@@ -1,50 +1,34 @@
-import backtest from "../lib/index";
-import { IStrategyTickResult } from "../interfaces/Strategy.interface";
-
-export interface IReduceBacktestResult<T> {
+export interface IReduceResult<T> {
   symbol: string;
-  results: IStrategyTickResult[];
   accumulator: T;
   totalTicks: number;
 }
 
 export type ReduceCallback<T> = (
   accumulator: T,
-  currentResult: IStrategyTickResult,
   index: number,
-  symbol: string,
-  when: Date
+  when: Date,
+  symbol: string
 ) => T | Promise<T>;
 
 export async function reduce<T>(
   symbol: string,
   timeframes: Date[],
   callback: ReduceCallback<T>,
-  initialValue?: T
-): Promise<IReduceBacktestResult<T>> {
-  const results: IStrategyTickResult[] = [];
-  let accumulator = initialValue || null;
+  initialValue: T
+): Promise<IReduceResult<T>> {
+  let accumulator = initialValue;
 
   for (let i = 0; i < timeframes.length; i++) {
     const when = timeframes[i];
-
-    const result = await backtest.strategyPublicService.tick(
-      symbol,
-      when,
-      true
-    );
-
-    results.push(result);
-
-    accumulator = await callback(accumulator, result, i, symbol, when);
+    accumulator = await callback(accumulator, i, when, symbol);
   }
 
   return {
     symbol,
-    results,
     accumulator,
     totalTicks: timeframes.length,
   };
-};
+}
 
 export default reduce;

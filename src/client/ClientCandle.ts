@@ -32,7 +32,7 @@ export class ClientCandle implements ICandle {
     });
 
     const step = INTERVAL_MINUTES[interval];
-    const adjust = step + step * limit;
+    const adjust = step * limit;
 
     if (!adjust) {
       throw new Error(

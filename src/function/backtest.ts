@@ -7,10 +7,6 @@ export interface IBacktestResult {
   results: IStrategyTickResult[];
 }
 
-export interface IBacktestGUIResult extends IBacktestResult {
-  markdown: string;
-}
-
 export async function runBacktest(
   symbol: string,
   timeframes: Date[]
@@ -28,46 +24,24 @@ export async function runBacktest(
     if (result.action === "closed") {
       results.push(result);
     }
-
   }
 
   return {
     symbol,
     results,
   };
-};
+}
 
 export async function runBacktestGUI(
   symbol: string,
   timeframes: Date[]
-): Promise<IBacktestGUIResult> {
+) {
   const backtestResult = await runBacktest(symbol, timeframes);
   const { results } = backtestResult;
 
-  // Создаем markdown таблицу
+  // Таблица для терминала
   const table = new Table({
-    head: ["#", "Time", "Action", "Note", "Price", "Reason", "PNL %"],
-    style: {
-      head: [],
-      border: [],
-    },
-    chars: {
-      top: "",
-      "top-mid": "",
-      "top-left": "",
-      "top-right": "",
-      bottom: "",
-      "bottom-mid": "",
-      "bottom-left": "",
-      "bottom-right": "",
-      left: "|",
-      "left-mid": "",
-      mid: "",
-      "mid-mid": "",
-      right: "|",
-      "right-mid": "",
-      middle: "|",
-    },
+    head: ["#", "Time", "Note", "Price", "Reason", "PNL %"],
   });
 
   let totalPnl = 0;
@@ -89,11 +63,10 @@ export async function runBacktestGUI(
       table.push([
         index + 1,
         new Date(result.signal.timestamp).toISOString(),
-        `${emoji} CLOSED`,
         result.signal.note,
         result.currentPrice.toFixed(2),
         result.closeReason,
-        pnlFormatted,
+        `${emoji} ${pnlFormatted}`,
       ]);
     }
   });
@@ -111,12 +84,10 @@ export async function runBacktestGUI(
     `${totalPnl > 0 ? "+" : ""}${totalPnl.toFixed(2)}%`,
   ]);
 
-  const markdown = table.toString();
+  console.log("\n");
+  console.log(table.toString());
+  console.log("\n");
 
-  return {
-    ...backtestResult,
-    markdown,
-  };
 };
 
 export default { runBacktest, runBacktestGUI };
