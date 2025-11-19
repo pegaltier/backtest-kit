@@ -3,4 +3,6 @@ export { runBacktest, runBacktestGUI } from "./function/backtest";
 export { reduce } from "./function/reduce";
 export { startRun, stopRun, stopAll } from "./function/run";
 
+export { ExecutionContextService } from "./lib/services/context/ExecutionContextService";
+
 export { backtest } from "./lib";

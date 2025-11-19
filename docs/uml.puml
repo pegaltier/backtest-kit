@@ -1,0 +1,29 @@
+@startyaml
+candlePublicService:
+	• candlePublicService: ""
+	loggerService: ""
+	candleConnectionService:
+		• candleConnectionService: ""
+		loggerService: ""
+		executionContextService: ""
+		candleSchemaService:
+			• candleSchemaService: ""
+			loggerService: ""
+strategyPublicService:
+	• strategyPublicService: ""
+	loggerService: ""
+	strategyConnectionService:
+		• strategyConnectionService: ""
+		loggerService: ""
+		executionContextService: ""
+		strategySchemaService:
+			• strategySchemaService: ""
+			loggerService: ""
+		candleConnectionService:
+			• candleConnectionService: ""
+			loggerService: ""
+			executionContextService: ""
+			candleSchemaService:
+				• candleSchemaService: ""
+				loggerService: ""
+@endyaml

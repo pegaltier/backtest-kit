@@ -138,13 +138,8 @@ interface IRunConfig {
     interval: number;
 }
 declare const startRun: (config: IRunConfig) => void;
-declare const stopRun: () => void;
-declare const getStatus: () => {
-    status: "pending" | "fulfilled" | "rejected" | "ready";
-    config: IRunConfig;
-    tickCount: number;
-    isRunning: boolean;
-};
+declare const stopRun: (symbol: string) => void;
+declare const stopAll: () => void;
 
 declare class LoggerService implements ILogger {
     private _commonLogger;
@@ -219,4 +214,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { addCandle, addStrategy, backtest, getStatus, reduce, runBacktest, runBacktestGUI, startRun, stopRun };
+export { ExecutionContextService, addCandle, addStrategy, backtest, reduce, runBacktest, runBacktestGUI, startRun, stopAll, stopRun };
