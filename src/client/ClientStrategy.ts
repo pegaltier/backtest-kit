@@ -1,16 +1,16 @@
 import {
-  ISignal,
+  IStrategy,
   ISignalData,
-  ISignalParams,
-  ISignalPnL,
-  ISignalTickResult,
-  SignalCloseReason,
-} from "../interfaces/Signal.interface";
+  IStrategyParams,
+  IStrategyPnL,
+  IStrategyTickResult,
+  StrategyCloseReason,
+} from "../interfaces/Strategy.interface";
 
 const PERCENT_SLIPPAGE = 0.1;
 const PERCENT_FEE = 0.1;
 
-const GET_PNL_FN = (signal: ISignalData, priceClose: number): ISignalPnL => {
+const GET_PNL_FN = (signal: ISignalData, priceClose: number): IStrategyPnL => {
   const priceOpen = signal.priceOpen;
 
   let priceOpenWithSlippage: number;
@@ -55,13 +55,13 @@ const GET_PNL_FN = (signal: ISignalData, priceClose: number): ISignalPnL => {
   };
 };
 
-export class ClientSignal implements ISignal {
+export class ClientStrategy implements IStrategy {
   _pendingSignal: ISignalData | null = null;
 
-  constructor(readonly params: ISignalParams) {}
+  constructor(readonly params: IStrategyParams) {}
 
-  public tick = async (symbol: string): Promise<ISignalTickResult> => {
-    this.params.logger.debug("ClientSignal tick", {
+  public tick = async (symbol: string): Promise<IStrategyTickResult> => {
+    this.params.logger.debug("ClientStrategy tick", {
       symbol,
     });
 
@@ -95,7 +95,7 @@ export class ClientSignal implements ISignal {
     // Получаем среднюю цену
     const averagePrice = await this.params.candle.getAveragePrice(symbol);
 
-    this.params.logger.debug("ClientSignal tick check", {
+    this.params.logger.debug("ClientStrategy tick check", {
       symbol,
       averagePrice,
       signalId: signal.id,
@@ -103,7 +103,7 @@ export class ClientSignal implements ISignal {
     });
 
     let shouldClose = false;
-    let closeReason: SignalCloseReason | undefined;
+    let closeReason: StrategyCloseReason | undefined;
 
     // Проверяем истечение времени
     const signalEndTime =
@@ -139,7 +139,7 @@ export class ClientSignal implements ISignal {
     if (shouldClose) {
       const pnl = GET_PNL_FN(signal, averagePrice);
 
-      this.params.logger.debug("ClientSignal closing", {
+      this.params.logger.debug("ClientStrategy closing", {
         symbol,
         signalId: signal.id,
         reason: closeReason,
@@ -175,4 +175,4 @@ export class ClientSignal implements ISignal {
   };
 }
 
-export default ClientSignal;
+export default ClientStrategy;

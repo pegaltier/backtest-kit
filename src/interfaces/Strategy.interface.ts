@@ -12,13 +12,13 @@ export interface ISignalData {
   timestamp: number;
 }
 
-export interface ISignalParams extends ISignalSchema {
+export interface IStrategyParams extends IStrategySchema {
   logger: ILogger;
   candle: ICandle;
   execution: TExecutionContextService;
 }
 
-export interface ISignalCallbacks {
+export interface IStrategyCallbacks {
   onOpen: (backtest: boolean, symbol: string, data: ISignalData) => void;
   onClose: (
     backtest: boolean,
@@ -28,50 +28,50 @@ export interface ISignalCallbacks {
   ) => void;
 }
 
-export interface ISignalSchema {
+export interface IStrategySchema {
   symbol: string;
   getSignal: (symbol: string) => Promise<ISignalData | null>;
-  callbacks?: Partial<ISignalCallbacks>;
+  callbacks?: Partial<IStrategyCallbacks>;
 }
 
-export type SignalCloseReason = "time_expired" | "take_profit" | "stop_loss";
+export type StrategyCloseReason = "time_expired" | "take_profit" | "stop_loss";
 
-export interface ISignalPnL {
+export interface IStrategyPnL {
   pnlPercentage: number;
   priceOpen: number;
   priceClose: number;
 }
 
-export interface ISignalTickResultIdle {
+export interface IStrategyTickResultIdle {
   action: "idle";
   signal: null;
 }
 
-export interface ISignalTickResultOpened {
+export interface IStrategyTickResultOpened {
   action: "opened";
   signal: ISignalData;
 }
 
-export interface ISignalTickResultActive {
+export interface IStrategyTickResultActive {
   action: "active";
   signal: ISignalData;
   currentPrice: number;
 }
 
-export interface ISignalTickResultClosed {
+export interface IStrategyTickResultClosed {
   action: "closed";
   signal: ISignalData;
   currentPrice: number;
-  closeReason: SignalCloseReason;
-  pnl: ISignalPnL;
+  closeReason: StrategyCloseReason;
+  pnl: IStrategyPnL;
 }
 
-export type ISignalTickResult =
-  | ISignalTickResultIdle
-  | ISignalTickResultOpened
-  | ISignalTickResultActive
-  | ISignalTickResultClosed;
+export type IStrategyTickResult =
+  | IStrategyTickResultIdle
+  | IStrategyTickResultOpened
+  | IStrategyTickResultActive
+  | IStrategyTickResultClosed;
 
-export interface ISignal {
-  tick: (symbol: string) => Promise<ISignalTickResult>;
+export interface IStrategy {
+  tick: (symbol: string) => Promise<IStrategyTickResult>;
 }
