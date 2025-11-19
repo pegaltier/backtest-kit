@@ -1,0 +1,87 @@
+{
+  "name": "backtest-kit",
+  "version": "0.0.1",
+  "description": "A TypeScript library for trading system backtest",
+  "author": {
+    "name": "Petr Tripolsky",
+    "email": "tripolskypetr@gmail.com",
+    "url": "https://github.com/tripolskypetr"
+  },
+  "funding": {
+    "type": "individual",
+    "url": "http://paypal.me/tripolskypetr"
+  },
+  "license": "MIT",
+  "homepage": "https://backtest-kit.github.io/modules.html",
+  "keywords": [
+    "backtesting",
+    "backtest",
+    "finance",
+    "trading",
+    "candles",
+    "indicators",
+    "multi value",
+    "multi symbol",
+    "framework"
+  ],
+  "files": [
+    "build",
+    "types.d.ts",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tripolskypetr/backtest-kit",
+    "documentation": "https://github.com/tripolskypetr/backtest-kit/tree/master/docs"
+  },
+  "bugs": {
+    "url": "https://github.com/tripolskypetr/backtest-kit/issues"
+  },
+  "scripts": {
+    "build": "rollup -c",
+    "test": "npm run build && node ./test/index.mjs",
+    "benchmark": "npm run build && node ./benchmark/index.mjs",
+    "build:docs": "rimraf docs && mkdir docs && node ./scripts/dts-docs.cjs ./types.d.ts ./docs",
+    "docs:gpt": "npm run build && node ./scripts/gpt-docs.mjs",
+    "docs:uml": "npm run build && node ./scripts/uml.mjs",
+    "docs:www": "rimraf docs/wwwroot && typedoc",
+    "repl": "dotenv -e .env -- npm run build && node -e \"import('./scripts/repl.mjs')\" --interactive"
+  },
+  "main": "build/index.cjs",
+  "module": "build/index.mjs",
+  "source": "src/index.ts",
+  "types": "./types.d.ts",
+  "exports": {
+    "require": "./build/index.cjs",
+    "types": "./types.d.ts",
+    "import": "./build/index.mjs",
+    "default": "./build/index.cjs"
+  },
+  "devDependencies": {
+    "@rollup/plugin-typescript": "11.1.6",
+    "@types/lodash-es": "4.17.12",
+    "@types/node": "22.9.0",
+    "@types/xml2js": "0.4.14",
+    "glob": "11.0.1",
+    "ollama": "0.5.14",
+    "rimraf": "6.0.1",
+    "rollup": "3.29.5",
+    "rollup-plugin-dts": "6.1.1",
+    "rollup-plugin-peer-deps-external": "2.2.4",
+    "tslib": "2.7.0",
+    "typedoc": "0.27.9",
+    "undici": "6.21.2",
+    "worker-testbed": "1.0.10"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "di-kit": "^1.0.18",
+    "di-scoped": "^1.0.20",
+    "functools-kit": "^1.0.93",
+    "get-moment-stamp": "^1.1.1",
+    "lodash-es": "4.17.21",
+    "xml2js": "0.6.2"
+  }
+}

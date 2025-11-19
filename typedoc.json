@@ -1,0 +1,13 @@
+{
+    "entryPoints": ["./types.d.ts"],
+    "readme": "./README.md", 
+    "projectDocuments": ["docs/*"],
+    "name": "backtest-kit",
+    "includeVersion": false,
+    "logLevel": "Verbose",
+    "out": "./docs/wwwroot",
+    "sort": [
+        "alphabetical"
+    ],
+    "tsconfig": "./tsconfig.docs.json"
+}
