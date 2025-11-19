@@ -11,10 +11,10 @@ export interface IBacktestGUIResult extends IBacktestResult {
   markdown: string;
 }
 
-export const runBacktest = async (
+export async function runBacktest(
   symbol: string,
   timeframes: Date[]
-): Promise<IBacktestResult> => {
+): Promise<IBacktestResult> {
   const results: IStrategyTickResult[] = [];
 
   for (const when of timeframes) {
@@ -37,10 +37,10 @@ export const runBacktest = async (
   };
 };
 
-export const runBacktestGUI = async (
+export async function runBacktestGUI(
   symbol: string,
   timeframes: Date[]
-): Promise<IBacktestGUIResult> => {
+): Promise<IBacktestGUIResult> {
   const backtestResult = await runBacktest(symbol, timeframes);
   const { results } = backtestResult;
 

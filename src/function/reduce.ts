@@ -16,12 +16,12 @@ export type ReduceCallback<T> = (
   when: Date
 ) => T | Promise<T>;
 
-export const reduce = async <T>(
+export async function reduce<T>(
   symbol: string,
   timeframes: Date[],
   callback: ReduceCallback<T>,
   initialValue?: T
-): Promise<IReduceBacktestResult<T>> => {
+): Promise<IReduceBacktestResult<T>> {
   const results: IStrategyTickResult[] = [];
   let accumulator = initialValue || null;
 

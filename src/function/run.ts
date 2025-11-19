@@ -15,7 +15,7 @@ interface IRunInstance {
 
 const instances = new Map<string, IRunInstance>();
 
-export const startRun = (config: IRunConfig) => {
+export function startRun(config: IRunConfig) {
   const { symbol, interval } = config;
 
   // Останавливаем предыдущий инстанс для этого символа
@@ -47,7 +47,7 @@ export const startRun = (config: IRunConfig) => {
   });
 };
 
-export const stopRun = (symbol: string) => {
+export function stopRun(symbol: string) {
   const instance = instances.get(symbol);
   if (instance) {
     clearInterval(instance.intervalId);
@@ -55,7 +55,7 @@ export const stopRun = (symbol: string) => {
   }
 };
 
-export const stopAll = () => {
+export function stopAll() {
   instances.forEach((instance) => {
     clearInterval(instance.intervalId);
   });

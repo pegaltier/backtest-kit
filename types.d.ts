@@ -111,8 +111,8 @@ interface IStrategy {
     tick: (symbol: string) => Promise<IStrategyTickResult>;
 }
 
-declare const addStrategy: (strategySchema: IStrategySchema) => void;
-declare const addCandle: (candleSchema: ICandleSchema) => void;
+declare function addStrategy(strategySchema: IStrategySchema): void;
+declare function addCandle(candleSchema: ICandleSchema): void;
 
 interface IBacktestResult {
     symbol: string;
@@ -121,8 +121,8 @@ interface IBacktestResult {
 interface IBacktestGUIResult extends IBacktestResult {
     markdown: string;
 }
-declare const runBacktest: (symbol: string, timeframes: Date[]) => Promise<IBacktestResult>;
-declare const runBacktestGUI: (symbol: string, timeframes: Date[]) => Promise<IBacktestGUIResult>;
+declare function runBacktest(symbol: string, timeframes: Date[]): Promise<IBacktestResult>;
+declare function runBacktestGUI(symbol: string, timeframes: Date[]): Promise<IBacktestGUIResult>;
 
 interface IReduceBacktestResult<T> {
     symbol: string;
@@ -131,15 +131,15 @@ interface IReduceBacktestResult<T> {
     totalTicks: number;
 }
 type ReduceCallback<T> = (accumulator: T, currentResult: IStrategyTickResult, index: number, symbol: string, when: Date) => T | Promise<T>;
-declare const reduce: <T>(symbol: string, timeframes: Date[], callback: ReduceCallback<T>, initialValue?: T) => Promise<IReduceBacktestResult<T>>;
+declare function reduce<T>(symbol: string, timeframes: Date[], callback: ReduceCallback<T>, initialValue?: T): Promise<IReduceBacktestResult<T>>;
 
 interface IRunConfig {
     symbol: string;
     interval: number;
 }
-declare const startRun: (config: IRunConfig) => void;
-declare const stopRun: (symbol: string) => void;
-declare const stopAll: () => void;
+declare function startRun(config: IRunConfig): void;
+declare function stopRun(symbol: string): void;
+declare function stopAll(): void;
 
 declare class LoggerService implements ILogger {
     private _commonLogger;
