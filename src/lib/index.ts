@@ -9,6 +9,8 @@ import ExecutionContextService, {
 import CandleSchemaService from "./services/schema/CandleSchemaService";
 import StrategySchemaService from "./services/schema/StrategySchemaService";
 import StrategyConnectionService from "./services/connection/StrategyConnectionService";
+import CandlePublicService from "./services/public/CandlePublicService";
+import StrategyPublicService from "./services/public/StrategyPublicService";
 
 const baseServices = {
   loggerService: inject<LoggerService>(TYPES.loggerService),
@@ -36,11 +38,19 @@ const schemaServices = {
   ),
 };
 
+const publicServices = {
+  candlePublicService: inject<CandlePublicService>(TYPES.candlePublicService),
+  strategyPublicService: inject<StrategyPublicService>(
+    TYPES.strategyPublicService
+  ),
+};
+
 export const backtest = {
   ...baseServices,
   ...contextServices,
   ...connectionServices,
   ...schemaServices,
+  ...publicServices,
 };
 
 init();

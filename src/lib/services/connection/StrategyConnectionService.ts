@@ -40,11 +40,11 @@ export class StrategyConnectionService implements IStrategy {
     }
   );
 
-  public tick = (symbol: string): Promise<IStrategyTickResult> => {
+  public tick = async (symbol: string): Promise<IStrategyTickResult> => {
     this.loggerService.log("strategyConnectionService tick", {
       symbol,
     });
-    return this.getStrategy(symbol).tick(symbol);
+    return await this.getStrategy(symbol).tick(symbol);
   };
 }
 

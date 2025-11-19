@@ -16,11 +16,17 @@ const schemaServices = {
     strategySchemaService: Symbol('strategySchemaService'),
 }
 
+const publicServices = {
+    candlePublicService: Symbol('candlePublicService'),
+    strategyPublicService: Symbol('strategyPublicService'),
+}
+
 export const TYPES = {
     ...baseServices,
     ...contextServices,
     ...connectionServices,
     ...schemaServices,
+    ...publicServices,
 }
 
 export default TYPES;
