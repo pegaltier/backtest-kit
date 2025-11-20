@@ -4,9 +4,9 @@ import StrategyConnectionService from "../services/connection/StrategyConnection
 import FrameConnectionService from "../services/connection/FrameConnectionService";
 import ExecutionContextService from "../services/context/ExecutionContextService";
 import MethodContextService from "../services/context/MethodContextService";
-import ExchangePublicService from "../services/public/ExchangePublicService";
-import StrategyPublicService from "../services/public/StrategyPublicService";
-import FramePublicService from "../services/public/FramePublicService";
+import ExchangeGlobalService from "../services/global/ExchangeGlobalService";
+import StrategyGlobalService from "../services/global/StrategyGlobalService";
+import FrameGlobalService from "../services/global/FrameGlobalService";
 import ExchangeSchemaService from "../services/schema/ExchangeSchemaService";
 import StrategySchemaService from "../services/schema/StrategySchemaService";
 import FrameSchemaService from "../services/schema/FrameSchemaService";
@@ -37,9 +37,9 @@ import TYPES from "./types";
 }
 
 {
-    provide(TYPES.exchangePublicService, () => new ExchangePublicService());
-    provide(TYPES.strategyPublicService, () => new StrategyPublicService());
-    provide(TYPES.framePublicService, () => new FramePublicService());
+    provide(TYPES.exchangeGlobalService, () => new ExchangeGlobalService());
+    provide(TYPES.strategyGlobalService, () => new StrategyGlobalService());
+    provide(TYPES.frameGlobalService, () => new FrameGlobalService());
 }
 
 {

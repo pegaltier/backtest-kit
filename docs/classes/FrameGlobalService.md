@@ -1,9 +1,9 @@
 ---
-title: docs/api-reference/class/FramePublicService
+title: docs/api-reference/class/FrameGlobalService
 group: docs
 ---
 
-# FramePublicService
+# FrameGlobalService
 
 ## Constructor
 

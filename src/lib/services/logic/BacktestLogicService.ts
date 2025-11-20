@@ -2,16 +2,16 @@ import { inject } from "../../core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../core/types";
 import { IStrategyTickResultClosed } from "../../../interfaces/Strategy.interface";
-import StrategyPublicService from "../public/StrategyPublicService";
-import ExchangePublicService from "../public/ExchangePublicService";
+import StrategyGlobalService from "../global/StrategyGlobalService";
+import ExchangeGlobalService from "../global/ExchangeGlobalService";
 
 export class BacktestLogicService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
-  private readonly strategyPublicService = inject<StrategyPublicService>(
-    TYPES.strategyPublicService
+  private readonly strategyGlobalService = inject<StrategyGlobalService>(
+    TYPES.strategyGlobalService
   );
-  private readonly exchangePublicService = inject<ExchangePublicService>(
-    TYPES.exchangePublicService
+  private readonly exchangeGlobalService = inject<ExchangeGlobalService>(
+    TYPES.exchangeGlobalService
   );
 
   public run = async (
@@ -29,7 +29,7 @@ export class BacktestLogicService {
     while (i < timeframes.length) {
       const when = timeframes[i];
 
-      const result = await this.strategyPublicService.tick(symbol, when, true);
+      const result = await this.strategyGlobalService.tick(symbol, when, true);
 
       // Если сигнал открыт, вызываем backtest
       if (result.action === "opened") {
@@ -42,7 +42,7 @@ export class BacktestLogicService {
         });
 
         // Получаем свечи для бектеста
-        const candles = await this.exchangePublicService.getNextCandles(
+        const candles = await this.exchangeGlobalService.getNextCandles(
           symbol,
           "1m",
           signal.minuteEstimatedTime,
@@ -61,7 +61,7 @@ export class BacktestLogicService {
         });
 
         // Вызываем backtest - всегда возвращает closed
-        const backtestResult = await this.strategyPublicService.backtest(
+        const backtestResult = await this.strategyGlobalService.backtest(
           symbol,
           candles,
           when,

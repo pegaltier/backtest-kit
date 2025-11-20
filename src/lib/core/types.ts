@@ -19,10 +19,10 @@ const schemaServices = {
     frameSchemaService: Symbol('frameSchemaService'),
 }
 
-const publicServices = {
-    exchangePublicService: Symbol('exchangePublicService'),
-    strategyPublicService: Symbol('strategyPublicService'),
-    framePublicService: Symbol('framePublicService'),
+const globalServices = {
+    exchangeGlobalService: Symbol('exchangeGlobalService'),
+    strategyGlobalService: Symbol('strategyGlobalService'),
+    frameGlobalService: Symbol('frameGlobalService'),
 }
 
 const logicServices = {
@@ -35,7 +35,7 @@ export const TYPES = {
     ...contextServices,
     ...connectionServices,
     ...schemaServices,
-    ...publicServices,
+    ...globalServices,
     ...logicServices,
 }
 

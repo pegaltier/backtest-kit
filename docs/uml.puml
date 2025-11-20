@@ -1,6 +1,6 @@
 @startyaml
-exchangePublicService:
-	• exchangePublicService: ""
+exchangeGlobalService:
+	• exchangeGlobalService: ""
 	loggerService:
 		• loggerService: ""
 		methodContextService: ""
@@ -19,8 +19,8 @@ exchangePublicService:
 				methodContextService: ""
 				executionContextService: ""
 		methodContextService: ""
-strategyPublicService:
-	• strategyPublicService: ""
+strategyGlobalService:
+	• strategyGlobalService: ""
 	loggerService:
 		• loggerService: ""
 		methodContextService: ""
@@ -53,8 +53,8 @@ strategyPublicService:
 					executionContextService: ""
 			methodContextService: ""
 		methodContextService: ""
-framePublicService:
-	• framePublicService: ""
+frameGlobalService:
+	• frameGlobalService: ""
 	loggerService:
 		• loggerService: ""
 		methodContextService: ""

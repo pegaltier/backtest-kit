@@ -31,6 +31,12 @@ currentPrice: number
 closeReason: StrategyCloseReason
 ```
 
+### closeTimestamp
+
+```ts
+closeTimestamp: number
+```
+
 ### pnl
 
 ```ts

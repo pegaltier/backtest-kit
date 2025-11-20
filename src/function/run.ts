@@ -25,7 +25,7 @@ export function startRun(config: IRunConfig) {
 
   const doWork = singlerun(async () => {
     const now = new Date();
-    const result = await backtest.strategyPublicService.tick(symbol, now, false);
+    const result = await backtest.strategyGlobalService.tick(symbol, now, false);
 
     const instance = instances.get(symbol);
     if (instance) {

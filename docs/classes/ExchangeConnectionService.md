@@ -51,6 +51,12 @@ getExchange: ((exchangeName: string) => ClientExchange) & IClearableMemoize<stri
 getCandles: (symbol: string, interval: CandleInterval, limit: number) => Promise<ICandleData[]>
 ```
 
+### getNextCandles
+
+```ts
+getNextCandles: (symbol: string, interval: CandleInterval, limit: number) => Promise<ICandleData[]>
+```
+
 ### getAveragePrice
 
 ```ts

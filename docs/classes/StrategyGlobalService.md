@@ -1,9 +1,9 @@
 ---
-title: docs/api-reference/class/StrategyPublicService
+title: docs/api-reference/class/StrategyGlobalService
 group: docs
 ---
 
-# StrategyPublicService
+# StrategyGlobalService
 
 ## Constructor
 
@@ -29,4 +29,10 @@ strategyConnectionService: any
 
 ```ts
 tick: (symbol: string, when: Date, backtest: boolean) => Promise<IStrategyTickResult>
+```
+
+### backtest
+
+```ts
+backtest: (symbol: string, candles: ICandleData[], when: Date, backtest: boolean) => Promise<IStrategyTickResultClosed>
 ```

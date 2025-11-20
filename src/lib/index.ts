@@ -11,9 +11,9 @@ import ExecutionContextService, {
 import MethodContextService, {
   TMethodContextService,
 } from "./services/context/MethodContextService";
-import ExchangePublicService from "./services/public/ExchangePublicService";
-import StrategyPublicService from "./services/public/StrategyPublicService";
-import FramePublicService from "./services/public/FramePublicService";
+import ExchangeGlobalService from "./services/global/ExchangeGlobalService";
+import StrategyGlobalService from "./services/global/StrategyGlobalService";
+import FrameGlobalService from "./services/global/FrameGlobalService";
 import ExchangeSchemaService from "./services/schema/ExchangeSchemaService";
 import StrategySchemaService from "./services/schema/StrategySchemaService";
 import FrameSchemaService from "./services/schema/FrameSchemaService";
@@ -57,15 +57,15 @@ const schemaServices = {
   ),
 };
 
-const publicServices = {
-  exchangePublicService: inject<ExchangePublicService>(
-    TYPES.exchangePublicService
+const globalServices = {
+  exchangeGlobalService: inject<ExchangeGlobalService>(
+    TYPES.exchangeGlobalService
   ),
-  strategyPublicService: inject<StrategyPublicService>(
-    TYPES.strategyPublicService
+  strategyGlobalService: inject<StrategyGlobalService>(
+    TYPES.strategyGlobalService
   ),
-  framePublicService: inject<FramePublicService>(
-    TYPES.framePublicService
+  frameGlobalService: inject<FrameGlobalService>(
+    TYPES.frameGlobalService
   ),
 };
 
@@ -81,7 +81,7 @@ export const backtest = {
   ...contextServices,
   ...connectionServices,
   ...schemaServices,
-  ...publicServices,
+  ...globalServices,
   ...logicServices,
 };
 

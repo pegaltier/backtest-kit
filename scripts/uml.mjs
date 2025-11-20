@@ -37,7 +37,7 @@ const toUML = async () => {
   };
   process(
     backtest,
-    Object.keys(backtest).filter((key) => key.includes("Public"))
+    Object.keys(backtest).filter((key) => key.includes("Global"))
   );
 
   const result = ["@startyaml", ...lines, "@endyaml"].join("\n");

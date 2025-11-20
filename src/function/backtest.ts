@@ -14,7 +14,7 @@ export async function runBacktest(
   const results: IStrategyTickResult[] = [];
 
   for (const when of timeframes) {
-    const result = await backtest.strategyPublicService.tick(
+    const result = await backtest.strategyGlobalService.tick(
       symbol,
       when,
       true

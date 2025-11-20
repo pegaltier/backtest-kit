@@ -5,7 +5,7 @@ import ExecutionContextService from "../context/ExecutionContextService";
 import { CandleInterval } from "../../../interfaces/Exchange.interface";
 import ExchangeConnectionService from "../connection/ExchangeConnectionService";
 
-export class ExchangePublicService {
+export class ExchangeGlobalService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly exchangeConnectionService =
     inject<ExchangeConnectionService>(TYPES.exchangeConnectionService);
@@ -17,7 +17,7 @@ export class ExchangePublicService {
     when: Date,
     backtest: boolean
   ) => {
-    this.loggerService.log("exchangePublicService getCandles", {
+    this.loggerService.log("exchangeGlobalService getCandles", {
       symbol,
       interval,
       limit,
@@ -47,7 +47,7 @@ export class ExchangePublicService {
     when: Date,
     backtest: boolean
   ) => {
-    this.loggerService.log("exchangePublicService getNextCandles", {
+    this.loggerService.log("exchangeGlobalService getNextCandles", {
       symbol,
       interval,
       limit,
@@ -75,7 +75,7 @@ export class ExchangePublicService {
     when: Date,
     backtest: boolean
   ) => {
-    this.loggerService.log("exchangePublicService getAveragePrice", {
+    this.loggerService.log("exchangeGlobalService getAveragePrice", {
       symbol,
       when,
       backtest,
@@ -98,7 +98,7 @@ export class ExchangePublicService {
     when: Date,
     backtest: boolean
   ) => {
-    this.loggerService.log("exchangePublicService formatPrice", {
+    this.loggerService.log("exchangeGlobalService formatPrice", {
       symbol,
       price,
       when,
@@ -122,7 +122,7 @@ export class ExchangePublicService {
     when: Date,
     backtest: boolean
   ) => {
-    this.loggerService.log("exchangePublicService formatQuantity", {
+    this.loggerService.log("exchangeGlobalService formatQuantity", {
       symbol,
       quantity,
       when,
@@ -144,4 +144,4 @@ export class ExchangePublicService {
   };
 }
 
-export default ExchangePublicService;
+export default ExchangeGlobalService;

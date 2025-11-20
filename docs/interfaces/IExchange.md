@@ -13,6 +13,12 @@ group: docs
 getCandles: (symbol: string, interval: CandleInterval, limit: number) => Promise<ICandleData[]>
 ```
 
+### getNextCandles
+
+```ts
+getNextCandles: (symbol: string, interval: CandleInterval, limit: number) => Promise<ICandleData[]>
+```
+
 ### formatQuantity
 
 ```ts

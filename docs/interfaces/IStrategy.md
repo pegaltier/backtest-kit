@@ -12,3 +12,9 @@ group: docs
 ```ts
 tick: (symbol: string) => Promise<IStrategyTickResult>
 ```
+
+### backtest
+
+```ts
+backtest: (candles: ICandleData[]) => Promise<IStrategyTickResultClosed>
+```

@@ -19,6 +19,12 @@ strategyName: string
 exchangeName: string
 ```
 
+### interval
+
+```ts
+interval: SignalInterval
+```
+
 ### getSignal
 
 ```ts

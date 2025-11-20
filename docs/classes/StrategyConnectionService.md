@@ -56,3 +56,9 @@ getStrategy: any
 ```ts
 tick: () => Promise<IStrategyTickResult>
 ```
+
+### backtest
+
+```ts
+backtest: (candles: ICandleData[]) => Promise<IStrategyTickResultClosed>
+```

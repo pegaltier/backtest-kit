@@ -70,7 +70,9 @@ interface IExchange {
 }
 type ExchangeName = string;
 
+type SignalInterval = "1m" | "3m" | "5m" | "15m" | "30m" | "1h";
 interface ISignalDto {
+    id?: string;
     position: "long" | "short";
     note: string;
     priceOpen: number;
@@ -89,6 +91,7 @@ interface IStrategyCallbacks {
 interface IStrategySchema {
     strategyName: StrategyName;
     exchangeName: ExchangeName;
+    interval: SignalInterval;
     getSignal: (symbol: string) => Promise<ISignalDto | null>;
     callbacks?: Partial<IStrategyCallbacks>;
 }
@@ -239,7 +242,7 @@ declare class StrategyConnectionService implements IStrategy {
 declare class ClientFrame implements IFrame {
     readonly params: IFrameParams;
     constructor(params: IFrameParams);
-    getTimeframe: (symbol: string) => Promise<Date[]>;
+    getTimeframe: ((symbol: string) => Promise<Date[]>) & functools_kit.ISingleshotClearable;
 }
 
 declare class FrameConnectionService implements IFrame {
@@ -250,7 +253,7 @@ declare class FrameConnectionService implements IFrame {
     getTimeframe: (symbol: string) => Promise<Date[]>;
 }
 
-declare class ExchangePublicService {
+declare class ExchangeGlobalService {
     private readonly loggerService;
     private readonly exchangeConnectionService;
     getCandles: (symbol: string, interval: CandleInterval, limit: number, when: Date, backtest: boolean) => Promise<ICandleData[]>;
@@ -260,14 +263,14 @@ declare class ExchangePublicService {
     formatQuantity: (symbol: string, quantity: number, when: Date, backtest: boolean) => Promise<string>;
 }
 
-declare class StrategyPublicService {
+declare class StrategyGlobalService {
     private readonly loggerService;
     private readonly strategyConnectionService;
     tick: (symbol: string, when: Date, backtest: boolean) => Promise<IStrategyTickResult>;
     backtest: (symbol: string, candles: ICandleData[], when: Date, backtest: boolean) => Promise<IStrategyBacktestResult>;
 }
 
-declare class FramePublicService {
+declare class FrameGlobalService {
     private readonly loggerService;
     private readonly frameConnectionService;
     getTimeframe: (symbol: string) => Promise<Date[]>;
@@ -298,8 +301,8 @@ declare class FrameSchemaService {
 
 declare class BacktestLogicService {
     private readonly loggerService;
-    private readonly strategyPublicService;
-    private readonly exchangePublicService;
+    private readonly strategyGlobalService;
+    private readonly exchangeGlobalService;
     run: (symbol: string, timeframes: Date[]) => Promise<IStrategyTickResultClosed[]>;
 }
 
@@ -309,9 +312,9 @@ declare class LiveLogicService {
 declare const backtest: {
     backtestLogicService: BacktestLogicService;
     liveLogicService: LiveLogicService;
-    exchangePublicService: ExchangePublicService;
-    strategyPublicService: StrategyPublicService;
-    framePublicService: FramePublicService;
+    exchangeGlobalService: ExchangeGlobalService;
+    strategyGlobalService: StrategyGlobalService;
+    frameGlobalService: FrameGlobalService;
     exchangeSchemaService: ExchangeSchemaService;
     strategySchemaService: StrategySchemaService;
     frameSchemaService: FrameSchemaService;
@@ -327,4 +330,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { type CandleInterval, ExecutionContextService, type FrameInterval, type ICandleData, type IExchangeSchema, type IFrameSchema, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, MethodContextService, addExchange, addStrategy, backtest, formatPrice, formatQuantity, getAveragePrice, getCandles, reduce, runBacktest, runBacktestGUI, startRun, stopAll, stopRun };
+export { type CandleInterval, ExecutionContextService, type FrameInterval, type ICandleData, type IExchangeSchema, type IFrameSchema, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, MethodContextService, type SignalInterval, addExchange, addStrategy, backtest, formatPrice, formatQuantity, getAveragePrice, getCandles, reduce, runBacktest, runBacktestGUI, startRun, stopAll, stopRun };

@@ -24,5 +24,5 @@ params: IFrameParams
 ### getTimeframe
 
 ```ts
-getTimeframe: (symbol: string) => Promise<Date[]>
+getTimeframe: ((symbol: string) => Promise<Date[]>) & ISingleshotClearable
 ```

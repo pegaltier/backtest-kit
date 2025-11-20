@@ -6,7 +6,7 @@ import { IStrategyBacktestResult, IStrategyTickResult } from "../../../interface
 import StrategyConnectionService from "../connection/StrategyConnectionService";
 import { ICandleData } from "../../../interfaces/Exchange.interface";
 
-export class StrategyPublicService {
+export class StrategyGlobalService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly strategyConnectionService =
     inject<StrategyConnectionService>(TYPES.strategyConnectionService);
@@ -16,7 +16,7 @@ export class StrategyPublicService {
     when: Date,
     backtest: boolean
   ): Promise<IStrategyTickResult> => {
-    this.loggerService.log("strategyPublicService tick", {
+    this.loggerService.log("strategyGlobalService tick", {
       symbol,
       when,
       backtest,
@@ -39,7 +39,7 @@ export class StrategyPublicService {
     when: Date,
     backtest: boolean
   ): Promise<IStrategyBacktestResult> => {
-    this.loggerService.log("strategyPublicService backtest", {
+    this.loggerService.log("strategyGlobalService backtest", {
       symbol,
       when,
       backtest,
@@ -57,4 +57,4 @@ export class StrategyPublicService {
   };
 }
 
-export default StrategyPublicService;
+export default StrategyGlobalService;

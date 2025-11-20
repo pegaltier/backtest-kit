@@ -13,12 +13,14 @@ group: docs
 - [StrategyConnectionService](classes/StrategyConnectionService.md)
 - [ClientFrame](classes/ClientFrame.md)
 - [FrameConnectionService](classes/FrameConnectionService.md)
-- [ExchangePublicService](classes/ExchangePublicService.md)
-- [StrategyPublicService](classes/StrategyPublicService.md)
-- [FramePublicService](classes/FramePublicService.md)
+- [ExchangeGlobalService](classes/ExchangeGlobalService.md)
+- [StrategyGlobalService](classes/StrategyGlobalService.md)
+- [FrameGlobalService](classes/FrameGlobalService.md)
 - [ExchangeSchemaService](classes/ExchangeSchemaService.md)
 - [StrategySchemaService](classes/StrategySchemaService.md)
 - [FrameSchemaService](classes/FrameSchemaService.md)
+- [BacktestLogicService](classes/BacktestLogicService.md)
+- [LiveLogicService](classes/LiveLogicService.md)
 
 ## Enums
 
@@ -71,8 +73,10 @@ group: docs
 - [TExecutionContextService](types/TExecutionContextService.md)
 - [CandleInterval](types/CandleInterval.md)
 - [ExchangeName](types/ExchangeName.md)
+- [SignalInterval](types/SignalInterval.md)
 - [StrategyCloseReason](types/StrategyCloseReason.md)
 - [IStrategyTickResult](types/IStrategyTickResult.md)
+- [IStrategyBacktestResult](types/IStrategyBacktestResult.md)
 - [StrategyName](types/StrategyName.md)
 - [FrameInterval](types/FrameInterval.md)
 - [FrameName](types/FrameName.md)

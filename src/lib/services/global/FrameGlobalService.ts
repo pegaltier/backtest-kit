@@ -4,18 +4,18 @@ import TYPES from "../../core/types";
 import ExecutionContextService from "../context/ExecutionContextService";
 import FrameConnectionService from "../connection/FrameConnectionService";
 
-export class FramePublicService {
+export class FrameGlobalService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly frameConnectionService = inject<FrameConnectionService>(
     TYPES.frameConnectionService
   );
 
   public getTimeframe = async (symbol: string) => {
-    this.loggerService.log("framePublicService getTimeframe", {
+    this.loggerService.log("frameGlobalService getTimeframe", {
       symbol,
     });
     return await this.frameConnectionService.getTimeframe(symbol);
   };
 }
 
-export default FramePublicService;
+export default FrameGlobalService;

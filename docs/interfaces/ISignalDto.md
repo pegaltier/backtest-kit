@@ -7,6 +7,12 @@ group: docs
 
 ## Properties
 
+### id
+
+```ts
+id: string
+```
+
 ### position
 
 ```ts

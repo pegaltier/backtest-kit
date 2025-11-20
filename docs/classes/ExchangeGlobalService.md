@@ -1,9 +1,9 @@
 ---
-title: docs/api-reference/class/ExchangePublicService
+title: docs/api-reference/class/ExchangeGlobalService
 group: docs
 ---
 
-# ExchangePublicService
+# ExchangeGlobalService
 
 ## Constructor
 
@@ -29,6 +29,12 @@ exchangeConnectionService: any
 
 ```ts
 getCandles: (symbol: string, interval: CandleInterval, limit: number, when: Date, backtest: boolean) => Promise<ICandleData[]>
+```
+
+### getNextCandles
+
+```ts
+getNextCandles: (symbol: string, interval: CandleInterval, limit: number, when: Date, backtest: boolean) => Promise<ICandleData[]>
 ```
 
 ### getAveragePrice
