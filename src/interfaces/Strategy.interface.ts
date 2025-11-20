@@ -2,8 +2,7 @@ import { TExecutionContextService } from "../lib/services/context/ExecutionConte
 import { ExchangeName, IExchange } from "./Exchange.interface";
 import { ILogger } from "./Logger.interface";
 
-export interface ISignalData {
-  id: string;
+export interface ISignalDto {
   position: "long" | "short";
   note: string;
   priceOpen: number;
@@ -13,6 +12,10 @@ export interface ISignalData {
   timestamp: number;
 }
 
+export interface ISignalRow extends ISignalDto {
+  id: string;
+}
+
 export interface IStrategyParams extends IStrategySchema {
   logger: ILogger;
   exchange: IExchange;
@@ -20,19 +23,19 @@ export interface IStrategyParams extends IStrategySchema {
 }
 
 export interface IStrategyCallbacks {
-  onOpen: (backtest: boolean, symbol: string, data: ISignalData) => void;
+  onOpen: (backtest: boolean, symbol: string, data: ISignalRow) => void;
   onClose: (
     backtest: boolean,
     symbol: string,
     priceClose: number,
-    data: ISignalData
+    data: ISignalRow
   ) => void;
 }
 
 export interface IStrategySchema {
   strategyName: StrategyName;
   exchangeName: ExchangeName;
-  getSignal: (symbol: string) => Promise<ISignalData | null>;
+  getSignal: (symbol: string) => Promise<ISignalDto | null>;
   callbacks?: Partial<IStrategyCallbacks>;
 }
 
@@ -51,18 +54,18 @@ export interface IStrategyTickResultIdle {
 
 export interface IStrategyTickResultOpened {
   action: "opened";
-  signal: ISignalData;
+  signal: ISignalRow;
 }
 
 export interface IStrategyTickResultActive {
   action: "active";
-  signal: ISignalData;
+  signal: ISignalRow;
   currentPrice: number;
 }
 
 export interface IStrategyTickResultClosed {
   action: "closed";
-  signal: ISignalData;
+  signal: ISignalRow;
   currentPrice: number;
   closeReason: StrategyCloseReason;
   pnl: IStrategyPnL;

@@ -1,62 +1,30 @@
+import { randomString } from "functools-kit";
 import {
   IStrategy,
-  ISignalData,
+  ISignalRow,
+  ISignalDto,
   IStrategyParams,
   IStrategyPnL,
   IStrategyTickResult,
   StrategyCloseReason,
 } from "../interfaces/Strategy.interface";
+import toProfitLossDto from "src/helpers/toProfitLossDto";
 
-const PERCENT_SLIPPAGE = 0.1;
-const PERCENT_FEE = 0.1;
-
-const GET_PNL_FN = (signal: ISignalData, priceClose: number): IStrategyPnL => {
-  const priceOpen = signal.priceOpen;
-
-  let priceOpenWithSlippage: number;
-  let priceCloseWithSlippage: number;
-
-  if (signal.position === "long") {
-    // LONG: покупаем дороже, продаем дешевле
-    priceOpenWithSlippage = priceOpen * (1 + PERCENT_SLIPPAGE / 100);
-    priceCloseWithSlippage = priceClose * (1 - PERCENT_SLIPPAGE / 100);
-  } else {
-    // SHORT: продаем дешевле, покупаем дороже
-    priceOpenWithSlippage = priceOpen * (1 - PERCENT_SLIPPAGE / 100);
-    priceCloseWithSlippage = priceClose * (1 + PERCENT_SLIPPAGE / 100);
+const GET_SIGNAL_FN = async (self: ClientStrategy) => {
+  const signal = await self.params.getSignal(
+    self.params.execution.context.symbol
+  );
+  if (!signal) {
+    return null;
   }
-
-  // Применяем комиссию дважды (при открытии и закрытии)
-  const totalFee = PERCENT_FEE * 2;
-
-  let pnlPercentage: number;
-
-  if (signal.position === "long") {
-    // LONG: прибыль при росте цены
-    pnlPercentage =
-      ((priceCloseWithSlippage - priceOpenWithSlippage) /
-        priceOpenWithSlippage) *
-      100;
-  } else {
-    // SHORT: прибыль при падении цены
-    pnlPercentage =
-      ((priceOpenWithSlippage - priceCloseWithSlippage) /
-        priceOpenWithSlippage) *
-      100;
-  }
-
-  // Вычитаем комиссии
-  pnlPercentage -= totalFee;
-
   return {
-    pnlPercentage,
-    priceOpen,
-    priceClose,
+    ...signal,
+    id: randomString(),
   };
 };
 
 export class ClientStrategy implements IStrategy {
-  _pendingSignal: ISignalData | null = null;
+  _pendingSignal: ISignalRow | null = null;
 
   constructor(readonly params: IStrategyParams) {}
 
@@ -64,9 +32,7 @@ export class ClientStrategy implements IStrategy {
     this.params.logger.debug("ClientStrategy tick");
 
     if (!this._pendingSignal) {
-      this._pendingSignal = await this.params.getSignal(
-        this.params.execution.context.symbol
-      );
+      this._pendingSignal = await GET_SIGNAL_FN(this);
 
       if (this._pendingSignal) {
         if (this.params.callbacks?.onOpen) {
@@ -139,7 +105,7 @@ export class ClientStrategy implements IStrategy {
 
     // Закрываем сигнал если выполнены условия
     if (shouldClose) {
-      const pnl = GET_PNL_FN(signal, averagePrice);
+      const pnl = toProfitLossDto(signal, averagePrice);
 
       this.params.logger.debug("ClientStrategy closing", {
         symbol: this.params.execution.context.symbol,
