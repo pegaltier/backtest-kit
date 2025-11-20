@@ -69,8 +69,7 @@ interface IExchange {
 }
 type ExchangeName = string;
 
-interface ISignalData {
-    id: string;
+interface ISignalDto {
     position: "long" | "short";
     note: string;
     priceOpen: number;
@@ -79,14 +78,17 @@ interface ISignalData {
     minuteEstimatedTime: number;
     timestamp: number;
 }
+interface ISignalRow extends ISignalDto {
+    id: string;
+}
 interface IStrategyCallbacks {
-    onOpen: (backtest: boolean, symbol: string, data: ISignalData) => void;
-    onClose: (backtest: boolean, symbol: string, priceClose: number, data: ISignalData) => void;
+    onOpen: (backtest: boolean, symbol: string, data: ISignalRow) => void;
+    onClose: (backtest: boolean, symbol: string, priceClose: number, data: ISignalRow) => void;
 }
 interface IStrategySchema {
     strategyName: StrategyName;
     exchangeName: ExchangeName;
-    getSignal: (symbol: string) => Promise<ISignalData | null>;
+    getSignal: (symbol: string) => Promise<ISignalDto | null>;
     callbacks?: Partial<IStrategyCallbacks>;
 }
 type StrategyCloseReason = "time_expired" | "take_profit" | "stop_loss";
@@ -101,16 +103,16 @@ interface IStrategyTickResultIdle {
 }
 interface IStrategyTickResultOpened {
     action: "opened";
-    signal: ISignalData;
+    signal: ISignalRow;
 }
 interface IStrategyTickResultActive {
     action: "active";
-    signal: ISignalData;
+    signal: ISignalRow;
     currentPrice: number;
 }
 interface IStrategyTickResultClosed {
     action: "closed";
-    signal: ISignalData;
+    signal: ISignalRow;
     currentPrice: number;
     closeReason: StrategyCloseReason;
     pnl: IStrategyPnL;
@@ -165,7 +167,11 @@ declare const MethodContextService: (new () => {
 }, "prototype"> & di_scoped.IScopedClassRun<[context: IExecutionContext]>;
 
 declare class LoggerService implements ILogger {
+    private readonly methodContextService;
+    private readonly executionContextService;
     private _commonLogger;
+    private get methodContext();
+    private get executionContext();
     log: (topic: string, ...args: any[]) => Promise<void>;
     debug: (topic: string, ...args: any[]) => Promise<void>;
     info: (topic: string, ...args: any[]) => Promise<void>;
@@ -250,4 +256,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { type CandleInterval, ExecutionContextService, type ICandleData, type IExchangeSchema, type ISignalData, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, MethodContextService, addExchange, addStrategy, backtest, formatPrice, formatQuantity, getAveragePrice, getCandles, reduce, runBacktest, runBacktestGUI, startRun, stopAll, stopRun };
+export { type CandleInterval, ExecutionContextService, type ICandleData, type IExchangeSchema, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, MethodContextService, addExchange, addStrategy, backtest, formatPrice, formatQuantity, getAveragePrice, getCandles, reduce, runBacktest, runBacktestGUI, startRun, stopAll, stopRun };
