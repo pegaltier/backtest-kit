@@ -20,8 +20,8 @@ const GET_SIGNAL_FN = async (self: ClientStrategy) => {
     return null;
   }
   return {
-    ...signal,
     id: randomString(),
+    ...signal,
   };
 };
 

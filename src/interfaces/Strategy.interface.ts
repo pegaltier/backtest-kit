@@ -3,6 +3,7 @@ import { ExchangeName, IExchange, ICandleData } from "./Exchange.interface";
 import { ILogger } from "./Logger.interface";
 
 export interface ISignalDto {
+  id?: string;
   position: "long" | "short";
   note: string;
   priceOpen: number;

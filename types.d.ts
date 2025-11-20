@@ -63,6 +63,7 @@ interface IExchangeSchema {
 }
 interface IExchange {
     getCandles: (symbol: string, interval: CandleInterval, limit: number) => Promise<ICandleData[]>;
+    getNextCandles: (symbol: string, interval: CandleInterval, limit: number) => Promise<ICandleData[]>;
     formatQuantity: (symbol: string, quantity: number) => Promise<string>;
     formatPrice: (symbol: string, price: number) => Promise<string>;
     getAveragePrice: (symbol: string) => Promise<number>;
@@ -115,11 +116,14 @@ interface IStrategyTickResultClosed {
     signal: ISignalRow;
     currentPrice: number;
     closeReason: StrategyCloseReason;
+    closeTimestamp: number;
     pnl: IStrategyPnL;
 }
 type IStrategyTickResult = IStrategyTickResultIdle | IStrategyTickResultOpened | IStrategyTickResultActive | IStrategyTickResultClosed;
+type IStrategyBacktestResult = IStrategyTickResultClosed;
 interface IStrategy {
     tick: (symbol: string) => Promise<IStrategyTickResult>;
+    backtest: (candles: ICandleData[]) => Promise<IStrategyBacktestResult>;
 }
 type StrategyName = string;
 
@@ -202,6 +206,7 @@ declare class ClientExchange implements IExchange {
     readonly params: IExchangeParams;
     constructor(params: IExchangeParams);
     getCandles: (symbol: string, interval: CandleInterval, limit: number) => Promise<ICandleData[]>;
+    getNextCandles: (symbol: string, interval: CandleInterval, limit: number) => Promise<ICandleData[]>;
     getAveragePrice: (symbol: string) => Promise<number>;
     formatQuantity: (symbol: string, quantity: number) => Promise<string>;
     formatPrice: (symbol: string, price: number) => Promise<string>;
@@ -214,6 +219,7 @@ declare class ExchangeConnectionService implements IExchange {
     private readonly methodContextService;
     getExchange: ((exchangeName: ExchangeName) => ClientExchange) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, ClientExchange>;
     getCandles: (symbol: string, interval: CandleInterval, limit: number) => Promise<ICandleData[]>;
+    getNextCandles: (symbol: string, interval: CandleInterval, limit: number) => Promise<ICandleData[]>;
     getAveragePrice: (symbol: string) => Promise<number>;
     formatPrice: (symbol: string, price: number) => Promise<string>;
     formatQuantity: (symbol: string, quantity: number) => Promise<string>;
@@ -227,6 +233,7 @@ declare class StrategyConnectionService implements IStrategy {
     private readonly methodContextService;
     private getStrategy;
     tick: () => Promise<IStrategyTickResult>;
+    backtest: (candles: ICandleData[]) => Promise<IStrategyBacktestResult>;
 }
 
 declare class ClientFrame implements IFrame {
@@ -247,6 +254,7 @@ declare class ExchangePublicService {
     private readonly loggerService;
     private readonly exchangeConnectionService;
     getCandles: (symbol: string, interval: CandleInterval, limit: number, when: Date, backtest: boolean) => Promise<ICandleData[]>;
+    getNextCandles: (symbol: string, interval: CandleInterval, limit: number, when: Date, backtest: boolean) => Promise<ICandleData[]>;
     getAveragePrice: (symbol: string, when: Date, backtest: boolean) => Promise<number>;
     formatPrice: (symbol: string, price: number, when: Date, backtest: boolean) => Promise<string>;
     formatQuantity: (symbol: string, quantity: number, when: Date, backtest: boolean) => Promise<string>;
@@ -256,6 +264,7 @@ declare class StrategyPublicService {
     private readonly loggerService;
     private readonly strategyConnectionService;
     tick: (symbol: string, when: Date, backtest: boolean) => Promise<IStrategyTickResult>;
+    backtest: (symbol: string, candles: ICandleData[], when: Date, backtest: boolean) => Promise<IStrategyBacktestResult>;
 }
 
 declare class FramePublicService {
@@ -288,6 +297,10 @@ declare class FrameSchemaService {
 }
 
 declare class BacktestLogicService {
+    private readonly loggerService;
+    private readonly strategyPublicService;
+    private readonly exchangePublicService;
+    run: (symbol: string, timeframes: Date[]) => Promise<IStrategyTickResultClosed[]>;
 }
 
 declare class LiveLogicService {
