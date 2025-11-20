@@ -9,7 +9,7 @@ export class BacktestLogicPublicService {
   private readonly backtestLogicPrivateService =
     inject<BacktestLogicPrivateService>(TYPES.backtestLogicPrivateService);
 
-  public run = async (
+  public run = (
     symbol: string,
     context: {
       strategyName: string;
@@ -21,10 +21,8 @@ export class BacktestLogicPublicService {
       symbol,
       context,
     });
-    return await MethodContextService.runInContext(
-      async () => {
-        return await this.backtestLogicPrivateService.run(symbol);
-      },
+    return MethodContextService.runAsyncIterator(
+      this.backtestLogicPrivateService.run(symbol),
       {
         exchangeName: context.exchangeName,
         strategyName: context.strategyName,

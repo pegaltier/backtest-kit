@@ -18,14 +18,16 @@ export class BacktestLogicPrivateService {
     TYPES.frameGlobalService
   );
 
-  public run = async (symbol: string): Promise<IStrategyTickResultClosed[]> => {
+  public async* run(
+    this: BacktestLogicPrivateService,
+    symbol: string
+  ) {
     this.loggerService.log("backtestLogicPrivateService run", {
       symbol,
     });
 
     const timeframes = await this.frameGlobalService.getTimeframe(symbol);
 
-    const results: IStrategyTickResultClosed[] = [];
     let i = 0;
 
     while (i < timeframes.length) {
@@ -53,7 +55,7 @@ export class BacktestLogicPrivateService {
         );
 
         if (!candles.length) {
-          return results;
+          return;
         }
 
         this.loggerService.log("backtestLogicPrivateService got candles", {
@@ -70,9 +72,6 @@ export class BacktestLogicPrivateService {
           true
         );
 
-        // Сохраняем результат (всегда closed)
-        results.push(backtestResult);
-
         this.loggerService.log("backtestLogicPrivateService signal closed", {
           symbol,
           signalId: backtestResult.signal.id,
@@ -87,18 +86,12 @@ export class BacktestLogicPrivateService {
         ) {
           i++;
         }
-        continue;
-      }
 
-      // Сохраняем closed результаты из tick (после type guard)
-      if (result.action === "closed") {
-        results.push(result as IStrategyTickResultClosed);
+        yield backtestResult;
       }
 
       i++;
     }
-
-    return results;
   };
 }
 
