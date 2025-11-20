@@ -10,6 +10,8 @@ import FramePublicService from "../services/public/FramePublicService";
 import ExchangeSchemaService from "../services/schema/ExchangeSchemaService";
 import StrategySchemaService from "../services/schema/StrategySchemaService";
 import FrameSchemaService from "../services/schema/FrameSchemaService";
+import BacktestLogicService from "../services/logic/BacktestLogicService";
+import LiveLogicService from "../services/logic/LiveLogicService";
 import { provide } from "./di";
 import TYPES from "./types";
 
@@ -38,4 +40,9 @@ import TYPES from "./types";
     provide(TYPES.exchangePublicService, () => new ExchangePublicService());
     provide(TYPES.strategyPublicService, () => new StrategyPublicService());
     provide(TYPES.framePublicService, () => new FramePublicService());
+}
+
+{
+    provide(TYPES.backtestLogicService, () => new BacktestLogicService());
+    provide(TYPES.liveLogicService, () => new LiveLogicService());
 }

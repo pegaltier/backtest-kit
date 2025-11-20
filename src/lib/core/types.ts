@@ -25,12 +25,18 @@ const publicServices = {
     framePublicService: Symbol('framePublicService'),
 }
 
+const logicServices = {
+    backtestLogicService: Symbol('backtestLogicService'),
+    liveLogicService: Symbol('liveLogicService'),
+}
+
 export const TYPES = {
     ...baseServices,
     ...contextServices,
     ...connectionServices,
     ...schemaServices,
     ...publicServices,
+    ...logicServices,
 }
 
 export default TYPES;

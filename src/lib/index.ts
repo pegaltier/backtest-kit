@@ -17,6 +17,8 @@ import FramePublicService from "./services/public/FramePublicService";
 import ExchangeSchemaService from "./services/schema/ExchangeSchemaService";
 import StrategySchemaService from "./services/schema/StrategySchemaService";
 import FrameSchemaService from "./services/schema/FrameSchemaService";
+import BacktestLogicService from "./services/logic/BacktestLogicService";
+import LiveLogicService from "./services/logic/LiveLogicService";
 
 const baseServices = {
   loggerService: inject<LoggerService>(TYPES.loggerService),
@@ -67,12 +69,20 @@ const publicServices = {
   ),
 };
 
+const logicServices = {
+  backtestLogicService: inject<BacktestLogicService>(
+    TYPES.backtestLogicService
+  ),
+  liveLogicService: inject<LiveLogicService>(TYPES.liveLogicService),
+};
+
 export const backtest = {
   ...baseServices,
   ...contextServices,
   ...connectionServices,
   ...schemaServices,
   ...publicServices,
+  ...logicServices,
 };
 
 init();
