@@ -156,6 +156,13 @@ interface IExecutionContext {
     exchangeName: ExchangeName;
     strategyName: StrategyName;
 }
+declare const MethodContextService: (new () => {
+    readonly context: IExecutionContext;
+}) & Omit<{
+    new (context: IExecutionContext): {
+        readonly context: IExecutionContext;
+    };
+}, "prototype"> & di_scoped.IScopedClassRun<[context: IExecutionContext]>;
 
 declare class LoggerService implements ILogger {
     private _commonLogger;
@@ -243,4 +250,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { type CandleInterval, ExecutionContextService, type ICandleData, type IExchangeSchema, type ISignalData, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, addExchange, addStrategy, backtest, formatPrice, formatQuantity, getAveragePrice, getCandles, reduce, runBacktest, runBacktestGUI, startRun, stopAll, stopRun };
+export { type CandleInterval, ExecutionContextService, type ICandleData, type IExchangeSchema, type ISignalData, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, MethodContextService, addExchange, addStrategy, backtest, formatPrice, formatQuantity, getAveragePrice, getCandles, reduce, runBacktest, runBacktestGUI, startRun, stopAll, stopRun };

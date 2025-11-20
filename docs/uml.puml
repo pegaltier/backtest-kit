@@ -9,6 +9,7 @@ exchangePublicService:
 		exchangeSchemaService:
 			• exchangeSchemaService: ""
 			loggerService: ""
+		methodContextService: ""
 strategyPublicService:
 	• strategyPublicService: ""
 	loggerService: ""
@@ -26,4 +27,6 @@ strategyPublicService:
 			exchangeSchemaService:
 				• exchangeSchemaService: ""
 				loggerService: ""
+			methodContextService: ""
+		methodContextService: ""
 @endyaml

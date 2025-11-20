@@ -45,6 +45,8 @@ const toUML = async () => {
   await writeFile("./docs/uml.puml", result);
 };
 
-moduleData.ExecutionContextService.runInContext(() => {
-  toUML(backtest);
+moduleData.MethodContextService.runInContext(() => {
+  moduleData.ExecutionContextService.runInContext(() => {
+    toUML(backtest);
+  }, {});
 }, {});

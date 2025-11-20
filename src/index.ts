@@ -27,5 +27,6 @@ export {
 } from "./interfaces/Strategy.interface";
 
 export { ExecutionContextService } from "./lib/services/context/ExecutionContextService";
+export { MethodContextService } from "./lib/services/context/MethodContextService";
 
 export { backtest } from "./lib";
