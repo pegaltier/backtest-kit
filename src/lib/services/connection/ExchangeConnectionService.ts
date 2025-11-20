@@ -22,11 +22,14 @@ export class ExchangeConnectionService implements IExchange {
   public getExchange = memoize<(symbol: string) => ClientExchange>(
     (symbol) => `${symbol}`,
     () => {
-      const { getCandles, callbacks } = this.exchangeSchemaService.getSchema();
+      const { getCandles, formatPrice, formatQuantity, callbacks } =
+        this.exchangeSchemaService.getSchema();
       return new ClientExchange({
         execution: this.executionContextService,
         logger: this.loggerService,
         getCandles,
+        formatPrice,
+        formatQuantity,
         callbacks,
       });
     }
@@ -50,6 +53,22 @@ export class ExchangeConnectionService implements IExchange {
       symbol,
     });
     return await this.getExchange(symbol).getAveragePrice(symbol);
+  };
+
+  public formatPrice = async (symbol: string, price: number) => {
+    this.loggerService.log("exchangeConnectionService getAveragePrice", {
+      symbol,
+      price,
+    });
+    return await this.getExchange(symbol).formatPrice(symbol, price);
+  };
+
+  public formatQuantity = async (symbol: string, quantity: number) => {
+    this.loggerService.log("exchangeConnectionService getAveragePrice", {
+      symbol,
+      quantity,
+    });
+    return await this.getExchange(symbol).formatQuantity(symbol, quantity);
   };
 }
 

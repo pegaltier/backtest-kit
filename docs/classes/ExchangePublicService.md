@@ -36,3 +36,15 @@ getCandles: (symbol: string, interval: CandleInterval, limit: number, when: Date
 ```ts
 getAveragePrice: (symbol: string, when: Date, backtest: boolean) => Promise<number>
 ```
+
+### formatPrice
+
+```ts
+formatPrice: (symbol: string, price: number, when: Date, backtest: boolean) => Promise<string>
+```
+
+### formatQuantity
+
+```ts
+formatQuantity: (symbol: string, quantity: number, when: Date, backtest: boolean) => Promise<string>
+```

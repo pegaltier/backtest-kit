@@ -31,6 +31,8 @@ group: docs
 - [stopAll](functions/stopAll.md)
 - [getCandles](functions/getCandles.md)
 - [getAveragePrice](functions/getAveragePrice.md)
+- [formatPrice](functions/formatPrice.md)
+- [formatQuantity](functions/formatQuantity.md)
 
 ## Interfaces
 

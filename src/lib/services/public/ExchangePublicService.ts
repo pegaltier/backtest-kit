@@ -7,9 +7,8 @@ import ExchangeConnectionService from "../connection/ExchangeConnectionService";
 
 export class ExchangePublicService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
-  private readonly exchangeConnectionService = inject<ExchangeConnectionService>(
-    TYPES.exchangeConnectionService
-  );
+  private readonly exchangeConnectionService =
+    inject<ExchangeConnectionService>(TYPES.exchangeConnectionService);
 
   public getCandles = async (
     symbol: string,
@@ -53,6 +52,55 @@ export class ExchangePublicService {
     return await ExecutionContextService.runInContext(
       async () => {
         return await this.exchangeConnectionService.getAveragePrice(symbol);
+      },
+      {
+        when,
+        backtest,
+      }
+    );
+  };
+
+  public formatPrice = async (
+    symbol: string,
+    price: number,
+    when: Date,
+    backtest: boolean
+  ) => {
+    this.loggerService.log("exchangePublicService formatPrice", {
+      symbol,
+      price,
+      when,
+      backtest,
+    });
+    return await ExecutionContextService.runInContext(
+      async () => {
+        return await this.exchangeConnectionService.formatPrice(symbol, price);
+      },
+      {
+        when,
+        backtest,
+      }
+    );
+  };
+
+  public formatQuantity = async (
+    symbol: string,
+    quantity: number,
+    when: Date,
+    backtest: boolean
+  ) => {
+    this.loggerService.log("exchangePublicService formatQuantity", {
+      symbol,
+      quantity,
+      when,
+      backtest,
+    });
+    return await ExecutionContextService.runInContext(
+      async () => {
+        return await this.exchangeConnectionService.formatQuantity(
+          symbol,
+          quantity
+        );
       },
       {
         when,

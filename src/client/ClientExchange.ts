@@ -85,6 +85,22 @@ export class ClientExchange implements IExchange {
 
     return vwap;
   };
+
+  public formatQuantity = async (symbol: string, quantity: number) => {
+    this.params.logger.debug("binanceService formatQuantity", {
+      symbol,
+      quantity,
+    });
+    return await this.params.formatQuantity(symbol, quantity);
+  };
+
+  public formatPrice = async (symbol: string, price: number) => {
+    this.params.logger.debug("binanceService formatPrice", {
+      symbol,
+      price,
+    });
+    return await this.params.formatPrice(symbol, price);
+  };
 }
 
 export default ClientExchange;

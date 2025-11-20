@@ -2,7 +2,12 @@ export { addExchange, addStrategy } from "./function/add";
 export { runBacktest, runBacktestGUI } from "./function/backtest";
 export { reduce } from "./function/reduce";
 export { startRun, stopRun, stopAll } from "./function/run";
-export { getCandles, getAveragePrice } from "./function/exchange";
+export {
+  getCandles,
+  getAveragePrice,
+  formatPrice,
+  formatQuantity,
+} from "./function/exchange";
 
 export {
   CandleInterval,
@@ -18,7 +23,7 @@ export {
   IStrategyTickResultClosed,
   IStrategyTickResultIdle,
   IStrategyTickResultOpened,
-  IStrategyPnL
+  IStrategyPnL,
 } from "./interfaces/Strategy.interface";
 
 export { ExecutionContextService } from "./lib/services/context/ExecutionContextService";

@@ -55,10 +55,14 @@ interface IExchangeCallbacks {
 }
 interface IExchangeSchema {
     getCandles: (symbol: string, interval: CandleInterval, since: Date, limit: number) => Promise<ICandleData[]>;
+    formatQuantity: (symbol: string, quantity: number) => Promise<string>;
+    formatPrice: (symbol: string, price: number) => Promise<string>;
     callbacks?: Partial<IExchangeCallbacks>;
 }
 interface IExchange {
     getCandles: (symbol: string, interval: CandleInterval, limit: number) => Promise<ICandleData[]>;
+    formatQuantity: (symbol: string, quantity: number) => Promise<string>;
+    formatPrice: (symbol: string, price: number) => Promise<string>;
     getAveragePrice: (symbol: string) => Promise<number>;
 }
 
@@ -139,6 +143,8 @@ declare function stopAll(): void;
 
 declare function getCandles(symbol: string, interval: CandleInterval, limit: number): Promise<ICandleData[]>;
 declare function getAveragePrice(symbol: string): Promise<number>;
+declare function formatPrice(symbol: string, price: number): Promise<string>;
+declare function formatQuantity(symbol: string, quantity: number): Promise<string>;
 
 declare class LoggerService implements ILogger {
     private _commonLogger;
@@ -153,6 +159,8 @@ declare class ClientExchange implements IExchange {
     constructor(params: IExchangeParams);
     getCandles: (symbol: string, interval: CandleInterval, limit: number) => Promise<ICandleData[]>;
     getAveragePrice: (symbol: string) => Promise<number>;
+    formatQuantity: (symbol: string, quantity: number) => Promise<string>;
+    formatPrice: (symbol: string, price: number) => Promise<string>;
 }
 
 declare class ExchangeConnectionService implements IExchange {
@@ -162,6 +170,8 @@ declare class ExchangeConnectionService implements IExchange {
     getExchange: ((symbol: string) => ClientExchange) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, ClientExchange>;
     getCandles: (symbol: string, interval: CandleInterval, limit: number) => Promise<ICandleData[]>;
     getAveragePrice: (symbol: string) => Promise<number>;
+    formatPrice: (symbol: string, price: number) => Promise<string>;
+    formatQuantity: (symbol: string, quantity: number) => Promise<string>;
 }
 
 declare class ExchangeSchemaService {
@@ -192,6 +202,8 @@ declare class ExchangePublicService {
     private readonly exchangeConnectionService;
     getCandles: (symbol: string, interval: CandleInterval, limit: number, when: Date, backtest: boolean) => Promise<ICandleData[]>;
     getAveragePrice: (symbol: string, when: Date, backtest: boolean) => Promise<number>;
+    formatPrice: (symbol: string, price: number, when: Date, backtest: boolean) => Promise<string>;
+    formatQuantity: (symbol: string, quantity: number, when: Date, backtest: boolean) => Promise<string>;
 }
 
 declare class StrategyPublicService {
@@ -213,4 +225,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { type CandleInterval, ExecutionContextService, type ICandleData, type IExchangeSchema, type ISignalData, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, addExchange, addStrategy, backtest, getAveragePrice, getCandles, reduce, runBacktest, runBacktestGUI, startRun, stopAll, stopRun };
+export { type CandleInterval, ExecutionContextService, type ICandleData, type IExchangeSchema, type ISignalData, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, addExchange, addStrategy, backtest, formatPrice, formatQuantity, getAveragePrice, getCandles, reduce, runBacktest, runBacktestGUI, startRun, stopAll, stopRun };
