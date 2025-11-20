@@ -4,6 +4,7 @@ import TYPES from "../../core/types";
 import ExecutionContextService from "../context/ExecutionContextService";
 import { IStrategyTickResult } from "../../../interfaces/Strategy.interface";
 import StrategyConnectionService from "../connection/StrategyConnectionService";
+import { ICandleData } from "../../../interfaces/Exchange.interface";
 
 export class StrategyPublicService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
@@ -23,6 +24,29 @@ export class StrategyPublicService {
     return await ExecutionContextService.runInContext(
       async () => {
         return await this.strategyConnectionService.tick();
+      },
+      {
+        symbol,
+        when,
+        backtest,
+      }
+    );
+  };
+
+  public backtest = async (
+    symbol: string,
+    candles: ICandleData[],
+    when: Date,
+    backtest: boolean
+  ): Promise<IStrategyTickResult> => {
+    this.loggerService.log("strategyPublicService backtest", {
+      symbol,
+      when,
+      backtest,
+    });
+    return await ExecutionContextService.runInContext(
+      async () => {
+        return await this.strategyConnectionService.backtest(candles);
       },
       {
         symbol,
