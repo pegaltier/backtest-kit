@@ -32,7 +32,7 @@ export class ClientExchange implements IExchange {
     });
 
     const step = INTERVAL_MINUTES[interval];
-    const adjust = step * limit;
+    const adjust = step * limit - 1;
 
     if (!adjust) {
       throw new Error(
