@@ -4,26 +4,26 @@ import TYPES from "../../core/types";
 import { TExecutionContextService } from "../context/ExecutionContextService";
 import {
   CandleInterval,
-  ICandle,
-} from "../../../interfaces/Candle.interface";
+  IExchange,
+} from "../../../interfaces/Exchange.interface";
 import { memoize } from "functools-kit";
-import ClientCandle from "../../../client/ClientCandle";
-import CandleSchemaService from "../schema/CandleSchemaService";
+import ClientExchange from "../../../client/ClientExchange";
+import ExchangeSchemaService from "../schema/ExchangeSchemaService";
 
-export class CandleConnectionService implements ICandle {
+export class ExchangeConnectionService implements IExchange {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly executionContextService = inject<TExecutionContextService>(
     TYPES.executionContextService
   );
-  private readonly candleSchemaService = inject<CandleSchemaService>(
-    TYPES.candleSchemaService
+  private readonly exchangeSchemaService = inject<ExchangeSchemaService>(
+    TYPES.exchangeSchemaService
   );
 
-  public getCandle = memoize<(symbol: string) => ClientCandle>(
+  public getExchange = memoize<(symbol: string) => ClientExchange>(
     (symbol) => `${symbol}`,
     () => {
-      const { getCandles, callbacks } = this.candleSchemaService.getSchema();
-      return new ClientCandle({
+      const { getCandles, callbacks } = this.exchangeSchemaService.getSchema();
+      return new ClientExchange({
         execution: this.executionContextService,
         logger: this.loggerService,
         getCandles,
@@ -37,20 +37,20 @@ export class CandleConnectionService implements ICandle {
     interval: CandleInterval,
     limit: number
   ) => {
-    this.loggerService.log("candleConnectionService getCandles", {
+    this.loggerService.log("exchangeConnectionService getCandles", {
       symbol,
       interval,
       limit,
     });
-    return await this.getCandle(symbol).getCandles(symbol, interval, limit);
+    return await this.getExchange(symbol).getCandles(symbol, interval, limit);
   };
 
   public getAveragePrice = async (symbol: string) => {
-    this.loggerService.log("candleConnectionService getAveragePrice", {
+    this.loggerService.log("exchangeConnectionService getAveragePrice", {
       symbol,
     });
-    return await this.getCandle(symbol).getAveragePrice(symbol);
+    return await this.getExchange(symbol).getAveragePrice(symbol);
   };
 }
 
-export default CandleConnectionService;
+export default ExchangeConnectionService;

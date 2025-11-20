@@ -22,12 +22,12 @@ export interface ICandleData {
   volume: number;
 }
 
-export interface ICandleParams extends ICandleSchema {
+export interface IExchangeParams extends IExchangeSchema {
   logger: ILogger;
   execution: TExecutionContextService;
 }
 
-export interface ICandleCallbacks {
+export interface IExchangeCallbacks {
   onCandleData: (
     symbol: string,
     interval: CandleInterval,
@@ -37,17 +37,17 @@ export interface ICandleCallbacks {
   ) => void;
 }
 
-export interface ICandleSchema {
+export interface IExchangeSchema {
   getCandles: (
     symbol: string,
     interval: CandleInterval,
     since: Date,
     limit: number
   ) => Promise<ICandleData[]>;
-  callbacks?: Partial<ICandleCallbacks>;
+  callbacks?: Partial<IExchangeCallbacks>;
 }
 
-export interface ICandle {
+export interface IExchange {
   getCandles: (
     symbol: string,
     interval: CandleInterval,

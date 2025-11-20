@@ -1,9 +1,9 @@
 ---
-title: docs/api-reference/class/CandlePublicService
+title: docs/api-reference/class/ExchangePublicService
 group: docs
 ---
 
-# CandlePublicService
+# ExchangePublicService
 
 ## Constructor
 
@@ -19,10 +19,10 @@ constructor();
 loggerService: any
 ```
 
-### candleConnectionService
+### exchangeConnectionService
 
 ```ts
-candleConnectionService: any
+exchangeConnectionService: any
 ```
 
 ### getCandles

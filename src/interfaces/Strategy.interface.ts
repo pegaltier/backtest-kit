@@ -1,5 +1,5 @@
 import { TExecutionContextService } from "../lib/services/context/ExecutionContextService";
-import { ICandle } from "./Candle.interface";
+import { IExchange } from "./Exchange.interface";
 import { ILogger } from "./Logger.interface";
 
 export interface ISignalData {
@@ -16,7 +16,7 @@ export interface ISignalData {
 export interface IStrategyParams extends IStrategySchema {
   symbol: string;
   logger: ILogger;
-  candle: ICandle;
+  exchange: IExchange;
   execution: TExecutionContextService;
 }
 

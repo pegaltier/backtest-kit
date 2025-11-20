@@ -33,10 +33,10 @@ executionContextService: any
 strategySchemaService: any
 ```
 
-### candleConnectionService
+### exchangeConnectionService
 
 ```ts
-candleConnectionService: any
+exchangeConnectionService: any
 ```
 
 ### getStrategy

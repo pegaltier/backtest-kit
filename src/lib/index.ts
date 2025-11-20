@@ -2,14 +2,14 @@ import "./core/provide";
 import { inject, init } from "./core/di";
 import TYPES from "./core/types";
 import LoggerService from "./services/base/LoggerService";
-import CandleConnectionService from "./services/connection/CandleConnectionService";
+import ExchangeConnectionService from "./services/connection/ExchangeConnectionService";
 import ExecutionContextService, {
   TExecutionContextService,
 } from "./services/context/ExecutionContextService";
-import CandleSchemaService from "./services/schema/CandleSchemaService";
+import ExchangeSchemaService from "./services/schema/ExchangeSchemaService";
 import StrategySchemaService from "./services/schema/StrategySchemaService";
 import StrategyConnectionService from "./services/connection/StrategyConnectionService";
-import CandlePublicService from "./services/public/CandlePublicService";
+import ExchangePublicService from "./services/public/ExchangePublicService";
 import StrategyPublicService from "./services/public/StrategyPublicService";
 
 const baseServices = {
@@ -23,8 +23,8 @@ const contextServices = {
 };
 
 const connectionServices = {
-  candleConnectionService: inject<CandleConnectionService>(
-    TYPES.candleConnectionService
+  exchangeConnectionService: inject<ExchangeConnectionService>(
+    TYPES.exchangeConnectionService
   ),
   strategyConnectionService: inject<StrategyConnectionService>(
     TYPES.strategyConnectionService
@@ -32,14 +32,14 @@ const connectionServices = {
 };
 
 const schemaServices = {
-  candleSchemaService: inject<CandleSchemaService>(TYPES.candleSchemaService),
+  exchangeSchemaService: inject<ExchangeSchemaService>(TYPES.exchangeSchemaService),
   strategySchemaService: inject<StrategySchemaService>(
     TYPES.strategySchemaService
   ),
 };
 
 const publicServices = {
-  candlePublicService: inject<CandlePublicService>(TYPES.candlePublicService),
+  exchangePublicService: inject<ExchangePublicService>(TYPES.exchangePublicService),
   strategyPublicService: inject<StrategyPublicService>(
     TYPES.strategyPublicService
   ),

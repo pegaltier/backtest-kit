@@ -1,15 +1,8 @@
 import { inject } from "../../core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../core/types";
-import ExecutionContextService, {
-  TExecutionContextService,
-} from "../context/ExecutionContextService";
-import { CandleInterval, ICandle } from "../../../interfaces/Candle.interface";
-import { memoize } from "functools-kit";
-import ClientStrategy from "../../../client/ClientStrategy";
-import CandleSchemaService from "../schema/CandleSchemaService";
+import ExecutionContextService from "../context/ExecutionContextService";
 import {
-  IStrategy,
   IStrategyTickResult,
 } from "../../../interfaces/Strategy.interface";
 import StrategyConnectionService from "../connection/StrategyConnectionService";

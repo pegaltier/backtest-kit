@@ -2,13 +2,13 @@ import { inject } from "../../core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../core/types";
 import ExecutionContextService from "../context/ExecutionContextService";
-import { CandleInterval } from "../../../interfaces/Candle.interface";
-import CandleConnectionService from "../connection/CandleConnectionService";
+import { CandleInterval } from "../../../interfaces/Exchange.interface";
+import ExchangeConnectionService from "../connection/ExchangeConnectionService";
 
-export class CandlePublicService {
+export class ExchangePublicService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
-  private readonly candleConnectionService = inject<CandleConnectionService>(
-    TYPES.candleConnectionService
+  private readonly exchangeConnectionService = inject<ExchangeConnectionService>(
+    TYPES.exchangeConnectionService
   );
 
   public getCandles = async (
@@ -18,7 +18,7 @@ export class CandlePublicService {
     when: Date,
     backtest: boolean
   ) => {
-    this.loggerService.log("candlePublicService getCandles", {
+    this.loggerService.log("exchangePublicService getCandles", {
       symbol,
       interval,
       limit,
@@ -27,7 +27,7 @@ export class CandlePublicService {
     });
     return await ExecutionContextService.runInContext(
       async () => {
-        return await this.candleConnectionService.getCandles(
+        return await this.exchangeConnectionService.getCandles(
           symbol,
           interval,
           limit
@@ -45,14 +45,14 @@ export class CandlePublicService {
     when: Date,
     backtest: boolean
   ) => {
-    this.loggerService.log("candlePublicService getAveragePrice", {
+    this.loggerService.log("exchangePublicService getAveragePrice", {
       symbol,
       when,
       backtest,
     });
     return await ExecutionContextService.runInContext(
       async () => {
-        return await this.candleConnectionService.getAveragePrice(symbol);
+        return await this.exchangeConnectionService.getAveragePrice(symbol);
       },
       {
         when,
@@ -62,4 +62,4 @@ export class CandlePublicService {
   };
 }
 
-export default CandlePublicService;
+export default ExchangePublicService;

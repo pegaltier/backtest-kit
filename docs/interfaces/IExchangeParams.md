@@ -1,9 +1,9 @@
 ---
-title: docs/api-reference/interface/ICandleParams
+title: docs/api-reference/interface/IExchangeParams
 group: docs
 ---
 
-# ICandleParams
+# IExchangeParams
 
 ## Properties
 

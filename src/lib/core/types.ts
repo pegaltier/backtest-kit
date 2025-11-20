@@ -7,17 +7,17 @@ const contextServices = {
 };
 
 const connectionServices = {
-    candleConnectionService: Symbol('candleConnectionService'),
+    exchangeConnectionService: Symbol('exchangeConnectionService'),
     strategyConnectionService: Symbol('strategyConnectionService'),
 };
 
 const schemaServices = {
-    candleSchemaService: Symbol('candleSchemaService'),
+    exchangeSchemaService: Symbol('exchangeSchemaService'),
     strategySchemaService: Symbol('strategySchemaService'),
 }
 
 const publicServices = {
-    candlePublicService: Symbol('candlePublicService'),
+    exchangePublicService: Symbol('exchangePublicService'),
     strategyPublicService: Symbol('strategyPublicService'),
 }
 

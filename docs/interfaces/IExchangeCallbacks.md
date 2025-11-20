@@ -1,9 +1,9 @@
 ---
-title: docs/api-reference/interface/ICandleCallbacks
+title: docs/api-reference/interface/IExchangeCallbacks
 group: docs
 ---
 
-# ICandleCallbacks
+# IExchangeCallbacks
 
 ## Properties
 

@@ -1,9 +1,9 @@
 ---
-title: docs/api-reference/interface/ICandleSchema
+title: docs/api-reference/interface/IExchangeSchema
 group: docs
 ---
 
-# ICandleSchema
+# IExchangeSchema
 
 ## Properties
 
@@ -16,5 +16,5 @@ getCandles: (symbol: string, interval: CandleInterval, since: Date, limit: numbe
 ### callbacks
 
 ```ts
-callbacks: Partial<ICandleCallbacks>
+callbacks: Partial<IExchangeCallbacks>
 ```

@@ -1,11 +1,25 @@
 ---
-title: docs/api-reference/interface/ICandle
+title: docs/api-reference/class/ClientExchange
 group: docs
 ---
 
-# ICandle
+# ClientExchange
+
+Implements `IExchange`
+
+## Constructor
+
+```ts
+constructor(params: IExchangeParams);
+```
 
 ## Properties
+
+### params
+
+```ts
+params: IExchangeParams
+```
 
 ### getCandles
 

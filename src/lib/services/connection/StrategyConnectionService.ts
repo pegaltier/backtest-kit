@@ -2,16 +2,16 @@ import { inject } from "../../core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../core/types";
 import { TExecutionContextService } from "../context/ExecutionContextService";
-import { CandleInterval, ICandle } from "../../../interfaces/Candle.interface";
+import { CandleInterval, IExchange } from "../../../interfaces/Exchange.interface";
 import { memoize } from "functools-kit";
 import ClientStrategy from "../../../client/ClientStrategy";
-import CandleSchemaService from "../schema/CandleSchemaService";
+import ExchangeSchemaService from "../schema/ExchangeSchemaService";
 import {
   IStrategy,
   IStrategyTickResult,
 } from "../../../interfaces/Strategy.interface";
 import StrategySchemaService from "../schema/StrategySchemaService";
-import CandleConnectionService from "./CandleConnectionService";
+import ExchangeConnectionService from "./ExchangeConnectionService";
 
 export class StrategyConnectionService implements IStrategy {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
@@ -21,8 +21,8 @@ export class StrategyConnectionService implements IStrategy {
   private readonly strategySchemaService = inject<StrategySchemaService>(
     TYPES.strategySchemaService
   );
-  private readonly candleConnectionService = inject<CandleConnectionService>(
-    TYPES.candleConnectionService
+  private readonly exchangeConnectionService = inject<ExchangeConnectionService>(
+    TYPES.exchangeConnectionService
   );
 
   private getStrategy = memoize<(symbol: string) => ClientStrategy>(
@@ -33,7 +33,7 @@ export class StrategyConnectionService implements IStrategy {
         symbol,
         execution: this.executionContextService,
         logger: this.loggerService,
-        candle: this.candleConnectionService,
+        exchange: this.exchangeConnectionService,
         getSignal,
         callbacks,
       });

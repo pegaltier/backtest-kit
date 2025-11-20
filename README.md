@@ -21,12 +21,12 @@ npm install
 
 ## Quick Start
 
-### 1. Add Data Source (Candles)
+### 1. Add Data Source (Exchange)
 
 ```typescript
-import { addCandle } from "./src/function/add";
+import { addExchange } from "./src/function/add";
 
-addCandle({
+addExchange({
   getCandles: async (symbol, interval, since, limit) => {
     // Fetch candle data from your source (exchange API, database, etc.)
     return [
@@ -164,16 +164,17 @@ console.log(result.accumulator);
 ```
 src/
 ├── function/          # High-level API functions
-│   ├── add.ts        # Add schemas (strategy, candle)
+│   ├── add.ts        # Add schemas (strategy, exchange)
 │   ├── backtest.ts   # Backtesting functions
 │   ├── reduce.ts     # Reduce pattern for accumulation
-│   └── run.ts        # Real-time execution
+│   ├── run.ts        # Real-time execution
+│   └── exchange.ts   # Exchange data functions
 ├── client/           # Client implementations
-│   ├── ClientCandle.ts    # Candle client with VWAP
+│   ├── ClientExchange.ts  # Exchange client with VWAP
 │   └── ClientStrategy.ts  # Strategy client with signal lifecycle
 ├── interfaces/       # TypeScript interfaces
 │   ├── Strategy.interface.ts
-│   └── Candle.interface.ts
+│   └── Exchange.interface.ts
 └── lib/             # Core library with DI
     ├── core/        # Dependency injection
     └── services/    # Services (schema, connection, public)
@@ -200,11 +201,17 @@ export const PERCENT_FEE = 0.1; // 0.1%
 
 ### Functions
 
-#### `addCandle(candleSchema: ICandleSchema)`
-Add candle data source.
+#### `addExchange(exchangeSchema: IExchangeSchema)`
+Add exchange data source for candles.
 
 #### `addStrategy(strategySchema: IStrategySchema)`
 Add trading strategy.
+
+#### `getCandles(symbol, interval, limit): Promise<ICandleData[]>`
+Get candle data from exchange.
+
+#### `getAveragePrice(symbol): Promise<number>`
+Get VWAP average price based on last 5 1m candles.
 
 #### `runBacktest(symbol: string, timeframes: Date[]): Promise<IBacktestResult>`
 Run backtest and return closed trades only.

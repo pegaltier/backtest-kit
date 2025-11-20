@@ -93,7 +93,7 @@ export class ClientStrategy implements IStrategy {
     const signal = this._pendingSignal;
 
     // Получаем среднюю цену
-    const averagePrice = await this.params.candle.getAveragePrice(symbol);
+    const averagePrice = await this.params.exchange.getAveragePrice(symbol);
 
     this.params.logger.debug("ClientStrategy tick check", {
       symbol,

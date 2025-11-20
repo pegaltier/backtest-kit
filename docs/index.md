@@ -8,12 +8,12 @@ group: docs
 ## Classes
 
 - [LoggerService](classes/LoggerService.md)
-- [ClientCandle](classes/ClientCandle.md)
-- [CandleConnectionService](classes/CandleConnectionService.md)
-- [CandleSchemaService](classes/CandleSchemaService.md)
+- [ClientExchange](classes/ClientExchange.md)
+- [ExchangeConnectionService](classes/ExchangeConnectionService.md)
+- [ExchangeSchemaService](classes/ExchangeSchemaService.md)
 - [StrategySchemaService](classes/StrategySchemaService.md)
 - [StrategyConnectionService](classes/StrategyConnectionService.md)
-- [CandlePublicService](classes/CandlePublicService.md)
+- [ExchangePublicService](classes/ExchangePublicService.md)
 - [StrategyPublicService](classes/StrategyPublicService.md)
 
 ## Enums
@@ -22,7 +22,7 @@ group: docs
 ## Functions
 
 - [addStrategy](functions/addStrategy.md)
-- [addCandle](functions/addCandle.md)
+- [addExchange](functions/addExchange.md)
 - [runBacktest](functions/runBacktest.md)
 - [runBacktestGUI](functions/runBacktestGUI.md)
 - [reduce](functions/reduce.md)
@@ -37,10 +37,10 @@ group: docs
 - [IExecutionContext](interfaces/IExecutionContext.md)
 - [ILogger](interfaces/ILogger.md)
 - [ICandleData](interfaces/ICandleData.md)
-- [ICandleParams](interfaces/ICandleParams.md)
-- [ICandleCallbacks](interfaces/ICandleCallbacks.md)
-- [ICandleSchema](interfaces/ICandleSchema.md)
-- [ICandle](interfaces/ICandle.md)
+- [IExchangeParams](interfaces/IExchangeParams.md)
+- [IExchangeCallbacks](interfaces/IExchangeCallbacks.md)
+- [IExchangeSchema](interfaces/IExchangeSchema.md)
+- [IExchange](interfaces/IExchange.md)
 - [ISignalData](interfaces/ISignalData.md)
 - [IStrategyCallbacks](interfaces/IStrategyCallbacks.md)
 - [IStrategySchema](interfaces/IStrategySchema.md)

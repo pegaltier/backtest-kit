@@ -46,18 +46,18 @@ interface ICandleData {
     close: number;
     volume: number;
 }
-interface ICandleParams extends ICandleSchema {
+interface IExchangeParams extends IExchangeSchema {
     logger: ILogger;
     execution: TExecutionContextService;
 }
-interface ICandleCallbacks {
+interface IExchangeCallbacks {
     onCandleData: (symbol: string, interval: CandleInterval, since: Date, limit: number, data: ICandleData[]) => void;
 }
-interface ICandleSchema {
+interface IExchangeSchema {
     getCandles: (symbol: string, interval: CandleInterval, since: Date, limit: number) => Promise<ICandleData[]>;
-    callbacks?: Partial<ICandleCallbacks>;
+    callbacks?: Partial<IExchangeCallbacks>;
 }
-interface ICandle {
+interface IExchange {
     getCandles: (symbol: string, interval: CandleInterval, limit: number) => Promise<ICandleData[]>;
     getAveragePrice: (symbol: string) => Promise<number>;
 }
@@ -112,7 +112,7 @@ interface IStrategy {
 }
 
 declare function addStrategy(strategySchema: IStrategySchema): void;
-declare function addCandle(candleSchema: ICandleSchema): void;
+declare function addExchange(exchangeSchema: IExchangeSchema): void;
 
 interface IBacktestResult {
     symbol: string;
@@ -148,27 +148,27 @@ declare class LoggerService implements ILogger {
     setLogger: (logger: ILogger) => void;
 }
 
-declare class ClientCandle implements ICandle {
-    readonly params: ICandleParams;
-    constructor(params: ICandleParams);
+declare class ClientExchange implements IExchange {
+    readonly params: IExchangeParams;
+    constructor(params: IExchangeParams);
     getCandles: (symbol: string, interval: CandleInterval, limit: number) => Promise<ICandleData[]>;
     getAveragePrice: (symbol: string) => Promise<number>;
 }
 
-declare class CandleConnectionService implements ICandle {
+declare class ExchangeConnectionService implements IExchange {
     private readonly loggerService;
     private readonly executionContextService;
-    private readonly candleSchemaService;
-    getCandle: ((symbol: string) => ClientCandle) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, ClientCandle>;
+    private readonly exchangeSchemaService;
+    getExchange: ((symbol: string) => ClientExchange) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, ClientExchange>;
     getCandles: (symbol: string, interval: CandleInterval, limit: number) => Promise<ICandleData[]>;
     getAveragePrice: (symbol: string) => Promise<number>;
 }
 
-declare class CandleSchemaService {
+declare class ExchangeSchemaService {
     private readonly loggerService;
-    private _candleSchema;
-    getSchema: () => ICandleSchema;
-    addSchema: (candleSchema: ICandleSchema) => void;
+    private _exchangeSchema;
+    getSchema: () => IExchangeSchema;
+    addSchema: (exchangeSchema: IExchangeSchema) => void;
 }
 
 declare class StrategySchemaService {
@@ -182,14 +182,14 @@ declare class StrategyConnectionService implements IStrategy {
     private readonly loggerService;
     private readonly executionContextService;
     private readonly strategySchemaService;
-    private readonly candleConnectionService;
+    private readonly exchangeConnectionService;
     private getStrategy;
     tick: (symbol: string) => Promise<IStrategyTickResult>;
 }
 
-declare class CandlePublicService {
+declare class ExchangePublicService {
     private readonly loggerService;
-    private readonly candleConnectionService;
+    private readonly exchangeConnectionService;
     getCandles: (symbol: string, interval: CandleInterval, limit: number, when: Date, backtest: boolean) => Promise<ICandleData[]>;
     getAveragePrice: (symbol: string, when: Date, backtest: boolean) => Promise<number>;
 }
@@ -201,11 +201,11 @@ declare class StrategyPublicService {
 }
 
 declare const backtest: {
-    candlePublicService: CandlePublicService;
+    exchangePublicService: ExchangePublicService;
     strategyPublicService: StrategyPublicService;
-    candleSchemaService: CandleSchemaService;
+    exchangeSchemaService: ExchangeSchemaService;
     strategySchemaService: StrategySchemaService;
-    candleConnectionService: CandleConnectionService;
+    exchangeConnectionService: ExchangeConnectionService;
     strategyConnectionService: StrategyConnectionService;
     executionContextService: {
         readonly context: IExecutionContext;
@@ -213,4 +213,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { type CandleInterval, ExecutionContextService, type ICandleData, type ICandleSchema, type ISignalData, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, addCandle, addStrategy, backtest, getAveragePrice, getCandles, reduce, runBacktest, runBacktestGUI, startRun, stopAll, stopRun };
+export { type CandleInterval, ExecutionContextService, type ICandleData, type IExchangeSchema, type ISignalData, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, addExchange, addStrategy, backtest, getAveragePrice, getCandles, reduce, runBacktest, runBacktestGUI, startRun, stopAll, stopRun };

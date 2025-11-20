@@ -1,8 +1,8 @@
 import {
   CandleInterval,
-  ICandle,
-  ICandleParams,
-} from "../interfaces/Candle.interface";
+  IExchange,
+  IExchangeParams,
+} from "../interfaces/Exchange.interface";
 
 const INTERVAL_MINUTES = {
   "1m": 1,
@@ -17,15 +17,15 @@ const INTERVAL_MINUTES = {
   "8h": 480,
 } as const;
 
-export class ClientCandle implements ICandle {
-  constructor(readonly params: ICandleParams) {}
+export class ClientExchange implements IExchange {
+  constructor(readonly params: IExchangeParams) {}
 
   public getCandles = async (
     symbol: string,
     interval: CandleInterval,
     limit: number
   ) => {
-    this.params.logger.debug(`ClientCandle getCandles`, {
+    this.params.logger.debug(`ClientExchange getCandles`, {
       symbol,
       interval,
       limit,
@@ -36,7 +36,7 @@ export class ClientCandle implements ICandle {
 
     if (!adjust) {
       throw new Error(
-        `ClientCandle unknown time adjust for interval=${interval}`
+        `ClientExchange unknown time adjust for interval=${interval}`
       );
     }
 
@@ -54,7 +54,7 @@ export class ClientCandle implements ICandle {
   };
 
   public getAveragePrice = async (symbol: string): Promise<number> => {
-    this.params.logger.debug(`ClientCandle getAveragePrice`, {
+    this.params.logger.debug(`ClientExchange getAveragePrice`, {
       symbol,
     });
 
@@ -62,7 +62,7 @@ export class ClientCandle implements ICandle {
 
     if (candles.length === 0) {
       throw new Error(
-        `ClientCandle getAveragePrice: no candles data for symbol=${symbol}`
+        `ClientExchange getAveragePrice: no candles data for symbol=${symbol}`
       );
     }
 
@@ -87,4 +87,4 @@ export class ClientCandle implements ICandle {
   };
 }
 
-export default ClientCandle;
+export default ClientExchange;

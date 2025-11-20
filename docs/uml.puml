@@ -1,13 +1,13 @@
 @startyaml
-candlePublicService:
-	• candlePublicService: ""
+exchangePublicService:
+	• exchangePublicService: ""
 	loggerService: ""
-	candleConnectionService:
-		• candleConnectionService: ""
+	exchangeConnectionService:
+		• exchangeConnectionService: ""
 		loggerService: ""
 		executionContextService: ""
-		candleSchemaService:
-			• candleSchemaService: ""
+		exchangeSchemaService:
+			• exchangeSchemaService: ""
 			loggerService: ""
 strategyPublicService:
 	• strategyPublicService: ""
@@ -19,11 +19,11 @@ strategyPublicService:
 		strategySchemaService:
 			• strategySchemaService: ""
 			loggerService: ""
-		candleConnectionService:
-			• candleConnectionService: ""
+		exchangeConnectionService:
+			• exchangeConnectionService: ""
 			loggerService: ""
 			executionContextService: ""
-			candleSchemaService:
-				• candleSchemaService: ""
+			exchangeSchemaService:
+				• exchangeSchemaService: ""
 				loggerService: ""
 @endyaml

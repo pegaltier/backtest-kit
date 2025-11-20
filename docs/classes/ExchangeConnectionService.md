@@ -1,11 +1,11 @@
 ---
-title: docs/api-reference/class/CandleConnectionService
+title: docs/api-reference/class/ExchangeConnectionService
 group: docs
 ---
 
-# CandleConnectionService
+# ExchangeConnectionService
 
-Implements `ICandle`
+Implements `IExchange`
 
 ## Constructor
 
@@ -27,16 +27,16 @@ loggerService: any
 executionContextService: any
 ```
 
-### candleSchemaService
+### exchangeSchemaService
 
 ```ts
-candleSchemaService: any
+exchangeSchemaService: any
 ```
 
-### getCandle
+### getExchange
 
 ```ts
-getCandle: ((symbol: string) => ClientCandle) & IClearableMemoize<string> & IControlMemoize<string, ClientCandle>
+getExchange: ((symbol: string) => ClientExchange) & IClearableMemoize<string> & IControlMemoize<string, ClientExchange>
 ```
 
 ### getCandles

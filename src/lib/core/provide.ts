@@ -1,10 +1,10 @@
 import LoggerService from "../services/base/LoggerService";
-import CandleConnectionService from "../services/connection/CandleConnectionService";
+import ExchangeConnectionService from "../services/connection/ExchangeConnectionService";
 import StrategyConnectionService from "../services/connection/StrategyConnectionService";
 import ExecutionContextService from "../services/context/ExecutionContextService";
-import CandlePublicService from "../services/public/CandlePublicService";
+import ExchangePublicService from "../services/public/ExchangePublicService";
 import StrategyPublicService from "../services/public/StrategyPublicService";
-import CandleSchemaService from "../services/schema/CandleSchemaService";
+import ExchangeSchemaService from "../services/schema/ExchangeSchemaService";
 import StrategySchemaService from "../services/schema/StrategySchemaService";
 import { provide } from "./di";
 import TYPES from "./types";
@@ -18,16 +18,16 @@ import TYPES from "./types";
 }
 
 {
-    provide(TYPES.candleConnectionService, () => new CandleConnectionService());
+    provide(TYPES.exchangeConnectionService, () => new ExchangeConnectionService());
     provide(TYPES.strategyConnectionService, () => new StrategyConnectionService());
 }
 
 {
-    provide(TYPES.candleSchemaService, () => new CandleSchemaService());
+    provide(TYPES.exchangeSchemaService, () => new ExchangeSchemaService());
     provide(TYPES.strategySchemaService, () => new StrategySchemaService());
 }
 
 {
-    provide(TYPES.candlePublicService, () => new CandlePublicService());
+    provide(TYPES.exchangePublicService, () => new ExchangePublicService());
     provide(TYPES.strategyPublicService, () => new StrategyPublicService());
 }
