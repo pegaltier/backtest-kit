@@ -1,3 +1,5 @@
+import { ILogger } from "./Logger.interface";
+
 export type FrameInterval =
   | "1m"
   | "3m"
@@ -13,7 +15,9 @@ export type FrameInterval =
   | "1d"
   | "3d";
 
-export interface IFrameParams extends IFrameSchema {}
+export interface IFrameParams extends IFrameSchema {
+    logger: ILogger;
+}
 
 export interface IFrameCallbacks {
   onTimeframe: (
@@ -33,7 +37,7 @@ export interface IFrameSchema {
 }
 
 export interface IFrame {
-  getTimeframe: () => Promise<Date[]>;
+  getTimeframe: (symbol: string) => Promise<Date[]>;
 }
 
 export type FrameName = string;

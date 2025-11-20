@@ -27,6 +27,8 @@ export {
   IStrategyPnL,
 } from "./interfaces/Strategy.interface";
 
+export { FrameInterval, IFrameSchema } from "./interfaces/Frame.interface";
+
 export { ExecutionContextService } from "./lib/services/context/ExecutionContextService";
 export { MethodContextService } from "./lib/services/context/MethodContextService";
 

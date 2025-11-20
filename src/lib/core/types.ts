@@ -10,16 +10,19 @@ const contextServices = {
 const connectionServices = {
     exchangeConnectionService: Symbol('exchangeConnectionService'),
     strategyConnectionService: Symbol('strategyConnectionService'),
+    frameConnectionService: Symbol('frameConnectionService'),
 };
 
 const schemaServices = {
     exchangeSchemaService: Symbol('exchangeSchemaService'),
     strategySchemaService: Symbol('strategySchemaService'),
+    frameSchemaService: Symbol('frameSchemaService'),
 }
 
 const publicServices = {
     exchangePublicService: Symbol('exchangePublicService'),
     strategyPublicService: Symbol('strategyPublicService'),
+    framePublicService: Symbol('framePublicService'),
 }
 
 export const TYPES = {

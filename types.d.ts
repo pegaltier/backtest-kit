@@ -123,6 +123,25 @@ interface IStrategy {
 }
 type StrategyName = string;
 
+type FrameInterval = "1m" | "3m" | "5m" | "15m" | "30m" | "1h" | "2h" | "4h" | "6h" | "8h" | "12h" | "1d" | "3d";
+interface IFrameParams extends IFrameSchema {
+    logger: ILogger;
+}
+interface IFrameCallbacks {
+    onTimeframe: (timeframe: Date[], startDate: Date, endDate: Date, interval: FrameInterval) => void;
+}
+interface IFrameSchema {
+    frameName: FrameName;
+    interval: FrameInterval;
+    startDate: Date;
+    endDate: Date;
+    callbacks?: Partial<IFrameCallbacks>;
+}
+interface IFrame {
+    getTimeframe: (symbol: string) => Promise<Date[]>;
+}
+type FrameName = string;
+
 declare function addStrategy(strategySchema: IStrategySchema): void;
 declare function addExchange(exchangeSchema: IExchangeSchema): void;
 
@@ -157,6 +176,7 @@ declare function formatQuantity(symbol: string, quantity: number): Promise<strin
 interface IExecutionContext {
     exchangeName: ExchangeName;
     strategyName: StrategyName;
+    frameName: FrameName;
 }
 declare const MethodContextService: (new () => {
     readonly context: IExecutionContext;
@@ -199,22 +219,6 @@ declare class ExchangeConnectionService implements IExchange {
     formatQuantity: (symbol: string, quantity: number) => Promise<string>;
 }
 
-declare class ExchangeSchemaService {
-    readonly loggerService: LoggerService;
-    private _registry;
-    register: (key: ExchangeName, value: IExchangeSchema) => void;
-    override: (key: ExchangeName, value: Partial<IExchangeSchema>) => IExchangeSchema;
-    get: (key: ExchangeName) => IExchangeSchema;
-}
-
-declare class StrategySchemaService {
-    readonly loggerService: LoggerService;
-    private _registry;
-    register: (key: StrategyName, value: IStrategySchema) => void;
-    override: (key: StrategyName, value: Partial<IStrategySchema>) => IStrategySchema;
-    get: (key: StrategyName) => IStrategySchema;
-}
-
 declare class StrategyConnectionService implements IStrategy {
     private readonly loggerService;
     private readonly executionContextService;
@@ -223,6 +227,20 @@ declare class StrategyConnectionService implements IStrategy {
     private readonly methodContextService;
     private getStrategy;
     tick: () => Promise<IStrategyTickResult>;
+}
+
+declare class ClientFrame implements IFrame {
+    readonly params: IFrameParams;
+    constructor(params: IFrameParams);
+    getTimeframe: (symbol: string) => Promise<Date[]>;
+}
+
+declare class FrameConnectionService implements IFrame {
+    private readonly loggerService;
+    private readonly frameSchemaService;
+    private readonly methodContextService;
+    getFrame: ((frameName: FrameName) => ClientFrame) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, ClientFrame>;
+    getTimeframe: (symbol: string) => Promise<Date[]>;
 }
 
 declare class ExchangePublicService {
@@ -240,13 +258,45 @@ declare class StrategyPublicService {
     tick: (symbol: string, when: Date, backtest: boolean) => Promise<IStrategyTickResult>;
 }
 
+declare class FramePublicService {
+    private readonly loggerService;
+    private readonly frameConnectionService;
+    getTimeframe: (symbol: string) => Promise<Date[]>;
+}
+
+declare class ExchangeSchemaService {
+    readonly loggerService: LoggerService;
+    private _registry;
+    register: (key: ExchangeName, value: IExchangeSchema) => void;
+    override: (key: ExchangeName, value: Partial<IExchangeSchema>) => IExchangeSchema;
+    get: (key: ExchangeName) => IExchangeSchema;
+}
+
+declare class StrategySchemaService {
+    readonly loggerService: LoggerService;
+    private _registry;
+    register: (key: StrategyName, value: IStrategySchema) => void;
+    override: (key: StrategyName, value: Partial<IStrategySchema>) => IStrategySchema;
+    get: (key: StrategyName) => IStrategySchema;
+}
+
+declare class FrameSchemaService {
+    private _registry;
+    register(key: FrameName, value: IFrameSchema): void;
+    override(key: FrameName, value: Partial<IFrameSchema>): void;
+    get(key: FrameName): IFrameSchema;
+}
+
 declare const backtest: {
     exchangePublicService: ExchangePublicService;
     strategyPublicService: StrategyPublicService;
+    framePublicService: FramePublicService;
     exchangeSchemaService: ExchangeSchemaService;
     strategySchemaService: StrategySchemaService;
+    frameSchemaService: FrameSchemaService;
     exchangeConnectionService: ExchangeConnectionService;
     strategyConnectionService: StrategyConnectionService;
+    frameConnectionService: FrameConnectionService;
     executionContextService: {
         readonly context: IExecutionContext$1;
     };
@@ -256,4 +306,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { type CandleInterval, ExecutionContextService, type ICandleData, type IExchangeSchema, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, MethodContextService, addExchange, addStrategy, backtest, formatPrice, formatQuantity, getAveragePrice, getCandles, reduce, runBacktest, runBacktestGUI, startRun, stopAll, stopRun };
+export { type CandleInterval, ExecutionContextService, type FrameInterval, type ICandleData, type IExchangeSchema, type IFrameSchema, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, MethodContextService, addExchange, addStrategy, backtest, formatPrice, formatQuantity, getAveragePrice, getCandles, reduce, runBacktest, runBacktestGUI, startRun, stopAll, stopRun };
