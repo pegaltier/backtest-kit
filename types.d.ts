@@ -137,6 +137,9 @@ declare function startRun(config: IRunConfig): void;
 declare function stopRun(symbol: string): void;
 declare function stopAll(): void;
 
+declare function getCandles(symbol: string, interval: CandleInterval, limit: number): Promise<ICandleData[]>;
+declare function getAveragePrice(symbol: string): Promise<number>;
+
 declare class LoggerService implements ILogger {
     private _commonLogger;
     log: (topic: string, ...args: any[]) => Promise<void>;
@@ -210,4 +213,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { ExecutionContextService, addCandle, addStrategy, backtest, reduce, runBacktest, runBacktestGUI, startRun, stopAll, stopRun };
+export { ExecutionContextService, addCandle, addStrategy, backtest, getAveragePrice, getCandles, reduce, runBacktest, runBacktestGUI, startRun, stopAll, stopRun };

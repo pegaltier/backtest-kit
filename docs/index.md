@@ -29,6 +29,8 @@ group: docs
 - [startRun](functions/startRun.md)
 - [stopRun](functions/stopRun.md)
 - [stopAll](functions/stopAll.md)
+- [getCandles](functions/getCandles.md)
+- [getAveragePrice](functions/getAveragePrice.md)
 
 ## Interfaces
 
