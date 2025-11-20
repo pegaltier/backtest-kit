@@ -1,20 +1,6 @@
 import * as di_scoped from 'di-scoped';
 import * as functools_kit from 'functools-kit';
 
-interface IExecutionContext {
-    symbol: string;
-    when: Date;
-    backtest: boolean;
-}
-declare const ExecutionContextService: (new () => {
-    readonly context: IExecutionContext;
-}) & Omit<{
-    new (context: IExecutionContext): {
-        readonly context: IExecutionContext;
-    };
-}, "prototype"> & di_scoped.IScopedClassRun<[context: IExecutionContext]>;
-type TExecutionContextService = InstanceType<typeof ExecutionContextService>;
-
 /**
  * Interface representing a logging mechanism for the swarm system.
  * Provides methods to record messages at different severity levels, used across components like agents, sessions, states, storage, swarms, history, embeddings, completions, and policies.
@@ -37,6 +23,22 @@ interface ILogger {
      */
     info(topic: string, ...args: any[]): void;
 }
+
+declare function setLogger(logger: ILogger): Promise<void>;
+
+interface IExecutionContext {
+    symbol: string;
+    when: Date;
+    backtest: boolean;
+}
+declare const ExecutionContextService: (new () => {
+    readonly context: IExecutionContext;
+}) & Omit<{
+    new (context: IExecutionContext): {
+        readonly context: IExecutionContext;
+    };
+}, "prototype"> & di_scoped.IScopedClassRun<[context: IExecutionContext]>;
+type TExecutionContextService = InstanceType<typeof ExecutionContextService>;
 
 type CandleInterval = "1m" | "3m" | "5m" | "15m" | "30m" | "1h" | "2h" | "4h" | "6h" | "8h";
 interface ICandleData {
@@ -150,6 +152,7 @@ type FrameName = string;
 
 declare function addStrategy(strategySchema: IStrategySchema): void;
 declare function addExchange(exchangeSchema: IExchangeSchema): void;
+declare function addFrame(frameSchema: IFrameSchema): void;
 
 interface IBacktestResult {
     symbol: string;
@@ -178,6 +181,8 @@ declare function getCandles(symbol: string, interval: CandleInterval, limit: num
 declare function getAveragePrice(symbol: string): Promise<number>;
 declare function formatPrice(symbol: string, price: number): Promise<string>;
 declare function formatQuantity(symbol: string, quantity: number): Promise<string>;
+declare function getDate(): Promise<Date>;
+declare function getMode(): Promise<"backtest" | "live">;
 
 interface IMethodContext {
     exchangeName: ExchangeName;
@@ -303,18 +308,63 @@ declare class BacktestLogicPrivateService {
     private readonly strategyGlobalService;
     private readonly exchangeGlobalService;
     private readonly frameGlobalService;
-    run: (symbol: string) => Promise<IStrategyTickResultClosed[]>;
+    run(symbol: string): AsyncGenerator<IStrategyTickResultClosed, void, unknown>;
 }
 
 declare class LiveLogicPrivateService {
+    private readonly loggerService;
+    private readonly strategyGlobalService;
+    run(symbol: string): AsyncGenerator<IStrategyTickResultOpened | IStrategyTickResultClosed, void, unknown>;
+}
+
+declare class BacktestLogicPublicService {
+    private readonly loggerService;
+    private readonly backtestLogicPrivateService;
+    run: (symbol: string, context: {
+        strategyName: string;
+        exchangeName: string;
+        frameName: string;
+    }) => AsyncGenerator<IStrategyTickResultClosed, void, unknown>;
+}
+
+declare class LiveLogicPublicService {
+    private readonly loggerService;
+    private readonly liveLogicPrivateService;
+    run: (symbol: string, context: {
+        strategyName: string;
+        exchangeName: string;
+    }) => AsyncGenerator<IStrategyTickResultOpened | IStrategyTickResultClosed, void, unknown>;
+}
+
+declare class LiveGlobalService {
+    private readonly loggerService;
+    private readonly liveLogicPublicService;
+    run: (symbol: string, context: {
+        strategyName: string;
+        exchangeName: string;
+    }) => AsyncGenerator<IStrategyTickResultOpened | IStrategyTickResultClosed, void, unknown>;
+}
+
+declare class BacktestGlobalService {
+    private readonly loggerService;
+    private readonly backtestLogicPublicService;
+    run: (symbol: string, context: {
+        strategyName: string;
+        exchangeName: string;
+        frameName: string;
+    }) => AsyncGenerator<IStrategyTickResultClosed, void, unknown>;
 }
 
 declare const backtest: {
+    backtestLogicPublicService: BacktestLogicPublicService;
+    liveLogicPublicService: LiveLogicPublicService;
     backtestLogicPrivateService: BacktestLogicPrivateService;
     liveLogicPrivateService: LiveLogicPrivateService;
     exchangeGlobalService: ExchangeGlobalService;
     strategyGlobalService: StrategyGlobalService;
     frameGlobalService: FrameGlobalService;
+    liveGlobalService: LiveGlobalService;
+    backtestGlobalService: BacktestGlobalService;
     exchangeSchemaService: ExchangeSchemaService;
     strategySchemaService: StrategySchemaService;
     frameSchemaService: FrameSchemaService;
@@ -330,4 +380,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { type CandleInterval, ExecutionContextService, type FrameInterval, type ICandleData, type IExchangeSchema, type IFrameSchema, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, MethodContextService, type SignalInterval, addExchange, addStrategy, backtest, formatPrice, formatQuantity, getAveragePrice, getCandles, reduce, runBacktest, runBacktestGUI, startRun, stopAll, stopRun };
+export { type CandleInterval, ExecutionContextService, type FrameInterval, type ICandleData, type IExchangeSchema, type IFrameSchema, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, MethodContextService, type SignalInterval, addExchange, addFrame, addStrategy, backtest, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, reduce, runBacktest, runBacktestGUI, setLogger, startRun, stopAll, stopRun };

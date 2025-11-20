@@ -21,6 +21,8 @@ import BacktestLogicPrivateService from "./services/logic/private/BacktestLogicP
 import LiveLogicPrivateService from "./services/logic/private/LiveLogicPrivateService";
 import BacktestLogicPublicService from "./services/logic/public/BacktestLogicPublicService";
 import LiveLogicPublicService from "./services/logic/public/LiveLogicPublicService";
+import LiveGlobalService from "./services/global/LiveGlobalService";
+import BacktestGlobalService from "./services/global/BacktestGlobalService";
 
 const baseServices = {
   loggerService: inject<LoggerService>(TYPES.loggerService),
@@ -65,6 +67,10 @@ const globalServices = {
     TYPES.strategyGlobalService
   ),
   frameGlobalService: inject<FrameGlobalService>(TYPES.frameGlobalService),
+  liveGlobalService: inject<LiveGlobalService>(TYPES.liveGlobalService),
+  backtestGlobalService: inject<BacktestGlobalService>(
+    TYPES.backtestGlobalService
+  ),
 };
 
 const logicPrivateServices = {

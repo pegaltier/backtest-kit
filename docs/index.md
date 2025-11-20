@@ -19,16 +19,20 @@ group: docs
 - [ExchangeSchemaService](classes/ExchangeSchemaService.md)
 - [StrategySchemaService](classes/StrategySchemaService.md)
 - [FrameSchemaService](classes/FrameSchemaService.md)
-- [BacktestLogicService](classes/BacktestLogicService.md)
-- [LiveLogicService](classes/LiveLogicService.md)
+- [BacktestLogicPrivateService](classes/BacktestLogicPrivateService.md)
+- [LiveLogicPrivateService](classes/LiveLogicPrivateService.md)
+- [BacktestLogicPublicService](classes/BacktestLogicPublicService.md)
+- [LiveLogicPublicService](classes/LiveLogicPublicService.md)
 
 ## Enums
 
 
 ## Functions
 
+- [setLogger](functions/setLogger.md)
 - [addStrategy](functions/addStrategy.md)
 - [addExchange](functions/addExchange.md)
+- [addFrame](functions/addFrame.md)
 - [runBacktest](functions/runBacktest.md)
 - [runBacktestGUI](functions/runBacktestGUI.md)
 - [reduce](functions/reduce.md)
@@ -39,11 +43,13 @@ group: docs
 - [getAveragePrice](functions/getAveragePrice.md)
 - [formatPrice](functions/formatPrice.md)
 - [formatQuantity](functions/formatQuantity.md)
+- [getDate](functions/getDate.md)
+- [getMode](functions/getMode.md)
 
 ## Interfaces
 
-- [IExecutionContext$1](interfaces/IExecutionContext$1.md)
 - [ILogger](interfaces/ILogger.md)
+- [IExecutionContext](interfaces/IExecutionContext.md)
 - [ICandleData](interfaces/ICandleData.md)
 - [IExchangeParams](interfaces/IExchangeParams.md)
 - [IExchangeCallbacks](interfaces/IExchangeCallbacks.md)
@@ -66,7 +72,7 @@ group: docs
 - [IBacktestResult](interfaces/IBacktestResult.md)
 - [IReduceResult](interfaces/IReduceResult.md)
 - [IRunConfig](interfaces/IRunConfig.md)
-- [IExecutionContext](interfaces/IExecutionContext.md)
+- [IMethodContext](interfaces/IMethodContext.md)
 
 ## Types
 

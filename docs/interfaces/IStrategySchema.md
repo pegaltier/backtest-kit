@@ -13,12 +13,6 @@ group: docs
 strategyName: string
 ```
 
-### exchangeName
-
-```ts
-exchangeName: string
-```
-
 ### interval
 
 ```ts

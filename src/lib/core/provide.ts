@@ -16,6 +16,8 @@ import { provide } from "./di";
 import TYPES from "./types";
 import BacktestLogicPublicService from "../services/logic/public/BacktestLogicPublicService";
 import LiveLogicPublicService from "../services/logic/public/LiveLogicPublicService";
+import LiveGlobalService from "../services/global/LiveGlobalService";
+import BacktestGlobalService from "../services/global/BacktestGlobalService";
 
 {
     provide(TYPES.loggerService, () => new LoggerService());
@@ -42,6 +44,8 @@ import LiveLogicPublicService from "../services/logic/public/LiveLogicPublicServ
     provide(TYPES.exchangeGlobalService, () => new ExchangeGlobalService());
     provide(TYPES.strategyGlobalService, () => new StrategyGlobalService());
     provide(TYPES.frameGlobalService, () => new FrameGlobalService());
+    provide(TYPES.liveGlobalService, () => new LiveGlobalService());
+    provide(TYPES.backtestGlobalService, () => new BacktestGlobalService());
 }
 
 {

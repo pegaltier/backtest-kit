@@ -16,5 +16,5 @@ logger: ILogger
 ### execution
 
 ```ts
-execution: { readonly context: IExecutionContext$1; }
+execution: { readonly context: IExecutionContext; }
 ```

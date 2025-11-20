@@ -23,6 +23,8 @@ const globalServices = {
     exchangeGlobalService: Symbol('exchangeGlobalService'),
     strategyGlobalService: Symbol('strategyGlobalService'),
     frameGlobalService: Symbol('frameGlobalService'),
+    liveGlobalService: Symbol('liveGlobalService'),
+    backtestGlobalService: Symbol('backtestGlobalService'),
 }
 
 const logicPrivateServices = {

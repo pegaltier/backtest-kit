@@ -1,9 +1,9 @@
 ---
-title: docs/api-reference/class/BacktestLogicService
+title: docs/api-reference/class/BacktestLogicPrivateService
 group: docs
 ---
 
-# BacktestLogicService
+# BacktestLogicPrivateService
 
 ## Constructor
 
@@ -31,8 +31,16 @@ strategyGlobalService: any
 exchangeGlobalService: any
 ```
 
+### frameGlobalService
+
+```ts
+frameGlobalService: any
+```
+
+## Methods
+
 ### run
 
 ```ts
-run: (symbol: string, timeframes: Date[]) => Promise<IStrategyTickResultClosed[]>
+run(symbol: string): AsyncGenerator<IStrategyTickResultClosed, void, unknown>;
 ```
