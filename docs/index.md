@@ -7,6 +7,7 @@ group: docs
 
 ## Classes
 
+- [PersistSignalUtils](classes/PersistSignalUtils.md)
 - [LoggerService](classes/LoggerService.md)
 - [ClientExchange](classes/ClientExchange.md)
 - [ExchangeConnectionService](classes/ExchangeConnectionService.md)
@@ -23,6 +24,8 @@ group: docs
 - [LiveLogicPrivateService](classes/LiveLogicPrivateService.md)
 - [BacktestLogicPublicService](classes/BacktestLogicPublicService.md)
 - [LiveLogicPublicService](classes/LiveLogicPublicService.md)
+- [LiveGlobalService](classes/LiveGlobalService.md)
+- [BacktestGlobalService](classes/BacktestGlobalService.md)
 
 ## Enums
 
@@ -73,6 +76,9 @@ group: docs
 - [IReduceResult](interfaces/IReduceResult.md)
 - [IRunConfig](interfaces/IRunConfig.md)
 - [IMethodContext](interfaces/IMethodContext.md)
+- [ISignalData](interfaces/ISignalData.md)
+- [IEntity](interfaces/IEntity.md)
+- [IPersistBase](interfaces/IPersistBase.md)
 
 ## Types
 
@@ -87,3 +93,6 @@ group: docs
 - [FrameInterval](types/FrameInterval.md)
 - [FrameName](types/FrameName.md)
 - [ReduceCallback](types/ReduceCallback.md)
+- [TPersistBase](types/TPersistBase.md)
+- [TPersistBaseCtor](types/TPersistBaseCtor.md)
+- [EntityId](types/EntityId.md)

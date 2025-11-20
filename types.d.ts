@@ -197,6 +197,51 @@ declare const MethodContextService: (new () => {
     };
 }, "prototype"> & di_scoped.IScopedClassRun<[context: IMethodContext]>;
 
+declare const BASE_WAIT_FOR_INIT_SYMBOL: unique symbol;
+interface ISignalData {
+    signalRow: ISignalRow | null;
+}
+type TPersistBase = InstanceType<typeof PersistBase>;
+type TPersistBaseCtor<EntityName extends string = string, Entity extends IEntity = IEntity> = new (entityName: EntityName, baseDir: string) => IPersistBase<Entity>;
+type EntityId = string | number;
+interface IEntity {
+}
+interface IPersistBase<Entity extends IEntity = IEntity> {
+    waitForInit(initial: boolean): Promise<void>;
+    readValue(entityId: EntityId): Promise<Entity>;
+    hasValue(entityId: EntityId): Promise<boolean>;
+    writeValue(entityId: EntityId, entity: Entity): Promise<void>;
+}
+declare const PersistBase: {
+    new <EntityName extends string = string>(entityName: EntityName, baseDir?: string): {
+        _directory: string;
+        readonly entityName: EntityName;
+        readonly baseDir: string;
+        _getFilePath(entityId: EntityId): string;
+        waitForInit(initial: boolean): Promise<void>;
+        getCount(): Promise<number>;
+        readValue<T extends IEntity = IEntity>(entityId: EntityId): Promise<T>;
+        hasValue(entityId: EntityId): Promise<boolean>;
+        writeValue<T extends IEntity = IEntity>(entityId: EntityId, entity: T): Promise<void>;
+        removeValue(entityId: EntityId): Promise<void>;
+        removeAll(): Promise<void>;
+        values<T extends IEntity = IEntity>(): AsyncGenerator<T>;
+        keys(): AsyncGenerator<EntityId>;
+        filter<T extends IEntity = IEntity>(predicate: (value: T) => boolean): AsyncGenerator<T>;
+        take<T extends IEntity = IEntity>(total: number, predicate?: (value: T) => boolean): AsyncGenerator<T>;
+        [BASE_WAIT_FOR_INIT_SYMBOL]: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+        [Symbol.asyncIterator](): AsyncIterableIterator<any>;
+    };
+};
+declare class PersistSignalUtils {
+    private PersistSignalFactory;
+    private getSignalStorage;
+    usePersistSignalAdapter(Ctor: TPersistBaseCtor<StrategyName, ISignalData>): void;
+    readSignalData: (strategyName: StrategyName, symbol: string) => Promise<ISignalRow | null>;
+    writeSignalData: (signalRow: ISignalRow | null, strategyName: StrategyName, symbol: string) => Promise<void>;
+}
+declare const PersistSignalAdaper: PersistSignalUtils;
+
 declare class LoggerService implements ILogger {
     private readonly methodContextService;
     private readonly executionContextService;
@@ -212,11 +257,11 @@ declare class LoggerService implements ILogger {
 declare class ClientExchange implements IExchange {
     readonly params: IExchangeParams;
     constructor(params: IExchangeParams);
-    getCandles: (symbol: string, interval: CandleInterval, limit: number) => Promise<ICandleData[]>;
-    getNextCandles: (symbol: string, interval: CandleInterval, limit: number) => Promise<ICandleData[]>;
-    getAveragePrice: (symbol: string) => Promise<number>;
-    formatQuantity: (symbol: string, quantity: number) => Promise<string>;
-    formatPrice: (symbol: string, price: number) => Promise<string>;
+    getCandles(symbol: string, interval: CandleInterval, limit: number): Promise<ICandleData[]>;
+    getNextCandles(symbol: string, interval: CandleInterval, limit: number): Promise<ICandleData[]>;
+    getAveragePrice(symbol: string): Promise<number>;
+    formatQuantity(symbol: string, quantity: number): Promise<string>;
+    formatPrice(symbol: string, price: number): Promise<string>;
 }
 
 declare class ExchangeConnectionService implements IExchange {
@@ -380,4 +425,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { type CandleInterval, ExecutionContextService, type FrameInterval, type ICandleData, type IExchangeSchema, type IFrameSchema, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, MethodContextService, type SignalInterval, addExchange, addFrame, addStrategy, backtest, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, reduce, runBacktest, runBacktestGUI, setLogger, startRun, stopAll, stopRun };
+export { type CandleInterval, ExecutionContextService, type FrameInterval, type ICandleData, type IExchangeSchema, type IFrameSchema, type IPersistBase, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, MethodContextService, PersistBase, PersistSignalAdaper, type SignalInterval, type TPersistBase, type TPersistBaseCtor, addExchange, addFrame, addStrategy, backtest, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, reduce, runBacktest, runBacktestGUI, setLogger, startRun, stopAll, stopRun };

@@ -21,32 +21,34 @@ constructor(params: IExchangeParams);
 params: IExchangeParams
 ```
 
+## Methods
+
 ### getCandles
 
 ```ts
-getCandles: (symbol: string, interval: CandleInterval, limit: number) => Promise<ICandleData[]>
+getCandles(symbol: string, interval: CandleInterval, limit: number): Promise<ICandleData[]>;
 ```
 
 ### getNextCandles
 
 ```ts
-getNextCandles: (symbol: string, interval: CandleInterval, limit: number) => Promise<ICandleData[]>
+getNextCandles(symbol: string, interval: CandleInterval, limit: number): Promise<ICandleData[]>;
 ```
 
 ### getAveragePrice
 
 ```ts
-getAveragePrice: (symbol: string) => Promise<number>
+getAveragePrice(symbol: string): Promise<number>;
 ```
 
 ### formatQuantity
 
 ```ts
-formatQuantity: (symbol: string, quantity: number) => Promise<string>
+formatQuantity(symbol: string, quantity: number): Promise<string>;
 ```
 
 ### formatPrice
 
 ```ts
-formatPrice: (symbol: string, price: number) => Promise<string>
+formatPrice(symbol: string, price: number): Promise<string>;
 ```
