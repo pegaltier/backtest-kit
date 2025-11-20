@@ -1,5 +1,5 @@
 import { TExecutionContextService } from "../lib/services/context/ExecutionContextService";
-import { ExchangeName, IExchange, ICandleData } from "./Exchange.interface";
+import { IExchange, ICandleData } from "./Exchange.interface";
 import { ILogger } from "./Logger.interface";
 
 export type SignalInterval =
