@@ -5,6 +5,8 @@ export { startRun, stopRun, stopAll } from "./function/run";
 export {
   getCandles,
   getAveragePrice,
+  getDate,
+  getMode,
   formatPrice,
   formatQuantity,
 } from "./function/exchange";

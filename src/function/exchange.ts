@@ -34,4 +34,15 @@ export async function formatQuantity(
   );
 }
 
-export default { getCandles, getAveragePrice };
+export async function getDate() {
+  const { when } = backtest.executionContextService.context;
+  return new Date(when.getTime());
+}
+
+export async function getMode() {
+  const { backtest: bt } = backtest.executionContextService.context;
+  return bt ? "backtest" : "live";
+}
+
+export default { getCandles, getAveragePrice, getDate, getMode };
+
