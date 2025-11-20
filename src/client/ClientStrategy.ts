@@ -200,6 +200,10 @@ export class ClientStrategy implements IStrategy {
       throw new Error("ClientStrategy backtest: no pending signal");
     }
 
+    if (!this.params.execution.context.backtest) {
+      throw new Error("ClientStrategy backtest: running in live context");
+    }
+
     this.params.logger.debug("ClientStrategy backtest", {
       symbol: this.params.execution.context.symbol,
       signalId: signal.id,
