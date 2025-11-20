@@ -36,7 +36,7 @@ export class BacktestLogicPrivateService {
       if (result.action === "opened") {
         const signal = result.signal;
 
-        this.loggerService.log("backtestLogicPrivateService signal opened", {
+        this.loggerService.info("backtestLogicPrivateService signal opened", {
           symbol,
           signalId: signal.id,
           minuteEstimatedTime: signal.minuteEstimatedTime,
@@ -55,7 +55,7 @@ export class BacktestLogicPrivateService {
           return;
         }
 
-        this.loggerService.log("backtestLogicPrivateService got candles", {
+        this.loggerService.info("backtestLogicPrivateService candles fetched", {
           symbol,
           signalId: signal.id,
           candlesCount: candles.length,
@@ -69,7 +69,7 @@ export class BacktestLogicPrivateService {
           true
         );
 
-        this.loggerService.log("backtestLogicPrivateService signal closed", {
+        this.loggerService.info("backtestLogicPrivateService signal closed", {
           symbol,
           signalId: backtestResult.signal.id,
           closeTimestamp: backtestResult.closeTimestamp,

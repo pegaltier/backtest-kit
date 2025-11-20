@@ -22,7 +22,7 @@ export class LiveLogicPrivateService {
 
       const result = await this.strategyGlobalService.tick(symbol, when, false);
 
-      this.loggerService.log("liveLogicPrivateService tick result", {
+      this.loggerService.info("liveLogicPrivateService tick result", {
         symbol,
         action: result.action,
       });
