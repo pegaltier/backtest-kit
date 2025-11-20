@@ -213,4 +213,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { ExecutionContextService, addCandle, addStrategy, backtest, getAveragePrice, getCandles, reduce, runBacktest, runBacktestGUI, startRun, stopAll, stopRun };
+export { type CandleInterval, ExecutionContextService, type ICandleData, type ICandleSchema, type ISignalData, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, addCandle, addStrategy, backtest, getAveragePrice, getCandles, reduce, runBacktest, runBacktestGUI, startRun, stopAll, stopRun };
