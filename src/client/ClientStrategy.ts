@@ -121,12 +121,14 @@ export class ClientStrategy implements IStrategy {
     // Закрываем сигнал если выполнены условия
     if (shouldClose) {
       const pnl = toProfitLossDto(signal, averagePrice);
+      const closeTimestamp = this.params.execution.context.when.getTime();
 
       this.params.logger.debug("ClientStrategy closing", {
         symbol: this.params.execution.context.symbol,
         signalId: signal.id,
         reason: closeReason,
         priceClose: averagePrice,
+        closeTimestamp,
         pnlPercentage: pnl.pnlPercentage,
       });
 
@@ -146,6 +148,7 @@ export class ClientStrategy implements IStrategy {
         signal: signal,
         currentPrice: averagePrice,
         closeReason: closeReason,
+        closeTimestamp: closeTimestamp,
         pnl: pnl,
       };
     }
@@ -207,12 +210,14 @@ export class ClientStrategy implements IStrategy {
       // Если достигнут TP/SL, закрываем сигнал
       if (shouldClose) {
         const pnl = toProfitLossDto(signal, averagePrice);
+        const closeTimestamp = recentCandles[recentCandles.length - 1].timestamp;
 
         this.params.logger.debug("ClientStrategy backtest closing", {
           symbol: this.params.execution.context.symbol,
           signalId: signal.id,
           reason: closeReason,
           priceClose: averagePrice,
+          closeTimestamp,
           pnlPercentage: pnl.pnlPercentage,
         });
 
@@ -232,6 +237,7 @@ export class ClientStrategy implements IStrategy {
           signal: signal,
           currentPrice: averagePrice,
           closeReason: closeReason,
+          closeTimestamp: closeTimestamp,
           pnl: pnl,
         };
       }
@@ -240,6 +246,7 @@ export class ClientStrategy implements IStrategy {
     // Если TP/SL не достигнут за период, вычисляем VWAP из последних 5 свечей
     const lastFiveCandles = candles.slice(-5);
     const lastPrice = GET_AVG_PRICE_FN(lastFiveCandles);
+    const closeTimestamp = lastFiveCandles[lastFiveCandles.length - 1].timestamp;
 
     const pnl = toProfitLossDto(signal, lastPrice);
 
@@ -247,6 +254,7 @@ export class ClientStrategy implements IStrategy {
       symbol: this.params.execution.context.symbol,
       signalId: signal.id,
       priceClose: lastPrice,
+      closeTimestamp,
       pnlPercentage: pnl.pnlPercentage,
     });
 
@@ -266,6 +274,7 @@ export class ClientStrategy implements IStrategy {
       signal: signal,
       currentPrice: lastPrice,
       closeReason: "time_expired",
+      closeTimestamp: closeTimestamp,
       pnl: pnl,
     };
   };

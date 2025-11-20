@@ -2,7 +2,7 @@ import { inject } from "../../core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../core/types";
 import ExecutionContextService from "../context/ExecutionContextService";
-import { IStrategyTickResult } from "../../../interfaces/Strategy.interface";
+import { IStrategyBacktestResult, IStrategyTickResult } from "../../../interfaces/Strategy.interface";
 import StrategyConnectionService from "../connection/StrategyConnectionService";
 import { ICandleData } from "../../../interfaces/Exchange.interface";
 
@@ -38,7 +38,7 @@ export class StrategyPublicService {
     candles: ICandleData[],
     when: Date,
     backtest: boolean
-  ): Promise<IStrategyTickResult> => {
+  ): Promise<IStrategyBacktestResult> => {
     this.loggerService.log("strategyPublicService backtest", {
       symbol,
       when,

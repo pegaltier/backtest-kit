@@ -68,6 +68,7 @@ export interface IStrategyTickResultClosed {
   signal: ISignalRow;
   currentPrice: number;
   closeReason: StrategyCloseReason;
+  closeTimestamp: number;
   pnl: IStrategyPnL;
 }
 
@@ -77,9 +78,7 @@ export type IStrategyTickResult =
   | IStrategyTickResultActive
   | IStrategyTickResultClosed;
 
-export type IStrategyBacktestResult =
-  | IStrategyTickResultActive
-  | IStrategyTickResultClosed;
+export type IStrategyBacktestResult = IStrategyTickResultClosed;
 
 export interface IStrategy {
   tick: (symbol: string) => Promise<IStrategyTickResult>;
