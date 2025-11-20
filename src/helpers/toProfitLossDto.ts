@@ -1,4 +1,4 @@
-import { ISignalRow, IStrategyPnL } from "src/interfaces/Strategy.interface";
+import { ISignalRow, IStrategyPnL } from "../interfaces/Strategy.interface";
 
 const PERCENT_SLIPPAGE = 0.1;
 const PERCENT_FEE = 0.1;

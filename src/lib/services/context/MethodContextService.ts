@@ -1,10 +1,12 @@
 import { scoped } from "di-scoped";
 import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { StrategyName } from "../../../interfaces/Strategy.interface";
+import { FrameName } from "../../../interfaces/Frame.interface";
 
 export interface IExecutionContext {
   exchangeName: ExchangeName;
   strategyName: StrategyName;
+  frameName: FrameName;
 }
 
 export const MethodContextService = scoped(

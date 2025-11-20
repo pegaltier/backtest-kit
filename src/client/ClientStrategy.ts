@@ -8,7 +8,7 @@ import {
   IStrategyTickResult,
   StrategyCloseReason,
 } from "../interfaces/Strategy.interface";
-import toProfitLossDto from "src/helpers/toProfitLossDto";
+import toProfitLossDto from "../helpers/toProfitLossDto";
 
 const GET_SIGNAL_FN = async (self: ClientStrategy) => {
   const signal = await self.params.getSignal(
