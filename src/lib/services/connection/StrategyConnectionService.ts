@@ -2,14 +2,9 @@ import { inject } from "../../core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../core/types";
 import { TExecutionContextService } from "../context/ExecutionContextService";
-import {
-  CandleInterval,
-  ICandleData,
-  IExchange,
-} from "../../../interfaces/Exchange.interface";
+import { ICandleData } from "../../../interfaces/Exchange.interface";
 import { memoize } from "functools-kit";
 import ClientStrategy from "../../../client/ClientStrategy";
-import ExchangeSchemaService from "../schema/ExchangeSchemaService";
 import {
   IStrategy,
   IStrategyBacktestResult,
@@ -37,14 +32,13 @@ export class StrategyConnectionService implements IStrategy {
   private getStrategy = memoize(
     (strategyName) => `${strategyName}`,
     (strategyName: StrategyName) => {
-      const { exchangeName, getSignal, interval, callbacks } =
+      const { getSignal, interval, callbacks } =
         this.strategySchemaService.get(strategyName);
       return new ClientStrategy({
         interval,
         execution: this.executionContextService,
         logger: this.loggerService,
-        exchange: this.exchangeConnectionService.getExchange(exchangeName),
-        exchangeName,
+        exchange: this.exchangeConnectionService,
         strategyName,
         getSignal,
         callbacks,

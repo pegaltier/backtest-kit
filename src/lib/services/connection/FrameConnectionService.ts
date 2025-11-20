@@ -1,7 +1,6 @@
 import { inject } from "../../core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../core/types";
-import { TExecutionContextService } from "../context/ExecutionContextService";
 import { FrameName, IFrame } from "../../../interfaces/Frame.interface";
 import { memoize } from "functools-kit";
 import ClientFrame from "../../../client/ClientFrame";

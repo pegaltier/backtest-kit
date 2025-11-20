@@ -4,6 +4,7 @@ import TYPES from "../../../core/types";
 import { IStrategyTickResultClosed } from "../../../../interfaces/Strategy.interface";
 import StrategyGlobalService from "../../global/StrategyGlobalService";
 import ExchangeGlobalService from "../../global/ExchangeGlobalService";
+import FrameGlobalService from "../../global/FrameGlobalService";
 
 export class BacktestLogicPrivateService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
@@ -13,15 +14,16 @@ export class BacktestLogicPrivateService {
   private readonly exchangeGlobalService = inject<ExchangeGlobalService>(
     TYPES.exchangeGlobalService
   );
+  private readonly frameGlobalService = inject<FrameGlobalService>(
+    TYPES.frameGlobalService
+  );
 
-  public run = async (
-    symbol: string,
-    timeframes: Date[]
-  ): Promise<IStrategyTickResultClosed[]> => {
+  public run = async (symbol: string): Promise<IStrategyTickResultClosed[]> => {
     this.loggerService.log("backtestLogicPrivateService run", {
       symbol,
-      timeframesCount: timeframes.length,
     });
+
+    const timeframes = await this.frameGlobalService.getTimeframe(symbol);
 
     const results: IStrategyTickResultClosed[] = [];
     let i = 0;
@@ -51,7 +53,7 @@ export class BacktestLogicPrivateService {
         );
 
         if (!candles.length) {
-            return results;
+          return results;
         }
 
         this.loggerService.log("backtestLogicPrivateService got candles", {

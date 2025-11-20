@@ -14,6 +14,8 @@ import BacktestLogicPrivateService from "../services/logic/private/BacktestLogic
 import LiveLogicPrivateService from "../services/logic/private/LiveLogicPrivateService";
 import { provide } from "./di";
 import TYPES from "./types";
+import BacktestLogicPublicService from "../services/logic/public/BacktestLogicPublicService";
+import LiveLogicPublicService from "../services/logic/public/LiveLogicPublicService";
 
 {
     provide(TYPES.loggerService, () => new LoggerService());
@@ -46,3 +48,9 @@ import TYPES from "./types";
     provide(TYPES.backtestLogicPrivateService, () => new BacktestLogicPrivateService());
     provide(TYPES.liveLogicPrivateService, () => new LiveLogicPrivateService());
 }
+
+{
+    provide(TYPES.backtestLogicPublicService, () => new BacktestLogicPublicService());
+    provide(TYPES.liveLogicPublicService, () => new LiveLogicPublicService());
+}
+

@@ -3,7 +3,7 @@ import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { StrategyName } from "../../../interfaces/Strategy.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
 
-export interface IExecutionContext {
+export interface IMethodContext {
   exchangeName: ExchangeName;
   strategyName: StrategyName;
   frameName: FrameName;
@@ -11,7 +11,7 @@ export interface IExecutionContext {
 
 export const MethodContextService = scoped(
   class {
-    constructor(readonly context: IExecutionContext) {}
+    constructor(readonly context: IMethodContext) {}
   }
 );
 

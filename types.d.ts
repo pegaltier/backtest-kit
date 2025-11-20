@@ -1,18 +1,18 @@
 import * as di_scoped from 'di-scoped';
 import * as functools_kit from 'functools-kit';
 
-interface IExecutionContext$1 {
+interface IExecutionContext {
     symbol: string;
     when: Date;
     backtest: boolean;
 }
 declare const ExecutionContextService: (new () => {
-    readonly context: IExecutionContext$1;
+    readonly context: IExecutionContext;
 }) & Omit<{
-    new (context: IExecutionContext$1): {
-        readonly context: IExecutionContext$1;
+    new (context: IExecutionContext): {
+        readonly context: IExecutionContext;
     };
-}, "prototype"> & di_scoped.IScopedClassRun<[context: IExecutionContext$1]>;
+}, "prototype"> & di_scoped.IScopedClassRun<[context: IExecutionContext]>;
 type TExecutionContextService = InstanceType<typeof ExecutionContextService>;
 
 /**
@@ -90,7 +90,6 @@ interface IStrategyCallbacks {
 }
 interface IStrategySchema {
     strategyName: StrategyName;
-    exchangeName: ExchangeName;
     interval: SignalInterval;
     getSignal: (symbol: string) => Promise<ISignalDto | null>;
     callbacks?: Partial<IStrategyCallbacks>;
@@ -180,18 +179,18 @@ declare function getAveragePrice(symbol: string): Promise<number>;
 declare function formatPrice(symbol: string, price: number): Promise<string>;
 declare function formatQuantity(symbol: string, quantity: number): Promise<string>;
 
-interface IExecutionContext {
+interface IMethodContext {
     exchangeName: ExchangeName;
     strategyName: StrategyName;
     frameName: FrameName;
 }
 declare const MethodContextService: (new () => {
-    readonly context: IExecutionContext;
+    readonly context: IMethodContext;
 }) & Omit<{
-    new (context: IExecutionContext): {
-        readonly context: IExecutionContext;
+    new (context: IMethodContext): {
+        readonly context: IMethodContext;
     };
-}, "prototype"> & di_scoped.IScopedClassRun<[context: IExecutionContext]>;
+}, "prototype"> & di_scoped.IScopedClassRun<[context: IMethodContext]>;
 
 declare class LoggerService implements ILogger {
     private readonly methodContextService;
@@ -299,19 +298,20 @@ declare class FrameSchemaService {
     get(key: FrameName): IFrameSchema;
 }
 
-declare class BacktestLogicService {
+declare class BacktestLogicPrivateService {
     private readonly loggerService;
     private readonly strategyGlobalService;
     private readonly exchangeGlobalService;
-    run: (symbol: string, timeframes: Date[]) => Promise<IStrategyTickResultClosed[]>;
+    private readonly frameGlobalService;
+    run: (symbol: string) => Promise<IStrategyTickResultClosed[]>;
 }
 
-declare class LiveLogicService {
+declare class LiveLogicPrivateService {
 }
 
 declare const backtest: {
-    backtestLogicService: BacktestLogicService;
-    liveLogicService: LiveLogicService;
+    backtestLogicPrivateService: BacktestLogicPrivateService;
+    liveLogicPrivateService: LiveLogicPrivateService;
     exchangeGlobalService: ExchangeGlobalService;
     strategyGlobalService: StrategyGlobalService;
     frameGlobalService: FrameGlobalService;
@@ -322,10 +322,10 @@ declare const backtest: {
     strategyConnectionService: StrategyConnectionService;
     frameConnectionService: FrameConnectionService;
     executionContextService: {
-        readonly context: IExecutionContext$1;
+        readonly context: IExecutionContext;
     };
     methodContextService: {
-        readonly context: IExecutionContext;
+        readonly context: IMethodContext;
     };
     loggerService: LoggerService;
 };

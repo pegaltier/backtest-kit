@@ -19,6 +19,8 @@ import StrategySchemaService from "./services/schema/StrategySchemaService";
 import FrameSchemaService from "./services/schema/FrameSchemaService";
 import BacktestLogicPrivateService from "./services/logic/private/BacktestLogicPrivateService";
 import LiveLogicPrivateService from "./services/logic/private/LiveLogicPrivateService";
+import BacktestLogicPublicService from "./services/logic/public/BacktestLogicPublicService";
+import LiveLogicPublicService from "./services/logic/public/LiveLogicPublicService";
 
 const baseServices = {
   loggerService: inject<LoggerService>(TYPES.loggerService),
@@ -52,9 +54,7 @@ const schemaServices = {
   strategySchemaService: inject<StrategySchemaService>(
     TYPES.strategySchemaService
   ),
-  frameSchemaService: inject<FrameSchemaService>(
-    TYPES.frameSchemaService
-  ),
+  frameSchemaService: inject<FrameSchemaService>(TYPES.frameSchemaService),
 };
 
 const globalServices = {
@@ -64,16 +64,25 @@ const globalServices = {
   strategyGlobalService: inject<StrategyGlobalService>(
     TYPES.strategyGlobalService
   ),
-  frameGlobalService: inject<FrameGlobalService>(
-    TYPES.frameGlobalService
-  ),
+  frameGlobalService: inject<FrameGlobalService>(TYPES.frameGlobalService),
 };
 
 const logicPrivateServices = {
   backtestLogicPrivateService: inject<BacktestLogicPrivateService>(
     TYPES.backtestLogicPrivateService
   ),
-  liveLogicPrivateService: inject<LiveLogicPrivateService>(TYPES.liveLogicPrivateService),
+  liveLogicPrivateService: inject<LiveLogicPrivateService>(
+    TYPES.liveLogicPrivateService
+  ),
+};
+
+const logicPublicServices = {
+  backtestLogicPublicService: inject<BacktestLogicPublicService>(
+    TYPES.backtestLogicPublicService
+  ),
+  liveLogicPublicService: inject<LiveLogicPublicService>(
+    TYPES.liveLogicPublicService
+  ),
 };
 
 export const backtest = {
@@ -83,6 +92,7 @@ export const backtest = {
   ...schemaServices,
   ...globalServices,
   ...logicPrivateServices,
+  ...logicPublicServices,
 };
 
 init();

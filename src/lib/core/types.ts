@@ -31,7 +31,8 @@ const logicPrivateServices = {
 }
 
 const logicPublicServices = {
-
+    backtestLogicPublicService: Symbol('backtestLogicPublicService'),
+    liveLogicPublicService: Symbol('liveLogicPublicService'),
 }
 
 export const TYPES = {

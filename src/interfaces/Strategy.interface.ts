@@ -43,7 +43,6 @@ export interface IStrategyCallbacks {
 
 export interface IStrategySchema {
   strategyName: StrategyName;
-  exchangeName: ExchangeName;
   interval: SignalInterval;
   getSignal: (symbol: string) => Promise<ISignalDto | null>;
   callbacks?: Partial<IStrategyCallbacks>;
