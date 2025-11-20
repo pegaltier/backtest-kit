@@ -157,7 +157,7 @@ export async function getDate() {
  * }
  * ```
  */
-export async function getMode() {
+export async function getMode(): Promise<"backtest" | "live"> {
   backtest.loggerService.info(GET_MODE_METHOD_NAME);
   const { backtest: bt } = backtest.executionContextService.context;
   return bt ? "backtest" : "live";
