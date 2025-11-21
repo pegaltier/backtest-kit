@@ -247,9 +247,9 @@ export class ClientStrategy implements IStrategy {
       if (this._pendingSignal) {
         if (this.params.callbacks?.onOpen) {
           this.params.callbacks.onOpen(
-            this.params.execution.context.backtest,
             this.params.execution.context.symbol,
-            this._pendingSignal
+            this._pendingSignal,
+            this.params.execution.context.backtest,
           );
         }
 
@@ -343,10 +343,10 @@ export class ClientStrategy implements IStrategy {
 
       if (this.params.callbacks?.onClose) {
         this.params.callbacks.onClose(
-          this.params.execution.context.backtest,
           this.params.execution.context.symbol,
           averagePrice,
-          signal
+          signal,
+          this.params.execution.context.backtest,
         );
       }
 
@@ -469,10 +469,10 @@ export class ClientStrategy implements IStrategy {
 
         if (this.params.callbacks?.onClose) {
           this.params.callbacks.onClose(
-            this.params.execution.context.backtest,
             this.params.execution.context.symbol,
             averagePrice,
-            signal
+            signal,
+            this.params.execution.context.backtest,
           );
         }
 
@@ -514,10 +514,10 @@ export class ClientStrategy implements IStrategy {
 
     if (this.params.callbacks?.onClose) {
       this.params.callbacks.onClose(
-        this.params.execution.context.backtest,
         this.params.execution.context.symbol,
         lastPrice,
-        signal
+        signal,
+        this.params.execution.context.backtest,
       );
     }
 

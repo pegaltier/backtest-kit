@@ -72,13 +72,13 @@ export interface IStrategyParams extends IStrategySchema {
  */
 export interface IStrategyCallbacks {
   /** Called when new signal is opened (after validation) */
-  onOpen: (backtest: boolean, symbol: string, data: ISignalRow) => void;
+  onOpen: (symbol: string, data: ISignalRow, backtest: boolean) => void;
   /** Called when signal is closed with final price */
   onClose: (
-    backtest: boolean,
     symbol: string,
     priceClose: number,
-    data: ISignalRow
+    data: ISignalRow,
+    backtest: boolean,
   ) => void;
 }
 
