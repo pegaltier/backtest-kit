@@ -1,24 +1,5 @@
 # Global Services
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [docs/classes/ClientFrame.md](docs/classes/ClientFrame.md)
-- [docs/classes/StrategyConnectionService.md](docs/classes/StrategyConnectionService.md)
-- [docs/interfaces/IExchangeParams.md](docs/interfaces/IExchangeParams.md)
-- [docs/interfaces/IStrategySchema.md](docs/interfaces/IStrategySchema.md)
-- [docs/uml.puml](docs/uml.puml)
-- [scripts/uml.mjs](scripts/uml.mjs)
-- [src/lib/core/provide.ts](src/lib/core/provide.ts)
-- [src/lib/core/types.ts](src/lib/core/types.ts)
-- [src/lib/index.ts](src/lib/index.ts)
-
-</details>
-
-
-
 ## Purpose and Scope
 
 Global Services form the context injection layer in the Service Orchestration tier of the architecture. They wrap Connection Services and Logic Services with execution context (symbol, timestamp, backtest mode) and provide routing logic based on the current method context. Global Services act as an adapter layer between the pure business logic in Client classes and the orchestration logic in Logic Services.

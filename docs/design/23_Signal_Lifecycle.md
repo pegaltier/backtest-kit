@@ -1,22 +1,5 @@
 # Signal Lifecycle
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [docs/interfaces/IStrategyTickResultActive.md](docs/interfaces/IStrategyTickResultActive.md)
-- [docs/interfaces/IStrategyTickResultClosed.md](docs/interfaces/IStrategyTickResultClosed.md)
-- [docs/interfaces/IStrategyTickResultIdle.md](docs/interfaces/IStrategyTickResultIdle.md)
-- [docs/interfaces/IStrategyTickResultOpened.md](docs/interfaces/IStrategyTickResultOpened.md)
-- [src/client/ClientStrategy.ts](src/client/ClientStrategy.ts)
-- [src/interfaces/Frame.interface.ts](src/interfaces/Frame.interface.ts)
-- [src/interfaces/Strategy.interface.ts](src/interfaces/Strategy.interface.ts)
-
-</details>
-
-
-
 ## Purpose and Scope
 
 This document provides a comprehensive technical reference for signal lifecycle management in the backtest-kit framework. It covers the four discrete states a trading signal can occupy (idle, opened, active, closed), the discriminated union type system used for type-safe state handling, validation rules, and the persistence mechanisms that enable crash-safe operation in live trading.

@@ -1,20 +1,5 @@
 # Backtest API
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [src/classes/Backtest.ts](src/classes/Backtest.ts)
-- [src/classes/Live.ts](src/classes/Live.ts)
-- [src/index.ts](src/index.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 This document covers the public API for running backtests through the `Backtest` utility class. The Backtest API provides methods for streaming historical strategy execution, running backtests in the background, and generating performance reports.
 
 For registering strategies, exchanges, and frames before running backtests, see [Configuration Functions](#3.1). For live trading operations, see [Live Trading API](#3.3). For detailed execution orchestration, see [Backtest Execution Flow](#7.1).

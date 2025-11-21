@@ -1,19 +1,5 @@
 # Exchange Functions
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/function/add.ts](src/function/add.ts)
-- [src/function/exchange.ts](src/function/exchange.ts)
-- [src/index.ts](src/index.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 This page documents the public utility functions for interacting with exchange data and execution context. These functions provide candle data fetching, VWAP calculation, price/quantity formatting, and execution context queries.
 
 For exchange registration and configuration, see [Configuration Functions](#3.1). For the underlying exchange business logic implementation, see [ClientExchange](#4.2). For exchange service orchestration, see [Global Services](#5.3).

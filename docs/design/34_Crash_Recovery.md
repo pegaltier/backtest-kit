@@ -1,21 +1,5 @@
 # Crash Recovery
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [src/client/ClientStrategy.ts](src/client/ClientStrategy.ts)
-- [src/index.ts](src/index.ts)
-- [src/interfaces/Frame.interface.ts](src/interfaces/Frame.interface.ts)
-- [src/interfaces/Strategy.interface.ts](src/interfaces/Strategy.interface.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 ## Purpose and Scope
 
 This document explains the crash-safe persistence mechanism in the backtest-kit framework that ensures live trading strategies can recover gracefully from process crashes, restarts, or unexpected failures. The crash recovery system prevents duplicate signals and ensures no active trades are lost when the process terminates unexpectedly.

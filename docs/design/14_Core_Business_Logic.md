@@ -1,21 +1,5 @@
 # Core Business Logic
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/client/ClientExchange.ts](src/client/ClientExchange.ts)
-- [src/client/ClientFrame.ts](src/client/ClientFrame.ts)
-- [src/client/ClientStrategy.ts](src/client/ClientStrategy.ts)
-- [src/helpers/toProfitLossDto.ts](src/helpers/toProfitLossDto.ts)
-- [src/interfaces/Frame.interface.ts](src/interfaces/Frame.interface.ts)
-- [src/interfaces/Strategy.interface.ts](src/interfaces/Strategy.interface.ts)
-
-</details>
-
-
-
 ## Purpose and Scope
 
 This document describes the **Business Logic Layer** of the backtest-kit framework, which contains pure TypeScript implementations of trading system functionality without dependency injection concerns. These client classes ([src/client/]()) implement the core algorithms for signal lifecycle management, market data processing, and timeframe generation.

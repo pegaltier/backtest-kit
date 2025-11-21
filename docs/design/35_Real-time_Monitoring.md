@@ -1,21 +1,5 @@
 # Real-time Monitoring
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/client/ClientExchange.ts](src/client/ClientExchange.ts)
-- [src/client/ClientFrame.ts](src/client/ClientFrame.ts)
-- [src/client/ClientStrategy.ts](src/client/ClientStrategy.ts)
-- [src/helpers/toProfitLossDto.ts](src/helpers/toProfitLossDto.ts)
-- [src/interfaces/Frame.interface.ts](src/interfaces/Frame.interface.ts)
-- [src/interfaces/Strategy.interface.ts](src/interfaces/Strategy.interface.ts)
-
-</details>
-
-
-
 ## Purpose and Scope
 
 This document describes how the backtest-kit framework monitors active trading signals in real-time by continuously checking market prices against take profit (TP), stop loss (SL), and time expiration conditions. This monitoring occurs during the "active" state of the signal lifecycle and determines when signals should close.

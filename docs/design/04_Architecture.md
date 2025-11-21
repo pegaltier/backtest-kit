@@ -1,26 +1,5 @@
 # Architecture
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [docs/classes/ClientFrame.md](docs/classes/ClientFrame.md)
-- [docs/classes/StrategyConnectionService.md](docs/classes/StrategyConnectionService.md)
-- [docs/interfaces/IExchangeParams.md](docs/interfaces/IExchangeParams.md)
-- [docs/interfaces/IStrategySchema.md](docs/interfaces/IStrategySchema.md)
-- [docs/uml.puml](docs/uml.puml)
-- [scripts/uml.mjs](scripts/uml.mjs)
-- [src/index.ts](src/index.ts)
-- [src/lib/core/provide.ts](src/lib/core/provide.ts)
-- [src/lib/core/types.ts](src/lib/core/types.ts)
-- [src/lib/index.ts](src/lib/index.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 This document describes the four-layer clean architecture pattern of the backtest-kit framework, including the dependency injection system, service organization, and how components interact across architectural boundaries. It explains how the system maintains separation of concerns through explicit layer boundaries and context propagation mechanisms.
 
 For specific service implementations within each layer, see [Layer Responsibilities](#2.1). For details on the DI system mechanics, see [Dependency Injection System](#2.2). For context propagation patterns, see [Context Propagation](#2.3).

@@ -1,19 +1,5 @@
 # ClientStrategy
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [src/client/ClientStrategy.ts](src/client/ClientStrategy.ts)
-- [src/interfaces/Frame.interface.ts](src/interfaces/Frame.interface.ts)
-- [src/interfaces/Strategy.interface.ts](src/interfaces/Strategy.interface.ts)
-
-</details>
-
-
-
 ## Purpose and Scope
 
 `ClientStrategy` is the core business logic component responsible for managing the complete lifecycle of trading signals. It implements signal generation, validation, state transitions, TP/SL monitoring, crash-safe persistence, and PNL calculation. This class operates in both backtest and live trading modes without dependency injection, making it a pure, testable implementation.

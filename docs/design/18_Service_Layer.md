@@ -1,20 +1,5 @@
 # Service Layer
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/lib/core/provide.ts](src/lib/core/provide.ts)
-- [src/lib/core/types.ts](src/lib/core/types.ts)
-- [src/lib/index.ts](src/lib/index.ts)
-- [src/lib/services/connection/FrameConnectionService.ts](src/lib/services/connection/FrameConnectionService.ts)
-- [src/lib/services/connection/StrategyConnectionService.ts](src/lib/services/connection/StrategyConnectionService.ts)
-
-</details>
-
-
-
 The Service Layer is the orchestration backbone of the backtest-kit framework, sitting between the Public API Layer and the Business Logic Layer. It manages dependency injection, configuration routing, instance caching, and execution context propagation. The layer is organized into four distinct service categories: Connection Services (instance routing and memoization), Schema Services (configuration registries), Global Services (context injection), and Logic Services (execution orchestration).
 
 For details on the Public API that consumes these services, see [Public API Reference](#3). For the Business Logic Layer that these services coordinate, see [Core Business Logic](#4). The Dependency Injection System that powers this layer is documented in [Dependency Injection System](#2.2).

@@ -1,19 +1,5 @@
 # Fast-Forward Simulation
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [src/client/ClientStrategy.ts](src/client/ClientStrategy.ts)
-- [src/interfaces/Frame.interface.ts](src/interfaces/Frame.interface.ts)
-- [src/interfaces/Strategy.interface.ts](src/interfaces/Strategy.interface.ts)
-
-</details>
-
-
-
 This document describes the fast-forward simulation mechanism in the backtest-kit framework, which allows signals to be evaluated using historical candle data without iterating through every individual timestamp. This approach significantly reduces backtesting time while maintaining accuracy in profit/loss calculations.
 
 For information about the overall backtest execution flow, see [Backtest Execution Flow](#7.1). For details on generating the timeframe array that drives backtests, see [Timeframe Generation](#7.2). For information on signal lifecycle states, see [Signal Lifecycle](#6).

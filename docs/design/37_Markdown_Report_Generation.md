@@ -1,19 +1,5 @@
 # Markdown Report Generation
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [docs/classes/BacktestMarkdownService.md](docs/classes/BacktestMarkdownService.md)
-- [docs/classes/LiveMarkdownService.md](docs/classes/LiveMarkdownService.md)
-- [src/lib/services/markdown/BacktestMarkdownService.ts](src/lib/services/markdown/BacktestMarkdownService.ts)
-- [src/lib/services/markdown/LiveMarkdownService.ts](src/lib/services/markdown/LiveMarkdownService.ts)
-
-</details>
-
-
-
 ## Purpose and Scope
 
 This document explains the markdown report generation system in backtest-kit. The framework provides two specialized services—`BacktestMarkdownService` and `LiveMarkdownService`—that passively observe signal execution events and generate formatted markdown reports with detailed signal information, statistics, and performance metrics.

@@ -1,22 +1,5 @@
 # ClientFrame
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [docs/classes/ClientExchange.md](docs/classes/ClientExchange.md)
-- [docs/classes/ExchangeConnectionService.md](docs/classes/ExchangeConnectionService.md)
-- [docs/interfaces/IExchange.md](docs/interfaces/IExchange.md)
-- [docs/interfaces/IExchangeSchema.md](docs/interfaces/IExchangeSchema.md)
-- [src/client/ClientExchange.ts](src/client/ClientExchange.ts)
-- [src/client/ClientFrame.ts](src/client/ClientFrame.ts)
-- [src/helpers/toProfitLossDto.ts](src/helpers/toProfitLossDto.ts)
-
-</details>
-
-
-
 ## Purpose and Scope
 
 `ClientFrame` is responsible for generating timeframe arrays used in backtesting operations. It produces an ordered sequence of timestamps from a start date to an end date at specified intervals (e.g., 1m, 1h, 1d). These timestamps serve as the iteration points for the backtesting engine, allowing strategies to be evaluated at each discrete time step.

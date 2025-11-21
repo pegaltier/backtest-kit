@@ -1,22 +1,5 @@
 # Live Execution Flow
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/index.ts](src/index.ts)
-- [src/lib/services/context/MethodContextService.ts](src/lib/services/context/MethodContextService.ts)
-- [src/lib/services/logic/private/BacktestLogicPrivateService.ts](src/lib/services/logic/private/BacktestLogicPrivateService.ts)
-- [src/lib/services/logic/private/LiveLogicPrivateService.ts](src/lib/services/logic/private/LiveLogicPrivateService.ts)
-- [src/lib/services/logic/public/BacktestLogicPublicService.ts](src/lib/services/logic/public/BacktestLogicPublicService.ts)
-- [src/lib/services/logic/public/LiveLogicPublicService.ts](src/lib/services/logic/public/LiveLogicPublicService.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 ## Purpose and Scope
 
 This document explains the live trading execution flow orchestrated by `LiveLogicPrivateService` and `LiveLogicPublicService`. It covers the infinite loop mechanics, real-time signal streaming, context propagation, and timing intervals used for continuous market monitoring.

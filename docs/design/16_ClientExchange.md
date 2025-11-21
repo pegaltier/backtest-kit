@@ -1,19 +1,5 @@
 # ClientExchange
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [src/client/ClientExchange.ts](src/client/ClientExchange.ts)
-- [src/client/ClientFrame.ts](src/client/ClientFrame.ts)
-- [src/helpers/toProfitLossDto.ts](src/helpers/toProfitLossDto.ts)
-
-</details>
-
-
-
 ## Purpose and Scope
 
 The `ClientExchange` class is a pure business logic component responsible for fetching and processing exchange data within the backtest-kit framework. It provides three core capabilities: historical candle fetching (backwards from execution context), future candle fetching (forwards for backtest simulation), and VWAP (Volume Weighted Average Price) calculation from recent 1-minute candles.

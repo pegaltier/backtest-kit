@@ -1,22 +1,5 @@
 # Signal Persistence
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [docs/interfaces/IPersistBase.md](docs/interfaces/IPersistBase.md)
-- [docs/interfaces/ISignalData.md](docs/interfaces/ISignalData.md)
-- [src/client/ClientStrategy.ts](src/client/ClientStrategy.ts)
-- [src/index.ts](src/index.ts)
-- [src/interfaces/Frame.interface.ts](src/interfaces/Frame.interface.ts)
-- [src/interfaces/Strategy.interface.ts](src/interfaces/Strategy.interface.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 Signal persistence ensures crash-safe operation during live trading by atomically writing signal state to disk before yielding results. This prevents duplicate signals and enables seamless recovery after process restarts. In backtest mode, persistence is disabled for performance.
 
 For information about signal states and transitions, see [Signal States](#6.1). For custom storage backends (Redis, PostgreSQL), see [Custom Persistence Backends](#11.2).

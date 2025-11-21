@@ -1,22 +1,5 @@
 # Backtesting
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/classes/Backtest.ts](src/classes/Backtest.ts)
-- [src/classes/Live.ts](src/classes/Live.ts)
-- [src/lib/services/context/MethodContextService.ts](src/lib/services/context/MethodContextService.ts)
-- [src/lib/services/logic/private/BacktestLogicPrivateService.ts](src/lib/services/logic/private/BacktestLogicPrivateService.ts)
-- [src/lib/services/logic/private/LiveLogicPrivateService.ts](src/lib/services/logic/private/LiveLogicPrivateService.ts)
-- [src/lib/services/logic/public/BacktestLogicPublicService.ts](src/lib/services/logic/public/BacktestLogicPublicService.ts)
-- [src/lib/services/logic/public/LiveLogicPublicService.ts](src/lib/services/logic/public/LiveLogicPublicService.ts)
-
-</details>
-
-
-
 ## Purpose and Scope
 
 This document describes the backtesting functionality in the backtest-kit framework, which simulates trading strategies against historical market data. Backtesting executes a strategy across a predefined timeframe, generating signals and calculating their profit/loss (PnL) without executing real trades.

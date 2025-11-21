@@ -1,22 +1,5 @@
 # Timeframe Generation
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [docs/classes/ClientExchange.md](docs/classes/ClientExchange.md)
-- [docs/classes/ExchangeConnectionService.md](docs/classes/ExchangeConnectionService.md)
-- [docs/interfaces/IExchange.md](docs/interfaces/IExchange.md)
-- [docs/interfaces/IExchangeSchema.md](docs/interfaces/IExchangeSchema.md)
-- [src/client/ClientExchange.ts](src/client/ClientExchange.ts)
-- [src/client/ClientFrame.ts](src/client/ClientFrame.ts)
-- [src/helpers/toProfitLossDto.ts](src/helpers/toProfitLossDto.ts)
-
-</details>
-
-
-
 This document explains how `ClientFrame` generates timestamp arrays for backtest iteration. The timeframe generation system produces evenly-spaced `Date` objects representing execution points throughout a historical period, configured by interval, start date, and end date.
 
 For information about how these timestamps are used during backtest execution, see [Backtest Execution Flow](#7.1). For details on fast-forward simulation that occurs after signals open, see [Fast-Forward Simulation](#7.3).

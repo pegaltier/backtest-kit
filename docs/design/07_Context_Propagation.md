@@ -1,23 +1,5 @@
 # Context Propagation
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/lib/core/provide.ts](src/lib/core/provide.ts)
-- [src/lib/core/types.ts](src/lib/core/types.ts)
-- [src/lib/index.ts](src/lib/index.ts)
-- [src/lib/services/context/MethodContextService.ts](src/lib/services/context/MethodContextService.ts)
-- [src/lib/services/logic/private/BacktestLogicPrivateService.ts](src/lib/services/logic/private/BacktestLogicPrivateService.ts)
-- [src/lib/services/logic/private/LiveLogicPrivateService.ts](src/lib/services/logic/private/LiveLogicPrivateService.ts)
-- [src/lib/services/logic/public/BacktestLogicPublicService.ts](src/lib/services/logic/public/BacktestLogicPublicService.ts)
-- [src/lib/services/logic/public/LiveLogicPublicService.ts](src/lib/services/logic/public/LiveLogicPublicService.ts)
-
-</details>
-
-
-
 ## Purpose and Scope
 
 Context propagation in backtest-kit enables implicit passing of runtime parameters through the service call stack without explicit function arguments. The system uses two context types: **MethodContext** for schema routing (which strategy/exchange/frame to use) and **ExecutionContext** for runtime state (backtest mode, current date). This eliminates manual parameter threading across dozens of function calls while maintaining type safety.

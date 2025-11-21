@@ -1,19 +1,5 @@
 # Custom Persistence Backends
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [docs/interfaces/IPersistBase.md](docs/interfaces/IPersistBase.md)
-- [docs/interfaces/ISignalData.md](docs/interfaces/ISignalData.md)
-- [src/index.ts](src/index.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 This page explains how to implement custom persistence backends for signal state storage. By default, the framework uses file-based atomic persistence for crash-safe live trading. Custom backends enable integration with Redis, PostgreSQL, MongoDB, or any other storage system while maintaining crash recovery guarantees.
 
 For general information about signal persistence and crash recovery mechanisms, see [Signal Persistence](#6.3). For implementing custom data sources for candle data, see [Custom Exchange Integration](#11.1).

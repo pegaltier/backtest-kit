@@ -1,21 +1,5 @@
 # Error Handling
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/client/ClientExchange.ts](src/client/ClientExchange.ts)
-- [src/client/ClientFrame.ts](src/client/ClientFrame.ts)
-- [src/client/ClientStrategy.ts](src/client/ClientStrategy.ts)
-- [src/helpers/toProfitLossDto.ts](src/helpers/toProfitLossDto.ts)
-- [src/interfaces/Frame.interface.ts](src/interfaces/Frame.interface.ts)
-- [src/interfaces/Strategy.interface.ts](src/interfaces/Strategy.interface.ts)
-
-</details>
-
-
-
 ## Purpose and Scope
 
 This document describes the error handling mechanisms in the backtest-kit framework, including validation errors, exchange data errors, persistence errors, and recommended error handling patterns for users. The framework uses a combination of explicit error throwing for unrecoverable errors, warning logs for degraded conditions, and graceful fallbacks for recoverable failures.

@@ -1,19 +1,5 @@
 # Overview
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [package-lock.json](package-lock.json)
-- [package.json](package.json)
-- [src/index.ts](src/index.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 ## Purpose and Scope
 

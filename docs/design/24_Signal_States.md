@@ -1,22 +1,5 @@
 # Signal States
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [docs/interfaces/IStrategyTickResultActive.md](docs/interfaces/IStrategyTickResultActive.md)
-- [docs/interfaces/IStrategyTickResultClosed.md](docs/interfaces/IStrategyTickResultClosed.md)
-- [docs/interfaces/IStrategyTickResultIdle.md](docs/interfaces/IStrategyTickResultIdle.md)
-- [docs/interfaces/IStrategyTickResultOpened.md](docs/interfaces/IStrategyTickResultOpened.md)
-- [src/client/ClientStrategy.ts](src/client/ClientStrategy.ts)
-- [src/interfaces/Frame.interface.ts](src/interfaces/Frame.interface.ts)
-- [src/interfaces/Strategy.interface.ts](src/interfaces/Strategy.interface.ts)
-
-</details>
-
-
-
 This page documents the four signal states in the backtest-kit framework and their corresponding TypeScript interfaces. Each state is represented by a distinct interface in a discriminated union, enabling type-safe signal lifecycle management.
 
 For information about how signals are generated and validated, see [Signal Generation and Validation](#6.2). For details on state persistence between crashes, see [Signal Persistence](#6.3). For PnL calculation logic in the closed state, see [PnL Calculation](#6.4).

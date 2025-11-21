@@ -1,24 +1,5 @@
 # Dependency Injection System
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [docs/classes/ClientFrame.md](docs/classes/ClientFrame.md)
-- [docs/classes/StrategyConnectionService.md](docs/classes/StrategyConnectionService.md)
-- [docs/interfaces/IExchangeParams.md](docs/interfaces/IExchangeParams.md)
-- [docs/interfaces/IStrategySchema.md](docs/interfaces/IStrategySchema.md)
-- [docs/uml.puml](docs/uml.puml)
-- [scripts/uml.mjs](scripts/uml.mjs)
-- [src/lib/core/provide.ts](src/lib/core/provide.ts)
-- [src/lib/core/types.ts](src/lib/core/types.ts)
-- [src/lib/index.ts](src/lib/index.ts)
-
-</details>
-
-
-
 This document explains the dependency injection (DI) infrastructure that provides the architectural backbone for backtest-kit. The system uses symbol-based service identifiers, factory registration, and a service aggregator pattern to enable loose coupling, testability, and implicit context propagation.
 
 For information about how context services specifically enable implicit parameter passing, see [Context Propagation](#2.3). For details on how services are organized into layers, see [Layer Responsibilities](#2.1).

@@ -1,18 +1,5 @@
 # Event Listeners
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [src/index.ts](src/index.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 This page documents the event listener system for subscribing to signal events. Event listeners allow users to react to strategy signals asynchronously as they occur, enabling patterns like background execution monitoring, conditional early termination, and event-driven workflows.
 
 For information about running strategies, see [Backtest API](#3.2) and [Live Trading API](#3.3). For information about signal states and transitions, see [Signal States](#6.1).

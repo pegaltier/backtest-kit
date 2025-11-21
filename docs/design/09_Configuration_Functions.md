@@ -1,20 +1,5 @@
 # Configuration Functions
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [src/function/add.ts](src/function/add.ts)
-- [src/function/exchange.ts](src/function/exchange.ts)
-- [src/index.ts](src/index.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 ## Purpose and Scope
 
 This document describes the three public API functions for registering configurations in the backtest-kit framework: `addStrategy()`, `addExchange()`, and `addFrame()`. These functions store schema objects in registry services that are later used by Connection Services to instantiate client components at runtime.

@@ -1,19 +1,5 @@
 # Connection Services
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/interfaces/Exchange.interface.ts](src/interfaces/Exchange.interface.ts)
-- [src/lib/services/connection/ExchangeConnectionService.ts](src/lib/services/connection/ExchangeConnectionService.ts)
-- [src/lib/services/connection/FrameConnectionService.ts](src/lib/services/connection/FrameConnectionService.ts)
-- [src/lib/services/connection/StrategyConnectionService.ts](src/lib/services/connection/StrategyConnectionService.ts)
-
-</details>
-
-
-
 ## Purpose and Scope
 
 Connection Services form the routing layer within the Service Orchestration architecture, responsible for directing method calls to the appropriate client instances (ClientStrategy, ClientExchange, ClientFrame) based on runtime context. These services implement memoized factory patterns to ensure efficient instance reuse while maintaining clean separation between configuration registration and execution.

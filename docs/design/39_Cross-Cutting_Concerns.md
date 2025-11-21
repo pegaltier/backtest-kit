@@ -1,20 +1,5 @@
 # Cross-Cutting Concerns
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/interfaces/Logger.interface.ts](src/interfaces/Logger.interface.ts)
-- [src/lib/core/provide.ts](src/lib/core/provide.ts)
-- [src/lib/core/types.ts](src/lib/core/types.ts)
-- [src/lib/index.ts](src/lib/index.ts)
-- [src/lib/services/base/LoggerService.ts](src/lib/services/base/LoggerService.ts)
-
-</details>
-
-
-
 ## Purpose and Scope
 
 This document describes the cross-cutting concerns that span all architectural layers of the backtest-kit framework. Cross-cutting concerns are system-wide capabilities that cannot be cleanly encapsulated within a single layer or component. These include logging, context management, persistence, and reporting mechanisms that are injected throughout the service stack.

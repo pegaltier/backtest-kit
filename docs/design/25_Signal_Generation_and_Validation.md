@@ -1,19 +1,5 @@
 # Signal Generation and Validation
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [src/client/ClientStrategy.ts](src/client/ClientStrategy.ts)
-- [src/interfaces/Frame.interface.ts](src/interfaces/Frame.interface.ts)
-- [src/interfaces/Strategy.interface.ts](src/interfaces/Strategy.interface.ts)
-
-</details>
-
-
-
 This document describes how trading signals are generated and validated before execution in the backtest-kit framework. It covers the throttling mechanism that prevents signal spam, the transformation from user-provided data to validated signal rows, and the comprehensive validation rules that ensure signal integrity for both long and short positions.
 
 For information about signal state transitions during execution, see [Signal States](#6.1). For information about crash-safe persistence of signals, see [Signal Persistence](#6.3).

@@ -1,20 +1,5 @@
 # Custom Exchange Integration
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/client/ClientExchange.ts](src/client/ClientExchange.ts)
-- [src/client/ClientFrame.ts](src/client/ClientFrame.ts)
-- [src/helpers/toProfitLossDto.ts](src/helpers/toProfitLossDto.ts)
-- [src/index.ts](src/index.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 This document explains how to implement custom exchange data sources by creating `IExchangeSchema` implementations. Custom exchanges enable backtesting and live trading with data from any source including REST APIs, databases, CSV files, or WebSocket streams.
 
 For information about using exchange functions (`getCandles`, `getAveragePrice`, etc.) in strategies, see [Exchange Functions](#3.4). For the internal architecture of exchange services, see [Connection Services](#5.1) and [Global Services](#5.3).

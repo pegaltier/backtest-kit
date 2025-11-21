@@ -1,22 +1,5 @@
 # Live Trading
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/classes/Backtest.ts](src/classes/Backtest.ts)
-- [src/classes/Live.ts](src/classes/Live.ts)
-- [src/lib/services/context/MethodContextService.ts](src/lib/services/context/MethodContextService.ts)
-- [src/lib/services/logic/private/BacktestLogicPrivateService.ts](src/lib/services/logic/private/BacktestLogicPrivateService.ts)
-- [src/lib/services/logic/private/LiveLogicPrivateService.ts](src/lib/services/logic/private/LiveLogicPrivateService.ts)
-- [src/lib/services/logic/public/BacktestLogicPublicService.ts](src/lib/services/logic/public/BacktestLogicPublicService.ts)
-- [src/lib/services/logic/public/LiveLogicPublicService.ts](src/lib/services/logic/public/LiveLogicPublicService.ts)
-
-</details>
-
-
-
 This document covers the live trading execution system, which enables real-time signal monitoring and trading operations with crash recovery. Live trading runs as an infinite async generator that continuously evaluates market conditions and manages open positions.
 
 For information about backtesting historical data, see [Backtesting](#7). For details on the underlying signal lifecycle and state transitions, see [Signal Lifecycle](#6). For information about signal persistence mechanisms, see [Signal Persistence](#6.3).

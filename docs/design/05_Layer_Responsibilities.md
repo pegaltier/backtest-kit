@@ -1,21 +1,5 @@
 # Layer Responsibilities
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/client/ClientStrategy.ts](src/client/ClientStrategy.ts)
-- [src/interfaces/Frame.interface.ts](src/interfaces/Frame.interface.ts)
-- [src/interfaces/Strategy.interface.ts](src/interfaces/Strategy.interface.ts)
-- [src/lib/core/provide.ts](src/lib/core/provide.ts)
-- [src/lib/core/types.ts](src/lib/core/types.ts)
-- [src/lib/index.ts](src/lib/index.ts)
-
-</details>
-
-
-
 This document details the responsibilities of each architectural layer in the backtest-kit framework and explains the separation of concerns between layers. The framework follows a strict four-layer architecture: Public API, Service Orchestration, Business Logic, and Cross-Cutting Concerns. Each layer has specific responsibilities and dependency rules that enforce modularity and testability.
 
 For information about the dependency injection system that connects these layers, see [Dependency Injection System](#2.2). For details on context propagation mechanisms, see [Context Propagation](#2.3).
