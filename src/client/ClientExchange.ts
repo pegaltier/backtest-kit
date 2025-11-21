@@ -66,7 +66,7 @@ export class ClientExchange implements IExchange {
     });
 
     const step = INTERVAL_MINUTES[interval];
-    const adjust = step * limit - 1;
+    const adjust = step * limit - step;
 
     if (!adjust) {
       throw new Error(
@@ -80,11 +80,20 @@ export class ClientExchange implements IExchange {
 
     const data = await this.params.getCandles(symbol, interval, since, limit);
 
+    // Filter candles to strictly match the requested range
+    const whenTimestamp = this.params.execution.context.when.getTime();
+    const sinceTimestamp = since.getTime();
+
+    const filteredData = data.filter(
+      (candle) =>
+        candle.timestamp >= sinceTimestamp && candle.timestamp <= whenTimestamp
+    );
+
     if (this.params.callbacks?.onCandleData) {
-      this.params.callbacks.onCandleData(symbol, interval, since, limit, data);
+      this.params.callbacks.onCandleData(symbol, interval, since, limit, filteredData);
     }
 
-    return data;
+    return filteredData;
   }
 
   /**
