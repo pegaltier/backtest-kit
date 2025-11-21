@@ -249,6 +249,7 @@ export class ClientStrategy implements IStrategy {
           this.params.callbacks.onOpen(
             this.params.execution.context.symbol,
             this._pendingSignal,
+            this._pendingSignal.priceOpen,
             this.params.execution.context.backtest,
           );
         }
@@ -257,6 +258,17 @@ export class ClientStrategy implements IStrategy {
           action: "opened",
           signal: this._pendingSignal,
         };
+      }
+
+      if (this.params.callbacks?.onIdle) {
+        const currentPrice = await this.params.exchange.getAveragePrice(
+          this.params.execution.context.symbol
+        );
+        this.params.callbacks.onIdle(
+          this.params.execution.context.symbol,
+          currentPrice,
+          this.params.execution.context.backtest,
+        );
       }
 
       return {
@@ -344,8 +356,8 @@ export class ClientStrategy implements IStrategy {
       if (this.params.callbacks?.onClose) {
         this.params.callbacks.onClose(
           this.params.execution.context.symbol,
-          averagePrice,
           signal,
+          averagePrice,
           this.params.execution.context.backtest,
         );
       }
@@ -360,6 +372,15 @@ export class ClientStrategy implements IStrategy {
         closeTimestamp: closeTimestamp,
         pnl: pnl,
       };
+    }
+
+    if (this.params.callbacks?.onActive) {
+      this.params.callbacks.onActive(
+        this.params.execution.context.symbol,
+        signal,
+        averagePrice,
+        this.params.execution.context.backtest,
+      );
     }
 
     return {
@@ -470,8 +491,8 @@ export class ClientStrategy implements IStrategy {
         if (this.params.callbacks?.onClose) {
           this.params.callbacks.onClose(
             this.params.execution.context.symbol,
-            averagePrice,
             signal,
+            averagePrice,
             this.params.execution.context.backtest,
           );
         }
@@ -515,8 +536,8 @@ export class ClientStrategy implements IStrategy {
     if (this.params.callbacks?.onClose) {
       this.params.callbacks.onClose(
         this.params.execution.context.symbol,
-        lastPrice,
         signal,
+        lastPrice,
         this.params.execution.context.backtest,
       );
     }

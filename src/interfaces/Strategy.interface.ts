@@ -68,16 +68,20 @@ export interface IStrategyParams extends IStrategySchema {
 
 /**
  * Optional lifecycle callbacks for signal events.
- * Called when signals are opened or closed.
+ * Called when signals are opened, active, idle, or closed.
  */
 export interface IStrategyCallbacks {
   /** Called when new signal is opened (after validation) */
-  onOpen: (symbol: string, data: ISignalRow, backtest: boolean) => void;
+  onOpen: (symbol: string, data: ISignalRow, currentPrice: number, backtest: boolean) => void;
+  /** Called when signal is being monitored (active state) */
+  onActive: (symbol: string, data: ISignalRow, currentPrice: number, backtest: boolean) => void;
+  /** Called when no active signal exists (idle state) */
+  onIdle: (symbol: string, currentPrice: number, backtest: boolean) => void;
   /** Called when signal is closed with final price */
   onClose: (
     symbol: string,
-    priceClose: number,
     data: ISignalRow,
+    priceClose: number,
     backtest: boolean,
   ) => void;
 }
