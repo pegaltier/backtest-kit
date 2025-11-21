@@ -136,6 +136,9 @@ const columns: Column[] = [
   },
 ];
 
+/** Maximum number of events to store in live trading reports */
+const MAX_EVENTS = 25;
+
 /**
  * Storage class for accumulating all tick events per strategy.
  * Maintains a chronological list of all events (idle, opened, active, closed).
@@ -146,15 +149,37 @@ class ReportStorage {
 
   /**
    * Adds an idle event to the storage.
+   * Replaces the last idle event only if there are no opened/active events after it.
    *
    * @param currentPrice - Current market price
    */
   public addIdleEvent(currentPrice: number) {
-    this._eventList.push({
+    const newEvent: TickEvent = {
       timestamp: Date.now(),
       action: "idle",
       currentPrice,
-    });
+    };
+
+    const lastIdleIndex = this._eventList.findLastIndex(
+      (event) => event.action === "idle"
+    );
+
+    const canReplaceLastIdle = lastIdleIndex !== -1 &&
+      !this._eventList
+        .slice(lastIdleIndex + 1)
+        .some((event) => event.action === "opened" || event.action === "active");
+
+    if (canReplaceLastIdle) {
+      this._eventList[lastIdleIndex] = newEvent;
+      return;
+    }
+    
+    {
+      this._eventList.push(newEvent);
+      if (this._eventList.length > MAX_EVENTS) {
+        this._eventList.shift();
+      }
+    }
   }
 
   /**
@@ -175,6 +200,11 @@ class ReportStorage {
       takeProfit: data.signal.priceTakeProfit,
       stopLoss: data.signal.priceStopLoss,
     });
+
+    // Trim queue if exceeded MAX_EVENTS
+    if (this._eventList.length > MAX_EVENTS) {
+      this._eventList.shift();
+    }
   }
 
   /**
@@ -207,6 +237,11 @@ class ReportStorage {
       this._eventList[existingIndex] = newEvent;
     } else {
       this._eventList.push(newEvent);
+
+      // Trim queue if exceeded MAX_EVENTS
+      if (this._eventList.length > MAX_EVENTS) {
+        this._eventList.shift();
+      }
     }
   }
 
@@ -246,6 +281,11 @@ class ReportStorage {
       this._eventList[existingIndex] = newEvent;
     } else {
       this._eventList.push(newEvent);
+
+      // Trim queue if exceeded MAX_EVENTS
+      if (this._eventList.length > MAX_EVENTS) {
+        this._eventList.shift();
+      }
     }
   }
 
