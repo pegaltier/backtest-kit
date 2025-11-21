@@ -517,20 +517,34 @@ addFrame(frameSchema: IFrameSchema): void
 
 ```typescript
 // Get historical candles
-getCandles(symbol: string, interval: CandleInterval, limit: number): Promise<ICandleData[]>
+const candles = await getCandles("BTCUSDT", "1h", 5);
+// Returns: [
+//   { timestamp: 1704067200000, open: 42150.5, high: 42380.2, low: 42100.0, close: 42250.8, volume: 125.43 },
+//   { timestamp: 1704070800000, open: 42250.8, high: 42500.0, low: 42200.0, close: 42450.3, volume: 98.76 },
+//   { timestamp: 1704074400000, open: 42450.3, high: 42600.0, low: 42400.0, close: 42580.5, volume: 110.22 },
+//   { timestamp: 1704078000000, open: 42580.5, high: 42700.0, low: 42550.0, close: 42650.0, volume: 95.18 },
+//   { timestamp: 1704081600000, open: 42650.0, high: 42750.0, low: 42600.0, close: 42720.0, volume: 102.35 }
+// ]
 
 // Get VWAP from last 5 1m candles
-getAveragePrice(symbol: string): Promise<number>
+const vwap = await getAveragePrice("BTCUSDT");
+// Returns: 42685.34
 
 // Get current date in execution context
-getDate(): Promise<Date>
+const date = await getDate();
+// Returns: 2024-01-01T12:00:00.000Z (in backtest mode, returns frame's current timestamp)
+// Returns: 2024-01-15T10:30:45.123Z (in live mode, returns current wall clock time)
 
-// Get current mode ("backtest" | "live")
-getMode(): Promise<string>
+// Get current mode
+const mode = await getMode();
+// Returns: "backtest" or "live"
 
 // Format price/quantity for exchange
-formatPrice(symbol: string, price: number): Promise<string>
-formatQuantity(symbol: string, quantity: number): Promise<string>
+const price = await formatPrice("BTCUSDT", 42685.3456789);
+// Returns: "42685.35" (formatted to exchange precision)
+
+const quantity = await formatQuantity("BTCUSDT", 0.123456789);
+// Returns: "0.12345" (formatted to exchange precision)
 ```
 
 ### Service APIs
