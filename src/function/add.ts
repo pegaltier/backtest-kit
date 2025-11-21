@@ -45,6 +45,10 @@ export function addStrategy(strategySchema: IStrategySchema) {
   backtest.loggerService.info(ADD_STRATEGY_METHOD_NAME, {
     strategySchema,
   });
+  backtest.strategyValidationService.addStrategy(
+    strategySchema.strategyName,
+    strategySchema
+  );
   backtest.strategySchemaService.register(
     strategySchema.strategyName,
     strategySchema
@@ -90,6 +94,10 @@ export function addExchange(exchangeSchema: IExchangeSchema) {
   backtest.loggerService.info(ADD_EXCHANGE_METHOD_NAME, {
     exchangeSchema,
   });
+  backtest.exchangeValidationService.addExchange(
+    exchangeSchema.exchangeName,
+    exchangeSchema
+  );
   backtest.exchangeSchemaService.register(
     exchangeSchema.exchangeName,
     exchangeSchema
@@ -130,5 +138,6 @@ export function addFrame(frameSchema: IFrameSchema) {
   backtest.loggerService.info(ADD_FRAME_METHOD_NAME, {
     frameSchema,
   });
+  backtest.frameValidationService.addFrame(frameSchema.frameName, frameSchema);
   backtest.frameSchemaService.register(frameSchema.frameName, frameSchema);
 }

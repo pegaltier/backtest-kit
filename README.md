@@ -2,6 +2,7 @@
 
 A production-ready TypeScript framework for backtesting and live trading strategies with crash-safe state persistence, signal validation, and memory-optimized architecture.
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/tripolskypetr/backtest-kit)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue)]()
 [![Architecture](https://img.shields.io/badge/architecture-clean-orange)]()
 
@@ -284,10 +285,6 @@ await Backtest.dump("my-strategy");
 
 // Save to custom path
 await Backtest.dump("my-strategy", "./custom/path");
-
-// Clear accumulated data
-await Backtest.clear("my-strategy"); // Clear specific strategy
-await Backtest.clear();              // Clear all strategies
 ```
 
 **Report includes:**
@@ -305,9 +302,6 @@ const markdown = await Live.getReport("my-strategy");
 
 // Save to disk (default: ./logs/live/my-strategy.md)
 await Live.dump("my-strategy");
-
-// Clear accumulated data
-await Live.clear("my-strategy");
 ```
 
 **Report includes:**
@@ -524,9 +518,6 @@ Backtest.getReport(strategyName: string): Promise<string>
 
 // Save report to disk
 Backtest.dump(strategyName: string, path?: string): Promise<void>
-
-// Clear accumulated data
-Backtest.clear(strategyName?: string): Promise<void>
 ```
 
 #### Live Trading API
@@ -554,9 +545,6 @@ Live.getReport(strategyName: string): Promise<string>
 
 // Save report to disk
 Live.dump(strategyName: string, path?: string): Promise<void>
-
-// Clear accumulated data
-Live.clear(strategyName?: string): Promise<void>
 ```
 
 ## Type Definitions
