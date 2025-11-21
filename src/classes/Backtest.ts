@@ -71,7 +71,7 @@ export class BacktestUtils {
    * console.log("Backtest completed");
    * ```
    */
-  public background = async (
+  public background = (
     symbol: string,
     context: {
       strategyName: string;

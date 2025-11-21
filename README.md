@@ -148,7 +148,7 @@ addFrame({
 import { Backtest, listenSignalBacktest, listenError } from "backtest-kit";
 
 // Run backtest in background
-await Backtest.background("BTCUSDT", {
+const stopBacktest = Backtest.background("BTCUSDT", {
   strategyName: "my-strategy",
   exchangeName: "binance",
   frameName: "1d-backtest"
@@ -177,7 +177,7 @@ await Backtest.dump("my-strategy"); // ./logs/backtest/my-strategy.md
 import { Live, listenSignalLive, listenError } from "backtest-kit";
 
 // Run live trading in background (infinite loop, crash-safe)
-const stop = await Live.background("BTCUSDT", {
+const stop = Live.background("BTCUSDT", {
   strategyName: "my-strategy",
   exchangeName: "binance"
 });
@@ -313,7 +313,7 @@ Generate detailed trading reports with statistics:
 import { Backtest } from "backtest-kit";
 
 // Run backtest
-await Backtest.background("BTCUSDT", {
+const stopBacktest = Backtest.background("BTCUSDT", {
   strategyName: "my-strategy",
   exchangeName: "binance",
   frameName: "1d-backtest"
@@ -426,7 +426,7 @@ listenSignalBacktestOnce(
 import { Live, listenSignalLive, listenSignalLiveOnce } from "backtest-kit";
 
 // Run live trading in background (infinite loop)
-const cancel = await Live.background("BTCUSDT", {
+const cancel = Live.background("BTCUSDT", {
   strategyName: "my-strategy",
   exchangeName: "binance"
 });
@@ -792,7 +792,7 @@ setTimeout(() => {
 }, 5000);
 
 // Live.background also returns a stop function
-const stopLive = await Live.background("BTCUSDT", {
+const stopLive = Live.background("BTCUSDT", {
   strategyName: "my-strategy",
   exchangeName: "binance"
 });

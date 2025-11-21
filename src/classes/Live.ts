@@ -87,7 +87,7 @@ export class LiveUtils {
    * });
    * ```
    */
-  public background = async (
+  public background = (
     symbol: string,
     context: {
       strategyName: string;

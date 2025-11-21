@@ -1205,7 +1205,7 @@ declare class BacktestUtils {
         strategyName: string;
         exchangeName: string;
         frameName: string;
-    }) => Promise<() => void>;
+    }) => () => void;
     /**
      * Generates markdown report with all closed signals for a strategy.
      *
@@ -1324,7 +1324,7 @@ declare class LiveUtils {
     background: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
-    }) => Promise<() => void>;
+    }) => () => void;
     /**
      * Generates markdown report with all events for a strategy.
      *
