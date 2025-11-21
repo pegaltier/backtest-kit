@@ -15,3 +15,5 @@ Contains nullable signal for atomic updates.
 ```ts
 signalRow: ISignalRow
 ```
+
+Current signal state (null when no active signal)

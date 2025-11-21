@@ -19,13 +19,21 @@ export type SignalInterval =
  * Will be validated and augmented with auto-generated id.
  */
 export interface ISignalDto {
+  /** Optional signal ID (auto-generated if not provided) */
   id?: string;
+  /** Trade direction: "long" (buy) or "short" (sell) */
   position: "long" | "short";
+  /** Human-readable description of signal reason */
   note: string;
+  /** Entry price for the position */
   priceOpen: number;
+  /** Take profit target price (must be > priceOpen for long, < priceOpen for short) */
   priceTakeProfit: number;
+  /** Stop loss exit price (must be < priceOpen for long, > priceOpen for short) */
   priceStopLoss: number;
+  /** Expected duration in minutes before time_expired */
   minuteEstimatedTime: number;
+  /** Signal creation timestamp in milliseconds */
   timestamp: number;
 }
 
@@ -34,6 +42,7 @@ export interface ISignalDto {
  * Used throughout the system after validation.
  */
 export interface ISignalRow extends ISignalDto {
+  /** Unique signal identifier (UUID v4 auto-generated) */
   id: string;
 }
 
@@ -42,8 +51,11 @@ export interface ISignalRow extends ISignalDto {
  * Combines schema with runtime dependencies.
  */
 export interface IStrategyParams extends IStrategySchema {
+  /** Logger service for debug output */
   logger: ILogger;
+  /** Exchange service for candle data and VWAP */
   exchange: IExchange;
+  /** Execution context service (symbol, when, backtest flag) */
   execution: TExecutionContextService;
 }
 
@@ -68,9 +80,13 @@ export interface IStrategyCallbacks {
  * Defines signal generation logic and configuration.
  */
 export interface IStrategySchema {
+  /** Unique strategy identifier for registration */
   strategyName: StrategyName;
+  /** Minimum interval between getSignal calls (throttling) */
   interval: SignalInterval;
+  /** Signal generation function (returns null if no signal, validated DTO if signal) */
   getSignal: (symbol: string) => Promise<ISignalDto | null>;
+  /** Optional lifecycle event callbacks (onOpen, onClose) */
   callbacks?: Partial<IStrategyCallbacks>;
 }
 
@@ -85,8 +101,11 @@ export type StrategyCloseReason = "time_expired" | "take_profit" | "stop_loss";
  * Includes adjusted prices with fees (0.1%) and slippage (0.1%).
  */
 export interface IStrategyPnL {
+  /** Profit/loss as percentage (e.g., 1.5 for +1.5%, -2.3 for -2.3%) */
   pnlPercentage: number;
+  /** Entry price adjusted with slippage and fees */
   priceOpen: number;
+  /** Exit price adjusted with slippage and fees */
   priceClose: number;
 }
 
@@ -94,7 +113,9 @@ export interface IStrategyPnL {
  * Tick result: no active signal, idle state.
  */
 export interface IStrategyTickResultIdle {
+  /** Discriminator for type-safe union */
   action: "idle";
+  /** No signal in idle state */
   signal: null;
 }
 
@@ -103,7 +124,9 @@ export interface IStrategyTickResultIdle {
  * Triggered after getSignal validation and persistence.
  */
 export interface IStrategyTickResultOpened {
+  /** Discriminator for type-safe union */
   action: "opened";
+  /** Newly created and validated signal with generated ID */
   signal: ISignalRow;
 }
 
@@ -112,8 +135,11 @@ export interface IStrategyTickResultOpened {
  * Waiting for TP/SL or time expiration.
  */
 export interface IStrategyTickResultActive {
+  /** Discriminator for type-safe union */
   action: "active";
+  /** Currently monitored signal */
   signal: ISignalRow;
+  /** Current VWAP price for monitoring */
   currentPrice: number;
 }
 
@@ -122,11 +148,17 @@ export interface IStrategyTickResultActive {
  * Final state with close reason and profit/loss calculation.
  */
 export interface IStrategyTickResultClosed {
+  /** Discriminator for type-safe union */
   action: "closed";
+  /** Completed signal with original parameters */
   signal: ISignalRow;
+  /** Final VWAP price at close */
   currentPrice: number;
+  /** Why signal closed (time_expired | take_profit | stop_loss) */
   closeReason: StrategyCloseReason;
+  /** Unix timestamp in milliseconds when signal closed */
   closeTimestamp: number;
+  /** Profit/loss calculation with fees and slippage */
   pnl: IStrategyPnL;
 }
 
@@ -150,9 +182,22 @@ export type IStrategyBacktestResult = IStrategyTickResultClosed;
  * Defines core strategy execution methods.
  */
 export interface IStrategy {
-  /** Single tick of strategy execution with VWAP monitoring */
+  /**
+   * Single tick of strategy execution with VWAP monitoring.
+   * Checks for signal generation (throttled) and TP/SL conditions.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @returns Promise resolving to tick result (idle | opened | active | closed)
+   */
   tick: (symbol: string) => Promise<IStrategyTickResult>;
-  /** Fast backtest using historical candles */
+
+  /**
+   * Fast backtest using historical candles.
+   * Iterates through candles, calculates VWAP, checks TP/SL on each candle.
+   *
+   * @param candles - Array of historical candle data
+   * @returns Promise resolving to closed result (always completes signal)
+   */
   backtest: (candles: ICandleData[]) => Promise<IStrategyBacktestResult>;
 }
 

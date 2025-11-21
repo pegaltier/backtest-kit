@@ -15,3 +15,5 @@ Used throughout the system after validation.
 ```ts
 id: string
 ```
+
+Unique signal identifier (UUID v4 auto-generated)

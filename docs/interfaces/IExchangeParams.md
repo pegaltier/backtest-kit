@@ -16,8 +16,12 @@ Combines schema with runtime dependencies.
 logger: ILogger
 ```
 
+Logger service for debug output
+
 ### execution
 
 ```ts
 execution: { readonly context: IExecutionContext; }
 ```
+
+Execution context service (symbol, when, backtest flag)

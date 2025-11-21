@@ -16,11 +16,15 @@ Defines candle data source and formatting logic.
 exchangeName: string
 ```
 
+Unique exchange identifier for registration
+
 ### getCandles
 
 ```ts
 getCandles: (symbol: string, interval: CandleInterval, since: Date, limit: number) => Promise<ICandleData[]>
 ```
+
+Fetch candles from data source (API or database).
 
 ### formatQuantity
 
@@ -28,14 +32,20 @@ getCandles: (symbol: string, interval: CandleInterval, since: Date, limit: numbe
 formatQuantity: (symbol: string, quantity: number) => Promise<string>
 ```
 
+Format quantity according to exchange precision rules.
+
 ### formatPrice
 
 ```ts
 formatPrice: (symbol: string, price: number) => Promise<string>
 ```
 
+Format price according to exchange precision rules.
+
 ### callbacks
 
 ```ts
 callbacks: Partial<IExchangeCallbacks>
 ```
+
+Optional lifecycle event callbacks (onCandleData)

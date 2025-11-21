@@ -16,14 +16,20 @@ Waiting for TP/SL or time expiration.
 action: "active"
 ```
 
+Discriminator for type-safe union
+
 ### signal
 
 ```ts
 signal: ISignalRow
 ```
 
+Currently monitored signal
+
 ### currentPrice
 
 ```ts
 currentPrice: number
 ```
+
+Current VWAP price for monitoring

@@ -16,7 +16,7 @@ Provides candle data access and VWAP calculation.
 getCandles: (symbol: string, interval: CandleInterval, limit: number) => Promise<ICandleData[]>
 ```
 
-Fetch historical candles backwards from execution context time
+Fetch historical candles backwards from execution context time.
 
 ### getNextCandles
 
@@ -24,7 +24,7 @@ Fetch historical candles backwards from execution context time
 getNextCandles: (symbol: string, interval: CandleInterval, limit: number) => Promise<ICandleData[]>
 ```
 
-Fetch future candles forward from execution context time (for backtest)
+Fetch future candles forward from execution context time (for backtest).
 
 ### formatQuantity
 
@@ -32,7 +32,7 @@ Fetch future candles forward from execution context time (for backtest)
 formatQuantity: (symbol: string, quantity: number) => Promise<string>
 ```
 
-Format quantity for exchange precision
+Format quantity for exchange precision.
 
 ### formatPrice
 
@@ -40,7 +40,7 @@ Format quantity for exchange precision
 formatPrice: (symbol: string, price: number) => Promise<string>
 ```
 
-Format price for exchange precision
+Format price for exchange precision.
 
 ### getAveragePrice
 
@@ -48,4 +48,7 @@ Format price for exchange precision
 getAveragePrice: (symbol: string) => Promise<number>
 ```
 
-Calculate VWAP from last 5 1m candles
+Calculate VWAP from last 5 1-minute candles.
+
+Formula: VWAP = Σ(Typical Price × Volume) / Σ(Volume)
+where Typical Price = (High + Low + Close) / 3

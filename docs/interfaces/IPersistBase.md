@@ -16,11 +16,16 @@ Implemented by PersistBase.
 waitForInit: (initial: boolean) => Promise<void>
 ```
 
+Initialize persistence directory and validate existing files.
+Uses singleshot to ensure one-time execution.
+
 ### readValue
 
 ```ts
 readValue: (entityId: EntityId) => Promise<Entity>
 ```
+
+Read entity from persistence storage.
 
 ### hasValue
 
@@ -28,8 +33,12 @@ readValue: (entityId: EntityId) => Promise<Entity>
 hasValue: (entityId: EntityId) => Promise<boolean>
 ```
 
+Check if entity exists in storage.
+
 ### writeValue
 
 ```ts
 writeValue: (entityId: EntityId, entity: Entity) => Promise<void>
 ```
+
+Write entity to storage with atomic file writes.

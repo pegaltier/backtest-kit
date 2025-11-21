@@ -21,11 +21,17 @@ export type CandleInterval =
  * Used for VWAP calculation and backtesting.
  */
 export interface ICandleData {
+  /** Unix timestamp in milliseconds when candle opened */
   timestamp: number;
+  /** Opening price at candle start */
   open: number;
+  /** Highest price during candle period */
   high: number;
+  /** Lowest price during candle period */
   low: number;
+  /** Closing price at candle end */
   close: number;
+  /** Trading volume during candle period */
   volume: number;
 }
 
@@ -34,7 +40,9 @@ export interface ICandleData {
  * Combines schema with runtime dependencies.
  */
 export interface IExchangeParams extends IExchangeSchema {
+  /** Logger service for debug output */
   logger: ILogger;
+  /** Execution context service (symbol, when, backtest flag) */
   execution: TExecutionContextService;
 }
 
@@ -57,15 +65,40 @@ export interface IExchangeCallbacks {
  * Defines candle data source and formatting logic.
  */
 export interface IExchangeSchema {
+  /** Unique exchange identifier for registration */
   exchangeName: ExchangeName;
+  /**
+   * Fetch candles from data source (API or database).
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param interval - Candle time interval (e.g., "1m", "1h")
+   * @param since - Start date for candle fetching
+   * @param limit - Maximum number of candles to fetch
+   * @returns Promise resolving to array of OHLCV candle data
+   */
   getCandles: (
     symbol: string,
     interval: CandleInterval,
     since: Date,
     limit: number
   ) => Promise<ICandleData[]>;
+  /**
+   * Format quantity according to exchange precision rules.
+   *
+   * @param symbol - Trading pair symbol
+   * @param quantity - Raw quantity value
+   * @returns Promise resolving to formatted quantity string
+   */
   formatQuantity: (symbol: string, quantity: number) => Promise<string>;
+  /**
+   * Format price according to exchange precision rules.
+   *
+   * @param symbol - Trading pair symbol
+   * @param price - Raw price value
+   * @returns Promise resolving to formatted price string
+   */
   formatPrice: (symbol: string, price: number) => Promise<string>;
+  /** Optional lifecycle event callbacks (onCandleData) */
   callbacks?: Partial<IExchangeCallbacks>;
 }
 
@@ -74,23 +107,61 @@ export interface IExchangeSchema {
  * Provides candle data access and VWAP calculation.
  */
 export interface IExchange {
-  /** Fetch historical candles backwards from execution context time */
+  /**
+   * Fetch historical candles backwards from execution context time.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param interval - Candle time interval (e.g., "1m", "1h")
+   * @param limit - Maximum number of candles to fetch
+   * @returns Promise resolving to array of candle data
+   */
   getCandles: (
     symbol: string,
     interval: CandleInterval,
     limit: number
   ) => Promise<ICandleData[]>;
-  /** Fetch future candles forward from execution context time (for backtest) */
+
+  /**
+   * Fetch future candles forward from execution context time (for backtest).
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param interval - Candle time interval (e.g., "1m", "1h")
+   * @param limit - Maximum number of candles to fetch
+   * @returns Promise resolving to array of candle data
+   */
   getNextCandles: (
     symbol: string,
     interval: CandleInterval,
     limit: number
   ) => Promise<ICandleData[]>;
-  /** Format quantity for exchange precision */
+
+  /**
+   * Format quantity for exchange precision.
+   *
+   * @param symbol - Trading pair symbol
+   * @param quantity - Raw quantity value
+   * @returns Promise resolving to formatted quantity string
+   */
   formatQuantity: (symbol: string, quantity: number) => Promise<string>;
-  /** Format price for exchange precision */
+
+  /**
+   * Format price for exchange precision.
+   *
+   * @param symbol - Trading pair symbol
+   * @param price - Raw price value
+   * @returns Promise resolving to formatted price string
+   */
   formatPrice: (symbol: string, price: number) => Promise<string>;
-  /** Calculate VWAP from last 5 1m candles */
+
+  /**
+   * Calculate VWAP from last 5 1-minute candles.
+   *
+   * Formula: VWAP = Σ(Typical Price × Volume) / Σ(Volume)
+   * where Typical Price = (High + Low + Close) / 3
+   *
+   * @param symbol - Trading pair symbol
+   * @returns Promise resolving to volume-weighted average price
+   */
   getAveragePrice: (symbol: string) => Promise<number>;
 }
 

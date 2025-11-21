@@ -15,8 +15,12 @@ Tick result: no active signal, idle state.
 action: "idle"
 ```
 
+Discriminator for type-safe union
+
 ### signal
 
 ```ts
 signal: null
 ```
+
+No signal in idle state

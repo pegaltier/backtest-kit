@@ -16,7 +16,8 @@ Defines core strategy execution methods.
 tick: (symbol: string) => Promise<IStrategyTickResult>
 ```
 
-Single tick of strategy execution with VWAP monitoring
+Single tick of strategy execution with VWAP monitoring.
+Checks for signal generation (throttled) and TP/SL conditions.
 
 ### backtest
 
@@ -24,4 +25,5 @@ Single tick of strategy execution with VWAP monitoring
 backtest: (candles: ICandleData[]) => Promise<IStrategyTickResultClosed>
 ```
 
-Fast backtest using historical candles
+Fast backtest using historical candles.
+Iterates through candles, calculates VWAP, checks TP/SL on each candle.

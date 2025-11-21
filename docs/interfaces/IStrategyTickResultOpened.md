@@ -16,8 +16,12 @@ Triggered after getSignal validation and persistence.
 action: "opened"
 ```
 
+Discriminator for type-safe union
+
 ### signal
 
 ```ts
 signal: ISignalRow
 ```
+
+Newly created and validated signal with generated ID

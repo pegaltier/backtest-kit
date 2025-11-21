@@ -98,11 +98,17 @@ type CandleInterval = "1m" | "3m" | "5m" | "15m" | "30m" | "1h" | "2h" | "4h" | 
  * Used for VWAP calculation and backtesting.
  */
 interface ICandleData {
+    /** Unix timestamp in milliseconds when candle opened */
     timestamp: number;
+    /** Opening price at candle start */
     open: number;
+    /** Highest price during candle period */
     high: number;
+    /** Lowest price during candle period */
     low: number;
+    /** Closing price at candle end */
     close: number;
+    /** Trading volume during candle period */
     volume: number;
 }
 /**
@@ -110,7 +116,9 @@ interface ICandleData {
  * Combines schema with runtime dependencies.
  */
 interface IExchangeParams extends IExchangeSchema {
+    /** Logger service for debug output */
     logger: ILogger;
+    /** Execution context service (symbol, when, backtest flag) */
     execution: TExecutionContextService;
 }
 /**
@@ -125,10 +133,35 @@ interface IExchangeCallbacks {
  * Defines candle data source and formatting logic.
  */
 interface IExchangeSchema {
+    /** Unique exchange identifier for registration */
     exchangeName: ExchangeName;
+    /**
+     * Fetch candles from data source (API or database).
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param interval - Candle time interval (e.g., "1m", "1h")
+     * @param since - Start date for candle fetching
+     * @param limit - Maximum number of candles to fetch
+     * @returns Promise resolving to array of OHLCV candle data
+     */
     getCandles: (symbol: string, interval: CandleInterval, since: Date, limit: number) => Promise<ICandleData[]>;
+    /**
+     * Format quantity according to exchange precision rules.
+     *
+     * @param symbol - Trading pair symbol
+     * @param quantity - Raw quantity value
+     * @returns Promise resolving to formatted quantity string
+     */
     formatQuantity: (symbol: string, quantity: number) => Promise<string>;
+    /**
+     * Format price according to exchange precision rules.
+     *
+     * @param symbol - Trading pair symbol
+     * @param price - Raw price value
+     * @returns Promise resolving to formatted price string
+     */
     formatPrice: (symbol: string, price: number) => Promise<string>;
+    /** Optional lifecycle event callbacks (onCandleData) */
     callbacks?: Partial<IExchangeCallbacks>;
 }
 /**
@@ -136,15 +169,49 @@ interface IExchangeSchema {
  * Provides candle data access and VWAP calculation.
  */
 interface IExchange {
-    /** Fetch historical candles backwards from execution context time */
+    /**
+     * Fetch historical candles backwards from execution context time.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param interval - Candle time interval (e.g., "1m", "1h")
+     * @param limit - Maximum number of candles to fetch
+     * @returns Promise resolving to array of candle data
+     */
     getCandles: (symbol: string, interval: CandleInterval, limit: number) => Promise<ICandleData[]>;
-    /** Fetch future candles forward from execution context time (for backtest) */
+    /**
+     * Fetch future candles forward from execution context time (for backtest).
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param interval - Candle time interval (e.g., "1m", "1h")
+     * @param limit - Maximum number of candles to fetch
+     * @returns Promise resolving to array of candle data
+     */
     getNextCandles: (symbol: string, interval: CandleInterval, limit: number) => Promise<ICandleData[]>;
-    /** Format quantity for exchange precision */
+    /**
+     * Format quantity for exchange precision.
+     *
+     * @param symbol - Trading pair symbol
+     * @param quantity - Raw quantity value
+     * @returns Promise resolving to formatted quantity string
+     */
     formatQuantity: (symbol: string, quantity: number) => Promise<string>;
-    /** Format price for exchange precision */
+    /**
+     * Format price for exchange precision.
+     *
+     * @param symbol - Trading pair symbol
+     * @param price - Raw price value
+     * @returns Promise resolving to formatted price string
+     */
     formatPrice: (symbol: string, price: number) => Promise<string>;
-    /** Calculate VWAP from last 5 1m candles */
+    /**
+     * Calculate VWAP from last 5 1-minute candles.
+     *
+     * Formula: VWAP = Σ(Typical Price × Volume) / Σ(Volume)
+     * where Typical Price = (High + Low + Close) / 3
+     *
+     * @param symbol - Trading pair symbol
+     * @returns Promise resolving to volume-weighted average price
+     */
     getAveragePrice: (symbol: string) => Promise<number>;
 }
 /**
@@ -162,13 +229,21 @@ type SignalInterval = "1m" | "3m" | "5m" | "15m" | "30m" | "1h";
  * Will be validated and augmented with auto-generated id.
  */
 interface ISignalDto {
+    /** Optional signal ID (auto-generated if not provided) */
     id?: string;
+    /** Trade direction: "long" (buy) or "short" (sell) */
     position: "long" | "short";
+    /** Human-readable description of signal reason */
     note: string;
+    /** Entry price for the position */
     priceOpen: number;
+    /** Take profit target price (must be > priceOpen for long, < priceOpen for short) */
     priceTakeProfit: number;
+    /** Stop loss exit price (must be < priceOpen for long, > priceOpen for short) */
     priceStopLoss: number;
+    /** Expected duration in minutes before time_expired */
     minuteEstimatedTime: number;
+    /** Signal creation timestamp in milliseconds */
     timestamp: number;
 }
 /**
@@ -176,6 +251,7 @@ interface ISignalDto {
  * Used throughout the system after validation.
  */
 interface ISignalRow extends ISignalDto {
+    /** Unique signal identifier (UUID v4 auto-generated) */
     id: string;
 }
 /**
@@ -193,9 +269,13 @@ interface IStrategyCallbacks {
  * Defines signal generation logic and configuration.
  */
 interface IStrategySchema {
+    /** Unique strategy identifier for registration */
     strategyName: StrategyName;
+    /** Minimum interval between getSignal calls (throttling) */
     interval: SignalInterval;
+    /** Signal generation function (returns null if no signal, validated DTO if signal) */
     getSignal: (symbol: string) => Promise<ISignalDto | null>;
+    /** Optional lifecycle event callbacks (onOpen, onClose) */
     callbacks?: Partial<IStrategyCallbacks>;
 }
 /**
@@ -208,15 +288,20 @@ type StrategyCloseReason = "time_expired" | "take_profit" | "stop_loss";
  * Includes adjusted prices with fees (0.1%) and slippage (0.1%).
  */
 interface IStrategyPnL {
+    /** Profit/loss as percentage (e.g., 1.5 for +1.5%, -2.3 for -2.3%) */
     pnlPercentage: number;
+    /** Entry price adjusted with slippage and fees */
     priceOpen: number;
+    /** Exit price adjusted with slippage and fees */
     priceClose: number;
 }
 /**
  * Tick result: no active signal, idle state.
  */
 interface IStrategyTickResultIdle {
+    /** Discriminator for type-safe union */
     action: "idle";
+    /** No signal in idle state */
     signal: null;
 }
 /**
@@ -224,7 +309,9 @@ interface IStrategyTickResultIdle {
  * Triggered after getSignal validation and persistence.
  */
 interface IStrategyTickResultOpened {
+    /** Discriminator for type-safe union */
     action: "opened";
+    /** Newly created and validated signal with generated ID */
     signal: ISignalRow;
 }
 /**
@@ -232,8 +319,11 @@ interface IStrategyTickResultOpened {
  * Waiting for TP/SL or time expiration.
  */
 interface IStrategyTickResultActive {
+    /** Discriminator for type-safe union */
     action: "active";
+    /** Currently monitored signal */
     signal: ISignalRow;
+    /** Current VWAP price for monitoring */
     currentPrice: number;
 }
 /**
@@ -241,11 +331,17 @@ interface IStrategyTickResultActive {
  * Final state with close reason and profit/loss calculation.
  */
 interface IStrategyTickResultClosed {
+    /** Discriminator for type-safe union */
     action: "closed";
+    /** Completed signal with original parameters */
     signal: ISignalRow;
+    /** Final VWAP price at close */
     currentPrice: number;
+    /** Why signal closed (time_expired | take_profit | stop_loss) */
     closeReason: StrategyCloseReason;
+    /** Unix timestamp in milliseconds when signal closed */
     closeTimestamp: number;
+    /** Profit/loss calculation with fees and slippage */
     pnl: IStrategyPnL;
 }
 /**
@@ -262,9 +358,21 @@ type IStrategyBacktestResult = IStrategyTickResultClosed;
  * Defines core strategy execution methods.
  */
 interface IStrategy {
-    /** Single tick of strategy execution with VWAP monitoring */
+    /**
+     * Single tick of strategy execution with VWAP monitoring.
+     * Checks for signal generation (throttled) and TP/SL conditions.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @returns Promise resolving to tick result (idle | opened | active | closed)
+     */
     tick: (symbol: string) => Promise<IStrategyTickResult>;
-    /** Fast backtest using historical candles */
+    /**
+     * Fast backtest using historical candles.
+     * Iterates through candles, calculates VWAP, checks TP/SL on each candle.
+     *
+     * @param candles - Array of historical candle data
+     * @returns Promise resolving to closed result (always completes signal)
+     */
     backtest: (candles: ICandleData[]) => Promise<IStrategyBacktestResult>;
 }
 /**
@@ -707,6 +815,7 @@ declare const BASE_WAIT_FOR_INIT_SYMBOL: unique symbol;
  * Contains nullable signal for atomic updates.
  */
 interface ISignalData {
+    /** Current signal state (null when no active signal) */
     signalRow: ISignalRow | null;
 }
 /**
@@ -732,9 +841,37 @@ interface IEntity {
  * Implemented by PersistBase.
  */
 interface IPersistBase<Entity extends IEntity = IEntity> {
+    /**
+     * Initialize persistence directory and validate existing files.
+     * Uses singleshot to ensure one-time execution.
+     *
+     * @param initial - Whether this is the first initialization
+     * @returns Promise that resolves when initialization is complete
+     */
     waitForInit(initial: boolean): Promise<void>;
+    /**
+     * Read entity from persistence storage.
+     *
+     * @param entityId - Unique entity identifier
+     * @returns Promise resolving to entity data
+     * @throws Error if entity not found or read fails
+     */
     readValue(entityId: EntityId): Promise<Entity>;
+    /**
+     * Check if entity exists in storage.
+     *
+     * @param entityId - Unique entity identifier
+     * @returns Promise resolving to true if exists, false otherwise
+     */
     hasValue(entityId: EntityId): Promise<boolean>;
+    /**
+     * Write entity to storage with atomic file writes.
+     *
+     * @param entityId - Unique entity identifier
+     * @param entity - Entity data to persist
+     * @returns Promise that resolves when write is complete
+     * @throws Error if write fails
+     */
     writeValue(entityId: EntityId, entity: Entity): Promise<void>;
 }
 /**
@@ -756,22 +893,80 @@ interface IPersistBase<Entity extends IEntity = IEntity> {
  */
 declare const PersistBase: {
     new <EntityName extends string = string>(entityName: EntityName, baseDir?: string): {
+        /** Computed directory path for entity storage */
         _directory: string;
         readonly entityName: EntityName;
         readonly baseDir: string;
+        /**
+         * Computes file path for entity ID.
+         *
+         * @param entityId - Entity identifier
+         * @returns Full file path to entity JSON file
+         */
         _getFilePath(entityId: EntityId): string;
         waitForInit(initial: boolean): Promise<void>;
+        /**
+         * Returns count of persisted entities.
+         *
+         * @returns Promise resolving to number of .json files in directory
+         */
         getCount(): Promise<number>;
         readValue<T extends IEntity = IEntity>(entityId: EntityId): Promise<T>;
         hasValue(entityId: EntityId): Promise<boolean>;
         writeValue<T extends IEntity = IEntity>(entityId: EntityId, entity: T): Promise<void>;
+        /**
+         * Removes entity from storage.
+         *
+         * @param entityId - Entity identifier to remove
+         * @returns Promise that resolves when entity is deleted
+         * @throws Error if entity not found or deletion fails
+         */
         removeValue(entityId: EntityId): Promise<void>;
+        /**
+         * Removes all entities from storage.
+         *
+         * @returns Promise that resolves when all entities are deleted
+         * @throws Error if deletion fails
+         */
         removeAll(): Promise<void>;
+        /**
+         * Async generator yielding all entity values.
+         * Sorted alphanumerically by entity ID.
+         *
+         * @returns AsyncGenerator yielding entities
+         * @throws Error if reading fails
+         */
         values<T extends IEntity = IEntity>(): AsyncGenerator<T>;
+        /**
+         * Async generator yielding all entity IDs.
+         * Sorted alphanumerically.
+         *
+         * @returns AsyncGenerator yielding entity IDs
+         * @throws Error if reading fails
+         */
         keys(): AsyncGenerator<EntityId>;
+        /**
+         * Filters entities by predicate function.
+         *
+         * @param predicate - Filter function
+         * @returns AsyncGenerator yielding filtered entities
+         */
         filter<T extends IEntity = IEntity>(predicate: (value: T) => boolean): AsyncGenerator<T>;
+        /**
+         * Takes first N entities, optionally filtered.
+         *
+         * @param total - Maximum number of entities to yield
+         * @param predicate - Optional filter function
+         * @returns AsyncGenerator yielding up to total entities
+         */
         take<T extends IEntity = IEntity>(total: number, predicate?: (value: T) => boolean): AsyncGenerator<T>;
         [BASE_WAIT_FOR_INIT_SYMBOL]: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+        /**
+         * Async iterator implementation.
+         * Delegates to values() generator.
+         *
+         * @returns AsyncIterableIterator yielding entities
+         */
         [Symbol.asyncIterator](): AsyncIterableIterator<any>;
     };
 };

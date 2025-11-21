@@ -16,11 +16,15 @@ Final state with close reason and profit/loss calculation.
 action: "closed"
 ```
 
+Discriminator for type-safe union
+
 ### signal
 
 ```ts
 signal: ISignalRow
 ```
+
+Completed signal with original parameters
 
 ### currentPrice
 
@@ -28,11 +32,15 @@ signal: ISignalRow
 currentPrice: number
 ```
 
+Final VWAP price at close
+
 ### closeReason
 
 ```ts
 closeReason: StrategyCloseReason
 ```
+
+Why signal closed (time_expired &vert; take_profit | stop_loss)
 
 ### closeTimestamp
 
@@ -40,8 +48,12 @@ closeReason: StrategyCloseReason
 closeTimestamp: number
 ```
 
+Unix timestamp in milliseconds when signal closed
+
 ### pnl
 
 ```ts
 pnl: IStrategyPnL
 ```
+
+Profit/loss calculation with fees and slippage

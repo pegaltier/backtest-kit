@@ -16,11 +16,15 @@ Defines signal generation logic and configuration.
 strategyName: string
 ```
 
+Unique strategy identifier for registration
+
 ### interval
 
 ```ts
 interval: SignalInterval
 ```
+
+Minimum interval between getSignal calls (throttling)
 
 ### getSignal
 
@@ -28,8 +32,12 @@ interval: SignalInterval
 getSignal: (symbol: string) => Promise<ISignalDto>
 ```
 
+Signal generation function (returns null if no signal, validated DTO if signal)
+
 ### callbacks
 
 ```ts
 callbacks: Partial<IStrategyCallbacks>
 ```
+
+Optional lifecycle event callbacks (onOpen, onClose)

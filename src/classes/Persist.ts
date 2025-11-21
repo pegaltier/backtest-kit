@@ -42,6 +42,7 @@ const BASE_UNLINK_RETRY_DELAY = 1_000;
  * Contains nullable signal for atomic updates.
  */
 export interface ISignalData {
+  /** Current signal state (null when no active signal) */
   signalRow: ISignalRow | null;
 }
 
@@ -74,12 +75,40 @@ export interface IEntity {}
  * Implemented by PersistBase.
  */
 export interface IPersistBase<Entity extends IEntity = IEntity> {
+  /**
+   * Initialize persistence directory and validate existing files.
+   * Uses singleshot to ensure one-time execution.
+   *
+   * @param initial - Whether this is the first initialization
+   * @returns Promise that resolves when initialization is complete
+   */
   waitForInit(initial: boolean): Promise<void>;
 
+  /**
+   * Read entity from persistence storage.
+   *
+   * @param entityId - Unique entity identifier
+   * @returns Promise resolving to entity data
+   * @throws Error if entity not found or read fails
+   */
   readValue(entityId: EntityId): Promise<Entity>;
 
+  /**
+   * Check if entity exists in storage.
+   *
+   * @param entityId - Unique entity identifier
+   * @returns Promise resolving to true if exists, false otherwise
+   */
   hasValue(entityId: EntityId): Promise<boolean>;
 
+  /**
+   * Write entity to storage with atomic file writes.
+   *
+   * @param entityId - Unique entity identifier
+   * @param entity - Entity data to persist
+   * @returns Promise that resolves when write is complete
+   * @throws Error if write fails
+   */
   writeValue(entityId: EntityId, entity: Entity): Promise<void>;
 }
 
@@ -149,8 +178,15 @@ const BASE_WAIT_FOR_INIT_UNLINK_FN = async (filePath: string) =>
  */
 export const PersistBase = makeExtendable(
   class<EntityName extends string = string> implements IPersistBase {
+    /** Computed directory path for entity storage */
     _directory: string;
 
+    /**
+     * Creates new persistence instance.
+     *
+     * @param entityName - Unique entity type identifier
+     * @param baseDir - Base directory for all entities (default: ./logs/data)
+     */
     constructor(
       readonly entityName: EntityName,
       readonly baseDir = join(process.cwd(), "logs/data")
@@ -162,6 +198,12 @@ export const PersistBase = makeExtendable(
       this._directory = join(this.baseDir, this.entityName);
     }
 
+    /**
+     * Computes file path for entity ID.
+     *
+     * @param entityId - Entity identifier
+     * @returns Full file path to entity JSON file
+     */
     _getFilePath(entityId: EntityId): string {
       return join(this.baseDir, this.entityName, `${entityId}.json`);
     }
@@ -178,6 +220,11 @@ export const PersistBase = makeExtendable(
       await this[BASE_WAIT_FOR_INIT_SYMBOL]();
     }
 
+    /**
+     * Returns count of persisted entities.
+     *
+     * @returns Promise resolving to number of .json files in directory
+     */
     async getCount(): Promise<number> {
       const files = await fs.readdir(this._directory);
       const { length } = files.filter((file) => file.endsWith(".json"));
@@ -249,6 +296,13 @@ export const PersistBase = makeExtendable(
       }
     }
 
+    /**
+     * Removes entity from storage.
+     *
+     * @param entityId - Entity identifier to remove
+     * @returns Promise that resolves when entity is deleted
+     * @throws Error if entity not found or deletion fails
+     */
     async removeValue(entityId: EntityId): Promise<void> {
       swarm.loggerService.debug(PERSIST_BASE_METHOD_NAME_REMOVE_VALUE, {
         entityName: this.entityName,
@@ -271,6 +325,12 @@ export const PersistBase = makeExtendable(
       }
     }
 
+    /**
+     * Removes all entities from storage.
+     *
+     * @returns Promise that resolves when all entities are deleted
+     * @throws Error if deletion fails
+     */
     async removeAll(): Promise<void> {
       swarm.loggerService.debug(PERSIST_BASE_METHOD_NAME_REMOVE_ALL, {
         entityName: this.entityName,
@@ -290,6 +350,13 @@ export const PersistBase = makeExtendable(
       }
     }
 
+    /**
+     * Async generator yielding all entity values.
+     * Sorted alphanumerically by entity ID.
+     *
+     * @returns AsyncGenerator yielding entities
+     * @throws Error if reading fails
+     */
     async *values<T extends IEntity = IEntity>(): AsyncGenerator<T> {
       swarm.loggerService.debug(PERSIST_BASE_METHOD_NAME_VALUES, {
         entityName: this.entityName,
@@ -318,6 +385,13 @@ export const PersistBase = makeExtendable(
       }
     }
 
+    /**
+     * Async generator yielding all entity IDs.
+     * Sorted alphanumerically.
+     *
+     * @returns AsyncGenerator yielding entity IDs
+     * @throws Error if reading fails
+     */
     async *keys(): AsyncGenerator<EntityId> {
       swarm.loggerService.debug(PERSIST_BASE_METHOD_NAME_KEYS, {
         entityName: this.entityName,
@@ -345,12 +419,24 @@ export const PersistBase = makeExtendable(
       }
     }
 
+    /**
+     * Async iterator implementation.
+     * Delegates to values() generator.
+     *
+     * @returns AsyncIterableIterator yielding entities
+     */
     async *[Symbol.asyncIterator](): AsyncIterableIterator<any> {
       for await (const entity of this.values()) {
         yield entity;
       }
     }
 
+    /**
+     * Filters entities by predicate function.
+     *
+     * @param predicate - Filter function
+     * @returns AsyncGenerator yielding filtered entities
+     */
     async *filter<T extends IEntity = IEntity>(
       predicate: (value: T) => boolean
     ): AsyncGenerator<T> {
@@ -361,6 +447,13 @@ export const PersistBase = makeExtendable(
       }
     }
 
+    /**
+     * Takes first N entities, optionally filtered.
+     *
+     * @param total - Maximum number of entities to yield
+     * @param predicate - Optional filter function
+     * @returns AsyncGenerator yielding up to total entities
+     */
     async *take<T extends IEntity = IEntity>(
       total: number,
       predicate?: (value: T) => boolean

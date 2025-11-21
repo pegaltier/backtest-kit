@@ -16,11 +16,15 @@ Will be validated and augmented with auto-generated id.
 id: string
 ```
 
+Optional signal ID (auto-generated if not provided)
+
 ### position
 
 ```ts
 position: "long" | "short"
 ```
+
+Trade direction: "long" (buy) or "short" (sell)
 
 ### note
 
@@ -28,11 +32,15 @@ position: "long" | "short"
 note: string
 ```
 
+Human-readable description of signal reason
+
 ### priceOpen
 
 ```ts
 priceOpen: number
 ```
+
+Entry price for the position
 
 ### priceTakeProfit
 
@@ -40,11 +48,15 @@ priceOpen: number
 priceTakeProfit: number
 ```
 
+Take profit target price (must be &gt; priceOpen for long, &lt; priceOpen for short)
+
 ### priceStopLoss
 
 ```ts
 priceStopLoss: number
 ```
+
+Stop loss exit price (must be &lt; priceOpen for long, &gt; priceOpen for short)
 
 ### minuteEstimatedTime
 
@@ -52,8 +64,12 @@ priceStopLoss: number
 minuteEstimatedTime: number
 ```
 
+Expected duration in minutes before time_expired
+
 ### timestamp
 
 ```ts
 timestamp: number
 ```
+
+Signal creation timestamp in milliseconds
