@@ -1211,22 +1211,6 @@ declare class BacktestUtils {
      * ```
      */
     dump: (strategyName: StrategyName, path?: string) => Promise<void>;
-    /**
-     * Clears accumulated signal data from storage.
-     *
-     * @param strategyName - Optional strategy name to clear specific strategy data.
-     *                       If omitted, clears all strategies' data.
-     *
-     * @example
-     * ```typescript
-     * // Clear specific strategy data
-     * await Backtest.clear("my-strategy");
-     *
-     * // Clear all strategies' data
-     * await Backtest.clear();
-     * ```
-     */
-    clear: (strategyName?: StrategyName) => Promise<void>;
 }
 /**
  * Singleton instance of BacktestUtils for convenient backtest operations.
@@ -1346,22 +1330,6 @@ declare class LiveUtils {
      * ```
      */
     dump: (strategyName: StrategyName, path?: string) => Promise<void>;
-    /**
-     * Clears accumulated event data from storage.
-     *
-     * @param strategyName - Optional strategy name to clear specific strategy data.
-     *                       If omitted, clears all strategies' data.
-     *
-     * @example
-     * ```typescript
-     * // Clear specific strategy data
-     * await Live.clear("my-strategy");
-     *
-     * // Clear all strategies' data
-     * await Live.clear();
-     * ```
-     */
-    clear: (strategyName?: StrategyName) => Promise<void>;
 }
 /**
  * Singleton instance of LiveUtils for convenient live trading operations.

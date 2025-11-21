@@ -160,28 +160,6 @@ export class LiveUtils {
     });
     await backtest.liveMarkdownService.dump(strategyName, path);
   };
-
-  /**
-   * Clears accumulated event data from storage.
-   *
-   * @param strategyName - Optional strategy name to clear specific strategy data.
-   *                       If omitted, clears all strategies' data.
-   *
-   * @example
-   * ```typescript
-   * // Clear specific strategy data
-   * await Live.clear("my-strategy");
-   *
-   * // Clear all strategies' data
-   * await Live.clear();
-   * ```
-   */
-  public clear = async (strategyName?: StrategyName): Promise<void> => {
-    backtest.loggerService.info(LIVE_METHOD_NAME_CLEAR, {
-      strategyName,
-    });
-    await backtest.liveMarkdownService.clear(strategyName);
-  };
 }
 
 /**

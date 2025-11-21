@@ -41,7 +41,7 @@ Each strategy gets its own isolated storage instance.
 ### tick
 
 ```ts
-tick: (data: IStrategyTickResult) => Promise<void>
+tick: any
 ```
 
 Processes tick events and accumulates closed signals.
@@ -67,3 +67,23 @@ dump: (strategyName: string, path?: string) => Promise<void>
 Saves strategy report to disk.
 Creates directory if it doesn't exist.
 Delegates to ReportStorage.dump().
+
+### clear
+
+```ts
+clear: (strategyName?: string) => Promise<void>
+```
+
+Clears accumulated signal data from storage.
+If strategyName is provided, clears only that strategy's data.
+If strategyName is omitted, clears all strategies' data.
+
+### init
+
+```ts
+init: (() => Promise<void>) & ISingleshotClearable
+```
+
+Initializes the service by subscribing to backtest signal events.
+Uses singleshot to ensure initialization happens only once.
+Automatically called on first use.

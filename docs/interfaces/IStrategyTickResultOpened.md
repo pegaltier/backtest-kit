@@ -25,3 +25,27 @@ signal: ISignalRow
 ```
 
 Newly created and validated signal with generated ID
+
+### strategyName
+
+```ts
+strategyName: string
+```
+
+Strategy name for tracking
+
+### exchangeName
+
+```ts
+exchangeName: string
+```
+
+Exchange name for tracking
+
+### currentPrice
+
+```ts
+currentPrice: number
+```
+
+Current VWAP price at signal open

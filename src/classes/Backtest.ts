@@ -145,28 +145,6 @@ export class BacktestUtils {
     });
     await backtest.backtestMarkdownService.dump(strategyName, path);
   };
-
-  /**
-   * Clears accumulated signal data from storage.
-   *
-   * @param strategyName - Optional strategy name to clear specific strategy data.
-   *                       If omitted, clears all strategies' data.
-   *
-   * @example
-   * ```typescript
-   * // Clear specific strategy data
-   * await Backtest.clear("my-strategy");
-   *
-   * // Clear all strategies' data
-   * await Backtest.clear();
-   * ```
-   */
-  public clear = async (strategyName?: StrategyName): Promise<void> => {
-    backtest.loggerService.info(BACKTEST_METHOD_NAME_CLEAR, {
-      strategyName,
-    });
-    await backtest.backtestMarkdownService.clear(strategyName);
-  };
 }
 
 /**

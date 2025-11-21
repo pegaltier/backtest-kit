@@ -45,3 +45,19 @@ Runs live trading in background without yielding results.
 Consumes all live trading results internally without exposing them.
 Infinite loop - will run until process is stopped or crashes.
 Useful for running live trading for side effects only (callbacks, persistence).
+
+### getReport
+
+```ts
+getReport: (strategyName: string) => Promise<string>
+```
+
+Generates markdown report with all events for a strategy.
+
+### dump
+
+```ts
+dump: (strategyName: string, path?: string) => Promise<void>
+```
+
+Saves strategy report to disk.

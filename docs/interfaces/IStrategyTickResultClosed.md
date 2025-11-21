@@ -57,3 +57,19 @@ pnl: IStrategyPnL
 ```
 
 Profit/loss calculation with fees and slippage
+
+### strategyName
+
+```ts
+strategyName: string
+```
+
+Strategy name for tracking
+
+### exchangeName
+
+```ts
+exchangeName: string
+```
+
+Exchange name for tracking

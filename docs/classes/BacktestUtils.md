@@ -36,3 +36,19 @@ Runs backtest in background without yielding results.
 
 Consumes all backtest results internally without exposing them.
 Useful for running backtests for side effects only (callbacks, logging).
+
+### getReport
+
+```ts
+getReport: (strategyName: string) => Promise<string>
+```
+
+Generates markdown report with all closed signals for a strategy.
+
+### dump
+
+```ts
+dump: (strategyName: string, path?: string) => Promise<void>
+```
+
+Saves strategy report to disk.
