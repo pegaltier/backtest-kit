@@ -33,7 +33,9 @@ const VALIDATE_SIGNAL_FN = (signal: ISignalRow): void => {
     errors.push(`priceOpen must be positive, got ${signal.priceOpen}`);
   }
   if (signal.priceTakeProfit <= 0) {
-    errors.push(`priceTakeProfit must be positive, got ${signal.priceTakeProfit}`);
+    errors.push(
+      `priceTakeProfit must be positive, got ${signal.priceTakeProfit}`
+    );
   }
   if (signal.priceStopLoss <= 0) {
     errors.push(`priceStopLoss must be positive, got ${signal.priceStopLoss}`);
@@ -146,10 +148,20 @@ const WAIT_FOR_INIT_FN = async (self: ClientStrategy) => {
   if (self.params.execution.context.backtest) {
     return;
   }
-  self._pendingSignal = await PersistSignalAdaper.readSignalData(
+  const pendingSignal = await PersistSignalAdaper.readSignalData(
     self.params.strategyName,
     self.params.execution.context.symbol
   );
+  if (!pendingSignal) {
+    return;
+  }
+  if (pendingSignal.exchangeName !== self.params.method.context.exchangeName) {
+    return;
+  }
+  if (pendingSignal.strategyName !== self.params.method.context.strategyName) {
+    return;
+  }
+  self._pendingSignal = pendingSignal;
 };
 
 /**
@@ -256,7 +268,7 @@ export class ClientStrategy implements IStrategy {
             this.params.execution.context.symbol,
             this._pendingSignal,
             this._pendingSignal.priceOpen,
-            this.params.execution.context.backtest,
+            this.params.execution.context.backtest
           );
         }
 
@@ -272,7 +284,7 @@ export class ClientStrategy implements IStrategy {
           this.params.callbacks.onTick(
             this.params.execution.context.symbol,
             result,
-            this.params.execution.context.backtest,
+            this.params.execution.context.backtest
           );
         }
 
@@ -287,7 +299,7 @@ export class ClientStrategy implements IStrategy {
         this.params.callbacks.onIdle(
           this.params.execution.context.symbol,
           currentPrice,
-          this.params.execution.context.backtest,
+          this.params.execution.context.backtest
         );
       }
 
@@ -303,7 +315,7 @@ export class ClientStrategy implements IStrategy {
         this.params.callbacks.onTick(
           this.params.execution.context.symbol,
           result,
-          this.params.execution.context.backtest,
+          this.params.execution.context.backtest
         );
       }
 
@@ -366,14 +378,18 @@ export class ClientStrategy implements IStrategy {
       // Предупреждение о закрытии сигнала в убыток
       if (closeReason === "stop_loss") {
         this.params.logger.warn(
-          `ClientStrategy tick: Signal closed with loss (stop_loss), PNL: ${pnl.pnlPercentage.toFixed(2)}%`
+          `ClientStrategy tick: Signal closed with loss (stop_loss), PNL: ${pnl.pnlPercentage.toFixed(
+            2
+          )}%`
         );
       }
 
       // Предупреждение о закрытии сигнала в убыток
       if (closeReason === "time_expired" && pnl.pnlPercentage < 0) {
         this.params.logger.warn(
-          `ClientStrategy tick: Signal closed with loss (time_expired), PNL: ${pnl.pnlPercentage.toFixed(2)}%`
+          `ClientStrategy tick: Signal closed with loss (time_expired), PNL: ${pnl.pnlPercentage.toFixed(
+            2
+          )}%`
         );
       }
 
@@ -391,7 +407,7 @@ export class ClientStrategy implements IStrategy {
           this.params.execution.context.symbol,
           signal,
           averagePrice,
-          this.params.execution.context.backtest,
+          this.params.execution.context.backtest
         );
       }
 
@@ -412,7 +428,7 @@ export class ClientStrategy implements IStrategy {
         this.params.callbacks.onTick(
           this.params.execution.context.symbol,
           result,
-          this.params.execution.context.backtest,
+          this.params.execution.context.backtest
         );
       }
 
@@ -424,7 +440,7 @@ export class ClientStrategy implements IStrategy {
         this.params.execution.context.symbol,
         signal,
         averagePrice,
-        this.params.execution.context.backtest,
+        this.params.execution.context.backtest
       );
     }
 
@@ -440,7 +456,7 @@ export class ClientStrategy implements IStrategy {
       this.params.callbacks.onTick(
         this.params.execution.context.symbol,
         result,
-        this.params.execution.context.backtest,
+        this.params.execution.context.backtest
       );
     }
 
@@ -541,7 +557,9 @@ export class ClientStrategy implements IStrategy {
         // Предупреждение при убытке от stop_loss
         if (closeReason === "stop_loss") {
           this.params.logger.warn(
-            `ClientStrategy backtest: Signal closed with loss (stop_loss), PNL: ${pnl.pnlPercentage.toFixed(2)}%`
+            `ClientStrategy backtest: Signal closed with loss (stop_loss), PNL: ${pnl.pnlPercentage.toFixed(
+              2
+            )}%`
           );
         }
 
@@ -550,7 +568,7 @@ export class ClientStrategy implements IStrategy {
             this.params.execution.context.symbol,
             signal,
             averagePrice,
-            this.params.execution.context.backtest,
+            this.params.execution.context.backtest
           );
         }
 
@@ -571,7 +589,7 @@ export class ClientStrategy implements IStrategy {
           this.params.callbacks.onTick(
             this.params.execution.context.symbol,
             result,
-            this.params.execution.context.backtest,
+            this.params.execution.context.backtest
           );
         }
 
@@ -598,7 +616,9 @@ export class ClientStrategy implements IStrategy {
     // Предупреждение при убытке от time_expired
     if (pnl.pnlPercentage < 0) {
       this.params.logger.warn(
-        `ClientStrategy backtest: Signal closed with loss (time_expired), PNL: ${pnl.pnlPercentage.toFixed(2)}%`
+        `ClientStrategy backtest: Signal closed with loss (time_expired), PNL: ${pnl.pnlPercentage.toFixed(
+          2
+        )}%`
       );
     }
 
@@ -607,7 +627,7 @@ export class ClientStrategy implements IStrategy {
         this.params.execution.context.symbol,
         signal,
         lastPrice,
-        this.params.execution.context.backtest,
+        this.params.execution.context.backtest
       );
     }
 
@@ -628,7 +648,7 @@ export class ClientStrategy implements IStrategy {
       this.params.callbacks.onTick(
         this.params.execution.context.symbol,
         result,
-        this.params.execution.context.backtest,
+        this.params.execution.context.backtest
       );
     }
 
