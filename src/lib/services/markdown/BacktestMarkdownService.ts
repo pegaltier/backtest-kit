@@ -40,6 +40,11 @@ const columns: Column[] = [
     format: (data) => data.signal.position.toUpperCase(),
   },
   {
+    key: "note",
+    label: "Note",
+    format: (data) => data.signal.note ?? "N/A",
+  },
+  {
     key: "openPrice",
     label: "Open Price",
     format: (data) => `${data.signal.priceOpen.toFixed(8)} USD`,
@@ -116,7 +121,7 @@ class ReportStorage {
    * @param strategyName - Strategy name
    * @returns Markdown formatted report with all signals
    */
-  public generateReport(strategyName: StrategyName): string {
+  public getReport(strategyName: StrategyName): string {
     if (this._signalList.length === 0) {
       return str.newline(
         `# Backtest Report: ${strategyName}`,
@@ -149,12 +154,13 @@ class ReportStorage {
    * Saves strategy report to disk.
    *
    * @param strategyName - Strategy name
+   * @param path - Directory path to save report (default: "./logs/backtest")
    */
-  public async saveReport(strategyName: StrategyName): Promise<void> {
-    const markdown = this.generateReport(strategyName);
+  public async dump(strategyName: StrategyName, path = "./logs/backtest"): Promise<void> {
+    const markdown = this.getReport(strategyName);
 
     try {
-      const dir = join(process.cwd(), "logs", "backtest");
+      const dir = join(process.cwd(), path);
       await mkdir(dir, { recursive: true });
 
       const filename = `${strategyName}.md`;
@@ -203,7 +209,7 @@ export class BacktestMarkdownService {
    * Memoized function to get or create ReportStorage for a strategy.
    * Each strategy gets its own isolated storage instance.
    */
-  private getReport = memoize<(strategyName: string) => ReportStorage>(
+  private getStorage = memoize<(strategyName: string) => ReportStorage>(
     ([strategyName]) => `${strategyName}`,
     () => new ReportStorage()
   );
@@ -234,13 +240,13 @@ export class BacktestMarkdownService {
       data,
     });
 
-    const report = this.getReport(data.signal.strategyName);
+    const storage = this.getStorage(data.signal.strategyName);
 
     if (data.action !== "closed") {
       return;
     }
 
-    report.addSignal(data);
+    storage.addSignal(data);
   };
 
   /**
@@ -257,29 +263,34 @@ export class BacktestMarkdownService {
    * console.log(markdown);
    * ```
    */
-  public generateReport(strategyName: StrategyName): string {
-    const report = this.getReport(strategyName);
-    return report.generateReport(strategyName);
-  }
+  public getReport = async (strategyName: StrategyName): Promise<string> => {
+    const storage = this.getStorage(strategyName);
+    return storage.getReport(strategyName);
+  };
 
   /**
    * Saves strategy report to disk.
-   * Creates logs/backtest directory if it doesn't exist.
-   * Delegates to ReportStorage.saveReport().
+   * Creates directory if it doesn't exist.
+   * Delegates to ReportStorage.dump().
    *
    * @param strategyName - Strategy name to save report for
+   * @param path - Directory path to save report (default: "./logs/backtest")
    *
    * @example
    * ```typescript
    * const service = new BacktestMarkdownService();
-   * await service.saveReport("my-strategy");
-   * // File saved to: logs/backtest/my-strategy.md
+   *
+   * // Save to default path: ./logs/backtest/my-strategy.md
+   * await service.dump("my-strategy");
+   *
+   * // Save to custom path: ./custom/path/my-strategy.md
+   * await service.dump("my-strategy", "./custom/path");
    * ```
    */
-  public async saveReport(strategyName: StrategyName): Promise<void> {
-    const report = this.getReport(strategyName);
-    await report.saveReport(strategyName);
-  }
+  public dump = async (strategyName: StrategyName, path = "./logs/backtest"): Promise<void> => {
+    const storage = this.getStorage(strategyName);
+    await storage.dump(strategyName, path);
+  };
 }
 
 export default BacktestMarkdownService;

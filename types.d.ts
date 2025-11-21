@@ -239,7 +239,7 @@ interface ISignalDto {
     /** Trade direction: "long" (buy) or "short" (sell) */
     position: "long" | "short";
     /** Human-readable description of signal reason */
-    note: string;
+    note?: string;
     /** Entry price for the position */
     priceOpen: number;
     /** Take profit target price (must be > priceOpen for long, < priceOpen for short) */
@@ -248,8 +248,6 @@ interface ISignalDto {
     priceStopLoss: number;
     /** Expected duration in minutes before time_expired */
     minuteEstimatedTime: number;
-    /** Signal creation timestamp in milliseconds */
-    timestamp: number;
 }
 /**
  * Complete signal with auto-generated id.
@@ -262,12 +260,18 @@ interface ISignalRow extends ISignalDto {
     exchangeName: ExchangeName;
     /** Unique strategy identifier for execution */
     strategyName: StrategyName;
+    /** Signal creation timestamp in milliseconds */
+    timestamp: number;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
+    symbol: string;
 }
 /**
  * Optional lifecycle callbacks for signal events.
  * Called when signals are opened, active, idle, or closed.
  */
 interface IStrategyCallbacks {
+    /** Called on every tick with the result */
+    onTick: (symbol: string, result: IStrategyTickResult, backtest: boolean) => void;
     /** Called when new signal is opened (after validation) */
     onOpen: (symbol: string, data: ISignalRow, currentPrice: number, backtest: boolean) => void;
     /** Called when signal is being monitored (active state) */
@@ -2064,7 +2068,91 @@ declare class BacktestGlobalService {
     }) => AsyncGenerator<IStrategyTickResultClosed, void, unknown>;
 }
 
+/**
+ * Service for generating and saving backtest markdown reports.
+ *
+ * Features:
+ * - Listens to signal events via onTick callback
+ * - Accumulates closed signals per strategy using memoized storage
+ * - Generates markdown tables with detailed signal information
+ * - Saves reports to disk in logs/backtest/{strategyName}.md
+ *
+ * @example
+ * ```typescript
+ * const service = new BacktestMarkdownService();
+ *
+ * // Add to strategy callbacks
+ * addStrategy({
+ *   strategyName: "my-strategy",
+ *   callbacks: {
+ *     onTick: (symbol, result, backtest) => {
+ *       service.tick(result);
+ *     }
+ *   }
+ * });
+ *
+ * // After backtest, generate and save report
+ * await service.saveReport("my-strategy");
+ * ```
+ */
 declare class BacktestMarkdownService {
+    /** Logger service for debug output */
+    private readonly loggerService;
+    /**
+     * Memoized function to get or create ReportStorage for a strategy.
+     * Each strategy gets its own isolated storage instance.
+     */
+    private getStorage;
+    /**
+     * Processes tick events and accumulates closed signals.
+     * Should be called from IStrategyCallbacks.onTick.
+     *
+     * Only processes closed signals - opened signals are ignored.
+     *
+     * @param data - Tick result from strategy execution (opened or closed)
+     *
+     * @example
+     * ```typescript
+     * const service = new BacktestMarkdownService();
+     *
+     * callbacks: {
+     *   onTick: (symbol, result, backtest) => {
+     *     service.tick(result);
+     *   }
+     * }
+     * ```
+     */
+    tick: (data: IStrategyTickResultOpened | IStrategyTickResultClosed) => Promise<void>;
+    /**
+     * Generates markdown report with all closed signals for a strategy.
+     * Delegates to ReportStorage.generateReport().
+     *
+     * @param strategyName - Strategy name to generate report for
+     * @returns Markdown formatted report string with table of all closed signals
+     *
+     * @example
+     * ```typescript
+     * const service = new BacktestMarkdownService();
+     * const markdown = service.generateReport("my-strategy");
+     * console.log(markdown);
+     * ```
+     */
+    getReport: (strategyName: StrategyName) => Promise<string>;
+    /**
+     * Saves strategy report to disk.
+     * Creates logs/backtest directory if it doesn't exist.
+     * Delegates to ReportStorage.saveReport().
+     *
+     * @param strategyName - Strategy name to save report for
+     *
+     * @example
+     * ```typescript
+     * const service = new BacktestMarkdownService();
+     * await service.saveReport("my-strategy");
+     * // File saved to: logs/backtest/my-strategy.md
+     * ```
+     */
+    dump: (strategyName: StrategyName) => Promise<void>;
 }
 
 declare class LiveMarkdownService {
