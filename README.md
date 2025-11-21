@@ -103,94 +103,98 @@ addFrame({
 });
 ```
 
-### 4. Run Backtest with Async Generator
+### 4. Run Backtest
 
 ```typescript
-import { Backtest } from "backtest-kit";
+import { Backtest, listenSignalBacktest, listenError } from "backtest-kit";
 
-// Stream backtest results without memory accumulation
+// Run backtest in background
+await Backtest.background("BTCUSDT", {
+  strategyName: "my-strategy",
+  exchangeName: "binance",
+  frameName: "1d-backtest"
+});
+
+// Listen to closed signals
+listenSignalBacktest((event) => {
+  if (event.action === "closed") {
+    console.log("PNL:", event.pnl.pnlPercentage);
+  }
+});
+
+// Listen to errors
+listenError((error) => {
+  console.error("Error:", error.message);
+});
+
+// Generate and save report
+const markdown = await Backtest.getReport("my-strategy");
+await Backtest.dump("my-strategy"); // ./logs/backtest/my-strategy.md
+```
+
+### 5. Run Live Trading (Crash-Safe)
+
+```typescript
+import { Live, listenSignalLive, listenError } from "backtest-kit";
+
+// Run live trading in background (infinite loop, crash-safe)
+const stop = await Live.background("BTCUSDT", {
+  strategyName: "my-strategy",
+  exchangeName: "binance"
+});
+
+// Listen to all signal events
+listenSignalLive((event) => {
+  if (event.action === "opened") {
+    console.log("Signal opened:", event.signal.id);
+  }
+
+  if (event.action === "closed") {
+    console.log("Signal closed:", {
+      reason: event.closeReason,
+      pnl: event.pnl.pnlPercentage,
+    });
+
+    // Auto-save report
+    Live.dump(event.strategyName);
+  }
+});
+
+// Listen to errors
+listenError((error) => {
+  console.error("Error:", error.message);
+});
+
+// Stop when needed: stop();
+```
+
+**Crash Recovery:** If process crashes, restart with same code - state automatically recovered from disk (no duplicate signals).
+
+### 6. Alternative: Async Generators (Optional)
+
+For manual control over execution flow:
+
+```typescript
+import { Backtest, Live } from "backtest-kit";
+
+// Manual backtest iteration
 for await (const result of Backtest.run("BTCUSDT", {
   strategyName: "my-strategy",
   exchangeName: "binance",
   frameName: "1d-backtest"
 })) {
-  console.log({
-    action: result.action,           // "closed"
-    reason: result.closeReason,      // "take_profit" | "stop_loss" | "time_expired"
-    pnl: result.pnl.pnlPercentage,  // e.g., +1.98%
-    closePrice: result.currentPrice,
-    closeTime: result.closeTimestamp,
-  });
-
-  // Early termination possible
-  if (result.pnl.pnlPercentage < -5) {
-    console.log("Stopping backtest - too many losses");
-    break;
-  }
+  console.log("PNL:", result.pnl.pnlPercentage);
+  if (result.pnl.pnlPercentage < -5) break; // Early termination
 }
 
-// Generate markdown report
-const markdown = await Backtest.getReport("my-strategy");
-console.log(markdown);
-
-// Save report to disk
-await Backtest.dump("my-strategy"); // ./logs/backtest/my-strategy.md
-```
-
-### 5. Live Trading with Crash Recovery
-
-```typescript
-import { Live } from "backtest-kit";
-
-// Infinite async generator - streams live results
+// Manual live iteration (infinite loop)
 for await (const result of Live.run("BTCUSDT", {
   strategyName: "my-strategy",
   exchangeName: "binance"
 })) {
-  if (result.action === "opened") {
-    console.log("New signal opened:", result.signal);
-    // Signal automatically persisted to disk
-  }
-
   if (result.action === "closed") {
-    console.log("Signal closed:", {
-      reason: result.closeReason,
-      pnl: result.pnl.pnlPercentage,
-      closePrice: result.currentPrice,
-    });
-    // State automatically persisted
-
-    // Save live trading report
-    await Live.dump("my-strategy"); // ./logs/live/my-strategy.md
+    console.log("PNL:", result.pnl.pnlPercentage);
   }
-
-  // If process crashes, restart will resume from last saved state
-  // No duplicate signals, no lost trades
-}
-```
-
-**Crash Recovery Example:**
-
-```typescript
-import { Live } from "backtest-kit";
-
-// First run
-for await (const result of Live.run("BTCUSDT", {
-  strategyName: "my-strategy",
-  exchangeName: "binance"
-})) {
-  console.log(result); // { action: "opened", signal: {...} }
-  // Process crashes here ❌
-}
-
-// After restart - automatic recovery ✅
-for await (const result of Live.run("BTCUSDT", {
-  strategyName: "my-strategy",
-  exchangeName: "binance"
-})) {
-  // Reads persisted state from disk
-  // Continues monitoring from where it left off
-  console.log(result); // { action: "active", signal: {...}, currentPrice: 50100 }
 }
 ```
 
