@@ -19,3 +19,9 @@ export const signalLiveEmitter = new Subject<IStrategyTickResult>();
  */
 export const signalBacktestEmitter = new Subject<IStrategyTickResult>();
 
+/**
+ * Error emitter for background execution errors.
+ * Emits errors caught in background tasks (Live.background, Backtest.background).
+ */
+export const errorEmitter = new Subject<Error>();
+

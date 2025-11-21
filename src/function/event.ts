@@ -1,5 +1,5 @@
 import backtest from "../lib";
-import { signalEmitter, signalLiveEmitter, signalBacktestEmitter } from "../config/emitters";
+import { signalEmitter, signalLiveEmitter, signalBacktestEmitter, errorEmitter } from "../config/emitters";
 import { IStrategyTickResult } from "../interfaces/Strategy.interface";
 import { queued } from "functools-kit";
 
@@ -9,6 +9,7 @@ const LISTEN_SIGNAL_LIVE_METHOD_NAME = "event.listenSignalLive";
 const LISTEN_SIGNAL_LIVE_ONCE_METHOD_NAME = "event.listenSignalLiveOnce";
 const LISTEN_SIGNAL_BACKTEST_METHOD_NAME = "event.listenSignalBacktest";
 const LISTEN_SIGNAL_BACKTEST_ONCE_METHOD_NAME = "event.listenSignalBacktestOnce";
+const LISTEN_ERROR_METHOD_NAME = "event.listenError";
 
 /**
  * Subscribes to all signal events with queued async processing.
@@ -186,4 +187,32 @@ export function listenSignalBacktestOnce(
 ) {
   backtest.loggerService.log(LISTEN_SIGNAL_BACKTEST_ONCE_METHOD_NAME);
   return signalBacktestEmitter.filter(filterFn).once(fn);
+}
+
+/**
+ * Subscribes to background execution errors with queued async processing.
+ *
+ * Listens to errors caught in Live.background() and Backtest.background() execution.
+ * Events are processed sequentially in order received, even if callback is async.
+ * Uses queued wrapper to prevent concurrent execution of the callback.
+ *
+ * @param fn - Callback function to handle error events
+ * @returns Unsubscribe function to stop listening
+ *
+ * @example
+ * ```typescript
+ * import { listenError } from "./function/event";
+ *
+ * const unsubscribe = listenError((error) => {
+ *   console.error("Background execution error:", error.message);
+ *   // Log to monitoring service, send alerts, etc.
+ * });
+ *
+ * // Later: stop listening
+ * unsubscribe();
+ * ```
+ */
+export function listenError(fn: (error: Error) => void) {
+  backtest.loggerService.log(LISTEN_ERROR_METHOD_NAME);
+  return errorEmitter.subscribe(queued(async (error) => fn(error)));
 }

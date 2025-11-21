@@ -7,6 +7,7 @@ export {
   listenSignalBacktestOnce,
   listenSignalLive,
   listenSignalLiveOnce,
+  listenError,
 } from "./function/event";
 export {
   getCandles,

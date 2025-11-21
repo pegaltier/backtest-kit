@@ -1,11 +1,16 @@
-import { IStrategyTickResultClosed, IStrategyTickResultOpened, StrategyName } from "../interfaces/Strategy.interface";
+import {
+  IStrategyTickResultClosed,
+  IStrategyTickResultOpened,
+  StrategyName,
+} from "../interfaces/Strategy.interface";
 import backtest from "../lib";
+import { errorEmitter } from "../config/emitters";
+import { getErrorMessage } from "functools-kit";
 
 const LIVE_METHOD_NAME_RUN = "LiveUtils.run";
 const LIVE_METHOD_NAME_BACKGROUND = "LiveUtils.background";
 const LIVE_METHOD_NAME_GET_REPORT = "LiveUtils.getReport";
 const LIVE_METHOD_NAME_DUMP = "LiveUtils.dump";
-const LIVE_METHOD_NAME_CLEAR = "LiveUtils.clear";
 
 /**
  * Utility class for live trading operations.
@@ -95,7 +100,10 @@ export class LiveUtils {
     });
     const iterator = this.run(symbol, context);
     let isStopped = false;
-    let lastValue: IStrategyTickResultOpened | IStrategyTickResultClosed | null = null;
+    let lastValue:
+      | IStrategyTickResultOpened
+      | IStrategyTickResultClosed
+      | null = null;
     const task = async () => {
       while (true) {
         const { value, done } = await iterator.next();
@@ -109,8 +117,10 @@ export class LiveUtils {
           break;
         }
       }
-    }
-    task();
+    };
+    task().catch((error) =>
+      errorEmitter.next(new Error(getErrorMessage(error)))
+    );
     return () => {
       isStopped = true;
     };

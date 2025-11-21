@@ -1,11 +1,12 @@
 import backtest from "../lib";
 import { StrategyName } from "../interfaces/Strategy.interface";
+import { errorEmitter } from "../config/emitters";
+import { getErrorMessage } from "functools-kit";
 
 const BACKTEST_METHOD_NAME_RUN = "BacktestUtils.run";
 const BACKTEST_METHOD_NAME_BACKGROUND = "BacktestUtils.background";
 const BACKTEST_METHOD_NAME_GET_REPORT = "BacktestUtils.getReport";
 const BACKTEST_METHOD_NAME_DUMP = "BacktestUtils.dump";
-const BACKTEST_METHOD_NAME_CLEAR = "BacktestUtils.clear";
 
 /**
  * Utility class for backtest operations.
@@ -94,11 +95,13 @@ export class BacktestUtils {
           break;
         }
       }
-    }
-    task();
+    };
+    task().catch((error) =>
+      errorEmitter.next(new Error(getErrorMessage(error)))
+    );
     return () => {
       isStopped = true;
-    }
+    };
   };
 
   /**

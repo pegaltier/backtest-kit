@@ -46,6 +46,7 @@ group: docs
 - [listenSignalLiveOnce](functions/listenSignalLiveOnce.md)
 - [listenSignalBacktest](functions/listenSignalBacktest.md)
 - [listenSignalBacktestOnce](functions/listenSignalBacktestOnce.md)
+- [listenError](functions/listenError.md)
 - [getCandles](functions/getCandles.md)
 - [getAveragePrice](functions/getAveragePrice.md)
 - [formatPrice](functions/formatPrice.md)

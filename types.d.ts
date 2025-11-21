@@ -790,6 +790,30 @@ declare function listenSignalBacktest(fn: (event: IStrategyTickResult) => void):
  * ```
  */
 declare function listenSignalBacktestOnce(filterFn: (event: IStrategyTickResult) => boolean, fn: (event: IStrategyTickResult) => void): () => void;
+/**
+ * Subscribes to background execution errors with queued async processing.
+ *
+ * Listens to errors caught in Live.background() and Backtest.background() execution.
+ * Events are processed sequentially in order received, even if callback is async.
+ * Uses queued wrapper to prevent concurrent execution of the callback.
+ *
+ * @param fn - Callback function to handle error events
+ * @returns Unsubscribe function to stop listening
+ *
+ * @example
+ * ```typescript
+ * import { listenError } from "./function/event";
+ *
+ * const unsubscribe = listenError((error) => {
+ *   console.error("Background execution error:", error.message);
+ *   // Log to monitoring service, send alerts, etc.
+ * });
+ *
+ * // Later: stop listening
+ * unsubscribe();
+ * ```
+ */
+declare function listenError(fn: (error: Error) => void): () => void;
 
 /**
  * Fetches historical candle data from the registered exchange.
@@ -2424,4 +2448,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type CandleInterval, ExecutionContextService, type FrameInterval, type ICandleData, type IExchangeSchema, type IFrameSchema, type IPersistBase, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, Live, MethodContextService, PersistBase, PersistSignalAdaper, type SignalInterval, type TPersistBase, type TPersistBaseCtor, addExchange, addFrame, addStrategy, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, setLogger };
+export { Backtest, type CandleInterval, ExecutionContextService, type FrameInterval, type ICandleData, type IExchangeSchema, type IFrameSchema, type IPersistBase, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, Live, MethodContextService, PersistBase, PersistSignalAdaper, type SignalInterval, type TPersistBase, type TPersistBaseCtor, addExchange, addFrame, addStrategy, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listenError, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, setLogger };
