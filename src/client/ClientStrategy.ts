@@ -318,6 +318,20 @@ export class ClientStrategy implements IStrategy {
       const pnl = toProfitLossDto(signal, averagePrice);
       const closeTimestamp = this.params.execution.context.when.getTime();
 
+      // Предупреждение о закрытии сигнала в убыток
+      if (closeReason === "stop_loss") {
+        this.params.logger.warn(
+          `ClientStrategy tick: Signal closed with loss (stop_loss), PNL: ${pnl.pnlPercentage.toFixed(2)}%`
+        );
+      }
+
+      // Предупреждение о закрытии сигнала в убыток
+      if (closeReason === "time_expired" && pnl.pnlPercentage < 0) {
+        this.params.logger.warn(
+          `ClientStrategy tick: Signal closed with loss (time_expired), PNL: ${pnl.pnlPercentage.toFixed(2)}%`
+        );
+      }
+
       this.params.logger.debug("ClientStrategy closing", {
         symbol: this.params.execution.context.symbol,
         signalId: signal.id,
@@ -446,6 +460,13 @@ export class ClientStrategy implements IStrategy {
           pnlPercentage: pnl.pnlPercentage,
         });
 
+        // Предупреждение при убытке от stop_loss
+        if (closeReason === "stop_loss") {
+          this.params.logger.warn(
+            `ClientStrategy backtest: Signal closed with loss (stop_loss), PNL: ${pnl.pnlPercentage.toFixed(2)}%`
+          );
+        }
+
         if (this.params.callbacks?.onClose) {
           this.params.callbacks.onClose(
             this.params.execution.context.backtest,
@@ -483,6 +504,13 @@ export class ClientStrategy implements IStrategy {
       closeTimestamp,
       pnlPercentage: pnl.pnlPercentage,
     });
+
+    // Предупреждение при убытке от time_expired
+    if (pnl.pnlPercentage < 0) {
+      this.params.logger.warn(
+        `ClientStrategy backtest: Signal closed with loss (time_expired), PNL: ${pnl.pnlPercentage.toFixed(2)}%`
+      );
+    }
 
     if (this.params.callbacks?.onClose) {
       this.params.callbacks.onClose(
