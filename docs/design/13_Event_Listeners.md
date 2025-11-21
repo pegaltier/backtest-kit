@@ -1,3 +1,8 @@
+---
+title: design/13_event_listeners
+group: design
+---
+
 # Event Listeners
 
 This page documents the event listener system for subscribing to signal events. Event listeners allow users to react to strategy signals asynchronously as they occur, enabling patterns like background execution monitoring, conditional early termination, and event-driven workflows.

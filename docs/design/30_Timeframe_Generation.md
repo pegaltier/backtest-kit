@@ -1,3 +1,8 @@
+---
+title: design/30_timeframe_generation
+group: design
+---
+
 # Timeframe Generation
 
 This document explains how `ClientFrame` generates timestamp arrays for backtest iteration. The timeframe generation system produces evenly-spaced `Date` objects representing execution points throughout a historical period, configured by interval, start date, and end date.

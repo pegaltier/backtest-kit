@@ -1,3 +1,8 @@
+---
+title: design/43_custom_exchange_integration
+group: design
+---
+
 # Custom Exchange Integration
 
 This document explains how to implement custom exchange data sources by creating `IExchangeSchema` implementations. Custom exchanges enable backtesting and live trading with data from any source including REST APIs, databases, CSV files, or WebSocket streams.

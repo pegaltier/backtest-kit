@@ -1,3 +1,8 @@
+---
+title: design/14_core_business_logic
+group: design
+---
+
 # Core Business Logic
 
 ## Purpose and Scope

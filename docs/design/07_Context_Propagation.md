@@ -1,3 +1,8 @@
+---
+title: design/07_context_propagation
+group: design
+---
+
 # Context Propagation
 
 ## Purpose and Scope

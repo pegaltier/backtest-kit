@@ -1,3 +1,8 @@
+---
+title: design/12_exchange_functions
+group: design
+---
+
 # Exchange Functions
 
 This page documents the public utility functions for interacting with exchange data and execution context. These functions provide candle data fetching, VWAP calculation, price/quantity formatting, and execution context queries.

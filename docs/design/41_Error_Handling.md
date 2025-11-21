@@ -1,3 +1,8 @@
+---
+title: design/41_error_handling
+group: design
+---
+
 # Error Handling
 
 ## Purpose and Scope

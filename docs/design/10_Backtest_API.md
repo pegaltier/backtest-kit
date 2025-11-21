@@ -1,3 +1,8 @@
+---
+title: design/10_backtest_api
+group: design
+---
+
 # Backtest API
 
 This document covers the public API for running backtests through the `Backtest` utility class. The Backtest API provides methods for streaming historical strategy execution, running backtests in the background, and generating performance reports.

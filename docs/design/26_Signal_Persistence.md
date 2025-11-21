@@ -1,3 +1,8 @@
+---
+title: design/26_signal_persistence
+group: design
+---
+
 # Signal Persistence
 
 Signal persistence ensures crash-safe operation during live trading by atomically writing signal state to disk before yielding results. This prevents duplicate signals and enables seamless recovery after process restarts. In backtest mode, persistence is disabled for performance.

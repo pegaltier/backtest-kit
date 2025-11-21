@@ -1,3 +1,8 @@
+---
+title: design/44_custom_persistence_backends
+group: design
+---
+
 # Custom Persistence Backends
 
 This page explains how to implement custom persistence backends for signal state storage. By default, the framework uses file-based atomic persistence for crash-safe live trading. Custom backends enable integration with Redis, PostgreSQL, MongoDB, or any other storage system while maintaining crash recovery guarantees.

@@ -1,3 +1,8 @@
+---
+title: design/11_live_trading_api
+group: design
+---
+
 # Live Trading API
 
 This page documents the public-facing Live Trading API provided by the `Live` class. This API enables production-ready live trading execution with infinite async generators, crash-safe state persistence, and real-time signal monitoring. The API is designed for production use with automatic state recovery after process crashes.

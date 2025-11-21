@@ -1,3 +1,8 @@
+---
+title: design/24_signal_states
+group: design
+---
+
 # Signal States
 
 This page documents the four signal states in the backtest-kit framework and their corresponding TypeScript interfaces. Each state is represented by a distinct interface in a discriminated union, enabling type-safe signal lifecycle management.

@@ -1,3 +1,8 @@
+---
+title: design/29_backtest_execution_flow
+group: design
+---
+
 # Backtest Execution Flow
 
 ## Purpose and Scope

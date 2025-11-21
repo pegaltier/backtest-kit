@@ -1,3 +1,8 @@
+---
+title: design/09_configuration_functions
+group: design
+---
+
 # Configuration Functions
 
 ## Purpose and Scope

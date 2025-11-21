@@ -1,3 +1,8 @@
+---
+title: design/32_live_trading
+group: design
+---
+
 # Live Trading
 
 This document covers the live trading execution system, which enables real-time signal monitoring and trading operations with crash recovery. Live trading runs as an infinite async generator that continuously evaluates market conditions and manages open positions.

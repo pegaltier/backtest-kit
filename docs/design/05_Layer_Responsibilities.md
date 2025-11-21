@@ -1,3 +1,8 @@
+---
+title: design/05_layer_responsibilities
+group: design
+---
+
 # Layer Responsibilities
 
 This document details the responsibilities of each architectural layer in the backtest-kit framework and explains the separation of concerns between layers. The framework follows a strict four-layer architecture: Public API, Service Orchestration, Business Logic, and Cross-Cutting Concerns. Each layer has specific responsibilities and dependency rules that enforce modularity and testability.

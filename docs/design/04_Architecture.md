@@ -1,3 +1,8 @@
+---
+title: design/04_architecture
+group: design
+---
+
 # Architecture
 
 This document describes the four-layer clean architecture pattern of the backtest-kit framework, including the dependency injection system, service organization, and how components interact across architectural boundaries. It explains how the system maintains separation of concerns through explicit layer boundaries and context propagation mechanisms.

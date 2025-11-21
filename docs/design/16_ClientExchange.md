@@ -1,3 +1,8 @@
+---
+title: design/16_clientexchange
+group: design
+---
+
 # ClientExchange
 
 ## Purpose and Scope

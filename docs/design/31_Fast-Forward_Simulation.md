@@ -1,3 +1,8 @@
+---
+title: design/31_fast-forward_simulation
+group: design
+---
+
 # Fast-Forward Simulation
 
 This document describes the fast-forward simulation mechanism in the backtest-kit framework, which allows signals to be evaluated using historical candle data without iterating through every individual timestamp. This approach significantly reduces backtesting time while maintaining accuracy in profit/loss calculations.

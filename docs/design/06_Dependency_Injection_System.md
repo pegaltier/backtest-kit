@@ -1,3 +1,8 @@
+---
+title: design/06_dependency_injection_system
+group: design
+---
+
 # Dependency Injection System
 
 This document explains the dependency injection (DI) infrastructure that provides the architectural backbone for backtest-kit. The system uses symbol-based service identifiers, factory registration, and a service aggregator pattern to enable loose coupling, testability, and implicit context propagation.

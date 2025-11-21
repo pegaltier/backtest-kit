@@ -1,3 +1,8 @@
+---
+title: design/39_cross-cutting_concerns
+group: design
+---
+
 # Cross-Cutting Concerns
 
 ## Purpose and Scope

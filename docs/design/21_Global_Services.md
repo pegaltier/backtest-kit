@@ -1,3 +1,8 @@
+---
+title: design/21_global_services
+group: design
+---
+
 # Global Services
 
 ## Purpose and Scope

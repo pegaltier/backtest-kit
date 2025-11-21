@@ -1,3 +1,8 @@
+---
+title: design/22_logic_services
+group: design
+---
+
 # Logic Services
 
 ## Purpose and Scope

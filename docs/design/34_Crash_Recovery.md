@@ -1,3 +1,8 @@
+---
+title: design/34_crash_recovery
+group: design
+---
+
 # Crash Recovery
 
 ## Purpose and Scope

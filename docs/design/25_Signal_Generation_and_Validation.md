@@ -1,3 +1,8 @@
+---
+title: design/25_signal_generation_and_validation
+group: design
+---
+
 # Signal Generation and Validation
 
 This document describes how trading signals are generated and validated before execution in the backtest-kit framework. It covers the throttling mechanism that prevents signal spam, the transformation from user-provided data to validated signal rows, and the comprehensive validation rules that ensure signal integrity for both long and short positions.

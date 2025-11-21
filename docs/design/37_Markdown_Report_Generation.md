@@ -1,3 +1,8 @@
+---
+title: design/37_markdown_report_generation
+group: design
+---
+
 # Markdown Report Generation
 
 ## Purpose and Scope
