@@ -12,7 +12,6 @@ The framework implements a **four-layer clean architecture** with strict separat
 
 ![Mermaid Diagram](./diagrams\04_Architecture_0.svg)
 
-**Sources:** Diagram 1 from high-level architecture overview, [src/lib/index.ts:1-118](), [src/index.ts:1-56]()
 
 ### Layer Responsibilities Summary
 
@@ -33,7 +32,6 @@ The framework uses a **symbol-based dependency injection** system built on `di-k
 
 ![Mermaid Diagram](./diagrams\04_Architecture_1.svg)
 
-**Sources:** [src/lib/core/types.ts:1-57](), [src/lib/core/provide.ts:1-68](), [src/lib/index.ts:29-110]()
 
 ### Symbol Registration Pattern
 
@@ -104,7 +102,6 @@ This pattern enables:
 - **Type-safe injection** via TypeScript inference
 - **Single import point** for framework internals
 
-**Sources:** [src/lib/index.ts:29-118](), [src/lib/core/types.ts:1-57](), [src/lib/core/provide.ts:1-68]()
 
 ---
 
@@ -114,7 +111,6 @@ Services are organized into **six semantic categories** based on their architect
 
 ![Mermaid Diagram](./diagrams\04_Architecture_2.svg)
 
-**Sources:** [src/lib/index.ts:29-110](), [docs/uml.puml:1-208](), [src/lib/core/types.ts:1-57]()
 
 ### Service Category Definitions
 
@@ -139,7 +135,6 @@ User configuration flows from Public API to Schema registries without executing 
 
 ![Mermaid Diagram](./diagrams\04_Architecture_3.svg)
 
-**Sources:** [src/function/add.ts]() (inferred), [types.d.ts:579-579](), [types.d.ts:413-422]()
 
 ### Runtime Instance Creation Flow
 
@@ -147,7 +142,6 @@ At execution time, Connection services create memoized client instances from reg
 
 ![Mermaid Diagram](./diagrams\04_Architecture_4.svg)
 
-**Sources:** [docs/classes/StrategyConnectionService.md:10-21](), Diagram 4 from high-level architecture overview
 
 ### Context Propagation Pattern
 
@@ -155,7 +149,6 @@ ExecutionContextService and MethodContextService use `di-scoped` to propagate co
 
 ![Mermaid Diagram](./diagrams\04_Architecture_5.svg)
 
-**Sources:** [types.d.ts:84-90](), [types.d.ts:344-351](), [types.d.ts:52-83](), [types.d.ts:310-323]()
 
 ---
 
@@ -175,7 +168,6 @@ Provides **runtime execution parameters** for each operation:
 
 Used by [src/lib/services/global/]() services to inject context into `ClientExchange` and `ClientStrategy` operations.
 
-**Sources:** [types.d.ts:52-95](), [src/lib/services/context/ExecutionContextService.ts]() (inferred)
 
 ### MethodContextService
 
@@ -189,7 +181,6 @@ Provides **schema routing parameters** for dependency resolution:
 
 Used by [src/lib/services/connection/]() services to retrieve correct client instances via memoized factories.
 
-**Sources:** [types.d.ts:310-351](), [src/lib/services/context/MethodContextService.ts]() (inferred)
 
 ### Scope Boundaries
 
@@ -199,7 +190,6 @@ Context scope is established at the **Logic Public Service** layer and flows dow
 
 This pattern eliminates the need to pass `strategyName`, `exchangeName`, `symbol`, `when`, and `backtest` as parameters through every method call in the service chain.
 
-**Sources:** Diagram 4 from high-level architecture overview, [types.d.ts:84-90](), [types.d.ts:344-351]()
 
 ---
 
@@ -228,7 +218,6 @@ This ensures:
 - **No redundant construction overhead** after first use
 - **Stateful client behavior** (e.g., signal persistence in `ClientStrategy`)
 
-**Sources:** [docs/classes/StrategyConnectionService.md:61-70](), Diagram 4 from high-level architecture overview
 
 ---
 
@@ -245,7 +234,6 @@ The complete execution flow from user-facing API to business logic demonstrates 
 3. **Business logic is pure** - `ClientStrategy` and `ClientExchange` have no knowledge of DI or service infrastructure
 4. **Memoization prevents redundancy** - Client instances created once per schema and reused
 
-**Sources:** Diagram 2 from high-level architecture overview, [src/lib/index.ts:1-118]()
 
 ---
 
@@ -262,4 +250,3 @@ This four-layer architecture with dependency injection provides several key adva
 | **Maintainability** | Consistent service naming and organization | Easy to locate functionality by following naming conventions |
 | **Extensibility** | New schemas registered via `add*` functions | Framework supports custom strategies/exchanges without code changes |
 
-**Sources:** Diagram 1 from high-level architecture overview, entire architecture analysis

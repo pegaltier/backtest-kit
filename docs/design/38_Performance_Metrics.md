@@ -17,7 +17,6 @@ The framework provides two levels of performance metric calculation depending on
 
 Live trading reports include comprehensive statistics calculated from all closed signals. Backtest reports provide raw signal data in tabular form, allowing users to perform their own analysis. Both services accumulate signal data per strategy using memoized storage instances.
 
-**Sources:** [README.md:293-332](), [src/lib/services/markdown/LiveMarkdownService.ts:275-303](), [src/lib/services/markdown/BacktestMarkdownService.ts:125-152]()
 
 ---
 
@@ -34,13 +33,11 @@ The `LiveMarkdownService` calculates four primary performance metrics from close
 | **Win Rate** | Percentage of profitable trades with win/loss breakdown | `(winCount / totalClosed) * 100` | `Win rate: 60.00% (3W / 2L)` |
 | **Average PNL** | Mean PNL percentage across all closed signals | `sum(pnl) / totalClosed` | `Average PNL: +1.23%` |
 
-**Sources:** [src/lib/services/markdown/LiveMarkdownService.ts:275-296](), [README.md:320-332]()
 
 ### Win Rate Calculation
 
 ![Mermaid Diagram](./diagrams\38_Performance_Metrics_0.svg)
 
-**Sources:** [src/lib/services/markdown/LiveMarkdownService.ts:276-293]()
 
 ### Average PNL Calculation
 
@@ -59,7 +56,6 @@ The calculation:
 3. Divides by the count of closed events
 4. Formats with sign prefix: `+1.23%` or `-2.45%`
 
-**Sources:** [src/lib/services/markdown/LiveMarkdownService.ts:280-296]()
 
 ---
 
@@ -67,7 +63,6 @@ The calculation:
 
 ![Mermaid Diagram](./diagrams\38_Performance_Metrics_1.svg)
 
-**Sources:** [src/lib/services/markdown/LiveMarkdownService.ts:397-413](), [src/lib/services/markdown/LiveMarkdownService.ts:219-249](), [src/lib/services/markdown/LiveMarkdownService.ts:258-303]()
 
 ---
 
@@ -98,7 +93,6 @@ const newEvent: TickEvent = {
 };
 ```
 
-**Sources:** [src/lib/services/markdown/LiveMarkdownService.ts:16-47](), [src/lib/services/markdown/LiveMarkdownService.ts:228-242]()
 
 ---
 
@@ -150,7 +144,6 @@ public getReport(strategyName: StrategyName): string {
 }
 ```
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:106-152](), [README.md:293-297]()
 
 ---
 
@@ -176,7 +169,6 @@ Both services use a `Column` interface to define how to extract and format data 
 
 The column definitions for backtest [BacktestMarkdownService.ts:27-100]() and live [LiveMarkdownService.ts:62-137]() are similar but differ in data sources (`IStrategyTickResultClosed` vs `TickEvent`).
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:18-100](), [src/lib/services/markdown/LiveMarkdownService.ts:49-137]()
 
 ---
 
@@ -192,7 +184,6 @@ The memoization pattern ensures:
 - Efficient memory usage
 - Cache clearing with `clear(strategyName)`
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:216-219](), [src/lib/services/markdown/LiveMarkdownService.ts:371-374]()
 
 ---
 
@@ -219,7 +210,6 @@ for await (const result of Live.run("BTCUSDT", {
 }
 ```
 
-**Sources:** [README.md:299-318]()
 
 ### Saving Reports to Disk
 
@@ -237,7 +227,6 @@ await Live.dump("my-strategy");
 // Contains: Win rate, avg PNL, total events + table
 ```
 
-**Sources:** [README.md:268-311]()
 
 ### Clearing Accumulated Data
 
@@ -253,7 +242,6 @@ await Backtest.clear();
 await Live.clear();
 ```
 
-**Sources:** [README.md:288-291](), [README.md:309-311]()
 
 ---
 
@@ -271,7 +259,6 @@ const lossCount = closedEvents.filter((e) => e.pnl && e.pnl < 0).length;
 
 Signals with exactly `pnl === 0` (breakeven after fees/slippage) are not counted as wins or losses in the win rate calculation, but are included in the total closed count.
 
-**Sources:** [src/lib/services/markdown/LiveMarkdownService.ts:278-279]()
 
 ### PNL Values Source
 
@@ -281,4 +268,3 @@ The PNL percentage values used in metrics come from the `toProfitLossDto` helper
 
 For details on the exact calculation formula, see [PnL Calculation](#6.4).
 
-**Sources:** [README.md:600-616](), [src/helpers/toProfitLossDto.ts]()

@@ -18,7 +18,6 @@ The execution model consists of two layers:
 
 Results stream to consumers as they occur, yielding only `opened` and `closed` signal events while filtering out `idle` and `active` states to reduce noise.
 
-**Sources**: [src/lib/services/logic/private/LiveLogicPrivateService.ts:1-86](), [types.d.ts:707-749]()
 
 ---
 
@@ -30,7 +29,6 @@ The following diagram shows how live execution flows through the service layers:
 
 ![Mermaid Diagram](./diagrams\33_Live_Execution_Flow_0.svg)
 
-**Sources**: [src/lib/services/logic/private/LiveLogicPrivateService.ts:1-86](), [src/lib/services/logic/public/LiveLogicPublicService.ts:1-78]()
 
 ---
 
@@ -52,7 +50,6 @@ The implementation uses these key constructs:
 | `sleep(TICK_TTL)` | Wait 1 minute + 1ms between iterations | [src/lib/services/logic/private/LiveLogicPrivateService.ts:69-80]() |
 | `yield result` | Stream opened/closed events to consumer | [src/lib/services/logic/private/LiveLogicPrivateService.ts:78]() |
 
-**Sources**: [src/lib/services/logic/private/LiveLogicPrivateService.ts:53-82]()
 
 ---
 
@@ -76,7 +73,6 @@ interface IMethodContext {
 
 This context is read by `StrategyConnectionService` and `ExchangeConnectionService` to route requests to the correct registered schema instances. The scoped context eliminates the need to pass these names as parameters through every function call.
 
-**Sources**: [src/lib/services/logic/public/LiveLogicPublicService.ts:55-74](), [src/lib/services/context/MethodContextService.ts:1-56](), [types.d.ts:315-351]()
 
 ---
 
@@ -97,7 +93,6 @@ The filtering logic prevents overwhelming the consumer with status updates:
 | `opened` | ✅ Yes | New signal created, user should know | `IStrategyTickResultOpened` |
 | `closed` | ✅ Yes | Signal completed with PNL, critical event | `IStrategyTickResultClosed` |
 
-**Sources**: [src/lib/services/logic/private/LiveLogicPrivateService.ts:61-81](), [types.d.ts:441-513]()
 
 ---
 
@@ -124,7 +119,6 @@ Each iteration consists of:
 4. **Yield (conditional)**: Stream result if `opened` or `closed`
 5. **Sleep**: Wait for remainder of 60-second interval
 
-**Sources**: [src/lib/services/logic/private/LiveLogicPrivateService.ts:7-82]()
 
 ---
 
@@ -146,7 +140,6 @@ Key interactions:
 
 4. **Context Injection**: `ExecutionContextService` provides `{symbol, when, backtest: false}` to all operations, enabling functions like `getCandles()` to work without explicit parameters.
 
-**Sources**: [src/lib/services/logic/private/LiveLogicPrivateService.ts:1-86](), [types.d.ts:57-95]()
 
 ---
 
@@ -166,7 +159,6 @@ This initialization ensures:
 
 For detailed crash recovery mechanisms, see [Crash Recovery](#8.2).
 
-**Sources**: [src/lib/services/logic/private/LiveLogicPrivateService.ts:53-82](), [types.d.ts:897-959]()
 
 ---
 
@@ -202,5 +194,3 @@ for await (const result of Live.run("BTCUSDT", {
 ```
 
 Each iteration of the loop represents one 1-minute tick. Results stream immediately when signals open or close, enabling real-time event processing and logging.
-
-**Sources**: [types.d.ts:707-749](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:39-52]()

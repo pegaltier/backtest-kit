@@ -46,7 +46,6 @@ Live trading runs an infinite loop with 1-minute intervals, monitoring active si
 | **Interval Control** | `sleep(60000 + 1ms)` ensures 1-minute tick rate |
 | **Filtered Output** | Only `opened` and `closed` yielded, `active` filtered |
 
-**Sources:**
 - [src/lib/services/logic/private/BacktestLogicPrivateService.ts]()
 - [src/lib/services/logic/private/LiveLogicPrivateService.ts]()
 - [src/client/ClientStrategy.ts:146-165]() (waitForInit)
@@ -82,7 +81,6 @@ The `PersistSignalAdapter` ensures atomicity through temporary file writes:
 - **State Recovery**: [src/client/ClientStrategy.ts:146-165]() (`waitForInit`)
 - **File Naming**: `{strategyName}_{symbol}.json` convention in `PersistSignalAdapter.getEntityId()`
 
-**Sources:**
 - [src/classes/Persist.ts]()
 - [src/client/ClientStrategy.ts:220-233]()
 - [src/client/ClientStrategy.ts:146-165]()
@@ -114,7 +112,6 @@ The `VALIDATE_SIGNAL_FN` function enforces the following constraints:
 
 ![Mermaid Diagram](./diagrams\02_Key_Features_5.svg)
 
-**Sources:**
 - [src/client/ClientStrategy.ts:28-88]() (VALIDATE_SIGNAL_FN)
 - [src/client/ClientStrategy.ts:90-131]() (GET_SIGNAL_FN)
 - [src/interfaces/Strategy.interface.ts:22-37]() (ISignalDto)
@@ -157,7 +154,6 @@ Both backtest and live execution use async generators (`AsyncIterableIterator`) 
 4. **Lazy Initialization**: Services created only when needed
    - **Pattern**: DI container resolves dependencies on first access
 
-**Sources:**
 - [src/lib/services/logic/private/BacktestLogicPrivateService.ts]()
 - [src/lib/services/logic/private/LiveLogicPrivateService.ts]()
 - [src/client/ClientStrategy.ts:194-464]() (prototype methods)
@@ -207,7 +203,6 @@ if (result.action === "closed") {
 | **active** | [src/client/ClientStrategy.ts:447-463]() | TP/SL/time condition met |
 | **closed** | [src/client/ClientStrategy.ts:416-435]() | `setPendingSignal(null)` |
 
-**Sources:**
 - [src/client/ClientStrategy.ts:258-464]() (tick method with all states)
 - [src/interfaces/Strategy.interface.ts:128-208]() (type definitions)
 
@@ -257,7 +252,6 @@ pnl% = (priceOpenWithCosts - priceCloseWithCosts) / priceOpenWithCosts × 100
 
 Without costs, this would be +2.0%. The 0.41% difference represents realistic trading costs.
 
-**Sources:**
 - [src/helpers/toProfitLossDto.ts]() (PNL calculation logic)
 - [src/client/ClientStrategy.ts:375]() (usage in tick method)
 - [src/client/ClientStrategy.ts:544]() (usage in backtest method)
@@ -300,7 +294,6 @@ if (lastSignalTimestamp !== null &&
 lastSignalTimestamp = currentTime; // Update for next check
 ```
 
-**Sources:**
 - [src/client/ClientStrategy.ts:19-26]() (INTERVAL_MINUTES mapping)
 - [src/client/ClientStrategy.ts:90-131]() (GET_SIGNAL_FN with throttling)
 - [src/interfaces/Strategy.interface.ts:10-16]() (SignalInterval type)
@@ -336,7 +329,6 @@ if (totalVolume === 0) {
 }
 ```
 
-**Sources:**
 - [src/client/ClientStrategy.ts:133-144]() (GET_AVG_PRICE_FN)
 - [src/client/ClientExchange.ts]() (getAveragePrice implementation)
 - [src/client/ClientStrategy.ts:329-331]() (usage in tick)
@@ -379,7 +371,6 @@ The framework generates detailed markdown reports with statistics for both backt
 
 ![Mermaid Diagram](./diagrams\02_Key_Features_13.svg)
 
-**Sources:**
 - [src/lib/services/markdown/BacktestMarkdownService.ts]()
 - [src/lib/services/markdown/LiveMarkdownService.ts]()
 - [src/lib/services/logic/public/BacktestLogicPublicService.ts]() (getReport, dump, clear)
@@ -434,7 +425,6 @@ addExchange({
 });
 ```
 
-**Sources:**
 - [src/function/add.ts]() (addStrategy, addExchange, addFrame)
 - [src/lib/services/schema/]() (registry services)
 - [src/lib/services/connection/]() (memoized factories)

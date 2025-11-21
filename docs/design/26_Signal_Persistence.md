@@ -17,13 +17,11 @@ The persistence system provides durability guarantees for active trading signals
 | `ClientStrategy.setPendingSignal()` | Writes signal state atomically | [src/client/ClientStrategy.ts:220-233]() |
 | `PersistBase<ISignalData>` | Base class for file-based persistence | [src/classes/Persist.ts:15-29]() |
 
-**Sources:** [src/client/ClientStrategy.ts:146-165](), [src/classes/Persist.ts:31-168](), [types.d.ts:895-910]()
 
 ## Persistence Architecture
 
 ![Mermaid Diagram](./diagrams\26_Signal_Persistence_0.svg)
 
-**Sources:** [src/client/ClientStrategy.ts:146-233](), [src/classes/Persist.ts:31-168]()
 
 The architecture uses a three-layer approach:
 
@@ -37,7 +35,6 @@ On initialization, `ClientStrategy.waitForInit()` attempts to load the last pers
 
 ![Mermaid Diagram](./diagrams\26_Signal_Persistence_1.svg)
 
-**Sources:** [src/client/ClientStrategy.ts:146-165](), [src/classes/Persist.ts:91-168]()
 
 The recovery process validates that the persisted signal matches the current execution context:
 
@@ -51,7 +48,6 @@ if (pendingSignal.strategyName !== self.params.method.context.strategyName) {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:158-163]()
 
 ## Atomic Write Operations
 
@@ -59,7 +55,6 @@ Every signal state change is persisted atomically through `ClientStrategy.setPen
 
 ![Mermaid Diagram](./diagrams\26_Signal_Persistence_2.svg)
 
-**Sources:** [src/client/ClientStrategy.ts:220-233](), [src/classes/Persist.ts:66-89]()
 
 The atomic write pattern ensures crash safety:
 
@@ -69,7 +64,6 @@ The atomic write pattern ensures crash safety:
 
 This pattern is implemented in `PersistBase.writeValue()`:
 
-**Sources:** [src/classes/Persist.ts:66-89]()
 
 ## File System Structure
 
@@ -113,7 +107,6 @@ When a signal is closed, the file contains:
 }
 ```
 
-**Sources:** [src/classes/Persist.ts:31-168](), [types.d.ts:895-910]()
 
 ## Entity ID Generation
 
@@ -133,7 +126,6 @@ This creates a unique identifier for each strategy-symbol pair. Multiple strateg
 | `mean-reversion` | `ETHUSDT` | `mean-reversion_ETHUSDT` | `./signal/mean-reversion_ETHUSDT.json` |
 | `momentum-5m` | `ETHUSDT` | `momentum-5m_ETHUSDT` | `./signal/momentum-5m_ETHUSDT.json` |
 
-**Sources:** [src/classes/Persist.ts:91-168]()
 
 ## Backtest vs Live Mode
 
@@ -141,7 +133,6 @@ Persistence behavior differs significantly between execution modes:
 
 ![Mermaid Diagram](./diagrams\26_Signal_Persistence_3.svg)
 
-**Sources:** [src/client/ClientStrategy.ts:146-233]()
 
 **Comparison Table:**
 
@@ -161,13 +152,11 @@ if (this.params.execution.context.backtest) {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:148-149](), [src/client/ClientStrategy.ts:225-227]()
 
 ## Persistence Lifecycle
 
 ![Mermaid Diagram](./diagrams\26_Signal_Persistence_4.svg)
 
-**Sources:** [src/client/ClientStrategy.ts:146-233](), [src/client/ClientStrategy.ts:258-464]()
 
 ## Error Handling
 
@@ -185,7 +174,6 @@ Persistence operations are wrapped in `trycatch` patterns to handle file system 
 
 All fatal errors are logged and propagated to the caller, preventing the strategy from yielding results with unconfirmed persistence.
 
-**Sources:** [src/classes/Persist.ts:15-89]()
 
 ## Custom Persistence Backends
 
@@ -214,7 +202,6 @@ usePersistSignalAdapter(new RedisPersistAdapter());
 
 For detailed information on implementing custom persistence backends, see [Custom Persistence Backends](#11.2).
 
-**Sources:** [types.d.ts:895-976]()
 
 ## Integration with Signal Lifecycle
 
@@ -222,7 +209,6 @@ Persistence is called at critical transition points in the signal lifecycle:
 
 ![Mermaid Diagram](./diagrams\26_Signal_Persistence_5.svg)
 
-**Sources:** [src/client/ClientStrategy.ts:258-464]()
 
 The persistence calls occur at exactly two points:
 

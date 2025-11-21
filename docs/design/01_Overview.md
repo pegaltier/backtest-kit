@@ -19,8 +19,6 @@ For detailed information about specific subsystems, refer to:
 - Signal state management: [Signal Lifecycle](#6)
 - Service layer architecture: [Service Layer](#5)
 
-**Sources:** [README.md:1-27](), [types.d.ts:1-50](), [package.json:1-40]()
-
 ---
 
 ## Framework Purpose
@@ -34,8 +32,6 @@ The **backtest-kit** framework enables users to:
 5. **Integrate data sources** - Connect custom exchanges via pluggable schema registration
 
 The framework enforces separation of concerns through dependency injection, enabling testable business logic without tight coupling to infrastructure services.
-
-**Sources:** [README.md:1-21](), [types.d.ts:4-50]()
 
 ---
 
@@ -53,8 +49,6 @@ The framework follows a clean architecture pattern with four distinct layers:
 | **Service Orchestration** | Dependency injection, routing, context management | Schema/Connection/Global/Logic services | [src/lib/services/*]() |
 | **Business Logic** | Pure, testable domain logic | `ClientStrategy`, `ClientExchange`, `ClientFrame` | [src/client/*]() |
 | **Cross-Cutting** | Logging, persistence, reporting, context | `LoggerService`, `PersistSignalAdapter`, Markdown services | [src/lib/services/base](), [src/classes/Persist.ts]() |
-
-**Sources:** [types.d.ts:1-56](), [src/index.ts:1-56](), [README.md:196-208]()
 
 For detailed layer responsibilities, see [Layer Responsibilities](#2.1).
 
@@ -80,8 +74,6 @@ The framework supports two execution modes with different characteristics:
 - [ClientFrame]() - Timeframe generation logic
 - [BacktestMarkdownService]() - Accumulates results for reporting
 
-**Sources:** [types.d.ts:515-517](), [README.md:105-137]()
-
 ### Live Mode
 
 - **Entry Point:** `Live.run(symbol, {strategyName, exchangeName})`
@@ -95,8 +87,6 @@ The framework supports two execution modes with different characteristics:
 - [LiveLogicPrivateService]() - Orchestrates infinite loop
 - [PersistSignalAdapter]() - Crash-safe persistence
 - [LiveMarkdownService]() - Accumulates events for reporting
-
-**Sources:** [types.d.ts:534-560](), [README.md:140-194]()
 
 ---
 
@@ -114,8 +104,6 @@ The client layer contains pure business logic without dependency injection:
 | `ClientExchange` | Candle data fetching, VWAP calculation | `getCandles()`, `getAveragePrice()` |
 | `ClientFrame` | Timeframe generation for backtesting | `getTimeframe()` |
 | `PersistSignalAdapter` | Crash-safe signal persistence | `write()`, `read()` |
-
-**Sources:** [types.d.ts:519-543](), [types.d.ts:173-221](), [types.d.ts:291-308]()
 
 ### Service Orchestration Layer
 
@@ -140,8 +128,6 @@ The service layer handles dependency injection and routing:
 4. **Logic Services** - Execution orchestration
    - `BacktestLogicPrivateService`, `LiveLogicPrivateService`
    - Implement async generator loops
-
-**Sources:** [types.d.ts:310-351](), [types.d.ts:84-96]()
 
 For detailed service layer documentation, see [Service Layer](#5).
 
@@ -173,8 +159,6 @@ type IStrategyTickResult =
 | Active | `IStrategyTickResultActive` | `signal, currentPrice` | Backtest: never, Live: no |
 | Closed | `IStrategyTickResultClosed` | `signal, pnl, closeReason` | Both modes |
 
-**Sources:** [types.d.ts:442-513](), [types.d.ts:361-392]()
-
 For complete signal lifecycle details, see [Signal Lifecycle](#6).
 
 ---
@@ -199,8 +183,6 @@ The framework uses a registration-then-execution pattern:
 - **Routing:** `MethodContextService` provides schema names for lookup
 - **Flexibility:** Multiple strategies/exchanges can coexist
 
-**Sources:** [types.d.ts:546-646](), [src/index.ts:1-11]()
-
 For configuration details, see [Configuration Functions](#3.1).
 
 ---
@@ -223,7 +205,6 @@ The framework uses **di-scoped** for implicit context passing:
 - Type-safe context access
 - Scoped to async execution boundaries
 
-**Sources:** [types.d.ts:57-96](), [types.d.ts:310-351]()
 
 For DI system details, see [Dependency Injection System](#2.2).
 
@@ -240,7 +221,6 @@ For DI system details, see [Dependency Injection System](#2.2).
 | `functools-kit` | ^1.0.93 | Functional utilities (singleshot, queued, memoize) |
 | `get-moment-stamp` | ^1.1.1 | Timestamp utilities for candle intervals |
 
-**Sources:** [package.json:73-78]()
 
 ### Build System
 
@@ -249,7 +229,6 @@ For DI system details, see [Dependency Injection System](#2.2).
 - **Types:** Single declaration file (`types.d.ts`)
 - **Target:** Node.js with TypeScript 5.0+
 
-**Sources:** [package.json:40-57]()
 
 ---
 
@@ -259,13 +238,11 @@ For DI system details, see [Dependency Injection System](#2.2).
 
 ![Mermaid Diagram](./diagrams\01_Overview_7.svg)
 
-**Sources:** Referenced in high-level diagrams provided
 
 ### Live Execution Flow
 
 ![Mermaid Diagram](./diagrams\01_Overview_8.svg)
 
-**Sources:** Referenced in high-level diagrams provided
 
 ---
 
@@ -289,7 +266,6 @@ The framework is optimized for production use:
 | Context propagation | `di-scoped` | No parameter threading overhead |
 | Persistence | Atomic file writes | Crash safety without performance penalty |
 
-**Sources:** [README.md:18-19](), [README.md:618-629]()
 
 ---
 
@@ -315,7 +291,6 @@ Signals are validated automatically in `ClientStrategy`:
 
 **Persistence Location:** [src/classes/Persist.ts]()
 
-**Sources:** [types.d.ts:361-392](), [README.md:210-242]()
 
 For error handling patterns, see [Error Handling](#10.2).
 
@@ -331,4 +306,3 @@ To use the framework:
 4. **Live Trading:** Use `Live.run()` for production deployment - see [Live Trading API](#3.3)
 5. **Reporting:** Generate markdown reports with `getReport()` and `dump()` - see [Reporting and Analytics](#9)
 
-**Sources:** [README.md:22-169](), [src/index.ts:1-56]()

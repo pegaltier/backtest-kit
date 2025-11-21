@@ -20,7 +20,6 @@ The Business Logic Layer consists of three client implementations that encapsula
 
 These classes are designed with **prototype function patterns** for memory efficiency and implement interfaces defined in [src/interfaces/]() for type safety. They receive dependencies through constructor parameters but do not use the DI container directly, making them pure and testable.
 
-**Sources:** [src/client/ClientStrategy.ts:1-660](), [src/client/ClientExchange.ts:1-223](), [src/client/ClientFrame.ts:1-93]()
 
 ---
 
@@ -28,7 +27,6 @@ These classes are designed with **prototype function patterns** for memory effic
 
 ![Mermaid Diagram](./diagrams\14_Core_Business_Logic_0.svg)
 
-**Sources:** [src/client/ClientStrategy.ts:194-199](), [src/client/ClientExchange.ts:46-47](), [src/client/ClientFrame.ts:75-76](), [src/interfaces/Strategy.interface.ts:219-237]()
 
 ---
 
@@ -40,7 +38,6 @@ These classes are designed with **prototype function patterns** for memory effic
 
 ![Mermaid Diagram](./diagrams\14_Core_Business_Logic_1.svg)
 
-**Sources:** [src/client/ClientStrategy.ts:194-199](), [src/interfaces/Strategy.interface.ts:60-69](), [src/interfaces/Strategy.interface.ts:43-54](), [src/interfaces/Strategy.interface.ts:204-208]()
 
 ### Signal Interval Throttling
 
@@ -57,7 +54,6 @@ The framework enforces minimum intervals between `getSignal()` calls to prevent 
 
 Throttling logic: [src/client/ClientStrategy.ts:94-106]()
 
-**Sources:** [src/client/ClientStrategy.ts:19-26](), [src/interfaces/Strategy.interface.ts:10-16]()
 
 ---
 
@@ -74,7 +70,6 @@ The `VALIDATE_SIGNAL_FN` performs comprehensive validation of signal parameters 
 
 ![Mermaid Diagram](./diagrams\14_Core_Business_Logic_2.svg)
 
-**Sources:** [src/client/ClientStrategy.ts:28-88](), [src/client/ClientStrategy.ts:124]()
 
 ---
 
@@ -91,7 +86,6 @@ The `tick()` method implements the main execution loop for signal monitoring. It
 - **Active State** ([src/client/ClientStrategy.ts:437-463]()): Signal being monitored, not yielded in live mode
 - **Closed State** ([src/client/ClientStrategy.ts:374-435]()): Signal completed with PnL calculation
 
-**Sources:** [src/client/ClientStrategy.ts:258-464](), [src/interfaces/Strategy.interface.ts:204-208]()
 
 ---
 
@@ -109,7 +103,6 @@ The `backtest()` method simulates signal outcomes using historical candle data w
 - **Short Position**: Checks if `averagePrice <= priceTakeProfit` or `averagePrice >= priceStopLoss` ([src/client/ClientStrategy.ts:533-540]())
 - **Time Expiration**: If no TP/SL hit, uses last 5 candles VWAP ([src/client/ClientStrategy.ts:601-606]())
 
-**Sources:** [src/client/ClientStrategy.ts:485-656]()
 
 ---
 
@@ -126,7 +119,6 @@ The `backtest()` method simulates signal outcomes using historical candle data w
 
 **Singleshot Pattern**: `waitForInit()` uses `singleshot` from `functools-kit` to ensure initialization happens exactly once ([src/client/ClientStrategy.ts:209]()).
 
-**Sources:** [src/client/ClientStrategy.ts:146-165](), [src/client/ClientStrategy.ts:220-233](), [src/client/ClientStrategy.ts:209]()
 
 ---
 
@@ -138,7 +130,6 @@ The `backtest()` method simulates signal outcomes using historical candle data w
 
 ![Mermaid Diagram](./diagrams\14_Core_Business_Logic_5.svg)
 
-**Sources:** [src/client/ClientExchange.ts:7-18]()
 
 ---
 
@@ -157,7 +148,6 @@ The `getCandles()` method fetches historical candles **backwards** from the exec
 
 **Implementation:** [src/client/ClientExchange.ts:57-101]()
 
-**Sources:** [src/client/ClientExchange.ts:57-101]()
 
 ---
 
@@ -176,7 +166,6 @@ The `getNextCandles()` method fetches candles **forwards** from execution contex
 
 **Implementation:** [src/client/ClientExchange.ts:113-157]()
 
-**Sources:** [src/client/ClientExchange.ts:113-157]()
 
 ---
 
@@ -203,7 +192,6 @@ Simple Average = Σ(close) / count
 
 **Code:** [src/client/ClientExchange.ts:172-203]()
 
-**Sources:** [src/client/ClientExchange.ts:172-203](), [src/client/ClientStrategy.ts:133-144]()
 
 ---
 
@@ -225,7 +213,6 @@ Simple Average = Σ(close) / count
 
 **Singleshot Caching:** The `getTimeframe()` method is wrapped with `singleshot` to cache results and prevent redundant generation ([src/client/ClientFrame.ts:86-89]()).
 
-**Sources:** [src/client/ClientFrame.ts:12-26](), [src/client/ClientFrame.ts:37-62](), [src/client/ClientFrame.ts:86-89]()
 
 ---
 
@@ -240,7 +227,6 @@ The `toProfitLossDto` helper calculates realistic profit/loss including market i
 | `PERCENT_SLIPPAGE` | 0.1% | Entry and exit (worse execution) |
 | `PERCENT_FEE` | 0.1% | Entry and exit (total 0.2%) |
 
-**Sources:** [src/helpers/toProfitLossDto.ts:7-13]()
 
 ---
 
@@ -255,7 +241,6 @@ The `toProfitLossDto` helper calculates realistic profit/loss including market i
 
 **Implementation:** [src/helpers/toProfitLossDto.ts:44-90]()
 
-**Sources:** [src/helpers/toProfitLossDto.ts:1-93]()
 
 ---
 
@@ -273,7 +258,6 @@ The Business Logic Layer integrates with the rest of the system through well-def
 | Execution Context | `ExecutionContextService` | DI container | All clients |
 | Method Context | `MethodContextService` | DI container | `ClientStrategy` |
 
-**Sources:** [src/interfaces/Strategy.interface.ts:60-69](), [src/interfaces/Exchange.interface.ts:1-150]()
 
 ---
 
@@ -302,4 +286,3 @@ public async tick(): Promise<IStrategyTickResult> {
 - Reduces memory when many strategy/exchange instances exist
 - Maintains clean separation between public API and implementation
 
-**Sources:** [src/client/ClientStrategy.ts:90-131](), [src/client/ClientExchange.ts:1-223](), [src/client/ClientFrame.ts:37-62]()

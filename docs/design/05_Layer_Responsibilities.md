@@ -14,7 +14,6 @@ The framework is organized into four distinct layers, each with clear boundaries
 
 ![Mermaid Diagram](./diagrams\05_Layer_Responsibilities_0.svg)
 
-Sources: [src/lib/index.ts:1-118](), [src/lib/core/types.ts:1-57](), [src/lib/core/provide.ts:1-68]()
 
 ---
 
@@ -54,7 +53,6 @@ The Public API Layer provides the only user-facing interface to the framework. I
 
 ![Mermaid Diagram](./diagrams\05_Layer_Responsibilities_1.svg)
 
-Sources: [src/lib/index.ts:101-118]()
 
 ---
 
@@ -79,7 +77,6 @@ The Service Orchestration Layer is the most complex layer, responsible for depen
 
 Schema services act as simple registries. They have no dependencies and are the foundation of the configuration system.
 
-Sources: [src/lib/core/provide.ts:39-43]()
 
 ### Connection Services
 
@@ -99,7 +96,6 @@ Sources: [src/lib/core/provide.ts:39-43]()
 
 Connection services bridge configuration (schemas) to execution (client instances). They use `MethodContextService` to determine which schema to activate based on the current execution context.
 
-Sources: [src/lib/core/provide.ts:33-37]()
 
 ### Global Services
 
@@ -121,7 +117,6 @@ Sources: [src/lib/core/provide.ts:33-37]()
 
 Global services use the scoped dependency injection pattern (`di-scoped`) to implicitly propagate context through the call stack without manual parameter passing.
 
-Sources: [src/lib/core/provide.ts:45-51]()
 
 ### Logic Services
 
@@ -148,7 +143,6 @@ Logic services are split into Public/Private pairs:
 
 ![Mermaid Diagram](./diagrams\05_Layer_Responsibilities_3.svg)
 
-Sources: [src/lib/core/provide.ts:53-61]()
 
 ---
 
@@ -193,7 +187,6 @@ const VALIDATE_SIGNAL_FN = (signal: ISignalRow): void => {
 }
 ```
 
-Sources: [src/client/ClientStrategy.ts:1-660](), [src/interfaces/Strategy.interface.ts:1-243]()
 
 ### ClientExchange
 
@@ -210,7 +203,6 @@ Sources: [src/client/ClientStrategy.ts:1-660](), [src/interfaces/Strategy.interf
 - `formatPrice()` - Format price with exchange precision
 - `formatQuantity()` - Format quantity with exchange precision
 
-Sources: Referenced in [src/client/ClientStrategy.ts:329]()
 
 ### ClientFrame
 
@@ -232,7 +224,6 @@ Sources: Referenced in [src/client/ClientStrategy.ts:329]()
 - Hours: `1h`, `2h`, `4h`, `6h`, `8h`, `12h`
 - Days: `1d`, `3d`
 
-Sources: [src/interfaces/Frame.interface.ts:1-108]()
 
 ---
 
@@ -261,7 +252,6 @@ this.params.logger.debug("ClientStrategy tick", {
 });
 ```
 
-Sources: [src/lib/index.ts:29-31](), [src/client/ClientStrategy.ts:259]()
 
 ### ExecutionContextService
 
@@ -279,7 +269,6 @@ interface ExecutionContext {
 }
 ```
 
-Sources: [src/lib/index.ts:34-40](), [src/client/ClientStrategy.ts:92]()
 
 ### MethodContextService
 
@@ -297,7 +286,6 @@ interface MethodContext {
 }
 ```
 
-Sources: [src/lib/index.ts:37-40](), [src/interfaces/Strategy.interface.ts:1-2]()
 
 ### PersistSignalAdapter
 
@@ -321,7 +309,6 @@ await PersistSignalAdaper.writeSignalData(
 );
 ```
 
-Sources: [src/client/ClientStrategy.ts:17](), [src/client/ClientStrategy.ts:151-165]()
 
 ### Markdown Services
 
@@ -335,7 +322,6 @@ Sources: [src/client/ClientStrategy.ts:17](), [src/client/ClientStrategy.ts:151-
 3. Generate markdown tables and statistics
 4. Provide `getReport()` and `dump()` methods
 
-Sources: [src/lib/index.ts:96-99]()
 
 ---
 
@@ -376,7 +362,6 @@ export const backtest = {
 
 This aggregator object provides all services through a single import, avoiding circular dependencies.
 
-Sources: [src/lib/index.ts:101-118](), [src/lib/core/types.ts:1-57]()
 
 ---
 

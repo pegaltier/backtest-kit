@@ -17,7 +17,6 @@ The framework maintains two distinct context scopes that serve different purpose
 | **MethodContext** | Per-operation | Routes to correct schema instances | `strategyName`, `exchangeName`, `frameName` |
 | **ExecutionContext** | Per-tick | Provides runtime execution state | `date`, `backtestMode`, `symbol` |
 
-**Sources:** [src/lib/services/context/MethodContextService.ts:12-19](), [src/lib/index.ts:8-13]()
 
 ---
 
@@ -31,7 +30,6 @@ The framework maintains two distinct context scopes that serve different purpose
 
 **Diagram: MethodContextService propagates schema names through async generator execution**
 
-**Sources:** [src/lib/services/context/MethodContextService.ts:1-56](), [src/lib/services/logic/public/LiveLogicPublicService.ts:66-73]()
 
 ---
 
@@ -49,7 +47,6 @@ interface IMethodContext {
 
 Each property corresponds to a schema registered via `addStrategy()`, `addExchange()`, or `addFrame()`. Connection services retrieve this context to determine which cached client instance to return.
 
-**Sources:** [src/lib/services/context/MethodContextService.ts:12-19]()
 
 ---
 
@@ -61,7 +58,6 @@ The following sequence shows how context flows from public API to connection ser
 
 **Diagram: Context propagation through service layers using di-scoped ambient context**
 
-**Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts:46-66](), [src/lib/services/logic/public/LiveLogicPublicService.ts:55-74]()
 
 ---
 
@@ -79,7 +75,6 @@ The following sequence shows how context flows from public API to connection ser
 | `backtestMode` | `boolean` | Whether running in backtest mode | Logic services |
 | `symbol` | `string` | Current trading pair | Logic services |
 
-**Sources:** [src/lib/index.ts:8-10](), [src/lib/core/types.ts:5-8]()
 
 ---
 
@@ -103,7 +98,6 @@ const result = await this.strategyGlobalService.tick(symbol, when, false);
 
 Global services inject this context into client instances, allowing functions like `getCandles()` to fetch data for the correct timestamp without receiving explicit date parameters.
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:57-61](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:58-61]()
 
 ---
 
@@ -121,7 +115,6 @@ The `MethodContextService.runAsyncIterator()` method wraps async generators to m
 
 **Diagram: runAsyncIterator maintains context across async generator yields**
 
-**Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts:58-65](), [src/lib/services/logic/public/LiveLogicPublicService.ts:66-73]()
 
 ---
 
@@ -148,7 +141,6 @@ The `runAsyncIterator` method:
 3. Re-injects context on each iteration
 4. Returns a new async generator with transparent context propagation
 
-**Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts:46-66](), [src/lib/services/logic/public/LiveLogicPublicService.ts:55-74]()
 
 ---
 
@@ -162,7 +154,6 @@ Connection services are the primary consumers of `MethodContext`. They use the c
 
 **Diagram: Connection services consume MethodContext to route to correct client instances**
 
-**Sources:** [src/lib/services/context/MethodContextService.ts:41-45](), [src/lib/index.ts:42-52]()
 
 ---
 
@@ -180,7 +171,6 @@ A key architectural principle: **client classes never access context services**.
 
 This separation enables unit testing clients without mocking the DI system.
 
-**Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts:1-70](), [src/lib/services/logic/public/LiveLogicPublicService.ts:1-78]()
 
 ---
 
@@ -203,7 +193,6 @@ Key features:
 - **Instance retrieval**: `MethodContextService.get()` returns current instance
 - **Type safety**: `TMethodContextService` type helper for injection
 
-**Sources:** [src/lib/services/context/MethodContextService.ts:41-53]()
 
 ---
 
@@ -213,7 +202,6 @@ Key features:
 
 **Diagram: Context lifecycle from creation through generator completion**
 
-**Sources:** [src/lib/services/context/MethodContextService.ts:41-45](), [src/lib/services/logic/public/LiveLogicPublicService.ts:66-73]()
 
 ---
 
@@ -226,7 +214,6 @@ The DI system registers context services as singletons but their scoped instance
 | `ExecutionContextService` | Singleton | Global | Stores current execution state |
 | `MethodContextService` | Scoped constructor | Per-operation | Provides schema routing |
 
-**Sources:** [src/lib/core/provide.ts:28-31](), [src/lib/core/types.ts:5-8](), [src/lib/index.ts:33-40]()
 
 ---
 
@@ -238,7 +225,6 @@ The complete flow showing both context types in action:
 
 **Diagram: Interaction between MethodContext and ExecutionContext during execution**
 
-**Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts:46-66](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:48-119]()
 
 ---
 
@@ -259,7 +245,6 @@ The complete flow showing both context types in action:
 3. **Learning Curve**: Developers must understand ambient context patterns
 4. **Runtime Dependency**: Requires `di-scoped` library for scoped context
 
-**Sources:** [src/lib/services/context/MethodContextService.ts:24-38]()
 
 ---
 

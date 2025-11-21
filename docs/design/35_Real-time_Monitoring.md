@@ -26,7 +26,6 @@ During the active state, the `tick()` method performs these checks on each invoc
 4. **Check Stop Loss**: Compares VWAP against `priceStopLoss` (direction-dependent)
 5. **Close or Continue**: Either closes signal with reason, or returns active result
 
-Sources: [src/client/ClientStrategy.ts:258-464]()
 
 ---
 
@@ -57,7 +56,6 @@ if (when.getTime() >= signalEndTime) {
 
 This check occurs first and takes priority. The signal's `timestamp` field records when it was created, and `minuteEstimatedTime` defines the maximum duration.
 
-Sources: [src/client/ClientStrategy.ts:343-349]()
 
 **Long Position TP/SL Logic**
 
@@ -77,7 +75,6 @@ For long positions:
 - Take profit triggers when price rises above target
 - Stop loss triggers when price falls below threshold
 
-Sources: [src/client/ClientStrategy.ts:351-360]()
 
 **Short Position TP/SL Logic**
 
@@ -97,7 +94,6 @@ For short positions:
 - Take profit triggers when price falls below target
 - Stop loss triggers when price rises above threshold
 
-Sources: [src/client/ClientStrategy.ts:362-371]()
 
 ---
 
@@ -119,7 +115,6 @@ The `ClientExchange.getAveragePrice()` method implements VWAP calculation:
 4. **Normalize**: Divide by total volume
 5. **Fallback**: If volume is zero, uses simple average of close prices
 
-Sources: [src/client/ClientExchange.ts:172-203]()
 
 ### Why VWAP?
 
@@ -132,7 +127,6 @@ VWAP provides several advantages for monitoring:
 
 The 5-candle window provides a 5-minute rolling average, balancing responsiveness with stability.
 
-Sources: [src/client/ClientExchange.ts:185-202]()
 
 ---
 
@@ -158,7 +152,6 @@ The `toProfitLossDto()` helper applies:
 - **Slippage**: 0.1% on entry and exit (worse execution simulation)
 - **Fees**: 0.1% per transaction (0.2% total)
 
-Sources: [src/client/ClientStrategy.ts:375](), [src/helpers/toProfitLossDto.ts:44-90]()
 
 **Step 2: Loss Warning Logs**
 
@@ -178,7 +171,6 @@ if (closeReason === "time_expired" && pnl.pnlPercentage < 0) {
 }
 ```
 
-Sources: [src/client/ClientStrategy.ts:379-394]()
 
 **Step 3: Callback Invocation**
 
@@ -195,7 +187,6 @@ if (this.params.callbacks?.onClose) {
 }
 ```
 
-Sources: [src/client/ClientStrategy.ts:405-412]()
 
 **Step 4: Persistence Update**
 
@@ -207,7 +198,6 @@ await this.setPendingSignal(null);
 
 In live mode, this writes `null` to disk via `PersistSignalAdapter`, ensuring crash recovery won't resurrect the closed signal.
 
-Sources: [src/client/ClientStrategy.ts:414]()
 
 **Step 5: Result Construction**
 
@@ -226,7 +216,6 @@ const result: IStrategyTickResultClosed = {
 };
 ```
 
-Sources: [src/client/ClientStrategy.ts:416-425](), [src/interfaces/Strategy.interface.ts:181-198]()
 
 ---
 
@@ -265,7 +254,6 @@ if (this.params.callbacks?.onActive) {
 }
 ```
 
-Sources: [src/client/ClientStrategy.ts:438-463](), [src/interfaces/Strategy.interface.ts:164-175]()
 
 ### Live Mode Filtering
 
@@ -310,7 +298,6 @@ for (let i = 4; i < candles.length; i++) {
 
 Starting at index 4 ensures there are always 5 candles available for VWAP calculation.
 
-Sources: [src/client/ClientStrategy.ts:512-598]()
 
 **Early Exit on TP/SL**
 
@@ -328,7 +315,6 @@ if (shouldClose) {
 }
 ```
 
-Sources: [src/client/ClientStrategy.ts:543-597]()
 
 **Time Expiration Fallback**
 
@@ -350,7 +336,6 @@ const result: IStrategyTickResultClosed = {
 };
 ```
 
-Sources: [src/client/ClientStrategy.ts:600-646]()
 
 ### Performance Benefits
 
@@ -381,7 +366,6 @@ The framework balances accuracy with performance through several design choices:
 
 The 5-candle window was chosen to balance real-time responsiveness with stability.
 
-Sources: [src/client/ClientExchange.ts:177]()
 
 ### Slippage and Fees
 
@@ -391,7 +375,6 @@ Sources: [src/client/ClientExchange.ts:177]()
 
 These values are conservative estimates for liquid cryptocurrency markets. Less liquid markets may experience higher slippage.
 
-Sources: [src/helpers/toProfitLossDto.ts:7-13]()
 
 ### Backtest Candle Resolution
 
@@ -421,7 +404,6 @@ if (candles.length === 0) {
 
 This prevents NaN values from propagating through monitoring logic.
 
-Sources: [src/client/ClientExchange.ts:179-183]()
 
 ### Zero Volume Candles
 
@@ -437,7 +419,6 @@ if (totalVolume === 0) {
 
 This ensures VWAP calculation always returns a valid price.
 
-Sources: [src/client/ClientExchange.ts:194-198]()
 
 ### Insufficient Backtest Candles
 
@@ -453,7 +434,6 @@ if (candles.length < 5) {
 
 The method logs a warning but continues processing with available data.
 
-Sources: [src/client/ClientStrategy.ts:504-508]()
 
 ### Context Validation
 
@@ -467,7 +447,6 @@ if (!this.params.execution.context.backtest) {
 
 This prevents accidental fast-forward execution in live trading.
 
-Sources: [src/client/ClientStrategy.ts:499-501]()
 
 ---
 
@@ -487,7 +466,6 @@ interface IStrategyCallbacks {
 
 These callbacks receive notifications during monitoring and closure.
 
-Sources: [src/interfaces/Strategy.interface.ts:74-91]()
 
 ### Signal Parameters
 
@@ -505,7 +483,6 @@ interface ISignalDto {
 
 All monitoring decisions flow from these five parameters.
 
-Sources: [src/interfaces/Strategy.interface.ts:22-37]()
 
 ---
 
@@ -522,4 +499,3 @@ The real-time monitoring system in backtest-kit provides continuous evaluation o
 
 The monitoring loop executes in `ClientStrategy.tick()` for live trading and `ClientStrategy.backtest()` for backtesting, with both implementations sharing core logic for TP/SL/time condition evaluation.
 
-Sources: [src/client/ClientStrategy.ts:258-656]()

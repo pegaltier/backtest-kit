@@ -17,7 +17,6 @@ Fast-forward simulation provides an optimized backtesting strategy by processing
 
 This approach is implemented in the `ClientStrategy.backtest()` method and orchestrated by `BacktestLogicPrivateService`.
 
-**Sources:** [src/client/ClientStrategy.ts:466-656](), [src/interfaces/Strategy.interface.ts:211-236]()
 
 ---
 
@@ -38,7 +37,6 @@ The framework supports two distinct execution modes for signals:
 
 **Diagram: Execution Mode Comparison**
 
-**Sources:** [src/client/ClientStrategy.ts:257-463](), [src/client/ClientStrategy.ts:485-656]()
 
 ---
 
@@ -61,7 +59,6 @@ public async backtest(
 2. Execution context must be in backtest mode (`context.backtest === true`)
 3. Candles array should contain at least 5 elements for VWAP calculation
 
-**Sources:** [src/client/ClientStrategy.ts:485-501](), [src/interfaces/Strategy.interface.ts:211-213]()
 
 ---
 
@@ -89,7 +86,6 @@ VWAP = weightedSum / totalVolume
 
 **Diagram: VWAP Calculation from 5-Candle Window**
 
-**Sources:** [src/client/ClientStrategy.ts:133-144]()
 
 ---
 
@@ -145,7 +141,6 @@ Stop Loss:    averagePrice >= signal.priceStopLoss
 
 **Diagram: Position-Specific TP/SL Decision Tree**
 
-**Sources:** [src/client/ClientStrategy.ts:520-541]()
 
 ---
 
@@ -169,7 +164,6 @@ When all candles have been processed without triggering TP/SL:
 
 **Diagram: Time Expiration Flow**
 
-**Sources:** [src/client/ClientStrategy.ts:600-655]()
 
 ---
 
@@ -211,7 +205,6 @@ The `IStrategyTickResultClosed` object includes:
 | `strategyName` | `string` | Strategy identifier |
 | `exchangeName` | `string` | Exchange identifier |
 
-**Sources:** [src/client/ClientStrategy.ts:543-596](), [src/helpers/toProfitLossDto.ts](), [src/interfaces/Strategy.interface.ts:181-198]()
 
 ---
 
@@ -245,7 +238,6 @@ BacktestLogicPrivateService.execute()
 
 **Key optimization:** After `backtest()` returns a closed result, the loop continues to the next timeframe timestamp. This avoids iterating through the signal's duration tick-by-tick.
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts]()
 
 ---
 
@@ -270,7 +262,6 @@ await this.setPendingSignal(null);
 
 This clears the pending signal in memory. In backtest mode, disk persistence is skipped (no file I/O).
 
-**Sources:** [src/client/ClientStrategy.ts:566-594](), [src/client/ClientStrategy.ts:220-233]()
 
 ---
 
@@ -305,7 +296,6 @@ Given:
 
 **Typical speedup:** 10-100x faster depending on API latency and timestamp granularity.
 
-**Sources:** [src/client/ClientStrategy.ts:485-656]()
 
 ---
 
@@ -365,7 +355,6 @@ if (closeReason === "time_expired" && pnl.pnlPercentage < 0) {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:494-508](), [src/client/ClientStrategy.ts:558-564](), [src/client/ClientStrategy.ts:617-623]()
 
 ---
 
@@ -386,4 +375,3 @@ This section maps natural language concepts to specific code entities for easy r
 | Candle data type | `ICandleData` | [src/interfaces/Exchange.interface.ts]() |
 | Signal row type | `ISignalRow` | [src/interfaces/Strategy.interface.ts:43-54]() |
 
-**Sources:** [src/client/ClientStrategy.ts](), [src/interfaces/Strategy.interface.ts]()

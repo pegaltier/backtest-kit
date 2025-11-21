@@ -6,7 +6,6 @@
 
 This document covers the implementation details of `ClientFrame`, its integration with the service orchestration layer, and the timeframe generation algorithm. For information about how timeframes are consumed during backtest execution, see [Backtest Execution Flow](#7.1). For frame configuration and registration, see [Configuration Functions](#3.1).
 
-**Sources:** [src/client/ClientFrame.ts:1-93]()
 
 ## Overview
 
@@ -18,7 +17,6 @@ In backtesting, strategies need to be evaluated at regular intervals across a hi
 
 The generated timeframe array is then consumed by `BacktestLogicPrivateService`, which iterates through each timestamp and triggers strategy evaluation.
 
-**Sources:** [src/client/ClientFrame.ts:64-74]()
 
 ## Architecture Integration
 
@@ -35,7 +33,6 @@ The generated timeframe array is then consumed by `BacktestLogicPrivateService`,
 
 This layered approach separates configuration (schema layer), context management (global layer), and pure business logic (client layer).
 
-**Sources:** [src/client/ClientFrame.ts:75-90](), High-Level System Architecture Diagram 1
 
 ## IFrame Interface
 
@@ -47,7 +44,6 @@ getTimeframe(symbol: string): Promise<Date[]>
 
 The `symbol` parameter exists for API consistency but is not used in timeframe generation. This design allows future extensions where different symbols might require different timeframes.
 
-**Sources:** [src/client/ClientFrame.ts:75-90]()
 
 ## Constructor Parameters
 
@@ -61,7 +57,6 @@ The `symbol` parameter exists for API consistency but is not used in timeframe g
 | `logger` | `ILoggerService` | Logger instance for debug output |
 | `callbacks` | `Partial<IFrameCallbacks>` | Optional callbacks (e.g., `onTimeframe`) |
 
-**Sources:** [src/client/ClientFrame.ts:1-6]()
 
 ## Supported Intervals
 
@@ -83,7 +78,6 @@ The `INTERVAL_MINUTES` constant maps each `FrameInterval` to its minute equivale
 | 1d | 1440 | Daily strategies |
 | 3d | 4320 | Multi-day strategies |
 
-**Sources:** [src/client/ClientFrame.ts:12-26]()
 
 ## Timeframe Generation Algorithm
 
@@ -104,7 +98,6 @@ The `GET_TIMEFRAME_FN` function [src/client/ClientFrame.ts:37-62]() performs the
 7. **Callback Invocation**: If `onTimeframe` callback exists, invoke it
 8. **Return**: Return generated timeframe array
 
-**Sources:** [src/client/ClientFrame.ts:37-62]()
 
 ## Singleshot Caching Pattern
 
@@ -126,7 +119,6 @@ The `singleshot` decorator ensures that:
 
 This optimization prevents redundant timeframe generation when multiple components request the same symbol's timeframe. Since timeframes are deterministic (same inputs always produce same output), caching is safe and improves performance.
 
-**Sources:** [src/client/ClientFrame.ts:86-89]()
 
 ## Callback System
 
@@ -151,7 +143,6 @@ callbacks?: {
 
 The callback is invoked after timeframe generation completes [src/client/ClientFrame.ts:57-59]().
 
-**Sources:** [src/client/ClientFrame.ts:57-59]()
 
 ## Integration with Backtest Flow
 
@@ -170,7 +161,6 @@ The callback is invoked after timeframe generation completes [src/client/ClientF
 
 The timeframe array is generated once and reused for the entire backtest run, thanks to singleshot caching.
 
-**Sources:** [src/client/ClientFrame.ts:1-93](), High-Level System Architecture Diagram 2
 
 ## Memory Efficiency Considerations
 
@@ -200,7 +190,6 @@ For extremely large backtests (e.g., 10+ years at 1m intervals), consider:
 
 However, for typical use cases (months to years of data at 1m-1h intervals), the current array-based approach provides optimal performance.
 
-**Sources:** [src/client/ClientFrame.ts:29-30](), [src/client/ClientFrame.ts:37-62]()
 
 ## Comparison with ClientExchange
 
@@ -217,7 +206,6 @@ Both `ClientFrame` and `ClientExchange` are client-layer components, but serve d
 
 `ClientFrame` establishes *when* to evaluate, while `ClientExchange` provides *what data* to evaluate. Both are orchestrated by `BacktestLogicPrivateService`.
 
-**Sources:** [src/client/ClientFrame.ts:1-93](), [src/client/ClientExchange.ts:1-223]()
 
 ## Error Handling
 
@@ -235,7 +223,6 @@ This error occurs if:
 
 Since `FrameInterval` is a type union, TypeScript prevents invalid intervals at compile time. The runtime check serves as a defensive safeguard.
 
-**Sources:** [src/client/ClientFrame.ts:45-47]()
 
 ## Testing Considerations
 
@@ -269,7 +256,6 @@ describe('ClientFrame', () => {
 });
 ```
 
-**Sources:** [src/client/ClientFrame.ts:1-93]()
 
 ## Configuration Example
 
@@ -288,4 +274,3 @@ addFrame({
 
 This schema is stored in `FrameSchemaService` and later used by `FrameConnectionService` to instantiate `ClientFrame` with the specified parameters.
 
-**Sources:** [src/client/ClientFrame.ts:1-93]()

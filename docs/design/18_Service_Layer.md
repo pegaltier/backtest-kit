@@ -24,7 +24,6 @@ The Service Layer consists of 19 distinct services organized into four functiona
 | Logic | `BacktestLogicPublicService`, `BacktestLogicPrivateService`, `LiveLogicPublicService`, `LiveLogicPrivateService` | Execution orchestration, async generator management |
 | Markdown | `BacktestMarkdownService`, `LiveMarkdownService` | Report generation and event accumulation |
 
-**Sources:** [src/lib/index.ts:29-110](), [src/lib/core/types.ts:1-56]()
 
 ---
 
@@ -49,7 +48,6 @@ The `TYPES` constant in [src/lib/core/types.ts:1-56]() defines Symbol identifier
 | `logicPublicServices` | `TYPES.backtestLogicPublicService`, `TYPES.liveLogicPublicService` | Public API facades |
 | `markdownServices` | `TYPES.backtestMarkdownService`, `TYPES.liveMarkdownService` | Report generation |
 
-**Sources:** [src/lib/core/types.ts:1-56](), [src/lib/core/provide.ts:1-68]()
 
 ---
 
@@ -91,7 +89,6 @@ The cache key is the `strategyName` string. On first access, the factory functio
 2. **Initialization happens once** - Expensive setup operations (like persistence file loading) execute only on first access
 3. **Performance optimization** - No redundant instantiation for repeated method calls
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:1-143](), [src/lib/services/connection/FrameConnectionService.ts:1-86]()
 
 ---
 
@@ -109,7 +106,6 @@ Connection Services implement the `IStrategy`, `IExchange`, and `IFrame` interfa
 4. **Client Instance** - Executes business logic and returns result
 5. **Event Emitters** - Connection service emits results to global event emitters for `listenSignal` API
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:86-140](), [src/lib/services/connection/FrameConnectionService.ts:50-82]()
 
 ---
 
@@ -149,7 +145,6 @@ Users and internal framework code can import services in two ways:
 
 The service aggregator is initialized via `init()` at [src/lib/index.ts:112](), which triggers all service registrations from `provide.ts`.
 
-**Sources:** [src/lib/index.ts:29-117]()
 
 ---
 
@@ -175,7 +170,6 @@ Services follow a lazy initialization pattern. The DI container is initialized a
 6. **Client Creation** - Connection services create client instances via memoized factories on first method call
 7. **Cached Reuse** - Subsequent method calls reuse cached client instances
 
-**Sources:** [src/lib/index.ts:1-117](), [src/lib/core/provide.ts:1-68]()
 
 ---
 
@@ -217,4 +211,3 @@ The following pages provide detailed documentation for each service category:
 - [Global Services](#5.3) - Context injection wrappers for Strategy, Exchange, Frame, Live, and Backtest
 - [Logic Services](#5.4) - `BacktestLogicPrivateService` and `LiveLogicPrivateService` orchestration of async generator execution
 
-**Sources:** [src/lib/index.ts:1-117](), [src/lib/core/types.ts:1-56](), [src/lib/core/provide.ts:1-68]()

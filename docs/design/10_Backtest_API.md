@@ -18,7 +18,6 @@ The class is defined in [src/classes/Backtest.ts:29-148]() and exported as a sin
 - Automatic context propagation (strategyName, exchangeName, frameName)
 - Integration with markdown reporting services
 
-Sources: [src/classes/Backtest.ts:1-169](), [src/index.ts:52]()
 
 ---
 
@@ -35,7 +34,6 @@ Sources: [src/classes/Backtest.ts:1-169](), [src/index.ts:52]()
 | `getReport()` | `Promise<string>` | Generate markdown report | View performance statistics |
 | `dump()` | `Promise<void>` | Save report to disk | Persist results for later analysis |
 
-Sources: [src/classes/Backtest.ts:29-148](), [types.d.ts:501-530]()
 
 ---
 
@@ -73,13 +71,11 @@ Async generator yielding `IStrategyTickResultClosed` objects containing:
 - `strategyName: string` - Strategy identifier
 - `exchangeName: string` - Exchange identifier
 
-Sources: [src/classes/Backtest.ts:37-50](), [types.d.ts:506-515](), [types.d.ts:491-508]()
 
 ### Execution Flow
 
 ![Mermaid Diagram](./diagrams\10_Backtest_API_1.svg)
 
-Sources: [src/classes/Backtest.ts:37-50](), Diagram 2 from high-level overview
 
 ### Usage Example
 
@@ -110,7 +106,6 @@ for await (const result of Backtest.run("BTCUSDT", {
 
 **Memory efficiency:** Results are streamed one at a time. The generator does not accumulate all results in memory, making it suitable for long historical periods.
 
-Sources: [README.md:107-137](), [src/classes/Backtest.ts:17-27]()
 
 ---
 
@@ -136,7 +131,6 @@ background(
 **Returns:**
 Promise resolving to a cancellation function `() => void`. Invoking this function stops the background execution after the current signal completes.
 
-Sources: [src/classes/Backtest.ts:73-102](), [types.d.ts:516-521]()
 
 ### Implementation Details
 
@@ -150,7 +144,6 @@ Key behaviors:
 - Loop exits on next iteration after cancellation
 - Generator cleanup occurs when loop breaks
 
-Sources: [src/classes/Backtest.ts:85-102]()
 
 ### Usage Example
 
@@ -184,7 +177,6 @@ setTimeout(() => {
 - Non-blocking execution in UI applications
 - Conditional termination based on external events
 
-Sources: [README.md:340-362](), [README.md:739-771]()
 
 ---
 
@@ -206,7 +198,6 @@ Promise resolving to markdown-formatted report string containing:
 - Total closed signals count
 - Table with signal details (timestamp, action, symbol, signal ID, position, prices, PNL, close reason)
 
-Sources: [src/classes/Backtest.ts:116-121](), [types.d.ts:522-524]()
 
 ### Report Integration
 
@@ -214,7 +205,6 @@ Sources: [src/classes/Backtest.ts:116-121](), [types.d.ts:522-524]()
 
 The `BacktestMarkdownService` passively accumulates closed signals as they are yielded during execution. It does not intercept or modify the backtest flow.
 
-Sources: [src/classes/Backtest.ts:116-121](), Diagram 1 from high-level overview
 
 ### Usage Example
 
@@ -244,7 +234,6 @@ console.log(markdown);
 // | ...       | CLOSED | BTCUSD | abc-123   | LONG     | ... | +2.45%    | take_profit  |
 ```
 
-Sources: [README.md:268-297](), [README.md:107-137]()
 
 ---
 
@@ -266,7 +255,6 @@ dump(strategyName: string, path?: string): Promise<void>
 - Default: `./logs/backtest/{strategyName}.md`
 - Custom: `{path}/{strategyName}.md`
 
-Sources: [src/classes/Backtest.ts:138-147](), [types.d.ts:525-527]()
 
 ### Usage Example
 
@@ -292,7 +280,6 @@ await Backtest.dump("my-strategy", "./custom/reports");
 - Existing files are overwritten
 - Atomic write operations ensure no corruption
 
-Sources: [README.md:282-290](), [src/classes/Backtest.ts:128-147]()
 
 ---
 
@@ -306,7 +293,6 @@ All Backtest methods use `MethodContextService` for implicit context propagation
 
 The context object passed to `run()` or `background()` is automatically injected into the scoped execution environment, allowing downstream services to retrieve the correct strategy/exchange/frame instances without explicit parameter passing.
 
-Sources: [src/classes/Backtest.ts:37-50](), [types.d.ts:315-351](), Diagram 4 from high-level overview
 
 ---
 
@@ -419,7 +405,6 @@ await Promise.all(
 );
 ```
 
-Sources: [README.md:107-137](), [README.md:340-362](), [README.md:693-715](), [README.md:719-771]()
 
 ---
 
@@ -439,7 +424,6 @@ The `Backtest` class is a thin wrapper around the service orchestration layer. U
 - `FrameGlobalService` - Wraps `ClientFrame` for timeframe generation
 - `BacktestMarkdownService` - Passively accumulates closed signals for reporting
 
-Sources: [src/classes/Backtest.ts:1-169](), Diagram 1 and Diagram 6 from high-level overview
 
 ---
 
@@ -501,7 +485,6 @@ addExchange({
 
 **Solution:** Implement retry logic in exchange `getCandles()` implementation.
 
-Sources: [README.md:213-243](), [types.d.ts:139-171]()
 
 ---
 
@@ -553,4 +536,3 @@ await Promise.all([
 
 Each backtest has its own execution context and does not interfere with others.
 
-Sources: [README.md:107-137](), [README.md:693-715]()

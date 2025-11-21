@@ -18,7 +18,6 @@ The framework provides three schema services, each managing a specific domain's 
 
 All schema services follow identical patterns: singleton registration, Map-based storage, and name-based lookup. They are instantiated once during framework initialization and shared across all execution contexts.
 
-**Sources:** [src/lib/core/types.ts:16-20](), [src/lib/core/provide.ts:39-43](), [types.d.ts:413-422](), [types.d.ts:137-171](), [types.d.ts:278-289]()
 
 ---
 
@@ -32,7 +31,6 @@ The following diagram illustrates the relationship between registration function
 
 This architecture separates registration (startup time) from instantiation (runtime). Users register schemas once during application initialization. Connection Services query these registries on-demand to create memoized client instances.
 
-**Sources:** [src/lib/index.ts:54-62](), [src/lib/core/types.ts:16-20](), [src/lib/core/provide.ts:39-43]()
 
 ---
 
@@ -76,7 +74,6 @@ The `addStrategy()` function registers a strategy schema into `StrategySchemaSer
 
 The registration process validates that `strategyName` is unique and stores the schema for later retrieval by `StrategyConnectionService`.
 
-**Sources:** [types.d.ts:413-422](), [types.d.ts:579-578](), [src/lib/services/schema/StrategySchemaService.ts]()
 
 ---
 
@@ -123,7 +120,6 @@ The `addExchange()` function registers an exchange schema into `ExchangeSchemaSe
 
 The registration process validates that `exchangeName` is unique and stores the schema for later retrieval by `ExchangeConnectionService`.
 
-**Sources:** [types.d.ts:137-171](), [types.d.ts:615-614](), [src/lib/services/schema/ExchangeSchemaService.ts]()
 
 ---
 
@@ -169,7 +165,6 @@ The `addFrame()` function registers a frame schema into `FrameSchemaService`:
 
 The registration process validates that `frameName` is unique and stores the schema for later retrieval by `FrameConnectionService`.
 
-**Sources:** [types.d.ts:278-289](), [types.d.ts:646-645](), [src/lib/services/schema/FrameSchemaService.ts]()
 
 ---
 
@@ -198,7 +193,6 @@ All schema services implement these methods:
 
 **Error Handling:** If `getSchema()` is called with an unregistered name, it throws an error indicating the missing configuration. This fail-fast behavior ensures configuration errors are detected early in the application lifecycle.
 
-**Sources:** [src/lib/services/schema/StrategySchemaService.ts](), [src/lib/services/schema/ExchangeSchemaService.ts](), [src/lib/services/schema/FrameSchemaService.ts]()
 
 ---
 
@@ -254,7 +248,6 @@ export const backtest = {
 
 This makes schema services accessible via `backtest.strategySchemaService`, `backtest.exchangeSchemaService`, and `backtest.frameSchemaService` for advanced use cases requiring direct registry access.
 
-**Sources:** [src/lib/core/provide.ts:39-43](), [src/lib/core/types.ts:16-20](), [src/lib/index.ts:54-62]()
 
 ---
 
@@ -268,7 +261,6 @@ The following diagram shows the complete lifecycle from user registration to cli
 
 The registration phase occurs at application startup, storing schemas in the registry. The instantiation phase occurs at runtime when Logic Services require client instances. Connection Services query Schema Services, create clients, and memoize them for reuse.
 
-**Sources:** [src/lib/services/schema/StrategySchemaService.ts](), [src/lib/services/connection/StrategyConnectionService.ts](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts]()
 
 ---
 
@@ -302,7 +294,6 @@ The `Map<string, ISchema>` data structure is chosen because:
 3. **Iteration Support**: `getAllSchemas()` can iterate over values
 4. **Uniqueness Guarantee**: Map keys enforce unique schema names
 
-**Sources:** [src/lib/core/provide.ts:39-43](), [src/lib/services/connection/StrategyConnectionService.ts]()
 
 ---
 
@@ -417,7 +408,6 @@ for await (const result of Backtest.run("BTCUSDT", {
 }
 ```
 
-**Sources:** [types.d.ts:579-578](), [types.d.ts:615-614](), [types.d.ts:646-645]()
 
 ---
 
@@ -465,7 +455,6 @@ Each schema service validates required fields during registration:
 - `ExchangeSchemaService`: Validates `exchangeName`, `getCandles`, `formatPrice`, `formatQuantity` are present
 - `FrameSchemaService`: Validates `frameName`, `interval`, `startDate`, `endDate` are present and dates are valid
 
-**Sources:** [src/lib/services/schema/StrategySchemaService.ts](), [src/lib/services/schema/ExchangeSchemaService.ts](), [src/lib/services/schema/FrameSchemaService.ts]()
 
 ---
 
@@ -487,4 +476,3 @@ For more information:
 - Registration API details: [Configuration Functions](#3.1)
 - Runtime orchestration: [Logic Services](#5.4)
 
-**Sources:** [src/lib/index.ts:42-62](), [src/lib/services/connection/StrategyConnectionService.ts]()

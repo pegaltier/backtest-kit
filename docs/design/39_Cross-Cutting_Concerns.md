@@ -24,7 +24,6 @@ The framework implements four primary cross-cutting concerns:
 | **Persistence** | `PersistSignalAdapter` | Crash-safe atomic storage for live trading |
 | **Reporting** | `BacktestMarkdownService`<br/>`LiveMarkdownService` | Passive event accumulation and markdown generation |
 
-**Sources:** [src/lib/index.ts:1-118](), [src/lib/core/types.ts:1-57]()
 
 ---
 
@@ -36,7 +35,6 @@ The framework implements four primary cross-cutting concerns:
 
 This diagram shows how cross-cutting concerns are injected (dashed lines) throughout the layered architecture, providing system-wide capabilities without creating tight coupling.
 
-**Sources:** [src/lib/index.ts:29-110](), [src/lib/core/provide.ts:24-66]()
 
 ---
 
@@ -111,7 +109,6 @@ The framework expects loggers to implement the `ILogger` interface with four sev
 | `info()` | Informational updates |
 | `warn()` | Potentially problematic situations |
 
-**Sources:** [src/lib/services/base/LoggerService.ts:1-144](), [src/interfaces/Logger.interface.ts:1-31](), [src/lib/core/types.ts:1-3]()
 
 ---
 
@@ -121,7 +118,6 @@ The framework expects loggers to implement the `ILogger` interface with four sev
 
 ![Mermaid Diagram](./diagrams\39_Cross-Cutting_Concerns_1.svg)
 
-**Sources:** [src/lib/services/base/LoggerService.ts:42-71](), [src/lib/index.ts:33-40]()
 
 ### MethodContextService
 
@@ -155,7 +151,6 @@ Set by logic services before each tick execution.
 4. **Logging**: Both contexts automatically read and appended
 5. **Method Exit**: Context automatically cleared by `di-scoped`
 
-**Sources:** [src/lib/core/provide.ts:28-31](), [src/lib/index.ts:33-40]()
 
 ---
 
@@ -184,7 +179,6 @@ This ensures exactly-once signal semantics in production trading.
 
 **Note:** For detailed persistence mechanics, see [6.3](#6.3) Signal Persistence.
 
-**Sources:** Referenced from high-level architecture diagrams
 
 ---
 
@@ -212,7 +206,6 @@ Markdown services observe signal events without affecting execution:
 
 ![Mermaid Diagram](./diagrams\39_Cross-Cutting_Concerns_2.svg)
 
-**Sources:** [src/lib/core/types.ts:40-43](), [src/lib/index.ts:96-99]()
 
 ---
 
@@ -267,7 +260,6 @@ Context services use `di-scoped` for automatic cleanup:
 - Context automatically cleared at method exit
 - No manual cleanup required
 
-**Sources:** [src/lib/index.ts:101-110](), [src/lib/services/base/LoggerService.ts:55-71]()
 
 ---
 
@@ -288,7 +280,6 @@ Context services use `di-scoped` for automatic cleanup:
 
 Each service category is registered in blocks within [src/lib/core/provide.ts:24-66]().
 
-**Sources:** [src/lib/core/types.ts:1-57](), [src/lib/core/provide.ts:1-68](), [src/lib/index.ts:1-118]()
 
 ---
 
@@ -305,4 +296,3 @@ Cross-cutting concerns in backtest-kit are implemented as injected services that
 
 These services are registered at startup, injected via constructor parameters, and accessed throughout the call stack without polluting business logic with cross-cutting concerns. The design enables clean separation of concerns while providing system-wide capabilities.
 
-**Sources:** [src/lib/index.ts:1-118](), [src/lib/core/types.ts:1-57](), [src/lib/core/provide.ts:1-68](), [src/lib/services/base/LoggerService.ts:1-144]()

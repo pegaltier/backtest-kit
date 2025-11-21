@@ -12,7 +12,6 @@ Signal generation occurs during the `tick()` method when no pending signal exist
 
 ![Mermaid Diagram](./diagrams\25_Signal_Generation_and_Validation_0.svg)
 
-Sources: [src/client/ClientStrategy.ts:90-131]()
 
 ## Signal DTO Transformation
 
@@ -47,7 +46,6 @@ const signalRow: ISignalRow = {
 };
 ```
 
-Sources: [src/client/ClientStrategy.ts:114-121](), [src/interfaces/Strategy.interface.ts:22-54]()
 
 ## Interval-Based Throttling
 
@@ -57,7 +55,6 @@ To prevent signal spam, the framework enforces a minimum time interval between `
 
 ![Mermaid Diagram](./diagrams\25_Signal_Generation_and_Validation_1.svg)
 
-Sources: [src/client/ClientStrategy.ts:19-26]()
 
 ### Throttling Implementation
 
@@ -85,7 +82,6 @@ self._lastSignalTimestamp = currentTime;
 - Timestamp updated only when interval elapses
 - Works in both backtest and live modes
 
-Sources: [src/client/ClientStrategy.ts:94-106](), [src/client/ClientStrategy.ts:196]()
 
 ## Validation Rules
 
@@ -95,7 +91,6 @@ All signals undergo comprehensive validation before execution. The `VALIDATE_SIG
 
 ![Mermaid Diagram](./diagrams\25_Signal_Generation_and_Validation_2.svg)
 
-Sources: [src/client/ClientStrategy.ts:28-88]()
 
 ### Price Validation
 
@@ -121,7 +116,6 @@ if (signal.priceStopLoss <= 0) {
 }
 ```
 
-Sources: [src/client/ClientStrategy.ts:31-42]()
 
 ### Long Position Rules
 
@@ -152,7 +146,6 @@ if (signal.position === "long") {
 - `priceTakeProfit: 51000` ✅ (51000 > 50000)
 - `priceStopLoss: 49000` ✅ (49000 < 50000)
 
-Sources: [src/client/ClientStrategy.ts:44-56]()
 
 ### Short Position Rules
 
@@ -183,7 +176,6 @@ if (signal.position === "short") {
 - `priceTakeProfit: 49000` ✅ (49000 < 50000)
 - `priceStopLoss: 51000` ✅ (51000 > 50000)
 
-Sources: [src/client/ClientStrategy.ts:58-70]()
 
 ### Time Parameter Validation
 
@@ -207,7 +199,6 @@ if (signal.timestamp <= 0) {
 
 The `minuteEstimatedTime` determines when the signal expires if neither take profit nor stop loss is hit. The `timestamp` is used for tracking signal creation time and is automatically set by the framework.
 
-Sources: [src/client/ClientStrategy.ts:72-80]()
 
 ## Error Handling
 
@@ -252,7 +243,6 @@ This ensures that validation failures do not crash the system. Instead, they:
 2. Return `null` to indicate no signal
 3. Allow execution to continue normally
 
-Sources: [src/client/ClientStrategy.ts:82-131]()
 
 ## Integration with Strategy Schema
 
@@ -273,7 +263,6 @@ interface IStrategySchema {
 
 The `getSignal` function from the schema becomes `params.getSignal` in the `ClientStrategy` instance, allowing the framework to control when and how it's called while applying throttling and validation.
 
-Sources: [src/interfaces/Strategy.interface.ts:94-106](), [src/client/ClientStrategy.ts:90-131]()
 
 ## Complete Signal Generation Code Entity Map
 
@@ -290,4 +279,3 @@ Sources: [src/interfaces/Strategy.interface.ts:94-106](), [src/client/ClientStra
 | Signal generation method | `tick()` | [src/client/ClientStrategy.ts:258-464]() |
 | Interval type | `SignalInterval` | [src/interfaces/Strategy.interface.ts:10-16]() |
 
-Sources: Multiple files as listed in table

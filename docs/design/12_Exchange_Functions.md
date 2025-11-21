@@ -19,7 +19,6 @@ Exchange functions are exported from [src/function/exchange.ts]() and provide a 
 | `getDate` | Get current execution context date | `Promise<Date>` |
 | `getMode` | Get current execution mode | `Promise<"backtest" \| "live">` |
 
-**Sources:** [src/function/exchange.ts:1-166](), [types.d.ts:795-893]()
 
 ---
 
@@ -27,7 +26,6 @@ Exchange functions are exported from [src/function/exchange.ts]() and provide a 
 
 ![Mermaid Diagram](./diagrams\12_Exchange_Functions_0.svg)
 
-**Sources:** [src/function/exchange.ts:28-166](), [src/lib/services/connection/ExchangeConnectionService.ts]()
 
 ---
 
@@ -89,7 +87,6 @@ console.log(`Fetched ${candles.length} hourly candles`);
 const sma = candles.reduce((sum, c) => sum + c.close, 0) / candles.length;
 ```
 
-**Sources:** [src/function/exchange.ts:28-43](), [types.d.ts:795-810]()
 
 ---
 
@@ -149,7 +146,6 @@ if (currentPrice > threshold) {
 }
 ```
 
-**Sources:** [src/function/exchange.ts:63-68](), [types.d.ts:812-829]()
 
 ---
 
@@ -199,7 +195,6 @@ console.log(`Current BTCUSDT price: $${formatted}`);
 // Output: "Current BTCUSDT price: $50125.43"
 ```
 
-**Sources:** [src/function/exchange.ts:85-94](), [types.d.ts:831-845]()
 
 ---
 
@@ -249,7 +244,6 @@ console.log(`Order size: ${formatted} BTC`);
 // Output: "Order size: 0.12345678 BTC"
 ```
 
-**Sources:** [src/function/exchange.ts:111-123](), [types.d.ts:847-861]()
 
 ---
 
@@ -297,7 +291,6 @@ const hour = currentDate.getUTCHours();
 const isTradingHours = hour >= 9 && hour < 17;
 ```
 
-**Sources:** [src/function/exchange.ts:139-143](), [types.d.ts:863-876]()
 
 ---
 
@@ -350,7 +343,6 @@ if (mode === "live") {
 }
 ```
 
-**Sources:** [src/function/exchange.ts:160-164](), [types.d.ts:878-893]()
 
 ---
 
@@ -380,7 +372,6 @@ interface IExecutionContext {
 3. **Read by Exchange Functions**: `getDate()` and `getMode()` directly access `context`
 4. **Used by ClientExchange**: `getCandles()` and `getAveragePrice()` use `context.when` for time-based queries
 
-**Sources:** [src/lib/services/context/ExecutionContextService.ts](), [types.d.ts:52-95]()
 
 ---
 
@@ -471,7 +462,6 @@ if (shortTermTrend && mediumTermTrend && longTermTrend) {
 }
 ```
 
-**Sources:** [src/function/exchange.ts:1-166]()
 
 ---
 
@@ -513,7 +503,6 @@ try {
 }
 ```
 
-**Sources:** [src/function/exchange.ts:1-166](), [src/lib/services/connection/ExchangeConnectionService.ts]()
 
 ---
 
@@ -554,4 +543,3 @@ The `LoggerService` automatically enriches logs with execution context when avai
 
 For custom logger configuration, see [Logging System](#10.1).
 
-**Sources:** [src/function/exchange.ts:4-9](), [src/function/exchange.ts:33-37](), [src/function/exchange.ts:64-67](), [src/function/exchange.ts:89-92](), [src/function/exchange.ts:115-118](), [src/function/exchange.ts:140](), [src/function/exchange.ts:161]()

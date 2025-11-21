@@ -6,7 +6,6 @@ This document explains the markdown report generation system in backtest-kit. Th
 
 These services act as event listeners that accumulate data without affecting execution flow. For information about the signal lifecycle events being observed, see [Signal Lifecycle](#6). For performance metrics calculation, see [Performance Metrics](#9.2).
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:1-349](), [src/lib/services/markdown/LiveMarkdownService.ts:1-511]()
 
 ---
 
@@ -21,7 +20,6 @@ The markdown generation system uses two mode-specific services that share a comm
 
 Both services follow the observer pattern, subscribing to signal emitters and accumulating data in isolated `ReportStorage` instances per strategy.
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:208-346](), [src/lib/services/markdown/LiveMarkdownService.ts:363-508]()
 
 ---
 
@@ -33,7 +31,6 @@ Both services follow the observer pattern, subscribing to signal emitters and ac
 
 The services subscribe to emitters during initialization and passively accumulate data. The `BacktestMarkdownService` only processes closed signals, while `LiveMarkdownService` tracks all event types to provide a complete operational timeline.
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:342-345](), [src/lib/services/markdown/LiveMarkdownService.ts:504-507](), [src/config/emitters.ts]()
 
 ---
 
@@ -47,7 +44,6 @@ Both services use an internal `ReportStorage` class to isolate data accumulation
 
 The memoization pattern is implemented using `functools-kit`'s `memoize` function, which caches storage instances by strategy name. This ensures each strategy maintains isolated state even when multiple strategies run concurrently.
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:106-179](), [src/lib/services/markdown/BacktestMarkdownService.ts:216-219](), [src/lib/services/markdown/LiveMarkdownService.ts:143-331](), [src/lib/services/markdown/LiveMarkdownService.ts:371-374]()
 
 ---
 
@@ -75,7 +71,6 @@ The `BacktestMarkdownService` uses 13 columns optimized for closed signal analys
 | `openTimestamp` | Open Time | ISO 8601 format |
 | `closeTimestamp` | Close Time | ISO 8601 format |
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:27-100]()
 
 ### Live Trading Columns
 
@@ -97,7 +92,6 @@ The `LiveMarkdownService` uses 13 columns that accommodate all event types:
 | `closeReason` | Close Reason | Only for closed events |
 | `duration` | Duration (min) | Only for closed events |
 
-**Sources:** [src/lib/services/markdown/LiveMarkdownService.ts:62-137]()
 
 ---
 
@@ -109,7 +103,6 @@ The `LiveMarkdownService` uses 13 columns that accommodate all event types:
 
 The report generation process is lazy—no computation occurs until `getReport()` is called. This allows the services to accumulate data with minimal overhead during execution.
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:125-152](), [src/lib/services/markdown/LiveMarkdownService.ts:258-304]()
 
 ---
 
@@ -131,7 +124,6 @@ The resulting markdown follows standard table syntax:
 | def-456   | ETHUSD | SHORT    | ... |
 ```
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:134-140](), [src/lib/services/markdown/LiveMarkdownService.ts:267-273]()
 
 ---
 
@@ -147,7 +139,6 @@ The backtest service implements a simple append-only accumulation:
 
 The filter logic at [src/lib/services/markdown/BacktestMarkdownService.ts:245-247]() ensures only closed signals with complete PNL information are recorded.
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:240-251]()
 
 ### LiveMarkdownService Strategy
 
@@ -159,7 +150,6 @@ The live service maintains a comprehensive event timeline with update logic for 
 
 The update logic at [src/lib/services/markdown/LiveMarkdownService.ts:187-210]() and [src/lib/services/markdown/LiveMarkdownService.ts:219-250]() replaces previous events with the same signal ID, ensuring the report always shows the latest state of each signal.
 
-**Sources:** [src/lib/services/markdown/LiveMarkdownService.ts:397-413]()
 
 ---
 
@@ -187,7 +177,6 @@ Win rate: 66.67% (12W / 6L)
 Average PNL: +1.23%
 ```
 
-**Sources:** [src/lib/services/markdown/LiveMarkdownService.ts:275-283](), [src/lib/services/markdown/LiveMarkdownService.ts:285-302]()
 
 ---
 
@@ -202,7 +191,6 @@ const markdown = await backtestMarkdownService.getReport("my-strategy");
 console.log(markdown);
 ```
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:267-273](), [src/lib/services/markdown/LiveMarkdownService.ts:429-435]()
 
 ### dump(strategyName, path?)
 
@@ -219,7 +207,6 @@ await backtestMarkdownService.dump("my-strategy");
 await liveMarkdownService.dump("my-strategy", "./custom/reports");
 ```
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:294-304](), [src/lib/services/markdown/LiveMarkdownService.ts:456-466]()
 
 ### clear(strategyName?)
 
@@ -233,13 +220,11 @@ await backtestMarkdownService.clear("my-strategy");
 await backtestMarkdownService.clear();
 ```
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:324-329](), [src/lib/services/markdown/LiveMarkdownService.ts:486-491]()
 
 ### init()
 
 Initializes the service by subscribing to the appropriate event emitter. Uses `functools-kit`'s `singleshot` pattern to ensure subscription happens only once, even if called multiple times. Automatically invoked on first use.
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:342-345](), [src/lib/services/markdown/LiveMarkdownService.ts:504-507]()
 
 ---
 
@@ -253,7 +238,6 @@ The markdown services are registered in the dependency injection container and i
 
 The services are accessible through the main `backtest` object, providing a unified API for report generation across both backtest and live modes.
 
-**Sources:** [src/lib/core/types.ts](), [src/lib/core/provide.ts](), [src/lib/index.ts]()
 
 ---
 
@@ -273,7 +257,6 @@ catch (error) {
 }
 ```
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:166-178](), [src/lib/services/markdown/LiveMarkdownService.ts:318-330]()
 
 ---
 
@@ -322,7 +305,6 @@ await Live.dump("scalper", "./reports/live");
 // Output: ./reports/live/scalper.md
 ```
 
-**Sources:** [docs/classes/BacktestMarkdownService.md:1-90](), [docs/classes/LiveMarkdownService.md:1-91]()
 
 ---
 
@@ -343,4 +325,3 @@ await Live.dump("scalper", "./reports/live");
 
 The services are designed to have minimal impact on execution performance, making them suitable for production use.
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:106-179](), [src/lib/services/markdown/LiveMarkdownService.ts:143-331]()

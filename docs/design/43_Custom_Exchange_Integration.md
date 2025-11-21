@@ -10,7 +10,6 @@ For information about using exchange functions (`getCandles`, `getAveragePrice`,
 
 The framework uses a schema-based registration pattern where users provide a configuration object implementing `IExchangeSchema`. This schema is registered via `addExchange()` and wrapped by `ClientExchange` at runtime. The wrapper adds VWAP calculation, execution context integration, and bidirectional candle fetching (backwards for historical data, forwards for backtest simulation).
 
-**Sources:** [types.d.ts:137-171](), [types.d.ts:581-615](), [src/client/ClientExchange.ts:1-223]()
 
 ---
 
@@ -22,7 +21,6 @@ The framework uses a schema-based registration pattern where users provide a con
 
 This diagram shows how user-provided schemas are registered, cached, and wrapped by `ClientExchange` to provide enhanced functionality including VWAP calculation and execution context awareness.
 
-**Sources:** [types.d.ts:137-171](), [src/client/ClientExchange.ts:46-223]()
 
 ---
 
@@ -38,7 +36,6 @@ The `IExchangeSchema` interface defines the contract for exchange implementation
 | `formatQuantity` | Function | Yes | Formats quantity values for exchange precision |
 | `callbacks` | Object | No | Optional lifecycle event hooks |
 
-**Sources:** [types.d.ts:137-171]()
 
 ---
 
@@ -87,7 +84,6 @@ Array of `ICandleData` objects, each containing:
 4. **Exact Timestamps**: Candle timestamps should align to interval boundaries
 5. **Error Handling**: Throw descriptive errors for failed requests
 
-**Sources:** [types.d.ts:137-171](), [types.d.ts:98-118]()
 
 ---
 
@@ -99,7 +95,6 @@ Array of `ICandleData` objects, each containing:
 
 `ClientExchange` automatically calculates the `since` parameter by subtracting `interval * limit` from the execution context `when` timestamp. This allows the user schema to focus solely on data retrieval.
 
-**Sources:** [src/client/ClientExchange.ts:57-101]()
 
 ---
 
@@ -154,7 +149,6 @@ addExchange({
 });
 ```
 
-**Sources:** [types.d.ts:137-171](), [types.d.ts:581-615]()
 
 ---
 
@@ -211,7 +205,6 @@ addExchange({
 });
 ```
 
-**Sources:** [types.d.ts:137-171]()
 
 ---
 
@@ -261,7 +254,6 @@ addExchange({
 });
 ```
 
-**Sources:** [types.d.ts:137-171]()
 
 ---
 
@@ -295,7 +287,6 @@ formatQuantity: (symbol: string, quantity: number) => Promise<string>
 - Minimum quantity enforcement: Ensure above exchange minimums
 - Lot size alignment: Round to exchange-required step sizes
 
-**Sources:** [types.d.ts:154-168](), [src/client/ClientExchange.ts:205-219]()
 
 ---
 
@@ -347,7 +338,6 @@ addExchange({
 - Data quality validation
 - Cache warming or preloading
 
-**Sources:** [types.d.ts:130-135](), [src/client/ClientExchange.ts:96-98](), [src/client/ClientExchange.ts:152-154]()
 
 ---
 
@@ -361,7 +351,6 @@ The `getAveragePrice` method is implemented entirely by `ClientExchange` and doe
 
 Formula: `VWAP = Σ(Typical Price × Volume) / Σ(Volume)` where `Typical Price = (High + Low + Close) / 3`
 
-**Sources:** [src/client/ClientExchange.ts:172-203]()
 
 ---
 
@@ -387,7 +376,6 @@ When `getCandles(symbol, "1m", 100)` is called:
 4. Filters results to range `[since, context.when]`
 5. Returns filtered candles
 
-**Sources:** [src/client/ClientExchange.ts:57-101](), [src/client/ClientExchange.ts:113-157]()
 
 ---
 
@@ -422,7 +410,6 @@ if (filteredData.length < limit) {
 
 Logs warnings when fewer candles than requested are returned, indicating potential data gaps or quality issues.
 
-**Sources:** [src/client/ClientExchange.ts:83-94](), [src/client/ClientExchange.ts:141-150]()
 
 ---
 
@@ -437,7 +424,6 @@ Logs warnings when fewer candles than requested are returned, indicating potenti
 
 Both methods call the same `schema.getCandles()` implementation but with different time ranges.
 
-**Sources:** [src/client/ClientExchange.ts:57-101](), [src/client/ClientExchange.ts:113-157]()
 
 ---
 
@@ -454,7 +440,6 @@ The framework uses dependency injection to route exchange calls through multiple
 3. **GlobalService**: Injects execution context before method calls
 4. **ClientExchange**: Wraps user schema with enhanced functionality
 
-**Sources:** [types.d.ts:137-171](), [src/client/ClientExchange.ts:46-48]()
 
 ---
 
@@ -489,7 +474,6 @@ When implementing custom exchanges, test the following scenarios:
 - **Rate limiting**: Implement backoff for API rate limits
 - **Timeout handling**: Set reasonable timeouts for data fetches
 
-**Sources:** [src/client/ClientExchange.ts:83-94](), [src/client/ClientExchange.ts:141-150]()
 
 ---
 
@@ -571,7 +555,6 @@ addExchange({
 });
 ```
 
-**Sources:** [types.d.ts:137-171]()
 
 ---
 
@@ -627,7 +610,6 @@ addExchange({
 });
 ```
 
-**Sources:** [src/client/ClientExchange.ts:62-75](), [src/client/ClientExchange.ts:179-183]()
 
 ---
 
@@ -641,4 +623,3 @@ Custom exchange integration requires implementing three core methods (`getCandle
 - Respect exchange precision in formatting methods
 - Consider caching and rate limiting for production use
 
-**Sources:** [types.d.ts:137-171](), [src/client/ClientExchange.ts:1-223]()

@@ -16,7 +16,6 @@ The dependency injection system consists of three core components:
 
 The system uses the `di-kit` and `di-scoped` libraries to provide inversion of control, enabling services to depend on abstractions rather than concrete implementations.
 
-**Sources:** [src/lib/index.ts:1-118](), [src/lib/core/types.ts:1-57](), [src/lib/core/provide.ts:1-68]()
 
 ---
 
@@ -30,7 +29,6 @@ The `TYPES` constant in [src/lib/core/types.ts]() defines Symbol-based identifie
 
 The symbols are organized into logical groups matching the architectural layers. Each service category is defined as a separate object, then merged into the `TYPES` export at [src/lib/core/types.ts:45-54]().
 
-**Sources:** [src/lib/core/types.ts:1-57]()
 
 ---
 
@@ -51,7 +49,6 @@ The registration is organized into blocks matching the symbol groups:
 - Logic services at [src/lib/core/provide.ts:53-61]()
 - Markdown services at [src/lib/core/provide.ts:63-66]()
 
-**Sources:** [src/lib/core/provide.ts:1-68]()
 
 ---
 
@@ -69,7 +66,6 @@ The framework organizes services into seven logical categories, each serving a d
 | **Logic** | `BacktestLogicPublicService`<br/>`BacktestLogicPrivateService`<br/>`LiveLogicPublicService`<br/>`LiveLogicPrivateService` | Orchestration of async generator execution flows |
 | **Markdown** | `BacktestMarkdownService`<br/>`LiveMarkdownService` | Passive accumulation of events for report generation |
 
-**Sources:** [src/lib/core/types.ts:1-54](), [src/lib/index.ts:29-110]()
 
 ---
 
@@ -104,7 +100,6 @@ const baseServices = {
 
 After the `backtest` object is constructed, the container is initialized by calling `init()` at [src/lib/index.ts:112](). This triggers lazy instantiation of any eagerly-loaded services.
 
-**Sources:** [src/lib/index.ts:1-118]()
 
 ---
 
@@ -118,7 +113,6 @@ Services declare dependencies by calling `inject<T>()` within their constructors
 
 The dependency graph shown in [docs/uml.puml]() illustrates the complete dependency tree. For example, `StrategyConnectionService` depends on five other services, which are automatically injected when the service is first created.
 
-**Sources:** [docs/classes/StrategyConnectionService.md:29-60](), [docs/uml.puml:28-55]()
 
 ---
 
@@ -135,7 +129,6 @@ The memoization ensures that each unique strategy name maps to exactly one `Clie
 
 The cache key is the configuration name (`strategyName`, `exchangeName`, or `frameName`) obtained from `MethodContextService.context` at runtime.
 
-**Sources:** [docs/classes/StrategyConnectionService.md:61-71](), [docs/uml.puml:28-173]()
 
 ---
 
@@ -153,7 +146,6 @@ The DI system follows a predictable lifecycle:
 4. **Resolution Phase** - Services are instantiated lazily on first access, with dependencies resolved recursively
 5. **Singleton Caching** - Subsequent accesses return the cached singleton instance
 
-**Sources:** [src/lib/core/provide.ts:1-68](), [src/lib/index.ts:1-118]()
 
 ---
 
@@ -165,7 +157,6 @@ The following diagram shows the full service dependency hierarchy, illustrating 
 
 This graph shows that `LoggerService` is the most pervasive dependency, injected into nearly every service. Context services (`ExecutionContextService`, `MethodContextService`) are injected into connection services to enable routing and execution context management. The dependency flow moves upward from Schema → Connection → Global → Logic → Public services.
 
-**Sources:** [docs/uml.puml:1-208]()
 
 ---
 
@@ -194,4 +185,3 @@ The DI container ensures that services are created only once and reused througho
 ### 7. Lazy Initialization
 Services are instantiated only when first accessed. This improves startup performance and reduces memory usage when certain features aren't used.
 
-**Sources:** [src/lib/index.ts:1-118](), [src/lib/core/types.ts:1-57](), [src/lib/core/provide.ts:1-68]()

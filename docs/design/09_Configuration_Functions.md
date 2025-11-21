@@ -6,7 +6,6 @@ This document describes the three public API functions for registering configura
 
 For information about running backtests and live trading with these configurations, see [Backtest API](#3.2) and [Live Trading API](#3.3). For details on how schema registries work internally, see [Schema Services](#5.2).
 
-**Sources:** [types.d.ts:545-646](), [src/function/add.ts:1-135](), [README.md:30-103]()
 
 ---
 
@@ -26,7 +25,6 @@ The three configuration functions are:
 | `addExchange()` | `IExchangeSchema` | Registers candle data source and formatting functions | `ExchangeSchemaService` |
 | `addFrame()` | `IFrameSchema` | Registers timeframe generator for backtest periods | `FrameSchemaService` |
 
-**Sources:** [src/function/add.ts:1-135](), [types.d.ts:410-646]()
 
 ---
 
@@ -40,7 +38,6 @@ The `addStrategy()` function registers a trading strategy configuration that def
 function addStrategy(strategySchema: IStrategySchema): void
 ```
 
-**Sources:** [types.d.ts:545-579](), [src/function/add.ts:44-52]()
 
 ### IStrategySchema Interface
 
@@ -53,7 +50,6 @@ The strategy schema contains the core strategy configuration:
 | `getSignal` | `(symbol: string) => Promise<ISignalDto \| null>` | ✅ | Async function returning signal DTO or null if no signal |
 | `callbacks` | `Partial<IStrategyCallbacks>` | ❌ | Optional lifecycle event handlers (onTick, onOpen, onActive, onIdle, onClose) |
 
-**Sources:** [types.d.ts:410-422]()
 
 ### Signal Generation Function
 
@@ -65,7 +61,6 @@ The `getSignal` function is called at most once per `interval` due to automatic 
 
 **Figure 2: Signal Generation Flow with Throttling and Validation**
 
-**Sources:** [types.d.ts:417-419]()
 
 ### ISignalDto Structure
 
@@ -81,7 +76,6 @@ The signal DTO returned by `getSignal` must contain:
 | `priceStopLoss` | `number` | ✅ | Long: must be < priceOpen. Short: must be > priceOpen. |
 | `minuteEstimatedTime` | `number` | ✅ | Must be positive. Signal duration before time_expired. |
 
-**Sources:** [types.d.ts:358-376]()
 
 ### Lifecycle Callbacks
 
@@ -95,7 +89,6 @@ Optional callbacks in `IStrategyCallbacks`:
 | `onIdle` | `(symbol, currentPrice, backtest)` | When no active signal exists |
 | `onClose` | `(symbol, data, priceClose, backtest)` | When signal closes (TP/SL/time_expired) |
 
-**Sources:** [types.d.ts:393-408]()
 
 ### Implementation Details
 
@@ -105,7 +98,6 @@ The `addStrategy()` function implementation in [src/function/add.ts:44-52]():
 2. Calls `strategySchemaService.register(strategyName, strategySchema)` to store in registry
 3. Does not validate the schema (validation happens at runtime in ClientStrategy)
 
-**Sources:** [src/function/add.ts:44-52]()
 
 ---
 
@@ -119,7 +111,6 @@ The `addExchange()` function registers an exchange data source that provides his
 function addExchange(exchangeSchema: IExchangeSchema): void
 ```
 
-**Sources:** [types.d.ts:580-615](), [src/function/add.ts:89-97]()
 
 ### IExchangeSchema Interface
 
@@ -133,7 +124,6 @@ The exchange schema defines data source integration:
 | `formatPrice` | `(symbol, price) => Promise<string>` | ✅ | Formats price per exchange precision rules |
 | `callbacks` | `Partial<IExchangeCallbacks>` | ❌ | Optional event handlers (onCandleData) |
 
-**Sources:** [types.d.ts:137-171]()
 
 ### getCandles Function
 
@@ -147,7 +137,6 @@ The `getCandles` implementation must fetch historical candle data:
 
 **Returns:** `Promise<ICandleData[]>` array sorted by timestamp ascending
 
-**Sources:** [types.d.ts:144-152]()
 
 ### ICandleData Structure
 
@@ -162,7 +151,6 @@ Each candle object must contain:
 | `close` | `number` | Closing price at candle end |
 | `volume` | `number` | Trading volume during candle period |
 
-**Sources:** [types.d.ts:103-118]()
 
 ### Format Functions
 
@@ -173,7 +161,6 @@ The formatting functions ensure prices and quantities match exchange precision r
 
 These are typically implemented using exchange API metadata or hardcoded precision rules.
 
-**Sources:** [types.d.ts:153-169]()
 
 ### Exchange Registration Flow
 
@@ -181,7 +168,6 @@ These are typically implemented using exchange API metadata or hardcoded precisi
 
 **Figure 3: Exchange Schema Registration Sequence**
 
-**Sources:** [src/function/add.ts:89-97]()
 
 ---
 
@@ -195,7 +181,6 @@ The `addFrame()` function registers a timeframe generator for backtesting with d
 function addFrame(frameSchema: IFrameSchema): void
 ```
 
-**Sources:** [types.d.ts:616-646](), [src/function/add.ts:129-134]()
 
 ### IFrameSchema Interface
 
@@ -209,7 +194,6 @@ The frame schema configures backtest period generation:
 | `endDate` | `Date` | ✅ | End of backtest period (inclusive) |
 | `callbacks` | `Partial<IFrameCallbacks>` | ❌ | Optional lifecycle callbacks (onTimeframe) |
 
-**Sources:** [types.d.ts:278-289]()
 
 ### Frame Intervals
 
@@ -223,7 +207,6 @@ Valid `FrameInterval` values determine timestamp spacing:
 
 The frame generates an array of `Date` objects spaced by the specified interval between `startDate` and `endDate`.
 
-**Sources:** [types.d.ts:234-235]()
 
 ### Timeframe Generation
 
@@ -233,7 +216,6 @@ When a backtest runs, the frame generates timestamps:
 
 **Figure 4: Timeframe Array Generation**
 
-**Sources:** [types.d.ts:278-303]()
 
 ### Frame Callbacks
 
@@ -250,7 +232,6 @@ onTimeframe: (
 
 This callback is useful for logging timestamp counts or validating the generated timeframe.
 
-**Sources:** [types.d.ts:247-258]()
 
 ---
 
@@ -268,7 +249,6 @@ Each schema service maintains an internal `Map` data structure:
 
 These registries persist for the lifetime of the Node.js process. They are not stored on disk.
 
-**Sources:** [types.d.ts:410-646]()
 
 ### Registration Example
 
@@ -326,7 +306,6 @@ addFrame({
 });
 ```
 
-**Sources:** [README.md:30-103]()
 
 ---
 
@@ -342,7 +321,6 @@ When backtest or live execution starts, Connection Services retrieve schemas by 
 
 This memoization ensures that multiple calls with the same `strategyName` return the same `ClientStrategy` instance, preserving state across ticks.
 
-**Sources:** [types.d.ts:1-1200]()
 
 ### Context Routing
 
@@ -359,7 +337,6 @@ interface IMethodContext {
 
 This context is set by `Backtest.run()` or `Live.run()` and automatically routes to the correct schema registries.
 
-**Sources:** [types.d.ts:310-350]()
 
 ---
 
@@ -369,7 +346,6 @@ This context is set by `Backtest.run()` or `Live.run()` and automatically routes
 
 The `add*()` functions perform **no validation** at registration time. Invalid schemas are stored as-is.
 
-**Sources:** [src/function/add.ts:1-135]()
 
 ### Runtime Validation
 
@@ -392,7 +368,6 @@ Validation occurs when:
 
 Validation errors throw exceptions with descriptive messages.
 
-**Sources:** [types.d.ts:358-422]()
 
 ---
 
@@ -431,7 +406,6 @@ Backtest.run("BTCUSDT", {
 
 Each strategy maintains independent state (separate `ClientStrategy` instances due to memoization by name).
 
-**Sources:** [types.d.ts:545-579]()
 
 ### Overwriting Schemas
 
@@ -454,7 +428,6 @@ addStrategy({
 
 The memoization cache is **not** cleared, so existing instances continue using the old schema. Only new requests retrieve the updated schema.
 
-**Sources:** [src/function/add.ts:44-134]()
 
 ---
 
@@ -484,4 +457,3 @@ Supporting types also exported:
 - `IExchangeCallbacks` - Exchange lifecycle callbacks
 - `IFrameCallbacks` - Frame lifecycle callbacks
 
-**Sources:** [src/index.ts:1-56]()

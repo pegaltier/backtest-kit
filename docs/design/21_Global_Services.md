@@ -22,7 +22,6 @@ Global Services occupy the middle tier of the Service Orchestration layer, sitti
 
 ![Mermaid Diagram](./diagrams\21_Global_Services_0.svg)
 
-**Sources:** [src/lib/index.ts:64-76](), [docs/uml.puml:1-208]()
 
 ## Service Registration
 
@@ -44,7 +43,6 @@ The services are then injected and exported through the `backtest` aggregator ob
 
 [src/lib/index.ts:64-76]()
 
-**Sources:** [src/lib/core/provide.ts:45-51](), [src/lib/core/types.ts:22-28](), [src/lib/index.ts:64-76]()
 
 ## Domain Global Services
 
@@ -56,7 +54,6 @@ All domain Global Services follow this pattern:
 
 ![Mermaid Diagram](./diagrams\21_Global_Services_1.svg)
 
-**Sources:** [docs/uml.puml:2-69]()
 
 ### StrategyGlobalService
 
@@ -74,7 +71,6 @@ All domain Global Services follow this pattern:
 
 ![Mermaid Diagram](./diagrams\21_Global_Services_2.svg)
 
-**Sources:** [docs/uml.puml:22-55](), [src/lib/index.ts:68-69]()
 
 ### ExchangeGlobalService
 
@@ -94,7 +90,6 @@ All domain Global Services follow this pattern:
 **Context Injection:**
 The `when` field from `ExecutionContextService` determines whether to fetch historical or real-time data. The `backtest` flag controls whether `getNextCandles()` is allowed.
 
-**Sources:** [docs/uml.puml:2-21](), [src/lib/index.ts:65-66]()
 
 ### FrameGlobalService
 
@@ -114,7 +109,6 @@ Execution context is primarily used for logging and validation. The timeframe ge
 
 ![Mermaid Diagram](./diagrams\21_Global_Services_3.svg)
 
-**Sources:** [docs/uml.puml:56-69](), [src/lib/index.ts:71]()
 
 ## Mode Global Services
 
@@ -138,7 +132,6 @@ Mode Global Services (`LiveGlobalService`, `BacktestGlobalService`) provide high
 
 ![Mermaid Diagram](./diagrams\21_Global_Services_4.svg)
 
-**Sources:** [docs/uml.puml:122-208](), [src/lib/index.ts:73-74]()
 
 ### LiveGlobalService
 
@@ -158,7 +151,6 @@ Mode Global Services (`LiveGlobalService`, `BacktestGlobalService`) provide high
 
 ![Mermaid Diagram](./diagrams\21_Global_Services_5.svg)
 
-**Sources:** [docs/uml.puml:70-121](), [src/lib/index.ts:72]()
 
 ## Context Injection Mechanism
 
@@ -194,7 +186,6 @@ Connection Services use these routing keys to look up schemas and create memoize
 
 For detailed information on context propagation patterns, see [Context Propagation](#2.3).
 
-**Sources:** [src/lib/index.ts:34-40](), [docs/uml.puml:1-208]()
 
 ## Dependency Injection Flow
 
@@ -209,7 +200,6 @@ Global Services are instantiated through the standard DI container flow. The fol
 4. Global Services inject their own dependencies (Connection/Logic Services)
 5. Connection Services lazily create and memoize Client instances on first use
 
-**Sources:** [src/lib/index.ts:1-118](), [src/lib/core/provide.ts:45-51](), [src/lib/core/types.ts:22-28]()
 
 ## Usage in Logic Services
 
@@ -225,7 +215,6 @@ Logic Services (both Public and Private) are the primary consumers of Domain Glo
 **Live Example:**
 `LiveLogicPrivateService` sets execution context to `Date.now()` every minute, then calls `StrategyGlobalService.tick()` to check for signal state changes.
 
-**Sources:** [docs/uml.puml:70-208]()
 
 ## Summary
 
@@ -241,4 +230,3 @@ Global Services serve as the context injection and routing layer in the Service 
 
 Domain Global Services implement the same interfaces as their corresponding Client classes but enrich operations with execution context. Mode Global Services provide simplified APIs for external consumers by wrapping Logic Public Services. Together, they enable clean separation between pure business logic (Client layer) and orchestration concerns (Logic layer) while maintaining implicit context propagation throughout the system.
 
-**Sources:** [src/lib/index.ts:64-76](), [src/lib/core/provide.ts:45-51](), [docs/uml.puml:1-208]()

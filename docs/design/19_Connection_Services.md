@@ -6,7 +6,6 @@ Connection Services form the routing layer within the Service Orchestration arch
 
 This document covers the three Connection Services: `StrategyConnectionService`, `ExchangeConnectionService`, and `FrameConnectionService`. For configuration registration mechanisms, see [Schema Services](#5.2). For the client implementations that Connection Services route to, see [Core Business Logic](#4). For the context services that enable routing, see [Context Propagation](#2.3).
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:1-143](), [src/lib/services/connection/ExchangeConnectionService.ts:1-185](), [src/lib/services/connection/FrameConnectionService.ts:1-86]()
 
 ---
 
@@ -18,7 +17,6 @@ Connection Services act as intelligent routers that bridge the Service Orchestra
 
 ![Mermaid Diagram](./diagrams\19_Connection_Services_0.svg)
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:44-143](), [src/lib/services/connection/ExchangeConnectionService.ts:38-185](), [src/lib/services/connection/FrameConnectionService.ts:32-86]()
 
 ---
 
@@ -38,7 +36,6 @@ Connection Services use `MethodContextService` to determine which client instanc
 
 **Example:** When `StrategyConnectionService.tick()` is called, it reads `methodContextService.context.strategyName` to determine which `ClientStrategy` instance to use.
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:93-110](), [src/lib/services/connection/ExchangeConnectionService.ts:86-99](), [src/lib/services/connection/FrameConnectionService.ts:75-82]()
 
 ---
 
@@ -71,7 +68,6 @@ The `getStrategy` method [src/lib/services/connection/StrategyConnectionService.
 - **First call**: Creates instance, caches it, returns it
 - **Subsequent calls**: Returns cached instance immediately
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:67-83](), [src/lib/services/connection/ExchangeConnectionService.ts:59-74](), [src/lib/services/connection/FrameConnectionService.ts:50-64]()
 
 ---
 
@@ -85,7 +81,6 @@ The service injects five core dependencies:
 
 ![Mermaid Diagram](./diagrams\19_Connection_Services_3.svg)
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:45-56]()
 
 ### Methods
 
@@ -131,7 +126,6 @@ Routes backtest simulation to the appropriate `ClientStrategy` instance with pro
 | `signalBacktestEmitter` | Backtest mode only | Backtest-specific observers |
 | `signalLiveEmitter` | Live mode only | Live trading observers |
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:1-143]()
 
 ---
 
@@ -143,7 +137,6 @@ Routes backtest simulation to the appropriate `ClientStrategy` instance with pro
 
 ![Mermaid Diagram](./diagrams\19_Connection_Services_4.svg)
 
-**Sources:** [src/lib/services/connection/ExchangeConnectionService.ts:39-48]()
 
 ### Methods
 
@@ -216,7 +209,6 @@ Formats quantity value according to exchange-specific precision rules.
 
 **Returns:** `Promise<string>` - Formatted quantity string
 
-**Sources:** [src/lib/services/connection/ExchangeConnectionService.ts:1-185](), [src/interfaces/Exchange.interface.ts:109-166]()
 
 ---
 
@@ -228,7 +220,6 @@ Formats quantity value according to exchange-specific precision rules.
 
 ![Mermaid Diagram](./diagrams\19_Connection_Services_5.svg)
 
-**Sources:** [src/lib/services/connection/FrameConnectionService.ts:33-39]()
 
 ### Methods
 
@@ -250,7 +241,6 @@ Retrieves backtest timeframe boundaries for symbol from registered frame schema.
 
 In live trading mode, `frameName` is set to empty string `""` [src/lib/services/connection/FrameConnectionService.ts:23]() because there are no timeframe constraints. The `FrameConnectionService` is not used during live execution.
 
-**Sources:** [src/lib/services/connection/FrameConnectionService.ts:1-86]()
 
 ---
 
@@ -279,4 +269,3 @@ All Connection Services inject `LoggerService` and log operations with context-e
 - `ExchangeConnectionService`: Logs all data fetching with symbol, interval, and limits
 - `FrameConnectionService`: Logs timeframe retrieval with symbol
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:1-143](), [src/lib/services/connection/ExchangeConnectionService.ts:1-185](), [src/lib/services/connection/FrameConnectionService.ts:1-86]()

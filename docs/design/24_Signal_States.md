@@ -15,7 +15,6 @@ Signals progress through four distinct states during their lifecycle. The framew
 | **Active** | `"active"` | Signal monitoring TP/SL conditions | Yes | Continuous VWAP |
 | **Closed** | `"closed"` | Signal completed with PnL result | Yes | Final close price |
 
-**Sources:** [src/interfaces/Strategy.interface.ts:127-208](), [src/client/ClientStrategy.ts]()
 
 ## State Discriminated Union Type System
 
@@ -39,7 +38,6 @@ if (result.action === "idle") {
 }
 ```
 
-**Sources:** [src/interfaces/Strategy.interface.ts:204-208](), [src/interfaces/Strategy.interface.ts:127-198]()
 
 ## State Transition Flow
 
@@ -47,7 +45,6 @@ if (result.action === "idle") {
 
 The state machine is implemented in `ClientStrategy.tick()` at [src/client/ClientStrategy.ts:258-464](). The `_pendingSignal` field at [src/client/ClientStrategy.ts:195]() tracks the current signal state.
 
-**Sources:** [src/client/ClientStrategy.ts:258-464](), [src/client/ClientStrategy.ts:195]()
 
 ## Idle State
 
@@ -79,7 +76,6 @@ Implementation at [src/client/ClientStrategy.ts:261-323]():
 
 The idle state is returned when `_pendingSignal` remains `null` after attempting signal generation.
 
-**Sources:** [src/interfaces/Strategy.interface.ts:129-141](), [src/client/ClientStrategy.ts:261-323](), [src/client/ClientStrategy.ts:90-131]()
 
 ## Opened State
 
@@ -112,7 +108,6 @@ Implementation at [src/client/ClientStrategy.ts:265-292]():
 
 After returning opened state, the next `tick()` call transitions to active state since `_pendingSignal` now exists.
 
-**Sources:** [src/interfaces/Strategy.interface.ts:147-158](), [src/client/ClientStrategy.ts:265-292](), [src/client/ClientStrategy.ts:90-131](), [src/client/ClientStrategy.ts:28-88]()
 
 ## Active State
 
@@ -154,7 +149,6 @@ The condition checks at [src/client/ClientStrategy.ts:340-371]() evaluate:
 
 If any condition is true, `shouldClose` is set and state transitions to closed instead of active.
 
-**Sources:** [src/interfaces/Strategy.interface.ts:164-175](), [src/client/ClientStrategy.ts:324-463](), [src/client/ClientStrategy.ts:340-371]()
 
 ## Closed State
 
@@ -203,7 +197,6 @@ Implementation at [src/client/ClientStrategy.ts:374-435]():
 
 The `ClientStrategy.backtest()` method at [src/client/ClientStrategy.ts:485-656]() always returns `IStrategyTickResultClosed`. It iterates through future candles checking TP/SL on each, or returns `time_expired` if duration elapses without hitting TP/SL.
 
-**Sources:** [src/interfaces/Strategy.interface.ts:181-198](), [src/interfaces/Strategy.interface.ts:112](), [src/client/ClientStrategy.ts:374-435](), [src/client/ClientStrategy.ts:485-656]()
 
 ## Type-Safe State Handling
 
@@ -253,4 +246,3 @@ async function handleTick(strategy: ClientStrategy) {
 
 The `LiveLogicPrivateService` at [src/lib/services/logic/LiveLogicPrivateService.ts]() filters active states to reduce noise. Only `opened` and `closed` states are yielded to the user in live trading, while backtest mode yields all states for analysis.
 
-**Sources:** [src/interfaces/Strategy.interface.ts:204-208](), [src/client/ClientStrategy.ts:258-464]()

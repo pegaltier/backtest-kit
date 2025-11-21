@@ -15,7 +15,6 @@ Both services operate independently from the main execution flow, subscribing to
 
 ![Mermaid Diagram](./diagrams\36_Reporting_and_Analytics_0.svg)
 
-**Sources**: [src/lib/services/markdown/BacktestMarkdownService.ts:1-349](), [src/lib/services/markdown/LiveMarkdownService.ts:1-511]()
 
 ## Service Architecture
 
@@ -33,7 +32,6 @@ The `BacktestMarkdownService` class is designed for post-execution analysis of b
 
 The service maintains a memoized `ReportStorage` instance per strategy name, ensuring isolated data collection when multiple strategies run concurrently. The storage accumulates `IStrategyTickResultClosed` objects in an internal array.
 
-**Sources**: [src/lib/services/markdown/BacktestMarkdownService.ts:208-346]()
 
 ### LiveMarkdownService
 
@@ -50,7 +48,6 @@ The `LiveMarkdownService` class provides operational visibility into live tradin
 
 The service uses a more sophisticated storage mechanism that replaces existing events with the same `signalId`, ensuring the report shows the latest state of each signal. This prevents duplicate entries when a signal transitions from `active` to `closed`.
 
-**Sources**: [src/lib/services/markdown/LiveMarkdownService.ts:363-508]()
 
 ## Report Structure
 
@@ -60,7 +57,6 @@ Both services define their reports using a `Column` interface that specifies ext
 
 ![Mermaid Diagram](./diagrams\36_Reporting_and_Analytics_1.svg)
 
-**Sources**: [src/lib/services/markdown/BacktestMarkdownService.ts:18-100](), [src/lib/services/markdown/LiveMarkdownService.ts:53-137]()
 
 ### Backtest Report Columns
 
@@ -82,7 +78,6 @@ The backtest report focuses on completed trade analysis with the following colum
 | Open Time | ISO 8601 | `new Date(data.signal.timestamp).toISOString()` |
 | Close Time | ISO 8601 | `new Date(data.closeTimestamp).toISOString()` |
 
-**Sources**: [src/lib/services/markdown/BacktestMarkdownService.ts:27-100]()
 
 ### Live Report Columns
 
@@ -106,7 +101,6 @@ The live trading report includes all event types with these columns:
 
 The nullable columns are only populated for relevant event types (e.g., `pnl` only exists for `closed` events).
 
-**Sources**: [src/lib/services/markdown/LiveMarkdownService.ts:62-137]()
 
 ## Data Storage and Event Processing
 
@@ -116,7 +110,6 @@ Both services use an internal `ReportStorage` class to manage data accumulation:
 
 ![Mermaid Diagram](./diagrams\36_Reporting_and_Analytics_2.svg)
 
-**Sources**: [src/lib/services/markdown/BacktestMarkdownService.ts:106-179](), [src/lib/services/markdown/LiveMarkdownService.ts:143-331]()
 
 ### Backtest Event Processing
 
@@ -134,7 +127,6 @@ storage.addSignal(data); // Append to list
 
 Each closed signal is appended to the `_signalList` array without modification.
 
-**Sources**: [src/lib/services/markdown/BacktestMarkdownService.ts:240-251]()
 
 ### Live Event Processing
 
@@ -144,7 +136,6 @@ The live service implements an update-or-append model to handle signal state tra
 
 This design ensures that each signal appears only once in the final report, showing its most recent state.
 
-**Sources**: [src/lib/services/markdown/LiveMarkdownService.ts:186-250](), [src/lib/services/markdown/LiveMarkdownService.ts:397-413]()
 
 ## Performance Metrics
 
@@ -172,7 +163,6 @@ Win rate: 61.11% (11W / 7L)
 Average PNL: +2.34%
 ```
 
-**Sources**: [src/lib/services/markdown/LiveMarkdownService.ts:275-297]()
 
 ### Backtest Statistics
 
@@ -186,7 +176,6 @@ Total signals: 42
 
 The framework does not calculate win rates or average PNL for backtest reports, as these metrics are better computed by specialized analysis tools that can account for strategy-specific factors.
 
-**Sources**: [src/lib/services/markdown/BacktestMarkdownService.ts:126-152]()
 
 ## Public API Methods
 
@@ -208,7 +197,6 @@ const report = await Live.getReport("my-strategy");
 console.log(report);
 ```
 
-**Sources**: [src/lib/services/markdown/BacktestMarkdownService.ts:267-273](), [src/lib/services/markdown/LiveMarkdownService.ts:429-435]()
 
 ### Saving Reports to Disk
 
@@ -229,7 +217,6 @@ await writeFile(filepath, markdown, "utf-8");
 
 Error handling logs failures to console but does not throw exceptions, ensuring that report generation failures don't crash the main application.
 
-**Sources**: [src/lib/services/markdown/BacktestMarkdownService.ts:160-178](), [src/lib/services/markdown/LiveMarkdownService.ts:312-330]()
 
 ### Clearing Accumulated Data
 
@@ -245,7 +232,6 @@ await Backtest.clear();
 
 This method delegates to the memoized `getStorage` function's `clear()` method, which removes cached `ReportStorage` instances. Clearing all strategies removes all cached instances, while clearing a specific strategy only removes that strategy's cache.
 
-**Sources**: [src/lib/services/markdown/BacktestMarkdownService.ts:324-329](), [src/lib/services/markdown/LiveMarkdownService.ts:486-491]()
 
 ## Initialization and Event Subscription
 
@@ -257,7 +243,6 @@ Both services use the `singleshot` decorator from `functools-kit` to ensure init
 
 The `init()` method is protected and automatically invoked on first service use. It subscribes the service's `tick()` method to the appropriate signal emitter.
 
-**Sources**: [src/lib/services/markdown/BacktestMarkdownService.ts:342-345](), [src/lib/services/markdown/LiveMarkdownService.ts:504-507]()
 
 ### Event Emitter Binding
 
@@ -265,7 +250,6 @@ The `init()` method is protected and automatically invoked on first service use.
 
 The emitters are defined in `src/config/emitters.ts` and use the event system to decouple signal generation from report accumulation.
 
-**Sources**: [src/lib/services/markdown/BacktestMarkdownService.ts:12](), [src/lib/services/markdown/LiveMarkdownService.ts:14]()
 
 ## Markdown Table Formatting
 
@@ -286,7 +270,6 @@ The table generation process:
 4. Pass to `str.table()` which adds markdown formatting
 5. Wrap in markdown document with title, statistics, and timestamp
 
-**Sources**: [src/lib/services/markdown/BacktestMarkdownService.ts:134-152](), [src/lib/services/markdown/LiveMarkdownService.ts:267-303]()
 
 ## Integration with Execution Flow
 
@@ -295,5 +278,3 @@ The markdown services operate completely independently from the main execution l
 ![Mermaid Diagram](./diagrams\36_Reporting_and_Analytics_7.svg)
 
 This architecture ensures that report generation never blocks strategy execution or impacts performance. The event-driven design allows reports to be generated incrementally as signals close, rather than requiring post-processing of execution results.
-
-**Sources**: [src/lib/services/markdown/BacktestMarkdownService.ts:240-251](), [src/lib/services/markdown/LiveMarkdownService.ts:397-413]()

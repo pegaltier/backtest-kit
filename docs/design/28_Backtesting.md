@@ -6,7 +6,6 @@ This document describes the backtesting functionality in the backtest-kit framew
 
 This page covers the high-level backtest orchestration, execution flow, and memory-efficient streaming architecture. For detailed API reference, see [Backtest API](#3.2). For signal state management, see [Signal Lifecycle](#6). For timeframe generation specifics, see [Timeframe Generation](#7.2). For fast-forward simulation mechanics, see [Fast-Forward Simulation](#7.3).
 
-**Sources:** [src/classes/Backtest.ts:1-169](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:1-123]()
 
 ---
 
@@ -44,7 +43,6 @@ for await (const result of Backtest.run("BTCUSDT", {
 const report = await Backtest.getReport("my-strategy");
 ```
 
-**Sources:** [src/classes/Backtest.ts:16-50](), [src/classes/Backtest.ts:104-121]()
 
 ---
 
@@ -71,7 +69,6 @@ The backtesting system follows the four-layer architecture with clear separation
 | `ClientExchange` | Business logic | Historical candle retrieval |
 | `ClientFrame` | Business logic | Timeframe timestamp array generation |
 
-**Sources:** [src/classes/Backtest.ts:29-50](), [src/lib/services/logic/public/BacktestLogicPublicService.ts:31-67](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:22-119]()
 
 ---
 
@@ -122,7 +119,6 @@ Backtesting follows a deterministic execution pattern that processes each timest
    - Memory-efficient: no array accumulation
    - Consumer can break iteration early
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:48-119](), [src/lib/services/logic/public/BacktestLogicPublicService.ts:46-66]()
 
 ---
 
@@ -158,7 +154,6 @@ for await (const result of Backtest.run("BTCUSDT", context)) {
 }
 ```
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:21-47](), [src/classes/Backtest.ts:10-28]()
 
 ---
 
@@ -192,7 +187,6 @@ interface IMethodContext {
 | 4. Scope Boundary | [src/lib/services/context/MethodContextService.ts:41-45]() | `di-scoped` creates implicit context scope |
 | 5. Implicit Retrieval | Service layer | Global/Connection services read context without explicit parameters |
 
-**Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts:46-66](), [src/lib/services/context/MethodContextService.ts:1-56](), [src/classes/Backtest.ts:37-50]()
 
 ---
 
@@ -233,7 +227,6 @@ await Backtest.dump("my-strategy", "./custom/path");
 
 For detailed report structure and metrics, see [Markdown Report Generation](#9.1) and [Performance Metrics](#9.2).
 
-**Sources:** [src/classes/Backtest.ts:104-147]()
 
 ---
 
@@ -281,7 +274,6 @@ public background = async (symbol: string, context: {...}) => {
 }
 ```
 
-**Sources:** [src/classes/Backtest.ts:73-102]()
 
 ---
 
@@ -304,7 +296,6 @@ Backtesting integrates with the signal lifecycle state machine. For complete sig
 
 Only closed signals are yielded in backtest mode because opening immediately triggers fast-forward simulation.
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:63-114]()
 
 ---
 
@@ -329,7 +320,6 @@ Instead of iterating every minute during a signal's lifetime, `backtest()` simul
 
 For fast-forward simulation details, see [Fast-Forward Simulation](#7.3).
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:9-21]()
 
 ---
 
@@ -384,4 +374,3 @@ await Backtest.dump("moving-average", "./reports");
 // Writes to: ./reports/moving-average.md
 ```
 
-**Sources:** [src/classes/Backtest.ts:16-28](), [src/classes/Backtest.ts:104-147]()

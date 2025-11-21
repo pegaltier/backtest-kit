@@ -14,7 +14,6 @@ The persistence layer uses a factory pattern with pluggable backends. The `Persi
 
 ![Mermaid Diagram](./diagrams\44_Custom_Persistence_Backends_0.svg)
 
-**Sources:** [types.d.ts:1067-1125](), [src/index.ts:44-50]()
 
 ---
 
@@ -47,7 +46,6 @@ type TPersistBaseCtor<EntityName, Entity> =
     new (entityName: EntityName, baseDir: string) => IPersistBase<Entity>;
 ```
 
-**Sources:** [types.d.ts:926-959](), [types.d.ts:899-903](), [types.d.ts:912]()
 
 ---
 
@@ -67,7 +65,6 @@ The `PersistBase` class provides the default implementation using atomic file wr
 - **Async Generators:** Provides `values()`, `keys()`, `filter()`, `take()` for iteration
 - **Singleshot Initialization:** `waitForInit()` uses memoization to run only once per instance
 
-**Sources:** [types.d.ts:977-1055]()
 
 ---
 
@@ -147,7 +144,6 @@ class RedisPersistAdapter implements IPersistBase<ISignalData> {
 }
 ```
 
-**Sources:** [types.d.ts:912](), [types.d.ts:926-959](), [types.d.ts:1067-1108]()
 
 ---
 
@@ -180,7 +176,6 @@ for await (const result of Live.run("BTCUSDT", {
 }
 ```
 
-**Sources:** [types.d.ts:1067-1125](), [src/index.ts:49]()
 
 ---
 
@@ -285,7 +280,6 @@ class PostgresPersistAdapter implements IPersistBase<ISignalData> {
 }
 ```
 
-**Sources:** [types.d.ts:926-959](), [types.d.ts:899-903]()
 
 ---
 
@@ -375,7 +369,6 @@ describe('RedisPersistAdapter', () => {
 });
 ```
 
-**Sources:** [types.d.ts:926-959](), [types.d.ts:899-903]()
 
 ---
 
@@ -444,7 +437,6 @@ class ReplicatedPersistAdapter implements IPersistBase<ISignalData> {
 }
 ```
 
-**Sources:** [types.d.ts:926-959](), [types.d.ts:1067-1125]()
 
 ---
 
@@ -460,4 +452,3 @@ Custom persistence backends enable flexible storage solutions while maintaining 
 
 The memoized factory pattern ensures single instances per strategy, and the nullable `signalRow` design enables atomic state clearing for proper signal lifecycle management.
 
-**Sources:** [types.d.ts:899-1125](), [src/index.ts:44-50]()

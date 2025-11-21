@@ -6,7 +6,6 @@ Logic Services orchestrate the execution of backtest and live trading operations
 
 For configuration and registration of strategies, exchanges, and frames, see [Configuration Functions](#3.1). For the business logic implementations that Logic Services orchestrate, see [Core Business Logic](#4).
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:1-123](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:1-86](), [Diagram 1: Four-Layer Architecture Overview]()
 
 ---
 
@@ -23,7 +22,6 @@ Logic Services follow a two-tier pattern with distinct responsibilities:
 
 ![Mermaid Diagram](./diagrams\22_Logic_Services_0.svg)
 
-**Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts:1-70](), [src/lib/services/logic/public/LiveLogicPublicService.ts:1-78](), [Diagram 1: Four-Layer Architecture Overview]()
 
 ---
 
@@ -49,7 +47,6 @@ Logic Services use a two-tier pattern to separate context management from execut
 
 ![Mermaid Diagram](./diagrams\22_Logic_Services_1.svg)
 
-**Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts:46-66](), [src/lib/services/context/MethodContextService.ts:1-56](), [Diagram 4: Configuration and Registration System]()
 
 ---
 
@@ -92,7 +89,6 @@ When a signal opens during iteration:
 3. **Time Skip**: Advances loop index to skip past the signal's close timestamp [src/lib/services/logic/private/BacktestLogicPrivateService.ts:107-112]()
 4. **Result Yield**: Emits `IStrategyTickResultClosed` with PnL calculation [src/lib/services/logic/private/BacktestLogicPrivateService.ts:114]()
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:1-123](), [Diagram 2: Backtest Execution Flow]()
 
 ---
 
@@ -137,7 +133,6 @@ Live trading filters intermediate states to reduce noise:
 | `active` | No | Signal monitoring in progress - no state change [src/lib/services/logic/private/LiveLogicPrivateService.ts:68-71]() |
 | `closed` | **Yes** | Signal completed - PnL finalized [src/lib/services/logic/private/LiveLogicPrivateService.ts:78]() |
 
-**Sources:** [src/lib/services/logic/private/LiveLogicPrivateService.ts:1-86](), [Diagram 3: Live Trading with Crash Recovery]()
 
 ---
 
@@ -183,7 +178,6 @@ public run = (
 | `exchangeName` | `string` | Identifies which exchange schema to use |
 | `frameName` | `string` | Identifies which frame schema to use for timeframe generation |
 
-**Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts:1-70](), [src/lib/services/context/MethodContextService.ts:12-19]()
 
 ---
 
@@ -228,7 +222,6 @@ public run = (
 | `exchangeName` | `string` | Identifies which exchange schema to use |
 | `frameName` | `string` | Empty string for live mode (no frame needed) [src/lib/services/logic/public/LiveLogicPublicService.ts:71]() |
 
-**Sources:** [src/lib/services/logic/public/LiveLogicPublicService.ts:1-78](), [src/lib/services/context/MethodContextService.ts:12-19]()
 
 ---
 
@@ -275,7 +268,6 @@ for await (const result of liveLogic.run("BTCUSDT")) {
 }
 ```
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:48-119](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:53-82](), [Diagram 2: Backtest Execution Flow]()
 
 ---
 
@@ -307,7 +299,6 @@ Logic Services coordinate multiple service types through dependency injection.
 - `LoggerService` - Invocation logging [src/lib/services/logic/public/LiveLogicPublicService.ts:39]()
 - `LiveLogicPrivateService` - Orchestration delegation [src/lib/services/logic/public/LiveLogicPublicService.ts:40-42]()
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:1-32](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:1-29](), [src/lib/services/logic/public/BacktestLogicPublicService.ts:1-34](), [src/lib/services/logic/public/LiveLogicPublicService.ts:1-42](), [Diagram 6: Dependency Injection and Service Aggregation]()
 
 ---
 
@@ -334,7 +325,6 @@ Logic Services use `MethodContextService.runAsyncIterator()` to inject context i
 | `exchangeName` | `ExchangeName` | Routes to correct exchange schema |
 | `frameName` | `FrameName` | Routes to correct frame schema (empty for live) |
 
-**Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts:46-66](), [src/lib/services/logic/public/LiveLogicPublicService.ts:55-74](), [src/lib/services/context/MethodContextService.ts:1-56](), [Diagram 4: Configuration and Registration System]()
 
 ---
 
@@ -363,7 +353,6 @@ Logic Services delegate business logic execution to Global Services that inject 
 
 ![Mermaid Diagram](./diagrams\22_Logic_Services_7.svg)
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:60-97](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:61](), [Diagram 1: Four-Layer Architecture Overview](), [Diagram 2: Backtest Execution Flow]()
 
 ---
 
@@ -402,4 +391,3 @@ async *run(
 ): AsyncGenerator<IStrategyTickResultOpened | IStrategyTickResultClosed>
 ```
 
-**Sources:** [src/index.ts:44-55](), [types.d.ts:1-56](), [Diagram 1: Four-Layer Architecture Overview]()

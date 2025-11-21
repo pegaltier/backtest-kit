@@ -16,7 +16,6 @@ The event listener system provides six public functions for subscribing to `IStr
 
 Event listeners use queued async processing to ensure sequential execution, preventing race conditions. All listener functions return an unsubscribe function that removes the listener when called.
 
-**Sources**: [types.d.ts:648-792](), [src/index.ts:3-10](), [README.md:334-461]()
 
 ---
 
@@ -28,7 +27,6 @@ Event listeners use queued async processing to ensure sequential execution, prev
 
 The event listener system bridges strategy execution to user code. Events originate from `BacktestLogicPrivateService` and `LiveLogicPrivateService`, which emit `IStrategyTickResult` events during `tick()` execution. The six listener functions filter and route events to user-provided callbacks based on execution mode (backtest/live) and subscription type (continuous/once).
 
-**Sources**: [types.d.ts:648-792](), [README.md:334-461]()
 
 ---
 
@@ -72,7 +70,6 @@ listenSignalBacktestOnce(
 );
 ```
 
-**Sources**: [types.d.ts:648-792](), [README.md:334-461]()
 
 ---
 
@@ -95,7 +92,6 @@ Each event contains the full state information for type-safe handling:
 
 **Note**: In backtest mode, `active` events are filtered and not yielded to optimize throughput. Live mode yields all states for real-time monitoring.
 
-**Sources**: [types.d.ts:440-517](), [README.md:579-598]()
 
 ---
 
@@ -131,7 +127,6 @@ cancel();
 unsubscribe();
 ```
 
-**Sources**: [types.d.ts:1146-1214](), [types.d.ts:1264-1333](), [README.md:338-362]()
 
 ---
 
@@ -156,7 +151,6 @@ listenSignal(async (event) => {
 });
 ```
 
-**Sources**: [types.d.ts:648-792]()
 
 ---
 
@@ -208,7 +202,6 @@ const cancel = listenSignalOnce(
 cancel();
 ```
 
-**Sources**: [types.d.ts:648-792](), [README.md:366-384]()
 
 ---
 
@@ -243,7 +236,6 @@ listenSignalOnce(
 // All three listeners receive events independently
 ```
 
-**Sources**: [README.md:420-449]()
 
 ---
 
@@ -363,7 +355,6 @@ console.log("Avg TP:", takeProfits.reduce((a, b) => a + b, 0) / takeProfits.leng
 console.log("Avg SL:", stopLosses.reduce((a, b) => a + b, 0) / stopLosses.length);
 ```
 
-**Sources**: [README.md:334-461]()
 
 ---
 
@@ -456,7 +447,6 @@ listenSignal(async (event) => {
 });
 ```
 
-**Sources**: [README.md:334-461]()
 
 ---
 
@@ -471,5 +461,3 @@ Event listeners provide a flexible mechanism for subscribing to strategy signals
 - **Automatic cleanup**: "Once" variants auto-unsubscribe
 
 Event listeners enable patterns like real-time monitoring, conditional early termination, and event-driven analytics without blocking strategy execution.
-
-**Sources**: [types.d.ts:648-792](), [src/index.ts:3-10](), [README.md:334-461]()

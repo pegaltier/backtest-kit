@@ -21,7 +21,6 @@ A signal exists in exactly one of four states at any given time. The framework u
 | **Active** | `"active"` | `ISignalRow` | Signal monitoring for TP/SL/time expiration | No (filtered) |
 | **Closed** | `"closed"` | `ISignalRow` | Signal completed with PNL calculation | Yes |
 
-**Sources:** [src/interfaces/Strategy.interface.ts:128-208](), [src/client/ClientStrategy.ts:258-464]()
 
 ---
 
@@ -37,7 +36,6 @@ The framework distinguishes between three signal representations:
 | `ISignalRow` | Validated signal with metadata | `id: string` (required) | Internal state, persistence, results |
 | `IStrategyTickResult` | Discriminated union of states | N/A (contains `ISignalRow` or `null`) | Return type of `tick()` and `backtest()` |
 
-**Sources:** [src/interfaces/Strategy.interface.ts:22-54](), [src/interfaces/Strategy.interface.ts:204-213]()
 
 ### Signal DTO to Signal Row Transformation
 
@@ -54,7 +52,6 @@ const signalRow: ISignalRow = {
 };
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:90-131]()
 
 ### Discriminated Union Structure
 
@@ -79,7 +76,6 @@ if (result.action === "closed") {
 }
 ```
 
-**Sources:** [src/interfaces/Strategy.interface.ts:204-213](), [docs/interfaces/IStrategyTickResultClosed.md:1-76]()
 
 ---
 
@@ -91,7 +87,6 @@ The `tick()` method calls `GET_SIGNAL_FN` when no pending signal exists. The fol
 
 ![Mermaid Diagram](./diagrams\23_Signal_Lifecycle_1.svg)
 
-**Sources:** [src/client/ClientStrategy.ts:90-131]()
 
 ### Throttling Intervals
 
@@ -122,7 +117,6 @@ if (
 self._lastSignalTimestamp = currentTime;
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:19-26](), [src/client/ClientStrategy.ts:94-106]()
 
 ---
 
@@ -161,7 +155,6 @@ The `VALIDATE_SIGNAL_FN` performs comprehensive validation before accepting a si
 | `minuteEstimatedTime` | Must be > 0 | `"minuteEstimatedTime must be positive, got {value}"` |
 | `timestamp` | Must be > 0 | `"timestamp must be positive, got {value}"` |
 
-**Sources:** [src/client/ClientStrategy.ts:28-88]()
 
 ### Validation Error Handling
 
@@ -177,7 +170,6 @@ if (errors.length > 0) {
 
 The error is caught by the `trycatch` wrapper in `GET_SIGNAL_FN`, which returns `null` on failure [src/client/ClientStrategy.ts:90-131]().
 
-**Sources:** [src/client/ClientStrategy.ts:83-88](), [src/client/ClientStrategy.ts:90-131]()
 
 ---
 
@@ -189,7 +181,6 @@ When a pending signal exists, the `tick()` method monitors it against three clos
 
 ![Mermaid Diagram](./diagrams\23_Signal_Lifecycle_2.svg)
 
-**Sources:** [src/client/ClientStrategy.ts:258-464]()
 
 ### Close Condition Logic
 
@@ -233,7 +224,6 @@ if (signal.position === "short") {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:343-371]()
 
 ---
 
@@ -243,7 +233,6 @@ if (signal.position === "short") {
 
 The `backtest()` method provides fast-forward simulation by processing an array of historical candles without iterating through every timestamp. This is called by `BacktestLogicPrivateService` after a signal opens.
 
-**Sources:** [src/client/ClientStrategy.ts:485-656]()
 
 ### Backtest vs Tick Comparison
 
@@ -257,13 +246,11 @@ The `backtest()` method provides fast-forward simulation by processing an array 
 | **Closure** | May return "active" | Always returns "closed" |
 | **Starting Index** | N/A | Index 4 (needs 5 candles for VWAP) |
 
-**Sources:** [src/client/ClientStrategy.ts:258-464](), [src/client/ClientStrategy.ts:485-656]()
 
 ### Backtest Execution Flow
 
 ![Mermaid Diagram](./diagrams\23_Signal_Lifecycle_3.svg)
 
-**Sources:** [src/client/ClientStrategy.ts:485-656]()
 
 ### VWAP Calculation for Backtest
 
@@ -292,7 +279,6 @@ for (let i = 4; i < candles.length; i++) {
   const averagePrice = GET_AVG_PRICE_FN(recentCandles);
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:133-144](), [src/client/ClientStrategy.ts:512-515]()
 
 ---
 
@@ -324,7 +310,6 @@ This method:
 2. Skips disk writes in backtest mode (performance optimization)
 3. Calls `PersistSignalAdaper.writeSignalData()` for atomic file write in live mode
 
-**Sources:** [src/client/ClientStrategy.ts:220-233]()
 
 ### State Recovery on Initialization
 
@@ -358,7 +343,6 @@ public waitForInit = singleshot(async () => await WAIT_FOR_INIT_FN(this));
 
 The `singleshot` wrapper ensures initialization happens exactly once, even if called multiple times.
 
-**Sources:** [src/client/ClientStrategy.ts:146-165](), [src/client/ClientStrategy.ts:209]()
 
 ### Persistence Call Sites
 
@@ -378,7 +362,6 @@ This ensures:
 
 For detailed persistence implementation, see [Signal Persistence](#6.3).
 
-**Sources:** [src/client/ClientStrategy.ts:220-233](), [src/client/ClientStrategy.ts:263](), [src/client/ClientStrategy.ts:414](), [src/client/ClientStrategy.ts:575](), [src/client/ClientStrategy.ts:634]()
 
 ---
 
@@ -400,7 +383,6 @@ For short positions:
 - Entry price adjusted down (unfavorable): `priceOpen * 0.999`
 - Exit price adjusted up (unfavorable): `priceClose * 1.001`
 
-**Sources:** [src/client/ClientStrategy.ts:15](), [src/helpers/toProfitLossDto]()
 
 ### Usage in ClientStrategy
 
@@ -421,7 +403,6 @@ const pnl = toProfitLossDto(signal, averagePrice);
 // pnl.priceClose: adjusted exit price with fees/slippage
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:375](), [src/client/ClientStrategy.ts:544](), [src/client/ClientStrategy.ts:606]()
 
 ### Loss Warnings
 
@@ -442,7 +423,6 @@ These warnings occur at:
 
 For detailed PnL calculation implementation, see [PnL Calculation](#6.4).
 
-**Sources:** [src/client/ClientStrategy.ts:379-393](), [src/client/ClientStrategy.ts:558-563](), [src/client/ClientStrategy.ts:617-622]()
 
 ---
 
@@ -454,4 +434,3 @@ In live trading mode, all state changes are atomically persisted to disk via `Pe
 
 The discriminated union type system ensures type-safe handling of all states, with the `action` field serving as the discriminator for pattern matching.
 
-**Sources:** [src/client/ClientStrategy.ts:1-660](), [src/interfaces/Strategy.interface.ts:1-243]()

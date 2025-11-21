@@ -16,7 +16,6 @@ Key characteristics:
 - **Real-time**: Uses current market prices via `getAveragePrice()`
 - **Filtered output**: Only yields `opened` and `closed` events (skips `idle` and `active`)
 
-Sources: [src/classes/Live.ts:10-38](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:10-24]()
 
 ---
 
@@ -55,7 +54,6 @@ for await (const result of Live.run("BTCUSDT", {
 
 **Important**: This loop runs forever and must be terminated with Ctrl+C or process.exit().
 
-Sources: [src/classes/Live.ts:40-62]()
 
 ---
 
@@ -85,7 +83,6 @@ const cancel = await Live.background("BTCUSDT", {
 cancel();
 ```
 
-Sources: [src/classes/Live.ts:64-117]()
 
 ---
 
@@ -101,7 +98,6 @@ Live.dump(strategyName: string, path?: string): Promise<void>
 
 Default path for `dump()` is `./logs/live`.
 
-Sources: [src/classes/Live.ts:119-162]()
 
 ---
 
@@ -122,7 +118,6 @@ Live trading uses a three-layer architecture with context injection:
 | Business Logic | `ClientStrategy` | Signal evaluation and persistence |
 | Cross-Cutting | `PersistSignalAdapter` | Atomic file I/O for crash safety |
 
-Sources: [src/classes/Live.ts:1-9](), [src/lib/services/logic/public/LiveLogicPublicService.ts:8-20](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:10-24]()
 
 ---
 
@@ -142,7 +137,6 @@ Sources: [src/classes/Live.ts:1-9](), [src/lib/services/logic/public/LiveLogicPu
 
 The extra 1ms buffer ensures the next tick starts after the minute boundary, preventing edge case timing issues.
 
-Sources: [src/lib/services/logic/private/LiveLogicPrivateService.ts:7-82]()
 
 ---
 
@@ -166,7 +160,6 @@ The `run()` method at [src/lib/services/logic/private/LiveLogicPrivateService.ts
 
 Live mode only yields `opened` and `closed` events to reduce noise. The `active` state occurs every minute while a signal is monitoring conditions, which would flood the output. Users typically only care about signal entry and exit points.
 
-Sources: [src/lib/services/logic/private/LiveLogicPrivateService.ts:53-82]()
 
 ---
 
@@ -190,7 +183,6 @@ interface IMethodContext {
 
 The `frameName` is an empty string for live trading because there is no historical timeframe—execution uses real-time data.
 
-Sources: [src/lib/services/logic/public/LiveLogicPublicService.ts:38-74](), [src/lib/services/context/MethodContextService.ts:6-19]()
 
 ---
 
@@ -218,7 +210,6 @@ Live trading persists signal state to disk before every yield, enabling seamless
 | `active` → `active` | No change (monitoring) |
 | `active` → `closed` | Write `null` to disk (clear signal) |
 
-Sources: [src/lib/services/logic/private/LiveLogicPrivateService.ts:10-24]()
 
 ---
 
@@ -235,7 +226,6 @@ The `getAveragePrice()` function is called during every tick to:
 2. **Check stop loss**: Compare current price to signal's `stopLoss` level
 3. **Calculate PnL**: Determine profit/loss when closing signal
 
-Sources: Based on execution flow from Diagram 3 in high-level architecture
 
 ---
 
@@ -253,7 +243,6 @@ Sources: Based on execution flow from Diagram 3 in high-level architecture
 
 All services are injected via dependency injection using `TYPES` symbols.
 
-Sources: [src/lib/services/logic/private/LiveLogicPrivateService.ts:26-29]()
 
 ---
 
@@ -270,7 +259,6 @@ Sources: [src/lib/services/logic/private/LiveLogicPrivateService.ts:26-29]()
 | **Fast-Forward** | No (real-time progression) | Yes (`backtest()` method) |
 | **Completion** | Never completes | Completes after last timeframe |
 
-Sources: [src/lib/services/logic/private/LiveLogicPrivateService.ts:53-82](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:48-119]()
 
 ---
 
@@ -296,7 +284,6 @@ The system handles crashes transparently:
 
 If `getSignal()` returns an invalid signal, `ClientStrategy` throws an error and the process crashes. Users should ensure their signal generation logic is correct before running live.
 
-Sources: [src/classes/Live.ts:40-117]()
 
 ---
 
@@ -330,7 +317,6 @@ Access reports via:
 - `Live.getReport(strategyName)`: Returns markdown string
 - `Live.dump(strategyName, path)`: Writes markdown to disk
 
-Sources: [src/lib/services/logic/private/LiveLogicPrivateService.ts:63-66](), [src/classes/Live.ts:119-162]()
 
 ---
 
@@ -396,7 +382,6 @@ const report = await Live.getReport("momentum-strategy");
 console.log(report);
 ```
 
-Sources: [src/classes/Live.ts:16-36]()
 
 ---
 
@@ -423,7 +408,6 @@ node live-eth.js
 
 Each process maintains its own state and persistence files, preventing conflicts.
 
-Sources: [src/lib/services/logic/private/LiveLogicPrivateService.ts:53-82]()
 
 ---
 
@@ -443,7 +427,6 @@ Live trading has minimal memory footprint:
 - Only current signal in memory
 - Generator pattern prevents accumulation
 
-Sources: [src/lib/services/logic/private/LiveLogicPrivateService.ts:7]()
 
 ---
 

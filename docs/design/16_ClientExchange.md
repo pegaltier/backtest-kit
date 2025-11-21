@@ -6,7 +6,6 @@ The `ClientExchange` class is a pure business logic component responsible for fe
 
 ClientExchange operates in the **Business Logic Layer** without dependency injection concerns, delegating DI orchestration to `ExchangeConnectionService` (see [Connection Services](#5.1)) and `ExchangeGlobalService` (see [Global Services](#5.3)). For public API wrappers that user code calls directly, see [Exchange Functions](#3.4).
 
-Sources: [src/client/ClientExchange.ts:1-223](), [README.md:196-207]()
 
 ---
 
@@ -18,7 +17,6 @@ ClientExchange sits in the Business Logic Layer and is instantiated by `Exchange
 
 ![Mermaid Diagram](./diagrams\16_ClientExchange_0.svg)
 
-Sources: [src/client/ClientExchange.ts:1-48]()
 
 ---
 
@@ -30,7 +28,6 @@ ClientExchange implements the `IExchange` interface and receives all dependencie
 
 ![Mermaid Diagram](./diagrams\16_ClientExchange_1.svg)
 
-Sources: [src/client/ClientExchange.ts:46-47]()
 
 | Property | Type | Purpose |
 |----------|------|---------|
@@ -42,7 +39,6 @@ Sources: [src/client/ClientExchange.ts:46-47]()
 | `logger` | `LoggerService` | Debug/warn logging with automatic context enrichment |
 | `callbacks.onCandleData` | `Function?` | Optional callback after candle data fetched |
 
-Sources: [src/client/ClientExchange.ts:1-5]()
 
 ---
 
@@ -54,7 +50,6 @@ The `getCandles()` method fetches historical candles **backwards** from the exec
 
 ![Mermaid Diagram](./diagrams\16_ClientExchange_2.svg)
 
-Sources: [src/client/ClientExchange.ts:57-101]()
 
 ### Time Calculation Logic
 
@@ -73,7 +68,6 @@ For example, requesting 100 candles of "1m" interval at 12:00:00 calculates:
 
 This returns candles from 10:21:00 to 12:00:00 (inclusive), totaling approximately 100 candles.
 
-Sources: [src/client/ClientExchange.ts:68-79]()
 
 ### Filtering and Validation
 
@@ -86,7 +80,6 @@ After fetching raw candles from the user-provided function, ClientExchange filte
 
 This filtering handles edge cases where the user-provided `getCandles` function returns extra or incomplete data.
 
-Sources: [src/client/ClientExchange.ts:87-100]()
 
 ---
 
@@ -98,7 +91,6 @@ The `getNextCandles()` method fetches candles **forwards** from the execution co
 
 ![Mermaid Diagram](./diagrams\16_ClientExchange_3.svg)
 
-Sources: [src/client/ClientExchange.ts:113-157]()
 
 ### Safety Mechanism
 
@@ -114,7 +106,6 @@ if (endTime > Date.now()) {
 
 This ensures backtest cannot "see the future" beyond the actual historical data available. In live mode, this method would always return `[]` since `Date.now()` equals `context.when`.
 
-Sources: [src/client/ClientExchange.ts:124-134]()
 
 ---
 
@@ -126,7 +117,6 @@ The `getAveragePrice()` method calculates Volume Weighted Average Price (VWAP) f
 
 ![Mermaid Diagram](./diagrams\16_ClientExchange_4.svg)
 
-Sources: [src/client/ClientExchange.ts:172-203]()
 
 ### Formula Breakdown
 
@@ -143,7 +133,6 @@ If total volume is zero (rare edge case), fallback to simple average of close pr
 | Zero Volume | Simple Average = Σ(close) / count |
 | No Candles | Throws Error |
 
-Sources: [src/client/ClientExchange.ts:185-203]()
 
 ---
 
@@ -182,7 +171,6 @@ const formattedPrice = await exchange.formatPrice("BTCUSDT", 50123.456);
 // Returns "50123.46"
 ```
 
-Sources: [src/client/ClientExchange.ts:205-219]()
 
 ---
 
@@ -205,7 +193,6 @@ The `INTERVAL_MINUTES` constant maps `CandleInterval` string literals to numeric
 | `"6h"` | 360 | Six-hour cycles |
 | `"8h"` | 480 | Third-day analysis |
 
-Sources: [src/client/ClientExchange.ts:7-18]()
 
 The mapping is used to calculate the number of milliseconds to offset from `context.when`:
 
@@ -217,7 +204,6 @@ const since = new Date(context.when.getTime() - adjust * 60 * 1000);
 
 If an unknown interval is provided, the methods throw descriptive errors [src/client/ClientExchange.ts:71-75]().
 
-Sources: [src/client/ClientExchange.ts:7-18](), [src/client/ClientExchange.ts:68-75]()
 
 ---
 
@@ -229,7 +215,6 @@ ClientExchange is **stateless** and **context-aware**. All temporal logic uses `
 
 ![Mermaid Diagram](./diagrams\16_ClientExchange_5.svg)
 
-Sources: [src/client/ClientExchange.ts:78](), [src/client/ClientExchange.ts:124]()
 
 ### Key Context Usage Points
 
@@ -241,7 +226,6 @@ Sources: [src/client/ClientExchange.ts:78](), [src/client/ClientExchange.ts:124]
 
 This design eliminates conditional logic for backtest vs. live modes—the behavior is unified through context injection.
 
-Sources: [src/client/ClientExchange.ts:77-79](), [src/client/ClientExchange.ts:124]()
 
 ---
 
@@ -275,7 +259,6 @@ interface IExchangeCallbacks {
 - **Debugging**: Log problematic time ranges during backtest
 - **Testing**: Mock verification in unit tests
 
-Sources: [src/client/ClientExchange.ts:96-98](), [src/client/ClientExchange.ts:152-154]()
 
 ---
 
@@ -303,7 +286,6 @@ This design is explicitly documented in the file header [src/client/ClientExchan
 
 When combined with `ExchangeConnectionService` memoization (see [Connection Services](#5.1)), the framework minimizes allocations while supporting multiple exchange configurations.
 
-Sources: [src/client/ClientExchange.ts:29]()
 
 ---
 
@@ -315,11 +297,9 @@ While ClientExchange provides price data, it does **not** calculate profit/loss.
 
 ![Mermaid Diagram](./diagrams\16_ClientExchange_6.svg)
 
-Sources: [src/client/ClientExchange.ts:172-203](), [src/helpers/toProfitLossDto.ts:1-93]()
 
 ClientExchange's responsibility ends at providing the raw VWAP; `ClientStrategy` owns signal lifecycle and PNL calculation.
 
-Sources: [src/client/ClientExchange.ts:172-203]()
 
 ---
 
@@ -335,4 +315,3 @@ ClientExchange throws descriptive errors for invalid states, enabling early fail
 
 All errors include contextual information (symbol, interval) for debugging. Warnings are logged for non-fatal issues like partial candle data.
 
-Sources: [src/client/ClientExchange.ts:72-75](), [src/client/ClientExchange.ts:92-94](), [src/client/ClientExchange.ts:146-150](), [src/client/ClientExchange.ts:180-182]()
