@@ -72,6 +72,7 @@ export class StrategyGlobalService {
   ): Promise<IStrategyBacktestResult> => {
     this.loggerService.log("strategyGlobalService backtest", {
       symbol,
+      candleCount: candles.length,
       when,
       backtest,
     });

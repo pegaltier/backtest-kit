@@ -120,7 +120,9 @@ export class StrategyConnectionService implements IStrategy {
   public backtest = async (
     candles: ICandleData[]
   ): Promise<IStrategyBacktestResult> => {
-    this.loggerService.log("strategyConnectionService backtest");
+    this.loggerService.log("strategyConnectionService backtest", {
+      candleCount: candles.length,
+    });
     const strategy = await this.getStrategy(
       this.methodContextService.context.strategyName
     );
