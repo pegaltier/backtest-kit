@@ -1,6 +1,6 @@
 # Backtest Kit
 
-A production-ready TypeScript framework for backtesting and live trading strategies with crash-safe state persistence, signal validation, and memory-optimized architecture.
+> A production-ready TypeScript framework for backtesting and live trading strategies with crash-safe state persistence, signal validation, and memory-optimized architecture.
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/tripolskypetr/backtest-kit)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue)]()
