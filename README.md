@@ -779,11 +779,6 @@ for await (const result of Backtest.run("BTCUSDT", {
 }
 ```
 
-## Deprecated APIs
-
-- **`src/function/run.ts`** - Use `liveLogicPublicService.run()` instead
-- Global mutable state (`startRun`, `stopRun`) - Prefer explicit service instantiation
-
 ## Use Cases
 
 - **Algorithmic Trading** - Backtest and deploy strategies with crash recovery
