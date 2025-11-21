@@ -22,6 +22,9 @@ const NOOP_LOGGER: ILogger = {
   info() {
     void 0;
   },
+  warn() {
+    void 0;
+  },
 };
 
 /**
@@ -105,6 +108,21 @@ export class LoggerService implements ILogger {
    */
   public info = async (topic: string, ...args: any[]) => {
     await this._commonLogger.info(
+      topic,
+      ...args,
+      this.methodContext,
+      this.executionContext
+    );
+  };
+
+  /**
+   * Logs warning-level message with automatic context injection.
+   *
+   * @param topic - Log topic/category
+   * @param args - Additional log arguments
+   */
+  public warn = async (topic: string, ...args: any[]) => {
+    await this._commonLogger.warn(
       topic,
       ...args,
       this.methodContext,

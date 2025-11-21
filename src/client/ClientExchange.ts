@@ -89,6 +89,10 @@ export class ClientExchange implements IExchange {
         candle.timestamp >= sinceTimestamp && candle.timestamp <= whenTimestamp
     );
 
+    if (filteredData.length < limit) {
+      this.params.logger.warn(`ClientExchange Expected ${limit} candles, got ${filteredData.length}`);
+    }
+
     if (this.params.callbacks?.onCandleData) {
       this.params.callbacks.onCandleData(symbol, interval, since, limit, filteredData);
     }
