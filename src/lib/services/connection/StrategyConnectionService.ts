@@ -72,6 +72,7 @@ export class StrategyConnectionService implements IStrategy {
       return new ClientStrategy({
         interval,
         execution: this.executionContextService,
+        method: this.methodContextService,
         logger: this.loggerService,
         exchange: this.exchangeConnectionService,
         strategyName,

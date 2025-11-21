@@ -28,6 +28,7 @@ export type FrameInterval =
  * Extends IFrameSchema with logger instance for internal logging.
  */
 export interface IFrameParams extends IFrameSchema {
+    /** Logger service for debug output */
     logger: ILogger;
 }
 

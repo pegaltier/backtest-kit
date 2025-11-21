@@ -108,6 +108,8 @@ const GET_SIGNAL_FN = trycatch(
     const signalRow: ISignalRow = {
       id: randomString(),
       ...signal,
+      exchangeName: self.params.method.context.exchangeName,
+      strategyName: self.params.method.context.strategyName,
     };
 
     // Валидируем сигнал перед возвратом

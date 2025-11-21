@@ -1,5 +1,6 @@
+import { TMethodContextService } from "src/lib/services/context/MethodContextService";
 import { TExecutionContextService } from "../lib/services/context/ExecutionContextService";
-import { IExchange, ICandleData } from "./Exchange.interface";
+import { IExchange, ICandleData, ExchangeName } from "./Exchange.interface";
 import { ILogger } from "./Logger.interface";
 
 /**
@@ -44,6 +45,10 @@ export interface ISignalDto {
 export interface ISignalRow extends ISignalDto {
   /** Unique signal identifier (UUID v4 auto-generated) */
   id: string;
+  /** Unique exchange identifier for execution */
+  exchangeName: ExchangeName;
+  /** Unique strategy identifier for execution */
+  strategyName: StrategyName;
 }
 
 /**
@@ -57,6 +62,8 @@ export interface IStrategyParams extends IStrategySchema {
   exchange: IExchange;
   /** Execution context service (symbol, when, backtest flag) */
   execution: TExecutionContextService;
+  /** Method context service (strategyName, exchangeName, frameName) */
+  method: TMethodContextService;
 }
 
 /**
