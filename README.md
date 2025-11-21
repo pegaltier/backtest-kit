@@ -32,22 +32,61 @@ npm install backtest-kit
 
 ```typescript
 import { addExchange } from "backtest-kit";
+import ccxt from "ccxt"; // Example using CCXT library
 
 addExchange({
   exchangeName: "binance",
+
+  // Fetch historical candles
   getCandles: async (symbol, interval, since, limit) => {
-    // Fetch candle data from your exchange API or database
-    return [
-      {
-        timestamp: Date.now(),
-        open: 50000,
-        high: 51000,
-        low: 49000,
-        close: 50500,
-        volume: 1000,
-      },
-    ];
+    const exchange = new ccxt.binance();
+    const ohlcv = await exchange.fetchOHLCV(symbol, interval, since.getTime(), limit);
+
+    return ohlcv.map(([timestamp, open, high, low, close, volume]) => ({
+      timestamp,
+      open,
+      high,
+      low,
+      close,
+      volume,
+    }));
   },
+
+  // Format price according to exchange rules (e.g., 2 decimals for BTC)
+  formatPrice: async (symbol, price) => {
+    const exchange = new ccxt.binance();
+    const market = exchange.market(symbol);
+    return exchange.priceToPrecision(symbol, price);
+  },
+
+  // Format quantity according to exchange rules (e.g., 8 decimals)
+  formatQuantity: async (symbol, quantity) => {
+    const exchange = new ccxt.binance();
+    return exchange.amountToPrecision(symbol, quantity);
+  },
+});
+```
+
+**Alternative: Database implementation**
+
+```typescript
+import { addExchange } from "backtest-kit";
+import { db } from "./database"; // Your database client
+
+addExchange({
+  exchangeName: "binance-db",
+
+  getCandles: async (symbol, interval, since, limit) => {
+    // Fetch from database for faster backtesting
+    return await db.query(`
+      SELECT timestamp, open, high, low, close, volume
+      FROM candles
+      WHERE symbol = $1 AND interval = $2 AND timestamp >= $3
+      ORDER BY timestamp ASC
+      LIMIT $4
+    `, [symbol, interval, since, limit]);
+  },
+
   formatPrice: async (symbol, price) => price.toFixed(2),
   formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
 });
