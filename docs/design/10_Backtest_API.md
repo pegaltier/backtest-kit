@@ -2,7 +2,7 @@
 
 This document covers the public API for running backtests through the `Backtest` utility class. The Backtest API provides methods for streaming historical strategy execution, running backtests in the background, and generating performance reports.
 
-For registering strategies, exchanges, and frames before running backtests, see [Configuration Functions](#3.1). For live trading operations, see [Live Trading API](#3.3). For detailed execution orchestration, see [Backtest Execution Flow](#7.1).
+For registering strategies, exchanges, and frames before running backtests, see [Configuration Functions](09_Configuration_Functions.md). For live trading operations, see [Live Trading API](11_Live_Trading_API.md). For detailed execution orchestration, see [Backtest Execution Flow](29_Backtest_Execution_Flow.md).
 
 ---
 
@@ -111,7 +111,7 @@ for await (const result of Backtest.run("BTCUSDT", {
 
 ## Backtest.background()
 
-Executes a backtest without yielding results to the caller. This method consumes the async generator internally, making it useful for fire-and-forget execution where results are handled via event listeners (see [Event Listeners](#3.5)).
+Executes a backtest without yielding results to the caller. This method consumes the async generator internally, making it useful for fire-and-forget execution where results are handled via event listeners (see [Event Listeners](13_Event_Listeners.md)).
 
 ### Method Signature
 
@@ -465,7 +465,7 @@ addStrategy({
 // Backtest will throw validation error when signal is generated
 ```
 
-**Solution:** Ensure signal validation rules are followed (see [Signal Generation and Validation](#6.2)).
+**Solution:** Ensure signal validation rules are followed (see [Signal Generation and Validation](25_Signal_Generation_and_Validation.md)).
 
 ### Exchange Errors
 

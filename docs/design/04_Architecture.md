@@ -2,7 +2,7 @@
 
 This document describes the four-layer clean architecture pattern of the backtest-kit framework, including the dependency injection system, service organization, and how components interact across architectural boundaries. It explains how the system maintains separation of concerns through explicit layer boundaries and context propagation mechanisms.
 
-For specific service implementations within each layer, see [Layer Responsibilities](#2.1). For details on the DI system mechanics, see [Dependency Injection System](#2.2). For context propagation patterns, see [Context Propagation](#2.3).
+For specific service implementations within each layer, see [Layer Responsibilities](05_Layer_Responsibilities.md). For details on the DI system mechanics, see [Dependency Injection System](06_Dependency_Injection_System.md). For context propagation patterns, see [Context Propagation](07_Context_Propagation.md).
 
 ---
 

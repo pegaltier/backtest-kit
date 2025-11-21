@@ -13,11 +13,11 @@ This page covers:
 - Technology dependencies
 
 For detailed information about specific subsystems, refer to:
-- Configuration and registration: [Configuration Functions](#3.1)
-- Backtest execution details: [Backtesting](#7)
-- Live trading implementation: [Live Trading](#8)
-- Signal state management: [Signal Lifecycle](#6)
-- Service layer architecture: [Service Layer](#5)
+- Configuration and registration: [Configuration Functions](09_Configuration_Functions.md)
+- Backtest execution details: [Backtesting](28_Backtesting.md)
+- Live trading implementation: [Live Trading](32_Live_Trading.md)
+- Signal state management: [Signal Lifecycle](23_Signal_Lifecycle.md)
+- Service layer architecture: [Service Layer](18_Service_Layer.md)
 
 ---
 
@@ -50,7 +50,7 @@ The framework follows a clean architecture pattern with four distinct layers:
 | **Business Logic** | Pure, testable domain logic | `ClientStrategy`, `ClientExchange`, `ClientFrame` | [src/client/*]() |
 | **Cross-Cutting** | Logging, persistence, reporting, context | `LoggerService`, `PersistSignalAdapter`, Markdown services | [src/lib/services/base](), [src/classes/Persist.ts]() |
 
-For detailed layer responsibilities, see [Layer Responsibilities](#2.1).
+For detailed layer responsibilities, see [Layer Responsibilities](05_Layer_Responsibilities.md).
 
 ---
 
@@ -129,7 +129,7 @@ The service layer handles dependency injection and routing:
    - `BacktestLogicPrivateService`, `LiveLogicPrivateService`
    - Implement async generator loops
 
-For detailed service layer documentation, see [Service Layer](#5).
+For detailed service layer documentation, see [Service Layer](18_Service_Layer.md).
 
 ---
 
@@ -159,7 +159,7 @@ type IStrategyTickResult =
 | Active | `IStrategyTickResultActive` | `signal, currentPrice` | Backtest: never, Live: no |
 | Closed | `IStrategyTickResultClosed` | `signal, pnl, closeReason` | Both modes |
 
-For complete signal lifecycle details, see [Signal Lifecycle](#6).
+For complete signal lifecycle details, see [Signal Lifecycle](23_Signal_Lifecycle.md).
 
 ---
 
@@ -183,7 +183,7 @@ The framework uses a registration-then-execution pattern:
 - **Routing:** `MethodContextService` provides schema names for lookup
 - **Flexibility:** Multiple strategies/exchanges can coexist
 
-For configuration details, see [Configuration Functions](#3.1).
+For configuration details, see [Configuration Functions](09_Configuration_Functions.md).
 
 ---
 
@@ -206,7 +206,7 @@ The framework uses **di-scoped** for implicit context passing:
 - Scoped to async execution boundaries
 
 
-For DI system details, see [Dependency Injection System](#2.2).
+For DI system details, see [Dependency Injection System](06_Dependency_Injection_System.md).
 
 ---
 
@@ -292,7 +292,7 @@ Signals are validated automatically in `ClientStrategy`:
 **Persistence Location:** [src/classes/Persist.ts]()
 
 
-For error handling patterns, see [Error Handling](#10.2).
+For error handling patterns, see [Error Handling](41_Error_Handling.md).
 
 ---
 
@@ -300,9 +300,9 @@ For error handling patterns, see [Error Handling](#10.2).
 
 To use the framework:
 
-1. **Installation:** `npm install backtest-kit` - see [Installation and Setup](#1.2)
-2. **Configuration:** Register schemas with `addStrategy()`, `addExchange()`, `addFrame()` - see [Configuration Functions](#3.1)
-3. **Backtesting:** Use `Backtest.run()` for historical testing - see [Backtest API](#3.2)
-4. **Live Trading:** Use `Live.run()` for production deployment - see [Live Trading API](#3.3)
-5. **Reporting:** Generate markdown reports with `getReport()` and `dump()` - see [Reporting and Analytics](#9)
+1. **Installation:** `npm install backtest-kit` - see [Installation and Setup](03_Installation_and_Setup.md)
+2. **Configuration:** Register schemas with `addStrategy()`, `addExchange()`, `addFrame()` - see [Configuration Functions](09_Configuration_Functions.md)
+3. **Backtesting:** Use `Backtest.run()` for historical testing - see [Backtest API](10_Backtest_API.md)
+4. **Live Trading:** Use `Live.run()` for production deployment - see [Live Trading API](11_Live_Trading_API.md)
+5. **Reporting:** Generate markdown reports with `getReport()` and `dump()` - see [Reporting and Analytics](36_Reporting_and_Analytics.md)
 

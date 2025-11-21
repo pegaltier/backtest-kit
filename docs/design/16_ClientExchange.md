@@ -4,7 +4,7 @@
 
 The `ClientExchange` class is a pure business logic component responsible for fetching and processing exchange data within the backtest-kit framework. It provides three core capabilities: historical candle fetching (backwards from execution context), future candle fetching (forwards for backtest simulation), and VWAP (Volume Weighted Average Price) calculation from recent 1-minute candles.
 
-ClientExchange operates in the **Business Logic Layer** without dependency injection concerns, delegating DI orchestration to `ExchangeConnectionService` (see [Connection Services](#5.1)) and `ExchangeGlobalService` (see [Global Services](#5.3)). For public API wrappers that user code calls directly, see [Exchange Functions](#3.4).
+ClientExchange operates in the **Business Logic Layer** without dependency injection concerns, delegating DI orchestration to `ExchangeConnectionService` (see [Connection Services](19_Connection_Services.md)) and `ExchangeGlobalService` (see [Global Services](21_Global_Services.md)). For public API wrappers that user code calls directly, see [Exchange Functions](12_Exchange_Functions.md).
 
 
 ---
@@ -85,7 +85,7 @@ This filtering handles edge cases where the user-provided `getCandles` function 
 
 ## Future Candle Fetching (Backtest Only)
 
-The `getNextCandles()` method fetches candles **forwards** from the execution context, used exclusively in backtest mode to simulate signal outcomes without iterating every timestamp (see [Fast-Forward Simulation](#7.3)).
+The `getNextCandles()` method fetches candles **forwards** from the execution context, used exclusively in backtest mode to simulate signal outcomes without iterating every timestamp (see [Fast-Forward Simulation](31_Fast-Forward_Simulation.md)).
 
 **Diagram: Future Candle Fetching with Safety Check**
 
@@ -284,14 +284,14 @@ This design is explicitly documented in the file header [src/client/ClientExchan
 
 > All methods use prototype functions for memory efficiency.
 
-When combined with `ExchangeConnectionService` memoization (see [Connection Services](#5.1)), the framework minimizes allocations while supporting multiple exchange configurations.
+When combined with `ExchangeConnectionService` memoization (see [Connection Services](19_Connection_Services.md)), the framework minimizes allocations while supporting multiple exchange configurations.
 
 
 ---
 
 ## Relationship with PNL Calculation
 
-While ClientExchange provides price data, it does **not** calculate profit/loss. PNL calculation occurs in `ClientStrategy` using the `toProfitLossDto()` helper (see [PnL Calculation](#6.4)), which applies slippage and fees to the close price obtained from `getAveragePrice()`.
+While ClientExchange provides price data, it does **not** calculate profit/loss. PNL calculation occurs in `ClientStrategy` using the `toProfitLossDto()` helper (see [PnL Calculation](27_PnL_Calculation.md)), which applies slippage and fees to the close price obtained from `getAveragePrice()`.
 
 **Data Flow:**
 

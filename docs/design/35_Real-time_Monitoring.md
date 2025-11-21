@@ -4,7 +4,7 @@
 
 This document describes how the backtest-kit framework monitors active trading signals in real-time by continuously checking market prices against take profit (TP), stop loss (SL), and time expiration conditions. This monitoring occurs during the "active" state of the signal lifecycle and determines when signals should close.
 
-For information about the complete signal lifecycle and state transitions, see [Signal Lifecycle](#6). For details on how signals are generated and validated, see [Signal Generation and Validation](#6.2). For PnL calculation specifics, see [PnL Calculation](#6.4).
+For information about the complete signal lifecycle and state transitions, see [Signal Lifecycle](23_Signal_Lifecycle.md). For details on how signals are generated and validated, see [Signal Generation and Validation](25_Signal_Generation_and_Validation.md). For PnL calculation specifics, see [PnL Calculation](27_PnL_Calculation.md).
 
 ---
 

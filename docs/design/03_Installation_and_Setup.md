@@ -1,7 +1,7 @@
 # Installation and Setup
 
 
-**Purpose and Scope:** This page covers the installation process, package structure, module entry points, and build system configuration for the backtest-kit framework. For information about configuring strategies, exchanges, and frames after installation, see [Configuration Functions](#3.1). For architecture details and service layer setup, see [Architecture](#2) and [Dependency Injection System](#2.2).
+**Purpose and Scope:** This page covers the installation process, package structure, module entry points, and build system configuration for the backtest-kit framework. For information about configuring strategies, exchanges, and frames after installation, see [Configuration Functions](09_Configuration_Functions.md). For architecture details and service layer setup, see [Architecture](04_Architecture.md) and [Dependency Injection System](06_Dependency_Injection_System.md).
 
 ---
 
@@ -131,8 +131,8 @@ The framework's runtime dependencies form a lightweight tree:
 
 **Key Dependencies:**
 
-- **di-kit**: Provides symbol-based dependency injection container (see [Dependency Injection System](#2.2))
-- **di-scoped**: Enables implicit context propagation for services (see [Context Propagation](#2.3))
+- **di-kit**: Provides symbol-based dependency injection container (see [Dependency Injection System](06_Dependency_Injection_System.md))
+- **di-scoped**: Enables implicit context propagation for services (see [Context Propagation](07_Context_Propagation.md))
 - **functools-kit**: Functional programming utilities for memoization and queuing
 - **get-moment-stamp**: Timestamp calculation and interval utilities
 
@@ -304,9 +304,9 @@ This generates:
 
 After successful installation:
 
-1. **Register your exchange data source** - See [Configuration Functions](#3.1) for `addExchange`
-2. **Define your trading strategy** - See [Configuration Functions](#3.1) for `addStrategy`  
-3. **Set up timeframe generators** - See [Configuration Functions](#3.1) for `addFrame`
-4. **Run your first backtest** - See [Backtest API](#3.2)
-5. **Deploy to live trading** - See [Live Trading API](#3.3)
+1. **Register your exchange data source** - See [Configuration Functions](09_Configuration_Functions.md) for `addExchange`
+2. **Define your trading strategy** - See [Configuration Functions](09_Configuration_Functions.md) for `addStrategy`  
+3. **Set up timeframe generators** - See [Configuration Functions](09_Configuration_Functions.md) for `addFrame`
+4. **Run your first backtest** - See [Backtest API](10_Backtest_API.md)
+5. **Deploy to live trading** - See [Live Trading API](11_Live_Trading_API.md)
 

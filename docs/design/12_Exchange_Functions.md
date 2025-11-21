@@ -2,7 +2,7 @@
 
 This page documents the public utility functions for interacting with exchange data and execution context. These functions provide candle data fetching, VWAP calculation, price/quantity formatting, and execution context queries.
 
-For exchange registration and configuration, see [Configuration Functions](#3.1). For the underlying exchange business logic implementation, see [ClientExchange](#4.2). For exchange service orchestration, see [Global Services](#5.3).
+For exchange registration and configuration, see [Configuration Functions](09_Configuration_Functions.md). For the underlying exchange business logic implementation, see [ClientExchange](16_ClientExchange.md). For exchange service orchestration, see [Global Services](21_Global_Services.md).
 
 ---
 
@@ -541,5 +541,5 @@ The `LoggerService` automatically enriches logs with execution context when avai
 }
 ```
 
-For custom logger configuration, see [Logging System](#10.1).
+For custom logger configuration, see [Logging System](40_Logging_System.md).
 

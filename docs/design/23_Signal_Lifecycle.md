@@ -4,7 +4,7 @@
 
 This document provides a comprehensive technical reference for signal lifecycle management in the backtest-kit framework. It covers the four discrete states a trading signal can occupy (idle, opened, active, closed), the discriminated union type system used for type-safe state handling, validation rules, and the persistence mechanisms that enable crash-safe operation in live trading.
 
-For execution orchestration of signals in backtest mode, see [Backtesting](#7). For live trading execution with crash recovery, see [Live Trading](#8). For ClientStrategy's broader role in business logic, see [ClientStrategy](#4.1).
+For execution orchestration of signals in backtest mode, see [Backtesting](28_Backtesting.md). For live trading execution with crash recovery, see [Live Trading](32_Live_Trading.md). For ClientStrategy's broader role in business logic, see [ClientStrategy](15_ClientStrategy.md).
 
 ---
 
@@ -360,7 +360,7 @@ This ensures:
 - Active signals resume correctly after restart (preserved until close)
 - Backtest mode skips all disk I/O for performance
 
-For detailed persistence implementation, see [Signal Persistence](#6.3).
+For detailed persistence implementation, see [Signal Persistence](26_Signal_Persistence.md).
 
 
 ---
@@ -421,7 +421,7 @@ These warnings occur at:
 - [src/client/ClientStrategy.ts:558-563]() (backtest stop_loss)
 - [src/client/ClientStrategy.ts:617-622]() (backtest time_expired)
 
-For detailed PnL calculation implementation, see [PnL Calculation](#6.4).
+For detailed PnL calculation implementation, see [PnL Calculation](27_PnL_Calculation.md).
 
 
 ---

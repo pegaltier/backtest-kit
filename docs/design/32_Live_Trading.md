@@ -2,7 +2,7 @@
 
 This document covers the live trading execution system, which enables real-time signal monitoring and trading operations with crash recovery. Live trading runs as an infinite async generator that continuously evaluates market conditions and manages open positions.
 
-For information about backtesting historical data, see [Backtesting](#7). For details on the underlying signal lifecycle and state transitions, see [Signal Lifecycle](#6). For information about signal persistence mechanisms, see [Signal Persistence](#6.3).
+For information about backtesting historical data, see [Backtesting](28_Backtesting.md). For details on the underlying signal lifecycle and state transitions, see [Signal Lifecycle](23_Signal_Lifecycle.md). For information about signal persistence mechanisms, see [Signal Persistence](26_Signal_Persistence.md).
 
 ---
 
@@ -434,12 +434,12 @@ Live trading has minimal memory footprint:
 
 For detailed information about specific live trading subsystems:
 
-- **[Live Execution Flow](#8.1)**: Step-by-step explanation of `LiveLogicPrivateService` orchestration
-- **[Crash Recovery](#8.2)**: Detailed atomic persistence and state recovery mechanisms
-- **[Real-time Monitoring](#8.3)**: How `ClientStrategy` monitors signals against market conditions
+- **[Live Execution Flow](33_Live_Execution_Flow.md)**: Step-by-step explanation of `LiveLogicPrivateService` orchestration
+- **[Crash Recovery](34_Crash_Recovery.md)**: Detailed atomic persistence and state recovery mechanisms
+- **[Real-time Monitoring](35_Real-time_Monitoring.md)**: How `ClientStrategy` monitors signals against market conditions
 
 For related topics across the framework:
 
-- **[Signal Lifecycle](#6)**: Complete signal state machine and transitions
-- **[Signal Persistence](#6.3)**: `PersistSignalAdapter` implementation details
-- **[Backtest API](#3.2)**: Comparison with backtesting execution model
+- **[Signal Lifecycle](23_Signal_Lifecycle.md)**: Complete signal state machine and transitions
+- **[Signal Persistence](26_Signal_Persistence.md)**: `PersistSignalAdapter` implementation details
+- **[Backtest API](10_Backtest_API.md)**: Comparison with backtesting execution model

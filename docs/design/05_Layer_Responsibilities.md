@@ -2,7 +2,7 @@
 
 This document details the responsibilities of each architectural layer in the backtest-kit framework and explains the separation of concerns between layers. The framework follows a strict four-layer architecture: Public API, Service Orchestration, Business Logic, and Cross-Cutting Concerns. Each layer has specific responsibilities and dependency rules that enforce modularity and testability.
 
-For information about the dependency injection system that connects these layers, see [Dependency Injection System](#2.2). For details on context propagation mechanisms, see [Context Propagation](#2.3).
+For information about the dependency injection system that connects these layers, see [Dependency Injection System](06_Dependency_Injection_System.md). For details on context propagation mechanisms, see [Context Propagation](07_Context_Propagation.md).
 
 ---
 

@@ -4,7 +4,7 @@
 
 This document describes the **Business Logic Layer** of the backtest-kit framework, which contains pure TypeScript implementations of trading system functionality without dependency injection concerns. These client classes ([src/client/]()) implement the core algorithms for signal lifecycle management, market data processing, and timeframe generation.
 
-For information about how these clients are instantiated and managed through dependency injection, see [Service Layer](#5). For details on the service orchestration that invokes these clients, see [Architecture](#2). For the public API that end users interact with, see [Public API Reference](#3).
+For information about how these clients are instantiated and managed through dependency injection, see [Service Layer](18_Service_Layer.md). For details on the service orchestration that invokes these clients, see [Architecture](04_Architecture.md). For the public API that end users interact with, see [Public API Reference](08_Public_API_Reference.md).
 
 ---
 

@@ -4,7 +4,7 @@
 
 This document explains the markdown report generation system in backtest-kit. The framework provides two specialized services—`BacktestMarkdownService` and `LiveMarkdownService`—that passively observe signal execution events and generate formatted markdown reports with detailed signal information, statistics, and performance metrics.
 
-These services act as event listeners that accumulate data without affecting execution flow. For information about the signal lifecycle events being observed, see [Signal Lifecycle](#6). For performance metrics calculation, see [Performance Metrics](#9.2).
+These services act as event listeners that accumulate data without affecting execution flow. For information about the signal lifecycle events being observed, see [Signal Lifecycle](23_Signal_Lifecycle.md). For performance metrics calculation, see [Performance Metrics](38_Performance_Metrics.md).
 
 
 ---

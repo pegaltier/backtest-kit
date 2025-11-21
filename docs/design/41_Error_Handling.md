@@ -4,7 +4,7 @@
 
 This document describes the error handling mechanisms in the backtest-kit framework, including validation errors, exchange data errors, persistence errors, and recommended error handling patterns for users. The framework uses a combination of explicit error throwing for unrecoverable errors, warning logs for degraded conditions, and graceful fallbacks for recoverable failures.
 
-For information about the logging system that captures error messages, see [Logging System](#10.1). For signal lifecycle management, see [Signal Lifecycle](#6).
+For information about the logging system that captures error messages, see [Logging System](40_Logging_System.md). For signal lifecycle management, see [Signal Lifecycle](23_Signal_Lifecycle.md).
 
 ---
 
@@ -309,7 +309,7 @@ The `PersistSignalAdapter` uses atomic file writes to prevent corruption, but fi
 2. **Crash Recovery**: On restart, the last valid state is loaded
 3. **State Validation**: Loaded state is validated against current strategy/exchange
 
-For details on persistence mechanisms, see [Signal Persistence](#6.3).
+For details on persistence mechanisms, see [Signal Persistence](26_Signal_Persistence.md).
 
 
 ---

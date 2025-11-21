@@ -2,7 +2,7 @@
 
 This document explains the dependency injection (DI) infrastructure that provides the architectural backbone for backtest-kit. The system uses symbol-based service identifiers, factory registration, and a service aggregator pattern to enable loose coupling, testability, and implicit context propagation.
 
-For information about how context services specifically enable implicit parameter passing, see [Context Propagation](#2.3). For details on how services are organized into layers, see [Layer Responsibilities](#2.1).
+For information about how context services specifically enable implicit parameter passing, see [Context Propagation](07_Context_Propagation.md). For details on how services are organized into layers, see [Layer Responsibilities](05_Layer_Responsibilities.md).
 
 ---
 
@@ -177,7 +177,7 @@ Services depend on abstractions (interfaces) rather than concrete implementation
 The registry pattern allows multiple strategies, exchanges, and frames to coexist. Connection services automatically route to the correct implementation based on context.
 
 ### 5. Implicit Context Propagation
-The `di-scoped` library enables context services to propagate execution context and routing information without explicit parameter threading. See [Context Propagation](#2.3) for details.
+The `di-scoped` library enables context services to propagate execution context and routing information without explicit parameter threading. See [Context Propagation](07_Context_Propagation.md) for details.
 
 ### 6. Singleton Management
 The DI container ensures that services are created only once and reused throughout the application lifecycle. This prevents memory overhead and maintains consistent state.

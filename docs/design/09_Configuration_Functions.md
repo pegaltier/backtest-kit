@@ -4,7 +4,7 @@
 
 This document describes the three public API functions for registering configurations in the backtest-kit framework: `addStrategy()`, `addExchange()`, and `addFrame()`. These functions store schema objects in registry services that are later used by Connection Services to instantiate client components at runtime.
 
-For information about running backtests and live trading with these configurations, see [Backtest API](#3.2) and [Live Trading API](#3.3). For details on how schema registries work internally, see [Schema Services](#5.2).
+For information about running backtests and live trading with these configurations, see [Backtest API](10_Backtest_API.md) and [Live Trading API](11_Live_Trading_API.md). For details on how schema registries work internally, see [Schema Services](20_Schema_Services.md).
 
 
 ---

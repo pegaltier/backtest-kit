@@ -4,7 +4,7 @@
 
 Global Services form the context injection layer in the Service Orchestration tier of the architecture. They wrap Connection Services and Logic Services with execution context (symbol, timestamp, backtest mode) and provide routing logic based on the current method context. Global Services act as an adapter layer between the pure business logic in Client classes and the orchestration logic in Logic Services.
 
-For information about the routing and memoization layer beneath Global Services, see [Connection Services](#5.1). For information about configuration registries, see [Schema Services](#5.2). For information about the orchestration layer above Global Services, see [Logic Services](#5.4).
+For information about the routing and memoization layer beneath Global Services, see [Connection Services](19_Connection_Services.md). For information about configuration registries, see [Schema Services](20_Schema_Services.md). For information about the orchestration layer above Global Services, see [Logic Services](22_Logic_Services.md).
 
 ## Architecture Position
 
@@ -184,7 +184,7 @@ Connection Services use these routing keys to look up schemas and create memoize
 
 ![Mermaid Diagram](./diagrams\21_Global_Services_6.svg)
 
-For detailed information on context propagation patterns, see [Context Propagation](#2.3).
+For detailed information on context propagation patterns, see [Context Propagation](07_Context_Propagation.md).
 
 
 ## Dependency Injection Flow

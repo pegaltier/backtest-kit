@@ -1,8 +1,8 @@
 # Schema Services
 
-Schema Services implement the registry pattern for storing configuration schemas in the backtest-kit framework. These services act as in-memory storage for strategy, exchange, and frame configurations registered at application startup via `addStrategy()`, `addExchange()`, and `addFrame()` functions. They provide lookup capabilities for Connection Services (see [5.1](#5.1)) which create runtime instances based on registered schemas.
+Schema Services implement the registry pattern for storing configuration schemas in the backtest-kit framework. These services act as in-memory storage for strategy, exchange, and frame configurations registered at application startup via `addStrategy()`, `addExchange()`, and `addFrame()` functions. They provide lookup capabilities for Connection Services (see [5.1](19_Connection_Services.md)) which create runtime instances based on registered schemas.
 
-For information about how registered schemas are instantiated into client objects, see [Connection Services](#5.1). For details on schema interfaces and registration functions, see [Configuration Functions](#3.1).
+For information about how registered schemas are instantiated into client objects, see [Connection Services](19_Connection_Services.md). For details on schema interfaces and registration functions, see [Configuration Functions](09_Configuration_Functions.md).
 
 ---
 
@@ -178,7 +178,7 @@ Schema Services provide lookup methods that Connection Services call to retrieve
 
 **Diagram: Schema Lookup Flow**
 
-The `MethodContextService` (see [2.3](#2.3)) provides the schema name as a routing key. Connection Services query Schema Services by name, retrieve the schema, and pass it to client constructors for instantiation.
+The `MethodContextService` (see [2.3](07_Context_Propagation.md)) provides the schema name as a routing key. Connection Services query Schema Services by name, retrieve the schema, and pass it to client constructors for instantiation.
 
 ### Common Schema Service Methods
 
@@ -472,7 +472,7 @@ Schema Services interact with multiple layers of the architecture:
 Schema Services have no dependencies on other services—they are pure registries with no outbound calls to other components. This makes them the foundational layer of the service architecture.
 
 For more information:
-- Connection Services usage: [Connection Services](#5.1)
-- Registration API details: [Configuration Functions](#3.1)
-- Runtime orchestration: [Logic Services](#5.4)
+- Connection Services usage: [Connection Services](19_Connection_Services.md)
+- Registration API details: [Configuration Functions](09_Configuration_Functions.md)
+- Runtime orchestration: [Logic Services](22_Logic_Services.md)
 

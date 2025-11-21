@@ -5,11 +5,11 @@
 This document describes the cross-cutting concerns that span all architectural layers of the backtest-kit framework. Cross-cutting concerns are system-wide capabilities that cannot be cleanly encapsulated within a single layer or component. These include logging, context management, persistence, and reporting mechanisms that are injected throughout the service stack.
 
 For detailed information about specific concerns, see:
-- **Logging System**: [10.1](#10.1)
-- **Error Handling**: [10.2](#10.2)
-- **Context Propagation Architecture**: [2.3](#2.3)
-- **Signal Persistence**: [6.3](#6.3)
-- **Report Generation**: [9](#9)
+- **Logging System**: [10.1](40_Logging_System.md)
+- **Error Handling**: [10.2](41_Error_Handling.md)
+- **Context Propagation Architecture**: [2.3](07_Context_Propagation.md)
+- **Signal Persistence**: [6.3](26_Signal_Persistence.md)
+- **Report Generation**: [9](36_Reporting_and_Analytics.md)
 
 ---
 
@@ -177,7 +177,7 @@ The `ClientStrategy` calls `PersistSignalAdapter` at critical state transitions:
 
 This ensures exactly-once signal semantics in production trading.
 
-**Note:** For detailed persistence mechanics, see [6.3](#6.3) Signal Persistence.
+**Note:** For detailed persistence mechanics, see [6.3](26_Signal_Persistence.md) Signal Persistence.
 
 
 ---

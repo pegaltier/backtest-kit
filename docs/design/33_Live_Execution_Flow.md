@@ -4,7 +4,7 @@
 
 This document explains the live trading execution flow orchestrated by `LiveLogicPrivateService` and `LiveLogicPublicService`. It covers the infinite loop mechanics, real-time signal streaming, context propagation, and timing intervals used for continuous market monitoring.
 
-For crash recovery mechanisms and state persistence, see [Crash Recovery](#8.2). For signal monitoring logic (take profit, stop loss, time expiration), see [Real-time Monitoring](#8.3). For the overall live trading system overview, see [Live Trading](#8).
+For crash recovery mechanisms and state persistence, see [Crash Recovery](34_Crash_Recovery.md). For signal monitoring logic (take profit, stop loss, time expiration), see [Real-time Monitoring](35_Real-time_Monitoring.md). For the overall live trading system overview, see [Live Trading](32_Live_Trading.md).
 
 ---
 
@@ -157,7 +157,7 @@ This initialization ensures:
 - **No duplication**: Recovered signals continue from their previous state, not re-opened
 - **Lazy initialization**: Recovery happens on first tick, not during service construction
 
-For detailed crash recovery mechanisms, see [Crash Recovery](#8.2).
+For detailed crash recovery mechanisms, see [Crash Recovery](34_Crash_Recovery.md).
 
 
 ---

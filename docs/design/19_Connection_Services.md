@@ -4,7 +4,7 @@
 
 Connection Services form the routing layer within the Service Orchestration architecture, responsible for directing method calls to the appropriate client instances (ClientStrategy, ClientExchange, ClientFrame) based on runtime context. These services implement memoized factory patterns to ensure efficient instance reuse while maintaining clean separation between configuration registration and execution.
 
-This document covers the three Connection Services: `StrategyConnectionService`, `ExchangeConnectionService`, and `FrameConnectionService`. For configuration registration mechanisms, see [Schema Services](#5.2). For the client implementations that Connection Services route to, see [Core Business Logic](#4). For the context services that enable routing, see [Context Propagation](#2.3).
+This document covers the three Connection Services: `StrategyConnectionService`, `ExchangeConnectionService`, and `FrameConnectionService`. For configuration registration mechanisms, see [Schema Services](20_Schema_Services.md). For the client implementations that Connection Services route to, see [Core Business Logic](14_Core_Business_Logic.md). For the context services that enable routing, see [Context Propagation](07_Context_Propagation.md).
 
 
 ---

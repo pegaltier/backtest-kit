@@ -2,7 +2,7 @@
 
 This document describes how trading signals are generated and validated before execution in the backtest-kit framework. It covers the throttling mechanism that prevents signal spam, the transformation from user-provided data to validated signal rows, and the comprehensive validation rules that ensure signal integrity for both long and short positions.
 
-For information about signal state transitions during execution, see [Signal States](#6.1). For information about crash-safe persistence of signals, see [Signal Persistence](#6.3).
+For information about signal state transitions during execution, see [Signal States](24_Signal_States.md). For information about crash-safe persistence of signals, see [Signal Persistence](26_Signal_Persistence.md).
 
 ## Overview
 

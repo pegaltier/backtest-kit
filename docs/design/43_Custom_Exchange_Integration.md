@@ -2,7 +2,7 @@
 
 This document explains how to implement custom exchange data sources by creating `IExchangeSchema` implementations. Custom exchanges enable backtesting and live trading with data from any source including REST APIs, databases, CSV files, or WebSocket streams.
 
-For information about using exchange functions (`getCandles`, `getAveragePrice`, etc.) in strategies, see [Exchange Functions](#3.4). For the internal architecture of exchange services, see [Connection Services](#5.1) and [Global Services](#5.3).
+For information about using exchange functions (`getCandles`, `getAveragePrice`, etc.) in strategies, see [Exchange Functions](12_Exchange_Functions.md). For the internal architecture of exchange services, see [Connection Services](19_Connection_Services.md) and [Global Services](21_Global_Services.md).
 
 ---
 

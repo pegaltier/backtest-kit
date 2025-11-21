@@ -2,7 +2,7 @@
 
 The Service Layer is the orchestration backbone of the backtest-kit framework, sitting between the Public API Layer and the Business Logic Layer. It manages dependency injection, configuration routing, instance caching, and execution context propagation. The layer is organized into four distinct service categories: Connection Services (instance routing and memoization), Schema Services (configuration registries), Global Services (context injection), and Logic Services (execution orchestration).
 
-For details on the Public API that consumes these services, see [Public API Reference](#3). For the Business Logic Layer that these services coordinate, see [Core Business Logic](#4). The Dependency Injection System that powers this layer is documented in [Dependency Injection System](#2.2).
+For details on the Public API that consumes these services, see [Public API Reference](08_Public_API_Reference.md). For the Business Logic Layer that these services coordinate, see [Core Business Logic](14_Core_Business_Logic.md). The Dependency Injection System that powers this layer is documented in [Dependency Injection System](06_Dependency_Injection_System.md).
 
 ---
 
@@ -206,8 +206,8 @@ The following table summarizes each service's primary responsibility and its pla
 
 The following pages provide detailed documentation for each service category:
 
-- [Connection Services](#5.1) - `StrategyConnectionService`, `ExchangeConnectionService`, `FrameConnectionService` routing patterns with memoization
-- [Schema Services](#5.2) - `StrategySchemaService`, `ExchangeSchemaService`, `FrameSchemaService` configuration registries
-- [Global Services](#5.3) - Context injection wrappers for Strategy, Exchange, Frame, Live, and Backtest
-- [Logic Services](#5.4) - `BacktestLogicPrivateService` and `LiveLogicPrivateService` orchestration of async generator execution
+- [Connection Services](19_Connection_Services.md) - `StrategyConnectionService`, `ExchangeConnectionService`, `FrameConnectionService` routing patterns with memoization
+- [Schema Services](20_Schema_Services.md) - `StrategySchemaService`, `ExchangeSchemaService`, `FrameSchemaService` configuration registries
+- [Global Services](21_Global_Services.md) - Context injection wrappers for Strategy, Exchange, Frame, Live, and Backtest
+- [Logic Services](22_Logic_Services.md) - `BacktestLogicPrivateService` and `LiveLogicPrivateService` orchestration of async generator execution
 

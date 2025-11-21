@@ -2,7 +2,7 @@
 
 This document describes the fast-forward simulation mechanism in the backtest-kit framework, which allows signals to be evaluated using historical candle data without iterating through every individual timestamp. This approach significantly reduces backtesting time while maintaining accuracy in profit/loss calculations.
 
-For information about the overall backtest execution flow, see [Backtest Execution Flow](#7.1). For details on generating the timeframe array that drives backtests, see [Timeframe Generation](#7.2). For information on signal lifecycle states, see [Signal Lifecycle](#6).
+For information about the overall backtest execution flow, see [Backtest Execution Flow](29_Backtest_Execution_Flow.md). For details on generating the timeframe array that drives backtests, see [Timeframe Generation](30_Timeframe_Generation.md). For information on signal lifecycle states, see [Signal Lifecycle](23_Signal_Lifecycle.md).
 
 ---
 
