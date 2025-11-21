@@ -2140,19 +2140,24 @@ declare class BacktestMarkdownService {
     getReport: (strategyName: StrategyName) => Promise<string>;
     /**
      * Saves strategy report to disk.
-     * Creates logs/backtest directory if it doesn't exist.
-     * Delegates to ReportStorage.saveReport().
+     * Creates directory if it doesn't exist.
+     * Delegates to ReportStorage.dump().
      *
      * @param strategyName - Strategy name to save report for
+     * @param path - Directory path to save report (default: "./logs/backtest")
      *
      * @example
      * ```typescript
      * const service = new BacktestMarkdownService();
-     * await service.saveReport("my-strategy");
-     * // File saved to: logs/backtest/my-strategy.md
+     *
+     * // Save to default path: ./logs/backtest/my-strategy.md
+     * await service.dump("my-strategy");
+     *
+     * // Save to custom path: ./custom/path/my-strategy.md
+     * await service.dump("my-strategy", "./custom/path");
      * ```
      */
-    dump: (strategyName: StrategyName) => Promise<void>;
+    dump: (strategyName: StrategyName, path?: string) => Promise<void>;
 }
 
 declare class LiveMarkdownService {

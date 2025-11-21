@@ -25,3 +25,14 @@ run: (symbol: string, context: { strategyName: string; exchangeName: string; fra
 ```
 
 Runs backtest for a symbol with context propagation.
+
+### background
+
+```ts
+background: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<() => void>
+```
+
+Runs backtest in background without yielding results.
+
+Consumes all backtest results internally without exposing them.
+Useful for running backtests for side effects only (callbacks, logging).

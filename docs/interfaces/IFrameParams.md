@@ -15,3 +15,5 @@ Extends IFrameSchema with logger instance for internal logging.
 ```ts
 logger: ILogger
 ```
+
+Logger service for debug output

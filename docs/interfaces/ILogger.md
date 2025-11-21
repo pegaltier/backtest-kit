@@ -37,3 +37,12 @@ info: (topic: string, ...args: any[]) => void
 
 Logs an info-level message.
 Used to record informational updates, such as successful completions, policy validations, or history commits, providing a high-level overview of system activity without excessive detail.
+
+### warn
+
+```ts
+warn: (topic: string, ...args: any[]) => void
+```
+
+Logs a warning-level message.
+Used to record potentially problematic situations that don't prevent execution but may require attention, such as missing data, unexpected conditions, or deprecated usage.

@@ -67,6 +67,14 @@ info: (topic: string, ...args: any[]) => Promise<void>
 
 Logs info-level message with automatic context injection.
 
+### warn
+
+```ts
+warn: (topic: string, ...args: any[]) => Promise<void>
+```
+
+Logs warning-level message with automatic context injection.
+
 ### setLogger
 
 ```ts

@@ -26,10 +26,22 @@ constructor();
 ### run
 
 ```ts
-run: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => AsyncGenerator<IStrategyTickResultOpened | IStrategyTickResultClosed, void, unknown>
+run: (symbol: string, context: { strategyName: string; exchangeName: string; }) => AsyncGenerator<IStrategyTickResultOpened | IStrategyTickResultClosed, void, unknown>
 ```
 
 Runs live trading for a symbol with context propagation.
 
 Infinite async generator with crash recovery support.
 Process can crash and restart - state will be recovered from disk.
+
+### background
+
+```ts
+background: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<() => void>
+```
+
+Runs live trading in background without yielding results.
+
+Consumes all live trading results internally without exposing them.
+Infinite loop - will run until process is stopped or crashes.
+Useful for running live trading for side effects only (callbacks, persistence).

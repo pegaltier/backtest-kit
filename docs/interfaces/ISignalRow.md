@@ -17,3 +17,35 @@ id: string
 ```
 
 Unique signal identifier (UUID v4 auto-generated)
+
+### exchangeName
+
+```ts
+exchangeName: string
+```
+
+Unique exchange identifier for execution
+
+### strategyName
+
+```ts
+strategyName: string
+```
+
+Unique strategy identifier for execution
+
+### timestamp
+
+```ts
+timestamp: number
+```
+
+Signal creation timestamp in milliseconds
+
+### symbol
+
+```ts
+symbol: string
+```
+
+Trading pair symbol (e.g., "BTCUSDT")

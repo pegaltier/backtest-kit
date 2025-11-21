@@ -65,11 +65,3 @@ minuteEstimatedTime: number
 ```
 
 Expected duration in minutes before time_expired
-
-### timestamp
-
-```ts
-timestamp: number
-```
-
-Signal creation timestamp in milliseconds
