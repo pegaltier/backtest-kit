@@ -1,6 +1,13 @@
 export { setLogger } from "./function/setup";
 export { addExchange, addStrategy, addFrame } from "./function/add";
-export { listenSignal, listenSignalOnce } from "./function/event";
+export {
+  listenSignal,
+  listenSignalOnce,
+  listenSignalBacktest,
+  listenSignalBacktestOnce,
+  listenSignalLive,
+  listenSignalLiveOnce,
+} from "./function/event";
 export {
   getCandles,
   getAveragePrice,
