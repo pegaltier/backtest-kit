@@ -17,6 +17,7 @@ A production-ready TypeScript framework for backtesting and live trading strateg
 - 🧠 **Interval Throttling** - Prevents signal spam at strategy level
 - ⚡ **Memory Optimized** - Prototype methods + memoization + streaming
 - 🔌 **Flexible Architecture** - Plug your own exchanges and strategies
+- 📝 **Markdown Reports** - Auto-generated trading reports with statistics (win rate, avg PNL)
 
 ## Installation
 
@@ -104,15 +105,14 @@ addFrame({
 ### 4. Run Backtest with Async Generator
 
 ```typescript
-import backtest from "backtest-kit/lib";
+import { Backtest } from "backtest-kit/classes/Backtest";
 
 // Stream backtest results without memory accumulation
-for await (const result of backtest.backtestLogicPublicService.run(
-  "BTCUSDT",
-  "my-strategy",
-  "binance",
-  "1d-backtest"
-)) {
+for await (const result of Backtest.run("BTCUSDT", {
+  strategyName: "my-strategy",
+  exchangeName: "binance",
+  frameName: "1d-backtest"
+})) {
   console.log({
     action: result.action,           // "closed"
     reason: result.closeReason,      // "take_profit" | "stop_loss" | "time_expired"
@@ -127,19 +127,25 @@ for await (const result of backtest.backtestLogicPublicService.run(
     break;
   }
 }
+
+// Generate markdown report
+const markdown = await Backtest.getReport("my-strategy");
+console.log(markdown);
+
+// Save report to disk
+await Backtest.dump("my-strategy"); // ./logs/backtest/my-strategy.md
 ```
 
 ### 5. Live Trading with Crash Recovery
 
 ```typescript
-import backtest from "backtest-kit/lib";
+import { Live } from "backtest-kit/classes/Live";
 
 // Infinite async generator - streams live results
-for await (const result of backtest.liveLogicPublicService.run(
-  "BTCUSDT",
-  "my-strategy",
-  "binance"
-)) {
+for await (const result of Live.run("BTCUSDT", {
+  strategyName: "my-strategy",
+  exchangeName: "binance"
+})) {
   if (result.action === "opened") {
     console.log("New signal opened:", result.signal);
     // Signal automatically persisted to disk
@@ -152,6 +158,9 @@ for await (const result of backtest.liveLogicPublicService.run(
       closePrice: result.currentPrice,
     });
     // State automatically persisted
+
+    // Save live trading report
+    await Live.dump("my-strategy"); // ./logs/live/my-strategy.md
   }
 
   // If process crashes, restart will resume from last saved state
@@ -162,14 +171,22 @@ for await (const result of backtest.liveLogicPublicService.run(
 **Crash Recovery Example:**
 
 ```typescript
+import { Live } from "backtest-kit/classes/Live";
+
 // First run
-for await (const result of liveLogic.run("BTCUSDT")) {
+for await (const result of Live.run("BTCUSDT", {
+  strategyName: "my-strategy",
+  exchangeName: "binance"
+})) {
   console.log(result); // { action: "opened", signal: {...} }
   // Process crashes here ❌
 }
 
 // After restart - automatic recovery ✅
-for await (const result of liveLogic.run("BTCUSDT")) {
+for await (const result of Live.run("BTCUSDT", {
+  strategyName: "my-strategy",
+  exchangeName: "binance"
+})) {
   // Reads persisted state from disk
   // Continues monitoring from where it left off
   console.log(result); // { action: "active", signal: {...}, currentPrice: 50100 }
@@ -242,6 +259,211 @@ addStrategy({
 
 Supported intervals: `"1m"`, `"3m"`, `"5m"`, `"15m"`, `"30m"`, `"1h"`
 
+## Markdown Reports
+
+Generate detailed trading reports with statistics:
+
+### Backtest Reports
+
+```typescript
+import { Backtest } from "backtest-kit/classes/Backtest";
+
+// Run backtest
+await Backtest.background("BTCUSDT", {
+  strategyName: "my-strategy",
+  exchangeName: "binance",
+  frameName: "1d-backtest"
+});
+
+// Generate markdown report
+const markdown = await Backtest.getReport("my-strategy");
+console.log(markdown);
+
+// Save to disk (default: ./logs/backtest/my-strategy.md)
+await Backtest.dump("my-strategy");
+
+// Save to custom path
+await Backtest.dump("my-strategy", "./custom/path");
+
+// Clear accumulated data
+await Backtest.clear("my-strategy"); // Clear specific strategy
+await Backtest.clear();              // Clear all strategies
+```
+
+**Report includes:**
+- Total closed signals
+- All signal details (prices, TP/SL, PNL, duration, close reason)
+- Timestamps for each signal
+
+### Live Trading Reports
+
+```typescript
+import { Live } from "backtest-kit/classes/Live";
+
+// Generate live trading report
+const markdown = await Live.getReport("my-strategy");
+
+// Save to disk (default: ./logs/live/my-strategy.md)
+await Live.dump("my-strategy");
+
+// Clear accumulated data
+await Live.clear("my-strategy");
+```
+
+**Report includes:**
+- Total events (idle, opened, active, closed)
+- Closed signals count
+- Win rate (% wins, wins/losses)
+- Average PNL percentage
+- Signal-by-signal details with current state
+
+**Report example:**
+```markdown
+# Live Trading Report: my-strategy
+
+Total events: 15
+Closed signals: 5
+Win rate: 60.00% (3W / 2L)
+Average PNL: +1.23%
+
+| Timestamp | Action | Symbol | Signal ID | Position | ... | PNL (net) | Close Reason |
+|-----------|--------|--------|-----------|----------|-----|-----------|--------------|
+| ...       | CLOSED | BTCUSD | abc-123   | LONG     | ... | +2.45%    | take_profit  |
+```
+
+## Event Listeners
+
+Subscribe to signal events with filtering support. Useful for running strategies in background while reacting to specific events.
+
+### Background Execution with Event Listeners
+
+```typescript
+import { Backtest } from "backtest-kit/classes/Backtest";
+import { listenSignalBacktest } from "backtest-kit/function/event";
+
+// Run backtest in background (doesn't yield results)
+Backtest.background("BTCUSDT", {
+  strategyName: "my-strategy",
+  exchangeName: "binance",
+  frameName: "1d-backtest"
+});
+
+// Listen to all backtest events
+const unsubscribe = listenSignalBacktest((event) => {
+  if (event.action === "closed") {
+    console.log("Signal closed:", {
+      pnl: event.pnl.pnlPercentage,
+      reason: event.closeReason
+    });
+  }
+});
+
+// Stop listening when done
+// unsubscribe();
+```
+
+### Listen Once with Filter
+
+```typescript
+import { Backtest } from "backtest-kit/classes/Backtest";
+import { listenSignalBacktestOnce } from "backtest-kit/function/event";
+
+// Run backtest in background
+Backtest.background("BTCUSDT", {
+  strategyName: "my-strategy",
+  exchangeName: "binance",
+  frameName: "1d-backtest"
+});
+
+// Wait for first take profit event
+listenSignalBacktestOnce(
+  (event) => event.action === "closed" && event.closeReason === "take_profit",
+  (event) => {
+    console.log("First take profit hit!", event.pnl.pnlPercentage);
+    // Automatically unsubscribes after first match
+  }
+);
+```
+
+### Live Trading with Event Listeners
+
+```typescript
+import { Live } from "backtest-kit/classes/Live";
+import { listenSignalLive, listenSignalLiveOnce } from "backtest-kit/function/event";
+
+// Run live trading in background (infinite loop)
+const cancel = await Live.background("BTCUSDT", {
+  strategyName: "my-strategy",
+  exchangeName: "binance"
+});
+
+// Listen to all live events
+listenSignalLive((event) => {
+  if (event.action === "opened") {
+    console.log("Signal opened:", event.signal.id);
+  }
+  if (event.action === "closed") {
+    console.log("Signal closed:", event.pnl.pnlPercentage);
+  }
+});
+
+// React to first stop loss once
+listenSignalLiveOnce(
+  (event) => event.action === "closed" && event.closeReason === "stop_loss",
+  (event) => {
+    console.error("Stop loss hit!", event.pnl.pnlPercentage);
+    // Send alert, dump report, etc.
+  }
+);
+
+// Stop live trading after some condition
+// cancel();
+```
+
+### Listen to All Signals (Backtest + Live)
+
+```typescript
+import { listenSignal, listenSignalOnce } from "backtest-kit/function/event";
+import { Backtest } from "backtest-kit/classes/Backtest";
+import { Live } from "backtest-kit/classes/Live";
+
+// Listen to both backtest and live events
+listenSignal((event) => {
+  console.log("Event:", event.action, event.strategyName);
+});
+
+// Wait for first loss from any source
+listenSignalOnce(
+  (event) => event.action === "closed" && event.pnl.pnlPercentage < 0,
+  (event) => {
+    console.log("First loss detected:", event.pnl.pnlPercentage);
+  }
+);
+
+// Run both modes
+Backtest.background("BTCUSDT", {
+  strategyName: "my-strategy",
+  exchangeName: "binance",
+  frameName: "1d-backtest"
+});
+
+Live.background("BTCUSDT", {
+  strategyName: "my-strategy",
+  exchangeName: "binance"
+});
+```
+
+**Available event listeners:**
+
+- `listenSignal(callback)` - Subscribe to all signal events (backtest + live)
+- `listenSignalOnce(filter, callback)` - Subscribe once with filter predicate
+- `listenSignalBacktest(callback)` - Subscribe to backtest signals only
+- `listenSignalBacktestOnce(filter, callback)` - Subscribe to backtest signals once
+- `listenSignalLive(callback)` - Subscribe to live signals only
+- `listenSignalLiveOnce(filter, callback)` - Subscribe to live signals once
+
+All listeners return an `unsubscribe` function. All callbacks are processed sequentially using queued async execution.
+
 ## API Reference
 
 ### High-Level Functions
@@ -281,27 +503,65 @@ formatQuantity(symbol: string, quantity: number): Promise<string>
 
 ### Service APIs
 
-#### Backtest Logic
+#### Backtest API
 
 ```typescript
+import { Backtest } from "backtest-kit/classes/Backtest";
+
 // Stream backtest results
-backtest.backtestLogicPublicService.run(
+Backtest.run(
   symbol: string,
-  strategyName: StrategyName,
-  exchangeName: ExchangeName,
-  frameName: FrameName
+  context: {
+    strategyName: string;
+    exchangeName: string;
+    frameName: string;
+  }
 ): AsyncIterableIterator<IStrategyTickResultClosed>
+
+// Run in background without yielding results
+Backtest.background(
+  symbol: string,
+  context: { strategyName, exchangeName, frameName }
+): Promise<() => void> // Returns cancellation function
+
+// Generate markdown report
+Backtest.getReport(strategyName: string): Promise<string>
+
+// Save report to disk
+Backtest.dump(strategyName: string, path?: string): Promise<void>
+
+// Clear accumulated data
+Backtest.clear(strategyName?: string): Promise<void>
 ```
 
-#### Live Logic
+#### Live Trading API
 
 ```typescript
+import { Live } from "backtest-kit/classes/Live";
+
 // Stream live results (infinite)
-backtest.liveLogicPublicService.run(
+Live.run(
   symbol: string,
-  strategyName: StrategyName,
-  exchangeName: ExchangeName
+  context: {
+    strategyName: string;
+    exchangeName: string;
+  }
 ): AsyncIterableIterator<IStrategyTickResult>
+
+// Run in background without yielding results
+Live.background(
+  symbol: string,
+  context: { strategyName, exchangeName }
+): Promise<() => void> // Returns cancellation function
+
+// Generate markdown report
+Live.getReport(strategyName: string): Promise<string>
+
+// Save report to disk
+Live.dump(strategyName: string, path?: string): Promise<void>
+
+// Clear accumulated data
+Live.clear(strategyName?: string): Promise<void>
 ```
 
 #### Advanced: Reduce Pattern
@@ -477,13 +737,23 @@ PersistSignalAdaper.usePersistSignalAdapter(RedisPersist);
 ### Multi-Symbol Live Trading
 
 ```typescript
+import { Live } from "backtest-kit/classes/Live";
+
 const symbols = ["BTCUSDT", "ETHUSDT", "SOLUSDT"];
 
 // Run all symbols in parallel
 await Promise.all(
   symbols.map(async (symbol) => {
-    for await (const result of liveLogic.run(symbol)) {
+    for await (const result of Live.run(symbol, {
+      strategyName: "my-strategy",
+      exchangeName: "binance"
+    })) {
       console.log(`[${symbol}]`, result.action);
+
+      // Generate reports periodically
+      if (result.action === "closed") {
+        await Live.dump("my-strategy");
+      }
     }
   })
 );
@@ -492,9 +762,18 @@ await Promise.all(
 ### Early Termination
 
 ```typescript
-for await (const result of backtestLogic.run("BTCUSDT")) {
+import { Backtest } from "backtest-kit/classes/Backtest";
+
+for await (const result of Backtest.run("BTCUSDT", {
+  strategyName: "my-strategy",
+  exchangeName: "binance",
+  frameName: "1d-backtest"
+})) {
   if (result.closeReason === "stop_loss") {
     console.log("Stop loss hit - terminating backtest");
+
+    // Save final report before exit
+    await Backtest.dump("my-strategy");
     break; // Generator stops immediately
   }
 }
