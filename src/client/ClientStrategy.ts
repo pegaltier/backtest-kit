@@ -376,7 +376,7 @@ export class ClientStrategy implements IStrategy {
    */
   public async backtest(
     candles: ICandleData[]
-  ): Promise<IStrategyBacktestResult> {  
+  ): Promise<IStrategyBacktestResult> {
     this.params.logger.debug("ClientStrategy backtest", {
       symbol: this.params.execution.context.symbol,
       candlesCount: candles.length,
@@ -390,6 +390,13 @@ export class ClientStrategy implements IStrategy {
 
     if (!this.params.execution.context.backtest) {
       throw new Error("ClientStrategy backtest: running in live context");
+    }
+
+    // Предупреждение если недостаточно свечей для VWAP
+    if (candles.length < 5) {
+      this.params.logger.warn(
+        `ClientStrategy backtest: Expected at least 5 candles for VWAP, got ${candles.length}`
+      );
     }
 
     // Проверяем каждую свечу на достижение TP/SL
