@@ -8,7 +8,8 @@ import {
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
-import { memoize, str } from "functools-kit";
+import { memoize, singleshot, str } from "functools-kit";
+import { signalBacktestEmitter } from "../../../config/emitters";
 
 /**
  * Column configuration for markdown table generation.
@@ -236,7 +237,7 @@ export class BacktestMarkdownService {
    * }
    * ```
    */
-  public tick = async (data: IStrategyTickResult) => {
+  private tick = async (data: IStrategyTickResult) => {
     this.loggerService.log("backtestMarkdownService tick", {
       data,
     });
@@ -264,6 +265,9 @@ export class BacktestMarkdownService {
    * ```
    */
   public getReport = async (strategyName: StrategyName): Promise<string> => {
+    this.loggerService.log("backtestMarkdownService getReport", {
+      strategyName,
+    });
     const storage = this.getStorage(strategyName);
     return storage.getReport(strategyName);
   };
@@ -291,9 +295,54 @@ export class BacktestMarkdownService {
     strategyName: StrategyName,
     path = "./logs/backtest"
   ): Promise<void> => {
+    this.loggerService.log("backtestMarkdownService dump", {
+      strategyName,
+      path,
+    });
     const storage = this.getStorage(strategyName);
     await storage.dump(strategyName, path);
   };
+
+  /**
+   * Clears accumulated signal data from storage.
+   * If strategyName is provided, clears only that strategy's data.
+   * If strategyName is omitted, clears all strategies' data.
+   *
+   * @param strategyName - Optional strategy name to clear specific strategy data
+   *
+   * @example
+   * ```typescript
+   * const service = new BacktestMarkdownService();
+   *
+   * // Clear specific strategy data
+   * await service.clear("my-strategy");
+   *
+   * // Clear all strategies' data
+   * await service.clear();
+   * ```
+   */
+  public clear = async (strategyName?: StrategyName) => {
+    this.loggerService.log("backtestMarkdownService clear", {
+      strategyName,
+    });
+    this.getStorage.clear(strategyName);
+  };
+
+  /**
+   * Initializes the service by subscribing to backtest signal events.
+   * Uses singleshot to ensure initialization happens only once.
+   * Automatically called on first use.
+   *
+   * @example
+   * ```typescript
+   * const service = new BacktestMarkdownService();
+   * await service.init(); // Subscribe to backtest events
+   * ```
+   */
+  protected init = singleshot(async () => {
+    this.loggerService.log("backtestMarkdownService init");
+    signalBacktestEmitter.subscribe(this.tick);
+  });
 }
 
 export default BacktestMarkdownService;

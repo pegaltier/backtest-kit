@@ -10,7 +10,8 @@ import {
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
-import { memoize, str } from "functools-kit";
+import { memoize, singleshot, str } from "functools-kit";
+import { signalLiveEmitter } from "../../../config/emitters";
 
 /**
  * Unified tick event data for report generation.
@@ -98,9 +99,7 @@ const columns: Column[] = [
     key: "openPrice",
     label: "Open Price",
     format: (data) =>
-      data.openPrice !== undefined
-        ? `${data.openPrice.toFixed(8)} USD`
-        : "N/A",
+      data.openPrice !== undefined ? `${data.openPrice.toFixed(8)} USD` : "N/A",
   },
   {
     key: "takeProfit",
@@ -132,7 +131,8 @@ const columns: Column[] = [
   {
     key: "duration",
     label: "Duration (min)",
-    format: (data) => (data.duration !== undefined ? `${data.duration}` : "N/A"),
+    format: (data) =>
+      data.duration !== undefined ? `${data.duration}` : "N/A",
   },
 ];
 
@@ -178,12 +178,18 @@ class ReportStorage {
   }
 
   /**
-   * Adds an active event to the storage.
+   * Updates or adds an active event to the storage.
+   * Replaces the previous event with the same signalId.
    *
    * @param data - Active tick result
    */
   public addActiveEvent(data: IStrategyTickResultActive) {
-    this._eventList.push({
+    // Find existing event with the same signalId
+    const existingIndex = this._eventList.findIndex(
+      (event) => event.signalId === data.signal.id
+    );
+
+    const newEvent: TickEvent = {
       timestamp: Date.now(),
       action: "active",
       symbol: data.signal.symbol,
@@ -194,11 +200,19 @@ class ReportStorage {
       openPrice: data.signal.priceOpen,
       takeProfit: data.signal.priceTakeProfit,
       stopLoss: data.signal.priceStopLoss,
-    });
+    };
+
+    // Replace existing event or add new one
+    if (existingIndex !== -1) {
+      this._eventList[existingIndex] = newEvent;
+    } else {
+      this._eventList.push(newEvent);
+    }
   }
 
   /**
-   * Adds a closed event to the storage.
+   * Updates or adds a closed event to the storage.
+   * Replaces the previous event with the same signalId.
    *
    * @param data - Closed tick result
    */
@@ -206,7 +220,12 @@ class ReportStorage {
     const durationMs = data.closeTimestamp - data.signal.timestamp;
     const durationMin = Math.round(durationMs / 60000);
 
-    this._eventList.push({
+    // Find existing event with the same signalId
+    const existingIndex = this._eventList.findIndex(
+      (event) => event.signalId === data.signal.id
+    );
+
+    const newEvent: TickEvent = {
       timestamp: data.closeTimestamp,
       action: "closed",
       symbol: data.signal.symbol,
@@ -220,7 +239,14 @@ class ReportStorage {
       pnl: data.pnl.pnlPercentage,
       closeReason: data.closeReason,
       duration: durationMin,
-    });
+    };
+
+    // Replace existing event or add new one
+    if (existingIndex !== -1) {
+      this._eventList[existingIndex] = newEvent;
+    } else {
+      this._eventList.push(newEvent);
+    }
   }
 
   /**
@@ -262,7 +288,9 @@ class ReportStorage {
       `Total events: ${this._eventList.length}`,
       `Closed signals: ${totalClosed}`,
       totalClosed > 0
-        ? `Win rate: ${((winCount / totalClosed) * 100).toFixed(2)}% (${winCount}W / ${lossCount}L)`
+        ? `Win rate: ${((winCount / totalClosed) * 100).toFixed(
+            2
+          )}% (${winCount}W / ${lossCount}L)`
         : "",
       totalClosed > 0
         ? `Average PNL: ${avgPnl > 0 ? "+" : ""}${avgPnl.toFixed(2)}%`
@@ -366,7 +394,7 @@ export class LiveMarkdownService {
    * }
    * ```
    */
-  public tick = async (data: IStrategyTickResult) => {
+  private tick = async (data: IStrategyTickResult) => {
     this.loggerService.log("liveMarkdownService tick", {
       data,
     });
@@ -399,6 +427,9 @@ export class LiveMarkdownService {
    * ```
    */
   public getReport = async (strategyName: StrategyName): Promise<string> => {
+    this.loggerService.log("liveMarkdownService getReport", {
+      strategyName,
+    });
     const storage = this.getStorage(strategyName);
     return storage.getReport(strategyName);
   };
@@ -426,9 +457,54 @@ export class LiveMarkdownService {
     strategyName: StrategyName,
     path = "./logs/live"
   ): Promise<void> => {
+    this.loggerService.log("liveMarkdownService dump", {
+      strategyName,
+      path,
+    });
     const storage = this.getStorage(strategyName);
     await storage.dump(strategyName, path);
   };
+
+  /**
+   * Clears accumulated event data from storage.
+   * If strategyName is provided, clears only that strategy's data.
+   * If strategyName is omitted, clears all strategies' data.
+   *
+   * @param strategyName - Optional strategy name to clear specific strategy data
+   *
+   * @example
+   * ```typescript
+   * const service = new LiveMarkdownService();
+   *
+   * // Clear specific strategy data
+   * await service.clear("my-strategy");
+   *
+   * // Clear all strategies' data
+   * await service.clear();
+   * ```
+   */
+  public clear = async (strategyName?: StrategyName) => {
+    this.loggerService.log("liveMarkdownService clear", {
+      strategyName,
+    });
+    this.getStorage.clear(strategyName);
+  };
+
+  /**
+   * Initializes the service by subscribing to live signal events.
+   * Uses singleshot to ensure initialization happens only once.
+   * Automatically called on first use.
+   *
+   * @example
+   * ```typescript
+   * const service = new LiveMarkdownService();
+   * await service.init(); // Subscribe to live events
+   * ```
+   */
+  protected init = singleshot(async () => {
+    this.loggerService.log("liveMarkdownService init");
+    signalLiveEmitter.subscribe(this.tick);
+  });
 }
 
 export default LiveMarkdownService;
