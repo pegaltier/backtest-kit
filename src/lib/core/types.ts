@@ -37,6 +37,11 @@ const logicPublicServices = {
     liveLogicPublicService: Symbol('liveLogicPublicService'),
 }
 
+const markdownServices = {
+    backtestMarkdownService: Symbol('backtestMarkdownService'),
+    liveMarkdownService: Symbol('liveMarkdownService'),
+}
+
 export const TYPES = {
     ...baseServices,
     ...contextServices,
@@ -45,6 +50,7 @@ export const TYPES = {
     ...globalServices,
     ...logicPrivateServices,
     ...logicPublicServices,
+    ...markdownServices,
 }
 
 export default TYPES;

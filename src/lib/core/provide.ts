@@ -18,6 +18,8 @@ import BacktestLogicPublicService from "../services/logic/public/BacktestLogicPu
 import LiveLogicPublicService from "../services/logic/public/LiveLogicPublicService";
 import LiveGlobalService from "../services/global/LiveGlobalService";
 import BacktestGlobalService from "../services/global/BacktestGlobalService";
+import BacktestMarkdownService from "../services/markdown/BacktestMarkdownService";
+import LiveMarkdownService from "../services/markdown/LiveMarkdownService";
 
 {
     provide(TYPES.loggerService, () => new LoggerService());
@@ -56,5 +58,10 @@ import BacktestGlobalService from "../services/global/BacktestGlobalService";
 {
     provide(TYPES.backtestLogicPublicService, () => new BacktestLogicPublicService());
     provide(TYPES.liveLogicPublicService, () => new LiveLogicPublicService());
+}
+
+{
+    provide(TYPES.backtestMarkdownService, () => new BacktestMarkdownService());
+    provide(TYPES.liveMarkdownService, () => new LiveMarkdownService());
 }
 

@@ -22,6 +22,11 @@ interface ILogger {
      * Used to record informational updates, such as successful completions, policy validations, or history commits, providing a high-level overview of system activity without excessive detail.
      */
     info(topic: string, ...args: any[]): void;
+    /**
+     * Logs a warning-level message.
+     * Used to record potentially problematic situations that don't prevent execution but may require attention, such as missing data, unexpected conditions, or deprecated usage.
+     */
+    warn(topic: string, ...args: any[]): void;
 }
 
 /**
@@ -253,16 +258,24 @@ interface ISignalDto {
 interface ISignalRow extends ISignalDto {
     /** Unique signal identifier (UUID v4 auto-generated) */
     id: string;
+    /** Unique exchange identifier for execution */
+    exchangeName: ExchangeName;
+    /** Unique strategy identifier for execution */
+    strategyName: StrategyName;
 }
 /**
  * Optional lifecycle callbacks for signal events.
- * Called when signals are opened or closed.
+ * Called when signals are opened, active, idle, or closed.
  */
 interface IStrategyCallbacks {
     /** Called when new signal is opened (after validation) */
-    onOpen: (backtest: boolean, symbol: string, data: ISignalRow) => void;
+    onOpen: (symbol: string, data: ISignalRow, currentPrice: number, backtest: boolean) => void;
+    /** Called when signal is being monitored (active state) */
+    onActive: (symbol: string, data: ISignalRow, currentPrice: number, backtest: boolean) => void;
+    /** Called when no active signal exists (idle state) */
+    onIdle: (symbol: string, currentPrice: number, backtest: boolean) => void;
     /** Called when signal is closed with final price */
-    onClose: (backtest: boolean, symbol: string, priceClose: number, data: ISignalRow) => void;
+    onClose: (symbol: string, data: ISignalRow, priceClose: number, backtest: boolean) => void;
 }
 /**
  * Strategy schema registered via addStrategy().
@@ -394,6 +407,7 @@ type FrameInterval = "1m" | "3m" | "5m" | "15m" | "30m" | "1h" | "2h" | "4h" | "
  * Extends IFrameSchema with logger instance for internal logging.
  */
 interface IFrameParams extends IFrameSchema {
+    /** Logger service for debug output */
     logger: ILogger;
 }
 /**
@@ -624,6 +638,92 @@ declare function listenSignal(fn: (event: IStrategyTickResult) => void): () => v
  * ```
  */
 declare function listenSignalOnce(filterFn: (event: IStrategyTickResult) => boolean, fn: (event: IStrategyTickResult) => void): () => void;
+/**
+ * Subscribes to live trading signal events with queued async processing.
+ *
+ * Only receives events from Live.run() execution.
+ * Events are processed sequentially in order received.
+ *
+ * @param fn - Callback function to handle live signal events
+ * @returns Unsubscribe function to stop listening
+ *
+ * @example
+ * ```typescript
+ * import { listenSignalLive } from "./function/event";
+ *
+ * const unsubscribe = listenSignalLive((event) => {
+ *   if (event.action === "closed") {
+ *     console.log("Live signal closed:", event.pnl.pnlPercentage);
+ *   }
+ * });
+ * ```
+ */
+declare function listenSignalLive(fn: (event: IStrategyTickResult) => void): () => void;
+/**
+ * Subscribes to filtered live signal events with one-time execution.
+ *
+ * Only receives events from Live.run() execution.
+ * Executes callback once and automatically unsubscribes.
+ *
+ * @param filterFn - Predicate to filter which events trigger the callback
+ * @param fn - Callback function to handle the filtered event (called only once)
+ * @returns Unsubscribe function to cancel the listener before it fires
+ *
+ * @example
+ * ```typescript
+ * import { listenSignalLiveOnce } from "./function/event";
+ *
+ * // Wait for first live take profit hit
+ * listenSignalLiveOnce(
+ *   (event) => event.action === "closed" && event.closeReason === "take_profit",
+ *   (event) => console.log("Live take profit:", event.pnl.pnlPercentage)
+ * );
+ * ```
+ */
+declare function listenSignalLiveOnce(filterFn: (event: IStrategyTickResult) => boolean, fn: (event: IStrategyTickResult) => void): () => void;
+/**
+ * Subscribes to backtest signal events with queued async processing.
+ *
+ * Only receives events from Backtest.run() execution.
+ * Events are processed sequentially in order received.
+ *
+ * @param fn - Callback function to handle backtest signal events
+ * @returns Unsubscribe function to stop listening
+ *
+ * @example
+ * ```typescript
+ * import { listenSignalBacktest } from "./function/event";
+ *
+ * const unsubscribe = listenSignalBacktest((event) => {
+ *   if (event.action === "closed") {
+ *     console.log("Backtest signal closed:", event.pnl.pnlPercentage);
+ *   }
+ * });
+ * ```
+ */
+declare function listenSignalBacktest(fn: (event: IStrategyTickResult) => void): () => void;
+/**
+ * Subscribes to filtered backtest signal events with one-time execution.
+ *
+ * Only receives events from Backtest.run() execution.
+ * Executes callback once and automatically unsubscribes.
+ *
+ * @param filterFn - Predicate to filter which events trigger the callback
+ * @param fn - Callback function to handle the filtered event (called only once)
+ * @returns Unsubscribe function to cancel the listener before it fires
+ *
+ * @example
+ * ```typescript
+ * import { listenSignalBacktestOnce } from "./function/event";
+ *
+ * // Wait for first backtest stop loss hit
+ * listenSignalBacktestOnce(
+ *   (event) => event.action === "closed" && event.closeReason === "stop_loss",
+ *   (event) => console.log("Backtest stop loss:", event.pnl.pnlPercentage)
+ * );
+ * ```
+ */
+declare function listenSignalBacktestOnce(filterFn: (event: IStrategyTickResult) => boolean, fn: (event: IStrategyTickResult) => void): () => void;
 
 /**
  * Fetches historical candle data from the registered exchange.
@@ -1040,7 +1140,7 @@ declare class BacktestUtils {
      *
      * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
      * @param context - Execution context with strategy, exchange, and frame names
-     * @returns Promise that resolves when backtest completes
+     * @returns Cancellation closure
      *
      * @example
      * ```typescript
@@ -1057,7 +1157,7 @@ declare class BacktestUtils {
         strategyName: string;
         exchangeName: string;
         frameName: string;
-    }) => Promise<void>;
+    }) => Promise<() => void>;
 }
 /**
  * Singleton instance of BacktestUtils for convenient backtest operations.
@@ -1132,7 +1232,7 @@ declare class LiveUtils {
      *
      * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
      * @param context - Execution context with strategy and exchange names
-     * @returns Promise that never resolves (infinite loop)
+     * @returns Cancellation closure
      *
      * @example
      * ```typescript
@@ -1147,7 +1247,7 @@ declare class LiveUtils {
     background: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
-    }) => Promise<void>;
+    }) => Promise<() => void>;
 }
 /**
  * Singleton instance of LiveUtils for convenient live trading operations.
@@ -1212,6 +1312,13 @@ declare class LoggerService implements ILogger {
      * @param args - Additional log arguments
      */
     info: (topic: string, ...args: any[]) => Promise<void>;
+    /**
+     * Logs warning-level message with automatic context injection.
+     *
+     * @param topic - Log topic/category
+     * @param args - Additional log arguments
+     */
+    warn: (topic: string, ...args: any[]) => Promise<void>;
     /**
      * Sets custom logger implementation.
      *
@@ -1957,7 +2064,15 @@ declare class BacktestGlobalService {
     }) => AsyncGenerator<IStrategyTickResultClosed, void, unknown>;
 }
 
+declare class BacktestMarkdownService {
+}
+
+declare class LiveMarkdownService {
+}
+
 declare const backtest: {
+    backtestMarkdownService: BacktestMarkdownService;
+    liveMarkdownService: LiveMarkdownService;
     backtestLogicPublicService: BacktestLogicPublicService;
     liveLogicPublicService: LiveLogicPublicService;
     backtestLogicPrivateService: BacktestLogicPrivateService;
@@ -1982,4 +2097,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type CandleInterval, ExecutionContextService, type FrameInterval, type ICandleData, type IExchangeSchema, type IFrameSchema, type IPersistBase, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, Live, MethodContextService, PersistBase, PersistSignalAdaper, type SignalInterval, type TPersistBase, type TPersistBaseCtor, addExchange, addFrame, addStrategy, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listenSignal, listenSignalOnce, setLogger };
+export { Backtest, type CandleInterval, ExecutionContextService, type FrameInterval, type ICandleData, type IExchangeSchema, type IFrameSchema, type IPersistBase, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, Live, MethodContextService, PersistBase, PersistSignalAdaper, type SignalInterval, type TPersistBase, type TPersistBaseCtor, addExchange, addFrame, addStrategy, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, setLogger };

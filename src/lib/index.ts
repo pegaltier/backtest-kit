@@ -23,6 +23,8 @@ import BacktestLogicPublicService from "./services/logic/public/BacktestLogicPub
 import LiveLogicPublicService from "./services/logic/public/LiveLogicPublicService";
 import LiveGlobalService from "./services/global/LiveGlobalService";
 import BacktestGlobalService from "./services/global/BacktestGlobalService";
+import BacktestMarkdownService from "./services/markdown/BacktestMarkdownService";
+import LiveMarkdownService from "./services/markdown/LiveMarkdownService";
 
 const baseServices = {
   loggerService: inject<LoggerService>(TYPES.loggerService),
@@ -91,6 +93,11 @@ const logicPublicServices = {
   ),
 };
 
+const markdownServices = {
+  backtestMarkdownService: inject<BacktestMarkdownService>(TYPES.backtestMarkdownService),
+  liveMarkdownService: inject<LiveMarkdownService>(TYPES.liveMarkdownService),
+}
+
 export const backtest = {
   ...baseServices,
   ...contextServices,
@@ -99,6 +106,7 @@ export const backtest = {
   ...globalServices,
   ...logicPrivateServices,
   ...logicPublicServices,
+  ...markdownServices,
 };
 
 init();
