@@ -132,6 +132,12 @@ export interface IStrategyTickResultIdle {
   action: "idle";
   /** No signal in idle state */
   signal: null;
+  /** Strategy name for tracking idle events */
+  strategyName: StrategyName;
+  /** Exchange name for tracking idle events */
+  exchangeName: ExchangeName;
+  /** Current VWAP price during idle state */
+  currentPrice: number;
 }
 
 /**
@@ -143,6 +149,12 @@ export interface IStrategyTickResultOpened {
   action: "opened";
   /** Newly created and validated signal with generated ID */
   signal: ISignalRow;
+  /** Strategy name for tracking */
+  strategyName: StrategyName;
+  /** Exchange name for tracking */
+  exchangeName: ExchangeName;
+  /** Current VWAP price at signal open */
+  currentPrice: number;
 }
 
 /**
@@ -156,6 +168,10 @@ export interface IStrategyTickResultActive {
   signal: ISignalRow;
   /** Current VWAP price for monitoring */
   currentPrice: number;
+  /** Strategy name for tracking */
+  strategyName: StrategyName;
+  /** Exchange name for tracking */
+  exchangeName: ExchangeName;
 }
 
 /**
@@ -175,6 +191,10 @@ export interface IStrategyTickResultClosed {
   closeTimestamp: number;
   /** Profit/loss calculation with fees and slippage */
   pnl: IStrategyPnL;
+  /** Strategy name for tracking */
+  strategyName: StrategyName;
+  /** Exchange name for tracking */
+  exchangeName: ExchangeName;
 }
 
 /**

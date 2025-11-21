@@ -1,5 +1,434 @@
-export class LiveMarkdownService {
+import { writeFile, mkdir } from "fs/promises";
+import { join } from "path";
+import {
+  IStrategyTickResult,
+  IStrategyTickResultOpened,
+  IStrategyTickResultActive,
+  IStrategyTickResultClosed,
+  StrategyName,
+} from "../../../interfaces/Strategy.interface";
+import { inject } from "../../../lib/core/di";
+import LoggerService from "../base/LoggerService";
+import TYPES from "../../../lib/core/types";
+import { memoize, str } from "functools-kit";
 
+/**
+ * Unified tick event data for report generation.
+ * Contains all information about a tick event regardless of action type.
+ */
+interface TickEvent {
+  /** Event timestamp in milliseconds */
+  timestamp: number;
+  /** Event action type */
+  action: "idle" | "opened" | "active" | "closed";
+  /** Trading pair symbol (only for non-idle events) */
+  symbol?: string;
+  /** Signal ID (only for opened/active/closed) */
+  signalId?: string;
+  /** Position type (only for opened/active/closed) */
+  position?: string;
+  /** Signal note (only for opened/active/closed) */
+  note?: string;
+  /** Current price */
+  currentPrice: number;
+  /** Open price (only for opened/active/closed) */
+  openPrice?: number;
+  /** Take profit price (only for opened/active/closed) */
+  takeProfit?: number;
+  /** Stop loss price (only for opened/active/closed) */
+  stopLoss?: number;
+  /** PNL percentage (only for closed) */
+  pnl?: number;
+  /** Close reason (only for closed) */
+  closeReason?: string;
+  /** Duration in minutes (only for closed) */
+  duration?: number;
+}
+
+/**
+ * Column configuration for markdown table generation.
+ * Defines how to extract and format data from tick events.
+ */
+interface Column {
+  /** Unique column identifier */
+  key: string;
+  /** Display label for column header */
+  label: string;
+  /** Formatting function to convert event data to string */
+  format: (data: TickEvent) => string;
+}
+
+const columns: Column[] = [
+  {
+    key: "timestamp",
+    label: "Timestamp",
+    format: (data) => new Date(data.timestamp).toISOString(),
+  },
+  {
+    key: "action",
+    label: "Action",
+    format: (data) => data.action.toUpperCase(),
+  },
+  {
+    key: "symbol",
+    label: "Symbol",
+    format: (data) => data.symbol ?? "N/A",
+  },
+  {
+    key: "signalId",
+    label: "Signal ID",
+    format: (data) => data.signalId ?? "N/A",
+  },
+  {
+    key: "position",
+    label: "Position",
+    format: (data) => data.position?.toUpperCase() ?? "N/A",
+  },
+  {
+    key: "note",
+    label: "Note",
+    format: (data) => data.note ?? "N/A",
+  },
+  {
+    key: "currentPrice",
+    label: "Current Price",
+    format: (data) => `${data.currentPrice.toFixed(8)} USD`,
+  },
+  {
+    key: "openPrice",
+    label: "Open Price",
+    format: (data) =>
+      data.openPrice !== undefined
+        ? `${data.openPrice.toFixed(8)} USD`
+        : "N/A",
+  },
+  {
+    key: "takeProfit",
+    label: "Take Profit",
+    format: (data) =>
+      data.takeProfit !== undefined
+        ? `${data.takeProfit.toFixed(8)} USD`
+        : "N/A",
+  },
+  {
+    key: "stopLoss",
+    label: "Stop Loss",
+    format: (data) =>
+      data.stopLoss !== undefined ? `${data.stopLoss.toFixed(8)} USD` : "N/A",
+  },
+  {
+    key: "pnl",
+    label: "PNL (net)",
+    format: (data) => {
+      if (data.pnl === undefined) return "N/A";
+      return `${data.pnl > 0 ? "+" : ""}${data.pnl.toFixed(2)}%`;
+    },
+  },
+  {
+    key: "closeReason",
+    label: "Close Reason",
+    format: (data) => data.closeReason ?? "N/A",
+  },
+  {
+    key: "duration",
+    label: "Duration (min)",
+    format: (data) => (data.duration !== undefined ? `${data.duration}` : "N/A"),
+  },
+];
+
+/**
+ * Storage class for accumulating all tick events per strategy.
+ * Maintains a chronological list of all events (idle, opened, active, closed).
+ */
+class ReportStorage {
+  /** Internal list of all tick events for this strategy */
+  private _eventList: TickEvent[] = [];
+
+  /**
+   * Adds an idle event to the storage.
+   *
+   * @param currentPrice - Current market price
+   */
+  public addIdleEvent(currentPrice: number) {
+    this._eventList.push({
+      timestamp: Date.now(),
+      action: "idle",
+      currentPrice,
+    });
+  }
+
+  /**
+   * Adds an opened event to the storage.
+   *
+   * @param data - Opened tick result
+   */
+  public addOpenedEvent(data: IStrategyTickResultOpened) {
+    this._eventList.push({
+      timestamp: data.signal.timestamp,
+      action: "opened",
+      symbol: data.signal.symbol,
+      signalId: data.signal.id,
+      position: data.signal.position,
+      note: data.signal.note,
+      currentPrice: data.signal.priceOpen,
+      openPrice: data.signal.priceOpen,
+      takeProfit: data.signal.priceTakeProfit,
+      stopLoss: data.signal.priceStopLoss,
+    });
+  }
+
+  /**
+   * Adds an active event to the storage.
+   *
+   * @param data - Active tick result
+   */
+  public addActiveEvent(data: IStrategyTickResultActive) {
+    this._eventList.push({
+      timestamp: Date.now(),
+      action: "active",
+      symbol: data.signal.symbol,
+      signalId: data.signal.id,
+      position: data.signal.position,
+      note: data.signal.note,
+      currentPrice: data.currentPrice,
+      openPrice: data.signal.priceOpen,
+      takeProfit: data.signal.priceTakeProfit,
+      stopLoss: data.signal.priceStopLoss,
+    });
+  }
+
+  /**
+   * Adds a closed event to the storage.
+   *
+   * @param data - Closed tick result
+   */
+  public addClosedEvent(data: IStrategyTickResultClosed) {
+    const durationMs = data.closeTimestamp - data.signal.timestamp;
+    const durationMin = Math.round(durationMs / 60000);
+
+    this._eventList.push({
+      timestamp: data.closeTimestamp,
+      action: "closed",
+      symbol: data.signal.symbol,
+      signalId: data.signal.id,
+      position: data.signal.position,
+      note: data.signal.note,
+      currentPrice: data.currentPrice,
+      openPrice: data.signal.priceOpen,
+      takeProfit: data.signal.priceTakeProfit,
+      stopLoss: data.signal.priceStopLoss,
+      pnl: data.pnl.pnlPercentage,
+      closeReason: data.closeReason,
+      duration: durationMin,
+    });
+  }
+
+  /**
+   * Generates markdown report with all tick events for a strategy.
+   *
+   * @param strategyName - Strategy name
+   * @returns Markdown formatted report with all events
+   */
+  public getReport(strategyName: StrategyName): string {
+    if (this._eventList.length === 0) {
+      return str.newline(
+        `# Live Trading Report: ${strategyName}`,
+        "",
+        "No events recorded yet."
+      );
+    }
+
+    const header = columns.map((col) => col.label);
+    const rows = this._eventList.map((event) =>
+      columns.map((col) => col.format(event))
+    );
+
+    const tableData = [header, ...rows];
+    const table = str.table(tableData);
+
+    // Calculate statistics
+    const closedEvents = this._eventList.filter((e) => e.action === "closed");
+    const totalClosed = closedEvents.length;
+    const winCount = closedEvents.filter((e) => e.pnl && e.pnl > 0).length;
+    const lossCount = closedEvents.filter((e) => e.pnl && e.pnl < 0).length;
+    const avgPnl =
+      totalClosed > 0
+        ? closedEvents.reduce((sum, e) => sum + (e.pnl || 0), 0) / totalClosed
+        : 0;
+
+    return str.newline(
+      `# Live Trading Report: ${strategyName}`,
+      "",
+      `Total events: ${this._eventList.length}`,
+      `Closed signals: ${totalClosed}`,
+      totalClosed > 0
+        ? `Win rate: ${((winCount / totalClosed) * 100).toFixed(2)}% (${winCount}W / ${lossCount}L)`
+        : "",
+      totalClosed > 0
+        ? `Average PNL: ${avgPnl > 0 ? "+" : ""}${avgPnl.toFixed(2)}%`
+        : "",
+      "",
+      table,
+      "",
+      "",
+      `*Generated: ${new Date().toISOString()}*`
+    );
+  }
+
+  /**
+   * Saves strategy report to disk.
+   *
+   * @param strategyName - Strategy name
+   * @param path - Directory path to save report (default: "./logs/live")
+   */
+  public async dump(
+    strategyName: StrategyName,
+    path = "./logs/live"
+  ): Promise<void> {
+    const markdown = this.getReport(strategyName);
+
+    try {
+      const dir = join(process.cwd(), path);
+      await mkdir(dir, { recursive: true });
+
+      const filename = `${strategyName}.md`;
+      const filepath = join(dir, filename);
+
+      await writeFile(filepath, markdown, "utf-8");
+      console.log(`Live trading report saved: ${filepath}`);
+    } catch (error) {
+      console.error(`Failed to save markdown report:`, error);
+    }
+  }
+}
+
+/**
+ * Service for generating and saving live trading markdown reports.
+ *
+ * Features:
+ * - Listens to all signal events via onTick callback
+ * - Accumulates all events (idle, opened, active, closed) per strategy
+ * - Generates markdown tables with detailed event information
+ * - Provides trading statistics (win rate, average PNL)
+ * - Saves reports to disk in logs/live/{strategyName}.md
+ *
+ * @example
+ * ```typescript
+ * const service = new LiveMarkdownService();
+ *
+ * // Add to strategy callbacks
+ * addStrategy({
+ *   strategyName: "my-strategy",
+ *   callbacks: {
+ *     onTick: (symbol, result, backtest) => {
+ *       if (!backtest) {
+ *         service.tick(result);
+ *       }
+ *     }
+ *   }
+ * });
+ *
+ * // Later: generate and save report
+ * await service.dump("my-strategy");
+ * ```
+ */
+export class LiveMarkdownService {
+  /** Logger service for debug output */
+  private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
+
+  /**
+   * Memoized function to get or create ReportStorage for a strategy.
+   * Each strategy gets its own isolated storage instance.
+   */
+  private getStorage = memoize<(strategyName: string) => ReportStorage>(
+    ([strategyName]) => `${strategyName}`,
+    () => new ReportStorage()
+  );
+
+  /**
+   * Processes tick events and accumulates all event types.
+   * Should be called from IStrategyCallbacks.onTick.
+   *
+   * Processes all event types: idle, opened, active, closed.
+   *
+   * @param data - Tick result from strategy execution
+   *
+   * @example
+   * ```typescript
+   * const service = new LiveMarkdownService();
+   *
+   * callbacks: {
+   *   onTick: (symbol, result, backtest) => {
+   *     if (!backtest) {
+   *       service.tick(result);
+   *     }
+   *   }
+   * }
+   * ```
+   */
+  public tick = async (data: IStrategyTickResult) => {
+    this.loggerService.log("liveMarkdownService tick", {
+      data,
+    });
+
+    const storage = this.getStorage(data.strategyName);
+
+    if (data.action === "idle") {
+      storage.addIdleEvent(data.currentPrice);
+    } else if (data.action === "opened") {
+      storage.addOpenedEvent(data);
+    } else if (data.action === "active") {
+      storage.addActiveEvent(data);
+    } else if (data.action === "closed") {
+      storage.addClosedEvent(data);
+    }
+  };
+
+  /**
+   * Generates markdown report with all events for a strategy.
+   * Delegates to ReportStorage.getReport().
+   *
+   * @param strategyName - Strategy name to generate report for
+   * @returns Markdown formatted report string with table of all events
+   *
+   * @example
+   * ```typescript
+   * const service = new LiveMarkdownService();
+   * const markdown = await service.getReport("my-strategy");
+   * console.log(markdown);
+   * ```
+   */
+  public getReport = async (strategyName: StrategyName): Promise<string> => {
+    const storage = this.getStorage(strategyName);
+    return storage.getReport(strategyName);
+  };
+
+  /**
+   * Saves strategy report to disk.
+   * Creates directory if it doesn't exist.
+   * Delegates to ReportStorage.dump().
+   *
+   * @param strategyName - Strategy name to save report for
+   * @param path - Directory path to save report (default: "./logs/live")
+   *
+   * @example
+   * ```typescript
+   * const service = new LiveMarkdownService();
+   *
+   * // Save to default path: ./logs/live/my-strategy.md
+   * await service.dump("my-strategy");
+   *
+   * // Save to custom path: ./custom/path/my-strategy.md
+   * await service.dump("my-strategy", "./custom/path");
+   * ```
+   */
+  public dump = async (
+    strategyName: StrategyName,
+    path = "./logs/live"
+  ): Promise<void> => {
+    const storage = this.getStorage(strategyName);
+    await storage.dump(strategyName, path);
+  };
 }
 
 export default LiveMarkdownService;

@@ -4,6 +4,10 @@ import {
   ISignalRow,
   IStrategyParams,
   IStrategyTickResult,
+  IStrategyTickResultIdle,
+  IStrategyTickResultOpened,
+  IStrategyTickResultActive,
+  IStrategyTickResultClosed,
   IStrategyBacktestResult,
   StrategyCloseReason,
   SignalInterval,
@@ -256,9 +260,12 @@ export class ClientStrategy implements IStrategy {
           );
         }
 
-        const result: IStrategyTickResult = {
+        const result: IStrategyTickResultOpened = {
           action: "opened",
           signal: this._pendingSignal,
+          strategyName: this.params.method.context.strategyName,
+          exchangeName: this.params.method.context.exchangeName,
+          currentPrice: this._pendingSignal.priceOpen,
         };
 
         if (this.params.callbacks?.onTick) {
@@ -272,10 +279,11 @@ export class ClientStrategy implements IStrategy {
         return result;
       }
 
+      const currentPrice = await this.params.exchange.getAveragePrice(
+        this.params.execution.context.symbol
+      );
+
       if (this.params.callbacks?.onIdle) {
-        const currentPrice = await this.params.exchange.getAveragePrice(
-          this.params.execution.context.symbol
-        );
         this.params.callbacks.onIdle(
           this.params.execution.context.symbol,
           currentPrice,
@@ -283,9 +291,12 @@ export class ClientStrategy implements IStrategy {
         );
       }
 
-      const result: IStrategyTickResult = {
+      const result: IStrategyTickResultIdle = {
         action: "idle",
         signal: null,
+        strategyName: this.params.method.context.strategyName,
+        exchangeName: this.params.method.context.exchangeName,
+        currentPrice,
       };
 
       if (this.params.callbacks?.onTick) {
@@ -386,13 +397,15 @@ export class ClientStrategy implements IStrategy {
 
       await this.setPendingSignal(null);
 
-      const result: IStrategyTickResult = {
+      const result: IStrategyTickResultClosed = {
         action: "closed",
         signal: signal,
         currentPrice: averagePrice,
         closeReason: closeReason,
         closeTimestamp: closeTimestamp,
         pnl: pnl,
+        strategyName: this.params.method.context.strategyName,
+        exchangeName: this.params.method.context.exchangeName,
       };
 
       if (this.params.callbacks?.onTick) {
@@ -415,10 +428,12 @@ export class ClientStrategy implements IStrategy {
       );
     }
 
-    const result: IStrategyTickResult = {
+    const result: IStrategyTickResultActive = {
       action: "active",
       signal: signal,
       currentPrice: averagePrice,
+      strategyName: this.params.method.context.strategyName,
+      exchangeName: this.params.method.context.exchangeName,
     };
 
     if (this.params.callbacks?.onTick) {
@@ -541,13 +556,15 @@ export class ClientStrategy implements IStrategy {
 
         await this.setPendingSignal(null);
 
-        const result: IStrategyBacktestResult = {
+        const result: IStrategyTickResultClosed = {
           action: "closed",
           signal: signal,
           currentPrice: averagePrice,
           closeReason: closeReason,
           closeTimestamp: closeTimestamp,
           pnl: pnl,
+          strategyName: this.params.method.context.strategyName,
+          exchangeName: this.params.method.context.exchangeName,
         };
 
         if (this.params.callbacks?.onTick) {
@@ -596,13 +613,15 @@ export class ClientStrategy implements IStrategy {
 
     await this.setPendingSignal(null);
 
-    const result: IStrategyBacktestResult = {
+    const result: IStrategyTickResultClosed = {
       action: "closed",
       signal: signal,
       currentPrice: lastPrice,
       closeReason: "time_expired",
       closeTimestamp: closeTimestamp,
       pnl: pnl,
+      strategyName: this.params.method.context.strategyName,
+      exchangeName: this.params.method.context.exchangeName,
     };
 
     if (this.params.callbacks?.onTick) {

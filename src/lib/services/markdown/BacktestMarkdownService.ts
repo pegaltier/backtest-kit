@@ -241,12 +241,11 @@ export class BacktestMarkdownService {
       data,
     });
 
-    const storage = this.getStorage(data.signal.strategyName);
-
     if (data.action !== "closed") {
       return;
     }
 
+    const storage = this.getStorage(data.strategyName);
     storage.addSignal(data);
   };
 
