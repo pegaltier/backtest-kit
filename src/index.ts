@@ -10,6 +10,7 @@ export {
   listenError,
   listenDone,
   listenDoneOnce,
+  listenProgress,
 } from "./function/event";
 export {
   getCandles,
@@ -40,6 +41,9 @@ export {
 } from "./interfaces/Strategy.interface";
 
 export { FrameInterval, IFrameSchema } from "./interfaces/Frame.interface";
+
+export { DoneContract } from "./contract/Done.contract";
+export { ProgressContract } from "./contract/Progress.contract";
 
 export { ExecutionContextService } from "./lib/services/context/ExecutionContextService";
 export { MethodContextService } from "./lib/services/context/MethodContextService";

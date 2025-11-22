@@ -1,6 +1,7 @@
 import { Subject } from "functools-kit";
 import { IStrategyTickResult } from "../interfaces/Strategy.interface";
 import { DoneContract } from "../contract/Done.contract";
+import { ProgressContract } from "../contract/Progress.contract";
 
 /**
  * Global signal emitter for all trading events (live + backtest).
@@ -31,4 +32,10 @@ export const errorEmitter = new Subject<Error>();
  * Emits when background tasks complete (Live.background, Backtest.background).
  */
 export const doneEmitter = new Subject<DoneContract>();
+
+/**
+ * Progress emitter for backtest execution progress.
+ * Emits progress updates during backtest execution.
+ */
+export const progressEmitter = new Subject<ProgressContract>();
 

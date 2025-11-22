@@ -1,7 +1,8 @@
 import backtest from "../lib";
-import { signalEmitter, signalLiveEmitter, signalBacktestEmitter, errorEmitter, doneEmitter } from "../config/emitters";
+import { signalEmitter, signalLiveEmitter, signalBacktestEmitter, errorEmitter, doneEmitter, progressEmitter } from "../config/emitters";
 import { IStrategyTickResult } from "../interfaces/Strategy.interface";
 import { DoneContract } from "../contract/Done.contract";
+import { ProgressContract } from "../contract/Progress.contract";
 import { queued } from "functools-kit";
 
 const LISTEN_SIGNAL_METHOD_NAME = "event.listenSignal";
@@ -13,6 +14,7 @@ const LISTEN_SIGNAL_BACKTEST_ONCE_METHOD_NAME = "event.listenSignalBacktestOnce"
 const LISTEN_ERROR_METHOD_NAME = "event.listenError";
 const LISTEN_DONE_METHOD_NAME = "event.listenDone";
 const LISTEN_DONE_ONCE_METHOD_NAME = "event.listenDoneOnce";
+const LISTEN_PROGRESS_METHOD_NAME = "event.listenProgress";
 
 /**
  * Subscribes to all signal events with queued async processing.
@@ -288,4 +290,39 @@ export function listenDoneOnce(
 ) {
   backtest.loggerService.log(LISTEN_DONE_ONCE_METHOD_NAME);
   return doneEmitter.filter(filterFn).once(fn);
+}
+
+/**
+ * Subscribes to backtest progress events with queued async processing.
+ *
+ * Emits during Backtest.background() execution to track progress.
+ * Events are processed sequentially in order received, even if callback is async.
+ * Uses queued wrapper to prevent concurrent execution of the callback.
+ *
+ * @param fn - Callback function to handle progress events
+ * @returns Unsubscribe function to stop listening to events
+ *
+ * @example
+ * ```typescript
+ * import { listenProgress, Backtest } from "backtest-kit";
+ *
+ * const unsubscribe = listenProgress((event) => {
+ *   console.log(`Progress: ${(event.progress * 100).toFixed(2)}%`);
+ *   console.log(`${event.processedFrames} / ${event.totalFrames} frames`);
+ *   console.log(`Strategy: ${event.strategyName}, Symbol: ${event.symbol}`);
+ * });
+ *
+ * Backtest.background("BTCUSDT", {
+ *   strategyName: "my-strategy",
+ *   exchangeName: "binance",
+ *   frameName: "1d-backtest"
+ * });
+ *
+ * // Later: stop listening
+ * unsubscribe();
+ * ```
+ */
+export function listenProgress(fn: (event: ProgressContract) => void) {
+  backtest.loggerService.log(LISTEN_PROGRESS_METHOD_NAME);
+  return progressEmitter.subscribe(queued(async (event) => fn(event)));
 }

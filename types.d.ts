@@ -697,6 +697,37 @@ interface DoneContract {
 }
 
 /**
+ * Contract for backtest progress events.
+ *
+ * Emitted during Backtest.background() execution to track progress.
+ * Contains information about total frames, processed frames, and completion percentage.
+ *
+ * @example
+ * ```typescript
+ * import { listenProgress } from "backtest-kit";
+ *
+ * listenProgress((event) => {
+ *   console.log(`Progress: ${(event.progress * 100).toFixed(2)}%`);
+ *   console.log(`Processed: ${event.processedFrames} / ${event.totalFrames}`);
+ * });
+ * ```
+ */
+interface ProgressContract {
+    /** exchangeName - Name of the exchange used in execution */
+    exchangeName: string;
+    /** strategyName - Name of the strategy being executed */
+    strategyName: string;
+    /** symbol - Trading symbol (e.g., "BTCUSDT") */
+    symbol: string;
+    /** totalFrames - Total number of frames to process */
+    totalFrames: number;
+    /** processedFrames - Number of frames processed so far */
+    processedFrames: number;
+    /** progress - Completion percentage from 0.0 to 1.0 */
+    progress: number;
+}
+
+/**
  * Subscribes to all signal events with queued async processing.
  *
  * Events are processed sequentially in order received, even if callback is async.
@@ -924,6 +955,37 @@ declare function listenDone(fn: (event: DoneContract) => void): () => void;
  * ```
  */
 declare function listenDoneOnce(filterFn: (event: DoneContract) => boolean, fn: (event: DoneContract) => void): () => void;
+/**
+ * Subscribes to backtest progress events with queued async processing.
+ *
+ * Emits during Backtest.background() execution to track progress.
+ * Events are processed sequentially in order received, even if callback is async.
+ * Uses queued wrapper to prevent concurrent execution of the callback.
+ *
+ * @param fn - Callback function to handle progress events
+ * @returns Unsubscribe function to stop listening to events
+ *
+ * @example
+ * ```typescript
+ * import { listenProgress, Backtest } from "backtest-kit";
+ *
+ * const unsubscribe = listenProgress((event) => {
+ *   console.log(`Progress: ${(event.progress * 100).toFixed(2)}%`);
+ *   console.log(`${event.processedFrames} / ${event.totalFrames} frames`);
+ *   console.log(`Strategy: ${event.strategyName}, Symbol: ${event.symbol}`);
+ * });
+ *
+ * Backtest.background("BTCUSDT", {
+ *   strategyName: "my-strategy",
+ *   exchangeName: "binance",
+ *   frameName: "1d-backtest"
+ * });
+ *
+ * // Later: stop listening
+ * unsubscribe();
+ * ```
+ */
+declare function listenProgress(fn: (event: ProgressContract) => void): () => void;
 
 /**
  * Fetches historical candle data from the registered exchange.
@@ -2154,6 +2216,7 @@ declare class BacktestLogicPrivateService {
     private readonly strategyGlobalService;
     private readonly exchangeGlobalService;
     private readonly frameGlobalService;
+    private readonly methodContextService;
     /**
      * Runs backtest for a symbol, streaming closed signals as async generator.
      *
@@ -2736,4 +2799,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type CandleInterval, type EntityId, ExecutionContextService, type FrameInterval, type ICandleData, type IExchangeSchema, type IFrameSchema, type IPersistBase, type ISignalData, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, Live, MethodContextService, PersistBase, PersistSignalAdaper, type SignalInterval, type TPersistBase, type TPersistBaseCtor, addExchange, addFrame, addStrategy, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listenDone, listenDoneOnce, listenError, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, setLogger };
+export { Backtest, type CandleInterval, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type ICandleData, type IExchangeSchema, type IFrameSchema, type IPersistBase, type ISignalData, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, Live, MethodContextService, PersistBase, PersistSignalAdaper, type ProgressContract, type SignalInterval, type TPersistBase, type TPersistBaseCtor, addExchange, addFrame, addStrategy, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listenDone, listenDoneOnce, listenError, listenProgress, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, setLogger };

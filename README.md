@@ -794,41 +794,6 @@ pnl% = (priceOpenWithCosts - priceCloseWithCosts) / priceOpenWithCosts * 100
 6. **Live Trading Ready** - Full implementation with real-time progression
 7. **Error Recovery** - Stateless process with disk-based state
 
-## File Structure
-
-```
-src/
-├── client/                      # Pure business logic (no DI)
-│   ├── ClientStrategy.ts       # Signal lifecycle + validation + persistence
-│   ├── ClientExchange.ts       # VWAP calculation
-│   └── ClientFrame.ts          # Timeframe generation
-├── classes/
-│   └── Persist.ts              # Atomic file persistence
-├── function/                   # High-level API
-│   ├── add.ts                  # addStrategy, addExchange, addFrame
-│   ├── exchange.ts             # getCandles, getAveragePrice, getDate, getMode
-│   └── run.ts                  # DEPRECATED - use logic services instead
-├── interfaces/                 # TypeScript interfaces
-│   ├── Strategy.interface.ts
-│   ├── Exchange.interface.ts
-│   └── Frame.interface.ts
-├── lib/
-│   ├── core/                   # DI container
-│   ├── services/
-│   │   ├── base/              # LoggerService
-│   │   ├── context/           # ExecutionContext, MethodContext
-│   │   ├── connection/        # Client instance creators
-│   │   ├── global/            # Context wrappers
-│   │   ├── schema/            # Registry services
-│   │   └── logic/
-│   │       └── private/       # Async generator orchestration
-│   │           ├── BacktestLogicPrivateService.ts
-│   │           └── LiveLogicPrivateService.ts
-│   └── index.ts               # Public API
-└── helpers/
-    └── toProfitLossDto.ts     # PNL calculation
-```
-
 ## Advanced Examples
 
 ### Multi-Symbol Live Trading
@@ -854,6 +819,24 @@ await Promise.all(
     }
   })
 );
+```
+
+### Backtest Progress Listener
+
+```typescript
+import { listenProgress, Backtest } from "backtest-kit";
+
+listenProgress((event) => {
+  console.log(`Progress: ${(event.progress * 100).toFixed(2)}%`);
+  console.log(`${event.processedFrames} / ${event.totalFrames} frames`);
+  console.log(`Strategy: ${event.strategyName}, Symbol: ${event.symbol}`);
+});
+
+Backtest.background("BTCUSDT", {
+  strategyName: "my-strategy",
+  exchangeName: "binance",
+  frameName: "1d-backtest"
+});
 ```
 
 ### Early Termination

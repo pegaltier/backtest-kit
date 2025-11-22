@@ -8,6 +8,7 @@ import {
   listenSignalBacktest,
   listenDone,
   listenDoneOnce,
+  listenProgress,
 } from "../../build/index.mjs";
 
 import getMockCandles from "../mock/getMockCandles.mjs";
@@ -454,5 +455,121 @@ test("early termination with break stops backtest", async ({ pass, fail }) => {
   }
 
   fail(`Early termination failed: got ${signalCount} signals`);
+
+});
+
+test("listenProgress tracks backtest progress", async ({ pass, fail }) => {
+
+  const [awaiter, { resolve }] = createAwaiter();
+
+  addExchange({
+    exchangeName: "binance-mock-progress",
+    getCandles: async (_symbol, interval, since, limit) => {
+      return await getMockCandles(interval, since, limit);
+    },
+    formatPrice: async (symbol, price) => {
+      return price.toFixed(8);
+    },
+    formatQuantity: async (symbol, quantity) => {
+      return quantity.toFixed(8);
+    },
+  });
+
+  addStrategy({
+    strategyName: "test-strategy-progress",
+    interval: "1m",
+    getSignal: async () => {
+      return {
+        position: "long",
+        note: "progress test",
+        priceOpen: 42000,
+        priceTakeProfit: 43000,
+        priceStopLoss: 41000,
+        minuteEstimatedTime: 60,
+      };
+    },
+  });
+
+  addFrame({
+    frameName: "3d-backtest-progress",
+    interval: "1d",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-04T00:00:00Z"), // 3 days
+  });
+
+  const progressEvents = [];
+  let finalProgress = null;
+
+  const unsubscribe = listenProgress((event) => {
+    if (event.strategyName === "test-strategy-progress") {
+      progressEvents.push({
+        processedFrames: event.processedFrames,
+        totalFrames: event.totalFrames,
+        progress: event.progress,
+        symbol: event.symbol,
+        exchangeName: event.exchangeName,
+      });
+
+      // Capture final progress event
+      if (event.progress === 1.0) {
+        finalProgress = event;
+      }
+    }
+  });
+
+  const doneUnsubscribe = listenDone((event) => {
+    if (event.strategyName === "test-strategy-progress") {
+      resolve(true);
+      doneUnsubscribe();
+    }
+  });
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-strategy-progress",
+    exchangeName: "binance-mock-progress",
+    frameName: "3d-backtest-progress",
+  });
+
+  await awaiter;
+  unsubscribe();
+
+  // Validate progress events
+  const hasProgressEvents = progressEvents.length > 0;
+  const hasFinalProgress = finalProgress !== null && finalProgress.progress === 1.0;
+  const progressIncreasing = progressEvents.every((event, index) => {
+    if (index === 0) return true;
+    return event.processedFrames >= progressEvents[index - 1].processedFrames;
+  });
+  const hasCorrectMetadata = progressEvents.every((event) =>
+    event.symbol === "BTCUSDT" &&
+    event.exchangeName === "binance-mock-progress"
+  );
+
+  if (hasProgressEvents && hasFinalProgress && progressIncreasing && hasCorrectMetadata) {
+    pass(`listenProgress tracked ${progressEvents.length} progress events, final: ${(finalProgress.progress * 100).toFixed(0)}%`);
+    return;
+  }
+
+  if (!hasProgressEvents) {
+    fail("No progress events were emitted");
+    return;
+  }
+
+  if (!hasFinalProgress) {
+    fail("Final progress event (100%) was not emitted");
+    return;
+  }
+
+  if (!progressIncreasing) {
+    fail("Progress events were not monotonically increasing");
+    return;
+  }
+
+  if (!hasCorrectMetadata) {
+    fail("Progress events have incorrect metadata");
+    return;
+  }
+
+  fail("Progress tracking validation failed");
 
 });

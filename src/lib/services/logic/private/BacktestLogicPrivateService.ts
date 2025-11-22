@@ -5,6 +5,10 @@ import { IStrategyTickResultClosed } from "../../../../interfaces/Strategy.inter
 import StrategyGlobalService from "../../global/StrategyGlobalService";
 import ExchangeGlobalService from "../../global/ExchangeGlobalService";
 import FrameGlobalService from "../../global/FrameGlobalService";
+import MethodContextService, {
+  TMethodContextService,
+} from "../../context/MethodContextService";
+import { progressEmitter } from "../../../../config/emitters";
 
 /**
  * Private service for backtest orchestration using async generators.
@@ -30,6 +34,9 @@ export class BacktestLogicPrivateService {
   private readonly frameGlobalService = inject<FrameGlobalService>(
     TYPES.frameGlobalService
   );
+  private readonly methodContextService = inject<TMethodContextService>(
+    TYPES.methodContextService
+  );
 
   /**
    * Runs backtest for a symbol, streaming closed signals as async generator.
@@ -51,11 +58,24 @@ export class BacktestLogicPrivateService {
     });
 
     const timeframes = await this.frameGlobalService.getTimeframe(symbol);
+    const totalFrames = timeframes.length;
 
     let i = 0;
 
     while (i < timeframes.length) {
       const when = timeframes[i];
+
+      // Emit progress event if context is available
+      {
+        await progressEmitter.next({
+          exchangeName: this.methodContextService.context.exchangeName,
+          strategyName: this.methodContextService.context.strategyName,
+          symbol,
+          totalFrames,
+          processedFrames: i,
+          progress: totalFrames > 0 ? i / totalFrames : 0,
+        });
+      }
 
       const result = await this.strategyGlobalService.tick(symbol, when, true);
 
@@ -115,6 +135,18 @@ export class BacktestLogicPrivateService {
       }
 
       i++;
+    }
+
+    // Emit final progress event (100%)
+    {
+      await progressEmitter.next({
+        exchangeName: this.methodContextService.context.exchangeName,
+        strategyName: this.methodContextService.context.strategyName,
+        symbol,
+        totalFrames,
+        processedFrames: totalFrames,
+        progress: 1.0,
+      });
     }
   }
 }
