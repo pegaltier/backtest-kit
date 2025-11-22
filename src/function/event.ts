@@ -1,6 +1,7 @@
 import backtest from "../lib";
-import { signalEmitter, signalLiveEmitter, signalBacktestEmitter, errorEmitter } from "../config/emitters";
+import { signalEmitter, signalLiveEmitter, signalBacktestEmitter, errorEmitter, doneEmitter } from "../config/emitters";
 import { IStrategyTickResult } from "../interfaces/Strategy.interface";
+import { DoneContract } from "../contract/Done.contract";
 import { queued } from "functools-kit";
 
 const LISTEN_SIGNAL_METHOD_NAME = "event.listenSignal";
@@ -10,6 +11,8 @@ const LISTEN_SIGNAL_LIVE_ONCE_METHOD_NAME = "event.listenSignalLiveOnce";
 const LISTEN_SIGNAL_BACKTEST_METHOD_NAME = "event.listenSignalBacktest";
 const LISTEN_SIGNAL_BACKTEST_ONCE_METHOD_NAME = "event.listenSignalBacktestOnce";
 const LISTEN_ERROR_METHOD_NAME = "event.listenError";
+const LISTEN_DONE_METHOD_NAME = "event.listenDone";
+const LISTEN_DONE_ONCE_METHOD_NAME = "event.listenDoneOnce";
 
 /**
  * Subscribes to all signal events with queued async processing.
@@ -215,4 +218,74 @@ export function listenSignalBacktestOnce(
 export function listenError(fn: (error: Error) => void) {
   backtest.loggerService.log(LISTEN_ERROR_METHOD_NAME);
   return errorEmitter.subscribe(queued(async (error) => fn(error)));
+}
+
+/**
+ * Subscribes to background execution completion events with queued async processing.
+ *
+ * Emits when Live.background() or Backtest.background() completes execution.
+ * Events are processed sequentially in order received, even if callback is async.
+ * Uses queued wrapper to prevent concurrent execution of the callback.
+ *
+ * @param fn - Callback function to handle completion events
+ * @returns Unsubscribe function to stop listening to events
+ *
+ * @example
+ * ```typescript
+ * import { listenDone, Live } from "backtest-kit";
+ *
+ * const unsubscribe = listenDone((event) => {
+ *   console.log("Completed:", event.strategyName, event.exchangeName, event.symbol);
+ *   if (event.backtest) {
+ *     console.log("Backtest mode completed");
+ *   }
+ * });
+ *
+ * Live.background("BTCUSDT", {
+ *   strategyName: "my-strategy",
+ *   exchangeName: "binance"
+ * });
+ *
+ * // Later: stop listening
+ * unsubscribe();
+ * ```
+ */
+export function listenDone(fn: (event: DoneContract) => void) {
+  backtest.loggerService.log(LISTEN_DONE_METHOD_NAME);
+  return doneEmitter.subscribe(queued(async (event) => fn(event)));
+}
+
+/**
+ * Subscribes to filtered background execution completion events with one-time execution.
+ *
+ * Emits when Live.background() or Backtest.background() completes execution.
+ * Executes callback once and automatically unsubscribes.
+ *
+ * @param filterFn - Predicate to filter which events trigger the callback
+ * @param fn - Callback function to handle the filtered event (called only once)
+ * @returns Unsubscribe function to cancel the listener before it fires
+ *
+ * @example
+ * ```typescript
+ * import { listenDoneOnce, Backtest } from "backtest-kit";
+ *
+ * // Wait for first backtest completion
+ * listenDoneOnce(
+ *   (event) => event.backtest && event.symbol === "BTCUSDT",
+ *   (event) => console.log("BTCUSDT backtest completed:", event.strategyName)
+ * );
+ *
+ * Backtest.background("BTCUSDT", {
+ *   strategyName: "my-strategy",
+ *   exchangeName: "binance",
+ *   frameName: "1d-backtest"
+ * });
+ * ```
+ */
+export function listenDoneOnce(
+  filterFn: (event: DoneContract) => boolean,
+  fn: (event: DoneContract) => void
+) {
+  backtest.loggerService.log(LISTEN_DONE_ONCE_METHOD_NAME);
+  return doneEmitter.filter(filterFn).once(fn);
 }
