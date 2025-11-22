@@ -46,6 +46,14 @@ Consumes all live trading results internally without exposing them.
 Infinite loop - will run until process is stopped or crashes.
 Useful for running live trading for side effects only (callbacks, persistence).
 
+### getData
+
+```ts
+getData: (strategyName: string) => Promise<LiveStatistics>
+```
+
+Gets statistical data from all live trading events for a strategy.
+
 ### getReport
 
 ```ts

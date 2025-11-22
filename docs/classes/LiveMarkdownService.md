@@ -50,6 +50,15 @@ Should be called from IStrategyCallbacks.onTick.
 
 Processes all event types: idle, opened, active, closed.
 
+### getData
+
+```ts
+getData: (strategyName: string) => Promise<LiveStatistics>
+```
+
+Gets statistical data from all live trading events for a strategy.
+Delegates to ReportStorage.getData().
+
 ### getReport
 
 ```ts

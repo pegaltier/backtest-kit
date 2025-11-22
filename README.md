@@ -22,7 +22,7 @@
 - 🛑 **Graceful Shutdown** - Live.background() waits for open positions to close before stopping
 - 💉 **Strategy Dependency Injection** - addStrategy() enables DI pattern for trading strategies
 - 🔍 **Schema Reflection API** - listExchanges(), listStrategies(), listFrames() for runtime introspection
-- 🧪 **Comprehensive Test Coverage** - 30+ unit tests covering validation, PNL, callbacks, reports, and event system
+- 🧪 **Comprehensive Test Coverage** - 45+ unit tests covering validation, PNL, callbacks, reports, and event system
 
 ## Installation
 

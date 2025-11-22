@@ -49,6 +49,15 @@ Should be called from IStrategyCallbacks.onTick.
 
 Only processes closed signals - opened signals are ignored.
 
+### getData
+
+```ts
+getData: (strategyName: string) => Promise<BacktestStatistics>
+```
+
+Gets statistical data from all closed signals for a strategy.
+Delegates to ReportStorage.getData().
+
 ### getReport
 
 ```ts

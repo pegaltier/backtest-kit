@@ -37,6 +37,14 @@ Runs backtest in background without yielding results.
 Consumes all backtest results internally without exposing them.
 Useful for running backtests for side effects only (callbacks, logging).
 
+### getData
+
+```ts
+getData: (strategyName: string) => Promise<BacktestStatistics>
+```
+
+Gets statistical data from all closed signals for a strategy.
+
 ### getReport
 
 ```ts

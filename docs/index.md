@@ -7,6 +7,8 @@ group: docs
 
 ## Classes
 
+- [BacktestMarkdownService](classes/BacktestMarkdownService.md)
+- [LiveMarkdownService](classes/LiveMarkdownService.md)
 - [PersistSignalUtils](classes/PersistSignalUtils.md)
 - [BacktestUtils](classes/BacktestUtils.md)
 - [LiveUtils](classes/LiveUtils.md)
@@ -28,8 +30,6 @@ group: docs
 - [LiveLogicPublicService](classes/LiveLogicPublicService.md)
 - [LiveGlobalService](classes/LiveGlobalService.md)
 - [BacktestGlobalService](classes/BacktestGlobalService.md)
-- [BacktestMarkdownService](classes/BacktestMarkdownService.md)
-- [LiveMarkdownService](classes/LiveMarkdownService.md)
 - [ExchangeValidationService](classes/ExchangeValidationService.md)
 - [StrategyValidationService](classes/StrategyValidationService.md)
 - [FrameValidationService](classes/FrameValidationService.md)
@@ -89,6 +89,9 @@ group: docs
 - [IStrategy](interfaces/IStrategy.md)
 - [DoneContract](interfaces/DoneContract.md)
 - [ProgressContract](interfaces/ProgressContract.md)
+- [BacktestStatistics](interfaces/BacktestStatistics.md)
+- [TickEvent](interfaces/TickEvent.md)
+- [LiveStatistics](interfaces/LiveStatistics.md)
 - [ISignalData](interfaces/ISignalData.md)
 - [IEntity](interfaces/IEntity.md)
 - [IPersistBase](interfaces/IPersistBase.md)
