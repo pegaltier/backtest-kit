@@ -1,4 +1,10 @@
-import { errorData, getErrorMessage, randomString, singleshot, trycatch } from "functools-kit";
+import {
+  errorData,
+  getErrorMessage,
+  randomString,
+  singleshot,
+  trycatch,
+} from "functools-kit";
 import {
   IStrategy,
   ISignalRow,
@@ -91,6 +97,9 @@ const VALIDATE_SIGNAL_FN = (signal: ISignalRow): void => {
 
 const GET_SIGNAL_FN = trycatch(
   async (self: ClientStrategy): Promise<ISignalRow | null> => {
+    if (self._isStopped) {
+      return null;
+    }
     const currentTime = self.params.execution.context.when.getTime();
     {
       const intervalMinutes = INTERVAL_MINUTES[self.params.interval];
@@ -112,7 +121,6 @@ const GET_SIGNAL_FN = trycatch(
     if (!signal) {
       return null;
     }
-
     const signalRow: ISignalRow = {
       id: randomString(),
       ...signal,
@@ -135,7 +143,7 @@ const GET_SIGNAL_FN = trycatch(
         message: getErrorMessage(error),
       });
       errorEmitter.next(error);
-    }
+    },
   }
 );
 
@@ -201,6 +209,7 @@ const WAIT_FOR_INIT_FN = async (self: ClientStrategy) => {
  * ```
  */
 export class ClientStrategy implements IStrategy {
+  _isStopped = false;
   _pendingSignal: ISignalRow | null = null;
   _lastSignalTimestamp: number | null = null;
 
@@ -662,6 +671,33 @@ export class ClientStrategy implements IStrategy {
     }
 
     return result;
+  }
+
+  /**
+   * Stops the strategy from generating new signals.
+   *
+   * Sets internal flag to prevent getSignal from being called.
+   * Does NOT close active pending signals - they continue monitoring until TP/SL/time_expired.
+   *
+   * Use case: Graceful shutdown in live trading without forcing position closure.
+   *
+   * @returns Promise that resolves immediately when stop flag is set
+   *
+   * @example
+   * ```typescript
+   * // In Live.background() cancellation
+   * await strategy.stop();
+   * // Existing signal will continue until natural close
+   * ```
+   */
+  public stop(): Promise<void> {
+    this.params.logger.debug("ClientStrategy stop", {
+      hasPendingSignal: this._pendingSignal !== null,
+    });
+
+    this._isStopped = true;
+
+    return Promise.resolve();
   }
 }
 

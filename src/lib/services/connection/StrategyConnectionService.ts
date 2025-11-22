@@ -137,6 +137,38 @@ export class StrategyConnectionService implements IStrategy {
     }
     return tick;
   };
+
+  /**
+   * Stops the specified strategy from generating new signals.
+   *
+   * Delegates to ClientStrategy.stop() which sets internal flag to prevent
+   * getSignal from being called on subsequent ticks.
+   *
+   * @param strategyName - Name of strategy to stop
+   * @returns Promise that resolves when stop flag is set
+   */
+  public stop = async (strategyName: StrategyName): Promise<void> => {
+    this.loggerService.log("strategyConnectionService stop", {
+      strategyName,
+    });
+    const strategy = this.getStrategy(strategyName);
+    await strategy.stop();
+  };
+
+  /**
+   * Clears the memoized ClientStrategy instance from cache.
+   *
+   * Forces re-initialization of strategy on next getStrategy call.
+   * Useful for resetting strategy state or releasing resources.
+   *
+   * @param strategyName - Name of strategy to clear from cache
+   */
+  public clear = async (strategyName: StrategyName): Promise<void> => {
+    this.loggerService.log("strategyConnectionService clear", {
+      strategyName,
+    });
+    this.getStrategy.clear(strategyName);
+  };
 }
 
 export default StrategyConnectionService;

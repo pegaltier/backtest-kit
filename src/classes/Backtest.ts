@@ -48,6 +48,7 @@ export class BacktestUtils {
       context,
     });
     backtest.backtestMarkdownService.clear(context.strategyName);
+    backtest.strategyGlobalService.clear(context.strategyName);
     return backtest.backtestGlobalService.run(symbol, context);
   };
 
@@ -102,6 +103,7 @@ export class BacktestUtils {
       errorEmitter.next(new Error(getErrorMessage(error)))
     );
     return () => {
+      backtest.strategyGlobalService.stop(context.strategyName);
       isStopped = true;
     };
   };

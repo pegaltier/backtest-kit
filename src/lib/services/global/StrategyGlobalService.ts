@@ -2,7 +2,7 @@ import { inject } from "../../core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../core/types";
 import ExecutionContextService from "../context/ExecutionContextService";
-import { IStrategyBacktestResult, IStrategyTickResult } from "../../../interfaces/Strategy.interface";
+import { IStrategyBacktestResult, IStrategyTickResult, StrategyName } from "../../../interfaces/Strategy.interface";
 import StrategyConnectionService from "../connection/StrategyConnectionService";
 import { ICandleData } from "../../../interfaces/Exchange.interface";
 
@@ -86,6 +86,37 @@ export class StrategyGlobalService {
         backtest,
       }
     );
+  };
+
+  /**
+   * Stops the strategy from generating new signals.
+   *
+   * Delegates to StrategyConnectionService.stop() to set internal flag.
+   * Does not require execution context.
+   *
+   * @param strategyName - Name of strategy to stop
+   * @returns Promise that resolves when stop flag is set
+   */
+  public stop = async (strategyName: StrategyName): Promise<void> => {
+    this.loggerService.log("strategyGlobalService stop", {
+      strategyName,
+    });
+    return await this.strategyConnectionService.stop(strategyName);
+  };
+
+  /**
+   * Clears the memoized ClientStrategy instance from cache.
+   *
+   * Delegates to StrategyConnectionService.clear() to remove strategy from cache.
+   * Forces re-initialization of strategy on next operation.
+   *
+   * @param strategyName - Name of strategy to clear from cache
+   */
+  public clear = async (strategyName: StrategyName): Promise<void> => {
+    this.loggerService.log("strategyGlobalService clear", {
+      strategyName,
+    });
+    return await this.strategyConnectionService.clear(strategyName);
   };
 }
 

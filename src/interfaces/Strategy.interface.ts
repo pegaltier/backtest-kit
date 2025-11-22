@@ -234,6 +234,28 @@ export interface IStrategy {
    * @returns Promise resolving to closed result (always completes signal)
    */
   backtest: (candles: ICandleData[]) => Promise<IStrategyBacktestResult>;
+
+  /**
+   * Stops the strategy from generating new signals.
+   *
+   * Sets internal flag to prevent getSignal from being called on subsequent ticks.
+   * Does NOT force-close active pending signals - they continue monitoring until natural closure (TP/SL/time_expired).
+   *
+   * Use case: Graceful shutdown in live trading mode without abandoning open positions.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @returns Promise that resolves immediately when stop flag is set
+   *
+   * @example
+   * ```typescript
+   * // Graceful shutdown in Live.background() cancellation
+   * const cancel = await Live.background("BTCUSDT", { ... });
+   *
+   * // Later: stop new signals, let existing ones close naturally
+   * await cancel();
+   * ```
+   */
+  stop: (symbol: string) => Promise<void>;
 }
 
 /**

@@ -64,6 +64,7 @@ export class LiveUtils {
       context,
     });
     backtest.liveMarkdownService.clear(context.strategyName);
+    backtest.strategyGlobalService.clear(context.strategyName);
     return backtest.liveGlobalService.run(symbol, context);
   };
 
@@ -117,6 +118,7 @@ export class LiveUtils {
       errorEmitter.next(new Error(getErrorMessage(error)))
     );
     return () => {
+      backtest.strategyGlobalService.stop(context.strategyName);
       isStopped = true;
     };
   };
