@@ -173,6 +173,10 @@ class ReportStorage {
     const stdDev = Math.sqrt(variance);
     const sharpeRatio = stdDev > 0 ? avgPnl / stdDev : 0;
 
+    // Annualized Sharpe Ratio
+    // Multiply by sqrt(365) to annualize
+    const annualizedSharpeRatio = sharpeRatio * Math.sqrt(365);
+
     // Calculate Certainty Ratio
     // Certainty Ratio = Average Win / |Average Loss|
     const wins = this._signalList.filter((s) => s.pnl.pnlPercentage > 0);
@@ -209,6 +213,7 @@ class ReportStorage {
       `**Total PNL:** ${isUnsafe(totalPnl) ? "N/A" : `${totalPnl > 0 ? "+" : ""}${totalPnl.toFixed(2)}% (higher is better)`}`,
       `**Standard Deviation:** ${isUnsafe(stdDev) ? "N/A" : `${stdDev.toFixed(3)}% (lower is better)`}`,
       `**Sharpe Ratio:** ${isUnsafe(sharpeRatio) ? "N/A" : `${sharpeRatio.toFixed(3)} (higher is better)`}`,
+      `**Annualized Sharpe Ratio (sharpeRatio × √365):** ${isUnsafe(annualizedSharpeRatio) ? "N/A" : `${annualizedSharpeRatio.toFixed(3)} (higher is better)`}`,
       `**Certainty Ratio:** ${isUnsafe(certaintyRatio) ? "N/A" : `${certaintyRatio.toFixed(3)} (higher is better)`}`,
       `**Expected Yearly Returns:** ${isUnsafe(expectedYearlyReturns) ? "N/A" : `${expectedYearlyReturns > 0 ? "+" : ""}${expectedYearlyReturns.toFixed(2)}% (higher is better)`}`,
     );
