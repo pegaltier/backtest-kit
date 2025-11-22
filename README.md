@@ -297,6 +297,67 @@ All signals are validated automatically before execution:
 
 Validation errors include detailed messages for debugging.
 
+## Custom Persistence Adapter
+
+By default, signals are persisted to disk using atomic file writes (`./logs/data/signal/`). You can override the persistence layer with a custom adapter (e.g., Redis, MongoDB):
+
+```typescript
+import { PersistBase, PersistSignalAdaper, ISignalData, EntityId } from "backtest-kit";
+import Redis from "ioredis";
+
+// Create custom Redis adapter
+class RedisPersist extends PersistBase<string, ISignalData> {
+  private redis = new Redis({
+    host: "localhost",
+    port: 6379,
+  });
+
+  async waitForInit(initial: boolean): Promise<void> {
+    // Initialize Redis connection if needed
+    await this.redis.ping();
+  }
+
+  async readValue(entityId: EntityId): Promise<ISignalData> {
+    const key = `${this.entityName}:${entityId}`;
+    const data = await this.redis.get(key);
+
+    if (!data) {
+      throw new Error(`Entity ${this.entityName}:${entityId} not found`);
+    }
+
+    return JSON.parse(data);
+  }
+
+  async hasValue(entityId: EntityId): Promise<boolean> {
+    const key = `${this.entityName}:${entityId}`;
+    const exists = await this.redis.exists(key);
+    return exists === 1;
+  }
+
+  async writeValue(entityId: EntityId, entity: ISignalData): Promise<void> {
+    const key = `${this.entityName}:${entityId}`;
+    await this.redis.set(key, JSON.stringify(entity));
+  }
+}
+
+// Register custom adapter
+PersistSignalAdaper.usePersistSignalAdapter(RedisPersist);
+
+// Now all signal persistence uses Redis
+Live.background("BTCUSDT", {
+  strategyName: "my-strategy",
+  exchangeName: "binance"
+});
+```
+
+**Key methods to implement:**
+- `waitForInit(initial)` - Initialize storage connection
+- `readValue(entityId)` - Read entity from storage
+- `hasValue(entityId)` - Check if entity exists
+- `writeValue(entityId, entity)` - Write entity to storage
+
+The adapter is registered globally and applies to all strategies.
+
 ## Interval Throttling
 
 Prevent signal spam with automatic throttling:
