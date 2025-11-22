@@ -16,6 +16,7 @@ import toProfitLossDto from "../helpers/toProfitLossDto";
 import { ICandleData } from "../interfaces/Exchange.interface";
 import { PersistSignalAdaper } from "../classes/Persist";
 import backtest from "../lib";
+import { errorEmitter } from "../config/emitters";
 
 const INTERVAL_MINUTES: Record<SignalInterval, number> = {
   "1m": 1,
@@ -133,6 +134,7 @@ const GET_SIGNAL_FN = trycatch(
         error: errorData(error),
         message: getErrorMessage(error),
       });
+      errorEmitter.next(error);
     }
   }
 );

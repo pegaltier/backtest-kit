@@ -137,7 +137,7 @@ class ReportStorage {
     );
 
     const tableData = [header, ...rows];
-    const table = str.table(tableData);
+    const table = str.newline(tableData.map(row => str.table(row)));
 
     // Calculate statistics
     const totalSignals = this._signalList.length;

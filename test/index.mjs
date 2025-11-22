@@ -4,6 +4,11 @@ import { run } from 'worker-testbed';
 
 import "./spec/exchange.test.mjs";
 import "./spec/event.test.mjs";
+import "./spec/validation.test.mjs";
+import "./spec/backtest.test.mjs";
+import "./spec/pnl.test.mjs";
+import "./spec/report.test.mjs";
+import "./spec/callbacks.test.mjs";
 
 run(import.meta.url, () => {
     console.log("All tests are finished");

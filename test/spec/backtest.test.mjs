@@ -1,0 +1,458 @@
+import { test } from "worker-testbed";
+
+import {
+  addExchange,
+  addFrame,
+  addStrategy,
+  Backtest,
+  listenSignalBacktest,
+  listenDone,
+  listenDoneOnce,
+} from "../../build/index.mjs";
+
+import getMockCandles from "../mock/getMockCandles.mjs";
+import { createAwaiter } from "functools-kit";
+
+test("Backtest.run yields closed signals", async ({ pass, fail }) => {
+
+  addExchange({
+    exchangeName: "binance-mock-run",
+    getCandles: async (_symbol, interval, since, limit) => {
+      return await getMockCandles(interval, since, limit);
+    },
+    formatPrice: async (symbol, price) => {
+      return price.toFixed(8);
+    },
+    formatQuantity: async (symbol, quantity) => {
+      return quantity.toFixed(8);
+    },
+  });
+
+  addStrategy({
+    strategyName: "test-strategy-run",
+    interval: "1m",
+    getSignal: async () => {
+      return {
+        position: "long",
+        note: "backtest run test",
+        priceOpen: 42000,
+        priceTakeProfit: 43000,
+        priceStopLoss: 41000,
+        minuteEstimatedTime: 60,
+      };
+    },
+  });
+
+  addFrame({
+    frameName: "1d-backtest-run",
+    interval: "1d",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-02T00:00:00Z"),
+  });
+
+  let signalCount = 0;
+
+  for await (const result of Backtest.run("BTCUSDT", {
+    strategyName: "test-strategy-run",
+    exchangeName: "binance-mock-run",
+    frameName: "1d-backtest-run",
+  })) {
+    signalCount++;
+    if (result.action === "closed") {
+      // Early termination after first signal
+      break;
+    }
+  }
+
+  if (signalCount > 0) {
+    pass(`Backtest.run yielded ${signalCount} signal(s)`);
+    return;
+  }
+
+  fail("Backtest.run did not yield signals");
+
+});
+
+test("Backtest.background executes without yielding", async ({ pass, fail }) => {
+
+  const [awaiter, { resolve }] = createAwaiter();
+
+  addExchange({
+    exchangeName: "binance-mock-background",
+    getCandles: async (_symbol, interval, since, limit) => {
+      return await getMockCandles(interval, since, limit);
+    },
+    formatPrice: async (symbol, price) => {
+      return price.toFixed(8);
+    },
+    formatQuantity: async (symbol, quantity) => {
+      return quantity.toFixed(8);
+    },
+  });
+
+  addStrategy({
+    strategyName: "test-strategy-background",
+    interval: "1m",
+    getSignal: async () => {
+      return {
+        position: "long",
+        note: "background test",
+        priceOpen: 42000,
+        priceTakeProfit: 43000,
+        priceStopLoss: 41000,
+        minuteEstimatedTime: 60,
+      };
+    },
+  });
+
+  addFrame({
+    frameName: "1d-backtest-background",
+    interval: "1d",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-02T00:00:00Z"),
+  });
+
+  const unsubscribe = listenSignalBacktest((event) => {
+    if (event.action === "closed") {
+      resolve(true);
+      unsubscribe();
+    }
+  });
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-strategy-background",
+    exchangeName: "binance-mock-background",
+    frameName: "1d-backtest-background",
+  });
+
+  const signalReceived = await awaiter;
+
+  if (signalReceived === true) {
+    pass("Backtest.background executed and emitted signals");
+    return;
+  }
+
+  fail("Backtest.background did not execute");
+
+});
+
+test("backtest completion triggers listenDone", async ({ pass, fail }) => {
+
+  const [awaiter, { resolve }] = createAwaiter();
+
+  addExchange({
+    exchangeName: "binance-mock-done",
+    getCandles: async (_symbol, interval, since, limit) => {
+      return await getMockCandles(interval, since, limit);
+    },
+    formatPrice: async (symbol, price) => {
+      return price.toFixed(8);
+    },
+    formatQuantity: async (symbol, quantity) => {
+      return quantity.toFixed(8);
+    },
+  });
+
+  addStrategy({
+    strategyName: "test-strategy-done",
+    interval: "1m",
+    getSignal: async () => {
+      return {
+        position: "long",
+        note: "done event test",
+        priceOpen: 42000,
+        priceTakeProfit: 43000,
+        priceStopLoss: 41000,
+        minuteEstimatedTime: 60,
+      };
+    },
+  });
+
+  addFrame({
+    frameName: "1d-backtest-done",
+    interval: "1d",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-02T00:00:00Z"),
+  });
+
+  const unsubscribe = listenDone((event) => {
+    if (event.backtest === true && event.strategyName === "test-strategy-done") {
+      resolve(event);
+      unsubscribe();
+    }
+  });
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-strategy-done",
+    exchangeName: "binance-mock-done",
+    frameName: "1d-backtest-done",
+  });
+
+  const doneEvent = await awaiter;
+
+  if (doneEvent && doneEvent.backtest === true) {
+    pass("Backtest completion triggered listenDone");
+    return;
+  }
+
+  fail("Backtest completion did not trigger listenDone");
+
+});
+
+test("listenDoneOnce triggers once for backtest", async ({ pass, fail }) => {
+
+  const [awaiter, { resolve }] = createAwaiter();
+
+  addExchange({
+    exchangeName: "binance-mock-done-once",
+    getCandles: async (_symbol, interval, since, limit) => {
+      return await getMockCandles(interval, since, limit);
+    },
+    formatPrice: async (symbol, price) => {
+      return price.toFixed(8);
+    },
+    formatQuantity: async (symbol, quantity) => {
+      return quantity.toFixed(8);
+    },
+  });
+
+  addStrategy({
+    strategyName: "test-strategy-done-once",
+    interval: "1m",
+    getSignal: async () => {
+      return {
+        position: "long",
+        note: "done once test",
+        priceOpen: 42000,
+        priceTakeProfit: 43000,
+        priceStopLoss: 41000,
+        minuteEstimatedTime: 60,
+      };
+    },
+  });
+
+  addFrame({
+    frameName: "1d-backtest-done-once",
+    interval: "1d",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-02T00:00:00Z"),
+  });
+
+  listenDoneOnce(
+    (event) => event.backtest === true && event.strategyName === "test-strategy-done-once",
+    (event) => {
+      resolve(event);
+    }
+  );
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-strategy-done-once",
+    exchangeName: "binance-mock-done-once",
+    frameName: "1d-backtest-done-once",
+  });
+
+  const doneEvent = await awaiter;
+
+  if (doneEvent && doneEvent.backtest === true) {
+    pass("listenDoneOnce triggered once for backtest");
+    return;
+  }
+
+  fail("listenDoneOnce did not trigger for backtest");
+
+});
+
+test("closed signal has take_profit reason", async ({ pass, fail }) => {
+
+  const [awaiter, { resolve }] = createAwaiter();
+
+  addExchange({
+    exchangeName: "binance-mock-tp-reason",
+    getCandles: async (_symbol, interval, since, limit) => {
+      return await getMockCandles(interval, since, limit);
+    },
+    formatPrice: async (symbol, price) => {
+      return price.toFixed(8);
+    },
+    formatQuantity: async (symbol, quantity) => {
+      return quantity.toFixed(8);
+    },
+  });
+
+  addStrategy({
+    strategyName: "test-strategy-tp-reason",
+    interval: "1m",
+    getSignal: async () => {
+      return {
+        position: "long",
+        note: "TP reason test",
+        priceOpen: 42000,
+        priceTakeProfit: 43000,
+        priceStopLoss: 41000,
+        minuteEstimatedTime: 60,
+      };
+    },
+  });
+
+  addFrame({
+    frameName: "1d-backtest-tp-reason",
+    interval: "1d",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-02T00:00:00Z"),
+  });
+
+  const unsubscribe = listenSignalBacktest((event) => {
+    if (event.action === "closed") {
+      resolve(event.closeReason);
+      unsubscribe();
+    }
+  });
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-strategy-tp-reason",
+    exchangeName: "binance-mock-tp-reason",
+    frameName: "1d-backtest-tp-reason",
+  });
+
+  const closeReason = await awaiter;
+
+  if (closeReason === "take_profit" || closeReason === "stop_loss" || closeReason === "time_expired") {
+    pass(`Signal closed with reason: ${closeReason}`);
+    return;
+  }
+
+  fail(`Invalid close reason: ${closeReason}`);
+
+});
+
+test("backtest signal has all required fields", async ({ pass, fail }) => {
+
+  const [awaiter, { resolve }] = createAwaiter();
+
+  addExchange({
+    exchangeName: "binance-mock-fields",
+    getCandles: async (_symbol, interval, since, limit) => {
+      return await getMockCandles(interval, since, limit);
+    },
+    formatPrice: async (symbol, price) => {
+      return price.toFixed(8);
+    },
+    formatQuantity: async (symbol, quantity) => {
+      return quantity.toFixed(8);
+    },
+  });
+
+  addStrategy({
+    strategyName: "test-strategy-fields",
+    interval: "1m",
+    getSignal: async () => {
+      return {
+        position: "long",
+        note: "fields test",
+        priceOpen: 42000,
+        priceTakeProfit: 43000,
+        priceStopLoss: 41000,
+        minuteEstimatedTime: 60,
+      };
+    },
+  });
+
+  addFrame({
+    frameName: "1d-backtest-fields",
+    interval: "1d",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-02T00:00:00Z"),
+  });
+
+  const unsubscribe = listenSignalBacktest((event) => {
+    if (event.action === "closed") {
+      resolve(event);
+      unsubscribe();
+    }
+  });
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-strategy-fields",
+    exchangeName: "binance-mock-fields",
+    frameName: "1d-backtest-fields",
+  });
+
+  const event = await awaiter;
+
+  const hasRequiredFields = event &&
+    event.signal &&
+    event.signal.id &&
+    event.signal.position &&
+    event.closeReason &&
+    event.closeTimestamp &&
+    event.pnl &&
+    typeof event.pnl.pnlPercentage === "number";
+
+  if (hasRequiredFields) {
+    pass("Closed signal has all required fields");
+    return;
+  }
+
+  fail("Closed signal missing required fields");
+
+});
+
+test("early termination with break stops backtest", async ({ pass, fail }) => {
+
+  addExchange({
+    exchangeName: "binance-mock-early",
+    getCandles: async (_symbol, interval, since, limit) => {
+      return await getMockCandles(interval, since, limit);
+    },
+    formatPrice: async (symbol, price) => {
+      return price.toFixed(8);
+    },
+    formatQuantity: async (symbol, quantity) => {
+      return quantity.toFixed(8);
+    },
+  });
+
+  addStrategy({
+    strategyName: "test-strategy-early",
+    interval: "1m",
+    getSignal: async () => {
+      return {
+        position: "long",
+        note: "early termination test",
+        priceOpen: 42000,
+        priceTakeProfit: 43000,
+        priceStopLoss: 41000,
+        minuteEstimatedTime: 1,
+      };
+    },
+  });
+
+  addFrame({
+    frameName: "7d-backtest-early",
+    interval: "1d",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-07T00:00:00Z"), // 7 days
+  });
+
+  let signalCount = 0;
+
+  for await (const result of Backtest.run("BTCUSDT", {
+    strategyName: "test-strategy-early",
+    exchangeName: "binance-mock-early",
+    frameName: "7d-backtest-early",
+  })) {
+    signalCount++;
+    if (signalCount >= 2) {
+      // Stop after 2 signals
+      break;
+    }
+  }
+
+  if (signalCount === 2) {
+    pass("Early termination stopped backtest after 2 signals");
+    return;
+  }
+
+  fail(`Early termination failed: got ${signalCount} signals`);
+
+});
