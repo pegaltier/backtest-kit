@@ -134,7 +134,25 @@ const HEADER_CONTENT =
   "* Portfolio management tracking multiple strategies across symbols\n" +
   "* Educational projects for learning trading system architecture\n" +
   "* Event-driven trading bots with real-time notifications (Telegram, Discord, email)\n" +
-  "* Multi-exchange trading with pluggable exchange adapters\n";
+  "* Multi-exchange trading with pluggable exchange adapters\n" +
+  "\n" +
+  "**Test Coverage:**\n" +
+  "\n" +
+  "The framework includes comprehensive unit tests using worker-testbed (tape-based testing):\n" +
+  "\n" +
+  "* **exchange.test.mjs:** Tests exchange helper functions (getCandles, getAveragePrice, getDate, getMode, formatPrice, formatQuantity) with mock candle data and VWAP calculations\n" +
+  "* **event.test.mjs:** Tests Live.background() execution and event listener system (listenSignalLive, listenSignalLiveOnce, listenDone, listenDoneOnce) for async coordination\n" +
+  "* **validation.test.mjs:** Tests signal validation logic (valid long/short positions, invalid TP/SL relationships, negative price detection, timestamp validation) using listenError for error handling\n" +
+  "* **pnl.test.mjs:** Tests PNL calculation accuracy with realistic fees (0.1%) and slippage (0.1%) simulation\n" +
+  "* **backtest.test.mjs:** Tests Backtest.run() and Backtest.background() with signal lifecycle verification (idle → opened → active → closed), listenDone events, early termination, and all close reasons (take_profit, stop_loss, time_expired)\n" +
+  "* **callbacks.test.mjs:** Tests strategy lifecycle callbacks (onOpen, onClose, onTimeframe) with correct parameter passing, backtest flag verification, and signal object integrity\n" +
+  "* **report.test.mjs:** Tests markdown report generation (Backtest.getReport, Live.getReport) with statistics validation (win rate, average PNL, total PNL, closed signals count) and table formatting\n" +
+  "\n" +
+  "All tests follow consistent patterns:\n" +
+  "* Unique exchange/strategy/frame names per test to prevent cross-contamination\n" +
+  "* Mock candle generator (getMockCandles.mjs) with forward timestamp progression\n" +
+  "* createAwaiter from functools-kit for async coordination\n" +
+  "* Background execution with Backtest.background() and event-driven completion detection\n";
 
 console.log("Loading model");
 

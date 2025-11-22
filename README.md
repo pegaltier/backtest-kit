@@ -21,6 +21,7 @@
 - 📝 **Markdown Reports** - Auto-generated trading reports with statistics (win rate, avg PNL)
 - 🛑 **Graceful Shutdown** - Live.background() waits for open positions to close before stopping
 - 💉 **Strategy Dependency Injection** - addStrategy() enables DI pattern for trading strategies
+- 🧪 **Comprehensive Test Coverage** - 30+ unit tests covering validation, PNL, callbacks, reports, and event system
 
 ## Installation
 
