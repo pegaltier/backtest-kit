@@ -2066,7 +2066,7 @@ declare class FrameSchemaService {
      * @param value - Partial schema updates
      * @throws Error if frame name doesn't exist
      */
-    override(key: FrameName, value: Partial<IFrameSchema>): void;
+    override(key: FrameName, value: Partial<IFrameSchema>): IFrameSchema;
     /**
      * Retrieves a frame schema by name.
      *

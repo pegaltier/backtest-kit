@@ -84,14 +84,9 @@ export class BacktestUtils {
       symbol,
       context,
     });
-    const iterator = this.run(symbol, context);
     let isStopped = false;
     const task = async () => {
-      while (true) {
-        const { done } = await iterator.next();
-        if (done) {
-          break;
-        }
+      for await (const _ of this.run(symbol, context)) {
         if (isStopped) {
           break;
         }

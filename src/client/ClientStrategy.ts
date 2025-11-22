@@ -1,4 +1,4 @@
-import { randomString, singleshot, trycatch } from "functools-kit";
+import { errorData, getErrorMessage, randomString, singleshot, trycatch } from "functools-kit";
 import {
   IStrategy,
   ISignalRow,
@@ -15,6 +15,7 @@ import {
 import toProfitLossDto from "../helpers/toProfitLossDto";
 import { ICandleData } from "../interfaces/Exchange.interface";
 import { PersistSignalAdaper } from "../classes/Persist";
+import backtest from "../lib";
 
 const INTERVAL_MINUTES: Record<SignalInterval, number> = {
   "1m": 1,
@@ -127,6 +128,12 @@ const GET_SIGNAL_FN = trycatch(
   },
   {
     defaultValue: null,
+    fallback: (error) => {
+      backtest.loggerService.warn("ClientStrategy exception thrown", {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      });
+    }
   }
 );
 

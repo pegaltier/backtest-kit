@@ -99,22 +99,10 @@ export class LiveUtils {
       symbol,
       context,
     });
-    const iterator = this.run(symbol, context);
     let isStopped = false;
-    let lastValue:
-      | IStrategyTickResultOpened
-      | IStrategyTickResultClosed
-      | null = null;
     const task = async () => {
-      while (true) {
-        const { value, done } = await iterator.next();
-        if (value) {
-          lastValue = value;
-        }
-        if (done) {
-          break;
-        }
-        if (lastValue?.action === "closed" && isStopped) {
+      for await (const signal of this.run(symbol, context)) {
+        if (signal?.action === "closed" && isStopped) {
           break;
         }
       }
