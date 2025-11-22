@@ -24,6 +24,25 @@ interface Column {
   format: (data: IStrategyTickResultClosed) => string;
 }
 
+/**
+ * Checks if a value is unsafe for display (not a number, NaN, or Infinity).
+ *
+ * @param value - Value to check
+ * @returns true if value is unsafe, false otherwise
+ */
+function isUnsafe(value: number | null): boolean {
+  if (typeof value !== "number") {
+    return true;
+  }
+  if (isNaN(value)) {
+    return true;
+  }
+  if (!isFinite(value)) {
+    return true;
+  }
+  return false;
+}
+
 const columns: Column[] = [
   {
     key: "signalId",
@@ -166,6 +185,8 @@ class ReportStorage {
       : 0;
     const certaintyRatio = avgLoss < 0 ? avgWin / Math.abs(avgLoss) : 0;
 
+    const winRate = (winCount / totalSignals) * 100;
+
     return str.newline(
       `# Backtest Report: ${strategyName}`,
       "",
@@ -173,12 +194,12 @@ class ReportStorage {
       "",
       `**Total signals:** ${totalSignals}`,
       `**Closed signals:** ${totalSignals}`,
-      `**Win rate:** ${((winCount / totalSignals) * 100).toFixed(2)}% (${winCount}W / ${lossCount}L) (higher is better)`,
-      `**Average PNL:** ${avgPnl > 0 ? "+" : ""}${avgPnl.toFixed(2)}% (higher is better)`,
-      `**Total PNL:** ${totalPnl > 0 ? "+" : ""}${totalPnl.toFixed(2)}% (higher is better)`,
-      `**Standard Deviation:** ${stdDev.toFixed(3)}% (lower is better)`,
-      `**Sharpe Ratio:** ${sharpeRatio.toFixed(3)} (higher is better)`,
-      `**Certainty Ratio:** ${certaintyRatio.toFixed(3)} (higher is better)`,
+      `**Win rate:** ${isUnsafe(winRate) ? "N/A" : `${winRate.toFixed(2)}% (${winCount}W / ${lossCount}L) (higher is better)`}`,
+      `**Average PNL:** ${isUnsafe(avgPnl) ? "N/A" : `${avgPnl > 0 ? "+" : ""}${avgPnl.toFixed(2)}% (higher is better)`}`,
+      `**Total PNL:** ${isUnsafe(totalPnl) ? "N/A" : `${totalPnl > 0 ? "+" : ""}${totalPnl.toFixed(2)}% (higher is better)`}`,
+      `**Standard Deviation:** ${isUnsafe(stdDev) ? "N/A" : `${stdDev.toFixed(3)}% (lower is better)`}`,
+      `**Sharpe Ratio:** ${isUnsafe(sharpeRatio) ? "N/A" : `${sharpeRatio.toFixed(3)} (higher is better)`}`,
+      `**Certainty Ratio:** ${isUnsafe(certaintyRatio) ? "N/A" : `${certaintyRatio.toFixed(3)} (higher is better)`}`,
     );
   }
 

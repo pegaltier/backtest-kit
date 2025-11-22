@@ -14,6 +14,25 @@ import { memoize, singleshot, str } from "functools-kit";
 import { signalLiveEmitter } from "../../../config/emitters";
 
 /**
+ * Checks if a value is unsafe for display (not a number, NaN, or Infinity).
+ *
+ * @param value - Value to check
+ * @returns true if value is unsafe, false otherwise
+ */
+function isUnsafe(value: number | null): boolean {
+  if (typeof value !== "number") {
+    return true;
+  }
+  if (isNaN(value)) {
+    return true;
+  }
+  if (!isFinite(value)) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * Unified tick event data for report generation.
  * Contains all information about a tick event regardless of action type.
  */
@@ -350,6 +369,8 @@ class ReportStorage {
       certaintyRatio = avgLoss < 0 ? avgWin / Math.abs(avgLoss) : 0;
     }
 
+    const winRate = (winCount / totalClosed) * 100;
+
     return str.newline(
       `# Live Trading Report: ${strategyName}`,
       "",
@@ -357,26 +378,12 @@ class ReportStorage {
       "",
       `**Total events:** ${this._eventList.length}`,
       `**Closed signals:** ${totalClosed}`,
-      totalClosed > 0
-        ? `**Win rate:** ${((winCount / totalClosed) * 100).toFixed(
-            2
-          )}% (${winCount}W / ${lossCount}L) (higher is better)`
-        : "",
-      totalClosed > 0
-        ? `**Average PNL:** ${avgPnl > 0 ? "+" : ""}${avgPnl.toFixed(2)}% (higher is better)`
-        : "",
-      totalClosed > 0
-        ? `**Total PNL:** ${totalPnl > 0 ? "+" : ""}${totalPnl.toFixed(2)}% (higher is better)`
-        : "",
-      totalClosed > 0
-        ? `**Standard Deviation:** ${stdDev.toFixed(3)}% (lower is better)`
-        : "",
-      totalClosed > 0
-        ? `**Sharpe Ratio:** ${sharpeRatio.toFixed(3)} (higher is better)`
-        : "",
-      totalClosed > 0
-        ? `**Certainty Ratio:** ${certaintyRatio.toFixed(3)} (higher is better)`
-        : "",
+      `**Win rate:** ${isUnsafe(winRate) ? "N/A" : `${winRate.toFixed(2)}% (${winCount}W / ${lossCount}L) (higher is better)`}`,
+      `**Average PNL:** ${isUnsafe(avgPnl) ? "N/A" : `${avgPnl > 0 ? "+" : ""}${avgPnl.toFixed(2)}% (higher is better)`}`,
+      `**Total PNL:** ${isUnsafe(totalPnl) ? "N/A" : `${totalPnl > 0 ? "+" : ""}${totalPnl.toFixed(2)}% (higher is better)`}`,
+      `**Standard Deviation:** ${isUnsafe(stdDev) ? "N/A" : `${stdDev.toFixed(3)}% (lower is better)`}`,
+      `**Sharpe Ratio:** ${isUnsafe(sharpeRatio) ? "N/A" : `${sharpeRatio.toFixed(3)} (higher is better)`}`,
+      `**Certainty Ratio:** ${isUnsafe(certaintyRatio) ? "N/A" : `${certaintyRatio.toFixed(3)} (higher is better)`}`,
     );
   }
 
