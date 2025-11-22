@@ -99,12 +99,12 @@ export class StrategyConnectionService implements IStrategy {
     const tick = await strategy.tick();
     {
       if (this.executionContextService.context.backtest) {
-        signalBacktestEmitter.next(tick);
+        await signalBacktestEmitter.next(tick);
       }
       if (!this.executionContextService.context.backtest) {
-        signalLiveEmitter.next(tick);
+        await signalLiveEmitter.next(tick);
       }
-      signalEmitter.next(tick);
+      await signalEmitter.next(tick);
     }
     return tick;
   };
@@ -131,9 +131,9 @@ export class StrategyConnectionService implements IStrategy {
     const tick = await strategy.backtest(candles);
     {
       if (this.executionContextService.context.backtest) {
-        signalBacktestEmitter.next(tick);
+        await signalBacktestEmitter.next(tick);
       }
-      signalEmitter.next(tick);
+      await signalEmitter.next(tick);
     }
     return tick;
   };
