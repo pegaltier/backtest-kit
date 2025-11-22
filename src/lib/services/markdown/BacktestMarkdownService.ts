@@ -132,12 +132,13 @@ class ReportStorage {
     }
 
     const header = columns.map((col) => col.label);
+    const separator = columns.map(() => "---");
     const rows = this._signalList.map((closedSignal) =>
       columns.map((col) => col.format(closedSignal))
     );
 
-    const tableData = [header, ...rows];
-    const table = str.newline(tableData.map(row => str.table(row)));
+    const tableData = [header, separator, ...rows];
+    const table = str.newline(tableData.map(row => `| ${row.join(" | ")} |`));
 
     // Calculate statistics
     const totalSignals = this._signalList.length;

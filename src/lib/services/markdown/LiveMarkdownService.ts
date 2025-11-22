@@ -305,12 +305,13 @@ class ReportStorage {
     }
 
     const header = columns.map((col) => col.label);
+    const separator = columns.map(() => "---");
     const rows = this._eventList.map((event) =>
       columns.map((col) => col.format(event))
     );
 
-    const tableData = [header, ...rows];
-    const table = str.newline(tableData.map(row => str.table(row)));
+    const tableData = [header, separator, ...rows];
+    const table = str.newline(tableData.map(row => `| ${row.join(" | ")} |`));
 
     // Calculate statistics
     const closedEvents = this._eventList.filter((e) => e.action === "closed");
