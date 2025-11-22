@@ -18,6 +18,14 @@ frameName: string
 
 Unique identifier for this frame
 
+### note
+
+```ts
+note: string
+```
+
+Optional developer note for documentation
+
 ### interval
 
 ```ts

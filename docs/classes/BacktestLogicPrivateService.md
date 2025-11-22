@@ -49,6 +49,12 @@ exchangeGlobalService: any
 frameGlobalService: any
 ```
 
+### methodContextService
+
+```ts
+methodContextService: any
+```
+
 ## Methods
 
 ### run

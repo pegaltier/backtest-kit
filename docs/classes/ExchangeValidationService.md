@@ -40,3 +40,11 @@ validate: (exchangeName: string, source: string) => void
 ```
 
 Validates the existence of an exchange
+
+### list
+
+```ts
+list: () => Promise<IExchangeSchema[]>
+```
+
+Returns a list of all registered exchange schemas

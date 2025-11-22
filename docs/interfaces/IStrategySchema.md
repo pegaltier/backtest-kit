@@ -18,6 +18,14 @@ strategyName: string
 
 Unique strategy identifier for registration
 
+### note
+
+```ts
+note: string
+```
+
+Optional developer note for documentation
+
 ### interval
 
 ```ts

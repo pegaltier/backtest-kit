@@ -40,3 +40,11 @@ validate: (strategyName: string, source: string) => void
 ```
 
 Validates the existence of a strategy
+
+### list
+
+```ts
+list: () => Promise<IStrategySchema[]>
+```
+
+Returns a list of all registered strategy schemas

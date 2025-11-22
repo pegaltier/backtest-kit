@@ -18,6 +18,14 @@ exchangeName: string
 
 Unique exchange identifier for registration
 
+### note
+
+```ts
+note: string
+```
+
+Optional developer note for documentation
+
 ### getCandles
 
 ```ts

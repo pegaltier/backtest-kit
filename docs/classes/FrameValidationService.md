@@ -40,3 +40,11 @@ validate: (frameName: string, source: string) => void
 ```
 
 Validates the existence of a frame
+
+### list
+
+```ts
+list: () => Promise<IFrameSchema[]>
+```
+
+Returns a list of all registered frame schemas
