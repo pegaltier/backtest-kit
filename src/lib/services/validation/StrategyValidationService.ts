@@ -60,6 +60,16 @@ export class StrategyValidationService {
       return true as never;
     }
   ) as (strategyName: StrategyName, source: string) => void;
+
+  /**
+   * Returns a list of all registered strategy schemas
+   * @public
+   * @returns Array of strategy schemas with their configurations
+   */
+  public list = async (): Promise<IStrategySchema[]> => {
+    this.loggerService.log("strategyValidationService list");
+    return Array.from(this._strategyMap.values());
+  };
 }
 
 /**

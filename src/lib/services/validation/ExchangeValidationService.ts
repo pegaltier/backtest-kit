@@ -60,6 +60,16 @@ export class ExchangeValidationService {
       return true as never;
     }
   ) as (exchangeName: ExchangeName, source: string) => void;
+
+  /**
+   * Returns a list of all registered exchange schemas
+   * @public
+   * @returns Array of exchange schemas with their configurations
+   */
+  public list = async (): Promise<IExchangeSchema[]> => {
+    this.loggerService.log("exchangeValidationService list");
+    return Array.from(this._exchangeMap.values());
+  };
 }
 
 /**

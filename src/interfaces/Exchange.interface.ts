@@ -67,6 +67,8 @@ export interface IExchangeCallbacks {
 export interface IExchangeSchema {
   /** Unique exchange identifier for registration */
   exchangeName: ExchangeName;
+  /** Optional developer note for documentation */
+  note?: string;
   /**
    * Fetch candles from data source (API or database).
    *

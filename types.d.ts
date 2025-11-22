@@ -140,6 +140,8 @@ interface IExchangeCallbacks {
 interface IExchangeSchema {
     /** Unique exchange identifier for registration */
     exchangeName: ExchangeName;
+    /** Optional developer note for documentation */
+    note?: string;
     /**
      * Fetch candles from data source (API or database).
      *
@@ -278,6 +280,8 @@ interface IFrameCallbacks {
 interface IFrameSchema {
     /** Unique identifier for this frame */
     frameName: FrameName;
+    /** Optional developer note for documentation */
+    note?: string;
     /** Interval for timestamp generation */
     interval: FrameInterval;
     /** Start of backtest period (inclusive) */
@@ -413,6 +417,8 @@ interface IStrategyCallbacks {
 interface IStrategySchema {
     /** Unique strategy identifier for registration */
     strategyName: StrategyName;
+    /** Optional developer note for documentation */
+    note?: string;
     /** Minimum interval between getSignal calls (throttling) */
     interval: SignalInterval;
     /** Signal generation function (returns null if no signal, validated DTO if signal) */
@@ -665,6 +671,90 @@ declare function addExchange(exchangeSchema: IExchangeSchema): void;
  * ```
  */
 declare function addFrame(frameSchema: IFrameSchema): void;
+
+/**
+ * Returns a list of all registered exchange schemas.
+ *
+ * Retrieves all exchanges that have been registered via addExchange().
+ * Useful for debugging, documentation, or building dynamic UIs.
+ *
+ * @returns Array of exchange schemas with their configurations
+ *
+ * @example
+ * ```typescript
+ * import { listExchanges, addExchange } from "backtest-kit";
+ *
+ * addExchange({
+ *   exchangeName: "binance",
+ *   note: "Binance cryptocurrency exchange",
+ *   getCandles: async (symbol, interval, since, limit) => [...],
+ *   formatPrice: async (symbol, price) => price.toFixed(2),
+ *   formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
+ * });
+ *
+ * const exchanges = listExchanges();
+ * console.log(exchanges);
+ * // [{ exchangeName: "binance", note: "Binance cryptocurrency exchange", ... }]
+ * ```
+ */
+declare function listExchanges(): Promise<IExchangeSchema[]>;
+/**
+ * Returns a list of all registered strategy schemas.
+ *
+ * Retrieves all strategies that have been registered via addStrategy().
+ * Useful for debugging, documentation, or building dynamic UIs.
+ *
+ * @returns Array of strategy schemas with their configurations
+ *
+ * @example
+ * ```typescript
+ * import { listStrategies, addStrategy } from "backtest-kit";
+ *
+ * addStrategy({
+ *   strategyName: "my-strategy",
+ *   note: "Simple moving average crossover strategy",
+ *   interval: "5m",
+ *   getSignal: async (symbol) => ({
+ *     position: "long",
+ *     priceOpen: 50000,
+ *     priceTakeProfit: 51000,
+ *     priceStopLoss: 49000,
+ *     minuteEstimatedTime: 60,
+ *   }),
+ * });
+ *
+ * const strategies = listStrategies();
+ * console.log(strategies);
+ * // [{ strategyName: "my-strategy", note: "Simple moving average...", ... }]
+ * ```
+ */
+declare function listStrategies(): Promise<IStrategySchema[]>;
+/**
+ * Returns a list of all registered frame schemas.
+ *
+ * Retrieves all frames that have been registered via addFrame().
+ * Useful for debugging, documentation, or building dynamic UIs.
+ *
+ * @returns Array of frame schemas with their configurations
+ *
+ * @example
+ * ```typescript
+ * import { listFrames, addFrame } from "backtest-kit";
+ *
+ * addFrame({
+ *   frameName: "1d-backtest",
+ *   note: "One day backtest period for testing",
+ *   interval: "1m",
+ *   startDate: new Date("2024-01-01T00:00:00Z"),
+ *   endDate: new Date("2024-01-02T00:00:00Z"),
+ * });
+ *
+ * const frames = listFrames();
+ * console.log(frames);
+ * // [{ frameName: "1d-backtest", note: "One day backtest...", ... }]
+ * ```
+ */
+declare function listFrames(): Promise<IFrameSchema[]>;
 
 /**
  * Contract for background execution completion events.
@@ -2705,6 +2795,12 @@ declare class ExchangeValidationService {
      * Memoized function to cache validation results
      */
     validate: (exchangeName: ExchangeName, source: string) => void;
+    /**
+     * Returns a list of all registered exchange schemas
+     * @public
+     * @returns Array of exchange schemas with their configurations
+     */
+    list: () => Promise<IExchangeSchema[]>;
 }
 
 /**
@@ -2736,6 +2832,12 @@ declare class StrategyValidationService {
      * Memoized function to cache validation results
      */
     validate: (strategyName: StrategyName, source: string) => void;
+    /**
+     * Returns a list of all registered strategy schemas
+     * @public
+     * @returns Array of strategy schemas with their configurations
+     */
+    list: () => Promise<IStrategySchema[]>;
 }
 
 /**
@@ -2767,6 +2869,12 @@ declare class FrameValidationService {
      * Memoized function to cache validation results
      */
     validate: (frameName: FrameName, source: string) => void;
+    /**
+     * Returns a list of all registered frame schemas
+     * @public
+     * @returns Array of frame schemas with their configurations
+     */
+    list: () => Promise<IFrameSchema[]>;
 }
 
 declare const backtest: {
@@ -2799,4 +2907,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type CandleInterval, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type ICandleData, type IExchangeSchema, type IFrameSchema, type IPersistBase, type ISignalData, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, Live, MethodContextService, PersistBase, PersistSignalAdaper, type ProgressContract, type SignalInterval, type TPersistBase, type TPersistBaseCtor, addExchange, addFrame, addStrategy, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listenDone, listenDoneOnce, listenError, listenProgress, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, setLogger };
+export { Backtest, type CandleInterval, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type ICandleData, type IExchangeSchema, type IFrameSchema, type IPersistBase, type ISignalData, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, Live, MethodContextService, PersistBase, PersistSignalAdaper, type ProgressContract, type SignalInterval, type TPersistBase, type TPersistBaseCtor, addExchange, addFrame, addStrategy, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listExchanges, listFrames, listStrategies, listenDone, listenDoneOnce, listenError, listenProgress, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, setLogger };

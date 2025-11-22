@@ -60,6 +60,16 @@ export class FrameValidationService {
       return true as never;
     }
   ) as (frameName: FrameName, source: string) => void;
+
+  /**
+   * Returns a list of all registered frame schemas
+   * @public
+   * @returns Array of frame schemas with their configurations
+   */
+  public list = async (): Promise<IFrameSchema[]> => {
+    this.loggerService.log("frameValidationService list");
+    return Array.from(this._frameMap.values());
+  };
 }
 
 /**

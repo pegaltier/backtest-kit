@@ -1,5 +1,6 @@
 export { setLogger } from "./function/setup";
 export { addExchange, addStrategy, addFrame } from "./function/add";
+export { listExchanges, listStrategies, listFrames } from "./function/list";
 export {
   listenSignal,
   listenSignalOnce,

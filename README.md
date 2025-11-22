@@ -21,6 +21,7 @@
 - 📝 **Markdown Reports** - Auto-generated trading reports with statistics (win rate, avg PNL)
 - 🛑 **Graceful Shutdown** - Live.background() waits for open positions to close before stopping
 - 💉 **Strategy Dependency Injection** - addStrategy() enables DI pattern for trading strategies
+- 🔍 **Schema Reflection API** - listExchanges(), listStrategies(), listFrames() for runtime introspection
 - 🧪 **Comprehensive Test Coverage** - 30+ unit tests covering validation, PNL, callbacks, reports, and event system
 
 ## Installation
@@ -251,6 +252,75 @@ for await (const result of Live.run("BTCUSDT", {
   }
 }
 ```
+
+### 7. Schema Reflection API (Optional)
+
+Retrieve registered schemas at runtime for debugging, documentation, or building dynamic UIs:
+
+```typescript
+import {
+  addExchange,
+  addStrategy,
+  addFrame,
+  listExchanges,
+  listStrategies,
+  listFrames
+} from "backtest-kit";
+
+// Register schemas with notes
+addExchange({
+  exchangeName: "binance",
+  note: "Binance cryptocurrency exchange with database backend",
+  getCandles: async (symbol, interval, since, limit) => [...],
+  formatPrice: async (symbol, price) => price.toFixed(2),
+  formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
+});
+
+addStrategy({
+  strategyName: "sma-crossover",
+  note: "Simple moving average crossover strategy (50/200)",
+  interval: "5m",
+  getSignal: async (symbol) => ({...}),
+});
+
+addFrame({
+  frameName: "january-2024",
+  note: "Full month backtest for January 2024",
+  interval: "1m",
+  startDate: new Date("2024-01-01"),
+  endDate: new Date("2024-02-01"),
+});
+
+// List all registered schemas
+const exchanges = await listExchanges();
+console.log("Available exchanges:", exchanges.map(e => ({
+  name: e.exchangeName,
+  note: e.note
+})));
+// Output: [{ name: "binance", note: "Binance cryptocurrency exchange..." }]
+
+const strategies = await listStrategies();
+console.log("Available strategies:", strategies.map(s => ({
+  name: s.strategyName,
+  note: s.note,
+  interval: s.interval
+})));
+// Output: [{ name: "sma-crossover", note: "Simple moving average...", interval: "5m" }]
+
+const frames = await listFrames();
+console.log("Available frames:", frames.map(f => ({
+  name: f.frameName,
+  note: f.note,
+  period: `${f.startDate.toISOString()} - ${f.endDate.toISOString()}`
+})));
+// Output: [{ name: "january-2024", note: "Full month backtest...", period: "2024-01-01..." }]
+```
+
+**Use cases:**
+- Generate documentation automatically from registered schemas
+- Build admin dashboards showing available strategies and exchanges
+- Create CLI tools with auto-completion based on registered schemas
+- Validate configuration files against registered schemas
 
 ## Architecture Overview
 

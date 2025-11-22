@@ -75,6 +75,8 @@ export interface IFrameCallbacks {
 export interface IFrameSchema {
   /** Unique identifier for this frame */
   frameName: FrameName;
+  /** Optional developer note for documentation */
+  note?: string;
   /** Interval for timestamp generation */
   interval: FrameInterval;
   /** Start of backtest period (inclusive) */
