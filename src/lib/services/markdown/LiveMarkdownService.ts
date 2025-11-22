@@ -321,25 +321,26 @@ class ReportStorage {
       totalClosed > 0
         ? closedEvents.reduce((sum, e) => sum + (e.pnl || 0), 0) / totalClosed
         : 0;
+    const totalPnl = closedEvents.reduce((sum, e) => sum + (e.pnl || 0), 0);
 
     return str.newline(
       `# Live Trading Report: ${strategyName}`,
       "",
-      `Total events: ${this._eventList.length}`,
-      `Closed signals: ${totalClosed}`,
+      table,
+      "",
+      `**Total events:** ${this._eventList.length}`,
+      `**Closed signals:** ${totalClosed}`,
       totalClosed > 0
-        ? `Win rate: ${((winCount / totalClosed) * 100).toFixed(
+        ? `**Win rate:** ${((winCount / totalClosed) * 100).toFixed(
             2
           )}% (${winCount}W / ${lossCount}L)`
         : "",
       totalClosed > 0
-        ? `Average PNL: ${avgPnl > 0 ? "+" : ""}${avgPnl.toFixed(2)}%`
+        ? `**Average PNL:** ${avgPnl > 0 ? "+" : ""}${avgPnl.toFixed(2)}%`
         : "",
-      "",
-      table,
-      "",
-      "",
-      `*Generated: ${new Date().toISOString()}*`
+      totalClosed > 0
+        ? `**Total PNL:** ${totalPnl > 0 ? "+" : ""}${totalPnl.toFixed(2)}%`
+        : "",
     );
   }
 

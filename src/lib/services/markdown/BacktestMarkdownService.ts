@@ -139,15 +139,23 @@ class ReportStorage {
     const tableData = [header, ...rows];
     const table = str.table(tableData);
 
+    // Calculate statistics
+    const totalSignals = this._signalList.length;
+    const winCount = this._signalList.filter((s) => s.pnl.pnlPercentage > 0).length;
+    const lossCount = this._signalList.filter((s) => s.pnl.pnlPercentage < 0).length;
+    const avgPnl = this._signalList.reduce((sum, s) => sum + s.pnl.pnlPercentage, 0) / totalSignals;
+    const totalPnl = this._signalList.reduce((sum, s) => sum + s.pnl.pnlPercentage, 0);
+
     return str.newline(
       `# Backtest Report: ${strategyName}`,
       "",
-      `Total signals: ${this._signalList.length}`,
-      "",
       table,
       "",
-      "",
-      `*Generated: ${new Date().toISOString()}*`
+      `**Total signals:** ${totalSignals}`,
+      `**Closed signals:** ${totalSignals}`,
+      `**Win rate:** ${((winCount / totalSignals) * 100).toFixed(2)}% (${winCount}W / ${lossCount}L)`,
+      `**Average PNL:** ${avgPnl > 0 ? "+" : ""}${avgPnl.toFixed(2)}%`,
+      `**Total PNL:** ${totalPnl > 0 ? "+" : ""}${totalPnl.toFixed(2)}%`,
     );
   }
 
