@@ -154,6 +154,18 @@ class ReportStorage {
     const stdDev = Math.sqrt(variance);
     const sharpeRatio = stdDev > 0 ? avgPnl / stdDev : 0;
 
+    // Calculate Certainty Ratio
+    // Certainty Ratio = Average Win / |Average Loss|
+    const wins = this._signalList.filter((s) => s.pnl.pnlPercentage > 0);
+    const losses = this._signalList.filter((s) => s.pnl.pnlPercentage < 0);
+    const avgWin = wins.length > 0
+      ? wins.reduce((sum, s) => sum + s.pnl.pnlPercentage, 0) / wins.length
+      : 0;
+    const avgLoss = losses.length > 0
+      ? losses.reduce((sum, s) => sum + s.pnl.pnlPercentage, 0) / losses.length
+      : 0;
+    const certaintyRatio = avgLoss < 0 ? avgWin / Math.abs(avgLoss) : 0;
+
     return str.newline(
       `# Backtest Report: ${strategyName}`,
       "",
@@ -166,6 +178,7 @@ class ReportStorage {
       `**Total PNL:** ${totalPnl > 0 ? "+" : ""}${totalPnl.toFixed(2)}%`,
       `**Standard Deviation:** ${stdDev.toFixed(3)}%`,
       `**Sharpe Ratio:** ${sharpeRatio.toFixed(3)}`,
+      `**Certainty Ratio:** ${certaintyRatio.toFixed(3)}`,
     );
   }
 

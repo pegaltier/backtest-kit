@@ -335,6 +335,21 @@ class ReportStorage {
       sharpeRatio = stdDev > 0 ? avgPnl / stdDev : 0;
     }
 
+    // Calculate Certainty Ratio
+    // Certainty Ratio = Average Win / |Average Loss|
+    let certaintyRatio = 0;
+    if (totalClosed > 0) {
+      const wins = closedEvents.filter((e) => e.pnl && e.pnl > 0);
+      const losses = closedEvents.filter((e) => e.pnl && e.pnl < 0);
+      const avgWin = wins.length > 0
+        ? wins.reduce((sum, e) => sum + (e.pnl || 0), 0) / wins.length
+        : 0;
+      const avgLoss = losses.length > 0
+        ? losses.reduce((sum, e) => sum + (e.pnl || 0), 0) / losses.length
+        : 0;
+      certaintyRatio = avgLoss < 0 ? avgWin / Math.abs(avgLoss) : 0;
+    }
+
     return str.newline(
       `# Live Trading Report: ${strategyName}`,
       "",
@@ -358,6 +373,9 @@ class ReportStorage {
         : "",
       totalClosed > 0
         ? `**Sharpe Ratio:** ${sharpeRatio.toFixed(3)}`
+        : "",
+      totalClosed > 0
+        ? `**Certainty Ratio:** ${certaintyRatio.toFixed(3)}`
         : "",
     );
   }
