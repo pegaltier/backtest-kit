@@ -109,6 +109,25 @@ export class BacktestUtils {
   };
 
   /**
+   * Gets statistical data from all closed signals for a strategy.
+   *
+   * @param strategyName - Strategy name to get data for
+   * @returns Promise resolving to statistical data object
+   *
+   * @example
+   * ```typescript
+   * const stats = await Backtest.getData("my-strategy");
+   * console.log(stats.sharpeRatio, stats.winRate);
+   * ```
+   */
+  public getData = async (strategyName: StrategyName) => {
+    backtest.loggerService.info("BacktestUtils.getData", {
+      strategyName,
+    });
+    return await backtest.backtestMarkdownService.getData(strategyName);
+  };
+
+  /**
    * Generates markdown report with all closed signals for a strategy.
    *
    * @param strategyName - Strategy name to generate report for

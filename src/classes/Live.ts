@@ -124,6 +124,25 @@ export class LiveUtils {
   };
 
   /**
+   * Gets statistical data from all live trading events for a strategy.
+   *
+   * @param strategyName - Strategy name to get data for
+   * @returns Promise resolving to statistical data object
+   *
+   * @example
+   * ```typescript
+   * const stats = await Live.getData("my-strategy");
+   * console.log(stats.sharpeRatio, stats.winRate);
+   * ```
+   */
+  public getData = async (strategyName: StrategyName) => {
+    backtest.loggerService.info("LiveUtils.getData", {
+      strategyName,
+    });
+    return await backtest.liveMarkdownService.getData(strategyName);
+  };
+
+  /**
    * Generates markdown report with all events for a strategy.
    *
    * @param strategyName - Strategy name to generate report for

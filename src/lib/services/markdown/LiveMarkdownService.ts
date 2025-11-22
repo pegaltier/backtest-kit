@@ -66,6 +66,70 @@ interface TickEvent {
 }
 
 /**
+ * Statistical data calculated from live trading results.
+ *
+ * All numeric values are null if calculation is unsafe (NaN, Infinity, etc).
+ * Provides comprehensive metrics for live trading performance analysis.
+ *
+ * @example
+ * ```typescript
+ * const stats = await Live.getData("my-strategy");
+ *
+ * console.log(`Total events: ${stats.totalEvents}`);
+ * console.log(`Closed signals: ${stats.totalClosed}`);
+ * console.log(`Win rate: ${stats.winRate}%`);
+ * console.log(`Sharpe Ratio: ${stats.sharpeRatio}`);
+ *
+ * // Access raw event data (includes idle, opened, active, closed)
+ * stats.eventList.forEach(event => {
+ *   if (event.action === "closed") {
+ *     console.log(`Closed signal: ${event.pnl}%`);
+ *   }
+ * });
+ * ```
+ */
+export interface LiveStatistics {
+  /** Array of all events (idle, opened, active, closed) with full details */
+  eventList: TickEvent[];
+
+  /** Total number of all events (includes idle, opened, active, closed) */
+  totalEvents: number;
+
+  /** Total number of closed signals only */
+  totalClosed: number;
+
+  /** Number of winning closed signals (PNL > 0) */
+  winCount: number;
+
+  /** Number of losing closed signals (PNL < 0) */
+  lossCount: number;
+
+  /** Win rate as percentage (0-100) based on closed signals, null if unsafe. Higher is better. */
+  winRate: number | null;
+
+  /** Average PNL per closed signal as percentage, null if unsafe. Higher is better. */
+  avgPnl: number | null;
+
+  /** Cumulative PNL across all closed signals as percentage, null if unsafe. Higher is better. */
+  totalPnl: number | null;
+
+  /** Standard deviation of returns (volatility metric), null if unsafe. Lower is better. */
+  stdDev: number | null;
+
+  /** Sharpe Ratio (risk-adjusted return = avgPnl / stdDev), null if unsafe. Higher is better. */
+  sharpeRatio: number | null;
+
+  /** Annualized Sharpe Ratio (sharpeRatio × √365), null if unsafe. Higher is better. */
+  annualizedSharpeRatio: number | null;
+
+  /** Certainty Ratio (avgWin / |avgLoss|), null if unsafe. Higher is better. */
+  certaintyRatio: number | null;
+
+  /** Expected yearly returns based on average trade duration and PNL, null if unsafe. Higher is better. */
+  expectedYearlyReturns: number | null;
+}
+
+/**
  * Column configuration for markdown table generation.
  * Defines how to extract and format data from tick events.
  */
@@ -309,13 +373,106 @@ class ReportStorage {
   }
 
   /**
-   * Generates markdown report with all tick events for a strategy.
+   * Calculates statistical data from live trading events (Controller).
+   * Returns null for any unsafe numeric values (NaN, Infinity, etc).
+   *
+   * @returns Statistical data (empty object if no events)
+   */
+  public async getData(): Promise<LiveStatistics> {
+    if (this._eventList.length === 0) {
+      return {
+        eventList: [],
+        totalEvents: 0,
+        totalClosed: 0,
+        winCount: 0,
+        lossCount: 0,
+        winRate: null,
+        avgPnl: null,
+        totalPnl: null,
+        stdDev: null,
+        sharpeRatio: null,
+        annualizedSharpeRatio: null,
+        certaintyRatio: null,
+        expectedYearlyReturns: null,
+      };
+    }
+
+    const closedEvents = this._eventList.filter((e) => e.action === "closed");
+    const totalClosed = closedEvents.length;
+    const winCount = closedEvents.filter((e) => e.pnl && e.pnl > 0).length;
+    const lossCount = closedEvents.filter((e) => e.pnl && e.pnl < 0).length;
+
+    // Calculate basic statistics
+    const avgPnl = totalClosed > 0
+      ? closedEvents.reduce((sum, e) => sum + (e.pnl || 0), 0) / totalClosed
+      : 0;
+    const totalPnl = closedEvents.reduce((sum, e) => sum + (e.pnl || 0), 0);
+    const winRate = (winCount / totalClosed) * 100;
+
+    // Calculate Sharpe Ratio (risk-free rate = 0)
+    let sharpeRatio = 0;
+    let stdDev = 0;
+    if (totalClosed > 0) {
+      const returns = closedEvents.map((e) => e.pnl || 0);
+      const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgPnl, 2), 0) / totalClosed;
+      stdDev = Math.sqrt(variance);
+      sharpeRatio = stdDev > 0 ? avgPnl / stdDev : 0;
+    }
+    const annualizedSharpeRatio = sharpeRatio * Math.sqrt(365);
+
+    // Calculate Certainty Ratio
+    let certaintyRatio = 0;
+    if (totalClosed > 0) {
+      const wins = closedEvents.filter((e) => e.pnl && e.pnl > 0);
+      const losses = closedEvents.filter((e) => e.pnl && e.pnl < 0);
+      const avgWin = wins.length > 0
+        ? wins.reduce((sum, e) => sum + (e.pnl || 0), 0) / wins.length
+        : 0;
+      const avgLoss = losses.length > 0
+        ? losses.reduce((sum, e) => sum + (e.pnl || 0), 0) / losses.length
+        : 0;
+      certaintyRatio = avgLoss < 0 ? avgWin / Math.abs(avgLoss) : 0;
+    }
+
+    // Calculate Expected Yearly Returns
+    let expectedYearlyReturns = 0;
+    if (totalClosed > 0) {
+      const avgDurationMin = closedEvents.reduce(
+        (sum, e) => sum + (e.duration || 0),
+        0
+      ) / totalClosed;
+      const avgDurationDays = avgDurationMin / (60 * 24);
+      const tradesPerYear = avgDurationDays > 0 ? 365 / avgDurationDays : 0;
+      expectedYearlyReturns = avgPnl * tradesPerYear;
+    }
+
+    return {
+      eventList: this._eventList,
+      totalEvents: this._eventList.length,
+      totalClosed,
+      winCount,
+      lossCount,
+      winRate: isUnsafe(winRate) ? null : winRate,
+      avgPnl: isUnsafe(avgPnl) ? null : avgPnl,
+      totalPnl: isUnsafe(totalPnl) ? null : totalPnl,
+      stdDev: isUnsafe(stdDev) ? null : stdDev,
+      sharpeRatio: isUnsafe(sharpeRatio) ? null : sharpeRatio,
+      annualizedSharpeRatio: isUnsafe(annualizedSharpeRatio) ? null : annualizedSharpeRatio,
+      certaintyRatio: isUnsafe(certaintyRatio) ? null : certaintyRatio,
+      expectedYearlyReturns: isUnsafe(expectedYearlyReturns) ? null : expectedYearlyReturns,
+    };
+  }
+
+  /**
+   * Generates markdown report with all tick events for a strategy (View).
    *
    * @param strategyName - Strategy name
    * @returns Markdown formatted report with all events
    */
-  public getReport(strategyName: StrategyName): string {
-    if (this._eventList.length === 0) {
+  public async getReport(strategyName: StrategyName): Promise<string> {
+    const stats = await this.getData();
+
+    if (stats.totalEvents === 0) {
       return str.newline(
         `# Live Trading Report: ${strategyName}`,
         "",
@@ -332,77 +489,21 @@ class ReportStorage {
     const tableData = [header, separator, ...rows];
     const table = str.newline(tableData.map(row => `| ${row.join(" | ")} |`));
 
-    // Calculate statistics
-    const closedEvents = this._eventList.filter((e) => e.action === "closed");
-    const totalClosed = closedEvents.length;
-    const winCount = closedEvents.filter((e) => e.pnl && e.pnl > 0).length;
-    const lossCount = closedEvents.filter((e) => e.pnl && e.pnl < 0).length;
-    const avgPnl =
-      totalClosed > 0
-        ? closedEvents.reduce((sum, e) => sum + (e.pnl || 0), 0) / totalClosed
-        : 0;
-    const totalPnl = closedEvents.reduce((sum, e) => sum + (e.pnl || 0), 0);
-
-    // Calculate Sharpe Ratio (risk-free rate = 0)
-    // Sharpe = Mean Return / Std Dev of Returns
-    let sharpeRatio = 0;
-    let stdDev = 0;
-    if (totalClosed > 0) {
-      const returns = closedEvents.map((e) => e.pnl || 0);
-      const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgPnl, 2), 0) / totalClosed;
-      stdDev = Math.sqrt(variance);
-      sharpeRatio = stdDev > 0 ? avgPnl / stdDev : 0;
-    }
-
-    // Annualized Sharpe Ratio
-    // Multiply by sqrt(365) to annualize
-    const annualizedSharpeRatio = sharpeRatio * Math.sqrt(365);
-
-    // Calculate Certainty Ratio
-    // Certainty Ratio = Average Win / |Average Loss|
-    let certaintyRatio = 0;
-    if (totalClosed > 0) {
-      const wins = closedEvents.filter((e) => e.pnl && e.pnl > 0);
-      const losses = closedEvents.filter((e) => e.pnl && e.pnl < 0);
-      const avgWin = wins.length > 0
-        ? wins.reduce((sum, e) => sum + (e.pnl || 0), 0) / wins.length
-        : 0;
-      const avgLoss = losses.length > 0
-        ? losses.reduce((sum, e) => sum + (e.pnl || 0), 0) / losses.length
-        : 0;
-      certaintyRatio = avgLoss < 0 ? avgWin / Math.abs(avgLoss) : 0;
-    }
-
-    // Calculate Expected Yearly Returns
-    // Based on average trade duration and average PNL
-    let expectedYearlyReturns = 0;
-    if (totalClosed > 0) {
-      const avgDurationMin = closedEvents.reduce(
-        (sum, e) => sum + (e.duration || 0),
-        0
-      ) / totalClosed;
-      const avgDurationDays = avgDurationMin / (60 * 24);
-      const tradesPerYear = avgDurationDays > 0 ? 365 / avgDurationDays : 0;
-      expectedYearlyReturns = avgPnl * tradesPerYear;
-    }
-
-    const winRate = (winCount / totalClosed) * 100;
-
     return str.newline(
       `# Live Trading Report: ${strategyName}`,
       "",
       table,
       "",
-      `**Total events:** ${this._eventList.length}`,
-      `**Closed signals:** ${totalClosed}`,
-      `**Win rate:** ${isUnsafe(winRate) ? "N/A" : `${winRate.toFixed(2)}% (${winCount}W / ${lossCount}L) (higher is better)`}`,
-      `**Average PNL:** ${isUnsafe(avgPnl) ? "N/A" : `${avgPnl > 0 ? "+" : ""}${avgPnl.toFixed(2)}% (higher is better)`}`,
-      `**Total PNL:** ${isUnsafe(totalPnl) ? "N/A" : `${totalPnl > 0 ? "+" : ""}${totalPnl.toFixed(2)}% (higher is better)`}`,
-      `**Standard Deviation:** ${isUnsafe(stdDev) ? "N/A" : `${stdDev.toFixed(3)}% (lower is better)`}`,
-      `**Sharpe Ratio:** ${isUnsafe(sharpeRatio) ? "N/A" : `${sharpeRatio.toFixed(3)} (higher is better)`}`,
-      `**Annualized Sharpe Ratio (sharpeRatio × √365):** ${isUnsafe(annualizedSharpeRatio) ? "N/A" : `${annualizedSharpeRatio.toFixed(3)} (higher is better)`}`,
-      `**Certainty Ratio:** ${isUnsafe(certaintyRatio) ? "N/A" : `${certaintyRatio.toFixed(3)} (higher is better)`}`,
-      `**Expected Yearly Returns:** ${isUnsafe(expectedYearlyReturns) ? "N/A" : `${expectedYearlyReturns > 0 ? "+" : ""}${expectedYearlyReturns.toFixed(2)}% (higher is better)`}`,
+      `**Total events:** ${stats.totalEvents}`,
+      `**Closed signals:** ${stats.totalClosed}`,
+      `**Win rate:** ${stats.winRate === null ? "N/A" : `${stats.winRate.toFixed(2)}% (${stats.winCount}W / ${stats.lossCount}L) (higher is better)`}`,
+      `**Average PNL:** ${stats.avgPnl === null ? "N/A" : `${stats.avgPnl > 0 ? "+" : ""}${stats.avgPnl.toFixed(2)}% (higher is better)`}`,
+      `**Total PNL:** ${stats.totalPnl === null ? "N/A" : `${stats.totalPnl > 0 ? "+" : ""}${stats.totalPnl.toFixed(2)}% (higher is better)`}`,
+      `**Standard Deviation:** ${stats.stdDev === null ? "N/A" : `${stats.stdDev.toFixed(3)}% (lower is better)`}`,
+      `**Sharpe Ratio:** ${stats.sharpeRatio === null ? "N/A" : `${stats.sharpeRatio.toFixed(3)} (higher is better)`}`,
+      `**Annualized Sharpe Ratio:** ${stats.annualizedSharpeRatio === null ? "N/A" : `${stats.annualizedSharpeRatio.toFixed(3)} (higher is better)`}`,
+      `**Certainty Ratio:** ${stats.certaintyRatio === null ? "N/A" : `${stats.certaintyRatio.toFixed(3)} (higher is better)`}`,
+      `**Expected Yearly Returns:** ${stats.expectedYearlyReturns === null ? "N/A" : `${stats.expectedYearlyReturns > 0 ? "+" : ""}${stats.expectedYearlyReturns.toFixed(2)}% (higher is better)`}`,
     );
   }
 
@@ -416,7 +517,7 @@ class ReportStorage {
     strategyName: StrategyName,
     path = "./logs/live"
   ): Promise<void> {
-    const markdown = this.getReport(strategyName);
+    const markdown = await this.getReport(strategyName);
 
     try {
       const dir = join(process.cwd(), path);
@@ -513,6 +614,28 @@ export class LiveMarkdownService {
     } else if (data.action === "closed") {
       storage.addClosedEvent(data);
     }
+  };
+
+  /**
+   * Gets statistical data from all live trading events for a strategy.
+   * Delegates to ReportStorage.getData().
+   *
+   * @param strategyName - Strategy name to get data for
+   * @returns Statistical data object with all metrics
+   *
+   * @example
+   * ```typescript
+   * const service = new LiveMarkdownService();
+   * const stats = await service.getData("my-strategy");
+   * console.log(stats.sharpeRatio, stats.winRate);
+   * ```
+   */
+  public getData = async (strategyName: StrategyName): Promise<LiveStatistics> => {
+    this.loggerService.log("liveMarkdownService getData", {
+      strategyName,
+    });
+    const storage = this.getStorage(strategyName);
+    return storage.getData();
   };
 
   /**

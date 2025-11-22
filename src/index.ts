@@ -46,6 +46,9 @@ export { FrameInterval, IFrameSchema } from "./interfaces/Frame.interface";
 export { DoneContract } from "./contract/Done.contract";
 export { ProgressContract } from "./contract/Progress.contract";
 
+export type { BacktestStatistics } from "./lib/services/markdown/BacktestMarkdownService";
+export type { LiveStatistics } from "./lib/services/markdown/LiveMarkdownService";
+
 export { ExecutionContextService } from "./lib/services/context/ExecutionContextService";
 export { MethodContextService } from "./lib/services/context/MethodContextService";
 

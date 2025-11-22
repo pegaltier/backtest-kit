@@ -1178,6 +1178,416 @@ declare function getDate(): Promise<Date>;
  */
 declare function getMode(): Promise<"backtest" | "live">;
 
+/**
+ * Statistical data calculated from backtest results.
+ *
+ * All numeric values are null if calculation is unsafe (NaN, Infinity, etc).
+ * Provides comprehensive metrics for strategy performance analysis.
+ *
+ * @example
+ * ```typescript
+ * const stats = await Backtest.getData("my-strategy");
+ *
+ * console.log(`Total signals: ${stats.totalSignals}`);
+ * console.log(`Win rate: ${stats.winRate}%`);
+ * console.log(`Sharpe Ratio: ${stats.sharpeRatio}`);
+ *
+ * // Access raw signal data
+ * stats.signalList.forEach(signal => {
+ *   console.log(`Signal ${signal.signal.id}: ${signal.pnl.pnlPercentage}%`);
+ * });
+ * ```
+ */
+interface BacktestStatistics {
+    /** Array of all closed signals with full details (price, PNL, timestamps, etc.) */
+    signalList: IStrategyTickResultClosed[];
+    /** Total number of closed signals */
+    totalSignals: number;
+    /** Number of winning signals (PNL > 0) */
+    winCount: number;
+    /** Number of losing signals (PNL < 0) */
+    lossCount: number;
+    /** Win rate as percentage (0-100), null if unsafe. Higher is better. */
+    winRate: number | null;
+    /** Average PNL per signal as percentage, null if unsafe. Higher is better. */
+    avgPnl: number | null;
+    /** Cumulative PNL across all signals as percentage, null if unsafe. Higher is better. */
+    totalPnl: number | null;
+    /** Standard deviation of returns (volatility metric), null if unsafe. Lower is better. */
+    stdDev: number | null;
+    /** Sharpe Ratio (risk-adjusted return = avgPnl / stdDev), null if unsafe. Higher is better. */
+    sharpeRatio: number | null;
+    /** Annualized Sharpe Ratio (sharpeRatio × √365), null if unsafe. Higher is better. */
+    annualizedSharpeRatio: number | null;
+    /** Certainty Ratio (avgWin / |avgLoss|), null if unsafe. Higher is better. */
+    certaintyRatio: number | null;
+    /** Expected yearly returns based on average trade duration and PNL, null if unsafe. Higher is better. */
+    expectedYearlyReturns: number | null;
+}
+/**
+ * Service for generating and saving backtest markdown reports.
+ *
+ * Features:
+ * - Listens to signal events via onTick callback
+ * - Accumulates closed signals per strategy using memoized storage
+ * - Generates markdown tables with detailed signal information
+ * - Saves reports to disk in logs/backtest/{strategyName}.md
+ *
+ * @example
+ * ```typescript
+ * const service = new BacktestMarkdownService();
+ *
+ * // Add to strategy callbacks
+ * addStrategy({
+ *   strategyName: "my-strategy",
+ *   callbacks: {
+ *     onTick: (symbol, result, backtest) => {
+ *       service.tick(result);
+ *     }
+ *   }
+ * });
+ *
+ * // After backtest, generate and save report
+ * await service.saveReport("my-strategy");
+ * ```
+ */
+declare class BacktestMarkdownService {
+    /** Logger service for debug output */
+    private readonly loggerService;
+    /**
+     * Memoized function to get or create ReportStorage for a strategy.
+     * Each strategy gets its own isolated storage instance.
+     */
+    private getStorage;
+    /**
+     * Processes tick events and accumulates closed signals.
+     * Should be called from IStrategyCallbacks.onTick.
+     *
+     * Only processes closed signals - opened signals are ignored.
+     *
+     * @param data - Tick result from strategy execution (opened or closed)
+     *
+     * @example
+     * ```typescript
+     * const service = new BacktestMarkdownService();
+     *
+     * callbacks: {
+     *   onTick: (symbol, result, backtest) => {
+     *     service.tick(result);
+     *   }
+     * }
+     * ```
+     */
+    private tick;
+    /**
+     * Gets statistical data from all closed signals for a strategy.
+     * Delegates to ReportStorage.getData().
+     *
+     * @param strategyName - Strategy name to get data for
+     * @returns Statistical data object with all metrics
+     *
+     * @example
+     * ```typescript
+     * const service = new BacktestMarkdownService();
+     * const stats = await service.getData("my-strategy");
+     * console.log(stats.sharpeRatio, stats.winRate);
+     * ```
+     */
+    getData: (strategyName: StrategyName) => Promise<BacktestStatistics>;
+    /**
+     * Generates markdown report with all closed signals for a strategy.
+     * Delegates to ReportStorage.generateReport().
+     *
+     * @param strategyName - Strategy name to generate report for
+     * @returns Markdown formatted report string with table of all closed signals
+     *
+     * @example
+     * ```typescript
+     * const service = new BacktestMarkdownService();
+     * const markdown = await service.getReport("my-strategy");
+     * console.log(markdown);
+     * ```
+     */
+    getReport: (strategyName: StrategyName) => Promise<string>;
+    /**
+     * Saves strategy report to disk.
+     * Creates directory if it doesn't exist.
+     * Delegates to ReportStorage.dump().
+     *
+     * @param strategyName - Strategy name to save report for
+     * @param path - Directory path to save report (default: "./logs/backtest")
+     *
+     * @example
+     * ```typescript
+     * const service = new BacktestMarkdownService();
+     *
+     * // Save to default path: ./logs/backtest/my-strategy.md
+     * await service.dump("my-strategy");
+     *
+     * // Save to custom path: ./custom/path/my-strategy.md
+     * await service.dump("my-strategy", "./custom/path");
+     * ```
+     */
+    dump: (strategyName: StrategyName, path?: string) => Promise<void>;
+    /**
+     * Clears accumulated signal data from storage.
+     * If strategyName is provided, clears only that strategy's data.
+     * If strategyName is omitted, clears all strategies' data.
+     *
+     * @param strategyName - Optional strategy name to clear specific strategy data
+     *
+     * @example
+     * ```typescript
+     * const service = new BacktestMarkdownService();
+     *
+     * // Clear specific strategy data
+     * await service.clear("my-strategy");
+     *
+     * // Clear all strategies' data
+     * await service.clear();
+     * ```
+     */
+    clear: (strategyName?: StrategyName) => Promise<void>;
+    /**
+     * Initializes the service by subscribing to backtest signal events.
+     * Uses singleshot to ensure initialization happens only once.
+     * Automatically called on first use.
+     *
+     * @example
+     * ```typescript
+     * const service = new BacktestMarkdownService();
+     * await service.init(); // Subscribe to backtest events
+     * ```
+     */
+    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+}
+
+/**
+ * Unified tick event data for report generation.
+ * Contains all information about a tick event regardless of action type.
+ */
+interface TickEvent {
+    /** Event timestamp in milliseconds */
+    timestamp: number;
+    /** Event action type */
+    action: "idle" | "opened" | "active" | "closed";
+    /** Trading pair symbol (only for non-idle events) */
+    symbol?: string;
+    /** Signal ID (only for opened/active/closed) */
+    signalId?: string;
+    /** Position type (only for opened/active/closed) */
+    position?: string;
+    /** Signal note (only for opened/active/closed) */
+    note?: string;
+    /** Current price */
+    currentPrice: number;
+    /** Open price (only for opened/active/closed) */
+    openPrice?: number;
+    /** Take profit price (only for opened/active/closed) */
+    takeProfit?: number;
+    /** Stop loss price (only for opened/active/closed) */
+    stopLoss?: number;
+    /** PNL percentage (only for closed) */
+    pnl?: number;
+    /** Close reason (only for closed) */
+    closeReason?: string;
+    /** Duration in minutes (only for closed) */
+    duration?: number;
+}
+/**
+ * Statistical data calculated from live trading results.
+ *
+ * All numeric values are null if calculation is unsafe (NaN, Infinity, etc).
+ * Provides comprehensive metrics for live trading performance analysis.
+ *
+ * @example
+ * ```typescript
+ * const stats = await Live.getData("my-strategy");
+ *
+ * console.log(`Total events: ${stats.totalEvents}`);
+ * console.log(`Closed signals: ${stats.totalClosed}`);
+ * console.log(`Win rate: ${stats.winRate}%`);
+ * console.log(`Sharpe Ratio: ${stats.sharpeRatio}`);
+ *
+ * // Access raw event data (includes idle, opened, active, closed)
+ * stats.eventList.forEach(event => {
+ *   if (event.action === "closed") {
+ *     console.log(`Closed signal: ${event.pnl}%`);
+ *   }
+ * });
+ * ```
+ */
+interface LiveStatistics {
+    /** Array of all events (idle, opened, active, closed) with full details */
+    eventList: TickEvent[];
+    /** Total number of all events (includes idle, opened, active, closed) */
+    totalEvents: number;
+    /** Total number of closed signals only */
+    totalClosed: number;
+    /** Number of winning closed signals (PNL > 0) */
+    winCount: number;
+    /** Number of losing closed signals (PNL < 0) */
+    lossCount: number;
+    /** Win rate as percentage (0-100) based on closed signals, null if unsafe. Higher is better. */
+    winRate: number | null;
+    /** Average PNL per closed signal as percentage, null if unsafe. Higher is better. */
+    avgPnl: number | null;
+    /** Cumulative PNL across all closed signals as percentage, null if unsafe. Higher is better. */
+    totalPnl: number | null;
+    /** Standard deviation of returns (volatility metric), null if unsafe. Lower is better. */
+    stdDev: number | null;
+    /** Sharpe Ratio (risk-adjusted return = avgPnl / stdDev), null if unsafe. Higher is better. */
+    sharpeRatio: number | null;
+    /** Annualized Sharpe Ratio (sharpeRatio × √365), null if unsafe. Higher is better. */
+    annualizedSharpeRatio: number | null;
+    /** Certainty Ratio (avgWin / |avgLoss|), null if unsafe. Higher is better. */
+    certaintyRatio: number | null;
+    /** Expected yearly returns based on average trade duration and PNL, null if unsafe. Higher is better. */
+    expectedYearlyReturns: number | null;
+}
+/**
+ * Service for generating and saving live trading markdown reports.
+ *
+ * Features:
+ * - Listens to all signal events via onTick callback
+ * - Accumulates all events (idle, opened, active, closed) per strategy
+ * - Generates markdown tables with detailed event information
+ * - Provides trading statistics (win rate, average PNL)
+ * - Saves reports to disk in logs/live/{strategyName}.md
+ *
+ * @example
+ * ```typescript
+ * const service = new LiveMarkdownService();
+ *
+ * // Add to strategy callbacks
+ * addStrategy({
+ *   strategyName: "my-strategy",
+ *   callbacks: {
+ *     onTick: (symbol, result, backtest) => {
+ *       if (!backtest) {
+ *         service.tick(result);
+ *       }
+ *     }
+ *   }
+ * });
+ *
+ * // Later: generate and save report
+ * await service.dump("my-strategy");
+ * ```
+ */
+declare class LiveMarkdownService {
+    /** Logger service for debug output */
+    private readonly loggerService;
+    /**
+     * Memoized function to get or create ReportStorage for a strategy.
+     * Each strategy gets its own isolated storage instance.
+     */
+    private getStorage;
+    /**
+     * Processes tick events and accumulates all event types.
+     * Should be called from IStrategyCallbacks.onTick.
+     *
+     * Processes all event types: idle, opened, active, closed.
+     *
+     * @param data - Tick result from strategy execution
+     *
+     * @example
+     * ```typescript
+     * const service = new LiveMarkdownService();
+     *
+     * callbacks: {
+     *   onTick: (symbol, result, backtest) => {
+     *     if (!backtest) {
+     *       service.tick(result);
+     *     }
+     *   }
+     * }
+     * ```
+     */
+    private tick;
+    /**
+     * Gets statistical data from all live trading events for a strategy.
+     * Delegates to ReportStorage.getData().
+     *
+     * @param strategyName - Strategy name to get data for
+     * @returns Statistical data object with all metrics
+     *
+     * @example
+     * ```typescript
+     * const service = new LiveMarkdownService();
+     * const stats = await service.getData("my-strategy");
+     * console.log(stats.sharpeRatio, stats.winRate);
+     * ```
+     */
+    getData: (strategyName: StrategyName) => Promise<LiveStatistics>;
+    /**
+     * Generates markdown report with all events for a strategy.
+     * Delegates to ReportStorage.getReport().
+     *
+     * @param strategyName - Strategy name to generate report for
+     * @returns Markdown formatted report string with table of all events
+     *
+     * @example
+     * ```typescript
+     * const service = new LiveMarkdownService();
+     * const markdown = await service.getReport("my-strategy");
+     * console.log(markdown);
+     * ```
+     */
+    getReport: (strategyName: StrategyName) => Promise<string>;
+    /**
+     * Saves strategy report to disk.
+     * Creates directory if it doesn't exist.
+     * Delegates to ReportStorage.dump().
+     *
+     * @param strategyName - Strategy name to save report for
+     * @param path - Directory path to save report (default: "./logs/live")
+     *
+     * @example
+     * ```typescript
+     * const service = new LiveMarkdownService();
+     *
+     * // Save to default path: ./logs/live/my-strategy.md
+     * await service.dump("my-strategy");
+     *
+     * // Save to custom path: ./custom/path/my-strategy.md
+     * await service.dump("my-strategy", "./custom/path");
+     * ```
+     */
+    dump: (strategyName: StrategyName, path?: string) => Promise<void>;
+    /**
+     * Clears accumulated event data from storage.
+     * If strategyName is provided, clears only that strategy's data.
+     * If strategyName is omitted, clears all strategies' data.
+     *
+     * @param strategyName - Optional strategy name to clear specific strategy data
+     *
+     * @example
+     * ```typescript
+     * const service = new LiveMarkdownService();
+     *
+     * // Clear specific strategy data
+     * await service.clear("my-strategy");
+     *
+     * // Clear all strategies' data
+     * await service.clear();
+     * ```
+     */
+    clear: (strategyName?: StrategyName) => Promise<void>;
+    /**
+     * Initializes the service by subscribing to live signal events.
+     * Uses singleshot to ensure initialization happens only once.
+     * Automatically called on first use.
+     *
+     * @example
+     * ```typescript
+     * const service = new LiveMarkdownService();
+     * await service.init(); // Subscribe to live events
+     * ```
+     */
+    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+}
+
 declare const BASE_WAIT_FOR_INIT_SYMBOL: unique symbol;
 /**
  * Signal data stored in persistence layer.
@@ -1469,6 +1879,19 @@ declare class BacktestUtils {
         frameName: string;
     }) => () => void;
     /**
+     * Gets statistical data from all closed signals for a strategy.
+     *
+     * @param strategyName - Strategy name to get data for
+     * @returns Promise resolving to statistical data object
+     *
+     * @example
+     * ```typescript
+     * const stats = await Backtest.getData("my-strategy");
+     * console.log(stats.sharpeRatio, stats.winRate);
+     * ```
+     */
+    getData: (strategyName: StrategyName) => Promise<BacktestStatistics>;
+    /**
      * Generates markdown report with all closed signals for a strategy.
      *
      * @param strategyName - Strategy name to generate report for
@@ -1587,6 +2010,19 @@ declare class LiveUtils {
         strategyName: string;
         exchangeName: string;
     }) => () => void;
+    /**
+     * Gets statistical data from all live trading events for a strategy.
+     *
+     * @param strategyName - Strategy name to get data for
+     * @returns Promise resolving to statistical data object
+     *
+     * @example
+     * ```typescript
+     * const stats = await Live.getData("my-strategy");
+     * console.log(stats.sharpeRatio, stats.winRate);
+     * ```
+     */
+    getData: (strategyName: StrategyName) => Promise<LiveStatistics>;
     /**
      * Generates markdown report with all events for a strategy.
      *
@@ -2516,257 +2952,6 @@ declare class BacktestGlobalService {
 }
 
 /**
- * Service for generating and saving backtest markdown reports.
- *
- * Features:
- * - Listens to signal events via onTick callback
- * - Accumulates closed signals per strategy using memoized storage
- * - Generates markdown tables with detailed signal information
- * - Saves reports to disk in logs/backtest/{strategyName}.md
- *
- * @example
- * ```typescript
- * const service = new BacktestMarkdownService();
- *
- * // Add to strategy callbacks
- * addStrategy({
- *   strategyName: "my-strategy",
- *   callbacks: {
- *     onTick: (symbol, result, backtest) => {
- *       service.tick(result);
- *     }
- *   }
- * });
- *
- * // After backtest, generate and save report
- * await service.saveReport("my-strategy");
- * ```
- */
-declare class BacktestMarkdownService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Memoized function to get or create ReportStorage for a strategy.
-     * Each strategy gets its own isolated storage instance.
-     */
-    private getStorage;
-    /**
-     * Processes tick events and accumulates closed signals.
-     * Should be called from IStrategyCallbacks.onTick.
-     *
-     * Only processes closed signals - opened signals are ignored.
-     *
-     * @param data - Tick result from strategy execution (opened or closed)
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestMarkdownService();
-     *
-     * callbacks: {
-     *   onTick: (symbol, result, backtest) => {
-     *     service.tick(result);
-     *   }
-     * }
-     * ```
-     */
-    private tick;
-    /**
-     * Generates markdown report with all closed signals for a strategy.
-     * Delegates to ReportStorage.generateReport().
-     *
-     * @param strategyName - Strategy name to generate report for
-     * @returns Markdown formatted report string with table of all closed signals
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestMarkdownService();
-     * const markdown = service.generateReport("my-strategy");
-     * console.log(markdown);
-     * ```
-     */
-    getReport: (strategyName: StrategyName) => Promise<string>;
-    /**
-     * Saves strategy report to disk.
-     * Creates directory if it doesn't exist.
-     * Delegates to ReportStorage.dump().
-     *
-     * @param strategyName - Strategy name to save report for
-     * @param path - Directory path to save report (default: "./logs/backtest")
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestMarkdownService();
-     *
-     * // Save to default path: ./logs/backtest/my-strategy.md
-     * await service.dump("my-strategy");
-     *
-     * // Save to custom path: ./custom/path/my-strategy.md
-     * await service.dump("my-strategy", "./custom/path");
-     * ```
-     */
-    dump: (strategyName: StrategyName, path?: string) => Promise<void>;
-    /**
-     * Clears accumulated signal data from storage.
-     * If strategyName is provided, clears only that strategy's data.
-     * If strategyName is omitted, clears all strategies' data.
-     *
-     * @param strategyName - Optional strategy name to clear specific strategy data
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestMarkdownService();
-     *
-     * // Clear specific strategy data
-     * await service.clear("my-strategy");
-     *
-     * // Clear all strategies' data
-     * await service.clear();
-     * ```
-     */
-    clear: (strategyName?: StrategyName) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to backtest signal events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestMarkdownService();
-     * await service.init(); // Subscribe to backtest events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-}
-
-/**
- * Service for generating and saving live trading markdown reports.
- *
- * Features:
- * - Listens to all signal events via onTick callback
- * - Accumulates all events (idle, opened, active, closed) per strategy
- * - Generates markdown tables with detailed event information
- * - Provides trading statistics (win rate, average PNL)
- * - Saves reports to disk in logs/live/{strategyName}.md
- *
- * @example
- * ```typescript
- * const service = new LiveMarkdownService();
- *
- * // Add to strategy callbacks
- * addStrategy({
- *   strategyName: "my-strategy",
- *   callbacks: {
- *     onTick: (symbol, result, backtest) => {
- *       if (!backtest) {
- *         service.tick(result);
- *       }
- *     }
- *   }
- * });
- *
- * // Later: generate and save report
- * await service.dump("my-strategy");
- * ```
- */
-declare class LiveMarkdownService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Memoized function to get or create ReportStorage for a strategy.
-     * Each strategy gets its own isolated storage instance.
-     */
-    private getStorage;
-    /**
-     * Processes tick events and accumulates all event types.
-     * Should be called from IStrategyCallbacks.onTick.
-     *
-     * Processes all event types: idle, opened, active, closed.
-     *
-     * @param data - Tick result from strategy execution
-     *
-     * @example
-     * ```typescript
-     * const service = new LiveMarkdownService();
-     *
-     * callbacks: {
-     *   onTick: (symbol, result, backtest) => {
-     *     if (!backtest) {
-     *       service.tick(result);
-     *     }
-     *   }
-     * }
-     * ```
-     */
-    private tick;
-    /**
-     * Generates markdown report with all events for a strategy.
-     * Delegates to ReportStorage.getReport().
-     *
-     * @param strategyName - Strategy name to generate report for
-     * @returns Markdown formatted report string with table of all events
-     *
-     * @example
-     * ```typescript
-     * const service = new LiveMarkdownService();
-     * const markdown = await service.getReport("my-strategy");
-     * console.log(markdown);
-     * ```
-     */
-    getReport: (strategyName: StrategyName) => Promise<string>;
-    /**
-     * Saves strategy report to disk.
-     * Creates directory if it doesn't exist.
-     * Delegates to ReportStorage.dump().
-     *
-     * @param strategyName - Strategy name to save report for
-     * @param path - Directory path to save report (default: "./logs/live")
-     *
-     * @example
-     * ```typescript
-     * const service = new LiveMarkdownService();
-     *
-     * // Save to default path: ./logs/live/my-strategy.md
-     * await service.dump("my-strategy");
-     *
-     * // Save to custom path: ./custom/path/my-strategy.md
-     * await service.dump("my-strategy", "./custom/path");
-     * ```
-     */
-    dump: (strategyName: StrategyName, path?: string) => Promise<void>;
-    /**
-     * Clears accumulated event data from storage.
-     * If strategyName is provided, clears only that strategy's data.
-     * If strategyName is omitted, clears all strategies' data.
-     *
-     * @param strategyName - Optional strategy name to clear specific strategy data
-     *
-     * @example
-     * ```typescript
-     * const service = new LiveMarkdownService();
-     *
-     * // Clear specific strategy data
-     * await service.clear("my-strategy");
-     *
-     * // Clear all strategies' data
-     * await service.clear();
-     * ```
-     */
-    clear: (strategyName?: StrategyName) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to live signal events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new LiveMarkdownService();
-     * await service.init(); // Subscribe to live events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-}
-
-/**
  * @class ExchangeValidationService
  * Service for managing and validating exchange configurations
  */
@@ -2907,4 +3092,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type CandleInterval, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type ICandleData, type IExchangeSchema, type IFrameSchema, type IPersistBase, type ISignalData, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, Live, MethodContextService, PersistBase, PersistSignalAdaper, type ProgressContract, type SignalInterval, type TPersistBase, type TPersistBaseCtor, addExchange, addFrame, addStrategy, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listExchanges, listFrames, listStrategies, listenDone, listenDoneOnce, listenError, listenProgress, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, setLogger };
+export { Backtest, type BacktestStatistics, type CandleInterval, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type ICandleData, type IExchangeSchema, type IFrameSchema, type IPersistBase, type ISignalData, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, Live, type LiveStatistics, MethodContextService, PersistBase, PersistSignalAdaper, type ProgressContract, type SignalInterval, type TPersistBase, type TPersistBaseCtor, addExchange, addFrame, addStrategy, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listExchanges, listFrames, listStrategies, listenDone, listenDoneOnce, listenError, listenProgress, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, setLogger };

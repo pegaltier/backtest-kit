@@ -43,6 +43,64 @@ function isUnsafe(value: number | null): boolean {
   return false;
 }
 
+/**
+ * Statistical data calculated from backtest results.
+ *
+ * All numeric values are null if calculation is unsafe (NaN, Infinity, etc).
+ * Provides comprehensive metrics for strategy performance analysis.
+ *
+ * @example
+ * ```typescript
+ * const stats = await Backtest.getData("my-strategy");
+ *
+ * console.log(`Total signals: ${stats.totalSignals}`);
+ * console.log(`Win rate: ${stats.winRate}%`);
+ * console.log(`Sharpe Ratio: ${stats.sharpeRatio}`);
+ *
+ * // Access raw signal data
+ * stats.signalList.forEach(signal => {
+ *   console.log(`Signal ${signal.signal.id}: ${signal.pnl.pnlPercentage}%`);
+ * });
+ * ```
+ */
+export interface BacktestStatistics {
+  /** Array of all closed signals with full details (price, PNL, timestamps, etc.) */
+  signalList: IStrategyTickResultClosed[];
+
+  /** Total number of closed signals */
+  totalSignals: number;
+
+  /** Number of winning signals (PNL > 0) */
+  winCount: number;
+
+  /** Number of losing signals (PNL < 0) */
+  lossCount: number;
+
+  /** Win rate as percentage (0-100), null if unsafe. Higher is better. */
+  winRate: number | null;
+
+  /** Average PNL per signal as percentage, null if unsafe. Higher is better. */
+  avgPnl: number | null;
+
+  /** Cumulative PNL across all signals as percentage, null if unsafe. Higher is better. */
+  totalPnl: number | null;
+
+  /** Standard deviation of returns (volatility metric), null if unsafe. Lower is better. */
+  stdDev: number | null;
+
+  /** Sharpe Ratio (risk-adjusted return = avgPnl / stdDev), null if unsafe. Higher is better. */
+  sharpeRatio: number | null;
+
+  /** Annualized Sharpe Ratio (sharpeRatio × √365), null if unsafe. Higher is better. */
+  annualizedSharpeRatio: number | null;
+
+  /** Certainty Ratio (avgWin / |avgLoss|), null if unsafe. Higher is better. */
+  certaintyRatio: number | null;
+
+  /** Expected yearly returns based on average trade duration and PNL, null if unsafe. Higher is better. */
+  expectedYearlyReturns: number | null;
+}
+
 const columns: Column[] = [
   {
     key: "signalId",
@@ -136,13 +194,91 @@ class ReportStorage {
   }
 
   /**
-   * Generates markdown report with all closed signals for a strategy.
+   * Calculates statistical data from closed signals (Controller).
+   * Returns null for any unsafe numeric values (NaN, Infinity, etc).
+   *
+   * @returns Statistical data (empty object if no signals)
+   */
+  public async getData(): Promise<BacktestStatistics> {
+    if (this._signalList.length === 0) {
+      return {
+        signalList: [],
+        totalSignals: 0,
+        winCount: 0,
+        lossCount: 0,
+        winRate: null,
+        avgPnl: null,
+        totalPnl: null,
+        stdDev: null,
+        sharpeRatio: null,
+        annualizedSharpeRatio: null,
+        certaintyRatio: null,
+        expectedYearlyReturns: null,
+      };
+    }
+
+    const totalSignals = this._signalList.length;
+    const winCount = this._signalList.filter((s) => s.pnl.pnlPercentage > 0).length;
+    const lossCount = this._signalList.filter((s) => s.pnl.pnlPercentage < 0).length;
+
+    // Calculate basic statistics
+    const avgPnl = this._signalList.reduce((sum, s) => sum + s.pnl.pnlPercentage, 0) / totalSignals;
+    const totalPnl = this._signalList.reduce((sum, s) => sum + s.pnl.pnlPercentage, 0);
+    const winRate = (winCount / totalSignals) * 100;
+
+    // Calculate Sharpe Ratio (risk-free rate = 0)
+    const returns = this._signalList.map((s) => s.pnl.pnlPercentage);
+    const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgPnl, 2), 0) / totalSignals;
+    const stdDev = Math.sqrt(variance);
+    const sharpeRatio = stdDev > 0 ? avgPnl / stdDev : 0;
+    const annualizedSharpeRatio = sharpeRatio * Math.sqrt(365);
+
+    // Calculate Certainty Ratio
+    const wins = this._signalList.filter((s) => s.pnl.pnlPercentage > 0);
+    const losses = this._signalList.filter((s) => s.pnl.pnlPercentage < 0);
+    const avgWin = wins.length > 0
+      ? wins.reduce((sum, s) => sum + s.pnl.pnlPercentage, 0) / wins.length
+      : 0;
+    const avgLoss = losses.length > 0
+      ? losses.reduce((sum, s) => sum + s.pnl.pnlPercentage, 0) / losses.length
+      : 0;
+    const certaintyRatio = avgLoss < 0 ? avgWin / Math.abs(avgLoss) : 0;
+
+    // Calculate Expected Yearly Returns
+    const avgDurationMs = this._signalList.reduce(
+      (sum, s) => sum + (s.closeTimestamp - s.signal.timestamp),
+      0
+    ) / totalSignals;
+    const avgDurationDays = avgDurationMs / (1000 * 60 * 60 * 24);
+    const tradesPerYear = avgDurationDays > 0 ? 365 / avgDurationDays : 0;
+    const expectedYearlyReturns = avgPnl * tradesPerYear;
+
+    return {
+      signalList: this._signalList,
+      totalSignals,
+      winCount,
+      lossCount,
+      winRate: isUnsafe(winRate) ? null : winRate,
+      avgPnl: isUnsafe(avgPnl) ? null : avgPnl,
+      totalPnl: isUnsafe(totalPnl) ? null : totalPnl,
+      stdDev: isUnsafe(stdDev) ? null : stdDev,
+      sharpeRatio: isUnsafe(sharpeRatio) ? null : sharpeRatio,
+      annualizedSharpeRatio: isUnsafe(annualizedSharpeRatio) ? null : annualizedSharpeRatio,
+      certaintyRatio: isUnsafe(certaintyRatio) ? null : certaintyRatio,
+      expectedYearlyReturns: isUnsafe(expectedYearlyReturns) ? null : expectedYearlyReturns,
+    };
+  }
+
+  /**
+   * Generates markdown report with all closed signals for a strategy (View).
    *
    * @param strategyName - Strategy name
    * @returns Markdown formatted report with all signals
    */
-  public getReport(strategyName: StrategyName): string {
-    if (this._signalList.length === 0) {
+  public async getReport(strategyName: StrategyName): Promise<string> {
+    const stats = await this.getData();
+
+    if (stats.totalSignals === 0) {
       return str.newline(
         `# Backtest Report: ${strategyName}`,
         "",
@@ -159,63 +295,21 @@ class ReportStorage {
     const tableData = [header, separator, ...rows];
     const table = str.newline(tableData.map(row => `| ${row.join(" | ")} |`));
 
-    // Calculate statistics
-    const totalSignals = this._signalList.length;
-    const winCount = this._signalList.filter((s) => s.pnl.pnlPercentage > 0).length;
-    const lossCount = this._signalList.filter((s) => s.pnl.pnlPercentage < 0).length;
-    const avgPnl = this._signalList.reduce((sum, s) => sum + s.pnl.pnlPercentage, 0) / totalSignals;
-    const totalPnl = this._signalList.reduce((sum, s) => sum + s.pnl.pnlPercentage, 0);
-
-    // Calculate Sharpe Ratio (risk-free rate = 0)
-    // Sharpe = Mean Return / Std Dev of Returns
-    const returns = this._signalList.map((s) => s.pnl.pnlPercentage);
-    const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgPnl, 2), 0) / totalSignals;
-    const stdDev = Math.sqrt(variance);
-    const sharpeRatio = stdDev > 0 ? avgPnl / stdDev : 0;
-
-    // Annualized Sharpe Ratio
-    // Multiply by sqrt(365) to annualize
-    const annualizedSharpeRatio = sharpeRatio * Math.sqrt(365);
-
-    // Calculate Certainty Ratio
-    // Certainty Ratio = Average Win / |Average Loss|
-    const wins = this._signalList.filter((s) => s.pnl.pnlPercentage > 0);
-    const losses = this._signalList.filter((s) => s.pnl.pnlPercentage < 0);
-    const avgWin = wins.length > 0
-      ? wins.reduce((sum, s) => sum + s.pnl.pnlPercentage, 0) / wins.length
-      : 0;
-    const avgLoss = losses.length > 0
-      ? losses.reduce((sum, s) => sum + s.pnl.pnlPercentage, 0) / losses.length
-      : 0;
-    const certaintyRatio = avgLoss < 0 ? avgWin / Math.abs(avgLoss) : 0;
-
-    // Calculate Expected Yearly Returns
-    // Based on average trade duration and average PNL
-    const avgDurationMs = this._signalList.reduce(
-      (sum, s) => sum + (s.closeTimestamp - s.signal.timestamp),
-      0
-    ) / totalSignals;
-    const avgDurationDays = avgDurationMs / (1000 * 60 * 60 * 24);
-    const tradesPerYear = avgDurationDays > 0 ? 365 / avgDurationDays : 0;
-    const expectedYearlyReturns = avgPnl * tradesPerYear;
-
-    const winRate = (winCount / totalSignals) * 100;
-
     return str.newline(
       `# Backtest Report: ${strategyName}`,
       "",
       table,
       "",
-      `**Total signals:** ${totalSignals}`,
-      `**Closed signals:** ${totalSignals}`,
-      `**Win rate:** ${isUnsafe(winRate) ? "N/A" : `${winRate.toFixed(2)}% (${winCount}W / ${lossCount}L) (higher is better)`}`,
-      `**Average PNL:** ${isUnsafe(avgPnl) ? "N/A" : `${avgPnl > 0 ? "+" : ""}${avgPnl.toFixed(2)}% (higher is better)`}`,
-      `**Total PNL:** ${isUnsafe(totalPnl) ? "N/A" : `${totalPnl > 0 ? "+" : ""}${totalPnl.toFixed(2)}% (higher is better)`}`,
-      `**Standard Deviation:** ${isUnsafe(stdDev) ? "N/A" : `${stdDev.toFixed(3)}% (lower is better)`}`,
-      `**Sharpe Ratio:** ${isUnsafe(sharpeRatio) ? "N/A" : `${sharpeRatio.toFixed(3)} (higher is better)`}`,
-      `**Annualized Sharpe Ratio (sharpeRatio × √365):** ${isUnsafe(annualizedSharpeRatio) ? "N/A" : `${annualizedSharpeRatio.toFixed(3)} (higher is better)`}`,
-      `**Certainty Ratio:** ${isUnsafe(certaintyRatio) ? "N/A" : `${certaintyRatio.toFixed(3)} (higher is better)`}`,
-      `**Expected Yearly Returns:** ${isUnsafe(expectedYearlyReturns) ? "N/A" : `${expectedYearlyReturns > 0 ? "+" : ""}${expectedYearlyReturns.toFixed(2)}% (higher is better)`}`,
+      `**Total signals:** ${stats.totalSignals}`,
+      `**Closed signals:** ${stats.totalSignals}`,
+      `**Win rate:** ${stats.winRate === null ? "N/A" : `${stats.winRate.toFixed(2)}% (${stats.winCount}W / ${stats.lossCount}L) (higher is better)`}`,
+      `**Average PNL:** ${stats.avgPnl === null ? "N/A" : `${stats.avgPnl > 0 ? "+" : ""}${stats.avgPnl.toFixed(2)}% (higher is better)`}`,
+      `**Total PNL:** ${stats.totalPnl === null ? "N/A" : `${stats.totalPnl > 0 ? "+" : ""}${stats.totalPnl.toFixed(2)}% (higher is better)`}`,
+      `**Standard Deviation:** ${stats.stdDev === null ? "N/A" : `${stats.stdDev.toFixed(3)}% (lower is better)`}`,
+      `**Sharpe Ratio:** ${stats.sharpeRatio === null ? "N/A" : `${stats.sharpeRatio.toFixed(3)} (higher is better)`}`,
+      `**Annualized Sharpe Ratio:** ${stats.annualizedSharpeRatio === null ? "N/A" : `${stats.annualizedSharpeRatio.toFixed(3)} (higher is better)`}`,
+      `**Certainty Ratio:** ${stats.certaintyRatio === null ? "N/A" : `${stats.certaintyRatio.toFixed(3)} (higher is better)`}`,
+      `**Expected Yearly Returns:** ${stats.expectedYearlyReturns === null ? "N/A" : `${stats.expectedYearlyReturns > 0 ? "+" : ""}${stats.expectedYearlyReturns.toFixed(2)}% (higher is better)`}`,
     );
   }
 
@@ -229,7 +323,7 @@ class ReportStorage {
     strategyName: StrategyName,
     path = "./logs/backtest"
   ): Promise<void> {
-    const markdown = this.getReport(strategyName);
+    const markdown = await this.getReport(strategyName);
 
     try {
       const dir = join(process.cwd(), path);
@@ -319,6 +413,28 @@ export class BacktestMarkdownService {
   };
 
   /**
+   * Gets statistical data from all closed signals for a strategy.
+   * Delegates to ReportStorage.getData().
+   *
+   * @param strategyName - Strategy name to get data for
+   * @returns Statistical data object with all metrics
+   *
+   * @example
+   * ```typescript
+   * const service = new BacktestMarkdownService();
+   * const stats = await service.getData("my-strategy");
+   * console.log(stats.sharpeRatio, stats.winRate);
+   * ```
+   */
+  public getData = async (strategyName: StrategyName): Promise<BacktestStatistics> => {
+    this.loggerService.log("backtestMarkdownService getData", {
+      strategyName,
+    });
+    const storage = this.getStorage(strategyName);
+    return storage.getData();
+  };
+
+  /**
    * Generates markdown report with all closed signals for a strategy.
    * Delegates to ReportStorage.generateReport().
    *
@@ -328,7 +444,7 @@ export class BacktestMarkdownService {
    * @example
    * ```typescript
    * const service = new BacktestMarkdownService();
-   * const markdown = service.generateReport("my-strategy");
+   * const markdown = await service.getReport("my-strategy");
    * console.log(markdown);
    * ```
    */
