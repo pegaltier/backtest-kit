@@ -465,7 +465,26 @@ const stopBacktest = Backtest.background("BTCUSDT", {
   frameName: "1d-backtest"
 });
 
-// Generate markdown report
+// Get raw statistical data (Controller)
+const stats = await Backtest.getData("my-strategy");
+console.log(stats);
+// Returns:
+// {
+//   signalList: [...],           // All closed signals
+//   totalSignals: 10,
+//   winCount: 7,
+//   lossCount: 3,
+//   winRate: 70.0,               // Percentage (higher is better)
+//   avgPnl: 1.23,                // Average PNL % (higher is better)
+//   totalPnl: 12.30,             // Total PNL % (higher is better)
+//   stdDev: 2.45,                // Standard deviation (lower is better)
+//   sharpeRatio: 0.50,           // Risk-adjusted return (higher is better)
+//   annualizedSharpeRatio: 9.55, // Sharpe × √365 (higher is better)
+//   certaintyRatio: 1.75,        // avgWin / |avgLoss| (higher is better)
+//   expectedYearlyReturns: 156   // Estimated yearly trades (higher is better)
+// }
+
+// Generate markdown report (View)
 const markdown = await Backtest.getReport("my-strategy");
 console.log(markdown);
 
@@ -476,29 +495,75 @@ await Backtest.dump("my-strategy");
 await Backtest.dump("my-strategy", "./custom/path");
 ```
 
-**Report includes:**
-- Total closed signals
+**getData() returns BacktestStatistics:**
+- `signalList` - Array of all closed signals
+- `totalSignals` - Total number of closed signals
+- `winCount` / `lossCount` - Number of winning/losing trades
+- `winRate` - Win percentage (higher is better)
+- `avgPnl` - Average PNL percentage (higher is better)
+- `totalPnl` - Total PNL percentage (higher is better)
+- `stdDev` - Standard deviation / volatility (lower is better)
+- `sharpeRatio` - Risk-adjusted return (higher is better)
+- `annualizedSharpeRatio` - Sharpe Ratio × √365 (higher is better)
+- `certaintyRatio` - avgWin / |avgLoss| (higher is better)
+- `expectedYearlyReturns` - Estimated number of trades per year (higher is better)
+
+**getReport() includes:**
+- All metrics from getData() formatted as markdown
 - All signal details (prices, TP/SL, PNL, duration, close reason)
 - Timestamps for each signal
+- "Higher is better" / "Lower is better" annotations
 
 ### Live Trading Reports
 
 ```typescript
 import { Live } from "backtest-kit";
 
-// Generate live trading report
+// Get raw statistical data (Controller)
+const stats = await Live.getData("my-strategy");
+console.log(stats);
+// Returns:
+// {
+//   eventList: [...],            // All events (idle, opened, active, closed)
+//   totalEvents: 15,
+//   totalClosed: 5,
+//   winCount: 3,
+//   lossCount: 2,
+//   winRate: 60.0,               // Percentage (higher is better)
+//   avgPnl: 1.23,                // Average PNL % (higher is better)
+//   totalPnl: 6.15,              // Total PNL % (higher is better)
+//   stdDev: 1.85,                // Standard deviation (lower is better)
+//   sharpeRatio: 0.66,           // Risk-adjusted return (higher is better)
+//   annualizedSharpeRatio: 12.61,// Sharpe × √365 (higher is better)
+//   certaintyRatio: 2.10,        // avgWin / |avgLoss| (higher is better)
+//   expectedYearlyReturns: 365   // Estimated yearly trades (higher is better)
+// }
+
+// Generate markdown report (View)
 const markdown = await Live.getReport("my-strategy");
 
 // Save to disk (default: ./logs/live/my-strategy.md)
 await Live.dump("my-strategy");
 ```
 
-**Report includes:**
-- Total events (idle, opened, active, closed)
-- Closed signals count
-- Win rate (% wins, wins/losses)
-- Average PNL percentage
+**getData() returns LiveStatistics:**
+- `eventList` - Array of all events (idle, opened, active, closed)
+- `totalEvents` - Total number of events
+- `totalClosed` - Total number of closed signals
+- `winCount` / `lossCount` - Number of winning/losing trades
+- `winRate` - Win percentage (higher is better)
+- `avgPnl` - Average PNL percentage (higher is better)
+- `totalPnl` - Total PNL percentage (higher is better)
+- `stdDev` - Standard deviation / volatility (lower is better)
+- `sharpeRatio` - Risk-adjusted return (higher is better)
+- `annualizedSharpeRatio` - Sharpe Ratio × √365 (higher is better)
+- `certaintyRatio` - avgWin / |avgLoss| (higher is better)
+- `expectedYearlyReturns` - Estimated number of trades per year (higher is better)
+
+**getReport() includes:**
+- All metrics from getData() formatted as markdown
 - Signal-by-signal details with current state
+- "Higher is better" / "Lower is better" annotations
 
 **Report example:**
 ```markdown
@@ -506,8 +571,14 @@ await Live.dump("my-strategy");
 
 Total events: 15
 Closed signals: 5
-Win rate: 60.00% (3W / 2L)
-Average PNL: +1.23%
+Win rate: 60.00% (3W / 2L) (higher is better)
+Average PNL: +1.23% (higher is better)
+Total PNL: +6.15% (higher is better)
+Standard Deviation: 1.85% (lower is better)
+Sharpe Ratio: 0.66 (higher is better)
+Annualized Sharpe Ratio: 12.61 (higher is better)
+Certainty Ratio: 2.10 (higher is better)
+Expected Yearly Returns: 365 trades (higher is better)
 
 | Timestamp | Action | Symbol | Signal ID | Position | ... | PNL (net) | Close Reason |
 |-----------|--------|--------|-----------|----------|-----|-----------|--------------|
@@ -744,7 +815,7 @@ const quantity = await formatQuantity("BTCUSDT", 0.123456789);
 #### Backtest API
 
 ```typescript
-import { Backtest } from "backtest-kit";
+import { Backtest, BacktestStatistics } from "backtest-kit";
 
 // Stream backtest results
 Backtest.run(
@@ -762,7 +833,10 @@ Backtest.background(
   context: { strategyName, exchangeName, frameName }
 ): Promise<() => void> // Returns cancellation function
 
-// Generate markdown report
+// Get raw statistical data (Controller)
+Backtest.getData(strategyName: string): Promise<BacktestStatistics>
+
+// Generate markdown report (View)
 Backtest.getReport(strategyName: string): Promise<string>
 
 // Save report to disk
@@ -772,7 +846,7 @@ Backtest.dump(strategyName: string, path?: string): Promise<void>
 #### Live Trading API
 
 ```typescript
-import { Live } from "backtest-kit";
+import { Live, LiveStatistics } from "backtest-kit";
 
 // Stream live results (infinite)
 Live.run(
@@ -789,7 +863,10 @@ Live.background(
   context: { strategyName, exchangeName }
 ): Promise<() => void> // Returns cancellation function
 
-// Generate markdown report
+// Get raw statistical data (Controller)
+Live.getData(strategyName: string): Promise<LiveStatistics>
+
+// Generate markdown report (View)
 Live.getReport(strategyName: string): Promise<string>
 
 // Save report to disk
@@ -797,6 +874,43 @@ Live.dump(strategyName: string, path?: string): Promise<void>
 ```
 
 ## Type Definitions
+
+### Statistics Types
+
+```typescript
+// Backtest statistics (exported from "backtest-kit")
+interface BacktestStatistics {
+  signalList: IStrategyTickResultClosed[];  // All closed signals
+  totalSignals: number;
+  winCount: number;
+  lossCount: number;
+  winRate: number | null;               // Win percentage (higher is better)
+  avgPnl: number | null;                // Average PNL % (higher is better)
+  totalPnl: number | null;              // Total PNL % (higher is better)
+  stdDev: number | null;                // Standard deviation (lower is better)
+  sharpeRatio: number | null;           // Risk-adjusted return (higher is better)
+  annualizedSharpeRatio: number | null; // Sharpe × √365 (higher is better)
+  certaintyRatio: number | null;        // avgWin / |avgLoss| (higher is better)
+  expectedYearlyReturns: number | null; // Estimated yearly trades (higher is better)
+}
+
+// Live statistics (exported from "backtest-kit")
+interface LiveStatistics {
+  eventList: TickEvent[];               // All events (idle, opened, active, closed)
+  totalEvents: number;
+  totalClosed: number;
+  winCount: number;
+  lossCount: number;
+  winRate: number | null;               // Win percentage (higher is better)
+  avgPnl: number | null;                // Average PNL % (higher is better)
+  totalPnl: number | null;              // Total PNL % (higher is better)
+  stdDev: number | null;                // Standard deviation (lower is better)
+  sharpeRatio: number | null;           // Risk-adjusted return (higher is better)
+  annualizedSharpeRatio: number | null; // Sharpe × √365 (higher is better)
+  certaintyRatio: number | null;        // avgWin / |avgLoss| (higher is better)
+  expectedYearlyReturns: number | null; // Estimated yearly trades (higher is better)
+}
+```
 
 ### Signal Data
 
