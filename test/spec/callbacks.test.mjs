@@ -496,8 +496,6 @@ test("onIdle callback is called in live mode when no signal is active", async ({
     },
   });
 
-  let cancellationToken;
-
   addStrategy({
     strategyName: "test-strategy-live-idle",
     interval: "1m",
@@ -515,7 +513,7 @@ test("onIdle callback is called in live mode when no signal is active", async ({
     },
   });
 
-  cancellationToken = Live.background("BTCUSDT", {
+  Live.background("BTCUSDT", {
     strategyName: "test-strategy-live-idle",
     exchangeName: "binance-mock-live-idle",
   });
