@@ -92,7 +92,6 @@ group: docs
 - [BacktestStatistics](interfaces/BacktestStatistics.md)
 - [TickEvent](interfaces/TickEvent.md)
 - [LiveStatistics](interfaces/LiveStatistics.md)
-- [ISignalData](interfaces/ISignalData.md)
 - [IEntity](interfaces/IEntity.md)
 - [IPersistBase](interfaces/IPersistBase.md)
 
@@ -108,6 +107,7 @@ group: docs
 - [IStrategyTickResult](types/IStrategyTickResult.md)
 - [IStrategyBacktestResult](types/IStrategyBacktestResult.md)
 - [StrategyName](types/StrategyName.md)
+- [SignalData](types/SignalData.md)
 - [TPersistBase](types/TPersistBase.md)
 - [TPersistBaseCtor](types/TPersistBaseCtor.md)
 - [EntityId](types/EntityId.md)

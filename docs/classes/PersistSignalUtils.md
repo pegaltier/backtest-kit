@@ -62,7 +62,7 @@ Uses atomic writes to prevent corruption on crashes.
 ### usePersistSignalAdapter
 
 ```ts
-usePersistSignalAdapter(Ctor: TPersistBaseCtor<StrategyName, ISignalData>): void;
+usePersistSignalAdapter(Ctor: TPersistBaseCtor<StrategyName, SignalData>): void;
 ```
 
 Registers a custom persistence adapter.

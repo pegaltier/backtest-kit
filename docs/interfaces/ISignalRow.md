@@ -18,6 +18,14 @@ id: string
 
 Unique signal identifier (UUID v4 auto-generated)
 
+### priceOpen
+
+```ts
+priceOpen: number
+```
+
+Entry price for the position
+
 ### exchangeName
 
 ```ts
