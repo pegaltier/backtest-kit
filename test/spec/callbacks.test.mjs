@@ -423,7 +423,7 @@ test("onActive callback is called in live mode when signal is active", async ({ 
     async waitForInit() {
     }
     async readValue() {
-      return { signalRow: mockSignal };
+      return mockSignal;
     }
     async hasValue() {
       return true;

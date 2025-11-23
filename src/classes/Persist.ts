@@ -41,10 +41,7 @@ const BASE_UNLINK_RETRY_DELAY = 1_000;
  * Signal data stored in persistence layer.
  * Contains nullable signal for atomic updates.
  */
-export interface ISignalData {
-  /** Current signal state (null when no active signal) */
-  signalRow: ISignalRow | null;
-}
+export type SignalData = ISignalRow | null;
 
 /**
  * Type helper for PersistBase instance.
@@ -495,12 +492,12 @@ export const PersistBase = makeExtendable(
  * Used by ClientStrategy for live mode persistence.
  */
 export class PersistSignalUtils {
-  private PersistSignalFactory: TPersistBaseCtor<StrategyName, ISignalData> =
+  private PersistSignalFactory: TPersistBaseCtor<StrategyName, SignalData> =
     PersistBase;
 
   private getSignalStorage = memoize(
     ([strategyName]: [StrategyName]): string => `${strategyName}`,
-    (strategyName: StrategyName): IPersistBase<ISignalData> =>
+    (strategyName: StrategyName): IPersistBase<SignalData> =>
       Reflect.construct(this.PersistSignalFactory, [
         strategyName,
         `./logs/data/signal/`,
@@ -522,7 +519,7 @@ export class PersistSignalUtils {
    * ```
    */
   public usePersistSignalAdapter(
-    Ctor: TPersistBaseCtor<StrategyName, ISignalData>
+    Ctor: TPersistBaseCtor<StrategyName, SignalData>
   ): void {
     swarm.loggerService.info(
       PERSIST_SIGNAL_UTILS_METHOD_NAME_USE_PERSIST_SIGNAL_ADAPTER
@@ -551,8 +548,7 @@ export class PersistSignalUtils {
     await stateStorage.waitForInit(isInitial);
 
     if (await stateStorage.hasValue(symbol)) {
-      const { signalRow } = await stateStorage.readValue(symbol);
-      return signalRow;
+      return await stateStorage.readValue(symbol);
     }
 
     return null;
@@ -580,7 +576,7 @@ export class PersistSignalUtils {
     const stateStorage = this.getSignalStorage(strategyName);
     await stateStorage.waitForInit(isInitial);
 
-    await stateStorage.writeValue(symbol, { signalRow });
+    await stateStorage.writeValue(symbol, signalRow);
   };
 }
 

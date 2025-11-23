@@ -1595,10 +1595,7 @@ declare const BASE_WAIT_FOR_INIT_SYMBOL: unique symbol;
  * Signal data stored in persistence layer.
  * Contains nullable signal for atomic updates.
  */
-interface ISignalData {
-    /** Current signal state (null when no active signal) */
-    signalRow: ISignalRow | null;
-}
+type SignalData = ISignalRow | null;
 /**
  * Type helper for PersistBase instance.
  */
@@ -1779,7 +1776,7 @@ declare class PersistSignalUtils {
      * PersistSignalAdaper.usePersistSignalAdapter(RedisPersist);
      * ```
      */
-    usePersistSignalAdapter(Ctor: TPersistBaseCtor<StrategyName, ISignalData>): void;
+    usePersistSignalAdapter(Ctor: TPersistBaseCtor<StrategyName, SignalData>): void;
     /**
      * Reads persisted signal data for a strategy and symbol.
      *
@@ -3094,4 +3091,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type BacktestStatistics, type CandleInterval, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type ICandleData, type IExchangeSchema, type IFrameSchema, type IPersistBase, type ISignalData, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, Live, type LiveStatistics, MethodContextService, PersistBase, PersistSignalAdaper, type ProgressContract, type SignalInterval, type TPersistBase, type TPersistBaseCtor, addExchange, addFrame, addStrategy, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listExchanges, listFrames, listStrategies, listenDone, listenDoneOnce, listenError, listenProgress, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, setLogger };
+export { Backtest, type BacktestStatistics, type CandleInterval, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type ICandleData, type IExchangeSchema, type IFrameSchema, type IPersistBase, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, Live, type LiveStatistics, MethodContextService, PersistBase, PersistSignalAdaper, type ProgressContract, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, addExchange, addFrame, addStrategy, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listExchanges, listFrames, listStrategies, listenDone, listenDoneOnce, listenError, listenProgress, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, setLogger };
