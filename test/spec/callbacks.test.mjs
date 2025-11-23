@@ -5,6 +5,8 @@ import {
   addFrame,
   addStrategy,
   Backtest,
+  Live,
+  PersistSignalAdaper,
 } from "../../build/index.mjs";
 
 import getMockCandles from "../mock/getMockCandles.mjs";
@@ -396,5 +398,135 @@ test("onTick callback is called when signal closes in backtest", async ({ pass, 
   }
 
   fail("onTick callback not called correctly");
+
+});
+
+test("onActive callback is called in live mode when signal is active", async ({ pass, fail }) => {
+
+  const [awaiter, { resolve }] = createAwaiter();
+
+  const mockSignal = {
+    id: "mock-active-signal-id",
+    position: "long",
+    note: "onActive live test",
+    priceOpen: 42000,
+    priceTakeProfit: 50000,
+    priceStopLoss: 41000,
+    minuteEstimatedTime: 120,
+    exchangeName: "binance-mock-live-active",
+    strategyName: "test-strategy-live-active",
+    timestamp: Date.now(),
+    symbol: "BTCUSDT",
+  };
+
+  PersistSignalAdaper.usePersistSignalAdapter(class {
+    async waitForInit() {
+    }
+    async readValue() {
+      return { signalRow: mockSignal };
+    }
+    async hasValue() {
+      return true;
+    }
+    async writeValue() {
+    }
+  });
+
+  addExchange({
+    exchangeName: "binance-mock-live-active",
+    getCandles: async (_symbol, interval, since, limit) => {
+      return await getMockCandles(interval, since, limit);
+    },
+    formatPrice: async (symbol, price) => {
+      return price.toFixed(8);
+    },
+    formatQuantity: async (symbol, quantity) => {
+      return quantity.toFixed(8);
+    },
+  });
+
+  addStrategy({
+    strategyName: "test-strategy-live-active",
+    interval: "1m",
+    getSignal: async () => {
+      return null;
+    },
+    callbacks: {
+      onActive: (symbol, signal, currentPrice, backtest) => {
+          resolve({
+            symbol,
+            signalId: signal.id,
+            currentPrice,
+            backtest,
+          });
+      },
+    },
+  });
+
+  Live.background("BTCUSDT", {
+    strategyName: "test-strategy-live-active",
+    exchangeName: "binance-mock-live-active",
+  });
+
+  const callbackData = await awaiter;
+
+  if (callbackData) {
+    pass("onActive callback called in live mode with active signal");
+    return;
+  }
+
+  fail("onActive callback not called correctly in live mode");
+
+});
+
+test("onIdle callback is called in live mode when no signal is active", async ({ pass, fail }) => {
+
+  const [awaiter, { resolve }] = createAwaiter();
+
+  addExchange({
+    exchangeName: "binance-mock-live-idle",
+    getCandles: async (_symbol, interval, since, limit) => {
+      return await getMockCandles(interval, since, limit);
+    },
+    formatPrice: async (symbol, price) => {
+      return price.toFixed(8);
+    },
+    formatQuantity: async (symbol, quantity) => {
+      return quantity.toFixed(8);
+    },
+  });
+
+  let cancellationToken;
+
+  addStrategy({
+    strategyName: "test-strategy-live-idle",
+    interval: "1m",
+    getSignal: async () => {
+      return null;
+    },
+    callbacks: {
+      onIdle: (symbol, currentPrice, backtest) => {
+        resolve({
+          symbol,
+          currentPrice,
+          backtest,
+        });
+      },
+    },
+  });
+
+  cancellationToken = Live.background("BTCUSDT", {
+    strategyName: "test-strategy-live-idle",
+    exchangeName: "binance-mock-live-idle",
+  });
+
+  const callbackData = await awaiter;
+
+  if (callbackData) {
+    pass("onIdle callback called in live mode when no signal active");
+    return;
+  }
+
+  fail("onIdle callback not called correctly in live mode");
 
 });
