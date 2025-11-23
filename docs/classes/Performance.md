@@ -1,0 +1,67 @@
+---
+title: docs/api-reference/class/Performance
+group: docs
+---
+
+# Performance
+
+Performance class provides static methods for performance metrics analysis.
+
+Features:
+- Get aggregated performance statistics by strategy
+- Generate markdown reports with bottleneck analysis
+- Save reports to disk
+- Clear accumulated metrics
+
+## Constructor
+
+```ts
+constructor();
+```
+
+## Methods
+
+### getData
+
+```ts
+static getData(strategyName: string): Promise<PerformanceStatistics>;
+```
+
+Gets aggregated performance statistics for a strategy.
+
+Returns detailed metrics grouped by operation type:
+- Count, total duration, average, min, max
+- Standard deviation for volatility
+- Percentiles (median, P95, P99) for outlier detection
+
+### getReport
+
+```ts
+static getReport(strategyName: string): Promise<string>;
+```
+
+Generates markdown report with performance analysis.
+
+Report includes:
+- Time distribution across operation types
+- Detailed metrics table with statistics
+- Percentile analysis for bottleneck detection
+
+### dump
+
+```ts
+static dump(strategyName: string, path?: string): Promise<void>;
+```
+
+Saves performance report to disk.
+
+Creates directory if it doesn't exist.
+Default path: ./logs/performance/{strategyName}.md
+
+### clear
+
+```ts
+static clear(strategyName?: string): Promise<void>;
+```
+
+Clears accumulated performance metrics from memory.

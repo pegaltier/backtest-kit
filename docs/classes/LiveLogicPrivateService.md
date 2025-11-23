@@ -40,6 +40,12 @@ loggerService: any
 strategyGlobalService: any
 ```
 
+### methodContextService
+
+```ts
+methodContextService: any
+```
+
 ## Methods
 
 ### run
