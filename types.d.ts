@@ -599,8 +599,8 @@ type StrategyName = string;
  *     timestamp: Date.now(),
  *   }),
  *   callbacks: {
- *     onOpen: (backtest, symbol, signal) => console.log("Signal opened"),
- *     onClose: (backtest, symbol, priceClose, signal) => console.log("Signal closed"),
+ *     onOpen: (symbol, signal, currentPrice, backtest) => console.log("Signal opened"),
+ *     onClose: (symbol, signal, priceClose, backtest) => console.log("Signal closed"),
  *   },
  * });
  * ```

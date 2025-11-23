@@ -119,10 +119,10 @@ addStrategy({
     };
   },
   callbacks: {
-    onOpen: (backtest, symbol, signal) => {
+    onOpen: (symbol, signal, currentPrice, backtest) => {
       console.log(`[${backtest ? "BT" : "LIVE"}] Signal opened:`, signal.id);
     },
-    onClose: (backtest, symbol, priceClose, signal) => {
+    onClose: (symbol, signal, priceClose, backtest) => {
       console.log(`[${backtest ? "BT" : "LIVE"}] Signal closed:`, priceClose);
     },
   },
@@ -916,13 +916,17 @@ interface LiveStatistics {
 
 ```typescript
 interface ISignalRow {
-  id?: string;                    // Auto-generated
+  id: string;                     // UUID v4 auto-generated
   position: "long" | "short";
   note?: string;
   priceOpen: number;
   priceTakeProfit: number;
   priceStopLoss: number;
   minuteEstimatedTime: number;
+  exchangeName: string;
+  strategyName: string;
+  timestamp: number;              // Signal creation timestamp
+  symbol: string;                 // Trading pair (e.g., "BTCUSDT")
 }
 ```
 
@@ -930,9 +934,27 @@ interface ISignalRow {
 
 ```typescript
 type IStrategyTickResult =
-  | { action: "idle"; signal: null }
-  | { action: "opened"; signal: ISignalRow }
-  | { action: "active"; signal: ISignalRow; currentPrice: number }
+  | {
+      action: "idle";
+      signal: null;
+      strategyName: string;
+      exchangeName: string;
+      currentPrice: number;
+    }
+  | {
+      action: "opened";
+      signal: ISignalRow;
+      strategyName: string;
+      exchangeName: string;
+      currentPrice: number;
+    }
+  | {
+      action: "active";
+      signal: ISignalRow;
+      currentPrice: number;
+      strategyName: string;
+      exchangeName: string;
+    }
   | {
       action: "closed";
       signal: ISignalRow;
@@ -940,10 +962,12 @@ type IStrategyTickResult =
       closeReason: "take_profit" | "stop_loss" | "time_expired";
       closeTimestamp: number;
       pnl: {
-        priceOpenWithCosts: number;
-        priceCloseWithCosts: number;
         pnlPercentage: number;
+        priceOpen: number;        // Entry price adjusted with slippage and fees
+        priceClose: number;       // Exit price adjusted with slippage and fees
       };
+      strategyName: string;
+      exchangeName: string;
     };
 ```
 

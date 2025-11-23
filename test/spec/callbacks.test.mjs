@@ -41,7 +41,7 @@ test("onOpen callback is called when signal opens", async ({ pass, fail }) => {
       };
     },
     callbacks: {
-      onOpen: (backtest, symbol, signal) => {
+      onOpen: (symbol, signal, currentPrice, backtest) => {
         resolve({
           backtest,
           symbol,
@@ -107,7 +107,7 @@ test("onClose callback is called when signal closes", async ({ pass, fail }) => 
       };
     },
     callbacks: {
-      onClose: (backtest, symbol, priceClose, signal) => {
+      onClose: (symbol, signal, priceClose, backtest) => {
         resolve({
           backtest,
           symbol,
@@ -299,7 +299,7 @@ test("callbacks receive correct signal object", async ({ pass, fail }) => {
       return testSignal;
     },
     callbacks: {
-      onOpen: (backtest, symbol, signal) => {
+      onOpen: (symbol, signal, currentPrice, backtest) => {
         resolve({
           position: signal.position,
           note: signal.note,
