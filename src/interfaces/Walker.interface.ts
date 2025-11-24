@@ -103,13 +103,13 @@ export interface IWalkerResults {
   totalStrategies: number;
 
   /** Best performing strategy name */
-  bestStrategy: StrategyName;
+  bestStrategy: StrategyName | null;
 
   /** Best metric value achieved */
   bestMetric: number | null;
 
   /** Best strategy statistics */
-  bestStats: BacktestStatistics;
+  bestStats: BacktestStatistics | null;
 }
 
 /**

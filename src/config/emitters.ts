@@ -4,6 +4,7 @@ import { DoneContract } from "../contract/Done.contract";
 import { ProgressContract } from "../contract/Progress.contract";
 import { PerformanceContract } from "../contract/Performance.contract";
 import { WalkerContract } from "../contract/Walker.contract";
+import { IWalkerResults } from "../interfaces/Walker.interface";
 
 /**
  * Global signal emitter for all trading events (live + backtest).
@@ -52,4 +53,10 @@ export const performanceEmitter = new Subject<PerformanceContract>();
  * Emits progress updates during walker execution (each strategy completion).
  */
 export const walkerEmitter = new Subject<WalkerContract>();
+
+/**
+ * Walker complete emitter for strategy comparison completion.
+ * Emits when all strategies have been tested and final results are available.
+ */
+export const walkerCompleteSubject = new Subject<IWalkerResults>();
 

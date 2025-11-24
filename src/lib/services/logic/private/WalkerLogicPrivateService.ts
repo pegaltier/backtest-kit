@@ -5,8 +5,9 @@ import { WalkerMetric } from "../../../../interfaces/Walker.interface";
 import { StrategyName } from "../../../../interfaces/Strategy.interface";
 import BacktestLogicPublicService from "../public/BacktestLogicPublicService";
 import BacktestMarkdownService from "../../markdown/BacktestMarkdownService";
+import WalkerSchemaService from "../../schema/WalkerSchemaService";
 import { WalkerContract } from "../../../../contract/Walker.contract";
-import { walkerEmitter } from "../../../../config/emitters";
+import { walkerEmitter, walkerCompleteSubject } from "../../../../config/emitters";
 import { resolveDocuments } from "functools-kit";
 
 /**
@@ -25,6 +26,8 @@ export class WalkerLogicPrivateService {
     inject<BacktestLogicPublicService>(TYPES.backtestLogicPublicService);
   private readonly backtestMarkdownService =
     inject<BacktestMarkdownService>(TYPES.backtestMarkdownService);
+  private readonly walkerSchemaService =
+    inject<WalkerSchemaService>(TYPES.walkerSchemaService);
 
   /**
    * Runs walker comparison for a symbol.
@@ -71,12 +74,19 @@ export class WalkerLogicPrivateService {
       context,
     });
 
+    // Get walker schema for callbacks
+    const walkerSchema = this.walkerSchemaService.get(context.walkerName);
+
     let strategiesTested = 0;
     let bestMetric: number | null = null;
     let bestStrategy: StrategyName | null = null;
 
     // Run backtest for each strategy
     for (const strategyName of strategies) {
+      // Call onStrategyStart callback if provided
+      if (walkerSchema.callbacks?.onStrategyStart) {
+        walkerSchema.callbacks.onStrategyStart(strategyName, symbol);
+      }
       this.loggerService.info("walkerLogicPrivateService testing strategy", {
         strategyName,
         symbol,
@@ -136,9 +146,40 @@ export class WalkerLogicPrivateService {
         totalStrategies: strategies.length,
       };
 
+      // Call onStrategyComplete callback if provided
+      if (walkerSchema.callbacks?.onStrategyComplete) {
+        walkerSchema.callbacks.onStrategyComplete(
+          strategyName,
+          symbol,
+          stats,
+          metricValue
+        );
+      }
+
       await walkerEmitter.next(walkerContract);
       yield walkerContract;
     }
+
+    const finalResults = {
+      walkerName: context.walkerName,
+      symbol,
+      exchangeName: context.exchangeName,
+      frameName: context.frameName,
+      metric,
+      totalStrategies: strategies.length,
+      bestStrategy,
+      bestMetric,
+      bestStats: bestStrategy !== null
+        ? await this.backtestMarkdownService.getData(bestStrategy)
+        : null,
+    };
+
+    // Call onComplete callback if provided with final best results
+    if (walkerSchema.callbacks?.onComplete) {
+      walkerSchema.callbacks.onComplete(finalResults);
+    }
+
+    await walkerCompleteSubject.next(finalResults);
   }
 
 }

@@ -13,6 +13,9 @@ export {
   listenDoneOnce,
   listenProgress,
   listenPerformance,
+  listenWalker,
+  listenWalkerOnce,
+  listenWalkerComplete,
 } from "./function/event";
 export {
   getCandles,
@@ -76,5 +79,7 @@ export { Backtest } from "./classes/Backtest";
 export { Live } from "./classes/Live";
 export { Performance } from "./classes/Performance";
 export { Walker } from "./classes/Walker";
+
+export * as emitters from "./config/emitters";
 
 export { backtest as lib } from "./lib";

@@ -12,6 +12,7 @@ import "./spec/callbacks.test.mjs";
 import "./spec/list.test.mjs";
 import "./spec/live.test.mjs";
 import "./spec/performance.test.mjs";
+import "./spec/walker.test.mjs";
 
 run(import.meta.url, () => {
     console.log("All tests are finished");

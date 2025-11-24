@@ -1,5 +1,6 @@
 import * as di_scoped from 'di-scoped';
 import * as functools_kit from 'functools-kit';
+import { Subject } from 'functools-kit';
 
 /**
  * Interface representing a logging mechanism for the swarm system.
@@ -822,11 +823,11 @@ interface IWalkerResults {
     /** Total number of strategies tested */
     totalStrategies: number;
     /** Best performing strategy name */
-    bestStrategy: StrategyName;
+    bestStrategy: StrategyName | null;
     /** Best metric value achieved */
     bestMetric: number | null;
     /** Best strategy statistics */
-    bestStats: BacktestStatistics;
+    bestStats: BacktestStatistics | null;
 }
 /**
  * Unique walker identifier.
@@ -1516,6 +1517,109 @@ declare function listenProgress(fn: (event: ProgressContract) => void): () => vo
  * ```
  */
 declare function listenPerformance(fn: (event: PerformanceContract) => void): () => void;
+/**
+ * Subscribes to walker progress events with queued async processing.
+ *
+ * Emits during Walker.run() execution after each strategy completes.
+ * Events are processed sequentially in order received, even if callback is async.
+ * Uses queued wrapper to prevent concurrent execution of the callback.
+ *
+ * @param fn - Callback function to handle walker progress events
+ * @returns Unsubscribe function to stop listening to events
+ *
+ * @example
+ * ```typescript
+ * import { listenWalker, Walker } from "backtest-kit";
+ *
+ * const unsubscribe = listenWalker((event) => {
+ *   console.log(`Progress: ${event.strategiesTested} / ${event.totalStrategies}`);
+ *   console.log(`Best strategy: ${event.bestStrategy} (${event.bestMetric})`);
+ *   console.log(`Current strategy: ${event.strategyName} (${event.metricValue})`);
+ * });
+ *
+ * Walker.run("BTCUSDT", {
+ *   walkerName: "my-walker",
+ *   exchangeName: "binance",
+ *   frameName: "1d-backtest"
+ * });
+ *
+ * // Later: stop listening
+ * unsubscribe();
+ * ```
+ */
+declare function listenWalker(fn: (event: WalkerContract) => void): () => void;
+/**
+ * Subscribes to filtered walker progress events with one-time execution.
+ *
+ * Listens for events matching the filter predicate, then executes callback once
+ * and automatically unsubscribes. Useful for waiting for specific walker conditions.
+ *
+ * @param filterFn - Predicate to filter which events trigger the callback
+ * @param fn - Callback function to handle the filtered event (called only once)
+ * @returns Unsubscribe function to cancel the listener before it fires
+ *
+ * @example
+ * ```typescript
+ * import { listenWalkerOnce, Walker } from "backtest-kit";
+ *
+ * // Wait for walker to complete all strategies
+ * listenWalkerOnce(
+ *   (event) => event.strategiesTested === event.totalStrategies,
+ *   (event) => {
+ *     console.log("Walker completed!");
+ *     console.log("Best strategy:", event.bestStrategy, event.bestMetric);
+ *   }
+ * );
+ *
+ * // Wait for specific strategy to be tested
+ * const cancel = listenWalkerOnce(
+ *   (event) => event.strategyName === "my-strategy-v2",
+ *   (event) => console.log("Strategy v2 tested:", event.metricValue)
+ * );
+ *
+ * Walker.run("BTCUSDT", {
+ *   walkerName: "my-walker",
+ *   exchangeName: "binance",
+ *   frameName: "1d-backtest"
+ * });
+ *
+ * // Cancel if needed before event fires
+ * cancel();
+ * ```
+ */
+declare function listenWalkerOnce(filterFn: (event: WalkerContract) => boolean, fn: (event: WalkerContract) => void): () => void;
+/**
+ * Subscribes to walker completion events with queued async processing.
+ *
+ * Emits when Walker.run() completes testing all strategies.
+ * Events are processed sequentially in order received, even if callback is async.
+ * Uses queued wrapper to prevent concurrent execution of the callback.
+ *
+ * @param fn - Callback function to handle walker completion event
+ * @returns Unsubscribe function to stop listening to events
+ *
+ * @example
+ * ```typescript
+ * import { listenWalkerComplete, Walker } from "backtest-kit";
+ *
+ * const unsubscribe = listenWalkerComplete((results) => {
+ *   console.log(`Walker ${results.walkerName} completed!`);
+ *   console.log(`Best strategy: ${results.bestStrategy}`);
+ *   console.log(`Best ${results.metric}: ${results.bestMetric}`);
+ *   console.log(`Tested ${results.totalStrategies} strategies`);
+ * });
+ *
+ * Walker.run("BTCUSDT", {
+ *   walkerName: "my-walker",
+ *   exchangeName: "binance",
+ *   frameName: "1d-backtest"
+ * });
+ *
+ * // Later: stop listening
+ * unsubscribe();
+ * ```
+ */
+declare function listenWalkerComplete(fn: (event: IWalkerResults) => void): () => void;
 
 /**
  * Fetches historical candle data from the registered exchange.
@@ -2739,6 +2843,65 @@ declare class WalkerUtils {
 declare const Walker: WalkerUtils;
 
 /**
+ * Global signal emitter for all trading events (live + backtest).
+ * Emits all signal events regardless of execution mode.
+ */
+declare const signalEmitter: Subject<IStrategyTickResult>;
+/**
+ * Live trading signal emitter.
+ * Emits only signals from live trading execution.
+ */
+declare const signalLiveEmitter: Subject<IStrategyTickResult>;
+/**
+ * Backtest signal emitter.
+ * Emits only signals from backtest execution.
+ */
+declare const signalBacktestEmitter: Subject<IStrategyTickResult>;
+/**
+ * Error emitter for background execution errors.
+ * Emits errors caught in background tasks (Live.background, Backtest.background).
+ */
+declare const errorEmitter: Subject<Error>;
+/**
+ * Done emitter for background execution completion.
+ * Emits when background tasks complete (Live.background, Backtest.background).
+ */
+declare const doneEmitter: Subject<DoneContract>;
+/**
+ * Progress emitter for backtest execution progress.
+ * Emits progress updates during backtest execution.
+ */
+declare const progressEmitter: Subject<ProgressContract>;
+/**
+ * Performance emitter for execution metrics.
+ * Emits performance metrics for profiling and bottleneck detection.
+ */
+declare const performanceEmitter: Subject<PerformanceContract>;
+/**
+ * Walker emitter for strategy comparison progress.
+ * Emits progress updates during walker execution (each strategy completion).
+ */
+declare const walkerEmitter: Subject<WalkerContract>;
+/**
+ * Walker complete emitter for strategy comparison completion.
+ * Emits when all strategies have been tested and final results are available.
+ */
+declare const walkerCompleteSubject: Subject<IWalkerResults>;
+
+declare const emitters_doneEmitter: typeof doneEmitter;
+declare const emitters_errorEmitter: typeof errorEmitter;
+declare const emitters_performanceEmitter: typeof performanceEmitter;
+declare const emitters_progressEmitter: typeof progressEmitter;
+declare const emitters_signalBacktestEmitter: typeof signalBacktestEmitter;
+declare const emitters_signalEmitter: typeof signalEmitter;
+declare const emitters_signalLiveEmitter: typeof signalLiveEmitter;
+declare const emitters_walkerCompleteSubject: typeof walkerCompleteSubject;
+declare const emitters_walkerEmitter: typeof walkerEmitter;
+declare namespace emitters {
+  export { emitters_doneEmitter as doneEmitter, emitters_errorEmitter as errorEmitter, emitters_performanceEmitter as performanceEmitter, emitters_progressEmitter as progressEmitter, emitters_signalBacktestEmitter as signalBacktestEmitter, emitters_signalEmitter as signalEmitter, emitters_signalLiveEmitter as signalLiveEmitter, emitters_walkerCompleteSubject as walkerCompleteSubject, emitters_walkerEmitter as walkerEmitter };
+}
+
+/**
  * Logger service with automatic context injection.
  *
  * Features:
@@ -3559,6 +3722,7 @@ declare class WalkerLogicPrivateService {
     private readonly loggerService;
     private readonly backtestLogicPublicService;
     private readonly backtestMarkdownService;
+    private readonly walkerSchemaService;
     /**
      * Runs walker comparison for a symbol.
      *
@@ -4104,4 +4268,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type BacktestStatistics, type CandleInterval, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type ICandleData, type IExchangeSchema, type IFrameSchema, type IPersistBase, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatistics, MethodContextService, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatistics, PersistBase, PersistSignalAdaper, type ProgressContract, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, Walker, type WalkerMetric, addExchange, addFrame, addStrategy, addWalker, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listExchanges, listFrames, listStrategies, listWalkers, listenDone, listenDoneOnce, listenError, listenPerformance, listenProgress, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, setLogger };
+export { Backtest, type BacktestStatistics, type CandleInterval, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type ICandleData, type IExchangeSchema, type IFrameSchema, type IPersistBase, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatistics, MethodContextService, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatistics, PersistBase, PersistSignalAdaper, type ProgressContract, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, Walker, type WalkerMetric, addExchange, addFrame, addStrategy, addWalker, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listExchanges, listFrames, listStrategies, listWalkers, listenDone, listenDoneOnce, listenError, listenPerformance, listenProgress, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenWalker, listenWalkerComplete, listenWalkerOnce, setLogger };
