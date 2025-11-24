@@ -23,6 +23,18 @@ export interface IHeatmapRow {
   avgPnl: number | null;
   /** Standard deviation of PNL */
   stdDev: number | null;
+  /** Profit factor: sum of wins / sum of losses */
+  profitFactor: number | null;
+  /** Average profit percentage on winning trades */
+  avgWin: number | null;
+  /** Average loss percentage on losing trades */
+  avgLoss: number | null;
+  /** Maximum consecutive winning trades */
+  maxWinStreak: number;
+  /** Maximum consecutive losing trades */
+  maxLossStreak: number;
+  /** Expectancy: (winRate * avgWin) - (lossRate * avgLoss) */
+  expectancy: number | null;
 }
 
 /**

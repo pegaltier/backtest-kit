@@ -24,7 +24,8 @@
 - 💉 **Strategy Dependency Injection** - addStrategy() enables DI pattern for trading strategies
 - 🔍 **Schema Reflection API** - listExchanges(), listStrategies(), listFrames() for runtime introspection
 - 🏃 **Strategy Comparison (Walker)** - Compare multiple strategies in parallel with automatic ranking and statistical analysis
-- 🧪 **Comprehensive Test Coverage** - 70 unit tests covering validation, PNL, callbacks, reports, performance tracking, walker, and event system
+- 🔥 **Portfolio Heatmap** - Multi-symbol performance analysis with extended metrics (Profit Factor, Expectancy, Win/Loss Streaks, Avg Win/Loss) sorted by Sharpe Ratio
+- 🧪 **Comprehensive Test Coverage** - 76 unit tests covering validation, PNL, callbacks, reports, performance tracking, walker, heatmap, and event system
 - 💾 **Zero Data Download** - Unlike Freqtrade, no need to download gigabytes of historical data - plug any data source (CCXT, database, API)
 - 🔒 **Safe Math & Robustness** - All metrics protected against NaN/Infinity with unsafe numeric checks, returns N/A for invalid calculations
 
@@ -382,7 +383,112 @@ Metric value: 1.85
 - `totalPnl` - Total PNL percentage
 - `certaintyRatio` - avgWin / |avgLoss|
 
-### 8. Schema Reflection API (Optional)
+### 8. Portfolio Heatmap (Optional)
+
+Heat provides portfolio-wide performance analysis across multiple symbols with extended metrics. Automatically collects data from all closed signals per strategy.
+
+#### Get Heatmap Data
+
+```typescript
+import { Heat, Backtest } from "backtest-kit";
+
+// Run backtests for multiple symbols
+for (const symbol of ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT"]) {
+  for await (const _ of Backtest.run(symbol, {
+    strategyName: "my-strategy",
+    exchangeName: "binance",
+    frameName: "2024-backtest"
+  })) {}
+}
+
+// Get raw heatmap data (Controller)
+const stats = await Heat.getData("my-strategy");
+console.log(stats);
+// Returns:
+// {
+//   symbols: [
+//     {
+//       symbol: "BTCUSDT",
+//       totalPnl: 15.5,           // Total profit/loss %
+//       sharpeRatio: 2.10,        // Risk-adjusted return
+//       profitFactor: 2.50,       // Wins / Losses ratio
+//       expectancy: 1.85,         // Expected value per trade
+//       winRate: 72.3,            // Win percentage
+//       avgWin: 2.45,             // Average win %
+//       avgLoss: -0.95,           // Average loss %
+//       maxDrawdown: -2.5,        // Maximum drawdown %
+//       maxWinStreak: 5,          // Consecutive wins
+//       maxLossStreak: 2,         // Consecutive losses
+//       totalTrades: 45,
+//       winCount: 32,
+//       lossCount: 13,
+//       avgPnl: 0.34,
+//       stdDev: 1.62
+//     },
+//     // ... more symbols sorted by Sharpe Ratio
+//   ],
+//   totalSymbols: 4,
+//   portfolioTotalPnl: 45.3,      // Portfolio-wide total PNL
+//   portfolioSharpeRatio: 1.85,   // Portfolio-wide Sharpe
+//   portfolioTotalTrades: 120
+// }
+
+// Generate markdown report (View)
+const markdown = await Heat.getReport("my-strategy");
+console.log(markdown);
+
+// Save to disk (default: ./logs/heatmap/my-strategy.md)
+await Heat.dump("my-strategy");
+
+// Save to custom path
+await Heat.dump("my-strategy", "./reports");
+
+// Clear accumulated data
+Heat.clear("my-strategy");
+
+// Clear all strategies
+Heat.clear();
+```
+
+#### Heatmap Report Example
+
+```markdown
+# Portfolio Heatmap: my-strategy
+
+**Total Symbols:** 4 | **Portfolio PNL:** +45.30% | **Portfolio Sharpe:** 1.85 | **Total Trades:** 120
+
+| Symbol | Total PNL | Sharpe | PF | Expect | WR | Avg Win | Avg Loss | Max DD | W Streak | L Streak | Trades |
+|--------|-----------|--------|-------|--------|-----|---------|----------|--------|----------|----------|--------|
+| BTCUSDT | +15.50% | 2.10 | 2.50 | +1.85% | 72.3% | +2.45% | -0.95% | -2.50% | 5 | 2 | 45 |
+| ETHUSDT | +12.30% | 1.85 | 2.15 | +1.45% | 68.5% | +2.10% | -1.05% | -3.10% | 4 | 2 | 38 |
+| SOLUSDT | +10.20% | 1.65 | 1.95 | +1.20% | 65.2% | +1.95% | -1.15% | -4.20% | 3 | 3 | 25 |
+| BNBUSDT | +7.30% | 1.40 | 1.75 | +0.95% | 62.5% | +1.75% | -1.20% | -3.80% | 3 | 2 | 12 |
+```
+
+**Column Descriptions:**
+- **Total PNL** - Total profit/loss percentage across all trades
+- **Sharpe** - Risk-adjusted return (higher is better)
+- **PF** - Profit Factor: sum of wins / sum of losses (>1.0 is profitable)
+- **Expect** - Expectancy: expected value per trade
+- **WR** - Win Rate: percentage of winning trades
+- **Avg Win** - Average profit on winning trades
+- **Avg Loss** - Average loss on losing trades
+- **Max DD** - Maximum drawdown (largest peak-to-trough decline)
+- **W Streak** - Maximum consecutive winning trades
+- **L Streak** - Maximum consecutive losing trades
+- **Trades** - Total number of trades for this symbol
+
+**Note:** Symbols are sorted by Sharpe Ratio descending (best performers first).
+
+#### Use Cases
+
+- **Multi-Symbol Portfolio Analysis** - Compare performance across different trading pairs
+- **Symbol Selection** - Identify which symbols work best with your strategy
+- **Risk Management** - Monitor drawdowns and streaks across the portfolio
+- **Strategy Optimization** - Focus on symbols with highest Sharpe Ratio
+- **Performance Tracking** - Track long-term portfolio health with expectancy and profit factor
+
+### 9. Schema Reflection API (Optional)
 
 Retrieve registered schemas at runtime for debugging, documentation, or building dynamic UIs:
 
@@ -1055,6 +1161,24 @@ Walker.getReport(symbol: string, walkerName: string): Promise<string>
 Walker.dump(symbol: string, walkerName: string, path?: string): Promise<void>
 ```
 
+#### Heat API
+
+```typescript
+import { Heat, IHeatmapStatistics } from "backtest-kit";
+
+// Get raw heatmap statistics (Controller)
+Heat.getData(strategyName: string): Promise<IHeatmapStatistics>
+
+// Generate markdown report (View)
+Heat.getReport(strategyName: string): Promise<string>
+
+// Save heatmap report to disk (default: ./logs/heatmap)
+Heat.dump(strategyName: string, path?: string): Promise<void>
+
+// Clear accumulated heatmap data
+Heat.clear(strategyName?: string): void
+```
+
 #### Performance Profiling API
 
 ```typescript
@@ -1175,6 +1299,35 @@ interface WalkerContract {
   bestStrategy: string | null;              // Current best strategy (null if first)
   bestMetric: number | null;                // Current best metric value
   stats: BacktestStatistics;                // Full statistics for current strategy
+}
+
+// Heatmap statistics (exported from "backtest-kit")
+interface IHeatmapStatistics {
+  symbols: IHeatmapRow[];                   // Array of per-symbol statistics
+  totalSymbols: number;                     // Total number of symbols tracked
+  portfolioTotalPnl: number | null;         // Portfolio-wide total PNL
+  portfolioSharpeRatio: number | null;      // Portfolio-wide Sharpe Ratio
+  portfolioTotalTrades: number;             // Portfolio-wide total trades
+}
+
+// Heatmap row (exported from "backtest-kit")
+interface IHeatmapRow {
+  symbol: string;                           // Trading pair symbol (e.g., "BTCUSDT")
+  totalPnl: number | null;                  // Total profit/loss % across all trades
+  sharpeRatio: number | null;               // Risk-adjusted return
+  profitFactor: number | null;              // Sum of wins / sum of losses
+  expectancy: number | null;                // Expected value per trade
+  winRate: number | null;                   // Win percentage
+  avgWin: number | null;                    // Average profit % on winning trades
+  avgLoss: number | null;                   // Average loss % on losing trades
+  maxDrawdown: number | null;               // Maximum drawdown %
+  maxWinStreak: number;                     // Maximum consecutive winning trades
+  maxLossStreak: number;                    // Maximum consecutive losing trades
+  totalTrades: number;                      // Total number of closed trades
+  winCount: number;                         // Number of winning trades
+  lossCount: number;                        // Number of losing trades
+  avgPnl: number | null;                    // Average PNL per trade
+  stdDev: number | null;                    // Standard deviation of PNL
 }
 ```
 

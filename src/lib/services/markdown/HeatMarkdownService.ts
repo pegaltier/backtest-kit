@@ -71,10 +71,50 @@ const columns: Column[] = [
       data.sharpeRatio !== null ? str(data.sharpeRatio, "%.2f") : "N/A",
   },
   {
+    key: "profitFactor",
+    label: "PF",
+    format: (data) =>
+      data.profitFactor !== null ? str(data.profitFactor, "%.2f") : "N/A",
+  },
+  {
+    key: "expectancy",
+    label: "Expect",
+    format: (data) =>
+      data.expectancy !== null ? str(data.expectancy, "%+.2f%%") : "N/A",
+  },
+  {
+    key: "winRate",
+    label: "WR",
+    format: (data) =>
+      data.winRate !== null ? str(data.winRate, "%.1f%%") : "N/A",
+  },
+  {
+    key: "avgWin",
+    label: "Avg Win",
+    format: (data) =>
+      data.avgWin !== null ? str(data.avgWin, "%+.2f%%") : "N/A",
+  },
+  {
+    key: "avgLoss",
+    label: "Avg Loss",
+    format: (data) =>
+      data.avgLoss !== null ? str(data.avgLoss, "%+.2f%%") : "N/A",
+  },
+  {
     key: "maxDrawdown",
     label: "Max DD",
     format: (data) =>
       data.maxDrawdown !== null ? str(-data.maxDrawdown, "%.2f%%") : "N/A",
+  },
+  {
+    key: "maxWinStreak",
+    label: "W Streak",
+    format: (data) => data.maxWinStreak.toString(),
+  },
+  {
+    key: "maxLossStreak",
+    label: "L Streak",
+    format: (data) => data.maxLossStreak.toString(),
   },
   {
     key: "totalTrades",
@@ -105,6 +145,7 @@ class HeatmapStorage {
 
     this.symbolData.get(symbol)!.push(data);
   }
+
 
   /**
    * Calculates statistics for a single symbol.
@@ -178,6 +219,67 @@ class HeatmapStorage {
       maxDrawdown = maxDD;
     }
 
+    // Calculate Profit Factor
+    let profitFactor: number | null = null;
+    if (winCount > 0 && lossCount > 0) {
+      const sumWins = signals
+        .filter((s) => s.pnl.pnlPercentage > 0)
+        .reduce((acc, s) => acc + s.pnl.pnlPercentage, 0);
+      const sumLosses = Math.abs(
+        signals
+          .filter((s) => s.pnl.pnlPercentage < 0)
+          .reduce((acc, s) => acc + s.pnl.pnlPercentage, 0)
+      );
+      if (sumLosses > 0) {
+        profitFactor = sumWins / sumLosses;
+      }
+    }
+
+    // Calculate Average Win / Average Loss
+    let avgWin: number | null = null;
+    let avgLoss: number | null = null;
+    if (winCount > 0) {
+      avgWin =
+        signals
+          .filter((s) => s.pnl.pnlPercentage > 0)
+          .reduce((acc, s) => acc + s.pnl.pnlPercentage, 0) / winCount;
+    }
+    if (lossCount > 0) {
+      avgLoss =
+        signals
+          .filter((s) => s.pnl.pnlPercentage < 0)
+          .reduce((acc, s) => acc + s.pnl.pnlPercentage, 0) / lossCount;
+    }
+
+    // Calculate Win/Loss Streaks
+    let maxWinStreak = 0;
+    let maxLossStreak = 0;
+    let currentWinStreak = 0;
+    let currentLossStreak = 0;
+
+    for (const signal of signals) {
+      if (signal.pnl.pnlPercentage > 0) {
+        currentWinStreak++;
+        currentLossStreak = 0;
+        if (currentWinStreak > maxWinStreak) {
+          maxWinStreak = currentWinStreak;
+        }
+      } else if (signal.pnl.pnlPercentage < 0) {
+        currentLossStreak++;
+        currentWinStreak = 0;
+        if (currentLossStreak > maxLossStreak) {
+          maxLossStreak = currentLossStreak;
+        }
+      }
+    }
+
+    // Calculate Expectancy
+    let expectancy: number | null = null;
+    if (winRate !== null && avgWin !== null && avgLoss !== null) {
+      const lossRate = 100 - winRate;
+      expectancy = (winRate / 100) * avgWin + (lossRate / 100) * avgLoss;
+    }
+
     // Apply safe math checks
     if (isUnsafe(winRate)) winRate = null;
     if (isUnsafe(totalPnl)) totalPnl = null;
@@ -185,6 +287,10 @@ class HeatmapStorage {
     if (isUnsafe(stdDev)) stdDev = null;
     if (isUnsafe(sharpeRatio)) sharpeRatio = null;
     if (isUnsafe(maxDrawdown)) maxDrawdown = null;
+    if (isUnsafe(profitFactor)) profitFactor = null;
+    if (isUnsafe(avgWin)) avgWin = null;
+    if (isUnsafe(avgLoss)) avgLoss = null;
+    if (isUnsafe(expectancy)) expectancy = null;
 
     return {
       symbol,
@@ -197,6 +303,12 @@ class HeatmapStorage {
       winRate,
       avgPnl,
       stdDev,
+      profitFactor,
+      avgWin,
+      avgLoss,
+      maxWinStreak,
+      maxLossStreak,
+      expectancy,
     };
   }
 
@@ -214,11 +326,12 @@ class HeatmapStorage {
       symbols.push(row);
     }
 
-    // Sort by total PNL descending (nulls last)
+    // Sort by Sharpe Ratio descending (best performers first, nulls last)
     symbols.sort((a, b) => {
-      if (a.totalPnl === null) return 1;
-      if (b.totalPnl === null) return -1;
-      return b.totalPnl - a.totalPnl;
+      if (a.sharpeRatio === null && b.sharpeRatio === null) return 0;
+      if (a.sharpeRatio === null) return 1;
+      if (b.sharpeRatio === null) return -1;
+      return b.sharpeRatio - a.sharpeRatio;
     });
 
     // Calculate portfolio-wide metrics

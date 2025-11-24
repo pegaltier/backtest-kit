@@ -207,7 +207,18 @@ test("Heat.getReport generates markdown report", async ({ pass, fail }) => {
   if (
     markdown &&
     markdown.includes("# Portfolio Heatmap: test-strategy-heat-3") &&
-    markdown.includes("| Symbol | Total PNL | Sharpe | Max DD | Trades |") &&
+    markdown.includes("| Symbol |") &&
+    markdown.includes("| Total PNL |") &&
+    markdown.includes("| Sharpe |") &&
+    markdown.includes("| PF |") &&
+    markdown.includes("| Expect |") &&
+    markdown.includes("| WR |") &&
+    markdown.includes("| Avg Win |") &&
+    markdown.includes("| Avg Loss |") &&
+    markdown.includes("| Max DD |") &&
+    markdown.includes("| W Streak |") &&
+    markdown.includes("| L Streak |") &&
+    markdown.includes("| Trades |") &&
     markdown.includes("BTCUSDT")
   ) {
     pass("Heat.getReport generated markdown report");
@@ -297,7 +308,73 @@ test("Heat calculates portfolio-wide metrics", async ({ pass, fail }) => {
 
 });
 
-test("Heat sorts symbols by Total PNL descending", async ({ pass, fail }) => {
+test("Heat calculates extended metrics correctly", async ({ pass, fail }) => {
+
+  addExchange({
+    exchangeName: "binance-mock-heat-extended",
+    getCandles: async (_symbol, interval, since, limit) => {
+      return await getMockCandles(interval, since, limit);
+    },
+    formatPrice: async (symbol, price) => {
+      return price.toFixed(8);
+    },
+    formatQuantity: async (symbol, quantity) => {
+      return quantity.toFixed(8);
+    },
+  });
+
+  addStrategy({
+    strategyName: "test-strategy-heat-extended",
+    interval: "1m",
+    getSignal: async () => {
+      return {
+        position: "long",
+        note: "heat test signal",
+        priceOpen: 42000,
+        priceTakeProfit: 43000,
+        priceStopLoss: 41000,
+        minuteEstimatedTime: 60,
+      };
+    },
+  });
+
+  addFrame({
+    frameName: "1d-backtest-heat-extended",
+    interval: "1d",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-02T00:00:00Z"),
+  });
+
+  // Run backtest to generate data
+  for await (const _ of Backtest.run("BTCUSDT", {
+    strategyName: "test-strategy-heat-extended",
+    exchangeName: "binance-mock-heat-extended",
+    frameName: "1d-backtest-heat-extended",
+  })) {
+    // Just consume
+  }
+
+  const stats = await Heat.getData("test-strategy-heat-extended");
+  const btcRow = stats.symbols.find(s => s.symbol === "BTCUSDT");
+
+  if (
+    btcRow &&
+    btcRow.profitFactor !== undefined &&
+    btcRow.avgWin !== undefined &&
+    btcRow.avgLoss !== undefined &&
+    btcRow.maxWinStreak !== undefined &&
+    btcRow.maxLossStreak !== undefined &&
+    btcRow.expectancy !== undefined
+  ) {
+    pass("Heat calculates extended metrics correctly");
+    return;
+  }
+
+  fail("Heat did not calculate extended metrics correctly");
+
+});
+
+test("Heat sorts symbols by Sharpe Ratio descending", async ({ pass, fail }) => {
 
   addExchange({
     exchangeName: "binance-mock-heat-6",
@@ -358,11 +435,11 @@ test("Heat sorts symbols by Total PNL descending", async ({ pass, fail }) => {
     return;
   }
 
-  // Verify symbols are sorted by Total PNL descending (nulls last)
+  // Verify symbols are sorted by Sharpe Ratio descending (nulls last)
   let isSorted = true;
   for (let i = 0; i < stats.symbols.length - 1; i++) {
-    const current = stats.symbols[i].totalPnl;
-    const next = stats.symbols[i + 1].totalPnl;
+    const current = stats.symbols[i].sharpeRatio;
+    const next = stats.symbols[i + 1].sharpeRatio;
 
     // null should always come after non-null
     if (current === null) {
@@ -380,7 +457,7 @@ test("Heat sorts symbols by Total PNL descending", async ({ pass, fail }) => {
   }
 
   if (isSorted) {
-    pass("Heat sorts symbols by Total PNL descending");
+    pass("Heat sorts symbols by Sharpe Ratio descending");
     return;
   }
 
