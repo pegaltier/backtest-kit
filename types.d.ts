@@ -3200,23 +3200,6 @@ declare class HeatUtils {
      * ```
      */
     dump: (strategyName: StrategyName, path?: string) => Promise<void>;
-    /**
-     * Clears accumulated heatmap data from storage.
-     * If strategyName is provided, clears only that strategy's data.
-     * If strategyName is omitted, clears all strategies' data.
-     *
-     * @param strategyName - Optional strategy name to clear specific strategy data
-     *
-     * @example
-     * ```typescript
-     * // Clear specific strategy data
-     * Heat.clear("my-strategy");
-     *
-     * // Clear all strategies' data
-     * Heat.clear();
-     * ```
-     */
-    clear: (strategyName?: StrategyName) => void;
 }
 /**
  * Singleton instance of HeatUtils for convenient heatmap operations.
