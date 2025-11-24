@@ -31,10 +31,22 @@ export const signalBacktestEmitter = new Subject<IStrategyTickResult>();
 export const errorEmitter = new Subject<Error>();
 
 /**
- * Done emitter for background execution completion.
- * Emits when background tasks complete (Live.background, Backtest.background).
+ * Done emitter for live background execution completion.
+ * Emits when live background tasks complete (Live.background).
  */
-export const doneEmitter = new Subject<DoneContract>();
+export const doneLiveSubject = new Subject<DoneContract>();
+
+/**
+ * Done emitter for backtest background execution completion.
+ * Emits when backtest background tasks complete (Backtest.background).
+ */
+export const doneBacktestSubject = new Subject<DoneContract>();
+
+/**
+ * Done emitter for walker background execution completion.
+ * Emits when walker background tasks complete (Walker.background).
+ */
+export const doneWalkerSubject = new Subject<DoneContract>();
 
 /**
  * Progress emitter for backtest execution progress.

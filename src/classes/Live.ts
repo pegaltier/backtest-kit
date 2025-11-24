@@ -4,7 +4,7 @@ import {
   StrategyName,
 } from "../interfaces/Strategy.interface";
 import backtest from "../lib";
-import { errorEmitter, doneEmitter } from "../config/emitters";
+import { errorEmitter, doneLiveSubject } from "../config/emitters";
 import { getErrorMessage } from "functools-kit";
 
 const LIVE_METHOD_NAME_RUN = "LiveUtils.run";
@@ -107,7 +107,7 @@ export class LiveUtils {
           break;
         }
       }
-      await doneEmitter.next({
+      await doneLiveSubject.next({
         exchangeName: context.exchangeName,
         strategyName: context.strategyName,
         backtest: false,

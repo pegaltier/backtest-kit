@@ -6,8 +6,6 @@ import {
   Live,
   listenSignalLive,
   listenSignalLiveOnce,
-  listenDone,
-  listenDoneOnce,
 } from "../../build/index.mjs";
 
 import getMockCandles from "../mock/getMockCandles.mjs";

@@ -9,6 +9,7 @@ import {
   listenWalker,
   listenWalkerOnce,
   listenWalkerComplete,
+  emitters,
 } from "../../build/index.mjs";
 
 import getMockCandles from "../mock/getMockCandles.mjs";
@@ -754,5 +755,80 @@ test("Walker.getReport generates markdown report", async ({ pass, fail }) => {
   }
 
   await awaiter;
+
+});
+
+test("doneWalkerSubject.toPromise() resolves after Walker.background", async ({ pass, fail }) => {
+
+  addExchange({
+    exchangeName: "binance-mock-walker-done-promise",
+    getCandles: async (_symbol, interval, since, limit) => {
+      return await getMockCandles(interval, since, limit);
+    },
+    formatPrice: async (symbol, price) => {
+      return price.toFixed(8);
+    },
+    formatQuantity: async (symbol, quantity) => {
+      return quantity.toFixed(8);
+    },
+  });
+
+  addStrategy({
+    strategyName: "test-strategy-walker-done-promise-1",
+    interval: "1m",
+    getSignal: async () => {
+      return {
+        position: "long",
+        note: "walker done promise test",
+        priceOpen: 42000,
+        priceTakeProfit: 43000,
+        priceStopLoss: 41000,
+        minuteEstimatedTime: 60,
+      };
+    },
+  });
+
+  addFrame({
+    frameName: "1d-backtest-walker-done-promise",
+    interval: "1d",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-02T00:00:00Z"),
+  });
+
+  addWalker({
+    walkerName: "test-walker-done-promise",
+    exchangeName: "binance-mock-walker-done-promise",
+    frameName: "1d-backtest-walker-done-promise",
+    strategies: ["test-strategy-walker-done-promise-1"],
+    metric: "sharpeRatio",
+  });
+
+  // Create promise that will resolve when doneWalkerSubject emits
+  const donePromise = emitters.doneWalkerSubject.toPromise();
+
+  // Run walker in background
+  Walker.background("BTCUSDT", {
+    walkerName: "test-walker-done-promise",
+  });
+
+  try {
+    // Wait for doneWalkerSubject to resolve
+    const event = await donePromise;
+
+    if (
+      event &&
+      event.strategyName === "test-walker-done-promise" &&
+      event.symbol === "BTCUSDT" &&
+      event.exchangeName === "binance-mock-walker-done-promise" &&
+      event.backtest === true
+    ) {
+      pass("doneWalkerSubject.toPromise() resolved after Walker.background");
+      return;
+    }
+
+    fail("doneWalkerSubject.toPromise() resolved with incorrect data");
+  } catch (error) {
+    fail(`doneWalkerSubject.toPromise() failed: ${error.message}`);
+  }
 
 });

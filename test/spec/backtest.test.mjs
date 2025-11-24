@@ -6,8 +6,8 @@ import {
   addStrategy,
   Backtest,
   listenSignalBacktest,
-  listenDone,
-  listenDoneOnce,
+  listenDoneBacktest,
+  listenDoneBacktestOnce,
   listenProgress,
 } from "../../build/index.mjs";
 
@@ -137,7 +137,7 @@ test("Backtest.background executes without yielding", async ({ pass, fail }) => 
 
 });
 
-test("backtest completion triggers listenDone", async ({ pass, fail }) => {
+test("backtest completion triggers listenDoneBacktest", async ({ pass, fail }) => {
 
   const [awaiter, { resolve }] = createAwaiter();
 
@@ -176,7 +176,7 @@ test("backtest completion triggers listenDone", async ({ pass, fail }) => {
     endDate: new Date("2024-01-02T00:00:00Z"),
   });
 
-  const unsubscribe = listenDone((event) => {
+  const unsubscribe = listenDoneBacktest((event) => {
     if (event.backtest === true && event.strategyName === "test-strategy-done") {
       resolve(event);
       unsubscribe();
@@ -192,15 +192,15 @@ test("backtest completion triggers listenDone", async ({ pass, fail }) => {
   const doneEvent = await awaiter;
 
   if (doneEvent && doneEvent.backtest === true) {
-    pass("Backtest completion triggered listenDone");
+    pass("Backtest completion triggered listenDoneBacktest");
     return;
   }
 
-  fail("Backtest completion did not trigger listenDone");
+  fail("Backtest completion did not trigger listenDoneBacktest");
 
 });
 
-test("listenDoneOnce triggers once for backtest", async ({ pass, fail }) => {
+test("listenDoneBacktestOnce triggers once for backtest", async ({ pass, fail }) => {
 
   const [awaiter, { resolve }] = createAwaiter();
 
@@ -239,7 +239,7 @@ test("listenDoneOnce triggers once for backtest", async ({ pass, fail }) => {
     endDate: new Date("2024-01-02T00:00:00Z"),
   });
 
-  listenDoneOnce(
+  listenDoneBacktestOnce(
     (event) => event.backtest === true && event.strategyName === "test-strategy-done-once",
     (event) => {
       resolve(event);
@@ -255,11 +255,11 @@ test("listenDoneOnce triggers once for backtest", async ({ pass, fail }) => {
   const doneEvent = await awaiter;
 
   if (doneEvent && doneEvent.backtest === true) {
-    pass("listenDoneOnce triggered once for backtest");
+    pass("listenDoneBacktestOnce triggered once for backtest");
     return;
   }
 
-  fail("listenDoneOnce did not trigger for backtest");
+  fail("listenDoneBacktestOnce did not trigger for backtest");
 
 });
 
@@ -517,7 +517,7 @@ test("listenProgress tracks backtest progress", async ({ pass, fail }) => {
     }
   });
 
-  const doneUnsubscribe = listenDone((event) => {
+  const doneUnsubscribe = listenDoneBacktest((event) => {
     if (event.strategyName === "test-strategy-progress") {
       resolve(true);
       doneUnsubscribe();

@@ -1,6 +1,6 @@
 import backtest from "../lib";
 import { StrategyName } from "../interfaces/Strategy.interface";
-import { errorEmitter, doneEmitter } from "../config/emitters";
+import { errorEmitter, doneBacktestSubject } from "../config/emitters";
 import { getErrorMessage } from "functools-kit";
 
 const BACKTEST_METHOD_NAME_RUN = "BacktestUtils.run";
@@ -92,7 +92,7 @@ export class BacktestUtils {
           break;
         }
       }
-      await doneEmitter.next({
+      await doneBacktestSubject.next({
         exchangeName: context.exchangeName,
         strategyName: context.strategyName,
         backtest: true,

@@ -6,7 +6,8 @@ import {
   addStrategy,
   Backtest,
   Live,
-  listenDone,
+  listenDoneBacktest,
+  listenDoneLive,
 } from "../../build/index.mjs";
 
 import getMockCandles from "../mock/getMockCandles.mjs";
@@ -52,7 +53,7 @@ test("Backtest.getReport returns markdown string", async ({ pass, fail }) => {
     endDate: new Date("2024-01-02T00:00:00Z"),
   });
 
-  const unsubscribe = listenDone((event) => {
+  const unsubscribe = listenDoneBacktest((event) => {
     if (event.backtest === true && event.strategyName === "test-strategy-bt-report") {
       resolve(true);
       unsubscribe();
@@ -117,7 +118,7 @@ test("Backtest report includes win rate statistics", async ({ pass, fail }) => {
     endDate: new Date("2024-01-02T00:00:00Z"),
   });
 
-  const unsubscribe = listenDone((event) => {
+  const unsubscribe = listenDoneBacktest((event) => {
     if (event.backtest === true && event.strategyName === "test-strategy-bt-stats") {
       resolve(true);
       unsubscribe();
@@ -300,7 +301,7 @@ test("Backtest report includes signal details table", async ({ pass, fail }) => 
     endDate: new Date("2024-01-02T00:00:00Z"),
   });
 
-  const unsubscribe = listenDone((event) => {
+  const unsubscribe = listenDoneBacktest((event) => {
     if (event.backtest === true && event.strategyName === "test-strategy-bt-table") {
       resolve(true);
       unsubscribe();

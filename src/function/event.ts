@@ -1,5 +1,5 @@
 import backtest from "../lib";
-import { signalEmitter, signalLiveEmitter, signalBacktestEmitter, errorEmitter, doneEmitter, progressEmitter, performanceEmitter, walkerEmitter, walkerCompleteSubject } from "../config/emitters";
+import { signalEmitter, signalLiveEmitter, signalBacktestEmitter, errorEmitter, doneLiveSubject, doneBacktestSubject, doneWalkerSubject, progressEmitter, performanceEmitter, walkerEmitter, walkerCompleteSubject } from "../config/emitters";
 import { IStrategyTickResult } from "../interfaces/Strategy.interface";
 import { DoneContract } from "../contract/Done.contract";
 import { ProgressContract } from "../contract/Progress.contract";
@@ -15,8 +15,12 @@ const LISTEN_SIGNAL_LIVE_ONCE_METHOD_NAME = "event.listenSignalLiveOnce";
 const LISTEN_SIGNAL_BACKTEST_METHOD_NAME = "event.listenSignalBacktest";
 const LISTEN_SIGNAL_BACKTEST_ONCE_METHOD_NAME = "event.listenSignalBacktestOnce";
 const LISTEN_ERROR_METHOD_NAME = "event.listenError";
-const LISTEN_DONE_METHOD_NAME = "event.listenDone";
-const LISTEN_DONE_ONCE_METHOD_NAME = "event.listenDoneOnce";
+const LISTEN_DONE_LIVE_METHOD_NAME = "event.listenDoneLive";
+const LISTEN_DONE_LIVE_ONCE_METHOD_NAME = "event.listenDoneLiveOnce";
+const LISTEN_DONE_BACKTEST_METHOD_NAME = "event.listenDoneBacktest";
+const LISTEN_DONE_BACKTEST_ONCE_METHOD_NAME = "event.listenDoneBacktestOnce";
+const LISTEN_DONE_WALKER_METHOD_NAME = "event.listenDoneWalker";
+const LISTEN_DONE_WALKER_ONCE_METHOD_NAME = "event.listenDoneWalkerOnce";
 const LISTEN_PROGRESS_METHOD_NAME = "event.listenProgress";
 const LISTEN_PERFORMANCE_METHOD_NAME = "event.listenPerformance";
 const LISTEN_WALKER_METHOD_NAME = "event.listenWalker";
@@ -230,9 +234,9 @@ export function listenError(fn: (error: Error) => void) {
 }
 
 /**
- * Subscribes to background execution completion events with queued async processing.
+ * Subscribes to live background execution completion events with queued async processing.
  *
- * Emits when Live.background() or Backtest.background() completes execution.
+ * Emits when Live.background() completes execution.
  * Events are processed sequentially in order received, even if callback is async.
  * Uses queued wrapper to prevent concurrent execution of the callback.
  *
@@ -241,13 +245,10 @@ export function listenError(fn: (error: Error) => void) {
  *
  * @example
  * ```typescript
- * import { listenDone, Live } from "backtest-kit";
+ * import { listenDoneLive, Live } from "backtest-kit";
  *
- * const unsubscribe = listenDone((event) => {
- *   console.log("Completed:", event.strategyName, event.exchangeName, event.symbol);
- *   if (event.backtest) {
- *     console.log("Backtest mode completed");
- *   }
+ * const unsubscribe = listenDoneLive((event) => {
+ *   console.log("Live completed:", event.strategyName, event.exchangeName, event.symbol);
  * });
  *
  * Live.background("BTCUSDT", {
@@ -259,15 +260,15 @@ export function listenError(fn: (error: Error) => void) {
  * unsubscribe();
  * ```
  */
-export function listenDone(fn: (event: DoneContract) => void) {
-  backtest.loggerService.log(LISTEN_DONE_METHOD_NAME);
-  return doneEmitter.subscribe(queued(async (event) => fn(event)));
+export function listenDoneLive(fn: (event: DoneContract) => void) {
+  backtest.loggerService.log(LISTEN_DONE_LIVE_METHOD_NAME);
+  return doneLiveSubject.subscribe(queued(async (event) => fn(event)));
 }
 
 /**
- * Subscribes to filtered background execution completion events with one-time execution.
+ * Subscribes to filtered live background execution completion events with one-time execution.
  *
- * Emits when Live.background() or Backtest.background() completes execution.
+ * Emits when Live.background() completes execution.
  * Executes callback once and automatically unsubscribes.
  *
  * @param filterFn - Predicate to filter which events trigger the callback
@@ -276,11 +277,78 @@ export function listenDone(fn: (event: DoneContract) => void) {
  *
  * @example
  * ```typescript
- * import { listenDoneOnce, Backtest } from "backtest-kit";
+ * import { listenDoneLiveOnce, Live } from "backtest-kit";
+ *
+ * // Wait for first live completion
+ * listenDoneLiveOnce(
+ *   (event) => event.symbol === "BTCUSDT",
+ *   (event) => console.log("BTCUSDT live completed:", event.strategyName)
+ * );
+ *
+ * Live.background("BTCUSDT", {
+ *   strategyName: "my-strategy",
+ *   exchangeName: "binance"
+ * });
+ * ```
+ */
+export function listenDoneLiveOnce(
+  filterFn: (event: DoneContract) => boolean,
+  fn: (event: DoneContract) => void
+) {
+  backtest.loggerService.log(LISTEN_DONE_LIVE_ONCE_METHOD_NAME);
+  return doneLiveSubject.filter(filterFn).once(fn);
+}
+
+/**
+ * Subscribes to backtest background execution completion events with queued async processing.
+ *
+ * Emits when Backtest.background() completes execution.
+ * Events are processed sequentially in order received, even if callback is async.
+ * Uses queued wrapper to prevent concurrent execution of the callback.
+ *
+ * @param fn - Callback function to handle completion events
+ * @returns Unsubscribe function to stop listening to events
+ *
+ * @example
+ * ```typescript
+ * import { listenDoneBacktest, Backtest } from "backtest-kit";
+ *
+ * const unsubscribe = listenDoneBacktest((event) => {
+ *   console.log("Backtest completed:", event.strategyName, event.exchangeName, event.symbol);
+ * });
+ *
+ * Backtest.background("BTCUSDT", {
+ *   strategyName: "my-strategy",
+ *   exchangeName: "binance",
+ *   frameName: "1d-backtest"
+ * });
+ *
+ * // Later: stop listening
+ * unsubscribe();
+ * ```
+ */
+export function listenDoneBacktest(fn: (event: DoneContract) => void) {
+  backtest.loggerService.log(LISTEN_DONE_BACKTEST_METHOD_NAME);
+  return doneBacktestSubject.subscribe(queued(async (event) => fn(event)));
+}
+
+/**
+ * Subscribes to filtered backtest background execution completion events with one-time execution.
+ *
+ * Emits when Backtest.background() completes execution.
+ * Executes callback once and automatically unsubscribes.
+ *
+ * @param filterFn - Predicate to filter which events trigger the callback
+ * @param fn - Callback function to handle the filtered event (called only once)
+ * @returns Unsubscribe function to cancel the listener before it fires
+ *
+ * @example
+ * ```typescript
+ * import { listenDoneBacktestOnce, Backtest } from "backtest-kit";
  *
  * // Wait for first backtest completion
- * listenDoneOnce(
- *   (event) => event.backtest && event.symbol === "BTCUSDT",
+ * listenDoneBacktestOnce(
+ *   (event) => event.symbol === "BTCUSDT",
  *   (event) => console.log("BTCUSDT backtest completed:", event.strategyName)
  * );
  *
@@ -291,12 +359,76 @@ export function listenDone(fn: (event: DoneContract) => void) {
  * });
  * ```
  */
-export function listenDoneOnce(
+export function listenDoneBacktestOnce(
   filterFn: (event: DoneContract) => boolean,
   fn: (event: DoneContract) => void
 ) {
-  backtest.loggerService.log(LISTEN_DONE_ONCE_METHOD_NAME);
-  return doneEmitter.filter(filterFn).once(fn);
+  backtest.loggerService.log(LISTEN_DONE_BACKTEST_ONCE_METHOD_NAME);
+  return doneBacktestSubject.filter(filterFn).once(fn);
+}
+
+/**
+ * Subscribes to walker background execution completion events with queued async processing.
+ *
+ * Emits when Walker.background() completes execution.
+ * Events are processed sequentially in order received, even if callback is async.
+ * Uses queued wrapper to prevent concurrent execution of the callback.
+ *
+ * @param fn - Callback function to handle completion events
+ * @returns Unsubscribe function to stop listening to events
+ *
+ * @example
+ * ```typescript
+ * import { listenDoneWalker, Walker } from "backtest-kit";
+ *
+ * const unsubscribe = listenDoneWalker((event) => {
+ *   console.log("Walker completed:", event.strategyName, event.exchangeName, event.symbol);
+ * });
+ *
+ * Walker.background("BTCUSDT", {
+ *   walkerName: "my-walker"
+ * });
+ *
+ * // Later: stop listening
+ * unsubscribe();
+ * ```
+ */
+export function listenDoneWalker(fn: (event: DoneContract) => void) {
+  backtest.loggerService.log(LISTEN_DONE_WALKER_METHOD_NAME);
+  return doneWalkerSubject.subscribe(queued(async (event) => fn(event)));
+}
+
+/**
+ * Subscribes to filtered walker background execution completion events with one-time execution.
+ *
+ * Emits when Walker.background() completes execution.
+ * Executes callback once and automatically unsubscribes.
+ *
+ * @param filterFn - Predicate to filter which events trigger the callback
+ * @param fn - Callback function to handle the filtered event (called only once)
+ * @returns Unsubscribe function to cancel the listener before it fires
+ *
+ * @example
+ * ```typescript
+ * import { listenDoneWalkerOnce, Walker } from "backtest-kit";
+ *
+ * // Wait for first walker completion
+ * listenDoneWalkerOnce(
+ *   (event) => event.symbol === "BTCUSDT",
+ *   (event) => console.log("BTCUSDT walker completed:", event.strategyName)
+ * );
+ *
+ * Walker.background("BTCUSDT", {
+ *   walkerName: "my-walker"
+ * });
+ * ```
+ */
+export function listenDoneWalkerOnce(
+  filterFn: (event: DoneContract) => boolean,
+  fn: (event: DoneContract) => void
+) {
+  backtest.loggerService.log(LISTEN_DONE_WALKER_ONCE_METHOD_NAME);
+  return doneWalkerSubject.filter(filterFn).once(fn);
 }
 
 /**

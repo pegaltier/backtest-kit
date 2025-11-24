@@ -1,6 +1,6 @@
 import backtest from "../lib";
 import { WalkerName } from "../interfaces/Walker.interface";
-import { errorEmitter, doneEmitter } from "../config/emitters";
+import { errorEmitter, doneWalkerSubject } from "../config/emitters";
 import { getErrorMessage } from "functools-kit";
 
 const WALKER_METHOD_NAME_RUN = "WalkerUtils.run";
@@ -112,7 +112,7 @@ export class WalkerUtils {
           break;
         }
       }
-      await doneEmitter.next({
+      await doneWalkerSubject.next({
         exchangeName: walkerSchema.exchangeName,
         strategyName: context.walkerName,
         backtest: true,

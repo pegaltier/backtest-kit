@@ -15,6 +15,13 @@ import { WalkerContract } from "../../../contract/Walker.contract";
 import { BacktestStatistics } from "./BacktestMarkdownService";
 
 /**
+ * Alias for walker statistics result interface.
+ * Used for clarity in markdown service context.
+ *
+ */
+export type WalkerStatistics = IWalkerResults;
+
+/**
  * Checks if a value is unsafe for display (not a number, NaN, or Infinity).
  */
 function isUnsafe(value: number | null): boolean {

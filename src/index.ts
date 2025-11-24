@@ -9,8 +9,12 @@ export {
   listenSignalLive,
   listenSignalLiveOnce,
   listenError,
-  listenDone,
-  listenDoneOnce,
+  listenDoneLive,
+  listenDoneLiveOnce,
+  listenDoneBacktest,
+  listenDoneBacktestOnce,
+  listenDoneWalker,
+  listenDoneWalkerOnce,
   listenProgress,
   listenPerformance,
   listenWalker,
@@ -61,6 +65,7 @@ export { PerformanceContract, PerformanceMetricType } from "./contract/Performan
 export type { BacktestStatistics } from "./lib/services/markdown/BacktestMarkdownService";
 export type { LiveStatistics } from "./lib/services/markdown/LiveMarkdownService";
 export type { PerformanceStatistics } from "./lib/services/markdown/PerformanceMarkdownService";
+export type { WalkerStatistics } from "./lib/services/markdown/WalkerMarkdownService";
 
 export { ExecutionContextService } from "./lib/services/context/ExecutionContextService";
 export { MethodContextService } from "./lib/services/context/MethodContextService";

@@ -23,7 +23,8 @@
 - 🛑 **Graceful Shutdown** - Live.background() waits for open positions to close before stopping
 - 💉 **Strategy Dependency Injection** - addStrategy() enables DI pattern for trading strategies
 - 🔍 **Schema Reflection API** - listExchanges(), listStrategies(), listFrames() for runtime introspection
-- 🧪 **Comprehensive Test Coverage** - 61 unit tests covering validation, PNL, callbacks, reports, performance tracking, and event system
+- 🏃 **Strategy Comparison (Walker)** - Compare multiple strategies in parallel with automatic ranking and statistical analysis
+- 🧪 **Comprehensive Test Coverage** - 70 unit tests covering validation, PNL, callbacks, reports, performance tracking, walker, and event system
 - 💾 **Zero Data Download** - Unlike Freqtrade, no need to download gigabytes of historical data - plug any data source (CCXT, database, API)
 - 🔒 **Safe Math & Robustness** - All metrics protected against NaN/Infinity with unsafe numeric checks, returns N/A for invalid calculations
 
@@ -151,7 +152,7 @@ addFrame({
 ### 4. Run Backtest
 
 ```typescript
-import { Backtest, listenSignalBacktest, listenError, listenDone } from "backtest-kit";
+import { Backtest, listenSignalBacktest, listenError, listenDoneBacktest } from "backtest-kit";
 
 // Run backtest in background
 const stopBacktest = Backtest.background("BTCUSDT", {
@@ -172,20 +173,18 @@ listenError((error) => {
   console.error("Error:", error.message);
 });
 
-// Listen to completion
-listenDone((event) => {
-  if (event.backtest) {
-    console.log("Backtest completed:", event.symbol);
-    // Generate and save report
-    Backtest.dump(event.strategyName); // ./logs/backtest/my-strategy.md
-  }
+// Listen to backtest completion
+listenDoneBacktest((event) => {
+  console.log("Backtest completed:", event.symbol);
+  // Generate and save report
+  Backtest.dump(event.strategyName); // ./logs/backtest/my-strategy.md
 });
 ```
 
 ### 5. Run Live Trading (Crash-Safe)
 
 ```typescript
-import { Live, listenSignalLive, listenError, listenDone } from "backtest-kit";
+import { Live, listenSignalLive, listenError, listenDoneLive } from "backtest-kit";
 
 // Run live trading in background (infinite loop, crash-safe)
 const stop = Live.background("BTCUSDT", {
@@ -215,11 +214,9 @@ listenError((error) => {
   console.error("Error:", error.message);
 });
 
-// Listen to completion
-listenDone((event) => {
-  if (!event.backtest) {
-    console.log("Live trading stopped:", event.symbol);
-  }
+// Listen to live trading completion
+listenDoneLive((event) => {
+  console.log("Live trading stopped:", event.symbol);
 });
 
 // Stop when needed: stop();
@@ -255,7 +252,137 @@ for await (const result of Live.run("BTCUSDT", {
 }
 ```
 
-### 7. Schema Reflection API (Optional)
+### 7. Strategy Comparison with Walker (Optional)
+
+Walker runs multiple strategies in parallel and compares their performance to find the best one. It automatically pulls configuration from walker schema.
+
+#### Register Walker Schema
+
+```typescript
+import { addWalker } from "backtest-kit";
+
+addWalker({
+  walkerName: "btc-walker",
+  exchangeName: "binance",
+  frameName: "1d-backtest",
+  strategies: ["strategy-a", "strategy-b", "strategy-c"],
+  metric: "sharpeRatio", // Metric to compare strategies
+  callbacks: {
+    onStrategyStart: (strategyName, symbol) => {
+      console.log(`Starting strategy: ${strategyName}`);
+    },
+    onStrategyComplete: (strategyName, symbol, stats) => {
+      console.log(`${strategyName} completed:`, stats.sharpeRatio);
+    },
+    onComplete: (results) => {
+      console.log("Best strategy:", results.bestStrategy);
+      console.log("Best metric:", results.bestMetric);
+    },
+  },
+});
+```
+
+#### Run Walker Comparison
+
+```typescript
+import { Walker, listenWalker, listenDoneWalker } from "backtest-kit";
+
+// Listen to walker progress
+listenWalker((progress) => {
+  console.log(`Progress: ${progress.strategiesTested}/${progress.totalStrategies}`);
+  console.log(`Current best: ${progress.bestStrategy} (${progress.bestMetric})`);
+});
+
+// Listen to walker completion
+listenDoneWalker((event) => {
+  console.log("Walker completed:", event.strategyName);
+  Walker.dump(event.symbol, event.strategyName); // Save report
+});
+
+// Run walker in background
+Walker.background("BTCUSDT", {
+  walkerName: "btc-walker"
+});
+
+// Or manually iterate
+for await (const progress of Walker.run("BTCUSDT", {
+  walkerName: "btc-walker"
+})) {
+  console.log("Progress:", progress.strategiesTested, "/", progress.totalStrategies);
+  console.log("Best so far:", progress.bestStrategy, progress.bestMetric);
+}
+```
+
+#### Get Walker Results
+
+```typescript
+import { Walker } from "backtest-kit";
+
+// Get raw comparison data (Controller)
+const results = await Walker.getData("BTCUSDT", "btc-walker");
+console.log(results);
+// Returns:
+// {
+//   bestStrategy: "strategy-b",
+//   bestMetric: 1.85,
+//   strategies: [
+//     {
+//       strategyName: "strategy-a",
+//       stats: { sharpeRatio: 1.23, winRate: 65.5, ... },
+//       metric: 1.23
+//     },
+//     {
+//       strategyName: "strategy-b",
+//       stats: { sharpeRatio: 1.85, winRate: 72.3, ... },
+//       metric: 1.85
+//     },
+//     {
+//       strategyName: "strategy-c",
+//       stats: { sharpeRatio: 0.98, winRate: 58.2, ... },
+//       metric: 0.98
+//     }
+//   ]
+// }
+
+// Generate markdown report (View)
+const markdown = await Walker.getReport("BTCUSDT", "btc-walker");
+console.log(markdown);
+
+// Save to disk (default: ./logs/walker/btc-walker.md)
+await Walker.dump("BTCUSDT", "btc-walker");
+
+// Save to custom path
+await Walker.dump("BTCUSDT", "btc-walker", "./custom/path");
+```
+
+**Walker Report Example:**
+```markdown
+# Walker Report: btc-walker
+
+Symbol: BTCUSDT
+Comparison metric: Sharpe Ratio (higher is better)
+Total strategies tested: 3
+
+## Best Strategy: strategy-b
+Metric value: 1.85
+
+## All Strategies Ranked
+
+| Rank | Strategy | Metric | Win Rate | Avg PNL | Total PNL | Std Dev |
+|------|----------|--------|----------|---------|-----------|---------|
+| 1    | strategy-b | 1.85 | 72.3% | +2.15% | +43.00% | 1.16% |
+| 2    | strategy-a | 1.23 | 65.5% | +1.85% | +37.00% | 1.50% |
+| 3    | strategy-c | 0.98 | 58.2% | +1.45% | +29.00% | 1.48% |
+```
+
+**Available metrics for comparison:**
+- `sharpeRatio` - Risk-adjusted return (default)
+- `winRate` - Win percentage
+- `avgPnl` - Average PNL percentage
+- `totalPnl` - Total PNL percentage
+- `certaintyRatio` - avgWin / |avgLoss|
+
+### 8. Schema Reflection API (Optional)
 
 Retrieve registered schemas at runtime for debugging, documentation, or building dynamic UIs:
 
@@ -714,36 +841,56 @@ Live.background("BTCUSDT", {
 - `listenPerformance(callback)` - Subscribe to performance metrics (backtest + live)
 - `listenProgress(callback)` - Subscribe to backtest progress events
 - `listenError(callback)` - Subscribe to background execution errors
-- `listenDone(callback)` - Subscribe to background completion events
-- `listenDoneOnce(filter, callback)` - Subscribe to background completion once
+- `listenDoneLive(callback)` - Subscribe to live background completion events
+- `listenDoneLiveOnce(filter, callback)` - Subscribe to live background completion once
+- `listenDoneBacktest(callback)` - Subscribe to backtest background completion events
+- `listenDoneBacktestOnce(filter, callback)` - Subscribe to backtest background completion once
+- `listenDoneWalker(callback)` - Subscribe to walker background completion events
+- `listenDoneWalkerOnce(filter, callback)` - Subscribe to walker background completion once
+- `listenWalker(callback)` - Subscribe to walker progress events (each strategy completion)
+- `listenWalkerOnce(filter, callback)` - Subscribe to walker progress events once
+- `listenWalkerComplete(callback)` - Subscribe to final walker results (all strategies compared)
 
 All listeners return an `unsubscribe` function. All callbacks are processed sequentially using queued async execution.
 
 ### Listen to Background Completion
 
 ```typescript
-import { listenDone, listenDoneOnce, Backtest, Live } from "backtest-kit";
+import {
+  listenDoneBacktest,
+  listenDoneBacktestOnce,
+  listenDoneLive,
+  Backtest,
+  Live
+} from "backtest-kit";
 
-// Listen to all completion events
-listenDone((event) => {
-  console.log("Execution completed:", {
-    mode: event.backtest ? "backtest" : "live",
+// Listen to backtest completion events
+listenDoneBacktest((event) => {
+  console.log("Backtest completed:", {
     symbol: event.symbol,
     strategy: event.strategyName,
     exchange: event.exchangeName,
   });
 
   // Auto-generate report on completion
-  if (event.backtest) {
-    Backtest.dump(event.strategyName);
-  } else {
-    Live.dump(event.strategyName);
-  }
+  Backtest.dump(event.strategyName);
+});
+
+// Listen to live completion events
+listenDoneLive((event) => {
+  console.log("Live trading stopped:", {
+    symbol: event.symbol,
+    strategy: event.strategyName,
+    exchange: event.exchangeName,
+  });
+
+  // Auto-generate report on completion
+  Live.dump(event.strategyName);
 });
 
 // Wait for specific backtest to complete
-listenDoneOnce(
-  (event) => event.backtest && event.symbol === "BTCUSDT",
+listenDoneBacktestOnce(
+  (event) => event.symbol === "BTCUSDT",
   (event) => {
     console.log("BTCUSDT backtest finished");
     // Start next backtest or live trading
@@ -777,6 +924,9 @@ addStrategy(strategySchema: IStrategySchema): void
 
 // Register timeframe generator
 addFrame(frameSchema: IFrameSchema): void
+
+// Register walker for strategy comparison
+addWalker(walkerSchema: IWalkerSchema): void
 ```
 
 #### Exchange Data
@@ -874,6 +1024,35 @@ Live.getReport(strategyName: string): Promise<string>
 
 // Save report to disk
 Live.dump(strategyName: string, path?: string): Promise<void>
+```
+
+#### Walker API
+
+```typescript
+import { Walker, WalkerResults } from "backtest-kit";
+
+// Stream walker progress (yields after each strategy)
+Walker.run(
+  symbol: string,
+  context: {
+    walkerName: string;
+  }
+): AsyncIterableIterator<WalkerContract>
+
+// Run in background without yielding results
+Walker.background(
+  symbol: string,
+  context: { walkerName }
+): () => void // Returns cancellation function
+
+// Get raw comparison data (Controller)
+Walker.getData(symbol: string, walkerName: string): Promise<IWalkerResults>
+
+// Generate markdown report (View)
+Walker.getReport(symbol: string, walkerName: string): Promise<string>
+
+// Save report to disk (default: ./logs/walker)
+Walker.dump(symbol: string, walkerName: string, path?: string): Promise<void>
 ```
 
 #### Performance Profiling API
@@ -976,6 +1155,27 @@ type PerformanceMetricType =
   | "backtest_timeframe"  // Single timeframe processing
   | "backtest_signal"     // Signal processing (tick + getNextCandles + backtest)
   | "live_tick";          // Single live tick duration
+
+// Walker results (exported from "backtest-kit")
+interface IWalkerResults {
+  bestStrategy: string;                     // Name of best performing strategy
+  bestMetric: number;                       // Metric value of best strategy
+  strategies: Array<{
+    strategyName: string;                   // Strategy name
+    stats: BacktestStatistics;              // Full backtest statistics
+    metric: number;                         // Metric value used for comparison
+  }>;
+}
+
+// Walker progress event (exported from "backtest-kit")
+interface WalkerContract {
+  strategiesTested: number;                 // Number of strategies tested so far
+  totalStrategies: number;                  // Total number of strategies to test
+  currentStrategy: string;                  // Currently testing strategy name
+  bestStrategy: string | null;              // Current best strategy (null if first)
+  bestMetric: number | null;                // Current best metric value
+  stats: BacktestStatistics;                // Full statistics for current strategy
+}
 ```
 
 ### Signal Data

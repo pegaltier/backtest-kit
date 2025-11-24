@@ -1395,9 +1395,9 @@ declare function listenSignalBacktestOnce(filterFn: (event: IStrategyTickResult)
  */
 declare function listenError(fn: (error: Error) => void): () => void;
 /**
- * Subscribes to background execution completion events with queued async processing.
+ * Subscribes to live background execution completion events with queued async processing.
  *
- * Emits when Live.background() or Backtest.background() completes execution.
+ * Emits when Live.background() completes execution.
  * Events are processed sequentially in order received, even if callback is async.
  * Uses queued wrapper to prevent concurrent execution of the callback.
  *
@@ -1406,13 +1406,10 @@ declare function listenError(fn: (error: Error) => void): () => void;
  *
  * @example
  * ```typescript
- * import { listenDone, Live } from "backtest-kit";
+ * import { listenDoneLive, Live } from "backtest-kit";
  *
- * const unsubscribe = listenDone((event) => {
- *   console.log("Completed:", event.strategyName, event.exchangeName, event.symbol);
- *   if (event.backtest) {
- *     console.log("Backtest mode completed");
- *   }
+ * const unsubscribe = listenDoneLive((event) => {
+ *   console.log("Live completed:", event.strategyName, event.exchangeName, event.symbol);
  * });
  *
  * Live.background("BTCUSDT", {
@@ -1424,11 +1421,11 @@ declare function listenError(fn: (error: Error) => void): () => void;
  * unsubscribe();
  * ```
  */
-declare function listenDone(fn: (event: DoneContract) => void): () => void;
+declare function listenDoneLive(fn: (event: DoneContract) => void): () => void;
 /**
- * Subscribes to filtered background execution completion events with one-time execution.
+ * Subscribes to filtered live background execution completion events with one-time execution.
  *
- * Emits when Live.background() or Backtest.background() completes execution.
+ * Emits when Live.background() completes execution.
  * Executes callback once and automatically unsubscribes.
  *
  * @param filterFn - Predicate to filter which events trigger the callback
@@ -1437,11 +1434,67 @@ declare function listenDone(fn: (event: DoneContract) => void): () => void;
  *
  * @example
  * ```typescript
- * import { listenDoneOnce, Backtest } from "backtest-kit";
+ * import { listenDoneLiveOnce, Live } from "backtest-kit";
+ *
+ * // Wait for first live completion
+ * listenDoneLiveOnce(
+ *   (event) => event.symbol === "BTCUSDT",
+ *   (event) => console.log("BTCUSDT live completed:", event.strategyName)
+ * );
+ *
+ * Live.background("BTCUSDT", {
+ *   strategyName: "my-strategy",
+ *   exchangeName: "binance"
+ * });
+ * ```
+ */
+declare function listenDoneLiveOnce(filterFn: (event: DoneContract) => boolean, fn: (event: DoneContract) => void): () => void;
+/**
+ * Subscribes to backtest background execution completion events with queued async processing.
+ *
+ * Emits when Backtest.background() completes execution.
+ * Events are processed sequentially in order received, even if callback is async.
+ * Uses queued wrapper to prevent concurrent execution of the callback.
+ *
+ * @param fn - Callback function to handle completion events
+ * @returns Unsubscribe function to stop listening to events
+ *
+ * @example
+ * ```typescript
+ * import { listenDoneBacktest, Backtest } from "backtest-kit";
+ *
+ * const unsubscribe = listenDoneBacktest((event) => {
+ *   console.log("Backtest completed:", event.strategyName, event.exchangeName, event.symbol);
+ * });
+ *
+ * Backtest.background("BTCUSDT", {
+ *   strategyName: "my-strategy",
+ *   exchangeName: "binance",
+ *   frameName: "1d-backtest"
+ * });
+ *
+ * // Later: stop listening
+ * unsubscribe();
+ * ```
+ */
+declare function listenDoneBacktest(fn: (event: DoneContract) => void): () => void;
+/**
+ * Subscribes to filtered backtest background execution completion events with one-time execution.
+ *
+ * Emits when Backtest.background() completes execution.
+ * Executes callback once and automatically unsubscribes.
+ *
+ * @param filterFn - Predicate to filter which events trigger the callback
+ * @param fn - Callback function to handle the filtered event (called only once)
+ * @returns Unsubscribe function to cancel the listener before it fires
+ *
+ * @example
+ * ```typescript
+ * import { listenDoneBacktestOnce, Backtest } from "backtest-kit";
  *
  * // Wait for first backtest completion
- * listenDoneOnce(
- *   (event) => event.backtest && event.symbol === "BTCUSDT",
+ * listenDoneBacktestOnce(
+ *   (event) => event.symbol === "BTCUSDT",
  *   (event) => console.log("BTCUSDT backtest completed:", event.strategyName)
  * );
  *
@@ -1452,7 +1505,60 @@ declare function listenDone(fn: (event: DoneContract) => void): () => void;
  * });
  * ```
  */
-declare function listenDoneOnce(filterFn: (event: DoneContract) => boolean, fn: (event: DoneContract) => void): () => void;
+declare function listenDoneBacktestOnce(filterFn: (event: DoneContract) => boolean, fn: (event: DoneContract) => void): () => void;
+/**
+ * Subscribes to walker background execution completion events with queued async processing.
+ *
+ * Emits when Walker.background() completes execution.
+ * Events are processed sequentially in order received, even if callback is async.
+ * Uses queued wrapper to prevent concurrent execution of the callback.
+ *
+ * @param fn - Callback function to handle completion events
+ * @returns Unsubscribe function to stop listening to events
+ *
+ * @example
+ * ```typescript
+ * import { listenDoneWalker, Walker } from "backtest-kit";
+ *
+ * const unsubscribe = listenDoneWalker((event) => {
+ *   console.log("Walker completed:", event.strategyName, event.exchangeName, event.symbol);
+ * });
+ *
+ * Walker.background("BTCUSDT", {
+ *   walkerName: "my-walker"
+ * });
+ *
+ * // Later: stop listening
+ * unsubscribe();
+ * ```
+ */
+declare function listenDoneWalker(fn: (event: DoneContract) => void): () => void;
+/**
+ * Subscribes to filtered walker background execution completion events with one-time execution.
+ *
+ * Emits when Walker.background() completes execution.
+ * Executes callback once and automatically unsubscribes.
+ *
+ * @param filterFn - Predicate to filter which events trigger the callback
+ * @param fn - Callback function to handle the filtered event (called only once)
+ * @returns Unsubscribe function to cancel the listener before it fires
+ *
+ * @example
+ * ```typescript
+ * import { listenDoneWalkerOnce, Walker } from "backtest-kit";
+ *
+ * // Wait for first walker completion
+ * listenDoneWalkerOnce(
+ *   (event) => event.symbol === "BTCUSDT",
+ *   (event) => console.log("BTCUSDT walker completed:", event.strategyName)
+ * );
+ *
+ * Walker.background("BTCUSDT", {
+ *   walkerName: "my-walker"
+ * });
+ * ```
+ */
+declare function listenDoneWalkerOnce(filterFn: (event: DoneContract) => boolean, fn: (event: DoneContract) => void): () => void;
 /**
  * Subscribes to backtest progress events with queued async processing.
  *
@@ -2089,6 +2195,150 @@ declare class PerformanceMarkdownService {
     /**
      * Initializes the service by subscribing to performance events.
      * Uses singleshot to ensure initialization happens only once.
+     */
+    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+}
+
+/**
+ * Alias for walker statistics result interface.
+ * Used for clarity in markdown service context.
+ *
+ */
+type WalkerStatistics = IWalkerResults;
+/**
+ * Service for generating and saving walker markdown reports.
+ *
+ * Features:
+ * - Listens to walker events via tick callback
+ * - Accumulates strategy results per walker using memoized storage
+ * - Generates markdown tables with detailed strategy comparison
+ * - Saves reports to disk in logs/walker/{walkerName}.md
+ *
+ * @example
+ * ```typescript
+ * const service = new WalkerMarkdownService();
+ * const results = await service.getData("my-walker");
+ * await service.dump("my-walker");
+ * ```
+ */
+declare class WalkerMarkdownService {
+    /** Logger service for debug output */
+    private readonly loggerService;
+    /**
+     * Memoized function to get or create ReportStorage for a walker.
+     * Each walker gets its own isolated storage instance.
+     */
+    private getStorage;
+    /**
+     * Processes walker progress events and accumulates strategy results.
+     * Should be called from walkerEmitter.
+     *
+     * @param data - Walker contract from walker execution
+     *
+     * @example
+     * ```typescript
+     * const service = new WalkerMarkdownService();
+     * walkerEmitter.subscribe((data) => service.tick(data));
+     * ```
+     */
+    private tick;
+    /**
+     * Gets walker results data from all strategy results.
+     * Delegates to ReportStorage.getData().
+     *
+     * @param walkerName - Walker name to get data for
+     * @param symbol - Trading symbol
+     * @param metric - Metric being optimized
+     * @param context - Context with exchangeName and frameName
+     * @returns Walker results data object with all metrics
+     *
+     * @example
+     * ```typescript
+     * const service = new WalkerMarkdownService();
+     * const results = await service.getData("my-walker", "BTCUSDT", "sharpeRatio", { exchangeName: "binance", frameName: "1d" });
+     * console.log(results.bestStrategy, results.bestMetric);
+     * ```
+     */
+    getData: (walkerName: WalkerName, symbol: string, metric: WalkerMetric, context: {
+        exchangeName: string;
+        frameName: string;
+    }) => Promise<IWalkerResults>;
+    /**
+     * Generates markdown report with all strategy results for a walker.
+     * Delegates to ReportStorage.getReport().
+     *
+     * @param walkerName - Walker name to generate report for
+     * @param symbol - Trading symbol
+     * @param metric - Metric being optimized
+     * @param context - Context with exchangeName and frameName
+     * @returns Markdown formatted report string
+     *
+     * @example
+     * ```typescript
+     * const service = new WalkerMarkdownService();
+     * const markdown = await service.getReport("my-walker", "BTCUSDT", "sharpeRatio", { exchangeName: "binance", frameName: "1d" });
+     * console.log(markdown);
+     * ```
+     */
+    getReport: (walkerName: WalkerName, symbol: string, metric: WalkerMetric, context: {
+        exchangeName: string;
+        frameName: string;
+    }) => Promise<string>;
+    /**
+     * Saves walker report to disk.
+     * Creates directory if it doesn't exist.
+     * Delegates to ReportStorage.dump().
+     *
+     * @param walkerName - Walker name to save report for
+     * @param symbol - Trading symbol
+     * @param metric - Metric being optimized
+     * @param context - Context with exchangeName and frameName
+     * @param path - Directory path to save report (default: "./logs/walker")
+     *
+     * @example
+     * ```typescript
+     * const service = new WalkerMarkdownService();
+     *
+     * // Save to default path: ./logs/walker/my-walker.md
+     * await service.dump("my-walker", "BTCUSDT", "sharpeRatio", { exchangeName: "binance", frameName: "1d" });
+     *
+     * // Save to custom path: ./custom/path/my-walker.md
+     * await service.dump("my-walker", "BTCUSDT", "sharpeRatio", { exchangeName: "binance", frameName: "1d" }, "./custom/path");
+     * ```
+     */
+    dump: (walkerName: WalkerName, symbol: string, metric: WalkerMetric, context: {
+        exchangeName: string;
+        frameName: string;
+    }, path?: string) => Promise<void>;
+    /**
+     * Clears accumulated result data from storage.
+     * If walkerName is provided, clears only that walker's data.
+     * If walkerName is omitted, clears all walkers' data.
+     *
+     * @param walkerName - Optional walker name to clear specific walker data
+     *
+     * @example
+     * ```typescript
+     * const service = new WalkerMarkdownService();
+     *
+     * // Clear specific walker data
+     * await service.clear("my-walker");
+     *
+     * // Clear all walkers' data
+     * await service.clear();
+     * ```
+     */
+    clear: (walkerName?: WalkerName) => Promise<void>;
+    /**
+     * Initializes the service by subscribing to walker events.
+     * Uses singleshot to ensure initialization happens only once.
+     * Automatically called on first use.
+     *
+     * @example
+     * ```typescript
+     * const service = new WalkerMarkdownService();
+     * await service.init(); // Subscribe to walker events
+     * ```
      */
     protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
 }
@@ -2827,10 +3077,20 @@ declare const signalBacktestEmitter: Subject<IStrategyTickResult>;
  */
 declare const errorEmitter: Subject<Error>;
 /**
- * Done emitter for background execution completion.
- * Emits when background tasks complete (Live.background, Backtest.background).
+ * Done emitter for live background execution completion.
+ * Emits when live background tasks complete (Live.background).
  */
-declare const doneEmitter: Subject<DoneContract>;
+declare const doneLiveSubject: Subject<DoneContract>;
+/**
+ * Done emitter for backtest background execution completion.
+ * Emits when backtest background tasks complete (Backtest.background).
+ */
+declare const doneBacktestSubject: Subject<DoneContract>;
+/**
+ * Done emitter for walker background execution completion.
+ * Emits when walker background tasks complete (Walker.background).
+ */
+declare const doneWalkerSubject: Subject<DoneContract>;
 /**
  * Progress emitter for backtest execution progress.
  * Emits progress updates during backtest execution.
@@ -2852,7 +3112,9 @@ declare const walkerEmitter: Subject<WalkerContract>;
  */
 declare const walkerCompleteSubject: Subject<IWalkerResults>;
 
-declare const emitters_doneEmitter: typeof doneEmitter;
+declare const emitters_doneBacktestSubject: typeof doneBacktestSubject;
+declare const emitters_doneLiveSubject: typeof doneLiveSubject;
+declare const emitters_doneWalkerSubject: typeof doneWalkerSubject;
 declare const emitters_errorEmitter: typeof errorEmitter;
 declare const emitters_performanceEmitter: typeof performanceEmitter;
 declare const emitters_progressEmitter: typeof progressEmitter;
@@ -2862,7 +3124,7 @@ declare const emitters_signalLiveEmitter: typeof signalLiveEmitter;
 declare const emitters_walkerCompleteSubject: typeof walkerCompleteSubject;
 declare const emitters_walkerEmitter: typeof walkerEmitter;
 declare namespace emitters {
-  export { emitters_doneEmitter as doneEmitter, emitters_errorEmitter as errorEmitter, emitters_performanceEmitter as performanceEmitter, emitters_progressEmitter as progressEmitter, emitters_signalBacktestEmitter as signalBacktestEmitter, emitters_signalEmitter as signalEmitter, emitters_signalLiveEmitter as signalLiveEmitter, emitters_walkerCompleteSubject as walkerCompleteSubject, emitters_walkerEmitter as walkerEmitter };
+  export { emitters_doneBacktestSubject as doneBacktestSubject, emitters_doneLiveSubject as doneLiveSubject, emitters_doneWalkerSubject as doneWalkerSubject, emitters_errorEmitter as errorEmitter, emitters_performanceEmitter as performanceEmitter, emitters_progressEmitter as progressEmitter, emitters_signalBacktestEmitter as signalBacktestEmitter, emitters_signalEmitter as signalEmitter, emitters_signalLiveEmitter as signalLiveEmitter, emitters_walkerCompleteSubject as walkerCompleteSubject, emitters_walkerEmitter as walkerEmitter };
 }
 
 /**
@@ -3910,144 +4172,6 @@ declare class BacktestGlobalService {
 }
 
 /**
- * Service for generating and saving walker markdown reports.
- *
- * Features:
- * - Listens to walker events via tick callback
- * - Accumulates strategy results per walker using memoized storage
- * - Generates markdown tables with detailed strategy comparison
- * - Saves reports to disk in logs/walker/{walkerName}.md
- *
- * @example
- * ```typescript
- * const service = new WalkerMarkdownService();
- * const results = await service.getData("my-walker");
- * await service.dump("my-walker");
- * ```
- */
-declare class WalkerMarkdownService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Memoized function to get or create ReportStorage for a walker.
-     * Each walker gets its own isolated storage instance.
-     */
-    private getStorage;
-    /**
-     * Processes walker progress events and accumulates strategy results.
-     * Should be called from walkerEmitter.
-     *
-     * @param data - Walker contract from walker execution
-     *
-     * @example
-     * ```typescript
-     * const service = new WalkerMarkdownService();
-     * walkerEmitter.subscribe((data) => service.tick(data));
-     * ```
-     */
-    private tick;
-    /**
-     * Gets walker results data from all strategy results.
-     * Delegates to ReportStorage.getData().
-     *
-     * @param walkerName - Walker name to get data for
-     * @param symbol - Trading symbol
-     * @param metric - Metric being optimized
-     * @param context - Context with exchangeName and frameName
-     * @returns Walker results data object with all metrics
-     *
-     * @example
-     * ```typescript
-     * const service = new WalkerMarkdownService();
-     * const results = await service.getData("my-walker", "BTCUSDT", "sharpeRatio", { exchangeName: "binance", frameName: "1d" });
-     * console.log(results.bestStrategy, results.bestMetric);
-     * ```
-     */
-    getData: (walkerName: WalkerName, symbol: string, metric: WalkerMetric, context: {
-        exchangeName: string;
-        frameName: string;
-    }) => Promise<IWalkerResults>;
-    /**
-     * Generates markdown report with all strategy results for a walker.
-     * Delegates to ReportStorage.getReport().
-     *
-     * @param walkerName - Walker name to generate report for
-     * @param symbol - Trading symbol
-     * @param metric - Metric being optimized
-     * @param context - Context with exchangeName and frameName
-     * @returns Markdown formatted report string
-     *
-     * @example
-     * ```typescript
-     * const service = new WalkerMarkdownService();
-     * const markdown = await service.getReport("my-walker", "BTCUSDT", "sharpeRatio", { exchangeName: "binance", frameName: "1d" });
-     * console.log(markdown);
-     * ```
-     */
-    getReport: (walkerName: WalkerName, symbol: string, metric: WalkerMetric, context: {
-        exchangeName: string;
-        frameName: string;
-    }) => Promise<string>;
-    /**
-     * Saves walker report to disk.
-     * Creates directory if it doesn't exist.
-     * Delegates to ReportStorage.dump().
-     *
-     * @param walkerName - Walker name to save report for
-     * @param symbol - Trading symbol
-     * @param metric - Metric being optimized
-     * @param context - Context with exchangeName and frameName
-     * @param path - Directory path to save report (default: "./logs/walker")
-     *
-     * @example
-     * ```typescript
-     * const service = new WalkerMarkdownService();
-     *
-     * // Save to default path: ./logs/walker/my-walker.md
-     * await service.dump("my-walker", "BTCUSDT", "sharpeRatio", { exchangeName: "binance", frameName: "1d" });
-     *
-     * // Save to custom path: ./custom/path/my-walker.md
-     * await service.dump("my-walker", "BTCUSDT", "sharpeRatio", { exchangeName: "binance", frameName: "1d" }, "./custom/path");
-     * ```
-     */
-    dump: (walkerName: WalkerName, symbol: string, metric: WalkerMetric, context: {
-        exchangeName: string;
-        frameName: string;
-    }, path?: string) => Promise<void>;
-    /**
-     * Clears accumulated result data from storage.
-     * If walkerName is provided, clears only that walker's data.
-     * If walkerName is omitted, clears all walkers' data.
-     *
-     * @param walkerName - Optional walker name to clear specific walker data
-     *
-     * @example
-     * ```typescript
-     * const service = new WalkerMarkdownService();
-     *
-     * // Clear specific walker data
-     * await service.clear("my-walker");
-     *
-     * // Clear all walkers' data
-     * await service.clear();
-     * ```
-     */
-    clear: (walkerName?: WalkerName) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to walker events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new WalkerMarkdownService();
-     * await service.init(); // Subscribe to walker events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-}
-
-/**
  * @class ExchangeValidationService
  * Service for managing and validating exchange configurations
  */
@@ -4232,4 +4356,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type BacktestStatistics, type CandleInterval, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type ICandleData, type IExchangeSchema, type IFrameSchema, type IPersistBase, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatistics, MethodContextService, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatistics, PersistBase, PersistSignalAdaper, type ProgressContract, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, Walker, type WalkerMetric, addExchange, addFrame, addStrategy, addWalker, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listExchanges, listFrames, listStrategies, listWalkers, listenDone, listenDoneOnce, listenError, listenPerformance, listenProgress, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenWalker, listenWalkerComplete, listenWalkerOnce, setLogger };
+export { Backtest, type BacktestStatistics, type CandleInterval, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type ICandleData, type IExchangeSchema, type IFrameSchema, type IPersistBase, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatistics, MethodContextService, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatistics, PersistBase, PersistSignalAdaper, type ProgressContract, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, Walker, type WalkerMetric, type WalkerStatistics, addExchange, addFrame, addStrategy, addWalker, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listExchanges, listFrames, listStrategies, listWalkers, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenPerformance, listenProgress, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenWalker, listenWalkerComplete, listenWalkerOnce, setLogger };
