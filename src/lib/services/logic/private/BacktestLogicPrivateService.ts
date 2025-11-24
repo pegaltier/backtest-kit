@@ -63,6 +63,7 @@ export class BacktestLogicPrivateService {
     const totalFrames = timeframes.length;
 
     let i = 0;
+    let previousEventTimestamp: number | null = null;
 
     while (i < timeframes.length) {
       const timeframeStartTime = performance.now();
@@ -129,8 +130,10 @@ export class BacktestLogicPrivateService {
 
         // Track signal processing duration
         const signalEndTime = performance.now();
+        const currentTimestamp = Date.now();
         await performanceEmitter.next({
-          timestamp: Date.now(),
+          timestamp: currentTimestamp,
+          previousTimestamp: previousEventTimestamp,
           metricType: "backtest_signal",
           duration: signalEndTime - signalStartTime,
           strategyName: this.methodContextService.context.strategyName,
@@ -138,6 +141,7 @@ export class BacktestLogicPrivateService {
           symbol,
           backtest: true,
         });
+        previousEventTimestamp = currentTimestamp;
 
         // Пропускаем timeframes до closeTimestamp
         while (
@@ -152,8 +156,10 @@ export class BacktestLogicPrivateService {
 
       // Track timeframe processing duration
       const timeframeEndTime = performance.now();
+      const currentTimestamp = Date.now();
       await performanceEmitter.next({
-        timestamp: Date.now(),
+        timestamp: currentTimestamp,
+        previousTimestamp: previousEventTimestamp,
         metricType: "backtest_timeframe",
         duration: timeframeEndTime - timeframeStartTime,
         strategyName: this.methodContextService.context.strategyName,
@@ -161,6 +167,7 @@ export class BacktestLogicPrivateService {
         symbol,
         backtest: true,
       });
+      previousEventTimestamp = currentTimestamp;
 
       i++;
     }
@@ -179,8 +186,10 @@ export class BacktestLogicPrivateService {
 
     // Track total backtest duration
     const backtestEndTime = performance.now();
+    const currentTimestamp = Date.now();
     await performanceEmitter.next({
-      timestamp: Date.now(),
+      timestamp: currentTimestamp,
+      previousTimestamp: previousEventTimestamp,
       metricType: "backtest_total",
       duration: backtestEndTime - backtestStartTime,
       strategyName: this.methodContextService.context.strategyName,
@@ -188,6 +197,7 @@ export class BacktestLogicPrivateService {
       symbol,
       backtest: true,
     });
+    previousEventTimestamp = currentTimestamp;
   }
 }
 

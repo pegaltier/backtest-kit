@@ -62,6 +62,8 @@ export class LiveLogicPrivateService {
       symbol,
     });
 
+    let previousEventTimestamp: number | null = null;
+
     while (true) {
       const tickStartTime = performance.now();
       const when = new Date();
@@ -75,8 +77,10 @@ export class LiveLogicPrivateService {
 
       // Track tick duration
       const tickEndTime = performance.now();
+      const currentTimestamp = Date.now();
       await performanceEmitter.next({
-        timestamp: Date.now(),
+        timestamp: currentTimestamp,
+        previousTimestamp: previousEventTimestamp,
         metricType: "live_tick",
         duration: tickEndTime - tickStartTime,
         strategyName: this.methodContextService.context.strategyName,
@@ -84,6 +88,7 @@ export class LiveLogicPrivateService {
         symbol,
         backtest: false,
       });
+      previousEventTimestamp = currentTimestamp;
 
       if (result.action === "active") {
         await sleep(TICK_TTL);

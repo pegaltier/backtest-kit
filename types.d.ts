@@ -850,6 +850,8 @@ type PerformanceMetricType = "backtest_total" | "backtest_timeframe" | "backtest
 interface PerformanceContract {
     /** Timestamp when the metric was recorded (milliseconds since epoch) */
     timestamp: number;
+    /** Timestamp of the previous event (milliseconds since epoch, null for first event) */
+    previousTimestamp: number | null;
     /** Type of operation being measured */
     metricType: PerformanceMetricType;
     /** Duration of the operation in milliseconds */
@@ -1692,6 +1694,12 @@ interface MetricStats {
     p95: number;
     /** 99th percentile duration (ms) */
     p99: number;
+    /** Average wait time between events (ms) */
+    avgWaitTime: number;
+    /** Minimum wait time between events (ms) */
+    minWaitTime: number;
+    /** Maximum wait time between events (ms) */
+    maxWaitTime: number;
 }
 /**
  * Performance statistics aggregated by strategy.

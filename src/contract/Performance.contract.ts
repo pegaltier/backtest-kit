@@ -35,6 +35,9 @@ export interface PerformanceContract {
   /** Timestamp when the metric was recorded (milliseconds since epoch) */
   timestamp: number;
 
+  /** Timestamp of the previous event (milliseconds since epoch, null for first event) */
+  previousTimestamp: number | null;
+
   /** Type of operation being measured */
   metricType: PerformanceMetricType;
 

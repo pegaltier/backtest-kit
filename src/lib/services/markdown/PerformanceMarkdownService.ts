@@ -43,6 +43,15 @@ interface MetricStats {
 
   /** 99th percentile duration (ms) */
   p99: number;
+
+  /** Average wait time between events (ms) */
+  avgWaitTime: number;
+
+  /** Minimum wait time between events (ms) */
+  minWaitTime: number;
+
+  /** Maximum wait time between events (ms) */
+  maxWaitTime: number;
 }
 
 /**
@@ -154,6 +163,27 @@ class PerformanceStorage {
         durations.length;
       const stdDev = Math.sqrt(variance);
 
+      // Calculate wait times between events
+      const waitTimes: number[] = [];
+      for (let i = 0; i < events.length; i++) {
+        if (events[i].previousTimestamp !== null) {
+          const waitTime = events[i].timestamp - events[i].previousTimestamp!;
+          waitTimes.push(waitTime);
+        }
+      }
+
+      const sortedWaitTimes = waitTimes.sort((a, b) => a - b);
+      const avgWaitTime =
+        sortedWaitTimes.length > 0
+          ? sortedWaitTimes.reduce((sum, w) => sum + w, 0) /
+            sortedWaitTimes.length
+          : 0;
+      const minWaitTime = sortedWaitTimes.length > 0 ? sortedWaitTimes[0] : 0;
+      const maxWaitTime =
+        sortedWaitTimes.length > 0
+          ? sortedWaitTimes[sortedWaitTimes.length - 1]
+          : 0;
+
       metricStats[metricType] = {
         metricType,
         count: events.length,
@@ -165,6 +195,9 @@ class PerformanceStorage {
         median: percentile(durations, 50),
         p95: percentile(durations, 95),
         p99: percentile(durations, 99),
+        avgWaitTime,
+        minWaitTime,
+        maxWaitTime,
       };
     }
 
@@ -213,6 +246,9 @@ class PerformanceStorage {
       "Median (ms)",
       "P95 (ms)",
       "P99 (ms)",
+      "Avg Wait (ms)",
+      "Min Wait (ms)",
+      "Max Wait (ms)",
     ];
     const summarySeparator = summaryHeader.map(() => "---");
     const summaryRows = sortedMetrics.map((metric) => [
@@ -226,6 +262,9 @@ class PerformanceStorage {
       metric.median.toFixed(2),
       metric.p95.toFixed(2),
       metric.p99.toFixed(2),
+      metric.avgWaitTime.toFixed(2),
+      metric.minWaitTime.toFixed(2),
+      metric.maxWaitTime.toFixed(2),
     ]);
 
     const summaryTableData = [summaryHeader, summarySeparator, ...summaryRows];
@@ -254,7 +293,7 @@ class PerformanceStorage {
       "",
       summaryTable,
       "",
-      "**Note:** All durations are in milliseconds. P95/P99 represent 95th and 99th percentile response times."
+      "**Note:** All durations are in milliseconds. P95/P99 represent 95th and 99th percentile response times. Wait times show the interval between consecutive events of the same type."
     );
   }
 
