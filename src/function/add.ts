@@ -185,6 +185,10 @@ export function addWalker(walkerSchema: IWalkerSchema) {
   backtest.loggerService.info(ADD_WALKER_METHOD_NAME, {
     walkerSchema,
   });
+  backtest.walkerValidationService.addWalker(
+    walkerSchema.walkerName,
+    walkerSchema
+  );
   backtest.walkerSchemaService.register(
     walkerSchema.walkerName,
     walkerSchema

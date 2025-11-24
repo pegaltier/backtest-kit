@@ -52,6 +52,7 @@ const validationServices = {
     exchangeValidationService: Symbol('exchangeValidationService'),
     strategyValidationService: Symbol('strategyValidationService'),
     frameValidationService: Symbol('frameValidationService'),
+    walkerValidationService: Symbol('walkerValidationService'),
 }
 
 export const TYPES = {

@@ -61,7 +61,17 @@ export class WalkerUtils {
       context,
     });
 
+    {
+      backtest.walkerValidationService.validate(context.walkerName, WALKER_METHOD_NAME_RUN);
+      backtest.exchangeValidationService.validate(context.exchangeName, WALKER_METHOD_NAME_RUN);
+      backtest.frameValidationService.validate(context.frameName, WALKER_METHOD_NAME_RUN);
+    }
+
     const walkerSchema = backtest.walkerSchemaService.get(context.walkerName);
+
+    for (const strategyName of walkerSchema.strategies) {
+      backtest.strategyValidationService.validate(strategyName, WALKER_METHOD_NAME_RUN);
+    }
 
     // Clear backtest data for all strategies
     for (const strategyName of walkerSchema.strategies) {

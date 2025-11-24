@@ -34,6 +34,7 @@ import WalkerMarkdownService from "./services/markdown/WalkerMarkdownService";
 import ExchangeValidationService from "./services/validation/ExchangeValidationService";
 import StrategyValidationService from "./services/validation/StrategyValidationService";
 import FrameValidationService from "./services/validation/FrameValidationService";
+import WalkerValidationService from "./services/validation/WalkerValidationService";
 
 const baseServices = {
   loggerService: inject<LoggerService>(TYPES.loggerService),
@@ -121,6 +122,7 @@ const validationServices = {
   exchangeValidationService: inject<ExchangeValidationService>(TYPES.exchangeValidationService),
   strategyValidationService: inject<StrategyValidationService>(TYPES.strategyValidationService),
   frameValidationService: inject<FrameValidationService>(TYPES.frameValidationService),
+  walkerValidationService: inject<WalkerValidationService>(TYPES.walkerValidationService),
 }
 
 export const backtest = {

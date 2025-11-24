@@ -29,6 +29,7 @@ import WalkerMarkdownService from "../services/markdown/WalkerMarkdownService";
 import ExchangeValidationService from "../services/validation/ExchangeValidationService";
 import StrategyValidationService from "../services/validation/StrategyValidationService";
 import FrameValidationService from "../services/validation/FrameValidationService";
+import WalkerValidationService from "../services/validation/WalkerValidationService";
 
 {
     provide(TYPES.loggerService, () => new LoggerService());
@@ -84,5 +85,6 @@ import FrameValidationService from "../services/validation/FrameValidationServic
     provide(TYPES.exchangeValidationService, () => new ExchangeValidationService());
     provide(TYPES.strategyValidationService, () => new StrategyValidationService());
     provide(TYPES.frameValidationService, () => new FrameValidationService());
+    provide(TYPES.walkerValidationService, () => new WalkerValidationService());
 }
 

@@ -2,10 +2,12 @@ import backtest from "../lib/index";
 import { IStrategySchema } from "../interfaces/Strategy.interface";
 import { IExchangeSchema } from "../interfaces/Exchange.interface";
 import { IFrameSchema } from "../interfaces/Frame.interface";
+import { IWalkerSchema } from "../interfaces/Walker.interface";
 
 const LIST_EXCHANGES_METHOD_NAME = "list.listExchanges";
 const LIST_STRATEGIES_METHOD_NAME = "list.listStrategies";
 const LIST_FRAMES_METHOD_NAME = "list.listFrames";
+const LIST_WALKERS_METHOD_NAME = "list.listWalkers";
 
 /**
  * Returns a list of all registered exchange schemas.
@@ -100,4 +102,35 @@ export async function listStrategies(): Promise<IStrategySchema[]> {
 export async function listFrames(): Promise<IFrameSchema[]> {
   backtest.loggerService.log(LIST_FRAMES_METHOD_NAME);
   return await backtest.frameValidationService.list();
+}
+
+/**
+ * Returns a list of all registered walker schemas.
+ *
+ * Retrieves all walkers that have been registered via addWalker().
+ * Useful for debugging, documentation, or building dynamic UIs.
+ *
+ * @returns Array of walker schemas with their configurations
+ *
+ * @example
+ * ```typescript
+ * import { listWalkers, addWalker } from "backtest-kit";
+ *
+ * addWalker({
+ *   walkerName: "llm-prompt-optimizer",
+ *   note: "Compare LLM-based trading strategies",
+ *   exchangeName: "binance",
+ *   frameName: "1d-backtest",
+ *   strategies: ["my-strategy-v1", "my-strategy-v2"],
+ *   metric: "sharpeRatio",
+ * });
+ *
+ * const walkers = listWalkers();
+ * console.log(walkers);
+ * // [{ walkerName: "llm-prompt-optimizer", note: "Compare LLM...", ... }]
+ * ```
+ */
+export async function listWalkers(): Promise<IWalkerSchema[]> {
+  backtest.loggerService.log(LIST_WALKERS_METHOD_NAME);
+  return await backtest.walkerValidationService.list();
 }
