@@ -194,9 +194,9 @@ export class ClientSizing implements ISizing {
    * @returns Promise resolving to calculated position size
    * @throws Error if required parameters are missing or invalid
    */
-  public calculate = async (
+  public async calculate(
     params: ISizingCalculateParams
-  ): Promise<number> => {
+  ): Promise<number> {
     return await CALCULATE_FN(params, this);
   };
 }

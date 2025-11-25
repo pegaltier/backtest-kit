@@ -4076,7 +4076,7 @@ declare class ClientSizing implements ISizing {
      * @returns Promise resolving to calculated position size
      * @throws Error if required parameters are missing or invalid
      */
-    calculate: (params: ISizingCalculateParams) => Promise<number>;
+    calculate(params: ISizingCalculateParams): Promise<number>;
 }
 
 /**
