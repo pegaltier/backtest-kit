@@ -25,7 +25,8 @@
 - 🔍 **Schema Reflection API** - listExchanges(), listStrategies(), listFrames() for runtime introspection
 - 🏃 **Strategy Comparison (Walker)** - Compare multiple strategies in parallel with automatic ranking and statistical analysis
 - 🔥 **Portfolio Heatmap** - Multi-symbol performance analysis with extended metrics (Profit Factor, Expectancy, Win/Loss Streaks, Avg Win/Loss) sorted by Sharpe Ratio
-- 🧪 **Comprehensive Test Coverage** - 76 unit tests covering validation, PNL, callbacks, reports, performance tracking, walker, heatmap, and event system
+- 🧪 **Comprehensive Test Coverage** - 89 unit tests covering validation, PNL, callbacks, reports, performance tracking, walker, heatmap, position sizing, and event system
+- 💰 **Position Sizing Calculator** - Built-in position sizing methods (Fixed Percentage, Kelly Criterion, ATR-based) with risk management constraints
 - 💾 **Zero Data Download** - Unlike Freqtrade, no need to download gigabytes of historical data - plug any data source (CCXT, database, API)
 - 🔒 **Safe Math & Robustness** - All metrics protected against NaN/Infinity with unsafe numeric checks, returns N/A for invalid calculations
 
@@ -488,7 +489,307 @@ Heat.clear();
 - **Strategy Optimization** - Focus on symbols with highest Sharpe Ratio
 - **Performance Tracking** - Track long-term portfolio health with expectancy and profit factor
 
-### 9. Schema Reflection API (Optional)
+### 9. Position Sizing Calculator (Optional)
+
+Position Sizing Calculator helps determine optimal position sizes based on risk management rules. Three calculation methods are available with constraint enforcement.
+
+#### Register Position Sizing Schemas
+
+```typescript
+import { addSizing } from "backtest-kit";
+
+// Fixed Percentage Risk - risk fixed % of account per trade
+addSizing({
+  sizingName: "conservative",
+  note: "Conservative 2% risk per trade",
+  method: "fixed-percentage",
+  riskPercentage: 2,                // Risk 2% of account per trade
+  maxPositionPercentage: 10,        // Max 10% of account in single position (optional)
+  minPositionSize: 0.001,           // Min 0.001 BTC position (optional)
+  maxPositionSize: 1.0,             // Max 1.0 BTC position (optional)
+});
+
+// Kelly Criterion - optimal bet sizing based on edge
+addSizing({
+  sizingName: "kelly-quarter",
+  note: "Kelly Criterion with 25% multiplier for safety",
+  method: "kelly-criterion",
+  kellyMultiplier: 0.25,            // Use 25% of full Kelly (recommended for safety)
+  maxPositionPercentage: 15,        // Cap position at 15% of account (optional)
+  minPositionSize: 0.001,           // Min 0.001 BTC position (optional)
+  maxPositionSize: 2.0,             // Max 2.0 BTC position (optional)
+});
+
+// ATR-based - volatility-adjusted position sizing
+addSizing({
+  sizingName: "atr-dynamic",
+  note: "ATR-based sizing with 2x multiplier",
+  method: "atr-based",
+  riskPercentage: 2,                // Risk 2% of account
+  atrMultiplier: 2,                 // Use 2x ATR as stop distance
+  maxPositionPercentage: 12,        // Max 12% of account (optional)
+  minPositionSize: 0.001,           // Min 0.001 BTC position (optional)
+  maxPositionSize: 1.5,             // Max 1.5 BTC position (optional)
+});
+```
+
+#### Calculate Position Sizes
+
+```typescript
+import { PositionSize } from "backtest-kit";
+
+// Fixed Percentage Method
+const quantity1 = await PositionSize.fixedPercentage(
+  "BTCUSDT",
+  10000,      // Account balance: $10,000
+  50000,      // Entry price: $50,000
+  49000,      // Stop loss: $49,000
+  { sizingName: "conservative" }
+);
+console.log(`Position size: ${quantity1} BTC`);
+// Formula: (accountBalance * riskPercentage / 100) / |priceOpen - priceStopLoss|
+// Example: (10000 * 0.02) / |50000 - 49000| = 0.2 BTC
+
+// Kelly Criterion Method
+const quantity2 = await PositionSize.kellyCriterion(
+  "BTCUSDT",
+  10000,      // Account balance: $10,000
+  50000,      // Entry price: $50,000
+  0.55,       // Win rate: 55%
+  1.5,        // Win/loss ratio: 1.5
+  { sizingName: "kelly-quarter" }
+);
+console.log(`Position size: ${quantity2} BTC`);
+// Formula: (winRate - (1 - winRate) / winLossRatio) * kellyMultiplier * accountBalance / priceOpen
+// Example: (0.55 - 0.45/1.5) * 0.25 * 10000 / 50000 = 0.0125 BTC
+
+// ATR-based Method
+const quantity3 = await PositionSize.atrBased(
+  "BTCUSDT",
+  10000,      // Account balance: $10,000
+  50000,      // Entry price: $50,000
+  500,        // ATR: $500
+  { sizingName: "atr-dynamic" }
+);
+console.log(`Position size: ${quantity3} BTC`);
+// Formula: (accountBalance * riskPercentage / 100) / (atr * atrMultiplier)
+// Example: (10000 * 0.02) / (500 * 2) = 0.2 BTC
+```
+
+#### Integration with Strategy
+
+```typescript
+import { addStrategy, PositionSize, getCandles, listenSignalLive } from "backtest-kit";
+
+// Mock Binance exchange client
+const binance = {
+  marketBuy: async (symbol: string, quantity: number) => {
+    console.log(`[BINANCE] Market BUY: ${quantity} ${symbol}`);
+    // return await exchange.createOrder(symbol, "market", "buy", quantity);
+    return { orderId: Math.random().toString(), symbol, side: "buy", quantity };
+  },
+  marketSell: async (symbol: string, quantity: number) => {
+    console.log(`[BINANCE] Market SELL: ${quantity} ${symbol}`);
+    // return await exchange.createOrder(symbol, "market", "sell", quantity);
+    return { orderId: Math.random().toString(), symbol, side: "sell", quantity };
+  },
+  getBalance: async (asset: string) => {
+    console.log(`[BINANCE] Get balance: ${asset}`);
+    // return await exchange.fetchBalance();
+    return { free: 10000, used: 0, total: 10000 };
+  },
+};
+
+addStrategy({
+  strategyName: "sma-crossover-sized",
+  interval: "5m",
+  getSignal: async (symbol) => {
+    return {
+      position: "long",
+      priceOpen: 50000,
+      priceTakeProfit: 51000,
+      priceStopLoss: 49000,
+      minuteEstimatedTime: 60,
+    };
+  },
+  callbacks: {
+    onOpen: async (symbol, signal, currentPrice, backtest) => {
+      if (backtest) return; // Skip execution in backtest mode
+
+      // Calculate ATR for dynamic sizing
+      const candles = await getCandles(symbol, "1h", 14);
+      const atr = calculateATR(candles); // Your ATR calculation
+
+      // Get account balance from exchange
+      const balance = await binance.getBalance("USDT");
+      const accountBalance = balance.free;
+
+      // Calculate position size based on volatility
+      const quantity = await PositionSize.atrBased(
+        symbol,
+        accountBalance,
+        signal.priceOpen,
+        atr,
+        { sizingName: "atr-dynamic" }
+      );
+
+      console.log(`[LIVE] Opening position: ${quantity} BTC at ${currentPrice}`);
+
+      // Execute market buy order
+      const order = await binance.marketBuy(symbol, quantity);
+      console.log(`Order executed:`, order);
+    },
+    onClose: async (symbol, signal, priceClose, backtest) => {
+      if (backtest) return; // Skip execution in backtest mode
+
+      // Get actual BTC balance from exchange
+      const balance = await binance.getBalance("BTC");
+      const quantity = balance.free; // Sell all available BTC
+
+      console.log(`[LIVE] Closing position: ${quantity} BTC at ${priceClose}`);
+      console.log(`Entry: ${signal.priceOpen}, Exit: ${priceClose}`);
+      console.log(`P&L: ${((priceClose - signal.priceOpen) / signal.priceOpen * 100).toFixed(2)}%`);
+
+      // Execute market sell order to close entire position
+      const order = await binance.marketSell(symbol, quantity);
+      console.log(`Order executed:`, order);
+    },
+  },
+});
+
+// Alternative: Calculate in listener
+listenSignalLive(async (event) => {
+  if (event.action === "opened") {
+    // Calculate position size when signal opens
+    const candles = await getCandles(event.signal.symbol, "1h", 14);
+    const atr = calculateATR(candles);
+
+    // Get account balance from exchange
+    const balance = await binance.getBalance("USDT");
+    const accountBalance = balance.free;
+
+    const quantity = await PositionSize.atrBased(
+      event.signal.symbol,
+      accountBalance,
+      event.signal.priceOpen,
+      atr,
+      { sizingName: "atr-dynamic" }
+    );
+
+    console.log(`Position opened: ${quantity} BTC at ${event.currentPrice}`);
+
+    // Execute market buy order
+    const order = await binance.marketBuy(event.signal.symbol, quantity);
+    console.log(`Order executed:`, order);
+  }
+
+  if (event.action === "closed") {
+    // Get actual BTC balance from exchange
+    const balance = await binance.getBalance("BTC");
+    const quantity = balance.free; // Sell all available BTC
+
+    console.log(`Position closed: ${quantity} BTC at ${event.currentPrice}`);
+    console.log(`Close reason: ${event.closeReason}`);
+    console.log(`P&L: ${event.pnl.pnlPercentage.toFixed(2)}%`);
+
+    // Execute market sell order to close entire position with profit/loss
+    const order = await binance.marketSell(event.signal.symbol, quantity);
+    console.log(`Order executed:`, order);
+  }
+});
+```
+
+#### List Available Sizing Schemas
+
+```typescript
+import { listSizings } from "backtest-kit";
+
+const sizings = await listSizings();
+console.log("Available sizing methods:", sizings.map(s => ({
+  name: s.sizingName,
+  method: s.method,
+  note: s.note
+})));
+// Output:
+// [
+//   { name: "conservative", method: "fixed-percentage", note: "Conservative 2% risk..." },
+//   { name: "kelly-quarter", method: "kelly-criterion", note: "Kelly Criterion with 25%..." },
+//   { name: "atr-dynamic", method: "atr-based", note: "ATR-based sizing with 2x..." }
+// ]
+```
+
+#### Position Sizing Callbacks
+
+```typescript
+import { addSizing } from "backtest-kit";
+
+addSizing({
+  sizingName: "monitored",
+  method: "fixed-percentage",
+  riskPercentage: 2,
+  callbacks: {
+    onCalculate: (quantity, params) => {
+      console.log(`Calculated position size: ${quantity}`);
+      console.log(`Symbol: ${params.symbol}`);
+      console.log(`Account balance: ${params.accountBalance}`);
+      console.log(`Entry price: ${params.priceOpen}`);
+
+      // Log to monitoring system, send alerts, etc.
+      if (quantity > 1.0) {
+        console.warn("Large position size detected!");
+      }
+    },
+  },
+});
+```
+
+#### Constraint Enforcement
+
+All sizing methods enforce optional constraints automatically:
+
+```typescript
+addSizing({
+  sizingName: "constrained",
+  method: "fixed-percentage",
+  riskPercentage: 10,               // High risk percentage
+  maxPositionPercentage: 5,         // But cap at 5% of account
+  minPositionSize: 0.01,            // Minimum 0.01 BTC
+  maxPositionSize: 0.5,             // Maximum 0.5 BTC
+});
+
+const quantity = await PositionSize.fixedPercentage(
+  "BTCUSDT",
+  10000,      // $10,000 account
+  50000,      // $50,000 entry
+  49000,      // $49,000 stop
+  { sizingName: "constrained" }
+);
+// Without constraints: (10000 * 0.10) / 1000 = 1.0 BTC
+// With maxPositionPercentage: min(1.0, 10000 * 0.05 / 50000) = 0.01 BTC
+// With maxPositionSize: min(0.01, 0.5) = 0.01 BTC
+// Result: 0.01 BTC (enforces all constraints)
+```
+
+**Available Constraints:**
+- `maxPositionPercentage` - Maximum percentage of account in single position
+- `minPositionSize` - Minimum position size in base currency
+- `maxPositionSize` - Maximum position size in base currency
+
+**When to Use Each Method:**
+
+1. **Fixed Percentage** - Simple risk management, consistent risk per trade
+   - Best for: Beginners, conservative strategies
+   - Risk: Fixed 1-2% per trade
+
+2. **Kelly Criterion** - Optimal bet sizing based on win rate and win/loss ratio
+   - Best for: Strategies with known edge, statistical advantage
+   - Risk: Use fractional Kelly (0.25-0.5) to reduce volatility
+
+3. **ATR-based** - Volatility-adjusted sizing, accounts for market conditions
+   - Best for: Swing trading, volatile markets
+   - Risk: Position size scales with volatility
+
+### 10. Schema Reflection API (Optional)
 
 Retrieve registered schemas at runtime for debugging, documentation, or building dynamic UIs:
 
@@ -497,9 +798,11 @@ import {
   addExchange,
   addStrategy,
   addFrame,
+  addSizing,
   listExchanges,
   listStrategies,
-  listFrames
+  listFrames,
+  listSizings
 } from "backtest-kit";
 
 // Register schemas with notes
@@ -526,6 +829,14 @@ addFrame({
   endDate: new Date("2024-02-01"),
 });
 
+addSizing({
+  sizingName: "conservative",
+  note: "Conservative 2% risk per trade",
+  method: "fixed-percentage",
+  riskPercentage: 2,
+  maxPositionPercentage: 10,
+});
+
 // List all registered schemas
 const exchanges = await listExchanges();
 console.log("Available exchanges:", exchanges.map(e => ({
@@ -549,6 +860,14 @@ console.log("Available frames:", frames.map(f => ({
   period: `${f.startDate.toISOString()} - ${f.endDate.toISOString()}`
 })));
 // Output: [{ name: "january-2024", note: "Full month backtest...", period: "2024-01-01..." }]
+
+const sizings = await listSizings();
+console.log("Available sizings:", sizings.map(s => ({
+  name: s.sizingName,
+  note: s.note,
+  method: s.method
+})));
+// Output: [{ name: "conservative", note: "Conservative 2% risk...", method: "fixed-percentage" }]
 ```
 
 **Use cases:**
@@ -1033,6 +1352,9 @@ addFrame(frameSchema: IFrameSchema): void
 
 // Register walker for strategy comparison
 addWalker(walkerSchema: IWalkerSchema): void
+
+// Register position sizing configuration
+addSizing(sizingSchema: ISizingSchema): void
 ```
 
 #### Exchange Data
@@ -1177,6 +1499,40 @@ Heat.dump(strategyName: string, path?: string): Promise<void>
 
 // Clear accumulated heatmap data
 Heat.clear(strategyName?: string): void
+```
+
+#### Position Sizing API
+
+```typescript
+import { PositionSize } from "backtest-kit";
+
+// Calculate position size using fixed percentage risk
+PositionSize.fixedPercentage(
+  symbol: string,
+  accountBalance: number,
+  priceOpen: number,
+  priceStopLoss: number,
+  context: { sizingName: string }
+): Promise<number>
+
+// Calculate position size using Kelly Criterion
+PositionSize.kellyCriterion(
+  symbol: string,
+  accountBalance: number,
+  priceOpen: number,
+  winRate: number,
+  winLossRatio: number,
+  context: { sizingName: string }
+): Promise<number>
+
+// Calculate position size using ATR-based method
+PositionSize.atrBased(
+  symbol: string,
+  accountBalance: number,
+  priceOpen: number,
+  atr: number,
+  context: { sizingName: string }
+): Promise<number>
 ```
 
 #### Performance Profiling API

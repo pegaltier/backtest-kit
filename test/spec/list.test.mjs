@@ -4,9 +4,11 @@ import {
   addExchange,
   addFrame,
   addStrategy,
+  addSizing,
   listExchanges,
   listFrames,
   listStrategies,
+  listSizings,
 } from "../../build/index.mjs";
 
 import getMockCandles from "../mock/getMockCandles.mjs";
@@ -402,5 +404,103 @@ test("listFrames includes callbacks when provided", async ({ pass, fail }) => {
   }
 
   fail("Frame callbacks missing or incorrect");
+
+});
+
+test("listSizings returns all registered sizing schemas", async ({ pass, fail }) => {
+
+  addSizing({
+    sizingName: "test-sizing-list-1",
+    note: "First test sizing for list",
+    method: "fixed-percentage",
+    riskPercentage: 2,
+  });
+
+  addSizing({
+    sizingName: "test-sizing-list-2",
+    note: "Second test sizing for list",
+    method: "kelly-criterion",
+    kellyMultiplier: 0.25,
+  });
+
+  addSizing({
+    sizingName: "test-sizing-list-3",
+    note: "Third test sizing for list",
+    method: "atr-based",
+    riskPercentage: 2,
+    atrMultiplier: 2,
+  });
+
+  const sizings = await listSizings();
+
+  const testSizings = sizings.filter(s =>
+    s.sizingName.startsWith("test-sizing-list")
+  );
+
+  if (testSizings.length >= 3) {
+    const hasNotes = testSizings.every(s => typeof s.note === "string");
+    const hasRequiredFields = testSizings.every(s =>
+      s.sizingName && s.method
+    );
+    const hasDifferentMethods =
+      testSizings.some(s => s.method === "fixed-percentage") &&
+      testSizings.some(s => s.method === "kelly-criterion") &&
+      testSizings.some(s => s.method === "atr-based");
+
+    if (hasNotes && hasRequiredFields && hasDifferentMethods) {
+      pass(`listSizings returned ${testSizings.length} test sizings with all fields`);
+      return;
+    }
+
+    if (!hasNotes) {
+      fail("Sizings missing notes");
+      return;
+    }
+
+    if (!hasRequiredFields) {
+      fail("Sizings missing required fields");
+      return;
+    }
+
+    if (!hasDifferentMethods) {
+      fail("Sizings do not have all three methods");
+      return;
+    }
+  }
+
+  fail(`Expected at least 3 test sizings, got ${testSizings.length}`);
+
+});
+
+test("listSizings includes callbacks when provided", async ({ pass, fail }) => {
+
+  addSizing({
+    sizingName: "test-sizing-with-callbacks",
+    note: "Sizing with callbacks for testing",
+    method: "fixed-percentage",
+    riskPercentage: 2,
+    callbacks: {
+      onCalculate: () => {},
+    },
+  });
+
+  const sizings = await listSizings();
+  const testSizing = sizings.find(s => s.sizingName === "test-sizing-with-callbacks");
+
+  if (!testSizing) {
+    fail("Test sizing with callbacks not found in list");
+    return;
+  }
+
+  const hasCallbacks =
+    testSizing.callbacks &&
+    typeof testSizing.callbacks.onCalculate === "function";
+
+  if (hasCallbacks) {
+    pass("Sizing callbacks correctly preserved in listSizings");
+    return;
+  }
+
+  fail("Sizing callbacks missing or incorrect");
 
 });

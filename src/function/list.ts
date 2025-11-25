@@ -3,11 +3,13 @@ import { IStrategySchema } from "../interfaces/Strategy.interface";
 import { IExchangeSchema } from "../interfaces/Exchange.interface";
 import { IFrameSchema } from "../interfaces/Frame.interface";
 import { IWalkerSchema } from "../interfaces/Walker.interface";
+import { ISizingSchema } from "../interfaces/Sizing.interface";
 
 const LIST_EXCHANGES_METHOD_NAME = "list.listExchanges";
 const LIST_STRATEGIES_METHOD_NAME = "list.listStrategies";
 const LIST_FRAMES_METHOD_NAME = "list.listFrames";
 const LIST_WALKERS_METHOD_NAME = "list.listWalkers";
+const LIST_SIZINGS_METHOD_NAME = "list.listSizings";
 
 /**
  * Returns a list of all registered exchange schemas.
@@ -133,4 +135,44 @@ export async function listFrames(): Promise<IFrameSchema[]> {
 export async function listWalkers(): Promise<IWalkerSchema[]> {
   backtest.loggerService.log(LIST_WALKERS_METHOD_NAME);
   return await backtest.walkerValidationService.list();
+}
+
+/**
+ * Returns a list of all registered sizing schemas.
+ *
+ * Retrieves all sizing configurations that have been registered via addSizing().
+ * Useful for debugging, documentation, or building dynamic UIs.
+ *
+ * @returns Array of sizing schemas with their configurations
+ *
+ * @example
+ * ```typescript
+ * import { listSizings, addSizing } from "backtest-kit";
+ *
+ * addSizing({
+ *   sizingName: "conservative",
+ *   note: "Low risk fixed percentage sizing",
+ *   method: "fixed-percentage",
+ *   riskPercentage: 1,
+ *   maxPositionPercentage: 10,
+ * });
+ *
+ * addSizing({
+ *   sizingName: "kelly",
+ *   note: "Kelly Criterion with quarter multiplier",
+ *   method: "kelly-criterion",
+ *   kellyMultiplier: 0.25,
+ * });
+ *
+ * const sizings = listSizings();
+ * console.log(sizings);
+ * // [
+ * //   { sizingName: "conservative", method: "fixed-percentage", ... },
+ * //   { sizingName: "kelly", method: "kelly-criterion", ... }
+ * // ]
+ * ```
+ */
+export async function listSizings(): Promise<ISizingSchema[]> {
+  backtest.loggerService.log(LIST_SIZINGS_METHOD_NAME);
+  return await backtest.sizingValidationService.list();
 }

@@ -5,6 +5,7 @@ import LoggerService from "./services/base/LoggerService";
 import ExchangeConnectionService from "./services/connection/ExchangeConnectionService";
 import StrategyConnectionService from "./services/connection/StrategyConnectionService";
 import FrameConnectionService from "./services/connection/FrameConnectionService";
+import SizingConnectionService from "./services/connection/SizingConnectionService";
 import ExecutionContextService, {
   TExecutionContextService,
 } from "./services/context/ExecutionContextService";
@@ -14,10 +15,12 @@ import MethodContextService, {
 import ExchangeGlobalService from "./services/global/ExchangeGlobalService";
 import StrategyGlobalService from "./services/global/StrategyGlobalService";
 import FrameGlobalService from "./services/global/FrameGlobalService";
+import SizingGlobalService from "./services/global/SizingGlobalService";
 import WalkerGlobalService from "./services/global/WalkerGlobalService";
 import ExchangeSchemaService from "./services/schema/ExchangeSchemaService";
 import StrategySchemaService from "./services/schema/StrategySchemaService";
 import FrameSchemaService from "./services/schema/FrameSchemaService";
+import SizingSchemaService from "./services/schema/SizingSchemaService";
 import WalkerSchemaService from "./services/schema/WalkerSchemaService";
 import BacktestLogicPrivateService from "./services/logic/private/BacktestLogicPrivateService";
 import LiveLogicPrivateService from "./services/logic/private/LiveLogicPrivateService";
@@ -36,6 +39,7 @@ import ExchangeValidationService from "./services/validation/ExchangeValidationS
 import StrategyValidationService from "./services/validation/StrategyValidationService";
 import FrameValidationService from "./services/validation/FrameValidationService";
 import WalkerValidationService from "./services/validation/WalkerValidationService";
+import SizingValidationService from "./services/validation/SizingValidationService";
 
 const baseServices = {
   loggerService: inject<LoggerService>(TYPES.loggerService),
@@ -60,6 +64,9 @@ const connectionServices = {
   frameConnectionService: inject<FrameConnectionService>(
     TYPES.frameConnectionService
   ),
+  sizingConnectionService: inject<SizingConnectionService>(
+    TYPES.sizingConnectionService
+  ),
 };
 
 const schemaServices = {
@@ -71,6 +78,7 @@ const schemaServices = {
   ),
   frameSchemaService: inject<FrameSchemaService>(TYPES.frameSchemaService),
   walkerSchemaService: inject<WalkerSchemaService>(TYPES.walkerSchemaService),
+  sizingSchemaService: inject<SizingSchemaService>(TYPES.sizingSchemaService),
 };
 
 const globalServices = {
@@ -86,6 +94,7 @@ const globalServices = {
     TYPES.backtestGlobalService
   ),
   walkerGlobalService: inject<WalkerGlobalService>(TYPES.walkerGlobalService),
+  sizingGlobalService: inject<SizingGlobalService>(TYPES.sizingGlobalService),
 };
 
 const logicPrivateServices = {
@@ -125,6 +134,7 @@ const validationServices = {
   strategyValidationService: inject<StrategyValidationService>(TYPES.strategyValidationService),
   frameValidationService: inject<FrameValidationService>(TYPES.frameValidationService),
   walkerValidationService: inject<WalkerValidationService>(TYPES.walkerValidationService),
+  sizingValidationService: inject<SizingValidationService>(TYPES.sizingValidationService),
 }
 
 export const backtest = {

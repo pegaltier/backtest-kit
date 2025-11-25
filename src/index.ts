@@ -1,6 +1,6 @@
 export { setLogger } from "./function/setup";
-export { addExchange, addStrategy, addFrame, addWalker } from "./function/add";
-export { listExchanges, listStrategies, listFrames, listWalkers } from "./function/list";
+export { addExchange, addStrategy, addFrame, addWalker, addSizing } from "./function/add";
+export { listExchanges, listStrategies, listFrames, listWalkers, listSizings } from "./function/list";
 export {
   listenSignal,
   listenSignalOnce,
@@ -52,6 +52,20 @@ export {
 export { FrameInterval, IFrameSchema } from "./interfaces/Frame.interface";
 
 export {
+  ISizingSchema,
+  ISizingSchemaFixedPercentage,
+  ISizingSchemaKelly,
+  ISizingSchemaATR,
+  ISizingCalculateParams,
+  ISizingCalculateParamsFixedPercentage,
+  ISizingCalculateParamsKelly,
+  ISizingCalculateParamsATR,
+  IPositionSizeFixedPercentageParams,
+  IPositionSizeKellyParams,
+  IPositionSizeATRParams,
+} from "./interfaces/Sizing.interface";
+
+export {
   WalkerMetric,
   IWalkerSchema,
   IWalkerResults,
@@ -90,6 +104,7 @@ export { Live } from "./classes/Live";
 export { Performance } from "./classes/Performance";
 export { Walker } from "./classes/Walker";
 export { Heat } from "./classes/Heat";
+export { PositionSize } from "./classes/PositionSize";
 
 export * as emitters from "./config/emitters";
 

@@ -3,11 +3,13 @@ import { IStrategySchema } from "../interfaces/Strategy.interface";
 import { IExchangeSchema } from "../interfaces/Exchange.interface";
 import { IFrameSchema } from "../interfaces/Frame.interface";
 import { IWalkerSchema } from "../interfaces/Walker.interface";
+import { ISizingSchema } from "../interfaces/Sizing.interface";
 
 const ADD_STRATEGY_METHOD_NAME = "add.addStrategy";
 const ADD_EXCHANGE_METHOD_NAME = "add.addExchange";
 const ADD_FRAME_METHOD_NAME = "add.addFrame";
 const ADD_WALKER_METHOD_NAME = "add.addWalker";
+const ADD_SIZING_METHOD_NAME = "add.addSizing";
 
 /**
  * Registers a trading strategy in the framework.
@@ -192,5 +194,71 @@ export function addWalker(walkerSchema: IWalkerSchema) {
   backtest.walkerSchemaService.register(
     walkerSchema.walkerName,
     walkerSchema
+  );
+}
+
+/**
+ * Registers a position sizing configuration in the framework.
+ *
+ * The sizing configuration defines:
+ * - Position sizing method (fixed-percentage, kelly-criterion, atr-based)
+ * - Risk parameters (risk percentage, Kelly multiplier, ATR multiplier)
+ * - Position constraints (min/max size, max position percentage)
+ * - Callback for calculation events
+ *
+ * @param sizingSchema - Sizing configuration object (discriminated union)
+ * @param sizingSchema.sizingName - Unique sizing identifier
+ * @param sizingSchema.method - Sizing method ("fixed-percentage" | "kelly-criterion" | "atr-based")
+ * @param sizingSchema.riskPercentage - Risk percentage per trade (for fixed-percentage and atr-based)
+ * @param sizingSchema.kellyMultiplier - Kelly multiplier (for kelly-criterion, default: 0.25)
+ * @param sizingSchema.atrMultiplier - ATR multiplier (for atr-based, default: 2)
+ * @param sizingSchema.maxPositionPercentage - Optional max position size as % of account
+ * @param sizingSchema.minPositionSize - Optional minimum position size
+ * @param sizingSchema.maxPositionSize - Optional maximum position size
+ * @param sizingSchema.callbacks - Optional lifecycle callbacks
+ *
+ * @example
+ * ```typescript
+ * // Fixed percentage sizing
+ * addSizing({
+ *   sizingName: "conservative",
+ *   method: "fixed-percentage",
+ *   riskPercentage: 1,
+ *   maxPositionPercentage: 10,
+ * });
+ *
+ * // Kelly Criterion sizing
+ * addSizing({
+ *   sizingName: "kelly",
+ *   method: "kelly-criterion",
+ *   kellyMultiplier: 0.25,
+ *   maxPositionPercentage: 20,
+ * });
+ *
+ * // ATR-based sizing
+ * addSizing({
+ *   sizingName: "atr-dynamic",
+ *   method: "atr-based",
+ *   riskPercentage: 2,
+ *   atrMultiplier: 2,
+ *   callbacks: {
+ *     onCalculate: (quantity, params) => {
+ *       console.log(`Calculated size: ${quantity} for ${params.symbol}`);
+ *     },
+ *   },
+ * });
+ * ```
+ */
+export function addSizing(sizingSchema: ISizingSchema) {
+  backtest.loggerService.info(ADD_SIZING_METHOD_NAME, {
+    sizingSchema,
+  });
+  backtest.sizingValidationService.addSizing(
+    sizingSchema.sizingName,
+    sizingSchema
+  );
+  backtest.sizingSchemaService.register(
+    sizingSchema.sizingName,
+    sizingSchema
   );
 }

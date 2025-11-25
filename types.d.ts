@@ -843,6 +843,205 @@ interface IWalkerResults {
 type WalkerName = string;
 
 /**
+ * Base parameters common to all sizing calculations.
+ */
+interface ISizingCalculateParamsBase {
+    /** Trading pair symbol (e.g., "BTCUSDT") */
+    symbol: string;
+    /** Current account balance */
+    accountBalance: number;
+    /** Planned entry price */
+    priceOpen: number;
+}
+/**
+ * Public API parameters for fixed percentage sizing (without method field).
+ */
+interface IPositionSizeFixedPercentageParams extends ISizingCalculateParamsBase {
+    /** Stop-loss price */
+    priceStopLoss: number;
+}
+/**
+ * Public API parameters for Kelly Criterion sizing (without method field).
+ */
+interface IPositionSizeKellyParams extends ISizingCalculateParamsBase {
+    /** Win rate (0-1) */
+    winRate: number;
+    /** Average win/loss ratio */
+    winLossRatio: number;
+}
+/**
+ * Public API parameters for ATR-based sizing (without method field).
+ */
+interface IPositionSizeATRParams extends ISizingCalculateParamsBase {
+    /** Current ATR value */
+    atr: number;
+}
+/**
+ * Parameters for fixed percentage sizing calculation.
+ */
+interface ISizingCalculateParamsFixedPercentage extends ISizingCalculateParamsBase {
+    method: "fixed-percentage";
+    /** Stop-loss price */
+    priceStopLoss: number;
+}
+/**
+ * Parameters for Kelly Criterion sizing calculation.
+ */
+interface ISizingCalculateParamsKelly extends ISizingCalculateParamsBase {
+    method: "kelly-criterion";
+    /** Win rate (0-1) */
+    winRate: number;
+    /** Average win/loss ratio */
+    winLossRatio: number;
+}
+/**
+ * Parameters for ATR-based sizing calculation.
+ */
+interface ISizingCalculateParamsATR extends ISizingCalculateParamsBase {
+    method: "atr-based";
+    /** Current ATR value */
+    atr: number;
+}
+/**
+ * Discriminated union for position size calculation parameters.
+ * Type-safe parameters based on sizing method.
+ */
+type ISizingCalculateParams = ISizingCalculateParamsFixedPercentage | ISizingCalculateParamsKelly | ISizingCalculateParamsATR;
+/**
+ * Fixed percentage sizing parameters for ClientSizing constructor.
+ */
+interface ISizingParamsFixedPercentage extends ISizingSchemaFixedPercentage {
+    /** Logger service for debug output */
+    logger: ILogger;
+}
+/**
+ * Kelly Criterion sizing parameters for ClientSizing constructor.
+ */
+interface ISizingParamsKelly extends ISizingSchemaKelly {
+    /** Logger service for debug output */
+    logger: ILogger;
+}
+/**
+ * ATR-based sizing parameters for ClientSizing constructor.
+ */
+interface ISizingParamsATR extends ISizingSchemaATR {
+    /** Logger service for debug output */
+    logger: ILogger;
+}
+/**
+ * Discriminated union for sizing parameters passed to ClientSizing constructor.
+ * Extends ISizingSchema with logger instance for internal logging.
+ */
+type ISizingParams = ISizingParamsFixedPercentage | ISizingParamsKelly | ISizingParamsATR;
+/**
+ * Callbacks for sizing lifecycle events.
+ */
+interface ISizingCallbacks {
+    /**
+     * Called after position size calculation.
+     * Useful for logging or validating the calculated size.
+     *
+     * @param quantity - Calculated position size
+     * @param params - Parameters used for calculation
+     */
+    onCalculate: (quantity: number, params: ISizingCalculateParams) => void;
+}
+/**
+ * Base sizing schema with common fields.
+ */
+interface ISizingSchemaBase {
+    /** Unique identifier for this sizing configuration */
+    sizingName: SizingName;
+    /** Optional developer note for documentation */
+    note?: string;
+    /** Maximum position size as % of account (0-100) */
+    maxPositionPercentage?: number;
+    /** Minimum position size (absolute value) */
+    minPositionSize?: number;
+    /** Maximum position size (absolute value) */
+    maxPositionSize?: number;
+    /** Optional lifecycle callbacks */
+    callbacks?: Partial<ISizingCallbacks>;
+}
+/**
+ * Fixed percentage sizing schema.
+ *
+ * @example
+ * ```typescript
+ * addSizing({
+ *   sizingName: "conservative",
+ *   method: "fixed-percentage",
+ *   riskPercentage: 1,
+ * });
+ * ```
+ */
+interface ISizingSchemaFixedPercentage extends ISizingSchemaBase {
+    method: "fixed-percentage";
+    /** Risk percentage per trade (0-100) */
+    riskPercentage: number;
+}
+/**
+ * Kelly Criterion sizing schema.
+ *
+ * @example
+ * ```typescript
+ * addSizing({
+ *   sizingName: "kelly",
+ *   method: "kelly-criterion",
+ *   kellyMultiplier: 0.25,
+ * });
+ * ```
+ */
+interface ISizingSchemaKelly extends ISizingSchemaBase {
+    method: "kelly-criterion";
+    /** Kelly Criterion multiplier (0-1, default 0.25 for quarter Kelly) */
+    kellyMultiplier?: number;
+}
+/**
+ * ATR-based sizing schema.
+ *
+ * @example
+ * ```typescript
+ * addSizing({
+ *   sizingName: "atr",
+ *   method: "atr-based",
+ *   riskPercentage: 2,
+ *   atrMultiplier: 2,
+ * });
+ * ```
+ */
+interface ISizingSchemaATR extends ISizingSchemaBase {
+    method: "atr-based";
+    /** Risk percentage per trade (0-100) */
+    riskPercentage: number;
+    /** ATR multiplier for stop distance calculation */
+    atrMultiplier?: number;
+}
+/**
+ * Discriminated union for sizing schemas.
+ * Type-safe configuration based on sizing method.
+ */
+type ISizingSchema = ISizingSchemaFixedPercentage | ISizingSchemaKelly | ISizingSchemaATR;
+/**
+ * Sizing interface for position size calculation.
+ * Used internally by strategy execution.
+ */
+interface ISizing {
+    /**
+     * Calculates position size based on risk parameters.
+     *
+     * @param params - Calculation parameters (symbol, balance, prices, etc.)
+     * @returns Promise resolving to calculated position size
+     */
+    calculate: (params: ISizingCalculateParams) => Promise<number>;
+}
+/**
+ * Unique identifier for a sizing schema.
+ * Used to retrieve sizing instances via dependency injection.
+ */
+type SizingName = string;
+
+/**
  * Registers a trading strategy in the framework.
  *
  * The strategy will be validated for:
@@ -982,6 +1181,59 @@ declare function addFrame(frameSchema: IFrameSchema): void;
  * ```
  */
 declare function addWalker(walkerSchema: IWalkerSchema): void;
+/**
+ * Registers a position sizing configuration in the framework.
+ *
+ * The sizing configuration defines:
+ * - Position sizing method (fixed-percentage, kelly-criterion, atr-based)
+ * - Risk parameters (risk percentage, Kelly multiplier, ATR multiplier)
+ * - Position constraints (min/max size, max position percentage)
+ * - Callback for calculation events
+ *
+ * @param sizingSchema - Sizing configuration object (discriminated union)
+ * @param sizingSchema.sizingName - Unique sizing identifier
+ * @param sizingSchema.method - Sizing method ("fixed-percentage" | "kelly-criterion" | "atr-based")
+ * @param sizingSchema.riskPercentage - Risk percentage per trade (for fixed-percentage and atr-based)
+ * @param sizingSchema.kellyMultiplier - Kelly multiplier (for kelly-criterion, default: 0.25)
+ * @param sizingSchema.atrMultiplier - ATR multiplier (for atr-based, default: 2)
+ * @param sizingSchema.maxPositionPercentage - Optional max position size as % of account
+ * @param sizingSchema.minPositionSize - Optional minimum position size
+ * @param sizingSchema.maxPositionSize - Optional maximum position size
+ * @param sizingSchema.callbacks - Optional lifecycle callbacks
+ *
+ * @example
+ * ```typescript
+ * // Fixed percentage sizing
+ * addSizing({
+ *   sizingName: "conservative",
+ *   method: "fixed-percentage",
+ *   riskPercentage: 1,
+ *   maxPositionPercentage: 10,
+ * });
+ *
+ * // Kelly Criterion sizing
+ * addSizing({
+ *   sizingName: "kelly",
+ *   method: "kelly-criterion",
+ *   kellyMultiplier: 0.25,
+ *   maxPositionPercentage: 20,
+ * });
+ *
+ * // ATR-based sizing
+ * addSizing({
+ *   sizingName: "atr-dynamic",
+ *   method: "atr-based",
+ *   riskPercentage: 2,
+ *   atrMultiplier: 2,
+ *   callbacks: {
+ *     onCalculate: (quantity, params) => {
+ *       console.log(`Calculated size: ${quantity} for ${params.symbol}`);
+ *     },
+ *   },
+ * });
+ * ```
+ */
+declare function addSizing(sizingSchema: ISizingSchema): void;
 
 /**
  * Returns a list of all registered exchange schemas.
@@ -1093,6 +1345,42 @@ declare function listFrames(): Promise<IFrameSchema[]>;
  * ```
  */
 declare function listWalkers(): Promise<IWalkerSchema[]>;
+/**
+ * Returns a list of all registered sizing schemas.
+ *
+ * Retrieves all sizing configurations that have been registered via addSizing().
+ * Useful for debugging, documentation, or building dynamic UIs.
+ *
+ * @returns Array of sizing schemas with their configurations
+ *
+ * @example
+ * ```typescript
+ * import { listSizings, addSizing } from "backtest-kit";
+ *
+ * addSizing({
+ *   sizingName: "conservative",
+ *   note: "Low risk fixed percentage sizing",
+ *   method: "fixed-percentage",
+ *   riskPercentage: 1,
+ *   maxPositionPercentage: 10,
+ * });
+ *
+ * addSizing({
+ *   sizingName: "kelly",
+ *   note: "Kelly Criterion with quarter multiplier",
+ *   method: "kelly-criterion",
+ *   kellyMultiplier: 0.25,
+ * });
+ *
+ * const sizings = listSizings();
+ * console.log(sizings);
+ * // [
+ * //   { sizingName: "conservative", method: "fixed-percentage", ... },
+ * //   { sizingName: "kelly", method: "kelly-criterion", ... }
+ * // ]
+ * ```
+ */
+declare function listSizings(): Promise<ISizingSchema[]>;
 
 /**
  * Contract for background execution completion events.
@@ -3241,6 +3529,92 @@ declare class HeatUtils {
 declare const Heat: HeatUtils;
 
 /**
+ * Utility class for position sizing calculations.
+ *
+ * Provides static methods for each sizing method with validation.
+ * Each method validates that the sizing schema matches the requested method.
+ *
+ * @example
+ * ```typescript
+ * import { PositionSize } from "./classes/PositionSize";
+ *
+ * // Fixed percentage sizing
+ * const quantity = await PositionSize.fixedPercentage(
+ *   "BTCUSDT",
+ *   10000,
+ *   50000,
+ *   49000,
+ *   { sizingName: "conservative" }
+ * );
+ *
+ * // Kelly Criterion sizing
+ * const quantity = await PositionSize.kellyCriterion(
+ *   "BTCUSDT",
+ *   10000,
+ *   50000,
+ *   0.55,
+ *   1.5,
+ *   { sizingName: "kelly" }
+ * );
+ *
+ * // ATR-based sizing
+ * const quantity = await PositionSize.atrBased(
+ *   "BTCUSDT",
+ *   10000,
+ *   50000,
+ *   500,
+ *   { sizingName: "atr-dynamic" }
+ * );
+ * ```
+ */
+declare class PositionSizeUtils {
+    /**
+     * Calculates position size using fixed percentage risk method.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param accountBalance - Current account balance
+     * @param priceOpen - Planned entry price
+     * @param priceStopLoss - Stop-loss price
+     * @param context - Execution context with sizing name
+     * @returns Promise resolving to calculated position size
+     * @throws Error if sizing schema method is not "fixed-percentage"
+     */
+    static fixedPercentage: (symbol: string, accountBalance: number, priceOpen: number, priceStopLoss: number, context: {
+        sizingName: SizingName;
+    }) => Promise<number>;
+    /**
+     * Calculates position size using Kelly Criterion method.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param accountBalance - Current account balance
+     * @param priceOpen - Planned entry price
+     * @param winRate - Win rate (0-1)
+     * @param winLossRatio - Average win/loss ratio
+     * @param context - Execution context with sizing name
+     * @returns Promise resolving to calculated position size
+     * @throws Error if sizing schema method is not "kelly-criterion"
+     */
+    static kellyCriterion: (symbol: string, accountBalance: number, priceOpen: number, winRate: number, winLossRatio: number, context: {
+        sizingName: SizingName;
+    }) => Promise<number>;
+    /**
+     * Calculates position size using ATR-based method.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param accountBalance - Current account balance
+     * @param priceOpen - Planned entry price
+     * @param atr - Current ATR value
+     * @param context - Execution context with sizing name
+     * @returns Promise resolving to calculated position size
+     * @throws Error if sizing schema method is not "atr-based"
+     */
+    static atrBased: (symbol: string, accountBalance: number, priceOpen: number, atr: number, context: {
+        sizingName: SizingName;
+    }) => Promise<number>;
+}
+declare const PositionSize: typeof PositionSizeUtils;
+
+/**
  * Global signal emitter for all trading events (live + backtest).
  * Emits all signal events regardless of execution mode.
  */
@@ -3682,6 +4056,87 @@ declare class FrameConnectionService implements IFrame {
 }
 
 /**
+ * Client implementation for position sizing calculation.
+ *
+ * Features:
+ * - Multiple sizing methods (fixed %, Kelly, ATR)
+ * - Min/max position constraints
+ * - Max position percentage limit
+ * - Callback support for validation and logging
+ *
+ * Used by strategy execution to determine optimal position sizes.
+ */
+declare class ClientSizing implements ISizing {
+    readonly params: ISizingParams;
+    constructor(params: ISizingParams);
+    /**
+     * Calculates position size based on configured method and constraints.
+     *
+     * @param params - Calculation parameters (symbol, balance, prices, etc.)
+     * @returns Promise resolving to calculated position size
+     * @throws Error if required parameters are missing or invalid
+     */
+    calculate: (params: ISizingCalculateParams) => Promise<number>;
+}
+
+/**
+ * Connection service routing sizing operations to correct ClientSizing instance.
+ *
+ * Routes sizing method calls to the appropriate sizing implementation
+ * based on the provided sizingName parameter. Uses memoization to cache
+ * ClientSizing instances for performance.
+ *
+ * Key features:
+ * - Explicit sizing routing via sizingName parameter
+ * - Memoized ClientSizing instances by sizingName
+ * - Position size calculation with risk management
+ *
+ * Note: sizingName is empty string for strategies without sizing configuration.
+ *
+ * @example
+ * ```typescript
+ * // Used internally by framework
+ * const quantity = await sizingConnectionService.calculate(
+ *   {
+ *     symbol: "BTCUSDT",
+ *     accountBalance: 10000,
+ *     priceOpen: 50000,
+ *     priceStopLoss: 49000,
+ *     method: "fixed-percentage"
+ *   },
+ *   { sizingName: "conservative" }
+ * );
+ * ```
+ */
+declare class SizingConnectionService {
+    private readonly loggerService;
+    private readonly sizingSchemaService;
+    /**
+     * Retrieves memoized ClientSizing instance for given sizing name.
+     *
+     * Creates ClientSizing on first call, returns cached instance on subsequent calls.
+     * Cache key is sizingName string.
+     *
+     * @param sizingName - Name of registered sizing schema
+     * @returns Configured ClientSizing instance
+     */
+    getSizing: ((sizingName: SizingName) => ClientSizing) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, ClientSizing>;
+    /**
+     * Calculates position size based on risk parameters and configured method.
+     *
+     * Routes to appropriate ClientSizing instance based on provided context.
+     * Supports multiple sizing methods: fixed-percentage, kelly-criterion, atr-based.
+     *
+     * @param params - Calculation parameters (symbol, balance, prices, method-specific data)
+     * @param context - Execution context with sizing name
+     * @returns Promise resolving to calculated position size
+     */
+    calculate: (params: ISizingCalculateParams, context: {
+        sizingName: SizingName;
+    }) => Promise<number>;
+}
+
+/**
  * Global service for exchange operations with execution context injection.
  *
  * Wraps ExchangeConnectionService with ExecutionContextService to inject
@@ -3818,6 +4273,27 @@ declare class FrameGlobalService {
      * @returns Promise resolving to array of Date objects
      */
     getTimeframe: (symbol: string) => Promise<Date[]>;
+}
+
+/**
+ * Global service for sizing operations.
+ *
+ * Wraps SizingConnectionService for position size calculation.
+ * Used internally by strategy execution and public API.
+ */
+declare class SizingGlobalService {
+    private readonly loggerService;
+    private readonly sizingConnectionService;
+    /**
+     * Calculates position size based on risk parameters.
+     *
+     * @param params - Calculation parameters (symbol, balance, prices, method-specific data)
+     * @param context - Execution context with sizing name
+     * @returns Promise resolving to calculated position size
+     */
+    calculate: (params: ISizingCalculateParams, context: {
+        sizingName: SizingName;
+    }) => Promise<number>;
 }
 
 /**
@@ -3985,6 +4461,53 @@ declare class FrameSchemaService {
      * @throws Error if frame name doesn't exist
      */
     get(key: FrameName): IFrameSchema;
+}
+
+/**
+ * Service for managing sizing schema registry.
+ *
+ * Uses ToolRegistry from functools-kit for type-safe schema storage.
+ * Sizing schemas are registered via addSizing() and retrieved by name.
+ */
+declare class SizingSchemaService {
+    readonly loggerService: LoggerService;
+    private _registry;
+    /**
+     * Registers a new sizing schema.
+     *
+     * @param key - Unique sizing name
+     * @param value - Sizing schema configuration
+     * @throws Error if sizing name already exists
+     */
+    register(key: SizingName, value: ISizingSchema): void;
+    /**
+     * Validates sizing schema structure for required properties.
+     *
+     * Performs shallow validation to ensure all required properties exist
+     * and have correct types before registration in the registry.
+     *
+     * @param sizingSchema - Sizing schema to validate
+     * @throws Error if sizingName is missing or not a string
+     * @throws Error if method is missing or not a valid sizing method
+     * @throws Error if required method-specific fields are missing
+     */
+    private validateShallow;
+    /**
+     * Overrides an existing sizing schema with partial updates.
+     *
+     * @param key - Sizing name to override
+     * @param value - Partial schema updates
+     * @throws Error if sizing name doesn't exist
+     */
+    override(key: SizingName, value: Partial<ISizingSchema>): ISizingSchema;
+    /**
+     * Retrieves a sizing schema by name.
+     *
+     * @param key - Sizing name
+     * @returns Sizing schema configuration
+     * @throws Error if sizing name doesn't exist
+     */
+    get(key: SizingName): ISizingSchema;
 }
 
 /**
@@ -4644,11 +5167,50 @@ declare class WalkerValidationService {
     list: () => Promise<IWalkerSchema[]>;
 }
 
+/**
+ * @class SizingValidationService
+ * Service for managing and validating sizing configurations
+ */
+declare class SizingValidationService {
+    /**
+     * @private
+     * @readonly
+     * Injected logger service instance
+     */
+    private readonly loggerService;
+    /**
+     * @private
+     * Map storing sizing schemas by sizing name
+     */
+    private _sizingMap;
+    /**
+     * Adds a sizing schema to the validation service
+     * @public
+     * @throws {Error} If sizingName already exists
+     */
+    addSizing: (sizingName: SizingName, sizingSchema: ISizingSchema) => void;
+    /**
+     * Validates the existence of a sizing and optionally its method
+     * @public
+     * @throws {Error} If sizingName is not found
+     * @throws {Error} If method is provided and doesn't match sizing schema method
+     * Memoized function to cache validation results
+     */
+    validate: (sizingName: SizingName, source: string, method?: "fixed-percentage" | "kelly-criterion" | "atr-based") => void;
+    /**
+     * Returns a list of all registered sizing schemas
+     * @public
+     * @returns Array of sizing schemas with their configurations
+     */
+    list: () => Promise<ISizingSchema[]>;
+}
+
 declare const backtest: {
     exchangeValidationService: ExchangeValidationService;
     strategyValidationService: StrategyValidationService;
     frameValidationService: FrameValidationService;
     walkerValidationService: WalkerValidationService;
+    sizingValidationService: SizingValidationService;
     backtestMarkdownService: BacktestMarkdownService;
     liveMarkdownService: LiveMarkdownService;
     performanceMarkdownService: PerformanceMarkdownService;
@@ -4666,13 +5228,16 @@ declare const backtest: {
     liveGlobalService: LiveGlobalService;
     backtestGlobalService: BacktestGlobalService;
     walkerGlobalService: WalkerGlobalService;
+    sizingGlobalService: SizingGlobalService;
     exchangeSchemaService: ExchangeSchemaService;
     strategySchemaService: StrategySchemaService;
     frameSchemaService: FrameSchemaService;
     walkerSchemaService: WalkerSchemaService;
+    sizingSchemaService: SizingSchemaService;
     exchangeConnectionService: ExchangeConnectionService;
     strategyConnectionService: StrategyConnectionService;
     frameConnectionService: FrameConnectionService;
+    sizingConnectionService: SizingConnectionService;
     executionContextService: {
         readonly context: IExecutionContext;
     };
@@ -4682,4 +5247,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type BacktestStatistics, type CandleInterval, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, Heat, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IHeatmapStatistics, type IPersistBase, type ISignalDto, type ISignalRow, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatistics, MethodContextService, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatistics, PersistBase, PersistSignalAdaper, type ProgressContract, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, Walker, type WalkerMetric, type WalkerStatistics, addExchange, addFrame, addStrategy, addWalker, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listExchanges, listFrames, listStrategies, listWalkers, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenPerformance, listenProgress, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenWalker, listenWalkerComplete, listenWalkerOnce, setLogger };
+export { Backtest, type BacktestStatistics, type CandleInterval, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, Heat, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IHeatmapStatistics, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatistics, MethodContextService, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatistics, PersistBase, PersistSignalAdaper, PositionSize, type ProgressContract, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, Walker, type WalkerMetric, type WalkerStatistics, addExchange, addFrame, addSizing, addStrategy, addWalker, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listExchanges, listFrames, listSizings, listStrategies, listWalkers, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenPerformance, listenProgress, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenWalker, listenWalkerComplete, listenWalkerOnce, setLogger };
