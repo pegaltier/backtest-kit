@@ -95,7 +95,7 @@ export interface IRiskSchema {
   note?: string;
   /** Optional lifecycle event callbacks (onRejected, onAllowed) */
   callbacks?: Partial<IRiskCallbacks>;
-  /** Optional custom validations array for risk logic */
+  /** Custom validations array for risk logic */
   validations: (IRiskValidation | IRiskValidationFn)[];
 }
 
