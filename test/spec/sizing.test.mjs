@@ -300,3 +300,61 @@ test("PositionSize.fixedPercentage with callback", async ({ pass, fail }) => {
   fail(`Callback quantity mismatch: ${callbackQuantity} !== ${quantity}`);
 
 });
+
+test("PositionSize integration with mock Binance workflow", async ({ pass, fail }) => {
+  // Create mock Binance client
+  const binance = {
+    marketBuy: async (symbol, quantity) => {
+      return { orderId: "mock-buy-123", symbol, side: "buy", quantity };
+    },
+    marketSell: async (symbol, quantity) => {
+      return { orderId: "mock-sell-456", symbol, side: "sell", quantity };
+    },
+    getBalance: async (asset) => {
+      if (asset === "USDT") return { free: 10000, used: 0, total: 10000 };
+      if (asset === "BTC") return { free: 0.2, used: 0, total: 0.2 };
+      return { free: 0, used: 0, total: 0 };
+    },
+  };
+
+  // Register sizing schema
+  addSizing({
+    sizingName: "test-binance-integration",
+    method: "fixed-percentage",
+    riskPercentage: 2,
+  });
+
+  // Simulate onOpen workflow: get balance and calculate position size
+  const usdtBalance = await binance.getBalance("USDT");
+  const quantity = await PositionSize.fixedPercentage(
+    "BTCUSDT",
+    usdtBalance.free,
+    50000,
+    49000,
+    { sizingName: "test-binance-integration" }
+  );
+
+  // Execute market buy order
+  const buyOrder = await binance.marketBuy("BTCUSDT", quantity);
+
+  // Simulate onClose workflow: get BTC balance and sell
+  const btcBalance = await binance.getBalance("BTC");
+  const sellOrder = await binance.marketSell("BTCUSDT", btcBalance.free);
+
+  // Verify workflow
+  if (
+    buyOrder &&
+    buyOrder.side === "buy" &&
+    buyOrder.orderId === "mock-buy-123" &&
+    sellOrder &&
+    sellOrder.side === "sell" &&
+    sellOrder.orderId === "mock-sell-456" &&
+    typeof quantity === "number" &&
+    quantity > 0
+  ) {
+    pass(`Binance integration workflow completed: buy ${quantity} BTC, sell ${btcBalance.free} BTC`);
+    return;
+  }
+
+  fail("Binance integration workflow failed");
+});
