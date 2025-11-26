@@ -2,7 +2,7 @@ import { RiskName, IRiskSchema } from "../../../interfaces/Risk.interface";
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
-import { ToolRegistry } from "functools-kit";
+import { isObject, ToolRegistry } from "functools-kit";
 
 /**
  * Service for managing risk schema registry.
@@ -13,7 +13,9 @@ import { ToolRegistry } from "functools-kit";
 export class RiskSchemaService {
   readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
-  private _registry = new ToolRegistry<Record<RiskName, IRiskSchema>>("riskSchema");
+  private _registry = new ToolRegistry<Record<RiskName, IRiskSchema>>(
+    "riskSchema"
+  );
 
   /**
    * Registers a new risk schema.
@@ -41,10 +43,23 @@ export class RiskSchemaService {
     this.loggerService.log(`riskSchemaService validateShallow`, {
       riskSchema,
     });
-
     if (typeof riskSchema.riskName !== "string") {
+      throw new Error(`risk schema validation failed: missing riskName`);
+    }
+    if (riskSchema.validations && !Array.isArray(riskSchema.validations)) {
       throw new Error(
-        `risk schema validation failed: missing riskName`
+        `risk schema validation failed: validations is not an array for riskName=${riskSchema.riskName}`
+      );
+    }
+    if (
+      riskSchema.validations &&
+      riskSchema.validations?.some(
+        (validation) =>
+          typeof validation !== "function" && !isObject(validation)
+      )
+    ) {
+      throw new Error(
+        `risk schema validation failed: invalid validations for riskName=${riskSchema.riskName}`
       );
     }
   };
