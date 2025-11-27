@@ -755,22 +755,48 @@ test("PersistRiskAdapter overwrites existing data", async ({ pass, fail }) => {
 
 test("PersistRiskAdapter isolates data by riskName", async ({ pass, fail }) => {
 
-  const storage = new Map();
+  // Storage per riskName - simulates how PersistBase would store data
+  const storageByRisk = new Map();
 
   PersistRiskAdapter.usePersistRiskAdapter(class {
-    async waitForInit() {}
+    constructor(riskName) {
+      this.riskName = riskName;
+    }
+
+    async waitForInit() {
+      // Initialize storage for this riskName if needed
+      if (!storageByRisk.has(this.riskName)) {
+        storageByRisk.set(this.riskName, new Map());
+      }
+    }
+
     async readValue(key) {
-      const data = storage.get(key);
+      const riskStorage = storageByRisk.get(this.riskName);
+      if (!riskStorage) {
+        throw new Error("Storage not initialized");
+      }
+      const data = riskStorage.get(key);
       if (!data) {
         throw new Error("Not found");
       }
       return data;
     }
+
     async hasValue(key) {
-      return storage.has(key);
+      const riskStorage = storageByRisk.get(this.riskName);
+      if (!riskStorage) {
+        return false;
+      }
+      return riskStorage.has(key);
     }
+
     async writeValue(key, value) {
-      storage.set(key, value);
+      let riskStorage = storageByRisk.get(this.riskName);
+      if (!riskStorage) {
+        riskStorage = new Map();
+        storageByRisk.set(this.riskName, riskStorage);
+      }
+      riskStorage.set(key, value);
     }
   });
 
