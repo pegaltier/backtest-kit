@@ -1062,6 +1062,210 @@ test("Custom Redis adapter works correctly", async ({ pass, fail }) => {
 
 ---
 
+## 📐 Architecture Overview
+
+The framework follows **clean architecture** with:
+
+- **Client Layer** - Pure business logic without DI (ClientStrategy, ClientExchange, ClientFrame)
+- **Service Layer** - DI-based services organized by responsibility
+  - **Schema Services** - Registry pattern for configuration
+  - **Connection Services** - Memoized client instance creators
+  - **Global Services** - Context wrappers for public API
+  - **Logic Services** - Async generator orchestration (backtest/live)
+- **Persistence Layer** - Crash-safe atomic file writes with `PersistSignalAdapter`
+
+---
+
+## ✅ Signal Validation
+
+All signals are validated automatically before execution:
+
+```typescript
+// ✅ Valid long signal
+{
+  position: "long",
+  priceOpen: 50000,
+  priceTakeProfit: 51000,  // ✅ 51000 > 50000
+  priceStopLoss: 49000,     // ✅ 49000 < 50000
+  minuteEstimatedTime: 60,  // ✅ positive
+}
+
+// ❌ Invalid long signal - throws error
+{
+  position: "long",
+  priceOpen: 50000,
+  priceTakeProfit: 49000,  // ❌ 49000 < 50000 (must be higher for long)
+  priceStopLoss: 51000,    // ❌ 51000 > 50000 (must be lower for long)
+}
+
+// ✅ Valid short signal
+{
+  position: "short",
+  priceOpen: 50000,
+  priceTakeProfit: 49000,  // ✅ 49000 < 50000 (profit goes down for short)
+  priceStopLoss: 51000,    // ✅ 51000 > 50000 (stop loss goes up for short)
+}
+```
+
+Validation errors include detailed messages for debugging.
+
+---
+
+## 🧠 Interval Throttling
+
+Prevent signal spam with automatic throttling:
+
+```typescript
+addStrategy({
+  strategyName: "my-strategy",
+  interval: "5m", // Signals generated max once per 5 minutes
+  getSignal: async (symbol) => {
+    // This function will be called max once per 5 minutes
+    // Even if tick() is called every second
+    return signal;
+  },
+});
+```
+
+Supported intervals: `"1m"`, `"3m"`, `"5m"`, `"15m"`, `"30m"`, `"1h"`
+
+---
+
+## 📝 Markdown Reports
+
+Generate detailed trading reports with statistics:
+
+### Backtest Reports
+
+```typescript
+import { Backtest } from "backtest-kit";
+
+// Get raw statistical data (Controller)
+const stats = await Backtest.getData("my-strategy");
+console.log(stats);
+// Returns:
+// {
+//   signalList: [...],           // All closed signals
+//   totalSignals: 10,
+//   winCount: 7,
+//   lossCount: 3,
+//   winRate: 70.0,               // Percentage (higher is better)
+//   avgPnl: 1.23,                // Average PNL % (higher is better)
+//   totalPnl: 12.30,             // Total PNL % (higher is better)
+//   stdDev: 2.45,                // Standard deviation (lower is better)
+//   sharpeRatio: 0.50,           // Risk-adjusted return (higher is better)
+//   annualizedSharpeRatio: 9.55, // Sharpe × √365 (higher is better)
+//   certaintyRatio: 1.75,        // avgWin / |avgLoss| (higher is better)
+//   expectedYearlyReturns: 156   // Estimated yearly trades (higher is better)
+// }
+
+// Generate markdown report (View)
+const markdown = await Backtest.getReport("my-strategy");
+
+// Save to disk (default: ./logs/backtest/my-strategy.md)
+await Backtest.dump("my-strategy");
+```
+
+### Live Trading Reports
+
+```typescript
+import { Live } from "backtest-kit";
+
+// Get raw statistical data (Controller)
+const stats = await Live.getData("my-strategy");
+console.log(stats);
+// Returns:
+// {
+//   eventList: [...],            // All events (idle, opened, active, closed)
+//   totalEvents: 15,
+//   totalClosed: 5,
+//   winCount: 3,
+//   lossCount: 2,
+//   winRate: 60.0,               // Percentage (higher is better)
+//   avgPnl: 1.23,                // Average PNL % (higher is better)
+//   totalPnl: 6.15,              // Total PNL % (higher is better)
+//   stdDev: 1.85,                // Standard deviation (lower is better)
+//   sharpeRatio: 0.66,           // Risk-adjusted return (higher is better)
+//   annualizedSharpeRatio: 12.61,// Sharpe × √365 (higher is better)
+//   certaintyRatio: 2.10,        // avgWin / |avgLoss| (higher is better)
+//   expectedYearlyReturns: 365   // Estimated yearly trades (higher is better)
+// }
+
+// Generate markdown report (View)
+const markdown = await Live.getReport("my-strategy");
+
+// Save to disk (default: ./logs/live/my-strategy.md)
+await Live.dump("my-strategy");
+```
+
+---
+
+## 🎧 Event Listeners
+
+### Listen to All Signals (Backtest + Live)
+
+```typescript
+import { listenSignal } from "backtest-kit";
+
+// Listen to both backtest and live signals
+listenSignal((event) => {
+  console.log(`[${event.backtest ? "BT" : "LIVE"}] ${event.action}:`, event.signal.id);
+
+  if (event.action === "closed") {
+    console.log("PNL:", event.pnl.pnlPercentage);
+    console.log("Close reason:", event.closeReason);
+  }
+});
+```
+
+### Listen Once with Filter
+
+```typescript
+import { listenSignalOnce, listenSignalLiveOnce } from "backtest-kit";
+
+// Listen once with filter
+listenSignalOnce(
+  (event) => event.action === "closed" && event.pnl.pnlPercentage > 5,
+  (event) => {
+    console.log("Big win detected:", event.pnl.pnlPercentage);
+  }
+);
+
+// Listen once for specific symbol in live mode
+listenSignalLiveOnce(
+  (event) => event.signal.symbol === "BTCUSDT" && event.action === "opened",
+  (event) => {
+    console.log("BTC signal opened:", event.signal.id);
+  }
+);
+```
+
+### Listen to Background Completion
+
+```typescript
+import { listenDoneBacktest, listenDoneLive, listenDoneWalker } from "backtest-kit";
+
+// Backtest completion
+listenDoneBacktest((event) => {
+  console.log("Backtest completed:", event.strategyName);
+  console.log("Symbol:", event.symbol);
+  console.log("Exchange:", event.exchangeName);
+});
+
+// Live trading completion
+listenDoneLive((event) => {
+  console.log("Live trading stopped:", event.strategyName);
+});
+
+// Walker completion
+listenDoneWalker((event) => {
+  console.log("Walker completed:", event.strategyName);
+  console.log("Best strategy:", event.bestStrategy);
+});
+```
+
+---
+
 ## ✅ Tested & Reliable
 
 `backtest-kit` comes with a robust test suite covering:
