@@ -14,13 +14,14 @@ test("Live.getData returns LiveStatistics structure", async ({ pass, fail }) => 
 
   const [awaiter, { resolve }] = createAwaiter();
 
+  const price = 42150.5;
   const mockSignal = {
     id: "mock-getdata-signal-id",
     position: "long",
     note: "Live getData test",
-    priceOpen: 42000,
-    priceTakeProfit: 50000,
-    priceStopLoss: 41000,
+    priceOpen: price,
+    priceTakeProfit: price + 8_000,
+    priceStopLoss: price - 1_000,
     minuteEstimatedTime: 120,
     exchangeName: "binance-mock-live-getdata",
     strategyName: "test-strategy-live-getdata",
@@ -92,13 +93,14 @@ test("Live.getData calculates all statistical metrics", async ({ pass, fail }) =
 
   const [awaiter, { resolve }] = createAwaiter();
 
+  const price = 42150.5;
   const mockSignal = {
     id: "mock-metrics-signal-id",
     position: "long",
     note: "Live metrics test",
-    priceOpen: 42000,
-    priceTakeProfit: 43000,
-    priceStopLoss: 41000,
+    priceOpen: price,
+    priceTakeProfit: price + 1_000,
+    priceStopLoss: price - 1_000,
     minuteEstimatedTime: 1,
     exchangeName: "binance-mock-live-metrics",
     strategyName: "test-strategy-live-metrics",
