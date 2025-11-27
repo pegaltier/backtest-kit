@@ -53,7 +53,17 @@ export interface ISignalRow extends ISignalDto {
   /** Signal creation timestamp in milliseconds */
   timestamp: number;
   /** Trading pair symbol (e.g., "BTCUSDT") */
-  symbol: string; 
+  symbol: string;
+}
+
+/**
+ * Scheduled signal row for delayed entry at specific price.
+ * Inherits from ISignalRow - represents a signal waiting for price to reach priceOpen.
+ * Once price reaches priceOpen, will be converted to regular _pendingSignal.
+ */
+export interface IScheduledSignalRow extends ISignalRow {
+  /** Entry price for the position */
+  priceOpen: number;
 }
 
 /**
@@ -106,19 +116,25 @@ export interface IStrategySchema {
   note?: string;
   /** Minimum interval between getSignal calls (throttling) */
   interval: SignalInterval;
-  /** Signal generation function (returns null if no signal, validated DTO if signal) */
+  /**
+   * Signal generation function (returns null if no signal, validated DTO if signal).
+   * If priceOpen is provided - becomes scheduled signal waiting for price to reach entry point.
+   * If priceOpen is omitted - opens immediately at current price.
+   */
   getSignal: (symbol: string) => Promise<ISignalDto | null>;
   /** Optional lifecycle event callbacks (onOpen, onClose) */
   callbacks?: Partial<IStrategyCallbacks>;
   /** Optional risk profile identifier for risk management */
   riskName?: RiskName;
+  /** Whether this strategy generates scheduled signals (delayed entry) */
+  scheduled?: boolean;
 }
 
 /**
  * Reason why signal was closed.
  * Used in discriminated union for type-safe handling.
  */
-export type StrategyCloseReason = "time_expired" | "take_profit" | "stop_loss";
+export type StrategyCloseReason = "time_expired" | "take_profit" | "stop_loss" | "cancelled";
 
 /**
  * Profit and loss calculation result.
@@ -148,6 +164,25 @@ export interface IStrategyTickResultIdle {
   /** Trading pair symbol (e.g., "BTCUSDT") */
   symbol: string;
   /** Current VWAP price during idle state */
+  currentPrice: number;
+}
+
+/**
+ * Tick result: scheduled signal created, waiting for price to reach entry point.
+ * Triggered when getSignal returns signal with priceOpen specified.
+ */
+export interface IStrategyTickResultScheduled {
+  /** Discriminator for type-safe union */
+  action: "scheduled";
+  /** Scheduled signal waiting for activation */
+  signal: IScheduledSignalRow;
+  /** Strategy name for tracking */
+  strategyName: StrategyName;
+  /** Exchange name for tracking */
+  exchangeName: ExchangeName;
+  /** Trading pair symbol (e.g., "BTCUSDT") */
+  symbol: string;
+  /** Current VWAP price when scheduled signal created */
   currentPrice: number;
 }
 
@@ -215,19 +250,42 @@ export interface IStrategyTickResultClosed {
 }
 
 /**
+ * Tick result: scheduled signal cancelled without opening position.
+ * Occurs when scheduled signal doesn't activate or hits stop loss before entry.
+ */
+export interface IStrategyTickResultCancelled {
+  /** Discriminator for type-safe union */
+  action: "cancelled";
+  /** Cancelled scheduled signal */
+  signal: IScheduledSignalRow;
+  /** Final VWAP price at cancellation */
+  currentPrice: number;
+  /** Unix timestamp in milliseconds when signal cancelled */
+  closeTimestamp: number;
+  /** Strategy name for tracking */
+  strategyName: StrategyName;
+  /** Exchange name for tracking */
+  exchangeName: ExchangeName;
+  /** Trading pair symbol (e.g., "BTCUSDT") */
+  symbol: string;
+}
+
+/**
  * Discriminated union of all tick results.
  * Use type guards: `result.action === "closed"` for type safety.
  */
 export type IStrategyTickResult =
   | IStrategyTickResultIdle
+  | IStrategyTickResultScheduled
   | IStrategyTickResultOpened
   | IStrategyTickResultActive
-  | IStrategyTickResultClosed;
+  | IStrategyTickResultClosed
+  | IStrategyTickResultCancelled;
 
 /**
- * Backtest always returns closed result (TP/SL or time_expired).
+ * Backtest returns closed result (TP/SL or time_expired) or cancelled result (scheduled signal never activated).
  */
-export type IStrategyBacktestResult = IStrategyTickResultClosed;
+export type IStrategyBacktestResult = IStrategyTickResultClosed | IStrategyTickResultCancelled;
 
 /**
  * Strategy interface implemented by ClientStrategy.
@@ -246,6 +304,9 @@ export interface IStrategy {
   /**
    * Fast backtest using historical candles.
    * Iterates through candles, calculates VWAP, checks TP/SL on each candle.
+   *
+   * For scheduled signals: first monitors activation/cancellation,
+   * then if activated continues with TP/SL monitoring.
    *
    * @param candles - Array of historical candle data
    * @returns Promise resolving to closed result (always completes signal)

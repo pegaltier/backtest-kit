@@ -529,6 +529,15 @@ interface ISignalRow extends ISignalDto {
     symbol: string;
 }
 /**
+ * Scheduled signal row for delayed entry at specific price.
+ * Inherits from ISignalRow - represents a signal waiting for price to reach priceOpen.
+ * Once price reaches priceOpen, will be converted to regular _pendingSignal.
+ */
+interface IScheduledSignalRow extends ISignalRow {
+    /** Entry price for the position */
+    priceOpen: number;
+}
+/**
  * Optional lifecycle callbacks for signal events.
  * Called when signals are opened, active, idle, or closed.
  */
@@ -555,18 +564,24 @@ interface IStrategySchema {
     note?: string;
     /** Minimum interval between getSignal calls (throttling) */
     interval: SignalInterval;
-    /** Signal generation function (returns null if no signal, validated DTO if signal) */
+    /**
+     * Signal generation function (returns null if no signal, validated DTO if signal).
+     * If priceOpen is provided - becomes scheduled signal waiting for price to reach entry point.
+     * If priceOpen is omitted - opens immediately at current price.
+     */
     getSignal: (symbol: string) => Promise<ISignalDto | null>;
     /** Optional lifecycle event callbacks (onOpen, onClose) */
     callbacks?: Partial<IStrategyCallbacks>;
     /** Optional risk profile identifier for risk management */
     riskName?: RiskName;
+    /** Whether this strategy generates scheduled signals (delayed entry) */
+    scheduled?: boolean;
 }
 /**
  * Reason why signal was closed.
  * Used in discriminated union for type-safe handling.
  */
-type StrategyCloseReason = "time_expired" | "take_profit" | "stop_loss";
+type StrategyCloseReason = "time_expired" | "take_profit" | "stop_loss" | "cancelled";
 /**
  * Profit and loss calculation result.
  * Includes adjusted prices with fees (0.1%) and slippage (0.1%).
@@ -594,6 +609,24 @@ interface IStrategyTickResultIdle {
     /** Trading pair symbol (e.g., "BTCUSDT") */
     symbol: string;
     /** Current VWAP price during idle state */
+    currentPrice: number;
+}
+/**
+ * Tick result: scheduled signal created, waiting for price to reach entry point.
+ * Triggered when getSignal returns signal with priceOpen specified.
+ */
+interface IStrategyTickResultScheduled {
+    /** Discriminator for type-safe union */
+    action: "scheduled";
+    /** Scheduled signal waiting for activation */
+    signal: IScheduledSignalRow;
+    /** Strategy name for tracking */
+    strategyName: StrategyName;
+    /** Exchange name for tracking */
+    exchangeName: ExchangeName;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
+    symbol: string;
+    /** Current VWAP price when scheduled signal created */
     currentPrice: number;
 }
 /**
@@ -657,14 +690,34 @@ interface IStrategyTickResultClosed {
     symbol: string;
 }
 /**
+ * Tick result: scheduled signal cancelled without opening position.
+ * Occurs when scheduled signal doesn't activate or hits stop loss before entry.
+ */
+interface IStrategyTickResultCancelled {
+    /** Discriminator for type-safe union */
+    action: "cancelled";
+    /** Cancelled scheduled signal */
+    signal: IScheduledSignalRow;
+    /** Final VWAP price at cancellation */
+    currentPrice: number;
+    /** Unix timestamp in milliseconds when signal cancelled */
+    closeTimestamp: number;
+    /** Strategy name for tracking */
+    strategyName: StrategyName;
+    /** Exchange name for tracking */
+    exchangeName: ExchangeName;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
+    symbol: string;
+}
+/**
  * Discriminated union of all tick results.
  * Use type guards: `result.action === "closed"` for type safety.
  */
-type IStrategyTickResult = IStrategyTickResultIdle | IStrategyTickResultOpened | IStrategyTickResultActive | IStrategyTickResultClosed;
+type IStrategyTickResult = IStrategyTickResultIdle | IStrategyTickResultScheduled | IStrategyTickResultOpened | IStrategyTickResultActive | IStrategyTickResultClosed | IStrategyTickResultCancelled;
 /**
- * Backtest always returns closed result (TP/SL or time_expired).
+ * Backtest returns closed result (TP/SL or time_expired) or cancelled result (scheduled signal never activated).
  */
-type IStrategyBacktestResult = IStrategyTickResultClosed;
+type IStrategyBacktestResult = IStrategyTickResultClosed | IStrategyTickResultCancelled;
 /**
  * Strategy interface implemented by ClientStrategy.
  * Defines core strategy execution methods.
@@ -681,6 +734,9 @@ interface IStrategy {
     /**
      * Fast backtest using historical candles.
      * Iterates through candles, calculates VWAP, checks TP/SL on each candle.
+     *
+     * For scheduled signals: first monitors activation/cancellation,
+     * then if activated continues with TP/SL monitoring.
      *
      * @param candles - Array of historical candle data
      * @returns Promise resolving to closed result (always completes signal)
@@ -3280,7 +3336,7 @@ declare class BacktestUtils {
         strategyName: string;
         exchangeName: string;
         frameName: string;
-    }) => AsyncGenerator<IStrategyTickResultClosed, void, unknown>;
+    }) => AsyncGenerator<IStrategyBacktestResult, void, unknown>;
     /**
      * Runs backtest in background without yielding results.
      *
@@ -3413,7 +3469,7 @@ declare class LiveUtils {
     run: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
-    }) => AsyncGenerator<IStrategyTickResultOpened | IStrategyTickResultClosed, void, unknown>;
+    }) => AsyncGenerator<IStrategyTickResultScheduled | IStrategyTickResultOpened | IStrategyTickResultClosed | IStrategyTickResultCancelled, void, unknown>;
     /**
      * Runs live trading in background without yielding results.
      *
@@ -5162,7 +5218,7 @@ declare class BacktestLogicPrivateService {
      * }
      * ```
      */
-    run(symbol: string): AsyncGenerator<IStrategyTickResultClosed, void, unknown>;
+    run(symbol: string): AsyncGenerator<IStrategyBacktestResult, void, unknown>;
 }
 
 /**
@@ -5207,7 +5263,7 @@ declare class LiveLogicPrivateService {
      * }
      * ```
      */
-    run(symbol: string): AsyncGenerator<IStrategyTickResultOpened | IStrategyTickResultClosed, void, unknown>;
+    run(symbol: string): AsyncGenerator<IStrategyTickResultScheduled | IStrategyTickResultOpened | IStrategyTickResultClosed | IStrategyTickResultCancelled, void, unknown>;
 }
 
 /**
@@ -5301,7 +5357,7 @@ declare class BacktestLogicPublicService {
         strategyName: string;
         exchangeName: string;
         frameName: string;
-    }) => AsyncGenerator<IStrategyTickResultClosed, void, unknown>;
+    }) => AsyncGenerator<IStrategyBacktestResult, void, unknown>;
 }
 
 /**
@@ -5352,7 +5408,7 @@ declare class LiveLogicPublicService {
     run: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
-    }) => AsyncGenerator<IStrategyTickResultOpened | IStrategyTickResultClosed, void, unknown>;
+    }) => AsyncGenerator<IStrategyTickResultScheduled | IStrategyTickResultOpened | IStrategyTickResultClosed | IStrategyTickResultCancelled, void, unknown>;
 }
 
 /**
@@ -5418,7 +5474,7 @@ declare class LiveGlobalService {
     run: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
-    }) => AsyncGenerator<IStrategyTickResultOpened | IStrategyTickResultClosed, void, unknown>;
+    }) => AsyncGenerator<IStrategyTickResultScheduled | IStrategyTickResultOpened | IStrategyTickResultClosed | IStrategyTickResultCancelled, void, unknown>;
 }
 
 /**
@@ -5444,7 +5500,7 @@ declare class BacktestGlobalService {
         strategyName: string;
         exchangeName: string;
         frameName: string;
-    }) => AsyncGenerator<IStrategyTickResultClosed, void, unknown>;
+    }) => AsyncGenerator<IStrategyBacktestResult, void, unknown>;
 }
 
 /**

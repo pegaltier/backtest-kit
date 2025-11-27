@@ -9,12 +9,15 @@ import {
 import {
   IStrategy,
   ISignalRow,
+  IScheduledSignalRow,
   IStrategyParams,
   IStrategyTickResult,
   IStrategyTickResultIdle,
+  IStrategyTickResultScheduled,
   IStrategyTickResultOpened,
   IStrategyTickResultActive,
   IStrategyTickResultClosed,
+  IStrategyTickResultCancelled,
   IStrategyBacktestResult,
   StrategyCloseReason,
   SignalInterval,
@@ -97,7 +100,7 @@ const VALIDATE_SIGNAL_FN = (signal: ISignalRow): void => {
 };
 
 const GET_SIGNAL_FN = trycatch(
-  async (self: ClientStrategy): Promise<ISignalRow | null> => {
+  async (self: ClientStrategy): Promise<ISignalRow | IScheduledSignalRow | null> => {
     if (self._isStopped) {
       return null;
     }
@@ -138,6 +141,33 @@ const GET_SIGNAL_FN = trycatch(
     if (!signal) {
       return null;
     }
+
+    // Если priceOpen указан - создаем scheduled signal
+    if (signal.priceOpen !== undefined) {
+      const scheduledSignalRow: IScheduledSignalRow = {
+        id: randomString(),
+        priceOpen: signal.priceOpen,
+        position: signal.position,
+        note: signal.note,
+        priceTakeProfit: signal.priceTakeProfit,
+        priceStopLoss: signal.priceStopLoss,
+        minuteEstimatedTime: signal.minuteEstimatedTime,
+        symbol: self.params.execution.context.symbol,
+        exchangeName: self.params.method.context.exchangeName,
+        strategyName: self.params.method.context.strategyName,
+        timestamp: currentTime,
+      };
+
+      // Валидируем сигнал перед возвратом
+      VALIDATE_SIGNAL_FN(scheduledSignalRow);
+
+      // @ts-ignore - runtime marker
+      scheduledSignalRow._isScheduled = true;
+
+      return scheduledSignalRow;
+    }
+
+    // Если priceOpen не указан - создаем обычный signal с текущей ценой
     const signalRow: ISignalRow = {
       id: randomString(),
       priceOpen: currentPrice,
@@ -150,6 +180,9 @@ const GET_SIGNAL_FN = trycatch(
 
     // Валидируем сигнал перед возвратом
     VALIDATE_SIGNAL_FN(signalRow);
+
+    // @ts-ignore - runtime marker
+    signalRow._isScheduled = false;
 
     return signalRow;
   },
@@ -229,6 +262,7 @@ const WAIT_FOR_INIT_FN = async (self: ClientStrategy) => {
 export class ClientStrategy implements IStrategy {
   _isStopped = false;
   _pendingSignal: ISignalRow | null = null;
+  _scheduledSignal: IScheduledSignalRow | null = null;
   _lastSignalTimestamp: number | null = null;
 
   constructor(readonly params: IStrategyParams) {}
@@ -271,14 +305,21 @@ export class ClientStrategy implements IStrategy {
   /**
    * Performs a single tick of strategy execution.
    *
-   * Flow:
-   * 1. If no pending signal: call getSignal with throttling and validation
-   * 2. If signal opened: trigger onOpen callback, persist state
-   * 3. If pending signal exists: check VWAP against TP/SL
-   * 4. If TP/SL/time reached: close signal, trigger onClose, persist state
+   * Flow (LIVE mode):
+   * 1. If scheduled signal exists: check activation/cancellation
+   * 2. If no pending/scheduled signal: call getSignal with throttling and validation
+   * 3. If signal opened: trigger onOpen callback, persist state
+   * 4. If pending signal exists: check VWAP against TP/SL
+   * 5. If TP/SL/time reached: close signal, trigger onClose, persist state
+   *
+   * Flow (BACKTEST mode):
+   * 1. If no pending/scheduled signal: call getSignal
+   * 2. If scheduled signal created: return "scheduled" (backtest() will handle it)
+   * 3. Otherwise same as LIVE
    *
    * @returns Promise resolving to discriminated union result:
    * - idle: No signal generated
+   * - scheduled: Scheduled signal created (backtest only)
    * - opened: New signal just created
    * - active: Signal monitoring in progress
    * - closed: Signal completed with PNL
@@ -294,9 +335,215 @@ export class ClientStrategy implements IStrategy {
   public async tick(): Promise<IStrategyTickResult> {
     this.params.logger.debug("ClientStrategy tick");
 
-    if (!this._pendingSignal) {
-      const pendingSignal = await GET_SIGNAL_FN(this);
-      await this.setPendingSignal(pendingSignal);
+    const isBacktest = this.params.execution.context.backtest;
+
+    // В LIVE режиме мониторим scheduled signal
+    if (!isBacktest && this._scheduledSignal && !this._pendingSignal) {
+      const averagePrice = await this.params.exchange.getAveragePrice(
+        this.params.execution.context.symbol
+      );
+
+      const scheduled = this._scheduledSignal;
+      let shouldActivate = false;
+      let shouldCancel = false;
+
+      // Проверяем активацию и отмену для long позиции
+      if (scheduled.position === "long") {
+        if (averagePrice <= scheduled.priceOpen) {
+          shouldActivate = true;
+        }
+        if (averagePrice <= scheduled.priceStopLoss) {
+          shouldCancel = true;
+        }
+      }
+
+      // Проверяем активацию и отмену для short позиции
+      if (scheduled.position === "short") {
+        if (averagePrice >= scheduled.priceOpen) {
+          shouldActivate = true;
+        }
+        if (averagePrice >= scheduled.priceStopLoss) {
+          shouldCancel = true;
+        }
+      }
+
+      // Отменяем scheduled signal если цена прошла через StopLoss
+      if (shouldCancel) {
+        this.params.logger.info("ClientStrategy scheduled signal cancelled", {
+          symbol: this.params.execution.context.symbol,
+          signalId: scheduled.id,
+          position: scheduled.position,
+          averagePrice,
+          priceStopLoss: scheduled.priceStopLoss,
+        });
+
+        this._scheduledSignal = null;
+
+        const result: IStrategyTickResultIdle = {
+          action: "idle",
+          signal: null,
+          strategyName: this.params.method.context.strategyName,
+          exchangeName: this.params.method.context.exchangeName,
+          symbol: this.params.execution.context.symbol,
+          currentPrice: averagePrice,
+        };
+
+        if (this.params.callbacks?.onTick) {
+          this.params.callbacks.onTick(
+            this.params.execution.context.symbol,
+            result,
+            this.params.execution.context.backtest
+          );
+        }
+
+        return result;
+      }
+
+      // Активируем scheduled signal если цена достигла priceOpen
+      if (shouldActivate) {
+        this.params.logger.info("ClientStrategy scheduled signal activated", {
+          symbol: this.params.execution.context.symbol,
+          signalId: scheduled.id,
+          position: scheduled.position,
+          averagePrice,
+          priceOpen: scheduled.priceOpen,
+        });
+
+        // Конвертируем scheduled signal в pending signal
+        this._scheduledSignal = null;
+        await this.setPendingSignal(scheduled);
+
+        // Register signal with risk management
+        await this.params.risk.addSignal(
+          this.params.execution.context.symbol,
+          {
+            strategyName: this.params.method.context.strategyName,
+            riskName: this.params.riskName,
+          }
+        );
+
+        if (this.params.callbacks?.onOpen) {
+          this.params.callbacks.onOpen(
+            this.params.execution.context.symbol,
+            this._pendingSignal,
+            this._pendingSignal.priceOpen,
+            this.params.execution.context.backtest
+          );
+        }
+
+        const result: IStrategyTickResultOpened = {
+          action: "opened",
+          signal: this._pendingSignal,
+          strategyName: this.params.method.context.strategyName,
+          exchangeName: this.params.method.context.exchangeName,
+          symbol: this.params.execution.context.symbol,
+          currentPrice: this._pendingSignal.priceOpen,
+        };
+
+        if (this.params.callbacks?.onTick) {
+          this.params.callbacks.onTick(
+            this.params.execution.context.symbol,
+            result,
+            this.params.execution.context.backtest
+          );
+        }
+
+        return result;
+      }
+
+      // Если ни активация ни отмена - возвращаем active для scheduled signal
+      const result: IStrategyTickResultActive = {
+        action: "active",
+        signal: scheduled,
+        currentPrice: averagePrice,
+        strategyName: this.params.method.context.strategyName,
+        exchangeName: this.params.method.context.exchangeName,
+        symbol: this.params.execution.context.symbol,
+      };
+
+      if (this.params.callbacks?.onTick) {
+        this.params.callbacks.onTick(
+          this.params.execution.context.symbol,
+          result,
+          this.params.execution.context.backtest
+        );
+      }
+
+      return result;
+    }
+
+    // Если нет ни pending ни scheduled signal - пытаемся получить новый
+    if (!this._pendingSignal && !this._scheduledSignal) {
+      const signal = await GET_SIGNAL_FN(this);
+
+      if (!signal) {
+        // Нет сигнала - переходим к idle логике ниже
+        await this.setPendingSignal(null);
+      } else {
+        // @ts-ignore - check runtime marker
+        if (signal._isScheduled === true) {
+          this._scheduledSignal = signal as IScheduledSignalRow;
+
+          const currentPrice = await this.params.exchange.getAveragePrice(
+            this.params.execution.context.symbol
+          );
+
+          this.params.logger.info("ClientStrategy scheduled signal created", {
+            symbol: this.params.execution.context.symbol,
+            signalId: this._scheduledSignal.id,
+            position: this._scheduledSignal.position,
+            priceOpen: this._scheduledSignal.priceOpen,
+            currentPrice: currentPrice,
+          });
+
+          // В BACKTEST режиме возвращаем "scheduled" чтобы BacktestLogicPrivateService обработал
+          if (isBacktest) {
+            const result: IStrategyTickResultScheduled = {
+              action: "scheduled",
+              signal: this._scheduledSignal,
+              strategyName: this.params.method.context.strategyName,
+              exchangeName: this.params.method.context.exchangeName,
+              symbol: this.params.execution.context.symbol,
+              currentPrice: currentPrice,
+            };
+
+            if (this.params.callbacks?.onTick) {
+              this.params.callbacks.onTick(
+                this.params.execution.context.symbol,
+                result,
+                this.params.execution.context.backtest
+              );
+            }
+
+            return result;
+          }
+
+          // В LIVE режиме возвращаем "active" - будем мониторить на следующих тиках
+          const result: IStrategyTickResultActive = {
+            action: "active",
+            signal: this._scheduledSignal,
+            currentPrice: currentPrice,
+            strategyName: this.params.method.context.strategyName,
+            exchangeName: this.params.method.context.exchangeName,
+            symbol: this.params.execution.context.symbol,
+          };
+
+          if (this.params.callbacks?.onTick) {
+            this.params.callbacks.onTick(
+              this.params.execution.context.symbol,
+              result,
+              this.params.execution.context.backtest
+            );
+          }
+
+          return result;
+        }
+
+        // Если получили обычный signal (не scheduled)
+        await this.setPendingSignal(signal);
+      }
+
+      // Продолжаем с обычным signal (если был установлен)
 
       if (this._pendingSignal) {
         // Register signal with risk management
@@ -522,22 +769,29 @@ export class ClientStrategy implements IStrategy {
   }
 
   /**
-   * Fast backtests a pending signal using historical candle data.
+   * Fast backtests a signal using historical candle data.
    *
-   * Iterates through candles checking VWAP against TP/SL on each timeframe.
-   * Starts from index 4 (needs 5 candles for VWAP calculation).
-   * Always returns closed result (either TP/SL or time_expired).
+   * For scheduled signals:
+   * 1. Iterates through candles checking for activation (price reaches priceOpen)
+   * 2. Or cancellation (price hits StopLoss before activation)
+   * 3. If activated: converts to pending signal and continues with TP/SL monitoring
+   * 4. If cancelled: returns closed result with closeReason "cancelled"
    *
-   * @param candles - Array of candles covering signal's minuteEstimatedTime
+   * For pending signals:
+   * 1. Iterates through candles checking VWAP against TP/SL on each timeframe
+   * 2. Starts from index 4 (needs 5 candles for VWAP calculation)
+   * 3. Returns closed result (either TP/SL or time_expired)
+   *
+   * @param candles - Array of candles to process
    * @returns Promise resolving to closed signal result with PNL
-   * @throws Error if no pending signal or not in backtest mode
+   * @throws Error if no pending/scheduled signal or not in backtest mode
    *
    * @example
    * ```typescript
    * // After signal opened in backtest
    * const candles = await exchange.getNextCandles("BTCUSDT", "1m", signal.minuteEstimatedTime);
    * const result = await strategy.backtest(candles);
-   * console.log(result.closeReason); // "take_profit" | "stop_loss" | "time_expired"
+   * console.log(result.closeReason); // "take_profit" | "stop_loss" | "time_expired" | "cancelled"
    * ```
    */
   public async backtest(
@@ -546,16 +800,235 @@ export class ClientStrategy implements IStrategy {
     this.params.logger.debug("ClientStrategy backtest", {
       symbol: this.params.execution.context.symbol,
       candlesCount: candles.length,
+      hasScheduled: !!this._scheduledSignal,
+      hasPending: !!this._pendingSignal,
     });
-
-    const signal = this._pendingSignal;
-
-    if (!signal) {
-      throw new Error("ClientStrategy backtest: no pending signal");
-    }
 
     if (!this.params.execution.context.backtest) {
       throw new Error("ClientStrategy backtest: running in live context");
+    }
+
+    if (!this._pendingSignal && !this._scheduledSignal) {
+      throw new Error("ClientStrategy backtest: no pending or scheduled signal");
+    }
+
+    // Обработка scheduled signal
+    if (this._scheduledSignal && !this._pendingSignal) {
+      const scheduled = this._scheduledSignal;
+
+      this.params.logger.debug("ClientStrategy backtest scheduled signal", {
+        symbol: this.params.execution.context.symbol,
+        signalId: scheduled.id,
+        priceOpen: scheduled.priceOpen,
+        position: scheduled.position,
+      });
+
+      // Ищем точку активации или отмены в свечах
+      for (let i = 0; i < candles.length; i++) {
+        const candle = candles[i];
+        const recentCandles = candles.slice(Math.max(0, i - 4), i + 1);
+        const averagePrice = GET_AVG_PRICE_FN(recentCandles);
+
+        let shouldActivate = false;
+        let shouldCancel = false;
+
+        // Проверяем активацию и отмену для long позиции
+        if (scheduled.position === "long") {
+          // Активация: цена упала до priceOpen или ниже
+          if (candle.low <= scheduled.priceOpen) {
+            shouldActivate = true;
+          }
+          // Отмена: цена упала ниже StopLoss
+          if (candle.low <= scheduled.priceStopLoss) {
+            shouldCancel = true;
+          }
+        }
+
+        // Проверяем активацию и отмену для short позиции
+        if (scheduled.position === "short") {
+          // Активация: цена выросла до priceOpen или выше
+          if (candle.high >= scheduled.priceOpen) {
+            shouldActivate = true;
+          }
+          // Отмена: цена выросла выше StopLoss
+          if (candle.high >= scheduled.priceStopLoss) {
+            shouldCancel = true;
+          }
+        }
+
+        // Отмена имеет приоритет над активацией
+        if (shouldCancel) {
+          this.params.logger.info("ClientStrategy backtest scheduled signal cancelled", {
+            symbol: this.params.execution.context.symbol,
+            signalId: scheduled.id,
+            candleTimestamp: candle.timestamp,
+            averagePrice,
+            priceStopLoss: scheduled.priceStopLoss,
+          });
+
+          this._scheduledSignal = null;
+
+          // Возвращаем cancelled (позиция НЕ была открыта)
+          const result: IStrategyTickResultCancelled = {
+            action: "cancelled",
+            signal: scheduled,
+            currentPrice: averagePrice,
+            closeTimestamp: candle.timestamp,
+            strategyName: this.params.method.context.strategyName,
+            exchangeName: this.params.method.context.exchangeName,
+            symbol: this.params.execution.context.symbol,
+          };
+
+          if (this.params.callbacks?.onTick) {
+            this.params.callbacks.onTick(
+              this.params.execution.context.symbol,
+              result,
+              this.params.execution.context.backtest
+            );
+          }
+
+          return result;
+        }
+
+        // Активация scheduled signal
+        if (shouldActivate) {
+          this.params.logger.info("ClientStrategy backtest scheduled signal activated", {
+            symbol: this.params.execution.context.symbol,
+            signalId: scheduled.id,
+            candleTimestamp: candle.timestamp,
+            priceOpen: scheduled.priceOpen,
+          });
+
+          // Конвертируем scheduled в pending
+          this._scheduledSignal = null;
+          await this.setPendingSignal(scheduled);
+
+          // Register signal with risk management
+          await this.params.risk.addSignal(
+            this.params.execution.context.symbol,
+            {
+              strategyName: this.params.method.context.strategyName,
+              riskName: this.params.riskName,
+            }
+          );
+
+          if (this.params.callbacks?.onOpen) {
+            this.params.callbacks.onOpen(
+              this.params.execution.context.symbol,
+              scheduled,
+              scheduled.priceOpen,
+              this.params.execution.context.backtest
+            );
+          }
+
+          // Продолжаем с оставшимися свечами для мониторинга TP/SL
+          const remainingCandles = candles.slice(i + 1);
+
+          if (remainingCandles.length === 0) {
+            // Нет свечей для бектеста - закрываем по time_expired
+            const lastPrice = averagePrice;
+            const pnl = toProfitLossDto(scheduled, lastPrice);
+
+            this.params.logger.debug("ClientStrategy backtest time_expired (no candles after activation)", {
+              symbol: this.params.execution.context.symbol,
+              signalId: scheduled.id,
+              priceClose: lastPrice,
+              closeTimestamp: candle.timestamp,
+              pnlPercentage: pnl.pnlPercentage,
+            });
+
+            if (this.params.callbacks?.onClose) {
+              this.params.callbacks.onClose(
+                this.params.execution.context.symbol,
+                scheduled,
+                lastPrice,
+                this.params.execution.context.backtest
+              );
+            }
+
+            await this.params.risk.removeSignal(
+              this.params.execution.context.symbol,
+              {
+                strategyName: this.params.method.context.strategyName,
+                riskName: this.params.riskName,
+              }
+            );
+
+            await this.setPendingSignal(null);
+
+            const result: IStrategyBacktestResult = {
+              action: "closed",
+              signal: scheduled,
+              currentPrice: lastPrice,
+              closeReason: "time_expired",
+              closeTimestamp: candle.timestamp,
+              pnl: pnl,
+              strategyName: this.params.method.context.strategyName,
+              exchangeName: this.params.method.context.exchangeName,
+              symbol: this.params.execution.context.symbol,
+            };
+
+            if (this.params.callbacks?.onTick) {
+              this.params.callbacks.onTick(
+                this.params.execution.context.symbol,
+                result,
+                this.params.execution.context.backtest
+              );
+            }
+
+            return result;
+          }
+
+          // Продолжаем backtest с оставшимися свечами (переходим к обычной логике ниже)
+          candles = remainingCandles;
+          break;
+        }
+      }
+
+      // Если scheduled signal не активировался и не отменился - это "cancelled" (не сработал)
+      // Позиция НЕ была открыта, поэтому это не time_expired, а именно cancelled
+      if (this._scheduledSignal) {
+        const lastCandles = candles.slice(-5);
+        const lastPrice = GET_AVG_PRICE_FN(lastCandles);
+        const closeTimestamp = candles[candles.length - 1].timestamp;
+
+        this.params.logger.info("ClientStrategy backtest scheduled signal not activated (cancelled)", {
+          symbol: this.params.execution.context.symbol,
+          signalId: scheduled.id,
+          closeTimestamp,
+          reason: "price never reached priceOpen",
+        });
+
+        this._scheduledSignal = null;
+
+        // Cancelled потому что позиция НЕ была открыта (цена не достигла priceOpen)
+        const result: IStrategyTickResultCancelled = {
+          action: "cancelled",
+          signal: scheduled,
+          currentPrice: lastPrice,
+          closeTimestamp: closeTimestamp,
+          strategyName: this.params.method.context.strategyName,
+          exchangeName: this.params.method.context.exchangeName,
+          symbol: this.params.execution.context.symbol,
+        };
+
+        if (this.params.callbacks?.onTick) {
+          this.params.callbacks.onTick(
+            this.params.execution.context.symbol,
+            result,
+            this.params.execution.context.backtest
+          );
+        }
+
+        return result;
+      }
+    }
+
+    // Обработка обычного pending signal (или после активации scheduled)
+    const signal = this._pendingSignal;
+
+    if (!signal) {
+      throw new Error("ClientStrategy backtest: no pending signal after scheduled activation");
     }
 
     // Предупреждение если недостаточно свечей для VWAP
