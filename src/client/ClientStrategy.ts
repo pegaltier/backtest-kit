@@ -101,7 +101,9 @@ const VALIDATE_SIGNAL_FN = (signal: ISignalRow): void => {
 };
 
 const GET_SIGNAL_FN = trycatch(
-  async (self: ClientStrategy): Promise<ISignalRow | IScheduledSignalRow | null> => {
+  async (
+    self: ClientStrategy
+  ): Promise<ISignalRow | IScheduledSignalRow | null> => {
     if (self._isStopped) {
       return null;
     }
@@ -119,6 +121,22 @@ const GET_SIGNAL_FN = trycatch(
       }
 
       self._lastSignalTimestamp = currentTime;
+    }
+    const currentPrice = await self.params.exchange.getAveragePrice(
+      self.params.execution.context.symbol
+    );
+    if (
+      await not(
+        self.params.risk.checkSignal({
+          symbol: self.params.execution.context.symbol,
+          strategyName: self.params.method.context.strategyName,
+          exchangeName: self.params.method.context.exchangeName,
+          currentPrice,
+          timestamp: currentTime,
+        })
+      )
+    ) {
+      return null;
     }
     const signal = await self.params.getSignal(
       self.params.execution.context.symbol
@@ -150,26 +168,6 @@ const GET_SIGNAL_FN = trycatch(
       scheduledSignalRow._isScheduled = true;
 
       return scheduledSignalRow;
-    }
-
-    // Если priceOpen не указан - создаем обычный signal с текущей ценой
-    const currentPrice = await self.params.exchange.getAveragePrice(
-      self.params.execution.context.symbol
-    );
-
-    // Check risk before creating pending signal
-    if (
-      await not(
-        self.params.risk.checkSignal({
-          symbol: self.params.execution.context.symbol,
-          strategyName: self.params.method.context.strategyName,
-          exchangeName: self.params.method.context.exchangeName,
-          currentPrice,
-          timestamp: currentTime,
-        })
-      )
-    ) {
-      return null;
     }
 
     const signalRow: ISignalRow = {
@@ -263,12 +261,15 @@ const CHECK_SCHEDULED_SIGNAL_TIMEOUT_FN = async (
     return null;
   }
 
-  self.params.logger.info("ClientStrategy scheduled signal cancelled by timeout", {
-    symbol: self.params.execution.context.symbol,
-    signalId: scheduled.id,
-    elapsedMinutes: Math.floor(elapsedTime / 60000),
-    maxMinutes: CC_SCHEDULE_AWAIT_MINUTES,
-  });
+  self.params.logger.info(
+    "ClientStrategy scheduled signal cancelled by timeout",
+    {
+      symbol: self.params.execution.context.symbol,
+      signalId: scheduled.id,
+      elapsedMinutes: Math.floor(elapsedTime / 60000),
+      maxMinutes: CC_SCHEDULE_AWAIT_MINUTES,
+    }
+  );
 
   self._scheduledSignal = null;
 
@@ -701,13 +702,16 @@ const CANCEL_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
   averagePrice: number,
   closeTimestamp: number
 ): Promise<IStrategyTickResultCancelled> => {
-  self.params.logger.info("ClientStrategy backtest scheduled signal cancelled", {
-    symbol: self.params.execution.context.symbol,
-    signalId: scheduled.id,
-    closeTimestamp,
-    averagePrice,
-    priceStopLoss: scheduled.priceStopLoss,
-  });
+  self.params.logger.info(
+    "ClientStrategy backtest scheduled signal cancelled",
+    {
+      symbol: self.params.execution.context.symbol,
+      signalId: scheduled.id,
+      closeTimestamp,
+      averagePrice,
+      priceStopLoss: scheduled.priceStopLoss,
+    }
+  );
 
   self._scheduledSignal = null;
 
@@ -745,11 +749,14 @@ const ACTIVATE_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
   self: ClientStrategy,
   scheduled: IScheduledSignalRow
 ): Promise<void> => {
-  self.params.logger.info("ClientStrategy backtest scheduled signal activated", {
-    symbol: self.params.execution.context.symbol,
-    signalId: scheduled.id,
-    priceOpen: scheduled.priceOpen,
-  });
+  self.params.logger.info(
+    "ClientStrategy backtest scheduled signal activated",
+    {
+      symbol: self.params.execution.context.symbol,
+      signalId: scheduled.id,
+      priceOpen: scheduled.priceOpen,
+    }
+  );
 
   self._scheduledSignal = null;
   await self.setPendingSignal(scheduled);
@@ -890,11 +897,21 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
 
     if (shouldActivate) {
       await ACTIVATE_SCHEDULED_SIGNAL_IN_BACKTEST_FN(self, scheduled);
-      return { activated: true, cancelled: false, activationIndex: i, result: null };
+      return {
+        activated: true,
+        cancelled: false,
+        activationIndex: i,
+        result: null,
+      };
     }
   }
 
-  return { activated: false, cancelled: false, activationIndex: -1, result: null };
+  return {
+    activated: false,
+    cancelled: false,
+    activationIndex: -1,
+    result: null,
+  };
 };
 
 const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
@@ -1062,10 +1079,11 @@ export class ClientStrategy implements IStrategy {
       if (timeoutResult) return timeoutResult;
 
       // Check price-based activation/cancellation
-      const { shouldActivate, shouldCancel } = CHECK_SCHEDULED_SIGNAL_PRICE_ACTIVATION_FN(
-        this._scheduledSignal,
-        currentPrice
-      );
+      const { shouldActivate, shouldCancel } =
+        CHECK_SCHEDULED_SIGNAL_PRICE_ACTIVATION_FN(
+          this._scheduledSignal,
+          currentPrice
+        );
 
       if (shouldCancel) {
         return await CANCEL_SCHEDULED_SIGNAL_BY_STOPLOSS_FN(
@@ -1096,7 +1114,10 @@ export class ClientStrategy implements IStrategy {
         // @ts-ignore - check runtime marker
         if (signal._isScheduled === true) {
           this._scheduledSignal = signal as IScheduledSignalRow;
-          return await OPEN_NEW_SCHEDULED_SIGNAL_FN(this, this._scheduledSignal);
+          return await OPEN_NEW_SCHEDULED_SIGNAL_FN(
+            this,
+            this._scheduledSignal
+          );
         }
 
         await this.setPendingSignal(signal);
@@ -1176,7 +1197,9 @@ export class ClientStrategy implements IStrategy {
     }
 
     if (!this._pendingSignal && !this._scheduledSignal) {
-      throw new Error("ClientStrategy backtest: no pending or scheduled signal");
+      throw new Error(
+        "ClientStrategy backtest: no pending or scheduled signal"
+      );
     }
 
     // Process scheduled signal
@@ -1201,7 +1224,10 @@ export class ClientStrategy implements IStrategy {
         const remainingCandles = candles.slice(activationIndex + 1);
 
         if (remainingCandles.length === 0) {
-          const recentCandles = candles.slice(Math.max(0, activationIndex - 4), activationIndex + 1);
+          const recentCandles = candles.slice(
+            Math.max(0, activationIndex - 4),
+            activationIndex + 1
+          );
           const lastPrice = GET_AVG_PRICE_FN(recentCandles);
           const closeTimestamp = candles[activationIndex].timestamp;
 
@@ -1222,12 +1248,15 @@ export class ClientStrategy implements IStrategy {
         const lastPrice = GET_AVG_PRICE_FN(lastCandles);
         const closeTimestamp = candles[candles.length - 1].timestamp;
 
-        this.params.logger.info("ClientStrategy backtest scheduled signal not activated (cancelled)", {
-          symbol: this.params.execution.context.symbol,
-          signalId: scheduled.id,
-          closeTimestamp,
-          reason: "price never reached priceOpen",
-        });
+        this.params.logger.info(
+          "ClientStrategy backtest scheduled signal not activated (cancelled)",
+          {
+            symbol: this.params.execution.context.symbol,
+            signalId: scheduled.id,
+            closeTimestamp,
+            reason: "price never reached priceOpen",
+          }
+        );
 
         return await CANCEL_SCHEDULED_SIGNAL_IN_BACKTEST_FN(
           this,
@@ -1242,7 +1271,9 @@ export class ClientStrategy implements IStrategy {
     const signal = this._pendingSignal;
 
     if (!signal) {
-      throw new Error("ClientStrategy backtest: no pending signal after scheduled activation");
+      throw new Error(
+        "ClientStrategy backtest: no pending signal after scheduled activation"
+      );
     }
 
     if (candles.length < 5) {
@@ -1251,7 +1282,11 @@ export class ClientStrategy implements IStrategy {
       );
     }
 
-    const closedResult = await PROCESS_PENDING_SIGNAL_CANDLES_FN(this, signal, candles);
+    const closedResult = await PROCESS_PENDING_SIGNAL_CANDLES_FN(
+      this,
+      signal,
+      candles
+    );
 
     if (closedResult) {
       return closedResult;
@@ -1259,7 +1294,8 @@ export class ClientStrategy implements IStrategy {
 
     const lastFiveCandles = candles.slice(-5);
     const lastPrice = GET_AVG_PRICE_FN(lastFiveCandles);
-    const closeTimestamp = lastFiveCandles[lastFiveCandles.length - 1].timestamp;
+    const closeTimestamp =
+      lastFiveCandles[lastFiveCandles.length - 1].timestamp;
 
     return await CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN(
       this,
