@@ -235,11 +235,13 @@ test("Multiple strategies share same risk profile with concurrent positions", as
     interval: "1m",
     riskName: "shared-max-1",
     getSignal: async () => {
+      const price = await getAveragePrice();
       return {
-        position: "long",
-        note: "shared risk test 1",
-        priceTakeProfit: 43000,
-        priceStopLoss: 41000,
+        position: "short",
+        note: "shared risk test 2",
+        priceOpen: price,
+        priceTakeProfit: price - 10_000,
+        priceStopLoss: price + 10_000,
         minuteEstimatedTime: 200,
       };
     },
@@ -263,7 +265,7 @@ test("Multiple strategies share same risk profile with concurrent positions", as
         position: "short",
         note: "shared risk test 2",
         priceOpen: price,
-        priceTakeProfit: price + 10_000,
+        priceTakeProfit: price - 10_000,
         priceStopLoss: price + 10_000,
         minuteEstimatedTime: 200,
       };
