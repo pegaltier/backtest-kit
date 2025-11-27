@@ -12,6 +12,7 @@ group: docs
 - [PerformanceMarkdownService](classes/PerformanceMarkdownService.md)
 - [WalkerMarkdownService](classes/WalkerMarkdownService.md)
 - [PersistSignalUtils](classes/PersistSignalUtils.md)
+- [PersistRiskUtils](classes/PersistRiskUtils.md)
 - [BacktestUtils](classes/BacktestUtils.md)
 - [LiveUtils](classes/LiveUtils.md)
 - [Performance](classes/Performance.md)
@@ -192,3 +193,5 @@ group: docs
 - [TPersistBase](types/TPersistBase.md)
 - [TPersistBaseCtor](types/TPersistBaseCtor.md)
 - [EntityId](types/EntityId.md)
+- [RiskData](types/RiskData.md)
+- [RiskMap](types/RiskMap.md)

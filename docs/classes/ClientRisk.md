@@ -29,17 +29,36 @@ constructor(params: IRiskParams);
 ### params
 
 ```ts
-params: any
+params: IRiskParams
 ```
 
 ### _activePositions
 
 ```ts
-_activePositions: any
+_activePositions: RiskMap | unique symbol
 ```
 
 Map of active positions tracked across all strategies.
 Key: `${strategyName}:${exchangeName}:${symbol}`
+Starts as POSITION_NEED_FETCH symbol, gets initialized on first use.
+
+### waitForInit
+
+```ts
+waitForInit: any
+```
+
+Initializes active positions by loading from persistence.
+Uses singleshot pattern to ensure initialization happens exactly once.
+Skips persistence in backtest mode.
+
+### _updatePositions
+
+```ts
+_updatePositions: any
+```
+
+Persists current active positions to disk.
 
 ### checkSignal
 

@@ -63,7 +63,7 @@ Validates portfolio drawdown, symbol exposure, position count, and daily loss li
 ### addSignal
 
 ```ts
-addSignal: (symbol: string, context: { strategyName: string; riskName: string; }) => void
+addSignal: (symbol: string, context: { strategyName: string; riskName: string; }) => Promise<void>
 ```
 
 Registers an opened signal with the risk management system.
@@ -72,7 +72,7 @@ Routes to appropriate ClientRisk instance.
 ### removeSignal
 
 ```ts
-removeSignal: (symbol: string, context: { strategyName: string; riskName: string; }) => void
+removeSignal: (symbol: string, context: { strategyName: string; riskName: string; }) => Promise<void>
 ```
 
 Removes a closed signal from the risk management system.

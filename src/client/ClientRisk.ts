@@ -89,7 +89,6 @@ export class ClientRisk implements IRisk {
 
   /**
    * Persists current active positions to disk.
-   * Only saves in live mode (skips if _activePositions is not initialized).
    */
   private async _updatePositions(): Promise<void> {
     if (this._activePositions === POSITION_NEED_FETCH) {

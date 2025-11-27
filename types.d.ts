@@ -4502,7 +4502,6 @@ declare class ClientRisk implements IRisk {
     private waitForInit;
     /**
      * Persists current active positions to disk.
-     * Only saves in live mode (skips if _activePositions is not initialized).
      */
     private _updatePositions;
     /**

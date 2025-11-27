@@ -41,7 +41,7 @@ Checks if a signal should be allowed based on risk limits.
 ### addSignal
 
 ```ts
-addSignal: (symbol: string, context: { strategyName: string; riskName: string; }) => void
+addSignal: (symbol: string, context: { strategyName: string; riskName: string; }) => Promise<void>
 ```
 
 Registers an opened signal with the risk management system.
@@ -49,7 +49,7 @@ Registers an opened signal with the risk management system.
 ### removeSignal
 
 ```ts
-removeSignal: (symbol: string, context: { strategyName: string; riskName: string; }) => void
+removeSignal: (symbol: string, context: { strategyName: string; riskName: string; }) => Promise<void>
 ```
 
 Removes a closed signal from the risk management system.
