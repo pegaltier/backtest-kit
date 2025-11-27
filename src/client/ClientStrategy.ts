@@ -27,6 +27,7 @@ import { ICandleData } from "../interfaces/Exchange.interface";
 import { PersistSignalAdaper } from "../classes/Persist";
 import backtest from "../lib";
 import { errorEmitter } from "../config/emitters";
+import { CC_SCHEDULE_AWAIT_MINUTES } from "../config/params";
 
 const INTERVAL_MINUTES: Record<SignalInterval, number> = {
   "1m": 1,
@@ -335,10 +336,8 @@ export class ClientStrategy implements IStrategy {
   public async tick(): Promise<IStrategyTickResult> {
     this.params.logger.debug("ClientStrategy tick");
 
-    const isBacktest = this.params.execution.context.backtest;
-
-    // В LIVE режиме мониторим scheduled signal
-    if (!isBacktest && this._scheduledSignal && !this._pendingSignal) {
+    // Мониторим scheduled signal независимо от режима
+    if (this._scheduledSignal && !this._pendingSignal) {
       const averagePrice = await this.params.exchange.getAveragePrice(
         this.params.execution.context.symbol
       );
@@ -346,6 +345,44 @@ export class ClientStrategy implements IStrategy {
       const scheduled = this._scheduledSignal;
       let shouldActivate = false;
       let shouldCancel = false;
+
+      // Проверяем время жизни scheduled signal
+      const currentTime = this.params.execution.context.when.getTime();
+      const signalTime = scheduled.timestamp;
+      const maxTimeToWait = CC_SCHEDULE_AWAIT_MINUTES * 60 * 1000; // конвертируем в миллисекунды
+      const elapsedTime = currentTime - signalTime;
+
+      if (elapsedTime >= maxTimeToWait) {
+        // Время истекло - отменяем scheduled signal
+        this.params.logger.info("ClientStrategy scheduled signal cancelled by timeout", {
+          symbol: this.params.execution.context.symbol,
+          signalId: scheduled.id,
+          elapsedMinutes: Math.floor(elapsedTime / 60000),
+          maxMinutes: CC_SCHEDULE_AWAIT_MINUTES,
+        });
+
+        this._scheduledSignal = null;
+
+        const result: IStrategyTickResultCancelled = {
+          action: "cancelled",
+          signal: scheduled,
+          currentPrice: averagePrice,
+          closeTimestamp: currentTime,
+          strategyName: this.params.method.context.strategyName,
+          exchangeName: this.params.method.context.exchangeName,
+          symbol: this.params.execution.context.symbol,
+        };
+
+        if (this.params.callbacks?.onTick) {
+          this.params.callbacks.onTick(
+            this.params.execution.context.symbol,
+            result,
+            this.params.execution.context.backtest
+          );
+        }
+
+        return result;
+      }
 
       // Проверяем активацию и отмену для long позиции
       if (scheduled.position === "long") {
@@ -496,36 +533,14 @@ export class ClientStrategy implements IStrategy {
             currentPrice: currentPrice,
           });
 
-          // В BACKTEST режиме возвращаем "scheduled" чтобы BacktestLogicPrivateService обработал
-          if (isBacktest) {
-            const result: IStrategyTickResultScheduled = {
-              action: "scheduled",
-              signal: this._scheduledSignal,
-              strategyName: this.params.method.context.strategyName,
-              exchangeName: this.params.method.context.exchangeName,
-              symbol: this.params.execution.context.symbol,
-              currentPrice: currentPrice,
-            };
-
-            if (this.params.callbacks?.onTick) {
-              this.params.callbacks.onTick(
-                this.params.execution.context.symbol,
-                result,
-                this.params.execution.context.backtest
-              );
-            }
-
-            return result;
-          }
-
-          // В LIVE режиме возвращаем "active" - будем мониторить на следующих тиках
-          const result: IStrategyTickResultActive = {
-            action: "active",
+          // Возвращаем "scheduled" независимо от режима
+          const result: IStrategyTickResultScheduled = {
+            action: "scheduled",
             signal: this._scheduledSignal,
-            currentPrice: currentPrice,
             strategyName: this.params.method.context.strategyName,
             exchangeName: this.params.method.context.exchangeName,
             symbol: this.params.execution.context.symbol,
+            currentPrice: currentPrice,
           };
 
           if (this.params.callbacks?.onTick) {

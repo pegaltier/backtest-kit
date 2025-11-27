@@ -9,6 +9,7 @@ import MethodContextService, {
   TMethodContextService,
 } from "../../context/MethodContextService";
 import { progressEmitter, performanceEmitter } from "../../../../config/emitters";
+import { CC_SCHEDULE_AWAIT_MINUTES } from "../../../../config/params";
 
 /**
  * Private service for backtest orchestration using async generators.
@@ -96,16 +97,10 @@ export class BacktestLogicPrivateService {
         });
 
         // Запрашиваем минутные свечи для мониторинга активации/отмены
-        // Берем двойной запас времени, максимум 2 часа
-        const maxMinutesToCheck = Math.min(
-          signal.minuteEstimatedTime * 2,
-          120
-        );
-
         const candles = await this.exchangeGlobalService.getNextCandles(
           symbol,
           "1m",
-          maxMinutesToCheck,
+          CC_SCHEDULE_AWAIT_MINUTES,
           when,
           true
         );
