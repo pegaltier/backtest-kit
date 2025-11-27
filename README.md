@@ -1475,6 +1475,85 @@ Live.background("BTCUSDT", {
 
 The adapter is registered globally and applies to all strategies.
 
+### Risk Position Persistence Adapter
+
+Risk management also supports custom persistence adapters for storing active position state:
+
+```typescript
+import { PersistBase, PersistRiskAdapter, RiskData, EntityId } from "backtest-kit";
+import Redis from "ioredis";
+
+// Create custom Redis adapter for risk positions
+class RedisRiskPersist extends PersistBase {
+  private redis = new Redis({
+    host: "localhost",
+    port: 6379,
+  });
+
+  async waitForInit(initial: boolean): Promise<void> {
+    await this.redis.ping();
+  }
+
+  async readValue(entityId: EntityId): Promise<RiskData> {
+    const key = `${this.entityName}:${entityId}`;
+    const data = await this.redis.get(key);
+
+    if (!data) {
+      throw new Error(`Entity ${this.entityName}:${entityId} not found`);
+    }
+
+    return JSON.parse(data);
+  }
+
+  async hasValue(entityId: EntityId): Promise<boolean> {
+    const key = `${this.entityName}:${entityId}`;
+    const exists = await this.redis.exists(key);
+    return exists === 1;
+  }
+
+  async writeValue(entityId: EntityId, entity: RiskData): Promise<void> {
+    const key = `${this.entityName}:${entityId}`;
+    await this.redis.set(key, JSON.stringify(entity));
+  }
+}
+
+// Register custom adapter
+PersistRiskAdapter.usePersistRiskAdapter(RedisRiskPersist);
+
+// Now all risk position persistence uses Redis
+Live.background("BTCUSDT", {
+  strategyName: "my-strategy",
+  exchangeName: "binance"
+});
+```
+
+**RiskData Format:**
+```typescript
+type RiskData = Array<[string, IRiskActivePosition]>;
+
+interface IRiskActivePosition {
+  signal: ISignalRow | null;
+  strategyName: string;
+  exchangeName: string;
+  openTimestamp: number;
+}
+```
+
+**Default Storage Location:** `./logs/data/risk/{riskName}/positions.json`
+
+**Key Features:**
+- Crash-safe active position tracking across strategy restarts
+- Automatic lazy loading on first access (singleshot pattern)
+- Map serialization to JSON-compatible array format
+- Per-risk-profile isolation with memoized storage instances
+- Atomic writes after every addSignal/removeSignal operation
+
+**Use Cases:**
+- Recover open positions after process crash or restart
+- Share position state across multiple process instances (with Redis)
+- Audit position history for compliance
+- Implement cross-process risk coordination
+
 ## Interval Throttling
 
 Prevent signal spam with automatic throttling:

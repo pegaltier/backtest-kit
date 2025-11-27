@@ -3,6 +3,7 @@ import { test } from "worker-testbed";
 import {
   addRisk,
   lib,
+  PersistRiskAdapter,
 } from "../../build/index.mjs";
 
 test("addRisk registers risk profile successfully", async ({ pass, fail }) => {
@@ -491,5 +492,324 @@ test("Risk removeSignal with same strategyName:symbol key", async ({ pass, fail 
   }
 
   fail(`Expected count 0 after removing signal, got ${finalCount}`);
+
+});
+
+test("PersistRiskAdapter.readPositionData returns empty array when no data exists", async ({ pass, fail }) => {
+
+  PersistRiskAdapter.usePersistRiskAdapter(class {
+    async waitForInit() {}
+    async readValue() {
+      throw new Error("Not found");
+    }
+    async hasValue() {
+      return false;
+    }
+    async writeValue() {}
+  });
+
+  const positions = await PersistRiskAdapter.readPositionData("test-risk-empty");
+
+  if (Array.isArray(positions) && positions.length === 0) {
+    pass("readPositionData returns empty array for new risk profile");
+    return;
+  }
+
+  fail(`Expected empty array, got ${JSON.stringify(positions)}`);
+
+});
+
+test("PersistRiskAdapter.writePositionData and readPositionData persist data correctly", async ({ pass, fail }) => {
+
+  let storedData = null;
+
+  PersistRiskAdapter.usePersistRiskAdapter(class {
+    async waitForInit() {}
+    async readValue() {
+      return storedData;
+    }
+    async hasValue() {
+      return storedData !== null;
+    }
+    async writeValue(_key, value) {
+      storedData = value;
+    }
+  });
+
+  const testRiskName = "test-risk-persist";
+  const testPositions = [
+    ["strategy1:BTCUSDT", {
+      signal: null,
+      strategyName: "strategy1",
+      exchangeName: "binance",
+      openTimestamp: 1234567890,
+    }],
+    ["strategy2:ETHUSDT", {
+      signal: null,
+      strategyName: "strategy2",
+      exchangeName: "binance",
+      openTimestamp: 1234567900,
+    }],
+  ];
+
+  // Write data
+  await PersistRiskAdapter.writePositionData(testPositions, testRiskName);
+
+  // Read data back
+  const readPositions = await PersistRiskAdapter.readPositionData(testRiskName);
+
+  if (
+    Array.isArray(readPositions) &&
+    readPositions.length === 2 &&
+    readPositions[0][0] === "strategy1:BTCUSDT" &&
+    readPositions[0][1].strategyName === "strategy1" &&
+    readPositions[1][0] === "strategy2:ETHUSDT" &&
+    readPositions[1][1].strategyName === "strategy2"
+  ) {
+    pass("writePositionData and readPositionData correctly persist and restore data");
+    return;
+  }
+
+  fail(`Data mismatch. Read: ${JSON.stringify(readPositions)}`);
+
+});
+
+test("PersistRiskAdapter supports custom adapter", async ({ pass, fail }) => {
+
+  let writeCalled = false;
+  let readCalled = false;
+
+  const mockPositions = [
+    ["custom:BTCUSDT", {
+      signal: null,
+      strategyName: "custom-strategy",
+      exchangeName: "custom-exchange",
+      openTimestamp: 9999999,
+    }],
+  ];
+
+  PersistRiskAdapter.usePersistRiskAdapter(class {
+    async waitForInit() {
+      // Mock initialization
+    }
+    async readValue() {
+      readCalled = true;
+      return mockPositions;
+    }
+    async hasValue() {
+      return true;
+    }
+    async writeValue(key, value) {
+      writeCalled = true;
+      if (key === "positions" && Array.isArray(value)) {
+        return;
+      }
+      throw new Error("Invalid write");
+    }
+  });
+
+  // Test write
+  await PersistRiskAdapter.writePositionData(mockPositions, "test-custom-adapter");
+
+  // Test read
+  const positions = await PersistRiskAdapter.readPositionData("test-custom-adapter");
+
+  if (
+    writeCalled &&
+    readCalled &&
+    positions.length === 1 &&
+    positions[0][0] === "custom:BTCUSDT"
+  ) {
+    pass("Custom adapter works correctly");
+    return;
+  }
+
+  fail(`Custom adapter failed. writeCalled: ${writeCalled}, readCalled: ${readCalled}`);
+
+});
+
+test("PersistRiskAdapter handles Map to Array conversion", async ({ pass, fail }) => {
+
+  let storedData = null;
+
+  PersistRiskAdapter.usePersistRiskAdapter(class {
+    async waitForInit() {}
+    async readValue() {
+      return storedData;
+    }
+    async hasValue() {
+      return storedData !== null;
+    }
+    async writeValue(_key, value) {
+      storedData = value;
+    }
+  });
+
+  const testRiskName = "test-risk-map-conversion";
+
+  // Create a Map
+  const positionsMap = new Map([
+    ["strategy1:BTCUSDT", {
+      signal: null,
+      strategyName: "strategy1",
+      exchangeName: "binance",
+      openTimestamp: Date.now(),
+    }],
+    ["strategy2:ETHUSDT", {
+      signal: null,
+      strategyName: "strategy2",
+      exchangeName: "binance",
+      openTimestamp: Date.now(),
+    }],
+  ]);
+
+  // Convert Map to Array and write
+  const positionsArray = Array.from(positionsMap);
+  await PersistRiskAdapter.writePositionData(positionsArray, testRiskName);
+
+  // Read back
+  const readPositions = await PersistRiskAdapter.readPositionData(testRiskName);
+
+  // Convert back to Map
+  const restoredMap = new Map(readPositions);
+
+  if (
+    restoredMap.size === 2 &&
+    restoredMap.has("strategy1:BTCUSDT") &&
+    restoredMap.has("strategy2:ETHUSDT") &&
+    restoredMap.get("strategy1:BTCUSDT").strategyName === "strategy1" &&
+    restoredMap.get("strategy2:ETHUSDT").strategyName === "strategy2"
+  ) {
+    pass("Map to Array conversion and restoration works correctly");
+    return;
+  }
+
+  fail(`Map conversion failed. Restored size: ${restoredMap.size}`);
+
+});
+
+test("PersistRiskAdapter overwrites existing data", async ({ pass, fail }) => {
+
+  let storedData = null;
+
+  PersistRiskAdapter.usePersistRiskAdapter(class {
+    async waitForInit() {}
+    async readValue() {
+      return storedData;
+    }
+    async hasValue() {
+      return storedData !== null;
+    }
+    async writeValue(_key, value) {
+      storedData = value;
+    }
+  });
+
+  const testRiskName = "test-risk-overwrite";
+
+  // Write initial data
+  const initialPositions = [
+    ["strategy1:BTCUSDT", {
+      signal: null,
+      strategyName: "strategy1",
+      exchangeName: "binance",
+      openTimestamp: 1111111,
+    }],
+  ];
+
+  await PersistRiskAdapter.writePositionData(initialPositions, testRiskName);
+
+  // Overwrite with new data
+  const newPositions = [
+    ["strategy2:ETHUSDT", {
+      signal: null,
+      strategyName: "strategy2",
+      exchangeName: "binance",
+      openTimestamp: 2222222,
+    }],
+    ["strategy3:BNBUSDT", {
+      signal: null,
+      strategyName: "strategy3",
+      exchangeName: "binance",
+      openTimestamp: 3333333,
+    }],
+  ];
+
+  await PersistRiskAdapter.writePositionData(newPositions, testRiskName);
+
+  // Read back
+  const readPositions = await PersistRiskAdapter.readPositionData(testRiskName);
+
+  if (
+    readPositions.length === 2 &&
+    readPositions[0][0] === "strategy2:ETHUSDT" &&
+    readPositions[1][0] === "strategy3:BNBUSDT"
+  ) {
+    pass("PersistRiskAdapter correctly overwrites existing data");
+    return;
+  }
+
+  fail(`Overwrite failed. Read: ${JSON.stringify(readPositions)}`);
+
+});
+
+test("PersistRiskAdapter isolates data by riskName", async ({ pass, fail }) => {
+
+  const storage = new Map();
+
+  PersistRiskAdapter.usePersistRiskAdapter(class {
+    async waitForInit() {}
+    async readValue(key) {
+      const data = storage.get(key);
+      if (!data) {
+        throw new Error("Not found");
+      }
+      return data;
+    }
+    async hasValue(key) {
+      return storage.has(key);
+    }
+    async writeValue(key, value) {
+      storage.set(key, value);
+    }
+  });
+
+  const risk1Data = [
+    ["risk1:BTCUSDT", {
+      signal: null,
+      strategyName: "risk1-strategy",
+      exchangeName: "binance",
+      openTimestamp: 1111111,
+    }],
+  ];
+
+  const risk2Data = [
+    ["risk2:ETHUSDT", {
+      signal: null,
+      strategyName: "risk2-strategy",
+      exchangeName: "binance",
+      openTimestamp: 2222222,
+    }],
+  ];
+
+  // Write to two different risk profiles
+  await PersistRiskAdapter.writePositionData(risk1Data, "test-risk-isolation-1");
+  await PersistRiskAdapter.writePositionData(risk2Data, "test-risk-isolation-2");
+
+  // Read back both
+  const read1 = await PersistRiskAdapter.readPositionData("test-risk-isolation-1");
+  const read2 = await PersistRiskAdapter.readPositionData("test-risk-isolation-2");
+
+  if (
+    read1.length === 1 &&
+    read2.length === 1 &&
+    read1[0][0] === "risk1:BTCUSDT" &&
+    read2[0][0] === "risk2:ETHUSDT"
+  ) {
+    pass("PersistRiskAdapter correctly isolates data by riskName");
+    return;
+  }
+
+  fail(`Isolation failed. risk1: ${JSON.stringify(read1)}, risk2: ${JSON.stringify(read2)}`);
 
 });
