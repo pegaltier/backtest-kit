@@ -369,7 +369,7 @@ const CANCEL_SCHEDULED_SIGNAL_BY_STOPLOSS_FN = async (
 const ACTIVATE_SCHEDULED_SIGNAL_FN = async (
   self: ClientStrategy,
   scheduled: IScheduledSignalRow
-): Promise<IStrategyTickResultOpened> => {
+): Promise<IStrategyTickResultOpened | null> => {
   self.params.logger.info("ClientStrategy scheduled signal activated", {
     symbol: self.params.execution.context.symbol,
     signalId: scheduled.id,
@@ -377,6 +377,24 @@ const ACTIVATE_SCHEDULED_SIGNAL_FN = async (
     averagePrice: scheduled.priceOpen,
     priceOpen: scheduled.priceOpen,
   });
+  if (
+    await not(
+        self.params.risk.checkSignal({
+          symbol: self.params.execution.context.symbol,
+          strategyName: self.params.method.context.strategyName,
+          exchangeName: self.params.method.context.exchangeName,
+          currentPrice: scheduled.priceOpen,
+          timestamp: self.params.execution.context.when.getTime(),
+      })
+    )
+  ) {
+    self.params.logger.info("ClientStrategy scheduled signal rejected by risk", {
+      symbol: self.params.execution.context.symbol,
+      signalId: scheduled.id,
+    });
+    self._scheduledSignal = null;
+    return null;
+  }
 
   self._scheduledSignal = null;
   await self.setPendingSignal(scheduled);
@@ -488,7 +506,22 @@ const OPEN_NEW_SCHEDULED_SIGNAL_FN = async (
 const OPEN_NEW_PENDING_SIGNAL_FN = async (
   self: ClientStrategy,
   signal: ISignalRow
-): Promise<IStrategyTickResultOpened> => {
+): Promise<IStrategyTickResultOpened | null> => {
+  if (
+    await not(
+      self.params.risk.checkSignal({
+        symbol: self.params.execution.context.symbol,
+        strategyName: self.params.method.context.strategyName,
+        exchangeName: self.params.method.context.exchangeName,
+        currentPrice: signal.priceOpen,
+        timestamp: self.params.execution.context.when.getTime(),
+      })
+    )
+  ) {
+    console.log(`[${self.params.method.context.strategyName}] OPEN_NEW_PENDING_SIGNAL_FN: risk.checkSignal() returned FALSE`);
+    return null;
+  }
+
   await self.params.risk.addSignal(self.params.execution.context.symbol, {
     strategyName: self.params.method.context.strategyName,
     riskName: self.params.riskName,
@@ -748,7 +781,7 @@ const CANCEL_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
 const ACTIVATE_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
   self: ClientStrategy,
   scheduled: IScheduledSignalRow
-): Promise<void> => {
+): Promise<boolean> => {
   self.params.logger.info(
     "ClientStrategy backtest scheduled signal activated",
     {
@@ -757,6 +790,25 @@ const ACTIVATE_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
       priceOpen: scheduled.priceOpen,
     }
   );
+
+  if (
+    await not(
+      self.params.risk.checkSignal({
+        symbol: self.params.execution.context.symbol,
+        strategyName: self.params.method.context.strategyName,
+        exchangeName: self.params.method.context.exchangeName,
+        currentPrice: scheduled.priceOpen,
+        timestamp: self.params.execution.context.when.getTime(),
+      })
+    )
+  ) {
+    self.params.logger.info("ClientStrategy backtest scheduled signal rejected by risk", {
+      symbol: self.params.execution.context.symbol,
+      signalId: scheduled.id,
+    });
+    self._scheduledSignal = null;
+    return false;
+  }
 
   self._scheduledSignal = null;
   await self.setPendingSignal(scheduled);
@@ -774,6 +826,8 @@ const ACTIVATE_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
       self.params.execution.context.backtest
     );
   }
+
+  return true;
 };
 
 const CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN = async (
@@ -1094,7 +1148,15 @@ export class ClientStrategy implements IStrategy {
       }
 
       if (shouldActivate) {
-        return await ACTIVATE_SCHEDULED_SIGNAL_FN(this, this._scheduledSignal);
+        const activateResult = await ACTIVATE_SCHEDULED_SIGNAL_FN(this, this._scheduledSignal);
+        if (activateResult) {
+          return activateResult;
+        }
+        // Risk rejected - return idle
+        const currentPrice = await this.params.exchange.getAveragePrice(
+          this.params.execution.context.symbol
+        );
+        return await RETURN_IDLE_FN(this, currentPrice);
       }
 
       return await RETURN_SCHEDULED_SIGNAL_ACTIVE_FN(
@@ -1124,7 +1186,12 @@ export class ClientStrategy implements IStrategy {
       }
 
       if (this._pendingSignal) {
-        return await OPEN_NEW_PENDING_SIGNAL_FN(this, this._pendingSignal);
+        const openResult = await OPEN_NEW_PENDING_SIGNAL_FN(this, this._pendingSignal);
+        if (openResult) {
+          return openResult;
+        }
+        // Risk rejected - clear pending signal and return idle
+        await this.setPendingSignal(null);
       }
 
       const currentPrice = await this.params.exchange.getAveragePrice(
