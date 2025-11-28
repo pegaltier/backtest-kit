@@ -159,13 +159,11 @@ const GET_SIGNAL_FN = trycatch(
         exchangeName: self.params.method.context.exchangeName,
         strategyName: self.params.method.context.strategyName,
         timestamp: currentTime,
+        _isScheduled: true,
       };
 
       // Валидируем сигнал перед возвратом
       VALIDATE_SIGNAL_FN(scheduledSignalRow);
-
-      // @ts-ignore - runtime marker
-      scheduledSignalRow._isScheduled = true;
 
       return scheduledSignalRow;
     }
@@ -178,13 +176,11 @@ const GET_SIGNAL_FN = trycatch(
       exchangeName: self.params.method.context.exchangeName,
       strategyName: self.params.method.context.strategyName,
       timestamp: currentTime,
+      _isScheduled: false,
     };
 
     // Валидируем сигнал перед возвратом
     VALIDATE_SIGNAL_FN(signalRow);
-
-    // @ts-ignore - runtime marker
-    signalRow._isScheduled = false;
 
     return signalRow;
   },
@@ -1138,6 +1134,14 @@ export class ClientStrategy implements IStrategy {
   public async tick(): Promise<IStrategyTickResult> {
     this.params.logger.debug("ClientStrategy tick");
 
+    // Early return if strategy was stopped
+    if (this._isStopped) {
+      const currentPrice = await this.params.exchange.getAveragePrice(
+        this.params.execution.context.symbol
+      );
+      return await RETURN_IDLE_FN(this, currentPrice);
+    }
+
     // Monitor scheduled signal
     if (this._scheduledSignal && !this._pendingSignal) {
       const currentPrice = await this.params.exchange.getAveragePrice(
@@ -1172,10 +1176,7 @@ export class ClientStrategy implements IStrategy {
         if (activateResult) {
           return activateResult;
         }
-        // Risk rejected - return idle
-        const currentPrice = await this.params.exchange.getAveragePrice(
-          this.params.execution.context.symbol
-        );
+        // Risk rejected or stopped - return idle
         return await RETURN_IDLE_FN(this, currentPrice);
       }
 
@@ -1193,7 +1194,6 @@ export class ClientStrategy implements IStrategy {
       if (!signal) {
         await this.setPendingSignal(null);
       } else {
-        // @ts-ignore - check runtime marker
         if (signal._isScheduled === true) {
           this._scheduledSignal = signal as IScheduledSignalRow;
           return await OPEN_NEW_SCHEDULED_SIGNAL_FN(
@@ -1397,6 +1397,7 @@ export class ClientStrategy implements IStrategy {
    * Stops the strategy from generating new signals.
    *
    * Sets internal flag to prevent getSignal from being called.
+   * Clears any scheduled signals (not yet activated).
    * Does NOT close active pending signals - they continue monitoring until TP/SL/time_expired.
    *
    * Use case: Graceful shutdown in live trading without forcing position closure.
@@ -1410,14 +1411,18 @@ export class ClientStrategy implements IStrategy {
    * // Existing signal will continue until natural close
    * ```
    */
-  public stop(): Promise<void> {
+  public async stop(): Promise<void> {
     this.params.logger.debug("ClientStrategy stop", {
       hasPendingSignal: this._pendingSignal !== null,
+      hasScheduledSignal: this._scheduledSignal !== null,
     });
 
     this._isStopped = true;
 
-    return Promise.resolve();
+    // Clear scheduled signal if exists
+    if (this._scheduledSignal) {
+      this._scheduledSignal = null;
+    }
   }
 }
 

@@ -527,6 +527,8 @@ interface ISignalRow extends ISignalDto {
     timestamp: number;
     /** Trading pair symbol (e.g., "BTCUSDT") */
     symbol: string;
+    /** Internal runtime marker for scheduled signals */
+    _isScheduled: boolean;
 }
 /**
  * Scheduled signal row for delayed entry at specific price.
