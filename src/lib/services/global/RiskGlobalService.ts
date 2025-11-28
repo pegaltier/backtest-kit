@@ -3,6 +3,8 @@ import LoggerService from "../base/LoggerService";
 import TYPES from "../../core/types";
 import RiskConnectionService from "../connection/RiskConnectionService";
 import { IRiskCheckArgs, RiskName } from "../../../interfaces/Risk.interface";
+import { memoize } from "functools-kit";
+import RiskValidationService from "../validation/RiskValidationService";
 
 /**
  * Global service for risk operations.
@@ -14,6 +16,29 @@ export class RiskGlobalService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly riskConnectionService = inject<RiskConnectionService>(
     TYPES.riskConnectionService
+  );
+  private readonly riskValidationService = inject<RiskValidationService>(
+    TYPES.riskValidationService
+  );
+
+  /**
+   * Validates risk configuration.
+   * Memoized to avoid redundant validations for the same risk instance.
+   * Logs validation activity.
+   * @param riskName - Name of the risk instance to validate
+   * @returns Promise that resolves when validation is complete
+   */
+  private validate = memoize(
+    ([riskName]) => `${riskName}`,
+    async (riskName: RiskName) => {
+      this.loggerService.log("riskGlobalService validate", {
+        riskName,
+      });
+      this.riskValidationService.validate(
+        riskName,
+        "riskGlobalService validate"
+      );
+    }
   );
 
   /**
@@ -31,6 +56,7 @@ export class RiskGlobalService {
       symbol: params.symbol,
       context,
     });
+    await this.validate(context.riskName);
     return await this.riskConnectionService.checkSignal(params, context);
   };
 
@@ -48,6 +74,7 @@ export class RiskGlobalService {
       symbol,
       context,
     });
+    await this.validate(context.riskName);
     await this.riskConnectionService.addSignal(symbol, context);
   };
 
@@ -65,6 +92,7 @@ export class RiskGlobalService {
       symbol,
       context,
     });
+    await this.validate(context.riskName);
     await this.riskConnectionService.removeSignal(symbol, context);
   };
 
@@ -78,6 +106,9 @@ export class RiskGlobalService {
     this.loggerService.log("riskGlobalService clear", {
       riskName,
     });
+    if (riskName) {
+      await this.validate(riskName);
+    }
     return await this.riskConnectionService.clear(riskName);
   };
 }
