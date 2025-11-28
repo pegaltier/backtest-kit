@@ -3,6 +3,7 @@ import LoggerService from "../base/LoggerService";
 import TYPES from "../../core/types";
 import { StrategyName, IStrategySchema } from "../../../interfaces/Strategy.interface";
 import { memoize } from "functools-kit";
+import RiskValidationService from "./RiskValidationService";
 
 /**
  * @class StrategyValidationService
@@ -15,6 +16,14 @@ export class StrategyValidationService {
    * Injected logger service instance
    */
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
+
+  /**
+   * @private
+   * @readonly
+   * Injected risk validation service instance
+   */
+  private readonly riskValidationService = inject<RiskValidationService>(TYPES.riskValidationService);
+
   /**
    * @private
    * Map storing strategy schemas by strategy name
@@ -57,6 +66,12 @@ export class StrategyValidationService {
           `strategy ${strategyName} not found source=${source}`
         );
       }
+
+      // Validate risk profile if configured
+      if (strategy.riskName) {
+        this.riskValidationService.validate(strategy.riskName, source);
+      }
+
       return true as never;
     }
   ) as (strategyName: StrategyName, source: string) => void;

@@ -6072,6 +6072,12 @@ declare class StrategyValidationService {
     private readonly loggerService;
     /**
      * @private
+     * @readonly
+     * Injected risk validation service instance
+     */
+    private readonly riskValidationService;
+    /**
+     * @private
      * Map storing strategy schemas by strategy name
      */
     private _strategyMap;
