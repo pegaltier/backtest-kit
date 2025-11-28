@@ -368,7 +368,8 @@ const CANCEL_SCHEDULED_SIGNAL_BY_STOPLOSS_FN = async (
 
 const ACTIVATE_SCHEDULED_SIGNAL_FN = async (
   self: ClientStrategy,
-  scheduled: IScheduledSignalRow
+  scheduled: IScheduledSignalRow,
+  activationTimestamp: number
 ): Promise<IStrategyTickResultOpened | null> => {
   // Check if strategy was stopped
   if (self._isStopped) {
@@ -380,7 +381,11 @@ const ACTIVATE_SCHEDULED_SIGNAL_FN = async (
     return null;
   }
 
-  const activationTime = self.params.execution.context.when.getTime();
+  // В LIVE режиме activationTimestamp - это текущее время при tick()
+  // В отличие от BACKTEST (где используется candle.timestamp + 60s),
+  // здесь мы не знаем ТОЧНОЕ время достижения priceOpen,
+  // поэтому используем время обнаружения активации
+  const activationTime = activationTimestamp;
 
   self.params.logger.info("ClientStrategy scheduled signal activation begin", {
     symbol: self.params.execution.context.symbol,
@@ -815,6 +820,9 @@ const ACTIVATE_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
     return false;
   }
 
+  // В BACKTEST режиме activationTimestamp - это candle.timestamp + 60*1000
+  // (timestamp СЛЕДУЮЩЕЙ свечи после достижения priceOpen)
+  // Это обеспечивает точный расчёт minuteEstimatedTime от момента активации
   const activationTime = activationTimestamp;
 
   self.params.logger.info(
@@ -1176,6 +1184,9 @@ export class ClientStrategy implements IStrategy {
   public async tick(): Promise<IStrategyTickResult> {
     this.params.logger.debug("ClientStrategy tick");
 
+    // Получаем текущее время в начале tick для консистентности
+    const currentTime = this.params.execution.context.when.getTime();
+
     // Early return if strategy was stopped
     if (this._isStopped) {
       const currentPrice = await this.params.exchange.getAveragePrice(
@@ -1214,7 +1225,7 @@ export class ClientStrategy implements IStrategy {
       }
 
       if (shouldActivate) {
-        const activateResult = await ACTIVATE_SCHEDULED_SIGNAL_FN(this, this._scheduledSignal);
+        const activateResult = await ACTIVATE_SCHEDULED_SIGNAL_FN(this, this._scheduledSignal, currentTime);
         if (activateResult) {
           return activateResult;
         }
