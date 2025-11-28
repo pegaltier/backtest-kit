@@ -25,6 +25,12 @@ declare const GLOBAL_CONFIG: {
      * Default: 20% (one signal cannot lose more than 20% of position)
      */
     CC_MAX_STOPLOSS_DISTANCE_PERCENT: number;
+    /**
+     * Maximum signal lifetime in minutes
+     * Prevents eternal signals that block risk limits for weeks/months
+     * Default: 1440 minutes (1 day)
+     */
+    CC_MAX_SIGNAL_LIFETIME_MINUTES: number;
 };
 /**
  * Type for global configuration object.

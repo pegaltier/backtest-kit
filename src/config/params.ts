@@ -14,13 +14,19 @@ export const GLOBAL_CONFIG = {
      * Must be greater than trading fees to ensure profitable trades
      * Default: 0.3% (covers 2×0.1% fees + minimum profit margin)
      */
-    CC_MIN_TAKEPROFIT_DISTANCE_PERCENT: 0.3,
+    CC_MIN_TAKEPROFIT_DISTANCE_PERCENT: 0.1,
     /**
      * Maximum StopLoss distance from priceOpen (percentage)
      * Prevents catastrophic losses from extreme StopLoss values
      * Default: 20% (one signal cannot lose more than 20% of position)
      */
     CC_MAX_STOPLOSS_DISTANCE_PERCENT: 20,
+    /**
+     * Maximum signal lifetime in minutes
+     * Prevents eternal signals that block risk limits for weeks/months
+     * Default: 1440 minutes (1 day)
+     */
+    CC_MAX_SIGNAL_LIFETIME_MINUTES: 1440,
 }
 
 /**

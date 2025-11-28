@@ -3,9 +3,8 @@ import "./config/setup.mjs"
 import { run } from 'worker-testbed';
 
 import "./e2e/defend.test.mjs"
-
+import "./e2e/sanitize.test.mjs"
 import "./e2e/timing.test.mjs";
-
 import "./e2e/risk.test.mjs";
 import "./e2e/scheduled.test.mjs";
 import "./e2e/config.test.mjs";

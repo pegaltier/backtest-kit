@@ -8,6 +8,7 @@ import {
   listenSignalBacktest,
   listenDoneBacktest,
   getAveragePrice,
+  setConfig,
 } from "../../build/index.mjs";
 
 import { Subject, sleep } from "functools-kit";
@@ -24,6 +25,11 @@ import { Subject, sleep } from "functools-kit";
  * Защита: Минимальная дистанция TP-priceOpen должна покрывать комиссии (>0.3%)
  */
 test("SANITIZE: Micro-profit eaten by fees - TP too close to priceOpen rejected", async ({ pass, fail }) => {
+
+  // Включаем валидацию для этого теста
+  setConfig({
+    CC_MIN_TAKEPROFIT_DISTANCE_PERCENT: 0.3, // Минимум 0.3% для покрытия комиссий
+  });
 
   let scheduledCount = 0;
   let openedCount = 0;
@@ -136,6 +142,11 @@ test("SANITIZE: Micro-profit eaten by fees - TP too close to priceOpen rejected"
  */
 test("SANITIZE: Extreme StopLoss rejected (>20% loss) - protects capital", async ({ pass, fail }) => {
 
+  // Включаем валидацию для этого теста
+  setConfig({
+    CC_MAX_STOPLOSS_DISTANCE_PERCENT: 20, // Максимум 20% риска на сигнал
+  });
+
   let scheduledCount = 0;
   let openedCount = 0;
 
@@ -223,5 +234,115 @@ test("SANITIZE: Extreme StopLoss rejected (>20% loss) - protects capital", async
 
   } catch (error) {
     fail(`Unexpected error: ${error.message || String(error)}`);
+  }
+});
+
+/**
+ * КРИТИЧЕСКИЙ ТЕСТ #3: Excessive minuteEstimatedTime rejected (>30 days)
+ *
+ * Проблема:
+ * - minuteEstimatedTime = 50000 минут (>34 дня) → сигнал блокирует риск-лимиты на месяц+
+ * - Один "вечный" сигнал = нет новых сделок в течение месяца
+ * - Потенциальный deadlock стратегии
+ *
+ * Защита: Максимальное время жизни сигнала (например, <30 дней = 43200 минут)
+ */
+test("SANITIZE: Excessive minuteEstimatedTime rejected (>30 days) - prevents eternal signals", async ({ pass, fail }) => {
+
+  // Включаем валидацию для этого теста
+  setConfig({
+    CC_MAX_SIGNAL_LIFETIME_MINUTES: 43200, // Максимум 30 дней (43200 минут)
+  });
+
+  let scheduledCount = 0;
+  let openedCount = 0;
+
+  addExchange({
+    exchangeName: "binance-sanitize-excessive-time",
+    getCandles: async (_symbol, interval, since, limit) => {
+      const candles = [];
+      const intervalMs = 60000;
+
+      for (let i = 0; i < limit; i++) {
+        const timestamp = since.getTime() + i * intervalMs;
+        candles.push({
+          timestamp,
+          open: 42000,
+          high: 42100,
+          low: 41900,
+          close: 42000,
+          volume: 100,
+        });
+      }
+
+      return candles;
+    },
+    formatPrice: async (symbol, price) => price.toFixed(8),
+    formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
+  });
+
+  let signalGenerated = false;
+
+  addStrategy({
+    strategyName: "test-sanitize-excessive-time",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+
+      // ОПАСНЫЙ СИГНАЛ: minuteEstimatedTime = 50000 минут (>34 дня!)
+      // Блокирует риск-лимиты на месяц+, стратегия не может торговать
+      return {
+        position: "long",
+        note: "SANITIZE: excessive time - eternal signal",
+        priceOpen: 42000,
+        priceTakeProfit: 43000,
+        priceStopLoss: 41000,
+        minuteEstimatedTime: 50000, // >34 дня - ОПАСНО!
+      };
+    },
+    callbacks: {
+      onSchedule: () => {
+        scheduledCount++;
+      },
+      onOpen: () => {
+        openedCount++;
+      },
+    },
+  });
+
+  addFrame({
+    frameName: "10m-sanitize-excessive-time",
+    interval: "1m",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-01T00:10:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+
+  try {
+    Backtest.background("BTCUSDT", {
+      strategyName: "test-sanitize-excessive-time",
+      exchangeName: "binance-sanitize-excessive-time",
+      frameName: "10m-sanitize-excessive-time",
+    });
+
+    await awaitSubject.toPromise();
+
+    if (scheduledCount === 0 && openedCount === 0) {
+      pass("MONEY SAFE: Excessive minuteEstimatedTime rejected! Signal with >30 days lifetime was NOT executed. Strategy deadlock prevented!");
+      return;
+    }
+
+    fail(`VALIDATION BUG: Signal with EXCESSIVE minuteEstimatedTime (50000min = 34+ days) was executed! scheduledCount=${scheduledCount}, openedCount=${openedCount}. Signal should be rejected by VALIDATE_SIGNAL_FN to prevent strategy deadlock.`);
+
+  } catch (error) {
+    const errMsg = error.message || String(error);
+    if (errMsg.includes("minuteEstimatedTime") || errMsg.includes("time") || errMsg.includes("excessive") || errMsg.includes("Invalid signal")) {
+      pass(`MONEY SAFE: Excessive minuteEstimatedTime rejected: ${errMsg.substring(0, 100)}`);
+    } else {
+      fail(`Unexpected error: ${errMsg}`);
+    }
   }
 });

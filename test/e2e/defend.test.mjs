@@ -1159,3 +1159,223 @@ test("DEFEND: Zero minuteEstimatedTime rejected - prevents instant timeout", asy
     }
   }
 });
+
+/**
+ * КРИТИЧЕСКИЙ ТЕСТ #11: TakeProfit равный priceOpen отклоняется (нулевой профит)
+ *
+ * Проблема:
+ * - TP = priceOpen → нулевой профит ДО комиссий
+ * - С комиссиями 2×0.1% = 0.2% → чистый PNL = УБЫТОК -0.2%
+ * - Гарантированный убыток на комиссиях без шанса на профит
+ *
+ * Защита: TP должен быть строго БОЛЬШЕ/МЕНЬШЕ priceOpen (в зависимости от позиции)
+ */
+test("DEFEND: TakeProfit equals priceOpen rejected - zero profit guarantees fee loss", async ({ pass, fail }) => {
+
+  let scheduledCount = 0;
+  let openedCount = 0;
+
+  addExchange({
+    exchangeName: "binance-defend-tp-equals-open",
+    getCandles: async (_symbol, interval, since, limit) => {
+      const candles = [];
+      const intervalMs = 60000;
+
+      for (let i = 0; i < limit; i++) {
+        const timestamp = since.getTime() + i * intervalMs;
+        candles.push({
+          timestamp,
+          open: 42000,
+          high: 42100,
+          low: 41900,
+          close: 42000,
+          volume: 100,
+        });
+      }
+
+      return candles;
+    },
+    formatPrice: async (symbol, price) => price.toFixed(8),
+    formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
+  });
+
+  let signalGenerated = false;
+
+  addStrategy({
+    strategyName: "test-defend-tp-equals-open",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+
+      // ОПАСНЫЙ СИГНАЛ: TP = priceOpen (нулевой профит до комиссий)
+      // Profit = (42000 - 42000) / 42000 = 0%
+      // Fees = 2 × 0.1% = 0.2%
+      // Net PNL = 0% - 0.2% = -0.2% (УБЫТОК!)
+      return {
+        position: "long",
+        note: "DEFEND: TP equals priceOpen - zero profit",
+        priceOpen: 42000,
+        priceTakeProfit: 42000, // TP = priceOpen → нулевой профит!
+        priceStopLoss: 41000,
+        minuteEstimatedTime: 60,
+      };
+    },
+    callbacks: {
+      onSchedule: () => {
+        scheduledCount++;
+      },
+      onOpen: () => {
+        openedCount++;
+      },
+    },
+  });
+
+  addFrame({
+    frameName: "10m-defend-tp-equals-open",
+    interval: "1m",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-01T00:10:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+
+  try {
+    Backtest.background("BTCUSDT", {
+      strategyName: "test-defend-tp-equals-open",
+      exchangeName: "binance-defend-tp-equals-open",
+      frameName: "10m-defend-tp-equals-open",
+    });
+
+    await awaitSubject.toPromise();
+
+    if (scheduledCount === 0 && openedCount === 0) {
+      pass("MONEY SAFE: TakeProfit equals priceOpen rejected! Zero profit signal was NOT executed. Guaranteed fee loss prevented!");
+      return;
+    }
+
+    fail(`CRITICAL BUG: Signal with TP=priceOpen was executed! scheduledCount=${scheduledCount}, openedCount=${openedCount}. This guarantees fee loss (0% profit - 0.2% fees = -0.2%)!`);
+
+  } catch (error) {
+    const errMsg = error.message || String(error);
+    if (errMsg.includes("TakeProfit") || errMsg.includes("priceOpen") || errMsg.includes("must be") || errMsg.includes("Invalid signal")) {
+      pass(`MONEY SAFE: TakeProfit equals priceOpen rejected: ${errMsg.substring(0, 100)}`);
+    } else {
+      fail(`Unexpected error: ${errMsg}`);
+    }
+  }
+});
+
+/**
+ * КРИТИЧЕСКИЙ ТЕСТ #12: Multiple scheduled signals respect risk limits (only one active)
+ *
+ * Проблема:
+ * - Стратегия генерирует 3 scheduled сигнала подряд
+ * - Если все 3 откроются одновременно → нарушение риск-лимитов (3× leverage)
+ * - КРИТИЧНО: Второй и третий сигналы должны ЖДАТЬ закрытия предыдущих
+ *
+ * Защита: Риск-менеджмент должен блокировать открытие новых сигналов при активном
+ */
+test("DEFEND: Multiple scheduled signals queue correctly - respects risk limits", async ({ pass, fail }) => {
+
+  let scheduledCount = 0;
+  let openedCount = 0;
+  let maxSimultaneousActive = 0;
+  let currentlyActive = 0;
+  let signalCounter = 0;
+
+  addExchange({
+    exchangeName: "binance-defend-multiple-scheduled",
+    getCandles: async (_symbol, interval, since, limit) => {
+      const candles = [];
+      const intervalMs = 60000;
+
+      for (let i = 0; i < limit; i++) {
+        const timestamp = since.getTime() + i * intervalMs;
+        // Цена падает медленно, чтобы активировать scheduled сигналы
+        const basePrice = 43000 - i * 10;
+
+        candles.push({
+          timestamp,
+          open: basePrice,
+          high: basePrice + 50,
+          low: basePrice - 50,
+          close: basePrice,
+          volume: 100,
+        });
+      }
+
+      return candles;
+    },
+    formatPrice: async (symbol, price) => price.toFixed(8),
+    formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
+  });
+
+  addStrategy({
+    strategyName: "test-defend-multiple-scheduled",
+    interval: "1m",
+    getSignal: async () => {
+      // Генерируем 3 сигнала подряд
+      if (signalCounter >= 3) return null;
+      signalCounter++;
+
+      const price = await getAveragePrice("BTCUSDT");
+
+      // Каждый сигнал с priceOpen немного ниже текущей цены
+      return {
+        position: "long",
+        note: `DEFEND: multiple scheduled test - signal ${signalCounter}`,
+        priceOpen: price - 100 * signalCounter, // Разные priceOpen для последовательной активации
+        priceTakeProfit: price + 500,
+        priceStopLoss: price - 500,
+        minuteEstimatedTime: 5, // Короткое время для быстрого закрытия
+      };
+    },
+    callbacks: {
+      onSchedule: () => {
+        scheduledCount++;
+        currentlyActive++;
+        maxSimultaneousActive = Math.max(maxSimultaneousActive, currentlyActive);
+      },
+      onOpen: () => {
+        openedCount++;
+      },
+      onClose: () => {
+        currentlyActive--;
+      },
+    },
+  });
+
+  addFrame({
+    frameName: "30m-defend-multiple-scheduled",
+    interval: "1m",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-01T00:30:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-defend-multiple-scheduled",
+    exchangeName: "binance-defend-multiple-scheduled",
+    frameName: "30m-defend-multiple-scheduled",
+  });
+
+  await awaitSubject.toPromise();
+
+  // Проверяем что было создано несколько scheduled сигналов
+  if (scheduledCount < 2) {
+    fail(`Not enough scheduled signals to test queuing: scheduledCount=${scheduledCount} (expected >=2)`);
+    return;
+  }
+
+  // КРИТИЧЕСКАЯ ПРОВЕРКА: НЕ должно быть более одного активного сигнала одновременно
+  if (maxSimultaneousActive > 1) {
+    fail(`RISK LIMIT BUG: Multiple signals active simultaneously! Max=${maxSimultaneousActive}. This violates risk limits - signals must queue, not run in parallel!`);
+    return;
+  }
+
+  pass(`MONEY SAFE: Multiple scheduled signals queued correctly. Created ${scheduledCount} signals, max simultaneous active: ${maxSimultaneousActive} (expected 1). Risk limits respected!`);
+});
