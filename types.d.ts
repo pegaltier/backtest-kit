@@ -4966,6 +4966,12 @@ declare class RiskConnectionService {
         strategyName: string;
         riskName: RiskName;
     }) => Promise<void>;
+    /**
+     * Clears the cached ClientRisk instance for the given risk name.
+     *
+     * @param riskName - Name of the risk schema to clear from cache
+     */
+    clear: (riskName?: RiskName) => Promise<void>;
 }
 
 /**
@@ -5167,6 +5173,13 @@ declare class RiskGlobalService {
         strategyName: string;
         riskName: RiskName;
     }) => Promise<void>;
+    /**
+     * Clears risk data.
+     * If riskName is provided, clears data for that specific risk instance.
+     * If no riskName is provided, clears all risk data.
+     * @param riskName - Optional name of the risk instance to clear
+     */
+    clear: (riskName?: RiskName) => Promise<void>;
 }
 
 /**

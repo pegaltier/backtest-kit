@@ -370,7 +370,17 @@ const ACTIVATE_SCHEDULED_SIGNAL_FN = async (
   self: ClientStrategy,
   scheduled: IScheduledSignalRow
 ): Promise<IStrategyTickResultOpened | null> => {
-  self.params.logger.info("ClientStrategy scheduled signal activated", {
+  // Check if strategy was stopped
+  if (self._isStopped) {
+    self.params.logger.info("ClientStrategy scheduled signal activation cancelled (stopped)", {
+      symbol: self.params.execution.context.symbol,
+      signalId: scheduled.id,
+    });
+    self._scheduledSignal = null;
+    return null;
+  }
+
+  self.params.logger.info("ClientStrategy scheduled signal activation begin", {
     symbol: self.params.execution.context.symbol,
     signalId: scheduled.id,
     position: scheduled.position,
@@ -782,6 +792,16 @@ const ACTIVATE_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
   self: ClientStrategy,
   scheduled: IScheduledSignalRow
 ): Promise<boolean> => {
+  // Check if strategy was stopped
+  if (self._isStopped) {
+    self.params.logger.info("ClientStrategy backtest scheduled signal activation cancelled (stopped)", {
+      symbol: self.params.execution.context.symbol,
+      signalId: scheduled.id,
+    });
+    self._scheduledSignal = null;
+    return false;
+  }
+
   self.params.logger.info(
     "ClientStrategy backtest scheduled signal activated",
     {
