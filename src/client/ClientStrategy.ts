@@ -40,16 +40,33 @@ const INTERVAL_MINUTES: Record<SignalInterval, number> = {
 const VALIDATE_SIGNAL_FN = (signal: ISignalRow): void => {
   const errors: string[] = [];
 
-  // Валидация цен
-  if (signal.priceOpen <= 0) {
+  // ЗАЩИТА ОТ NaN/Infinity: все цены должны быть конечными числами
+  if (!isFinite(signal.priceOpen)) {
+    errors.push(
+      `priceOpen must be a finite number, got ${signal.priceOpen} (${typeof signal.priceOpen})`
+    );
+  }
+  if (!isFinite(signal.priceTakeProfit)) {
+    errors.push(
+      `priceTakeProfit must be a finite number, got ${signal.priceTakeProfit} (${typeof signal.priceTakeProfit})`
+    );
+  }
+  if (!isFinite(signal.priceStopLoss)) {
+    errors.push(
+      `priceStopLoss must be a finite number, got ${signal.priceStopLoss} (${typeof signal.priceStopLoss})`
+    );
+  }
+
+  // Валидация цен (только если они конечные)
+  if (isFinite(signal.priceOpen) && signal.priceOpen <= 0) {
     errors.push(`priceOpen must be positive, got ${signal.priceOpen}`);
   }
-  if (signal.priceTakeProfit <= 0) {
+  if (isFinite(signal.priceTakeProfit) && signal.priceTakeProfit <= 0) {
     errors.push(
       `priceTakeProfit must be positive, got ${signal.priceTakeProfit}`
     );
   }
-  if (signal.priceStopLoss <= 0) {
+  if (isFinite(signal.priceStopLoss) && signal.priceStopLoss <= 0) {
     errors.push(`priceStopLoss must be positive, got ${signal.priceStopLoss}`);
   }
 

@@ -346,3 +346,315 @@ test("SANITIZE: Excessive minuteEstimatedTime rejected (>30 days) - prevents ete
     }
   }
 });
+
+/**
+ * КРИТИЧЕСКИЙ ТЕСТ #4: Negative prices rejected - prevents impossible trades
+ *
+ * Проблема:
+ * - Отрицательные цены физически невозможны на крипто-биржах
+ * - priceOpen < 0 или priceTakeProfit < 0 → краш системы или неопределенное поведение
+ * - Математические операции с отрицательными ценами дают некорректные результаты
+ *
+ * Защита: Все цены ДОЛЖНЫ быть > 0
+ */
+test("SANITIZE: Negative prices rejected - prevents impossible trades", async ({ pass, fail }) => {
+
+  let scheduledCount = 0;
+  let openedCount = 0;
+
+  addExchange({
+    exchangeName: "binance-sanitize-negative-prices",
+    getCandles: async (_symbol, interval, since, limit) => {
+      const candles = [];
+      const intervalMs = 60000;
+
+      for (let i = 0; i < limit; i++) {
+        const timestamp = since.getTime() + i * intervalMs;
+        candles.push({
+          timestamp,
+          open: 42000,
+          high: 42100,
+          low: 41900,
+          close: 42000,
+          volume: 100,
+        });
+      }
+
+      return candles;
+    },
+    formatPrice: async (symbol, price) => price.toFixed(8),
+    formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
+  });
+
+  let signalGenerated = false;
+
+  addStrategy({
+    strategyName: "test-sanitize-negative-prices",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+
+      // НЕВАЛИДНЫЙ СИГНАЛ: Отрицательные цены
+      return {
+        position: "long",
+        note: "SANITIZE: negative prices test",
+        priceOpen: -42000, // НЕВОЗМОЖНО! Отрицательная цена!
+        priceTakeProfit: 43000,
+        priceStopLoss: 41000,
+        minuteEstimatedTime: 60,
+      };
+    },
+    callbacks: {
+      onSchedule: () => {
+        scheduledCount++;
+      },
+      onOpen: () => {
+        openedCount++;
+      },
+    },
+  });
+
+  addFrame({
+    frameName: "10m-sanitize-negative-prices",
+    interval: "1m",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-01T00:10:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+
+  try {
+    Backtest.background("BTCUSDT", {
+      strategyName: "test-sanitize-negative-prices",
+      exchangeName: "binance-sanitize-negative-prices",
+      frameName: "10m-sanitize-negative-prices",
+    });
+
+    await awaitSubject.toPromise();
+
+    if (scheduledCount === 0 && openedCount === 0) {
+      pass("MONEY SAFE: Negative price rejected! Signal with priceOpen=-42000 was NOT executed. Impossible trade prevented!");
+      return;
+    }
+
+    fail(`VALIDATION BUG: Signal with NEGATIVE price was executed! scheduledCount=${scheduledCount}, openedCount=${openedCount}. Signal with priceOpen=-42000 should be rejected by VALIDATE_SIGNAL_FN.`);
+
+  } catch (error) {
+    const errMsg = error.message || String(error);
+    if (errMsg.includes("negative") || errMsg.includes("must be") || errMsg.includes("priceOpen") || errMsg.includes("Invalid signal") || errMsg.includes("positive")) {
+      pass(`MONEY SAFE: Negative price rejected: ${errMsg.substring(0, 100)}`);
+    } else {
+      fail(`Unexpected error: ${errMsg}`);
+    }
+  }
+});
+
+/**
+ * КРИТИЧЕСКИЙ ТЕСТ #5: NaN/Infinity prices rejected - prevents calculation explosions
+ *
+ * Проблема:
+ * - NaN или Infinity в ценах → все расчеты PNL становятся NaN
+ * - Один NaN заражает весь бэктест → невозможно вычислить прибыль/убыток
+ * - Infinity в расчетах может вызвать переполнение или деление на ноль
+ *
+ * Защита: Все цены ДОЛЖНЫ быть конечными числами (isFinite)
+ */
+test("SANITIZE: NaN/Infinity prices rejected - prevents calculation explosions", async ({ pass, fail }) => {
+
+  let scheduledCount = 0;
+  let openedCount = 0;
+
+  addExchange({
+    exchangeName: "binance-sanitize-nan-prices",
+    getCandles: async (_symbol, interval, since, limit) => {
+      const candles = [];
+      const intervalMs = 60000;
+
+      for (let i = 0; i < limit; i++) {
+        const timestamp = since.getTime() + i * intervalMs;
+        candles.push({
+          timestamp,
+          open: 42000,
+          high: 42100,
+          low: 41900,
+          close: 42000,
+          volume: 100,
+        });
+      }
+
+      return candles;
+    },
+    formatPrice: async (symbol, price) => price.toFixed(8),
+    formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
+  });
+
+  let signalGenerated = false;
+
+  addStrategy({
+    strategyName: "test-sanitize-nan-prices",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+
+      // НЕВАЛИДНЫЙ СИГНАЛ: NaN в ценах
+      return {
+        position: "long",
+        note: "SANITIZE: NaN price test",
+        priceOpen: NaN, // КАТАСТРОФА! Все расчеты станут NaN!
+        priceTakeProfit: 43000,
+        priceStopLoss: 41000,
+        minuteEstimatedTime: 60,
+      };
+    },
+    callbacks: {
+      onSchedule: () => {
+        scheduledCount++;
+      },
+      onOpen: () => {
+        openedCount++;
+      },
+    },
+  });
+
+  addFrame({
+    frameName: "10m-sanitize-nan-prices",
+    interval: "1m",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-01T00:10:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+
+  try {
+    Backtest.background("BTCUSDT", {
+      strategyName: "test-sanitize-nan-prices",
+      exchangeName: "binance-sanitize-nan-prices",
+      frameName: "10m-sanitize-nan-prices",
+    });
+
+    await awaitSubject.toPromise();
+
+    if (scheduledCount === 0 && openedCount === 0) {
+      pass("MONEY SAFE: NaN price rejected! Signal with priceOpen=NaN was NOT executed. Calculation explosion prevented!");
+      return;
+    }
+
+    fail(`VALIDATION BUG: Signal with NaN price was executed! scheduledCount=${scheduledCount}, openedCount=${openedCount}. Signal with priceOpen=NaN should be rejected by VALIDATE_SIGNAL_FN.`);
+
+  } catch (error) {
+    const errMsg = error.message || String(error);
+    if (errMsg.includes("NaN") || errMsg.includes("finite") || errMsg.includes("number") || errMsg.includes("Invalid signal") || errMsg.includes("must be")) {
+      pass(`MONEY SAFE: NaN price rejected: ${errMsg.substring(0, 100)}`);
+    } else {
+      fail(`Unexpected error: ${errMsg}`);
+    }
+  }
+});
+
+/**
+ * КРИТИЧЕСКИЙ ТЕСТ #6: Infinity prices rejected - prevents overflow
+ *
+ * Проблема:
+ * - Infinity в ценах → расчеты переполняются
+ * - priceTakeProfit = Infinity → невозможно достичь TP, сигнал вечно активен
+ * - Математические операции с Infinity дают неопределенные результаты
+ *
+ * Защита: Все цены ДОЛЖНЫ быть конечными числами (not Infinity)
+ */
+test("SANITIZE: Infinity prices rejected - prevents overflow", async ({ pass, fail }) => {
+
+  let scheduledCount = 0;
+  let openedCount = 0;
+
+  addExchange({
+    exchangeName: "binance-sanitize-infinity-prices",
+    getCandles: async (_symbol, interval, since, limit) => {
+      const candles = [];
+      const intervalMs = 60000;
+
+      for (let i = 0; i < limit; i++) {
+        const timestamp = since.getTime() + i * intervalMs;
+        candles.push({
+          timestamp,
+          open: 42000,
+          high: 42100,
+          low: 41900,
+          close: 42000,
+          volume: 100,
+        });
+      }
+
+      return candles;
+    },
+    formatPrice: async (symbol, price) => price.toFixed(8),
+    formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
+  });
+
+  let signalGenerated = false;
+
+  addStrategy({
+    strategyName: "test-sanitize-infinity-prices",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+
+      // НЕВАЛИДНЫЙ СИГНАЛ: Infinity в ценах
+      return {
+        position: "long",
+        note: "SANITIZE: Infinity price test",
+        priceOpen: 42000,
+        priceTakeProfit: Infinity, // НЕВОЗМОЖНО достичь! Сигнал вечно активен!
+        priceStopLoss: 41000,
+        minuteEstimatedTime: 60,
+      };
+    },
+    callbacks: {
+      onSchedule: () => {
+        scheduledCount++;
+      },
+      onOpen: () => {
+        openedCount++;
+      },
+    },
+  });
+
+  addFrame({
+    frameName: "10m-sanitize-infinity-prices",
+    interval: "1m",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-01T00:10:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+
+  try {
+    Backtest.background("BTCUSDT", {
+      strategyName: "test-sanitize-infinity-prices",
+      exchangeName: "binance-sanitize-infinity-prices",
+      frameName: "10m-sanitize-infinity-prices",
+    });
+
+    await awaitSubject.toPromise();
+
+    if (scheduledCount === 0 && openedCount === 0) {
+      pass("MONEY SAFE: Infinity price rejected! Signal with priceTakeProfit=Infinity was NOT executed. Eternal signal prevented!");
+      return;
+    }
+
+    fail(`VALIDATION BUG: Signal with Infinity price was executed! scheduledCount=${scheduledCount}, openedCount=${openedCount}. Signal with priceTakeProfit=Infinity should be rejected by VALIDATE_SIGNAL_FN.`);
+
+  } catch (error) {
+    const errMsg = error.message || String(error);
+    if (errMsg.includes("Infinity") || errMsg.includes("finite") || errMsg.includes("number") || errMsg.includes("Invalid signal") || errMsg.includes("must be")) {
+      pass(`MONEY SAFE: Infinity price rejected: ${errMsg.substring(0, 100)}`);
+    } else {
+      fail(`Unexpected error: ${errMsg}`);
+    }
+  }
+});
