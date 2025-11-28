@@ -5075,6 +5075,19 @@ declare class ExchangeGlobalService {
 declare class StrategyGlobalService {
     private readonly loggerService;
     private readonly strategyConnectionService;
+    private readonly strategySchemaService;
+    private readonly riskValidationService;
+    private readonly strategyValidationService;
+    private readonly methodContextService;
+    /**
+     * Validates strategy and associated risk configuration.
+     *
+     * Memoized to avoid redundant validations for the same strategy.
+     * Logs validation activity.
+     * @param strategyName - Name of the strategy to validate
+     * @returns Promise that resolves when validation is complete
+     */
+    private validate;
     /**
      * Checks signal status at a specific timestamp.
      *
@@ -5118,7 +5131,7 @@ declare class StrategyGlobalService {
      *
      * @param strategyName - Name of strategy to clear from cache
      */
-    clear: (strategyName: StrategyName) => Promise<void>;
+    clear: (strategyName?: StrategyName) => Promise<void>;
 }
 
 /**
@@ -5149,6 +5162,7 @@ declare class FrameGlobalService {
 declare class SizingGlobalService {
     private readonly loggerService;
     private readonly sizingConnectionService;
+    private readonly sizingValidationService;
     /**
      * Calculates position size based on risk parameters.
      *
