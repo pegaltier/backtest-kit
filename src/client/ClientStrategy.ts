@@ -311,24 +311,28 @@ const CHECK_SCHEDULED_SIGNAL_PRICE_ACTIVATION_FN = (
   let shouldCancel = false;
 
   if (scheduled.position === "long") {
-    // Long = покупаем дешевле, ждем падения цены ДО priceOpen
-    if (currentPrice <= scheduled.priceOpen) {
-      shouldActivate = true;
-    }
+    // КРИТИЧНО: Сначала проверяем StopLoss (отмена приоритетнее активации)
     // Отмена если цена упала СЛИШКОМ низко (ниже SL)
     if (currentPrice <= scheduled.priceStopLoss) {
       shouldCancel = true;
     }
+    // Long = покупаем дешевле, ждем падения цены ДО priceOpen
+    // Активируем только если НЕ пробит StopLoss
+    else if (currentPrice <= scheduled.priceOpen) {
+      shouldActivate = true;
+    }
   }
 
   if (scheduled.position === "short") {
-    // Short = продаем дороже, ждем роста цены ДО priceOpen
-    if (currentPrice >= scheduled.priceOpen) {
-      shouldActivate = true;
-    }
+    // КРИТИЧНО: Сначала проверяем StopLoss (отмена приоритетнее активации)
     // Отмена если цена выросла СЛИШКОМ высоко (выше SL)
     if (currentPrice >= scheduled.priceStopLoss) {
       shouldCancel = true;
+    }
+    // Short = продаем дороже, ждем роста цены ДО priceOpen
+    // Активируем только если НЕ пробит StopLoss
+    else if (currentPrice >= scheduled.priceOpen) {
+      shouldActivate = true;
     }
   }
 
@@ -994,24 +998,28 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
     let shouldCancel = false;
 
     if (scheduled.position === "long") {
-      // Long = покупаем дешевле, ждем падения цены ДО priceOpen
-      if (candle.low <= scheduled.priceOpen) {
-        shouldActivate = true;
-      }
+      // КРИТИЧНО: Сначала проверяем StopLoss (отмена приоритетнее активации)
       // Отмена если цена упала СЛИШКОМ низко (ниже SL)
       if (candle.low <= scheduled.priceStopLoss) {
         shouldCancel = true;
       }
+      // Long = покупаем дешевле, ждем падения цены ДО priceOpen
+      // Активируем только если НЕ пробит StopLoss
+      else if (candle.low <= scheduled.priceOpen) {
+        shouldActivate = true;
+      }
     }
 
     if (scheduled.position === "short") {
-      // Short = продаем дороже, ждем роста цены ДО priceOpen
-      if (candle.high >= scheduled.priceOpen) {
-        shouldActivate = true;
-      }
+      // КРИТИЧНО: Сначала проверяем StopLoss (отмена приоритетнее активации)
       // Отмена если цена выросла СЛИШКОМ высоко (выше SL)
       if (candle.high >= scheduled.priceStopLoss) {
         shouldCancel = true;
+      }
+      // Short = продаем дороже, ждем роста цены ДО priceOpen
+      // Активируем только если НЕ пробит StopLoss
+      else if (candle.high >= scheduled.priceOpen) {
+        shouldActivate = true;
       }
     }
 

@@ -2,6 +2,8 @@ import "./config/setup.mjs"
 
 import { run } from 'worker-testbed';
 
+import "./e2e/defend.test.mjs"
+
 import "./e2e/timing.test.mjs";
 
 import "./e2e/risk.test.mjs";
@@ -23,6 +25,7 @@ import "./spec/event.test.mjs";
 import "./spec/validation.test.mjs";
 import "./spec/backtest.test.mjs";
 import "./spec/pnl.test.mjs";
+
 
 run(import.meta.url, () => {
     console.log("All tests are finished");
