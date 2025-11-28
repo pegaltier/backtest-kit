@@ -47,9 +47,18 @@ export class BacktestUtils {
       symbol,
       context,
     });
-    backtest.backtestMarkdownService.clear(context.strategyName);
-    backtest.scheduleMarkdownService.clear(context.strategyName);
-    backtest.strategyGlobalService.clear(context.strategyName);
+
+    {
+      backtest.backtestMarkdownService.clear(context.strategyName);
+      backtest.scheduleMarkdownService.clear(context.strategyName);
+    }
+
+
+    {
+      backtest.riskGlobalService.clear(context.strategyName);
+      backtest.strategyGlobalService.clear(context.strategyName);
+    }
+
     return backtest.backtestGlobalService.run(symbol, context);
   };
 

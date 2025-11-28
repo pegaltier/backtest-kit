@@ -67,6 +67,19 @@ export class RiskGlobalService {
     });
     await this.riskConnectionService.removeSignal(symbol, context);
   };
+
+  /**
+   * Clears risk data.
+   * If riskName is provided, clears data for that specific risk instance.
+   * If no riskName is provided, clears all risk data.
+   * @param riskName - Optional name of the risk instance to clear
+   */
+  public clear = async (riskName?: RiskName): Promise<void> => {
+    this.loggerService.log("riskGlobalService clear", {
+      riskName,
+    });
+    return await this.riskConnectionService.clear(riskName);
+  };
 }
 
 export default RiskGlobalService;
