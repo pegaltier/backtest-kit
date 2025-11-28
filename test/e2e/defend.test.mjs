@@ -110,7 +110,7 @@ test("DEFEND: LONG limit order activates BEFORE StopLoss (impossible to cancel p
   });
 
   await awaitSubject.toPromise();
-  await sleep(3000);
+  // await sleep(3000);
 
   if (!scheduledResult) {
     fail("CRITICAL: Scheduled signal was not created");
@@ -242,7 +242,7 @@ test("DEFEND: SHORT limit order activates BEFORE StopLoss (impossible to cancel 
   });
 
   await awaitSubject.toPromise();
-  await sleep(3000);
+  // await sleep(3000);
 
   if (!scheduledResult) {
     fail("CRITICAL: Scheduled signal was not created");
@@ -397,7 +397,7 @@ test("DEFEND: Scheduled signal activated and closed on same candle (instant TP)"
   });
 
   await awaitSubject.toPromise();
-  await sleep(3000);
+  // await sleep(3000);
 
   if (!scheduledResult) {
     fail("CRITICAL: Scheduled signal was not created");
@@ -838,6 +838,322 @@ test("DEFEND: Invalid StopLoss rejected (LONG: SL >= priceOpen)", async ({ pass,
     const errMsg = error.message || String(error);
     if (errMsg.includes("priceStopLoss") || errMsg.includes("priceOpen") || errMsg.includes("Invalid signal")) {
       pass(`MONEY SAFE: Invalid LONG SL rejected: ${errMsg.substring(0, 100)}`);
+    } else {
+      fail(`Unexpected error: ${errMsg}`);
+    }
+  }
+});
+
+/**
+ * КРИТИЧЕСКИЙ ТЕСТ #8: Нулевой или отсутствующий StopLoss отклоняется
+ *
+ * Проблема:
+ * - priceStopLoss = 0 → один флеш-краш может обнулить депозит
+ * - priceStopLoss = undefined → неограниченные убытки
+ * - КРИТИЧНО: StopLoss ОБЯЗАТЕЛЕН для защиты капитала
+ *
+ * Защита: priceStopLoss ДОЛЖЕН быть > 0 и определен
+ */
+test("DEFEND: Zero or missing StopLoss rejected - prevents unlimited losses", async ({ pass, fail }) => {
+
+  let scheduledCount = 0;
+  let openedCount = 0;
+
+  addExchange({
+    exchangeName: "binance-defend-zero-sl",
+    getCandles: async (_symbol, interval, since, limit) => {
+      const candles = [];
+      const intervalMs = 60000;
+
+      for (let i = 0; i < limit; i++) {
+        const timestamp = since.getTime() + i * intervalMs;
+        candles.push({
+          timestamp,
+          open: 42000,
+          high: 42100,
+          low: 41900,
+          close: 42000,
+          volume: 100,
+        });
+      }
+
+      return candles;
+    },
+    formatPrice: async (symbol, price) => price.toFixed(8),
+    formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
+  });
+
+  let signalGenerated = false;
+
+  addStrategy({
+    strategyName: "test-defend-zero-sl",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+
+      // ОПАСНЫЙ СИГНАЛ: StopLoss = 0 (или undefined)
+      return {
+        position: "long",
+        note: "DEFEND: zero StopLoss test - unlimited risk",
+        priceOpen: 42000,
+        priceTakeProfit: 43000,
+        priceStopLoss: 0, // ОПАСНО! Неограниченный риск!
+        minuteEstimatedTime: 60,
+      };
+    },
+    callbacks: {
+      onSchedule: () => {
+        scheduledCount++;
+      },
+      onOpen: () => {
+        openedCount++;
+      },
+    },
+  });
+
+  addFrame({
+    frameName: "10m-defend-zero-sl",
+    interval: "1m",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-01T00:10:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+
+  try {
+    Backtest.background("BTCUSDT", {
+      strategyName: "test-defend-zero-sl",
+      exchangeName: "binance-defend-zero-sl",
+      frameName: "10m-defend-zero-sl",
+    });
+
+    await awaitSubject.toPromise();
+
+    if (scheduledCount === 0 && openedCount === 0) {
+      pass("MONEY SAFE: Zero StopLoss rejected! Signal was NOT executed. Capital protected from unlimited losses!");
+      return;
+    }
+
+    fail(`CRITICAL BUG: Signal with ZERO StopLoss was executed! scheduledCount=${scheduledCount}, openedCount=${openedCount}. Flash crash could wipe account!`);
+
+  } catch (error) {
+    const errMsg = error.message || String(error);
+    if (errMsg.includes("StopLoss") || errMsg.includes("priceStopLoss") || errMsg.includes("zero") || errMsg.includes("Invalid signal")) {
+      pass(`MONEY SAFE: Zero StopLoss rejected: ${errMsg.substring(0, 100)}`);
+    } else {
+      fail(`Unexpected error: ${errMsg}`);
+    }
+  }
+});
+
+/**
+ * КРИТИЧЕСКИЙ ТЕСТ #9: SHORT сигнал с инвертированной логикой TP/SL отклоняется
+ *
+ * Проблема:
+ * - SHORT требует: TP < priceOpen < SL
+ * - Но получает: priceOpen < TP (инвертированная логика LONG)
+ * - Сигнал будет ждать РОСТА цены вместо падения
+ * - Математически невозможный сценарий для SHORT позиции
+ *
+ * Защита: Валидация SHORT: TP < priceOpen < SL
+ */
+test("DEFEND: SHORT signal with inverted TP/SL rejected (TP > priceOpen)", async ({ pass, fail }) => {
+
+  let scheduledCount = 0;
+  let openedCount = 0;
+
+  addExchange({
+    exchangeName: "binance-defend-inverted-short",
+    getCandles: async (_symbol, interval, since, limit) => {
+      const candles = [];
+      const intervalMs = 60000;
+
+      for (let i = 0; i < limit; i++) {
+        const timestamp = since.getTime() + i * intervalMs;
+        candles.push({
+          timestamp,
+          open: 42000,
+          high: 42100,
+          low: 41900,
+          close: 42000,
+          volume: 100,
+        });
+      }
+
+      return candles;
+    },
+    formatPrice: async (symbol, price) => price.toFixed(8),
+    formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
+  });
+
+  let signalGenerated = false;
+
+  addStrategy({
+    strategyName: "test-defend-inverted-short",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+
+      // НЕВАЛИДНЫЙ СИГНАЛ: SHORT с TP > priceOpen (должно быть TP < priceOpen)
+      // SHORT = продаем по priceOpen, ждем падения до TP
+      // Но здесь TP=43000 > priceOpen=42000 → инвертированная логика!
+      return {
+        position: "short",
+        note: "DEFEND: inverted SHORT logic - TP above priceOpen",
+        priceOpen: 42000,
+        priceTakeProfit: 43000, // ОШИБКА! Должно быть < 42000
+        priceStopLoss: 44000,
+        minuteEstimatedTime: 60,
+      };
+    },
+    callbacks: {
+      onSchedule: () => {
+        scheduledCount++;
+      },
+      onOpen: () => {
+        openedCount++;
+      },
+    },
+  });
+
+  addFrame({
+    frameName: "10m-defend-inverted-short",
+    interval: "1m",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-01T00:10:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+
+  try {
+    Backtest.background("BTCUSDT", {
+      strategyName: "test-defend-inverted-short",
+      exchangeName: "binance-defend-inverted-short",
+      frameName: "10m-defend-inverted-short",
+    });
+
+    await awaitSubject.toPromise();
+
+    if (scheduledCount === 0 && openedCount === 0) {
+      pass("MONEY SAFE: Inverted SHORT logic rejected! Signal with TP > priceOpen was NOT executed. Logic error caught!");
+      return;
+    }
+
+    fail(`LOGIC BUG: SHORT signal with INVERTED logic (TP > priceOpen) was executed! scheduledCount=${scheduledCount}, openedCount=${openedCount}. This violates SHORT position rules!`);
+
+  } catch (error) {
+    const errMsg = error.message || String(error);
+    if (errMsg.includes("TakeProfit") || errMsg.includes("SHORT") || errMsg.includes("priceOpen") || errMsg.includes("Invalid signal")) {
+      pass(`MONEY SAFE: Inverted SHORT logic rejected: ${errMsg.substring(0, 100)}`);
+    } else {
+      fail(`Unexpected error: ${errMsg}`);
+    }
+  }
+});
+
+/**
+ * КРИТИЧЕСКИЙ ТЕСТ #10: Нулевое время жизни сигнала отклоняется (minuteEstimatedTime = 0)
+ *
+ * Проблема:
+ * - minuteEstimatedTime = 0 → сигнал закроется мгновенно по timeout
+ * - Комиссии списались, но сигнал не успел отработать
+ * - Гарантированный убыток на комиссиях без шанса на профит
+ *
+ * Защита: Минимальное время жизни сигнала (например, ≥5 минут)
+ */
+test("DEFEND: Zero minuteEstimatedTime rejected - prevents instant timeout", async ({ pass, fail }) => {
+
+  let scheduledCount = 0;
+  let openedCount = 0;
+
+  addExchange({
+    exchangeName: "binance-defend-zero-time",
+    getCandles: async (_symbol, interval, since, limit) => {
+      const candles = [];
+      const intervalMs = 60000;
+
+      for (let i = 0; i < limit; i++) {
+        const timestamp = since.getTime() + i * intervalMs;
+        candles.push({
+          timestamp,
+          open: 42000,
+          high: 42100,
+          low: 41900,
+          close: 42000,
+          volume: 100,
+        });
+      }
+
+      return candles;
+    },
+    formatPrice: async (symbol, price) => price.toFixed(8),
+    formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
+  });
+
+  let signalGenerated = false;
+
+  addStrategy({
+    strategyName: "test-defend-zero-time",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+
+      // ОПАСНЫЙ СИГНАЛ: minuteEstimatedTime = 0
+      // Сигнал закроется мгновенно по timeout
+      return {
+        position: "long",
+        note: "DEFEND: zero time test - instant timeout",
+        priceOpen: 42000,
+        priceTakeProfit: 43000,
+        priceStopLoss: 41000,
+        minuteEstimatedTime: 0, // ОПАСНО! Мгновенное закрытие!
+      };
+    },
+    callbacks: {
+      onSchedule: () => {
+        scheduledCount++;
+      },
+      onOpen: () => {
+        openedCount++;
+      },
+    },
+  });
+
+  addFrame({
+    frameName: "10m-defend-zero-time",
+    interval: "1m",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-01T00:10:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+
+  try {
+    Backtest.background("BTCUSDT", {
+      strategyName: "test-defend-zero-time",
+      exchangeName: "binance-defend-zero-time",
+      frameName: "10m-defend-zero-time",
+    });
+
+    await awaitSubject.toPromise();
+
+    if (scheduledCount === 0 && openedCount === 0) {
+      pass("MONEY SAFE: Zero minuteEstimatedTime rejected! Signal was NOT executed. Instant timeout prevented!");
+      return;
+    }
+
+    fail(`CRITICAL BUG: Signal with ZERO minuteEstimatedTime was executed! scheduledCount=${scheduledCount}, openedCount=${openedCount}. This guarantees fee loss!`);
+
+  } catch (error) {
+    const errMsg = error.message || String(error);
+    if (errMsg.includes("minuteEstimatedTime") || errMsg.includes("time") || errMsg.includes("zero") || errMsg.includes("Invalid signal")) {
+      pass(`MONEY SAFE: Zero minuteEstimatedTime rejected: ${errMsg.substring(0, 100)}`);
     } else {
       fail(`Unexpected error: ${errMsg}`);
     }
