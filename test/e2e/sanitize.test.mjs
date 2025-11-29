@@ -792,3 +792,170 @@ test("SANITIZE: Incomplete Binance candles rejected (anomalous prices) - prevent
 
   fail(`Unexpected error (expected incomplete candle validation error): ${errMsg}`);
 });
+
+/**
+ * БАЗОВЫЙ ТЕСТ #8: Система вообще работает - открывает и закрывает позиции
+ *
+ * Проблема:
+ * - Если все предыдущие тесты проверяют что ПЛОХОЕ отклоняется,
+ * - то этот тест проверяет что ХОРОШЕЕ работает!
+ * - Санитарная проверка: система должна уметь торговать в принципе
+ *
+ * Защита: Базовая функциональность
+ * - Сигнал создается (scheduled)
+ * - Сигнал активируется (opened) когда цена достигает priceOpen
+ * - Сигнал закрывается (closed) когда цена достигает TP
+ * - PNL положительный (прибыль)
+ */
+test("SANITIZE: Basic trading works - system can open and close positions", async ({ pass, fail }) => {
+
+  let scheduledResult = null;
+  let openedResult = null;
+  let closedResult = null;
+
+  addExchange({
+    exchangeName: "binance-sanitize-basic-trading",
+    getCandles: async (_symbol, _interval, since, limit) => {
+      const candles = [];
+      const intervalMs = 60000;
+
+      for (let i = 0; i < limit; i++) {
+        const timestamp = since.getTime() + i * intervalMs;
+
+        if (i < 5) {
+          // Первые 5 свечей: цена выше priceOpen (сигнал ждет активации)
+          // ВАЖНО: low должен быть ВЫШЕ StopLoss=41000!
+          candles.push({
+            timestamp,
+            open: 43000,
+            high: 43100,
+            low: 42900,  // Выше SL=41000, выше priceOpen=42000
+            close: 43000,
+            volume: 100,
+          });
+        } else if (i >= 5 && i < 10) {
+          // Следующие 5 свечей: цена достигает priceOpen=42000 (сигнал активируется)
+          // low=41900 <= priceOpen=42000 → активация!
+          candles.push({
+            timestamp,
+            open: 42000,
+            high: 42100,
+            low: 41900,  // Ниже priceOpen=42000, но выше SL=41000
+            close: 42000,
+            volume: 100,
+          });
+        } else {
+          // Остальные свечи: цена достигает TP=43000 (сигнал закрывается)
+          candles.push({
+            timestamp,
+            open: 43000,
+            high: 43100,
+            low: 42900,
+            close: 43000,
+            volume: 100,
+          });
+        }
+      }
+
+      return candles;
+    },
+    formatPrice: async (_symbol, price) => price.toFixed(8),
+    formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
+  });
+
+  let signalGenerated = false;
+
+  addStrategy({
+    strategyName: "test-sanitize-basic-trading",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+
+      return {
+        position: "long",
+        note: "SANITIZE: basic trading test",
+        priceOpen: 42000,
+        priceTakeProfit: 43000,
+        priceStopLoss: 41000,
+        minuteEstimatedTime: 60,
+      };
+    },
+    callbacks: {
+      onSchedule: (_symbol, data) => {
+        scheduledResult = data;
+      },
+      onOpen: (_symbol, data) => {
+        openedResult = data;
+      },
+      onClose: (_symbol, data, priceClose) => {
+        closedResult = { signal: data, priceClose };
+      },
+    },
+  });
+
+  addFrame({
+    frameName: "30m-sanitize-basic-trading",
+    interval: "1m",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-01T00:30:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+
+  let finalResult = null;
+  listenSignalBacktest((result) => {
+    if (result.action === "closed") {
+      finalResult = result;
+    }
+  });
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-sanitize-basic-trading",
+    exchangeName: "binance-sanitize-basic-trading",
+    frameName: "30m-sanitize-basic-trading",
+  });
+
+  await awaitSubject.toPromise();
+  await sleep(1000);
+
+  // КРИТИЧЕСКАЯ ПРОВЕРКА #1: Сигнал должен быть создан (scheduled)
+  if (!scheduledResult) {
+    fail("SYSTEM BROKEN: Signal was NOT scheduled! Basic trading functionality broken!");
+    return;
+  }
+
+  // КРИТИЧЕСКАЯ ПРОВЕРКА #2: Сигнал должен быть открыт (opened)
+  if (!openedResult) {
+    fail("SYSTEM BROKEN: Signal was NOT opened! Price reached priceOpen=42000 but signal didn't activate!");
+    return;
+  }
+
+  // КРИТИЧЕСКАЯ ПРОВЕРКА #3: Сигнал должен быть закрыт (closed)
+  if (!closedResult || !finalResult) {
+    fail("SYSTEM BROKEN: Signal was NOT closed! Price reached TP=43000 but signal didn't close!");
+    return;
+  }
+
+  // КРИТИЧЕСКАЯ ПРОВЕРКА #4: Закрытие должно быть по TP (не по SL)
+  if (finalResult.closeReason !== "take_profit") {
+    fail(`LOGIC BUG: Expected close by "take_profit", got "${finalResult.closeReason}". Price reached TP=43000!`);
+    return;
+  }
+
+  // КРИТИЧЕСКАЯ ПРОВЕРКА #5: PNL должен быть положительный (прибыль)
+  if (finalResult.pnl.pnlPercentage <= 0) {
+    fail(`LOGIC BUG: Expected positive PNL (profit from TP), got ${finalResult.pnl.pnlPercentage.toFixed(2)}%`);
+    return;
+  }
+
+  // КРИТИЧЕСКАЯ ПРОВЕРКА #6: PNL должен быть разумным (~2.38% для priceOpen=42000, TP=43000)
+  const expectedPnl = ((43000 - 42000) / 42000) * 100; // ~2.38%
+  if (Math.abs(finalResult.pnl.pnlPercentage - expectedPnl) > 0.5) {
+    fail(`LOGIC BUG: PNL mismatch! Expected ~${expectedPnl.toFixed(2)}%, got ${finalResult.pnl.pnlPercentage.toFixed(2)}%`);
+    return;
+  }
+
+  pass(`SYSTEM WORKS: Basic trading successful! Signal: scheduled -> opened -> closed by TP. PNL: ${finalResult.pnl.pnlPercentage.toFixed(2)}% (expected ~${expectedPnl.toFixed(2)}%)`);
+});
