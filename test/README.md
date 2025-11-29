@@ -273,6 +273,13 @@ test("Basic trading: scheduled → opened → closed", async ({ pass, fail }) =>
 - **Тест #3**: SHORT position closes by stop_loss (SHORT закрывается по SL с убытком)
 - **Тест #4**: LONG activates when candle.low exactly equals priceOpen (граничный случай)
 - **Тест #5**: Small profit (0.5%) passes validation (маленький профит проходит валидацию)
+- **Тест #6**: LONG position closes by stop_loss (LONG закрывается по SL с убытком)
+
+### test/e2e/edge.test.mjs
+Тесты граничных случаев и edge cases:
+- **Тест #1**: Scheduled SHORT cancelled by SL BEFORE activation (отмена SHORT scheduled по SL)
+- **Тест #2**: getAveragePrice works with zero volume (VWAP при нулевом volume)
+- **Тест #3**: Very large profit (>100%) passes validation (огромный профит >100%)
 
 ## Отладка тестов
 

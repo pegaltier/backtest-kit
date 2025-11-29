@@ -699,3 +699,152 @@ test("CLOSE: Small profit (0.5%) passes validation and yields profit", async ({ 
   const expectedPnl = ((42210 - 42000) / 42000) * 100; // ~0.5%
   pass(`SMALL PROFIT WORKS: 0.5% profit signal passed validation and yielded profit. PNL: ${finalResult.pnl.pnlPercentage.toFixed(2)}% (expected ~${expectedPnl.toFixed(2)}%). Small profits work!`);
 });
+
+
+/**
+ * ТЕСТ #6: LONG закрывается по StopLoss с убытком
+ *
+ * Сценарий:
+ * - LONG: priceOpen=42000, TP=43000, SL=41000
+ * - Цена ПАДАЕТ ниже SL=41000
+ * - КРИТИЧНО: LONG должен закрыться по StopLoss с убытком
+ */
+test("CLOSE: LONG position closes by stop_loss when price falls below SL", async ({ pass, fail }) => {
+
+  let scheduledResult = null;
+  let openedResult = null;
+  let closedResult = null;
+
+  addExchange({
+    exchangeName: "binance-close-long-sl",
+    getCandles: async (_symbol, _interval, since, limit) => {
+      const candles = [];
+      const intervalMs = 60000;
+
+      for (let i = 0; i < limit; i++) {
+        const timestamp = since.getTime() + i * intervalMs;
+
+        if (i < 5) {
+          // Фаза 1: Ждем активации (цена выше priceOpen)
+          candles.push({
+            timestamp,
+            open: 43000,
+            high: 43100,
+            low: 42900,
+            close: 43000,
+            volume: 100,
+          });
+        } else if (i >= 5 && i < 10) {
+          // Фаза 2: Активация (цена достигает priceOpen)
+          candles.push({
+            timestamp,
+            open: 42000,
+            high: 42100,
+            low: 41900,
+            close: 42000,
+            volume: 100,
+          });
+        } else {
+          // Фаза 3: Цена ПАДАЕТ ниже SL=41000 (LONG закрывается по SL)
+          candles.push({
+            timestamp,
+            open: 41000,
+            high: 41100,
+            low: 40900,  // <= SL=41000 → закрытие по SL!
+            close: 41000,
+            volume: 100,
+          });
+        }
+      }
+
+      return candles;
+    },
+    formatPrice: async (_symbol, price) => price.toFixed(8),
+    formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
+  });
+
+  let signalGenerated = false;
+
+  addStrategy({
+    strategyName: "test-close-long-sl",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+
+      return {
+        position: "long",
+        note: "CLOSE: LONG stop_loss test",
+        priceOpen: 42000,
+        priceTakeProfit: 43000,  // LONG: TP выше priceOpen
+        priceStopLoss: 41000,    // LONG: SL ниже priceOpen
+        minuteEstimatedTime: 60,
+      };
+    },
+    callbacks: {
+      onSchedule: (_symbol, data) => {
+        scheduledResult = data;
+      },
+      onOpen: (_symbol, data) => {
+        openedResult = data;
+      },
+      onClose: (_symbol, data, priceClose) => {
+        closedResult = { signal: data, priceClose };
+      },
+    },
+  });
+
+  addFrame({
+    frameName: "30m-close-long-sl",
+    interval: "1m",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-01T00:30:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+
+  let finalResult = null;
+  listenSignalBacktest((result) => {
+    if (result.action === "closed") {
+      finalResult = result;
+    }
+  });
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-close-long-sl",
+    exchangeName: "binance-close-long-sl",
+    frameName: "30m-close-long-sl",
+  });
+
+  await awaitSubject.toPromise();
+
+  if (!scheduledResult) {
+    fail("LONG signal was NOT scheduled!");
+    return;
+  }
+
+  if (!openedResult) {
+    fail("LONG signal was NOT opened!");
+    return;
+  }
+
+  if (!closedResult || !finalResult) {
+    fail("LONG signal was NOT closed!");
+    return;
+  }
+
+  // КРИТИЧЕСКАЯ ПРОВЕРКА: Закрытие должно быть по stop_loss
+  if (finalResult.closeReason !== "stop_loss") {
+    fail(`LOGIC BUG: Expected close by "stop_loss", got "${finalResult.closeReason}". LONG should close when price falls below SL=41000!`);
+    return;
+  }
+
+  // КРИТИЧЕСКАЯ ПРОВЕРКА: PNL должен быть отрицательный (убыток)
+  if (finalResult.pnl.pnlPercentage >= 0) {
+    fail(`LOGIC BUG: Expected negative PNL (loss from SL), got ${finalResult.pnl.pnlPercentage.toFixed(2)}%`);
+    return;
+  }
+
+  pass(`LONG SL WORKS: LONG closed by stop_loss with loss. PNL: ${finalResult.pnl.pnlPercentage.toFixed(2)}%. LONG StopLoss protection works!`);
+});
