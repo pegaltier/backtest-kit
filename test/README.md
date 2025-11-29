@@ -255,7 +255,8 @@ test("Basic trading: scheduled → opened → closed", async ({ pass, fail }) =>
 - **Тест #5**: NaN prices rejected
 - **Тест #6**: Infinity prices rejected
 - **Тест #7**: Incomplete Binance candles rejected (аномальные цены)
-- **Тест #8**: Basic trading works (базовая торговля)
+- **Тест #8**: Basic LONG trading works (базовая торговля LONG)
+- **Тест #9**: Basic SHORT trading works (базовая торговля SHORT)
 
 ### test/e2e/defend.test.mjs
 Тесты защиты от потери денег:
@@ -264,6 +265,14 @@ test("Basic trading: scheduled → opened → closed", async ({ pass, fail }) =>
 - **Тест #14**: Extreme volatility - TP vs SL приоритет
 - **Тест #15**: Exchange.getCandles throws error
 - **Тест #16**: listenSignalBacktest throws error
+
+### test/e2e/close.test.mjs
+Тесты закрытия позиций и граничных случаев:
+- **Тест #1**: Position closes by time_expired (закрытие по истечению времени)
+- **Тест #2**: Scheduled signal cancelled by time_expired (отмена scheduled по времени)
+- **Тест #3**: SHORT position closes by stop_loss (SHORT закрывается по SL с убытком)
+- **Тест #4**: LONG activates when candle.low exactly equals priceOpen (граничный случай)
+- **Тест #5**: Small profit (0.5%) passes validation (маленький профит проходит валидацию)
 
 ## Отладка тестов
 

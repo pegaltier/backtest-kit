@@ -4,6 +4,7 @@ import { run } from 'worker-testbed';
 
 import "./e2e/other.test.mjs"
 import "./e2e/defend.test.mjs"
+import "./e2e/close.test.mjs"
 import "./e2e/sanitize.test.mjs"
 import "./e2e/timing.test.mjs";
 import "./e2e/risk.test.mjs";
