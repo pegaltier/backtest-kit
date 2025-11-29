@@ -646,6 +646,8 @@ interface IStrategyCallbacks {
     onSchedule: (symbol: string, data: IScheduledSignalRow, currentPrice: number, backtest: boolean) => void;
     /** Called when scheduled signal is cancelled without opening position */
     onCancel: (symbol: string, data: IScheduledSignalRow, currentPrice: number, backtest: boolean) => void;
+    /** Called when signal is written to persist storage (for testing) */
+    onWrite: (symbol: string, data: ISignalRow | null, backtest: boolean) => void;
 }
 /**
  * Strategy schema registered via addStrategy().
