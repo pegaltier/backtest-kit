@@ -261,7 +261,7 @@ Check out the sections below for detailed examples! 📚
 
 ### 1. Register Exchange Data Source
 
-You can plug any data source—CCXT for live data or a database for faster backtesting:
+You can plug any data source: CCXT for live data or a database for faster backtesting:
 
 ```typescript
 import { addExchange } from "backtest-kit";
