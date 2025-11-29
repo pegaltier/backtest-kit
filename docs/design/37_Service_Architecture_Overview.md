@@ -11,7 +11,6 @@ The service layer implements a 6-layer architecture where each layer has a speci
 
 The service layer isolates business logic (Client classes) from framework concerns (validation, context propagation, persistence, reporting). Client classes have no DI dependencies and receive all parameters explicitly, while services handle cross-cutting concerns through dependency injection.
 
-**Sources:** [src/lib/index.ts:1-170](), [src/lib/core/provide.ts:1-111](), [docs/internals.md:28-40]()
 
 ## Service Type Hierarchy
 
@@ -19,7 +18,6 @@ The framework organizes services into six categories, each with a distinct purpo
 
 ![Mermaid Diagram](./diagrams/37_Service_Architecture_Overview_0.svg)
 
-**Sources:** [src/lib/index.ts:49-162](), [src/lib/core/types.ts:1-81](), [docs/internals.md:28-40]()
 
 ## Service Organization in Code
 
@@ -43,7 +41,6 @@ The dependency injection container is initialized through three files:
 2. **[src/lib/core/provide.ts]()**: Binds service implementations to tokens using `provide()`
 3. **[src/lib/index.ts]()**: Injects services using `inject<T>()` and exports the unified `backtest` object
 
-**Sources:** [src/lib/index.ts:1-170](), [src/lib/core/types.ts:1-81](), [src/lib/core/provide.ts:1-111]()
 
 ## Dependency Injection System
 
@@ -53,7 +50,6 @@ Services use Symbol-based dependency injection for type-safe resolution. Each se
 
 Services receive dependencies through constructor injection. The DI container resolves the dependency graph at initialization time via `init()` called in [src/lib/index.ts:164]().
 
-**Sources:** [src/lib/core/types.ts:1-81](), [src/lib/core/provide.ts:1-111](), [src/lib/index.ts:1-170]()
 
 ## Service Type Responsibilities
 
@@ -107,7 +103,6 @@ Subscribe to event emitters and generate performance reports. Markdown services 
 
 **Implementations:** `BacktestMarkdownService`, `LiveMarkdownService`, `ScheduleMarkdownService`, `PerformanceMarkdownService`, `WalkerMarkdownService`, `HeatMarkdownService`
 
-**Sources:** [src/lib/services/schema/](), [src/lib/services/validation/](), [src/lib/services/connection/](), [src/lib/services/global/](), [src/lib/services/logic/](), [src/lib/services/markdown/]()
 
 ## Service Dependency Flow
 
@@ -115,7 +110,6 @@ Services form a dependency chain from public API to Client classes:
 
 ![Mermaid Diagram](./diagrams/37_Service_Architecture_Overview_2.svg)
 
-**Sources:** [src/lib/index.ts:1-170](), [src/lib/services/global/](), [src/lib/services/logic/](), [src/lib/services/connection/]()
 
 ## Component-Specific Service Groups
 
@@ -125,7 +119,6 @@ Services are organized around six component types (Strategy, Exchange, Frame, Wa
 
 The pattern is consistent across all components: Global → Validation/Logic → Connection → Schema → Client. This uniformity makes the codebase predictable and maintainable.
 
-**Sources:** [src/lib/core/types.ts:1-81](), [src/lib/index.ts:49-162](), [src/lib/core/provide.ts:1-111]()
 
 ## Context Propagation Through Services
 
@@ -134,5 +127,4 @@ Services use `MethodContextService` and `ExecutionContextService` from `di-scope
 ![Mermaid Diagram](./diagrams/37_Service_Architecture_Overview_4.svg)
 
 Services at any depth can resolve `MethodContextService` or `ExecutionContextService` via DI to access context without it being passed as parameters. This enables clean APIs where strategy authors call `getCandles(symbol, interval, limit)` instead of `getCandles(symbol, interval, limit, context)`.
-
-**Sources:** [src/lib/services/context/ExecutionContextService.ts](), [src/lib/services/context/MethodContextService.ts](), [src/lib/services/logic/public/]()
+

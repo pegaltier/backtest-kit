@@ -24,7 +24,6 @@ The framework supports six types of components that can be registered:
 
 Each component is identified by a unique name (`strategyName`, `exchangeName`, etc.) and stored in a corresponding schema service.
 
-**Sources:** [src/function/add.ts:1-342]()
 
 ---
 
@@ -38,7 +37,6 @@ All registration functions follow the same pattern: accept a schema object and s
 
 **Diagram: Registration Function Flow**
 
-**Sources:** [src/function/add.ts:50-341](), [types.d.ts:186-221](), [types.d.ts:615-633]()
 
 ### addStrategy
 
@@ -73,7 +71,6 @@ addStrategy({
 });
 ```
 
-**Sources:** [src/function/add.ts:50-62](), [types.d.ts:615-633]()
 
 ### addExchange
 
@@ -99,7 +96,6 @@ addExchange({
 });
 ```
 
-**Sources:** [src/function/add.ts:99-111](), [types.d.ts:186-221]()
 
 ### addFrame
 
@@ -122,7 +118,6 @@ addFrame({
 });
 ```
 
-**Sources:** [src/function/add.ts:143-149](), [types.d.ts:327-341]()
 
 ### addRisk
 
@@ -150,7 +145,6 @@ addRisk({
 });
 ```
 
-**Sources:** [src/function/add.ts:329-341](), [types.d.ts:478-488]()
 
 ### addSizing
 
@@ -171,7 +165,6 @@ addSizing({
 });
 ```
 
-**Sources:** [src/function/add.ts:254-265](), [types.d.ts:1-1500]() (ISizingSchema types)
 
 ### addWalker
 
@@ -195,7 +188,6 @@ addWalker({
 });
 ```
 
-**Sources:** [src/function/add.ts:188-199](), [types.d.ts:1014-1032]()
 
 ---
 
@@ -235,7 +227,6 @@ export function addStrategy(strategySchema: IStrategySchema) {
 }
 ```
 
-**Sources:** [src/function/add.ts:50-62](), [src/function/add.ts:99-111](), [src/function/add.ts:143-149]()
 
 ---
 
@@ -254,7 +245,6 @@ The dependency injection configuration is defined in:
 - Service binding: [src/lib/core/provide.ts:62-68]()
 - Service injection: [src/lib/index.ts:80-91]()
 
-**Sources:** [src/lib/core/types.ts:18-25](), [src/lib/core/provide.ts:62-68](), [src/lib/index.ts:80-91]()
 
 ### ToolRegistry Pattern
 
@@ -272,7 +262,6 @@ This pattern enables:
 - **Duplicate prevention**: Registration fails if name already exists
 - **Runtime introspection**: All schemas can be listed for debugging
 
-**Sources:** [src/lib/index.ts:80-91]()
 
 ---
 
@@ -295,7 +284,6 @@ Validation services are bound in the DI container:
 
 Validation services use memoization to cache validation results per component name. This ensures validation only runs once per component, even if the schema is retrieved multiple times during execution.
 
-**Sources:** [src/lib/core/types.ts:59-66](), [src/lib/core/provide.ts:103-109](), [src/lib/index.ts:143-150]()
 
 ---
 
@@ -331,7 +319,6 @@ console.log(strategies);
 
 These functions delegate to the validation services' `list()` method, which returns all schemas stored in the registry.
 
-**Sources:** [src/function/list.ts:41-217]()
 
 ---
 
@@ -352,7 +339,6 @@ Key points:
 
 For details on client instantiation, see [Connection Services](./38_Connection_Services.md). For execution orchestration, see [Execution Modes](./06_Execution_Modes.md).
 
-**Sources:** [src/function/add.ts:1-342](), [types.d.ts:186-633]()
 
 ---
 
@@ -370,5 +356,4 @@ The complete DI setup is defined across three files:
 1. Token symbols: [src/lib/core/types.ts:1-81]()
 2. Service binding: [src/lib/core/provide.ts:1-111]()
 3. Service injection: [src/lib/index.ts:1-170]()
-
-**Sources:** [src/lib/core/types.ts:1-81](), [src/lib/core/provide.ts:1-111](), [src/lib/index.ts:1-170]()
+

@@ -22,7 +22,6 @@ The public API is organized into six functional groups, all exported from the ma
 | **Event Listeners** | Subscribe to signal lifecycle events | `listenSignal()`, `listenSignalBacktest()`, `listenSignalLive()`, and `Once` variants |
 | **Setup Functions** | Configure framework behavior | `setLogger()`, `PersistSignalAdaper.usePersistSignalAdapter()` |
 
-**Sources:** [src/index.ts:1-56](), [types.d.ts:1-1410]()
 
 ## API Function Mapping
 
@@ -30,7 +29,6 @@ This diagram maps public API functions to their concrete implementations in the 
 
 ![Mermaid Diagram](./diagrams/14_Public_API_Reference_1.svg)
 
-**Sources:** [src/index.ts:1-56](), [src/function/add.ts](), [src/classes/Backtest.ts](), [src/classes/Live.ts](), [src/function/exchange.ts](), [src/function/event.ts]()
 
 ## Configuration Functions
 
@@ -80,7 +78,6 @@ addStrategy({
 });
 ```
 
-**Sources:** [types.d.ts:409-422](), [types.d.ts:546-579](), [src/function/add.ts]()
 
 ### addExchange()
 
@@ -124,7 +121,6 @@ addExchange({
 });
 ```
 
-**Sources:** [types.d.ts:137-171](), [types.d.ts:580-615](), [src/function/add.ts]()
 
 ### addFrame()
 
@@ -163,7 +159,6 @@ addFrame({
 });
 ```
 
-**Sources:** [types.d.ts:259-289](), [types.d.ts:617-646](), [src/function/add.ts]()
 
 ## Backtest Execution API
 
@@ -214,7 +209,6 @@ for await (const result of Backtest.run("BTCUSDT", {
 }
 ```
 
-**Sources:** [types.d.ts:1127-1233](), [src/classes/Backtest.ts]()
 
 ### Backtest.background()
 
@@ -248,7 +242,6 @@ const cancel = await Backtest.background("BTCUSDT", {
 setTimeout(() => cancel(), 10000);
 ```
 
-**Sources:** [types.d.ts:1165-1185](), [src/classes/Backtest.ts]()
 
 ### Backtest.getReport()
 
@@ -273,7 +266,6 @@ const markdown = await Backtest.getReport("momentum-strategy");
 console.log(markdown);
 ```
 
-**Sources:** [types.d.ts:1186-1197](), [src/classes/Backtest.ts]()
 
 ### Backtest.dump()
 
@@ -302,7 +294,6 @@ await Backtest.dump("momentum-strategy");
 await Backtest.dump("momentum-strategy", "./reports");
 ```
 
-**Sources:** [types.d.ts:1198-1214](), [src/classes/Backtest.ts]()
 
 ## Live Trading API
 
@@ -349,7 +340,6 @@ for await (const result of Live.run("BTCUSDT", {
 }
 ```
 
-**Sources:** [types.d.ts:1236-1349](), [src/classes/Live.ts]()
 
 ### Live.background()
 
@@ -381,7 +371,6 @@ const cancel = await Live.background("BTCUSDT", {
 process.on('SIGTERM', () => cancel());
 ```
 
-**Sources:** [types.d.ts:1280-1303](), [src/classes/Live.ts]()
 
 ### Live.getReport()
 
@@ -406,7 +395,6 @@ const markdown = await Live.getReport("momentum-strategy");
 console.log(markdown);
 ```
 
-**Sources:** [types.d.ts:1304-1316](), [src/classes/Live.ts]()
 
 ### Live.dump()
 
@@ -435,7 +423,6 @@ await Live.dump("momentum-strategy");
 await Live.dump("momentum-strategy", "./live-reports");
 ```
 
-**Sources:** [types.d.ts:1317-1333](), [src/classes/Live.ts]()
 
 ## Exchange Utility Functions
 
@@ -476,7 +463,6 @@ candles.forEach(candle => {
 });
 ```
 
-**Sources:** [types.d.ts:794-811](), [src/function/exchange.ts]()
 
 ### getAveragePrice()
 
@@ -505,7 +491,6 @@ const vwap = await getAveragePrice("BTCUSDT");
 console.log("Current VWAP:", vwap);
 ```
 
-**Sources:** [types.d.ts:812-830](), [src/function/exchange.ts]()
 
 ### formatPrice()
 
@@ -531,7 +516,6 @@ const formatted = await formatPrice("BTCUSDT", 50000.123456);
 console.log(formatted); // "50000.12"
 ```
 
-**Sources:** [types.d.ts:831-846](), [src/function/exchange.ts]()
 
 ### formatQuantity()
 
@@ -557,7 +541,6 @@ const formatted = await formatQuantity("BTCUSDT", 0.123456789);
 console.log(formatted); // "0.12345678"
 ```
 
-**Sources:** [types.d.ts:847-862](), [src/function/exchange.ts]()
 
 ### getDate()
 
@@ -576,7 +559,6 @@ const date = await getDate();
 console.log("Execution date:", date.toISOString());
 ```
 
-**Sources:** [types.d.ts:863-877](), [src/function/exchange.ts]()
 
 ### getMode()
 
@@ -599,7 +581,6 @@ if (mode === "backtest") {
 }
 ```
 
-**Sources:** [types.d.ts:878-893](), [src/function/exchange.ts]()
 
 ## Event Listeners
 
@@ -650,7 +631,6 @@ const unsubscribe = listenSignal((event) => {
 unsubscribe();
 ```
 
-**Sources:** [types.d.ts:648-673](), [src/function/event.ts]()
 
 ### listenSignalOnce()
 
@@ -684,7 +664,6 @@ listenSignalOnce(
 );
 ```
 
-**Sources:** [types.d.ts:674-706](), [src/function/event.ts]()
 
 ### listenSignalBacktest()
 
@@ -706,7 +685,6 @@ const unsubscribe = listenSignalBacktest((event) => {
 });
 ```
 
-**Sources:** [types.d.ts:750-770](), [src/function/event.ts]()
 
 ### listenSignalBacktestOnce()
 
@@ -729,7 +707,6 @@ listenSignalBacktestOnce(
 );
 ```
 
-**Sources:** [types.d.ts:771-792](), [src/function/event.ts]()
 
 ### listenSignalLive()
 
@@ -751,7 +728,6 @@ const unsubscribe = listenSignalLive((event) => {
 });
 ```
 
-**Sources:** [types.d.ts:707-727](), [src/function/event.ts]()
 
 ### listenSignalLiveOnce()
 
@@ -774,7 +750,6 @@ listenSignalLiveOnce(
 );
 ```
 
-**Sources:** [types.d.ts:728-749](), [src/function/event.ts]()
 
 ## Setup Functions
 
@@ -818,7 +793,6 @@ setLogger({
 });
 ```
 
-**Sources:** [types.d.ts:32-49](), [src/function/setup.ts]()
 
 ### PersistSignalAdaper.usePersistSignalAdapter()
 
@@ -853,7 +827,6 @@ class RedisPersist extends PersistBase {
 PersistSignalAdaper.usePersistSignalAdapter(RedisPersist);
 ```
 
-**Sources:** [types.d.ts:1057-1125](), [src/classes/Persist.ts]()
 
 ## Type Exports
 
@@ -881,7 +854,6 @@ All TypeScript interfaces and types are exported for type-safe usage. See indivi
 | `FrameInterval` | `"1m"` \| `"3m"` \| `"5m"` \| `"15m"` \| `"30m"` \| `"1h"` \| `"2h"` \| `"4h"` \| `"6h"` \| `"8h"` \| `"12h"` \| `"1d"` \| `"3d"` | Timeframe generation intervals |
 | `StrategyCloseReason` | `"time_expired"` \| `"take_profit"` \| `"stop_loss"` | Signal close reasons |
 
-**Sources:** [types.d.ts:1-1410](), [src/index.ts:20-39]()
 
 ## Complete API Usage Example
 
@@ -974,5 +946,4 @@ for await (const result of Live.run("BTCUSDT", {
   }
 }
 ```
-
-**Sources:** [src/index.ts:1-56](), [README.md:22-194]()
+

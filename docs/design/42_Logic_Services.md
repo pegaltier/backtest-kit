@@ -7,7 +7,6 @@ Logic Services orchestrate the execution of backtest and live trading operations
 
 For configuration and registration of strategies, exchanges, and frames, see [Configuration Functions](./15_Configuration_Functions.md). For the business logic implementations that Logic Services orchestrate, see [Core Business Logic](./30_Core_Business_Logic.md).
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:1-123](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:1-86](), [Diagram 1: Four-Layer Architecture Overview]()
 
 ---
 
@@ -24,7 +23,6 @@ Logic Services follow a two-tier pattern with distinct responsibilities:
 
 ![Mermaid Diagram](./diagrams/42_Logic_Services_0.svg)
 
-**Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts:1-70](), [src/lib/services/logic/public/LiveLogicPublicService.ts:1-78](), [Diagram 1: Four-Layer Architecture Overview]()
 
 ---
 
@@ -50,7 +48,6 @@ Logic Services use a two-tier pattern to separate context management from execut
 
 ![Mermaid Diagram](./diagrams/42_Logic_Services_1.svg)
 
-**Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts:46-66](), [src/lib/services/context/MethodContextService.ts:1-56](), [Diagram 4: Configuration and Registration System]()
 
 ---
 
@@ -119,7 +116,6 @@ The service emits granular performance metrics through `performanceEmitter`:
 
 Each metric includes `timestamp`, `previousTimestamp`, `strategyName`, `exchangeName`, `symbol`, and `backtest: true` flag [src/lib/services/logic/private/BacktestLogicPrivateService.ts:161-172,232-242,256-268,286-298]().
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:1-303](), [config/emitters.ts]()
 
 ---
 
@@ -178,7 +174,6 @@ Live trading filters intermediate states to reduce noise:
 
 The service emits `live_tick` performance metrics through `performanceEmitter` after each tick cycle, tracking the duration of signal status checks. Each metric includes `timestamp`, `previousTimestamp`, `strategyName`, `exchangeName`, `symbol`, and `backtest: false` flag [src/lib/services/logic/private/LiveLogicPrivateService.ts:79-91]().
 
-**Sources:** [src/lib/services/logic/private/LiveLogicPrivateService.ts:1-117](), [config/emitters.ts]()
 
 ---
 
@@ -224,7 +219,6 @@ public run = (
 | `exchangeName` | `string` | Identifies which exchange schema to use |
 | `frameName` | `string` | Identifies which frame schema to use for timeframe generation |
 
-**Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts:1-70](), [src/lib/services/context/MethodContextService.ts:12-19]()
 
 ---
 
@@ -269,7 +263,6 @@ public run = (
 | `exchangeName` | `string` | Identifies which exchange schema to use |
 | `frameName` | `string` | Empty string for live mode (no frame needed) [src/lib/services/logic/public/LiveLogicPublicService.ts:71]() |
 
-**Sources:** [src/lib/services/logic/public/LiveLogicPublicService.ts:1-78](), [src/lib/services/context/MethodContextService.ts:12-19]()
 
 ---
 
@@ -318,7 +311,6 @@ for await (const result of liveLogic.run("BTCUSDT")) {
 }
 ```
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:59-300](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:60-113]()
 
 ---
 
@@ -351,7 +343,6 @@ Logic Services coordinate multiple service types through dependency injection.
 - `LoggerService` - Invocation logging [src/lib/services/logic/public/LiveLogicPublicService.ts:39]()
 - `LiveLogicPrivateService` - Orchestration delegation [src/lib/services/logic/public/LiveLogicPublicService.ts:40-42]()
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:31-43](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:30-36](), [src/lib/services/logic/public/BacktestLogicPublicService.ts:32-34](), [src/lib/services/logic/public/LiveLogicPublicService.ts:39-42]()
 
 ---
 
@@ -378,7 +369,6 @@ Logic Services use `MethodContextService.runAsyncIterator()` to inject context i
 | `exchangeName` | `ExchangeName` | Routes to correct exchange schema |
 | `frameName` | `FrameName` | Routes to correct frame schema (empty for live) |
 
-**Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts:46-66](), [src/lib/services/logic/public/LiveLogicPublicService.ts:55-74](), [src/lib/services/context/MethodContextService.ts:1-56](), [Diagram 4: Configuration and Registration System]()
 
 ---
 
@@ -407,7 +397,6 @@ Logic Services delegate business logic execution to Global Services that inject 
 
 ![Mermaid Diagram](./diagrams/42_Logic_Services_7.svg)
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:91-252](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:71]()
 
 ---
 
@@ -466,7 +455,6 @@ The walker uses a configurable metric for strategy comparison:
 
 The metric name must correspond to a field in `IBacktestStatistics` returned by `BacktestMarkdownService.getData()`.
 
-**Sources:** [docs/internals.md:381-388]() (WalkerLogicPrivateService description), [Diagram 2: Component Lifecycle - Registration to Execution]()
 
 ---
 
@@ -514,7 +502,6 @@ public run = (
 | `exchangeName` | `string` | Exchange for all strategy backtests |
 | `frameName` | `string` | Timeframe for all strategy backtests |
 
-**Sources:** [docs/internals.md:374-380]() (WalkerLogicPublicService description)
 
 ---
 
@@ -552,5 +539,4 @@ async *run(
   }
 ): AsyncGenerator<IStrategyTickResultOpened | IStrategyTickResultClosed>
 ```
-
-**Sources:** [src/index.ts:44-55](), [types.d.ts:1-56](), [Diagram 1: Four-Layer Architecture Overview]()
+

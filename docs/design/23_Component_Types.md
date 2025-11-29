@@ -21,7 +21,6 @@ backtest-kit uses a **schema-based registration system** where users define comp
 
 This architecture enables **separation of concerns**: schemas define "what" components do, while the framework handles "how" they integrate with execution modes (Backtest, Live, Walker).
 
-**Sources:** [src/function/add.ts:1-342](), [types.d.ts:184-633]()
 
 ---
 
@@ -46,7 +45,6 @@ The validation step performs:
 - **Type checking** - Validates field types match interface definitions
 - **Memoization** - Stores validation result to avoid redundant checks
 
-**Sources:** [src/function/add.ts:50-341](), [src/lib/core/types.ts:18-66]()
 
 ---
 
@@ -63,7 +61,6 @@ The validation step performs:
 | **Sizing** | `ISizingSchema` | `addSizing()` | Position size calculation (fixed, Kelly, ATR-based methods) | Backtest, Live, Walker |
 | **Walker** | `IWalkerSchema` | `addWalker()` | Multi-strategy comparison orchestration | Walker only |
 
-**Sources:** [types.d.ts:184-633](), [src/function/add.ts:1-342]()
 
 ---
 
@@ -71,7 +68,6 @@ The validation step performs:
 
 ![Mermaid Diagram](./diagrams/23_Component_Types_0.svg)
 
-**Sources:** [src/function/add.ts:50-341](), [src/lib/services/validation/StrategyValidationService.ts:1-50](), [src/lib/services/schema/StrategySchemaService.ts:1-30](), [src/lib/services/connection/StrategyConnectionService.ts:1-50]()
 
 ---
 
@@ -83,7 +79,6 @@ Each component type has a corresponding `*SchemaService` class that implements t
 
 ![Mermaid Diagram](./diagrams/23_Component_Types_1.svg)
 
-**Sources:** [src/lib/services/schema/StrategySchemaService.ts:1-30](), [src/lib/services/schema/ExchangeSchemaService.ts:1-30](), [src/lib/core/types.ts:18-26]()
 
 ---
 
@@ -107,7 +102,6 @@ Each component type has a `*ValidationService` class responsible for:
 | `SizingValidationService` | Validates `ISizingSchema` discriminated union (method-specific fields) | `addSizing()` | `listSizings()` |
 | `WalkerValidationService` | Validates `IWalkerSchema` fields (walkerName, strategies array, metric) | `addWalker()` | `listWalkers()` |
 
-**Sources:** [src/lib/services/validation/StrategyValidationService.ts:1-50](), [src/lib/core/types.ts:59-66](), [src/function/list.ts:1-218]()
 
 ---
 
@@ -119,7 +113,6 @@ Each component type has a `*ValidationService` class responsible for:
 
 ![Mermaid Diagram](./diagrams/23_Component_Types_2.svg)
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:1-50](), [src/lib/services/connection/ExchangeConnectionService.ts:1-50]()
 
 ---
 
@@ -127,7 +120,6 @@ Each component type has a `*ValidationService` class responsible for:
 
 ![Mermaid Diagram](./diagrams/23_Component_Types_3.svg)
 
-**Sources:** [src/function/add.ts:50-341](), [src/lib/services/connection/StrategyConnectionService.ts:1-50]()
 
 ---
 
@@ -173,7 +165,6 @@ const connectionServices = {
 }
 ```
 
-**Sources:** [src/lib/core/types.ts:1-81](), [src/lib/core/provide.ts:1-111]()
 
 ---
 
@@ -192,7 +183,6 @@ Each component type has a corresponding string-based name type for type-safe reg
 
 These type aliases provide semantic clarity while maintaining string compatibility for runtime lookup.
 
-**Sources:** [types.d.ts:275-360](), [types.d.ts:533-824]()
 
 ---
 
@@ -202,7 +192,6 @@ Some component types reference other components by name, creating a dependency g
 
 ![Mermaid Diagram](./diagrams/23_Component_Types_4.svg)
 
-**Sources:** [types.d.ts:616-633](), [types.d.ts:1019-1033]()
 
 ---
 
@@ -225,7 +214,6 @@ These functions are useful for:
 - **UI Generation** - Building dropdowns/selectors of available components
 - **Testing** - Verifying registration state
 
-**Sources:** [src/function/list.ts:41-217](), [src/index.ts:3]()
 
 ---
 
@@ -240,7 +228,6 @@ All component schemas share these common optional fields:
 
 The `callbacks` field provides hooks into component lifecycle events without requiring custom code. Each component type has its own callback interface (e.g., `IStrategyCallbacks`, `IExchangeCallbacks`) with event-specific methods.
 
-**Sources:** [types.d.ts:179-221](), [types.d.ts:295-341]()
 
 ---
 
@@ -251,5 +238,4 @@ For each component type, the framework maintains three service classes:
 ![Mermaid Diagram](./diagrams/23_Component_Types_5.svg)
 
 This consistent three-layer pattern (Validation → Schema → Connection → Client) applies to all component types, providing predictable behavior and code organization.
-
-**Sources:** [src/lib/index.ts:1-170](), [src/lib/core/types.ts:1-81]()
+

@@ -13,7 +13,6 @@ The logging system consists of three primary components: the `ILogger` interface
 
 ![Mermaid Diagram](./diagrams/76_Logging_System_0.svg)
 
-**Sources:** [src/lib/services/base/LoggerService.ts:1-144](), [src/interfaces/Logger.interface.ts:1-31](), [src/lib/core/types.ts:1-3](), [src/lib/core/provide.ts:24-26](), [src/lib/index.ts:29-31]()
 
 ## ILogger Interface
 
@@ -39,7 +38,6 @@ method(topic: string, ...args: any[]): void
 
 The interface is intentionally simple, allowing any logging library (Winston, Pino, Bunyan, console) to be adapted with minimal wrapper code.
 
-**Sources:** [src/interfaces/Logger.interface.ts:6-30]()
 
 ## LoggerService Implementation
 
@@ -58,7 +56,6 @@ The interface is intentionally simple, allowing any logging library (Winston, Pi
 
 ![Mermaid Diagram](./diagrams/76_Logging_System_1.svg)
 
-**Sources:** [src/lib/services/base/LoggerService.ts:11-143]()
 
 ### NOOP_LOGGER Default
 
@@ -74,7 +71,6 @@ const NOOP_LOGGER: ILogger = {
 };
 ```
 
-**Sources:** [src/lib/services/base/LoggerService.ts:15-28]()
 
 ## Automatic Context Enrichment
 
@@ -84,7 +80,6 @@ const NOOP_LOGGER: ILogger = {
 
 ![Mermaid Diagram](./diagrams/76_Logging_System_2.svg)
 
-**Sources:** [src/lib/services/base/LoggerService.ts:42-86]()
 
 ### Method Context
 
@@ -98,7 +93,6 @@ Method context provides information about which strategy, exchange, and frame ar
 
 Context availability is checked via `MethodContextService.hasContext()` before retrieval. If no context exists, an empty object is appended.
 
-**Sources:** [src/lib/services/base/LoggerService.ts:52-60]()
 
 ### Execution Context
 
@@ -112,7 +106,6 @@ Execution context provides information about the current execution state, includ
 
 Context availability is checked via `ExecutionContextService.hasContext()` before retrieval. If no context exists, an empty object is appended.
 
-**Sources:** [src/lib/services/base/LoggerService.ts:63-71]()
 
 ## Configuration
 
@@ -132,7 +125,6 @@ backtest.loggerService.setLogger({
 });
 ```
 
-**Sources:** [src/lib/services/base/LoggerService.ts:134-140]()
 
 ### Integration with Third-Party Loggers
 
@@ -164,7 +156,6 @@ backtest.loggerService.setLogger({
 
 ![Mermaid Diagram](./diagrams/76_Logging_System_3.svg)
 
-**Sources:** [src/lib/core/types.ts:1-3](), [src/lib/core/provide.ts:24-26](), [src/lib/index.ts:29-31]()
 
 ### Service Registration
 
@@ -188,7 +179,6 @@ This pattern appears in:
 - Connection services (StrategyConnectionService, ExchangeConnectionService, FrameConnectionService)
 - Schema services (StrategySchemaService, ExchangeSchemaService, FrameSchemaService)
 
-**Sources:** [src/lib/services/base/LoggerService.ts:1-6]()
 
 ## Usage Patterns
 
@@ -243,7 +233,6 @@ public log = async (topic: string, ...args: any[]) => {
 
 This design supports remote logging services, database writes, or file I/O without blocking execution.
 
-**Sources:** [src/lib/services/base/LoggerService.ts:79-86]()
 
 ## Service Integration Matrix
 
@@ -258,5 +247,4 @@ The following table shows which framework services inject `LoggerService`:
 | Markdown Services | BacktestMarkdownService, LiveMarkdownService |
 
 This pervasive integration ensures consistent logging behavior across all framework components.
-
-**Sources:** Based on architecture analysis from high-level diagrams and [src/lib/core/provide.ts:1-67]()
+

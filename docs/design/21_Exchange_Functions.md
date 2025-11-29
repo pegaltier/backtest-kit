@@ -7,7 +7,6 @@ This page documents the public utility functions for interacting with exchange d
 
 For information about registering exchange schemas, see [Component Registration Functions](./16_Component_Registration_Functions.md). For details about the underlying exchange client implementation, see [ClientExchange](./32_ClientExchange.md). For defining custom exchange integrations, see [Exchange Schemas](./25_Exchange_Schemas.md).
 
-**Sources:** [src/index.ts:26-32](), [types.d.ts:148-275]()
 
 ## Context Propagation Mechanism
 
@@ -20,7 +19,6 @@ This allows strategy authors to write clean code like `getCandles(symbol, interv
 
 ![Mermaid Diagram](./diagrams/21_Exchange_Functions_0.svg)
 
-**Sources:** [types.d.ts:100-143](), [types.d.ts:363-402]()
 
 ---
 
@@ -80,7 +78,6 @@ addStrategy({
 });
 ```
 
-**Sources:** [types.d.ts:148-166](), [types.d.ts:226-235](), [src/index.ts:26-32]()
 
 ---
 
@@ -134,7 +131,6 @@ addStrategy({
 });
 ```
 
-**Sources:** [types.d.ts:261-270](), [types.d.ts:12-16]()
 
 ---
 
@@ -184,7 +180,6 @@ const formattedPrice = await formatPrice("BTCUSDT", 45123.456789);
 // Returns: "45123.46"
 ```
 
-**Sources:** [types.d.ts:212-218](), [types.d.ts:252-260]()
 
 ---
 
@@ -235,7 +230,6 @@ const formatted = await formatQuantity("BTCUSDT", quantity);
 // Returns: "0.001235"
 ```
 
-**Sources:** [types.d.ts:204-210](), [types.d.ts:246-251]()
 
 ---
 
@@ -278,7 +272,6 @@ addStrategy({
 });
 ```
 
-**Sources:** [types.d.ts:105-112]()
 
 ---
 
@@ -324,7 +317,6 @@ addStrategy({
 });
 ```
 
-**Sources:** [types.d.ts:105-112]()
 
 ---
 
@@ -334,7 +326,6 @@ addStrategy({
 
 ![Mermaid Diagram](./diagrams/21_Exchange_Functions_1.svg)
 
-**Sources:** [src/index.ts:26-32](), [types.d.ts:168-221](), [types.d.ts:223-271]()
 
 ---
 
@@ -353,7 +344,6 @@ The `ICandleData` interface defines the structure returned by `getCandles`:
 | `close` | `number` | Closing price at candle end |
 | `volume` | `number` | Trading volume during candle period |
 
-**Sources:** [types.d.ts:148-166]()
 
 ---
 
@@ -363,7 +353,6 @@ Exchange functions delegate to the user-defined `IExchangeSchema` implementation
 
 ![Mermaid Diagram](./diagrams/21_Exchange_Functions_3.svg)
 
-**Sources:** [types.d.ts:185-221]()
 
 ---
 
@@ -398,7 +387,6 @@ addStrategy({
 });
 ```
 
-**Sources:** [types.d.ts:615-633]()
 
 ---
 
@@ -429,7 +417,6 @@ addStrategy({
 });
 ```
 
-**Sources:** [types.d.ts:261-270]()
 
 ---
 
@@ -463,7 +450,6 @@ addStrategy({
 });
 ```
 
-**Sources:** [types.d.ts:148-166]()
 
 ---
 
@@ -492,7 +478,6 @@ addStrategy({
 });
 ```
 
-**Sources:** [types.d.ts:212-218](), [types.d.ts:595-611]()
 
 ---
 
@@ -547,7 +532,6 @@ const limit = isBacktest ? 100 : 20; // More data in backtest
 const candles = await getCandles(symbol, "1m", limit);
 ```
 
-**Sources:** [types.d.ts:105-112](), [types.d.ts:226-270]()
 
 ---
 
@@ -563,7 +547,6 @@ Exchange functions may throw errors in the following scenarios:
 | **Data source failure** | Exchange schema's implementation throws error | Implement error handling in exchange schema's methods |
 | **Network timeout** | External API call exceeds timeout | Implement retry logic or timeout handling in schema |
 
-**Sources:** [types.d.ts:185-221]()
 
 ---
 
@@ -603,5 +586,4 @@ async function getCachedVWAP(symbol: string): Promise<number> {
   return cachedVWAP.value;
 }
 ```
-
-**Sources:** [types.d.ts:12-16](), [types.d.ts:261-270]()
+

@@ -23,7 +23,6 @@ Signals in backtest-kit can be created in two modes based on the presence of `pr
 | **pendingAt** | Current timestamp | Activation timestamp (updated later) |
 | **Timeout logic** | Uses `minuteEstimatedTime` from `pendingAt` | Uses `CC_SCHEDULE_AWAIT_MINUTES` from `scheduledAt`, then `minuteEstimatedTime` from `pendingAt` after activation |
 
-**Sources:** [src/interfaces/Strategy.interface.ts:63-72](), [src/client/ClientStrategy.ts:232-254](), [src/client/ClientStrategy.ts:256-272]()
 
 ---
 
@@ -59,7 +58,6 @@ const scheduledSignalRow: IScheduledSignalRow = {
 };
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:232-254]()
 
 ---
 
@@ -85,7 +83,6 @@ The activation logic differs based on position type to implement proper limit or
 - Cancels if: `currentPrice >= priceStopLoss` (before activation)
 - Example: priceOpen=43000, waits for price to rise from 41000 to 43000
 
-**Sources:** [src/client/ClientStrategy.ts:388-422](), [src/client/ClientStrategy.ts:1081-1105]()
 
 ---
 
@@ -115,7 +112,6 @@ if (elapsedTime >= maxTimeToWait) {
 
 **Key timing rule:** Timeout is calculated from `scheduledAt` (when signal was created), NOT from `pendingAt`.
 
-**Sources:** [src/client/ClientStrategy.ts:332-386](), [src/config/params.ts:6]()
 
 ### StopLoss Cancellation
 
@@ -146,7 +142,6 @@ if (scheduled.position === "short") {
 - The check order ensures activation happens first (physically correct)
 - If price falls directly to 39000, it never reaches 41000, so cancellation occurs
 
-**Sources:** [src/client/ClientStrategy.ts:396-420](), [src/client/ClientStrategy.ts:1082-1105](), [test/e2e/defend.test.mjs:24-145]()
 
 ---
 
@@ -194,7 +189,6 @@ if (elapsedTime >= maxTimeToWait) {
 
 **What happens if you use `scheduledAt` instead?** Signal closes prematurely because it includes the waiting time before activation. This was a critical bug fixed in the codebase.
 
-**Sources:** [src/client/ClientStrategy.ts:510-515](), [src/client/ClientStrategy.ts:680-683](), [test/e2e/timing.test.mjs:34-153]()
 
 ---
 
@@ -233,7 +227,6 @@ if (result.action === "scheduled") {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:332-576](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:67-111]()
 
 ### Backtest Mode: Candle Array Processing
 
@@ -265,7 +258,6 @@ if (result.action === "scheduled") {
 
 **Key difference:** Backtest uses `candle.high` and `candle.low` for precise TP/SL detection within a candle, while live uses VWAP calculated from recent candles.
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:93-183](), [src/client/ClientStrategy.ts:1048-1134]()
 
 ---
 
@@ -296,7 +288,6 @@ For a scheduled signal that times out:
 4. **onCancel**: When timeout or StopLoss hit
 5. **onTick**: With `action: "cancelled"`
 
-**Sources:** [src/interfaces/Strategy.interface.ts:93-115](), [src/client/ClientStrategy.ts:594-601](), [src/client/ClientStrategy.ts:524-531](), [src/client/ClientStrategy.ts:358-365]()
 
 ---
 
@@ -314,7 +305,6 @@ Maximum time (in minutes) to wait for scheduled signal activation. Calculated fr
 
 **Boundary behavior:** Signal cancels when `elapsedTime >= CC_SCHEDULE_AWAIT_MINUTES` (inclusive).
 
-**Sources:** [src/config/params.ts:6](), [src/client/ClientStrategy.ts:339](), [test/e2e/defend.test.mjs:445-536]()
 
 ---
 
@@ -335,7 +325,6 @@ Maximum time (in minutes) to wait for scheduled signal activation. Calculated fr
 | `CANCEL_SCHEDULED_SIGNAL_IN_BACKTEST_FN` | Cancels scheduled signal in backtest mode | Backtest | [ClientStrategy.ts:848-895]() |
 | `PROCESS_SCHEDULED_SIGNAL_CANDLES_FN` | Processes candle array for scheduled signal | Backtest | [ClientStrategy.ts:1048-1134]() |
 
-**Sources:** [src/client/ClientStrategy.ts:187-1134]()
 
 ---
 
@@ -359,7 +348,6 @@ if (elapsedTime >= signal.minuteEstimatedTime * 60 * 1000) {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:680-683](), [test/e2e/timing.test.mjs:34-153]()
 
 ### 2. Checking Activation Before StopLoss
 
@@ -380,7 +368,6 @@ if (currentPrice <= priceStopLoss) {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:396-420](), [test/e2e/defend.test.mjs:24-145]()
 
 ### 3. Forgetting to Update pendingAt on Activation
 
@@ -402,8 +389,6 @@ const activatedSignal = {
 };
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:510-515](), [src/client/ClientStrategy.ts:949-954]()
 
 ---
-
-**Sources:** [src/client/ClientStrategy.ts:1-1346](), [src/interfaces/Strategy.interface.ts:63-72](), [src/config/params.ts:1-36](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:93-183](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:60-113](), [test/e2e/defend.test.mjs:1-1632](), [test/e2e/timing.test.mjs:1-630]()
+

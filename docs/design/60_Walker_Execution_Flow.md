@@ -20,7 +20,6 @@ Walker mode provides multi-strategy comparison by:
 
 Walker execution is deterministic and reproducible since it uses the same frame (timeframe) and exchange for all strategies.
 
-**Sources:** [README.md:403-459](), [src/classes/Walker.ts:1-273]()
 
 ---
 
@@ -45,7 +44,6 @@ A walker is defined using `IWalkerSchema` which specifies:
 - `totalPnl` - Cumulative PNL percentage
 - `certaintyRatio` - Average win / |average loss|
 
-**Sources:** [README.md:406-466](), [src/classes/Walker.ts:31-86]()
 
 ---
 
@@ -53,7 +51,6 @@ A walker is defined using `IWalkerSchema` which specifies:
 
 ![Mermaid Diagram](./diagrams/60_Walker_Execution_Flow_0.svg)
 
-**Sources:** [src/classes/Walker.ts:31-86](), [src/lib/services/global/WalkerGlobalService.ts:46-86]()
 
 ---
 
@@ -63,7 +60,6 @@ Walker execution flows through three service layers:
 
 ![Mermaid Diagram](./diagrams/60_Walker_Execution_Flow_1.svg)
 
-**Sources:** [src/classes/Walker.ts:31-144](), [src/lib/services/global/WalkerGlobalService.ts:1-90]()
 
 ---
 
@@ -106,7 +102,6 @@ for (const strategyName of strategies) {
 
 This ensures clean state for consistent comparisons.
 
-**Sources:** [src/classes/Walker.ts:50-79](), [src/lib/services/global/WalkerGlobalService.ts:64-84]()
 
 ---
 
@@ -116,7 +111,6 @@ The core of Walker execution is a sequential iteration through the strategies ar
 
 ![Mermaid Diagram](./diagrams/60_Walker_Execution_Flow_2.svg)
 
-**Sources:** [src/classes/Walker.ts:31-86](), [README.md:406-459]()
 
 ---
 
@@ -161,7 +155,6 @@ This creates a "context sandwich":
 - Outer: Walker method context
 - Inner: Backtest method context for current strategy
 
-**Sources:** [src/classes/Walker.ts:82-86](), [src/lib/services/global/WalkerGlobalService.ts:52-86]()
 
 ---
 
@@ -200,7 +193,6 @@ interface IWalkerResults {
 }
 ```
 
-**Sources:** [src/function/event.ts:506-535](), [src/config/emitters.ts:62-73]()
 
 ---
 
@@ -247,7 +239,6 @@ listenWalkerOnce(
 );
 ```
 
-**Sources:** [src/function/event.ts:507-571](), [README.md:407-440]()
 
 ---
 
@@ -277,7 +268,6 @@ stop();
 
 The cancellation is graceful - it allows the current strategy's backtest to complete before stopping.
 
-**Sources:** [src/classes/Walker.ts:108-143](), [src/function/event.ts:397-433]()
 
 ---
 
@@ -294,7 +284,6 @@ Walker coordinates with multiple markdown services:
 3. **Metric Extraction**: Walker extracts the comparison metric from statistics
 4. **Storage**: `WalkerMarkdownService` stores the strategy result for final report generation
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:370-435](), [src/classes/Walker.ts:159-178]()
 
 ---
 
@@ -313,7 +302,6 @@ Walker execution differs from individual Backtest runs:
 | **Event Emitter** | `signalBacktestEmitter` | `walkerEmitter` |
 | **Completion Event** | `doneBacktestSubject` | `walkerCompleteSubject` |
 
-**Sources:** [src/classes/Backtest.ts:30-66](), [src/classes/Walker.ts:31-86]()
 
 ---
 
@@ -355,7 +343,6 @@ listenError((error) => {
 });
 ```
 
-**Sources:** [src/classes/Walker.ts:135-137](), [src/function/event.ts:232-235]()
 
 ---
 
@@ -376,7 +363,6 @@ For a walker with 10 strategies over a 1-month frame:
 3. **Strategy Pre-filtering**: Remove obviously poor strategies before walker
 4. **Progress Monitoring**: Use `listenWalker()` to track execution progress
 
-**Sources:** [README.md:406-459]()
 
 ---
 
@@ -394,5 +380,4 @@ Walker execution orchestrates multi-strategy backtesting through:
 8. **Report Generation**: Aggregates results into comparison table
 
 The walker provides a systematic approach to strategy optimization by ensuring all strategies are tested under identical conditions.
-
-**Sources:** [src/classes/Walker.ts:1-273](), [README.md:403-459](), [src/lib/services/global/WalkerGlobalService.ts:1-90]()
+

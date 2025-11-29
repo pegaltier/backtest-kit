@@ -15,7 +15,6 @@ The framework provides two distinct configuration mechanisms that operate indepe
 
 ![Mermaid Diagram](./diagrams/15_Configuration_Functions_0.svg)
 
-**Sources:** [src/config/params.ts:1-35](), [types.d.ts:5-97](), [src/index.ts:1]()
 
 ---
 
@@ -38,7 +37,6 @@ The `ILogger` interface defines four logging severity levels. All methods accept
 | `info(topic, ...args)` | Informational updates | Successful operations, completions |
 | `warn(topic, ...args)` | Potentially problematic situations | Missing data, unexpected conditions |
 
-**Sources:** [types.d.ts:45-66]()
 
 ### Automatic Context Injection
 
@@ -46,7 +44,6 @@ When a logger is registered, the framework automatically injects contextual meta
 
 ![Mermaid Diagram](./diagrams/15_Configuration_Functions_1.svg)
 
-**Sources:** [types.d.ts:69-84](), [src/lib/services/context/ExecutionContextService.ts](), [src/lib/services/context/MethodContextService.ts]()
 
 ### Usage Example
 
@@ -73,7 +70,6 @@ await setLogger({
 });
 ```
 
-**Sources:** [types.d.ts:76-83](), [test/config/setup.mjs:1-5]()
 
 ---
 
@@ -112,13 +108,11 @@ await setConfig({
 });
 ```
 
-**Sources:** [types.d.ts:86-97](), [src/config/params.ts:1-35]()
 
 ### Runtime Modification Warning
 
 Configuration changes apply immediately to all subsequent operations. Modifying parameters mid-execution (e.g., during a backtest) may cause inconsistent behavior. **Best practice:** Call `setConfig` once during application initialization, before any component registration or execution.
 
-**Sources:** [test/config/setup.mjs:36-41]()
 
 ---
 
@@ -134,7 +128,6 @@ Configuration changes apply immediately to all subsequent operations. Modifying 
 | `CC_MAX_STOPLOSS_DISTANCE_PERCENT` | `20` | `number` | Validation | `VALIDATE_SIGNAL_FN` |
 | `CC_MAX_SIGNAL_LIFETIME_MINUTES` | `1440` | `number` | Validation | `VALIDATE_SIGNAL_FN` |
 
-**Sources:** [src/config/params.ts:1-30](), [types.d.ts:5-34]()
 
 ---
 
@@ -166,7 +159,6 @@ await setConfig({
 });
 ```
 
-**Sources:** [src/config/params.ts:2-6](), [types.d.ts:5-10](), [test/e2e/defend.test.mjs:445-536]()
 
 ---
 
@@ -202,7 +194,6 @@ await setConfig({
 });
 ```
 
-**Sources:** [src/config/params.ts:7-10](), [types.d.ts:11-15](), [types.d.ts:262-270]()
 
 ---
 
@@ -239,7 +230,6 @@ await setConfig({
 });
 ```
 
-**Sources:** [src/config/params.ts:11-17](), [types.d.ts:16-21](), [test/e2e/sanitize.test.mjs:17-131]()
 
 ---
 
@@ -274,7 +264,6 @@ await setConfig({
 });
 ```
 
-**Sources:** [src/config/params.ts:18-23](), [types.d.ts:22-27](), [test/e2e/sanitize.test.mjs:133-238]()
 
 ---
 
@@ -307,7 +296,6 @@ await setConfig({
 });
 ```
 
-**Sources:** [src/config/params.ts:24-30](), [types.d.ts:28-34](), [test/e2e/sanitize.test.mjs:240-348]()
 
 ---
 
@@ -317,7 +305,6 @@ The following diagram shows which framework components consume each configuratio
 
 ![Mermaid Diagram](./diagrams/15_Configuration_Functions_7.svg)
 
-**Sources:** [src/config/params.ts:1-35](), [types.d.ts:5-34]()
 
 ---
 
@@ -332,7 +319,6 @@ Configuration parameters are thoroughly tested in the test suite:
 | `test/e2e/defend.test.mjs` | `CC_SCHEDULE_AWAIT_MINUTES` | Scheduled signal timeout behavior |
 | `test/config/setup.mjs` | Global setup | Test environment configuration |
 
-**Sources:** [test/e2e/config.test.mjs:1](), [test/e2e/sanitize.test.mjs:1-660](), [test/e2e/defend.test.mjs:1-950](), [test/config/setup.mjs:36-41]()
 
 ---
 
@@ -395,5 +381,4 @@ if (process.env.NODE_ENV === 'test') {
   });
 }
 ```
-
-**Sources:** [test/config/setup.mjs:36-41](), [test/e2e/sanitize.test.mjs:17-131]()
+

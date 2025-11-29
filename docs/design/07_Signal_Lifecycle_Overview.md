@@ -17,7 +17,6 @@ The signal lifecycle is modeled as a finite state machine with six distinct stat
 
 ![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_0.svg)
 
-**Sources:** [src/client/ClientStrategy.ts:1-1400](), [src/interfaces/Strategy.interface.ts:1-350](), [types.d.ts:536-825]()
 
 ### State Descriptions
 
@@ -30,7 +29,6 @@ The signal lifecycle is modeled as a finite state machine with six distinct stat
 | **closed** | `action: "closed"` | `ISignalRow` | Final state with PnL calculation. Includes `closeReason` and `closeTimestamp`. |
 | **cancelled** | `action: "cancelled"` | `IScheduledSignalRow` | Scheduled signal cancelled before activation. Timeout or StopLoss hit. |
 
-**Sources:** [types.d.ts:653-778](), [src/interfaces/Strategy.interface.ts:159-278]()
 
 ---
 
@@ -42,7 +40,6 @@ The framework uses a discriminated union pattern for type-safe signal handling. 
 
 ![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_1.svg)
 
-**Sources:** [src/interfaces/Strategy.interface.ts:19-72](), [types.d.ts:543-591]()
 
 ### Tick Result Discriminated Union
 
@@ -57,7 +54,6 @@ Each state transition yields a specific tick result type, enabling type-safe han
 | `IStrategyTickResultClosed` | `action: "closed"` | `signal: ISignalRow`, `pnl`, `closeReason` | Signal closed with result |
 | `IStrategyTickResultCancelled` | `action: "cancelled"` | `signal: IScheduledSignalRow` | Scheduled signal cancelled |
 
-**Sources:** [src/interfaces/Strategy.interface.ts:159-295](), [types.d.ts:653-770]()
 
 ---
 
@@ -69,7 +65,6 @@ Signal generation occurs via the user-defined `getSignal()` function, followed b
 
 ![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_2.svg)
 
-**Sources:** [src/client/ClientStrategy.ts:187-283](), [src/client/ClientStrategy.ts:40-185]()
 
 ### Validation Rules
 
@@ -86,7 +81,6 @@ The `VALIDATE_SIGNAL_FN` enforces financial safety constraints to prevent invali
 | **Time Constraints** | `minuteEstimatedTime > 0` | Hard-coded |
 | **Maximum Lifetime** | Signal cannot block risk limits indefinitely | `CC_MAX_SIGNAL_LIFETIME_MINUTES` (default: 1440 min = 1 day) |
 
-**Sources:** [src/client/ClientStrategy.ts:40-185](), [types.d.ts:5-34]()
 
 ### Signal Augmentation
 
@@ -115,7 +109,6 @@ User-provided `ISignalDto` is augmented with framework metadata:
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:234-272]()
 
 ---
 
@@ -129,7 +122,6 @@ Occurs when `getSignal()` returns a signal with `priceOpen` specified. Signal wa
 
 **Key Implementation:** Scheduled signals do NOT perform risk check at creation time. Risk validation occurs during activation when position opens.
 
-**Sources:** [src/client/ClientStrategy.ts:578-621](), [src/client/ClientStrategy.ts:234-254]()
 
 ### Idle → Opened (Immediate)
 
@@ -137,13 +129,11 @@ Occurs when `getSignal()` returns a signal without `priceOpen`. Position opens i
 
 ![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_4.svg)
 
-**Sources:** [src/client/ClientStrategy.ts:623-673]()
 
 ### Scheduled → Opened (Activation)
 
 Occurs when market price reaches `priceOpen` for a scheduled signal. Triggers risk check at activation time. The `pendingAt` timestamp is updated during activation. Time-based expiration calculates from `pendingAt`, not `scheduledAt`.
 
-**Sources:** [src/client/ClientStrategy.ts:459-551](), [src/client/ClientStrategy.ts:388-422]()
 
 ### Scheduled → Cancelled
 
@@ -162,7 +152,6 @@ if (elapsedTime >= maxTimeToWait) {
 - Long: `currentPrice <= priceStopLoss` → cancel
 - Short: `currentPrice >= priceStopLoss` → cancel
 
-**Sources:** [src/client/ClientStrategy.ts:332-386](), [src/client/ClientStrategy.ts:388-422]()
 
 ### Opened/Active → Closed
 
@@ -172,7 +161,6 @@ Occurs when signal meets closure condition: TakeProfit hit, StopLoss hit, or tim
 
 **Critical:** When TakeProfit or StopLoss triggers, the framework uses the **exact TP/SL price** for PnL calculation, not the current VWAP. This ensures deterministic results.
 
-**Sources:** [src/client/ClientStrategy.ts:675-734](), [src/client/ClientStrategy.ts:736-789]()
 
 ---
 
@@ -210,7 +198,6 @@ pendingAt: activationTime  // Updated to activation timestamp
 - **Scheduled signal timeout:** `currentTime - scheduledAt >= CC_SCHEDULE_AWAIT_MINUTES * 60 * 1000`
 - **Active signal expiration:** `currentTime - pendingAt >= minuteEstimatedTime * 60 * 1000`
 
-**Sources:** [src/client/ClientStrategy.ts:234-272](), [src/client/ClientStrategy.ts:459-551](), [src/client/ClientStrategy.ts:680-683]()
 
 ---
 
@@ -243,7 +230,6 @@ if (callbacks.onTick) {
 }
 ```
 
-**Sources:** [src/interfaces/Strategy.interface.ts:92-115](), [src/client/ClientStrategy.ts:524-548](), [src/client/ClientStrategy.ts:752-786]()
 
 ---
 
@@ -268,7 +254,6 @@ Only one signal can exist per symbol at a time. The framework enforces mutual ex
 - Scheduled signal transitions to pending signal on activation
 - New signals rejected if active signal exists (via risk check)
 
-**Sources:** [src/client/ClientStrategy.ts:1063-1092]()
 
 ### Persistence (Live Mode Only)
 
@@ -293,7 +278,6 @@ const restored = await PersistSignalAdapter.readSignalData(
 
 **Atomic Write Pattern:** Write to temp file, then rename for crash-safe persistence.
 
-**Sources:** [src/client/ClientStrategy.ts:1093-1132](), [src/client/ClientStrategy.ts:298-330]()
 
 ---
 

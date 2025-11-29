@@ -27,7 +27,6 @@ All three modes share the same strategy code but execute it in different context
 | **Fast-Forward** | Yes via `strategy.backtest()` | No | Yes (per strategy) |
 | **Primary Use Case** | Strategy validation | Production trading | Strategy optimization |
 
-**Sources:** [README.md:1-258](), [src/classes/Backtest.ts:1-208](), [src/classes/Live.ts:1-220](), [src/classes/Walker.ts:1-274]()
 
 ## Backtest Execution Flow
 
@@ -35,7 +34,6 @@ All three modes share the same strategy code but execute it in different context
 
 **Backtest Execution Flow Diagram** - Shows how `BacktestLogicPrivateService` iterates through historical timeframes and fast-forwards through signal lifetimes using the `backtest()` method.
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:59-300](), [src/classes/Backtest.ts:38-66]()
 
 ### Key Characteristics
 
@@ -79,7 +77,6 @@ while (
 
 **Scheduled Signal Handling**: For scheduled signals (limit orders), backtest mode requests additional candles to monitor activation: `CC_SCHEDULE_AWAIT_MINUTES + minuteEstimatedTime + 1`. The `backtest()` method first checks if `priceOpen` is reached within the timeout window, then monitors TP/SL if activated.
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:59-300](), [src/config/params.ts:1-100]()
 
 ### Memory Efficiency
 
@@ -103,7 +100,6 @@ for await (const result of Backtest.run("BTCUSDT", context)) {
 }
 ```
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:59-300](), [src/classes/Backtest.ts:38-66]()
 
 ## Live Execution Flow
 
@@ -111,7 +107,6 @@ for await (const result of Backtest.run("BTCUSDT", context)) {
 
 **Live Execution Flow Diagram** - Shows how `LiveLogicPrivateService` runs an infinite loop with real-time clock progression and crash-safe persistence.
 
-**Sources:** [src/lib/services/logic/private/LiveLogicPrivateService.ts:60-113](), [src/classes/Live.ts:55-82]()
 
 ### Key Characteristics
 
@@ -150,7 +145,6 @@ async waitForInit(initial: boolean): Promise<void> {
 
 **Real-Time Monitoring**: Unlike backtest mode which uses historical candles for fast-forward, live mode calls `getAveragePrice()` on every tick to check if take profit or stop loss is hit. This uses VWAP from the last 5 1-minute candles.
 
-**Sources:** [src/lib/services/logic/private/LiveLogicPrivateService.ts:60-113](), [src/lib/clients/ClientStrategy.ts:100-200]() (estimated)
 
 ### Scheduled Signal Timing
 
@@ -165,7 +159,6 @@ closeAt:     1704157200000  // Closes minuteEstimatedTime after pendingAt
 
 This was a critical bug fix to prevent premature closure causing financial losses on fees. The test suite verifies this behavior in [test/e2e/timing.test.mjs:34-153]().
 
-**Sources:** [test/e2e/timing.test.mjs:34-153](), [src/lib/clients/ClientStrategy.ts:1-500]() (estimated)
 
 ## Walker Execution Flow
 
@@ -173,7 +166,6 @@ This was a critical bug fix to prevent premature closure causing financial losse
 
 **Walker Execution Flow Diagram** - Shows how `WalkerLogicPrivateService` orchestrates multiple backtests sequentially and selects the best strategy by comparing metrics.
 
-**Sources:** [src/classes/Walker.ts:39-87](), [src/lib/services/global/WalkerGlobalService.ts:52-86]()
 
 ### Key Characteristics
 
@@ -221,7 +213,6 @@ walkerEmitter.next({
 
 **State Isolation**: Each backtest run in walker mode starts with cleared state for markdown services, strategy, and risk profiles. This ensures strategies don't interfere with each other.
 
-**Sources:** [src/classes/Walker.ts:39-144](), [src/lib/services/markdown/WalkerMarkdownService.ts:1-300]() (estimated)
 
 ### Walker Result Structure
 
@@ -244,7 +235,6 @@ interface IWalkerResults {
 
 The markdown report includes a comparison table showing all metrics side-by-side for strategy selection.
 
-**Sources:** [src/interfaces/Walker.interface.ts:1-50]() (estimated), [README.md:406-467]()
 
 ## Context Propagation Patterns
 
@@ -254,7 +244,6 @@ All three execution modes use the same context propagation architecture but with
 
 **Context Propagation Across Modes** - Shows how both `MethodContext` and `ExecutionContext` wrap execution in all three modes.
 
-**Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts:38-67](), [src/lib/services/logic/public/LiveLogicPublicService.ts:55-75](), [src/lib/services/context/MethodContextService.ts:1-200]() (estimated)
 
 ### Context Types
 
@@ -276,7 +265,6 @@ The key difference between modes is the value of `when` and `backtest`:
 | Live | `new Date()` | `false` |
 | Walker | `timeframes[i]` per strategy | `true` |
 
-**Sources:** [src/lib/services/context/ExecutionContextService.ts:1-100]() (estimated), [src/lib/services/context/MethodContextService.ts:1-200]() (estimated)
 
 ## Event Emission Differences
 
@@ -286,7 +274,6 @@ Each mode emits events to different subjects for filtered consumption:
 
 **Event Emission Architecture** - Shows how signals route through global and mode-specific emitters for filtered consumption.
 
-**Sources:** [src/config/emitters.ts:1-81](), [src/function/event.ts:56-207](), [src/lib/services/markdown/BacktestMarkdownService.ts:526-529](), [src/lib/services/markdown/LiveMarkdownService.ts:730-733]()
 
 ### Subscription Patterns
 
@@ -315,7 +302,6 @@ listenSignalLive((event) => {
 
 All listeners use queued processing to ensure sequential execution even with async callbacks, preventing race conditions.
 
-**Sources:** [src/function/event.ts:56-207]()
 
 ## Choosing the Right Mode
 
@@ -351,7 +337,6 @@ Common patterns combine multiple modes:
    - Use `Heat.getData()` to compare portfolio-wide performance
    - Select best-performing symbols for live trading
 
-**Sources:** [README.md:233-241](), [README.md:469-550]()
 
 ## Performance Metrics
 
@@ -378,7 +363,6 @@ Available metric types:
 
 These metrics enable bottleneck detection and optimization of strategy logic or data fetching.
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:158-243](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:79-91](), [src/contract/Performance.contract.ts:1-50]() (estimated)
 
 ---
 

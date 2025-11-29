@@ -17,7 +17,6 @@ The framework enables:
 8. **Scheduled Signals** - Limit order tracking with cancellation rate analytics via `Schedule.getData()`
 9. **Pluggable Integration** - Custom exchange data sources and persistence backends via schema registration
 
-**Sources:** [README.md:1-50](), [types.d.ts:1-85](), [src/index.ts:1-131]()
 
 ---
 
@@ -40,7 +39,6 @@ The framework implements a six-layer clean architecture with dependency injectio
 | **Event System** | Pub-sub for observability | `signalEmitter`, `doneEmitter`, `errorEmitter`, `progressEmitter` | [src/config/emitters.ts]() |
 | **Reporting & Analytics** | Performance metrics and markdown generation | `BacktestMarkdownService`, `LiveMarkdownService`, etc. | [src/lib/services/markdown/]() |
 
-**Sources:** [src/index.ts:1-131](), [src/classes/Backtest.ts:1-50](), [src/classes/Live.ts:1-50](), [src/classes/Walker.ts:1-50](), [src/classes/Heat.ts:1-50](), [src/classes/Schedule.ts:1-50](), [src/classes/PositionSize.ts:1-50](), [src/lib/services/]()
 
 ---
 
@@ -78,7 +76,6 @@ The framework provides three primary execution modes with distinct characteristi
 - Emits progress events via `progressEmitter` in [src/config/emitters.ts]()
 - Generates comparison reports via `WalkerMarkdownService`
 
-**Sources:** [types.d.ts:515-560](), [src/classes/Backtest.ts](), [src/classes/Live.ts](), [src/classes/Walker.ts](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts](), [src/lib/services/logic/private/LiveLogicPrivateService.ts](), [src/lib/services/logic/private/WalkerLogicPrivateService.ts](), [README.md:338-459]()
 
 ---
 
@@ -97,7 +94,6 @@ The client layer contains pure business logic without dependency injection:
 | `ClientFrame` | Timeframe generation for backtesting | `getTimeframe()` |
 | `PersistSignalAdapter` | Crash-safe signal persistence | `write()`, `read()` |
 
-**Sources:** [types.d.ts:519-543](), [types.d.ts:173-221](), [types.d.ts:291-308]()
 
 ### Service Orchestration Layer
 
@@ -123,7 +119,6 @@ The service layer handles dependency injection and routing:
    - `BacktestLogicPrivateService`, `LiveLogicPrivateService`
    - Implement async generator loops
 
-**Sources:** [types.d.ts:310-351](), [types.d.ts:84-96]()
 
 For detailed service layer documentation, see [Service Layer](./36_Service_Layer.md).
 
@@ -169,7 +164,6 @@ When `getSignal()` returns `ISignalDto` with `priceOpen` specified:
 4. **Cancellation:** If timeout (`CC_SCHEDULE_AWAIT_MINUTES`) or `priceStopLoss` hit first, signal transitions to `cancelled`
 5. **Tracking:** Schedule statistics available via `Schedule.getData()` in [src/classes/Schedule.ts]()
 
-**Sources:** [types.d.ts:542-770](), [src/client/ClientStrategy.ts](), [src/classes/Schedule.ts:1-135](), [README.md:54-82]()
 
 ---
 
@@ -193,7 +187,6 @@ The framework uses a registration-then-execution pattern:
 - **Routing:** `MethodContextService` provides schema names for lookup
 - **Flexibility:** Multiple strategies/exchanges can coexist
 
-**Sources:** [types.d.ts:546-646](), [src/index.ts:1-11]()
 
 For configuration details, see [Configuration Functions](./15_Configuration_Functions.md).
 
@@ -217,7 +210,6 @@ The framework uses **di-scoped** for implicit context passing:
 - Type-safe context access
 - Scoped to async execution boundaries
 
-**Sources:** [types.d.ts:57-96](), [types.d.ts:310-351]()
 
 For DI system details, see [Dependency Injection System](./11_Dependency_Injection_System.md).
 
@@ -234,7 +226,6 @@ For DI system details, see [Dependency Injection System](./11_Dependency_Injecti
 | `functools-kit` | ^1.0.93 | Functional utilities (singleshot, queued, memoize) |
 | `get-moment-stamp` | ^1.1.1 | Timestamp utilities for candle intervals |
 
-**Sources:** [package.json:73-78]()
 
 ### Build System
 
@@ -243,7 +234,6 @@ For DI system details, see [Dependency Injection System](./11_Dependency_Injecti
 - **Types:** Single declaration file (`types.d.ts`)
 - **Target:** Node.js with TypeScript 5.0+
 
-**Sources:** [package.json:40-57]()
 
 ---
 
@@ -253,13 +243,11 @@ For DI system details, see [Dependency Injection System](./11_Dependency_Injecti
 
 ![Mermaid Diagram](./diagrams/01_Overview_7.svg)
 
-**Sources:** Referenced in high-level diagrams provided
 
 ### Live Execution Flow
 
 ![Mermaid Diagram](./diagrams/01_Overview_8.svg)
 
-**Sources:** Referenced in high-level diagrams provided
 
 ---
 
@@ -283,7 +271,6 @@ The framework is optimized for production use:
 | Context propagation | `di-scoped` | No parameter threading overhead |
 | Persistence | Atomic file writes | Crash safety without performance penalty |
 
-**Sources:** [README.md:18-19](), [README.md:618-629]()
 
 ---
 
@@ -309,7 +296,6 @@ Signals are validated automatically in `ClientStrategy`:
 
 **Persistence Location:** [src/classes/Persist.ts]()
 
-**Sources:** [types.d.ts:361-392](), [README.md:210-242]()
 
 For error handling patterns, see [Error Handling](./77_Error_Handling.md).
 
@@ -324,5 +310,4 @@ To use the framework:
 3. **Backtesting:** Use `Backtest.run()` for historical testing - see [Backtest API](./17_Backtest_API.md)
 4. **Live Trading:** Use `Live.run()` for production deployment - see [Live Trading API](./18_Live_Trading_API.md)
 5. **Reporting:** Generate markdown reports with `getReport()` and `dump()` - see [Reporting and Analytics](./67_Reporting_and_Analytics.md)
-
-**Sources:** [README.md:22-169](), [src/index.ts:1-56]()
+

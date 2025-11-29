@@ -20,7 +20,6 @@ Signals progress through six distinct states during their lifecycle. The framewo
 
 The key distinction is between **immediate signals** (no `priceOpen` specified, opens instantly) and **scheduled signals** (`priceOpen` specified, waits for price activation).
 
-**Sources:** [types.d.ts:654-765](), [src/client/ClientStrategy.ts:1-1180](), [src/interfaces/Strategy.interface.ts:19-73]()
 
 ## State Discriminated Union Type System
 
@@ -53,7 +52,6 @@ if (result.action === "cancelled") {
 }
 ```
 
-**Sources:** [types.d.ts:770](), [types.d.ts:654-765](), [src/interfaces/Strategy.interface.ts:162-278]()
 
 ## State Transition Flow
 
@@ -70,7 +68,6 @@ The state machine is implemented in `ClientStrategy.tick()`. The `_pendingSignal
 | **Immediate** | `getSignal()` returns `ISignalDto` without `priceOpen` | `opened` | Opens at current VWAP instantly | `OPEN_NEW_PENDING_SIGNAL_FN` at [src/client/ClientStrategy.ts:623-673]() |
 | **Scheduled** | `getSignal()` returns `ISignalDto` with `priceOpen` | `scheduled` | Waits for price to reach `priceOpen` | `OPEN_NEW_SCHEDULED_SIGNAL_FN` at [src/client/ClientStrategy.ts:578-621]() |
 
-**Sources:** [src/client/ClientStrategy.ts:1093-1094](), [src/client/ClientStrategy.ts:578-673](), [src/client/ClientStrategy.ts:332-551]()
 
 ## Idle State
 
@@ -104,7 +101,6 @@ Implementation in `ClientStrategy.tick()`:
 
 The idle state is returned when both `_pendingSignal` and `_scheduledSignal` remain `null` after attempting signal generation.
 
-**Sources:** [types.d.ts:654-667](), [src/client/ClientStrategy.ts:187-283](), [src/client/ClientStrategy.ts:816-846]()
 
 ## Scheduled State
 
@@ -159,7 +155,6 @@ On subsequent ticks with `_scheduledSignal` set, the framework monitors for thre
 | **Timeout** | `CC_SCHEDULE_AWAIT_MINUTES` elapsed | `CHECK_SCHEDULED_SIGNAL_TIMEOUT_FN` at [src/client/ClientStrategy.ts:332-386]() | `cancelled` |
 | **StopLoss Hit** | Price crosses StopLoss before activation | `CANCEL_SCHEDULED_SIGNAL_BY_STOPLOSS_FN` at [src/client/ClientStrategy.ts:424-457]() | `idle` |
 
-**Sources:** [types.d.ts:672-685](), [types.d.ts:588-591](), [src/client/ClientStrategy.ts:578-621](), [src/client/ClientStrategy.ts:233-254](), [src/client/ClientStrategy.ts:332-551]()
 
 ## Opened State
 
@@ -209,7 +204,6 @@ Implementation in `ACTIVATE_SCHEDULED_SIGNAL_FN` at [src/client/ClientStrategy.t
 
 After returning opened state, the next `tick()` call transitions to active state since `_pendingSignal` now exists.
 
-**Sources:** [types.d.ts:690-703](), [src/client/ClientStrategy.ts:623-673](), [src/client/ClientStrategy.ts:459-551](), [src/client/ClientStrategy.ts:256-271]()
 
 ## Active State
 
@@ -257,7 +251,6 @@ If any condition is true, returns `IStrategyTickResultClosed` instead of proceed
 
 Time expiration calculation uses `signal.pendingAt` at [src/client/ClientStrategy.ts:681](), NOT `signal.scheduledAt`. This ensures scheduled signals only start their lifetime countdown after activation, not from initial creation.
 
-**Sources:** [types.d.ts:708-721](), [src/client/ClientStrategy.ts:791-814](), [src/client/ClientStrategy.ts:675-734]()
 
 ## Closed State
 
@@ -323,7 +316,6 @@ The `ClientStrategy.backtest()` method at [src/client/ClientStrategy.ts:1001-117
 3. Returns `time_expired` if duration elapses without hitting TP/SL
 4. Uses exact TP/SL prices (not VWAP) for close price
 
-**Sources:** [types.d.ts:726-745](), [types.d.ts:638](), [src/client/ClientStrategy.ts:736-789](), [src/client/ClientStrategy.ts:1001-1179]()
 
 ## Cancelled State
 
@@ -384,7 +376,6 @@ When cancelled by stop loss:
 
 In backtest mode, `CANCEL_SCHEDULED_SIGNAL_IN_BACKTEST_FN` at [src/client/ClientStrategy.ts:848-895]() handles scheduled signal cancellations and always returns `IStrategyTickResultCancelled` (not `idle`).
 
-**Sources:** [types.d.ts:750-765](), [src/client/ClientStrategy.ts:332-386](), [src/client/ClientStrategy.ts:388-457](), [src/client/ClientStrategy.ts:848-895]()
 
 ## Type-Safe State Handling
 
@@ -433,5 +424,4 @@ async function handleTick(strategy: ClientStrategy) {
 ### State Filtering in Live Mode
 
 The `LiveLogicPrivateService` at [src/lib/services/logic/LiveLogicPrivateService.ts]() filters active states to reduce noise. Only `opened` and `closed` states are yielded to the user in live trading, while backtest mode yields all states for analysis.
-
-**Sources:** [src/interfaces/Strategy.interface.ts:204-208](), [src/client/ClientStrategy.ts:258-464]()
+

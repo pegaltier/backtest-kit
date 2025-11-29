@@ -12,7 +12,6 @@ For event-driven signal flow, see [Event System](./13_Event_System.md).
 
 Cross-cutting concerns provide infrastructure services that are consumed by all layers.
 
-**Sources:** [types.d.ts:40-130](), [src/config/params.ts:1-35](), [src/classes/Persist.ts:1-732]()
 
 ---
 
@@ -29,7 +28,6 @@ The framework accepts any logger implementing the `ILogger` interface, which def
 | `info()` | Informational updates | Successful completions, validations |
 | `warn()` | Potentially problematic situations | Missing data, deprecated usage |
 
-**Sources:** [types.d.ts:45-66]()
 
 ### Logger Registration
 
@@ -44,7 +42,6 @@ setLogger({
 });
 ```
 
-**Sources:** [types.d.ts:68-85](), [test/config/setup.mjs:1-4]()
 
 ### Automatic Context Injection
 
@@ -58,7 +55,6 @@ The framework automatically injects contextual information into log messages. Se
 [PersistBase] entityName=my-strategy - Writing signal state
 ```
 
-**Sources:** [types.d.ts:68-85](), [src/classes/Persist.ts:192-196]()
 
 ### LoggerService Integration
 
@@ -77,7 +73,6 @@ constructor(
 }
 ```
 
-**Sources:** [src/classes/Persist.ts:192-196](), [src/classes/Persist.ts:234-238]()
 
 ---
 
@@ -89,7 +84,6 @@ The framework emits all errors to a centralized `errorEmitter` Subject, allowing
 
 ![Mermaid Diagram](./diagrams/75_Cross-Cutting_Concerns_2.svg)
 
-**Sources:** [types.d.ts:1-3](), [src/index.ts:11]()
 
 ### Error Listener Registration
 
@@ -102,7 +96,6 @@ listenError((error) => {
 });
 ```
 
-**Sources:** [src/index.ts:11](), [test/e2e/defend.test.mjs:615-640]()
 
 ### Background vs Foreground Error Propagation
 
@@ -141,7 +134,6 @@ try {
 }
 ```
 
-**Sources:** [test/e2e/defend.test.mjs:615-641](), [test/e2e/sanitize.test.mjs:110-131]()
 
 ### Validation Error Emission
 
@@ -153,7 +145,6 @@ Signal validation errors are thrown from `VALIDATE_SIGNAL_FN` and caught by logi
 - Negative or NaN prices
 - Inverted long/short logic (e.g., long with TP < priceOpen)
 
-**Sources:** [test/e2e/sanitize.test.mjs:27-131](), [test/e2e/defend.test.mjs:544-641]()
 
 ---
 
@@ -165,7 +156,6 @@ The persistence layer provides crash-safe state management for live trading via 
 
 ![Mermaid Diagram](./diagrams/75_Cross-Cutting_Concerns_3.svg)
 
-**Sources:** [src/classes/Persist.ts:40-482](), [src/utils/writeFileAtomic.ts:1-141]()
 
 ### PersistBase Abstract Class
 
@@ -193,7 +183,6 @@ The persistence layer provides crash-safe state management for live trading via 
         └── positions.json
 ```
 
-**Sources:** [src/classes/Persist.ts:160-482](), [types.d.ts:40-111]()
 
 ### PersistSignalAdapter
 
@@ -223,7 +212,6 @@ await PersistSignalAdapter.writeSignalData(
 );
 ```
 
-**Sources:** [src/classes/Persist.ts:484-600](), [types.d.ts:40-46]()
 
 ### PersistRiskAdapter
 
@@ -255,7 +243,6 @@ const positions = await PersistRiskAdapter.readPositionData("my-risk");
 await PersistRiskAdapter.writePositionData(positionsArray, "my-risk");
 ```
 
-**Sources:** [src/classes/Persist.ts:602-731](), [types.d.ts:605-607]()
 
 ### Atomic File Writes
 
@@ -278,7 +265,6 @@ await PersistRiskAdapter.writePositionData(positionsArray, "my-risk");
 - **Durability (both):** `sync()` ensures data is flushed to disk before rename/close
 - **Isolation:** Temp filename uses crypto-random bytes to prevent collisions
 
-**Sources:** [src/utils/writeFileAtomic.ts:1-141]()
 
 ### Custom Persistence Adapters
 
@@ -315,7 +301,6 @@ PersistSignalAdapter.usePersistSignalAdapter(RedisPersist);
 PersistRiskAdapter.usePersistRiskAdapter(RedisPersist);
 ```
 
-**Sources:** [src/classes/Persist.ts:514-529](), [src/classes/Persist.ts:640-660](), [test/config/setup.mjs:6-34]()
 
 ### Crash Recovery Pattern
 
@@ -342,7 +327,6 @@ const BASE_WAIT_FOR_INIT_FN = async (self: TPersistBase): Promise<void> => {
 
 **Retry logic for file deletion:** [src/classes/Persist.ts:136-158]()
 
-**Sources:** [src/classes/Persist.ts:113-158](), [src/classes/Persist.ts:37-39]()
 
 ---
 
@@ -354,7 +338,6 @@ The `GLOBAL_CONFIG` object defines system-wide constraints for validation and ti
 
 ![Mermaid Diagram](./diagrams/75_Cross-Cutting_Concerns_4.svg)
 
-**Sources:** [src/config/params.ts:1-35](), [types.d.ts:5-34]()
 
 ### Configuration Parameters
 
@@ -366,7 +349,6 @@ The `GLOBAL_CONFIG` object defines system-wide constraints for validation and ti
 | `CC_MAX_STOPLOSS_DISTANCE_PERCENT` | 20% | Maximum SL distance | Reject valid signals | Catastrophic losses allowed |
 | `CC_MAX_SIGNAL_LIFETIME_MINUTES` | 1440 | Maximum signal lifetime | Premature closures | Eternal signals block risk |
 
-**Sources:** [src/config/params.ts:1-30]()
 
 ### setConfig Function
 
@@ -392,7 +374,6 @@ setConfig({
 });
 ```
 
-**Sources:** [types.d.ts:86-97](), [test/config/setup.mjs:36-41](), [test/e2e/sanitize.test.mjs:30-32]()
 
 ### Validation Parameter Usage
 
@@ -417,7 +398,6 @@ The validation parameters are enforced in `VALIDATE_SIGNAL_FN`, which throws err
 - Excessive minuteEstimatedTime rejected (>30 days)
 - Negative/NaN/Infinity prices rejected
 
-**Sources:** [test/e2e/sanitize.test.mjs:27-660](), [test/e2e/defend.test.mjs:544-949]()
 
 ### Timing Parameter Usage
 
@@ -435,7 +415,6 @@ The timing parameters control scheduled signal behavior and signal lifecycle:
 - If elapsed >= `minuteEstimatedTime`, signal closes with `"time_expired"` reason
 - Validation rejects signals where `minuteEstimatedTime > CC_MAX_SIGNAL_LIFETIME_MINUTES`
 
-**Sources:** [test/e2e/defend.test.mjs:445-536](), [test/e2e/sanitize.test.mjs:250-348]()
 
 ---
 
@@ -447,7 +426,6 @@ The DI container provides singletons for cross-cutting concerns that are injecte
 
 ![Mermaid Diagram](./diagrams/75_Cross-Cutting_Concerns_5.svg)
 
-**Sources:** [src/classes/Persist.ts:192-196](), [types.d.ts:171-176]()
 
 ### Context Injection Flow
 
@@ -458,7 +436,6 @@ Logging context is automatically injected via the context propagation system (se
 3. Services access these via DI-scoped tokens
 4. Logger calls include context parameters automatically
 
-**Sources:** [types.d.ts:100-143](), [types.d.ts:362-402]()
 
 ---
 
@@ -481,7 +458,6 @@ Logging context is automatically injected via the context propagation system (se
    });
    ```
 
-**Sources:** [types.d.ts:45-66]()
 
 ### Error Handling Guidelines
 
@@ -503,7 +479,6 @@ Logging context is automatically injected via the context propagation system (se
    - Check `CC_MIN_TAKEPROFIT_DISTANCE_PERCENT` and related parameters
    - Review signal generation logic for price calculation bugs
 
-**Sources:** [test/e2e/defend.test.mjs:615-641](), [src/index.ts:11]()
 
 ### Persistence Guidelines
 
@@ -523,7 +498,6 @@ Logging context is automatically injected via the context propagation system (se
    - Monitor disk space usage (especially for high-frequency strategies)
    - Alert on repeated write failures
 
-**Sources:** [src/classes/Persist.ts:113-158](), [test/config/setup.mjs:6-34]()
 
 ### Configuration Guidelines
 
@@ -545,5 +519,4 @@ Logging context is automatically injected via the context propagation system (se
    - Include comments explaining why specific values are chosen
    - Reference trading fees and slippage assumptions
    - Note asset-specific considerations (e.g., crypto vs stocks)
-
-**Sources:** [test/config/setup.mjs:36-41](), [test/e2e/sanitize.test.mjs:30-32]()
+

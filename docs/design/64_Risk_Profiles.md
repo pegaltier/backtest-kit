@@ -41,7 +41,6 @@ Validations can be provided as:
 1. **Function**: `(payload: IRiskValidationPayload) => void | Promise<void>`
 2. **Object**: `{ validate: Function, note?: string }` for documentation
 
-**Sources:** [src/interfaces/Risk.interface.ts:87-100](), [types.d.ts:476-488]()
 
 ---
 
@@ -60,7 +59,6 @@ Each `riskName` creates an **isolated risk profile** with its own:
 
 Multiple strategies sharing `riskName: "conservative"` all contribute to the same `activePositionCount`. Strategies using different risk profiles have independent position tracking.
 
-**Sources:** [src/client/ClientRisk.ts:73-82](), [src/lib/services/connection/RiskConnectionService.ts:56-65](), [test/spec/risk.test.mjs:374-437]()
 
 ---
 
@@ -148,7 +146,6 @@ addRisk({
 });
 ```
 
-**Sources:** [src/interfaces/Risk.interface.ts:62-86](), [src/client/ClientRisk.ts:165-217](), [test/spec/risk.test.mjs:41-93]()
 
 ---
 
@@ -160,7 +157,6 @@ addRisk({
 
 The `DO_VALIDATION_FN` wrapper catches errors and converts them to `false` return values, preventing exceptions from propagating. Validation errors are also emitted to `validationSubject` for observability.
 
-**Sources:** [src/client/ClientRisk.ts:165-217](), [src/client/ClientRisk.ts:30-46](), [src/lib/services/global/RiskGlobalService.ts:44-61]()
 
 ---
 
@@ -200,7 +196,6 @@ interface IRiskActivePosition {
 
 **Note:** The `signal` field is stored as `null` in the actual implementation ([src/client/ClientRisk.ts:121]()) since detailed signal information isn't needed for risk validation - only counts and keys matter.
 
-**Sources:** [src/client/ClientRisk.ts:20-28](), [src/client/ClientRisk.ts:107-128](), [src/client/ClientRisk.ts:134-150](), [src/interfaces/Risk.interface.ts:24-35]()
 
 ---
 
@@ -235,7 +230,6 @@ addStrategy({ strategyName: "strat-2", riskName: "shared" }); // max 5 positions
 // Total possible positions: 5 (shared limit)
 ```
 
-**Sources:** [src/lib/services/connection/RiskConnectionService.ts:56-65](), [test/spec/risk.test.mjs:374-437]()
 
 ---
 
@@ -266,7 +260,6 @@ PersistRiskAdapter.readPositionData(riskName);
 
 The `singleshot` pattern ensures `waitForInit()` only executes once per `ClientRisk` instance, even if called multiple times concurrently.
 
-**Sources:** [src/client/ClientRisk.ts:53-59](), [src/client/ClientRisk.ts:88-96](), [src/classes/Persist.ts](), [test/spec/risk.test.mjs:498-576]()
 
 ---
 
@@ -311,7 +304,6 @@ addRisk({
 1. **onRejected**: Called when any validation throws an error ([src/client/ClientRisk.ts:203-206]())
 2. **onAllowed**: Called when all validations pass ([src/client/ClientRisk.ts:212-214]())
 
-**Sources:** [src/interfaces/Risk.interface.ts:38-49](), [src/client/ClientRisk.ts:203-214]()
 
 ---
 
@@ -376,7 +368,6 @@ addStrategy({
 });
 ```
 
-**Sources:** [src/interfaces/Risk.interface.ts:87-100](), [test/spec/risk.test.mjs:41-93](), [test/spec/risk.test.mjs:209-247]()
 
 ---
 
@@ -388,5 +379,4 @@ addStrategy({
 4. **Persistence Enables Recovery:** Live mode restores active positions from disk on restart
 5. **Isolation By riskName:** Each risk profile has independent position tracking and persistence
 6. **Cross-Strategy Analysis:** Validations see all active positions across strategies using this risk profile
-
-**Sources:** [src/client/ClientRisk.ts](), [src/interfaces/Risk.interface.ts](), [src/lib/services/connection/RiskConnectionService.ts]()
+

@@ -15,13 +15,11 @@ For information about how validated schemas are stored and retrieved, see [Schem
 
 ![Mermaid Diagram](./diagrams/40_Validation_Services_0.svg)
 
-**Sources:** [src/function/add.ts:54-56](), [src/function/add.ts:103-105](), [src/lib/index.ts:143-150](), [src/lib/core/types.ts:59-66]()
 
 ### Validation Flow: Registration to Execution
 
 ![Mermaid Diagram](./diagrams/40_Validation_Services_1.svg)
 
-**Sources:** [src/function/add.ts:50-62](), [test/e2e/defend.test.mjs:544-641](), [test/e2e/sanitize.test.mjs:27-131]()
 
 ---
 
@@ -40,7 +38,6 @@ The framework provides six validation service classes, one for each component ty
 | `SizingValidationService` | Sizing | Position sizing method validation, parameter range checks | `TYPES.sizingValidationService` |
 | `WalkerValidationService` | Walker | Strategy comparison validation, metric selection checks | `TYPES.walkerValidationService` |
 
-**Sources:** [src/lib/index.ts:143-150](), [src/lib/core/types.ts:59-66](), [src/lib/core/provide.ts:102-109]()
 
 ### Common Service Interface
 
@@ -61,7 +58,6 @@ interface IValidationService<TSchema> {
 
 The `addComponent` method (named `addStrategy`, `addExchange`, etc.) is called by the corresponding `add*` functions in the public API. Validation results are memoized to avoid repeated validation of the same schema.
 
-**Sources:** [src/function/add.ts:50-62](), [src/function/list.ts:41-44]()
 
 ---
 
@@ -73,7 +69,6 @@ Schema validation occurs when a component is registered via an `add*` function. 
 
 ![Mermaid Diagram](./diagrams/40_Validation_Services_2.svg)
 
-**Sources:** [src/function/add.ts:50-62](), [src/function/add.ts:99-111]()
 
 ### Validation Checks by Component Type
 
@@ -123,13 +118,11 @@ Each validation service performs component-specific checks:
 - `metric` is valid metric name (if specified)
 - `callbacks` structure is valid (if specified)
 
-**Sources:** [src/function/add.ts:16-62](), [src/function/add.ts:99-111](), [src/function/add.ts:143-149](), [src/function/add.ts:188-199](), [src/function/add.ts:254-265](), [src/function/add.ts:329-340]()
 
 ### Memoization Pattern
 
 Validation services use memoization to cache validation results. Once a schema is validated, subsequent calls with the same schema name return the cached result without re-running validation logic. This optimization is critical for performance during execution when validation services may be called frequently.
 
-**Sources:** [src/lib/index.ts:143-150]()
 
 ---
 
@@ -141,7 +134,6 @@ Signal validation occurs at runtime when a strategy generates a signal via `getS
 
 ![Mermaid Diagram](./diagrams/40_Validation_Services_3.svg)
 
-**Sources:** [test/e2e/defend.test.mjs:25-145](), [test/e2e/sanitize.test.mjs:27-131]()
 
 ### Price Validation Checks
 
@@ -165,7 +157,6 @@ The framework validates all price fields to prevent impossible or dangerous trad
 }
 ```
 
-**Sources:** [test/e2e/sanitize.test.mjs:360-452](), [test/e2e/sanitize.test.mjs:464-556](), [test/e2e/sanitize.test.mjs:568-660]()
 
 ### TP/SL Logic Validation
 
@@ -203,7 +194,6 @@ The framework enforces position-specific logic for Take Profit and Stop Loss pri
 }
 ```
 
-**Sources:** [test/e2e/defend.test.mjs:544-641](), [test/e2e/defend.test.mjs:648-743](), [test/e2e/defend.test.mjs:751-845](), [test/e2e/defend.test.mjs:962-1069]()
 
 ### Distance Validation
 
@@ -239,7 +229,6 @@ The framework validates minimum and maximum distances for Take Profit and Stop L
 }
 ```
 
-**Sources:** [test/e2e/sanitize.test.mjs:27-131](), [test/e2e/sanitize.test.mjs:143-238](), [src/config/params.ts:13-23]()
 
 ### Lifetime Validation
 
@@ -261,7 +250,6 @@ The framework validates signal lifetime to prevent "eternal signals" that block 
 }
 ```
 
-**Sources:** [test/e2e/sanitize.test.mjs:250-348](), [src/config/params.ts:24-29]()
 
 ---
 
@@ -290,7 +278,6 @@ setConfig({
 });
 ```
 
-**Sources:** [src/config/params.ts:1-35](), [test/config/setup.mjs:36-41](), [test/e2e/sanitize.test.mjs:27-131]()
 
 ---
 
@@ -322,13 +309,11 @@ export function addStrategy(strategySchema: IStrategySchema) {
 
 This two-phase approach ensures that invalid schemas are rejected before being stored, preventing runtime errors later in the execution pipeline.
 
-**Sources:** [src/function/add.ts:50-62](), [src/function/add.ts:99-111](), [src/function/add.ts:143-149]()
 
 ### Pattern 2: Validation Result Memoization
 
 Validation services memoize validation results to avoid redundant checks. Once a schema is validated, subsequent references to the same component name use the cached validation result. This is critical for performance during execution when components may be referenced hundreds or thousands of times.
 
-**Sources:** [src/lib/index.ts:143-150]()
 
 ### Pattern 3: Listing Registered Schemas
 
@@ -342,7 +327,6 @@ export async function listExchanges(): Promise<IExchangeSchema[]> {
 }
 ```
 
-**Sources:** [src/function/list.ts:41-44](), [src/function/list.ts:76-79](), [src/function/list.ts:106-109]()
 
 ### Pattern 4: Reference Validation
 
@@ -350,7 +334,6 @@ Some validation services check that referenced components exist. For example, `W
 
 This cross-component validation ensures that the execution engine never attempts to use non-existent components, preventing runtime errors.
 
-**Sources:** [src/function/add.ts:188-199]()
 
 ---
 
@@ -367,7 +350,6 @@ When validation fails, the validation service throws an error immediately. This 
 3. **Constraint Violations:** Values outside valid ranges (e.g., negative `maxConcurrentPositions`)
 4. **Runtime Signal Validation:** Invalid signal prices, TP/SL logic, or lifetime
 
-**Sources:** [test/e2e/defend.test.mjs:544-641](), [test/e2e/sanitize.test.mjs:110-130]()
 
 ### Signal Rejection vs. Validation Errors
 
@@ -380,7 +362,6 @@ It's important to distinguish between two types of validation failures:
 
 Signal rejections are part of normal execution flow - the framework validates every signal generated by `getSignal()` and silently rejects invalid ones. Schema validation errors are exceptional conditions that indicate programmer error.
 
-**Sources:** [test/e2e/defend.test.mjs:25-145](), [test/e2e/sanitize.test.mjs:110-130]()
 
 ---
 
@@ -398,7 +379,6 @@ After a schema passes validation:
 
 This ensures that only validated schemas reach the execution engine.
 
-**Sources:** [src/function/add.ts:50-62](), [src/lib/index.ts:80-91](), [src/lib/index.ts:143-150]()
 
 ### Validation Service DI Bindings
 
@@ -417,5 +397,4 @@ All validation services are registered in the DI container as singletons:
 ```
 
 The singleton pattern ensures that validation results and registered schemas are shared across the entire application lifecycle.
-
-**Sources:** [src/lib/core/provide.ts:102-109](), [src/lib/core/types.ts:59-66](), [src/lib/index.ts:143-150]()
+

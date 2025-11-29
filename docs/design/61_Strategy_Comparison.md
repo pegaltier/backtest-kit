@@ -22,7 +22,6 @@ Walker mode ranks strategies using one of several performance metrics. The metri
 
 Each metric is extracted from `BacktestStatistics` after running a complete backtest for the strategy. Metrics return `null` when calculations are unsafe (NaN, Infinity), and null values are excluded from comparison ranking.
 
-**Sources:** [README.md:461-466]()
 
 ---
 
@@ -34,7 +33,6 @@ Walker orchestrates multiple sequential backtest runs and accumulates results fo
 
 ![Mermaid Diagram](./diagrams/61_Strategy_Comparison_0.svg)
 
-**Sources:** [src/classes/Walker.ts:39-86](), [src/lib/services/global/WalkerGlobalService.ts:52-86]()
 
 ### Key Components
 
@@ -57,7 +55,6 @@ Walker does **not** run strategies in parallel. Each strategy completes its full
 - Resource isolation (one backtest's memory footprint at a time)
 - Progressive result availability (can monitor best strategy mid-execution)
 
-**Sources:** [src/classes/Walker.ts:39-86](), [src/lib/services/global/WalkerGlobalService.ts:52-86]()
 
 ---
 
@@ -87,7 +84,6 @@ Walker uses `WalkerMarkdownService` to accumulate strategy results during execut
 - Filename format: `{walkerName}.md`
 - Located at [src/classes/Walker.ts:232-254]()
 
-**Sources:** [src/classes/Walker.ts:159-254]()
 
 ---
 
@@ -137,7 +133,6 @@ results.strategies.forEach((result, index) => {
 });
 ```
 
-**Sources:** [README.md:445-454]()
 
 ---
 
@@ -217,7 +212,6 @@ listenWalkerComplete((results) => {
 });
 ```
 
-**Sources:** [src/function/event.ts:507-567](), [src/config/emitters.ts:67-73]()
 
 ---
 
@@ -225,7 +219,6 @@ listenWalkerComplete((results) => {
 
 ![Mermaid Diagram](./diagrams/61_Strategy_Comparison_2.svg)
 
-**Sources:** [src/classes/Walker.ts:39-86](), [src/function/event.ts:507-567]()
 
 ---
 
@@ -266,7 +259,6 @@ for (const strategyName of walkerSchema.strategies) {
 
 This ensures each strategy starts with clean state and no leftover data from previous runs.
 
-**Sources:** [src/classes/Walker.ts:64-79]()
 
 ---
 
@@ -328,7 +320,6 @@ await Walker.dump("BTCUSDT", "my-walker");
 await Walker.dump("BTCUSDT", "my-walker", "./custom/reports");
 ```
 
-**Sources:** [src/classes/Walker.ts:159-254](), [README.md:456-459]()
 
 ---
 
@@ -367,7 +358,6 @@ stop();
 
 The cancellation function calls `strategyGlobalService.stop()` for each strategy to gracefully terminate any ongoing backtests.
 
-**Sources:** [src/classes/Walker.ts:108-143]()
 
 ---
 
@@ -416,7 +406,6 @@ const consensusWinner = Array.from(rankings.entries())
   .sort((a, b) => a[1] - b[1])[0][0];
 ```
 
-**Sources:** [README.md:461-466]()
 
 ---
 
@@ -474,5 +463,4 @@ const results = await Walker.getData("BTCUSDT", "my-walker");
 3. **Report generation** - Automatic markdown reports
 4. **Data isolation** - Automatic clearing between runs
 5. **Validation** - Upfront validation of all dependencies
-
-**Sources:** [README.md:407-459]()
+

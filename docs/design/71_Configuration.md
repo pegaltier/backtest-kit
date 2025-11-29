@@ -13,7 +13,6 @@ The configuration system operates as a global singleton that affects all framewo
 
 ![Mermaid Diagram](./diagrams/71_Configuration_0.svg)
 
-**Sources:** [src/config/params.ts:1-36](), [types.d.ts:5-97]()
 
 ---
 
@@ -29,7 +28,6 @@ The `GLOBAL_CONFIG` object contains five parameters that control framework behav
 | `CC_MAX_STOPLOSS_DISTANCE_PERCENT` | 20 | `number` | Maximum Stop Loss distance from `priceOpen` as percentage |
 | `CC_MAX_SIGNAL_LIFETIME_MINUTES` | 1440 | `number` | Maximum signal lifetime in minutes (default: 1 day) |
 
-**Sources:** [src/config/params.ts:1-30](), [types.d.ts:5-34]()
 
 ---
 
@@ -67,7 +65,6 @@ await setConfig({
 // All other parameters retain default values
 ```
 
-**Sources:** [types.d.ts:86-97](), [src/index.ts:1]()
 
 ---
 
@@ -102,7 +99,6 @@ await setLogger({
 });
 ```
 
-**Sources:** [types.d.ts:45-85](), [test/config/setup.mjs:4]()
 
 ---
 
@@ -112,7 +108,6 @@ Validation parameters enforce financial safety constraints during signal generat
 
 ![Mermaid Diagram](./diagrams/71_Configuration_1.svg)
 
-**Sources:** [test/e2e/sanitize.test.mjs:16-660](), [test/e2e/defend.test.mjs:540-845]()
 
 ---
 
@@ -162,7 +157,6 @@ await setConfig({
 });
 ```
 
-**Sources:** [src/config/params.ts:12-17](), [test/e2e/sanitize.test.mjs:16-131]()
 
 ---
 
@@ -207,7 +201,6 @@ await setConfig({
 });
 ```
 
-**Sources:** [src/config/params.ts:18-23](), [test/e2e/sanitize.test.mjs:132-238]()
 
 ---
 
@@ -251,7 +244,6 @@ await setConfig({
 });
 ```
 
-**Sources:** [src/config/params.ts:24-29](), [test/e2e/sanitize.test.mjs:239-348]()
 
 ---
 
@@ -261,7 +253,6 @@ Timing parameters control execution behavior for scheduled signals, VWAP calcula
 
 ![Mermaid Diagram](./diagrams/71_Configuration_2.svg)
 
-**Sources:** [src/config/params.ts:1-30]()
 
 ---
 
@@ -306,7 +297,6 @@ await setConfig({
 });
 ```
 
-**Sources:** [src/config/params.ts:2-6](), [test/e2e/defend.test.mjs:444-536]()
 
 ---
 
@@ -351,7 +341,6 @@ await setConfig({
 });
 ```
 
-**Sources:** [src/config/params.ts:7-11](), [types.d.ts:12-15]()
 
 ---
 
@@ -386,7 +375,6 @@ test("SANITIZE: Micro-profit rejected", async ({ pass, fail }) => {
 });
 ```
 
-**Sources:** [test/config/setup.mjs:36-41](), [test/e2e/sanitize.test.mjs:29-31]()
 
 ---
 
@@ -402,7 +390,6 @@ The following table shows which framework components are affected by each config
 | `CC_MAX_STOPLOSS_DISTANCE_PERCENT` | Signal validation (VALIDATE_SIGNAL_FN) | Rejects signals with excessive risk |
 | `CC_MAX_SIGNAL_LIFETIME_MINUTES` | Signal validation (VALIDATE_SIGNAL_FN) | Rejects signals with excessive lifetime |
 
-**Sources:** [src/config/params.ts:1-30](), [types.d.ts:5-34]()
 
 ---
 
@@ -460,5 +447,4 @@ await setConfig({
   CC_MAX_SIGNAL_LIFETIME_MINUTES: 10080, // 7 days
 });
 ```
-
-**Sources:** [test/config/setup.mjs:36-41](), [test/e2e/sanitize.test.mjs:26-131]()
+

@@ -7,7 +7,6 @@
 
 For information about how `ClientStrategy` is orchestrated within the execution flow, see [Backtest Execution Flow](./51_Backtest_Execution_Flow.md) and [Live Execution Flow](./55_Live_Execution_Flow.md). For details on the persistence mechanism, see [Signal Persistence](./48_Signal_Persistence.md). For PNL calculation specifics, see [PnL Calculation](./49_PnL_Calculation.md).
 
-**Sources:** [src/client/ClientStrategy.ts:167-193]()
 
 ---
 
@@ -19,7 +18,6 @@ For information about how `ClientStrategy` is orchestrated within the execution 
 
 ![Mermaid Diagram](./diagrams/31_ClientStrategy_0.svg)
 
-**Sources:** [src/client/ClientStrategy.ts:1-660](), High-Level Diagram 1
 
 ---
 
@@ -37,7 +35,6 @@ The `ClientStrategy` class implements the `IStrategy` interface and manages two 
 
 ![Mermaid Diagram](./diagrams/31_ClientStrategy_1.svg)
 
-**Sources:** [src/client/ClientStrategy.ts:194-198](), [src/interfaces/Strategy.interface.ts:59-69]()
 
 ---
 
@@ -47,7 +44,6 @@ The `ClientStrategy` class implements the `IStrategy` interface and manages two 
 
 ![Mermaid Diagram](./diagrams/31_ClientStrategy_2.svg)
 
-**Sources:** [src/client/ClientStrategy.ts:258-464](), [src/interfaces/Strategy.interface.ts:130-208]()
 
 ---
 
@@ -70,7 +66,6 @@ Signal generation is throttled at the strategy level to prevent spam. The `GET_S
 | `"30m"` | 30 | 1,800,000 |
 | `"1h"` | 60 | 3,600,000 |
 
-**Sources:** [src/client/ClientStrategy.ts:19-26](), [src/client/ClientStrategy.ts:90-131]()
 
 ### Validation Rules
 
@@ -100,7 +95,6 @@ Long: priceTakeProfit (49000) must be > priceOpen (50000)
 Long: priceStopLoss (51000) must be < priceOpen (50000)
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:28-88]()
 
 ---
 
@@ -140,7 +134,6 @@ else if (averagePrice >= signal.priceStopLoss) {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:236-464](), [src/client/ClientStrategy.ts:343-371]()
 
 ---
 
@@ -168,7 +161,6 @@ for (let i = 4; i < candles.length; i++) {
 
 **Why 5 candles?** This matches the live trading behavior where `ClientExchange.getAveragePrice()` uses the last 5 1-minute candles for VWAP calculation, ensuring consistency between backtest and live modes.
 
-**Sources:** [src/client/ClientStrategy.ts:467-656](), [src/client/ClientStrategy.ts:510-598]()
 
 ---
 
@@ -191,7 +183,6 @@ The `waitForInit()` method loads persisted state on startup:
 - Validates that persisted signal matches current exchange/strategy context
 - Skips persistence entirely in backtest mode for performance
 
-**Sources:** [src/client/ClientStrategy.ts:146-165](), [src/client/ClientStrategy.ts:209-233]()
 
 ---
 
@@ -215,7 +206,6 @@ All callbacks are invoked synchronously within the tick execution:
 
 **Important:** All callbacks are invoked even if they return promises, but the execution does not await them. This ensures callbacks don't block the main execution flow.
 
-**Sources:** [src/client/ClientStrategy.ts:266-290](), [src/client/ClientStrategy.ts:405-433](), [src/interfaces/Strategy.interface.ts:72-91]()
 
 ---
 
@@ -244,7 +234,6 @@ This calculation is used in:
 1. `backtest()` method - calculates VWAP from 5-candle sliding window
 2. Indirectly via `ClientExchange.getAveragePrice()` during `tick()` method
 
-**Sources:** [src/client/ClientStrategy.ts:133-144]()
 
 ---
 
@@ -275,7 +264,6 @@ The `backtest()` method achieves fast simulation through:
 - `tick()` approach: 60 calls to `tick()`, 60 VWAP calculations, 60 persistence writes
 - `backtest()` approach: 1 call to `backtest()`, ~5-60 VWAP calculations (stops early), 1 persistence write
 
-**Sources:** [src/client/ClientStrategy.ts:194-198](), [src/client/ClientStrategy.ts:209](), [src/client/ClientStrategy.ts:485-656]()
 
 ---
 
@@ -307,5 +295,4 @@ The `backtest()` method achieves fast simulation through:
 | `IStrategyTickResult` | [src/interfaces/Strategy.interface.ts:204]() | Discriminated union of tick results |
 | `IStrategyTickResultClosed` | [src/interfaces/Strategy.interface.ts:181]() | Closed signal with PNL |
 | `IStrategyCallbacks` | [src/interfaces/Strategy.interface.ts:75]() | Lifecycle event handlers |
-
-**Sources:** [src/client/ClientStrategy.ts:1-660](), [src/interfaces/Strategy.interface.ts:1-243]()
+

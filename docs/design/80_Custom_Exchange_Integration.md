@@ -13,7 +13,6 @@ The framework separates data retrieval (user-provided `IExchangeSchema`) from da
 
 The framework wraps these implementations in `ClientExchange` which adds VWAP calculation, execution context awareness, and bidirectional time-travel (backwards for historical data, forwards for backtest fast-forward).
 
-**Sources:** [types.d.ts:188-221](), [README.md:262-301]()
 </thinking>
 
 ---
@@ -26,7 +25,6 @@ The framework wraps these implementations in `ClientExchange` which adds VWAP ca
 
 When `addExchange()` is called, the schema is stored in `ExchangeSchemaService` using the ToolRegistry pattern. On first use, `ExchangeConnectionService` creates a `ClientExchange` instance wrapping the user schema. This instance is memoized and reused for all subsequent operations.
 
-**Sources:** [src/function/add.ts:1-80](), [src/lib/services/connection/ExchangeConnectionService.ts:1-50]()
 
 ---
 
@@ -43,7 +41,6 @@ User implementations must conform to `IExchangeSchema`:
 | `formatQuantity` | `(symbol, quantity) => Promise<string>` | Yes | Format quantity to exchange precision rules |
 | `callbacks` | `Partial<IExchangeCallbacks>` | No | Optional lifecycle event hooks |
 
-**Sources:** [types.d.ts:188-221]()
 
 ## getCandles Implementation
 
@@ -86,7 +83,6 @@ getCandles: (
 3. Align timestamps to interval boundaries (e.g., "1m" at :00 seconds)
 4. Throw descriptive errors for failed requests or invalid symbols
 
-**Sources:** [types.d.ts:188-221](), [types.d.ts:153-166]()
 
 ---
 
@@ -128,7 +124,6 @@ addExchange({
 - CCXT handles rate limiting, authentication, and exchange-specific APIs
 - Same code works for any CCXT-supported exchange (Binance, Bybit, etc.)
 
-**Sources:** [README.md:98-122]()
 
 ## Example: Database Exchange
 
@@ -160,7 +155,6 @@ addExchange({
 - Offline operation (no network dependency)
 - Consistent data (pre-downloaded and validated)
 
-**Sources:** [README.md:284-301]()
 
 ## ClientExchange Time-Travel Wrapper
 
@@ -170,7 +164,6 @@ addExchange({
 
 `ClientExchange.getCandles()` reads `ExecutionContextService.context.when` to determine the current time (historical for backtest, `Date.now()` for live). It calculates `since = when - (interval × limit)`, fetches candles via user schema, then filters results to `[since, when]` range.
 
-**Sources:** [src/lib/client/ClientExchange.ts:57-101]()
 
 ---
 
@@ -214,7 +207,6 @@ addExchange({
 });
 ```
 
-**Sources:** [types.d.ts:210-218](), [src/lib/client/ClientExchange.ts:205-219]()
 
 ## Lifecycle Callbacks
 
@@ -259,7 +251,6 @@ addExchange({
 - Data quality validation
 - Cache prewarming
 
-**Sources:** [types.d.ts:180-183](), [src/lib/client/ClientExchange.ts:96-98]()
 
 ---
 
@@ -277,7 +268,6 @@ Where `Typical Price = (High + Low + Close) / 3`
 
 **Fallback:** If `totalVolume == 0`, returns simple average of close prices.
 
-**Sources:** [src/lib/client/ClientExchange.ts:172-203]()
 
 ## Bidirectional Time-Travel
 
@@ -299,7 +289,6 @@ Where `Typical Price = (High + Low + Close) / 3`
 - Strategy calls `getCandles("BTCUSDT", "1m", 100)` for indicators → fetches `[12:00 - 100min, 12:00]`
 - Framework calls `getNextCandles("BTCUSDT", "1m", 60)` for signal outcome → fetches `[12:00, 12:00 + 60min]`
 
-**Sources:** [src/lib/client/ClientExchange.ts:57-101](), [src/lib/client/ClientExchange.ts:113-157]()
 
 ## Automatic Filtering and Validation
 
@@ -326,7 +315,6 @@ if (filteredData.length < limit) {
 
 Logs warnings for data gaps or quality issues.
 
-**Sources:** [src/lib/client/ClientExchange.ts:83-94]()
 
 ## Service Layer Integration
 
@@ -340,7 +328,6 @@ Logs warnings for data gaps or quality issues.
 4. `ExecutionContextService` provides `{when, backtest, symbol}` via scoped DI
 5. `ClientExchange` wraps user schema with enhanced functionality
 
-**Sources:** [src/lib/services/schema/ExchangeSchemaService.ts:1-20](), [src/lib/services/connection/ExchangeConnectionService.ts:1-50]()
 
 ## Testing Custom Exchanges
 
@@ -372,7 +359,6 @@ Test these scenarios when implementing custom exchanges:
 - Use connection pooling for database sources
 - Set reasonable timeouts (5-30s depending on data source)
 
-**Sources:** [src/lib/client/ClientExchange.ts:83-94]()
 
 ## Common Implementation Patterns
 
@@ -442,7 +428,6 @@ addExchange({
 });
 ```
 
-**Sources:** [types.d.ts:188-221]()
 
 ---
 
@@ -498,7 +483,6 @@ addExchange({
 });
 ```
 
-**Sources:** [src/client/ClientExchange.ts:62-75](), [src/client/ClientExchange.ts:179-183]()
 
 ---
 
@@ -511,5 +495,4 @@ Custom exchange integration requires implementing three core methods (`getCandle
 - Handle errors with descriptive messages
 - Respect exchange precision in formatting methods
 - Consider caching and rate limiting for production use
-
-**Sources:** [types.d.ts:137-171](), [src/client/ClientExchange.ts:1-223]()
+

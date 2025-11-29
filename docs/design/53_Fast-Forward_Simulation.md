@@ -30,7 +30,6 @@ The framework supports two execution modes for strategy evaluation:
 
 ![Mermaid Diagram](./diagrams/53_Fast-Forward_Simulation_0.svg)
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:75-253](), [src/interfaces/Strategy.interface.ts:309-321]()
 
 ---
 
@@ -52,7 +51,6 @@ backtest: (candles: ICandleData[]) => Promise<IStrategyBacktestResult>
 
 ![Mermaid Diagram](./diagrams/53_Fast-Forward_Simulation_1.svg)
 
-**Sources:** [src/client/ClientStrategy.ts:1188-1318](), [src/interfaces/Strategy.interface.ts:294-295]()
 
 ---
 
@@ -99,7 +97,6 @@ if (signal.position === "short") {
 
 3. **VWAP Calculation**: Average price is calculated using volume-weighted average of recent candles (controlled by `CC_AVG_PRICE_CANDLES_COUNT`).
 
-**Sources:** [src/client/ClientStrategy.ts:1164-1186](), [src/client/ClientStrategy.ts:1143-1183]()
 
 ---
 
@@ -141,7 +138,6 @@ for (let i = candlesCount - 1; i < candles.length; i++) {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:285-296](), [src/client/ClientStrategy.ts:1144-1145]()
 
 ---
 
@@ -200,7 +196,6 @@ const candlesNeeded =
   1;
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:1048-1134](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:94-143]()
 
 ---
 
@@ -236,7 +231,6 @@ For a scheduled signal:
 
 If `minuteEstimatedTime` counted from `scheduledAt`, the signal would close prematurely, incurring trading fees without adequate time to reach TP.
 
-**Sources:** [src/client/ClientStrategy.ts:1136-1186](), [test/e2e/timing.test.mjs:34-153]()
 
 ---
 
@@ -266,7 +260,6 @@ yield backtestResult;
 
 This prevents redundant `tick()` calls during periods where a signal is already open and being processed.
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:186-253](), [src/lib/services/connection/StrategyConnectionService.ts:132-150]()
 
 ---
 
@@ -302,7 +295,6 @@ For a 30-day backtest with 15-minute signals:
 - **Fast-forward**: ~100 backtest calls (assuming ~3 signals/day)
 - **Speedup**: ~430x fewer function calls
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:64-298](), [src/config/emitters.ts]()
 
 ---
 
@@ -345,7 +337,6 @@ This determinism is critical for:
 - **Walker Optimization**: Fair comparison between strategy variants
 - **Regression Testing**: Verify framework changes don't alter outcomes
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:59-300](), [src/client/ClientStrategy.ts:1188-1318]()
 
 ---
 
@@ -369,5 +360,4 @@ This determinism is critical for:
 | `CC_AVG_PRICE_CANDLES_COUNT` | 3 | VWAP window size |
 | `CC_SCHEDULE_AWAIT_MINUTES` | 120 | Scheduled signal timeout |
 | `CC_MAX_SIGNAL_LIFETIME_MINUTES` | 10080 | Maximum signal duration (7 days) |
-
-**Sources:** [src/client/ClientStrategy.ts:1-1318](), [src/config/params.ts]()
+

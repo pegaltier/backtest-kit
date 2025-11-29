@@ -11,7 +11,6 @@ For information about how these timestamps are used during backtest execution, s
 
 `ClientFrame` is responsible for generating the temporal backbone of backtesting—an array of timestamps that determines when the strategy's `tick()` method is evaluated. This generation happens once per backtest run and is cached for performance.
 
-**Sources:** [src/client/ClientFrame.ts:1-93]()
 
 ---
 
@@ -23,7 +22,6 @@ For information about how these timestamps are used during backtest execution, s
 
 ![Mermaid Diagram](./diagrams/52_Timeframe_Generation_0.svg)
 
-**Sources:** [src/client/ClientFrame.ts:1-93]()
 
 ---
 
@@ -44,7 +42,6 @@ The `INTERVAL_MINUTES` constant maps `FrameInterval` enum values to their minute
 | `"1d"` | 1440 | Daily strategies |
 | `"3d"` | 4320 | Multi-day patterns |
 
-**Sources:** [src/client/ClientFrame.ts:12-26]()
 
 ---
 
@@ -56,7 +53,6 @@ The `GET_TIMEFRAME_FN` function implements a simple iterative algorithm to produ
 
 ![Mermaid Diagram](./diagrams/52_Timeframe_Generation_1.svg)
 
-**Sources:** [src/client/ClientFrame.ts:37-62]()
 
 ### Implementation Details
 
@@ -71,7 +67,6 @@ The core loop creates `Date` objects with millisecond precision:
 
 The algorithm ensures inclusive boundaries—both `startDate` and `endDate` are included in the result if they align with interval boundaries.
 
-**Sources:** [src/client/ClientFrame.ts:49-62]()
 
 ---
 
@@ -85,7 +80,6 @@ The `getTimeframe` method is wrapped with the `singleshot` decorator from `funct
 
 This optimization prevents redundant timestamp generation when multiple components or iterations request the same timeframe. The cache is scoped to the `ClientFrame` instance, which is itself memoized per `frameName` by `FrameConnectionService`.
 
-**Sources:** [src/client/ClientFrame.ts:86-89]()
 
 ---
 
@@ -103,7 +97,6 @@ The timestamp array length directly determines backtest duration. For example:
 
 Memory efficiency is maintained because only one timestamp is active in execution context at a time.
 
-**Sources:** [src/client/ClientFrame.ts:1-93]()
 
 ---
 
@@ -141,7 +134,6 @@ addFrame({
 
 The `callbacks.onTimeframe` hook receives the generated array and configuration parameters, enabling validation, logging, or custom processing.
 
-**Sources:** [src/client/ClientFrame.ts:57-59]()
 
 ---
 
@@ -157,7 +149,6 @@ if (!intervalMinutes) {
 
 This validation occurs during the first `getTimeframe()` call. Since the method is wrapped with `singleshot`, the error is thrown only once and propagates through the call stack to the backtest orchestrator.
 
-**Sources:** [src/client/ClientFrame.ts:44-47]()
 
 ---
 
@@ -182,7 +173,6 @@ export class ClientFrame implements IFrame {
 
 This approach avoids creating new function closures for each `ClientFrame` instance, reducing memory overhead when multiple frames are registered.
 
-**Sources:** [src/client/ClientFrame.ts:37-89]()
 
 ---
 
@@ -194,5 +184,4 @@ While `ClientFrame` uses `FrameInterval` for timestamp generation, `ClientExchan
 - **`CandleInterval`**: Determines granularity of OHLCV data fetched
 
 The frame interval can be larger than the candle interval. For example, a strategy might evaluate every 1 hour (`frame.interval = "1h"`) while analyzing 100 1-minute candles (`getCandles("BTCUSDT", "1m", 100)`).
-
-**Sources:** [src/client/ClientFrame.ts:12-26](), [src/client/ClientExchange.ts:7-18]()
+

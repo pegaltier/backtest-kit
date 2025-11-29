@@ -11,7 +11,6 @@ The framework follows clean architecture principles with six distinct layers, se
 
 ![Mermaid Diagram](./diagrams/09_Architecture_0.svg)
 
-**Sources:** [src/lib/index.ts:1-170](), [src/lib/core/types.ts:1-81](), [src/lib/core/provide.ts:1-111]()
 
 ## Layer Responsibilities
 
@@ -28,7 +27,6 @@ The public API layer consists of exported functions and classes that users inter
 | Event Listeners | `listenSignal`, `listenError`, `listenDone`, etc. | Subscribe to system events |
 | Utilities | `getCandles`, `getAveragePrice`, `formatPrice`, `formatQuantity` | Exchange helpers |
 
-**Sources:** [src/index.ts:1-131](), [src/function/add.ts:1-342](), [src/function/list.ts:1-218]()
 
 ### Layer 2: Global Services
 
@@ -45,7 +43,6 @@ Global Services act as context-aware entry points that wrap lower layers with `M
 - `WalkerGlobalService` - Multi-strategy comparison
 - `RiskGlobalService` - Risk management coordination
 
-**Sources:** [src/lib/services/global/StrategyGlobalService.ts](), [src/lib/services/global/ExchangeGlobalService.ts](), [src/lib/index.ts:93-108]()
 
 ### Layer 3: Logic Services
 
@@ -60,7 +57,6 @@ Logic Services implement core orchestration logic using async generators for bac
 - **Public Services** (`BacktestLogicPublicService`, `LiveLogicPublicService`) - Wrap generators with `MethodContextService.runAsyncIterator()` to propagate `strategyName`, `exchangeName`, `frameName`
 - **Private Services** (`BacktestLogicPrivateService`, `LiveLogicPrivateService`) - Implement async generator logic with `ExecutionContextService.runInContext()` calls
 
-**Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts](), [src/lib/index.ts:110-132]()
 
 ### Layer 4: Connection Services
 
@@ -80,7 +76,6 @@ Connection Services provide memoized client instance management. They resolve sc
 
 **Memoization Pattern:** Connection Services use `functools-kit`'s `singlerun` to cache instances: `this.getClient = singlerun((name) => new ClientStrategy(params))`
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts](), [src/lib/services/connection/ExchangeConnectionService.ts](), [src/lib/index.ts:62-78]()
 
 ### Layer 5: Schema & Validation Services
 
@@ -117,7 +112,6 @@ async validate(name: StrategyName): Promise<void> {
 }
 ```
 
-**Sources:** [src/lib/services/schema/StrategySchemaService.ts](), [src/lib/services/validation/StrategyValidationService.ts](), [src/lib/index.ts:80-91](), [src/lib/index.ts:143-150]()
 
 ### Layer 6: Client Classes
 
@@ -144,7 +138,6 @@ class ClientStrategy {
 }
 ```
 
-**Sources:** [src/lib/classes/ClientStrategy.ts](), [src/lib/classes/ClientExchange.ts](), [src/lib/classes/ClientRisk.ts]()
 
 ## Dependency Injection System
 
@@ -197,7 +190,6 @@ The following diagram maps the actual dependency relationships between services:
 
 ![Mermaid Diagram](./diagrams/09_Architecture_5.svg)
 
-**Sources:** [src/lib/core/types.ts:1-81](), [src/lib/core/provide.ts:1-111](), [src/lib/index.ts:49-162](), [src/lib/core/di.ts]()
 
 ## Context Propagation
 
@@ -284,7 +276,6 @@ class ExchangeConnectionService {
 - Automatic propagation through async boundaries
 - Isolated execution contexts prevent cross-contamination
 
-**Sources:** [types.d.ts:100-143](), [types.d.ts:362-403](), [src/lib/services/context/ExecutionContextService.ts](), [src/lib/services/context/MethodContextService.ts]()
 
 ## Event System
 
@@ -356,7 +347,6 @@ async *run(symbol: string) {
 }
 ```
 
-**Sources:** [src/config/emitters.ts](), [src/function/event.ts](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts]()
 
 ## Service Organization Summary
 
@@ -374,5 +364,4 @@ The following table maps service categories to their file locations:
 | Markdown Services | `*MarkdownService` | `src/lib/services/markdown/` | 6 |
 
 **Total Services:** 40+ injectable services
-
-**Sources:** [src/lib/index.ts:49-162](), [src/lib/core/types.ts:1-81](), [src/lib/core/provide.ts:1-111]()
+
