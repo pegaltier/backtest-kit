@@ -1454,7 +1454,7 @@ test("PERSIST: LONG signal closes by TP after system restart - onClose called", 
   });
 
   // Ждем закрытия сигнала
-  await sleep(3000);
+  await sleep(10);
 
   if (!onCloseCalled) {
     fail("onClose callback was NOT called after system restart");
@@ -1557,7 +1557,7 @@ test("PERSIST: SHORT signal closes by SL after system restart - onClose called",
   });
 
   // Ждем закрытия сигнала
-  await sleep(3000);
+  await sleep(10);
 
   if (!onCloseCalled) {
     fail("onClose callback was NOT called after system restart");
@@ -1663,7 +1663,7 @@ test("PERSIST: Scheduled signal is NOT written to persist storage", async ({ pas
   });
 
   // Ждем некоторое время
-  await sleep(3000);
+  await sleep(10);
 
   // ПРОВЕРКА #1: onSchedule должен быть вызван
   if (!onScheduleCalled) {
@@ -1784,7 +1784,7 @@ test("PERSIST: Only active signals persist, scheduled signals do not", async ({ 
   });
 
   // Ждем обработки
-  await sleep(3000);
+  await sleep(10);
 
   // ПРОВЕРКА #1: onSchedule должен быть вызван (сигнал создан)
   if (!onScheduleCalled) {

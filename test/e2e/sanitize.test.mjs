@@ -116,7 +116,7 @@ test("SANITIZE: Micro-profit eaten by fees - TP too close to priceOpen rejected"
     });
 
     await awaitSubject.toPromise();
-    // await sleep(3000);
+    // await sleep(10);
 
     // Сигнал должен быть отклонен на этапе валидации (в GET_SIGNAL_FN -> VALIDATE_SIGNAL_FN)
     if (scheduledCount === 0 && openedCount === 0) {
@@ -223,7 +223,7 @@ test("SANITIZE: Extreme StopLoss rejected (>20% loss) - protects capital", async
     });
 
     await awaitSubject.toPromise();
-    // await sleep(3000);
+    // await sleep(10);
 
     // Сигнал должен быть отклонен на этапе валидации (в GET_SIGNAL_FN -> VALIDATE_SIGNAL_FN)
     if (scheduledCount === 0 && openedCount === 0) {
