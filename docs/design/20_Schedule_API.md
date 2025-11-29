@@ -1,24 +1,5 @@
 # Schedule API
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [src/classes/Schedule.ts](src/classes/Schedule.ts)
-- [src/index.ts](src/index.ts)
-- [src/lib/services/global/WalkerGlobalService.ts](src/lib/services/global/WalkerGlobalService.ts)
-- [src/lib/services/markdown/BacktestMarkdownService.ts](src/lib/services/markdown/BacktestMarkdownService.ts)
-- [src/lib/services/markdown/LiveMarkdownService.ts](src/lib/services/markdown/LiveMarkdownService.ts)
-- [src/lib/services/markdown/ScheduleMarkdownService.ts](src/lib/services/markdown/ScheduleMarkdownService.ts)
-- [test/index.mjs](test/index.mjs)
-- [test/spec/scheduled.test.mjs](test/spec/scheduled.test.mjs)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 The Schedule API provides statistical tracking and reporting for **scheduled signals** (limit orders) in the backtest-kit framework. This API specifically monitors signals that specify a `priceOpen` entry point and tracks whether they activate or get cancelled before execution.
 

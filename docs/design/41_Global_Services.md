@@ -1,24 +1,5 @@
 # Global Services
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/client/ClientRisk.ts](src/client/ClientRisk.ts)
-- [src/function/add.ts](src/function/add.ts)
-- [src/function/list.ts](src/function/list.ts)
-- [src/interfaces/Risk.interface.ts](src/interfaces/Risk.interface.ts)
-- [src/lib/core/provide.ts](src/lib/core/provide.ts)
-- [src/lib/core/types.ts](src/lib/core/types.ts)
-- [src/lib/index.ts](src/lib/index.ts)
-- [src/lib/services/connection/RiskConnectionService.ts](src/lib/services/connection/RiskConnectionService.ts)
-- [src/lib/services/global/RiskGlobalService.ts](src/lib/services/global/RiskGlobalService.ts)
-- [test/spec/risk.test.mjs](test/spec/risk.test.mjs)
-
-</details>
-
-
 
 Global Services form Layer 1 of the service architecture, serving as public API entry points that orchestrate validation and delegate operations to lower-level services. These services provide a consistent interface for component registration, validation, and execution across the framework.
 

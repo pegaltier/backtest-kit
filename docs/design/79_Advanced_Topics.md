@@ -1,26 +1,5 @@
 # Advanced Topics
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [src/classes/Schedule.ts](src/classes/Schedule.ts)
-- [src/client/ClientRisk.ts](src/client/ClientRisk.ts)
-- [src/interfaces/Risk.interface.ts](src/interfaces/Risk.interface.ts)
-- [src/lib/services/connection/RiskConnectionService.ts](src/lib/services/connection/RiskConnectionService.ts)
-- [src/lib/services/global/RiskGlobalService.ts](src/lib/services/global/RiskGlobalService.ts)
-- [src/lib/services/global/WalkerGlobalService.ts](src/lib/services/global/WalkerGlobalService.ts)
-- [src/lib/services/markdown/BacktestMarkdownService.ts](src/lib/services/markdown/BacktestMarkdownService.ts)
-- [src/lib/services/markdown/LiveMarkdownService.ts](src/lib/services/markdown/LiveMarkdownService.ts)
-- [src/lib/services/markdown/ScheduleMarkdownService.ts](src/lib/services/markdown/ScheduleMarkdownService.ts)
-- [test/spec/risk.test.mjs](test/spec/risk.test.mjs)
-- [test/spec/scheduled.test.mjs](test/spec/scheduled.test.mjs)
-
-</details>
-
-
 
 This document covers advanced integration patterns and customization techniques for the backtest-kit framework. It explains how to implement custom exchange data sources, integrate alternative persistence backends, and design multi-symbol trading strategies with shared state management.
 

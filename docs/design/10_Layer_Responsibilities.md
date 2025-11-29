@@ -1,25 +1,5 @@
 # Layer Responsibilities
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [assets/uml.svg](assets/uml.svg)
-- [docs/internals.md](docs/internals.md)
-- [docs/uml.puml](docs/uml.puml)
-- [scripts/_convert-md-mermaid-to-svg.cjs](scripts/_convert-md-mermaid-to-svg.cjs)
-- [scripts/gpt-docs.mjs](scripts/gpt-docs.mjs)
-- [scripts/uml.mjs](scripts/uml.mjs)
-- [src/function/add.ts](src/function/add.ts)
-- [src/function/list.ts](src/function/list.ts)
-- [src/lib/core/provide.ts](src/lib/core/provide.ts)
-- [src/lib/core/types.ts](src/lib/core/types.ts)
-- [src/lib/index.ts](src/lib/index.ts)
-
-</details>
-
-
 
 This document describes the six-layer service architecture of backtest-kit and the responsibilities of each layer. The framework follows a clean architecture pattern with strict separation of concerns, dependency injection, and unidirectional data flow from public API down to infrastructure.
 

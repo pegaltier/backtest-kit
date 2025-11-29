@@ -1,28 +1,5 @@
 # Context Propagation
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [assets/uml.svg](assets/uml.svg)
-- [docs/internals.md](docs/internals.md)
-- [docs/uml.puml](docs/uml.puml)
-- [scripts/_convert-md-mermaid-to-svg.cjs](scripts/_convert-md-mermaid-to-svg.cjs)
-- [scripts/gpt-docs.mjs](scripts/gpt-docs.mjs)
-- [scripts/uml.mjs](scripts/uml.mjs)
-- [src/index.ts](src/index.ts)
-- [src/lib/services/logic/private/BacktestLogicPrivateService.ts](src/lib/services/logic/private/BacktestLogicPrivateService.ts)
-- [src/lib/services/logic/private/LiveLogicPrivateService.ts](src/lib/services/logic/private/LiveLogicPrivateService.ts)
-- [src/lib/services/logic/public/BacktestLogicPublicService.ts](src/lib/services/logic/public/BacktestLogicPublicService.ts)
-- [src/lib/services/logic/public/LiveLogicPublicService.ts](src/lib/services/logic/public/LiveLogicPublicService.ts)
-- [test/e2e/timing.test.mjs](test/e2e/timing.test.mjs)
-- [test/index.mjs](test/index.mjs)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 ## Purpose and Scope
 

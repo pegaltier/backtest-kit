@@ -1,27 +1,5 @@
 # Custom Persistence Backends
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [src/classes/Persist.ts](src/classes/Persist.ts)
-- [src/classes/Schedule.ts](src/classes/Schedule.ts)
-- [src/config/params.ts](src/config/params.ts)
-- [src/lib/services/global/WalkerGlobalService.ts](src/lib/services/global/WalkerGlobalService.ts)
-- [src/lib/services/markdown/BacktestMarkdownService.ts](src/lib/services/markdown/BacktestMarkdownService.ts)
-- [src/lib/services/markdown/LiveMarkdownService.ts](src/lib/services/markdown/LiveMarkdownService.ts)
-- [src/lib/services/markdown/ScheduleMarkdownService.ts](src/lib/services/markdown/ScheduleMarkdownService.ts)
-- [src/utils/writeFileAtomic.ts](src/utils/writeFileAtomic.ts)
-- [test/config/setup.mjs](test/config/setup.mjs)
-- [test/e2e/defend.test.mjs](test/e2e/defend.test.mjs)
-- [test/e2e/sanitize.test.mjs](test/e2e/sanitize.test.mjs)
-- [test/spec/scheduled.test.mjs](test/spec/scheduled.test.mjs)
-
-</details>
-
-
 
 This page explains how to implement custom persistence backends for signal state storage. By default, the framework uses file-based atomic persistence for crash-safe live trading. Custom backends enable integration with Redis, PostgreSQL, MongoDB, or any other storage system while maintaining crash recovery guarantees.
 

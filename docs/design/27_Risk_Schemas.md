@@ -1,27 +1,5 @@
 # Risk Schemas
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/client/ClientRisk.ts](src/client/ClientRisk.ts)
-- [src/function/add.ts](src/function/add.ts)
-- [src/function/list.ts](src/function/list.ts)
-- [src/index.ts](src/index.ts)
-- [src/interfaces/Risk.interface.ts](src/interfaces/Risk.interface.ts)
-- [src/lib/core/provide.ts](src/lib/core/provide.ts)
-- [src/lib/core/types.ts](src/lib/core/types.ts)
-- [src/lib/index.ts](src/lib/index.ts)
-- [src/lib/services/connection/RiskConnectionService.ts](src/lib/services/connection/RiskConnectionService.ts)
-- [src/lib/services/global/RiskGlobalService.ts](src/lib/services/global/RiskGlobalService.ts)
-- [test/index.mjs](test/index.mjs)
-- [test/spec/risk.test.mjs](test/spec/risk.test.mjs)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 This document describes the risk management schema system in backtest-kit. Risk schemas define portfolio-level risk controls that prevent signals from violating configured limits. Multiple strategies can share the same risk profile, enabling cross-strategy risk analysis.
 

@@ -1,24 +1,5 @@
 # Custom Exchange Integration
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [src/classes/Schedule.ts](src/classes/Schedule.ts)
-- [src/index.ts](src/index.ts)
-- [src/lib/services/global/WalkerGlobalService.ts](src/lib/services/global/WalkerGlobalService.ts)
-- [src/lib/services/markdown/BacktestMarkdownService.ts](src/lib/services/markdown/BacktestMarkdownService.ts)
-- [src/lib/services/markdown/LiveMarkdownService.ts](src/lib/services/markdown/LiveMarkdownService.ts)
-- [src/lib/services/markdown/ScheduleMarkdownService.ts](src/lib/services/markdown/ScheduleMarkdownService.ts)
-- [test/index.mjs](test/index.mjs)
-- [test/spec/scheduled.test.mjs](test/spec/scheduled.test.mjs)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 This page explains how to implement custom exchange data sources by creating `IExchangeSchema` implementations. The framework supports any data source: CCXT exchanges, REST APIs, databases, CSV files, or WebSocket streams. The same exchange implementation works for both backtest and live trading modes.
 

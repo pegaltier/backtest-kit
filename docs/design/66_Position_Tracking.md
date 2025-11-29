@@ -1,19 +1,5 @@
 # Position Tracking
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/client/ClientRisk.ts](src/client/ClientRisk.ts)
-- [src/interfaces/Risk.interface.ts](src/interfaces/Risk.interface.ts)
-- [src/lib/services/connection/RiskConnectionService.ts](src/lib/services/connection/RiskConnectionService.ts)
-- [src/lib/services/global/RiskGlobalService.ts](src/lib/services/global/RiskGlobalService.ts)
-- [test/spec/risk.test.mjs](test/spec/risk.test.mjs)
-
-</details>
-
-
 
 ## Purpose and Scope
 

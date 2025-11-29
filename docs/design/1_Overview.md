@@ -1,30 +1,5 @@
 # Overview
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [assets/uml.svg](assets/uml.svg)
-- [docs/internals.md](docs/internals.md)
-- [docs/uml.puml](docs/uml.puml)
-- [scripts/_convert-md-mermaid-to-svg.cjs](scripts/_convert-md-mermaid-to-svg.cjs)
-- [scripts/gpt-docs.mjs](scripts/gpt-docs.mjs)
-- [scripts/uml.mjs](scripts/uml.mjs)
-- [src/classes/Schedule.ts](src/classes/Schedule.ts)
-- [src/index.ts](src/index.ts)
-- [src/lib/services/global/WalkerGlobalService.ts](src/lib/services/global/WalkerGlobalService.ts)
-- [src/lib/services/markdown/BacktestMarkdownService.ts](src/lib/services/markdown/BacktestMarkdownService.ts)
-- [src/lib/services/markdown/LiveMarkdownService.ts](src/lib/services/markdown/LiveMarkdownService.ts)
-- [src/lib/services/markdown/ScheduleMarkdownService.ts](src/lib/services/markdown/ScheduleMarkdownService.ts)
-- [test/index.mjs](test/index.mjs)
-- [test/spec/scheduled.test.mjs](test/spec/scheduled.test.mjs)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 **backtest-kit** is a production-ready TypeScript framework for backtesting and live trading algorithmic strategies. It provides crash-safe state persistence, comprehensive signal validation, memory-optimized async generators, and enterprise-grade reporting capabilities.
 

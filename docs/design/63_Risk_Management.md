@@ -1,22 +1,5 @@
 # Risk Management
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/client/ClientRisk.ts](src/client/ClientRisk.ts)
-- [src/index.ts](src/index.ts)
-- [src/interfaces/Risk.interface.ts](src/interfaces/Risk.interface.ts)
-- [src/lib/services/connection/RiskConnectionService.ts](src/lib/services/connection/RiskConnectionService.ts)
-- [src/lib/services/global/RiskGlobalService.ts](src/lib/services/global/RiskGlobalService.ts)
-- [test/index.mjs](test/index.mjs)
-- [test/spec/risk.test.mjs](test/spec/risk.test.mjs)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 This document covers the risk management system in backtest-kit, which provides portfolio-level controls to prevent signals that violate configured limits. The system tracks active positions across strategies, executes custom validation logic, and persists state for crash recovery.
 

@@ -1,25 +1,5 @@
 # Validation Services
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/classes/Persist.ts](src/classes/Persist.ts)
-- [src/config/params.ts](src/config/params.ts)
-- [src/function/add.ts](src/function/add.ts)
-- [src/function/list.ts](src/function/list.ts)
-- [src/lib/core/provide.ts](src/lib/core/provide.ts)
-- [src/lib/core/types.ts](src/lib/core/types.ts)
-- [src/lib/index.ts](src/lib/index.ts)
-- [src/utils/writeFileAtomic.ts](src/utils/writeFileAtomic.ts)
-- [test/config/setup.mjs](test/config/setup.mjs)
-- [test/e2e/defend.test.mjs](test/e2e/defend.test.mjs)
-- [test/e2e/sanitize.test.mjs](test/e2e/sanitize.test.mjs)
-
-</details>
-
-
 
 ## Purpose and Scope
 

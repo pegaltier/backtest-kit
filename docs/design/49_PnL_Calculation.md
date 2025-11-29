@@ -1,20 +1,5 @@
 # PnL Calculation
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/client/ClientStrategy.ts](src/client/ClientStrategy.ts)
-- [src/index.ts](src/index.ts)
-- [src/interfaces/Strategy.interface.ts](src/interfaces/Strategy.interface.ts)
-- [src/lib/services/connection/StrategyConnectionService.ts](src/lib/services/connection/StrategyConnectionService.ts)
-- [test/index.mjs](test/index.mjs)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 This page documents the profit and loss (PnL) calculation system used to determine trading performance. PnL is calculated when a signal closes, incorporating realistic trading costs including slippage and fees. This ensures backtest results accurately reflect real-world trading conditions.
 

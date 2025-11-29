@@ -1,28 +1,5 @@
 # Architecture
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [assets/uml.svg](assets/uml.svg)
-- [docs/internals.md](docs/internals.md)
-- [docs/uml.puml](docs/uml.puml)
-- [scripts/_convert-md-mermaid-to-svg.cjs](scripts/_convert-md-mermaid-to-svg.cjs)
-- [scripts/gpt-docs.mjs](scripts/gpt-docs.mjs)
-- [scripts/uml.mjs](scripts/uml.mjs)
-- [src/function/add.ts](src/function/add.ts)
-- [src/function/list.ts](src/function/list.ts)
-- [src/index.ts](src/index.ts)
-- [src/lib/core/provide.ts](src/lib/core/provide.ts)
-- [src/lib/core/types.ts](src/lib/core/types.ts)
-- [src/lib/index.ts](src/lib/index.ts)
-- [test/index.mjs](test/index.mjs)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 ## Purpose and Scope
 

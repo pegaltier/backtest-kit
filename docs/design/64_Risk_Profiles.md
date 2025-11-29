@@ -1,22 +1,5 @@
 # Risk Profiles
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/client/ClientRisk.ts](src/client/ClientRisk.ts)
-- [src/index.ts](src/index.ts)
-- [src/interfaces/Risk.interface.ts](src/interfaces/Risk.interface.ts)
-- [src/lib/services/connection/RiskConnectionService.ts](src/lib/services/connection/RiskConnectionService.ts)
-- [src/lib/services/global/RiskGlobalService.ts](src/lib/services/global/RiskGlobalService.ts)
-- [test/index.mjs](test/index.mjs)
-- [test/spec/risk.test.mjs](test/spec/risk.test.mjs)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 This page documents the risk profile system in backtest-kit, explaining how `IRiskSchema` structures define portfolio-level risk controls, how risk profiles are isolated by `riskName`, and how multiple strategies share risk limits through custom validation functions. For risk validation execution flow, see [Risk Validation](#12.2). For position tracking implementation details, see [Position Tracking](#12.3). For risk schema registration API, see [Risk Schemas](#5.4).
 

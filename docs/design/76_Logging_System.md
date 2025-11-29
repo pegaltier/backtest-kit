@@ -1,23 +1,5 @@
 # Logging System
 
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [assets/uml.svg](assets/uml.svg)
-- [docs/internals.md](docs/internals.md)
-- [docs/uml.puml](docs/uml.puml)
-- [scripts/_convert-md-mermaid-to-svg.cjs](scripts/_convert-md-mermaid-to-svg.cjs)
-- [scripts/gpt-docs.mjs](scripts/gpt-docs.mjs)
-- [scripts/uml.mjs](scripts/uml.mjs)
-- [src/index.ts](src/index.ts)
-- [test/index.mjs](test/index.mjs)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 The logging system provides consistent, context-aware logging throughout the backtest-kit framework. It automatically enriches log messages with execution context (symbol, timestamp, mode) and method context (strategy name, exchange name, frame name) without requiring explicit parameter passing. The system uses a pluggable architecture that defaults to silent operation and allows users to configure custom logger implementations.
 
