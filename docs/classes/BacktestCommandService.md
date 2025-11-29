@@ -1,9 +1,9 @@
 ---
-title: docs/api-reference/class/BacktestGlobalService
+title: docs/api-reference/class/BacktestCommandService
 group: docs
 ---
 
-# BacktestGlobalService
+# BacktestCommandService
 
 Global service providing access to backtest functionality.
 

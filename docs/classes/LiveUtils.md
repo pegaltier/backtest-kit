@@ -7,7 +7,7 @@ group: docs
 
 Utility class for live trading operations.
 
-Provides simplified access to liveGlobalService.run() with logging.
+Provides simplified access to liveCommandService.run() with logging.
 Exported as singleton instance for convenient usage.
 
 Features:

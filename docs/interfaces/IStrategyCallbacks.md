@@ -65,3 +65,11 @@ onCancel: (symbol: string, data: IScheduledSignalRow, currentPrice: number, back
 ```
 
 Called when scheduled signal is cancelled without opening position
+
+### onWrite
+
+```ts
+onWrite: (symbol: string, data: ISignalRow, backtest: boolean) => void
+```
+
+Called when signal is written to persist storage (for testing)

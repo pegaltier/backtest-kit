@@ -7,7 +7,7 @@ group: docs
 
 Utility class for walker operations.
 
-Provides simplified access to walkerGlobalService.run() with logging.
+Provides simplified access to walkerCommandService.run() with logging.
 Automatically pulls exchangeName and frameName from walker schema.
 Exported as singleton instance for convenient usage.
 

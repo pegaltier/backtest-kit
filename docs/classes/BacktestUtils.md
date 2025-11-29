@@ -7,7 +7,7 @@ group: docs
 
 Utility class for backtest operations.
 
-Provides simplified access to backtestGlobalService.run() with logging.
+Provides simplified access to backtestCommandService.run() with logging.
 Exported as singleton instance for convenient usage.
 
 ## Constructor

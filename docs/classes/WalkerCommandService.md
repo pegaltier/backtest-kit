@@ -1,9 +1,9 @@
 ---
-title: docs/api-reference/class/WalkerGlobalService
+title: docs/api-reference/class/WalkerCommandService
 group: docs
 ---
 
-# WalkerGlobalService
+# WalkerCommandService
 
 Global service providing access to walker functionality.
 

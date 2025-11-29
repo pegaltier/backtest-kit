@@ -37,7 +37,7 @@ const toUML = async () => {
   };
   process(
     lib,
-    Object.keys(lib).filter((key) => key.includes("Global"))
+    Object.keys(lib).filter((key) => key.includes("Command"))
   );
 
   const result = ["@startyaml", ...lines, "@endyaml"].join("\n");

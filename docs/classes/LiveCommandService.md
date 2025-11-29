@@ -1,9 +1,9 @@
 ---
-title: docs/api-reference/class/LiveGlobalService
+title: docs/api-reference/class/LiveCommandService
 group: docs
 ---
 
-# LiveGlobalService
+# LiveCommandService
 
 Global service providing access to live trading functionality.
 
