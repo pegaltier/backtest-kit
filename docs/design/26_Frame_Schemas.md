@@ -13,7 +13,7 @@ Frame schemas are registered via the `addFrame()` function and conform to the `I
 
 **Core Schema Definition**
 
-![Mermaid Diagram](./diagrams\26_Frame_Schemas_0.svg)
+![Mermaid Diagram](./diagrams/26_Frame_Schemas_0.svg)
 
 **Schema Fields**
 
@@ -36,7 +36,7 @@ The `FrameInterval` type defines the step size for timeframe generation. Each in
 
 **Available Intervals**
 
-![Mermaid Diagram](./diagrams\26_Frame_Schemas_1.svg)
+![Mermaid Diagram](./diagrams/26_Frame_Schemas_1.svg)
 
 **Interval Selection Guidelines**
 
@@ -57,7 +57,7 @@ Frame schemas are registered via `addFrame()` and retrieved by name during backt
 
 **Registration Flow**
 
-![Mermaid Diagram](./diagrams\26_Frame_Schemas_2.svg)
+![Mermaid Diagram](./diagrams/26_Frame_Schemas_2.svg)
 
 **Registration Example**
 
@@ -105,7 +105,7 @@ Frames generate arrays of `Date` objects representing tick timestamps. The `Clie
 
 **Generation Process**
 
-![Mermaid Diagram](./diagrams\26_Frame_Schemas_3.svg)
+![Mermaid Diagram](./diagrams/26_Frame_Schemas_3.svg)
 
 **Example Timeframe Output**
 
@@ -137,7 +137,7 @@ Frame schemas support an optional `onTimeframe` callback invoked after timeframe
 
 **Callback Interface**
 
-![Mermaid Diagram](./diagrams\26_Frame_Schemas_4.svg)
+![Mermaid Diagram](./diagrams/26_Frame_Schemas_4.svg)
 
 **Callback Parameters**
 
@@ -179,7 +179,7 @@ Frame functionality is implemented through a layered service architecture with s
 
 **Service Layer Mapping**
 
-![Mermaid Diagram](./diagrams\26_Frame_Schemas_5.svg)
+![Mermaid Diagram](./diagrams/26_Frame_Schemas_5.svg)
 
 **Layer Responsibilities**
 
@@ -217,7 +217,7 @@ When `ClientFrame` is instantiated via `FrameConnectionService`, the schema is a
 
 **Parameter Augmentation**
 
-![Mermaid Diagram](./diagrams\26_Frame_Schemas_6.svg)
+![Mermaid Diagram](./diagrams/26_Frame_Schemas_6.svg)
 
 **IFrameParams Structure**
 
@@ -240,7 +240,7 @@ Frames are consumed by `BacktestLogicPrivateService` to generate the iteration a
 
 **Backtest Integration Flow**
 
-![Mermaid Diagram](./diagrams\26_Frame_Schemas_7.svg)
+![Mermaid Diagram](./diagrams/26_Frame_Schemas_7.svg)
 
 The `frameName` from `MethodContext` determines which frame to use. The generated timeframe array drives the iteration loop, with each timestamp representing a simulated "now" moment for strategy execution.
 

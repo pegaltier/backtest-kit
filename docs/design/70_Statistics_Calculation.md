@@ -17,7 +17,7 @@ All metrics include safe math checks to handle edge cases (NaN, Infinity) and re
 
 ## Statistics Calculation Architecture
 
-![Mermaid Diagram](./diagrams\70_Statistics_Calculation_0.svg)
+![Mermaid Diagram](./diagrams/70_Statistics_Calculation_0.svg)
 
 **Calculation Flow:**
 
@@ -148,7 +148,7 @@ function isUnsafe(value: number | null): boolean {
 
 **Validation Flow:**
 
-![Mermaid Diagram](./diagrams\70_Statistics_Calculation_1.svg)
+![Mermaid Diagram](./diagrams/70_Statistics_Calculation_1.svg)
 
 ### Application Examples
 
@@ -389,7 +389,7 @@ const avgWaitTime = totalCancelled > 0
 
 ## Metrics Calculation Flow
 
-![Mermaid Diagram](./diagrams\70_Statistics_Calculation_2.svg)
+![Mermaid Diagram](./diagrams/70_Statistics_Calculation_2.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:202-270](), [src/lib/services/markdown/LiveMarkdownService.ts:381-464]()
 

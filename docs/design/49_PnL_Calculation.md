@@ -78,7 +78,7 @@ interface IStrategyPnL {
 
 The following diagram shows how `toProfitLossDto` processes a closed signal:
 
-![Mermaid Diagram](./diagrams\49_PnL_Calculation_0.svg)
+![Mermaid Diagram](./diagrams/49_PnL_Calculation_0.svg)
 
 **Sources**: [src/helpers/toProfitLossDto.ts:44-90]()
 
@@ -196,7 +196,7 @@ The fee is subtracted **after** slippage-adjusted PnL calculation, ensuring both
 
 The `toProfitLossDto` function is called by `ClientStrategy` when a signal transitions to the `closed` state. The following diagram shows where PnL calculation fits in the system:
 
-![Mermaid Diagram](./diagrams\49_PnL_Calculation_1.svg)
+![Mermaid Diagram](./diagrams/49_PnL_Calculation_1.svg)
 
 **Call Chain**:
 1. `ClientStrategy.tick()` detects close condition (TP/SL/time)

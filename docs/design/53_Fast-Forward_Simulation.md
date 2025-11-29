@@ -28,7 +28,7 @@ The framework supports two execution modes for strategy evaluation:
 
 **Execution Flow Diagram:**
 
-![Mermaid Diagram](./diagrams\53_Fast-Forward_Simulation_0.svg)
+![Mermaid Diagram](./diagrams/53_Fast-Forward_Simulation_0.svg)
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:75-253](), [src/interfaces/Strategy.interface.ts:309-321]()
 
@@ -50,7 +50,7 @@ backtest: (candles: ICandleData[]) => Promise<IStrategyBacktestResult>
 
 **Processing Logic:**
 
-![Mermaid Diagram](./diagrams\53_Fast-Forward_Simulation_1.svg)
+![Mermaid Diagram](./diagrams/53_Fast-Forward_Simulation_1.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:1188-1318](), [src/interfaces/Strategy.interface.ts:294-295]()
 
@@ -89,7 +89,7 @@ if (signal.position === "short") {
 
 **Price Resolution Diagram:**
 
-![Mermaid Diagram](./diagrams\53_Fast-Forward_Simulation_2.svg)
+![Mermaid Diagram](./diagrams/53_Fast-Forward_Simulation_2.svg)
 
 **Key Implementation Details:**
 
@@ -126,7 +126,7 @@ const GET_AVG_PRICE_FN = (candles: ICandleData[]): number => {
 
 **VWAP Calculation Process:**
 
-![Mermaid Diagram](./diagrams\53_Fast-Forward_Simulation_3.svg)
+![Mermaid Diagram](./diagrams/53_Fast-Forward_Simulation_3.svg)
 
 **Window Size Configuration:**
 
@@ -151,7 +151,7 @@ Scheduled signals require a two-phase fast-forward simulation: first monitoring 
 
 **Two-Phase Process Diagram:**
 
-![Mermaid Diagram](./diagrams\53_Fast-Forward_Simulation_4.svg)
+![Mermaid Diagram](./diagrams/53_Fast-Forward_Simulation_4.svg)
 
 **Phase 1: Activation Monitoring (`PROCESS_SCHEDULED_SIGNAL_CANDLES_FN`)**
 
@@ -210,7 +210,7 @@ For immediate signals (no `priceOpen` specified) or after scheduled signal activ
 
 **Processing Flow (`PROCESS_PENDING_SIGNAL_CANDLES_FN`):**
 
-![Mermaid Diagram](./diagrams\53_Fast-Forward_Simulation_5.svg)
+![Mermaid Diagram](./diagrams/53_Fast-Forward_Simulation_5.svg)
 
 **Critical Timing Detail:**
 
@@ -246,7 +246,7 @@ The fast-forward mechanism integrates tightly with `BacktestLogicPrivateService`
 
 **Execution Context Flow:**
 
-![Mermaid Diagram](./diagrams\53_Fast-Forward_Simulation_6.svg)
+![Mermaid Diagram](./diagrams/53_Fast-Forward_Simulation_6.svg)
 
 **Timeframe Skipping Optimization:**
 

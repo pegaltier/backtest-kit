@@ -34,7 +34,7 @@ Each component is identified by a unique name (`strategyName`, `exchangeName`, e
 
 All registration functions follow the same pattern: accept a schema object and store it in the framework's internal registry.
 
-![Mermaid Diagram](./diagrams\08_Component_Registration_0.svg)
+![Mermaid Diagram](./diagrams/08_Component_Registration_0.svg)
 
 **Diagram: Registration Function Flow**
 
@@ -208,7 +208,7 @@ When a component is registered via an `add*` function, the framework performs tw
 1. **Validation**: Schema is validated and stored in a validation service
 2. **Registration**: Schema is stored in a schema service for later retrieval
 
-![Mermaid Diagram](./diagrams\08_Component_Registration_1.svg)
+![Mermaid Diagram](./diagrams/08_Component_Registration_1.svg)
 
 **Diagram: Registration Sequence**
 
@@ -245,7 +245,7 @@ export function addStrategy(strategySchema: IStrategySchema) {
 
 Registered schemas are stored in schema services that follow the ToolRegistry pattern. Each component type has a dedicated schema service:
 
-![Mermaid Diagram](./diagrams\08_Component_Registration_2.svg)
+![Mermaid Diagram](./diagrams/08_Component_Registration_2.svg)
 
 **Diagram: Schema Service Architecture**
 
@@ -282,7 +282,7 @@ This pattern enables:
 
 Each component type has a corresponding validation service that performs schema validation during registration:
 
-![Mermaid Diagram](./diagrams\08_Component_Registration_3.svg)
+![Mermaid Diagram](./diagrams/08_Component_Registration_3.svg)
 
 **Diagram: Validation Layer**
 
@@ -341,7 +341,7 @@ These functions delegate to the validation services' `list()` method, which retu
 
 The relationship between registration and execution follows this sequence:
 
-![Mermaid Diagram](./diagrams\08_Component_Registration_4.svg)
+![Mermaid Diagram](./diagrams/08_Component_Registration_4.svg)
 
 **Diagram: Registration to Execution Lifecycle**
 
@@ -362,7 +362,7 @@ For details on client instantiation, see [Connection Services](#7.2). For execut
 
 All schema services and validation services are bound using Symbol-based tokens in the DI container. This prevents naming collisions and provides type safety:
 
-![Mermaid Diagram](./diagrams\08_Component_Registration_5.svg)
+![Mermaid Diagram](./diagrams/08_Component_Registration_5.svg)
 
 **Diagram: Symbol-Based DI Token Flow**
 

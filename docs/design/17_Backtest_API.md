@@ -11,7 +11,7 @@ The `Backtest` class is a singleton utility that provides simplified access to b
 
 **Backtest API Service Architecture**
 
-![Mermaid Diagram](./diagrams\17_Backtest_API_0.svg)
+![Mermaid Diagram](./diagrams/17_Backtest_API_0.svg)
 
 **Sources**: [src/classes/Backtest.ts:1-208](), [src/lib/services/markdown/BacktestMarkdownService.ts:1-533]()
 
@@ -183,7 +183,7 @@ The `BacktestMarkdownService` calculates statistics using the `ReportStorage` cl
 
 **Statistics Calculation Flow**
 
-![Mermaid Diagram](./diagrams\17_Backtest_API_1.svg)
+![Mermaid Diagram](./diagrams/17_Backtest_API_1.svg)
 
 **Sources**: [src/lib/services/markdown/BacktestMarkdownService.ts:183-270]()
 
@@ -220,7 +220,7 @@ The following diagram contrasts the execution patterns of `run()` and `backgroun
 
 **run() vs background() Execution Flow**
 
-![Mermaid Diagram](./diagrams\17_Backtest_API_2.svg)
+![Mermaid Diagram](./diagrams/17_Backtest_API_2.svg)
 
 **Sources**: [src/classes/Backtest.ts:38-122]()
 
@@ -258,7 +258,7 @@ The Backtest API integrates with the event system through multiple emitters:
 
 **Backtest Event Emission Flow**
 
-![Mermaid Diagram](./diagrams\17_Backtest_API_3.svg)
+![Mermaid Diagram](./diagrams/17_Backtest_API_3.svg)
 
 **Emitter Initialization**: Event emitters are initialized in [src/config/emitters.ts:1-80]():
 - `signalEmitter` - All signal events (live + backtest)

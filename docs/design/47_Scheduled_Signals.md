@@ -67,7 +67,7 @@ const scheduledSignalRow: IScheduledSignalRow = {
 
 ### Title: Scheduled Signal Activation Flow
 
-![Mermaid Diagram](./diagrams\47_Scheduled_Signals_0.svg)
+![Mermaid Diagram](./diagrams/47_Scheduled_Signals_0.svg)
 
 ### Position-Specific Activation Rules
 
@@ -93,7 +93,7 @@ The activation logic differs based on position type to implement proper limit or
 
 ### Title: Scheduled Signal Cancellation Conditions
 
-![Mermaid Diagram](./diagrams\47_Scheduled_Signals_1.svg)
+![Mermaid Diagram](./diagrams/47_Scheduled_Signals_1.svg)
 
 ### Timeout Cancellation
 
@@ -165,7 +165,7 @@ Scheduled signals have **two** critical timestamps that determine their lifecycl
 
 ### Title: Scheduled Signal Timeline
 
-![Mermaid Diagram](./diagrams\47_Scheduled_Signals_2.svg)
+![Mermaid Diagram](./diagrams/47_Scheduled_Signals_2.svg)
 
 ### Code Implementation
 
@@ -273,7 +273,7 @@ if (result.action === "scheduled") {
 
 ### Title: Scheduled Signal State Machine with Callbacks
 
-![Mermaid Diagram](./diagrams\47_Scheduled_Signals_3.svg)
+![Mermaid Diagram](./diagrams/47_Scheduled_Signals_3.svg)
 
 ### Callback Invocation Order
 

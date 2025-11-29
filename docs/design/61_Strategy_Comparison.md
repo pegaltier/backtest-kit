@@ -32,7 +32,7 @@ Walker orchestrates multiple sequential backtest runs and accumulates results fo
 
 ### Execution Flow Diagram
 
-![Mermaid Diagram](./diagrams\61_Strategy_Comparison_0.svg)
+![Mermaid Diagram](./diagrams/61_Strategy_Comparison_0.svg)
 
 **Sources:** [src/classes/Walker.ts:39-86](), [src/lib/services/global/WalkerGlobalService.ts:52-86]()
 
@@ -67,7 +67,7 @@ Walker uses `WalkerMarkdownService` to accumulate strategy results during execut
 
 ### Storage Architecture
 
-![Mermaid Diagram](./diagrams\61_Strategy_Comparison_1.svg)
+![Mermaid Diagram](./diagrams/61_Strategy_Comparison_1.svg)
 
 **Key Methods:**
 
@@ -223,7 +223,7 @@ listenWalkerComplete((results) => {
 
 ## Progress Tracking Flow
 
-![Mermaid Diagram](./diagrams\61_Strategy_Comparison_2.svg)
+![Mermaid Diagram](./diagrams/61_Strategy_Comparison_2.svg)
 
 **Sources:** [src/classes/Walker.ts:39-86](), [src/function/event.ts:507-567]()
 

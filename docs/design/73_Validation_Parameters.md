@@ -36,7 +36,7 @@ Trading fees (typically 0.1% per side) create a minimum profit threshold. If `pr
 
 ### Validation Logic
 
-![Mermaid Diagram](./diagrams\73_Validation_Parameters_0.svg)
+![Mermaid Diagram](./diagrams/73_Validation_Parameters_0.svg)
 
 **Diagram: Take Profit Distance Validation Flow**
 
@@ -83,7 +83,7 @@ Excessively wide stop losses can expose the portfolio to catastrophic single-tra
 
 ### Validation Logic
 
-![Mermaid Diagram](./diagrams\73_Validation_Parameters_1.svg)
+![Mermaid Diagram](./diagrams/73_Validation_Parameters_1.svg)
 
 **Diagram: Stop Loss Distance Validation Flow**
 
@@ -132,7 +132,7 @@ Signals with excessively long `minuteEstimatedTime` can create strategy deadlock
 
 ### Validation Logic
 
-![Mermaid Diagram](./diagrams\73_Validation_Parameters_2.svg)
+![Mermaid Diagram](./diagrams/73_Validation_Parameters_2.svg)
 
 **Diagram: Signal Lifetime Validation Flow**
 
@@ -168,7 +168,7 @@ The default value of `1440 minutes` (1 day):
 
 The following diagram shows how validation parameters integrate into the signal generation pipeline:
 
-![Mermaid Diagram](./diagrams\73_Validation_Parameters_3.svg)
+![Mermaid Diagram](./diagrams/73_Validation_Parameters_3.svg)
 
 **Diagram: Complete Signal Validation Flow with Validation Parameters**
 
@@ -300,7 +300,7 @@ The table below summarizes default values, their safety guarantees, and when to 
 
 These validation parameters work in conjunction with risk profile limits (see [Risk Profiles](#12.1)):
 
-![Mermaid Diagram](./diagrams\73_Validation_Parameters_4.svg)
+![Mermaid Diagram](./diagrams/73_Validation_Parameters_4.svg)
 
 **Diagram: Validation Parameters as First Line of Defense**
 

@@ -54,7 +54,7 @@ Each `riskName` creates an **isolated risk profile** with its own:
 
 ### Isolation Mechanism
 
-![Mermaid Diagram](./diagrams\64_Risk_Profiles_0.svg)
+![Mermaid Diagram](./diagrams/64_Risk_Profiles_0.svg)
 
 **Diagram: Risk Profile Isolation Architecture**
 
@@ -154,7 +154,7 @@ addRisk({
 
 ## Validation Execution Flow
 
-![Mermaid Diagram](./diagrams\64_Risk_Profiles_1.svg)
+![Mermaid Diagram](./diagrams/64_Risk_Profiles_1.svg)
 
 **Diagram: Risk Validation and Position Tracking Flow**
 
@@ -183,7 +183,7 @@ This allows:
 
 ### Position Lifecycle Operations
 
-![Mermaid Diagram](./diagrams\64_Risk_Profiles_2.svg)
+![Mermaid Diagram](./diagrams/64_Risk_Profiles_2.svg)
 
 **Diagram: Position Tracking State Machine**
 
@@ -208,7 +208,7 @@ interface IRiskActivePosition {
 
 ### Shared Risk Profile Example
 
-![Mermaid Diagram](./diagrams\64_Risk_Profiles_3.svg)
+![Mermaid Diagram](./diagrams/64_Risk_Profiles_3.svg)
 
 **Diagram: Cross-Strategy Position Limit Enforcement**
 
@@ -260,7 +260,7 @@ PersistRiskAdapter.readPositionData(riskName);
 
 ### Initialization Pattern
 
-![Mermaid Diagram](./diagrams\64_Risk_Profiles_4.svg)
+![Mermaid Diagram](./diagrams/64_Risk_Profiles_4.svg)
 
 **Diagram: Crash Recovery Initialization Flow**
 

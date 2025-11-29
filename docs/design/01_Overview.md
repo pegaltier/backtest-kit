@@ -27,7 +27,7 @@ The framework implements a six-layer clean architecture with dependency injectio
 
 ### High-Level System Diagram
 
-![Mermaid Diagram](./diagrams\01_Overview_0.svg)
+![Mermaid Diagram](./diagrams/01_Overview_0.svg)
 
 ### Layer Responsibilities
 
@@ -50,7 +50,7 @@ The framework provides three primary execution modes with distinct characteristi
 
 ### Execution Mode Comparison
 
-![Mermaid Diagram](./diagrams\01_Overview_1.svg)
+![Mermaid Diagram](./diagrams/01_Overview_1.svg)
 
 | Mode | Entry Point | Execution Pattern | Output | Use Case |
 |------|-------------|-------------------|--------|----------|
@@ -88,7 +88,7 @@ The framework provides three primary execution modes with distinct characteristi
 
 The client layer contains pure business logic without dependency injection:
 
-![Mermaid Diagram](./diagrams\01_Overview_2.svg)
+![Mermaid Diagram](./diagrams/01_Overview_2.svg)
 
 | Component | Responsibility | Key Methods |
 |-----------|----------------|-------------|
@@ -103,7 +103,7 @@ The client layer contains pure business logic without dependency injection:
 
 The service layer handles dependency injection and routing:
 
-![Mermaid Diagram](./diagrams\01_Overview_3.svg)
+![Mermaid Diagram](./diagrams/01_Overview_3.svg)
 
 **Service Types:**
 
@@ -135,7 +135,7 @@ Signals transition through six states in a type-safe discriminated union:
 
 ### Signal State Machine
 
-![Mermaid Diagram](./diagrams\01_Overview_4.svg)
+![Mermaid Diagram](./diagrams/01_Overview_4.svg)
 
 ### Signal Type Hierarchy
 
@@ -177,7 +177,7 @@ When `getSignal()` returns `ISignalDto` with `priceOpen` specified:
 
 The framework uses a registration-then-execution pattern:
 
-![Mermaid Diagram](./diagrams\01_Overview_5.svg)
+![Mermaid Diagram](./diagrams/01_Overview_5.svg)
 
 ### Registration APIs
 
@@ -203,7 +203,7 @@ For configuration details, see [Configuration Functions](#3.1).
 
 The framework uses symbol-based dependency injection with scoped context propagation:
 
-![Mermaid Diagram](./diagrams\01_Overview_6.svg)
+![Mermaid Diagram](./diagrams/01_Overview_6.svg)
 
 ### Context Propagation
 
@@ -251,13 +251,13 @@ For DI system details, see [Dependency Injection System](#2.2).
 
 ### Backtest Execution Flow
 
-![Mermaid Diagram](./diagrams\01_Overview_7.svg)
+![Mermaid Diagram](./diagrams/01_Overview_7.svg)
 
 **Sources:** Referenced in high-level diagrams provided
 
 ### Live Execution Flow
 
-![Mermaid Diagram](./diagrams\01_Overview_8.svg)
+![Mermaid Diagram](./diagrams/01_Overview_8.svg)
 
 **Sources:** Referenced in high-level diagrams provided
 

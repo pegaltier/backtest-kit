@@ -31,7 +31,7 @@ All three modes share the same strategy code but execute it in different context
 
 ## Backtest Execution Flow
 
-![Mermaid Diagram](./diagrams\06_Execution_Modes_0.svg)
+![Mermaid Diagram](./diagrams/06_Execution_Modes_0.svg)
 
 **Backtest Execution Flow Diagram** - Shows how `BacktestLogicPrivateService` iterates through historical timeframes and fast-forwards through signal lifetimes using the `backtest()` method.
 
@@ -107,7 +107,7 @@ for await (const result of Backtest.run("BTCUSDT", context)) {
 
 ## Live Execution Flow
 
-![Mermaid Diagram](./diagrams\06_Execution_Modes_1.svg)
+![Mermaid Diagram](./diagrams/06_Execution_Modes_1.svg)
 
 **Live Execution Flow Diagram** - Shows how `LiveLogicPrivateService` runs an infinite loop with real-time clock progression and crash-safe persistence.
 
@@ -169,7 +169,7 @@ This was a critical bug fix to prevent premature closure causing financial losse
 
 ## Walker Execution Flow
 
-![Mermaid Diagram](./diagrams\06_Execution_Modes_2.svg)
+![Mermaid Diagram](./diagrams/06_Execution_Modes_2.svg)
 
 **Walker Execution Flow Diagram** - Shows how `WalkerLogicPrivateService` orchestrates multiple backtests sequentially and selects the best strategy by comparing metrics.
 
@@ -250,7 +250,7 @@ The markdown report includes a comparison table showing all metrics side-by-side
 
 All three execution modes use the same context propagation architecture but with different parameters:
 
-![Mermaid Diagram](./diagrams\06_Execution_Modes_3.svg)
+![Mermaid Diagram](./diagrams/06_Execution_Modes_3.svg)
 
 **Context Propagation Across Modes** - Shows how both `MethodContext` and `ExecutionContext` wrap execution in all three modes.
 
@@ -282,7 +282,7 @@ The key difference between modes is the value of `when` and `backtest`:
 
 Each mode emits events to different subjects for filtered consumption:
 
-![Mermaid Diagram](./diagrams\06_Execution_Modes_4.svg)
+![Mermaid Diagram](./diagrams/06_Execution_Modes_4.svg)
 
 **Event Emission Architecture** - Shows how signals route through global and mode-specific emitters for filtered consumption.
 

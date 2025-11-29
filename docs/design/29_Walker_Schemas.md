@@ -11,7 +11,7 @@ Walker schemas are defined by the `IWalkerSchema` interface and registered via t
 
 **Schema Definition**
 
-![Mermaid Diagram](./diagrams\29_Walker_Schemas_0.svg)
+![Mermaid Diagram](./diagrams/29_Walker_Schemas_0.svg)
 
 Sources: [types.d.ts:1014-1028]()
 
@@ -73,7 +73,7 @@ Walker schemas are registered through the `addWalker()` function, which performs
 
 **Registration Flow**
 
-![Mermaid Diagram](./diagrams\29_Walker_Schemas_1.svg)
+![Mermaid Diagram](./diagrams/29_Walker_Schemas_1.svg)
 
 Sources: [src/function/add.ts:188-200](), [src/lib/index.ts:88-91]()
 
@@ -108,7 +108,7 @@ Sources: [src/function/add.ts:151-200]()
 
 Walker schemas support lifecycle callbacks for monitoring comparison progress.
 
-![Mermaid Diagram](./diagrams\29_Walker_Schemas_2.svg)
+![Mermaid Diagram](./diagrams/29_Walker_Schemas_2.svg)
 
 Sources: [types.d.ts:1014-1028]()
 
@@ -154,7 +154,7 @@ Walker schemas orchestrate multiple components to perform strategy comparison.
 
 **Component Dependencies**
 
-![Mermaid Diagram](./diagrams\29_Walker_Schemas_3.svg)
+![Mermaid Diagram](./diagrams/29_Walker_Schemas_3.svg)
 
 Sources: [src/classes/Walker.ts:31-87](), [src/lib/index.ts:1-170]()
 
@@ -162,7 +162,7 @@ Sources: [src/classes/Walker.ts:31-87](), [src/lib/index.ts:1-170]()
 
 When `Walker.run()` is called, validation occurs for all referenced components:
 
-![Mermaid Diagram](./diagrams\29_Walker_Schemas_4.svg)
+![Mermaid Diagram](./diagrams/29_Walker_Schemas_4.svg)
 
 Sources: [src/classes/Walker.ts:50-59]()
 
@@ -172,7 +172,7 @@ The `Walker.run()` method executes backtests sequentially for all strategies and
 
 **Execution Architecture**
 
-![Mermaid Diagram](./diagrams\29_Walker_Schemas_5.svg)
+![Mermaid Diagram](./diagrams/29_Walker_Schemas_5.svg)
 
 Sources: [src/classes/Walker.ts:39-87](), [src/lib/services/logic/private/WalkerLogicPrivateService.ts]()
 
@@ -216,7 +216,7 @@ Sources: [types.d.ts:1030-1050]()
 
 ### Data Retrieval Methods
 
-![Mermaid Diagram](./diagrams\29_Walker_Schemas_6.svg)
+![Mermaid Diagram](./diagrams/29_Walker_Schemas_6.svg)
 
 Sources: [src/classes/Walker.ts:146-255]()
 
@@ -253,7 +253,7 @@ Walker execution emits progress and completion events through the global event s
 
 **Event Flow**
 
-![Mermaid Diagram](./diagrams\29_Walker_Schemas_7.svg)
+![Mermaid Diagram](./diagrams/29_Walker_Schemas_7.svg)
 
 Sources: [src/config/emitters.ts:63-73](), [src/function/event.ts:507-623]()
 

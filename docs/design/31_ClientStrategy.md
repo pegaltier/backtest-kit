@@ -17,7 +17,7 @@ For information about how `ClientStrategy` is orchestrated within the execution 
 
 ### System Integration Diagram
 
-![Mermaid Diagram](./diagrams\31_ClientStrategy_0.svg)
+![Mermaid Diagram](./diagrams/31_ClientStrategy_0.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:1-660](), High-Level Diagram 1
 
@@ -35,7 +35,7 @@ The `ClientStrategy` class implements the `IStrategy` interface and manages two 
 
 ### Constructor Parameters
 
-![Mermaid Diagram](./diagrams\31_ClientStrategy_1.svg)
+![Mermaid Diagram](./diagrams/31_ClientStrategy_1.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:194-198](), [src/interfaces/Strategy.interface.ts:59-69]()
 
@@ -45,7 +45,7 @@ The `ClientStrategy` class implements the `IStrategy` interface and manages two 
 
 `ClientStrategy` manages signals through four distinct states, represented by discriminated union types `IStrategyTickResult`.
 
-![Mermaid Diagram](./diagrams\31_ClientStrategy_2.svg)
+![Mermaid Diagram](./diagrams/31_ClientStrategy_2.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:258-464](), [src/interfaces/Strategy.interface.ts:130-208]()
 
@@ -57,7 +57,7 @@ The `ClientStrategy` class implements the `IStrategy` interface and manages two 
 
 Signal generation is throttled at the strategy level to prevent spam. The `GET_SIGNAL_FN` helper enforces minimum intervals between `getSignal()` calls:
 
-![Mermaid Diagram](./diagrams\31_ClientStrategy_3.svg)
+![Mermaid Diagram](./diagrams/31_ClientStrategy_3.svg)
 
 **Interval Constants:**
 
@@ -110,7 +110,7 @@ The `tick()` method performs a single iteration of strategy execution. It is cal
 
 ### tick() Execution Flow
 
-![Mermaid Diagram](./diagrams\31_ClientStrategy_4.svg)
+![Mermaid Diagram](./diagrams/31_ClientStrategy_4.svg)
 
 ### TP/SL Check Logic
 
@@ -150,7 +150,7 @@ The `backtest()` method performs fast-forward simulation using an array of futur
 
 ### backtest() Execution Flow
 
-![Mermaid Diagram](./diagrams\31_ClientStrategy_5.svg)
+![Mermaid Diagram](./diagrams/31_ClientStrategy_5.svg)
 
 ### VWAP Calculation with 5-Candle Window
 
@@ -178,13 +178,13 @@ for (let i = 4; i < candles.length; i++) {
 
 ### Persistence Flow
 
-![Mermaid Diagram](./diagrams\31_ClientStrategy_6.svg)
+![Mermaid Diagram](./diagrams/31_ClientStrategy_6.svg)
 
 ### Initialization with State Recovery
 
 The `waitForInit()` method loads persisted state on startup:
 
-![Mermaid Diagram](./diagrams\31_ClientStrategy_7.svg)
+![Mermaid Diagram](./diagrams/31_ClientStrategy_7.svg)
 
 **Key Features:**
 - Uses `singleshot` pattern to ensure initialization happens exactly once
@@ -211,7 +211,7 @@ The `waitForInit()` method loads persisted state on startup:
 
 All callbacks are invoked synchronously within the tick execution:
 
-![Mermaid Diagram](./diagrams\31_ClientStrategy_8.svg)
+![Mermaid Diagram](./diagrams/31_ClientStrategy_8.svg)
 
 **Important:** All callbacks are invoked even if they return promises, but the execution does not await them. This ensures callbacks don't block the main execution flow.
 
@@ -238,7 +238,7 @@ If totalVolume == 0:
 
 ### Implementation
 
-![Mermaid Diagram](./diagrams\31_ClientStrategy_9.svg)
+![Mermaid Diagram](./diagrams/31_ClientStrategy_9.svg)
 
 This calculation is used in:
 1. `backtest()` method - calculates VWAP from 5-candle sliding window

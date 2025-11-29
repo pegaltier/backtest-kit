@@ -13,7 +13,7 @@ The backtest-kit framework organizes services into six distinct layers, each wit
 
 **Layer Organization Diagram**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_0.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_0.svg)
 
 **Sources**: [src/lib/core/types.ts:1-81](), [src/lib/core/provide.ts:1-111](), [src/lib/index.ts:1-170](), [docs/internals.md:28-40]()
 
@@ -73,7 +73,7 @@ Public logic services wrap execution in context and provide the public interface
 
 **Logic Service Responsibilities**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_1.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_1.svg)
 
 Each public service:
 
@@ -136,7 +136,7 @@ const connectionServices = {
 
 **Connection Service Architecture**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_2.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_2.svg)
 
 Each Connection Service:
 
@@ -165,7 +165,7 @@ Client Classes contain pure business logic without dependency injection dependen
 
 **Client Class Hierarchy**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_3.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_3.svg)
 
 | Client Class | Primary Responsibility | Key State |
 |--------------|----------------------|-----------|
@@ -199,7 +199,7 @@ Schema Services store component configurations using the `ToolRegistry` pattern:
 
 **Schema Service Pattern**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_4.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_4.svg)
 
 Each Schema Service provides:
 
@@ -229,7 +229,7 @@ Validation Services perform runtime existence checks with memoization:
 
 **Validation Service Pattern**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_5.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_5.svg)
 
 Each Validation Service provides:
 
@@ -287,7 +287,7 @@ const markdownServices = {
 
 **Markdown Service Data Flow**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_6.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_6.svg)
 
 Each Markdown Service:
 
@@ -317,7 +317,7 @@ Three services span all layers and provide infrastructure concerns.
 
 The `LoggerService` provides logging infrastructure with automatic context injection:
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_7.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_7.svg)
 
 Injected into nearly every service via [src/lib/core/types.ts:1-3]():
 
@@ -361,7 +361,7 @@ Used by Connection Services to resolve which component instance to return.
 
 **Component Registration Pattern**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_8.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_8.svg)
 
 1. Public API function receives schema
 2. Validation Service stores for runtime checks
@@ -371,7 +371,7 @@ Used by Connection Services to resolve which component instance to return.
 
 **Backtest Execution Pattern**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_9.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_9.svg)
 
 1. Public service wraps with MethodContext
 2. Private service gets client from Connection Service

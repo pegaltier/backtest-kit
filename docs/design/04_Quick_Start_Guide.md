@@ -85,7 +85,7 @@ Backtest.background("BTCUSDT", {
 
 The framework uses a registration-first architecture. You must register all components before execution using the `add*` functions:
 
-![Mermaid Diagram](./diagrams\04_Quick_Start_Guide_0.svg)
+![Mermaid Diagram](./diagrams/04_Quick_Start_Guide_0.svg)
 
 ### Registration Functions
 
@@ -275,7 +275,7 @@ for await (const result of Backtest.run("BTCUSDT", {
 
 Signals transition through states during execution:
 
-![Mermaid Diagram](./diagrams\04_Quick_Start_Guide_1.svg)
+![Mermaid Diagram](./diagrams/04_Quick_Start_Guide_1.svg)
 
 **State Transitions**:
 
@@ -390,7 +390,7 @@ const price = await getAveragePrice(symbol);  // No context params needed!
 
 **How It Works**:
 
-![Mermaid Diagram](./diagrams\04_Quick_Start_Guide_2.svg)
+![Mermaid Diagram](./diagrams/04_Quick_Start_Guide_2.svg)
 
 **Benefits**:
 - Clean API: No parameter drilling through layers

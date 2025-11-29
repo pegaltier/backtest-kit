@@ -40,7 +40,7 @@ Sources: [README.md:22-26](), [package.json:73-78]()
 
 The distributed npm package contains three primary artifacts:
 
-![Mermaid Diagram](./diagrams\03_Installation_and_Setup_0.svg)
+![Mermaid Diagram](./diagrams/03_Installation_and_Setup_0.svg)
 
 **Package contents:**
 
@@ -91,7 +91,7 @@ Resolves to: `build/index.cjs`
 
 TypeScript automatically resolves types from `types.d.ts` for both import styles.
 
-![Mermaid Diagram](./diagrams\03_Installation_and_Setup_1.svg)
+![Mermaid Diagram](./diagrams/03_Installation_and_Setup_1.svg)
 
 Sources: [package.json:52-57](), [README.md:32-34]()
 
@@ -103,7 +103,7 @@ The package uses **Rollup** to compile TypeScript source into distributable Java
 
 ### Build Process Overview
 
-![Mermaid Diagram](./diagrams\03_Installation_and_Setup_2.svg)
+![Mermaid Diagram](./diagrams/03_Installation_and_Setup_2.svg)
 
 ### Build Scripts
 
@@ -133,7 +133,7 @@ Sources: [package.json:58-67]()
 
 The framework's runtime dependencies form a lightweight tree:
 
-![Mermaid Diagram](./diagrams\03_Installation_and_Setup_3.svg)
+![Mermaid Diagram](./diagrams/03_Installation_and_Setup_3.svg)
 
 **Key Dependencies:**
 
@@ -198,7 +198,7 @@ Sources: [README.md:28-103]()
 
 Understanding how public API functions map to internal implementation:
 
-![Mermaid Diagram](./diagrams\03_Installation_and_Setup_4.svg)
+![Mermaid Diagram](./diagrams/03_Installation_and_Setup_4.svg)
 
 **Key Export Mappings:**
 

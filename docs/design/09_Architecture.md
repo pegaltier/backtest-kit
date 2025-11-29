@@ -9,7 +9,7 @@ This document provides a comprehensive overview of backtest-kit's layered archit
 
 The framework follows clean architecture principles with six distinct layers, separated by dependency injection boundaries. Each layer has a specific responsibility, with dependencies flowing inward toward business logic.
 
-![Mermaid Diagram](./diagrams\09_Architecture_0.svg)
+![Mermaid Diagram](./diagrams/09_Architecture_0.svg)
 
 **Sources:** [src/lib/index.ts:1-170](), [src/lib/core/types.ts:1-81](), [src/lib/core/provide.ts:1-111]()
 
@@ -34,7 +34,7 @@ The public API layer consists of exported functions and classes that users inter
 
 Global Services act as context-aware entry points that wrap lower layers with `MethodContextService` and `ExecutionContextService` scope management. They coordinate validation and delegate to Logic Services.
 
-![Mermaid Diagram](./diagrams\09_Architecture_1.svg)
+![Mermaid Diagram](./diagrams/09_Architecture_1.svg)
 
 **Key Global Services:**
 
@@ -53,7 +53,7 @@ Logic Services implement core orchestration logic using async generators for bac
 
 **Logic Service Pattern:**
 
-![Mermaid Diagram](./diagrams\09_Architecture_2.svg)
+![Mermaid Diagram](./diagrams/09_Architecture_2.svg)
 
 **Public vs Private Split:**
 
@@ -66,7 +66,7 @@ Logic Services implement core orchestration logic using async generators for bac
 
 Connection Services provide memoized client instance management. They resolve schema configurations, inject dependencies, and return cached client instances to avoid repeated instantiation.
 
-![Mermaid Diagram](./diagrams\09_Architecture_3.svg)
+![Mermaid Diagram](./diagrams/09_Architecture_3.svg)
 
 **Key Connection Services:**
 
@@ -150,7 +150,7 @@ class ClientStrategy {
 
 The framework uses a custom DI container with Symbol-based tokens for type-safe service resolution.
 
-![Mermaid Diagram](./diagrams\09_Architecture_4.svg)
+![Mermaid Diagram](./diagrams/09_Architecture_4.svg)
 
 ### Symbol-Based Tokens
 
@@ -195,7 +195,7 @@ const backtest = {
 
 The following diagram maps the actual dependency relationships between services:
 
-![Mermaid Diagram](./diagrams\09_Architecture_5.svg)
+![Mermaid Diagram](./diagrams/09_Architecture_5.svg)
 
 **Sources:** [src/lib/core/types.ts:1-81](), [src/lib/core/provide.ts:1-111](), [src/lib/index.ts:49-162](), [src/lib/core/di.ts]()
 
@@ -227,7 +227,7 @@ interface IExecutionContext {
 
 ### Context Flow Architecture
 
-![Mermaid Diagram](./diagrams\09_Architecture_6.svg)
+![Mermaid Diagram](./diagrams/09_Architecture_6.svg)
 
 ### MethodContextService Pattern
 
@@ -294,7 +294,7 @@ The framework uses `functools-kit`'s `Subject` for pub-sub event handling with q
 
 All events are emitted through global Subject instances:
 
-![Mermaid Diagram](./diagrams\09_Architecture_7.svg)
+![Mermaid Diagram](./diagrams/09_Architecture_7.svg)
 
 ### Event Types
 
@@ -327,7 +327,7 @@ export const listenSignal = (fn: (data: IStrategyTickResult) => void | Promise<v
 
 ### Event Emission Flow
 
-![Mermaid Diagram](./diagrams\09_Architecture_8.svg)
+![Mermaid Diagram](./diagrams/09_Architecture_8.svg)
 
 ### Emission Points
 

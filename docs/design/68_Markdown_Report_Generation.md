@@ -28,7 +28,7 @@ Both services follow the observer pattern, subscribing to signal emitters and ac
 
 ## Event Flow Architecture
 
-![Mermaid Diagram](./diagrams\68_Markdown_Report_Generation_0.svg)
+![Mermaid Diagram](./diagrams/68_Markdown_Report_Generation_0.svg)
 
 **Diagram: Signal Event Flow to Markdown Reports**
 
@@ -42,7 +42,7 @@ The services subscribe to emitters during initialization and passively accumulat
 
 Both services use an internal `ReportStorage` class to isolate data accumulation logic. Each strategy receives its own memoized storage instance, preventing data contamination between concurrent strategies.
 
-![Mermaid Diagram](./diagrams\68_Markdown_Report_Generation_1.svg)
+![Mermaid Diagram](./diagrams/68_Markdown_Report_Generation_1.svg)
 
 **Diagram: Service and Storage Class Structure**
 
@@ -104,7 +104,7 @@ The `LiveMarkdownService` uses 13 columns that accommodate all event types:
 
 ## Report Generation Pipeline
 
-![Mermaid Diagram](./diagrams\68_Markdown_Report_Generation_2.svg)
+![Mermaid Diagram](./diagrams/68_Markdown_Report_Generation_2.svg)
 
 **Diagram: Report Generation Sequence**
 
@@ -142,7 +142,7 @@ The resulting markdown follows standard table syntax:
 
 The backtest service implements a simple append-only accumulation:
 
-![Mermaid Diagram](./diagrams\68_Markdown_Report_Generation_3.svg)
+![Mermaid Diagram](./diagrams/68_Markdown_Report_Generation_3.svg)
 
 **Diagram: Backtest Event Accumulation State Machine**
 
@@ -154,7 +154,7 @@ The filter logic at [src/lib/services/markdown/BacktestMarkdownService.ts:245-24
 
 The live service maintains a comprehensive event timeline with update logic for active and closed events:
 
-![Mermaid Diagram](./diagrams\68_Markdown_Report_Generation_4.svg)
+![Mermaid Diagram](./diagrams/68_Markdown_Report_Generation_4.svg)
 
 **Diagram: Live Event Accumulation Logic**
 
@@ -248,7 +248,7 @@ Initializes the service by subscribing to the appropriate event emitter. Uses `f
 
 The markdown services are registered in the dependency injection container and integrated into the backtest aggregator object:
 
-![Mermaid Diagram](./diagrams\68_Markdown_Report_Generation_5.svg)
+![Mermaid Diagram](./diagrams/68_Markdown_Report_Generation_5.svg)
 
 **Diagram: DI Integration for Markdown Services**
 

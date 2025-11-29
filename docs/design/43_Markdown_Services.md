@@ -13,7 +13,7 @@ For information about the event system that feeds these services, see [Event Sys
 
 The Markdown Services subsystem consists of three specialized service classes, each responsible for reporting on a specific execution mode:
 
-![Mermaid Diagram](./diagrams\43_Markdown_Services_0.svg)
+![Mermaid Diagram](./diagrams/43_Markdown_Services_0.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:370-532](), [src/lib/services/markdown/LiveMarkdownService.ts:567-736](), [src/lib/services/markdown/ScheduleMarkdownService.ts:374-493]()
 
@@ -31,7 +31,7 @@ The Markdown Services subsystem consists of three specialized service classes, e
 
 The following diagram illustrates how trading events flow from execution contexts through emitters to markdown services, and finally to persistent reports:
 
-![Mermaid Diagram](./diagrams\43_Markdown_Services_1.svg)
+![Mermaid Diagram](./diagrams/43_Markdown_Services_1.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:402-413](), [src/lib/services/markdown/LiveMarkdownService.ts:601-617](), [src/lib/services/markdown/ScheduleMarkdownService.ts:401-413]()
 
@@ -49,7 +49,7 @@ The following diagram illustrates how trading events flow from execution context
 
 The service subscribes to `signalBacktestEmitter` during initialization using the `singleshot` pattern to ensure one-time setup:
 
-![Mermaid Diagram](./diagrams\43_Markdown_Services_2.svg)
+![Mermaid Diagram](./diagrams/43_Markdown_Services_2.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:526-529](), [src/lib/services/markdown/BacktestMarkdownService.ts:402-413]()
 
@@ -57,7 +57,7 @@ The service subscribes to `signalBacktestEmitter` during initialization using th
 
 Each strategy gets an isolated `ReportStorage` instance via memoization:
 
-![Mermaid Diagram](./diagrams\43_Markdown_Services_3.svg)
+![Mermaid Diagram](./diagrams/43_Markdown_Services_3.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:378-381](), [src/lib/services/markdown/BacktestMarkdownService.ts:179-194]()
 
@@ -111,7 +111,7 @@ All numeric metrics use the `isUnsafe()` function to guard against `NaN`, `Infin
 
 ### Event Accumulation Logic
 
-![Mermaid Diagram](./diagrams\43_Markdown_Services_4.svg)
+![Mermaid Diagram](./diagrams/43_Markdown_Services_4.svg)
 
 **Sources:** [src/lib/services/markdown/LiveMarkdownService.ts:239-373](), [src/lib/services/markdown/LiveMarkdownService.ts:222-224]()
 
@@ -170,7 +170,7 @@ cancellationRate = (totalCancelled / totalScheduled) × 100
 
 Each markdown service contains an internal `ReportStorage` class that implements the Controller-View pattern for data management:
 
-![Mermaid Diagram](./diagrams\43_Markdown_Services_5.svg)
+![Mermaid Diagram](./diagrams/43_Markdown_Services_5.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:179-341](), [src/lib/services/markdown/LiveMarkdownService.ts:229-535]()
 
@@ -186,7 +186,7 @@ Services use `functools-kit` memoization to create one `ReportStorage` instance 
 
 ### Calculation Flow
 
-![Mermaid Diagram](./diagrams\43_Markdown_Services_6.svg)
+![Mermaid Diagram](./diagrams/43_Markdown_Services_6.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:202-269](), [src/lib/services/markdown/LiveMarkdownService.ts:381-464]()
 
@@ -210,7 +210,7 @@ Services use `functools-kit` memoization to create one `ReportStorage` instance 
 
 All services generate markdown reports with column-based tables for event data:
 
-![Mermaid Diagram](./diagrams\43_Markdown_Services_7.svg)
+![Mermaid Diagram](./diagrams/43_Markdown_Services_7.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:104-177](), [src/lib/services/markdown/LiveMarkdownService.ts:145-220]()
 
@@ -244,7 +244,7 @@ The `dump()` method writes reports to disk with the following structure:
 
 Public API classes (`Backtest`, `Live`, `Schedule`) delegate to markdown services through the dependency injection container:
 
-![Mermaid Diagram](./diagrams\43_Markdown_Services_8.svg)
+![Mermaid Diagram](./diagrams/43_Markdown_Services_8.svg)
 
 **Sources:** [src/classes/Backtest.ts:1-134](), [src/classes/Live.ts:1-134](), [src/classes/Schedule.ts:1-135]()
 
@@ -270,7 +270,7 @@ Public API classes (`Backtest`, `Live`, `Schedule`) delegate to markdown service
 
 ### Initialization Sequence
 
-![Mermaid Diagram](./diagrams\43_Markdown_Services_9.svg)
+![Mermaid Diagram](./diagrams/43_Markdown_Services_9.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:526-529](), [src/lib/services/markdown/LiveMarkdownService.ts:730-733](), [src/lib/services/markdown/ScheduleMarkdownService.ts:465-474]()
 
@@ -280,6 +280,6 @@ Public API classes (`Backtest`, `Live`, `Schedule`) delegate to markdown service
 
 All markdown services implement a `clear()` method to reset accumulated data:
 
-![Mermaid Diagram](./diagrams\43_Markdown_Services_10.svg)
+![Mermaid Diagram](./diagrams/43_Markdown_Services_10.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:508-513](), [src/lib/services/markdown/LiveMarkdownService.ts:712-717](), [src/lib/services/markdown/ScheduleMarkdownService.ts:465-470]()

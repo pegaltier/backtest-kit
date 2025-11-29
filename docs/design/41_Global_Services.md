@@ -40,7 +40,7 @@ Execution Mode Global Services provide entry points for running backtests and li
 
 ## Global Service Architecture
 
-![Mermaid Diagram](./diagrams\41_Global_Services_0.svg)
+![Mermaid Diagram](./diagrams/41_Global_Services_0.svg)
 
 **Purpose**: This diagram illustrates how Global Services act as an intermediary layer between public APIs and lower-level services. Component Global Services orchestrate validation and delegate to Connection Services, while Execution Global Services delegate to Logic Services.
 
@@ -54,7 +54,7 @@ Component Global Services follow a consistent implementation pattern with three 
 
 ### Standard Structure
 
-![Mermaid Diagram](./diagrams\41_Global_Services_1.svg)
+![Mermaid Diagram](./diagrams/41_Global_Services_1.svg)
 
 **Purpose**: This diagram shows the standard implementation pattern for Component Global Services using RiskGlobalService as an example. All public methods follow the log-validate-delegate sequence.
 
@@ -87,7 +87,7 @@ private readonly riskValidationService = inject<RiskValidationService>(
 
 The validation pattern uses memoization to avoid redundant schema checks:
 
-![Mermaid Diagram](./diagrams\41_Global_Services_2.svg)
+![Mermaid Diagram](./diagrams/41_Global_Services_2.svg)
 
 **Purpose**: This sequence diagram demonstrates the validation orchestration pattern. The first call to `validate()` for a given component name performs validation and caches the result. Subsequent calls return immediately from cache.
 
@@ -127,7 +127,7 @@ Global Services are used internally by the framework but can also be accessed di
 
 ### Direct Access Pattern
 
-![Mermaid Diagram](./diagrams\41_Global_Services_3.svg)
+![Mermaid Diagram](./diagrams/41_Global_Services_3.svg)
 
 **Purpose**: This diagram shows how Global Services fit into the public API. The `add*` and `list*` functions bypass Global Services and access Validation/Schema services directly, while test code and advanced users can access Global Services through the `lib` export.
 
@@ -180,7 +180,7 @@ Execution Mode Global Services differ from Component Global Services by delegati
 
 These services provide the entry points for `Backtest.run()` and `Live.run()` operations:
 
-![Mermaid Diagram](./diagrams\41_Global_Services_4.svg)
+![Mermaid Diagram](./diagrams/41_Global_Services_4.svg)
 
 **Purpose**: This diagram illustrates the delegation chain from Execution Mode Global Services through Logic Services. Unlike Component Global Services that delegate to Connection Services, these delegate to Logic Services which manage context propagation and execution orchestration.
 
@@ -333,7 +333,7 @@ Each Global Service manages exactly one component type or execution mode:
 
 ## Delegation Flow Summary
 
-![Mermaid Diagram](./diagrams\41_Global_Services_5.svg)
+![Mermaid Diagram](./diagrams/41_Global_Services_5.svg)
 
 **Purpose**: This diagram summarizes the complete delegation flow for both Component and Execution Global Services. Both types perform validation first, but Component services delegate to Connection Services while Execution services delegate to Logic Services.
 

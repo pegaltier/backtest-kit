@@ -69,7 +69,7 @@ The validation step performs:
 
 ## Component Registration Flow Diagram
 
-![Mermaid Diagram](./diagrams\23_Component_Types_0.svg)
+![Mermaid Diagram](./diagrams/23_Component_Types_0.svg)
 
 **Sources:** [src/function/add.ts:50-341](), [src/lib/services/validation/StrategyValidationService.ts:1-50](), [src/lib/services/schema/StrategySchemaService.ts:1-30](), [src/lib/services/connection/StrategyConnectionService.ts:1-50]()
 
@@ -81,7 +81,7 @@ The validation step performs:
 
 Each component type has a corresponding `*SchemaService` class that implements the `ToolRegistry` pattern for name-based storage and retrieval:
 
-![Mermaid Diagram](./diagrams\23_Component_Types_1.svg)
+![Mermaid Diagram](./diagrams/23_Component_Types_1.svg)
 
 **Sources:** [src/lib/services/schema/StrategySchemaService.ts:1-30](), [src/lib/services/schema/ExchangeSchemaService.ts:1-30](), [src/lib/core/types.ts:18-26]()
 
@@ -117,7 +117,7 @@ Each component type has a `*ValidationService` class responsible for:
 
 `*ConnectionService` classes act as **memoized factories** that create and cache `Client*` instances. Each component name gets exactly one client instance, created lazily on first use:
 
-![Mermaid Diagram](./diagrams\23_Component_Types_2.svg)
+![Mermaid Diagram](./diagrams/23_Component_Types_2.svg)
 
 **Sources:** [src/lib/services/connection/StrategyConnectionService.ts:1-50](), [src/lib/services/connection/ExchangeConnectionService.ts:1-50]()
 
@@ -125,7 +125,7 @@ Each component type has a `*ValidationService` class responsible for:
 
 ## Component Lifecycle States
 
-![Mermaid Diagram](./diagrams\23_Component_Types_3.svg)
+![Mermaid Diagram](./diagrams/23_Component_Types_3.svg)
 
 **Sources:** [src/function/add.ts:50-341](), [src/lib/services/connection/StrategyConnectionService.ts:1-50]()
 
@@ -200,7 +200,7 @@ These type aliases provide semantic clarity while maintaining string compatibili
 
 Some component types reference other components by name, creating a dependency graph:
 
-![Mermaid Diagram](./diagrams\23_Component_Types_4.svg)
+![Mermaid Diagram](./diagrams/23_Component_Types_4.svg)
 
 **Sources:** [types.d.ts:616-633](), [types.d.ts:1019-1033]()
 
@@ -248,7 +248,7 @@ The `callbacks` field provides hooks into component lifecycle events without req
 
 For each component type, the framework maintains three service classes:
 
-![Mermaid Diagram](./diagrams\23_Component_Types_5.svg)
+![Mermaid Diagram](./diagrams/23_Component_Types_5.svg)
 
 This consistent three-layer pattern (Validation → Schema → Connection → Client) applies to all component types, providing predictable behavior and code organization.
 

@@ -179,7 +179,7 @@ Sources: [src/classes/Schedule.ts:115-120](), [types.d.ts:7393-7425]()
 
 The Schedule API follows the framework's layered service architecture with specialized markdown reporting components.
 
-![Mermaid Diagram](./diagrams\20_Schedule_API_0.svg)
+![Mermaid Diagram](./diagrams/20_Schedule_API_0.svg)
 
 **Architecture Layers:**
 
@@ -201,7 +201,7 @@ Sources: [src/classes/Schedule.ts:1-135](), [src/lib/services/markdown/ScheduleM
 
 The following diagram shows how scheduled signal events flow from strategy execution through the event system to the Schedule API's storage.
 
-![Mermaid Diagram](./diagrams\20_Schedule_API_1.svg)
+![Mermaid Diagram](./diagrams/20_Schedule_API_1.svg)
 
 **Event Processing Rules:**
 
@@ -265,7 +265,7 @@ The markdown report contains a table of all events followed by summary statistic
 
 ### Report Structure
 
-![Mermaid Diagram](./diagrams\20_Schedule_API_2.svg)
+![Mermaid Diagram](./diagrams/20_Schedule_API_2.svg)
 
 **Table Columns:**
 
@@ -436,7 +436,7 @@ Sources: [src/classes/Schedule.ts:1-135]()
 
 The Schedule API fits into the broader signal lifecycle as follows:
 
-![Mermaid Diagram](./diagrams\20_Schedule_API_3.svg)
+![Mermaid Diagram](./diagrams/20_Schedule_API_3.svg)
 
 **API Specialization:**
 - **Schedule API**: Tracks pre-activation events (`scheduled`, `cancelled`)

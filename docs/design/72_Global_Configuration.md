@@ -15,7 +15,7 @@ The framework uses a singleton `GLOBAL_CONFIG` object to store runtime parameter
 
 ### GLOBAL_CONFIG Definition
 
-![Mermaid Diagram](./diagrams\72_Global_Configuration_0.svg)
+![Mermaid Diagram](./diagrams/72_Global_Configuration_0.svg)
 
 **GLOBAL_CONFIG Parameter Summary**
 
@@ -73,7 +73,7 @@ Sources: [types.d.ts:86-97](), [src/index.ts:1]()
 
 **Validation Flow:**
 
-![Mermaid Diagram](./diagrams\72_Global_Configuration_1.svg)
+![Mermaid Diagram](./diagrams/72_Global_Configuration_1.svg)
 
 **Example:**
 ```typescript
@@ -101,7 +101,7 @@ Sources: [src/config/params.ts:3-6](), [types.d.ts:7-10](), [test/e2e/defend.tes
 
 **VWAP Calculation Flow:**
 
-![Mermaid Diagram](./diagrams\72_Global_Configuration_2.svg)
+![Mermaid Diagram](./diagrams/72_Global_Configuration_2.svg)
 
 **Example:**
 ```typescript
@@ -129,7 +129,7 @@ Sources: [src/config/params.ts:8-10](), [types.d.ts:12-15](), [types.d.ts:264-27
 
 **Validation Logic:**
 
-![Mermaid Diagram](./diagrams\72_Global_Configuration_3.svg)
+![Mermaid Diagram](./diagrams/72_Global_Configuration_3.svg)
 
 **Example:**
 ```typescript
@@ -157,7 +157,7 @@ Sources: [src/config/params.ts:12-17](), [types.d.ts:17-21](), [test/e2e/sanitiz
 
 **Validation Logic:**
 
-![Mermaid Diagram](./diagrams\72_Global_Configuration_4.svg)
+![Mermaid Diagram](./diagrams/72_Global_Configuration_4.svg)
 
 **Example:**
 ```typescript
@@ -186,7 +186,7 @@ Sources: [src/config/params.ts:19-23](), [types.d.ts:23-27](), [test/e2e/sanitiz
 
 **Lifecycle Monitoring:**
 
-![Mermaid Diagram](./diagrams\72_Global_Configuration_5.svg)
+![Mermaid Diagram](./diagrams/72_Global_Configuration_5.svg)
 
 **Example:**
 ```typescript
@@ -204,7 +204,7 @@ Sources: [src/config/params.ts:25-29](), [types.d.ts:29-34](), [test/e2e/sanitiz
 
 The configuration system follows a simple write-once-read-many pattern, where configuration parameters are read by validation and monitoring logic throughout the framework.
 
-![Mermaid Diagram](./diagrams\72_Global_Configuration_6.svg)
+![Mermaid Diagram](./diagrams/72_Global_Configuration_6.svg)
 
 **Configuration Consumers:**
 

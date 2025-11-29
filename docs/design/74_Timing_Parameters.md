@@ -61,7 +61,7 @@ The parameter is consumed in two locations within `ClientStrategy`:
 
 ### Timeout Behavior Flow
 
-![Mermaid Diagram](./diagrams\74_Timing_Parameters_0.svg)
+![Mermaid Diagram](./diagrams/74_Timing_Parameters_0.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:332-386](), [src/client/ClientStrategy.ts:1048-1134]()
 
@@ -103,7 +103,7 @@ The test creates a 121-minute backtest frame where scheduled signal never activa
 
 The parameter is enforced during signal validation within `VALIDATE_SIGNAL_FN`:
 
-![Mermaid Diagram](./diagrams\74_Timing_Parameters_1.svg)
+![Mermaid Diagram](./diagrams/74_Timing_Parameters_1.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:160-171]()
 
@@ -172,7 +172,7 @@ The sanitize test suite validates rejection of excessive lifetimes:
 
 The `GET_AVG_PRICE_FN` function computes VWAP using the most recent N candles:
 
-![Mermaid Diagram](./diagrams\74_Timing_Parameters_2.svg)
+![Mermaid Diagram](./diagrams/74_Timing_Parameters_2.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:285-296]()
 
@@ -365,7 +365,7 @@ setConfig({
 
 ## Timing Parameter Validation Summary
 
-![Mermaid Diagram](./diagrams\74_Timing_Parameters_3.svg)
+![Mermaid Diagram](./diagrams/74_Timing_Parameters_3.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:40-185](), [src/client/ClientStrategy.ts:332-386](), [src/client/ClientStrategy.ts:285-296]()
 

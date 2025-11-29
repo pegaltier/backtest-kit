@@ -15,7 +15,7 @@ The signal lifecycle is modeled as a finite state machine with six distinct stat
 
 ### State Transition Diagram
 
-![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_0.svg)
+![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_0.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:1-1400](), [src/interfaces/Strategy.interface.ts:1-350](), [types.d.ts:536-825]()
 
@@ -40,7 +40,7 @@ The framework uses a discriminated union pattern for type-safe signal handling. 
 
 ### Core Signal Interfaces
 
-![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_1.svg)
+![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_1.svg)
 
 **Sources:** [src/interfaces/Strategy.interface.ts:19-72](), [types.d.ts:543-591]()
 
@@ -67,7 +67,7 @@ Signal generation occurs via the user-defined `getSignal()` function, followed b
 
 ### Signal Generation Flow
 
-![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_2.svg)
+![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_2.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:187-283](), [src/client/ClientStrategy.ts:40-185]()
 
@@ -125,7 +125,7 @@ User-provided `ISignalDto` is augmented with framework metadata:
 
 Occurs when `getSignal()` returns a signal with `priceOpen` specified. Signal waits for market price to reach entry point.
 
-![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_3.svg)
+![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_3.svg)
 
 **Key Implementation:** Scheduled signals do NOT perform risk check at creation time. Risk validation occurs during activation when position opens.
 
@@ -135,7 +135,7 @@ Occurs when `getSignal()` returns a signal with `priceOpen` specified. Signal wa
 
 Occurs when `getSignal()` returns a signal without `priceOpen`. Position opens immediately at current VWAP.
 
-![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_4.svg)
+![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_4.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:623-673]()
 
@@ -143,7 +143,7 @@ Occurs when `getSignal()` returns a signal without `priceOpen`. Position opens i
 
 Occurs when market price reaches `priceOpen` for a scheduled signal. Triggers risk check at activation time.
 
-![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_5.svg)
+![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_5.svg)
 
 **Critical:** `pendingAt` timestamp is updated during activation. Time-based expiration calculates from `pendingAt`, not `scheduledAt`.
 
@@ -172,7 +172,7 @@ if (elapsedTime >= maxTimeToWait) {
 
 Occurs when signal meets closure condition: TakeProfit hit, StopLoss hit, or time expired.
 
-![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_6.svg)
+![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_6.svg)
 
 **Critical:** When TakeProfit or StopLoss triggers, the framework uses the **exact TP/SL price** for PnL calculation, not the current VWAP. This ensures deterministic results.
 
@@ -224,7 +224,7 @@ Strategies can register callbacks to observe signal state transitions. All callb
 
 ### Callback Inventory
 
-![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_7.svg)
+![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_7.svg)
 
 ### Callback Execution Order
 

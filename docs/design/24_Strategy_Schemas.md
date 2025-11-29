@@ -15,7 +15,7 @@ For information about risk management configuration, see [Risk Schemas](#5.4). F
 
 The `IStrategySchema` interface defines the complete configuration for a trading strategy. When registered via `addStrategy()`, the schema is stored in `StrategySchemaService` and validated by `StrategyValidationService`.
 
-![Mermaid Diagram](./diagrams\24_Strategy_Schemas_0.svg)
+![Mermaid Diagram](./diagrams/24_Strategy_Schemas_0.svg)
 
 **Sources:** [types.d.ts:616-633](), [types.d.ts:544-559](), [types.d.ts:593-611]()
 
@@ -48,7 +48,7 @@ Minimum time interval between `getSignal()` invocations. Implements throttling t
 
 The framework enforces this interval using `_lastSignalTimestamp` tracking in `ClientStrategy`. When `tick()` is called, the framework checks elapsed time since last signal generation:
 
-![Mermaid Diagram](./diagrams\24_Strategy_Schemas_1.svg)
+![Mermaid Diagram](./diagrams/24_Strategy_Schemas_1.svg)
 
 **Interval Mappings (INTERVAL_MINUTES):**
 
@@ -117,7 +117,7 @@ The `ISignalDto` interface defines the structure returned by `getSignal()`. It i
 
 ### ISignalDto Fields
 
-![Mermaid Diagram](./diagrams\24_Strategy_Schemas_2.svg)
+![Mermaid Diagram](./diagrams/24_Strategy_Schemas_2.svg)
 
 **Field Details:**
 
@@ -148,7 +148,7 @@ The `ISignalDto` interface defines the structure returned by `getSignal()`. It i
 
 Lifecycle event handlers called during signal state transitions. All callbacks are optional.
 
-![Mermaid Diagram](./diagrams\24_Strategy_Schemas_3.svg)
+![Mermaid Diagram](./diagrams/24_Strategy_Schemas_3.svg)
 
 **Callback Signatures:**
 
@@ -202,7 +202,7 @@ Reference to a registered risk profile via `addRisk()`. When specified, the stra
 
 **Risk Integration Flow:**
 
-![Mermaid Diagram](./diagrams\24_Strategy_Schemas_4.svg)
+![Mermaid Diagram](./diagrams/24_Strategy_Schemas_4.svg)
 
 **Cross-Strategy Position Tracking:**
 
@@ -260,7 +260,7 @@ Not used by framework logic, purely informational.
 
 Strategies are registered via the `addStrategy()` function, which performs validation and storage in two services.
 
-![Mermaid Diagram](./diagrams\24_Strategy_Schemas_5.svg)
+![Mermaid Diagram](./diagrams/24_Strategy_Schemas_5.svg)
 
 **Registration Code Path:**
 
@@ -290,7 +290,7 @@ When strategy is first used (during `Backtest.run()` or `Live.run()`):
 
 ### Relationship with Exchange
 
-![Mermaid Diagram](./diagrams\24_Strategy_Schemas_6.svg)
+![Mermaid Diagram](./diagrams/24_Strategy_Schemas_6.svg)
 
 The `getSignal` function has implicit access to exchange operations via context propagation. No explicit parameters needed.
 
@@ -300,7 +300,7 @@ The `getSignal` function has implicit access to exchange operations via context 
 
 ### Relationship with Risk Management
 
-![Mermaid Diagram](./diagrams\24_Strategy_Schemas_7.svg)
+![Mermaid Diagram](./diagrams/24_Strategy_Schemas_7.svg)
 
 **Risk Check Flow:**
 

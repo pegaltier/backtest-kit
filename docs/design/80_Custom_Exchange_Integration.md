@@ -20,7 +20,7 @@ The framework wraps these implementations in `ClientExchange` which adds VWAP ca
 
 ## Exchange Registration Flow
 
-![Mermaid Diagram](./diagrams\80_Custom_Exchange_Integration_0.svg)
+![Mermaid Diagram](./diagrams/80_Custom_Exchange_Integration_0.svg)
 
 **Diagram: Exchange schema registration and instantiation flow**
 
@@ -164,7 +164,7 @@ addExchange({
 
 ## ClientExchange Time-Travel Wrapper
 
-![Mermaid Diagram](./diagrams\80_Custom_Exchange_Integration_1.svg)
+![Mermaid Diagram](./diagrams/80_Custom_Exchange_Integration_1.svg)
 
 **Diagram: ClientExchange wraps user schema with time-aware fetching**
 
@@ -267,7 +267,7 @@ addExchange({
 
 `ClientExchange` implements `getAveragePrice()` automatically—no user implementation required. Used by strategies for current market price.
 
-![Mermaid Diagram](./diagrams\80_Custom_Exchange_Integration_2.svg)
+![Mermaid Diagram](./diagrams/80_Custom_Exchange_Integration_2.svg)
 
 **Diagram: getAveragePrice() uses last 5 one-minute candles**
 
@@ -290,7 +290,7 @@ Where `Typical Price = (High + Low + Close) / 3`
 
 **Both methods call the same `schema.getCandles()` with different time ranges.**
 
-![Mermaid Diagram](./diagrams\80_Custom_Exchange_Integration_3.svg)
+![Mermaid Diagram](./diagrams/80_Custom_Exchange_Integration_3.svg)
 
 **Diagram: Bidirectional candle fetching in backtest mode**
 
@@ -330,7 +330,7 @@ Logs warnings for data gaps or quality issues.
 
 ## Service Layer Integration
 
-![Mermaid Diagram](./diagrams\80_Custom_Exchange_Integration_4.svg)
+![Mermaid Diagram](./diagrams/80_Custom_Exchange_Integration_4.svg)
 
 **Diagram: Exchange schema flows through service layers**
 

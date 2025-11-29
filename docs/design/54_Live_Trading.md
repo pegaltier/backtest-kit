@@ -22,7 +22,7 @@ Sources: [src/classes/Live.ts:1-220](), [src/lib/services/logic/private/LiveLogi
 
 ## Architecture
 
-![Mermaid Diagram](./diagrams\54_Live_Trading_0.svg)
+![Mermaid Diagram](./diagrams/54_Live_Trading_0.svg)
 
 **Live Trading Architecture**
 
@@ -35,7 +35,7 @@ Sources: [src/classes/Live.ts:44-219](), [src/lib/services/logic/public/LiveLogi
 
 ## Infinite Loop Execution
 
-![Mermaid Diagram](./diagrams\54_Live_Trading_1.svg)
+![Mermaid Diagram](./diagrams/54_Live_Trading_1.svg)
 
 **Infinite Loop State Machine**
 
@@ -45,7 +45,7 @@ Sources: [src/lib/services/logic/private/LiveLogicPrivateService.ts:60-113]()
 
 ### Tick Execution Flow
 
-![Mermaid Diagram](./diagrams\54_Live_Trading_2.svg)
+![Mermaid Diagram](./diagrams/54_Live_Trading_2.svg)
 
 **Live Tick Execution Sequence**
 
@@ -180,7 +180,7 @@ Sources: [src/classes/Live.ts:192-201]()
 
 ## Context Propagation
 
-![Mermaid Diagram](./diagrams\54_Live_Trading_3.svg)
+![Mermaid Diagram](./diagrams/54_Live_Trading_3.svg)
 
 **Context Propagation in Live Trading**
 
@@ -297,7 +297,7 @@ Sources: [src/config/emitters.ts:1-81](), [src/function/event.ts:121-235]()
 
 ## Comparison with Backtest Execution
 
-![Mermaid Diagram](./diagrams\54_Live_Trading_4.svg)
+![Mermaid Diagram](./diagrams/54_Live_Trading_4.svg)
 
 **Backtest vs Live Execution Comparison**
 

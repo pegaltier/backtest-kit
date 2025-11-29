@@ -13,7 +13,7 @@ When a strategy's `tick()` method executes, the framework calls the user's `getS
 
 ### End-to-End Signal Generation Pipeline
 
-![Mermaid Diagram](./diagrams\46_Signal_Generation_and_Validation_0.svg)
+![Mermaid Diagram](./diagrams/46_Signal_Generation_and_Validation_0.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:187-283]()
 
@@ -50,7 +50,7 @@ The framework transforms user-provided `ISignalDto` objects into validated `ISig
 
 ### Augmentation Example
 
-![Mermaid Diagram](./diagrams\46_Signal_Generation_and_Validation_1.svg)
+![Mermaid Diagram](./diagrams/46_Signal_Generation_and_Validation_1.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:232-272]()
 
@@ -62,7 +62,7 @@ The `VALIDATE_SIGNAL_FN` performs comprehensive validation of signal parameters 
 
 ### Validation Architecture
 
-![Mermaid Diagram](./diagrams\46_Signal_Generation_and_Validation_2.svg)
+![Mermaid Diagram](./diagrams/46_Signal_Generation_and_Validation_2.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:40-185]()
 
@@ -241,7 +241,7 @@ The `GET_SIGNAL_FN` wrapper coordinates signal generation, validation, and error
 
 ### GET_SIGNAL_FN Control Flow
 
-![Mermaid Diagram](./diagrams\46_Signal_Generation_and_Validation_3.svg)
+![Mermaid Diagram](./diagrams/46_Signal_Generation_and_Validation_3.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:187-283]()
 
@@ -318,7 +318,7 @@ Signals can be immediate (open at current price) or scheduled (wait for specific
 
 ### Signal Type Decision Tree
 
-![Mermaid Diagram](./diagrams\46_Signal_Generation_and_Validation_4.svg)
+![Mermaid Diagram](./diagrams/46_Signal_Generation_and_Validation_4.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:232-272](), [src/interfaces/Strategy.interface.ts:64-72]()
 
@@ -561,7 +561,7 @@ The `GET_SIGNAL_FN` is called from `ClientStrategy.tick()` method during strateg
 
 ### ClientStrategy.tick() Call Chain
 
-![Mermaid Diagram](./diagrams\46_Signal_Generation_and_Validation_5.svg)
+![Mermaid Diagram](./diagrams/46_Signal_Generation_and_Validation_5.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:187-283](), [src/lib/services/connection/StrategyConnectionService.ts:104-121]()
 

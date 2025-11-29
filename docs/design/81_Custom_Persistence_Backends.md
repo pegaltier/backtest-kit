@@ -13,7 +13,7 @@ The persistence layer uses a factory pattern with pluggable backends. The `Persi
 
 **Architecture Diagram: Persistence Layer Components**
 
-![Mermaid Diagram](./diagrams\81_Custom_Persistence_Backends_0.svg)
+![Mermaid Diagram](./diagrams/81_Custom_Persistence_Backends_0.svg)
 
 **Sources:** [types.d.ts:1067-1125](), [src/index.ts:44-50]()
 
@@ -59,7 +59,7 @@ The `PersistBase` class provides the default implementation using atomic file wr
 
 **Default Implementation Flow**
 
-![Mermaid Diagram](./diagrams\81_Custom_Persistence_Backends_1.svg)
+![Mermaid Diagram](./diagrams/81_Custom_Persistence_Backends_1.svg)
 
 **Key Features of PersistBase**
 
@@ -80,7 +80,7 @@ Custom adapters extend or implement the `IPersistBase<ISignalData>` interface. T
 
 **Implementation Requirements Diagram**
 
-![Mermaid Diagram](./diagrams\81_Custom_Persistence_Backends_2.svg)
+![Mermaid Diagram](./diagrams/81_Custom_Persistence_Backends_2.svg)
 
 **Example: Redis Persistence Adapter**
 
@@ -196,7 +196,7 @@ Custom adapters are registered globally via `PersistSignalAdaper.usePersistSigna
 
 **Registration Flow**
 
-![Mermaid Diagram](./diagrams\81_Custom_Persistence_Backends_3.svg)
+![Mermaid Diagram](./diagrams/81_Custom_Persistence_Backends_3.svg)
 
 **Registration Code Example**
 
@@ -321,7 +321,7 @@ Custom adapters should be thoroughly tested for atomicity, crash recovery, and c
 
 **Test Requirements**
 
-![Mermaid Diagram](./diagrams\81_Custom_Persistence_Backends_4.svg)
+![Mermaid Diagram](./diagrams/81_Custom_Persistence_Backends_4.svg)
 
 **Example Test Suite**
 

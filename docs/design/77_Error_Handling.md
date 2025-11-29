@@ -88,7 +88,7 @@ All background tasks use `getErrorMessage()` from `functools-kit` to normalize e
 
 ## Background Task Error Flow
 
-![Mermaid Diagram](./diagrams\77_Error_Handling_0.svg)
+![Mermaid Diagram](./diagrams/77_Error_Handling_0.svg)
 
 **Diagram: Background Task Error Propagation**
 
@@ -206,7 +206,7 @@ return validationSubject.subscribe(queued(async (error) => fn(error)));
 
 ## Error Handling Architecture
 
-![Mermaid Diagram](./diagrams\77_Error_Handling_1.svg)
+![Mermaid Diagram](./diagrams/77_Error_Handling_1.svg)
 
 **Diagram: Error Handling System Architecture**
 
@@ -218,7 +218,7 @@ This diagram shows the complete error handling pipeline from error sources throu
 
 ## Error-to-Code Entity Mapping
 
-![Mermaid Diagram](./diagrams\77_Error_Handling_2.svg)
+![Mermaid Diagram](./diagrams/77_Error_Handling_2.svg)
 
 **Diagram: Error Handling Code Entity Mapping**
 
@@ -263,7 +263,7 @@ warn(topic: string, ...args: any[]): void;
 
 ## Error Handling Lifecycle
 
-![Mermaid Diagram](./diagrams\77_Error_Handling_3.svg)
+![Mermaid Diagram](./diagrams/77_Error_Handling_3.svg)
 
 **Diagram: Error Handling Sequence**
 

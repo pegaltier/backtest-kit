@@ -12,7 +12,7 @@ For event-driven signal flow, see [Event System](#3.4).
 
 Cross-cutting concerns provide infrastructure services that are consumed by all layers:
 
-![Mermaid Diagram](./diagrams\75_Cross-Cutting_Concerns_0.svg)
+![Mermaid Diagram](./diagrams/75_Cross-Cutting_Concerns_0.svg)
 
 **Sources:** [types.d.ts:40-130](), [src/config/params.ts:1-35](), [src/classes/Persist.ts:1-732]()
 
@@ -52,7 +52,7 @@ setLogger({
 
 The framework automatically injects contextual information into log messages. Services access the logger through dependency injection and include strategy/exchange/symbol context:
 
-![Mermaid Diagram](./diagrams\75_Cross-Cutting_Concerns_1.svg)
+![Mermaid Diagram](./diagrams/75_Cross-Cutting_Concerns_1.svg)
 
 **Example log output with automatic context:**
 ```
@@ -89,7 +89,7 @@ constructor(
 
 The framework emits all errors to a centralized `errorEmitter` Subject, allowing users to subscribe to and handle errors globally:
 
-![Mermaid Diagram](./diagrams\75_Cross-Cutting_Concerns_2.svg)
+![Mermaid Diagram](./diagrams/75_Cross-Cutting_Concerns_2.svg)
 
 **Sources:** [types.d.ts:1-3](), [src/index.ts:11]()
 
@@ -165,7 +165,7 @@ Signal validation errors are thrown from `VALIDATE_SIGNAL_FN` and caught by logi
 
 The persistence layer provides crash-safe state management for live trading via atomic file writes and abstract base classes supporting custom adapters:
 
-![Mermaid Diagram](./diagrams\75_Cross-Cutting_Concerns_3.svg)
+![Mermaid Diagram](./diagrams/75_Cross-Cutting_Concerns_3.svg)
 
 **Sources:** [src/classes/Persist.ts:40-482](), [src/utils/writeFileAtomic.ts:1-141]()
 
@@ -354,7 +354,7 @@ const BASE_WAIT_FOR_INIT_FN = async (self: TPersistBase): Promise<void> => {
 
 The `GLOBAL_CONFIG` object defines system-wide constraints for validation and timing. Users modify these parameters via `setConfig()`:
 
-![Mermaid Diagram](./diagrams\75_Cross-Cutting_Concerns_4.svg)
+![Mermaid Diagram](./diagrams/75_Cross-Cutting_Concerns_4.svg)
 
 **Sources:** [src/config/params.ts:1-35](), [types.d.ts:5-34]()
 
@@ -447,7 +447,7 @@ The timing parameters control scheduled signal behavior and signal lifecycle:
 
 The DI container provides singletons for cross-cutting concerns that are injected into all service classes:
 
-![Mermaid Diagram](./diagrams\75_Cross-Cutting_Concerns_5.svg)
+![Mermaid Diagram](./diagrams/75_Cross-Cutting_Concerns_5.svg)
 
 **Sources:** [src/classes/Persist.ts:192-196](), [types.d.ts:171-176]()
 

@@ -17,7 +17,7 @@ The service layer isolates business logic (Client classes) from framework concer
 
 The framework organizes services into six categories, each with a distinct purpose in the execution flow:
 
-![Mermaid Diagram](./diagrams\37_Service_Architecture_Overview_0.svg)
+![Mermaid Diagram](./diagrams/37_Service_Architecture_Overview_0.svg)
 
 **Sources:** [src/lib/index.ts:49-162](), [src/lib/core/types.ts:1-81](), [docs/internals.md:28-40]()
 
@@ -49,7 +49,7 @@ The dependency injection container is initialized through three files:
 
 Services use Symbol-based dependency injection for type-safe resolution. Each service type has a unique Symbol defined in [src/lib/core/types.ts]():
 
-![Mermaid Diagram](./diagrams\37_Service_Architecture_Overview_1.svg)
+![Mermaid Diagram](./diagrams/37_Service_Architecture_Overview_1.svg)
 
 Services receive dependencies through constructor injection. The DI container resolves the dependency graph at initialization time via `init()` called in [src/lib/index.ts:164]().
 
@@ -113,7 +113,7 @@ Subscribe to event emitters and generate performance reports. Markdown services 
 
 Services form a dependency chain from public API to Client classes:
 
-![Mermaid Diagram](./diagrams\37_Service_Architecture_Overview_2.svg)
+![Mermaid Diagram](./diagrams/37_Service_Architecture_Overview_2.svg)
 
 **Sources:** [src/lib/index.ts:1-170](), [src/lib/services/global/](), [src/lib/services/logic/](), [src/lib/services/connection/]()
 
@@ -121,7 +121,7 @@ Services form a dependency chain from public API to Client classes:
 
 Services are organized around six component types (Strategy, Exchange, Frame, Walker, Sizing, Risk). Each component has a complete service stack:
 
-![Mermaid Diagram](./diagrams\37_Service_Architecture_Overview_3.svg)
+![Mermaid Diagram](./diagrams/37_Service_Architecture_Overview_3.svg)
 
 The pattern is consistent across all components: Global → Validation/Logic → Connection → Schema → Client. This uniformity makes the codebase predictable and maintainable.
 
@@ -131,7 +131,7 @@ The pattern is consistent across all components: Global → Validation/Logic →
 
 Services use `MethodContextService` and `ExecutionContextService` from `di-scoped` to propagate context without explicit parameters. The context flows through the service stack:
 
-![Mermaid Diagram](./diagrams\37_Service_Architecture_Overview_4.svg)
+![Mermaid Diagram](./diagrams/37_Service_Architecture_Overview_4.svg)
 
 Services at any depth can resolve `MethodContextService` or `ExecutionContextService` via DI to access context without it being passed as parameters. This enables clean APIs where strategy authors call `getCandles(symbol, interval, limit)` instead of `getCandles(symbol, interval, limit, context)`.
 

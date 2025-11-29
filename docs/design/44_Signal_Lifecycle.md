@@ -11,7 +11,7 @@ For information about risk management checks that occur during signal generation
 
 Signals in backtest-kit follow a discriminated union pattern with six possible states. Each state is represented by a specific TypeScript interface with an `action` discriminator field for type-safe handling.
 
-![Mermaid Diagram](./diagrams\44_Signal_Lifecycle_0.svg)
+![Mermaid Diagram](./diagrams/44_Signal_Lifecycle_0.svg)
 
 **Sources:** [types.d.ts:653-770](), [src/interfaces/Strategy.interface.ts:159-295]()
 
@@ -29,7 +29,7 @@ The framework defines a hierarchy of signal types with increasing levels of comp
 | `ISignalRow` | Validated signal with metadata | Extends `ISignalDto` + `id`, `priceOpen` (required), `scheduledAt`, `pendingAt`, `symbol`, `strategyName`, `exchangeName`, `_isScheduled` | Used throughout lifecycle |
 | `IScheduledSignalRow` | Scheduled signal variant | Extends `ISignalRow`, enforces `priceOpen` presence | Represents delayed entry signals |
 
-![Mermaid Diagram](./diagrams\44_Signal_Lifecycle_1.svg)
+![Mermaid Diagram](./diagrams/44_Signal_Lifecycle_1.svg)
 
 **Sources:** [types.d.ts:543-592](), [src/interfaces/Strategy.interface.ts:19-72](), [src/client/ClientStrategy.ts:187-283]()
 
@@ -39,7 +39,7 @@ The framework defines a hierarchy of signal types with increasing levels of comp
 
 Signal generation occurs within `ClientStrategy` and involves throttling, risk checks, and validation. The `GET_SIGNAL_FN` wrapper coordinates this process.
 
-![Mermaid Diagram](./diagrams\44_Signal_Lifecycle_2.svg)
+![Mermaid Diagram](./diagrams/44_Signal_Lifecycle_2.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:187-283](), [src/client/ClientStrategy.ts:31-38]()
 
@@ -107,7 +107,7 @@ minuteEstimatedTime <= CC_MAX_SIGNAL_LIFETIME_MINUTES
 
 When no active signal exists, `ClientStrategy.tick()` attempts to generate a new signal. The flow differs based on whether `priceOpen` is specified.
 
-![Mermaid Diagram](./diagrams\44_Signal_Lifecycle_3.svg)
+![Mermaid Diagram](./diagrams/44_Signal_Lifecycle_3.svg)
 
 **Key Difference:** Immediate signals undergo risk check and call `risk.addSignal()` immediately. Scheduled signals defer risk check until price activation.
 
@@ -121,7 +121,7 @@ Scheduled signals represent delayed entry positions that wait for price to reach
 
 ### Scheduled Signal State Machine
 
-![Mermaid Diagram](./diagrams\44_Signal_Lifecycle_4.svg)
+![Mermaid Diagram](./diagrams/44_Signal_Lifecycle_4.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:332-386](), [src/client/ClientStrategy.ts:388-422](), [src/client/ClientStrategy.ts:459-551]()
 
@@ -151,7 +151,7 @@ if (scheduled.position === "long") {
 
 Once a signal is opened (stored in `_pendingSignal`), it enters active monitoring. The framework checks for TP/SL conditions and time expiration on each tick.
 
-![Mermaid Diagram](./diagrams\44_Signal_Lifecycle_5.svg)
+![Mermaid Diagram](./diagrams/44_Signal_Lifecycle_5.svg)
 
 **Critical Detail:** Time expiration uses `pendingAt` timestamp, not `scheduledAt`. For scheduled signals, this ensures `minuteEstimatedTime` counts from activation, not from creation.
 
@@ -170,11 +170,11 @@ Signals maintain two critical timestamps with distinct semantics:
 
 ### Timestamp Flow for Immediate Signals
 
-![Mermaid Diagram](./diagrams\44_Signal_Lifecycle_6.svg)
+![Mermaid Diagram](./diagrams/44_Signal_Lifecycle_6.svg)
 
 ### Timestamp Flow for Scheduled Signals
 
-![Mermaid Diagram](./diagrams\44_Signal_Lifecycle_7.svg)
+![Mermaid Diagram](./diagrams/44_Signal_Lifecycle_7.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:243-266](), [src/client/ClientStrategy.ts:510-515](), [src/client/ClientStrategy.ts:949-954](), [src/client/ClientStrategy.ts:675-683]()
 
@@ -186,7 +186,7 @@ In live trading mode, signals are persisted to disk after every state change to 
 
 ### Persistence Architecture
 
-![Mermaid Diagram](./diagrams\44_Signal_Lifecycle_8.svg)
+![Mermaid Diagram](./diagrams/44_Signal_Lifecycle_8.svg)
 
 ### Persistence Flow Example
 
@@ -247,7 +247,7 @@ Profit and loss is calculated by `toProfitLossDto` which applies trading fees an
 
 ### Fee and Slippage Model
 
-![Mermaid Diagram](./diagrams\44_Signal_Lifecycle_9.svg)
+![Mermaid Diagram](./diagrams/44_Signal_Lifecycle_9.svg)
 
 ### Long Position Example
 
@@ -312,7 +312,7 @@ The signal lifecycle behaves differently in backtest and live modes due to timin
 
 ### Backtest Fast-Forward Algorithm
 
-![Mermaid Diagram](./diagrams\44_Signal_Lifecycle_10.svg)
+![Mermaid Diagram](./diagrams/44_Signal_Lifecycle_10.svg)
 
 **Key Optimization:** The backtest method processes all candles in a single pass without yielding control, making it significantly faster than tick-by-tick iteration.
 
@@ -324,7 +324,7 @@ The signal lifecycle behaves differently in backtest and live modes due to timin
 
 Every state transition emits events through Subject-based emitters, enabling observability and report generation.
 
-![Mermaid Diagram](./diagrams\44_Signal_Lifecycle_11.svg)
+![Mermaid Diagram](./diagrams/44_Signal_Lifecycle_11.svg)
 
 **Event Flow:** Each state transition calls the specific lifecycle callback (e.g., `onOpen`), then always calls `onTick` with the full result. The result is then emitted to all registered listeners via the Subject pattern.
 

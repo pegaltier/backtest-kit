@@ -13,7 +13,7 @@ For signal lifecycle management, see [Signal Lifecycle](#8). For risk management
 
 The persistence layer consists of three main components: the abstract `PersistBase` class, specialized adapters for signals and risk data, and the atomic file writing utility.
 
-![Mermaid Diagram](./diagrams\78_Persistence_Layer_0.svg)
+![Mermaid Diagram](./diagrams/78_Persistence_Layer_0.svg)
 
 **Sources:** [src/classes/Persist.ts:1-177](), [src/utils/writeFileAtomic.ts:1-141]()
 
@@ -25,7 +25,7 @@ The persistence layer consists of three main components: the abstract `PersistBa
 
 The `IPersistBase` interface defines the contract all persistence implementations must fulfill:
 
-![Mermaid Diagram](./diagrams\78_Persistence_Layer_1.svg)
+![Mermaid Diagram](./diagrams/78_Persistence_Layer_1.svg)
 
 **Sources:** [src/classes/Persist.ts:69-111](), [src/classes/Persist.ts:160-177]()
 
@@ -45,7 +45,7 @@ The constructor accepts an `entityName` (e.g., "signal", "risk") and optional `b
 
 #### Read Operations
 
-![Mermaid Diagram](./diagrams\78_Persistence_Layer_2.svg)
+![Mermaid Diagram](./diagrams/78_Persistence_Layer_2.svg)
 
 **Sources:** [src/classes/Persist.ts:232-253]()
 
@@ -53,7 +53,7 @@ The constructor accepts an `entityName` (e.g., "signal", "risk") and optional `b
 
 Write operations use `writeFileAtomic` to ensure crash safety (see [Atomic File Writes](#atomic-file-writes)):
 
-![Mermaid Diagram](./diagrams\78_Persistence_Layer_3.svg)
+![Mermaid Diagram](./diagrams/78_Persistence_Layer_3.svg)
 
 **Sources:** [src/classes/Persist.ts:276-295](), [src/utils/writeFileAtomic.ts:63-140]()
 
@@ -84,7 +84,7 @@ await persist.removeAll();
 
 `PersistBase` implements `AsyncIterableIterator` for convenient iteration over all stored entities:
 
-![Mermaid Diagram](./diagrams\78_Persistence_Layer_4.svg)
+![Mermaid Diagram](./diagrams/78_Persistence_Layer_4.svg)
 
 Entities are sorted alphanumerically by ID using `localeCompare` with numeric sensitivity.
 
@@ -96,7 +96,7 @@ The `writeFileAtomic` function ensures that file writes either complete fully or
 
 ### Platform-Specific Behavior
 
-![Mermaid Diagram](./diagrams\78_Persistence_Layer_5.svg)
+![Mermaid Diagram](./diagrams/78_Persistence_Layer_5.svg)
 
 | Platform | Strategy | Atomicity | Temp File |
 |----------|----------|-----------|-----------|
@@ -109,7 +109,7 @@ The `writeFileAtomic` function ensures that file writes either complete fully or
 
 On POSIX systems, if any step fails, the temporary file is cleaned up before rethrowing the error:
 
-![Mermaid Diagram](./diagrams\78_Persistence_Layer_6.svg)
+![Mermaid Diagram](./diagrams/78_Persistence_Layer_6.svg)
 
 **Sources:** [src/utils/writeFileAtomic.ts:109-140]()
 
@@ -174,7 +174,7 @@ return JSON.parse(fileContent) as T;
 
 During `waitForInit`, the system validates all existing files and removes corrupted ones:
 
-![Mermaid Diagram](./diagrams\78_Persistence_Layer_7.svg)
+![Mermaid Diagram](./diagrams/78_Persistence_Layer_7.svg)
 
 The cleanup uses retry logic with configurable parameters:
 
@@ -193,7 +193,7 @@ The framework provides two specialized adapter classes for different data types:
 
 Manages signal state persistence for live trading. Each strategy-symbol combination gets its own file:
 
-![Mermaid Diagram](./diagrams\78_Persistence_Layer_8.svg)
+![Mermaid Diagram](./diagrams/78_Persistence_Layer_8.svg)
 
 **Entity Name Pattern:** `signal/{strategyName}`  
 **Entity ID Pattern:** `{symbol}` (e.g., "BTCUSDT")
@@ -204,7 +204,7 @@ Manages signal state persistence for live trading. Each strategy-symbol combinat
 
 Manages active position tracking for risk management. Each risk profile stores all positions in a single file:
 
-![Mermaid Diagram](./diagrams\78_Persistence_Layer_9.svg)
+![Mermaid Diagram](./diagrams/78_Persistence_Layer_9.svg)
 
 **Entity Name Pattern:** `risk/{riskName}`  
 **Entity ID Pattern:** Always `"positions"`
@@ -236,7 +236,7 @@ The `waitForInit` method implements crash recovery by validating existing data a
 
 ### Initialization Pattern
 
-![Mermaid Diagram](./diagrams\78_Persistence_Layer_10.svg)
+![Mermaid Diagram](./diagrams/78_Persistence_Layer_10.svg)
 
 The `singleshot` decorator ensures initialization happens only once, even if called multiple times.
 
@@ -244,7 +244,7 @@ The `singleshot` decorator ensures initialization happens only once, even if cal
 
 ### Validation Logic
 
-![Mermaid Diagram](./diagrams\78_Persistence_Layer_11.svg)
+![Mermaid Diagram](./diagrams/78_Persistence_Layer_11.svg)
 
 Error messages logged:
 
@@ -277,7 +277,7 @@ interface IPersistBase<Entity extends IEntity = IEntity> {
 
 ### Redis Implementation Example
 
-![Mermaid Diagram](./diagrams\78_Persistence_Layer_12.svg)
+![Mermaid Diagram](./diagrams/78_Persistence_Layer_12.svg)
 
 Key implementation details:
 
@@ -318,7 +318,7 @@ Key operations:
 
 ### Adapter Selection Criteria
 
-![Mermaid Diagram](./diagrams\78_Persistence_Layer_13.svg)
+![Mermaid Diagram](./diagrams/78_Persistence_Layer_13.svg)
 
 **Sources:** [README.md:1023-1043]()
 
@@ -366,7 +366,7 @@ for await (const log of tradingLogs.filter((l) =>
 
 Services use persistence adapters through the dependency injection system:
 
-![Mermaid Diagram](./diagrams\78_Persistence_Layer_14.svg)
+![Mermaid Diagram](./diagrams/78_Persistence_Layer_14.svg)
 
 **Sources:** [src/classes/Persist.ts:1-60]()
 

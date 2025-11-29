@@ -23,7 +23,7 @@ The generated timeframe array is then consumed by `BacktestLogicPrivateService`,
 
 ## Architecture Integration
 
-![Mermaid Diagram](./diagrams\33_ClientFrame_0.svg)
+![Mermaid Diagram](./diagrams/33_ClientFrame_0.svg)
 
 **ClientFrame Position in Service Hierarchy**
 
@@ -88,7 +88,7 @@ The `INTERVAL_MINUTES` constant maps each `FrameInterval` to its minute equivale
 
 ## Timeframe Generation Algorithm
 
-![Mermaid Diagram](./diagrams\33_ClientFrame_1.svg)
+![Mermaid Diagram](./diagrams/33_ClientFrame_1.svg)
 
 **Algorithm Steps**
 
@@ -156,7 +156,7 @@ The callback is invoked after timeframe generation completes [src/client/ClientF
 
 ## Integration with Backtest Flow
 
-![Mermaid Diagram](./diagrams\33_ClientFrame_2.svg)
+![Mermaid Diagram](./diagrams/33_ClientFrame_2.svg)
 
 **Backtest Orchestration**
 

@@ -27,7 +27,7 @@ The risk validation system provides access to:
 
 ## Validation Flow
 
-![Mermaid Diagram](./diagrams\65_Risk_Validation_0.svg)
+![Mermaid Diagram](./diagrams/65_Risk_Validation_0.svg)
 
 **Sources**: [src/client/ClientRisk.ts:165-217](), [test/spec/risk.test.mjs:41-143]()
 
@@ -146,7 +146,7 @@ The object form allows documentation of validation logic. The framework normaliz
 
 The `DO_VALIDATION_FN` is a `trycatch` wrapper that executes validation functions with error handling and logging.
 
-![Mermaid Diagram](./diagrams\65_Risk_Validation_1.svg)
+![Mermaid Diagram](./diagrams/65_Risk_Validation_1.svg)
 
 ### Implementation
 
@@ -198,7 +198,7 @@ public checkSignal = async (params: IRiskCheckArgs): Promise<boolean>
 
 ### Execution Steps
 
-![Mermaid Diagram](./diagrams\65_Risk_Validation_2.svg)
+![Mermaid Diagram](./diagrams/65_Risk_Validation_2.svg)
 
 **Sources**: [src/client/ClientRisk.ts:165-217]()
 
@@ -372,7 +372,7 @@ Use the `timestamp` field to implement time-of-day restrictions.
 
 Risk validation requests flow through multiple service layers before reaching `ClientRisk`.
 
-![Mermaid Diagram](./diagrams\65_Risk_Validation_3.svg)
+![Mermaid Diagram](./diagrams/65_Risk_Validation_3.svg)
 
 ### Service Responsibilities
 
@@ -454,7 +454,7 @@ Validation errors are caught and emitted via the event system, allowing external
 
 ### Error Flow
 
-![Mermaid Diagram](./diagrams\65_Risk_Validation_4.svg)
+![Mermaid Diagram](./diagrams/65_Risk_Validation_4.svg)
 
 ### Subscribing to Validation Errors
 

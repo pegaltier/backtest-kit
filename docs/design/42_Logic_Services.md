@@ -22,7 +22,7 @@ Logic Services follow a two-tier pattern with distinct responsibilities:
 
 ### Service Hierarchy Diagram
 
-![Mermaid Diagram](./diagrams\42_Logic_Services_0.svg)
+![Mermaid Diagram](./diagrams/42_Logic_Services_0.svg)
 
 **Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts:1-70](), [src/lib/services/logic/public/LiveLogicPublicService.ts:1-78](), [Diagram 1: Four-Layer Architecture Overview]()
 
@@ -48,7 +48,7 @@ Logic Services use a two-tier pattern to separate context management from execut
 
 ### Context Propagation Flow
 
-![Mermaid Diagram](./diagrams\42_Logic_Services_1.svg)
+![Mermaid Diagram](./diagrams/42_Logic_Services_1.svg)
 
 **Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts:46-66](), [src/lib/services/context/MethodContextService.ts:1-56](), [Diagram 4: Configuration and Registration System]()
 
@@ -70,7 +70,7 @@ Core orchestration service for backtest execution using memory-efficient async g
 
 ### Execution Flow
 
-![Mermaid Diagram](./diagrams\42_Logic_Services_2.svg)
+![Mermaid Diagram](./diagrams/42_Logic_Services_2.svg)
 
 ### Key Methods
 
@@ -143,7 +143,7 @@ Core orchestration service for live trading execution with infinite async genera
 
 ### Execution Flow
 
-![Mermaid Diagram](./diagrams\42_Logic_Services_3.svg)
+![Mermaid Diagram](./diagrams/42_Logic_Services_3.svg)
 
 ### Key Methods
 
@@ -291,7 +291,7 @@ Logic Services use async generators (`async function*`) for memory-efficient str
 
 ### Memory Efficiency Diagram
 
-![Mermaid Diagram](./diagrams\42_Logic_Services_4.svg)
+![Mermaid Diagram](./diagrams/42_Logic_Services_4.svg)
 
 ### Consumer Pattern Examples
 
@@ -328,7 +328,7 @@ Logic Services coordinate multiple service types through dependency injection.
 
 ### Dependency Injection Registration
 
-![Mermaid Diagram](./diagrams\42_Logic_Services_5.svg)
+![Mermaid Diagram](./diagrams/42_Logic_Services_5.svg)
 
 ### Injected Dependencies by Service
 
@@ -361,7 +361,7 @@ Logic Services use `MethodContextService.runAsyncIterator()` to inject context i
 
 ### MethodContextService Integration
 
-![Mermaid Diagram](./diagrams\42_Logic_Services_6.svg)
+![Mermaid Diagram](./diagrams/42_Logic_Services_6.svg)
 
 ### Context Lifecycle
 
@@ -405,7 +405,7 @@ Logic Services delegate business logic execution to Global Services that inject 
 
 ### Execution Context Injection
 
-![Mermaid Diagram](./diagrams\42_Logic_Services_7.svg)
+![Mermaid Diagram](./diagrams/42_Logic_Services_7.svg)
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:91-252](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:71]()
 
@@ -430,7 +430,7 @@ Core orchestration service for multi-strategy comparison execution.
 
 ### Execution Flow Diagram
 
-![Mermaid Diagram](./diagrams\42_Logic_Services_8.svg)
+![Mermaid Diagram](./diagrams/42_Logic_Services_8.svg)
 
 ### Key Methods
 
@@ -450,7 +450,7 @@ Executes backtests for all strategies sequentially and identifies the best perfo
 
 `WalkerLogicPrivateService` delegates to `BacktestLogicPublicService` for individual strategy execution:
 
-![Mermaid Diagram](./diagrams\42_Logic_Services_9.svg)
+![Mermaid Diagram](./diagrams/42_Logic_Services_9.svg)
 
 ### Metric Comparison
 
@@ -524,7 +524,7 @@ Logic Services are accessed through the `Backtest` and `Live` classes in the Pub
 
 ### Call Chain Diagram
 
-![Mermaid Diagram](./diagrams\42_Logic_Services_10.svg)
+![Mermaid Diagram](./diagrams/42_Logic_Services_10.svg)
 
 ### Type Signatures
 

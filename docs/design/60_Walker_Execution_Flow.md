@@ -51,7 +51,7 @@ A walker is defined using `IWalkerSchema` which specifies:
 
 ## High-Level Execution Flow
 
-![Mermaid Diagram](./diagrams\60_Walker_Execution_Flow_0.svg)
+![Mermaid Diagram](./diagrams/60_Walker_Execution_Flow_0.svg)
 
 **Sources:** [src/classes/Walker.ts:31-86](), [src/lib/services/global/WalkerGlobalService.ts:46-86]()
 
@@ -61,7 +61,7 @@ A walker is defined using `IWalkerSchema` which specifies:
 
 Walker execution flows through three service layers:
 
-![Mermaid Diagram](./diagrams\60_Walker_Execution_Flow_1.svg)
+![Mermaid Diagram](./diagrams/60_Walker_Execution_Flow_1.svg)
 
 **Sources:** [src/classes/Walker.ts:31-144](), [src/lib/services/global/WalkerGlobalService.ts:1-90]()
 
@@ -114,7 +114,7 @@ This ensures clean state for consistent comparisons.
 
 The core of Walker execution is a sequential iteration through the strategies array:
 
-![Mermaid Diagram](./diagrams\60_Walker_Execution_Flow_2.svg)
+![Mermaid Diagram](./diagrams/60_Walker_Execution_Flow_2.svg)
 
 **Sources:** [src/classes/Walker.ts:31-86](), [README.md:406-459]()
 
@@ -285,7 +285,7 @@ The cancellation is graceful - it allows the current strategy's backtest to comp
 
 Walker coordinates with multiple markdown services:
 
-![Mermaid Diagram](./diagrams\60_Walker_Execution_Flow_3.svg)
+![Mermaid Diagram](./diagrams/60_Walker_Execution_Flow_3.svg)
 
 ### Data Flow
 

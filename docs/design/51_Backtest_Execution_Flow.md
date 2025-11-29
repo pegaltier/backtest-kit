@@ -15,7 +15,7 @@ The backtest execution follows a pipeline where `BacktestLogicPrivateService` or
 
 **High-Level Execution Sequence**
 
-![Mermaid Diagram](./diagrams\51_Backtest_Execution_Flow_0.svg)
+![Mermaid Diagram](./diagrams/51_Backtest_Execution_Flow_0.svg)
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:1-123](), [src/lib/services/logic/public/BacktestLogicPublicService.ts:1-70]()
 
@@ -27,7 +27,7 @@ The backtest execution involves multiple service layers with clear separation of
 
 **Service Layer Interaction Diagram**
 
-![Mermaid Diagram](./diagrams\51_Backtest_Execution_Flow_1.svg)
+![Mermaid Diagram](./diagrams/51_Backtest_Execution_Flow_1.svg)
 
 **Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts:1-70](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:1-123](), [src/lib/services/context/MethodContextService.ts:1-56]()
 
@@ -65,7 +65,7 @@ The timeframe generation is configured via `addFrame()` and handled by `ClientFr
 
 The service iterates through the timeframe array using a while loop with manual index management. This allows skipping timestamps when signals close.
 
-![Mermaid Diagram](./diagrams\51_Backtest_Execution_Flow_2.svg)
+![Mermaid Diagram](./diagrams/51_Backtest_Execution_Flow_2.svg)
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:48-119]()
 
@@ -91,7 +91,7 @@ When a signal opens (`result.action === "opened"`), the backtest flow transition
 
 **Fast-Forward Execution Flow**
 
-![Mermaid Diagram](./diagrams\51_Backtest_Execution_Flow_3.svg)
+![Mermaid Diagram](./diagrams/51_Backtest_Execution_Flow_3.svg)
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:62-114](), [src/client/ClientStrategy.ts:485-656]()
 
@@ -148,7 +148,7 @@ while (
 
 **Skipping Example Visualization**
 
-![Mermaid Diagram](./diagrams\51_Backtest_Execution_Flow_4.svg)
+![Mermaid Diagram](./diagrams/51_Backtest_Execution_Flow_4.svg)
 
 This skipping ensures:
 1. No duplicate signals during an active signal's lifetime
@@ -206,7 +206,7 @@ The following diagram traces a complete execution from the Public API through al
 
 **End-to-End Execution Trace**
 
-![Mermaid Diagram](./diagrams\51_Backtest_Execution_Flow_5.svg)
+![Mermaid Diagram](./diagrams/51_Backtest_Execution_Flow_5.svg)
 
 **Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts:46-67](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:48-119](), [src/client/ClientStrategy.ts:258-464](), [src/client/ClientStrategy.ts:485-656]()
 

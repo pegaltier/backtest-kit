@@ -13,7 +13,7 @@ The DI system in backtest-kit is based on Symbol-based service tokens, factory-b
 
 Service tokens are JavaScript Symbols that uniquely identify each service type in the container. Tokens are organized by service category and defined in a centralized registry.
 
-![Mermaid Diagram](./diagrams\11_Dependency_Injection_System_0.svg)
+![Mermaid Diagram](./diagrams/11_Dependency_Injection_System_0.svg)
 
 The token registry groups related services by their architectural layer. Each token is a unique Symbol created with a descriptive name matching the service's purpose.
 
@@ -36,7 +36,7 @@ The token registry groups related services by their architectural layer. Each to
 
 Service registration occurs at module load time via the `provide()` function. Each service is bound to its token with a factory function that creates a new instance. Registration is organized by service category in separate code blocks.
 
-![Mermaid Diagram](./diagrams\11_Dependency_Injection_System_1.svg)
+![Mermaid Diagram](./diagrams/11_Dependency_Injection_System_1.svg)
 
 The registration pattern follows a consistent structure:
 
@@ -52,7 +52,7 @@ All services are registered as singletons - the factory is only called once per 
 
 Services are resolved from the DI container using the `inject()` function and aggregated into typed service collections. The main backtest object exports all services grouped by category.
 
-![Mermaid Diagram](./diagrams\11_Dependency_Injection_System_2.svg)
+![Mermaid Diagram](./diagrams/11_Dependency_Injection_System_2.svg)
 
 The `inject()` function performs lazy resolution - services are only instantiated when first accessed. The aggregated `backtest` object serves as the central service locator used throughout the framework.
 
@@ -62,7 +62,7 @@ The `inject()` function performs lazy resolution - services are only instantiate
 
 All services follow a singleton lifecycle pattern. Once a service is resolved from the container, the same instance is reused for all subsequent requests.
 
-![Mermaid Diagram](./diagrams\11_Dependency_Injection_System_3.svg)
+![Mermaid Diagram](./diagrams/11_Dependency_Injection_System_3.svg)
 
 Key lifecycle characteristics:
 
@@ -79,7 +79,7 @@ Key lifecycle characteristics:
 
 Services declare their dependencies by importing and using the DI system within their constructors. Dependencies are resolved at construction time through recursive DI resolution.
 
-![Mermaid Diagram](./diagrams\11_Dependency_Injection_System_4.svg)
+![Mermaid Diagram](./diagrams/11_Dependency_Injection_System_4.svg)
 
 This pattern enables:
 - **Automatic Dependency Resolution**: Services don't need to manually pass dependencies
@@ -93,7 +93,7 @@ This pattern enables:
 
 Connection services use the memoization pattern to ensure that only one client instance exists per schema name. This prevents duplicate client creation and ensures consistent state across the framework.
 
-![Mermaid Diagram](./diagrams\11_Dependency_Injection_System_5.svg)
+![Mermaid Diagram](./diagrams/11_Dependency_Injection_System_5.svg)
 
 **Memoized Connection Services:**
 
@@ -113,7 +113,7 @@ The memoization is implemented using the `singleshot` decorator from `functools-
 
 The DI system integrates with `di-scoped` to provide context propagation throughout the framework. Two context types flow through the service layer: `ExecutionContext` and `MethodContext`.
 
-![Mermaid Diagram](./diagrams\11_Dependency_Injection_System_6.svg)
+![Mermaid Diagram](./diagrams/11_Dependency_Injection_System_6.svg)
 
 **Context Types:**
 
@@ -136,7 +136,7 @@ For detailed information on context propagation mechanics, see [Context Propagat
 
 The dependency injection system enables clean separation of the six architectural layers. Each layer depends on services from the same or lower layers via DI.
 
-![Mermaid Diagram](./diagrams\11_Dependency_Injection_System_7.svg)
+![Mermaid Diagram](./diagrams/11_Dependency_Injection_System_7.svg)
 
 **Layer Dependency Rules:**
 

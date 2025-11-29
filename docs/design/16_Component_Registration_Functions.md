@@ -30,7 +30,7 @@ Sources: [src/function/add.ts:1-342](), [src/function/list.ts:1-218](), [src/ind
 
 ## Registration Flow Architecture
 
-![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_0.svg)
+![Mermaid Diagram](./diagrams/16_Component_Registration_Functions_0.svg)
 
 **Registration Flow**:
 1. User calls `addStrategy()`, `addExchange()`, etc. with schema object
@@ -46,7 +46,7 @@ Sources: [src/function/add.ts:50-62](), [src/lib/core/provide.ts:102-109](), [sr
 
 ## Service Architecture Mapping
 
-![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_1.svg)
+![Mermaid Diagram](./diagrams/16_Component_Registration_Functions_1.svg)
 
 Sources: [src/lib/core/types.ts:18-66](), [src/lib/index.ts:22-27](), [src/lib/index.ts:80-91]()
 
@@ -532,7 +532,7 @@ Sources: [src/function/list.ts:137-140](), [types.d.ts:1019-1030]()
 
 All `*ValidationService` classes follow the same pattern for schema validation and memoization:
 
-![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_2.svg)
+![Mermaid Diagram](./diagrams/16_Component_Registration_Functions_2.svg)
 
 **ValidationService Responsibilities**:
 1. **Registration-time storage**: Store schemas in `Map<name, schema>` for validation
@@ -553,7 +553,7 @@ Sources: [src/lib/core/types.ts:59-66](), [src/function/add.ts:54-57](), [src/fu
 
 All `*SchemaService` classes follow the ToolRegistry pattern for schema storage and retrieval:
 
-![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_3.svg)
+![Mermaid Diagram](./diagrams/16_Component_Registration_Functions_3.svg)
 
 **SchemaService Responsibilities**:
 1. **Storage**: Store schemas in `ToolRegistry` (Map-based) by name

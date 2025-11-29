@@ -22,7 +22,7 @@ ClientSizing does not validate signals, track positions, or interact with exchan
 
 ClientSizing sits in the Client Classes layer and is instantiated by SizingConnectionService. The connection service memoizes one ClientSizing instance per sizing schema name.
 
-![Mermaid Diagram](./diagrams\35_ClientSizing_0.svg)
+![Mermaid Diagram](./diagrams/35_ClientSizing_0.svg)
 
 **Sources:** [types.d.ts:535-632](), High-Level Architecture Diagrams (Diagram 4)
 
@@ -198,7 +198,7 @@ The ATR-based formula:
 
 The diagram below shows how ClientSizing integrates into the signal generation flow:
 
-![Mermaid Diagram](./diagrams\35_ClientSizing_1.svg)
+![Mermaid Diagram](./diagrams/35_ClientSizing_1.svg)
 
 **Sources:** [types.d.ts:609-632]()
 
@@ -245,7 +245,7 @@ Sizing schemas are registered via the `addSizing()` function and stored in `Sizi
 
 ### Registration Flow
 
-![Mermaid Diagram](./diagrams\35_ClientSizing_2.svg)
+![Mermaid Diagram](./diagrams/35_ClientSizing_2.svg)
 
 ### Memoization
 

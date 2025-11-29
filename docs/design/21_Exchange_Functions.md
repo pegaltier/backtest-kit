@@ -18,7 +18,7 @@ Exchange functions leverage the framework's context propagation system to operat
 
 This allows strategy authors to write clean code like `getCandles(symbol, interval, limit)` instead of passing context objects through every function call.
 
-![Mermaid Diagram](./diagrams\21_Exchange_Functions_0.svg)
+![Mermaid Diagram](./diagrams/21_Exchange_Functions_0.svg)
 
 **Sources:** [types.d.ts:100-143](), [types.d.ts:363-402]()
 
@@ -332,7 +332,7 @@ addStrategy({
 
 ### Data Flow Diagram
 
-![Mermaid Diagram](./diagrams\21_Exchange_Functions_1.svg)
+![Mermaid Diagram](./diagrams/21_Exchange_Functions_1.svg)
 
 **Sources:** [src/index.ts:26-32](), [types.d.ts:168-221](), [types.d.ts:223-271]()
 
@@ -342,7 +342,7 @@ addStrategy({
 
 The `ICandleData` interface defines the structure returned by `getCandles`:
 
-![Mermaid Diagram](./diagrams\21_Exchange_Functions_2.svg)
+![Mermaid Diagram](./diagrams/21_Exchange_Functions_2.svg)
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -361,7 +361,7 @@ The `ICandleData` interface defines the structure returned by `getCandles`:
 
 Exchange functions delegate to the user-defined `IExchangeSchema` implementation registered via `addExchange()`. The schema must implement three required methods:
 
-![Mermaid Diagram](./diagrams\21_Exchange_Functions_3.svg)
+![Mermaid Diagram](./diagrams/21_Exchange_Functions_3.svg)
 
 **Sources:** [types.d.ts:185-221]()
 

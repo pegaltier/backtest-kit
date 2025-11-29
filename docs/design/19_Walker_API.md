@@ -201,7 +201,7 @@ Sources: [src/classes/Walker.ts:232-255]()
 
 The following diagram shows how Walker orchestrates multiple backtest runs and aggregates results.
 
-![Mermaid Diagram](./diagrams\19_Walker_API_0.svg)
+![Mermaid Diagram](./diagrams/19_Walker_API_0.svg)
 
 **Key Points:**
 - Walker validates all schemas before starting (walker, exchange, frame, all strategies)
@@ -347,7 +347,7 @@ Sources: [src/function/event.ts:427-433]()
 
 The following diagram shows the event emission sequence during walker execution.
 
-![Mermaid Diagram](./diagrams\19_Walker_API_1.svg)
+![Mermaid Diagram](./diagrams/19_Walker_API_1.svg)
 
 **Event Timing:**
 1. `walkerEmitter` - Emits after each strategy completes (N times for N strategies)
@@ -615,7 +615,7 @@ Sources: [src/lib/services/markdown/BacktestMarkdownService.ts:46-102]()
 
 The following diagram shows how Walker integrates with the service layer.
 
-![Mermaid Diagram](./diagrams\19_Walker_API_2.svg)
+![Mermaid Diagram](./diagrams/19_Walker_API_2.svg)
 
 **Service Responsibilities:**
 - `WalkerGlobalService` - Validation orchestration and delegation

@@ -59,7 +59,7 @@ Sources: [types.d.ts:168-176](), [types.d.ts:185-221]()
 
 ## Architecture Diagram
 
-![Mermaid Diagram](./diagrams\32_ClientExchange_0.svg)
+![Mermaid Diagram](./diagrams/32_ClientExchange_0.svg)
 
 **Diagram: ClientExchange Position in Architecture**
 
@@ -124,7 +124,7 @@ Sources: [types.d.ts:237-244]()
 
 ## Market Data Flow Diagram
 
-![Mermaid Diagram](./diagrams\32_ClientExchange_1.svg)
+![Mermaid Diagram](./diagrams/32_ClientExchange_1.svg)
 
 **Diagram: Market Data Fetching Flow**
 
@@ -144,7 +144,7 @@ Where **Typical Price = (High + Low + Close) / 3**
 
 ### Implementation Flow
 
-![Mermaid Diagram](./diagrams\32_ClientExchange_2.svg)
+![Mermaid Diagram](./diagrams/32_ClientExchange_2.svg)
 
 **Diagram: VWAP Calculation Algorithm**
 
@@ -229,7 +229,7 @@ Sources: [types.d.ts:246-251](), [types.d.ts:204-210]()
 
 ### Context Propagation Pattern
 
-![Mermaid Diagram](./diagrams\32_ClientExchange_3.svg)
+![Mermaid Diagram](./diagrams/32_ClientExchange_3.svg)
 
 **Diagram: Context Propagation to ClientExchange**
 
@@ -441,7 +441,7 @@ Sources: [types.d.ts:148]()
 
 ## Summary: ClientExchange Responsibilities
 
-![Mermaid Diagram](./diagrams\32_ClientExchange_4.svg)
+![Mermaid Diagram](./diagrams/32_ClientExchange_4.svg)
 
 **Diagram: ClientExchange Inputs and Outputs**
 

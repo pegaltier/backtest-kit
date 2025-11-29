@@ -13,13 +13,13 @@ For information about how validated schemas are stored and retrieved, see [Schem
 
 ### Validation Services in the DI System
 
-![Mermaid Diagram](./diagrams\40_Validation_Services_0.svg)
+![Mermaid Diagram](./diagrams/40_Validation_Services_0.svg)
 
 **Sources:** [src/function/add.ts:54-56](), [src/function/add.ts:103-105](), [src/lib/index.ts:143-150](), [src/lib/core/types.ts:59-66]()
 
 ### Validation Flow: Registration to Execution
 
-![Mermaid Diagram](./diagrams\40_Validation_Services_1.svg)
+![Mermaid Diagram](./diagrams/40_Validation_Services_1.svg)
 
 **Sources:** [src/function/add.ts:50-62](), [test/e2e/defend.test.mjs:544-641](), [test/e2e/sanitize.test.mjs:27-131]()
 
@@ -71,7 +71,7 @@ The `addComponent` method (named `addStrategy`, `addExchange`, etc.) is called b
 
 Schema validation occurs when a component is registered via an `add*` function. The validation flow follows this sequence:
 
-![Mermaid Diagram](./diagrams\40_Validation_Services_2.svg)
+![Mermaid Diagram](./diagrams/40_Validation_Services_2.svg)
 
 **Sources:** [src/function/add.ts:50-62](), [src/function/add.ts:99-111]()
 
@@ -139,7 +139,7 @@ Validation services use memoization to cache validation results. Once a schema i
 
 Signal validation occurs at runtime when a strategy generates a signal via `getSignal()`. The validation function `VALIDATE_SIGNAL_FN` performs comprehensive checks to ensure the signal is financially sound and meets safety constraints.
 
-![Mermaid Diagram](./diagrams\40_Validation_Services_3.svg)
+![Mermaid Diagram](./diagrams/40_Validation_Services_3.svg)
 
 **Sources:** [test/e2e/defend.test.mjs:25-145](), [test/e2e/sanitize.test.mjs:27-131]()
 
@@ -388,7 +388,7 @@ Signal rejections are part of normal execution flow - the framework validates ev
 
 ### Validation → Schema Storage Flow
 
-![Mermaid Diagram](./diagrams\40_Validation_Services_4.svg)
+![Mermaid Diagram](./diagrams/40_Validation_Services_4.svg)
 
 After a schema passes validation:
 1. It's stored in the corresponding `*SchemaService` (see [Schema Services](#7.3))

@@ -25,7 +25,7 @@ Sources: [src/classes/Walker.ts:1-273]()
 
 The following diagram shows how walker reports are generated from strategy execution through to final output:
 
-![Mermaid Diagram](./diagrams\62_Walker_Reports_0.svg)
+![Mermaid Diagram](./diagrams/62_Walker_Reports_0.svg)
 
 Sources: [src/classes/Walker.ts:1-273](), [src/lib/services/global/WalkerGlobalService.ts:1-90](), [src/config/emitters.ts:62-73]()
 
@@ -64,7 +64,7 @@ The method returns an `IWalkerResults` object containing:
 
 ### Implementation Details
 
-![Mermaid Diagram](./diagrams\62_Walker_Reports_1.svg)
+![Mermaid Diagram](./diagrams/62_Walker_Reports_1.svg)
 
 The method performs the following steps:
 
@@ -124,7 +124,7 @@ The generated markdown report includes:
 
 ### Report Generation Flow
 
-![Mermaid Diagram](./diagrams\62_Walker_Reports_2.svg)
+![Mermaid Diagram](./diagrams/62_Walker_Reports_2.svg)
 
 ### Implementation
 
@@ -175,7 +175,7 @@ For example:
 
 ### Implementation
 
-![Mermaid Diagram](./diagrams\62_Walker_Reports_3.svg)
+![Mermaid Diagram](./diagrams/62_Walker_Reports_3.svg)
 
 The method performs atomic file writes to prevent corruption:
 
@@ -258,7 +258,7 @@ Walker reports use markdown tables to present comparison data in a structured fo
 
 The comparison table ranks strategies by the selected metric and displays key performance indicators:
 
-![Mermaid Diagram](./diagrams\62_Walker_Reports_4.svg)
+![Mermaid Diagram](./diagrams/62_Walker_Reports_4.svg)
 
 ### Example Report Output
 
@@ -291,7 +291,7 @@ Walker reports integrate with the event system to provide real-time updates and 
 
 ### Event Flow Diagram
 
-![Mermaid Diagram](./diagrams\62_Walker_Reports_5.svg)
+![Mermaid Diagram](./diagrams/62_Walker_Reports_5.svg)
 
 ### Event Types and Usage
 
@@ -328,7 +328,7 @@ Sources: [README.md:436-440](), [src/function/event.ts:528-557]()
 
 The following diagram illustrates the complete lifecycle of walker report data from execution through persistence:
 
-![Mermaid Diagram](./diagrams\62_Walker_Reports_6.svg)
+![Mermaid Diagram](./diagrams/62_Walker_Reports_6.svg)
 
 Sources: [src/classes/Walker.ts:1-273](), [src/lib/services/global/WalkerGlobalService.ts:1-90]()
 
@@ -348,7 +348,7 @@ Sources: [src/classes/Walker.ts:1-273](), [src/lib/services/global/WalkerGlobalS
 
 ### Method Call Chain
 
-![Mermaid Diagram](./diagrams\62_Walker_Reports_7.svg)
+![Mermaid Diagram](./diagrams/62_Walker_Reports_7.svg)
 
 All walker report methods follow this delegation pattern:
 1. User calls `Walker.method()`

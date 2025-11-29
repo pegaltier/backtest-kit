@@ -55,7 +55,7 @@ Sources: [src/client/ClientStrategy.ts:285-296](), [src/config/params.ts:11]()
 
 ## Monitoring Flow Diagram
 
-![Mermaid Diagram](./diagrams\57_Real-time_Monitoring_0.svg)
+![Mermaid Diagram](./diagrams/57_Real-time_Monitoring_0.svg)
 
 **Key decision points:**
 1. If `_pendingSignal` exists → monitor TP/SL/time
@@ -361,7 +361,7 @@ Sources: [src/client/ClientStrategy.ts:1136-1190](), [src/client/ClientStrategy.
 
 ## Monitoring State Transitions
 
-![Mermaid Diagram](./diagrams\57_Real-time_Monitoring_1.svg)
+![Mermaid Diagram](./diagrams/57_Real-time_Monitoring_1.svg)
 
 **Key monitoring loops**:
 1. **idle → scheduled → opened → active → closed**: Full lifecycle with scheduled entry

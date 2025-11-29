@@ -26,7 +26,7 @@ Sources: [types.d.ts:95](), [src/index.ts:95]()
 
 ## Performance Tracking Architecture
 
-![Mermaid Diagram](./diagrams\69_Performance_Metrics_0.svg)
+![Mermaid Diagram](./diagrams/69_Performance_Metrics_0.svg)
 
 **Performance Tracking Flow**
 
@@ -42,7 +42,7 @@ Sources: [src/lib/services/logic/private/BacktestLogicPrivateService.ts:1-303]()
 
 Tracks the complete execution time from the first timeframe to the last:
 
-![Mermaid Diagram](./diagrams\69_Performance_Metrics_1.svg)
+![Mermaid Diagram](./diagrams/69_Performance_Metrics_1.svg)
 
 Sources: [src/lib/services/logic/private/BacktestLogicPrivateService.ts:64-65](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:285-298]()
 
@@ -50,7 +50,7 @@ Sources: [src/lib/services/logic/private/BacktestLogicPrivateService.ts:64-65]()
 
 Tracks the time to process a single timestamp, including tick execution and potential signal handling:
 
-![Mermaid Diagram](./diagrams\69_Performance_Metrics_2.svg)
+![Mermaid Diagram](./diagrams/69_Performance_Metrics_2.svg)
 
 Sources: [src/lib/services/logic/private/BacktestLogicPrivateService.ts:76](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:255-269]()
 
@@ -58,7 +58,7 @@ Sources: [src/lib/services/logic/private/BacktestLogicPrivateService.ts:76](), [
 
 Tracks the time to execute the fast-forward backtest simulation for a single signal from open to close:
 
-![Mermaid Diagram](./diagrams\69_Performance_Metrics_3.svg)
+![Mermaid Diagram](./diagrams/69_Performance_Metrics_3.svg)
 
 This metric captures the duration of the optimized backtest path, including candle fetching and TP/SL detection via high/low analysis.
 
@@ -72,7 +72,7 @@ Sources: [src/lib/services/logic/private/BacktestLogicPrivateService.ts:95-172](
 
 Tracks the time to execute a complete tick cycle in live trading, including signal generation, risk checks, and TP/SL monitoring:
 
-![Mermaid Diagram](./diagrams\69_Performance_Metrics_4.svg)
+![Mermaid Diagram](./diagrams/69_Performance_Metrics_4.svg)
 
 Sources: [src/lib/services/logic/private/LiveLogicPrivateService.ts:68-91]()
 
@@ -138,7 +138,7 @@ listenPerformance((event) => {
 
 ### Performance Event Flow
 
-![Mermaid Diagram](./diagrams\69_Performance_Metrics_5.svg)
+![Mermaid Diagram](./diagrams/69_Performance_Metrics_5.svg)
 
 Sources: [src/index.ts:19](), [src/config/emitters.ts]()
 
@@ -258,7 +258,7 @@ Sources: [test/spec/performance.test.mjs]()
 
 The `PerformanceMarkdownService` subscribes to performance events and accumulates metrics for later analysis:
 
-![Mermaid Diagram](./diagrams\69_Performance_Metrics_6.svg)
+![Mermaid Diagram](./diagrams/69_Performance_Metrics_6.svg)
 
 The service maintains a separate storage instance per strategy, allowing isolated performance tracking across multiple concurrent executions.
 

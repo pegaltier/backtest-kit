@@ -11,7 +11,7 @@ The logging system consists of three primary components: the `ILogger` interface
 
 ### Component Architecture
 
-![Mermaid Diagram](./diagrams\76_Logging_System_0.svg)
+![Mermaid Diagram](./diagrams/76_Logging_System_0.svg)
 
 **Sources:** [src/lib/services/base/LoggerService.ts:1-144](), [src/interfaces/Logger.interface.ts:1-31](), [src/lib/core/types.ts:1-3](), [src/lib/core/provide.ts:24-26](), [src/lib/index.ts:29-31]()
 
@@ -56,7 +56,7 @@ The interface is intentionally simple, allowing any logging library (Winston, Pi
 
 ### Internal Structure
 
-![Mermaid Diagram](./diagrams\76_Logging_System_1.svg)
+![Mermaid Diagram](./diagrams/76_Logging_System_1.svg)
 
 **Sources:** [src/lib/services/base/LoggerService.ts:11-143]()
 
@@ -82,7 +82,7 @@ const NOOP_LOGGER: ILogger = {
 
 ### Context Enrichment Flow
 
-![Mermaid Diagram](./diagrams\76_Logging_System_2.svg)
+![Mermaid Diagram](./diagrams/76_Logging_System_2.svg)
 
 **Sources:** [src/lib/services/base/LoggerService.ts:42-86]()
 
@@ -162,7 +162,7 @@ backtest.loggerService.setLogger({
 
 ### Registration Flow
 
-![Mermaid Diagram](./diagrams\76_Logging_System_3.svg)
+![Mermaid Diagram](./diagrams/76_Logging_System_3.svg)
 
 **Sources:** [src/lib/core/types.ts:1-3](), [src/lib/core/provide.ts:24-26](), [src/lib/index.ts:29-31]()
 

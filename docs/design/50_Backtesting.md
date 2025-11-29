@@ -55,7 +55,7 @@ The backtesting system follows the four-layer architecture with clear separation
 
 ### Component Diagram
 
-![Mermaid Diagram](./diagrams\50_Backtesting_0.svg)
+![Mermaid Diagram](./diagrams/50_Backtesting_0.svg)
 
 ### Component Responsibilities
 
@@ -82,7 +82,7 @@ Backtesting follows a deterministic execution pattern that processes each timest
 
 ### Sequence Diagram
 
-![Mermaid Diagram](./diagrams\50_Backtesting_1.svg)
+![Mermaid Diagram](./diagrams/50_Backtesting_1.svg)
 
 ### Execution Steps
 
@@ -133,7 +133,7 @@ The backtest system uses async generators to achieve memory efficiency when proc
 
 ### Streaming vs Accumulation
 
-![Mermaid Diagram](./diagrams\50_Backtesting_2.svg)
+![Mermaid Diagram](./diagrams/50_Backtesting_2.svg)
 
 ### Benefits of Streaming
 
@@ -169,7 +169,7 @@ Backtesting uses `MethodContextService` to implicitly pass configuration context
 
 ### Context Flow Diagram
 
-![Mermaid Diagram](./diagrams\50_Backtesting_3.svg)
+![Mermaid Diagram](./diagrams/50_Backtesting_3.svg)
 
 ### Context Structure
 
@@ -203,7 +203,7 @@ The framework passively accumulates closed signals for reporting via `BacktestMa
 
 ### Report Accumulation Flow
 
-![Mermaid Diagram](./diagrams\50_Backtesting_4.svg)
+![Mermaid Diagram](./diagrams/50_Backtesting_4.svg)
 
 ### Report Usage
 
@@ -292,7 +292,7 @@ Backtesting integrates with the signal lifecycle state machine. For complete sig
 
 ### State Transitions in Backtest
 
-![Mermaid Diagram](./diagrams\50_Backtesting_5.svg)
+![Mermaid Diagram](./diagrams/50_Backtesting_5.svg)
 
 ### Signal Result Types
 

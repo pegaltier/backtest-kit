@@ -26,7 +26,7 @@ The key distinction is between **immediate signals** (no `priceOpen` specified, 
 
 ### Discriminated Union Diagram
 
-![Mermaid Diagram](./diagrams\45_Signal_States_0.svg)
+![Mermaid Diagram](./diagrams/45_Signal_States_0.svg)
 
 The `IStrategyTickResult` type is a discriminated union defined at [types.d.ts:770](). TypeScript uses the `action` property to narrow types in conditional blocks:
 
@@ -59,7 +59,7 @@ if (result.action === "cancelled") {
 
 ### Complete State Machine Diagram
 
-![Mermaid Diagram](./diagrams\45_Signal_States_1.svg)
+![Mermaid Diagram](./diagrams/45_Signal_States_1.svg)
 
 The state machine is implemented in `ClientStrategy.tick()`. The `_pendingSignal` field at [src/client/ClientStrategy.ts:1093]() tracks active signals, while `_scheduledSignal` at [src/client/ClientStrategy.ts:1094]() tracks scheduled signals waiting for price activation.
 
@@ -388,7 +388,7 @@ In backtest mode, `CANCEL_SCHEDULED_SIGNAL_IN_BACKTEST_FN` at [src/client/Client
 
 ## Type-Safe State Handling
 
-![Mermaid Diagram](./diagrams\45_Signal_States_2.svg)
+![Mermaid Diagram](./diagrams/45_Signal_States_2.svg)
 
 ### Usage Example
 

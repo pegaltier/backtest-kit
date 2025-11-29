@@ -67,7 +67,7 @@ Sources: [README.md:407-429](), [src/classes/Walker.ts:52-60]()
 
 ### Component Interaction Diagram
 
-![Mermaid Diagram](./diagrams\59_Walker_Mode_0.svg)
+![Mermaid Diagram](./diagrams/59_Walker_Mode_0.svg)
 
 **Key Responsibilities:**
 
@@ -87,7 +87,7 @@ Sources: [src/classes/Walker.ts:31-87](), [src/lib/services/global/WalkerGlobalS
 
 Walker Mode executes strategies sequentially, not in parallel. This ensures deterministic results and prevents resource contention.
 
-![Mermaid Diagram](./diagrams\59_Walker_Mode_1.svg)
+![Mermaid Diagram](./diagrams/59_Walker_Mode_1.svg)
 
 **Step-by-Step Process:**
 
@@ -113,7 +113,7 @@ Sources: [src/classes/Walker.ts:39-87](), [src/classes/Walker.ts:64-80]()
 
 Before each strategy runs, Walker clears accumulated data to ensure isolation:
 
-![Mermaid Diagram](./diagrams\59_Walker_Mode_2.svg)
+![Mermaid Diagram](./diagrams/59_Walker_Mode_2.svg)
 
 **Clearing Logic:**
 
@@ -145,7 +145,7 @@ Sources: [src/classes/Walker.ts:64-80]()
 
 ### Event Emission Timeline
 
-![Mermaid Diagram](./diagrams\59_Walker_Mode_3.svg)
+![Mermaid Diagram](./diagrams/59_Walker_Mode_3.svg)
 
 ### WalkerContract Structure
 
@@ -309,7 +309,7 @@ Sources: [README.md:457-459](), [src/classes/Walker.ts:159-214]()
 
 The `Walker` singleton provides the public API for walker operations.
 
-![Mermaid Diagram](./diagrams\59_Walker_Mode_4.svg)
+![Mermaid Diagram](./diagrams/59_Walker_Mode_4.svg)
 
 ### Method Details
 
@@ -506,7 +506,7 @@ Sources: [README.md:417-428]()
 
 ### Walker vs Backtest Mode
 
-![Mermaid Diagram](./diagrams\59_Walker_Mode_5.svg)
+![Mermaid Diagram](./diagrams/59_Walker_Mode_5.svg)
 
 **Key Differences:**
 
@@ -541,7 +541,7 @@ Sources: [src/classes/Walker.ts:64-80](), [src/classes/Backtest.ts:38-66]()
 
 Walker performs comprehensive validation before execution:
 
-![Mermaid Diagram](./diagrams\59_Walker_Mode_6.svg)
+![Mermaid Diagram](./diagrams/59_Walker_Mode_6.svg)
 
 **Validation Sequence:**
 
