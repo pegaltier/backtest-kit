@@ -1379,3 +1379,274 @@ test("DEFEND: Multiple scheduled signals queue correctly - respects risk limits"
 
   pass(`MONEY SAFE: Multiple scheduled signals queued correctly. Created ${scheduledCount} signals, max simultaneous active: ${maxSimultaneousActive} (expected 1). Risk limits respected!`);
 });
+
+/**
+ * КРИТИЧЕСКИЙ ТЕСТ #13: Scheduled LONG отменяется по SL ДО активации
+ *
+ * Сценарий ПРОТИВОПОЛОЖНЫЙ тесту #1:
+ * - LONG: priceOpen=42000, StopLoss=40000
+ * - Цена падает резко от 45000 → 39000, МИНУЯ priceOpen!
+ * - Цена НЕ достигает priceOpen=42000, но достигает SL=40000
+ * - КРИТИЧНО: Scheduled сигнал должен ОТМЕНЯТЬСЯ по SL до активации
+ */
+test("DEFEND: Scheduled LONG cancelled by SL BEFORE activation (price skips priceOpen)", async ({ pass, fail }) => {
+
+  let scheduledResult = null;
+  let openedResult = null;
+  let cancelledResult = null;
+
+  addExchange({
+    exchangeName: "binance-defend-scheduled-sl-cancel",
+    getCandles: async (_symbol, interval, since, limit) => {
+      const candles = [];
+      const intervalMs = 60000;
+
+      for (let i = 0; i < limit; i++) {
+        const timestamp = since.getTime() + i * intervalMs;
+
+        if (i < 5) {
+          // Первые 5 свечей: цена высокая (45000), scheduled ждет
+          candles.push({
+            timestamp,
+            open: 45000,
+            high: 45100,
+            low: 44900,
+            close: 45000,
+            volume: 100,
+          });
+        } else {
+          // С 6-й свечи: РЕЗКОЕ падение, МИНУЯ priceOpen=42000!
+          // Цена падает от 45000 сразу до 39000 (ниже SL=40000)
+          const basePrice = 39000; // Ниже SL=40000, НЕ достигает priceOpen=42000
+          candles.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 100,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+
+      return candles;
+    },
+    formatPrice: async (symbol, price) => price.toFixed(8),
+    formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
+  });
+
+  let signalGenerated = false;
+
+  addStrategy({
+    strategyName: "test-defend-scheduled-sl-cancel",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+
+      return {
+        position: "long",
+        note: "DEFEND: scheduled SL cancellation test",
+        priceOpen: 42000,      // НЕ будет достигнут
+        priceTakeProfit: 43000,
+        priceStopLoss: 40000,   // Будет достигнут БЕЗ активации
+        minuteEstimatedTime: 60,
+      };
+    },
+    callbacks: {
+      onSchedule: (_symbol, data) => {
+        scheduledResult = data;
+      },
+      onOpen: (_symbol, data) => {
+        openedResult = data;
+      },
+      onCancel: (_symbol, data) => {
+        cancelledResult = data;
+      },
+    },
+  });
+
+  addFrame({
+    frameName: "30m-defend-scheduled-sl-cancel",
+    interval: "1m",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-01T00:30:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-defend-scheduled-sl-cancel",
+    exchangeName: "binance-defend-scheduled-sl-cancel",
+    frameName: "30m-defend-scheduled-sl-cancel",
+  });
+
+  await awaitSubject.toPromise();
+  await sleep(3000);
+
+  if (!scheduledResult) {
+    fail("CRITICAL: Scheduled signal was not created");
+    return;
+  }
+
+  // КРИТИЧЕСКАЯ ПРОВЕРКА: Сигнал НЕ должен быть открыт
+  if (openedResult) {
+    fail("LOGIC BUG: Signal was OPENED despite price never reaching priceOpen! This violates limit order physics!");
+    return;
+  }
+
+  // Сигнал должен быть отменен
+  if (!cancelledResult) {
+    fail("CRITICAL BUG: Signal was not cancelled despite SL being hit before activation! Risk protection failed!");
+    return;
+  }
+
+  pass(`MONEY SAFE: Scheduled LONG cancelled by StopLoss BEFORE activation (price dropped from 45000 to 39000, skipping priceOpen=42000). Pre-activation SL protection works!`);
+});
+
+/**
+ * КРИТИЧЕСКИЙ ТЕСТ #14: Цена пересекает И TP И SL на одной свече (extreme volatility)
+ *
+ * Сценарий:
+ * - LONG: priceOpen=42000, TP=43000, SL=41000
+ * - Экстремальная волатильность: low=40500 (ниже SL), high=43500 (выше TP)
+ * - ВОПРОС: Что срабатывает первым - TP или SL?
+ * - КРИТИЧНО: Должен закрыться по TP (цена сначала растет, потом падает)
+ *
+ * Проверяет приоритет TP vs SL при экстремальной волатильности.
+ */
+test("DEFEND: Extreme volatility - price crosses both TP and SL in single candle (TP wins)", async ({ pass, fail }) => {
+
+  let openedResult = null;
+  let closedResult = null;
+
+  addExchange({
+    exchangeName: "binance-defend-extreme-volatility",
+    getCandles: async (_symbol, interval, since, limit) => {
+      const candles = [];
+      const intervalMs = 60000;
+
+      for (let i = 0; i < limit; i++) {
+        const timestamp = since.getTime() + i * intervalMs;
+
+        if (i < 5) {
+          // Первые 5 свечей: стабильная цена для активации VWAP
+          candles.push({
+            timestamp,
+            open: 42000,
+            high: 42050,
+            low: 41950,
+            close: 42000,
+            volume: 100,
+          });
+        } else if (i === 5) {
+          // 6-я свеча: ЭКСТРЕМАЛЬНАЯ волатильность!
+          // low=40500 (ниже SL=41000), high=43500 (выше TP=43000)
+          candles.push({
+            timestamp,
+            open: 42000,
+            high: 43500,  // ВЫШЕ TP=43000 → TP сработает
+            low: 40500,   // НИЖЕ SL=41000 → SL тоже достигнут
+            close: 42000,
+            volume: 200,
+          });
+        } else {
+          // Остальные свечи: стабильная цена
+          candles.push({
+            timestamp,
+            open: 42000,
+            high: 42050,
+            low: 41950,
+            close: 42000,
+            volume: 100,
+          });
+        }
+      }
+
+      return candles;
+    },
+    formatPrice: async (symbol, price) => price.toFixed(8),
+    formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
+  });
+
+  let signalGenerated = false;
+
+  addStrategy({
+    strategyName: "test-defend-extreme-volatility",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+
+      const price = await getAveragePrice("BTCUSDT");
+
+      return {
+        position: "long",
+        note: "DEFEND: extreme volatility - both TP and SL hit",
+        priceOpen: price,
+        priceTakeProfit: price + 1000, // TP=43000
+        priceStopLoss: price - 1000,   // SL=41000
+        minuteEstimatedTime: 60,
+      };
+    },
+    callbacks: {
+      onOpen: (_symbol, data) => {
+        openedResult = data;
+      },
+      onClose: (_symbol, data, priceClose) => {
+        closedResult = { signal: data, priceClose };
+      },
+    },
+  });
+
+  addFrame({
+    frameName: "30m-defend-extreme-volatility",
+    interval: "1m",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-01T00:30:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+
+  let finalResult = null;
+  listenSignalBacktest((result) => {
+    if (result.action === "closed") {
+      finalResult = result;
+    }
+  });
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-defend-extreme-volatility",
+    exchangeName: "binance-defend-extreme-volatility",
+    frameName: "30m-defend-extreme-volatility",
+  });
+
+  await awaitSubject.toPromise();
+  await sleep(3000);
+
+  if (!openedResult) {
+    fail("CRITICAL: Signal was not opened");
+    return;
+  }
+
+  if (!closedResult || !finalResult) {
+    fail("CRITICAL: Signal was not closed");
+    return;
+  }
+
+  // КРИТИЧЕСКАЯ ПРОВЕРКА: Должен закрыться по TP (не по SL)
+  if (finalResult.closeReason !== "take_profit") {
+    fail(`LOGIC BUG: Expected close by "take_profit", got "${finalResult.closeReason}". When both TP and SL are hit on same candle, TP should take priority!`);
+    return;
+  }
+
+  // PNL должен быть положительный (прибыль)
+  if (finalResult.pnl.pnlPercentage <= 0) {
+    fail(`LOGIC BUG: Expected positive PNL (profit from TP), got ${finalResult.pnl.pnlPercentage.toFixed(2)}%`);
+    return;
+  }
+
+  pass(`MONEY SAFE: Extreme volatility handled correctly. When candle crosses both TP (high=43500) and SL (low=40500), closed by "take_profit" with PNL=${finalResult.pnl.pnlPercentage.toFixed(2)}%. Correct priority!`);
+});
