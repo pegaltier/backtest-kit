@@ -18,7 +18,7 @@ import StrategyGlobalService from "./services/global/StrategyGlobalService";
 import FrameGlobalService from "./services/global/FrameGlobalService";
 import SizingGlobalService from "./services/global/SizingGlobalService";
 import RiskGlobalService from "./services/global/RiskGlobalService";
-import WalkerGlobalService from "./services/global/WalkerGlobalService";
+import WalkerCommandService from "./services/command/WalkerCommandService";
 import ExchangeSchemaService from "./services/schema/ExchangeSchemaService";
 import StrategySchemaService from "./services/schema/StrategySchemaService";
 import FrameSchemaService from "./services/schema/FrameSchemaService";
@@ -31,8 +31,8 @@ import WalkerLogicPrivateService from "./services/logic/private/WalkerLogicPriva
 import BacktestLogicPublicService from "./services/logic/public/BacktestLogicPublicService";
 import LiveLogicPublicService from "./services/logic/public/LiveLogicPublicService";
 import WalkerLogicPublicService from "./services/logic/public/WalkerLogicPublicService";
-import LiveGlobalService from "./services/global/LiveGlobalService";
-import BacktestGlobalService from "./services/global/BacktestGlobalService";
+import LiveCommandService from "./services/command/LiveCommandService";
+import BacktestCommandService from "./services/command/BacktestCommandService";
 import BacktestMarkdownService from "./services/markdown/BacktestMarkdownService";
 import LiveMarkdownService from "./services/markdown/LiveMarkdownService";
 import ScheduleMarkdownService from "./services/markdown/ScheduleMarkdownService";
@@ -98,13 +98,16 @@ const globalServices = {
     TYPES.strategyGlobalService
   ),
   frameGlobalService: inject<FrameGlobalService>(TYPES.frameGlobalService),
-  liveGlobalService: inject<LiveGlobalService>(TYPES.liveGlobalService),
-  backtestGlobalService: inject<BacktestGlobalService>(
-    TYPES.backtestGlobalService
-  ),
-  walkerGlobalService: inject<WalkerGlobalService>(TYPES.walkerGlobalService),
   sizingGlobalService: inject<SizingGlobalService>(TYPES.sizingGlobalService),
   riskGlobalService: inject<RiskGlobalService>(TYPES.riskGlobalService),
+};
+
+const commandServices = {
+  liveCommandService: inject<LiveCommandService>(TYPES.liveCommandService),
+  backtestCommandService: inject<BacktestCommandService>(
+    TYPES.backtestCommandService
+  ),
+  walkerCommandService: inject<WalkerCommandService>(TYPES.walkerCommandService),
 };
 
 const logicPrivateServices = {
@@ -155,6 +158,7 @@ export const backtest = {
   ...connectionServices,
   ...schemaServices,
   ...globalServices,
+  ...commandServices,
   ...logicPrivateServices,
   ...logicPublicServices,
   ...markdownServices,

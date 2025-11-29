@@ -3595,7 +3595,7 @@ declare const PersistRiskAdapter: PersistRiskUtils;
 /**
  * Utility class for backtest operations.
  *
- * Provides simplified access to backtestGlobalService.run() with logging.
+ * Provides simplified access to backtestCommandService.run() with logging.
  * Exported as singleton instance for convenient usage.
  *
  * @example
@@ -3716,7 +3716,7 @@ declare const Backtest: BacktestUtils;
 /**
  * Utility class for live trading operations.
  *
- * Provides simplified access to liveGlobalService.run() with logging.
+ * Provides simplified access to liveCommandService.run() with logging.
  * Exported as singleton instance for convenient usage.
  *
  * Features:
@@ -4063,7 +4063,7 @@ declare class Performance {
 /**
  * Utility class for walker operations.
  *
- * Provides simplified access to walkerGlobalService.run() with logging.
+ * Provides simplified access to walkerCommandService.run() with logging.
  * Automatically pulls exchangeName and frameName from walker schema.
  * Exported as singleton instance for convenient usage.
  *
@@ -5315,7 +5315,7 @@ declare class RiskGlobalService {
  * Simple wrapper around WalkerLogicPublicService for dependency injection.
  * Used by public API exports.
  */
-declare class WalkerGlobalService {
+declare class WalkerCommandService {
     private readonly loggerService;
     private readonly walkerLogicPublicService;
     private readonly walkerSchemaService;
@@ -5898,7 +5898,7 @@ declare class WalkerLogicPublicService {
  * Simple wrapper around LiveLogicPublicService for dependency injection.
  * Used by public API exports.
  */
-declare class LiveGlobalService {
+declare class LiveCommandService {
     private readonly loggerService;
     private readonly liveLogicPublicService;
     private readonly strategyValidationService;
@@ -5926,7 +5926,7 @@ declare class LiveGlobalService {
  * Simple wrapper around BacktestLogicPublicService for dependency injection.
  * Used by public API exports.
  */
-declare class BacktestGlobalService {
+declare class BacktestCommandService {
     private readonly loggerService;
     private readonly strategySchemaService;
     private readonly riskValidationService;
@@ -6338,12 +6338,12 @@ declare const backtest: {
     backtestLogicPrivateService: BacktestLogicPrivateService;
     liveLogicPrivateService: LiveLogicPrivateService;
     walkerLogicPrivateService: WalkerLogicPrivateService;
+    liveCommandService: LiveCommandService;
+    backtestCommandService: BacktestCommandService;
+    walkerCommandService: WalkerCommandService;
     exchangeGlobalService: ExchangeGlobalService;
     strategyGlobalService: StrategyGlobalService;
     frameGlobalService: FrameGlobalService;
-    liveGlobalService: LiveGlobalService;
-    backtestGlobalService: BacktestGlobalService;
-    walkerGlobalService: WalkerGlobalService;
     sizingGlobalService: SizingGlobalService;
     riskGlobalService: RiskGlobalService;
     exchangeSchemaService: ExchangeSchemaService;

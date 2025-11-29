@@ -10,7 +10,7 @@ import WalkerValidationService from "../validation/WalkerValidationService";
 import StrategySchemaService from "../schema/StrategySchemaService";
 import RiskValidationService from "../validation/RiskValidationService";
 
-const METHOD_NAME_RUN = "walkerGlobalService run";
+const METHOD_NAME_RUN = "walkerCommandService run";
 
 /**
  * Global service providing access to walker functionality.
@@ -18,7 +18,7 @@ const METHOD_NAME_RUN = "walkerGlobalService run";
  * Simple wrapper around WalkerLogicPublicService for dependency injection.
  * Used by public API exports.
  */
-export class WalkerGlobalService {
+export class WalkerCommandService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly walkerLogicPublicService = inject<WalkerLogicPublicService>(
     TYPES.walkerLogicPublicService
@@ -86,4 +86,4 @@ export class WalkerGlobalService {
   };
 }
 
-export default WalkerGlobalService;
+export default WalkerCommandService;

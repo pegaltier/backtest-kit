@@ -8,7 +8,7 @@ import FrameValidationService from "../validation/FrameValidationService";
 import StrategySchemaService from "../schema/StrategySchemaService";
 import RiskValidationService from "../validation/RiskValidationService";
 
-const METHOD_NAME_RUN = "backtestGlobalService run";
+const METHOD_NAME_RUN = "backtestCommandService run";
 
 /**
  * Global service providing access to backtest functionality.
@@ -16,7 +16,7 @@ const METHOD_NAME_RUN = "backtestGlobalService run";
  * Simple wrapper around BacktestLogicPublicService for dependency injection.
  * Used by public API exports.
  */
-export class BacktestGlobalService {
+export class BacktestCommandService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly strategySchemaService = inject<StrategySchemaService>(
     TYPES.strategySchemaService
@@ -75,4 +75,4 @@ export class BacktestGlobalService {
   };
 }
 
-export default BacktestGlobalService;
+export default BacktestCommandService;

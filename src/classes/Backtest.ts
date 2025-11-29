@@ -11,7 +11,7 @@ const BACKTEST_METHOD_NAME_DUMP = "BacktestUtils.dump";
 /**
  * Utility class for backtest operations.
  *
- * Provides simplified access to backtestGlobalService.run() with logging.
+ * Provides simplified access to backtestCommandService.run() with logging.
  * Exported as singleton instance for convenient usage.
  *
  * @example
@@ -62,7 +62,7 @@ export class BacktestUtils {
       riskName && backtest.riskGlobalService.clear(riskName);
     }
 
-    return backtest.backtestGlobalService.run(symbol, context);
+    return backtest.backtestCommandService.run(symbol, context);
   };
 
   /**

@@ -25,9 +25,9 @@ import TYPES from "./types";
 import BacktestLogicPublicService from "../services/logic/public/BacktestLogicPublicService";
 import LiveLogicPublicService from "../services/logic/public/LiveLogicPublicService";
 import WalkerLogicPublicService from "../services/logic/public/WalkerLogicPublicService";
-import LiveGlobalService from "../services/global/LiveGlobalService";
-import BacktestGlobalService from "../services/global/BacktestGlobalService";
-import WalkerGlobalService from "../services/global/WalkerGlobalService";
+import LiveCommandService from "../services/command/LiveCommandService";
+import BacktestCommandService from "../services/command/BacktestCommandService";
+import WalkerCommandService from "../services/command/WalkerCommandService";
 import BacktestMarkdownService from "../services/markdown/BacktestMarkdownService";
 import LiveMarkdownService from "../services/markdown/LiveMarkdownService";
 import ScheduleMarkdownService from "../services/markdown/ScheduleMarkdownService";
@@ -71,11 +71,14 @@ import RiskValidationService from "../services/validation/RiskValidationService"
     provide(TYPES.exchangeGlobalService, () => new ExchangeGlobalService());
     provide(TYPES.strategyGlobalService, () => new StrategyGlobalService());
     provide(TYPES.frameGlobalService, () => new FrameGlobalService());
-    provide(TYPES.liveGlobalService, () => new LiveGlobalService());
-    provide(TYPES.backtestGlobalService, () => new BacktestGlobalService());
-    provide(TYPES.walkerGlobalService, () => new WalkerGlobalService());
     provide(TYPES.sizingGlobalService, () => new SizingGlobalService());
     provide(TYPES.riskGlobalService, () => new RiskGlobalService());
+}
+
+{
+    provide(TYPES.liveCommandService, () => new LiveCommandService());
+    provide(TYPES.backtestCommandService, () => new BacktestCommandService());
+    provide(TYPES.walkerCommandService, () => new WalkerCommandService());
 }
 
 {

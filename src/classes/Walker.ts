@@ -12,7 +12,7 @@ const WALKER_METHOD_NAME_DUMP = "WalkerUtils.dump";
 /**
  * Utility class for walker operations.
  *
- * Provides simplified access to walkerGlobalService.run() with logging.
+ * Provides simplified access to walkerCommandService.run() with logging.
  * Automatically pulls exchangeName and frameName from walker schema.
  * Exported as singleton instance for convenient usage.
  *
@@ -79,7 +79,7 @@ export class WalkerUtils {
 
     }
 
-    return backtest.walkerGlobalService.run(symbol, {
+    return backtest.walkerCommandService.run(symbol, {
       walkerName: context.walkerName,
       exchangeName: walkerSchema.exchangeName,
       frameName: walkerSchema.frameName,

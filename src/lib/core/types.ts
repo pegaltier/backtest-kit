@@ -28,11 +28,14 @@ const globalServices = {
     exchangeGlobalService: Symbol('exchangeGlobalService'),
     strategyGlobalService: Symbol('strategyGlobalService'),
     frameGlobalService: Symbol('frameGlobalService'),
-    liveGlobalService: Symbol('liveGlobalService'),
-    backtestGlobalService: Symbol('backtestGlobalService'),
-    walkerGlobalService: Symbol('walkerGlobalService'),
     sizingGlobalService: Symbol('sizingGlobalService'),
     riskGlobalService: Symbol('riskGlobalService'),
+}
+
+const commandServices = {
+ liveCommandService: Symbol('liveCommandService'),
+    backtestCommandService: Symbol('backtestCommandService'),
+    walkerCommandService: Symbol('walkerCommandService'),
 }
 
 const logicPrivateServices = {
@@ -71,6 +74,7 @@ export const TYPES = {
     ...connectionServices,
     ...schemaServices,
     ...globalServices,
+    ...commandServices,
     ...logicPrivateServices,
     ...logicPublicServices,
     ...markdownServices,

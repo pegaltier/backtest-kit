@@ -15,7 +15,7 @@ const LIVE_METHOD_NAME_DUMP = "LiveUtils.dump";
 /**
  * Utility class for live trading operations.
  *
- * Provides simplified access to liveGlobalService.run() with logging.
+ * Provides simplified access to liveCommandService.run() with logging.
  * Exported as singleton instance for convenient usage.
  *
  * Features:
@@ -78,7 +78,7 @@ export class LiveUtils {
       riskName && backtest.riskGlobalService.clear(riskName);
     }
     
-    return backtest.liveGlobalService.run(symbol, context);
+    return backtest.liveCommandService.run(symbol, context);
   };
 
   /**

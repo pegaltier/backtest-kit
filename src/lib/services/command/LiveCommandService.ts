@@ -7,7 +7,7 @@ import ExchangeValidationService from "../validation/ExchangeValidationService";
 import StrategySchemaService from "../schema/StrategySchemaService";
 import RiskValidationService from "../validation/RiskValidationService";
 
-const METHOD_NAME_RUN = "liveGlobalService run";
+const METHOD_NAME_RUN = "liveCommandService run";
 
 /**
  * Global service providing access to live trading functionality.
@@ -15,7 +15,7 @@ const METHOD_NAME_RUN = "liveGlobalService run";
  * Simple wrapper around LiveLogicPublicService for dependency injection.
  * Used by public API exports.
  */
-export class LiveGlobalService {
+export class LiveCommandService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly liveLogicPublicService = inject<LiveLogicPublicService>(
     TYPES.liveLogicPublicService
@@ -73,4 +73,4 @@ export class LiveGlobalService {
   };
 }
 
-export default LiveGlobalService;
+export default LiveCommandService;
