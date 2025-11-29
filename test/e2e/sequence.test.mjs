@@ -1049,3 +1049,312 @@ test("SEQUENCE: Alternating LONG and SHORT positions (TP, TP, SL, SL)", async ({
 
   pass(`ALTERNATING: ${closedEvents.length} LONG/SHORT signals processed. ${pnlSummary}. Total PNL: ${totalPnl.toFixed(2)}%`);
 });
+
+
+/**
+ * SEQUENCE ТЕСТ #7: Быстрая последовательность из 2 сигналов
+ *
+ * Сценарий:
+ * - Сигнал #1: LONG активируется быстро, закрывается по TP
+ * - Сигнал #2: LONG активируется быстро, закрывается по SL
+ *
+ * Проверяет: Быстрая смена сигналов работает корректно
+ */
+test("SEQUENCE: 2 quick signals - fast TP, fast SL", async ({ pass, fail }) => {
+  const signalsResults = {
+    scheduled: [],
+    opened: [],
+    closed: [],
+  };
+
+  const startTime = new Date("2024-01-01T00:00:00Z").getTime();
+  const intervalMs = 60000;
+  const basePrice = 95000;
+
+  let allCandles = [];
+
+  for (let i = 0; i < 5; i++) {
+    allCandles.push({
+      timestamp: startTime + i * intervalMs,
+      open: basePrice,
+      high: basePrice + 100,
+      low: basePrice - 100,
+      close: basePrice,
+      volume: 100,
+    });
+  }
+
+  addExchange({
+    exchangeName: "binance-sequence-quick",
+    getCandles: async (_symbol, _interval, since, limit) => {
+      const sinceIndex = Math.floor((since.getTime() - startTime) / intervalMs);
+      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
+      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+    },
+    formatPrice: async (_symbol, p) => p.toFixed(8),
+    formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
+  });
+
+  let signalCount = 0;
+
+  addStrategy({
+    strategyName: "test-sequence-quick",
+    interval: "1m",
+    getSignal: async () => {
+      signalCount++;
+      if (signalCount > 2) return null;
+
+      if (signalCount === 1) {
+        allCandles = [];
+
+        for (let i = 0; i < 40; i++) {
+          const timestamp = startTime + i * intervalMs;
+
+          // Сигнал #1: Быстрый TP (0-2: ожидание, 3-4: активация, 5-6: TP)
+          if (i < 3) {
+            allCandles.push({ timestamp, open: basePrice + 500, high: basePrice + 600, low: basePrice + 400, close: basePrice + 500, volume: 100 });
+          } else if (i >= 3 && i < 5) {
+            allCandles.push({ timestamp, open: basePrice, high: basePrice + 100, low: basePrice - 100, close: basePrice, volume: 100 });
+          } else if (i >= 5 && i < 7) {
+            allCandles.push({ timestamp, open: basePrice + 1000, high: basePrice + 1100, low: basePrice + 900, close: basePrice + 1000, volume: 100 });
+          }
+
+          // Сигнал #2: Быстрый SL (10-12: ожидание, 13-14: активация, 15-16: SL)
+          else if (i >= 10 && i < 13) {
+            allCandles.push({ timestamp, open: basePrice + 500, high: basePrice + 600, low: basePrice + 400, close: basePrice + 500, volume: 100 });
+          } else if (i >= 13 && i < 15) {
+            allCandles.push({ timestamp, open: basePrice, high: basePrice + 100, low: basePrice - 100, close: basePrice, volume: 100 });
+          } else if (i >= 15 && i < 17) {
+            allCandles.push({ timestamp, open: basePrice - 1000, high: basePrice - 900, low: basePrice - 1100, close: basePrice - 1000, volume: 100 });
+          }
+
+          // Остальное: нейтральные свечи
+          else {
+            allCandles.push({ timestamp, open: basePrice, high: basePrice + 100, low: basePrice - 100, close: basePrice, volume: 100 });
+          }
+        }
+      }
+
+      return {
+        position: "long",
+        note: `SEQUENCE: quick signal #${signalCount}`,
+        priceOpen: basePrice,
+        priceTakeProfit: basePrice + 1000,
+        priceStopLoss: basePrice - 1000,
+        minuteEstimatedTime: 15,
+      };
+    },
+    callbacks: {
+      onSchedule: (_symbol, data) => {
+        signalsResults.scheduled.push(data);
+      },
+      onOpen: (_symbol, data) => {
+        signalsResults.opened.push(data);
+      },
+      onClose: (_symbol, data, priceClose) => {
+        signalsResults.closed.push({ signal: data, priceClose });
+      },
+    },
+  });
+
+  addFrame({
+    frameName: "40m-sequence-quick",
+    interval: "1m",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-01T00:40:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+
+  const allSignalEvents = [];
+  listenSignalBacktest((result) => {
+    allSignalEvents.push(result);
+  });
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-sequence-quick",
+    exchangeName: "binance-sequence-quick",
+    frameName: "40m-sequence-quick",
+  });
+
+  await awaitSubject.toPromise();
+
+  if (signalsResults.opened.length < 1) {
+    fail(`Expected at least 1 opened signal, got ${signalsResults.opened.length}`);
+    return;
+  }
+
+  if (signalsResults.closed.length < 1) {
+    fail(`Expected at least 1 closed signal, got ${signalsResults.closed.length}`);
+    return;
+  }
+
+  const closedEvents = allSignalEvents.filter(e => e.action === "closed");
+
+  if (closedEvents.length < 1) {
+    fail(`Expected at least 1 closed event, got ${closedEvents.length}`);
+    return;
+  }
+
+  const hasTP = closedEvents.some(e => e.closeReason === "take_profit");
+  const hasSL = closedEvents.some(e => e.closeReason === "stop_loss");
+
+  const pnlSummary = closedEvents.map((e, i) => `#${i + 1}: ${e.closeReason} (${e.pnl.pnlPercentage.toFixed(2)}%)`).join(", ");
+  const totalPnl = closedEvents.reduce((sum, e) => sum + e.pnl.pnlPercentage, 0);
+
+  pass(`QUICK SEQUENCE: ${closedEvents.length} quick signals processed. ${pnlSummary}. Total PNL: ${totalPnl.toFixed(2)}%`);
+});
+
+
+/**
+ * SEQUENCE ТЕСТ #8: Быстрая последовательность из 2 SHORT сигналов
+ *
+ * Сценарий:
+ * - Сигнал #1: SHORT активируется быстро, закрывается по TP
+ * - Сигнал #2: SHORT активируется быстро, закрывается по SL
+ *
+ * Проверяет: Быстрая смена SHORT сигналов работает корректно
+ */
+test("SEQUENCE: 2 quick SHORT signals - fast TP, fast SL", async ({ pass, fail }) => {
+  const signalsResults = {
+    scheduled: [],
+    opened: [],
+    closed: [],
+  };
+
+  const startTime = new Date("2024-01-01T00:00:00Z").getTime();
+  const intervalMs = 60000;
+  const basePrice = 95000;
+
+  let allCandles = [];
+
+  for (let i = 0; i < 5; i++) {
+    allCandles.push({
+      timestamp: startTime + i * intervalMs,
+      open: basePrice,
+      high: basePrice + 100,
+      low: basePrice - 100,
+      close: basePrice,
+      volume: 100,
+    });
+  }
+
+  addExchange({
+    exchangeName: "binance-sequence-quick-short",
+    getCandles: async (_symbol, _interval, since, limit) => {
+      const sinceIndex = Math.floor((since.getTime() - startTime) / intervalMs);
+      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
+      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+    },
+    formatPrice: async (_symbol, p) => p.toFixed(8),
+    formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
+  });
+
+  let signalCount = 0;
+
+  addStrategy({
+    strategyName: "test-sequence-quick-short",
+    interval: "1m",
+    getSignal: async () => {
+      signalCount++;
+      if (signalCount > 2) return null;
+
+      if (signalCount === 1) {
+        allCandles = [];
+
+        for (let i = 0; i < 40; i++) {
+          const timestamp = startTime + i * intervalMs;
+
+          // Сигнал #1: Быстрый TP (0-2: ожидание ниже, 3-4: активация, 5-6: TP снизу)
+          if (i < 3) {
+            allCandles.push({ timestamp, open: basePrice - 500, high: basePrice - 400, low: basePrice - 600, close: basePrice - 500, volume: 100 });
+          } else if (i >= 3 && i < 5) {
+            allCandles.push({ timestamp, open: basePrice, high: basePrice + 100, low: basePrice - 100, close: basePrice, volume: 100 });
+          } else if (i >= 5 && i < 7) {
+            allCandles.push({ timestamp, open: basePrice - 1000, high: basePrice - 900, low: basePrice - 1100, close: basePrice - 1000, volume: 100 });
+          }
+
+          // Сигнал #2: Быстрый SL (10-12: ожидание ниже, 13-14: активация, 15-16: SL сверху)
+          else if (i >= 10 && i < 13) {
+            allCandles.push({ timestamp, open: basePrice - 500, high: basePrice - 400, low: basePrice - 600, close: basePrice - 500, volume: 100 });
+          } else if (i >= 13 && i < 15) {
+            allCandles.push({ timestamp, open: basePrice, high: basePrice + 100, low: basePrice - 100, close: basePrice, volume: 100 });
+          } else if (i >= 15 && i < 17) {
+            allCandles.push({ timestamp, open: basePrice + 1000, high: basePrice + 1100, low: basePrice + 900, close: basePrice + 1000, volume: 100 });
+          }
+
+          // Остальное: нейтральные свечи
+          else {
+            allCandles.push({ timestamp, open: basePrice, high: basePrice + 100, low: basePrice - 100, close: basePrice, volume: 100 });
+          }
+        }
+      }
+
+      return {
+        position: "short",
+        note: `SEQUENCE: quick SHORT signal #${signalCount}`,
+        priceOpen: basePrice,
+        priceTakeProfit: basePrice - 1000,  // SHORT: TP ниже priceOpen
+        priceStopLoss: basePrice + 1000,    // SHORT: SL выше priceOpen
+        minuteEstimatedTime: 15,
+      };
+    },
+    callbacks: {
+      onSchedule: (_symbol, data) => {
+        signalsResults.scheduled.push(data);
+      },
+      onOpen: (_symbol, data) => {
+        signalsResults.opened.push(data);
+      },
+      onClose: (_symbol, data, priceClose) => {
+        signalsResults.closed.push({ signal: data, priceClose });
+      },
+    },
+  });
+
+  addFrame({
+    frameName: "40m-sequence-quick-short",
+    interval: "1m",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-01T00:40:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+
+  const allSignalEvents = [];
+  listenSignalBacktest((result) => {
+    allSignalEvents.push(result);
+  });
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-sequence-quick-short",
+    exchangeName: "binance-sequence-quick-short",
+    frameName: "40m-sequence-quick-short",
+  });
+
+  await awaitSubject.toPromise();
+
+  if (signalsResults.opened.length < 1) {
+    fail(`Expected at least 1 opened signal, got ${signalsResults.opened.length}`);
+    return;
+  }
+
+  if (signalsResults.closed.length < 1) {
+    fail(`Expected at least 1 closed signal, got ${signalsResults.closed.length}`);
+    return;
+  }
+
+  const closedEvents = allSignalEvents.filter(e => e.action === "closed");
+
+  if (closedEvents.length < 1) {
+    fail(`Expected at least 1 closed event, got ${closedEvents.length}`);
+    return;
+  }
+
+  const pnlSummary = closedEvents.map((e, i) => `#${i + 1}: ${e.closeReason} (${e.pnl.pnlPercentage.toFixed(2)}%)`).join(", ");
+  const totalPnl = closedEvents.reduce((sum, e) => sum + e.pnl.pnlPercentage, 0);
+
+  pass(`QUICK SHORT SEQUENCE: ${closedEvents.length} quick SHORT signals processed. ${pnlSummary}. Total PNL: ${totalPnl.toFixed(2)}%`);
+});
