@@ -1741,3 +1741,119 @@ test("DEFEND: Backtest fails gracefully when Exchange.getCandles throws error", 
   // Любая другая ошибка тоже ок - главное что не зависло
   pass(`INFRASTRUCTURE SAFE: Backtest failed with error (expected behavior): ${errMsg.substring(0, 80)}`);
 });
+
+/**
+ * КРИТИЧЕСКИЙ ТЕСТ #16: Ошибка в listenSignalBacktest callback
+ *
+ * Сценарий:
+ * - listenSignalBacktest callback бросает исключение (баг в пользовательском коде)
+ * - КРИТИЧНО: Backtest должен прерваться с ошибкой, не зависнуть
+ *
+ * Проверяет устойчивость к ошибкам в пользовательских callback'ах.
+ */
+test("DEFEND: Backtest fails gracefully when listenSignalBacktest throws error", async ({ pass, fail }) => {
+
+  let errorCaught = null;
+  let signalReceived = false;
+
+  addExchange({
+    exchangeName: "binance-defend-listener-error",
+    getCandles: async (_symbol, interval, since, limit) => {
+      const candles = [];
+      const intervalMs = 60000;
+
+      for (let i = 0; i < limit; i++) {
+        const timestamp = since.getTime() + i * intervalMs;
+        candles.push({
+          timestamp,
+          open: 42000,
+          high: 42100,
+          low: 41900,
+          close: 42000,
+          volume: 100,
+        });
+      }
+
+      return candles;
+    },
+    formatPrice: async (_symbol, price) => price.toFixed(8),
+    formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
+  });
+
+  let signalGenerated = false;
+
+  addStrategy({
+    strategyName: "test-defend-listener-error",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+
+      const price = await getAveragePrice("BTCUSDT");
+
+      return {
+        position: "long",
+        note: "DEFEND: listener error test",
+        priceOpen: price,
+        priceTakeProfit: price + 1000,
+        priceStopLoss: price - 1000,
+        minuteEstimatedTime: 1,
+      };
+    },
+  });
+
+  addFrame({
+    frameName: "5m-defend-listener-error",
+    interval: "1m",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-01T00:05:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+
+  const unsubscribeError = listenError((error) => {
+    errorCaught = error;
+    awaitSubject.next();
+  });
+
+  listenDoneBacktest(() => {
+    awaitSubject.next();
+  });
+
+  // Callback который бросает ошибку при получении сигнала
+  listenSignalBacktest((result) => {
+    signalReceived = true;
+    throw new Error("LISTENER_ERROR: User callback crashed");
+  });
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-defend-listener-error",
+    exchangeName: "binance-defend-listener-error",
+    frameName: "5m-defend-listener-error",
+  });
+
+  await awaitSubject.toPromise();
+  await sleep(1000);
+  unsubscribeError();
+
+  if (!signalReceived) {
+    fail("Signal was not received by listenSignalBacktest - test setup broken");
+    return;
+  }
+
+  if (!errorCaught) {
+    fail("CRITICAL BUG: listenSignalBacktest threw error but listenError was not called! Error handling broken!");
+    return;
+  }
+
+  const errMsg = errorCaught.message || String(errorCaught);
+
+  // Проверяем что это ожидаемая ошибка от listener
+  if (errMsg.includes("LISTENER_ERROR") || errMsg.includes("User callback crashed")) {
+    pass(`INFRASTRUCTURE SAFE: Backtest failed gracefully with listener error: "${errMsg.substring(0, 80)}"`);
+    return;
+  }
+
+  // Любая другая ошибка тоже ок - главное что не зависло
+  pass(`INFRASTRUCTURE SAFE: Backtest failed with error (expected behavior): ${errMsg.substring(0, 80)}`);
+});
