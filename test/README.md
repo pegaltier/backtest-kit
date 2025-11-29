@@ -110,6 +110,11 @@ if (candle.high >= scheduled.priceOpen) {
 
 #### LONG позиции
 ```typescript
+// КРИТИЧНО для LONG:
+// - priceOpen > priceStopLoss (по валидации)
+// - Активация: low <= priceOpen (цена упала до входа)
+// - Отмена: low <= priceStopLoss (цена пробила SL)
+
 if (candle.low <= scheduled.priceStopLoss) {
   shouldCancel = true;  // Отмена приоритетнее активации
 }
@@ -118,8 +123,27 @@ else if (candle.low <= scheduled.priceOpen) {
 }
 ```
 
+**EDGE CASE для LONG**: Если на ОДНОЙ свече `low <= priceStopLoss` И `low <= priceOpen`:
+- Приоритет у **отмены**!
+- StopLoss пробит ДО или ВМЕСТЕ с активацией
+- Сигнал **НЕ открывается**, сразу переходит в `cancelled`
+
+**Пример edge case**:
+```javascript
+// Сигнал: priceOpen = 42000, priceStopLoss = 41000
+// Свеча: { low: 40500, high: 43000 }
+// Результат: CANCELLED (не opened!)
+// Объяснение: low=40500 пробивает и SL (41000) и priceOpen (42000)
+//             но проверка SL идет первой → shouldCancel=true
+```
+
 #### SHORT позиции
 ```typescript
+// КРИТИЧНО для SHORT:
+// - priceOpen < priceStopLoss (по валидации)
+// - Активация: high >= priceOpen (цена выросла до входа)
+// - Отмена: high >= priceStopLoss (цена пробила SL)
+
 if (candle.high >= scheduled.priceStopLoss) {
   shouldCancel = true;  // Отмена приоритетнее активации
 }
@@ -127,6 +151,126 @@ else if (candle.high >= scheduled.priceOpen) {
   shouldActivate = true;
 }
 ```
+
+**EDGE CASE для SHORT**: Если на ОДНОЙ свече `high >= priceStopLoss` И `high >= priceOpen`:
+- Приоритет у **отмены**!
+- StopLoss пробит ДО или ВМЕСТЕ с активацией
+- Сигнал **НЕ открывается**, сразу переходит в `cancelled`
+
+**Пример edge case**:
+```javascript
+// Сигнал: priceOpen = 42000, priceStopLoss = 44000
+// Свеча: { low: 41000, high: 45000 }
+// Результат: CANCELLED (не opened!)
+// Объяснение: high=45000 пробивает и SL (44000) и priceOpen (42000)
+//             но проверка SL идет первой → shouldCancel=true
+```
+
+---
+
+## ⚠️ EDGE CASE: Одновременное достижение SL и priceOpen
+
+**Критическая ситуация**: Что происходит, когда цена на ОДНОЙ свече достигает и StopLoss, и priceOpen одновременно?
+
+### Поведение системы
+
+Система **ВСЕГДА отменяет** сигнал в этом случае, позиция НЕ открывается.
+
+**Логика**:
+1. Проверка StopLoss выполняется **ДО** проверки активации
+2. Если обе проверки срабатывают на одной свече → приоритет у отмены
+3. Это защищает от открытия позиции, которая мгновенно закрылась бы по SL
+
+### Примеры
+
+**LONG позиция - резкое падение**:
+```javascript
+// Настройка сигнала
+{
+  position: "long",
+  priceOpen: 42000,       // Вход при падении до 42k
+  priceStopLoss: 41000,   // SL на 41k
+}
+
+// Приходит экстремальная свеча
+{
+  low: 40500,   // ⚠️ Пробивает ОБА уровня!
+  high: 43000,
+}
+
+// Результат: CANCELLED
+// Почему: low (40500) <= priceStopLoss (41000) → shouldCancel=true
+//         Проверка активации даже не выполняется
+```
+
+**SHORT позиция - резкий рост**:
+```javascript
+// Настройка сигнала
+{
+  position: "short",
+  priceOpen: 42000,       // Вход при росте до 42k
+  priceStopLoss: 44000,   // SL на 44k
+}
+
+// Приходит экстремальная свеча
+{
+  low: 41000,
+  high: 45000,   // ⚠️ Пробивает ОБА уровня!
+}
+
+// Результат: CANCELLED
+// Почему: high (45000) >= priceStopLoss (44000) → shouldCancel=true
+//         Проверка активации даже не выполняется
+```
+
+### Почему это важно для тестов
+
+При написании тестов для scheduled сигналов **избегайте** свечей с экстремальной волатильностью:
+
+```javascript
+// ❌ ОПАСНО: Может вызвать edge case
+const candle = {
+  low: priceStopLoss - 1000,   // Далеко ниже SL
+  high: priceTakeProfit + 1000, // Далеко выше TP
+};
+
+// ✅ БЕЗОПАСНО: Контролируемая активация
+const candle = {
+  low: priceOpen - 100,         // Чуть ниже входа
+  high: priceOpen + 500,        // Выше входа, но не TP
+};
+```
+
+### Когда тестировать edge case
+
+Создайте отдельный тест для проверки этого поведения:
+
+```javascript
+test("EDGE: Scheduled cancelled when SL hit before activation", async ({ pass, fail }) => {
+  addStrategy({
+    getSignal: async () => ({
+      position: "long",
+      priceOpen: 42000,
+      priceStopLoss: 41000,
+      priceTakeProfit: 43000,
+    })
+  });
+
+  addExchange({
+    getCandles: async () => [{
+      low: 40500,   // Пробивает и SL, и priceOpen
+      high: 43000,
+      // ...
+    }]
+  });
+
+  // Ожидаем: scheduled → cancelled (НЕ opened!)
+});
+```
+
+См. [test/e2e/defend.test.mjs](./e2e/defend.test.mjs) тест #13 для реального примера.
+
+---
 
 ## Паттерны написания тестов
 
