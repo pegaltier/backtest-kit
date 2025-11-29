@@ -15,7 +15,6 @@ The backtest-kit framework organizes services into six distinct layers, each wit
 
 ![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_0.svg)
 
-**Sources**: [src/lib/core/types.ts:1-81](), [src/lib/core/provide.ts:1-111](), [src/lib/index.ts:1-170](), [docs/internals.md:28-40]()
 
 ---
 
@@ -59,7 +58,6 @@ Execution entry points provide static methods for running backtests and live tra
 
 These delegate to corresponding Global Services which wrap Logic Services with validation.
 
-**Sources**: [src/function/add.ts:1-342](), [src/function/list.ts:1-218]()
 
 ---
 
@@ -110,7 +108,6 @@ These services have dependencies on:
 - `FrameGlobalService` - Timeframe generation (backtest only)
 - Markdown services - Report generation
 
-**Sources**: [src/lib/core/types.ts:38-48](), [src/lib/core/provide.ts:81-91](), [docs/internals.md:36-37]()
 
 ---
 
@@ -153,7 +150,6 @@ Connection services inject their dependencies into client constructors:
 - `FrameConnectionService` injects `FrameSchemaService`
 - `SizingConnectionService` injects `SizingSchemaService`
 
-**Sources**: [src/lib/core/types.ts:10-16](), [src/lib/core/provide.ts:53-59](), [docs/internals.md:34]()
 
 ---
 
@@ -185,7 +181,6 @@ Client classes have NO direct dependency injection. Instead:
 
 Example: `ClientStrategy` receives schema functions and other clients as constructor parameters, not DI symbols.
 
-**Sources**: [docs/internals.md:30]()
 
 ---
 
@@ -260,7 +255,6 @@ When `BacktestLogicPublicService` starts execution:
 3. Calls `FrameValidationService.validate(frameName)`
 4. If strategy has `riskName`, validates via `RiskValidationService.validate(riskName)`
 
-**Sources**: [src/lib/core/types.ts:18-25](), [src/lib/core/types.ts:59-66](), [src/lib/core/provide.ts:61-68](), [src/lib/core/provide.ts:102-109](), [docs/internals.md:32-34]()
 
 ---
 
@@ -305,7 +299,6 @@ Storage is memoized per component:
 - `LiveMarkdownService` - One storage per (strategyName, exchangeName)
 - `WalkerMarkdownService` - One storage per walkerName
 
-**Sources**: [src/lib/core/types.ts:50-57](), [src/lib/core/provide.ts:93-100](), [docs/internals.md:37]()
 
 ---
 
@@ -351,7 +344,6 @@ The `MethodContextService` manages component selection using `di-scoped`:
 
 Used by Connection Services to resolve which component instance to return.
 
-**Sources**: [src/lib/core/types.ts:1-8](), [src/lib/index.ts:49-60](), [docs/internals.md:72-73]()
 
 ---
 
@@ -397,7 +389,6 @@ Layer 5 (Schemas)
 
 Events flow horizontally to Layer 6 (Markdown Services) for reporting.
 
-**Sources**: [src/function/add.ts:50-62](), [docs/internals.md:54-92]()
 
 ---
 
@@ -449,5 +440,4 @@ export const backtest = {
   ...validationServices,
 };
 ```
-
-**Sources**: [src/lib/core/provide.ts:1-111](), [src/lib/index.ts:49-162]()
+

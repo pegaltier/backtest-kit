@@ -38,7 +38,6 @@ The `validationSubject` handles errors thrown by custom risk validation function
 export const validationSubject = new Subject<Error>();
 ```
 
-**Sources**: [src/config/emitters.ts:28-31](), [src/config/emitters.ts:75-79]()
 
 ---
 
@@ -82,7 +81,6 @@ task().catch((error) =>
 
 All background tasks use `getErrorMessage()` from `functools-kit` to normalize error objects into consistent `Error` instances with string messages. This handles cases where thrown values are not Error objects.
 
-**Sources**: [src/classes/Backtest.ts:114-117](), [src/classes/Live.ts:130-132](), [src/classes/Walker.ts:135-137]()
 
 ---
 
@@ -94,7 +92,6 @@ All background tasks use `getErrorMessage()` from `functools-kit` to normalize e
 
 This diagram shows how errors in background execution are caught, normalized, and propagated to user error handlers through `errorEmitter`.
 
-**Sources**: [src/classes/Backtest.ts:89-122](), [src/classes/Live.ts:105-137](), [src/classes/Walker.ts:108-144](), [src/config/emitters.ts:28-31]()
 
 ---
 
@@ -113,7 +110,6 @@ The framework catches validation errors at the risk checking boundary and:
 
 This pattern enables strategies to continue running even when validation logic has issues, while still providing visibility into validation failures.
 
-**Sources**: [src/config/emitters.ts:75-79](), [types.d.ts:456-474]()
 
 ---
 
@@ -200,7 +196,6 @@ return errorEmitter.subscribe(queued(async (error) => fn(error)));
 return validationSubject.subscribe(queued(async (error) => fn(error)));
 ```
 
-**Sources**: [src/function/event.ts:232-235](), [src/function/event.ts:649-652](), [src/function/event.ts:209-235](), [src/function/event.ts:625-652]()
 
 ---
 
@@ -212,7 +207,6 @@ return validationSubject.subscribe(queued(async (error) => fn(error)));
 
 This diagram shows the complete error handling pipeline from error sources through capture, normalization, emission, subscription, and user handling.
 
-**Sources**: [src/classes/Backtest.ts:114-117](), [src/classes/Live.ts:130-132](), [src/classes/Walker.ts:135-137](), [src/config/emitters.ts:28-31](), [src/config/emitters.ts:75-79](), [src/function/event.ts:232-235](), [src/function/event.ts:649-652]()
 
 ---
 
@@ -224,7 +218,6 @@ This diagram shows the complete error handling pipeline from error sources throu
 
 This diagram maps error types to their corresponding code entities, showing where errors originate and how they flow through specific functions and classes.
 
-**Sources**: [src/config/emitters.ts:28-31](), [src/config/emitters.ts:75-79](), [src/function/event.ts:232](), [src/function/event.ts:649](), [src/classes/Backtest.ts:89](), [src/classes/Live.ts:105](), [src/classes/Walker.ts:108]()
 
 ---
 
@@ -257,7 +250,6 @@ warn(topic: string, ...args: any[]): void;
 | Recoverable issue | `logger.warn()` | No, logged only |
 | Fatal issue requiring stop | `throw new Error()` | Yes, caught by background task wrapper |
 
-**Sources**: [types.d.ts:61-66](), [types.d.ts:45-66]()
 
 ---
 
@@ -269,7 +261,6 @@ warn(topic: string, ...args: any[]): void;
 
 This sequence diagram illustrates the temporal flow of error handling from background task failure through emission and queued processing in user handlers.
 
-**Sources**: [src/classes/Backtest.ts:102-117](), [src/classes/Live.ts:117-132](), [src/classes/Walker.ts:122-137](), [src/config/emitters.ts:28-31](), [src/function/event.ts:232-235]()
 
 ---
 
@@ -301,5 +292,4 @@ emitters.errorEmitter.subscribe((error) => {
   // Direct subscription without wrapper
 });
 ```
-
-**Sources**: [src/index.ts:1-131](), [src/config/emitters.ts:1-81]()
+

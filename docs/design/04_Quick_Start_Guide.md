@@ -79,7 +79,6 @@ Backtest.background("BTCUSDT", {
 });
 ```
 
-**Sources**: [README.md:94-185](), [test/spec/backtest.test.mjs:1-50](), [src/function/add.ts:1-342]()
 
 ## Component Registration Flow
 
@@ -97,7 +96,6 @@ The framework uses a registration-first architecture. You must register all comp
 | `addRisk()` | Register risk management rules | `riskName`, `validations`, `callbacks` | [src/function/add.ts:329-341]() |
 | `addWalker()` | Register strategy comparison | `walkerName`, `strategies`, `metric` | [src/function/add.ts:188-200]() |
 
-**Sources**: [src/function/add.ts:1-342](), [src/index.ts:1-5](), [types.d.ts:1-300]()
 
 ## Exchange Registration
 
@@ -141,7 +139,6 @@ addExchange({
 - `formatPrice()` and `formatQuantity()` apply exchange-specific precision rules
 - Exchange instances are memoized per `exchangeName` by `ExchangeConnectionService`
 
-**Sources**: [README.md:262-301](), [types.d.ts:167-221](), [src/function/add.ts:99-111]()
 
 ## Strategy Registration
 
@@ -193,7 +190,6 @@ addStrategy({
 - TP/SL distance constraints: `CC_MIN_TAKEPROFIT_DISTANCE_PERCENT`, `CC_MAX_STOPLOSS_DISTANCE_PERCENT`
 - Maximum lifetime: `CC_MAX_SIGNAL_LIFETIME_MINUTES`
 
-**Sources**: [README.md:306-333](), [types.d.ts:544-633](), [src/function/add.ts:50-62]()
 
 ## Frame Registration
 
@@ -215,7 +211,6 @@ addFrame({
 
 **Supported Intervals**: `"1m"`, `"3m"`, `"5m"`, `"15m"`, `"30m"`, `"1h"`, `"2h"`, `"4h"`, `"6h"`, `"8h"`, `"12h"`, `"1d"`, `"3d"`
 
-**Sources**: [types.d.ts:284-341](), [src/function/add.ts:143-149]()
 
 ## Running Backtest
 
@@ -247,7 +242,6 @@ listenDoneBacktest((event) => {
 });
 ```
 
-**Sources**: [README.md:339-358](), [test/spec/backtest.test.mjs:1-100]()
 
 ### Option 2: Generator Mode (Manual Control)
 
@@ -269,7 +263,6 @@ for await (const result of Backtest.run("BTCUSDT", {
 }
 ```
 
-**Sources**: [README.md:361-369]()
 
 ## Signal Lifecycle
 
@@ -288,7 +281,6 @@ Signals transition through states during execution:
 | `opened` | `active` | Position being monitored | `onActive()` |
 | `active` | `closed` | TP/SL hit or time expired | `onClose()` |
 
-**Sources**: [types.d.ts:544-774](), [README.md:54-68]()
 
 ## Event Listening
 
@@ -342,7 +334,6 @@ listenError((error) => {
 | `listenDoneLive()` | Live completion | `DoneContract` |
 | `listenError()` | All errors | `Error` |
 
-**Sources**: [src/function/event.ts:1-200](), [types.d.ts:1-100]()
 
 ## Generating Reports
 
@@ -373,7 +364,6 @@ await Backtest.dump("my-strategy", "./custom/path");
 - Certainty ratio (avgWin / |avgLoss|)
 - Expected yearly returns
 
-**Sources**: [README.md:339-369](), [src/lib/services/markdown/BacktestMarkdownService.ts:1-533](), [types.d.ts:846-871]()
 
 ## Context Propagation (Advanced)
 
@@ -399,7 +389,6 @@ const price = await getAveragePrice(symbol);  // No context params needed!
 
 For details, see [Context Propagation](./12_Context_Propagation.md).
 
-**Sources**: [types.d.ts:100-143](), [types.d.ts:362-403](), [README.md:29-30]()
 
 ## Next Steps
 
@@ -413,5 +402,4 @@ Now that you have a working backtest, explore these topics:
 6. **Strategy Comparison**: Compare multiple strategies with [Walker API](./19_Walker_API.md)
 
 **Complete Example Projects**: See [README.md:84-257]() for full working examples including CCXT integration, database sources, and advanced features.
-
-**Sources**: [README.md:1-257](), [types.d.ts:1-1000]()
+

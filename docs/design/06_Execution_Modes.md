@@ -365,5 +365,3 @@ These metrics enable bottleneck detection and optimization of strategy logic or 
 
 
 ---
-
-**Page Sources:** [README.md:1-258](), [src/classes/Backtest.ts:1-208](), [src/classes/Live.ts:1-220](), [src/classes/Walker.ts:1-274](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:1-303](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:1-117](), [src/config/emitters.ts:1-81](), [src/function/event.ts:1-550](), [test/e2e/timing.test.mjs:34-153]()

@@ -15,7 +15,6 @@ When a strategy's `tick()` method executes, the framework calls the user's `getS
 
 ![Mermaid Diagram](./diagrams/46_Signal_Generation_and_Validation_0.svg)
 
-**Sources**: [src/client/ClientStrategy.ts:187-283]()
 
 ---
 
@@ -46,13 +45,11 @@ The framework transforms user-provided `ISignalDto` objects into validated `ISig
 - `ISignalRow`: Framework-augmented signal with execution context
 - `IScheduledSignalRow`: Extends `ISignalRow` with guaranteed `priceOpen` (delayed entry signal)
 
-**Sources**: [types.d.ts:544-591](), [src/interfaces/Strategy.interface.ts:23-72]()
 
 ### Augmentation Example
 
 ![Mermaid Diagram](./diagrams/46_Signal_Generation_and_Validation_1.svg)
 
-**Sources**: [src/client/ClientStrategy.ts:232-272]()
 
 ---
 
@@ -64,7 +61,6 @@ The `VALIDATE_SIGNAL_FN` performs comprehensive validation of signal parameters 
 
 ![Mermaid Diagram](./diagrams/46_Signal_Generation_and_Validation_2.svg)
 
-**Sources**: [src/client/ClientStrategy.ts:40-185]()
 
 ### Validation Check Catalog
 
@@ -87,7 +83,6 @@ if (!isFinite(signal.priceStopLoss)) {
 
 **Rationale**: `NaN` or `Infinity` in prices causes all PnL calculations to become `NaN`, corrupting backtest results.
 
-**Sources**: [src/client/ClientStrategy.ts:43-58](), [test/e2e/sanitize.test.mjs:464-660]()
 
 #### 2. Positive Price Checks
 
@@ -108,7 +103,6 @@ if (isFinite(signal.priceStopLoss) && signal.priceStopLoss <= 0) {
 
 **Rationale**: Negative or zero prices are impossible on exchanges and cause undefined behavior in price calculations.
 
-**Sources**: [src/client/ClientStrategy.ts:61-71](), [test/e2e/sanitize.test.mjs:360-452]()
 
 #### 3. Position-Specific Logic Validation
 
@@ -152,7 +146,6 @@ if (signal.position === "short") {
 
 **Rationale**: Short positions profit when price decreases, so TP must be lower than entry price, and SL must be higher to cut losses.
 
-**Sources**: [src/client/ClientStrategy.ts:74-150](), [test/e2e/defend.test.mjs:544-641]()
 
 #### 4. Minimum TakeProfit Distance (Fee Coverage)
 
@@ -178,7 +171,6 @@ if (tpDistancePercent < GLOBAL_CONFIG.CC_MIN_TAKEPROFIT_DISTANCE_PERCENT) {
 - `priceOpen = 42000`, `priceTakeProfit = 42010` → Distance = 0.024% → **REJECTED**
 - Net PnL after fees: 0.024% - 0.2% = **-0.176% loss despite "winning" trade**
 
-**Sources**: [src/client/ClientStrategy.ts:87-97](), [src/config/params.ts:16-18](), [test/e2e/sanitize.test.mjs:27-131]()
 
 #### 5. Maximum StopLoss Distance (Catastrophic Loss Prevention)
 
@@ -204,7 +196,6 @@ if (slDistancePercent > GLOBAL_CONFIG.CC_MAX_STOPLOSS_DISTANCE_PERCENT) {
 - `priceOpen = 42000`, `priceStopLoss = 20000` → Distance = 52.4% → **REJECTED**
 - Single trade could lose >50% of position value
 
-**Sources**: [src/client/ClientStrategy.ts:100-110](), [src/config/params.ts:19-23](), [test/e2e/sanitize.test.mjs:143-238]()
 
 #### 6. Maximum Signal Lifetime (Eternal Signal Prevention)
 
@@ -231,7 +222,6 @@ if (signal.minuteEstimatedTime > GLOBAL_CONFIG.CC_MAX_SIGNAL_LIFETIME_MINUTES) {
 - `minuteEstimatedTime = 50000` minutes (34.7 days) → **REJECTED**
 - Strategy would be unable to open new positions for >1 month
 
-**Sources**: [src/client/ClientStrategy.ts:161-170](), [src/config/params.ts:24-29](), [test/e2e/sanitize.test.mjs:250-348]()
 
 ---
 
@@ -243,7 +233,6 @@ The `GET_SIGNAL_FN` wrapper coordinates signal generation, validation, and error
 
 ![Mermaid Diagram](./diagrams/46_Signal_Generation_and_Validation_3.svg)
 
-**Sources**: [src/client/ClientStrategy.ts:187-283]()
 
 ### Interval Throttling
 
@@ -277,7 +266,6 @@ self._lastSignalTimestamp = currentTime;
 
 **Purpose**: Prevents excessive API calls and ensures strategies generate signals at specified intervals (e.g., `interval: "5m"` → max 1 signal per 5 minutes).
 
-**Sources**: [src/client/ClientStrategy.ts:31-38](), [src/client/ClientStrategy.ts:196-208]()
 
 ### Error Handling Strategy
 
@@ -308,7 +296,6 @@ const GET_SIGNAL_FN = trycatch(
 
 **Observability**: Errors are emitted to `errorEmitter` for monitoring via `listenError()` event listener.
 
-**Sources**: [src/client/ClientStrategy.ts:187-283](), [src/config/emitters.ts]()
 
 ---
 
@@ -320,7 +307,6 @@ Signals can be immediate (open at current price) or scheduled (wait for specific
 
 ![Mermaid Diagram](./diagrams/46_Signal_Generation_and_Validation_4.svg)
 
-**Sources**: [src/client/ClientStrategy.ts:232-272](), [src/interfaces/Strategy.interface.ts:64-72]()
 
 ### Immediate Signal Example
 
@@ -352,7 +338,6 @@ Signals can be immediate (open at current price) or scheduled (wait for specific
 
 **Behavior**: Position opens immediately at current VWAP price. Both `scheduledAt` and `pendingAt` are identical.
 
-**Sources**: [src/client/ClientStrategy.ts:256-269]()
 
 ### Scheduled Signal Example
 
@@ -394,7 +379,6 @@ Signals can be immediate (open at current price) or scheduled (wait for specific
 
 **Timeout**: Scheduled signals cancel after `CC_SCHEDULE_AWAIT_MINUTES` (default: 120 minutes) if price never reaches `priceOpen`.
 
-**Sources**: [src/client/ClientStrategy.ts:234-251](), [src/client/ClientStrategy.ts:510-515](), [src/config/params.ts:6-7]()
 
 ---
 
@@ -411,7 +395,6 @@ Global configuration parameters control validation thresholds. These can be modi
 | `CC_MAX_SIGNAL_LIFETIME_MINUTES` | `1440` | minutes | Maximum signal lifetime | Eternal signal prevention |
 | `CC_SCHEDULE_AWAIT_MINUTES` | `120` | minutes | Scheduled signal timeout | Scheduled signal cancellation |
 
-**Sources**: [src/config/params.ts:1-36](), [types.d.ts:5-34]()
 
 ### Configuration Usage Example
 
@@ -439,7 +422,6 @@ setConfig({
 });
 ```
 
-**Sources**: [types.d.ts:85-97](), [test/config/setup.mjs:36-41]()
 
 ---
 
@@ -467,7 +449,6 @@ This section demonstrates common validation failures and their error messages.
 
 **Why Rejected**: Profit of 0.024% cannot cover trading fees (0.1% entry + 0.1% exit = 0.2%). Net result would be -0.176% loss despite hitting TP.
 
-**Sources**: [test/e2e/sanitize.test.mjs:27-131]()
 
 ### Example 2: Catastrophic StopLoss
 
@@ -489,7 +470,6 @@ This section demonstrates common validation failures and their error messages.
 
 **Why Rejected**: Single trade could lose >50% of position value, requiring >100% gain to recover.
 
-**Sources**: [test/e2e/sanitize.test.mjs:143-238]()
 
 ### Example 3: Eternal Signal
 
@@ -511,7 +491,6 @@ This section demonstrates common validation failures and their error messages.
 
 **Why Rejected**: Signal would occupy risk limit slot for >1 month, preventing new trades.
 
-**Sources**: [test/e2e/sanitize.test.mjs:250-348]()
 
 ### Example 4: NaN Price
 
@@ -531,7 +510,6 @@ This section demonstrates common validation failures and their error messages.
 
 **Why Rejected**: NaN propagates through all calculations, corrupting PnL results.
 
-**Sources**: [test/e2e/sanitize.test.mjs:464-556]()
 
 ### Example 5: Invalid Long Position Logic
 
@@ -551,7 +529,6 @@ This section demonstrates common validation failures and their error messages.
 
 **Why Rejected**: Long positions profit when price increases. TP must be above entry price.
 
-**Sources**: [test/e2e/defend.test.mjs:544-641]()
 
 ---
 
@@ -563,7 +540,6 @@ The `GET_SIGNAL_FN` is called from `ClientStrategy.tick()` method during strateg
 
 ![Mermaid Diagram](./diagrams/46_Signal_Generation_and_Validation_5.svg)
 
-**Sources**: [src/client/ClientStrategy.ts:187-283](), [src/lib/services/connection/StrategyConnectionService.ts:104-121]()
 
 ---
 
@@ -584,5 +560,4 @@ Signal generation and validation in backtest-kit ensures financial safety throug
 - ✅ Fee coverage (TP distance ≥ 0.1%)
 - ✅ Loss limits (SL distance ≤ 20%)
 - ✅ Lifetime constraints (≤ 1440 minutes)
-
-**Sources**: [src/client/ClientStrategy.ts:40-283](), [src/config/params.ts:1-36](), [types.d.ts:5-34]()
+

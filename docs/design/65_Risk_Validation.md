@@ -21,7 +21,6 @@ The risk validation system provides access to:
 - Portfolio state (active position count, list of all active positions)
 - Ability to throw errors to reject signals with descriptive messages
 
-**Sources**: [src/client/ClientRisk.ts:165-217](), [src/interfaces/Risk.interface.ts:1-145]()
 
 ---
 
@@ -29,7 +28,6 @@ The risk validation system provides access to:
 
 ![Mermaid Diagram](./diagrams/65_Risk_Validation_0.svg)
 
-**Sources**: [src/client/ClientRisk.ts:165-217](), [test/spec/risk.test.mjs:41-143]()
 
 ---
 
@@ -51,7 +49,6 @@ interface IRiskCheckArgs {
 
 These fields are passed directly from `ClientStrategy` context and represent the current signal request parameters.
 
-**Sources**: [src/interfaces/Risk.interface.ts:10-21]()
 
 ### IRiskValidationPayload (Full Context)
 
@@ -69,7 +66,6 @@ The payload is constructed in `ClientRisk.checkSignal()` by augmenting `IRiskChe
 | `activePositionCount` | `number` | Number of currently open positions across all strategies sharing this risk profile |
 | `activePositions` | `IRiskActivePosition[]` | Array of all active position objects with signal details, strategy names, and timestamps |
 
-**Sources**: [src/interfaces/Risk.interface.ts:55-60](), [src/client/ClientRisk.ts:177-181]()
 
 ### IRiskActivePosition Structure
 
@@ -84,7 +80,6 @@ interface IRiskActivePosition {
 
 This allows validations to inspect individual positions, check per-strategy exposure, or implement complex portfolio logic.
 
-**Sources**: [src/interfaces/Risk.interface.ts:26-35]()
 
 ---
 
@@ -110,7 +105,6 @@ addRisk({
 });
 ```
 
-**Sources**: [src/interfaces/Risk.interface.ts:66-68](), [test/spec/risk.test.mjs:209-247]()
 
 ### Object Form (with note)
 
@@ -138,7 +132,6 @@ addRisk({
 
 The object form allows documentation of validation logic. The framework normalizes both forms internally.
 
-**Sources**: [src/interfaces/Risk.interface.ts:74-85](), [test/spec/risk.test.mjs:41-93]()
 
 ---
 
@@ -180,7 +173,6 @@ const DO_VALIDATION_FN = trycatch(
 
 This ensures that validation errors never crash the system but are properly logged and observable via `listenValidation()`.
 
-**Sources**: [src/client/ClientRisk.ts:31-46](), [src/config/emitters.ts]()
 
 ---
 
@@ -194,13 +186,11 @@ The `checkSignal` method is the core validation orchestration function in `Clien
 public checkSignal = async (params: IRiskCheckArgs): Promise<boolean>
 ```
 
-**Sources**: [src/client/ClientRisk.ts:165]()
 
 ### Execution Steps
 
 ![Mermaid Diagram](./diagrams/65_Risk_Validation_2.svg)
 
-**Sources**: [src/client/ClientRisk.ts:165-217]()
 
 ### Code Walkthrough
 
@@ -214,7 +204,6 @@ if (this._activePositions === POSITION_NEED_FETCH) {
 
 Lazy initialization loads persisted positions from disk on first use. See [Position Tracking](./66_Position_Tracking.md) for details.
 
-**Sources**: [src/client/ClientRisk.ts:171-173]()
 
 #### 2. Build Validation Payload
 
@@ -230,7 +219,6 @@ const payload: IRiskValidationPayload = {
 
 The payload combines passthrough arguments from `ClientStrategy` with current portfolio state.
 
-**Sources**: [src/client/ClientRisk.ts:175-181]()
 
 #### 3. Execute Validations
 
@@ -257,7 +245,6 @@ if (this.params.validations) {
 
 Validations execute sequentially. The loop breaks immediately on first failure (short-circuit evaluation). Both function and object forms are normalized to extract the validation function.
 
-**Sources**: [src/client/ClientRisk.ts:184-201]()
 
 #### 4. Handle Result
 
@@ -279,7 +266,6 @@ return true;
 
 Callbacks fire based on validation result. The method returns `true` for approval, `false` for rejection.
 
-**Sources**: [src/client/ClientRisk.ts:203-217]()
 
 ---
 
@@ -302,7 +288,6 @@ addRisk({
 
 Most common pattern. Prevents excessive portfolio exposure by limiting total open positions.
 
-**Sources**: [test/spec/risk.test.mjs:41-93]()
 
 ### Pattern 2: Symbol Filtering
 
@@ -321,7 +306,6 @@ addRisk({
 
 Reject signals for specific trading pairs based on symbol name.
 
-**Sources**: [test/spec/risk.test.mjs:291-344]()
 
 ### Pattern 3: Per-Strategy Position Tracking
 
@@ -344,7 +328,6 @@ addRisk({
 
 Limit positions per individual strategy using the `activePositions` array.
 
-**Sources**: [src/interfaces/Risk.interface.ts:55-60]()
 
 ### Pattern 4: Time-Based Filtering
 
@@ -364,7 +347,6 @@ addRisk({
 
 Use the `timestamp` field to implement time-of-day restrictions.
 
-**Sources**: [src/interfaces/Risk.interface.ts:10-21]()
 
 ---
 
@@ -383,7 +365,6 @@ Risk validation requests flow through multiple service layers before reaching `C
 | `RiskConnectionService` | [src/lib/services/connection/RiskConnectionService.ts:41-135]() | Memoized `ClientRisk` instances |
 | `ClientRisk` | [src/client/ClientRisk.ts:73-218]() | Validation execution, position tracking |
 
-**Sources**: [src/lib/services/global/RiskGlobalService.ts:15-114](), [src/lib/services/connection/RiskConnectionService.ts:41-135]()
 
 ---
 
@@ -405,7 +386,6 @@ Fires when any validation throws an error. Receives:
 
 **Use case**: Log rejected signals, track rejection reasons, send alerts.
 
-**Sources**: [src/interfaces/Risk.interface.ts:43-46]()
 
 ### onAllowed Callback
 
@@ -419,7 +399,6 @@ Fires when all validations pass. Receives same parameters as `onRejected`.
 
 **Use case**: Track approved signals, monitor validation pass rate, log portfolio changes.
 
-**Sources**: [src/interfaces/Risk.interface.ts:48]()
 
 ### Example Usage
 
@@ -444,7 +423,6 @@ addRisk({
 });
 ```
 
-**Sources**: [test/spec/risk.test.mjs:58-63](), [test/spec/risk.test.mjs:304-308]()
 
 ---
 
@@ -475,7 +453,6 @@ const unsubscribe = listenValidation((error) => {
 
 The `listenValidation` function subscribes to the `validationSubject` emitter, receiving all validation errors across all risk profiles.
 
-**Sources**: [src/client/ClientRisk.ts:39-44](), [src/config/emitters.ts]()
 
 ---
 
@@ -539,7 +516,6 @@ test("Risk validation rejects when limit exceeded", async ({ pass, fail }) => {
 });
 ```
 
-**Sources**: [test/spec/risk.test.mjs:41-93]()
 
 ---
 
@@ -605,5 +581,4 @@ addStrategy({
   riskName: "aggressive" 
 });
 ```
-
-**Sources**: [test/spec/risk.test.mjs:374-437]()
+

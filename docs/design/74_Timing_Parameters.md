@@ -24,7 +24,6 @@ These parameters affect:
 - **Signal Validation**: Rejection of signals with excessive estimated time
 - **Price Monitoring**: Window size for VWAP-based average price calculation
 
-**Sources**: [src/config/params.ts:1-36]()
 
 ---
 
@@ -57,13 +56,11 @@ The parameter is consumed in two locations within `ClientStrategy`:
    }
    ```
 
-**Sources**: [src/client/ClientStrategy.ts:332-386](), [src/client/ClientStrategy.ts:1048-1134]()
 
 ### Timeout Behavior Flow
 
 ![Mermaid Diagram](./diagrams/74_Timing_Parameters_0.svg)
 
-**Sources**: [src/client/ClientStrategy.ts:332-386](), [src/client/ClientStrategy.ts:1048-1134]()
 
 ### Cancellation vs Activation Priority
 
@@ -71,7 +68,6 @@ When a scheduled signal's timeout period is reached, cancellation takes preceden
 
 **Example**: If `CC_SCHEDULE_AWAIT_MINUTES=120` and a scheduled signal has been waiting for 120 minutes, it will be cancelled even if the current candle's price briefly touched `priceOpen`. This prevents ambiguous state where both activation and timeout conditions are met simultaneously.
 
-**Sources**: [src/client/ClientStrategy.ts:1066-1077]()
 
 ### Test Validation
 
@@ -85,7 +81,6 @@ The framework includes boundary condition tests that verify exact timeout behavi
 
 The test creates a 121-minute backtest frame where scheduled signal never activates, confirming cancellation occurs precisely at the 120-minute mark.
 
-**Sources**: [test/e2e/defend.test.mjs:444-536]()
 
 ---
 
@@ -105,7 +100,6 @@ The parameter is enforced during signal validation within `VALIDATE_SIGNAL_FN`:
 
 ![Mermaid Diagram](./diagrams/74_Timing_Parameters_1.svg)
 
-**Sources**: [src/client/ClientStrategy.ts:160-171]()
 
 ### Code Implementation
 
@@ -126,7 +120,6 @@ if (GLOBAL_CONFIG.CC_MAX_SIGNAL_LIFETIME_MINUTES &&
 }
 ```
 
-**Sources**: [src/client/ClientStrategy.ts:160-171]()
 
 ### Impact on Risk Management
 
@@ -142,7 +135,6 @@ Signals with excessive lifetimes create cascading problems:
 - Signals 2-3: Normal 60-minute signals - fill remaining slots
 - Result: Strategy cannot generate new signals for 34+ days even if market conditions are favorable
 
-**Sources**: [src/client/ClientStrategy.ts:160-171]()
 
 ### Test Coverage
 
@@ -154,7 +146,6 @@ The sanitize test suite validates rejection of excessive lifetimes:
 // Verifies strategy deadlock prevention
 ```
 
-**Sources**: [test/e2e/sanitize.test.mjs:250-348]()
 
 ---
 
@@ -174,7 +165,6 @@ The `GET_AVG_PRICE_FN` function computes VWAP using the most recent N candles:
 
 ![Mermaid Diagram](./diagrams/74_Timing_Parameters_2.svg)
 
-**Sources**: [src/client/ClientStrategy.ts:285-296]()
 
 ### Code Implementation
 
@@ -197,7 +187,6 @@ const GET_AVG_PRICE_FN = (candles: ICandleData[]): number => {
 
 **Note**: The fallback to simple average (when `totalVolume === 0`) ensures the function never returns NaN, but this should rarely occur with real market data.
 
-**Sources**: [src/client/ClientStrategy.ts:285-296]()
 
 ### Usage in Backtest Mode
 
@@ -216,7 +205,6 @@ for (let i = candlesCount - 1; i < candles.length; i++) {
 
 This ensures that TP/SL checks are performed using the same VWAP window as live mode, maintaining consistency between backtesting and live execution.
 
-**Sources**: [src/client/ClientStrategy.ts:1136-1196]()
 
 ### Usage in Live Mode
 
@@ -231,7 +219,6 @@ const currentPrice = await self.params.exchange.getAveragePrice(
 
 The exchange connection service handles fetching the exact number of candles specified by `CC_AVG_PRICE_CANDLES_COUNT`.
 
-**Sources**: [src/client/ClientStrategy.ts:209-211]()
 
 ### Window Size Trade-offs
 
@@ -243,7 +230,6 @@ The exchange connection service handles fetching the exact number of candles spe
 
 **Important**: The window size interacts with signal interval. A 5-candle window on 1m intervals = 5 minutes of data, but on 5m intervals = 25 minutes of data.
 
-**Sources**: [src/config/params.ts:8-11]()
 
 ---
 
@@ -275,7 +261,6 @@ setConfig({
 });
 ```
 
-**Sources**: [test/config/setup.mjs:36-41]()
 
 ---
 
@@ -304,7 +289,6 @@ addFrame({
 
 Otherwise, scheduled signals will always timeout before the frame ends.
 
-**Sources**: [test/e2e/defend.test.mjs:496-500]()
 
 ### VWAP Window and Data Availability
 
@@ -318,7 +302,6 @@ for (let i = candlesCount - 1; i < candles.length; i++) {
 
 This ensures VWAP is always calculated from the full window.
 
-**Sources**: [src/client/ClientStrategy.ts:1143]()
 
 ---
 
@@ -367,7 +350,6 @@ setConfig({
 
 ![Mermaid Diagram](./diagrams/74_Timing_Parameters_3.svg)
 
-**Sources**: [src/client/ClientStrategy.ts:40-185](), [src/client/ClientStrategy.ts:332-386](), [src/client/ClientStrategy.ts:285-296]()
 
 ---
 

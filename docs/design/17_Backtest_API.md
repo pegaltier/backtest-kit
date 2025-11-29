@@ -13,7 +13,6 @@ The `Backtest` class is a singleton utility that provides simplified access to b
 
 ![Mermaid Diagram](./diagrams/17_Backtest_API_0.svg)
 
-**Sources**: [src/classes/Backtest.ts:1-208](), [src/lib/services/markdown/BacktestMarkdownService.ts:1-533]()
 
 ## Backtest Class Methods
 
@@ -27,7 +26,6 @@ The `Backtest` class exposes five public methods organized into two categories: 
 | `getReport(strategyName)` | `Promise<string>` | Generate markdown report with all signals |
 | `dump(strategyName, path?)` | `Promise<void>` | Save markdown report to disk |
 
-**Sources**: [src/classes/Backtest.ts:30-187](), [docs/classes/BacktestUtils.md:1-63]()
 
 ### Backtest.run()
 
@@ -69,7 +67,6 @@ interface IStrategyTickResultClosed {
 }
 ```
 
-**Sources**: [src/classes/Backtest.ts:38-66](), [README.md:339-369]()
 
 ### Backtest.background()
 
@@ -103,7 +100,6 @@ await doneBacktestSubject.next({
 
 **Error Handling**: Errors during background execution are caught and emitted to `errorEmitter` [src/classes/Backtest.ts:115-117]().
 
-**Sources**: [src/classes/Backtest.ts:89-122](), [src/config/emitters.ts:40-49]()
 
 ### Backtest.getData()
 
@@ -134,7 +130,6 @@ interface BacktestStatistics {
 
 **Safe Math**: All numeric metrics return `null` if calculation produces `NaN` or `Infinity` [src/lib/services/markdown/BacktestMarkdownService.ts:33-44]().
 
-**Sources**: [src/classes/Backtest.ts:136-141](), [src/lib/services/markdown/BacktestMarkdownService.ts:66-102]()
 
 ### Backtest.getReport()
 
@@ -155,7 +150,6 @@ public getReport = async (strategyName: StrategyName) => Promise<string>
 
 **Empty State**: Returns message "No signals closed yet" if no data [src/lib/services/markdown/BacktestMarkdownService.ts:282-286]().
 
-**Sources**: [src/classes/Backtest.ts:155-160](), [src/lib/services/markdown/BacktestMarkdownService.ts:278-314]()
 
 ### Backtest.dump()
 
@@ -175,7 +169,6 @@ public dump = async (
 
 **Default Path**: If `path` parameter is omitted, reports are saved to `./logs/backtest/` directory [src/lib/services/markdown/BacktestMarkdownService.ts:324]().
 
-**Sources**: [src/classes/Backtest.ts:177-186](), [src/lib/services/markdown/BacktestMarkdownService.ts:322-340]()
 
 ## Statistics Calculation Details
 
@@ -185,7 +178,6 @@ The `BacktestMarkdownService` calculates statistics using the `ReportStorage` cl
 
 ![Mermaid Diagram](./diagrams/17_Backtest_API_1.svg)
 
-**Sources**: [src/lib/services/markdown/BacktestMarkdownService.ts:183-270]()
 
 ### Metric Calculations
 
@@ -212,7 +204,6 @@ The following formulas are used for statistical calculations:
 - `tradesPerYear = 365 / avgDurationDays`
 - `expectedYearlyReturns = avgPnl × tradesPerYear`
 
-**Sources**: [src/lib/services/markdown/BacktestMarkdownService.ts:224-254]()
 
 ## Execution Flow Comparison
 
@@ -222,7 +213,6 @@ The following diagram contrasts the execution patterns of `run()` and `backgroun
 
 ![Mermaid Diagram](./diagrams/17_Backtest_API_2.svg)
 
-**Sources**: [src/classes/Backtest.ts:38-122]()
 
 ## State Management
 
@@ -250,7 +240,6 @@ const { riskName } = backtest.strategySchemaService.get(context.strategyName);
 riskName && backtest.riskGlobalService.clear(riskName);
 ```
 
-**Sources**: [src/classes/Backtest.ts:51-63]()
 
 ## Event Integration
 
@@ -266,7 +255,6 @@ The Backtest API integrates with the event system through multiple emitters:
 - `doneBacktestSubject` - Backtest completion events
 - `progressEmitter` - Progress updates during execution
 
-**Sources**: [src/config/emitters.ts:1-80](), [src/classes/Backtest.ts:108-122]()
 
 ## Usage Examples
 
@@ -352,7 +340,6 @@ console.log("Portfolio metrics:", {
 });
 ```
 
-**Sources**: [README.md:339-369](), [src/classes/Backtest.ts:1-208]()
 
 ## Related APIs
 
@@ -361,5 +348,4 @@ For scheduled signals tracking, use the `Schedule` utility class documented in [
 For live trading execution, see [Live Trading API](./18_Live_Trading_API.md). The Live API provides crash-safe persistence and real-time monitoring with a similar interface pattern.
 
 For comparing multiple strategies in parallel, see [Walker API](./19_Walker_API.md). The Walker API internally uses `Backtest.run()` to execute each strategy and rank results by selected metrics.
-
-**Sources**: [src/classes/Schedule.ts:1-135](), [src/classes/Live.ts:1-220](), [src/classes/Walker.ts:1-274]()
+
