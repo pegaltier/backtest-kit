@@ -959,3 +959,171 @@ test("SANITIZE: Basic trading works - system can open and close positions", asyn
 
   pass(`SYSTEM WORKS: Basic trading successful! Signal: scheduled -> opened -> closed by TP. PNL: ${finalResult.pnl.pnlPercentage.toFixed(2)}% (expected ~${expectedPnl.toFixed(2)}%)`);
 });
+
+
+/**
+ * БАЗОВЫЙ ТЕСТ #9: SHORT позиция работает - открывает и закрывает позиции
+ *
+ * Проблема:
+ * - Тест #8 проверяет LONG, но нужно убедиться что SHORT тоже работает
+ * - SHORT имеет обратную логику: ждем РОСТА цены до priceOpen
+ *
+ * Защита: Базовая функциональность SHORT
+ * - Сигнал создается (scheduled)
+ * - Сигнал активируется (opened) когда цена РАСТЕТ до priceOpen
+ * - Сигнал закрывается (closed) когда цена ПАДАЕТ до TP
+ * - PNL положительный (прибыль)
+ */
+test("SANITIZE: Basic SHORT trading works - system can open and close SHORT positions", async ({ pass, fail }) => {
+
+  let scheduledResult = null;
+  let openedResult = null;
+  let closedResult = null;
+
+  addExchange({
+    exchangeName: "binance-sanitize-basic-short",
+    getCandles: async (_symbol, _interval, since, limit) => {
+      const candles = [];
+      const intervalMs = 60000;
+
+      for (let i = 0; i < limit; i++) {
+        const timestamp = since.getTime() + i * intervalMs;
+
+        if (i < 5) {
+          // Фаза 1: Ждем активации (цена НИЖЕ priceOpen)
+          // ВАЖНО: high должен быть НИЖЕ StopLoss=43000!
+          candles.push({
+            timestamp,
+            open: 41000,
+            high: 41100,  // Ниже SL=43000, ниже priceOpen=42000
+            low: 40900,
+            close: 41000,
+            volume: 100,
+          });
+        } else if (i >= 5 && i < 10) {
+          // Фаза 2: Активация (цена РАСТЕТ до priceOpen)
+          // high=42100 >= priceOpen=42000 → активация!
+          candles.push({
+            timestamp,
+            open: 42000,
+            high: 42100,  // Выше priceOpen=42000, но ниже SL=43000
+            low: 41900,
+            close: 42000,
+            volume: 100,
+          });
+        } else {
+          // Фаза 3: Закрытие (цена ПАДАЕТ до TP)
+          // low=40900 <= TP=41000 → закрытие по TP!
+          candles.push({
+            timestamp,
+            open: 41000,
+            high: 41100,
+            low: 40900,
+            close: 41000,
+            volume: 100,
+          });
+        }
+      }
+
+      return candles;
+    },
+    formatPrice: async (_symbol, price) => price.toFixed(8),
+    formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
+  });
+
+  let signalGenerated = false;
+
+  addStrategy({
+    strategyName: "test-sanitize-basic-short",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+
+      return {
+        position: "short",
+        note: "SANITIZE: basic SHORT trading test",
+        priceOpen: 42000,
+        priceTakeProfit: 41000,  // SHORT: TP ниже priceOpen
+        priceStopLoss: 43000,    // SHORT: SL выше priceOpen
+        minuteEstimatedTime: 60,
+      };
+    },
+    callbacks: {
+      onSchedule: (_symbol, data) => {
+        scheduledResult = data;
+      },
+      onOpen: (_symbol, data) => {
+        openedResult = data;
+      },
+      onClose: (_symbol, data, priceClose) => {
+        closedResult = { signal: data, priceClose };
+      },
+    },
+  });
+
+  addFrame({
+    frameName: "30m-sanitize-basic-short",
+    interval: "1m",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-01T00:30:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+
+  let finalResult = null;
+  listenSignalBacktest((result) => {
+    if (result.action === "closed") {
+      finalResult = result;
+    }
+  });
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-sanitize-basic-short",
+    exchangeName: "binance-sanitize-basic-short",
+    frameName: "30m-sanitize-basic-short",
+  });
+
+  await awaitSubject.toPromise();
+  await sleep(1000);
+
+  // КРИТИЧЕСКАЯ ПРОВЕРКА #1: Сигнал должен быть создан (scheduled)
+  if (!scheduledResult) {
+    fail("SYSTEM BROKEN: SHORT signal was NOT scheduled! Basic SHORT trading functionality broken!");
+    return;
+  }
+
+  // КРИТИЧЕСКАЯ ПРОВЕРКА #2: Сигнал должен быть открыт (opened)
+  if (!openedResult) {
+    fail("SYSTEM BROKEN: SHORT signal was NOT opened! Price reached priceOpen=42000 but signal didn't activate!");
+    return;
+  }
+
+  // КРИТИЧЕСКАЯ ПРОВЕРКА #3: Сигнал должен быть закрыт (closed)
+  if (!closedResult || !finalResult) {
+    fail("SYSTEM BROKEN: SHORT signal was NOT closed! Price reached TP=41000 but signal didn't close!");
+    return;
+  }
+
+  // КРИТИЧЕСКАЯ ПРОВЕРКА #4: Закрытие должно быть по TP (не по SL)
+  if (finalResult.closeReason !== "take_profit") {
+    fail(`LOGIC BUG: Expected close by "take_profit", got "${finalResult.closeReason}". Price reached TP=41000!`);
+    return;
+  }
+
+  // КРИТИЧЕСКАЯ ПРОВЕРКА #5: PNL должен быть положительный (прибыль)
+  if (finalResult.pnl.pnlPercentage <= 0) {
+    fail(`LOGIC BUG: Expected positive PNL (profit from TP), got ${finalResult.pnl.pnlPercentage.toFixed(2)}%`);
+    return;
+  }
+
+  // КРИТИЧЕСКАЯ ПРОВЕРКА #6: PNL должен быть разумным (~2.38% для priceOpen=42000, TP=41000)
+  const expectedPnl = ((42000 - 41000) / 42000) * 100; // ~2.38%
+  if (Math.abs(finalResult.pnl.pnlPercentage - expectedPnl) > 0.5) {
+    fail(`LOGIC BUG: PNL mismatch! Expected ~${expectedPnl.toFixed(2)}%, got ${finalResult.pnl.pnlPercentage.toFixed(2)}%`);
+    return;
+  }
+
+  pass(`SYSTEM WORKS: SHORT trading successful! Signal: scheduled → opened → closed by TP. PNL: ${finalResult.pnl.pnlPercentage.toFixed(2)}% (expected ~${expectedPnl.toFixed(2)}%)`);
+});
