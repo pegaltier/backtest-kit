@@ -6,92 +6,81 @@ group: design
 # Overview
 
 
-## Purpose and Scope
+**backtest-kit** is a production-ready TypeScript framework for backtesting and live trading algorithmic strategies. It provides crash-safe state persistence, comprehensive signal validation, memory-optimized async generators, and enterprise-grade reporting capabilities.
 
-This document provides a high-level introduction to **backtest-kit**, a production-ready TypeScript framework for backtesting and live trading of algorithmic trading strategies. The framework is designed with clean architecture principles, crash-safe persistence, memory-efficient async generators, and comprehensive signal validation.
+## Core Capabilities
 
-This page covers:
-- The framework's architectural design and four-layer structure
-- Execution modes (backtest vs live trading)
-- Key components and their responsibilities
-- Signal lifecycle and data flow
-- Technology dependencies
+The framework enables:
 
-For detailed information about specific subsystems, refer to:
-- Configuration and registration: [Configuration Functions](09_Configuration_Functions.md)
-- Backtest execution details: [Backtesting](28_Backtesting.md)
-- Live trading implementation: [Live Trading](32_Live_Trading.md)
-- Signal state management: [Signal Lifecycle](23_Signal_Lifecycle.md)
-- Service layer architecture: [Service Layer](18_Service_Layer.md)
+1. **Historical Backtesting** - Memory-efficient streaming execution against historical candle data via `Backtest.run()` and `Backtest.background()`
+2. **Live Trading** - Real-time strategy execution with atomic persistence and crash recovery via `Live.run()` and `Live.background()`
+3. **Signal Validation** - Automatic validation of TP/SL logic, price relationships, and timestamp constraints in [src/client/ClientStrategy.ts]()
+4. **Strategy Comparison** - Multi-strategy A/B testing with metric-based ranking via `Walker.run()` and `Walker.background()`
+5. **Portfolio Analytics** - Multi-symbol performance tracking with extended metrics via `Heat.getData()`
+6. **Risk Management** - Portfolio-level risk controls with custom validation logic via `addRisk()`
+7. **Position Sizing** - Built-in sizing methods (Fixed %, Kelly Criterion, ATR-based) via `PositionSize` class
+8. **Scheduled Signals** - Limit order tracking with cancellation rate analytics via `Schedule.getData()`
+9. **Pluggable Integration** - Custom exchange data sources and persistence backends via schema registration
 
----
-
-## Framework Purpose
-
-The **backtest-kit** framework enables users to:
-
-1. **Backtest trading strategies** - Test algorithms against historical candle data with memory-efficient streaming
-2. **Deploy live trading** - Run strategies in production with crash recovery and atomic persistence
-3. **Validate signals** - Automatically validate signal parameters (prices, TP/SL logic, timestamps)
-4. **Monitor performance** - Generate markdown reports with statistics (win rate, PnL, close reasons)
-5. **Integrate data sources** - Connect custom exchanges via pluggable schema registration
-
-The framework enforces separation of concerns through dependency injection, enabling testable business logic without tight coupling to infrastructure services.
 
 ---
 
-## Four-Layer Architecture
+## System Architecture
 
-The framework follows a clean architecture pattern with four distinct layers:
+The framework implements a six-layer clean architecture with dependency injection:
+
+### High-Level System Diagram
 
 ![Mermaid Diagram](./diagrams/01_Overview_0.svg)
 
 ### Layer Responsibilities
 
-| Layer | Purpose | Components | Key Files |
-|-------|---------|------------|-----------|
-| **Public API** | User-facing functions and utilities | `Backtest`, `Live`, `addStrategy`, `getCandles` | [src/index.ts:1-56]() |
-| **Service Orchestration** | Dependency injection, routing, context management | Schema/Connection/Global/Logic services | [src/lib/services/*]() |
-| **Business Logic** | Pure, testable domain logic | `ClientStrategy`, `ClientExchange`, `ClientFrame` | [src/client/*]() |
-| **Cross-Cutting** | Logging, persistence, reporting, context | `LoggerService`, `PersistSignalAdapter`, Markdown services | [src/lib/services/base](), [src/classes/Persist.ts]() |
+| Layer | Purpose | Key Components | Location |
+|-------|---------|----------------|----------|
+| **User Interface** | Public API exports and utility classes | `Backtest`, `Live`, `Walker`, `Heat`, `Schedule`, `PositionSize` | [src/classes/](), [src/function/]() |
+| **Registry & Validation** | Schema storage and validation logic | `*SchemaService`, `*ValidationService` | [src/lib/services/schema/](), [src/lib/services/validation/]() |
+| **Execution Engine** | Core orchestration and business logic | `*LogicPrivateService`, `*GlobalService`, `*ConnectionService`, `Client*` classes | [src/lib/services/logic/](), [src/lib/services/global/](), [src/lib/services/connection/](), [src/client/]() |
+| **State Management** | Crash-safe persistence and configuration | `PersistSignalAdapter`, `PersistRiskAdapter`, `GLOBAL_CONFIG` | [src/classes/Persist.ts](), [src/config/params.ts]() |
+| **Event System** | Pub-sub for observability | `signalEmitter`, `doneEmitter`, `errorEmitter`, `progressEmitter` | [src/config/emitters.ts]() |
+| **Reporting & Analytics** | Performance metrics and markdown generation | `BacktestMarkdownService`, `LiveMarkdownService`, etc. | [src/lib/services/markdown/]() |
 
-For detailed layer responsibilities, see [Layer Responsibilities](05_Layer_Responsibilities.md).
 
 ---
 
 ## Execution Modes
 
-The framework supports two execution modes with different characteristics:
+The framework provides three primary execution modes with distinct characteristics:
+
+### Execution Mode Comparison
 
 ![Mermaid Diagram](./diagrams/01_Overview_1.svg)
 
-### Backtest Mode
+| Mode | Entry Point | Execution Pattern | Output | Use Case |
+|------|-------------|-------------------|--------|----------|
+| **Backtest** | `Backtest.run(symbol, {strategyName, exchangeName, frameName})` | Finite loop over historical timeframes | `IStrategyTickResultClosed` only | Strategy validation with historical data |
+| **Live** | `Live.run(symbol, {strategyName, exchangeName})` | Infinite loop with 1-minute intervals | `IStrategyTickResult` (idle/opened/active/closed) | Real-time trading with crash recovery |
+| **Walker** | `Walker.run(symbol, {walkerName})` | Iterates strategies, runs Backtest for each | `IWalkerResults` with ranked strategies | A/B testing and strategy selection |
 
-- **Entry Point:** `Backtest.run(symbol, {strategyName, exchangeName, frameName})`
-- **Execution:** Iterates through historical timeframes generated by `ClientFrame`
-- **Fast-Forward:** Uses `backtest()` method to simulate signal outcomes with future candles
-- **Memory:** Streams results via async generator, no accumulation
-- **Output:** Only yields `IStrategyTickResultClosed` (completed signals)
+### Key Differences
 
-**Key Classes:**
-- [BacktestLogicPrivateService]() - Orchestrates timeframe iteration
-- [FrameGlobalService]() - Generates timestamp arrays
-- [ClientFrame]() - Timeframe generation logic
-- [BacktestMarkdownService]() - Accumulates results for reporting
+**Backtest Mode:**
+- Uses `ClientStrategy.backtest(candles)` for fast-forward simulation
+- Generates timeframes via `ClientFrame.getTimeframe()` based on `IFrameSchema`
+- No persistence required (stateless)
+- Memory-efficient streaming via async generators
 
-### Live Mode
+**Live Mode:**
+- Uses only `ClientStrategy.tick()` with real-time VWAP from `ClientExchange.getAveragePrice()`
+- Atomic persistence via `PersistSignalAdapter.writeValue()` at state transitions
+- Crash recovery via `waitForInit()` pattern in [src/client/ClientStrategy.ts]()
+- Interval throttling via `_lastSignalTimestamp` checks
 
-- **Entry Point:** `Live.run(symbol, {strategyName, exchangeName})`
-- **Execution:** Infinite loop with 1-minute intervals
-- **Real-Time:** Monitors signals against VWAP from last 5 candles
-- **Persistence:** Atomic writes to disk before state changes
-- **Recovery:** Resumes from last persisted state on crash/restart
-- **Output:** Yields `IStrategyTickResult` (idle/opened/active/closed)
+**Walker Mode:**
+- Orchestrates multiple `Backtest.run()` executions
+- Compares strategies using configurable metrics: `sharpeRatio`, `winRate`, `avgPnl`, `totalPnl`, `certaintyRatio`, `expectedYearlyReturns`
+- Emits progress events via `progressEmitter` in [src/config/emitters.ts]()
+- Generates comparison reports via `WalkerMarkdownService`
 
-**Key Classes:**
-- [LiveLogicPrivateService]() - Orchestrates infinite loop
-- [PersistSignalAdapter]() - Crash-safe persistence
-- [LiveMarkdownService]() - Accumulates events for reporting
 
 ---
 
@@ -109,6 +98,7 @@ The client layer contains pure business logic without dependency injection:
 | `ClientExchange` | Candle data fetching, VWAP calculation | `getCandles()`, `getAveragePrice()` |
 | `ClientFrame` | Timeframe generation for backtesting | `getTimeframe()` |
 | `PersistSignalAdapter` | Crash-safe signal persistence | `write()`, `read()` |
+
 
 ### Service Orchestration Layer
 
@@ -134,37 +124,51 @@ The service layer handles dependency injection and routing:
    - `BacktestLogicPrivateService`, `LiveLogicPrivateService`
    - Implement async generator loops
 
-For detailed service layer documentation, see [Service Layer](18_Service_Layer.md).
+
+For detailed service layer documentation, see [Service Layer](./36_Service_Layer.md).
 
 ---
 
 ## Signal Lifecycle
 
-Signals transition through four states in a type-safe discriminated union:
+Signals transition through six states in a type-safe discriminated union:
+
+### Signal State Machine
 
 ![Mermaid Diagram](./diagrams/01_Overview_4.svg)
 
-### Signal Types
+### Signal Type Hierarchy
+
+The framework defines signal states as a discriminated union in [types.d.ts:654-770]():
 
 ```typescript
-// Discriminated union - type-safe state handling
 type IStrategyTickResult = 
-  | IStrategyTickResultIdle      // action: "idle"
-  | IStrategyTickResultOpened    // action: "opened"
-  | IStrategyTickResultActive    // action: "active"
-  | IStrategyTickResultClosed    // action: "closed"
+  | IStrategyTickResultIdle         // action: "idle"
+  | IStrategyTickResultScheduled    // action: "scheduled" (new in v1.x)
+  | IStrategyTickResultOpened       // action: "opened"
+  | IStrategyTickResultActive       // action: "active"
+  | IStrategyTickResultClosed       // action: "closed"
+  | IStrategyTickResultCancelled    // action: "cancelled" (new in v1.x)
 ```
 
-**Key Interfaces:**
+| State | When Yielded | Key Properties | Lifecycle Callbacks |
+|-------|--------------|----------------|---------------------|
+| `idle` | Live: always when no signal, Backtest: never | `signal: null`, `currentPrice` | `onIdle()` |
+| `scheduled` | Both: when `priceOpen` specified in `ISignalDto` | `signal: IScheduledSignalRow`, `currentPrice` | `onSchedule()` |
+| `opened` | Both: when position activated | `signal: ISignalRow`, `currentPrice` | `onOpen()` |
+| `active` | Live: every tick while monitoring, Backtest: never | `signal: ISignalRow`, `currentPrice` | `onActive()` |
+| `closed` | Both: when TP/SL/time triggered | `pnl: IStrategyPnL`, `closeReason`, `closeTimestamp` | `onClose()` |
+| `cancelled` | Both: when scheduled signal times out or SL hit before entry | `signal: IScheduledSignalRow`, `closeTimestamp` | `onCancel()` |
 
-| State | Interface | Properties | When Yielded |
-|-------|-----------|------------|--------------|
-| Idle | `IStrategyTickResultIdle` | `signal: null` | Backtest: never, Live: yes |
-| Opened | `IStrategyTickResultOpened` | `signal: ISignalRow` | Both modes |
-| Active | `IStrategyTickResultActive` | `signal, currentPrice` | Backtest: never, Live: no |
-| Closed | `IStrategyTickResultClosed` | `signal, pnl, closeReason` | Both modes |
+### Scheduled Signal Behavior
 
-For complete signal lifecycle details, see [Signal Lifecycle](23_Signal_Lifecycle.md).
+When `getSignal()` returns `ISignalDto` with `priceOpen` specified:
+1. Signal enters `scheduled` state with `_isScheduled: true` flag
+2. Framework monitors `currentPrice` against `priceOpen` each tick
+3. **Activation:** If price reaches `priceOpen`, signal transitions to `opened`
+4. **Cancellation:** If timeout (`CC_SCHEDULE_AWAIT_MINUTES`) or `priceStopLoss` hit first, signal transitions to `cancelled`
+5. **Tracking:** Schedule statistics available via `Schedule.getData()` in [src/classes/Schedule.ts]()
+
 
 ---
 
@@ -188,7 +192,8 @@ The framework uses a registration-then-execution pattern:
 - **Routing:** `MethodContextService` provides schema names for lookup
 - **Flexibility:** Multiple strategies/exchanges can coexist
 
-For configuration details, see [Configuration Functions](09_Configuration_Functions.md).
+
+For configuration details, see [Configuration Functions](./15_Configuration_Functions.md).
 
 ---
 
@@ -211,7 +216,7 @@ The framework uses **di-scoped** for implicit context passing:
 - Scoped to async execution boundaries
 
 
-For DI system details, see [Dependency Injection System](06_Dependency_Injection_System.md).
+For DI system details, see [Dependency Injection System](./11_Dependency_Injection_System.md).
 
 ---
 
@@ -297,7 +302,7 @@ Signals are validated automatically in `ClientStrategy`:
 **Persistence Location:** [src/classes/Persist.ts]()
 
 
-For error handling patterns, see [Error Handling](41_Error_Handling.md).
+For error handling patterns, see [Error Handling](./77_Error_Handling.md).
 
 ---
 
@@ -305,9 +310,9 @@ For error handling patterns, see [Error Handling](41_Error_Handling.md).
 
 To use the framework:
 
-1. **Installation:** `npm install backtest-kit` - see [Installation and Setup](03_Installation_and_Setup.md)
-2. **Configuration:** Register schemas with `addStrategy()`, `addExchange()`, `addFrame()` - see [Configuration Functions](09_Configuration_Functions.md)
-3. **Backtesting:** Use `Backtest.run()` for historical testing - see [Backtest API](10_Backtest_API.md)
-4. **Live Trading:** Use `Live.run()` for production deployment - see [Live Trading API](11_Live_Trading_API.md)
-5. **Reporting:** Generate markdown reports with `getReport()` and `dump()` - see [Reporting and Analytics](36_Reporting_and_Analytics.md)
+1. **Installation:** `npm install backtest-kit` - see [Installation and Setup](./03_Installation_and_Setup.md)
+2. **Configuration:** Register schemas with `addStrategy()`, `addExchange()`, `addFrame()` - see [Configuration Functions](./15_Configuration_Functions.md)
+3. **Backtesting:** Use `Backtest.run()` for historical testing - see [Backtest API](./17_Backtest_API.md)
+4. **Live Trading:** Use `Live.run()` for production deployment - see [Live Trading API](./18_Live_Trading_API.md)
+5. **Reporting:** Generate markdown reports with `getReport()` and `dump()` - see [Reporting and Analytics](./67_Reporting_and_Analytics.md)
 

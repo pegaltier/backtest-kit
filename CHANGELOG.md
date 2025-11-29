@@ -1,3 +1,29 @@
+# Scheduled (Limit) Orders (v1.2.1, 29/11/2025)
+
+> Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/1.2.1)
+
+**Scheduled Positions with SL Protection** 🚀✨
+
+Now LONG orders activate only when the candle’s low touches or breaks below `priceOpen`, while SHORT orders trigger when the high reaches or exceeds `priceOpen`. Most importantly — StopLoss is checked first on every candle: if a single candle hits both `priceOpen` and `priceStopLoss` at the same time, the signal is instantly cancelled and the position is never opened, protecting you from instant losses even in the wildest volatility spikes. 🛡️⚡ All edge cases are thoroughly tested and documented.
+
+```ts
+// Example: LONG scheduled position
+{
+  position: "long",
+  priceOpen: 42000,
+  priceStopLoss: 41000,
+  priceTakeProfit: 45000
+}
+
+// Candle that would previously cause trouble:
+{ low: 40500, high: 43000 }  // ← hits both levels!
+
+→ Result: instantly CANCELLED (position never opens)
+```
+
+
+
+
 # Backtest & Live Trading (v1.1.1, 22/11/2025)
 
 > Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/1.1.1)
@@ -93,3 +119,6 @@ listenError((error) => {
   console.error("Error:", error.message);
 });
 ```
+
+
+

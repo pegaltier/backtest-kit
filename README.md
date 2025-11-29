@@ -1,3 +1,5 @@
+<img src="./assets/triangle.svg" height="105px" align="right">
+
 # 🧿 Backtest Kit
 
 > **A production-ready TypeScript framework for backtesting and live trading strategies with crash-safe state persistence, signal validation, and memory-optimized architecture.**
