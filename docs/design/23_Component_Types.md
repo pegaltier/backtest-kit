@@ -1,3 +1,8 @@
+---
+title: design/23_component_types
+group: design
+---
+
 # Component Types
 
 

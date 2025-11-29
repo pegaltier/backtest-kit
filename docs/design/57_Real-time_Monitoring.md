@@ -1,3 +1,8 @@
+---
+title: design/57_real-time_monitoring
+group: design
+---
+
 # Real-time Monitoring
 
 

@@ -1,3 +1,8 @@
+---
+title: design/12_context_propagation
+group: design
+---
+
 # Context Propagation
 
 

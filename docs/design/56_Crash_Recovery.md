@@ -1,3 +1,8 @@
+---
+title: design/56_crash_recovery
+group: design
+---
+
 # Crash Recovery
 
 

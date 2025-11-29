@@ -1,3 +1,8 @@
+---
+title: design/74_timing_parameters
+group: design
+---
+
 # Timing Parameters
 
 

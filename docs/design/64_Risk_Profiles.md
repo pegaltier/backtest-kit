@@ -1,3 +1,8 @@
+---
+title: design/64_risk_profiles
+group: design
+---
+
 # Risk Profiles
 
 

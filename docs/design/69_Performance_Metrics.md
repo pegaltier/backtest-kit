@@ -1,3 +1,8 @@
+---
+title: design/69_performance_metrics
+group: design
+---
+
 # Performance Metrics
 
 

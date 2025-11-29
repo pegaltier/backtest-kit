@@ -1,3 +1,8 @@
+---
+title: design/67_reporting_and_analytics
+group: design
+---
+
 # Reporting and Analytics
 
 

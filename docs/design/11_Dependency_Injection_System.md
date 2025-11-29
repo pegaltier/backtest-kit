@@ -1,3 +1,8 @@
+---
+title: design/11_dependency_injection_system
+group: design
+---
+
 # Dependency Injection System
 
 

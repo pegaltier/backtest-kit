@@ -1,3 +1,8 @@
+---
+title: design/35_clientsizing
+group: design
+---
+
 # ClientSizing
 
 

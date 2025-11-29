@@ -1,3 +1,8 @@
+---
+title: design/76_logging_system
+group: design
+---
+
 # Logging System
 
 

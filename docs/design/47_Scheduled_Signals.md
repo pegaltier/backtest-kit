@@ -1,3 +1,8 @@
+---
+title: design/47_scheduled_signals
+group: design
+---
+
 # Scheduled Signals
 
 

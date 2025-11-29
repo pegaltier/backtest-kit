@@ -1,3 +1,8 @@
+---
+title: design/28_sizing_schemas
+group: design
+---
+
 # Sizing Schemas
 
 

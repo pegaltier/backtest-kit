@@ -1,3 +1,8 @@
+---
+title: design/61_strategy_comparison
+group: design
+---
+
 # Strategy Comparison
 
 

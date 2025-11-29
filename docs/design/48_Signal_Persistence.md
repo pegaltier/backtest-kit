@@ -1,3 +1,8 @@
+---
+title: design/48_signal_persistence
+group: design
+---
+
 # Signal Persistence
 
 

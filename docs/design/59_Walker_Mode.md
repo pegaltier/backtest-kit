@@ -1,3 +1,8 @@
+---
+title: design/59_walker_mode
+group: design
+---
+
 # Walker Mode
 
 

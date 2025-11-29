@@ -1,3 +1,8 @@
+---
+title: design/14_public_api_reference
+group: design
+---
+
 # Public API Reference
 
 

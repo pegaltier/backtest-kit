@@ -1,3 +1,8 @@
+---
+title: design/58_interval_throttling
+group: design
+---
+
 # Interval Throttling
 
 

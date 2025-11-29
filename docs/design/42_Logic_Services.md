@@ -1,3 +1,8 @@
+---
+title: design/42_logic_services
+group: design
+---
+
 # Logic Services
 
 

@@ -1,3 +1,8 @@
+---
+title: design/01_overview
+group: design
+---
+
 # Overview
 
 
@@ -310,4 +315,4 @@ To use the framework:
 3. **Backtesting:** Use `Backtest.run()` for historical testing - see [Backtest API](./17_Backtest_API.md)
 4. **Live Trading:** Use `Live.run()` for production deployment - see [Live Trading API](./18_Live_Trading_API.md)
 5. **Reporting:** Generate markdown reports with `getReport()` and `dump()` - see [Reporting and Analytics](./67_Reporting_and_Analytics.md)
-
+

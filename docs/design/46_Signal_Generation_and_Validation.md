@@ -1,3 +1,8 @@
+---
+title: design/46_signal_generation_and_validation
+group: design
+---
+
 # Signal Generation and Validation
 
 

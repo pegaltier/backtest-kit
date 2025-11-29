@@ -1,3 +1,8 @@
+---
+title: design/21_exchange_functions
+group: design
+---
+
 # Exchange Functions
 
 

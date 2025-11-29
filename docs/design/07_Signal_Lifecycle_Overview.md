@@ -1,3 +1,8 @@
+---
+title: design/07_signal_lifecycle_overview
+group: design
+---
+
 # Signal Lifecycle Overview
 
 

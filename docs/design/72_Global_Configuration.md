@@ -1,3 +1,8 @@
+---
+title: design/72_global_configuration
+group: design
+---
+
 # Global Configuration
 
 

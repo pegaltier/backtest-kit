@@ -1,3 +1,8 @@
+---
+title: design/73_validation_parameters
+group: design
+---
+
 # Validation Parameters
 
 

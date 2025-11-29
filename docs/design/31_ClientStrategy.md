@@ -1,3 +1,8 @@
+---
+title: design/31_clientstrategy
+group: design
+---
+
 # ClientStrategy
 
 

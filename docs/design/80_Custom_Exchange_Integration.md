@@ -1,3 +1,8 @@
+---
+title: design/80_custom_exchange_integration
+group: design
+---
+
 # Custom Exchange Integration
 
 

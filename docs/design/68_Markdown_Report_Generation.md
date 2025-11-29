@@ -1,3 +1,8 @@
+---
+title: design/68_markdown_report_generation
+group: design
+---
+
 # Markdown Report Generation
 
 

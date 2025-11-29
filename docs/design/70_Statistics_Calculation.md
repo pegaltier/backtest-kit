@@ -1,3 +1,8 @@
+---
+title: design/70_statistics_calculation
+group: design
+---
+
 # Statistics Calculation
 
 

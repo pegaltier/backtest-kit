@@ -1,3 +1,8 @@
+---
+title: design/41_global_services
+group: design
+---
+
 # Global Services
 
 

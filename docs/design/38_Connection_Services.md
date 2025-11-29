@@ -1,3 +1,8 @@
+---
+title: design/38_connection_services
+group: design
+---
+
 # Connection Services
 
 

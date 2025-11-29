@@ -1,3 +1,8 @@
+---
+title: design/30_core_business_logic
+group: design
+---
+
 # Core Business Logic
 
 

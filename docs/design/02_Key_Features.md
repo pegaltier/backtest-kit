@@ -1,3 +1,8 @@
+---
+title: design/02_key_features
+group: design
+---
+
 # Key Features
 
 

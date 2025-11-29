@@ -1,3 +1,8 @@
+---
+title: design/63_risk_management
+group: design
+---
+
 # Risk Management
 
 

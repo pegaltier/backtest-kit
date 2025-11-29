@@ -1,3 +1,8 @@
+---
+title: design/08_component_registration
+group: design
+---
+
 # Component Registration
 
 

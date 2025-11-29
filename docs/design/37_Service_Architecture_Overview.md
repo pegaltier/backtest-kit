@@ -1,3 +1,8 @@
+---
+title: design/37_service_architecture_overview
+group: design
+---
+
 # Service Architecture Overview
 
 

@@ -1,3 +1,8 @@
+---
+title: design/49_pnl_calculation
+group: design
+---
+
 # PnL Calculation
 
 

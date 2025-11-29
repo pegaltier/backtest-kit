@@ -1,3 +1,8 @@
+---
+title: design/75_cross-cutting_concerns
+group: design
+---
+
 # Cross-Cutting Concerns
 
 

@@ -1,3 +1,8 @@
+---
+title: design/04_quick_start_guide
+group: design
+---
+
 # Quick Start Guide
 
 

@@ -1,3 +1,8 @@
+---
+title: design/71_configuration
+group: design
+---
+
 # Configuration
 
 

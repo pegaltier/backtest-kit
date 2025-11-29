@@ -1,3 +1,8 @@
+---
+title: design/33_clientframe
+group: design
+---
+
 # ClientFrame
 
 

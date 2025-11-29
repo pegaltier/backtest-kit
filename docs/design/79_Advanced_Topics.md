@@ -1,3 +1,8 @@
+---
+title: design/79_advanced_topics
+group: design
+---
+
 # Advanced Topics
 
 

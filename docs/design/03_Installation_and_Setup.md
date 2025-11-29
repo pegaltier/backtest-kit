@@ -1,3 +1,8 @@
+---
+title: design/03_installation_and_setup
+group: design
+---
+
 # Installation and Setup
 
 

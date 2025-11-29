@@ -1,3 +1,8 @@
+---
+title: design/05_core_concepts
+group: design
+---
+
 # Core Concepts
 
 

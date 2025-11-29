@@ -1,3 +1,8 @@
+---
+title: design/77_error_handling
+group: design
+---
+
 # Error Handling
 
 

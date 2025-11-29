@@ -1,3 +1,8 @@
+---
+title: design/44_signal_lifecycle
+group: design
+---
+
 # Signal Lifecycle
 
 

@@ -1,3 +1,8 @@
+---
+title: design/52_timeframe_generation
+group: design
+---
+
 # Timeframe Generation
 
 

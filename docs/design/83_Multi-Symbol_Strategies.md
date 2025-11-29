@@ -1,3 +1,8 @@
+---
+title: design/83_multi-symbol_strategies
+group: design
+---
+
 # Multi-Symbol Strategies
 
 

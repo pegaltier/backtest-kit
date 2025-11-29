@@ -1,3 +1,8 @@
+---
+title: design/10_layer_responsibilities
+group: design
+---
+
 # Layer Responsibilities
 
 

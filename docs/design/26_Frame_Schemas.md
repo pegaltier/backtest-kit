@@ -1,3 +1,8 @@
+---
+title: design/26_frame_schemas
+group: design
+---
+
 # Frame Schemas
 
 

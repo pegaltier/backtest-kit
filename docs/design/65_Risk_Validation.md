@@ -1,3 +1,8 @@
+---
+title: design/65_risk_validation
+group: design
+---
+
 # Risk Validation
 
 

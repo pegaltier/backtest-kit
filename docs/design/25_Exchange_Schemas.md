@@ -1,3 +1,8 @@
+---
+title: design/25_exchange_schemas
+group: design
+---
+
 # Exchange Schemas
 
 

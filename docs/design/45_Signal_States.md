@@ -1,3 +1,8 @@
+---
+title: design/45_signal_states
+group: design
+---
+
 # Signal States
 
 
