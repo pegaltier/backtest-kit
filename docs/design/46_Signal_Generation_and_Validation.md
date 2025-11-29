@@ -13,50 +13,7 @@ When a strategy's `tick()` method executes, the framework calls the user's `getS
 
 ### End-to-End Signal Generation Pipeline
 
-```mermaid
-graph TB
-    subgraph "User Code"
-        UserGetSignal["strategy.getSignal(symbol)<br/>Returns ISignalDto | null"]
-    end
-    
-    subgraph "GET_SIGNAL_FN Wrapper"
-        CheckStopped["Check _isStopped flag"]
-        CheckInterval["Check interval throttling<br/>INTERVAL_MINUTES"]
-        GetVWAP["exchange.getAveragePrice()<br/>Calculate current VWAP"]
-        RiskCheck["risk.checkSignal()<br/>Portfolio-level check"]
-        CallUser["Invoke user's getSignal()"]
-        AugmentScheduled["Augment to IScheduledSignalRow<br/>if priceOpen specified"]
-        AugmentImmediate["Augment to ISignalRow<br/>if priceOpen omitted"]
-        ValidateScheduled["VALIDATE_SIGNAL_FN<br/>Validate scheduled signal"]
-        ValidateImmediate["VALIDATE_SIGNAL_FN<br/>Validate immediate signal"]
-        ReturnScheduled["Return IScheduledSignalRow"]
-        ReturnImmediate["Return ISignalRow"]
-        ReturnNull["Return null"]
-    end
-    
-    UserGetSignal --> CheckStopped
-    CheckStopped -->|"_isStopped=true"| ReturnNull
-    CheckStopped -->|"_isStopped=false"| CheckInterval
-    CheckInterval -->|"Interval not elapsed"| ReturnNull
-    CheckInterval -->|"Interval elapsed"| GetVWAP
-    GetVWAP --> RiskCheck
-    RiskCheck -->|"Risk rejected"| ReturnNull
-    RiskCheck -->|"Risk approved"| CallUser
-    CallUser -->|"Returns null"| ReturnNull
-    CallUser -->|"Returns ISignalDto with priceOpen"| AugmentScheduled
-    CallUser -->|"Returns ISignalDto without priceOpen"| AugmentImmediate
-    AugmentScheduled --> ValidateScheduled
-    AugmentImmediate --> ValidateImmediate
-    ValidateScheduled -->|"Valid"| ReturnScheduled
-    ValidateScheduled -->|"Invalid"| ReturnNull
-    ValidateImmediate -->|"Valid"| ReturnImmediate
-    ValidateImmediate -->|"Invalid"| ReturnNull
-    
-    style UserGetSignal fill:#e1f5ff
-    style CallUser fill:#e1f5ff
-    style ValidateScheduled fill:#ffe1e1
-    style ValidateImmediate fill:#ffe1e1
-```
+![Mermaid Diagram](./diagrams\46_Signal_Generation_and_Validation_0.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:187-283]()
 
@@ -93,31 +50,7 @@ The framework transforms user-provided `ISignalDto` objects into validated `ISig
 
 ### Augmentation Example
 
-```mermaid
-graph LR
-    subgraph "User Returns ISignalDto"
-        DTO["position: 'long'<br/>priceTakeProfit: 42000<br/>priceStopLoss: 40000<br/>minuteEstimatedTime: 60<br/>note: 'Bullish divergence'<br/>priceOpen: undefined"]
-    end
-    
-    subgraph "GET_SIGNAL_FN Augmentation"
-        AddID["id = randomString()<br/>'a1b2c3d4-...'"]
-        AddContext["symbol = 'BTCUSDT'<br/>exchangeName = 'binance'<br/>strategyName = 'my-strategy'"]
-        AddTimestamps["scheduledAt = Date.now()<br/>pendingAt = Date.now()"]
-        AddPrice["priceOpen = currentPrice<br/>41000 (from VWAP)"]
-        AddFlag["_isScheduled = false"]
-    end
-    
-    subgraph "Result ISignalRow"
-        ROW["id: 'a1b2c3d4-...'<br/>position: 'long'<br/>priceOpen: 41000<br/>priceTakeProfit: 42000<br/>priceStopLoss: 40000<br/>minuteEstimatedTime: 60<br/>symbol: 'BTCUSDT'<br/>exchangeName: 'binance'<br/>strategyName: 'my-strategy'<br/>scheduledAt: 1704067200000<br/>pendingAt: 1704067200000<br/>_isScheduled: false"]
-    end
-    
-    DTO --> AddID
-    AddID --> AddContext
-    AddContext --> AddTimestamps
-    AddTimestamps --> AddPrice
-    AddPrice --> AddFlag
-    AddFlag --> ROW
-```
+![Mermaid Diagram](./diagrams\46_Signal_Generation_and_Validation_1.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:232-272]()
 
@@ -129,62 +62,7 @@ The `VALIDATE_SIGNAL_FN` performs comprehensive validation of signal parameters 
 
 ### Validation Architecture
 
-```mermaid
-graph TB
-    subgraph "VALIDATE_SIGNAL_FN"
-        Input["Input: ISignalRow"]
-        ErrorArray["errors: string[] = []"]
-        
-        subgraph "Category 1: Safety Checks"
-            CheckFinite["isFinite() checks<br/>Reject NaN/Infinity"]
-            CheckPositive["Price > 0 checks<br/>Reject negative/zero"]
-        end
-        
-        subgraph "Category 2: Position Logic"
-            CheckLongTP["Long: TP > priceOpen"]
-            CheckLongSL["Long: SL < priceOpen"]
-            CheckShortTP["Short: TP < priceOpen"]
-            CheckShortSL["Short: SL > priceOpen"]
-        end
-        
-        subgraph "Category 3: Distance Constraints"
-            CheckTPDistance["TP distance >= CC_MIN_TAKEPROFIT_DISTANCE_PERCENT<br/>Covers fees (0.1% × 2)"]
-            CheckSLDistance["SL distance <= CC_MAX_STOPLOSS_DISTANCE_PERCENT<br/>Limits catastrophic loss"]
-        end
-        
-        subgraph "Category 4: Lifetime Constraints"
-            CheckMinutePositive["minuteEstimatedTime > 0"]
-            CheckMaxLifetime["minuteEstimatedTime <= CC_MAX_SIGNAL_LIFETIME_MINUTES<br/>Prevents eternal signals"]
-        end
-        
-        subgraph "Category 5: Timestamp Checks"
-            CheckScheduledAt["scheduledAt > 0"]
-            CheckPendingAt["pendingAt > 0"]
-        end
-        
-        ThrowError["if errors.length > 0:<br/>throw Error(errors.join('\\n'))"]
-    end
-    
-    Input --> ErrorArray
-    ErrorArray --> CheckFinite
-    CheckFinite --> CheckPositive
-    CheckPositive --> CheckLongTP
-    CheckLongTP --> CheckLongSL
-    CheckLongSL --> CheckShortTP
-    CheckShortTP --> CheckShortSL
-    CheckShortSL --> CheckTPDistance
-    CheckTPDistance --> CheckSLDistance
-    CheckSLDistance --> CheckMinutePositive
-    CheckMinutePositive --> CheckMaxLifetime
-    CheckMaxLifetime --> CheckScheduledAt
-    CheckScheduledAt --> CheckPendingAt
-    CheckPendingAt --> ThrowError
-    
-    style CheckFinite fill:#ffe1e1
-    style CheckTPDistance fill:#fff4e1
-    style CheckSLDistance fill:#fff4e1
-    style CheckMaxLifetime fill:#fff4e1
-```
+![Mermaid Diagram](./diagrams\46_Signal_Generation_and_Validation_2.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:40-185]()
 
@@ -363,66 +241,7 @@ The `GET_SIGNAL_FN` wrapper coordinates signal generation, validation, and error
 
 ### GET_SIGNAL_FN Control Flow
 
-```mermaid
-graph TB
-    Entry["GET_SIGNAL_FN called"]
-    
-    CheckStopped["Check self._isStopped"]
-    ReturnNull1["Return null<br/>(strategy stopped)"]
-    
-    CheckInterval["Check interval throttling<br/>currentTime - _lastSignalTimestamp < intervalMs"]
-    UpdateTimestamp["Update _lastSignalTimestamp = currentTime"]
-    ReturnNull2["Return null<br/>(interval not elapsed)"]
-    
-    GetVWAP["currentPrice = exchange.getAveragePrice(symbol)"]
-    
-    RiskCheck["riskAllowed = risk.checkSignal({...})"]
-    ReturnNull3["Return null<br/>(risk rejected)"]
-    
-    CallUserGetSignal["signal = getSignal(symbol)<br/>(user function)"]
-    ReturnNull4["Return null<br/>(user returned null)"]
-    
-    CheckPriceOpen{"signal.priceOpen !== undefined"}
-    
-    CreateScheduled["Create IScheduledSignalRow:<br/>- id = randomString()<br/>- priceOpen = signal.priceOpen<br/>- scheduledAt = currentTime<br/>- pendingAt = currentTime<br/>- _isScheduled = true"]
-    
-    CreateImmediate["Create ISignalRow:<br/>- id = randomString()<br/>- priceOpen = currentPrice<br/>- scheduledAt = currentTime<br/>- pendingAt = currentTime<br/>- _isScheduled = false"]
-    
-    ValidateScheduled["VALIDATE_SIGNAL_FN(scheduledSignalRow)"]
-    ValidateImmediate["VALIDATE_SIGNAL_FN(signalRow)"]
-    
-    ReturnScheduled["Return IScheduledSignalRow"]
-    ReturnImmediate["Return ISignalRow"]
-    
-    ErrorHandler["trycatch fallback:<br/>- Log error<br/>- Emit to errorEmitter<br/>- Return null"]
-    
-    Entry --> CheckStopped
-    CheckStopped -->|"_isStopped = true"| ReturnNull1
-    CheckStopped -->|"_isStopped = false"| CheckInterval
-    CheckInterval -->|"Interval not elapsed"| ReturnNull2
-    CheckInterval -->|"Interval elapsed"| UpdateTimestamp
-    UpdateTimestamp --> GetVWAP
-    GetVWAP --> RiskCheck
-    RiskCheck -->|"not(riskAllowed)"| ReturnNull3
-    RiskCheck -->|"riskAllowed"| CallUserGetSignal
-    CallUserGetSignal -->|"null"| ReturnNull4
-    CallUserGetSignal -->|"ISignalDto"| CheckPriceOpen
-    CheckPriceOpen -->|"Yes (scheduled)"| CreateScheduled
-    CheckPriceOpen -->|"No (immediate)"| CreateImmediate
-    CreateScheduled --> ValidateScheduled
-    CreateImmediate --> ValidateImmediate
-    ValidateScheduled -->|"Valid"| ReturnScheduled
-    ValidateImmediate -->|"Valid"| ReturnImmediate
-    ValidateScheduled -.->|"Throws error"| ErrorHandler
-    ValidateImmediate -.->|"Throws error"| ErrorHandler
-    ErrorHandler --> ReturnNull1
-    
-    style CheckStopped fill:#e1f5ff
-    style RiskCheck fill:#e1ffe1
-    style ValidateScheduled fill:#ffe1e1
-    style ValidateImmediate fill:#ffe1e1
-    style ErrorHandler fill:#ffe1e1
-```
+![Mermaid Diagram](./diagrams\46_Signal_Generation_and_Validation_3.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:187-283]()
 
@@ -499,49 +318,7 @@ Signals can be immediate (open at current price) or scheduled (wait for specific
 
 ### Signal Type Decision Tree
 
-```mermaid
-graph TB
-    UserReturns["User's getSignal() returns ISignalDto"]
-    
-    CheckPriceOpen{"dto.priceOpen === undefined?"}
-    
-    subgraph "Immediate Signal Path"
-        ImmedType["Type: ISignalRow"]
-        ImmedPrice["priceOpen = currentPrice (VWAP)"]
-        ImmedTimestamps["scheduledAt = pendingAt = currentTime"]
-        ImmedFlag["_isScheduled = false"]
-        ImmedBehavior["Behavior: Opens immediately<br/>at current VWAP price"]
-    end
-    
-    subgraph "Scheduled Signal Path"
-        SchedType["Type: IScheduledSignalRow"]
-        SchedPrice["priceOpen = dto.priceOpen (user-specified)"]
-        SchedTimestamps["scheduledAt = currentTime<br/>pendingAt = currentTime (temporary)"]
-        SchedFlag["_isScheduled = true"]
-        SchedBehavior["Behavior: Waits for price<br/>to reach priceOpen,<br/>then activates"]
-    end
-    
-    ActivationUpdate["On activation:<br/>pendingAt = activationTime<br/>_isScheduled = false"]
-    
-    UserReturns --> CheckPriceOpen
-    CheckPriceOpen -->|"Yes"| ImmedType
-    CheckPriceOpen -->|"No"| SchedType
-    
-    ImmedType --> ImmedPrice
-    ImmedPrice --> ImmedTimestamps
-    ImmedTimestamps --> ImmedFlag
-    ImmedFlag --> ImmedBehavior
-    
-    SchedType --> SchedPrice
-    SchedPrice --> SchedTimestamps
-    SchedTimestamps --> SchedFlag
-    SchedFlag --> SchedBehavior
-    SchedBehavior --> ActivationUpdate
-    
-    style CheckPriceOpen fill:#fff4e1
-    style ImmedBehavior fill:#e1f5ff
-    style SchedBehavior fill:#ffe1f5
-```
+![Mermaid Diagram](./diagrams\46_Signal_Generation_and_Validation_4.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:232-272](), [src/interfaces/Strategy.interface.ts:64-72]()
 
@@ -784,67 +561,7 @@ The `GET_SIGNAL_FN` is called from `ClientStrategy.tick()` method during strateg
 
 ### ClientStrategy.tick() Call Chain
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant StrategyConnection as StrategyConnectionService
-    participant ClientStrategy
-    participant GET_SIGNAL as GET_SIGNAL_FN
-    participant VALIDATE as VALIDATE_SIGNAL_FN
-    participant Exchange as ClientExchange
-    participant Risk as ClientRisk
-    
-    User->>StrategyConnection: tick()
-    StrategyConnection->>ClientStrategy: tick(symbol)
-    
-    alt Has pending signal
-        ClientStrategy->>Exchange: getAveragePrice()
-        Exchange-->>ClientStrategy: currentPrice
-        ClientStrategy->>ClientStrategy: Check TP/SL/time_expired
-        ClientStrategy-->>StrategyConnection: IStrategyTickResult (active/closed)
-    else Has scheduled signal
-        ClientStrategy->>Exchange: getAveragePrice()
-        Exchange-->>ClientStrategy: currentPrice
-        ClientStrategy->>ClientStrategy: Check activation/timeout
-        ClientStrategy-->>StrategyConnection: IStrategyTickResult (scheduled/opened/cancelled)
-    else Idle (no signal)
-        ClientStrategy->>GET_SIGNAL: GET_SIGNAL_FN(self)
-        
-        GET_SIGNAL->>Exchange: getAveragePrice()
-        Exchange-->>GET_SIGNAL: currentPrice
-        
-        GET_SIGNAL->>Risk: checkSignal({...})
-        Risk-->>GET_SIGNAL: boolean (approved/rejected)
-        
-        alt Risk approved
-            GET_SIGNAL->>User: strategy.getSignal(symbol)
-            User-->>GET_SIGNAL: ISignalDto | null
-            
-            alt Signal returned
-                GET_SIGNAL->>GET_SIGNAL: Augment to ISignalRow/IScheduledSignalRow
-                GET_SIGNAL->>VALIDATE: VALIDATE_SIGNAL_FN(signal)
-                
-                alt Valid
-                    VALIDATE-->>GET_SIGNAL: (no error)
-                    GET_SIGNAL-->>ClientStrategy: ISignalRow | IScheduledSignalRow
-                    ClientStrategy->>ClientStrategy: setPendingSignal() or setScheduledSignal()
-                    ClientStrategy-->>StrategyConnection: IStrategyTickResult (opened/scheduled)
-                else Invalid
-                    VALIDATE-->>GET_SIGNAL: throw Error(...)
-                    GET_SIGNAL->>GET_SIGNAL: Catch error, log, emit
-                    GET_SIGNAL-->>ClientStrategy: null
-                    ClientStrategy-->>StrategyConnection: IStrategyTickResult (idle)
-                end
-            else No signal
-                GET_SIGNAL-->>ClientStrategy: null
-                ClientStrategy-->>StrategyConnection: IStrategyTickResult (idle)
-            end
-        else Risk rejected
-            GET_SIGNAL-->>ClientStrategy: null
-            ClientStrategy-->>StrategyConnection: IStrategyTickResult (idle)
-        end
-    end
-```
+![Mermaid Diagram](./diagrams\46_Signal_Generation_and_Validation_5.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:187-283](), [src/lib/services/connection/StrategyConnectionService.ts:104-121]()
 

@@ -32,45 +32,7 @@ Walker orchestrates multiple sequential backtest runs and accumulates results fo
 
 ### Execution Flow Diagram
 
-```mermaid
-graph TB
-    WalkerRun["Walker.run(symbol, {walkerName})"]
-    GetSchema["WalkerSchemaService.get(walkerName)"]
-    ValidateAll["Validate exchange, frame,<br/>all strategies, risk profiles"]
-    ClearData["Clear backtest data<br/>for all strategies"]
-    
-    StrategyLoop["For each strategy<br/>in walkerSchema.strategies"]
-    RunBacktest["Backtest.run(symbol,<br/>{strategyName, exchangeName, frameName})"]
-    ConsumeResults["Consume all<br/>backtest results"]
-    GetStats["BacktestMarkdownService.getData(strategyName)"]
-    ExtractMetric["Extract metric value<br/>from stats"]
-    
-    EmitProgress["walkerEmitter.next({<br/>strategyName, metricValue,<br/>bestStrategy, bestMetric<br/>})"]
-    UpdateBest["Update bestStrategy<br/>if metricValue > bestMetric"]
-    
-    NextStrategy["Next strategy"]
-    Complete["All strategies complete"]
-    EmitComplete["walkerCompleteSubject.next({<br/>bestStrategy, bestMetric,<br/>strategies[]<br/>})"]
-    YieldResult["Yield WalkerContract<br/>to caller"]
-    
-    WalkerRun --> GetSchema
-    GetSchema --> ValidateAll
-    ValidateAll --> ClearData
-    ClearData --> StrategyLoop
-    
-    StrategyLoop --> RunBacktest
-    RunBacktest --> ConsumeResults
-    ConsumeResults --> GetStats
-    GetStats --> ExtractMetric
-    ExtractMetric --> EmitProgress
-    EmitProgress --> UpdateBest
-    UpdateBest --> YieldResult
-    YieldResult --> NextStrategy
-    
-    NextStrategy --> StrategyLoop
-    NextStrategy --> Complete
-    Complete --> EmitComplete
-```
+![Mermaid Diagram](./diagrams\61_Strategy_Comparison_0.svg)
 
 **Sources:** [src/classes/Walker.ts:39-86](), [src/lib/services/global/WalkerGlobalService.ts:52-86]()
 
@@ -105,37 +67,7 @@ Walker uses `WalkerMarkdownService` to accumulate strategy results during execut
 
 ### Storage Architecture
 
-```mermaid
-graph TB
-    subgraph "Per-Walker Storage (Memoized)"
-        ReportStorage["ReportStorage instance<br/>for walkerName + symbol"]
-        StrategyResults["strategies: IWalkerStrategyResult[]"]
-        BestTracking["bestStrategy: string<br/>bestMetric: number"]
-    end
-    
-    subgraph "Per-Strategy Data"
-        StrategyName["strategyName"]
-        BacktestStats["BacktestStatistics<br/>(from BacktestMarkdownService)"]
-        MetricValue["metric: number<br/>(extracted from stats)"]
-    end
-    
-    subgraph "Event Flow"
-        WalkerEmitter["walkerEmitter.next()"]
-        MarkdownService["WalkerMarkdownService.tick()"]
-        AddResult["storage.addStrategyResult()"]
-    end
-    
-    WalkerEmitter --> MarkdownService
-    MarkdownService --> AddResult
-    AddResult --> ReportStorage
-    
-    ReportStorage --> StrategyResults
-    StrategyResults --> StrategyName
-    StrategyResults --> BacktestStats
-    StrategyResults --> MetricValue
-    
-    ReportStorage --> BestTracking
-```
+![Mermaid Diagram](./diagrams\61_Strategy_Comparison_1.svg)
 
 **Key Methods:**
 
@@ -291,46 +223,7 @@ listenWalkerComplete((results) => {
 
 ## Progress Tracking Flow
 
-```mermaid
-sequenceDiagram
-    participant Walker as Walker.run()
-    participant Backtest as Backtest.run()
-    participant BacktestMD as BacktestMarkdownService
-    participant Emitter as walkerEmitter
-    participant Listener as listenWalker()
-    participant Complete as walkerCompleteSubject
-    
-    Walker->>Backtest: Run strategy A
-    Backtest-->>BacktestMD: Accumulate signals
-    Backtest-->>Walker: All signals completed
-    Walker->>BacktestMD: getData(strategyA)
-    BacktestMD-->>Walker: BacktestStatistics
-    Walker->>Walker: Extract metric value
-    Walker->>Emitter: emit progress (1/3 complete)
-    Emitter-->>Listener: WalkerContract
-    
-    Walker->>Backtest: Run strategy B
-    Backtest-->>BacktestMD: Accumulate signals
-    Backtest-->>Walker: All signals completed
-    Walker->>BacktestMD: getData(strategyB)
-    BacktestMD-->>Walker: BacktestStatistics
-    Walker->>Walker: Extract metric value
-    Walker->>Walker: Update best if better
-    Walker->>Emitter: emit progress (2/3 complete)
-    Emitter-->>Listener: WalkerContract
-    
-    Walker->>Backtest: Run strategy C
-    Backtest-->>BacktestMD: Accumulate signals
-    Backtest-->>Walker: All signals completed
-    Walker->>BacktestMD: getData(strategyC)
-    BacktestMD-->>Walker: BacktestStatistics
-    Walker->>Walker: Extract metric value
-    Walker->>Emitter: emit progress (3/3 complete)
-    Emitter-->>Listener: WalkerContract
-    
-    Walker->>Complete: emit final results
-    Complete-->>Listener: IWalkerResults
-```
+![Mermaid Diagram](./diagrams\61_Strategy_Comparison_2.svg)
 
 **Sources:** [src/classes/Walker.ts:39-86](), [src/function/event.ts:507-567]()
 

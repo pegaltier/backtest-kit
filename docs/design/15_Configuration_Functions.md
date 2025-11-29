@@ -13,43 +13,7 @@ For information about component registration functions (`addStrategy`, `addExcha
 
 The framework provides two distinct configuration mechanisms that operate independently:
 
-```mermaid
-graph TB
-    User["User Code"]
-    
-    subgraph "Configuration Layer"
-        SetLogger["setLogger(logger: ILogger)"]
-        SetConfig["setConfig(config: Partial<GlobalConfig>)"]
-    end
-    
-    subgraph "Global State"
-        LoggerService["LoggerService<br/>(DI Container)"]
-        GLOBAL_CONFIG["GLOBAL_CONFIG<br/>(Runtime Object)"]
-    end
-    
-    subgraph "Consuming Services"
-        ClientStrategy["ClientStrategy"]
-        ClientExchange["ClientExchange"]
-        ValidationService["ValidationService"]
-        BacktestLogic["BacktestLogicPrivateService"]
-        LiveLogic["LiveLogicPrivateService"]
-    end
-    
-    User --> SetLogger
-    User --> SetConfig
-    
-    SetLogger --> LoggerService
-    SetConfig --> GLOBAL_CONFIG
-    
-    LoggerService -.-> ClientStrategy
-    LoggerService -.-> ClientExchange
-    LoggerService -.-> ValidationService
-    
-    GLOBAL_CONFIG -.-> ValidationService
-    GLOBAL_CONFIG -.-> ClientStrategy
-    GLOBAL_CONFIG -.-> BacktestLogic
-    GLOBAL_CONFIG -.-> LiveLogic
-```
+![Mermaid Diagram](./diagrams\15_Configuration_Functions_0.svg)
 
 **Sources:** [src/config/params.ts:1-35](), [types.d.ts:5-97](), [src/index.ts:1]()
 
@@ -80,31 +44,7 @@ The `ILogger` interface defines four logging severity levels. All methods accept
 
 When a logger is registered, the framework automatically injects contextual metadata into all log calls:
 
-```mermaid
-graph LR
-    UserLogger["User's ILogger Implementation"]
-    LoggerService["LoggerService<br/>(DI Token)"]
-    
-    subgraph "Context Sources"
-        MethodContext["MethodContextService<br/>strategyName<br/>exchangeName<br/>frameName"]
-        ExecutionContext["ExecutionContextService<br/>symbol<br/>when<br/>backtest"]
-    end
-    
-    subgraph "Logging Call Sites"
-        ClientStrategy["ClientStrategy.tick()"]
-        ClientExchange["ClientExchange.getCandles()"]
-        ValidationService["ValidationService.validateSignal()"]
-    end
-    
-    UserLogger --> LoggerService
-    
-    MethodContext -.->|"Injects context"| LoggerService
-    ExecutionContext -.->|"Injects context"| LoggerService
-    
-    ClientStrategy --> LoggerService
-    ClientExchange --> LoggerService
-    ValidationService --> LoggerService
-```
+![Mermaid Diagram](./diagrams\15_Configuration_Functions_1.svg)
 
 **Sources:** [types.d.ts:69-84](), [src/lib/services/context/ExecutionContextService.ts](), [src/lib/services/context/MethodContextService.ts]()
 
@@ -206,28 +146,7 @@ Configuration changes apply immediately to all subsequent operations. Modifying 
 
 ### Behavior Flow
 
-```mermaid
-stateDiagram-v2
-    [*] --> Scheduled: "getSignal() returns<br/>signal with priceOpen"
-    
-    Scheduled --> Activated: "Price reaches priceOpen<br/>(within CC_SCHEDULE_AWAIT_MINUTES)"
-    Scheduled --> Cancelled: "Timeout exceeded<br/>(elapsedTime ≥ CC_SCHEDULE_AWAIT_MINUTES)"
-    
-    Activated --> Active: "Position opened"
-    Cancelled --> [*]: "Risk limits released"
-    
-    note right of Scheduled
-        Timeout calculation:
-        elapsedTime = (currentTime - scheduledAt) / 60000
-        if (elapsedTime ≥ CC_SCHEDULE_AWAIT_MINUTES) → cancel
-    end note
-    
-    note right of Cancelled
-        onCancel callback invoked
-        action: "cancelled"
-        Risk slot freed for new signals
-    end note
-```
+![Mermaid Diagram](./diagrams\15_Configuration_Functions_2.svg)
 
 ### Impact on Risk Management
 
@@ -259,30 +178,7 @@ await setConfig({
 
 ### VWAP Calculation Flow
 
-```mermaid
-graph LR
-    GetAveragePrice["ClientExchange.getAveragePrice(symbol)"]
-    
-    subgraph "Data Retrieval"
-        GetCandles["exchange.getCandles(symbol, '1m', since, limit)"]
-        Config["GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT"]
-    end
-    
-    subgraph "VWAP Formula"
-        TypicalPrice["Typical Price = (High + Low + Close) / 3"]
-        WeightedSum["Σ(Typical Price × Volume)"]
-        TotalVolume["Σ(Volume)"]
-        VWAP["VWAP = WeightedSum / TotalVolume"]
-    end
-    
-    GetAveragePrice --> GetCandles
-    GetCandles --> Config
-    GetCandles --> TypicalPrice
-    TypicalPrice --> WeightedSum
-    TypicalPrice --> TotalVolume
-    WeightedSum --> VWAP
-    TotalVolume --> VWAP
-```
+![Mermaid Diagram](./diagrams\15_Configuration_Functions_3.svg)
 
 ### Trade-offs
 
@@ -322,28 +218,7 @@ The framework applies **0.1% fee** + **0.1% slippage** = **0.2% total cost** on 
 
 ### Validation Logic
 
-```mermaid
-graph TB
-    Signal["Signal DTO<br/>from getSignal()"]
-    
-    ValidateSignal["VALIDATE_SIGNAL_FN"]
-    
-    subgraph "TP Distance Check"
-        CalcDistance["Calculate distance:<br/>LONG: (TP - priceOpen) / priceOpen × 100<br/>SHORT: (priceOpen - TP) / priceOpen × 100"]
-        
-        CompareMin{"distance ≥<br/>CC_MIN_TAKEPROFIT_DISTANCE_PERCENT?"}
-    end
-    
-    Accept["Signal accepted<br/>Proceeds to risk check"]
-    Reject["Throw validation error<br/>Signal rejected"]
-    
-    Signal --> ValidateSignal
-    ValidateSignal --> CalcDistance
-    CalcDistance --> CompareMin
-    
-    CompareMin -->|"Yes"| Accept
-    CompareMin -->|"No"| Reject
-```
+![Mermaid Diagram](./diagrams\15_Configuration_Functions_4.svg)
 
 ### Recommended Settings
 
@@ -376,34 +251,7 @@ await setConfig({
 
 ### Risk Protection Mechanism
 
-```mermaid
-graph TB
-    Signal["Signal DTO<br/>from getSignal()"]
-    
-    ValidateSignal["VALIDATE_SIGNAL_FN"]
-    
-    subgraph "SL Distance Check"
-        CalcDistance["Calculate distance:<br/>LONG: (priceOpen - SL) / priceOpen × 100<br/>SHORT: (SL - priceOpen) / priceOpen × 100"]
-        
-        CompareMax{"distance ≤<br/>CC_MAX_STOPLOSS_DISTANCE_PERCENT?"}
-    end
-    
-    Accept["Signal accepted<br/>Maximum 20% loss per signal"]
-    Reject["Throw validation error<br/>Signal rejected<br/>(risk too high)"]
-    
-    Signal --> ValidateSignal
-    ValidateSignal --> CalcDistance
-    CalcDistance --> CompareMax
-    
-    CompareMax -->|"Yes"| Accept
-    CompareMax -->|"No"| Reject
-    
-    note right of Reject
-        Prevents scenarios like:
-        priceOpen=42000, SL=20000
-        = 52% loss on single signal
-    end note
-```
+![Mermaid Diagram](./diagrams\15_Configuration_Functions_5.svg)
 
 ### Portfolio Impact
 
@@ -442,28 +290,7 @@ await setConfig({
 
 ### Lifetime Tracking and Enforcement
 
-```mermaid
-stateDiagram-v2
-    [*] --> Opened: "Signal created<br/>pendingAt = timestamp"
-    
-    Opened --> Active: "Monitoring TP/SL"
-    
-    Active --> ClosedTP: "Take profit hit"
-    Active --> ClosedSL: "Stop loss hit"
-    Active --> ClosedTime: "elapsedTime ≥<br/>CC_MAX_SIGNAL_LIFETIME_MINUTES"
-    
-    ClosedTP --> [*]: "closeReason: 'take_profit'"
-    ClosedSL --> [*]: "closeReason: 'stop_loss'"
-    ClosedTime --> [*]: "closeReason: 'time_expired'"
-    
-    note right of Active
-        Lifetime check:
-        elapsedMinutes = (now - pendingAt) / 60000
-        if (elapsedMinutes ≥ CC_MAX_SIGNAL_LIFETIME_MINUTES) {
-            closeReason = "time_expired"
-        }
-    end note
-```
+![Mermaid Diagram](./diagrams\15_Configuration_Functions_6.svg)
 
 ### Risk Slot Deadlock Prevention
 
@@ -496,39 +323,7 @@ await setConfig({
 
 The following diagram shows which framework components consume each configuration parameter:
 
-```mermaid
-graph TB
-    subgraph "GLOBAL_CONFIG Parameters"
-        P1["CC_SCHEDULE_AWAIT_MINUTES"]
-        P2["CC_AVG_PRICE_CANDLES_COUNT"]
-        P3["CC_MIN_TAKEPROFIT_DISTANCE_PERCENT"]
-        P4["CC_MAX_STOPLOSS_DISTANCE_PERCENT"]
-        P5["CC_MAX_SIGNAL_LIFETIME_MINUTES"]
-    end
-    
-    subgraph "Validation Layer"
-        ValidateSignal["VALIDATE_SIGNAL_FN<br/>(src/lib/validation/validateSignal.ts)"]
-    end
-    
-    subgraph "Strategy Execution"
-        ClientStrategyTick["ClientStrategy.tick()"]
-        ClientStrategyBacktest["ClientStrategy.backtest()"]
-    end
-    
-    subgraph "Exchange Services"
-        ClientExchangeVWAP["ClientExchange.getAveragePrice()"]
-    end
-    
-    P1 --> ClientStrategyBacktest
-    P2 --> ClientExchangeVWAP
-    P3 --> ValidateSignal
-    P4 --> ValidateSignal
-    P5 --> ValidateSignal
-    
-    ValidateSignal --> ClientStrategyTick
-    ValidateSignal --> ClientStrategyBacktest
-    ClientExchangeVWAP --> ClientStrategyTick
-```
+![Mermaid Diagram](./diagrams\15_Configuration_Functions_7.svg)
 
 **Sources:** [src/config/params.ts:1-35](), [types.d.ts:5-34]()
 

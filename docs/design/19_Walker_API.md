@@ -201,47 +201,7 @@ Sources: [src/classes/Walker.ts:232-255]()
 
 The following diagram shows how Walker orchestrates multiple backtest runs and aggregates results.
 
-```mermaid
-graph TB
-    User["User Code: Walker.run()"]
-    WalkerClass["WalkerUtils.run()<br/>[Walker.ts:39-87]"]
-    Validation["Schema Validation<br/>walkerValidationService<br/>exchangeValidationService<br/>frameValidationService<br/>strategyValidationService"]
-    Schema["WalkerSchemaService.get()<br/>Get walker.strategies array<br/>Get walker.metric"]
-    Clear["Clear Previous Data<br/>walkerMarkdownService.clear()<br/>backtestMarkdownService.clear()<br/>scheduleMarkdownService.clear()"]
-    GlobalService["WalkerGlobalService.run()<br/>[WalkerGlobalService.ts:52-86]"]
-    LogicService["WalkerLogicPublicService.run()<br/>MethodContextService.runAsyncIterator"]
-    PrivateLogic["WalkerLogicPrivateService<br/>Iterate strategies array"]
-    
-    subgraph "For Each Strategy"
-        BacktestRun["Backtest.run()<br/>Run full backtest"]
-        BacktestData["Backtest.getData()<br/>Get BacktestStatistics"]
-        ExtractMetric["Extract metric value<br/>e.g., stats.sharpeRatio"]
-        CompareMetric["Compare to bestMetric<br/>Update if better"]
-        EmitProgress["Emit WalkerContract<br/>walkerEmitter.next()"]
-    end
-    
-    FinalResults["Emit IWalkerResults<br/>walkerCompleteSubject.next()"]
-    YieldProgress["Yield progress to user<br/>AsyncGenerator"]
-    
-    User --> WalkerClass
-    WalkerClass --> Validation
-    Validation --> Schema
-    Schema --> Clear
-    Clear --> GlobalService
-    GlobalService --> LogicService
-    LogicService --> PrivateLogic
-    
-    PrivateLogic --> BacktestRun
-    BacktestRun --> BacktestData
-    BacktestData --> ExtractMetric
-    ExtractMetric --> CompareMetric
-    CompareMetric --> EmitProgress
-    EmitProgress --> YieldProgress
-    
-    EmitProgress --> |Next strategy| BacktestRun
-    EmitProgress --> |All done| FinalResults
-    FinalResults --> YieldProgress
-```
+![Mermaid Diagram](./diagrams\19_Walker_API_0.svg)
 
 **Key Points:**
 - Walker validates all schemas before starting (walker, exchange, frame, all strategies)
@@ -387,44 +347,7 @@ Sources: [src/function/event.ts:427-433]()
 
 The following diagram shows the event emission sequence during walker execution.
 
-```mermaid
-graph TB
-    Start["Walker.run() starts"]
-    Loop["Iterate strategies array"]
-    
-    subgraph "Per Strategy"
-        RunBacktest["Run Backtest.run()"]
-        GetData["Get Backtest.getData()"]
-        Extract["Extract metric value"]
-        Compare["Update bestStrategy<br/>if metric better"]
-        EmitWalker["walkerEmitter.next()<br/>WalkerContract"]
-    end
-    
-    Complete["All strategies done"]
-    EmitComplete["walkerCompleteSubject.next()<br/>IWalkerResults"]
-    EmitDone["doneWalkerSubject.next()<br/>DoneContract<br/>(only for background)"]
-    
-    Start --> Loop
-    Loop --> RunBacktest
-    RunBacktest --> GetData
-    GetData --> Extract
-    Extract --> Compare
-    Compare --> EmitWalker
-    
-    EmitWalker --> |Next strategy| RunBacktest
-    EmitWalker --> |All done| Complete
-    
-    Complete --> EmitComplete
-    Complete --> |If background| EmitDone
-    
-    ListenWalker["listenWalker()<br/>subscribes"]
-    ListenComplete["listenWalkerComplete()<br/>subscribes"]
-    ListenDone["listenDoneWalker()<br/>subscribes"]
-    
-    EmitWalker -.-> ListenWalker
-    EmitComplete -.-> ListenComplete
-    EmitDone -.-> ListenDone
-```
+![Mermaid Diagram](./diagrams\19_Walker_API_1.svg)
 
 **Event Timing:**
 1. `walkerEmitter` - Emits after each strategy completes (N times for N strategies)
@@ -692,40 +615,7 @@ Sources: [src/lib/services/markdown/BacktestMarkdownService.ts:46-102]()
 
 The following diagram shows how Walker integrates with the service layer.
 
-```mermaid
-graph TB
-    WalkerClass["Walker<br/>Singleton instance<br/>[Walker.ts:273]"]
-    GlobalService["WalkerGlobalService<br/>[WalkerGlobalService.ts]"]
-    LogicPublic["WalkerLogicPublicService<br/>Context wrapper"]
-    LogicPrivate["WalkerLogicPrivateService<br/>Core orchestration"]
-    
-    MethodContext["MethodContextService<br/>Propagate walkerName<br/>exchangeName, frameName"]
-    ExecContext["ExecutionContextService<br/>Propagate symbol<br/>when, backtest flag"]
-    
-    BacktestLogic["BacktestLogicPrivateService<br/>Run individual backtest"]
-    BacktestMarkdown["BacktestMarkdownService<br/>Collect strategy results"]
-    WalkerMarkdown["WalkerMarkdownService<br/>Aggregate comparison"]
-    
-    ValidationServices["Validation Services<br/>WalkerValidationService<br/>StrategyValidationService<br/>ExchangeValidationService<br/>FrameValidationService"]
-    SchemaServices["Schema Services<br/>WalkerSchemaService<br/>StrategySchemaService"]
-    
-    WalkerClass --> GlobalService
-    GlobalService --> ValidationServices
-    GlobalService --> SchemaServices
-    GlobalService --> LogicPublic
-    
-    LogicPublic --> MethodContext
-    MethodContext --> LogicPrivate
-    
-    LogicPrivate --> ExecContext
-    ExecContext --> BacktestLogic
-    
-    BacktestLogic --> BacktestMarkdown
-    LogicPrivate --> WalkerMarkdown
-    
-    BacktestMarkdown -.->|Per strategy stats| WalkerMarkdown
-    WalkerMarkdown -.->|Comparison results| WalkerClass
-```
+![Mermaid Diagram](./diagrams\19_Walker_API_2.svg)
 
 **Service Responsibilities:**
 - `WalkerGlobalService` - Validation orchestration and delegation

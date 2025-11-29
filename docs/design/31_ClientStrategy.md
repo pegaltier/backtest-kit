@@ -17,32 +17,7 @@ For information about how `ClientStrategy` is orchestrated within the execution 
 
 ### System Integration Diagram
 
-```mermaid
-graph TB
-    subgraph "Service Orchestration Layer"
-        StrategyConn["StrategyConnectionService<br/>getStrategy() memoized"]
-        BacktestLogic["BacktestLogicPrivateService"]
-        LiveLogic["LiveLogicPrivateService"]
-    end
-    
-    subgraph "Business Logic Layer"
-        ClientStrategy["ClientStrategy<br/>tick() / backtest()"]
-    end
-    
-    subgraph "Dependencies"
-        ClientExchange["ClientExchange<br/>getAveragePrice()"]
-        PersistAdapter["PersistSignalAdapter<br/>writeSignalData()"]
-        Logger["LoggerService"]
-    end
-    
-    StrategyConn -->|"creates instance"| ClientStrategy
-    BacktestLogic -->|"calls tick() / backtest()"| ClientStrategy
-    LiveLogic -->|"calls tick()"| ClientStrategy
-    
-    ClientStrategy -->|"VWAP calculation"| ClientExchange
-    ClientStrategy -->|"atomic writes"| PersistAdapter
-    ClientStrategy -->|"debug logs"| Logger
-```
+![Mermaid Diagram](./diagrams\31_ClientStrategy_0.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:1-660](), High-Level Diagram 1
 
@@ -60,33 +35,7 @@ The `ClientStrategy` class implements the `IStrategy` interface and manages two 
 
 ### Constructor Parameters
 
-```mermaid
-graph LR
-    IStrategyParams["IStrategyParams"]
-    
-    subgraph "Schema Configuration"
-        strategyName["strategyName: StrategyName"]
-        interval["interval: SignalInterval"]
-        getSignal["getSignal: (symbol) => Promise<ISignalDto>"]
-        callbacks["callbacks?: Partial<IStrategyCallbacks>"]
-    end
-    
-    subgraph "Runtime Dependencies"
-        logger["logger: ILogger"]
-        exchange["exchange: IExchange"]
-        execution["execution: ExecutionContextService"]
-        method["method: MethodContextService"]
-    end
-    
-    IStrategyParams --> strategyName
-    IStrategyParams --> interval
-    IStrategyParams --> getSignal
-    IStrategyParams --> callbacks
-    IStrategyParams --> logger
-    IStrategyParams --> exchange
-    IStrategyParams --> execution
-    IStrategyParams --> method
-```
+![Mermaid Diagram](./diagrams\31_ClientStrategy_1.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:194-198](), [src/interfaces/Strategy.interface.ts:59-69]()
 
@@ -96,54 +45,7 @@ graph LR
 
 `ClientStrategy` manages signals through four distinct states, represented by discriminated union types `IStrategyTickResult`.
 
-```mermaid
-stateDiagram-v2
-    [*] --> idle: "No pending signal"
-    
-    idle --> opened: "GET_SIGNAL_FN() returns signal<br/>VALIDATE_SIGNAL_FN() passes<br/>setPendingSignal(signal)"
-    
-    opened --> active: "Next tick() call<br/>Signal monitoring begins"
-    
-    active --> active: "TP/SL not reached<br/>Time not expired"
-    
-    active --> closed_tp: "averagePrice >= priceTakeProfit (long)<br/>averagePrice <= priceTakeProfit (short)"
-    
-    active --> closed_sl: "averagePrice <= priceStopLoss (long)<br/>averagePrice >= priceStopLoss (short)"
-    
-    active --> closed_time: "when >= signal.timestamp + minuteEstimatedTime"
-    
-    closed_tp --> idle: "setPendingSignal(null)<br/>PNL calculated"
-    closed_sl --> idle: "setPendingSignal(null)<br/>PNL calculated"
-    closed_time --> idle: "setPendingSignal(null)<br/>PNL calculated"
-    
-    note right of idle
-        IStrategyTickResultIdle
-        action: "idle"
-        signal: null
-    end note
-    
-    note right of opened
-        IStrategyTickResultOpened
-        action: "opened"
-        signal: ISignalRow
-        callbacks.onOpen() invoked
-    end note
-    
-    note right of active
-        IStrategyTickResultActive
-        action: "active"
-        signal: ISignalRow
-        callbacks.onActive() invoked
-    end note
-    
-    note right of closed_tp
-        IStrategyTickResultClosed
-        action: "closed"
-        closeReason: "take_profit"
-        pnl: IStrategyPnL
-        callbacks.onClose() invoked
-    end note
-```
+![Mermaid Diagram](./diagrams\31_ClientStrategy_2.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:258-464](), [src/interfaces/Strategy.interface.ts:130-208]()
 
@@ -155,39 +57,7 @@ stateDiagram-v2
 
 Signal generation is throttled at the strategy level to prevent spam. The `GET_SIGNAL_FN` helper enforces minimum intervals between `getSignal()` calls:
 
-```mermaid
-sequenceDiagram
-    participant tick as "tick()"
-    participant GET_SIGNAL_FN
-    participant getSignal as "params.getSignal()"
-    participant VALIDATE_SIGNAL_FN
-    
-    tick->>GET_SIGNAL_FN: Check if signal should be generated
-    
-    alt Interval not elapsed
-        GET_SIGNAL_FN->>GET_SIGNAL_FN: currentTime - lastSignalTimestamp < intervalMs
-        GET_SIGNAL_FN-->>tick: return null (throttled)
-    else Interval elapsed
-        GET_SIGNAL_FN->>GET_SIGNAL_FN: Update lastSignalTimestamp
-        GET_SIGNAL_FN->>getSignal: Call user's getSignal function
-        getSignal-->>GET_SIGNAL_FN: ISignalDto or null
-        
-        alt Signal returned
-            GET_SIGNAL_FN->>GET_SIGNAL_FN: Add id, symbol, exchangeName, strategyName, timestamp
-            GET_SIGNAL_FN->>VALIDATE_SIGNAL_FN: Validate ISignalRow
-            
-            alt Validation passes
-                VALIDATE_SIGNAL_FN-->>GET_SIGNAL_FN: Valid
-                GET_SIGNAL_FN-->>tick: return ISignalRow
-            else Validation fails
-                VALIDATE_SIGNAL_FN-->>GET_SIGNAL_FN: throw Error
-                GET_SIGNAL_FN-->>tick: return null (caught by trycatch)
-            end
-        else No signal
-            GET_SIGNAL_FN-->>tick: return null
-        end
-    end
-```
+![Mermaid Diagram](./diagrams\31_ClientStrategy_3.svg)
 
 **Interval Constants:**
 
@@ -240,54 +110,7 @@ The `tick()` method performs a single iteration of strategy execution. It is cal
 
 ### tick() Execution Flow
 
-```mermaid
-graph TB
-    Start["tick() called"]
-    CheckPending{"_pendingSignal<br/>exists?"}
-    
-    subgraph "Signal Generation Path"
-        CallGetSignal["GET_SIGNAL_FN(this)"]
-        SetPending["setPendingSignal(signal)"]
-        TriggerOnOpen["callbacks.onOpen()"]
-        ReturnOpened["return IStrategyTickResultOpened"]
-        GetIdlePrice["exchange.getAveragePrice()"]
-        TriggerOnIdle["callbacks.onIdle()"]
-        ReturnIdle["return IStrategyTickResultIdle"]
-    end
-    
-    subgraph "Signal Monitoring Path"
-        GetAvgPrice["exchange.getAveragePrice()"]
-        CheckTime{"when >= signalEndTime?"}
-        CheckTPSL{"TP or SL reached?"}
-        CalcPNL["toProfitLossDto(signal, avgPrice)"]
-        TriggerOnClose["callbacks.onClose()"]
-        ClearSignal["setPendingSignal(null)"]
-        ReturnClosed["return IStrategyTickResultClosed"]
-        TriggerOnActive["callbacks.onActive()"]
-        ReturnActive["return IStrategyTickResultActive"]
-    end
-    
-    Start --> CheckPending
-    
-    CheckPending -->|No| CallGetSignal
-    CallGetSignal --> SetPending
-    SetPending -->|signal created| TriggerOnOpen
-    TriggerOnOpen --> ReturnOpened
-    SetPending -->|no signal| GetIdlePrice
-    GetIdlePrice --> TriggerOnIdle
-    TriggerOnIdle --> ReturnIdle
-    
-    CheckPending -->|Yes| GetAvgPrice
-    GetAvgPrice --> CheckTime
-    CheckTime -->|Yes| CalcPNL
-    CheckTime -->|No| CheckTPSL
-    CheckTPSL -->|Yes| CalcPNL
-    CheckTPSL -->|No| TriggerOnActive
-    TriggerOnActive --> ReturnActive
-    CalcPNL --> TriggerOnClose
-    TriggerOnClose --> ClearSignal
-    ClearSignal --> ReturnClosed
-```
+![Mermaid Diagram](./diagrams\31_ClientStrategy_4.svg)
 
 ### TP/SL Check Logic
 
@@ -327,64 +150,7 @@ The `backtest()` method performs fast-forward simulation using an array of futur
 
 ### backtest() Execution Flow
 
-```mermaid
-graph TB
-    Start["backtest(candles) called"]
-    ValidateSignal{"_pendingSignal<br/>exists?"}
-    ValidateMode{"backtest mode?"}
-    CheckCandleCount{"candles.length >= 5?"}
-    
-    subgraph "Candle Iteration"
-        LoopStart["for i = 4 to candles.length - 1"]
-        SliceCandles["recentCandles = candles.slice(i-4, i+1)"]
-        CalcVWAP["averagePrice = GET_AVG_PRICE_FN(recentCandles)"]
-        CheckLongTP{"position === 'long'<br/>&& avgPrice >= priceTakeProfit?"}
-        CheckLongSL{"position === 'long'<br/>&& avgPrice <= priceStopLoss?"}
-        CheckShortTP{"position === 'short'<br/>&& avgPrice <= priceTakeProfit?"}
-        CheckShortSL{"position === 'short'<br/>&& avgPrice >= priceStopLoss?"}
-        CalcPNLHit["pnl = toProfitLossDto(signal, avgPrice)"]
-        ClearSignal["setPendingSignal(null)"]
-        ReturnClosedHit["return IStrategyTickResultClosed"]
-    end
-    
-    subgraph "Time Expired Path"
-        GetLastFive["lastFiveCandles = candles.slice(-5)"]
-        CalcLastVWAP["lastPrice = GET_AVG_PRICE_FN(lastFiveCandles)"]
-        CalcPNLExpired["pnl = toProfitLossDto(signal, lastPrice)"]
-        ClearSignalExpired["setPendingSignal(null)"]
-        ReturnClosedExpired["return IStrategyTickResultClosed<br/>closeReason: 'time_expired'"]
-    end
-    
-    Start --> ValidateSignal
-    ValidateSignal -->|No| ThrowError["throw Error"]
-    ValidateSignal -->|Yes| ValidateMode
-    ValidateMode -->|No| ThrowError
-    ValidateMode -->|Yes| CheckCandleCount
-    CheckCandleCount -->|No| LogWarn["logger.warn()"]
-    CheckCandleCount --> LoopStart
-    LogWarn --> LoopStart
-    
-    LoopStart --> SliceCandles
-    SliceCandles --> CalcVWAP
-    CalcVWAP --> CheckLongTP
-    CheckLongTP -->|Yes| CalcPNLHit
-    CheckLongTP -->|No| CheckLongSL
-    CheckLongSL -->|Yes| CalcPNLHit
-    CheckLongSL -->|No| CheckShortTP
-    CheckShortTP -->|Yes| CalcPNLHit
-    CheckShortTP -->|No| CheckShortSL
-    CheckShortSL -->|Yes| CalcPNLHit
-    CheckShortSL -->|No| LoopStart
-    
-    CalcPNLHit --> ClearSignal
-    ClearSignal --> ReturnClosedHit
-    
-    LoopStart -->|"Loop complete<br/>TP/SL not hit"| GetLastFive
-    GetLastFive --> CalcLastVWAP
-    CalcLastVWAP --> CalcPNLExpired
-    CalcPNLExpired --> ClearSignalExpired
-    ClearSignalExpired --> ReturnClosedExpired
-```
+![Mermaid Diagram](./diagrams\31_ClientStrategy_5.svg)
 
 ### VWAP Calculation with 5-Candle Window
 
@@ -412,62 +178,13 @@ for (let i = 4; i < candles.length; i++) {
 
 ### Persistence Flow
 
-```mermaid
-sequenceDiagram
-    participant Strategy as "ClientStrategy"
-    participant SetPending as "setPendingSignal()"
-    participant Persist as "PersistSignalAdapter"
-    participant Disk as "File System"
-    
-    Note over Strategy: Signal opened
-    Strategy->>SetPending: setPendingSignal(signalRow)
-    SetPending->>SetPending: this._pendingSignal = signalRow
-    
-    alt backtest mode
-        SetPending-->>Strategy: return (no persistence)
-    else live mode
-        SetPending->>Persist: writeSignalData(signalRow, strategyName, symbol)
-        Persist->>Disk: Atomic write to ./data/signals/{strategyName}_{symbol}.json
-        Disk-->>Persist: Success
-        Persist-->>SetPending: Complete
-        SetPending-->>Strategy: return
-    end
-    
-    Note over Strategy: Later... signal closed
-    Strategy->>SetPending: setPendingSignal(null)
-    SetPending->>SetPending: this._pendingSignal = null
-    
-    alt live mode
-        SetPending->>Persist: writeSignalData(null, strategyName, symbol)
-        Persist->>Disk: Atomic write (clear signal)
-        Disk-->>Persist: Success
-        Persist-->>SetPending: Complete
-    end
-```
+![Mermaid Diagram](./diagrams\31_ClientStrategy_6.svg)
 
 ### Initialization with State Recovery
 
 The `waitForInit()` method loads persisted state on startup:
 
-```mermaid
-graph LR
-    waitForInit["waitForInit()"]
-    CheckMode{"backtest mode?"}
-    ReadSignal["PersistSignalAdapter.readSignalData()"]
-    ValidateExchange{"exchangeName matches?"}
-    ValidateStrategy{"strategyName matches?"}
-    RestoreState["this._pendingSignal = pendingSignal"]
-    
-    waitForInit --> CheckMode
-    CheckMode -->|Yes| Skip["return (no persistence)"]
-    CheckMode -->|No| ReadSignal
-    ReadSignal -->|null| Skip
-    ReadSignal -->|signal exists| ValidateExchange
-    ValidateExchange -->|No| Skip
-    ValidateExchange -->|Yes| ValidateStrategy
-    ValidateStrategy -->|No| Skip
-    ValidateStrategy -->|Yes| RestoreState
-```
+![Mermaid Diagram](./diagrams\31_ClientStrategy_7.svg)
 
 **Key Features:**
 - Uses `singleshot` pattern to ensure initialization happens exactly once
@@ -494,25 +211,7 @@ graph LR
 
 All callbacks are invoked synchronously within the tick execution:
 
-```mermaid
-sequenceDiagram
-    participant tick as "tick()"
-    participant Callbacks as "params.callbacks"
-    participant User as "User Code"
-    
-    Note over tick: Signal just opened
-    tick->>Callbacks: onOpen(symbol, signal, currentPrice, backtest)
-    Callbacks->>User: Invoke user's onOpen handler
-    User-->>Callbacks: Complete
-    Callbacks-->>tick: Continue
-    
-    tick->>Callbacks: onTick(symbol, result, backtest)
-    Callbacks->>User: Invoke user's onTick handler
-    User-->>Callbacks: Complete
-    Callbacks-->>tick: Continue
-    
-    tick-->>tick: return IStrategyTickResultOpened
-```
+![Mermaid Diagram](./diagrams\31_ClientStrategy_8.svg)
 
 **Important:** All callbacks are invoked even if they return promises, but the execution does not await them. This ensures callbacks don't block the main execution flow.
 
@@ -539,25 +238,7 @@ If totalVolume == 0:
 
 ### Implementation
 
-```mermaid
-graph LR
-    Input["candles: ICandleData[]"]
-    Reduce1["reduce: sumPriceVolume"]
-    Reduce2["reduce: totalVolume"]
-    Check{"totalVolume == 0?"}
-    CalcVWAP["VWAP = sumPriceVolume / totalVolume"]
-    CalcAvg["VWAP = sum(close) / length"]
-    Output["return VWAP"]
-    
-    Input --> Reduce1
-    Input --> Reduce2
-    Reduce1 --> Check
-    Reduce2 --> Check
-    Check -->|No| CalcVWAP
-    Check -->|Yes| CalcAvg
-    CalcVWAP --> Output
-    CalcAvg --> Output
-```
+![Mermaid Diagram](./diagrams\31_ClientStrategy_9.svg)
 
 This calculation is used in:
 1. `backtest()` method - calculates VWAP from 5-candle sliding window

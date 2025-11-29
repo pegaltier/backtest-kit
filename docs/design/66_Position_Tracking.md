@@ -21,33 +21,7 @@ The tracking system provides:
 - Isolated position registries per risk profile
 - Efficient lookup via composite keys
 
-```mermaid
-graph TB
-    subgraph "Multiple Strategies"
-        Strategy1["ClientStrategy<br/>strategy1<br/>riskName: 'conservative'"]
-        Strategy2["ClientStrategy<br/>strategy2<br/>riskName: 'conservative'"]
-        Strategy3["ClientStrategy<br/>strategy3<br/>riskName: 'aggressive'"]
-    end
-    
-    subgraph "Shared Risk Instances"
-        Risk1["ClientRisk<br/>conservative<br/>_activePositions: Map"]
-        Risk2["ClientRisk<br/>aggressive<br/>_activePositions: Map"]
-    end
-    
-    subgraph "Position Data"
-        Pos1["strategy1:BTCUSDT<br/>openTimestamp: 123..."]
-        Pos2["strategy2:ETHUSDT<br/>openTimestamp: 124..."]
-        Pos3["strategy3:BNBUSDT<br/>openTimestamp: 125..."]
-    end
-    
-    Strategy1 -->|"addSignal('BTCUSDT')"| Risk1
-    Strategy2 -->|"addSignal('ETHUSDT')"| Risk1
-    Strategy3 -->|"addSignal('BNBUSDT')"| Risk2
-    
-    Risk1 --> Pos1
-    Risk1 --> Pos2
-    Risk2 --> Pos3
-```
+![Mermaid Diagram](./diagrams\66_Position_Tracking_0.svg)
 
 **Diagram: Position Sharing Across Strategies**
 
@@ -101,32 +75,7 @@ Positions are registered when signals open and removed when signals close. The l
 
 ### Position Registration Flow
 
-```mermaid
-sequenceDiagram
-    participant Strategy as "ClientStrategy"
-    participant RiskGlobal as "RiskGlobalService"
-    participant RiskConn as "RiskConnectionService"
-    participant ClientRisk as "ClientRisk"
-    participant Persist as "PersistRiskAdapter"
-    
-    Strategy->>RiskGlobal: "addSignal(symbol, context)"
-    RiskGlobal->>RiskConn: "addSignal(symbol, context)"
-    RiskConn->>ClientRisk: "addSignal(symbol, context)"
-    
-    ClientRisk->>ClientRisk: "Check if _activePositions === POSITION_NEED_FETCH"
-    
-    alt "Needs Initialization"
-        ClientRisk->>Persist: "readPositionData(riskName)"
-        Persist-->>ClientRisk: "Return persisted positions"
-        ClientRisk->>ClientRisk: "Set _activePositions = new Map(data)"
-    end
-    
-    ClientRisk->>ClientRisk: "key = GET_KEY_FN(strategyName, symbol)"
-    ClientRisk->>ClientRisk: "riskMap.set(key, position)"
-    ClientRisk->>Persist: "writePositionData(Array.from(_activePositions))"
-    Persist-->>ClientRisk: "Write complete"
-    ClientRisk-->>Strategy: "Position registered"
-```
+![Mermaid Diagram](./diagrams\66_Position_Tracking_1.svg)
 
 **Diagram: Position Registration Sequence**
 
@@ -179,33 +128,7 @@ Position tracking uses lazy initialization to defer persistence loading until fi
 
 ### Initialization States
 
-```mermaid
-stateDiagram-v2
-    [*] --> POSITION_NEED_FETCH: "ClientRisk instantiated"
-    
-    POSITION_NEED_FETCH --> Initializing: "First addSignal/removeSignal/checkSignal"
-    
-    state Initializing {
-        [*] --> ReadDisk: "WAIT_FOR_INIT_FN called"
-        ReadDisk --> ParseData: "PersistRiskAdapter.readPositionData"
-        ParseData --> CreateMap: "Convert array to Map"
-        CreateMap --> [*]: "Set _activePositions = Map"
-    }
-    
-    Initializing --> Initialized: "waitForInit() complete"
-    
-    Initialized --> Initialized: "Subsequent operations"
-    
-    note right of POSITION_NEED_FETCH
-        Symbol constant indicates
-        uninitialized state
-    end note
-    
-    note right of Initialized
-        _activePositions is now
-        Map<string, IRiskActivePosition>
-    end note
-```
+![Mermaid Diagram](./diagrams\66_Position_Tracking_2.svg)
 
 **Diagram: Lazy Initialization State Machine**
 
@@ -239,30 +162,7 @@ Position data persists to disk after every `addSignal` and `removeSignal` operat
 
 ### Persistence Flow
 
-```mermaid
-graph TB
-    subgraph "In-Memory State"
-        Map["_activePositions: Map<br/>strategy1:BTCUSDT → position1<br/>strategy2:ETHUSDT → position2"]
-    end
-    
-    subgraph "Persistence Layer"
-        Update["_updatePositions()"]
-        Convert["Array.from(Map)"]
-        Write["PersistRiskAdapter.writePositionData"]
-    end
-    
-    subgraph "Disk Storage"
-        File["positions<br/>riskName: 'conservative'<br/>[[key, value], [key, value]]"]
-    end
-    
-    Map -->|"After add/remove"| Update
-    Update --> Convert
-    Convert --> Write
-    Write --> File
-    
-    File -.->|"On restart"| WAIT["WAIT_FOR_INIT_FN"]
-    WAIT -.->|"new Map(array)"| Map
-```
+![Mermaid Diagram](./diagrams\66_Position_Tracking_3.svg)
 
 **Diagram: Persistence and Recovery Flow**
 
@@ -317,28 +217,7 @@ Custom validation functions receive position data through the `IRiskValidationPa
 
 ### Payload Construction
 
-```mermaid
-graph LR
-    subgraph "Input"
-        Args["IRiskCheckArgs<br/>symbol<br/>strategyName<br/>exchangeName<br/>currentPrice<br/>timestamp"]
-    end
-    
-    subgraph "ClientRisk State"
-        ActivePos["_activePositions: Map"]
-        Size["riskMap.size"]
-        Values["Array.from(riskMap.values())"]
-    end
-    
-    subgraph "Output"
-        Payload["IRiskValidationPayload<br/>...IRiskCheckArgs<br/>activePositionCount<br/>activePositions[]"]
-    end
-    
-    Args --> Payload
-    Size --> Payload
-    Values --> Payload
-    ActivePos --> Size
-    ActivePos --> Values
-```
+![Mermaid Diagram](./diagrams\66_Position_Tracking_4.svg)
 
 **Diagram: Validation Payload Construction**
 
@@ -390,29 +269,7 @@ Each risk profile maintains an isolated position registry. Strategies with diffe
 
 ### Example: Multiple Risk Profiles
 
-```mermaid
-graph TB
-    subgraph "Risk Profile: conservative"
-        ConRisk["ClientRisk<br/>riskName: 'conservative'"]
-        ConMap["_activePositions<br/>strategy1:BTCUSDT<br/>strategy2:ETHUSDT"]
-        ConFile["Disk: positions<br/>riskName: 'conservative'"]
-        
-        ConRisk --> ConMap
-        ConMap --> ConFile
-    end
-    
-    subgraph "Risk Profile: aggressive"
-        AggRisk["ClientRisk<br/>riskName: 'aggressive'"]
-        AggMap["_activePositions<br/>strategy3:BNBUSDT"]
-        AggFile["Disk: positions<br/>riskName: 'aggressive'"]
-        
-        AggRisk --> AggMap
-        AggMap --> AggFile
-    end
-    
-    style ConRisk fill:#f9f9f9
-    style AggRisk fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\66_Position_Tracking_5.svg)
 
 **Diagram: Position Isolation by Risk Profile**
 
@@ -440,30 +297,7 @@ Position tracking integrates with the service layer through `RiskGlobalService` 
 
 ### Service Architecture
 
-```mermaid
-graph TB
-    subgraph "Public API"
-        StrategyConn["StrategyConnectionService<br/>Calls addSignal/removeSignal"]
-    end
-    
-    subgraph "Global Service Layer"
-        RiskGlobal["RiskGlobalService<br/>addSignal(symbol, context)<br/>removeSignal(symbol, context)<br/>checkSignal(params, context)"]
-    end
-    
-    subgraph "Connection Service Layer"
-        RiskConn["RiskConnectionService<br/>getRisk(riskName) - memoized<br/>Routes operations"]
-    end
-    
-    subgraph "Client Layer"
-        ClientRisk1["ClientRisk<br/>riskName: 'conservative'<br/>_activePositions: Map"]
-        ClientRisk2["ClientRisk<br/>riskName: 'aggressive'<br/>_activePositions: Map"]
-    end
-    
-    StrategyConn --> RiskGlobal
-    RiskGlobal --> RiskConn
-    RiskConn -->|"getRisk('conservative')"| ClientRisk1
-    RiskConn -->|"getRisk('aggressive')"| ClientRisk2
-```
+![Mermaid Diagram](./diagrams\66_Position_Tracking_6.svg)
 
 **Diagram: Position Tracking Service Integration**
 

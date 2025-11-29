@@ -11,28 +11,7 @@ Walker schemas are defined by the `IWalkerSchema` interface and registered via t
 
 **Schema Definition**
 
-```mermaid
-graph TB
-    IWalkerSchema["IWalkerSchema"]
-    WalkerName["walkerName: WalkerName"]
-    ExchangeName["exchangeName: ExchangeName"]
-    FrameName["frameName: FrameName"]
-    Strategies["strategies: StrategyName[]"]
-    Metric["metric?: WalkerMetric"]
-    Note["note?: string"]
-    Callbacks["callbacks?: Partial<IWalkerCallbacks>"]
-    
-    IWalkerSchema --> WalkerName
-    IWalkerSchema --> ExchangeName
-    IWalkerSchema --> FrameName
-    IWalkerSchema --> Strategies
-    IWalkerSchema --> Metric
-    IWalkerSchema --> Note
-    IWalkerSchema --> Callbacks
-    
-    Callbacks --> OnStrategyComplete["onStrategyComplete()"]
-    Callbacks --> OnComplete["onComplete()"]
-```
+![Mermaid Diagram](./diagrams\29_Walker_Schemas_0.svg)
 
 Sources: [types.d.ts:1014-1028]()
 
@@ -94,33 +73,7 @@ Walker schemas are registered through the `addWalker()` function, which performs
 
 **Registration Flow**
 
-```mermaid
-graph LR
-    AddWalker["addWalker(schema)"]
-    WalkerValidationService["WalkerValidationService.addWalker()"]
-    WalkerSchemaService["WalkerSchemaService.register()"]
-    ToolRegistry["ToolRegistry<IWalkerSchema>"]
-    
-    AddWalker --> WalkerValidationService
-    WalkerValidationService --> WalkerSchemaService
-    WalkerSchemaService --> ToolRegistry
-    
-    ValidationChecks["Validation Checks"]
-    CheckWalkerName["walkerName not empty"]
-    CheckExchange["exchangeName registered"]
-    CheckFrame["frameName registered"]
-    CheckStrategies["strategies array not empty"]
-    CheckEachStrategy["each strategy registered"]
-    CheckMetric["metric is valid WalkerMetric"]
-    
-    WalkerValidationService --> ValidationChecks
-    ValidationChecks --> CheckWalkerName
-    ValidationChecks --> CheckExchange
-    ValidationChecks --> CheckFrame
-    ValidationChecks --> CheckStrategies
-    ValidationChecks --> CheckEachStrategy
-    ValidationChecks --> CheckMetric
-```
+![Mermaid Diagram](./diagrams\29_Walker_Schemas_1.svg)
 
 Sources: [src/function/add.ts:188-200](), [src/lib/index.ts:88-91]()
 
@@ -155,29 +108,7 @@ Sources: [src/function/add.ts:151-200]()
 
 Walker schemas support lifecycle callbacks for monitoring comparison progress.
 
-```mermaid
-graph TB
-    subgraph "Walker Execution"
-        Start["Walker.run()"]
-        Strategy1["Strategy 1 Backtest"]
-        Callback1["onStrategyComplete()"]
-        Strategy2["Strategy 2 Backtest"]
-        Callback2["onStrategyComplete()"]
-        Strategy3["Strategy N Backtest"]
-        Callback3["onStrategyComplete()"]
-        Complete["onComplete()"]
-        End["Complete"]
-    end
-    
-    Start --> Strategy1
-    Strategy1 --> Callback1
-    Callback1 --> Strategy2
-    Strategy2 --> Callback2
-    Callback2 --> Strategy3
-    Strategy3 --> Callback3
-    Callback3 --> Complete
-    Complete --> End
-```
+![Mermaid Diagram](./diagrams\29_Walker_Schemas_2.svg)
 
 Sources: [types.d.ts:1014-1028]()
 
@@ -223,33 +154,7 @@ Walker schemas orchestrate multiple components to perform strategy comparison.
 
 **Component Dependencies**
 
-```mermaid
-graph TB
-    WalkerSchema["IWalkerSchema"]
-    ExchangeSchema["IExchangeSchema<br/>(exchangeName)"]
-    FrameSchema["IFrameSchema<br/>(frameName)"]
-    Strategy1["IStrategySchema<br/>(strategies[0])"]
-    Strategy2["IStrategySchema<br/>(strategies[1])"]
-    StrategyN["IStrategySchema<br/>(strategies[N])"]
-    
-    WalkerSchema --> ExchangeSchema
-    WalkerSchema --> FrameSchema
-    WalkerSchema --> Strategy1
-    WalkerSchema --> Strategy2
-    WalkerSchema --> StrategyN
-    
-    BacktestLogic["BacktestLogicPrivateService"]
-    WalkerLogic["WalkerLogicPrivateService"]
-    
-    ExchangeSchema --> BacktestLogic
-    FrameSchema --> BacktestLogic
-    Strategy1 --> BacktestLogic
-    Strategy2 --> BacktestLogic
-    StrategyN --> BacktestLogic
-    
-    BacktestLogic --> WalkerLogic
-    WalkerLogic --> WalkerResults["IWalkerResults"]
-```
+![Mermaid Diagram](./diagrams\29_Walker_Schemas_3.svg)
 
 Sources: [src/classes/Walker.ts:31-87](), [src/lib/index.ts:1-170]()
 
@@ -257,29 +162,7 @@ Sources: [src/classes/Walker.ts:31-87](), [src/lib/index.ts:1-170]()
 
 When `Walker.run()` is called, validation occurs for all referenced components:
 
-```mermaid
-sequenceDiagram
-    participant W as Walker.run()
-    participant WV as WalkerValidationService
-    participant EV as ExchangeValidationService
-    participant FV as FrameValidationService
-    participant SV as StrategyValidationService
-    
-    W->>WV: validate(walkerName)
-    WV->>WV: Check walker exists
-    W->>WV: get schema
-    W->>EV: validate(exchangeName)
-    EV->>EV: Check exchange exists
-    W->>FV: validate(frameName)
-    FV->>FV: Check frame exists
-    
-    loop For each strategy
-        W->>SV: validate(strategyName)
-        SV->>SV: Check strategy exists
-    end
-    
-    W->>W: Execute walker logic
-```
+![Mermaid Diagram](./diagrams\29_Walker_Schemas_4.svg)
 
 Sources: [src/classes/Walker.ts:50-59]()
 
@@ -289,42 +172,7 @@ The `Walker.run()` method executes backtests sequentially for all strategies and
 
 **Execution Architecture**
 
-```mermaid
-graph TB
-    subgraph "Walker.run()"
-        Input["symbol: string<br/>context: {walkerName}"]
-        GetSchema["WalkerSchemaService.get()"]
-        ClearData["Clear markdown services"]
-        ClearStrategies["Clear strategy instances"]
-        ClearRisk["Clear risk instances"]
-        RunWalker["WalkerGlobalService.run()"]
-    end
-    
-    subgraph "WalkerLogicPrivateService"
-        IterateStrategies["for strategy in strategies"]
-        RunBacktest["BacktestGlobalService.run()"]
-        CollectStats["BacktestMarkdownService.getData()"]
-        EmitProgress["walkerEmitter.next()"]
-        CompareMetrics["Compare by metric"]
-        SelectBest["Select best strategy"]
-        EmitComplete["walkerCompleteSubject.next()"]
-    end
-    
-    Input --> GetSchema
-    GetSchema --> ClearData
-    ClearData --> ClearStrategies
-    ClearStrategies --> ClearRisk
-    ClearRisk --> RunWalker
-    
-    RunWalker --> IterateStrategies
-    IterateStrategies --> RunBacktest
-    RunBacktest --> CollectStats
-    CollectStats --> EmitProgress
-    EmitProgress --> IterateStrategies
-    IterateStrategies --> CompareMetrics
-    CompareMetrics --> SelectBest
-    SelectBest --> EmitComplete
-```
+![Mermaid Diagram](./diagrams\29_Walker_Schemas_5.svg)
 
 Sources: [src/classes/Walker.ts:39-87](), [src/lib/services/logic/private/WalkerLogicPrivateService.ts]()
 
@@ -368,27 +216,7 @@ Sources: [types.d.ts:1030-1050]()
 
 ### Data Retrieval Methods
 
-```mermaid
-graph TB
-    WalkerUtils["Walker"]
-    GetData["getData(symbol, walkerName)"]
-    GetReport["getReport(symbol, walkerName)"]
-    Dump["dump(symbol, walkerName, path?)"]
-    
-    WalkerMarkdownService["WalkerMarkdownService"]
-    
-    WalkerUtils --> GetData
-    WalkerUtils --> GetReport
-    WalkerUtils --> Dump
-    
-    GetData --> WalkerMarkdownService
-    GetReport --> WalkerMarkdownService
-    Dump --> WalkerMarkdownService
-    
-    GetData --> IWalkerResults["Returns: IWalkerResults"]
-    GetReport --> Markdown["Returns: string (markdown)"]
-    Dump --> File["Writes: ./logs/walker/{walkerName}.md"]
-```
+![Mermaid Diagram](./diagrams\29_Walker_Schemas_6.svg)
 
 Sources: [src/classes/Walker.ts:146-255]()
 
@@ -425,37 +253,7 @@ Walker execution emits progress and completion events through the global event s
 
 **Event Flow**
 
-```mermaid
-graph TB
-    subgraph "Walker Execution"
-        Strategy1["Strategy 1 Complete"]
-        Strategy2["Strategy 2 Complete"]
-        Strategy3["Strategy N Complete"]
-        Complete["All Strategies Complete"]
-    end
-    
-    subgraph "Event Emitters"
-        WalkerEmitter["walkerEmitter"]
-        WalkerCompleteSubject["walkerCompleteSubject"]
-        DoneWalkerSubject["doneWalkerSubject"]
-    end
-    
-    subgraph "Event Listeners"
-        ListenWalker["listenWalker()"]
-        ListenWalkerComplete["listenWalkerComplete()"]
-        ListenDoneWalker["listenDoneWalker()"]
-    end
-    
-    Strategy1 --> WalkerEmitter
-    Strategy2 --> WalkerEmitter
-    Strategy3 --> WalkerEmitter
-    Complete --> WalkerCompleteSubject
-    Complete --> DoneWalkerSubject
-    
-    WalkerEmitter --> ListenWalker
-    WalkerCompleteSubject --> ListenWalkerComplete
-    DoneWalkerSubject --> ListenDoneWalker
-```
+![Mermaid Diagram](./diagrams\29_Walker_Schemas_7.svg)
 
 Sources: [src/config/emitters.ts:63-73](), [src/function/event.ts:507-623]()
 

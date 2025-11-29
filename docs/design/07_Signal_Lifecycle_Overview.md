@@ -15,57 +15,7 @@ The signal lifecycle is modeled as a finite state machine with six distinct stat
 
 ### State Transition Diagram
 
-```mermaid
-stateDiagram-v2
-    [*] --> idle
-    
-    idle --> scheduled: "getSignal returns ISignalDto with priceOpen"
-    idle --> opened: "getSignal returns ISignalDto without priceOpen"
-    
-    scheduled --> opened: "Price reaches priceOpen (activation)"
-    scheduled --> cancelled: "Timeout or StopLoss hit before activation"
-    
-    opened --> active: "Next tick (monitoring begins)"
-    
-    active --> closed: "TakeProfit hit OR StopLoss hit OR time_expired"
-    active --> active: "Continue monitoring"
-    
-    closed --> [*]
-    cancelled --> [*]
-    
-    note right of idle
-        No active signal exists.
-        Strategy may generate new signal.
-    end note
-    
-    note right of scheduled
-        Signal created with future entry price.
-        Waiting for market price to reach priceOpen.
-        Timeout: CC_SCHEDULE_AWAIT_MINUTES
-    end note
-    
-    note right of opened
-        Signal just created/activated.
-        Position tracking begins.
-        Risk limits updated.
-    end note
-    
-    note right of active
-        Position being monitored.
-        VWAP checked against TP/SL.
-        Time expiration tracked.
-    end note
-    
-    note right of closed
-        Final state with PnL calculation.
-        Reason: take_profit | stop_loss | time_expired
-    end note
-    
-    note right of cancelled
-        Scheduled signal never activated.
-        No position opened, no PnL.
-    end note
-```
+![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_0.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:1-1400](), [src/interfaces/Strategy.interface.ts:1-350](), [types.d.ts:536-825]()
 
@@ -90,44 +40,7 @@ The framework uses a discriminated union pattern for type-safe signal handling. 
 
 ### Core Signal Interfaces
 
-```mermaid
-classDiagram
-    class ISignalDto {
-        +string? id
-        +string position
-        +string? note
-        +number? priceOpen
-        +number priceTakeProfit
-        +number priceStopLoss
-        +number minuteEstimatedTime
-    }
-    
-    class ISignalRow {
-        +string id
-        +number priceOpen
-        +string exchangeName
-        +string strategyName
-        +number scheduledAt
-        +number pendingAt
-        +string symbol
-        +boolean _isScheduled
-        +string position
-        +number priceTakeProfit
-        +number priceStopLoss
-        +number minuteEstimatedTime
-    }
-    
-    class IScheduledSignalRow {
-        +number priceOpen
-    }
-    
-    ISignalDto <|-- ISignalRow : "augmented with metadata"
-    ISignalRow <|-- IScheduledSignalRow : "extends (requires priceOpen)"
-    
-    note for ISignalDto "User-provided DTO from getSignal()\nOptional priceOpen determines scheduling"
-    note for ISignalRow "Complete signal with auto-generated id\nUsed throughout system after validation"
-    note for IScheduledSignalRow "Scheduled signal awaiting activation\npendingAt equals scheduledAt until activated"
-```
+![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_1.svg)
 
 **Sources:** [src/interfaces/Strategy.interface.ts:19-72](), [types.d.ts:543-591]()
 
@@ -154,33 +67,7 @@ Signal generation occurs via the user-defined `getSignal()` function, followed b
 
 ### Signal Generation Flow
 
-```mermaid
-flowchart TD
-    Start["tick() called"] --> CheckInterval["Check interval throttling"]
-    CheckInterval -->|"Too soon"| ReturnNull["Return null"]
-    CheckInterval -->|"Interval elapsed"| GetPrice["getAveragePrice(symbol)"]
-    
-    GetPrice --> RiskCheck["risk.checkSignal()"]
-    RiskCheck -->|"Rejected"| ReturnNull
-    RiskCheck -->|"Approved"| CallGetSignal["getSignal(symbol)"]
-    
-    CallGetSignal -->|"Returns null"| ReturnNull
-    CallGetSignal -->|"Returns ISignalDto"| CheckPriceOpen{"priceOpen\nspecified?"}
-    
-    CheckPriceOpen -->|"Yes"| CreateScheduled["Create IScheduledSignalRow"]
-    CheckPriceOpen -->|"No"| CreateImmediate["Create ISignalRow with currentPrice"]
-    
-    CreateScheduled --> Validate["VALIDATE_SIGNAL_FN"]
-    CreateImmediate --> Validate
-    
-    Validate -->|"Valid"| ReturnSignal["Return signal"]
-    Validate -->|"Invalid"| ThrowError["Throw validation error"]
-    
-    ReturnNull --> End["Return idle result"]
-    ReturnSignal --> ProcessSignal["Process signal in tick()"]
-    ThrowError --> ErrorEmit["Emit to errorEmitter"]
-    ErrorEmit --> ReturnNull
-```
+![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_2.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:187-283](), [src/client/ClientStrategy.ts:40-185]()
 
@@ -238,24 +125,7 @@ User-provided `ISignalDto` is augmented with framework metadata:
 
 Occurs when `getSignal()` returns a signal with `priceOpen` specified. Signal waits for market price to reach entry point.
 
-```mermaid
-sequenceDiagram
-    participant Tick as "tick()"
-    participant GetSignal as "getSignal()"
-    participant Risk as "risk.checkSignal()"
-    participant Validate as "VALIDATE_SIGNAL_FN"
-    participant Callback as "callbacks.onSchedule"
-    
-    Tick->>GetSignal: Call user function
-    GetSignal-->>Tick: ISignalDto with priceOpen
-    Tick->>Validate: Validate signal
-    Validate-->>Tick: Valid
-    Tick->>Callback: Notify scheduled
-    Tick-->>Tick: Store in _scheduledSignal
-    Tick-->>Tick: Return IStrategyTickResultScheduled
-    
-    Note over Tick: Risk check deferred to activation time
-```
+![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_3.svg)
 
 **Key Implementation:** Scheduled signals do NOT perform risk check at creation time. Risk validation occurs during activation when position opens.
 
@@ -265,24 +135,7 @@ sequenceDiagram
 
 Occurs when `getSignal()` returns a signal without `priceOpen`. Position opens immediately at current VWAP.
 
-```mermaid
-sequenceDiagram
-    participant Tick as "tick()"
-    participant GetSignal as "getSignal()"
-    participant Risk as "risk.checkSignal()"
-    participant Persist as "PersistSignalAdapter"
-    participant Callback as "callbacks.onOpen"
-    
-    Tick->>GetSignal: Call user function
-    GetSignal-->>Tick: ISignalDto without priceOpen
-    Tick->>Risk: checkSignal(currentPrice)
-    Risk-->>Tick: Approved
-    Tick->>Persist: setPendingSignal()
-    Tick->>Risk: addSignal() (update portfolio)
-    Tick->>Callback: Notify opened
-    Tick-->>Tick: Store in _pendingSignal
-    Tick-->>Tick: Return IStrategyTickResultOpened
-```
+![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_4.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:623-673]()
 
@@ -290,39 +143,7 @@ sequenceDiagram
 
 Occurs when market price reaches `priceOpen` for a scheduled signal. Triggers risk check at activation time.
 
-```mermaid
-sequenceDiagram
-    participant Tick as "tick()"
-    participant Price as "getAveragePrice()"
-    participant Check as "CHECK_SCHEDULED_SIGNAL_PRICE_ACTIVATION_FN"
-    participant Risk as "risk.checkSignal()"
-    participant Activate as "ACTIVATE_SCHEDULED_SIGNAL_FN"
-    participant Persist as "PersistSignalAdapter"
-    
-    Tick->>Price: Get current VWAP
-    Price-->>Tick: currentPrice
-    Tick->>Check: Check activation conditions
-    
-    alt Long position
-        Check->>Check: currentPrice <= priceOpen?
-        Check->>Check: currentPrice > priceStopLoss?
-    else Short position
-        Check->>Check: currentPrice >= priceOpen?
-        Check->>Check: currentPrice < priceStopLoss?
-    end
-    
-    Check-->>Tick: shouldActivate=true
-    Tick->>Activate: Activate signal
-    Activate->>Risk: checkSignal(priceOpen)
-    Risk-->>Activate: Approved
-    
-    Activate->>Activate: Update pendingAt timestamp
-    Activate->>Persist: setPendingSignal()
-    Activate->>Risk: addSignal()
-    Activate-->>Tick: Return IStrategyTickResultOpened
-    
-    Note over Activate: pendingAt updated from scheduledAt<br/>to activation timestamp
-```
+![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_5.svg)
 
 **Critical:** `pendingAt` timestamp is updated during activation. Time-based expiration calculates from `pendingAt`, not `scheduledAt`.
 
@@ -351,32 +172,7 @@ if (elapsedTime >= maxTimeToWait) {
 
 Occurs when signal meets closure condition: TakeProfit hit, StopLoss hit, or time expired.
 
-```mermaid
-flowchart TD
-    Active["Signal in active state"] --> GetPrice["getAveragePrice(symbol)"]
-    GetPrice --> CheckTime{"Time expired?\n(currentTime - pendingAt\n>= minuteEstimatedTime)"}
-    
-    CheckTime -->|"Yes"| CloseTime["Close with time_expired"]
-    CheckTime -->|"No"| CheckTP{"TakeProfit hit?"}
-    
-    CheckTP -->|"Long: price >= TP<br/>Short: price <= TP"| CloseTP["Close with take_profit<br/>Use exact TP price"]
-    CheckTP -->|"No"| CheckSL{"StopLoss hit?"}
-    
-    CheckSL -->|"Long: price <= SL<br/>Short: price >= SL"| CloseSL["Close with stop_loss<br/>Use exact SL price"]
-    CheckSL -->|"No"| ContinueActive["Continue active"]
-    
-    CloseTime --> CalculatePnL["toProfitLossDto()"]
-    CloseTP --> CalculatePnL
-    CloseSL --> CalculatePnL
-    
-    CalculatePnL --> UpdateRisk["risk.removeSignal()"]
-    UpdateRisk --> Persist["setPendingSignal(null)"]
-    Persist --> Callback["callbacks.onClose()"]
-    Callback --> ReturnClosed["Return IStrategyTickResultClosed"]
-    
-    ContinueActive --> Callback2["callbacks.onActive()"]
-    Callback2 --> ReturnActive["Return IStrategyTickResultActive"]
-```
+![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_6.svg)
 
 **Critical:** When TakeProfit or StopLoss triggers, the framework uses the **exact TP/SL price** for PnL calculation, not the current VWAP. This ensures deterministic results.
 
@@ -428,27 +224,7 @@ Strategies can register callbacks to observe signal state transitions. All callb
 
 ### Callback Inventory
 
-```mermaid
-graph LR
-    subgraph "Signal Lifecycle Callbacks"
-        onTick["onTick(symbol, result, backtest)"]
-        onIdle["onIdle(symbol, currentPrice, backtest)"]
-        onSchedule["onSchedule(symbol, signal, currentPrice, backtest)"]
-        onOpen["onOpen(symbol, signal, currentPrice, backtest)"]
-        onActive["onActive(symbol, signal, currentPrice, backtest)"]
-        onClose["onClose(symbol, signal, priceClose, backtest)"]
-        onCancel["onCancel(symbol, signal, currentPrice, backtest)"]
-    end
-    
-    onTick -.->|"Called on every tick<br/>with tick result"| onTick
-    
-    onIdle -.->|"No active signal"| onIdle
-    onSchedule -.->|"Scheduled signal created"| onSchedule
-    onOpen -.->|"Position opened/activated"| onOpen
-    onActive -.->|"Position monitoring"| onActive
-    onClose -.->|"Position closed with PnL"| onClose
-    onCancel -.->|"Scheduled cancelled"| onCancel
-```
+![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_7.svg)
 
 ### Callback Execution Order
 

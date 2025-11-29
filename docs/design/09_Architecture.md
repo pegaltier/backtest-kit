@@ -9,55 +9,7 @@ This document provides a comprehensive overview of backtest-kit's layered archit
 
 The framework follows clean architecture principles with six distinct layers, separated by dependency injection boundaries. Each layer has a specific responsibility, with dependencies flowing inward toward business logic.
 
-```mermaid
-graph TB
-    subgraph "Layer 1: Public API"
-        API["Public Functions<br/>addStrategy, addExchange<br/>setLogger, setConfig"]
-        Classes["Execution Classes<br/>Backtest, Live, Walker<br/>Schedule, Performance"]
-    end
-    
-    subgraph "Layer 2: Global Services"
-        StrategyGlobal["StrategyGlobalService"]
-        ExchangeGlobal["ExchangeGlobalService"]
-        LiveGlobal["LiveGlobalService"]
-        BacktestGlobal["BacktestGlobalService"]
-    end
-    
-    subgraph "Layer 3: Logic Services"
-        LogicPublic["BacktestLogicPublicService<br/>LiveLogicPublicService"]
-        LogicPrivate["BacktestLogicPrivateService<br/>LiveLogicPrivateService"]
-    end
-    
-    subgraph "Layer 4: Connection Services"
-        StrategyConn["StrategyConnectionService"]
-        ExchangeConn["ExchangeConnectionService"]
-        RiskConn["RiskConnectionService"]
-    end
-    
-    subgraph "Layer 5: Schema & Validation"
-        SchemaServices["StrategySchemaService<br/>ExchangeSchemaService"]
-        ValidationServices["StrategyValidationService<br/>ExchangeValidationService"]
-    end
-    
-    subgraph "Layer 6: Client Classes"
-        ClientStrategy["ClientStrategy"]
-        ClientExchange["ClientExchange"]
-        ClientRisk["ClientRisk"]
-    end
-    
-    API --> StrategyGlobal
-    Classes --> LiveGlobal
-    StrategyGlobal --> LogicPublic
-    LiveGlobal --> LogicPublic
-    LogicPublic --> LogicPrivate
-    LogicPrivate --> StrategyConn
-    StrategyConn --> ClientStrategy
-    StrategyConn --> SchemaServices
-    SchemaServices --> ValidationServices
-    
-    style API fill:#f9f9f9
-    style ClientStrategy fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\09_Architecture_0.svg)
 
 **Sources:** [src/lib/index.ts:1-170](), [src/lib/core/types.ts:1-81](), [src/lib/core/provide.ts:1-111]()
 
@@ -82,19 +34,7 @@ The public API layer consists of exported functions and classes that users inter
 
 Global Services act as context-aware entry points that wrap lower layers with `MethodContextService` and `ExecutionContextService` scope management. They coordinate validation and delegate to Logic Services.
 
-```mermaid
-graph LR
-    User["User Code"]
-    SG["StrategyGlobalService"]
-    SV["StrategyValidationService"]
-    LP["LogicPrivateService"]
-    MC["MethodContextService"]
-    
-    User -->|"tick(symbol)"| SG
-    SG -->|"validate"| SV
-    SG -->|"wrap context"| MC
-    MC -->|"delegate"| LP
-```
+![Mermaid Diagram](./diagrams\09_Architecture_1.svg)
 
 **Key Global Services:**
 
@@ -113,14 +53,7 @@ Logic Services implement core orchestration logic using async generators for bac
 
 **Logic Service Pattern:**
 
-```mermaid
-graph TB
-    LogicPublic["LogicPublicService<br/>Context Management"]
-    LogicPrivate["LogicPrivateService<br/>Core Orchestration"]
-    
-    LogicPublic -->|"MethodContextService.runAsyncIterator"| LogicPrivate
-    LogicPrivate -->|"ExecutionContextService.runInContext"| Operations["Strategy.tick()<br/>Exchange.getCandles()"]
-```
+![Mermaid Diagram](./diagrams\09_Architecture_2.svg)
 
 **Public vs Private Split:**
 
@@ -133,18 +66,7 @@ graph TB
 
 Connection Services provide memoized client instance management. They resolve schema configurations, inject dependencies, and return cached client instances to avoid repeated instantiation.
 
-```mermaid
-graph TB
-    ConnectionService["ConnectionService"]
-    SchemaService["SchemaService"]
-    Client["Client Instance"]
-    Cache["Memoization Cache"]
-    
-    ConnectionService -->|"resolve schema"| SchemaService
-    ConnectionService -->|"inject deps"| Client
-    ConnectionService -->|"cache by name"| Cache
-    Cache -->|"return cached"| Client
-```
+![Mermaid Diagram](./diagrams\09_Architecture_3.svg)
 
 **Key Connection Services:**
 
@@ -228,17 +150,7 @@ class ClientStrategy {
 
 The framework uses a custom DI container with Symbol-based tokens for type-safe service resolution.
 
-```mermaid
-graph TB
-    Tokens["Symbol Tokens<br/>TYPES.strategyGlobalService"]
-    Provide["provide() Bindings"]
-    Inject["inject() Resolution"]
-    Services["Service Instances"]
-    
-    Tokens -->|"define"| Provide
-    Provide -->|"bind factory"| Services
-    Inject -->|"resolve by token"| Services
-```
+![Mermaid Diagram](./diagrams\09_Architecture_4.svg)
 
 ### Symbol-Based Tokens
 
@@ -283,28 +195,7 @@ const backtest = {
 
 The following diagram maps the actual dependency relationships between services:
 
-```mermaid
-graph TD
-    BGS["BacktestGlobalService"]
-    BLP["BacktestLogicPrivateService"]
-    SGS["StrategyGlobalService"]
-    SCS["StrategyConnectionService"]
-    SSS["StrategySchemaService"]
-    SVS["StrategyValidationService"]
-    RVS["RiskValidationService"]
-    LS["LoggerService"]
-    
-    BGS -->|"inject"| BLP
-    BGS -->|"inject"| SVS
-    BGS -->|"inject"| LS
-    BLP -->|"inject"| SGS
-    SGS -->|"inject"| SCS
-    SGS -->|"inject"| SVS
-    SCS -->|"inject"| SSS
-    SCS -->|"inject"| LS
-    SVS -->|"inject"| RVS
-    SVS -->|"inject"| LS
-```
+![Mermaid Diagram](./diagrams\09_Architecture_5.svg)
 
 **Sources:** [src/lib/core/types.ts:1-81](), [src/lib/core/provide.ts:1-111](), [src/lib/index.ts:49-162](), [src/lib/core/di.ts]()
 
@@ -336,22 +227,7 @@ interface IExecutionContext {
 
 ### Context Flow Architecture
 
-```mermaid
-graph TB
-    User["User calls Backtest.run()"]
-    LogicPublic["BacktestLogicPublicService"]
-    LogicPrivate["BacktestLogicPrivateService"]
-    StrategyGlobal["StrategyGlobalService.tick()"]
-    ClientStrategy["ClientStrategy.tick()"]
-    ExchangeConn["ExchangeConnectionService"]
-    
-    User -->|"context object"| LogicPublic
-    LogicPublic -->|"MethodContextService.runAsyncIterator"| LogicPrivate
-    LogicPrivate -->|"ExecutionContextService.runInContext"| StrategyGlobal
-    StrategyGlobal -->|"implicit context"| ClientStrategy
-    ClientStrategy -->|"getCandles(symbol)"| ExchangeConn
-    ExchangeConn -->|"resolve via methodContext.exchangeName"| ClientExchange["ClientExchange instance"]
-```
+![Mermaid Diagram](./diagrams\09_Architecture_6.svg)
 
 ### MethodContextService Pattern
 
@@ -418,18 +294,7 @@ The framework uses `functools-kit`'s `Subject` for pub-sub event handling with q
 
 All events are emitted through global Subject instances:
 
-```mermaid
-graph LR
-    SignalEmitter["signalEmitter<br/>(all signals)"]
-    BacktestEmitter["signalBacktestEmitter<br/>(backtest only)"]
-    LiveEmitter["signalLiveEmitter<br/>(live only)"]
-    ErrorEmitter["errorEmitter<br/>(background errors)"]
-    DoneEmitter["doneEmitter<br/>(completion)"]
-    ProgressEmitter["progressEmitter<br/>(walker progress)"]
-    
-    SignalEmitter -->|"filter"| BacktestEmitter
-    SignalEmitter -->|"filter"| LiveEmitter
-```
+![Mermaid Diagram](./diagrams\09_Architecture_7.svg)
 
 ### Event Types
 
@@ -462,21 +327,7 @@ export const listenSignal = (fn: (data: IStrategyTickResult) => void | Promise<v
 
 ### Event Emission Flow
 
-```mermaid
-graph TB
-    Strategy["ClientStrategy.tick()"]
-    Logic["BacktestLogicPrivateService"]
-    GlobalEmitter["signalEmitter.next()"]
-    ModeEmitter["signalBacktestEmitter.next()"]
-    Markdown["BacktestMarkdownService"]
-    UserListener["User Event Listeners"]
-    
-    Strategy -->|"return result"| Logic
-    Logic -->|"emit"| GlobalEmitter
-    GlobalEmitter -->|"broadcast"| ModeEmitter
-    GlobalEmitter -->|"broadcast"| Markdown
-    GlobalEmitter -->|"broadcast"| UserListener
-```
+![Mermaid Diagram](./diagrams\09_Architecture_8.svg)
 
 ### Emission Points
 

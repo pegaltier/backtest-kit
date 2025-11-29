@@ -88,53 +88,7 @@ All background tasks use `getErrorMessage()` from `functools-kit` to normalize e
 
 ## Background Task Error Flow
 
-```mermaid
-graph TB
-    subgraph "User Code"
-        BT_BG["Backtest.background()"]
-        LV_BG["Live.background()"]
-        WK_BG["Walker.background()"]
-    end
-    
-    subgraph "Execution Layer"
-        BT_Run["Backtest.run()<br/>async generator"]
-        LV_Run["Live.run()<br/>async generator"]
-        WK_Run["Walker.run()<br/>async generator"]
-    end
-    
-    subgraph "Error Catching"
-        TryCatch["task().catch(error)"]
-        GetMsg["getErrorMessage(error)<br/>Normalize to string"]
-        CreateError["new Error(message)"]
-    end
-    
-    subgraph "Error Propagation"
-        ErrorEmitter["errorEmitter.next(error)"]
-    end
-    
-    subgraph "User Error Handlers"
-        ListenError["listenError(fn)"]
-        ErrorCallback["User callback function"]
-    end
-    
-    BT_BG --> BT_Run
-    LV_BG --> LV_Run
-    WK_BG --> WK_Run
-    
-    BT_Run --> TryCatch
-    LV_Run --> TryCatch
-    WK_Run --> TryCatch
-    
-    TryCatch --> GetMsg
-    GetMsg --> CreateError
-    CreateError --> ErrorEmitter
-    
-    ErrorEmitter --> ListenError
-    ListenError --> ErrorCallback
-    
-    style TryCatch fill:#f9f9f9
-    style ErrorEmitter fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\77_Error_Handling_0.svg)
 
 **Diagram: Background Task Error Propagation**
 
@@ -252,56 +206,7 @@ return validationSubject.subscribe(queued(async (error) => fn(error)));
 
 ## Error Handling Architecture
 
-```mermaid
-graph TB
-    subgraph "Error Sources"
-        BgTask["Background Task<br/>Backtest/Live/Walker.background()"]
-        ValidationFn["Risk Validation Function<br/>User-defined validation logic"]
-    end
-    
-    subgraph "Error Capture"
-        Catch1["task().catch(error)"]
-        Catch2["try-catch in<br/>ClientRisk.checkSignal()"]
-    end
-    
-    subgraph "Error Normalization"
-        GetMsg["getErrorMessage(error)"]
-        NewError["new Error(message)"]
-    end
-    
-    subgraph "Error Emitters"
-        ErrEmit["errorEmitter<br/>Subject&lt;Error&gt;"]
-        ValEmit["validationSubject<br/>Subject&lt;Error&gt;"]
-    end
-    
-    subgraph "Error Subscription"
-        ListenErr["listenError(fn)<br/>queued processing"]
-        ListenVal["listenValidation(fn)<br/>queued processing"]
-    end
-    
-    subgraph "User Handlers"
-        UserCb1["User error callback<br/>Logging/Alerting"]
-        UserCb2["User validation callback<br/>Debugging"]
-    end
-    
-    BgTask --> Catch1
-    ValidationFn --> Catch2
-    
-    Catch1 --> GetMsg
-    GetMsg --> NewError
-    NewError --> ErrEmit
-    
-    Catch2 --> ValEmit
-    
-    ErrEmit --> ListenErr
-    ValEmit --> ListenVal
-    
-    ListenErr --> UserCb1
-    ListenVal --> UserCb2
-    
-    style ErrEmit fill:#f9f9f9
-    style ValEmit fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\77_Error_Handling_1.svg)
 
 **Diagram: Error Handling System Architecture**
 
@@ -313,45 +218,7 @@ This diagram shows the complete error handling pipeline from error sources throu
 
 ## Error-to-Code Entity Mapping
 
-```mermaid
-graph LR
-    subgraph "Error Types"
-        GenErr["General Execution Errors"]
-        ValErr["Validation Errors"]
-    end
-    
-    subgraph "Emitter Instances"
-        ErrEmit["errorEmitter<br/>src/config/emitters.ts:31"]
-        ValSub["validationSubject<br/>src/config/emitters.ts:79"]
-    end
-    
-    subgraph "Listener Functions"
-        ListenErr["listenError()<br/>src/function/event.ts:232"]
-        ListenVal["listenValidation()<br/>src/function/event.ts:649"]
-    end
-    
-    subgraph "Background Methods"
-        BT_BG["Backtest.background()<br/>src/classes/Backtest.ts:89"]
-        LV_BG["Live.background()<br/>src/classes/Live.ts:105"]
-        WK_BG["Walker.background()<br/>src/classes/Walker.ts:108"]
-    end
-    
-    subgraph "Risk Layer"
-        RiskCheck["ClientRisk.checkSignal()"]
-    end
-    
-    GenErr --> ErrEmit
-    ValErr --> ValSub
-    
-    ErrEmit --> ListenErr
-    ValSub --> ListenVal
-    
-    BT_BG --> GenErr
-    LV_BG --> GenErr
-    WK_BG --> GenErr
-    
-    RiskCheck --> ValErr
-```
+![Mermaid Diagram](./diagrams\77_Error_Handling_2.svg)
 
 **Diagram: Error Handling Code Entity Mapping**
 
@@ -396,38 +263,7 @@ warn(topic: string, ...args: any[]): void;
 
 ## Error Handling Lifecycle
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Background as Background Method
-    participant Task as Async Task
-    participant Emitter as errorEmitter
-    participant Listener as listenError
-    participant Handler as User Handler
-    
-    User->>Background: Backtest.background()
-    Background->>Task: Start async task
-    activate Task
-    
-    Note over Task: Error occurs during<br/>generator iteration
-    
-    Task-->>Background: throw Error
-    deactivate Task
-    
-    Background->>Background: task().catch(error)
-    Background->>Background: getErrorMessage(error)
-    Background->>Background: new Error(message)
-    Background->>Emitter: errorEmitter.next(error)
-    
-    Emitter->>Listener: Emit error to subscribers
-    Listener->>Handler: queued(fn)(error)
-    
-    Handler->>Handler: Log error
-    Handler->>Handler: Send to monitoring
-    Handler-->>Listener: Complete
-    
-    Note over Listener,Handler: Next error waits for<br/>current handler to finish
-```
+![Mermaid Diagram](./diagrams\77_Error_Handling_3.svg)
 
 **Diagram: Error Handling Sequence**
 

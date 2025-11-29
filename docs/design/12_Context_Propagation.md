@@ -28,48 +28,7 @@ The framework maintains two distinct context scopes that serve different purpose
 
 `MethodContextService` uses the `di-scoped` library to create ambient context that flows through async operations without explicit parameters. The service contains an `IMethodContext` object with three schema names that determine which registered implementations to use.
 
-```mermaid
-graph TB
-    subgraph "User Code"
-        UserCall["LiveLogicPublicService.run()"]
-    end
-    
-    subgraph "Context Injection Layer"
-        RunAsyncIterator["MethodContextService.runAsyncIterator()"]
-        ContextObj["IMethodContext {<br/>strategyName: 'my-strategy'<br/>exchangeName: 'binance'<br/>frameName: ''<br/>}"]
-    end
-    
-    subgraph "Private Logic Layer"
-        PrivateService["LiveLogicPrivateService.run()"]
-    end
-    
-    subgraph "Connection Services (Context Consumers)"
-        StrategyConn["StrategyConnectionService.getStrategy()"]
-        ExchangeConn["ExchangeConnectionService.getExchange()"]
-        FrameConn["FrameConnectionService.getFrame()"]
-    end
-    
-    subgraph "Context Retrieval"
-        GetContext["MethodContextService.get().context"]
-    end
-    
-    UserCall --> RunAsyncIterator
-    RunAsyncIterator --> ContextObj
-    ContextObj --> PrivateService
-    PrivateService --> StrategyConn
-    PrivateService --> ExchangeConn
-    PrivateService --> FrameConn
-    
-    StrategyConn --> GetContext
-    ExchangeConn --> GetContext
-    FrameConn --> GetContext
-    
-    GetContext -.-> ContextObj
-    
-    style RunAsyncIterator fill:#f9f9f9
-    style GetContext fill:#f9f9f9
-    style ContextObj fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\12_Context_Propagation_0.svg)
 
 **Diagram: MethodContextService propagates schema names through async generator execution**
 
@@ -99,34 +58,7 @@ Each property corresponds to a schema registered via `addStrategy()`, `addExchan
 
 The following sequence shows how context flows from public API to connection services:
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant PublicService as "BacktestLogicPublicService"
-    participant MCS as "MethodContextService"
-    participant PrivateService as "BacktestLogicPrivateService"
-    participant StrategyGlobal as "StrategyGlobalService"
-    participant StrategyConn as "StrategyConnectionService"
-    participant ClientStrategy
-    
-    User->>PublicService: run(symbol, {strategyName, exchangeName, frameName})
-    PublicService->>MCS: runAsyncIterator(generator, context)
-    
-    Note over MCS: Sets ambient context:<br/>{strategyName, exchangeName, frameName}
-    
-    MCS->>PrivateService: iterate generator
-    PrivateService->>StrategyGlobal: tick(symbol, when, backtest)
-    StrategyGlobal->>StrategyConn: getStrategy()
-    
-    Note over StrategyConn: Retrieves context:<br/>MethodContextService.get().context
-    
-    StrategyConn->>StrategyConn: const {strategyName} = context
-    StrategyConn->>ClientStrategy: return cached instance[strategyName]
-    ClientStrategy-->>StrategyGlobal: ClientStrategy instance
-    StrategyGlobal-->>PrivateService: tick result
-    PrivateService-->>MCS: yield result
-    MCS-->>User: result
-```
+![Mermaid Diagram](./diagrams\12_Context_Propagation_1.svg)
 
 **Diagram: Context propagation through service layers using di-scoped ambient context**
 
@@ -186,50 +118,7 @@ JavaScript async generators introduce complexity for context propagation because
 
 The `MethodContextService.runAsyncIterator()` method wraps async generators to maintain context across yields:
 
-```mermaid
-graph TB
-    subgraph "Public Service Layer"
-        PublicRun["BacktestLogicPublicService.run()"]
-    end
-    
-    subgraph "Context Wrapper"
-        RunAsyncIter["MethodContextService.runAsyncIterator()"]
-        ContextCapture["Captures context object"]
-    end
-    
-    subgraph "Private Generator"
-        PrivateGen["BacktestLogicPrivateService.run()*"]
-        Yield1["yield result1"]
-        Yield2["yield result2"]
-        YieldN["yield resultN"]
-    end
-    
-    subgraph "Context Scope Boundaries"
-        Resume1["Resume with context"]
-        Resume2["Resume with context"]
-        ResumeN["Resume with context"]
-    end
-    
-    PublicRun --> RunAsyncIter
-    RunAsyncIter --> ContextCapture
-    ContextCapture --> PrivateGen
-    
-    PrivateGen --> Yield1
-    Yield1 --> Resume1
-    Resume1 --> Yield2
-    Yield2 --> Resume2
-    Resume2 --> YieldN
-    YieldN --> ResumeN
-    
-    ContextCapture -.->|restores context| Resume1
-    ContextCapture -.->|restores context| Resume2
-    ContextCapture -.->|restores context| ResumeN
-    
-    style ContextCapture fill:#f9f9f9
-    style Resume1 fill:#f9f9f9
-    style Resume2 fill:#f9f9f9
-    style ResumeN fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\12_Context_Propagation_2.svg)
 
 **Diagram: runAsyncIterator maintains context across async generator yields**
 
@@ -270,52 +159,7 @@ The `runAsyncIterator` method:
 
 Connection services are the primary consumers of `MethodContext`. They use the context to determine which cached client instance to return:
 
-```mermaid
-graph LR
-    subgraph "MethodContext"
-        Context["IMethodContext:<br/>{strategyName, exchangeName, frameName}"]
-    end
-    
-    subgraph "Connection Services"
-        StrategyConn["StrategyConnectionService"]
-        ExchangeConn["ExchangeConnectionService"]
-        FrameConn["FrameConnectionService"]
-    end
-    
-    subgraph "Context Retrieval"
-        GetContext["MethodContextService.get()"]
-    end
-    
-    subgraph "Schema Registries"
-        StrategyReg["StrategySchemaService"]
-        ExchangeReg["ExchangeSchemaService"]
-        FrameReg["FrameSchemaService"]
-    end
-    
-    subgraph "Client Instances"
-        ClientStrat["ClientStrategy[strategyName]"]
-        ClientExch["ClientExchange[exchangeName]"]
-        ClientFrame["ClientFrame[frameName]"]
-    end
-    
-    Context --> GetContext
-    
-    StrategyConn --> GetContext
-    ExchangeConn --> GetContext
-    FrameConn --> GetContext
-    
-    GetContext -.->|"context.strategyName"| StrategyConn
-    GetContext -.->|"context.exchangeName"| ExchangeConn
-    GetContext -.->|"context.frameName"| FrameConn
-    
-    StrategyConn --> StrategyReg
-    ExchangeConn --> ExchangeReg
-    FrameConn --> FrameReg
-    
-    StrategyReg --> ClientStrat
-    ExchangeReg --> ClientExch
-    FrameReg --> ClientFrame
-```
+![Mermaid Diagram](./diagrams\12_Context_Propagation_3.svg)
 
 **Diagram: Connection services consume MethodContext to route to correct client instances**
 
@@ -366,29 +210,7 @@ Key features:
 
 ### Context Lifecycle
 
-```mermaid
-stateDiagram-v2
-    direction LR
-    [*] --> ContextCreated: "Public service called with<br/>context parameters"
-    
-    ContextCreated --> ContextBound: "runAsyncIterator() wraps generator"
-    
-    state ContextBound {
-        [*] --> GeneratorYield
-        GeneratorYield --> ContextRestore: "di-scoped restores context"
-        ContextRestore --> ServiceCall: "Connection service reads context"
-        ServiceCall --> GeneratorYield: "Next iteration"
-    }
-    
-    ContextBound --> ContextDestroyed: "Generator completes or throws"
-    
-    ContextDestroyed --> [*]
-    
-    note right of ContextBound
-        Context remains valid
-        across all yields
-    end note
-```
+![Mermaid Diagram](./diagrams\12_Context_Propagation_4.svg)
 
 **Diagram: Context lifecycle from creation through generator completion**
 
@@ -413,45 +235,7 @@ The DI system registers context services as singletons but their scoped instance
 
 The complete flow showing both context types in action:
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant PublicLogic as "BacktestLogicPublicService"
-    participant MCS as "MethodContextService<br/>(di-scoped)"
-    participant PrivateLogic as "BacktestLogicPrivateService"
-    participant ECS as "ExecutionContextService<br/>(singleton)"
-    participant GlobalSvc as "StrategyGlobalService"
-    participant ConnSvc as "StrategyConnectionService"
-    
-    User->>PublicLogic: run(symbol, {strategyName, exchangeName, frameName})
-    
-    Note over PublicLogic,MCS: Set MethodContext
-    PublicLogic->>MCS: runAsyncIterator(generator, context)
-    
-    MCS->>PrivateLogic: Start async generator
-    
-    loop Each timeframe
-        Note over PrivateLogic,ECS: Set ExecutionContext
-        PrivateLogic->>ECS: setDate(timeframe[i])
-        PrivateLogic->>ECS: setBacktestMode(true)
-        
-        PrivateLogic->>GlobalSvc: tick(symbol, when, backtest)
-        
-        Note over GlobalSvc,ConnSvc: Read MethodContext
-        GlobalSvc->>ConnSvc: getStrategy()
-        ConnSvc->>MCS: get().context.strategyName
-        MCS-->>ConnSvc: "my-strategy"
-        
-        ConnSvc-->>GlobalSvc: ClientStrategy instance
-        
-        Note over GlobalSvc: Inject ExecutionContext
-        GlobalSvc->>GlobalSvc: Pass (symbol, when, backtest) to client
-        
-        GlobalSvc-->>PrivateLogic: result
-        PrivateLogic-->>MCS: yield result
-        MCS-->>User: result
-    end
-```
+![Mermaid Diagram](./diagrams\12_Context_Propagation_5.svg)
 
 **Diagram: Interaction between MethodContext and ExecutionContext during execution**
 

@@ -22,58 +22,7 @@ Sources: [src/classes/Live.ts:1-220](), [src/lib/services/logic/private/LiveLogi
 
 ## Architecture
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        LiveUtils["LiveUtils<br/>(Singleton class)"]
-        run["run(symbol, context)<br/>Returns: AsyncGenerator"]
-        background["background(symbol, context)<br/>Returns: Cancellation closure"]
-        getData["getData(strategyName)<br/>Returns: Promise&lt;ILiveStatistics&gt;"]
-        getReport["getReport(strategyName)<br/>Returns: Promise&lt;string&gt;"]
-        dump["dump(strategyName, path?)<br/>Returns: Promise&lt;void&gt;"]
-    end
-    
-    subgraph "Service Layer"
-        LiveGlobalService["LiveGlobalService<br/>(Validation + delegation)"]
-        LiveLogicPublicService["LiveLogicPublicService<br/>(Context wrapper)"]
-        LiveLogicPrivateService["LiveLogicPrivateService<br/>(Core infinite loop)"]
-        StrategyGlobalService["StrategyGlobalService<br/>(tick() orchestration)"]
-    end
-    
-    subgraph "Execution Context"
-        MethodContext["MethodContextService.runAsyncIterator<br/>{strategyName, exchangeName}"]
-        ExecutionContext["ExecutionContextService.runInContext<br/>{symbol, when: Date.now(), backtest: false}"]
-    end
-    
-    subgraph "Client Layer"
-        ClientStrategy["ClientStrategy<br/>(Signal lifecycle + persistence)"]
-        ClientExchange["ClientExchange<br/>(VWAP + market data)"]
-        PersistSignalAdapter["PersistSignalAdapter<br/>(Atomic file writes)"]
-    end
-    
-    subgraph "Event System"
-        signalLiveEmitter["signalLiveEmitter<br/>(Live-specific events)"]
-        doneLiveSubject["doneLiveSubject<br/>(Completion event)"]
-        performanceEmitter["performanceEmitter<br/>(Timing metrics)"]
-    end
-    
-    LiveUtils --> run
-    LiveUtils --> background
-    LiveUtils --> getData
-    run --> LiveGlobalService
-    background --> LiveGlobalService
-    LiveGlobalService --> LiveLogicPublicService
-    LiveLogicPublicService --> MethodContext
-    MethodContext --> LiveLogicPrivateService
-    LiveLogicPrivateService --> ExecutionContext
-    ExecutionContext --> StrategyGlobalService
-    StrategyGlobalService --> ClientStrategy
-    ClientStrategy --> PersistSignalAdapter
-    ClientStrategy --> ClientExchange
-    ClientStrategy --> signalLiveEmitter
-    background --> doneLiveSubject
-    LiveLogicPrivateService --> performanceEmitter
-```
+![Mermaid Diagram](./diagrams\54_Live_Trading_0.svg)
 
 **Live Trading Architecture**
 
@@ -86,51 +35,7 @@ Sources: [src/classes/Live.ts:44-219](), [src/lib/services/logic/public/LiveLogi
 
 ## Infinite Loop Execution
 
-```mermaid
-stateDiagram-v2
-    [*] --> Initialize
-    Initialize --> ClearState: Clear previous state
-    ClearState --> WaitForInit: Restore persisted signals
-    WaitForInit --> LoopStart: Start infinite while(true)
-    
-    LoopStart --> CreateTimestamp: when = new Date()
-    CreateTimestamp --> CallTick: await tick(symbol, when, false)
-    CallTick --> CheckAction: result.action?
-    
-    CheckAction --> Sleep_Idle: action === 'idle'
-    CheckAction --> Sleep_Active: action === 'active'
-    CheckAction --> Sleep_Scheduled: action === 'scheduled'
-    CheckAction --> YieldResult: action === 'opened' | 'closed' | 'cancelled'
-    
-    Sleep_Idle --> LoopStart: sleep(TICK_TTL)
-    Sleep_Active --> LoopStart: sleep(TICK_TTL)
-    Sleep_Scheduled --> LoopStart: sleep(TICK_TTL)
-    
-    YieldResult --> PersistState: Atomic file write
-    PersistState --> EmitEvent: signalLiveEmitter.next()
-    EmitEvent --> EmitPerformance: performanceEmitter.next()
-    EmitPerformance --> Sleep_Result: sleep(TICK_TTL)
-    Sleep_Result --> LoopStart
-    
-    note right of CreateTimestamp
-        Real-time clock:
-        new Date()
-        NOT historical timestamp
-    end note
-    
-    note right of Sleep_Idle
-        TICK_TTL = 1 * 60 * 1000 + 1
-        (Slightly over 1 minute)
-    end note
-    
-    note right of CheckAction
-        Idle/Active/Scheduled:
-        Skip yield, continue loop
-        
-        Opened/Closed/Cancelled:
-        Yield to consumer
-    end note
-```
+![Mermaid Diagram](./diagrams\54_Live_Trading_1.svg)
 
 **Infinite Loop State Machine**
 
@@ -140,45 +45,7 @@ Sources: [src/lib/services/logic/private/LiveLogicPrivateService.ts:60-113]()
 
 ### Tick Execution Flow
 
-```mermaid
-sequenceDiagram
-    participant Loop as "LiveLogicPrivateService.run()"
-    participant Timestamp as "new Date()"
-    participant Strategy as "StrategyGlobalService.tick()"
-    participant Client as "ClientStrategy"
-    participant Exchange as "ClientExchange"
-    participant Persist as "PersistSignalAdapter"
-    participant Emitter as "signalLiveEmitter"
-    
-    Loop->>Timestamp: Create real-time timestamp
-    Timestamp-->>Loop: when = Date.now()
-    
-    Loop->>Strategy: tick(symbol, when, backtest=false)
-    Strategy->>Client: Check signal state
-    
-    alt Signal needs VWAP check
-        Client->>Exchange: getAveragePrice(symbol)
-        Exchange-->>Client: VWAP price
-        Client->>Client: Check TP/SL vs VWAP
-    end
-    
-    alt State changed (opened/closed)
-        Client->>Persist: writeValue() - atomic write
-        Persist-->>Client: State persisted
-        Client->>Emitter: emit signal event
-        Emitter-->>Loop: Event queued
-    end
-    
-    Strategy-->>Loop: IStrategyTickResult
-    
-    alt action === 'idle' | 'active' | 'scheduled'
-        Loop->>Loop: sleep(TICK_TTL)<br/>Continue loop
-    else action === 'opened' | 'closed' | 'cancelled'
-        Loop-->>Consumer: yield result
-        Consumer-->>Loop: (resume iteration)
-        Loop->>Loop: sleep(TICK_TTL)<br/>Continue loop
-    end
-```
+![Mermaid Diagram](./diagrams\54_Live_Trading_2.svg)
 
 **Live Tick Execution Sequence**
 
@@ -313,36 +180,7 @@ Sources: [src/classes/Live.ts:192-201]()
 
 ## Context Propagation
 
-```mermaid
-graph LR
-    subgraph "User Code"
-        UserCall["Live.run(symbol, context)"]
-    end
-    
-    subgraph "Context Establishment"
-        MethodCtx["MethodContextService.runAsyncIterator<br/>{strategyName, exchangeName, frameName: ''}"]
-        ExecCtx["ExecutionContextService.runInContext<br/>{symbol, when: Date.now(), backtest: false}"]
-    end
-    
-    subgraph "Context-Aware Operations"
-        GetCandles["getCandles(symbol, interval, limit)<br/>NO context params"]
-        GetAvgPrice["getAveragePrice(symbol)<br/>NO context params"]
-        GetSignal["strategy.getSignal()<br/>NO context params"]
-        Tick["strategy.tick()<br/>NO context params"]
-    end
-    
-    UserCall --> MethodCtx
-    MethodCtx --> ExecCtx
-    ExecCtx --> GetCandles
-    ExecCtx --> GetAvgPrice
-    ExecCtx --> GetSignal
-    ExecCtx --> Tick
-    
-    GetCandles -.->|Implicit context| DI["di-scoped container"]
-    GetAvgPrice -.->|Implicit context| DI
-    GetSignal -.->|Implicit context| DI
-    Tick -.->|Implicit context| DI
-```
+![Mermaid Diagram](./diagrams\54_Live_Trading_3.svg)
 
 **Context Propagation in Live Trading**
 
@@ -459,46 +297,7 @@ Sources: [src/config/emitters.ts:1-81](), [src/function/event.ts:121-235]()
 
 ## Comparison with Backtest Execution
 
-```mermaid
-graph TB
-    subgraph "Backtest Execution"
-        BT_Frame["Frame.getTimeframe()<br/>Returns: Date[]"]
-        BT_Loop["for (i = 0; i < timeframes.length; i++)"]
-        BT_When["when = timeframes[i]<br/>(Historical timestamp)"]
-        BT_Tick["tick(symbol, when, backtest=true)"]
-        BT_Fast["strategy.backtest(candles)<br/>(Fast-forward simulation)"]
-        BT_Yield["yield closed signal"]
-        BT_Done["Loop completes when i >= length"]
-        
-        BT_Frame --> BT_Loop
-        BT_Loop --> BT_When
-        BT_When --> BT_Tick
-        BT_Tick --> BT_Fast
-        BT_Fast --> BT_Yield
-        BT_Yield --> BT_Loop
-        BT_Loop --> BT_Done
-    end
-    
-    subgraph "Live Execution"
-        LV_Loop["while (true)"]
-        LV_When["when = new Date()<br/>(Real-time timestamp)"]
-        LV_Tick["tick(symbol, when, backtest=false)"]
-        LV_VWAP["exchange.getAveragePrice()<br/>(VWAP calculation)"]
-        LV_Filter["Filter idle/active/scheduled"]
-        LV_Yield["yield opened/closed/cancelled"]
-        LV_Sleep["sleep(TICK_TTL)"]
-        LV_Never["Never completes<br/>(Infinite loop)"]
-        
-        LV_Loop --> LV_When
-        LV_When --> LV_Tick
-        LV_Tick --> LV_VWAP
-        LV_VWAP --> LV_Filter
-        LV_Filter --> LV_Yield
-        LV_Yield --> LV_Sleep
-        LV_Sleep --> LV_Loop
-        LV_Loop --> LV_Never
-    end
-```
+![Mermaid Diagram](./diagrams\54_Live_Trading_4.svg)
 
 **Backtest vs Live Execution Comparison**
 

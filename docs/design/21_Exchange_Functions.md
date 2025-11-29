@@ -18,24 +18,7 @@ Exchange functions leverage the framework's context propagation system to operat
 
 This allows strategy authors to write clean code like `getCandles(symbol, interval, limit)` instead of passing context objects through every function call.
 
-```mermaid
-graph TB
-    Strategy["Strategy.getSignal()"]
-    GetCandles["getCandles(symbol, interval, limit)"]
-    DI["di-scoped Container"]
-    MethodCtx["MethodContextService<br/>exchangeName"]
-    ExecCtx["ExecutionContextService<br/>symbol, when, backtest"]
-    ExchangeConn["ExchangeConnectionService"]
-    ClientExchange["ClientExchange"]
-    
-    Strategy --> GetCandles
-    GetCandles --> DI
-    DI --> MethodCtx
-    DI --> ExecCtx
-    MethodCtx --> ExchangeConn
-    ExecCtx --> ClientExchange
-    ExchangeConn --> ClientExchange
-```
+![Mermaid Diagram](./diagrams\21_Exchange_Functions_0.svg)
 
 **Sources:** [types.d.ts:100-143](), [types.d.ts:363-402]()
 
@@ -349,61 +332,7 @@ addStrategy({
 
 ### Data Flow Diagram
 
-```mermaid
-graph TB
-    subgraph "User Code"
-        Strategy["getSignal(symbol)<br/>strategy code"]
-    end
-    
-    subgraph "Public API - /function/exchange"
-        GetCandles["getCandles(symbol, interval, limit)"]
-        GetAvgPrice["getAveragePrice(symbol)"]
-        FormatPrice["formatPrice(symbol, price)"]
-        FormatQty["formatQuantity(symbol, qty)"]
-        GetDate["getDate()"]
-        GetMode["getMode()"]
-    end
-    
-    subgraph "Service Layer"
-        ExchangeGlobal["ExchangeGlobalService"]
-        ExchangeConn["ExchangeConnectionService"]
-    end
-    
-    subgraph "Client Layer"
-        ClientExchange["ClientExchange<br/>getCandles()<br/>getAveragePrice()<br/>formatPrice()<br/>formatQuantity()"]
-    end
-    
-    subgraph "Context Services"
-        MethodCtx["MethodContextService<br/>exchangeName"]
-        ExecCtx["ExecutionContextService<br/>symbol, when, backtest"]
-    end
-    
-    subgraph "Exchange Schema"
-        IExchangeSchema["IExchangeSchema<br/>getCandles()<br/>formatPrice()<br/>formatQuantity()"]
-    end
-    
-    Strategy --> GetCandles
-    Strategy --> GetAvgPrice
-    Strategy --> FormatPrice
-    Strategy --> FormatQty
-    Strategy --> GetDate
-    Strategy --> GetMode
-    
-    GetCandles --> ExchangeGlobal
-    GetAvgPrice --> ExchangeGlobal
-    FormatPrice --> ExchangeGlobal
-    FormatQty --> ExchangeGlobal
-    
-    GetDate --> ExecCtx
-    GetMode --> ExecCtx
-    
-    ExchangeGlobal --> MethodCtx
-    ExchangeGlobal --> ExecCtx
-    ExchangeGlobal --> ExchangeConn
-    
-    ExchangeConn --> ClientExchange
-    ClientExchange --> IExchangeSchema
-```
+![Mermaid Diagram](./diagrams\21_Exchange_Functions_1.svg)
 
 **Sources:** [src/index.ts:26-32](), [types.d.ts:168-221](), [types.d.ts:223-271]()
 
@@ -413,31 +342,7 @@ graph TB
 
 The `ICandleData` interface defines the structure returned by `getCandles`:
 
-```mermaid
-classDiagram
-    class ICandleData {
-        +number timestamp
-        +number open
-        +number high
-        +number low
-        +number close
-        +number volume
-    }
-    
-    class CandleInterval {
-        <<enumeration>>
-        1m
-        3m
-        5m
-        15m
-        30m
-        1h
-        2h
-        4h
-        6h
-        8h
-    }
-```
+![Mermaid Diagram](./diagrams\21_Exchange_Functions_2.svg)
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -456,32 +361,7 @@ classDiagram
 
 Exchange functions delegate to the user-defined `IExchangeSchema` implementation registered via `addExchange()`. The schema must implement three required methods:
 
-```mermaid
-graph LR
-    subgraph "Exchange Function Layer"
-        GetCandles_Fn["getCandles() function"]
-        FormatPrice_Fn["formatPrice() function"]
-        FormatQty_Fn["formatQuantity() function"]
-    end
-    
-    subgraph "Exchange Schema Implementation"
-        GetCandles_Impl["schema.getCandles()"]
-        FormatPrice_Impl["schema.formatPrice()"]
-        FormatQty_Impl["schema.formatQuantity()"]
-    end
-    
-    subgraph "External Data Source"
-        API["Exchange API<br/>CCXT / REST / WebSocket"]
-        DB["Database<br/>Historical Data"]
-    end
-    
-    GetCandles_Fn --> GetCandles_Impl
-    FormatPrice_Fn --> FormatPrice_Impl
-    FormatQty_Fn --> FormatQty_Impl
-    
-    GetCandles_Impl --> API
-    GetCandles_Impl --> DB
-```
+![Mermaid Diagram](./diagrams\21_Exchange_Functions_3.svg)
 
 **Sources:** [types.d.ts:185-221]()
 

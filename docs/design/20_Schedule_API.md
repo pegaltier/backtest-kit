@@ -179,42 +179,7 @@ Sources: [src/classes/Schedule.ts:115-120](), [types.d.ts:7393-7425]()
 
 The Schedule API follows the framework's layered service architecture with specialized markdown reporting components.
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        ScheduleClass["Schedule (singleton)<br/>src/classes/Schedule.ts"]
-    end
-    
-    subgraph "Service Layer"
-        ScheduleMarkdownService["ScheduleMarkdownService<br/>src/lib/services/markdown/"]
-        LoggerService["LoggerService"]
-    end
-    
-    subgraph "Storage Layer"
-        ReportStorage["ReportStorage (memoized)<br/>per strategyName"]
-    end
-    
-    subgraph "Event System"
-        signalEmitter["signalEmitter<br/>Subject from functools-kit"]
-        signalLiveEmitter["signalLiveEmitter"]
-    end
-    
-    subgraph "Strategy Execution"
-        ClientStrategy["ClientStrategy.tick()<br/>IStrategyTickResult"]
-    end
-    
-    ScheduleClass --> ScheduleMarkdownService
-    ScheduleMarkdownService --> ReportStorage
-    ScheduleMarkdownService --> LoggerService
-    
-    signalEmitter --> ScheduleMarkdownService
-    signalLiveEmitter -.-> signalEmitter
-    
-    ClientStrategy --> signalEmitter
-    
-    ReportStorage --> ScheduleStatistics["ScheduleStatistics"]
-    ReportStorage --> MarkdownReport["Markdown Report"]
-```
+![Mermaid Diagram](./diagrams\20_Schedule_API_0.svg)
 
 **Architecture Layers:**
 
@@ -236,34 +201,7 @@ Sources: [src/classes/Schedule.ts:1-135](), [src/lib/services/markdown/ScheduleM
 
 The following diagram shows how scheduled signal events flow from strategy execution through the event system to the Schedule API's storage.
 
-```mermaid
-sequenceDiagram
-    participant Strategy as "Strategy.getSignal()"
-    participant Client as "ClientStrategy"
-    participant Emitter as "signalEmitter"
-    participant Service as "ScheduleMarkdownService"
-    participant Storage as "ReportStorage"
-    
-    Note over Strategy,Client: Signal with priceOpen specified
-    Strategy->>Client: Return ISignalDto with priceOpen
-    Client->>Client: Validate signal
-    Client->>Client: Create IScheduledSignalRow
-    Client->>Emitter: Emit "scheduled" event
-    Emitter->>Service: tick(IStrategyTickResultScheduled)
-    Service->>Storage: addScheduledEvent(data)
-    Storage->>Storage: Push to _eventList (max 250)
-    
-    Note over Client,Storage: Later: Signal never activates
-    Client->>Client: Timeout or SL hit
-    Client->>Emitter: Emit "cancelled" event
-    Emitter->>Service: tick(IStrategyTickResultCancelled)
-    Service->>Storage: addCancelledEvent(data)
-    Storage->>Storage: Replace existing event or add new
-    
-    Note over Storage: User requests report
-    Storage->>Storage: Calculate statistics
-    Storage->>Storage: Generate markdown
-```
+![Mermaid Diagram](./diagrams\20_Schedule_API_1.svg)
 
 **Event Processing Rules:**
 
@@ -327,15 +265,7 @@ The markdown report contains a table of all events followed by summary statistic
 
 ### Report Structure
 
-```mermaid
-graph TB
-    Title["# Scheduled Signals Report: {strategyName}"]
-    Table["Markdown Table<br/>Columns: Timestamp, Action, Symbol,<br/>Signal ID, Position, Note,<br/>Current Price, Entry Price,<br/>Take Profit, Stop Loss, Wait Time"]
-    Stats["Summary Statistics<br/>- Total events<br/>- Total scheduled<br/>- Total cancelled<br/>- Cancellation rate %<br/>- Avg wait time (min)"]
-    
-    Title --> Table
-    Table --> Stats
-```
+![Mermaid Diagram](./diagrams\20_Schedule_API_2.svg)
 
 **Table Columns:**
 
@@ -506,42 +436,7 @@ Sources: [src/classes/Schedule.ts:1-135]()
 
 The Schedule API fits into the broader signal lifecycle as follows:
 
-```mermaid
-stateDiagram-v2
-    [*] --> GetSignal: Strategy generates signal
-    
-    GetSignal --> Validate: Framework validates
-    Validate --> CheckPrice: Check if priceOpen specified
-    
-    CheckPrice --> Scheduled: priceOpen exists
-    CheckPrice --> Opened: priceOpen omitted
-    
-    state Scheduled {
-        [*] --> Waiting: Emit "scheduled" event<br/>Schedule tracks
-        Waiting --> Activated: Price reaches priceOpen
-        Waiting --> Cancelled: Timeout or SL hit
-        Cancelled --> [*]: Emit "cancelled" event<br/>Schedule tracks
-    }
-    
-    Scheduled --> Opened: Activated
-    Opened --> Active: Position monitoring
-    Active --> Closed: TP/SL/time
-    Closed --> [*]
-    
-    note right of Scheduled
-        Schedule API tracks
-        only these two events:
-        - scheduled
-        - cancelled
-    end note
-    
-    note right of Closed
-        Backtest/Live APIs
-        track these events:
-        - opened
-        - closed
-    end note
-```
+![Mermaid Diagram](./diagrams\20_Schedule_API_3.svg)
 
 **API Specialization:**
 - **Schedule API**: Tracks pre-activation events (`scheduled`, `cancelled`)

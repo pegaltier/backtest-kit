@@ -13,43 +13,7 @@ The persistence layer uses a factory pattern with pluggable backends. The `Persi
 
 **Architecture Diagram: Persistence Layer Components**
 
-```mermaid
-graph TB
-    subgraph "Client Layer"
-        ClientStrategy["ClientStrategy<br/>(Signal Lifecycle)"]
-    end
-    
-    subgraph "Persistence Facade"
-        PersistSignalUtils["PersistSignalUtils<br/>(Singleton)"]
-        PersistSignalAdapter["PersistSignalAdaper<br/>(Global Instance)"]
-    end
-    
-    subgraph "Factory Layer"
-        Factory["PersistSignalFactory<br/>(Memoized per strategy)"]
-    end
-    
-    subgraph "Storage Implementations"
-        DefaultImpl["PersistBase<br/>(File-based atomic writes)"]
-        CustomImpl["Custom Adapter<br/>(Redis, PostgreSQL, etc.)"]
-    end
-    
-    subgraph "Storage Backend"
-        FileSystem["File System<br/>./signals/*.json"]
-        Redis["Redis<br/>key-value store"]
-        Database["SQL Database<br/>PostgreSQL, MySQL"]
-    end
-    
-    ClientStrategy -->|"readSignalData()<br/>writeSignalData()"| PersistSignalAdapter
-    PersistSignalAdapter -.->|"same instance"| PersistSignalUtils
-    PersistSignalUtils -->|"getSignalStorage(strategyName)"| Factory
-    Factory -->|"creates once, caches"| DefaultImpl
-    Factory -->|"creates once, caches"| CustomImpl
-    DefaultImpl --> FileSystem
-    CustomImpl --> Redis
-    CustomImpl --> Database
-    
-    User["User Code"] -->|"usePersistSignalAdapter(CustomCtor)"| PersistSignalUtils
-```
+![Mermaid Diagram](./diagrams\81_Custom_Persistence_Backends_0.svg)
 
 **Sources:** [types.d.ts:1067-1125](), [src/index.ts:44-50]()
 
@@ -95,34 +59,7 @@ The `PersistBase` class provides the default implementation using atomic file wr
 
 **Default Implementation Flow**
 
-```mermaid
-sequenceDiagram
-    participant CS as ClientStrategy
-    participant Utils as PersistSignalUtils
-    participant Base as PersistBase
-    participant FS as File System
-    
-    Note over CS,FS: Initialization Phase
-    CS->>Utils: readSignalData(strategyName, symbol)
-    Utils->>Base: getSignalStorage(strategyName)
-    Base->>Base: waitForInit(true)
-    Base->>FS: mkdir ./signals/strategyName
-    Base->>FS: readdir (validate .json files)
-    Base->>Utils: PersistBase instance
-    Utils->>Base: readValue(symbol)
-    Base->>FS: readFile ./signals/strategyName/BTCUSDT.json
-    FS-->>Base: ISignalData JSON
-    Base-->>Utils: signalRow
-    Utils-->>CS: ISignalRow | null
-    
-    Note over CS,FS: Write Phase (Atomic)
-    CS->>Utils: writeSignalData(signalRow, strategyName, symbol)
-    Utils->>Base: writeValue(symbol, {signalRow})
-    Base->>FS: writeFileAtomic (temp file + rename)
-    FS-->>Base: success
-    Base-->>Utils: void
-    Utils-->>CS: void
-```
+![Mermaid Diagram](./diagrams\81_Custom_Persistence_Backends_1.svg)
 
 **Key Features of PersistBase**
 
@@ -143,45 +80,7 @@ Custom adapters extend or implement the `IPersistBase<ISignalData>` interface. T
 
 **Implementation Requirements Diagram**
 
-```mermaid
-classDiagram
-    class IPersistBase~ISignalData~ {
-        <<interface>>
-        +waitForInit(initial: boolean) Promise~void~
-        +readValue(entityId: EntityId) Promise~ISignalData~
-        +hasValue(entityId: EntityId) Promise~boolean~
-        +writeValue(entityId: EntityId, entity: ISignalData) Promise~void~
-    }
-    
-    class PersistBase {
-        +entityName: string
-        +baseDir: string
-        +_directory: string
-        +_getFilePath(entityId) string
-        +waitForInit(initial) Promise~void~
-        +readValue(entityId) Promise~ISignalData~
-        +hasValue(entityId) Promise~boolean~
-        +writeValue(entityId, entity) Promise~void~
-        +removeValue(entityId) Promise~void~
-        +removeAll() Promise~void~
-        +values() AsyncGenerator~ISignalData~
-        +keys() AsyncGenerator~EntityId~
-    }
-    
-    class CustomAdapter {
-        +entityName: string
-        +baseDir: string
-        +constructor(entityName, baseDir)
-        +waitForInit(initial) Promise~void~
-        +readValue(entityId) Promise~ISignalData~
-        +hasValue(entityId) Promise~boolean~
-        +writeValue(entityId, entity) Promise~void~
-    }
-    
-    IPersistBase <|.. PersistBase : implements
-    IPersistBase <|.. CustomAdapter : implements
-    PersistBase <|-- CustomAdapter : can extend
-```
+![Mermaid Diagram](./diagrams\81_Custom_Persistence_Backends_2.svg)
 
 **Example: Redis Persistence Adapter**
 
@@ -297,39 +196,7 @@ Custom adapters are registered globally via `PersistSignalAdaper.usePersistSigna
 
 **Registration Flow**
 
-```mermaid
-sequenceDiagram
-    participant User as User Code
-    participant Adapter as PersistSignalAdaper
-    participant Factory as PersistSignalFactory
-    participant Strategy as ClientStrategy
-    participant Custom as CustomAdapter
-    
-    Note over User,Custom: Setup Phase (Before Execution)
-    User->>Adapter: usePersistSignalAdapter(RedisPersistAdapter)
-    Adapter->>Factory: Replace factory constructor
-    Factory-->>Adapter: Factory updated
-    
-    Note over User,Custom: Execution Phase (Live Trading)
-    Strategy->>Adapter: readSignalData(strategyName, symbol)
-    Adapter->>Factory: getSignalStorage(strategyName)
-    Factory->>Custom: new RedisPersistAdapter(strategyName, baseDir)
-    Custom->>Custom: constructor (connect to Redis)
-    Factory->>Custom: waitForInit(true)
-    Custom->>Custom: Initialize Redis connection
-    Factory-->>Adapter: Cached instance
-    Adapter->>Custom: readValue(symbol)
-    Custom-->>Adapter: ISignalData
-    Adapter-->>Strategy: ISignalRow | null
-    
-    Note over User,Custom: Write Phase
-    Strategy->>Adapter: writeSignalData(signalRow, strategyName, symbol)
-    Adapter->>Factory: getSignalStorage(strategyName)
-    Factory-->>Adapter: Cached instance
-    Adapter->>Custom: writeValue(symbol, {signalRow})
-    Custom-->>Adapter: void
-    Adapter-->>Strategy: void
-```
+![Mermaid Diagram](./diagrams\81_Custom_Persistence_Backends_3.svg)
 
 **Registration Code Example**
 
@@ -454,45 +321,7 @@ Custom adapters should be thoroughly tested for atomicity, crash recovery, and c
 
 **Test Requirements**
 
-```mermaid
-graph TB
-    subgraph "Functional_Tests"
-        T1["CRUD_Operations"]
-        T2["Null_Handling"]
-        T3["Error_Cases"]
-    end
-    
-    subgraph "Atomicity_Tests"
-        T4["Concurrent_Writes"]
-        T5["Partial_Write_Detection"]
-        T6["Transaction_Rollback"]
-    end
-    
-    subgraph "Crash_Recovery_Tests"
-        T7["Process_Restart"]
-        T8["Connection_Loss"]
-        T9["Data_Corruption"]
-    end
-    
-    subgraph "Performance_Tests"
-        T10["High_Throughput"]
-        T11["Multiple_Strategies"]
-        T12["Memory_Leaks"]
-    end
-    
-    T1["CRUD_Operations<br/>read, write, has, init"]
-    T2["Null_Handling<br/>entity = null clears"]
-    T3["Error_Cases<br/>not found, connection failure"]
-    T4["Concurrent_Writes<br/>no race conditions"]
-    T5["Partial_Write_Detection<br/>corrupt data handling"]
-    T6["Transaction_Rollback<br/>error recovery"]
-    T7["Process_Restart<br/>state recovery"]
-    T8["Connection_Loss<br/>reconnection"]
-    T9["Data_Corruption<br/>validation on init"]
-    T10["High_Throughput<br/>1000+ writes/sec"]
-    T11["Multiple_Strategies<br/>instance isolation"]
-    T12["Memory_Leaks<br/>connection pooling"]
-```
+![Mermaid Diagram](./diagrams\81_Custom_Persistence_Backends_4.svg)
 
 **Example Test Suite**
 

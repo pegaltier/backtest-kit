@@ -55,75 +55,7 @@ Sources: [src/client/ClientStrategy.ts:285-296](), [src/config/params.ts:11]()
 
 ## Monitoring Flow Diagram
 
-```mermaid
-graph TB
-    Tick["ClientStrategy.tick()<br/>(Live mode)"]
-    GetAvg["exchange.getAveragePrice(symbol)<br/>Fetch last 5 candles<br/>Compute VWAP"]
-    
-    HasPending{"Has _pendingSignal?"}
-    HasScheduled{"Has _scheduledSignal?"}
-    
-    CheckCompletion["CHECK_PENDING_SIGNAL_COMPLETION_FN<br/>Check TP/SL/time_expired"]
-    CheckTimeout["CHECK_SCHEDULED_SIGNAL_TIMEOUT_FN<br/>Check CC_SCHEDULE_AWAIT_MINUTES"]
-    CheckActivation["CHECK_SCHEDULED_SIGNAL_PRICE_ACTIVATION_FN<br/>Check priceOpen reached"]
-    
-    TPHit{"TP hit?"}
-    SLHit{"SL hit?"}
-    TimeExpired{"Time expired?"}
-    
-    TimeoutHit{"Timeout?"}
-    SLCancelled{"SL cancelled?"}
-    PriceActivated{"Price activated?"}
-    
-    ClosedTP["IStrategyTickResultClosed<br/>closeReason: take_profit"]
-    ClosedSL["IStrategyTickResultClosed<br/>closeReason: stop_loss"]
-    ClosedTime["IStrategyTickResultClosed<br/>closeReason: time_expired"]
-    
-    CancelledTimeout["IStrategyTickResultCancelled<br/>Timeout reached"]
-    CancelledSL["IStrategyTickResultIdle<br/>SL hit before activation"]
-    Opened["IStrategyTickResultOpened<br/>Position activated"]
-    
-    Active["IStrategyTickResultActive<br/>Still monitoring"]
-    ScheduledActive["IStrategyTickResultActive<br/>Waiting for priceOpen"]
-    
-    Tick --> GetAvg
-    GetAvg --> HasPending
-    
-    HasPending -->|Yes| CheckCompletion
-    HasPending -->|No| HasScheduled
-    
-    CheckCompletion --> TPHit
-    TPHit -->|Yes| ClosedTP
-    TPHit -->|No| SLHit
-    
-    SLHit -->|Yes| ClosedSL
-    SLHit -->|No| TimeExpired
-    
-    TimeExpired -->|Yes| ClosedTime
-    TimeExpired -->|No| Active
-    
-    HasScheduled -->|Yes| CheckTimeout
-    HasScheduled -->|No| GetSignal["GET_SIGNAL_FN<br/>Try generate new signal"]
-    
-    CheckTimeout --> TimeoutHit
-    TimeoutHit -->|Yes| CancelledTimeout
-    TimeoutHit -->|No| CheckActivation
-    
-    CheckActivation --> SLCancelled
-    SLCancelled -->|Yes| CancelledSL
-    SLCancelled -->|No| PriceActivated
-    
-    PriceActivated -->|Yes| Opened
-    PriceActivated -->|No| ScheduledActive
-    
-    style GetAvg fill:#e1f5ff
-    style CheckCompletion fill:#fff4e1
-    style CheckTimeout fill:#fff4e1
-    style CheckActivation fill:#fff4e1
-    style ClosedTP fill:#e1ffe1
-    style ClosedSL fill:#ffe1e1
-    style ClosedTime fill:#ffe1e1
-```
+![Mermaid Diagram](./diagrams\57_Real-time_Monitoring_0.svg)
 
 **Key decision points:**
 1. If `_pendingSignal` exists → monitor TP/SL/time
@@ -429,48 +361,7 @@ Sources: [src/client/ClientStrategy.ts:1136-1190](), [src/client/ClientStrategy.
 
 ## Monitoring State Transitions
 
-```mermaid
-stateDiagram-v2
-    [*] --> idle
-    
-    idle --> scheduled: "GET_SIGNAL_FN returns signal with priceOpen"
-    idle --> opened: "GET_SIGNAL_FN returns signal without priceOpen"
-    
-    scheduled --> opened: "CHECK_SCHEDULED_SIGNAL_PRICE_ACTIVATION_FN<br/>currentPrice reaches priceOpen<br/>AND risk.checkSignal passes"
-    
-    scheduled --> cancelled: "CHECK_SCHEDULED_SIGNAL_TIMEOUT_FN<br/>elapsedTime >= CC_SCHEDULE_AWAIT_MINUTES"
-    
-    scheduled --> idle: "CHECK_SCHEDULED_SIGNAL_PRICE_ACTIVATION_FN<br/>currentPrice hits priceStopLoss before priceOpen"
-    
-    opened --> active: "Position monitoring begins<br/>_pendingSignal set"
-    
-    active --> closed_tp: "CHECK_PENDING_SIGNAL_COMPLETION_FN<br/>averagePrice >= priceTakeProfit (LONG)<br/>averagePrice <= priceTakeProfit (SHORT)"
-    
-    active --> closed_sl: "CHECK_PENDING_SIGNAL_COMPLETION_FN<br/>averagePrice <= priceStopLoss (LONG)<br/>averagePrice >= priceStopLoss (SHORT)"
-    
-    active --> closed_time: "CHECK_PENDING_SIGNAL_COMPLETION_FN<br/>(currentTime - pendingAt) >= minuteEstimatedTime"
-    
-    active --> active: "No conditions met<br/>Return IStrategyTickResultActive"
-    
-    closed_tp --> [*]: "IStrategyTickResultClosed<br/>closeReason: take_profit"
-    closed_sl --> [*]: "IStrategyTickResultClosed<br/>closeReason: stop_loss"
-    closed_time --> [*]: "IStrategyTickResultClosed<br/>closeReason: time_expired"
-    cancelled --> [*]: "IStrategyTickResultCancelled"
-    
-    note right of scheduled
-        Scheduled state:
-        - _scheduledSignal set
-        - Waiting for priceOpen
-        - Max wait: CC_SCHEDULE_AWAIT_MINUTES
-    end note
-    
-    note right of active
-        Active state:
-        - _pendingSignal set
-        - Monitoring TP/SL/time
-        - Lifetime from pendingAt
-    end note
-```
+![Mermaid Diagram](./diagrams\57_Real-time_Monitoring_1.svg)
 
 **Key monitoring loops**:
 1. **idle → scheduled → opened → active → closed**: Full lifecycle with scheduled entry

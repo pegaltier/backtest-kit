@@ -13,43 +13,7 @@ The backtest-kit framework organizes services into six distinct layers, each wit
 
 **Layer Organization Diagram**
 
-```mermaid
-graph TB
-    subgraph "Layer 1: Public API"
-        API["addStrategy()<br/>addExchange()<br/>addFrame()<br/>addRisk()<br/>addSizing()<br/>addWalker()<br/>listStrategies()"]
-    end
-    
-    subgraph "Layer 2: Logic Services"
-        LogicPublic["BacktestLogicPublicService<br/>LiveLogicPublicService<br/>WalkerLogicPublicService"]
-        LogicPrivate["BacktestLogicPrivateService<br/>LiveLogicPrivateService<br/>WalkerLogicPrivateService"]
-    end
-    
-    subgraph "Layer 3: Connection Services"
-        Connection["StrategyConnectionService<br/>ExchangeConnectionService<br/>RiskConnectionService<br/>FrameConnectionService<br/>SizingConnectionService"]
-    end
-    
-    subgraph "Layer 4: Client Classes"
-        Client["ClientStrategy<br/>ClientExchange<br/>ClientRisk<br/>ClientFrame<br/>ClientSizing"]
-    end
-    
-    subgraph "Layer 5: Schema & Validation"
-        Schema["StrategySchemaService<br/>ExchangeSchemaService<br/>RiskSchemaService"]
-        Validation["StrategyValidationService<br/>ExchangeValidationService<br/>RiskValidationService"]
-    end
-    
-    subgraph "Layer 6: Reporting"
-        Markdown["BacktestMarkdownService<br/>LiveMarkdownService<br/>WalkerMarkdownService"]
-    end
-    
-    API --> LogicPublic
-    API --> Validation
-    LogicPublic --> LogicPrivate
-    LogicPrivate --> Connection
-    Connection --> Client
-    Connection --> Schema
-    LogicPrivate --> Markdown
-    Validation --> Schema
-```
+![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_0.svg)
 
 **Sources**: [src/lib/core/types.ts:1-81](), [src/lib/core/provide.ts:1-111](), [src/lib/index.ts:1-170](), [docs/internals.md:28-40]()
 
@@ -109,20 +73,7 @@ Public logic services wrap execution in context and provide the public interface
 
 **Logic Service Responsibilities**
 
-```mermaid
-graph LR
-    User["User Code"] --> BLP["BacktestLogicPublicService"]
-    User --> LLP["LiveLogicPublicService"]
-    User --> WLP["WalkerLogicPublicService"]
-    
-    BLP --> MethodCtx["MethodContextService.runAsyncIterator()"]
-    LLP --> MethodCtx
-    WLP --> MethodCtx
-    
-    MethodCtx --> BLPS["BacktestLogicPrivateService"]
-    MethodCtx --> LLPS["LiveLogicPrivateService"]
-    MethodCtx --> WLPS["WalkerLogicPrivateService"]
-```
+![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_1.svg)
 
 Each public service:
 
@@ -185,18 +136,7 @@ const connectionServices = {
 
 **Connection Service Architecture**
 
-```mermaid
-graph TB
-    SGS["StrategyGlobalService"] --> SCS["StrategyConnectionService"]
-    SCS --> Memo{"Memoized<br/>Instance Cache"}
-    Memo -->|"Cache Miss"| Create["new ClientStrategy()"]
-    Memo -->|"Cache Hit"| Cached["Return Existing<br/>ClientStrategy"]
-    
-    Create --> Inject["Inject Dependencies:<br/>- strategySchema<br/>- riskConnectionService<br/>- exchangeConnectionService"]
-    
-    Inject --> CS["ClientStrategy Instance"]
-    Cached --> CS
-```
+![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_2.svg)
 
 Each Connection Service:
 
@@ -225,41 +165,7 @@ Client Classes contain pure business logic without dependency injection dependen
 
 **Client Class Hierarchy**
 
-```mermaid
-graph TB
-    subgraph "ClientStrategy"
-        CS_Init["waitForInit()<br/>Load persisted state"]
-        CS_Tick["tick()<br/>Generate/monitor signals"]
-        CS_Fast["backtest()<br/>Fast-forward simulation"]
-        CS_Persist["setPendingSignal()<br/>Atomic file writes"]
-    end
-    
-    subgraph "ClientExchange"
-        CE_Candles["getCandles()<br/>Fetch market data"]
-        CE_VWAP["getAveragePrice()<br/>VWAP calculation"]
-        CE_Format["formatPrice()<br/>formatQuantity()"]
-    end
-    
-    subgraph "ClientRisk"
-        CR_Track["addSignal()<br/>removeSignal()"]
-        CR_Check["checkSignal()<br/>Portfolio-level validation"]
-        CR_Active["_activePositions Map<br/>strategyName:symbol keys"]
-    end
-    
-    subgraph "ClientFrame"
-        CF_Gen["getTimeframe()<br/>Interval-based timestamps"]
-    end
-    
-    subgraph "ClientSizing"
-        CSZ_Calc["calculateQuantity()<br/>Fixed/Kelly/ATR methods"]
-    end
-    
-    CS_Tick --> CE_VWAP
-    CS_Tick --> CR_Check
-    CS_Tick --> CSZ_Calc
-    CS_Fast --> CE_Candles
-    CR_Check --> CR_Active
-```
+![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_3.svg)
 
 | Client Class | Primary Responsibility | Key State |
 |--------------|----------------------|-----------|
@@ -293,15 +199,7 @@ Schema Services store component configurations using the `ToolRegistry` pattern:
 
 **Schema Service Pattern**
 
-```mermaid
-graph LR
-    Add["addStrategy()"] --> SSS["StrategySchemaService"]
-    SSS --> Registry["ToolRegistry<br/>Internal Storage"]
-    Registry --> Validate["validateShallow()<br/>Type checking"]
-    
-    Get["get(strategyName)"] --> Registry
-    Override["override(name, partial)"] --> Registry
-```
+![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_4.svg)
 
 Each Schema Service provides:
 
@@ -331,18 +229,7 @@ Validation Services perform runtime existence checks with memoization:
 
 **Validation Service Pattern**
 
-```mermaid
-graph TB
-    API["addStrategy(schema)"] --> VS["StrategyValidationService"]
-    VS --> Store["Store in Internal Map"]
-    
-    Call["validate(strategyName)"] --> Check{"Exists in Map?"}
-    Check -->|No| Error["Throw Error"]
-    Check -->|Yes| RiskCheck{"Has riskName?"}
-    RiskCheck -->|Yes| ValidateRisk["RiskValidationService.validate()"]
-    RiskCheck -->|No| Success["Return Success"]
-    ValidateRisk --> Success
-```
+![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_5.svg)
 
 Each Validation Service provides:
 
@@ -400,24 +287,7 @@ const markdownServices = {
 
 **Markdown Service Data Flow**
 
-```mermaid
-graph TB
-    Emit["BacktestLogicPrivateService"] --> SigEmit["signalBacktestEmitter.next()"]
-    SigEmit --> BMS["BacktestMarkdownService"]
-    
-    BMS --> Subscribe["Subscribe on Initialization"]
-    Subscribe --> Store["ReportStorage<br/>Memoized by strategyName"]
-    Store --> EventList["_eventList<br/>Max 250 events"]
-    
-    GetData["Backtest.getData()"] --> BMS
-    BMS --> Calc["Calculate Statistics:<br/>- Total PNL<br/>- Win Rate<br/>- Sharpe Ratio<br/>- Drawdown"]
-    
-    GetReport["Backtest.getReport()"] --> BMS
-    BMS --> Format["Format Markdown Tables"]
-    
-    Dump["Backtest.dump()"] --> BMS
-    BMS --> Write["fs.writeFileSync()"]
-```
+![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_6.svg)
 
 Each Markdown Service:
 
@@ -447,15 +317,7 @@ Three services span all layers and provide infrastructure concerns.
 
 The `LoggerService` provides logging infrastructure with automatic context injection:
 
-```mermaid
-graph LR
-    Any["Any Service"] --> LS["LoggerService"]
-    LS --> Ctx{"Has Context?"}
-    Ctx -->|Yes| Inject["Inject strategyName,<br/>exchangeName, symbol"]
-    Ctx -->|No| Direct["Log directly"]
-    Inject --> Custom["User-defined ILogger"]
-    Direct --> Custom
-```
+![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_7.svg)
 
 Injected into nearly every service via [src/lib/core/types.ts:1-3]():
 
@@ -499,20 +361,7 @@ Used by Connection Services to resolve which component instance to return.
 
 **Component Registration Pattern**
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant addStrategy
-    participant StrategyValidationService
-    participant StrategySchemaService
-    
-    User->>addStrategy: addStrategy(schema)
-    addStrategy->>StrategyValidationService: addStrategy(name, schema)
-    StrategyValidationService->>StrategyValidationService: Store in internal map
-    addStrategy->>StrategySchemaService: register(name, schema)
-    StrategySchemaService->>StrategySchemaService: validateShallow(schema)
-    StrategySchemaService->>StrategySchemaService: Store in ToolRegistry
-```
+![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_8.svg)
 
 1. Public API function receives schema
 2. Validation Service stores for runtime checks
@@ -522,26 +371,7 @@ sequenceDiagram
 
 **Backtest Execution Pattern**
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant BacktestLogicPublicService
-    participant MethodContextService
-    participant BacktestLogicPrivateService
-    participant StrategyConnectionService
-    participant ClientStrategy
-    
-    User->>BacktestLogicPublicService: run(symbol, context)
-    BacktestLogicPublicService->>MethodContextService: runAsyncIterator(fn, context)
-    MethodContextService->>BacktestLogicPrivateService: run(symbol)
-    BacktestLogicPrivateService->>StrategyConnectionService: get()
-    StrategyConnectionService->>StrategyConnectionService: Check memoization cache
-    StrategyConnectionService->>ClientStrategy: new ClientStrategy() [if not cached]
-    StrategyConnectionService-->>BacktestLogicPrivateService: Return ClientStrategy
-    BacktestLogicPrivateService->>ClientStrategy: tick(symbol)
-    ClientStrategy-->>BacktestLogicPrivateService: Signal result
-    BacktestLogicPrivateService-->>User: yield signal
-```
+![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_9.svg)
 
 1. Public service wraps with MethodContext
 2. Private service gets client from Connection Service

@@ -27,69 +27,7 @@ The framework implements a six-layer clean architecture with dependency injectio
 
 ### High-Level System Diagram
 
-```mermaid
-graph TB
-    subgraph API["User Interface Layer"]
-        Backtest["Backtest class<br/>src/classes/Backtest.ts"]
-        Live["Live class<br/>src/classes/Live.ts"]
-        Walker["Walker class<br/>src/classes/Walker.ts"]
-        Heat["Heat class<br/>src/classes/Heat.ts"]
-        Schedule["Schedule class<br/>src/classes/Schedule.ts"]
-        PositionSize["PositionSize class<br/>src/classes/PositionSize.ts"]
-        AddFns["addStrategy/addExchange/addFrame<br/>addRisk/addSizing/addWalker<br/>src/function/add"]
-        ExchangeFns["getCandles/getAveragePrice<br/>formatPrice/formatQuantity<br/>src/function/exchange"]
-        ListenFns["listenSignal/listenProgress<br/>listenDone/listenError<br/>src/function/event"]
-    end
-    
-    subgraph Registry["Component Registry & Validation"]
-        SchemaServices["StrategySchemaService<br/>ExchangeSchemaService<br/>FrameSchemaService<br/>RiskSchemaService<br/>SizingSchemaService<br/>WalkerSchemaService"]
-        ValidationServices["StrategyValidationService<br/>ExchangeValidationService<br/>FrameValidationService<br/>RiskValidationService<br/>WalkerValidationService"]
-    end
-    
-    subgraph Engine["Execution Engine"]
-        LogicServices["BacktestLogicPrivateService<br/>LiveLogicPrivateService<br/>WalkerLogicPrivateService"]
-        GlobalServices["StrategyGlobalService<br/>ExchangeGlobalService<br/>FrameGlobalService"]
-        ConnectionServices["StrategyConnectionService<br/>ExchangeConnectionService<br/>FrameConnectionService<br/>RiskConnectionService"]
-        ClientLayer["ClientStrategy<br/>ClientExchange<br/>ClientFrame<br/>ClientRisk<br/>ClientSizing"]
-    end
-    
-    subgraph State["State Management"]
-        PersistSignal["PersistSignalAdapter<br/>src/classes/Persist.ts"]
-        PersistRisk["PersistRiskAdapter<br/>src/classes/Persist.ts"]
-        Config["GLOBAL_CONFIG<br/>src/config/params.ts"]
-    end
-    
-    subgraph Events["Event System"]
-        Emitters["signalEmitter<br/>signalBacktestEmitter<br/>signalLiveEmitter<br/>doneEmitter<br/>errorEmitter<br/>progressEmitter<br/>src/config/emitters"]
-    end
-    
-    subgraph Reports["Reporting & Analytics"]
-        MarkdownServices["BacktestMarkdownService<br/>LiveMarkdownService<br/>ScheduleMarkdownService<br/>WalkerMarkdownService<br/>PerformanceMarkdownService"]
-    end
-    
-    API --> SchemaServices
-    API --> ValidationServices
-    AddFns --> SchemaServices
-    
-    Backtest --> LogicServices
-    Live --> LogicServices
-    Walker --> LogicServices
-    
-    LogicServices --> GlobalServices
-    GlobalServices --> ConnectionServices
-    ConnectionServices --> SchemaServices
-    ConnectionServices --> ClientLayer
-    
-    ClientLayer --> PersistSignal
-    ClientLayer --> PersistRisk
-    ClientLayer --> Config
-    
-    LogicServices --> Emitters
-    Emitters --> ListenFns
-    Emitters --> MarkdownServices
-    
-    MarkdownServices --> Reports
-```
+![Mermaid Diagram](./diagrams\01_Overview_0.svg)
 
 ### Layer Responsibilities
 
@@ -112,47 +50,7 @@ The framework provides three primary execution modes with distinct characteristi
 
 ### Execution Mode Comparison
 
-```mermaid
-graph TB
-    subgraph Backtest["Backtest Mode - Historical Simulation"]
-        BT_Entry["Backtest.run/background<br/>src/classes/Backtest.ts"]
-        BT_Logic["BacktestLogicPrivateService<br/>src/lib/services/logic/private"]
-        BT_Frame["ClientFrame.getTimeframe<br/>src/client/ClientFrame.ts"]
-        BT_Strategy["ClientStrategy.tick<br/>ClientStrategy.backtest<br/>src/client/ClientStrategy.ts"]
-        BT_Report["BacktestMarkdownService<br/>src/lib/services/markdown"]
-        
-        BT_Entry --> BT_Logic
-        BT_Logic --> BT_Frame
-        BT_Logic --> BT_Strategy
-        BT_Strategy --> BT_Report
-    end
-    
-    subgraph Live["Live Mode - Real-time Trading"]
-        LV_Entry["Live.run/background<br/>src/classes/Live.ts"]
-        LV_Logic["LiveLogicPrivateService<br/>src/lib/services/logic/private"]
-        LV_Strategy["ClientStrategy.tick<br/>src/client/ClientStrategy.ts"]
-        LV_Persist["PersistSignalAdapter<br/>src/classes/Persist.ts"]
-        LV_Report["LiveMarkdownService<br/>src/lib/services/markdown"]
-        
-        LV_Entry --> LV_Logic
-        LV_Logic --> LV_Strategy
-        LV_Strategy --> LV_Persist
-        LV_Strategy --> LV_Report
-    end
-    
-    subgraph Walker["Walker Mode - Strategy Comparison"]
-        WK_Entry["Walker.run/background<br/>src/classes/Walker.ts"]
-        WK_Logic["WalkerLogicPrivateService<br/>src/lib/services/logic/private"]
-        WK_Backtest["Runs Backtest.run<br/>for each strategy"]
-        WK_Compare["Metric-based ranking<br/>Sharpe/WinRate/PnL"]
-        WK_Report["WalkerMarkdownService<br/>src/lib/services/markdown"]
-        
-        WK_Entry --> WK_Logic
-        WK_Logic --> WK_Backtest
-        WK_Backtest --> WK_Compare
-        WK_Compare --> WK_Report
-    end
-```
+![Mermaid Diagram](./diagrams\01_Overview_1.svg)
 
 | Mode | Entry Point | Execution Pattern | Output | Use Case |
 |------|-------------|-------------------|--------|----------|
@@ -190,23 +88,7 @@ graph TB
 
 The client layer contains pure business logic without dependency injection:
 
-```mermaid
-graph TB
-    ClientStrategy["ClientStrategy<br/>src/client/ClientStrategy.ts"]
-    ClientExchange["ClientExchange<br/>src/client/ClientExchange.ts"]
-    ClientFrame["ClientFrame<br/>src/client/ClientFrame.ts"]
-    
-    IStrategy["IStrategy interface<br/>tick, backtest methods"]
-    IExchange["IExchange interface<br/>getCandles, getAveragePrice"]
-    IFrame["IFrame interface<br/>getTimeframe method"]
-    
-    ClientStrategy -.->|implements| IStrategy
-    ClientExchange -.->|implements| IExchange
-    ClientFrame -.->|implements| IFrame
-    
-    ClientStrategy -->|"uses"| ClientExchange
-    ClientStrategy -->|"uses"| PersistSignalAdapter["PersistSignalAdapter<br/>src/classes/Persist.ts"]
-```
+![Mermaid Diagram](./diagrams\01_Overview_2.svg)
 
 | Component | Responsibility | Key Methods |
 |-----------|----------------|-------------|
@@ -221,24 +103,7 @@ graph TB
 
 The service layer handles dependency injection and routing:
 
-```mermaid
-graph TB
-    SchemaService["Schema Services<br/>Registry pattern"]
-    ConnectionService["Connection Services<br/>Memoized factories"]
-    GlobalService["Global Services<br/>Context injection"]
-    LogicService["Logic Services<br/>Async generators"]
-    
-    SchemaService -->|"lookup schema"| ConnectionService
-    ConnectionService -->|"create client"| ClientLayer["Client Layer<br/>ClientStrategy/Exchange/Frame"]
-    GlobalService -->|"wrap with context"| ConnectionService
-    LogicService -->|"orchestrates"| GlobalService
-    
-    MethodContext["MethodContextService<br/>strategyName, exchangeName, frameName"]
-    ExecutionContext["ExecutionContextService<br/>symbol, when, backtest flag"]
-    
-    MethodContext -.->|"routing"| ConnectionService
-    ExecutionContext -.->|"runtime context"| ClientLayer
-```
+![Mermaid Diagram](./diagrams\01_Overview_3.svg)
 
 **Service Types:**
 
@@ -270,64 +135,7 @@ Signals transition through six states in a type-safe discriminated union:
 
 ### Signal State Machine
 
-```mermaid
-stateDiagram-v2
-    [*] --> idle
-    
-    idle --> scheduled: "getSignal returns ISignalDto<br/>with priceOpen specified"
-    idle --> opened: "getSignal returns ISignalDto<br/>priceOpen omitted (immediate)"
-    
-    scheduled --> opened: "Price reaches priceOpen"
-    scheduled --> cancelled: "Timeout (CC_SCHEDULE_AWAIT_MINUTES)<br/>or SL hit before activation"
-    
-    opened --> active: "Next tick"
-    active --> active: "Monitor TP/SL/time via VWAP"
-    active --> closed: "TP hit OR SL hit OR time_expired"
-    
-    closed --> idle: "PNL calculated via toProfitLossDto"
-    cancelled --> idle: "Signal discarded"
-    
-    note right of idle
-        IStrategyTickResultIdle
-        action: "idle"
-        signal: null
-    end note
-    
-    note right of scheduled
-        IStrategyTickResultScheduled
-        action: "scheduled"
-        signal: IScheduledSignalRow
-        _isScheduled: true
-    end note
-    
-    note right of opened
-        IStrategyTickResultOpened
-        action: "opened"
-        signal: ISignalRow
-        pendingAt timestamp set
-    end note
-    
-    note right of active
-        IStrategyTickResultActive
-        action: "active"
-        signal: ISignalRow
-        currentPrice: number
-    end note
-    
-    note right of closed
-        IStrategyTickResultClosed
-        action: "closed"
-        pnl: IStrategyPnL
-        closeReason: StrategyCloseReason
-    end note
-    
-    note right of cancelled
-        IStrategyTickResultCancelled
-        action: "cancelled"
-        signal: IScheduledSignalRow
-        closeTimestamp: number
-    end note
-```
+![Mermaid Diagram](./diagrams\01_Overview_4.svg)
 
 ### Signal Type Hierarchy
 
@@ -369,28 +177,7 @@ When `getSignal()` returns `ISignalDto` with `priceOpen` specified:
 
 The framework uses a registration-then-execution pattern:
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant addStrategy["addStrategy function"]
-    participant SchemaService["StrategySchemaService"]
-    participant ConnectionService["StrategyConnectionService"]
-    participant ClientStrategy
-    
-    User->>addStrategy: "addStrategy(IStrategySchema)"
-    addStrategy->>SchemaService: "Store schema in registry map"
-    
-    Note over SchemaService: Registration phase complete
-    
-    User->>Backtest: "Backtest.run(symbol, context)"
-    Backtest->>ConnectionService: "getStrategy(strategyName)"
-    ConnectionService->>SchemaService: "Lookup schema by name"
-    SchemaService-->>ConnectionService: "Return IStrategySchema"
-    ConnectionService->>ClientStrategy: "new ClientStrategy(params)"
-    ConnectionService-->>Backtest: "Return cached instance"
-    
-    Note over ClientStrategy: Execution phase
-```
+![Mermaid Diagram](./diagrams\01_Overview_5.svg)
 
 ### Registration APIs
 
@@ -416,29 +203,7 @@ For configuration details, see [Configuration Functions](#3.1).
 
 The framework uses symbol-based dependency injection with scoped context propagation:
 
-```mermaid
-graph TB
-    types["types.ts<br/>50+ service symbols"]
-    provide["provide.ts<br/>Factory registration"]
-    DIContainer["di-kit/di-scoped<br/>Container"]
-    backtest_obj["backtest object<br/>Service aggregator"]
-    
-    types --> provide
-    provide --> DIContainer
-    DIContainer --> backtest_obj
-    
-    backtest_obj --> LogicServices["Logic Services"]
-    backtest_obj --> GlobalServices["Global Services"]
-    backtest_obj --> ConnectionServices["Connection Services"]
-    backtest_obj --> SchemaServices["Schema Services"]
-    backtest_obj --> BaseServices["Logger, Context Services"]
-    
-    ExecutionContext["ExecutionContextService<br/>di-scoped for context"]
-    MethodContext["MethodContextService<br/>di-scoped for routing"]
-    
-    ExecutionContext -.->|"implicit propagation"| GlobalServices
-    MethodContext -.->|"implicit propagation"| ConnectionServices
-```
+![Mermaid Diagram](./diagrams\01_Overview_6.svg)
 
 ### Context Propagation
 
@@ -486,63 +251,13 @@ For DI system details, see [Dependency Injection System](#2.2).
 
 ### Backtest Execution Flow
 
-```mermaid
-sequenceDiagram
-    participant Backtest["Backtest.run"]
-    participant Logic["BacktestLogicPrivateService"]
-    participant Frame["FrameGlobalService"]
-    participant Strategy["StrategyGlobalService"]
-    participant Exchange["ExchangeGlobalService"]
-    
-    Backtest->>Logic: "Initialize with context"
-    Logic->>Frame: "getTimeframe(symbol)"
-    Frame-->>Logic: "[timestamp1, ..., timestampN]"
-    
-    loop "For each timestamp"
-        Logic->>Exchange: "Set context date (backtest mode)"
-        Logic->>Strategy: "tick(symbol)"
-        
-        alt "Signal opened"
-            Strategy-->>Logic: "IStrategyTickResultOpened"
-            Logic->>Exchange: "getNextCandles (future data)"
-            Logic->>Strategy: "backtest(candles)"
-            Strategy-->>Logic: "IStrategyTickResultClosed"
-            Logic-->>Backtest: "yield closed result"
-        end
-    end
-```
+![Mermaid Diagram](./diagrams\01_Overview_7.svg)
 
 **Sources:** Referenced in high-level diagrams provided
 
 ### Live Execution Flow
 
-```mermaid
-sequenceDiagram
-    participant Live["Live.run"]
-    participant Logic["LiveLogicPrivateService"]
-    participant Strategy["StrategyGlobalService"]
-    participant Persist["PersistSignalAdapter"]
-    
-    Live->>Logic: "Initialize infinite generator"
-    
-    alt "First run"
-        Logic->>Persist: "Load persisted state"
-        Persist-->>Logic: "ISignalRow or null"
-    end
-    
-    loop "Infinite (1 minute intervals)"
-        Logic->>Strategy: "tick(symbol)"
-        
-        alt "Signal state changed"
-            Strategy->>Persist: "Atomic write"
-            Persist-->>Strategy: "Write complete"
-            Strategy-->>Logic: "Yield result"
-            Logic-->>Live: "Stream event"
-        end
-        
-        Logic->>Logic: "sleep(60000ms + 1ms)"
-    end
-```
+![Mermaid Diagram](./diagrams\01_Overview_8.svg)
 
 **Sources:** Referenced in high-level diagrams provided
 

@@ -26,33 +26,7 @@ The key distinction is between **immediate signals** (no `priceOpen` specified, 
 
 ### Discriminated Union Diagram
 
-```mermaid
-graph TB
-    Union["IStrategyTickResult<br/>(Discriminated Union)"]
-    
-    Idle["IStrategyTickResultIdle<br/>action: 'idle'<br/>signal: null"]
-    Scheduled["IStrategyTickResultScheduled<br/>action: 'scheduled'<br/>signal: IScheduledSignalRow"]
-    Opened["IStrategyTickResultOpened<br/>action: 'opened'<br/>signal: ISignalRow"]
-    Active["IStrategyTickResultActive<br/>action: 'active'<br/>signal: ISignalRow"]
-    Closed["IStrategyTickResultClosed<br/>action: 'closed'<br/>signal: ISignalRow<br/>closeReason: StrategyCloseReason<br/>pnl: IStrategyPnL"]
-    Cancelled["IStrategyTickResultCancelled<br/>action: 'cancelled'<br/>signal: IScheduledSignalRow<br/>closeTimestamp: number"]
-    
-    Union --> Idle
-    Union --> Scheduled
-    Union --> Opened
-    Union --> Active
-    Union --> Closed
-    Union --> Cancelled
-    
-    Idle -.->|"signal property"| NullType["null"]
-    Scheduled -.->|"signal property"| ScheduledRow["IScheduledSignalRow<br/>(extends ISignalRow)"]
-    Opened -.->|"signal property"| SignalRow["ISignalRow"]
-    Active -.->|"signal property"| SignalRow
-    Closed -.->|"signal property"| SignalRow
-    Cancelled -.->|"signal property"| ScheduledRow
-    
-    Closed -.->|"closeReason"| Reasons["'take_profit'<br/>'stop_loss'<br/>'time_expired'"]
-```
+![Mermaid Diagram](./diagrams\45_Signal_States_0.svg)
 
 The `IStrategyTickResult` type is a discriminated union defined at [types.d.ts:770](). TypeScript uses the `action` property to narrow types in conditional blocks:
 
@@ -85,69 +59,7 @@ if (result.action === "cancelled") {
 
 ### Complete State Machine Diagram
 
-```mermaid
-stateDiagram-v2
-    direction LR
-    
-    [*] --> Idle
-    
-    state "Signal Generation Fork" as Fork
-    Idle --> Fork: "GET_SIGNAL_FN returns signal"
-    
-    Fork --> Scheduled: "priceOpen specified<br/>OPEN_NEW_SCHEDULED_SIGNAL_FN"
-    Fork --> Opened: "priceOpen omitted<br/>OPEN_NEW_PENDING_SIGNAL_FN"
-    
-    Scheduled --> Scheduled: "tick() monitoring<br/>Price not reached<br/>Timeout not reached"
-    
-    Scheduled --> Opened: "Price reached priceOpen<br/>ACTIVATE_SCHEDULED_SIGNAL_FN"
-    
-    Scheduled --> Cancelled: "CC_SCHEDULE_AWAIT_MINUTES timeout<br/>OR price hit StopLoss<br/>CHECK_SCHEDULED_SIGNAL_TIMEOUT_FN"
-    
-    Opened --> Active: "Next tick()<br/>TP/SL conditions not met"
-    
-    Active --> Active: "tick() monitoring<br/>VWAP between TP/SL<br/>Time not expired"
-    
-    Active --> Closed: "TP/SL hit OR time expired<br/>CHECK_PENDING_SIGNAL_COMPLETION_FN"
-    
-    Cancelled --> Idle: "Clear _scheduledSignal"
-    Closed --> Idle: "setPendingSignal(null)"
-    
-    note right of Idle
-        _pendingSignal = null
-        _scheduledSignal = null
-        Returns IStrategyTickResultIdle
-    end note
-    
-    note right of Scheduled
-        _scheduledSignal set
-        Waiting for activation
-        Returns IStrategyTickResultScheduled
-    end note
-    
-    note right of Opened
-        _pendingSignal set
-        Just activated
-        Returns IStrategyTickResultOpened
-    end note
-    
-    note right of Active
-        _pendingSignal exists
-        Monitoring TP/SL
-        Returns IStrategyTickResultActive
-    end note
-    
-    note right of Closed
-        Signal completed
-        PnL calculated
-        Returns IStrategyTickResultClosed
-    end note
-    
-    note right of Cancelled
-        Scheduled signal failed
-        No position opened
-        Returns IStrategyTickResultCancelled
-    end note
-```
+![Mermaid Diagram](./diagrams\45_Signal_States_1.svg)
 
 The state machine is implemented in `ClientStrategy.tick()`. The `_pendingSignal` field at [src/client/ClientStrategy.ts:1093]() tracks active signals, while `_scheduledSignal` at [src/client/ClientStrategy.ts:1094]() tracks scheduled signals waiting for price activation.
 
@@ -476,23 +388,7 @@ In backtest mode, `CANCEL_SCHEDULED_SIGNAL_IN_BACKTEST_FN` at [src/client/Client
 
 ## Type-Safe State Handling
 
-```mermaid
-graph LR
-    Tick["strategy.tick()"]
-    Result["result: IStrategyTickResult"]
-    
-    Tick --> Result
-    
-    Result --> Guard1{"result.action<br/>===<br/>'idle'"}
-    Result --> Guard2{"result.action<br/>===<br/>'opened'"}
-    Result --> Guard3{"result.action<br/>===<br/>'active'"}
-    Result --> Guard4{"result.action<br/>===<br/>'closed'"}
-    
-    Guard1 -->|"TypeScript narrows to<br/>IStrategyTickResultIdle"| Action1["Access result.signal (null)<br/>result.currentPrice"]
-    Guard2 -->|"TypeScript narrows to<br/>IStrategyTickResultOpened"| Action2["Access result.signal<br/>result.currentPrice"]
-    Guard3 -->|"TypeScript narrows to<br/>IStrategyTickResultActive"| Action3["Access result.signal<br/>result.currentPrice"]
-    Guard4 -->|"TypeScript narrows to<br/>IStrategyTickResultClosed"| Action4["Access result.signal<br/>result.closeReason<br/>result.pnl<br/>result.closeTimestamp"]
-```
+![Mermaid Diagram](./diagrams\45_Signal_States_2.svg)
 
 ### Usage Example
 

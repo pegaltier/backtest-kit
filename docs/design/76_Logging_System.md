@@ -11,56 +11,7 @@ The logging system consists of three primary components: the `ILogger` interface
 
 ### Component Architecture
 
-```mermaid
-graph TB
-    subgraph "User Space"
-        CustomLogger["Custom Logger Implementation<br/>(implements ILogger)"]
-        UserCode["User Application"]
-    end
-    
-    subgraph "Logging Layer"
-        ILogger["ILogger Interface<br/>log, debug, info, warn"]
-        LoggerService["LoggerService<br/>(implements ILogger)"]
-        NoopLogger["NOOP_LOGGER<br/>(default implementation)"]
-    end
-    
-    subgraph "Context Layer"
-        MethodCtx["MethodContextService<br/>strategyName, exchangeName, frameName"]
-        ExecCtx["ExecutionContextService<br/>symbol, when, backtest"]
-    end
-    
-    subgraph "Service Layer"
-        BacktestLogic["BacktestLogicPrivateService"]
-        LiveLogic["LiveLogicPrivateService"]
-        StrategyGlobal["StrategyGlobalService"]
-        ExchangeGlobal["ExchangeGlobalService"]
-        ConnServices["Connection Services"]
-    end
-    
-    subgraph "DI System"
-        Types["TYPES.loggerService"]
-        Provide["provide.ts registration"]
-        BacktestObj["backtest.loggerService"]
-    end
-    
-    UserCode -->|"setLogger()"| LoggerService
-    CustomLogger -.->|"delegates to"| LoggerService
-    LoggerService -.->|"defaults to"| NoopLogger
-    LoggerService -->|"implements"| ILogger
-    
-    LoggerService -->|"inject"| MethodCtx
-    LoggerService -->|"inject"| ExecCtx
-    
-    BacktestLogic -->|"inject"| LoggerService
-    LiveLogic -->|"inject"| LoggerService
-    StrategyGlobal -->|"inject"| LoggerService
-    ExchangeGlobal -->|"inject"| LoggerService
-    ConnServices -->|"inject"| LoggerService
-    
-    Types --> Provide
-    Provide --> BacktestObj
-    BacktestObj --> LoggerService
-```
+![Mermaid Diagram](./diagrams\76_Logging_System_0.svg)
 
 **Sources:** [src/lib/services/base/LoggerService.ts:1-144](), [src/interfaces/Logger.interface.ts:1-31](), [src/lib/core/types.ts:1-3](), [src/lib/core/provide.ts:24-26](), [src/lib/index.ts:29-31]()
 
@@ -105,53 +56,7 @@ The interface is intentionally simple, allowing any logging library (Winston, Pi
 
 ### Internal Structure
 
-```mermaid
-classDiagram
-    class ILogger {
-        <<interface>>
-        +log(topic, ...args) void
-        +debug(topic, ...args) void
-        +info(topic, ...args) void
-        +warn(topic, ...args) void
-    }
-    
-    class LoggerService {
-        -_commonLogger: ILogger
-        -methodContextService: TMethodContextService
-        -executionContextService: TExecutionContextService
-        -get methodContext() object
-        -get executionContext() object
-        +log(topic, ...args) Promise~void~
-        +debug(topic, ...args) Promise~void~
-        +info(topic, ...args) Promise~void~
-        +warn(topic, ...args) Promise~void~
-        +setLogger(logger) void
-    }
-    
-    class NOOP_LOGGER {
-        +log() void
-        +debug() void
-        +info() void
-        +warn() void
-    }
-    
-    class MethodContextService {
-        +context object
-        +hasContext() boolean
-    }
-    
-    class ExecutionContextService {
-        +context object
-        +hasContext() boolean
-    }
-    
-    ILogger <|.. LoggerService : implements
-    ILogger <|.. NOOP_LOGGER : implements
-    LoggerService --> MethodContextService : injects
-    LoggerService --> ExecutionContextService : injects
-    LoggerService --> ILogger : delegates to _commonLogger
-    LoggerService ..> NOOP_LOGGER : defaults to
-```
+![Mermaid Diagram](./diagrams\76_Logging_System_1.svg)
 
 **Sources:** [src/lib/services/base/LoggerService.ts:11-143]()
 
@@ -177,35 +82,7 @@ const NOOP_LOGGER: ILogger = {
 
 ### Context Enrichment Flow
 
-```mermaid
-sequenceDiagram
-    participant Service as "BacktestLogicPrivateService"
-    participant Logger as "LoggerService"
-    participant MethodCtx as "MethodContextService"
-    participant ExecCtx as "ExecutionContextService"
-    participant Custom as "Custom Logger (user-provided)"
-    
-    Service->>Logger: log("backtest-start", data)
-    
-    Note over Logger: Check context availability
-    
-    Logger->>MethodCtx: hasContext()?
-    MethodCtx-->>Logger: true
-    Logger->>MethodCtx: get context
-    MethodCtx-->>Logger: {strategyName, exchangeName, frameName}
-    
-    Logger->>ExecCtx: hasContext()?
-    ExecCtx-->>Logger: true
-    Logger->>ExecCtx: get context
-    ExecCtx-->>Logger: {symbol, when, backtest}
-    
-    Note over Logger: Merge all arguments
-    
-    Logger->>Custom: log("backtest-start", data,<br/>{strategyName, exchangeName, frameName},<br/>{symbol, when, backtest})
-    
-    Custom-->>Logger: void
-    Logger-->>Service: Promise<void>
-```
+![Mermaid Diagram](./diagrams\76_Logging_System_2.svg)
 
 **Sources:** [src/lib/services/base/LoggerService.ts:42-86]()
 
@@ -285,15 +162,7 @@ backtest.loggerService.setLogger({
 
 ### Registration Flow
 
-```mermaid
-graph LR
-    A["TYPES.loggerService<br/>(Symbol)"] --> B["provide()<br/>registration"]
-    B --> C["new LoggerService()"]
-    C --> D["inject()<br/>in services"]
-    D --> E["backtest.loggerService<br/>(exported)"]
-    
-    F["Service Classes"] -.->|"inject(TYPES.loggerService)"| D
-```
+![Mermaid Diagram](./diagrams\76_Logging_System_3.svg)
 
 **Sources:** [src/lib/core/types.ts:1-3](), [src/lib/core/provide.ts:24-26](), [src/lib/index.ts:29-31]()
 

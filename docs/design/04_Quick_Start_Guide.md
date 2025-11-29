@@ -85,32 +85,7 @@ Backtest.background("BTCUSDT", {
 
 The framework uses a registration-first architecture. You must register all components before execution using the `add*` functions:
 
-```mermaid
-sequenceDiagram
-    participant User as "User Code"
-    participant AddFn as "add* Functions"
-    participant Schema as "*SchemaService"
-    participant Validation as "*ValidationService"
-    participant Execution as "Backtest/Live"
-
-    User->>AddFn: addExchange(schema)
-    AddFn->>Validation: validate schema
-    AddFn->>Schema: register(name, schema)
-    
-    User->>AddFn: addStrategy(schema)
-    AddFn->>Validation: validate schema
-    AddFn->>Schema: register(name, schema)
-    
-    User->>AddFn: addFrame(schema)
-    AddFn->>Validation: validate schema
-    AddFn->>Schema: register(name, schema)
-    
-    User->>Execution: Backtest.run(symbol, context)
-    Execution->>Schema: get(strategyName)
-    Execution->>Schema: get(exchangeName)
-    Execution->>Schema: get(frameName)
-    Execution-->>User: yield signals
-```
+![Mermaid Diagram](./diagrams\04_Quick_Start_Guide_0.svg)
 
 ### Registration Functions
 
@@ -300,34 +275,7 @@ for await (const result of Backtest.run("BTCUSDT", {
 
 Signals transition through states during execution:
 
-```mermaid
-stateDiagram-v2
-    [*] --> idle: "No active signal"
-    idle --> scheduled: "priceOpen specified"
-    idle --> opened: "Immediate entry"
-    scheduled --> opened: "Price activated"
-    scheduled --> cancelled: "Timeout/SL hit"
-    opened --> active: "Position monitoring"
-    active --> closed: "TP/SL/time"
-    closed --> [*]
-    cancelled --> [*]
-    
-    note right of scheduled
-        priceOpen: entry price<br/>scheduledAt: creation time<br/>Wait for CC_SCHEDULE_AWAIT_MINUTES
-    end note
-    
-    note right of opened
-        pendingAt: entry time<br/>priceOpen: actual entry price
-    end note
-    
-    note right of active
-        Monitor VWAP vs TP/SL<br/>Check minuteEstimatedTime
-    end note
-    
-    note right of closed
-        closeReason:<br/>- take_profit<br/>- stop_loss<br/>- time_expired
-    end note
-```
+![Mermaid Diagram](./diagrams\04_Quick_Start_Guide_1.svg)
 
 **State Transitions**:
 
@@ -442,24 +390,7 @@ const price = await getAveragePrice(symbol);  // No context params needed!
 
 **How It Works**:
 
-```mermaid
-graph TB
-    UserCode["User Code:<br/>Backtest.run(symbol, context)"]
-    MethodContext["MethodContextService.runAsyncIterator<br/>{strategyName, exchangeName, frameName}"]
-    ExecContext["ExecutionContextService.runInContext<br/>{symbol, when, backtest}"]
-    GetSignal["strategy.getSignal(symbol)"]
-    GetAvgPrice["getAveragePrice(symbol)<br/>NO CONTEXT PARAMS"]
-    DIContainer["di-scoped Container"]
-    ExchangeConn["ExchangeConnectionService<br/>uses methodContext.exchangeName"]
-    
-    UserCode --> MethodContext
-    MethodContext --> ExecContext
-    ExecContext --> GetSignal
-    GetSignal --> GetAvgPrice
-    GetAvgPrice --> DIContainer
-    DIContainer --> ExchangeConn
-    ExchangeConn --> |"Resolves correct exchange"| GetAvgPrice
-```
+![Mermaid Diagram](./diagrams\04_Quick_Start_Guide_2.svg)
 
 **Benefits**:
 - Clean API: No parameter drilling through layers

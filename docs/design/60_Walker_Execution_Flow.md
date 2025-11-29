@@ -51,38 +51,7 @@ A walker is defined using `IWalkerSchema` which specifies:
 
 ## High-Level Execution Flow
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Walker["Walker.run()"]
-    participant WalkerGlobal["WalkerGlobalService"]
-    participant WalkerLogicPublic["WalkerLogicPublicService"]
-    participant WalkerLogicPrivate["WalkerLogicPrivateService"]
-    participant Backtest["Backtest.run()"]
-    participant WalkerMarkdown["WalkerMarkdownService"]
-    participant Events["walkerEmitter"]
-
-    User->>Walker: "Walker.run(symbol, {walkerName})"
-    Walker->>WalkerGlobal: "Validate and get schema"
-    WalkerGlobal->>WalkerGlobal: "Validate exchange, frame, walker"
-    WalkerGlobal->>WalkerGlobal: "Validate all strategies & risks"
-    WalkerGlobal->>WalkerLogicPublic: "run(symbol, context)"
-    
-    WalkerLogicPublic->>WalkerLogicPrivate: "Context propagation"
-    
-    loop For each strategy in strategies[]
-        WalkerLogicPrivate->>Backtest: "Run backtest for strategy"
-        Backtest-->>WalkerLogicPrivate: "Statistics (sharpeRatio, etc)"
-        WalkerLogicPrivate->>WalkerLogicPrivate: "Compare with current best"
-        WalkerLogicPrivate->>Events: "Emit progress event"
-        WalkerLogicPrivate->>WalkerMarkdown: "Store strategy results"
-        WalkerLogicPrivate-->>User: "Yield progress"
-    end
-    
-    WalkerLogicPrivate->>WalkerLogicPrivate: "Select best strategy"
-    WalkerLogicPrivate->>Events: "Emit walkerCompleteSubject"
-    WalkerLogicPrivate-->>User: "Final results"
-```
+![Mermaid Diagram](./diagrams\60_Walker_Execution_Flow_0.svg)
 
 **Sources:** [src/classes/Walker.ts:31-86](), [src/lib/services/global/WalkerGlobalService.ts:46-86]()
 
@@ -92,43 +61,7 @@ sequenceDiagram
 
 Walker execution flows through three service layers:
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        WalkerClass["Walker.run()<br/>Walker.background()<br/>Walker.getData()"]
-    end
-    
-    subgraph "Global Service Layer"
-        WalkerGlobal["WalkerGlobalService.run()"]
-        SchemaService["WalkerSchemaService.get()"]
-        Validations["ValidationServices<br/>- walkerValidation<br/>- strategyValidation<br/>- exchangeValidation<br/>- frameValidation<br/>- riskValidation"]
-    end
-    
-    subgraph "Logic Service Layer"
-        WalkerLogicPublic["WalkerLogicPublicService.run()<br/>(MethodContext wrapper)"]
-        WalkerLogicPrivate["WalkerLogicPrivateService.run()<br/>(Core iteration logic)"]
-    end
-    
-    subgraph "Backtest Execution"
-        BacktestGlobal["BacktestGlobalService.run()"]
-        BacktestMarkdown["BacktestMarkdownService"]
-    end
-    
-    subgraph "Storage & Events"
-        WalkerMarkdown["WalkerMarkdownService<br/>(Accumulate results)"]
-        Emitters["walkerEmitter<br/>walkerCompleteSubject<br/>doneWalkerSubject"]
-    end
-    
-    WalkerClass-->WalkerGlobal
-    WalkerGlobal-->SchemaService
-    WalkerGlobal-->Validations
-    WalkerGlobal-->WalkerLogicPublic
-    WalkerLogicPublic-->WalkerLogicPrivate
-    WalkerLogicPrivate-->BacktestGlobal
-    WalkerLogicPrivate-->WalkerMarkdown
-    WalkerLogicPrivate-->Emitters
-    BacktestGlobal-->BacktestMarkdown
-```
+![Mermaid Diagram](./diagrams\60_Walker_Execution_Flow_1.svg)
 
 **Sources:** [src/classes/Walker.ts:31-144](), [src/lib/services/global/WalkerGlobalService.ts:1-90]()
 
@@ -181,39 +114,7 @@ This ensures clean state for consistent comparisons.
 
 The core of Walker execution is a sequential iteration through the strategies array:
 
-```mermaid
-graph TD
-    Start["Start Walker Execution"]
-    Init["Initialize:<br/>- bestStrategy = null<br/>- bestMetric = -Infinity<br/>- strategiesTested = 0"]
-    GetNext["Get next strategy from array"]
-    HasMore{"More<br/>strategies?"}
-    RunBacktest["Run Backtest.run() for strategy"]
-    CollectStats["Collect statistics from<br/>BacktestMarkdownService"]
-    ExtractMetric["Extract comparison metric<br/>(sharpeRatio, winRate, etc)"]
-    Compare{"Metric ><br/>bestMetric?"}
-    UpdateBest["Update bestStrategy<br/>and bestMetric"]
-    EmitProgress["Emit progress event:<br/>- strategiesTested<br/>- totalStrategies<br/>- bestStrategy<br/>- bestMetric"]
-    YieldProgress["Yield progress to user"]
-    IncrementCount["strategiesTested++"]
-    EmitComplete["Emit walkerCompleteSubject"]
-    End["Return final results"]
-    
-    Start-->Init
-    Init-->GetNext
-    GetNext-->HasMore
-    HasMore-->|"Yes"|RunBacktest
-    RunBacktest-->CollectStats
-    CollectStats-->ExtractMetric
-    ExtractMetric-->Compare
-    Compare-->|"Yes"|UpdateBest
-    Compare-->|"No"|EmitProgress
-    UpdateBest-->EmitProgress
-    EmitProgress-->YieldProgress
-    YieldProgress-->IncrementCount
-    IncrementCount-->GetNext
-    HasMore-->|"No"|EmitComplete
-    EmitComplete-->End
-```
+![Mermaid Diagram](./diagrams\60_Walker_Execution_Flow_2.svg)
 
 **Sources:** [src/classes/Walker.ts:31-86](), [README.md:406-459]()
 
@@ -384,24 +285,7 @@ The cancellation is graceful - it allows the current strategy's backtest to comp
 
 Walker coordinates with multiple markdown services:
 
-```mermaid
-graph LR
-    WalkerLogic["WalkerLogicPrivateService"]
-    
-    subgraph "Per-Strategy Services"
-        BacktestMarkdown["BacktestMarkdownService<br/>(stores closed signals)"]
-        ScheduleMarkdown["ScheduleMarkdownService<br/>(tracks scheduled signals)"]
-    end
-    
-    WalkerMarkdown["WalkerMarkdownService<br/>(aggregates comparisons)"]
-    
-    WalkerLogic-->|"Runs backtest"|BacktestMarkdown
-    WalkerLogic-->|"Runs backtest"|ScheduleMarkdown
-    WalkerLogic-->|"Stores results"|WalkerMarkdown
-    
-    BacktestMarkdown-->|"getData()"|WalkerLogic
-    WalkerLogic-->|"Extract metric"|WalkerMarkdown
-```
+![Mermaid Diagram](./diagrams\60_Walker_Execution_Flow_3.svg)
 
 ### Data Flow
 

@@ -46,30 +46,7 @@ The `run()` method initiates live trading execution for a trading pair. It retur
 
 ### Execution Characteristics
 
-```mermaid
-graph TB
-    UserCode["User Code<br/>for await (const result of Live.run())"]
-    LiveRun["Live.run()<br/>src/classes/Live.ts:50"]
-    LiveGlobal["liveGlobalService.run()<br/>LiveGlobalService"]
-    MethodCtx["MethodContextService.runAsyncIterator()<br/>Context Propagation"]
-    LivePrivate["LiveLogicPrivateService.run()<br/>Infinite Generator"]
-    
-    Sleep["sleep(60000 + 1ms)<br/>1-minute intervals"]
-    StrategyTick["strategyGlobalService.tick()<br/>Signal Monitoring"]
-    Persist["PersistSignalAdapter<br/>Atomic File Writes"]
-    
-    UserCode --> LiveRun
-    LiveRun --> LiveGlobal
-    LiveGlobal --> MethodCtx
-    MethodCtx --> LivePrivate
-    
-    LivePrivate --> Sleep
-    Sleep --> StrategyTick
-    StrategyTick --> Persist
-    Persist --> LivePrivate
-    
-    LivePrivate -.->|"yield opened/closed"| UserCode
-```
+![Mermaid Diagram](./diagrams\18_Live_Trading_API_0.svg)
 
 **Diagram: Live.run Execution Path**
 
@@ -99,43 +76,7 @@ This filtering is implemented in [src/lib/services/logic/private/LiveLogicPrivat
 
 ### State Persistence and Recovery
 
-```mermaid
-sequenceDiagram
-    participant Process as "Node Process"
-    participant LiveRun as "Live.run()"
-    participant Strategy as "ClientStrategy"
-    participant Persist as "PersistSignalAdapter"
-    participant Disk as "File System<br/>./data/signal/"
-    
-    Process->>LiveRun: Start iteration
-    LiveRun->>Strategy: tick(symbol)
-    
-    alt Signal Opens
-        Strategy->>Strategy: Validate signal
-        Strategy->>Persist: writeValue(entityId, signalRow)
-        Persist->>Disk: Atomic write signal.json
-        Disk-->>Persist: Write complete
-        Persist-->>Strategy: Persisted
-        Strategy-->>LiveRun: yield { action: "opened" }
-    else Signal Closes
-        Strategy->>Strategy: Calculate PNL
-        Strategy->>Persist: writeValue(entityId, null)
-        Persist->>Disk: Atomic write (clear state)
-        Disk-->>Persist: Write complete
-        Persist-->>Strategy: Persisted
-        Strategy-->>LiveRun: yield { action: "closed" }
-    end
-    
-    Note over Process: ⚠️ CRASH
-    
-    Process->>LiveRun: Restart & Resume
-    LiveRun->>Strategy: tick(symbol)
-    Strategy->>Persist: readValue(entityId)
-    Persist->>Disk: Read signal.json
-    Disk-->>Persist: Last saved state
-    Persist-->>Strategy: Restored signal
-    Strategy-->>LiveRun: Continue monitoring
-```
+![Mermaid Diagram](./diagrams\18_Live_Trading_API_1.svg)
 
 **Diagram: Crash Recovery Flow**
 
@@ -197,23 +138,7 @@ The method waits for the next `closed` event before honoring the cancellation fl
 
 ### Cancellation Behavior
 
-```mermaid
-stateDiagram-v2
-    [*] --> Running: background() called
-    
-    Running --> AwaitingClose: stop() called
-    Running --> [*]: Process crashes
-    
-    AwaitingClose --> Stopped: Signal closed
-    AwaitingClose --> [*]: Process crashes
-    
-    Stopped --> [*]: Generator terminated
-    
-    note right of AwaitingClose
-        Waits for lastValue.action === "closed"
-        before breaking loop
-    end note
-```
+![Mermaid Diagram](./diagrams\18_Live_Trading_API_2.svg)
 
 **Diagram: Background Cancellation State Machine**
 
@@ -271,36 +196,7 @@ Saves the markdown report to disk. Default path is `./logs/live/{strategyName}.m
 
 The generator yields a discriminated union `IStrategyTickResult` with the `action` field as the discriminator:
 
-```mermaid
-classDiagram
-    class IStrategyTickResult {
-        <<union>>
-    }
-    
-    class IStrategyTickResultOpened {
-        +action: "opened"
-        +signal: ISignalRow
-        +currentPrice: number
-        +strategyName: string
-        +exchangeName: string
-    }
-    
-    class IStrategyTickResultClosed {
-        +action: "closed"
-        +signal: ISignalRow
-        +currentPrice: number
-        +closeReason: StrategyCloseReason
-        +closeTimestamp: number
-        +pnl: IStrategyPnL
-        +strategyName: string
-        +exchangeName: string
-    }
-    
-    IStrategyTickResult <|-- IStrategyTickResultOpened
-    IStrategyTickResult <|-- IStrategyTickResultClosed
-    
-    note for IStrategyTickResultClosed "closeReason:<br/>take_profit | stop_loss | time_expired"
-```
+![Mermaid Diagram](./diagrams\18_Live_Trading_API_3.svg)
 
 **Diagram: Live Result Type Hierarchy**
 
@@ -423,40 +319,7 @@ Each symbol maintains independent state persistence in separate files: `./data/s
 
 ## Service Integration
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        LiveClass["Live<br/>src/classes/Live.ts"]
-    end
-    
-    subgraph "Service Orchestration"
-        LiveGlobal["LiveGlobalService<br/>Context Injection"]
-        LiveLogicPublic["LiveLogicPublicService<br/>Public Interface"]
-        LiveLogicPrivate["LiveLogicPrivateService<br/>Generator Implementation"]
-        MethodCtx["MethodContextService<br/>Schema Name Routing"]
-    end
-    
-    subgraph "Strategy Execution"
-        StrategyGlobal["StrategyGlobalService<br/>Strategy Access"]
-        ClientStrategy["ClientStrategy<br/>Signal Lifecycle"]
-    end
-    
-    subgraph "Persistence & Reporting"
-        Persist["PersistSignalAdapter<br/>Atomic Writes"]
-        Markdown["LiveMarkdownService<br/>Report Generation"]
-    end
-    
-    LiveClass --> LiveGlobal
-    LiveGlobal --> MethodCtx
-    MethodCtx --> LiveLogicPublic
-    LiveLogicPublic --> LiveLogicPrivate
-    
-    LiveLogicPrivate --> StrategyGlobal
-    StrategyGlobal --> ClientStrategy
-    
-    ClientStrategy --> Persist
-    ClientStrategy -.->|"Events"| Markdown
-```
+![Mermaid Diagram](./diagrams\18_Live_Trading_API_4.svg)
 
 **Diagram: Live API Service Dependencies**
 

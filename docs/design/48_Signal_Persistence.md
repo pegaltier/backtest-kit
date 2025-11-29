@@ -22,47 +22,7 @@ The persistence system provides durability guarantees for active trading signals
 
 ## Persistence Architecture
 
-```mermaid
-graph TB
-    subgraph "ClientStrategy"
-        WaitInit["waitForInit()<br/>(singleshot)"]
-        SetPending["setPendingSignal()<br/>(atomic write)"]
-        Tick["tick()<br/>(signal monitoring)"]
-        Backtest["backtest()<br/>(fast-forward)"]
-    end
-    
-    subgraph "PersistSignalAdapter"
-        ReadSignal["readSignalData()<br/>(strategyName, symbol)"]
-        WriteSignal["writeSignalData()<br/>(signal, strategyName, symbol)"]
-    end
-    
-    subgraph "PersistBase<ISignalData>"
-        ReadValue["readValue(entityId)<br/>(read JSON file)"]
-        WriteValue["writeValue(entityId, entity)<br/>(atomic rename)"]
-        HasValue["hasValue(entityId)<br/>(file exists check)"]
-    end
-    
-    subgraph "File System"
-        SignalDir["./signal/<br/>directory"]
-        SignalFile["{strategyName}_{symbol}.json<br/>{signalRow: ISignalRow | null}"]
-        TempFile["{strategyName}_{symbol}.json.tmp<br/>(atomic write buffer)"]
-    end
-    
-    WaitInit -->|read on startup| ReadSignal
-    SetPending -->|write before yield| WriteSignal
-    Tick --> SetPending
-    Backtest --> SetPending
-    
-    ReadSignal --> ReadValue
-    WriteSignal --> WriteValue
-    
-    ReadValue -->|read| SignalFile
-    WriteValue -->|1. write| TempFile
-    WriteValue -->|2. rename| SignalFile
-    HasValue -->|check exists| SignalFile
-    
-    TempFile -.->|fs.rename atomic| SignalFile
-```
+![Mermaid Diagram](./diagrams\48_Signal_Persistence_0.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:146-233](), [src/classes/Persist.ts:31-168]()
 
@@ -76,47 +36,7 @@ The architecture uses a three-layer approach:
 
 On initialization, `ClientStrategy.waitForInit()` attempts to load the last persisted signal state. This occurs once per strategy instance using the `singleshot` pattern from `functools-kit`.
 
-```mermaid
-sequenceDiagram
-    participant Init as ClientStrategy<br/>Constructor
-    participant Wait as waitForInit()
-    participant Adapter as PersistSignalAdapter
-    participant Persist as PersistBase
-    participant FS as File System
-    
-    Init->>Wait: First call (singleshot)
-    
-    alt Backtest Mode
-        Wait->>Wait: Skip persistence (return early)
-        Note over Wait: No state recovery in backtest
-    else Live Mode
-        Wait->>Adapter: readSignalData(strategyName, symbol)
-        Adapter->>Persist: readValue(entityId)
-        Persist->>FS: Read {strategyName}_{symbol}.json
-        
-        alt File Exists
-            FS-->>Persist: ISignalData JSON content
-            Persist-->>Adapter: Parse and validate
-            
-            alt Valid Signal for This Exchange/Strategy
-                Adapter-->>Wait: ISignalRow (restored state)
-                Wait->>Wait: Set _pendingSignal = restored
-                Note over Wait: Resume monitoring existing signal
-            else Mismatched Exchange/Strategy
-                Wait->>Wait: Set _pendingSignal = null
-                Note over Wait: Ignore incompatible signal
-            end
-        else File Not Found
-            FS-->>Persist: null
-            Persist-->>Adapter: null
-            Adapter-->>Wait: null
-            Wait->>Wait: Set _pendingSignal = null
-            Note over Wait: No previous signal to recover
-        end
-    end
-    
-    Wait->>Init: Initialization complete
-```
+![Mermaid Diagram](./diagrams\48_Signal_Persistence_1.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:146-165](), [src/classes/Persist.ts:91-168]()
 
@@ -138,42 +58,7 @@ if (pendingSignal.strategyName !== self.params.method.context.strategyName) {
 
 Every signal state change is persisted atomically through `ClientStrategy.setPendingSignal()`. The method writes to disk **before** the result is yielded to the user, ensuring durability.
 
-```mermaid
-sequenceDiagram
-    participant Tick as ClientStrategy.tick()
-    participant Set as setPendingSignal()
-    participant Adapter as PersistSignalAdapter
-    participant Persist as PersistBase
-    participant FS as File System
-    
-    Tick->>Tick: Signal opened/closed condition met
-    Tick->>Set: setPendingSignal(newSignal or null)
-    
-    Set->>Set: Update _pendingSignal in memory
-    
-    alt Backtest Mode
-        Set->>Set: Skip persistence (return)
-        Note over Set: Performance optimization
-    else Live Mode
-        Set->>Adapter: writeSignalData(signal, strategyName, symbol)
-        Adapter->>Persist: writeValue(entityId, signalData)
-        
-        Persist->>FS: 1. Write to {file}.json.tmp
-        Note over FS: Temporary file for atomic write
-        
-        Persist->>FS: 2. fs.rename({file}.json.tmp, {file}.json)
-        Note over FS: Atomic rename operation<br/>(POSIX guarantee)
-        
-        FS-->>Persist: Write complete
-        Persist-->>Adapter: Success
-        Adapter-->>Set: Success
-    end
-    
-    Set-->>Tick: State persisted (or skipped)
-    Tick->>Tick: Construct IStrategyTickResult
-    Tick-->>Tick: yield result to user
-    Note over Tick: Result only yielded after persistence
-```
+![Mermaid Diagram](./diagrams\48_Signal_Persistence_2.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:220-233](), [src/classes/Persist.ts:66-89]()
 
@@ -255,27 +140,7 @@ This creates a unique identifier for each strategy-symbol pair. Multiple strateg
 
 Persistence behavior differs significantly between execution modes:
 
-```mermaid
-graph LR
-    subgraph "Backtest Mode"
-        BT_Init["waitForInit()"]
-        BT_Set["setPendingSignal()"]
-        BT_Skip["Early return<br/>(no disk I/O)"]
-        
-        BT_Init -->|if backtest| BT_Skip
-        BT_Set -->|if backtest| BT_Skip
-    end
-    
-    subgraph "Live Mode"
-        LV_Init["waitForInit()"]
-        LV_Read["PersistSignalAdapter<br/>readSignalData()"]
-        LV_Set["setPendingSignal()"]
-        LV_Write["PersistSignalAdapter<br/>writeSignalData()"]
-        
-        LV_Init --> LV_Read
-        LV_Set --> LV_Write
-    end
-```
+![Mermaid Diagram](./diagrams\48_Signal_Persistence_3.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:146-233]()
 
@@ -301,37 +166,7 @@ if (this.params.execution.context.backtest) {
 
 ## Persistence Lifecycle
 
-```mermaid
-stateDiagram-v2
-    [*] --> Uninitialized: ClientStrategy constructed
-    
-    Uninitialized --> Initialized: waitForInit() called
-    
-    state Initialized {
-        [*] --> NoSignal: _pendingSignal = null
-        NoSignal --> SignalOpened: setPendingSignal(signal)<br/>Persists to disk (live)
-        SignalOpened --> SignalActive: tick() monitoring
-        SignalActive --> SignalClosed: TP/SL/time condition met
-        SignalClosed --> NoSignal: setPendingSignal(null)<br/>Persists null to disk (live)
-    }
-    
-    Initialized --> [*]: Process exit
-    
-    note right of Uninitialized
-        File may exist from previous run
-        Contains last signal state
-    end note
-    
-    note right of SignalOpened
-        Atomic write to disk
-        {signalRow: ISignalRow}
-    end note
-    
-    note right of SignalClosed
-        Atomic write to disk
-        {signalRow: null}
-    end note
-```
+![Mermaid Diagram](./diagrams\48_Signal_Persistence_4.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:146-233](), [src/client/ClientStrategy.ts:258-464]()
 
@@ -386,39 +221,7 @@ For detailed information on implementing custom persistence backends, see [Custo
 
 Persistence is called at critical transition points in the signal lifecycle:
 
-```mermaid
-flowchart TD
-    Start["tick() called"]
-    CheckPending{"Has pending<br/>signal?"}
-    GenSignal["GET_SIGNAL_FN()<br/>(throttled generation)"]
-    Validate["VALIDATE_SIGNAL_FN()<br/>(price/TP/SL checks)"]
-    PersistOpen["setPendingSignal(signal)<br/>Atomic write"]
-    YieldOpen["yield 'opened' result"]
-    
-    Monitor["Monitor VWAP<br/>Check TP/SL/time"]
-    CheckClose{"Close<br/>condition<br/>met?"}
-    CalcPnL["toProfitLossDto()<br/>(with fees/slippage)"]
-    PersistClose["setPendingSignal(null)<br/>Atomic write"]
-    YieldClosed["yield 'closed' result"]
-    YieldActive["yield 'active' result"]
-    
-    Start --> CheckPending
-    CheckPending -->|No| GenSignal
-    GenSignal --> Validate
-    Validate --> PersistOpen
-    PersistOpen --> YieldOpen
-    
-    CheckPending -->|Yes| Monitor
-    Monitor --> CheckClose
-    CheckClose -->|Yes| CalcPnL
-    CalcPnL --> PersistClose
-    PersistClose --> YieldClosed
-    
-    CheckClose -->|No| YieldActive
-    
-    classDef persist fill:#f9f9f9,stroke:#333,stroke-width:2px
-    class PersistOpen,PersistClose persist
-```
+![Mermaid Diagram](./diagrams\48_Signal_Persistence_5.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:258-464]()
 

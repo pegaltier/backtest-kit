@@ -55,54 +55,7 @@ The backtesting system follows the four-layer architecture with clear separation
 
 ### Component Diagram
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        BacktestClass["BacktestUtils<br/>(Backtest.run, getReport, dump)"]
-    end
-    
-    subgraph "Service Orchestration Layer"
-        BacktestLogicPublic["BacktestLogicPublicService<br/>(Context wrapper)"]
-        BacktestLogicPrivate["BacktestLogicPrivateService<br/>(Async generator orchestrator)"]
-        MethodContext["MethodContextService<br/>(Context propagation)"]
-    end
-    
-    subgraph "Global Service Layer"
-        BacktestGlobal["BacktestGlobalService<br/>(Execution context injection)"]
-        StrategyGlobal["StrategyGlobalService<br/>(tick, backtest methods)"]
-        ExchangeGlobal["ExchangeGlobalService<br/>(getNextCandles)"]
-        FrameGlobal["FrameGlobalService<br/>(getTimeframe)"]
-    end
-    
-    subgraph "Business Logic Layer"
-        ClientStrategy["ClientStrategy<br/>(Signal lifecycle, backtest simulation)"]
-        ClientExchange["ClientExchange<br/>(Historical candle fetching)"]
-        ClientFrame["ClientFrame<br/>(Timestamp array generation)"]
-    end
-    
-    subgraph "Cross-Cutting Concerns"
-        BacktestMarkdown["BacktestMarkdownService<br/>(Report accumulation)"]
-        Logger["LoggerService<br/>(Execution logging)"]
-        ExecutionContext["ExecutionContextService<br/>(Backtest mode flag)"]
-    end
-    
-    BacktestClass --> BacktestGlobal
-    BacktestGlobal --> BacktestLogicPublic
-    BacktestLogicPublic --> MethodContext
-    BacktestLogicPublic --> BacktestLogicPrivate
-    
-    BacktestLogicPrivate --> FrameGlobal
-    BacktestLogicPrivate --> StrategyGlobal
-    BacktestLogicPrivate --> ExchangeGlobal
-    
-    FrameGlobal --> ClientFrame
-    StrategyGlobal --> ClientStrategy
-    ExchangeGlobal --> ClientExchange
-    
-    ClientStrategy -.-> BacktestMarkdown
-    BacktestLogicPrivate -.-> Logger
-    StrategyGlobal -.-> ExecutionContext
-```
+![Mermaid Diagram](./diagrams\50_Backtesting_0.svg)
 
 ### Component Responsibilities
 
@@ -129,45 +82,7 @@ Backtesting follows a deterministic execution pattern that processes each timest
 
 ### Sequence Diagram
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant BacktestClass["Backtest"]
-    participant LogicPublic["BacktestLogicPublicService"]
-    participant MethodCtx["MethodContextService"]
-    participant LogicPrivate["BacktestLogicPrivateService"]
-    participant FrameGlobal["FrameGlobalService"]
-    participant StrategyGlobal["StrategyGlobalService"]
-    participant ExchangeGlobal["ExchangeGlobalService"]
-    
-    User->>BacktestClass: "run(symbol, context)"
-    BacktestClass->>LogicPublic: "run(symbol, context)"
-    LogicPublic->>MethodCtx: "runAsyncIterator(generator, context)"
-    LogicPublic->>LogicPrivate: "run(symbol)"
-    
-    LogicPrivate->>FrameGlobal: "getTimeframe(symbol)"
-    FrameGlobal-->>LogicPrivate: "[timestamp1, ..., timestampN]"
-    
-    loop "For each timestamp in timeframes"
-        LogicPrivate->>StrategyGlobal: "tick(symbol, timestamp, backtest=true)"
-        StrategyGlobal-->>LogicPrivate: "IStrategyTickResult"
-        
-        alt "result.action === 'opened'"
-            LogicPrivate->>ExchangeGlobal: "getNextCandles(symbol, '1m', minuteEstimatedTime, when, true)"
-            ExchangeGlobal-->>LogicPrivate: "ICandle[] (future candles)"
-            
-            LogicPrivate->>StrategyGlobal: "backtest(symbol, candles, when, true)"
-            StrategyGlobal-->>LogicPrivate: "IStrategyTickResultClosed"
-            
-            LogicPrivate->>LogicPrivate: "Skip timestamps until closeTimestamp"
-            LogicPrivate-->>User: "yield closed result"
-        end
-        
-        LogicPrivate->>LogicPrivate: "i++"
-    end
-    
-    LogicPrivate-->>User: "Generator completes"
-```
+![Mermaid Diagram](./diagrams\50_Backtesting_1.svg)
 
 ### Execution Steps
 
@@ -218,33 +133,7 @@ The backtest system uses async generators to achieve memory efficiency when proc
 
 ### Streaming vs Accumulation
 
-```mermaid
-graph LR
-    subgraph "Memory-Efficient Streaming (Current Design)"
-        Timeframes1["Timeframe Array<br/>(loaded once)"]
-        Generator1["Async Generator<br/>(yields one at a time)"]
-        Consumer1["Consumer<br/>(processes incrementally)"]
-        Memory1["Memory Usage<br/>(O(1) for results)"]
-        
-        Timeframes1 --> Generator1
-        Generator1 -.->|"yield"| Consumer1
-        Consumer1 --> Memory1
-    end
-    
-    subgraph "Array Accumulation (Alternative Design)"
-        Timeframes2["Timeframe Array<br/>(loaded once)"]
-        Accumulator["Result Accumulator<br/>(stores all results)"]
-        Consumer2["Consumer<br/>(receives full array)"]
-        Memory2["Memory Usage<br/>(O(N) for results)"]
-        
-        Timeframes2 --> Accumulator
-        Accumulator --> Consumer2
-        Consumer2 --> Memory2
-    end
-    
-    style Memory1 fill:#90EE90
-    style Memory2 fill:#FFB6C6
-```
+![Mermaid Diagram](./diagrams\50_Backtesting_2.svg)
 
 ### Benefits of Streaming
 
@@ -280,39 +169,7 @@ Backtesting uses `MethodContextService` to implicitly pass configuration context
 
 ### Context Flow Diagram
 
-```mermaid
-graph TB
-    UserCode["User Code<br/>(specifies context)"]
-    BacktestRun["Backtest.run<br/>(receives context)"]
-    LogicPublic["BacktestLogicPublicService.run<br/>(wraps with MethodContextService)"]
-    MethodCtx["MethodContextService.runAsyncIterator<br/>(di-scoped context)"]
-    LogicPrivate["BacktestLogicPrivateService.run<br/>(no context param)"]
-    
-    subgraph "Implicit Context Access"
-        StrategyGlobal["StrategyGlobalService<br/>(reads strategyName from context)"]
-        ExchangeGlobal["ExchangeGlobalService<br/>(reads exchangeName from context)"]
-        FrameGlobal["FrameGlobalService<br/>(reads frameName from context)"]
-    end
-    
-    ConnectionServices["ConnectionServices<br/>(use context for routing)"]
-    
-    UserCode -->|"context object"| BacktestRun
-    BacktestRun -->|"forwards context"| LogicPublic
-    LogicPublic -->|"injects context"| MethodCtx
-    MethodCtx -->|"scope boundary"| LogicPrivate
-    
-    LogicPrivate --> StrategyGlobal
-    LogicPrivate --> ExchangeGlobal
-    LogicPrivate --> FrameGlobal
-    
-    StrategyGlobal -.->|"implicit read"| MethodCtx
-    ExchangeGlobal -.->|"implicit read"| MethodCtx
-    FrameGlobal -.->|"implicit read"| MethodCtx
-    
-    StrategyGlobal --> ConnectionServices
-    ExchangeGlobal --> ConnectionServices
-    FrameGlobal --> ConnectionServices
-```
+![Mermaid Diagram](./diagrams\50_Backtesting_3.svg)
 
 ### Context Structure
 
@@ -346,22 +203,7 @@ The framework passively accumulates closed signals for reporting via `BacktestMa
 
 ### Report Accumulation Flow
 
-```mermaid
-graph LR
-    BacktestLogic["BacktestLogicPrivateService<br/>(yields closed signals)"]
-    ClientStrategy["ClientStrategy<br/>(emits signal events)"]
-    BacktestMarkdown["BacktestMarkdownService<br/>(accumulates results)"]
-    ReportAPI["Backtest.getReport<br/>(generates markdown)"]
-    User["User<br/>(retrieves report)"]
-    
-    BacktestLogic -.->|"yield"| ClientStrategy
-    ClientStrategy -.->|"event emission"| BacktestMarkdown
-    BacktestMarkdown -->|"stores in memory"| BacktestMarkdown
-    
-    User --> ReportAPI
-    ReportAPI --> BacktestMarkdown
-    BacktestMarkdown -->|"formats as markdown"| User
-```
+![Mermaid Diagram](./diagrams\50_Backtesting_4.svg)
 
 ### Report Usage
 
@@ -450,34 +292,7 @@ Backtesting integrates with the signal lifecycle state machine. For complete sig
 
 ### State Transitions in Backtest
 
-```mermaid
-stateDiagram-v2
-    [*] --> Idle: "timestamp iteration"
-    
-    Idle --> Opened: "tick() returns 'opened'"
-    
-    state Opened {
-        [*] --> FetchFutureCandles: "getNextCandles()"
-        FetchFutureCandles --> InvokeBacktest: "candles retrieved"
-        InvokeBacktest --> Simulate: "backtest(candles)"
-    }
-    
-    Opened --> Closed: "backtest() always returns 'closed'"
-    
-    state Closed {
-        [*] --> CalculatePnL: "closeReason determined"
-        CalculatePnL --> ApplyFees: "slippage + fees"
-        ApplyFees --> YieldResult: "IStrategyTickResultClosed"
-    }
-    
-    Closed --> Idle: "skip timestamps, continue iteration"
-    
-    note right of Opened
-        Fast-forward simulation
-        No timestamp iteration
-        during signal lifetime
-    end note
-```
+![Mermaid Diagram](./diagrams\50_Backtesting_5.svg)
 
 ### Signal Result Types
 

@@ -27,58 +27,7 @@ Connection Services implement the factory pattern with memoization to manage cli
 
 ### Instance Management Architecture
 
-```mermaid
-graph TB
-    subgraph "Schema Services"
-        StrategySchema["StrategySchemaService"]
-        ExchangeSchema["ExchangeSchemaService"]
-        FrameSchema["FrameSchemaService"]
-        RiskSchema["RiskSchemaService"]
-        SizingSchema["SizingSchemaService"]
-    end
-    
-    subgraph "Connection Services"
-        StrategyConn["StrategyConnectionService"]
-        ExchangeConn["ExchangeConnectionService"]
-        FrameConn["FrameConnectionService"]
-        RiskConn["RiskConnectionService"]
-        SizingConn["SizingConnectionService"]
-    end
-    
-    subgraph "Memoization Layer"
-        GetStrategy["getStrategy(strategyName)"]
-        GetExchange["getExchange(exchangeName)"]
-        GetFrame["getFrame(frameName)"]
-        GetRisk["getRisk(riskName)"]
-        GetSizing["getSizing(sizingName)"]
-    end
-    
-    subgraph "Client Instances"
-        ClientStrategy["ClientStrategy"]
-        ClientExchange["ClientExchange"]
-        ClientFrame["ClientFrame"]
-        ClientRisk["ClientRisk"]
-        ClientSizing["ClientSizing"]
-    end
-    
-    StrategySchema -->|"provides schema"| StrategyConn
-    ExchangeSchema -->|"provides schema"| ExchangeConn
-    FrameSchema -->|"provides schema"| FrameConn
-    RiskSchema -->|"provides schema"| RiskConn
-    SizingSchema -->|"provides schema"| SizingConn
-    
-    StrategyConn -->|"calls"| GetStrategy
-    ExchangeConn -->|"calls"| GetExchange
-    FrameConn -->|"calls"| GetFrame
-    RiskConn -->|"calls"| GetRisk
-    SizingConn -->|"calls"| GetSizing
-    
-    GetStrategy -->|"creates once, caches"| ClientStrategy
-    GetExchange -->|"creates once, caches"| ClientExchange
-    GetFrame -->|"creates once, caches"| ClientFrame
-    GetRisk -->|"creates once, caches"| ClientRisk
-    GetSizing -->|"creates once, caches"| ClientSizing
-```
+![Mermaid Diagram](./diagrams\38_Connection_Services_0.svg)
 
 **Sources:** [src/lib/services/connection/StrategyConnectionService.ts:76-94](), [src/lib/services/connection/RiskConnectionService.ts:56-65](), [src/lib/core/types.ts:10-16]()
 
@@ -90,16 +39,7 @@ All Connection Services use `memoize` from `functools-kit` to cache client insta
 
 ### Memoization Structure
 
-```mermaid
-graph LR
-    Call["tick() or other method"] --> Lookup["Get name from context"]
-    Lookup --> Check{"Instance cached?"}
-    Check -->|"Yes"| Return["Return cached client"]
-    Check -->|"No"| Schema["Fetch schema from SchemaService"]
-    Schema --> Create["new Client(params)"]
-    Create --> Cache["Store in memoize cache"]
-    Cache --> Return
-```
+![Mermaid Diagram](./diagrams\38_Connection_Services_1.svg)
 
 ### Memoize Key Function Pattern
 
@@ -176,40 +116,7 @@ Connection Services inject dependencies into client constructors, combining sche
 
 ### Injection Flow
 
-```mermaid
-graph TB
-    subgraph "Connection Service"
-        GetClient["getStrategy() or getRisk()"]
-        SchemaLookup["schemaService.get(name)"]
-        InjectServices["Inject service dependencies"]
-        CreateClient["new Client(params)"]
-    end
-    
-    subgraph "Schema Service"
-        SchemaData["Schema: {<br/>name, config,<br/>functions, callbacks}"]
-    end
-    
-    subgraph "Service Layer"
-        Logger["LoggerService"]
-        ExecCtx["ExecutionContextService"]
-        MethodCtx["MethodContextService"]
-        OtherConn["Other ConnectionServices"]
-    end
-    
-    subgraph "Client Instance"
-        ClientParams["constructor(params)"]
-    end
-    
-    GetClient --> SchemaLookup
-    SchemaLookup --> SchemaData
-    SchemaData --> InjectServices
-    Logger --> InjectServices
-    ExecCtx --> InjectServices
-    MethodCtx --> InjectServices
-    OtherConn --> InjectServices
-    InjectServices --> CreateClient
-    CreateClient --> ClientParams
-```
+![Mermaid Diagram](./diagrams\38_Connection_Services_2.svg)
 
 **Sources:** [src/lib/services/connection/StrategyConnectionService.ts:76-94](), [src/lib/services/connection/RiskConnectionService.ts:56-65](), [src/client/ClientStrategy.ts:1-30](), [src/client/ClientRisk.ts:1-30]()
 
@@ -221,17 +128,7 @@ Manages `ClientStrategy` instances by strategyName. Implements the `IStrategy` i
 
 ### Constructor Dependencies
 
-```mermaid
-graph LR
-    StrategyConn["StrategyConnectionService"]
-    
-    StrategyConn -->|"inject TYPES.loggerService"| Logger["LoggerService"]
-    StrategyConn -->|"inject TYPES.executionContextService"| ExecCtx["ExecutionContextService"]
-    StrategyConn -->|"inject TYPES.methodContextService"| MethodCtx["MethodContextService"]
-    StrategyConn -->|"inject TYPES.strategySchemaService"| Schema["StrategySchemaService"]
-    StrategyConn -->|"inject TYPES.exchangeConnectionService"| ExchangeConn["ExchangeConnectionService"]
-    StrategyConn -->|"inject TYPES.riskConnectionService"| RiskConn["RiskConnectionService"]
-```
+![Mermaid Diagram](./diagrams\38_Connection_Services_3.svg)
 
 **Sources:** [src/lib/services/connection/StrategyConnectionService.ts:53-65](), [src/lib/core/types.ts:1-81]()
 
@@ -289,13 +186,7 @@ Manages `ClientRisk` instances by riskName. Implements `IRisk` interface methods
 
 ### Constructor Dependencies
 
-```mermaid
-graph LR
-    RiskConn["RiskConnectionService"]
-    
-    RiskConn -->|"inject TYPES.loggerService"| Logger["LoggerService"]
-    RiskConn -->|"inject TYPES.riskSchemaService"| Schema["RiskSchemaService"]
-```
+![Mermaid Diagram](./diagrams\38_Connection_Services_4.svg)
 
 **Sources:** [src/lib/services/connection/RiskConnectionService.ts:42-45]()
 
@@ -354,25 +245,7 @@ Removes a closed position from the risk tracker. Called after signal is closed.
 
 Multiple strategies with the same `riskName` share one ClientRisk instance [src/lib/services/connection/RiskConnectionService.ts:56-65](). This enables cross-strategy position tracking:
 
-```mermaid
-graph TB
-    Strategy1["Strategy: rsi-strategy<br/>riskName: 'conservative'"]
-    Strategy2["Strategy: ema-strategy<br/>riskName: 'conservative'"]
-    Strategy3["Strategy: macd-strategy<br/>riskName: 'aggressive'"]
-    
-    RiskConn["RiskConnectionService"]
-    
-    Risk1["ClientRisk instance<br/>riskName: 'conservative'<br/>tracks 2 strategies"]
-    Risk2["ClientRisk instance<br/>riskName: 'aggressive'<br/>tracks 1 strategy"]
-    
-    Strategy1 -->|"getRisk('conservative')"| RiskConn
-    Strategy2 -->|"getRisk('conservative')"| RiskConn
-    Strategy3 -->|"getRisk('aggressive')"| RiskConn
-    
-    RiskConn -->|"returns same instance"| Risk1
-    RiskConn -->|"returns same instance"| Risk1
-    RiskConn -->|"returns different instance"| Risk2
-```
+![Mermaid Diagram](./diagrams\38_Connection_Services_5.svg)
 
 **Sources:** [src/lib/services/connection/RiskConnectionService.ts:1-138](), [src/client/ClientRisk.ts:1-221]()
 
@@ -431,52 +304,7 @@ Connection Services integrate with multiple layers of the architecture, serving 
 
 ### Service Dependencies
 
-```mermaid
-graph TB
-    subgraph "Global Services"
-        StrategyGlobal["StrategyGlobalService"]
-        ExchangeGlobal["ExchangeGlobalService"]
-        FrameGlobal["FrameGlobalService"]
-    end
-    
-    subgraph "Connection Services"
-        StrategyConn["StrategyConnectionService"]
-        ExchangeConn["ExchangeConnectionService"]
-        FrameConn["FrameConnectionService"]
-    end
-    
-    subgraph "Schema Services"
-        StrategySchema["StrategySchemaService"]
-        ExchangeSchema["ExchangeSchemaService"]
-        FrameSchema["FrameSchemaService"]
-    end
-    
-    subgraph "Client Layer"
-        ClientStrategy["ClientStrategy"]
-        ClientExchange["ClientExchange"]
-        ClientFrame["ClientFrame"]
-    end
-    
-    subgraph "Context Services"
-        MethodCtx["MethodContextService<br/>{strategyName, exchangeName, frameName}"]
-    end
-    
-    StrategyGlobal -->|"calls"| StrategyConn
-    ExchangeGlobal -->|"calls"| ExchangeConn
-    FrameGlobal -->|"calls"| FrameConn
-    
-    StrategyConn -->|"uses routing key"| MethodCtx
-    ExchangeConn -->|"uses routing key"| MethodCtx
-    FrameConn -->|"uses routing key"| MethodCtx
-    
-    StrategyConn -->|"lookup config"| StrategySchema
-    ExchangeConn -->|"lookup config"| ExchangeSchema
-    FrameConn -->|"lookup config"| FrameSchema
-    
-    StrategyConn -->|"creates/caches"| ClientStrategy
-    ExchangeConn -->|"creates/caches"| ClientExchange
-    FrameConn -->|"creates/caches"| ClientFrame
-```
+![Mermaid Diagram](./diagrams\38_Connection_Services_6.svg)
 
 ### Data Flow Through Connection Layer
 

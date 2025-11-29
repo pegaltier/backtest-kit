@@ -17,52 +17,7 @@ All metrics include safe math checks to handle edge cases (NaN, Infinity) and re
 
 ## Statistics Calculation Architecture
 
-```mermaid
-graph TB
-    subgraph "Event Sources"
-        BacktestEmitter["signalBacktestEmitter"]
-        LiveEmitter["signalLiveEmitter"]
-        ScheduleEmitter["signalEmitter (all events)"]
-    end
-    
-    subgraph "Markdown Services"
-        BacktestMarkdown["BacktestMarkdownService"]
-        LiveMarkdown["LiveMarkdownService"]
-        ScheduleMarkdown["ScheduleMarkdownService"]
-    end
-    
-    subgraph "Storage Layer (Per Strategy)"
-        BacktestStorage["ReportStorage (Backtest)<br/>_signalList: IStrategyTickResultClosed[]"]
-        LiveStorage["ReportStorage (Live)<br/>_eventList: TickEvent[]"]
-        ScheduleStorage["ReportStorage (Schedule)<br/>_eventList: ScheduledEvent[]"]
-    end
-    
-    subgraph "Calculation Methods"
-        BacktestCalc["getData()<br/>BacktestStatistics"]
-        LiveCalc["getData()<br/>LiveStatistics"]
-        ScheduleCalc["getData()<br/>ScheduleStatistics"]
-    end
-    
-    subgraph "Safe Math Layer"
-        IsUnsafe["isUnsafe(value)<br/>Returns null for NaN/Infinity"]
-    end
-    
-    BacktestEmitter --> BacktestMarkdown
-    LiveEmitter --> LiveMarkdown
-    ScheduleEmitter --> ScheduleMarkdown
-    
-    BacktestMarkdown --> |"tick() filters closed"| BacktestStorage
-    LiveMarkdown --> |"tick() all events"| LiveStorage
-    ScheduleMarkdown --> |"tick() scheduled/cancelled"| ScheduleStorage
-    
-    BacktestStorage --> BacktestCalc
-    LiveStorage --> LiveCalc
-    ScheduleStorage --> ScheduleCalc
-    
-    BacktestCalc --> IsUnsafe
-    LiveCalc --> IsUnsafe
-    ScheduleCalc --> IsUnsafe
-```
+![Mermaid Diagram](./diagrams\70_Statistics_Calculation_0.svg)
 
 **Calculation Flow:**
 
@@ -193,19 +148,7 @@ function isUnsafe(value: number | null): boolean {
 
 **Validation Flow:**
 
-```mermaid
-graph TD
-    CalcMetric["Calculate Metric<br/>(e.g., avgPnl)"]
-    CheckSafe{"isUnsafe(value)?"}
-    ReturnValue["Return number value"]
-    ReturnNull["Return null"]
-    
-    CalcMetric --> CheckSafe
-    CheckSafe -->|"false"| ReturnValue
-    CheckSafe -->|"true"| ReturnNull
-    
-    style ReturnNull fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\70_Statistics_Calculation_1.svg)
 
 ### Application Examples
 
@@ -446,83 +389,7 @@ const avgWaitTime = totalCancelled > 0
 
 ## Metrics Calculation Flow
 
-```mermaid
-graph TB
-    Input["Input: Signal/Event List"]
-    
-    subgraph "Basic Statistics"
-        CountWins["Count Wins<br/>(PNL > 0)"]
-        CountLosses["Count Losses<br/>(PNL < 0)"]
-        SumPnl["Sum PNL<br/>Total & Average"]
-        CalcWinRate["Calculate Win Rate<br/>(wins / total) × 100"]
-    end
-    
-    subgraph "Variance Calculation"
-        CalcReturns["Extract Returns<br/>pnlPercentage[]"]
-        CalcVariance["Calculate Variance<br/>Σ((r - avg)²) / n"]
-        CalcStdDev["Standard Deviation<br/>√variance"]
-    end
-    
-    subgraph "Risk-Adjusted Metrics"
-        CalcSharpe["Sharpe Ratio<br/>avgPnl / stdDev"]
-        CalcAnnualized["Annualized Sharpe<br/>sharpe × √365"]
-    end
-    
-    subgraph "Advanced Metrics"
-        SeparateWinsLosses["Separate Wins/Losses"]
-        CalcAvgWin["Calculate avgWin"]
-        CalcAvgLoss["Calculate avgLoss"]
-        CalcCertainty["Certainty Ratio<br/>avgWin / |avgLoss|"]
-    end
-    
-    subgraph "Duration Analysis"
-        CalcDurations["Calculate Durations<br/>close - pending"]
-        CalcAvgDuration["Average Duration"]
-        CalcTradesPerYear["Trades Per Year<br/>365 / avgDurationDays"]
-        CalcExpected["Expected Returns<br/>avgPnl × tradesPerYear"]
-    end
-    
-    subgraph "Safe Math Validation"
-        CheckSafe["isUnsafe() for<br/>each metric"]
-        ReturnStats["Return Statistics<br/>(null for unsafe values)"]
-    end
-    
-    Input --> CountWins
-    Input --> CountLosses
-    Input --> SumPnl
-    CountWins --> CalcWinRate
-    CountLosses --> CalcWinRate
-    
-    Input --> CalcReturns
-    CalcReturns --> CalcVariance
-    SumPnl --> CalcVariance
-    CalcVariance --> CalcStdDev
-    
-    SumPnl --> CalcSharpe
-    CalcStdDev --> CalcSharpe
-    CalcSharpe --> CalcAnnualized
-    
-    Input --> SeparateWinsLosses
-    SeparateWinsLosses --> CalcAvgWin
-    SeparateWinsLosses --> CalcAvgLoss
-    CalcAvgWin --> CalcCertainty
-    CalcAvgLoss --> CalcCertainty
-    
-    Input --> CalcDurations
-    CalcDurations --> CalcAvgDuration
-    CalcAvgDuration --> CalcTradesPerYear
-    CalcTradesPerYear --> CalcExpected
-    SumPnl --> CalcExpected
-    
-    CalcWinRate --> CheckSafe
-    SumPnl --> CheckSafe
-    CalcStdDev --> CheckSafe
-    CalcAnnualized --> CheckSafe
-    CalcCertainty --> CheckSafe
-    CalcExpected --> CheckSafe
-    
-    CheckSafe --> ReturnStats
-```
+![Mermaid Diagram](./diagrams\70_Statistics_Calculation_2.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:202-270](), [src/lib/services/markdown/LiveMarkdownService.ts:381-464]()
 

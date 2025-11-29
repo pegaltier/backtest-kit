@@ -22,36 +22,7 @@ ClientSizing does not validate signals, track positions, or interact with exchan
 
 ClientSizing sits in the Client Classes layer and is instantiated by SizingConnectionService. The connection service memoizes one ClientSizing instance per sizing schema name.
 
-```mermaid
-graph TB
-    subgraph "Layer 2: Logic Services"
-        BacktestLogic["BacktestLogicPrivateService"]
-        LiveLogic["LiveLogicPrivateService"]
-    end
-    
-    subgraph "Layer 3: Connection Services"
-        SizingConnection["SizingConnectionService<br/>Memoized instance per sizingName"]
-        StrategyConnection["StrategyConnectionService"]
-    end
-    
-    subgraph "Layer 4: Client Classes"
-        ClientSizing["ClientSizing<br/>Position size calculation"]
-        ClientStrategy["ClientStrategy<br/>References sizing via schema"]
-    end
-    
-    subgraph "Layer 5: Schema Services"
-        SizingSchema["SizingSchemaService<br/>Schema registry"]
-    end
-    
-    BacktestLogic --> StrategyConnection
-    LiveLogic --> StrategyConnection
-    StrategyConnection --> ClientStrategy
-    ClientStrategy -.->|"References sizingName"| SizingConnection
-    SizingConnection --> ClientSizing
-    SizingConnection --> SizingSchema
-    
-    ClientStrategy -.->|"Uses calculated size"| ClientSizing
-```
+![Mermaid Diagram](./diagrams\35_ClientSizing_0.svg)
 
 **Sources:** [types.d.ts:535-632](), High-Level Architecture Diagrams (Diagram 4)
 
@@ -227,44 +198,7 @@ The ATR-based formula:
 
 The diagram below shows how ClientSizing integrates into the signal generation flow:
 
-```mermaid
-graph TB
-    subgraph "ClientStrategy"
-        GetSignal["getSignal()<br/>Returns ISignalDto"]
-        ValidateSignal["VALIDATE_SIGNAL_FN<br/>Checks prices, distances"]
-    end
-    
-    subgraph "ClientSizing"
-        GetSchema["Retrieve sizing schema<br/>via sizingName"]
-        DetermineMethod["Determine method<br/>fixed/kelly/atr"]
-        CalculateSize["calculatePositionSize()<br/>Returns formatted quantity"]
-    end
-    
-    subgraph "ClientRisk"
-        CheckRisk["checkSignal()<br/>Validates portfolio limits"]
-    end
-    
-    subgraph "Signal Execution"
-        AugmentSignal["Augment signal with<br/>calculated quantity"]
-        OpenPosition["Open position<br/>with sized quantity"]
-    end
-    
-    GetSignal --> ValidateSignal
-    ValidateSignal --> GetSchema
-    GetSchema --> DetermineMethod
-    
-    DetermineMethod -->|"fixed-percentage"| CalculateFixed["portfolioBalance × percentage / entryPrice"]
-    DetermineMethod -->|"kelly-criterion"| CalculateKelly["portfolioBalance × kellyPercentage / entryPrice"]
-    DetermineMethod -->|"atr-based"| CalculateATR["portfolioBalance × riskPct / (atrMultiplier × ATR)"]
-    
-    CalculateFixed --> CalculateSize
-    CalculateKelly --> CalculateSize
-    CalculateATR --> CalculateSize
-    
-    CalculateSize --> CheckRisk
-    CheckRisk --> AugmentSignal
-    AugmentSignal --> OpenPosition
-```
+![Mermaid Diagram](./diagrams\35_ClientSizing_1.svg)
 
 **Sources:** [types.d.ts:609-632]()
 
@@ -311,18 +245,7 @@ Sizing schemas are registered via the `addSizing()` function and stored in `Sizi
 
 ### Registration Flow
 
-```mermaid
-graph LR
-    AddSizing["addSizing()<br/>Public API"]
-    Validate["SizingValidationService<br/>Validate schema"]
-    Store["SizingSchemaService<br/>Store in ToolRegistry"]
-    Retrieve["SizingConnectionService<br/>Retrieve and instantiate"]
-    
-    AddSizing --> Validate
-    Validate --> Store
-    Store --> Retrieve
-    Retrieve --> ClientSizing["ClientSizing instance"]
-```
+![Mermaid Diagram](./diagrams\35_ClientSizing_2.svg)
 
 ### Memoization
 

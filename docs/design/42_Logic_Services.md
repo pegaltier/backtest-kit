@@ -22,53 +22,7 @@ Logic Services follow a two-tier pattern with distinct responsibilities:
 
 ### Service Hierarchy Diagram
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        Backtest["Backtest.run()"]
-        Live["Live.run()"]
-    end
-    
-    subgraph "Logic Services - Public Layer"
-        BLP["BacktestLogicPublicService"]
-        LLP["LiveLogicPublicService"]
-    end
-    
-    subgraph "Logic Services - Private Layer"
-        BLPR["BacktestLogicPrivateService"]
-        LLPR["LiveLogicPrivateService"]
-    end
-    
-    subgraph "Global Services"
-        SG["StrategyGlobalService"]
-        EG["ExchangeGlobalService"]
-        FG["FrameGlobalService"]
-    end
-    
-    subgraph "Context Services"
-        MC["MethodContextService"]
-        EC["ExecutionContextService"]
-    end
-    
-    Backtest --> BLP
-    Live --> LLP
-    
-    BLP -->|"runAsyncIterator()"| MC
-    LLP -->|"runAsyncIterator()"| MC
-    
-    BLP --> BLPR
-    LLP --> LLPR
-    
-    BLPR --> SG
-    BLPR --> EG
-    BLPR --> FG
-    
-    LLPR --> SG
-    
-    SG --> EC
-    EG --> EC
-    FG --> EC
-```
+![Mermaid Diagram](./diagrams\42_Logic_Services_0.svg)
 
 **Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts:1-70](), [src/lib/services/logic/public/LiveLogicPublicService.ts:1-78](), [Diagram 1: Four-Layer Architecture Overview]()
 
@@ -94,24 +48,7 @@ Logic Services use a two-tier pattern to separate context management from execut
 
 ### Context Propagation Flow
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant PublicService as "BacktestLogicPublicService"
-    participant MCS as "MethodContextService"
-    participant PrivateService as "BacktestLogicPrivateService"
-    participant GlobalService as "StrategyGlobalService"
-    
-    User->>PublicService: run(symbol, {strategyName, exchangeName, frameName})
-    PublicService->>MCS: runAsyncIterator(generator, context)
-    MCS->>PrivateService: run(symbol) with injected context
-    PrivateService->>GlobalService: tick(symbol, when, backtest)
-    Note over GlobalService: Implicitly reads context from MethodContextService
-    GlobalService-->>PrivateService: IStrategyTickResult
-    PrivateService-->>MCS: yield result
-    MCS-->>PublicService: yield result
-    PublicService-->>User: yield result
-```
+![Mermaid Diagram](./diagrams\42_Logic_Services_1.svg)
 
 **Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts:46-66](), [src/lib/services/context/MethodContextService.ts:1-56](), [Diagram 4: Configuration and Registration System]()
 
@@ -133,44 +70,7 @@ Core orchestration service for backtest execution using memory-efficient async g
 
 ### Execution Flow
 
-```mermaid
-graph TB
-    Start["run(symbol)"] --> GetTimeframe["frameGlobalService.getTimeframe(symbol)"]
-    GetTimeframe --> InitLoop["i = 0, previousEventTimestamp = null"]
-    
-    InitLoop --> CheckLoop{"i < timeframes.length"}
-    CheckLoop -->|false| FinalProgress["Emit final progress (100%)"]
-    FinalProgress --> EmitTotalMetric["Emit backtest_total performance metric"]
-    EmitTotalMetric --> End["Generator completes"]
-    
-    CheckLoop -->|true| EmitProgress["progressEmitter.next()"]
-    EmitProgress --> GetWhen["when = timeframes[i]"]
-    GetWhen --> Tick["strategyGlobalService.tick(symbol, when, true)"]
-    
-    Tick --> CheckAction{"result.action"}
-    
-    CheckAction -->|"scheduled"| FetchScheduledCandles["getNextCandles()<br/>CC_SCHEDULE_AWAIT_MINUTES + minuteEstimatedTime + 1"]
-    FetchScheduledCandles --> BacktestScheduled["strategyGlobalService.backtest()"]
-    BacktestScheduled --> EmitScheduledMetric["Emit backtest_signal performance metric"]
-    EmitScheduledMetric --> SkipScheduled["Skip timeframes until closeTimestamp"]
-    SkipScheduled --> YieldScheduled["yield backtestResult"]
-    YieldScheduled --> EmitTimeframe1["Emit backtest_timeframe metric"]
-    EmitTimeframe1 --> Increment1["i++"]
-    Increment1 --> CheckLoop
-    
-    CheckAction -->|"opened"| FetchCandles["getNextCandles()<br/>minuteEstimatedTime"]
-    FetchCandles --> Backtest["strategyGlobalService.backtest()"]
-    Backtest --> EmitSignalMetric["Emit backtest_signal performance metric"]
-    EmitSignalMetric --> SkipTimeframes["Skip timeframes until closeTimestamp"]
-    SkipTimeframes --> YieldResult["yield backtestResult"]
-    YieldResult --> EmitTimeframe2["Emit backtest_timeframe metric"]
-    EmitTimeframe2 --> Increment2["i++"]
-    Increment2 --> CheckLoop
-    
-    CheckAction -->|"idle"| EmitTimeframe3["Emit backtest_timeframe metric"]
-    EmitTimeframe3 --> Increment3["i++"]
-    Increment3 --> CheckLoop
-```
+![Mermaid Diagram](./diagrams\42_Logic_Services_2.svg)
 
 ### Key Methods
 
@@ -243,34 +143,7 @@ Core orchestration service for live trading execution with infinite async genera
 
 ### Execution Flow
 
-```mermaid
-graph TB
-    Start["run(symbol)"] --> InitPrevTimestamp["previousEventTimestamp = null"]
-    InitPrevTimestamp --> Loop["while (true)"]
-    
-    Loop --> StartTick["tickStartTime = performance.now()"]
-    StartTick --> CreateDate["when = new Date()"]
-    CreateDate --> Tick["strategyGlobalService.tick(symbol, when, false)"]
-    
-    Tick --> LogResult["loggerService.info(action)"]
-    LogResult --> EmitMetric["Emit live_tick performance metric"]
-    EmitMetric --> CheckAction{"result.action"}
-    
-    CheckAction -->|"active"| SleepActive["sleep(TICK_TTL)"]
-    SleepActive --> Loop
-    
-    CheckAction -->|"idle"| SleepIdle["sleep(TICK_TTL)"]
-    SleepIdle --> Loop
-    
-    CheckAction -->|"scheduled"| SleepScheduled["sleep(TICK_TTL)"]
-    SleepScheduled --> Loop
-    
-    CheckAction -->|"opened, closed, cancelled"| YieldResult["yield result"]
-    YieldResult --> SleepYield["sleep(TICK_TTL)"]
-    SleepYield --> Loop
-    
-    Note["Never completes - infinite loop"]
-```
+![Mermaid Diagram](./diagrams\42_Logic_Services_3.svg)
 
 ### Key Methods
 
@@ -418,21 +291,7 @@ Logic Services use async generators (`async function*`) for memory-efficient str
 
 ### Memory Efficiency Diagram
 
-```mermaid
-graph LR
-    subgraph "Traditional Array Accumulation"
-        T1["Iterate all timestamps"] --> T2["Accumulate results in array"]
-        T2 --> T3["Return full array"]
-        T3 --> T4["Memory: O(n) where n = result count"]
-    end
-    
-    subgraph "Async Generator Streaming"
-        G1["Iterate timestamps"] --> G2["yield single result"]
-        G2 --> G3["Consumer processes result"]
-        G3 --> G4["Result discarded"]
-        G4 --> G5["Memory: O(1) constant"]
-    end
-```
+![Mermaid Diagram](./diagrams\42_Logic_Services_4.svg)
 
 ### Consumer Pattern Examples
 
@@ -469,48 +328,7 @@ Logic Services coordinate multiple service types through dependency injection.
 
 ### Dependency Injection Registration
 
-```mermaid
-graph TB
-    subgraph "DI Container"
-        TYPES["types.ts - Symbol definitions"]
-    end
-    
-    subgraph "Logic Services - Public"
-        BLP["BacktestLogicPublicService<br/>TYPES.backtestLogicPublicService"]
-        LLP["LiveLogicPublicService<br/>TYPES.liveLogicPublicService"]
-    end
-    
-    subgraph "Logic Services - Private"
-        BLPR["BacktestLogicPrivateService<br/>TYPES.backtestLogicPrivateService"]
-        LLPR["LiveLogicPrivateService<br/>TYPES.liveLogicPrivateService"]
-    end
-    
-    subgraph "Injected Dependencies"
-        Logger["LoggerService<br/>TYPES.loggerService"]
-        Strategy["StrategyGlobalService<br/>TYPES.strategyGlobalService"]
-        Exchange["ExchangeGlobalService<br/>TYPES.exchangeGlobalService"]
-        Frame["FrameGlobalService<br/>TYPES.frameGlobalService"]
-    end
-    
-    TYPES --> BLP
-    TYPES --> LLP
-    TYPES --> BLPR
-    TYPES --> LLPR
-    
-    BLP -->|inject| Logger
-    BLP -->|inject| BLPR
-    
-    LLP -->|inject| Logger
-    LLP -->|inject| LLPR
-    
-    BLPR -->|inject| Logger
-    BLPR -->|inject| Strategy
-    BLPR -->|inject| Exchange
-    BLPR -->|inject| Frame
-    
-    LLPR -->|inject| Logger
-    LLPR -->|inject| Strategy
-```
+![Mermaid Diagram](./diagrams\42_Logic_Services_5.svg)
 
 ### Injected Dependencies by Service
 
@@ -543,32 +361,7 @@ Logic Services use `MethodContextService.runAsyncIterator()` to inject context i
 
 ### MethodContextService Integration
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant PublicLogic as "BacktestLogicPublicService"
-    participant MCS as "MethodContextService"
-    participant PrivateLogic as "BacktestLogicPrivateService"
-    participant Connection as "StrategyConnectionService"
-    
-    User->>PublicLogic: run(symbol, {strategyName, exchangeName, frameName})
-    
-    PublicLogic->>MCS: runAsyncIterator(generator, context)
-    Note over MCS: Stores context in scoped instance
-    
-    MCS->>PrivateLogic: Start generator iteration
-    
-    loop For each timeframe
-        PrivateLogic->>Connection: getStrategy(strategyName)
-        Note over Connection: Reads strategyName from MCS.context
-        Connection-->>PrivateLogic: ClientStrategy instance
-        
-        PrivateLogic->>MCS: yield result
-    end
-    
-    MCS-->>PublicLogic: yield result
-    PublicLogic-->>User: yield result
-```
+![Mermaid Diagram](./diagrams\42_Logic_Services_6.svg)
 
 ### Context Lifecycle
 
@@ -612,35 +405,7 @@ Logic Services delegate business logic execution to Global Services that inject 
 
 ### Execution Context Injection
 
-```mermaid
-graph TB
-    subgraph "Logic Layer"
-        Logic["LiveLogicPrivateService<br/>Creates: new Date()"]
-    end
-    
-    subgraph "Global Layer"
-        Global["StrategyGlobalService.tick()"]
-    end
-    
-    subgraph "Context Layer"
-        ECS["ExecutionContextService<br/>runInContext()"]
-    end
-    
-    subgraph "Business Logic Layer"
-        Client["ClientStrategy.tick()"]
-    end
-    
-    Logic -->|"tick(symbol, when, false)"| Global
-    Global -->|"Wraps with ExecutionContextService"| ECS
-    ECS -->|"Injects {symbol, when, backtest}"| Client
-    Client -->|"Uses getCandles(), getAveragePrice()"| Client
-    
-    Note1["when = new Date() for live"]
-    Note2["when = timeframes[i] for backtest"]
-    
-    Logic -.-> Note1
-    Logic -.-> Note2
-```
+![Mermaid Diagram](./diagrams\42_Logic_Services_7.svg)
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:91-252](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:71]()
 
@@ -665,26 +430,7 @@ Core orchestration service for multi-strategy comparison execution.
 
 ### Execution Flow Diagram
 
-```mermaid
-graph TB
-    Start["run(symbol, strategies, metric)"] --> InitBest["bestStrategy = null<br/>bestMetric = -Infinity"]
-    InitBest --> LoopStart["For each strategy in strategies"]
-    
-    LoopStart --> RunBacktest["backtestLogicPublicService.run()<br/>with strategy context"]
-    RunBacktest --> CollectResults["Collect all closed signals"]
-    CollectResults --> GetData["backtestMarkdownService.getData()"]
-    GetData --> ExtractMetric["Extract metric value<br/>(e.g., sharpeRatio)"]
-    
-    ExtractMetric --> CompareMetric{"metric > bestMetric?"}
-    CompareMetric -->|Yes| UpdateBest["bestStrategy = current<br/>bestMetric = metric"]
-    CompareMetric -->|No| EmitProgress
-    UpdateBest --> EmitProgress["walkerEmitter.next()<br/>with progress data"]
-    
-    EmitProgress --> CheckMore{"More strategies?"}
-    CheckMore -->|Yes| LoopStart
-    CheckMore -->|No| YieldBest["yield bestStrategy result"]
-    YieldBest --> End["Generator completes"]
-```
+![Mermaid Diagram](./diagrams\42_Logic_Services_8.svg)
 
 ### Key Methods
 
@@ -704,28 +450,7 @@ Executes backtests for all strategies sequentially and identifies the best perfo
 
 `WalkerLogicPrivateService` delegates to `BacktestLogicPublicService` for individual strategy execution:
 
-```mermaid
-sequenceDiagram
-    participant Walker as "WalkerLogicPrivateService"
-    participant BacktestPublic as "BacktestLogicPublicService"
-    participant BacktestPrivate as "BacktestLogicPrivateService"
-    participant Markdown as "BacktestMarkdownService"
-    
-    Walker->>BacktestPublic: run(symbol, {strategyName, exchangeName, frameName})
-    BacktestPublic->>BacktestPrivate: Wrapped async generator
-    
-    loop For each timeframe
-        BacktestPrivate-->>BacktestPublic: yield closed signal
-        BacktestPublic-->>Walker: yield closed signal
-        Walker->>Walker: Accumulate results
-    end
-    
-    Walker->>Markdown: getData(strategyName)
-    Markdown-->>Walker: IBacktestStatistics
-    Walker->>Walker: Extract metric and compare
-    Walker->>Walker: Update bestStrategy if better
-    Walker->>Walker: Emit walkerEmitter progress event
-```
+![Mermaid Diagram](./diagrams\42_Logic_Services_9.svg)
 
 ### Metric Comparison
 
@@ -799,36 +524,7 @@ Logic Services are accessed through the `Backtest` and `Live` classes in the Pub
 
 ### Call Chain Diagram
 
-```mermaid
-graph TB
-    subgraph "Public API"
-        BacktestClass["Backtest.run()"]
-        LiveClass["Live.run()"]
-    end
-    
-    subgraph "Service Aggregator"
-        LibObject["lib object<br/>(backtest)"]
-    end
-    
-    subgraph "Public Logic Services"
-        BLP["BacktestLogicPublicService.run()"]
-        LLP["LiveLogicPublicService.run()"]
-    end
-    
-    subgraph "Private Logic Services"
-        BLPR["BacktestLogicPrivateService.run()"]
-        LLPR["LiveLogicPrivateService.run()"]
-    end
-    
-    BacktestClass --> LibObject
-    LiveClass --> LibObject
-    
-    LibObject -->|"backtestLogicPublicService"| BLP
-    LibObject -->|"liveLogicPublicService"| LLP
-    
-    BLP --> BLPR
-    LLP --> LLPR
-```
+![Mermaid Diagram](./diagrams\42_Logic_Services_10.svg)
 
 ### Type Signatures
 

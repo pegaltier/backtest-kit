@@ -69,32 +69,7 @@ The validation step performs:
 
 ## Component Registration Flow Diagram
 
-```mermaid
-graph TB
-    User["User Code"]
-    AddFn["add* Function<br/>(addStrategy, addExchange, etc.)"]
-    ValidationSvc["*ValidationService<br/>(StrategyValidationService, etc.)"]
-    SchemaSvc["*SchemaService<br/>(StrategySchemaService, etc.)"]
-    Registry["ToolRegistry<br/>(Map: name → schema)"]
-    ConnectionSvc["*ConnectionService<br/>(StrategyConnectionService, etc.)"]
-    ClientClass["Client* Class<br/>(ClientStrategy, ClientExchange, etc.)"]
-    
-    User -->|"Pass IStrategySchema"| AddFn
-    AddFn -->|"1. Validate schema"| ValidationSvc
-    ValidationSvc -->|"Check duplicates<br/>Validate fields"| ValidationSvc
-    AddFn -->|"2. Store schema"| SchemaSvc
-    SchemaSvc -->|"register(name, schema)"| Registry
-    
-    ConnectionSvc -->|"get(name)"| SchemaSvc
-    SchemaSvc -->|"Return schema"| ConnectionSvc
-    ConnectionSvc -->|"Instantiate with schema"| ClientClass
-    
-    note1["Validation happens at<br/>registration time"]
-    note2["Client instances are<br/>memoized (one per name)"]
-    
-    ValidationSvc -.-> note1
-    ConnectionSvc -.-> note2
-```
+![Mermaid Diagram](./diagrams\23_Component_Types_0.svg)
 
 **Sources:** [src/function/add.ts:50-341](), [src/lib/services/validation/StrategyValidationService.ts:1-50](), [src/lib/services/schema/StrategySchemaService.ts:1-30](), [src/lib/services/connection/StrategyConnectionService.ts:1-50]()
 
@@ -106,55 +81,7 @@ graph TB
 
 Each component type has a corresponding `*SchemaService` class that implements the `ToolRegistry` pattern for name-based storage and retrieval:
 
-```mermaid
-classDiagram
-    class ToolRegistry {
-        -Map~string,T~ _registry
-        +register(name: string, tool: T)
-        +get(name: string): T
-        +has(name: string): boolean
-        +list(): T[]
-    }
-    
-    class StrategySchemaService {
-        +register(name: StrategyName, schema: IStrategySchema)
-        +get(name: StrategyName): IStrategySchema
-        +has(name: StrategyName): boolean
-        +list(): IStrategySchema[]
-    }
-    
-    class ExchangeSchemaService {
-        +register(name: ExchangeName, schema: IExchangeSchema)
-        +get(name: ExchangeName): IExchangeSchema
-    }
-    
-    class FrameSchemaService {
-        +register(name: FrameName, schema: IFrameSchema)
-        +get(name: FrameName): IFrameSchema
-    }
-    
-    class RiskSchemaService {
-        +register(name: RiskName, schema: IRiskSchema)
-        +get(name: RiskName): IRiskSchema
-    }
-    
-    class SizingSchemaService {
-        +register(name: SizingName, schema: ISizingSchema)
-        +get(name: SizingName): ISizingSchema
-    }
-    
-    class WalkerSchemaService {
-        +register(name: WalkerName, schema: IWalkerSchema)
-        +get(name: WalkerName): IWalkerSchema
-    }
-    
-    ToolRegistry <|-- StrategySchemaService
-    ToolRegistry <|-- ExchangeSchemaService
-    ToolRegistry <|-- FrameSchemaService
-    ToolRegistry <|-- RiskSchemaService
-    ToolRegistry <|-- SizingSchemaService
-    ToolRegistry <|-- WalkerSchemaService
-```
+![Mermaid Diagram](./diagrams\23_Component_Types_1.svg)
 
 **Sources:** [src/lib/services/schema/StrategySchemaService.ts:1-30](), [src/lib/services/schema/ExchangeSchemaService.ts:1-30](), [src/lib/core/types.ts:18-26]()
 
@@ -190,29 +117,7 @@ Each component type has a `*ValidationService` class responsible for:
 
 `*ConnectionService` classes act as **memoized factories** that create and cache `Client*` instances. Each component name gets exactly one client instance, created lazily on first use:
 
-```mermaid
-sequenceDiagram
-    participant Logic as "BacktestLogicPrivateService"
-    participant ConnSvc as "StrategyConnectionService"
-    participant SchemaSvc as "StrategySchemaService"
-    participant Client as "ClientStrategy"
-    participant Cache as "Memoization Cache"
-    
-    Logic->>ConnSvc: get("my-strategy")
-    ConnSvc->>Cache: Check if instance exists
-    
-    alt Instance cached
-        Cache-->>ConnSvc: Return cached ClientStrategy
-        ConnSvc-->>Logic: Return instance
-    else Instance not cached
-        ConnSvc->>SchemaSvc: get("my-strategy")
-        SchemaSvc-->>ConnSvc: Return IStrategySchema
-        ConnSvc->>Client: new ClientStrategy(schema, logger, execution)
-        Client-->>ConnSvc: ClientStrategy instance
-        ConnSvc->>Cache: Store instance
-        ConnSvc-->>Logic: Return instance
-    end
-```
+![Mermaid Diagram](./diagrams\23_Component_Types_2.svg)
 
 **Sources:** [src/lib/services/connection/StrategyConnectionService.ts:1-50](), [src/lib/services/connection/ExchangeConnectionService.ts:1-50]()
 
@@ -220,35 +125,7 @@ sequenceDiagram
 
 ## Component Lifecycle States
 
-```mermaid
-stateDiagram-v2
-    [*] --> Unregistered
-    Unregistered --> Validating: User calls add* function
-    Validating --> ValidationFailed: Validation error<br/>(duplicate name, missing field)
-    Validating --> Registered: Validation passes
-    Registered --> Instantiated: First use in execution
-    Instantiated --> Executing: tick() or backtest() called
-    Executing --> Instantiated: Operation complete
-    
-    ValidationFailed --> [*]
-    
-    note right of Registered
-        Schema stored in
-        *SchemaService registry
-    end note
-    
-    note right of Instantiated
-        Client instance created
-        and cached in
-        *ConnectionService
-    end note
-    
-    note right of Executing
-        Component logic executes
-        within ExecutionContext
-        and MethodContext
-    end note
-```
+![Mermaid Diagram](./diagrams\23_Component_Types_3.svg)
 
 **Sources:** [src/function/add.ts:50-341](), [src/lib/services/connection/StrategyConnectionService.ts:1-50]()
 
@@ -323,27 +200,7 @@ These type aliases provide semantic clarity while maintaining string compatibili
 
 Some component types reference other components by name, creating a dependency graph:
 
-```mermaid
-graph LR
-    Strategy["IStrategySchema<br/>strategyName"]
-    Exchange["IExchangeSchema<br/>exchangeName"]
-    Frame["IFrameSchema<br/>frameName"]
-    Risk["IRiskSchema<br/>riskName"]
-    Sizing["ISizingSchema<br/>sizingName"]
-    Walker["IWalkerSchema<br/>walkerName"]
-    
-    Strategy -.->|"Optional riskName<br/>reference"| Risk
-    Strategy -.->|"Optional sizingName<br/>reference"| Sizing
-    Walker -->|"Required exchangeName<br/>reference"| Exchange
-    Walker -->|"Required frameName<br/>reference"| Frame
-    Walker -->|"Required strategies[]<br/>array reference"| Strategy
-    
-    note1["Strategy can operate<br/>independently without<br/>risk or sizing"]
-    note2["Walker orchestrates<br/>multiple strategies<br/>on same exchange/frame"]
-    
-    Strategy -.-> note1
-    Walker -.-> note2
-```
+![Mermaid Diagram](./diagrams\23_Component_Types_4.svg)
 
 **Sources:** [types.d.ts:616-633](), [types.d.ts:1019-1033]()
 
@@ -391,34 +248,7 @@ The `callbacks` field provides hooks into component lifecycle events without req
 
 For each component type, the framework maintains three service classes:
 
-```mermaid
-graph TB
-    subgraph "Component Type: Strategy"
-        SchemaA["StrategySchemaService<br/>(Storage)"]
-        ValidationA["StrategyValidationService<br/>(Validation)"]
-        ConnectionA["StrategyConnectionService<br/>(Factory)"]
-        ClientA["ClientStrategy<br/>(Business Logic)"]
-        
-        ValidationA -->|"Validates before"| SchemaA
-        ConnectionA -->|"Retrieves from"| SchemaA
-        ConnectionA -->|"Creates"| ClientA
-    end
-    
-    subgraph "Component Type: Exchange"
-        SchemaB["ExchangeSchemaService<br/>(Storage)"]
-        ValidationB["ExchangeValidationService<br/>(Validation)"]
-        ConnectionB["ExchangeConnectionService<br/>(Factory)"]
-        ClientB["ClientExchange<br/>(Business Logic)"]
-        
-        ValidationB -->|"Validates before"| SchemaB
-        ConnectionB -->|"Retrieves from"| SchemaB
-        ConnectionB -->|"Creates"| ClientB
-    end
-    
-    subgraph "... (Same pattern for Frame, Risk, Sizing)"
-        EllipsisNode["..."]
-    end
-```
+![Mermaid Diagram](./diagrams\23_Component_Types_5.svg)
 
 This consistent three-layer pattern (Validation → Schema → Connection → Client) applies to all component types, providing predictable behavior and code organization.
 

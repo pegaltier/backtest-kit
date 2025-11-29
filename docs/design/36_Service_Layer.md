@@ -11,43 +11,7 @@ For details on the Public API that consumes these services, see [Public API Refe
 
 The Service Layer consists of 19 distinct services organized into four functional categories. Each category has a specific architectural responsibility in the framework's orchestration pipeline.
 
-```mermaid
-graph TB
-    subgraph "Service Categories"
-        Base["Base Services<br/>LoggerService"]
-        Context["Context Services<br/>ExecutionContextService<br/>MethodContextService"]
-        Schema["Schema Services<br/>StrategySchemaService<br/>ExchangeSchemaService<br/>FrameSchemaService"]
-        Connection["Connection Services<br/>StrategyConnectionService<br/>ExchangeConnectionService<br/>FrameConnectionService"]
-        Global["Global Services<br/>StrategyGlobalService<br/>ExchangeGlobalService<br/>FrameGlobalService<br/>LiveGlobalService<br/>BacktestGlobalService"]
-        Logic["Logic Services<br/>BacktestLogicPublicService<br/>BacktestLogicPrivateService<br/>LiveLogicPublicService<br/>LiveLogicPrivateService"]
-        Markdown["Markdown Services<br/>BacktestMarkdownService<br/>LiveMarkdownService"]
-    end
-    
-    subgraph "Client Layer"
-        ClientStrategy["ClientStrategy"]
-        ClientExchange["ClientExchange"]
-        ClientFrame["ClientFrame"]
-    end
-    
-    Base -.->|"injected into"| Schema
-    Base -.->|"injected into"| Connection
-    Base -.->|"injected into"| Global
-    Base -.->|"injected into"| Logic
-    
-    Context -.->|"provides context"| Connection
-    Context -.->|"provides context"| Global
-    Context -.->|"provides context"| Logic
-    
-    Schema -->|"configuration lookup"| Connection
-    Connection -->|"creates and caches"| ClientStrategy
-    Connection -->|"creates and caches"| ClientExchange
-    Connection -->|"creates and caches"| ClientFrame
-    
-    Global -->|"injects context"| Connection
-    Logic -->|"orchestrates"| Global
-    
-    Markdown -.->|"consumes events"| Logic
-```
+![Mermaid Diagram](./diagrams\36_Service_Layer_0.svg)
 
 **Service Category Responsibilities**
 
@@ -69,40 +33,7 @@ graph TB
 
 All services are registered using the dependency injection system powered by `di-kit` and `di-scoped`. The `TYPES` constant defines Symbol identifiers for each service, and the `provide.ts` file registers factory functions that instantiate services.
 
-```mermaid
-graph LR
-    subgraph "types.ts"
-        TYPES["TYPES object<br/>Symbol definitions"]
-    end
-    
-    subgraph "provide.ts"
-        Factory1["provide(TYPES.loggerService,<br/>() => new LoggerService())"]
-        Factory2["provide(TYPES.strategyConnectionService,<br/>() => new StrategyConnectionService())"]
-        Factory3["provide(TYPES.backtestLogicPrivateService,<br/>() => new BacktestLogicPrivateService())"]
-    end
-    
-    subgraph "index.ts"
-        Inject1["inject<LoggerService><br/>(TYPES.loggerService)"]
-        Inject2["inject<StrategyConnectionService><br/>(TYPES.strategyConnectionService)"]
-        Inject3["inject<BacktestLogicPrivateService><br/>(TYPES.backtestLogicPrivateService)"]
-    end
-    
-    subgraph "Service Aggregator"
-        Backtest["backtest object<br/>Exports all services"]
-    end
-    
-    TYPES --> Factory1
-    TYPES --> Factory2
-    TYPES --> Factory3
-    
-    Factory1 --> Inject1
-    Factory2 --> Inject2
-    Factory3 --> Inject3
-    
-    Inject1 --> Backtest
-    Inject2 --> Backtest
-    Inject3 --> Backtest
-```
+![Mermaid Diagram](./diagrams\36_Service_Layer_1.svg)
 
 **Service Type Symbols**
 
@@ -129,49 +60,7 @@ Connection Services implement a routing pattern that directs method calls to the
 
 **StrategyConnectionService Architecture**
 
-```mermaid
-graph TB
-    subgraph "StrategyConnectionService"
-        GetStrategy["getStrategy(strategyName)<br/>Memoized factory"]
-        Tick["tick() method<br/>IStrategy interface"]
-        Backtest["backtest(candles) method<br/>IStrategy interface"]
-    end
-    
-    subgraph "Dependencies"
-        MethodCtx["methodContextService.context<br/>{strategyName: string}"]
-        Schema["strategySchemaService.get(strategyName)<br/>Returns IStrategySchema"]
-        ExecCtx["executionContextService"]
-        ExchangeConn["exchangeConnectionService"]
-        Logger["loggerService"]
-    end
-    
-    subgraph "Client Cache"
-        CS1["ClientStrategy instance<br/>strategyName='macd'"]
-        CS2["ClientStrategy instance<br/>strategyName='rsi'"]
-    end
-    
-    subgraph "Event Emitters"
-        SignalEmitter["signalEmitter.next(tick)"]
-        BacktestEmitter["signalBacktestEmitter.next(tick)"]
-        LiveEmitter["signalLiveEmitter.next(tick)"]
-    end
-    
-    MethodCtx -->|"provides strategyName"| GetStrategy
-    Schema -->|"provides config"| GetStrategy
-    ExecCtx -->|"injected into client"| GetStrategy
-    ExchangeConn -->|"injected into client"| GetStrategy
-    Logger -->|"injected into client"| GetStrategy
-    
-    GetStrategy -->|"creates once, caches"| CS1
-    GetStrategy -->|"creates once, caches"| CS2
-    
-    Tick -->|"routes to cached instance"| CS1
-    Backtest -->|"routes to cached instance"| CS1
-    
-    Tick -->|"emits result"| SignalEmitter
-    Tick -->|"emits result"| BacktestEmitter
-    Tick -->|"emits result"| LiveEmitter
-```
+![Mermaid Diagram](./diagrams\36_Service_Layer_2.svg)
 
 **Memoization Cache Key Strategy**
 
@@ -211,46 +100,7 @@ The cache key is the `strategyName` string. On first access, the factory functio
 
 Connection Services implement the `IStrategy`, `IExchange`, and `IFrame` interfaces, delegating all method calls to the appropriate client instance. The routing is automatic based on `MethodContextService.context`, which is set by Global Services.
 
-```mermaid
-sequenceDiagram
-    participant User as "User Code"
-    participant Global as "StrategyGlobalService"
-    participant MethodCtx as "MethodContextService"
-    participant Conn as "StrategyConnectionService"
-    participant Cache as "Memoized Cache"
-    participant Client as "ClientStrategy Instance"
-    participant Schema as "StrategySchemaService"
-    
-    User->>Global: tick()
-    Global->>MethodCtx: withContext({ strategyName: 'macd' })
-    MethodCtx->>Conn: tick()
-    
-    Conn->>MethodCtx: context.strategyName
-    MethodCtx-->>Conn: 'macd'
-    
-    Conn->>Cache: getStrategy('macd')
-    
-    alt First access
-        Cache->>Schema: get('macd')
-        Schema-->>Cache: IStrategySchema config
-        Cache->>Client: new ClientStrategy(config)
-        Client-->>Cache: instance
-    else Cached
-        Cache-->>Conn: cached instance
-    end
-    
-    Conn->>Client: await strategy.waitForInit()
-    Client-->>Conn: initialized
-    
-    Conn->>Client: await strategy.tick()
-    Client-->>Conn: IStrategyTickResult
-    
-    Conn->>Conn: signalEmitter.next(result)
-    Conn->>Conn: signalBacktestEmitter.next(result)<br/>OR signalLiveEmitter.next(result)
-    
-    Conn-->>Global: IStrategyTickResult
-    Global-->>User: IStrategyTickResult
-```
+![Mermaid Diagram](./diagrams\36_Service_Layer_3.svg)
 
 **Key Routing Components**
 
@@ -314,32 +164,7 @@ Services follow a lazy initialization pattern. The DI container is initialized a
 
 **Initialization Order**
 
-```mermaid
-graph TB
-    Import["import 'backtest-kit'"]
-    Provide["provide.ts executes<br/>Registers factories"]
-    Init["init() called<br/>DI container ready"]
-    Register["User registers schemas<br/>addStrategy, addExchange, addFrame"]
-    Execute["User calls run()<br/>Logic service requested"]
-    Logic["LogicService instantiated<br/>Injects dependencies"]
-    Global["GlobalService instantiated<br/>Injects dependencies"]
-    Connection["ConnectionService instantiated<br/>Injects dependencies"]
-    Schema["SchemaService instantiated<br/>Already has registrations"]
-    Client["ClientStrategy/Exchange/Frame<br/>Created on first getStrategy() call"]
-    
-    Import --> Provide
-    Provide --> Init
-    Init --> Register
-    Register --> Execute
-    Execute --> Logic
-    Logic --> Global
-    Global --> Connection
-    Connection --> Schema
-    Connection --> Client
-    
-    style Import fill:#f9f9f9
-    style Client fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\36_Service_Layer_4.svg)
 
 **Service Instance Lifecycle**
 

@@ -25,45 +25,7 @@ Sources: [src/classes/Walker.ts:1-273]()
 
 The following diagram shows how walker reports are generated from strategy execution through to final output:
 
-```mermaid
-graph TB
-    User["Walker.run()<br/>or Walker.background()"]
-    WalkerGlobal["WalkerGlobalService"]
-    WalkerLogic["WalkerLogicPublicService<br/>WalkerLogicPrivateService"]
-    
-    subgraph "Strategy Execution"
-        BacktestRun["Backtest.run() for each strategy"]
-        BacktestMarkdown["BacktestMarkdownService<br/>Accumulates closed signals"]
-        BacktestData["BacktestStatistics per strategy"]
-    end
-    
-    subgraph "Walker Event System"
-        WalkerEmitter["walkerEmitter<br/>Progress events"]
-        WalkerComplete["walkerCompleteSubject<br/>Final results"]
-        WalkerMarkdown["WalkerMarkdownService<br/>Subscribes to events"]
-    end
-    
-    subgraph "Report Generation"
-        GetData["Walker.getData()<br/>Returns IWalkerResults"]
-        GetReport["Walker.getReport()<br/>Returns markdown string"]
-        Dump["Walker.dump()<br/>Writes to disk"]
-    end
-    
-    User --> WalkerGlobal
-    WalkerGlobal --> WalkerLogic
-    WalkerLogic --> BacktestRun
-    BacktestRun --> BacktestMarkdown
-    BacktestMarkdown --> BacktestData
-    
-    WalkerLogic --> WalkerEmitter
-    WalkerLogic --> WalkerComplete
-    WalkerEmitter --> WalkerMarkdown
-    WalkerComplete --> WalkerMarkdown
-    
-    WalkerMarkdown --> GetData
-    WalkerMarkdown --> GetReport
-    GetReport --> Dump
-```
+![Mermaid Diagram](./diagrams\62_Walker_Reports_0.svg)
 
 Sources: [src/classes/Walker.ts:1-273](), [src/lib/services/global/WalkerGlobalService.ts:1-90](), [src/config/emitters.ts:62-73]()
 
@@ -102,17 +64,7 @@ The method returns an `IWalkerResults` object containing:
 
 ### Implementation Details
 
-```mermaid
-graph LR
-    GetData["Walker.getData()"]
-    Schema["WalkerSchemaService.get()<br/>Retrieve walker schema"]
-    Markdown["WalkerMarkdownService.getData()<br/>symbol, walkerName, metric, context"]
-    BacktestStats["BacktestMarkdownService.getData()<br/>For each strategy"]
-    
-    GetData --> Schema
-    GetData --> Markdown
-    Markdown --> BacktestStats
-```
+![Mermaid Diagram](./diagrams\62_Walker_Reports_1.svg)
 
 The method performs the following steps:
 
@@ -172,27 +124,7 @@ The generated markdown report includes:
 
 ### Report Generation Flow
 
-```mermaid
-graph TB
-    GetReport["Walker.getReport()"]
-    Schema["WalkerSchemaService.get()<br/>Extract metric"]
-    Markdown["WalkerMarkdownService.getReport()"]
-    
-    subgraph "Report Assembly"
-        Header["Generate header:<br/>Walker name, symbol"]
-        Summary["Generate summary:<br/>Best strategy, metric"]
-        Table["Generate comparison table:<br/>All strategies ranked"]
-        Stats["Append statistics:<br/>Total strategies, context"]
-    end
-    
-    GetReport --> Schema
-    GetReport --> Markdown
-    Markdown --> Header
-    Header --> Summary
-    Summary --> Table
-    Table --> Stats
-    Stats --> Output["Return markdown string"]
-```
+![Mermaid Diagram](./diagrams\62_Walker_Reports_2.svg)
 
 ### Implementation
 
@@ -243,26 +175,7 @@ For example:
 
 ### Implementation
 
-```mermaid
-graph TB
-    Dump["Walker.dump()"]
-    Log["loggerService.info()<br/>Log invocation"]
-    Schema["WalkerSchemaService.get()<br/>Extract schema"]
-    Markdown["walkerMarkdownService.dump()"]
-    
-    subgraph "File Operations"
-        MkDir["mkdir(dir, recursive: true)<br/>Create directory"]
-        GetReport["getReport()<br/>Generate markdown"]
-        WriteFile["writeFile(filepath, markdown)<br/>Atomic write"]
-    end
-    
-    Dump --> Log
-    Dump --> Schema
-    Dump --> Markdown
-    Markdown --> MkDir
-    MkDir --> GetReport
-    GetReport --> WriteFile
-```
+![Mermaid Diagram](./diagrams\62_Walker_Reports_3.svg)
 
 The method performs atomic file writes to prevent corruption:
 
@@ -345,34 +258,7 @@ Walker reports use markdown tables to present comparison data in a structured fo
 
 The comparison table ranks strategies by the selected metric and displays key performance indicators:
 
-```mermaid
-graph TB
-    Table["Comparison Table"]
-    
-    subgraph "Columns"
-        Rank["Rank<br/>(1, 2, 3...)"]
-        Name["Strategy Name"]
-        Metric["Metric Value<br/>(e.g., Sharpe Ratio)"]
-        WinRate["Win Rate %"]
-        AvgPNL["Avg PNL %"]
-        TotalPNL["Total PNL %"]
-        Trades["Total Signals"]
-    end
-    
-    subgraph "Sorting"
-        Desc["Sorted by metric value<br/>descending"]
-    end
-    
-    Table --> Rank
-    Table --> Name
-    Table --> Metric
-    Table --> WinRate
-    Table --> AvgPNL
-    Table --> TotalPNL
-    Table --> Trades
-    
-    Table --> Desc
-```
+![Mermaid Diagram](./diagrams\62_Walker_Reports_4.svg)
 
 ### Example Report Output
 
@@ -405,31 +291,7 @@ Walker reports integrate with the event system to provide real-time updates and 
 
 ### Event Flow Diagram
 
-```mermaid
-graph TB
-    Walker["Walker.run()<br/>or Walker.background()"]
-    
-    subgraph "Progress Events"
-        WalkerEmitter["walkerEmitter<br/>After each strategy"]
-        ListenWalker["listenWalker()<br/>User callback"]
-    end
-    
-    subgraph "Completion Events"
-        WalkerComplete["walkerCompleteSubject<br/>All strategies done"]
-        ListenComplete["listenWalkerComplete()<br/>User callback"]
-        DoneWalker["doneWalkerSubject<br/>Background completion"]
-        ListenDone["listenDoneWalker()<br/>User callback"]
-    end
-    
-    Walker --> WalkerEmitter
-    WalkerEmitter --> ListenWalker
-    
-    Walker --> WalkerComplete
-    WalkerComplete --> ListenComplete
-    
-    Walker --> DoneWalker
-    DoneWalker --> ListenDone
-```
+![Mermaid Diagram](./diagrams\62_Walker_Reports_5.svg)
 
 ### Event Types and Usage
 
@@ -466,40 +328,7 @@ Sources: [README.md:436-440](), [src/function/event.ts:528-557]()
 
 The following diagram illustrates the complete lifecycle of walker report data from execution through persistence:
 
-```mermaid
-stateDiagram-v2
-    [*] --> WalkerExecution: Walker.run() or Walker.background()
-    
-    WalkerExecution --> StrategyIteration: For each strategy in walker schema
-    
-    StrategyIteration --> BacktestRun: Backtest.run(strategy)
-    BacktestRun --> SignalAccumulation: BacktestMarkdownService collects closed signals
-    SignalAccumulation --> StatsCalculation: Calculate BacktestStatistics
-    
-    StatsCalculation --> NextStrategy: More strategies?
-    NextStrategy --> StrategyIteration: Yes
-    NextStrategy --> ResultsAggregation: No
-    
-    ResultsAggregation --> MetricComparison: Compare strategies by metric
-    MetricComparison --> BestSelection: Select best strategy and metric
-    BestSelection --> EventEmission: Emit walkerCompleteSubject
-    
-    EventEmission --> DataAccess: Walker.getData()
-    DataAccess --> ReportGeneration: Walker.getReport()
-    ReportGeneration --> FilePersistence: Walker.dump()
-    
-    FilePersistence --> [*]
-    
-    note right of StrategyIteration
-        Each strategy backtest
-        is independent
-    end note
-    
-    note right of ResultsAggregation
-        WalkerMarkdownService
-        aggregates all results
-    end note
-```
+![Mermaid Diagram](./diagrams\62_Walker_Reports_6.svg)
 
 Sources: [src/classes/Walker.ts:1-273](), [src/lib/services/global/WalkerGlobalService.ts:1-90]()
 
@@ -519,21 +348,7 @@ Sources: [src/classes/Walker.ts:1-273](), [src/lib/services/global/WalkerGlobalS
 
 ### Method Call Chain
 
-```mermaid
-graph LR
-    User["User Code"]
-    WalkerClass["Walker<br/>(BacktestUtils)"]
-    Logger["LoggerService"]
-    Schema["WalkerSchemaService"]
-    Markdown["WalkerMarkdownService"]
-    Backtest["BacktestMarkdownService"]
-    
-    User --> WalkerClass
-    WalkerClass --> Logger
-    WalkerClass --> Schema
-    WalkerClass --> Markdown
-    Markdown --> Backtest
-```
+![Mermaid Diagram](./diagrams\62_Walker_Reports_7.svg)
 
 All walker report methods follow this delegation pattern:
 1. User calls `Walker.method()`

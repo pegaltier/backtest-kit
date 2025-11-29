@@ -13,96 +13,13 @@ For information about how validated schemas are stored and retrieved, see [Schem
 
 ### Validation Services in the DI System
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        addStrategy["addStrategy()"]
-        addExchange["addExchange()"]
-        addFrame["addFrame()"]
-        addRisk["addRisk()"]
-        addSizing["addSizing()"]
-        addWalker["addWalker()"]
-    end
-    
-    subgraph "Validation Layer"
-        StrategyValidation["StrategyValidationService"]
-        ExchangeValidation["ExchangeValidationService"]
-        FrameValidation["FrameValidationService"]
-        RiskValidation["RiskValidationService"]
-        SizingValidation["SizingValidationService"]
-        WalkerValidation["WalkerValidationService"]
-    end
-    
-    subgraph "Schema Storage Layer"
-        StrategySchema["StrategySchemaService"]
-        ExchangeSchema["ExchangeSchemaService"]
-        FrameSchema["FrameSchemaService"]
-        RiskSchema["RiskSchemaService"]
-        SizingSchema["SizingSchemaService"]
-        WalkerSchema["WalkerSchemaService"]
-    end
-    
-    subgraph "Execution Layer"
-        GlobalServices["*GlobalService classes"]
-        LogicServices["*LogicPrivate/LogicPublic"]
-        ClientClasses["Client* classes"]
-    end
-    
-    addStrategy --> StrategyValidation
-    addExchange --> ExchangeValidation
-    addFrame --> FrameValidation
-    addRisk --> RiskValidation
-    addSizing --> SizingValidation
-    addWalker --> WalkerValidation
-    
-    StrategyValidation --> StrategySchema
-    ExchangeValidation --> ExchangeSchema
-    FrameValidation --> FrameSchema
-    RiskValidation --> RiskSchema
-    SizingValidation --> SizingSchema
-    WalkerValidation --> WalkerSchema
-    
-    StrategySchema --> GlobalServices
-    GlobalServices --> LogicServices
-    LogicServices --> ClientClasses
-```
+![Mermaid Diagram](./diagrams\40_Validation_Services_0.svg)
 
 **Sources:** [src/function/add.ts:54-56](), [src/function/add.ts:103-105](), [src/lib/index.ts:143-150](), [src/lib/core/types.ts:59-66]()
 
 ### Validation Flow: Registration to Execution
 
-```mermaid
-stateDiagram-v2
-    [*] --> ComponentRegistration
-    
-    ComponentRegistration --> SchemaValidation: "add* function called"
-    
-    state SchemaValidation {
-        [*] --> ValidateStructure
-        ValidateStructure --> ValidateReferences: "Check schema fields"
-        ValidateReferences --> Memoize: "Check dependencies exist"
-        Memoize --> [*]: "Cache validation result"
-    }
-    
-    SchemaValidation --> SchemaStorage: "Validation passes"
-    SchemaValidation --> ErrorEmission: "Validation fails"
-    
-    SchemaStorage --> RuntimeExecution
-    
-    state RuntimeExecution {
-        [*] --> SignalGeneration
-        SignalGeneration --> SignalValidation
-        SignalValidation --> RiskValidation
-        RiskValidation --> [*]: "All checks pass"
-    }
-    
-    RuntimeExecution --> Execution: "Signal approved"
-    RuntimeExecution --> SignalRejection: "Validation fails"
-    
-    ErrorEmission --> [*]
-    SignalRejection --> [*]
-    Execution --> [*]
-```
+![Mermaid Diagram](./diagrams\40_Validation_Services_1.svg)
 
 **Sources:** [src/function/add.ts:50-62](), [test/e2e/defend.test.mjs:544-641](), [test/e2e/sanitize.test.mjs:27-131]()
 
@@ -154,28 +71,7 @@ The `addComponent` method (named `addStrategy`, `addExchange`, etc.) is called b
 
 Schema validation occurs when a component is registered via an `add*` function. The validation flow follows this sequence:
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant addFunction as "add* function"
-    participant ValidationService as "*ValidationService"
-    participant SchemaService as "*SchemaService"
-    participant Logger
-    
-    User->>addFunction: "Register component"
-    addFunction->>Logger: "Log registration"
-    addFunction->>ValidationService: "addComponent(name, schema)"
-    
-    ValidationService->>ValidationService: "Validate schema structure"
-    
-    alt Validation passes
-        ValidationService->>ValidationService: "Memoize result"
-        addFunction->>SchemaService: "register(name, schema)"
-        SchemaService-->>User: "Component registered"
-    else Validation fails
-        ValidationService-->>User: "Throw validation error"
-    end
-```
+![Mermaid Diagram](./diagrams\40_Validation_Services_2.svg)
 
 **Sources:** [src/function/add.ts:50-62](), [src/function/add.ts:99-111]()
 
@@ -243,35 +139,7 @@ Validation services use memoization to cache validation results. Once a schema i
 
 Signal validation occurs at runtime when a strategy generates a signal via `getSignal()`. The validation function `VALIDATE_SIGNAL_FN` performs comprehensive checks to ensure the signal is financially sound and meets safety constraints.
 
-```mermaid
-graph TB
-    GetSignal["strategy.getSignal()"]
-    AugmentMetadata["Add id, timestamps, context"]
-    ValidateSignal["VALIDATE_SIGNAL_FN"]
-    
-    subgraph "Validation Checks"
-        CheckPrices["Price Validation"]
-        CheckLogic["TP/SL Logic"]
-        CheckDistances["Distance Validation"]
-        CheckLifetime["Lifetime Validation"]
-    end
-    
-    Approved["Signal Approved"]
-    Rejected["Signal Rejected"]
-    
-    GetSignal --> AugmentMetadata
-    AugmentMetadata --> ValidateSignal
-    ValidateSignal --> CheckPrices
-    CheckPrices --> CheckLogic
-    CheckLogic --> CheckDistances
-    CheckDistances --> CheckLifetime
-    
-    CheckLifetime --> Approved
-    CheckPrices --> Rejected
-    CheckLogic --> Rejected
-    CheckDistances --> Rejected
-    CheckLifetime --> Rejected
-```
+![Mermaid Diagram](./diagrams\40_Validation_Services_3.svg)
 
 **Sources:** [test/e2e/defend.test.mjs:25-145](), [test/e2e/sanitize.test.mjs:27-131]()
 
@@ -520,21 +388,7 @@ Signal rejections are part of normal execution flow - the framework validates ev
 
 ### Validation → Schema Storage Flow
 
-```mermaid
-graph LR
-    User["User Code"]
-    Add["add* function"]
-    Validation["*ValidationService"]
-    Schema["*SchemaService"]
-    Connection["*ConnectionService"]
-    Client["Client* class"]
-    
-    User --> Add
-    Add --> Validation
-    Validation --> Schema
-    Schema --> Connection
-    Connection --> Client
-```
+![Mermaid Diagram](./diagrams\40_Validation_Services_4.svg)
 
 After a schema passes validation:
 1. It's stored in the corresponding `*SchemaService` (see [Schema Services](#7.3))

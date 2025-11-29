@@ -19,33 +19,7 @@ The risk management system prevents signal generation when portfolio conditions 
 
 **Architecture Flow**
 
-```mermaid
-graph TB
-    Strategy["ClientStrategy.tick()"]
-    RiskCheck["ClientRisk.checkSignal()"]
-    Validations["Execute custom<br/>validations array"]
-    Decision{"All validations<br/>passed?"}
-    CreateSignal["Create and<br/>persist signal"]
-    Reject["Return idle<br/>trigger onRejected"]
-    AddPosition["ClientRisk.addSignal()"]
-    RemovePosition["ClientRisk.removeSignal()"]
-    Persist["PersistRiskAdapter<br/>atomic write"]
-    
-    Strategy --> RiskCheck
-    RiskCheck --> Validations
-    Validations --> Decision
-    Decision -->|No| Reject
-    Decision -->|Yes| CreateSignal
-    CreateSignal --> AddPosition
-    AddPosition --> Persist
-    
-    CreateSignal --> |"Signal closes"| RemovePosition
-    RemovePosition --> Persist
-    
-    style RiskCheck fill:#f9f9f9
-    style Decision fill:#f9f9f9
-    style Persist fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\63_Risk_Management_0.svg)
 
 Sources: [src/client/ClientRisk.ts:165-217](), [src/interfaces/Risk.interface.ts:1-145]()
 
@@ -106,31 +80,7 @@ Risk validation occurs before signal creation. The process executes all custom v
 
 **Validation Payload Structure**
 
-```mermaid
-graph LR
-    subgraph "IRiskCheckArgs (passthrough)"
-        Symbol["symbol: string"]
-        Strategy["strategyName: string"]
-        Exchange["exchangeName: string"]
-        Price["currentPrice: number"]
-        Time["timestamp: number"]
-    end
-    
-    subgraph "Portfolio State (computed)"
-        Count["activePositionCount: number"]
-        Positions["activePositions: IRiskActivePosition[]"]
-    end
-    
-    Symbol --> Payload["IRiskValidationPayload"]
-    Strategy --> Payload
-    Exchange --> Payload
-    Price --> Payload
-    Time --> Payload
-    Count --> Payload
-    Positions --> Payload
-    
-    Payload --> Validation["Custom validation<br/>function"]
-```
+![Mermaid Diagram](./diagrams\63_Risk_Management_1.svg)
 
 Sources: [src/interfaces/Risk.interface.ts:10-60]()
 
@@ -162,35 +112,7 @@ Sources: [src/client/ClientRisk.ts:165-217](), [src/client/ClientRisk.ts:31-46](
 
 **Position Lifecycle**
 
-```mermaid
-stateDiagram-v2
-    [*] --> POSITION_NEED_FETCH: ClientRisk instantiated
-    POSITION_NEED_FETCH --> Initialized: waitForInit()
-    
-    state Initialized {
-        [*] --> Empty: No persisted data
-        [*] --> Restored: Persisted data loaded
-        Empty --> Active: addSignal()
-        Restored --> Active: addSignal()
-        Active --> Closed: removeSignal()
-        Closed --> Active: addSignal()
-    }
-    
-    state Active {
-        [*] --> InMemory: Map updated
-        InMemory --> Persisted: _updatePositions()
-    }
-    
-    note right of POSITION_NEED_FETCH
-        Symbol marker indicating
-        positions not yet loaded
-    end note
-    
-    note right of Active
-        Key: strategyName:symbol
-        Value: IRiskActivePosition
-    end note
-```
+![Mermaid Diagram](./diagrams\63_Risk_Management_2.svg)
 
 Sources: [src/client/ClientRisk.ts:73-150]()
 
@@ -243,33 +165,7 @@ Sources: [src/interfaces/Risk.interface.ts:23-35](), [src/client/ClientRisk.ts:2
 
 **Isolation by Risk Profile**
 
-```mermaid
-graph TB
-    subgraph "Risk Profile: conservative"
-        ConservativeMap["_activePositions Map"]
-        Pos1["strategy-a:BTCUSDT"]
-        Pos2["strategy-b:ETHUSDT"]
-        ConservativeMap --> Pos1
-        ConservativeMap --> Pos2
-    end
-    
-    subgraph "Risk Profile: aggressive"
-        AggressiveMap["_activePositions Map"]
-        Pos3["strategy-c:BTCUSDT"]
-        Pos4["strategy-d:BNBUSDT"]
-        AggressiveMap --> Pos3
-        AggressiveMap --> Pos4
-    end
-    
-    Storage1["PersistRiskAdapter<br/>positions-conservative.json"]
-    Storage2["PersistRiskAdapter<br/>positions-aggressive.json"]
-    
-    ConservativeMap -.-> Storage1
-    AggressiveMap -.-> Storage2
-    
-    style ConservativeMap fill:#f9f9f9
-    style AggressiveMap fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\63_Risk_Management_3.svg)
 
 Each `ClientRisk` instance has its own `_activePositions` Map. Multiple strategies can share a risk profile to enable cross-strategy position limits.
 
@@ -283,29 +179,7 @@ Risk positions are persisted via `PersistRiskAdapter` for crash recovery in live
 
 **PersistRiskAdapter Architecture**
 
-```mermaid
-graph TB
-    ClientRisk["ClientRisk<br/>_activePositions: Map"]
-    UpdatePositions["_updatePositions()"]
-    Adapter["PersistRiskAdapter"]
-    PersistBase["PersistBase<br/>(abstract class)"]
-    FileSystem["FileSystemPersist<br/>(default implementation)"]
-    
-    ClientRisk --> UpdatePositions
-    UpdatePositions --> |"Array.from(map)"| Adapter
-    Adapter --> PersistBase
-    PersistBase --> FileSystem
-    
-    FileSystem --> |"Atomic write"| File["positions-{riskName}.json"]
-    
-    Restore["waitForInit()"]
-    Restore --> Adapter
-    Adapter --> |"Read file"| PersistBase
-    PersistBase --> |"new Map(array)"| ClientRisk
-    
-    style Adapter fill:#f9f9f9
-    style PersistBase fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\63_Risk_Management_4.svg)
 
 Sources: [src/client/ClientRisk.ts:88-101](), [src/client/ClientRisk.ts:53-59]()
 
@@ -343,51 +217,7 @@ Risk management operates through a three-layer service architecture with explici
 
 **Service Dependency Graph**
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        AddRisk["addRisk()"]
-        ListRisks["listRisks()"]
-    end
-    
-    subgraph "Global Service Layer"
-        RiskGlobalService["RiskGlobalService<br/>checkSignal()<br/>addSignal()<br/>removeSignal()"]
-    end
-    
-    subgraph "Validation Layer"
-        RiskValidationService["RiskValidationService<br/>validate()"]
-        RiskSchemaService["RiskSchemaService<br/>ToolRegistry pattern<br/>get(riskName)"]
-    end
-    
-    subgraph "Connection Layer"
-        RiskConnectionService["RiskConnectionService<br/>getRisk() memoized<br/>routes to ClientRisk"]
-    end
-    
-    subgraph "Client Layer"
-        ClientRisk["ClientRisk<br/>_activePositions Map<br/>checkSignal()<br/>addSignal()<br/>removeSignal()"]
-    end
-    
-    subgraph "Persistence Layer"
-        PersistRiskAdapter["PersistRiskAdapter<br/>readPositionData()<br/>writePositionData()"]
-    end
-    
-    AddRisk --> RiskSchemaService
-    ListRisks --> RiskSchemaService
-    
-    RiskGlobalService --> RiskValidationService
-    RiskGlobalService --> RiskConnectionService
-    
-    RiskValidationService --> RiskSchemaService
-    
-    RiskConnectionService --> RiskSchemaService
-    RiskConnectionService --> ClientRisk
-    
-    ClientRisk --> PersistRiskAdapter
-    
-    style RiskGlobalService fill:#f9f9f9
-    style RiskConnectionService fill:#f9f9f9
-    style ClientRisk fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\63_Risk_Management_5.svg)
 
 Sources: [src/lib/services/global/RiskGlobalService.ts:1-117](), [src/lib/services/connection/RiskConnectionService.ts:1-138](), [src/client/ClientRisk.ts:1-221]()
 

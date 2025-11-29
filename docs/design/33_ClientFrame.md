@@ -23,23 +23,7 @@ The generated timeframe array is then consumed by `BacktestLogicPrivateService`,
 
 ## Architecture Integration
 
-```mermaid
-graph TB
-    BacktestLogic["BacktestLogicPrivateService"]
-    FrameGlobal["FrameGlobalService"]
-    FrameConn["FrameConnectionService"]
-    ClientFrame["ClientFrame"]
-    FrameSchema["FrameSchemaService"]
-    
-    BacktestLogic -->|"getTimeframe(symbol)"| FrameGlobal
-    FrameGlobal -->|"injects execution context"| FrameConn
-    FrameConn -->|"memoized factory"| ClientFrame
-    FrameSchema -->|"provides IFrameParams"| FrameConn
-    
-    ClientFrame -->|"returns Date[]"| FrameConn
-    FrameConn -->|"returns Date[]"| FrameGlobal
-    FrameGlobal -->|"returns Date[]"| BacktestLogic
-```
+![Mermaid Diagram](./diagrams\33_ClientFrame_0.svg)
 
 **ClientFrame Position in Service Hierarchy**
 
@@ -104,39 +88,7 @@ The `INTERVAL_MINUTES` constant maps each `FrameInterval` to its minute equivale
 
 ## Timeframe Generation Algorithm
 
-```mermaid
-flowchart TD
-    Start["getTimeframe(symbol)"]
-    LogDebug["logger.debug('ClientFrame getTimeframe')"]
-    GetParams["Extract interval, startDate, endDate from params"]
-    LookupInterval["intervalMinutes = INTERVAL_MINUTES[interval]"]
-    CheckInterval{"intervalMinutes exists?"}
-    ThrowError["throw Error('unknown interval')"]
-    InitArray["timeframes = []"]
-    InitCurrent["currentDate = new Date(startDate)"]
-    CheckLoop{"currentDate <= endDate?"}
-    PushDate["timeframes.push(new Date(currentDate))"]
-    Increment["currentDate += intervalMinutes * 60 * 1000"]
-    CheckCallback{"callbacks.onTimeframe exists?"}
-    CallCallback["callbacks.onTimeframe(timeframes, ...)"]
-    Return["return timeframes"]
-    
-    Start --> LogDebug
-    LogDebug --> GetParams
-    GetParams --> LookupInterval
-    LookupInterval --> CheckInterval
-    CheckInterval -->|No| ThrowError
-    CheckInterval -->|Yes| InitArray
-    InitArray --> InitCurrent
-    InitCurrent --> CheckLoop
-    CheckLoop -->|Yes| PushDate
-    PushDate --> Increment
-    Increment --> CheckLoop
-    CheckLoop -->|No| CheckCallback
-    CheckCallback -->|Yes| CallCallback
-    CheckCallback -->|No| Return
-    CallCallback --> Return
-```
+![Mermaid Diagram](./diagrams\33_ClientFrame_1.svg)
 
 **Algorithm Steps**
 
@@ -204,44 +156,7 @@ The callback is invoked after timeframe generation completes [src/client/ClientF
 
 ## Integration with Backtest Flow
 
-```mermaid
-sequenceDiagram
-    participant Logic as BacktestLogicPrivateService
-    participant Global as FrameGlobalService
-    participant Conn as FrameConnectionService
-    participant Client as ClientFrame
-    participant Cache as singleshot cache
-    
-    Logic->>Global: getTimeframe("BTCUSDT")
-    Global->>Conn: getTimeframe("BTCUSDT")
-    Note over Global: Sets execution context
-    
-    Conn->>Conn: getFrame(frameName)
-    Note over Conn: Memoized factory lookup
-    
-    Conn->>Client: new ClientFrame(params)
-    Note over Conn: First access creates instance
-    
-    Client->>Cache: Check cache for "BTCUSDT"
-    Cache-->>Client: Cache miss
-    
-    Client->>Client: GET_TIMEFRAME_FN()
-    Note over Client: Generate timestamps
-    Client->>Client: Loop: startDate to endDate
-    Client->>Client: callbacks.onTimeframe()
-    
-    Client->>Cache: Store result
-    Cache-->>Client: Cached
-    
-    Client-->>Conn: [Date1, Date2, ..., DateN]
-    Conn-->>Global: [Date1, Date2, ..., DateN]
-    Global-->>Logic: [Date1, Date2, ..., DateN]
-    
-    Note over Logic: Iterate timeframe
-    loop For each timestamp
-        Logic->>Logic: tick(symbol, timestamp)
-    end
-```
+![Mermaid Diagram](./diagrams\33_ClientFrame_2.svg)
 
 **Backtest Orchestration**
 

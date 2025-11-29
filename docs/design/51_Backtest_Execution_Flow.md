@@ -15,40 +15,7 @@ The backtest execution follows a pipeline where `BacktestLogicPrivateService` or
 
 **High-Level Execution Sequence**
 
-```mermaid
-graph TB
-    Start["Backtest.run()"] --> Public["BacktestLogicPublicService.run()"]
-    Public --> Context["MethodContextService.runAsyncIterator()"]
-    Context --> Private["BacktestLogicPrivateService.run()"]
-    Private --> GetFrame["FrameGlobalService.getTimeframe()"]
-    GetFrame --> TimeArray["Date[] timeframes"]
-    
-    TimeArray --> Loop["for (i = 0; i < timeframes.length; i++)"]
-    Loop --> SetContext["Set execution context: when = timeframes[i]"]
-    SetContext --> Tick["StrategyGlobalService.tick()"]
-    
-    Tick --> CheckAction{"result.action?"}
-    CheckAction -->|"idle"| IncrementIdle["i++"]
-    CheckAction -->|"active"| IncrementActive["i++"]
-    CheckAction -->|"opened"| FetchCandles["ExchangeGlobalService.getNextCandles()"]
-    
-    FetchCandles --> BacktestCall["StrategyGlobalService.backtest()"]
-    BacktestCall --> ClosedResult["IStrategyTickResultClosed"]
-    
-    ClosedResult --> SkipLoop["Skip timeframes until closeTimestamp"]
-    SkipLoop --> Yield["yield closedResult"]
-    Yield --> IncrementSkip["i++"]
-    
-    IncrementIdle --> Loop
-    IncrementActive --> Loop
-    IncrementSkip --> Loop
-    
-    Loop -->|"i >= timeframes.length"| End["Generator complete"]
-    
-    style Start fill:#e1f5ff
-    style Private fill:#fff4e1
-    style Yield fill:#c8e6c9
-```
+![Mermaid Diagram](./diagrams\51_Backtest_Execution_Flow_0.svg)
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:1-123](), [src/lib/services/logic/public/BacktestLogicPublicService.ts:1-70]()
 
@@ -60,58 +27,7 @@ The backtest execution involves multiple service layers with clear separation of
 
 **Service Layer Interaction Diagram**
 
-```mermaid
-graph TB
-    subgraph "Public Layer"
-        BacktestPub["BacktestLogicPublicService"]
-    end
-    
-    subgraph "Context Layer"
-        MethodCtx["MethodContextService<br/>exchangeName, strategyName, frameName"]
-        ExecCtx["ExecutionContextService<br/>symbol, when, backtest=true"]
-    end
-    
-    subgraph "Private Orchestration Layer"
-        BacktestPriv["BacktestLogicPrivateService"]
-    end
-    
-    subgraph "Global Domain Services"
-        StratGlobal["StrategyGlobalService<br/>tick(), backtest()"]
-        ExchGlobal["ExchangeGlobalService<br/>getNextCandles()"]
-        FrameGlobal["FrameGlobalService<br/>getTimeframe()"]
-    end
-    
-    subgraph "Connection Layer"
-        StratConn["StrategyConnectionService"]
-        ExchConn["ExchangeConnectionService"]
-        FrameConn["FrameConnectionService"]
-    end
-    
-    subgraph "Business Logic Layer"
-        ClientStrat["ClientStrategy<br/>tick(), backtest()"]
-        ClientExch["ClientExchange<br/>getCandles(), getNextCandles()"]
-        ClientFrame["ClientFrame<br/>getTimeframe()"]
-    end
-    
-    BacktestPub --> MethodCtx
-    MethodCtx --> BacktestPriv
-    BacktestPriv --> ExecCtx
-    BacktestPriv --> StratGlobal
-    BacktestPriv --> ExchGlobal
-    BacktestPriv --> FrameGlobal
-    
-    StratGlobal --> ExecCtx
-    ExchGlobal --> ExecCtx
-    FrameGlobal --> ExecCtx
-    
-    StratGlobal --> StratConn
-    ExchGlobal --> ExchConn
-    FrameGlobal --> FrameConn
-    
-    StratConn --> ClientStrat
-    ExchConn --> ClientExch
-    FrameConn --> ClientFrame
-```
+![Mermaid Diagram](./diagrams\51_Backtest_Execution_Flow_1.svg)
 
 **Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts:1-70](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:1-123](), [src/lib/services/context/MethodContextService.ts:1-56]()
 
@@ -149,32 +65,7 @@ The timeframe generation is configured via `addFrame()` and handled by `ClientFr
 
 The service iterates through the timeframe array using a while loop with manual index management. This allows skipping timestamps when signals close.
 
-```mermaid
-stateDiagram-v2
-    [*] --> CheckIndex
-    CheckIndex --> SetContext: i < timeframes.length
-    CheckIndex --> Complete: i >= timeframes.length
-    
-    SetContext --> CallTick: "when = timeframes[i]"
-    CallTick --> ProcessResult: "await tick(symbol, when, true)"
-    
-    ProcessResult --> Idle: "action === 'idle'"
-    ProcessResult --> Active: "action === 'active'"
-    ProcessResult --> Opened: "action === 'opened'"
-    
-    Idle --> IncrementSimple: "No signal generated"
-    Active --> IncrementSimple: "Should not occur in backtest"
-    IncrementSimple --> CheckIndex: "i++"
-    
-    Opened --> FetchCandles: "Signal opened"
-    FetchCandles --> RunBacktest: "Get future candles"
-    RunBacktest --> SkipTimestamps: "Fast-forward simulation"
-    SkipTimestamps --> YieldResult: "Skip to closeTimestamp"
-    YieldResult --> IncrementAfterYield: "yield closedResult"
-    IncrementAfterYield --> CheckIndex: "i++"
-    
-    Complete --> [*]
-```
+![Mermaid Diagram](./diagrams\51_Backtest_Execution_Flow_2.svg)
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:48-119]()
 
@@ -200,38 +91,7 @@ When a signal opens (`result.action === "opened"`), the backtest flow transition
 
 **Fast-Forward Execution Flow**
 
-```mermaid
-sequenceDiagram
-    participant Loop as "BacktestLogicPrivateService<br/>Iteration Loop"
-    participant StratGlobal as "StrategyGlobalService"
-    participant ExchGlobal as "ExchangeGlobalService"
-    participant ClientStrat as "ClientStrategy"
-    
-    Loop->>StratGlobal: tick(symbol, when, true)
-    StratGlobal->>ClientStrat: tick()
-    ClientStrat-->>StratGlobal: {action: "opened", signal}
-    StratGlobal-->>Loop: IStrategyTickResultOpened
-    
-    Note over Loop: Signal detected!<br/>minuteEstimatedTime = 60
-    
-    Loop->>ExchGlobal: getNextCandles(symbol, "1m", 60, when, true)
-    ExchGlobal-->>Loop: ICandleData[] (60 candles)
-    
-    Note over Loop: Pass candles to backtest()
-    
-    Loop->>StratGlobal: backtest(symbol, candles, when, true)
-    StratGlobal->>ClientStrat: backtest(candles)
-    
-    Note over ClientStrat: Iterate through candles<br/>Check VWAP vs TP/SL<br/>Calculate PnL
-    
-    ClientStrat-->>StratGlobal: {action: "closed", closeTimestamp, pnl}
-    StratGlobal-->>Loop: IStrategyTickResultClosed
-    
-    Note over Loop: Skip timeframes until closeTimestamp
-    Loop->>Loop: "while (timeframes[i] < closeTimestamp) i++"
-    
-    Loop->>Loop: yield closedResult
-```
+![Mermaid Diagram](./diagrams\51_Backtest_Execution_Flow_3.svg)
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:62-114](), [src/client/ClientStrategy.ts:485-656]()
 
@@ -288,22 +148,7 @@ while (
 
 **Skipping Example Visualization**
 
-```mermaid
-graph LR
-    T0["timeframes[0]<br/>10:00:00"] --> T1["timeframes[1]<br/>10:01:00"]
-    T1 --> T2["timeframes[2]<br/>10:02:00"]
-    T2 -.->|"Signal opened<br/>minuteEstimatedTime=60"| T3["timeframes[3]<br/>10:03:00"]
-    T3 -.-> T4["..."]
-    T4 -.-> T61["timeframes[62]<br/>11:02:00"]
-    T61 -.->|"closeTimestamp=11:02:00<br/>Skip to here"| T62["timeframes[63]<br/>11:03:00"]
-    T62 --> T63["timeframes[64]<br/>11:04:00"]
-    
-    style T2 fill:#c8e6c9
-    style T3 fill:#e0e0e0
-    style T4 fill:#e0e0e0
-    style T61 fill:#e0e0e0
-    style T62 fill:#c8e6c9
-```
+![Mermaid Diagram](./diagrams\51_Backtest_Execution_Flow_4.svg)
 
 This skipping ensures:
 1. No duplicate signals during an active signal's lifetime
@@ -361,61 +206,7 @@ The following diagram traces a complete execution from the Public API through al
 
 **End-to-End Execution Trace**
 
-```mermaid
-sequenceDiagram
-    participant User as "User Code"
-    participant Backtest as "Backtest.run()"
-    participant Public as "BacktestLogicPublicService"
-    participant MethodCtx as "MethodContextService"
-    participant Private as "BacktestLogicPrivateService"
-    participant FrameGlob as "FrameGlobalService"
-    participant StratGlob as "StrategyGlobalService"
-    participant ExchGlob as "ExchangeGlobalService"
-    participant ClientFrame as "ClientFrame"
-    participant ClientStrat as "ClientStrategy"
-    participant ClientExch as "ClientExchange"
-    
-    User->>Backtest: "run('BTCUSDT', {...})"
-    Backtest->>Public: "run('BTCUSDT', {strategy, exchange, frame})"
-    Public->>MethodCtx: "runAsyncIterator(generator, context)"
-    MethodCtx->>Private: "run('BTCUSDT')"
-    
-    Private->>FrameGlob: "getTimeframe('BTCUSDT')"
-    FrameGlob->>ClientFrame: "getTimeframe('BTCUSDT')"
-    ClientFrame-->>FrameGlob: "Date[] [t0, t1, ..., tN]"
-    FrameGlob-->>Private: "Date[]"
-    
-    loop "for each timestamp i"
-        Private->>StratGlob: "tick('BTCUSDT', timeframes[i], true)"
-        StratGlob->>ClientStrat: "tick()"
-        
-        alt "Signal opened"
-            ClientStrat-->>StratGlob: "{action: 'opened', signal}"
-            StratGlob-->>Private: "IStrategyTickResultOpened"
-            
-            Private->>ExchGlob: "getNextCandles('BTCUSDT', '1m', 60, when, true)"
-            ExchGlob->>ClientExch: "getNextCandles(...)"
-            ClientExch-->>ExchGlob: "ICandleData[]"
-            ExchGlob-->>Private: "ICandleData[]"
-            
-            Private->>StratGlob: "backtest('BTCUSDT', candles, when, true)"
-            StratGlob->>ClientStrat: "backtest(candles)"
-            ClientStrat-->>StratGlob: "{action: 'closed', pnl, closeReason}"
-            StratGlob-->>Private: "IStrategyTickResultClosed"
-            
-            Private->>Private: "Skip timeframes until closeTimestamp"
-            Private-->>MethodCtx: "yield closedResult"
-        else "Idle or Active"
-            ClientStrat-->>StratGlob: "{action: 'idle'}"
-            StratGlob-->>Private: "IStrategyTickResultIdle"
-            Note over Private: "Do not yield, continue loop"
-        end
-    end
-    
-    MethodCtx-->>Public: "async iterator results"
-    Public-->>Backtest: "async iterator results"
-    Backtest-->>User: "async iterator results"
-```
+![Mermaid Diagram](./diagrams\51_Backtest_Execution_Flow_5.svg)
 
 **Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts:46-67](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:48-119](), [src/client/ClientStrategy.ts:258-464](), [src/client/ClientStrategy.ts:485-656]()
 

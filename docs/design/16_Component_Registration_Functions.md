@@ -30,46 +30,7 @@ Sources: [src/function/add.ts:1-342](), [src/function/list.ts:1-218](), [src/ind
 
 ## Registration Flow Architecture
 
-```mermaid
-graph TB
-    subgraph "User Code"
-        UserCall["User calls add*(schema)"]
-    end
-    
-    subgraph "Public API Layer - src/function/add.ts"
-        AddFunction["add* function<br/>(addStrategy, addExchange, etc.)"]
-        LogCall["loggerService.info()<br/>Log registration"]
-    end
-    
-    subgraph "Validation Layer - src/lib/services/validation/*"
-        ValidationService["*ValidationService<br/>(StrategyValidationService, etc.)"]
-        ValidateMethod["addStrategy(name, schema)<br/>Memoized validation storage"]
-    end
-    
-    subgraph "Schema Storage Layer - src/lib/services/schema/*"
-        SchemaService["*SchemaService<br/>(StrategySchemaService, etc.)"]
-        RegisterMethod["register(name, schema)<br/>ToolRegistry pattern"]
-    end
-    
-    subgraph "Runtime Retrieval"
-        ConnectionService["*ConnectionService<br/>Retrieves schemas by name"]
-        ClientClass["Client*<br/>Uses schema at runtime"]
-    end
-    
-    UserCall --> AddFunction
-    AddFunction --> LogCall
-    AddFunction --> ValidateMethod
-    AddFunction --> RegisterMethod
-    ValidateMethod --> ValidationService
-    RegisterMethod --> SchemaService
-    SchemaService --> ConnectionService
-    ConnectionService --> ClientClass
-    
-    style UserCall fill:#f9f9f9
-    style AddFunction fill:#e3f2fd
-    style ValidationService fill:#fff3e0
-    style SchemaService fill:#e8f5e9
-```
+![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_0.svg)
 
 **Registration Flow**:
 1. User calls `addStrategy()`, `addExchange()`, etc. with schema object
@@ -85,48 +46,7 @@ Sources: [src/function/add.ts:50-62](), [src/lib/core/provide.ts:102-109](), [sr
 
 ## Service Architecture Mapping
 
-```mermaid
-graph LR
-    subgraph "Schema Types"
-        Strategy["IStrategySchema"]
-        Exchange["IExchangeSchema"]
-        Frame["IFrameSchema"]
-        Risk["IRiskSchema"]
-        Sizing["ISizingSchema"]
-        Walker["IWalkerSchema"]
-    end
-    
-    subgraph "Validation Services"
-        StrategyVal["StrategyValidationService"]
-        ExchangeVal["ExchangeValidationService"]
-        FrameVal["FrameValidationService"]
-        RiskVal["RiskValidationService"]
-        SizingVal["SizingValidationService"]
-        WalkerVal["WalkerValidationService"]
-    end
-    
-    subgraph "Schema Services"
-        StrategySchema["StrategySchemaService"]
-        ExchangeSchema["ExchangeSchemaService"]
-        FrameSchema["FrameSchemaService"]
-        RiskSchema["RiskSchemaService"]
-        SizingSchema["SizingSchemaService"]
-        WalkerSchema["WalkerSchemaService"]
-    end
-    
-    Strategy --> StrategyVal
-    Strategy --> StrategySchema
-    Exchange --> ExchangeVal
-    Exchange --> ExchangeSchema
-    Frame --> FrameVal
-    Frame --> FrameSchema
-    Risk --> RiskVal
-    Risk --> RiskSchema
-    Sizing --> SizingVal
-    Sizing --> SizingSchema
-    Walker --> WalkerVal
-    Walker --> WalkerSchema
-```
+![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_1.svg)
 
 Sources: [src/lib/core/types.ts:18-66](), [src/lib/index.ts:22-27](), [src/lib/index.ts:80-91]()
 
@@ -612,32 +532,7 @@ Sources: [src/function/list.ts:137-140](), [types.d.ts:1019-1030]()
 
 All `*ValidationService` classes follow the same pattern for schema validation and memoization:
 
-```mermaid
-graph TB
-    subgraph "ValidationService Pattern"
-        AddMethod["add*(name, schema)<br/>Store for validation"]
-        ListMethod["list()<br/>Return all schemas"]
-        Storage["_validations Map<br/>name → schema"]
-    end
-    
-    subgraph "Usage by add* Functions"
-        AddCall["addStrategy(schema)"]
-        StoreValidation["strategyValidationService<br/>.addStrategy(name, schema)"]
-    end
-    
-    subgraph "Usage by list* Functions"
-        ListCall["listStrategies()"]
-        GetAll["strategyValidationService<br/>.list()"]
-    end
-    
-    AddCall --> StoreValidation
-    StoreValidation --> AddMethod
-    AddMethod --> Storage
-    
-    ListCall --> GetAll
-    GetAll --> ListMethod
-    ListMethod --> Storage
-```
+![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_2.svg)
 
 **ValidationService Responsibilities**:
 1. **Registration-time storage**: Store schemas in `Map<name, schema>` for validation
@@ -658,35 +553,7 @@ Sources: [src/lib/core/types.ts:59-66](), [src/function/add.ts:54-57](), [src/fu
 
 All `*SchemaService` classes follow the ToolRegistry pattern for schema storage and retrieval:
 
-```mermaid
-graph TB
-    subgraph "SchemaService Pattern (ToolRegistry)"
-        Register["register(name, schema)<br/>Store schema"]
-        Get["get(name)<br/>Retrieve schema"]
-        Has["has(name)<br/>Check existence"]
-        RegistryMap["_registry Map<br/>name → schema"]
-    end
-    
-    subgraph "Used by add* Functions"
-        AddFunc["addStrategy(schema)"]
-        RegisterCall["strategySchemaService<br/>.register(name, schema)"]
-    end
-    
-    subgraph "Used by ConnectionService"
-        ConnService["StrategyConnectionService"]
-        GetSchema["strategySchemaService<br/>.get(strategyName)"]
-        CreateClient["new ClientStrategy(schema)"]
-    end
-    
-    AddFunc --> RegisterCall
-    RegisterCall --> Register
-    Register --> RegistryMap
-    
-    ConnService --> GetSchema
-    GetSchema --> Get
-    Get --> RegistryMap
-    RegistryMap --> CreateClient
-```
+![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_3.svg)
 
 **SchemaService Responsibilities**:
 1. **Storage**: Store schemas in `ToolRegistry` (Map-based) by name

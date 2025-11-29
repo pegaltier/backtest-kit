@@ -21,26 +21,7 @@ For information about how these timestamps are used during backtest execution, s
 
 ### Component Interaction
 
-```mermaid
-graph TB
-    User["User Code"]
-    AddFrame["addFrame()"]
-    Schema["FrameSchemaService<br/>(Registry)"]
-    Conn["FrameConnectionService<br/>(Memoized Factory)"]
-    Global["FrameGlobalService<br/>(Context Injection)"]
-    Client["ClientFrame"]
-    Backtest["BacktestLogicPrivateService"]
-    
-    User -->|"register IFrameSchema"| AddFrame
-    AddFrame -->|"store configuration"| Schema
-    Backtest -->|"getTimeframe(symbol)"| Global
-    Global -->|"inject context"| Conn
-    Conn -->|"lookup schema"| Schema
-    Conn -->|"instantiate/cache"| Client
-    Client -->|"return Date[]"| Backtest
-    
-    Schema -.->|"frameName<br/>interval<br/>startDate<br/>endDate"| Client
-```
+![Mermaid Diagram](./diagrams\52_Timeframe_Generation_0.svg)
 
 **Sources:** [src/client/ClientFrame.ts:1-93]()
 
@@ -73,36 +54,7 @@ The `GET_TIMEFRAME_FN` function implements a simple iterative algorithm to produ
 
 ### Algorithm Flow
 
-```mermaid
-flowchart TD
-    Start["Start: getTimeframe(symbol)"]
-    Extract["Extract params:<br/>interval, startDate, endDate"]
-    Lookup["Lookup intervalMinutes<br/>from INTERVAL_MINUTES"]
-    Validate["Validate interval exists"]
-    Init["Initialize:<br/>timeframes = []<br/>currentDate = startDate"]
-    Check{"currentDate <= endDate?"}
-    Push["Push new Date(currentDate)<br/>to timeframes"]
-    Increment["currentDate += intervalMinutes<br/>* 60 * 1000 ms"]
-    Callback{"callbacks.onTimeframe?"}
-    Call["Call callback(timeframes,<br/>startDate, endDate, interval)"]
-    Return["Return timeframes"]
-    
-    Start --> Extract
-    Extract --> Lookup
-    Lookup --> Validate
-    Validate --> Init
-    Init --> Check
-    Check -->|Yes| Push
-    Push --> Increment
-    Increment --> Check
-    Check -->|No| Callback
-    Callback -->|Yes| Call
-    Callback -->|No| Return
-    Call --> Return
-    
-    style Start fill:#e1f5ff
-    style Return fill:#e1f5ff
-```
+![Mermaid Diagram](./diagrams\52_Timeframe_Generation_1.svg)
 
 **Sources:** [src/client/ClientFrame.ts:37-62]()
 
@@ -129,29 +81,7 @@ The `getTimeframe` method is wrapped with the `singleshot` decorator from `funct
 
 ### Caching Behavior
 
-```mermaid
-sequenceDiagram
-    participant Backtest as BacktestLogicPrivateService
-    participant Frame as ClientFrame
-    participant Cache as singleshot cache
-    participant Gen as GET_TIMEFRAME_FN
-    
-    Note over Backtest: First call
-    Backtest->>Frame: getTimeframe(symbol)
-    Frame->>Cache: Check cache
-    Cache-->>Frame: Cache miss
-    Frame->>Gen: Execute generation
-    Gen-->>Frame: Date[] array
-    Frame->>Cache: Store result
-    Frame-->>Backtest: Return Date[]
-    
-    Note over Backtest: Subsequent calls
-    Backtest->>Frame: getTimeframe(symbol)
-    Frame->>Cache: Check cache
-    Cache-->>Frame: Cache hit
-    Frame-->>Backtest: Return cached Date[]
-    Note over Gen: Not executed
-```
+![Mermaid Diagram](./diagrams\52_Timeframe_Generation_2.svg)
 
 This optimization prevents redundant timestamp generation when multiple components or iterations request the same timeframe. The cache is scoped to the `ClientFrame` instance, which is itself memoized per `frameName` by `FrameConnectionService`.
 
@@ -165,27 +95,7 @@ The generated timestamp array drives the backtest loop. `BacktestLogicPrivateSer
 
 ### Execution Flow
 
-```mermaid
-sequenceDiagram
-    participant Logic as BacktestLogicPrivateService
-    participant FrameGlobal as FrameGlobalService
-    participant FrameConn as FrameConnectionService
-    participant ClientFrame as ClientFrame
-    participant ExecCtx as ExecutionContextService
-    participant Strategy as StrategyGlobalService
-    
-    Logic->>FrameGlobal: getTimeframe(symbol)
-    FrameGlobal->>FrameConn: Route via methodContext
-    FrameConn->>ClientFrame: getTimeframe(symbol)
-    ClientFrame-->>Logic: [Date1, Date2, ..., DateN]
-    
-    loop For each timestamp in array
-        Logic->>ExecCtx: Set context.when = timestamp
-        Logic->>Strategy: tick(symbol, timestamp, true)
-        Strategy-->>Logic: IStrategyTickResult
-        Note over Logic: Process result, potentially<br/>call backtest() for simulation
-    end
-```
+![Mermaid Diagram](./diagrams\52_Timeframe_Generation_3.svg)
 
 The timestamp array length directly determines backtest duration. For example:
 - 30 days at 1-minute intervals: ~43,200 timestamps

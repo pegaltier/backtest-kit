@@ -11,33 +11,7 @@ The `Backtest` class is a singleton utility that provides simplified access to b
 
 **Backtest API Service Architecture**
 
-```mermaid
-graph TB
-    User["User Code"]
-    BacktestClass["Backtest (singleton)<br/>src/classes/Backtest.ts"]
-    BacktestGlobal["BacktestGlobalService<br/>src/lib/services/global/BacktestGlobalService.ts"]
-    BacktestLogic["BacktestLogicPublicService<br/>BacktestLogicPrivateService"]
-    BacktestMarkdown["BacktestMarkdownService<br/>src/lib/services/markdown/BacktestMarkdownService.ts"]
-    ScheduleMarkdown["ScheduleMarkdownService<br/>src/lib/services/markdown/ScheduleMarkdownService.ts"]
-    
-    User -->|"run(symbol, context)"| BacktestClass
-    User -->|"background(symbol, context)"| BacktestClass
-    User -->|"getData(strategyName)"| BacktestClass
-    User -->|"getReport(strategyName)"| BacktestClass
-    User -->|"dump(strategyName)"| BacktestClass
-    
-    BacktestClass -->|"run()"| BacktestGlobal
-    BacktestClass -->|"getData()"| BacktestMarkdown
-    BacktestClass -->|"getReport()"| BacktestMarkdown
-    BacktestClass -->|"dump()"| BacktestMarkdown
-    
-    BacktestGlobal --> BacktestLogic
-    BacktestLogic -->|"emits closed signals"| BacktestMarkdown
-    BacktestLogic -->|"emits scheduled/cancelled"| ScheduleMarkdown
-    
-    BacktestMarkdown -->|"stores"| ReportStorage["ReportStorage<br/>_signalList[]"]
-    ScheduleMarkdown -->|"stores"| ScheduleStorage["ReportStorage<br/>_eventList[]"]
-```
+![Mermaid Diagram](./diagrams\17_Backtest_API_0.svg)
 
 **Sources**: [src/classes/Backtest.ts:1-208](), [src/lib/services/markdown/BacktestMarkdownService.ts:1-533]()
 
@@ -209,30 +183,7 @@ The `BacktestMarkdownService` calculates statistics using the `ReportStorage` cl
 
 **Statistics Calculation Flow**
 
-```mermaid
-graph TB
-    Tick["ClientStrategy.tick()<br/>yields closed signal"]
-    Emitter["signalBacktestEmitter.next()"]
-    Service["BacktestMarkdownService.tick()"]
-    Storage["ReportStorage.addSignal()"]
-    List["_signalList: IStrategyTickResultClosed[]"]
-    
-    GetData["Backtest.getData()"]
-    Calculate["ReportStorage.getData()"]
-    Metrics["Calculate metrics:<br/>• winRate = wins/total<br/>• avgPnl = sum(pnl)/total<br/>• stdDev = sqrt(variance)<br/>• sharpeRatio = avgPnl/stdDev<br/>• certaintyRatio = avgWin/|avgLoss|"]
-    SafeCheck["isUnsafe() check<br/>return null if NaN/Infinity"]
-    Result["BacktestStatistics"]
-    
-    Tick --> Emitter
-    Emitter --> Service
-    Service --> Storage
-    Storage --> List
-    
-    GetData --> Calculate
-    Calculate --> Metrics
-    Metrics --> SafeCheck
-    SafeCheck --> Result
-```
+![Mermaid Diagram](./diagrams\17_Backtest_API_1.svg)
 
 **Sources**: [src/lib/services/markdown/BacktestMarkdownService.ts:183-270]()
 
@@ -269,48 +220,7 @@ The following diagram contrasts the execution patterns of `run()` and `backgroun
 
 **run() vs background() Execution Flow**
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Backtest
-    participant Global["BacktestGlobalService"]
-    participant Logic["BacktestLogicPrivateService"]
-    participant Emitters["Event Emitters"]
-    
-    Note over User,Emitters: Backtest.run() - Manual Iteration
-    User->>Backtest: for await (result of run())
-    Backtest->>Backtest: Clear state (markdown, strategy, risk)
-    Backtest->>Global: run(symbol, context)
-    Global->>Logic: async generator
-    
-    loop For each closed signal
-        Logic->>Logic: Process timestamp
-        Logic-->>Emitters: signalBacktestEmitter.next()
-        Logic-->>Backtest: yield closed signal
-        Backtest-->>User: yield result
-        User->>User: Process result
-        User->>User: Can break early
-    end
-    
-    Note over User,Emitters: Backtest.background() - Automatic Consumption
-    User->>Backtest: stop = background()
-    Backtest->>Backtest: Clear state
-    Backtest->>Backtest: Start async task
-    
-    loop Until complete or stopped
-        Backtest->>Global: Iterate run()
-        Global->>Logic: Get next signal
-        Logic-->>Emitters: signalBacktestEmitter.next()
-        Logic-->>Backtest: yield closed signal
-        Backtest->>Backtest: Check isStopped flag
-    end
-    
-    Backtest->>Emitters: doneBacktestSubject.next()
-    
-    Note over User,Emitters: User can call stop() anytime
-    User->>Backtest: stop()
-    Backtest->>Global: strategyGlobalService.stop()
-```
+![Mermaid Diagram](./diagrams\17_Backtest_API_2.svg)
 
 **Sources**: [src/classes/Backtest.ts:38-122]()
 
@@ -348,35 +258,7 @@ The Backtest API integrates with the event system through multiple emitters:
 
 **Backtest Event Emission Flow**
 
-```mermaid
-graph LR
-    Logic["BacktestLogicPrivateService<br/>generates signals"]
-    
-    General["signalEmitter<br/>(all modes)"]
-    Specific["signalBacktestEmitter<br/>(backtest only)"]
-    Markdown["BacktestMarkdownService<br/>subscribes"]
-    Schedule["ScheduleMarkdownService<br/>subscribes"]
-    User["User listeners<br/>listenSignalBacktest()"]
-    
-    Done["doneBacktestSubject<br/>(on completion)"]
-    DoneUser["User listeners<br/>listenDoneBacktest()"]
-    
-    Progress["progressEmitter<br/>(during execution)"]
-    ProgressUser["User listeners<br/>listenProgress()"]
-    
-    Logic -->|"all events"| General
-    Logic -->|"closed only"| Specific
-    Logic -->|"progress"| Progress
-    
-    General --> Schedule
-    Specific --> Markdown
-    Specific --> User
-    
-    Done --> DoneUser
-    Progress --> ProgressUser
-    
-    Markdown -->|"accumulates"| Storage["ReportStorage<br/>_signalList[]"]
-```
+![Mermaid Diagram](./diagrams\17_Backtest_API_3.svg)
 
 **Emitter Initialization**: Event emitters are initialized in [src/config/emitters.ts:1-80]():
 - `signalEmitter` - All signal events (live + backtest)

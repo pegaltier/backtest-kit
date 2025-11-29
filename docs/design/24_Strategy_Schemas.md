@@ -15,51 +15,7 @@ For information about risk management configuration, see [Risk Schemas](#5.4). F
 
 The `IStrategySchema` interface defines the complete configuration for a trading strategy. When registered via `addStrategy()`, the schema is stored in `StrategySchemaService` and validated by `StrategyValidationService`.
 
-```mermaid
-classDiagram
-    class IStrategySchema {
-        +string strategyName
-        +string? note
-        +SignalInterval interval
-        +getSignal(symbol) Promise~ISignalDto|null~
-        +Partial~IStrategyCallbacks~? callbacks
-        +RiskName? riskName
-    }
-    
-    class SignalInterval {
-        <<enumeration>>
-        1m
-        3m
-        5m
-        15m
-        30m
-        1h
-    }
-    
-    class ISignalDto {
-        +string? id
-        +string position
-        +string? note
-        +number? priceOpen
-        +number priceTakeProfit
-        +number priceStopLoss
-        +number minuteEstimatedTime
-    }
-    
-    class IStrategyCallbacks {
-        +onTick(symbol, result, backtest)
-        +onOpen(symbol, data, currentPrice, backtest)
-        +onActive(symbol, data, currentPrice, backtest)
-        +onIdle(symbol, currentPrice, backtest)
-        +onClose(symbol, data, priceClose, backtest)
-        +onSchedule(symbol, data, currentPrice, backtest)
-        +onCancel(symbol, data, currentPrice, backtest)
-    }
-    
-    IStrategySchema --> SignalInterval
-    IStrategySchema --> ISignalDto : "getSignal returns"
-    IStrategySchema --> IStrategyCallbacks : "optional"
-```
+![Mermaid Diagram](./diagrams\24_Strategy_Schemas_0.svg)
 
 **Sources:** [types.d.ts:616-633](), [types.d.ts:544-559](), [types.d.ts:593-611]()
 
@@ -92,17 +48,7 @@ Minimum time interval between `getSignal()` invocations. Implements throttling t
 
 The framework enforces this interval using `_lastSignalTimestamp` tracking in `ClientStrategy`. When `tick()` is called, the framework checks elapsed time since last signal generation:
 
-```mermaid
-stateDiagram-v2
-    [*] --> CheckTimestamp
-    CheckTimestamp --> GetSignal: "interval elapsed"
-    CheckTimestamp --> SkipGetSignal: "interval not elapsed"
-    GetSignal --> ValidateSignal
-    ValidateSignal --> CheckRisk
-    CheckRisk --> [*]
-    SkipGetSignal --> MonitorActiveSignal
-    MonitorActiveSignal --> [*]
-```
+![Mermaid Diagram](./diagrams\24_Strategy_Schemas_1.svg)
 
 **Interval Mappings (INTERVAL_MINUTES):**
 
@@ -171,37 +117,7 @@ The `ISignalDto` interface defines the structure returned by `getSignal()`. It i
 
 ### ISignalDto Fields
 
-```mermaid
-graph TB
-    subgraph "Required Fields"
-        position["position<br/>long | short"]
-        priceTakeProfit["priceTakeProfit<br/>Exit price for profit"]
-        priceStopLoss["priceStopLoss<br/>Exit price for loss"]
-        minuteEstimatedTime["minuteEstimatedTime<br/>Expected duration"]
-    end
-    
-    subgraph "Optional Fields"
-        id["id<br/>UUID v4 (auto-generated)"]
-        priceOpen["priceOpen<br/>Entry price (scheduled if provided)"]
-        note["note<br/>Human-readable description"]
-    end
-    
-    subgraph "Validation Rules"
-        rule1["TP distance ≥ CC_MIN_TAKEPROFIT_DISTANCE_PERCENT"]
-        rule2["SL distance ≤ CC_MAX_STOPLOSS_DISTANCE_PERCENT"]
-        rule3["Long: TP > priceOpen > SL"]
-        rule4["Short: SL > priceOpen > TP"]
-        rule5["minuteEstimatedTime ≤ CC_MAX_SIGNAL_LIFETIME_MINUTES"]
-    end
-    
-    position --> rule3
-    position --> rule4
-    priceTakeProfit --> rule1
-    priceStopLoss --> rule2
-    minuteEstimatedTime --> rule5
-    priceOpen -.-> rule3
-    priceOpen -.-> rule4
-```
+![Mermaid Diagram](./diagrams\24_Strategy_Schemas_2.svg)
 
 **Field Details:**
 
@@ -232,38 +148,7 @@ graph TB
 
 Lifecycle event handlers called during signal state transitions. All callbacks are optional.
 
-```mermaid
-sequenceDiagram
-    participant Strategy as "ClientStrategy"
-    participant Callback as "IStrategyCallbacks"
-    participant Emitter as "Event Emitters"
-    
-    Strategy->>Strategy: tick() called
-    
-    alt No Active Signal
-        Strategy->>Callback: onIdle(symbol, price, backtest)
-        Strategy->>Strategy: Check interval throttling
-        Strategy->>Strategy: Call getSignal()
-        
-        alt Scheduled Signal
-            Strategy->>Callback: onSchedule(symbol, data, price, backtest)
-        else Opened Signal
-            Strategy->>Callback: onOpen(symbol, data, price, backtest)
-        end
-    else Active Signal
-        Strategy->>Callback: onActive(symbol, data, price, backtest)
-        Strategy->>Strategy: Monitor TP/SL
-        
-        alt Signal Closed
-            Strategy->>Callback: onClose(symbol, data, priceClose, backtest)
-        else Scheduled Cancelled
-            Strategy->>Callback: onCancel(symbol, data, price, backtest)
-        end
-    end
-    
-    Strategy->>Callback: onTick(symbol, result, backtest)
-    Strategy->>Emitter: Emit events
-```
+![Mermaid Diagram](./diagrams\24_Strategy_Schemas_3.svg)
 
 **Callback Signatures:**
 
@@ -317,17 +202,7 @@ Reference to a registered risk profile via `addRisk()`. When specified, the stra
 
 **Risk Integration Flow:**
 
-```mermaid
-graph LR
-    A["getSignal() returns ISignalDto"] --> B["VALIDATE_SIGNAL_FN"]
-    B --> C{"riskName<br/>specified?"}
-    C -->|No| G["Open signal"]
-    C -->|Yes| D["ClientRisk.checkSignal()"]
-    D --> E["Run custom validations"]
-    E --> F{"Risk check<br/>passes?"}
-    F -->|Yes| G
-    F -->|No| H["Reject signal<br/>return idle"]
-```
+![Mermaid Diagram](./diagrams\24_Strategy_Schemas_4.svg)
 
 **Cross-Strategy Position Tracking:**
 
@@ -385,26 +260,7 @@ Not used by framework logic, purely informational.
 
 Strategies are registered via the `addStrategy()` function, which performs validation and storage in two services.
 
-```mermaid
-sequenceDiagram
-    participant User as "User Code"
-    participant addStrategy as "addStrategy()"
-    participant Validation as "StrategyValidationService"
-    participant Schema as "StrategySchemaService"
-    participant Logger as "LoggerService"
-    
-    User->>addStrategy: Call with IStrategySchema
-    addStrategy->>Logger: Log registration
-    
-    addStrategy->>Validation: addStrategy(name, schema)
-    Note over Validation: Stores for validation<br/>checks during execution
-    
-    addStrategy->>Schema: register(name, schema)
-    Note over Schema: ToolRegistry pattern<br/>storage
-    
-    Schema-->>addStrategy: Registration complete
-    addStrategy-->>User: Return void
-```
+![Mermaid Diagram](./diagrams\24_Strategy_Schemas_5.svg)
 
 **Registration Code Path:**
 
@@ -434,32 +290,7 @@ When strategy is first used (during `Backtest.run()` or `Live.run()`):
 
 ### Relationship with Exchange
 
-```mermaid
-graph TB
-    subgraph "Strategy Schema"
-        getSignal["getSignal(symbol)"]
-    end
-    
-    subgraph "Exchange Functions"
-        getCandles["getCandles(symbol, interval, limit)"]
-        getAveragePrice["getAveragePrice(symbol)"]
-        formatPrice["formatPrice(symbol, price)"]
-    end
-    
-    subgraph "Context Services"
-        ExecutionContext["ExecutionContextService<br/>symbol, when, backtest"]
-        MethodContext["MethodContextService<br/>strategyName, exchangeName"]
-    end
-    
-    getSignal --> getCandles
-    getSignal --> getAveragePrice
-    getSignal --> formatPrice
-    
-    getCandles -.-> ExecutionContext
-    getCandles -.-> MethodContext
-    getAveragePrice -.-> ExecutionContext
-    formatPrice -.-> ExecutionContext
-```
+![Mermaid Diagram](./diagrams\24_Strategy_Schemas_6.svg)
 
 The `getSignal` function has implicit access to exchange operations via context propagation. No explicit parameters needed.
 
@@ -469,32 +300,7 @@ The `getSignal` function has implicit access to exchange operations via context 
 
 ### Relationship with Risk Management
 
-```mermaid
-graph TB
-    subgraph "Strategy Schema"
-        riskName["riskName: string"]
-        getSignal["getSignal(symbol)"]
-    end
-    
-    subgraph "Risk Schema"
-        riskProfile["IRiskSchema"]
-        validations["validations[]"]
-        maxConcurrent["maxConcurrentPositions"]
-    end
-    
-    subgraph "ClientStrategy"
-        checkRisk["Check risk before opening"]
-        addSignal["addSignal() on open"]
-        removeSignal["removeSignal() on close"]
-    end
-    
-    riskName -.->|"Links to"| riskProfile
-    getSignal --> checkRisk
-    checkRisk --> validations
-    checkRisk --> maxConcurrent
-    checkRisk -->|"Pass"| addSignal
-    addSignal -.-> removeSignal
-```
+![Mermaid Diagram](./diagrams\24_Strategy_Schemas_7.svg)
 
 **Risk Check Flow:**
 

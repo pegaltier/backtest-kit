@@ -26,40 +26,7 @@ Sources: [types.d.ts:95](), [src/index.ts:95]()
 
 ## Performance Tracking Architecture
 
-```mermaid
-graph TB
-    subgraph "Execution Layer"
-        BLogic["BacktestLogicPrivateService"]
-        LLogic["LiveLogicPrivateService"]
-    end
-    
-    subgraph "Timing Instrumentation"
-        BStart["performance.now()<br/>at operation start"]
-        BEnd["performance.now()<br/>at operation end"]
-        Calc["duration = end - start"]
-    end
-    
-    subgraph "Event Emission"
-        PEmitter["performanceEmitter<br/>(Subject)"]
-        PContract["PerformanceContract<br/>{timestamp, metricType,<br/>duration, strategyName,<br/>exchangeName, symbol}"]
-    end
-    
-    subgraph "Consumption Layer"
-        Listen["listenPerformance()"]
-        PMService["PerformanceMarkdownService"]
-        Custom["Custom handlers"]
-    end
-    
-    BLogic --> BStart
-    LLogic --> BStart
-    BStart --> BEnd
-    BEnd --> Calc
-    Calc --> PContract
-    PContract --> PEmitter
-    PEmitter --> Listen
-    Listen --> PMService
-    Listen --> Custom
-```
+![Mermaid Diagram](./diagrams\69_Performance_Metrics_0.svg)
 
 **Performance Tracking Flow**
 
@@ -75,17 +42,7 @@ Sources: [src/lib/services/logic/private/BacktestLogicPrivateService.ts:1-303]()
 
 Tracks the complete execution time from the first timeframe to the last:
 
-```mermaid
-graph LR
-    Start["backtestStartTime =<br/>performance.now()"]
-    Process["Process all<br/>timeframes"]
-    End["backtestEndTime =<br/>performance.now()"]
-    Emit["performanceEmitter.next({<br/>metricType: 'backtest_total',<br/>duration: end - start})"]
-    
-    Start --> Process
-    Process --> End
-    End --> Emit
-```
+![Mermaid Diagram](./diagrams\69_Performance_Metrics_1.svg)
 
 Sources: [src/lib/services/logic/private/BacktestLogicPrivateService.ts:64-65](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:285-298]()
 
@@ -93,19 +50,7 @@ Sources: [src/lib/services/logic/private/BacktestLogicPrivateService.ts:64-65]()
 
 Tracks the time to process a single timestamp, including tick execution and potential signal handling:
 
-```mermaid
-graph LR
-    TStart["timeframeStartTime =<br/>performance.now()"]
-    Tick["strategyGlobalService.tick()"]
-    Handle["Handle result<br/>(idle/scheduled/opened)"]
-    TEnd["timeframeEndTime =<br/>performance.now()"]
-    Emit["performanceEmitter.next({<br/>metricType: 'backtest_timeframe',<br/>duration: end - start})"]
-    
-    TStart --> Tick
-    Tick --> Handle
-    Handle --> TEnd
-    TEnd --> Emit
-```
+![Mermaid Diagram](./diagrams\69_Performance_Metrics_2.svg)
 
 Sources: [src/lib/services/logic/private/BacktestLogicPrivateService.ts:76](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:255-269]()
 
@@ -113,19 +58,7 @@ Sources: [src/lib/services/logic/private/BacktestLogicPrivateService.ts:76](), [
 
 Tracks the time to execute the fast-forward backtest simulation for a single signal from open to close:
 
-```mermaid
-graph LR
-    SStart["signalStartTime =<br/>performance.now()"]
-    Fetch["getNextCandles()"]
-    BT["strategyGlobalService.backtest()"]
-    SEnd["signalEndTime =<br/>performance.now()"]
-    Emit["performanceEmitter.next({<br/>metricType: 'backtest_signal',<br/>duration: end - start})"]
-    
-    SStart --> Fetch
-    Fetch --> BT
-    BT --> SEnd
-    SEnd --> Emit
-```
+![Mermaid Diagram](./diagrams\69_Performance_Metrics_3.svg)
 
 This metric captures the duration of the optimized backtest path, including candle fetching and TP/SL detection via high/low analysis.
 
@@ -139,19 +72,7 @@ Sources: [src/lib/services/logic/private/BacktestLogicPrivateService.ts:95-172](
 
 Tracks the time to execute a complete tick cycle in live trading, including signal generation, risk checks, and TP/SL monitoring:
 
-```mermaid
-graph LR
-    TStart["tickStartTime =<br/>performance.now()"]
-    Tick["strategyGlobalService.tick()"]
-    TEnd["tickEndTime =<br/>performance.now()"]
-    Emit["performanceEmitter.next({<br/>metricType: 'live_tick',<br/>duration: end - start})"]
-    Sleep["sleep(TICK_TTL)"]
-    
-    TStart --> Tick
-    Tick --> TEnd
-    TEnd --> Emit
-    Emit --> Sleep
-```
+![Mermaid Diagram](./diagrams\69_Performance_Metrics_4.svg)
 
 Sources: [src/lib/services/logic/private/LiveLogicPrivateService.ts:68-91]()
 
@@ -217,25 +138,7 @@ listenPerformance((event) => {
 
 ### Performance Event Flow
 
-```mermaid
-sequenceDiagram
-    participant Logic as BacktestLogicPrivateService
-    participant Perf as performanceEmitter
-    participant Listen as listenPerformance
-    participant Service as PerformanceMarkdownService
-    participant Custom as Custom Handler
-    
-    Logic->>Logic: performance.now() at start
-    Logic->>Logic: Execute operation
-    Logic->>Logic: performance.now() at end
-    Logic->>Logic: Calculate duration
-    Logic->>Perf: performanceEmitter.next(contract)
-    Perf->>Listen: Emit to all subscribers
-    Listen->>Service: Forward event
-    Listen->>Custom: Forward event
-    Service->>Service: Accumulate metrics
-    Custom->>Custom: Custom processing
-```
+![Mermaid Diagram](./diagrams\69_Performance_Metrics_5.svg)
 
 Sources: [src/index.ts:19](), [src/config/emitters.ts]()
 
@@ -355,33 +258,7 @@ Sources: [test/spec/performance.test.mjs]()
 
 The `PerformanceMarkdownService` subscribes to performance events and accumulates metrics for later analysis:
 
-```mermaid
-graph TB
-    subgraph "Event Flow"
-        Emitter["performanceEmitter"]
-        Init["PerformanceMarkdownService.init()"]
-    end
-    
-    subgraph "Storage"
-        Memo["Memoized getStorage(strategyName)"]
-        Storage["ReportStorage instance"]
-        EventList["_eventList: PerformanceContract[]"]
-    end
-    
-    subgraph "Access Methods"
-        GetData["getData(strategyName)"]
-        GetReport["getReport(strategyName)"]
-        Dump["dump(strategyName, path?)"]
-    end
-    
-    Emitter --> Init
-    Init --> Memo
-    Memo --> Storage
-    Storage --> EventList
-    EventList --> GetData
-    EventList --> GetReport
-    GetReport --> Dump
-```
+![Mermaid Diagram](./diagrams\69_Performance_Metrics_6.svg)
 
 The service maintains a separate storage instance per strategy, allowing isolated performance tracking across multiple concurrent executions.
 

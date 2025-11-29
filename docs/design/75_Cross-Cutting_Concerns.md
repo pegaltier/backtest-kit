@@ -12,59 +12,7 @@ For event-driven signal flow, see [Event System](#3.4).
 
 Cross-cutting concerns provide infrastructure services that are consumed by all layers:
 
-```mermaid
-graph TB
-    subgraph "User Configuration"
-        SetLogger["setLogger(ILogger)"]
-        SetConfig["setConfig(Partial<GlobalConfig>)"]
-    end
-    
-    subgraph "Logging Infrastructure"
-        LoggerService["LoggerService<br/>(DI Token)"]
-        ILogger["ILogger Interface<br/>log/debug/info/warn"]
-        ContextInjection["Automatic Context Injection<br/>strategyName, exchangeName, symbol"]
-    end
-    
-    subgraph "Error Infrastructure"
-        ErrorEmitter["errorEmitter<br/>(Subject)"]
-        ListenError["listenError()<br/>Global error handler"]
-        ValidationError["Validation Error Emission<br/>VALIDATE_SIGNAL_FN throws"]
-    end
-    
-    subgraph "Persistence Infrastructure"
-        PersistBase["PersistBase<br/>Abstract class"]
-        SignalAdapter["PersistSignalAdapter<br/>Signal state persistence"]
-        RiskAdapter["PersistRiskAdapter<br/>Risk positions persistence"]
-        AtomicWrites["writeFileAtomic()<br/>Crash-safe writes"]
-    end
-    
-    subgraph "Configuration Infrastructure"
-        GlobalConfig["GLOBAL_CONFIG<br/>CC_* parameters"]
-        ValidationParams["Validation Constraints<br/>MIN_TAKEPROFIT, MAX_STOPLOSS"]
-        TimingParams["Timing Constraints<br/>SCHEDULE_AWAIT, MAX_LIFETIME"]
-    end
-    
-    SetLogger --> LoggerService
-    LoggerService --> ILogger
-    ILogger --> ContextInjection
-    
-    SetConfig --> GlobalConfig
-    GlobalConfig --> ValidationParams
-    GlobalConfig --> TimingParams
-    
-    ValidationError --> ErrorEmitter
-    ErrorEmitter --> ListenError
-    
-    PersistBase --> SignalAdapter
-    PersistBase --> RiskAdapter
-    SignalAdapter --> AtomicWrites
-    RiskAdapter --> AtomicWrites
-    
-    ContextInjection -.-> "All Services"
-    ValidationParams -.-> "VALIDATE_SIGNAL_FN"
-    SignalAdapter -.-> "ClientStrategy"
-    RiskAdapter -.-> "ClientRisk"
-```
+![Mermaid Diagram](./diagrams\75_Cross-Cutting_Concerns_0.svg)
 
 **Sources:** [types.d.ts:40-130](), [src/config/params.ts:1-35](), [src/classes/Persist.ts:1-732]()
 
@@ -104,24 +52,7 @@ setLogger({
 
 The framework automatically injects contextual information into log messages. Services access the logger through dependency injection and include strategy/exchange/symbol context:
 
-```mermaid
-graph LR
-    UserCode["User Calls<br/>Backtest.run()"]
-    MethodCtx["MethodContextService<br/>strategyName, exchangeName"]
-    ExecCtx["ExecutionContextService<br/>symbol, when"]
-    Service["Service Class<br/>e.g., ClientStrategy"]
-    LoggerService["LoggerService<br/>(DI Injected)"]
-    UserLogger["User's ILogger<br/>Implementation"]
-    
-    UserCode --> MethodCtx
-    MethodCtx --> ExecCtx
-    ExecCtx --> Service
-    Service --> LoggerService
-    LoggerService --> UserLogger
-    
-    Note1["Context includes:<br/>- strategyName<br/>- exchangeName<br/>- symbol<br/>- timestamp"]
-    Service -.-> Note1
-```
+![Mermaid Diagram](./diagrams\75_Cross-Cutting_Concerns_1.svg)
 
 **Example log output with automatic context:**
 ```
@@ -158,38 +89,7 @@ constructor(
 
 The framework emits all errors to a centralized `errorEmitter` Subject, allowing users to subscribe to and handle errors globally:
 
-```mermaid
-graph TB
-    subgraph "Error Sources"
-        ValidationFail["VALIDATE_SIGNAL_FN<br/>throws Error"]
-        RiskCheckFail["Risk Validation<br/>throws Error"]
-        PersistFail["Persistence Failure<br/>writeValue() throws"]
-        ExchangeFail["Exchange API Failure<br/>getCandles() throws"]
-    end
-    
-    subgraph "Error Processing"
-        TryCatch["try-catch Wrappers<br/>In Logic Services"]
-        ErrorEmitter["errorEmitter.next()<br/>Subject<Error>"]
-        QueuedProcessing["Queued Processing<br/>No blocking"]
-    end
-    
-    subgraph "Error Handling"
-        ListenError["listenError(callback)<br/>User subscription"]
-        BackgroundMode["Background Mode<br/>No propagation"]
-        ForegroundMode["Foreground Mode<br/>Throws error"]
-    end
-    
-    ValidationFail --> TryCatch
-    RiskCheckFail --> TryCatch
-    PersistFail --> TryCatch
-    ExchangeFail --> TryCatch
-    
-    TryCatch --> ErrorEmitter
-    ErrorEmitter --> QueuedProcessing
-    QueuedProcessing --> ListenError
-    QueuedProcessing --> BackgroundMode
-    QueuedProcessing --> ForegroundMode
-```
+![Mermaid Diagram](./diagrams\75_Cross-Cutting_Concerns_2.svg)
 
 **Sources:** [types.d.ts:1-3](), [src/index.ts:11]()
 
@@ -265,41 +165,7 @@ Signal validation errors are thrown from `VALIDATE_SIGNAL_FN` and caught by logi
 
 The persistence layer provides crash-safe state management for live trading via atomic file writes and abstract base classes supporting custom adapters:
 
-```mermaid
-graph TB
-    subgraph "Abstract Layer"
-        PersistBase["PersistBase<EntityName, Entity><br/>Abstract class with:<br/>- waitForInit()<br/>- readValue(id)<br/>- writeValue(id, entity)<br/>- hasValue(id)<br/>- keys(), values()"]
-        IPersistBase["IPersistBase<Entity><br/>Interface"]
-    end
-    
-    subgraph "Concrete Adapters"
-        PersistSignalAdapter["PersistSignalAdapter<br/>entityName: strategyName<br/>Entity: ISignalRow | null"]
-        PersistRiskAdapter["PersistRiskAdapter<br/>entityName: riskName<br/>Entity: RiskData"]
-        FileSystem["File System Backend<br/>./logs/data/signal/<br/>./logs/data/risk/"]
-    end
-    
-    subgraph "Custom Adapters (User-Provided)"
-        RedisPersist["Redis Adapter<br/>extends PersistBase"]
-        MongoPersist["MongoDB Adapter<br/>extends PersistBase"]
-        PostgresPersist["Postgres Adapter<br/>extends PersistBase"]
-    end
-    
-    subgraph "Atomic Write Layer"
-        WriteFileAtomic["writeFileAtomic()<br/>Temp file + rename<br/>(POSIX)<br/>or direct write + sync<br/>(Windows)"]
-    end
-    
-    PersistBase --> IPersistBase
-    PersistBase --> PersistSignalAdapter
-    PersistBase --> PersistRiskAdapter
-    
-    PersistSignalAdapter --> FileSystem
-    PersistRiskAdapter --> FileSystem
-    FileSystem --> WriteFileAtomic
-    
-    RedisPersist -.->|"extends"| PersistBase
-    MongoPersist -.->|"extends"| PersistBase
-    PostgresPersist -.->|"extends"| PersistBase
-```
+![Mermaid Diagram](./diagrams\75_Cross-Cutting_Concerns_3.svg)
 
 **Sources:** [src/classes/Persist.ts:40-482](), [src/utils/writeFileAtomic.ts:1-141]()
 
@@ -488,31 +354,7 @@ const BASE_WAIT_FOR_INIT_FN = async (self: TPersistBase): Promise<void> => {
 
 The `GLOBAL_CONFIG` object defines system-wide constraints for validation and timing. Users modify these parameters via `setConfig()`:
 
-```mermaid
-graph TB
-    subgraph "Configuration Parameters"
-        CCSchedule["CC_SCHEDULE_AWAIT_MINUTES<br/>Default: 120<br/>Purpose: Scheduled signal timeout"]
-        CCAvgPrice["CC_AVG_PRICE_CANDLES_COUNT<br/>Default: 5<br/>Purpose: VWAP calculation window"]
-        CCMinTP["CC_MIN_TAKEPROFIT_DISTANCE_PERCENT<br/>Default: 0.1<br/>Purpose: Minimum TP distance"]
-        CCMaxSL["CC_MAX_STOPLOSS_DISTANCE_PERCENT<br/>Default: 20<br/>Purpose: Maximum SL distance"]
-        CCMaxLifetime["CC_MAX_SIGNAL_LIFETIME_MINUTES<br/>Default: 1440<br/>Purpose: Maximum signal duration"]
-    end
-    
-    subgraph "Usage Sites"
-        ValidateSignal["VALIDATE_SIGNAL_FN<br/>Checks TP/SL distances"]
-        ScheduledTimeout["Scheduled Signal Logic<br/>Cancels after timeout"]
-        TimeExpired["Time-based Closure<br/>minuteEstimatedTime check"]
-        VWAP["VWAP Calculation<br/>getAveragePrice()"]
-    end
-    
-    CCMinTP --> ValidateSignal
-    CCMaxSL --> ValidateSignal
-    CCMaxLifetime --> ValidateSignal
-    
-    CCSchedule --> ScheduledTimeout
-    CCMaxLifetime --> TimeExpired
-    CCAvgPrice --> VWAP
-```
+![Mermaid Diagram](./diagrams\75_Cross-Cutting_Concerns_4.svg)
 
 **Sources:** [src/config/params.ts:1-35](), [types.d.ts:5-34]()
 
@@ -605,40 +447,7 @@ The timing parameters control scheduled signal behavior and signal lifecycle:
 
 The DI container provides singletons for cross-cutting concerns that are injected into all service classes:
 
-```mermaid
-graph TB
-    subgraph "DI Container"
-        LoggerToken["Logger Token<br/>Singleton"]
-        ConfigToken["Config Token<br/>Singleton"]
-    end
-    
-    subgraph "Service Layer"
-        ClientStrategy["ClientStrategy"]
-        ClientExchange["ClientExchange"]
-        ClientRisk["ClientRisk"]
-        BacktestLogic["BacktestLogicPrivateService"]
-        LiveLogic["LiveLogicPrivateService"]
-    end
-    
-    subgraph "Infrastructure"
-        PersistSignal["PersistSignalAdapter"]
-        PersistRisk["PersistRiskAdapter"]
-        ValidateSignal["VALIDATE_SIGNAL_FN"]
-    end
-    
-    LoggerToken --> ClientStrategy
-    LoggerToken --> ClientExchange
-    LoggerToken --> ClientRisk
-    LoggerToken --> BacktestLogic
-    LoggerToken --> LiveLogic
-    LoggerToken --> PersistSignal
-    
-    ConfigToken --> ValidateSignal
-    ConfigToken --> ClientStrategy
-    
-    ClientStrategy --> PersistSignal
-    ClientRisk --> PersistRisk
-```
+![Mermaid Diagram](./diagrams\75_Cross-Cutting_Concerns_5.svg)
 
 **Sources:** [src/classes/Persist.ts:192-196](), [types.d.ts:171-176]()
 

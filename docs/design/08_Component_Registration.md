@@ -34,31 +34,7 @@ Each component is identified by a unique name (`strategyName`, `exchangeName`, e
 
 All registration functions follow the same pattern: accept a schema object and store it in the framework's internal registry.
 
-```mermaid
-graph LR
-    addStrategy["addStrategy(IStrategySchema)"]
-    addExchange["addExchange(IExchangeSchema)"]
-    addFrame["addFrame(IFrameSchema)"]
-    addRisk["addRisk(IRiskSchema)"]
-    addSizing["addSizing(ISizingSchema)"]
-    addWalker["addWalker(IWalkerSchema)"]
-    
-    User["User Code"]
-    
-    User --> addStrategy
-    User --> addExchange
-    User --> addFrame
-    User --> addRisk
-    User --> addSizing
-    User --> addWalker
-    
-    addStrategy --> StrategyRegistry["StrategySchemaService"]
-    addExchange --> ExchangeRegistry["ExchangeSchemaService"]
-    addFrame --> FrameRegistry["FrameSchemaService"]
-    addRisk --> RiskRegistry["RiskSchemaService"]
-    addSizing --> SizingRegistry["SizingSchemaService"]
-    addWalker --> WalkerRegistry["WalkerSchemaService"]
-```
+![Mermaid Diagram](./diagrams\08_Component_Registration_0.svg)
 
 **Diagram: Registration Function Flow**
 
@@ -232,22 +208,7 @@ When a component is registered via an `add*` function, the framework performs tw
 1. **Validation**: Schema is validated and stored in a validation service
 2. **Registration**: Schema is stored in a schema service for later retrieval
 
-```mermaid
-sequenceDiagram
-    participant User as "User Code"
-    participant AddFn as "add* Function<br/>(src/function/add.ts)"
-    participant Logger as "LoggerService"
-    participant Validation as "*ValidationService"
-    participant Schema as "*SchemaService"
-    
-    User->>AddFn: addStrategy(schema)
-    AddFn->>Logger: info(method, {schema})
-    AddFn->>Validation: addStrategy(name, schema)
-    Note over Validation: Memoized validation
-    AddFn->>Schema: register(name, schema)
-    Note over Schema: ToolRegistry storage
-    AddFn-->>User: void
-```
+![Mermaid Diagram](./diagrams\08_Component_Registration_1.svg)
 
 **Diagram: Registration Sequence**
 
@@ -284,40 +245,7 @@ export function addStrategy(strategySchema: IStrategySchema) {
 
 Registered schemas are stored in schema services that follow the ToolRegistry pattern. Each component type has a dedicated schema service:
 
-```mermaid
-graph TB
-    subgraph "Schema Services"
-        StrategySchema["StrategySchemaService"]
-        ExchangeSchema["ExchangeSchemaService"]
-        FrameSchema["FrameSchemaService"]
-        RiskSchema["RiskSchemaService"]
-        SizingSchema["SizingSchemaService"]
-        WalkerSchema["WalkerSchemaService"]
-    end
-    
-    subgraph "DI Container"
-        StrategySymbol["TYPES.strategySchemaService"]
-        ExchangeSymbol["TYPES.exchangeSchemaService"]
-        FrameSymbol["TYPES.frameSchemaService"]
-        RiskSymbol["TYPES.riskSchemaService"]
-        SizingSymbol["TYPES.sizingSchemaService"]
-        WalkerSymbol["TYPES.walkerSchemaService"]
-    end
-    
-    StrategySymbol -.->|inject| StrategySchema
-    ExchangeSymbol -.->|inject| ExchangeSchema
-    FrameSymbol -.->|inject| FrameSchema
-    RiskSymbol -.->|inject| RiskSchema
-    SizingSymbol -.->|inject| SizingSchema
-    WalkerSymbol -.->|inject| WalkerSchema
-    
-    StrategySchema -->|"stores"| StrategySchemas["Map<strategyName, IStrategySchema>"]
-    ExchangeSchema -->|"stores"| ExchangeSchemas["Map<exchangeName, IExchangeSchema>"]
-    FrameSchema -->|"stores"| FrameSchemas["Map<frameName, IFrameSchema>"]
-    RiskSchema -->|"stores"| RiskSchemas["Map<riskName, IRiskSchema>"]
-    SizingSchema -->|"stores"| SizingSchemas["Map<sizingName, ISizingSchema>"]
-    WalkerSchema -->|"stores"| WalkerSchemas["Map<walkerName, IWalkerSchema>"]
-```
+![Mermaid Diagram](./diagrams\08_Component_Registration_2.svg)
 
 **Diagram: Schema Service Architecture**
 
@@ -354,33 +282,7 @@ This pattern enables:
 
 Each component type has a corresponding validation service that performs schema validation during registration:
 
-```mermaid
-graph TB
-    subgraph "Validation Services"
-        StrategyVal["StrategyValidationService"]
-        ExchangeVal["ExchangeValidationService"]
-        FrameVal["FrameValidationService"]
-        RiskVal["RiskValidationService"]
-        SizingVal["SizingValidationService"]
-        WalkerVal["WalkerValidationService"]
-    end
-    
-    subgraph "Validation Checks"
-        StrategyChecks["- interval valid<br/>- getSignal is function<br/>- callbacks optional"]
-        ExchangeChecks["- exchangeName unique<br/>- getCandles is function<br/>- format functions present"]
-        FrameChecks["- interval valid<br/>- startDate < endDate<br/>- dates are valid"]
-        RiskChecks["- validations is array<br/>- each validation is function"]
-        SizingChecks["- method is valid<br/>- parameters match method<br/>- percentages in range"]
-        WalkerChecks["- strategies array non-empty<br/>- metric is valid<br/>- exchange/frame exist"]
-    end
-    
-    StrategyVal --> StrategyChecks
-    ExchangeVal --> ExchangeChecks
-    FrameVal --> FrameChecks
-    RiskVal --> RiskChecks
-    SizingVal --> SizingChecks
-    WalkerVal --> WalkerChecks
-```
+![Mermaid Diagram](./diagrams\08_Component_Registration_3.svg)
 
 **Diagram: Validation Layer**
 
@@ -439,41 +341,7 @@ These functions delegate to the validation services' `list()` method, which retu
 
 The relationship between registration and execution follows this sequence:
 
-```mermaid
-stateDiagram-v2
-    [*] --> Registration
-    
-    state Registration {
-        [*] --> AddStrategy
-        AddStrategy --> ValidateStrategy
-        ValidateStrategy --> StoreStrategy
-        StoreStrategy --> [*]
-    }
-    
-    Registration --> ReadyForExecution
-    
-    state ReadyForExecution {
-        [*] --> WaitingForRun
-        note right of WaitingForRun
-            Schemas stored in memory
-            No instances created yet
-        end note
-    }
-    
-    ReadyForExecution --> Execution
-    
-    state Execution {
-        [*] --> RetrieveSchema
-        RetrieveSchema --> CreateClient
-        CreateClient --> ExecuteLogic
-        note right of CreateClient
-            ConnectionService.get()
-            Memoized client instances
-        end note
-    }
-    
-    Execution --> [*]
-```
+![Mermaid Diagram](./diagrams\08_Component_Registration_4.svg)
 
 **Diagram: Registration to Execution Lifecycle**
 
@@ -494,49 +362,7 @@ For details on client instantiation, see [Connection Services](#7.2). For execut
 
 All schema services and validation services are bound using Symbol-based tokens in the DI container. This prevents naming collisions and provides type safety:
 
-```mermaid
-graph LR
-    subgraph "Symbol Definitions<br/>(src/lib/core/types.ts)"
-        StratSym["Symbol('strategySchemaService')"]
-        ExchSym["Symbol('exchangeSchemaService')"]
-        FrameSym["Symbol('frameSchemaService')"]
-        RiskSym["Symbol('riskSchemaService')"]
-        SizingSym["Symbol('sizingSchemaService')"]
-        WalkerSym["Symbol('walkerSchemaService')"]
-    end
-    
-    subgraph "Service Binding<br/>(src/lib/core/provide.ts)"
-        StratSvc["StrategySchemaService"]
-        ExchSvc["ExchangeSchemaService"]
-        FrameSvc["FrameSchemaService"]
-        RiskSvc["RiskSchemaService"]
-        SizingSvc["SizingSchemaService"]
-        WalkerSvc["WalkerSchemaService"]
-    end
-    
-    subgraph "Injection<br/>(src/lib/index.ts)"
-        StratInject["inject<StrategySchemaService>()"]
-        ExchInject["inject<ExchangeSchemaService>()"]
-        FrameInject["inject<FrameSchemaService>()"]
-        RiskInject["inject<RiskSchemaService>()"]
-        SizingInject["inject<SizingSchemaService>()"]
-        WalkerInject["inject<WalkerSchemaService>()"]
-    end
-    
-    StratSym -.->|binds to| StratSvc
-    ExchSym -.->|binds to| ExchSvc
-    FrameSym -.->|binds to| FrameSvc
-    RiskSym -.->|binds to| RiskSvc
-    SizingSym -.->|binds to| SizingSvc
-    WalkerSym -.->|binds to| WalkerSvc
-    
-    StratSvc -.->|resolves to| StratInject
-    ExchSvc -.->|resolves to| ExchInject
-    FrameSvc -.->|resolves to| FrameInject
-    RiskSvc -.->|resolves to| RiskInject
-    SizingSvc -.->|resolves to| SizingInject
-    WalkerSvc -.->|resolves to| WalkerInject
-```
+![Mermaid Diagram](./diagrams\08_Component_Registration_5.svg)
 
 **Diagram: Symbol-Based DI Token Flow**
 

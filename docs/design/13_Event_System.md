@@ -20,73 +20,7 @@ Event Source → Subject.next() → Queued Listener → User Callback
 
 **Event Emitter Diagram**
 
-```mermaid
-graph TB
-    subgraph "Event Sources"
-        BT[BacktestLogicPrivateService]
-        LV[LiveLogicPrivateService]
-        WK[WalkerLogicPrivateService]
-        ST[ClientStrategy]
-        RS[ClientRisk]
-    end
-    
-    subgraph "Emitters (src/config/emitters.ts)"
-        SE["signalEmitter"]
-        SBE["signalBacktestEmitter"]
-        SLE["signalLiveEmitter"]
-        EE["errorEmitter"]
-        DBE["doneBacktestSubject"]
-        DLE["doneLiveSubject"]
-        DWE["doneWalkerSubject"]
-        PE["progressEmitter"]
-        PFE["performanceEmitter"]
-        WE["walkerEmitter"]
-        WCE["walkerCompleteSubject"]
-        VE["validationSubject"]
-    end
-    
-    subgraph "Listener Functions (src/function/event.ts)"
-        LS["listenSignal()"]
-        LSB["listenSignalBacktest()"]
-        LSL["listenSignalLive()"]
-        LE["listenError()"]
-        LDB["listenDoneBacktest()"]
-        LDL["listenDoneLive()"]
-        LDW["listenDoneWalker()"]
-        LP["listenProgress()"]
-        LPF["listenPerformance()"]
-        LW["listenWalker()"]
-        LWC["listenWalkerComplete()"]
-        LV2["listenValidation()"]
-    end
-    
-    BT --> SE
-    BT --> SBE
-    BT --> DBE
-    BT --> PE
-    BT --> PFE
-    LV --> SE
-    LV --> SLE
-    LV --> DLE
-    WK --> WE
-    WK --> WCE
-    WK --> DWE
-    ST --> EE
-    RS --> VE
-    
-    SE --> LS
-    SBE --> LSB
-    SLE --> LSL
-    EE --> LE
-    DBE --> LDB
-    DLE --> LDL
-    DWE --> LDW
-    PE --> LP
-    PFE --> LPF
-    WE --> LW
-    WCE --> LWC
-    VE --> LV2
-```
+![Mermaid Diagram](./diagrams\13_Event_System_0.svg)
 
 **Sources:** [src/config/emitters.ts:1-81](), [src/function/event.ts:1-647]()
 
@@ -230,21 +164,7 @@ export function listenSignal(fn: (event: IStrategyTickResult) => void) {
 
 **Queued Processing Flow**
 
-```mermaid
-sequenceDiagram
-    participant Emitter as signalEmitter
-    participant Queue as Queued Wrapper
-    participant CB1 as Callback 1
-    participant CB2 as Callback 2
-    
-    Emitter->>Queue: Event A
-    Queue->>CB1: Process Event A
-    Emitter->>Queue: Event B (queued)
-    Note over Queue: Wait for CB1
-    CB1-->>Queue: Complete
-    Queue->>CB2: Process Event B
-    CB2-->>Queue: Complete
-```
+![Mermaid Diagram](./diagrams\13_Event_System_1.svg)
 
 **Sources:** [src/function/event.ts:58](), [src/function/event.ts:9]()
 
@@ -256,47 +176,7 @@ sequenceDiagram
 
 **Backtest Signal Event Flow**
 
-```mermaid
-graph LR
-    subgraph "Execution Layer"
-        BTLS["BacktestLogicPrivateService.run()"]
-        SGS["StrategyGlobalService.tick()"]
-        CS["ClientStrategy.tick/backtest()"]
-    end
-    
-    subgraph "Emission Points"
-        E1["signalEmitter.next()"]
-        E2["signalBacktestEmitter.next()"]
-        E3["progressEmitter.next()"]
-        E4["doneBacktestSubject.next()"]
-    end
-    
-    subgraph "Markdown Services"
-        BMS["BacktestMarkdownService.tick()"]
-        SMS["ScheduleMarkdownService.tick()"]
-    end
-    
-    subgraph "User Code"
-        UL1["listenSignalBacktest()"]
-        UL2["listenProgress()"]
-        UL3["listenDoneBacktest()"]
-    end
-    
-    BTLS --> SGS
-    SGS --> CS
-    CS --> E1
-    CS --> E2
-    BTLS --> E3
-    BTLS --> E4
-    
-    E1 --> BMS
-    E2 --> BMS
-    E1 --> SMS
-    
-    E2 --> UL1
-    E3 --> UL2
-    E4 --> UL3
-```
+![Mermaid Diagram](./diagrams\13_Event_System_2.svg)
 
 **Key Emission Points:**
 
@@ -310,48 +190,7 @@ graph LR
 
 **Live Signal Event Flow**
 
-```mermaid
-graph LR
-    subgraph "Execution Layer"
-        LVLS["LiveLogicPrivateService.run()"]
-        SGS2["StrategyGlobalService.tick()"]
-        CS2["ClientStrategy.tick()"]
-    end
-    
-    subgraph "Persistence"
-        PSA["PersistSignalAdapter.writeSignalData()"]
-    end
-    
-    subgraph "Emission Points"
-        E1L["signalEmitter.next()"]
-        E2L["signalLiveEmitter.next()"]
-        E4L["doneLiveSubject.next()"]
-    end
-    
-    subgraph "Markdown Services"
-        LMS["LiveMarkdownService.tick()"]
-        SMS2["ScheduleMarkdownService.tick()"]
-    end
-    
-    subgraph "User Code"
-        UL1L["listenSignalLive()"]
-        UL3L["listenDoneLive()"]
-    end
-    
-    LVLS --> SGS2
-    SGS2 --> CS2
-    CS2 --> PSA
-    CS2 --> E1L
-    CS2 --> E2L
-    LVLS --> E4L
-    
-    E1L --> LMS
-    E2L --> LMS
-    E1L --> SMS2
-    
-    E2L --> UL1L
-    E4L --> UL3L
-```
+![Mermaid Diagram](./diagrams\13_Event_System_3.svg)
 
 **Key Emission Points:**
 
@@ -365,41 +204,7 @@ graph LR
 
 **Walker Progress Event Flow**
 
-```mermaid
-graph LR
-    subgraph "Execution Layer"
-        WKLS["WalkerLogicPrivateService.run()"]
-        BTLS2["BacktestLogicPublicService.run()"]
-    end
-    
-    subgraph "Emission Points"
-        E1W["walkerEmitter.next()"]
-        E2W["walkerCompleteSubject.next()"]
-        E3W["doneWalkerSubject.next()"]
-    end
-    
-    subgraph "Markdown Services"
-        WMS["WalkerMarkdownService.tick()"]
-    end
-    
-    subgraph "User Code"
-        UL1W["listenWalker()"]
-        UL2W["listenWalkerComplete()"]
-        UL3W["listenDoneWalker()"]
-    end
-    
-    WKLS --> BTLS2
-    BTLS2 --> E1W
-    WKLS --> E2W
-    WKLS --> E3W
-    
-    E1W --> WMS
-    E2W --> WMS
-    
-    E1W --> UL1W
-    E2W --> UL2W
-    E3W --> UL3W
-```
+![Mermaid Diagram](./diagrams\13_Event_System_4.svg)
 
 **Key Emission Points:**
 

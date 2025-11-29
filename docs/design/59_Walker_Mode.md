@@ -67,41 +67,7 @@ Sources: [README.md:407-429](), [src/classes/Walker.ts:52-60]()
 
 ### Component Interaction Diagram
 
-```mermaid
-graph TB
-    User["User Code"]
-    WalkerClass["Walker.run()<br/>Walker.background()"]
-    WalkerGlobalService["WalkerGlobalService"]
-    WalkerLogicPublicService["WalkerLogicPublicService"]
-    WalkerLogicPrivateService["WalkerLogicPrivateService"]
-    
-    WalkerSchemaService["WalkerSchemaService<br/>(get walker schema)"]
-    WalkerValidationService["WalkerValidationService"]
-    StrategyValidationService["StrategyValidationService"]
-    
-    BacktestGlobalService["BacktestGlobalService.run()"]
-    BacktestMarkdownService["BacktestMarkdownService<br/>(per strategy)"]
-    WalkerMarkdownService["WalkerMarkdownService<br/>(comparison)"]
-    
-    walkerEmitter["walkerEmitter<br/>(progress events)"]
-    walkerCompleteSubject["walkerCompleteSubject<br/>(final results)"]
-    
-    User --> WalkerClass
-    WalkerClass --> WalkerGlobalService
-    WalkerGlobalService --> WalkerLogicPublicService
-    WalkerLogicPublicService --> WalkerLogicPrivateService
-    
-    WalkerGlobalService --> WalkerSchemaService
-    WalkerGlobalService --> WalkerValidationService
-    WalkerGlobalService --> StrategyValidationService
-    
-    WalkerLogicPrivateService --> BacktestGlobalService
-    WalkerLogicPrivateService --> BacktestMarkdownService
-    WalkerLogicPrivateService --> WalkerMarkdownService
-    
-    WalkerLogicPrivateService --> walkerEmitter
-    WalkerLogicPrivateService --> walkerCompleteSubject
-```
+![Mermaid Diagram](./diagrams\59_Walker_Mode_0.svg)
 
 **Key Responsibilities:**
 
@@ -121,30 +87,7 @@ Sources: [src/classes/Walker.ts:31-87](), [src/lib/services/global/WalkerGlobalS
 
 Walker Mode executes strategies sequentially, not in parallel. This ensures deterministic results and prevents resource contention.
 
-```mermaid
-stateDiagram-v2
-    [*] --> ValidateWalker
-    ValidateWalker --> GetWalkerSchema
-    GetWalkerSchema --> ValidateStrategies
-    ValidateStrategies --> ClearAccumulators
-    
-    ClearAccumulators --> StrategyLoop
-    
-    state StrategyLoop {
-        [*] --> SelectStrategy
-        SelectStrategy --> ClearStrategyData
-        ClearStrategyData --> RunBacktest
-        RunBacktest --> CollectStatistics
-        CollectStatistics --> EmitProgress
-        EmitProgress --> CompareMetrics
-        CompareMetrics --> [*]
-    }
-    
-    StrategyLoop --> StrategyLoop: Next Strategy
-    StrategyLoop --> EmitComplete: All Done
-    EmitComplete --> GenerateReport
-    GenerateReport --> [*]
-```
+![Mermaid Diagram](./diagrams\59_Walker_Mode_1.svg)
 
 **Step-by-Step Process:**
 
@@ -170,20 +113,7 @@ Sources: [src/classes/Walker.ts:39-87](), [src/classes/Walker.ts:64-80]()
 
 Before each strategy runs, Walker clears accumulated data to ensure isolation:
 
-```mermaid
-graph LR
-    ClearLoop["For each strategy"]
-    
-    ClearMarkdown["Clear Markdown Services<br/>backtestMarkdownService.clear<br/>scheduleMarkdownService.clear"]
-    
-    ClearStrategy["Clear Strategy State<br/>strategyGlobalService.clear"]
-    
-    ClearRisk["Clear Risk State<br/>riskGlobalService.clear<br/>(if riskName present)"]
-    
-    ClearLoop --> ClearMarkdown
-    ClearMarkdown --> ClearStrategy
-    ClearStrategy --> ClearRisk
-```
+![Mermaid Diagram](./diagrams\59_Walker_Mode_2.svg)
 
 **Clearing Logic:**
 
@@ -215,30 +145,7 @@ Sources: [src/classes/Walker.ts:64-80]()
 
 ### Event Emission Timeline
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Walker
-    participant WalkerLogic
-    participant Backtest
-    participant walkerEmitter
-    participant walkerCompleteSubject
-    
-    User->>Walker: Walker.background(symbol, {walkerName})
-    Walker->>WalkerLogic: run(symbol, context)
-    
-    loop For each strategy
-        WalkerLogic->>Backtest: Backtest.run(symbol, context)
-        Backtest-->>WalkerLogic: Closed signals
-        WalkerLogic->>WalkerLogic: Collect statistics
-        WalkerLogic->>WalkerLogic: Update best strategy
-        WalkerLogic->>walkerEmitter: Emit progress
-        walkerEmitter-->>User: WalkerContract event
-    end
-    
-    WalkerLogic->>walkerCompleteSubject: Emit final results
-    walkerCompleteSubject-->>User: IWalkerResults
-```
+![Mermaid Diagram](./diagrams\59_Walker_Mode_3.svg)
 
 ### WalkerContract Structure
 
@@ -402,22 +309,7 @@ Sources: [README.md:457-459](), [src/classes/Walker.ts:159-214]()
 
 The `Walker` singleton provides the public API for walker operations.
 
-```mermaid
-graph TB
-    User["User Code"]
-    
-    run["Walker.run(symbol, context)<br/>Returns: AsyncGenerator"]
-    background["Walker.background(symbol, context)<br/>Returns: () => void"]
-    getData["Walker.getData(symbol, walkerName)<br/>Returns: Promise&lt;IWalkerResults&gt;"]
-    getReport["Walker.getReport(symbol, walkerName)<br/>Returns: Promise&lt;string&gt;"]
-    dump["Walker.dump(symbol, walkerName, path?)<br/>Returns: Promise&lt;void&gt;"]
-    
-    User --> run
-    User --> background
-    User --> getData
-    User --> getReport
-    User --> dump
-```
+![Mermaid Diagram](./diagrams\59_Walker_Mode_4.svg)
 
 ### Method Details
 
@@ -614,25 +506,7 @@ Sources: [README.md:417-428]()
 
 ### Walker vs Backtest Mode
 
-```mermaid
-graph LR
-    subgraph "Backtest Mode"
-        B1["Single Strategy"]
-        B2["Single Execution"]
-        B3["Detailed Results"]
-    end
-    
-    subgraph "Walker Mode"
-        W1["Multiple Strategies"]
-        W2["Sequential Execution"]
-        W3["Comparative Results"]
-    end
-    
-    BacktestGlobalService["BacktestGlobalService.run()"]
-    
-    B2 --> BacktestGlobalService
-    W2 --> BacktestGlobalService
-```
+![Mermaid Diagram](./diagrams\59_Walker_Mode_5.svg)
 
 **Key Differences:**
 
@@ -667,29 +541,7 @@ Sources: [src/classes/Walker.ts:64-80](), [src/classes/Backtest.ts:38-66]()
 
 Walker performs comprehensive validation before execution:
 
-```mermaid
-graph TB
-    Start["Walker.run()"]
-    
-    V1["WalkerValidationService<br/>validate(walkerName)"]
-    V2["ExchangeValidationService<br/>validate(exchangeName)"]
-    V3["FrameValidationService<br/>validate(frameName)"]
-    
-    LoopStart["For each strategy"]
-    V4["StrategyValidationService<br/>validate(strategyName)"]
-    V5["RiskValidationService<br/>validate(riskName)"]
-    
-    Execute["WalkerLogicPublicService.run()"]
-    
-    Start --> V1
-    V1 --> V2
-    V2 --> V3
-    V3 --> LoopStart
-    LoopStart --> V4
-    V4 --> V5
-    V5 --> LoopStart
-    LoopStart --> Execute
-```
+![Mermaid Diagram](./diagrams\59_Walker_Mode_6.svg)
 
 **Validation Sequence:**
 

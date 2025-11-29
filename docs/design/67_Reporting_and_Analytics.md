@@ -20,77 +20,7 @@ Additionally, the framework provides performance profiling via `performanceEmitt
 
 **Reporting System Architecture Diagram**
 
-```mermaid
-graph TB
-    subgraph "Execution Layer"
-        BacktestLogic["BacktestLogicPrivateService"]
-        LiveLogic["LiveLogicPrivateService"]
-        WalkerLogic["WalkerLogicPrivateService"]
-        Strategy["ClientStrategy"]
-    end
-    
-    subgraph "Event System"
-        SignalEmitter["signalEmitter"]
-        BacktestEmitter["signalBacktestEmitter"]
-        LiveEmitter["signalLiveEmitter"]
-        WalkerEmitter["walkerEmitter"]
-        WalkerComplete["walkerCompleteSubject"]
-        PerfEmitter["performanceEmitter"]
-    end
-    
-    subgraph "Reporting Layer"
-        BacktestMD["BacktestMarkdownService"]
-        LiveMD["LiveMarkdownService"]
-        WalkerMD["WalkerMarkdownService"]
-        ScheduleMD["ScheduleMarkdownService"]
-        
-        subgraph "Storage (Memoized per strategy/walker)"
-            BacktestStore["ReportStorage"]
-            LiveStore["ReportStorage"]
-            WalkerStore["ReportStorage"]
-            ScheduleStore["ReportStorage"]
-        end
-    end
-    
-    subgraph "Public API"
-        BacktestAPI["Backtest.getData()<br/>Backtest.getReport()<br/>Backtest.dump()"]
-        LiveAPI["Live.getData()<br/>Live.getReport()<br/>Live.dump()"]
-        WalkerAPI["Walker.getData()<br/>Walker.getReport()<br/>Walker.dump()"]
-        ScheduleAPI["Schedule.getData()<br/>Schedule.getReport()<br/>Schedule.dump()"]
-    end
-    
-    subgraph "Output"
-        MDFiles["./logs/backtest/*.md<br/>./logs/live/*.md<br/>./logs/walker/*.md<br/>./logs/schedule/*.md"]
-    end
-    
-    Strategy -->|"closed signals"| BacktestEmitter
-    Strategy -->|"all tick events"| LiveEmitter
-    Strategy -->|"scheduled/cancelled"| SignalEmitter
-    WalkerLogic -->|"progress updates"| WalkerEmitter
-    WalkerLogic -->|"final results"| WalkerComplete
-    BacktestLogic -->|"timing metrics"| PerfEmitter
-    LiveLogic -->|"timing metrics"| PerfEmitter
-    
-    BacktestEmitter -->|"subscribe"| BacktestMD
-    LiveEmitter -->|"subscribe"| LiveMD
-    WalkerEmitter -->|"subscribe"| WalkerMD
-    SignalEmitter -->|"subscribe"| ScheduleMD
-    
-    BacktestMD --> BacktestStore
-    LiveMD --> LiveStore
-    WalkerMD --> WalkerStore
-    ScheduleMD --> ScheduleStore
-    
-    BacktestAPI --> BacktestMD
-    LiveAPI --> LiveMD
-    WalkerAPI --> WalkerMD
-    ScheduleAPI --> ScheduleMD
-    
-    BacktestMD -->|"writeFile"| MDFiles
-    LiveMD -->|"writeFile"| MDFiles
-    WalkerMD -->|"writeFile"| MDFiles
-    ScheduleMD -->|"writeFile"| MDFiles
-```
+![Mermaid Diagram](./diagrams\67_Reporting_and_Analytics_0.svg)
 
 **Sources**: [src/lib/services/markdown/BacktestMarkdownService.ts:1-533](), [src/lib/services/markdown/LiveMarkdownService.ts:1-737](), [src/lib/services/markdown/ScheduleMarkdownService.ts:1-535](), [src/config/emitters.ts:1-81](), [src/classes/Backtest.ts:1-208](), [src/classes/Live.ts:1-220](), [src/classes/Walker.ts:1-274](), [src/classes/Schedule.ts:1-135]()
 
@@ -202,49 +132,7 @@ Scheduled signals are created when `signal.priceOpen` is specified (price must r
 
 Both services define their reports using a `Column` interface that specifies extraction and formatting logic:
 
-```mermaid
-classDiagram
-    class Column {
-        +string key
-        +string label
-        +format(data) string
-    }
-    
-    class BacktestColumns {
-        signalId
-        symbol
-        position
-        note
-        openPrice
-        closePrice
-        takeProfit
-        stopLoss
-        pnl
-        closeReason
-        duration
-        openTimestamp
-        closeTimestamp
-    }
-    
-    class LiveColumns {
-        timestamp
-        action
-        symbol
-        signalId
-        position
-        note
-        currentPrice
-        openPrice
-        takeProfit
-        stopLoss
-        pnl
-        closeReason
-        duration
-    }
-    
-    Column <|-- BacktestColumns
-    Column <|-- LiveColumns
-```
+![Mermaid Diagram](./diagrams\67_Reporting_and_Analytics_1.svg)
 
 **Sources**: [src/lib/services/markdown/BacktestMarkdownService.ts:18-100](), [src/lib/services/markdown/LiveMarkdownService.ts:53-137]()
 
@@ -348,31 +236,7 @@ The table is sorted descending by the selected metric, making it easy to identif
 
 Both services use an internal `ReportStorage` class to manage data accumulation:
 
-```mermaid
-stateDiagram-v2
-    direction LR
-    
-    [*] --> Empty: new ReportStorage()
-    
-    Empty --> Accumulating: addSignal() / addEvent()
-    
-    Accumulating --> Accumulating: More signals/events
-    
-    Accumulating --> Reporting: getReport()
-    note right of Reporting
-        Generates markdown table
-        Calculates statistics
-    end note
-    
-    Accumulating --> FileOutput: dump()
-    note right of FileOutput
-        Writes to ./logs/{mode}/*.md
-        Creates directory if needed
-    end note
-    
-    FileOutput --> Accumulating: Continue accumulation
-    Reporting --> Accumulating: Continue accumulation
-```
+![Mermaid Diagram](./diagrams\67_Reporting_and_Analytics_2.svg)
 
 **Sources**: [src/lib/services/markdown/BacktestMarkdownService.ts:106-179](), [src/lib/services/markdown/LiveMarkdownService.ts:143-331]()
 
@@ -398,31 +262,7 @@ Each closed signal is appended to the `_signalList` array without modification.
 
 The live service implements an update-or-append model to handle signal state transitions:
 
-```mermaid
-flowchart TD
-    A["tick(data)"] --> B{data.action?}
-    
-    B -->|"idle"| C["addIdleEvent()<br/>Append new event"]
-    B -->|"opened"| D["addOpenedEvent()<br/>Append new event"]
-    B -->|"active"| E["addActiveEvent()<br/>Find by signalId"]
-    B -->|"closed"| F["addClosedEvent()<br/>Find by signalId"]
-    
-    E --> G{Found?}
-    F --> H{Found?}
-    
-    G -->|Yes| I["Replace existing"]
-    G -->|No| J["Append new"]
-    
-    H -->|Yes| K["Replace existing"]
-    H -->|No| L["Append new"]
-    
-    C --> M["_eventList updated"]
-    D --> M
-    I --> M
-    J --> M
-    K --> M
-    L --> M
-```
+![Mermaid Diagram](./diagrams\67_Reporting_and_Analytics_3.svg)
 
 This design ensures that each signal appears only once in the final report, showing its most recent state.
 
@@ -661,32 +501,7 @@ All markdown services expose a `getReport()` method that returns a markdown-form
 
 **Report Generation Flow Diagram**
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant API as "Backtest/Live/Schedule/Walker"
-    participant Service as "MarkdownService"
-    participant Storage as "ReportStorage"
-    
-    User->>API: getReport(strategyName)
-    API->>Service: getReport(strategyName)
-    Service->>Service: getStorage(strategyName)
-    Service->>Storage: getReport(strategyName)
-    
-    alt Has data
-        Storage->>Storage: Build column headers
-        Storage->>Storage: Format each row
-        Storage->>Storage: Create markdown table
-        Storage->>Storage: Calculate statistics
-        Storage->>Storage: Append metrics footer
-        Storage-->>Service: markdown string
-    else No data
-        Storage-->>Service: "No signals/events yet"
-    end
-    
-    Service-->>API: markdown string
-    API-->>User: markdown string
-```
+![Mermaid Diagram](./diagrams\67_Reporting_and_Analytics_4.svg)
 
 **Usage Example**
 
@@ -805,23 +620,7 @@ await Walker.clear();
 
 Both services use the `singleshot` decorator from `functools-kit` to ensure initialization happens exactly once:
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Service as "MarkdownService"
-    participant Emitter as "signalEmitter"
-    
-    Note over Service: First call to any method
-    User->>Service: getReport() / dump() / clear()
-    Service->>Service: init() (via singleshot)
-    Service->>Emitter: subscribe(this.tick)
-    Note over Emitter: Service now receives all signal events
-    
-    Note over Service: Subsequent calls
-    User->>Service: getReport()
-    Note over Service: init() not called again
-    Service->>Service: Execute method directly
-```
+![Mermaid Diagram](./diagrams\67_Reporting_and_Analytics_5.svg)
 
 The `init()` method is protected and automatically invoked on first service use. It subscribes the service's `tick()` method to the appropriate signal emitter.
 
@@ -829,28 +628,7 @@ The `init()` method is protected and automatically invoked on first service use.
 
 ### Event Emitter Binding
 
-```mermaid
-graph LR
-    subgraph "Event Emitters (config/emitters)"
-        BacktestEmit["signalBacktestEmitter"]
-        LiveEmit["signalLiveEmitter"]
-    end
-    
-    subgraph "Markdown Services"
-        BacktestSvc["BacktestMarkdownService.tick()"]
-        LiveSvc["LiveMarkdownService.tick()"]
-    end
-    
-    subgraph "Signal Sources"
-        Strategy["ClientStrategy<br/>via BacktestLogic/LiveLogic"]
-    end
-    
-    Strategy -->|"emit IStrategyTickResult"| BacktestEmit
-    Strategy -->|"emit IStrategyTickResult"| LiveEmit
-    
-    BacktestEmit -.->|"subscribe (init)"| BacktestSvc
-    LiveEmit -.->|"subscribe (init)"| LiveSvc
-```
+![Mermaid Diagram](./diagrams\67_Reporting_and_Analytics_6.svg)
 
 The emitters are defined in `src/config/emitters.ts` and use the event system to decouple signal generation from report accumulation.
 
@@ -905,27 +683,7 @@ return str.newline(
 
 The markdown services operate completely independently from the main execution loop:
 
-```mermaid
-graph TB
-    subgraph "Main Execution (Synchronous)"
-        Logic["BacktestLogicPrivateService /<br/>LiveLogicPrivateService"]
-        Strategy["ClientStrategy"]
-        Emitter["Event Emitter"]
-    end
-    
-    subgraph "Reporting (Asynchronous)"
-        MDService["MarkdownService"]
-        Storage["ReportStorage"]
-    end
-    
-    Logic --> Strategy
-    Strategy -->|"Yield result to user"| User["User Iterator"]
-    Strategy -->|"Emit event (non-blocking)"| Emitter
-    Emitter -.->|"Async callback"| MDService
-    MDService --> Storage
-    
-    User -->|"Later: getReport() / dump()"| MDService
-```
+![Mermaid Diagram](./diagrams\67_Reporting_and_Analytics_7.svg)
 
 This architecture ensures that report generation never blocks strategy execution or impacts performance. The event-driven design allows reports to be generated incrementally as signals close, rather than requiring post-processing of execution results.
 

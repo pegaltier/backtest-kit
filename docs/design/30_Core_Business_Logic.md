@@ -11,44 +11,7 @@ For information about the service layer that wraps these client classes, see [Se
 
 Client classes form Layer 4 in the framework's six-layer architecture. They implement business rules and algorithms without any dependency on the DI container, making them independently testable and memory-efficient through prototype methods.
 
-```mermaid
-graph TB
-    subgraph "Layer 3: Connection Services"
-        StrategyConn["StrategyConnectionService<br/>Memoized instance management"]
-        ExchangeConn["ExchangeConnectionService<br/>Memoized instance management"]
-        RiskConn["RiskConnectionService<br/>Memoized instance management"]
-        FrameConn["FrameConnectionService<br/>Memoized instance management"]
-        SizingConn["SizingConnectionService<br/>Memoized instance management"]
-    end
-    
-    subgraph "Layer 4: Client Classes (Pure Business Logic)"
-        ClientStrategy["ClientStrategy<br/>Signal lifecycle state machine<br/>TP/SL monitoring<br/>Persistence coordination"]
-        ClientExchange["ClientExchange<br/>Market data fetching<br/>VWAP calculation<br/>Price/quantity formatting"]
-        ClientRisk["ClientRisk<br/>Portfolio position tracking<br/>Custom validation execution<br/>Concurrent position limits"]
-        ClientFrame["ClientFrame<br/>Timeframe generation<br/>Interval-based timestamps"]
-        ClientSizing["ClientSizing<br/>Position size calculation<br/>Fixed/Kelly/ATR methods"]
-    end
-    
-    subgraph "Layer 5: Schema & Validation"
-        StrategySchema["IStrategySchema"]
-        ExchangeSchema["IExchangeSchema"]
-        RiskSchema["IRiskSchema"]
-        FrameSchema["IFrameSchema"]
-        SizingSchema["ISizingSchema"]
-    end
-    
-    StrategyConn -->|"new ClientStrategy(params)"| ClientStrategy
-    ExchangeConn -->|"new ClientExchange(params)"| ClientExchange
-    RiskConn -->|"new ClientRisk(params)"| ClientRisk
-    FrameConn -->|"new ClientFrame(params)"| ClientFrame
-    SizingConn -->|"new ClientSizing(params)"| ClientSizing
-    
-    StrategySchema -.->|"provides config"| StrategyConn
-    ExchangeSchema -.->|"provides config"| ExchangeConn
-    RiskSchema -.->|"provides config"| RiskConn
-    FrameSchema -.->|"provides config"| FrameConn
-    SizingSchema -.->|"provides config"| SizingConn
-```
+![Mermaid Diagram](./diagrams\30_Core_Business_Logic_0.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:1-1300](), [src/lib/services/connection/StrategyConnectionService.ts:76-94](), [docs/internals.md:28-39]()
 
@@ -72,15 +35,7 @@ The framework provides five client classes, each responsible for a specific doma
 
 Client classes receive all dependencies through constructor parameters, avoiding framework-level dependency injection:
 
-```mermaid
-graph LR
-    Schema["Schema<br/>(IStrategySchema)"] -->|"extracted properties"| Params["Constructor Params<br/>(IStrategyParams)"]
-    Services["Service References<br/>(logger, exchange, risk)"] -->|"injected references"| Params
-    Contexts["Context Services<br/>(execution, method)"] -->|"runtime contexts"| Params
-    
-    Params -->|"plain object"| Constructor["new ClientStrategy(params)"]
-    Constructor --> Instance["ClientStrategy Instance<br/>(no DI container access)"]
-```
+![Mermaid Diagram](./diagrams\30_Core_Business_Logic_1.svg)
 
 This design allows client classes to be instantiated and tested independently without the DI container. Constructor parameters are plain objects conforming to interfaces like `IStrategyParams`.
 
@@ -119,24 +74,7 @@ Client classes extensively use module-level private functions prefixed with uppe
 3. Allows helper functions to be unit tested independently
 4. Reduces memory overhead by sharing functions across all instances
 
-```mermaid
-graph TB
-    ClientStrategy["ClientStrategy Class<br/>(public interface)"]
-    
-    subgraph "Module-Level Private Functions"
-        GET_SIGNAL_FN["GET_SIGNAL_FN<br/>Signal generation wrapper"]
-        VALIDATE_SIGNAL_FN["VALIDATE_SIGNAL_FN<br/>Price and TP/SL validation"]
-        CHECK_PENDING_FN["CHECK_PENDING_SIGNAL_COMPLETION_FN<br/>TP/SL/time monitoring"]
-        CLOSE_PENDING_FN["CLOSE_PENDING_SIGNAL_FN<br/>Position closure"]
-        PROCESS_CANDLES_FN["PROCESS_PENDING_SIGNAL_CANDLES_FN<br/>Backtest candle iteration"]
-    end
-    
-    ClientStrategy -->|"calls"| GET_SIGNAL_FN
-    ClientStrategy -->|"calls"| CHECK_PENDING_FN
-    GET_SIGNAL_FN -->|"calls"| VALIDATE_SIGNAL_FN
-    CHECK_PENDING_FN -->|"calls"| CLOSE_PENDING_FN
-    ClientStrategy -->|"calls"| PROCESS_CANDLES_FN
-```
+![Mermaid Diagram](./diagrams\30_Core_Business_Logic_2.svg)
 
 **Example private function pattern:**
 
@@ -148,35 +86,7 @@ graph TB
 
 Connection Services act as factories that create and memoize Client class instances. The memoization pattern ensures one client instance per schema name:
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant StrategyGlobalService
-    participant StrategyConnectionService
-    participant StrategySchemaService
-    participant ClientStrategy
-    participant Memoize as "memoize() cache"
-    
-    User->>StrategyGlobalService: tick()
-    StrategyGlobalService->>StrategyConnectionService: tick()
-    StrategyConnectionService->>StrategyConnectionService: getStrategy(strategyName)
-    
-    alt First call for strategyName
-        StrategyConnectionService->>StrategySchemaService: get(strategyName)
-        StrategySchemaService-->>StrategyConnectionService: IStrategySchema
-        StrategyConnectionService->>ClientStrategy: new ClientStrategy(params)
-        ClientStrategy-->>StrategyConnectionService: instance
-        StrategyConnectionService->>Memoize: cache[strategyName] = instance
-    else Subsequent calls
-        StrategyConnectionService->>Memoize: retrieve cache[strategyName]
-        Memoize-->>StrategyConnectionService: cached instance
-    end
-    
-    StrategyConnectionService->>ClientStrategy: tick()
-    ClientStrategy-->>StrategyConnectionService: IStrategyTickResult
-    StrategyConnectionService-->>StrategyGlobalService: IStrategyTickResult
-    StrategyGlobalService-->>User: IStrategyTickResult
-```
+![Mermaid Diagram](./diagrams\30_Core_Business_Logic_3.svg)
 
 The memoization key is the schema name string (e.g., `strategyName`, `exchangeName`), ensuring that multiple calls with the same name reuse the same client instance.
 
@@ -208,46 +118,7 @@ Client instances persist for the duration of the application process and maintai
 
 Client classes collaborate through dependency references passed in constructor parameters, forming a dependency graph:
 
-```mermaid
-graph TB
-    subgraph "ClientStrategy Dependencies"
-        CS_Logger["logger: ILogger<br/>Logging service"]
-        CS_Exchange["exchange: IExchange<br/>(ClientExchange instance)"]
-        CS_Risk["risk: IRisk<br/>(ClientRisk instance)"]
-        CS_Execution["execution: TExecutionContextService<br/>Symbol, timestamp, backtest flag"]
-        CS_Method["method: TMethodContextService<br/>Strategy/exchange/frame names"]
-    end
-    
-    subgraph "ClientExchange Dependencies"
-        CE_Logger["logger: ILogger<br/>Logging service"]
-        CE_Schema["getCandles: Function<br/>User-provided implementation"]
-        CE_Format["formatPrice: Function<br/>formatQuantity: Function"]
-        CE_Execution["execution: TExecutionContextService"]
-        CE_Method["method: TMethodContextService"]
-    end
-    
-    subgraph "ClientRisk Dependencies"
-        CR_Logger["logger: ILogger<br/>Logging service"]
-        CR_Validations["validations: Array<Function><br/>Custom validation rules"]
-        CR_MaxPositions["maxConcurrentPositions: number<br/>Portfolio limit"]
-    end
-    
-    ClientStrategy -->|"references"| CS_Logger
-    ClientStrategy -->|"references"| CS_Exchange
-    ClientStrategy -->|"references"| CS_Risk
-    ClientStrategy -->|"references"| CS_Execution
-    ClientStrategy -->|"references"| CS_Method
-    
-    ClientExchange -->|"references"| CE_Logger
-    ClientExchange -->|"references"| CE_Schema
-    ClientExchange -->|"references"| CE_Format
-    ClientExchange -->|"references"| CE_Execution
-    ClientExchange -->|"references"| CE_Method
-    
-    ClientRisk -->|"references"| CR_Logger
-    ClientRisk -->|"references"| CR_Validations
-    ClientRisk -->|"references"| CR_MaxPositions
-```
+![Mermaid Diagram](./diagrams\30_Core_Business_Logic_4.svg)
 
 **Key collaboration patterns:**
 

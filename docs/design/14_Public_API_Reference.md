@@ -9,31 +9,7 @@ For detailed implementation details of the underlying service architecture, see 
 
 The public API is organized into six functional groups, all exported from the main entry point:
 
-```mermaid
-graph TB
-    subgraph "Public API (src/index.ts)"
-        Config["Configuration Functions<br/>addStrategy, addExchange, addFrame"]
-        BacktestAPI["Backtest Execution<br/>Backtest.run, background, getReport, dump"]
-        LiveAPI["Live Trading<br/>Live.run, background, getReport, dump"]
-        Exchange["Exchange Utilities<br/>getCandles, getAveragePrice, formatPrice, etc"]
-        Events["Event Listeners<br/>listenSignal, listenSignalBacktest, listenSignalLive"]
-        Setup["Setup Functions<br/>setLogger, PersistSignalAdaper"]
-    end
-    
-    subgraph "Type Exports"
-        Types["Interfaces & Types<br/>IStrategySchema, IExchangeSchema, IFrameSchema<br/>ISignalRow, IStrategyTickResult, ICandleData"]
-    end
-    
-    subgraph "Context Services (Advanced)"
-        Context["ExecutionContextService<br/>MethodContextService"]
-    end
-    
-    Config --> Types
-    BacktestAPI --> Types
-    LiveAPI --> Types
-    Exchange --> Types
-    Events --> Types
-```
+![Mermaid Diagram](./diagrams\14_Public_API_Reference_0.svg)
 
 **Public API Groups:**
 
@@ -52,36 +28,7 @@ graph TB
 
 This diagram maps public API functions to their concrete implementations in the codebase:
 
-```mermaid
-graph LR
-    subgraph "Public API Functions"
-        addStrategy["addStrategy()"]
-        addExchange["addExchange()"]
-        addFrame["addFrame()"]
-        BacktestRun["Backtest.run()"]
-        LiveRun["Live.run()"]
-        getCandles["getCandles()"]
-        listenSignal["listenSignal()"]
-    end
-    
-    subgraph "Implementation Classes"
-        StrategySchemaService["StrategySchemaService<br/>src/lib/services/schema"]
-        ExchangeSchemaService["ExchangeSchemaService<br/>src/lib/services/schema"]
-        FrameSchemaService["FrameSchemaService<br/>src/lib/services/schema"]
-        BacktestUtils["BacktestUtils class<br/>src/classes/Backtest.ts"]
-        LiveUtils["LiveUtils class<br/>src/classes/Live.ts"]
-        ExchangeGlobalService["ExchangeGlobalService<br/>src/lib/services/global"]
-        EventEmitter["EventEmitter<br/>src/function/event.ts"]
-    end
-    
-    addStrategy --> StrategySchemaService
-    addExchange --> ExchangeSchemaService
-    addFrame --> FrameSchemaService
-    BacktestRun --> BacktestUtils
-    LiveRun --> LiveUtils
-    getCandles --> ExchangeGlobalService
-    listenSignal --> EventEmitter
-```
+![Mermaid Diagram](./diagrams\14_Public_API_Reference_1.svg)
 
 **Sources:** [src/index.ts:1-56](), [src/function/add.ts](), [src/classes/Backtest.ts](), [src/classes/Live.ts](), [src/function/exchange.ts](), [src/function/event.ts]()
 

@@ -59,52 +59,7 @@ Sources: [types.d.ts:168-176](), [types.d.ts:185-221]()
 
 ## Architecture Diagram
 
-```mermaid
-graph TB
-    subgraph "Layer 3: Connection Services"
-        ExchangeConnection["ExchangeConnectionService<br/>Memoized instance management"]
-    end
-    
-    subgraph "Layer 4: Client Classes"
-        ClientExchange["ClientExchange<br/>Business logic implementation"]
-    end
-    
-    subgraph "User-Defined Schema"
-        Schema["IExchangeSchema<br/>exchangeName<br/>getCandles()<br/>formatPrice()<br/>formatQuantity()"]
-    end
-    
-    subgraph "Runtime Dependencies"
-        Logger["ILogger<br/>Debug output"]
-        ExecutionCtx["ExecutionContextService<br/>symbol, when, backtest"]
-    end
-    
-    subgraph "Data Sources"
-        API["Exchange API<br/>CCXT, Binance, etc."]
-        DB["Database<br/>PostgreSQL, MongoDB"]
-        Files["CSV/JSON Files<br/>Historical data"]
-    end
-    
-    subgraph "Consumers"
-        Strategy["ClientStrategy<br/>Signal generation"]
-        Live["LiveLogicPrivateService<br/>Monitoring"]
-        Backtest["BacktestLogicPrivateService<br/>Simulation"]
-    end
-    
-    Schema --> ExchangeConnection
-    Logger --> ExchangeConnection
-    ExecutionCtx --> ExchangeConnection
-    
-    ExchangeConnection --> |"Instantiate"| ClientExchange
-    
-    ClientExchange --> |"Delegate to"| Schema
-    Schema --> |"Fetch from"| API
-    Schema --> |"Fetch from"| DB
-    Schema --> |"Fetch from"| Files
-    
-    ClientExchange --> |"Provide data to"| Strategy
-    ClientExchange --> |"Provide data to"| Live
-    ClientExchange --> |"Provide data to"| Backtest
-```
+![Mermaid Diagram](./diagrams\32_ClientExchange_0.svg)
 
 **Diagram: ClientExchange Position in Architecture**
 
@@ -169,49 +124,7 @@ Sources: [types.d.ts:237-244]()
 
 ## Market Data Flow Diagram
 
-```mermaid
-graph LR
-    subgraph "Execution Context"
-        When["execution.when<br/>Current timestamp"]
-        Backtest["execution.backtest<br/>Mode flag"]
-    end
-    
-    subgraph "ClientExchange Methods"
-        GetCandles["getCandles()<br/>Historical backwards"]
-        GetNext["getNextCandles()<br/>Future forwards"]
-    end
-    
-    subgraph "User Schema"
-        UserGetCandles["IExchangeSchema.getCandles()<br/>Custom data source"]
-    end
-    
-    subgraph "Timestamp Calculation"
-        CalcSince["Calculate since:<br/>when - (interval × limit)"]
-        UseSince["Use since:<br/>execution.when"]
-    end
-    
-    subgraph "Data Source"
-        Source["API/Database/Files"]
-    end
-    
-    subgraph "Result Processing"
-        OnCandle["callbacks.onCandleData"]
-        Return["Return ICandleData[]"]
-    end
-    
-    When --> GetCandles
-    When --> GetNext
-    
-    GetCandles --> CalcSince
-    GetNext --> UseSince
-    
-    CalcSince --> UserGetCandles
-    UseSince --> UserGetCandles
-    
-    UserGetCandles --> Source
-    Source --> OnCandle
-    OnCandle --> Return
-```
+![Mermaid Diagram](./diagrams\32_ClientExchange_1.svg)
 
 **Diagram: Market Data Fetching Flow**
 
@@ -231,28 +144,7 @@ Where **Typical Price = (High + Low + Close) / 3**
 
 ### Implementation Flow
 
-```mermaid
-graph TB
-    Start["getAveragePrice(symbol)"]
-    
-    GetCandles["Call getCandles()<br/>interval='1m'<br/>limit=CC_AVG_PRICE_CANDLES_COUNT"]
-    
-    Loop["For each candle"]
-    CalcTypical["typicalPrice =<br/>(high + low + close) / 3"]
-    Accumulate["totalPriceVolume +=<br/>typicalPrice × volume<br/>totalVolume += volume"]
-    
-    CalcVWAP["vwap =<br/>totalPriceVolume / totalVolume"]
-    
-    Return["Return vwap"]
-    
-    Start --> GetCandles
-    GetCandles --> Loop
-    Loop --> CalcTypical
-    CalcTypical --> Accumulate
-    Accumulate --> |"Next candle"| Loop
-    Loop --> |"All processed"| CalcVWAP
-    CalcVWAP --> Return
-```
+![Mermaid Diagram](./diagrams\32_ClientExchange_2.svg)
 
 **Diagram: VWAP Calculation Algorithm**
 
@@ -337,42 +229,7 @@ Sources: [types.d.ts:246-251](), [types.d.ts:204-210]()
 
 ### Context Propagation Pattern
 
-```mermaid
-graph TB
-    subgraph "Public Service Layer"
-        BacktestPublic["BacktestLogicPublicService.run()"]
-        LivePublic["LiveLogicPublicService.run()"]
-    end
-    
-    subgraph "Context Establishment"
-        MethodCtx["MethodContextService.runAsyncIterator()<br/>exchangeName, strategyName, frameName"]
-        ExecCtx["ExecutionContextService.runInContext()<br/>symbol, when, backtest"]
-    end
-    
-    subgraph "Connection Service"
-        ExchangeConn["ExchangeConnectionService.get()<br/>Resolves exchangeName from MethodContext"]
-    end
-    
-    subgraph "Client Class"
-        ClientExchange["ClientExchange<br/>Reads execution.when<br/>Reads execution.backtest"]
-    end
-    
-    subgraph "Operations"
-        GetCandles["getCandles()<br/>since = when - offset"]
-        GetAvg["getAveragePrice()<br/>Uses current timestamp"]
-    end
-    
-    BacktestPublic --> MethodCtx
-    LivePublic --> MethodCtx
-    
-    MethodCtx --> ExecCtx
-    ExecCtx --> ExchangeConn
-    
-    ExchangeConn --> ClientExchange
-    
-    ClientExchange --> GetCandles
-    ClientExchange --> GetAvg
-```
+![Mermaid Diagram](./diagrams\32_ClientExchange_3.svg)
 
 **Diagram: Context Propagation to ClientExchange**
 
@@ -584,45 +441,7 @@ Sources: [types.d.ts:148]()
 
 ## Summary: ClientExchange Responsibilities
 
-```mermaid
-graph TB
-    subgraph "Input: User Schema"
-        Schema["IExchangeSchema<br/>getCandles()<br/>formatPrice()<br/>formatQuantity()"]
-    end
-    
-    subgraph "Input: Runtime Context"
-        Context["ExecutionContext<br/>symbol, when, backtest"]
-    end
-    
-    subgraph "ClientExchange Core"
-        Exchange["ClientExchange"]
-    end
-    
-    subgraph "Output: Market Data"
-        Historical["Historical Candles<br/>getCandles()"]
-        Future["Future Candles<br/>getNextCandles()"]
-        VWAP["VWAP Price<br/>getAveragePrice()"]
-    end
-    
-    subgraph "Output: Formatting"
-        Price["Formatted Prices<br/>formatPrice()"]
-        Qty["Formatted Quantities<br/>formatQuantity()"]
-    end
-    
-    subgraph "Output: Events"
-        Events["Lifecycle Events<br/>onCandleData()"]
-    end
-    
-    Schema --> Exchange
-    Context --> Exchange
-    
-    Exchange --> Historical
-    Exchange --> Future
-    Exchange --> VWAP
-    Exchange --> Price
-    Exchange --> Qty
-    Exchange --> Events
-```
+![Mermaid Diagram](./diagrams\32_ClientExchange_4.svg)
 
 **Diagram: ClientExchange Inputs and Outputs**
 

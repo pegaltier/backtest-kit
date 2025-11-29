@@ -40,52 +40,7 @@ Execution Mode Global Services provide entry points for running backtests and li
 
 ## Global Service Architecture
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        AddFunctions["add* functions<br/>(addStrategy, addExchange, etc)"]
-        BacktestAPI["Backtest.run()<br/>Backtest.background()"]
-        LiveAPI["Live.run()<br/>Live.background()"]
-        ListFunctions["list* functions<br/>(listStrategies, listRisks, etc)"]
-    end
-    
-    subgraph "Global Services Layer"
-        ComponentGlobal["Component Global Services<br/>StrategyGlobalService<br/>ExchangeGlobalService<br/>RiskGlobalService<br/>etc."]
-        ExecutionGlobal["Execution Global Services<br/>BacktestGlobalService<br/>LiveGlobalService<br/>WalkerGlobalService"]
-    end
-    
-    subgraph "Validation & Schema Layer"
-        ValidationServices["*ValidationService<br/>Memoized validation<br/>Schema existence checks"]
-        SchemaServices["*SchemaService<br/>ToolRegistry storage<br/>Schema retrieval"]
-    end
-    
-    subgraph "Connection & Logic Layer"
-        ConnectionServices["*ConnectionService<br/>Memoized client instances"]
-        LogicServices["*LogicPublicService<br/>Context management<br/>Execution orchestration"]
-    end
-    
-    subgraph "Client Layer"
-        Clients["Client Classes<br/>ClientStrategy<br/>ClientExchange<br/>ClientRisk<br/>etc."]
-    end
-    
-    AddFunctions --> ValidationServices
-    AddFunctions --> SchemaServices
-    ListFunctions --> ValidationServices
-    
-    BacktestAPI --> ExecutionGlobal
-    LiveAPI --> ExecutionGlobal
-    
-    ComponentGlobal --> ValidationServices
-    ComponentGlobal --> ConnectionServices
-    ExecutionGlobal --> ValidationServices
-    ExecutionGlobal --> LogicServices
-    
-    ConnectionServices --> SchemaServices
-    ConnectionServices --> Clients
-    
-    style ComponentGlobal fill:#f9f9f9
-    style ExecutionGlobal fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\41_Global_Services_0.svg)
 
 **Purpose**: This diagram illustrates how Global Services act as an intermediary layer between public APIs and lower-level services. Component Global Services orchestrate validation and delegate to Connection Services, while Execution Global Services delegate to Logic Services.
 
@@ -99,21 +54,7 @@ Component Global Services follow a consistent implementation pattern with three 
 
 ### Standard Structure
 
-```mermaid
-graph LR
-    subgraph "RiskGlobalService Example"
-        DI["Dependency Injection<br/>loggerService<br/>riskConnectionService<br/>riskValidationService"]
-        Validate["validate() method<br/>Memoized by riskName<br/>Calls ValidationService"]
-        PublicMethods["Public Methods<br/>checkSignal()<br/>addSignal()<br/>removeSignal()<br/>clear()"]
-    end
-    
-    DI --> Validate
-    Validate --> PublicMethods
-    
-    PublicMethods --> Log["1. Log operation"]
-    Log --> CallValidate["2. await validate(riskName)"]
-    CallValidate --> Delegate["3. Delegate to ConnectionService"]
-```
+![Mermaid Diagram](./diagrams\41_Global_Services_1.svg)
 
 **Purpose**: This diagram shows the standard implementation pattern for Component Global Services using RiskGlobalService as an example. All public methods follow the log-validate-delegate sequence.
 
@@ -146,31 +87,7 @@ private readonly riskValidationService = inject<RiskValidationService>(
 
 The validation pattern uses memoization to avoid redundant schema checks:
 
-```mermaid
-sequenceDiagram
-    participant Client
-    participant RiskGlobalService
-    participant MemoizedValidate
-    participant RiskValidationService
-    participant RiskConnectionService
-    
-    Client->>RiskGlobalService: checkSignal(params, {riskName})
-    RiskGlobalService->>RiskGlobalService: loggerService.log()
-    RiskGlobalService->>MemoizedValidate: validate(riskName)
-    
-    alt First call for riskName
-        MemoizedValidate->>RiskValidationService: validate(riskName, source)
-        RiskValidationService-->>MemoizedValidate: validation complete
-        MemoizedValidate->>MemoizedValidate: Cache result
-    else Cached
-        MemoizedValidate->>MemoizedValidate: Return cached result
-    end
-    
-    MemoizedValidate-->>RiskGlobalService: validated
-    RiskGlobalService->>RiskConnectionService: checkSignal(params, context)
-    RiskConnectionService-->>RiskGlobalService: result
-    RiskGlobalService-->>Client: result
-```
+![Mermaid Diagram](./diagrams\41_Global_Services_2.svg)
 
 **Purpose**: This sequence diagram demonstrates the validation orchestration pattern. The first call to `validate()` for a given component name performs validation and caches the result. Subsequent calls return immediately from cache.
 
@@ -210,31 +127,7 @@ Global Services are used internally by the framework but can also be accessed di
 
 ### Direct Access Pattern
 
-```mermaid
-graph TB
-    subgraph "Public API Functions"
-        AddRisk["addRisk(schema)<br/>src/function/add.ts:329-341"]
-        ListRisks["listRisks()<br/>src/function/list.ts:214-217"]
-    end
-    
-    subgraph "Global Services (via lib export)"
-        RiskGlobalService["lib.riskGlobalService<br/>checkSignal()<br/>addSignal()<br/>removeSignal()"]
-    end
-    
-    subgraph "Lower Services (Direct)"
-        RiskValidationService["backtest.riskValidationService<br/>addRisk()<br/>validate()"]
-        RiskSchemaService["backtest.riskSchemaService<br/>register()"]
-    end
-    
-    AddRisk --> RiskValidationService
-    AddRisk --> RiskSchemaService
-    ListRisks --> RiskValidationService
-    
-    RiskGlobalService --> RiskValidationService
-    RiskGlobalService -.->|"Delegates to"| RiskConnectionService["RiskConnectionService"]
-    
-    TestCode["Test Code<br/>test/spec/risk.test.mjs"] --> RiskGlobalService
-```
+![Mermaid Diagram](./diagrams\41_Global_Services_3.svg)
 
 **Purpose**: This diagram shows how Global Services fit into the public API. The `add*` and `list*` functions bypass Global Services and access Validation/Schema services directly, while test code and advanced users can access Global Services through the `lib` export.
 
@@ -287,34 +180,7 @@ Execution Mode Global Services differ from Component Global Services by delegati
 
 These services provide the entry points for `Backtest.run()` and `Live.run()` operations:
 
-```mermaid
-graph TB
-    subgraph "Backtest Class"
-        BacktestRun["Backtest.run(options)"]
-        BacktestBackground["Backtest.background(options)"]
-    end
-    
-    subgraph "BacktestGlobalService"
-        BGS_Validate["validate()<br/>Checks strategy/exchange/frame"]
-        BGS_Run["run()<br/>Delegates to BacktestLogicPublicService"]
-    end
-    
-    subgraph "BacktestLogicPublicService"
-        BLPS_Context["Wraps with MethodContextService"]
-        BLPS_Delegate["Delegates to BacktestLogicPrivateService"]
-    end
-    
-    subgraph "BacktestLogicPrivateService"
-        BLPS_Execute["Executes backtest logic<br/>Timeframe iteration<br/>Signal processing"]
-    end
-    
-    BacktestRun --> BGS_Validate
-    BacktestBackground --> BGS_Validate
-    BGS_Validate --> BGS_Run
-    BGS_Run --> BLPS_Context
-    BLPS_Context --> BLPS_Delegate
-    BLPS_Delegate --> BLPS_Execute
-```
+![Mermaid Diagram](./diagrams\41_Global_Services_4.svg)
 
 **Purpose**: This diagram illustrates the delegation chain from Execution Mode Global Services through Logic Services. Unlike Component Global Services that delegate to Connection Services, these delegate to Logic Services which manage context propagation and execution orchestration.
 
@@ -467,45 +333,7 @@ Each Global Service manages exactly one component type or execution mode:
 
 ## Delegation Flow Summary
 
-```mermaid
-graph TB
-    User["User Code"]
-    
-    subgraph "Global Services Layer"
-        CompGlobal["Component Global Services<br/>Strategy, Exchange, Risk, etc."]
-        ExecGlobal["Execution Global Services<br/>Backtest, Live"]
-    end
-    
-    subgraph "Validation Layer"
-        Validation["*ValidationService<br/>Schema validation<br/>Memoized checks"]
-    end
-    
-    subgraph "Connection/Logic Layer"
-        Connection["*ConnectionService<br/>Memoized client instances"]
-        Logic["*LogicPublicService<br/>Context management"]
-    end
-    
-    subgraph "Client Layer"
-        Clients["Client Classes<br/>Business logic implementation"]
-    end
-    
-    User -->|"Component operations"| CompGlobal
-    User -->|"Execution operations"| ExecGlobal
-    
-    CompGlobal -->|"1. Validate"| Validation
-    CompGlobal -->|"2. Delegate"| Connection
-    
-    ExecGlobal -->|"1. Validate"| Validation
-    ExecGlobal -->|"2. Delegate"| Logic
-    
-    Connection --> Clients
-    Logic --> Connection
-    Connection -->|"Return results"| CompGlobal
-    Logic -->|"Return results"| ExecGlobal
-    
-    CompGlobal -->|"Results"| User
-    ExecGlobal -->|"Results"| User
-```
+![Mermaid Diagram](./diagrams\41_Global_Services_5.svg)
 
 **Purpose**: This diagram summarizes the complete delegation flow for both Component and Execution Global Services. Both types perform validation first, but Component services delegate to Connection Services while Execution services delegate to Logic Services.
 

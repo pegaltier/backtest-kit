@@ -29,33 +29,7 @@ The following diagram shows how live execution flows through the service layers:
 
 **Live Execution Service Architecture**
 
-```mermaid
-graph TB
-    User["User Application"]
-    LiveAPI["Live.run()<br/>Live.background()"]
-    LivePublic["LiveLogicPublicService"]
-    MethodCtx["MethodContextService<br/>(scoped context)"]
-    LivePrivate["LiveLogicPrivateService<br/>infinite while loop"]
-    StrategyGlobal["StrategyGlobalService"]
-    ExchangeGlobal["ExchangeGlobalService"]
-    ClientStrategy["ClientStrategy<br/>tick() method"]
-    ClientExchange["ClientExchange<br/>getAveragePrice()"]
-    Logger["LoggerService"]
-    
-    User --> LiveAPI
-    LiveAPI --> LivePublic
-    LivePublic --> MethodCtx
-    MethodCtx --> LivePrivate
-    LivePrivate --> StrategyGlobal
-    StrategyGlobal --> ClientStrategy
-    LivePrivate --> Logger
-    ClientStrategy --> ExchangeGlobal
-    ExchangeGlobal --> ClientExchange
-    
-    LivePrivate -.->|"yield opened/closed"| LivePublic
-    LivePublic -.->|"stream results"| LiveAPI
-    LiveAPI -.->|"async iterator"| User
-```
+![Mermaid Diagram](./diagrams\55_Live_Execution_Flow_0.svg)
 
 **Sources**: [src/lib/services/logic/private/LiveLogicPrivateService.ts:1-86](), [src/lib/services/logic/public/LiveLogicPublicService.ts:1-78]()
 
@@ -67,52 +41,7 @@ The core of live execution is implemented in `LiveLogicPrivateService.run()` as 
 
 **Live Loop Structure**
 
-```mermaid
-flowchart TD
-    Start["async *run(symbol)"]
-    Init["Initialize services"]
-    LoopStart["while (true)"]
-    CreateDate["when = new Date()"]
-    CallTick["result = await strategyGlobalService.tick(symbol, when, false)"]
-    LogResult["loggerService.info('tick result', action)"]
-    CheckAction{"result.action"}
-    
-    IsActive["action === 'active'"]
-    IsIdle["action === 'idle'"]
-    IsOpenedClosed["action === 'opened' or 'closed'"]
-    
-    Sleep1["await sleep(TICK_TTL)"]
-    Sleep2["await sleep(TICK_TTL)"]
-    Sleep3["await sleep(TICK_TTL)"]
-    
-    Continue1["continue"]
-    Continue2["continue"]
-    
-    Yield["yield result"]
-    
-    Start --> Init
-    Init --> LoopStart
-    LoopStart --> CreateDate
-    CreateDate --> CallTick
-    CallTick --> LogResult
-    LogResult --> CheckAction
-    
-    CheckAction --> IsActive
-    CheckAction --> IsIdle
-    CheckAction --> IsOpenedClosed
-    
-    IsActive --> Sleep1
-    Sleep1 --> Continue1
-    Continue1 --> LoopStart
-    
-    IsIdle --> Sleep2
-    Sleep2 --> Continue2
-    Continue2 --> LoopStart
-    
-    IsOpenedClosed --> Yield
-    Yield --> Sleep3
-    Sleep3 --> LoopStart
-```
+![Mermaid Diagram](./diagrams\55_Live_Execution_Flow_1.svg)
 
 The implementation uses these key constructs:
 
@@ -134,41 +63,7 @@ Live execution uses `MethodContextService` to propagate schema names (`strategyN
 
 **Context Propagation Flow**
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant LivePublic as LiveLogicPublicService
-    participant MethodCtx as MethodContextService
-    participant LivePrivate as LiveLogicPrivateService
-    participant StrategyGlobal as StrategyGlobalService
-    participant StrategyConn as StrategyConnectionService
-    
-    User->>LivePublic: run(symbol, {strategyName, exchangeName})
-    
-    Note over LivePublic: Prepare context object
-    LivePublic->>MethodCtx: runAsyncIterator(generator, context)
-    
-    Note over MethodCtx: Inject context into scope<br/>{strategyName, exchangeName, frameName: ""}
-    
-    MethodCtx->>LivePrivate: Execute run(symbol)
-    
-    loop Infinite Loop
-        LivePrivate->>StrategyGlobal: tick(symbol, when, false)
-        
-        Note over StrategyGlobal: Read context from<br/>MethodContextService.context
-        
-        StrategyGlobal->>StrategyConn: Get strategy instance<br/>using context.strategyName
-        
-        StrategyConn-->>StrategyGlobal: ClientStrategy instance
-        StrategyGlobal-->>LivePrivate: IStrategyTickResult
-        
-        alt action === "opened" or "closed"
-            LivePrivate-->>MethodCtx: yield result
-            MethodCtx-->>LivePublic: propagate result
-            LivePublic-->>User: stream result
-        end
-    end
-```
+![Mermaid Diagram](./diagrams\55_Live_Execution_Flow_2.svg)
 
 The context object contains:
 
@@ -192,56 +87,7 @@ Live execution filters and streams results based on their action type:
 
 **Result Filtering Logic**
 
-```mermaid
-stateDiagram-v2
-    direction LR
-    [*] --> TickResult: strategyGlobalService.tick()
-    
-    TickResult --> CheckAction: result.action
-    
-    CheckAction --> Idle: action === "idle"
-    CheckAction --> Active: action === "active"
-    CheckAction --> Opened: action === "opened"
-    CheckAction --> Closed: action === "closed"
-    
-    Idle --> Sleep1: No signal exists
-    Active --> Sleep2: Signal monitoring
-    
-    Sleep1 --> Continue1: await sleep(TICK_TTL)
-    Sleep2 --> Continue2: await sleep(TICK_TTL)
-    
-    Continue1 --> [*]: continue loop
-    Continue2 --> [*]: continue loop
-    
-    Opened --> Yield1: New signal created
-    Closed --> Yield2: Signal completed
-    
-    Yield1 --> Sleep3: yield result
-    Yield2 --> Sleep3: yield result
-    
-    Sleep3 --> [*]: continue loop
-    
-    note right of Idle
-        Not yielded
-        Internal state only
-    end note
-    
-    note right of Active
-        Not yielded in live mode
-        Reduces noise
-    end note
-    
-    note right of Opened
-        Yielded to user
-        IStrategyTickResultOpened
-    end note
-    
-    note right of Closed
-        Yielded to user
-        IStrategyTickResultClosed
-        Includes PNL
-    end note
-```
+![Mermaid Diagram](./diagrams\55_Live_Execution_Flow_3.svg)
 
 The filtering logic prevents overwhelming the consumer with status updates:
 
@@ -270,29 +116,7 @@ The extra 1ms ensures operations complete before the next tick begins, preventin
 
 **Timing Diagram**
 
-```mermaid
-gantt
-    title Live Execution Timing (60-second intervals)
-    dateFormat ss
-    axisFormat %S
-    
-    section Tick 1
-    Create Date :milestone, t1_date, 00, 0s
-    Execute tick() :t1_tick, after t1_date, 5s
-    Process result :t1_process, after t1_tick, 2s
-    Yield (if needed) :milestone, t1_yield, after t1_process, 0s
-    Sleep 60s :t1_sleep, after t1_yield, 53s
-    
-    section Tick 2
-    Create Date :milestone, t2_date, 60, 0s
-    Execute tick() :t2_tick, after t2_date, 5s
-    Process result :t2_process, after t2_tick, 2s
-    Yield (if needed) :milestone, t2_yield, after t2_process, 0s
-    Sleep 60s :t2_sleep, after t2_yield, 53s
-    
-    section Tick 3
-    Create Date :milestone, t3_date, 120, 0s
-```
+![Mermaid Diagram](./diagrams\55_Live_Execution_Flow_4.svg)
 
 Each iteration consists of:
 1. **Date creation** (~0ms): Capture current timestamp with `new Date()`
@@ -311,37 +135,7 @@ Each iteration consists of:
 
 **Service Interaction Diagram**
 
-```mermaid
-graph LR
-    LivePrivate["LiveLogicPrivateService<br/>run() generator"]
-    
-    subgraph "Global Services Layer"
-        StrategyGlobal["StrategyGlobalService<br/>tick(), backtest()"]
-        ExchangeGlobal["ExchangeGlobalService<br/>getAveragePrice()"]
-    end
-    
-    subgraph "Connection Layer"
-        StrategyConn["StrategyConnectionService<br/>getStrategy() memoized"]
-        ExchangeConn["ExchangeConnectionService<br/>getExchange() memoized"]
-    end
-    
-    subgraph "Business Logic Layer"
-        ClientStrategy["ClientStrategy<br/>signal validation<br/>PNL calculation"]
-        ClientExchange["ClientExchange<br/>VWAP calculation<br/>candle fetching"]
-    end
-    
-    LivePrivate -->|"tick(symbol, when, false)"| StrategyGlobal
-    StrategyGlobal --> StrategyConn
-    StrategyConn --> ClientStrategy
-    
-    ClientStrategy -->|"needs VWAP"| ExchangeGlobal
-    ExchangeGlobal --> ExchangeConn
-    ExchangeConn --> ClientExchange
-    
-    ClientExchange -->|"ICandleData[]"| ClientStrategy
-    ClientStrategy -->|"IStrategyTickResult"| StrategyGlobal
-    StrategyGlobal -->|"result"| LivePrivate
-```
+![Mermaid Diagram](./diagrams\55_Live_Execution_Flow_5.svg)
 
 Key interactions:
 
@@ -363,42 +157,7 @@ Before entering the infinite loop, `LiveLogicPrivateService` relies on `ClientSt
 
 **Initialization Sequence**
 
-```mermaid
-sequenceDiagram
-    participant Process
-    participant LivePrivate as LiveLogicPrivateService
-    participant StrategyGlobal as StrategyGlobalService
-    participant ClientStrategy
-    participant PersistAdapter as PersistSignalAdapter
-    participant Disk
-    
-    Process->>LivePrivate: run(symbol)
-    
-    Note over LivePrivate: First call to strategyGlobalService.tick()<br/>triggers initialization
-    
-    LivePrivate->>StrategyGlobal: tick(symbol, new Date(), false)
-    StrategyGlobal->>ClientStrategy: tick(symbol)
-    
-    alt First tick
-        ClientStrategy->>PersistAdapter: waitForInit()
-        PersistAdapter->>Disk: Read persisted signal file
-        
-        alt Signal file exists
-            Disk-->>PersistAdapter: ISignalRow data
-            PersistAdapter-->>ClientStrategy: Restored signal
-            Note over ClientStrategy: Resume monitoring<br/>from persisted state
-        else No signal file
-            Disk-->>PersistAdapter: null
-            PersistAdapter-->>ClientStrategy: No state
-            Note over ClientStrategy: Start fresh<br/>idle state
-        end
-    end
-    
-    ClientStrategy-->>StrategyGlobal: IStrategyTickResult
-    StrategyGlobal-->>LivePrivate: result
-    
-    Note over LivePrivate: Enter infinite loop<br/>State recovered if process crashed
-```
+![Mermaid Diagram](./diagrams\55_Live_Execution_Flow_6.svg)
 
 This initialization ensures:
 - **Crash safety**: Process can restart without losing active signals

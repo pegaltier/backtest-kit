@@ -67,65 +67,7 @@ const scheduledSignalRow: IScheduledSignalRow = {
 
 ### Title: Scheduled Signal Activation Flow
 
-```mermaid
-stateDiagram-v2
-    [*] --> Scheduled: getSignal returns priceOpen
-    
-    Scheduled --> CheckTimeout: Every tick
-    CheckTimeout --> Cancelled: elapsedTime >= CC_SCHEDULE_AWAIT_MINUTES
-    
-    CheckTimeout --> CheckPrice: timeout not reached
-    
-    CheckPrice --> CheckStopLoss: Get current VWAP
-    
-    state CheckStopLoss {
-        [*] --> LongCheck: position = long
-        [*] --> ShortCheck: position = short
-        
-        LongCheck --> SLHit: currentPrice <= priceStopLoss
-        LongCheck --> CheckActivation: currentPrice > priceStopLoss
-        
-        ShortCheck --> SLHit: currentPrice >= priceStopLoss
-        ShortCheck --> CheckActivation: currentPrice < priceStopLoss
-        
-        SLHit --> [*]
-        CheckActivation --> [*]
-    }
-    
-    CheckStopLoss --> Cancelled: SL hit before activation
-    CheckStopLoss --> CheckActivationPrice: SL not hit
-    
-    state CheckActivationPrice {
-        [*] --> LongActivation: position = long
-        [*] --> ShortActivation: position = short
-        
-        LongActivation --> Activate: currentPrice <= priceOpen
-        LongActivation --> Wait: currentPrice > priceOpen
-        
-        ShortActivation --> Activate: currentPrice >= priceOpen
-        ShortActivation --> Wait: currentPrice < priceOpen
-        
-        Activate --> [*]
-        Wait --> [*]
-    }
-    
-    CheckActivationPrice --> Opened: Activation conditions met
-    CheckActivationPrice --> Scheduled: Wait for next tick
-    
-    Opened --> RiskCheck: Run risk validation
-    RiskCheck --> Active: Risk approved
-    RiskCheck --> Cancelled: Risk rejected
-    
-    Active --> [*]
-    Cancelled --> [*]
-    
-    note right of CheckStopLoss
-        CRITICAL: StopLoss check
-        happens BEFORE activation
-        to prevent impossible
-        limit orders
-    end note
-```
+![Mermaid Diagram](./diagrams\47_Scheduled_Signals_0.svg)
 
 ### Position-Specific Activation Rules
 
@@ -151,37 +93,7 @@ The activation logic differs based on position type to implement proper limit or
 
 ### Title: Scheduled Signal Cancellation Conditions
 
-```mermaid
-graph TB
-    ScheduledSignal["Scheduled Signal<br/>(action: scheduled)"]
-    
-    ScheduledSignal --> TimeoutCheck{"elapsedTime >=<br/>CC_SCHEDULE_AWAIT_MINUTES?"}
-    TimeoutCheck -->|Yes| TimeoutCancel["Cancelled<br/>(timeout)"]
-    TimeoutCheck -->|No| StopLossCheck
-    
-    StopLossCheck{"StopLoss hit?"}
-    StopLossCheck -->|"LONG: price <= SL"| SLCancel["Cancelled<br/>(StopLoss)"]
-    StopLossCheck -->|"SHORT: price >= SL"| SLCancel
-    StopLossCheck -->|No| ActivationCheck
-    
-    ActivationCheck{"Price reached<br/>priceOpen?"}
-    ActivationCheck -->|Yes| RiskCheck["Risk Validation"]
-    ActivationCheck -->|No| WaitNextTick["Continue monitoring<br/>(action: active)"]
-    
-    RiskCheck -->|Approved| Opened["Signal Opened<br/>(pendingAt updated)"]
-    RiskCheck -->|Rejected| RiskCancel["Cancelled<br/>(risk rejected)"]
-    
-    WaitNextTick --> ScheduledSignal
-    
-    TimeoutCancel --> End[End]
-    SLCancel --> End
-    RiskCancel --> End
-    Opened --> End
-    
-    style TimeoutCheck fill:#fff4e1
-    style StopLossCheck fill:#ffe1e1
-    style ActivationCheck fill:#e1ffe1
-```
+![Mermaid Diagram](./diagrams\47_Scheduled_Signals_1.svg)
 
 ### Timeout Cancellation
 
@@ -253,33 +165,7 @@ Scheduled signals have **two** critical timestamps that determine their lifecycl
 
 ### Title: Scheduled Signal Timeline
 
-```mermaid
-sequenceDiagram
-    participant Strategy as Strategy.getSignal
-    participant Framework as ClientStrategy
-    participant Market as Price Monitoring
-    
-    Note over Strategy,Market: T1: Signal Creation
-    Strategy->>Framework: Return signal with priceOpen=41000
-    Framework->>Framework: scheduledAt = T1<br/>pendingAt = T1 (temporary)
-    Framework-->>Market: action: scheduled
-    
-    Note over Market: T2-T119: Waiting for activation<br/>(price monitoring, timeout checks)
-    
-    Note over Strategy,Market: T120: Price Reaches priceOpen
-    Market->>Framework: currentPrice <= 41000 (LONG)
-    Framework->>Framework: pendingAt = T120 (UPDATE!)
-    Framework->>Framework: Run risk check
-    Framework-->>Market: action: opened
-    
-    Note over Market: T120-T120+1440min: Position active<br/>(minuteEstimatedTime counts from T120)
-    
-    Market->>Framework: TP/SL/timeout check
-    Note over Framework: Timeout check uses:<br/>currentTime - pendingAt >= minuteEstimatedTime
-    Framework-->>Market: action: closed
-    
-    Note right of Framework: scheduledAt = T1 (creation)<br/>pendingAt = T120 (activation)<br/>Wait time = T120 - T1<br/>Active time = closeTime - T120
-```
+![Mermaid Diagram](./diagrams\47_Scheduled_Signals_2.svg)
 
 ### Code Implementation
 
@@ -387,75 +273,7 @@ if (result.action === "scheduled") {
 
 ### Title: Scheduled Signal State Machine with Callbacks
 
-```mermaid
-stateDiagram-v2
-    [*] --> idle: No signal
-    
-    idle --> scheduled: getSignal() returns priceOpen
-    
-    state scheduled {
-        [*] --> monitoring
-        monitoring --> monitoring: tick (price not reached)
-        
-        note right of monitoring
-            Callbacks:
-            - onSchedule (creation)
-            - onTick (every tick)
-        end note
-    }
-    
-    scheduled --> opened: Price reached + risk approved
-    scheduled --> cancelled: Timeout or StopLoss or risk rejected
-    
-    state opened {
-        [*] --> position_activated
-        
-        note right of position_activated
-            Callbacks:
-            - onOpen (activation)
-            - onTick
-            pendingAt updated!
-        end note
-    }
-    
-    opened --> active: Position monitoring begins
-    
-    state active {
-        [*] --> monitoring_tpsl
-        monitoring_tpsl --> monitoring_tpsl: tick (no TP/SL/timeout)
-        
-        note right of monitoring_tpsl
-            Callbacks:
-            - onActive (every tick)
-            - onTick
-        end note
-    }
-    
-    active --> closed: TP/SL/time_expired
-    
-    state closed {
-        [*] --> position_closed
-        
-        note right of position_closed
-            Callbacks:
-            - onClose (with PNL)
-            - onTick
-        end note
-    }
-    
-    state cancelled {
-        [*] --> no_position
-        
-        note right of no_position
-            Callbacks:
-            - onCancel
-            - onTick
-        end note
-    }
-    
-    closed --> [*]
-    cancelled --> [*]
-```
+![Mermaid Diagram](./diagrams\47_Scheduled_Signals_3.svg)
 
 ### Callback Invocation Order
 

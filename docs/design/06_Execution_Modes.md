@@ -31,47 +31,7 @@ All three modes share the same strategy code but execute it in different context
 
 ## Backtest Execution Flow
 
-```mermaid
-flowchart TB
-    Start["Backtest.run(symbol, context)"] --> Validate["BacktestGlobalService.run()<br/>Validates strategy, exchange, frame"]
-    Validate --> Clear["Clear markdown/schedule/risk state"]
-    Clear --> Context["MethodContextService.runAsyncIterator()<br/>Wraps with context propagation"]
-    Context --> Private["BacktestLogicPrivateService.run(symbol)"]
-    
-    Private --> GetTimeframe["frameGlobalService.getTimeframe()<br/>Returns Date[] array"]
-    GetTimeframe --> LoopStart["i = 0"]
-    
-    LoopStart --> LoopCheck{"i < timeframes.length"}
-    LoopCheck -->|No| Done["Emit progress 100%<br/>Return"]
-    
-    LoopCheck -->|Yes| EmitProgress["progressEmitter.next()<br/>progress: i/total"]
-    EmitProgress --> Tick["strategyGlobalService.tick(symbol, when, true)<br/>when = timeframes[i]"]
-    
-    Tick --> CheckAction{"result.action"}
-    
-    CheckAction -->|"idle"| Increment["i++"]
-    
-    CheckAction -->|"scheduled"| GetScheduledCandles["exchangeGlobalService.getNextCandles()<br/>limit = CC_SCHEDULE_AWAIT_MINUTES + minuteEstimatedTime + 1"]
-    GetScheduledCandles --> BacktestScheduled["strategyGlobalService.backtest(symbol, candles, when, true)<br/>Monitors activation/cancellation + TP/SL"]
-    BacktestScheduled --> SkipToClose1["Skip timeframes until closeTimestamp<br/>i += skip count"]
-    SkipToClose1 --> YieldScheduled["yield backtestResult<br/>(closed or cancelled)"]
-    YieldScheduled --> Increment
-    
-    CheckAction -->|"opened"| GetCandles["exchangeGlobalService.getNextCandles()<br/>limit = signal.minuteEstimatedTime"]
-    GetCandles --> BacktestSignal["strategyGlobalService.backtest(symbol, candles, when, true)<br/>Monitors TP/SL in candle data"]
-    BacktestSignal --> SkipToClose2["Skip timeframes until closeTimestamp<br/>i += skip count"]
-    SkipToClose2 --> YieldClosed["yield backtestResult<br/>(always closed)"]
-    YieldClosed --> Increment
-    
-    Increment --> LoopCheck
-    
-    style Start fill:#e1f5ff
-    style Private fill:#fff4e1
-    style BacktestSignal fill:#ffe1e1
-    style BacktestScheduled fill:#ffe1e1
-    style YieldClosed fill:#e1ffe1
-    style YieldScheduled fill:#e1ffe1
-```
+![Mermaid Diagram](./diagrams\06_Execution_Modes_0.svg)
 
 **Backtest Execution Flow Diagram** - Shows how `BacktestLogicPrivateService` iterates through historical timeframes and fast-forwards through signal lifetimes using the `backtest()` method.
 
@@ -147,55 +107,7 @@ for await (const result of Backtest.run("BTCUSDT", context)) {
 
 ## Live Execution Flow
 
-```mermaid
-flowchart TB
-    Start["Live.run(symbol, context)"] --> Validate["LiveGlobalService.run()<br/>Validates strategy, exchange"]
-    Validate --> Clear["Clear markdown/schedule/risk state"]
-    Clear --> Context["MethodContextService.runAsyncIterator()<br/>Wraps with context propagation"]
-    Context --> Private["LiveLogicPrivateService.run(symbol)"]
-    
-    Private --> WaitInit["strategyGlobalService.waitForInit()<br/>Restore persisted state from disk"]
-    WaitInit --> InfiniteLoop["while (true)"]
-    
-    InfiniteLoop --> CreateDate["when = new Date()<br/>Real-time timestamp"]
-    CreateDate --> Tick["strategyGlobalService.tick(symbol, when, false)<br/>backtest=false"]
-    
-    Tick --> CheckAction{"result.action"}
-    
-    CheckAction -->|"idle"| Sleep1["sleep(TICK_TTL)<br/>60 seconds + 1ms"]
-    Sleep1 --> Continue1["continue"]
-    Continue1 --> InfiniteLoop
-    
-    CheckAction -->|"active"| Sleep2["sleep(TICK_TTL)"]
-    Sleep2 --> Continue2["continue"]
-    Continue2 --> InfiniteLoop
-    
-    CheckAction -->|"scheduled"| Sleep3["sleep(TICK_TTL)"]
-    Sleep3 --> Continue3["continue"]
-    Continue3 --> InfiniteLoop
-    
-    CheckAction -->|"opened"| Persist1["PersistSignalAdapter.writeValue()<br/>Atomic file write"]
-    Persist1 --> YieldOpened["yield result"]
-    YieldOpened --> Sleep4["sleep(TICK_TTL)"]
-    Sleep4 --> InfiniteLoop
-    
-    CheckAction -->|"closed"| Persist2["PersistSignalAdapter.writeValue()<br/>Update state"]
-    Persist2 --> YieldClosed["yield result"]
-    YieldClosed --> Sleep5["sleep(TICK_TTL)"]
-    Sleep5 --> InfiniteLoop
-    
-    CheckAction -->|"cancelled"| Persist3["PersistSignalAdapter.writeValue()<br/>Update state"]
-    Persist3 --> YieldCancelled["yield result"]
-    YieldCancelled --> Sleep6["sleep(TICK_TTL)"]
-    Sleep6 --> InfiniteLoop
-    
-    style Start fill:#e1f5ff
-    style Private fill:#fff4e1
-    style InfiniteLoop fill:#ffe1e1
-    style Persist1 fill:#e1ffe1
-    style Persist2 fill:#e1ffe1
-    style Persist3 fill:#e1ffe1
-```
+![Mermaid Diagram](./diagrams\06_Execution_Modes_1.svg)
 
 **Live Execution Flow Diagram** - Shows how `LiveLogicPrivateService` runs an infinite loop with real-time clock progression and crash-safe persistence.
 
@@ -257,44 +169,7 @@ This was a critical bug fix to prevent premature closure causing financial losse
 
 ## Walker Execution Flow
 
-```mermaid
-flowchart TB
-    Start["Walker.run(symbol, context)"] --> GetSchema["walkerSchemaService.get(walkerName)<br/>Extract strategies, exchangeName, frameName, metric"]
-    GetSchema --> ValidateAll["Validate walker + all strategies + exchange + frame"]
-    ValidateAll --> Clear["Clear walker markdown + all strategy markdown"]
-    Clear --> Context["MethodContextService.runAsyncIterator()<br/>Wraps with context propagation"]
-    
-    Context --> Private["WalkerLogicPrivateService.run(symbol)"]
-    Private --> InitResults["results = []<br/>bestStrategy = null<br/>bestMetric = -Infinity"]
-    
-    InitResults --> LoopStart["i = 0"]
-    LoopStart --> LoopCheck{"i < strategies.length"}
-    LoopCheck -->|No| EmitComplete["walkerCompleteSubject.next(results)<br/>Emit final results"]
-    EmitComplete --> Done["Return"]
-    
-    LoopCheck -->|Yes| EmitStart["walkerEmitter.next()<br/>onStrategyStart callback"]
-    EmitStart --> RunBacktest["for await (const _ of<br/>Backtest.run(symbol, {<br/>  strategyName: strategies[i],<br/>  exchangeName,<br/>  frameName<br/>}))"]
-    
-    RunBacktest --> GetStats["backtestMarkdownService.getData(strategyName)<br/>Returns BacktestStatistics"]
-    GetStats --> ExtractMetric["metric = stats[walkerSchema.metric]<br/>e.g., sharpeRatio, winRate"]
-    
-    ExtractMetric --> CompareMetric{"metric > bestMetric"}
-    CompareMetric -->|Yes| UpdateBest["bestStrategy = strategyName<br/>bestMetric = metric"]
-    CompareMetric -->|No| SkipUpdate["Continue"]
-    
-    UpdateBest --> StoreResult["results.push({<br/>  strategyName,<br/>  stats,<br/>  metric<br/>})"]
-    SkipUpdate --> StoreResult
-    
-    StoreResult --> EmitProgress["walkerEmitter.next()<br/>onStrategyComplete callback<br/>Progress: i+1/total"]
-    EmitProgress --> Increment["i++"]
-    Increment --> LoopCheck
-    
-    style Start fill:#e1f5ff
-    style Private fill:#fff4e1
-    style RunBacktest fill:#ffe1e1
-    style CompareMetric fill:#fff4e1
-    style EmitComplete fill:#e1ffe1
-```
+![Mermaid Diagram](./diagrams\06_Execution_Modes_2.svg)
 
 **Walker Execution Flow Diagram** - Shows how `WalkerLogicPrivateService` orchestrates multiple backtests sequentially and selects the best strategy by comparing metrics.
 
@@ -375,26 +250,7 @@ The markdown report includes a comparison table showing all metrics side-by-side
 
 All three execution modes use the same context propagation architecture but with different parameters:
 
-```mermaid
-flowchart LR
-    User["User Code<br/>Backtest.run(symbol, context)"] --> Public["LogicPublicService<br/>(Backtest/Live/Walker)"]
-    
-    Public --> WrapMethod["MethodContextService.runAsyncIterator()<br/>strategyName, exchangeName, frameName"]
-    
-    WrapMethod --> Private["LogicPrivateService<br/>(Backtest/Live/Walker)"]
-    
-    Private --> WrapExec["ExecutionContextService.runInContext()<br/>symbol, when, backtest flag"]
-    
-    WrapExec --> Operations["getCandles(symbol, interval, limit)<br/>getAveragePrice(symbol)<br/>strategy.tick(symbol)"]
-    
-    Operations --> Resolve["di-scoped container resolves<br/>methodContext + executionContext"]
-    
-    Resolve --> Services["ExchangeConnectionService<br/>StrategyConnectionService<br/>Use resolved contexts"]
-    
-    style WrapMethod fill:#e1f5ff
-    style WrapExec fill:#e1f5ff
-    style Resolve fill:#fff4e1
-```
+![Mermaid Diagram](./diagrams\06_Execution_Modes_3.svg)
 
 **Context Propagation Across Modes** - Shows how both `MethodContext` and `ExecutionContext` wrap execution in all three modes.
 
@@ -426,31 +282,7 @@ The key difference between modes is the value of `when` and `backtest`:
 
 Each mode emits events to different subjects for filtered consumption:
 
-```mermaid
-flowchart TB
-    SignalGenerated["Signal state change<br/>(idle, scheduled, opened, active, closed, cancelled)"]
-    
-    SignalGenerated --> AllEmitter["signalEmitter.next(event)<br/>Global signal emitter"]
-    
-    SignalGenerated --> ModeCheck{"event.backtest?"}
-    
-    ModeCheck -->|true| BacktestEmitter["signalBacktestEmitter.next(event)<br/>Backtest-only signals"]
-    ModeCheck -->|false| LiveEmitter["signalLiveEmitter.next(event)<br/>Live-only signals"]
-    
-    BacktestEmitter --> BacktestMarkdown["BacktestMarkdownService.tick(event)<br/>Accumulate closed signals"]
-    LiveEmitter --> LiveMarkdown["LiveMarkdownService.tick(event)<br/>Accumulate all events"]
-    
-    BacktestEmitter --> ScheduleMarkdown1["ScheduleMarkdownService.tick(event)<br/>Track scheduled/cancelled"]
-    LiveEmitter --> ScheduleMarkdown2["ScheduleMarkdownService.tick(event)<br/>Track scheduled/cancelled"]
-    
-    AllEmitter --> UserListeners["User-defined listeners<br/>listenSignal() subscribers"]
-    BacktestEmitter --> BacktestListeners["User-defined listeners<br/>listenSignalBacktest() subscribers"]
-    LiveEmitter --> LiveListeners["User-defined listeners<br/>listenSignalLive() subscribers"]
-    
-    style AllEmitter fill:#e1f5ff
-    style BacktestEmitter fill:#fff4e1
-    style LiveEmitter fill:#ffe1e1
-```
+![Mermaid Diagram](./diagrams\06_Execution_Modes_4.svg)
 
 **Event Emission Architecture** - Shows how signals route through global and mode-specific emitters for filtered consumption.
 

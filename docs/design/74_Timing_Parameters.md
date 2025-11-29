@@ -61,50 +61,7 @@ The parameter is consumed in two locations within `ClientStrategy`:
 
 ### Timeout Behavior Flow
 
-```mermaid
-graph TB
-    subgraph "Scheduled Signal Creation"
-        A["getSignal returns<br/>priceOpen specified"]
-        B["IScheduledSignalRow created<br/>scheduledAt = currentTime"]
-        C["Signal stored in<br/>_scheduledSignal"]
-    end
-    
-    subgraph "Each Tick Cycle"
-        D["CHECK_SCHEDULED_SIGNAL_TIMEOUT_FN<br/>called"]
-        E["Calculate elapsedTime<br/>=currentTime - scheduledAt"]
-        F{"elapsedTime >=<br/>CC_SCHEDULE_AWAIT_MINUTES<br/>* 60 * 1000?"}
-    end
-    
-    subgraph "Timeout Actions"
-        G["Log cancellation<br/>scheduledAt, elapsedMinutes"]
-        H["Set _scheduledSignal = null"]
-        I["Call onCancel callback<br/>if defined"]
-        J["Return IStrategyTickResultCancelled<br/>action='cancelled'"]
-    end
-    
-    subgraph "Activation Actions"
-        K["Price reached priceOpen<br/>before timeout"]
-        L["ACTIVATE_SCHEDULED_SIGNAL_FN<br/>convert to pending"]
-        M["Update pendingAt timestamp<br/>to activation time"]
-    end
-    
-    A --> B
-    B --> C
-    C --> D
-    D --> E
-    E --> F
-    F -->|"Yes (Timeout)"| G
-    F -->|"No (Continue)"| K
-    G --> H
-    H --> I
-    I --> J
-    K --> L
-    L --> M
-    
-    style F fill:#f9f9f9
-    style J fill:#f9f9f9
-    style M fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\74_Timing_Parameters_0.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:332-386](), [src/client/ClientStrategy.ts:1048-1134]()
 
@@ -146,49 +103,7 @@ The test creates a 121-minute backtest frame where scheduled signal never activa
 
 The parameter is enforced during signal validation within `VALIDATE_SIGNAL_FN`:
 
-```mermaid
-graph TB
-    subgraph "Signal Generation"
-        A["Strategy.getSignal<br/>returns ISignalDto"]
-        B["Framework augments with<br/>id, timestamps, context"]
-    end
-    
-    subgraph "VALIDATE_SIGNAL_FN"
-        C["Check minuteEstimatedTime > 0"]
-        D{"minuteEstimatedTime ><br/>CC_MAX_SIGNAL_LIFETIME_MINUTES?"}
-        E["Calculate days<br/>= minutes / 60 / 24"]
-        F["Build error message<br/>'minuteEstimatedTime too large'"]
-        G["Append to errors array"]
-    end
-    
-    subgraph "Error Handling"
-        H{"errors.length > 0?"}
-        I["throw Error with<br/>concatenated messages"]
-        J["Signal rejected<br/>not added to _pendingSignal"]
-    end
-    
-    subgraph "Success Path"
-        K["Validation passes"]
-        L["Signal proceeds to<br/>risk check"]
-    end
-    
-    A --> B
-    B --> C
-    C --> D
-    D -->|"Yes (Exceeds)"| E
-    D -->|"No (Valid)"| K
-    E --> F
-    F --> G
-    G --> H
-    H -->|"Yes"| I
-    H -->|"No"| K
-    I --> J
-    K --> L
-    
-    style D fill:#f9f9f9
-    style I fill:#f9f9f9
-    style L fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\74_Timing_Parameters_1.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:160-171]()
 
@@ -257,54 +172,7 @@ The sanitize test suite validates rejection of excessive lifetimes:
 
 The `GET_AVG_PRICE_FN` function computes VWAP using the most recent N candles:
 
-```mermaid
-graph TB
-    subgraph "VWAP Calculation: GET_AVG_PRICE_FN"
-        A["Input: candles array<br/>(ICandleData[])"]
-        B["For each candle:<br/>typicalPrice = (high + low + close) / 3"]
-        C["priceVolume = typicalPrice * volume"]
-        D["Accumulate sumPriceVolume<br/>= Σ(typicalPrice * volume)"]
-        E["Accumulate totalVolume<br/>= Σ(volume)"]
-        F{"totalVolume === 0?"}
-        G["Fallback: simple average<br/>Σ(close) / length"]
-        H["VWAP = sumPriceVolume / totalVolume"]
-    end
-    
-    subgraph "Usage in Live Mode"
-        I["ClientStrategy.tick called"]
-        J["getAveragePrice fetches<br/>CC_AVG_PRICE_CANDLES_COUNT candles"]
-        K["GET_AVG_PRICE_FN calculates<br/>VWAP from candles"]
-        L["Compare VWAP to TP/SL<br/>for signal closure"]
-    end
-    
-    subgraph "Usage in Backtest Mode"
-        M["backtest iterates candles"]
-        N["For each candle index i:<br/>slice recent candles[i-4:i+1]"]
-        O["GET_AVG_PRICE_FN calculates<br/>VWAP from window"]
-        P["Check TP/SL against VWAP<br/>at each candle"]
-    end
-    
-    A --> B
-    B --> C
-    C --> D
-    C --> E
-    D --> F
-    E --> F
-    F -->|"Yes"| G
-    F -->|"No"| H
-    
-    I --> J
-    J --> K
-    K --> L
-    
-    M --> N
-    N --> O
-    O --> P
-    
-    style F fill:#f9f9f9
-    style L fill:#f9f9f9
-    style P fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\74_Timing_Parameters_2.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:285-296]()
 
@@ -497,58 +365,7 @@ setConfig({
 
 ## Timing Parameter Validation Summary
 
-```mermaid
-graph TB
-    subgraph "Signal Creation Pipeline"
-        A["Strategy.getSignal called<br/>returns ISignalDto"]
-        B["Framework augments signal<br/>with metadata"]
-    end
-    
-    subgraph "VALIDATE_SIGNAL_FN Checks"
-        C["Check: minuteEstimatedTime > 0"]
-        D["Check: minuteEstimatedTime <=<br/>CC_MAX_SIGNAL_LIFETIME_MINUTES"]
-        E["Check: prices are finite"]
-        F["Check: TP/SL directions correct"]
-        G["Check: TP distance >=<br/>CC_MIN_TAKEPROFIT_DISTANCE_PERCENT"]
-        H["Check: SL distance <=<br/>CC_MAX_STOPLOSS_DISTANCE_PERCENT"]
-    end
-    
-    subgraph "Scheduled Signal Monitoring"
-        I["Each tick or backtest candle"]
-        J["Calculate elapsedTime<br/>= currentTime - scheduledAt"]
-        K["Check: elapsedTime <<br/>CC_SCHEDULE_AWAIT_MINUTES * 60 * 1000"]
-        L{"Timeout<br/>exceeded?"}
-        M["Cancel signal<br/>action='cancelled'"]
-        N["Continue monitoring<br/>for priceOpen"]
-    end
-    
-    subgraph "VWAP Price Monitoring"
-        O["Fetch last N candles<br/>N = CC_AVG_PRICE_CANDLES_COUNT"]
-        P["GET_AVG_PRICE_FN<br/>calculates VWAP"]
-        Q["Compare VWAP to<br/>priceTakeProfit, priceStopLoss"]
-    end
-    
-    A --> B
-    B --> C
-    C --> D
-    D --> E
-    E --> F
-    F --> G
-    G --> H
-    H --> I
-    I --> J
-    J --> K
-    K --> L
-    L -->|"Yes"| M
-    L -->|"No"| N
-    N --> O
-    O --> P
-    P --> Q
-    
-    style D fill:#f9f9f9
-    style L fill:#f9f9f9
-    style P fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\74_Timing_Parameters_3.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:40-185](), [src/client/ClientStrategy.ts:332-386](), [src/client/ClientStrategy.ts:285-296]()
 

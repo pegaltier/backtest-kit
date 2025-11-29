@@ -28,52 +28,7 @@ Both services follow the observer pattern, subscribing to signal emitters and ac
 
 ## Event Flow Architecture
 
-```mermaid
-graph TB
-    subgraph "Execution Layer"
-        BacktestLogic["BacktestLogicPrivateService"]
-        LiveLogic["LiveLogicPrivateService"]
-        ClientStrategy["ClientStrategy"]
-    end
-    
-    subgraph "Event System"
-        BacktestEmitter["signalBacktestEmitter"]
-        LiveEmitter["signalLiveEmitter"]
-    end
-    
-    subgraph "Markdown Services"
-        BacktestMD["BacktestMarkdownService"]
-        LiveMD["LiveMarkdownService"]
-    end
-    
-    subgraph "Storage Layer"
-        BacktestStorage["ReportStorage (Backtest)"]
-        LiveStorage["ReportStorage (Live)"]
-    end
-    
-    subgraph "File System"
-        BacktestFiles["./logs/backtest/{strategy}.md"]
-        LiveFiles["./logs/live/{strategy}.md"]
-    end
-    
-    ClientStrategy -->|"tick result"| BacktestLogic
-    ClientStrategy -->|"tick result"| LiveLogic
-    
-    BacktestLogic -->|"emit closed signals"| BacktestEmitter
-    LiveLogic -->|"emit all events"| LiveEmitter
-    
-    BacktestEmitter -.->|"subscribe"| BacktestMD
-    LiveEmitter -.->|"subscribe"| LiveMD
-    
-    BacktestMD -->|"addSignal()"| BacktestStorage
-    LiveMD -->|"addIdleEvent()<br/>addOpenedEvent()<br/>addActiveEvent()<br/>addClosedEvent()"| LiveStorage
-    
-    BacktestStorage -->|"getReport()"| BacktestMD
-    LiveStorage -->|"getReport()"| LiveMD
-    
-    BacktestMD -->|"dump()"| BacktestFiles
-    LiveMD -->|"dump()"| LiveFiles
-```
+![Mermaid Diagram](./diagrams\68_Markdown_Report_Generation_0.svg)
 
 **Diagram: Signal Event Flow to Markdown Reports**
 
@@ -87,48 +42,7 @@ The services subscribe to emitters during initialization and passively accumulat
 
 Both services use an internal `ReportStorage` class to isolate data accumulation logic. Each strategy receives its own memoized storage instance, preventing data contamination between concurrent strategies.
 
-```mermaid
-classDiagram
-    class BacktestMarkdownService {
-        -loggerService: LoggerService
-        -getStorage: memoized function
-        -tick(data: IStrategyTickResult)
-        +getReport(strategyName): Promise~string~
-        +dump(strategyName, path): Promise~void~
-        +clear(strategyName?): Promise~void~
-        +init(): Promise~void~
-    }
-    
-    class ReportStorage_Backtest {
-        -_signalList: IStrategyTickResultClosed[]
-        +addSignal(data: IStrategyTickResultClosed)
-        +getReport(strategyName): string
-        +dump(strategyName, path): Promise~void~
-    }
-    
-    class LiveMarkdownService {
-        -loggerService: LoggerService
-        -getStorage: memoized function
-        -tick(data: IStrategyTickResult)
-        +getReport(strategyName): Promise~string~
-        +dump(strategyName, path): Promise~void~
-        +clear(strategyName?): Promise~void~
-        +init(): Promise~void~
-    }
-    
-    class ReportStorage_Live {
-        -_eventList: TickEvent[]
-        +addIdleEvent(currentPrice: number)
-        +addOpenedEvent(data: IStrategyTickResultOpened)
-        +addActiveEvent(data: IStrategyTickResultActive)
-        +addClosedEvent(data: IStrategyTickResultClosed)
-        +getReport(strategyName): string
-        +dump(strategyName, path): Promise~void~
-    }
-    
-    BacktestMarkdownService --> ReportStorage_Backtest : creates via memoized factory
-    LiveMarkdownService --> ReportStorage_Live : creates via memoized factory
-```
+![Mermaid Diagram](./diagrams\68_Markdown_Report_Generation_1.svg)
 
 **Diagram: Service and Storage Class Structure**
 
@@ -190,34 +104,7 @@ The `LiveMarkdownService` uses 13 columns that accommodate all event types:
 
 ## Report Generation Pipeline
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Service as "BacktestMarkdownService<br/>or LiveMarkdownService"
-    participant Storage as "ReportStorage"
-    participant Formatter as "functools-kit str.table"
-    
-    User->>Service: getReport(strategyName)
-    Service->>Storage: getStorage(strategyName)
-    
-    alt No data accumulated
-        Storage-->>Service: Empty event list
-        Service-->>User: "No signals/events recorded"
-    else Data exists
-        Storage->>Storage: Extract header from columns
-        Storage->>Storage: Map events to rows using column.format()
-        Storage->>Formatter: str.table([header, ...rows])
-        Formatter-->>Storage: Markdown table string
-        
-        alt LiveMarkdownService only
-            Storage->>Storage: Calculate statistics<br/>(win rate, avg PNL)
-        end
-        
-        Storage->>Storage: Build final markdown with<br/>title, counts, table, timestamp
-        Storage-->>Service: Complete markdown string
-        Service-->>User: Markdown report
-    end
-```
+![Mermaid Diagram](./diagrams\68_Markdown_Report_Generation_2.svg)
 
 **Diagram: Report Generation Sequence**
 
@@ -255,14 +142,7 @@ The resulting markdown follows standard table syntax:
 
 The backtest service implements a simple append-only accumulation:
 
-```mermaid
-stateDiagram-v2
-    [*] --> Listening: init() subscribes to signalBacktestEmitter
-    Listening --> FilterEvent: tick(data) called
-    FilterEvent --> Listening: action !== "closed" (ignore)
-    FilterEvent --> AddSignal: action === "closed"
-    AddSignal --> Listening: _signalList.push(data)
-```
+![Mermaid Diagram](./diagrams\68_Markdown_Report_Generation_3.svg)
 
 **Diagram: Backtest Event Accumulation State Machine**
 
@@ -274,22 +154,7 @@ The filter logic at [src/lib/services/markdown/BacktestMarkdownService.ts:245-24
 
 The live service maintains a comprehensive event timeline with update logic for active and closed events:
 
-```mermaid
-graph TD
-    TickEvent["tick(data)"]
-    CheckAction{"data.action?"}
-    
-    AddIdle["addIdleEvent()<br/>Append to _eventList"]
-    AddOpened["addOpenedEvent()<br/>Append to _eventList"]
-    UpdateActive["addActiveEvent()<br/>Find by signalId<br/>Replace or append"]
-    UpdateClosed["addClosedEvent()<br/>Find by signalId<br/>Replace or append"]
-    
-    TickEvent --> CheckAction
-    CheckAction -->|"idle"| AddIdle
-    CheckAction -->|"opened"| AddOpened
-    CheckAction -->|"active"| UpdateActive
-    CheckAction -->|"closed"| UpdateClosed
-```
+![Mermaid Diagram](./diagrams\68_Markdown_Report_Generation_4.svg)
 
 **Diagram: Live Event Accumulation Logic**
 
@@ -383,19 +248,7 @@ Initializes the service by subscribing to the appropriate event emitter. Uses `f
 
 The markdown services are registered in the dependency injection container and integrated into the backtest aggregator object:
 
-```mermaid
-graph LR
-    types["TYPES.backtestMarkdownService<br/>TYPES.liveMarkdownService"]
-    provide["provide.ts<br/>Factory registration"]
-    backtest["backtest object<br/>Aggregator"]
-    
-    types --> provide
-    provide --> backtest
-    
-    backtest --> getReport["backtest.getReport()"]
-    backtest --> dump["backtest.dump()"]
-    backtest --> clear["backtest.clear()"]
-```
+![Mermaid Diagram](./diagrams\68_Markdown_Report_Generation_5.svg)
 
 **Diagram: DI Integration for Markdown Services**
 

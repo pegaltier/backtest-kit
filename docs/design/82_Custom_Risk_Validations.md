@@ -50,15 +50,7 @@ Both formats are functionally equivalent. The object format allows you to attach
 
 ## Validation Function Signature
 
-```mermaid
-graph LR
-    Input["IRiskValidationPayload"] --> Function["Validation Function"]
-    Function --> Success["void | Promise<void>"]
-    Function --> Reject["throw Error"]
-    
-    Success --> Allow["Signal Allowed"]
-    Reject --> Deny["Signal Rejected"]
-```
+![Mermaid Diagram](./diagrams\82_Custom_Risk_Validations_0.svg)
 
 **Validation Function Signature**
 
@@ -79,47 +71,7 @@ interface IRiskValidationFn {
 
 ## The IRiskValidationPayload Interface
 
-```mermaid
-graph TB
-    subgraph "IRiskValidationPayload Structure"
-        Base["IRiskCheckArgs (Base Parameters)"]
-        
-        subgraph "Passthrough from Strategy"
-            Symbol["symbol: string"]
-            Strategy["strategyName: string"]
-            Exchange["exchangeName: string"]
-            Price["currentPrice: number"]
-            Time["timestamp: number"]
-        end
-        
-        subgraph "Portfolio State"
-            Count["activePositionCount: number"]
-            Positions["activePositions: IRiskActivePosition[]"]
-        end
-        
-        Base --> Symbol
-        Base --> Strategy
-        Base --> Exchange
-        Base --> Price
-        Base --> Time
-        
-        Payload["IRiskValidationPayload"] --> Base
-        Payload --> Count
-        Payload --> Positions
-    end
-    
-    subgraph "IRiskActivePosition Structure"
-        Signal["signal: ISignalRow"]
-        StratName["strategyName: string"]
-        ExchName["exchangeName: string"]
-        OpenTime["openTimestamp: number"]
-    end
-    
-    Positions --> Signal
-    Positions --> StratName
-    Positions --> ExchName
-    Positions --> OpenTime
-```
+![Mermaid Diagram](./diagrams\82_Custom_Risk_Validations_1.svg)
 
 **IRiskValidationPayload Fields**
 
@@ -147,36 +99,7 @@ Each element in `activePositions` contains:
 
 ## Error Throwing Patterns
 
-```mermaid
-sequenceDiagram
-    participant Strategy as ClientStrategy
-    participant Risk as ClientRisk.checkSignal
-    participant Wrapper as DO_VALIDATION_FN
-    participant Validation as Custom Validation
-    participant Emitter as validationSubject
-    participant Logger as LoggerService
-    
-    Strategy->>Risk: checkSignal(params)
-    Risk->>Risk: Build IRiskValidationPayload
-    
-    loop For each validation
-        Risk->>Wrapper: DO_VALIDATION_FN(validation, payload)
-        Wrapper->>Validation: Execute validation(payload)
-        
-        alt Validation throws error
-            Validation-->>Wrapper: throw Error("Rejection reason")
-            Wrapper->>Logger: log error details
-            Wrapper->>Emitter: validationSubject.next(error)
-            Wrapper-->>Risk: return false
-            Risk->>Risk: Break validation loop
-        else Validation succeeds
-            Validation-->>Wrapper: return void
-            Wrapper-->>Risk: return true
-        end
-    end
-    
-    Risk-->>Strategy: return boolean
-```
+![Mermaid Diagram](./diagrams\82_Custom_Risk_Validations_2.svg)
 
 **Error Handling Mechanism**
 
@@ -340,26 +263,7 @@ addRisk({
 
 ## Multiple Validation Composition
 
-```mermaid
-graph TD
-    Start["ClientRisk.checkSignal called"] --> BuildPayload["Build IRiskValidationPayload"]
-    BuildPayload --> Loop["For each validation in validations array"]
-    
-    Loop --> Execute["Execute DO_VALIDATION_FN"]
-    Execute --> Check{"Validation result"}
-    
-    Check -->|Success| NextVal{"More validations?"}
-    Check -->|Failure| Reject["Set isValid = false<br/>Break loop"]
-    
-    NextVal -->|Yes| Loop
-    NextVal -->|No| AllPass["All validations passed"]
-    
-    AllPass --> CallbackAllow["Call onAllowed callback"]
-    Reject --> CallbackReject["Call onRejected callback"]
-    
-    CallbackAllow --> ReturnTrue["Return true"]
-    CallbackReject --> ReturnFalse["Return false"]
-```
+![Mermaid Diagram](./diagrams\82_Custom_Risk_Validations_3.svg)
 
 Validations are executed sequentially in the order they are defined in the `validations` array. The validation process follows these rules:
 
@@ -464,35 +368,7 @@ addRisk({
 
 ## Validation Context and Callbacks
 
-```mermaid
-graph LR
-    subgraph "Before Validation"
-        Signal["New Signal Request"]
-    end
-    
-    subgraph "During Validation"
-        Check["checkSignal executed"]
-        Validate["Validations run"]
-    end
-    
-    subgraph "After Validation - Success"
-        AllowCB["onAllowed callback"]
-        AddPos["addSignal to track position"]
-    end
-    
-    subgraph "After Validation - Failure"
-        RejectCB["onRejected callback"]
-        NoAdd["Position not added"]
-    end
-    
-    Signal --> Check
-    Check --> Validate
-    Validate --> AllowCB
-    Validate --> RejectCB
-    
-    AllowCB --> AddPos
-    RejectCB --> NoAdd
-```
+![Mermaid Diagram](./diagrams\82_Custom_Risk_Validations_4.svg)
 
 **Lifecycle Callbacks**
 
@@ -527,35 +403,7 @@ These callbacks receive:
 
 ## Validation Isolation by Risk Profile
 
-```mermaid
-graph TB
-    subgraph "Risk Profile: conservative"
-        ConsRisk["ClientRisk instance"]
-        ConsPos["_activePositions Map"]
-        ConsVal["validations array"]
-    end
-    
-    subgraph "Risk Profile: aggressive"
-        AggRisk["ClientRisk instance"]
-        AggPos["_activePositions Map"]
-        AggVal["validations array"]
-    end
-    
-    Strategy1["Strategy A<br/>riskName: 'conservative'"] --> ConsRisk
-    Strategy2["Strategy B<br/>riskName: 'conservative'"] --> ConsRisk
-    
-    Strategy3["Strategy C<br/>riskName: 'aggressive'"] --> AggRisk
-    
-    ConsRisk --> ConsPos
-    ConsRisk --> ConsVal
-    AggRisk --> AggPos
-    AggRisk --> AggVal
-    
-    ConsPos -.->|"Shares position tracking"| Strategy1
-    ConsPos -.->|"Shares position tracking"| Strategy2
-    
-    AggPos -.->|"Independent tracking"| Strategy3
-```
+![Mermaid Diagram](./diagrams\82_Custom_Risk_Validations_5.svg)
 
 Each risk profile maintains its own isolated state:
 
@@ -613,25 +461,7 @@ addStrategy({
 
 ## Error Monitoring
 
-```mermaid
-sequenceDiagram
-    participant Val as Validation Function
-    participant Wrapper as DO_VALIDATION_FN
-    participant Logger as LoggerService
-    participant Subject as validationSubject
-    participant Listener as External Monitor
-    
-    Val->>Val: throw Error("Rejection")
-    Val-->>Wrapper: Error thrown
-    
-    Wrapper->>Logger: warn("ClientRisk exception thrown", error)
-    Wrapper->>Subject: validationSubject.next(error)
-    Subject->>Listener: emit error event
-    
-    Listener->>Listener: Log to monitoring system
-    Listener->>Listener: Send alert
-    Listener->>Listener: Update metrics
-```
+![Mermaid Diagram](./diagrams\82_Custom_Risk_Validations_6.svg)
 
 **Listening to Validation Errors**
 
