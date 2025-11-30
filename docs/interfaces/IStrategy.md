@@ -19,6 +19,16 @@ tick: (symbol: string) => Promise<IStrategyTickResult>
 Single tick of strategy execution with VWAP monitoring.
 Checks for signal generation (throttled) and TP/SL conditions.
 
+### getPendingSignal
+
+```ts
+getPendingSignal: (symbol: string) => Promise<ISignalRow>
+```
+
+Retrieves the currently active pending signal for the symbol.
+If no active signal exists, returns null.
+Used internally for monitoring TP/SL and time expiration.
+
 ### backtest
 
 ```ts

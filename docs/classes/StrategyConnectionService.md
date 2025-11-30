@@ -75,6 +75,16 @@ Retrieves memoized ClientStrategy instance for given strategy name.
 Creates ClientStrategy on first call, returns cached instance on subsequent calls.
 Cache key is strategyName string.
 
+### getPendingSignal
+
+```ts
+getPendingSignal: () => Promise<ISignalRow>
+```
+
+Retrieves the currently active pending signal for the strategy.
+If no active signal exists, returns null.
+Used internally for monitoring TP/SL and time expiration.
+
 ### tick
 
 ```ts

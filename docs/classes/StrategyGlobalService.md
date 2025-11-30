@@ -67,6 +67,16 @@ Validates strategy and associated risk configuration.
 Memoized to avoid redundant validations for the same strategy.
 Logs validation activity.
 
+### getPendingSignal
+
+```ts
+getPendingSignal: (symbol: string, when: Date, backtest: boolean) => Promise<ISignalRow>
+```
+
+Retrieves the currently active pending signal for the symbol.
+If no active signal exists, returns null.
+Used internally for monitoring TP/SL and time expiration.
+
 ### tick
 
 ```ts
