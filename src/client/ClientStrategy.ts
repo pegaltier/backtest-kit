@@ -37,7 +37,7 @@ const INTERVAL_MINUTES: Record<SignalInterval, number> = {
   "1h": 60,
 };
 
-const VALIDATE_SIGNAL_FN = (signal: ISignalRow, currentPrice: number): void => {
+const VALIDATE_SIGNAL_FN = (signal: ISignalRow, currentPrice: number, isScheduled: boolean): void => {
   const errors: string[] = [];
 
   // ЗАЩИТА ОТ NaN/Infinity: currentPrice должна быть конечным числом
@@ -93,22 +93,24 @@ const VALIDATE_SIGNAL_FN = (signal: ISignalRow, currentPrice: number): void => {
       );
     }
 
-    // ЗАЩИТА ОТ EDGE CASE: текущая цена уже пробила StopLoss
-    // Для scheduled сигналов это означает что сигнал будет немедленно отменен
-    if (isFinite(currentPrice) && currentPrice <= signal.priceStopLoss) {
-      errors.push(
-        `Long: currentPrice (${currentPrice}) <= priceStopLoss (${signal.priceStopLoss}). ` +
-          `Signal would be immediately cancelled. This scheduled signal is invalid.`
-      );
-    }
+    // ЗАЩИТА ОТ EDGE CASE: для immediate сигналов проверяем что текущая цена не пробила SL/TP
+    // Для scheduled сигналов эта проверка избыточна т.к. priceOpen уже проверен выше
+    if (!isScheduled) {
+      // Текущая цена уже пробила StopLoss - позиция откроется и сразу закроется по SL
+      if (isFinite(currentPrice) && currentPrice < signal.priceStopLoss) {
+        errors.push(
+          `Long: currentPrice (${currentPrice}) < priceStopLoss (${signal.priceStopLoss}). ` +
+            `Signal would be immediately cancelled. This signal is invalid.`
+        );
+      }
 
-    // ЗАЩИТА ОТ EDGE CASE: текущая цена уже достигла TakeProfit
-    // Такой сигнал бессмыслен - профит уже упущен
-    if (isFinite(currentPrice) && currentPrice >= signal.priceTakeProfit) {
-      errors.push(
-        `Long: currentPrice (${currentPrice}) >= priceTakeProfit (${signal.priceTakeProfit}). ` +
-          `Signal is invalid - the profit opportunity has already passed.`
-      );
+      // Текущая цена уже достигла TakeProfit - профит упущен
+      if (isFinite(currentPrice) && currentPrice > signal.priceTakeProfit) {
+        errors.push(
+          `Long: currentPrice (${currentPrice}) > priceTakeProfit (${signal.priceTakeProfit}). ` +
+            `Signal is invalid - the profit opportunity has already passed.`
+        );
+      }
     }
 
     // ЗАЩИТА ОТ МИКРО-ПРОФИТА: TakeProfit должен быть достаточно далеко, чтобы покрыть комиссии
@@ -151,22 +153,24 @@ const VALIDATE_SIGNAL_FN = (signal: ISignalRow, currentPrice: number): void => {
       );
     }
 
-    // ЗАЩИТА ОТ EDGE CASE: текущая цена уже пробила StopLoss
-    // Для scheduled сигналов это означает что сигнал будет немедленно отменен
-    if (isFinite(currentPrice) && currentPrice >= signal.priceStopLoss) {
-      errors.push(
-        `Short: currentPrice (${currentPrice}) >= priceStopLoss (${signal.priceStopLoss}). ` +
-          `Signal would be immediately cancelled. This scheduled signal is invalid.`
-      );
-    }
+    // ЗАЩИТА ОТ EDGE CASE: для immediate сигналов проверяем что текущая цена не пробила SL/TP
+    // Для scheduled сигналов эта проверка избыточна т.к. priceOpen уже проверен выше
+    if (!isScheduled) {
+      // Текущая цена уже пробила StopLoss - позиция откроется и сразу закроется по SL
+      if (isFinite(currentPrice) && currentPrice > signal.priceStopLoss) {
+        errors.push(
+          `Short: currentPrice (${currentPrice}) > priceStopLoss (${signal.priceStopLoss}). ` +
+            `Signal would be immediately cancelled. This signal is invalid.`
+        );
+      }
 
-    // ЗАЩИТА ОТ EDGE CASE: текущая цена уже достигла TakeProfit
-    // Такой сигнал бессмыслен - профит уже упущен
-    if (isFinite(currentPrice) && currentPrice <= signal.priceTakeProfit) {
-      errors.push(
-        `Short: currentPrice (${currentPrice}) <= priceTakeProfit (${signal.priceTakeProfit}). ` +
-          `Signal is invalid - the profit opportunity has already passed.`
-      );
+      // Текущая цена уже достигла TakeProfit - профит упущен
+      if (isFinite(currentPrice) && currentPrice < signal.priceTakeProfit) {
+        errors.push(
+          `Short: currentPrice (${currentPrice}) < priceTakeProfit (${signal.priceTakeProfit}). ` +
+            `Signal is invalid - the profit opportunity has already passed.`
+        );
+      }
     }
 
     // ЗАЩИТА ОТ МИКРО-ПРОФИТА: TakeProfit должен быть достаточно далеко, чтобы покрыть комиссии
@@ -304,7 +308,7 @@ const GET_SIGNAL_FN = trycatch(
         };
 
         // Валидируем сигнал перед возвратом
-        VALIDATE_SIGNAL_FN(signalRow, currentPrice);
+        VALIDATE_SIGNAL_FN(signalRow, currentPrice, false);
 
         return signalRow;
       }
@@ -327,7 +331,7 @@ const GET_SIGNAL_FN = trycatch(
       };
 
       // Валидируем сигнал перед возвратом
-      VALIDATE_SIGNAL_FN(scheduledSignalRow, currentPrice);
+      VALIDATE_SIGNAL_FN(scheduledSignalRow, currentPrice, true);
 
       return scheduledSignalRow;
     }
@@ -345,7 +349,7 @@ const GET_SIGNAL_FN = trycatch(
     };
 
     // Валидируем сигнал перед возвратом
-    VALIDATE_SIGNAL_FN(signalRow, currentPrice);
+    VALIDATE_SIGNAL_FN(signalRow, currentPrice, false);
 
     return signalRow;
   },
