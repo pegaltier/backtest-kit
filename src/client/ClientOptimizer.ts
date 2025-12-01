@@ -13,6 +13,8 @@ import {
   IOptimizerStrategy,
 } from "../interfaces/Optimizer.interface";
 import { MessageModel } from "../model/Message.model";
+import { writeFile, mkdir } from "fs/promises";
+import { join } from "path";
 
 const ITERATION_LIMIT = 25;
 const DEFAULT_SOURCE_NAME = "unknown";
@@ -245,6 +247,32 @@ export class ClientOptimizer implements IOptimizer {
     }
 
     return str.newline(sections);
+  };
+
+  public dump = async (
+    symbol: string,
+    path = "./"
+  ): Promise<void> => {
+    this.params.logger.debug("ClientOptimizer dump", {
+      symbol,
+      path,
+    });
+
+    const report = await this.getReport(symbol);
+
+    try {
+      const dir = join(process.cwd(), path);
+      await mkdir(dir, { recursive: true });
+
+      const filename = `${this.params.optimizerName}_${symbol}.mjs`;
+      const filepath = join(dir, filename);
+
+      await writeFile(filepath, report, "utf-8");
+      this.params.logger.info(`Optimizer report saved: ${filepath}`);
+    } catch (error) {
+      this.params.logger.warn(`Failed to save optimizer report:`, error);
+      throw error;
+    }
   };
 }
 
