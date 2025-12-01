@@ -83,7 +83,10 @@ export interface IOptimizerSchema {
   optimizerName: OptimizerName;
   range: IOptimizerRange[];
   source: Source[];
-  getPrompt: (messages: MessageModel[]) => string | Promise<string>;
+  getPrompt: (
+    symbol: string,
+    messages: MessageModel[]
+  ) => string | Promise<string>;
   template?: Partial<IOptimizerTemplate>;
   callbacks?: Partial<IOptimizerCallbacks>;
 }

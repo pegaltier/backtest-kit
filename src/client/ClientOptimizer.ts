@@ -1,4 +1,5 @@
 import {
+  distinctDocuments,
   iterateDocuments,
   resolveDocuments,
   str,
@@ -57,7 +58,8 @@ const RESOLVE_PAGINATION_FN = async <Data extends IOptimizerData = any>(
       });
     },
   });
-  return await resolveDocuments(iterator);
+  const distinct = distinctDocuments(iterator, (data) => data.id);
+  return await resolveDocuments(distinct);
 };
 
 const GET_STRATEGY_DATA_FN = async (symbol: string, self: ClientOptimizer) => {
@@ -116,7 +118,7 @@ const GET_STRATEGY_DATA_FN = async (symbol: string, self: ClientOptimizer) => {
     strategyList.push({
       symbol,
       messages: messageList,
-      strategy: await self.params.getPrompt(messageList),
+      strategy: await self.params.getPrompt(symbol, messageList),
     });
   }
   return strategyList;
