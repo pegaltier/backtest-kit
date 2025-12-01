@@ -125,6 +125,7 @@ export interface IOptimizerSchema {
 export interface IOptimizerParams extends IOptimizerSchema {
   logger: ILogger;
   method: TMethodContextService;
+  template: IOptimizerTemplate;
 }
 
 export interface IOptimizer {
