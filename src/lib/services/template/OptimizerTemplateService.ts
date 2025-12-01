@@ -6,6 +6,7 @@ import {
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { str } from "functools-kit";
+import { CandleInterval, ExchangeName } from "../../../interfaces/Exchange.interface";
 
 export class OptimizerTemplateService implements IOptimizerTemplate {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
@@ -14,7 +15,12 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
     this.loggerService.log("optimizerTemplateService getTopBanner", {
       symbol,
     });
-    return "#!/usr/bin/env node";
+    return str.newline(
+      "#!/usr/bin/env node",
+      "",
+      `import { Ollama } from "ollama";`,
+      `import ccxt from "ccxt";`
+    );
   };
 
   public getUserMessage = async (
@@ -43,12 +49,60 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
     return "ОК";
   };
 
+  public getExchangeTemplate = async (
+    symbol: string,
+    exchangeName: ExchangeName
+  ) => {
+    this.loggerService.log("optimizerTemplateService getExchangeTemplate", {
+      exchangeName,
+      symbol,
+    });
+    return str.newline(
+      `addExchange({`,
+      `    exchangeName: "${exchangeName}",`,
+      `    getCandles: async (symbol, interval, since, limit) => {`,
+      `        const exchange = new ccxt.binance();`,
+      `        const ohlcv = await exchange.fetchOHLCV(symbol, interval, since.getTime(), limit);`,
+      `        return ohlcv.map(([timestamp, open, high, low, close, volume]) => ({`,
+      `            timestamp, open, high, low, close, volume`,
+      `        }));`,
+      `    },`,
+      `    formatPrice: async (symbol, price) => price.toFixed(2),`,
+      `    formatQuantity: async (symbol, quantity) => quantity.toFixed(8),`,
+      `});`
+    );
+  };
+
+  public getFrameTemplate = async (
+    symbol: string,
+    frameName: string,
+    interval: CandleInterval,
+    startDate: Date,
+    endDate: Date
+  ) => {
+    this.loggerService.log("optimizerTemplateService getFrameTemplate", {
+      symbol,
+      frameName,
+      interval,
+      startDate,
+      endDate,
+    });
+    return str.newline(
+      `addFrame({`,
+      `    frameName: "${frameName}",`,
+      `    interval: "${interval}",`,
+      `    startDate: new Date("${startDate.toISOString()}"),`,
+      `    endDate: new Date("${endDate.toISOString()}"),`,
+      `});`
+    );
+  };
+
   public getTextTemplate = async (symbol: string) => {
     this.loggerService.log("optimizerTemplateService getTextTemplate", {
       symbol,
     });
     return str.newline(
-      `export async function text(messages) {`,
+      `async function text(messages) {`,
       `    const ollama = new Ollama({`,
       `        host: "https://ollama.com",`,
       `        headers: {`,
@@ -82,7 +136,7 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
       symbol,
     });
     return str.newline(
-      `export async function json(messages) {`,
+      `async function json(messages) {`,
       `    const ollama = new Ollama({`,
       `        host: "https://ollama.com",`,
       `        headers: {`,

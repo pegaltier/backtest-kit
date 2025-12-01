@@ -1,3 +1,5 @@
+import { TMethodContextService } from "../lib/services/context/MethodContextService";
+import { CandleInterval } from "./Exchange.interface";
 import { ILogger } from "./Logger.interface";
 import { MessageModel } from "src/model/Message.model";
 
@@ -63,6 +65,17 @@ export interface IOptimizerTemplate {
     data: Data[],
     name: string
   ): string | Promise<string>;
+  getExchangeTemplate(
+    symbol: string,
+    exchangeName: string
+  ): string | Promise<string>;
+  getFrameTemplate(
+    symbol: string,
+    frameName: string,
+    interval: CandleInterval,
+    startDate: Date,
+    endDate: Date
+  ): string | Promise<string>;
   getAssistantMessage<Data extends IOptimizerData = any>(
     symbol: string,
     data: Data[],
@@ -96,6 +109,7 @@ export interface IOptimizerSchema {
 
 export interface IOptimizerParams extends IOptimizerSchema {
   logger: ILogger;
+  method: TMethodContextService;
 }
 
 export interface IOptimizer {
