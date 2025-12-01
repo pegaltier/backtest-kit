@@ -52,10 +52,32 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
     return "ОК";
   };
 
+  public getWalkerTemplate = async (
+    walkerName: string,
+    exchangeName: string,
+    frameName: string,
+    strategies: string[]
+  ) => {
+    this.loggerService.log("optimizerTemplateService getWalkerTemplate", {
+      walkerName,
+      exchangeName,
+      frameName,
+      strategies,
+    });
+    return str.newline(
+      `addWalker({`,
+      `    walkerName: "${walkerName}",`,
+      `    exchangeName: "${exchangeName}",`,
+      `    frameName: "${frameName}",`,
+      `    strategies: [${strategies.map((s) => `"${s}"`).join(", ")}],`,
+      `});`
+    );
+  };
+
   public getStrategyTemplate = async (
     strategyName: string,
     interval: string,
-    prompt: string,
+    prompt: string
   ) => {
     this.loggerService.log("optimizerTemplateService getStrategyTemplate", {
       strategyName,
@@ -206,6 +228,27 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
       `    interval: "${interval}",`,
       `    startDate: new Date("${startDate.toISOString()}"),`,
       `    endDate: new Date("${endDate.toISOString()}"),`,
+      `});`
+    );
+  };
+
+  public getLauncherTemplate = async (symbol: string, walkerName: string) => {
+    this.loggerService.log("optimizerTemplateService getLauncherTemplate", {
+      symbol,
+      walkerName,
+    });
+    return str.newline(
+      `Walker.background("${symbol}", {`,
+      `    walkerName: "${walkerName}"`,
+      `});`,
+      ``,
+      `listenSignalBacktest((event) => {`,
+      `    console.log(event);`,
+      `});`,
+      ``,
+      `listenWalkerComplete((results) => {`,
+      `    console.log("Walker completed:", results.bestStrategy);`,
+      `    Walker.dump("${symbol}", results.walkerName); // Save report`,
       `});`
     );
   };

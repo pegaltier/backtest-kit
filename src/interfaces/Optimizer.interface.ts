@@ -65,6 +65,17 @@ export interface IOptimizerTemplate {
     data: Data[],
     name: string
   ): string | Promise<string>;
+  getAssistantMessage<Data extends IOptimizerData = any>(
+    symbol: string,
+    data: Data[],
+    name: string
+  ): string | Promise<string>;
+  getWalkerTemplate(
+    walkerName: string,
+    exchangeName: string,
+    frameName: string,
+    strategies: string[]
+  ): string | Promise<string>;
   getExchangeTemplate(
     symbol: string,
     exchangeName: string
@@ -76,16 +87,15 @@ export interface IOptimizerTemplate {
     startDate: Date,
     endDate: Date
   ): string | Promise<string>;
-  getAssistantMessage<Data extends IOptimizerData = any>(
-    symbol: string,
-    data: Data[],
-    name: string
-  ): string | Promise<string>;
   getStrategyTemplate(
     strategyName: string,
     interval: string,
     prompt: string
-  ): Promise<string>;
+  ): string | Promise<string>;
+  getLauncherTemplate(
+    symbol: string,
+    walkerName: string
+  ): string | Promise<string>;
   getTextTemplate(symbol: string): string | Promise<string>;
   getJsonTemplate(symbol: string): string | Promise<string>;
 }
