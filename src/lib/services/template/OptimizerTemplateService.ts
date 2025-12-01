@@ -7,8 +7,6 @@ import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { str } from "functools-kit";
 
-import { Ollama } from "ollama";
-
 export class OptimizerTemplateService implements IOptimizerTemplate {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
