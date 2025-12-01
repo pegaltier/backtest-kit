@@ -11,9 +11,28 @@ import {
   ExchangeName,
 } from "../../../interfaces/Exchange.interface";
 
+/**
+ * Default template service for generating optimizer code snippets.
+ * Implements all IOptimizerTemplate methods with Ollama LLM integration.
+ *
+ * Features:
+ * - Multi-timeframe analysis (1m, 5m, 15m, 1h)
+ * - JSON structured output for signals
+ * - Debug logging to ./dump/strategy
+ * - CCXT exchange integration
+ * - Walker-based strategy comparison
+ *
+ * Can be partially overridden in optimizer schema configuration.
+ */
 export class OptimizerTemplateService implements IOptimizerTemplate {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
+  /**
+   * Generates the top banner with imports and constants.
+   *
+   * @param symbol - Trading pair symbol
+   * @returns Shebang, imports, and WARN_KB constant
+   */
   public getTopBanner = async (symbol: string) => {
     this.loggerService.log("optimizerTemplateService getTopBanner", {
       symbol,
@@ -46,6 +65,15 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
     );
   };
 
+  /**
+   * Generates default user message for LLM conversation.
+   * Simple prompt to read and acknowledge data.
+   *
+   * @param symbol - Trading pair symbol
+   * @param data - Fetched data array
+   * @param name - Source name
+   * @returns User message with JSON data
+   */
   public getUserMessage = async (
     symbol: string,
     data: IOptimizerData[],
@@ -59,6 +87,15 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
     return str.newline("Прочитай данные и скажи ОК", "", JSON.stringify(data));
   };
 
+  /**
+   * Generates default assistant message for LLM conversation.
+   * Simple acknowledgment response.
+   *
+   * @param symbol - Trading pair symbol
+   * @param data - Fetched data array
+   * @param name - Source name
+   * @returns Assistant acknowledgment message
+   */
   public getAssistantMessage = async (
     symbol: string,
     data: IOptimizerData[],
@@ -72,6 +109,16 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
     return "ОК";
   };
 
+  /**
+   * Generates Walker configuration code.
+   * Compares multiple strategies on test frame.
+   *
+   * @param walkerName - Unique walker identifier
+   * @param exchangeName - Exchange to use for backtesting
+   * @param frameName - Test frame name
+   * @param strategies - Array of strategy names to compare
+   * @returns Generated addWalker() call
+   */
   public getWalkerTemplate = async (
     walkerName: string,
     exchangeName: string,
@@ -94,6 +141,15 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
     );
   };
 
+  /**
+   * Generates Strategy configuration with LLM integration.
+   * Includes multi-timeframe analysis and signal generation.
+   *
+   * @param strategyName - Unique strategy identifier
+   * @param interval - Signal throttling interval (e.g., "5m")
+   * @param prompt - Strategy logic from getPrompt()
+   * @returns Generated addStrategy() call with getSignal() function
+   */
   public getStrategyTemplate = async (
     strategyName: string,
     interval: string,
@@ -214,6 +270,14 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
     );
   };
 
+  /**
+   * Generates Exchange configuration code.
+   * Uses CCXT Binance with standard formatters.
+   *
+   * @param symbol - Trading pair symbol (unused, for consistency)
+   * @param exchangeName - Unique exchange identifier
+   * @returns Generated addExchange() call with CCXT integration
+   */
   public getExchangeTemplate = async (
     symbol: string,
     exchangeName: ExchangeName
@@ -238,6 +302,16 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
     );
   };
 
+  /**
+   * Generates Frame (timeframe) configuration code.
+   *
+   * @param symbol - Trading pair symbol (unused, for consistency)
+   * @param frameName - Unique frame identifier
+   * @param interval - Candle interval (e.g., "1m")
+   * @param startDate - Frame start date
+   * @param endDate - Frame end date
+   * @returns Generated addFrame() call
+   */
   public getFrameTemplate = async (
     symbol: string,
     frameName: string,
@@ -262,6 +336,14 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
     );
   };
 
+  /**
+   * Generates launcher code to run Walker with event listeners.
+   * Includes progress tracking and completion handlers.
+   *
+   * @param symbol - Trading pair symbol
+   * @param walkerName - Walker name to launch
+   * @returns Generated Walker.background() call with listeners
+   */
   public getLauncherTemplate = async (symbol: string, walkerName: string) => {
     this.loggerService.log("optimizerTemplateService getLauncherTemplate", {
       symbol,
@@ -303,6 +385,13 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
     );
   };
 
+  /**
+   * Generates dumpJson() helper function for debug output.
+   * Saves LLM conversations and results to ./dump/strategy/{resultId}/
+   *
+   * @param symbol - Trading pair symbol (unused, for consistency)
+   * @returns Generated async dumpJson() function
+   */
   public getJsonDumpTemplate = async (symbol: string) => {
     this.loggerService.log("optimizerTemplateService getJsonDumpTemplate", {
       symbol,
@@ -399,6 +488,13 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
     );
   };
 
+  /**
+   * Generates text() helper for LLM text generation.
+   * Uses Ollama gpt-oss:20b model for market analysis.
+   *
+   * @param symbol - Trading pair symbol (used in prompt)
+   * @returns Generated async text() function
+   */
   public getTextTemplate = async (symbol: string) => {
     this.loggerService.log("optimizerTemplateService getTextTemplate", {
       symbol,
@@ -444,6 +540,21 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
     );
   };
 
+  /**
+   * Generates json() helper for structured LLM output.
+   * Uses Ollama with JSON schema for trading signals.
+   *
+   * Signal schema:
+   * - position: "wait" | "long" | "short"
+   * - note: strategy explanation
+   * - priceOpen: entry price
+   * - priceTakeProfit: target price
+   * - priceStopLoss: stop price
+   * - minuteEstimatedTime: expected duration (max 360 min)
+   *
+   * @param symbol - Trading pair symbol (unused, for consistency)
+   * @returns Generated async json() function with signal schema
+   */
   public getJsonTemplate = async (symbol: string) => {
     this.loggerService.log("optimizerTemplateService getJsonTemplate", {
       symbol,

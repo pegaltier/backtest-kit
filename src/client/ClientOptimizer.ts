@@ -21,6 +21,16 @@ const DEFAULT_SOURCE_NAME = "unknown";
 
 const CREATE_PREFIX_FN = () => (Math.random() + 1).toString(36).substring(7);
 
+/**
+ * Default user message formatter.
+ * Delegates to template's getUserMessage method.
+ *
+ * @param symbol - Trading pair symbol
+ * @param data - Fetched data array
+ * @param name - Source name
+ * @param self - ClientOptimizer instance
+ * @returns Formatted user message content
+ */
 const DEFAULT_USER_FN = async <Data extends IOptimizerData = any>(
   symbol: string,
   data: Data[],
@@ -30,6 +40,16 @@ const DEFAULT_USER_FN = async <Data extends IOptimizerData = any>(
   return await self.params.template.getUserMessage(symbol, data, name);
 };
 
+/**
+ * Default assistant message formatter.
+ * Delegates to template's getAssistantMessage method.
+ *
+ * @param symbol - Trading pair symbol
+ * @param data - Fetched data array
+ * @param name - Source name
+ * @param self - ClientOptimizer instance
+ * @returns Formatted assistant message content
+ */
 const DEFAULT_ASSISTANT_FN = async <Data extends IOptimizerData = any>(
   symbol: string,
   data: Data[],
@@ -39,6 +59,14 @@ const DEFAULT_ASSISTANT_FN = async <Data extends IOptimizerData = any>(
   return await self.params.template.getAssistantMessage(symbol, data, name);
 };
 
+/**
+ * Resolves paginated data from source with deduplication.
+ * Uses iterateDocuments to handle pagination automatically.
+ *
+ * @param fetch - Source fetch function
+ * @param filterData - Filter arguments (symbol, dates)
+ * @returns Deduplicated array of all fetched data
+ */
 const RESOLVE_PAGINATION_FN = async <Data extends IOptimizerData = any>(
   fetch: IOptimizerSourceFn,
   filterData: IOptimizerFilterArgs
@@ -59,6 +87,15 @@ const RESOLVE_PAGINATION_FN = async <Data extends IOptimizerData = any>(
   return await resolveDocuments(distinct);
 };
 
+/**
+ * Collects data from all sources and generates strategy metadata.
+ * Iterates through training ranges, fetches data from each source,
+ * builds LLM conversation history, and generates strategy prompts.
+ *
+ * @param symbol - Trading pair symbol
+ * @param self - ClientOptimizer instance
+ * @returns Array of generated strategies with conversation context
+ */
 const GET_STRATEGY_DATA_FN = async (symbol: string, self: ClientOptimizer) => {
   const strategyList: IOptimizerStrategy[] = [];
   for (const { startDate, endDate } of self.params.rangeTrain) {
@@ -148,6 +185,14 @@ const GET_STRATEGY_DATA_FN = async (symbol: string, self: ClientOptimizer) => {
   return strategyList;
 };
 
+/**
+ * Generates complete executable strategy code.
+ * Assembles all components: imports, helpers, exchange, frames, strategies, walker, launcher.
+ *
+ * @param symbol - Trading pair symbol
+ * @param self - ClientOptimizer instance
+ * @returns Generated TypeScript/JavaScript code as string
+ */
 const GET_STRATEGY_CODE_FN = async (
   symbol: string,
   self: ClientOptimizer
@@ -278,6 +323,14 @@ const GET_STRATEGY_CODE_FN = async (
   return code;
 };
 
+/**
+ * Saves generated strategy code to file.
+ * Creates directory if needed, writes .mjs file with generated code.
+ *
+ * @param symbol - Trading pair symbol
+ * @param path - Output directory path
+ * @param self - ClientOptimizer instance
+ */
 const GET_STRATEGY_DUMP_FN = async (
   symbol: string,
   path: string,
@@ -304,9 +357,27 @@ const GET_STRATEGY_DUMP_FN = async (
   }
 };
 
+/**
+ * Client implementation for optimizer operations.
+ *
+ * Features:
+ * - Data collection from multiple sources with pagination
+ * - LLM conversation history building
+ * - Strategy code generation with templates
+ * - File export with callbacks
+ *
+ * Used by OptimizerConnectionService to create optimizer instances.
+ */
 export class ClientOptimizer implements IOptimizer {
   constructor(readonly params: IOptimizerParams) {}
 
+  /**
+   * Fetches data from all sources and generates strategy metadata.
+   * Processes each training range and builds LLM conversation history.
+   *
+   * @param symbol - Trading pair symbol
+   * @returns Array of generated strategies with conversation context
+   */
   public getData = async (symbol: string) => {
     this.params.logger.debug("ClientOptimizer getData", {
       symbol,
@@ -314,6 +385,13 @@ export class ClientOptimizer implements IOptimizer {
     return await GET_STRATEGY_DATA_FN(symbol, this);
   };
 
+  /**
+   * Generates complete executable strategy code.
+   * Includes imports, helpers, strategies, walker, and launcher.
+   *
+   * @param symbol - Trading pair symbol
+   * @returns Generated TypeScript/JavaScript code as string
+   */
   public getCode = async (symbol: string): Promise<string> => {
     this.params.logger.debug("ClientOptimizer getCode", {
       symbol,
@@ -321,6 +399,13 @@ export class ClientOptimizer implements IOptimizer {
     return await GET_STRATEGY_CODE_FN(symbol, this);
   };
 
+  /**
+   * Generates and saves strategy code to file.
+   * Creates directory if needed, writes .mjs file.
+   *
+   * @param symbol - Trading pair symbol
+   * @param path - Output directory path (default: "./")
+   */
   public dump = async (symbol: string, path = "./"): Promise<void> => {
     this.params.logger.debug("ClientOptimizer dump", {
       symbol,

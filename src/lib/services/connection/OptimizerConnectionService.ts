@@ -7,10 +7,24 @@ import ClientOptimizer from "../../../client/ClientOptimizer";
 import OptimizerSchemaService from "../schema/OptimizerSchemaService";
 import OptimizerTemplateService from "../template/OptimizerTemplateService";
 
+/**
+ * Type helper for optimizer method signatures.
+ * Maps IOptimizer interface methods to any return type.
+ */
 export type TOptimizer = {
   [key in keyof IOptimizer]: any;
 };
 
+/**
+ * Service for creating and caching optimizer client instances.
+ * Handles dependency injection and template merging.
+ *
+ * Features:
+ * - Memoized optimizer instances (one per optimizerName)
+ * - Template merging (custom + defaults)
+ * - Logger injection
+ * - Delegates to ClientOptimizer for actual operations
+ */
 export class OptimizerConnectionService implements TOptimizer {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly optimizerSchemaService = inject<OptimizerSchemaService>(
@@ -20,6 +34,15 @@ export class OptimizerConnectionService implements TOptimizer {
     TYPES.optimizerTemplateService
   );
 
+  /**
+   * Creates or retrieves cached optimizer instance.
+   * Memoized by optimizerName for performance.
+   *
+   * Merges custom templates from schema with defaults from OptimizerTemplateService.
+   *
+   * @param optimizerName - Unique optimizer identifier
+   * @returns ClientOptimizer instance with resolved dependencies
+   */
   public getOptimizer = memoize(
     ([optimizerName]) => `${optimizerName}`,
     (optimizerName: OptimizerName) => {
@@ -67,6 +90,13 @@ export class OptimizerConnectionService implements TOptimizer {
     }
   );
 
+  /**
+   * Fetches data from all sources and generates strategy metadata.
+   *
+   * @param symbol - Trading pair symbol
+   * @param optimizerName - Optimizer identifier
+   * @returns Array of generated strategies with conversation context
+   */
   public getData = async (symbol: string, optimizerName: string): Promise<IOptimizerStrategy[]> => {
     this.loggerService.log("optimizerConnectionService getData", {
       symbol,
@@ -76,6 +106,13 @@ export class OptimizerConnectionService implements TOptimizer {
     return await optimizer.getData(symbol);
   }
 
+  /**
+   * Generates complete executable strategy code.
+   *
+   * @param symbol - Trading pair symbol
+   * @param optimizerName - Optimizer identifier
+   * @returns Generated TypeScript/JavaScript code as string
+   */
   public getCode = async (symbol: string, optimizerName: string): Promise<string> => {
     this.loggerService.log("optimizerConnectionService getCode", {
       symbol,
@@ -84,7 +121,14 @@ export class OptimizerConnectionService implements TOptimizer {
     const optimizer = this.getOptimizer(optimizerName);
     return await optimizer.getCode(symbol);
   }
-  
+
+  /**
+   * Generates and saves strategy code to file.
+   *
+   * @param symbol - Trading pair symbol
+   * @param optimizerName - Optimizer identifier
+   * @param path - Output directory path (optional)
+   */
   public dump = async (symbol: string, optimizerName: string, path?: string): Promise<void> => {
     this.loggerService.log("optimizerConnectionService getCode", {
       symbol,

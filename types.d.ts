@@ -1589,46 +1589,179 @@ declare function addSizing(sizingSchema: ISizingSchema): void;
  */
 declare function addRisk(riskSchema: IRiskSchema): void;
 
+/**
+ * Message role type for LLM conversation context.
+ * Defines the sender of a message in a chat-based interaction.
+ */
 type MessageRole = "assistant" | "system" | "user";
+/**
+ * Message model for LLM conversation history.
+ * Used in Optimizer to build prompts and maintain conversation context.
+ */
 interface MessageModel {
+    /**
+     * The sender of the message.
+     * - "system": System instructions and context
+     * - "user": User input and questions
+     * - "assistant": LLM responses
+     */
     role: MessageRole;
+    /**
+     * The text content of the message.
+     * Contains the actual message text sent or received.
+     */
     content: string;
 }
 
+/**
+ * Unique identifier for data rows in optimizer sources.
+ * Can be either a string or numeric ID.
+ */
 type RowId = string | number;
+/**
+ * Time range configuration for optimizer training or testing periods.
+ * Used to define date boundaries for data collection.
+ */
 interface IOptimizerRange {
+    /**
+     * Optional description of this time range.
+     * Example: "Bull market period 2024-Q1"
+     */
     note?: string;
+    /**
+     * Start date of the range (inclusive).
+     */
     startDate: Date;
+    /**
+     * End date of the range (inclusive).
+     */
     endDate: Date;
 }
+/**
+ * Base interface for optimizer data sources.
+ * All data fetched from sources must have a unique ID for deduplication.
+ */
 interface IOptimizerData {
+    /**
+     * Unique identifier for this data row.
+     * Used for deduplication when paginating data sources.
+     */
     id: RowId;
 }
+/**
+ * Filter arguments for data source queries without pagination.
+ * Used internally to filter data by symbol and time range.
+ */
 interface IOptimizerFilterArgs {
+    /**
+     * Trading pair symbol (e.g., "BTCUSDT").
+     */
     symbol: string;
+    /**
+     * Start date of the data range (inclusive).
+     */
     startDate: Date;
+    /**
+     * End date of the data range (inclusive).
+     */
     endDate: Date;
 }
+/**
+ * Fetch arguments for paginated data source queries.
+ * Extends filter arguments with pagination parameters.
+ */
 interface IOptimizerFetchArgs extends IOptimizerFilterArgs {
+    /**
+     * Maximum number of records to fetch per request.
+     * Default: 25 (ITERATION_LIMIT)
+     */
     limit: number;
+    /**
+     * Number of records to skip from the beginning.
+     * Used for pagination (offset = page * limit).
+     */
     offset: number;
 }
+/**
+ * Data source function for fetching optimizer training data.
+ * Must support pagination and return data with unique IDs.
+ *
+ * @param args - Fetch arguments including symbol, dates, limit, offset
+ * @returns Array of data rows or Promise resolving to data array
+ */
 interface IOptimizerSourceFn<Data extends IOptimizerData = any> {
     (args: IOptimizerFetchArgs): Data[] | Promise<Data[]>;
 }
+/**
+ * Generated strategy data with LLM conversation history.
+ * Contains the full context used to generate a trading strategy.
+ */
 interface IOptimizerStrategy {
+    /**
+     * Trading pair symbol this strategy was generated for.
+     */
     symbol: string;
+    /**
+     * LLM conversation history used to generate the strategy.
+     * Contains user prompts and assistant responses for each data source.
+     */
     messages: MessageModel[];
+    /**
+     * Generated strategy prompt/description.
+     * Output from getPrompt() function, used as strategy logic.
+     */
     strategy: string;
 }
+/**
+ * Data source configuration with custom message formatters.
+ * Defines how to fetch data and format it for LLM conversation.
+ */
 interface IOptimizerSource<Data extends IOptimizerData = any> {
+    /**
+     * Optional description of this data source.
+     * Example: "Historical backtest results for training"
+     */
     note?: string;
+    /**
+     * Unique name identifying this data source.
+     * Used in callbacks and logging.
+     */
     name: string;
+    /**
+     * Function to fetch data from this source.
+     * Must support pagination via limit/offset.
+     */
     fetch: IOptimizerSourceFn<Data>;
+    /**
+     * Optional custom formatter for user messages.
+     * If not provided, uses default template from OptimizerTemplateService.
+     *
+     * @param symbol - Trading pair symbol
+     * @param data - Fetched data array
+     * @param name - Source name
+     * @returns Formatted user message content
+     */
     user?: (symbol: string, data: Data[], name: string) => string | Promise<string>;
+    /**
+     * Optional custom formatter for assistant messages.
+     * If not provided, uses default template from OptimizerTemplateService.
+     *
+     * @param symbol - Trading pair symbol
+     * @param data - Fetched data array
+     * @param name - Source name
+     * @returns Formatted assistant message content
+     */
     assistant?: (symbol: string, data: Data[], name: string) => string | Promise<string>;
 }
+/**
+ * Union type for data source configuration.
+ * Can be either a simple fetch function or a full source configuration object.
+ */
 type Source<Data extends IOptimizerData = any> = IOptimizerSourceFn<Data> | IOptimizerSource<Data>;
+/**
+ * Lifecycle callbacks for optimizer events.
+ * Provides hooks for monitoring and validating optimizer operations.
+ */
 interface IOptimizerCallbacks {
     /**
      * Called after strategy data is generated for all train ranges.
@@ -1666,38 +1799,201 @@ interface IOptimizerCallbacks {
      */
     onSourceData?: <Data extends IOptimizerData = any>(symbol: string, sourceName: string, data: Data[], startDate: Date, endDate: Date) => void | Promise<void>;
 }
+/**
+ * Template interface for generating code snippets and LLM messages.
+ * Each method returns TypeScript/JavaScript code as a string.
+ */
 interface IOptimizerTemplate {
+    /**
+     * Generates the top banner with imports and initialization.
+     *
+     * @param symbol - Trading pair symbol
+     * @returns Generated import statements and setup code
+     */
     getTopBanner(symbol: string): string | Promise<string>;
+    /**
+     * Generates default user message content for LLM conversation.
+     *
+     * @param symbol - Trading pair symbol
+     * @param data - Data array from source
+     * @param name - Source name
+     * @returns Formatted user message content
+     */
     getUserMessage<Data extends IOptimizerData = any>(symbol: string, data: Data[], name: string): string | Promise<string>;
+    /**
+     * Generates default assistant message content for LLM conversation.
+     *
+     * @param symbol - Trading pair symbol
+     * @param data - Data array from source
+     * @param name - Source name
+     * @returns Formatted assistant message content
+     */
     getAssistantMessage<Data extends IOptimizerData = any>(symbol: string, data: Data[], name: string): string | Promise<string>;
+    /**
+     * Generates Walker configuration code.
+     *
+     * @param walkerName - Unique walker identifier
+     * @param exchangeName - Exchange name to use
+     * @param frameName - Frame name for testing
+     * @param strategies - Array of strategy names to compare
+     * @returns Generated addWalker() call
+     */
     getWalkerTemplate(walkerName: string, exchangeName: string, frameName: string, strategies: string[]): string | Promise<string>;
+    /**
+     * Generates Exchange configuration code.
+     *
+     * @param symbol - Trading pair symbol
+     * @param exchangeName - Unique exchange identifier
+     * @returns Generated addExchange() call with CCXT integration
+     */
     getExchangeTemplate(symbol: string, exchangeName: string): string | Promise<string>;
+    /**
+     * Generates Frame (timeframe) configuration code.
+     *
+     * @param symbol - Trading pair symbol
+     * @param frameName - Unique frame identifier
+     * @param interval - Candle interval (e.g., "1m", "5m")
+     * @param startDate - Frame start date
+     * @param endDate - Frame end date
+     * @returns Generated addFrame() call
+     */
     getFrameTemplate(symbol: string, frameName: string, interval: CandleInterval, startDate: Date, endDate: Date): string | Promise<string>;
+    /**
+     * Generates Strategy configuration code with LLM integration.
+     *
+     * @param strategyName - Unique strategy identifier
+     * @param interval - Signal throttling interval (e.g., "5m")
+     * @param prompt - Strategy logic prompt from getPrompt()
+     * @returns Generated addStrategy() call with getSignal() function
+     */
     getStrategyTemplate(strategyName: string, interval: string, prompt: string): string | Promise<string>;
+    /**
+     * Generates launcher code to run Walker and listen to events.
+     *
+     * @param symbol - Trading pair symbol
+     * @param walkerName - Walker name to launch
+     * @returns Generated Walker.background() call with event listeners
+     */
     getLauncherTemplate(symbol: string, walkerName: string): string | Promise<string>;
+    /**
+     * Generates text() helper function for LLM text generation.
+     *
+     * @param symbol - Trading pair symbol
+     * @returns Generated async text() function using Ollama
+     */
     getTextTemplate(symbol: string): string | Promise<string>;
+    /**
+     * Generates json() helper function for structured LLM output.
+     *
+     * @param symbol - Trading pair symbol
+     * @returns Generated async json() function with signal schema
+     */
     getJsonTemplate(symbol: string): string | Promise<string>;
+    /**
+     * Generates dumpJson() helper function for debug output.
+     *
+     * @param symbol - Trading pair symbol
+     * @returns Generated async dumpJson() function for file logging
+     */
     getJsonDumpTemplate: (symbol: string) => string | Promise<string>;
 }
+/**
+ * Schema configuration for optimizer registration.
+ * Defines how to collect data, generate strategies, and create executable code.
+ */
 interface IOptimizerSchema {
+    /**
+     * Optional description of this optimizer configuration.
+     */
     note?: string;
+    /**
+     * Unique identifier for this optimizer.
+     * Used to retrieve optimizer instance from registry.
+     */
     optimizerName: OptimizerName;
+    /**
+     * Array of training time ranges.
+     * Each range generates a separate strategy variant for comparison.
+     */
     rangeTrain: IOptimizerRange[];
+    /**
+     * Testing time range for strategy validation.
+     * Used in generated Walker to evaluate strategy performance.
+     */
     rangeTest: IOptimizerRange;
+    /**
+     * Array of data sources for strategy generation.
+     * Each source contributes to the LLM conversation context.
+     */
     source: Source[];
+    /**
+     * Function to generate strategy prompt from conversation history.
+     * Called after all sources are processed for each training range.
+     *
+     * @param symbol - Trading pair symbol
+     * @param messages - Complete conversation history with all sources
+     * @returns Strategy prompt/logic description
+     */
     getPrompt: (symbol: string, messages: MessageModel[]) => string | Promise<string>;
+    /**
+     * Optional custom template overrides.
+     * If not provided, uses defaults from OptimizerTemplateService.
+     */
     template?: Partial<IOptimizerTemplate>;
+    /**
+     * Optional lifecycle callbacks for monitoring.
+     */
     callbacks?: Partial<IOptimizerCallbacks>;
 }
+/**
+ * Internal parameters for ClientOptimizer instantiation.
+ * Extends schema with resolved dependencies (logger, complete template).
+ */
 interface IOptimizerParams extends IOptimizerSchema {
+    /**
+     * Logger instance for debug and info messages.
+     * Injected by OptimizerConnectionService.
+     */
     logger: ILogger;
+    /**
+     * Complete template implementation with all methods.
+     * Merged from schema.template and OptimizerTemplateService defaults.
+     */
     template: IOptimizerTemplate;
 }
+/**
+ * Optimizer client interface for strategy generation and code export.
+ * Implemented by ClientOptimizer class.
+ */
 interface IOptimizer {
+    /**
+     * Fetches data from all sources and generates strategy metadata.
+     * Processes each training range and builds LLM conversation history.
+     *
+     * @param symbol - Trading pair symbol
+     * @returns Array of generated strategies with conversation context
+     */
     getData(symbol: string): Promise<IOptimizerStrategy[]>;
+    /**
+     * Generates complete executable strategy code.
+     * Includes imports, helpers, strategies, walker, and launcher.
+     *
+     * @param symbol - Trading pair symbol
+     * @returns Generated TypeScript/JavaScript code as string
+     */
     getCode(symbol: string): Promise<string>;
+    /**
+     * Generates and saves strategy code to file.
+     * Creates directory if needed, writes .mjs file.
+     *
+     * @param symbol - Trading pair symbol
+     * @param path - Output directory path (default: "./")
+     */
     dump(symbol: string, path?: string): Promise<void>;
 }
+/**
+ * Unique string identifier for registered optimizers.
+ */
 type OptimizerName = string;
 
 /**
@@ -4555,17 +4851,81 @@ declare class PositionSizeUtils {
 }
 declare const PositionSize: typeof PositionSizeUtils;
 
+/**
+ * Public API utilities for optimizer operations.
+ * Provides high-level methods for strategy generation and code export.
+ *
+ * Usage:
+ * ```typescript
+ * import { Optimizer } from "backtest-kit";
+ *
+ * // Get strategy data
+ * const strategies = await Optimizer.getData("BTCUSDT", {
+ *   optimizerName: "my-optimizer"
+ * });
+ *
+ * // Generate code
+ * const code = await Optimizer.getCode("BTCUSDT", {
+ *   optimizerName: "my-optimizer"
+ * });
+ *
+ * // Save to file
+ * await Optimizer.dump("BTCUSDT", {
+ *   optimizerName: "my-optimizer"
+ * }, "./output");
+ * ```
+ */
 declare class OptimizerUtils {
+    /**
+     * Fetches data from all sources and generates strategy metadata.
+     * Processes each training range and builds LLM conversation history.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Context with optimizerName
+     * @returns Array of generated strategies with conversation context
+     * @throws Error if optimizer not found
+     */
     getData: (symbol: string, context: {
         optimizerName: OptimizerName;
     }) => Promise<IOptimizerStrategy[]>;
+    /**
+     * Generates complete executable strategy code.
+     * Includes imports, helpers, strategies, walker, and launcher.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Context with optimizerName
+     * @returns Generated TypeScript/JavaScript code as string
+     * @throws Error if optimizer not found
+     */
     getCode: (symbol: string, context: {
         optimizerName: OptimizerName;
     }) => Promise<string>;
+    /**
+     * Generates and saves strategy code to file.
+     * Creates directory if needed, writes .mjs file.
+     *
+     * Format: `{optimizerName}_{symbol}.mjs`
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Context with optimizerName
+     * @param path - Output directory path (default: "./")
+     * @throws Error if optimizer not found or file write fails
+     */
     dump: (symbol: string, context: {
         optimizerName: string;
     }, path?: string) => Promise<void>;
 }
+/**
+ * Singleton instance of OptimizerUtils.
+ * Public API for optimizer operations.
+ *
+ * @example
+ * ```typescript
+ * import { Optimizer } from "backtest-kit";
+ *
+ * await Optimizer.dump("BTCUSDT", { optimizerName: "my-optimizer" });
+ * ```
+ */
 declare const Optimizer: OptimizerUtils;
 
 /**
@@ -6538,65 +6898,352 @@ declare class RiskValidationService {
     list: () => Promise<IRiskSchema[]>;
 }
 
+/**
+ * Default template service for generating optimizer code snippets.
+ * Implements all IOptimizerTemplate methods with Ollama LLM integration.
+ *
+ * Features:
+ * - Multi-timeframe analysis (1m, 5m, 15m, 1h)
+ * - JSON structured output for signals
+ * - Debug logging to ./dump/strategy
+ * - CCXT exchange integration
+ * - Walker-based strategy comparison
+ *
+ * Can be partially overridden in optimizer schema configuration.
+ */
 declare class OptimizerTemplateService implements IOptimizerTemplate {
     private readonly loggerService;
+    /**
+     * Generates the top banner with imports and constants.
+     *
+     * @param symbol - Trading pair symbol
+     * @returns Shebang, imports, and WARN_KB constant
+     */
     getTopBanner: (symbol: string) => Promise<string>;
+    /**
+     * Generates default user message for LLM conversation.
+     * Simple prompt to read and acknowledge data.
+     *
+     * @param symbol - Trading pair symbol
+     * @param data - Fetched data array
+     * @param name - Source name
+     * @returns User message with JSON data
+     */
     getUserMessage: (symbol: string, data: IOptimizerData[], name: string) => Promise<string>;
+    /**
+     * Generates default assistant message for LLM conversation.
+     * Simple acknowledgment response.
+     *
+     * @param symbol - Trading pair symbol
+     * @param data - Fetched data array
+     * @param name - Source name
+     * @returns Assistant acknowledgment message
+     */
     getAssistantMessage: (symbol: string, data: IOptimizerData[], name: string) => Promise<string>;
+    /**
+     * Generates Walker configuration code.
+     * Compares multiple strategies on test frame.
+     *
+     * @param walkerName - Unique walker identifier
+     * @param exchangeName - Exchange to use for backtesting
+     * @param frameName - Test frame name
+     * @param strategies - Array of strategy names to compare
+     * @returns Generated addWalker() call
+     */
     getWalkerTemplate: (walkerName: string, exchangeName: string, frameName: string, strategies: string[]) => Promise<string>;
+    /**
+     * Generates Strategy configuration with LLM integration.
+     * Includes multi-timeframe analysis and signal generation.
+     *
+     * @param strategyName - Unique strategy identifier
+     * @param interval - Signal throttling interval (e.g., "5m")
+     * @param prompt - Strategy logic from getPrompt()
+     * @returns Generated addStrategy() call with getSignal() function
+     */
     getStrategyTemplate: (strategyName: string, interval: string, prompt: string) => Promise<string>;
+    /**
+     * Generates Exchange configuration code.
+     * Uses CCXT Binance with standard formatters.
+     *
+     * @param symbol - Trading pair symbol (unused, for consistency)
+     * @param exchangeName - Unique exchange identifier
+     * @returns Generated addExchange() call with CCXT integration
+     */
     getExchangeTemplate: (symbol: string, exchangeName: ExchangeName) => Promise<string>;
+    /**
+     * Generates Frame (timeframe) configuration code.
+     *
+     * @param symbol - Trading pair symbol (unused, for consistency)
+     * @param frameName - Unique frame identifier
+     * @param interval - Candle interval (e.g., "1m")
+     * @param startDate - Frame start date
+     * @param endDate - Frame end date
+     * @returns Generated addFrame() call
+     */
     getFrameTemplate: (symbol: string, frameName: string, interval: CandleInterval, startDate: Date, endDate: Date) => Promise<string>;
+    /**
+     * Generates launcher code to run Walker with event listeners.
+     * Includes progress tracking and completion handlers.
+     *
+     * @param symbol - Trading pair symbol
+     * @param walkerName - Walker name to launch
+     * @returns Generated Walker.background() call with listeners
+     */
     getLauncherTemplate: (symbol: string, walkerName: string) => Promise<string>;
+    /**
+     * Generates dumpJson() helper function for debug output.
+     * Saves LLM conversations and results to ./dump/strategy/{resultId}/
+     *
+     * @param symbol - Trading pair symbol (unused, for consistency)
+     * @returns Generated async dumpJson() function
+     */
     getJsonDumpTemplate: (symbol: string) => Promise<string>;
+    /**
+     * Generates text() helper for LLM text generation.
+     * Uses Ollama gpt-oss:20b model for market analysis.
+     *
+     * @param symbol - Trading pair symbol (used in prompt)
+     * @returns Generated async text() function
+     */
     getTextTemplate: (symbol: string) => Promise<string>;
+    /**
+     * Generates json() helper for structured LLM output.
+     * Uses Ollama with JSON schema for trading signals.
+     *
+     * Signal schema:
+     * - position: "wait" | "long" | "short"
+     * - note: strategy explanation
+     * - priceOpen: entry price
+     * - priceTakeProfit: target price
+     * - priceStopLoss: stop price
+     * - minuteEstimatedTime: expected duration (max 360 min)
+     *
+     * @param symbol - Trading pair symbol (unused, for consistency)
+     * @returns Generated async json() function with signal schema
+     */
     getJsonTemplate: (symbol: string) => Promise<string>;
 }
 
+/**
+ * Service for managing optimizer schema registration and retrieval.
+ * Provides validation and registry management for optimizer configurations.
+ *
+ * Uses ToolRegistry for immutable schema storage.
+ */
 declare class OptimizerSchemaService {
     readonly loggerService: LoggerService;
     private _registry;
+    /**
+     * Registers a new optimizer schema.
+     * Validates required fields before registration.
+     *
+     * @param key - Unique optimizer name
+     * @param value - Optimizer schema configuration
+     * @throws Error if schema validation fails
+     */
     register: (key: OptimizerName, value: IOptimizerSchema) => void;
+    /**
+     * Validates optimizer schema structure.
+     * Checks required fields: optimizerName, rangeTrain, source, getPrompt.
+     *
+     * @param optimizerSchema - Schema to validate
+     * @throws Error if validation fails
+     */
     private validateShallow;
+    /**
+     * Partially overrides an existing optimizer schema.
+     * Merges provided values with existing schema.
+     *
+     * @param key - Optimizer name to override
+     * @param value - Partial schema values to merge
+     * @returns Updated complete schema
+     * @throws Error if optimizer not found
+     */
     override: (key: OptimizerName, value: Partial<IOptimizerSchema>) => IOptimizerSchema;
+    /**
+     * Retrieves optimizer schema by name.
+     *
+     * @param key - Optimizer name
+     * @returns Complete optimizer schema
+     * @throws Error if optimizer not found
+     */
     get: (key: OptimizerName) => IOptimizerSchema;
 }
 
+/**
+ * Service for validating optimizer existence and managing optimizer registry.
+ * Maintains a Map of registered optimizers for validation purposes.
+ *
+ * Uses memoization for efficient repeated validation checks.
+ */
 declare class OptimizerValidationService {
     private readonly loggerService;
     private _optimizerMap;
+    /**
+     * Adds optimizer to validation registry.
+     * Prevents duplicate optimizer names.
+     *
+     * @param optimizerName - Unique optimizer identifier
+     * @param optimizerSchema - Complete optimizer schema
+     * @throws Error if optimizer with same name already exists
+     */
     addOptimizer: (optimizerName: OptimizerName, optimizerSchema: IOptimizerSchema) => void;
+    /**
+     * Validates that optimizer exists in registry.
+     * Memoized for performance on repeated checks.
+     *
+     * @param optimizerName - Optimizer name to validate
+     * @param source - Source method name for error messages
+     * @throws Error if optimizer not found
+     */
     validate: (optimizerName: OptimizerName, source: string) => void;
+    /**
+     * Lists all registered optimizer schemas.
+     *
+     * @returns Array of all optimizer schemas
+     */
     list: () => Promise<IOptimizerSchema[]>;
 }
 
+/**
+ * Client implementation for optimizer operations.
+ *
+ * Features:
+ * - Data collection from multiple sources with pagination
+ * - LLM conversation history building
+ * - Strategy code generation with templates
+ * - File export with callbacks
+ *
+ * Used by OptimizerConnectionService to create optimizer instances.
+ */
 declare class ClientOptimizer implements IOptimizer {
     readonly params: IOptimizerParams;
     constructor(params: IOptimizerParams);
+    /**
+     * Fetches data from all sources and generates strategy metadata.
+     * Processes each training range and builds LLM conversation history.
+     *
+     * @param symbol - Trading pair symbol
+     * @returns Array of generated strategies with conversation context
+     */
     getData: (symbol: string) => Promise<IOptimizerStrategy[]>;
+    /**
+     * Generates complete executable strategy code.
+     * Includes imports, helpers, strategies, walker, and launcher.
+     *
+     * @param symbol - Trading pair symbol
+     * @returns Generated TypeScript/JavaScript code as string
+     */
     getCode: (symbol: string) => Promise<string>;
+    /**
+     * Generates and saves strategy code to file.
+     * Creates directory if needed, writes .mjs file.
+     *
+     * @param symbol - Trading pair symbol
+     * @param path - Output directory path (default: "./")
+     */
     dump: (symbol: string, path?: string) => Promise<void>;
 }
 
+/**
+ * Type helper for optimizer method signatures.
+ * Maps IOptimizer interface methods to any return type.
+ */
 type TOptimizer = {
     [key in keyof IOptimizer]: any;
 };
+/**
+ * Service for creating and caching optimizer client instances.
+ * Handles dependency injection and template merging.
+ *
+ * Features:
+ * - Memoized optimizer instances (one per optimizerName)
+ * - Template merging (custom + defaults)
+ * - Logger injection
+ * - Delegates to ClientOptimizer for actual operations
+ */
 declare class OptimizerConnectionService implements TOptimizer {
     private readonly loggerService;
     private readonly optimizerSchemaService;
     private readonly optimizerTemplateService;
+    /**
+     * Creates or retrieves cached optimizer instance.
+     * Memoized by optimizerName for performance.
+     *
+     * Merges custom templates from schema with defaults from OptimizerTemplateService.
+     *
+     * @param optimizerName - Unique optimizer identifier
+     * @returns ClientOptimizer instance with resolved dependencies
+     */
     getOptimizer: ((optimizerName: OptimizerName) => ClientOptimizer) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, ClientOptimizer>;
+    /**
+     * Fetches data from all sources and generates strategy metadata.
+     *
+     * @param symbol - Trading pair symbol
+     * @param optimizerName - Optimizer identifier
+     * @returns Array of generated strategies with conversation context
+     */
     getData: (symbol: string, optimizerName: string) => Promise<IOptimizerStrategy[]>;
+    /**
+     * Generates complete executable strategy code.
+     *
+     * @param symbol - Trading pair symbol
+     * @param optimizerName - Optimizer identifier
+     * @returns Generated TypeScript/JavaScript code as string
+     */
     getCode: (symbol: string, optimizerName: string) => Promise<string>;
+    /**
+     * Generates and saves strategy code to file.
+     *
+     * @param symbol - Trading pair symbol
+     * @param optimizerName - Optimizer identifier
+     * @param path - Output directory path (optional)
+     */
     dump: (symbol: string, optimizerName: string, path?: string) => Promise<void>;
 }
 
+/**
+ * Global service for optimizer operations with validation.
+ * Entry point for public API, performs validation before delegating to ConnectionService.
+ *
+ * Workflow:
+ * 1. Log operation
+ * 2. Validate optimizer exists
+ * 3. Delegate to OptimizerConnectionService
+ */
 declare class OptimizerGlobalService {
     private readonly loggerService;
     private readonly optimizerConnectionService;
     private readonly optimizerValidationService;
+    /**
+     * Fetches data from all sources and generates strategy metadata.
+     * Validates optimizer existence before execution.
+     *
+     * @param symbol - Trading pair symbol
+     * @param optimizerName - Optimizer identifier
+     * @returns Array of generated strategies with conversation context
+     * @throws Error if optimizer not found
+     */
     getData: (symbol: string, optimizerName: string) => Promise<IOptimizerStrategy[]>;
+    /**
+     * Generates complete executable strategy code.
+     * Validates optimizer existence before execution.
+     *
+     * @param symbol - Trading pair symbol
+     * @param optimizerName - Optimizer identifier
+     * @returns Generated TypeScript/JavaScript code as string
+     * @throws Error if optimizer not found
+     */
     getCode: (symbol: string, optimizerName: string) => Promise<string>;
+    /**
+     * Generates and saves strategy code to file.
+     * Validates optimizer existence before execution.
+     *
+     * @param symbol - Trading pair symbol
+     * @param optimizerName - Optimizer identifier
+     * @param path - Output directory path (optional)
+     * @throws Error if optimizer not found
+     */
     dump: (symbol: string, optimizerName: string, path?: string) => Promise<void>;
 }
 

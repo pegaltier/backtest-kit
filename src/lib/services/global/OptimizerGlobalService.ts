@@ -9,6 +9,15 @@ const METHOD_NAME_GET_DATA = "optimizerGlobalService getData";
 const METHOD_NAME_GET_CODE = "optimizerGlobalService getCode";
 const METHOD_NAME_DUMP = "optimizerGlobalService dump";
 
+/**
+ * Global service for optimizer operations with validation.
+ * Entry point for public API, performs validation before delegating to ConnectionService.
+ *
+ * Workflow:
+ * 1. Log operation
+ * 2. Validate optimizer exists
+ * 3. Delegate to OptimizerConnectionService
+ */
 export class OptimizerGlobalService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly optimizerConnectionService =
@@ -16,6 +25,15 @@ export class OptimizerGlobalService {
   private readonly optimizerValidationService =
     inject<OptimizerValidationService>(TYPES.optimizerValidationService);
 
+  /**
+   * Fetches data from all sources and generates strategy metadata.
+   * Validates optimizer existence before execution.
+   *
+   * @param symbol - Trading pair symbol
+   * @param optimizerName - Optimizer identifier
+   * @returns Array of generated strategies with conversation context
+   * @throws Error if optimizer not found
+   */
   public getData = async (
     symbol: string,
     optimizerName: string
@@ -31,6 +49,15 @@ export class OptimizerGlobalService {
     return await this.optimizerConnectionService.getData(symbol, optimizerName);
   };
 
+  /**
+   * Generates complete executable strategy code.
+   * Validates optimizer existence before execution.
+   *
+   * @param symbol - Trading pair symbol
+   * @param optimizerName - Optimizer identifier
+   * @returns Generated TypeScript/JavaScript code as string
+   * @throws Error if optimizer not found
+   */
   public getCode = async (
     symbol: string,
     optimizerName: string
@@ -46,6 +73,15 @@ export class OptimizerGlobalService {
     return await this.optimizerConnectionService.getCode(symbol, optimizerName);
   };
 
+  /**
+   * Generates and saves strategy code to file.
+   * Validates optimizer existence before execution.
+   *
+   * @param symbol - Trading pair symbol
+   * @param optimizerName - Optimizer identifier
+   * @param path - Output directory path (optional)
+   * @throws Error if optimizer not found
+   */
   public dump = async (
     symbol: string,
     optimizerName: string,
