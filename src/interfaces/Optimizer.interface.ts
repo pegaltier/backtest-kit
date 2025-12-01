@@ -112,7 +112,8 @@ export interface IOptimizerValidation {
 export interface IOptimizerSchema {
   note?: string;
   optimizerName: OptimizerName;
-  range: IOptimizerRange[];
+  rangeTrain: IOptimizerRange[];
+  rangeTest: IOptimizerRange;
   source: Source[];
   getPrompt: (
     symbol: string,

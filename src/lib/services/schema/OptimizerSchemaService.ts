@@ -26,9 +26,9 @@ export class OptimizerSchemaService {
       throw new Error(`optimizer template validation failed: missing optimizerName`);
     }
 
-    if (!Array.isArray(optimizerSchema.range) || optimizerSchema.range.length === 0) {
+    if (!Array.isArray(optimizerSchema.rangeTrain) || optimizerSchema.rangeTrain.length === 0) {
       throw new Error(
-        `optimizer template validation failed: range must be a non-empty array for optimizerName=${optimizerSchema.optimizerName}`
+        `optimizer template validation failed: rangeTrain must be a non-empty array for optimizerName=${optimizerSchema.optimizerName}`
       );
     }
 

@@ -6394,15 +6394,24 @@ type Source<Data extends IOptimizerData = any> = IOptimizerSourceFn<Data> | IOpt
 interface IOptimizerCallbacks {
 }
 interface IOptimizerTemplate {
-    getUserMessage<Data extends IOptimizerData = any>(symbol: string, data: Data[], name: string): Promise<string>;
-    getAssistantMessage<Data extends IOptimizerData = any>(symbol: string, data: Data[], name: string): Promise<string>;
+    getTopBanner(symbol: string): string | Promise<string>;
+    getUserMessage<Data extends IOptimizerData = any>(symbol: string, data: Data[], name: string): string | Promise<string>;
+    getAssistantMessage<Data extends IOptimizerData = any>(symbol: string, data: Data[], name: string): string | Promise<string>;
+    getWalkerTemplate(walkerName: string, exchangeName: string, frameName: string, strategies: string[]): string | Promise<string>;
+    getExchangeTemplate(symbol: string, exchangeName: string): string | Promise<string>;
+    getFrameTemplate(symbol: string, frameName: string, interval: CandleInterval, startDate: Date, endDate: Date): string | Promise<string>;
+    getStrategyTemplate(strategyName: string, interval: string, prompt: string): string | Promise<string>;
+    getLauncherTemplate(symbol: string, walkerName: string): string | Promise<string>;
+    getTextTemplate(symbol: string): string | Promise<string>;
+    getJsonTemplate(symbol: string): string | Promise<string>;
 }
 interface IOptimizerSchema {
     note?: string;
     optimizerName: OptimizerName;
-    range: IOptimizerRange[];
+    rangeTrain: IOptimizerRange[];
+    rangeTest: IOptimizerRange;
     source: Source[];
-    getPrompt: (messages: MessageModel$1[]) => string | Promise<string>;
+    getPrompt: (symbol: string, messages: MessageModel$1[]) => string | Promise<string>;
     template?: Partial<IOptimizerTemplate>;
     callbacks?: Partial<IOptimizerCallbacks>;
 }
@@ -6410,8 +6419,16 @@ type OptimizerName = string;
 
 declare class OptimizerTemplateService implements IOptimizerTemplate {
     private readonly loggerService;
-    getUserMessage: (symbol: string, data: IOptimizerData[]) => Promise<string>;
-    getAssistantMessage: (symbol: string, data: IOptimizerData[]) => Promise<string>;
+    getTopBanner: (symbol: string) => Promise<string>;
+    getUserMessage: (symbol: string, data: IOptimizerData[], name: string) => Promise<string>;
+    getAssistantMessage: (symbol: string, data: IOptimizerData[], name: string) => Promise<string>;
+    getWalkerTemplate: (walkerName: string, exchangeName: string, frameName: string, strategies: string[]) => Promise<string>;
+    getStrategyTemplate: (strategyName: string, interval: string, prompt: string) => Promise<string>;
+    getExchangeTemplate: (symbol: string, exchangeName: ExchangeName) => Promise<string>;
+    getFrameTemplate: (symbol: string, frameName: string, interval: CandleInterval, startDate: Date, endDate: Date) => Promise<string>;
+    getLauncherTemplate: (symbol: string, walkerName: string) => Promise<string>;
+    getTextTemplate: (symbol: string) => Promise<string>;
+    getJsonTemplate: (symbol: string) => Promise<string>;
 }
 
 declare class OptimizerSchemaService {

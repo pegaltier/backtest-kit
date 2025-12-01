@@ -59,7 +59,7 @@ const RESOLVE_PAGINATION_FN = async <Data extends IOptimizerData = any>(
 
 const GET_STRATEGY_DATA_FN = async (symbol: string, self: ClientOptimizer) => {
   const strategyList: IOptimizerStrategy[] = [];
-  for (const { startDate, endDate } of self.params.range) {
+  for (const { startDate, endDate } of self.params.rangeTrain) {
     const messageList: MessageModel[] = [];
     for (const source of self.params.source) {
       if (typeof source === "function") {
@@ -158,27 +158,49 @@ export class ClientOptimizer implements IOptimizer {
 
     // 3. Exchange template (assuming first strategy has exchange info)
     {
-      sections.push(await this.params.template.getExchangeTemplate(symbol, `${prefix}_${exchangeName}`));
-      sections.push("");
-    }
-
-    // 4. Frame templates for each range
-    for (let i = 0; i < this.params.range.length; i++) {
-      const range = this.params.range[i];
-      const frameName = `${prefix}_frame-${i + 1}`;
       sections.push(
-        await this.params.template.getFrameTemplate(
+        await this.params.template.getExchangeTemplate(
           symbol,
-          frameName,
-          "1m", // default interval
-          range.startDate,
-          range.endDate
+          `${prefix}_${exchangeName}`
         )
       );
       sections.push("");
     }
 
-    // 5. Strategy templates for each generated strategy
+    // 4. Train frame templates
+    {
+      for (let i = 0; i < this.params.rangeTrain.length; i++) {
+        const range = this.params.rangeTrain[i];
+        const frameName = `${prefix}_train_frame-${i + 1}`;
+        sections.push(
+          await this.params.template.getFrameTemplate(
+            symbol,
+            frameName,
+            "1m", // default interval
+            range.startDate,
+            range.endDate
+          )
+        );
+        sections.push("");
+      }
+    }
+
+    // 5. Test frame template
+    {
+      const testFrameName = `${prefix}_test_frame`;
+      sections.push(
+        await this.params.template.getFrameTemplate(
+          symbol,
+          testFrameName,
+          "1m", // default interval
+          this.params.rangeTest.startDate,
+          this.params.rangeTest.endDate
+        )
+      );
+      sections.push("");
+    }
+
+    // 6. Strategy templates for each generated strategy
     {
       for (let i = 0; i < strategyData.length; i++) {
         const strategy = strategyData[i];
@@ -195,32 +217,35 @@ export class ClientOptimizer implements IOptimizer {
       }
     }
 
-    // 6. Walker template
+    // 7. Walker template (uses test frame for validation)
     {
-      const walkerName = `${prefix}_walker-1`;
-      const frameName = `${prefix}_frame-1`;
-      const strategies = strategyData.map((_, i) => `${prefix}_strategy-${i + 1}`);
+      const walkerName = `${prefix}_walker`;
+      const testFrameName = `${prefix}_test_frame`;
+      const strategies = strategyData.map(
+        (_, i) => `${prefix}_strategy-${i + 1}`
+      );
       sections.push(
         await this.params.template.getWalkerTemplate(
           walkerName,
           `${prefix}_${exchangeName}`,
-          frameName,
+          testFrameName,
           strategies
         )
       );
       sections.push("");
     }
 
-    // 7. Launcher template
+    // 8. Launcher template
     {
-      const walkerName = `${prefix}_walker-1`;
-      sections.push(await this.params.template.getLauncherTemplate(symbol, walkerName));
+      const walkerName = `${prefix}_walker`;
+      sections.push(
+        await this.params.template.getLauncherTemplate(symbol, walkerName)
+      );
       sections.push("");
     }
 
     return str.newline(sections);
-  }
-
+  };
 }
 
 export default ClientOptimizer;
