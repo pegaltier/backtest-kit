@@ -6404,6 +6404,7 @@ interface IOptimizerTemplate {
     getLauncherTemplate(symbol: string, walkerName: string): string | Promise<string>;
     getTextTemplate(symbol: string): string | Promise<string>;
     getJsonTemplate(symbol: string): string | Promise<string>;
+    getJsonDumpTemplate: (symbol: string) => string | Promise<string>;
 }
 interface IOptimizerSchema {
     note?: string;
@@ -6427,6 +6428,7 @@ declare class OptimizerTemplateService implements IOptimizerTemplate {
     getExchangeTemplate: (symbol: string, exchangeName: ExchangeName) => Promise<string>;
     getFrameTemplate: (symbol: string, frameName: string, interval: CandleInterval, startDate: Date, endDate: Date) => Promise<string>;
     getLauncherTemplate: (symbol: string, walkerName: string) => Promise<string>;
+    getJsonDumpTemplate: (symbol: string) => Promise<string>;
     getTextTemplate: (symbol: string) => Promise<string>;
     getJsonTemplate: (symbol: string) => Promise<string>;
 }

@@ -40,6 +40,26 @@ const INTERVAL_MINUTES: Record<SignalInterval, number> = {
 const VALIDATE_SIGNAL_FN = (signal: ISignalRow, currentPrice: number, isScheduled: boolean): void => {
   const errors: string[] = [];
 
+  // ПРОВЕРКА ОБЯЗАТЕЛЬНЫХ ПОЛЕЙ ISignalRow
+  if (signal.id === undefined || signal.id === null || signal.id === '') {
+    errors.push('id is required and must be a non-empty string');
+  }
+  if (signal.exchangeName === undefined || signal.exchangeName === null || signal.exchangeName === '') {
+    errors.push('exchangeName is required');
+  }
+  if (signal.strategyName === undefined || signal.strategyName === null || signal.strategyName === '') {
+    errors.push('strategyName is required');
+  }
+  if (signal.symbol === undefined || signal.symbol === null || signal.symbol === '') {
+    errors.push('symbol is required and must be a non-empty string');
+  }
+  if (signal._isScheduled === undefined || signal._isScheduled === null) {
+    errors.push('_isScheduled is required');
+  }
+  if (signal.position === undefined || signal.position === null) {
+    errors.push('position is required and must be "long" or "short"');
+  }
+
   // ЗАЩИТА ОТ NaN/Infinity: currentPrice должна быть конечным числом
   if (!isFinite(currentPrice)) {
     errors.push(
