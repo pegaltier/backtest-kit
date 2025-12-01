@@ -47,13 +47,3 @@ dump: (strategyName: string, path?: string) => Promise<void>
 ```
 
 Saves strategy report to disk.
-
-### clear
-
-```ts
-clear: (strategyName?: string) => Promise<void>
-```
-
-Clears accumulated scheduled signal data from storage.
-If strategyName is provided, clears only that strategy's data.
-If strategyName is omitted, clears all strategies' data.

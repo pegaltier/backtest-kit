@@ -78,7 +78,7 @@ Cache key is strategyName string.
 ### getPendingSignal
 
 ```ts
-getPendingSignal: () => Promise<ISignalRow>
+getPendingSignal: (strategyName: string) => Promise<ISignalRow>
 ```
 
 Retrieves the currently active pending signal for the strategy.

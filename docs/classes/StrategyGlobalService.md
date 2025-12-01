@@ -70,7 +70,7 @@ Logs validation activity.
 ### getPendingSignal
 
 ```ts
-getPendingSignal: (symbol: string, when: Date, backtest: boolean) => Promise<ISignalRow>
+getPendingSignal: (strategyName: string) => Promise<ISignalRow>
 ```
 
 Retrieves the currently active pending signal for the symbol.

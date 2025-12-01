@@ -56,7 +56,7 @@ static dump(strategyName: string, path?: string): Promise<void>;
 Saves performance report to disk.
 
 Creates directory if it doesn't exist.
-Default path: ./logs/performance/{strategyName}.md
+Default path: ./dump/performance/{strategyName}.md
 
 ### clear
 

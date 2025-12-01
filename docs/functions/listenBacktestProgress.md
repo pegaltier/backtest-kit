@@ -1,12 +1,12 @@
 ---
-title: docs/api-reference/function/listenProgress
+title: docs/api-reference/function/listenBacktestProgress
 group: docs
 ---
 
-# listenProgress
+# listenBacktestProgress
 
 ```ts
-declare function listenProgress(fn: (event: ProgressContract) => void): () => void;
+declare function listenBacktestProgress(fn: (event: ProgressBacktestContract) => void): () => void;
 ```
 
 Subscribes to backtest progress events with queued async processing.

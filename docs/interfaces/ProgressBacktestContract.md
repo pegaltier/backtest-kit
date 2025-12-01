@@ -1,9 +1,9 @@
 ---
-title: docs/api-reference/interface/ProgressContract
+title: docs/api-reference/interface/ProgressBacktestContract
 group: docs
 ---
 
-# ProgressContract
+# ProgressBacktestContract
 
 Contract for backtest progress events.
 
