@@ -103,6 +103,12 @@ export interface IOptimizerStrategy {
   symbol: string;
 
   /**
+   * Unique name taken from data source.
+   * Used in callbacks and logging.
+   */
+  name: string;
+
+  /**
    * LLM conversation history used to generate the strategy.
    * Contains user prompts and assistant responses for each data source.
    */

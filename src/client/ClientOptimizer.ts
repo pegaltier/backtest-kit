@@ -132,50 +132,55 @@ const GET_STRATEGY_DATA_FN = async (symbol: string, self: ClientOptimizer) => {
             content: assistantContent,
           }
         );
-        return;
-      }
-      const {
-        fetch,
-        name = DEFAULT_SOURCE_NAME,
-        assistant = DEFAULT_ASSISTANT_FN,
-        user = DEFAULT_USER_FN,
-      } = source;
-      const data = await RESOLVE_PAGINATION_FN(fetch, {
-        symbol,
-        startDate,
-        endDate,
-      });
-
-      if (self.params.callbacks?.onSourceData) {
-        await self.params.callbacks.onSourceData(
+      } else {
+        const {
+          fetch,
+          name = DEFAULT_SOURCE_NAME,
+          assistant = DEFAULT_ASSISTANT_FN,
+          user = DEFAULT_USER_FN,
+        } = source;
+        const data = await RESOLVE_PAGINATION_FN(fetch, {
           symbol,
-          name,
-          data,
           startDate,
-          endDate
+          endDate,
+        });
+
+        if (self.params.callbacks?.onSourceData) {
+          await self.params.callbacks.onSourceData(
+            symbol,
+            name,
+            data,
+            startDate,
+            endDate
+          );
+        }
+
+        const [userContent, assistantContent] = await Promise.all([
+          user(symbol, data, name, self),
+          assistant(symbol, data, name, self),
+        ]);
+        messageList.push(
+          {
+            role: "user",
+            content: userContent,
+          },
+          {
+            role: "assistant",
+            content: assistantContent,
+          }
         );
       }
-
-      const [userContent, assistantContent] = await Promise.all([
-        user(symbol, data, name, self),
-        assistant(symbol, data, name, self),
-      ]);
-      messageList.push(
-        {
-          role: "user",
-          content: userContent,
-        },
-        {
-          role: "assistant",
-          content: assistantContent,
-        }
-      );
+      const name =
+        "name" in source
+          ? source.name || DEFAULT_SOURCE_NAME
+          : DEFAULT_SOURCE_NAME;
+      strategyList.push({
+        symbol,
+        name,
+        messages: messageList,
+        strategy: await self.params.getPrompt(symbol, messageList),
+      });
     }
-    strategyList.push({
-      symbol,
-      messages: messageList,
-      strategy: await self.params.getPrompt(symbol, messageList),
-    });
   }
 
   if (self.params.callbacks?.onData) {
@@ -193,10 +198,7 @@ const GET_STRATEGY_DATA_FN = async (symbol: string, self: ClientOptimizer) => {
  * @param self - ClientOptimizer instance
  * @returns Generated TypeScript/JavaScript code as string
  */
-const GET_STRATEGY_CODE_FN = async (
-  symbol: string,
-  self: ClientOptimizer
-) => {
+const GET_STRATEGY_CODE_FN = async (symbol: string, self: ClientOptimizer) => {
   const strategyData = await self.getData(symbol);
 
   const prefix = CREATE_PREFIX_FN();

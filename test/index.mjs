@@ -29,6 +29,7 @@ import "./spec/event.test.mjs";
 import "./spec/validation.test.mjs";
 import "./spec/backtest.test.mjs";
 import "./spec/pnl.test.mjs";
+import "./spec/optimizer.test.mjs"
 
 run(import.meta.url, () => {
     console.log("All tests are finished");

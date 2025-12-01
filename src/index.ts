@@ -6,6 +6,7 @@ export {
   addWalker,
   addSizing,
   addRisk,
+  addOptimizer,
 } from "./function/add";
 export {
   listExchanges,

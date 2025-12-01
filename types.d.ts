@@ -1334,262 +1334,6 @@ interface ISizing {
 type SizingName = string;
 
 /**
- * Registers a trading strategy in the framework.
- *
- * The strategy will be validated for:
- * - Signal validation (prices, TP/SL logic, timestamps)
- * - Interval throttling (prevents signal spam)
- * - Crash-safe persistence in live mode
- *
- * @param strategySchema - Strategy configuration object
- * @param strategySchema.strategyName - Unique strategy identifier
- * @param strategySchema.interval - Signal generation interval ("1m" | "3m" | "5m" | "15m" | "30m" | "1h")
- * @param strategySchema.getSignal - Async function that generates trading signals
- * @param strategySchema.callbacks - Optional lifecycle callbacks (onOpen, onClose)
- *
- * @example
- * ```typescript
- * addStrategy({
- *   strategyName: "my-strategy",
- *   interval: "5m",
- *   getSignal: async (symbol) => ({
- *     position: "long",
- *     priceOpen: 50000,
- *     priceTakeProfit: 51000,
- *     priceStopLoss: 49000,
- *     minuteEstimatedTime: 60,
- *     timestamp: Date.now(),
- *   }),
- *   callbacks: {
- *     onOpen: (symbol, signal, currentPrice, backtest) => console.log("Signal opened"),
- *     onClose: (symbol, signal, priceClose, backtest) => console.log("Signal closed"),
- *   },
- * });
- * ```
- */
-declare function addStrategy(strategySchema: IStrategySchema): void;
-/**
- * Registers an exchange data source in the framework.
- *
- * The exchange provides:
- * - Historical candle data via getCandles
- * - Price/quantity formatting for the exchange
- * - VWAP calculation from last 5 1m candles
- *
- * @param exchangeSchema - Exchange configuration object
- * @param exchangeSchema.exchangeName - Unique exchange identifier
- * @param exchangeSchema.getCandles - Async function to fetch candle data
- * @param exchangeSchema.formatPrice - Async function to format prices
- * @param exchangeSchema.formatQuantity - Async function to format quantities
- * @param exchangeSchema.callbacks - Optional callback for candle data events
- *
- * @example
- * ```typescript
- * addExchange({
- *   exchangeName: "binance",
- *   getCandles: async (symbol, interval, since, limit) => {
- *     // Fetch from Binance API or database
- *     return [{
- *       timestamp: Date.now(),
- *       open: 50000,
- *       high: 51000,
- *       low: 49000,
- *       close: 50500,
- *       volume: 1000,
- *     }];
- *   },
- *   formatPrice: async (symbol, price) => price.toFixed(2),
- *   formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
- * });
- * ```
- */
-declare function addExchange(exchangeSchema: IExchangeSchema): void;
-/**
- * Registers a timeframe generator for backtesting.
- *
- * The frame defines:
- * - Start and end dates for backtest period
- * - Interval for timeframe generation
- * - Callback for timeframe generation events
- *
- * @param frameSchema - Frame configuration object
- * @param frameSchema.frameName - Unique frame identifier
- * @param frameSchema.interval - Timeframe interval ("1m" | "3m" | "5m" | "15m" | "30m" | "1h" | "2h" | "4h" | "6h" | "8h" | "12h" | "1d" | "3d")
- * @param frameSchema.startDate - Start date for timeframe generation
- * @param frameSchema.endDate - End date for timeframe generation
- * @param frameSchema.callbacks - Optional callback for timeframe events
- *
- * @example
- * ```typescript
- * addFrame({
- *   frameName: "1d-backtest",
- *   interval: "1m",
- *   startDate: new Date("2024-01-01T00:00:00Z"),
- *   endDate: new Date("2024-01-02T00:00:00Z"),
- *   callbacks: {
- *     onTimeframe: (timeframe, startDate, endDate, interval) => {
- *       console.log(`Generated ${timeframe.length} timeframes`);
- *     },
- *   },
- * });
- * ```
- */
-declare function addFrame(frameSchema: IFrameSchema): void;
-/**
- * Registers a walker for strategy comparison.
- *
- * The walker executes backtests for multiple strategies on the same
- * historical data and compares their performance using a specified metric.
- *
- * @param walkerSchema - Walker configuration object
- * @param walkerSchema.walkerName - Unique walker identifier
- * @param walkerSchema.exchangeName - Exchange to use for all strategies
- * @param walkerSchema.frameName - Timeframe to use for all strategies
- * @param walkerSchema.strategies - Array of strategy names to compare
- * @param walkerSchema.metric - Metric to optimize (default: "sharpeRatio")
- * @param walkerSchema.callbacks - Optional lifecycle callbacks
- *
- * @example
- * ```typescript
- * addWalker({
- *   walkerName: "llm-prompt-optimizer",
- *   exchangeName: "binance",
- *   frameName: "1d-backtest",
- *   strategies: [
- *     "my-strategy-v1",
- *     "my-strategy-v2",
- *     "my-strategy-v3"
- *   ],
- *   metric: "sharpeRatio",
- *   callbacks: {
- *     onStrategyComplete: (strategyName, symbol, stats, metric) => {
- *       console.log(`${strategyName}: ${metric}`);
- *     },
- *     onComplete: (results) => {
- *       console.log(`Best strategy: ${results.bestStrategy}`);
- *     }
- *   }
- * });
- * ```
- */
-declare function addWalker(walkerSchema: IWalkerSchema): void;
-/**
- * Registers a position sizing configuration in the framework.
- *
- * The sizing configuration defines:
- * - Position sizing method (fixed-percentage, kelly-criterion, atr-based)
- * - Risk parameters (risk percentage, Kelly multiplier, ATR multiplier)
- * - Position constraints (min/max size, max position percentage)
- * - Callback for calculation events
- *
- * @param sizingSchema - Sizing configuration object (discriminated union)
- * @param sizingSchema.sizingName - Unique sizing identifier
- * @param sizingSchema.method - Sizing method ("fixed-percentage" | "kelly-criterion" | "atr-based")
- * @param sizingSchema.riskPercentage - Risk percentage per trade (for fixed-percentage and atr-based)
- * @param sizingSchema.kellyMultiplier - Kelly multiplier (for kelly-criterion, default: 0.25)
- * @param sizingSchema.atrMultiplier - ATR multiplier (for atr-based, default: 2)
- * @param sizingSchema.maxPositionPercentage - Optional max position size as % of account
- * @param sizingSchema.minPositionSize - Optional minimum position size
- * @param sizingSchema.maxPositionSize - Optional maximum position size
- * @param sizingSchema.callbacks - Optional lifecycle callbacks
- *
- * @example
- * ```typescript
- * // Fixed percentage sizing
- * addSizing({
- *   sizingName: "conservative",
- *   method: "fixed-percentage",
- *   riskPercentage: 1,
- *   maxPositionPercentage: 10,
- * });
- *
- * // Kelly Criterion sizing
- * addSizing({
- *   sizingName: "kelly",
- *   method: "kelly-criterion",
- *   kellyMultiplier: 0.25,
- *   maxPositionPercentage: 20,
- * });
- *
- * // ATR-based sizing
- * addSizing({
- *   sizingName: "atr-dynamic",
- *   method: "atr-based",
- *   riskPercentage: 2,
- *   atrMultiplier: 2,
- *   callbacks: {
- *     onCalculate: (quantity, params) => {
- *       console.log(`Calculated size: ${quantity} for ${params.symbol}`);
- *     },
- *   },
- * });
- * ```
- */
-declare function addSizing(sizingSchema: ISizingSchema): void;
-/**
- * Registers a risk management configuration in the framework.
- *
- * The risk configuration defines:
- * - Maximum concurrent positions across all strategies
- * - Custom validations for advanced risk logic (portfolio metrics, correlations, etc.)
- * - Callbacks for rejected/allowed signals
- *
- * Multiple ClientStrategy instances share the same ClientRisk instance,
- * enabling cross-strategy risk analysis. ClientRisk tracks all active positions
- * and provides access to them via validation functions.
- *
- * @param riskSchema - Risk configuration object
- * @param riskSchema.riskName - Unique risk profile identifier
- * @param riskSchema.maxConcurrentPositions - Optional max number of open positions across all strategies
- * @param riskSchema.validations - Optional custom validation functions with access to params and active positions
- * @param riskSchema.callbacks - Optional lifecycle callbacks (onRejected, onAllowed)
- *
- * @example
- * ```typescript
- * // Basic risk limit
- * addRisk({
- *   riskName: "conservative",
- *   maxConcurrentPositions: 5,
- * });
- *
- * // With custom validations (access to signal data and portfolio state)
- * addRisk({
- *   riskName: "advanced",
- *   maxConcurrentPositions: 10,
- *   validations: [
- *     {
- *       validate: async ({ params }) => {
- *         // params contains: symbol, strategyName, exchangeName, signal, currentPrice, timestamp
- *         // Calculate portfolio metrics from external data source
- *         const portfolio = await getPortfolioState();
- *         if (portfolio.drawdown > 20) {
- *           throw new Error("Portfolio drawdown exceeds 20%");
- *         }
- *       },
- *       docDescription: "Prevents trading during high drawdown",
- *     },
- *     ({ params }) => {
- *       // Access signal details
- *       const positionValue = calculatePositionValue(params.signal, params.currentPrice);
- *       if (positionValue > 10000) {
- *         throw new Error("Position value exceeds $10,000 limit");
- *       }
- *     },
- *   ],
- *   callbacks: {
- *     onRejected: (symbol, reason, limit, params) => {
- *       console.log(`[RISK] Signal rejected for ${symbol}: ${reason}`);
- *     },
- *     onAllowed: (symbol, params) => {
- *       console.log(`[RISK] Signal allowed for ${symbol}`);
- *     },
- *   },
- * });
- * ```
- */
-declare function addRisk(riskSchema: IRiskSchema): void;
-
-/**
  * Message role type for LLM conversation context.
  * Defines the sender of a message in a chat-based interaction.
  */
@@ -1701,6 +1445,11 @@ interface IOptimizerStrategy {
      * Trading pair symbol this strategy was generated for.
      */
     symbol: string;
+    /**
+     * Unique name taken from data source.
+     * Used in callbacks and logging.
+     */
+    name: string;
     /**
      * LLM conversation history used to generate the strategy.
      * Contains user prompts and assistant responses for each data source.
@@ -1995,6 +1744,350 @@ interface IOptimizer {
  * Unique string identifier for registered optimizers.
  */
 type OptimizerName = string;
+
+/**
+ * Registers a trading strategy in the framework.
+ *
+ * The strategy will be validated for:
+ * - Signal validation (prices, TP/SL logic, timestamps)
+ * - Interval throttling (prevents signal spam)
+ * - Crash-safe persistence in live mode
+ *
+ * @param strategySchema - Strategy configuration object
+ * @param strategySchema.strategyName - Unique strategy identifier
+ * @param strategySchema.interval - Signal generation interval ("1m" | "3m" | "5m" | "15m" | "30m" | "1h")
+ * @param strategySchema.getSignal - Async function that generates trading signals
+ * @param strategySchema.callbacks - Optional lifecycle callbacks (onOpen, onClose)
+ *
+ * @example
+ * ```typescript
+ * addStrategy({
+ *   strategyName: "my-strategy",
+ *   interval: "5m",
+ *   getSignal: async (symbol) => ({
+ *     position: "long",
+ *     priceOpen: 50000,
+ *     priceTakeProfit: 51000,
+ *     priceStopLoss: 49000,
+ *     minuteEstimatedTime: 60,
+ *     timestamp: Date.now(),
+ *   }),
+ *   callbacks: {
+ *     onOpen: (symbol, signal, currentPrice, backtest) => console.log("Signal opened"),
+ *     onClose: (symbol, signal, priceClose, backtest) => console.log("Signal closed"),
+ *   },
+ * });
+ * ```
+ */
+declare function addStrategy(strategySchema: IStrategySchema): void;
+/**
+ * Registers an exchange data source in the framework.
+ *
+ * The exchange provides:
+ * - Historical candle data via getCandles
+ * - Price/quantity formatting for the exchange
+ * - VWAP calculation from last 5 1m candles
+ *
+ * @param exchangeSchema - Exchange configuration object
+ * @param exchangeSchema.exchangeName - Unique exchange identifier
+ * @param exchangeSchema.getCandles - Async function to fetch candle data
+ * @param exchangeSchema.formatPrice - Async function to format prices
+ * @param exchangeSchema.formatQuantity - Async function to format quantities
+ * @param exchangeSchema.callbacks - Optional callback for candle data events
+ *
+ * @example
+ * ```typescript
+ * addExchange({
+ *   exchangeName: "binance",
+ *   getCandles: async (symbol, interval, since, limit) => {
+ *     // Fetch from Binance API or database
+ *     return [{
+ *       timestamp: Date.now(),
+ *       open: 50000,
+ *       high: 51000,
+ *       low: 49000,
+ *       close: 50500,
+ *       volume: 1000,
+ *     }];
+ *   },
+ *   formatPrice: async (symbol, price) => price.toFixed(2),
+ *   formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
+ * });
+ * ```
+ */
+declare function addExchange(exchangeSchema: IExchangeSchema): void;
+/**
+ * Registers a timeframe generator for backtesting.
+ *
+ * The frame defines:
+ * - Start and end dates for backtest period
+ * - Interval for timeframe generation
+ * - Callback for timeframe generation events
+ *
+ * @param frameSchema - Frame configuration object
+ * @param frameSchema.frameName - Unique frame identifier
+ * @param frameSchema.interval - Timeframe interval ("1m" | "3m" | "5m" | "15m" | "30m" | "1h" | "2h" | "4h" | "6h" | "8h" | "12h" | "1d" | "3d")
+ * @param frameSchema.startDate - Start date for timeframe generation
+ * @param frameSchema.endDate - End date for timeframe generation
+ * @param frameSchema.callbacks - Optional callback for timeframe events
+ *
+ * @example
+ * ```typescript
+ * addFrame({
+ *   frameName: "1d-backtest",
+ *   interval: "1m",
+ *   startDate: new Date("2024-01-01T00:00:00Z"),
+ *   endDate: new Date("2024-01-02T00:00:00Z"),
+ *   callbacks: {
+ *     onTimeframe: (timeframe, startDate, endDate, interval) => {
+ *       console.log(`Generated ${timeframe.length} timeframes`);
+ *     },
+ *   },
+ * });
+ * ```
+ */
+declare function addFrame(frameSchema: IFrameSchema): void;
+/**
+ * Registers a walker for strategy comparison.
+ *
+ * The walker executes backtests for multiple strategies on the same
+ * historical data and compares their performance using a specified metric.
+ *
+ * @param walkerSchema - Walker configuration object
+ * @param walkerSchema.walkerName - Unique walker identifier
+ * @param walkerSchema.exchangeName - Exchange to use for all strategies
+ * @param walkerSchema.frameName - Timeframe to use for all strategies
+ * @param walkerSchema.strategies - Array of strategy names to compare
+ * @param walkerSchema.metric - Metric to optimize (default: "sharpeRatio")
+ * @param walkerSchema.callbacks - Optional lifecycle callbacks
+ *
+ * @example
+ * ```typescript
+ * addWalker({
+ *   walkerName: "llm-prompt-optimizer",
+ *   exchangeName: "binance",
+ *   frameName: "1d-backtest",
+ *   strategies: [
+ *     "my-strategy-v1",
+ *     "my-strategy-v2",
+ *     "my-strategy-v3"
+ *   ],
+ *   metric: "sharpeRatio",
+ *   callbacks: {
+ *     onStrategyComplete: (strategyName, symbol, stats, metric) => {
+ *       console.log(`${strategyName}: ${metric}`);
+ *     },
+ *     onComplete: (results) => {
+ *       console.log(`Best strategy: ${results.bestStrategy}`);
+ *     }
+ *   }
+ * });
+ * ```
+ */
+declare function addWalker(walkerSchema: IWalkerSchema): void;
+/**
+ * Registers a position sizing configuration in the framework.
+ *
+ * The sizing configuration defines:
+ * - Position sizing method (fixed-percentage, kelly-criterion, atr-based)
+ * - Risk parameters (risk percentage, Kelly multiplier, ATR multiplier)
+ * - Position constraints (min/max size, max position percentage)
+ * - Callback for calculation events
+ *
+ * @param sizingSchema - Sizing configuration object (discriminated union)
+ * @param sizingSchema.sizingName - Unique sizing identifier
+ * @param sizingSchema.method - Sizing method ("fixed-percentage" | "kelly-criterion" | "atr-based")
+ * @param sizingSchema.riskPercentage - Risk percentage per trade (for fixed-percentage and atr-based)
+ * @param sizingSchema.kellyMultiplier - Kelly multiplier (for kelly-criterion, default: 0.25)
+ * @param sizingSchema.atrMultiplier - ATR multiplier (for atr-based, default: 2)
+ * @param sizingSchema.maxPositionPercentage - Optional max position size as % of account
+ * @param sizingSchema.minPositionSize - Optional minimum position size
+ * @param sizingSchema.maxPositionSize - Optional maximum position size
+ * @param sizingSchema.callbacks - Optional lifecycle callbacks
+ *
+ * @example
+ * ```typescript
+ * // Fixed percentage sizing
+ * addSizing({
+ *   sizingName: "conservative",
+ *   method: "fixed-percentage",
+ *   riskPercentage: 1,
+ *   maxPositionPercentage: 10,
+ * });
+ *
+ * // Kelly Criterion sizing
+ * addSizing({
+ *   sizingName: "kelly",
+ *   method: "kelly-criterion",
+ *   kellyMultiplier: 0.25,
+ *   maxPositionPercentage: 20,
+ * });
+ *
+ * // ATR-based sizing
+ * addSizing({
+ *   sizingName: "atr-dynamic",
+ *   method: "atr-based",
+ *   riskPercentage: 2,
+ *   atrMultiplier: 2,
+ *   callbacks: {
+ *     onCalculate: (quantity, params) => {
+ *       console.log(`Calculated size: ${quantity} for ${params.symbol}`);
+ *     },
+ *   },
+ * });
+ * ```
+ */
+declare function addSizing(sizingSchema: ISizingSchema): void;
+/**
+ * Registers a risk management configuration in the framework.
+ *
+ * The risk configuration defines:
+ * - Maximum concurrent positions across all strategies
+ * - Custom validations for advanced risk logic (portfolio metrics, correlations, etc.)
+ * - Callbacks for rejected/allowed signals
+ *
+ * Multiple ClientStrategy instances share the same ClientRisk instance,
+ * enabling cross-strategy risk analysis. ClientRisk tracks all active positions
+ * and provides access to them via validation functions.
+ *
+ * @param riskSchema - Risk configuration object
+ * @param riskSchema.riskName - Unique risk profile identifier
+ * @param riskSchema.maxConcurrentPositions - Optional max number of open positions across all strategies
+ * @param riskSchema.validations - Optional custom validation functions with access to params and active positions
+ * @param riskSchema.callbacks - Optional lifecycle callbacks (onRejected, onAllowed)
+ *
+ * @example
+ * ```typescript
+ * // Basic risk limit
+ * addRisk({
+ *   riskName: "conservative",
+ *   maxConcurrentPositions: 5,
+ * });
+ *
+ * // With custom validations (access to signal data and portfolio state)
+ * addRisk({
+ *   riskName: "advanced",
+ *   maxConcurrentPositions: 10,
+ *   validations: [
+ *     {
+ *       validate: async ({ params }) => {
+ *         // params contains: symbol, strategyName, exchangeName, signal, currentPrice, timestamp
+ *         // Calculate portfolio metrics from external data source
+ *         const portfolio = await getPortfolioState();
+ *         if (portfolio.drawdown > 20) {
+ *           throw new Error("Portfolio drawdown exceeds 20%");
+ *         }
+ *       },
+ *       docDescription: "Prevents trading during high drawdown",
+ *     },
+ *     ({ params }) => {
+ *       // Access signal details
+ *       const positionValue = calculatePositionValue(params.signal, params.currentPrice);
+ *       if (positionValue > 10000) {
+ *         throw new Error("Position value exceeds $10,000 limit");
+ *       }
+ *     },
+ *   ],
+ *   callbacks: {
+ *     onRejected: (symbol, reason, limit, params) => {
+ *       console.log(`[RISK] Signal rejected for ${symbol}: ${reason}`);
+ *     },
+ *     onAllowed: (symbol, params) => {
+ *       console.log(`[RISK] Signal allowed for ${symbol}`);
+ *     },
+ *   },
+ * });
+ * ```
+ */
+declare function addRisk(riskSchema: IRiskSchema): void;
+/**
+ * Registers an optimizer configuration in the framework.
+ *
+ * The optimizer generates trading strategies by:
+ * - Collecting data from multiple sources across training periods
+ * - Building LLM conversation history with fetched data
+ * - Generating strategy prompts using getPrompt()
+ * - Creating executable backtest code with templates
+ *
+ * The optimizer produces a complete .mjs file containing:
+ * - Exchange, Frame, Strategy, and Walker configurations
+ * - Multi-timeframe analysis logic
+ * - LLM integration for signal generation
+ * - Event listeners for progress tracking
+ *
+ * @param optimizerSchema - Optimizer configuration object
+ * @param optimizerSchema.optimizerName - Unique optimizer identifier
+ * @param optimizerSchema.rangeTrain - Array of training time ranges (each generates a strategy variant)
+ * @param optimizerSchema.rangeTest - Testing time range for strategy validation
+ * @param optimizerSchema.source - Array of data sources (functions or source objects with custom formatters)
+ * @param optimizerSchema.getPrompt - Function to generate strategy prompt from conversation history
+ * @param optimizerSchema.template - Optional custom template overrides (top banner, helpers, strategy logic, etc.)
+ * @param optimizerSchema.callbacks - Optional lifecycle callbacks (onData, onCode, onDump, onSourceData)
+ *
+ * @example
+ * ```typescript
+ * // Basic optimizer with single data source
+ * addOptimizer({
+ *   optimizerName: "llm-strategy-generator",
+ *   rangeTrain: [
+ *     {
+ *       note: "Bull market period",
+ *       startDate: new Date("2024-01-01"),
+ *       endDate: new Date("2024-01-31"),
+ *     },
+ *     {
+ *       note: "Bear market period",
+ *       startDate: new Date("2024-02-01"),
+ *       endDate: new Date("2024-02-28"),
+ *     },
+ *   ],
+ *   rangeTest: {
+ *     note: "Validation period",
+ *     startDate: new Date("2024-03-01"),
+ *     endDate: new Date("2024-03-31"),
+ *   },
+ *   source: [
+ *     {
+ *       name: "historical-backtests",
+ *       fetch: async ({ symbol, startDate, endDate, limit, offset }) => {
+ *         // Fetch historical backtest results from database
+ *         return await db.backtests.find({
+ *           symbol,
+ *           date: { $gte: startDate, $lte: endDate },
+ *         })
+ *         .skip(offset)
+ *         .limit(limit);
+ *       },
+ *       user: async (symbol, data, name) => {
+ *         return `Analyze these ${data.length} backtest results for ${symbol}:\n${JSON.stringify(data)}`;
+ *       },
+ *       assistant: async (symbol, data, name) => {
+ *         return "Historical data analyzed successfully";
+ *       },
+ *     },
+ *   ],
+ *   getPrompt: async (symbol, messages) => {
+ *     // Generate strategy prompt from conversation
+ *     return `"Analyze ${symbol} using RSI and MACD. Enter LONG when RSI < 30 and MACD crosses above signal."`;
+ *   },
+ *   callbacks: {
+ *     onData: (symbol, strategyData) => {
+ *       console.log(`Generated ${strategyData.length} strategies for ${symbol}`);
+ *     },
+ *     onCode: (symbol, code) => {
+ *       console.log(`Generated ${code.length} characters of code for ${symbol}`);
+ *     },
+ *     onDump: (symbol, filepath) => {
+ *       console.log(`Saved strategy to ${filepath}`);
+ *     },
+ *     onSourceData: (symbol, sourceName, data, startDate, endDate) => {
+ *       console.log(`Fetched ${data.length} rows from ${sourceName} for ${symbol}`);
+ *     },
+ *   },
+ * });
+ * ```
+ */
+declare function addOptimizer(optimizerSchema: IOptimizerSchema): void;
 
 /**
  * Returns a list of all registered exchange schemas.
@@ -7299,4 +7392,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type BacktestStatistics, type CandleInterval, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IHeatmapStatistics, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatistics, type MessageModel, type MessageRole, MethodContextService, Optimizer, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatistics, PersistBase, PersistRiskAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type RiskData, Schedule, type ScheduleStatistics, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, Walker, type WalkerMetric, type WalkerStatistics, addExchange, addFrame, addRisk, addSizing, addStrategy, addWalker, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenPerformance, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, setConfig, setLogger };
+export { Backtest, type BacktestStatistics, type CandleInterval, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IHeatmapStatistics, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatistics, type MessageModel, type MessageRole, MethodContextService, Optimizer, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatistics, PersistBase, PersistRiskAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type RiskData, Schedule, type ScheduleStatistics, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, Walker, type WalkerMetric, type WalkerStatistics, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenPerformance, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, setConfig, setLogger };
