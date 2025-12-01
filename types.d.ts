@@ -1,6 +1,7 @@
 import * as di_scoped from 'di-scoped';
 import * as functools_kit from 'functools-kit';
 import { Subject } from 'functools-kit';
+import { MessageModel as MessageModel$1 } from 'src/model/Message.model';
 
 declare const GLOBAL_CONFIG: {
     /**
@@ -2589,6 +2590,12 @@ interface IHeatmapStatistics {
     portfolioSharpeRatio: number | null;
     /** Portfolio-wide total trades */
     portfolioTotalTrades: number;
+}
+
+type MessageRole = "assistant" | "system" | "user";
+interface MessageModel {
+    role: MessageRole;
+    content: string;
 }
 
 /**
@@ -6355,13 +6362,84 @@ declare class RiskValidationService {
     list: () => Promise<IRiskSchema[]>;
 }
 
+type RowId = string | number;
+interface IOptimizerRange {
+    note?: string;
+    startDate: Date;
+    endDate: Date;
+}
+interface IOptimizerData {
+    id: RowId;
+}
+interface IOptimizerFilterArgs {
+    symbol: string;
+    startDate: Date;
+    endDate: Date;
+}
+interface IOptimizerFetchArgs extends IOptimizerFilterArgs {
+    limit: number;
+    offset: number;
+}
+interface IOptimizerSourceFn<Data extends IOptimizerData = any> {
+    (args: IOptimizerFetchArgs): Data[] | Promise<Data[]>;
+}
+interface IOptimizerSource<Data extends IOptimizerData = any> {
+    note?: string;
+    name: string;
+    fetch: IOptimizerSourceFn<Data>;
+    user?: (symbol: string, data: Data[], name: string) => string | Promise<string>;
+    assistant?: (symbol: string, data: Data[], name: string) => string | Promise<string>;
+}
+type Source<Data extends IOptimizerData = any> = IOptimizerSourceFn<Data> | IOptimizerSource<Data>;
+interface IOptimizerCallbacks {
+}
+interface IOptimizerTemplate {
+    getUserMessage<Data extends IOptimizerData = any>(symbol: string, data: Data[], name: string): Promise<string>;
+    getAssistantMessage<Data extends IOptimizerData = any>(symbol: string, data: Data[], name: string): Promise<string>;
+}
+interface IOptimizerSchema {
+    note?: string;
+    optimizerName: OptimizerName;
+    range: IOptimizerRange[];
+    source: Source[];
+    getPrompt: (messages: MessageModel$1[]) => string | Promise<string>;
+    template?: Partial<IOptimizerTemplate>;
+    callbacks?: Partial<IOptimizerCallbacks>;
+}
+type OptimizerName = string;
+
+declare class OptimizerTemplateService implements IOptimizerTemplate {
+    private readonly loggerService;
+    getUserMessage: (symbol: string, data: IOptimizerData[]) => Promise<string>;
+    getAssistantMessage: (symbol: string, data: IOptimizerData[]) => Promise<string>;
+}
+
+declare class OptimizerSchemaService {
+    readonly loggerService: LoggerService;
+    private _registry;
+    register: (key: OptimizerName, value: IOptimizerSchema) => void;
+    private validateShallow;
+    override: (key: OptimizerName, value: Partial<IOptimizerSchema>) => IOptimizerSchema;
+    get: (key: OptimizerName) => IOptimizerSchema;
+}
+
+declare class OptimizerValidationService {
+    private readonly loggerService;
+    private _optimizerMap;
+    addOptimizer: (optimizerName: OptimizerName, optimizerSchema: IOptimizerSchema) => void;
+    validate: (optimizerName: OptimizerName, source: string) => void;
+    list: () => Promise<IOptimizerSchema[]>;
+}
+
 declare const backtest: {
+    optimizerTemplateService: OptimizerTemplateService;
     exchangeValidationService: ExchangeValidationService;
     strategyValidationService: StrategyValidationService;
     frameValidationService: FrameValidationService;
     walkerValidationService: WalkerValidationService;
     sizingValidationService: SizingValidationService;
     riskValidationService: RiskValidationService;
+    optimizerValidationService: OptimizerValidationService;
     backtestMarkdownService: BacktestMarkdownService;
     liveMarkdownService: LiveMarkdownService;
     scheduleMarkdownService: ScheduleMarkdownService;
@@ -6388,6 +6466,7 @@ declare const backtest: {
     walkerSchemaService: WalkerSchemaService;
     sizingSchemaService: SizingSchemaService;
     riskSchemaService: RiskSchemaService;
+    optimizerSchemaService: OptimizerSchemaService;
     exchangeConnectionService: ExchangeConnectionService;
     strategyConnectionService: StrategyConnectionService;
     frameConnectionService: FrameConnectionService;
@@ -6402,4 +6481,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type BacktestStatistics, type CandleInterval, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IHeatmapStatistics, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatistics, MethodContextService, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatistics, PersistBase, PersistRiskAdapter, PersistSignalAdapter, PositionSize, type ProgressContract, type RiskData, Schedule, type ScheduleStatistics, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, Walker, type WalkerMetric, type WalkerStatistics, addExchange, addFrame, addRisk, addSizing, addStrategy, addWalker, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listExchanges, listFrames, listRisks, listSizings, listStrategies, listWalkers, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenPerformance, listenProgress, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, setConfig, setLogger };
+export { Backtest, type BacktestStatistics, type CandleInterval, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IHeatmapStatistics, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatistics, type MessageModel, type MessageRole, MethodContextService, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatistics, PersistBase, PersistRiskAdapter, PersistSignalAdapter, PositionSize, type ProgressContract, type RiskData, Schedule, type ScheduleStatistics, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, Walker, type WalkerMetric, type WalkerStatistics, addExchange, addFrame, addRisk, addSizing, addStrategy, addWalker, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listExchanges, listFrames, listRisks, listSizings, listStrategies, listWalkers, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenPerformance, listenProgress, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, setConfig, setLogger };

@@ -1,38 +1,73 @@
 import { ILogger } from "./Logger.interface";
 import { MessageModel } from "src/model/Message.model";
 
+type RowId = string | number;
+
 export interface IOptimizerRange {
   note?: string;
   startDate: Date;
   endDate: Date;
 }
 
-export interface IOptimizerFetchArgs {
+export interface IOptimizerData {
+  id: RowId;
+}
+
+export interface IOptimizerFilterArgs {
   symbol: string;
   startDate: Date;
   endDate: Date;
+}
+
+export interface IOptimizerFetchArgs extends IOptimizerFilterArgs {
   limit: number;
   offset: number;
 }
 
-export interface IOptimizerSourceFn<Data extends object = any> {
-  (args: IOptimizerFetchArgs): Data | Promise<Data>;
+export interface IOptimizerSourceFn<Data extends IOptimizerData = any> {
+  (args: IOptimizerFetchArgs): Data[] | Promise<Data[]>;
 }
 
-export interface IOptimizerSource<Data extends object = any> {
+export interface IOptimizerStrategy {
+  symbol: string;
+  messages: MessageModel[];
+  strategy: string;
+}
+
+export interface IOptimizerSource<Data extends IOptimizerData = any> {
   note?: string;
+  name: string;
   fetch: IOptimizerSourceFn<Data>;
-  user?: (data: Data) => string | Promise<string>;
-  assistant?: (data: Data) => string | Promise<string>;
+  user?: (
+    symbol: string,
+    data: Data[],
+    name: string
+  ) => string | Promise<string>;
+  assistant?: (
+    symbol: string,
+    data: Data[],
+    name: string
+  ) => string | Promise<string>;
 }
 
-type Source<Data extends object = any> =
+type Source<Data extends IOptimizerData = any> =
   | IOptimizerSourceFn<Data>
   | IOptimizerSource<Data>;
 
 export interface IOptimizerCallbacks {}
 
-export interface IOptimizerTemplate {}
+export interface IOptimizerTemplate {
+  getUserMessage<Data extends IOptimizerData = any>(
+    symbol: string,
+    data: Data[],
+    name: string
+  ): Promise<string>;
+  getAssistantMessage<Data extends IOptimizerData = any>(
+    symbol: string,
+    data: Data[],
+    name: string
+  ): Promise<string>;
+}
 
 export interface IOptimizerValidationFn {
   (payload: any): void | Promise<void>;
@@ -43,11 +78,11 @@ export interface IOptimizerValidation {
   note?: string;
 }
 
-export interface IOptimizerSchema<Data extends object = any> {
+export interface IOptimizerSchema {
   note?: string;
   optimizerName: OptimizerName;
   range: IOptimizerRange[];
-  source: Source<Data>[];
+  source: Source[];
   getPrompt: (messages: MessageModel[]) => string | Promise<string>;
   template?: Partial<IOptimizerTemplate>;
   callbacks?: Partial<IOptimizerCallbacks>;
@@ -57,6 +92,8 @@ export interface IOptimizerParams extends IOptimizerSchema {
   logger: ILogger;
 }
 
-export interface IOptimizer {}
+export interface IOptimizer {
+  getStrategyData(symbol: string): Promise<IOptimizerStrategy[]>;
+}
 
 export type OptimizerName = string;
