@@ -99,24 +99,44 @@ export class BacktestUtils {
       context,
     });
     let isStopped = false;
+    let isDone = false;
     const task = async () => {
       for await (const _ of this.run(symbol, context)) {
         if (isStopped) {
           break;
         }
       }
-      await doneBacktestSubject.next({
-        exchangeName: context.exchangeName,
-        strategyName: context.strategyName,
-        backtest: true,
-        symbol,
-      });
+      if (!isDone) {
+        await doneBacktestSubject.next({
+          exchangeName: context.exchangeName,
+          strategyName: context.strategyName,
+          backtest: true,
+          symbol,
+        });
+      }
+      isDone = true;
     };
     task().catch((error) =>
       errorEmitter.next(new Error(getErrorMessage(error)))
     );
     return () => {
       backtest.strategyGlobalService.stop(context.strategyName);
+      backtest.strategyGlobalService
+        .getPendingSignal(context.strategyName)
+        .then(async (pendingSignal) => {
+          if (pendingSignal) {
+            return;
+          }
+          if (!isDone) {
+            await doneBacktestSubject.next({
+              exchangeName: context.exchangeName,
+              strategyName: context.strategyName,
+              backtest: true,
+              symbol,
+            });
+          }
+          isDone = true;
+        });
       isStopped = true;
     };
   };

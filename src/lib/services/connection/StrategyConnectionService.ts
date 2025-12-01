@@ -98,13 +98,14 @@ export class StrategyConnectionService implements IStrategy {
    * Retrieves the currently active pending signal for the strategy.
    * If no active signal exists, returns null.
    * Used internally for monitoring TP/SL and time expiration.
+   * 
+   * @param strategyName - Name of strategy to get pending signal for
+   * 
    * @returns Promise resolving to pending signal or null
    */
-  public getPendingSignal = async (): Promise<ISignalRow | null> => {
+  public getPendingSignal = async (strategyName: StrategyName): Promise<ISignalRow | null> => {
     this.loggerService.log("strategyConnectionService getPendingSignal");
-    const strategy = await this.getStrategy(
-      this.methodContextService.context.strategyName
-    );
+    const strategy = await this.getStrategy(strategyName);
     return await strategy.getPendingSignal();
   };
 

@@ -139,8 +139,11 @@ export class LiveUtils {
     return () => {
       backtest.strategyGlobalService.stop(context.strategyName);
       backtest.strategyGlobalService
-        .getPendingSignal(symbol, new Date(), false)
-        .then(async () => {
+        .getPendingSignal(context.strategyName)
+        .then(async (pendingSignal) => {
+          if (pendingSignal) {
+            return;
+          }
           if (!isDone) {
             await doneLiveSubject.next({
               exchangeName: context.exchangeName,

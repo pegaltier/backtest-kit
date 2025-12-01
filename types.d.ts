@@ -4447,6 +4447,11 @@ declare const walkerEmitter: Subject<WalkerContract>;
  */
 declare const walkerCompleteSubject: Subject<IWalkerResults>;
 /**
+ * Walker stop emitter for walker cancellation events.
+ * Emits when a walker comparison is stopped/cancelled.
+ */
+declare const walkerStopSubject: Subject<string>;
+/**
  * Validation emitter for risk validation errors.
  * Emits when risk validation functions throw errors during signal checking.
  */
@@ -4464,8 +4469,9 @@ declare const emitters_signalLiveEmitter: typeof signalLiveEmitter;
 declare const emitters_validationSubject: typeof validationSubject;
 declare const emitters_walkerCompleteSubject: typeof walkerCompleteSubject;
 declare const emitters_walkerEmitter: typeof walkerEmitter;
+declare const emitters_walkerStopSubject: typeof walkerStopSubject;
 declare namespace emitters {
-  export { emitters_doneBacktestSubject as doneBacktestSubject, emitters_doneLiveSubject as doneLiveSubject, emitters_doneWalkerSubject as doneWalkerSubject, emitters_errorEmitter as errorEmitter, emitters_performanceEmitter as performanceEmitter, emitters_progressEmitter as progressEmitter, emitters_signalBacktestEmitter as signalBacktestEmitter, emitters_signalEmitter as signalEmitter, emitters_signalLiveEmitter as signalLiveEmitter, emitters_validationSubject as validationSubject, emitters_walkerCompleteSubject as walkerCompleteSubject, emitters_walkerEmitter as walkerEmitter };
+  export { emitters_doneBacktestSubject as doneBacktestSubject, emitters_doneLiveSubject as doneLiveSubject, emitters_doneWalkerSubject as doneWalkerSubject, emitters_errorEmitter as errorEmitter, emitters_performanceEmitter as performanceEmitter, emitters_progressEmitter as progressEmitter, emitters_signalBacktestEmitter as signalBacktestEmitter, emitters_signalEmitter as signalEmitter, emitters_signalLiveEmitter as signalLiveEmitter, emitters_validationSubject as validationSubject, emitters_walkerCompleteSubject as walkerCompleteSubject, emitters_walkerEmitter as walkerEmitter, emitters_walkerStopSubject as walkerStopSubject };
 }
 
 /**
@@ -4731,9 +4737,12 @@ declare class StrategyConnectionService implements IStrategy {
      * Retrieves the currently active pending signal for the strategy.
      * If no active signal exists, returns null.
      * Used internally for monitoring TP/SL and time expiration.
+     *
+     * @param strategyName - Name of strategy to get pending signal for
+     *
      * @returns Promise resolving to pending signal or null
      */
-    getPendingSignal: () => Promise<ISignalRow | null>;
+    getPendingSignal: (strategyName: StrategyName) => Promise<ISignalRow | null>;
     /**
      * Executes live trading tick for current strategy.
      *
@@ -5191,7 +5200,7 @@ declare class StrategyGlobalService {
      * @param backtest - Whether running in backtest mode
      * @returns Promise resolving to pending signal or null
      */
-    getPendingSignal: (symbol: string, when: Date, backtest: boolean) => Promise<ISignalRow | null>;
+    getPendingSignal: (strategyName: StrategyName) => Promise<ISignalRow | null>;
     /**
      * Checks signal status at a specific timestamp.
      *

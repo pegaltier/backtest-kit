@@ -7,8 +7,14 @@ import BacktestLogicPublicService from "../public/BacktestLogicPublicService";
 import BacktestMarkdownService from "../../markdown/BacktestMarkdownService";
 import WalkerSchemaService from "../../schema/WalkerSchemaService";
 import { WalkerContract } from "../../../../contract/Walker.contract";
-import { walkerEmitter, walkerCompleteSubject } from "../../../../config/emitters";
+import {
+  walkerEmitter,
+  walkerCompleteSubject,
+  walkerStopSubject,
+} from "../../../../config/emitters";
 import { resolveDocuments } from "functools-kit";
+
+const CANCEL_SYMBOL = Symbol("CANCEL_SYMBOL");
 
 /**
  * Private service for walker orchestration (strategy comparison).
@@ -24,10 +30,12 @@ export class WalkerLogicPrivateService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly backtestLogicPublicService =
     inject<BacktestLogicPublicService>(TYPES.backtestLogicPublicService);
-  private readonly backtestMarkdownService =
-    inject<BacktestMarkdownService>(TYPES.backtestMarkdownService);
-  private readonly walkerSchemaService =
-    inject<WalkerSchemaService>(TYPES.walkerSchemaService);
+  private readonly backtestMarkdownService = inject<BacktestMarkdownService>(
+    TYPES.backtestMarkdownService
+  );
+  private readonly walkerSchemaService = inject<WalkerSchemaService>(
+    TYPES.walkerSchemaService
+  );
 
   /**
    * Runs walker comparison for a symbol.
@@ -81,6 +89,11 @@ export class WalkerLogicPrivateService {
     let bestMetric: number | null = null;
     let bestStrategy: StrategyName | null = null;
 
+    const listenStop = walkerStopSubject
+      .filter((walkerName) => walkerName === context.walkerName)
+      .map(() => CANCEL_SYMBOL)
+      .toPromise();
+
     // Run backtest for each strategy
     for (const strategyName of strategies) {
       // Call onStrategyStart callback if provided
@@ -98,7 +111,20 @@ export class WalkerLogicPrivateService {
         frameName: context.frameName,
       });
 
-      await resolveDocuments(iterator);
+      const result = await Promise.race([
+        await resolveDocuments(iterator),
+        listenStop,
+      ]);
+
+      if (result === CANCEL_SYMBOL) {
+        this.loggerService.info(
+          "walkerLogicPrivateService received stop signal, cancelling walker",
+          {
+            context,
+          }
+        );
+        break;
+      }
 
       this.loggerService.info("walkerLogicPrivateService backtest complete", {
         strategyName,
@@ -169,9 +195,10 @@ export class WalkerLogicPrivateService {
       totalStrategies: strategies.length,
       bestStrategy,
       bestMetric,
-      bestStats: bestStrategy !== null
-        ? await this.backtestMarkdownService.getData(bestStrategy)
-        : null,
+      bestStats:
+        bestStrategy !== null
+          ? await this.backtestMarkdownService.getData(bestStrategy)
+          : null,
     };
 
     // Call onComplete callback if provided with final best results
@@ -181,7 +208,6 @@ export class WalkerLogicPrivateService {
 
     await walkerCompleteSubject.next(finalResults);
   }
-
 }
 
 export default WalkerLogicPrivateService;

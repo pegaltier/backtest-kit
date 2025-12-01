@@ -1,6 +1,6 @@
 import backtest from "../lib";
 import { WalkerName } from "../interfaces/Walker.interface";
-import { errorEmitter, doneWalkerSubject } from "../config/emitters";
+import { errorEmitter, doneWalkerSubject, walkerStopSubject } from "../config/emitters";
 import { getErrorMessage } from "functools-kit";
 
 const WALKER_METHOD_NAME_RUN = "WalkerUtils.run";
@@ -119,27 +119,40 @@ export class WalkerUtils {
     const walkerSchema = backtest.walkerSchemaService.get(context.walkerName);
 
     let isStopped = false;
+    let isDone = false;
     const task = async () => {
       for await (const _ of this.run(symbol, context)) {
         if (isStopped) {
           break;
         }
       }
-      await doneWalkerSubject.next({
-        exchangeName: walkerSchema.exchangeName,
-        strategyName: context.walkerName,
-        backtest: true,
-        symbol,
-      });
+      if (!isDone) {
+        await doneWalkerSubject.next({
+          exchangeName: walkerSchema.exchangeName,
+          strategyName: context.walkerName,
+          backtest: true,
+          symbol,
+        });
+      }
+      isDone = true;
     };
     task().catch((error) =>
       errorEmitter.next(new Error(getErrorMessage(error)))
     );
     return () => {
-      isStopped = true;
       for (const strategyName of walkerSchema.strategies) {
         backtest.strategyGlobalService.stop(strategyName);
       }
+      walkerStopSubject.next(context.walkerName);
+      if (!isDone) {
+        doneWalkerSubject.next({
+          exchangeName: walkerSchema.exchangeName,
+          strategyName: context.walkerName,
+          backtest: true,
+          symbol,
+        });
+      }
+      isDone = true;
     };
   };
 
