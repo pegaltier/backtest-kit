@@ -36,6 +36,7 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
       `    listenDoneBacktest,`,
       `    listenBacktestProgress,`,
       `    listenWalkerProgress,`,
+      `    listenError,`,
       `} from "backtest-kit";`,
       `import { promises as fs } from "fs";`,
       `import { v4 as uuid } from "uuid";`,
@@ -294,6 +295,10 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
       `listenDoneBacktest((event) => {`,
       `    console.log("Backtest completed:", event.symbol);`,
       `    Backtest.dump(event.strategyName);`,
+      `});`,
+      ``,
+      `listenError((error) => {`,
+      `    console.error("Error occurred:", error);`,
       `});`
     );
   };
