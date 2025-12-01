@@ -131,7 +131,8 @@ export interface IOptimizerParams extends IOptimizerSchema {
 
 export interface IOptimizer {
   getData(symbol: string): Promise<IOptimizerStrategy[]>;
-  getReport(symbol: string): Promise<string>;
+  getCode(symbol: string): Promise<string>;
+  dump(symbol: string, path?: string): Promise<void>;
 }
 
 export type OptimizerName = string;

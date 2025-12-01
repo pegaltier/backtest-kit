@@ -121,7 +121,7 @@ const GET_STRATEGY_DATA_FN = async (symbol: string, self: ClientOptimizer) => {
   return strategyList;
 };
 
-const GET_STRATEGY_REPORT_FN = async (
+const GET_STRATEGY_CODE_FN = async (
   symbol: string,
   self: ClientOptimizer
 ) => {
@@ -244,7 +244,7 @@ const GET_STRATEGY_DUMP_FN = async (
   path: string,
   self: ClientOptimizer
 ) => {
-  const report = await self.getReport(symbol);
+  const report = await self.getCode(symbol);
 
   try {
     const dir = join(process.cwd(), path);
@@ -271,11 +271,11 @@ export class ClientOptimizer implements IOptimizer {
     return await GET_STRATEGY_DATA_FN(symbol, this);
   };
 
-  public getReport = async (symbol: string): Promise<string> => {
-    this.params.logger.debug("ClientOptimizer getReport", {
+  public getCode = async (symbol: string): Promise<string> => {
+    this.params.logger.debug("ClientOptimizer getCode", {
       symbol,
     });
-    return await GET_STRATEGY_REPORT_FN(symbol, this);
+    return await GET_STRATEGY_CODE_FN(symbol, this);
   };
 
   public dump = async (symbol: string, path = "./"): Promise<void> => {

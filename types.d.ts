@@ -1010,13 +1010,13 @@ declare class BacktestMarkdownService {
      * Delegates to ReportStorage.dump().
      *
      * @param strategyName - Strategy name to save report for
-     * @param path - Directory path to save report (default: "./logs/backtest")
+     * @param path - Directory path to save report (default: "./dump/backtest")
      *
      * @example
      * ```typescript
      * const service = new BacktestMarkdownService();
      *
-     * // Save to default path: ./logs/backtest/my-strategy.md
+     * // Save to default path: ./dump/backtest/my-strategy.md
      * await service.dump("my-strategy");
      *
      * // Save to custom path: ./custom/path/my-strategy.md
@@ -2777,13 +2777,13 @@ declare class LiveMarkdownService {
      * Delegates to ReportStorage.dump().
      *
      * @param strategyName - Strategy name to save report for
-     * @param path - Directory path to save report (default: "./logs/live")
+     * @param path - Directory path to save report (default: "./dump/live")
      *
      * @example
      * ```typescript
      * const service = new LiveMarkdownService();
      *
-     * // Save to default path: ./logs/live/my-strategy.md
+     * // Save to default path: ./dump/live/my-strategy.md
      * await service.dump("my-strategy");
      *
      * // Save to custom path: ./custom/path/my-strategy.md
@@ -2970,13 +2970,13 @@ declare class ScheduleMarkdownService {
      * Delegates to ReportStorage.dump().
      *
      * @param strategyName - Strategy name to save report for
-     * @param path - Directory path to save report (default: "./logs/schedule")
+     * @param path - Directory path to save report (default: "./dump/schedule")
      *
      * @example
      * ```typescript
      * const service = new ScheduleMarkdownService();
      *
-     * // Save to default path: ./logs/schedule/my-strategy.md
+     * // Save to default path: ./dump/schedule/my-strategy.md
      * await service.dump("my-strategy");
      *
      * // Save to custom path: ./custom/path/my-strategy.md
@@ -3141,7 +3141,7 @@ declare class PerformanceMarkdownService {
      *
      * @example
      * ```typescript
-     * // Save to default path: ./logs/performance/my-strategy.md
+     * // Save to default path: ./dump/performance/my-strategy.md
      * await performanceService.dump("my-strategy");
      *
      * // Save to custom path
@@ -3256,13 +3256,13 @@ declare class WalkerMarkdownService {
      * @param symbol - Trading symbol
      * @param metric - Metric being optimized
      * @param context - Context with exchangeName and frameName
-     * @param path - Directory path to save report (default: "./logs/walker")
+     * @param path - Directory path to save report (default: "./dump/walker")
      *
      * @example
      * ```typescript
      * const service = new WalkerMarkdownService();
      *
-     * // Save to default path: ./logs/walker/my-walker.md
+     * // Save to default path: ./dump/walker/my-walker.md
      * await service.dump("my-walker", "BTCUSDT", "sharpeRatio", { exchangeName: "binance", frameName: "1d" });
      *
      * // Save to custom path: ./custom/path/my-walker.md
@@ -3696,11 +3696,11 @@ declare class BacktestUtils {
      * Saves strategy report to disk.
      *
      * @param strategyName - Strategy name to save report for
-     * @param path - Optional directory path to save report (default: "./logs/backtest")
+     * @param path - Optional directory path to save report (default: "./dump/backtest")
      *
      * @example
      * ```typescript
-     * // Save to default path: ./logs/backtest/my-strategy.md
+     * // Save to default path: ./dump/backtest/my-strategy.md
      * await Backtest.dump("my-strategy");
      *
      * // Save to custom path: ./custom/path/my-strategy.md
@@ -3828,11 +3828,11 @@ declare class LiveUtils {
      * Saves strategy report to disk.
      *
      * @param strategyName - Strategy name to save report for
-     * @param path - Optional directory path to save report (default: "./logs/live")
+     * @param path - Optional directory path to save report (default: "./dump/live")
      *
      * @example
      * ```typescript
-     * // Save to default path: ./logs/live/my-strategy.md
+     * // Save to default path: ./dump/live/my-strategy.md
      * await Live.dump("my-strategy");
      *
      * // Save to custom path: ./custom/path/my-strategy.md
@@ -3914,11 +3914,11 @@ declare class ScheduleUtils {
      * Saves strategy report to disk.
      *
      * @param strategyName - Strategy name to save report for
-     * @param path - Optional directory path to save report (default: "./logs/schedule")
+     * @param path - Optional directory path to save report (default: "./dump/schedule")
      *
      * @example
      * ```typescript
-     * // Save to default path: ./logs/schedule/my-strategy.md
+     * // Save to default path: ./dump/schedule/my-strategy.md
      * await Schedule.dump("my-strategy");
      *
      * // Save to custom path: ./custom/path/my-strategy.md
@@ -4044,14 +4044,14 @@ declare class Performance {
      * Saves performance report to disk.
      *
      * Creates directory if it doesn't exist.
-     * Default path: ./logs/performance/{strategyName}.md
+     * Default path: ./dump/performance/{strategyName}.md
      *
      * @param strategyName - Strategy name to save report for
      * @param path - Optional custom directory path
      *
      * @example
      * ```typescript
-     * // Save to default path: ./logs/performance/my-strategy.md
+     * // Save to default path: ./dump/performance/my-strategy.md
      * await Performance.dump("my-strategy");
      *
      * // Save to custom path: ./reports/perf/my-strategy.md
@@ -4161,11 +4161,11 @@ declare class WalkerUtils {
      *
      * @param symbol - Trading symbol
      * @param walkerName - Walker name to save report for
-     * @param path - Optional directory path to save report (default: "./logs/walker")
+     * @param path - Optional directory path to save report (default: "./dump/walker")
      *
      * @example
      * ```typescript
-     * // Save to default path: ./logs/walker/my-walker.md
+     * // Save to default path: ./dump/walker/my-walker.md
      * await Walker.dump("BTCUSDT", "my-walker");
      *
      * // Save to custom path: ./custom/path/my-walker.md
@@ -4272,11 +4272,11 @@ declare class HeatUtils {
      * Default filename: {strategyName}.md
      *
      * @param strategyName - Strategy name to save heatmap report for
-     * @param path - Optional directory path to save report (default: "./logs/heatmap")
+     * @param path - Optional directory path to save report (default: "./dump/heatmap")
      *
      * @example
      * ```typescript
-     * // Save to default path: ./logs/heatmap/my-strategy.md
+     * // Save to default path: ./dump/heatmap/my-strategy.md
      * await Heat.dump("my-strategy");
      *
      * // Save to custom path: ./reports/my-strategy.md
@@ -6085,13 +6085,13 @@ declare class HeatMarkdownService {
      * Default filename: {strategyName}.md
      *
      * @param strategyName - Strategy name to save heatmap report for
-     * @param path - Optional directory path to save report (default: "./logs/heatmap")
+     * @param path - Optional directory path to save report (default: "./dump/heatmap")
      *
      * @example
      * ```typescript
      * const service = new HeatMarkdownService();
      *
-     * // Save to default path: ./logs/heatmap/my-strategy.md
+     * // Save to default path: ./dump/heatmap/my-strategy.md
      * await service.dump("my-strategy");
      *
      * // Save to custom path: ./reports/my-strategy.md
