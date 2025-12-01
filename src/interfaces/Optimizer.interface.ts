@@ -57,17 +57,18 @@ type Source<Data extends IOptimizerData = any> =
 export interface IOptimizerCallbacks {}
 
 export interface IOptimizerTemplate {
+  getTopBanner(symbol: string): string | Promise<string>;
   getUserMessage<Data extends IOptimizerData = any>(
     symbol: string,
     data: Data[],
     name: string
-  ): Promise<string>;
+  ): string | Promise<string>;
   getAssistantMessage<Data extends IOptimizerData = any>(
     symbol: string,
     data: Data[],
     name: string
-  ): Promise<string>;
-  getTextTemplate(): Promise<string>;
+  ): string | Promise<string>;
+  getTextTemplate(symbol: string): string | Promise<string>;
 }
 
 export interface IOptimizerValidationFn {

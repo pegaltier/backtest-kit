@@ -10,6 +10,13 @@ import { str } from "functools-kit";
 export class OptimizerTemplateService implements IOptimizerTemplate {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
+  public getTopBanner = async (symbol: string) => {
+    this.loggerService.log("optimizerTemplateService getTopBanner", {
+      symbol,
+    });
+    return "#!/usr/bin/env node";
+  }
+
   public getUserMessage = async (
     symbol: string,
     data: IOptimizerData[],
@@ -36,8 +43,10 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
     return "ОК";
   };
 
-  public getTextTemplate = async () => {
-    this.loggerService.log("optimizerTemplateService getTextTemplate");
+  public getTextTemplate = async (symbol: string) => {
+    this.loggerService.log("optimizerTemplateService getTextTemplate", {
+      symbol,
+    });
     return str.newline(
       `export async function text(messages) {`,
       `    const ollama = new Ollama({`,
