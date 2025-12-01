@@ -4,7 +4,6 @@ import backtest from "../lib";
 const SCHEDULE_METHOD_NAME_GET_DATA = "ScheduleUtils.getData";
 const SCHEDULE_METHOD_NAME_GET_REPORT = "ScheduleUtils.getReport";
 const SCHEDULE_METHOD_NAME_DUMP = "ScheduleUtils.dump";
-const SCHEDULE_METHOD_NAME_CLEAR = "ScheduleUtils.clear";
 
 /**
  * Utility class for scheduled signals reporting operations.
@@ -94,29 +93,6 @@ export class ScheduleUtils {
       path,
     });
     await backtest.scheduleMarkdownService.dump(strategyName, path);
-  };
-
-  /**
-   * Clears accumulated scheduled signal data from storage.
-   * If strategyName is provided, clears only that strategy's data.
-   * If strategyName is omitted, clears all strategies' data.
-   *
-   * @param strategyName - Optional strategy name to clear specific strategy data
-   *
-   * @example
-   * ```typescript
-   * // Clear specific strategy data
-   * await Schedule.clear("my-strategy");
-   *
-   * // Clear all strategies' data
-   * await Schedule.clear();
-   * ```
-   */
-  public clear = async (strategyName?: StrategyName): Promise<void> => {
-    backtest.loggerService.info(SCHEDULE_METHOD_NAME_CLEAR, {
-      strategyName,
-    });
-    await backtest.scheduleMarkdownService.clear(strategyName);
   };
 }
 

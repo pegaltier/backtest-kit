@@ -5,6 +5,7 @@ import { IFrameSchema } from "../interfaces/Frame.interface";
 import { IWalkerSchema } from "../interfaces/Walker.interface";
 import { ISizingSchema } from "../interfaces/Sizing.interface";
 import { IRiskSchema } from "../interfaces/Risk.interface";
+import { IOptimizerSchema } from "../interfaces/Optimizer.interface";
 
 const LIST_EXCHANGES_METHOD_NAME = "list.listExchanges";
 const LIST_STRATEGIES_METHOD_NAME = "list.listStrategies";
@@ -12,6 +13,7 @@ const LIST_FRAMES_METHOD_NAME = "list.listFrames";
 const LIST_WALKERS_METHOD_NAME = "list.listWalkers";
 const LIST_SIZINGS_METHOD_NAME = "list.listSizings";
 const LIST_RISKS_METHOD_NAME = "list.listRisks";
+const LIST_OPTIMIZERS_METHOD_NAME = "list.listOptimizers";
 
 /**
  * Returns a list of all registered exchange schemas.
@@ -214,4 +216,45 @@ export async function listSizings(): Promise<ISizingSchema[]> {
 export async function listRisks(): Promise<IRiskSchema[]> {
   backtest.loggerService.log(LIST_RISKS_METHOD_NAME);
   return await backtest.riskValidationService.list();
+}
+
+/**
+ * Returns a list of all registered optimizer schemas.
+ *
+ * Retrieves all optimizers that have been registered via addOptimizer().
+ * Useful for debugging, documentation, or building dynamic UIs.
+ *
+ * @returns Array of optimizer schemas with their configurations
+ *
+ * @example
+ * ```typescript
+ * import { listOptimizers, addOptimizer } from "backtest-kit";
+ *
+ * addOptimizer({
+ *   optimizerName: "llm-strategy-generator",
+ *   note: "Generates trading strategies using LLM",
+ *   rangeTrain: [
+ *     {
+ *       note: "Training period 1",
+ *       startDate: new Date("2024-01-01"),
+ *       endDate: new Date("2024-01-31"),
+ *     },
+ *   ],
+ *   rangeTest: {
+ *     note: "Testing period",
+ *     startDate: new Date("2024-02-01"),
+ *     endDate: new Date("2024-02-28"),
+ *   },
+ *   source: [],
+ *   getPrompt: async (symbol, messages) => "Generate strategy",
+ * });
+ *
+ * const optimizers = listOptimizers();
+ * console.log(optimizers);
+ * // [{ optimizerName: "llm-strategy-generator", note: "Generates...", ... }]
+ * ```
+ */
+export async function listOptimizers(): Promise<IOptimizerSchema[]> {
+  backtest.loggerService.log(LIST_OPTIMIZERS_METHOD_NAME);
+  return await backtest.optimizerValidationService.list();
 }

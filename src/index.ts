@@ -1,6 +1,21 @@
 export { setLogger, setConfig } from "./function/setup";
-export { addExchange, addStrategy, addFrame, addWalker, addSizing, addRisk } from "./function/add";
-export { listExchanges, listStrategies, listFrames, listWalkers, listSizings, listRisks } from "./function/list";
+export {
+  addExchange,
+  addStrategy,
+  addFrame,
+  addWalker,
+  addSizing,
+  addRisk,
+} from "./function/add";
+export {
+  listExchanges,
+  listStrategies,
+  listFrames,
+  listWalkers,
+  listSizings,
+  listRisks,
+  listOptimizers,
+} from "./function/list";
 export {
   listenSignal,
   listenSignalOnce,
@@ -91,13 +106,25 @@ export {
 } from "./interfaces/Heatmap.interface";
 
 export {
-  MessageModel,
-  MessageRole,
-} from "./model/Message.model"
+  IOptimizerCallbacks,
+  IOptimizerData,
+  IOptimizerFetchArgs,
+  IOptimizerFilterArgs,
+  IOptimizerRange,
+  IOptimizerSchema,
+  IOptimizerSource,
+  IOptimizerStrategy,
+  IOptimizerTemplate,
+} from "./interfaces/Optimizer.interface"
+
+export { MessageModel, MessageRole } from "./model/Message.model";
 
 export { DoneContract } from "./contract/Done.contract";
 export { ProgressBacktestContract } from "./contract/ProgressBacktest.contract";
-export { PerformanceContract, PerformanceMetricType } from "./contract/Performance.contract";
+export {
+  PerformanceContract,
+  PerformanceMetricType,
+} from "./contract/Performance.contract";
 
 export type { BacktestStatistics } from "./lib/services/markdown/BacktestMarkdownService";
 export type { LiveStatistics } from "./lib/services/markdown/LiveMarkdownService";
@@ -127,6 +154,7 @@ export { Performance } from "./classes/Performance";
 export { Walker } from "./classes/Walker";
 export { Heat } from "./classes/Heat";
 export { PositionSize } from "./classes/PositionSize";
+export { Optimizer } from "./classes/Optimizer";
 
 export * as emitters from "./config/emitters";
 

@@ -1,8 +1,6 @@
 import * as di_scoped from 'di-scoped';
 import * as functools_kit from 'functools-kit';
 import { Subject } from 'functools-kit';
-import { MessageModel as MessageModel$1 } from 'src/model/Message.model';
-import { IOptimizerStrategy as IOptimizerStrategy$1 } from 'src/interfaces/Optimizer.interface';
 
 declare const GLOBAL_CONFIG: {
     /**
@@ -1591,6 +1589,117 @@ declare function addSizing(sizingSchema: ISizingSchema): void;
  */
 declare function addRisk(riskSchema: IRiskSchema): void;
 
+type MessageRole = "assistant" | "system" | "user";
+interface MessageModel {
+    role: MessageRole;
+    content: string;
+}
+
+type RowId = string | number;
+interface IOptimizerRange {
+    note?: string;
+    startDate: Date;
+    endDate: Date;
+}
+interface IOptimizerData {
+    id: RowId;
+}
+interface IOptimizerFilterArgs {
+    symbol: string;
+    startDate: Date;
+    endDate: Date;
+}
+interface IOptimizerFetchArgs extends IOptimizerFilterArgs {
+    limit: number;
+    offset: number;
+}
+interface IOptimizerSourceFn<Data extends IOptimizerData = any> {
+    (args: IOptimizerFetchArgs): Data[] | Promise<Data[]>;
+}
+interface IOptimizerStrategy {
+    symbol: string;
+    messages: MessageModel[];
+    strategy: string;
+}
+interface IOptimizerSource<Data extends IOptimizerData = any> {
+    note?: string;
+    name: string;
+    fetch: IOptimizerSourceFn<Data>;
+    user?: (symbol: string, data: Data[], name: string) => string | Promise<string>;
+    assistant?: (symbol: string, data: Data[], name: string) => string | Promise<string>;
+}
+type Source<Data extends IOptimizerData = any> = IOptimizerSourceFn<Data> | IOptimizerSource<Data>;
+interface IOptimizerCallbacks {
+    /**
+     * Called after strategy data is generated for all train ranges.
+     * Useful for logging or validating the generated strategies.
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyData - Array of generated strategies with their messages
+     */
+    onData?: (symbol: string, strategyData: IOptimizerStrategy[]) => void | Promise<void>;
+    /**
+     * Called after strategy code is generated.
+     * Useful for logging or validating the generated code.
+     *
+     * @param symbol - Trading pair symbol
+     * @param code - Generated strategy code
+     */
+    onCode?: (symbol: string, code: string) => void | Promise<void>;
+    /**
+     * Called after strategy code is dumped to file.
+     * Useful for logging or performing additional actions after file write.
+     *
+     * @param symbol - Trading pair symbol
+     * @param filepath - Path where the file was saved
+     */
+    onDump?: (symbol: string, filepath: string) => void | Promise<void>;
+    /**
+     * Called after data is fetched from a source.
+     * Useful for logging or validating the fetched data.
+     *
+     * @param symbol - Trading pair symbol
+     * @param sourceName - Name of the data source
+     * @param data - Array of fetched data
+     * @param startDate - Start date of the data range
+     * @param endDate - End date of the data range
+     */
+    onSourceData?: <Data extends IOptimizerData = any>(symbol: string, sourceName: string, data: Data[], startDate: Date, endDate: Date) => void | Promise<void>;
+}
+interface IOptimizerTemplate {
+    getTopBanner(symbol: string): string | Promise<string>;
+    getUserMessage<Data extends IOptimizerData = any>(symbol: string, data: Data[], name: string): string | Promise<string>;
+    getAssistantMessage<Data extends IOptimizerData = any>(symbol: string, data: Data[], name: string): string | Promise<string>;
+    getWalkerTemplate(walkerName: string, exchangeName: string, frameName: string, strategies: string[]): string | Promise<string>;
+    getExchangeTemplate(symbol: string, exchangeName: string): string | Promise<string>;
+    getFrameTemplate(symbol: string, frameName: string, interval: CandleInterval, startDate: Date, endDate: Date): string | Promise<string>;
+    getStrategyTemplate(strategyName: string, interval: string, prompt: string): string | Promise<string>;
+    getLauncherTemplate(symbol: string, walkerName: string): string | Promise<string>;
+    getTextTemplate(symbol: string): string | Promise<string>;
+    getJsonTemplate(symbol: string): string | Promise<string>;
+    getJsonDumpTemplate: (symbol: string) => string | Promise<string>;
+}
+interface IOptimizerSchema {
+    note?: string;
+    optimizerName: OptimizerName;
+    rangeTrain: IOptimizerRange[];
+    rangeTest: IOptimizerRange;
+    source: Source[];
+    getPrompt: (symbol: string, messages: MessageModel[]) => string | Promise<string>;
+    template?: Partial<IOptimizerTemplate>;
+    callbacks?: Partial<IOptimizerCallbacks>;
+}
+interface IOptimizerParams extends IOptimizerSchema {
+    logger: ILogger;
+    template: IOptimizerTemplate;
+}
+interface IOptimizer {
+    getData(symbol: string): Promise<IOptimizerStrategy[]>;
+    getCode(symbol: string): Promise<string>;
+    dump(symbol: string, path?: string): Promise<void>;
+}
+type OptimizerName = string;
+
 /**
  * Returns a list of all registered exchange schemas.
  *
@@ -1770,6 +1879,43 @@ declare function listSizings(): Promise<ISizingSchema[]>;
  * ```
  */
 declare function listRisks(): Promise<IRiskSchema[]>;
+/**
+ * Returns a list of all registered optimizer schemas.
+ *
+ * Retrieves all optimizers that have been registered via addOptimizer().
+ * Useful for debugging, documentation, or building dynamic UIs.
+ *
+ * @returns Array of optimizer schemas with their configurations
+ *
+ * @example
+ * ```typescript
+ * import { listOptimizers, addOptimizer } from "backtest-kit";
+ *
+ * addOptimizer({
+ *   optimizerName: "llm-strategy-generator",
+ *   note: "Generates trading strategies using LLM",
+ *   rangeTrain: [
+ *     {
+ *       note: "Training period 1",
+ *       startDate: new Date("2024-01-01"),
+ *       endDate: new Date("2024-01-31"),
+ *     },
+ *   ],
+ *   rangeTest: {
+ *     note: "Testing period",
+ *     startDate: new Date("2024-02-01"),
+ *     endDate: new Date("2024-02-28"),
+ *   },
+ *   source: [],
+ *   getPrompt: async (symbol, messages) => "Generate strategy",
+ * });
+ *
+ * const optimizers = listOptimizers();
+ * console.log(optimizers);
+ * // [{ optimizerName: "llm-strategy-generator", note: "Generates...", ... }]
+ * ```
+ */
+declare function listOptimizers(): Promise<IOptimizerSchema[]>;
 
 /**
  * Contract for background execution completion events.
@@ -2624,12 +2770,6 @@ interface IHeatmapStatistics {
     portfolioSharpeRatio: number | null;
     /** Portfolio-wide total trades */
     portfolioTotalTrades: number;
-}
-
-type MessageRole = "assistant" | "system" | "user";
-interface MessageModel {
-    role: MessageRole;
-    content: string;
 }
 
 /**
@@ -3960,23 +4100,6 @@ declare class ScheduleUtils {
      * ```
      */
     dump: (strategyName: StrategyName, path?: string) => Promise<void>;
-    /**
-     * Clears accumulated scheduled signal data from storage.
-     * If strategyName is provided, clears only that strategy's data.
-     * If strategyName is omitted, clears all strategies' data.
-     *
-     * @param strategyName - Optional strategy name to clear specific strategy data
-     *
-     * @example
-     * ```typescript
-     * // Clear specific strategy data
-     * await Schedule.clear("my-strategy");
-     *
-     * // Clear all strategies' data
-     * await Schedule.clear();
-     * ```
-     */
-    clear: (strategyName?: StrategyName) => Promise<void>;
 }
 /**
  * Singleton instance of ScheduleUtils for convenient scheduled signals reporting.
@@ -4431,6 +4554,19 @@ declare class PositionSizeUtils {
     }) => Promise<number>;
 }
 declare const PositionSize: typeof PositionSizeUtils;
+
+declare class OptimizerUtils {
+    getData: (symbol: string, context: {
+        optimizerName: OptimizerName;
+    }) => Promise<IOptimizerStrategy[]>;
+    getCode: (symbol: string, context: {
+        optimizerName: OptimizerName;
+    }) => Promise<string>;
+    dump: (symbol: string, context: {
+        optimizerName: string;
+    }, path?: string) => Promise<void>;
+}
+declare const Optimizer: OptimizerUtils;
 
 /**
  * Global signal emitter for all trading events (live + backtest).
@@ -6402,111 +6538,6 @@ declare class RiskValidationService {
     list: () => Promise<IRiskSchema[]>;
 }
 
-type RowId = string | number;
-interface IOptimizerRange {
-    note?: string;
-    startDate: Date;
-    endDate: Date;
-}
-interface IOptimizerData {
-    id: RowId;
-}
-interface IOptimizerFilterArgs {
-    symbol: string;
-    startDate: Date;
-    endDate: Date;
-}
-interface IOptimizerFetchArgs extends IOptimizerFilterArgs {
-    limit: number;
-    offset: number;
-}
-interface IOptimizerSourceFn<Data extends IOptimizerData = any> {
-    (args: IOptimizerFetchArgs): Data[] | Promise<Data[]>;
-}
-interface IOptimizerStrategy {
-    symbol: string;
-    messages: MessageModel$1[];
-    strategy: string;
-}
-interface IOptimizerSource<Data extends IOptimizerData = any> {
-    note?: string;
-    name: string;
-    fetch: IOptimizerSourceFn<Data>;
-    user?: (symbol: string, data: Data[], name: string) => string | Promise<string>;
-    assistant?: (symbol: string, data: Data[], name: string) => string | Promise<string>;
-}
-type Source<Data extends IOptimizerData = any> = IOptimizerSourceFn<Data> | IOptimizerSource<Data>;
-interface IOptimizerCallbacks {
-    /**
-     * Called after strategy data is generated for all train ranges.
-     * Useful for logging or validating the generated strategies.
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyData - Array of generated strategies with their messages
-     */
-    onData?: (symbol: string, strategyData: IOptimizerStrategy[]) => void | Promise<void>;
-    /**
-     * Called after strategy code is generated.
-     * Useful for logging or validating the generated code.
-     *
-     * @param symbol - Trading pair symbol
-     * @param code - Generated strategy code
-     */
-    onCode?: (symbol: string, code: string) => void | Promise<void>;
-    /**
-     * Called after strategy code is dumped to file.
-     * Useful for logging or performing additional actions after file write.
-     *
-     * @param symbol - Trading pair symbol
-     * @param filepath - Path where the file was saved
-     */
-    onDump?: (symbol: string, filepath: string) => void | Promise<void>;
-    /**
-     * Called after data is fetched from a source.
-     * Useful for logging or validating the fetched data.
-     *
-     * @param symbol - Trading pair symbol
-     * @param sourceName - Name of the data source
-     * @param data - Array of fetched data
-     * @param startDate - Start date of the data range
-     * @param endDate - End date of the data range
-     */
-    onSourceData?: <Data extends IOptimizerData = any>(symbol: string, sourceName: string, data: Data[], startDate: Date, endDate: Date) => void | Promise<void>;
-}
-interface IOptimizerTemplate {
-    getTopBanner(symbol: string): string | Promise<string>;
-    getUserMessage<Data extends IOptimizerData = any>(symbol: string, data: Data[], name: string): string | Promise<string>;
-    getAssistantMessage<Data extends IOptimizerData = any>(symbol: string, data: Data[], name: string): string | Promise<string>;
-    getWalkerTemplate(walkerName: string, exchangeName: string, frameName: string, strategies: string[]): string | Promise<string>;
-    getExchangeTemplate(symbol: string, exchangeName: string): string | Promise<string>;
-    getFrameTemplate(symbol: string, frameName: string, interval: CandleInterval, startDate: Date, endDate: Date): string | Promise<string>;
-    getStrategyTemplate(strategyName: string, interval: string, prompt: string): string | Promise<string>;
-    getLauncherTemplate(symbol: string, walkerName: string): string | Promise<string>;
-    getTextTemplate(symbol: string): string | Promise<string>;
-    getJsonTemplate(symbol: string): string | Promise<string>;
-    getJsonDumpTemplate: (symbol: string) => string | Promise<string>;
-}
-interface IOptimizerSchema {
-    note?: string;
-    optimizerName: OptimizerName;
-    rangeTrain: IOptimizerRange[];
-    rangeTest: IOptimizerRange;
-    source: Source[];
-    getPrompt: (symbol: string, messages: MessageModel$1[]) => string | Promise<string>;
-    template?: Partial<IOptimizerTemplate>;
-    callbacks?: Partial<IOptimizerCallbacks>;
-}
-interface IOptimizerParams extends IOptimizerSchema {
-    logger: ILogger;
-    template: IOptimizerTemplate;
-}
-interface IOptimizer {
-    getData(symbol: string): Promise<IOptimizerStrategy[]>;
-    getCode(symbol: string): Promise<string>;
-    dump(symbol: string, path?: string): Promise<void>;
-}
-type OptimizerName = string;
-
 declare class OptimizerTemplateService implements IOptimizerTemplate {
     private readonly loggerService;
     getTopBanner: (symbol: string) => Promise<string>;
@@ -6564,7 +6595,7 @@ declare class OptimizerGlobalService {
     private readonly loggerService;
     private readonly optimizerConnectionService;
     private readonly optimizerValidationService;
-    getData: (symbol: string, optimizerName: string) => Promise<IOptimizerStrategy$1[]>;
+    getData: (symbol: string, optimizerName: string) => Promise<IOptimizerStrategy[]>;
     getCode: (symbol: string, optimizerName: string) => Promise<string>;
     dump: (symbol: string, optimizerName: string, path?: string) => Promise<void>;
 }
@@ -6621,4 +6652,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type BacktestStatistics, type CandleInterval, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IHeatmapStatistics, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatistics, type MessageModel, type MessageRole, MethodContextService, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatistics, PersistBase, PersistRiskAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type RiskData, Schedule, type ScheduleStatistics, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, Walker, type WalkerMetric, type WalkerStatistics, addExchange, addFrame, addRisk, addSizing, addStrategy, addWalker, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listExchanges, listFrames, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenPerformance, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, setConfig, setLogger };
+export { Backtest, type BacktestStatistics, type CandleInterval, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IHeatmapStatistics, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatistics, type MessageModel, type MessageRole, MethodContextService, Optimizer, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatistics, PersistBase, PersistRiskAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type RiskData, Schedule, type ScheduleStatistics, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, Walker, type WalkerMetric, type WalkerStatistics, addExchange, addFrame, addRisk, addSizing, addStrategy, addWalker, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenPerformance, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, setConfig, setLogger };
