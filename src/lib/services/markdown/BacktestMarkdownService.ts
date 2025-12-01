@@ -317,11 +317,11 @@ class ReportStorage {
    * Saves strategy report to disk.
    *
    * @param strategyName - Strategy name
-   * @param path - Directory path to save report (default: "./logs/backtest")
+   * @param path - Directory path to save report (default: "./dump/backtest")
    */
   public async dump(
     strategyName: StrategyName,
-    path = "./logs/backtest"
+    path = "./dump/backtest"
   ): Promise<void> {
     const markdown = await this.getReport(strategyName);
 
@@ -462,13 +462,13 @@ export class BacktestMarkdownService {
    * Delegates to ReportStorage.dump().
    *
    * @param strategyName - Strategy name to save report for
-   * @param path - Directory path to save report (default: "./logs/backtest")
+   * @param path - Directory path to save report (default: "./dump/backtest")
    *
    * @example
    * ```typescript
    * const service = new BacktestMarkdownService();
    *
-   * // Save to default path: ./logs/backtest/my-strategy.md
+   * // Save to default path: ./dump/backtest/my-strategy.md
    * await service.dump("my-strategy");
    *
    * // Save to custom path: ./custom/path/my-strategy.md
@@ -477,7 +477,7 @@ export class BacktestMarkdownService {
    */
   public dump = async (
     strategyName: StrategyName,
-    path = "./logs/backtest"
+    path = "./dump/backtest"
   ): Promise<void> => {
     this.loggerService.log("backtestMarkdownService dump", {
       strategyName,

@@ -157,7 +157,7 @@ class ReportStorage {
    * @param symbol - Trading symbol
    * @param metric - Metric being optimized
    * @param context - Context with exchangeName and frameName
-   * @param path - Directory path to save report (default: "./logs/walker")
+   * @param path - Directory path to save report (default: "./dump/walker")
    */
   public async dump(
     symbol: string,
@@ -166,7 +166,7 @@ class ReportStorage {
       exchangeName: string;
       frameName: string;
     },
-    path = "./logs/walker"
+    path = "./dump/walker"
   ): Promise<void> {
     const markdown = await this.getReport(symbol, metric, context);
 
@@ -316,13 +316,13 @@ export class WalkerMarkdownService {
    * @param symbol - Trading symbol
    * @param metric - Metric being optimized
    * @param context - Context with exchangeName and frameName
-   * @param path - Directory path to save report (default: "./logs/walker")
+   * @param path - Directory path to save report (default: "./dump/walker")
    *
    * @example
    * ```typescript
    * const service = new WalkerMarkdownService();
    *
-   * // Save to default path: ./logs/walker/my-walker.md
+   * // Save to default path: ./dump/walker/my-walker.md
    * await service.dump("my-walker", "BTCUSDT", "sharpeRatio", { exchangeName: "binance", frameName: "1d" });
    *
    * // Save to custom path: ./custom/path/my-walker.md
@@ -337,7 +337,7 @@ export class WalkerMarkdownService {
       exchangeName: string;
       frameName: string;
     },
-    path = "./logs/walker"
+    path = "./dump/walker"
   ): Promise<void> => {
     this.loggerService.log("walkerMarkdownService dump", {
       walkerName,

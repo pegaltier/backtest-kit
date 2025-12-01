@@ -305,7 +305,7 @@ class PerformanceStorage {
    */
   public async dump(
     strategyName: string,
-    path = "./logs/performance"
+    path = "./dump/performance"
   ): Promise<void> {
     const markdown = await this.getReport(strategyName);
 
@@ -432,7 +432,7 @@ export class PerformanceMarkdownService {
    *
    * @example
    * ```typescript
-   * // Save to default path: ./logs/performance/my-strategy.md
+   * // Save to default path: ./dump/performance/my-strategy.md
    * await performanceService.dump("my-strategy");
    *
    * // Save to custom path
@@ -441,7 +441,7 @@ export class PerformanceMarkdownService {
    */
   public dump = async (
     strategyName: string,
-    path = "./logs/performance"
+    path = "./dump/performance"
   ): Promise<void> => {
     this.loggerService.log("performanceMarkdownService dump", {
       strategyName,

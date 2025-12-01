@@ -412,11 +412,11 @@ class HeatmapStorage {
    * Saves heatmap report to disk.
    *
    * @param strategyName - Strategy name for filename
-   * @param path - Directory path to save report (default: "./logs/heatmap")
+   * @param path - Directory path to save report (default: "./dump/heatmap")
    */
   public async dump(
     strategyName: StrategyName,
-    path = "./logs/heatmap"
+    path = "./dump/heatmap"
   ): Promise<void> {
     const markdown = await this.getReport(strategyName);
 
@@ -562,13 +562,13 @@ export class HeatMarkdownService {
    * Default filename: {strategyName}.md
    *
    * @param strategyName - Strategy name to save heatmap report for
-   * @param path - Optional directory path to save report (default: "./logs/heatmap")
+   * @param path - Optional directory path to save report (default: "./dump/heatmap")
    *
    * @example
    * ```typescript
    * const service = new HeatMarkdownService();
    *
-   * // Save to default path: ./logs/heatmap/my-strategy.md
+   * // Save to default path: ./dump/heatmap/my-strategy.md
    * await service.dump("my-strategy");
    *
    * // Save to custom path: ./reports/my-strategy.md
@@ -577,7 +577,7 @@ export class HeatMarkdownService {
    */
   public dump = async (
     strategyName: StrategyName,
-    path = "./logs/heatmap"
+    path = "./dump/heatmap"
   ): Promise<void> => {
     this.loggerService.log(HEATMAP_METHOD_NAME_DUMP, {
       strategyName,

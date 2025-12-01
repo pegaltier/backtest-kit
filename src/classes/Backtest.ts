@@ -183,11 +183,11 @@ export class BacktestUtils {
    * Saves strategy report to disk.
    *
    * @param strategyName - Strategy name to save report for
-   * @param path - Optional directory path to save report (default: "./logs/backtest")
+   * @param path - Optional directory path to save report (default: "./dump/backtest")
    *
    * @example
    * ```typescript
-   * // Save to default path: ./logs/backtest/my-strategy.md
+   * // Save to default path: ./dump/backtest/my-strategy.md
    * await Backtest.dump("my-strategy");
    *
    * // Save to custom path: ./custom/path/my-strategy.md

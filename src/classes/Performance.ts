@@ -96,14 +96,14 @@ export class Performance {
    * Saves performance report to disk.
    *
    * Creates directory if it doesn't exist.
-   * Default path: ./logs/performance/{strategyName}.md
+   * Default path: ./dump/performance/{strategyName}.md
    *
    * @param strategyName - Strategy name to save report for
    * @param path - Optional custom directory path
    *
    * @example
    * ```typescript
-   * // Save to default path: ./logs/performance/my-strategy.md
+   * // Save to default path: ./dump/performance/my-strategy.md
    * await Performance.dump("my-strategy");
    *
    * // Save to custom path: ./reports/perf/my-strategy.md
@@ -112,7 +112,7 @@ export class Performance {
    */
   public static async dump(
     strategyName: string,
-    path = "./logs/performance"
+    path = "./dump/performance"
   ): Promise<void> {
     return backtest.performanceMarkdownService.dump(strategyName, path);
   }

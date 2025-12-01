@@ -200,11 +200,11 @@ export class LiveUtils {
    * Saves strategy report to disk.
    *
    * @param strategyName - Strategy name to save report for
-   * @param path - Optional directory path to save report (default: "./logs/live")
+   * @param path - Optional directory path to save report (default: "./dump/live")
    *
    * @example
    * ```typescript
-   * // Save to default path: ./logs/live/my-strategy.md
+   * // Save to default path: ./dump/live/my-strategy.md
    * await Live.dump("my-strategy");
    *
    * // Save to custom path: ./custom/path/my-strategy.md

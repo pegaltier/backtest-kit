@@ -183,7 +183,7 @@ export const PersistBase = makeExtendable(
      * Creates new persistence instance.
      *
      * @param entityName - Unique entity type identifier
-     * @param baseDir - Base directory for all entities (default: ./logs/data)
+     * @param baseDir - Base directory for all entities (default: ./dump/data)
      */
     constructor(
       readonly entityName: EntityName,
@@ -501,7 +501,7 @@ export class PersistSignalUtils {
     (strategyName: StrategyName): IPersistBase<SignalData> =>
       Reflect.construct(this.PersistSignalFactory, [
         strategyName,
-        `./logs/data/signal/`,
+        `./dump/data/signal/`,
       ])
   );
 
@@ -632,7 +632,7 @@ export class PersistRiskUtils {
     (riskName: RiskName): IPersistBase<RiskData> =>
       Reflect.construct(this.PersistRiskFactory, [
         riskName,
-        `./logs/data/risk/`,
+        `./dump/data/risk/`,
       ])
   );
 

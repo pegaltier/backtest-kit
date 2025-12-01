@@ -511,11 +511,11 @@ class ReportStorage {
    * Saves strategy report to disk.
    *
    * @param strategyName - Strategy name
-   * @param path - Directory path to save report (default: "./logs/live")
+   * @param path - Directory path to save report (default: "./dump/live")
    */
   public async dump(
     strategyName: StrategyName,
-    path = "./logs/live"
+    path = "./dump/live"
   ): Promise<void> {
     const markdown = await this.getReport(strategyName);
 
@@ -666,13 +666,13 @@ export class LiveMarkdownService {
    * Delegates to ReportStorage.dump().
    *
    * @param strategyName - Strategy name to save report for
-   * @param path - Directory path to save report (default: "./logs/live")
+   * @param path - Directory path to save report (default: "./dump/live")
    *
    * @example
    * ```typescript
    * const service = new LiveMarkdownService();
    *
-   * // Save to default path: ./logs/live/my-strategy.md
+   * // Save to default path: ./dump/live/my-strategy.md
    * await service.dump("my-strategy");
    *
    * // Save to custom path: ./custom/path/my-strategy.md
@@ -681,7 +681,7 @@ export class LiveMarkdownService {
    */
   public dump = async (
     strategyName: StrategyName,
-    path = "./logs/live"
+    path = "./dump/live"
   ): Promise<void> => {
     this.loggerService.log("liveMarkdownService dump", {
       strategyName,

@@ -327,11 +327,11 @@ class ReportStorage {
    * Saves strategy report to disk.
    *
    * @param strategyName - Strategy name
-   * @param path - Directory path to save report (default: "./logs/schedule")
+   * @param path - Directory path to save report (default: "./dump/schedule")
    */
   public async dump(
     strategyName: StrategyName,
-    path = "./logs/schedule"
+    path = "./dump/schedule"
   ): Promise<void> {
     const markdown = await this.getReport(strategyName);
 
@@ -464,13 +464,13 @@ export class ScheduleMarkdownService {
    * Delegates to ReportStorage.dump().
    *
    * @param strategyName - Strategy name to save report for
-   * @param path - Directory path to save report (default: "./logs/schedule")
+   * @param path - Directory path to save report (default: "./dump/schedule")
    *
    * @example
    * ```typescript
    * const service = new ScheduleMarkdownService();
    *
-   * // Save to default path: ./logs/schedule/my-strategy.md
+   * // Save to default path: ./dump/schedule/my-strategy.md
    * await service.dump("my-strategy");
    *
    * // Save to custom path: ./custom/path/my-strategy.md
@@ -479,7 +479,7 @@ export class ScheduleMarkdownService {
    */
   public dump = async (
     strategyName: StrategyName,
-    path = "./logs/schedule"
+    path = "./dump/schedule"
   ): Promise<void> => {
     this.loggerService.log("scheduleMarkdownService dump", {
       strategyName,

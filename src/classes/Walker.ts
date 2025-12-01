@@ -232,11 +232,11 @@ export class WalkerUtils {
    *
    * @param symbol - Trading symbol
    * @param walkerName - Walker name to save report for
-   * @param path - Optional directory path to save report (default: "./logs/walker")
+   * @param path - Optional directory path to save report (default: "./dump/walker")
    *
    * @example
    * ```typescript
-   * // Save to default path: ./logs/walker/my-walker.md
+   * // Save to default path: ./dump/walker/my-walker.md
    * await Walker.dump("BTCUSDT", "my-walker");
    *
    * // Save to custom path: ./custom/path/my-walker.md

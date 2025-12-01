@@ -74,11 +74,11 @@ export class ScheduleUtils {
    * Saves strategy report to disk.
    *
    * @param strategyName - Strategy name to save report for
-   * @param path - Optional directory path to save report (default: "./logs/schedule")
+   * @param path - Optional directory path to save report (default: "./dump/schedule")
    *
    * @example
    * ```typescript
-   * // Save to default path: ./logs/schedule/my-strategy.md
+   * // Save to default path: ./dump/schedule/my-strategy.md
    * await Schedule.dump("my-strategy");
    *
    * // Save to custom path: ./custom/path/my-strategy.md
