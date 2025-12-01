@@ -55,7 +55,52 @@ type Source<Data extends IOptimizerData = any> =
   | IOptimizerSourceFn<Data>
   | IOptimizerSource<Data>;
 
-export interface IOptimizerCallbacks {}
+export interface IOptimizerCallbacks {
+  /**
+   * Called after strategy data is generated for all train ranges.
+   * Useful for logging or validating the generated strategies.
+   *
+   * @param symbol - Trading pair symbol
+   * @param strategyData - Array of generated strategies with their messages
+   */
+  onData?: (symbol: string, strategyData: IOptimizerStrategy[]) => void | Promise<void>;
+
+  /**
+   * Called after strategy code is generated.
+   * Useful for logging or validating the generated code.
+   *
+   * @param symbol - Trading pair symbol
+   * @param code - Generated strategy code
+   */
+  onCode?: (symbol: string, code: string) => void | Promise<void>;
+
+  /**
+   * Called after strategy code is dumped to file.
+   * Useful for logging or performing additional actions after file write.
+   *
+   * @param symbol - Trading pair symbol
+   * @param filepath - Path where the file was saved
+   */
+  onDump?: (symbol: string, filepath: string) => void | Promise<void>;
+
+  /**
+   * Called after data is fetched from a source.
+   * Useful for logging or validating the fetched data.
+   *
+   * @param symbol - Trading pair symbol
+   * @param sourceName - Name of the data source
+   * @param data - Array of fetched data
+   * @param startDate - Start date of the data range
+   * @param endDate - End date of the data range
+   */
+  onSourceData?: <Data extends IOptimizerData = any>(
+    symbol: string,
+    sourceName: string,
+    data: Data[],
+    startDate: Date,
+    endDate: Date
+  ) => void | Promise<void>;
+}
 
 export interface IOptimizerTemplate {
   getTopBanner(symbol: string): string | Promise<string>;

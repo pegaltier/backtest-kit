@@ -70,6 +70,17 @@ const GET_STRATEGY_DATA_FN = async (symbol: string, self: ClientOptimizer) => {
           startDate,
           endDate,
         });
+
+        if (self.params.callbacks?.onSourceData) {
+          await self.params.callbacks.onSourceData(
+            symbol,
+            DEFAULT_SOURCE_NAME,
+            data,
+            startDate,
+            endDate
+          );
+        }
+
         const [userContent, assistantContent] = await Promise.all([
           DEFAULT_USER_FN(symbol, data, DEFAULT_SOURCE_NAME, self),
           DEFAULT_ASSISTANT_FN(symbol, data, DEFAULT_SOURCE_NAME, self),
@@ -97,6 +108,17 @@ const GET_STRATEGY_DATA_FN = async (symbol: string, self: ClientOptimizer) => {
         startDate,
         endDate,
       });
+
+      if (self.params.callbacks?.onSourceData) {
+        await self.params.callbacks.onSourceData(
+          symbol,
+          name,
+          data,
+          startDate,
+          endDate
+        );
+      }
+
       const [userContent, assistantContent] = await Promise.all([
         user(symbol, data, name, self),
         assistant(symbol, data, name, self),
@@ -118,6 +140,11 @@ const GET_STRATEGY_DATA_FN = async (symbol: string, self: ClientOptimizer) => {
       strategy: await self.params.getPrompt(symbol, messageList),
     });
   }
+
+  if (self.params.callbacks?.onData) {
+    await self.params.callbacks.onData(symbol, strategyList);
+  }
+
   return strategyList;
 };
 
@@ -242,7 +269,13 @@ const GET_STRATEGY_CODE_FN = async (
     sections.push("");
   }
 
-  return str.newline(sections);
+  const code = str.newline(sections);
+
+  if (self.params.callbacks?.onCode) {
+    await self.params.callbacks.onCode(symbol, code);
+  }
+
+  return code;
 };
 
 const GET_STRATEGY_DUMP_FN = async (
@@ -261,6 +294,10 @@ const GET_STRATEGY_DUMP_FN = async (
 
     await writeFile(filepath, report, "utf-8");
     self.params.logger.info(`Optimizer report saved: ${filepath}`);
+
+    if (self.params.callbacks?.onDump) {
+      await self.params.callbacks.onDump(symbol, filepath);
+    }
   } catch (error) {
     self.params.logger.warn(`Failed to save optimizer report:`, error);
     throw error;
