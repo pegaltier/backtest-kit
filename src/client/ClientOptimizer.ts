@@ -2,7 +2,6 @@ import {
   distinctDocuments,
   iterateDocuments,
   resolveDocuments,
-  str,
 } from "functools-kit";
 import {
   IOptimizer,
@@ -209,11 +208,13 @@ const GET_STRATEGY_CODE_FN = async (symbol: string, self: ClientOptimizer) => {
   {
     sections.push(await self.params.template.getTopBanner(symbol));
     sections.push("");
+    sections.push("");
   }
 
   // 2. JSON dump helper function
   {
     sections.push(await self.params.template.getJsonDumpTemplate(symbol));
+    sections.push("");
     sections.push("");
   }
 
@@ -221,10 +222,12 @@ const GET_STRATEGY_CODE_FN = async (symbol: string, self: ClientOptimizer) => {
   {
     sections.push(await self.params.template.getTextTemplate(symbol));
     sections.push("");
+    sections.push("");
   }
 
   {
     sections.push(await self.params.template.getJsonTemplate(symbol));
+    sections.push("");
     sections.push("");
   }
 
@@ -236,6 +239,7 @@ const GET_STRATEGY_CODE_FN = async (symbol: string, self: ClientOptimizer) => {
         `${prefix}_${exchangeName}`
       )
     );
+    sections.push("");
     sections.push("");
   }
 
@@ -255,6 +259,7 @@ const GET_STRATEGY_CODE_FN = async (symbol: string, self: ClientOptimizer) => {
       );
       sections.push("");
     }
+    sections.push("");
   }
 
   // 6. Test frame template
@@ -269,6 +274,7 @@ const GET_STRATEGY_CODE_FN = async (symbol: string, self: ClientOptimizer) => {
         self.params.rangeTest.endDate
       )
     );
+    sections.push("");
     sections.push("");
   }
 
@@ -287,6 +293,7 @@ const GET_STRATEGY_CODE_FN = async (symbol: string, self: ClientOptimizer) => {
       );
       sections.push("");
     }
+    sections.push("");
   }
 
   // 8. Walker template (uses test frame for validation)
@@ -305,6 +312,7 @@ const GET_STRATEGY_CODE_FN = async (symbol: string, self: ClientOptimizer) => {
       )
     );
     sections.push("");
+    sections.push("");
   }
 
   // 9. Launcher template
@@ -316,7 +324,7 @@ const GET_STRATEGY_CODE_FN = async (symbol: string, self: ClientOptimizer) => {
     sections.push("");
   }
 
-  const code = str.newline(sections);
+  const code = sections.join("\n");
 
   if (self.params.callbacks?.onCode) {
     await self.params.callbacks.onCode(symbol, code);
