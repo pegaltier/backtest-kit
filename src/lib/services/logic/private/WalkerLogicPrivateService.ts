@@ -11,6 +11,7 @@ import {
   walkerEmitter,
   walkerCompleteSubject,
   walkerStopSubject,
+  progressWalkerEmitter,
 } from "../../../../config/emitters";
 import { resolveDocuments } from "functools-kit";
 
@@ -171,6 +172,17 @@ export class WalkerLogicPrivateService {
         strategiesTested,
         totalStrategies: strategies.length,
       };
+
+      // Emit progress event
+      await progressWalkerEmitter.next({
+        walkerName: context.walkerName,
+        exchangeName: context.exchangeName,
+        frameName: context.frameName,
+        symbol,
+        totalStrategies: strategies.length,
+        processedStrategies: strategiesTested,
+        progress: strategies.length > 0 ? strategiesTested / strategies.length : 0,
+      });
 
       // Call onStrategyComplete callback if provided
       if (walkerSchema.callbacks?.onStrategyComplete) {

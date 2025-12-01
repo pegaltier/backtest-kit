@@ -1,7 +1,8 @@
 import { Subject } from "functools-kit";
 import { IStrategyTickResult } from "../interfaces/Strategy.interface";
 import { DoneContract } from "../contract/Done.contract";
-import { ProgressContract } from "../contract/Progress.contract";
+import { ProgressBacktestContract } from "../contract/ProgressBacktest.contract";
+import { ProgressWalkerContract } from "../contract/ProgressWalker.contract";
 import { PerformanceContract } from "../contract/Performance.contract";
 import { WalkerContract } from "../contract/Walker.contract";
 import { IWalkerResults, WalkerName } from "../interfaces/Walker.interface";
@@ -52,7 +53,13 @@ export const doneWalkerSubject = new Subject<DoneContract>();
  * Progress emitter for backtest execution progress.
  * Emits progress updates during backtest execution.
  */
-export const progressBacktestEmitter = new Subject<ProgressContract>();
+export const progressBacktestEmitter = new Subject<ProgressBacktestContract>();
+
+/**
+ * Progress emitter for walker execution progress.
+ * Emits progress updates during walker execution.
+ */
+export const progressWalkerEmitter = new Subject<ProgressWalkerContract>();
 
 /**
  * Performance emitter for execution metrics.

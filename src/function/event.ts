@@ -1,8 +1,9 @@
 import backtest from "../lib";
-import { signalEmitter, signalLiveEmitter, signalBacktestEmitter, errorEmitter, doneLiveSubject, doneBacktestSubject, doneWalkerSubject, progressBacktestEmitter, performanceEmitter, walkerEmitter, walkerCompleteSubject, validationSubject } from "../config/emitters";
+import { signalEmitter, signalLiveEmitter, signalBacktestEmitter, errorEmitter, doneLiveSubject, doneBacktestSubject, doneWalkerSubject, progressBacktestEmitter, progressWalkerEmitter, performanceEmitter, walkerEmitter, walkerCompleteSubject, validationSubject } from "../config/emitters";
 import { IStrategyTickResult } from "../interfaces/Strategy.interface";
 import { DoneContract } from "../contract/Done.contract";
-import { ProgressContract } from "../contract/Progress.contract";
+import { ProgressBacktestContract } from "../contract/ProgressBacktest.contract";
+import { ProgressWalkerContract } from "../contract/ProgressWalker.contract";
 import { PerformanceContract } from "../contract/Performance.contract";
 import { WalkerContract } from "../contract/Walker.contract";
 import { IWalkerResults } from "../interfaces/Walker.interface";
@@ -22,6 +23,7 @@ const LISTEN_DONE_BACKTEST_ONCE_METHOD_NAME = "event.listenDoneBacktestOnce";
 const LISTEN_DONE_WALKER_METHOD_NAME = "event.listenDoneWalker";
 const LISTEN_DONE_WALKER_ONCE_METHOD_NAME = "event.listenDoneWalkerOnce";
 const LISTEN_PROGRESS_METHOD_NAME = "event.listenBacktestProgress";
+const LISTEN_PROGRESS_WALKER_METHOD_NAME = "event.listenWalkerProgress";
 const LISTEN_PERFORMANCE_METHOD_NAME = "event.listenPerformance";
 const LISTEN_WALKER_METHOD_NAME = "event.listenWalker";
 const LISTEN_WALKER_ONCE_METHOD_NAME = "event.listenWalkerOnce";
@@ -462,9 +464,44 @@ export function listenDoneWalkerOnce(
  * unsubscribe();
  * ```
  */
-export function listenBacktestProgress(fn: (event: ProgressContract) => void) {
+export function listenBacktestProgress(fn: (event: ProgressBacktestContract) => void) {
   backtest.loggerService.log(LISTEN_PROGRESS_METHOD_NAME);
   return progressBacktestEmitter.subscribe(queued(async (event) => fn(event)));
+}
+
+/**
+ * Subscribes to walker progress events with queued async processing.
+ *
+ * Emits during Walker.run() execution after each strategy completes.
+ * Events are processed sequentially in order received, even if callback is async.
+ * Uses queued wrapper to prevent concurrent execution of the callback.
+ *
+ * @param fn - Callback function to handle walker progress events
+ * @returns Unsubscribe function to stop listening to events
+ *
+ * @example
+ * ```typescript
+ * import { listenWalkerProgress, Walker } from "backtest-kit";
+ *
+ * const unsubscribe = listenWalkerProgress((event) => {
+ *   console.log(`Progress: ${(event.progress * 100).toFixed(2)}%`);
+ *   console.log(`${event.processedStrategies} / ${event.totalStrategies} strategies`);
+ *   console.log(`Walker: ${event.walkerName}, Symbol: ${event.symbol}`);
+ * });
+ *
+ * Walker.run("BTCUSDT", {
+ *   walkerName: "my-walker",
+ *   exchangeName: "binance",
+ *   frameName: "1d-backtest"
+ * });
+ *
+ * // Later: stop listening
+ * unsubscribe();
+ * ```
+ */
+export function listenWalkerProgress(fn: (event: ProgressWalkerContract) => void) {
+  backtest.loggerService.log(LISTEN_PROGRESS_WALKER_METHOD_NAME);
+  return progressWalkerEmitter.subscribe(queued(async (event) => fn(event)));
 }
 
 /**

@@ -14,7 +14,7 @@
  * });
  * ```
  */
-export interface ProgressContract {
+export interface ProgressBacktestContract {
     /** exchangeName - Name of the exchange used in execution */
     exchangeName: string;
     /** strategyName - Name of the strategy being executed */
@@ -29,4 +29,4 @@ export interface ProgressContract {
     progress: number;
 }
 
-export default ProgressContract;
+export default ProgressBacktestContract;

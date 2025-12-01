@@ -96,7 +96,7 @@ export {
 } from "./model/Message.model"
 
 export { DoneContract } from "./contract/Done.contract";
-export { ProgressContract } from "./contract/Progress.contract";
+export { ProgressBacktestContract } from "./contract/ProgressBacktest.contract";
 export { PerformanceContract, PerformanceMetricType } from "./contract/Performance.contract";
 
 export type { BacktestStatistics } from "./lib/services/markdown/BacktestMarkdownService";
