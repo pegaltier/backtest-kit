@@ -145,15 +145,6 @@ export interface IOptimizerTemplate {
   getJsonDumpTemplate: (symbol: string) => string | Promise<string>;
 }
 
-export interface IOptimizerValidationFn {
-  (payload: any): void | Promise<void>;
-}
-
-export interface IOptimizerValidation {
-  validate: IOptimizerValidationFn;
-  note?: string;
-}
-
 export interface IOptimizerSchema {
   note?: string;
   optimizerName: OptimizerName;

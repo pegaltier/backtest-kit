@@ -2,6 +2,7 @@ import * as di_scoped from 'di-scoped';
 import * as functools_kit from 'functools-kit';
 import { Subject } from 'functools-kit';
 import { MessageModel as MessageModel$1 } from 'src/model/Message.model';
+import { IOptimizerStrategy as IOptimizerStrategy$1 } from 'src/interfaces/Optimizer.interface';
 
 declare const GLOBAL_CONFIG: {
     /**
@@ -5299,7 +5300,7 @@ declare class StrategyGlobalService {
  * Wraps FrameConnectionService for timeframe generation.
  * Used internally by BacktestLogicPrivateService.
  */
-declare class FrameGlobalService$1 {
+declare class FrameGlobalService {
     private readonly loggerService;
     private readonly frameConnectionService;
     private readonly frameValidationService;
@@ -6436,6 +6437,41 @@ interface IOptimizerSource<Data extends IOptimizerData = any> {
 }
 type Source<Data extends IOptimizerData = any> = IOptimizerSourceFn<Data> | IOptimizerSource<Data>;
 interface IOptimizerCallbacks {
+    /**
+     * Called after strategy data is generated for all train ranges.
+     * Useful for logging or validating the generated strategies.
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyData - Array of generated strategies with their messages
+     */
+    onData?: (symbol: string, strategyData: IOptimizerStrategy[]) => void | Promise<void>;
+    /**
+     * Called after strategy code is generated.
+     * Useful for logging or validating the generated code.
+     *
+     * @param symbol - Trading pair symbol
+     * @param code - Generated strategy code
+     */
+    onCode?: (symbol: string, code: string) => void | Promise<void>;
+    /**
+     * Called after strategy code is dumped to file.
+     * Useful for logging or performing additional actions after file write.
+     *
+     * @param symbol - Trading pair symbol
+     * @param filepath - Path where the file was saved
+     */
+    onDump?: (symbol: string, filepath: string) => void | Promise<void>;
+    /**
+     * Called after data is fetched from a source.
+     * Useful for logging or validating the fetched data.
+     *
+     * @param symbol - Trading pair symbol
+     * @param sourceName - Name of the data source
+     * @param data - Array of fetched data
+     * @param startDate - Start date of the data range
+     * @param endDate - End date of the data range
+     */
+    onSourceData?: <Data extends IOptimizerData = any>(symbol: string, sourceName: string, data: Data[], startDate: Date, endDate: Date) => void | Promise<void>;
 }
 interface IOptimizerTemplate {
     getTopBanner(symbol: string): string | Promise<string>;
@@ -6524,11 +6560,13 @@ declare class OptimizerConnectionService implements TOptimizer {
     dump: (symbol: string, optimizerName: string, path?: string) => Promise<void>;
 }
 
-declare class FrameGlobalService {
+declare class OptimizerGlobalService {
     private readonly loggerService;
-    private readonly frameConnectionService;
-    private readonly frameValidationService;
-    getTimeframe: (symbol: string, frameName: string) => Promise<Date[]>;
+    private readonly optimizerConnectionService;
+    private readonly optimizerValidationService;
+    getData: (symbol: string, optimizerName: string) => Promise<IOptimizerStrategy$1[]>;
+    getCode: (symbol: string, optimizerName: string) => Promise<string>;
+    dump: (symbol: string, optimizerName: string, path?: string) => Promise<void>;
 }
 
 declare const backtest: {
@@ -6557,10 +6595,10 @@ declare const backtest: {
     walkerCommandService: WalkerCommandService;
     exchangeGlobalService: ExchangeGlobalService;
     strategyGlobalService: StrategyGlobalService;
-    frameGlobalService: FrameGlobalService$1;
+    frameGlobalService: FrameGlobalService;
     sizingGlobalService: SizingGlobalService;
     riskGlobalService: RiskGlobalService;
-    optimizerGlobalService: FrameGlobalService;
+    optimizerGlobalService: OptimizerGlobalService;
     exchangeSchemaService: ExchangeSchemaService;
     strategySchemaService: StrategySchemaService;
     frameSchemaService: FrameSchemaService;
