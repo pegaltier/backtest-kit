@@ -448,7 +448,7 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
       symbol,
     });
     return [
-      `const dumpJson = async (resultId, history, result, outputDir = "./dump/strategy") => {`,
+      `async function dumpJson(resultId, history, result, outputDir = "./dump/strategy") {`,
       `    // Extract system messages and system reminders from existing data`,
       `    const systemMessages = history.filter((m) => m.role === "system");`,
       `    const userMessages = history.filter((m) => m.role === "user");`,
@@ -535,7 +535,7 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
       ``,
       `        await fs.writeFile(contentFilePath, content, "utf8");`,
       `    }`,
-      `};`
+      `}`
     ].join("\n");
   };
 
