@@ -10,6 +10,19 @@ import {
   partialLossSubject,
 } from "../../../config/emitters";
 
+/**
+ * Callback function for emitting profit events to partialProfitSubject.
+ *
+ * Called by ClientPartial when a new profit level is reached.
+ * Emits PartialProfitContract event to all subscribers.
+ *
+ * @param symbol - Trading pair symbol
+ * @param data - Signal row data
+ * @param currentPrice - Current market price
+ * @param level - Profit level reached
+ * @param backtest - True if backtest mode
+ * @param timestamp - Event timestamp in milliseconds
+ */
 const COMMIT_PROFIT_FN = async (
   symbol: string,
   data: ISignalRow,
@@ -27,6 +40,19 @@ const COMMIT_PROFIT_FN = async (
     timestamp,
   });
 
+/**
+ * Callback function for emitting loss events to partialLossSubject.
+ *
+ * Called by ClientPartial when a new loss level is reached.
+ * Emits PartialLossContract event to all subscribers.
+ *
+ * @param symbol - Trading pair symbol
+ * @param data - Signal row data
+ * @param currentPrice - Current market price
+ * @param level - Loss level reached
+ * @param backtest - True if backtest mode
+ * @param timestamp - Event timestamp in milliseconds
+ */
 const COMMIT_LOSS_FN = async (
   symbol: string,
   data: ISignalRow,
@@ -44,9 +70,53 @@ const COMMIT_LOSS_FN = async (
     timestamp,
   });
 
+/**
+ * Connection service for partial profit/loss tracking.
+ *
+ * Provides memoized ClientPartial instances per signal ID.
+ * Acts as factory and lifetime manager for ClientPartial objects.
+ *
+ * Features:
+ * - Creates one ClientPartial instance per signal ID (memoized)
+ * - Configures instances with logger and event emitter callbacks
+ * - Delegates profit/loss/clear operations to appropriate ClientPartial
+ * - Cleans up memoized instances when signals are cleared
+ *
+ * Architecture:
+ * - Injected into ClientStrategy via PartialGlobalService
+ * - Uses memoize from functools-kit for instance caching
+ * - Emits events to partialProfitSubject/partialLossSubject
+ *
+ * @example
+ * ```typescript
+ * // Service injected via DI
+ * const service = inject<PartialConnectionService>(TYPES.partialConnectionService);
+ *
+ * // Called by ClientStrategy during signal monitoring
+ * await service.profit("BTCUSDT", signal, 55000, 10.0, false, new Date());
+ * // Creates or reuses ClientPartial for signal.id
+ * // Delegates to ClientPartial.profit()
+ *
+ * // When signal closes
+ * await service.clear("BTCUSDT", signal, 52000);
+ * // Clears signal state and removes memoized instance
+ * ```
+ */
 export class PartialConnectionService implements IPartial {
+  /**
+   * Logger service injected from DI container.
+   */
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
+  /**
+   * Memoized factory function for ClientPartial instances.
+   *
+   * Creates one ClientPartial per signal ID with configured callbacks.
+   * Instances are cached until clear() is called.
+   *
+   * Key format: signalId
+   * Value: ClientPartial instance with logger and event emitters
+   */
   private getPartial = memoize<(signalId: string) => ClientPartial>(
     ([signalId]) => `${signalId}`,
     () => {
@@ -58,6 +128,20 @@ export class PartialConnectionService implements IPartial {
     }
   );
 
+  /**
+   * Processes profit state and emits events for newly reached profit levels.
+   *
+   * Retrieves or creates ClientPartial for signal ID, initializes it if needed,
+   * then delegates to ClientPartial.profit() method.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param data - Signal row data
+   * @param currentPrice - Current market price
+   * @param revenuePercent - Current profit percentage (positive value)
+   * @param backtest - True if backtest mode, false if live mode
+   * @param when - Event timestamp (current time for live, candle time for backtest)
+   * @returns Promise that resolves when profit processing is complete
+   */
   public profit = async (
     symbol: string,
     data: ISignalRow,
@@ -86,6 +170,20 @@ export class PartialConnectionService implements IPartial {
     );
   };
 
+  /**
+   * Processes loss state and emits events for newly reached loss levels.
+   *
+   * Retrieves or creates ClientPartial for signal ID, initializes it if needed,
+   * then delegates to ClientPartial.loss() method.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param data - Signal row data
+   * @param currentPrice - Current market price
+   * @param lossPercent - Current loss percentage (negative value)
+   * @param backtest - True if backtest mode, false if live mode
+   * @param when - Event timestamp (current time for live, candle time for backtest)
+   * @returns Promise that resolves when loss processing is complete
+   */
   public loss = async (
     symbol: string,
     data: ISignalRow,
@@ -114,6 +212,23 @@ export class PartialConnectionService implements IPartial {
     );
   };
 
+  /**
+   * Clears partial profit/loss state when signal closes.
+   *
+   * Retrieves ClientPartial for signal ID, initializes if needed,
+   * delegates clear operation, then removes memoized instance.
+   *
+   * Sequence:
+   * 1. Get ClientPartial from memoize cache
+   * 2. Ensure initialization (waitForInit)
+   * 3. Call ClientPartial.clear() - removes state, persists to disk
+   * 4. Clear memoized instance - prevents memory leaks
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param data - Signal row data
+   * @param priceClose - Final closing price
+   * @returns Promise that resolves when clear is complete
+   */
   public clear = async (
     symbol: string,
     data: ISignalRow,
