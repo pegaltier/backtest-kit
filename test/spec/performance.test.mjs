@@ -210,7 +210,7 @@ test("Performance.getData returns statistics", async ({ pass, fail }) => {
   });
 
   // Get performance statistics
-  const stats = await Performance.getData("test-strategy-perf-data");
+  const stats = await Performance.getData("BTCUSDT", "test-strategy-perf-data");
 
   if (
     stats &&
@@ -285,7 +285,7 @@ test("Performance statistics include metric types", async ({ pass, fail }) => {
   await awaiter;
 
   // Get performance statistics
-  const stats = await Performance.getData("test-strategy-perf-metrics");
+  const stats = await Performance.getData("BTCUSDT", "test-strategy-perf-metrics");
 
   // Check for expected metric types
   const metricTypes = Object.keys(stats.metricStats);
@@ -345,7 +345,7 @@ test("Performance.getReport returns markdown string", async ({ pass, fail }) => 
   });
 
   // Get performance report
-  const markdown = await Performance.getReport("test-strategy-perf-report");
+  const markdown = await Performance.getReport("BTCUSDT", "test-strategy-perf-report");
 
   if (
     typeof markdown === "string" &&
@@ -417,7 +417,7 @@ test("Performance.clear clears statistics", async ({ pass, fail }) => {
   await awaiter;
 
   // Verify data exists
-  const statsBefore = await Performance.getData("test-strategy-perf-clear");
+  const statsBefore = await Performance.getData("BTCUSDT", "test-strategy-perf-clear");
 
   if (statsBefore.totalEvents === 0) {
     fail("No performance events were generated");
@@ -425,10 +425,10 @@ test("Performance.clear clears statistics", async ({ pass, fail }) => {
   }
 
   // Clear performance data
-  await Performance.clear("test-strategy-perf-clear");
+  await Performance.clear({ symbol: "BTCUSDT", strategyName: "test-strategy-perf-clear" });
 
   // Verify data is cleared
-  const statsAfter = await Performance.getData("test-strategy-perf-clear");
+  const statsAfter = await Performance.getData("BTCUSDT", "test-strategy-perf-clear");
 
   if (statsAfter.totalEvents === 0 && statsAfter.totalDuration === 0) {
     pass("Performance.clear successfully cleared statistics");

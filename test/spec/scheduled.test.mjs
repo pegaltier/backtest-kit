@@ -271,7 +271,7 @@ test("Schedule.getData tracks scheduled signal lifecycle", async ({ pass, fail }
 
   await awaiter;
 
-  const stats = await Schedule.getData("test-strategy-schedule-lifecycle");
+  const stats = await Schedule.getData("BTCUSDT", "test-strategy-schedule-lifecycle");
 
   if (
     stats &&
