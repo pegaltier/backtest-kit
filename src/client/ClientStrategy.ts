@@ -411,8 +411,8 @@ const WAIT_FOR_INIT_FN = async (self: ClientStrategy) => {
 
   // Restore pending signal
   const pendingSignal = await PersistSignalAdapter.readSignalData(
+    self.params.execution.context.symbol,
     self.params.strategyName,
-    self.params.execution.context.symbol
   );
   if (pendingSignal) {
     if (pendingSignal.exchangeName !== self.params.method.context.exchangeName) {
@@ -439,8 +439,8 @@ const WAIT_FOR_INIT_FN = async (self: ClientStrategy) => {
 
   // Restore scheduled signal
   const scheduledSignal = await PersistScheduleAdapter.readScheduleData(
+    self.params.execution.context.symbol,
     self.params.strategyName,
-    self.params.execution.context.symbol
   );
   if (scheduledSignal) {
     if (scheduledSignal.exchangeName !== self.params.method.context.exchangeName) {
