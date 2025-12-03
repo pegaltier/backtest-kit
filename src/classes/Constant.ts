@@ -1,65 +1,82 @@
 /**
  * Utility class containing predefined trading constants for take-profit and stop-loss levels.
  *
- * Provides standardized percentage values based on Kelly Criterion with exponential risk decay.
- * These constants represent percentage levels relative to entry price.
+ * Based on Kelly Criterion with exponential risk decay.
+ * Values represent percentage of distance traveled towards final TP/SL target.
+ * 
+ * Example: If final TP is at +10% profit:
+ * - TP_LEVEL1 (30) triggers when price reaches 30% of distance = +3% profit
+ * - TP_LEVEL2 (60) triggers when price reaches 60% of distance = +6% profit
+ * - TP_LEVEL3 (90) triggers when price reaches 90% of distance = +9% profit
  */
 export class ConstantUtils {
     /**
-     * Take Profit Level 1 (Kelly-optimized aggressive target).
-     * Represents 100% profit from entry price.
+     * Take Profit Level 1 (Kelly-optimized early partial).
+     * Triggers at 30% of distance to final TP target.
+     * Lock in profit early, let rest run.
      */
-    public readonly TP_LEVEL1 = 100;
+    public readonly TP_LEVEL1 = 30;
 
     /**
-     * Take Profit Level 2 (Kelly-optimized moderate target).
-     * Represents 50% profit from entry price.
+     * Take Profit Level 2 (Kelly-optimized mid partial).
+     * Triggers at 60% of distance to final TP target.
+     * Secure majority of position while trend continues.
      */
-    public readonly TP_LEVEL2 = 50;
+    public readonly TP_LEVEL2 = 60;
 
     /**
-     * Take Profit Level 3 (Kelly-optimized conservative target).
-     * Represents 25% profit from entry price.
+     * Take Profit Level 3 (Kelly-optimized final partial).
+     * Triggers at 90% of distance to final TP target.
+     * Near-complete exit, minimal exposure remains.
      */
-    public readonly TP_LEVEL3 = 25;
+    public readonly TP_LEVEL3 = 90;
 
     /**
-     * Stop Loss Level 1 (Kelly-optimized maximum risk).
-     * Represents 50% maximum acceptable loss from entry price.
+     * Stop Loss Level 1 (Kelly-optimized early warning).
+     * Triggers at 40% of distance to final SL target.
+     * Reduce exposure when setup weakens.
      */
-    public readonly SL_LEVEL1 = 100;
+    public readonly SL_LEVEL1 = 40;
 
     /**
-     * Stop Loss Level 2 (Kelly-optimized standard stop).
-     * Represents 25% maximum acceptable loss from entry price.
+     * Stop Loss Level 2 (Kelly-optimized final exit).
+     * Triggers at 80% of distance to final SL target.
+     * Exit remaining position before catastrophic loss.
      */
-    public readonly SL_LEVEL2 = 50;
+    public readonly SL_LEVEL2 = 80;
 }
 
 /**
  * Global singleton instance of ConstantUtils.
  * Provides static-like access to predefined trading level constants.
  *
- * Take Profit example:
- * 
+ * Kelly-optimized scaling strategy:
+ * Profit side (pyramiding out):
+ * - Close 33% at 30% progress (quick profit lock)
+ * - Close 33% at 60% progress (secure gains)
+ * - Close 34% at 90% progress (exit near target)
+ *
+ * Loss side (damage control):
+ * - Close 50% at 40% progress (reduce risk early)
+ * - Close 50% at 80% progress (exit before full stop)
+ *
  * @example
  * ```typescript
+ * // Final targets: TP at +10%, SL at -5%
  * listenPartialProfit(async (event) => {
- *   // ClientPartial эмитит события на всех уровнях: 10, 20, 30, 40, 50...
- *   // Но мы закрываем только на Kelly-оптимизированных уровнях:
- *   if (event.level === Constant.TP_LEVEL3) { close 33% }
- *   if (event.level === Constant.TP_LEVEL2) { close 33% }
- *   if (event.level === Constant.TP_LEVEL1) { close 34% }
+ *   // event.level emits: 10, 20, 30, 40, 50...
+ *   if (event.level === Constant.TP_LEVEL1) { await close(33); } // at +3% profit
+ *   if (event.level === Constant.TP_LEVEL2) { await close(33); } // at +6% profit
+ *   if (event.level === Constant.TP_LEVEL3) { await close(34); } // at +9% profit
  * });
  * ```
- * 
- * Stop Loss example:
- * 
+ *
  * @example
  * ```typescript
  * listenPartialLoss(async (event) => {
- *   if (event.level === SL_LEVEL2) { close 50% } // Closest to Constant.SL_LEVEL2
- *   if (event.level === SL_LEVEL1) { close 50% } // Closest to Constant.SL_LEVEL1
+ *   // event.level emits: 10, 20, 30, 40, 50...
+ *   if (event.level === Constant.SL_LEVEL1) { await close(50); } // at -2% loss
+ *   if (event.level === Constant.SL_LEVEL2) { await close(50); } // at -4% loss
  * });
  * ```
  */
