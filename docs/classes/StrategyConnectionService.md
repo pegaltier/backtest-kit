@@ -64,6 +64,12 @@ exchangeConnectionService: any
 methodContextService: any
 ```
 
+### partialConnectionService
+
+```ts
+partialConnectionService: any
+```
+
 ### getStrategy
 
 ```ts
