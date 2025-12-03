@@ -5976,6 +5976,85 @@ declare class PartialUtils {
 declare const Partial$1: PartialUtils;
 
 /**
+ * Utility class containing predefined trading constants for take-profit and stop-loss levels.
+ *
+ * Based on Kelly Criterion with exponential risk decay.
+ * Values represent percentage of distance traveled towards final TP/SL target.
+ *
+ * Example: If final TP is at +10% profit:
+ * - TP_LEVEL1 (30) triggers when price reaches 30% of distance = +3% profit
+ * - TP_LEVEL2 (60) triggers when price reaches 60% of distance = +6% profit
+ * - TP_LEVEL3 (90) triggers when price reaches 90% of distance = +9% profit
+ */
+declare class ConstantUtils {
+    /**
+     * Take Profit Level 1 (Kelly-optimized early partial).
+     * Triggers at 30% of distance to final TP target.
+     * Lock in profit early, let rest run.
+     */
+    readonly TP_LEVEL1 = 30;
+    /**
+     * Take Profit Level 2 (Kelly-optimized mid partial).
+     * Triggers at 60% of distance to final TP target.
+     * Secure majority of position while trend continues.
+     */
+    readonly TP_LEVEL2 = 60;
+    /**
+     * Take Profit Level 3 (Kelly-optimized final partial).
+     * Triggers at 90% of distance to final TP target.
+     * Near-complete exit, minimal exposure remains.
+     */
+    readonly TP_LEVEL3 = 90;
+    /**
+     * Stop Loss Level 1 (Kelly-optimized early warning).
+     * Triggers at 40% of distance to final SL target.
+     * Reduce exposure when setup weakens.
+     */
+    readonly SL_LEVEL1 = 40;
+    /**
+     * Stop Loss Level 2 (Kelly-optimized final exit).
+     * Triggers at 80% of distance to final SL target.
+     * Exit remaining position before catastrophic loss.
+     */
+    readonly SL_LEVEL2 = 80;
+}
+/**
+ * Global singleton instance of ConstantUtils.
+ * Provides static-like access to predefined trading level constants.
+ *
+ * Kelly-optimized scaling strategy:
+ * Profit side (pyramiding out):
+ * - Close 33% at 30% progress (quick profit lock)
+ * - Close 33% at 60% progress (secure gains)
+ * - Close 34% at 90% progress (exit near target)
+ *
+ * Loss side (damage control):
+ * - Close 50% at 40% progress (reduce risk early)
+ * - Close 50% at 80% progress (exit before full stop)
+ *
+ * @example
+ * ```typescript
+ * // Final targets: TP at +10%, SL at -5%
+ * listenPartialProfit(async (event) => {
+ *   // event.level emits: 10, 20, 30, 40, 50...
+ *   if (event.level === Constant.TP_LEVEL1) { await close(33); } // at +3% profit
+ *   if (event.level === Constant.TP_LEVEL2) { await close(33); } // at +6% profit
+ *   if (event.level === Constant.TP_LEVEL3) { await close(34); } // at +9% profit
+ * });
+ * ```
+ *
+ * @example
+ * ```typescript
+ * listenPartialLoss(async (event) => {
+ *   // event.level emits: 10, 20, 30, 40, 50...
+ *   if (event.level === Constant.SL_LEVEL1) { await close(50); } // at -2% loss
+ *   if (event.level === Constant.SL_LEVEL2) { await close(50); } // at -4% loss
+ * });
+ * ```
+ */
+declare const Constant: ConstantUtils;
+
+/**
  * Global signal emitter for all trading events (live + backtest).
  * Emits all signal events regardless of execution mode.
  */
@@ -8540,4 +8619,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type BacktestStatistics, type CandleInterval, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IHeatmapStatistics, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatistics, type MessageModel, type MessageRole, MethodContextService, Optimizer, Partial$1 as Partial, type PartialData, type PartialLossContract, type PartialProfitContract, type PartialStatistics, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatistics, PersistBase, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressWalkerContract, type RiskData, Schedule, type ScheduleData, type ScheduleStatistics, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, Walker, type WalkerContract, type WalkerMetric, type WalkerStatistics, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, setConfig, setLogger };
+export { Backtest, type BacktestStatistics, type CandleInterval, Constant, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IHeatmapStatistics, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatistics, type MessageModel, type MessageRole, MethodContextService, Optimizer, Partial$1 as Partial, type PartialData, type PartialLossContract, type PartialProfitContract, type PartialStatistics, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatistics, PersistBase, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressWalkerContract, type RiskData, Schedule, type ScheduleData, type ScheduleStatistics, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, Walker, type WalkerContract, type WalkerMetric, type WalkerStatistics, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, setConfig, setLogger };

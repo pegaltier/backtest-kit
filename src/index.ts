@@ -171,6 +171,7 @@ export { Heat } from "./classes/Heat";
 export { PositionSize } from "./classes/PositionSize";
 export { Optimizer } from "./classes/Optimizer";
 export { Partial } from "./classes/Partial";
+export { Constant } from "./classes/Constant";
 
 export * as emitters from "./config/emitters";
 
