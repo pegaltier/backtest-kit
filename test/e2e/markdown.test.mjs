@@ -12,6 +12,7 @@ import {
   Performance,
   Partial,
   Heat,
+  PersistSignalAdapter,
 } from "../../build/index.mjs";
 
 import { Subject, sleep } from "functools-kit";
@@ -358,52 +359,7 @@ test("MARKDOWN PARALLEL: All markdown services work with multi-symbol isolation"
     return;
   }
 
-  // 1. LiveMarkdownService - проверяем getData() и getReport()
-  try {
-    const btcLiveData = await Live.getData("BTCUSDT", "test-markdown-parallel");
-    const ethLiveData = await Live.getData("ETHUSDT", "test-markdown-parallel");
-
-    // Verify data exists and has valid structure
-    if (!btcLiveData || typeof btcLiveData !== "object") {
-      fail("LiveMarkdownService: BTCUSDT getData() returned invalid data");
-      return;
-    }
-
-    if (!ethLiveData || typeof ethLiveData !== "object") {
-      fail("LiveMarkdownService: ETHUSDT getData() returned invalid data");
-      return;
-    }
-
-    // Verify getReport() works and returns non-empty markdown
-    const btcLiveReport = await Live.getReport("BTCUSDT", "test-markdown-parallel");
-    const ethLiveReport = await Live.getReport("ETHUSDT", "test-markdown-parallel");
-
-    if (typeof btcLiveReport !== "string" || btcLiveReport.length === 0) {
-      fail("LiveMarkdownService: BTCUSDT getReport() returned invalid report");
-      return;
-    }
-
-    if (typeof ethLiveReport !== "string" || ethLiveReport.length === 0) {
-      fail("LiveMarkdownService: ETHUSDT getReport() returned invalid report");
-      return;
-    }
-
-    // Verify symbol isolation: reports should mention only their own symbol
-    if (!btcLiveReport.includes("BTCUSDT")) {
-      fail("LiveMarkdownService: BTCUSDT report doesn't mention BTCUSDT");
-      return;
-    }
-
-    if (!ethLiveReport.includes("ETHUSDT")) {
-      fail("LiveMarkdownService: ETHUSDT report doesn't mention ETHUSDT");
-      return;
-    }
-  } catch (err) {
-    fail(`LiveMarkdownService failed: ${err.message}`);
-    return;
-  }
-
-  // 2. ScheduleMarkdownService - проверяем getData()
+  // 1. ScheduleMarkdownService - проверяем getData()
   try {
     const btcScheduleData = await Schedule.getData("BTCUSDT", "test-markdown-parallel");
     const ethScheduleData = await Schedule.getData("ETHUSDT", "test-markdown-parallel");
@@ -436,7 +392,7 @@ test("MARKDOWN PARALLEL: All markdown services work with multi-symbol isolation"
     return;
   }
 
-  // 3. PerformanceMarkdownService - проверяем getData()
+  // 2. PerformanceMarkdownService - проверяем getData()
   try {
     const btcPerfData = await Performance.getData("BTCUSDT", "test-markdown-parallel");
     const ethPerfData = await Performance.getData("ETHUSDT", "test-markdown-parallel");
@@ -469,7 +425,7 @@ test("MARKDOWN PARALLEL: All markdown services work with multi-symbol isolation"
     return;
   }
 
-  // 4. PartialMarkdownService - проверяем getData()
+  // 3. PartialMarkdownService - проверяем getData()
   try {
     const btcPartialData = await Partial.getData("BTCUSDT", "test-markdown-parallel");
     const ethPartialData = await Partial.getData("ETHUSDT", "test-markdown-parallel");
@@ -496,7 +452,7 @@ test("MARKDOWN PARALLEL: All markdown services work with multi-symbol isolation"
     return;
   }
 
-  // 5. HeatMarkdownService - проверяем getData()
+  // 4. HeatMarkdownService - проверяем getData()
   try {
     const btcHeatData = await Heat.getData("BTCUSDT", "test-markdown-parallel");
     const ethHeatData = await Heat.getData("ETHUSDT", "test-markdown-parallel");
@@ -517,9 +473,271 @@ test("MARKDOWN PARALLEL: All markdown services work with multi-symbol isolation"
     return;
   }
 
-  // 6. WalkerMarkdownService - пропускаем, так как требует walker schema и comparison setup
+  // 5. WalkerMarkdownService - пропускаем, так как требует walker schema и comparison setup
   // Walker используется для сравнения стратегий, а не для одиночных backtests
   // Изоляция по (symbol, strategyName) уже проверена через другие сервисы
 
-  pass("MARKDOWN SERVICES WORK: All markdown services (Backtest, Live, Schedule, Performance, Partial, Heat) correctly isolate data by (symbol, strategyName) pairs. Multi-symbol architecture verified.");
+  pass("MARKDOWN SERVICES WORK: All markdown services (Backtest, Schedule, Performance, Partial, Heat) correctly isolate data by (symbol, strategyName) pairs. Multi-symbol architecture verified.");
+});
+
+/**
+ * LIVE MARKDOWN TEST: Проверяет LiveMarkdownService с persist storage
+ *
+ * Проверяет:
+ * - LiveMarkdownService.getStorage() с ключом `${symbol}:${strategyName}` в LIVE режиме
+ * - Изоляцию данных между символами
+ * - Live.getData() и Live.getReport() работают корректно
+ *
+ * Сценарий:
+ * - Используем PersistSignalAdapter.readValue() для восстановления уже открытых сигналов
+ * - Свечи сразу закрывают сигналы (BTCUSDT → TP, ETHUSDT → SL)
+ * - Коллбек onClose вызывает awaitSubject.next()
+ * - Проверяем что Live.getData() и Live.getReport() содержат правильные данные
+ */
+test("LIVE MARKDOWN: LiveMarkdownService works with persist storage", async ({ pass, fail }) => {
+  const btcBasePrice = 95000;
+  const btcPriceOpen = btcBasePrice;
+  const btcPriceTakeProfit = btcBasePrice + 1000;
+  const btcPriceStopLoss = btcBasePrice - 1000;
+
+  const ethBasePrice = 4000;
+  const ethPriceOpen = ethBasePrice;
+  const ethPriceTakeProfit = ethBasePrice - 100; // SHORT: TP below
+  const ethPriceStopLoss = ethBasePrice + 100;   // SHORT: SL above
+
+  let btcClosedCount = 0;
+  let ethClosedCount = 0;
+
+  const awaitSubject = new Subject();
+  let errorCaught = null;
+
+  const unsubscribeError = listenError((error) => {
+    errorCaught = error;
+    awaitSubject.next();
+  });
+
+  // PersistSignalAdapter для BTCUSDT (LONG)
+  const btcPersistCalled = { read: false };
+  class BtcPersistAdapter {
+    async waitForInit() {}
+
+    async readValue(symbol, strategyName) {
+      if (symbol === "BTCUSDT" && strategyName === "test-live-markdown" && !btcPersistCalled.read) {
+        btcPersistCalled.read = true;
+        return {
+          id: "persist-btc-live-markdown",
+          position: "long",
+          priceOpen: btcPriceOpen,
+          priceTakeProfit: btcPriceTakeProfit,
+          priceStopLoss: btcPriceStopLoss,
+          minuteEstimatedTime: 60,
+          exchangeName: "binance-live-markdown",
+          strategyName: "test-live-markdown",
+          timestamp: Date.now(),
+          symbol: "BTCUSDT",
+        };
+      }
+      return null;
+    }
+
+    async hasValue(symbol, strategyName) {
+      return symbol === "BTCUSDT" && strategyName === "test-live-markdown" && !btcPersistCalled.read;
+    }
+
+    async writeValue() {}
+    async deleteValue() {}
+  }
+
+  // PersistSignalAdapter для ETHUSDT (SHORT)
+  const ethPersistCalled = { read: false };
+  class EthPersistAdapter {
+    async waitForInit() {}
+
+    async readValue(symbol, strategyName) {
+      if (symbol === "ETHUSDT" && strategyName === "test-live-markdown" && !ethPersistCalled.read) {
+        ethPersistCalled.read = true;
+        return {
+          id: "persist-eth-live-markdown",
+          position: "short",
+          priceOpen: ethPriceOpen,
+          priceTakeProfit: ethPriceTakeProfit,
+          priceStopLoss: ethPriceStopLoss,
+          minuteEstimatedTime: 60,
+          exchangeName: "binance-live-markdown",
+          strategyName: "test-live-markdown",
+          timestamp: Date.now(),
+          symbol: "ETHUSDT",
+        };
+      }
+      return null;
+    }
+
+    async hasValue(symbol, strategyName) {
+      return symbol === "ETHUSDT" && strategyName === "test-live-markdown" && !ethPersistCalled.read;
+    }
+
+    async writeValue() {}
+    async deleteValue() {}
+  }
+
+  // Используем мультиплексор для обоих адаптеров
+  PersistSignalAdapter.usePersistSignalAdapter(class {
+    btcAdapter = new BtcPersistAdapter();
+    ethAdapter = new EthPersistAdapter();
+
+    async waitForInit() {
+      await this.btcAdapter.waitForInit();
+      await this.ethAdapter.waitForInit();
+    }
+
+    async readValue(symbol, strategyName) {
+      if (symbol === "BTCUSDT") {
+        return await this.btcAdapter.readValue(symbol, strategyName);
+      }
+      if (symbol === "ETHUSDT") {
+        return await this.ethAdapter.readValue(symbol, strategyName);
+      }
+      return null;
+    }
+
+    async hasValue(symbol, strategyName) {
+      if (symbol === "BTCUSDT") {
+        return await this.btcAdapter.hasValue(symbol, strategyName);
+      }
+      if (symbol === "ETHUSDT") {
+        return await this.ethAdapter.hasValue(symbol, strategyName);
+      }
+      return false;
+    }
+
+    async writeValue() {}
+    async deleteValue() {}
+  });
+
+  addExchange({
+    exchangeName: "binance-live-markdown",
+    getCandles: async (symbol, _interval, _since, limit) => {
+      const candles = [];
+      const intervalMs = 60000;
+
+      for (let i = 0; i < limit; i++) {
+        const timestamp = Date.now() + i * intervalMs;
+
+        if (symbol === "BTCUSDT") {
+          // BTCUSDT: свечи сразу закрывают по TP
+          candles.push({
+            timestamp,
+            open: btcPriceTakeProfit,
+            high: btcPriceTakeProfit + 100,
+            low: btcPriceTakeProfit - 100,
+            close: btcPriceTakeProfit,
+            volume: 100,
+          });
+        } else if (symbol === "ETHUSDT") {
+          // ETHUSDT SHORT: свечи сразу закрывают по SL (цена идет вверх)
+          candles.push({
+            timestamp,
+            open: ethPriceStopLoss,
+            high: ethPriceStopLoss + 100,
+            low: ethPriceStopLoss - 100,
+            close: ethPriceStopLoss,
+            volume: 100,
+          });
+        }
+      }
+
+      return candles;
+    },
+    formatPrice: async (_symbol, p) => p.toFixed(8),
+    formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
+  });
+
+  addStrategy({
+    strategyName: "test-live-markdown",
+    interval: "1m",
+    getSignal: async () => null,
+    onClose: async (result) => {
+      if (result.symbol === "BTCUSDT") {
+        btcClosedCount++;
+        if (btcClosedCount >= 1 && ethClosedCount >= 1) {
+          awaitSubject.next();
+        }
+      }
+      if (result.symbol === "ETHUSDT") {
+        ethClosedCount++;
+        if (btcClosedCount >= 1 && ethClosedCount >= 1) {
+          awaitSubject.next();
+        }
+      }
+    },
+  });
+
+  // Запускаем Live для обоих символов
+  const stopBtc = Live.background("BTCUSDT", {
+    strategyName: "test-live-markdown",
+    exchangeName: "binance-live-markdown",
+  });
+
+  const stopEth = Live.background("ETHUSDT", {
+    strategyName: "test-live-markdown",
+    exchangeName: "binance-live-markdown",
+  });
+
+  await awaitSubject.toPromise();
+  await sleep(2000); // Ждем чтобы данные записались в LiveMarkdownService
+  unsubscribeError();
+  stopBtc();
+  stopEth();
+
+  if (errorCaught) {
+    fail(`Error during live: ${errorCaught.message || errorCaught}`);
+    return;
+  }
+
+  // Проверка LiveMarkdownService
+  try {
+    const btcLiveData = await Live.getData("BTCUSDT", "test-live-markdown");
+    const ethLiveData = await Live.getData("ETHUSDT", "test-live-markdown");
+
+    // Verify data exists and has valid structure
+    if (!btcLiveData || typeof btcLiveData !== "object") {
+      fail("LiveMarkdownService: BTCUSDT getData() returned invalid data");
+      return;
+    }
+
+    if (!ethLiveData || typeof ethLiveData !== "object") {
+      fail("LiveMarkdownService: ETHUSDT getData() returned invalid data");
+      return;
+    }
+
+    // Verify getReport() works and returns non-empty markdown
+    const btcLiveReport = await Live.getReport("BTCUSDT", "test-live-markdown");
+    const ethLiveReport = await Live.getReport("ETHUSDT", "test-live-markdown");
+
+    if (typeof btcLiveReport !== "string" || btcLiveReport.length === 0) {
+      fail("LiveMarkdownService: BTCUSDT getReport() returned invalid report");
+      return;
+    }
+
+    if (typeof ethLiveReport !== "string" || ethLiveReport.length === 0) {
+      fail("LiveMarkdownService: ETHUSDT getReport() returned invalid report");
+      return;
+    }
+
+    // Verify symbol isolation: reports should mention only their own symbol
+    if (!btcLiveReport.includes("BTCUSDT")) {
+      fail("LiveMarkdownService: BTCUSDT report doesn't mention BTCUSDT");
+      return;
+    }
+
+    if (!ethLiveReport.includes("ETHUSDT")) {
+      fail("LiveMarkdownService: ETHUSDT report doesn't mention ETHUSDT");
+      return;
+    }
+  } catch (err) {
+    fail(`LiveMarkdownService failed: ${err.message}`);
+    return;
+  }
+
+  pass("LIVE MARKDOWN WORKS: LiveMarkdownService correctly handles persist storage and isolates data by (symbol, strategyName) pairs in live mode.");
 });
