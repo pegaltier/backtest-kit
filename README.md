@@ -1954,7 +1954,7 @@ await setConfig({
 
 ## ✅ Tested & Reliable
 
-`backtest-kit` comes with **128 unit and integration tests** covering:
+`backtest-kit` comes with **217 unit and integration tests** covering:
 
 - Signal validation and throttling
 - PNL calculation with fees and slippage
