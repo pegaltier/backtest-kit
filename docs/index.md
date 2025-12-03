@@ -26,6 +26,7 @@ group: docs
 - [PositionSizeUtils](classes/PositionSizeUtils.md)
 - [OptimizerUtils](classes/OptimizerUtils.md)
 - [PartialUtils](classes/PartialUtils.md)
+- [ConstantUtils](classes/ConstantUtils.md)
 - [LoggerService](classes/LoggerService.md)
 - [ClientExchange](classes/ClientExchange.md)
 - [ExchangeConnectionService](classes/ExchangeConnectionService.md)
