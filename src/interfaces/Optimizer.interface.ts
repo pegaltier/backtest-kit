@@ -421,12 +421,6 @@ export interface IOptimizerSchema {
   ) => string | Promise<string>;
 
   /**
-   * Callback invoked to report progress during optimizer operations.
-   * @param progress - Progress details including processed sources and percentage
-   */
-  onProgress(progress: ProgressOptimizerContract): void;
-
-  /**
    * Optional custom template overrides.
    * If not provided, uses defaults from OptimizerTemplateService.
    */

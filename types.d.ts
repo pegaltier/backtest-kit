@@ -1518,35 +1518,6 @@ interface MessageModel {
 }
 
 /**
- * Contract for optimizer progress events.
- *
- * Emitted during optimizer execution to track progress.
- * Contains information about total sources, processed sources, and completion percentage.
- *
- * @example
- * ```typescript
- * import { listenOptimizerProgress } from "backtest-kit";
- *
- * listenOptimizerProgress((event) => {
- *   console.log(`Progress: ${(event.progress * 100).toFixed(2)}%`);
- *   console.log(`Processed: ${event.processedSources} / ${event.totalSources}`);
- * });
- * ```
- */
-interface ProgressOptimizerContract {
-    /** optimizerName - Name of the optimizer being executed */
-    optimizerName: string;
-    /** symbol - Trading symbol (e.g., "BTCUSDT") */
-    symbol: string;
-    /** totalSources - Total number of sources to process */
-    totalSources: number;
-    /** processedSources - Number of sources processed so far */
-    processedSources: number;
-    /** progress - Completion percentage from 0.0 to 1.0 */
-    progress: number;
-}
-
-/**
  * Unique identifier for data rows in optimizer sources.
  * Can be either a string or numeric ID.
  */
@@ -1873,11 +1844,6 @@ interface IOptimizerSchema {
      * @returns Strategy prompt/logic description
      */
     getPrompt: (symbol: string, messages: MessageModel[]) => string | Promise<string>;
-    /**
-     * Callback invoked to report progress during optimizer operations.
-     * @param progress - Progress details including processed sources and percentage
-     */
-    onProgress(progress: ProgressOptimizerContract): void;
     /**
      * Optional custom template overrides.
      * If not provided, uses defaults from OptimizerTemplateService.
@@ -2590,6 +2556,35 @@ interface ProgressWalkerContract {
     totalStrategies: number;
     /** processedStrategies - Number of strategies processed so far */
     processedStrategies: number;
+    /** progress - Completion percentage from 0.0 to 1.0 */
+    progress: number;
+}
+
+/**
+ * Contract for optimizer progress events.
+ *
+ * Emitted during optimizer execution to track progress.
+ * Contains information about total sources, processed sources, and completion percentage.
+ *
+ * @example
+ * ```typescript
+ * import { listenOptimizerProgress } from "backtest-kit";
+ *
+ * listenOptimizerProgress((event) => {
+ *   console.log(`Progress: ${(event.progress * 100).toFixed(2)}%`);
+ *   console.log(`Processed: ${event.processedSources} / ${event.totalSources}`);
+ * });
+ * ```
+ */
+interface ProgressOptimizerContract {
+    /** optimizerName - Name of the optimizer being executed */
+    optimizerName: string;
+    /** symbol - Trading symbol (e.g., "BTCUSDT") */
+    symbol: string;
+    /** totalSources - Total number of sources to process */
+    totalSources: number;
+    /** processedSources - Number of sources processed so far */
+    processedSources: number;
     /** progress - Completion percentage from 0.0 to 1.0 */
     progress: number;
 }
@@ -8322,7 +8317,8 @@ declare class OptimizerValidationService {
  */
 declare class ClientOptimizer implements IOptimizer {
     readonly params: IOptimizerParams;
-    constructor(params: IOptimizerParams);
+    readonly onProgress: (progress: ProgressOptimizerContract) => void;
+    constructor(params: IOptimizerParams, onProgress: (progress: ProgressOptimizerContract) => void);
     /**
      * Fetches data from all sources and generates strategy metadata.
      * Processes each training range and builds LLM conversation history.

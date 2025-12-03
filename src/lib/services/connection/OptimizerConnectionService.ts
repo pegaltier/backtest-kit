@@ -1,7 +1,12 @@
 import { inject } from "../../core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../core/types";
-import { OptimizerName, IOptimizer, IOptimizerTemplate, IOptimizerStrategy } from "../../../interfaces/Optimizer.interface";
+import {
+  OptimizerName,
+  IOptimizer,
+  IOptimizerTemplate,
+  IOptimizerStrategy,
+} from "../../../interfaces/Optimizer.interface";
 import { memoize } from "functools-kit";
 import ClientOptimizer from "../../../client/ClientOptimizer";
 import OptimizerSchemaService from "../schema/OptimizerSchemaService";
@@ -12,7 +17,8 @@ import { progressOptimizerEmitter } from "../../../config/emitters";
 /**
  * Callback function for emitting progress events to progressOptimizerEmitter.
  */
-const COMMIT_PROGRESS_FN = async (progress: ProgressOptimizerContract) => progressOptimizerEmitter.next(progress);
+const COMMIT_PROGRESS_FN = async (progress: ProgressOptimizerContract) =>
+  progressOptimizerEmitter.next(progress);
 
 /**
  * Type helper for optimizer method signatures.
@@ -53,8 +59,14 @@ export class OptimizerConnectionService implements TOptimizer {
   public getOptimizer = memoize(
     ([optimizerName]) => `${optimizerName}`,
     (optimizerName: OptimizerName) => {
-      const { getPrompt, rangeTest, rangeTrain, source, template: rawTemplate = {}, callbacks } =
-        this.optimizerSchemaService.get(optimizerName);
+      const {
+        getPrompt,
+        rangeTest,
+        rangeTrain,
+        source,
+        template: rawTemplate = {},
+        callbacks,
+      } = this.optimizerSchemaService.get(optimizerName);
 
       const {
         getAssistantMessage = this.optimizerTemplateService.getAssistantMessage,
@@ -83,18 +95,20 @@ export class OptimizerConnectionService implements TOptimizer {
         getTopBanner,
         getUserMessage,
       };
-      
-      return new ClientOptimizer({
-        optimizerName,
-        logger: this.loggerService,
-        onProgress: COMMIT_PROGRESS_FN,
-        getPrompt,
-        rangeTest,
-        rangeTrain,
-        source,
-        template,
-        callbacks,
-      });
+
+      return new ClientOptimizer(
+        {
+          optimizerName,
+          logger: this.loggerService,
+          getPrompt,
+          rangeTest,
+          rangeTrain,
+          source,
+          template,
+          callbacks,
+        },
+        COMMIT_PROGRESS_FN
+      );
     }
   );
 
@@ -105,14 +119,17 @@ export class OptimizerConnectionService implements TOptimizer {
    * @param optimizerName - Optimizer identifier
    * @returns Array of generated strategies with conversation context
    */
-  public getData = async (symbol: string, optimizerName: string): Promise<IOptimizerStrategy[]> => {
+  public getData = async (
+    symbol: string,
+    optimizerName: string
+  ): Promise<IOptimizerStrategy[]> => {
     this.loggerService.log("optimizerConnectionService getData", {
       symbol,
       optimizerName,
     });
     const optimizer = this.getOptimizer(optimizerName);
     return await optimizer.getData(symbol);
-  }
+  };
 
   /**
    * Generates complete executable strategy code.
@@ -121,14 +138,17 @@ export class OptimizerConnectionService implements TOptimizer {
    * @param optimizerName - Optimizer identifier
    * @returns Generated TypeScript/JavaScript code as string
    */
-  public getCode = async (symbol: string, optimizerName: string): Promise<string> => {
+  public getCode = async (
+    symbol: string,
+    optimizerName: string
+  ): Promise<string> => {
     this.loggerService.log("optimizerConnectionService getCode", {
       symbol,
       optimizerName,
     });
     const optimizer = this.getOptimizer(optimizerName);
     return await optimizer.getCode(symbol);
-  }
+  };
 
   /**
    * Generates and saves strategy code to file.
@@ -137,14 +157,18 @@ export class OptimizerConnectionService implements TOptimizer {
    * @param optimizerName - Optimizer identifier
    * @param path - Output directory path (optional)
    */
-  public dump = async (symbol: string, optimizerName: string, path?: string): Promise<void> => {
+  public dump = async (
+    symbol: string,
+    optimizerName: string,
+    path?: string
+  ): Promise<void> => {
     this.loggerService.log("optimizerConnectionService getCode", {
       symbol,
       optimizerName,
     });
     const optimizer = this.getOptimizer(optimizerName);
     return await optimizer.dump(symbol, path);
-  }
+  };
 }
 
 export default OptimizerConnectionService;

@@ -14,6 +14,7 @@ import {
 import { MessageModel } from "../model/Message.model";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
+import ProgressOptimizerContract from "../contract/ProgressOptimizer.contract";
 
 const ITERATION_LIMIT = 25;
 const DEFAULT_SOURCE_NAME = "unknown";
@@ -104,7 +105,7 @@ const GET_STRATEGY_DATA_FN = async (symbol: string, self: ClientOptimizer) => {
     const messageList: MessageModel[] = [];
     for (const source of self.params.source) {
       // Emit progress event at the start of processing each source
-      await self.params.onProgress({
+      await self.onProgress({
         optimizerName: self.params.optimizerName,
         symbol,
         totalSources,
@@ -198,7 +199,7 @@ const GET_STRATEGY_DATA_FN = async (symbol: string, self: ClientOptimizer) => {
   }
 
   // Emit final progress event (100%)
-  await self.params.onProgress({
+  await self.onProgress({
     optimizerName: self.params.optimizerName,
     symbol,
     totalSources,
@@ -394,7 +395,10 @@ const GET_STRATEGY_DUMP_FN = async (
  * Used by OptimizerConnectionService to create optimizer instances.
  */
 export class ClientOptimizer implements IOptimizer {
-  constructor(readonly params: IOptimizerParams) {}
+  constructor(
+    readonly params: IOptimizerParams,
+    readonly onProgress: (progress: ProgressOptimizerContract) => void,
+  ) {}
 
   /**
    * Fetches data from all sources and generates strategy metadata.
