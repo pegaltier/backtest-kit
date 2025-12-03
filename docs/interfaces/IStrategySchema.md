@@ -37,7 +37,7 @@ Minimum interval between getSignal calls (throttling)
 ### getSignal
 
 ```ts
-getSignal: (symbol: string) => Promise<ISignalDto>
+getSignal: (symbol: string, when: Date) => Promise<ISignalDto>
 ```
 
 Signal generation function (returns null if no signal, validated DTO if signal).

@@ -79,3 +79,13 @@ callbacks: Partial<IOptimizerCallbacks>
 ```
 
 Optional lifecycle callbacks for monitoring.
+
+## Methods
+
+### onProgress
+
+```ts
+onProgress: (progress: ProgressOptimizerContract) => void
+```
+
+Callback invoked to report progress during optimizer operations.
