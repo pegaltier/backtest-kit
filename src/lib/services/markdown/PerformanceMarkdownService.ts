@@ -466,17 +466,14 @@ export class PerformanceMarkdownService {
    * @param symbol - Optional trading pair symbol
    * @param strategyName - Optional strategy name
    */
-  public clear = async (symbol?: string, strategyName?: string) => {
+  public clear = async (ctx?: { symbol: string; strategyName: string; }) => {
     this.loggerService.log("performanceMarkdownService clear", {
-      symbol,
-      strategyName,
+      ctx,
     });
-    if (symbol && strategyName) {
-      const key = `${symbol}:${strategyName}`;
+    if (ctx) {
+      const key = `${ctx.symbol}:${ctx.strategyName}`;
       this.getStorage.clear(key);
-    } else if (symbol) {
-      this.getStorage.clear(symbol);
-    } else {
+    } {
       this.getStorage.clear();
     }
   };

@@ -4215,7 +4215,10 @@ declare class PerformanceMarkdownService {
      * @param symbol - Optional trading pair symbol
      * @param strategyName - Optional strategy name
      */
-    clear: (symbol?: string, strategyName?: string) => Promise<void>;
+    clear: (ctx?: {
+        symbol: string;
+        strategyName: string;
+    }) => Promise<void>;
     /**
      * Initializes the service by subscribing to performance events.
      * Uses singleshot to ensure initialization happens only once.
@@ -5443,21 +5446,6 @@ declare class Performance {
      * ```
      */
     static dump(strategyName: string, path?: string): Promise<void>;
-    /**
-     * Clears accumulated performance metrics from memory.
-     *
-     * @param strategyName - Optional strategy name to clear specific strategy's metrics
-     *
-     * @example
-     * ```typescript
-     * // Clear specific strategy metrics
-     * await Performance.clear("my-strategy");
-     *
-     * // Clear all metrics for all strategies
-     * await Performance.clear();
-     * ```
-     */
-    static clear(strategyName?: string): Promise<void>;
 }
 
 /**

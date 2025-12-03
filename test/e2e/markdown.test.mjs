@@ -5,6 +5,7 @@ import {
   addFrame,
   addStrategy,
   Backtest,
+  Live,
   listenDoneBacktest,
   listenError,
   Schedule,
@@ -299,7 +300,7 @@ test("MARKDOWN PARALLEL: All markdown services work with multi-symbol isolation"
   });
 
   await awaitSubject.toPromise();
-  await sleep(1000);
+  // await sleep(1000);
   unsubscribeError();
   unsubscribeDone();
 
@@ -312,7 +313,97 @@ test("MARKDOWN PARALLEL: All markdown services work with multi-symbol isolation"
   // ПРОВЕРКА ВСЕХ MARKDOWN СЕРВИСОВ
   // ========================================
 
-  // 1. ScheduleMarkdownService - проверяем getData()
+  // 0. BacktestMarkdownService - проверяем getData() и getReport()
+  try {
+    const btcBacktestData = await Backtest.getData("BTCUSDT", "test-markdown-parallel");
+    const ethBacktestData = await Backtest.getData("ETHUSDT", "test-markdown-parallel");
+
+    // Verify data exists and has valid structure
+    if (!btcBacktestData || typeof btcBacktestData !== "object") {
+      fail("BacktestMarkdownService: BTCUSDT getData() returned invalid data");
+      return;
+    }
+
+    if (!ethBacktestData || typeof ethBacktestData !== "object") {
+      fail("BacktestMarkdownService: ETHUSDT getData() returned invalid data");
+      return;
+    }
+
+    // Verify getReport() works and returns non-empty markdown
+    const btcBacktestReport = await Backtest.getReport("BTCUSDT", "test-markdown-parallel");
+    const ethBacktestReport = await Backtest.getReport("ETHUSDT", "test-markdown-parallel");
+
+    if (typeof btcBacktestReport !== "string" || btcBacktestReport.length === 0) {
+      fail("BacktestMarkdownService: BTCUSDT getReport() returned invalid report");
+      return;
+    }
+
+    if (typeof ethBacktestReport !== "string" || ethBacktestReport.length === 0) {
+      fail("BacktestMarkdownService: ETHUSDT getReport() returned invalid report");
+      return;
+    }
+
+    // Verify symbol isolation: reports should mention only their own symbol
+    if (!btcBacktestReport.includes("BTCUSDT")) {
+      fail("BacktestMarkdownService: BTCUSDT report doesn't mention BTCUSDT");
+      return;
+    }
+
+    if (!ethBacktestReport.includes("ETHUSDT")) {
+      fail("BacktestMarkdownService: ETHUSDT report doesn't mention ETHUSDT");
+      return;
+    }
+  } catch (err) {
+    fail(`BacktestMarkdownService failed: ${err.message}`);
+    return;
+  }
+
+  // 1. LiveMarkdownService - проверяем getData() и getReport()
+  try {
+    const btcLiveData = await Live.getData("BTCUSDT", "test-markdown-parallel");
+    const ethLiveData = await Live.getData("ETHUSDT", "test-markdown-parallel");
+
+    // Verify data exists and has valid structure
+    if (!btcLiveData || typeof btcLiveData !== "object") {
+      fail("LiveMarkdownService: BTCUSDT getData() returned invalid data");
+      return;
+    }
+
+    if (!ethLiveData || typeof ethLiveData !== "object") {
+      fail("LiveMarkdownService: ETHUSDT getData() returned invalid data");
+      return;
+    }
+
+    // Verify getReport() works and returns non-empty markdown
+    const btcLiveReport = await Live.getReport("BTCUSDT", "test-markdown-parallel");
+    const ethLiveReport = await Live.getReport("ETHUSDT", "test-markdown-parallel");
+
+    if (typeof btcLiveReport !== "string" || btcLiveReport.length === 0) {
+      fail("LiveMarkdownService: BTCUSDT getReport() returned invalid report");
+      return;
+    }
+
+    if (typeof ethLiveReport !== "string" || ethLiveReport.length === 0) {
+      fail("LiveMarkdownService: ETHUSDT getReport() returned invalid report");
+      return;
+    }
+
+    // Verify symbol isolation: reports should mention only their own symbol
+    if (!btcLiveReport.includes("BTCUSDT")) {
+      fail("LiveMarkdownService: BTCUSDT report doesn't mention BTCUSDT");
+      return;
+    }
+
+    if (!ethLiveReport.includes("ETHUSDT")) {
+      fail("LiveMarkdownService: ETHUSDT report doesn't mention ETHUSDT");
+      return;
+    }
+  } catch (err) {
+    fail(`LiveMarkdownService failed: ${err.message}`);
+    return;
+  }
+
+  // 2. ScheduleMarkdownService - проверяем getData()
   try {
     const btcScheduleData = await Schedule.getData("BTCUSDT", "test-markdown-parallel");
     const ethScheduleData = await Schedule.getData("ETHUSDT", "test-markdown-parallel");
@@ -345,7 +436,7 @@ test("MARKDOWN PARALLEL: All markdown services work with multi-symbol isolation"
     return;
   }
 
-  // 2. PerformanceMarkdownService - проверяем getData()
+  // 3. PerformanceMarkdownService - проверяем getData()
   try {
     const btcPerfData = await Performance.getData("BTCUSDT", "test-markdown-parallel");
     const ethPerfData = await Performance.getData("ETHUSDT", "test-markdown-parallel");
@@ -378,7 +469,7 @@ test("MARKDOWN PARALLEL: All markdown services work with multi-symbol isolation"
     return;
   }
 
-  // 3. PartialMarkdownService - проверяем getData()
+  // 4. PartialMarkdownService - проверяем getData()
   try {
     const btcPartialData = await Partial.getData("BTCUSDT", "test-markdown-parallel");
     const ethPartialData = await Partial.getData("ETHUSDT", "test-markdown-parallel");
@@ -405,7 +496,7 @@ test("MARKDOWN PARALLEL: All markdown services work with multi-symbol isolation"
     return;
   }
 
-  // 4. HeatMarkdownService - проверяем getData()
+  // 5. HeatMarkdownService - проверяем getData()
   try {
     const btcHeatData = await Heat.getData("BTCUSDT", "test-markdown-parallel");
     const ethHeatData = await Heat.getData("ETHUSDT", "test-markdown-parallel");
@@ -426,9 +517,9 @@ test("MARKDOWN PARALLEL: All markdown services work with multi-symbol isolation"
     return;
   }
 
-  // 5. WalkerMarkdownService - пропускаем, так как требует walker schema и comparison setup
+  // 6. WalkerMarkdownService - пропускаем, так как требует walker schema и comparison setup
   // Walker используется для сравнения стратегий, а не для одиночных backtests
   // Изоляция по (symbol, strategyName) уже проверена через другие сервисы
 
-  pass("MARKDOWN SERVICES WORK: All markdown services (Schedule, Performance, Partial, Heat) correctly isolate data by (symbol, strategyName) pairs. Multi-symbol architecture verified.");
+  pass("MARKDOWN SERVICES WORK: All markdown services (Backtest, Live, Schedule, Performance, Partial, Heat) correctly isolate data by (symbol, strategyName) pairs. Multi-symbol architecture verified.");
 });

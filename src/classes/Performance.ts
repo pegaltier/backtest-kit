@@ -119,24 +119,6 @@ export class Performance {
   ): Promise<void> {
     return backtest.performanceMarkdownService.dump(strategyName, path);
   }
-
-  /**
-   * Clears accumulated performance metrics from memory.
-   *
-   * @param strategyName - Optional strategy name to clear specific strategy's metrics
-   *
-   * @example
-   * ```typescript
-   * // Clear specific strategy metrics
-   * await Performance.clear("my-strategy");
-   *
-   * // Clear all metrics for all strategies
-   * await Performance.clear();
-   * ```
-   */
-  public static async clear(strategyName?: string): Promise<void> {
-    return backtest.performanceMarkdownService.clear(strategyName);
-  }
 }
 
 export default Performance;

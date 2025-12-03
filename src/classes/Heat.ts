@@ -5,7 +5,6 @@ import { StrategyName } from "../interfaces/Strategy.interface";
 const HEAT_METHOD_NAME_GET_DATA = "HeatUtils.getData";
 const HEAT_METHOD_NAME_GET_REPORT = "HeatUtils.getReport";
 const HEAT_METHOD_NAME_DUMP = "HeatUtils.dump";
-const HEAT_METHOD_NAME_CLEAR = "HeatUtils.clear";
 
 /**
  * Utility class for portfolio heatmap operations.
