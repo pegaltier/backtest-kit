@@ -251,12 +251,14 @@ Backtest.background("BTCUSDT", {
 - 🌐 **`addFrame`**: Configure timeframes for backtesting. 📅
 - 🔄 **`Backtest` / `Live`**: Run strategies in backtest or live mode (generator or background). ⚡
 - 📅 **`Schedule`**: Track scheduled signals and cancellation rate for limit orders. 📊
+- 📊 **`Partial`**: Access partial profit/loss statistics and reports for risk management. Track signals reaching milestone levels (10%, 20%, 30%, etc.). 💹
+- 🎯 **`Constant`**: Kelly Criterion-based constants for optimal take profit (TP_LEVEL1-3) and stop loss (SL_LEVEL1-2) levels. 📐
 - 🏃 **`Walker`**: Compare multiple strategies in parallel with ranking. 🏆
 - 🔥 **`Heat`**: Portfolio-wide performance analysis across multiple symbols. 📊
 - 💰 **`PositionSize`**: Calculate position sizes with Fixed %, Kelly Criterion, or ATR-based methods. 💵
 - 🛡️ **`addRisk`**: Portfolio-level risk management with custom validation logic. 🔐
-- 💾 **`PersistBase`**: Base class for custom persistence adapters (Redis, MongoDB, PostgreSQL). 🗄️
-- 🔌 **`PersistSignalAdapter` / `PersistScheduleAdapter` / `PersistRiskAdapter`**: Register custom adapters for signal, scheduled signal, and risk persistence. 🔄
+- 💾 **`PersistBase`**: Base class for custom persistence adapters (Redis, MongoDB, PostgreSQL).
+- 🔌 **`PersistSignalAdapter` / `PersistScheduleAdapter` / `PersistRiskAdapter` / `PersistPartialAdapter`**: Register custom adapters for signal, scheduled signal, risk, and partial state persistence.
 - 🤖 **`Optimizer`**: AI-powered strategy generation with LLM integration. Auto-generate strategies from historical data and export executable code. 🧠
 
 Check out the sections below for detailed examples! 📚
@@ -1074,7 +1076,259 @@ test("Custom Redis adapter works correctly", async ({ pass, fail }) => {
 });
 ```
 
-### 10. Scheduled Signal Persistence
+### 10. Partial Profit/Loss Tracking
+
+Partial Profit/Loss system tracks signal performance at fixed percentage levels (10%, 20%, 30%, etc.) for risk management and position scaling strategies.
+
+#### Understanding Partial Levels
+
+The system automatically monitors profit/loss milestones and emits events when signals reach specific levels:
+
+```typescript
+import {
+  listenPartialProfit,
+  listenPartialLoss,
+  listenPartialProfitOnce,
+  listenPartialLossOnce,
+  Constant
+} from "backtest-kit";
+
+// Listen to all profit levels (10%, 20%, 30%, 40%, 50%, 60%, 70%, 80%, 90%, 100%)
+listenPartialProfit(({ symbol, signal, price, level, backtest }) => {
+  console.log(`${symbol} profit: ${level}% at ${price}`);
+
+  // Close portions at Kelly-optimized levels
+  if (level === Constant.TP_LEVEL3) {
+    console.log("Close 33% at 25% profit");
+  }
+  if (level === Constant.TP_LEVEL2) {
+    console.log("Close 33% at 50% profit");
+  }
+  if (level === Constant.TP_LEVEL1) {
+    console.log("Close 34% at 100% profit");
+  }
+});
+
+// Listen to all loss levels (10%, 20%, 30%, 40%, 50%, 60%, 70%, 80%, 90%, 100%)
+listenPartialLoss(({ symbol, signal, price, level, backtest }) => {
+  console.log(`${symbol} loss: -${level}% at ${price}`);
+
+  // Close portions at stop levels
+  if (level === Constant.SL_LEVEL2) {
+    console.log("Close 50% at -50% loss");
+  }
+  if (level === Constant.SL_LEVEL1) {
+    console.log("Close 50% at -100% loss");
+  }
+});
+
+// Listen once to first profit level reached
+listenPartialProfitOnce(
+  () => true, // Accept any profit event
+  ({ symbol, signal, price, level, backtest }) => {
+    console.log(`First profit milestone: ${level}%`);
+  }
+);
+
+// Listen once to first loss level reached
+listenPartialLossOnce(
+  () => true, // Accept any loss event
+  ({ symbol, signal, price, level, backtest }) => {
+    console.log(`First loss milestone: -${level}%`);
+  }
+);
+```
+
+#### Constant Utility - Kelly-Optimized Levels
+
+The `Constant` class provides predefined Kelly Criterion-based levels for optimal position sizing:
+
+```typescript
+import { Constant } from "backtest-kit";
+
+// Take Profit Levels
+console.log(Constant.TP_LEVEL1); // 100% (aggressive target)
+console.log(Constant.TP_LEVEL2); // 50%  (moderate target)
+console.log(Constant.TP_LEVEL3); // 25%  (conservative target)
+
+// Stop Loss Levels
+console.log(Constant.SL_LEVEL1); // 100% (maximum risk)
+console.log(Constant.SL_LEVEL2); // 50%  (standard stop)
+```
+
+**Use Case - Scale Out Strategy:**
+
+```typescript
+// Strategy: Close position in 3 tranches at optimal levels
+listenPartialProfit(({ symbol, signal, price, level, backtest }) => {
+  if (level === Constant.TP_LEVEL3) {
+    // Close 33% at 25% profit (secure early gains)
+    executePartialClose(symbol, signal.id, 0.33);
+  }
+  if (level === Constant.TP_LEVEL2) {
+    // Close 33% at 50% profit (lock in medium gains)
+    executePartialClose(symbol, signal.id, 0.33);
+  }
+  if (level === Constant.TP_LEVEL1) {
+    // Close 34% at 100% profit (maximize winners)
+    executePartialClose(symbol, signal.id, 0.34);
+  }
+});
+```
+
+#### Partial Reports and Statistics
+
+The `Partial` utility provides access to accumulated partial profit/loss data:
+
+```typescript
+import { Partial } from "backtest-kit";
+
+// Get statistical data
+const stats = await Partial.getData("BTCUSDT");
+console.log(stats);
+// Returns:
+// {
+//   totalEvents: 15,          // Total profit/loss events
+//   totalProfit: 10,          // Number of profit events
+//   totalLoss: 5,             // Number of loss events
+//   eventList: [
+//     {
+//       timestamp: 1704370800000,
+//       action: "PROFIT",       // PROFIT or LOSS
+//       symbol: "BTCUSDT",
+//       signalId: "abc123",
+//       position: "LONG",       // or SHORT
+//       level: 10,              // Percentage level reached
+//       price: 51500.00,        // Current price at level
+//       mode: "Backtest"        // or Live
+//     },
+//     // ... more events
+//   ]
+// }
+
+// Generate markdown report
+const markdown = await Partial.getReport("BTCUSDT");
+console.log(markdown);
+
+// Save report to disk (default: ./dump/partial/BTCUSDT.md)
+await Partial.dump("BTCUSDT");
+
+// Custom output path
+await Partial.dump("BTCUSDT", "./reports/partial");
+```
+
+**Partial Report Example:**
+
+```markdown
+# Partial Profit/Loss Report: BTCUSDT
+
+| Action | Symbol | Signal ID | Position | Level % | Current Price | Timestamp | Mode |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PROFIT | BTCUSDT | abc123 | LONG | +10% | 51500.00000000 USD | 2024-01-15T10:30:00.000Z | Backtest |
+| PROFIT | BTCUSDT | abc123 | LONG | +20% | 53000.00000000 USD | 2024-01-15T11:15:00.000Z | Backtest |
+| LOSS | BTCUSDT | def456 | SHORT | -10% | 51500.00000000 USD | 2024-01-15T14:00:00.000Z | Backtest |
+
+**Total events:** 15
+**Profit events:** 10
+**Loss events:** 5
+```
+
+#### Strategy Callbacks
+
+Partial profit/loss callbacks can also be configured at the strategy level:
+
+```typescript
+import { addStrategy } from "backtest-kit";
+
+addStrategy({
+  strategyName: "my-strategy",
+  interval: "5m",
+  getSignal: async (symbol) => { /* ... */ },
+  callbacks: {
+    onPartialProfit: (symbol, data, currentPrice, revenuePercent, backtest) => {
+      console.log(`Signal ${data.id} at ${revenuePercent.toFixed(2)}% profit`);
+    },
+    onPartialLoss: (symbol, data, currentPrice, lossPercent, backtest) => {
+      console.log(`Signal ${data.id} at ${lossPercent.toFixed(2)}% loss`);
+    },
+  },
+});
+```
+
+#### How Partial Levels Work
+
+**Architecture:**
+
+1. `ClientPartial` - Tracks levels using `Map<signalId, Set<level>>` to prevent duplicates
+2. `ClientStrategy` - Calls `partial.profit()` / `partial.loss()` on every tick
+3. `PartialMarkdownService` - Accumulates events (max 250 per symbol) for reports
+4. State persisted to disk: `./dump/data/partial/{symbol}/levels.json`
+
+**Level Detection:**
+
+```typescript
+// For LONG position at entry price 50000
+// Current price = 55000 → revenue = 10%
+// Levels triggered: 10%
+
+// Current price = 61000 → revenue = 22%
+// Levels triggered: 10%, 20% (only 20% event emitted if 10% already triggered)
+
+// For SHORT position at entry price 50000
+// Current price = 45000 → revenue = 10%
+// Levels triggered: 10%
+```
+
+**Deduplication Guarantee:**
+
+Each level is emitted **exactly once per signal**:
+
+- Uses `Set<level>` to track reached levels
+- Persisted to disk for crash recovery
+- Restored on system restart
+
+**Crash Recovery:**
+
+```typescript
+// Before crash:
+// Signal opened at 50000, reached 10% and 20% profit
+// State: { profitLevels: [10, 20], lossLevels: [] }
+// Persisted to: ./dump/data/partial/BTCUSDT/levels.json
+
+// After restart:
+// State restored from disk
+// Only new levels (30%, 40%, etc.) will emit events
+// 10% and 20% won't fire again
+```
+
+#### Best Practices
+
+1. **Use Constant for Kelly-Optimized Levels** - Don't hardcode profit/loss levels
+2. **Scale Out Gradually** - Close positions in tranches (25%, 50%, 100%)
+3. **Monitor Partial Statistics** - Use `Partial.getData()` to track scaling effectiveness
+4. **Filter Events** - Use `listenPartialProfitOnce` for first-level-only logic
+5. **Combine with Position Sizing** - Scale out inversely to volatility
+
+```typescript
+import { Constant, listenPartialProfit } from "backtest-kit";
+
+// Advanced: Dynamic scaling based on level
+listenPartialProfit(({ symbol, signal, price, level, backtest }) => {
+  const percentToClose =
+    level === Constant.TP_LEVEL3 ? 0.25 : // 25% at first level
+    level === Constant.TP_LEVEL2 ? 0.35 : // 35% at second level
+    level === Constant.TP_LEVEL1 ? 0.40 : // 40% at third level
+    0;
+
+  if (percentToClose > 0) {
+    executePartialClose(symbol, signal.id, percentToClose);
+  }
+});
+```
+
+---
+
+### 11. Scheduled Signal Persistence
 
 The framework includes a separate persistence system for scheduled signals (`PersistScheduleAdapter`) that works independently from pending/active signal persistence (`PersistSignalAdapter`). This separation ensures crash-safe recovery of both signal types.
 
@@ -1793,6 +2047,63 @@ listenSignal((event) => {
     console.log("Close reason:", event.closeReason);
   }
 });
+```
+
+### Listen to Partial Profit/Loss Events
+
+```typescript
+import {
+  listenPartialProfit,
+  listenPartialLoss,
+  listenPartialProfitOnce,
+  listenPartialLossOnce,
+  Constant
+} from "backtest-kit";
+
+// Listen to all profit milestones
+listenPartialProfit(({ symbol, signal, price, level, backtest }) => {
+  console.log(`${symbol} reached ${level}% profit at ${price}`);
+
+  // Scale out at Kelly-optimized levels
+  if (level === Constant.TP_LEVEL3) {
+    console.log("Close 33% at 25% profit");
+  }
+  if (level === Constant.TP_LEVEL2) {
+    console.log("Close 33% at 50% profit");
+  }
+  if (level === Constant.TP_LEVEL1) {
+    console.log("Close 34% at 100% profit");
+  }
+});
+
+// Listen to all loss milestones
+listenPartialLoss(({ symbol, signal, price, level, backtest }) => {
+  console.log(`${symbol} reached -${level}% loss at ${price}`);
+
+  // Scale out at stop levels
+  if (level === Constant.SL_LEVEL2) {
+    console.log("Close 50% at -50% loss");
+  }
+  if (level === Constant.SL_LEVEL1) {
+    console.log("Close 50% at -100% loss");
+  }
+});
+
+// Listen once to first profit level
+listenPartialProfitOnce(
+  () => true, // Accept any profit event
+  ({ symbol, signal, price, level, backtest }) => {
+    console.log(`First profit milestone: ${level}%`);
+  }
+);
+
+// Listen once to first loss level
+listenPartialLossOnce(
+  () => true, // Accept any loss event
+  ({ symbol, signal, price, level, backtest }) => {
+    console.log(`First loss milestone: -${level}%`);
+  }
+);
 ```
 
 ### Listen Once with Filter
