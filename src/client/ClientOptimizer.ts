@@ -97,9 +97,20 @@ const RESOLVE_PAGINATION_FN = async <Data extends IOptimizerData = any>(
  */
 const GET_STRATEGY_DATA_FN = async (symbol: string, self: ClientOptimizer) => {
   const strategyList: IOptimizerStrategy[] = [];
+  const totalSources = self.params.rangeTrain.length * self.params.source.length;
+  let processedSources = 0;
+
   for (const { startDate, endDate } of self.params.rangeTrain) {
     const messageList: MessageModel[] = [];
     for (const source of self.params.source) {
+      // Emit progress event at the start of processing each source
+      await self.params.onProgress({
+        optimizerName: self.params.optimizerName,
+        symbol,
+        totalSources,
+        processedSources,
+        progress: totalSources > 0 ? processedSources / totalSources : 0,
+      });
       if (typeof source === "function") {
         const data = await RESOLVE_PAGINATION_FN(source, {
           symbol,
@@ -131,6 +142,8 @@ const GET_STRATEGY_DATA_FN = async (symbol: string, self: ClientOptimizer) => {
             content: assistantContent,
           }
         );
+
+        processedSources++;
       } else {
         const {
           fetch,
@@ -168,6 +181,8 @@ const GET_STRATEGY_DATA_FN = async (symbol: string, self: ClientOptimizer) => {
             content: assistantContent,
           }
         );
+
+        processedSources++;
       }
       const name =
         "name" in source
@@ -181,6 +196,15 @@ const GET_STRATEGY_DATA_FN = async (symbol: string, self: ClientOptimizer) => {
       });
     }
   }
+
+  // Emit final progress event (100%)
+  await self.params.onProgress({
+    optimizerName: self.params.optimizerName,
+    symbol,
+    totalSources,
+    processedSources: totalSources,
+    progress: 1.0,
+  });
 
   if (self.params.callbacks?.onData) {
     await self.params.callbacks.onData(symbol, strategyList);

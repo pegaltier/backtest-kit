@@ -1,6 +1,7 @@
 import { CandleInterval } from "./Exchange.interface";
 import { ILogger } from "./Logger.interface";
 import { MessageModel } from "../model/Message.model";
+import ProgressOptimizerContract from "../contract/ProgressOptimizer.contract";
 
 /**
  * Unique identifier for data rows in optimizer sources.
@@ -418,6 +419,12 @@ export interface IOptimizerSchema {
     symbol: string,
     messages: MessageModel[]
   ) => string | Promise<string>;
+
+  /**
+   * Callback invoked to report progress during optimizer operations.
+   * @param progress - Progress details including processed sources and percentage
+   */
+  onProgress(progress: ProgressOptimizerContract): void;
 
   /**
    * Optional custom template overrides.

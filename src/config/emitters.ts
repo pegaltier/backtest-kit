@@ -3,6 +3,7 @@ import { IStrategyTickResult } from "../interfaces/Strategy.interface";
 import { DoneContract } from "../contract/Done.contract";
 import { ProgressBacktestContract } from "../contract/ProgressBacktest.contract";
 import { ProgressWalkerContract } from "../contract/ProgressWalker.contract";
+import { ProgressOptimizerContract } from "../contract/ProgressOptimizer.contract";
 import { PerformanceContract } from "../contract/Performance.contract";
 import { WalkerContract } from "../contract/Walker.contract";
 import { IWalkerResults, WalkerName } from "../interfaces/Walker.interface";
@@ -62,6 +63,12 @@ export const progressBacktestEmitter = new Subject<ProgressBacktestContract>();
  * Emits progress updates during walker execution.
  */
 export const progressWalkerEmitter = new Subject<ProgressWalkerContract>();
+
+/**
+ * Progress emitter for optimizer execution progress.
+ * Emits progress updates during optimizer execution.
+ */
+export const progressOptimizerEmitter = new Subject<ProgressOptimizerContract>();
 
 /**
  * Performance emitter for execution metrics.

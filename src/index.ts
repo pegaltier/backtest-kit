@@ -42,6 +42,7 @@ export {
   listenPartialProfit,
   listenPartialProfitOnce,
   listenWalkerProgress,
+  listenOptimizerProgress,
 } from "./function/event";
 export {
   getCandles,
@@ -129,6 +130,7 @@ export { PartialLossContract } from "./contract/PartialLoss.contract";
 export { PartialProfitContract } from "./contract/PartialProfit.contract";
 export { WalkerContract } from "./contract/Walker.contract";
 export { ProgressWalkerContract } from "./contract/ProgressWalker.contract";
+export { ProgressOptimizerContract } from "./contract/ProgressOptimizer.contract";
 export { DoneContract } from "./contract/Done.contract";
 export { ProgressBacktestContract } from "./contract/ProgressBacktest.contract";
 export {

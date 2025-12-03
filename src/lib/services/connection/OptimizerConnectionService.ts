@@ -6,6 +6,13 @@ import { memoize } from "functools-kit";
 import ClientOptimizer from "../../../client/ClientOptimizer";
 import OptimizerSchemaService from "../schema/OptimizerSchemaService";
 import OptimizerTemplateService from "../template/OptimizerTemplateService";
+import ProgressOptimizerContract from "../../../contract/ProgressOptimizer.contract";
+import { progressOptimizerEmitter } from "../../../config/emitters";
+
+/**
+ * Callback function for emitting progress events to progressOptimizerEmitter.
+ */
+const COMMIT_PROGRESS_FN = async (progress: ProgressOptimizerContract) => progressOptimizerEmitter.next(progress);
 
 /**
  * Type helper for optimizer method signatures.
@@ -80,6 +87,7 @@ export class OptimizerConnectionService implements TOptimizer {
       return new ClientOptimizer({
         optimizerName,
         logger: this.loggerService,
+        onProgress: COMMIT_PROGRESS_FN,
         getPrompt,
         rangeTest,
         rangeTrain,
