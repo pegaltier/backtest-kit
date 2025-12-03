@@ -1,12 +1,12 @@
 import { Subject } from "functools-kit";
-import { IStrategyTickResult } from "../interfaces/Strategy.interface";
+import { IStrategyTickResult, StrategyName } from "../interfaces/Strategy.interface";
 import { DoneContract } from "../contract/Done.contract";
 import { ProgressBacktestContract } from "../contract/ProgressBacktest.contract";
 import { ProgressWalkerContract } from "../contract/ProgressWalker.contract";
 import { ProgressOptimizerContract } from "../contract/ProgressOptimizer.contract";
 import { PerformanceContract } from "../contract/Performance.contract";
 import { WalkerContract } from "../contract/Walker.contract";
-import { IWalkerResults, WalkerName } from "../interfaces/Walker.interface";
+import { IWalkerResults } from "../interfaces/Walker.interface";
 import { PartialProfitContract } from "../contract/PartialProfit.contract";
 import { PartialLossContract } from "../contract/PartialLoss.contract";
 
@@ -92,7 +92,7 @@ export const walkerCompleteSubject = new Subject<IWalkerResults>();
  * Walker stop emitter for walker cancellation events.
  * Emits when a walker comparison is stopped/cancelled.
  */
-export const walkerStopSubject = new Subject<WalkerName>();
+export const walkerStopSubject = new Subject<{ symbol: string; strategyName: StrategyName }>();
 
 /**
  * Validation emitter for risk validation errors.

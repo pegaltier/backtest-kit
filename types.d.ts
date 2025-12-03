@@ -6158,7 +6158,10 @@ declare const walkerCompleteSubject: Subject<IWalkerResults>;
  * Walker stop emitter for walker cancellation events.
  * Emits when a walker comparison is stopped/cancelled.
  */
-declare const walkerStopSubject: Subject<string>;
+declare const walkerStopSubject: Subject<{
+    symbol: string;
+    strategyName: StrategyName;
+}>;
 /**
  * Validation emitter for risk validation errors.
  * Emits when risk validation functions throw errors during signal checking.
