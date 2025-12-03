@@ -50,7 +50,7 @@ const HANDLE_PROFIT_FN = async (
         backtest,
       });
 
-      self.params.onProfit(symbol, data, currentPrice, level, backtest);
+      await self.params.onProfit(symbol, data, currentPrice, level, backtest);
     }
   }
 
@@ -98,7 +98,7 @@ const HANDLE_LOSS_FN = async (
         backtest,
       });
 
-      self.params.onLoss(symbol, data, currentPrice, level, backtest);
+      await self.params.onLoss(symbol, data, currentPrice, level, backtest);
     }
   }
 

@@ -153,6 +153,8 @@ export {
   PersistRiskAdapter,
   ScheduleData,
   PersistScheduleAdapter,
+  PartialData,
+  PersistPartialAdapter,
 } from "./classes/Persist";
 
 export { Backtest } from "./classes/Backtest";

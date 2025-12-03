@@ -3,6 +3,7 @@ import { TExecutionContextService } from "../lib/services/context/ExecutionConte
 import { IExchange, ICandleData, ExchangeName } from "./Exchange.interface";
 import { ILogger } from "./Logger.interface";
 import { IRisk, RiskName } from "./Risk.interface";
+import { IPartial } from "./Partial.interface";
 
 /**
  * Signal generation interval for throttling.
@@ -76,6 +77,8 @@ export interface IScheduledSignalRow extends ISignalRow {
  * Combines schema with runtime dependencies.
  */
 export interface IStrategyParams extends IStrategySchema {
+  /** Partial handling service for partial profit/loss */
+  partial: IPartial;
   /** Logger service for debug output */
   logger: ILogger;
   /** Exchange service for candle data and VWAP */

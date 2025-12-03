@@ -5,7 +5,10 @@ import { ISignalRow } from "../../../interfaces/Strategy.interface";
 import { IPartial, PartialLevel } from "../../../interfaces/Partial.interface";
 import ClientPartial from "src/client/ClientPartial";
 import { memoize } from "functools-kit";
-import { partialProfitSubject, partialLossSubject } from "../../../config/emitters";
+import {
+  partialProfitSubject,
+  partialLossSubject,
+} from "../../../config/emitters";
 
 export class PartialConnectionService implements IPartial {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
@@ -15,36 +18,34 @@ export class PartialConnectionService implements IPartial {
     () => {
       return new ClientPartial({
         logger: this.loggerService,
-        onProfit: (
+        onProfit: async (
           symbol: string,
           data: ISignalRow,
           currentPrice: number,
           level: PartialLevel,
           backtest: boolean
-        ) => {
-          partialProfitSubject.next({
+        ) =>
+          await partialProfitSubject.next({
             symbol,
             data,
             currentPrice,
             level,
             backtest,
-          });
-        },
-        onLoss: (
+          }),
+        onLoss: async (
           symbol: string,
           data: ISignalRow,
           currentPrice: number,
           level: PartialLevel,
           backtest: boolean
-        ) => {
-          partialLossSubject.next({
+        ) =>
+          await partialLossSubject.next({
             symbol,
             data,
             currentPrice,
             level,
             backtest,
-          });
-        },
+          }),
       });
     }
   );
@@ -65,7 +66,13 @@ export class PartialConnectionService implements IPartial {
     });
     const partial = this.getPartial(data.id);
     await partial.waitForInit(symbol);
-    return await partial.profit(symbol, data, currentPrice, revenuePercent, backtest);
+    return await partial.profit(
+      symbol,
+      data,
+      currentPrice,
+      revenuePercent,
+      backtest
+    );
   };
 
   public loss = async (
@@ -84,7 +91,13 @@ export class PartialConnectionService implements IPartial {
     });
     const partial = this.getPartial(data.id);
     await partial.waitForInit(symbol);
-    return await partial.loss(symbol, data, currentPrice, lossPercent, backtest);
+    return await partial.loss(
+      symbol,
+      data,
+      currentPrice,
+      lossPercent,
+      backtest
+    );
   };
 
   public clear = async (

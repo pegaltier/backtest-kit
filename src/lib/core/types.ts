@@ -14,6 +14,7 @@ const connectionServices = {
     sizingConnectionService: Symbol('sizingConnectionService'),
     riskConnectionService: Symbol('riskConnectionService'),
     optimizerConnectionService: Symbol('optimizerConnectionService'),
+    partialConnectionService: Symbol('partialConnectionService'),
 };
 
 const schemaServices = {

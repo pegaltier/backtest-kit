@@ -45,6 +45,7 @@ import OptimizerSchemaService from "../services/schema/OptimizerSchemaService";
 import OptimizerValidationService from "../services/validation/OptimizerValidationService";
 import OptimizerGlobalService from "../services/global/OptimizerGlobalService";
 import OptimizerConnectionService from "../services/connection/OptimizerConnectionService";
+import { PartialConnectionService } from "../services/connection/PartialConnectionService";
 
 {
     provide(TYPES.loggerService, () => new LoggerService());
@@ -62,6 +63,7 @@ import OptimizerConnectionService from "../services/connection/OptimizerConnecti
     provide(TYPES.sizingConnectionService, () => new SizingConnectionService());
     provide(TYPES.riskConnectionService, () => new RiskConnectionService());
     provide(TYPES.optimizerConnectionService, () => new OptimizerConnectionService());
+    provide(TYPES.partialConnectionService, () => new PartialConnectionService());
 }
 
 {

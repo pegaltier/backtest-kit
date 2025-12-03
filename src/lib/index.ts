@@ -50,6 +50,7 @@ import OptimizerSchemaService from "./services/schema/OptimizerSchemaService";
 import OptimizerValidationService from "./services/validation/OptimizerValidationService";
 import OptimizerConnectionService from "./services/connection/OptimizerConnectionService";
 import OptimizerGlobalService from "./services/global/OptimizerGlobalService";
+import { PartialConnectionService } from "./services/connection/PartialConnectionService";
 
 const baseServices = {
   loggerService: inject<LoggerService>(TYPES.loggerService),
@@ -83,6 +84,7 @@ const connectionServices = {
   optimizerConnectionService: inject<OptimizerConnectionService>(
     TYPES.optimizerConnectionService
   ),
+  partialConnectionService: inject<PartialConnectionService>(TYPES.partialConnectionService),
 };
 
 const schemaServices = {

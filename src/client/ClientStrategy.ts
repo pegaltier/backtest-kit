@@ -893,6 +893,13 @@ const CLOSE_PENDING_SIGNAL_FN = async (
     );
   }
 
+  // КРИТИЧНО: Очищаем состояние ClientPartial при закрытии позиции
+  await self.params.partial.clear(
+    self.params.execution.context.symbol,
+    signal,
+    currentPrice
+  );
+
   await self.params.risk.removeSignal(self.params.execution.context.symbol, {
     strategyName: self.params.method.context.strategyName,
     riskName: self.params.riskName,
@@ -941,25 +948,47 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
     }
 
     // Call onPartialProfit if revenue is positive (but not reached TP yet)
-    if (revenuePercent > 0 && self.params.callbacks?.onPartialProfit) {
-      self.params.callbacks.onPartialProfit(
+    if (revenuePercent > 0) {
+      // КРИТИЧНО: Вызываем ClientPartial для отслеживания уровней
+      await self.params.partial.profit(
         self.params.execution.context.symbol,
         signal,
         currentPrice,
         revenuePercent,
         self.params.execution.context.backtest
       );
+
+      if (self.params.callbacks?.onPartialProfit) {
+        self.params.callbacks.onPartialProfit(
+          self.params.execution.context.symbol,
+          signal,
+          currentPrice,
+          revenuePercent,
+          self.params.execution.context.backtest
+        );
+      }
     }
 
     // Call onPartialLoss if revenue is negative (but not hit SL yet)
-    if (revenuePercent < 0 && self.params.callbacks?.onPartialLoss) {
-      self.params.callbacks.onPartialLoss(
+    if (revenuePercent < 0) {
+      // КРИТИЧНО: Вызываем ClientPartial для отслеживания уровней
+      await self.params.partial.loss(
         self.params.execution.context.symbol,
         signal,
         currentPrice,
         revenuePercent,
         self.params.execution.context.backtest
       );
+
+      if (self.params.callbacks?.onPartialLoss) {
+        self.params.callbacks.onPartialLoss(
+          self.params.execution.context.symbol,
+          signal,
+          currentPrice,
+          revenuePercent,
+          self.params.execution.context.backtest
+        );
+      }
     }
   }
 
@@ -1185,6 +1214,13 @@ const CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN = async (
     );
   }
 
+  // КРИТИЧНО: Очищаем состояние ClientPartial при закрытии позиции
+  await self.params.partial.clear(
+    self.params.execution.context.symbol,
+    signal,
+    averagePrice
+  );
+
   await self.params.risk.removeSignal(self.params.execution.context.symbol, {
     strategyName: self.params.method.context.strategyName,
     riskName: self.params.riskName,
@@ -1390,25 +1426,47 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
       }
 
       // Call onPartialProfit if revenue is positive (but not reached TP yet)
-      if (revenuePercent > 0 && self.params.callbacks?.onPartialProfit) {
-        self.params.callbacks.onPartialProfit(
+      if (revenuePercent > 0) {
+        // КРИТИЧНО: Вызываем ClientPartial для отслеживания уровней
+        await self.params.partial.profit(
           self.params.execution.context.symbol,
           signal,
           averagePrice,
           revenuePercent,
           self.params.execution.context.backtest
         );
+
+        if (self.params.callbacks?.onPartialProfit) {
+          self.params.callbacks.onPartialProfit(
+            self.params.execution.context.symbol,
+            signal,
+            averagePrice,
+            revenuePercent,
+            self.params.execution.context.backtest
+          );
+        }
       }
 
       // Call onPartialLoss if revenue is negative (but not hit SL yet)
-      if (revenuePercent < 0 && self.params.callbacks?.onPartialLoss) {
-        self.params.callbacks.onPartialLoss(
+      if (revenuePercent < 0) {
+        // КРИТИЧНО: Вызываем ClientPartial для отслеживания уровней
+        await self.params.partial.loss(
           self.params.execution.context.symbol,
           signal,
           averagePrice,
           revenuePercent,
           self.params.execution.context.backtest
         );
+
+        if (self.params.callbacks?.onPartialLoss) {
+          self.params.callbacks.onPartialLoss(
+            self.params.execution.context.symbol,
+            signal,
+            averagePrice,
+            revenuePercent,
+            self.params.execution.context.backtest
+          );
+        }
       }
     }
   }
