@@ -6,6 +6,8 @@ import { ProgressWalkerContract } from "../contract/ProgressWalker.contract";
 import { PerformanceContract } from "../contract/Performance.contract";
 import { WalkerContract } from "../contract/Walker.contract";
 import { IWalkerResults, WalkerName } from "../interfaces/Walker.interface";
+import { PartialProfitContract } from "../contract/PartialProfit.contract";
+import { PartialLossContract } from "../contract/PartialLoss.contract";
 
 /**
  * Global signal emitter for all trading events (live + backtest).
@@ -90,4 +92,16 @@ export const walkerStopSubject = new Subject<WalkerName>();
  * Emits when risk validation functions throw errors during signal checking.
  */
 export const validationSubject = new Subject<Error>();
+
+/**
+ * Partial profit emitter for profit level milestones.
+ * Emits when a signal reaches a profit level (10%, 20%, 30%, etc).
+ */
+export const partialProfitSubject = new Subject<PartialProfitContract>();
+
+/**
+ * Partial loss emitter for loss level milestones.
+ * Emits when a signal reaches a loss level (10%, 20%, 30%, etc).
+ */
+export const partialLossSubject = new Subject<PartialLossContract>();
 

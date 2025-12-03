@@ -1,5 +1,5 @@
 import backtest from "../lib";
-import { signalEmitter, signalLiveEmitter, signalBacktestEmitter, errorEmitter, doneLiveSubject, doneBacktestSubject, doneWalkerSubject, progressBacktestEmitter, progressWalkerEmitter, performanceEmitter, walkerEmitter, walkerCompleteSubject, validationSubject } from "../config/emitters";
+import { signalEmitter, signalLiveEmitter, signalBacktestEmitter, errorEmitter, doneLiveSubject, doneBacktestSubject, doneWalkerSubject, progressBacktestEmitter, progressWalkerEmitter, performanceEmitter, walkerEmitter, walkerCompleteSubject, validationSubject, partialProfitSubject, partialLossSubject } from "../config/emitters";
 import { IStrategyTickResult } from "../interfaces/Strategy.interface";
 import { DoneContract } from "../contract/Done.contract";
 import { ProgressBacktestContract } from "../contract/ProgressBacktest.contract";
@@ -7,6 +7,8 @@ import { ProgressWalkerContract } from "../contract/ProgressWalker.contract";
 import { PerformanceContract } from "../contract/Performance.contract";
 import { WalkerContract } from "../contract/Walker.contract";
 import { IWalkerResults } from "../interfaces/Walker.interface";
+import { PartialProfitContract } from "../contract/PartialProfit.contract";
+import { PartialLossContract } from "../contract/PartialLoss.contract";
 import { queued } from "functools-kit";
 
 const LISTEN_SIGNAL_METHOD_NAME = "event.listenSignal";
@@ -29,6 +31,10 @@ const LISTEN_WALKER_METHOD_NAME = "event.listenWalker";
 const LISTEN_WALKER_ONCE_METHOD_NAME = "event.listenWalkerOnce";
 const LISTEN_WALKER_COMPLETE_METHOD_NAME = "event.listenWalkerComplete";
 const LISTEN_VALIDATION_METHOD_NAME = "event.listenValidation";
+const LISTEN_PARTIAL_PROFIT_METHOD_NAME = "event.listenPartialProfit";
+const LISTEN_PARTIAL_PROFIT_ONCE_METHOD_NAME = "event.listenPartialProfitOnce";
+const LISTEN_PARTIAL_LOSS_METHOD_NAME = "event.listenPartialLoss";
+const LISTEN_PARTIAL_LOSS_ONCE_METHOD_NAME = "event.listenPartialLossOnce";
 
 /**
  * Subscribes to all signal events with queued async processing.
@@ -686,4 +692,138 @@ export function listenWalkerComplete(fn: (event: IWalkerResults) => void) {
 export function listenValidation(fn: (error: Error) => void) {
   backtest.loggerService.log(LISTEN_VALIDATION_METHOD_NAME);
   return validationSubject.subscribe(queued(async (error) => fn(error)));
+}
+
+/**
+ * Subscribes to partial profit level events with queued async processing.
+ *
+ * Emits when a signal reaches a profit level milestone (10%, 20%, 30%, etc).
+ * Events are processed sequentially in order received, even if callback is async.
+ * Uses queued wrapper to prevent concurrent execution of the callback.
+ *
+ * @param fn - Callback function to handle partial profit events
+ * @returns Unsubscribe function to stop listening to events
+ *
+ * @example
+ * ```typescript
+ * import { listenPartialProfit } from "./function/event";
+ *
+ * const unsubscribe = listenPartialProfit((event) => {
+ *   console.log(`Signal ${event.data.id} reached ${event.level}% profit`);
+ *   console.log(`Symbol: ${event.symbol}, Price: ${event.currentPrice}`);
+ *   console.log(`Mode: ${event.backtest ? "Backtest" : "Live"}`);
+ * });
+ *
+ * // Later: stop listening
+ * unsubscribe();
+ * ```
+ */
+export function listenPartialProfit(fn: (event: PartialProfitContract) => void) {
+  backtest.loggerService.log(LISTEN_PARTIAL_PROFIT_METHOD_NAME);
+  return partialProfitSubject.subscribe(queued(async (event) => fn(event)));
+}
+
+/**
+ * Subscribes to filtered partial profit level events with one-time execution.
+ *
+ * Listens for events matching the filter predicate, then executes callback once
+ * and automatically unsubscribes. Useful for waiting for specific profit conditions.
+ *
+ * @param filterFn - Predicate to filter which events trigger the callback
+ * @param fn - Callback function to handle the filtered event (called only once)
+ * @returns Unsubscribe function to cancel the listener before it fires
+ *
+ * @example
+ * ```typescript
+ * import { listenPartialProfitOnce } from "./function/event";
+ *
+ * // Wait for first 50% profit level on any signal
+ * listenPartialProfitOnce(
+ *   (event) => event.level === 50,
+ *   (event) => console.log("50% profit reached:", event.data.id)
+ * );
+ *
+ * // Wait for 30% profit on BTCUSDT
+ * const cancel = listenPartialProfitOnce(
+ *   (event) => event.symbol === "BTCUSDT" && event.level === 30,
+ *   (event) => console.log("BTCUSDT hit 30% profit")
+ * );
+ *
+ * // Cancel if needed before event fires
+ * cancel();
+ * ```
+ */
+export function listenPartialProfitOnce(
+  filterFn: (event: PartialProfitContract) => boolean,
+  fn: (event: PartialProfitContract) => void
+) {
+  backtest.loggerService.log(LISTEN_PARTIAL_PROFIT_ONCE_METHOD_NAME);
+  return partialProfitSubject.filter(filterFn).once(fn);
+}
+
+/**
+ * Subscribes to partial loss level events with queued async processing.
+ *
+ * Emits when a signal reaches a loss level milestone (10%, 20%, 30%, etc).
+ * Events are processed sequentially in order received, even if callback is async.
+ * Uses queued wrapper to prevent concurrent execution of the callback.
+ *
+ * @param fn - Callback function to handle partial loss events
+ * @returns Unsubscribe function to stop listening to events
+ *
+ * @example
+ * ```typescript
+ * import { listenPartialLoss } from "./function/event";
+ *
+ * const unsubscribe = listenPartialLoss((event) => {
+ *   console.log(`Signal ${event.data.id} reached ${event.level}% loss`);
+ *   console.log(`Symbol: ${event.symbol}, Price: ${event.currentPrice}`);
+ *   console.log(`Mode: ${event.backtest ? "Backtest" : "Live"}`);
+ * });
+ *
+ * // Later: stop listening
+ * unsubscribe();
+ * ```
+ */
+export function listenPartialLoss(fn: (event: PartialLossContract) => void) {
+  backtest.loggerService.log(LISTEN_PARTIAL_LOSS_METHOD_NAME);
+  return partialLossSubject.subscribe(queued(async (event) => fn(event)));
+}
+
+/**
+ * Subscribes to filtered partial loss level events with one-time execution.
+ *
+ * Listens for events matching the filter predicate, then executes callback once
+ * and automatically unsubscribes. Useful for waiting for specific loss conditions.
+ *
+ * @param filterFn - Predicate to filter which events trigger the callback
+ * @param fn - Callback function to handle the filtered event (called only once)
+ * @returns Unsubscribe function to cancel the listener before it fires
+ *
+ * @example
+ * ```typescript
+ * import { listenPartialLossOnce } from "./function/event";
+ *
+ * // Wait for first 20% loss level on any signal
+ * listenPartialLossOnce(
+ *   (event) => event.level === 20,
+ *   (event) => console.log("20% loss reached:", event.data.id)
+ * );
+ *
+ * // Wait for 10% loss on ETHUSDT in live mode
+ * const cancel = listenPartialLossOnce(
+ *   (event) => event.symbol === "ETHUSDT" && event.level === 10 && !event.backtest,
+ *   (event) => console.log("ETHUSDT hit 10% loss in live mode")
+ * );
+ *
+ * // Cancel if needed before event fires
+ * cancel();
+ * ```
+ */
+export function listenPartialLossOnce(
+  filterFn: (event: PartialLossContract) => boolean,
+  fn: (event: PartialLossContract) => void
+) {
+  backtest.loggerService.log(LISTEN_PARTIAL_LOSS_ONCE_METHOD_NAME);
+  return partialLossSubject.filter(filterFn).once(fn);
 }

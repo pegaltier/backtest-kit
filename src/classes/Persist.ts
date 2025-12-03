@@ -11,8 +11,13 @@ import {
 import { join } from "path";
 import { writeFileAtomic } from "../utils/writeFileAtomic";
 import swarm from "../lib";
-import { ISignalRow, IScheduledSignalRow, StrategyName } from "../interfaces/Strategy.interface";
+import {
+  ISignalRow,
+  IScheduledSignalRow,
+  StrategyName,
+} from "../interfaces/Strategy.interface";
 import { IRiskActivePosition, RiskName } from "../interfaces/Risk.interface";
+import { IPartialData } from "../interfaces/Partial.interface";
 
 const BASE_WAIT_FOR_INIT_SYMBOL = Symbol("wait-for-init");
 
@@ -29,6 +34,13 @@ const PERSIST_SCHEDULE_UTILS_METHOD_NAME_READ_DATA =
   "PersistScheduleUtils.readScheduleData";
 const PERSIST_SCHEDULE_UTILS_METHOD_NAME_WRITE_DATA =
   "PersistScheduleUtils.writeScheduleData";
+
+const PERSIST_PARTIAL_UTILS_METHOD_NAME_USE_PERSIST_PARTIAL_ADAPTER =
+  "PersistPartialUtils.usePersistPartialAdapter";
+const PERSIST_PARTIAL_UTILS_METHOD_NAME_READ_DATA =
+  "PersistPartialUtils.readPartialData";
+const PERSIST_PARTIAL_UTILS_METHOD_NAME_WRITE_DATA =
+  "PersistPartialUtils.writePartialData";
 
 const PERSIST_BASE_METHOD_NAME_CTOR = "PersistBase.CTOR";
 const PERSIST_BASE_METHOD_NAME_WAIT_FOR_INIT = "PersistBase.waitForInit";
@@ -675,9 +687,7 @@ export class PersistRiskUtils {
    * @param riskName - Risk profile identifier
    * @returns Promise resolving to Map of active positions
    */
-  public readPositionData = async (
-    riskName: RiskName
-  ): Promise<RiskData> => {
+  public readPositionData = async (riskName: RiskName): Promise<RiskData> => {
     swarm.loggerService.info(PERSIST_RISK_UTILS_METHOD_NAME_READ_DATA);
 
     const isInitial = !this.getRiskStorage.has(riskName);
@@ -860,3 +870,125 @@ export class PersistScheduleUtils {
  * ```
  */
 export const PersistScheduleAdapter = new PersistScheduleUtils();
+
+/**
+ * Type for persisted partial data.
+ * Stores profit and loss levels as arrays for JSON serialization.
+ */
+export type PartialData = Record<string, IPartialData>;
+
+/**
+ * Utility class for managing partial profit/loss levels persistence.
+ *
+ * Features:
+ * - Memoized storage instances per symbol
+ * - Custom adapter support
+ * - Atomic read/write operations for partial data
+ * - Crash-safe partial state management
+ *
+ * Used by ClientPartial for live mode persistence of profit/loss levels.
+ */
+export class PersistPartialUtils {
+  private PersistPartialFactory: TPersistBaseCtor<string, PartialData> =
+    PersistBase;
+
+  private getPartialStorage = memoize(
+    ([symbol]: [string]): string => `${symbol}`,
+    (symbol: string): IPersistBase<PartialData> =>
+      Reflect.construct(this.PersistPartialFactory, [
+        symbol,
+        `./dump/data/partial/`,
+      ])
+  );
+
+  /**
+   * Registers a custom persistence adapter.
+   *
+   * @param Ctor - Custom PersistBase constructor
+   *
+   * @example
+   * ```typescript
+   * class RedisPersist extends PersistBase {
+   *   async readValue(id) { return JSON.parse(await redis.get(id)); }
+   *   async writeValue(id, entity) { await redis.set(id, JSON.stringify(entity)); }
+   * }
+   * PersistPartialAdapter.usePersistPartialAdapter(RedisPersist);
+   * ```
+   */
+  public usePersistPartialAdapter(
+    Ctor: TPersistBaseCtor<string, PartialData>
+  ): void {
+    swarm.loggerService.info(
+      PERSIST_PARTIAL_UTILS_METHOD_NAME_USE_PERSIST_PARTIAL_ADAPTER
+    );
+    this.PersistPartialFactory = Ctor;
+  }
+
+  /**
+   * Reads persisted partial data for a symbol.
+   *
+   * Called by ClientPartial.waitForInit() to restore state.
+   * Returns empty object if no partial data exists.
+   *
+   * @param symbol - Trading pair symbol
+   * @returns Promise resolving to partial data record
+   */
+  public readPartialData = async (symbol: string): Promise<PartialData> => {
+    swarm.loggerService.info(PERSIST_PARTIAL_UTILS_METHOD_NAME_READ_DATA);
+
+    const isInitial = !this.getPartialStorage.has(symbol);
+    const stateStorage = this.getPartialStorage(symbol);
+    await stateStorage.waitForInit(isInitial);
+
+    const PARTIAL_STORAGE_KEY = "levels";
+
+    if (await stateStorage.hasValue(PARTIAL_STORAGE_KEY)) {
+      return await stateStorage.readValue(PARTIAL_STORAGE_KEY);
+    }
+
+    return {};
+  };
+
+  /**
+   * Writes partial data to disk with atomic file writes.
+   *
+   * Called by ClientPartial after profit/loss level changes to persist state.
+   * Uses atomic writes to prevent corruption on crashes.
+   *
+   * @param partialData - Record of signal IDs to partial data
+   * @param symbol - Trading pair symbol
+   * @returns Promise that resolves when write is complete
+   */
+  public writePartialData = async (
+    partialData: PartialData,
+    symbol: string
+  ): Promise<void> => {
+    swarm.loggerService.info(PERSIST_PARTIAL_UTILS_METHOD_NAME_WRITE_DATA);
+
+    const isInitial = !this.getPartialStorage.has(symbol);
+    const stateStorage = this.getPartialStorage(symbol);
+    await stateStorage.waitForInit(isInitial);
+
+    const PARTIAL_STORAGE_KEY = "levels";
+
+    await stateStorage.writeValue(PARTIAL_STORAGE_KEY, partialData);
+  };
+}
+
+/**
+ * Global singleton instance of PersistPartialUtils.
+ * Used by ClientPartial for partial profit/loss levels persistence.
+ *
+ * @example
+ * ```typescript
+ * // Custom adapter
+ * PersistPartialAdapter.usePersistPartialAdapter(RedisPersist);
+ *
+ * // Read partial data
+ * const partialData = await PersistPartialAdapter.readPartialData("BTCUSDT");
+ *
+ * // Write partial data
+ * await PersistPartialAdapter.writePartialData(partialData, "BTCUSDT");
+ * ```
+ */
+export const PersistPartialAdapter = new PersistPartialUtils();

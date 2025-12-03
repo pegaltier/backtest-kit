@@ -117,7 +117,7 @@ export interface IStrategyCallbacks {
   /** Called when signal is in partial profit state (price moved favorably but not reached TP yet) */
   onPartialProfit: (symbol: string, data: ISignalRow, currentPrice: number, revenuePercent: number, backtest: boolean) => void;
   /** Called when signal is in partial loss state (price moved against position but not hit SL yet) */
-  onPartialLoss: (symbol: string, data: ISignalRow, currentPrice: number, revenuePercent: number, backtest: boolean) => void;
+  onPartialLoss: (symbol: string, data: ISignalRow, currentPrice: number, lossPercent: number, backtest: boolean) => void;
 }
 
 /**

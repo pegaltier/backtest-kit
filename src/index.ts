@@ -37,6 +37,11 @@ export {
   listenWalkerOnce,
   listenWalkerComplete,
   listenValidation,
+  listenPartialLoss,
+  listenPartialLossOnce,
+  listenPartialProfit,
+  listenPartialProfitOnce,
+  listenWalkerProgress,
 } from "./function/event";
 export {
   getCandles,
