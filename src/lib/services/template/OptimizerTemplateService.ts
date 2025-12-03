@@ -541,7 +541,7 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
 
   /**
    * Generates text() helper for LLM text generation.
-   * Uses Ollama gpt-oss:20b model for market analysis.
+   * Uses Ollama deepseek-v3.1:671b model for market analysis.
    *
    * @param symbol - Trading pair symbol (used in prompt)
    * @returns Generated async text() function
@@ -568,7 +568,7 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
       `    });`,
       ``,
       `    const response = await ollama.chat({`,
-      `        model: "gpt-oss:20b",`,
+      `        model: "deepseek-v3.1:671b",`,
       `        messages: [`,
       `            {`,
       `                role: "system",`,
@@ -634,7 +634,7 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
       `    });`,
       ``,
       `    const response = await ollama.chat({`,
-      `        model: "gpt-oss:20b",`,
+      `        model: "deepseek-v3.1:671b",`,
       `        messages: [`,
       `            {`,
       `                role: "system",`,
