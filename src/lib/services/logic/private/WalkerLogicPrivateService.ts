@@ -133,7 +133,7 @@ export class WalkerLogicPrivateService {
       });
 
       // Get statistics from BacktestMarkdownService
-      const stats = await this.backtestMarkdownService.getData(strategyName);
+      const stats = await this.backtestMarkdownService.getData(symbol, strategyName);
 
       // Extract metric value
       const value = stats[metric];
@@ -209,7 +209,7 @@ export class WalkerLogicPrivateService {
       bestMetric,
       bestStats:
         bestStrategy !== null
-          ? await this.backtestMarkdownService.getData(bestStrategy)
+          ? await this.backtestMarkdownService.getData(symbol, bestStrategy)
           : null,
     };
 

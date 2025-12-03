@@ -45,15 +45,17 @@ export class StrategyGlobalService {
   /**
    * Validates strategy and associated risk configuration.
    *
-   * Memoized to avoid redundant validations for the same strategy.
+   * Memoized to avoid redundant validations for the same symbol-strategy pair.
    * Logs validation activity.
+   * @param symbol - Trading pair symbol
    * @param strategyName - Name of the strategy to validate
    * @returns Promise that resolves when validation is complete
    */
   private validate = memoize(
-    ([strategyName]) => `${strategyName}`,
-    async (strategyName: string) => {
+    ([symbol, strategyName]) => `${symbol}:${strategyName}`,
+    async (symbol: string, strategyName: string) => {
       this.loggerService.log(METHOD_NAME_VALIDATE, {
+        symbol,
         strategyName,
       });
       const strategySchema = this.strategySchemaService.get(strategyName);
@@ -73,18 +75,19 @@ export class StrategyGlobalService {
    * Used internally for monitoring TP/SL and time expiration.
    *
    * @param symbol - Trading pair symbol
-   * @param when - Timestamp for tick evaluation
-   * @param backtest - Whether running in backtest mode
+   * @param strategyName - Name of the strategy
    * @returns Promise resolving to pending signal or null
    */
   public getPendingSignal = async (
+    symbol: string,
     strategyName: StrategyName
   ): Promise<ISignalRow | null> => {
     this.loggerService.log("strategyGlobalService getPendingSignal", {
+      symbol,
       strategyName,
     });
-    await this.validate(this.methodContextService.context.strategyName);
-    return await this.strategyConnectionService.getPendingSignal(strategyName);
+    await this.validate(symbol, strategyName);
+    return await this.strategyConnectionService.getPendingSignal(symbol, strategyName);
   };
 
   /**
@@ -108,10 +111,11 @@ export class StrategyGlobalService {
       when,
       backtest,
     });
-    await this.validate(this.methodContextService.context.strategyName);
+    const strategyName = this.methodContextService.context.strategyName;
+    await this.validate(symbol, strategyName);
     return await ExecutionContextService.runInContext(
       async () => {
-        return await this.strategyConnectionService.tick();
+        return await this.strategyConnectionService.tick(symbol, strategyName);
       },
       {
         symbol,
@@ -145,10 +149,11 @@ export class StrategyGlobalService {
       when,
       backtest,
     });
-    await this.validate(this.methodContextService.context.strategyName);
+    const strategyName = this.methodContextService.context.strategyName;
+    await this.validate(symbol, strategyName);
     return await ExecutionContextService.runInContext(
       async () => {
-        return await this.strategyConnectionService.backtest(candles);
+        return await this.strategyConnectionService.backtest(symbol, strategyName, candles);
       },
       {
         symbol,
@@ -164,15 +169,17 @@ export class StrategyGlobalService {
    * Delegates to StrategyConnectionService.stop() to set internal flag.
    * Does not require execution context.
    *
+   * @param symbol - Trading pair symbol
    * @param strategyName - Name of strategy to stop
    * @returns Promise that resolves when stop flag is set
    */
-  public stop = async (strategyName: StrategyName): Promise<void> => {
+  public stop = async (symbol: string, strategyName: StrategyName): Promise<void> => {
     this.loggerService.log("strategyGlobalService stop", {
+      symbol,
       strategyName,
     });
-    await this.validate(strategyName);
-    return await this.strategyConnectionService.stop(strategyName);
+    await this.validate(symbol, strategyName);
+    return await this.strategyConnectionService.stop(symbol, strategyName);
   };
 
   /**
@@ -181,16 +188,18 @@ export class StrategyGlobalService {
    * Delegates to StrategyConnectionService.clear() to remove strategy from cache.
    * Forces re-initialization of strategy on next operation.
    *
-   * @param strategyName - Name of strategy to clear from cache
+   * @param symbol - Trading pair symbol (optional, clears all if not provided)
+   * @param strategyName - Name of strategy to clear from cache (optional, clears all for symbol if not provided)
    */
-  public clear = async (strategyName?: StrategyName): Promise<void> => {
+  public clear = async (symbol?: string, strategyName?: StrategyName): Promise<void> => {
     this.loggerService.log("strategyGlobalService clear", {
+      symbol,
       strategyName,
     });
-    if (strategyName) {
-      await this.validate(strategyName);
+    if (symbol && strategyName) {
+      await this.validate(symbol, strategyName);
     }
-    return await this.strategyConnectionService.clear(strategyName);
+    return await this.strategyConnectionService.clear(symbol, strategyName);
   };
 }
 

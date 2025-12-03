@@ -313,19 +313,21 @@ export interface IStrategy {
    * Checks for signal generation (throttled) and TP/SL conditions.
    *
    * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param strategyName - Name of the strategy
    * @returns Promise resolving to tick result (idle | opened | active | closed)
    */
-  tick: (symbol: string) => Promise<IStrategyTickResult>;
+  tick: (symbol: string, strategyName: StrategyName) => Promise<IStrategyTickResult>;
 
   /**
    * Retrieves the currently active pending signal for the symbol.
    * If no active signal exists, returns null.
    * Used internally for monitoring TP/SL and time expiration.
-   * 
-   * @param symbol 
-   * @returns 
+   *
+   * @param symbol - Trading pair symbol
+   * @param strategyName - Name of the strategy
+   * @returns Promise resolving to pending signal or null
    */
-  getPendingSignal: (symbol: string) => Promise<ISignalRow | null>;
+  getPendingSignal: (symbol: string, strategyName: StrategyName) => Promise<ISignalRow | null>;
 
   /**
    * Fast backtest using historical candles.
@@ -334,10 +336,12 @@ export interface IStrategy {
    * For scheduled signals: first monitors activation/cancellation,
    * then if activated continues with TP/SL monitoring.
    *
+   * @param symbol - Trading pair symbol
+   * @param strategyName - Name of the strategy
    * @param candles - Array of historical candle data
    * @returns Promise resolving to closed result (always completes signal)
    */
-  backtest: (candles: ICandleData[]) => Promise<IStrategyBacktestResult>;
+  backtest: (symbol: string, strategyName: StrategyName, candles: ICandleData[]) => Promise<IStrategyBacktestResult>;
 
   /**
    * Stops the strategy from generating new signals.
@@ -348,6 +352,7 @@ export interface IStrategy {
    * Use case: Graceful shutdown in live trading mode without abandoning open positions.
    *
    * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param strategyName - Name of the strategy
    * @returns Promise that resolves immediately when stop flag is set
    *
    * @example
@@ -359,7 +364,7 @@ export interface IStrategy {
    * await cancel();
    * ```
    */
-  stop: (symbol: string) => Promise<void>;
+  stop: (symbol: string, strategyName: StrategyName) => Promise<void>;
 }
 
 /**

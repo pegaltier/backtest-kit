@@ -49,12 +49,12 @@ export class BacktestUtils {
     });
 
     {
-      backtest.backtestMarkdownService.clear(context.strategyName);
-      backtest.scheduleMarkdownService.clear(context.strategyName);
+      backtest.backtestMarkdownService.clear(symbol, context.strategyName);
+      backtest.scheduleMarkdownService.clear(symbol, context.strategyName);
     }
 
     {
-      backtest.strategyGlobalService.clear(context.strategyName);
+      backtest.strategyGlobalService.clear(symbol, context.strategyName);
     }
 
     {
@@ -120,9 +120,9 @@ export class BacktestUtils {
       errorEmitter.next(new Error(getErrorMessage(error)))
     );
     return () => {
-      backtest.strategyGlobalService.stop(context.strategyName);
+      backtest.strategyGlobalService.stop(symbol, context.strategyName);
       backtest.strategyGlobalService
-        .getPendingSignal(context.strategyName)
+        .getPendingSignal(symbol, context.strategyName)
         .then(async (pendingSignal) => {
           if (pendingSignal) {
             return;
@@ -142,41 +142,45 @@ export class BacktestUtils {
   };
 
   /**
-   * Gets statistical data from all closed signals for a strategy.
+   * Gets statistical data from all closed signals for a symbol-strategy pair.
    *
+   * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to get data for
    * @returns Promise resolving to statistical data object
    *
    * @example
    * ```typescript
-   * const stats = await Backtest.getData("my-strategy");
+   * const stats = await Backtest.getData("BTCUSDT", "my-strategy");
    * console.log(stats.sharpeRatio, stats.winRate);
    * ```
    */
-  public getData = async (strategyName: StrategyName) => {
+  public getData = async (symbol: string, strategyName: StrategyName) => {
     backtest.loggerService.info("BacktestUtils.getData", {
+      symbol,
       strategyName,
     });
-    return await backtest.backtestMarkdownService.getData(strategyName);
+    return await backtest.backtestMarkdownService.getData(symbol, strategyName);
   };
 
   /**
-   * Generates markdown report with all closed signals for a strategy.
+   * Generates markdown report with all closed signals for a symbol-strategy pair.
    *
+   * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to generate report for
    * @returns Promise resolving to markdown formatted report string
    *
    * @example
    * ```typescript
-   * const markdown = await Backtest.getReport("my-strategy");
+   * const markdown = await Backtest.getReport("BTCUSDT", "my-strategy");
    * console.log(markdown);
    * ```
    */
-  public getReport = async (strategyName: StrategyName): Promise<string> => {
+  public getReport = async (symbol: string, strategyName: StrategyName): Promise<string> => {
     backtest.loggerService.info(BACKTEST_METHOD_NAME_GET_REPORT, {
+      symbol,
       strategyName,
     });
-    return await backtest.backtestMarkdownService.getReport(strategyName);
+    return await backtest.backtestMarkdownService.getReport(symbol, strategyName);
   };
 
   /**

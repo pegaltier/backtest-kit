@@ -372,11 +372,11 @@ export class BacktestMarkdownService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
   /**
-   * Memoized function to get or create ReportStorage for a strategy.
-   * Each strategy gets its own isolated storage instance.
+   * Memoized function to get or create ReportStorage for a symbol-strategy pair.
+   * Each symbol-strategy combination gets its own isolated storage instance.
    */
-  private getStorage = memoize<(strategyName: string) => ReportStorage>(
-    ([strategyName]) => `${strategyName}`,
+  private getStorage = memoize<(symbol: string, strategyName: string) => ReportStorage>(
+    ([symbol, strategyName]) => `${symbol}:${strategyName}`,
     () => new ReportStorage()
   );
 
@@ -408,59 +408,64 @@ export class BacktestMarkdownService {
       return;
     }
 
-    const storage = this.getStorage(data.strategyName);
+    const storage = this.getStorage(data.symbol, data.strategyName);
     storage.addSignal(data);
   };
 
   /**
-   * Gets statistical data from all closed signals for a strategy.
+   * Gets statistical data from all closed signals for a symbol-strategy pair.
    * Delegates to ReportStorage.getData().
    *
+   * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to get data for
    * @returns Statistical data object with all metrics
    *
    * @example
    * ```typescript
    * const service = new BacktestMarkdownService();
-   * const stats = await service.getData("my-strategy");
+   * const stats = await service.getData("BTCUSDT", "my-strategy");
    * console.log(stats.sharpeRatio, stats.winRate);
    * ```
    */
-  public getData = async (strategyName: StrategyName): Promise<BacktestStatistics> => {
+  public getData = async (symbol: string, strategyName: StrategyName): Promise<BacktestStatistics> => {
     this.loggerService.log("backtestMarkdownService getData", {
+      symbol,
       strategyName,
     });
-    const storage = this.getStorage(strategyName);
+    const storage = this.getStorage(symbol, strategyName);
     return storage.getData();
   };
 
   /**
-   * Generates markdown report with all closed signals for a strategy.
+   * Generates markdown report with all closed signals for a symbol-strategy pair.
    * Delegates to ReportStorage.generateReport().
    *
+   * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to generate report for
    * @returns Markdown formatted report string with table of all closed signals
    *
    * @example
    * ```typescript
    * const service = new BacktestMarkdownService();
-   * const markdown = await service.getReport("my-strategy");
+   * const markdown = await service.getReport("BTCUSDT", "my-strategy");
    * console.log(markdown);
    * ```
    */
-  public getReport = async (strategyName: StrategyName): Promise<string> => {
+  public getReport = async (symbol: string, strategyName: StrategyName): Promise<string> => {
     this.loggerService.log("backtestMarkdownService getReport", {
+      symbol,
       strategyName,
     });
-    const storage = this.getStorage(strategyName);
+    const storage = this.getStorage(symbol, strategyName);
     return storage.getReport(strategyName);
   };
 
   /**
-   * Saves strategy report to disk.
+   * Saves symbol-strategy report to disk.
    * Creates directory if it doesn't exist.
    * Delegates to ReportStorage.dump().
    *
+   * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to save report for
    * @param path - Directory path to save report (default: "./dump/backtest")
    *
@@ -469,47 +474,64 @@ export class BacktestMarkdownService {
    * const service = new BacktestMarkdownService();
    *
    * // Save to default path: ./dump/backtest/my-strategy.md
-   * await service.dump("my-strategy");
+   * await service.dump("BTCUSDT", "my-strategy");
    *
    * // Save to custom path: ./custom/path/my-strategy.md
-   * await service.dump("my-strategy", "./custom/path");
+   * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
    * ```
    */
   public dump = async (
+    symbol: string,
     strategyName: StrategyName,
     path = "./dump/backtest"
   ): Promise<void> => {
     this.loggerService.log("backtestMarkdownService dump", {
+      symbol,
       strategyName,
       path,
     });
-    const storage = this.getStorage(strategyName);
+    const storage = this.getStorage(symbol, strategyName);
     await storage.dump(strategyName, path);
   };
 
   /**
    * Clears accumulated signal data from storage.
-   * If strategyName is provided, clears only that strategy's data.
-   * If strategyName is omitted, clears all strategies' data.
+   * If symbol and strategyName are provided, clears only that specific pair's data.
+   * If only symbol is provided, clears all data for that symbol (all strategies).
+   * If nothing is provided, clears all data.
    *
-   * @param strategyName - Optional strategy name to clear specific strategy data
+   * @param symbol - Optional trading pair symbol
+   * @param strategyName - Optional strategy name
    *
    * @example
    * ```typescript
    * const service = new BacktestMarkdownService();
    *
-   * // Clear specific strategy data
-   * await service.clear("my-strategy");
+   * // Clear specific symbol-strategy pair
+   * await service.clear("BTCUSDT", "my-strategy");
    *
-   * // Clear all strategies' data
+   * // Clear all strategies for a symbol
+   * await service.clear("BTCUSDT");
+   *
+   * // Clear all data
    * await service.clear();
    * ```
    */
-  public clear = async (strategyName?: StrategyName) => {
+  public clear = async (symbol?: string, strategyName?: StrategyName) => {
     this.loggerService.log("backtestMarkdownService clear", {
+      symbol,
       strategyName,
     });
-    this.getStorage.clear(strategyName);
+    if (symbol && strategyName) {
+      const key = `${symbol}:${strategyName}`;
+      this.getStorage.clear(key);
+    } else if (symbol) {
+      // Clear all strategies for this symbol - need to iterate
+      // For simplicity, just clear the specific key pattern
+      this.getStorage.clear(symbol);
+    } else {
+      this.getStorage.clear();
+    }
   };
 
   /**

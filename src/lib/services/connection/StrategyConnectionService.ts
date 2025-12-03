@@ -7,7 +7,6 @@ import { memoize } from "functools-kit";
 import ClientStrategy from "../../../client/ClientStrategy";
 import {
   ISignalRow,
-  IStrategy,
   IStrategyBacktestResult,
   IStrategyTickResult,
   StrategyName,
@@ -34,24 +33,23 @@ const NOOP_RISK: IRisk = {
  * Connection service routing strategy operations to correct ClientStrategy instance.
  *
  * Routes all IStrategy method calls to the appropriate strategy implementation
- * based on methodContextService.context.strategyName. Uses memoization to cache
+ * based on symbol-strategy pairs. Uses memoization to cache
  * ClientStrategy instances for performance.
  *
  * Key features:
- * - Automatic strategy routing via method context
- * - Memoized ClientStrategy instances by strategyName
- * - Implements IStrategy interface
+ * - Automatic strategy routing via symbol-strategy pairs
+ * - Memoized ClientStrategy instances by symbol:strategyName
  * - Ensures initialization with waitForInit() before operations
  * - Handles both tick() (live) and backtest() operations
  *
  * @example
  * ```typescript
  * // Used internally by framework
- * const result = await strategyConnectionService.tick();
- * // Automatically routes to correct strategy based on methodContext
+ * const result = await strategyConnectionService.tick(symbol, strategyName);
+ * // Routes to correct strategy instance for symbol-strategy pair
  * ```
  */
-export class StrategyConnectionService implements IStrategy {
+export class StrategyConnectionService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly executionContextService = inject<TExecutionContextService>(
     TYPES.executionContextService
@@ -68,17 +66,18 @@ export class StrategyConnectionService implements IStrategy {
   private readonly partialConnectionService = inject<PartialConnectionService>(TYPES.partialConnectionService);
 
   /**
-   * Retrieves memoized ClientStrategy instance for given strategy name.
+   * Retrieves memoized ClientStrategy instance for given symbol-strategy pair.
    *
    * Creates ClientStrategy on first call, returns cached instance on subsequent calls.
-   * Cache key is strategyName string.
+   * Cache key is symbol:strategyName string.
    *
+   * @param symbol - Trading pair symbol
    * @param strategyName - Name of registered strategy schema
    * @returns Configured ClientStrategy instance
    */
   private getStrategy = memoize(
-    ([strategyName]) => `${strategyName}`,
-    (strategyName: StrategyName) => {
+    ([symbol, strategyName]) => `${symbol}:${strategyName}`,
+    (symbol: string, strategyName: StrategyName) => {
       const { riskName, getSignal, interval, callbacks } =
         this.strategySchemaService.get(strategyName);
       return new ClientStrategy({
@@ -101,15 +100,19 @@ export class StrategyConnectionService implements IStrategy {
    * Retrieves the currently active pending signal for the strategy.
    * If no active signal exists, returns null.
    * Used internally for monitoring TP/SL and time expiration.
-   * 
+   *
+   * @param symbol - Trading pair symbol
    * @param strategyName - Name of strategy to get pending signal for
-   * 
+   *
    * @returns Promise resolving to pending signal or null
    */
-  public getPendingSignal = async (strategyName: StrategyName): Promise<ISignalRow | null> => {
-    this.loggerService.log("strategyConnectionService getPendingSignal");
-    const strategy = await this.getStrategy(strategyName);
-    return await strategy.getPendingSignal();
+  public getPendingSignal = async (symbol: string, strategyName: StrategyName): Promise<ISignalRow | null> => {
+    this.loggerService.log("strategyConnectionService getPendingSignal", {
+      symbol,
+      strategyName,
+    });
+    const strategy = this.getStrategy(symbol, strategyName);
+    return await strategy.getPendingSignal(symbol, strategyName);
   };
 
   /**
@@ -118,15 +121,18 @@ export class StrategyConnectionService implements IStrategy {
    * Waits for strategy initialization before processing tick.
    * Evaluates current market conditions and returns signal state.
    *
+   * @param symbol - Trading pair symbol
+   * @param strategyName - Name of strategy to tick
    * @returns Promise resolving to tick result (idle, opened, active, closed)
    */
-  public tick = async (): Promise<IStrategyTickResult> => {
-    this.loggerService.log("strategyConnectionService tick");
-    const strategy = await this.getStrategy(
-      this.methodContextService.context.strategyName
-    );
+  public tick = async (symbol: string, strategyName: StrategyName): Promise<IStrategyTickResult> => {
+    this.loggerService.log("strategyConnectionService tick", {
+      symbol,
+      strategyName,
+    });
+    const strategy = this.getStrategy(symbol, strategyName);
     await strategy.waitForInit();
-    const tick = await strategy.tick();
+    const tick = await strategy.tick(symbol, strategyName);
     {
       if (this.executionContextService.context.backtest) {
         await signalBacktestEmitter.next(tick);
@@ -145,20 +151,24 @@ export class StrategyConnectionService implements IStrategy {
    * Waits for strategy initialization before processing candles.
    * Evaluates strategy signals against historical data.
    *
+   * @param symbol - Trading pair symbol
+   * @param strategyName - Name of strategy to backtest
    * @param candles - Array of historical candle data to backtest
    * @returns Promise resolving to backtest result (signal or idle)
    */
   public backtest = async (
+    symbol: string,
+    strategyName: StrategyName,
     candles: ICandleData[]
   ): Promise<IStrategyBacktestResult> => {
     this.loggerService.log("strategyConnectionService backtest", {
+      symbol,
+      strategyName,
       candleCount: candles.length,
     });
-    const strategy = await this.getStrategy(
-      this.methodContextService.context.strategyName
-    );
+    const strategy = this.getStrategy(symbol, strategyName);
     await strategy.waitForInit();
-    const tick = await strategy.backtest(candles);
+    const tick = await strategy.backtest(symbol, strategyName, candles);
     {
       if (this.executionContextService.context.backtest) {
         await signalBacktestEmitter.next(tick);
@@ -174,15 +184,17 @@ export class StrategyConnectionService implements IStrategy {
    * Delegates to ClientStrategy.stop() which sets internal flag to prevent
    * getSignal from being called on subsequent ticks.
    *
+   * @param symbol - Trading pair symbol
    * @param strategyName - Name of strategy to stop
    * @returns Promise that resolves when stop flag is set
    */
-  public stop = async (strategyName: StrategyName): Promise<void> => {
+  public stop = async (symbol: string, strategyName: StrategyName): Promise<void> => {
     this.loggerService.log("strategyConnectionService stop", {
+      symbol,
       strategyName,
     });
-    const strategy = this.getStrategy(strategyName);
-    await strategy.stop();
+    const strategy = this.getStrategy(symbol, strategyName);
+    await strategy.stop(symbol, strategyName);
   };
 
   /**
@@ -191,13 +203,22 @@ export class StrategyConnectionService implements IStrategy {
    * Forces re-initialization of strategy on next getStrategy call.
    * Useful for resetting strategy state or releasing resources.
    *
-   * @param strategyName - Name of strategy to clear from cache
+   * @param symbol - Trading pair symbol (optional, clears all if not provided)
+   * @param strategyName - Name of strategy to clear from cache (optional, clears all for symbol if not provided)
    */
-  public clear = async (strategyName: StrategyName): Promise<void> => {
+  public clear = async (symbol?: string, strategyName?: StrategyName): Promise<void> => {
     this.loggerService.log("strategyConnectionService clear", {
+      symbol,
       strategyName,
     });
-    this.getStrategy.clear(strategyName);
+    if (symbol && strategyName) {
+      const key = `${symbol}:${strategyName}`;
+      this.getStrategy.clear(key);
+    } else if (symbol) {
+      this.getStrategy.clear(symbol);
+    } else {
+      this.getStrategy.clear();
+    }
   };
 }
 

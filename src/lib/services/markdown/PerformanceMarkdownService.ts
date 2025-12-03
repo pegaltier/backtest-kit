@@ -356,11 +356,11 @@ export class PerformanceMarkdownService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
   /**
-   * Memoized function to get or create PerformanceStorage for a strategy.
-   * Each strategy gets its own isolated storage instance.
+   * Memoized function to get or create PerformanceStorage for a symbol-strategy pair.
+   * Each symbol-strategy combination gets its own isolated storage instance.
    */
-  private getStorage = memoize<(strategyName: string) => PerformanceStorage>(
-    ([strategyName]) => `${strategyName}`,
+  private getStorage = memoize<(symbol: string, strategyName: string) => PerformanceStorage>(
+    ([symbol, strategyName]) => `${symbol}:${strategyName}`,
     () => new PerformanceStorage()
   );
 
@@ -375,92 +375,110 @@ export class PerformanceMarkdownService {
       event,
     });
 
+    const symbol = event.symbol || "global";
     const strategyName = event.strategyName || "global";
-    const storage = this.getStorage(strategyName);
+    const storage = this.getStorage(symbol, strategyName);
     storage.addEvent(event);
   };
 
   /**
-   * Gets aggregated performance statistics for a strategy.
+   * Gets aggregated performance statistics for a symbol-strategy pair.
    *
+   * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to get data for
    * @returns Performance statistics with aggregated metrics
    *
    * @example
    * ```typescript
-   * const stats = await performanceService.getData("my-strategy");
+   * const stats = await performanceService.getData("BTCUSDT", "my-strategy");
    * console.log("Total time:", stats.totalDuration);
    * console.log("Slowest operation:", Object.values(stats.metricStats)
    *   .sort((a, b) => b.avgDuration - a.avgDuration)[0]);
    * ```
    */
   public getData = async (
+    symbol: string,
     strategyName: string
   ): Promise<PerformanceStatistics> => {
     this.loggerService.log("performanceMarkdownService getData", {
+      symbol,
       strategyName,
     });
-    const storage = this.getStorage(strategyName);
+    const storage = this.getStorage(symbol, strategyName);
     return storage.getData(strategyName);
   };
 
   /**
    * Generates markdown report with performance analysis.
    *
+   * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to generate report for
    * @returns Markdown formatted report string
    *
    * @example
    * ```typescript
-   * const markdown = await performanceService.getReport("my-strategy");
+   * const markdown = await performanceService.getReport("BTCUSDT", "my-strategy");
    * console.log(markdown);
    * ```
    */
-  public getReport = async (strategyName: string): Promise<string> => {
+  public getReport = async (symbol: string, strategyName: string): Promise<string> => {
     this.loggerService.log("performanceMarkdownService getReport", {
+      symbol,
       strategyName,
     });
-    const storage = this.getStorage(strategyName);
+    const storage = this.getStorage(symbol, strategyName);
     return storage.getReport(strategyName);
   };
 
   /**
    * Saves performance report to disk.
    *
+   * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to save report for
    * @param path - Directory path to save report
    *
    * @example
    * ```typescript
    * // Save to default path: ./dump/performance/my-strategy.md
-   * await performanceService.dump("my-strategy");
+   * await performanceService.dump("BTCUSDT", "my-strategy");
    *
    * // Save to custom path
-   * await performanceService.dump("my-strategy", "./custom/path");
+   * await performanceService.dump("BTCUSDT", "my-strategy", "./custom/path");
    * ```
    */
   public dump = async (
+    symbol: string,
     strategyName: string,
     path = "./dump/performance"
   ): Promise<void> => {
     this.loggerService.log("performanceMarkdownService dump", {
+      symbol,
       strategyName,
       path,
     });
-    const storage = this.getStorage(strategyName);
+    const storage = this.getStorage(symbol, strategyName);
     await storage.dump(strategyName, path);
   };
 
   /**
    * Clears accumulated performance data from storage.
    *
-   * @param strategyName - Optional strategy name to clear specific strategy data
+   * @param symbol - Optional trading pair symbol
+   * @param strategyName - Optional strategy name
    */
-  public clear = async (strategyName?: string) => {
+  public clear = async (symbol?: string, strategyName?: string) => {
     this.loggerService.log("performanceMarkdownService clear", {
+      symbol,
       strategyName,
     });
-    this.getStorage.clear(strategyName);
+    if (symbol && strategyName) {
+      const key = `${symbol}:${strategyName}`;
+      this.getStorage.clear(key);
+    } else if (symbol) {
+      this.getStorage.clear(symbol);
+    } else {
+      this.getStorage.clear();
+    }
   };
 
   /**
