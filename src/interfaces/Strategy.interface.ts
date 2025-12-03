@@ -3,6 +3,7 @@ import { TExecutionContextService } from "../lib/services/context/ExecutionConte
 import { IExchange, ICandleData, ExchangeName } from "./Exchange.interface";
 import { ILogger } from "./Logger.interface";
 import { IRisk, RiskName } from "./Risk.interface";
+import { IPartial } from "./Partial.interface";
 
 /**
  * Signal generation interval for throttling.
@@ -76,6 +77,8 @@ export interface IScheduledSignalRow extends ISignalRow {
  * Combines schema with runtime dependencies.
  */
 export interface IStrategyParams extends IStrategySchema {
+  /** Partial handling service for partial profit/loss */
+  partial: IPartial;
   /** Logger service for debug output */
   logger: ILogger;
   /** Exchange service for candle data and VWAP */
@@ -117,7 +120,7 @@ export interface IStrategyCallbacks {
   /** Called when signal is in partial profit state (price moved favorably but not reached TP yet) */
   onPartialProfit: (symbol: string, data: ISignalRow, currentPrice: number, revenuePercent: number, backtest: boolean) => void;
   /** Called when signal is in partial loss state (price moved against position but not hit SL yet) */
-  onPartialLoss: (symbol: string, data: ISignalRow, currentPrice: number, revenuePercent: number, backtest: boolean) => void;
+  onPartialLoss: (symbol: string, data: ISignalRow, currentPrice: number, lossPercent: number, backtest: boolean) => void;
 }
 
 /**

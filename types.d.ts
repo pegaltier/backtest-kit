@@ -571,6 +571,162 @@ interface IRisk {
 type RiskName = string;
 
 /**
+ * Profit or loss level milestone in percentage points.
+ * Represents 10%, 20%, 30%, ..., 100% profit or loss thresholds.
+ *
+ * Used to track when a signal reaches specific profit/loss milestones.
+ * Each level is emitted only once per signal (deduplication via Set).
+ *
+ * @example
+ * ```typescript
+ * const level: PartialLevel = 50; // 50% profit or loss milestone
+ * ```
+ */
+type PartialLevel = 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90 | 100;
+/**
+ * Serializable partial data for persistence layer.
+ * Converts Sets to arrays for JSON serialization.
+ *
+ * Stored in PersistPartialAdapter as Record<signalId, IPartialData>.
+ * Loaded on initialization and converted back to IPartialState.
+ */
+interface IPartialData {
+    /**
+     * Array of profit levels that have been reached for this signal.
+     * Serialized form of IPartialState.profitLevels Set.
+     */
+    profitLevels: PartialLevel[];
+    /**
+     * Array of loss levels that have been reached for this signal.
+     * Serialized form of IPartialState.lossLevels Set.
+     */
+    lossLevels: PartialLevel[];
+}
+/**
+ * Partial profit/loss tracking interface.
+ * Implemented by ClientPartial and PartialConnectionService.
+ *
+ * Tracks profit/loss level milestones for active trading signals.
+ * Emits events when signals reach 10%, 20%, 30%, etc profit or loss.
+ *
+ * @example
+ * ```typescript
+ * import { ClientPartial } from "./client/ClientPartial";
+ *
+ * const partial = new ClientPartial({
+ *   logger: loggerService,
+ *   onProfit: (symbol, data, price, level, backtest, timestamp) => {
+ *     console.log(`Signal ${data.id} reached ${level}% profit`);
+ *   },
+ *   onLoss: (symbol, data, price, level, backtest, timestamp) => {
+ *     console.log(`Signal ${data.id} reached ${level}% loss`);
+ *   }
+ * });
+ *
+ * await partial.waitForInit("BTCUSDT");
+ *
+ * // During signal monitoring
+ * await partial.profit("BTCUSDT", signal, 51000, 15.5, false, new Date());
+ * // Emits event when reaching 10% profit milestone
+ *
+ * // When signal closes
+ * await partial.clear("BTCUSDT", signal, 52000);
+ * ```
+ */
+interface IPartial {
+    /**
+     * Processes profit state and emits events for new profit levels reached.
+     *
+     * Called by ClientStrategy during signal monitoring when revenuePercent > 0.
+     * Checks which profit levels (10%, 20%, 30%, etc) have been reached
+     * and emits events for new levels only (Set-based deduplication).
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param data - Signal row data
+     * @param currentPrice - Current market price
+     * @param revenuePercent - Current profit percentage (positive value)
+     * @param backtest - True if backtest mode, false if live mode
+     * @param when - Event timestamp (current time for live, candle time for backtest)
+     * @returns Promise that resolves when profit processing is complete
+     *
+     * @example
+     * ```typescript
+     * // Signal opened at $50000, current price $51500
+     * // Revenue: 3% profit
+     * await partial.profit("BTCUSDT", signal, 51500, 3.0, false, new Date());
+     * // No events emitted (below 10% threshold)
+     *
+     * // Price rises to $55000
+     * // Revenue: 10% profit
+     * await partial.profit("BTCUSDT", signal, 55000, 10.0, false, new Date());
+     * // Emits partialProfitSubject event for 10% level
+     *
+     * // Price rises to $61000
+     * // Revenue: 22% profit
+     * await partial.profit("BTCUSDT", signal, 61000, 22.0, false, new Date());
+     * // Emits events for 20% level only (10% already emitted)
+     * ```
+     */
+    profit(symbol: string, data: ISignalRow, currentPrice: number, revenuePercent: number, backtest: boolean, when: Date): Promise<void>;
+    /**
+     * Processes loss state and emits events for new loss levels reached.
+     *
+     * Called by ClientStrategy during signal monitoring when revenuePercent < 0.
+     * Checks which loss levels (10%, 20%, 30%, etc) have been reached
+     * and emits events for new levels only (Set-based deduplication).
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param data - Signal row data
+     * @param currentPrice - Current market price
+     * @param lossPercent - Current loss percentage (negative value)
+     * @param backtest - True if backtest mode, false if live mode
+     * @param when - Event timestamp (current time for live, candle time for backtest)
+     * @returns Promise that resolves when loss processing is complete
+     *
+     * @example
+     * ```typescript
+     * // Signal opened at $50000, current price $48000
+     * // Loss: -4% loss
+     * await partial.loss("BTCUSDT", signal, 48000, -4.0, false, new Date());
+     * // No events emitted (below -10% threshold)
+     *
+     * // Price drops to $45000
+     * // Loss: -10% loss
+     * await partial.loss("BTCUSDT", signal, 45000, -10.0, false, new Date());
+     * // Emits partialLossSubject event for 10% level
+     *
+     * // Price drops to $39000
+     * // Loss: -22% loss
+     * await partial.loss("BTCUSDT", signal, 39000, -22.0, false, new Date());
+     * // Emits events for 20% level only (10% already emitted)
+     * ```
+     */
+    loss(symbol: string, data: ISignalRow, currentPrice: number, lossPercent: number, backtest: boolean, when: Date): Promise<void>;
+    /**
+     * Clears partial profit/loss state when signal closes.
+     *
+     * Called by ClientStrategy when signal completes (TP/SL/time_expired).
+     * Removes signal state from memory and persists changes to disk.
+     * Cleans up memoized ClientPartial instance in PartialConnectionService.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param data - Signal row data
+     * @param priceClose - Final closing price
+     * @returns Promise that resolves when clear is complete
+     *
+     * @example
+     * ```typescript
+     * // Signal closes at take profit
+     * await partial.clear("BTCUSDT", signal, 52000);
+     * // State removed from _states Map
+     * // Persisted to disk without this signal's data
+     * // Memoized instance cleared from getPartial cache
+     * ```
+     */
+    clear(symbol: string, data: ISignalRow, priceClose: number): Promise<void>;
+}
+
+/**
  * Signal generation interval for throttling.
  * Enforces minimum time between getSignal calls.
  */
@@ -651,7 +807,7 @@ interface IStrategyCallbacks {
     /** Called when signal is in partial profit state (price moved favorably but not reached TP yet) */
     onPartialProfit: (symbol: string, data: ISignalRow, currentPrice: number, revenuePercent: number, backtest: boolean) => void;
     /** Called when signal is in partial loss state (price moved against position but not hit SL yet) */
-    onPartialLoss: (symbol: string, data: ISignalRow, currentPrice: number, revenuePercent: number, backtest: boolean) => void;
+    onPartialLoss: (symbol: string, data: ISignalRow, currentPrice: number, lossPercent: number, backtest: boolean) => void;
 }
 /**
  * Strategy schema registered via addStrategy().
@@ -2483,6 +2639,180 @@ interface WalkerContract {
 }
 
 /**
+ * Contract for partial profit level events.
+ *
+ * Emitted by partialProfitSubject when a signal reaches a profit level milestone (10%, 20%, 30%, etc).
+ * Used for tracking partial take-profit execution and monitoring strategy performance.
+ *
+ * Events are emitted only once per level per signal (Set-based deduplication in ClientPartial).
+ * Multiple levels can be emitted in a single tick if price jumps significantly.
+ *
+ * Consumers:
+ * - PartialMarkdownService: Accumulates events for report generation
+ * - User callbacks via listenPartialProfit() / listenPartialProfitOnce()
+ *
+ * @example
+ * ```typescript
+ * import { listenPartialProfit } from "backtest-kit";
+ *
+ * // Listen to all partial profit events
+ * listenPartialProfit((event) => {
+ *   console.log(`[${event.backtest ? "Backtest" : "Live"}] Signal ${event.data.id} reached ${event.level}% profit`);
+ *   console.log(`Symbol: ${event.symbol}, Price: ${event.currentPrice}`);
+ *   console.log(`Position: ${event.data.position}, Entry: ${event.data.priceOpen}`);
+ * });
+ *
+ * // Wait for first 50% profit level
+ * listenPartialProfitOnce(
+ *   (event) => event.level === 50,
+ *   (event) => console.log("50% profit reached:", event.data.id)
+ * );
+ * ```
+ */
+interface PartialProfitContract {
+    /**
+     * Trading pair symbol (e.g., "BTCUSDT").
+     * Identifies which market this profit event belongs to.
+     */
+    symbol: string;
+    /**
+     * Complete signal row data.
+     * Contains all signal information: id, position, priceOpen, priceTakeProfit, priceStopLoss, etc.
+     */
+    data: ISignalRow;
+    /**
+     * Current market price at which this profit level was reached.
+     * Used to calculate actual profit percentage.
+     */
+    currentPrice: number;
+    /**
+     * Profit level milestone reached (10, 20, 30, 40, 50, 60, 70, 80, 90, or 100).
+     * Represents percentage profit relative to entry price.
+     *
+     * @example
+     * ```typescript
+     * // If entry was $50000 and level is 20:
+     * // currentPrice >= $60000 (20% profit)
+     * ```
+     */
+    level: PartialLevel;
+    /**
+     * Execution mode flag.
+     * - true: Event from backtest execution (historical candle data)
+     * - false: Event from live trading (real-time tick)
+     */
+    backtest: boolean;
+    /**
+     * Event timestamp in milliseconds since Unix epoch.
+     *
+     * Timing semantics:
+     * - Live mode: when.getTime() at the moment profit level was detected
+     * - Backtest mode: candle.timestamp of the candle that triggered the level
+     *
+     * @example
+     * ```typescript
+     * const eventDate = new Date(event.timestamp);
+     * console.log(`Profit reached at: ${eventDate.toISOString()}`);
+     * ```
+     */
+    timestamp: number;
+}
+
+/**
+ * Contract for partial loss level events.
+ *
+ * Emitted by partialLossSubject when a signal reaches a loss level milestone (-10%, -20%, -30%, etc).
+ * Used for tracking partial stop-loss execution and monitoring strategy drawdown.
+ *
+ * Events are emitted only once per level per signal (Set-based deduplication in ClientPartial).
+ * Multiple levels can be emitted in a single tick if price drops significantly.
+ *
+ * Consumers:
+ * - PartialMarkdownService: Accumulates events for report generation
+ * - User callbacks via listenPartialLoss() / listenPartialLossOnce()
+ *
+ * @example
+ * ```typescript
+ * import { listenPartialLoss } from "backtest-kit";
+ *
+ * // Listen to all partial loss events
+ * listenPartialLoss((event) => {
+ *   console.log(`[${event.backtest ? "Backtest" : "Live"}] Signal ${event.data.id} reached -${event.level}% loss`);
+ *   console.log(`Symbol: ${event.symbol}, Price: ${event.currentPrice}`);
+ *   console.log(`Position: ${event.data.position}, Entry: ${event.data.priceOpen}`);
+ *
+ *   // Alert on significant loss
+ *   if (event.level >= 30 && !event.backtest) {
+ *     console.warn("HIGH LOSS ALERT:", event.data.id);
+ *   }
+ * });
+ *
+ * // Wait for first 20% loss level
+ * listenPartialLossOnce(
+ *   (event) => event.level === 20,
+ *   (event) => console.log("20% loss reached:", event.data.id)
+ * );
+ * ```
+ */
+interface PartialLossContract {
+    /**
+     * Trading pair symbol (e.g., "BTCUSDT").
+     * Identifies which market this loss event belongs to.
+     */
+    symbol: string;
+    /**
+     * Complete signal row data.
+     * Contains all signal information: id, position, priceOpen, priceTakeProfit, priceStopLoss, etc.
+     */
+    data: ISignalRow;
+    /**
+     * Current market price at which this loss level was reached.
+     * Used to calculate actual loss percentage.
+     */
+    currentPrice: number;
+    /**
+     * Loss level milestone reached (10, 20, 30, 40, 50, 60, 70, 80, 90, or 100).
+     * Represents percentage loss relative to entry price (absolute value).
+     *
+     * Note: Stored as positive number, but represents negative loss.
+     * level=20 means -20% loss from entry price.
+     *
+     * @example
+     * ```typescript
+     * // If entry was $50000 and level is 20:
+     * // currentPrice <= $40000 (-20% loss)
+     * // Level is stored as 20, not -20
+     * ```
+     */
+    level: PartialLevel;
+    /**
+     * Execution mode flag.
+     * - true: Event from backtest execution (historical candle data)
+     * - false: Event from live trading (real-time tick)
+     */
+    backtest: boolean;
+    /**
+     * Event timestamp in milliseconds since Unix epoch.
+     *
+     * Timing semantics:
+     * - Live mode: when.getTime() at the moment loss level was detected
+     * - Backtest mode: candle.timestamp of the candle that triggered the level
+     *
+     * @example
+     * ```typescript
+     * const eventDate = new Date(event.timestamp);
+     * console.log(`Loss reached at: ${eventDate.toISOString()}`);
+     *
+     * // Calculate time in loss
+     * const entryTime = event.data.pendingAt;
+     * const timeInLoss = event.timestamp - entryTime;
+     * console.log(`In loss for ${timeInLoss / 1000 / 60} minutes`);
+     * ```
+     */
+    timestamp: number;
+}
+
+/**
  * Subscribes to all signal events with queued async processing.
  *
  * Events are processed sequentially in order received, even if callback is async.
@@ -2848,6 +3178,37 @@ declare function listenDoneWalkerOnce(filterFn: (event: DoneContract) => boolean
  */
 declare function listenBacktestProgress(fn: (event: ProgressBacktestContract) => void): () => void;
 /**
+ * Subscribes to walker progress events with queued async processing.
+ *
+ * Emits during Walker.run() execution after each strategy completes.
+ * Events are processed sequentially in order received, even if callback is async.
+ * Uses queued wrapper to prevent concurrent execution of the callback.
+ *
+ * @param fn - Callback function to handle walker progress events
+ * @returns Unsubscribe function to stop listening to events
+ *
+ * @example
+ * ```typescript
+ * import { listenWalkerProgress, Walker } from "backtest-kit";
+ *
+ * const unsubscribe = listenWalkerProgress((event) => {
+ *   console.log(`Progress: ${(event.progress * 100).toFixed(2)}%`);
+ *   console.log(`${event.processedStrategies} / ${event.totalStrategies} strategies`);
+ *   console.log(`Walker: ${event.walkerName}, Symbol: ${event.symbol}`);
+ * });
+ *
+ * Walker.run("BTCUSDT", {
+ *   walkerName: "my-walker",
+ *   exchangeName: "binance",
+ *   frameName: "1d-backtest"
+ * });
+ *
+ * // Later: stop listening
+ * unsubscribe();
+ * ```
+ */
+declare function listenWalkerProgress(fn: (event: ProgressWalkerContract) => void): () => void;
+/**
  * Subscribes to performance metric events with queued async processing.
  *
  * Emits during strategy execution to track timing metrics for operations.
@@ -3008,6 +3369,118 @@ declare function listenWalkerComplete(fn: (event: IWalkerResults) => void): () =
  * ```
  */
 declare function listenValidation(fn: (error: Error) => void): () => void;
+/**
+ * Subscribes to partial profit level events with queued async processing.
+ *
+ * Emits when a signal reaches a profit level milestone (10%, 20%, 30%, etc).
+ * Events are processed sequentially in order received, even if callback is async.
+ * Uses queued wrapper to prevent concurrent execution of the callback.
+ *
+ * @param fn - Callback function to handle partial profit events
+ * @returns Unsubscribe function to stop listening to events
+ *
+ * @example
+ * ```typescript
+ * import { listenPartialProfit } from "./function/event";
+ *
+ * const unsubscribe = listenPartialProfit((event) => {
+ *   console.log(`Signal ${event.data.id} reached ${event.level}% profit`);
+ *   console.log(`Symbol: ${event.symbol}, Price: ${event.currentPrice}`);
+ *   console.log(`Mode: ${event.backtest ? "Backtest" : "Live"}`);
+ * });
+ *
+ * // Later: stop listening
+ * unsubscribe();
+ * ```
+ */
+declare function listenPartialProfit(fn: (event: PartialProfitContract) => void): () => void;
+/**
+ * Subscribes to filtered partial profit level events with one-time execution.
+ *
+ * Listens for events matching the filter predicate, then executes callback once
+ * and automatically unsubscribes. Useful for waiting for specific profit conditions.
+ *
+ * @param filterFn - Predicate to filter which events trigger the callback
+ * @param fn - Callback function to handle the filtered event (called only once)
+ * @returns Unsubscribe function to cancel the listener before it fires
+ *
+ * @example
+ * ```typescript
+ * import { listenPartialProfitOnce } from "./function/event";
+ *
+ * // Wait for first 50% profit level on any signal
+ * listenPartialProfitOnce(
+ *   (event) => event.level === 50,
+ *   (event) => console.log("50% profit reached:", event.data.id)
+ * );
+ *
+ * // Wait for 30% profit on BTCUSDT
+ * const cancel = listenPartialProfitOnce(
+ *   (event) => event.symbol === "BTCUSDT" && event.level === 30,
+ *   (event) => console.log("BTCUSDT hit 30% profit")
+ * );
+ *
+ * // Cancel if needed before event fires
+ * cancel();
+ * ```
+ */
+declare function listenPartialProfitOnce(filterFn: (event: PartialProfitContract) => boolean, fn: (event: PartialProfitContract) => void): () => void;
+/**
+ * Subscribes to partial loss level events with queued async processing.
+ *
+ * Emits when a signal reaches a loss level milestone (10%, 20%, 30%, etc).
+ * Events are processed sequentially in order received, even if callback is async.
+ * Uses queued wrapper to prevent concurrent execution of the callback.
+ *
+ * @param fn - Callback function to handle partial loss events
+ * @returns Unsubscribe function to stop listening to events
+ *
+ * @example
+ * ```typescript
+ * import { listenPartialLoss } from "./function/event";
+ *
+ * const unsubscribe = listenPartialLoss((event) => {
+ *   console.log(`Signal ${event.data.id} reached ${event.level}% loss`);
+ *   console.log(`Symbol: ${event.symbol}, Price: ${event.currentPrice}`);
+ *   console.log(`Mode: ${event.backtest ? "Backtest" : "Live"}`);
+ * });
+ *
+ * // Later: stop listening
+ * unsubscribe();
+ * ```
+ */
+declare function listenPartialLoss(fn: (event: PartialLossContract) => void): () => void;
+/**
+ * Subscribes to filtered partial loss level events with one-time execution.
+ *
+ * Listens for events matching the filter predicate, then executes callback once
+ * and automatically unsubscribes. Useful for waiting for specific loss conditions.
+ *
+ * @param filterFn - Predicate to filter which events trigger the callback
+ * @param fn - Callback function to handle the filtered event (called only once)
+ * @returns Unsubscribe function to cancel the listener before it fires
+ *
+ * @example
+ * ```typescript
+ * import { listenPartialLossOnce } from "./function/event";
+ *
+ * // Wait for first 20% loss level on any signal
+ * listenPartialLossOnce(
+ *   (event) => event.level === 20,
+ *   (event) => console.log("20% loss reached:", event.data.id)
+ * );
+ *
+ * // Wait for 10% loss on ETHUSDT in live mode
+ * const cancel = listenPartialLossOnce(
+ *   (event) => event.symbol === "ETHUSDT" && event.level === 10 && !event.backtest,
+ *   (event) => console.log("ETHUSDT hit 10% loss in live mode")
+ * );
+ *
+ * // Cancel if needed before event fires
+ * cancel();
+ * ```
+ */
+declare function listenPartialLossOnce(filterFn: (event: PartialLossContract) => boolean, fn: (event: PartialLossContract) => void): () => void;
 
 /**
  * Fetches historical candle data from the registered exchange.
@@ -3873,6 +4346,190 @@ declare class WalkerMarkdownService {
     protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
 }
 
+/**
+ * Unified partial profit/loss event data for report generation.
+ * Contains all information about profit and loss level milestones.
+ */
+interface PartialEvent {
+    /** Event timestamp in milliseconds */
+    timestamp: number;
+    /** Event action type (profit or loss) */
+    action: "profit" | "loss";
+    /** Trading pair symbol */
+    symbol: string;
+    /** Signal ID */
+    signalId: string;
+    /** Position type */
+    position: string;
+    /** Current market price */
+    currentPrice: number;
+    /** Profit/loss level reached (10, 20, 30, etc) */
+    level: PartialLevel;
+    /** True if backtest mode, false if live mode */
+    backtest: boolean;
+}
+/**
+ * Statistical data calculated from partial profit/loss events.
+ *
+ * Provides metrics for partial profit/loss milestone tracking.
+ *
+ * @example
+ * ```typescript
+ * const stats = await Partial.getData("my-strategy");
+ *
+ * console.log(`Total events: ${stats.totalEvents}`);
+ * console.log(`Profit events: ${stats.totalProfit}`);
+ * console.log(`Loss events: ${stats.totalLoss}`);
+ * ```
+ */
+interface PartialStatistics {
+    /** Array of all profit/loss events with full details */
+    eventList: PartialEvent[];
+    /** Total number of all events (includes profit, loss) */
+    totalEvents: number;
+    /** Total number of profit events */
+    totalProfit: number;
+    /** Total number of loss events */
+    totalLoss: number;
+}
+/**
+ * Service for generating and saving partial profit/loss markdown reports.
+ *
+ * Features:
+ * - Listens to partial profit and loss events via partialProfitSubject/partialLossSubject
+ * - Accumulates all events (profit, loss) per symbol
+ * - Generates markdown tables with detailed event information
+ * - Provides statistics (total profit/loss events)
+ * - Saves reports to disk in dump/partial/{symbol}.md
+ *
+ * @example
+ * ```typescript
+ * const service = new PartialMarkdownService();
+ *
+ * // Service automatically subscribes to subjects on init
+ * // No manual callback setup needed
+ *
+ * // Later: generate and save report
+ * await service.dump("BTCUSDT");
+ * ```
+ */
+declare class PartialMarkdownService {
+    /** Logger service for debug output */
+    private readonly loggerService;
+    /**
+     * Memoized function to get or create ReportStorage for a symbol.
+     * Each symbol gets its own isolated storage instance.
+     */
+    private getStorage;
+    /**
+     * Processes profit events and accumulates them.
+     * Should be called from partialProfitSubject subscription.
+     *
+     * @param data - Profit event data
+     *
+     * @example
+     * ```typescript
+     * const service = new PartialMarkdownService();
+     * // Service automatically subscribes in init()
+     * ```
+     */
+    private tickProfit;
+    /**
+     * Processes loss events and accumulates them.
+     * Should be called from partialLossSubject subscription.
+     *
+     * @param data - Loss event data
+     *
+     * @example
+     * ```typescript
+     * const service = new PartialMarkdownService();
+     * // Service automatically subscribes in init()
+     * ```
+     */
+    private tickLoss;
+    /**
+     * Gets statistical data from all partial profit/loss events for a symbol.
+     * Delegates to ReportStorage.getData().
+     *
+     * @param symbol - Trading pair symbol to get data for
+     * @returns Statistical data object with all metrics
+     *
+     * @example
+     * ```typescript
+     * const service = new PartialMarkdownService();
+     * const stats = await service.getData("BTCUSDT");
+     * console.log(stats.totalProfit, stats.totalLoss);
+     * ```
+     */
+    getData: (symbol: string) => Promise<PartialStatistics>;
+    /**
+     * Generates markdown report with all partial events for a symbol.
+     * Delegates to ReportStorage.getReport().
+     *
+     * @param symbol - Trading pair symbol to generate report for
+     * @returns Markdown formatted report string with table of all events
+     *
+     * @example
+     * ```typescript
+     * const service = new PartialMarkdownService();
+     * const markdown = await service.getReport("BTCUSDT");
+     * console.log(markdown);
+     * ```
+     */
+    getReport: (symbol: string) => Promise<string>;
+    /**
+     * Saves symbol report to disk.
+     * Creates directory if it doesn't exist.
+     * Delegates to ReportStorage.dump().
+     *
+     * @param symbol - Trading pair symbol to save report for
+     * @param path - Directory path to save report (default: "./dump/partial")
+     *
+     * @example
+     * ```typescript
+     * const service = new PartialMarkdownService();
+     *
+     * // Save to default path: ./dump/partial/BTCUSDT.md
+     * await service.dump("BTCUSDT");
+     *
+     * // Save to custom path: ./custom/path/BTCUSDT.md
+     * await service.dump("BTCUSDT", "./custom/path");
+     * ```
+     */
+    dump: (symbol: string, path?: string) => Promise<void>;
+    /**
+     * Clears accumulated event data from storage.
+     * If symbol is provided, clears only that symbol's data.
+     * If symbol is omitted, clears all symbols' data.
+     *
+     * @param symbol - Optional symbol to clear specific symbol data
+     *
+     * @example
+     * ```typescript
+     * const service = new PartialMarkdownService();
+     *
+     * // Clear specific symbol data
+     * await service.clear("BTCUSDT");
+     *
+     * // Clear all symbols' data
+     * await service.clear();
+     * ```
+     */
+    clear: (symbol?: string) => Promise<void>;
+    /**
+     * Initializes the service by subscribing to partial profit/loss events.
+     * Uses singleshot to ensure initialization happens only once.
+     * Automatically called on first use.
+     *
+     * @example
+     * ```typescript
+     * const service = new PartialMarkdownService();
+     * await service.init(); // Subscribe to profit/loss events
+     * ```
+     */
+    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+}
+
 declare const BASE_WAIT_FOR_INIT_SYMBOL: unique symbol;
 /**
  * Signal data stored in persistence layer.
@@ -4249,6 +4906,79 @@ declare class PersistScheduleUtils {
  * ```
  */
 declare const PersistScheduleAdapter: PersistScheduleUtils;
+/**
+ * Type for persisted partial data.
+ * Stores profit and loss levels as arrays for JSON serialization.
+ */
+type PartialData = Record<string, IPartialData>;
+/**
+ * Utility class for managing partial profit/loss levels persistence.
+ *
+ * Features:
+ * - Memoized storage instances per symbol
+ * - Custom adapter support
+ * - Atomic read/write operations for partial data
+ * - Crash-safe partial state management
+ *
+ * Used by ClientPartial for live mode persistence of profit/loss levels.
+ */
+declare class PersistPartialUtils {
+    private PersistPartialFactory;
+    private getPartialStorage;
+    /**
+     * Registers a custom persistence adapter.
+     *
+     * @param Ctor - Custom PersistBase constructor
+     *
+     * @example
+     * ```typescript
+     * class RedisPersist extends PersistBase {
+     *   async readValue(id) { return JSON.parse(await redis.get(id)); }
+     *   async writeValue(id, entity) { await redis.set(id, JSON.stringify(entity)); }
+     * }
+     * PersistPartialAdapter.usePersistPartialAdapter(RedisPersist);
+     * ```
+     */
+    usePersistPartialAdapter(Ctor: TPersistBaseCtor<string, PartialData>): void;
+    /**
+     * Reads persisted partial data for a symbol.
+     *
+     * Called by ClientPartial.waitForInit() to restore state.
+     * Returns empty object if no partial data exists.
+     *
+     * @param symbol - Trading pair symbol
+     * @returns Promise resolving to partial data record
+     */
+    readPartialData: (symbol: string) => Promise<PartialData>;
+    /**
+     * Writes partial data to disk with atomic file writes.
+     *
+     * Called by ClientPartial after profit/loss level changes to persist state.
+     * Uses atomic writes to prevent corruption on crashes.
+     *
+     * @param partialData - Record of signal IDs to partial data
+     * @param symbol - Trading pair symbol
+     * @returns Promise that resolves when write is complete
+     */
+    writePartialData: (partialData: PartialData, symbol: string) => Promise<void>;
+}
+/**
+ * Global singleton instance of PersistPartialUtils.
+ * Used by ClientPartial for partial profit/loss levels persistence.
+ *
+ * @example
+ * ```typescript
+ * // Custom adapter
+ * PersistPartialAdapter.usePersistPartialAdapter(RedisPersist);
+ *
+ * // Read partial data
+ * const partialData = await PersistPartialAdapter.readPartialData("BTCUSDT");
+ *
+ * // Write partial data
+ * await PersistPartialAdapter.writePartialData(partialData, "BTCUSDT");
+ * ```
+ */
+declare const PersistPartialAdapter: PersistPartialUtils;
 
 /**
  * Utility class for backtest operations.
@@ -5101,6 +5831,151 @@ declare class OptimizerUtils {
 declare const Optimizer: OptimizerUtils;
 
 /**
+ * Utility class for accessing partial profit/loss reports and statistics.
+ *
+ * Provides static-like methods (via singleton instance) to retrieve data
+ * accumulated by PartialMarkdownService from partial profit/loss events.
+ *
+ * Features:
+ * - Statistical data extraction (total profit/loss events count)
+ * - Markdown report generation with event tables
+ * - File export to disk
+ *
+ * Data source:
+ * - PartialMarkdownService listens to partialProfitSubject/partialLossSubject
+ * - Accumulates events in ReportStorage (max 250 events per symbol)
+ * - Events include: timestamp, action, symbol, signalId, position, level, price, mode
+ *
+ * @example
+ * ```typescript
+ * import { Partial } from "./classes/Partial";
+ *
+ * // Get statistical data for BTCUSDT
+ * const stats = await Partial.getData("BTCUSDT");
+ * console.log(`Total events: ${stats.totalEvents}`);
+ * console.log(`Profit events: ${stats.totalProfit}`);
+ * console.log(`Loss events: ${stats.totalLoss}`);
+ *
+ * // Generate markdown report
+ * const markdown = await Partial.getReport("BTCUSDT");
+ * console.log(markdown); // Formatted table with all events
+ *
+ * // Export report to file
+ * await Partial.dump("BTCUSDT"); // Saves to ./dump/partial/BTCUSDT.md
+ * await Partial.dump("BTCUSDT", "./custom/path"); // Custom directory
+ * ```
+ */
+declare class PartialUtils {
+    /**
+     * Retrieves statistical data from accumulated partial profit/loss events.
+     *
+     * Delegates to PartialMarkdownService.getData() which reads from ReportStorage.
+     * Returns aggregated metrics calculated from all profit and loss events.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @returns Promise resolving to PartialStatistics object with counts and event list
+     *
+     * @example
+     * ```typescript
+     * const stats = await Partial.getData("BTCUSDT");
+     *
+     * console.log(`Total events: ${stats.totalEvents}`);
+     * console.log(`Profit events: ${stats.totalProfit} (${(stats.totalProfit / stats.totalEvents * 100).toFixed(1)}%)`);
+     * console.log(`Loss events: ${stats.totalLoss} (${(stats.totalLoss / stats.totalEvents * 100).toFixed(1)}%)`);
+     *
+     * // Iterate through all events
+     * for (const event of stats.eventList) {
+     *   console.log(`${event.action.toUpperCase()}: Signal ${event.signalId} reached ${event.level}%`);
+     * }
+     * ```
+     */
+    getData: (symbol: string) => Promise<PartialStatistics>;
+    /**
+     * Generates markdown report with all partial profit/loss events for a symbol.
+     *
+     * Creates formatted table containing:
+     * - Action (PROFIT/LOSS)
+     * - Symbol
+     * - Signal ID
+     * - Position (LONG/SHORT)
+     * - Level % (+10%, -20%, etc)
+     * - Current Price
+     * - Timestamp (ISO 8601)
+     * - Mode (Backtest/Live)
+     *
+     * Also includes summary statistics at the end.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @returns Promise resolving to markdown formatted report string
+     *
+     * @example
+     * ```typescript
+     * const markdown = await Partial.getReport("BTCUSDT");
+     * console.log(markdown);
+     *
+     * // Output:
+     * // # Partial Profit/Loss Report: BTCUSDT
+     * //
+     * // | Action | Symbol | Signal ID | Position | Level % | Current Price | Timestamp | Mode |
+     * // | --- | --- | --- | --- | --- | --- | --- | --- |
+     * // | PROFIT | BTCUSDT | abc123 | LONG | +10% | 51500.00000000 USD | 2024-01-15T10:30:00.000Z | Backtest |
+     * // | LOSS | BTCUSDT | abc123 | LONG | -10% | 49000.00000000 USD | 2024-01-15T11:00:00.000Z | Backtest |
+     * //
+     * // **Total events:** 2
+     * // **Profit events:** 1
+     * // **Loss events:** 1
+     * ```
+     */
+    getReport: (symbol: string) => Promise<string>;
+    /**
+     * Generates and saves markdown report to file.
+     *
+     * Creates directory if it doesn't exist.
+     * Filename format: {symbol}.md (e.g., "BTCUSDT.md")
+     *
+     * Delegates to PartialMarkdownService.dump() which:
+     * 1. Generates markdown report via getReport()
+     * 2. Creates output directory (recursive mkdir)
+     * 3. Writes file with UTF-8 encoding
+     * 4. Logs success/failure to console
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param path - Output directory path (default: "./dump/partial")
+     * @returns Promise that resolves when file is written
+     *
+     * @example
+     * ```typescript
+     * // Save to default path: ./dump/partial/BTCUSDT.md
+     * await Partial.dump("BTCUSDT");
+     *
+     * // Save to custom path: ./reports/partial/BTCUSDT.md
+     * await Partial.dump("BTCUSDT", "./reports/partial");
+     *
+     * // After multiple symbols backtested, export all reports
+     * for (const symbol of ["BTCUSDT", "ETHUSDT", "BNBUSDT"]) {
+     *   await Partial.dump(symbol, "./backtest-results");
+     * }
+     * ```
+     */
+    dump: (symbol: string, path?: string) => Promise<void>;
+}
+/**
+ * Global singleton instance of PartialUtils.
+ * Provides static-like access to partial profit/loss reporting methods.
+ *
+ * @example
+ * ```typescript
+ * import { Partial } from "backtest-kit";
+ *
+ * // Usage same as PartialUtils methods
+ * const stats = await Partial.getData("BTCUSDT");
+ * const report = await Partial.getReport("BTCUSDT");
+ * await Partial.dump("BTCUSDT");
+ * ```
+ */
+declare const Partial$1: PartialUtils;
+
+/**
  * Global signal emitter for all trading events (live + backtest).
  * Emits all signal events regardless of execution mode.
  */
@@ -5170,11 +6045,23 @@ declare const walkerStopSubject: Subject<string>;
  * Emits when risk validation functions throw errors during signal checking.
  */
 declare const validationSubject: Subject<Error>;
+/**
+ * Partial profit emitter for profit level milestones.
+ * Emits when a signal reaches a profit level (10%, 20%, 30%, etc).
+ */
+declare const partialProfitSubject: Subject<PartialProfitContract>;
+/**
+ * Partial loss emitter for loss level milestones.
+ * Emits when a signal reaches a loss level (10%, 20%, 30%, etc).
+ */
+declare const partialLossSubject: Subject<PartialLossContract>;
 
 declare const emitters_doneBacktestSubject: typeof doneBacktestSubject;
 declare const emitters_doneLiveSubject: typeof doneLiveSubject;
 declare const emitters_doneWalkerSubject: typeof doneWalkerSubject;
 declare const emitters_errorEmitter: typeof errorEmitter;
+declare const emitters_partialLossSubject: typeof partialLossSubject;
+declare const emitters_partialProfitSubject: typeof partialProfitSubject;
 declare const emitters_performanceEmitter: typeof performanceEmitter;
 declare const emitters_progressBacktestEmitter: typeof progressBacktestEmitter;
 declare const emitters_progressWalkerEmitter: typeof progressWalkerEmitter;
@@ -5186,7 +6073,7 @@ declare const emitters_walkerCompleteSubject: typeof walkerCompleteSubject;
 declare const emitters_walkerEmitter: typeof walkerEmitter;
 declare const emitters_walkerStopSubject: typeof walkerStopSubject;
 declare namespace emitters {
-  export { emitters_doneBacktestSubject as doneBacktestSubject, emitters_doneLiveSubject as doneLiveSubject, emitters_doneWalkerSubject as doneWalkerSubject, emitters_errorEmitter as errorEmitter, emitters_performanceEmitter as performanceEmitter, emitters_progressBacktestEmitter as progressBacktestEmitter, emitters_progressWalkerEmitter as progressWalkerEmitter, emitters_signalBacktestEmitter as signalBacktestEmitter, emitters_signalEmitter as signalEmitter, emitters_signalLiveEmitter as signalLiveEmitter, emitters_validationSubject as validationSubject, emitters_walkerCompleteSubject as walkerCompleteSubject, emitters_walkerEmitter as walkerEmitter, emitters_walkerStopSubject as walkerStopSubject };
+  export { emitters_doneBacktestSubject as doneBacktestSubject, emitters_doneLiveSubject as doneLiveSubject, emitters_doneWalkerSubject as doneWalkerSubject, emitters_errorEmitter as errorEmitter, emitters_partialLossSubject as partialLossSubject, emitters_partialProfitSubject as partialProfitSubject, emitters_performanceEmitter as performanceEmitter, emitters_progressBacktestEmitter as progressBacktestEmitter, emitters_progressWalkerEmitter as progressWalkerEmitter, emitters_signalBacktestEmitter as signalBacktestEmitter, emitters_signalEmitter as signalEmitter, emitters_signalLiveEmitter as signalLiveEmitter, emitters_validationSubject as validationSubject, emitters_walkerCompleteSubject as walkerCompleteSubject, emitters_walkerEmitter as walkerEmitter, emitters_walkerStopSubject as walkerStopSubject };
 }
 
 /**
@@ -5438,6 +6325,7 @@ declare class StrategyConnectionService implements IStrategy {
     private readonly riskConnectionService;
     private readonly exchangeConnectionService;
     private readonly methodContextService;
+    private readonly partialConnectionService;
     /**
      * Retrieves memoized ClientStrategy instance for given strategy name.
      *
@@ -7419,6 +8307,184 @@ declare class OptimizerGlobalService {
     dump: (symbol: string, optimizerName: string, path?: string) => Promise<void>;
 }
 
+/**
+ * Connection service for partial profit/loss tracking.
+ *
+ * Provides memoized ClientPartial instances per signal ID.
+ * Acts as factory and lifetime manager for ClientPartial objects.
+ *
+ * Features:
+ * - Creates one ClientPartial instance per signal ID (memoized)
+ * - Configures instances with logger and event emitter callbacks
+ * - Delegates profit/loss/clear operations to appropriate ClientPartial
+ * - Cleans up memoized instances when signals are cleared
+ *
+ * Architecture:
+ * - Injected into ClientStrategy via PartialGlobalService
+ * - Uses memoize from functools-kit for instance caching
+ * - Emits events to partialProfitSubject/partialLossSubject
+ *
+ * @example
+ * ```typescript
+ * // Service injected via DI
+ * const service = inject<PartialConnectionService>(TYPES.partialConnectionService);
+ *
+ * // Called by ClientStrategy during signal monitoring
+ * await service.profit("BTCUSDT", signal, 55000, 10.0, false, new Date());
+ * // Creates or reuses ClientPartial for signal.id
+ * // Delegates to ClientPartial.profit()
+ *
+ * // When signal closes
+ * await service.clear("BTCUSDT", signal, 52000);
+ * // Clears signal state and removes memoized instance
+ * ```
+ */
+declare class PartialConnectionService implements IPartial {
+    /**
+     * Logger service injected from DI container.
+     */
+    private readonly loggerService;
+    /**
+     * Memoized factory function for ClientPartial instances.
+     *
+     * Creates one ClientPartial per signal ID with configured callbacks.
+     * Instances are cached until clear() is called.
+     *
+     * Key format: signalId
+     * Value: ClientPartial instance with logger and event emitters
+     */
+    private getPartial;
+    /**
+     * Processes profit state and emits events for newly reached profit levels.
+     *
+     * Retrieves or creates ClientPartial for signal ID, initializes it if needed,
+     * then delegates to ClientPartial.profit() method.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param data - Signal row data
+     * @param currentPrice - Current market price
+     * @param revenuePercent - Current profit percentage (positive value)
+     * @param backtest - True if backtest mode, false if live mode
+     * @param when - Event timestamp (current time for live, candle time for backtest)
+     * @returns Promise that resolves when profit processing is complete
+     */
+    profit: (symbol: string, data: ISignalRow, currentPrice: number, revenuePercent: number, backtest: boolean, when: Date) => Promise<void>;
+    /**
+     * Processes loss state and emits events for newly reached loss levels.
+     *
+     * Retrieves or creates ClientPartial for signal ID, initializes it if needed,
+     * then delegates to ClientPartial.loss() method.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param data - Signal row data
+     * @param currentPrice - Current market price
+     * @param lossPercent - Current loss percentage (negative value)
+     * @param backtest - True if backtest mode, false if live mode
+     * @param when - Event timestamp (current time for live, candle time for backtest)
+     * @returns Promise that resolves when loss processing is complete
+     */
+    loss: (symbol: string, data: ISignalRow, currentPrice: number, lossPercent: number, backtest: boolean, when: Date) => Promise<void>;
+    /**
+     * Clears partial profit/loss state when signal closes.
+     *
+     * Retrieves ClientPartial for signal ID, initializes if needed,
+     * delegates clear operation, then removes memoized instance.
+     *
+     * Sequence:
+     * 1. Get ClientPartial from memoize cache
+     * 2. Ensure initialization (waitForInit)
+     * 3. Call ClientPartial.clear() - removes state, persists to disk
+     * 4. Clear memoized instance - prevents memory leaks
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param data - Signal row data
+     * @param priceClose - Final closing price
+     * @returns Promise that resolves when clear is complete
+     */
+    clear: (symbol: string, data: ISignalRow, priceClose: number) => Promise<void>;
+}
+
+/**
+ * Global service for partial profit/loss tracking.
+ *
+ * Thin delegation layer that forwards operations to PartialConnectionService.
+ * Provides centralized logging for all partial operations at the global level.
+ *
+ * Architecture:
+ * - Injected into ClientStrategy constructor via IStrategyParams
+ * - Delegates all operations to PartialConnectionService
+ * - Logs operations at "partialGlobalService" level before delegation
+ *
+ * Purpose:
+ * - Single injection point for ClientStrategy (dependency injection pattern)
+ * - Centralized logging for monitoring partial operations
+ * - Layer of abstraction between strategy and connection layer
+ *
+ * @example
+ * ```typescript
+ * // Service injected into ClientStrategy via DI
+ * const strategy = new ClientStrategy({
+ *   partial: partialGlobalService,
+ *   ...
+ * });
+ *
+ * // Called during signal monitoring
+ * await strategy.params.partial.profit("BTCUSDT", signal, 55000, 10.0, false, new Date());
+ * // Logs at global level → delegates to PartialConnectionService
+ * ```
+ */
+declare class PartialGlobalService {
+    /**
+     * Logger service injected from DI container.
+     * Used for logging operations at global service level.
+     */
+    private readonly loggerService;
+    /**
+     * Connection service injected from DI container.
+     * Handles actual ClientPartial instance creation and management.
+     */
+    private readonly partialConnectionService;
+    /**
+     * Processes profit state and emits events for newly reached profit levels.
+     *
+     * Logs operation at global service level, then delegates to PartialConnectionService.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param data - Signal row data
+     * @param currentPrice - Current market price
+     * @param revenuePercent - Current profit percentage (positive value)
+     * @param backtest - True if backtest mode, false if live mode
+     * @param when - Event timestamp (current time for live, candle time for backtest)
+     * @returns Promise that resolves when profit processing is complete
+     */
+    profit: (symbol: string, data: ISignalRow, currentPrice: number, revenuePercent: number, backtest: boolean, when: Date) => Promise<void>;
+    /**
+     * Processes loss state and emits events for newly reached loss levels.
+     *
+     * Logs operation at global service level, then delegates to PartialConnectionService.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param data - Signal row data
+     * @param currentPrice - Current market price
+     * @param lossPercent - Current loss percentage (negative value)
+     * @param backtest - True if backtest mode, false if live mode
+     * @param when - Event timestamp (current time for live, candle time for backtest)
+     * @returns Promise that resolves when loss processing is complete
+     */
+    loss: (symbol: string, data: ISignalRow, currentPrice: number, lossPercent: number, backtest: boolean, when: Date) => Promise<void>;
+    /**
+     * Clears partial profit/loss state when signal closes.
+     *
+     * Logs operation at global service level, then delegates to PartialConnectionService.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param data - Signal row data
+     * @param priceClose - Final closing price
+     * @returns Promise that resolves when clear is complete
+     */
+    clear: (symbol: string, data: ISignalRow, priceClose: number) => Promise<void>;
+}
+
 declare const backtest: {
     optimizerTemplateService: OptimizerTemplateService;
     exchangeValidationService: ExchangeValidationService;
@@ -7434,6 +8500,7 @@ declare const backtest: {
     performanceMarkdownService: PerformanceMarkdownService;
     walkerMarkdownService: WalkerMarkdownService;
     heatMarkdownService: HeatMarkdownService;
+    partialMarkdownService: PartialMarkdownService;
     backtestLogicPublicService: BacktestLogicPublicService;
     liveLogicPublicService: LiveLogicPublicService;
     walkerLogicPublicService: WalkerLogicPublicService;
@@ -7449,6 +8516,7 @@ declare const backtest: {
     sizingGlobalService: SizingGlobalService;
     riskGlobalService: RiskGlobalService;
     optimizerGlobalService: OptimizerGlobalService;
+    partialGlobalService: PartialGlobalService;
     exchangeSchemaService: ExchangeSchemaService;
     strategySchemaService: StrategySchemaService;
     frameSchemaService: FrameSchemaService;
@@ -7462,6 +8530,7 @@ declare const backtest: {
     sizingConnectionService: SizingConnectionService;
     riskConnectionService: RiskConnectionService;
     optimizerConnectionService: OptimizerConnectionService;
+    partialConnectionService: PartialConnectionService;
     executionContextService: {
         readonly context: IExecutionContext;
     };
@@ -7471,4 +8540,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type BacktestStatistics, type CandleInterval, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IHeatmapStatistics, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatistics, type MessageModel, type MessageRole, MethodContextService, Optimizer, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatistics, PersistBase, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type RiskData, Schedule, type ScheduleData, type ScheduleStatistics, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, Walker, type WalkerMetric, type WalkerStatistics, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenPerformance, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, setConfig, setLogger };
+export { Backtest, type BacktestStatistics, type CandleInterval, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IHeatmapStatistics, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatistics, type MessageModel, type MessageRole, MethodContextService, Optimizer, Partial$1 as Partial, type PartialData, type PartialLossContract, type PartialProfitContract, type PartialStatistics, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatistics, PersistBase, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressWalkerContract, type RiskData, Schedule, type ScheduleData, type ScheduleStatistics, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, Walker, type WalkerContract, type WalkerMetric, type WalkerStatistics, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, setConfig, setLogger };

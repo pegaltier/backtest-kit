@@ -14,6 +14,7 @@ const connectionServices = {
     sizingConnectionService: Symbol('sizingConnectionService'),
     riskConnectionService: Symbol('riskConnectionService'),
     optimizerConnectionService: Symbol('optimizerConnectionService'),
+    partialConnectionService: Symbol('partialConnectionService'),
 };
 
 const schemaServices = {
@@ -33,6 +34,7 @@ const globalServices = {
     sizingGlobalService: Symbol('sizingGlobalService'),
     riskGlobalService: Symbol('riskGlobalService'),
     optimizerGlobalService: Symbol('optimizerGlobalService'),
+    partialGlobalService: Symbol('partialGlobalService'),
 }
 
 const commandServices = {
@@ -60,6 +62,7 @@ const markdownServices = {
     performanceMarkdownService: Symbol('performanceMarkdownService'),
     walkerMarkdownService: Symbol('walkerMarkdownService'),
     heatMarkdownService: Symbol('heatMarkdownService'),
+    partialMarkdownService: Symbol('partialMarkdownService'),
 }
 
 const validationServices = {

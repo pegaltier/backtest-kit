@@ -73,3 +73,19 @@ onWrite: (symbol: string, data: ISignalRow, backtest: boolean) => void
 ```
 
 Called when signal is written to persist storage (for testing)
+
+### onPartialProfit
+
+```ts
+onPartialProfit: (symbol: string, data: ISignalRow, currentPrice: number, revenuePercent: number, backtest: boolean) => void
+```
+
+Called when signal is in partial profit state (price moved favorably but not reached TP yet)
+
+### onPartialLoss
+
+```ts
+onPartialLoss: (symbol: string, data: ISignalRow, currentPrice: number, lossPercent: number, backtest: boolean) => void
+```
+
+Called when signal is in partial loss state (price moved against position but not hit SL yet)

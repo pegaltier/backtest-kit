@@ -45,6 +45,9 @@ import OptimizerSchemaService from "../services/schema/OptimizerSchemaService";
 import OptimizerValidationService from "../services/validation/OptimizerValidationService";
 import OptimizerGlobalService from "../services/global/OptimizerGlobalService";
 import OptimizerConnectionService from "../services/connection/OptimizerConnectionService";
+import { PartialConnectionService } from "../services/connection/PartialConnectionService";
+import PartialMarkdownService from "../services/markdown/PartialMarkdownService";
+import PartialGlobalService from "../services/global/PartialGlobalService";
 
 {
     provide(TYPES.loggerService, () => new LoggerService());
@@ -62,6 +65,7 @@ import OptimizerConnectionService from "../services/connection/OptimizerConnecti
     provide(TYPES.sizingConnectionService, () => new SizingConnectionService());
     provide(TYPES.riskConnectionService, () => new RiskConnectionService());
     provide(TYPES.optimizerConnectionService, () => new OptimizerConnectionService());
+    provide(TYPES.partialConnectionService, () => new PartialConnectionService());
 }
 
 {
@@ -81,6 +85,7 @@ import OptimizerConnectionService from "../services/connection/OptimizerConnecti
     provide(TYPES.sizingGlobalService, () => new SizingGlobalService());
     provide(TYPES.riskGlobalService, () => new RiskGlobalService());
     provide(TYPES.optimizerGlobalService, () => new OptimizerGlobalService());
+    provide(TYPES.partialGlobalService, () => new PartialGlobalService());
 }
 
 {
@@ -108,6 +113,7 @@ import OptimizerConnectionService from "../services/connection/OptimizerConnecti
     provide(TYPES.performanceMarkdownService, () => new PerformanceMarkdownService());
     provide(TYPES.walkerMarkdownService, () => new WalkerMarkdownService());
     provide(TYPES.heatMarkdownService, () => new HeatMarkdownService());
+    provide(TYPES.partialMarkdownService, () => new PartialMarkdownService());
 }
 
 {

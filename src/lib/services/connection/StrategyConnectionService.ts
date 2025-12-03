@@ -22,6 +22,7 @@ import {
 } from "../../../config/emitters";
 import { IRisk } from "../../../interfaces/Risk.interface";
 import RiskConnectionService from "./RiskConnectionService";
+import { PartialConnectionService } from "./PartialConnectionService";
 
 const NOOP_RISK: IRisk = {
   checkSignal: () => Promise.resolve(true),
@@ -64,6 +65,7 @@ export class StrategyConnectionService implements IStrategy {
   private readonly methodContextService = inject<TMethodContextService>(
     TYPES.methodContextService
   );
+  private readonly partialConnectionService = inject<PartialConnectionService>(TYPES.partialConnectionService);
 
   /**
    * Retrieves memoized ClientStrategy instance for given strategy name.
@@ -84,6 +86,7 @@ export class StrategyConnectionService implements IStrategy {
         execution: this.executionContextService,
         method: this.methodContextService,
         logger: this.loggerService,
+        partial: this.partialConnectionService,
         exchange: this.exchangeConnectionService,
         risk: riskName ? this.riskConnectionService.getRisk(riskName) : NOOP_RISK,
         riskName,
