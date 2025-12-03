@@ -27,18 +27,18 @@ constructor();
 ### getData
 
 ```ts
-getData: (strategyName: string) => Promise<ScheduleStatistics>
+getData: (symbol: string, strategyName: string) => Promise<ScheduleStatistics>
 ```
 
-Gets statistical data from all scheduled signal events for a strategy.
+Gets statistical data from all scheduled signal events for a symbol-strategy pair.
 
 ### getReport
 
 ```ts
-getReport: (strategyName: string) => Promise<string>
+getReport: (symbol: string, strategyName: string) => Promise<string>
 ```
 
-Generates markdown report with all scheduled events for a strategy.
+Generates markdown report with all scheduled events for a symbol-strategy pair.
 
 ### dump
 

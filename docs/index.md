@@ -163,7 +163,6 @@ group: docs
 - [IStrategyTickResultActive](interfaces/IStrategyTickResultActive.md)
 - [IStrategyTickResultClosed](interfaces/IStrategyTickResultClosed.md)
 - [IStrategyTickResultCancelled](interfaces/IStrategyTickResultCancelled.md)
-- [IStrategy](interfaces/IStrategy.md)
 - [BacktestStatistics](interfaces/BacktestStatistics.md)
 - [IWalkerSchema](interfaces/IWalkerSchema.md)
 - [IWalkerCallbacks](interfaces/IWalkerCallbacks.md)

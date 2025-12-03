@@ -40,18 +40,18 @@ Useful for running backtests for side effects only (callbacks, logging).
 ### getData
 
 ```ts
-getData: (strategyName: string) => Promise<BacktestStatistics>
+getData: (symbol: string, strategyName: string) => Promise<BacktestStatistics>
 ```
 
-Gets statistical data from all closed signals for a strategy.
+Gets statistical data from all closed signals for a symbol-strategy pair.
 
 ### getReport
 
 ```ts
-getReport: (strategyName: string) => Promise<string>
+getReport: (symbol: string, strategyName: string) => Promise<string>
 ```
 
-Generates markdown report with all closed signals for a strategy.
+Generates markdown report with all closed signals for a symbol-strategy pair.
 
 ### dump
 

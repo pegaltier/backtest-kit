@@ -49,18 +49,18 @@ Useful for running live trading for side effects only (callbacks, persistence).
 ### getData
 
 ```ts
-getData: (strategyName: string) => Promise<LiveStatistics>
+getData: (symbol: string, strategyName: string) => Promise<LiveStatistics>
 ```
 
-Gets statistical data from all live trading events for a strategy.
+Gets statistical data from all live trading events for a symbol-strategy pair.
 
 ### getReport
 
 ```ts
-getReport: (strategyName: string) => Promise<string>
+getReport: (symbol: string, strategyName: string) => Promise<string>
 ```
 
-Generates markdown report with all events for a strategy.
+Generates markdown report with all events for a symbol-strategy pair.
 
 ### dump
 

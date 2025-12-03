@@ -24,10 +24,10 @@ constructor();
 ### getData
 
 ```ts
-static getData(strategyName: string): Promise<PerformanceStatistics>;
+static getData(symbol: string, strategyName: string): Promise<PerformanceStatistics>;
 ```
 
-Gets aggregated performance statistics for a strategy.
+Gets aggregated performance statistics for a symbol-strategy pair.
 
 Returns detailed metrics grouped by operation type:
 - Count, total duration, average, min, max
@@ -37,7 +37,7 @@ Returns detailed metrics grouped by operation type:
 ### getReport
 
 ```ts
-static getReport(strategyName: string): Promise<string>;
+static getReport(symbol: string, strategyName: string): Promise<string>;
 ```
 
 Generates markdown report with performance analysis.
@@ -57,11 +57,3 @@ Saves performance report to disk.
 
 Creates directory if it doesn't exist.
 Default path: ./dump/performance/{strategyName}.md
-
-### clear
-
-```ts
-static clear(strategyName?: string): Promise<void>;
-```
-
-Clears accumulated performance metrics from memory.

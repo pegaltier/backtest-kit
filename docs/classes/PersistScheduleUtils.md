@@ -38,10 +38,10 @@ getScheduleStorage: any
 ### readScheduleData
 
 ```ts
-readScheduleData: (strategyName: string, symbol: string) => Promise<IScheduledSignalRow>
+readScheduleData: (symbol: string, strategyName: string) => Promise<IScheduledSignalRow>
 ```
 
-Reads persisted scheduled signal data for a strategy and symbol.
+Reads persisted scheduled signal data for a symbol and strategy.
 
 Called by ClientStrategy.waitForInit() to restore scheduled signal state.
 Returns null if no scheduled signal exists.
@@ -49,7 +49,7 @@ Returns null if no scheduled signal exists.
 ### writeScheduleData
 
 ```ts
-writeScheduleData: (scheduledSignalRow: IScheduledSignalRow, strategyName: string, symbol: string) => Promise<void>
+writeScheduleData: (scheduledSignalRow: IScheduledSignalRow, symbol: string, strategyName: string) => Promise<void>
 ```
 
 Writes scheduled signal data to disk with atomic file writes.

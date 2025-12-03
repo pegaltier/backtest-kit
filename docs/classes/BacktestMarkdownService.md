@@ -35,8 +35,8 @@ Logger service for debug output
 getStorage: any
 ```
 
-Memoized function to get or create ReportStorage for a strategy.
-Each strategy gets its own isolated storage instance.
+Memoized function to get or create ReportStorage for a symbol-strategy pair.
+Each symbol-strategy combination gets its own isolated storage instance.
 
 ### tick
 
@@ -52,40 +52,40 @@ Only processes closed signals - opened signals are ignored.
 ### getData
 
 ```ts
-getData: (strategyName: string) => Promise<BacktestStatistics>
+getData: (symbol: string, strategyName: string) => Promise<BacktestStatistics>
 ```
 
-Gets statistical data from all closed signals for a strategy.
+Gets statistical data from all closed signals for a symbol-strategy pair.
 Delegates to ReportStorage.getData().
 
 ### getReport
 
 ```ts
-getReport: (strategyName: string) => Promise<string>
+getReport: (symbol: string, strategyName: string) => Promise<string>
 ```
 
-Generates markdown report with all closed signals for a strategy.
+Generates markdown report with all closed signals for a symbol-strategy pair.
 Delegates to ReportStorage.generateReport().
 
 ### dump
 
 ```ts
-dump: (strategyName: string, path?: string) => Promise<void>
+dump: (symbol: string, strategyName: string, path?: string) => Promise<void>
 ```
 
-Saves strategy report to disk.
+Saves symbol-strategy report to disk.
 Creates directory if it doesn't exist.
 Delegates to ReportStorage.dump().
 
 ### clear
 
 ```ts
-clear: (strategyName?: string) => Promise<void>
+clear: (ctx?: { symbol: string; strategyName: string; }) => Promise<void>
 ```
 
 Clears accumulated signal data from storage.
-If strategyName is provided, clears only that strategy's data.
-If strategyName is omitted, clears all strategies' data.
+If ctx is provided, clears only that specific symbol-strategy pair's data.
+If nothing is provided, clears all data.
 
 ### init
 

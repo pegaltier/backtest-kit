@@ -64,13 +64,13 @@ validate: any
 
 Validates strategy and associated risk configuration.
 
-Memoized to avoid redundant validations for the same strategy.
+Memoized to avoid redundant validations for the same symbol-strategy pair.
 Logs validation activity.
 
 ### getPendingSignal
 
 ```ts
-getPendingSignal: (strategyName: string) => Promise<ISignalRow>
+getPendingSignal: (symbol: string, strategyName: string) => Promise<ISignalRow>
 ```
 
 Retrieves the currently active pending signal for the symbol.
@@ -102,7 +102,7 @@ timestamp, and backtest mode flag.
 ### stop
 
 ```ts
-stop: (strategyName: string) => Promise<void>
+stop: (symbol: string, strategyName: string) => Promise<void>
 ```
 
 Stops the strategy from generating new signals.
@@ -113,7 +113,7 @@ Does not require execution context.
 ### clear
 
 ```ts
-clear: (strategyName?: string) => Promise<void>
+clear: (ctx?: { symbol: string; strategyName: string; }) => Promise<void>
 ```
 
 Clears the memoized ClientStrategy instance from cache.

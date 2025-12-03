@@ -119,7 +119,7 @@ getTextTemplate: (symbol: string) => Promise<string>
 ```
 
 Generates text() helper for LLM text generation.
-Uses Ollama gpt-oss:20b model for market analysis.
+Uses Ollama deepseek-v3.1:671b model for market analysis.
 
 ### getJsonTemplate
 
