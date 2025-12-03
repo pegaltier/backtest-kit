@@ -323,7 +323,7 @@ const GET_STRATEGY_CODE_FN = async (symbol: string, self: ClientOptimizer) => {
     sections.push(
       await self.params.template.getWalkerTemplate(
         walkerName,
-        `${prefix}_${exchangeName}`,
+        `${exchangeName}`,
         testFrameName,
         strategies
       )
