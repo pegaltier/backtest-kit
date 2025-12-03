@@ -1,0 +1,56 @@
+@ -1,55 +0,0 @@
+---
+title: docs/api-reference/interface/IStrategy
+group: docs
+---
+
+# IStrategy
+
+Strategy interface implemented by ClientStrategy.
+Defines core strategy execution methods.
+
+## Properties
+
+### tick
+
+```ts
+tick: (symbol: string) => Promise<IStrategyTickResult>
+```
+
+Single tick of strategy execution with VWAP monitoring.
+Checks for signal generation (throttled) and TP/SL conditions.
+
+### getPendingSignal
+
+```ts
+getPendingSignal: (symbol: string) => Promise<ISignalRow>
+```
+
+Retrieves the currently active pending signal for the symbol.
+If no active signal exists, returns null.
+Used internally for monitoring TP/SL and time expiration.
+
+### backtest
+
+```ts
+backtest: (candles: ICandleData[]) => Promise<IStrategyBacktestResult>
+```
+
+Fast backtest using historical candles.
+Iterates through candles, calculates VWAP, checks TP/SL on each candle.
+
+For scheduled signals: first monitors activation/cancellation,
+then if activated continues with TP/SL monitoring.
+
+### stop
+
+```ts
+stop: (symbol: string) => Promise<void>
+```
+
+Stops the strategy from generating new signals.
+
+Sets internal flag to prevent getSignal from being called on subsequent ticks.
+Does NOT force-close active pending signals - they continue monitoring until natural closure (TP/SL/time_expired).
+
+Use case: Graceful shutdown in live trading mode without abandoning open positions.
