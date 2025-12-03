@@ -1,3 +1,115 @@
+# Partial Profit/Loss Tracking (v1.4.0, 03/12/2025)
+
+> Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/1.4.0)
+
+**Position Scaling with Fixed Levels** 📊💰
+
+Now you can scale out positions at fixed profit/loss milestones (10%, 20%, 30%, ..., 100%)! The system automatically monitors signals and emits events when they reach specific percentage levels, enabling sophisticated risk management strategies like partial profit taking and dynamic stop-loss adjustments. Each level is triggered **exactly once per signal** with Set-based deduplication and crash-safe persistence. 🎯✨
+
+```ts
+import {
+  listenPartialProfit,
+  listenPartialLoss,
+  Constant
+} from "backtest-kit";
+
+// Listen to all profit levels (10%, 20%, 30%, ...)
+listenPartialProfit(({ symbol, signal, price, level, backtest }) => {
+  console.log(`${symbol} reached ${level}% profit at ${price}`);
+
+  // Scale out at Kelly-optimized levels
+  if (level === Constant.TP_LEVEL3) {
+    console.log("Close 33% at 25% profit");
+  }
+  if (level === Constant.TP_LEVEL2) {
+    console.log("Close 33% at 50% profit");
+  }
+  if (level === Constant.TP_LEVEL1) {
+    console.log("Close 34% at 100% profit");
+  }
+});
+
+// Listen to all loss levels (10%, 20%, 30%, ...)
+listenPartialLoss(({ symbol, signal, price, level, backtest }) => {
+  console.log(`${symbol} reached -${level}% loss at ${price}`);
+
+  // Scale out at stop levels
+  if (level === Constant.SL_LEVEL2) {
+    console.log("Close 50% at -50% loss");
+  }
+  if (level === Constant.SL_LEVEL1) {
+    console.log("Close 50% at -100% loss");
+  }
+});
+```
+
+**New Event Listeners** 🎧
+
+- **`listenPartialProfit(callback)`** - Emits for each profit level reached (10%, 20%, 30%, etc.)
+- **`listenPartialLoss(callback)`** - Emits for each loss level reached (10%, 20%, 30%, etc.)
+- **`listenPartialProfitOnce(filter, callback)`** - Fires once for first profit level
+- **`listenPartialLossOnce(filter, callback)`** - Fires once for first loss level
+
+**Constant Utility** 📐
+
+Kelly Criterion-based constants for optimal position sizing:
+
+```ts
+import { Constant } from "backtest-kit";
+
+// Take Profit Levels
+Constant.TP_LEVEL1  // 100% (aggressive target)
+Constant.TP_LEVEL2  // 50%  (moderate target)
+Constant.TP_LEVEL3  // 25%  (conservative target)
+
+// Stop Loss Levels
+Constant.SL_LEVEL1  // 100% (maximum risk)
+Constant.SL_LEVEL2  // 50%  (standard stop)
+```
+
+**Partial Statistics & Reports** 📈
+
+```ts
+import { Partial } from "backtest-kit";
+
+// Get statistical data
+const stats = await Partial.getData("BTCUSDT");
+console.log(stats);
+// {
+//   totalEvents: 15,
+//   totalProfit: 10,
+//   totalLoss: 5,
+//   eventList: [...]
+// }
+
+// Generate markdown report
+const markdown = await Partial.getReport("BTCUSDT");
+
+// Save to disk
+await Partial.dump("BTCUSDT"); // ./dump/partial/BTCUSDT.md
+```
+
+**Strategy-Level Callbacks** 🎯
+
+```ts
+addStrategy({
+  strategyName: "my-strategy",
+  interval: "5m",
+  getSignal: async (symbol) => { /* ... */ },
+  callbacks: {
+    onPartialProfit: (symbol, data, currentPrice, revenuePercent, backtest) => {
+      console.log(`Signal ${data.id} at ${revenuePercent.toFixed(2)}% profit`);
+    },
+    onPartialLoss: (symbol, data, currentPrice, lossPercent, backtest) => {
+      console.log(`Signal ${data.id} at ${lossPercent.toFixed(2)}% loss`);
+    },
+  },
+});
+```
+
+
+
+
 # Immediate Activation (v1.3.0, 01/12/2025)
 
 > Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/1.3.0)
