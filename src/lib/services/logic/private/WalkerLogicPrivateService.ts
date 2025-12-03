@@ -90,8 +90,15 @@ export class WalkerLogicPrivateService {
     let bestMetric: number | null = null;
     let bestStrategy: StrategyName | null = null;
 
+    let pendingStrategy: string;
+
     const listenStop = walkerStopSubject
-      .filter((walkerName) => walkerName === context.walkerName)
+      .filter((data) => {
+        let isOk = true;
+        isOk = isOk && data.symbol === symbol;
+        isOk = isOk && data.strategyName === pendingStrategy;
+        return isOk;
+      })
       .map(() => CANCEL_SYMBOL)
       .toPromise();
 
@@ -111,6 +118,8 @@ export class WalkerLogicPrivateService {
         exchangeName: context.exchangeName,
         frameName: context.frameName,
       });
+
+      pendingStrategy = strategyName;
 
       const result = await Promise.race([
         await resolveDocuments(iterator),
@@ -133,7 +142,7 @@ export class WalkerLogicPrivateService {
       });
 
       // Get statistics from BacktestMarkdownService
-      const stats = await this.backtestMarkdownService.getData(strategyName);
+      const stats = await this.backtestMarkdownService.getData(symbol, strategyName);
 
       // Extract metric value
       const value = stats[metric];
@@ -209,7 +218,7 @@ export class WalkerLogicPrivateService {
       bestMetric,
       bestStats:
         bestStrategy !== null
-          ? await this.backtestMarkdownService.getData(bestStrategy)
+          ? await this.backtestMarkdownService.getData(symbol, bestStrategy)
           : null,
     };
 

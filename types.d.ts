@@ -973,61 +973,6 @@ type IStrategyTickResult = IStrategyTickResultIdle | IStrategyTickResultSchedule
  */
 type IStrategyBacktestResult = IStrategyTickResultClosed | IStrategyTickResultCancelled;
 /**
- * Strategy interface implemented by ClientStrategy.
- * Defines core strategy execution methods.
- */
-interface IStrategy {
-    /**
-     * Single tick of strategy execution with VWAP monitoring.
-     * Checks for signal generation (throttled) and TP/SL conditions.
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @returns Promise resolving to tick result (idle | opened | active | closed)
-     */
-    tick: (symbol: string) => Promise<IStrategyTickResult>;
-    /**
-     * Retrieves the currently active pending signal for the symbol.
-     * If no active signal exists, returns null.
-     * Used internally for monitoring TP/SL and time expiration.
-     *
-     * @param symbol
-     * @returns
-     */
-    getPendingSignal: (symbol: string) => Promise<ISignalRow | null>;
-    /**
-     * Fast backtest using historical candles.
-     * Iterates through candles, calculates VWAP, checks TP/SL on each candle.
-     *
-     * For scheduled signals: first monitors activation/cancellation,
-     * then if activated continues with TP/SL monitoring.
-     *
-     * @param candles - Array of historical candle data
-     * @returns Promise resolving to closed result (always completes signal)
-     */
-    backtest: (candles: ICandleData[]) => Promise<IStrategyBacktestResult>;
-    /**
-     * Stops the strategy from generating new signals.
-     *
-     * Sets internal flag to prevent getSignal from being called on subsequent ticks.
-     * Does NOT force-close active pending signals - they continue monitoring until natural closure (TP/SL/time_expired).
-     *
-     * Use case: Graceful shutdown in live trading mode without abandoning open positions.
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @returns Promise that resolves immediately when stop flag is set
-     *
-     * @example
-     * ```typescript
-     * // Graceful shutdown in Live.background() cancellation
-     * const cancel = await Live.background("BTCUSDT", { ... });
-     *
-     * // Later: stop new signals, let existing ones close naturally
-     * await cancel();
-     * ```
-     */
-    stop: (symbol: string) => Promise<void>;
-}
-/**
  * Unique strategy identifier.
  */
 type StrategyName = string;
@@ -1109,8 +1054,8 @@ declare class BacktestMarkdownService {
     /** Logger service for debug output */
     private readonly loggerService;
     /**
-     * Memoized function to get or create ReportStorage for a strategy.
-     * Each strategy gets its own isolated storage instance.
+     * Memoized function to get or create ReportStorage for a symbol-strategy pair.
+     * Each symbol-strategy combination gets its own isolated storage instance.
      */
     private getStorage;
     /**
@@ -1134,40 +1079,43 @@ declare class BacktestMarkdownService {
      */
     private tick;
     /**
-     * Gets statistical data from all closed signals for a strategy.
+     * Gets statistical data from all closed signals for a symbol-strategy pair.
      * Delegates to ReportStorage.getData().
      *
+     * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to get data for
      * @returns Statistical data object with all metrics
      *
      * @example
      * ```typescript
      * const service = new BacktestMarkdownService();
-     * const stats = await service.getData("my-strategy");
+     * const stats = await service.getData("BTCUSDT", "my-strategy");
      * console.log(stats.sharpeRatio, stats.winRate);
      * ```
      */
-    getData: (strategyName: StrategyName) => Promise<BacktestStatistics>;
+    getData: (symbol: string, strategyName: StrategyName) => Promise<BacktestStatistics>;
     /**
-     * Generates markdown report with all closed signals for a strategy.
+     * Generates markdown report with all closed signals for a symbol-strategy pair.
      * Delegates to ReportStorage.generateReport().
      *
+     * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to generate report for
      * @returns Markdown formatted report string with table of all closed signals
      *
      * @example
      * ```typescript
      * const service = new BacktestMarkdownService();
-     * const markdown = await service.getReport("my-strategy");
+     * const markdown = await service.getReport("BTCUSDT", "my-strategy");
      * console.log(markdown);
      * ```
      */
-    getReport: (strategyName: StrategyName) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName) => Promise<string>;
     /**
-     * Saves strategy report to disk.
+     * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
      * Delegates to ReportStorage.dump().
      *
+     * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to save report for
      * @param path - Directory path to save report (default: "./dump/backtest")
      *
@@ -1176,32 +1124,35 @@ declare class BacktestMarkdownService {
      * const service = new BacktestMarkdownService();
      *
      * // Save to default path: ./dump/backtest/my-strategy.md
-     * await service.dump("my-strategy");
+     * await service.dump("BTCUSDT", "my-strategy");
      *
      * // Save to custom path: ./custom/path/my-strategy.md
-     * await service.dump("my-strategy", "./custom/path");
+     * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
      * ```
      */
-    dump: (strategyName: StrategyName, path?: string) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, path?: string) => Promise<void>;
     /**
      * Clears accumulated signal data from storage.
-     * If strategyName is provided, clears only that strategy's data.
-     * If strategyName is omitted, clears all strategies' data.
+     * If ctx is provided, clears only that specific symbol-strategy pair's data.
+     * If nothing is provided, clears all data.
      *
-     * @param strategyName - Optional strategy name to clear specific strategy data
+     * @param ctx - Optional context with symbol and strategyName
      *
      * @example
      * ```typescript
      * const service = new BacktestMarkdownService();
      *
-     * // Clear specific strategy data
-     * await service.clear("my-strategy");
+     * // Clear specific symbol-strategy pair
+     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy" });
      *
-     * // Clear all strategies' data
+     * // Clear all data
      * await service.clear();
      * ```
      */
-    clear: (strategyName?: StrategyName) => Promise<void>;
+    clear: (ctx?: {
+        symbol: string;
+        strategyName: StrategyName;
+    }) => Promise<void>;
     /**
      * Initializes the service by subscribing to backtest signal events.
      * Uses singleshot to ensure initialization happens only once.
@@ -3809,8 +3760,8 @@ declare class LiveMarkdownService {
     /** Logger service for debug output */
     private readonly loggerService;
     /**
-     * Memoized function to get or create ReportStorage for a strategy.
-     * Each strategy gets its own isolated storage instance.
+     * Memoized function to get or create ReportStorage for a symbol-strategy pair.
+     * Each symbol-strategy combination gets its own isolated storage instance.
      */
     private getStorage;
     /**
@@ -3836,40 +3787,43 @@ declare class LiveMarkdownService {
      */
     private tick;
     /**
-     * Gets statistical data from all live trading events for a strategy.
+     * Gets statistical data from all live trading events for a symbol-strategy pair.
      * Delegates to ReportStorage.getData().
      *
+     * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to get data for
      * @returns Statistical data object with all metrics
      *
      * @example
      * ```typescript
      * const service = new LiveMarkdownService();
-     * const stats = await service.getData("my-strategy");
+     * const stats = await service.getData("BTCUSDT", "my-strategy");
      * console.log(stats.sharpeRatio, stats.winRate);
      * ```
      */
-    getData: (strategyName: StrategyName) => Promise<LiveStatistics>;
+    getData: (symbol: string, strategyName: StrategyName) => Promise<LiveStatistics>;
     /**
-     * Generates markdown report with all events for a strategy.
+     * Generates markdown report with all events for a symbol-strategy pair.
      * Delegates to ReportStorage.getReport().
      *
+     * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to generate report for
      * @returns Markdown formatted report string with table of all events
      *
      * @example
      * ```typescript
      * const service = new LiveMarkdownService();
-     * const markdown = await service.getReport("my-strategy");
+     * const markdown = await service.getReport("BTCUSDT", "my-strategy");
      * console.log(markdown);
      * ```
      */
-    getReport: (strategyName: StrategyName) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName) => Promise<string>;
     /**
-     * Saves strategy report to disk.
+     * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
      * Delegates to ReportStorage.dump().
      *
+     * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to save report for
      * @param path - Directory path to save report (default: "./dump/live")
      *
@@ -3878,32 +3832,35 @@ declare class LiveMarkdownService {
      * const service = new LiveMarkdownService();
      *
      * // Save to default path: ./dump/live/my-strategy.md
-     * await service.dump("my-strategy");
+     * await service.dump("BTCUSDT", "my-strategy");
      *
      * // Save to custom path: ./custom/path/my-strategy.md
-     * await service.dump("my-strategy", "./custom/path");
+     * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
      * ```
      */
-    dump: (strategyName: StrategyName, path?: string) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, path?: string) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
-     * If strategyName is provided, clears only that strategy's data.
-     * If strategyName is omitted, clears all strategies' data.
+     * If ctx is provided, clears only that specific symbol-strategy pair's data.
+     * If nothing is provided, clears all data.
      *
-     * @param strategyName - Optional strategy name to clear specific strategy data
+     * @param ctx - Optional context with symbol and strategyName
      *
      * @example
      * ```typescript
      * const service = new LiveMarkdownService();
      *
-     * // Clear specific strategy data
-     * await service.clear("my-strategy");
+     * // Clear specific symbol-strategy pair
+     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy" });
      *
-     * // Clear all strategies' data
+     * // Clear all data
      * await service.clear();
      * ```
      */
-    clear: (strategyName?: StrategyName) => Promise<void>;
+    clear: (ctx?: {
+        symbol: string;
+        strategyName: StrategyName;
+    }) => Promise<void>;
     /**
      * Initializes the service by subscribing to live signal events.
      * Uses singleshot to ensure initialization happens only once.
@@ -4009,8 +3966,8 @@ declare class ScheduleMarkdownService {
     /** Logger service for debug output */
     private readonly loggerService;
     /**
-     * Memoized function to get or create ReportStorage for a strategy.
-     * Each strategy gets its own isolated storage instance.
+     * Memoized function to get or create ReportStorage for a symbol-strategy pair.
+     * Each symbol-strategy combination gets its own isolated storage instance.
      */
     private getStorage;
     /**
@@ -4029,40 +3986,43 @@ declare class ScheduleMarkdownService {
      */
     private tick;
     /**
-     * Gets statistical data from all scheduled signal events for a strategy.
+     * Gets statistical data from all scheduled signal events for a symbol-strategy pair.
      * Delegates to ReportStorage.getData().
      *
+     * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to get data for
      * @returns Statistical data object with all metrics
      *
      * @example
      * ```typescript
      * const service = new ScheduleMarkdownService();
-     * const stats = await service.getData("my-strategy");
+     * const stats = await service.getData("BTCUSDT", "my-strategy");
      * console.log(stats.cancellationRate, stats.avgWaitTime);
      * ```
      */
-    getData: (strategyName: StrategyName) => Promise<ScheduleStatistics>;
+    getData: (symbol: string, strategyName: StrategyName) => Promise<ScheduleStatistics>;
     /**
-     * Generates markdown report with all scheduled events for a strategy.
+     * Generates markdown report with all scheduled events for a symbol-strategy pair.
      * Delegates to ReportStorage.getReport().
      *
+     * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to generate report for
      * @returns Markdown formatted report string with table of all events
      *
      * @example
      * ```typescript
      * const service = new ScheduleMarkdownService();
-     * const markdown = await service.getReport("my-strategy");
+     * const markdown = await service.getReport("BTCUSDT", "my-strategy");
      * console.log(markdown);
      * ```
      */
-    getReport: (strategyName: StrategyName) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName) => Promise<string>;
     /**
-     * Saves strategy report to disk.
+     * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
      * Delegates to ReportStorage.dump().
      *
+     * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to save report for
      * @param path - Directory path to save report (default: "./dump/schedule")
      *
@@ -4071,32 +4031,35 @@ declare class ScheduleMarkdownService {
      * const service = new ScheduleMarkdownService();
      *
      * // Save to default path: ./dump/schedule/my-strategy.md
-     * await service.dump("my-strategy");
+     * await service.dump("BTCUSDT", "my-strategy");
      *
      * // Save to custom path: ./custom/path/my-strategy.md
-     * await service.dump("my-strategy", "./custom/path");
+     * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
      * ```
      */
-    dump: (strategyName: StrategyName, path?: string) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, path?: string) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
-     * If strategyName is provided, clears only that strategy's data.
-     * If strategyName is omitted, clears all strategies' data.
+     * If ctx is provided, clears only that specific symbol-strategy pair's data.
+     * If nothing is provided, clears all data.
      *
-     * @param strategyName - Optional strategy name to clear specific strategy data
+     * @param ctx - Optional context with symbol and strategyName
      *
      * @example
      * ```typescript
      * const service = new ScheduleMarkdownService();
      *
-     * // Clear specific strategy data
-     * await service.clear("my-strategy");
+     * // Clear specific symbol-strategy pair
+     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy" });
      *
-     * // Clear all strategies' data
+     * // Clear all data
      * await service.clear();
      * ```
      */
-    clear: (strategyName?: StrategyName) => Promise<void>;
+    clear: (ctx?: {
+        symbol: string;
+        strategyName: StrategyName;
+    }) => Promise<void>;
     /**
      * Initializes the service by subscribing to live signal events.
      * Uses singleshot to ensure initialization happens only once.
@@ -4188,8 +4151,8 @@ declare class PerformanceMarkdownService {
     /** Logger service for debug output */
     private readonly loggerService;
     /**
-     * Memoized function to get or create PerformanceStorage for a strategy.
-     * Each strategy gets its own isolated storage instance.
+     * Memoized function to get or create PerformanceStorage for a symbol-strategy pair.
+     * Each symbol-strategy combination gets its own isolated storage instance.
      */
     private getStorage;
     /**
@@ -4200,55 +4163,62 @@ declare class PerformanceMarkdownService {
      */
     private track;
     /**
-     * Gets aggregated performance statistics for a strategy.
+     * Gets aggregated performance statistics for a symbol-strategy pair.
      *
+     * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to get data for
      * @returns Performance statistics with aggregated metrics
      *
      * @example
      * ```typescript
-     * const stats = await performanceService.getData("my-strategy");
+     * const stats = await performanceService.getData("BTCUSDT", "my-strategy");
      * console.log("Total time:", stats.totalDuration);
      * console.log("Slowest operation:", Object.values(stats.metricStats)
      *   .sort((a, b) => b.avgDuration - a.avgDuration)[0]);
      * ```
      */
-    getData: (strategyName: string) => Promise<PerformanceStatistics>;
+    getData: (symbol: string, strategyName: string) => Promise<PerformanceStatistics>;
     /**
      * Generates markdown report with performance analysis.
      *
+     * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to generate report for
      * @returns Markdown formatted report string
      *
      * @example
      * ```typescript
-     * const markdown = await performanceService.getReport("my-strategy");
+     * const markdown = await performanceService.getReport("BTCUSDT", "my-strategy");
      * console.log(markdown);
      * ```
      */
-    getReport: (strategyName: string) => Promise<string>;
+    getReport: (symbol: string, strategyName: string) => Promise<string>;
     /**
      * Saves performance report to disk.
      *
+     * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to save report for
      * @param path - Directory path to save report
      *
      * @example
      * ```typescript
      * // Save to default path: ./dump/performance/my-strategy.md
-     * await performanceService.dump("my-strategy");
+     * await performanceService.dump("BTCUSDT", "my-strategy");
      *
      * // Save to custom path
-     * await performanceService.dump("my-strategy", "./custom/path");
+     * await performanceService.dump("BTCUSDT", "my-strategy", "./custom/path");
      * ```
      */
-    dump: (strategyName: string, path?: string) => Promise<void>;
+    dump: (symbol: string, strategyName: string, path?: string) => Promise<void>;
     /**
      * Clears accumulated performance data from storage.
      *
-     * @param strategyName - Optional strategy name to clear specific strategy data
+     * @param symbol - Optional trading pair symbol
+     * @param strategyName - Optional strategy name
      */
-    clear: (strategyName?: string) => Promise<void>;
+    clear: (ctx?: {
+        symbol: string;
+        strategyName: string;
+    }) => Promise<void>;
     /**
      * Initializes the service by subscribing to performance events.
      * Uses singleshot to ensure initialization happens only once.
@@ -4772,16 +4742,16 @@ declare class PersistSignalUtils {
      */
     usePersistSignalAdapter(Ctor: TPersistBaseCtor<StrategyName, SignalData>): void;
     /**
-     * Reads persisted signal data for a strategy and symbol.
+     * Reads persisted signal data for a symbol and strategy.
      *
      * Called by ClientStrategy.waitForInit() to restore state.
      * Returns null if no signal exists.
      *
-     * @param strategyName - Strategy identifier
      * @param symbol - Trading pair symbol
+     * @param strategyName - Strategy identifier
      * @returns Promise resolving to signal or null
      */
-    readSignalData: (strategyName: StrategyName, symbol: string) => Promise<ISignalRow | null>;
+    readSignalData: (symbol: string, strategyName: StrategyName) => Promise<ISignalRow | null>;
     /**
      * Writes signal data to disk with atomic file writes.
      *
@@ -4789,11 +4759,11 @@ declare class PersistSignalUtils {
      * Uses atomic writes to prevent corruption on crashes.
      *
      * @param signalRow - Signal data (null to clear)
-     * @param strategyName - Strategy identifier
      * @param symbol - Trading pair symbol
+     * @param strategyName - Strategy identifier
      * @returns Promise that resolves when write is complete
      */
-    writeSignalData: (signalRow: ISignalRow | null, strategyName: StrategyName, symbol: string) => Promise<void>;
+    writeSignalData: (signalRow: ISignalRow | null, symbol: string, strategyName: StrategyName) => Promise<void>;
 }
 /**
  * Global singleton instance of PersistSignalUtils.
@@ -4920,16 +4890,16 @@ declare class PersistScheduleUtils {
      */
     usePersistScheduleAdapter(Ctor: TPersistBaseCtor<StrategyName, ScheduleData>): void;
     /**
-     * Reads persisted scheduled signal data for a strategy and symbol.
+     * Reads persisted scheduled signal data for a symbol and strategy.
      *
      * Called by ClientStrategy.waitForInit() to restore scheduled signal state.
      * Returns null if no scheduled signal exists.
      *
-     * @param strategyName - Strategy identifier
      * @param symbol - Trading pair symbol
+     * @param strategyName - Strategy identifier
      * @returns Promise resolving to scheduled signal or null
      */
-    readScheduleData: (strategyName: StrategyName, symbol: string) => Promise<IScheduledSignalRow | null>;
+    readScheduleData: (symbol: string, strategyName: StrategyName) => Promise<IScheduledSignalRow | null>;
     /**
      * Writes scheduled signal data to disk with atomic file writes.
      *
@@ -4937,11 +4907,11 @@ declare class PersistScheduleUtils {
      * Uses atomic writes to prevent corruption on crashes.
      *
      * @param scheduledSignalRow - Scheduled signal data (null to clear)
-     * @param strategyName - Strategy identifier
      * @param symbol - Trading pair symbol
+     * @param strategyName - Strategy identifier
      * @returns Promise that resolves when write is complete
      */
-    writeScheduleData: (scheduledSignalRow: IScheduledSignalRow | null, strategyName: StrategyName, symbol: string) => Promise<void>;
+    writeScheduleData: (scheduledSignalRow: IScheduledSignalRow | null, symbol: string, strategyName: StrategyName) => Promise<void>;
 }
 /**
  * Global singleton instance of PersistScheduleUtils.
@@ -5093,31 +5063,33 @@ declare class BacktestUtils {
         frameName: string;
     }) => () => void;
     /**
-     * Gets statistical data from all closed signals for a strategy.
+     * Gets statistical data from all closed signals for a symbol-strategy pair.
      *
+     * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to get data for
      * @returns Promise resolving to statistical data object
      *
      * @example
      * ```typescript
-     * const stats = await Backtest.getData("my-strategy");
+     * const stats = await Backtest.getData("BTCUSDT", "my-strategy");
      * console.log(stats.sharpeRatio, stats.winRate);
      * ```
      */
-    getData: (strategyName: StrategyName) => Promise<BacktestStatistics>;
+    getData: (symbol: string, strategyName: StrategyName) => Promise<BacktestStatistics>;
     /**
-     * Generates markdown report with all closed signals for a strategy.
+     * Generates markdown report with all closed signals for a symbol-strategy pair.
      *
+     * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to generate report for
      * @returns Promise resolving to markdown formatted report string
      *
      * @example
      * ```typescript
-     * const markdown = await Backtest.getReport("my-strategy");
+     * const markdown = await Backtest.getReport("BTCUSDT", "my-strategy");
      * console.log(markdown);
      * ```
      */
-    getReport: (strategyName: StrategyName) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName) => Promise<string>;
     /**
      * Saves strategy report to disk.
      *
@@ -5225,31 +5197,33 @@ declare class LiveUtils {
         exchangeName: string;
     }) => () => void;
     /**
-     * Gets statistical data from all live trading events for a strategy.
+     * Gets statistical data from all live trading events for a symbol-strategy pair.
      *
+     * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to get data for
      * @returns Promise resolving to statistical data object
      *
      * @example
      * ```typescript
-     * const stats = await Live.getData("my-strategy");
+     * const stats = await Live.getData("BTCUSDT", "my-strategy");
      * console.log(stats.sharpeRatio, stats.winRate);
      * ```
      */
-    getData: (strategyName: StrategyName) => Promise<LiveStatistics>;
+    getData: (symbol: string, strategyName: StrategyName) => Promise<LiveStatistics>;
     /**
-     * Generates markdown report with all events for a strategy.
+     * Generates markdown report with all events for a symbol-strategy pair.
      *
+     * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to generate report for
      * @returns Promise resolving to markdown formatted report string
      *
      * @example
      * ```typescript
-     * const markdown = await Live.getReport("my-strategy");
+     * const markdown = await Live.getReport("BTCUSDT", "my-strategy");
      * console.log(markdown);
      * ```
      */
-    getReport: (strategyName: StrategyName) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName) => Promise<string>;
     /**
      * Saves strategy report to disk.
      *
@@ -5311,31 +5285,33 @@ declare const Live: LiveUtils;
  */
 declare class ScheduleUtils {
     /**
-     * Gets statistical data from all scheduled signal events for a strategy.
+     * Gets statistical data from all scheduled signal events for a symbol-strategy pair.
      *
+     * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to get data for
      * @returns Promise resolving to statistical data object
      *
      * @example
      * ```typescript
-     * const stats = await Schedule.getData("my-strategy");
+     * const stats = await Schedule.getData("BTCUSDT", "my-strategy");
      * console.log(stats.cancellationRate, stats.avgWaitTime);
      * ```
      */
-    getData: (strategyName: StrategyName) => Promise<ScheduleStatistics>;
+    getData: (symbol: string, strategyName: StrategyName) => Promise<ScheduleStatistics>;
     /**
-     * Generates markdown report with all scheduled events for a strategy.
+     * Generates markdown report with all scheduled events for a symbol-strategy pair.
      *
+     * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to generate report for
      * @returns Promise resolving to markdown formatted report string
      *
      * @example
      * ```typescript
-     * const markdown = await Schedule.getReport("my-strategy");
+     * const markdown = await Schedule.getReport("BTCUSDT", "my-strategy");
      * console.log(markdown);
      * ```
      */
-    getReport: (strategyName: StrategyName) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName) => Promise<string>;
     /**
      * Saves strategy report to disk.
      *
@@ -5399,19 +5375,20 @@ declare const Schedule: ScheduleUtils;
  */
 declare class Performance {
     /**
-     * Gets aggregated performance statistics for a strategy.
+     * Gets aggregated performance statistics for a symbol-strategy pair.
      *
      * Returns detailed metrics grouped by operation type:
      * - Count, total duration, average, min, max
      * - Standard deviation for volatility
      * - Percentiles (median, P95, P99) for outlier detection
      *
+     * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to analyze
      * @returns Performance statistics with aggregated metrics
      *
      * @example
      * ```typescript
-     * const stats = await Performance.getData("my-strategy");
+     * const stats = await Performance.getData("BTCUSDT", "my-strategy");
      *
      * // Find slowest operation type
      * const slowest = Object.values(stats.metricStats)
@@ -5426,7 +5403,7 @@ declare class Performance {
      * }
      * ```
      */
-    static getData(strategyName: string): Promise<PerformanceStatistics>;
+    static getData(symbol: string, strategyName: string): Promise<PerformanceStatistics>;
     /**
      * Generates markdown report with performance analysis.
      *
@@ -5435,12 +5412,13 @@ declare class Performance {
      * - Detailed metrics table with statistics
      * - Percentile analysis for bottleneck detection
      *
+     * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to generate report for
      * @returns Markdown formatted report string
      *
      * @example
      * ```typescript
-     * const markdown = await Performance.getReport("my-strategy");
+     * const markdown = await Performance.getReport("BTCUSDT", "my-strategy");
      * console.log(markdown);
      *
      * // Or save to file
@@ -5448,7 +5426,7 @@ declare class Performance {
      * await fs.writeFile("performance-report.md", markdown);
      * ```
      */
-    static getReport(strategyName: string): Promise<string>;
+    static getReport(symbol: string, strategyName: string): Promise<string>;
     /**
      * Saves performance report to disk.
      *
@@ -5468,21 +5446,6 @@ declare class Performance {
      * ```
      */
     static dump(strategyName: string, path?: string): Promise<void>;
-    /**
-     * Clears accumulated performance metrics from memory.
-     *
-     * @param strategyName - Optional strategy name to clear specific strategy's metrics
-     *
-     * @example
-     * ```typescript
-     * // Clear specific strategy metrics
-     * await Performance.clear("my-strategy");
-     *
-     * // Clear all metrics for all strategies
-     * await Performance.clear();
-     * ```
-     */
-    static clear(strategyName?: string): Promise<void>;
 }
 
 /**
@@ -6177,7 +6140,10 @@ declare const walkerCompleteSubject: Subject<IWalkerResults>;
  * Walker stop emitter for walker cancellation events.
  * Emits when a walker comparison is stopped/cancelled.
  */
-declare const walkerStopSubject: Subject<string>;
+declare const walkerStopSubject: Subject<{
+    symbol: string;
+    strategyName: StrategyName;
+}>;
 /**
  * Validation emitter for risk validation errors.
  * Emits when risk validation functions throw errors during signal checking.
@@ -6440,24 +6406,23 @@ declare class ExchangeConnectionService implements IExchange {
  * Connection service routing strategy operations to correct ClientStrategy instance.
  *
  * Routes all IStrategy method calls to the appropriate strategy implementation
- * based on methodContextService.context.strategyName. Uses memoization to cache
+ * based on symbol-strategy pairs. Uses memoization to cache
  * ClientStrategy instances for performance.
  *
  * Key features:
- * - Automatic strategy routing via method context
- * - Memoized ClientStrategy instances by strategyName
- * - Implements IStrategy interface
+ * - Automatic strategy routing via symbol-strategy pairs
+ * - Memoized ClientStrategy instances by symbol:strategyName
  * - Ensures initialization with waitForInit() before operations
  * - Handles both tick() (live) and backtest() operations
  *
  * @example
  * ```typescript
  * // Used internally by framework
- * const result = await strategyConnectionService.tick();
- * // Automatically routes to correct strategy based on methodContext
+ * const result = await strategyConnectionService.tick(symbol, strategyName);
+ * // Routes to correct strategy instance for symbol-strategy pair
  * ```
  */
-declare class StrategyConnectionService implements IStrategy {
+declare class StrategyConnectionService {
     private readonly loggerService;
     private readonly executionContextService;
     private readonly strategySchemaService;
@@ -6466,11 +6431,12 @@ declare class StrategyConnectionService implements IStrategy {
     private readonly methodContextService;
     private readonly partialConnectionService;
     /**
-     * Retrieves memoized ClientStrategy instance for given strategy name.
+     * Retrieves memoized ClientStrategy instance for given symbol-strategy pair.
      *
      * Creates ClientStrategy on first call, returns cached instance on subsequent calls.
-     * Cache key is strategyName string.
+     * Cache key is symbol:strategyName string.
      *
+     * @param symbol - Trading pair symbol
      * @param strategyName - Name of registered strategy schema
      * @returns Configured ClientStrategy instance
      */
@@ -6480,49 +6446,58 @@ declare class StrategyConnectionService implements IStrategy {
      * If no active signal exists, returns null.
      * Used internally for monitoring TP/SL and time expiration.
      *
+     * @param symbol - Trading pair symbol
      * @param strategyName - Name of strategy to get pending signal for
      *
      * @returns Promise resolving to pending signal or null
      */
-    getPendingSignal: (strategyName: StrategyName) => Promise<ISignalRow | null>;
+    getPendingSignal: (symbol: string, strategyName: StrategyName) => Promise<ISignalRow | null>;
     /**
      * Executes live trading tick for current strategy.
      *
      * Waits for strategy initialization before processing tick.
      * Evaluates current market conditions and returns signal state.
      *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Name of strategy to tick
      * @returns Promise resolving to tick result (idle, opened, active, closed)
      */
-    tick: () => Promise<IStrategyTickResult>;
+    tick: (symbol: string, strategyName: StrategyName) => Promise<IStrategyTickResult>;
     /**
      * Executes backtest for current strategy with provided candles.
      *
      * Waits for strategy initialization before processing candles.
      * Evaluates strategy signals against historical data.
      *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Name of strategy to backtest
      * @param candles - Array of historical candle data to backtest
      * @returns Promise resolving to backtest result (signal or idle)
      */
-    backtest: (candles: ICandleData[]) => Promise<IStrategyBacktestResult>;
+    backtest: (symbol: string, strategyName: StrategyName, candles: ICandleData[]) => Promise<IStrategyBacktestResult>;
     /**
      * Stops the specified strategy from generating new signals.
      *
      * Delegates to ClientStrategy.stop() which sets internal flag to prevent
      * getSignal from being called on subsequent ticks.
      *
+     * @param symbol - Trading pair symbol
      * @param strategyName - Name of strategy to stop
      * @returns Promise that resolves when stop flag is set
      */
-    stop: (strategyName: StrategyName) => Promise<void>;
+    stop: (symbol: string, strategyName: StrategyName) => Promise<void>;
     /**
      * Clears the memoized ClientStrategy instance from cache.
      *
      * Forces re-initialization of strategy on next getStrategy call.
      * Useful for resetting strategy state or releasing resources.
      *
-     * @param strategyName - Name of strategy to clear from cache
+     * @param ctx - Optional context with symbol and strategyName (clears all if not provided)
      */
-    clear: (strategyName: StrategyName) => Promise<void>;
+    clear: (ctx?: {
+        symbol: string;
+        strategyName: StrategyName;
+    }) => Promise<void>;
 }
 
 /**
@@ -6926,8 +6901,9 @@ declare class StrategyGlobalService {
     /**
      * Validates strategy and associated risk configuration.
      *
-     * Memoized to avoid redundant validations for the same strategy.
+     * Memoized to avoid redundant validations for the same symbol-strategy pair.
      * Logs validation activity.
+     * @param symbol - Trading pair symbol
      * @param strategyName - Name of the strategy to validate
      * @returns Promise that resolves when validation is complete
      */
@@ -6938,11 +6914,10 @@ declare class StrategyGlobalService {
      * Used internally for monitoring TP/SL and time expiration.
      *
      * @param symbol - Trading pair symbol
-     * @param when - Timestamp for tick evaluation
-     * @param backtest - Whether running in backtest mode
+     * @param strategyName - Name of the strategy
      * @returns Promise resolving to pending signal or null
      */
-    getPendingSignal: (strategyName: StrategyName) => Promise<ISignalRow | null>;
+    getPendingSignal: (symbol: string, strategyName: StrategyName) => Promise<ISignalRow | null>;
     /**
      * Checks signal status at a specific timestamp.
      *
@@ -6974,19 +6949,23 @@ declare class StrategyGlobalService {
      * Delegates to StrategyConnectionService.stop() to set internal flag.
      * Does not require execution context.
      *
+     * @param symbol - Trading pair symbol
      * @param strategyName - Name of strategy to stop
      * @returns Promise that resolves when stop flag is set
      */
-    stop: (strategyName: StrategyName) => Promise<void>;
+    stop: (symbol: string, strategyName: StrategyName) => Promise<void>;
     /**
      * Clears the memoized ClientStrategy instance from cache.
      *
      * Delegates to StrategyConnectionService.clear() to remove strategy from cache.
      * Forces re-initialization of strategy on next operation.
      *
-     * @param strategyName - Name of strategy to clear from cache
+     * @param ctx - Optional context with symbol and strategyName (clears all if not provided)
      */
-    clear: (strategyName?: StrategyName) => Promise<void>;
+    clear: (ctx?: {
+        symbol: string;
+        strategyName: StrategyName;
+    }) => Promise<void>;
 }
 
 /**
@@ -8199,7 +8178,7 @@ declare class OptimizerTemplateService implements IOptimizerTemplate {
     getJsonDumpTemplate: (symbol: string) => Promise<string>;
     /**
      * Generates text() helper for LLM text generation.
-     * Uses Ollama gpt-oss:20b model for market analysis.
+     * Uses Ollama deepseek-v3.1:671b model for market analysis.
      *
      * @param symbol - Trading pair symbol (used in prompt)
      * @returns Generated async text() function

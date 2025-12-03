@@ -376,11 +376,11 @@ export class ScheduleMarkdownService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
   /**
-   * Memoized function to get or create ReportStorage for a strategy.
-   * Each strategy gets its own isolated storage instance.
+   * Memoized function to get or create ReportStorage for a symbol-strategy pair.
+   * Each symbol-strategy combination gets its own isolated storage instance.
    */
-  private getStorage = memoize<(strategyName: string) => ReportStorage>(
-    ([strategyName]) => `${strategyName}`,
+  private getStorage = memoize<(symbol: string, strategyName: string) => ReportStorage>(
+    ([symbol, strategyName]) => `${symbol}:${strategyName}`,
     () => new ReportStorage()
   );
 
@@ -403,7 +403,7 @@ export class ScheduleMarkdownService {
       data,
     });
 
-    const storage = this.getStorage(data.strategyName);
+    const storage = this.getStorage(data.symbol, data.strategyName);
 
     if (data.action === "scheduled") {
       storage.addScheduledEvent(data);
@@ -413,56 +413,62 @@ export class ScheduleMarkdownService {
   };
 
   /**
-   * Gets statistical data from all scheduled signal events for a strategy.
+   * Gets statistical data from all scheduled signal events for a symbol-strategy pair.
    * Delegates to ReportStorage.getData().
    *
+   * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to get data for
    * @returns Statistical data object with all metrics
    *
    * @example
    * ```typescript
    * const service = new ScheduleMarkdownService();
-   * const stats = await service.getData("my-strategy");
+   * const stats = await service.getData("BTCUSDT", "my-strategy");
    * console.log(stats.cancellationRate, stats.avgWaitTime);
    * ```
    */
   public getData = async (
+    symbol: string,
     strategyName: StrategyName
   ): Promise<ScheduleStatistics> => {
     this.loggerService.log("scheduleMarkdownService getData", {
+      symbol,
       strategyName,
     });
-    const storage = this.getStorage(strategyName);
+    const storage = this.getStorage(symbol, strategyName);
     return storage.getData();
   };
 
   /**
-   * Generates markdown report with all scheduled events for a strategy.
+   * Generates markdown report with all scheduled events for a symbol-strategy pair.
    * Delegates to ReportStorage.getReport().
    *
+   * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to generate report for
    * @returns Markdown formatted report string with table of all events
    *
    * @example
    * ```typescript
    * const service = new ScheduleMarkdownService();
-   * const markdown = await service.getReport("my-strategy");
+   * const markdown = await service.getReport("BTCUSDT", "my-strategy");
    * console.log(markdown);
    * ```
    */
-  public getReport = async (strategyName: StrategyName): Promise<string> => {
+  public getReport = async (symbol: string, strategyName: StrategyName): Promise<string> => {
     this.loggerService.log("scheduleMarkdownService getReport", {
+      symbol,
       strategyName,
     });
-    const storage = this.getStorage(strategyName);
+    const storage = this.getStorage(symbol, strategyName);
     return storage.getReport(strategyName);
   };
 
   /**
-   * Saves strategy report to disk.
+   * Saves symbol-strategy report to disk.
    * Creates directory if it doesn't exist.
    * Delegates to ReportStorage.dump().
    *
+   * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to save report for
    * @param path - Directory path to save report (default: "./dump/schedule")
    *
@@ -471,47 +477,54 @@ export class ScheduleMarkdownService {
    * const service = new ScheduleMarkdownService();
    *
    * // Save to default path: ./dump/schedule/my-strategy.md
-   * await service.dump("my-strategy");
+   * await service.dump("BTCUSDT", "my-strategy");
    *
    * // Save to custom path: ./custom/path/my-strategy.md
-   * await service.dump("my-strategy", "./custom/path");
+   * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
    * ```
    */
   public dump = async (
+    symbol: string,
     strategyName: StrategyName,
     path = "./dump/schedule"
   ): Promise<void> => {
     this.loggerService.log("scheduleMarkdownService dump", {
+      symbol,
       strategyName,
       path,
     });
-    const storage = this.getStorage(strategyName);
+    const storage = this.getStorage(symbol, strategyName);
     await storage.dump(strategyName, path);
   };
 
   /**
    * Clears accumulated event data from storage.
-   * If strategyName is provided, clears only that strategy's data.
-   * If strategyName is omitted, clears all strategies' data.
+   * If ctx is provided, clears only that specific symbol-strategy pair's data.
+   * If nothing is provided, clears all data.
    *
-   * @param strategyName - Optional strategy name to clear specific strategy data
+   * @param ctx - Optional context with symbol and strategyName
    *
    * @example
    * ```typescript
    * const service = new ScheduleMarkdownService();
    *
-   * // Clear specific strategy data
-   * await service.clear("my-strategy");
+   * // Clear specific symbol-strategy pair
+   * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy" });
    *
-   * // Clear all strategies' data
+   * // Clear all data
    * await service.clear();
    * ```
    */
-  public clear = async (strategyName?: StrategyName) => {
+  public clear = async (ctx?: { symbol: string; strategyName: StrategyName }) => {
     this.loggerService.log("scheduleMarkdownService clear", {
-      strategyName,
+      ctx,
     });
-    this.getStorage.clear(strategyName);
+    if (ctx) {
+      const key = `${ctx.symbol}:${ctx.strategyName}`;
+      this.getStorage.clear(key);
+    } else {
+      this.getStorage.clear();
+    }
   };
 
   /**

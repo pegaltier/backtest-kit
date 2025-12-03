@@ -20,6 +20,7 @@ import {
   IStrategyTickResultCancelled,
   IStrategyBacktestResult,
   SignalInterval,
+  StrategyName,
 } from "../interfaces/Strategy.interface";
 import toProfitLossDto from "../helpers/toProfitLossDto";
 import { ICandleData } from "../interfaces/Exchange.interface";
@@ -410,8 +411,8 @@ const WAIT_FOR_INIT_FN = async (self: ClientStrategy) => {
 
   // Restore pending signal
   const pendingSignal = await PersistSignalAdapter.readSignalData(
+    self.params.execution.context.symbol,
     self.params.strategyName,
-    self.params.execution.context.symbol
   );
   if (pendingSignal) {
     if (pendingSignal.exchangeName !== self.params.method.context.exchangeName) {
@@ -438,8 +439,8 @@ const WAIT_FOR_INIT_FN = async (self: ClientStrategy) => {
 
   // Restore scheduled signal
   const scheduledSignal = await PersistScheduleAdapter.readScheduleData(
+    self.params.execution.context.symbol,
     self.params.strategyName,
-    self.params.execution.context.symbol
   );
   if (scheduledSignal) {
     if (scheduledSignal.exchangeName !== self.params.method.context.exchangeName) {
@@ -1556,8 +1557,8 @@ export class ClientStrategy implements IStrategy {
 
     await PersistSignalAdapter.writeSignalData(
       this._pendingSignal,
+      this.params.execution.context.symbol,
       this.params.strategyName,
-      this.params.execution.context.symbol
     );
   }
 
@@ -1582,8 +1583,8 @@ export class ClientStrategy implements IStrategy {
 
     await PersistScheduleAdapter.writeScheduleData(
       this._scheduledSignal,
+      this.params.execution.context.symbol,
       this.params.strategyName,
-      this.params.execution.context.symbol
     );
   }
 
@@ -1592,7 +1593,11 @@ export class ClientStrategy implements IStrategy {
    * If no signal is pending, returns null. 
    * @returns Promise resolving to the pending signal or null.
    */
-  public async getPendingSignal(): Promise<ISignalRow | null> {
+  public async getPendingSignal(symbol: string, strategyName: StrategyName): Promise<ISignalRow | null> {
+    this.params.logger.debug("ClientStrategy getPendingSignal", {
+      symbol,
+      strategyName,
+    });
     return this._pendingSignal;
   }
 
@@ -1626,8 +1631,11 @@ export class ClientStrategy implements IStrategy {
    * }
    * ```
    */
-  public async tick(): Promise<IStrategyTickResult> {
-    this.params.logger.debug("ClientStrategy tick");
+  public async tick(symbol: string, strategyName: StrategyName): Promise<IStrategyTickResult> {
+    this.params.logger.debug("ClientStrategy tick", {
+      symbol,
+      strategyName,
+    });
 
     // Получаем текущее время в начале tick для консистентности
     const currentTime = this.params.execution.context.when.getTime();
@@ -1766,10 +1774,14 @@ export class ClientStrategy implements IStrategy {
    * ```
    */
   public async backtest(
+    symbol: string,
+    strategyName: StrategyName,
     candles: ICandleData[]
   ): Promise<IStrategyBacktestResult> {
     this.params.logger.debug("ClientStrategy backtest", {
-      symbol: this.params.execution.context.symbol,
+      symbol,
+      strategyName,
+      contextSymbol: this.params.execution.context.symbol,
       candlesCount: candles.length,
       hasScheduled: !!this._scheduledSignal,
       hasPending: !!this._pendingSignal,
@@ -1949,8 +1961,10 @@ export class ClientStrategy implements IStrategy {
    * // Existing signal will continue until natural close
    * ```
    */
-  public async stop(): Promise<void> {
+  public async stop(symbol: string, strategyName: StrategyName): Promise<void> {
     this.params.logger.debug("ClientStrategy stop", {
+      symbol,
+      strategyName,
       hasPendingSignal: this._pendingSignal !== null,
       hasScheduledSignal: this._scheduledSignal !== null,
     });

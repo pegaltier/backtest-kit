@@ -34,19 +34,20 @@ import { PerformanceStatistics } from "../lib/services/markdown/PerformanceMarkd
  */
 export class Performance {
   /**
-   * Gets aggregated performance statistics for a strategy.
+   * Gets aggregated performance statistics for a symbol-strategy pair.
    *
    * Returns detailed metrics grouped by operation type:
    * - Count, total duration, average, min, max
    * - Standard deviation for volatility
    * - Percentiles (median, P95, P99) for outlier detection
    *
+   * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to analyze
    * @returns Performance statistics with aggregated metrics
    *
    * @example
    * ```typescript
-   * const stats = await Performance.getData("my-strategy");
+   * const stats = await Performance.getData("BTCUSDT", "my-strategy");
    *
    * // Find slowest operation type
    * const slowest = Object.values(stats.metricStats)
@@ -62,9 +63,10 @@ export class Performance {
    * ```
    */
   public static async getData(
+    symbol: string,
     strategyName: string
   ): Promise<PerformanceStatistics> {
-    return backtest.performanceMarkdownService.getData(strategyName);
+    return backtest.performanceMarkdownService.getData(symbol, strategyName);
   }
 
   /**
@@ -75,12 +77,13 @@ export class Performance {
    * - Detailed metrics table with statistics
    * - Percentile analysis for bottleneck detection
    *
+   * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to generate report for
    * @returns Markdown formatted report string
    *
    * @example
    * ```typescript
-   * const markdown = await Performance.getReport("my-strategy");
+   * const markdown = await Performance.getReport("BTCUSDT", "my-strategy");
    * console.log(markdown);
    *
    * // Or save to file
@@ -88,8 +91,8 @@ export class Performance {
    * await fs.writeFile("performance-report.md", markdown);
    * ```
    */
-  public static async getReport(strategyName: string): Promise<string> {
-    return backtest.performanceMarkdownService.getReport(strategyName);
+  public static async getReport(symbol: string, strategyName: string): Promise<string> {
+    return backtest.performanceMarkdownService.getReport(symbol, strategyName);
   }
 
   /**
@@ -115,24 +118,6 @@ export class Performance {
     path = "./dump/performance"
   ): Promise<void> {
     return backtest.performanceMarkdownService.dump(strategyName, path);
-  }
-
-  /**
-   * Clears accumulated performance metrics from memory.
-   *
-   * @param strategyName - Optional strategy name to clear specific strategy's metrics
-   *
-   * @example
-   * ```typescript
-   * // Clear specific strategy metrics
-   * await Performance.clear("my-strategy");
-   *
-   * // Clear all metrics for all strategies
-   * await Performance.clear();
-   * ```
-   */
-  public static async clear(strategyName?: string): Promise<void> {
-    return backtest.performanceMarkdownService.clear(strategyName);
   }
 }
 

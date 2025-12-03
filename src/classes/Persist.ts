@@ -516,10 +516,10 @@ export class PersistSignalUtils {
     PersistBase;
 
   private getSignalStorage = memoize(
-    ([strategyName]: [StrategyName]): string => `${strategyName}`,
-    (strategyName: StrategyName): IPersistBase<SignalData> =>
+    ([symbol, strategyName]: [string, StrategyName]): string => `${symbol}:${strategyName}`,
+    (symbol: string, strategyName: StrategyName): IPersistBase<SignalData> =>
       Reflect.construct(this.PersistSignalFactory, [
-        strategyName,
+        `${symbol}_${strategyName}`,
         `./dump/data/signal/`,
       ])
   );
@@ -548,23 +548,24 @@ export class PersistSignalUtils {
   }
 
   /**
-   * Reads persisted signal data for a strategy and symbol.
+   * Reads persisted signal data for a symbol and strategy.
    *
    * Called by ClientStrategy.waitForInit() to restore state.
    * Returns null if no signal exists.
    *
-   * @param strategyName - Strategy identifier
    * @param symbol - Trading pair symbol
+   * @param strategyName - Strategy identifier
    * @returns Promise resolving to signal or null
    */
   public readSignalData = async (
-    strategyName: StrategyName,
-    symbol: string
+    symbol: string,
+    strategyName: StrategyName
   ): Promise<ISignalRow | null> => {
     swarm.loggerService.info(PERSIST_SIGNAL_UTILS_METHOD_NAME_READ_DATA);
 
-    const isInitial = !this.getSignalStorage.has(strategyName);
-    const stateStorage = this.getSignalStorage(strategyName);
+    const key = `${symbol}:${strategyName}`;
+    const isInitial = !this.getSignalStorage.has(key);
+    const stateStorage = this.getSignalStorage(symbol, strategyName);
     await stateStorage.waitForInit(isInitial);
 
     if (await stateStorage.hasValue(symbol)) {
@@ -581,19 +582,20 @@ export class PersistSignalUtils {
    * Uses atomic writes to prevent corruption on crashes.
    *
    * @param signalRow - Signal data (null to clear)
-   * @param strategyName - Strategy identifier
    * @param symbol - Trading pair symbol
+   * @param strategyName - Strategy identifier
    * @returns Promise that resolves when write is complete
    */
   public writeSignalData = async (
     signalRow: ISignalRow | null,
-    strategyName: StrategyName,
-    symbol: string
+    symbol: string,
+    strategyName: StrategyName
   ): Promise<void> => {
     swarm.loggerService.info(PERSIST_SIGNAL_UTILS_METHOD_NAME_WRITE_DATA);
 
-    const isInitial = !this.getSignalStorage.has(strategyName);
-    const stateStorage = this.getSignalStorage(strategyName);
+    const key = `${symbol}:${strategyName}`;
+    const isInitial = !this.getSignalStorage.has(key);
+    const stateStorage = this.getSignalStorage(symbol, strategyName);
     await stateStorage.waitForInit(isInitial);
 
     await stateStorage.writeValue(symbol, signalRow);
@@ -769,10 +771,10 @@ export class PersistScheduleUtils {
     PersistBase;
 
   private getScheduleStorage = memoize(
-    ([strategyName]: [StrategyName]): string => `${strategyName}`,
-    (strategyName: StrategyName): IPersistBase<ScheduleData> =>
+    ([symbol, strategyName]: [string, StrategyName]): string => `${symbol}:${strategyName}`,
+    (symbol: string, strategyName: StrategyName): IPersistBase<ScheduleData> =>
       Reflect.construct(this.PersistScheduleFactory, [
-        strategyName,
+        `${symbol}_${strategyName}`,
         `./dump/data/schedule/`,
       ])
   );
@@ -801,23 +803,24 @@ export class PersistScheduleUtils {
   }
 
   /**
-   * Reads persisted scheduled signal data for a strategy and symbol.
+   * Reads persisted scheduled signal data for a symbol and strategy.
    *
    * Called by ClientStrategy.waitForInit() to restore scheduled signal state.
    * Returns null if no scheduled signal exists.
    *
-   * @param strategyName - Strategy identifier
    * @param symbol - Trading pair symbol
+   * @param strategyName - Strategy identifier
    * @returns Promise resolving to scheduled signal or null
    */
   public readScheduleData = async (
-    strategyName: StrategyName,
-    symbol: string
+    symbol: string,
+    strategyName: StrategyName
   ): Promise<IScheduledSignalRow | null> => {
     swarm.loggerService.info(PERSIST_SCHEDULE_UTILS_METHOD_NAME_READ_DATA);
 
-    const isInitial = !this.getScheduleStorage.has(strategyName);
-    const stateStorage = this.getScheduleStorage(strategyName);
+    const key = `${symbol}:${strategyName}`;
+    const isInitial = !this.getScheduleStorage.has(key);
+    const stateStorage = this.getScheduleStorage(symbol, strategyName);
     await stateStorage.waitForInit(isInitial);
 
     if (await stateStorage.hasValue(symbol)) {
@@ -834,19 +837,20 @@ export class PersistScheduleUtils {
    * Uses atomic writes to prevent corruption on crashes.
    *
    * @param scheduledSignalRow - Scheduled signal data (null to clear)
-   * @param strategyName - Strategy identifier
    * @param symbol - Trading pair symbol
+   * @param strategyName - Strategy identifier
    * @returns Promise that resolves when write is complete
    */
   public writeScheduleData = async (
     scheduledSignalRow: IScheduledSignalRow | null,
-    strategyName: StrategyName,
-    symbol: string
+    symbol: string,
+    strategyName: StrategyName
   ): Promise<void> => {
     swarm.loggerService.info(PERSIST_SCHEDULE_UTILS_METHOD_NAME_WRITE_DATA);
 
-    const isInitial = !this.getScheduleStorage.has(strategyName);
-    const stateStorage = this.getScheduleStorage(strategyName);
+    const key = `${symbol}:${strategyName}`;
+    const isInitial = !this.getScheduleStorage.has(key);
+    const stateStorage = this.getScheduleStorage(symbol, strategyName);
     await stateStorage.waitForInit(isInitial);
 
     await stateStorage.writeValue(symbol, scheduledSignalRow);

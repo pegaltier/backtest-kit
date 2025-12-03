@@ -2,6 +2,8 @@ import "./config/setup.mjs"
 
 import { run } from 'worker-testbed';
 
+import "./e2e/markdown.test.mjs";
+import "./e2e/facades.test.mjs";
 import "./e2e/partial.test.mjs"
 import "./e2e/levels.test.mjs";
 import "./e2e/restore.test.mjs";
@@ -9,6 +11,7 @@ import "./e2e/persist.test.mjs"
 import "./e2e/sequence.test.mjs"
 import "./e2e/other.test.mjs"
 import "./e2e/defend.test.mjs"
+import "./e2e/parallel.test.mjs";
 import "./e2e/close.test.mjs"
 import "./e2e/sanitize.test.mjs"
 import "./e2e/edge.test.mjs"

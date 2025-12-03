@@ -358,7 +358,7 @@ test("getData includes signalList with all closed trades", async ({ pass, fail }
 
   await awaiter;
 
-  const stats = await Backtest.getData("test-strategy-signallist");
+  const stats = await Backtest.getData("BTCUSDT", "test-strategy-signallist");
 
   if (!Array.isArray(stats.signalList)) {
     fail("signalList is not an array");
@@ -441,7 +441,7 @@ test("Statistical metrics are calculated correctly", async ({ pass, fail }) => {
 
   await awaiter;
 
-  const stats = await Backtest.getData("test-strategy-calculation");
+  const stats = await Backtest.getData("BTCUSDT", "test-strategy-calculation");
 
   if (stats.totalSignals < 3) {
     fail(`Expected at least 3 signals, got ${stats.totalSignals}`);

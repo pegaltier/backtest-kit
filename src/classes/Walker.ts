@@ -62,14 +62,14 @@ export class WalkerUtils {
 
     // Clear backtest data for all strategies
     for (const strategyName of walkerSchema.strategies) {
-      
+
       {
-        backtest.backtestMarkdownService.clear(strategyName);
-        backtest.scheduleMarkdownService.clear(strategyName);
+        backtest.backtestMarkdownService.clear({ symbol, strategyName });
+        backtest.scheduleMarkdownService.clear({ symbol, strategyName });
       }
 
       {
-        backtest.strategyGlobalService.clear(strategyName);
+        backtest.strategyGlobalService.clear({ symbol, strategyName });
       }
 
       {
@@ -141,9 +141,9 @@ export class WalkerUtils {
     );
     return () => {
       for (const strategyName of walkerSchema.strategies) {
-        backtest.strategyGlobalService.stop(strategyName);
+        backtest.strategyGlobalService.stop(symbol, strategyName);
+        walkerStopSubject.next({ symbol, strategyName });
       }
-      walkerStopSubject.next(context.walkerName);
       if (!isDone) {
         doneWalkerSubject.next({
           exchangeName: walkerSchema.exchangeName,

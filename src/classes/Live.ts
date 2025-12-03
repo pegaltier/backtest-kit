@@ -65,12 +65,12 @@ export class LiveUtils {
     });
 
     {
-      backtest.liveMarkdownService.clear(context.strategyName);
-      backtest.scheduleMarkdownService.clear(context.strategyName);
+      backtest.liveMarkdownService.clear({ symbol, strategyName: context.strategyName });
+      backtest.scheduleMarkdownService.clear({ symbol, strategyName: context.strategyName });
     }
 
     {
-      backtest.strategyGlobalService.clear(context.strategyName);
+      backtest.strategyGlobalService.clear({ symbol, strategyName: context.strategyName });
     }
 
     {
@@ -137,9 +137,9 @@ export class LiveUtils {
       errorEmitter.next(new Error(getErrorMessage(error)))
     );
     return () => {
-      backtest.strategyGlobalService.stop(context.strategyName);
+      backtest.strategyGlobalService.stop(symbol, context.strategyName);
       backtest.strategyGlobalService
-        .getPendingSignal(context.strategyName)
+        .getPendingSignal(symbol, context.strategyName)
         .then(async (pendingSignal) => {
           if (pendingSignal) {
             return;
@@ -159,41 +159,45 @@ export class LiveUtils {
   };
 
   /**
-   * Gets statistical data from all live trading events for a strategy.
+   * Gets statistical data from all live trading events for a symbol-strategy pair.
    *
+   * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to get data for
    * @returns Promise resolving to statistical data object
    *
    * @example
    * ```typescript
-   * const stats = await Live.getData("my-strategy");
+   * const stats = await Live.getData("BTCUSDT", "my-strategy");
    * console.log(stats.sharpeRatio, stats.winRate);
    * ```
    */
-  public getData = async (strategyName: StrategyName) => {
+  public getData = async (symbol: string, strategyName: StrategyName) => {
     backtest.loggerService.info("LiveUtils.getData", {
+      symbol,
       strategyName,
     });
-    return await backtest.liveMarkdownService.getData(strategyName);
+    return await backtest.liveMarkdownService.getData(symbol, strategyName);
   };
 
   /**
-   * Generates markdown report with all events for a strategy.
+   * Generates markdown report with all events for a symbol-strategy pair.
    *
+   * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to generate report for
    * @returns Promise resolving to markdown formatted report string
    *
    * @example
    * ```typescript
-   * const markdown = await Live.getReport("my-strategy");
+   * const markdown = await Live.getReport("BTCUSDT", "my-strategy");
    * console.log(markdown);
    * ```
    */
-  public getReport = async (strategyName: StrategyName): Promise<string> => {
+  public getReport = async (symbol: string, strategyName: StrategyName): Promise<string> => {
     backtest.loggerService.info(LIVE_METHOD_NAME_GET_REPORT, {
+      symbol,
       strategyName,
     });
-    return await backtest.liveMarkdownService.getReport(strategyName);
+    return await backtest.liveMarkdownService.getReport(symbol, strategyName);
   };
 
   /**

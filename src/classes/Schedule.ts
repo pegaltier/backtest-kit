@@ -32,41 +32,45 @@ const SCHEDULE_METHOD_NAME_DUMP = "ScheduleUtils.dump";
  */
 export class ScheduleUtils {
   /**
-   * Gets statistical data from all scheduled signal events for a strategy.
+   * Gets statistical data from all scheduled signal events for a symbol-strategy pair.
    *
+   * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to get data for
    * @returns Promise resolving to statistical data object
    *
    * @example
    * ```typescript
-   * const stats = await Schedule.getData("my-strategy");
+   * const stats = await Schedule.getData("BTCUSDT", "my-strategy");
    * console.log(stats.cancellationRate, stats.avgWaitTime);
    * ```
    */
-  public getData = async (strategyName: StrategyName) => {
+  public getData = async (symbol: string, strategyName: StrategyName) => {
     backtest.loggerService.info(SCHEDULE_METHOD_NAME_GET_DATA, {
+      symbol,
       strategyName,
     });
-    return await backtest.scheduleMarkdownService.getData(strategyName);
+    return await backtest.scheduleMarkdownService.getData(symbol, strategyName);
   };
 
   /**
-   * Generates markdown report with all scheduled events for a strategy.
+   * Generates markdown report with all scheduled events for a symbol-strategy pair.
    *
+   * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to generate report for
    * @returns Promise resolving to markdown formatted report string
    *
    * @example
    * ```typescript
-   * const markdown = await Schedule.getReport("my-strategy");
+   * const markdown = await Schedule.getReport("BTCUSDT", "my-strategy");
    * console.log(markdown);
    * ```
    */
-  public getReport = async (strategyName: StrategyName): Promise<string> => {
+  public getReport = async (symbol: string, strategyName: StrategyName): Promise<string> => {
     backtest.loggerService.info(SCHEDULE_METHOD_NAME_GET_REPORT, {
+      symbol,
       strategyName,
     });
-    return await backtest.scheduleMarkdownService.getReport(strategyName);
+    return await backtest.scheduleMarkdownService.getReport(symbol, strategyName);
   };
 
   /**

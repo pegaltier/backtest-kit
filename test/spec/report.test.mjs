@@ -70,7 +70,7 @@ test("Backtest.getReport returns markdown string", async ({ pass, fail }) => {
 
   await awaiter;
 
-  const report = await Backtest.getReport("test-strategy-bt-report");
+  const report = await Backtest.getReport("BTCUSDT", "test-strategy-bt-report");
 
   if (typeof report === "string" && report.includes("# Backtest Report:")) {
     pass("Backtest.getReport returns markdown string");
@@ -136,7 +136,7 @@ test("Backtest report includes win rate statistics", async ({ pass, fail }) => {
 
   await awaiter;
 
-  const report = await Backtest.getReport("test-strategy-bt-stats");
+  const report = await Backtest.getReport("BTCUSDT", "test-strategy-bt-stats");
 
   const hasWinRate = report.includes("Win rate:");
   const hasAvgPnl = report.includes("Average PNL:");
@@ -264,7 +264,7 @@ test("Backtest report includes signal details table", async ({ pass, fail }) => 
 
   await awaiter;
 
-  const report = await Backtest.getReport("test-strategy-bt-table");
+  const report = await Backtest.getReport("BTCUSDT", "test-strategy-bt-table");
 
   // Check for markdown table format
   const hasTableSeparator = report.includes(" | ");
