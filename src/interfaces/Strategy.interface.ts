@@ -77,6 +77,8 @@ export interface IScheduledSignalRow extends ISignalRow {
  * Combines schema with runtime dependencies.
  */
 export interface IStrategyParams extends IStrategySchema {
+  /** Trading pair symbol (e.g., "BTCUSDT") */
+  symbol: string;
   /** Partial handling service for partial profit/loss */
   partial: IPartial;
   /** Logger service for debug output */

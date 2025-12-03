@@ -81,6 +81,7 @@ export class StrategyConnectionService {
       const { riskName, getSignal, interval, callbacks } =
         this.strategySchemaService.get(strategyName);
       return new ClientStrategy({
+        symbol,
         interval,
         execution: this.executionContextService,
         method: this.methodContextService,
