@@ -394,6 +394,7 @@ await Optimizer.dump(
   "./generated"
 );
 
+/*
 await Optimizer.getData("BTCUSDT", {
   optimizerName: "btc-optimizer",
 }).then((list) =>
@@ -406,3 +407,4 @@ await Optimizer.getData("BTCUSDT", {
     )
   )
 );
+*/
