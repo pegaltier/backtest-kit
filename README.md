@@ -50,7 +50,7 @@ Build sophisticated trading systems with confidence. Backtest Kit empowers you t
 
 - 🤖 **AI Strategy Optimizer**: LLM-powered strategy generation from historical data. Train multiple strategy variants, compare performance, and auto-generate executable code. Supports Ollama integration with multi-timeframe analysis. 🧠
 
-- 🧪 **Comprehensive Test Coverage**: Unit and integration tests covering validation, PNL, callbacks, reports, performance tracking, walker, heatmap, position sizing, risk management, scheduled signals, optimizer, and event system. 
+- 🧪 **Comprehensive Test Coverage**: Unit and integration tests covering validation, PNL, callbacks, reports, performance tracking, walker, heatmap, position sizing, risk management, scheduled signals, crash recovery, optimizer, and event system. 
 
 ---
 
@@ -256,7 +256,7 @@ Backtest.background("BTCUSDT", {
 - 💰 **`PositionSize`**: Calculate position sizes with Fixed %, Kelly Criterion, or ATR-based methods. 💵
 - 🛡️ **`addRisk`**: Portfolio-level risk management with custom validation logic. 🔐
 - 💾 **`PersistBase`**: Base class for custom persistence adapters (Redis, MongoDB, PostgreSQL). 🗄️
-- 🔌 **`PersistSignalAdapter` / `PersistRiskAdapter`**: Register custom adapters for signal and risk persistence. 🔄
+- 🔌 **`PersistSignalAdapter` / `PersistScheduleAdapter` / `PersistRiskAdapter`**: Register custom adapters for signal, scheduled signal, and risk persistence. 🔄
 - 🤖 **`Optimizer`**: AI-powered strategy generation with LLM integration. Auto-generate strategies from historical data and export executable code. 🧠
 
 Check out the sections below for detailed examples! 📚
@@ -1074,6 +1074,270 @@ test("Custom Redis adapter works correctly", async ({ pass, fail }) => {
 });
 ```
 
+### 10. Scheduled Signal Persistence
+
+The framework includes a separate persistence system for scheduled signals (`PersistScheduleAdapter`) that works independently from pending/active signal persistence (`PersistSignalAdapter`). This separation ensures crash-safe recovery of both signal types.
+
+#### Understanding the Dual Persistence System
+
+The library uses **two independent persistence layers** for signals:
+
+1. **PersistSignalAdapter** - Manages pending/active signals (signals that are already opened or waiting to reach TP/SL)
+2. **PersistScheduleAdapter** - Manages scheduled signals (signals waiting for entry price to activate)
+
+This dual-layer architecture ensures that both signal types can be recovered independently after crashes, with proper callbacks (`onActive` for pending signals, `onSchedule` for scheduled signals).
+
+#### Default Storage Structure
+
+By default, scheduled signals are stored separately from pending signals:
+
+```
+./dump/data/
+  signal/
+    my-strategy/
+      BTCUSDT.json      # Pending/active signal state
+      ETHUSDT.json
+  schedule/
+    my-strategy/
+      BTCUSDT.json      # Scheduled signal state
+      ETHUSDT.json
+```
+
+#### How Scheduled Signal Persistence Works
+
+**During Normal Operation:**
+
+When a strategy generates a scheduled signal (limit order waiting for entry), the framework:
+
+1. Stores the signal to disk using atomic writes: `./dump/data/schedule/{strategyName}/{symbol}.json`
+2. Monitors price movements for activation
+3. When price reaches entry point OR cancellation condition occurs:
+   - Deletes scheduled signal from storage
+   - Optionally creates pending signal in `PersistSignalAdapter`
+
+**After System Crash:**
+
+When the system restarts:
+
+1. Framework checks for stored scheduled signals during initialization
+2. Validates exchange name and strategy name match (security protection)
+3. Restores scheduled signal to memory (`_scheduledSignal`)
+4. Calls `onSchedule()` callback to notify about restored signal
+5. Continues monitoring from where it left off
+
+**Crash Recovery Flow:**
+
+```typescript
+// Before crash:
+// 1. Strategy generates signal with priceOpen = 50000 (current price = 49500)
+// 2. Signal stored to ./dump/data/schedule/my-strategy/BTCUSDT.json
+// 3. System waits for price to reach 50000
+// 4. CRASH OCCURS at current price = 49800
+
+// After restart:
+// 1. System reads ./dump/data/schedule/my-strategy/BTCUSDT.json
+// 2. Validates exchangeName and strategyName
+// 3. Restores signal to _scheduledSignal
+// 4. Calls onSchedule() callback with restored signal
+// 5. Continues monitoring for price = 50000
+// 6. When price reaches 50000, signal activates normally
+```
+
+#### Scheduled Signal Data Structure
+
+```typescript
+interface IScheduledSignalRow {
+  id: string;                    // Unique signal ID
+  position: "long" | "short";
+  priceOpen: number;             // Entry price (trigger price for scheduled signal)
+  priceTakeProfit: number;
+  priceStopLoss: number;
+  minuteEstimatedTime: number;
+  exchangeName: string;          // Used for validation during restore
+  strategyName: string;          // Used for validation during restore
+  timestamp: number;
+  pendingAt: number;
+  scheduledAt: number;
+  symbol: string;
+  _isScheduled: true;            // Marker for scheduled signals
+  note?: string;
+}
+```
+
+#### Integration with ClientStrategy
+
+The `ClientStrategy` class uses `setScheduledSignal()` method to ensure all scheduled signal changes are persisted:
+
+```typescript
+// WRONG - Direct assignment (not persisted)
+this._scheduledSignal = newSignal;
+
+// CORRECT - Using setScheduledSignal() method (persisted)
+await this.setScheduledSignal(newSignal);
+```
+
+**Automatic Persistence Locations:**
+
+All scheduled signal state changes are automatically persisted:
+
+- Signal generation (new scheduled signal created)
+- Signal activation (scheduled → pending transition)
+- Signal cancellation (timeout or stop loss hit before activation)
+- Manual signal clearing
+
+**BACKTEST Mode Exception:**
+
+In backtest mode, persistence is **skipped** for performance reasons:
+
+```typescript
+public async setScheduledSignal(scheduledSignal: IScheduledSignalRow | null) {
+  this._scheduledSignal = scheduledSignal;
+
+  if (this.params.execution.context.backtest) {
+    return; // Skip persistence in backtest mode
+  }
+
+  await PersistScheduleAdapter.writeScheduleData(
+    this._scheduledSignal,
+    this.params.strategyName,
+    this.params.execution.context.symbol
+  );
+}
+```
+
+#### Custom Scheduled Signal Adapters
+
+You can replace file-based scheduled signal persistence with custom adapters (Redis, MongoDB, etc.):
+
+```typescript
+import { PersistScheduleAdapter, PersistBase } from "backtest-kit";
+import Redis from "ioredis";
+
+const redis = new Redis();
+
+class RedisSchedulePersist extends PersistBase {
+  async waitForInit(initial: boolean): Promise<void> {
+    console.log(`Redis scheduled signal persistence initialized for ${this.entityName}`);
+  }
+
+  async readValue<T>(entityId: string | number): Promise<T> {
+    const key = `schedule:${this.entityName}:${entityId}`;
+    const data = await redis.get(key);
+
+    if (!data) {
+      throw new Error(`Scheduled signal ${this.entityName}:${entityId} not found`);
+    }
+
+    return JSON.parse(data) as T;
+  }
+
+  async hasValue(entityId: string | number): Promise<boolean> {
+    const key = `schedule:${this.entityName}:${entityId}`;
+    const exists = await redis.exists(key);
+    return exists === 1;
+  }
+
+  async writeValue<T>(entityId: string | number, entity: T): Promise<void> {
+    const key = `schedule:${this.entityName}:${entityId}`;
+    const serializedData = JSON.stringify(entity);
+    await redis.set(key, serializedData);
+
+    // Optional: Set TTL for scheduled signals (e.g., 24 hours)
+    await redis.expire(key, 86400);
+  }
+
+  async removeValue(entityId: string | number): Promise<void> {
+    const key = `schedule:${this.entityName}:${entityId}`;
+    const result = await redis.del(key);
+
+    if (result === 0) {
+      throw new Error(`Scheduled signal ${this.entityName}:${entityId} not found for deletion`);
+    }
+  }
+
+  async removeAll(): Promise<void> {
+    const pattern = `schedule:${this.entityName}:*`;
+    const keys = await redis.keys(pattern);
+
+    if (keys.length > 0) {
+      await redis.del(...keys);
+    }
+  }
+
+  async *values<T>(): AsyncGenerator<T> {
+    const pattern = `schedule:${this.entityName}:*`;
+    const keys = await redis.keys(pattern);
+
+    keys.sort((a, b) => a.localeCompare(b, undefined, {
+      numeric: true,
+      sensitivity: "base"
+    }));
+
+    for (const key of keys) {
+      const data = await redis.get(key);
+      if (data) {
+        yield JSON.parse(data) as T;
+      }
+    }
+  }
+
+  async *keys(): AsyncGenerator<string> {
+    const pattern = `schedule:${this.entityName}:*`;
+    const keys = await redis.keys(pattern);
+
+    keys.sort((a, b) => a.localeCompare(b, undefined, {
+      numeric: true,
+      sensitivity: "base"
+    }));
+
+    for (const key of keys) {
+      const entityId = key.slice(`schedule:${this.entityName}:`.length);
+      yield entityId;
+    }
+  }
+}
+
+// Register Redis adapter for scheduled signal persistence
+PersistScheduleAdapter.usePersistScheduleAdapter(RedisSchedulePersist);
+```
+
+#### Best Practices
+
+1. **Always use `setScheduledSignal()`** - Never assign `_scheduledSignal` directly (except in `waitForInit` for restoration)
+
+2. **Validate signal metadata** - Always store `exchangeName` and `strategyName` with signals for validation
+
+3. **Handle empty storage gracefully** - Don't crash when `readScheduleData()` returns `null`
+
+4. **Test crash recovery** - Write E2E tests that simulate system crashes and verify restoration
+
+5. **Choose persistence adapter wisely**:
+   - Use file-based for single-instance deployments
+   - Use Redis for distributed systems with multiple instances
+   - Use MongoDB for analytics and complex queries
+
+6. **Monitor persistence operations** - Use callbacks to track storage operations:
+
+```typescript
+addStrategy({
+  strategyName: "my-strategy",
+  interval: "5m",
+  getSignal: async (symbol) => { /* ... */ },
+  callbacks: {
+    onSchedule: (symbol, signal, price, backtest) => {
+      console.log(`Scheduled signal created/restored: ${signal.id}`);
+      // Signal was either:
+      // 1. Newly generated and persisted
+      // 2. Restored from storage after crash
+    },
+    onCancel: (symbol, signal, price, backtest) => {
+      console.log(`Scheduled signal cancelled: ${signal.id}`);
+      // Signal was removed from storage
+    },
+  },
+});
+```
+
 ---
 
 ## 🤖 AI Strategy Optimizer
@@ -1690,11 +1954,13 @@ await setConfig({
 
 ## ✅ Tested & Reliable
 
-`backtest-kit` comes with **123 unit and integration tests** covering:
+`backtest-kit` comes with **128 unit and integration tests** covering:
 
 - Signal validation and throttling
 - PNL calculation with fees and slippage
 - Crash recovery and state persistence
+- Dual-layer persistence (pending signals and scheduled signals)
+- Crash recovery validation (exchange/strategy name mismatch protection)
 - Callback execution order (onSchedule, onOpen, onActive, onClose, onCancel)
 - Markdown report generation (backtest, live, scheduled signals)
 - Walker strategy comparison
