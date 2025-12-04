@@ -94,7 +94,7 @@ export class BacktestLogicPrivateService {
       try {
         result = await this.strategyGlobalService.tick(symbol, when, true);
       } catch (error) {
-        console.warn(`backtestLogicPrivateService tick failed, skipping timeframe when=${when.toISOString()} symbol=${symbol} strategyName=${this.methodContextService.context.strategyName} exchangeName=${this.methodContextService.context.exchangeName}`, error);
+        console.warn(`backtestLogicPrivateService tick failed, skipping timeframe when=${when.toISOString()} symbol=${symbol} strategyName=${this.methodContextService.context.strategyName} exchangeName=${this.methodContextService.context.exchangeName}`);
         this.loggerService.warn(
           "backtestLogicPrivateService tick failed, skipping timeframe",
           {
@@ -138,7 +138,7 @@ export class BacktestLogicPrivateService {
             true
           );
         } catch (error) {
-          console.warn(`backtestLogicPrivateService getNextCandles failed for scheduled signal when=${when.toISOString()} symbol=${symbol} strategyName=${this.methodContextService.context.strategyName} exchangeName=${this.methodContextService.context.exchangeName}`, error);
+          console.warn(`backtestLogicPrivateService getNextCandles failed for scheduled signal when=${when.toISOString()} symbol=${symbol} strategyName=${this.methodContextService.context.strategyName} exchangeName=${this.methodContextService.context.exchangeName}`);
           this.loggerService.warn(
             "backtestLogicPrivateService getNextCandles failed for scheduled signal",
             {
@@ -179,7 +179,7 @@ export class BacktestLogicPrivateService {
             true
           );
         } catch (error) {
-          console.warn(`backtestLogicPrivateService backtest failed for scheduled signal when=${when.toISOString()} symbol=${symbol} strategyName=${this.methodContextService.context.strategyName} exchangeName=${this.methodContextService.context.exchangeName}`, error);
+          console.warn(`backtestLogicPrivateService backtest failed for scheduled signal when=${when.toISOString()} symbol=${symbol} strategyName=${this.methodContextService.context.strategyName} exchangeName=${this.methodContextService.context.exchangeName}`);
           this.loggerService.warn(
             "backtestLogicPrivateService backtest failed for scheduled signal",
             {
@@ -255,7 +255,7 @@ export class BacktestLogicPrivateService {
             true
           );
         } catch (error) {
-          console.warn(`backtestLogicPrivateService getNextCandles failed for opened signal when=${when.toISOString()} symbol=${symbol} strategyName=${this.methodContextService.context.strategyName} exchangeName=${this.methodContextService.context.exchangeName}`, error);
+          console.warn(`backtestLogicPrivateService getNextCandles failed for opened signal when=${when.toISOString()} symbol=${symbol} strategyName=${this.methodContextService.context.strategyName} exchangeName=${this.methodContextService.context.exchangeName}`);
           this.loggerService.warn(
             "backtestLogicPrivateService getNextCandles failed for opened signal",
             {
@@ -290,7 +290,7 @@ export class BacktestLogicPrivateService {
             true
           );
         } catch (error) {
-          console.warn(`backtestLogicPrivateService backtest failed for opened signal when=${when.toISOString()} symbol=${symbol} strategyName=${this.methodContextService.context.strategyName} exchangeName=${this.methodContextService.context.exchangeName}`, error);
+          console.warn(`backtestLogicPrivateService backtest failed for opened signal when=${when.toISOString()} symbol=${symbol} strategyName=${this.methodContextService.context.strategyName} exchangeName=${this.methodContextService.context.exchangeName}`);
           this.loggerService.warn(
             "backtestLogicPrivateService backtest failed for opened signal",
             {

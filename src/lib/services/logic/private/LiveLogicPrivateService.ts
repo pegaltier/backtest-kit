@@ -72,7 +72,7 @@ export class LiveLogicPrivateService {
       try {
         result = await this.strategyGlobalService.tick(symbol, when, false);
       } catch (error) {
-        console.warn(`backtestLogicPrivateService tick failed when=${when.toISOString()} symbol=${symbol} strategyName=${this.methodContextService.context.strategyName} exchangeName=${this.methodContextService.context.exchangeName}`, error);
+        console.warn(`backtestLogicPrivateService tick failed when=${when.toISOString()} symbol=${symbol} strategyName=${this.methodContextService.context.strategyName} exchangeName=${this.methodContextService.context.exchangeName}`);
         this.loggerService.warn(
           "liveLogicPrivateService tick failed, retrying after sleep",
           {

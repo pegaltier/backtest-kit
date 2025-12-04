@@ -129,7 +129,7 @@ export class WalkerLogicPrivateService {
           listenStop,
         ]);
       } catch (error) {
-        console.warn(`walkerLogicPrivateService backtest failed symbol=${symbol} strategyName=${strategyName} exchangeName=${context.exchangeName}`, error);
+        console.warn(`walkerLogicPrivateService backtest failed symbol=${symbol} strategyName=${strategyName} exchangeName=${context.exchangeName}`);
         this.loggerService.warn(
           "walkerLogicPrivateService backtest failed for strategy, skipping",
           {
