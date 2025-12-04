@@ -102,7 +102,7 @@ timestamp, and backtest mode flag.
 ### stop
 
 ```ts
-stop: (symbol: string, strategyName: string) => Promise<void>
+stop: (ctx: { symbol: string; strategyName: string; }) => Promise<void>
 ```
 
 Stops the strategy from generating new signals.

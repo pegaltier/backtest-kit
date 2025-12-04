@@ -9,9 +9,10 @@ group: docs
 declare function listenError(fn: (error: Error) => void): () => void;
 ```
 
-Subscribes to background execution errors with queued async processing.
+Subscribes to recoverable execution errors with queued async processing.
 
-Listens to errors caught in Live.background() and Backtest.background() execution.
+Listens to recoverable errors during strategy execution (e.g., failed API calls).
+These errors are caught and handled gracefully - execution continues.
 Events are processed sequentially in order received, even if callback is async.
 Uses queued wrapper to prevent concurrent execution of the callback.
 

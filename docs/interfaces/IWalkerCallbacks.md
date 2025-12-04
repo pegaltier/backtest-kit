@@ -26,6 +26,14 @@ onStrategyComplete: (strategyName: string, symbol: string, stats: BacktestStatis
 
 Called when a strategy backtest completes
 
+### onStrategyError
+
+```ts
+onStrategyError: (strategyName: string, symbol: string, error: unknown) => void
+```
+
+Called when a strategy backtest fails with an error
+
 ### onComplete
 
 ```ts

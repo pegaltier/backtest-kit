@@ -101,6 +101,7 @@ group: docs
 - [listenSignalBacktest](functions/listenSignalBacktest.md)
 - [listenSignalBacktestOnce](functions/listenSignalBacktestOnce.md)
 - [listenError](functions/listenError.md)
+- [listenExit](functions/listenExit.md)
 - [listenDoneLive](functions/listenDoneLive.md)
 - [listenDoneLiveOnce](functions/listenDoneLiveOnce.md)
 - [listenDoneBacktest](functions/listenDoneBacktest.md)

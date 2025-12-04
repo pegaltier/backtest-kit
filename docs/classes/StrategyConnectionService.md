@@ -113,7 +113,7 @@ Evaluates strategy signals against historical data.
 ### stop
 
 ```ts
-stop: (symbol: string, strategyName: string) => Promise<void>
+stop: (ctx: { symbol: string; strategyName: string; }) => Promise<void>
 ```
 
 Stops the specified strategy from generating new signals.
