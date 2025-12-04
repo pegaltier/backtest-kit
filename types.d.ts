@@ -6520,7 +6520,10 @@ declare class StrategyConnectionService {
      * @param strategyName - Name of strategy to stop
      * @returns Promise that resolves when stop flag is set
      */
-    stop: (symbol: string, strategyName: StrategyName) => Promise<void>;
+    stop: (ctx: {
+        symbol: string;
+        strategyName: StrategyName;
+    }) => Promise<void>;
     /**
      * Clears the memoized ClientStrategy instance from cache.
      *
@@ -6988,7 +6991,10 @@ declare class StrategyGlobalService {
      * @param strategyName - Name of strategy to stop
      * @returns Promise that resolves when stop flag is set
      */
-    stop: (symbol: string, strategyName: StrategyName) => Promise<void>;
+    stop: (ctx: {
+        symbol: string;
+        strategyName: StrategyName;
+    }) => Promise<void>;
     /**
      * Clears the memoized ClientStrategy instance from cache.
      *

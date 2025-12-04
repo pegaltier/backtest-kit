@@ -137,7 +137,7 @@ export class LiveUtils {
       exitEmitter.next(new Error(getErrorMessage(error)))
     );
     return () => {
-      backtest.strategyGlobalService.stop(symbol, context.strategyName);
+      backtest.strategyGlobalService.stop({symbol, strategyName: context.strategyName});
       backtest.strategyGlobalService
         .getPendingSignal(symbol, context.strategyName)
         .then(async (pendingSignal) => {
