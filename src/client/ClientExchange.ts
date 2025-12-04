@@ -142,7 +142,7 @@ const GET_CANDLES_FN = async (
           message: getErrorMessage(err),
         }
       );
-      console.warn(message)
+      console.warn(message);
       lastError = err;
       await sleep(GLOBAL_CONFIG.CC_GET_CANDLES_RETRY_DELAY_MS);
     }

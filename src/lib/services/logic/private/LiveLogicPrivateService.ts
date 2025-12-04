@@ -3,7 +3,7 @@ import LoggerService from "../../base/LoggerService";
 import TYPES from "../../../core/types";
 import StrategyGlobalService from "../../global/StrategyGlobalService";
 import { sleep } from "functools-kit";
-import { performanceEmitter } from "../../../../config/emitters";
+import { performanceEmitter, errorEmitter } from "../../../../config/emitters";
 import MethodContextService, {
   TMethodContextService,
 } from "../../context/MethodContextService";
@@ -81,6 +81,7 @@ export class LiveLogicPrivateService {
             error: error instanceof Error ? error.message : String(error),
           }
         );
+        await errorEmitter.next(error instanceof Error ? error : new Error(String(error)));
         await sleep(TICK_TTL);
         continue;
       }

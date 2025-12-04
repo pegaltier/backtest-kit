@@ -11,6 +11,7 @@ import MethodContextService, {
 import {
   progressBacktestEmitter,
   performanceEmitter,
+  errorEmitter,
 } from "../../../../config/emitters";
 import { GLOBAL_CONFIG } from "../../../../config/params";
 
@@ -101,6 +102,7 @@ export class BacktestLogicPrivateService {
             error: error instanceof Error ? error.message : String(error),
           }
         );
+        await errorEmitter.next(error instanceof Error ? error : new Error(String(error)));
         i++;
         continue;
       }
@@ -145,6 +147,7 @@ export class BacktestLogicPrivateService {
               error: error instanceof Error ? error.message : String(error),
             }
           );
+          await errorEmitter.next(error instanceof Error ? error : new Error(String(error)));
           i++;
           continue;
         }
@@ -184,6 +187,7 @@ export class BacktestLogicPrivateService {
               error: error instanceof Error ? error.message : String(error),
             }
           );
+          await errorEmitter.next(error instanceof Error ? error : new Error(String(error)));
           i++;
           continue;
         }
@@ -259,6 +263,7 @@ export class BacktestLogicPrivateService {
               error: error instanceof Error ? error.message : String(error),
             }
           );
+          await errorEmitter.next(error instanceof Error ? error : new Error(String(error)));
           i++;
           continue;
         }
@@ -293,6 +298,7 @@ export class BacktestLogicPrivateService {
               error: error instanceof Error ? error.message : String(error),
             }
           );
+          await errorEmitter.next(error instanceof Error ? error : new Error(String(error)));
           i++;
           continue;
         }

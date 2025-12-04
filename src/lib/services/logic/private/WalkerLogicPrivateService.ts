@@ -12,6 +12,7 @@ import {
   walkerCompleteSubject,
   walkerStopSubject,
   progressWalkerEmitter,
+  errorEmitter,
 } from "../../../../config/emitters";
 import { resolveDocuments } from "functools-kit";
 
@@ -137,6 +138,7 @@ export class WalkerLogicPrivateService {
             error: error instanceof Error ? error.message : String(error),
           }
         );
+        await errorEmitter.next(error instanceof Error ? error : new Error(String(error)));
         // Call onStrategyError callback if provided
         if (walkerSchema.callbacks?.onStrategyError) {
           walkerSchema.callbacks.onStrategyError(strategyName, symbol, error);
