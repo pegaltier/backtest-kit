@@ -7,6 +7,7 @@ import { performanceEmitter, errorEmitter } from "../../../../config/emitters";
 import MethodContextService, {
   TMethodContextService,
 } from "../../context/MethodContextService";
+import { IStrategyTickResult } from "../../../../interfaces/Strategy.interface";
 
 const TICK_TTL = 1 * 60 * 1_000 + 1;
 
@@ -68,7 +69,7 @@ export class LiveLogicPrivateService {
       const tickStartTime = performance.now();
       const when = new Date();
 
-      let result;
+      let result: IStrategyTickResult;
       try {
         result = await this.strategyGlobalService.tick(symbol, when, false);
       } catch (error) {

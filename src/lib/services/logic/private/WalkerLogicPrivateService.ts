@@ -2,7 +2,7 @@ import { inject } from "../../../core/di";
 import LoggerService from "../../base/LoggerService";
 import TYPES from "../../../core/types";
 import { WalkerMetric } from "../../../../interfaces/Walker.interface";
-import { StrategyName } from "../../../../interfaces/Strategy.interface";
+import { IStrategyBacktestResult, StrategyName } from "../../../../interfaces/Strategy.interface";
 import BacktestLogicPublicService from "../public/BacktestLogicPublicService";
 import BacktestMarkdownService from "../../markdown/BacktestMarkdownService";
 import WalkerSchemaService from "../../schema/WalkerSchemaService";
@@ -122,7 +122,7 @@ export class WalkerLogicPrivateService {
 
       pendingStrategy = strategyName;
 
-      let result;
+      let result: IStrategyBacktestResult[] | symbol;
       try {
         result = await Promise.race([
           await resolveDocuments(iterator),

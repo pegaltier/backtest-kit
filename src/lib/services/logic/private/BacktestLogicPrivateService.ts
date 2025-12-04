@@ -1,7 +1,8 @@
 import { inject } from "../../../core/di";
 import LoggerService from "../../base/LoggerService";
 import TYPES from "../../../core/types";
-import { IStrategyTickResultClosed } from "../../../../interfaces/Strategy.interface";
+import { IStrategyBacktestResult, IStrategyTickResult } from "../../../../interfaces/Strategy.interface";
+import { ICandleData } from "../../../../interfaces/Exchange.interface";
 import StrategyGlobalService from "../../global/StrategyGlobalService";
 import ExchangeGlobalService from "../../global/ExchangeGlobalService";
 import FrameGlobalService from "../../global/FrameGlobalService";
@@ -90,7 +91,7 @@ export class BacktestLogicPrivateService {
         });
       }
 
-      let result;
+      let result: IStrategyTickResult;
       try {
         result = await this.strategyGlobalService.tick(symbol, when, true);
       } catch (error) {
@@ -128,7 +129,7 @@ export class BacktestLogicPrivateService {
         // + minuteEstimatedTime для работы сигнала ПОСЛЕ активации
         // +1 потому что when включается как первая свеча (timestamp начинается с when, а не after when)
         const candlesNeeded = GLOBAL_CONFIG.CC_SCHEDULE_AWAIT_MINUTES + signal.minuteEstimatedTime + 1;
-        let candles;
+        let candles: ICandleData[];
         try {
           candles = await this.exchangeGlobalService.getNextCandles(
             symbol,
@@ -170,7 +171,7 @@ export class BacktestLogicPrivateService {
 
         // backtest() сам обработает scheduled signal: найдет активацию/отмену
         // и если активируется - продолжит с TP/SL мониторингом
-        let backtestResult;
+        let backtestResult: IStrategyBacktestResult;
         try {
           backtestResult = await this.strategyGlobalService.backtest(
             symbol,
@@ -245,7 +246,7 @@ export class BacktestLogicPrivateService {
         });
 
         // Получаем свечи для бектеста
-        let candles;
+        let candles: ICandleData[];
         try {
           candles = await this.exchangeGlobalService.getNextCandles(
             symbol,
@@ -281,7 +282,7 @@ export class BacktestLogicPrivateService {
         });
 
         // Вызываем backtest - всегда возвращает closed
-        let backtestResult;
+        let backtestResult: IStrategyBacktestResult;
         try {
           backtestResult = await this.strategyGlobalService.backtest(
             symbol,

@@ -5063,7 +5063,7 @@ declare class BacktestUtils {
         strategyName: string;
         exchangeName: string;
         frameName: string;
-    }) => AsyncGenerator<any, void, unknown>;
+    }) => AsyncGenerator<IStrategyBacktestResult, void, unknown>;
     /**
      * Runs backtest in background without yielding results.
      *
@@ -5198,7 +5198,7 @@ declare class LiveUtils {
     run: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
-    }) => AsyncGenerator<any, void, unknown>;
+    }) => AsyncGenerator<IStrategyTickResultOpened | IStrategyTickResultClosed | IStrategyTickResultCancelled, void, unknown>;
     /**
      * Runs live trading in background without yielding results.
      *
@@ -7457,7 +7457,7 @@ declare class BacktestLogicPrivateService {
      * }
      * ```
      */
-    run(symbol: string): AsyncGenerator<any, void, unknown>;
+    run(symbol: string): AsyncGenerator<IStrategyBacktestResult, void, unknown>;
 }
 
 /**
@@ -7502,7 +7502,7 @@ declare class LiveLogicPrivateService {
      * }
      * ```
      */
-    run(symbol: string): AsyncGenerator<any, void, unknown>;
+    run(symbol: string): AsyncGenerator<IStrategyTickResultOpened | IStrategyTickResultClosed | IStrategyTickResultCancelled, void, unknown>;
 }
 
 /**
@@ -7596,7 +7596,7 @@ declare class BacktestLogicPublicService {
         strategyName: string;
         exchangeName: string;
         frameName: string;
-    }) => AsyncGenerator<any, void, unknown>;
+    }) => AsyncGenerator<IStrategyBacktestResult, void, unknown>;
 }
 
 /**
@@ -7647,7 +7647,7 @@ declare class LiveLogicPublicService {
     run: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
-    }) => AsyncGenerator<any, void, unknown>;
+    }) => AsyncGenerator<IStrategyTickResultOpened | IStrategyTickResultClosed | IStrategyTickResultCancelled, void, unknown>;
 }
 
 /**
@@ -7715,7 +7715,7 @@ declare class LiveCommandService {
     run: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
-    }) => AsyncGenerator<any, void, unknown>;
+    }) => AsyncGenerator<IStrategyTickResultOpened | IStrategyTickResultClosed | IStrategyTickResultCancelled, void, unknown>;
 }
 
 /**
@@ -7743,7 +7743,7 @@ declare class BacktestCommandService {
         strategyName: string;
         exchangeName: string;
         frameName: string;
-    }) => AsyncGenerator<any, void, unknown>;
+    }) => AsyncGenerator<IStrategyBacktestResult, void, unknown>;
 }
 
 /**
