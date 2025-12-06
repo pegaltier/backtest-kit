@@ -1333,3 +1333,306 @@ test("PARTIAL LISTENERS: listenPartialProfit and listenPartialLoss capture event
 
   pass(`listenPartialProfit WORKS: ${partialProfitEvents.length} events, levels: ${uniqueLevels.join('%, ')}%, max ${maxLevel}%`);
 });
+
+
+/**
+ * PARTIAL DEDUPE TEST: Verify events are NOT emitted twice for same level
+ *
+ * This test simulates price oscillation (reaching level, dropping, reaching again)
+ * and verifies that milestone events are emitted only ONCE per level:
+ * - Price rises to 20% profit
+ * - Price drops back to 15%
+ * - Price rises again to 20% profit
+ * - Expected: Only ONE event at 20% level (first time reached)
+ *
+ * This validates ClientPartial's Set-based deduplication logic.
+ * Uses listenPartialProfit/listenPartialLoss instead of strategy callbacks.
+ */
+test("PARTIAL DEDUPE: Events NOT emitted twice for same level", async ({ pass, fail }) => {
+  const partialProfitEvents = [];
+  const partialLossEvents = [];
+
+  const startTime = new Date("2024-01-01T00:00:00Z").getTime();
+  const intervalMs = 60000;
+  const basePrice = 100000;
+  const priceOpen = basePrice - 500; // 99500
+  const priceTakeProfit = priceOpen + 1000; // 100500
+  const priceStopLoss = priceOpen - 1000; // 98500
+  const tpDistance = priceTakeProfit - priceOpen; // 1000
+
+  let allCandles = [];
+  let signalGenerated = false;
+
+  // Pre-fill initial candles for getAveragePrice (min 5 candles)
+  for (let i = 0; i < 5; i++) {
+    allCandles.push({
+      timestamp: startTime + i * intervalMs,
+      open: basePrice,
+      high: basePrice + 100,
+      low: basePrice - 50,
+      close: basePrice,
+      volume: 100,
+    });
+  }
+
+  addExchange({
+    exchangeName: "binance-partial-dedupe",
+    getCandles: async (_symbol, _interval, since, limit) => {
+      const sinceIndex = Math.floor((since.getTime() - startTime) / intervalMs);
+      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
+      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+    },
+    formatPrice: async (_symbol, p) => p.toFixed(8),
+    formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
+  });
+
+  addStrategy({
+    strategyName: "test-partial-dedupe",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+
+      // Regenerate ALL candles in first getSignal call
+      allCandles = [];
+
+      let candleIndex = 0;
+
+      // Phase 1: Activation (candles 0-4) - price at priceOpen
+      for (let i = 0; i < 5; i++) {
+        const timestamp = startTime + candleIndex * intervalMs;
+        allCandles.push({
+          timestamp,
+          open: priceOpen,
+          high: priceOpen + 10,
+          low: priceOpen - 10,
+          close: priceOpen,
+          volume: 100,
+        });
+        candleIndex++;
+      }
+
+      // Phase 2: Rise to 25% profit (candles 5-9)
+      // This should trigger events at 1%, 3%, 6%, 10%, 15%, 20%, 25%
+      for (let i = 0; i < 5; i++) {
+        const timestamp = startTime + candleIndex * intervalMs;
+        const progress = 0.05 * (i + 1); // 0.05, 0.10, 0.15, 0.20, 0.25
+        const price = priceOpen + tpDistance * progress;
+
+        allCandles.push({
+          timestamp,
+          open: price,
+          high: price + 10,
+          low: price - 10,
+          close: price,
+          volume: 100,
+        });
+        candleIndex++;
+      }
+
+      // Phase 3: Drop back to 12% profit (candles 10-12)
+      // Price falls but NO new events should be emitted (levels already reached)
+      for (let i = 0; i < 3; i++) {
+        const timestamp = startTime + candleIndex * intervalMs;
+        const progress = 0.12; // 12% profit
+        const price = priceOpen + tpDistance * progress;
+
+        allCandles.push({
+          timestamp,
+          open: price,
+          high: price + 10,
+          low: price - 10,
+          close: price,
+          volume: 100,
+        });
+        candleIndex++;
+      }
+
+      // Phase 4: Rise AGAIN to 25% profit (candles 13-17)
+      // Price returns to previous high, but NO duplicate events should be emitted
+      for (let i = 0; i < 5; i++) {
+        const timestamp = startTime + candleIndex * intervalMs;
+        const progress = 0.05 * (i + 1) + 0.12; // 0.17, 0.22, 0.27, ...
+        const price = priceOpen + tpDistance * progress;
+
+        allCandles.push({
+          timestamp,
+          open: price,
+          high: price + 10,
+          low: price - 10,
+          close: price,
+          volume: 100,
+        });
+        candleIndex++;
+      }
+
+      // Phase 5: Continue to TP (candles 18-25)
+      const remainingSteps = 8;
+      for (let i = 0; i < remainingSteps; i++) {
+        const timestamp = startTime + candleIndex * intervalMs;
+        const progress = 0.37 + (0.63 / remainingSteps) * (i + 1); // 0.37 -> 1.0
+        const price = priceOpen + tpDistance * progress;
+
+        allCandles.push({
+          timestamp,
+          open: price,
+          high: price + 10,
+          low: price - 10,
+          close: price,
+          volume: 100,
+        });
+        candleIndex++;
+      }
+
+      // Phase 6: Hold at TP for closure (candles 26-28)
+      for (let i = 0; i < 3; i++) {
+        const timestamp = startTime + candleIndex * intervalMs;
+        allCandles.push({
+          timestamp,
+          open: priceTakeProfit,
+          high: priceTakeProfit + 10,
+          low: priceTakeProfit - 10,
+          close: priceTakeProfit,
+          volume: 100,
+        });
+        candleIndex++;
+      }
+
+      // console.log(`\n=== PARTIAL DEDUPE TEST SETUP ===`);
+      // console.log(`Total candles: ${allCandles.length}`);
+      // console.log(`Phase 2: Rise to 25% (candles 5-9)`);
+      // console.log(`Phase 3: Drop to 12% (candles 10-12)`);
+      // console.log(`Phase 4: Rise again to 32% (candles 13-17)`);
+      // console.log(`Expected: NO duplicate events for levels 15%, 20%, 25%`);
+      // console.log(`===================================\n`);
+
+      return {
+        position: "long",
+        priceOpen,
+        priceTakeProfit,
+        priceStopLoss,
+        minuteEstimatedTime: 60,
+      };
+    },
+  });
+
+  addFrame({
+    frameName: "60m-partial-dedupe",
+    interval: "1m",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-01T01:00:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+
+  // Subscribe to partial profit/loss events BEFORE starting backtest
+  const unsubscribeProfit = listenPartialProfit((event) => {
+    partialProfitEvents.push({
+      symbol: event.symbol,
+      signalId: event.data.id,
+      currentPrice: event.currentPrice,
+      level: event.level,
+      backtest: event.backtest,
+    });
+
+    // console.log(`[listenPartialProfit] Level: ${event.level}%, Price: ${event.currentPrice.toFixed(2)}`);
+  });
+
+  const unsubscribeLoss = listenPartialLoss((event) => {
+    partialLossEvents.push({
+      symbol: event.symbol,
+      signalId: event.data.id,
+      currentPrice: event.currentPrice,
+      level: event.level,
+      backtest: event.backtest,
+    });
+
+    // console.log(`[listenPartialLoss] Level: ${event.level}%, Price: ${event.currentPrice.toFixed(2)}`);
+  });
+
+  listenDoneBacktest(async () => {
+    // console.log(`\n=== BACKTEST COMPLETED ===`);
+    // console.log(`Total profit events: ${partialProfitEvents.length}`);
+    await sleep(50);
+    awaitSubject.next();
+  });
+
+  let errorCaught = null;
+  const unsubscribeError = listenError((error) => {
+    if (error && error.message && error.message.includes("no candles data")) {
+      // console.log(`[IGNORED] ${error.message}`);
+      return;
+    }
+    console.error(`\n[ERROR]`, error);
+    errorCaught = error;
+    awaitSubject.next();
+  });
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-partial-dedupe",
+    exchangeName: "binance-partial-dedupe",
+    frameName: "60m-partial-dedupe",
+  });
+
+  await awaitSubject.toPromise();
+  await sleep(100);
+
+  // Cleanup
+  unsubscribeProfit();
+  unsubscribeLoss();
+  unsubscribeError();
+
+  if (errorCaught) {
+    fail(`Error: ${errorCaught.message || errorCaught}`);
+    return;
+  }
+
+  // No loss events expected
+  if (partialLossEvents.length > 0) {
+    fail(`Expected 0 loss events, got ${partialLossEvents.length}`);
+    return;
+  }
+
+  // Should have profit events
+  if (partialProfitEvents.length < 3) {
+    fail(`Expected at least 3 profit events, got ${partialProfitEvents.length}`);
+    return;
+  }
+
+  // CRITICAL: Check for duplicate levels
+  const levelCounts = new Map();
+  for (const event of partialProfitEvents) {
+    const count = levelCounts.get(event.level) || 0;
+    levelCounts.set(event.level, count + 1);
+  }
+
+  // Find any duplicates
+  const duplicates = [];
+  for (const [level, count] of levelCounts.entries()) {
+    if (count > 1) {
+      duplicates.push(`${level}% (${count} times)`);
+    }
+  }
+
+  if (duplicates.length > 0) {
+    fail(`Duplicate events detected: ${duplicates.join(', ')}. Each level should emit only ONCE!`);
+    return;
+  }
+
+  // Verify all levels are unique
+  const uniqueLevels = [...new Set(partialProfitEvents.map(e => e.level))].sort((a, b) => a - b);
+  if (uniqueLevels.length !== partialProfitEvents.length) {
+    fail(`Event count mismatch: ${partialProfitEvents.length} events but only ${uniqueLevels.length} unique levels`);
+    return;
+  }
+
+  const maxLevel = Math.max(...partialProfitEvents.map(e => e.level));
+
+  // console.log(`\n=== VERIFICATION PASSED ===`);
+  // console.log(`Total events: ${partialProfitEvents.length}`);
+  // console.log(`Unique levels: ${uniqueLevels.join('%, ')}%`);
+  // console.log(`All levels emitted exactly ONCE (no duplicates)`);
+  // console.log(`===========================\n`);
+
+  pass(`Deduplication WORKS: ${partialProfitEvents.length} unique events, levels: ${uniqueLevels.join('%, ')}%, max ${maxLevel}%`);
+});
