@@ -945,26 +945,30 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
   signal: ISignalRow,
   currentPrice: number
 ): Promise<IStrategyTickResultActive> => {
-  // Calculate revenue percentage for partial fill/loss callbacks
+  // Calculate percentage of path to TP/SL for partial fill/loss callbacks
   {
-    let revenuePercent = 0;
+    let progressPercent = 0;
 
     if (signal.position === "long") {
-      // For long: positive if current > open, negative if current < open
-      revenuePercent = ((currentPrice - signal.priceOpen) / signal.priceOpen) * 100;
+      // For long: calculate progress towards TP (positive) or SL (negative)
+      const tpDistance = signal.priceTakeProfit - signal.priceOpen;
+      const currentDistance = currentPrice - signal.priceOpen;
+      progressPercent = (currentDistance / tpDistance) * 100;
     } else if (signal.position === "short") {
-      // For short: positive if current < open, negative if current > open
-      revenuePercent = ((signal.priceOpen - currentPrice) / signal.priceOpen) * 100;
+      // For short: calculate progress towards TP (positive) or SL (negative)
+      const tpDistance = signal.priceOpen - signal.priceTakeProfit;
+      const currentDistance = signal.priceOpen - currentPrice;
+      progressPercent = (currentDistance / tpDistance) * 100;
     }
 
-    // Call onPartialProfit if revenue is positive (but not reached TP yet)
-    if (revenuePercent > 0) {
+    // Call onPartialProfit if progress is positive (moving towards TP, but not past it)
+    if (progressPercent > 0) {
       // КРИТИЧНО: Вызываем ClientPartial для отслеживания уровней
       await self.params.partial.profit(
         self.params.execution.context.symbol,
         signal,
         currentPrice,
-        revenuePercent,
+        Math.min(progressPercent, 100),
         self.params.execution.context.backtest,
         self.params.execution.context.when
       );
@@ -974,20 +978,20 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
           self.params.execution.context.symbol,
           signal,
           currentPrice,
-          revenuePercent,
+          Math.min(progressPercent, 100),
           self.params.execution.context.backtest
         );
       }
     }
 
-    // Call onPartialLoss if revenue is negative (but not hit SL yet)
-    if (revenuePercent < 0) {
+    // Call onPartialLoss if progress is negative (moving towards SL)
+    if (progressPercent < 0) {
       // КРИТИЧНО: Вызываем ClientPartial для отслеживания уровней
       await self.params.partial.loss(
         self.params.execution.context.symbol,
         signal,
         currentPrice,
-        revenuePercent,
+        Math.abs(progressPercent),
         self.params.execution.context.backtest,
         self.params.execution.context.when
       );
@@ -997,7 +1001,7 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
           self.params.execution.context.symbol,
           signal,
           currentPrice,
-          revenuePercent,
+          Math.abs(progressPercent),
           self.params.execution.context.backtest
         );
       }
@@ -1429,23 +1433,27 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
     }
 
     // Call onPartialProfit/onPartialLoss callbacks during backtest candle processing
-    // Calculate revenue percentage
+    // Calculate percentage of path to TP/SL
     {
-      let revenuePercent = 0;
+      let progressPercent = 0;
       if (signal.position === "long") {
-        revenuePercent = ((averagePrice - signal.priceOpen) / signal.priceOpen) * 100;
+        const tpDistance = signal.priceTakeProfit - signal.priceOpen;
+        const currentDistance = averagePrice - signal.priceOpen;
+        progressPercent = (currentDistance / tpDistance) * 100;
       } else if (signal.position === "short") {
-        revenuePercent = ((signal.priceOpen - averagePrice) / signal.priceOpen) * 100;
+        const tpDistance = signal.priceOpen - signal.priceTakeProfit;
+        const currentDistance = signal.priceOpen - averagePrice;
+        progressPercent = (currentDistance / tpDistance) * 100;
       }
 
-      // Call onPartialProfit if revenue is positive (but not reached TP yet)
-      if (revenuePercent > 0) {
+      // Call onPartialProfit if progress is positive (moving towards TP, but not past it)
+      if (progressPercent > 0) {
         // КРИТИЧНО: Вызываем ClientPartial для отслеживания уровней
         await self.params.partial.profit(
           self.params.execution.context.symbol,
           signal,
           averagePrice,
-          revenuePercent,
+          Math.min(progressPercent, 100),
           self.params.execution.context.backtest,
           self.params.execution.context.when
         );
@@ -1455,20 +1463,20 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
             self.params.execution.context.symbol,
             signal,
             averagePrice,
-            revenuePercent,
+            Math.min(progressPercent, 100),
             self.params.execution.context.backtest
           );
         }
       }
 
-      // Call onPartialLoss if revenue is negative (but not hit SL yet)
-      if (revenuePercent < 0) {
+      // Call onPartialLoss if progress is negative (moving towards SL)
+      if (progressPercent < 0) {
         // КРИТИЧНО: Вызываем ClientPartial для отслеживания уровней
         await self.params.partial.loss(
           self.params.execution.context.symbol,
           signal,
           averagePrice,
-          revenuePercent,
+          Math.abs(progressPercent),
           self.params.execution.context.backtest,
           self.params.execution.context.when
         );
@@ -1478,7 +1486,7 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
             self.params.execution.context.symbol,
             signal,
             averagePrice,
-            revenuePercent,
+            Math.abs(progressPercent),
             self.params.execution.context.backtest
           );
         }
