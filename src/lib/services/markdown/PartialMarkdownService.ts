@@ -5,7 +5,7 @@ import { PartialLevel } from "../../../interfaces/Partial.interface";
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
-import { memoize, singleshot, str } from "functools-kit";
+import { memoize, singleshot } from "functools-kit";
 import {
   partialProfitSubject,
   partialLossSubject,
@@ -240,11 +240,11 @@ class ReportStorage {
     const stats = await this.getData();
 
     if (stats.totalEvents === 0) {
-      return str.newline(
+      return [
         `# Partial Profit/Loss Report: ${symbol}:${strategyName}`,
         "",
         "No partial profit/loss events recorded yet."
-      );
+      ].join("\n");
     }
 
     const header = columns.map((col) => col.label);
@@ -254,9 +254,9 @@ class ReportStorage {
     );
 
     const tableData = [header, separator, ...rows];
-    const table = str.newline(tableData.map((row) => `| ${row.join(" | ")} |`));
+    const table = tableData.map((row) => `| ${row.join(" | ")} |`).join("\n");
 
-    return str.newline(
+    return [
       `# Partial Profit/Loss Report: ${symbol}:${strategyName}`,
       "",
       table,
@@ -264,7 +264,7 @@ class ReportStorage {
       `**Total events:** ${stats.totalEvents}`,
       `**Profit events:** ${stats.totalProfit}`,
       `**Loss events:** ${stats.totalLoss}`
-    );
+    ].join("\n");
   }
 
   /**

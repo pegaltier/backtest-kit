@@ -8,7 +8,7 @@ import {
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
-import { memoize, singleshot, str } from "functools-kit";
+import { memoize, singleshot } from "functools-kit";
 import { signalBacktestEmitter } from "../../../config/emitters";
 import { toPlainString } from "../../../helpers/toPlainString";
 
@@ -280,11 +280,11 @@ class ReportStorage {
     const stats = await this.getData();
 
     if (stats.totalSignals === 0) {
-      return str.newline(
+      return [
         `# Backtest Report: ${strategyName}`,
         "",
         "No signals closed yet."
-      );
+      ].join("\n");
     }
 
     const header = columns.map((col) => col.label);
@@ -294,9 +294,9 @@ class ReportStorage {
     );
 
     const tableData = [header, separator, ...rows];
-    const table = str.newline(tableData.map(row => `| ${row.join(" | ")} |`));
+    const table = tableData.map(row => `| ${row.join(" | ")} |`).join("\n");
 
-    return str.newline(
+    return [
       `# Backtest Report: ${strategyName}`,
       "",
       table,
@@ -311,7 +311,7 @@ class ReportStorage {
       `**Annualized Sharpe Ratio:** ${stats.annualizedSharpeRatio === null ? "N/A" : `${stats.annualizedSharpeRatio.toFixed(3)} (higher is better)`}`,
       `**Certainty Ratio:** ${stats.certaintyRatio === null ? "N/A" : `${stats.certaintyRatio.toFixed(3)} (higher is better)`}`,
       `**Expected Yearly Returns:** ${stats.expectedYearlyReturns === null ? "N/A" : `${stats.expectedYearlyReturns > 0 ? "+" : ""}${stats.expectedYearlyReturns.toFixed(2)}% (higher is better)`}`,
-    );
+    ].join("\n");
   }
 
   /**

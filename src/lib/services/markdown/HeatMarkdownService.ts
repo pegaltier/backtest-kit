@@ -381,11 +381,11 @@ class HeatmapStorage {
     const data = await this.getData();
 
     if (data.symbols.length === 0) {
-      return str.newline(
+      return [
         `# Portfolio Heatmap: ${strategyName}`,
         "",
         "*No data available*"
-      );
+      ].join("\n");
     }
 
     const header = columns.map((col) => col.label);
@@ -395,17 +395,15 @@ class HeatmapStorage {
     );
 
     const tableData = [header, separator, ...rows];
-    const table = str.newline(
-      tableData.map((row) => `| ${row.join(" | ")} |`)
-    );
+    const table = tableData.map((row) => `| ${row.join(" | ")} |`).join("\n");
 
-    return str.newline(
+    return [
       `# Portfolio Heatmap: ${strategyName}`,
       "",
       `**Total Symbols:** ${data.totalSymbols} | **Portfolio PNL:** ${data.portfolioTotalPnl !== null ? str(data.portfolioTotalPnl, "%+.2f%%") : "N/A"} | **Portfolio Sharpe:** ${data.portfolioSharpeRatio !== null ? str(data.portfolioSharpeRatio, "%.2f") : "N/A"} | **Total Trades:** ${data.portfolioTotalTrades}`,
       "",
       table
-    );
+    ].join("\n");
   }
 
   /**

@@ -32,6 +32,15 @@ declare const GLOBAL_CONFIG: {
      */
     CC_MAX_SIGNAL_LIFETIME_MINUTES: number;
     /**
+     * Maximum time allowed for signal generation (in seconds).
+     * Prevents long-running or stuck signal generation routines from blocking
+     * execution or consuming resources indefinitely. If generation exceeds this
+     * threshold the attempt should be aborted, logged and optionally retried.
+     *
+     * Default: 180 seconds (3 minutes)
+     */
+    CC_MAX_SIGNAL_GENERATION_SECONDS: number;
+    /**
      * Number of retries for getCandles function
      * Default: 3 retries
      */

@@ -9,7 +9,7 @@ import {
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
-import { memoize, singleshot, str } from "functools-kit";
+import { memoize, singleshot } from "functools-kit";
 import { signalEmitter, signalLiveEmitter } from "../../../config/emitters";
 import { toPlainString } from "../../../helpers/toPlainString";
 
@@ -295,11 +295,11 @@ class ReportStorage {
     const stats = await this.getData();
 
     if (stats.totalEvents === 0) {
-      return str.newline(
+      return [
         `# Scheduled Signals Report: ${strategyName}`,
         "",
         "No scheduled signals recorded yet."
-      );
+      ].join("\n");
     }
 
     const header = columns.map((col) => col.label);
@@ -309,9 +309,9 @@ class ReportStorage {
     );
 
     const tableData = [header, separator, ...rows];
-    const table = str.newline(tableData.map((row) => `| ${row.join(" | ")} |`));
+    const table = tableData.map((row) => `| ${row.join(" | ")} |`).join("\n");
 
-    return str.newline(
+    return [
       `# Scheduled Signals Report: ${strategyName}`,
       "",
       table,
@@ -321,7 +321,7 @@ class ReportStorage {
       `**Cancelled signals:** ${stats.totalCancelled}`,
       `**Cancellation rate:** ${stats.cancellationRate === null ? "N/A" : `${stats.cancellationRate.toFixed(2)}% (lower is better)`}`,
       `**Average wait time (cancelled):** ${stats.avgWaitTime === null ? "N/A" : `${stats.avgWaitTime.toFixed(2)} minutes`}`
-    );
+    ].join("\n");
   }
 
   /**

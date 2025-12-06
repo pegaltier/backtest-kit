@@ -7,7 +7,7 @@ import {
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
-import { memoize, singleshot, str } from "functools-kit";
+import { memoize, singleshot } from "functools-kit";
 import { performanceEmitter } from "../../../config/emitters";
 
 /**
@@ -222,11 +222,11 @@ class PerformanceStorage {
     const stats = await this.getData(strategyName);
 
     if (stats.totalEvents === 0) {
-      return str.newline(
+      return [
         `# Performance Report: ${strategyName}`,
         "",
         "No performance metrics recorded yet."
-      );
+      ].join("\n");
     }
 
     // Sort metrics by total duration (descending) to show bottlenecks first
@@ -268,9 +268,7 @@ class PerformanceStorage {
     ]);
 
     const summaryTableData = [summaryHeader, summarySeparator, ...summaryRows];
-    const summaryTable = str.newline(
-      summaryTableData.map((row) => `| ${row.join(" | ")} |`)
-    );
+    const summaryTable = summaryTableData.map((row) => `| ${row.join(" | ")} |`).join("\n");
 
     // Calculate percentage of total time for each metric
     const percentages = sortedMetrics.map((metric) => {
@@ -278,7 +276,7 @@ class PerformanceStorage {
       return `- **${metric.metricType}**: ${pct.toFixed(1)}% (${metric.totalDuration.toFixed(2)}ms total)`;
     });
 
-    return str.newline(
+    return [
       `# Performance Report: ${strategyName}`,
       "",
       `**Total events:** ${stats.totalEvents}`,
@@ -287,14 +285,14 @@ class PerformanceStorage {
       "",
       "## Time Distribution",
       "",
-      str.newline(percentages),
+      percentages.join("\n"),
       "",
       "## Detailed Metrics",
       "",
       summaryTable,
       "",
       "**Note:** All durations are in milliseconds. P95/P99 represent 95th and 99th percentile response times. Wait times show the interval between consecutive events of the same type."
-    );
+    ].join("\n");
   }
 
   /**

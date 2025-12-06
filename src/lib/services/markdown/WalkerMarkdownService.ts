@@ -9,7 +9,7 @@ import { StrategyName } from "../../../interfaces/Strategy.interface";
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
-import { memoize, singleshot, str } from "functools-kit";
+import { memoize, singleshot } from "functools-kit";
 import { walkerEmitter } from "../../../config/emitters";
 import { WalkerContract } from "../../../contract/Walker.contract";
 import { BacktestStatistics } from "./BacktestMarkdownService";
@@ -351,7 +351,7 @@ class ReportStorage {
     );
 
     const tableData = [header, separator, ...rows];
-    return str.newline(tableData.map((row) => `| ${row.join(" | ")} |`));
+    return tableData.map((row) => `| ${row.join(" | ")} |`).join("\n");
   }
 
   /**
@@ -397,7 +397,7 @@ class ReportStorage {
     );
 
     const tableData = [header, separator, ...rows];
-    return str.newline(tableData.map((row) => `| ${row.join(" | ")} |`));
+    return tableData.map((row) => `| ${row.join(" | ")} |`).join("\n");
   }
 
   /**
@@ -422,7 +422,7 @@ class ReportStorage {
     // Get total signals for best strategy
     const bestStrategySignals = results.bestStats?.totalSignals ?? 0;
 
-    return str.newline(
+    return [
       `# Walker Comparison Report: ${results.walkerName}`,
       "",
       `**Symbol:** ${results.symbol}`,
@@ -445,7 +445,7 @@ class ReportStorage {
       this.getPnlTable(),
       "",
       "**Note:** Higher values are better for all metrics except Standard Deviation (lower is better)."
-    );
+    ].join("\n");
   }
 
   /**
