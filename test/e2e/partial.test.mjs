@@ -852,3 +852,238 @@ test("Partial.getData returns empty statistics for nonexistent symbol", async ({
 
   fail("Partial.getData did not return empty statistics correctly");
 });
+
+
+/**
+ * PARTIAL PROGRESS TEST: Verify percentage calculations during TP achievement
+ *
+ * This test simulates market movement towards TP and verifies that:
+ * - Events are emitted as price progresses
+ * - Percentages are calculated correctly (0-100% range)
+ * - Percentages increase monotonically
+ *
+ * Note: Exact levels (10%, 20%, etc) may vary due to VWAP and HIGH/LOW checks.
+ * Tolerance: ±10% is acceptable for milestone verification.
+ */
+test("PARTIAL PROGRESS: Percentage calculation during TP achievement", async ({ pass, fail }) => {
+  const partialProfitEvents = [];
+  const partialLossEvents = [];
+
+  const startTime = new Date("2024-01-01T00:00:00Z").getTime();
+  const intervalMs = 60000;
+  const basePrice = 100000;
+  const priceOpen = basePrice - 500; // 99500 (LONG: buy lower, wait for price to fall)
+  const priceTakeProfit = priceOpen + 1000; // 100500
+  const priceStopLoss = priceOpen - 1000; // 98500
+  const tpDistance = priceTakeProfit - priceOpen; // 1000
+
+  let allCandles = [];
+  let signalGenerated = false;
+
+  // CRITICAL: Pre-fill initial candles for getAveragePrice (min 5 candles)
+  // Candles must be ABOVE priceOpen to ensure scheduled state (not immediate activation)
+  for (let i = 0; i < 5; i++) {
+    allCandles.push({
+      timestamp: startTime + i * intervalMs,
+      open: basePrice,
+      high: basePrice + 100,
+      low: basePrice - 50, // 99950 > priceOpen (99500) ✓
+      close: basePrice,
+      volume: 100,
+    });
+  }
+
+  addExchange({
+    exchangeName: "binance-partial-progress",
+    getCandles: async (_symbol, _interval, since, limit) => {
+      const sinceIndex = Math.floor((since.getTime() - startTime) / intervalMs);
+      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
+      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+    },
+    formatPrice: async (_symbol, p) => p.toFixed(8),
+    formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
+  });
+
+  addStrategy({
+    strategyName: "test-partial-progress",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+
+      // CRITICAL: Regenerate ALL candles in first getSignal call
+      allCandles = [];
+
+      let candleIndex = 0;
+
+      // Phase 1: Activation (candles 0-4) - price falls to priceOpen
+      for (let i = 0; i < 5; i++) {
+        const timestamp = startTime + candleIndex * intervalMs;
+        allCandles.push({
+          timestamp,
+          open: priceOpen,
+          high: priceOpen + 10,
+          low: priceOpen - 10,
+          close: priceOpen,
+          volume: 100,
+        });
+        candleIndex++;
+      }
+
+      // Phase 2: Gradual rise to TP (candles 5-24)
+      // Move from priceOpen (99500) to priceTakeProfit (100500) in 20 steps
+      const steps = 20;
+      for (let i = 0; i < steps; i++) {
+        const timestamp = startTime + candleIndex * intervalMs;
+        const progress = (i + 1) / steps; // 0.05, 0.10, 0.15, ..., 1.0
+        const price = priceOpen + tpDistance * progress;
+
+        allCandles.push({
+          timestamp,
+          open: price,
+          high: price + 10,
+          low: price - 10,
+          close: price,
+          volume: 100,
+        });
+        candleIndex++;
+      }
+
+      // Phase 3: Hold at TP for closure (candles 25-27)
+      for (let i = 0; i < 3; i++) {
+        const timestamp = startTime + candleIndex * intervalMs;
+        allCandles.push({
+          timestamp,
+          open: priceTakeProfit,
+          high: priceTakeProfit + 10,
+          low: priceTakeProfit - 10,
+          close: priceTakeProfit,
+          volume: 100,
+        });
+        candleIndex++;
+      }
+
+      // console.log(`\n=== PARTIAL PROGRESS TEST SETUP ===`);
+      // console.log(`basePrice: ${basePrice}`);
+      // console.log(`priceOpen: ${priceOpen}`);
+      // console.log(`priceTakeProfit: ${priceTakeProfit}`);
+      // console.log(`priceStopLoss: ${priceStopLoss}`);
+      // console.log(`TP distance: ${tpDistance}`);
+      // console.log(`Total candles: ${allCandles.length}`);
+      // console.log(`Price progression: ${priceOpen} → ${priceTakeProfit} (${steps} steps)`);
+      // console.log(`===================================\n`);
+
+      return {
+        position: "long",
+        priceOpen,
+        priceTakeProfit,
+        priceStopLoss,
+        minuteEstimatedTime: 60,
+      };
+    },
+    callbacks: {
+      onPartialProfit: async (symbol, data, currentPrice, revenuePercent, backtest) => {
+        const event = { symbol, signalId: data.id, currentPrice, revenuePercent, backtest };
+        partialProfitEvents.push(event);
+
+        // console.log(`[PROFIT EVENT] Level: ${revenuePercent.toFixed(2)}%, Price: ${currentPrice.toFixed(2)}, Expected: ${(priceOpen + tpDistance * (revenuePercent / 100)).toFixed(2)}`);
+        await sleep(10); // Let // console.log flush
+      },
+      onPartialLoss: async (symbol, data, currentPrice, revenuePercent, backtest) => {
+        const event = { symbol, signalId: data.id, currentPrice, revenuePercent, backtest };
+        partialLossEvents.push(event);
+
+        // console.log(`[LOSS EVENT] Level: ${revenuePercent.toFixed(2)}%, Price: ${currentPrice.toFixed(2)}`);
+        await sleep(10);
+      },
+    },
+  });
+
+  addFrame({
+    frameName: "60m-partial-progress",
+    interval: "1m",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-01T01:00:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(async () => {
+    // console.log(`\n=== BACKTEST COMPLETED ===`);
+    // console.log(`Total profit events: ${partialProfitEvents.length}`);
+    // console.log(`Total loss events: ${partialLossEvents.length}`);
+    await sleep(50); // Let all logs flush
+    awaitSubject.next();
+  });
+
+  let errorCaught = null;
+  const unsubscribeError = listenError((error) => {
+    // Ignore "no candles data" errors - they can occur during initialization
+    if (error && error.message && error.message.includes("no candles data")) {
+      // console.log(`[IGNORED] ${error.message}`);
+      return;
+    }
+    console.error(`\n[ERROR]`, error);
+    errorCaught = error;
+    awaitSubject.next();
+  });
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-partial-progress",
+    exchangeName: "binance-partial-progress",
+    frameName: "60m-partial-progress",
+  });
+
+  await awaitSubject.toPromise();
+  await sleep(100); // Final flush
+  unsubscribeError();
+
+  if (errorCaught) {
+    fail(`Error: ${errorCaught.message || errorCaught}`);
+    return;
+  }
+
+  // No loss events expected
+  if (partialLossEvents.length > 0) {
+    fail(`Expected 0 loss events, got ${partialLossEvents.length}`);
+    return;
+  }
+
+  // Should have at least 3 profit events
+  if (partialProfitEvents.length < 3) {
+    fail(`Expected at least 3 profit events, got ${partialProfitEvents.length}`);
+    return;
+  }
+
+  // Verify all percentages are in 0-100% range
+  for (let i = 0; i < partialProfitEvents.length; i++) {
+    const percent = partialProfitEvents[i].revenuePercent;
+    if (percent < 0 || percent > 100) {
+      fail(`Progress should be 0-100%, got ${percent.toFixed(2)}% at event #${i + 1}`);
+      return;
+    }
+  }
+
+  // Verify percentages increase monotonically
+  for (let i = 1; i < partialProfitEvents.length; i++) {
+    if (partialProfitEvents[i].revenuePercent <= partialProfitEvents[i - 1].revenuePercent) {
+      fail(`Progress should increase: ${partialProfitEvents[i - 1].revenuePercent.toFixed(2)}% -> ${partialProfitEvents[i].revenuePercent.toFixed(2)}%`);
+      return;
+    }
+  }
+
+  // Verify we have reasonable coverage (at least reached 50%+ progress)
+  const maxProgress = Math.max(...partialProfitEvents.map(e => e.revenuePercent));
+  if (maxProgress < 50) {
+    fail(`Expected max progress >= 50%, got ${maxProgress.toFixed(2)}%`);
+    return;
+  }
+
+  const actualLevels = partialProfitEvents.map(e => e.revenuePercent).sort((a, b) => a - b);
+  // console.log(`\n=== VERIFICATION PASSED ===`);
+  // console.log(`Total events: ${partialProfitEvents.length}`);
+  // console.log(`Progress levels: ${actualLevels.map(l => l.toFixed(2) + '%').join(', ')}`);
+  // console.log(`Max progress: ${maxProgress.toFixed(2)}%`);
+  // console.log(`===========================\n`);
+
+  pass(`Percentage calculation WORKS: ${partialProfitEvents.length} events, max progress ${maxProgress.toFixed(2)}%`);
+});
