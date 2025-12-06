@@ -4,6 +4,7 @@ import {
   not,
   randomString,
   singleshot,
+  sleep,
   trycatch,
 } from "functools-kit";
 import {
@@ -38,6 +39,8 @@ const INTERVAL_MINUTES: Record<SignalInterval, number> = {
   "30m": 30,
   "1h": 60,
 };
+
+const TIMEOUT_SYMBOL = Symbol('timeout');
 
 const VALIDATE_SIGNAL_FN = (signal: ISignalRow, currentPrice: number, isScheduled: boolean): void => {
   const errors: string[] = [];
@@ -299,10 +302,17 @@ const GET_SIGNAL_FN = trycatch(
     ) {
       return null;
     }
-    const signal = await self.params.getSignal(
-      self.params.execution.context.symbol,
-      self.params.execution.context.when,
-    );
+    const timeoutMs = GLOBAL_CONFIG.CC_MAX_SIGNAL_GENERATION_SECONDS * 1_000;
+    const signal = await Promise.race([
+      self.params.getSignal(
+        self.params.execution.context.symbol,
+        self.params.execution.context.when,
+      ),
+      sleep(timeoutMs).then(() => TIMEOUT_SYMBOL),
+    ]);
+    if (typeof signal === "symbol") {
+      throw new Error(`Timeout for ${self.params.method.context.strategyName} symbol=${self.params.execution.context.symbol}`);
+    }
     if (!signal) {
       return null;
     }
