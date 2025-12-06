@@ -9,6 +9,7 @@ import {
   CandleInterval,
   ExchangeName,
 } from "../../../interfaces/Exchange.interface";
+import { toPlainString } from "../../../helpers/toPlainString";
 
 /**
  * Default template service for generating optimizer code snippets.
@@ -175,6 +176,9 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
       prompt,
     });
 
+    // Convert prompt to plain text first
+    const plainPrompt = toPlainString(prompt);
+
     // Escape special characters to prevent code injection
     const escapedStrategyName = String(strategyName)
       .replace(/\\/g, '\\\\')
@@ -182,7 +186,7 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
     const escapedInterval = String(interval)
       .replace(/\\/g, '\\\\')
       .replace(/"/g, '\\"');
-    const escapedPrompt = String(prompt)
+    const escapedPrompt = String(plainPrompt)
       .replace(/\\/g, '\\\\')
       .replace(/`/g, '\\`')
       .replace(/\$/g, '\\$');

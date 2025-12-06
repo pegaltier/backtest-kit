@@ -10,6 +10,7 @@ import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { memoize, singleshot, str } from "functools-kit";
 import { signalBacktestEmitter } from "../../../config/emitters";
+import { toPlainString } from "../../../helpers/toPlainString";
 
 /**
  * Column configuration for markdown table generation.
@@ -120,7 +121,7 @@ const columns: Column[] = [
   {
     key: "note",
     label: "Note",
-    format: (data) => data.signal.note ?? "N/A",
+    format: (data) => toPlainString(data.signal.note ?? "N/A"),
   },
   {
     key: "openPrice",

@@ -28,6 +28,7 @@ import { PersistSignalAdapter, PersistScheduleAdapter } from "../classes/Persist
 import backtest from "../lib";
 import { errorEmitter } from "../config/emitters";
 import { GLOBAL_CONFIG } from "../config/params";
+import toPlainString from "../helpers/toPlainString";
 
 const INTERVAL_MINUTES: Record<SignalInterval, number> = {
   "1m": 1,
@@ -325,7 +326,7 @@ const GET_SIGNAL_FN = trycatch(
           id: randomString(),
           priceOpen: signal.priceOpen, // Используем priceOpen из сигнала
           position: signal.position,
-          note: signal.note,
+          note: toPlainString(signal.note),
           priceTakeProfit: signal.priceTakeProfit,
           priceStopLoss: signal.priceStopLoss,
           minuteEstimatedTime: signal.minuteEstimatedTime,
@@ -348,7 +349,7 @@ const GET_SIGNAL_FN = trycatch(
         id: randomString(),
         priceOpen: signal.priceOpen,
         position: signal.position,
-        note: signal.note,
+        note: toPlainString(signal.note),
         priceTakeProfit: signal.priceTakeProfit,
         priceStopLoss: signal.priceStopLoss,
         minuteEstimatedTime: signal.minuteEstimatedTime,
@@ -370,6 +371,7 @@ const GET_SIGNAL_FN = trycatch(
       id: randomString(),
       priceOpen: currentPrice,
       ...signal,
+      note: toPlainString(signal.note),
       symbol: self.params.execution.context.symbol,
       exchangeName: self.params.method.context.exchangeName,
       strategyName: self.params.method.context.strategyName,

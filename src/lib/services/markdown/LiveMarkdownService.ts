@@ -12,6 +12,7 @@ import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { memoize, singleshot, str } from "functools-kit";
 import { signalLiveEmitter } from "../../../config/emitters";
+import { toPlainString } from "../../../helpers/toPlainString";
 
 /**
  * Checks if a value is unsafe for display (not a number, NaN, or Infinity).
@@ -171,7 +172,7 @@ const columns: Column[] = [
   {
     key: "note",
     label: "Note",
-    format: (data) => data.note ?? "N/A",
+    format: (data) => toPlainString(data.note ?? "N/A"),
   },
   {
     key: "currentPrice",
