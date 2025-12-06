@@ -57,3 +57,19 @@ symbol: string
 ```
 
 Trading pair symbol (e.g., "BTCUSDT")
+
+### percentTp
+
+```ts
+percentTp: number
+```
+
+Percentage progress towards take profit (0-100%, 0 if moving towards SL)
+
+### percentSl
+
+```ts
+percentSl: number
+```
+
+Percentage progress towards stop loss (0-100%, 0 if moving towards TP)

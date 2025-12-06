@@ -69,7 +69,7 @@ Logs operation at global service level, then delegates to PartialConnectionServi
 ### clear
 
 ```ts
-clear: (symbol: string, data: ISignalRow, priceClose: number) => Promise<void>
+clear: (symbol: string, data: ISignalRow, priceClose: number, backtest: boolean) => Promise<void>
 ```
 
 Clears partial profit/loss state when signal closes.

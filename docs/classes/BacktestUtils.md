@@ -56,7 +56,7 @@ Generates markdown report with all closed signals for a symbol-strategy pair.
 ### dump
 
 ```ts
-dump: (strategyName: string, path?: string) => Promise<void>
+dump: (symbol: string, strategyName: string, path?: string) => Promise<void>
 ```
 
 Saves strategy report to disk.

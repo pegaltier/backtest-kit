@@ -50,7 +50,7 @@ Report includes:
 ### dump
 
 ```ts
-static dump(strategyName: string, path?: string): Promise<void>;
+static dump(symbol: string, strategyName: string, path?: string): Promise<void>;
 ```
 
 Saves performance report to disk.
