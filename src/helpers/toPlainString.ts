@@ -51,6 +51,12 @@ export const toPlainString = (content: string): string => {
     text = text.replace(/\n[\s\n]*\n/g, "\n");
     text = text.replace(/[ \t]+/g, " ");
 
+    // Remove all newline characters
+    text = text.replace(/\n/g, " ");
+
+    // Remove excessive spaces after newline removal
+    text = text.replace(/\s+/g, " ");
+
     return text.trim();
 };
 
