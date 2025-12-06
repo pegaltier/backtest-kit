@@ -3777,6 +3777,10 @@ interface TickEvent {
     takeProfit?: number;
     /** Stop loss price (only for opened/active/closed) */
     stopLoss?: number;
+    /** Percentage progress towards take profit (only for active) */
+    percentTp?: number;
+    /** Percentage progress towards stop loss (only for active) */
+    percentSl?: number;
     /** PNL percentage (only for closed) */
     pnl?: number;
     /** Close reason (only for closed) */

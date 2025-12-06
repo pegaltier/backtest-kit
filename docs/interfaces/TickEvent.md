@@ -90,6 +90,22 @@ stopLoss: number
 
 Stop loss price (only for opened/active/closed)
 
+### percentTp
+
+```ts
+percentTp: number
+```
+
+Percentage progress towards take profit (only for active)
+
+### percentSl
+
+```ts
+percentSl: number
+```
+
+Percentage progress towards stop loss (only for active)
+
 ### pnl
 
 ```ts
