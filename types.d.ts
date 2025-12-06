@@ -927,6 +927,10 @@ interface IStrategyTickResultActive {
     exchangeName: ExchangeName;
     /** Trading pair symbol (e.g., "BTCUSDT") */
     symbol: string;
+    /** Percentage progress towards take profit (0-100%, 0 if moving towards SL) */
+    percentTp: number;
+    /** Percentage progress towards stop loss (0-100%, 0 if moving towards TP) */
+    percentSl: number;
 }
 /**
  * Tick result: signal closed with PNL.

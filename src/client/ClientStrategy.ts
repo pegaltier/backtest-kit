@@ -716,6 +716,8 @@ const RETURN_SCHEDULED_SIGNAL_ACTIVE_FN = async (
     strategyName: self.params.method.context.strategyName,
     exchangeName: self.params.method.context.exchangeName,
     symbol: self.params.execution.context.symbol,
+    percentTp: 0,
+    percentSl: 0,
   };
 
   if (self.params.callbacks?.onTick) {
@@ -955,6 +957,9 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
   signal: ISignalRow,
   currentPrice: number
 ): Promise<IStrategyTickResultActive> => {
+  let percentTp = 0;
+  let percentSl = 0;
+
   // Calculate percentage of path to TP/SL for partial fill/loss callbacks
   {
     if (signal.position === "long") {
@@ -965,12 +970,13 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
         // Moving towards TP
         const tpDistance = signal.priceTakeProfit - signal.priceOpen;
         const progressPercent = (currentDistance / tpDistance) * 100;
+        percentTp = Math.min(progressPercent, 100);
 
         await self.params.partial.profit(
           self.params.execution.context.symbol,
           signal,
           currentPrice,
-          Math.min(progressPercent, 100),
+          percentTp,
           self.params.execution.context.backtest,
           self.params.execution.context.when
         );
@@ -980,7 +986,7 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
             self.params.execution.context.symbol,
             signal,
             currentPrice,
-            Math.min(progressPercent, 100),
+            percentTp,
             self.params.execution.context.backtest
           );
         }
@@ -988,12 +994,13 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
         // Moving towards SL
         const slDistance = signal.priceOpen - signal.priceStopLoss;
         const progressPercent = (Math.abs(currentDistance) / slDistance) * 100;
+        percentSl = Math.min(progressPercent, 100);
 
         await self.params.partial.loss(
           self.params.execution.context.symbol,
           signal,
           currentPrice,
-          Math.min(progressPercent, 100),
+          percentSl,
           self.params.execution.context.backtest,
           self.params.execution.context.when
         );
@@ -1003,7 +1010,7 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
             self.params.execution.context.symbol,
             signal,
             currentPrice,
-            Math.min(progressPercent, 100),
+            percentSl,
             self.params.execution.context.backtest
           );
         }
@@ -1016,12 +1023,13 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
         // Moving towards TP
         const tpDistance = signal.priceOpen - signal.priceTakeProfit;
         const progressPercent = (currentDistance / tpDistance) * 100;
+        percentTp = Math.min(progressPercent, 100);
 
         await self.params.partial.profit(
           self.params.execution.context.symbol,
           signal,
           currentPrice,
-          Math.min(progressPercent, 100),
+          percentTp,
           self.params.execution.context.backtest,
           self.params.execution.context.when
         );
@@ -1031,22 +1039,23 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
             self.params.execution.context.symbol,
             signal,
             currentPrice,
-            Math.min(progressPercent, 100),
+            percentTp,
             self.params.execution.context.backtest
           );
         }
       }
-      
+
       if (currentDistance < 0) {
         // Moving towards SL
         const slDistance = signal.priceStopLoss - signal.priceOpen;
         const progressPercent = (Math.abs(currentDistance) / slDistance) * 100;
+        percentSl = Math.min(progressPercent, 100);
 
         await self.params.partial.loss(
           self.params.execution.context.symbol,
           signal,
           currentPrice,
-          Math.min(progressPercent, 100),
+          percentSl,
           self.params.execution.context.backtest,
           self.params.execution.context.when
         );
@@ -1056,7 +1065,7 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
             self.params.execution.context.symbol,
             signal,
             currentPrice,
-            Math.min(progressPercent, 100),
+            percentSl,
             self.params.execution.context.backtest
           );
         }
@@ -1071,6 +1080,8 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
     strategyName: self.params.method.context.strategyName,
     exchangeName: self.params.method.context.exchangeName,
     symbol: self.params.execution.context.symbol,
+    percentTp,
+    percentSl,
   };
 
   if (self.params.callbacks?.onTick) {
@@ -1991,6 +2002,8 @@ export class ClientStrategy implements IStrategy {
             action: "active",
             signal: scheduled,
             currentPrice: lastPrice,
+            percentSl: 0,
+            percentTp: 0,
             strategyName: this.params.method.context.strategyName,
             exchangeName: this.params.method.context.exchangeName,
             symbol: this.params.execution.context.symbol,
