@@ -139,15 +139,24 @@ test("PARTIAL BACKTEST: onPartialProfit for LONG with gradual profit", async ({ 
     return;
   }
 
-  for (let i = 1; i < partialFillEvents.length; i++) {
-    if (partialFillEvents[i].revenuePercent <= partialFillEvents[i - 1].revenuePercent) {
-      fail(`Revenue should increase: ${partialFillEvents[i - 1].revenuePercent.toFixed(2)}% -> ${partialFillEvents[i].revenuePercent.toFixed(2)}%`);
+  // Check that all revenuePercent values are positive (0-100% progress towards TP)
+  for (let i = 0; i < partialFillEvents.length; i++) {
+    if (partialFillEvents[i].revenuePercent < 0 || partialFillEvents[i].revenuePercent > 100) {
+      fail(`Progress should be 0-100%, got ${partialFillEvents[i].revenuePercent.toFixed(2)}%`);
       return;
     }
   }
 
-  const maxRevenue = Math.max(...partialFillEvents.map(e => e.revenuePercent));
-  pass(`onPartialProfit WORKS: ${partialFillEvents.length} calls, max revenue ${maxRevenue.toFixed(2)}%`);
+  // Check that progress increases
+  for (let i = 1; i < partialFillEvents.length; i++) {
+    if (partialFillEvents[i].revenuePercent <= partialFillEvents[i - 1].revenuePercent) {
+      fail(`Progress should increase: ${partialFillEvents[i - 1].revenuePercent.toFixed(2)}% -> ${partialFillEvents[i].revenuePercent.toFixed(2)}%`);
+      return;
+    }
+  }
+
+  const maxProgress = Math.max(...partialFillEvents.map(e => e.revenuePercent));
+  pass(`onPartialProfit WORKS: ${partialFillEvents.length} calls, max progress ${maxProgress.toFixed(2)}%`);
 });
 
 
@@ -278,22 +287,24 @@ test("PARTIAL BACKTEST: onPartialLoss for LONG with gradual loss", async ({ pass
     return;
   }
 
+  // Check that all revenuePercent values are positive (0-100% progress towards SL)
   for (let i = 0; i < partialLossEvents.length; i++) {
-    if (partialLossEvents[i].revenuePercent >= 0) {
-      fail(`Revenue should be negative, got ${partialLossEvents[i].revenuePercent.toFixed(2)}%`);
+    if (partialLossEvents[i].revenuePercent < 0 || partialLossEvents[i].revenuePercent > 100) {
+      fail(`Progress should be 0-100%, got ${partialLossEvents[i].revenuePercent.toFixed(2)}%`);
       return;
     }
   }
 
+  // Check that progress increases (moving closer to SL)
   for (let i = 1; i < partialLossEvents.length; i++) {
-    if (partialLossEvents[i].revenuePercent >= partialLossEvents[i - 1].revenuePercent) {
-      fail(`Loss should increase: ${partialLossEvents[i - 1].revenuePercent.toFixed(2)}% -> ${partialLossEvents[i].revenuePercent.toFixed(2)}%`);
+    if (partialLossEvents[i].revenuePercent <= partialLossEvents[i - 1].revenuePercent) {
+      fail(`Progress should increase: ${partialLossEvents[i - 1].revenuePercent.toFixed(2)}% -> ${partialLossEvents[i].revenuePercent.toFixed(2)}%`);
       return;
     }
   }
 
-  const maxLoss = Math.min(...partialLossEvents.map(e => e.revenuePercent));
-  pass(`onPartialLoss WORKS: ${partialLossEvents.length} calls, max loss ${maxLoss.toFixed(2)}%`);
+  const maxProgress = Math.max(...partialLossEvents.map(e => e.revenuePercent));
+  pass(`onPartialLoss WORKS: ${partialLossEvents.length} calls, max progress ${maxProgress.toFixed(2)}%`);
 });
 
 
@@ -419,8 +430,24 @@ test("PARTIAL BACKTEST: onPartialProfit for SHORT with price falling", async ({ 
     return;
   }
 
-  const maxRevenue = Math.max(...partialFillEvents.map(e => e.revenuePercent));
-  pass(`onPartialProfit SHORT WORKS: ${partialFillEvents.length} calls, max revenue ${maxRevenue.toFixed(2)}%`);
+  // Check that all revenuePercent values are positive (0-100% progress towards TP)
+  for (let i = 0; i < partialFillEvents.length; i++) {
+    if (partialFillEvents[i].revenuePercent < 0 || partialFillEvents[i].revenuePercent > 100) {
+      fail(`Progress should be 0-100%, got ${partialFillEvents[i].revenuePercent.toFixed(2)}%`);
+      return;
+    }
+  }
+
+  // Check that progress increases
+  for (let i = 1; i < partialFillEvents.length; i++) {
+    if (partialFillEvents[i].revenuePercent <= partialFillEvents[i - 1].revenuePercent) {
+      fail(`Progress should increase: ${partialFillEvents[i - 1].revenuePercent.toFixed(2)}% -> ${partialFillEvents[i].revenuePercent.toFixed(2)}%`);
+      return;
+    }
+  }
+
+  const maxProgress = Math.max(...partialFillEvents.map(e => e.revenuePercent));
+  pass(`onPartialProfit SHORT WORKS: ${partialFillEvents.length} calls, max progress ${maxProgress.toFixed(2)}%`);
 });
 
 
@@ -546,15 +573,24 @@ test("PARTIAL BACKTEST: onPartialLoss for SHORT with price rising", async ({ pas
     return;
   }
 
+  // Check that all revenuePercent values are positive (0-100% progress towards SL)
   for (let i = 0; i < partialLossEvents.length; i++) {
-    if (partialLossEvents[i].revenuePercent >= 0) {
-      fail(`Revenue should be negative, got ${partialLossEvents[i].revenuePercent.toFixed(2)}%`);
+    if (partialLossEvents[i].revenuePercent < 0 || partialLossEvents[i].revenuePercent > 100) {
+      fail(`Progress should be 0-100%, got ${partialLossEvents[i].revenuePercent.toFixed(2)}%`);
       return;
     }
   }
 
-  const maxLoss = Math.min(...partialLossEvents.map(e => e.revenuePercent));
-  pass(`onPartialLoss SHORT WORKS: ${partialLossEvents.length} calls, max loss ${maxLoss.toFixed(2)}%`);
+  // Check that progress increases (moving closer to SL)
+  for (let i = 1; i < partialLossEvents.length; i++) {
+    if (partialLossEvents[i].revenuePercent <= partialLossEvents[i - 1].revenuePercent) {
+      fail(`Progress should increase: ${partialLossEvents[i - 1].revenuePercent.toFixed(2)}% -> ${partialLossEvents[i].revenuePercent.toFixed(2)}%`);
+      return;
+    }
+  }
+
+  const maxProgress = Math.max(...partialLossEvents.map(e => e.revenuePercent));
+  pass(`onPartialLoss SHORT WORKS: ${partialLossEvents.length} calls, max progress ${maxProgress.toFixed(2)}%`);
 });
 
 
@@ -657,7 +693,7 @@ test("Partial.getData returns partial profit/loss statistics for symbol", async 
     return;
   }
 
-  const stats = await Partial.getData("BTCUSDT");
+  const stats = await Partial.getData("BTCUSDT", "test-partial-facade-1");
 
   if (
     stats &&
@@ -775,11 +811,11 @@ test("Partial.getReport generates markdown report with table", async ({ pass, fa
     return;
   }
 
-  const markdown = await Partial.getReport("ETHUSDT");
+  const markdown = await Partial.getReport("ETHUSDT", "test-partial-facade-2");
 
   if (
     markdown &&
-    markdown.includes("# Partial Profit/Loss Report: ETHUSDT") &&
+    markdown.includes("# Partial Profit/Loss Report: ETHUSDT:test-partial-facade-2") &&
     markdown.includes("| Action |") &&
     markdown.includes("| Symbol |") &&
     markdown.includes("| Level % |") &&
@@ -801,7 +837,7 @@ test("Partial.getReport generates markdown report with table", async ({ pass, fa
 test("Partial.getData returns empty statistics for nonexistent symbol", async ({ pass, fail }) => {
   const { Partial } = await import("../../build/index.mjs");
 
-  const stats = await Partial.getData("NONEXISTENT_SYMBOL_12345");
+  const stats = await Partial.getData("NONEXISTENT_SYMBOL_12345", "nonexistent-strategy");
 
   if (
     stats &&
