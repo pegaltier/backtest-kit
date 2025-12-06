@@ -12,7 +12,7 @@ The backtest-kit framework organizes services into distinct functional layers. S
 
 **Complete Layer Architecture**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_0.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_0.svg)
 
 **Sources**: [src/lib/core/types.ts:1-81](), [src/lib/core/provide.ts:1-111](), [src/classes/Backtest.ts:1-231](), [src/classes/Live.ts:1-245](), [src/classes/Walker.ts:1-287]()
 </thinking>
@@ -33,7 +33,7 @@ Execution classes in [src/classes/Backtest.ts](), [src/classes/Live.ts](), and [
 
 **API Layer Delegation Pattern**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_1.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_1.svg)
 
 Each execution class:
 1. Logs the operation via `backtest.loggerService`
@@ -68,7 +68,7 @@ Command Services validate component configurations and delegate to Logic Service
 
 **Command Service Architecture**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_2.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_2.svg)
 
 | Service | Validates | Delegates To |
 |---------|-----------|--------------|
@@ -125,7 +125,7 @@ Public Logic Services wrap Private Logic Services with `MethodContextService` to
 
 **Logic Service Context Injection**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_3.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_3.svg)
 
 Each Public Logic Service:
 
@@ -149,11 +149,11 @@ Private Logic Services implement the core execution algorithms:
 
 **BacktestLogicPrivateService Execution Flow**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_4.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_4.svg)
 
 **LiveLogicPrivateService Execution Flow**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_5.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_5.svg)
 
 **Sources**: [src/lib/services/logic/private/BacktestLogicPrivateService.ts:1-120](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:1-85](), [src/lib/services/logic/private/WalkerLogicPrivateService.ts:1-145]()
 
@@ -167,7 +167,7 @@ Global Services wrap Connection Services with `ExecutionContextService` to injec
 
 **Global Service Wrapper Architecture**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_6.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_6.svg)
 
 | Service | Wraps | Injects Context For |
 |---------|-------|---------------------|
@@ -249,7 +249,7 @@ Public logic services wrap execution in context and provide the public interface
 
 **Logic Service Responsibilities**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_7.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_7.svg)
 
 Each public service:
 
@@ -310,7 +310,7 @@ Connection services are defined in [src/lib/core/types.ts:10-16]():
 
 **StrategyConnectionService Architecture**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_8.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_8.svg)
 
 The `getStrategy` method in [src/lib/services/connection/StrategyConnectionService.ts:78-98]() uses `memoize` from `functools-kit` to cache instances:
 
@@ -387,7 +387,7 @@ Client Classes contain pure business logic without dependency injection. They re
 
 **ClientStrategy State Management**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_9.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_9.svg)
 
 Client Classes have no knowledge of:
 - Dependency injection framework
@@ -415,7 +415,7 @@ Client Classes contain pure business logic without dependency injection dependen
 
 **Client Class Hierarchy**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_10.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_10.svg)
 
 | Client Class | Primary Responsibility | Key State |
 |--------------|----------------------|-----------|
@@ -449,7 +449,7 @@ Schema Services store component configurations using the `ToolRegistry` pattern:
 
 **Schema Service Pattern**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_11.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_11.svg)
 
 Each Schema Service provides:
 
@@ -479,7 +479,7 @@ Validation Services perform runtime existence checks with memoization:
 
 **Validation Service Pattern**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_12.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_12.svg)
 
 Each Validation Service provides:
 
@@ -537,7 +537,7 @@ const markdownServices = {
 
 **Markdown Service Data Flow**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_13.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_13.svg)
 
 Each Markdown Service:
 
@@ -567,7 +567,7 @@ Three services span all layers and provide infrastructure concerns.
 
 The `LoggerService` provides logging infrastructure with automatic context injection:
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_14.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_14.svg)
 
 Injected into nearly every service via [src/lib/core/types.ts:1-3]():
 
@@ -611,7 +611,7 @@ Used by Connection Services to resolve which component instance to return.
 
 **Component Registration Pattern**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_15.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_15.svg)
 
 1. Public API function receives schema
 2. Validation Service stores for runtime checks
@@ -621,7 +621,7 @@ Used by Connection Services to resolve which component instance to return.
 
 **Backtest Execution Pattern**
 
-![Mermaid Diagram](./diagrams\10_Layer_Responsibilities_16.svg)
+![Mermaid Diagram](./diagrams/10_Layer_Responsibilities_16.svg)
 
 1. Public service wraps with MethodContext
 2. Private service gets client from Connection Service

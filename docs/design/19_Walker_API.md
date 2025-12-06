@@ -309,7 +309,7 @@ Sources: [src/classes/Walker.ts:232-255](), [src/lib/services/markdown/WalkerMar
 
 The following diagram shows the complete execution path from `Walker.run()` through the service layer to backtest orchestration.
 
-![Mermaid Diagram](./diagrams\19_Walker_API_0.svg)
+![Mermaid Diagram](./diagrams/19_Walker_API_0.svg)
 
 **Execution Characteristics:**
 - **Sequential Execution:** Strategies are tested one at a time (lines 107-228)
@@ -455,7 +455,7 @@ Sources: [src/function/event.ts:427-433]()
 
 The following diagram shows the event emission sequence during walker execution.
 
-![Mermaid Diagram](./diagrams\19_Walker_API_1.svg)
+![Mermaid Diagram](./diagrams/19_Walker_API_1.svg)
 
 **Event Timing:**
 1. `walkerEmitter` - Emits after each strategy completes (N times for N strategies)
@@ -723,7 +723,7 @@ Sources: [src/lib/services/markdown/BacktestMarkdownService.ts:46-102]()
 
 The following diagram shows the complete service dependency graph for Walker execution.
 
-![Mermaid Diagram](./diagrams\19_Walker_API_2.svg)
+![Mermaid Diagram](./diagrams/19_Walker_API_2.svg)
 
 **Key Service Interactions:**
 

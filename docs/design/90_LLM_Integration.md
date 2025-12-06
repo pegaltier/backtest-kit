@@ -8,7 +8,7 @@ For information about the overall optimizer architecture and data collection, se
 
 The LLM integration serves as the intelligence layer that analyzes multi-timeframe market data and generates trading strategy recommendations. The system follows a request-response pattern where historical market data is formatted into prompts, sent to the LLM service, and the responses are captured for code generation.
 
-![Mermaid Diagram](./diagrams\90_LLM_Integration_0.svg)
+![Mermaid Diagram](./diagrams/90_LLM_Integration_0.svg)
 
 **Sources:** [demo/optimization/src/index.mjs:324-383](), [demo/optimization/package.json:8-14]()
 
@@ -16,7 +16,7 @@ The LLM integration serves as the intelligence layer that analyzes multi-timefra
 
 The system integrates with Ollama through the official `ollama` npm package. The client is configured with custom host and authentication headers to support both self-hosted and cloud-based Ollama instances.
 
-![Mermaid Diagram](./diagrams\90_LLM_Integration_1.svg)
+![Mermaid Diagram](./diagrams/90_LLM_Integration_1.svg)
 
 **Configuration Structure:**
 
@@ -38,7 +38,7 @@ The LLM integration implements a multi-layer prompt engineering pattern that com
 
 System prompts establish the operational context and output format requirements. The system uses two sequential system messages:
 
-![Mermaid Diagram](./diagrams\90_LLM_Integration_2.svg)
+![Mermaid Diagram](./diagrams/90_LLM_Integration_2.svg)
 
 **System Prompt Components:**
 
@@ -57,7 +57,7 @@ System prompts establish the operational context and output format requirements.
 
 The final user message requests specific trading analysis components:
 
-![Mermaid Diagram](./diagrams\90_LLM_Integration_3.svg)
+![Mermaid Diagram](./diagrams/90_LLM_Integration_3.svg)
 
 **Query Structure:**
 
@@ -76,7 +76,7 @@ The final user message requests specific trading analysis components:
 
 The LLM receives a conversation history built from multi-timeframe data sources. Each source contributes a user-assistant message pair to the conversation.
 
-![Mermaid Diagram](./diagrams\90_LLM_Integration_4.svg)
+![Mermaid Diagram](./diagrams/90_LLM_Integration_4.svg)
 
 **Message Roles:**
 
@@ -109,7 +109,7 @@ Each assistant message provides acknowledgment in Russian:
 
 The LLM response undergoes character escaping to ensure safe embedding in generated JavaScript code. The response text becomes part of a string literal in the generated strategy file.
 
-![Mermaid Diagram](./diagrams\90_LLM_Integration_5.svg)
+![Mermaid Diagram](./diagrams/90_LLM_Integration_5.svg)
 
 **Escape Sequence:**
 
@@ -138,7 +138,7 @@ The optimizer system provides two helper functions for LLM interaction, availabl
 
 The `text()` function performs synchronous LLM calls with conversation history:
 
-![Mermaid Diagram](./diagrams\90_LLM_Integration_6.svg)
+![Mermaid Diagram](./diagrams/90_LLM_Integration_6.svg)
 
 **Parameters:**
 
@@ -155,7 +155,7 @@ The `text()` function performs synchronous LLM calls with conversation history:
 
 The `json()` function is similar to `text()` but parses the response as JSON. This helper is available for custom template implementations but not used in the default optimizer flow.
 
-![Mermaid Diagram](./diagrams\90_LLM_Integration_7.svg)
+![Mermaid Diagram](./diagrams/90_LLM_Integration_7.svg)
 
 **Sources:** Reference implementation pattern from [src/client/ClientOptimizer.ts]() (not shown in provided files)
 
@@ -163,7 +163,7 @@ The `json()` function is similar to `text()` but parses the response as JSON. Th
 
 The LLM integration connects to the optimizer system through the `IOptimizerSchema` interface:
 
-![Mermaid Diagram](./diagrams\90_LLM_Integration_8.svg)
+![Mermaid Diagram](./diagrams/90_LLM_Integration_8.svg)
 
 **Integration Contract:**
 
@@ -196,7 +196,7 @@ interface IOptimizerSchema {
 
 The LLM integration emits progress events during data collection, allowing external monitoring of the optimization process:
 
-![Mermaid Diagram](./diagrams\90_LLM_Integration_9.svg)
+![Mermaid Diagram](./diagrams/90_LLM_Integration_9.svg)
 
 **Progress Event Structure:**
 

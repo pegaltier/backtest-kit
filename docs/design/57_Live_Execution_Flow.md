@@ -27,7 +27,7 @@ The generator yields only `opened` and `closed` results to consumers, filtering 
 
 **Live Execution Service Stack**
 
-![Mermaid Diagram](./diagrams\57_Live_Execution_Flow_0.svg)
+![Mermaid Diagram](./diagrams/57_Live_Execution_Flow_0.svg)
 
 **Sources**: [src/lib/services/logic/private/LiveLogicPrivateService.ts:30-131](), [src/lib/services/logic/public/LiveLogicPublicService.ts:1-78]()
 
@@ -39,7 +39,7 @@ The generator yields only `opened` and `closed` results to consumers, filtering 
 
 **Infinite Loop Implementation**
 
-![Mermaid Diagram](./diagrams\57_Live_Execution_Flow_1.svg)
+![Mermaid Diagram](./diagrams/57_Live_Execution_Flow_1.svg)
 
 **Key Implementation Details:**
 
@@ -65,7 +65,7 @@ The generator yields only `opened` and `closed` results to consumers, filtering 
 
 **Context Injection Flow**
 
-![Mermaid Diagram](./diagrams\57_Live_Execution_Flow_2.svg)
+![Mermaid Diagram](./diagrams/57_Live_Execution_Flow_2.svg)
 
 **Context Schema:**
 
@@ -89,7 +89,7 @@ The `MethodContextService` uses `AsyncLocalStorage` to provide scoped context ac
 
 **Result Filtering State Machine**
 
-![Mermaid Diagram](./diagrams\57_Live_Execution_Flow_3.svg)
+![Mermaid Diagram](./diagrams/57_Live_Execution_Flow_3.svg)
 
 **Filtering Logic:**
 
@@ -166,7 +166,7 @@ await sleep(TICK_TTL);
 
 **Timing Sequence:**
 
-![Mermaid Diagram](./diagrams\57_Live_Execution_Flow_4.svg)
+![Mermaid Diagram](./diagrams/57_Live_Execution_Flow_4.svg)
 
 **Sources**: [src/lib/services/logic/private/LiveLogicPrivateService.ts:12](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:86-128]()
 
@@ -178,7 +178,7 @@ await sleep(TICK_TTL);
 
 **Service Call Chain**
 
-![Mermaid Diagram](./diagrams\57_Live_Execution_Flow_5.svg)
+![Mermaid Diagram](./diagrams/57_Live_Execution_Flow_5.svg)
 
 **Key Service Dependencies:**
 
@@ -205,7 +205,7 @@ The `backtest` flag passed to `tick()` controls mode-specific behavior:
 
 **Lazy Initialization Flow**
 
-![Mermaid Diagram](./diagrams\57_Live_Execution_Flow_6.svg)
+![Mermaid Diagram](./diagrams/57_Live_Execution_Flow_6.svg)
 
 **Initialization Characteristics:**
 

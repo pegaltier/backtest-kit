@@ -14,13 +14,13 @@ The component registration system implements a three-stage pipeline that transfo
 
 ### Registration Flow Diagram
 
-![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_0.svg)
+![Mermaid Diagram](./diagrams/16_Component_Registration_Functions_0.svg)
 
 **Sources:** [src/function/add.ts:1-444]()
 
 ### Component Lifecycle
 
-![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_1.svg)
+![Mermaid Diagram](./diagrams/16_Component_Registration_Functions_1.svg)
 
 **Sources:** [src/function/add.ts:52-444](), [src/lib/services/schema/*](), [src/lib/services/validation/*](), [src/lib/services/connection/*]()
 
@@ -105,7 +105,7 @@ Optional callbacks invoked during signal lifecycle transitions:
 
 ### Registration Process
 
-![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_2.svg)
+![Mermaid Diagram](./diagrams/16_Component_Registration_Functions_2.svg)
 
 **Sources:** [src/function/add.ts:52-64]()
 
@@ -341,7 +341,7 @@ Valid intervals for timeframe generation:
 
 ### Timeframe Generation Process
 
-![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_3.svg)
+![Mermaid Diagram](./diagrams/16_Component_Registration_Functions_3.svg)
 
 **Sources:** [src/function/add.ts:145-151]()
 
@@ -430,7 +430,7 @@ Metrics available for strategy comparison:
 
 ### Walker Execution Flow
 
-![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_4.svg)
+![Mermaid Diagram](./diagrams/16_Component_Registration_Functions_4.svg)
 
 **Sources:** [src/function/add.ts:190-202]()
 
@@ -537,7 +537,7 @@ interface ISizingSchemaATRBased {
 
 ### Sizing Method Comparison
 
-![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_5.svg)
+![Mermaid Diagram](./diagrams/16_Component_Registration_Functions_5.svg)
 
 **Sources:** [src/function/add.ts:256-268]()
 
@@ -627,7 +627,7 @@ interface IRiskValidationPayload {
 
 ### Risk Validation Flow
 
-![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_6.svg)
+![Mermaid Diagram](./diagrams/16_Component_Registration_Functions_6.svg)
 
 **Sources:** [src/function/add.ts:331-343]()
 
@@ -763,7 +763,7 @@ type IOptimizerSourceFn = (
 
 ### Optimizer Data Collection Pipeline
 
-![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_7.svg)
+![Mermaid Diagram](./diagrams/16_Component_Registration_Functions_7.svg)
 
 **Sources:** [src/function/add.ts:432-444]()
 
@@ -886,7 +886,7 @@ The registration functions depend on two service categories that are injected vi
 
 ### Service Dependency Diagram
 
-![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_8.svg)
+![Mermaid Diagram](./diagrams/16_Component_Registration_Functions_8.svg)
 
 **Sources:** [src/function/add.ts:1-444](), [src/lib/index.ts:1-232](), [src/lib/core/provide.ts:1-132](), [src/lib/core/types.ts:1-97]()
 
@@ -979,7 +979,7 @@ class SchemaService<T> {
 
 ### Registry Access Pattern
 
-![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_9.svg)
+![Mermaid Diagram](./diagrams/16_Component_Registration_Functions_9.svg)
 
 **Sources:** [src/lib/services/schema/*](), [src/lib/services/connection/*]()
 

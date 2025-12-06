@@ -81,7 +81,7 @@ The `logger` instance is provided by the dependency injection container and used
 
 ### getTimeframe Method
 
-![Mermaid Diagram](./diagrams\34_ClientFrame_0.svg)
+![Mermaid Diagram](./diagrams/34_ClientFrame_0.svg)
 
 **Algorithm Steps:**
 
@@ -105,7 +105,7 @@ The `logger` instance is provided by the dependency injection container and used
 
 ### Backtest Orchestration Flow
 
-![Mermaid Diagram](./diagrams\34_ClientFrame_1.svg)
+![Mermaid Diagram](./diagrams/34_ClientFrame_1.svg)
 
 **Key Integration Points:**
 
@@ -172,7 +172,7 @@ addFrame({
 
 ### Frame Service Hierarchy
 
-![Mermaid Diagram](./diagrams\34_ClientFrame_2.svg)
+![Mermaid Diagram](./diagrams/34_ClientFrame_2.svg)
 
 **Layer Descriptions:**
 

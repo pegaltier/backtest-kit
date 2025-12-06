@@ -12,7 +12,7 @@ For general signal lifecycle information, see [Signal Lifecycle Overview](#2.2).
 
 The Partial system operates as an event-driven subsystem that monitors active signals and emits milestone events when unrealized profit or loss reaches predefined thresholds.
 
-![Mermaid Diagram](./diagrams\73_Partial_Profit_Loss_Tracking_0.svg)
+![Mermaid Diagram](./diagrams/73_Partial_Profit_Loss_Tracking_0.svg)
 
 **Sources:** [README.md:1079-1217](), [test/e2e/partial.test.mjs:1-819]()
 
@@ -134,7 +134,7 @@ The system provides event listeners for external monitoring without requiring st
 
 ### Listener Functions
 
-![Mermaid Diagram](./diagrams\73_Partial_Profit_Loss_Tracking_1.svg)
+![Mermaid Diagram](./diagrams/73_Partial_Profit_Loss_Tracking_1.svg)
 
 ### API Reference
 
@@ -207,7 +207,7 @@ The `PartialMarkdownService` accumulates partial profit/loss events and generate
 
 ### Service Architecture
 
-![Mermaid Diagram](./diagrams\73_Partial_Profit_Loss_Tracking_2.svg)
+![Mermaid Diagram](./diagrams/73_Partial_Profit_Loss_Tracking_2.svg)
 
 ### Storage Behavior
 
@@ -285,7 +285,7 @@ The `Partial` facade provides a unified interface for accessing partial profit/l
 
 ### Facade Methods
 
-![Mermaid Diagram](./diagrams\73_Partial_Profit_Loss_Tracking_3.svg)
+![Mermaid Diagram](./diagrams/73_Partial_Profit_Loss_Tracking_3.svg)
 
 ### API Reference
 
@@ -402,7 +402,7 @@ Partial profit/loss tracking enables dynamic position management strategies base
 
 ### Position Scaling Flow
 
-![Mermaid Diagram](./diagrams\73_Partial_Profit_Loss_Tracking_4.svg)
+![Mermaid Diagram](./diagrams/73_Partial_Profit_Loss_Tracking_4.svg)
 
 ### Example: Tiered Exit Strategy
 
@@ -450,7 +450,7 @@ In **live mode**, partial profit/loss events are persisted to disk through `Pers
 
 ### Persistence Architecture
 
-![Mermaid Diagram](./diagrams\73_Partial_Profit_Loss_Tracking_5.svg)
+![Mermaid Diagram](./diagrams/73_Partial_Profit_Loss_Tracking_5.svg)
 
 ### Persistence Behavior
 
@@ -563,14 +563,14 @@ Partial profit/loss tracking behaves differently for LONG and SHORT positions du
 
 ### LONG Position (Profit on Price Rise)
 
-![Mermaid Diagram](./diagrams\73_Partial_Profit_Loss_Tracking_6.svg)
+![Mermaid Diagram](./diagrams/73_Partial_Profit_Loss_Tracking_6.svg)
 
 **Profit triggers:** When `currentPrice > priceOpen`
 **Loss triggers:** When `currentPrice < priceOpen`
 
 ### SHORT Position (Profit on Price Fall)
 
-![Mermaid Diagram](./diagrams\73_Partial_Profit_Loss_Tracking_7.svg)
+![Mermaid Diagram](./diagrams/73_Partial_Profit_Loss_Tracking_7.svg)
 
 **Profit triggers:** When `currentPrice < priceOpen`
 **Loss triggers:** When `currentPrice > priceOpen`
@@ -595,7 +595,7 @@ The milestone detection algorithm ensures each level is triggered **exactly once
 
 ### Detection Logic
 
-![Mermaid Diagram](./diagrams\73_Partial_Profit_Loss_Tracking_8.svg)
+![Mermaid Diagram](./diagrams/73_Partial_Profit_Loss_Tracking_8.svg)
 
 ### Milestone Tracking State
 

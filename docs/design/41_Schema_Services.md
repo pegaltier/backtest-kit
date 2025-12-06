@@ -29,7 +29,7 @@ All schema services follow identical patterns: singleton registration, `ToolRegi
 
 The following diagram illustrates the relationship between registration functions, schema services, and connection services:
 
-![Mermaid Diagram](./diagrams\41_Schema_Services_0.svg)
+![Mermaid Diagram](./diagrams/41_Schema_Services_0.svg)
 
 **Diagram: Schema Service Registry Pattern**
 
@@ -73,7 +73,7 @@ interface IStrategySchema {
 
 The `addStrategy()` function registers a strategy schema into `StrategySchemaService`:
 
-![Mermaid Diagram](./diagrams\41_Schema_Services_1.svg)
+![Mermaid Diagram](./diagrams/41_Schema_Services_1.svg)
 
 **Diagram: Strategy Schema Registration Flow**
 
@@ -120,7 +120,7 @@ interface IExchangeSchema {
 
 The `addExchange()` function registers an exchange schema into `ExchangeSchemaService`:
 
-![Mermaid Diagram](./diagrams\41_Schema_Services_2.svg)
+![Mermaid Diagram](./diagrams/41_Schema_Services_2.svg)
 
 **Diagram: Exchange Schema Registration Flow**
 
@@ -166,7 +166,7 @@ interface IFrameSchema {
 
 The `addFrame()` function registers a frame schema into `FrameSchemaService`:
 
-![Mermaid Diagram](./diagrams\41_Schema_Services_3.svg)
+![Mermaid Diagram](./diagrams/41_Schema_Services_3.svg)
 
 **Diagram: Frame Schema Registration Flow**
 
@@ -371,7 +371,7 @@ Schema Services provide lookup methods that Connection Services call to retrieve
 
 ### Lookup Pattern
 
-![Mermaid Diagram](./diagrams\41_Schema_Services_4.svg)
+![Mermaid Diagram](./diagrams/41_Schema_Services_4.svg)
 
 **Diagram: Schema Lookup Flow**
 
@@ -471,7 +471,7 @@ This makes all schema services accessible via `backtest.*SchemaService` for adva
 
 The following diagram shows the complete lifecycle from user registration to client instantiation:
 
-![Mermaid Diagram](./diagrams\41_Schema_Services_5.svg)
+![Mermaid Diagram](./diagrams/41_Schema_Services_5.svg)
 
 **Diagram: Complete Schema Registration and Instantiation Flow**
 

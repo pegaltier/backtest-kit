@@ -26,7 +26,7 @@ All functions operate within the current `ExecutionContext` (symbol, when, backt
 
 ## Exchange Function Access Patterns
 
-![Mermaid Diagram](./diagrams\21_Exchange_Functions_0.svg)
+![Mermaid Diagram](./diagrams/21_Exchange_Functions_0.svg)
 
 **Diagram: Exchange Function Call Flow and Service Layers**
 
@@ -148,7 +148,7 @@ The `getAveragePrice` function calculates the Volume-Weighted Average Price (VWA
 
 ### VWAP Calculation Flow
 
-![Mermaid Diagram](./diagrams\21_Exchange_Functions_1.svg)
+![Mermaid Diagram](./diagrams/21_Exchange_Functions_1.svg)
 
 **Diagram: VWAP Calculation Algorithm**
 
@@ -224,7 +224,7 @@ The actual formatting logic is defined in the `IExchangeSchema` registered via `
 
 ## Retry Logic and Error Handling
 
-![Mermaid Diagram](./diagrams\21_Exchange_Functions_2.svg)
+![Mermaid Diagram](./diagrams/21_Exchange_Functions_2.svg)
 
 **Diagram: GET_CANDLES_FN Retry Logic Flow**
 
@@ -260,7 +260,7 @@ All fetched candles are validated using `VALIDATE_NO_INCOMPLETE_CANDLES_FN` to d
 
 ### Validation Checks
 
-![Mermaid Diagram](./diagrams\21_Exchange_Functions_3.svg)
+![Mermaid Diagram](./diagrams/21_Exchange_Functions_3.svg)
 
 **Diagram: Candle Validation and Anomaly Detection Flow**
 
@@ -402,7 +402,7 @@ ExecutionContextService.runInContext(
 
 ## Exchange Function Integration in Signal Lifecycle
 
-![Mermaid Diagram](./diagrams\21_Exchange_Functions_4.svg)
+![Mermaid Diagram](./diagrams/21_Exchange_Functions_4.svg)
 
 **Diagram: Exchange Function Calls During Signal Lifecycle**
 

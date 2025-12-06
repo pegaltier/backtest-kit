@@ -26,7 +26,7 @@ The `rangeTrain` parameter is an array of date range objects, each representing 
 | `startDate` | `Date` | Beginning of the training period (inclusive) |
 | `endDate` | `Date` | End of the training period (inclusive) |
 
-![Mermaid Diagram](./diagrams\92_Training_vs_Testing_Ranges_0.svg)
+![Mermaid Diagram](./diagrams/92_Training_vs_Testing_Ranges_0.svg)
 
 **Sources:** [demo/optimization/src/index.mjs:19-55]()
 
@@ -61,7 +61,7 @@ The Optimizer implements walk-forward validation where:
 3. **Temporal Ordering**: Training ranges precede the test range chronologically
 4. **No Look-Ahead**: The test range contains data unseen during strategy generation
 
-![Mermaid Diagram](./diagrams\92_Training_vs_Testing_Ranges_1.svg)
+![Mermaid Diagram](./diagrams/92_Training_vs_Testing_Ranges_1.svg)
 
 **Sources:** [demo/optimization/src/index.mjs:19-61]()
 
@@ -73,7 +73,7 @@ The Optimizer implements walk-forward validation where:
 
 For each element in the `rangeTrain` array, the Optimizer performs:
 
-![Mermaid Diagram](./diagrams\92_Training_vs_Testing_Ranges_2.svg)
+![Mermaid Diagram](./diagrams/92_Training_vs_Testing_Ranges_2.svg)
 
 Each training range generates one strategy recommendation through multi-timeframe analysis. The LLM receives 4 datasets per training range (1h, 30m, 15m, 1m candles), creating a comprehensive market view before producing strategy logic.
 
@@ -85,7 +85,7 @@ Each training range generates one strategy recommendation through multi-timefram
 
 After code generation via `OptimizerTemplateService`, the generated strategies are backtested against `rangeTest`:
 
-![Mermaid Diagram](./diagrams\92_Training_vs_Testing_Ranges_3.svg)
+![Mermaid Diagram](./diagrams/92_Training_vs_Testing_Ranges_3.svg)
 
 The Walker compares all generated strategies exclusively on the `rangeTest` period, ensuring performance metrics reflect out-of-sample results. Training frames are included in the generated code but not used during Walker execution.
 
@@ -106,7 +106,7 @@ The separation of `rangeTrain` and `rangeTest` prevents several forms of overfit
 | **Regime Optimization** | Multiple training days expose diverse market conditions |
 | **Strategy Specialization** | Walker validates on unseen data, penalizing overfitted strategies |
 
-![Mermaid Diagram](./diagrams\92_Training_vs_Testing_Ranges_4.svg)
+![Mermaid Diagram](./diagrams/92_Training_vs_Testing_Ranges_4.svg)
 
 **Sources:** [demo/optimization/src/index.mjs:19-61]()
 
@@ -163,7 +163,7 @@ This configuration trains on November 24-30, 2025 and validates on December 1, 2
 
 Each training range triggers data collection across all configured sources:
 
-![Mermaid Diagram](./diagrams\92_Training_vs_Testing_Ranges_5.svg)
+![Mermaid Diagram](./diagrams/92_Training_vs_Testing_Ranges_5.svg)
 
 The `startDate` and `endDate` from each training range are passed directly to `source.fetch()` methods, ensuring data alignment with the temporal split.
 

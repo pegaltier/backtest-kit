@@ -18,7 +18,7 @@ The risk management system prevents signal generation when portfolio conditions 
 
 **Architecture Flow**
 
-![Mermaid Diagram](./diagrams\65_Risk_Management_0.svg)
+![Mermaid Diagram](./diagrams/65_Risk_Management_0.svg)
 
 Sources: [src/client/ClientRisk.ts:165-217](), [src/interfaces/Risk.interface.ts:1-145]()
 
@@ -79,7 +79,7 @@ Risk validation occurs before signal creation. The process executes all custom v
 
 **Validation Payload Structure**
 
-![Mermaid Diagram](./diagrams\65_Risk_Management_1.svg)
+![Mermaid Diagram](./diagrams/65_Risk_Management_1.svg)
 
 Sources: [src/interfaces/Risk.interface.ts:10-60]()
 
@@ -111,7 +111,7 @@ Sources: [src/client/ClientRisk.ts:165-217](), [src/client/ClientRisk.ts:31-46](
 
 **Position Lifecycle**
 
-![Mermaid Diagram](./diagrams\65_Risk_Management_2.svg)
+![Mermaid Diagram](./diagrams/65_Risk_Management_2.svg)
 
 Sources: [src/client/ClientRisk.ts:73-150]()
 
@@ -164,7 +164,7 @@ Sources: [src/interfaces/Risk.interface.ts:23-35](), [src/client/ClientRisk.ts:2
 
 **Isolation by Risk Profile**
 
-![Mermaid Diagram](./diagrams\65_Risk_Management_3.svg)
+![Mermaid Diagram](./diagrams/65_Risk_Management_3.svg)
 
 Each `ClientRisk` instance has its own `_activePositions` Map. Multiple strategies can share a risk profile to enable cross-strategy position limits.
 
@@ -178,7 +178,7 @@ Risk positions are persisted via `PersistRiskAdapter` for crash recovery in live
 
 **PersistRiskAdapter Architecture**
 
-![Mermaid Diagram](./diagrams\65_Risk_Management_4.svg)
+![Mermaid Diagram](./diagrams/65_Risk_Management_4.svg)
 
 Sources: [src/client/ClientRisk.ts:88-101](), [src/client/ClientRisk.ts:53-59]()
 
@@ -216,7 +216,7 @@ Risk management operates through a three-layer service architecture with explici
 
 **Service Dependency Graph**
 
-![Mermaid Diagram](./diagrams\65_Risk_Management_5.svg)
+![Mermaid Diagram](./diagrams/65_Risk_Management_5.svg)
 
 Sources: [src/lib/services/global/RiskGlobalService.ts:1-117](), [src/lib/services/connection/RiskConnectionService.ts:1-138](), [src/client/ClientRisk.ts:1-221]()
 

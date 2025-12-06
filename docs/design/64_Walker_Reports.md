@@ -24,7 +24,7 @@ Sources: [src/classes/Walker.ts:1-273]()
 
 The following diagram shows how walker reports are generated from strategy execution through to final output, mapping user-facing APIs to internal service implementations:
 
-![Mermaid Diagram](./diagrams\64_Walker_Reports_0.svg)
+![Mermaid Diagram](./diagrams/64_Walker_Reports_0.svg)
 
 Sources: [src/classes/Walker.ts:1-273](), [src/lib/services/global/WalkerGlobalService.ts:1-90](), [src/config/emitters.ts:62-73](), [docs/classes/WalkerUtils.md:1-54]()
 
@@ -70,7 +70,7 @@ Each `IWalkerStrategyResult` in the `strategies` array contains:
 
 ### Implementation Details
 
-![Mermaid Diagram](./diagrams\64_Walker_Reports_1.svg)
+![Mermaid Diagram](./diagrams/64_Walker_Reports_1.svg)
 
 The method performs the following steps:
 
@@ -129,7 +129,7 @@ Walker.getReport(
 
 The generated markdown report follows this structure:
 
-![Mermaid Diagram](./diagrams\64_Walker_Reports_2.svg)
+![Mermaid Diagram](./diagrams/64_Walker_Reports_2.svg)
 
 Report sections:
 
@@ -140,7 +140,7 @@ Report sections:
 
 ### Report Generation Flow
 
-![Mermaid Diagram](./diagrams\64_Walker_Reports_3.svg)
+![Mermaid Diagram](./diagrams/64_Walker_Reports_3.svg)
 
 ### Implementation
 
@@ -191,7 +191,7 @@ For example:
 
 ### Implementation
 
-![Mermaid Diagram](./diagrams\64_Walker_Reports_4.svg)
+![Mermaid Diagram](./diagrams/64_Walker_Reports_4.svg)
 
 The method performs atomic file writes to prevent corruption:
 
@@ -326,7 +326,7 @@ Walker reports integrate with the event system to provide real-time updates and 
 
 ### Event Flow Diagram
 
-![Mermaid Diagram](./diagrams\64_Walker_Reports_5.svg)
+![Mermaid Diagram](./diagrams/64_Walker_Reports_5.svg)
 
 ### Event Types and Usage
 
@@ -363,7 +363,7 @@ Sources: [README.md:436-440](), [src/function/event.ts:528-557]()
 
 The following state diagram illustrates the complete lifecycle of walker report data from execution through persistence:
 
-![Mermaid Diagram](./diagrams\64_Walker_Reports_6.svg)
+![Mermaid Diagram](./diagrams/64_Walker_Reports_6.svg)
 
 **Key Persistence Points:**
 - Backtest signals are accumulated in `backtestMarkdownService` per strategy-symbol pair
@@ -388,7 +388,7 @@ Sources: [src/classes/Walker.ts:1-273](), [src/lib/services/markdown/BacktestMar
 
 ### Method Call Chain
 
-![Mermaid Diagram](./diagrams\64_Walker_Reports_7.svg)
+![Mermaid Diagram](./diagrams/64_Walker_Reports_7.svg)
 
 **Delegation Pattern:**
 

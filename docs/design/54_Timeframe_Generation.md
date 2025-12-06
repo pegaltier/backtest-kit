@@ -53,7 +53,7 @@ Frame schemas are registered via `addFrame()` and define the date range and inte
 
 ### IFrameSchema Structure
 
-![Mermaid Diagram](./diagrams\54_Timeframe_Generation_0.svg)
+![Mermaid Diagram](./diagrams/54_Timeframe_Generation_0.svg)
 
 **Sources:** [types.d.ts:332-379]()
 
@@ -96,7 +96,7 @@ The `IFrame.getTimeframe()` method transforms a date range and interval into a c
 
 ### Algorithm Flow Diagram
 
-![Mermaid Diagram](./diagrams\54_Timeframe_Generation_1.svg)
+![Mermaid Diagram](./diagrams/54_Timeframe_Generation_1.svg)
 
 **Sources:** [types.d.ts:380-393]()
 
@@ -136,7 +136,7 @@ Frame schemas are managed by `FrameSchemaService`, which provides name-based loo
 
 ### Schema Registration and Retrieval Flow
 
-![Mermaid Diagram](./diagrams\54_Timeframe_Generation_2.svg)
+![Mermaid Diagram](./diagrams/54_Timeframe_Generation_2.svg)
 
 **Sources:** [types.d.ts:366-393]()
 
@@ -159,7 +159,7 @@ Timeframe generation is the first step in backtest execution. `BacktestLogicPriv
 
 ### Backtest Execution with Timeframes
 
-![Mermaid Diagram](./diagrams\54_Timeframe_Generation_3.svg)
+![Mermaid Diagram](./diagrams/54_Timeframe_Generation_3.svg)
 
 **Sources:** [types.d.ts:380-393](), architecture Diagram 3 from system overview
 
@@ -315,7 +315,7 @@ Frames are retrieved by `frameName` string identifier. This name is used in:
 
 ### Name-Based Retrieval Flow
 
-![Mermaid Diagram](./diagrams\54_Timeframe_Generation_4.svg)
+![Mermaid Diagram](./diagrams/54_Timeframe_Generation_4.svg)
 
 **Sources:** [types.d.ts:395-398](), [types.d.ts:404-413]()
 

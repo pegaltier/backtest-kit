@@ -10,7 +10,7 @@ For information about how these components are instantiated and connected at run
 
 The framework organizes components into seven distinct types, each registered through a dedicated function and validated by a corresponding service. All schemas follow a consistent pattern: a required `name` field for unique identification, optional `note` field for documentation, required configuration parameters specific to the component type, and optional `callbacks` object for lifecycle hooks.
 
-![Mermaid Diagram](./diagrams\23_Component_Types_0.svg)
+![Mermaid Diagram](./diagrams/23_Component_Types_0.svg)
 
 **Sources:** [src/function/add.ts:1-444](), [src/lib/core/types.ts:1-97](), [src/lib/core/provide.ts:1-132](), [types.d.ts:226-833]()
 
@@ -35,7 +35,7 @@ All component schemas share a common structural pattern with three tiers of fiel
 
 Component registration follows a three-phase pipeline: user code calls an `add*` function with a schema object, the function delegates to a validation service that applies 10-30 validation rules depending on component type, and upon successful validation the schema is stored in a schema service for later retrieval by connection services during execution.
 
-![Mermaid Diagram](./diagrams\23_Component_Types_1.svg)
+![Mermaid Diagram](./diagrams/23_Component_Types_1.svg)
 
 **Sources:** [src/function/add.ts:52-64](), [src/function/add.ts:101-113](), [src/lib/services/validation/StrategyValidationService.ts](), [src/lib/services/schema/StrategySchemaService.ts](), [src/lib/services/connection/StrategyConnectionService.ts]()
 
@@ -116,7 +116,7 @@ interface ISignalRow extends ISignalDto {
 
 Strategy callbacks fire at eight distinct lifecycle points, providing hooks for logging, monitoring, and custom business logic. All callbacks receive the `backtest` boolean flag to distinguish between historical simulation and live trading.
 
-![Mermaid Diagram](./diagrams\23_Component_Types_2.svg)
+![Mermaid Diagram](./diagrams/23_Component_Types_2.svg)
 
 **Callback Interface:**
 
@@ -237,7 +237,7 @@ interface ICandleData {
 
 `ClientExchange` wraps the schema's `getCandles` function with additional logic: anomaly detection filters out incomplete candles with near-zero prices, retry logic handles transient API failures, and execution context determines whether to fetch backward (past candles) or forward (future candles for backtest fast-forward).
 
-![Mermaid Diagram](./diagrams\23_Component_Types_3.svg)
+![Mermaid Diagram](./diagrams/23_Component_Types_3.svg)
 
 **Anomaly Detection Logic:**
 
@@ -339,7 +339,7 @@ type FrameName = string;
 
 `ClientFrame.getTimeframe()` generates timestamps by starting at `startDate` and incrementing by `interval` milliseconds until exceeding `endDate`. The resulting array is chronologically ordered and used by `BacktestLogicPrivateService` for sequential strategy execution.
 
-![Mermaid Diagram](./diagrams\23_Component_Types_4.svg)
+![Mermaid Diagram](./diagrams/23_Component_Types_4.svg)
 
 **Interval to Milliseconds Conversion:**
 
@@ -450,7 +450,7 @@ interface IRiskActivePosition {
 
 `ClientRisk.checkSignal()` is called twice per signal lifecycle: once before `getSignal()` (pre-generation check) and once at scheduled signal activation (pre-open check). Each validation in the `validations` array is executed sequentially with access to current portfolio state via `PersistRiskAdapter`.
 
-![Mermaid Diagram](./diagrams\23_Component_Types_5.svg)
+![Mermaid Diagram](./diagrams/23_Component_Types_5.svg)
 
 **Sources:** [src/client/ClientRisk.ts](), [types.d.ts:443-526]()
 
@@ -608,7 +608,7 @@ type SizingName = string;
 
 The three sizing methods optimize for different objectives: fixed-percentage maintains consistent risk per trade, Kelly Criterion maximizes long-term growth rate based on historical win rate, and ATR-based adjusts position size inversely to market volatility.
 
-![Mermaid Diagram](./diagrams\23_Component_Types_6.svg)
+![Mermaid Diagram](./diagrams/23_Component_Types_6.svg)
 
 **Algorithm Details:**
 
@@ -733,7 +733,7 @@ type WalkerMetric =
 
 `WalkerLogicPrivateService` iterates through the strategies array sequentially, running a full backtest for each and collecting performance metrics. After all strategies complete, the walker identifies the best strategy by comparing metric values and emits the final results.
 
-![Mermaid Diagram](./diagrams\23_Component_Types_7.svg)
+![Mermaid Diagram](./diagrams/23_Component_Types_7.svg)
 
 **Sources:** [src/lib/services/logic/private/WalkerLogicPrivateService.ts](), [src/interfaces/Walker.interface.ts]()
 
@@ -889,7 +889,7 @@ interface IOptimizerMessage {
 
 The optimizer iterates through training ranges and sources in nested loops: for each training range, it fetches data from each source (with pagination support), formats the data into user/assistant message pairs, and appends to the conversation history. After collecting all data, it calls `getPrompt()` with the complete message history to generate a strategy prompt for that training range.
 
-![Mermaid Diagram](./diagrams\23_Component_Types_8.svg)
+![Mermaid Diagram](./diagrams/23_Component_Types_8.svg)
 
 **Pagination Logic:**
 
@@ -1113,7 +1113,7 @@ addOptimizer({
 
 Component types form a dependency graph where strategies reference exchanges and risk profiles, walkers reference strategies and frames, and optimizers generate complete component configurations. The framework enforces referential integrity at registration time by validating that referenced component names exist in their respective schema services.
 
-![Mermaid Diagram](./diagrams\23_Component_Types_9.svg)
+![Mermaid Diagram](./diagrams/23_Component_Types_9.svg)
 
 **Dependency Rules:**
 

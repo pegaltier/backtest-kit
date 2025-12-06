@@ -10,7 +10,7 @@ For information about signal states and lifecycle transitions, see [Signal State
 
 The signal generation process is orchestrated by `GET_SIGNAL_FN` in [src/client/ClientStrategy.ts:263-396]() and executes a multi-stage pipeline with early-exit optimization at each validation layer.
 
-![Mermaid Diagram](./diagrams\48_Signal_Generation_and_Validation_0.svg)
+![Mermaid Diagram](./diagrams/48_Signal_Generation_and_Validation_0.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:263-396](), [src/interfaces/Strategy.interface.ts:132-149]()
 
@@ -48,7 +48,7 @@ const INTERVAL_MINUTES: Record<SignalInterval, number> = {
 
 ### Throttling Logic
 
-![Mermaid Diagram](./diagrams\48_Signal_Generation_and_Validation_1.svg)
+![Mermaid Diagram](./diagrams/48_Signal_Generation_and_Validation_1.svg)
 
 The throttling mechanism [src/client/ClientStrategy.ts:272-284]() checks if sufficient time has elapsed since the last signal generation attempt. If `_lastSignalTimestamp` is `null` (first call), the check passes immediately. Otherwise, it compares `currentTime - _lastSignalTimestamp` against the configured interval in milliseconds.
 
@@ -76,7 +76,7 @@ interface IRiskCheckArgs {
 
 ### Risk Validation Flow
 
-![Mermaid Diagram](./diagrams\48_Signal_Generation_and_Validation_2.svg)
+![Mermaid Diagram](./diagrams/48_Signal_Generation_and_Validation_2.svg)
 
 If any validation in the risk profile throws an error or `checkSignal()` returns `false`, signal generation is aborted and `tick()` returns `null`. This prevents violating portfolio limits like maximum concurrent positions or leverage constraints.
 
@@ -157,7 +157,7 @@ if (isFinite(signal.priceOpen) && signal.priceOpen <= 0) {
 
 LONG position validation [src/client/ClientStrategy.ts:105-162]() enforces the invariant: `priceStopLoss < priceOpen < priceTakeProfit`.
 
-![Mermaid Diagram](./diagrams\48_Signal_Generation_and_Validation_3.svg)
+![Mermaid Diagram](./diagrams/48_Signal_Generation_and_Validation_3.svg)
 
 #### Edge Case Protection for Immediate Signals
 
@@ -184,7 +184,7 @@ For immediate (non-scheduled) signals [src/client/ClientStrategy.ts:118-135](), 
 
 SHORT position validation [src/client/ClientStrategy.ts:165-222]() enforces the invariant: `priceTakeProfit < priceOpen < priceStopLoss`.
 
-![Mermaid Diagram](./diagrams\48_Signal_Generation_and_Validation_4.svg)
+![Mermaid Diagram](./diagrams/48_Signal_Generation_and_Validation_4.svg)
 
 SHORT logic is inverted from LONG: profits occur when price falls (toward TP), losses occur when price rises (toward SL).
 
@@ -257,7 +257,7 @@ After successful validation, `GET_SIGNAL_FN` determines whether to create a sche
 
 ### Decision Tree
 
-![Mermaid Diagram](./diagrams\48_Signal_Generation_and_Validation_5.svg)
+![Mermaid Diagram](./diagrams/48_Signal_Generation_and_Validation_5.svg)
 
 ### Activation Logic
 
@@ -329,7 +329,7 @@ const GET_SIGNAL_FN = trycatch(
 
 ### Error Flow
 
-![Mermaid Diagram](./diagrams\48_Signal_Generation_and_Validation_6.svg)
+![Mermaid Diagram](./diagrams/48_Signal_Generation_and_Validation_6.svg)
 
 The `trycatch` wrapper ensures:
 1. **Logging:** All errors are logged via `LoggerService`

@@ -25,7 +25,7 @@ Risk schemas are registered via `addRisk()` and referenced by strategies via the
 
 ### IRiskSchema Interface
 
-![Mermaid Diagram](./diagrams\27_Risk_Schemas_0.svg)
+![Mermaid Diagram](./diagrams/27_Risk_Schemas_0.svg)
 
 **Diagram: Risk Schema Type Hierarchy**
 
@@ -101,7 +101,7 @@ The `activePositions` array provides access to all currently open positions acro
 
 ### Validation Execution Flow
 
-![Mermaid Diagram](./diagrams\27_Risk_Schemas_1.svg)
+![Mermaid Diagram](./diagrams/27_Risk_Schemas_1.svg)
 
 **Diagram: Risk Validation Execution Flow**
 
@@ -145,7 +145,7 @@ interface IRiskActivePosition {
 
 ### Position Lifecycle
 
-![Mermaid Diagram](./diagrams\27_Risk_Schemas_2.svg)
+![Mermaid Diagram](./diagrams/27_Risk_Schemas_2.svg)
 
 **Diagram: Position Tracking Lifecycle**
 
@@ -171,7 +171,7 @@ Position tracking operations:
 
 Each `riskName` maintains independent position tracking:
 
-![Mermaid Diagram](./diagrams\27_Risk_Schemas_3.svg)
+![Mermaid Diagram](./diagrams/27_Risk_Schemas_3.svg)
 
 **Diagram: Risk Profile Isolation via Memoization**
 
@@ -232,7 +232,7 @@ addRisk({
 
 ### Registration via addRisk()
 
-![Mermaid Diagram](./diagrams\27_Risk_Schemas_4.svg)
+![Mermaid Diagram](./diagrams/27_Risk_Schemas_4.svg)
 
 **Diagram: Risk Schema Registration Flow**
 
@@ -324,7 +324,7 @@ Multiple strategies can share the same risk profile, enabling cross-strategy pos
 
 Risk position data is persisted to disk in live mode to enable crash recovery:
 
-![Mermaid Diagram](./diagrams\27_Risk_Schemas_5.svg)
+![Mermaid Diagram](./diagrams/27_Risk_Schemas_5.svg)
 
 **Diagram: Risk Position Persistence Flow**
 
@@ -372,7 +372,7 @@ This format allows direct conversion to/from the internal `Map<string, IRiskActi
 
 ## Service Architecture
 
-![Mermaid Diagram](./diagrams\27_Risk_Schemas_6.svg)
+![Mermaid Diagram](./diagrams/27_Risk_Schemas_6.svg)
 
 **Diagram: Risk Management Service Architecture**
 

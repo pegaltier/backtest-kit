@@ -59,7 +59,7 @@ Sources: [src/interfaces/Strategy.interface.ts:7-17](), [src/interfaces/Strategy
 
 The framework converts `SignalInterval` strings to millisecond durations via the `INTERVAL_MINUTES` constant:
 
-![Mermaid Diagram](./diagrams\60_Interval_Throttling_0.svg)
+![Mermaid Diagram](./diagrams/60_Interval_Throttling_0.svg)
 
 **Mapping Definition:**
 
@@ -93,7 +93,7 @@ Sources: [src/client/ClientStrategy.ts:31-38]()
 
 Each `ClientStrategy` instance maintains a private field `_lastSignalTimestamp` that records when `getSignal` was last called:
 
-![Mermaid Diagram](./diagrams\60_Interval_Throttling_1.svg)
+![Mermaid Diagram](./diagrams/60_Interval_Throttling_1.svg)
 
 **Field Declaration:**
 
@@ -119,7 +119,7 @@ Sources: [src/client/ClientStrategy.ts:194-208]()
 
 The throttling check occurs in `GET_SIGNAL_FN` before calling the user-defined `getSignal` function:
 
-![Mermaid Diagram](./diagrams\60_Interval_Throttling_2.svg)
+![Mermaid Diagram](./diagrams/60_Interval_Throttling_2.svg)
 
 **Implementation at [src/client/ClientStrategy.ts:194-208]():**
 
@@ -156,7 +156,7 @@ Sources: [src/client/ClientStrategy.ts:187-283]()
 
 The throttling check is the first gate in the signal generation pipeline:
 
-![Mermaid Diagram](./diagrams\60_Interval_Throttling_3.svg)
+![Mermaid Diagram](./diagrams/60_Interval_Throttling_3.svg)
 
 **Position in Call Stack:**
 
@@ -173,7 +173,7 @@ Sources: [src/client/ClientStrategy.ts:187-283]()
 
 In live trading, throttling operates on real-time clock progression:
 
-![Mermaid Diagram](./diagrams\60_Interval_Throttling_4.svg)
+![Mermaid Diagram](./diagrams/60_Interval_Throttling_4.svg)
 
 **Live Loop Context at [src/lib/services/logic/private/LiveLogicPrivateService.ts]():**
 
@@ -197,7 +197,7 @@ Sources: [src/client/ClientStrategy.ts:194-208]()
 
 In backtesting, throttling operates on historical timestamp progression:
 
-![Mermaid Diagram](./diagrams\60_Interval_Throttling_5.svg)
+![Mermaid Diagram](./diagrams/60_Interval_Throttling_5.svg)
 
 **Backtest Timeframe Iteration:**
 

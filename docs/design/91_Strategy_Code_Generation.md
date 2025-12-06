@@ -30,7 +30,7 @@ The template system is defined by the `IOptimizerTemplate` interface, which spec
 
 **Template System Diagram:**
 
-![Mermaid Diagram](./diagrams\91_Strategy_Code_Generation_0.svg)
+![Mermaid Diagram](./diagrams/91_Strategy_Code_Generation_0.svg)
 
 Sources: [src/interfaces/Optimizer.interface.ts:238-374](), [src/lib/services/template/OptimizerTemplateService.ts:14-26](), [src/lib/services/connection/OptimizerConnectionService.ts:59-112]()
 
@@ -261,7 +261,7 @@ The assembly pipeline in `GET_STRATEGY_CODE_FN` calls template methods in a spec
 
 **Assembly Sequence Diagram:**
 
-![Mermaid Diagram](./diagrams\91_Strategy_Code_Generation_1.svg)
+![Mermaid Diagram](./diagrams/91_Strategy_Code_Generation_1.svg)
 
 **Pipeline Implementation Details:**
 
@@ -287,7 +287,7 @@ Templates can be partially overridden in the optimizer schema by providing a `te
 
 **Template Merging Diagram:**
 
-![Mermaid Diagram](./diagrams\91_Strategy_Code_Generation_2.svg)
+![Mermaid Diagram](./diagrams/91_Strategy_Code_Generation_2.svg)
 
 **Example: Custom Strategy Template**
 
@@ -427,7 +427,7 @@ The generated code integrates seamlessly with backtest-kit's execution modes. Th
 
 **Execution Flow:**
 
-![Mermaid Diagram](./diagrams\91_Strategy_Code_Generation_3.svg)
+![Mermaid Diagram](./diagrams/91_Strategy_Code_Generation_3.svg)
 
 The generated strategies use environment-based authentication (`process.env.OLLAMA_API_KEY`) for Ollama API access, allowing the same code to run in different environments without modification.
 

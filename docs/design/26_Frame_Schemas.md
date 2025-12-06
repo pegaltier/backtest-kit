@@ -12,7 +12,7 @@ The `IFrameSchema` interface defines the contract for frame registration. All fr
 
 **Interface Structure**
 
-![Mermaid Diagram](./diagrams\26_Frame_Schemas_0.svg)
+![Mermaid Diagram](./diagrams/26_Frame_Schemas_0.svg)
 
 **Field Definitions**
 
@@ -64,7 +64,7 @@ The `FrameInterval` type defines the step size for timeframe generation. Each in
 
 **Available Intervals**
 
-![Mermaid Diagram](./diagrams\26_Frame_Schemas_1.svg)
+![Mermaid Diagram](./diagrams/26_Frame_Schemas_1.svg)
 
 **Interval Selection Guidelines**
 
@@ -85,7 +85,7 @@ Frame schemas are registered via `addFrame()` and retrieved by name during backt
 
 **Registration Flow**
 
-![Mermaid Diagram](./diagrams\26_Frame_Schemas_2.svg)
+![Mermaid Diagram](./diagrams/26_Frame_Schemas_2.svg)
 
 **Registration Example**
 
@@ -133,7 +133,7 @@ Frames generate arrays of `Date` objects representing tick timestamps. The `Clie
 
 **Generation Process**
 
-![Mermaid Diagram](./diagrams\26_Frame_Schemas_3.svg)
+![Mermaid Diagram](./diagrams/26_Frame_Schemas_3.svg)
 
 **Example Timeframe Output**
 
@@ -167,7 +167,7 @@ Frame schemas support an optional `onTimeframe` callback invoked after timeframe
 
 The `onTimeframe` callback is invoked by `ClientFrame` after timestamp array generation, before backtest iteration begins. Useful for logging, validation, or external integrations.
 
-![Mermaid Diagram](./diagrams\26_Frame_Schemas_4.svg)
+![Mermaid Diagram](./diagrams/26_Frame_Schemas_4.svg)
 
 **Callback Signature**
 
@@ -211,7 +211,7 @@ Frame schemas are managed through a layered service architecture following the f
 
 **Service Layer Flow**
 
-![Mermaid Diagram](./diagrams\26_Frame_Schemas_5.svg)
+![Mermaid Diagram](./diagrams/26_Frame_Schemas_5.svg)
 
 **Key Code Entities**
 
@@ -239,7 +239,7 @@ The `IFrameParams` interface extends `IFrameSchema` with injected dependencies f
 
 **Parameter Composition**
 
-![Mermaid Diagram](./diagrams\26_Frame_Schemas_6.svg)
+![Mermaid Diagram](./diagrams/26_Frame_Schemas_6.svg)
 
 **Field Sources**
 
@@ -263,7 +263,7 @@ Frames are consumed by `BacktestLogicPrivateService` to generate the iteration a
 
 **Backtest Integration Flow**
 
-![Mermaid Diagram](./diagrams\26_Frame_Schemas_7.svg)
+![Mermaid Diagram](./diagrams/26_Frame_Schemas_7.svg)
 
 The `frameName` from `MethodContext` determines which frame to use. The generated timeframe array drives the iteration loop, with each timestamp representing a simulated "now" moment for strategy execution.
 

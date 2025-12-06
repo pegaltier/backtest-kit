@@ -49,7 +49,7 @@ Both formats are functionally equivalent. The object format allows you to attach
 
 ## Validation Function Signature
 
-![Mermaid Diagram](./diagrams\85_Custom_Risk_Validations_0.svg)
+![Mermaid Diagram](./diagrams/85_Custom_Risk_Validations_0.svg)
 
 **Validation Function Signature**
 
@@ -70,7 +70,7 @@ interface IRiskValidationFn {
 
 ## The IRiskValidationPayload Interface
 
-![Mermaid Diagram](./diagrams\85_Custom_Risk_Validations_1.svg)
+![Mermaid Diagram](./diagrams/85_Custom_Risk_Validations_1.svg)
 
 **IRiskValidationPayload Fields**
 
@@ -98,7 +98,7 @@ Each element in `activePositions` contains:
 
 ## Error Throwing Patterns
 
-![Mermaid Diagram](./diagrams\85_Custom_Risk_Validations_2.svg)
+![Mermaid Diagram](./diagrams/85_Custom_Risk_Validations_2.svg)
 
 **Error Handling Mechanism**
 
@@ -262,7 +262,7 @@ addRisk({
 
 ## Multiple Validation Composition
 
-![Mermaid Diagram](./diagrams\85_Custom_Risk_Validations_3.svg)
+![Mermaid Diagram](./diagrams/85_Custom_Risk_Validations_3.svg)
 
 Validations are executed sequentially in the order they are defined in the `validations` array. The validation process follows these rules:
 
@@ -367,7 +367,7 @@ addRisk({
 
 ## Validation Context and Callbacks
 
-![Mermaid Diagram](./diagrams\85_Custom_Risk_Validations_4.svg)
+![Mermaid Diagram](./diagrams/85_Custom_Risk_Validations_4.svg)
 
 **Lifecycle Callbacks**
 
@@ -402,7 +402,7 @@ These callbacks receive:
 
 ## Validation Isolation by Risk Profile
 
-![Mermaid Diagram](./diagrams\85_Custom_Risk_Validations_5.svg)
+![Mermaid Diagram](./diagrams/85_Custom_Risk_Validations_5.svg)
 
 Each risk profile maintains its own isolated state:
 
@@ -460,7 +460,7 @@ addStrategy({
 
 ## Error Monitoring
 
-![Mermaid Diagram](./diagrams\85_Custom_Risk_Validations_6.svg)
+![Mermaid Diagram](./diagrams/85_Custom_Risk_Validations_6.svg)
 
 **Listening to Validation Errors**
 

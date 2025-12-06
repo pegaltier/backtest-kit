@@ -86,7 +86,7 @@ export const validationSubject = new Subject<Error>();
 
 ## Error Flow Architecture
 
-![Mermaid Diagram](./diagrams\80_Error_Handling_0.svg)
+![Mermaid Diagram](./diagrams/80_Error_Handling_0.svg)
 
 **Sources:**
 - [src/config/emitters.ts:32-108]()
@@ -202,7 +202,7 @@ function listenValidation(fn: (error: Error) => void): () => void
 
 ## Error Source Mapping
 
-![Mermaid Diagram](./diagrams\80_Error_Handling_1.svg)
+![Mermaid Diagram](./diagrams/80_Error_Handling_1.svg)
 
 **Sources:**
 - [test/e2e/defend.test.mjs:1664-1743]()
@@ -432,7 +432,7 @@ Background execution methods (`Backtest.background()`, `Live.background()`, `Wal
 
 ### Error Handling Flow in Background Methods
 
-![Mermaid Diagram](./diagrams\80_Error_Handling_2.svg)
+![Mermaid Diagram](./diagrams/80_Error_Handling_2.svg)
 
 **Error Boundaries:**
 - Background methods establish error boundaries around execution

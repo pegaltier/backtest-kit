@@ -12,7 +12,7 @@ Sources: [src/interfaces/Optimizer.interface.ts:380-433]()
 
 ## Schema Structure Overview
 
-![Mermaid Diagram](./diagrams\30_Optimizer_Schemas_0.svg)
+![Mermaid Diagram](./diagrams/30_Optimizer_Schemas_0.svg)
 
 **Diagram: Optimizer Schema Interface Structure**
 
@@ -314,7 +314,7 @@ interface IOptimizerCallbacks {
 
 #### Callback Invocation Points
 
-![Mermaid Diagram](./diagrams\30_Optimizer_Schemas_1.svg)
+![Mermaid Diagram](./diagrams/30_Optimizer_Schemas_1.svg)
 
 **Diagram: Callback Invocation Sequence**
 
@@ -359,7 +359,7 @@ Sources: [src/interfaces/Optimizer.interface.ts:191-236](), [src/interfaces/Opti
 
 The `source` array accepts two types of entries:
 
-![Mermaid Diagram](./diagrams\30_Optimizer_Schemas_2.svg)
+![Mermaid Diagram](./diagrams/30_Optimizer_Schemas_2.svg)
 
 **Diagram: Source Type Variants**
 
@@ -529,7 +529,7 @@ listenOptimizerProgress((event) => {
 
 #### Code Assembly Pipeline
 
-![Mermaid Diagram](./diagrams\30_Optimizer_Schemas_3.svg)
+![Mermaid Diagram](./diagrams/30_Optimizer_Schemas_3.svg)
 
 **Diagram: Code Generation Pipeline**
 
@@ -567,7 +567,7 @@ Sources: [src/lib/services/validation/OptimizerValidationService.ts]() (not show
 
 ## Schema Lifecycle
 
-![Mermaid Diagram](./diagrams\30_Optimizer_Schemas_4.svg)
+![Mermaid Diagram](./diagrams/30_Optimizer_Schemas_4.svg)
 
 **Diagram: Schema Registration and Lifecycle**
 

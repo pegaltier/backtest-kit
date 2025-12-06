@@ -17,7 +17,7 @@ The framework provides real-time monitoring through a pub-sub event system with 
 
 ### Live Trading Event Flow
 
-![Mermaid Diagram](./diagrams\59_Real-time_Monitoring_0.svg)
+![Mermaid Diagram](./diagrams/59_Real-time_Monitoring_0.svg)
 
 **Key components:**
 - **signalLiveEmitter** [src/config/emitters.ts:23]() - Emits all signal lifecycle events (idle, scheduled, opened, active, closed, cancelled)
@@ -274,7 +274,7 @@ interface IStrategySchema {
 
 ### Callback Execution Order
 
-![Mermaid Diagram](./diagrams\59_Real-time_Monitoring_1.svg)
+![Mermaid Diagram](./diagrams/59_Real-time_Monitoring_1.svg)
 
 ### onSchedule Callback
 
@@ -436,7 +436,7 @@ Sources: [README.md:144-158](), [src/function/event.ts:132-164]()
 
 ### Event Accumulation Architecture
 
-![Mermaid Diagram](./diagrams\59_Real-time_Monitoring_2.svg)
+![Mermaid Diagram](./diagrams/59_Real-time_Monitoring_2.svg)
 
 **Key design decisions:**
 - **Memoized storage** [src/lib/services/markdown/LiveMarkdownService.ts:575-578]() - Each `symbol:strategyName` pair gets isolated storage
@@ -907,7 +907,7 @@ Sources: [README.md:100-189](), [src/function/event.ts:132-164](), [src/lib/serv
 
 ## Monitoring State Transitions
 
-![Mermaid Diagram](./diagrams\59_Real-time_Monitoring_3.svg)
+![Mermaid Diagram](./diagrams/59_Real-time_Monitoring_3.svg)
 
 **Key monitoring loops**:
 1. **idle → scheduled → opened → active → closed**: Full lifecycle with scheduled entry

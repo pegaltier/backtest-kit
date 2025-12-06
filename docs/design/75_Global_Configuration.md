@@ -14,7 +14,7 @@ The framework uses a singleton `GLOBAL_CONFIG` object to store runtime parameter
 
 ### GLOBAL_CONFIG Definition
 
-![Mermaid Diagram](./diagrams\75_Global_Configuration_0.svg)
+![Mermaid Diagram](./diagrams/75_Global_Configuration_0.svg)
 
 **GLOBAL_CONFIG Parameter Summary**
 
@@ -59,7 +59,7 @@ setConfig(config: Partial<GlobalConfig>): Promise<void>
 
 **Code Flow:**
 
-![Mermaid Diagram](./diagrams\75_Global_Configuration_1.svg)
+![Mermaid Diagram](./diagrams/75_Global_Configuration_1.svg)
 
 Sources: [types.d.ts:124-135](), [src/client/ClientStrategy.ts:30](), [src/client/ClientStrategy.ts:474-528]()
 
@@ -81,7 +81,7 @@ Sources: [types.d.ts:124-135](), [src/client/ClientStrategy.ts:30](), [src/clien
 
 **Validation Flow:**
 
-![Mermaid Diagram](./diagrams\75_Global_Configuration_2.svg)
+![Mermaid Diagram](./diagrams/75_Global_Configuration_2.svg)
 
 **Example:**
 ```typescript
@@ -109,7 +109,7 @@ Sources: [src/config/params.ts:3-6](), [types.d.ts:7-10](), [test/e2e/defend.tes
 
 **VWAP Calculation Flow:**
 
-![Mermaid Diagram](./diagrams\75_Global_Configuration_3.svg)
+![Mermaid Diagram](./diagrams/75_Global_Configuration_3.svg)
 
 **Example:**
 ```typescript
@@ -137,7 +137,7 @@ Sources: [src/config/params.ts:8-10](), [types.d.ts:12-15](), [types.d.ts:264-27
 
 **Validation Logic:**
 
-![Mermaid Diagram](./diagrams\75_Global_Configuration_4.svg)
+![Mermaid Diagram](./diagrams/75_Global_Configuration_4.svg)
 
 **Example:**
 ```typescript
@@ -165,7 +165,7 @@ Sources: [src/config/params.ts:12-17](), [types.d.ts:17-21](), [test/e2e/sanitiz
 
 **Validation Logic:**
 
-![Mermaid Diagram](./diagrams\75_Global_Configuration_5.svg)
+![Mermaid Diagram](./diagrams/75_Global_Configuration_5.svg)
 
 **Example:**
 ```typescript
@@ -194,7 +194,7 @@ Sources: [src/config/params.ts:19-23](), [types.d.ts:23-27](), [test/e2e/sanitiz
 
 **Lifecycle Monitoring:**
 
-![Mermaid Diagram](./diagrams\75_Global_Configuration_6.svg)
+![Mermaid Diagram](./diagrams/75_Global_Configuration_6.svg)
 
 **Example:**
 ```typescript
@@ -222,7 +222,7 @@ Sources: [src/config/params.ts:25-29](), [types.d.ts:29-34](), [test/e2e/sanitiz
 
 **Retry Logic Flow:**
 
-![Mermaid Diagram](./diagrams\75_Global_Configuration_7.svg)
+![Mermaid Diagram](./diagrams/75_Global_Configuration_7.svg)
 
 **Example:**
 ```typescript
@@ -282,7 +282,7 @@ Sources: [types.d.ts:39-43]()
 
 **Anomaly Detection Logic:**
 
-![Mermaid Diagram](./diagrams\75_Global_Configuration_8.svg)
+![Mermaid Diagram](./diagrams/75_Global_Configuration_8.svg)
 
 **Example:**
 ```typescript
@@ -317,7 +317,7 @@ Sources: [types.d.ts:44-57]()
 
 **Statistical Method Selection:**
 
-![Mermaid Diagram](./diagrams\75_Global_Configuration_9.svg)
+![Mermaid Diagram](./diagrams/75_Global_Configuration_9.svg)
 
 **Example:**
 ```typescript
@@ -335,7 +335,7 @@ Sources: [types.d.ts:58-72]()
 
 The configuration system follows a simple write-once-read-many pattern, where configuration parameters are read by validation and monitoring logic throughout the framework.
 
-![Mermaid Diagram](./diagrams\75_Global_Configuration_10.svg)
+![Mermaid Diagram](./diagrams/75_Global_Configuration_10.svg)
 
 **Configuration Consumers by Code Entity:**
 

@@ -8,7 +8,7 @@ backtest-kit provides three execution modes that share the same strategy and exc
 
 ### Mode Comparison
 
-![Mermaid Diagram](./diagrams\05_Core_Concepts_0.svg)
+![Mermaid Diagram](./diagrams/05_Core_Concepts_0.svg)
 
 **Sources:** [src/classes/Backtest.ts:1-208](), [src/classes/Live.ts:1-220](), [src/classes/Walker.ts:1-274](), Diagram 3 from high-level architecture
 
@@ -36,7 +36,7 @@ Signals progress through a state machine implemented as a discriminated union of
 
 ### State Machine Diagram
 
-![Mermaid Diagram](./diagrams\05_Core_Concepts_1.svg)
+![Mermaid Diagram](./diagrams/05_Core_Concepts_1.svg)
 
 **Sources:** [src/interfaces/Strategy.interface.ts:159-296](), [src/client/ClientStrategy.ts:40-895](), Diagram 5 from high-level architecture
 
@@ -80,7 +80,7 @@ backtest-kit uses a registration-based architecture where components are defined
 
 ### Component Registration Flow
 
-![Mermaid Diagram](./diagrams\05_Core_Concepts_2.svg)
+![Mermaid Diagram](./diagrams/05_Core_Concepts_2.svg)
 
 **Sources:** [src/index.ts:1-131](), [src/lib/services/connection/StrategyConnectionService.ts:76-94](), Diagram 2 from high-level architecture
 
@@ -103,7 +103,7 @@ Each schema is stored in a corresponding `*SchemaService` using the ToolRegistry
 
 The framework uses memoized Connection Services to lazily instantiate Client classes:
 
-![Mermaid Diagram](./diagrams\05_Core_Concepts_3.svg)
+![Mermaid Diagram](./diagrams/05_Core_Concepts_3.svg)
 
 **Sources:** [src/lib/services/connection/StrategyConnectionService.ts:76-94](), [src/client/ClientStrategy.ts:1-1092]()
 
@@ -136,7 +136,7 @@ The framework uses `di-scoped` to propagate execution context without explicit p
 
 ### Context Flow Example
 
-![Mermaid Diagram](./diagrams\05_Core_Concepts_4.svg)
+![Mermaid Diagram](./diagrams/05_Core_Concepts_4.svg)
 
 **Sources:** [src/lib/services/context/ExecutionContextService.ts](), [src/lib/services/context/MethodContextService.ts](), Diagram 6 from high-level architecture
 

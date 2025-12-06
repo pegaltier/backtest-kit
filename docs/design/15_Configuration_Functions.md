@@ -12,7 +12,7 @@ For information about component registration functions (`addStrategy`, `addExcha
 
 The framework provides two distinct configuration mechanisms that operate independently:
 
-![Mermaid Diagram](./diagrams\15_Configuration_Functions_0.svg)
+![Mermaid Diagram](./diagrams/15_Configuration_Functions_0.svg)
 
 **Sources:** [src/config/params.ts:1-35](), [types.d.ts:5-97](), [src/index.ts:1]()
 
@@ -43,7 +43,7 @@ The `ILogger` interface defines four logging severity levels. All methods accept
 
 When a logger is registered, the framework automatically injects contextual metadata into all log calls:
 
-![Mermaid Diagram](./diagrams\15_Configuration_Functions_1.svg)
+![Mermaid Diagram](./diagrams/15_Configuration_Functions_1.svg)
 
 **Sources:** [types.d.ts:69-84](), [src/lib/services/context/ExecutionContextService.ts](), [src/lib/services/context/MethodContextService.ts]()
 
@@ -145,7 +145,7 @@ Configuration changes apply immediately to all subsequent operations. Modifying 
 
 ### Behavior Flow
 
-![Mermaid Diagram](./diagrams\15_Configuration_Functions_2.svg)
+![Mermaid Diagram](./diagrams/15_Configuration_Functions_2.svg)
 
 ### Impact on Risk Management
 
@@ -177,7 +177,7 @@ await setConfig({
 
 ### VWAP Calculation Flow
 
-![Mermaid Diagram](./diagrams\15_Configuration_Functions_3.svg)
+![Mermaid Diagram](./diagrams/15_Configuration_Functions_3.svg)
 
 ### Trade-offs
 
@@ -217,7 +217,7 @@ The framework applies **0.1% fee** + **0.1% slippage** = **0.2% total cost** on 
 
 ### Validation Logic
 
-![Mermaid Diagram](./diagrams\15_Configuration_Functions_4.svg)
+![Mermaid Diagram](./diagrams/15_Configuration_Functions_4.svg)
 
 ### Recommended Settings
 
@@ -250,7 +250,7 @@ await setConfig({
 
 ### Risk Protection Mechanism
 
-![Mermaid Diagram](./diagrams\15_Configuration_Functions_5.svg)
+![Mermaid Diagram](./diagrams/15_Configuration_Functions_5.svg)
 
 ### Portfolio Impact
 
@@ -289,7 +289,7 @@ await setConfig({
 
 ### Lifetime Tracking and Enforcement
 
-![Mermaid Diagram](./diagrams\15_Configuration_Functions_6.svg)
+![Mermaid Diagram](./diagrams/15_Configuration_Functions_6.svg)
 
 ### Risk Slot Deadlock Prevention
 
@@ -322,7 +322,7 @@ await setConfig({
 
 The following diagram shows which framework components consume each configuration parameter:
 
-![Mermaid Diagram](./diagrams\15_Configuration_Functions_7.svg)
+![Mermaid Diagram](./diagrams/15_Configuration_Functions_7.svg)
 
 **Sources:** [src/config/params.ts:1-35](), [types.d.ts:5-34]()
 

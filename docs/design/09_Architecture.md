@@ -18,7 +18,7 @@ The system implements a seven-layer architecture where each layer has distinct r
 
 ### System Layers Diagram
 
-![Mermaid Diagram](./diagrams\09_Architecture_0.svg)
+![Mermaid Diagram](./diagrams/09_Architecture_0.svg)
 
 **Layer 1: Public API** provides user-facing functions exported from [src/index.ts:1-184](). The `add.ts` functions register components ([src/function/add.ts:1-445]()), while `event.ts` functions subscribe to system events ([src/function/event.ts:1-892]()). Utility classes like `Backtest`, `Live`, and `Walker` provide high-level execution control.
 
@@ -44,7 +44,7 @@ Services are organized into 10 functional categories following a matrix pattern 
 
 ### Service Category Matrix
 
-![Mermaid Diagram](./diagrams\09_Architecture_1.svg)
+![Mermaid Diagram](./diagrams/09_Architecture_1.svg)
 
 ### Service Category Responsibilities
 
@@ -73,7 +73,7 @@ The system implements a lightweight dependency injection container that wires ap
 
 ### DI System Flow Diagram
 
-![Mermaid Diagram](./diagrams\09_Architecture_2.svg)
+![Mermaid Diagram](./diagrams/09_Architecture_2.svg)
 
 ### Service Registration Example
 
@@ -150,7 +150,7 @@ The system uses two context services to propagate execution state through servic
 
 ### Context Injection Flow
 
-![Mermaid Diagram](./diagrams\09_Architecture_3.svg)
+![Mermaid Diagram](./diagrams/09_Architecture_3.svg)
 
 **Flow Description:**
 
@@ -183,7 +183,7 @@ The event system implements a comprehensive publish-subscribe pattern with 16 di
 
 All event emitters are defined in [src/config/emitters.ts:1-122]() using the `Subject` pattern from `functools-kit`:
 
-![Mermaid Diagram](./diagrams\09_Architecture_4.svg)
+![Mermaid Diagram](./diagrams/09_Architecture_4.svg)
 
 ### Event Emitter Types and Purposes
 
@@ -210,7 +210,7 @@ All event emitters are defined in [src/config/emitters.ts:1-122]() using the `Su
 
 Event consumers use listener functions from [src/function/event.ts:1-892]() that implement a consistent API pattern:
 
-![Mermaid Diagram](./diagrams\09_Architecture_5.svg)
+![Mermaid Diagram](./diagrams/09_Architecture_5.svg)
 
 ### Queued Callback Processing
 
@@ -262,7 +262,7 @@ The system maintains clear module boundaries with well-defined interaction patte
 
 ### Primary Module Boundaries
 
-![Mermaid Diagram](./diagrams\09_Architecture_6.svg)
+![Mermaid Diagram](./diagrams/09_Architecture_6.svg)
 
 ### Interaction Patterns by Layer
 

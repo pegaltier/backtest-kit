@@ -33,7 +33,7 @@ Additional service categories exist for execution modes:
 
 ## Service Categories
 
-![Mermaid Diagram](./diagrams\38_Service_Layer_0.svg)
+![Mermaid Diagram](./diagrams/38_Service_Layer_0.svg)
 
 ### Connection Services
 
@@ -170,7 +170,7 @@ For details on AI optimization, see [AI-Powered Strategy Optimization](#16.5).
 
 ## Service Registration and Injection
 
-![Mermaid Diagram](./diagrams\38_Service_Layer_1.svg)
+![Mermaid Diagram](./diagrams/38_Service_Layer_1.svg)
 
 The registration process follows three phases:
 
@@ -239,7 +239,7 @@ The Backtest, Live, and Walker utility classes ([src/classes/Backtest.ts](), [sr
 
 Services follow a strict layering pattern to prevent circular dependencies:
 
-![Mermaid Diagram](./diagrams\38_Service_Layer_2.svg)
+![Mermaid Diagram](./diagrams/38_Service_Layer_2.svg)
 
 **Layering Rules:**
 

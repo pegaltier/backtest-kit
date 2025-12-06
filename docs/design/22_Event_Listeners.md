@@ -22,7 +22,7 @@ Sources: [src/function/event.ts:1-653](), [src/config/emitters.ts:1-81]()
 
 ## Event Emitter Architecture
 
-![Mermaid Diagram](./diagrams\22_Event_Listeners_0.svg)
+![Mermaid Diagram](./diagrams/22_Event_Listeners_0.svg)
 
 **Event Flow**: Event producers (ClientStrategy, logic services, ClientRisk) emit events to Subject instances. Listener functions subscribe to these Subjects and forward events to user callbacks wrapped in `queued()` for sequential processing.
 
@@ -157,7 +157,7 @@ Sources: [src/function/event.ts:201-207]()
 
 ## Signal Event Types
 
-![Mermaid Diagram](./diagrams\22_Event_Listeners_1.svg)
+![Mermaid Diagram](./diagrams/22_Event_Listeners_1.svg)
 
 **Discriminated Union**: Use `event.action` for type-safe handling. Each action type has different properties available.
 
@@ -520,7 +520,7 @@ Sources: [src/function/event.ts:649-652]()
 
 All event listener functions wrap user callbacks with `queued()` from `functools-kit` to ensure sequential async processing. This prevents concurrent execution of callbacks even if they are async functions.
 
-![Mermaid Diagram](./diagrams\22_Event_Listeners_2.svg)
+![Mermaid Diagram](./diagrams/22_Event_Listeners_2.svg)
 
 **Key Behavior**:
 - Events arrive in order at Subject

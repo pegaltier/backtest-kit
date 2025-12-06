@@ -10,7 +10,7 @@ For statistical metric calculations (Sharpe Ratio, Certainty Ratio, etc.), see [
 
 The markdown generation system consists of three independent service classes that follow identical architectural patterns. Each service subscribes to event emitters, accumulates events in per-strategy storage, and provides three methods for data access (`getData`), report generation (`getReport`), and file persistence (`dump`).
 
-![Mermaid Diagram](./diagrams\70_Markdown_Report_Generation_0.svg)
+![Mermaid Diagram](./diagrams/70_Markdown_Report_Generation_0.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:1-545](), [src/lib/services/markdown/LiveMarkdownService.ts:1-749](), [src/lib/services/markdown/ScheduleMarkdownService.ts:1-548]()
 
@@ -24,7 +24,7 @@ Each markdown service subscribes to event emitters during initialization using t
 
 `BacktestMarkdownService` only accumulates `closed` events (signals that have reached TP, SL, or timeout). Idle, opened, and active events are ignored since backtest execution skips timeframes once a signal opens.
 
-![Mermaid Diagram](./diagrams\70_Markdown_Report_Generation_1.svg)
+![Mermaid Diagram](./diagrams/70_Markdown_Report_Generation_1.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:402-413](), [src/lib/services/markdown/BacktestMarkdownService.ts:538-541]()
 
@@ -32,7 +32,7 @@ Each markdown service subscribes to event emitters during initialization using t
 
 `LiveMarkdownService` accumulates all four event types: `idle`, `opened`, `active`, and `closed`. The service implements special logic to replace consecutive idle events (no signal activity) to prevent unbounded memory growth, while preserving opened/active/closed events.
 
-![Mermaid Diagram](./diagrams\70_Markdown_Report_Generation_2.svg)
+![Mermaid Diagram](./diagrams/70_Markdown_Report_Generation_2.svg)
 
 **Sources:** [src/lib/services/markdown/LiveMarkdownService.ts:239-266](), [src/lib/services/markdown/LiveMarkdownService.ts:299-329](), [src/lib/services/markdown/LiveMarkdownService.ts:337-373]()
 
@@ -101,7 +101,7 @@ The schedule service tracks scheduled signals and their cancellation metrics. Re
 
 All markdown services implement a consistent three-method API pattern: `getData()`, `getReport()`, and `dump()`. This separation of concerns enables flexible data access for different use cases.
 
-![Mermaid Diagram](./diagrams\70_Markdown_Report_Generation_3.svg)
+![Mermaid Diagram](./diagrams/70_Markdown_Report_Generation_3.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:430-495](), [src/lib/services/markdown/LiveMarkdownService.ts:634-699](), [src/lib/services/markdown/ScheduleMarkdownService.ts:430-498]()
 
@@ -165,7 +165,7 @@ The `dump()` method writes markdown reports to disk using Node.js file system AP
 
 Tables are generated using a column configuration system that defines label, key, and formatting function for each column. The system maps event data to table rows using these column definitions.
 
-![Mermaid Diagram](./diagrams\70_Markdown_Report_Generation_4.svg)
+![Mermaid Diagram](./diagrams/70_Markdown_Report_Generation_4.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:289-296](), [src/lib/services/markdown/LiveMarkdownService.ts:483-490]()
 
@@ -326,7 +326,7 @@ The service subscribes to `signalEmitter` (universal emitter) instead of mode-sp
 
 All markdown services use the `singleshot` pattern from `functools-kit` to ensure event subscription happens exactly once. The `init()` method is marked protected and called automatically on first data access.
 
-![Mermaid Diagram](./diagrams\70_Markdown_Report_Generation_5.svg)
+![Mermaid Diagram](./diagrams/70_Markdown_Report_Generation_5.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:538-541](), [src/lib/services/markdown/LiveMarkdownService.ts:742-745](), [src/lib/services/markdown/ScheduleMarkdownService.ts:541-544]()
 

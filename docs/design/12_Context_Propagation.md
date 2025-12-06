@@ -72,7 +72,7 @@ Both context services extend the `di-scoped` library's scoped class pattern, pro
 
 The context is stored in async local storage, making it accessible to all code within the callback/generator without explicit passing.
 
-![Mermaid Diagram](./diagrams\12_Context_Propagation_0.svg)
+![Mermaid Diagram](./diagrams/12_Context_Propagation_0.svg)
 
 **Diagram: di-scoped Context Establishment**
 
@@ -100,7 +100,7 @@ inject<TMethodContextService>(TYPES.methodContextService);
 
 Context flows through the architecture layers in a cascade pattern:
 
-![Mermaid Diagram](./diagrams\12_Context_Propagation_1.svg)
+![Mermaid Diagram](./diagrams/12_Context_Propagation_1.svg)
 
 **Diagram: Context Propagation Through Layers**
 
@@ -143,7 +143,7 @@ MethodContextService.runAsyncIterator(
 
 Global services inject context into operations by accessing the context services via dependency injection and calling operations within the context scope:
 
-![Mermaid Diagram](./diagrams\12_Context_Propagation_2.svg)
+![Mermaid Diagram](./diagrams/12_Context_Propagation_2.svg)
 
 **Diagram: Context Injection Through Global Services**
 
@@ -224,7 +224,7 @@ The following table shows common context usage patterns in ClientStrategy:
 
 Context is established and torn down at specific architectural boundaries:
 
-![Mermaid Diagram](./diagrams\12_Context_Propagation_3.svg)
+![Mermaid Diagram](./diagrams/12_Context_Propagation_3.svg)
 
 **Diagram: Context Lifecycle in Single Operation**
 
@@ -250,7 +250,7 @@ This nesting allows logic services to maintain stable routing while updating tem
 
 ### Context Service to Code Entities
 
-![Mermaid Diagram](./diagrams\12_Context_Propagation_4.svg)
+![Mermaid Diagram](./diagrams/12_Context_Propagation_4.svg)
 
 **Diagram: Context Service Code Entity Relationships**
 
@@ -260,7 +260,7 @@ This nesting allows logic services to maintain stable routing while updating tem
 
 The following diagram maps natural language concepts to actual code access patterns in `ClientStrategy`:
 
-![Mermaid Diagram](./diagrams\12_Context_Propagation_5.svg)
+![Mermaid Diagram](./diagrams/12_Context_Propagation_5.svg)
 
 **Diagram: Context Access in ClientStrategy (Natural Language to Code)**
 

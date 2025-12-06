@@ -12,7 +12,7 @@ For global configuration parameters, see [Configuration](#14).
 
 Cross-cutting concerns provide infrastructure services that are consumed by all layers:
 
-![Mermaid Diagram](./diagrams\78_Cross-Cutting_Concerns_0.svg)
+![Mermaid Diagram](./diagrams/78_Cross-Cutting_Concerns_0.svg)
 
 **Sources:** [src/index.ts:1-184](), [src/config/emitters.ts:1-122](), [src/classes/Persist.ts:1-732]()
 
@@ -52,7 +52,7 @@ setLogger({
 
 The framework automatically injects contextual information into log messages. Services access the logger through dependency injection and include strategy/exchange/symbol context:
 
-![Mermaid Diagram](./diagrams\78_Cross-Cutting_Concerns_1.svg)
+![Mermaid Diagram](./diagrams/78_Cross-Cutting_Concerns_1.svg)
 
 **Example log output with automatic context:**
 ```
@@ -89,7 +89,7 @@ constructor(
 
 The framework distinguishes between recoverable errors (`errorEmitter`) and fatal errors (`exitEmitter`), allowing users to implement appropriate handling for each:
 
-![Mermaid Diagram](./diagrams\78_Cross-Cutting_Concerns_2.svg)
+![Mermaid Diagram](./diagrams/78_Cross-Cutting_Concerns_2.svg)
 
 **Sources:** [src/config/emitters.ts:32-42](), [src/function/event.ts:1-892](), [src/index.ts:21-47]()
 
@@ -190,7 +190,7 @@ Signal validation errors are thrown from `VALIDATE_SIGNAL_FN` and caught by logi
 
 The persistence layer provides crash-safe state management for live trading via atomic file writes and abstract base classes supporting custom adapters:
 
-![Mermaid Diagram](./diagrams\78_Cross-Cutting_Concerns_3.svg)
+![Mermaid Diagram](./diagrams/78_Cross-Cutting_Concerns_3.svg)
 
 **Sources:** [src/classes/Persist.ts:40-482](), [src/utils/writeFileAtomic.ts:1-141]()
 
@@ -415,7 +415,7 @@ const BASE_WAIT_FOR_INIT_FN = async (self: TPersistBase): Promise<void> => {
 
 The DI container provides singletons for cross-cutting concerns that are injected into all service classes:
 
-![Mermaid Diagram](./diagrams\78_Cross-Cutting_Concerns_4.svg)
+![Mermaid Diagram](./diagrams/78_Cross-Cutting_Concerns_4.svg)
 
 **Sources:** [src/classes/Persist.ts:192-196](), [types.d.ts:171-176]()
 

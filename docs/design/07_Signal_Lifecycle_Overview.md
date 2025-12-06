@@ -10,7 +10,7 @@ For details on strategy registration and configuration, see [Component Registrat
 
 The signal lifecycle follows a deterministic state machine with distinct states and transition conditions. All states are represented by discriminated union types in `IStrategyTickResult`, enabling type-safe state handling in callbacks and event listeners.
 
-![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_0.svg)
+![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_0.svg)
 
 **Sources:** [src/interfaces/Strategy.interface.ts:170-306](), [src/client/ClientStrategy.ts:1-1000](), [types.d.ts:853-974]()
 
@@ -20,7 +20,7 @@ The signal lifecycle follows a deterministic state machine with distinct states 
 
 Signals progress through three type representations during their lifecycle, each with increasing specificity:
 
-![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_1.svg)
+![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_1.svg)
 
 | Type | Purpose | When Created | Key Characteristics |
 |------|---------|--------------|---------------------|
@@ -38,7 +38,7 @@ Signals progress through three type representations during their lifecycle, each
 
 The transition from `Idle` state occurs when `getSignal()` returns a non-null signal that passes validation and risk checks:
 
-![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_2.svg)
+![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_2.svg)
 
 **Key Logic:**
 - **Throttling**: Enforced by `INTERVAL_MINUTES` mapping [src/client/ClientStrategy.ts:32-39]()
@@ -54,7 +54,7 @@ The transition from `Idle` state occurs when `getSignal()` returns a non-null si
 
 Scheduled signals require continuous monitoring for three conditions: activation, cancellation, or timeout.
 
-![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_3.svg)
+![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_3.svg)
 
 **Critical Conditions:**
 
@@ -73,7 +73,7 @@ Scheduled signals require continuous monitoring for three conditions: activation
 
 Active signals are monitored on every tick for three terminal conditions:
 
-![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_4.svg)
+![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_4.svg)
 
 **Terminal Conditions:**
 
@@ -91,7 +91,7 @@ Active signals are monitored on every tick for three terminal conditions:
 
 All signals pass through a comprehensive validation pipeline with 30+ rules before activation. Validation occurs twice for scheduled signals: once at creation, and again at activation.
 
-![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_5.svg)
+![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_5.svg)
 
 **Key Validation Rules:**
 
@@ -110,7 +110,7 @@ All signals pass through a comprehensive validation pipeline with 30+ rules befo
 
 Signals track two distinct timestamps that serve different purposes:
 
-![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_6.svg)
+![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_6.svg)
 
 | Timestamp | Purpose | When Set | Used For |
 |-----------|---------|----------|----------|
@@ -143,7 +143,7 @@ if (elapsedSincePending >= maxPositionTime) {
 
 All state transitions return a discriminated union type `IStrategyTickResult` with an `action` discriminator field:
 
-![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_7.svg)
+![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_7.svg)
 
 **Type-Safe Pattern Matching:**
 
@@ -171,7 +171,7 @@ if (result.action === "closed") {
 
 Signals are persisted to disk in live mode only, enabling crash recovery without data loss. Three adapters handle different persistence concerns:
 
-![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_8.svg)
+![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_8.svg)
 
 **Persistence Adapters:**
 
@@ -197,7 +197,7 @@ All persistence operations are atomic to prevent corruption:
 
 Strategies can register callbacks for every lifecycle event, enabling custom logging, metrics collection, and state tracking:
 
-![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_9.svg)
+![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_9.svg)
 
 **Callback Invocation Order:**
 

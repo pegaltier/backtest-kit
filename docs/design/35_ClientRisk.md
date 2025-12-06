@@ -24,7 +24,7 @@ Sources: [src/client/ClientRisk.ts:152-217](), [src/interfaces/Risk.interface.ts
 
 ## Architecture Overview
 
-![Mermaid Diagram](./diagrams\35_ClientRisk_0.svg)
+![Mermaid Diagram](./diagrams/35_ClientRisk_0.svg)
 
 **Key Integration Points:**
 
@@ -63,7 +63,7 @@ Sources: [src/client/ClientRisk.ts:20-28](), [src/interfaces/Risk.interface.ts:2
 
 The `_activePositions` field uses a special initialization pattern:
 
-![Mermaid Diagram](./diagrams\35_ClientRisk_1.svg)
+![Mermaid Diagram](./diagrams/35_ClientRisk_1.svg)
 
 **Implementation Details:**
 
@@ -84,7 +84,7 @@ Sources: [src/client/ClientRisk.ts:79-88](), [src/client/ClientRisk.ts:53-59]()
 
 ### Signal Check Process
 
-![Mermaid Diagram](./diagrams\35_ClientRisk_2.svg)
+![Mermaid Diagram](./diagrams/35_ClientRisk_2.svg)
 
 Sources: [src/client/ClientRisk.ts:165-217]()
 
@@ -127,7 +127,7 @@ Sources: [src/client/ClientRisk.ts:30-46](), [src/interfaces/Risk.interface.ts:5
 
 ### Adding Positions
 
-![Mermaid Diagram](./diagrams\35_ClientRisk_3.svg)
+![Mermaid Diagram](./diagrams/35_ClientRisk_3.svg)
 
 **Key Pattern Ensures Uniqueness:**
 
@@ -139,7 +139,7 @@ Sources: [src/client/ClientRisk.ts:107-128]()
 
 ### Removing Positions
 
-![Mermaid Diagram](./diagrams\35_ClientRisk_4.svg)
+![Mermaid Diagram](./diagrams/35_ClientRisk_4.svg)
 
 Sources: [src/client/ClientRisk.ts:134-150]()
 
@@ -147,7 +147,7 @@ Sources: [src/client/ClientRisk.ts:134-150]()
 
 ### Persistence Architecture
 
-![Mermaid Diagram](./diagrams\35_ClientRisk_5.svg)
+![Mermaid Diagram](./diagrams/35_ClientRisk_5.svg)
 
 **Data Format:**
 
@@ -169,7 +169,7 @@ Sources: [src/client/ClientRisk.ts:93-101](), [src/client/ClientRisk.ts:53-59]()
 
 ### Crash Recovery Process
 
-![Mermaid Diagram](./diagrams\35_ClientRisk_6.svg)
+![Mermaid Diagram](./diagrams/35_ClientRisk_6.svg)
 
 **Isolation by Risk Name:**
 
@@ -185,7 +185,7 @@ Sources: [src/client/ClientRisk.ts:53-59](), [test/spec/risk.test.mjs:756-841]()
 
 ## Data Flow Diagram
 
-![Mermaid Diagram](./diagrams\35_ClientRisk_7.svg)
+![Mermaid Diagram](./diagrams/35_ClientRisk_7.svg)
 
 **Payload Construction:**
 

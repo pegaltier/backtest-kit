@@ -12,7 +12,7 @@ This document covers the internal implementation of the `ClientOptimizer` class,
 
 ### Class Definition
 
-![Mermaid Diagram](./diagrams\37_ClientOptimizer_0.svg)
+![Mermaid Diagram](./diagrams/37_ClientOptimizer_0.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:1-448](), [src/interfaces/Optimizer.interface.ts:454-484]()
 
@@ -43,7 +43,7 @@ The `getData` method orchestrates the entire data collection and strategy genera
 
 ### getData Sequence Diagram
 
-![Mermaid Diagram](./diagrams\37_ClientOptimizer_1.svg)
+![Mermaid Diagram](./diagrams/37_ClientOptimizer_1.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:99-215](), [src/client/ClientOptimizer.ts:410-415]()
 
@@ -51,7 +51,7 @@ The `getData` method orchestrates the entire data collection and strategy genera
 
 The `RESOLVE_PAGINATION_FN` helper uses `functools-kit` utilities to handle paginated data sources automatically:
 
-![Mermaid Diagram](./diagrams\37_ClientOptimizer_2.svg)
+![Mermaid Diagram](./diagrams/37_ClientOptimizer_2.svg)
 
 The pagination loop uses `ITERATION_LIMIT = 25` records per request. Data is deduplicated using the `id` field from `IOptimizerData`.
 
@@ -77,7 +77,7 @@ The `getCode` method assembles a complete executable Node.js script by calling t
 
 ### Code Assembly Pipeline
 
-![Mermaid Diagram](./diagrams\37_ClientOptimizer_3.svg)
+![Mermaid Diagram](./diagrams/37_ClientOptimizer_3.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:225-350](), [src/client/ClientOptimizer.ts:424-429]()
 
@@ -105,7 +105,7 @@ Each section is separated by an empty line for readability.
 
 All generated component names use a random prefix to avoid collisions:
 
-![Mermaid Diagram](./diagrams\37_ClientOptimizer_4.svg)
+![Mermaid Diagram](./diagrams/37_ClientOptimizer_4.svg)
 
 The prefix is generated using: `(Math.random() + 1).toString(36).substring(7)`, producing strings like `"x8k2p9f"`.
 
@@ -125,7 +125,7 @@ The `dump` method writes the generated code to a `.mjs` file in the specified di
 
 ### Dump Flow
 
-![Mermaid Diagram](./diagrams\37_ClientOptimizer_5.svg)
+![Mermaid Diagram](./diagrams/37_ClientOptimizer_5.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:360-384](), [src/client/ClientOptimizer.ts:438-444]()
 
@@ -148,7 +148,7 @@ The `dump` method writes the generated code to a `.mjs` file in the specified di
 
 The user and assistant formatters allow customization per source while providing sensible defaults:
 
-![Mermaid Diagram](./diagrams\37_ClientOptimizer_6.svg)
+![Mermaid Diagram](./diagrams/37_ClientOptimizer_6.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:34-60](), [src/client/ClientOptimizer.ts:148-176]()
 
@@ -158,7 +158,7 @@ The user and assistant formatters allow customization per source while providing
 
 ### Service Integration Architecture
 
-![Mermaid Diagram](./diagrams\37_ClientOptimizer_7.svg)
+![Mermaid Diagram](./diagrams/37_ClientOptimizer_7.svg)
 
 **Sources:** [src/lib/services/connection/OptimizerConnectionService.ts:1-175]()
 
@@ -166,7 +166,7 @@ The user and assistant formatters allow customization per source while providing
 
 `OptimizerConnectionService.getOptimizer` merges custom templates from the schema with defaults:
 
-![Mermaid Diagram](./diagrams\37_ClientOptimizer_8.svg)
+![Mermaid Diagram](./diagrams/37_ClientOptimizer_8.svg)
 
 All 11 template methods are resolved using this pattern, ensuring `ClientOptimizer` always receives a complete `IOptimizerTemplate` implementation.
 
@@ -223,7 +223,7 @@ Conversation history uses `MessageModel` from the shared model layer:
 
 The `dump` method includes try-catch error handling:
 
-![Mermaid Diagram](./diagrams\37_ClientOptimizer_9.svg)
+![Mermaid Diagram](./diagrams/37_ClientOptimizer_9.svg)
 
 Errors during file operations are logged and re-thrown to the caller.
 

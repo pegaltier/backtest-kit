@@ -17,7 +17,7 @@ The framework's architecture naturally supports multi-symbol strategies through 
 3. **Context propagation** - `ExecutionContextService` injects the current symbol into each operation
 4. **Per-symbol persistence** - Signal files are stored separately for each symbol
 
-![Mermaid Diagram](./diagrams\86_Multi-Symbol_Strategies_0.svg)
+![Mermaid Diagram](./diagrams/86_Multi-Symbol_Strategies_0.svg)
 
 **Sources:** [types.d.ts:57-64](), [types.d.ts:315-323](), [types.d.ts:1069-1107]()
 
@@ -52,7 +52,7 @@ await Promise.all(
 
 ### Execution Flow Diagram
 
-![Mermaid Diagram](./diagrams\86_Multi-Symbol_Strategies_1.svg)
+![Mermaid Diagram](./diagrams/86_Multi-Symbol_Strategies_1.svg)
 
 **Sources:** [README.md:692-715](), [types.d.ts:1264-1333]()
 
@@ -83,7 +83,7 @@ Each `(strategyName, symbol)` pair maintains completely isolated signal state. T
 
 ### State Isolation Flow
 
-![Mermaid Diagram](./diagrams\86_Multi-Symbol_Strategies_2.svg)
+![Mermaid Diagram](./diagrams/86_Multi-Symbol_Strategies_2.svg)
 
 **Sources:** [types.d.ts:1086-1107](), [types.d.ts:57-64]()
 
@@ -104,7 +104,7 @@ The framework uses memoization to cache `ClientStrategy` instances per `(symbol,
 
 ### Instance Architecture per Symbol
 
-![Mermaid Diagram](./diagrams\86_Multi-Symbol_Strategies_3.svg)
+![Mermaid Diagram](./diagrams/86_Multi-Symbol_Strategies_3.svg)
 
 **Memory Usage:**
 - **ClientStrategy instances:** 3 (one per symbol-strategy pair: `BTCUSDT:my-strategy`, `ETHUSDT:my-strategy`, `SOLUSDT:my-strategy`)
@@ -163,7 +163,7 @@ process.on("SIGINT", () => {
 
 ### Event Listener Flow
 
-![Mermaid Diagram](./diagrams\86_Multi-Symbol_Strategies_4.svg)
+![Mermaid Diagram](./diagrams/86_Multi-Symbol_Strategies_4.svg)
 
 **Sources:** [types.d.ts:1264-1333](), [types.d.ts:707-749]()
 
@@ -192,7 +192,7 @@ Average PNL: +1.45%
 
 ### Report Accumulation Pattern
 
-![Mermaid Diagram](./diagrams\86_Multi-Symbol_Strategies_5.svg)
+![Mermaid Diagram](./diagrams/86_Multi-Symbol_Strategies_5.svg)
 
 ### Symbol Filtering in Reports
 
@@ -411,7 +411,7 @@ Each symbol's state is persisted independently. If the entire process crashes:
 
 On restart, all symbols resume from their last persisted state with no signal duplication.
 
-![Mermaid Diagram](./diagrams\86_Multi-Symbol_Strategies_6.svg)
+![Mermaid Diagram](./diagrams/86_Multi-Symbol_Strategies_6.svg)
 
 **Sources:** [types.d.ts:1069-1125](), [README.md:170-194]()
 

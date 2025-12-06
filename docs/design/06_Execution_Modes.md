@@ -29,7 +29,7 @@ The framework provides three orthogonal execution modes that differ in temporal 
 
 ## Mode Selection and Entry Points
 
-![Mermaid Diagram](./diagrams\06_Execution_Modes_0.svg)
+![Mermaid Diagram](./diagrams/06_Execution_Modes_0.svg)
 
 **Service Layering Pattern**
 
@@ -68,7 +68,7 @@ Backtest mode performs historical simulation by iterating through predefined tim
 
 ### Execution Flow
 
-![Mermaid Diagram](./diagrams\06_Execution_Modes_1.svg)
+![Mermaid Diagram](./diagrams/06_Execution_Modes_1.svg)
 
 **Skip-Ahead Optimization**
 
@@ -125,7 +125,7 @@ Live mode performs real-time trading by continuously polling the strategy with c
 
 ### Execution Flow
 
-![Mermaid Diagram](./diagrams\06_Execution_Modes_2.svg)
+![Mermaid Diagram](./diagrams/06_Execution_Modes_2.svg)
 
 **Tick Throttling and Sleep Pattern**
 
@@ -139,7 +139,7 @@ const TICK_TTL = 1 * 60 * 1_000 + 1; // 61 seconds
 
 ### Crash Recovery Architecture
 
-![Mermaid Diagram](./diagrams\06_Execution_Modes_3.svg)
+![Mermaid Diagram](./diagrams/06_Execution_Modes_3.svg)
 
 **State Restoration Process**
 
@@ -188,7 +188,7 @@ Walker mode performs strategy comparison by executing multiple backtests sequent
 
 ### Execution Flow
 
-![Mermaid Diagram](./diagrams\06_Execution_Modes_4.svg)
+![Mermaid Diagram](./diagrams/06_Execution_Modes_4.svg)
 
 **Metric Extraction and Comparison**
 
@@ -233,7 +233,7 @@ const isBetter =
 
 All three execution modes share the same core strategy execution framework, differing only in temporal progression and result aggregation:
 
-![Mermaid Diagram](./diagrams\06_Execution_Modes_5.svg)
+![Mermaid Diagram](./diagrams/06_Execution_Modes_5.svg)
 
 **Polymorphic Design Pattern**
 
@@ -251,7 +251,7 @@ The `backtest` boolean parameter in execution context distinguishes between back
 
 ## Data Access Patterns by Mode
 
-![Mermaid Diagram](./diagrams\06_Execution_Modes_6.svg)
+![Mermaid Diagram](./diagrams/06_Execution_Modes_6.svg)
 
 **getCandles() vs getNextCandles()**
 

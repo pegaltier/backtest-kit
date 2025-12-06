@@ -18,7 +18,7 @@ Sources: [types.d.ts:188-221](), [src/function/add.ts:64-111]()
 
 ## Exchange Schema Structure
 
-![Mermaid Diagram](./diagrams\25_Exchange_Schemas_0.svg)
+![Mermaid Diagram](./diagrams/25_Exchange_Schemas_0.svg)
 
 **Required Fields:**
 
@@ -36,7 +36,7 @@ Sources: [types.d.ts:188-221](), [types.d.ts:153-166](), [types.d.ts:180-183]()
 
 ## Registration Flow
 
-![Mermaid Diagram](./diagrams\25_Exchange_Schemas_1.svg)
+![Mermaid Diagram](./diagrams/25_Exchange_Schemas_1.svg)
 
 The registration process follows this sequence:
 
@@ -202,7 +202,7 @@ Sources: [types.d.ts:180-183](), [types.d.ts:220]()
 
 ## Runtime Integration
 
-![Mermaid Diagram](./diagrams\25_Exchange_Schemas_2.svg)
+![Mermaid Diagram](./diagrams/25_Exchange_Schemas_2.svg)
 
 **Flow:**
 
@@ -224,7 +224,7 @@ Sources: [types.d.ts:171-176](), [types.d.ts:226-271](), [src/lib/core/types.ts:
 
 The exchange schema methods do not receive explicit context parameters. Instead, context flows implicitly through `ExecutionContextService`:
 
-![Mermaid Diagram](./diagrams\25_Exchange_Schemas_3.svg)
+![Mermaid Diagram](./diagrams/25_Exchange_Schemas_3.svg)
 
 **Context Fields Used:**
 

@@ -14,7 +14,7 @@ The backtest-kit persistence layer is organized into four independent adapter sy
 
 ### Adapter System Overview
 
-![Mermaid Diagram](./diagrams\84_Custom_Persistence_Backends_0.svg)
+![Mermaid Diagram](./diagrams/84_Custom_Persistence_Backends_0.svg)
 
 **Sources:** [README.md:741-1077]()
 
@@ -33,7 +33,7 @@ Each adapter manages a specific entity type with its own directory structure:
 
 ### Persistence Points in Signal Lifecycle
 
-![Mermaid Diagram](./diagrams\84_Custom_Persistence_Backends_1.svg)
+![Mermaid Diagram](./diagrams/84_Custom_Persistence_Backends_1.svg)
 
 **Sources:** [README.md:741-766](), [README.md:1331-1386]()
 
@@ -45,7 +45,7 @@ The `PersistBase` abstract class defines the contract for all persistence operat
 
 ### Class Definition
 
-![Mermaid Diagram](./diagrams\84_Custom_Persistence_Backends_2.svg)
+![Mermaid Diagram](./diagrams/84_Custom_Persistence_Backends_2.svg)
 
 **Sources:** [README.md:777-869]()
 
@@ -87,7 +87,7 @@ Custom adapters must extend `PersistBase` and implement all abstract methods. Th
 
 ### Implementation Template
 
-![Mermaid Diagram](./diagrams\84_Custom_Persistence_Backends_3.svg)
+![Mermaid Diagram](./diagrams/84_Custom_Persistence_Backends_3.svg)
 
 **Sources:** [README.md:777-869]()
 
@@ -409,7 +409,7 @@ Custom adapters must be registered before any trading operations begin. The fram
 
 ### Registration Flow
 
-![Mermaid Diagram](./diagrams\84_Custom_Persistence_Backends_4.svg)
+![Mermaid Diagram](./diagrams/84_Custom_Persistence_Backends_4.svg)
 
 **Sources:** [README.md:879-892]()
 
@@ -480,7 +480,7 @@ Different storage backends offer trade-offs in performance, complexity, and oper
 
 ### When to Use Each Backend
 
-![Mermaid Diagram](./diagrams\84_Custom_Persistence_Backends_5.svg)
+![Mermaid Diagram](./diagrams/84_Custom_Persistence_Backends_5.svg)
 
 **Sources:** [README.md:1030-1051]()
 

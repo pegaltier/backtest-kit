@@ -10,7 +10,7 @@ For component-specific schemas, see [Component Types](#5). For execution mode di
 
 The configuration system operates as a global singleton that affects all framework operations. Parameters control safety checks, timing behavior, and monitoring thresholds throughout the signal lifecycle.
 
-![Mermaid Diagram](./diagrams\74_Configuration_0.svg)
+![Mermaid Diagram](./diagrams/74_Configuration_0.svg)
 
 **Sources:** [src/config/params.ts:1-36](), [types.d.ts:5-97]()
 
@@ -109,7 +109,7 @@ await setLogger({
 
 Validation parameters enforce financial safety constraints during signal generation. These checks prevent signals with impossible or dangerous price configurations from being executed.
 
-![Mermaid Diagram](./diagrams\74_Configuration_1.svg)
+![Mermaid Diagram](./diagrams/74_Configuration_1.svg)
 
 **Sources:** [test/e2e/sanitize.test.mjs:16-660](), [test/e2e/defend.test.mjs:540-845]()
 
@@ -258,7 +258,7 @@ await setConfig({
 
 Timing parameters control execution behavior for scheduled signals, VWAP calculation, and monitoring intervals.
 
-![Mermaid Diagram](./diagrams\74_Configuration_2.svg)
+![Mermaid Diagram](./diagrams/74_Configuration_2.svg)
 
 **Sources:** [src/config/params.ts:1-30]()
 

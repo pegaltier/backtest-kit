@@ -10,7 +10,7 @@ For information about the service layer that wraps these client classes, see [Se
 
 Client classes form Layer 4 in the framework's six-layer architecture. They implement business rules and algorithms without any dependency on the DI container, making them independently testable and memory-efficient through prototype methods.
 
-![Mermaid Diagram](./diagrams\31_Core_Business_Logic_0.svg)
+![Mermaid Diagram](./diagrams/31_Core_Business_Logic_0.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:1-1300](), [src/lib/services/connection/StrategyConnectionService.ts:76-94](), [docs/internals.md:28-39]()
 
@@ -34,7 +34,7 @@ The framework provides five client classes, each responsible for a specific doma
 
 Client classes receive all dependencies through constructor parameters, avoiding framework-level dependency injection:
 
-![Mermaid Diagram](./diagrams\31_Core_Business_Logic_1.svg)
+![Mermaid Diagram](./diagrams/31_Core_Business_Logic_1.svg)
 
 This design allows client classes to be instantiated and tested independently without the DI container. Constructor parameters are plain objects conforming to interfaces like `IStrategyParams`.
 
@@ -73,7 +73,7 @@ Client classes extensively use module-level private functions prefixed with uppe
 3. Allows helper functions to be unit tested independently
 4. Reduces memory overhead by sharing functions across all instances
 
-![Mermaid Diagram](./diagrams\31_Core_Business_Logic_2.svg)
+![Mermaid Diagram](./diagrams/31_Core_Business_Logic_2.svg)
 
 **Example private function pattern:**
 
@@ -85,7 +85,7 @@ Client classes extensively use module-level private functions prefixed with uppe
 
 Connection Services act as factories that create and memoize Client class instances. The memoization pattern ensures one client instance per schema name:
 
-![Mermaid Diagram](./diagrams\31_Core_Business_Logic_3.svg)
+![Mermaid Diagram](./diagrams/31_Core_Business_Logic_3.svg)
 
 The memoization key is the schema name string (e.g., `strategyName`, `exchangeName`), ensuring that multiple calls with the same name reuse the same client instance.
 
@@ -117,7 +117,7 @@ Client instances persist for the duration of the application process and maintai
 
 Client classes collaborate through dependency references passed in constructor parameters, forming a dependency graph:
 
-![Mermaid Diagram](./diagrams\31_Core_Business_Logic_4.svg)
+![Mermaid Diagram](./diagrams/31_Core_Business_Logic_4.svg)
 
 **Key collaboration patterns:**
 

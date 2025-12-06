@@ -26,7 +26,7 @@ Connection Services implement the factory pattern with memoization to manage cli
 
 ### Instance Management Architecture
 
-![Mermaid Diagram](./diagrams\40_Connection_Services_0.svg)
+![Mermaid Diagram](./diagrams/40_Connection_Services_0.svg)
 
 **Sources:** [src/lib/services/connection/StrategyConnectionService.ts:76-94](), [src/lib/services/connection/RiskConnectionService.ts:56-65](), [src/lib/core/types.ts:10-16]()
 
@@ -38,7 +38,7 @@ All Connection Services use `memoize` from `functools-kit` to cache client insta
 
 ### Memoization Structure
 
-![Mermaid Diagram](./diagrams\40_Connection_Services_1.svg)
+![Mermaid Diagram](./diagrams/40_Connection_Services_1.svg)
 
 ### Memoize Key Function Pattern
 
@@ -115,7 +115,7 @@ Connection Services inject dependencies into client constructors, combining sche
 
 ### Injection Flow
 
-![Mermaid Diagram](./diagrams\40_Connection_Services_2.svg)
+![Mermaid Diagram](./diagrams/40_Connection_Services_2.svg)
 
 **Sources:** [src/lib/services/connection/StrategyConnectionService.ts:76-94](), [src/lib/services/connection/RiskConnectionService.ts:56-65](), [src/client/ClientStrategy.ts:1-30](), [src/client/ClientRisk.ts:1-30]()
 
@@ -127,7 +127,7 @@ Manages `ClientStrategy` instances by strategyName. Implements the `IStrategy` i
 
 ### Constructor Dependencies
 
-![Mermaid Diagram](./diagrams\40_Connection_Services_3.svg)
+![Mermaid Diagram](./diagrams/40_Connection_Services_3.svg)
 
 **Sources:** [src/lib/services/connection/StrategyConnectionService.ts:53-65](), [src/lib/core/types.ts:1-81]()
 
@@ -185,7 +185,7 @@ Manages `ClientRisk` instances by riskName. Implements `IRisk` interface methods
 
 ### Constructor Dependencies
 
-![Mermaid Diagram](./diagrams\40_Connection_Services_4.svg)
+![Mermaid Diagram](./diagrams/40_Connection_Services_4.svg)
 
 **Sources:** [src/lib/services/connection/RiskConnectionService.ts:42-45]()
 
@@ -244,7 +244,7 @@ Removes a closed position from the risk tracker. Called after signal is closed.
 
 Multiple strategies with the same `riskName` share one ClientRisk instance [src/lib/services/connection/RiskConnectionService.ts:56-65](). This enables cross-strategy position tracking:
 
-![Mermaid Diagram](./diagrams\40_Connection_Services_5.svg)
+![Mermaid Diagram](./diagrams/40_Connection_Services_5.svg)
 
 **Sources:** [src/lib/services/connection/RiskConnectionService.ts:1-138](), [src/client/ClientRisk.ts:1-221]()
 
@@ -303,7 +303,7 @@ Connection Services integrate with multiple layers of the architecture, serving 
 
 ### Service Dependencies
 
-![Mermaid Diagram](./diagrams\40_Connection_Services_6.svg)
+![Mermaid Diagram](./diagrams/40_Connection_Services_6.svg)
 
 ### Data Flow Through Connection Layer
 

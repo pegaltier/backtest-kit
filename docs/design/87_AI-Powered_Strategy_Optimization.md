@@ -15,7 +15,7 @@ The optimization system enables:
 
 The optimizer system consists of four primary components that orchestrate data collection, LLM conversation building, code generation, and file export.
 
-![Mermaid Diagram](./diagrams\87_AI-Powered_Strategy_Optimization_0.svg)
+![Mermaid Diagram](./diagrams/87_AI-Powered_Strategy_Optimization_0.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:1-448](), [src/lib/services/connection/OptimizerConnectionService.ts:1-175](), [src/lib/services/template/OptimizerTemplateService.ts:1-710](), [src/interfaces/Optimizer.interface.ts:1-490]()
 
@@ -25,7 +25,7 @@ The optimizer system consists of four primary components that orchestrate data c
 
 The optimizer follows a three-phase pipeline: data collection, LLM interaction, and code assembly.
 
-![Mermaid Diagram](./diagrams\87_AI-Powered_Strategy_Optimization_1.svg)
+![Mermaid Diagram](./diagrams/87_AI-Powered_Strategy_Optimization_1.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:90-215](), [src/client/ClientOptimizer.ts:217-350](), [src/client/ClientOptimizer.ts:352-384]()
 
@@ -84,7 +84,7 @@ const configSource: IOptimizerSource = {
 
 The `ClientOptimizer` collects data from all sources across all training ranges, building a conversation history for the LLM.
 
-![Mermaid Diagram](./diagrams\87_AI-Powered_Strategy_Optimization_2.svg)
+![Mermaid Diagram](./diagrams/87_AI-Powered_Strategy_Optimization_2.svg)
 
 ### Pagination Implementation
 
@@ -153,7 +153,7 @@ The `GET_STRATEGY_CODE_FN` assembles code sections in this order:
 
 The generated code integrates Ollama for runtime strategy generation with two helper functions: `text()` for analysis and `json()` for structured signals.
 
-![Mermaid Diagram](./diagrams\87_AI-Powered_Strategy_Optimization_3.svg)
+![Mermaid Diagram](./diagrams/87_AI-Powered_Strategy_Optimization_3.svg)
 
 ### JSON Schema Configuration
 
@@ -376,7 +376,7 @@ Events are emitted:
 
 The `OptimizerConnectionService` manages optimizer instances with memoization and template merging.
 
-![Mermaid Diagram](./diagrams\87_AI-Powered_Strategy_Optimization_4.svg)
+![Mermaid Diagram](./diagrams/87_AI-Powered_Strategy_Optimization_4.svg)
 
 ### Template Merging Logic
 

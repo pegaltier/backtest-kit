@@ -24,7 +24,7 @@ Sources: [src/lib/services/logic/private/LiveLogicPrivateService.ts:1-134](), [s
 
 ## Live Execution Architecture
 
-![Mermaid Diagram](./diagrams\56_Live_Trading_0.svg)
+![Mermaid Diagram](./diagrams/56_Live_Trading_0.svg)
 
 **Architecture Diagram: Live Trading Execution Flow**
 
@@ -38,7 +38,7 @@ Sources: [src/lib/services/logic/private/LiveLogicPrivateService.ts:1-134](), [s
 
 The core of live trading is an infinite async generator in `LiveLogicPrivateService`:
 
-![Mermaid Diagram](./diagrams\56_Live_Trading_1.svg)
+![Mermaid Diagram](./diagrams/56_Live_Trading_1.svg)
 
 **State Machine: Live Trading Loop Iteration**
 
@@ -81,7 +81,7 @@ Sources: [src/lib/services/logic/private/LiveLogicPrivateService.ts:12]()
 
 ### Persistence Architecture
 
-![Mermaid Diagram](./diagrams\56_Live_Trading_2.svg)
+![Mermaid Diagram](./diagrams/56_Live_Trading_2.svg)
 
 **Crash Recovery Architecture: Persistence Flow**
 
@@ -122,7 +122,7 @@ Sources: [README.md:19-20]()
 
 Live mode emits events through multiple channels:
 
-![Mermaid Diagram](./diagrams\56_Live_Trading_3.svg)
+![Mermaid Diagram](./diagrams/56_Live_Trading_3.svg)
 
 **Event Flow: Live Trading Monitoring**
 
@@ -215,7 +215,7 @@ Sources: [README.md:130-143]()
 
 ### Throttling Implementation
 
-![Mermaid Diagram](./diagrams\56_Live_Trading_4.svg)
+![Mermaid Diagram](./diagrams/56_Live_Trading_4.svg)
 
 **Sequence: Interval Throttling Logic**
 
@@ -341,7 +341,7 @@ Sources: [README.md:383-407]()
 
 ### Execution Differences
 
-![Mermaid Diagram](./diagrams\56_Live_Trading_5.svg)
+![Mermaid Diagram](./diagrams/56_Live_Trading_5.svg)
 
 **Comparison: Backtest vs Live Execution Flow**
 

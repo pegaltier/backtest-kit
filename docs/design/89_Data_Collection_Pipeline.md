@@ -51,7 +51,7 @@ interface IOptimizerData {
 
 The `id` field enables deduplication when paginating through large datasets. Without unique IDs, the same records could be processed multiple times.
 
-![Mermaid Diagram](./diagrams\89_Data_Collection_Pipeline_0.svg)
+![Mermaid Diagram](./diagrams/89_Data_Collection_Pipeline_0.svg)
 
 **Diagram: Source Type Configuration Options**
 
@@ -63,7 +63,7 @@ Sources: [src/interfaces/Optimizer.interface.ts:38-44](), [src/interfaces/Optimi
 
 The optimizer uses `functools-kit` utilities to handle pagination automatically, eliminating the need for manual offset/limit management in user code. The `RESOLVE_PAGINATION_FN` function orchestrates this:
 
-![Mermaid Diagram](./diagrams\89_Data_Collection_Pipeline_1.svg)
+![Mermaid Diagram](./diagrams/89_Data_Collection_Pipeline_1.svg)
 
 **Diagram: Pagination Flow with functools-kit Integration**
 
@@ -95,7 +95,7 @@ Sources: [src/interfaces/Optimizer.interface.ts:68-83]()
 
 The `GET_STRATEGY_DATA_FN` function implements the complete data collection pipeline. It is called by `ClientOptimizer.getData()` and processes all training ranges sequentially.
 
-![Mermaid Diagram](./diagrams\89_Data_Collection_Pipeline_2.svg)
+![Mermaid Diagram](./diagrams/89_Data_Collection_Pipeline_2.svg)
 
 **Diagram: Data Collection Sequence Flow**
 
@@ -149,7 +149,7 @@ Sources: [src/client/ClientOptimizer.ts:34-60](), [src/lib/services/template/Opt
 
 Sources can override default formatters by providing `user` and `assistant` functions in the source configuration:
 
-![Mermaid Diagram](./diagrams\89_Data_Collection_Pipeline_3.svg)
+![Mermaid Diagram](./diagrams/89_Data_Collection_Pipeline_3.svg)
 
 **Diagram: Message Formatter Selection Logic**
 
@@ -186,7 +186,7 @@ Sources: [src/client/ClientOptimizer.ts:105](), [src/client/ClientOptimizer.ts:1
 
 The demo implementation shows a real-world pattern for collecting multi-timeframe technical indicator data from a historical database service:
 
-![Mermaid Diagram](./diagrams\89_Data_Collection_Pipeline_4.svg)
+![Mermaid Diagram](./diagrams/89_Data_Collection_Pipeline_4.svg)
 
 **Diagram: Multi-Timeframe Data Source Architecture**
 
@@ -277,7 +277,7 @@ Sources: [src/client/ClientOptimizer.ts:122-130](), [src/client/ClientOptimizer.
 
 The `OptimizerConnectionService` retrieves the schema, merges templates, and passes callbacks to `ClientOptimizer`:
 
-![Mermaid Diagram](./diagrams\89_Data_Collection_Pipeline_5.svg)
+![Mermaid Diagram](./diagrams/89_Data_Collection_Pipeline_5.svg)
 
 **Diagram: Dependency Flow from Registration to Execution**
 

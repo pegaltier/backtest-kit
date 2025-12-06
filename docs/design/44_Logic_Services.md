@@ -18,7 +18,7 @@ Logic Services are organized into three execution mode families, each with Priva
 
 **Public Services** wrap Private Services with `MethodContextService` to provide implicit context propagation, allowing downstream functions to access `strategyName`, `exchangeName`, and `frameName` without explicit parameters.
 
-![Mermaid Diagram](./diagrams\44_Logic_Services_0.svg)
+![Mermaid Diagram](./diagrams/44_Logic_Services_0.svg)
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:1-387](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:1-134](), [src/lib/services/logic/private/WalkerLogicPrivateService.ts:1-255]()
 
@@ -91,7 +91,7 @@ This pattern allows downstream functions like `getCandles()` and `getSignal()` t
 
 ### Execution Flow
 
-![Mermaid Diagram](./diagrams\44_Logic_Services_1.svg)
+![Mermaid Diagram](./diagrams/44_Logic_Services_1.svg)
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:62-384]()
 
@@ -167,7 +167,7 @@ All operations are wrapped in try-catch blocks that emit errors via `errorEmitte
 
 ### Execution Flow
 
-![Mermaid Diagram](./diagrams\44_Logic_Services_2.svg)
+![Mermaid Diagram](./diagrams/44_Logic_Services_2.svg)
 
 **Sources:** [src/lib/services/logic/private/LiveLogicPrivateService.ts:61-130]()
 
@@ -243,7 +243,7 @@ try {
 
 ### Execution Flow
 
-![Mermaid Diagram](./diagrams\44_Logic_Services_3.svg)
+![Mermaid Diagram](./diagrams/44_Logic_Services_3.svg)
 
 **Sources:** [src/lib/services/logic/private/WalkerLogicPrivateService.ts:70-251]()
 
@@ -354,7 +354,7 @@ All Logic Services use AsyncGenerator functions (`async *`) for memory-efficient
 
 ### AsyncGenerator Pattern
 
-![Mermaid Diagram](./diagrams\44_Logic_Services_4.svg)
+![Mermaid Diagram](./diagrams/44_Logic_Services_4.svg)
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:62](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:61](), [src/lib/services/logic/private/WalkerLogicPrivateService.ts:70]()
 
@@ -500,7 +500,7 @@ await performanceEmitter.next({
 
 Logic Services coordinate execution by orchestrating calls to Global Services, Schema Services, and Markdown Services.
 
-![Mermaid Diagram](./diagrams\44_Logic_Services_5.svg)
+![Mermaid Diagram](./diagrams/44_Logic_Services_5.svg)
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:35-46](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:31-37](), [src/lib/services/logic/private/WalkerLogicPrivateService.ts:31-40]()
 

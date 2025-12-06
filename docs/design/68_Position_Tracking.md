@@ -20,7 +20,7 @@ The tracking system provides:
 - Isolated position registries per risk profile
 - Efficient lookup via composite keys
 
-![Mermaid Diagram](./diagrams\68_Position_Tracking_0.svg)
+![Mermaid Diagram](./diagrams/68_Position_Tracking_0.svg)
 
 **Diagram: Position Sharing Across Strategies**
 
@@ -74,7 +74,7 @@ Positions are registered when signals open and removed when signals close. The l
 
 ### Position Registration Flow
 
-![Mermaid Diagram](./diagrams\68_Position_Tracking_1.svg)
+![Mermaid Diagram](./diagrams/68_Position_Tracking_1.svg)
 
 **Diagram: Position Registration Sequence**
 
@@ -127,7 +127,7 @@ Position tracking uses lazy initialization to defer persistence loading until fi
 
 ### Initialization States
 
-![Mermaid Diagram](./diagrams\68_Position_Tracking_2.svg)
+![Mermaid Diagram](./diagrams/68_Position_Tracking_2.svg)
 
 **Diagram: Lazy Initialization State Machine**
 
@@ -161,7 +161,7 @@ Position data persists to disk after every `addSignal` and `removeSignal` operat
 
 ### Persistence Flow
 
-![Mermaid Diagram](./diagrams\68_Position_Tracking_3.svg)
+![Mermaid Diagram](./diagrams/68_Position_Tracking_3.svg)
 
 **Diagram: Persistence and Recovery Flow**
 
@@ -216,7 +216,7 @@ Custom validation functions receive position data through the `IRiskValidationPa
 
 ### Payload Construction
 
-![Mermaid Diagram](./diagrams\68_Position_Tracking_4.svg)
+![Mermaid Diagram](./diagrams/68_Position_Tracking_4.svg)
 
 **Diagram: Validation Payload Construction**
 
@@ -268,7 +268,7 @@ Each risk profile maintains an isolated position registry. Strategies with diffe
 
 ### Example: Multiple Risk Profiles
 
-![Mermaid Diagram](./diagrams\68_Position_Tracking_5.svg)
+![Mermaid Diagram](./diagrams/68_Position_Tracking_5.svg)
 
 **Diagram: Position Isolation by Risk Profile**
 
@@ -296,7 +296,7 @@ Position tracking integrates with the service layer through `RiskGlobalService` 
 
 ### Service Architecture
 
-![Mermaid Diagram](./diagrams\68_Position_Tracking_6.svg)
+![Mermaid Diagram](./diagrams/68_Position_Tracking_6.svg)
 
 **Diagram: Position Tracking Service Integration**
 

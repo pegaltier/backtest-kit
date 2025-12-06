@@ -313,7 +313,7 @@ interface IStrategyTickResultCancelled {
 
 ## State Machine Diagram
 
-![Mermaid Diagram](./diagrams\47_Signal_States_0.svg)
+![Mermaid Diagram](./diagrams/47_Signal_States_0.svg)
 
 **State Transition Summary:**
 
@@ -612,7 +612,7 @@ if (signal.position === "short" && averagePrice >= signal.priceStopLoss) {
 
 ## Example State Flow: Scheduled Signal with Activation
 
-![Mermaid Diagram](./diagrams\47_Signal_States_1.svg)
+![Mermaid Diagram](./diagrams/47_Signal_States_1.svg)
 
 **Sources:**
 - [src/client/ClientStrategy.ts:960-1100]()
@@ -622,7 +622,7 @@ if (signal.position === "short" && averagePrice >= signal.priceStopLoss) {
 
 ## Example State Flow: Pre-activation Cancellation
 
-![Mermaid Diagram](./diagrams\47_Signal_States_2.svg)
+![Mermaid Diagram](./diagrams/47_Signal_States_2.svg)
 
 **Key Difference from Opened→Closed:**
 - `onCancel()` fired instead of `onClose()` 

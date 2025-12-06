@@ -28,7 +28,7 @@ All registration functions follow the same pattern: validate schema structure, t
 
 ## Registration Architecture
 
-![Mermaid Diagram](./diagrams\08_Component_Registration_0.svg)
+![Mermaid Diagram](./diagrams/08_Component_Registration_0.svg)
 
 **Component Registration Flow**
 
@@ -42,7 +42,7 @@ This diagram shows the complete registration pipeline from user code to runtime 
 
 All seven registration functions follow an identical implementation pattern:
 
-![Mermaid Diagram](./diagrams\08_Component_Registration_1.svg)
+![Mermaid Diagram](./diagrams/08_Component_Registration_1.svg)
 
 **Registration Sequence**
 
@@ -56,7 +56,7 @@ Each `add*` function executes the same three-step pattern: logging, validation, 
 
 Schema services implement a simple name-to-schema registry using `Map` data structures. Each service provides three core methods:
 
-![Mermaid Diagram](./diagrams\08_Component_Registration_2.svg)
+![Mermaid Diagram](./diagrams/08_Component_Registration_2.svg)
 
 **Schema Service Class Hierarchy**
 
@@ -123,7 +123,7 @@ Validation occurs synchronously during registration, ensuring only valid schemas
 
 ## Component Lifecycle: Registration to Execution
 
-![Mermaid Diagram](./diagrams\08_Component_Registration_3.svg)
+![Mermaid Diagram](./diagrams/08_Component_Registration_3.svg)
 
 **Component State Transitions**
 
@@ -137,7 +137,7 @@ Components transition from registration (configuration) to execution (runtime) t
 
 Component registration integrates with the dependency injection system through service instantiation at application startup:
 
-![Mermaid Diagram](./diagrams\08_Component_Registration_4.svg)
+![Mermaid Diagram](./diagrams/08_Component_Registration_4.svg)
 
 **Service Instantiation Flow**
 
@@ -225,7 +225,7 @@ Calling `add*` with the same name twice overwrites the previous registration. Th
 
 Registration functions throw synchronously when validation fails:
 
-![Mermaid Diagram](./diagrams\08_Component_Registration_5.svg)
+![Mermaid Diagram](./diagrams/08_Component_Registration_5.svg)
 
 **Error Propagation**
 

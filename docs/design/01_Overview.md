@@ -26,7 +26,7 @@ The framework is structured as a **dependency injection container** that orchest
 
 The system implements a **layered architecture** with clear separation of concerns across five tiers, from user-facing API to persistence layer.
 
-![Mermaid Diagram](./diagrams\01_Overview_0.svg)
+![Mermaid Diagram](./diagrams/01_Overview_0.svg)
 
 **Layer Responsibilities**:
 
@@ -46,7 +46,7 @@ Each layer depends only on layers below it, creating a **unidirectional dependen
 
 The framework uses a **registry-based dependency injection pattern** where components are registered by name before execution. Registration functions (`addStrategy`, `addExchange`, `addFrame`, etc.) store schemas in registry services, which are later instantiated by Connection services during execution.
 
-![Mermaid Diagram](./diagrams\01_Overview_1.svg)
+![Mermaid Diagram](./diagrams/01_Overview_1.svg)
 
 This pattern enables **dependency inversion**: strategies reference exchanges by name (`exchangeName: "binance"`), not by direct import. Components can be registered in separate modules and assembled at runtime through string identifiers. The memoization layer in Connection services ensures each symbol-strategy-exchange combination gets exactly one instance, preventing duplicate state.
 
@@ -63,7 +63,7 @@ This pattern enables **dependency inversion**: strategies reference exchanges by
 
 The framework provides three execution modes with distinct temporal semantics and completion behavior, but all share the same strategy logic and signal lifecycle.
 
-![Mermaid Diagram](./diagrams\01_Overview_2.svg)
+![Mermaid Diagram](./diagrams/01_Overview_2.svg)
 
 **Mode Characteristics**:
 
@@ -81,7 +81,7 @@ All three modes use the same `ClientStrategy.tick()` method for signal generatio
 
 Signals (trading positions) progress through a **state machine** with six possible states and multiple terminal outcomes. The lifecycle is identical in backtest and live modes, with different timing mechanisms.
 
-![Mermaid Diagram](./diagrams\01_Overview_3.svg)
+![Mermaid Diagram](./diagrams/01_Overview_3.svg)
 
 **State Descriptions**:
 
@@ -107,7 +107,7 @@ The **scheduled state** is unique: it represents a limit order waiting for `pric
 
 The framework implements a **pub-sub event architecture** with 16 emitters organized into 5 functional categories. All event callbacks use queued processing to ensure sequential execution even with async handlers.
 
-![Mermaid Diagram](./diagrams\01_Overview_4.svg)
+![Mermaid Diagram](./diagrams/01_Overview_4.svg)
 
 **Event Categories**:
 
@@ -163,7 +163,7 @@ This architecture eliminates the need to pass `symbol`, `when`, `strategyName`, 
 
 The framework uses a **symbol-based dependency injection container** with ~60 services registered at startup. Services are organized into a matrix pattern by component type (Strategy, Exchange, Frame, etc.) and function category (Connection, Schema, Global, Validation, etc.).
 
-![Mermaid Diagram](./diagrams\01_Overview_5.svg)
+![Mermaid Diagram](./diagrams/01_Overview_5.svg)
 
 **Service Organization Pattern**:
 
@@ -217,7 +217,7 @@ The atomic write pattern (write to `.tmp`, then rename) ensures that crashes dur
 
 The framework generates **markdown reports** with statistical analysis for each execution mode. Reports are accumulated via event subscription and calculated on-demand or saved to disk.
 
-![Mermaid Diagram](./diagrams\01_Overview_6.svg)
+![Mermaid Diagram](./diagrams/01_Overview_6.svg)
 
 **Report Types**:
 

@@ -10,7 +10,7 @@
 
 Signal persistence operates exclusively in **live mode** (not backtest mode) to maintain crash-safe state across process restarts. The system uses four specialized adapters to persist different aspects of trading state:
 
-![Mermaid Diagram](./diagrams\50_Signal_Persistence_0.svg)
+![Mermaid Diagram](./diagrams/50_Signal_Persistence_0.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:411-472](), [types.d.ts:1-1000]()
 
@@ -128,7 +128,7 @@ interface IPartialData {
 
 All persistence adapters implement **atomic writes** to prevent data corruption during crashes. The pattern ensures that either the full write succeeds or no changes are made:
 
-![Mermaid Diagram](./diagrams\50_Signal_Persistence_1.svg)
+![Mermaid Diagram](./diagrams/50_Signal_Persistence_1.svg)
 
 **Implementation Pattern:**
 1. Write data to temporary file (`{filename}.tmp`)
@@ -146,7 +146,7 @@ All persistence adapters implement **atomic writes** to prevent data corruption 
 
 The `waitForInit()` method is called at the start of every live trading session to restore persisted state. It **only runs in live mode** (skipped in backtest).
 
-![Mermaid Diagram](./diagrams\50_Signal_Persistence_2.svg)
+![Mermaid Diagram](./diagrams/50_Signal_Persistence_2.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:411-472]()
 
@@ -264,7 +264,7 @@ The following table shows when persistence operations occur during the signal li
 
 ### Example: Mid-Trade Process Crash
 
-![Mermaid Diagram](./diagrams\50_Signal_Persistence_3.svg)
+![Mermaid Diagram](./diagrams/50_Signal_Persistence_3.svg)
 
 **Key Properties:**
 1. **No Duplicate Signals:** Restored `_pendingSignal` prevents `getSignal()` from being called
@@ -409,7 +409,7 @@ ClientStrategy maintains both in-memory and on-disk representations of signal st
 
 ### State Synchronization
 
-![Mermaid Diagram](./diagrams\50_Signal_Persistence_4.svg)
+![Mermaid Diagram](./diagrams/50_Signal_Persistence_4.svg)
 
 **Synchronization Guarantees:**
 1. **Write-Through:** Every in-memory state change immediately persists to disk

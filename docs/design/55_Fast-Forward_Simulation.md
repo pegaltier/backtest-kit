@@ -32,7 +32,7 @@ The framework supports two execution modes for strategy evaluation:
 
 **Backtest Execution Flow**
 
-![Mermaid Diagram](./diagrams\55_Fast-Forward_Simulation_0.svg)
+![Mermaid Diagram](./diagrams/55_Fast-Forward_Simulation_0.svg)
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:59-298](), [src/client/ClientStrategy.ts:1639-1753]()
 
@@ -59,7 +59,7 @@ backtest: (
 
 **Signal Lifecycle Processing Flow**
 
-![Mermaid Diagram](./diagrams\55_Fast-Forward_Simulation_1.svg)
+![Mermaid Diagram](./diagrams/55_Fast-Forward_Simulation_1.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:1781-1949](), [src/interfaces/Strategy.interface.ts:304-306]()
 
@@ -98,7 +98,7 @@ if (signal.position === "short") {
 
 **Price Resolution Diagram:**
 
-![Mermaid Diagram](./diagrams\55_Fast-Forward_Simulation_2.svg)
+![Mermaid Diagram](./diagrams/55_Fast-Forward_Simulation_2.svg)
 
 **Key Implementation Details:**
 
@@ -135,7 +135,7 @@ const GET_AVG_PRICE_FN = (candles: ICandleData[]): number => {
 
 **VWAP Calculation Process**
 
-![Mermaid Diagram](./diagrams\55_Fast-Forward_Simulation_3.svg)
+![Mermaid Diagram](./diagrams/55_Fast-Forward_Simulation_3.svg)
 
 **Window Size and Usage:**
 
@@ -164,7 +164,7 @@ Scheduled signals require a two-phase fast-forward simulation: first monitoring 
 
 **Two-Phase Process Diagram:**
 
-![Mermaid Diagram](./diagrams\55_Fast-Forward_Simulation_4.svg)
+![Mermaid Diagram](./diagrams/55_Fast-Forward_Simulation_4.svg)
 
 **Phase 1: Activation Monitoring (`PROCESS_SCHEDULED_SIGNAL_CANDLES_FN`)**
 
@@ -240,7 +240,7 @@ For immediate signals (no `priceOpen` specified) or after scheduled signal activ
 
 **Processing Flow (`PROCESS_PENDING_SIGNAL_CANDLES_FN`):**
 
-![Mermaid Diagram](./diagrams\55_Fast-Forward_Simulation_5.svg)
+![Mermaid Diagram](./diagrams/55_Fast-Forward_Simulation_5.svg)
 
 **Critical Timing Detail:**
 
@@ -276,7 +276,7 @@ The fast-forward mechanism integrates tightly with `BacktestLogicPrivateService`
 
 **Execution Context and Skip-Ahead Flow**
 
-![Mermaid Diagram](./diagrams\55_Fast-Forward_Simulation_6.svg)
+![Mermaid Diagram](./diagrams/55_Fast-Forward_Simulation_6.svg)
 
 **Skip-Ahead Optimization Logic:**
 

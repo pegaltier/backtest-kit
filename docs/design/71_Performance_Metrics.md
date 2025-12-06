@@ -23,7 +23,7 @@ All metrics are calculated identically for both backtest and live modes, with im
 
 ## Metric Calculation Architecture
 
-![Mermaid Diagram](./diagrams\71_Performance_Metrics_0.svg)
+![Mermaid Diagram](./diagrams/71_Performance_Metrics_0.svg)
 
 The calculation pipeline follows a three-stage process: basic statistics compute foundational metrics (counts, sums, averages), risk metrics compute volatility measures (variance, standard deviation, Sharpe ratio), and scaled metrics compute time-adjusted projections (annualized Sharpe, yearly returns).
 
@@ -228,7 +228,7 @@ const expectedYearlyReturns = avgPnl * tradesPerYear;
 
 ## Calculation Flow Diagram
 
-![Mermaid Diagram](./diagrams\71_Performance_Metrics_1.svg)
+![Mermaid Diagram](./diagrams/71_Performance_Metrics_1.svg)
 
 The calculation follows a dependency chain where basic metrics must be computed before risk metrics, and risk metrics before scaled metrics. All calculations are protected by `isUnsafe()` checks that set metrics to `null` if they contain NaN or Infinity values.
 

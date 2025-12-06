@@ -50,7 +50,7 @@ If activation conditions are met, the signal skips the scheduled phase and opens
 
 ## Scheduled Signal State Machine
 
-![Mermaid Diagram](./diagrams\49_Scheduled_Signals_0.svg)
+![Mermaid Diagram](./diagrams/49_Scheduled_Signals_0.svg)
 
 **Scheduled Signal Flow:**
 
@@ -67,7 +67,7 @@ If activation conditions are met, the signal skips the scheduled phase and opens
 
 The activation check compares current VWAP price against `priceOpen` and `priceStopLoss` to determine whether to activate or cancel:
 
-![Mermaid Diagram](./diagrams\49_Scheduled_Signals_1.svg)
+![Mermaid Diagram](./diagrams/49_Scheduled_Signals_1.svg)
 
 **Critical Priority Order (Pre-Activation Cancellation):**
 
@@ -143,7 +143,7 @@ if (await not(risk.checkSignal({ ... }))) {
 
 Scheduled signals implement **two-phase risk validation** to ensure risk limits are still valid when the position actually opens:
 
-![Mermaid Diagram](./diagrams\49_Scheduled_Signals_2.svg)
+![Mermaid Diagram](./diagrams/49_Scheduled_Signals_2.svg)
 
 **Why Two Checks Are Necessary:**
 
@@ -228,7 +228,7 @@ T=105min: Position monitoring
 
 In backtest mode, scheduled signals are processed through the `backtest()` method which iterates through historical candles:
 
-![Mermaid Diagram](./diagrams\49_Scheduled_Signals_3.svg)
+![Mermaid Diagram](./diagrams/49_Scheduled_Signals_3.svg)
 
 **Key Differences from Live Mode:**
 

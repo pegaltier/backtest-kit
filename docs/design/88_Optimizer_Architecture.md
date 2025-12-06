@@ -10,7 +10,7 @@ For details on data collection and pagination, see [Data Collection Pipeline](#1
 
 The Optimizer system consists of four primary components organized in a layered architecture:
 
-![Mermaid Diagram](./diagrams\88_Optimizer_Architecture_0.svg)
+![Mermaid Diagram](./diagrams/88_Optimizer_Architecture_0.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:1-448](), [src/lib/services/connection/OptimizerConnectionService.ts:1-175](), [src/lib/services/template/OptimizerTemplateService.ts:1-710]()
 
@@ -115,7 +115,7 @@ For schema service architecture details, see [Schema Services](#7.3).
 
 The template merging pattern allows users to override specific template methods while falling back to defaults for unspecified methods. This provides flexibility without requiring complete reimplementation.
 
-![Mermaid Diagram](./diagrams\88_Optimizer_Architecture_1.svg)
+![Mermaid Diagram](./diagrams/88_Optimizer_Architecture_1.svg)
 
 **Implementation Example:**
 
@@ -159,7 +159,7 @@ This pattern ensures:
 
 The `getData` method collects data from all configured sources and builds LLM conversation histories for strategy generation.
 
-![Mermaid Diagram](./diagrams\88_Optimizer_Architecture_2.svg)
+![Mermaid Diagram](./diagrams/88_Optimizer_Architecture_2.svg)
 
 **Key Steps:**
 
@@ -177,7 +177,7 @@ The `getData` method collects data from all configured sources and builds LLM co
 
 The `getCode` method assembles executable strategy code from 11 template sections in a specific order.
 
-![Mermaid Diagram](./diagrams\88_Optimizer_Architecture_3.svg)
+![Mermaid Diagram](./diagrams/88_Optimizer_Architecture_3.svg)
 
 **Section Assembly Order:**
 
@@ -214,7 +214,7 @@ The prefix is generated via `CREATE_PREFIX_FN()` using base36 encoding [src/clie
 
 The `dump` method saves generated code to the file system with error handling and callbacks.
 
-![Mermaid Diagram](./diagrams\88_Optimizer_Architecture_4.svg)
+![Mermaid Diagram](./diagrams/88_Optimizer_Architecture_4.svg)
 
 **File Path Construction:**
 
@@ -270,7 +270,7 @@ The following symbols identify Optimizer-related services in the dependency inje
 
 **Service Composition:**
 
-![Mermaid Diagram](./diagrams\88_Optimizer_Architecture_5.svg)
+![Mermaid Diagram](./diagrams/88_Optimizer_Architecture_5.svg)
 
 The Optimizer services follow the same dependency injection pattern as other framework components. For comprehensive coverage of the DI system, see [Dependency Injection System](#3.2).
 

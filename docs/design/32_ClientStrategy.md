@@ -14,7 +14,7 @@ For strategy schema definitions and configuration, see [Strategy Schemas](#5.1).
 
 `ClientStrategy` is instantiated by `StrategyConnectionService` with memoization per symbol-strategy pair. The class maintains internal state for pending and scheduled signals while delegating to injected dependencies for exchange data, risk validation, and persistence.
 
-![Mermaid Diagram](./diagrams\32_ClientStrategy_0.svg)
+![Mermaid Diagram](./diagrams/32_ClientStrategy_0.svg)
 
 **State Variables:**
 - `_isStopped`: Flag set by `stop()` to prevent new signal generation
@@ -30,7 +30,7 @@ For strategy schema definitions and configuration, see [Strategy Schemas](#5.1).
 
 The strategy manages signals through a state machine with two parallel tracks: scheduled signals (delayed entry) and pending signals (active positions).
 
-![Mermaid Diagram](./diagrams\32_ClientStrategy_1.svg)
+![Mermaid Diagram](./diagrams/32_ClientStrategy_1.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:1516-1519](), [src/client/ClientStrategy.ts:263-396](), [src/client/ClientStrategy.ts:474-528](), [src/client/ClientStrategy.ts:817-876]()
 
@@ -51,7 +51,7 @@ The strategy manages signals through a state machine with two parallel tracks: s
 
 **Throttling Implementation:**
 
-![Mermaid Diagram](./diagrams\32_ClientStrategy_2.svg)
+![Mermaid Diagram](./diagrams/32_ClientStrategy_2.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:32-39](), [src/client/ClientStrategy.ts:271-284](), [src/interfaces/Strategy.interface.ts:12-18]()
 
@@ -77,7 +77,7 @@ await strategy.waitForInit();
 
 **State Restoration Flow:**
 
-![Mermaid Diagram](./diagrams\32_ClientStrategy_3.svg)
+![Mermaid Diagram](./diagrams/32_ClientStrategy_3.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:411-472](), [src/client/ClientStrategy.ts:1532]()
 
@@ -89,7 +89,7 @@ Performs a single iteration of strategy execution, handling signal generation, v
 
 ### Execution Flow (Live Mode)
 
-![Mermaid Diagram](./diagrams\32_ClientStrategy_4.svg)
+![Mermaid Diagram](./diagrams/32_ClientStrategy_4.svg)
 
 **Key Decision Points:**
 1. **Stopped check**: Early return if `stop()` was called
@@ -107,13 +107,13 @@ Fast-forwards through historical candle data to simulate signal lifecycle withou
 
 ### Backtest Flow
 
-![Mermaid Diagram](./diagrams\32_ClientStrategy_5.svg)
+![Mermaid Diagram](./diagrams/32_ClientStrategy_5.svg)
 
 **Scheduled Signal Processing Logic:**
 
 For scheduled signals, the backtest must first determine if/when activation occurs:
 
-![Mermaid Diagram](./diagrams\32_ClientStrategy_6.svg)
+![Mermaid Diagram](./diagrams/32_ClientStrategy_6.svg)
 
 **VWAP Calculation Window:**
 
@@ -141,7 +141,7 @@ Gracefully stops new signal generation while allowing active positions to close 
 - Clears `_scheduledSignal` if exists (not yet activated)
 - Does **NOT** force-close `_pendingSignal` (continues monitoring)
 
-![Mermaid Diagram](./diagrams\32_ClientStrategy_7.svg)
+![Mermaid Diagram](./diagrams/32_ClientStrategy_7.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:1969-1983]()
 
@@ -151,7 +151,7 @@ Gracefully stops new signal generation while allowing active positions to close 
 
 The `GET_SIGNAL_FN` helper orchestrates multi-stage validation before creating signals.
 
-![Mermaid Diagram](./diagrams\32_ClientStrategy_8.svg)
+![Mermaid Diagram](./diagrams/32_ClientStrategy_8.svg)
 
 **Validation Stages:**
 
@@ -188,7 +188,7 @@ if (signal.position === undefined || signal.position === null) {
 
 ### Price Validation Rules
 
-![Mermaid Diagram](./diagrams\32_ClientStrategy_9.svg)
+![Mermaid Diagram](./diagrams/32_ClientStrategy_9.svg)
 
 ### Configuration Parameters
 
@@ -218,7 +218,7 @@ Scheduled signals implement delayed entry at specific price points with pre-acti
 
 ### Activation Decision Tree
 
-![Mermaid Diagram](./diagrams\32_ClientStrategy_10.svg)
+![Mermaid Diagram](./diagrams/32_ClientStrategy_10.svg)
 
 ### Cancellation Priority Logic
 
@@ -258,13 +258,13 @@ Once activated, pending signals are continuously monitored for Take Profit, Stop
 
 ### TP/SL Check Logic
 
-![Mermaid Diagram](./diagrams\32_ClientStrategy_11.svg)
+![Mermaid Diagram](./diagrams/32_ClientStrategy_11.svg)
 
 ### Closure Cleanup Sequence
 
 When a signal closes, multiple cleanup operations execute:
 
-![Mermaid Diagram](./diagrams\32_ClientStrategy_12.svg)
+![Mermaid Diagram](./diagrams/32_ClientStrategy_12.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:817-876](), [src/client/ClientStrategy.ts:878-938](), [src/client/ClientStrategy.ts:940-1022]()
 
@@ -276,7 +276,7 @@ When a signal closes, multiple cleanup operations execute:
 
 ### Persistence Adapters
 
-![Mermaid Diagram](./diagrams\32_ClientStrategy_13.svg)
+![Mermaid Diagram](./diagrams/32_ClientStrategy_13.svg)
 
 ### Write Operations
 
@@ -569,7 +569,7 @@ for await (const result of Live.run("BTCUSDT", {
 
 ## Integration with Other Components
 
-![Mermaid Diagram](./diagrams\32_ClientStrategy_14.svg)
+![Mermaid Diagram](./diagrams/32_ClientStrategy_14.svg)
 
 **Component Interaction Pattern:**
 1. **Schema Registration**: `addStrategy()` → `StrategySchemaService.addSchema()`

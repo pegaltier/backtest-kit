@@ -26,7 +26,7 @@ The `IExchangeSchema` interface defines the contract for custom exchange impleme
 
 ### Integration Architecture
 
-![Mermaid Diagram](./diagrams\82_Advanced_Topics_0.svg)
+![Mermaid Diagram](./diagrams/82_Advanced_Topics_0.svg)
 
 **Sources:** [types.d.ts:137-171](), [src/index.ts:1-56]()
 
@@ -151,7 +151,7 @@ The default persistence implementation uses atomic file writes to local disk. Cu
 
 ### Persistence Architecture
 
-![Mermaid Diagram](./diagrams\82_Advanced_Topics_1.svg)
+![Mermaid Diagram](./diagrams/82_Advanced_Topics_1.svg)
 
 **Sources:** [types.d.ts:895-1125](), [README.md:676-690]()
 
@@ -355,7 +355,7 @@ Multi-symbol strategies execute the same trading logic across multiple symbols s
 
 ### Execution Patterns
 
-![Mermaid Diagram](./diagrams\82_Advanced_Topics_2.svg)
+![Mermaid Diagram](./diagrams/82_Advanced_Topics_2.svg)
 
 **Sources:** [README.md:693-715]()
 

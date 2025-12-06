@@ -12,7 +12,7 @@ The framework provides three execution modes that share core business logic but 
 
 ### Diagram: Execution Mode Architecture
 
-![Mermaid Diagram](./diagrams\02_Key_Features_0.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_0.svg)
 
 **Sources:**
 - [src/lib/services/logic/private/BacktestLogicPrivateService.ts]()
@@ -24,7 +24,7 @@ The framework provides three execution modes that share core business logic but 
 
 Historical simulation processes timeframes sequentially using `BacktestLogicPrivateService`:
 
-![Mermaid Diagram](./diagrams\02_Key_Features_1.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_1.svg)
 
 **Backtest Flow Characteristics:**
 
@@ -40,7 +40,7 @@ Historical simulation processes timeframes sequentially using `BacktestLogicPriv
 
 Real-time trading operates an infinite loop with crash recovery:
 
-![Mermaid Diagram](./diagrams\02_Key_Features_2.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_2.svg)
 
 **Live Trading Characteristics:**
 
@@ -63,7 +63,7 @@ Real-time trading operates an infinite loop with crash recovery:
 
 Strategy comparison mode runs multiple backtests sequentially and ranks results by a metric:
 
-![Mermaid Diagram](./diagrams\02_Key_Features_3.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_3.svg)
 
 **Walker Characteristics:**
 
@@ -89,7 +89,7 @@ Live trading uses atomic file writes to persist signal state before every state 
 
 ### Persistence Architecture
 
-![Mermaid Diagram](./diagrams\02_Key_Features_4.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_4.svg)
 
 ### Atomic Write Implementation
 
@@ -104,7 +104,7 @@ The `PersistSignalAdapter` ensures atomicity through temporary file writes:
 
 **State Transitions with Persistence:**
 
-![Mermaid Diagram](./diagrams\02_Key_Features_5.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_5.svg)
 
 **Key Code Locations:**
 
@@ -128,7 +128,7 @@ Every signal from `getSignal()` passes through 30+ validation rules before execu
 
 ### Diagram: Validation Pipeline
 
-![Mermaid Diagram](./diagrams\02_Key_Features_6.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_6.svg)
 
 **Sources:**
 - [src/client/ClientStrategy.ts:41-261]() (VALIDATE_SIGNAL_FN)
@@ -138,7 +138,7 @@ Every signal from `getSignal()` passes through 30+ validation rules before execu
 
 The `VALIDATE_SIGNAL_FN` at [src/client/ClientStrategy.ts:41-261]() enforces these constraints:
 
-![Mermaid Diagram](./diagrams\02_Key_Features_7.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_7.svg)
 
 ### Global Validation Parameters
 
@@ -167,7 +167,7 @@ Configurable via `setConfig()` from [src/config/params.ts:1-35]():
 
 ### Validation Flow
 
-![Mermaid Diagram](./diagrams\02_Key_Features_8.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_8.svg)
 
 **Sources:**
 - [src/client/ClientStrategy.ts:41-261]() (VALIDATE_SIGNAL_FN)
@@ -184,7 +184,7 @@ Signals follow a deterministic state machine supporting both market orders (imme
 
 ### Diagram: Signal State Machine
 
-![Mermaid Diagram](./diagrams\02_Key_Features_9.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_9.svg)
 
 **Sources:**
 - [src/client/ClientStrategy.ts:474-596]() (scheduled signal logic)
@@ -203,7 +203,7 @@ Scheduled signals wait for price activation with timeout and pre-activation canc
 
 **Scheduled Signal Flow:**
 
-![Mermaid Diagram](./diagrams\02_Key_Features_10.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_10.svg)
 
 **Sources:**
 - [src/client/ClientStrategy.ts:474-528]() (timeout check)
@@ -244,7 +244,7 @@ Portfolio-level risk controls with custom validation logic, concurrent position 
 
 ### Diagram: Risk Validation Flow
 
-![Mermaid Diagram](./diagrams\02_Key_Features_11.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_11.svg)
 
 **Sources:**
 - [src/client/ClientRisk.ts]()
@@ -321,7 +321,7 @@ Walker mode executes multiple strategies on the same timeframe and ranks them by
 
 ### Diagram: Walker Execution Flow
 
-![Mermaid Diagram](./diagrams\02_Key_Features_12.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_12.svg)
 
 **Sources:**
 - [src/lib/services/logic/private/WalkerLogicPrivateService.ts]()
@@ -377,7 +377,7 @@ LLM-driven strategy generation from historical data with multi-timeframe analysi
 
 ### Diagram: Optimizer Pipeline
 
-![Mermaid Diagram](./diagrams\02_Key_Features_13.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_13.svg)
 
 **Sources:**
 - [src/client/ClientOptimizer.ts]()
@@ -450,7 +450,7 @@ Position size calculation with multiple methods: fixed percentage, Kelly Criteri
 
 ### Diagram: Position Sizing Methods
 
-![Mermaid Diagram](./diagrams\02_Key_Features_14.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_14.svg)
 
 **Sources:**
 - [src/client/ClientSizing.ts]()
@@ -519,7 +519,7 @@ All execution modes use async generators (`AsyncIterableIterator`) to stream res
 
 ### Generator Architecture
 
-![Mermaid Diagram](./diagrams\02_Key_Features_15.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_15.svg)
 
 ### Generator Comparison
 
@@ -562,7 +562,7 @@ Signals follow a deterministic state machine with discriminated union types for 
 
 ### Complete Signal Lifecycle
 
-![Mermaid Diagram](./diagrams\02_Key_Features_16.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_16.svg)
 
 ### Type-Safe State Handling
 
@@ -654,7 +654,7 @@ pnl% = (priceOpenWithCosts - priceCloseWithCosts) / priceOpenWithCosts × 100
 
 ### PNL Calculation Implementation
 
-![Mermaid Diagram](./diagrams\02_Key_Features_17.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_17.svg)
 
 **Example Calculation (Long Position):**
 
@@ -680,7 +680,7 @@ Comprehensive performance analysis with markdown reports, statistics calculation
 
 ### Diagram: Reporting Architecture
 
-![Mermaid Diagram](./diagrams\02_Key_Features_18.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_18.svg)
 
 **Sources:**
 - [src/lib/services/markdown/BacktestMarkdownService.ts]()
@@ -712,7 +712,7 @@ All markdown services calculate comprehensive statistics:
 
 `ClientPartial` tracks milestone levels (10%, 20%, 30%, ..., 100%) for active signals:
 
-![Mermaid Diagram](./diagrams\02_Key_Features_19.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_19.svg)
 
 **Partial API:**
 
@@ -782,7 +782,7 @@ All price monitoring uses Volume-Weighted Average Price from last 5 one-minute c
 
 ### Throttling Mechanism
 
-![Mermaid Diagram](./diagrams\02_Key_Features_20.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_20.svg)
 
 ### Supported Intervals
 
@@ -825,7 +825,7 @@ All price monitoring uses Volume-Weighted Average Price (VWAP) calculated from t
 
 ### VWAP Calculation
 
-![Mermaid Diagram](./diagrams\02_Key_Features_21.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_21.svg)
 
 ### VWAP Usage Points
 
@@ -838,7 +838,7 @@ All price monitoring uses Volume-Weighted Average Price (VWAP) calculated from t
 
 ### VWAP Implementation Flow
 
-![Mermaid Diagram](./diagrams\02_Key_Features_22.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_22.svg)
 
 **Edge Case**: If total volume is zero, fallback to simple average of close prices:
 ```typescript
@@ -875,7 +875,7 @@ The framework uses a registry pattern with dependency injection to support custo
 
 ### Registration System
 
-![Mermaid Diagram](./diagrams\02_Key_Features_23.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_23.svg)
 
 ### Schema Interfaces
 
@@ -889,7 +889,7 @@ The framework uses a registry pattern with dependency injection to support custo
 
 Connection services use memoization to ensure single instance per schema name:
 
-![Mermaid Diagram](./diagrams\02_Key_Features_24.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_24.svg)
 
 ### Custom Implementation Example
 
