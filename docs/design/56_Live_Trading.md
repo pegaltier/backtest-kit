@@ -24,72 +24,7 @@ Sources: [src/lib/services/logic/private/LiveLogicPrivateService.ts:1-134](), [s
 
 ## Live Execution Architecture
 
-```mermaid
-graph TB
-    subgraph "User Space"
-        API["Live.run() / Live.background()"]
-        Listeners["listenSignalLive()<br/>listenDoneLive()<br/>listenPartialProfit/Loss()"]
-    end
-    
-    subgraph "Public API Layer"
-        LivePublic["LiveLogicPublicService"]
-    end
-    
-    subgraph "Private Execution Layer"
-        LivePrivate["LiveLogicPrivateService<br/>while(true) infinite loop"]
-        MethodContext["MethodContextService<br/>strategyName, exchangeName"]
-    end
-    
-    subgraph "Strategy Execution"
-        StrategyGlobal["StrategyGlobalService"]
-        Strategy["ClientStrategy<br/>tick(symbol, when, false)"]
-        SignalState["Signal State Machine<br/>idle → scheduled → opened → active → closed"]
-    end
-    
-    subgraph "Persistence Layer"
-        PersistSignal["PersistSignalAdapter<br/>Signal state recovery"]
-        PersistSchedule["PersistScheduleAdapter<br/>Scheduled signal recovery"]
-        PersistRisk["PersistRiskAdapter<br/>Active position recovery"]
-        FileSystem["./logs/data/*.json<br/>Atomic writes"]
-    end
-    
-    subgraph "Event System"
-        SignalLiveEmitter["signalLiveEmitter"]
-        DoneLiveSubject["doneLiveSubject"]
-        PerformanceEmitter["performanceEmitter"]
-    end
-    
-    subgraph "Reporting"
-        LiveMarkdown["LiveMarkdownService<br/>Accumulates all events<br/>MAX_EVENTS=250"]
-        Report["Live.getData()<br/>Live.getReport()<br/>Live.dump()"]
-    end
-    
-    API -->|calls| LivePublic
-    LivePublic -->|delegates to| LivePrivate
-    LivePrivate -->|creates real-time Date| LivePrivate
-    LivePrivate -->|calls tick()| StrategyGlobal
-    LivePrivate -->|sleeps TICK_TTL=61s| LivePrivate
-    
-    StrategyGlobal -->|executes| Strategy
-    Strategy -->|transitions| SignalState
-    Strategy -->|reads/writes| PersistSignal
-    Strategy -->|reads/writes| PersistSchedule
-    Strategy -->|reads/writes| PersistRisk
-    
-    PersistSignal -->|atomic writes| FileSystem
-    PersistSchedule -->|atomic writes| FileSystem
-    PersistRisk -->|atomic writes| FileSystem
-    
-    Strategy -->|emits events| SignalLiveEmitter
-    LivePrivate -->|emits completion| DoneLiveSubject
-    LivePrivate -->|emits timing| PerformanceEmitter
-    
-    SignalLiveEmitter -->|subscribes| LiveMarkdown
-    SignalLiveEmitter -->|notifies| Listeners
-    DoneLiveSubject -->|notifies| Listeners
-    
-    LiveMarkdown -->|provides| Report
-```
+![Mermaid Diagram](./diagrams\56_Live_Trading_0.svg)
 
 **Architecture Diagram: Live Trading Execution Flow**
 
@@ -103,31 +38,7 @@ Sources: [src/lib/services/logic/private/LiveLogicPrivateService.ts:1-134](), [s
 
 The core of live trading is an infinite async generator in `LiveLogicPrivateService`:
 
-```mermaid
-stateDiagram-v2
-    [*] --> CreateDate: while(true)
-    CreateDate --> CallTick: when = new Date()
-    CallTick --> CheckResult: await tick(symbol, when, false)
-    CheckResult --> YieldResult: action = "opened" | "closed"
-    CheckResult --> Sleep: action = "idle" | "active" | "scheduled"
-    YieldResult --> Sleep: yield result
-    Sleep --> CreateDate: await sleep(TICK_TTL)
-    
-    note right of CreateDate
-        Real-time progression
-        No predefined timeframes
-    end note
-    
-    note right of CallTick
-        backtest=false
-        Uses current market data
-    end note
-    
-    note right of Sleep
-        TICK_TTL = 61 seconds
-        Prevents rate limiting
-    end note
-```
+![Mermaid Diagram](./diagrams\56_Live_Trading_1.svg)
 
 **State Machine: Live Trading Loop Iteration**
 
@@ -170,36 +81,7 @@ Sources: [src/lib/services/logic/private/LiveLogicPrivateService.ts:12]()
 
 ### Persistence Architecture
 
-```mermaid
-graph LR
-    subgraph "ClientStrategy"
-        Tick["tick()<br/>Check signal status"]
-        WaitInit["waitForInit()<br/>Load persisted state"]
-        Stop["stop()<br/>Save signal state"]
-    end
-    
-    subgraph "Persistence Adapters"
-        PersistSignal["PersistSignalAdapter<br/>Active signal storage"]
-        PersistSchedule["PersistScheduleAdapter<br/>Scheduled signal storage"]
-        PersistRisk["PersistRiskAdapter<br/>Active positions list"]
-    end
-    
-    subgraph "File Storage"
-        SignalFiles["./logs/data/signal/<br/>{strategyName}/<br/>{symbol}.json"]
-        ScheduleFiles["./logs/data/schedule/<br/>{strategyName}/<br/>{symbol}.json"]
-        RiskFiles["./logs/data/risk/<br/>{riskName}/<br/>positions.json"]
-    end
-    
-    WaitInit -->|readValue()| PersistSignal
-    WaitInit -->|readValue()| PersistSchedule
-    Tick -->|writeValue()| PersistSignal
-    Tick -->|writeValue()| PersistSchedule
-    Stop -->|writeValue()| PersistSignal
-    
-    PersistSignal -->|atomic write| SignalFiles
-    PersistSchedule -->|atomic write| ScheduleFiles
-    PersistRisk -->|atomic write| RiskFiles
-```
+![Mermaid Diagram](./diagrams\56_Live_Trading_2.svg)
 
 **Crash Recovery Architecture: Persistence Flow**
 
@@ -240,49 +122,7 @@ Sources: [README.md:19-20]()
 
 Live mode emits events through multiple channels:
 
-```mermaid
-graph TB
-    subgraph "Signal Lifecycle Events"
-        TickResult["IStrategyTickResult<br/>from tick()"]
-        SignalEmitter["signalEmitter<br/>(all modes)"]
-        SignalLiveEmitter["signalLiveEmitter<br/>(live only)"]
-    end
-    
-    subgraph "Event Types"
-        Idle["action: 'idle'<br/>No signal generated"]
-        Scheduled["action: 'scheduled'<br/>Limit order created"]
-        Opened["action: 'opened'<br/>Market order executed"]
-        Active["action: 'active'<br/>Monitoring TP/SL"]
-        Closed["action: 'closed'<br/>Position closed"]
-        Cancelled["action: 'cancelled'<br/>Scheduled signal cancelled"]
-    end
-    
-    subgraph "Listeners"
-        ListenSignal["listenSignal()<br/>listenSignalOnce()"]
-        ListenSignalLive["listenSignalLive()<br/>listenSignalLiveOnce()"]
-        ListenDoneLive["listenDoneLive()<br/>listenDoneLiveOnce()"]
-        ListenPartial["listenPartialProfit()<br/>listenPartialLoss()"]
-    end
-    
-    subgraph "Reporting"
-        LiveMarkdown["LiveMarkdownService<br/>Accumulates events<br/>MAX_EVENTS=250"]
-    end
-    
-    TickResult -->|emits| SignalEmitter
-    TickResult -->|emits| SignalLiveEmitter
-    
-    SignalEmitter -->|notifies| ListenSignal
-    SignalLiveEmitter -->|notifies| ListenSignalLive
-    
-    SignalLiveEmitter -->|subscribes| LiveMarkdown
-    
-    Idle -.->|type| TickResult
-    Scheduled -.->|type| TickResult
-    Opened -.->|type| TickResult
-    Active -.->|type| TickResult
-    Closed -.->|type| TickResult
-    Cancelled -.->|type| TickResult
-```
+![Mermaid Diagram](./diagrams\56_Live_Trading_3.svg)
 
 **Event Flow: Live Trading Monitoring**
 
@@ -375,28 +215,7 @@ Sources: [README.md:130-143]()
 
 ### Throttling Implementation
 
-```mermaid
-sequenceDiagram
-    participant Loop as LiveLogicPrivateService
-    participant Strategy as ClientStrategy
-    participant LastTime as _lastSignalTimestamp
-    participant GetSignal as getSignal()
-    
-    Loop->>Strategy: tick(symbol, when, false)
-    Strategy->>LastTime: Check last signal time
-    
-    alt Within interval
-        LastTime-->>Strategy: Skip signal generation
-        Strategy-->>Loop: action: "idle" | "active"
-    else Interval expired
-        LastTime->>GetSignal: Call getSignal()
-        GetSignal-->>Strategy: Return signal
-        Strategy->>LastTime: Update timestamp
-        Strategy-->>Loop: action: "scheduled" | "opened"
-    end
-    
-    Loop->>Loop: Sleep TICK_TTL (61s)
-```
+![Mermaid Diagram](./diagrams\56_Live_Trading_4.svg)
 
 **Sequence: Interval Throttling Logic**
 
@@ -522,50 +341,7 @@ Sources: [README.md:383-407]()
 
 ### Execution Differences
 
-```mermaid
-graph TB
-    subgraph "Backtest Mode"
-        BT_Frame["FrameGlobalService<br/>Predefined timeframes"]
-        BT_Loop["for (i = 0; i < timeframes.length; i++)"]
-        BT_Tick["tick(symbol, timeframes[i], true)"]
-        BT_Signal["If signal opened"]
-        BT_Candles["getNextCandles(future)"]
-        BT_Backtest["backtest(candles)"]
-        BT_Skip["Skip to closeTimestamp"]
-        BT_Yield["Yield closed result"]
-        BT_Complete["[*] Complete"]
-        
-        BT_Frame --> BT_Loop
-        BT_Loop --> BT_Tick
-        BT_Tick --> BT_Signal
-        BT_Signal --> BT_Candles
-        BT_Candles --> BT_Backtest
-        BT_Backtest --> BT_Skip
-        BT_Skip --> BT_Loop
-        BT_Backtest --> BT_Yield
-        BT_Yield --> BT_Loop
-        BT_Loop --> BT_Complete
-    end
-    
-    subgraph "Live Mode"
-        Live_Loop["while (true)"]
-        Live_Date["when = new Date()"]
-        Live_Tick["tick(symbol, when, false)"]
-        Live_Action["Check action"]
-        Live_Yield["Yield opened/closed"]
-        Live_Sleep["sleep(TICK_TTL)"]
-        Live_Continue["[*] Never ends"]
-        
-        Live_Loop --> Live_Date
-        Live_Date --> Live_Tick
-        Live_Tick --> Live_Action
-        Live_Action --> Live_Yield
-        Live_Action --> Live_Sleep
-        Live_Yield --> Live_Sleep
-        Live_Sleep --> Live_Loop
-        Live_Loop --> Live_Continue
-    end
-```
+![Mermaid Diagram](./diagrams\56_Live_Trading_5.svg)
 
 **Comparison: Backtest vs Live Execution Flow**
 

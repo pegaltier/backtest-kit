@@ -53,28 +53,7 @@ Frame schemas are registered via `addFrame()` and define the date range and inte
 
 ### IFrameSchema Structure
 
-```mermaid
-classDiagram
-    class IFrameSchema {
-        +frameName: FrameName
-        +note?: string
-        +interval: FrameInterval
-        +startDate: Date
-        +endDate: Date
-        +callbacks?: Partial~IFrameCallbacks~
-    }
-    
-    class IFrameCallbacks {
-        +onTimeframe(timeframe: Date[], startDate: Date, endDate: Date, interval: FrameInterval): void
-    }
-    
-    class IFrameParams {
-        +logger: ILogger
-    }
-    
-    IFrameSchema --> IFrameCallbacks : contains
-    IFrameParams --|> IFrameSchema : extends
-```
+![Mermaid Diagram](./diagrams\54_Timeframe_Generation_0.svg)
 
 **Sources:** [types.d.ts:332-379]()
 
@@ -117,42 +96,7 @@ The `IFrame.getTimeframe()` method transforms a date range and interval into a c
 
 ### Algorithm Flow Diagram
 
-```mermaid
-flowchart TB
-    Start["getTimeframe(symbol, frameName)"]
-    GetSchema["Retrieve IFrameSchema<br/>by frameName"]
-    ExtractParams["Extract:<br/>startDate, endDate, interval"]
-    
-    ConvertToMs["Convert dates to<br/>milliseconds timestamps"]
-    CalculateInterval["Calculate interval<br/>in milliseconds"]
-    
-    InitArray["Initialize timeframe: Date[] = []"]
-    SetCurrent["currentTime = startDate.getTime()"]
-    
-    LoopStart{{"currentTime <= endDate?"}}
-    CreateDate["Create new Date(currentTime)"]
-    AppendArray["Append to timeframe array"]
-    Increment["currentTime += intervalMs"]
-    
-    Callback["Call onTimeframe callback<br/>(if registered)"]
-    Return["Return timeframe: Date[]"]
-    
-    Start --> GetSchema
-    GetSchema --> ExtractParams
-    ExtractParams --> ConvertToMs
-    ConvertToMs --> CalculateInterval
-    CalculateInterval --> InitArray
-    InitArray --> SetCurrent
-    SetCurrent --> LoopStart
-    
-    LoopStart -->|Yes| CreateDate
-    CreateDate --> AppendArray
-    AppendArray --> Increment
-    Increment --> LoopStart
-    
-    LoopStart -->|No| Callback
-    Callback --> Return
-```
+![Mermaid Diagram](./diagrams\54_Timeframe_Generation_1.svg)
 
 **Sources:** [types.d.ts:380-393]()
 
@@ -192,29 +136,7 @@ Frame schemas are managed by `FrameSchemaService`, which provides name-based loo
 
 ### Schema Registration and Retrieval Flow
 
-```mermaid
-sequenceDiagram
-    participant User as User Code
-    participant AddFrame as addFrame()
-    participant Schema as FrameSchemaService
-    participant Global as FrameGlobalService
-    participant Client as ClientFrame
-    
-    User->>AddFrame: addFrame(IFrameSchema)
-    AddFrame->>Schema: register(frameName, schema)
-    Schema->>Schema: Store in registry Map
-    
-    Note over User,Client: Later: During Backtest Execution
-    
-    User->>Global: getTimeframe(symbol, frameName)
-    Global->>Schema: getSchema(frameName)
-    Schema-->>Global: Return IFrameSchema
-    Global->>Client: Instantiate ClientFrame(params)
-    Client->>Client: Calculate timeframes
-    Client->>Client: Trigger onTimeframe callback
-    Client-->>Global: Return Date[]
-    Global-->>User: Return timeframe array
-```
+![Mermaid Diagram](./diagrams\54_Timeframe_Generation_2.svg)
 
 **Sources:** [types.d.ts:366-393]()
 
@@ -237,51 +159,7 @@ Timeframe generation is the first step in backtest execution. `BacktestLogicPriv
 
 ### Backtest Execution with Timeframes
 
-```mermaid
-flowchart TB
-    subgraph "Backtest Initialization"
-        Start["BacktestLogicPrivateService.run()"]
-        GetFrame["FrameGlobalService.getTimeframe(symbol, frameName)"]
-        TimeframeArray["timeframe: Date[]<br/>(e.g., 1440 timestamps for 1 day @ 1m)"]
-    end
-    
-    subgraph "Timeframe Iteration Loop"
-        LoopStart{{"For each timestamp in timeframe"}}
-        SetContext["ExecutionContextService.context.when = timestamp"]
-        TickStrategy["ClientStrategy.tick()<br/>with when = timestamp"]
-        
-        CheckSignal{{"Signal opened?"}}
-        FetchCandles["ClientExchange.getNextCandles()<br/>(future data for backtest)"]
-        BacktestMethod["ClientStrategy.backtest(candles)<br/>(fast VWAP simulation)"]
-        SkipAhead["Skip timeframes<br/>until signal closes"]
-        
-        ContinueLoop["Continue to next timestamp"]
-    end
-    
-    subgraph "Completion"
-        EndLoop["All timestamps processed"]
-        EmitResults["Emit backtest results"]
-    end
-    
-    Start --> GetFrame
-    GetFrame --> TimeframeArray
-    TimeframeArray --> LoopStart
-    
-    LoopStart -->|Next timestamp| SetContext
-    SetContext --> TickStrategy
-    TickStrategy --> CheckSignal
-    
-    CheckSignal -->|Yes| FetchCandles
-    FetchCandles --> BacktestMethod
-    BacktestMethod --> SkipAhead
-    SkipAhead --> LoopStart
-    
-    CheckSignal -->|No| ContinueLoop
-    ContinueLoop --> LoopStart
-    
-    LoopStart -->|Complete| EndLoop
-    EndLoop --> EmitResults
-```
+![Mermaid Diagram](./diagrams\54_Timeframe_Generation_3.svg)
 
 **Sources:** [types.d.ts:380-393](), architecture Diagram 3 from system overview
 
@@ -437,26 +315,7 @@ Frames are retrieved by `frameName` string identifier. This name is used in:
 
 ### Name-Based Retrieval Flow
 
-```mermaid
-flowchart LR
-    User["User calls<br/>Backtest.run(symbol, { strategyName, exchangeName, frameName })"]
-    
-    MethodContext["MethodContextService<br/>context.frameName = 'my-frame'"]
-    
-    BacktestLogic["BacktestLogicPrivateService<br/>reads frameName from context"]
-    
-    FrameGlobal["FrameGlobalService<br/>getTimeframe(symbol, frameName)"]
-    
-    FrameSchema["FrameSchemaService<br/>registry.get('my-frame')"]
-    
-    Schema["IFrameSchema<br/>(interval, startDate, endDate)"]
-    
-    User --> MethodContext
-    MethodContext --> BacktestLogic
-    BacktestLogic --> FrameGlobal
-    FrameGlobal --> FrameSchema
-    FrameSchema --> Schema
-```
+![Mermaid Diagram](./diagrams\54_Timeframe_Generation_4.svg)
 
 **Sources:** [types.d.ts:395-398](), [types.d.ts:404-413]()
 

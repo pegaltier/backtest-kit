@@ -10,54 +10,7 @@ For component-specific schemas, see [Component Types](#5). For execution mode di
 
 The configuration system operates as a global singleton that affects all framework operations. Parameters control safety checks, timing behavior, and monitoring thresholds throughout the signal lifecycle.
 
-```mermaid
-graph TB
-    subgraph "Configuration Layer"
-        GLOBAL_CONFIG["GLOBAL_CONFIG<br/>(src/config/params.ts)"]
-        setConfig["setConfig()<br/>(src/function/setup.ts)"]
-        setLogger["setLogger()<br/>(src/function/setup.ts)"]
-    end
-    
-    subgraph "Validation Layer"
-        VALIDATE_SIGNAL["VALIDATE_SIGNAL_FN<br/>Signal validation"]
-        TakeProfitCheck["CC_MIN_TAKEPROFIT_DISTANCE_PERCENT<br/>Minimum TP distance check"]
-        StopLossCheck["CC_MAX_STOPLOSS_DISTANCE_PERCENT<br/>Maximum SL distance check"]
-        LifetimeCheck["CC_MAX_SIGNAL_LIFETIME_MINUTES<br/>Maximum signal lifetime check"]
-    end
-    
-    subgraph "Execution Layer"
-        ClientStrategy["ClientStrategy<br/>Signal lifecycle management"]
-        ClientExchange["ClientExchange<br/>VWAP calculation"]
-        ScheduledTimeout["Scheduled signal timeout<br/>CC_SCHEDULE_AWAIT_MINUTES"]
-        VWAPCandles["VWAP candle count<br/>CC_AVG_PRICE_CANDLES_COUNT"]
-    end
-    
-    subgraph "Logging Layer"
-        LoggerService["LoggerService<br/>Framework-wide logging"]
-        CustomLogger["ILogger implementation<br/>User-provided"]
-    end
-    
-    setConfig --> GLOBAL_CONFIG
-    setLogger --> CustomLogger
-    
-    GLOBAL_CONFIG --> TakeProfitCheck
-    GLOBAL_CONFIG --> StopLossCheck
-    GLOBAL_CONFIG --> LifetimeCheck
-    GLOBAL_CONFIG --> ScheduledTimeout
-    GLOBAL_CONFIG --> VWAPCandles
-    
-    TakeProfitCheck --> VALIDATE_SIGNAL
-    StopLossCheck --> VALIDATE_SIGNAL
-    LifetimeCheck --> VALIDATE_SIGNAL
-    
-    VALIDATE_SIGNAL --> ClientStrategy
-    ScheduledTimeout --> ClientStrategy
-    VWAPCandles --> ClientExchange
-    
-    CustomLogger --> LoggerService
-    LoggerService --> ClientStrategy
-    LoggerService --> ClientExchange
-```
+![Mermaid Diagram](./diagrams\74_Configuration_0.svg)
 
 **Sources:** [src/config/params.ts:1-36](), [types.d.ts:5-97]()
 
@@ -156,31 +109,7 @@ await setLogger({
 
 Validation parameters enforce financial safety constraints during signal generation. These checks prevent signals with impossible or dangerous price configurations from being executed.
 
-```mermaid
-graph LR
-    subgraph "Signal Generation"
-        getSignal["Strategy.getSignal()<br/>Returns ISignalDto"]
-    end
-    
-    subgraph "Validation Checks"
-        CheckTP["Check Take Profit<br/>CC_MIN_TAKEPROFIT_DISTANCE_PERCENT"]
-        CheckSL["Check Stop Loss<br/>CC_MAX_STOPLOSS_DISTANCE_PERCENT"]
-        CheckLifetime["Check Signal Lifetime<br/>CC_MAX_SIGNAL_LIFETIME_MINUTES"]
-    end
-    
-    subgraph "Results"
-        Accepted["Signal Accepted<br/>Proceed to risk checks"]
-        Rejected["Signal Rejected<br/>Return idle result"]
-    end
-    
-    getSignal --> CheckTP
-    CheckTP --> CheckSL
-    CheckSL --> CheckLifetime
-    CheckLifetime --> Accepted
-    CheckTP --> Rejected
-    CheckSL --> Rejected
-    CheckLifetime --> Rejected
-```
+![Mermaid Diagram](./diagrams\74_Configuration_1.svg)
 
 **Sources:** [test/e2e/sanitize.test.mjs:16-660](), [test/e2e/defend.test.mjs:540-845]()
 
@@ -329,27 +258,7 @@ await setConfig({
 
 Timing parameters control execution behavior for scheduled signals, VWAP calculation, and monitoring intervals.
 
-```mermaid
-graph TB
-    subgraph "Scheduled Signal Timeline"
-        Create["Signal Created<br/>scheduledAt timestamp"]
-        Wait["Waiting Period<br/>Up to CC_SCHEDULE_AWAIT_MINUTES"]
-        Activate["Price Reaches priceOpen<br/>Signal activates"]
-        Timeout["Timeout Reached<br/>Signal cancelled"]
-    end
-    
-    subgraph "VWAP Calculation"
-        FetchCandles["Fetch Last N Candles<br/>CC_AVG_PRICE_CANDLES_COUNT"]
-        Calculate["Calculate VWAP<br/>Σ(Typical Price × Volume) / Σ(Volume)"]
-    end
-    
-    Create --> Wait
-    Wait --> Activate
-    Wait --> Timeout
-    
-    FetchCandles --> Calculate
-    Calculate --> Wait
-```
+![Mermaid Diagram](./diagrams\74_Configuration_2.svg)
 
 **Sources:** [src/config/params.ts:1-30]()
 

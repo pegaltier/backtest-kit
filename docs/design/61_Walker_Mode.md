@@ -18,50 +18,7 @@ Sources: [src/lib/services/logic/private/WalkerLogicPrivateService.ts:1-255](), 
 
 ## Execution Flow
 
-```mermaid
-sequenceDiagram
-    participant User as "User Code"
-    participant WalkerUtils as "Walker.run()"
-    participant WalkerCmd as "WalkerCommandService"
-    participant WalkerLogic as "WalkerLogicPrivateService"
-    participant BacktestLogic as "BacktestLogicPublicService"
-    participant BacktestMD as "BacktestMarkdownService"
-    participant Emitter as "Event Emitters"
-    
-    User->>WalkerUtils: run(symbol, context)
-    WalkerUtils->>WalkerCmd: run(symbol, context)
-    WalkerCmd->>WalkerLogic: run(symbol, strategies, metric, context)
-    
-    Note over WalkerLogic: Get WalkerSchema
-    WalkerLogic->>WalkerLogic: walkerSchemaService.get(walkerName)
-    
-    loop For each strategy in strategies array
-        WalkerLogic->>WalkerLogic: onStrategyStart callback
-        
-        WalkerLogic->>BacktestLogic: run(symbol, {strategyName, exchangeName, frameName})
-        
-        Note over BacktestLogic: Execute full backtest
-        BacktestLogic-->>WalkerLogic: IStrategyBacktestResult[]
-        
-        WalkerLogic->>BacktestMD: getData(symbol, strategyName)
-        BacktestMD-->>WalkerLogic: BacktestStatistics
-        
-        WalkerLogic->>WalkerLogic: Extract metric value
-        WalkerLogic->>WalkerLogic: Compare with bestMetric
-        WalkerLogic->>WalkerLogic: Update bestStrategy if better
-        
-        WalkerLogic->>Emitter: progressWalkerEmitter.next()
-        WalkerLogic->>Emitter: walkerEmitter.next(WalkerContract)
-        WalkerLogic->>WalkerLogic: onStrategyComplete callback
-        
-        WalkerLogic-->>User: yield WalkerContract
-    end
-    
-    WalkerLogic->>WalkerLogic: onComplete callback
-    WalkerLogic->>Emitter: walkerCompleteSubject.next(finalResults)
-    
-    Note over User: Final results contain<br/>bestStrategy and bestMetric
-```
+![Mermaid Diagram](./diagrams\61_Walker_Mode_0.svg)
 
 **Diagram: Sequential Strategy Execution and Metric Comparison**
 
@@ -165,49 +122,7 @@ Sources: [src/lib/services/logic/private/WalkerLogicPrivateService.ts:168-186]()
 
 ## Walker Contract and Progress Tracking
 
-```mermaid
-graph TB
-    subgraph "WalkerLogicPrivateService Execution"
-        A["Initialize<br/>bestMetric = null<br/>bestStrategy = null<br/>strategiesTested = 0"]
-        B["For each strategy"]
-        C["Run BacktestLogicPublicService"]
-        D["Get BacktestStatistics"]
-        E["Extract metricValue"]
-        F{"metricValue > bestMetric?"}
-        G["Update bestMetric<br/>Update bestStrategy"]
-        H["Increment strategiesTested"]
-        I["Build WalkerContract"]
-        J["Emit progressWalkerEmitter"]
-        K["Emit walkerEmitter"]
-        L["Yield WalkerContract"]
-    end
-    
-    subgraph "WalkerContract Fields"
-        M["walkerName<br/>exchangeName<br/>frameName<br/>symbol"]
-        N["strategyName (current)<br/>stats (current)<br/>metricValue (current)"]
-        O["metric<br/>bestMetric<br/>bestStrategy"]
-        P["strategiesTested<br/>totalStrategies<br/>progress calculation"]
-    end
-    
-    A-->B
-    B-->C
-    C-->D
-    D-->E
-    E-->F
-    F-->|Yes|G
-    F-->|No|H
-    G-->H
-    H-->I
-    I-->J
-    J-->K
-    K-->L
-    L-->B
-    
-    I-->M
-    I-->N
-    I-->O
-    I-->P
-```
+![Mermaid Diagram](./diagrams\61_Walker_Mode_1.svg)
 
 **Diagram: WalkerContract Construction and Event Flow**
 
@@ -324,48 +239,7 @@ Sources: [docs/classes/WalkerUtils.md](), [src/lib/utils/WalkerUtils.ts](), [src
 
 ## Integration with Backtest System
 
-```mermaid
-graph TB
-    subgraph "Walker Layer"
-        W1["WalkerLogicPrivateService<br/>run(symbol, strategies, metric)"]
-        W2["WalkerSchemaService<br/>get(walkerName)"]
-        W3["WalkerMarkdownService<br/>accumulate results"]
-    end
-    
-    subgraph "Backtest Layer"
-        B1["BacktestLogicPublicService<br/>run(symbol, context)"]
-        B2["BacktestLogicPrivateService<br/>timeframe iteration"]
-        B3["BacktestMarkdownService<br/>getData(symbol, strategyName)"]
-    end
-    
-    subgraph "Strategy Layer"
-        S1["StrategyGlobalService<br/>tick() / backtest()"]
-        S2["ClientStrategy<br/>signal lifecycle"]
-        S3["signalBacktestEmitter<br/>event stream"]
-    end
-    
-    subgraph "Shared Context"
-        C1["ExecutionContextService<br/>symbol, when, backtest=true"]
-        C2["MethodContextService<br/>strategyName, exchangeName, frameName"]
-    end
-    
-    W1-->W2
-    W1-->|"for each strategy"|B1
-    W1-->B3
-    W1-->W3
-    
-    B1-->C2
-    B1-->B2
-    B2-->S1
-    B2-->C1
-    
-    S1-->S2
-    S2-->S3
-    S3-->B3
-    
-    C1-->S1
-    C2-->B1
-```
+![Mermaid Diagram](./diagrams\61_Walker_Mode_2.svg)
 
 **Diagram: Walker's Layered Integration with Backtest System**
 

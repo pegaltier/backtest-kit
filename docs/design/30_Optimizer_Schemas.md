@@ -12,50 +12,7 @@ Sources: [src/interfaces/Optimizer.interface.ts:380-433]()
 
 ## Schema Structure Overview
 
-```mermaid
-graph TB
-    subgraph "IOptimizerSchema Interface"
-        Schema["IOptimizerSchema"]
-        
-        subgraph "Required Fields"
-            OptName["optimizerName: string"]
-            RangeTrain["rangeTrain: IOptimizerRange[]"]
-            RangeTest["rangeTest: IOptimizerRange"]
-            Source["source: Source[]"]
-            GetPrompt["getPrompt: Function"]
-        end
-        
-        subgraph "Optional Fields"
-            Template["template?: Partial<IOptimizerTemplate>"]
-            Callbacks["callbacks?: Partial<IOptimizerCallbacks>"]
-            Note["note?: string"]
-        end
-        
-        Schema --> OptName
-        Schema --> RangeTrain
-        Schema --> RangeTest
-        Schema --> Source
-        Schema --> GetPrompt
-        Schema --> Template
-        Schema --> Callbacks
-        Schema --> Note
-    end
-    
-    subgraph "Supporting Types"
-        OptimizerRange["IOptimizerRange<br/>startDate, endDate, note?"]
-        OptimizerSource["IOptimizerSource<br/>name, fetch, user?, assistant?"]
-        OptimizerSourceFn["IOptimizerSourceFn<br/>(args) => Data[]"]
-        OptimizerTemplate["IOptimizerTemplate<br/>11 code generation methods"]
-        OptimizerCallbacks["IOptimizerCallbacks<br/>onData?, onCode?, onDump?, onSourceData?"]
-    end
-    
-    RangeTrain -.-> OptimizerRange
-    RangeTest -.-> OptimizerRange
-    Source -.-> OptimizerSource
-    Source -.-> OptimizerSourceFn
-    Template -.-> OptimizerTemplate
-    Callbacks -.-> OptimizerCallbacks
-```
+![Mermaid Diagram](./diagrams\30_Optimizer_Schemas_0.svg)
 
 **Diagram: Optimizer Schema Interface Structure**
 
@@ -357,39 +314,7 @@ interface IOptimizerCallbacks {
 
 #### Callback Invocation Points
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant ClientOptimizer
-    participant Sources
-    participant LLM
-    participant FileSystem
-    
-    User->>ClientOptimizer: getData(symbol)
-    
-    loop For each rangeTrain
-        loop For each source
-            ClientOptimizer->>Sources: fetch(symbol, dates, limit, offset)
-            Sources-->>ClientOptimizer: data[]
-            ClientOptimizer->>ClientOptimizer: onSourceData callback
-        end
-        ClientOptimizer->>LLM: getPrompt(symbol, messages)
-        LLM-->>ClientOptimizer: strategy prompt
-    end
-    
-    ClientOptimizer->>ClientOptimizer: onData callback
-    ClientOptimizer-->>User: IOptimizerStrategy[]
-    
-    User->>ClientOptimizer: getCode(symbol)
-    ClientOptimizer->>ClientOptimizer: Assemble code sections
-    ClientOptimizer->>ClientOptimizer: onCode callback
-    ClientOptimizer-->>User: code string
-    
-    User->>ClientOptimizer: dump(symbol, path)
-    ClientOptimizer->>FileSystem: writeFile(path, code)
-    ClientOptimizer->>ClientOptimizer: onDump callback
-    ClientOptimizer-->>User: void
-```
+![Mermaid Diagram](./diagrams\30_Optimizer_Schemas_1.svg)
 
 **Diagram: Callback Invocation Sequence**
 
@@ -434,35 +359,7 @@ Sources: [src/interfaces/Optimizer.interface.ts:191-236](), [src/interfaces/Opti
 
 The `source` array accepts two types of entries:
 
-```mermaid
-graph LR
-    Source["source: Source[]"]
-    
-    subgraph "Type 1: Function"
-        SourceFn["IOptimizerSourceFn<br/>(args) => Data[]"]
-        DefaultUser["Uses default getUserMessage"]
-        DefaultAssistant["Uses default getAssistantMessage"]
-    end
-    
-    subgraph "Type 2: Object"
-        SourceObj["IOptimizerSource"]
-        SourceName["name: string"]
-        SourceFetch["fetch: IOptimizerSourceFn"]
-        SourceUser["user?: custom formatter"]
-        SourceAssistant["assistant?: custom formatter"]
-    end
-    
-    Source --> SourceFn
-    Source --> SourceObj
-    
-    SourceFn --> DefaultUser
-    SourceFn --> DefaultAssistant
-    
-    SourceObj --> SourceName
-    SourceObj --> SourceFetch
-    SourceObj --> SourceUser
-    SourceObj --> SourceAssistant
-```
+![Mermaid Diagram](./diagrams\30_Optimizer_Schemas_2.svg)
 
 **Diagram: Source Type Variants**
 
@@ -632,41 +529,7 @@ listenOptimizerProgress((event) => {
 
 #### Code Assembly Pipeline
 
-```mermaid
-graph TB
-    Start["Optimizer.getCode(symbol, optimizerName)"]
-    GetData["getData()<br/>Fetch all source data"]
-    
-    subgraph "Code Section Assembly (11 parts)"
-        Banner["1. getTopBanner<br/>Shebang + imports"]
-        DumpJson["2. getJsonDumpTemplate<br/>dumpJson() helper"]
-        Text["3. getTextTemplate<br/>text() LLM helper"]
-        Json["4. getJsonTemplate<br/>json() LLM helper"]
-        Exchange["5. getExchangeTemplate<br/>addExchange() call"]
-        TrainFrames["6. getFrameTemplate × rangeTrain.length<br/>Training frames"]
-        TestFrame["7. getFrameTemplate<br/>Test frame"]
-        Strategies["8. getStrategyTemplate × strategies.length<br/>Strategy definitions"]
-        Walker["9. getWalkerTemplate<br/>addWalker() comparison"]
-        Launcher["10. getLauncherTemplate<br/>Walker.background() + listeners"]
-    end
-    
-    OnCode["callbacks.onCode(symbol, code)"]
-    End["Return code string"]
-    
-    Start --> GetData
-    GetData --> Banner
-    Banner --> DumpJson
-    DumpJson --> Text
-    Text --> Json
-    Json --> Exchange
-    Exchange --> TrainFrames
-    TrainFrames --> TestFrame
-    TestFrame --> Strategies
-    Strategies --> Walker
-    Walker --> Launcher
-    Launcher --> OnCode
-    OnCode --> End
-```
+![Mermaid Diagram](./diagrams\30_Optimizer_Schemas_3.svg)
 
 **Diagram: Code Generation Pipeline**
 
@@ -704,22 +567,7 @@ Sources: [src/lib/services/validation/OptimizerValidationService.ts]() (not show
 
 ## Schema Lifecycle
 
-```mermaid
-stateDiagram-v2
-    [*] --> Registration: addOptimizer(schema)
-    Registration --> Validation: OptimizerValidationService
-    Validation --> Storage: OptimizerSchemaService.set()
-    Storage --> Retrieval: User calls Optimizer.getData/getCode/dump
-    Retrieval --> Connection: OptimizerConnectionService.getOptimizer()
-    Connection --> TemplateMerge: Merge custom + default templates
-    TemplateMerge --> Instantiation: new ClientOptimizer(params)
-    Instantiation --> Memoization: Cache by optimizerName
-    Memoization --> Execution: execute methods
-    Execution --> [*]
-    
-    Validation --> Error: Invalid schema
-    Error --> [*]
-```
+![Mermaid Diagram](./diagrams\30_Optimizer_Schemas_4.svg)
 
 **Diagram: Schema Registration and Lifecycle**
 

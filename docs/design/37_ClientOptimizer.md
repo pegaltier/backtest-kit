@@ -12,61 +12,7 @@ This document covers the internal implementation of the `ClientOptimizer` class,
 
 ### Class Definition
 
-```mermaid
-classDiagram
-    class IOptimizer {
-        <<interface>>
-        +getData(symbol: string) Promise~IOptimizerStrategy[]~
-        +getCode(symbol: string) Promise~string~
-        +dump(symbol: string, path?: string) Promise~void~
-    }
-    
-    class ClientOptimizer {
-        +readonly params: IOptimizerParams
-        +readonly onProgress: Function
-        +getData(symbol: string) Promise~IOptimizerStrategy[]~
-        +getCode(symbol: string) Promise~string~
-        +dump(symbol: string, path?: string) Promise~void~
-    }
-    
-    class IOptimizerParams {
-        +optimizerName: OptimizerName
-        +logger: ILogger
-        +rangeTrain: IOptimizerRange[]
-        +rangeTest: IOptimizerRange
-        +source: Source[]
-        +getPrompt: Function
-        +template: IOptimizerTemplate
-        +callbacks?: Partial~IOptimizerCallbacks~
-    }
-    
-    class IOptimizerTemplate {
-        <<interface>>
-        +getTopBanner(symbol: string)
-        +getUserMessage(symbol, data, name)
-        +getAssistantMessage(symbol, data, name)
-        +getWalkerTemplate(...)
-        +getStrategyTemplate(...)
-        +getExchangeTemplate(...)
-        +getFrameTemplate(...)
-        +getLauncherTemplate(...)
-        +getTextTemplate(symbol: string)
-        +getJsonTemplate(symbol: string)
-        +getJsonDumpTemplate(symbol: string)
-    }
-    
-    class IOptimizerStrategy {
-        +symbol: string
-        +name: string
-        +messages: MessageModel[]
-        +strategy: string
-    }
-    
-    IOptimizer <|.. ClientOptimizer
-    ClientOptimizer --> IOptimizerParams
-    IOptimizerParams --> IOptimizerTemplate
-    ClientOptimizer ..> IOptimizerStrategy : returns
-```
+![Mermaid Diagram](./diagrams\37_ClientOptimizer_0.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:1-448](), [src/interfaces/Optimizer.interface.ts:454-484]()
 
@@ -97,66 +43,7 @@ The `getData` method orchestrates the entire data collection and strategy genera
 
 ### getData Sequence Diagram
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant ClientOptimizer
-    participant GET_STRATEGY_DATA_FN
-    participant RESOLVE_PAGINATION_FN
-    participant Source as "Data Source"
-    participant Template as "IOptimizerTemplate"
-    participant GetPrompt as "getPrompt Function"
-    participant Callbacks as "IOptimizerCallbacks"
-    
-    User->>ClientOptimizer: getData(symbol)
-    ClientOptimizer->>GET_STRATEGY_DATA_FN: Execute with symbol, self
-    
-    loop For each rangeTrain
-        GET_STRATEGY_DATA_FN->>GET_STRATEGY_DATA_FN: Initialize messageList
-        
-        loop For each source
-            GET_STRATEGY_DATA_FN->>ClientOptimizer: onProgress(event)
-            
-            GET_STRATEGY_DATA_FN->>RESOLVE_PAGINATION_FN: fetch, filterData
-            
-            loop Until no more pages
-                RESOLVE_PAGINATION_FN->>Source: fetch(symbol, dates, limit, offset)
-                Source-->>RESOLVE_PAGINATION_FN: Data array
-            end
-            
-            RESOLVE_PAGINATION_FN->>RESOLVE_PAGINATION_FN: distinctDocuments(by id)
-            RESOLVE_PAGINATION_FN-->>GET_STRATEGY_DATA_FN: Deduplicated data
-            
-            opt onSourceData callback
-                GET_STRATEGY_DATA_FN->>Callbacks: onSourceData(symbol, name, data, dates)
-            end
-            
-            par Format messages
-                GET_STRATEGY_DATA_FN->>Template: getUserMessage(symbol, data, name)
-                Template-->>GET_STRATEGY_DATA_FN: User content
-            and
-                GET_STRATEGY_DATA_FN->>Template: getAssistantMessage(symbol, data, name)
-                Template-->>GET_STRATEGY_DATA_FN: Assistant content
-            end
-            
-            GET_STRATEGY_DATA_FN->>GET_STRATEGY_DATA_FN: Push user/assistant to messageList
-        end
-        
-        GET_STRATEGY_DATA_FN->>GetPrompt: getPrompt(symbol, messageList)
-        GetPrompt-->>GET_STRATEGY_DATA_FN: Strategy prompt text
-        
-        GET_STRATEGY_DATA_FN->>GET_STRATEGY_DATA_FN: Push IOptimizerStrategy to strategyList
-    end
-    
-    GET_STRATEGY_DATA_FN->>ClientOptimizer: onProgress(100%)
-    
-    opt onData callback
-        GET_STRATEGY_DATA_FN->>Callbacks: onData(symbol, strategyList)
-    end
-    
-    GET_STRATEGY_DATA_FN-->>ClientOptimizer: strategyList
-    ClientOptimizer-->>User: IOptimizerStrategy[]
-```
+![Mermaid Diagram](./diagrams\37_ClientOptimizer_1.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:99-215](), [src/client/ClientOptimizer.ts:410-415]()
 
@@ -164,26 +51,7 @@ sequenceDiagram
 
 The `RESOLVE_PAGINATION_FN` helper uses `functools-kit` utilities to handle paginated data sources automatically:
 
-```mermaid
-graph TB
-    Start["RESOLVE_PAGINATION_FN(fetch, filterData)"]
-    Iterator["iterateDocuments with limit=25"]
-    CreateRequest["createRequest(limit, offset)"]
-    FetchData["fetch(symbol, dates, limit, offset)"]
-    CheckMore{"More pages?"}
-    Distinct["distinctDocuments by id"]
-    Resolve["resolveDocuments"]
-    Return["Return deduplicated array"]
-    
-    Start --> Iterator
-    Iterator --> CreateRequest
-    CreateRequest --> FetchData
-    FetchData --> CheckMore
-    CheckMore -->|Yes| CreateRequest
-    CheckMore -->|No| Distinct
-    Distinct --> Resolve
-    Resolve --> Return
-```
+![Mermaid Diagram](./diagrams\37_ClientOptimizer_2.svg)
 
 The pagination loop uses `ITERATION_LIMIT = 25` records per request. Data is deduplicated using the `id` field from `IOptimizerData`.
 
@@ -209,63 +77,7 @@ The `getCode` method assembles a complete executable Node.js script by calling t
 
 ### Code Assembly Pipeline
 
-```mermaid
-graph TB
-    Start["getCode(symbol)"]
-    GetData["getData(symbol)"]
-    Prefix["CREATE_PREFIX_FN() → random prefix"]
-    Sections["Initialize sections array"]
-    
-    Banner["getTopBanner(symbol)"]
-    JsonDump["getJsonDumpTemplate(symbol)"]
-    TextHelper["getTextTemplate(symbol)"]
-    JsonHelper["getJsonTemplate(symbol)"]
-    
-    Exchange["getExchangeTemplate(symbol, exchangeName)"]
-    
-    TrainFrames["Loop rangeTrain"]
-    TrainFrame["getFrameTemplate(symbol, frameName, interval, dates)"]
-    
-    TestFrame["getFrameTemplate for rangeTest"]
-    
-    Strategies["Loop strategyData"]
-    Strategy["getStrategyTemplate(name, interval, prompt)"]
-    
-    Walker["getWalkerTemplate(walkerName, exchange, frame, strategies)"]
-    
-    Launcher["getLauncherTemplate(symbol, walkerName)"]
-    
-    Join["sections.join('\n')"]
-    Callback["onCode callback?"]
-    Return["Return code string"]
-    
-    Start --> GetData
-    GetData --> Prefix
-    Prefix --> Sections
-    
-    Sections --> Banner
-    Banner --> JsonDump
-    JsonDump --> TextHelper
-    TextHelper --> JsonHelper
-    
-    JsonHelper --> Exchange
-    
-    Exchange --> TrainFrames
-    TrainFrames --> TrainFrame
-    TrainFrame --> TrainFrames
-    TrainFrames --> TestFrame
-    
-    TestFrame --> Strategies
-    Strategies --> Strategy
-    Strategy --> Strategies
-    
-    Strategies --> Walker
-    Walker --> Launcher
-    
-    Launcher --> Join
-    Join --> Callback
-    Callback --> Return
-```
+![Mermaid Diagram](./diagrams\37_ClientOptimizer_3.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:225-350](), [src/client/ClientOptimizer.ts:424-429]()
 
@@ -293,21 +105,7 @@ Each section is separated by an empty line for readability.
 
 All generated component names use a random prefix to avoid collisions:
 
-```mermaid
-graph LR
-    Prefix["CREATE_PREFIX_FN()"]
-    ExchangeName["{prefix}_exchange"]
-    TrainFrame["{prefix}_train_frame-1..N"]
-    TestFrame["{prefix}_test_frame"]
-    Strategy["{prefix}_strategy-1..N"]
-    Walker["{prefix}_walker"]
-    
-    Prefix --> ExchangeName
-    Prefix --> TrainFrame
-    Prefix --> TestFrame
-    Prefix --> Strategy
-    Prefix --> Walker
-```
+![Mermaid Diagram](./diagrams\37_ClientOptimizer_4.svg)
 
 The prefix is generated using: `(Math.random() + 1).toString(36).substring(7)`, producing strings like `"x8k2p9f"`.
 
@@ -327,39 +125,7 @@ The `dump` method writes the generated code to a `.mjs` file in the specified di
 
 ### Dump Flow
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant ClientOptimizer
-    participant GET_STRATEGY_DUMP_FN
-    participant getCode as "getCode Method"
-    participant FS as "fs/promises"
-    participant Logger
-    participant Callback as "onDump Callback"
-    
-    User->>ClientOptimizer: dump(symbol, path)
-    ClientOptimizer->>GET_STRATEGY_DUMP_FN: Execute
-    
-    GET_STRATEGY_DUMP_FN->>getCode: await getCode(symbol)
-    getCode-->>GET_STRATEGY_DUMP_FN: code string
-    
-    GET_STRATEGY_DUMP_FN->>GET_STRATEGY_DUMP_FN: Construct filepath
-    
-    GET_STRATEGY_DUMP_FN->>FS: mkdir(dir, recursive: true)
-    FS-->>GET_STRATEGY_DUMP_FN: Directory created
-    
-    GET_STRATEGY_DUMP_FN->>FS: writeFile(filepath, code, "utf-8")
-    FS-->>GET_STRATEGY_DUMP_FN: File written
-    
-    GET_STRATEGY_DUMP_FN->>Logger: info("Optimizer report saved: {filepath}")
-    
-    opt onDump callback exists
-        GET_STRATEGY_DUMP_FN->>Callback: onDump(symbol, filepath)
-    end
-    
-    GET_STRATEGY_DUMP_FN-->>ClientOptimizer: void
-    ClientOptimizer-->>User: void
-```
+![Mermaid Diagram](./diagrams\37_ClientOptimizer_5.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:360-384](), [src/client/ClientOptimizer.ts:438-444]()
 
@@ -382,28 +148,7 @@ sequenceDiagram
 
 The user and assistant formatters allow customization per source while providing sensible defaults:
 
-```mermaid
-graph TB
-    SourceConfig["Source Configuration"]
-    HasUser{"Has custom user fn?"}
-    HasAssistant{"Has custom assistant fn?"}
-    CustomUser["Use source.user"]
-    CustomAssistant["Use source.assistant"]
-    DefaultUser["Use DEFAULT_USER_FN"]
-    DefaultAssistant["Use DEFAULT_ASSISTANT_FN"]
-    TemplateUser["template.getUserMessage"]
-    TemplateAssistant["template.getAssistantMessage"]
-    
-    SourceConfig --> HasUser
-    HasUser -->|Yes| CustomUser
-    HasUser -->|No| DefaultUser
-    DefaultUser --> TemplateUser
-    
-    SourceConfig --> HasAssistant
-    HasAssistant -->|Yes| CustomAssistant
-    HasAssistant -->|No| DefaultAssistant
-    DefaultAssistant --> TemplateAssistant
-```
+![Mermaid Diagram](./diagrams\37_ClientOptimizer_6.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:34-60](), [src/client/ClientOptimizer.ts:148-176]()
 
@@ -413,31 +158,7 @@ graph TB
 
 ### Service Integration Architecture
 
-```mermaid
-graph TB
-    User["User Code"]
-    OptimizerAPI["Optimizer.getData/getCode/dump"]
-    OptimizerCommand["OptimizerCommandService"]
-    OptimizerGlobal["OptimizerGlobalService"]
-    OptimizerConnection["OptimizerConnectionService"]
-    OptimizerSchema["OptimizerSchemaService"]
-    OptimizerTemplate["OptimizerTemplateService"]
-    ClientOptimizer["ClientOptimizer"]
-    
-    User --> OptimizerAPI
-    OptimizerAPI --> OptimizerCommand
-    OptimizerCommand --> OptimizerGlobal
-    OptimizerGlobal --> OptimizerConnection
-    
-    OptimizerConnection --> OptimizerSchema
-    OptimizerConnection --> OptimizerTemplate
-    OptimizerConnection -->|"getOptimizer(name)"| ClientOptimizer
-    
-    OptimizerSchema -.->|"IOptimizerSchema"| OptimizerConnection
-    OptimizerTemplate -.->|"Default templates"| OptimizerConnection
-    
-    ClientOptimizer -.->|"getData/getCode/dump"| OptimizerConnection
-```
+![Mermaid Diagram](./diagrams\37_ClientOptimizer_7.svg)
 
 **Sources:** [src/lib/services/connection/OptimizerConnectionService.ts:1-175]()
 
@@ -445,35 +166,7 @@ graph TB
 
 `OptimizerConnectionService.getOptimizer` merges custom templates from the schema with defaults:
 
-```mermaid
-graph TB
-    Schema["IOptimizerSchema"]
-    RawTemplate["schema.template (Partial)"]
-    DefaultTemplate["OptimizerTemplateService"]
-    
-    Merge{"For each template method"}
-    HasCustom{"Custom method exists?"}
-    UseCustom["Use schema.template.method"]
-    UseDefault["Use templateService.method"]
-    
-    CompleteTemplate["IOptimizerTemplate (Complete)"]
-    Params["IOptimizerParams"]
-    Constructor["new ClientOptimizer(params, onProgress)"]
-    
-    Schema --> RawTemplate
-    RawTemplate --> Merge
-    DefaultTemplate --> Merge
-    
-    Merge --> HasCustom
-    HasCustom -->|Yes| UseCustom
-    HasCustom -->|No| UseDefault
-    
-    UseCustom --> CompleteTemplate
-    UseDefault --> CompleteTemplate
-    
-    CompleteTemplate --> Params
-    Params --> Constructor
-```
+![Mermaid Diagram](./diagrams\37_ClientOptimizer_8.svg)
 
 All 11 template methods are resolved using this pattern, ensuring `ClientOptimizer` always receives a complete `IOptimizerTemplate` implementation.
 
@@ -530,32 +223,7 @@ Conversation history uses `MessageModel` from the shared model layer:
 
 The `dump` method includes try-catch error handling:
 
-```mermaid
-graph TB
-    Start["dump method"]
-    GetCode["await getCode(symbol)"]
-    TryBlock["try block"]
-    MkDir["mkdir(dir, recursive: true)"]
-    WriteFile["writeFile(filepath, code)"]
-    LogSuccess["logger.info('saved')"]
-    Callback["onDump callback"]
-    CatchBlock["catch block"]
-    LogError["logger.warn('failed')"]
-    Throw["throw error"]
-    Return["return void"]
-    
-    Start --> GetCode
-    GetCode --> TryBlock
-    TryBlock --> MkDir
-    MkDir --> WriteFile
-    WriteFile --> LogSuccess
-    LogSuccess --> Callback
-    Callback --> Return
-    
-    TryBlock -.->|Exception| CatchBlock
-    CatchBlock --> LogError
-    LogError --> Throw
-```
+![Mermaid Diagram](./diagrams\37_ClientOptimizer_9.svg)
 
 Errors during file operations are logged and re-thrown to the caller.
 

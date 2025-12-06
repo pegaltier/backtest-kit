@@ -29,48 +29,7 @@ The framework provides three orthogonal execution modes that differ in temporal 
 
 ## Mode Selection and Entry Points
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        BacktestUtils["BacktestUtils<br/>Backtest.run()<br/>Backtest.background()"]
-        LiveUtils["LiveUtils<br/>Live.run()<br/>Live.background()"]
-        WalkerUtils["WalkerUtils<br/>Walker.run()<br/>Walker.background()"]
-    end
-    
-    subgraph "Command Services"
-        BacktestCmd["BacktestCommandService<br/>run(symbol, context)"]
-        LiveCmd["LiveCommandService<br/>run(symbol, context)"]
-        WalkerCmd["WalkerCommandService<br/>run(symbol, context)"]
-    end
-    
-    subgraph "Public Logic Services"
-        BacktestPublic["BacktestLogicPublicService<br/>Validation + context setup"]
-        LivePublic["LiveLogicPublicService<br/>Validation + context setup"]
-        WalkerPublic["WalkerLogicPublicService<br/>Validation + context setup"]
-    end
-    
-    subgraph "Private Logic Services"
-        BacktestPrivate["BacktestLogicPrivateService<br/>Core execution loop"]
-        LivePrivate["LiveLogicPrivateService<br/>Core execution loop"]
-        WalkerPrivate["WalkerLogicPrivateService<br/>Core execution loop"]
-    end
-    
-    BacktestUtils -->|"delegates"| BacktestCmd
-    LiveUtils -->|"delegates"| LiveCmd
-    WalkerUtils -->|"delegates"| WalkerCmd
-    
-    BacktestCmd -->|"validates + delegates"| BacktestPublic
-    LiveCmd -->|"validates + delegates"| LivePublic
-    WalkerCmd -->|"validates + delegates"| WalkerPublic
-    
-    BacktestPublic -->|"sets context + delegates"| BacktestPrivate
-    LivePublic -->|"sets context + delegates"| LivePrivate
-    WalkerPublic -->|"sets context + delegates"| WalkerPrivate
-    
-    BacktestPrivate -->|"yields"| BacktestPublic
-    LivePrivate -->|"yields"| LivePublic
-    WalkerPrivate -->|"yields"| WalkerPublic
-```
+![Mermaid Diagram](./diagrams\06_Execution_Modes_0.svg)
 
 **Service Layering Pattern**
 
@@ -109,66 +68,7 @@ Backtest mode performs historical simulation by iterating through predefined tim
 
 ### Execution Flow
 
-```mermaid
-flowchart TB
-    Start["BacktestLogicPrivateService.run(symbol)"]
-    GetFrames["FrameGlobalService.getTimeframe()<br/>returns Date[]"]
-    InitLoop["i = 0<br/>while i < timeframes.length"]
-    
-    GetTime["when = timeframes[i]"]
-    EmitProgress["progressBacktestEmitter.next()<br/>processedFrames: i, totalFrames"]
-    
-    Tick["StrategyGlobalService.tick(symbol, when, backtest=true)"]
-    CheckAction{"result.action?"}
-    
-    ScheduledPath["action === 'scheduled'"]
-    GetCandlesScheduled["ExchangeGlobalService.getNextCandles()<br/>interval='1m'<br/>count=CC_SCHEDULE_AWAIT_MINUTES + minuteEstimatedTime"]
-    BacktestScheduled["StrategyGlobalService.backtest(symbol, candles, when, backtest=true)"]
-    SkipScheduled["Skip timeframes until closeTimestamp<br/>while timeframes[i] < closeTimestamp: i++"]
-    YieldScheduled["yield backtestResult"]
-    
-    OpenedPath["action === 'opened'"]
-    GetCandlesOpened["ExchangeGlobalService.getNextCandles()<br/>interval='1m'<br/>count=minuteEstimatedTime"]
-    BacktestOpened["StrategyGlobalService.backtest(symbol, candles, when, backtest=true)"]
-    SkipOpened["Skip timeframes until closeTimestamp<br/>while timeframes[i] < closeTimestamp: i++"]
-    YieldOpened["yield backtestResult"]
-    
-    IdlePath["action === 'idle' | 'active'"]
-    Increment["i++"]
-    
-    CheckDone{"i < timeframes.length?"}
-    FinalProgress["progressBacktestEmitter.next()<br/>progress=1.0"]
-    End["Complete"]
-    
-    Start --> GetFrames
-    GetFrames --> InitLoop
-    InitLoop --> GetTime
-    GetTime --> EmitProgress
-    EmitProgress --> Tick
-    Tick --> CheckAction
-    
-    CheckAction -->|"scheduled"| ScheduledPath
-    ScheduledPath --> GetCandlesScheduled
-    GetCandlesScheduled --> BacktestScheduled
-    BacktestScheduled --> SkipScheduled
-    SkipScheduled --> YieldScheduled
-    YieldScheduled --> CheckDone
-    
-    CheckAction -->|"opened"| OpenedPath
-    OpenedPath --> GetCandlesOpened
-    GetCandlesOpened --> BacktestOpened
-    BacktestOpened --> SkipOpened
-    SkipOpened --> YieldOpened
-    YieldOpened --> CheckDone
-    
-    CheckAction -->|"idle/active"| IdlePath
-    IdlePath --> Increment
-    Increment --> CheckDone
-    
-    CheckDone -->|"Yes"| GetTime
-    CheckDone -->|"No"| FinalProgress
-    FinalProgress --> End
-```
+![Mermaid Diagram](./diagrams\06_Execution_Modes_1.svg)
 
 **Skip-Ahead Optimization**
 
@@ -225,60 +125,7 @@ Live mode performs real-time trading by continuously polling the strategy with c
 
 ### Execution Flow
 
-```mermaid
-flowchart TB
-    Start["LiveLogicPrivateService.run(symbol)"]
-    InitLoop["previousEventTimestamp = null<br/>while (true)"]
-    
-    CreateDate["when = new Date()"]
-    RecordStart["tickStartTime = performance.now()"]
-    
-    Tick["StrategyGlobalService.tick(symbol, when, backtest=false)"]
-    CheckError{"tick() throws?"}
-    ErrorPath["Log error<br/>errorEmitter.next(error)<br/>sleep(TICK_TTL)"]
-    
-    LogResult["Log action type"]
-    EmitPerformance["performanceEmitter.next()<br/>metricType='live_tick'<br/>duration"]
-    
-    CheckAction{"result.action?"}
-    ActivePath["action === 'active'"]
-    IdlePath["action === 'idle'"]
-    ScheduledPath["action === 'scheduled'"]
-    OpenedClosedPath["action === 'opened' | 'closed'"]
-    
-    Sleep["sleep(TICK_TTL)"]
-    Yield["yield result"]
-    
-    LoopBack["Continue to next iteration"]
-    
-    Start --> InitLoop
-    InitLoop --> CreateDate
-    CreateDate --> RecordStart
-    RecordStart --> Tick
-    
-    Tick --> CheckError
-    CheckError -->|"Yes"| ErrorPath
-    CheckError -->|"No"| LogResult
-    ErrorPath --> LoopBack
-    
-    LogResult --> EmitPerformance
-    EmitPerformance --> CheckAction
-    
-    CheckAction -->|"active"| ActivePath
-    CheckAction -->|"idle"| IdlePath
-    CheckAction -->|"scheduled"| ScheduledPath
-    CheckAction -->|"opened/closed"| OpenedClosedPath
-    
-    ActivePath --> Sleep
-    IdlePath --> Sleep
-    ScheduledPath --> Sleep
-    
-    OpenedClosedPath --> Yield
-    Yield --> Sleep
-    
-    Sleep --> LoopBack
-    LoopBack --> CreateDate
-```
+![Mermaid Diagram](./diagrams\06_Execution_Modes_2.svg)
 
 **Tick Throttling and Sleep Pattern**
 
@@ -292,49 +139,7 @@ const TICK_TTL = 1 * 60 * 1_000 + 1; // 61 seconds
 
 ### Crash Recovery Architecture
 
-```mermaid
-graph TB
-    subgraph "Process Lifecycle"
-        Start["Process Start"]
-        Crash["Process Crash/Restart"]
-        Resume["Resume Execution"]
-    end
-    
-    subgraph "ClientStrategy"
-        WaitInit["waitForInit()<br/>Blocks until state loaded"]
-        Tick["tick()<br/>Check signal status"]
-        RestoreSignal["Restore active signal<br/>from _signal field"]
-    end
-    
-    subgraph "Persistence Adapters"
-        PersistSignal["PersistSignalAdapter<br/>Active signal state"]
-        PersistSchedule["PersistScheduleAdapter<br/>Scheduled signals"]
-        PersistRisk["PersistRiskAdapter<br/>Active positions"]
-    end
-    
-    subgraph "Storage Backend"
-        FileSystem["File System<br/>JSON files in .backtest-kit/"]
-    end
-    
-    Start -->|"First run"| Tick
-    Crash --> Resume
-    Resume -->|"Restart"| WaitInit
-    
-    WaitInit -->|"readValue()"| PersistSignal
-    WaitInit -->|"readValue()"| PersistSchedule
-    WaitInit -->|"readValue()"| PersistRisk
-    
-    PersistSignal -->|"load from"| FileSystem
-    PersistSchedule -->|"load from"| FileSystem
-    PersistRisk -->|"load from"| FileSystem
-    
-    PersistSignal -->|"restore"| RestoreSignal
-    RestoreSignal --> Tick
-    
-    Tick -->|"writeValue()"| PersistSignal
-    Tick -->|"writeValue()"| PersistSchedule
-    Tick -->|"writeValue()"| PersistRisk
-```
+![Mermaid Diagram](./diagrams\06_Execution_Modes_3.svg)
 
 **State Restoration Process**
 
@@ -383,79 +188,7 @@ Walker mode performs strategy comparison by executing multiple backtests sequent
 
 ### Execution Flow
 
-```mermaid
-flowchart TB
-    Start["WalkerLogicPrivateService.run(symbol, strategies[], metric, context)"]
-    GetSchema["WalkerSchemaService.get(walkerName)"]
-    InitVars["strategiesTested = 0<br/>bestMetric = null<br/>bestStrategy = null"]
-    
-    LoopStart["for strategyName of strategies"]
-    CallbackStart["walkerSchema.callbacks?.onStrategyStart()"]
-    
-    RunBacktest["BacktestLogicPublicService.run(symbol, {<br/>  strategyName,<br/>  exchangeName,<br/>  frameName<br/>})"]
-    
-    ResolveResults["await resolveDocuments(iterator)<br/>Collect all IStrategyBacktestResult[]"]
-    
-    CheckError{"backtest throws?"}
-    ErrorPath["Log error<br/>errorEmitter.next(error)<br/>walkerSchema.callbacks?.onStrategyError()<br/>continue to next strategy"]
-    
-    GetStats["BacktestMarkdownService.getData(symbol, strategyName)"]
-    ExtractMetric["metricValue = stats[metric]<br/>Validate not NaN/null/undefined"]
-    
-    CompareBest{"metricValue > bestMetric?"}
-    UpdateBest["bestMetric = metricValue<br/>bestStrategy = strategyName"]
-    
-    IncrementCount["strategiesTested++"]
-    
-    CreateContract["WalkerContract {<br/>  strategyName,<br/>  stats,<br/>  metricValue,<br/>  bestMetric,<br/>  bestStrategy,<br/>  strategiesTested,<br/>  totalStrategies<br/>}"]
-    
-    EmitProgress["progressWalkerEmitter.next()<br/>processedStrategies, progress"]
-    CallbackComplete["walkerSchema.callbacks?.onStrategyComplete()"]
-    
-    EmitWalker["walkerEmitter.next(walkerContract)"]
-    Yield["yield walkerContract"]
-    
-    CheckMoreStrategies{"More strategies?"}
-    
-    FinalResults["Build final results {<br/>  bestStrategy,<br/>  bestMetric,<br/>  bestStats<br/>}"]
-    CallbackDone["walkerSchema.callbacks?.onComplete()"]
-    EmitComplete["walkerCompleteSubject.next(finalResults)"]
-    End["Complete"]
-    
-    Start --> GetSchema
-    GetSchema --> InitVars
-    InitVars --> LoopStart
-    
-    LoopStart --> CallbackStart
-    CallbackStart --> RunBacktest
-    RunBacktest --> ResolveResults
-    
-    ResolveResults --> CheckError
-    CheckError -->|"Yes"| ErrorPath
-    CheckError -->|"No"| GetStats
-    ErrorPath --> CheckMoreStrategies
-    
-    GetStats --> ExtractMetric
-    ExtractMetric --> CompareBest
-    
-    CompareBest -->|"Yes"| UpdateBest
-    CompareBest -->|"No"| IncrementCount
-    UpdateBest --> IncrementCount
-    
-    IncrementCount --> CreateContract
-    CreateContract --> EmitProgress
-    EmitProgress --> CallbackComplete
-    CallbackComplete --> EmitWalker
-    EmitWalker --> Yield
-    
-    Yield --> CheckMoreStrategies
-    CheckMoreStrategies -->|"Yes"| LoopStart
-    CheckMoreStrategies -->|"No"| FinalResults
-    
-    FinalResults --> CallbackDone
-    CallbackDone --> EmitComplete
-    EmitComplete --> End
-```
+![Mermaid Diagram](./diagrams\06_Execution_Modes_4.svg)
 
 **Metric Extraction and Comparison**
 
@@ -500,61 +233,7 @@ const isBetter =
 
 All three execution modes share the same core strategy execution framework, differing only in temporal progression and result aggregation:
 
-```mermaid
-graph TB
-    subgraph "Execution Modes"
-        BacktestMode["Backtest Mode<br/>BacktestLogicPrivateService"]
-        LiveMode["Live Mode<br/>LiveLogicPrivateService"]
-        WalkerMode["Walker Mode<br/>WalkerLogicPrivateService"]
-    end
-    
-    subgraph "Shared Strategy Framework"
-        StrategyGlobal["StrategyGlobalService<br/>Context injection wrapper"]
-        StrategyConn["StrategyConnectionService<br/>Memoized ClientStrategy instances"]
-        ClientStrategy["ClientStrategy<br/>tick(), backtest(), stop()"]
-    end
-    
-    subgraph "Shared Data Access"
-        ExchangeGlobal["ExchangeGlobalService<br/>Context injection wrapper"]
-        ExchangeConn["ExchangeConnectionService<br/>Memoized ClientExchange instances"]
-        ClientExchange["ClientExchange<br/>getCandles(), getNextCandles()"]
-    end
-    
-    subgraph "Shared Risk Management"
-        RiskGlobal["RiskGlobalService<br/>Context injection wrapper"]
-        RiskConn["RiskConnectionService<br/>Memoized ClientRisk instances"]
-        ClientRisk["ClientRisk<br/>checkSignal(), addSignal()"]
-    end
-    
-    subgraph "Mode-Specific Features"
-        FrameGen["FrameGlobalService<br/>Timeframe generation<br/>(Backtest only)"]
-        Persist["PersistSignalAdapter<br/>PersistScheduleAdapter<br/>PersistRiskAdapter<br/>(Live only)"]
-        Metrics["BacktestMarkdownService<br/>Statistics calculation<br/>(Walker only)"]
-    end
-    
-    BacktestMode -->|"uses"| StrategyGlobal
-    LiveMode -->|"uses"| StrategyGlobal
-    WalkerMode -->|"delegates to"| BacktestMode
-    
-    StrategyGlobal -->|"manages"| StrategyConn
-    StrategyConn -->|"creates"| ClientStrategy
-    
-    ClientStrategy -->|"fetches data from"| ExchangeGlobal
-    ExchangeGlobal -->|"manages"| ExchangeConn
-    ExchangeConn -->|"creates"| ClientExchange
-    
-    ClientStrategy -->|"validates with"| RiskGlobal
-    RiskGlobal -->|"manages"| RiskConn
-    RiskConn -->|"creates"| ClientRisk
-    
-    BacktestMode -->|"uses"| FrameGen
-    BacktestMode -->|"uses"| ExchangeGlobal
-    
-    LiveMode -->|"uses"| Persist
-    LiveMode -->|"uses"| ExchangeGlobal
-    
-    WalkerMode -->|"uses"| Metrics
-```
+![Mermaid Diagram](./diagrams\06_Execution_Modes_5.svg)
 
 **Polymorphic Design Pattern**
 
@@ -572,42 +251,7 @@ The `backtest` boolean parameter in execution context distinguishes between back
 
 ## Data Access Patterns by Mode
 
-```mermaid
-graph LR
-    subgraph "Backtest Mode Data Flow"
-        BT_Tick["tick(when=timeframe[i])"]
-        BT_GetCandles["getCandles()<br/>Fetch historical backwards"]
-        BT_GetNext["getNextCandles()<br/>Fetch historical forwards"]
-        BT_Signal["Signal generation"]
-        BT_Backtest["backtest(candles)<br/>Fast simulation"]
-        
-        BT_Tick -->|"ExecutionContext.when"| BT_GetCandles
-        BT_Signal -->|"Signal opened"| BT_GetNext
-        BT_GetNext -->|"Future candles"| BT_Backtest
-    end
-    
-    subgraph "Live Mode Data Flow"
-        Live_Tick["tick(when=new Date())"]
-        Live_GetCandles["getCandles()<br/>Fetch recent backwards"]
-        Live_Signal["Signal generation"]
-        Live_Monitor["Real-time monitoring"]
-        
-        Live_Tick -->|"ExecutionContext.when"| Live_GetCandles
-        Live_Signal -->|"Signal opened"| Live_Monitor
-        Live_Monitor -->|"Continuous"| Live_GetCandles
-    end
-    
-    subgraph "Walker Mode Data Flow"
-        Walker_Loop["Strategy iteration"]
-        Walker_Backtest["BacktestLogicPublicService.run()"]
-        Walker_Stats["BacktestMarkdownService.getData()"]
-        Walker_Compare["Metric comparison"]
-        
-        Walker_Loop -->|"Each strategy"| Walker_Backtest
-        Walker_Backtest -->|"Complete results"| Walker_Stats
-        Walker_Stats -->|"Extract metric"| Walker_Compare
-    end
-```
+![Mermaid Diagram](./diagrams\06_Execution_Modes_6.svg)
 
 **getCandles() vs getNextCandles()**
 

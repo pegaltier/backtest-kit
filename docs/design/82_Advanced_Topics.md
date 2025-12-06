@@ -26,42 +26,7 @@ The `IExchangeSchema` interface defines the contract for custom exchange impleme
 
 ### Integration Architecture
 
-```mermaid
-graph TB
-    subgraph "User Code"
-        CustomExchange["Custom Exchange Implementation<br/>implements IExchangeSchema"]
-        AddExchange["addExchange()<br/>Registration Function"]
-    end
-    
-    subgraph "Schema Registry"
-        ExchangeSchemaService["ExchangeSchemaService<br/>Map<ExchangeName, IExchangeSchema>"]
-    end
-    
-    subgraph "Connection Layer"
-        ExchangeConnectionService["ExchangeConnectionService<br/>getExchange(exchangeName)"]
-        ClientExchange["ClientExchange<br/>Business Logic Implementation"]
-    end
-    
-    subgraph "Data Sources"
-        RestAPI["REST API<br/>(Binance, Coinbase)"]
-        Database["Database<br/>(PostgreSQL, MongoDB)"]
-        Files["CSV/JSON Files<br/>(Historical Data)"]
-        WebSocket["WebSocket Streams<br/>(Real-time)"]
-    end
-    
-    CustomExchange -->|implements| AddExchange
-    AddExchange -->|register| ExchangeSchemaService
-    ExchangeConnectionService -->|lookup| ExchangeSchemaService
-    ExchangeConnectionService -->|create| ClientExchange
-    
-    CustomExchange -.->|fetch data| RestAPI
-    CustomExchange -.->|query| Database
-    CustomExchange -.->|read| Files
-    CustomExchange -.->|subscribe| WebSocket
-    
-    ClientExchange -->|VWAP calculation| ClientExchange
-    ClientExchange -->|precision formatting| ClientExchange
-```
+![Mermaid Diagram](./diagrams\82_Advanced_Topics_0.svg)
 
 **Sources:** [types.d.ts:137-171](), [src/index.ts:1-56]()
 
@@ -186,54 +151,7 @@ The default persistence implementation uses atomic file writes to local disk. Cu
 
 ### Persistence Architecture
 
-```mermaid
-graph TB
-    subgraph "Strategy Layer"
-        ClientStrategy["ClientStrategy<br/>Signal Lifecycle Manager"]
-    end
-    
-    subgraph "Persistence Adapter Layer"
-        PersistSignalAdaper["PersistSignalAdaper<br/>Global Singleton"]
-        UsePersistSignalAdapter["usePersistSignalAdapter(Ctor)<br/>Register Custom Adapter"]
-    end
-    
-    subgraph "Base Persistence"
-        PersistBase["PersistBase<br/>Abstract Base Class"]
-        FileSystem["Default Implementation<br/>Atomic File Writes"]
-    end
-    
-    subgraph "Custom Implementations"
-        RedisAdapter["RedisPersist<br/>extends PersistBase"]
-        PostgresAdapter["PostgresPersist<br/>extends PersistBase"]
-        S3Adapter["S3Persist<br/>extends PersistBase"]
-        MongoAdapter["MongoPersist<br/>extends PersistBase"]
-    end
-    
-    subgraph "Storage Systems"
-        Redis["Redis<br/>In-Memory Cache"]
-        Postgres["PostgreSQL<br/>Relational DB"]
-        S3["AWS S3<br/>Object Storage"]
-        MongoDB["MongoDB<br/>Document DB"]
-    end
-    
-    ClientStrategy -->|readSignalData| PersistSignalAdaper
-    ClientStrategy -->|writeSignalData| PersistSignalAdaper
-    
-    UsePersistSignalAdapter -->|register| PersistSignalAdaper
-    PersistSignalAdaper -->|factory| PersistBase
-    
-    PersistBase <-.->|default| FileSystem
-    
-    RedisAdapter -.->|extends| PersistBase
-    PostgresAdapter -.->|extends| PersistBase
-    S3Adapter -.->|extends| PersistBase
-    MongoAdapter -.->|extends| PersistBase
-    
-    RedisAdapter -->|commands| Redis
-    PostgresAdapter -->|SQL queries| Postgres
-    S3Adapter -->|API calls| S3
-    MongoAdapter -->|queries| MongoDB
-```
+![Mermaid Diagram](./diagrams\82_Advanced_Topics_1.svg)
 
 **Sources:** [types.d.ts:895-1125](), [README.md:676-690]()
 
@@ -437,38 +355,7 @@ Multi-symbol strategies execute the same trading logic across multiple symbols s
 
 ### Execution Patterns
 
-```mermaid
-graph TB
-    subgraph "Isolated State Pattern"
-        direction LR
-        Strategy1["Strategy Instance 1<br/>(BTCUSDT)"]
-        Strategy2["Strategy Instance 2<br/>(ETHUSDT)"]
-        Strategy3["Strategy Instance 3<br/>(SOLUSDT)"]
-        
-        Persist1["Persistence<br/>my-strategy:BTCUSDT"]
-        Persist2["Persistence<br/>my-strategy:ETHUSDT"]
-        Persist3["Persistence<br/>my-strategy:SOLUSDT"]
-        
-        Strategy1 --> Persist1
-        Strategy2 --> Persist2
-        Strategy3 --> Persist3
-    end
-    
-    subgraph "Shared State Pattern"
-        direction TB
-        SharedMemory["Shared Memory State<br/>Map<symbol, ISignalRow>"]
-        
-        StrategyA["Strategy Instance A<br/>(BTCUSDT)"]
-        StrategyB["Strategy Instance B<br/>(ETHUSDT)"]
-        StrategyC["Strategy Instance C<br/>(SOLUSDT)"]
-        
-        StrategyA --> SharedMemory
-        StrategyB --> SharedMemory
-        StrategyC --> SharedMemory
-        
-        SharedMemory --> PortfolioPersist["Portfolio Persistence<br/>my-strategy:portfolio"]
-    end
-```
+![Mermaid Diagram](./diagrams\82_Advanced_Topics_2.svg)
 
 **Sources:** [README.md:693-715]()
 

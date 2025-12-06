@@ -53,36 +53,7 @@ Each `riskName` creates an **isolated risk profile** with its own:
 
 ### Isolation Mechanism
 
-```mermaid
-graph TB
-    subgraph "Risk Profile: conservative"
-        Risk1["ClientRisk Instance<br/>(memoized by riskName)"]
-        Positions1["Active Positions Map<br/>strategy1:BTCUSDT<br/>strategy2:ETHUSDT"]
-        Persist1["Persistence<br/>risk-conservative.json"]
-    end
-    
-    subgraph "Risk Profile: aggressive"
-        Risk2["ClientRisk Instance<br/>(memoized by riskName)"]
-        Positions2["Active Positions Map<br/>strategy3:BNBUSDT"]
-        Persist2["Persistence<br/>risk-aggressive.json"]
-    end
-    
-    Strategy1["Strategy: momentum-1<br/>riskName: conservative"]
-    Strategy2["Strategy: momentum-2<br/>riskName: conservative"]
-    Strategy3["Strategy: scalper<br/>riskName: aggressive"]
-    
-    Strategy1 --> Risk1
-    Strategy2 --> Risk1
-    Strategy3 --> Risk2
-    
-    Risk1 --> Positions1
-    Risk1 --> Persist1
-    Risk2 --> Positions2
-    Risk2 --> Persist2
-    
-    style Risk1 fill:#f9f9f9
-    style Risk2 fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\66_Risk_Profiles_0.svg)
 
 **Diagram: Risk Profile Isolation Architecture**
 
@@ -182,45 +153,7 @@ addRisk({
 
 ## Validation Execution Flow
 
-```mermaid
-sequenceDiagram
-    participant Strategy as ClientStrategy
-    participant RiskConn as RiskConnectionService
-    participant ClientRisk as ClientRisk
-    participant Persist as PersistRiskAdapter
-    
-    Note over Strategy: Before opening signal
-    
-    Strategy->>RiskConn: checkSignal(params, {riskName})
-    RiskConn->>ClientRisk: checkSignal(params)
-    
-    alt First use
-        ClientRisk->>ClientRisk: waitForInit() [singleshot]
-        ClientRisk->>Persist: readPositionData(riskName)
-        Persist-->>ClientRisk: _activePositions Map
-    end
-    
-    ClientRisk->>ClientRisk: Build IRiskValidationPayload<br/>{...params, activePositionCount, activePositions}
-    
-    loop For each validation
-        ClientRisk->>ClientRisk: DO_VALIDATION_FN(validation, payload)
-        alt Validation throws error
-            ClientRisk-->>Strategy: return false (rejected)
-            Note over Strategy: Signal rejected
-        end
-    end
-    
-    alt All validations pass
-        ClientRisk->>ClientRisk: callbacks?.onAllowed(symbol, params)
-        ClientRisk-->>Strategy: return true (allowed)
-        Strategy->>RiskConn: addSignal(symbol, context)
-        RiskConn->>ClientRisk: addSignal(symbol, context)
-        ClientRisk->>ClientRisk: _activePositions.set(key, position)
-        ClientRisk->>Persist: writePositionData(positions, riskName)
-    else Any validation fails
-        ClientRisk->>ClientRisk: callbacks?.onRejected(symbol, params)
-    end
-```
+![Mermaid Diagram](./diagrams\66_Risk_Profiles_1.svg)
 
 **Diagram: Risk Validation and Position Tracking Flow**
 
@@ -249,39 +182,7 @@ This allows:
 
 ### Position Lifecycle Operations
 
-```mermaid
-stateDiagram-v2
-    [*] --> NeedFetch: ClientRisk created
-    
-    NeedFetch --> Initialized: waitForInit() called
-    
-    state Initialized {
-        [*] --> EmptyMap: No persisted data
-        [*] --> LoadedMap: Found persisted data
-        
-        EmptyMap --> Tracking
-        LoadedMap --> Tracking
-        
-        state Tracking {
-            [*] --> CheckSignal: checkSignal(params)
-            CheckSignal --> RunValidations: Build payload
-            RunValidations --> Allowed: Validations pass
-            RunValidations --> Rejected: Validation throws
-            
-            Allowed --> AddSignal: Signal opened
-            AddSignal --> UpdateMap: map.set(key, position)
-            UpdateMap --> Persist: writePositionData()
-            
-            Persist --> [*]
-            Rejected --> [*]
-        }
-        
-        Tracking --> RemoveSignal: Signal closed
-        RemoveSignal --> DeleteKey: map.delete(key)
-        DeleteKey --> PersistAgain: writePositionData()
-        PersistAgain --> Tracking
-    }
-```
+![Mermaid Diagram](./diagrams\66_Risk_Profiles_2.svg)
 
 **Diagram: Position Tracking State Machine**
 
@@ -306,33 +207,7 @@ interface IRiskActivePosition {
 
 ### Shared Risk Profile Example
 
-```mermaid
-graph LR
-    subgraph "Execution Context"
-        Strategy1["Strategy: macd-long<br/>riskName: shared-5"]
-        Strategy2["Strategy: rsi-long<br/>riskName: shared-5"]
-        Strategy3["Strategy: macd-short<br/>riskName: shared-5"]
-    end
-    
-    subgraph "Risk Profile: shared-5"
-        ClientRisk["ClientRisk<br/>(memoized instance)"]
-        Validation["Validation:<br/>if (count >= 5) throw"]
-        Positions["Active Positions:<br/>macd-long:BTCUSDT<br/>rsi-long:ETHUSDT<br/>macd-short:BNBUSDT<br/>rsi-long:SOLUSDT"]
-    end
-    
-    Strategy1 --> ClientRisk
-    Strategy2 --> ClientRisk
-    Strategy3 --> ClientRisk
-    
-    ClientRisk --> Validation
-    ClientRisk --> Positions
-    
-    NewSignal["Strategy1 attempts<br/>ADAUSDT signal"]
-    NewSignal -.-> |"checkSignal()"| ClientRisk
-    
-    Result["Result: REJECTED<br/>(count=4, limit=5 would exceed)"]
-    ClientRisk -.-> Result
-```
+![Mermaid Diagram](./diagrams\66_Risk_Profiles_3.svg)
 
 **Diagram: Cross-Strategy Position Limit Enforcement**
 
@@ -384,42 +259,7 @@ PersistRiskAdapter.readPositionData(riskName);
 
 ### Initialization Pattern
 
-```mermaid
-sequenceDiagram
-    participant App as Application
-    participant ClientRisk as ClientRisk
-    participant Singleshot as waitForInit [singleshot]
-    participant Adapter as PersistRiskAdapter
-    participant Disk as File System
-    
-    App->>ClientRisk: new ClientRisk(params)
-    Note over ClientRisk: _activePositions = POSITION_NEED_FETCH
-    
-    App->>ClientRisk: checkSignal(params)
-    
-    alt First call
-        ClientRisk->>Singleshot: waitForInit()
-        Singleshot->>Adapter: readPositionData(riskName)
-        Adapter->>Disk: Read risk-{riskName}.json
-        alt File exists
-            Disk-->>Adapter: positions array
-            Adapter-->>Singleshot: positions
-            Singleshot->>ClientRisk: _activePositions = new Map(positions)
-        else File not found
-            Disk-->>Adapter: Error
-            Adapter-->>Singleshot: [] (empty array)
-            Singleshot->>ClientRisk: _activePositions = new Map([])
-        end
-    end
-    
-    ClientRisk->>ClientRisk: Use _activePositions for validation
-    
-    Note over App: Later: position added/removed
-    App->>ClientRisk: addSignal() or removeSignal()
-    ClientRisk->>ClientRisk: Update _activePositions Map
-    ClientRisk->>Adapter: writePositionData(Array.from(map), riskName)
-    Adapter->>Disk: Atomic write to risk-{riskName}.json
-```
+![Mermaid Diagram](./diagrams\66_Risk_Profiles_4.svg)
 
 **Diagram: Crash Recovery Initialization Flow**
 

@@ -19,25 +19,7 @@ The framework wraps these implementations in `ClientExchange` which adds VWAP ca
 
 ## Exchange Registration Flow
 
-```mermaid
-graph TB
-    User["User Code<br/>addExchange(schema)"]
-    AddFn["function/add.ts<br/>addExchange()"]
-    SchemaService["ExchangeSchemaService<br/>ToolRegistry pattern"]
-    ConnService["ExchangeConnectionService<br/>getExchange() memoized"]
-    ClientExchange["ClientExchange<br/>Wraps IExchangeSchema"]
-    Strategy["Strategy Code<br/>getCandles(symbol)"]
-    
-    User -->|"IExchangeSchema"| AddFn
-    AddFn -->|"addTool(exchangeName)"| SchemaService
-    Strategy -->|"Reads context"| ConnService
-    ConnService -->|"getTool(exchangeName)"| SchemaService
-    ConnService -->|"Instantiates"| ClientExchange
-    ClientExchange -->|"Delegates to"| User
-    
-    note1["Memoized:<br/>One ClientExchange<br/>per exchangeName"]
-    ConnService -.-> note1
-```
+![Mermaid Diagram](./diagrams\83_Custom_Exchange_Integration_0.svg)
 
 **Diagram: Exchange schema registration and instantiation flow**
 
@@ -181,33 +163,7 @@ addExchange({
 
 ## ClientExchange Time-Travel Wrapper
 
-```mermaid
-sequenceDiagram
-    participant Strategy as "Strategy.tick()"
-    participant ClientExchange as "ClientExchange"
-    participant ExecCtx as "ExecutionContextService"
-    participant UserSchema as "User getCandles()"
-    participant DataSource as "Data Source"
-    
-    Strategy->>ClientExchange: getCandles(symbol, "1m", 100)
-    ClientExchange->>ExecCtx: Get context
-    ExecCtx-->>ClientExchange: {when: Date, backtest: true}
-    
-    Note over ClientExchange: Calculate time range<br/>since = when - (100 * 1min)
-    
-    ClientExchange->>UserSchema: getCandles(symbol, "1m", since, 100)
-    UserSchema->>DataSource: Fetch from source
-    DataSource-->>UserSchema: Raw candles
-    UserSchema-->>ClientExchange: ICandleData[]
-    
-    Note over ClientExchange: Filter: since <= ts <= when
-    
-    alt Has callback
-        ClientExchange->>UserSchema: callbacks.onCandleData(...)
-    end
-    
-    ClientExchange-->>Strategy: Filtered candles
-```
+![Mermaid Diagram](./diagrams\83_Custom_Exchange_Integration_1.svg)
 
 **Diagram: ClientExchange wraps user schema with time-aware fetching**
 
@@ -310,25 +266,7 @@ addExchange({
 
 `ClientExchange` implements `getAveragePrice()` automatically—no user implementation required. Used by strategies for current market price.
 
-```mermaid
-graph LR
-    Strategy["strategy.getSignal()"]
-    GetAvgPrice["getAveragePrice(symbol)"]
-    GetCandles["ClientExchange<br/>getCandles(symbol, '1m', 5)"]
-    UserSchema["User schema<br/>getCandles()"]
-    Calculate["Calculate VWAP:<br/>(Σ(TP × Vol)) / Σ(Vol)"]
-    Return["Return: number"]
-    
-    Strategy --> GetAvgPrice
-    GetAvgPrice --> GetCandles
-    GetCandles --> UserSchema
-    UserSchema --> Calculate
-    Calculate --> Return
-    Return --> Strategy
-    
-    note1["Typical Price (TP):<br/>(high + low + close) / 3"]
-    Calculate -.-> note1
-```
+![Mermaid Diagram](./diagrams\83_Custom_Exchange_Integration_2.svg)
 
 **Diagram: getAveragePrice() uses last 5 one-minute candles**
 
@@ -351,29 +289,7 @@ Where `Typical Price = (High + Low + Close) / 3`
 
 **Both methods call the same `schema.getCandles()` with different time ranges.**
 
-```mermaid
-graph LR
-    ContextWhen["ExecutionContext<br/>when: Date"]
-    
-    subgraph Backwards["getCandles()"]
-        B1["since = when - (interval × limit)"]
-        B2["schema.getCandles(symbol, interval, since, limit)"]
-        B3["Filter: since <= ts <= when"]
-    end
-    
-    subgraph Forwards["getNextCandles()"]
-        F1["since = when"]
-        F2["schema.getCandles(symbol, interval, since, limit)"]
-        F3["Filter: when <= ts <= endTime"]
-    end
-    
-    ContextWhen --> B1
-    ContextWhen --> F1
-    B1 --> B2
-    F1 --> F2
-    B2 --> B3
-    F2 --> F3
-```
+![Mermaid Diagram](./diagrams\83_Custom_Exchange_Integration_3.svg)
 
 **Diagram: Bidirectional candle fetching in backtest mode**
 
@@ -413,26 +329,7 @@ Logs warnings for data gaps or quality issues.
 
 ## Service Layer Integration
 
-```mermaid
-graph TB
-    AddExchange["addExchange(schema)"]
-    SchemaService["ExchangeSchemaService<br/>addTool(exchangeName, schema)"]
-    ConnService["ExchangeConnectionService<br/>getExchange(exchangeName)"]
-    MethodCtx["MethodContextService<br/>{exchangeName, strategyName}"]
-    ExecCtx["ExecutionContextService<br/>{when, backtest, symbol}"]
-    ClientExchange["ClientExchange instance"]
-    UserImpl["User IExchangeSchema"]
-    
-    AddExchange --> SchemaService
-    ConnService --> SchemaService
-    ConnService --> MethodCtx
-    ConnService --> ExecCtx
-    ConnService -->|"new ClientExchange(schema)"| ClientExchange
-    ClientExchange -->|"Delegates to"| UserImpl
-    
-    note1["Memoized:<br/>One instance per exchangeName"]
-    ConnService -.-> note1
-```
+![Mermaid Diagram](./diagrams\83_Custom_Exchange_Integration_4.svg)
 
 **Diagram: Exchange schema flows through service layers**
 

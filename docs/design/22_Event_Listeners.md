@@ -22,77 +22,7 @@ Sources: [src/function/event.ts:1-653](), [src/config/emitters.ts:1-81]()
 
 ## Event Emitter Architecture
 
-```mermaid
-graph TB
-    subgraph "Subject Instances (emitters.ts)"
-        signalEmitter["signalEmitter<br/>Subject&lt;IStrategyTickResult&gt;"]
-        signalLiveEmitter["signalLiveEmitter<br/>Subject&lt;IStrategyTickResult&gt;"]
-        signalBacktestEmitter["signalBacktestEmitter<br/>Subject&lt;IStrategyTickResult&gt;"]
-        errorEmitter["errorEmitter<br/>Subject&lt;Error&gt;"]
-        doneLiveSubject["doneLiveSubject<br/>Subject&lt;DoneContract&gt;"]
-        doneBacktestSubject["doneBacktestSubject<br/>Subject&lt;DoneContract&gt;"]
-        doneWalkerSubject["doneWalkerSubject<br/>Subject&lt;DoneContract&gt;"]
-        progressEmitter["progressEmitter<br/>Subject&lt;ProgressContract&gt;"]
-        performanceEmitter["performanceEmitter<br/>Subject&lt;PerformanceContract&gt;"]
-        walkerEmitter["walkerEmitter<br/>Subject&lt;WalkerContract&gt;"]
-        walkerCompleteSubject["walkerCompleteSubject<br/>Subject&lt;IWalkerResults&gt;"]
-        validationSubject["validationSubject<br/>Subject&lt;Error&gt;"]
-    end
-    
-    subgraph "Listener Functions (event.ts)"
-        listenSignal["listenSignal()"]
-        listenSignalLive["listenSignalLive()"]
-        listenSignalBacktest["listenSignalBacktest()"]
-        listenError["listenError()"]
-        listenDoneLive["listenDoneLive()"]
-        listenDoneBacktest["listenDoneBacktest()"]
-        listenDoneWalker["listenDoneWalker()"]
-        listenProgress["listenProgress()"]
-        listenPerformance["listenPerformance()"]
-        listenWalker["listenWalker()"]
-        listenWalkerComplete["listenWalkerComplete()"]
-        listenValidation["listenValidation()"]
-    end
-    
-    subgraph "Event Producers"
-        ClientStrategy["ClientStrategy<br/>tick() / backtest()"]
-        LiveLogic["LiveLogicPrivateService"]
-        BacktestLogic["BacktestLogicPrivateService"]
-        WalkerLogic["WalkerLogicPrivateService"]
-        ClientRisk["ClientRisk<br/>checkSignal()"]
-    end
-    
-    ClientStrategy --> signalEmitter
-    ClientStrategy --> signalLiveEmitter
-    ClientStrategy --> signalBacktestEmitter
-    
-    LiveLogic --> doneLiveSubject
-    BacktestLogic --> doneBacktestSubject
-    BacktestLogic --> progressEmitter
-    BacktestLogic --> performanceEmitter
-    WalkerLogic --> doneWalkerSubject
-    WalkerLogic --> walkerEmitter
-    WalkerLogic --> walkerCompleteSubject
-    
-    ClientRisk --> validationSubject
-    
-    LiveLogic --> errorEmitter
-    BacktestLogic --> errorEmitter
-    WalkerLogic --> errorEmitter
-    
-    signalEmitter --> listenSignal
-    signalLiveEmitter --> listenSignalLive
-    signalBacktestEmitter --> listenSignalBacktest
-    errorEmitter --> listenError
-    doneLiveSubject --> listenDoneLive
-    doneBacktestSubject --> listenDoneBacktest
-    doneWalkerSubject --> listenDoneWalker
-    progressEmitter --> listenProgress
-    performanceEmitter --> listenPerformance
-    walkerEmitter --> listenWalker
-    walkerCompleteSubject --> listenWalkerComplete
-    validationSubject --> listenValidation
-```
+![Mermaid Diagram](./diagrams\22_Event_Listeners_0.svg)
 
 **Event Flow**: Event producers (ClientStrategy, logic services, ClientRisk) emit events to Subject instances. Listener functions subscribe to these Subjects and forward events to user callbacks wrapped in `queued()` for sequential processing.
 
@@ -227,25 +157,7 @@ Sources: [src/function/event.ts:201-207]()
 
 ## Signal Event Types
 
-```mermaid
-graph LR
-    subgraph "IStrategyTickResult Union"
-        Idle["IStrategyTickResultIdle<br/>action: 'idle'<br/>signal: null"]
-        Scheduled["IStrategyTickResultScheduled<br/>action: 'scheduled'<br/>signal: IScheduledSignalRow"]
-        Opened["IStrategyTickResultOpened<br/>action: 'opened'<br/>signal: ISignalRow"]
-        Active["IStrategyTickResultActive<br/>action: 'active'<br/>signal: ISignalRow"]
-        Closed["IStrategyTickResultClosed<br/>action: 'closed'<br/>signal: ISignalRow<br/>pnl: IStrategyPnL"]
-        Cancelled["IStrategyTickResultCancelled<br/>action: 'cancelled'<br/>signal: IScheduledSignalRow"]
-    end
-    
-    Idle -->|"getSignal returns null"| Idle
-    Idle -->|"priceOpen specified"| Scheduled
-    Idle -->|"priceOpen omitted"| Opened
-    Scheduled -->|"price activates"| Opened
-    Scheduled -->|"timeout / SL hit"| Cancelled
-    Opened -->|"monitoring started"| Active
-    Active -->|"TP/SL/time_expired"| Closed
-```
+![Mermaid Diagram](./diagrams\22_Event_Listeners_1.svg)
 
 **Discriminated Union**: Use `event.action` for type-safe handling. Each action type has different properties available.
 
@@ -608,35 +520,7 @@ Sources: [src/function/event.ts:649-652]()
 
 All event listener functions wrap user callbacks with `queued()` from `functools-kit` to ensure sequential async processing. This prevents concurrent execution of callbacks even if they are async functions.
 
-```mermaid
-graph TB
-    subgraph "Event Emission (Producer)"
-        Emit1["Event 1 emitted"]
-        Emit2["Event 2 emitted"]
-        Emit3["Event 3 emitted"]
-    end
-    
-    subgraph "Subject Subscription"
-        Subject["Subject.subscribe(<br/>queued(callback))"]
-    end
-    
-    subgraph "Queued Processing (Consumer)"
-        Queue["Internal Queue"]
-        Process1["Process Event 1"]
-        Process2["Process Event 2"]
-        Process3["Process Event 3"]
-    end
-    
-    Emit1 --> Subject
-    Emit2 --> Subject
-    Emit3 --> Subject
-    
-    Subject --> Queue
-    
-    Queue -->|"Sequential"| Process1
-    Process1 -->|"await complete"| Process2
-    Process2 -->|"await complete"| Process3
-```
+![Mermaid Diagram](./diagrams\22_Event_Listeners_2.svg)
 
 **Key Behavior**:
 - Events arrive in order at Subject

@@ -31,50 +31,7 @@ Signal state is persisted at two critical moments to ensure crash safety:
 
 **Diagram: When Persistence Occurs**
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant ClientStrategy
-    participant Persist["PersistSignalAdapter"]
-    participant Disk["File System"]
-    
-    Note over ClientStrategy: No pending signal
-    
-    User->>ClientStrategy: tick()
-    ClientStrategy->>ClientStrategy: getSignal() returns new signal
-    ClientStrategy->>ClientStrategy: Validate signal
-    
-    rect rgb(240, 240, 240)
-        Note over ClientStrategy,Disk: PERSISTENCE POINT 1: Signal Opened
-        ClientStrategy->>Persist: writeSignalData(signal)
-        Persist->>Disk: Atomic file write
-        Disk-->>Persist: Write complete
-        Persist-->>ClientStrategy: State saved
-    end
-    
-    ClientStrategy-->>User: yield { action: "opened" }
-    
-    Note over ClientStrategy: Signal now active
-    
-    User->>ClientStrategy: tick() x N times
-    ClientStrategy->>ClientStrategy: Monitor TP/SL/time
-    ClientStrategy-->>User: yield { action: "active" }
-    
-    Note over ClientStrategy: TP/SL/time condition met
-    
-    User->>ClientStrategy: tick()
-    ClientStrategy->>ClientStrategy: Calculate PNL
-    
-    rect rgb(240, 240, 240)
-        Note over ClientStrategy,Disk: PERSISTENCE POINT 2: Signal Closed
-        ClientStrategy->>Persist: writeSignalData(null)
-        Persist->>Disk: Atomic file write (clear)
-        Disk-->>Persist: Write complete
-        Persist-->>ClientStrategy: State cleared
-    end
-    
-    ClientStrategy-->>User: yield { action: "closed", pnl }
-```
+![Mermaid Diagram](./diagrams\58_Crash_Recovery_0.svg)
 
 **Key Principle**: State is persisted **before** yielding the result to the user. This ensures the disk state is always consistent with what the user observes.
 
@@ -88,31 +45,7 @@ The `setPendingSignal()` method centralizes all state changes and ensures atomic
 
 **Diagram: setPendingSignal Flow**
 
-```mermaid
-flowchart TD
-    A["setPendingSignal(signal)"] --> B{"Backtest mode?"}
-    B -->|Yes| C["Set _pendingSignal in memory"]
-    B -->|No| D["Set _pendingSignal in memory"]
-    
-    C --> E[Return immediately]
-    D --> F["PersistSignalAdapter.writeSignalData()"]
-    
-    F --> G["Get memoized storage instance"]
-    G --> H["Construct ISignalData object"]
-    H --> I["PersistBase.writeValue()"]
-    
-    I --> J["Generate file path<br/>./storage/signals/{strategy}/{symbol}.json"]
-    J --> K["Serialize to JSON string"]
-    K --> L["writeFileAtomic()"]
-    
-    L --> M["Write to temp file"]
-    M --> N["Atomic rename to final path"]
-    N --> O[Return success]
-    
-    style F fill:#f9f9f9
-    style L fill:#f9f9f9
-    style N fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\58_Crash_Recovery_1.svg)
 
 The atomic write prevents corruption even if the process crashes mid-write. The temp file + rename pattern ensures the final file is either complete or doesn't exist.
 
@@ -126,47 +59,7 @@ When a live trading process restarts, `waitForInit()` restores the signal state 
 
 **Diagram: State Recovery Flow**
 
-```mermaid
-flowchart TD
-    A["Live.run() starts"] --> B["ClientStrategy created"]
-    B --> C["strategy.waitForInit()"]
-    
-    C --> D{"Backtest mode?"}
-    D -->|Yes| E["Skip recovery<br/>return immediately"]
-    D -->|No| F["PersistSignalAdapter.readSignalData()"]
-    
-    F --> G["Get storage instance for strategy"]
-    G --> H["Compute file path<br/>{strategy}/{symbol}.json"]
-    H --> I{"File exists?"}
-    
-    I -->|No| J["Return null<br/>No pending signal"]
-    I -->|Yes| K["Read file from disk"]
-    
-    K --> L["Parse JSON to ISignalData"]
-    L --> M{"signalRow === null?"}
-    
-    M -->|Yes| N["Return null<br/>Signal was closed"]
-    M -->|No| O["Validate exchangeName"]
-    
-    O --> P{"Matches current exchange?"}
-    P -->|No| Q["Return null<br/>Config mismatch"]
-    P -->|Yes| R["Validate strategyName"]
-    
-    R --> S{"Matches current strategy?"}
-    S -->|No| T["Return null<br/>Config mismatch"]
-    S -->|Yes| U["Set _pendingSignal<br/>Resume monitoring"]
-    
-    E --> V["Start tick loop"]
-    J --> V
-    N --> V
-    Q --> V
-    T --> V
-    U --> V
-    
-    style F fill:#f9f9f9
-    style K fill:#f9f9f9
-    style U fill:#e6ffe6
-```
+![Mermaid Diagram](./diagrams\58_Crash_Recovery_2.svg)
 
 **Validation Guards**: The recovery logic validates that the persisted signal matches the current configuration. This prevents resuming with the wrong exchange or strategy after configuration changes.
 
@@ -241,55 +134,13 @@ The `PersistBase` class implements the low-level persistence operations:
 
 **Diagram: PersistBase.writeValue() Internals**
 
-```mermaid
-flowchart TD
-    A["writeValue(entityId, entity)"] --> B["_getFilePath(entityId)"]
-    B --> C["Path: {baseDir}/{entityName}/{entityId}.json"]
-    
-    C --> D["Ensure directory exists<br/>mkdir -p"]
-    D --> E["JSON.stringify(entity, null, 2)"]
-    
-    E --> F["writeFileAtomic(path, json)"]
-    F --> G["Generate temp filename<br/>{path}.tmp-{random}"]
-    
-    G --> H["fs.writeFile(tmpPath, json)"]
-    H --> I["fs.rename(tmpPath, path)"]
-    
-    I --> J{"Rename successful?"}
-    J -->|Yes| K["Return success"]
-    J -->|No| L["Retry or throw error"]
-    
-    style F fill:#f9f9f9
-    style I fill:#f9f9f9
-    style K fill:#e6ffe6
-```
+![Mermaid Diagram](./diagrams\58_Crash_Recovery_3.svg)
 
 The atomic rename operation (`fs.rename()`) is the critical step that ensures atomicity. On POSIX systems, rename is atomic at the filesystem level, meaning the file either appears complete or doesn't appear at all - no partial writes are visible.
 
 **Diagram: PersistBase.readValue() Internals**
 
-```mermaid
-flowchart TD
-    A["readValue(entityId)"] --> B["_getFilePath(entityId)"]
-    B --> C["Check file exists<br/>fs.access()"]
-    
-    C --> D{"File exists?"}
-    D -->|No| E["Throw Error:<br/>Entity not found"]
-    D -->|Yes| F["fs.readFile(path, 'utf-8')"]
-    
-    F --> G["JSON.parse(content)"]
-    G --> H{"Parse successful?"}
-    
-    H -->|No| I["Delete corrupted file<br/>fs.unlink()"]
-    I --> J["Throw Error:<br/>Corrupted entity"]
-    
-    H -->|Yes| K["Return parsed entity"]
-    
-    style F fill:#f9f9f9
-    style G fill:#f9f9f9
-    style I fill:#ffe6e6
-    style K fill:#e6ffe6
-```
+![Mermaid Diagram](./diagrams\58_Crash_Recovery_4.svg)
 
 **Auto-Cleanup**: If a file becomes corrupted (invalid JSON), `PersistBase` automatically deletes it and throws an error. This prevents accumulating corrupted files and ensures clean restarts.
 
@@ -303,33 +154,7 @@ The framework allows replacing the default file-based persistence with custom im
 
 **Diagram: Custom Adapter Integration**
 
-```mermaid
-flowchart TD
-    A["Application Startup"] --> B["Define Custom Adapter Class"]
-    B --> C["class RedisPersist extends PersistBase"]
-    
-    C --> D["Override readValue()"]
-    C --> E["Override writeValue()"]
-    C --> F["Override hasValue()"]
-    
-    D --> G["Implement Redis GET"]
-    E --> H["Implement Redis SET"]
-    F --> I["Implement Redis EXISTS"]
-    
-    G --> J["Register Adapter"]
-    H --> J
-    I --> J
-    
-    J --> K["PersistSignalAdapter.usePersistSignalAdapter(RedisPersist)"]
-    K --> L["Replace PersistSignalFactory"]
-    
-    L --> M["Live.run() execution"]
-    M --> N["ClientStrategy uses custom adapter"]
-    N --> O["All persistence goes through Redis"]
-    
-    style K fill:#f9f9f9
-    style N fill:#e6ffe6
-```
+![Mermaid Diagram](./diagrams\58_Crash_Recovery_5.svg)
 
 **Example Implementation**:
 
@@ -398,38 +223,7 @@ Sources: [README.md:676-690](), [types.d.ts:1067-1084](), [types.d.ts:922-959]()
 
 **Recovery Sequence (After Restart)**:
 
-```mermaid
-sequenceDiagram
-    participant Process
-    participant Live["Live.run()"]
-    participant Strategy["ClientStrategy"]
-    participant Persist["PersistSignalAdapter"]
-    participant Disk
-    
-    Note over Process: Process restarted
-    
-    Process->>Live: Live.run("BTCUSDT", {strategy, exchange})
-    Live->>Strategy: new ClientStrategy(params)
-    Strategy->>Strategy: waitForInit() - singleshot
-    
-    Strategy->>Persist: readSignalData("my-strategy", "BTCUSDT")
-    Persist->>Disk: Read ./storage/signals/my-strategy/BTCUSDT.json
-    Disk-->>Persist: { signalRow: {...} }
-    
-    Persist-->>Strategy: Return ISignalRow
-    Strategy->>Strategy: Validate exchangeName matches
-    Strategy->>Strategy: Validate strategyName matches
-    Strategy->>Strategy: Set _pendingSignal = signalRow
-    
-    Note over Strategy: State restored ✅
-    
-    Strategy-->>Live: waitForInit() complete
-    Live->>Strategy: First tick()
-    Strategy->>Strategy: Check TP/SL with current VWAP
-    Strategy-->>Live: yield { action: "active", currentPrice: 50150 }
-    
-    Note over Strategy: Seamless resume - no duplicate signal
-```
+![Mermaid Diagram](./diagrams\58_Crash_Recovery_6.svg)
 
 **Key Points**:
 - No duplicate signal is created because `_pendingSignal` is already set
@@ -570,58 +364,7 @@ The crash recovery system integrates seamlessly with the signal lifecycle state 
 
 **State Machine with Persistence Points**:
 
-```mermaid
-stateDiagram-v2
-    direction LR
-    
-    [*] --> Idle: Process starts
-    
-    Idle --> Opened: getSignal() returns signal<br/>✅ PERSIST before yield
-    
-    state Opened {
-        [*] --> Validate
-        Validate --> WriteFile: Validation passes
-        WriteFile --> Yield: Atomic write complete
-    }
-    
-    Opened --> Active: Next tick
-    
-    state Active {
-        [*] --> Monitor
-        Monitor --> CheckTP: VWAP fetch
-        CheckTP --> CheckSL
-        CheckSL --> CheckTime
-        CheckTime --> Monitor: Not met
-    }
-    
-    Active --> Active: Continue monitoring<br/>(no persistence)
-    
-    Active --> Closed: TP/SL/time hit<br/>✅ PERSIST null before yield
-    
-    state Closed {
-        [*] --> CalcPnL
-        CalcPnL --> ClearFile: PnL calculated
-        ClearFile --> Yield: Atomic write complete
-    }
-    
-    Closed --> Idle: Signal complete
-    
-    note right of Opened
-        File written:
-        {signalRow: ISignalRow}
-    end note
-    
-    note right of Active
-        ⚠️ CRASH HERE:
-        State recovers to Active
-        on restart
-    end note
-    
-    note right of Closed
-        File updated:
-        {signalRow: null}
-    end note
-```
+![Mermaid Diagram](./diagrams\58_Crash_Recovery_7.svg)
 
 **Recovery Behavior by State**:
 

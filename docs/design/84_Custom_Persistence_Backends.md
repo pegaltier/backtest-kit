@@ -14,56 +14,7 @@ The backtest-kit persistence layer is organized into four independent adapter sy
 
 ### Adapter System Overview
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        LiveAPI["Live.background()"]
-        BacktestAPI["Backtest.run()"]
-    end
-    
-    subgraph "Core Business Logic"
-        ClientStrategy["ClientStrategy<br/>tick(), backtest(), stop()"]
-        ClientRisk["ClientRisk<br/>checkSignal(), addSignal()"]
-        ClientPartial["ClientPartial<br/>profit(), loss()"]
-    end
-    
-    subgraph "Persistence Adapters"
-        PersistSignalAdapter["PersistSignalAdapter<br/>Entity: signal/&lt;strategy&gt;/&lt;symbol&gt;.json"]
-        PersistScheduleAdapter["PersistScheduleAdapter<br/>Entity: schedule/&lt;strategy&gt;/&lt;symbol&gt;.json"]
-        PersistRiskAdapter["PersistRiskAdapter<br/>Entity: risk/&lt;riskName&gt;/positions.json"]
-        PersistPartialAdapter["PersistPartialAdapter<br/>Entity: partial/&lt;symbol&gt;/levels.json"]
-    end
-    
-    subgraph "Base Persistence System"
-        PersistBase["PersistBase (abstract)<br/>waitForInit(), readValue(), writeValue()<br/>hasValue(), removeValue(), removeAll()<br/>values(), keys(), filter(), take()"]
-    end
-    
-    subgraph "Storage Backends"
-        FileSystem["Default: File System<br/>./dump/data/"]
-        Redis["Custom: Redis"]
-        MongoDB["Custom: MongoDB"]
-        PostgreSQL["Custom: PostgreSQL"]
-    end
-    
-    LiveAPI --> ClientStrategy
-    BacktestAPI --> ClientStrategy
-    
-    ClientStrategy --> PersistSignalAdapter
-    ClientStrategy --> PersistScheduleAdapter
-    ClientStrategy --> ClientPartial
-    ClientRisk --> PersistRiskAdapter
-    ClientPartial --> PersistPartialAdapter
-    
-    PersistSignalAdapter --> PersistBase
-    PersistScheduleAdapter --> PersistBase
-    PersistRiskAdapter --> PersistBase
-    PersistPartialAdapter --> PersistBase
-    
-    PersistBase -.->|"default"| FileSystem
-    PersistBase -.->|"custom"| Redis
-    PersistBase -.->|"custom"| MongoDB
-    PersistBase -.->|"custom"| PostgreSQL
-```
+![Mermaid Diagram](./diagrams\84_Custom_Persistence_Backends_0.svg)
 
 **Sources:** [README.md:741-1077]()
 
@@ -82,63 +33,7 @@ Each adapter manages a specific entity type with its own directory structure:
 
 ### Persistence Points in Signal Lifecycle
 
-```mermaid
-stateDiagram-v2
-    [*] --> Idle: Strategy generates signal
-    
-    Idle --> ScheduledPersist: priceOpen ≠ currentPrice
-    Idle --> OpenedPersist: priceOpen = currentPrice
-    
-    state "Schedule Persistence" as ScheduledPersist {
-        [*] --> WriteSchedule: PersistScheduleAdapter.writeValue()
-        WriteSchedule --> Scheduled
-        Scheduled --> RemoveSchedule: Activated or cancelled
-        RemoveSchedule --> [*]: PersistScheduleAdapter.removeValue()
-    }
-    
-    state "Signal Persistence" as OpenedPersist {
-        [*] --> WriteSignal: PersistSignalAdapter.writeValue()
-        WriteSignal --> Opened
-        Opened --> Active
-        Active --> WritePartial: Milestone reached
-        WritePartial --> Active
-        Active --> RemoveSignal: Closed
-        RemoveSignal --> [*]: PersistSignalAdapter.removeValue()
-    }
-    
-    state "Risk Persistence" as RiskPersist {
-        [*] --> AddPosition: PersistRiskAdapter.writeValue()
-        AddPosition --> Tracked
-        Tracked --> RemovePosition: Signal closed
-        RemovePosition --> [*]
-    }
-    
-    ScheduledPersist --> OpenedPersist: Price reached
-    ScheduledPersist --> [*]: Cancelled
-    
-    OpenedPersist --> RiskPersist: Position opened
-    OpenedPersist --> [*]: Closed
-    
-    RiskPersist --> [*]: Position closed
-    
-    note right of ScheduledPersist
-        Live mode only
-        Atomic file writes
-        Entity ID: symbol
-    end note
-    
-    note right of OpenedPersist
-        Live mode only
-        Continuous updates
-        Entity ID: symbol
-    end note
-    
-    note right of RiskPersist
-        Live & Backtest modes
-        Active position registry
-        Entity ID: positions
-    end note
-```
+![Mermaid Diagram](./diagrams\84_Custom_Persistence_Backends_1.svg)
 
 **Sources:** [README.md:741-766](), [README.md:1331-1386]()
 
@@ -150,64 +45,7 @@ The `PersistBase` abstract class defines the contract for all persistence operat
 
 ### Class Definition
 
-```mermaid
-classDiagram
-    class PersistBase {
-        <<abstract>>
-        +string entityName
-        +string baseDir
-        +constructor(entityName, baseDir)
-        +waitForInit(initial: boolean) Promise~void~*
-        +readValue~T~(entityId: string|number) Promise~T~*
-        +hasValue(entityId: string|number) Promise~boolean~*
-        +writeValue~T~(entityId, entity: T) Promise~void~*
-        +removeValue(entityId: string|number) Promise~void~*
-        +removeAll() Promise~void~*
-        +values~T~() AsyncGenerator~T~*
-        +keys() AsyncGenerator~string~*
-        +filter~T~(predicate) AsyncGenerator~T~
-        +take~T~(count: number) AsyncGenerator~T~
-    }
-    
-    class FileSystemPersist {
-        +waitForInit(initial)
-        +readValue(entityId)
-        +hasValue(entityId)
-        +writeValue(entityId, entity)
-        +removeValue(entityId)
-        +removeAll()
-        +values()
-        +keys()
-    }
-    
-    class RedisPersist {
-        -RedisClient redis
-        +waitForInit(initial)
-        +readValue(entityId)
-        +hasValue(entityId)
-        +writeValue(entityId, entity)
-        +removeValue(entityId)
-        +removeAll()
-        +values()
-        +keys()
-    }
-    
-    class MongoPersist {
-        -Collection collection
-        +waitForInit(initial)
-        +readValue(entityId)
-        +hasValue(entityId)
-        +writeValue(entityId, entity)
-        +removeValue(entityId)
-        +removeAll()
-        +values()
-        +keys()
-    }
-    
-    PersistBase <|-- FileSystemPersist : extends
-    PersistBase <|-- RedisPersist : extends
-    PersistBase <|-- MongoPersist : extends
-```
+![Mermaid Diagram](./diagrams\84_Custom_Persistence_Backends_2.svg)
 
 **Sources:** [README.md:777-869]()
 
@@ -249,51 +87,7 @@ Custom adapters must extend `PersistBase` and implement all abstract methods. Th
 
 ### Implementation Template
 
-```mermaid
-sequenceDiagram
-    participant Framework as Framework
-    participant Adapter as Custom Adapter
-    participant Backend as Storage Backend
-    
-    Note over Framework,Backend: Initialization Phase
-    Framework->>Adapter: new CustomAdapter(entityName, baseDir)
-    Framework->>Adapter: waitForInit(initial=true)
-    Adapter->>Backend: Connect / create indexes
-    Backend-->>Adapter: Ready
-    Adapter-->>Framework: void
-    
-    Note over Framework,Backend: Write Phase
-    Framework->>Adapter: writeValue("BTCUSDT", signalData)
-    Adapter->>Backend: Serialize and store
-    Backend-->>Adapter: Success
-    Adapter-->>Framework: void
-    
-    Note over Framework,Backend: Read Phase
-    Framework->>Adapter: hasValue("BTCUSDT")
-    Adapter->>Backend: Check existence
-    Backend-->>Adapter: true
-    Adapter-->>Framework: true
-    
-    Framework->>Adapter: readValue("BTCUSDT")
-    Adapter->>Backend: Retrieve data
-    Backend-->>Adapter: Raw data
-    Adapter->>Adapter: Deserialize
-    Adapter-->>Framework: Typed entity
-    
-    Note over Framework,Backend: Iteration Phase
-    Framework->>Adapter: values()
-    loop For each entity
-        Adapter->>Backend: Fetch next
-        Backend-->>Adapter: Entity data
-        Adapter-->>Framework: yield entity
-    end
-    
-    Note over Framework,Backend: Cleanup Phase
-    Framework->>Adapter: removeValue("BTCUSDT")
-    Adapter->>Backend: Delete entity
-    Backend-->>Adapter: Deleted count
-    Adapter-->>Framework: void
-```
+![Mermaid Diagram](./diagrams\84_Custom_Persistence_Backends_3.svg)
 
 **Sources:** [README.md:777-869]()
 
@@ -615,54 +409,7 @@ Custom adapters must be registered before any trading operations begin. The fram
 
 ### Registration Flow
 
-```mermaid
-sequenceDiagram
-    participant User as User Code
-    participant PSA as PersistSignalAdapter
-    participant PSched as PersistScheduleAdapter
-    participant PRA as PersistRiskAdapter
-    participant PPA as PersistPartialAdapter
-    participant Live as Live.background()
-    
-    Note over User,PPA: Registration Phase (Before Trading)
-    
-    User->>PSA: usePersistSignalAdapter(RedisPersist)
-    PSA->>PSA: Store class reference
-    PSA-->>User: void
-    
-    User->>PSched: usePersistScheduleAdapter(RedisPersist)
-    PSched->>PSched: Store class reference
-    PSched-->>User: void
-    
-    User->>PRA: usePersistRiskAdapter(RedisPersist)
-    PRA->>PRA: Store class reference
-    PRA-->>User: void
-    
-    User->>PPA: usePersistPartialAdapter(RedisPersist)
-    PPA->>PPA: Store class reference
-    PPA-->>User: void
-    
-    Note over User,PPA: Execution Phase
-    
-    User->>Live: background("BTCUSDT", config)
-    
-    Live->>PSA: getInstance()
-    PSA->>PSA: new RedisPersist("signal", "./dump/data")
-    PSA->>PSA: waitForInit(true)
-    PSA-->>Live: Adapter instance
-    
-    Live->>PSched: getInstance()
-    PSched->>PSched: new RedisPersist("schedule", "./dump/data")
-    PSched->>PSched: waitForInit(true)
-    PSched-->>Live: Adapter instance
-    
-    Live->>PRA: getInstance()
-    PRA->>PRA: new RedisPersist("risk", "./dump/data")
-    PRA->>PRA: waitForInit(true)
-    PRA-->>Live: Adapter instance
-    
-    Note over User,PPA: Trading begins with Redis persistence
-```
+![Mermaid Diagram](./diagrams\84_Custom_Persistence_Backends_4.svg)
 
 **Sources:** [README.md:879-892]()
 
@@ -733,36 +480,7 @@ Different storage backends offer trade-offs in performance, complexity, and oper
 
 ### When to Use Each Backend
 
-```mermaid
-graph TB
-    Start["Select Persistence Backend"]
-    
-    SingleInstance{"Single<br/>instance?"}
-    FrequentWrites{"High write<br/>frequency?"}
-    ComplexQueries{"Complex<br/>queries?"}
-    Compliance{"Regulatory<br/>compliance?"}
-    
-    FileSystem["File System<br/>(default)<br/>✓ No dependencies<br/>✓ Easy debugging<br/>✓ Sufficient for most cases"]
-    
-    Redis["Redis<br/>✓ Fast read/write<br/>✓ Built-in TTL<br/>✓ Pub/sub support<br/>⚠ Memory-limited"]
-    
-    MongoDB["MongoDB<br/>✓ Rich query language<br/>✓ Aggregation pipelines<br/>✓ Scalable<br/>⚠ More complex setup"]
-    
-    PostgreSQL["PostgreSQL<br/>✓ ACID transactions<br/>✓ Strong consistency<br/>✓ Mature ecosystem<br/>⚠ Higher latency"]
-    
-    Start --> SingleInstance
-    SingleInstance -->|Yes| FileSystem
-    SingleInstance -->|No| FrequentWrites
-    
-    FrequentWrites -->|Yes| Redis
-    FrequentWrites -->|No| ComplexQueries
-    
-    ComplexQueries -->|Yes| MongoDB
-    ComplexQueries -->|No| Compliance
-    
-    Compliance -->|Yes| PostgreSQL
-    Compliance -->|No| FileSystem
-```
+![Mermaid Diagram](./diagrams\84_Custom_Persistence_Backends_5.svg)
 
 **Sources:** [README.md:1030-1051]()
 

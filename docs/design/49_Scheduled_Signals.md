@@ -50,41 +50,7 @@ If activation conditions are met, the signal skips the scheduled phase and opens
 
 ## Scheduled Signal State Machine
 
-```mermaid
-stateDiagram-v2
-    [*] --> getSignal: tick() called<br/>interval passed
-    
-    getSignal --> ImmediateOpen: priceOpen undefined<br/>OR<br/>price already at target
-    getSignal --> Scheduled: priceOpen specified<br/>price not at target
-    
-    state "Scheduled Signal" as Scheduled {
-        [*] --> Monitoring: PersistScheduleAdapter<br/>writes signal
-        
-        Monitoring --> PriceCheck: tick() monitors<br/>every 61s
-        PriceCheck --> Monitoring: price not reached<br/>time < 120min
-        
-        PriceCheck --> ActivationCheck: price reached<br/>priceOpen
-        ActivationCheck --> RiskCheck: SL not hit
-        
-        RiskCheck --> Activated: risk.checkSignal()<br/>passes
-        RiskCheck --> CancelledRisk: risk.checkSignal()<br/>fails
-        
-        PriceCheck --> CancelledSL: price hit SL<br/>before priceOpen
-        PriceCheck --> CancelledTimeout: elapsed time<br/>>= 120min
-    }
-    
-    Activated --> [*]: Converts to ISignalRow<br/>_isScheduled=false<br/>pendingAt updated
-    CancelledRisk --> [*]: IStrategyTickResultCancelled<br/>never opened
-    CancelledSL --> [*]: IStrategyTickResultIdle<br/>never opened
-    CancelledTimeout --> [*]: IStrategyTickResultCancelled<br/>never opened
-    ImmediateOpen --> [*]: Regular signal flow
-    
-    note right of Scheduled
-        scheduledAt = creation time
-        pendingAt = scheduledAt initially
-        State persisted in live mode
-    end note
-```
+![Mermaid Diagram](./diagrams\49_Scheduled_Signals_0.svg)
 
 **Scheduled Signal Flow:**
 
@@ -101,28 +67,7 @@ stateDiagram-v2
 
 The activation check compares current VWAP price against `priceOpen` and `priceStopLoss` to determine whether to activate or cancel:
 
-```mermaid
-graph TB
-    subgraph "LONG Position"
-        LONG_Start["currentPrice vs priceOpen<br/>priceStopLoss < priceOpen"]
-        LONG_Start -->|"currentPrice <= priceStopLoss"| LONG_Cancel["Cancel: SL hit<br/>return IStrategyTickResultIdle"]
-        LONG_Start -->|"currentPrice <= priceOpen<br/>AND NOT <= priceStopLoss"| LONG_Activate["Activate: price reached<br/>proceed to risk check"]
-        LONG_Start -->|"currentPrice > priceOpen"| LONG_Wait["Wait: continue monitoring<br/>return IStrategyTickResultActive"]
-    end
-    
-    subgraph "SHORT Position"
-        SHORT_Start["currentPrice vs priceOpen<br/>priceStopLoss > priceOpen"]
-        SHORT_Start -->|"currentPrice >= priceStopLoss"| SHORT_Cancel["Cancel: SL hit<br/>return IStrategyTickResultIdle"]
-        SHORT_Start -->|"currentPrice >= priceOpen<br/>AND NOT >= priceStopLoss"| SHORT_Activate["Activate: price reached<br/>proceed to risk check"]
-        SHORT_Start -->|"currentPrice < priceOpen"| SHORT_Wait["Wait: continue monitoring<br/>return IStrategyTickResultActive"]
-    end
-    
-    LONG_Activate --> RiskCheck["risk.checkSignal()<br/>at activation time"]
-    SHORT_Activate --> RiskCheck
-    
-    RiskCheck -->|"passes"| Final_Activate["Convert to ISignalRow<br/>update pendingAt<br/>onOpen callback"]
-    RiskCheck -->|"fails"| Final_Cancel["Cancel: risk rejected<br/>clear _scheduledSignal"]
-```
+![Mermaid Diagram](./diagrams\49_Scheduled_Signals_1.svg)
 
 **Critical Priority Order (Pre-Activation Cancellation):**
 
@@ -198,37 +143,7 @@ if (await not(risk.checkSignal({ ... }))) {
 
 Scheduled signals implement **two-phase risk validation** to ensure risk limits are still valid when the position actually opens:
 
-```mermaid
-sequenceDiagram
-    participant GS as getSignal()
-    participant Risk as ClientRisk
-    participant Sched as _scheduledSignal
-    participant Time as Time Passes
-    participant Activate as Activation
-    
-    Note over GS,Risk: Phase 1: Signal Creation
-    GS->>Risk: checkSignal()<br/>(pre-creation check)
-    Risk-->>GS: true (allowed)
-    GS->>Sched: Create IScheduledSignalRow<br/>_isScheduled=true
-    Sched->>Sched: PersistScheduleAdapter<br/>writes to disk
-    
-    Note over Time: Minutes/hours pass<br/>Market conditions change<br/>Other strategies may trade
-    
-    Note over Activate,Risk: Phase 2: Activation
-    Activate->>Activate: Price reaches priceOpen
-    Activate->>Risk: checkSignal()<br/>(activation check)
-    
-    alt Risk Check Passes
-        Risk-->>Activate: true (still allowed)
-        Activate->>Activate: Convert to ISignalRow<br/>_isScheduled=false
-        Activate->>Activate: Update pendingAt timestamp
-        Activate->>Risk: addSignal()<br/>(register position)
-    else Risk Check Fails
-        Risk-->>Activate: false (rejected)
-        Activate->>Activate: Cancel scheduled signal<br/>setScheduledSignal(null)
-        Note over Activate: Signal never opens<br/>No position created
-    end
-```
+![Mermaid Diagram](./diagrams\49_Scheduled_Signals_2.svg)
 
 **Why Two Checks Are Necessary:**
 
@@ -313,31 +228,7 @@ T=105min: Position monitoring
 
 In backtest mode, scheduled signals are processed through the `backtest()` method which iterates through historical candles:
 
-```mermaid
-graph TB
-    Start["backtest(candles)<br/>called with signal"]
-    Start --> CheckScheduled{"signal._isScheduled<br/>== true?"}
-    
-    CheckScheduled -->|"false"| RegularBacktest["Process as regular signal<br/>Check TP/SL on each candle"]
-    
-    CheckScheduled -->|"true"| ScheduledLoop["Iterate candles<br/>until activation/cancellation"]
-    
-    ScheduledLoop --> CandleCheck{"For each candle"}
-    
-    CandleCheck --> SLCheck{"Price hit SL?<br/>(before priceOpen)"}
-    SLCheck -->|"yes"| CancelSL["Return IStrategyTickResultCancelled<br/>action: 'cancelled'"]
-    
-    SLCheck -->|"no"| PriceCheck{"Price reached<br/>priceOpen?"}
-    
-    PriceCheck -->|"no"| NextCandle["Continue to next candle"]
-    NextCandle --> CandleCheck
-    
-    PriceCheck -->|"yes"| Activate["Activate signal<br/>Convert to ISignalRow<br/>Update pendingAt"]
-    
-    Activate --> RemainingCandles["Process remaining candles<br/>Monitor TP/SL"]
-    
-    RemainingCandles --> FinalResult["Return IStrategyTickResultClosed<br/>action: 'closed'"]
-```
+![Mermaid Diagram](./diagrams\49_Scheduled_Signals_3.svg)
 
 **Key Differences from Live Mode:**
 

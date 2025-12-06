@@ -12,43 +12,7 @@ The framework provides three execution modes that share core business logic but 
 
 ### Diagram: Execution Mode Architecture
 
-```mermaid
-graph TB
-    User["User Code"]
-    
-    subgraph "Execution Modes"
-        BacktestAPI["Backtest.run()<br/>Backtest.background()"]
-        LiveAPI["Live.run()<br/>Live.background()"]
-        WalkerAPI["Walker.run()<br/>Walker.background()"]
-    end
-    
-    subgraph "Logic Services"
-        BacktestLogic["BacktestLogicPrivateService<br/>execute() generator"]
-        LiveLogic["LiveLogicPrivateService<br/>execute() generator"]
-        WalkerLogic["WalkerLogicPrivateService<br/>execute() generator"]
-    end
-    
-    subgraph "Shared Components"
-        Strategy["ClientStrategy<br/>tick(), backtest(), stop()"]
-        Exchange["ClientExchange<br/>getCandles(), getAveragePrice()"]
-        Risk["ClientRisk<br/>checkSignal(), addSignal()"]
-    end
-    
-    User --> BacktestAPI
-    User --> LiveAPI
-    User --> WalkerAPI
-    
-    BacktestAPI --> BacktestLogic
-    LiveAPI --> LiveLogic
-    WalkerAPI --> WalkerLogic
-    
-    BacktestLogic --> Strategy
-    LiveLogic --> Strategy
-    WalkerLogic --> BacktestLogic
-    
-    Strategy --> Exchange
-    Strategy --> Risk
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_0.svg)
 
 **Sources:**
 - [src/lib/services/logic/private/BacktestLogicPrivateService.ts]()
@@ -60,27 +24,7 @@ graph TB
 
 Historical simulation processes timeframes sequentially using `BacktestLogicPrivateService`:
 
-```mermaid
-graph TB
-    User["User Code"]
-    BacktestRun["Backtest.run()"]
-    LogicPrivate["BacktestLogicPrivateService"]
-    Frame["FrameGlobalService<br/>(ClientFrame)"]
-    Strategy["StrategyGlobalService<br/>(ClientStrategy)"]
-    Exchange["ExchangeGlobalService<br/>(ClientExchange)"]
-    
-    User -->|"Backtest.run(symbol, config)"| BacktestRun
-    BacktestRun -->|"delegates to"| LogicPrivate
-    LogicPrivate -->|"getTimeframe(symbol)"| Frame
-    Frame -->|"[timestamp1, timestamp2, ...]"| LogicPrivate
-    
-    LogicPrivate -->|"for each timestamp"| Strategy
-    LogicPrivate -->|"setExecutionContext(when, backtest=true)"| Exchange
-    Strategy -->|"tick()"| LogicPrivate
-    Strategy -->|"backtest(candles)"| LogicPrivate
-    LogicPrivate -->|"yield closed result"| BacktestRun
-    BacktestRun -->|"stream results"| User
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_1.svg)
 
 **Backtest Flow Characteristics:**
 
@@ -96,31 +40,7 @@ graph TB
 
 Real-time trading operates an infinite loop with crash recovery:
 
-```mermaid
-graph TB
-    User["User Code"]
-    LiveRun["Live.run()"]
-    LogicPrivate["LiveLogicPrivateService"]
-    Strategy["ClientStrategy<br/>tick(), waitForInit()"]
-    Exchange["ClientExchange"]
-    Persist["PersistSignalAdapter"]
-    Disk["./storage/signals/<br/>{strategy}_{symbol}.json"]
-    
-    User -->|"Live.run(symbol, config)"| LiveRun
-    LiveRun -->|"delegates to"| LogicPrivate
-    
-    LogicPrivate -->|"while(true) loop"| LogicPrivate
-    LogicPrivate -->|"ExecutionContextService<br/>when=Date.now(), backtest=false"| Strategy
-    LogicPrivate -->|"tick()"| Strategy
-    
-    Strategy -->|"setPendingSignal()"| Persist
-    Persist -->|"atomic write"| Disk
-    Disk -->|"waitForInit()"| Strategy
-    
-    LogicPrivate -->|"yield opened/closed"| LiveRun
-    LiveRun -->|"stream events"| User
-    LogicPrivate -->|"sleep(60000 + 1ms)"| LogicPrivate
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_2.svg)
 
 **Live Trading Characteristics:**
 
@@ -143,28 +63,7 @@ graph TB
 
 Strategy comparison mode runs multiple backtests sequentially and ranks results by a metric:
 
-```mermaid
-graph TB
-    User["User Code"]
-    WalkerRun["Walker.run()"]
-    WalkerLogic["WalkerLogicPrivateService"]
-    WalkerSchema["WalkerSchemaService<br/>strategies[], metric"]
-    BacktestLogic["BacktestLogicPrivateService"]
-    Markdown["BacktestMarkdownService<br/>getData()"]
-    Compare["Metric Comparison<br/>bestStrategy, bestMetric"]
-    
-    User -->|"Walker.run(symbol, config)"| WalkerRun
-    WalkerRun -->|"delegates to"| WalkerLogic
-    WalkerLogic -->|"get walker schema"| WalkerSchema
-    
-    WalkerLogic -->|"for each strategy"| BacktestLogic
-    BacktestLogic -->|"run full backtest"| Markdown
-    Markdown -->|"stats (sharpeRatio, winRate, etc)"| Compare
-    Compare -->|"update best if better"| WalkerLogic
-    
-    WalkerLogic -->|"yield WalkerContract<br/>{strategyName, stats, metric}"| WalkerRun
-    WalkerRun -->|"stream progress"| User
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_3.svg)
 
 **Walker Characteristics:**
 
@@ -190,24 +89,7 @@ Live trading uses atomic file writes to persist signal state before every state 
 
 ### Persistence Architecture
 
-```mermaid
-graph LR
-    Strategy["ClientStrategy"]
-    Persist["PersistSignalAdapter"]
-    Base["PersistBase"]
-    FileImpl["FilePersist"]
-    Disk["./storage/signals/<br/>{strategyName}_{symbol}.json"]
-    
-    Strategy -->|"setPendingSignal(signal)"| Persist
-    Persist -->|"writeSignalData()"| Base
-    Base -->|"writeValue()"| FileImpl
-    FileImpl -->|"atomic write"| Disk
-    
-    Disk -->|"restore on restart"| FileImpl
-    FileImpl -->|"readValue()"| Base
-    Base -->|"readSignalData()"| Persist
-    Persist -->|"load state"| Strategy
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_4.svg)
 
 ### Atomic Write Implementation
 
@@ -222,29 +104,7 @@ The `PersistSignalAdapter` ensures atomicity through temporary file writes:
 
 **State Transitions with Persistence:**
 
-```mermaid
-stateDiagram-v2
-    [*] --> Idle: "No signal<br/>(disk: null)"
-    
-    Idle --> Opened: "getSignal() returns signal<br/>PERSIST BEFORE YIELD"
-    note right of Opened
-        ClientStrategy.setPendingSignal(signal)
-        → PersistSignalAdapter.writeSignalData()
-        → yield opened result
-    end note
-    
-    Opened --> Active: "Next tick"
-    Active --> Active: "Monitoring (no persist)"
-    
-    Active --> Closed: "TP/SL/time hit<br/>PERSIST NULL BEFORE YIELD"
-    note right of Closed
-        ClientStrategy.setPendingSignal(null)
-        → PersistSignalAdapter.writeSignalData(null)
-        → yield closed result
-    end note
-    
-    Closed --> Idle: "Signal complete"
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_5.svg)
 
 **Key Code Locations:**
 
@@ -268,22 +128,7 @@ Every signal from `getSignal()` passes through 30+ validation rules before execu
 
 ### Diagram: Validation Pipeline
 
-```mermaid
-graph LR
-    GetSignal["User getSignal()"]
-    Augment["Augment with id,<br/>timestamps, metadata"]
-    Validate["VALIDATE_SIGNAL_FN<br/>30+ rules"]
-    Risk["Risk.checkSignal()"]
-    Accept["Return ISignalRow"]
-    Reject["return null<br/>(error logged)"]
-    
-    GetSignal --> Augment
-    Augment --> Validate
-    Validate -->|"pass"| Risk
-    Validate -->|"fail"| Reject
-    Risk -->|"pass"| Accept
-    Risk -->|"fail"| Reject
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_6.svg)
 
 **Sources:**
 - [src/client/ClientStrategy.ts:41-261]() (VALIDATE_SIGNAL_FN)
@@ -293,35 +138,7 @@ graph LR
 
 The `VALIDATE_SIGNAL_FN` at [src/client/ClientStrategy.ts:41-261]() enforces these constraints:
 
-```mermaid
-graph TB
-    subgraph "Price Validation"
-        P1["priceOpen > 0"]
-        P2["priceTakeProfit > 0"]
-        P3["priceStopLoss > 0"]
-    end
-    
-    subgraph "Long Position Logic"
-        L1["priceTakeProfit > priceOpen<br/>(profit goes up)"]
-        L2["priceStopLoss < priceOpen<br/>(stop below entry)"]
-    end
-    
-    subgraph "Short Position Logic"
-        S1["priceTakeProfit < priceOpen<br/>(profit goes down)"]
-        S2["priceStopLoss > priceOpen<br/>(stop above entry)"]
-    end
-    
-    subgraph "Time Validation"
-        T1["minuteEstimatedTime > 0"]
-        T2["timestamp > 0"]
-    end
-    
-    subgraph "Distance Validation"
-        D1["TP distance >= CC_MIN_TAKEPROFIT_DISTANCE_PERCENT"]
-        D2["SL distance <= CC_MAX_STOPLOSS_DISTANCE_PERCENT"]
-        D3["minuteEstimatedTime <= CC_MAX_SIGNAL_LIFETIME_MINUTES"]
-    end
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_7.svg)
 
 ### Global Validation Parameters
 
@@ -350,30 +167,7 @@ Configurable via `setConfig()` from [src/config/params.ts:1-35]():
 
 ### Validation Flow
 
-```mermaid
-sequenceDiagram
-    participant Strategy as "ClientStrategy"
-    participant GetSignal as "GET_SIGNAL_FN"
-    participant Validate as "VALIDATE_SIGNAL_FN"
-    participant User as "User getSignal()"
-    
-    Strategy->>GetSignal: "Check interval throttle"
-    alt "Too soon (< interval)"
-        GetSignal-->>Strategy: "return null"
-    else "Interval passed"
-        GetSignal->>User: "await getSignal(symbol)"
-        User-->>GetSignal: "ISignalDto"
-        GetSignal->>GetSignal: "Augment with id, timestamp"
-        GetSignal->>Validate: "VALIDATE_SIGNAL_FN(signalRow)"
-        alt "Validation passes"
-            Validate-->>GetSignal: "void"
-            GetSignal-->>Strategy: "ISignalRow"
-        else "Validation fails"
-            Validate-->>GetSignal: "throw Error(details)"
-            GetSignal-->>Strategy: "null (caught by trycatch)"
-        end
-    end
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_8.svg)
 
 **Sources:**
 - [src/client/ClientStrategy.ts:41-261]() (VALIDATE_SIGNAL_FN)
@@ -390,27 +184,7 @@ Signals follow a deterministic state machine supporting both market orders (imme
 
 ### Diagram: Signal State Machine
 
-```mermaid
-stateDiagram-v2
-    [*] --> Idle
-    
-    Idle --> Scheduled: "getSignal() with priceOpen != current"
-    Idle --> Opened: "getSignal() with priceOpen == current"
-    
-    Scheduled --> Opened: "Price reaches priceOpen"
-    Scheduled --> Cancelled: "Timeout (CC_SCHEDULE_AWAIT_MINUTES)"
-    Scheduled --> Cancelled: "SL hit before activation"
-    
-    Cancelled --> [*]
-    
-    Opened --> Active: "Next tick()"
-    
-    Active --> Active: "Monitoring TP/SL/time"
-    Active --> Closed: "TP/SL/time_expired"
-    
-    Closed --> Idle: "Signal complete"
-    Idle --> [*]
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_9.svg)
 
 **Sources:**
 - [src/client/ClientStrategy.ts:474-596]() (scheduled signal logic)
@@ -429,32 +203,7 @@ Scheduled signals wait for price activation with timeout and pre-activation canc
 
 **Scheduled Signal Flow:**
 
-```mermaid
-sequenceDiagram
-    participant Strategy as "ClientStrategy"
-    participant Check as "CHECK_SCHEDULED_SIGNAL_PRICE_ACTIVATION_FN"
-    participant Activate as "ACTIVATE_SCHEDULED_SIGNAL_FN"
-    participant Risk as "ClientRisk"
-    
-    Strategy->>Check: "Check price vs priceOpen"
-    
-    alt "SL hit before activation"
-        Check-->>Strategy: "shouldCancel=true"
-        Strategy->>Strategy: "CANCEL_SCHEDULED_SIGNAL_BY_STOPLOSS_FN"
-    else "Price reached priceOpen"
-        Check-->>Strategy: "shouldActivate=true"
-        Strategy->>Activate: "Activate scheduled signal"
-        Activate->>Risk: "checkSignal() re-validation"
-        Risk-->>Activate: "pass/fail"
-        alt "Risk check pass"
-            Activate->>Strategy: "Convert to opened signal"
-        else "Risk check fail"
-            Activate-->>Strategy: "Cancel activation"
-        end
-    else "Still waiting"
-        Check-->>Strategy: "Continue monitoring"
-    end
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_10.svg)
 
 **Sources:**
 - [src/client/ClientStrategy.ts:474-528]() (timeout check)
@@ -495,25 +244,7 @@ Portfolio-level risk controls with custom validation logic, concurrent position 
 
 ### Diagram: Risk Validation Flow
 
-```mermaid
-graph TB
-    GetSignal["GET_SIGNAL_FN"]
-    PreCheck["Risk.checkSignal()<br/>pre-generation check"]
-    Generate["User getSignal()"]
-    PostCheck["Risk.checkSignal()<br/>post-validation check"]
-    AddSignal["Risk.addSignal()<br/>register active position"]
-    RemoveSignal["Risk.removeSignal()<br/>on signal close"]
-    
-    GetSignal --> PreCheck
-    PreCheck -->|"pass"| Generate
-    PreCheck -->|"fail"| Reject["return null"]
-    Generate --> Validate["VALIDATE_SIGNAL_FN"]
-    Validate --> PostCheck
-    PostCheck -->|"pass"| AddSignal
-    PostCheck -->|"fail"| Reject
-    AddSignal --> Active["Signal active"]
-    Active --> RemoveSignal
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_11.svg)
 
 **Sources:**
 - [src/client/ClientRisk.ts]()
@@ -590,27 +321,7 @@ Walker mode executes multiple strategies on the same timeframe and ranks them by
 
 ### Diagram: Walker Execution Flow
 
-```mermaid
-graph TB
-    WalkerSchema["WalkerSchemaService<br/>strategies[], metric, frameName"]
-    WalkerLogic["WalkerLogicPrivateService"]
-    Loop["For each strategy<br/>in strategies[]"]
-    RunBacktest["BacktestLogicPublicService<br/>run full backtest"]
-    GetStats["BacktestMarkdownService<br/>getData()"]
-    Extract["Extract metric value<br/>(sharpeRatio, winRate, etc)"]
-    Compare["Compare with bestMetric<br/>update if better"]
-    Emit["Emit WalkerContract<br/>progress event"]
-    Final["Emit walkerCompleteSubject<br/>final results"]
-    
-    WalkerSchema --> WalkerLogic
-    WalkerLogic --> Loop
-    Loop --> RunBacktest
-    RunBacktest --> GetStats
-    GetStats --> Extract
-    Extract --> Compare
-    Compare --> Emit
-    Loop -->|"all strategies done"| Final
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_12.svg)
 
 **Sources:**
 - [src/lib/services/logic/private/WalkerLogicPrivateService.ts]()
@@ -666,38 +377,7 @@ LLM-driven strategy generation from historical data with multi-timeframe analysi
 
 ### Diagram: Optimizer Pipeline
 
-```mermaid
-graph TB
-    subgraph "Phase 1: Data Collection"
-        Sources["Data Sources<br/>(1h, 30m, 15m, 1m)"]
-        Fetch["IOptimizerSourceFn<br/>pagination with limit/offset"]
-        Format["Format to markdown tables"]
-        Messages["Build conversation history<br/>user/assistant pairs"]
-    end
-    
-    subgraph "Phase 2: LLM Interaction"
-        Prompt["getPrompt(symbol, messageList)"]
-        LLM["Ollama API<br/>deepseek-v3.1:671b"]
-        Strategy["Generated strategy logic"]
-    end
-    
-    subgraph "Phase 3: Code Generation"
-        Templates["OptimizerTemplateService<br/>11 template methods"]
-        Assemble["Assemble code sections"]
-        Export["Write to .mjs file"]
-    end
-    
-    Sources --> Fetch
-    Fetch --> Format
-    Format --> Messages
-    Messages --> Prompt
-    Prompt --> LLM
-    LLM --> Strategy
-    
-    Strategy --> Templates
-    Templates --> Assemble
-    Assemble --> Export
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_13.svg)
 
 **Sources:**
 - [src/client/ClientOptimizer.ts]()
@@ -770,39 +450,7 @@ Position size calculation with multiple methods: fixed percentage, Kelly Criteri
 
 ### Diagram: Position Sizing Methods
 
-```mermaid
-graph TB
-    SizingSchema["ISizingSchema<br/>method, constraints"]
-    
-    subgraph "Fixed Percentage"
-        FixedCalc["riskPercentage × balance<br/>/ (priceOpen - priceStopLoss)"]
-    end
-    
-    subgraph "Kelly Criterion"
-        KellyCalc["kellyFraction = winRate - (1 - winRate) / winLossRatio<br/>position = kellyFraction × kellyMultiplier × balance"]
-    end
-    
-    subgraph "ATR-Based"
-        ATRCalc["stopDistance = atr × atrMultiplier<br/>position = riskPercentage × balance / stopDistance"]
-    end
-    
-    subgraph "Constraints"
-        MinSize["minPositionSize"]
-        MaxSize["maxPositionSize"]
-        MaxPct["maxPositionPercentage"]
-    end
-    
-    SizingSchema --> FixedCalc
-    SizingSchema --> KellyCalc
-    SizingSchema --> ATRCalc
-    
-    FixedCalc --> MinSize
-    KellyCalc --> MinSize
-    ATRCalc --> MinSize
-    
-    MinSize --> MaxSize
-    MaxSize --> MaxPct
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_14.svg)
 
 **Sources:**
 - [src/client/ClientSizing.ts]()
@@ -871,38 +519,7 @@ All execution modes use async generators (`AsyncIterableIterator`) to stream res
 
 ### Generator Architecture
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        BacktestRun["Backtest.run()"]
-        LiveRun["Live.run()"]
-    end
-    
-    subgraph "Generator Implementation"
-        BacktestGen["BacktestLogicPrivateService.execute()*"]
-        LiveGen["LiveLogicPrivateService.execute()*"]
-    end
-    
-    subgraph "Yield Patterns"
-        BacktestYield["yield closed result<br/>(only completed signals)"]
-        LiveYield["yield opened/closed<br/>(filtered active)"]
-    end
-    
-    subgraph "Memory Characteristics"
-        M1["No accumulation"]
-        M2["O(1) memory per iteration"]
-        M3["Early termination with break"]
-    end
-    
-    BacktestRun --> BacktestGen
-    LiveRun --> LiveGen
-    BacktestGen --> BacktestYield
-    LiveGen --> LiveYield
-    BacktestYield --> M1
-    LiveYield --> M1
-    M1 --> M2
-    M2 --> M3
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_15.svg)
 
 ### Generator Comparison
 
@@ -945,84 +562,7 @@ Signals follow a deterministic state machine with discriminated union types for 
 
 ### Complete Signal Lifecycle
 
-```mermaid
-stateDiagram-v2
-    direction LR
-    
-    [*] --> Idle
-    
-    state "Idle" as Idle {
-        [*] --> NoSignal
-        NoSignal: "IStrategyTickResultIdle"
-        NoSignal: "action: 'idle'"
-        NoSignal: "signal: null"
-    }
-    
-    Idle --> Scheduled: "getSignal() with priceOpen != current"
-    Idle --> Opened: "getSignal() with priceOpen == current"
-    
-    state "Scheduled" as Scheduled {
-        [*] --> Pending
-        Pending: "IStrategyTickResultScheduled"
-        Pending: "action: 'scheduled'"
-        Pending: "signal: ISignalRow (scheduledAt)"
-        Pending: "Wait for price activation"
-        Pending: "Trigger onSchedule callback"
-    }
-    
-    Scheduled --> Opened: "Price reaches priceOpen"
-    Scheduled --> Cancelled: "Timeout (CC_SCHEDULE_AWAIT_MINUTES)"
-    Scheduled --> Cancelled: "SL hit before activation"
-    
-    state "Cancelled" as Cancelled {
-        [*] --> NotActivated
-        NotActivated: "IStrategyTickResultCancelled"
-        NotActivated: "action: 'cancelled'"
-        NotActivated: "signal: ISignalRow"
-        NotActivated: "closeReason: 'timeout' | 'stop_loss'"
-        NotActivated: "Trigger onCancel callback"
-    }
-    
-    Cancelled --> Idle: "Return to idle"
-    
-    state "Opened" as Opened {
-        [*] --> NewSignal
-        NewSignal: "IStrategyTickResultOpened"
-        NewSignal: "action: 'opened'"
-        NewSignal: "signal: ISignalRow (pendingAt)"
-        NewSignal: "Persist to disk (live)"
-        NewSignal: "Trigger onOpen callback"
-    }
-    
-    Opened --> Active: "Next tick()"
-    
-    state "Active" as Active {
-        [*] --> Monitoring
-        Monitoring: "IStrategyTickResultActive"
-        Monitoring: "action: 'active'"
-        Monitoring: "signal: ISignalRow"
-        Monitoring: "Check TP/SL/time"
-        Monitoring: "Trigger onActive callback"
-    }
-    
-    Active --> Active: "Conditions not met"
-    Active --> Closed: "TP hit"
-    Active --> Closed: "SL hit"
-    Active --> Closed: "Time expired"
-    
-    state "Closed" as Closed {
-        [*] --> Completed
-        Completed: "IStrategyTickResultClosed"
-        Completed: "action: 'closed'"
-        Completed: "signal: ISignalRow"
-        Completed: "closeReason: StrategyCloseReason"
-        Completed: "pnl: IStrategyPnL"
-        Completed: "Persist null (live)"
-        Completed: "Trigger onClose callback"
-    }
-    
-    Closed --> Idle: "Signal lifecycle complete"
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_16.svg)
 
 ### Type-Safe State Handling
 
@@ -1114,27 +654,7 @@ pnl% = (priceOpenWithCosts - priceCloseWithCosts) / priceOpenWithCosts × 100
 
 ### PNL Calculation Implementation
 
-```mermaid
-graph TB
-    Signal["ISignalRow"]
-    ClosePrice["currentPrice<br/>(VWAP at close)"]
-    Helper["toProfitLossDto()"]
-    Result["IStrategyPnL"]
-    
-    Signal -->|"position, priceOpen"| Helper
-    ClosePrice -->|"priceClose"| Helper
-    
-    Helper -->|"apply costs"| Result
-    
-    Result -->|"priceOpen (adjusted)"| Output
-    Result -->|"priceClose (adjusted)"| Output
-    Result -->|"pnlPercentage"| Output
-    
-    subgraph "Cost Application"
-        L["LONG:<br/>open × 1.002<br/>close × 0.998"]
-        S["SHORT:<br/>open × 0.999<br/>close × 1.002"]
-    end
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_17.svg)
 
 **Example Calculation (Long Position):**
 
@@ -1160,44 +680,7 @@ Comprehensive performance analysis with markdown reports, statistics calculation
 
 ### Diagram: Reporting Architecture
 
-```mermaid
-graph TB
-    subgraph "Event Sources"
-        SignalEmitters["signalEmitter<br/>signalBacktestEmitter<br/>signalLiveEmitter"]
-        ProgressEmitters["progressBacktestEmitter<br/>progressWalkerEmitter<br/>progressOptimizerEmitter"]
-        PartialEmitters["partialProfitSubject<br/>partialLossSubject"]
-    end
-    
-    subgraph "Markdown Services"
-        BacktestMD["BacktestMarkdownService<br/>closed signals only"]
-        LiveMD["LiveMarkdownService<br/>all events (idle/active/opened/closed)"]
-        WalkerMD["WalkerMarkdownService<br/>strategy comparison"]
-        ScheduleMD["ScheduleMarkdownService<br/>scheduled/cancelled"]
-        PartialMD["PartialMarkdownService<br/>milestone tracking"]
-        HeatMD["HeatMarkdownService<br/>multi-symbol analysis"]
-    end
-    
-    subgraph "Public API"
-        GetData["getData(strategyName)"]
-        GetReport["getReport(strategyName)"]
-        Dump["dump(strategyName, path?)"]
-    end
-    
-    SignalEmitters --> BacktestMD
-    SignalEmitters --> LiveMD
-    SignalEmitters --> ScheduleMD
-    PartialEmitters --> PartialMD
-    
-    BacktestMD --> GetData
-    LiveMD --> GetData
-    WalkerMD --> GetData
-    ScheduleMD --> GetData
-    PartialMD --> GetData
-    HeatMD --> GetData
-    
-    GetData --> GetReport
-    GetReport --> Dump
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_18.svg)
 
 **Sources:**
 - [src/lib/services/markdown/BacktestMarkdownService.ts]()
@@ -1229,20 +712,7 @@ All markdown services calculate comprehensive statistics:
 
 `ClientPartial` tracks milestone levels (10%, 20%, 30%, ..., 100%) for active signals:
 
-```mermaid
-graph LR
-    Active["Active Signal"]
-    Monitor["Monitor revenuePercent"]
-    Check["Check milestone levels"]
-    Emit["Emit partialProfitSubject<br/>or partialLossSubject"]
-    Store["Store in Set<br/>(deduplication)"]
-    
-    Active --> Monitor
-    Monitor --> Check
-    Check -->|"new level reached"| Emit
-    Emit --> Store
-    Check -->|"already emitted"| Monitor
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_19.svg)
 
 **Partial API:**
 
@@ -1312,26 +782,7 @@ All price monitoring uses Volume-Weighted Average Price from last 5 one-minute c
 
 ### Throttling Mechanism
 
-```mermaid
-graph TB
-    Tick["ClientStrategy.tick()"]
-    GetSignal["GET_SIGNAL_FN()"]
-    Check["Check interval"]
-    LastTime["_lastSignalTimestamp"]
-    CurrentTime["execution.context.when"]
-    
-    Tick --> GetSignal
-    GetSignal --> Check
-    Check --> LastTime
-    Check --> CurrentTime
-    
-    Check -->|"currentTime - lastTime < interval"| Reject["return null"]
-    Check -->|"currentTime - lastTime >= interval"| Allow["Call getSignal()"]
-    
-    Allow --> Update["Update _lastSignalTimestamp"]
-    Update --> Validate["VALIDATE_SIGNAL_FN()"]
-    Validate --> Return["return ISignalRow"]
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_20.svg)
 
 ### Supported Intervals
 
@@ -1374,22 +825,7 @@ All price monitoring uses Volume-Weighted Average Price (VWAP) calculated from t
 
 ### VWAP Calculation
 
-```mermaid
-graph TB
-    Candles["Last 5 × 1m candles"]
-    TypicalPrice["Typical Price = (high + low + close) / 3"]
-    PriceVolume["Price × Volume"]
-    SumPV["Σ(Price × Volume)"]
-    SumV["Σ(Volume)"]
-    VWAP["VWAP = Σ(Price × Volume) / Σ(Volume)"]
-    
-    Candles --> TypicalPrice
-    TypicalPrice --> PriceVolume
-    PriceVolume --> SumPV
-    Candles --> SumV
-    SumPV --> VWAP
-    SumV --> VWAP
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_21.svg)
 
 ### VWAP Usage Points
 
@@ -1402,22 +838,7 @@ graph TB
 
 ### VWAP Implementation Flow
 
-```mermaid
-sequenceDiagram
-    participant Strategy as "ClientStrategy"
-    participant Exchange as "ExchangeGlobalService"
-    participant Client as "ClientExchange"
-    participant Calc as "GET_AVG_PRICE_FN"
-    
-    Strategy->>Exchange: "getAveragePrice(symbol)"
-    Exchange->>Client: "getAveragePrice(symbol)"
-    Client->>Client: "getCandles(symbol, '1m', 5)"
-    Client->>Calc: "Calculate VWAP"
-    Calc->>Calc: "Σ(typical_price × volume) / Σ(volume)"
-    Calc-->>Client: "VWAP value"
-    Client-->>Exchange: "VWAP value"
-    Exchange-->>Strategy: "VWAP value"
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_22.svg)
 
 **Edge Case**: If total volume is zero, fallback to simple average of close prices:
 ```typescript
@@ -1454,44 +875,7 @@ The framework uses a registry pattern with dependency injection to support custo
 
 ### Registration System
 
-```mermaid
-graph TB
-    subgraph "User Configuration"
-        AddStrategy["addStrategy(IStrategySchema)"]
-        AddExchange["addExchange(IExchangeSchema)"]
-        AddFrame["addFrame(IFrameSchema)"]
-    end
-    
-    subgraph "Schema Registries"
-        StrategyReg["StrategySchemaService<br/>Map<name, schema>"]
-        ExchangeReg["ExchangeSchemaService<br/>Map<name, schema>"]
-        FrameReg["FrameSchemaService<br/>Map<name, schema>"]
-    end
-    
-    subgraph "Connection Services (Memoized)"
-        StrategyConn["StrategyConnectionService<br/>getStrategy(name)"]
-        ExchangeConn["ExchangeConnectionService<br/>getExchange(name)"]
-        FrameConn["FrameConnectionService<br/>getFrame(name)"]
-    end
-    
-    subgraph "Client Instances"
-        CS["ClientStrategy instances"]
-        CE["ClientExchange instances"]
-        CF["ClientFrame instances"]
-    end
-    
-    AddStrategy --> StrategyReg
-    AddExchange --> ExchangeReg
-    AddFrame --> FrameReg
-    
-    StrategyReg --> StrategyConn
-    ExchangeReg --> ExchangeConn
-    FrameReg --> FrameConn
-    
-    StrategyConn -->|"create once, cache"| CS
-    ExchangeConn -->|"create once, cache"| CE
-    FrameConn -->|"create once, cache"| CF
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_23.svg)
 
 ### Schema Interfaces
 
@@ -1505,21 +889,7 @@ graph TB
 
 Connection services use memoization to ensure single instance per schema name:
 
-```mermaid
-graph LR
-    Call1["Call 1:<br/>getStrategy('my-strategy')"]
-    Call2["Call 2:<br/>getStrategy('my-strategy')"]
-    Memo["Memoization Cache"]
-    Instance["ClientStrategy instance"]
-    
-    Call1 --> Memo
-    Memo -->|"cache miss"| Create["new ClientStrategy()"]
-    Create --> Instance
-    Instance --> Memo
-    
-    Call2 --> Memo
-    Memo -->|"cache hit"| Instance
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_24.svg)
 
 ### Custom Implementation Example
 

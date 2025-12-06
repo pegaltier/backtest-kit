@@ -32,47 +32,7 @@ The framework supports two execution modes for strategy evaluation:
 
 **Backtest Execution Flow**
 
-```mermaid
-flowchart TB
-    Start["BacktestLogicPrivateService.run()"]
-    Loop["for (i = 0; i < timeframes.length; i++)"]
-    SetContext["ExecutionContextService.runInContext<br/>{symbol, when: timeframes[i], backtest: true}"]
-    Tick["strategyGlobalService.tick()"]
-    CheckAction{"result.action?"}
-    
-    IdleActive["idle / active"]
-    Opened["opened"]
-    Scheduled["scheduled"]
-    
-    GetCandles["exchangeGlobalService.getNextCandles<br/>(symbol, '1m', signal.minuteEstimatedTime)"]
-    GetScheduledCandles["exchangeGlobalService.getNextCandles<br/>(symbol, '1m', CC_SCHEDULE_AWAIT + minuteEstimatedTime)"]
-    
-    Backtest["strategyGlobalService.backtest(candles)"]
-    SkipLoop["while (i < timeframes.length &&<br/>timeframes[i].getTime() < closeTimestamp) i++"]
-    Yield["yield backtestResult"]
-    Continue["continue loop"]
-    
-    Start --> Loop
-    Loop --> SetContext
-    SetContext --> Tick
-    Tick --> CheckAction
-    
-    CheckAction -->|"idle/active"| IdleActive
-    CheckAction -->|"opened"| Opened
-    CheckAction -->|"scheduled"| Scheduled
-    
-    IdleActive --> Continue
-    Opened --> GetCandles
-    Scheduled --> GetScheduledCandles
-    
-    GetCandles --> Backtest
-    GetScheduledCandles --> Backtest
-    
-    Backtest --> SkipLoop
-    SkipLoop --> Yield
-    Yield --> Continue
-    Continue --> Loop
-```
+![Mermaid Diagram](./diagrams\55_Fast-Forward_Simulation_0.svg)
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:59-298](), [src/client/ClientStrategy.ts:1639-1753]()
 
@@ -99,49 +59,7 @@ backtest: (
 
 **Signal Lifecycle Processing Flow**
 
-```mermaid
-flowchart TD
-    Start["backtest(symbol, strategyName, candles)"]
-    CheckMode{"execution.context.backtest?"}
-    ThrowLive["throw Error: 'running in live context'"]
-    
-    CheckSignal{"_pendingSignal ||<br/>_scheduledSignal?"}
-    ThrowNoSignal["throw Error: 'no pending or scheduled signal'"]
-    
-    CheckType{"_scheduledSignal?"}
-    
-    ProcessScheduled["PROCESS_SCHEDULED_SIGNAL_CANDLES_FN<br/>(scheduled, candles)"]
-    CheckResult{"{activated, cancelled}?"}
-    
-    Cancelled["Return IStrategyTickResultCancelled"]
-    SliceCandles["candles = candles.slice(activationIndex + 1)"]
-    
-    ProcessPending["PROCESS_PENDING_SIGNAL_CANDLES_FN<br/>(_pendingSignal, candles)"]
-    CheckClosed{"closedResult?"}
-    ReturnClosed["Return closedResult"]
-    
-    TimeExpired["CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN<br/>(signal, lastPrice, 'time_expired')"]
-    
-    Start --> CheckMode
-    CheckMode -->|"false"| ThrowLive
-    CheckMode -->|"true"| CheckSignal
-    CheckSignal -->|"false"| ThrowNoSignal
-    CheckSignal -->|"true"| CheckType
-    
-    CheckType -->|"true"| ProcessScheduled
-    CheckType -->|"false"| ProcessPending
-    
-    ProcessScheduled --> CheckResult
-    CheckResult -->|"cancelled"| Cancelled
-    CheckResult -->|"activated"| SliceCandles
-    CheckResult -->|"still waiting"| ProcessPending
-    
-    SliceCandles --> ProcessPending
-    ProcessPending --> CheckClosed
-    CheckClosed -->|"true"| ReturnClosed
-    CheckClosed -->|"false"| TimeExpired
-    TimeExpired --> ReturnClosed
-```
+![Mermaid Diagram](./diagrams\55_Fast-Forward_Simulation_1.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:1781-1949](), [src/interfaces/Strategy.interface.ts:304-306]()
 
@@ -180,40 +98,7 @@ if (signal.position === "short") {
 
 **Price Resolution Diagram:**
 
-```mermaid
-flowchart LR
-    subgraph "Candle Structure"
-        Open["open"]
-        High["high<br/>(highest price in interval)"]
-        Low["low<br/>(lowest price in interval)"]
-        Close["close"]
-        Volume["volume"]
-    end
-    
-    subgraph "Long Position Detection"
-        HighCheck["high >= priceTakeProfit"]
-        LowCheck["low <= priceStopLoss"]
-        TPHit["Close at priceTakeProfit<br/>(exact price)"]
-        SLHit["Close at priceStopLoss<br/>(exact price)"]
-    end
-    
-    subgraph "Short Position Detection"
-        LowCheckShort["low <= priceTakeProfit"]
-        HighCheckShort["high >= priceStopLoss"]
-        TPHitShort["Close at priceTakeProfit"]
-        SLHitShort["Close at priceStopLoss"]
-    end
-    
-    High --> HighCheck
-    Low --> LowCheck
-    HighCheck -->|"true"| TPHit
-    LowCheck -->|"true"| SLHit
-    
-    Low --> LowCheckShort
-    High --> HighCheckShort
-    LowCheckShort -->|"true"| TPHitShort
-    HighCheckShort -->|"true"| SLHitShort
-```
+![Mermaid Diagram](./diagrams\55_Fast-Forward_Simulation_2.svg)
 
 **Key Implementation Details:**
 
@@ -250,31 +135,7 @@ const GET_AVG_PRICE_FN = (candles: ICandleData[]): number => {
 
 **VWAP Calculation Process**
 
-```mermaid
-flowchart TB
-    Input["Input: ICandleData[]<br/>(recent N candles)"]
-    
-    subgraph Calculation ["GET_AVG_PRICE_FN"]
-        Reduce1["Σ (typicalPrice × volume)"]
-        TypPrice["typicalPrice = (high + low + close) / 3"]
-        Reduce2["Σ volume"]
-        Check{"totalVolume === 0?"}
-        VWAP["sumPriceVolume / totalVolume"]
-        Fallback["Σ close / candles.length"]
-    end
-    
-    Output["Return: number"]
-    
-    Input --> Reduce1
-    Input --> Reduce2
-    Reduce1 --> TypPrice
-    TypPrice --> Check
-    Reduce2 --> Check
-    Check -->|"No"| VWAP
-    Check -->|"Yes"| Fallback
-    VWAP --> Output
-    Fallback --> Output
-```
+![Mermaid Diagram](./diagrams\55_Fast-Forward_Simulation_3.svg)
 
 **Window Size and Usage:**
 
@@ -303,44 +164,7 @@ Scheduled signals require a two-phase fast-forward simulation: first monitoring 
 
 **Two-Phase Process Diagram:**
 
-```mermaid
-stateDiagram-v2
-    [*] --> Phase1
-    
-    state Phase1 {
-        [*] --> MonitorActivation
-        MonitorActivation --> CheckTimeout: Every candle
-        CheckTimeout --> TimeoutExpired: scheduledAt + CC_SCHEDULE_AWAIT_MINUTES
-        CheckTimeout --> CheckSL: Not expired
-        CheckSL --> SLHit: price hit SL
-        CheckSL --> CheckPrice: SL not hit
-        CheckPrice --> PriceReached: price hit priceOpen
-        CheckPrice --> MonitorActivation: Continue waiting
-        
-        TimeoutExpired --> Cancelled
-        SLHit --> Cancelled
-        PriceReached --> Activated
-    }
-    
-    Phase1 --> [*]: Cancelled
-    Phase1 --> Phase2: Activated
-    
-    state Phase2 {
-        [*] --> MonitorTPSL
-        MonitorTPSL --> CheckExpired: Every candle
-        CheckExpired --> TimeExpired: pendingAt + minuteEstimatedTime
-        CheckExpired --> CheckTPSL: Not expired
-        CheckTPSL --> TPHit: Take Profit
-        CheckTPSL --> SLHit2: Stop Loss
-        CheckTPSL --> MonitorTPSL: Continue
-        
-        TimeExpired --> Closed
-        TPHit --> Closed
-        SLHit2 --> Closed
-    }
-    
-    Phase2 --> [*]: Closed
-```
+![Mermaid Diagram](./diagrams\55_Fast-Forward_Simulation_4.svg)
 
 **Phase 1: Activation Monitoring (`PROCESS_SCHEDULED_SIGNAL_CANDLES_FN`)**
 
@@ -416,32 +240,7 @@ For immediate signals (no `priceOpen` specified) or after scheduled signal activ
 
 **Processing Flow (`PROCESS_PENDING_SIGNAL_CANDLES_FN`):**
 
-```mermaid
-flowchart TD
-    Start["Start at candle index<br/>(candlesCount - 1)"]
-    CalcVWAP["Calculate VWAP<br/>from recent N candles"]
-    CheckTime{"Elapsed Time >=<br/>minuteEstimatedTime?"}
-    CloseTime["Close at VWAP<br/>reason: time_expired"]
-    CheckTP{"Position long:<br/>high >= TP?<br/>Position short:<br/>low <= TP?"}
-    CloseTP["Close at priceTakeProfit<br/>reason: take_profit"]
-    CheckSL{"Position long:<br/>low <= SL?<br/>Position short:<br/>high >= SL?"}
-    CloseSL["Close at priceStopLoss<br/>reason: stop_loss"]
-    NextCandle["i++"]
-    Return["Return IStrategyTickResultClosed"]
-    
-    Start --> CalcVWAP
-    CalcVWAP --> CheckTime
-    CheckTime -->|"Yes"| CloseTime
-    CheckTime -->|"No"| CheckTP
-    CheckTP -->|"Yes"| CloseTP
-    CheckTP -->|"No"| CheckSL
-    CheckSL -->|"Yes"| CloseSL
-    CheckSL -->|"No"| NextCandle
-    NextCandle --> CalcVWAP
-    CloseTime --> Return
-    CloseTP --> Return
-    CloseSL --> Return
-```
+![Mermaid Diagram](./diagrams\55_Fast-Forward_Simulation_5.svg)
 
 **Critical Timing Detail:**
 
@@ -477,54 +276,7 @@ The fast-forward mechanism integrates tightly with `BacktestLogicPrivateService`
 
 **Execution Context and Skip-Ahead Flow**
 
-```mermaid
-sequenceDiagram
-    participant BLP as BacktestLogicPrivateService
-    participant ECS as ExecutionContextService
-    participant SG as StrategyGlobalService
-    participant SC as StrategyConnectionService
-    participant CS as ClientStrategy
-    participant EG as ExchangeGlobalService
-    participant CEX as ClientExchange
-    
-    Note over BLP: timeframes[i] = 2024-01-01T00:00:00
-    
-    BLP->>ECS: runInContext({symbol, when: timeframes[i], backtest: true})
-    ECS->>SG: tick(symbol, strategyName, frameName)
-    SG->>SC: getStrategy(strategyName).tick()
-    SC->>CS: tick(symbol, strategyName)
-    CS-->>SC: IStrategyTickResultOpened
-    SC-->>SG: result
-    SG-->>BLP: result.action === "opened"
-    
-    Note over BLP: Need future candles
-    
-    BLP->>EG: getNextCandles(symbol, "1m", minuteEstimatedTime, when, true)
-    EG->>CEX: getCandles(symbol, "1m", since: when, limit)
-    CEX-->>EG: ICandleData[]
-    EG-->>BLP: candles
-    
-    Note over BLP: Fast-forward through signal lifecycle
-    
-    BLP->>SG: backtest(symbol, strategyName, frameName, candles)
-    SG->>SC: getStrategy(strategyName).backtest(candles)
-    SC->>CS: backtest(symbol, strategyName, candles)
-    
-    CS->>CS: PROCESS_PENDING_SIGNAL_CANDLES_FN
-    Note over CS: Iterate candles checking TP/SL/time
-    CS->>CS: CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN
-    
-    CS-->>SC: IStrategyTickResultClosed
-    SC-->>SG: result
-    SG-->>BLP: backtestResult
-    
-    Note over BLP: Skip ahead optimization
-    
-    BLP->>BLP: while (timeframes[i] < closeTimestamp) i++
-    Note over BLP: Now i points to first frame after signal closed
-    
-    BLP->>BLP: yield backtestResult
-```
+![Mermaid Diagram](./diagrams\55_Fast-Forward_Simulation_6.svg)
 
 **Skip-Ahead Optimization Logic:**
 

@@ -26,57 +26,7 @@ All functions operate within the current `ExecutionContext` (symbol, when, backt
 
 ## Exchange Function Access Patterns
 
-```mermaid
-graph TB
-    subgraph "User Layer"
-        AddExchange["addExchange()<br/>IExchangeSchema"]
-        UserCode["Strategy getSignal()"]
-    end
-    
-    subgraph "Schema Layer"
-        ExchangeSchema["ExchangeSchemaService<br/>Registry: name → schema"]
-    end
-    
-    subgraph "Connection Layer"
-        ExchangeConnection["ExchangeConnectionService<br/>Memoized instances"]
-        ClientExchange["ClientExchange<br/>IExchange implementation"]
-    end
-    
-    subgraph "Global Layer"
-        ExchangeGlobal["ExchangeGlobalService<br/>Context injection wrapper"]
-        ExecutionContext["ExecutionContextService<br/>symbol, when, backtest"]
-    end
-    
-    subgraph "Function Implementations"
-        GetCandles["getCandles()<br/>Historical backwards"]
-        GetNextCandles["getNextCandles()<br/>Future forward"]
-        GetAveragePrice["getAveragePrice()<br/>VWAP from N candles"]
-        FormatPrice["formatPrice()<br/>Exchange precision"]
-        FormatQuantity["formatQuantity()<br/>Exchange precision"]
-    end
-    
-    subgraph "Data Source"
-        UserImplementation["User-provided getCandles<br/>CCXT, Database, API"]
-    end
-    
-    AddExchange -->|registers| ExchangeSchema
-    ExchangeSchema -->|provides schema| ExchangeConnection
-    ExchangeConnection -->|creates| ClientExchange
-    ExchangeGlobal -->|wraps with context| ClientExchange
-    ExecutionContext -->|provides when/symbol| ClientExchange
-    
-    UserCode -->|calls via strategy context| ExchangeGlobal
-    
-    ClientExchange --> GetCandles
-    ClientExchange --> GetNextCandles
-    ClientExchange --> GetAveragePrice
-    ClientExchange --> FormatPrice
-    ClientExchange --> FormatQuantity
-    
-    GetCandles -->|delegates to| UserImplementation
-    GetNextCandles -->|delegates to| UserImplementation
-    GetAveragePrice -->|uses| GetCandles
-```
+![Mermaid Diagram](./diagrams\21_Exchange_Functions_0.svg)
 
 **Diagram: Exchange Function Call Flow and Service Layers**
 
@@ -198,31 +148,7 @@ The `getAveragePrice` function calculates the Volume-Weighted Average Price (VWA
 
 ### VWAP Calculation Flow
 
-```mermaid
-flowchart TD
-    Start["getAveragePrice(symbol)"]
-    FetchCandles["getCandles(symbol, '1m', N)<br/>N = CC_AVG_PRICE_CANDLES_COUNT"]
-    CheckEmpty{"candles.length === 0?"}
-    ThrowError["throw Error<br/>'no candles data'"]
-    
-    CalcTypical["For each candle:<br/>typicalPrice = (high + low + close) / 3"]
-    CalcPriceVolume["sumPriceVolume += typicalPrice * volume"]
-    CalcTotalVolume["totalVolume += volume"]
-    
-    CheckVolume{"totalVolume === 0?"}
-    SimpleAvg["Return simple average:<br/>sum(close) / candles.length"]
-    VWAP["Return VWAP:<br/>sumPriceVolume / totalVolume"]
-    
-    Start --> FetchCandles
-    FetchCandles --> CheckEmpty
-    CheckEmpty -->|Yes| ThrowError
-    CheckEmpty -->|No| CalcTypical
-    CalcTypical --> CalcPriceVolume
-    CalcPriceVolume --> CalcTotalVolume
-    CalcTotalVolume --> CheckVolume
-    CheckVolume -->|Yes| SimpleAvg
-    CheckVolume -->|No| VWAP
-```
+![Mermaid Diagram](./diagrams\21_Exchange_Functions_1.svg)
 
 **Diagram: VWAP Calculation Algorithm**
 
@@ -298,36 +224,7 @@ The actual formatting logic is defined in the `IExchangeSchema` registered via `
 
 ## Retry Logic and Error Handling
 
-```mermaid
-flowchart TD
-    Start["GET_CANDLES_FN<br/>symbol, interval, since, limit"]
-    InitRetry["retryCount = 0<br/>maxRetries = CC_GET_CANDLES_RETRY_COUNT"]
-    
-    TryFetch["Try:<br/>params.getCandles(symbol, interval, since, limit)"]
-    Validate["VALIDATE_NO_INCOMPLETE_CANDLES_FN(result)"]
-    Success["Return result"]
-    
-    CatchError["Catch error"]
-    LogWarn["Log warning with attempt number<br/>console.warn + logger.warn"]
-    IncrementRetry["retryCount++"]
-    CheckRetry{"retryCount < maxRetries?"}
-    Sleep["sleep(CC_GET_CANDLES_RETRY_DELAY_MS)"]
-    ThrowError["throw lastError"]
-    
-    Start --> InitRetry
-    InitRetry --> TryFetch
-    TryFetch --> Validate
-    Validate -->|Valid| Success
-    Validate -->|Invalid| CatchError
-    TryFetch -->|Error| CatchError
-    
-    CatchError --> LogWarn
-    LogWarn --> IncrementRetry
-    IncrementRetry --> CheckRetry
-    CheckRetry -->|Yes| Sleep
-    Sleep --> TryFetch
-    CheckRetry -->|No| ThrowError
-```
+![Mermaid Diagram](./diagrams\21_Exchange_Functions_2.svg)
 
 **Diagram: GET_CANDLES_FN Retry Logic Flow**
 
@@ -363,47 +260,7 @@ All fetched candles are validated using `VALIDATE_NO_INCOMPLETE_CANDLES_FN` to d
 
 ### Validation Checks
 
-```mermaid
-flowchart TD
-    Start["VALIDATE_NO_INCOMPLETE_CANDLES_FN(candles)"]
-    CheckEmpty{"candles.length === 0?"}
-    ReturnEarly["Return (no validation needed)"]
-    
-    CalcReference["Calculate reference price:<br/>median or average of OHLC"]
-    CheckMedianCondition{"candles.length >= CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN?"}
-    UseMedian["Use median of sorted prices"]
-    UseAverage["Use average of prices"]
-    
-    CalcThreshold["minValidPrice = referencePrice /<br/>CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR"]
-    
-    LoopCandles["For each candle:"]
-    CheckFinite["Check isFinite for OHLCV"]
-    CheckPositive["Check > 0 for OHLC, >= 0 for volume"]
-    CheckAnomaly["Check OHLC >= minValidPrice"]
-    
-    ThrowError["throw Error with details"]
-    Success["Validation passed"]
-    
-    Start --> CheckEmpty
-    CheckEmpty -->|Yes| ReturnEarly
-    CheckEmpty -->|No| CalcReference
-    
-    CalcReference --> CheckMedianCondition
-    CheckMedianCondition -->|Yes| UseMedian
-    CheckMedianCondition -->|No| UseAverage
-    
-    UseMedian --> CalcThreshold
-    UseAverage --> CalcThreshold
-    CalcThreshold --> LoopCandles
-    
-    LoopCandles --> CheckFinite
-    CheckFinite -->|Fail| ThrowError
-    CheckFinite -->|Pass| CheckPositive
-    CheckPositive -->|Fail| ThrowError
-    CheckPositive -->|Pass| CheckAnomaly
-    CheckAnomaly -->|Fail| ThrowError
-    CheckAnomaly -->|Pass| Success
-```
+![Mermaid Diagram](./diagrams\21_Exchange_Functions_3.svg)
 
 **Diagram: Candle Validation and Anomaly Detection Flow**
 
@@ -545,46 +402,7 @@ ExecutionContextService.runInContext(
 
 ## Exchange Function Integration in Signal Lifecycle
 
-```mermaid
-sequenceDiagram
-    participant S as ClientStrategy
-    participant E as ClientExchange
-    participant U as User getCandles<br/>Implementation
-    
-    Note over S: tick() called with when
-    
-    S->>E: getAveragePrice(symbol)
-    E->>E: getCandles(symbol, "1m", CC_AVG_PRICE_CANDLES_COUNT)
-    E->>U: getCandles(symbol, "1m", since, limit)
-    U-->>E: ICandleData[]
-    E->>E: VALIDATE_NO_INCOMPLETE_CANDLES_FN
-    E->>E: Filter by timestamp range
-    E->>E: Calculate VWAP from candles
-    E-->>S: currentPrice (VWAP)
-    
-    S->>S: Check risk limits with currentPrice
-    S->>S: Call getSignal(symbol, when)
-    
-    alt Signal Opened
-        S->>S: Validate signal with currentPrice
-        S->>E: formatPrice(symbol, priceTakeProfit)
-        E->>U: formatPrice(symbol, price)
-        U-->>E: "50000.00"
-        E-->>S: Formatted price
-        
-        S->>E: formatQuantity(symbol, quantity)
-        E->>U: formatQuantity(symbol, quantity)
-        U-->>E: "0.001"
-        E-->>S: Formatted quantity
-    end
-    
-    Note over S: Signal monitoring loop
-    loop Every tick
-        S->>E: getAveragePrice(symbol)
-        E-->>S: currentPrice
-        S->>S: Check TP/SL against currentPrice
-    end
-```
+![Mermaid Diagram](./diagrams\21_Exchange_Functions_4.svg)
 
 **Diagram: Exchange Function Calls During Signal Lifecycle**
 

@@ -8,38 +8,7 @@ For information about executing Walker operations, see [Walker API](#4.5). For d
 
 Walker schemas are registered using the `IWalkerSchema` interface, which specifies a collection of strategies to compare, a metric for ranking, and the execution environment.
 
-```mermaid
-classDiagram
-    class IWalkerSchema {
-        +WalkerName walkerName
-        +string? note
-        +StrategyName[] strategies
-        +WalkerMetric metric
-        +ExchangeName exchangeName
-        +FrameName frameName
-        +Partial~IWalkerCallbacks~? callbacks
-    }
-    
-    class IWalkerCallbacks {
-        +onStrategy(walkerName, strategyName, results, statistics)
-        +onComplete(walkerName, results)
-    }
-    
-    class IWalkerResults {
-        +StrategyName bestStrategy
-        +number bestMetric
-        +IWalkerStrategyResult[] strategies
-    }
-    
-    class IWalkerStrategyResult {
-        +StrategyName strategyName
-        +BacktestStatistics statistics
-    }
-    
-    IWalkerSchema --> IWalkerCallbacks : callbacks
-    IWalkerCallbacks --> IWalkerResults : onComplete
-    IWalkerResults --> IWalkerStrategyResult : strategies
-```
+![Mermaid Diagram](./diagrams\29_Walker_Schemas_0.svg)
 
 **Sources:** [types.d.ts:1486-1530]()
 
@@ -180,34 +149,7 @@ callbacks?: Partial<IWalkerCallbacks>;
 
 Walker execution emits events at key lifecycle points via the `IWalkerCallbacks` interface.
 
-```mermaid
-sequenceDiagram
-    participant Walker as WalkerLogicPrivateService
-    participant Callback as IWalkerCallbacks
-    participant Emitter as Event Emitters
-    
-    Note over Walker: For each strategy in strategies[]
-    
-    Walker->>Walker: Run BacktestLogicPublicService
-    Walker->>Walker: Calculate BacktestStatistics
-    
-    Walker->>Callback: onStrategy(walkerName, strategyName, results, statistics)
-    Note over Callback: Access individual strategy performance
-    
-    Walker->>Emitter: progressWalkerEmitter.next(progress)
-    Note over Emitter: Progress tracking (N/M strategies)
-    
-    Note over Walker: After all strategies complete
-    
-    Walker->>Walker: Compare metrics, select best
-    Walker->>Walker: Build IWalkerResults
-    
-    Walker->>Callback: onComplete(walkerName, results)
-    Note over Callback: Access comparative results
-    
-    Walker->>Emitter: walkerCompleteSubject.next(results)
-    Walker->>Emitter: doneWalkerSubject.next()
-```
+![Mermaid Diagram](./diagrams\29_Walker_Schemas_1.svg)
 
 ### onStrategy Callback
 
@@ -305,26 +247,7 @@ listenWalkerComplete((walkerName, results) => {
 
 Walker schemas are registered using the `addWalker()` function, which validates the configuration and stores it in the `WalkerSchemaService` registry.
 
-```mermaid
-flowchart LR
-    User["User Code"]
-    addWalker["addWalker(schema)"]
-    WalkerValidation["WalkerValidationService"]
-    WalkerSchema["WalkerSchemaService"]
-    StrategySchema["StrategySchemaService"]
-    ExchangeSchema["ExchangeSchemaService"]
-    FrameSchema["FrameSchemaService"]
-    
-    User --> addWalker
-    addWalker --> WalkerValidation
-    WalkerValidation --> StrategySchema
-    WalkerValidation --> ExchangeSchema
-    WalkerValidation --> FrameSchema
-    addWalker --> WalkerSchema
-    
-    WalkerSchema -.->|"getWalker(walkerName)"| WalkerConnectionService
-    WalkerConnectionService -.->|"used by"| WalkerLogicPrivateService
-```
+![Mermaid Diagram](./diagrams\29_Walker_Schemas_2.svg)
 
 **Basic registration:**
 ```typescript
@@ -391,27 +314,7 @@ The `strategies` array order determines execution sequence, which affects:
 
 **Execution diagram:**
 
-```mermaid
-flowchart TB
-    Start["Walker Execution Start"]
-    S1["Execute strategies[0]"]
-    S2["Execute strategies[1]"]
-    S3["Execute strategies[N]"]
-    Compare["Compare Metrics"]
-    Results["Determine Best Strategy"]
-    
-    Start --> S1
-    S1 -->|"onStrategy callback"| S2
-    S2 -->|"onStrategy callback"| S3
-    S3 -->|"onStrategy callback"| Compare
-    Compare --> Results
-    Results -->|"onComplete callback"| End["Walker Complete"]
-    
-    S1 -.->|"progressWalkerEmitter<br/>1/N"| Monitor
-    S2 -.->|"progressWalkerEmitter<br/>2/N"| Monitor
-    S3 -.->|"progressWalkerEmitter<br/>N/N"| Monitor
-    Monitor["Progress Monitoring"]
-```
+![Mermaid Diagram](./diagrams\29_Walker_Schemas_3.svg)
 
 **Best practice:** Place high-priority or baseline strategies first in the array for earlier feedback during long-running comparisons.
 
@@ -421,35 +324,7 @@ flowchart TB
 
 Walker schemas are consumed by the Walker execution pipeline during `Walker.run()` or `Walker.background()` operations.
 
-```mermaid
-flowchart TB
-    subgraph "Registration Phase"
-        addWalker["addWalker(schema)"]
-        WalkerSchemaService["WalkerSchemaService<br/>Registry Storage"]
-    end
-    
-    subgraph "Execution Phase"
-        WalkerRun["Walker.run(walkerName)"]
-        WalkerCommand["WalkerCommandService"]
-        WalkerLogic["WalkerLogicPrivateService"]
-        WalkerConnection["WalkerConnectionService"]
-    end
-    
-    subgraph "Per-Strategy Execution"
-        BacktestPublic["BacktestLogicPublicService"]
-        StrategyConnection["StrategyConnectionService"]
-        ClientStrategy["ClientStrategy"]
-    end
-    
-    addWalker --> WalkerSchemaService
-    WalkerRun --> WalkerCommand
-    WalkerCommand --> WalkerLogic
-    WalkerLogic --> WalkerConnection
-    WalkerConnection --> WalkerSchemaService
-    WalkerLogic --> BacktestPublic
-    BacktestPublic --> StrategyConnection
-    StrategyConnection --> ClientStrategy
-```
+![Mermaid Diagram](./diagrams\29_Walker_Schemas_4.svg)
 
 **Execution flow:**
 1. User calls `Walker.run(walkerName)`

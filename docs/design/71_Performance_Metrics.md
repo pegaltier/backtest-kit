@@ -23,46 +23,7 @@ All metrics are calculated identically for both backtest and live modes, with im
 
 ## Metric Calculation Architecture
 
-```mermaid
-graph TB
-    subgraph "Data Collection Layer"
-        ClosedSignals["Closed Signals Array<br/>[IStrategyTickResultClosed]"]
-        SignalData["Signal Data Fields<br/>pnl.pnlPercentage<br/>pendingAt<br/>closeTimestamp"]
-    end
-    
-    subgraph "ReportStorage Class"
-        AddSignal["addSignal()<br/>addClosedEvent()"]
-        SignalList["_signalList<br/>_eventList<br/>In-memory storage"]
-        GetData["getData()<br/>Calculate all metrics"]
-    end
-    
-    subgraph "Metric Calculation Pipeline"
-        BasicStats["Basic Statistics<br/>winCount, lossCount<br/>avgPnl, totalPnl<br/>winRate"]
-        RiskMetrics["Risk Metrics<br/>variance calculation<br/>stdDev = sqrt(variance)<br/>sharpeRatio = avgPnl / stdDev"]
-        ScaledMetrics["Scaled Metrics<br/>annualizedSharpeRatio<br/>certaintyRatio<br/>expectedYearlyReturns"]
-    end
-    
-    subgraph "Output Interfaces"
-        BacktestStats["BacktestStatistics<br/>BacktestMarkdownService"]
-        LiveStats["LiveStatistics<br/>LiveMarkdownService"]
-    end
-    
-    ClosedSignals --> SignalData
-    SignalData --> AddSignal
-    AddSignal --> SignalList
-    SignalList --> GetData
-    
-    GetData --> BasicStats
-    BasicStats --> RiskMetrics
-    RiskMetrics --> ScaledMetrics
-    
-    ScaledMetrics --> BacktestStats
-    ScaledMetrics --> LiveStats
-    
-    style BasicStats fill:#f9f9f9
-    style RiskMetrics fill:#f9f9f9
-    style ScaledMetrics fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\71_Performance_Metrics_0.svg)
 
 The calculation pipeline follows a three-stage process: basic statistics compute foundational metrics (counts, sums, averages), risk metrics compute volatility measures (variance, standard deviation, Sharpe ratio), and scaled metrics compute time-adjusted projections (annualized Sharpe, yearly returns).
 
@@ -267,49 +228,7 @@ const expectedYearlyReturns = avgPnl * tradesPerYear;
 
 ## Calculation Flow Diagram
 
-```mermaid
-flowchart TB
-    Start["getData() Invoked"]
-    CheckEmpty["Check if<br/>_signalList.length == 0"]
-    ReturnEmpty["Return empty stats<br/>All metrics = null"]
-    
-    CountBasic["Count Basic Stats<br/>totalSignals<br/>winCount = filter(pnl > 0)<br/>lossCount = filter(pnl < 0)"]
-    
-    CalcBasic["Calculate Basic Metrics<br/>avgPnl = sum(pnl) / total<br/>totalPnl = sum(pnl)<br/>winRate = winCount / total * 100"]
-    
-    CalcVariance["Calculate Variance<br/>returns = map(pnl)<br/>variance = sum((r - avgPnl)²) / total"]
-    
-    CalcStdDev["Calculate Standard Deviation<br/>stdDev = sqrt(variance)"]
-    
-    CalcSharpe["Calculate Sharpe Ratio<br/>sharpeRatio = avgPnl / stdDev<br/>annualizedSharpe = sharpe * sqrt(365)"]
-    
-    FilterWinsLosses["Filter Wins and Losses<br/>wins = filter(pnl > 0)<br/>losses = filter(pnl < 0)"]
-    
-    CalcCertainty["Calculate Certainty Ratio<br/>avgWin = sum(wins) / winCount<br/>avgLoss = sum(losses) / lossCount<br/>certaintyRatio = avgWin / abs(avgLoss)"]
-    
-    CalcDuration["Calculate Trade Duration<br/>avgDurationMs = sum(closeTime - openTime) / total<br/>avgDurationDays = ms / (1000*60*60*24)"]
-    
-    CalcYearly["Calculate Expected Yearly Returns<br/>tradesPerYear = 365 / avgDurationDays<br/>expectedYearly = avgPnl * tradesPerYear"]
-    
-    SafetyCheck["Apply isUnsafe() Checks<br/>Set to null if NaN/Infinity"]
-    
-    ReturnStats["Return BacktestStatistics<br/>or LiveStatistics"]
-    
-    Start --> CheckEmpty
-    CheckEmpty -->|length == 0| ReturnEmpty
-    CheckEmpty -->|length > 0| CountBasic
-    
-    CountBasic --> CalcBasic
-    CalcBasic --> CalcVariance
-    CalcVariance --> CalcStdDev
-    CalcStdDev --> CalcSharpe
-    CalcSharpe --> FilterWinsLosses
-    FilterWinsLosses --> CalcCertainty
-    CalcCertainty --> CalcDuration
-    CalcDuration --> CalcYearly
-    CalcYearly --> SafetyCheck
-    SafetyCheck --> ReturnStats
-```
+![Mermaid Diagram](./diagrams\71_Performance_Metrics_1.svg)
 
 The calculation follows a dependency chain where basic metrics must be computed before risk metrics, and risk metrics before scaled metrics. All calculations are protected by `isUnsafe()` checks that set metrics to `null` if they contain NaN or Infinity values.
 

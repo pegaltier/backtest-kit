@@ -59,24 +59,7 @@ Sources: [src/interfaces/Strategy.interface.ts:7-17](), [src/interfaces/Strategy
 
 The framework converts `SignalInterval` strings to millisecond durations via the `INTERVAL_MINUTES` constant:
 
-```mermaid
-graph LR
-    SignalInterval["SignalInterval Type"]
-    Mapping["INTERVAL_MINUTES Object"]
-    Milliseconds["Milliseconds Duration"]
-    
-    SignalInterval -->|"Lookup"| Mapping
-    Mapping -->|"Convert"| Milliseconds
-    
-    subgraph "Mapping Table"
-        M1["'1m' → 1 minute"]
-        M3["'3m' → 3 minutes"]
-        M5["'5m' → 5 minutes"]
-        M15["'15m' → 15 minutes"]
-        M30["'30m' → 30 minutes"]
-        M60["'1h' → 60 minutes"]
-    end
-```
+![Mermaid Diagram](./diagrams\60_Interval_Throttling_0.svg)
 
 **Mapping Definition:**
 
@@ -110,22 +93,7 @@ Sources: [src/client/ClientStrategy.ts:31-38]()
 
 Each `ClientStrategy` instance maintains a private field `_lastSignalTimestamp` that records when `getSignal` was last called:
 
-```mermaid
-stateDiagram-v2
-    [*] --> Null: "Initial state"
-    Null --> Timestamp: "First getSignal call"
-    Timestamp --> Timestamp: "Subsequent calls (if interval passed)"
-    
-    note right of Null
-        _lastSignalTimestamp = null
-        No throttling on first call
-    end note
-    
-    note right of Timestamp
-        _lastSignalTimestamp = currentTime
-        Throttling active
-    end note
-```
+![Mermaid Diagram](./diagrams\60_Interval_Throttling_1.svg)
 
 **Field Declaration:**
 
@@ -151,32 +119,7 @@ Sources: [src/client/ClientStrategy.ts:194-208]()
 
 The throttling check occurs in `GET_SIGNAL_FN` before calling the user-defined `getSignal` function:
 
-```mermaid
-flowchart TD
-    Start["tick() or backtest() called"]
-    CheckStopped{"_isStopped flag?"}
-    GetCurrentTime["currentTime = execution.context.when.getTime()"]
-    CheckNull{"_lastSignalTimestamp == null?"}
-    CalcInterval["intervalMs = INTERVAL_MINUTES[interval] × 60 × 1000"]
-    CheckElapsed{"currentTime - _lastSignalTimestamp >= intervalMs?"}
-    UpdateTimestamp["_lastSignalTimestamp = currentTime"]
-    CallGetSignal["Call user's getSignal(symbol)"]
-    ReturnNull1["return null"]
-    ReturnNull2["return null"]
-    Continue["Continue with risk check and validation"]
-    
-    Start --> CheckStopped
-    CheckStopped -->|"true"| ReturnNull1
-    CheckStopped -->|"false"| GetCurrentTime
-    GetCurrentTime --> CheckNull
-    CheckNull -->|"true (first call)"| UpdateTimestamp
-    CheckNull -->|"false"| CalcInterval
-    CalcInterval --> CheckElapsed
-    CheckElapsed -->|"false (too soon)"| ReturnNull2
-    CheckElapsed -->|"true (interval passed)"| UpdateTimestamp
-    UpdateTimestamp --> CallGetSignal
-    CallGetSignal --> Continue
-```
+![Mermaid Diagram](./diagrams\60_Interval_Throttling_2.svg)
 
 **Implementation at [src/client/ClientStrategy.ts:194-208]():**
 
@@ -213,36 +156,7 @@ Sources: [src/client/ClientStrategy.ts:187-283]()
 
 The throttling check is the first gate in the signal generation pipeline:
 
-```mermaid
-graph TB
-    subgraph "GET_SIGNAL_FN"
-        ThrottleCheck["1. Throttling Check<br/>(_lastSignalTimestamp)"]
-        GetVWAP["2. Get Current VWAP<br/>(exchange.getAveragePrice)"]
-        RiskCheck["3. Risk Check<br/>(risk.checkSignal)"]
-        CallGetSignal["4. Call User getSignal<br/>(params.getSignal)"]
-        ValidateSignal["5. Validate Signal<br/>(VALIDATE_SIGNAL_FN)"]
-        
-        ThrottleCheck -->|"Passed"| GetVWAP
-        ThrottleCheck -->|"Failed"| ReturnNull["return null"]
-        GetVWAP --> RiskCheck
-        RiskCheck -->|"Rejected"| ReturnNull
-        RiskCheck -->|"Approved"| CallGetSignal
-        CallGetSignal -->|"null"| ReturnNull
-        CallGetSignal -->|"ISignalDto"| ValidateSignal
-        ValidateSignal --> ReturnSignal["return ISignalRow"]
-    end
-    
-    subgraph "ClientStrategy.tick()"
-        TickStart["tick() called"]
-        GetSignalFn["GET_SIGNAL_FN(self)"]
-        HandleResult["Process result"]
-        
-        TickStart --> GetSignalFn
-        GetSignalFn --> HandleResult
-    end
-    
-    TickStart -.-> ThrottleCheck
-```
+![Mermaid Diagram](./diagrams\60_Interval_Throttling_3.svg)
 
 **Position in Call Stack:**
 
@@ -259,38 +173,7 @@ Sources: [src/client/ClientStrategy.ts:187-283]()
 
 In live trading, throttling operates on real-time clock progression:
 
-```mermaid
-sequenceDiagram
-    participant Loop as "Live Loop"
-    participant Context as "ExecutionContext"
-    participant Strategy as "ClientStrategy"
-    participant Timestamp as "_lastSignalTimestamp"
-    
-    Note over Loop: T=0:00:00
-    Loop->>Context: when = Date.now()
-    Context->>Strategy: tick(symbol)
-    Strategy->>Timestamp: Check (null)
-    Timestamp-->>Strategy: First call, allow
-    Strategy->>Timestamp: Set = 0:00:00
-    Strategy->>Strategy: Call getSignal()
-    
-    Note over Loop: T=0:02:30 (2.5 min later)
-    Loop->>Context: when = Date.now()
-    Context->>Strategy: tick(symbol)
-    Strategy->>Timestamp: Check (0:02:30 - 0:00:00 = 150s)
-    Note over Strategy: Interval = "5m" = 300s<br/>150s < 300s → REJECT
-    Timestamp-->>Strategy: Too soon, block
-    Strategy-->>Loop: return idle (no signal)
-    
-    Note over Loop: T=0:05:30 (5.5 min from start)
-    Loop->>Context: when = Date.now()
-    Context->>Strategy: tick(symbol)
-    Strategy->>Timestamp: Check (0:05:30 - 0:00:00 = 330s)
-    Note over Strategy: 330s >= 300s → ALLOW
-    Timestamp-->>Strategy: Interval passed
-    Strategy->>Timestamp: Set = 0:05:30
-    Strategy->>Strategy: Call getSignal()
-```
+![Mermaid Diagram](./diagrams\60_Interval_Throttling_4.svg)
 
 **Live Loop Context at [src/lib/services/logic/private/LiveLogicPrivateService.ts]():**
 
@@ -314,40 +197,7 @@ Sources: [src/client/ClientStrategy.ts:194-208]()
 
 In backtesting, throttling operates on historical timestamp progression:
 
-```mermaid
-sequenceDiagram
-    participant Frame as "Frame Timeframe"
-    participant Loop as "Backtest Loop"
-    participant Context as "ExecutionContext"
-    participant Strategy as "ClientStrategy"
-    participant Timestamp as "_lastSignalTimestamp"
-    
-    Frame->>Loop: timestamps[0] = 2024-01-01 00:00
-    Loop->>Context: when = 2024-01-01 00:00
-    Context->>Strategy: tick(symbol)
-    Strategy->>Timestamp: Check (null)
-    Timestamp-->>Strategy: First call, allow
-    Strategy->>Timestamp: Set = 00:00
-    Strategy->>Strategy: Call getSignal()
-    
-    Frame->>Loop: timestamps[1] = 2024-01-01 00:01
-    Loop->>Context: when = 2024-01-01 00:01
-    Context->>Strategy: tick(symbol)
-    Strategy->>Timestamp: Check (00:01 - 00:00 = 1 min)
-    Note over Strategy: Interval = "5m"<br/>1 min < 5 min → REJECT
-    Timestamp-->>Strategy: Too soon, block
-    
-    Note over Loop: Skip timestamps[2..4]
-    
-    Frame->>Loop: timestamps[5] = 2024-01-01 00:05
-    Loop->>Context: when = 2024-01-01 00:05
-    Context->>Strategy: tick(symbol)
-    Strategy->>Timestamp: Check (00:05 - 00:00 = 5 min)
-    Note over Strategy: 5 min >= 5 min → ALLOW
-    Timestamp-->>Strategy: Interval passed
-    Strategy->>Timestamp: Set = 00:05
-    Strategy->>Strategy: Call getSignal()
-```
+![Mermaid Diagram](./diagrams\60_Interval_Throttling_5.svg)
 
 **Backtest Timeframe Iteration:**
 

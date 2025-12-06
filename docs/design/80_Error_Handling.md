@@ -86,68 +86,7 @@ export const validationSubject = new Subject<Error>();
 
 ## Error Flow Architecture
 
-```mermaid
-graph TB
-    subgraph "Error Sources"
-        Exchange["Exchange API<br/>getCandles, formatPrice"]
-        Strategy["Strategy Callbacks<br/>onOpen, onClose, onActive"]
-        Risk["Risk Validation<br/>checkSignal, validation fns"]
-        Listeners["User Listeners<br/>listenSignal callbacks"]
-        Infrastructure["Infrastructure<br/>Network, filesystem"]
-    end
-    
-    subgraph "Error Emission Layer"
-        ErrorEmitter["errorEmitter<br/>Subject&lt;Error&gt;<br/>Recoverable errors"]
-        ExitEmitter["exitEmitter<br/>Subject&lt;Error&gt;<br/>Fatal errors"]
-        ValidationSubject["validationSubject<br/>Subject&lt;Error&gt;<br/>Validation errors"]
-    end
-    
-    subgraph "Background Execution"
-        BacktestBg["Backtest.background"]
-        LiveBg["Live.background"]
-        WalkerBg["Walker.background"]
-    end
-    
-    subgraph "Error Consumer Layer"
-        ListenError["listenError()<br/>queued callback"]
-        ListenExit["listenExit()<br/>queued callback"]
-        ListenValidation["listenValidation()<br/>queued callback"]
-    end
-    
-    subgraph "Error Handling"
-        LogError["Logger.error()<br/>Log to console/file"]
-        TerminateExec["Terminate Execution<br/>Stop background task"]
-        ContinueExec["Continue Execution<br/>Reject signal, retry"]
-    end
-    
-    Exchange -->|"API failure"| ErrorEmitter
-    Exchange -->|"Unrecoverable"| ExitEmitter
-    Strategy -->|"Callback exception"| ErrorEmitter
-    Risk -->|"Validation exception"| ValidationSubject
-    Listeners -->|"User callback error"| ErrorEmitter
-    Infrastructure -->|"Network timeout"| ErrorEmitter
-    Infrastructure -->|"Critical failure"| ExitEmitter
-    
-    BacktestBg -->|"Catches and emits"| ErrorEmitter
-    BacktestBg -->|"Critical errors"| ExitEmitter
-    LiveBg -->|"Catches and emits"| ErrorEmitter
-    LiveBg -->|"Critical errors"| ExitEmitter
-    WalkerBg -->|"Catches and emits"| ErrorEmitter
-    WalkerBg -->|"Critical errors"| ExitEmitter
-    
-    ErrorEmitter -->|"Notifies"| ListenError
-    ExitEmitter -->|"Notifies"| ListenExit
-    ValidationSubject -->|"Notifies"| ListenValidation
-    
-    ListenError -->|"Logs"| LogError
-    ListenError -->|"Strategy"| ContinueExec
-    
-    ListenExit -->|"Logs"| LogError
-    ListenExit -->|"Action"| TerminateExec
-    
-    ListenValidation -->|"Logs"| LogError
-    ListenValidation -->|"Rejects signal"| ContinueExec
-```
+![Mermaid Diagram](./diagrams\80_Error_Handling_0.svg)
 
 **Sources:**
 - [src/config/emitters.ts:32-108]()
@@ -263,62 +202,7 @@ function listenValidation(fn: (error: Error) => void): () => void
 
 ## Error Source Mapping
 
-```mermaid
-graph LR
-    subgraph "Exchange Layer"
-        ExchangeGetCandles["ClientExchange.getCandles()"]
-        ExchangeFormat["formatPrice()<br/>formatQuantity()"]
-        ExchangeVWAP["getAveragePrice()"]
-    end
-    
-    subgraph "Strategy Layer"
-        StrategyGetSignal["ClientStrategy.getSignal()"]
-        StrategyCallbacks["onOpen/onClose/onActive<br/>callbacks"]
-        StrategyTick["ClientStrategy.tick()"]
-    end
-    
-    subgraph "Risk Layer"
-        RiskCheck["ClientRisk.checkSignal()"]
-        RiskValidation["IRiskSchema.validation<br/>functions"]
-        RiskCallbacks["onReject callbacks"]
-    end
-    
-    subgraph "Validation Layer"
-        StrategyValidation["StrategyValidationService<br/>30+ rules"]
-        SignalValidation["VALIDATE_SIGNAL_FN<br/>Price logic checks"]
-    end
-    
-    subgraph "User Callbacks"
-        ListenerCallbacks["listenSignal callback"]
-        StrategyUserCb["IStrategySchema callbacks"]
-        RiskUserCb["IRiskSchema callbacks"]
-    end
-    
-    ExchangeGetCandles -->|"Network timeout"| ErrorPath1["errorEmitter"]
-    ExchangeGetCandles -->|"Retry exhaustion"| ErrorPath2["exitEmitter"]
-    ExchangeFormat -->|"Invalid format"| ErrorPath1
-    ExchangeVWAP -->|"No candles"| ErrorPath1
-    
-    StrategyGetSignal -->|"Exception"| ErrorPath1
-    StrategyCallbacks -->|"User code error"| ErrorPath1
-    StrategyTick -->|"Critical failure"| ErrorPath2
-    
-    RiskCheck -->|"Validation exception"| ValidationPath["validationSubject"]
-    RiskValidation -->|"Function throws"| ValidationPath
-    RiskCallbacks -->|"Callback error"| ErrorPath1
-    
-    StrategyValidation -->|"Rule violation"| SignalRejection["Signal rejected<br/>No emission"]
-    SignalValidation -->|"Invalid prices"| SignalRejection
-    
-    ListenerCallbacks -->|"User error"| ErrorPath1
-    StrategyUserCb -->|"Exception"| ErrorPath1
-    RiskUserCb -->|"Exception"| ErrorPath1
-    
-    ErrorPath1 -->|"Logged"| Cont["Execution continues"]
-    ErrorPath2 -->|"Logged"| Term["Execution terminates"]
-    ValidationPath -->|"Logged"| Cont
-    SignalRejection -->|"Silent"| Cont
-```
+![Mermaid Diagram](./diagrams\80_Error_Handling_1.svg)
 
 **Sources:**
 - [test/e2e/defend.test.mjs:1664-1743]()
@@ -548,45 +432,7 @@ Background execution methods (`Backtest.background()`, `Live.background()`, `Wal
 
 ### Error Handling Flow in Background Methods
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant BgMethod as "Backtest.background()"
-    participant Logic as "BacktestLogicPrivateService"
-    participant Strategy as "ClientStrategy"
-    participant Exchange as "ClientExchange"
-    participant ErrorEmitter as "errorEmitter"
-    participant ExitEmitter as "exitEmitter"
-    
-    User->>BgMethod: Execute background task
-    BgMethod->>Logic: Start backtest execution
-    
-    alt Recoverable Error Path
-        Logic->>Exchange: getCandles()
-        Exchange-->>Logic: Throws network error
-        Logic->>ErrorEmitter: emit(error)
-        ErrorEmitter-->>User: listenError callback
-        Logic->>Logic: Continue with retry
-        Logic-->>BgMethod: Complete execution
-    end
-    
-    alt Fatal Error Path
-        Logic->>Strategy: tick()
-        Strategy-->>Logic: Throws critical error
-        Logic->>ExitEmitter: emit(error)
-        ExitEmitter-->>User: listenExit callback
-        Logic-->>BgMethod: Terminate execution
-        BgMethod-->>User: Background task ended
-    end
-    
-    alt Normal Path
-        Logic->>Strategy: tick()
-        Strategy-->>Logic: Returns result
-        Logic->>Logic: Process signal
-        Logic-->>BgMethod: Complete execution
-        BgMethod-->>User: doneLiveSubject
-    end
-```
+![Mermaid Diagram](./diagrams\80_Error_Handling_2.svg)
 
 **Error Boundaries:**
 - Background methods establish error boundaries around execution

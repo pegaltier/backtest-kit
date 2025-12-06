@@ -81,21 +81,7 @@ The `logger` instance is provided by the dependency injection container and used
 
 ### getTimeframe Method
 
-```mermaid
-flowchart TD
-    Start["getTimeframe(symbol, frameName)"] --> ParseInterval["Parse interval to milliseconds<br/>(e.g., '1m' → 60000 ms)"]
-    ParseInterval --> InitArray["Initialize empty Date array"]
-    InitArray --> SetCurrent["currentTime = startDate.getTime()"]
-    SetCurrent --> CheckLoop{"currentTime <= endDate?"}
-    CheckLoop -->|Yes| AppendDate["Append new Date(currentTime)<br/>to timeframe array"]
-    AppendDate --> Increment["currentTime += intervalMs"]
-    Increment --> CheckLoop
-    CheckLoop -->|No| InvokeCallback["Invoke callbacks.onTimeframe<br/>if defined"]
-    InvokeCallback --> Return["Return timeframe array"]
-    
-    style Start fill:#e1f5ff
-    style Return fill:#e1ffe1
-```
+![Mermaid Diagram](./diagrams\34_ClientFrame_0.svg)
 
 **Algorithm Steps:**
 
@@ -119,40 +105,7 @@ flowchart TD
 
 ### Backtest Orchestration Flow
 
-```mermaid
-sequenceDiagram
-    participant BLE as BacktestLogicPrivateService
-    participant FGS as FrameGlobalService
-    participant FCS as FrameConnectionService
-    participant CF as ClientFrame
-    participant CS as ClientStrategy
-    
-    BLE->>FGS: Get frame for symbol/frameName
-    FGS->>FCS: getFrame(frameName)
-    FCS->>CF: new ClientFrame(params)<br/>[memoized]
-    CF-->>FCS: ClientFrame instance
-    FCS-->>FGS: ClientFrame instance
-    
-    FGS->>CF: getTimeframe(symbol, frameName)
-    CF->>CF: Generate Date array<br/>(startDate → endDate @ interval)
-    CF->>CF: callbacks.onTimeframe?.<br/>(timeframe, startDate, endDate, interval)
-    CF-->>FGS: Date[] timeframe
-    FGS-->>BLE: Date[] timeframe
-    
-    loop For each timestamp in timeframe
-        BLE->>BLE: Set ExecutionContext.when = timestamp
-        BLE->>CS: tick(symbol, strategyName)
-        CS-->>BLE: IStrategyTickResult
-        
-        alt Signal opened
-            BLE->>BLE: Fetch next candles<br/>Skip ahead to signal close
-        else No signal
-            BLE->>BLE: Continue to next timestamp
-        end
-    end
-    
-    BLE->>BLE: Complete backtest<br/>Return statistics
-```
+![Mermaid Diagram](./diagrams\34_ClientFrame_1.svg)
 
 **Key Integration Points:**
 
@@ -219,50 +172,7 @@ addFrame({
 
 ### Frame Service Hierarchy
 
-```mermaid
-graph TB
-    subgraph "Public API"
-        AddFrame["addFrame()<br/>Registration function"]
-    end
-    
-    subgraph "Schema Layer"
-        FSS["FrameSchemaService<br/>Registry: frameName → IFrameSchema"]
-    end
-    
-    subgraph "Validation Layer"
-        FVS["FrameValidationService<br/>Schema validation rules"]
-    end
-    
-    subgraph "Connection Layer"
-        FCS["FrameConnectionService<br/>Memoized instance provider"]
-    end
-    
-    subgraph "Global Layer"
-        FGS["FrameGlobalService<br/>Context injection wrapper"]
-    end
-    
-    subgraph "Client Layer"
-        CF["ClientFrame<br/>Timeframe generation logic"]
-    end
-    
-    subgraph "Logic Layer"
-        BLP["BacktestLogicPrivateService<br/>Timeframe iteration orchestration"]
-    end
-    
-    AddFrame -->|registers| FSS
-    AddFrame -->|validates| FVS
-    FSS -->|provides schema| FCS
-    FCS -->|instantiates| CF
-    FCS -->|memoizes by frameName| FCS
-    FGS -->|wraps| FCS
-    FGS -->|injects ExecutionContext| CF
-    BLP -->|queries| FGS
-    BLP -->|iterates over| CF
-    
-    style AddFrame fill:#e1f5ff
-    style CF fill:#ffe1e1
-    style BLP fill:#fff4e1
-```
+![Mermaid Diagram](./diagrams\34_ClientFrame_2.svg)
 
 **Layer Descriptions:**
 

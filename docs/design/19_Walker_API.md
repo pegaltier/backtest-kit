@@ -309,76 +309,7 @@ Sources: [src/classes/Walker.ts:232-255](), [src/lib/services/markdown/WalkerMar
 
 The following diagram shows the complete execution path from `Walker.run()` through the service layer to backtest orchestration.
 
-```mermaid
-graph TB
-    User["User Code:<br/>Walker.run(symbol, context)"]
-    WalkerUtils["WalkerUtils.run()<br/>[Walker.ts:39-87]"]
-    
-    subgraph "Validation Phase"
-        ValidateWalker["walkerValidationService.validate()<br/>Check walker schema exists"]
-        ValidateExchange["exchangeValidationService.validate()<br/>Check exchange schema exists"]
-        ValidateFrame["frameValidationService.validate()<br/>Check frame schema exists"]
-        ValidateStrategies["strategyValidationService.validate()<br/>Check all strategy schemas exist"]
-    end
-    
-    subgraph "Cleanup Phase"
-        GetSchema["walkerSchemaService.get(walkerName)<br/>Extract strategies array and metric"]
-        ClearWalker["walkerMarkdownService.clear(walkerName)"]
-        ClearBacktests["For each strategy:<br/>backtestMarkdownService.clear()<br/>scheduleMarkdownService.clear()<br/>riskGlobalService.clear()"]
-    end
-    
-    CommandService["walkerCommandService.run(symbol, context)<br/>[WalkerCommandService.ts]"]
-    GlobalService["walkerGlobalService.run(symbol, walkerName)<br/>Inject context"]
-    LogicPublic["walkerLogicPublicService.run()<br/>MethodContextService wrapper"]
-    LogicPrivate["WalkerLogicPrivateService.run()<br/>[WalkerLogicPrivateService.ts:70-251]"]
-    
-    subgraph "Strategy Loop [WalkerLogicPrivateService:107-228]"
-        LoopStart["for (const strategyName of strategies)"]
-        CallbackStart["walkerSchema.callbacks?.onStrategyStart()"]
-        BacktestPublic["backtestLogicPublicService.run()<br/>[BacktestLogicPublicService.ts]"]
-        ResolveDocuments["await resolveDocuments(iterator)<br/>Collect all IStrategyBacktestResult[]"]
-        GetStats["backtestMarkdownService.getData()<br/>Returns BacktestStatistics"]
-        ExtractMetric["Extract metric value from stats<br/>e.g., stats.sharpeRatio"]
-        CompareBest["if (metricValue > bestMetric)<br/>Update bestStrategy, bestMetric"]
-        BuildContract["Create WalkerContract:<br/>{ strategyName, stats, metricValue,<br/>bestStrategy, bestMetric, ... }"]
-        EmitProgress["progressWalkerEmitter.next()<br/>walkerEmitter.next()<br/>yield walkerContract"]
-        CallbackComplete["walkerSchema.callbacks?.onStrategyComplete()"]
-    end
-    
-    FinalResults["Build final results:<br/>{ bestStrategy, bestMetric, bestStats }"]
-    EmitComplete["walkerCompleteSubject.next(finalResults)"]
-    CallbackDone["walkerSchema.callbacks?.onComplete()"]
-    
-    User --> WalkerUtils
-    WalkerUtils --> ValidateWalker
-    ValidateWalker --> ValidateExchange
-    ValidateExchange --> ValidateFrame
-    ValidateFrame --> ValidateStrategies
-    ValidateStrategies --> GetSchema
-    GetSchema --> ClearWalker
-    ClearWalker --> ClearBacktests
-    ClearBacktests --> CommandService
-    CommandService --> GlobalService
-    GlobalService --> LogicPublic
-    LogicPublic --> LogicPrivate
-    
-    LogicPrivate --> LoopStart
-    LoopStart --> CallbackStart
-    CallbackStart --> BacktestPublic
-    BacktestPublic --> ResolveDocuments
-    ResolveDocuments --> GetStats
-    GetStats --> ExtractMetric
-    ExtractMetric --> CompareBest
-    CompareBest --> BuildContract
-    BuildContract --> EmitProgress
-    EmitProgress --> CallbackComplete
-    CallbackComplete --> |Next strategy| LoopStart
-    CallbackComplete --> |All complete| FinalResults
-    
-    FinalResults --> EmitComplete
-    EmitComplete --> CallbackDone
-    CallbackDone --> User
-```
+![Mermaid Diagram](./diagrams\19_Walker_API_0.svg)
 
 **Execution Characteristics:**
 - **Sequential Execution:** Strategies are tested one at a time (lines 107-228)
@@ -524,44 +455,7 @@ Sources: [src/function/event.ts:427-433]()
 
 The following diagram shows the event emission sequence during walker execution.
 
-```mermaid
-graph TB
-    Start["Walker.run() starts"]
-    Loop["Iterate strategies array"]
-    
-    subgraph "Per Strategy"
-        RunBacktest["Run Backtest.run()"]
-        GetData["Get Backtest.getData()"]
-        Extract["Extract metric value"]
-        Compare["Update bestStrategy<br/>if metric better"]
-        EmitWalker["walkerEmitter.next()<br/>WalkerContract"]
-    end
-    
-    Complete["All strategies done"]
-    EmitComplete["walkerCompleteSubject.next()<br/>IWalkerResults"]
-    EmitDone["doneWalkerSubject.next()<br/>DoneContract<br/>(only for background)"]
-    
-    Start --> Loop
-    Loop --> RunBacktest
-    RunBacktest --> GetData
-    GetData --> Extract
-    Extract --> Compare
-    Compare --> EmitWalker
-    
-    EmitWalker --> |Next strategy| RunBacktest
-    EmitWalker --> |All done| Complete
-    
-    Complete --> EmitComplete
-    Complete --> |If background| EmitDone
-    
-    ListenWalker["listenWalker()<br/>subscribes"]
-    ListenComplete["listenWalkerComplete()<br/>subscribes"]
-    ListenDone["listenDoneWalker()<br/>subscribes"]
-    
-    EmitWalker -.-> ListenWalker
-    EmitComplete -.-> ListenComplete
-    EmitDone -.-> ListenDone
-```
+![Mermaid Diagram](./diagrams\19_Walker_API_1.svg)
 
 **Event Timing:**
 1. `walkerEmitter` - Emits after each strategy completes (N times for N strategies)
@@ -829,96 +723,7 @@ Sources: [src/lib/services/markdown/BacktestMarkdownService.ts:46-102]()
 
 The following diagram shows the complete service dependency graph for Walker execution.
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        WalkerUtils["WalkerUtils (exported as Walker)<br/>[Walker.ts:1-274]"]
-    end
-    
-    subgraph "Command Layer"
-        WalkerCommand["WalkerCommandService<br/>[WalkerCommandService.ts]<br/>Validation + delegation"]
-    end
-    
-    subgraph "Validation Services"
-        WalkerValidation["WalkerValidationService<br/>Validate walker schema"]
-        StrategyValidation["StrategyValidationService<br/>Validate strategy schemas"]
-        ExchangeValidation["ExchangeValidationService<br/>Validate exchange schema"]
-        FrameValidation["FrameValidationService<br/>Validate frame schema"]
-        RiskValidation["RiskValidationService<br/>Validate risk schemas"]
-    end
-    
-    subgraph "Schema Services"
-        WalkerSchema["WalkerSchemaService<br/>Get walker.strategies, walker.metric"]
-        StrategySchema["StrategySchemaService<br/>Get strategy configs"]
-        ExchangeSchema["ExchangeSchemaService<br/>Get exchange config"]
-        FrameSchema["FrameSchemaService<br/>Get frame config"]
-        RiskSchema["RiskSchemaService<br/>Get risk config"]
-    end
-    
-    subgraph "Global Services"
-        WalkerGlobal["WalkerGlobalService<br/>Context injection wrapper"]
-        BacktestGlobal["BacktestGlobalService<br/>Strategy-level wrapper"]
-        RiskGlobal["RiskGlobalService<br/>Risk state management"]
-    end
-    
-    subgraph "Logic Services"
-        WalkerLogicPublic["WalkerLogicPublicService<br/>MethodContextService.runAsyncIterator"]
-        WalkerLogicPrivate["WalkerLogicPrivateService<br/>[WalkerLogicPrivateService.ts:31-254]<br/>for-loop through strategies"]
-        BacktestLogicPublic["BacktestLogicPublicService<br/>Per-strategy backtest wrapper"]
-        BacktestLogicPrivate["BacktestLogicPrivateService<br/>[BacktestLogicPrivateService.ts:33-387]<br/>Timeframe iteration"]
-    end
-    
-    subgraph "Context Services"
-        MethodContext["MethodContextService<br/>Store: walkerName, exchangeName,<br/>frameName, strategyName"]
-        ExecContext["ExecutionContextService<br/>Store: symbol, when, backtest flag"]
-    end
-    
-    subgraph "Markdown Services"
-        WalkerMarkdown["WalkerMarkdownService<br/>Accumulate walkerEmitter events<br/>Compute best strategy"]
-        BacktestMarkdown["BacktestMarkdownService<br/>Accumulate signalBacktestEmitter<br/>Calculate BacktestStatistics"]
-        ScheduleMarkdown["ScheduleMarkdownService<br/>Track scheduled signal events"]
-    end
-    
-    subgraph "Business Logic"
-        StrategyGlobal["StrategyGlobalService<br/>tick(), backtest() delegation"]
-        ExchangeGlobal["ExchangeGlobalService<br/>getCandles(), getNextCandles()"]
-        FrameGlobal["FrameGlobalService<br/>getTimeframe() generation"]
-    end
-    
-    WalkerUtils --> WalkerCommand
-    WalkerCommand --> WalkerValidation
-    WalkerCommand --> StrategyValidation
-    WalkerCommand --> ExchangeValidation
-    WalkerCommand --> FrameValidation
-    WalkerCommand --> RiskValidation
-    
-    WalkerCommand --> WalkerSchema
-    WalkerCommand --> StrategySchema
-    
-    WalkerCommand --> WalkerGlobal
-    WalkerGlobal --> WalkerLogicPublic
-    WalkerLogicPublic --> MethodContext
-    MethodContext --> WalkerLogicPrivate
-    
-    WalkerLogicPrivate --> BacktestGlobal
-    BacktestGlobal --> BacktestLogicPublic
-    BacktestLogicPublic --> MethodContext
-    BacktestLogicPublic --> BacktestLogicPrivate
-    
-    BacktestLogicPrivate --> ExecContext
-    BacktestLogicPrivate --> StrategyGlobal
-    BacktestLogicPrivate --> ExchangeGlobal
-    BacktestLogicPrivate --> FrameGlobal
-    
-    WalkerLogicPrivate --> BacktestMarkdown
-    WalkerLogicPrivate --> WalkerMarkdown
-    
-    WalkerUtils -.->|getData()| WalkerMarkdown
-    WalkerUtils -.->|getReport()| WalkerMarkdown
-    WalkerUtils -.->|dump()| WalkerMarkdown
-    
-    BacktestMarkdown -.->|Per strategy stats| WalkerLogicPrivate
-```
+![Mermaid Diagram](./diagrams\19_Walker_API_2.svg)
 
 **Key Service Interactions:**
 

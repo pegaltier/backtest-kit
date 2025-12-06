@@ -17,50 +17,7 @@ The framework provides real-time monitoring through a pub-sub event system with 
 
 ### Live Trading Event Flow
 
-```mermaid
-graph TB
-    LiveLogic["LiveLogicPrivateService<br/>Infinite while(true) loop"]
-    Strategy["ClientStrategy.tick()<br/>Process signals"]
-    
-    SignalEmitter["signalLiveEmitter<br/>Subject&lt;IStrategyTickResult&gt;"]
-    DoneEmitter["doneLiveSubject<br/>Subject&lt;DoneContract&gt;"]
-    ErrorEmitter["errorEmitter<br/>Subject&lt;Error&gt;"]
-    
-    ListenSignalLive["listenSignalLive(callback)<br/>Subscribe to live signals"]
-    ListenDoneLive["listenDoneLive(callback)<br/>Subscribe to completion"]
-    ListenError["listenError(callback)<br/>Subscribe to errors"]
-    
-    StrategyCallbacks["Strategy Callbacks<br/>onSchedule, onOpen,<br/>onActive, onClose, onCancel"]
-    
-    LiveMarkdown["LiveMarkdownService<br/>Auto-accumulates events<br/>Generates reports"]
-    
-    UserCode["User Monitoring Code<br/>Dashboard, alerts, logging"]
-    
-    LiveLogic -->|tick() every 61s| Strategy
-    Strategy -->|emit events| SignalEmitter
-    Strategy -->|emit completion| DoneEmitter
-    Strategy -->|emit errors| ErrorEmitter
-    
-    SignalEmitter -->|subscribe| ListenSignalLive
-    SignalEmitter -->|auto-subscribe| LiveMarkdown
-    SignalEmitter -->|invoke| StrategyCallbacks
-    
-    DoneEmitter -->|subscribe| ListenDoneLive
-    ErrorEmitter -->|subscribe| ListenError
-    
-    ListenSignalLive -->|notify| UserCode
-    ListenDoneLive -->|notify| UserCode
-    ListenError -->|notify| UserCode
-    
-    StrategyCallbacks -->|invoke| UserCode
-    
-    LiveMarkdown -->|getData/getReport/dump| UserCode
-    
-    style SignalEmitter fill:#e1f5ff
-    style DoneEmitter fill:#e1f5ff
-    style ErrorEmitter fill:#ffe1e1
-    style LiveMarkdown fill:#e1ffe1
-```
+![Mermaid Diagram](./diagrams\59_Real-time_Monitoring_0.svg)
 
 **Key components:**
 - **signalLiveEmitter** [src/config/emitters.ts:23]() - Emits all signal lifecycle events (idle, scheduled, opened, active, closed, cancelled)
@@ -317,43 +274,7 @@ interface IStrategySchema {
 
 ### Callback Execution Order
 
-```mermaid
-stateDiagram-v2
-    [*] --> Idle
-    
-    Idle --> Scheduled: "onSchedule(signal, currentPrice)<br/>Limit order created"
-    Idle --> Opened: "onOpen(signal, currentPrice)<br/>Market order filled"
-    
-    Scheduled --> Cancelled: "onCancel(signal, currentPrice)<br/>Timeout or SL hit"
-    Scheduled --> Opened: "onOpen(signal, currentPrice)<br/>Limit order filled"
-    
-    Opened --> Active: "onActive(signal, currentPrice)<br/>Position monitoring"
-    
-    Active --> Active: "onActive(signal, currentPrice)<br/>Still open"
-    Active --> Closed: "onClose(signal, priceClose)<br/>TP/SL/timeout"
-    
-    Cancelled --> [*]
-    Closed --> [*]
-    
-    note right of Scheduled
-        onSchedule parameters:
-        - symbol: Trading pair
-        - signal: ISignalRow with priceOpen
-        - currentPrice: Current VWAP
-        - backtest: false (live mode)
-    end note
-    
-    note right of Active
-        onActive called every tick
-        while position is open
-    end note
-    
-    note right of Closed
-        onClose parameters:
-        - priceClose: Exact TP/SL price
-        - NOT current VWAP
-    end note
-```
+![Mermaid Diagram](./diagrams\59_Real-time_Monitoring_1.svg)
 
 ### onSchedule Callback
 
@@ -515,58 +436,7 @@ Sources: [README.md:144-158](), [src/function/event.ts:132-164]()
 
 ### Event Accumulation Architecture
 
-```mermaid
-graph TB
-    SignalEmitter["signalLiveEmitter<br/>Subject&lt;IStrategyTickResult&gt;"]
-    
-    Service["LiveMarkdownService<br/>Singleton service"]
-    
-    GetStorage["getStorage(symbol, strategyName)<br/>Memoized storage instances"]
-    
-    Storage1["ReportStorage<br/>BTCUSDT:my-strategy"]
-    Storage2["ReportStorage<br/>ETHUSDT:my-strategy"]
-    Storage3["ReportStorage<br/>BTCUSDT:other-strategy"]
-    
-    TickHandler["tick(event)<br/>Process event"]
-    
-    AddIdle["addIdleEvent(currentPrice)<br/>Replace last idle"]
-    AddOpened["addOpenedEvent(data)<br/>Append to list"]
-    AddActive["addActiveEvent(data)<br/>Replace by signalId"]
-    AddClosed["addClosedEvent(data)<br/>Replace by signalId"]
-    
-    EventList["_eventList: TickEvent[]<br/>Max 250 events<br/>FIFO queue"]
-    
-    GetData["getData()<br/>Calculate statistics"]
-    GetReport["getReport(strategyName)<br/>Generate markdown"]
-    Dump["dump(strategyName, path)<br/>Save to disk"]
-    
-    SignalEmitter -->|subscribe| Service
-    Service -->|init() singleshot| GetStorage
-    
-    GetStorage -->|cache| Storage1
-    GetStorage -->|cache| Storage2
-    GetStorage -->|cache| Storage3
-    
-    Service -->|event| TickHandler
-    
-    TickHandler -->|idle| AddIdle
-    TickHandler -->|opened| AddOpened
-    TickHandler -->|active| AddActive
-    TickHandler -->|closed| AddClosed
-    
-    AddIdle --> EventList
-    AddOpened --> EventList
-    AddActive --> EventList
-    AddClosed --> EventList
-    
-    Storage1 --> GetData
-    Storage1 --> GetReport
-    Storage1 --> Dump
-    
-    style Service fill:#e1ffe1
-    style GetStorage fill:#e1f5ff
-    style EventList fill:#fff4e1
-```
+![Mermaid Diagram](./diagrams\59_Real-time_Monitoring_2.svg)
 
 **Key design decisions:**
 - **Memoized storage** [src/lib/services/markdown/LiveMarkdownService.ts:575-578]() - Each `symbol:strategyName` pair gets isolated storage
@@ -1037,48 +907,7 @@ Sources: [README.md:100-189](), [src/function/event.ts:132-164](), [src/lib/serv
 
 ## Monitoring State Transitions
 
-```mermaid
-stateDiagram-v2
-    [*] --> idle
-    
-    idle --> scheduled: "GET_SIGNAL_FN returns signal with priceOpen"
-    idle --> opened: "GET_SIGNAL_FN returns signal without priceOpen"
-    
-    scheduled --> opened: "CHECK_SCHEDULED_SIGNAL_PRICE_ACTIVATION_FN<br/>currentPrice reaches priceOpen<br/>AND risk.checkSignal passes"
-    
-    scheduled --> cancelled: "CHECK_SCHEDULED_SIGNAL_TIMEOUT_FN<br/>elapsedTime >= CC_SCHEDULE_AWAIT_MINUTES"
-    
-    scheduled --> idle: "CHECK_SCHEDULED_SIGNAL_PRICE_ACTIVATION_FN<br/>currentPrice hits priceStopLoss before priceOpen"
-    
-    opened --> active: "Position monitoring begins<br/>_pendingSignal set"
-    
-    active --> closed_tp: "CHECK_PENDING_SIGNAL_COMPLETION_FN<br/>averagePrice >= priceTakeProfit (LONG)<br/>averagePrice <= priceTakeProfit (SHORT)"
-    
-    active --> closed_sl: "CHECK_PENDING_SIGNAL_COMPLETION_FN<br/>averagePrice <= priceStopLoss (LONG)<br/>averagePrice >= priceStopLoss (SHORT)"
-    
-    active --> closed_time: "CHECK_PENDING_SIGNAL_COMPLETION_FN<br/>(currentTime - pendingAt) >= minuteEstimatedTime"
-    
-    active --> active: "No conditions met<br/>Return IStrategyTickResultActive"
-    
-    closed_tp --> [*]: "IStrategyTickResultClosed<br/>closeReason: take_profit"
-    closed_sl --> [*]: "IStrategyTickResultClosed<br/>closeReason: stop_loss"
-    closed_time --> [*]: "IStrategyTickResultClosed<br/>closeReason: time_expired"
-    cancelled --> [*]: "IStrategyTickResultCancelled"
-    
-    note right of scheduled
-        Scheduled state:
-        - _scheduledSignal set
-        - Waiting for priceOpen
-        - Max wait: CC_SCHEDULE_AWAIT_MINUTES
-    end note
-    
-    note right of active
-        Active state:
-        - _pendingSignal set
-        - Monitoring TP/SL/time
-        - Lifetime from pendingAt
-    end note
-```
+![Mermaid Diagram](./diagrams\59_Real-time_Monitoring_3.svg)
 
 **Key monitoring loops**:
 1. **idle → scheduled → opened → active → closed**: Full lifecycle with scheduled entry

@@ -14,71 +14,7 @@ Sources: [src/lib/services/logic/private/WalkerLogicPrivateService.ts:1-254]()
 
 ## Execution Architecture
 
-```mermaid
-graph TB
-    subgraph "Walker Entry Point"
-        WalkerAPI["Walker.run() / Walker.background()"]
-        WalkerCmd["WalkerCommandService"]
-    end
-    
-    subgraph "Walker Orchestration Layer"
-        WalkerPrivate["WalkerLogicPrivateService.run()"]
-        WalkerSchema["WalkerSchemaService.get()"]
-    end
-    
-    subgraph "Strategy Execution Layer"
-        BacktestPublic["BacktestLogicPublicService.run()"]
-        BacktestPrivate["BacktestLogicPrivateService.run()"]
-        StrategyGlobal["StrategyGlobalService"]
-    end
-    
-    subgraph "Statistics Extraction"
-        BacktestMD["BacktestMarkdownService.getData()"]
-        StatsCalc["Statistics Calculation<br/>sharpeRatio, winRate, avgPnl"]
-    end
-    
-    subgraph "Progress Tracking"
-        WalkerContract["WalkerContract<br/>strategiesTested, bestMetric<br/>bestStrategy, metricValue"]
-        WalkerEmitter["walkerEmitter.next()"]
-        ProgressEmitter["progressWalkerEmitter.next()"]
-    end
-    
-    subgraph "Callbacks"
-        OnStrategyStart["onStrategyStart(strategyName, symbol)"]
-        OnStrategyComplete["onStrategyComplete(strategyName, symbol, stats, metricValue)"]
-        OnComplete["onComplete(finalResults)"]
-        OnStrategyError["onStrategyError(strategyName, symbol, error)"]
-    end
-    
-    WalkerAPI -->|delegates| WalkerCmd
-    WalkerCmd -->|calls| WalkerPrivate
-    WalkerPrivate -->|fetches schema| WalkerSchema
-    
-    WalkerPrivate -->|for each strategy| OnStrategyStart
-    OnStrategyStart --> BacktestPublic
-    BacktestPublic -->|delegates| BacktestPrivate
-    BacktestPrivate -->|orchestrates| StrategyGlobal
-    
-    BacktestPublic -->|accumulates results| BacktestMD
-    BacktestMD -->|computes| StatsCalc
-    
-    StatsCalc -->|extracts metric| WalkerPrivate
-    WalkerPrivate -->|compares & updates| WalkerContract
-    WalkerContract -->|emits| WalkerEmitter
-    WalkerContract -->|emits| ProgressEmitter
-    
-    WalkerContract -->|triggers| OnStrategyComplete
-    OnStrategyComplete -->|next iteration| WalkerPrivate
-    
-    WalkerPrivate -->|all complete| OnComplete
-    
-    BacktestPublic -.->|on error| OnStrategyError
-    OnStrategyError -.->|continues| WalkerPrivate
-    
-    style WalkerPrivate fill:#f9f9f9
-    style BacktestPublic fill:#f9f9f9
-    style WalkerContract fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\62_Walker_Execution_Flow_0.svg)
 
 **Diagram: Walker Execution Architecture** - Shows the layered architecture from API entry point through orchestration, strategy execution, statistics extraction, and callback lifecycle.
 
@@ -110,68 +46,7 @@ Sources: [src/lib/services/logic/private/WalkerLogicPrivateService.ts:70-252]()
 
 ### State Machine for Single Strategy Execution
 
-```mermaid
-stateDiagram-v2
-    [*] --> Idle: Walker iteration begins
-    
-    Idle --> CallbackStart: Strategy selected
-    CallbackStart --> BacktestSetup: onStrategyStart() called
-    
-    BacktestSetup --> BacktestRunning: BacktestLogicPublicService.run()
-    
-    state BacktestRunning {
-        [*] --> Timeframes
-        Timeframes --> SignalDetection: tick() each timeframe
-        SignalDetection --> SignalExecution: Signal opened/scheduled
-        SignalExecution --> Timeframes: Signal closed
-        Timeframes --> Complete: All timeframes processed
-    }
-    
-    BacktestRunning --> StatsExtraction: resolveDocuments() completes
-    BacktestRunning --> ErrorHandler: Backtest throws error
-    
-    ErrorHandler --> CallbackError: Log error
-    CallbackError --> NextStrategy: onStrategyError() called
-    
-    StatsExtraction --> MetricExtraction: BacktestMarkdownService.getData()
-    MetricExtraction --> MetricValidation: Extract stats[metric]
-    
-    MetricValidation --> MetricValid: value is number, finite, not NaN
-    MetricValidation --> MetricNull: Invalid value
-    
-    MetricValid --> CompareMetric: metricValue !== null
-    MetricNull --> CompareMetric: metricValue = null
-    
-    CompareMetric --> UpdateBest: metricValue > bestMetric
-    CompareMetric --> KeepBest: metricValue <= bestMetric
-    
-    UpdateBest --> EmitProgress: bestStrategy = strategyName
-    KeepBest --> EmitProgress: No update
-    
-    EmitProgress --> YieldContract: progressWalkerEmitter.next()
-    YieldContract --> CallbackComplete: walkerEmitter.next()
-    CallbackComplete --> NextStrategy: onStrategyComplete() called
-    
-    NextStrategy --> Idle: More strategies remain
-    NextStrategy --> FinalEmit: All strategies complete
-    
-    FinalEmit --> [*]: walkerCompleteSubject.next()
-    
-    note right of BacktestRunning
-        Executes full backtest
-        with all timeframes
-    end note
-    
-    note right of MetricValidation
-        Validates: typeof === 'number'
-        && !isNaN() && isFinite()
-    end note
-    
-    note right of CompareMetric
-        Maximization strategy:
-        Higher metric = better
-    end note
-```
+![Mermaid Diagram](./diagrams\62_Walker_Execution_Flow_1.svg)
 
 **Diagram: State Machine for Single Strategy in Walker** - Shows the complete lifecycle of a single strategy execution within the walker loop, from callback invocation through metric extraction to progress emission.
 
@@ -199,45 +74,7 @@ This context is injected into `MethodContextService` and flows through the entir
 
 The orchestration follows this sequence:
 
-```mermaid
-sequenceDiagram
-    participant Walker as WalkerLogicPrivateService
-    participant BacktestPublic as BacktestLogicPublicService
-    participant BacktestPrivate as BacktestLogicPrivateService
-    participant Frame as FrameGlobalService
-    participant Strategy as StrategyGlobalService
-    participant Markdown as BacktestMarkdownService
-    
-    Walker->>Walker: for (strategyName of strategies)
-    Walker->>BacktestPublic: run(symbol, context)
-    BacktestPublic->>BacktestPrivate: run(symbol)
-    
-    BacktestPrivate->>Frame: getTimeframe(symbol, frameName)
-    Frame-->>BacktestPrivate: timeframes[]
-    
-    loop For each timeframe
-        BacktestPrivate->>Strategy: tick(symbol, when, true)
-        Strategy-->>BacktestPrivate: result (idle/opened/scheduled)
-        
-        alt Signal opened/scheduled
-            BacktestPrivate->>Strategy: backtest(symbol, candles, when, true)
-            Strategy-->>BacktestPrivate: IStrategyBacktestResult (closed)
-            BacktestPrivate-->>BacktestPublic: yield result
-            BacktestPublic->>Markdown: accumulate event
-        end
-    end
-    
-    BacktestPrivate-->>BacktestPublic: generator complete
-    BacktestPublic-->>Walker: resolveDocuments(results[])
-    
-    Walker->>Markdown: getData(symbol, strategyName)
-    Markdown->>Markdown: Calculate statistics
-    Markdown-->>Walker: {sharpeRatio, winRate, avgPnl, ...}
-    
-    Walker->>Walker: Extract metricValue = stats[metric]
-    Walker->>Walker: Compare with bestMetric
-    Walker->>Walker: yield WalkerContract
-```
+![Mermaid Diagram](./diagrams\62_Walker_Execution_Flow_2.svg)
 
 **Diagram: Backtest Orchestration Sequence** - Shows the message flow from walker through backtest execution to statistics extraction.
 
@@ -420,32 +257,7 @@ The walker schema supports four lifecycle callbacks that execute at specific poi
 
 ### Callback Invocation Points
 
-```mermaid
-graph LR
-    Start["Walker.run() called"] --> InitVars["Initialize tracking variables"]
-    InitVars --> Loop["for (strategyName of strategies)"]
-    
-    Loop --> CB1["onStrategyStart(strategyName, symbol)"]
-    CB1 --> Backtest["BacktestLogicPublicService.run()"]
-    
-    Backtest --> Success["Backtest succeeds"]
-    Backtest --> Error["Backtest throws error"]
-    
-    Error --> CB4["onStrategyError(strategyName, symbol, error)"]
-    CB4 --> Continue["continue to next strategy"]
-    
-    Success --> Stats["BacktestMarkdownService.getData()"]
-    Stats --> Compare["Compare metric"]
-    Compare --> Yield["yield WalkerContract"]
-    Yield --> CB2["onStrategyComplete(strategyName, symbol, stats, metricValue)"]
-    CB2 --> Continue
-    
-    Continue --> Loop
-    
-    Loop --> AllDone["All strategies complete"]
-    AllDone --> CB3["onComplete(finalResults)"]
-    CB3 --> End["walkerCompleteSubject.next()"]
-```
+![Mermaid Diagram](./diagrams\62_Walker_Execution_Flow_3.svg)
 
 **Diagram: Walker Callback Invocation Points** - Shows the four callback types and when they execute during the walker lifecycle.
 

@@ -10,49 +10,7 @@ For information about signal states and lifecycle transitions, see [Signal State
 
 The signal generation process is orchestrated by `GET_SIGNAL_FN` in [src/client/ClientStrategy.ts:263-396]() and executes a multi-stage pipeline with early-exit optimization at each validation layer.
 
-```mermaid
-flowchart TB
-    Start["tick() called"] --> CheckStopped{"_isStopped?"}
-    CheckStopped -->|Yes| ReturnNull1["Return null"]
-    CheckStopped -->|No| CheckInterval["Check Interval Throttling<br/>_lastSignalTimestamp"]
-    
-    CheckInterval --> IntervalPassed{"Interval<br/>elapsed?"}
-    IntervalPassed -->|No| ReturnNull2["Return null<br/>(throttled)"]
-    IntervalPassed -->|Yes| UpdateTimestamp["_lastSignalTimestamp = currentTime"]
-    
-    UpdateTimestamp --> GetVWAP["exchange.getAveragePrice()"]
-    GetVWAP --> RiskCheck["risk.checkSignal()"]
-    
-    RiskCheck --> RiskPassed{"Risk<br/>allowed?"}
-    RiskPassed -->|No| ReturnNull3["Return null<br/>(risk rejected)"]
-    RiskPassed -->|Yes| CallGetSignal["User's getSignal()"]
-    
-    CallGetSignal --> SignalReturned{"Signal<br/>returned?"}
-    SignalReturned -->|null| ReturnNull4["Return null"]
-    SignalReturned -->|ISignalDto| CheckStopped2{"_isStopped<br/>(double-check)?"}
-    
-    CheckStopped2 -->|Yes| ReturnNull5["Return null"]
-    CheckStopped2 -->|No| CheckPriceOpen{"priceOpen<br/>defined?"}
-    
-    CheckPriceOpen -->|No| BuildImmediate["Build ISignalRow<br/>priceOpen = currentPrice<br/>_isScheduled = false"]
-    CheckPriceOpen -->|Yes| CheckActivation{"Price already<br/>reached?"}
-    
-    CheckActivation -->|Yes| BuildImmediate2["Build ISignalRow<br/>priceOpen from DTO<br/>_isScheduled = false"]
-    CheckActivation -->|No| BuildScheduled["Build IScheduledSignalRow<br/>priceOpen from DTO<br/>_isScheduled = true"]
-    
-    BuildImmediate --> Validate["VALIDATE_SIGNAL_FN<br/>(30+ rules)"]
-    BuildImmediate2 --> Validate
-    BuildScheduled --> Validate
-    
-    Validate --> ValidationPassed{"Valid?"}
-    ValidationPassed -->|No| ThrowError["Throw Error<br/>(validation failed)"]
-    ValidationPassed -->|Yes| ReturnSignal["Return validated signal"]
-    
-    style CheckInterval fill:#e1f5ff
-    style RiskCheck fill:#ffe1e1
-    style Validate fill:#fff4e1
-    style ThrowError fill:#ffcccc
-```
+![Mermaid Diagram](./diagrams\48_Signal_Generation_and_Validation_0.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:263-396](), [src/interfaces/Strategy.interface.ts:132-149]()
 
@@ -90,17 +48,7 @@ const INTERVAL_MINUTES: Record<SignalInterval, number> = {
 
 ### Throttling Logic
 
-```mermaid
-stateDiagram-v2
-    [*] --> CheckTimestamp: tick() called
-    CheckTimestamp --> CalcInterval: Get interval from INTERVAL_MINUTES
-    CalcInterval --> CompareTime: elapsed = currentTime - _lastSignalTimestamp
-    CompareTime --> Throttled: elapsed < intervalMs
-    CompareTime --> Allowed: elapsed >= intervalMs
-    Throttled --> [*]: Return null
-    Allowed --> UpdateTimestamp: _lastSignalTimestamp = currentTime
-    UpdateTimestamp --> Continue: Proceed to risk check
-```
+![Mermaid Diagram](./diagrams\48_Signal_Generation_and_Validation_1.svg)
 
 The throttling mechanism [src/client/ClientStrategy.ts:272-284]() checks if sufficient time has elapsed since the last signal generation attempt. If `_lastSignalTimestamp` is `null` (first call), the check passes immediately. Otherwise, it compares `currentTime - _lastSignalTimestamp` against the configured interval in milliseconds.
 
@@ -128,41 +76,7 @@ interface IRiskCheckArgs {
 
 ### Risk Validation Flow
 
-```mermaid
-sequenceDiagram
-    participant CS as ClientStrategy
-    participant E as ClientExchange
-    participant R as ClientRisk
-    participant V as Custom Validation
-    
-    CS->>E: getAveragePrice(symbol)
-    E-->>CS: currentPrice (VWAP)
-    
-    CS->>R: checkSignal(params)
-    Note over R: params: symbol, strategyName,<br/>exchangeName, currentPrice, timestamp
-    
-    R->>R: Load activePositions from<br/>PersistRiskAdapter
-    
-    loop For each validation in validations[]
-        R->>V: validate(payload)
-        Note over V: payload includes:<br/>activePositionCount,<br/>activePositions[]
-        
-        alt Validation Passes
-            V-->>R: void (success)
-        else Validation Fails
-            V-->>R: throw Error
-            R-->>CS: return false
-        end
-    end
-    
-    R-->>CS: return true (all passed)
-    
-    alt Risk Allowed
-        CS->>CS: Continue to getSignal()
-    else Risk Rejected
-        CS->>CS: Return null (throttled)
-    end
-```
+![Mermaid Diagram](./diagrams\48_Signal_Generation_and_Validation_2.svg)
 
 If any validation in the risk profile throws an error or `checkSignal()` returns `false`, signal generation is aborted and `tick()` returns `null`. This prevents violating portfolio limits like maximum concurrent positions or leverage constraints.
 
@@ -243,18 +157,7 @@ if (isFinite(signal.priceOpen) && signal.priceOpen <= 0) {
 
 LONG position validation [src/client/ClientStrategy.ts:105-162]() enforces the invariant: `priceStopLoss < priceOpen < priceTakeProfit`.
 
-```mermaid
-graph LR
-    SL["priceStopLoss<br/>(e.g., $40,000)"] --> Open["priceOpen<br/>(e.g., $42,000)"]
-    Open --> TP["priceTakeProfit<br/>(e.g., $44,000)"]
-    
-    SL -.->|"Must be <"| Open
-    Open -.->|"Must be <"| TP
-    
-    style SL fill:#ffcccc
-    style Open fill:#e1f5ff
-    style TP fill:#ccffcc
-```
+![Mermaid Diagram](./diagrams\48_Signal_Generation_and_Validation_3.svg)
 
 #### Edge Case Protection for Immediate Signals
 
@@ -281,18 +184,7 @@ For immediate (non-scheduled) signals [src/client/ClientStrategy.ts:118-135](), 
 
 SHORT position validation [src/client/ClientStrategy.ts:165-222]() enforces the invariant: `priceTakeProfit < priceOpen < priceStopLoss`.
 
-```mermaid
-graph LR
-    TP["priceTakeProfit<br/>(e.g., $40,000)"] --> Open["priceOpen<br/>(e.g., $42,000)"]
-    Open --> SL["priceStopLoss<br/>(e.g., $44,000)"]
-    
-    TP -.->|"Must be <"| Open
-    Open -.->|"Must be <"| SL
-    
-    style TP fill:#ccffcc
-    style Open fill:#e1f5ff
-    style SL fill:#ffcccc
-```
+![Mermaid Diagram](./diagrams\48_Signal_Generation_and_Validation_4.svg)
 
 SHORT logic is inverted from LONG: profits occur when price falls (toward TP), losses occur when price rises (toward SL).
 
@@ -365,40 +257,7 @@ After successful validation, `GET_SIGNAL_FN` determines whether to create a sche
 
 ### Decision Tree
 
-```mermaid
-flowchart TB
-    Start["User's getSignal() returns ISignalDto"] --> CheckPriceOpen{"priceOpen<br/>defined in DTO?"}
-    
-    CheckPriceOpen -->|No| Immediate1["Create ISignalRow<br/>priceOpen = currentPrice<br/>_isScheduled = false"]
-    
-    CheckPriceOpen -->|Yes| DetermineActivation["Check if priceOpen<br/>already reached"]
-    
-    DetermineActivation --> LONGCheck{"position === 'long'?"}
-    LONGCheck -->|Yes| LONGCondition{"currentPrice <= priceOpen?"}
-    LONGCondition -->|Yes| ActivateImmediate["shouldActivateImmediately = true"]
-    LONGCondition -->|No| ScheduleSignal["shouldActivateImmediately = false"]
-    
-    LONGCheck -->|No| SHORTCheck{"position === 'short'?"}
-    SHORTCheck -->|Yes| SHORTCondition{"currentPrice >= priceOpen?"}
-    SHORTCondition -->|Yes| ActivateImmediate2["shouldActivateImmediately = true"]
-    SHORTCondition -->|No| ScheduleSignal2["shouldActivateImmediately = false"]
-    
-    ActivateImmediate --> Immediate2["Create ISignalRow<br/>priceOpen from DTO<br/>_isScheduled = false<br/>pendingAt = currentTime"]
-    ActivateImmediate2 --> Immediate2
-    
-    ScheduleSignal --> Scheduled["Create IScheduledSignalRow<br/>priceOpen from DTO<br/>_isScheduled = true<br/>pendingAt = scheduledAt (temp)"]
-    ScheduleSignal2 --> Scheduled
-    
-    Immediate1 --> Validate["VALIDATE_SIGNAL_FN<br/>(isScheduled = false)"]
-    Immediate2 --> Validate
-    Scheduled --> Validate2["VALIDATE_SIGNAL_FN<br/>(isScheduled = true)"]
-    
-    Validate --> Return["Return ISignalRow"]
-    Validate2 --> Return2["Return IScheduledSignalRow"]
-    
-    style Immediate2 fill:#ccffcc
-    style Scheduled fill:#fff4e1
-```
+![Mermaid Diagram](./diagrams\48_Signal_Generation_and_Validation_5.svg)
 
 ### Activation Logic
 
@@ -470,35 +329,7 @@ const GET_SIGNAL_FN = trycatch(
 
 ### Error Flow
 
-```mermaid
-sequenceDiagram
-    participant T as tick()
-    participant GS as GET_SIGNAL_FN
-    participant V as VALIDATE_SIGNAL_FN
-    participant L as LoggerService
-    participant E as errorEmitter
-    participant U as User Listener
-    
-    T->>GS: Call with self
-    
-    alt Validation Error
-        GS->>V: VALIDATE_SIGNAL_FN(signal)
-        V->>V: Check 30+ rules
-        V-->>GS: throw Error("Invalid signal...")
-        GS->>L: warn("ClientStrategy exception...")
-        GS->>E: errorEmitter.next(error)
-        E->>U: listenError callback
-        GS-->>T: Return null (defaultValue)
-    else User getSignal Error
-        GS->>GS: User's getSignal() throws
-        GS->>L: warn("ClientStrategy exception...")
-        GS->>E: errorEmitter.next(error)
-        E->>U: listenError callback
-        GS-->>T: Return null (defaultValue)
-    else Success
-        GS-->>T: Return ISignalRow | IScheduledSignalRow
-    end
-```
+![Mermaid Diagram](./diagrams\48_Signal_Generation_and_Validation_6.svg)
 
 The `trycatch` wrapper ensures:
 1. **Logging:** All errors are logged via `LoggerService`

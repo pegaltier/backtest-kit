@@ -24,49 +24,7 @@ Sources: [src/client/ClientRisk.ts:152-217](), [src/interfaces/Risk.interface.ts
 
 ## Architecture Overview
 
-```mermaid
-graph TB
-    subgraph "Service Layer"
-        RiskGlobalService["RiskGlobalService"]
-        RiskConnectionService["RiskConnectionService<br/>Memoized instance management"]
-        RiskSchemaService["RiskSchemaService<br/>Schema registry"]
-    end
-    
-    subgraph "Client Layer"
-        ClientRisk["ClientRisk<br/>Portfolio tracking<br/>Validation execution"]
-        
-        subgraph "Internal State"
-            ActivePositions["_activePositions: Map<br/>Key: strategyName:symbol<br/>Value: IRiskActivePosition"]
-            InitSymbol["POSITION_NEED_FETCH<br/>Lazy init marker"]
-        end
-        
-        ClientRisk --> ActivePositions
-        ClientRisk --> InitSymbol
-    end
-    
-    subgraph "Persistence Layer"
-        PersistRiskAdapter["PersistRiskAdapter<br/>Atomic file writes"]
-        PersistBase["PersistBase<br/>Abstract base class"]
-        
-        PersistRiskAdapter --> PersistBase
-    end
-    
-    subgraph "Strategy Execution"
-        ClientStrategy["ClientStrategy<br/>Calls checkSignal<br/>before signal creation"]
-    end
-    
-    RiskGlobalService --> RiskConnectionService
-    RiskConnectionService --> RiskSchemaService
-    RiskConnectionService --> ClientRisk
-    
-    ClientStrategy --> RiskGlobalService
-    
-    ClientRisk --> PersistRiskAdapter
-    
-    style ClientRisk fill:#f0e1ff
-    style ActivePositions fill:#e1ffe1
-    style PersistRiskAdapter fill:#e1ffe1
-```
+![Mermaid Diagram](./diagrams\35_ClientRisk_0.svg)
 
 **Key Integration Points:**
 
@@ -105,25 +63,7 @@ Sources: [src/client/ClientRisk.ts:20-28](), [src/interfaces/Risk.interface.ts:2
 
 The `_activePositions` field uses a special initialization pattern:
 
-```mermaid
-stateDiagram-v2
-    [*] --> POSITION_NEED_FETCH: Constructor
-    POSITION_NEED_FETCH --> Loading: First operation called
-    Loading --> Initialized: waitForInit completes
-    Initialized --> Initialized: All subsequent operations
-    
-    note right of POSITION_NEED_FETCH
-        Symbol indicates<br/>lazy initialization
-    end note
-    
-    note right of Loading
-        Calls PersistRiskAdapter<br/>readPositionData
-    end note
-    
-    note right of Initialized
-        _activePositions is Map<br/>with restored data
-    end note
-```
+![Mermaid Diagram](./diagrams\35_ClientRisk_1.svg)
 
 **Implementation Details:**
 
@@ -144,42 +84,7 @@ Sources: [src/client/ClientRisk.ts:79-88](), [src/client/ClientRisk.ts:53-59]()
 
 ### Signal Check Process
 
-```mermaid
-sequenceDiagram
-    participant CS as ClientStrategy
-    participant RGS as RiskGlobalService
-    participant RCS as RiskConnectionService
-    participant CR as ClientRisk
-    participant PRA as PersistRiskAdapter
-    
-    CS->>RGS: checkSignal(IRiskCheckArgs)
-    RGS->>RCS: checkSignal(params, context)
-    RCS->>CR: checkSignal(params)
-    
-    alt _activePositions === POSITION_NEED_FETCH
-        CR->>CR: waitForInit()
-        CR->>PRA: readPositionData(riskName)
-        PRA-->>CR: Array of positions
-        CR->>CR: _activePositions = new Map(data)
-    end
-    
-    CR->>CR: Build IRiskValidationPayload<br/>with activePositionCount<br/>and activePositions
-    
-    loop For each validation
-        CR->>CR: Execute validation function
-        alt Validation throws error
-            CR->>CR: isValid = false, break
-        end
-    end
-    
-    alt isValid === false
-        CR->>CS: onRejected callback
-        CR-->>CS: return false
-    else isValid === true
-        CR->>CS: onAllowed callback
-        CR-->>CS: return true
-    end
-```
+![Mermaid Diagram](./diagrams\35_ClientRisk_2.svg)
 
 Sources: [src/client/ClientRisk.ts:165-217]()
 
@@ -222,19 +127,7 @@ Sources: [src/client/ClientRisk.ts:30-46](), [src/interfaces/Risk.interface.ts:5
 
 ### Adding Positions
 
-```mermaid
-graph LR
-    A["addSignal called"] --> B["Check if initialized"]
-    B --> C["waitForInit if needed"]
-    C --> D["Generate key:<br/>strategyName:symbol"]
-    D --> E["Add to _activePositions Map"]
-    E --> F["_updatePositions"]
-    F --> G["PersistRiskAdapter.writePositionData"]
-    G --> H["Return"]
-    
-    style E fill:#e1ffe1
-    style G fill:#e1ffe1
-```
+![Mermaid Diagram](./diagrams\35_ClientRisk_3.svg)
 
 **Key Pattern Ensures Uniqueness:**
 
@@ -246,19 +139,7 @@ Sources: [src/client/ClientRisk.ts:107-128]()
 
 ### Removing Positions
 
-```mermaid
-graph LR
-    A["removeSignal called"] --> B["Check if initialized"]
-    B --> C["waitForInit if needed"]
-    C --> D["Generate key:<br/>strategyName:symbol"]
-    D --> E["Delete from _activePositions Map"]
-    E --> F["_updatePositions"]
-    F --> G["PersistRiskAdapter.writePositionData"]
-    G --> H["Return"]
-    
-    style E fill:#ffe1e1
-    style G fill:#e1ffe1
-```
+![Mermaid Diagram](./diagrams\35_ClientRisk_4.svg)
 
 Sources: [src/client/ClientRisk.ts:134-150]()
 
@@ -266,41 +147,7 @@ Sources: [src/client/ClientRisk.ts:134-150]()
 
 ### Persistence Architecture
 
-```mermaid
-graph TB
-    subgraph "In-Memory State"
-        ActiveMap["_activePositions: Map<br/>strategyName:symbol -> IRiskActivePosition"]
-    end
-    
-    subgraph "Persistence Adapter"
-        PRA["PersistRiskAdapter"]
-        
-        subgraph "Operations"
-            Write["writePositionData<br/>Array.from(Map)"]
-            Read["readPositionData<br/>returns Array"]
-        end
-        
-        PRA --> Write
-        PRA --> Read
-    end
-    
-    subgraph "PersistBase Implementation"
-        FileSystem["Default: Atomic file writes<br/>risk-{riskName}.json"]
-        Custom["Custom: User-provided adapter<br/>Redis, MongoDB, etc."]
-    end
-    
-    ActiveMap --> Write
-    Read --> ActiveMap
-    
-    Write --> FileSystem
-    Write --> Custom
-    Read --> FileSystem
-    Read --> Custom
-    
-    style ActiveMap fill:#fff4e1
-    style FileSystem fill:#e1ffe1
-    style Custom fill:#e1f5ff
-```
+![Mermaid Diagram](./diagrams\35_ClientRisk_5.svg)
 
 **Data Format:**
 
@@ -322,33 +169,7 @@ Sources: [src/client/ClientRisk.ts:93-101](), [src/client/ClientRisk.ts:53-59]()
 
 ### Crash Recovery Process
 
-```mermaid
-sequenceDiagram
-    participant App as Application Restart
-    participant CR as ClientRisk
-    participant Init as waitForInit
-    participant PRA as PersistRiskAdapter
-    participant FS as File System
-    
-    App->>CR: First operation<br/>(checkSignal, addSignal, etc.)
-    CR->>CR: Check: _activePositions === POSITION_NEED_FETCH?
-    CR->>Init: waitForInit() [singleshot]
-    Init->>PRA: readPositionData(riskName)
-    PRA->>FS: Read risk-{riskName}.json
-    
-    alt File exists
-        FS-->>PRA: JSON data
-        PRA-->>Init: Array of [key, position] tuples
-    else File not found
-        FS-->>PRA: Error
-        PRA-->>Init: Empty array []
-    end
-    
-    Init->>CR: _activePositions = new Map(data)
-    CR-->>App: Continue with operation
-    
-    note over Init,PRA: Singleshot ensures<br/>this only runs once
-```
+![Mermaid Diagram](./diagrams\35_ClientRisk_6.svg)
 
 **Isolation by Risk Name:**
 
@@ -364,53 +185,7 @@ Sources: [src/client/ClientRisk.ts:53-59](), [test/spec/risk.test.mjs:756-841]()
 
 ## Data Flow Diagram
 
-```mermaid
-graph TB
-    subgraph "Signal Generation"
-        GetSignal["strategy.getSignal"]
-        ValidateSignal["VALIDATE_SIGNAL_FN"]
-    end
-    
-    subgraph "Risk Check"
-        CheckSignal["ClientRisk.checkSignal"]
-        BuildPayload["Build IRiskValidationPayload<br/>+ activePositionCount<br/>+ activePositions array"]
-        RunValidations["Execute custom validations"]
-        Decision{"All validations<br/>passed?"}
-    end
-    
-    subgraph "Position Updates"
-        AddSignal["ClientRisk.addSignal<br/>On signal opened"]
-        RemoveSignal["ClientRisk.removeSignal<br/>On signal closed"]
-        UpdatePositions["_updatePositions<br/>Persist to disk"]
-    end
-    
-    subgraph "Persistence"
-        PersistWrite["PersistRiskAdapter.writePositionData"]
-        PersistRead["PersistRiskAdapter.readPositionData"]
-        AtomicFile["Atomic file write<br/>risk-{riskName}.json"]
-    end
-    
-    GetSignal --> ValidateSignal
-    ValidateSignal --> CheckSignal
-    CheckSignal --> BuildPayload
-    BuildPayload --> RunValidations
-    RunValidations --> Decision
-    
-    Decision -->|Yes| AddSignal
-    Decision -->|No| Rejected["Return false<br/>onRejected callback"]
-    
-    AddSignal --> UpdatePositions
-    RemoveSignal --> UpdatePositions
-    UpdatePositions --> PersistWrite
-    PersistWrite --> AtomicFile
-    
-    AtomicFile -.->|On restart| PersistRead
-    PersistRead -.-> CheckSignal
-    
-    style BuildPayload fill:#fff4e1
-    style UpdatePositions fill:#e1ffe1
-    style AtomicFile fill:#e1ffe1
-```
+![Mermaid Diagram](./diagrams\35_ClientRisk_7.svg)
 
 **Payload Construction:**
 

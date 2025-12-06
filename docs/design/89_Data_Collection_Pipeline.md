@@ -51,32 +51,7 @@ interface IOptimizerData {
 
 The `id` field enables deduplication when paginating through large datasets. Without unique IDs, the same records could be processed multiple times.
 
-```mermaid
-graph LR
-    Schema["IOptimizerSchema"]
-    Source1["source[0]"]
-    Source2["source[1]"]
-    SourceN["source[n]"]
-    
-    SimpleFunc["IOptimizerSourceFn<br/>Function only"]
-    FullConfig["IOptimizerSource<br/>with name, fetch,<br/>user, assistant"]
-    
-    FetchArgs["IOptimizerFetchArgs<br/>symbol, startDate,<br/>endDate, limit, offset"]
-    DataArray["Data[] extends<br/>IOptimizerData<br/>(must have id field)"]
-    
-    Schema -->|"source array"| Source1
-    Schema --> Source2
-    Schema --> SourceN
-    
-    Source1 -.->|"can be"| SimpleFunc
-    Source1 -.->|"or"| FullConfig
-    
-    SimpleFunc -->|"receives"| FetchArgs
-    FullConfig -->|"fetch() receives"| FetchArgs
-    
-    SimpleFunc -->|"returns"| DataArray
-    FullConfig -->|"fetch() returns"| DataArray
-```
+![Mermaid Diagram](./diagrams\89_Data_Collection_Pipeline_0.svg)
 
 **Diagram: Source Type Configuration Options**
 
@@ -88,34 +63,7 @@ Sources: [src/interfaces/Optimizer.interface.ts:38-44](), [src/interfaces/Optimi
 
 The optimizer uses `functools-kit` utilities to handle pagination automatically, eliminating the need for manual offset/limit management in user code. The `RESOLVE_PAGINATION_FN` function orchestrates this:
 
-```mermaid
-graph TB
-    ResolvePag["RESOLVE_PAGINATION_FN"]
-    IterDocs["iterateDocuments<br/>from functools-kit"]
-    DistinctDocs["distinctDocuments<br/>from functools-kit"]
-    ResolveAll["resolveDocuments<br/>from functools-kit"]
-    
-    FetchFn["Source fetch function<br/>(user-provided)"]
-    FilterArgs["IOptimizerFilterArgs<br/>symbol, startDate, endDate"]
-    
-    Iterator["AsyncGenerator<br/>yields Data[] batches"]
-    Distinct["AsyncGenerator<br/>with duplicates removed"]
-    Final["Data[]<br/>Complete deduplicated array"]
-    
-    ResolvePag -->|"calls"| IterDocs
-    ResolvePag -->|"receives"| FilterArgs
-    
-    IterDocs -->|"createRequest with<br/>limit, offset"| FetchFn
-    IterDocs -->|"yields pages until<br/>length < limit"| Iterator
-    
-    Iterator -->|"feeds to"| DistinctDocs
-    DistinctDocs -->|"compares by data.id"| Distinct
-    
-    Distinct -->|"accumulates"| ResolveAll
-    ResolveAll -->|"returns"| Final
-    
-    Final -->|"complete dataset"| ResolvePag
-```
+![Mermaid Diagram](./diagrams\89_Data_Collection_Pipeline_1.svg)
 
 **Diagram: Pagination Flow with functools-kit Integration**
 
@@ -147,57 +95,7 @@ Sources: [src/interfaces/Optimizer.interface.ts:68-83]()
 
 The `GET_STRATEGY_DATA_FN` function implements the complete data collection pipeline. It is called by `ClientOptimizer.getData()` and processes all training ranges sequentially.
 
-```mermaid
-sequenceDiagram
-    participant Caller as "User Code"
-    participant ClientOpt as "ClientOptimizer"
-    participant GetStratFn as "GET_STRATEGY_DATA_FN"
-    participant ProgEmit as "progressOptimizerEmitter"
-    participant ResolvePag as "RESOLVE_PAGINATION_FN"
-    participant Source as "User Source fetch()"
-    
-    Caller->>ClientOpt: getData(symbol)
-    ClientOpt->>GetStratFn: Execute with symbol, self
-    
-    Note over GetStratFn: strategyList = []<br/>processedSources = 0
-    
-    loop For each rangeTrain
-        Note over GetStratFn: messageList = []
-        
-        loop For each source
-            GetStratFn->>ProgEmit: Emit start progress
-            GetStratFn->>ResolvePag: fetch data with pagination
-            ResolvePag->>Source: fetch(symbol, dates, limit, offset)
-            Source-->>ResolvePag: Data[] page
-            Note over ResolvePag: Continue until<br/>page.length < limit
-            ResolvePag-->>GetStratFn: Complete Data[] array
-            
-            alt callbacks.onSourceData exists
-                GetStratFn->>Caller: onSourceData(symbol, name, data, dates)
-            end
-            
-            GetStratFn->>GetStratFn: Format user message
-            GetStratFn->>GetStratFn: Format assistant message
-            
-            Note over GetStratFn: messageList.push(<br/>  {role: "user", content},<br/>  {role: "assistant", content}<br/>)
-            
-            Note over GetStratFn: processedSources++
-        end
-        
-        GetStratFn->>GetStratFn: getPrompt(symbol, messageList)
-        
-        Note over GetStratFn: strategyList.push({<br/>  symbol, name, messages, strategy<br/>})
-    end
-    
-    GetStratFn->>ProgEmit: Emit 100% progress
-    
-    alt callbacks.onData exists
-        GetStratFn->>Caller: onData(symbol, strategyList)
-    end
-    
-    GetStratFn-->>ClientOpt: IOptimizerStrategy[]
-    ClientOpt-->>Caller: Return strategy data
-```
+![Mermaid Diagram](./diagrams\89_Data_Collection_Pipeline_2.svg)
 
 **Diagram: Data Collection Sequence Flow**
 
@@ -251,37 +149,7 @@ Sources: [src/client/ClientOptimizer.ts:34-60](), [src/lib/services/template/Opt
 
 Sources can override default formatters by providing `user` and `assistant` functions in the source configuration:
 
-```mermaid
-graph TB
-    SourceDef["Source Definition"]
-    HasCustom{"Has custom<br/>user/assistant?"}
-    
-    CustomUser["source.user(symbol, data, name)"]
-    CustomAssist["source.assistant(symbol, data, name)"]
-    
-    DefaultUser["DEFAULT_USER_FN<br/>→ template.getUserMessage"]
-    DefaultAssist["DEFAULT_ASSISTANT_FN<br/>→ template.getAssistantMessage"]
-    
-    UserContent["User Message Content<br/>(string)"]
-    AssistContent["Assistant Message Content<br/>(string)"]
-    
-    MessageList["messageList.push(<br/>{role: 'user', content: ...},<br/>{role: 'assistant', content: ...}<br/>)"]
-    
-    SourceDef --> HasCustom
-    
-    HasCustom -->|"Yes"| CustomUser
-    HasCustom -->|"Yes"| CustomAssist
-    HasCustom -->|"No"| DefaultUser
-    HasCustom -->|"No"| DefaultAssist
-    
-    CustomUser --> UserContent
-    CustomAssist --> AssistContent
-    DefaultUser --> UserContent
-    DefaultAssist --> AssistContent
-    
-    UserContent --> MessageList
-    AssistContent --> MessageList
-```
+![Mermaid Diagram](./diagrams\89_Data_Collection_Pipeline_3.svg)
 
 **Diagram: Message Formatter Selection Logic**
 
@@ -318,59 +186,7 @@ Sources: [src/client/ClientOptimizer.ts:105](), [src/client/ClientOptimizer.ts:1
 
 The demo implementation shows a real-world pattern for collecting multi-timeframe technical indicator data from a historical database service:
 
-```mermaid
-graph TB
-    subgraph "Source Configuration"
-        LongTerm["long-term-range<br/>1h candles, 48 periods"]
-        SwingTerm["swing-term-range<br/>30m candles, 96 periods"]
-        ShortTerm["short-term-range<br/>15m candles"]
-        MicroTerm["micro-term-range<br/>1m candles, 60 periods"]
-    end
-    
-    subgraph "CCXT Dumper REST API"
-        LongAPI["/view/long-term-range"]
-        SwingAPI["/view/swing-term-range"]
-        ShortAPI["/view/short-term-range"]
-        MicroAPI["/view/micro-term-range"]
-    end
-    
-    subgraph "Formatted Data Tables"
-        LongMD["1h Markdown Table<br/>RSI, MACD, ADX, ATR,<br/>Bollinger, Stochastic,<br/>EMA, SMA, Support/Resistance"]
-        SwingMD["30m Markdown Table<br/>Similar indicators with<br/>30m-specific periods"]
-        ShortMD["15m Markdown Table<br/>Faster indicator periods<br/>for short-term signals"]
-        MicroMD["1m Markdown Table<br/>Ultra-fast indicators<br/>for scalping signals"]
-    end
-    
-    subgraph "LLM Conversation"
-        User1["User: 1h analysis with metadata"]
-        Assist1["Assistant: Data acknowledged"]
-        User2["User: 30m analysis with metadata"]
-        Assist2["Assistant: Data acknowledged"]
-        User3["User: 15m analysis with metadata"]
-        Assist3["Assistant: Data acknowledged"]
-        User4["User: 1m analysis with metadata"]
-        Assist4["Assistant: Data acknowledged"]
-    end
-    
-    LongTerm -->|"fetch()"| LongAPI
-    SwingTerm -->|"fetch()"| SwingAPI
-    ShortTerm -->|"fetch()"| ShortAPI
-    MicroTerm -->|"fetch()"| MicroAPI
-    
-    LongAPI -->|"JSON rows"| LongMD
-    SwingAPI -->|"JSON rows"| SwingMD
-    ShortAPI -->|"JSON rows"| ShortMD
-    MicroAPI -->|"JSON rows"| MicroMD
-    
-    LongMD -->|"user() formatter"| User1
-    LongMD -->|"assistant() formatter"| Assist1
-    SwingMD --> User2
-    SwingMD --> Assist2
-    ShortMD --> User3
-    ShortMD --> Assist3
-    MicroMD --> User4
-    MicroMD --> Assist4
-```
+![Mermaid Diagram](./diagrams\89_Data_Collection_Pipeline_4.svg)
 
 **Diagram: Multi-Timeframe Data Source Architecture**
 
@@ -461,27 +277,7 @@ Sources: [src/client/ClientOptimizer.ts:122-130](), [src/client/ClientOptimizer.
 
 The `OptimizerConnectionService` retrieves the schema, merges templates, and passes callbacks to `ClientOptimizer`:
 
-```mermaid
-graph LR
-    User["addOptimizer(schema)"]
-    SchemaService["OptimizerSchemaService"]
-    ConnService["OptimizerConnectionService"]
-    TemplateService["OptimizerTemplateService"]
-    
-    ClientOpt["ClientOptimizer instance"]
-    Params["IOptimizerParams<br/>with merged template<br/>and callbacks"]
-    
-    User -->|"registers"| SchemaService
-    
-    ConnService -->|"getOptimizer(name)"| SchemaService
-    ConnService -->|"get defaults"| TemplateService
-    
-    ConnService -->|"merge template<br/>+ callbacks"| Params
-    
-    Params -->|"new ClientOptimizer"| ClientOpt
-    
-    ClientOpt -->|"getData()"| GetStratFn["GET_STRATEGY_DATA_FN"]
-```
+![Mermaid Diagram](./diagrams\89_Data_Collection_Pipeline_5.svg)
 
 **Diagram: Dependency Flow from Registration to Execution**
 

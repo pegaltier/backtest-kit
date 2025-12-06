@@ -18,102 +18,7 @@ The system implements a seven-layer architecture where each layer has distinct r
 
 ### System Layers Diagram
 
-```mermaid
-graph TB
-    subgraph "Layer 1: Public API"
-        API["add.ts functions<br/>addStrategy, addExchange,<br/>addFrame, addRisk, etc"]
-        Events["event.ts functions<br/>listenSignal*, listenDone*,<br/>listenProgress*, etc"]
-        Utils["Utility Classes<br/>Backtest, Live, Walker,<br/>Schedule, Heat, Partial,<br/>PositionSize, Optimizer"]
-    end
-    
-    subgraph "Layer 2: Command Services"
-        BacktestCmd["BacktestCommandService"]
-        LiveCmd["LiveCommandService"]
-        WalkerCmd["WalkerCommandService"]
-    end
-    
-    subgraph "Layer 3: Logic Services"
-        direction LR
-        LogicPrivate["BacktestLogicPrivateService<br/>LiveLogicPrivateService<br/>WalkerLogicPrivateService"]
-        LogicPublic["BacktestLogicPublicService<br/>LiveLogicPublicService<br/>WalkerLogicPublicService"]
-    end
-    
-    subgraph "Layer 4: Global Services"
-        StratGlobal["StrategyGlobalService"]
-        ExchGlobal["ExchangeGlobalService"]
-        FrameGlobal["FrameGlobalService"]
-        RiskGlobal["RiskGlobalService"]
-        SizingGlobal["SizingGlobalService"]
-        OptimizerGlobal["OptimizerGlobalService"]
-        PartialGlobal["PartialGlobalService"]
-    end
-    
-    subgraph "Layer 5: Connection Services"
-        StratConn["StrategyConnectionService"]
-        ExchConn["ExchangeConnectionService"]
-        FrameConn["FrameConnectionService"]
-        RiskConn["RiskConnectionService"]
-        SizingConn["SizingConnectionService"]
-        OptimizerConn["OptimizerConnectionService"]
-        PartialConn["PartialConnectionService"]
-    end
-    
-    subgraph "Layer 6: Business Logic (Client Classes)"
-        ClientStrat["ClientStrategy"]
-        ClientExch["ClientExchange"]
-        ClientFrame["ClientFrame"]
-        ClientRisk["ClientRisk"]
-        ClientSizing["ClientSizing"]
-        ClientOpt["ClientOptimizer"]
-        ClientPartial["ClientPartial"]
-    end
-    
-    subgraph "Layer 7: Schema & Validation"
-        Schema["StrategySchemaService<br/>ExchangeSchemaService<br/>FrameSchemaService<br/>RiskSchemaService<br/>SizingSchemaService<br/>OptimizerSchemaService"]
-        Validation["StrategyValidationService<br/>ExchangeValidationService<br/>FrameValidationService<br/>RiskValidationService<br/>SizingValidationService<br/>OptimizerValidationService"]
-    end
-    
-    API -->|calls| BacktestCmd
-    API -->|calls| LiveCmd
-    API -->|calls| WalkerCmd
-    Utils -->|calls| LogicPublic
-    
-    BacktestCmd -->|delegates| LogicPrivate
-    LiveCmd -->|delegates| LogicPrivate
-    WalkerCmd -->|delegates| LogicPrivate
-    
-    LogicPublic -->|wraps| LogicPrivate
-    
-    LogicPrivate -->|uses| StratGlobal
-    LogicPrivate -->|uses| ExchGlobal
-    LogicPrivate -->|uses| FrameGlobal
-    
-    StratGlobal -->|creates| StratConn
-    ExchGlobal -->|creates| ExchConn
-    FrameGlobal -->|creates| FrameConn
-    RiskGlobal -->|creates| RiskConn
-    SizingGlobal -->|creates| SizingConn
-    OptimizerGlobal -->|creates| OptimizerConn
-    PartialGlobal -->|creates| PartialConn
-    
-    StratConn -->|instantiates| ClientStrat
-    ExchConn -->|instantiates| ClientExch
-    FrameConn -->|instantiates| ClientFrame
-    RiskConn -->|instantiates| ClientRisk
-    SizingConn -->|instantiates| ClientSizing
-    OptimizerConn -->|instantiates| ClientOpt
-    PartialConn -->|instantiates| ClientPartial
-    
-    StratConn -->|reads| Schema
-    ExchConn -->|reads| Schema
-    FrameConn -->|reads| Schema
-    RiskConn -->|reads| Schema
-    SizingConn -->|reads| Schema
-    OptimizerConn -->|reads| Schema
-    
-    API -->|registers| Schema
-    API -->|validates| Validation
-```
+![Mermaid Diagram](./diagrams\09_Architecture_0.svg)
 
 **Layer 1: Public API** provides user-facing functions exported from [src/index.ts:1-184](). The `add.ts` functions register components ([src/function/add.ts:1-445]()), while `event.ts` functions subscribe to system events ([src/function/event.ts:1-892]()). Utility classes like `Backtest`, `Live`, and `Walker` provide high-level execution control.
 
@@ -139,86 +44,7 @@ Services are organized into 10 functional categories following a matrix pattern 
 
 ### Service Category Matrix
 
-```mermaid
-graph TB
-    subgraph "Base Services"
-        Logger["LoggerService<br/>TYPES.loggerService"]
-    end
-    
-    subgraph "Context Services"
-        ExecCtx["ExecutionContextService<br/>TYPES.executionContextService<br/>symbol, when, backtest"]
-        MethodCtx["MethodContextService<br/>TYPES.methodContextService<br/>strategyName, exchangeName"]
-    end
-    
-    subgraph "Connection Services (Memoization)"
-        StratConn["StrategyConnectionService<br/>TYPES.strategyConnectionService"]
-        ExchConn["ExchangeConnectionService<br/>TYPES.exchangeConnectionService"]
-        FrameConn["FrameConnectionService<br/>TYPES.frameConnectionService"]
-        RiskConn["RiskConnectionService<br/>TYPES.riskConnectionService"]
-        SizingConn["SizingConnectionService<br/>TYPES.sizingConnectionService"]
-        OptConn["OptimizerConnectionService<br/>TYPES.optimizerConnectionService"]
-        PartConn["PartialConnectionService<br/>TYPES.partialConnectionService"]
-    end
-    
-    subgraph "Schema Services (Registry)"
-        StratSchema["StrategySchemaService<br/>TYPES.strategySchemaService"]
-        ExchSchema["ExchangeSchemaService<br/>TYPES.exchangeSchemaService"]
-        FrameSchema["FrameSchemaService<br/>TYPES.frameSchemaService"]
-        WalkerSchema["WalkerSchemaService<br/>TYPES.walkerSchemaService"]
-        RiskSchema["RiskSchemaService<br/>TYPES.riskSchemaService"]
-        SizingSchema["SizingSchemaService<br/>TYPES.sizingSchemaService"]
-        OptSchema["OptimizerSchemaService<br/>TYPES.optimizerSchemaService"]
-    end
-    
-    subgraph "Global Services (Context Injection)"
-        StratGlobal["StrategyGlobalService<br/>TYPES.strategyGlobalService"]
-        ExchGlobal["ExchangeGlobalService<br/>TYPES.exchangeGlobalService"]
-        FrameGlobal["FrameGlobalService<br/>TYPES.frameGlobalService"]
-        RiskGlobal["RiskGlobalService<br/>TYPES.riskGlobalService"]
-        SizingGlobal["SizingGlobalService<br/>TYPES.sizingGlobalService"]
-        OptGlobal["OptimizerGlobalService<br/>TYPES.optimizerGlobalService"]
-        PartGlobal["PartialGlobalService<br/>TYPES.partialGlobalService"]
-    end
-    
-    subgraph "Command Services (Validation + Delegation)"
-        BacktestCmd["BacktestCommandService<br/>TYPES.backtestCommandService"]
-        LiveCmd["LiveCommandService<br/>TYPES.liveCommandService"]
-        WalkerCmd["WalkerCommandService<br/>TYPES.walkerCommandService"]
-    end
-    
-    subgraph "Logic Services (Execution)"
-        BacktestPrivate["BacktestLogicPrivateService<br/>TYPES.backtestLogicPrivateService"]
-        LivePrivate["LiveLogicPrivateService<br/>TYPES.liveLogicPrivateService"]
-        WalkerPrivate["WalkerLogicPrivateService<br/>TYPES.walkerLogicPrivateService"]
-        BacktestPublic["BacktestLogicPublicService<br/>TYPES.backtestLogicPublicService"]
-        LivePublic["LiveLogicPublicService<br/>TYPES.liveLogicPublicService"]
-        WalkerPublic["WalkerLogicPublicService<br/>TYPES.walkerLogicPublicService"]
-    end
-    
-    subgraph "Markdown Services (Reporting)"
-        BacktestMD["BacktestMarkdownService<br/>TYPES.backtestMarkdownService"]
-        LiveMD["LiveMarkdownService<br/>TYPES.liveMarkdownService"]
-        ScheduleMD["ScheduleMarkdownService<br/>TYPES.scheduleMarkdownService"]
-        PerfMD["PerformanceMarkdownService<br/>TYPES.performanceMarkdownService"]
-        WalkerMD["WalkerMarkdownService<br/>TYPES.walkerMarkdownService"]
-        HeatMD["HeatMarkdownService<br/>TYPES.heatMarkdownService"]
-        PartMD["PartialMarkdownService<br/>TYPES.partialMarkdownService"]
-    end
-    
-    subgraph "Validation Services (Rules)"
-        StratValid["StrategyValidationService<br/>TYPES.strategyValidationService"]
-        ExchValid["ExchangeValidationService<br/>TYPES.exchangeValidationService"]
-        FrameValid["FrameValidationService<br/>TYPES.frameValidationService"]
-        RiskValid["RiskValidationService<br/>TYPES.riskValidationService"]
-        SizingValid["SizingValidationService<br/>TYPES.sizingValidationService"]
-        WalkerValid["WalkerValidationService<br/>TYPES.walkerValidationService"]
-        OptValid["OptimizerValidationService<br/>TYPES.optimizerValidationService"]
-    end
-    
-    subgraph "Template Services (Code Generation)"
-        OptTemplate["OptimizerTemplateService<br/>TYPES.optimizerTemplateService"]
-    end
-```
+![Mermaid Diagram](./diagrams\09_Architecture_1.svg)
 
 ### Service Category Responsibilities
 
@@ -247,35 +73,7 @@ The system implements a lightweight dependency injection container that wires ap
 
 ### DI System Flow Diagram
 
-```mermaid
-graph TB
-    subgraph "1. Symbol Registry (types.ts)"
-        TYPES["TYPES object<br/>~60 Symbol keys<br/>baseServices,<br/>contextServices,<br/>connectionServices,<br/>schemaServices, etc"]
-    end
-    
-    subgraph "2. Service Registration (provide.ts)"
-        Provide["provide() calls<br/>Line 53: LoggerService<br/>Lines 62-68: Connection Services<br/>Lines 72-78: Schema Services<br/>Lines 82-88: Global Services<br/>Lines 92-94: Command Services<br/>Lines 98-106: Logic Services<br/>Lines 110-116: Markdown Services<br/>Lines 120-126: Validation Services<br/>Line 130: Template Services"]
-    end
-    
-    subgraph "3. Service Instantiation (di.ts)"
-        DI["DI Container<br/>provide(symbol, factory)<br/>inject(symbol)<br/>init()"]
-    end
-    
-    subgraph "4. Service Aggregation (index.ts)"
-        Backtest["backtest object<br/>Lines 57-224<br/>All services flattened<br/>into single namespace"]
-    end
-    
-    subgraph "5. Public Export (index.ts root)"
-        Export["src/index.ts<br/>export { backtest as lib }<br/>Line 183"]
-    end
-    
-    TYPES -->|defines keys| Provide
-    Provide -->|registers factories| DI
-    DI -->|injects instances| Backtest
-    Backtest -->|exported as lib| Export
-    
-    DI -.->|constructor injection| Services["All Service Instances<br/>~60 services created<br/>Dependencies resolved<br/>via constructor params"]
-```
+![Mermaid Diagram](./diagrams\09_Architecture_2.svg)
 
 ### Service Registration Example
 
@@ -352,35 +150,7 @@ The system uses two context services to propagate execution state through servic
 
 ### Context Injection Flow
 
-```mermaid
-sequenceDiagram
-    participant Logic as BacktestLogicPrivateService
-    participant Global as StrategyGlobalService
-    participant Method as MethodContextService
-    participant Exec as ExecutionContextService
-    participant Conn as StrategyConnectionService
-    participant Client as ClientStrategy
-    
-    Logic->>Exec: setContext(symbol, when, backtest=true)
-    Logic->>Global: tick(strategyName, exchangeName)
-    
-    Global->>Method: setContext(strategyName, exchangeName)
-    Global->>Conn: getStrategy(symbol, strategyName, exchangeName)
-    
-    Conn->>Exec: getContext()
-    Exec-->>Conn: {symbol, when, backtest}
-    Conn->>Method: getContext()
-    Method-->>Conn: {strategyName, exchangeName}
-    
-    Conn->>Client: new ClientStrategy(symbol, when, backtest, schema)
-    Client->>Client: tick()
-    Client-->>Conn: IStrategyTickResult
-    Conn-->>Global: IStrategyTickResult
-    Global-->>Logic: IStrategyTickResult
-    
-    Logic->>Exec: clearContext()
-    Logic->>Method: clearContext()
-```
+![Mermaid Diagram](./diagrams\09_Architecture_3.svg)
 
 **Flow Description:**
 
@@ -413,39 +183,7 @@ The event system implements a comprehensive publish-subscribe pattern with 16 di
 
 All event emitters are defined in [src/config/emitters.ts:1-122]() using the `Subject` pattern from `functools-kit`:
 
-```mermaid
-graph TB
-    subgraph "Signal Events (3 channels)"
-        SE["signalEmitter<br/>All signals"]
-        SLE["signalLiveEmitter<br/>Live only"]
-        SBE["signalBacktestEmitter<br/>Backtest only"]
-    end
-    
-    subgraph "Progress Events (3 channels)"
-        PBE["progressBacktestEmitter<br/>Backtest frames"]
-        PWE["progressWalkerEmitter<br/>Walker strategies"]
-        POE["progressOptimizerEmitter<br/>Optimizer sources"]
-    end
-    
-    subgraph "Completion Events (4 channels)"
-        DLS["doneLiveSubject<br/>Live done"]
-        DBS["doneBacktestSubject<br/>Backtest done"]
-        DWS["doneWalkerSubject<br/>Walker done"]
-        WCS["walkerCompleteSubject<br/>Walker results"]
-    end
-    
-    subgraph "Monitoring Events (3 channels)"
-        PerfE["performanceEmitter<br/>Timing metrics"]
-        ErrE["errorEmitter<br/>Recoverable errors"]
-        ExitE["exitEmitter<br/>Fatal errors"]
-    end
-    
-    subgraph "Analysis Events (3 channels)"
-        WE["walkerEmitter<br/>Walker progress"]
-        PPE["partialProfitSubject<br/>Profit milestones"]
-        PLE["partialLossSubject<br/>Loss milestones"]
-    end
-```
+![Mermaid Diagram](./diagrams\09_Architecture_4.svg)
 
 ### Event Emitter Types and Purposes
 
@@ -472,28 +210,7 @@ graph TB
 
 Event consumers use listener functions from [src/function/event.ts:1-892]() that implement a consistent API pattern:
 
-```mermaid
-graph LR
-    subgraph "Base Listeners"
-        LS["listenSignal(fn)<br/>Subscribe to all"]
-        LSB["listenSignalBacktest(fn)<br/>Subscribe to backtest"]
-        LSL["listenSignalLive(fn)<br/>Subscribe to live"]
-    end
-    
-    subgraph "Once Listeners"
-        LSO["listenSignalOnce(filter, fn)<br/>One-time with filter"]
-        LSBO["listenSignalBacktestOnce(filter, fn)<br/>One-time backtest"]
-        LSLO["listenSignalLiveOnce(filter, fn)<br/>One-time live"]
-    end
-    
-    LS -->|Wrapper| Emitter["signalEmitter.subscribe()"]
-    LSB -->|Wrapper| EmitterB["signalBacktestEmitter.subscribe()"]
-    LSL -->|Wrapper| EmitterL["signalLiveEmitter.subscribe()"]
-    
-    LSO -->|Wrapper| Filter["signalEmitter.filter().once()"]
-    LSBO -->|Wrapper| FilterB["signalBacktestEmitter.filter().once()"]
-    LSLO -->|Wrapper| FilterL["signalLiveEmitter.filter().once()"]
-```
+![Mermaid Diagram](./diagrams\09_Architecture_5.svg)
 
 ### Queued Callback Processing
 
@@ -545,88 +262,7 @@ The system maintains clear module boundaries with well-defined interaction patte
 
 ### Primary Module Boundaries
 
-```mermaid
-graph TB
-    subgraph "User Space"
-        UserCode["User Application Code"]
-    end
-    
-    subgraph "Public API Layer (src/function/, src/classes/)"
-        Add["add.ts<br/>Component Registration"]
-        Event["event.ts<br/>Event Subscriptions"]
-        Setup["setup.ts<br/>Configuration"]
-        Classes["Backtest, Live, Walker<br/>Schedule, Heat, Partial<br/>PositionSize, Optimizer"]
-    end
-    
-    subgraph "Service Layer (src/lib/services/)"
-        Command["Command Services<br/>BacktestCommandService<br/>LiveCommandService<br/>WalkerCommandService"]
-        Logic["Logic Services<br/>Private: Execution<br/>Public: Contracts"]
-        Global["Global Services<br/>Context Injection<br/>Orchestration"]
-        Connection["Connection Services<br/>Memoization<br/>Routing"]
-        Schema["Schema Services<br/>Registration<br/>Retrieval"]
-        Validation["Validation Services<br/>Rule Enforcement"]
-        Markdown["Markdown Services<br/>Report Generation"]
-        Template["Template Services<br/>Code Generation"]
-    end
-    
-    subgraph "Business Logic Layer (src/lib/classes/)"
-        ClientStrat["ClientStrategy<br/>Signal Lifecycle"]
-        ClientExch["ClientExchange<br/>Data Access"]
-        ClientRisk["ClientRisk<br/>Risk Management"]
-        ClientSizing["ClientSizing<br/>Position Sizing"]
-        ClientFrame["ClientFrame<br/>Timeframe Generation"]
-        ClientOpt["ClientOptimizer<br/>AI Strategy Generation"]
-        ClientPartial["ClientPartial<br/>Milestone Tracking"]
-    end
-    
-    subgraph "Infrastructure Layer (src/lib/core/, src/config/)"
-        DI["Dependency Injection<br/>provide.ts, di.ts, types.ts"]
-        Context["Context Services<br/>ExecutionContextService<br/>MethodContextService"]
-        Emitters["Event Emitters<br/>emitters.ts<br/>16 Subject instances"]
-        Persist["Persistence Adapters<br/>PersistSignalAdapter<br/>PersistRiskAdapter<br/>PersistScheduleAdapter<br/>PersistPartialAdapter"]
-    end
-    
-    subgraph "External Dependencies"
-        CCXT["CCXT Library<br/>Exchange API"]
-        Ollama["Ollama API<br/>LLM Integration"]
-        FileSystem["File System<br/>JSON Storage"]
-    end
-    
-    UserCode -->|calls| Add
-    UserCode -->|calls| Event
-    UserCode -->|calls| Setup
-    UserCode -->|calls| Classes
-    
-    Add -->|registers| Schema
-    Add -->|validates| Validation
-    Classes -->|delegates| Command
-    Classes -->|delegates| Logic
-    
-    Command -->|validates & delegates| Logic
-    Logic -->|orchestrates| Global
-    Global -->|manages| Connection
-    Connection -->|creates| ClientStrat
-    Connection -->|creates| ClientExch
-    Connection -->|creates| ClientRisk
-    Connection -->|reads| Schema
-    
-    ClientStrat -->|uses| ClientExch
-    ClientStrat -->|uses| ClientRisk
-    ClientStrat -->|uses| ClientSizing
-    ClientStrat -->|persists| Persist
-    
-    Logic -->|emits| Emitters
-    ClientStrat -->|emits| Emitters
-    
-    Logic -->|records| Markdown
-    
-    ClientExch -->|calls| CCXT
-    ClientOpt -->|calls| Ollama
-    Persist -->|writes| FileSystem
-    
-    Context -->|injected into| Connection
-    Context -->|injected into| Global
-```
+![Mermaid Diagram](./diagrams\09_Architecture_6.svg)
 
 ### Interaction Patterns by Layer
 

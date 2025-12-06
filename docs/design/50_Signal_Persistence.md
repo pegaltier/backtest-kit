@@ -10,37 +10,7 @@
 
 Signal persistence operates exclusively in **live mode** (not backtest mode) to maintain crash-safe state across process restarts. The system uses four specialized adapters to persist different aspects of trading state:
 
-```mermaid
-graph TB
-    subgraph "ClientStrategy State"
-        PendingSignal["_pendingSignal: ISignalRow | null<br/>(active position)"]
-        ScheduledSignal["_scheduledSignal: IScheduledSignalRow | null<br/>(limit order)"]
-    end
-    
-    subgraph "Persistence Adapters"
-        PSA["PersistSignalAdapter<br/>readSignalData()<br/>writeSignalData()<br/>Atomic file writes"]
-        PSCH["PersistScheduleAdapter<br/>readScheduleData()<br/>writeScheduleData()<br/>Atomic file writes"]
-        PRA["PersistRiskAdapter<br/>readRiskData()<br/>writeRiskData()<br/>Active position registry"]
-        PPA["PersistPartialAdapter<br/>readPartialData()<br/>writePartialData()<br/>Profit/loss milestones"]
-    end
-    
-    subgraph "Storage Layer"
-        SignalFile["./persist/signal/{symbol}_{strategy}.json"]
-        ScheduleFile["./persist/schedule/{symbol}_{strategy}.json"]
-        RiskFile["./persist/risk/{symbol}_{risk}.json"]
-        PartialFile["./persist/partial/{symbol}.json"]
-    end
-    
-    PendingSignal -->|"setPendingSignal()"| PSA
-    ScheduledSignal -->|"setScheduledSignal()"| PSCH
-    PSA -->|"atomic write"| SignalFile
-    PSCH -->|"atomic write"| ScheduleFile
-    PRA -->|"atomic write"| RiskFile
-    PPA -->|"atomic write"| PartialFile
-    
-    SignalFile -.->|"waitForInit() restore"| PendingSignal
-    ScheduleFile -.->|"waitForInit() restore"| ScheduledSignal
-```
+![Mermaid Diagram](./diagrams\50_Signal_Persistence_0.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:411-472](), [types.d.ts:1-1000]()
 
@@ -158,29 +128,7 @@ interface IPartialData {
 
 All persistence adapters implement **atomic writes** to prevent data corruption during crashes. The pattern ensures that either the full write succeeds or no changes are made:
 
-```mermaid
-sequenceDiagram
-    participant Strategy as ClientStrategy
-    participant Adapter as PersistSignalAdapter
-    participant TempFile as {file}.tmp
-    participant FinalFile as {file}.json
-    
-    Strategy->>Adapter: writeSignalData(symbol, strategy, signal)
-    Adapter->>TempFile: Write JSON to .tmp file
-    Note over TempFile: Complete write to temporary file
-    
-    Adapter->>TempFile: fsync() - flush to disk
-    Note over TempFile: Ensure data physically written
-    
-    Adapter->>FinalFile: rename(.tmp → .json)
-    Note over FinalFile: Atomic operation by OS
-    
-    alt Crash before rename
-        TempFile-->>Strategy: Original file unchanged ✓
-    else Crash after rename
-        FinalFile-->>Strategy: New data persisted ✓
-    end
-```
+![Mermaid Diagram](./diagrams\50_Signal_Persistence_1.svg)
 
 **Implementation Pattern:**
 1. Write data to temporary file (`{filename}.tmp`)
@@ -198,30 +146,7 @@ sequenceDiagram
 
 The `waitForInit()` method is called at the start of every live trading session to restore persisted state. It **only runs in live mode** (skipped in backtest).
 
-```mermaid
-flowchart TD
-    Start["Live.run() or Live.background()"]
-    
-    Start --> CheckMode{"execution.context.backtest?"}
-    CheckMode -->|true| SkipRestore["Skip restoration<br/>(backtest mode)"]
-    CheckMode -->|false| RestorePending["PersistSignalAdapter.readSignalData()"]
-    
-    RestorePending --> HasPending{"pendingSignal exists?"}
-    HasPending -->|Yes| ValidatePending["Validate exchangeName<br/>and strategyName match"]
-    ValidatePending --> SetPending["self._pendingSignal = pendingSignal"]
-    SetPending --> CallOnActive["callbacks.onActive()<br/>(notify restored state)"]
-    HasPending -->|No| RestoreScheduled
-    
-    CallOnActive --> RestoreScheduled["PersistScheduleAdapter.readScheduleData()"]
-    RestoreScheduled --> HasScheduled{"scheduledSignal exists?"}
-    HasScheduled -->|Yes| ValidateScheduled["Validate exchangeName<br/>and strategyName match"]
-    ValidateScheduled --> SetScheduled["self._scheduledSignal = scheduledSignal"]
-    SetScheduled --> CallOnSchedule["callbacks.onSchedule()<br/>(notify restored state)"]
-    HasScheduled -->|No| Complete
-    
-    CallOnSchedule --> Complete["Ready for tick() execution"]
-    SkipRestore --> Complete
-```
+![Mermaid Diagram](./diagrams\50_Signal_Persistence_2.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:411-472]()
 
@@ -339,45 +264,7 @@ The following table shows when persistence operations occur during the signal li
 
 ### Example: Mid-Trade Process Crash
 
-```mermaid
-sequenceDiagram
-    participant User as Live.background()
-    participant Strategy as ClientStrategy
-    participant Persist as PersistSignalAdapter
-    participant Disk as Filesystem
-    participant Process as Node Process
-    
-    Note over User,Disk: Normal Operation
-    User->>Strategy: tick() iteration 1
-    Strategy->>Strategy: getSignal() returns signal
-    Strategy->>Persist: setPendingSignal(signal)
-    Persist->>Disk: Write signal atomically
-    Note over Disk: signal/BTCUSDT_my-strategy.json<br/>{"id":"abc123","priceOpen":50000,...}
-    
-    User->>Strategy: tick() iteration 2
-    Strategy->>Strategy: Check TP/SL (active)
-    Note over Strategy: Signal still active
-    
-    Note over Process: ⚠️ CRASH (OOM / SIGKILL / power loss)
-    Process->>Process: Process terminates
-    
-    Note over User,Disk: ===== RESTART =====
-    
-    User->>Strategy: Live.background() restart
-    Strategy->>Strategy: waitForInit()
-    Strategy->>Persist: readSignalData(BTCUSDT, my-strategy)
-    Persist->>Disk: Read signal/BTCUSDT_my-strategy.json
-    Disk-->>Persist: {"id":"abc123","priceOpen":50000,...}
-    Persist-->>Strategy: ISignalRow (restored)
-    
-    Strategy->>Strategy: self._pendingSignal = signal
-    Strategy->>User: callbacks.onActive(signal)
-    Note over User: User notified of restored position
-    
-    User->>Strategy: tick() iteration continues
-    Strategy->>Strategy: Monitor TP/SL (no duplicate)
-    Note over Strategy: Exact continuation<br/>No signal regeneration<br/>No duplicate positions
-```
+![Mermaid Diagram](./diagrams\50_Signal_Persistence_3.svg)
 
 **Key Properties:**
 1. **No Duplicate Signals:** Restored `_pendingSignal` prevents `getSignal()` from being called
@@ -522,29 +409,7 @@ ClientStrategy maintains both in-memory and on-disk representations of signal st
 
 ### State Synchronization
 
-```mermaid
-graph LR
-    subgraph "In-Memory State (ClientStrategy)"
-        MS["_pendingSignal: ISignalRow | null"]
-        SS["_scheduledSignal: IScheduledSignalRow | null"]
-    end
-    
-    subgraph "On-Disk State (Filesystem)"
-        PF["signal/{symbol}_{strategy}.json"]
-        SF["schedule/{symbol}_{strategy}.json"]
-    end
-    
-    MS -.->|"setPendingSignal()<br/>sync write"| PF
-    SS -.->|"setScheduledSignal()<br/>sync write"| SF
-    
-    PF -.->|"waitForInit()<br/>restore"| MS
-    SF -.->|"waitForInit()<br/>restore"| SS
-    
-    style MS fill:#f9f9f9
-    style SS fill:#f9f9f9
-    style PF fill:#e1f5ff
-    style SF fill:#e1f5ff
-```
+![Mermaid Diagram](./diagrams\50_Signal_Persistence_4.svg)
 
 **Synchronization Guarantees:**
 1. **Write-Through:** Every in-memory state change immediately persists to disk

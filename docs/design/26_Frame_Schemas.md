@@ -12,37 +12,7 @@ The `IFrameSchema` interface defines the contract for frame registration. All fr
 
 **Interface Structure**
 
-```mermaid
-classDiagram
-    class IFrameSchema {
-        +FrameName frameName
-        +string note
-        +FrameInterval interval
-        +Date startDate
-        +Date endDate
-        +Partial~IFrameCallbacks~ callbacks
-    }
-    
-    class IFrameCallbacks {
-        +onTimeframe(Date[] timeframe, Date startDate, Date endDate, FrameInterval interval) void
-    }
-    
-    class FrameInterval {
-        <<enumeration>>
-        1m | 3m | 5m | 15m | 30m
-        1h | 2h | 4h | 6h | 8h | 12h
-        1d | 3d
-    }
-    
-    class ClientFrame {
-        +getTimeframe(string symbol, FrameName frameName) Promise~Date[]~
-    }
-    
-    IFrameSchema --> IFrameCallbacks : "optional callbacks"
-    IFrameSchema --> FrameInterval : "interval type"
-    ClientFrame ..|> IFrame : implements
-    ClientFrame --> IFrameSchema : "uses schema for generation"
-```
+![Mermaid Diagram](./diagrams\26_Frame_Schemas_0.svg)
 
 **Field Definitions**
 
@@ -94,30 +64,7 @@ The `FrameInterval` type defines the step size for timeframe generation. Each in
 
 **Available Intervals**
 
-```mermaid
-graph LR
-    subgraph "Minute Intervals"
-        M1["1m<br/>1 minute"]
-        M3["3m<br/>3 minutes"]
-        M5["5m<br/>5 minutes"]
-        M15["15m<br/>15 minutes"]
-        M30["30m<br/>30 minutes"]
-    end
-    
-    subgraph "Hour Intervals"
-        H1["1h<br/>1 hour"]
-        H2["2h<br/>2 hours"]
-        H4["4h<br/>4 hours"]
-        H6["6h<br/>6 hours"]
-        H8["8h<br/>8 hours"]
-        H12["12h<br/>12 hours"]
-    end
-    
-    subgraph "Day Intervals"
-        D1["1d<br/>1 day"]
-        D3["3d<br/>3 days"]
-    end
-```
+![Mermaid Diagram](./diagrams\26_Frame_Schemas_1.svg)
 
 **Interval Selection Guidelines**
 
@@ -138,20 +85,7 @@ Frame schemas are registered via `addFrame()` and retrieved by name during backt
 
 **Registration Flow**
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant addFrame["addFrame()"]
-    participant FrameValidationService
-    participant FrameSchemaService
-    
-    User->>addFrame: Register frame schema
-    addFrame->>FrameValidationService: addFrame(frameName, schema)
-    FrameValidationService->>FrameValidationService: Validate structure
-    addFrame->>FrameSchemaService: register(frameName, schema)
-    FrameSchemaService->>FrameSchemaService: Store in ToolRegistry
-    addFrame-->>User: Registration complete
-```
+![Mermaid Diagram](./diagrams\26_Frame_Schemas_2.svg)
 
 **Registration Example**
 
@@ -199,26 +133,7 @@ Frames generate arrays of `Date` objects representing tick timestamps. The `Clie
 
 **Generation Process**
 
-```mermaid
-graph TB
-    Start["ClientFrame.getTimeframe()"]
-    Parse["Parse interval<br/>(1m → 1 minute)"]
-    Init["Initialize timestamp<br/>at startDate"]
-    Loop{"timestamp <= endDate?"}
-    Add["Add timestamp to array"]
-    Increment["Increment timestamp<br/>by interval"]
-    Callback["Trigger onTimeframe callback"]
-    Return["Return Date[] array"]
-    
-    Start --> Parse
-    Parse --> Init
-    Init --> Loop
-    Loop -->|Yes| Add
-    Add --> Increment
-    Increment --> Loop
-    Loop -->|No| Callback
-    Callback --> Return
-```
+![Mermaid Diagram](./diagrams\26_Frame_Schemas_3.svg)
 
 **Example Timeframe Output**
 
@@ -252,21 +167,7 @@ Frame schemas support an optional `onTimeframe` callback invoked after timeframe
 
 The `onTimeframe` callback is invoked by `ClientFrame` after timestamp array generation, before backtest iteration begins. Useful for logging, validation, or external integrations.
 
-```mermaid
-classDiagram
-    class IFrameCallbacks {
-        +onTimeframe(Date[] timeframe, Date startDate, Date endDate, FrameInterval interval) void
-    }
-    
-    class ClientFrame {
-        -IFrameParams params
-        +getTimeframe(string symbol, FrameName frameName) Promise~Date[]~
-    }
-    
-    ClientFrame --> IFrameCallbacks : "invokes after generation"
-    
-    note for IFrameCallbacks "Single callback invoked once per frame\nBefore BacktestLogicPrivateService iteration"
-```
+![Mermaid Diagram](./diagrams\26_Frame_Schemas_4.svg)
 
 **Callback Signature**
 
@@ -310,32 +211,7 @@ Frame schemas are managed through a layered service architecture following the f
 
 **Service Layer Flow**
 
-```mermaid
-graph TB
-    addFrame["addFrame(IFrameSchema)"]
-    FrameValidationService["FrameValidationService"]
-    FrameSchemaService["FrameSchemaService<br/>ToolRegistry storage"]
-    FrameConnectionService["FrameConnectionService<br/>Memoized ClientFrame instances"]
-    FrameGlobalService["FrameGlobalService<br/>Context injection wrapper"]
-    ClientFrame["ClientFrame<br/>getTimeframe() implementation"]
-    BacktestLogicPrivate["BacktestLogicPrivateService"]
-    
-    addFrame --> FrameValidationService
-    addFrame --> FrameSchemaService
-    
-    BacktestLogicPrivate --> FrameGlobalService
-    FrameGlobalService --> FrameConnectionService
-    FrameConnectionService --> FrameSchemaService
-    FrameConnectionService --> ClientFrame
-    
-    note1["Validation:<br/>- Unique frameName<br/>- startDate < endDate<br/>- Valid interval"]
-    note2["Storage:<br/>- Map[frameName, IFrameSchema]<br/>- Retrieved by name"]
-    note3["Memoization:<br/>- One ClientFrame per frameName<br/>- Cached instances"]
-    
-    FrameValidationService -.-> note1
-    FrameSchemaService -.-> note2
-    FrameConnectionService -.-> note3
-```
+![Mermaid Diagram](./diagrams\26_Frame_Schemas_5.svg)
 
 **Key Code Entities**
 
@@ -363,17 +239,7 @@ The `IFrameParams` interface extends `IFrameSchema` with injected dependencies f
 
 **Parameter Composition**
 
-```mermaid
-graph LR
-    IFrameSchema["IFrameSchema<br/>frameName, interval,<br/>startDate, endDate, callbacks"]
-    ILogger["ILogger<br/>Injected by DI"]
-    IFrameParams["IFrameParams<br/>extends IFrameSchema<br/>+ logger"]
-    ClientFrame["ClientFrame<br/>constructor(IFrameParams)"]
-    
-    IFrameSchema --> IFrameParams
-    ILogger --> IFrameParams
-    IFrameParams --> ClientFrame
-```
+![Mermaid Diagram](./diagrams\26_Frame_Schemas_6.svg)
 
 **Field Sources**
 
@@ -397,30 +263,7 @@ Frames are consumed by `BacktestLogicPrivateService` to generate the iteration a
 
 **Backtest Integration Flow**
 
-```mermaid
-sequenceDiagram
-    participant Backtest["Backtest.run()"]
-    participant BacktestLogicPublic["BacktestLogicPublicService"]
-    participant MethodContext["MethodContextService"]
-    participant BacktestLogicPrivate["BacktestLogicPrivateService"]
-    participant FrameConnection["FrameConnectionService"]
-    participant ClientFrame["ClientFrame"]
-    participant Strategy["ClientStrategy"]
-    
-    Backtest->>BacktestLogicPublic: run(symbol, context)
-    BacktestLogicPublic->>MethodContext: runAsyncIterator(generator, context)
-    MethodContext->>BacktestLogicPrivate: run(symbol)
-    BacktestLogicPrivate->>FrameConnection: get(frameName)
-    FrameConnection->>ClientFrame: getTimeframe(symbol, frameName)
-    ClientFrame-->>BacktestLogicPrivate: Date[] timeframe
-    
-    loop For each timestamp in timeframe
-        BacktestLogicPrivate->>Strategy: tick(symbol)
-        Strategy-->>BacktestLogicPrivate: IStrategyTickResult
-    end
-    
-    BacktestLogicPrivate-->>Backtest: Yield closed signals
-```
+![Mermaid Diagram](./diagrams\26_Frame_Schemas_7.svg)
 
 The `frameName` from `MethodContext` determines which frame to use. The generated timeframe array drives the iteration loop, with each timestamp representing a simulated "now" moment for strategy execution.
 

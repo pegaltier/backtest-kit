@@ -12,70 +12,7 @@ For signal lifecycle management, see [Signal Lifecycle](#8). For risk management
 
 The persistence layer consists of three main components: the abstract `PersistBase` class, specialized adapters for signals and risk data, and the atomic file writing utility.
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        LiveClass["Live (class)"]
-        BacktestClass["Backtest (class)"]
-        StrategyCallbacks["IStrategyCallbacks"]
-        PartialCallbacks["Partial Callbacks"]
-    end
-    
-    subgraph "Persistence Adapters"
-        PersistSignalAdaper["PersistSignalAdapter<br/>(static registry)"]
-        PersistScheduleAdapter["PersistScheduleAdapter<br/>(static registry)"]
-        PersistRiskAdapter["PersistRiskAdapter<br/>(static registry)"]
-        PersistPartialAdapter["PersistPartialAdapter<br/>(static registry)"]
-    end
-    
-    subgraph "Base Persistence"
-        PersistBase["PersistBase<br/>(abstract class)"]
-        IPersistBase["IPersistBase<br/>(interface)"]
-    end
-    
-    subgraph "Atomic Write Utility"
-        writeFileAtomic["writeFileAtomic<br/>(function)"]
-    end
-    
-    subgraph "File System"
-        SignalFiles["./logs/data/signal/<br/>{strategyName}/<br/>{symbol}.json"]
-        ScheduleFiles["./logs/data/schedule/<br/>{strategyName}/<br/>{symbol}.json"]
-        RiskFiles["./logs/data/risk/<br/>{riskName}/<br/>positions.json"]
-        PartialFiles["./logs/data/partial/<br/>{symbol}/<br/>data.json"]
-    end
-    
-    subgraph "Custom Implementations"
-        RedisAdapter["RedisPersist<br/>(user-defined)"]
-        MongoAdapter["MongoPersist<br/>(user-defined)"]
-        FileAdapter["Default File-based<br/>(built-in)"]
-    end
-    
-    LiveClass --> PersistSignalAdaper
-    LiveClass --> PersistScheduleAdapter
-    StrategyCallbacks --> PersistRiskAdapter
-    PartialCallbacks --> PersistPartialAdapter
-    
-    PersistSignalAdaper --> PersistBase
-    PersistScheduleAdapter --> PersistBase
-    PersistRiskAdapter --> PersistBase
-    PersistPartialAdapter --> PersistBase
-    
-    PersistBase --> IPersistBase
-    PersistBase --> writeFileAtomic
-    
-    RedisAdapter -.implements.-> IPersistBase
-    MongoAdapter -.implements.-> IPersistBase
-    FileAdapter -.implements.-> IPersistBase
-    
-    writeFileAtomic --> SignalFiles
-    writeFileAtomic --> ScheduleFiles
-    writeFileAtomic --> RiskFiles
-    writeFileAtomic --> PartialFiles
-    
-    PersistSignalAdaper -.registers.-> RedisAdapter
-    PersistSignalAdaper -.registers.-> MongoAdapter
-    PersistSignalAdaper -.registers.-> FileAdapter
-```
+![Mermaid Diagram](./diagrams\81_Persistence_Layer_0.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:27](), [README.md:260-261]()
 
@@ -87,52 +24,7 @@ graph TB
 
 The `IPersistBase` interface defines the contract all persistence implementations must fulfill:
 
-```mermaid
-classDiagram
-    class IPersistBase {
-        <<interface>>
-        +waitForInit(initial: boolean) Promise~void~
-        +readValue(entityId: EntityId) Promise~Entity~
-        +hasValue(entityId: EntityId) Promise~boolean~
-        +writeValue(entityId: EntityId, entity: Entity) Promise~void~
-    }
-    
-    class PersistBase {
-        +entityName: string
-        +baseDir: string
-        +_directory: string
-        +waitForInit(initial: boolean) Promise~void~
-        +readValue(entityId: EntityId) Promise~T~
-        +hasValue(entityId: EntityId) Promise~boolean~
-        +writeValue(entityId: EntityId, entity: T) Promise~void~
-        +removeValue(entityId: EntityId) Promise~void~
-        +removeAll() Promise~void~
-        +values() AsyncGenerator~T~
-        +keys() AsyncGenerator~EntityId~
-        +getCount() Promise~number~
-        +_getFilePath(entityId: EntityId) string
-    }
-    
-    class RedisPersist {
-        <<user-defined>>
-        +waitForInit(initial: boolean) Promise~void~
-        +readValue(entityId: EntityId) Promise~T~
-        +hasValue(entityId: EntityId) Promise~boolean~
-        +writeValue(entityId: EntityId, entity: T) Promise~void~
-    }
-    
-    class MongoPersist {
-        <<user-defined>>
-        +waitForInit(initial: boolean) Promise~void~
-        +readValue(entityId: EntityId) Promise~T~
-        +hasValue(entityId: EntityId) Promise~boolean~
-        +writeValue(entityId: EntityId, entity: T) Promise~void~
-    }
-    
-    IPersistBase <|.. PersistBase : implements
-    IPersistBase <|.. RedisPersist : implements
-    IPersistBase <|.. MongoPersist : implements
-```
+![Mermaid Diagram](./diagrams\81_Persistence_Layer_1.svg)
 
 **Sources:** [src/classes/Persist.ts:69-111](), [src/classes/Persist.ts:160-177]()
 
@@ -152,20 +44,7 @@ The constructor accepts an `entityName` (e.g., "signal", "risk") and optional `b
 
 #### Read Operations
 
-```mermaid
-sequenceDiagram
-    participant Client
-    participant PersistBase
-    participant FileSystem
-    
-    Client->>PersistBase: readValue("BTCUSDT")
-    PersistBase->>PersistBase: _getFilePath("BTCUSDT")
-    Note over PersistBase: Returns "./logs/data/signal/<br/>strategy/BTCUSDT.json"
-    PersistBase->>FileSystem: fs.readFile(filePath, "utf-8")
-    FileSystem-->>PersistBase: JSON string
-    PersistBase->>PersistBase: JSON.parse(content)
-    PersistBase-->>Client: Return entity
-```
+![Mermaid Diagram](./diagrams\81_Persistence_Layer_2.svg)
 
 **Sources:** [src/classes/Persist.ts:232-253]()
 
@@ -173,30 +52,7 @@ sequenceDiagram
 
 Write operations use `writeFileAtomic` to ensure crash safety (see [Atomic File Writes](#atomic-file-writes)):
 
-```mermaid
-sequenceDiagram
-    participant Client
-    participant PersistBase
-    participant writeFileAtomic
-    participant FileSystem
-    
-    Client->>PersistBase: writeValue("BTCUSDT", signal)
-    PersistBase->>PersistBase: _getFilePath("BTCUSDT")
-    PersistBase->>PersistBase: JSON.stringify(signal)
-    PersistBase->>writeFileAtomic: writeFileAtomic(filePath, data)
-    
-    alt POSIX (Linux/Mac)
-        writeFileAtomic->>FileSystem: Write to .tmp-{random}-BTCUSDT.json
-        writeFileAtomic->>FileSystem: fs.sync() - flush to disk
-        writeFileAtomic->>FileSystem: fs.rename() - atomic replacement
-    else Windows
-        writeFileAtomic->>FileSystem: Write directly to BTCUSDT.json
-        writeFileAtomic->>FileSystem: fs.sync() - flush to disk
-    end
-    
-    writeFileAtomic-->>PersistBase: Success
-    PersistBase-->>Client: Success
-```
+![Mermaid Diagram](./diagrams\81_Persistence_Layer_3.svg)
 
 **Sources:** [src/classes/Persist.ts:276-295](), [src/utils/writeFileAtomic.ts:63-140]()
 
@@ -227,22 +83,7 @@ await persist.removeAll();
 
 `PersistBase` implements `AsyncIterableIterator` for convenient iteration over all stored entities:
 
-```mermaid
-graph LR
-    values["values()<br/>AsyncGenerator"]
-    keys["keys()<br/>AsyncGenerator"]
-    Symbol["Symbol.asyncIterator"]
-    
-    values --> |"Yields entities"| Entity1["Entity 1"]
-    values --> |"Yields entities"| Entity2["Entity 2"]
-    values --> |"Yields entities"| EntityN["Entity N"]
-    
-    keys --> |"Yields IDs"| Key1["'BTCUSDT'"]
-    keys --> |"Yields IDs"| Key2["'ETHUSDT'"]
-    keys --> |"Yields IDs"| KeyN["'SOLUSDT'"]
-    
-    Symbol --> |"Delegates to"| values
-```
+![Mermaid Diagram](./diagrams\81_Persistence_Layer_4.svg)
 
 Entities are sorted alphanumerically by ID using `localeCompare` with numeric sensitivity.
 
@@ -254,36 +95,7 @@ The `writeFileAtomic` function ensures that file writes either complete fully or
 
 ### Platform-Specific Behavior
 
-```mermaid
-graph TB
-    Start["writeFileAtomic(file, data)"]
-    CheckOS{Platform?}
-    
-    subgraph "POSIX (Linux/Mac)"
-        TmpFile["Generate temp file:<br/>.tmp-{random}-{filename}"]
-        Write1["Write data to temp file"]
-        Sync1["Sync to disk (flush)"]
-        Rename["Atomic rename:<br/>temp → target"]
-    end
-    
-    subgraph "Windows"
-        Write2["Write directly to target"]
-        Sync2["Sync to disk (flush)"]
-    end
-    
-    Start --> CheckOS
-    CheckOS -->|IS_WINDOWS=false| TmpFile
-    CheckOS -->|IS_WINDOWS=true| Write2
-    
-    TmpFile --> Write1
-    Write1 --> Sync1
-    Sync1 --> Rename
-    
-    Write2 --> Sync2
-    
-    Rename --> Done["Success"]
-    Sync2 --> Done
-```
+![Mermaid Diagram](./diagrams\81_Persistence_Layer_5.svg)
 
 | Platform | Strategy | Atomicity | Temp File |
 |----------|----------|-----------|-----------|
@@ -296,28 +108,7 @@ graph TB
 
 On POSIX systems, if any step fails, the temporary file is cleaned up before rethrowing the error:
 
-```mermaid
-sequenceDiagram
-    participant Caller
-    participant writeFileAtomic
-    participant FileSystem
-    
-    Caller->>writeFileAtomic: writeFileAtomic(file, data)
-    writeFileAtomic->>FileSystem: Create temp file
-    FileSystem-->>writeFileAtomic: Handle opened
-    
-    alt Write Success
-        writeFileAtomic->>FileSystem: Write data
-        writeFileAtomic->>FileSystem: Sync to disk
-        writeFileAtomic->>FileSystem: Close handle
-        writeFileAtomic->>FileSystem: Rename temp → target
-        writeFileAtomic-->>Caller: Success
-    else Write Failure
-        writeFileAtomic->>FileSystem: Close handle (swallow errors)
-        writeFileAtomic->>FileSystem: Unlink temp file (swallow errors)
-        writeFileAtomic-->>Caller: Throw original error
-    end
-```
+![Mermaid Diagram](./diagrams\81_Persistence_Layer_6.svg)
 
 **Sources:** [src/utils/writeFileAtomic.ts:109-140]()
 
@@ -395,27 +186,7 @@ return JSON.parse(fileContent) as T;
 
 During `waitForInit`, the system validates all existing files and removes corrupted ones:
 
-```mermaid
-flowchart TD
-    Start["waitForInit()"]
-    CreateDir["Create directory (recursive)"]
-    IterateFiles["for await (key of keys())"]
-    TryRead{Try readValue(key)}
-    
-    TryRead -->|Success| NextFile
-    TryRead -->|Parse Error| LogError["Log error:<br/>Invalid document"]
-    LogError --> TryUnlink{Try unlink(file)}
-    TryUnlink -->|Success| NextFile["Continue iteration"]
-    TryUnlink -->|Failed| LogUnlinkError["Log unlink error"]
-    LogUnlinkError --> NextFile
-    
-    NextFile --> MoreFiles{More files?}
-    MoreFiles -->|Yes| IterateFiles
-    MoreFiles -->|No| Done["Initialization complete"]
-    
-    Start --> CreateDir
-    CreateDir --> IterateFiles
-```
+![Mermaid Diagram](./diagrams\81_Persistence_Layer_7.svg)
 
 The cleanup uses retry logic with configurable parameters:
 
@@ -434,27 +205,7 @@ The framework provides four specialized adapter classes for different data types
 
 Manages active signal state persistence for live trading. Each strategy-symbol combination gets its own file:
 
-```mermaid
-graph TB
-    subgraph "Signal Persistence"
-        LiveLogic["LiveLogicPrivateService"]
-        ClientStrategy["ClientStrategy"]
-        
-        PersistSignalUtils["PersistSignalAdapter<br/>(static registry)"]
-        
-        DefaultImpl["Default: PersistBase<br/>(file-based)"]
-        CustomImpl["Custom: User class<br/>(Redis/Mongo/etc)"]
-    end
-    
-    LiveLogic --> ClientStrategy
-    ClientStrategy --> PersistSignalUtils
-    
-    PersistSignalUtils -.uses.-> DefaultImpl
-    PersistSignalUtils -.uses.-> CustomImpl
-    
-    DefaultImpl --> SignalFile["./logs/data/signal/<br/>{strategyName}/<br/>{symbol}.json"]
-    CustomImpl --> ExternalDB["Redis/MongoDB/<br/>PostgreSQL"]
-```
+![Mermaid Diagram](./diagrams\81_Persistence_Layer_8.svg)
 
 **Entity Name Pattern:** `signal/{strategyName}`  
 **Entity ID Pattern:** `{symbol}` (e.g., "BTCUSDT")  
@@ -466,25 +217,7 @@ graph TB
 
 Manages scheduled signal state persistence for delayed entry orders. Each strategy-symbol combination stores one scheduled signal awaiting activation:
 
-```mermaid
-graph TB
-    subgraph "Schedule Persistence"
-        ClientStrategy["ClientStrategy"]
-        
-        PersistScheduleUtils["PersistScheduleAdapter<br/>(static registry)"]
-        
-        DefaultImpl["Default: PersistBase<br/>(file-based)"]
-        CustomImpl["Custom: User class<br/>(Redis/Mongo/etc)"]
-    end
-    
-    ClientStrategy --> PersistScheduleUtils
-    
-    PersistScheduleUtils -.uses.-> DefaultImpl
-    PersistScheduleUtils -.uses.-> CustomImpl
-    
-    DefaultImpl --> ScheduleFile["./logs/data/schedule/<br/>{strategyName}/<br/>{symbol}.json"]
-    CustomImpl --> ExternalDB["Redis/MongoDB/<br/>PostgreSQL"]
-```
+![Mermaid Diagram](./diagrams\81_Persistence_Layer_9.svg)
 
 **Entity Name Pattern:** `schedule/{strategyName}`  
 **Entity ID Pattern:** `{symbol}` (e.g., "BTCUSDT")  
@@ -496,25 +229,7 @@ graph TB
 
 Manages active position tracking for risk management. Each risk profile stores all positions across all strategies in a single file:
 
-```mermaid
-graph TB
-    subgraph "Risk Persistence"
-        ClientRisk["ClientRisk"]
-        
-        PersistRiskUtils["PersistRiskAdapter<br/>(static registry)"]
-        
-        DefaultImpl["Default: PersistBase<br/>(file-based)"]
-        CustomImpl["Custom: User class<br/>(Redis/Mongo/etc)"]
-    end
-    
-    ClientRisk --> PersistRiskUtils
-    
-    PersistRiskUtils -.uses.-> DefaultImpl
-    PersistRiskUtils -.uses.-> CustomImpl
-    
-    DefaultImpl --> RiskFile["./logs/data/risk/<br/>{riskName}/<br/>positions.json"]
-    CustomImpl --> ExternalDB["Redis/MongoDB/<br/>PostgreSQL"]
-```
+![Mermaid Diagram](./diagrams\81_Persistence_Layer_10.svg)
 
 **Entity Name Pattern:** `risk/{riskName}`  
 **Entity ID Pattern:** Always `"positions"`  
@@ -526,25 +241,7 @@ graph TB
 
 Manages partial profit/loss milestone tracking. Each symbol stores which profit/loss levels (10%, 20%, 30%, etc.) have been reached for each active signal:
 
-```mermaid
-graph TB
-    subgraph "Partial Persistence"
-        ClientPartial["ClientPartial"]
-        
-        PersistPartialUtils["PersistPartialAdapter<br/>(static registry)"]
-        
-        DefaultImpl["Default: PersistBase<br/>(file-based)"]
-        CustomImpl["Custom: User class<br/>(Redis/Mongo/etc)"]
-    end
-    
-    ClientPartial --> PersistPartialUtils
-    
-    PersistPartialUtils -.uses.-> DefaultImpl
-    PersistPartialUtils -.uses.-> CustomImpl
-    
-    DefaultImpl --> PartialFile["./logs/data/partial/<br/>{symbol}/<br/>data.json"]
-    CustomImpl --> ExternalDB["Redis/MongoDB/<br/>PostgreSQL"]
-```
+![Mermaid Diagram](./diagrams\81_Persistence_Layer_11.svg)
 
 **Entity Name Pattern:** `partial/{symbol}`  
 **Entity ID Pattern:** Always `"data"`  
@@ -588,37 +285,7 @@ The `waitForInit` method implements crash recovery by validating existing data a
 
 ### Initialization Pattern
 
-```mermaid
-sequenceDiagram
-    participant Service
-    participant PersistBase
-    participant Singleshot
-    participant FileSystem
-    
-    Note over Service: First call
-    Service->>PersistBase: waitForInit(true)
-    PersistBase->>Singleshot: Execute once
-    Singleshot->>FileSystem: mkdir(directory, recursive)
-    
-    loop For each file
-        Singleshot->>FileSystem: Read file
-        alt Valid JSON
-            Singleshot->>Singleshot: Validation passed
-        else Invalid JSON
-            Singleshot->>FileSystem: unlink(file) with retry
-            Note over Singleshot: Log error, continue
-        end
-    end
-    
-    Singleshot-->>PersistBase: Complete
-    PersistBase-->>Service: Complete
-    
-    Note over Service: Subsequent calls
-    Service->>PersistBase: waitForInit(false)
-    PersistBase->>Singleshot: Already executed
-    Singleshot-->>PersistBase: Skip, return immediately
-    PersistBase-->>Service: Complete
-```
+![Mermaid Diagram](./diagrams\81_Persistence_Layer_12.svg)
 
 The `singleshot` decorator ensures initialization happens only once, even if called multiple times.
 
@@ -626,28 +293,7 @@ The `singleshot` decorator ensures initialization happens only once, even if cal
 
 ### Validation Logic
 
-```mermaid
-flowchart TD
-    Start["For each file in directory"]
-    ReadFile["Read file into memory"]
-    ParseJSON{JSON.parse()}
-    
-    ParseJSON -->|Success| Valid["File is valid"]
-    ParseJSON -->|Throws Error| Invalid["File is corrupted"]
-    
-    Invalid --> LogError["console.error:<br/>Invalid document"]
-    LogError --> Retry["retry(fs.unlink, 5, 1000)"]
-    
-    Retry --> RetrySuccess{Retry result}
-    RetrySuccess -->|Success| Continue["Continue to next file"]
-    RetrySuccess -->|Failed| LogRetryError["console.error:<br/>Failed to remove"]
-    LogRetryError --> Continue
-    
-    Valid --> Continue
-    Continue --> MoreFiles{More files?}
-    MoreFiles -->|Yes| Start
-    MoreFiles -->|No| Done["Initialization complete"]
-```
+![Mermaid Diagram](./diagrams\81_Persistence_Layer_13.svg)
 
 Error messages logged:
 
@@ -680,34 +326,7 @@ interface IPersistBase<Entity extends IEntity = IEntity> {
 
 ### Redis Implementation Example
 
-```mermaid
-classDiagram
-    class RedisPersist {
-        -redis: Redis
-        -entityName: string
-        -baseDir: string
-        
-        +waitForInit(initial: boolean) Promise~void~
-        +readValue(entityId: string) Promise~T~
-        +hasValue(entityId: string) Promise~boolean~
-        +writeValue(entityId: string, entity: T) Promise~void~
-        +removeValue(entityId: string) Promise~void~
-        +removeAll() Promise~void~
-        +values() AsyncGenerator~T~
-        +keys() AsyncGenerator~string~
-    }
-    
-    class IPersistBase {
-        <<interface>>
-    }
-    
-    class PersistBase {
-        <<abstract>>
-    }
-    
-    RedisPersist ..|> IPersistBase : implements
-    RedisPersist --|> PersistBase : extends
-```
+![Mermaid Diagram](./diagrams\81_Persistence_Layer_14.svg)
 
 Key implementation details:
 
@@ -748,26 +367,7 @@ Key operations:
 
 ### Adapter Selection Criteria
 
-```mermaid
-graph TB
-    Start["Choose Persistence Backend"]
-    
-    Decision1{Deployment<br/>scenario?}
-    
-    Decision1 -->|Single instance| FileBased["File-based (default)"]
-    Decision1 -->|Distributed| Decision2{Performance<br/>needs?}
-    
-    Decision2 -->|High performance| Redis["Redis"]
-    Decision2 -->|Complex queries| Decision3{Data<br/>structure?}
-    
-    Decision3 -->|Relational| PostgreSQL["PostgreSQL"]
-    Decision3 -->|Document-based| MongoDB["MongoDB"]
-    
-    FileBased --> Note1["✓ No dependencies<br/>✓ Simple debugging<br/>✓ JSON file inspection"]
-    Redis --> Note2["✓ Fast read/write<br/>✓ Built-in TTL<br/>✓ Pub/sub support"]
-    MongoDB --> Note3["✓ Rich queries<br/>✓ Aggregations<br/>✓ Scalable"]
-    PostgreSQL --> Note4["✓ ACID transactions<br/>✓ Complex joins<br/>✓ Mature ecosystem"]
-```
+![Mermaid Diagram](./diagrams\81_Persistence_Layer_15.svg)
 
 **Sources:** [README.md:1023-1043]()
 
@@ -815,32 +415,7 @@ for await (const log of tradingLogs.filter((l) =>
 
 Services use persistence adapters through the dependency injection system:
 
-```mermaid
-sequenceDiagram
-    participant Live as Live.background()
-    participant LiveLogic as LiveLogicPrivateService
-    participant ClientStrategy as ClientStrategy
-    participant PersistSignalUtils as PersistSignalAdaper
-    participant Persist as PersistBase
-    participant Disk as File System
-    
-    Live->>LiveLogic: run(symbol, context)
-    LiveLogic->>ClientStrategy: waitForInit()
-    ClientStrategy->>PersistSignalUtils: Get adapter
-    PersistSignalUtils->>Persist: Instantiate (if needed)
-    
-    Persist->>Disk: mkdir(directory)
-    Persist->>Disk: Validate existing files
-    Persist-->>ClientStrategy: Ready
-    
-    loop Every tick
-        LiveLogic->>ClientStrategy: tick(symbol)
-        ClientStrategy->>ClientStrategy: Process signal
-        ClientStrategy->>PersistSignalUtils: Write signal
-        PersistSignalUtils->>Persist: writeValue(symbol, signal)
-        Persist->>Disk: writeFileAtomic()
-    end
-```
+![Mermaid Diagram](./diagrams\81_Persistence_Layer_16.svg)
 
 **Sources:** [src/classes/Persist.ts:1-60]()
 

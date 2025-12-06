@@ -39,35 +39,7 @@ Sources: [README.md:22-26](), [package.json:73-78]()
 
 The distributed npm package contains three primary artifacts:
 
-```mermaid
-graph TB
-    subgraph "npm Package: backtest-kit"
-        BuildDir["build/<br/>Compiled JavaScript"]
-        TypesDef["types.d.ts<br/>TypeScript Definitions"]
-        Readme["README.md<br/>Documentation"]
-    end
-    
-    subgraph "build/ Directory"
-        CJS["index.cjs<br/>CommonJS Entry"]
-        ESM["index.mjs<br/>ES Module Entry"]
-    end
-    
-    BuildDir --> CJS
-    BuildDir --> ESM
-    
-    subgraph "Source (Not Included)"
-        SrcDir["src/<br/>TypeScript Source"]
-        SrcIndex["src/index.ts"]
-    end
-    
-    SrcIndex -.->|compiled to| CJS
-    SrcIndex -.->|compiled to| ESM
-    SrcIndex -.->|types extracted to| TypesDef
-    
-    style BuildDir fill:#f9f9f9
-    style TypesDef fill:#f9f9f9
-    style SrcDir fill:#e0e0e0
-```
+![Mermaid Diagram](./diagrams\03_Installation_and_Setup_0.svg)
 
 **Package contents:**
 
@@ -118,32 +90,7 @@ Resolves to: `build/index.cjs`
 
 TypeScript automatically resolves types from `types.d.ts` for both import styles.
 
-```mermaid
-graph LR
-    subgraph "Import Statements"
-        ESImport["import from 'backtest-kit'"]
-        CJSRequire["require('backtest-kit')"]
-        TSTypes["TypeScript compiler"]
-    end
-    
-    subgraph "Package Exports (package.json)"
-        ExportsMap["exports field"]
-    end
-    
-    subgraph "Resolved Files"
-        ESM["build/index.mjs"]
-        CJS["build/index.cjs"]
-        Types["types.d.ts"]
-    end
-    
-    ESImport --> ExportsMap
-    CJSRequire --> ExportsMap
-    TSTypes --> ExportsMap
-    
-    ExportsMap -->|"exports.import"| ESM
-    ExportsMap -->|"exports.require"| CJS
-    ExportsMap -->|"exports.types"| Types
-```
+![Mermaid Diagram](./diagrams\03_Installation_and_Setup_1.svg)
 
 Sources: [package.json:52-57](), [README.md:32-34]()
 
@@ -155,41 +102,7 @@ The package uses **Rollup** to compile TypeScript source into distributable Java
 
 ### Build Process Overview
 
-```mermaid
-graph TB
-    subgraph "Source Files"
-        SrcIndex["src/index.ts<br/>(Entry Point)"]
-        SrcClient["src/client/*"]
-        SrcLib["src/lib/*"]
-        SrcInterfaces["src/interfaces/*"]
-        SrcFunction["src/function/*"]
-    end
-    
-    subgraph "Rollup Build Pipeline"
-        RollupConfig["rollup.config"]
-        PluginTS["@rollup/plugin-typescript"]
-        PluginDTS["rollup-plugin-dts"]
-    end
-    
-    subgraph "Build Outputs"
-        OutCJS["build/index.cjs"]
-        OutESM["build/index.mjs"]
-        OutTypes["types.d.ts"]
-    end
-    
-    SrcIndex --> RollupConfig
-    SrcClient --> RollupConfig
-    SrcLib --> RollupConfig
-    SrcInterfaces --> RollupConfig
-    SrcFunction --> RollupConfig
-    
-    RollupConfig --> PluginTS
-    RollupConfig --> PluginDTS
-    
-    PluginTS -->|"Compile TypeScript"| OutCJS
-    PluginTS -->|"Compile TypeScript"| OutESM
-    PluginDTS -->|"Extract types"| OutTypes
-```
+![Mermaid Diagram](./diagrams\03_Installation_and_Setup_2.svg)
 
 ### Build Scripts
 
@@ -219,31 +132,7 @@ Sources: [package.json:58-67]()
 
 The framework's runtime dependencies form a lightweight tree:
 
-```mermaid
-graph TD
-    BacktestKit["backtest-kit<br/>(Your Application)"]
-    
-    subgraph "Runtime Dependencies"
-        DIKit["di-kit@^1.0.18<br/>DI Container"]
-        DIScoped["di-scoped@^1.0.20<br/>Scoped Context"]
-        Functools["functools-kit@^1.0.93<br/>Functional Utils"]
-        Moment["get-moment-stamp@^1.1.1<br/>Timestamp Utils"]
-    end
-    
-    subgraph "Peer Dependency (User Provided)"
-        TypeScript["typescript@^5.0.0"]
-    end
-    
-    BacktestKit --> DIKit
-    BacktestKit --> DIScoped
-    BacktestKit --> Functools
-    BacktestKit --> Moment
-    BacktestKit -.->|"requires"| TypeScript
-    
-    DIScoped -.->|"peer dep"| TypeScript
-    Functools -.->|"peer dep"| TypeScript
-    Moment -.->|"peer dep"| TypeScript
-```
+![Mermaid Diagram](./diagrams\03_Installation_and_Setup_3.svg)
 
 **Key Dependencies:**
 
@@ -308,45 +197,7 @@ Sources: [README.md:28-103]()
 
 Understanding how public API functions map to internal implementation:
 
-```mermaid
-graph TB
-    subgraph "Public API (User Imports)"
-        ExportBacktest["Backtest<br/>(object)"]
-        ExportLive["Live<br/>(object)"]
-        ExportAdd["addStrategy<br/>addExchange<br/>addFrame"]
-        ExportUtils["getCandles<br/>getAveragePrice<br/>formatPrice"]
-    end
-    
-    subgraph "src/lib/index.ts"
-        LibBacktest["backtest service<br/>aggregator object"]
-        LibLive["live service<br/>aggregator object"]
-    end
-    
-    subgraph "src/function/add.ts"
-        AddFunctions["addStrategy()<br/>addExchange()<br/>addFrame()"]
-    end
-    
-    subgraph "src/function/exchange.ts"
-        ExchangeFunctions["getCandles()<br/>getAveragePrice()<br/>formatPrice()<br/>formatQuantity()"]
-    end
-    
-    subgraph "Service Layer (DI Container)"
-        BacktestService["BacktestLogicPublicService"]
-        LiveService["LiveLogicPublicService"]
-        SchemaServices["StrategySchemaService<br/>ExchangeSchemaService<br/>FrameSchemaService"]
-        GlobalServices["ExchangeGlobalService"]
-    end
-    
-    ExportBacktest --> LibBacktest
-    ExportLive --> LibLive
-    ExportAdd --> AddFunctions
-    ExportUtils --> ExchangeFunctions
-    
-    LibBacktest --> BacktestService
-    LibLive --> LiveService
-    AddFunctions --> SchemaServices
-    ExchangeFunctions --> GlobalServices
-```
+![Mermaid Diagram](./diagrams\03_Installation_and_Setup_4.svg)
 
 **Key Export Mappings:**
 

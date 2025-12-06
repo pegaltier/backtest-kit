@@ -26,33 +26,7 @@ The risk validation system provides access to:
 
 ## Validation Flow
 
-```mermaid
-graph TB
-    GetSignal["Strategy.getSignal()<br/>(User function)"]
-    SignalDto["ISignalDto<br/>Returns signal or null"]
-    ValidateSignal["VALIDATE_SIGNAL_FN<br/>Price/distance/lifetime checks"]
-    CheckRisk["ClientRisk.checkSignal()<br/>Custom validations"]
-    BuildPayload["Build IRiskValidationPayload<br/>Extends IRiskCheckArgs"]
-    ExecuteValidations["Execute validations array<br/>DO_VALIDATION_FN wrapper"]
-    Decision{{"Validation result"}}
-    Approved["onAllowed callback<br/>Returns true"]
-    Rejected["onRejected callback<br/>Returns false"]
-    OpenPosition["Signal opens<br/>Position active"]
-    ReturnIdle["Signal rejected<br/>Returns idle"]
-    
-    GetSignal --> SignalDto
-    SignalDto --> |"signal exists"| ValidateSignal
-    SignalDto --> |"null returned"| ReturnIdle
-    ValidateSignal --> |"validation passes"| CheckRisk
-    ValidateSignal --> |"validation fails"| ReturnIdle
-    CheckRisk --> BuildPayload
-    BuildPayload --> ExecuteValidations
-    ExecuteValidations --> Decision
-    Decision --> |"All pass"| Approved
-    Decision --> |"Any throws error"| Rejected
-    Approved --> OpenPosition
-    Rejected --> ReturnIdle
-```
+![Mermaid Diagram](./diagrams\67_Risk_Validation_0.svg)
 
 **Sources**: [src/client/ClientRisk.ts:165-217](), [test/spec/risk.test.mjs:41-143]()
 
@@ -171,25 +145,7 @@ The object form allows documentation of validation logic. The framework normaliz
 
 The `DO_VALIDATION_FN` is a `trycatch` wrapper that executes validation functions with error handling and logging.
 
-```mermaid
-graph TB
-    Input["validation function<br/>IRiskValidationPayload"]
-    Execute["Execute validation(payload)"]
-    Success{{"Validation completes"}}
-    ThrowError{{"Throws error"}}
-    ReturnTrue["Return true"]
-    LogError["loggerService.warn()<br/>'ClientRisk exception thrown'"]
-    EmitValidation["validationSubject.next(error)"]
-    ReturnFalse["Return false"]
-    
-    Input --> Execute
-    Execute --> Success
-    Execute --> ThrowError
-    Success --> ReturnTrue
-    ThrowError --> LogError
-    LogError --> EmitValidation
-    EmitValidation --> ReturnFalse
-```
+![Mermaid Diagram](./diagrams\67_Risk_Validation_1.svg)
 
 ### Implementation
 
@@ -241,42 +197,7 @@ public checkSignal = async (params: IRiskCheckArgs): Promise<boolean>
 
 ### Execution Steps
 
-```mermaid
-sequenceDiagram
-    participant Strategy as ClientStrategy
-    participant Risk as ClientRisk
-    participant Persist as PersistRiskAdapter
-    participant Val as DO_VALIDATION_FN
-    participant CB as Callbacks
-    
-    Strategy->>Risk: checkSignal(IRiskCheckArgs)
-    
-    alt _activePositions === POSITION_NEED_FETCH
-        Risk->>Risk: waitForInit()
-        Risk->>Persist: readPositionData()
-        Persist-->>Risk: Map of positions
-    end
-    
-    Risk->>Risk: Build IRiskValidationPayload
-    Note over Risk: Add activePositionCount<br/>Add activePositions array
-    
-    loop For each validation
-        Risk->>Val: Execute validation function
-        Val->>Val: validation(payload)
-        
-        alt Validation passes
-            Val-->>Risk: true
-        else Validation throws error
-            Val->>Val: Log error, emit to validationSubject
-            Val-->>Risk: false
-            Risk->>CB: onRejected(symbol, params)
-            Risk-->>Strategy: false (rejected)
-        end
-    end
-    
-    Risk->>CB: onAllowed(symbol, params)
-    Risk-->>Strategy: true (approved)
-```
+![Mermaid Diagram](./diagrams\67_Risk_Validation_2.svg)
 
 **Sources**: [src/client/ClientRisk.ts:165-217]()
 
@@ -450,21 +371,7 @@ Use the `timestamp` field to implement time-of-day restrictions.
 
 Risk validation requests flow through multiple service layers before reaching `ClientRisk`.
 
-```mermaid
-graph TB
-    Strategy["ClientStrategy.tick()<br/>Needs risk check"]
-    StrategyConn["StrategyConnectionService<br/>Routes by strategyName"]
-    RiskGlobal["RiskGlobalService<br/>Public API entry point"]
-    RiskValidation["RiskValidationService<br/>Schema validation"]
-    RiskConn["RiskConnectionService<br/>Memoized ClientRisk instances"]
-    ClientRisk["ClientRisk<br/>Execute validations"]
-    
-    Strategy --> |"checkSignal(params, context)"| RiskGlobal
-    RiskGlobal --> |"validate(riskName)"| RiskValidation
-    RiskGlobal --> |"checkSignal(params, context)"| RiskConn
-    RiskConn --> |"getRisk(riskName)"| ClientRisk
-    ClientRisk --> |"DO_VALIDATION_FN"| ClientRisk
-```
+![Mermaid Diagram](./diagrams\67_Risk_Validation_3.svg)
 
 ### Service Responsibilities
 
@@ -546,19 +453,7 @@ Validation errors are caught and emitted via the event system, allowing external
 
 ### Error Flow
 
-```mermaid
-graph LR
-    Validation["Validation function<br/>throws Error"]
-    Wrapper["DO_VALIDATION_FN<br/>trycatch wrapper"]
-    Log["loggerService.warn()<br/>'ClientRisk exception thrown'"]
-    Emit["validationSubject.next(error)"]
-    Listen["listenValidation()<br/>External subscribers"]
-    
-    Validation --> Wrapper
-    Wrapper --> Log
-    Wrapper --> Emit
-    Emit --> Listen
-```
+![Mermaid Diagram](./diagrams\67_Risk_Validation_4.svg)
 
 ### Subscribing to Validation Errors
 

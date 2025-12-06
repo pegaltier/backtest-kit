@@ -16,32 +16,7 @@ Scheduled signals represent limit orders that wait for price to reach a specific
 
 ### Lifecycle State Machine
 
-```mermaid
-stateDiagram-v2
-    [*] --> Scheduled: "getSignal() returns priceOpen != currentPrice"
-    
-    Scheduled --> Activated: "Price reaches priceOpen"
-    Scheduled --> CancelledTimeout: "Timeout (CC_SCHEDULE_AWAIT_MINUTES)"
-    Scheduled --> CancelledSL: "SL hit before activation"
-    Scheduled --> CancelledRisk: "Risk check fails at activation"
-    
-    Activated --> [*]: "Becomes regular active signal"
-    CancelledTimeout --> [*]: "Logged via onCancel callback"
-    CancelledSL --> [*]: "Logged via onCancel callback"
-    CancelledRisk --> [*]: "Logged via onCancel callback"
-    
-    note right of Scheduled
-        IScheduledSignalRow state
-        _isScheduled: true
-        scheduledAt: creation timestamp
-        pendingAt: scheduledAt (temporary)
-    end note
-    
-    note right of CancelledTimeout
-        Default: 120 minutes
-        Configurable via GLOBAL_CONFIG
-    end note
-```
+![Mermaid Diagram](./diagrams\20_Schedule_API_0.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:41-261](), [src/interfaces/Strategy.interface.ts:64-73](), [types.d.ts:5-72]()
 
@@ -53,37 +28,7 @@ The Schedule API is exposed through a service interface with three primary metho
 
 ### Method Signatures
 
-```mermaid
-classDiagram
-    class ScheduleAPI {
-        +getData(symbol, strategyName) Promise~ScheduleStatistics~
-        +getReport(symbol, strategyName) Promise~string~
-        +dump(symbol, strategyName, path?) Promise~void~
-    }
-    
-    class ScheduleStatistics {
-        +eventList: ScheduledEvent[]
-        +totalEvents: number
-        +totalScheduled: number
-        +totalCancelled: number
-        +cancellationRate: number | null
-        +avgWaitTime: number | null
-    }
-    
-    class ScheduledEvent {
-        +timestamp: number
-        +action: "scheduled" | "cancelled"
-        +symbol: string
-        +signalId: string
-        +position: string
-        +currentPrice: number
-        +priceOpen: number
-        +duration?: number
-    }
-    
-    ScheduleAPI --> ScheduleStatistics: returns
-    ScheduleStatistics --> ScheduledEvent: contains array
-```
+![Mermaid Diagram](./diagrams\20_Schedule_API_1.svg)
 
 **Sources:** [src/lib/services/markdown/ScheduleMarkdownService.ts:374-545](), [types.d.ts:1000-1500]()
 
@@ -259,38 +204,7 @@ The Schedule API tracks two types of events: scheduled signal creation and sched
 
 ### ScheduledEvent Interface
 
-```mermaid
-classDiagram
-    class ScheduledEvent {
-        +timestamp: number
-        +action: "scheduled" | "cancelled"
-        +symbol: string
-        +signalId: string
-        +position: "long" | "short"
-        +note?: string
-        +currentPrice: number
-        +priceOpen: number
-        +takeProfit: number
-        +stopLoss: number
-        +closeTimestamp?: number
-        +duration?: number
-    }
-    
-    class ScheduledEventData["Scheduled Action"] {
-        +timestamp: scheduledAt
-        +action: "scheduled"
-        +duration: undefined
-    }
-    
-    class CancelledEventData["Cancelled Action"] {
-        +timestamp: closeTimestamp
-        +action: "cancelled"
-        +duration: number
-    }
-    
-    ScheduledEvent <|-- ScheduledEventData
-    ScheduledEvent <|-- CancelledEventData
-```
+![Mermaid Diagram](./diagrams\20_Schedule_API_2.svg)
 
 **Sources:** [src/lib/services/markdown/ScheduleMarkdownService.ts:15-44]()
 
@@ -302,50 +216,7 @@ The Schedule API uses internal storage per symbol-strategy pair to accumulate ev
 
 ### Storage Architecture
 
-```mermaid
-graph TB
-    subgraph "Event Sources"
-        SignalEmitter["signalEmitter<br/>Universal events"]
-        SignalLiveEmitter["signalLiveEmitter<br/>Live mode only"]
-    end
-    
-    subgraph "ScheduleMarkdownService"
-        Init["init()<br/>singleshot initialization"]
-        Tick["tick(data: IStrategyTickResult)<br/>Event processor"]
-        GetStorage["getStorage(symbol, strategyName)<br/>memoized factory"]
-    end
-    
-    subgraph "ReportStorage"
-        EventList["_eventList: ScheduledEvent[]<br/>MAX_EVENTS = 250"]
-        AddScheduled["addScheduledEvent(data)"]
-        AddCancelled["addCancelledEvent(data)<br/>Replaces by signalId"]
-        GetData["getData(): ScheduleStatistics"]
-        GetReport["getReport(): string"]
-        Dump["dump(): void"]
-    end
-    
-    subgraph "Public API"
-        APIGetData["Schedule.getData()"]
-        APIGetReport["Schedule.getReport()"]
-        APIDump["Schedule.dump()"]
-    end
-    
-    SignalEmitter -->|subscribe| Init
-    Init --> Tick
-    Tick -->|"action='scheduled'"| AddScheduled
-    Tick -->|"action='cancelled'"| AddCancelled
-    Tick --> GetStorage
-    GetStorage --> EventList
-    AddScheduled --> EventList
-    AddCancelled --> EventList
-    
-    APIGetData --> GetStorage
-    APIGetReport --> GetStorage
-    APIDump --> GetStorage
-    GetStorage --> GetData
-    GetStorage --> GetReport
-    GetStorage --> Dump
-```
+![Mermaid Diagram](./diagrams\20_Schedule_API_3.svg)
 
 **Sources:** [src/lib/services/markdown/ScheduleMarkdownService.ts:374-545](), [src/lib/services/markdown/ScheduleMarkdownService.ts:163-237](), [src/lib/services/markdown/ScheduleMarkdownService.ts:382-413]()
 
@@ -366,26 +237,7 @@ The Schedule API maintains a bounded queue of events to prevent unbounded memory
 
 ### Event Replacement Logic
 
-```mermaid
-sequenceDiagram
-    participant Strategy as ClientStrategy
-    participant Service as ScheduleMarkdownService
-    participant Storage as ReportStorage
-    participant Queue as EventList[MAX_EVENTS]
-    
-    Strategy->>Service: scheduled event (signalId: "abc123")
-    Service->>Storage: addScheduledEvent()
-    Storage->>Queue: push scheduled event
-    
-    Note over Queue: EventList = [scheduled-abc123, ...]
-    
-    Strategy->>Service: cancelled event (signalId: "abc123")
-    Service->>Storage: addCancelledEvent()
-    Storage->>Storage: findIndex(signalId == "abc123")
-    Storage->>Queue: replace at index
-    
-    Note over Queue: EventList = [cancelled-abc123, ...]<br/>Duration calculated from<br/>closeTimestamp - scheduledAt
-```
+![Mermaid Diagram](./diagrams\20_Schedule_API_4.svg)
 
 **Sources:** [src/lib/services/markdown/ScheduleMarkdownService.ts:160-162](), [src/lib/services/markdown/ScheduleMarkdownService.ts:176-194](), [src/lib/services/markdown/ScheduleMarkdownService.ts:196-237]()
 
@@ -397,22 +249,7 @@ Scheduled signals can be cancelled for multiple reasons before activation. The S
 
 ### Cancellation Triggers
 
-```mermaid
-graph TB
-    Scheduled["Scheduled Signal<br/>IScheduledSignalRow"]
-    
-    Scheduled -->|"elapsedTime >= CC_SCHEDULE_AWAIT_MINUTES"| Timeout["Timeout Cancellation<br/>Default: 120 minutes"]
-    Scheduled -->|"Long: currentPrice <= priceStopLoss<br/>Short: currentPrice >= priceStopLoss"| SLHit["Stop Loss Hit<br/>Before Activation"]
-    Scheduled -->|"risk.checkSignal() === false<br/>at activation time"| RiskFail["Risk Check Failed<br/>At Activation"]
-    
-    Timeout --> Cancelled["IStrategyTickResultCancelled<br/>action: 'cancelled'"]
-    SLHit --> Cancelled
-    RiskFail --> Cancelled
-    
-    Cancelled --> Callback["onCancel callback<br/>fired"]
-    Cancelled --> Persist["PersistScheduleAdapter<br/>removed"]
-    Cancelled --> Event["signalEmitter.next()<br/>event emitted"]
-```
+![Mermaid Diagram](./diagrams\20_Schedule_API_5.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:474-528](), [src/client/ClientStrategy.ts:530-564](), [src/client/ClientStrategy.ts:601-693]()
 
@@ -451,28 +288,7 @@ The Schedule API automatically subscribes to signal events emitted by strategy e
 
 ### Event Flow
 
-```mermaid
-sequenceDiagram
-    participant Strategy as ClientStrategy.tick()
-    participant Emit as signalEmitter
-    participant Service as ScheduleMarkdownService
-    participant Storage as ReportStorage
-    
-    Note over Strategy: getSignal() returns<br/>priceOpen != currentPrice
-    
-    Strategy->>Strategy: Create IScheduledSignalRow
-    Strategy->>Strategy: onSchedule callback (optional)
-    Strategy->>Emit: signalEmitter.next(scheduled)
-    Emit->>Service: tick(scheduled)
-    Service->>Storage: addScheduledEvent()
-    
-    Note over Strategy: Later: cancellation<br/>detected
-    
-    Strategy->>Strategy: onCancel callback (optional)
-    Strategy->>Emit: signalEmitter.next(cancelled)
-    Emit->>Service: tick(cancelled)
-    Service->>Storage: addCancelledEvent()
-```
+![Mermaid Diagram](./diagrams\20_Schedule_API_6.svg)
 
 **Sources:** [src/lib/services/markdown/ScheduleMarkdownService.ts:541-544](), [src/client/ClientStrategy.ts:720-763]()
 
@@ -586,37 +402,7 @@ The Schedule API complements other reporting APIs in the backtest-kit framework.
 
 ### Service Class Hierarchy
 
-```mermaid
-classDiagram
-    class ScheduleMarkdownService {
-        -loggerService: LoggerService
-        -getStorage: memoize~ReportStorage~
-        -tick(data: IStrategyTickResult): Promise~void~
-        +getData(symbol, strategyName): Promise~ScheduleStatistics~
-        +getReport(symbol, strategyName): Promise~string~
-        +dump(symbol, strategyName, path): Promise~void~
-        +clear(ctx?): Promise~void~
-        #init(): singleshot
-    }
-    
-    class ReportStorage {
-        -_eventList: ScheduledEvent[]
-        +addScheduledEvent(data): void
-        +addCancelledEvent(data): void
-        +getData(): Promise~ScheduleStatistics~
-        +getReport(strategyName): Promise~string~
-        +dump(strategyName, path): Promise~void~
-    }
-    
-    class Memoization {
-        key: "symbol:strategyName"
-        factory: () => new ReportStorage()
-    }
-    
-    ScheduleMarkdownService --> ReportStorage: creates via memoize
-    ScheduleMarkdownService --> Memoization: uses
-    Memoization --> ReportStorage: returns cached
-```
+![Mermaid Diagram](./diagrams\20_Schedule_API_7.svg)
 
 **Sources:** [src/lib/services/markdown/ScheduleMarkdownService.ts:374-545](), [src/lib/services/markdown/ScheduleMarkdownService.ts:163-350](), [src/lib/services/markdown/ScheduleMarkdownService.ts:382-385]()
 
@@ -635,19 +421,6 @@ The Schedule API implements bounded memory usage through queue size limits and i
 
 ### Memory Growth Pattern
 
-```mermaid
-graph LR
-    Start["0 events"] --> Growth["Linear growth<br/>1 event per scheduled signal"]
-    Growth --> Limit["250 events reached"]
-    Limit --> Steady["Steady state<br/>FIFO eviction"]
-    
-    Steady --> Steady
-    
-    Note1["Memory: O(250 * event_size)"]
-    Note2["Per symbol-strategy pair"]
-    
-    Limit -.-> Note1
-    Limit -.-> Note2
-```
+![Mermaid Diagram](./diagrams\20_Schedule_API_8.svg)
 
 **Sources:** [src/lib/services/markdown/ScheduleMarkdownService.ts:160-162](), [src/lib/services/markdown/ScheduleMarkdownService.ts:382-385](), [src/lib/services/markdown/ScheduleMarkdownService.ts:500-528]()

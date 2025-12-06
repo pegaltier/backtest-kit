@@ -66,65 +66,7 @@ All metrics assume higher values indicate better performance. No metrics use asc
 
 ### WalkerLogicPrivateService.run() Flow
 
-```mermaid
-flowchart TB
-    Run["WalkerLogicPrivateService.run(symbol, strategies[], metric)"]
-    InitVars["bestMetric = null<br/>bestStrategy = null<br/>strategiesTested = 0"]
-    Loop["for (const strategyName of strategies)"]
-    
-    Callback1["walkerSchema.callbacks?.onStrategyStart()"]
-    CreateIterator["iterator = backtestLogicPublicService.run(symbol, context)"]
-    ResolveDocuments["await resolveDocuments(iterator)"]
-    
-    Callback2["walkerSchema.callbacks?.onStrategyError()"]
-    Continue["continue to next strategy"]
-    
-    GetData["stats = backtestMarkdownService.getData(symbol, strategyName)"]
-    ExtractMetric["metricValue = stats[metric]<br/>with null safety checks"]
-    
-    CompareMetric{"metricValue > bestMetric<br/>or bestMetric === null?"}
-    UpdateBest["bestMetric = metricValue<br/>bestStrategy = strategyName"]
-    Increment["strategiesTested++"]
-    
-    BuildContract["walkerContract = {<br/>walkerName, symbol,<br/>strategyName, stats,<br/>metricValue, metric,<br/>bestMetric, bestStrategy,<br/>strategiesTested, totalStrategies<br/>}"]
-    
-    EmitProgress["progressWalkerEmitter.next({<br/>processedStrategies, progress<br/>})"]
-    Callback3["walkerSchema.callbacks?.onStrategyComplete()"]
-    EmitWalker["walkerEmitter.next(walkerContract)"]
-    Yield["yield walkerContract"]
-    
-    LoopEnd["Next strategy"]
-    Complete["All strategies complete"]
-    FinalResults["finalResults = {<br/>walkerName, symbol,<br/>metric, totalStrategies,<br/>bestStrategy, bestMetric,<br/>bestStats<br/>}"]
-    Callback4["walkerSchema.callbacks?.onComplete()"]
-    EmitComplete["walkerCompleteSubject.next(finalResults)"]
-    
-    Run --> InitVars
-    InitVars --> Loop
-    Loop --> Callback1
-    Callback1 --> CreateIterator
-    CreateIterator --> ResolveDocuments
-    ResolveDocuments -->|Error| Callback2
-    Callback2 --> Continue
-    Continue --> LoopEnd
-    ResolveDocuments -->|Success| GetData
-    GetData --> ExtractMetric
-    ExtractMetric --> CompareMetric
-    CompareMetric -->|Yes| UpdateBest
-    CompareMetric -->|No| Increment
-    UpdateBest --> Increment
-    Increment --> BuildContract
-    BuildContract --> EmitProgress
-    EmitProgress --> Callback3
-    Callback3 --> EmitWalker
-    EmitWalker --> Yield
-    Yield --> LoopEnd
-    LoopEnd --> Loop
-    LoopEnd --> Complete
-    Complete --> FinalResults
-    FinalResults --> Callback4
-    Callback4 --> EmitComplete
-```
+![Mermaid Diagram](./diagrams\63_Strategy_Comparison_0.svg)
 
 ### Key Implementation Details
 
@@ -225,19 +167,7 @@ The contract is constructed at [src/lib/services/logic/private/WalkerLogicPrivat
 
 ### Contract Emission Flow
 
-```mermaid
-sequenceDiagram
-    participant WL as WalkerLogicPrivateService
-    participant PE as progressWalkerEmitter
-    participant WE as walkerEmitter
-    participant Caller as for await (const contract of run())
-    
-    WL->>WL: "Build walkerContract"
-    WL->>PE: "progressWalkerEmitter.next({processedStrategies, progress})"
-    WL->>WE: "walkerEmitter.next(walkerContract)"
-    WL->>Caller: "yield walkerContract"
-    Note over Caller: "Caller receives contract<br/>with current + best strategy data"
-```
+![Mermaid Diagram](./diagrams\63_Strategy_Comparison_1.svg)
 
 Three emissions occur per strategy:
 1. **progressWalkerEmitter** - Numeric progress (count, percentage)
@@ -363,29 +293,7 @@ interface IWalkerResults {
 
 ### Event Emission Sequence
 
-```mermaid
-sequenceDiagram
-    participant WL as WalkerLogicPrivateService
-    participant PWE as progressWalkerEmitter
-    participant WE as walkerEmitter
-    participant WCS as walkerCompleteSubject
-    participant L1 as listenWalkerProgress()
-    participant L2 as listenWalker()
-    participant L3 as listenWalkerComplete()
-    
-    loop "For each strategy"
-        WL->>WL: "Complete backtest for strategy"
-        WL->>WL: "Update bestStrategy/bestMetric"
-        WL->>PWE: "progressWalkerEmitter.next(ProgressWalkerContract)"
-        PWE->>L1: "Notify with progress: 0.0-1.0"
-        WL->>WE: "walkerEmitter.next(WalkerContract)"
-        WE->>L2: "Notify with full contract"
-    end
-    
-    WL->>WL: "All strategies complete"
-    WL->>WCS: "walkerCompleteSubject.next(IWalkerResults)"
-    WCS->>L3: "Notify with final results"
-```
+![Mermaid Diagram](./diagrams\63_Strategy_Comparison_2.svg)
 
 ### Listener Functions
 
@@ -410,29 +318,7 @@ Walker retrieves statistics for each strategy by calling `BacktestMarkdownServic
 
 ### Statistics Retrieval Flow
 
-```mermaid
-sequenceDiagram
-    participant WLP as WalkerLogicPrivateService
-    participant BLPS as BacktestLogicPublicService
-    participant BMS as BacktestMarkdownService
-    participant Storage as ReportStorage (memoized)
-    
-    WLP->>BLPS: "run(symbol, {strategyName, exchangeName, frameName})"
-    Note over BLPS: "Iterate timeframes,<br/>yield IStrategyBacktestResult<br/>for each closed signal"
-    loop "For each closed signal"
-        BLPS->>BMS: "signalBacktestEmitter.next(signal)"
-        BMS->>Storage: "Accumulate signal data"
-    end
-    BLPS-->>WLP: "Backtest complete (generator exhausted)"
-    
-    WLP->>BMS: "getData(symbol, strategyName)"
-    BMS->>Storage: "Retrieve accumulated signals"
-    Storage-->>BMS: "Array of IStrategyBacktestResult"
-    BMS->>BMS: "Calculate statistics:<br/>sharpeRatio, winRate, avgPnl,<br/>certaintyRatio, etc."
-    BMS-->>WLP: "BacktestStatistics"
-    
-    WLP->>WLP: "Extract metricValue = stats[metric]"
-```
+![Mermaid Diagram](./diagrams\63_Strategy_Comparison_3.svg)
 
 ### BacktestStatistics Interface
 

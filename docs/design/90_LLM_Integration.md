@@ -8,59 +8,7 @@ For information about the overall optimizer architecture and data collection, se
 
 The LLM integration serves as the intelligence layer that analyzes multi-timeframe market data and generates trading strategy recommendations. The system follows a request-response pattern where historical market data is formatted into prompts, sent to the LLM service, and the responses are captured for code generation.
 
-```mermaid
-graph TB
-    subgraph "User Code"
-        addOptimizer["addOptimizer()"]
-        getPrompt["getPrompt callback"]
-    end
-    
-    subgraph "Optimizer Execution"
-        ClientOptimizer["ClientOptimizer"]
-        getData["getData()"]
-        getCode["getCode()"]
-    end
-    
-    subgraph "LLM Integration Layer"
-        text["text() helper"]
-        json["json() helper"]
-        OllamaClient["Ollama Client"]
-    end
-    
-    subgraph "External Service"
-        OllamaAPI["Ollama API"]
-        Model["deepseek-v3.1:671b"]
-    end
-    
-    subgraph "Data Pipeline"
-        MessageList["messages array"]
-        UserMessages["user messages"]
-        AssistantMessages["assistant messages"]
-    end
-    
-    addOptimizer -->|registers| getPrompt
-    getPrompt -->|called by| ClientOptimizer
-    
-    ClientOptimizer -->|builds| MessageList
-    MessageList -->|contains| UserMessages
-    MessageList -->|contains| AssistantMessages
-    
-    ClientOptimizer -->|invokes| getPrompt
-    getPrompt -->|calls| text
-    
-    text -->|configures| OllamaClient
-    OllamaClient -->|chat request| OllamaAPI
-    OllamaAPI -->|uses| Model
-    Model -->|response| OllamaClient
-    OllamaClient -->|returns| text
-    
-    text -->|strategy text| ClientOptimizer
-    ClientOptimizer -->|via getData| getCode
-    
-    style getPrompt fill:#ffe1e1
-    style text fill:#e1f5ff
-    style OllamaAPI fill:#e1ffe1
-```
+![Mermaid Diagram](./diagrams\90_LLM_Integration_0.svg)
 
 **Sources:** [demo/optimization/src/index.mjs:324-383](), [demo/optimization/package.json:8-14]()
 
@@ -68,45 +16,7 @@ graph TB
 
 The system integrates with Ollama through the official `ollama` npm package. The client is configured with custom host and authentication headers to support both self-hosted and cloud-based Ollama instances.
 
-```mermaid
-flowchart LR
-    subgraph "Configuration"
-        EnvVar[".env file"]
-        APIKey["OLLAMA_API_KEY"]
-        Host["host URL"]
-    end
-    
-    subgraph "Client Initialization"
-        OllamaConstructor["new Ollama()"]
-        Headers["headers config"]
-        Authorization["Authorization: Bearer"]
-    end
-    
-    subgraph "Model Configuration"
-        Model["model: deepseek-v3.1:671b"]
-        Think["think: true"]
-        Messages["messages array"]
-    end
-    
-    subgraph "API Communication"
-        ChatMethod["ollama.chat()"]
-        Response["response.message.content"]
-    end
-    
-    EnvVar -->|provides| APIKey
-    APIKey -->|read by| OllamaConstructor
-    Host -->|set in| OllamaConstructor
-    
-    OllamaConstructor -->|creates| Headers
-    Headers -->|includes| Authorization
-    
-    OllamaConstructor -->|used by| ChatMethod
-    Model -->|parameter| ChatMethod
-    Think -->|parameter| ChatMethod
-    Messages -->|parameter| ChatMethod
-    
-    ChatMethod -->|returns| Response
-```
+![Mermaid Diagram](./diagrams\90_LLM_Integration_1.svg)
 
 **Configuration Structure:**
 
@@ -128,45 +38,7 @@ The LLM integration implements a multi-layer prompt engineering pattern that com
 
 System prompts establish the operational context and output format requirements. The system uses two sequential system messages:
 
-```mermaid
-graph TB
-    subgraph "System Message 1: Output Format"
-        Format1["В ответ напиши торговую стратегию"]
-        Format2["где нет ничего лишнего"]
-        Format3["только отчёт готовый для копипасты"]
-        Format4["Не здоровайся, не говори что делаешь"]
-        Format5["только отчёт!"]
-    end
-    
-    subgraph "System Message 2: Reasoning"
-        Reasoning["Reasoning: high"]
-    end
-    
-    subgraph "User Messages"
-        DataMessage["Multi-timeframe market data"]
-        AnalysisRequest["Запрос на анализ"]
-    end
-    
-    subgraph "LLM Processing"
-        DeepThinking["Deep reasoning enabled"]
-        StrategyGeneration["Strategy generation"]
-    end
-    
-    Format1 --> Format2
-    Format2 --> Format3
-    Format3 --> Format4
-    Format4 --> Format5
-    
-    Format5 -->|constrains| LLM
-    Reasoning -->|enables| DeepThinking
-    DataMessage -->|provides| StrategyGeneration
-    AnalysisRequest -->|guides| StrategyGeneration
-    
-    LLM[("LLM\ndeepseek-v3.1")]
-    Format5 --> LLM
-    DeepThinking --> LLM
-    StrategyGeneration --> LLM
-```
+![Mermaid Diagram](./diagrams\90_LLM_Integration_2.svg)
 
 **System Prompt Components:**
 
@@ -185,42 +57,7 @@ graph TB
 
 The final user message requests specific trading analysis components:
 
-```mermaid
-graph LR
-    subgraph "Query Components"
-        Symbol["Symbol: BTCUSDT"]
-        Q1["На каких условиях купить?"]
-        Q2["Анализ рынка"]
-        Q3["Поддержка/Сопротивление"]
-        Q4["Точки входа LONG/SHORT"]
-        Q5["Risk/Reward ratio"]
-        Q6["Предпочтение: LONG или SHORT"]
-        Q7["Фундаментальный анализ"]
-        Q8["Стратегическая рекомендация"]
-    end
-    
-    subgraph "Analysis Focus"
-        Technical["Technical Analysis"]
-        Fundamental["Fundamental Analysis"]
-        Strategic["Strategic Recommendations"]
-    end
-    
-    Symbol --> Q1
-    Q1 --> Q2
-    Q2 --> Q3
-    Q3 --> Q4
-    Q4 --> Q5
-    Q5 --> Q6
-    Q6 --> Q7
-    Q7 --> Q8
-    
-    Q2 --> Technical
-    Q3 --> Technical
-    Q4 --> Technical
-    Q5 --> Technical
-    Q7 --> Fundamental
-    Q8 --> Strategic
-```
+![Mermaid Diagram](./diagrams\90_LLM_Integration_3.svg)
 
 **Query Structure:**
 
@@ -239,44 +76,7 @@ graph LR
 
 The LLM receives a conversation history built from multi-timeframe data sources. Each source contributes a user-assistant message pair to the conversation.
 
-```mermaid
-sequenceDiagram
-    participant CO as ClientOptimizer
-    participant Source1 as long-term-range
-    participant Source2 as swing-term-range
-    participant Source3 as short-term-range
-    participant Source4 as micro-term-range
-    participant LLM as Ollama API
-    
-    Note over CO: Build conversation for date range
-    
-    CO->>Source1: fetch 1h candles
-    Source1-->>CO: data array
-    CO->>CO: format to markdown table
-    CO->>CO: append user message (1h analysis)
-    CO->>CO: append assistant message "OK"
-    
-    CO->>Source2: fetch 30m candles
-    Source2-->>CO: data array
-    CO->>CO: format to markdown table
-    CO->>CO: append user message (30m analysis)
-    CO->>CO: append assistant message "OK"
-    
-    CO->>Source3: fetch 15m candles
-    Source3-->>CO: data array
-    CO->>CO: format to markdown table
-    CO->>CO: append user message (15m analysis)
-    CO->>CO: append assistant message "OK"
-    
-    CO->>Source4: fetch 1m candles
-    Source4-->>CO: data array
-    CO->>CO: format to markdown table
-    CO->>CO: append user message (1m analysis)
-    CO->>CO: append assistant message "OK"
-    
-    CO->>LLM: chat(systemPrompts + messages + finalQuery)
-    LLM-->>CO: strategy recommendation
-```
+![Mermaid Diagram](./diagrams\90_LLM_Integration_4.svg)
 
 **Message Roles:**
 
@@ -309,41 +109,7 @@ Each assistant message provides acknowledgment in Russian:
 
 The LLM response undergoes character escaping to ensure safe embedding in generated JavaScript code. The response text becomes part of a string literal in the generated strategy file.
 
-```mermaid
-flowchart TB
-    subgraph "Response Reception"
-        ChatCall["ollama.chat()"]
-        ResponseObj["response object"]
-        MessageContent["response.message.content"]
-        Trim["content.trim()"]
-    end
-    
-    subgraph "Escape Pipeline"
-        Backslash["Escape backslashes: \\ -> \\\\"]
-        Backticks["Escape backticks: ` -> \\`"]
-        Dollar["Escape dollar signs: $ -> \\$"]
-        DoubleQuote["Escape double quotes: \" -> \\\""]
-        SingleQuote["Escape single quotes: ' -> \\'"]
-    end
-    
-    subgraph "Output"
-        EscapedString["Escaped string"]
-        StrategyCode["Embedded in strategy code"]
-    end
-    
-    ChatCall --> ResponseObj
-    ResponseObj --> MessageContent
-    MessageContent --> Trim
-    
-    Trim --> Backslash
-    Backslash --> Backticks
-    Backticks --> Dollar
-    Dollar --> DoubleQuote
-    DoubleQuote --> SingleQuote
-    
-    SingleQuote --> EscapedString
-    EscapedString --> StrategyCode
-```
+![Mermaid Diagram](./diagrams\90_LLM_Integration_5.svg)
 
 **Escape Sequence:**
 
@@ -372,43 +138,7 @@ The optimizer system provides two helper functions for LLM interaction, availabl
 
 The `text()` function performs synchronous LLM calls with conversation history:
 
-```mermaid
-graph TB
-    subgraph "Function Signature"
-        TextFn["text(symbol, messages)"]
-        Symbol["symbol: string"]
-        Messages["messages: array"]
-    end
-    
-    subgraph "Internal Processing"
-        OllamaInit["Initialize Ollama client"]
-        BuildChat["Build chat request"]
-        SystemPrompt["Add system prompts"]
-        UserMessages["Add user messages"]
-        FinalQuery["Add analysis query"]
-        SendRequest["Send to LLM"]
-        Escape["Escape response"]
-    end
-    
-    subgraph "Return Value"
-        EscapedText["Escaped strategy text"]
-    end
-    
-    TextFn --> Symbol
-    TextFn --> Messages
-    
-    Symbol --> BuildChat
-    Messages --> UserMessages
-    
-    OllamaInit --> BuildChat
-    BuildChat --> SystemPrompt
-    SystemPrompt --> UserMessages
-    UserMessages --> FinalQuery
-    FinalQuery --> SendRequest
-    SendRequest --> Escape
-    
-    Escape --> EscapedText
-```
+![Mermaid Diagram](./diagrams\90_LLM_Integration_6.svg)
 
 **Parameters:**
 
@@ -425,36 +155,7 @@ graph TB
 
 The `json()` function is similar to `text()` but parses the response as JSON. This helper is available for custom template implementations but not used in the default optimizer flow.
 
-```mermaid
-graph LR
-    subgraph "Template Integration"
-        DefaultTemplate["Default OptimizerTemplateService"]
-        CustomTemplate["Custom template merger"]
-        HelperExport["text/json helper exports"]
-    end
-    
-    subgraph "Usage Context"
-        GetPrompt["getPrompt callback"]
-        StrategyGeneration["Strategy generation"]
-        TextResponse["Text-based response"]
-    end
-    
-    subgraph "Alternative Usage"
-        JsonHelper["json() helper"]
-        StructuredData["Structured strategy data"]
-        CustomProcessing["Custom post-processing"]
-    end
-    
-    DefaultTemplate -->|provides| HelperExport
-    CustomTemplate -->|overrides| HelperExport
-    
-    HelperExport -->|exports| GetPrompt
-    GetPrompt -->|calls text()| StrategyGeneration
-    StrategyGeneration -->|returns| TextResponse
-    
-    JsonHelper -.->|alternative| StructuredData
-    StructuredData -.->|enables| CustomProcessing
-```
+![Mermaid Diagram](./diagrams\90_LLM_Integration_7.svg)
 
 **Sources:** Reference implementation pattern from [src/client/ClientOptimizer.ts]() (not shown in provided files)
 
@@ -462,48 +163,7 @@ graph LR
 
 The LLM integration connects to the optimizer system through the `IOptimizerSchema` interface:
 
-```mermaid
-graph TB
-    subgraph "Schema Definition"
-        IOptimizerSchema["IOptimizerSchema"]
-        GetPromptField["getPrompt: function"]
-    end
-    
-    subgraph "User Implementation"
-        addOptimizer["addOptimizer()"]
-        GetPromptImpl["getPrompt: async (symbol, messages)"]
-        TextCall["await text(symbol, messages)"]
-    end
-    
-    subgraph "Execution Flow"
-        OptimizerDump["Optimizer.dump()"]
-        ClientOptimizer["ClientOptimizer.getData()"]
-        MessageBuild["Build message list"]
-        InvokeGetPrompt["Invoke getPrompt"]
-        CollectStrategies["Collect strategy list"]
-    end
-    
-    subgraph "Code Generation"
-        GetCode["ClientOptimizer.getCode()"]
-        StrategyTemplate["getStrategyTemplate()"]
-        EmbedPrompt["Embed LLM prompt in code"]
-    end
-    
-    IOptimizerSchema -->|defines| GetPromptField
-    GetPromptField -->|implemented by| addOptimizer
-    addOptimizer -->|provides| GetPromptImpl
-    GetPromptImpl -->|calls| TextCall
-    
-    OptimizerDump -->|creates| ClientOptimizer
-    ClientOptimizer -->|builds| MessageBuild
-    MessageBuild -->|calls| InvokeGetPrompt
-    InvokeGetPrompt -->|uses| GetPromptImpl
-    GetPromptImpl -->|returns| CollectStrategies
-    
-    CollectStrategies -->|input to| GetCode
-    GetCode -->|uses| StrategyTemplate
-    StrategyTemplate -->|contains| EmbedPrompt
-```
+![Mermaid Diagram](./diagrams\90_LLM_Integration_8.svg)
 
 **Integration Contract:**
 
@@ -536,28 +196,7 @@ interface IOptimizerSchema {
 
 The LLM integration emits progress events during data collection, allowing external monitoring of the optimization process:
 
-```mermaid
-sequenceDiagram
-    participant User as listenOptimizerProgress
-    participant Emitter as progressOptimizerEmitter
-    participant CO as ClientOptimizer
-    participant LLM as Ollama API
-    
-    User->>Emitter: Subscribe to progress
-    
-    loop For each training date
-        loop For each source (1h, 30m, 15m, 1m)
-            CO->>CO: Fetch source data
-            CO->>Emitter: Emit progress event
-            Emitter->>User: { progress, processedSources, totalSources }
-        end
-        CO->>LLM: Call getPrompt with messages
-        LLM-->>CO: Return strategy text
-    end
-    
-    CO->>Emitter: Emit final progress (1.0)
-    Emitter->>User: { progress: 1.0, ... }
-```
+![Mermaid Diagram](./diagrams\90_LLM_Integration_9.svg)
 
 **Progress Event Structure:**
 

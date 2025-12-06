@@ -77,35 +77,7 @@ interface IStrategyPnL {
 
 The following diagram shows how `toProfitLossDto` processes a closed signal:
 
-```mermaid
-flowchart TD
-    Input["toProfitLossDto(signal, priceClose)"]
-    CheckPosition{"signal.position?"}
-    
-    LongSlippage["LONG: Apply Slippage<br/>priceOpenWithSlippage = priceOpen * 1.001<br/>priceCloseWithSlippage = priceClose * 0.999"]
-    
-    ShortSlippage["SHORT: Apply Slippage<br/>priceOpenWithSlippage = priceOpen * 0.999<br/>priceCloseWithSlippage = priceClose * 1.001"]
-    
-    LongPnL["LONG: Calculate Raw PnL<br/>pnl = (closeWithSlip - openWithSlip) / openWithSlip * 100"]
-    
-    ShortPnL["SHORT: Calculate Raw PnL<br/>pnl = (openWithSlip - closeWithSlip) / openWithSlip * 100"]
-    
-    Fees["Subtract Total Fees<br/>pnl -= (PERCENT_FEE * 2)<br/>pnl -= 0.2%"]
-    
-    Output["Return IStrategyPnL<br/>{pnlPercentage, priceOpen, priceClose}"]
-    
-    Input --> CheckPosition
-    CheckPosition -->|"long"| LongSlippage
-    CheckPosition -->|"short"| ShortSlippage
-    
-    LongSlippage --> LongPnL
-    ShortSlippage --> ShortPnL
-    
-    LongPnL --> Fees
-    ShortPnL --> Fees
-    
-    Fees --> Output
-```
+![Mermaid Diagram](./diagrams\51_PnL_Calculation_0.svg)
 
 **Sources**: [src/helpers/toProfitLossDto.ts:44-90]()
 
@@ -223,36 +195,7 @@ The fee is subtracted **after** slippage-adjusted PnL calculation, ensuring both
 
 The `toProfitLossDto` function is called by `ClientStrategy` when a signal transitions to the `closed` state. The following diagram shows where PnL calculation fits in the system:
 
-```mermaid
-graph TB
-    subgraph "ClientStrategy Signal Lifecycle"
-        Opened["Signal State: opened<br/>IStrategyTickResultOpened"]
-        Active["Signal State: active<br/>IStrategyTickResultActive"]
-        Closed["Signal State: closed<br/>IStrategyTickResultClosed"]
-    end
-    
-    subgraph "PnL Calculation System"
-        GetPrice["ClientExchange.getAveragePrice(symbol)<br/>Returns VWAP from last 5 1m candles"]
-        CalcPnL["toProfitLossDto(signal, priceClose)<br/>src/helpers/toProfitLossDto.ts:44"]
-        PnLResult["IStrategyPnL<br/>{pnlPercentage, priceOpen, priceClose}"]
-    end
-    
-    subgraph "Persistence Layer"
-        Persist["PersistSignalAdapter.write(null)<br/>Clear signal from disk"]
-    end
-    
-    subgraph "Reporting Layer"
-        Report["BacktestMarkdownService<br/>LiveMarkdownService<br/>Accumulate PnL statistics"]
-    end
-    
-    Opened --> Active
-    Active -->|TP hit / SL hit / Time expired| GetPrice
-    GetPrice --> CalcPnL
-    CalcPnL --> PnLResult
-    PnLResult --> Closed
-    Closed --> Persist
-    Closed --> Report
-```
+![Mermaid Diagram](./diagrams\51_PnL_Calculation_1.svg)
 
 **Call Chain**:
 1. `ClientStrategy.tick()` detects close condition (TP/SL/time)

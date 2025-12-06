@@ -28,83 +28,7 @@ All registration functions follow the same pattern: validate schema structure, t
 
 ## Registration Architecture
 
-```mermaid
-graph TB
-    subgraph "User Code"
-        User["User Application"]
-    end
-    
-    subgraph "Public API Layer"
-        addStrategy["addStrategy(schema)"]
-        addExchange["addExchange(schema)"]
-        addFrame["addFrame(schema)"]
-        addRisk["addRisk(schema)"]
-        addSizing["addSizing(schema)"]
-        addWalker["addWalker(schema)"]
-        addOptimizer["addOptimizer(schema)"]
-    end
-    
-    subgraph "Validation Layer"
-        StrategyValidation["StrategyValidationService"]
-        ExchangeValidation["ExchangeValidationService"]
-        FrameValidation["FrameValidationService"]
-        RiskValidation["RiskValidationService"]
-        SizingValidation["SizingValidationService"]
-        WalkerValidation["WalkerValidationService"]
-        OptimizerValidation["OptimizerValidationService"]
-    end
-    
-    subgraph "Schema Registry Layer"
-        StrategySchema["StrategySchemaService<br/>Map: strategyName → IStrategySchema"]
-        ExchangeSchema["ExchangeSchemaService<br/>Map: exchangeName → IExchangeSchema"]
-        FrameSchema["FrameSchemaService<br/>Map: frameName → IFrameSchema"]
-        RiskSchema["RiskSchemaService<br/>Map: riskName → IRiskSchema"]
-        SizingSchema["SizingSchemaService<br/>Map: sizingName → ISizingSchema"]
-        WalkerSchema["WalkerSchemaService<br/>Map: walkerName → IWalkerSchema"]
-        OptimizerSchema["OptimizerSchemaService<br/>Map: optimizerName → IOptimizerSchema"]
-    end
-    
-    subgraph "Execution Layer (Queries Registries)"
-        Connection["Connection Services<br/>Instantiate Client* classes"]
-        Global["Global Services<br/>Inject context"]
-        Logic["Logic Services<br/>Execute strategies"]
-    end
-    
-    User -->|"1. Call registration"| addStrategy
-    User -->|"1. Call registration"| addExchange
-    User -->|"1. Call registration"| addFrame
-    User -->|"1. Call registration"| addRisk
-    User -->|"1. Call registration"| addSizing
-    User -->|"1. Call registration"| addWalker
-    User -->|"1. Call registration"| addOptimizer
-    
-    addStrategy -->|"2. Validate"| StrategyValidation
-    addExchange -->|"2. Validate"| ExchangeValidation
-    addFrame -->|"2. Validate"| FrameValidation
-    addRisk -->|"2. Validate"| RiskValidation
-    addSizing -->|"2. Validate"| SizingValidation
-    addWalker -->|"2. Validate"| WalkerValidation
-    addOptimizer -->|"2. Validate"| OptimizerValidation
-    
-    StrategyValidation -->|"3. Store"| StrategySchema
-    ExchangeValidation -->|"3. Store"| ExchangeSchema
-    FrameValidation -->|"3. Store"| FrameSchema
-    RiskValidation -->|"3. Store"| RiskSchema
-    SizingValidation -->|"3. Store"| SizingSchema
-    WalkerValidation -->|"3. Store"| WalkerSchema
-    OptimizerValidation -->|"3. Store"| OptimizerSchema
-    
-    StrategySchema -.->|"4. Query at runtime"| Connection
-    ExchangeSchema -.->|"4. Query at runtime"| Connection
-    FrameSchema -.->|"4. Query at runtime"| Global
-    RiskSchema -.->|"4. Query at runtime"| Connection
-    SizingSchema -.->|"4. Query at runtime"| Connection
-    WalkerSchema -.->|"4. Query at runtime"| Logic
-    OptimizerSchema -.->|"4. Query at runtime"| Connection
-    
-    Connection -.-> Global
-    Global -.-> Logic
-```
+![Mermaid Diagram](./diagrams\08_Component_Registration_0.svg)
 
 **Component Registration Flow**
 
@@ -118,35 +42,7 @@ This diagram shows the complete registration pipeline from user code to runtime 
 
 All seven registration functions follow an identical implementation pattern:
 
-```mermaid
-sequenceDiagram
-    participant User as "User Code"
-    participant AddFn as "add* Function<br/>(add.ts)"
-    participant Logger as "LoggerService"
-    participant Validation as "*ValidationService"
-    participant Schema as "*SchemaService"
-    
-    User->>AddFn: addStrategy(schema)
-    
-    AddFn->>Logger: log(METHOD_NAME, schema)
-    Note over Logger: Logs registration event
-    
-    AddFn->>Validation: addStrategy(name, schema)
-    Note over Validation: Validates:<br/>- Schema structure<br/>- Required fields<br/>- Field types<br/>- Business rules
-    
-    alt Validation Fails
-        Validation-->>AddFn: throw ValidationError
-        AddFn-->>User: throw error
-    else Validation Succeeds
-        Validation->>Validation: validation passes
-    end
-    
-    AddFn->>Schema: register(name, schema)
-    Note over Schema: Stores in Map:<br/>name → schema
-    
-    Schema-->>AddFn: void
-    AddFn-->>User: void (success)
-```
+![Mermaid Diagram](./diagrams\08_Component_Registration_1.svg)
 
 **Registration Sequence**
 
@@ -160,72 +56,7 @@ Each `add*` function executes the same three-step pattern: logging, validation, 
 
 Schema services implement a simple name-to-schema registry using `Map` data structures. Each service provides three core methods:
 
-```mermaid
-classDiagram
-    class SchemaServicePattern {
-        -Map~string, Schema~ registry
-        +register(name, schema) void
-        +get(name) Schema
-        +has(name) boolean
-    }
-    
-    class StrategySchemaService {
-        -Map~string, IStrategySchema~ registry
-        +register(strategyName, schema)
-        +get(strategyName) IStrategySchema
-        +has(strategyName) boolean
-    }
-    
-    class ExchangeSchemaService {
-        -Map~string, IExchangeSchema~ registry
-        +register(exchangeName, schema)
-        +get(exchangeName) IExchangeSchema
-        +has(exchangeName) boolean
-    }
-    
-    class FrameSchemaService {
-        -Map~string, IFrameSchema~ registry
-        +register(frameName, schema)
-        +get(frameName) IFrameSchema
-        +has(frameName) boolean
-    }
-    
-    class WalkerSchemaService {
-        -Map~string, IWalkerSchema~ registry
-        +register(walkerName, schema)
-        +get(walkerName) IWalkerSchema
-        +has(walkerName) boolean
-    }
-    
-    class SizingSchemaService {
-        -Map~string, ISizingSchema~ registry
-        +register(sizingName, schema)
-        +get(sizingName) ISizingSchema
-        +has(sizingName) boolean
-    }
-    
-    class RiskSchemaService {
-        -Map~string, IRiskSchema~ registry
-        +register(riskName, schema)
-        +get(riskName) IRiskSchema
-        +has(riskName) boolean
-    }
-    
-    class OptimizerSchemaService {
-        -Map~string, IOptimizerSchema~ registry
-        +register(optimizerName, schema)
-        +get(optimizerName) IOptimizerSchema
-        +has(optimizerName) boolean
-    }
-    
-    SchemaServicePattern <|-- StrategySchemaService
-    SchemaServicePattern <|-- ExchangeSchemaService
-    SchemaServicePattern <|-- FrameSchemaService
-    SchemaServicePattern <|-- WalkerSchemaService
-    SchemaServicePattern <|-- SizingSchemaService
-    SchemaServicePattern <|-- RiskSchemaService
-    SchemaServicePattern <|-- OptimizerSchemaService
-```
+![Mermaid Diagram](./diagrams\08_Component_Registration_2.svg)
 
 **Schema Service Class Hierarchy**
 
@@ -292,45 +123,7 @@ Validation occurs synchronously during registration, ensuring only valid schemas
 
 ## Component Lifecycle: Registration to Execution
 
-```mermaid
-stateDiagram-v2
-    [*] --> Registered: add* function called
-    
-    state "Registration Phase" as Registration {
-        Registered --> Validated: Validation succeeds
-        Validated --> Stored: Schema stored in registry
-    }
-    
-    state "Execution Phase" as Execution {
-        Stored --> Queried: Logic service queries schema
-        Queried --> Instantiated: Connection service creates Client* instance
-        Instantiated --> ContextInjected: Global service injects context
-        ContextInjected --> Executed: tick/backtest/stop methods called
-    }
-    
-    Executed --> [*]: Execution completes
-    
-    note right of Registered
-        addStrategy, addExchange, etc.
-        Synchronous operation
-    end note
-    
-    note right of Queried
-        Schema services: get(name)
-        Lookup by name identifier
-    end note
-    
-    note right of Instantiated
-        Connection services cache
-        instances by (symbol, name) key
-    end note
-    
-    note right of ContextInjected
-        ExecutionContextService
-        MethodContextService
-        Implicit parameter passing
-    end note
-```
+![Mermaid Diagram](./diagrams\08_Component_Registration_3.svg)
 
 **Component State Transitions**
 
@@ -344,38 +137,7 @@ Components transition from registration (configuration) to execution (runtime) t
 
 Component registration integrates with the dependency injection system through service instantiation at application startup:
 
-```mermaid
-graph LR
-    subgraph "Startup Phase"
-        TYPES["TYPES Symbol Registry<br/>(types.ts)"]
-        Provide["provide() Calls<br/>(provide.ts)"]
-        Init["init() Initialization<br/>(di.ts)"]
-    end
-    
-    subgraph "Service Instantiation"
-        ValidationServices["7 Validation Services<br/>*ValidationService"]
-        SchemaServices["7 Schema Services<br/>*SchemaService"]
-    end
-    
-    subgraph "Aggregation"
-        BacktestObj["backtest Object<br/>(lib/index.ts)"]
-        AddFunctions["add* Functions<br/>(function/add.ts)"]
-    end
-    
-    subgraph "Public API"
-        IndexExports["index.ts Exports"]
-    end
-    
-    TYPES --> Provide
-    Provide --> ValidationServices
-    Provide --> SchemaServices
-    ValidationServices --> Init
-    SchemaServices --> Init
-    
-    Init --> BacktestObj
-    BacktestObj --> AddFunctions
-    AddFunctions --> IndexExports
-```
+![Mermaid Diagram](./diagrams\08_Component_Registration_4.svg)
 
 **Service Instantiation Flow**
 
@@ -463,19 +225,7 @@ Calling `add*` with the same name twice overwrites the previous registration. Th
 
 Registration functions throw synchronously when validation fails:
 
-```mermaid
-graph TD
-    Call["add* function called"] --> Validate["Validation service checks schema"]
-    
-    Validate -->|"Valid"| Store["Schema service stores schema"]
-    Validate -->|"Invalid"| Error["throw ValidationError"]
-    
-    Store --> Success["Return void"]
-    Error --> UserCatch["User try/catch block"]
-    
-    Success --> Continue["Continue registration"]
-    UserCatch --> Handle["Handle error / log / exit"]
-```
+![Mermaid Diagram](./diagrams\08_Component_Registration_5.svg)
 
 **Error Propagation**
 

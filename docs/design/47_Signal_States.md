@@ -313,29 +313,7 @@ interface IStrategyTickResultCancelled {
 
 ## State Machine Diagram
 
-```mermaid
-stateDiagram-v2
-    [*] --> idle: "Strategy initialization"
-    
-    idle --> scheduled: "getSignal() returns signal with priceOpen\n(priceOpen ≠ currentPrice)"
-    idle --> opened: "getSignal() returns signal without priceOpen\n(opens at currentPrice)"
-    idle --> idle: "No signal or risk rejected"
-    
-    scheduled --> cancelled: "Timeout (CC_SCHEDULE_AWAIT_MINUTES)\nOR Pre-activation SL hit\nOR Risk check fails at activation"
-    scheduled --> opened: "Price reaches priceOpen\nAND Risk check passes"
-    scheduled --> scheduled: "Waiting for activation"
-    
-    opened --> active: "Next tick after opening"
-    
-    active --> closed: "TP reached\nOR SL reached\nOR Time expired"
-    active --> active: "Position monitoring continues"
-    
-    closed --> idle: "Next tick after closure"
-    cancelled --> idle: "Next tick after cancellation"
-    
-    closed --> [*]: "Terminal state (PnL realized)"
-    cancelled --> [*]: "Terminal state (No trade executed)"
-```
+![Mermaid Diagram](./diagrams\47_Signal_States_0.svg)
 
 **State Transition Summary:**
 
@@ -634,58 +612,7 @@ if (signal.position === "short" && averagePrice >= signal.priceStopLoss) {
 
 ## Example State Flow: Scheduled Signal with Activation
 
-```mermaid
-sequenceDiagram
-    participant Tick as "tick() method"
-    participant GetSignal as "GET_SIGNAL_FN"
-    participant Risk as "Risk Check"
-    participant State as "_scheduledSignal / _pendingSignal"
-    participant Callback as "Strategy Callbacks"
-    
-    Note over Tick,Callback: Tick 1: Signal Generation
-    Tick->>GetSignal: "Call getSignal()"
-    GetSignal->>GetSignal: "Returns signal with priceOpen=42000"
-    GetSignal->>GetSignal: "currentPrice=43000 (above priceOpen for LONG)"
-    GetSignal->>State: "Set _scheduledSignal"
-    State->>Callback: "onSchedule() triggered"
-    GetSignal-->>Tick: "Return IStrategyTickResultScheduled"
-    
-    Note over Tick,Callback: Tick 2-9: Waiting for Activation
-    loop Monitoring
-        Tick->>Tick: "Check activation: currentPrice=43000-42500"
-        Tick->>Tick: "priceOpen not reached yet"
-        Tick->>Callback: "onActive() for scheduled signal"
-        Tick-->>Tick: "Return IStrategyTickResultActive"
-    end
-    
-    Note over Tick,Callback: Tick 10: Price Reaches priceOpen
-    Tick->>Tick: "Check activation: currentPrice=41900 <= priceOpen=42000"
-    Tick->>Tick: "shouldActivate = true"
-    Tick->>Risk: "checkSignal() at activation time"
-    Risk-->>Tick: "Risk check passes"
-    Tick->>State: "Clear _scheduledSignal"
-    Tick->>State: "Set _pendingSignal (pendingAt updated)"
-    State->>Callback: "onOpen() triggered"
-    Tick-->>Tick: "Return IStrategyTickResultOpened"
-    
-    Note over Tick,Callback: Tick 11-20: Active Monitoring
-    loop Position Monitoring
-        Tick->>Tick: "Check TP/SL: currentPrice between TP and SL"
-        Tick->>Callback: "onActive() for pending signal"
-        Tick-->>Tick: "Return IStrategyTickResultActive"
-    end
-    
-    Note over Tick,Callback: Tick 21: Take Profit Hit
-    Tick->>Tick: "Check TP: currentPrice=43100 >= priceTakeProfit=43000"
-    Tick->>State: "Clear _pendingSignal"
-    State->>Callback: "onClose() triggered"
-    Tick-->>Tick: "Return IStrategyTickResultClosed (closeReason='take_profit')"
-    
-    Note over Tick,Callback: Tick 22: Return to Idle
-    Tick->>Tick: "No active signal"
-    Tick->>Callback: "onIdle() triggered"
-    Tick-->>Tick: "Return IStrategyTickResultIdle"
-```
+![Mermaid Diagram](./diagrams\47_Signal_States_1.svg)
 
 **Sources:**
 - [src/client/ClientStrategy.ts:960-1100]()
@@ -695,41 +622,7 @@ sequenceDiagram
 
 ## Example State Flow: Pre-activation Cancellation
 
-```mermaid
-sequenceDiagram
-    participant Tick as "tick() method"
-    participant GetSignal as "GET_SIGNAL_FN"
-    participant Check as "CHECK_SCHEDULED_SIGNAL_PRICE_ACTIVATION_FN"
-    participant State as "_scheduledSignal"
-    participant Callback as "Strategy Callbacks"
-    
-    Note over Tick,Callback: Tick 1: Scheduled Signal Created
-    Tick->>GetSignal: "Call getSignal()"
-    GetSignal->>State: "Set _scheduledSignal (LONG, priceOpen=42000, SL=40000)"
-    State->>Callback: "onSchedule() triggered"
-    GetSignal-->>Tick: "Return IStrategyTickResultScheduled"
-    
-    Note over Tick,Callback: Tick 2-5: Waiting
-    loop Monitoring
-        Tick->>Check: "currentPrice=43000-42500"
-        Check-->>Tick: "shouldActivate=false, shouldCancel=false"
-        Tick->>Callback: "onActive() for scheduled signal"
-        Tick-->>Tick: "Return IStrategyTickResultActive"
-    end
-    
-    Note over Tick,Callback: Tick 6: Price Drops Below Stop Loss
-    Tick->>Check: "currentPrice=39500 (below priceOpen=42000 AND below SL=40000)"
-    Check->>Check: "LONG: currentPrice <= priceStopLoss → shouldCancel=true"
-    Check-->>Tick: "shouldActivate=false, shouldCancel=true"
-    Tick->>State: "Clear _scheduledSignal (never activated)"
-    State->>Callback: "onCancel() triggered (NOT onClose - no trade executed)"
-    Tick-->>Tick: "Return IStrategyTickResultCancelled"
-    
-    Note over Tick,Callback: Tick 7: Return to Idle
-    Tick->>Tick: "No active signal"
-    Tick->>Callback: "onIdle() triggered"
-    Tick-->>Tick: "Return IStrategyTickResultIdle"
-```
+![Mermaid Diagram](./diagrams\47_Signal_States_2.svg)
 
 **Key Difference from Opened→Closed:**
 - `onCancel()` fired instead of `onClose()` 

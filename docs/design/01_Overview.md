@@ -26,71 +26,7 @@ The framework is structured as a **dependency injection container** that orchest
 
 The system implements a **layered architecture** with clear separation of concerns across five tiers, from user-facing API to persistence layer.
 
-```mermaid
-flowchart TB
-    subgraph "1. Public API Layer"
-        addStrategy["addStrategy()"]
-        addExchange["addExchange()"]
-        addFrame["addFrame()"]
-        addRisk["addRisk()"]
-        addWalker["addWalker()"]
-        addOptimizer["addOptimizer()"]
-        
-        BacktestClass["Backtest.run()"]
-        LiveClass["Live.run()"]
-        WalkerClass["Walker.run()"]
-        
-        listenSignal["listenSignal()"]
-        listenError["listenError()"]
-    end
-    
-    subgraph "2. Command Layer"
-        BacktestCommand["BacktestCommandService"]
-        LiveCommand["LiveCommandService"]
-        WalkerCommand["WalkerCommandService"]
-    end
-    
-    subgraph "3. Logic Layer"
-        BacktestLogic["BacktestLogicPrivateService"]
-        LiveLogic["LiveLogicPrivateService"]
-        WalkerLogic["WalkerLogicPrivateService"]
-    end
-    
-    subgraph "4. Business Logic Layer"
-        ClientStrategy["ClientStrategy"]
-        ClientExchange["ClientExchange"]
-        ClientRisk["ClientRisk"]
-        ClientFrame["ClientFrame"]
-    end
-    
-    subgraph "5. Persistence Layer"
-        PersistSignal["PersistSignalAdapter"]
-        PersistSchedule["PersistScheduleAdapter"]
-        PersistRisk["PersistRiskAdapter"]
-    end
-    
-    addStrategy --> BacktestCommand
-    addExchange --> BacktestCommand
-    BacktestClass --> BacktestCommand
-    
-    BacktestCommand --> BacktestLogic
-    LiveCommand --> LiveLogic
-    WalkerCommand --> WalkerLogic
-    
-    BacktestLogic --> ClientStrategy
-    LiveLogic --> ClientStrategy
-    WalkerLogic --> BacktestLogic
-    
-    ClientStrategy --> ClientExchange
-    ClientStrategy --> ClientRisk
-    ClientStrategy --> PersistSignal
-    
-    ClientRisk --> PersistRisk
-    
-    listenSignal --> signalEmitter["signalEmitter"]
-    BacktestLogic -.emits.-> signalEmitter
-    LiveLogic -.emits.-> signalEmitter
-```
+![Mermaid Diagram](./diagrams\01_Overview_0.svg)
 
 **Layer Responsibilities**:
 
@@ -110,52 +46,7 @@ Each layer depends only on layers below it, creating a **unidirectional dependen
 
 The framework uses a **registry-based dependency injection pattern** where components are registered by name before execution. Registration functions (`addStrategy`, `addExchange`, `addFrame`, etc.) store schemas in registry services, which are later instantiated by Connection services during execution.
 
-```mermaid
-flowchart LR
-    subgraph "User Code"
-        UserStrategy["Strategy Definition"]
-        UserExchange["Exchange Definition"]
-        UserFrame["Frame Definition"]
-    end
-    
-    subgraph "Registration Functions"
-        addStrategy["addStrategy(schema)"]
-        addExchange["addExchange(schema)"]
-        addFrame["addFrame(schema)"]
-    end
-    
-    subgraph "Schema Services"
-        StrategySchema["StrategySchemaService<br/>Map: name → IStrategySchema"]
-        ExchangeSchema["ExchangeSchemaService<br/>Map: name → IExchangeSchema"]
-        FrameSchema["FrameSchemaService<br/>Map: name → IFrameSchema"]
-    end
-    
-    subgraph "Connection Services"
-        StrategyConn["StrategyConnectionService<br/>Memoized ClientStrategy instances"]
-        ExchangeConn["ExchangeConnectionService<br/>Memoized ClientExchange instances"]
-        FrameConn["FrameGlobalService"]
-    end
-    
-    subgraph "Execution"
-        BacktestRun["Backtest.run(symbol, {<br/>  strategyName,<br/>  exchangeName,<br/>  frameName<br/>})"]
-    end
-    
-    UserStrategy --> addStrategy
-    UserExchange --> addExchange
-    UserFrame --> addFrame
-    
-    addStrategy --> StrategySchema
-    addExchange --> ExchangeSchema
-    addFrame --> FrameSchema
-    
-    BacktestRun --> StrategyConn
-    BacktestRun --> ExchangeConn
-    BacktestRun --> FrameConn
-    
-    StrategyConn --> StrategySchema
-    ExchangeConn --> ExchangeSchema
-    FrameConn --> FrameSchema
-```
+![Mermaid Diagram](./diagrams\01_Overview_1.svg)
 
 This pattern enables **dependency inversion**: strategies reference exchanges by name (`exchangeName: "binance"`), not by direct import. Components can be registered in separate modules and assembled at runtime through string identifiers. The memoization layer in Connection services ensures each symbol-strategy-exchange combination gets exactly one instance, preventing duplicate state.
 
@@ -172,61 +63,7 @@ This pattern enables **dependency inversion**: strategies reference exchanges by
 
 The framework provides three execution modes with distinct temporal semantics and completion behavior, but all share the same strategy logic and signal lifecycle.
 
-```mermaid
-graph TB
-    subgraph "Backtest Mode"
-        BT_Input["Input:<br/>- strategyName<br/>- exchangeName<br/>- frameName"]
-        BT_Frame["FrameGlobalService<br/>getTimeframes()"]
-        BT_Loop["For each timeframe Date"]
-        BT_Tick["ClientStrategy.tick(when)"]
-        BT_Signal["Signal opened?"]
-        BT_Candles["getNextCandles()<br/>fetch future data"]
-        BT_Fast["ClientStrategy.backtest()<br/>fast VWAP simulation"]
-        BT_Output["Output:<br/>IStrategyTickResultClosed<br/>via AsyncGenerator"]
-        
-        BT_Input --> BT_Frame
-        BT_Frame --> BT_Loop
-        BT_Loop --> BT_Tick
-        BT_Tick --> BT_Signal
-        BT_Signal -->|Yes| BT_Candles
-        BT_Candles --> BT_Fast
-        BT_Fast --> BT_Output
-        BT_Output --> BT_Loop
-        BT_Signal -->|No| BT_Loop
-    end
-    
-    subgraph "Live Mode"
-        L_Input["Input:<br/>- strategyName<br/>- exchangeName<br/>- no frameName"]
-        L_Loop["Infinite loop<br/>while(true)"]
-        L_Time["when = new Date()"]
-        L_Tick["ClientStrategy.tick(when)"]
-        L_Sleep["sleep(TICK_TTL=61s)"]
-        L_Output["Output:<br/>IStrategyTickResult<br/>via AsyncGenerator"]
-        
-        L_Input --> L_Loop
-        L_Loop --> L_Time
-        L_Time --> L_Tick
-        L_Tick --> L_Output
-        L_Output --> L_Sleep
-        L_Sleep --> L_Loop
-    end
-    
-    subgraph "Walker Mode"
-        W_Input["Input:<br/>- walkerName<br/>- strategies[]<br/>- metric"]
-        W_Loop["For each strategy"]
-        W_Backtest["Run Backtest.run()<br/>get all signals"]
-        W_Stats["Calculate metric<br/>sharpeRatio, winRate, etc"]
-        W_Compare["Compare to best"]
-        W_Output["Output:<br/>IWalkerResults<br/>bestStrategy, bestMetric"]
-        
-        W_Input --> W_Loop
-        W_Loop --> W_Backtest
-        W_Backtest --> W_Stats
-        W_Stats --> W_Compare
-        W_Compare --> W_Loop
-        W_Loop --> W_Output
-    end
-```
+![Mermaid Diagram](./diagrams\01_Overview_2.svg)
 
 **Mode Characteristics**:
 
@@ -244,29 +81,7 @@ All three modes use the same `ClientStrategy.tick()` method for signal generatio
 
 Signals (trading positions) progress through a **state machine** with six possible states and multiple terminal outcomes. The lifecycle is identical in backtest and live modes, with different timing mechanisms.
 
-```mermaid
-stateDiagram-v2
-    [*] --> idle: No active signal
-    
-    idle --> scheduled: getSignal() returns<br/>signal with priceOpen
-    idle --> opened: getSignal() returns<br/>signal without priceOpen
-    
-    scheduled --> opened: Price reaches priceOpen<br/>& risk.checkSignal() passes
-    scheduled --> cancelled: Timeout (120 min)<br/>OR Price hits SL<br/>OR risk.checkSignal() fails
-    
-    opened --> active: Position monitoring begins<br/>onOpen() callback fired
-    
-    active --> active: Monitoring TP/SL/timeout<br/>onActive() callback fired
-    
-    active --> closed_tp: Price hits priceTakeProfit
-    active --> closed_sl: Price hits priceStopLoss
-    active --> closed_timeout: minuteEstimatedTime expires
-    
-    cancelled --> idle: onCancel() callback fired
-    closed_tp --> idle: onClose() callback fired
-    closed_sl --> idle: onClose() callback fired
-    closed_timeout --> idle: onClose() callback fired
-```
+![Mermaid Diagram](./diagrams\01_Overview_3.svg)
 
 **State Descriptions**:
 
@@ -292,68 +107,7 @@ The **scheduled state** is unique: it represents a limit order waiting for `pric
 
 The framework implements a **pub-sub event architecture** with 16 emitters organized into 5 functional categories. All event callbacks use queued processing to ensure sequential execution even with async handlers.
 
-```mermaid
-flowchart TB
-    subgraph "Event Producers"
-        BacktestLogic["BacktestLogicPrivateService"]
-        LiveLogic["LiveLogicPrivateService"]
-        WalkerLogic["WalkerLogicPrivateService"]
-        ClientStrategy["ClientStrategy"]
-    end
-    
-    subgraph "Event Bus (16 Emitters)"
-        direction TB
-        
-        signalEmitter["signalEmitter<br/>All signals"]
-        signalLiveEmitter["signalLiveEmitter<br/>Live only"]
-        signalBacktestEmitter["signalBacktestEmitter<br/>Backtest only"]
-        
-        progressBacktestEmitter["progressBacktestEmitter<br/>Backtest progress"]
-        progressWalkerEmitter["progressWalkerEmitter<br/>Walker progress"]
-        
-        doneBacktestSubject["doneBacktestSubject<br/>Backtest complete"]
-        doneLiveSubject["doneLiveSubject<br/>Live complete"]
-        doneWalkerSubject["doneWalkerSubject<br/>Walker complete"]
-        
-        errorEmitter["errorEmitter<br/>Recoverable errors"]
-        exitEmitter["exitEmitter<br/>Fatal errors"]
-        
-        partialProfitSubject["partialProfitSubject<br/>Profit milestones"]
-        partialLossSubject["partialLossSubject<br/>Loss milestones"]
-    end
-    
-    subgraph "Event Consumers"
-        listenSignal["listenSignal()"]
-        listenSignalLive["listenSignalLive()"]
-        listenSignalBacktest["listenSignalBacktest()"]
-        listenDone["listenDoneBacktest()"]
-        listenError["listenError()"]
-        listenPartial["listenPartialProfit()"]
-    end
-    
-    BacktestLogic --> signalEmitter
-    BacktestLogic --> signalBacktestEmitter
-    BacktestLogic --> progressBacktestEmitter
-    BacktestLogic --> doneBacktestSubject
-    
-    LiveLogic --> signalEmitter
-    LiveLogic --> signalLiveEmitter
-    LiveLogic --> doneLiveSubject
-    
-    WalkerLogic --> progressWalkerEmitter
-    WalkerLogic --> doneWalkerSubject
-    
-    ClientStrategy --> partialProfitSubject
-    ClientStrategy --> partialLossSubject
-    ClientStrategy --> errorEmitter
-    
-    signalEmitter -.-> listenSignal
-    signalLiveEmitter -.-> listenSignalLive
-    signalBacktestEmitter -.-> listenSignalBacktest
-    doneBacktestSubject -.-> listenDone
-    errorEmitter -.-> listenError
-    partialProfitSubject -.-> listenPartial
-```
+![Mermaid Diagram](./diagrams\01_Overview_4.svg)
 
 **Event Categories**:
 
@@ -409,59 +163,7 @@ This architecture eliminates the need to pass `symbol`, `when`, `strategyName`, 
 
 The framework uses a **symbol-based dependency injection container** with ~60 services registered at startup. Services are organized into a matrix pattern by component type (Strategy, Exchange, Frame, etc.) and function category (Connection, Schema, Global, Validation, etc.).
 
-```mermaid
-graph TB
-    subgraph "TYPES Symbol Registry"
-        TYPES["TYPES.strategySchemaService<br/>TYPES.strategyConnectionService<br/>TYPES.strategyGlobalService<br/>TYPES.exchangeSchemaService<br/>...60+ symbols"]
-    end
-    
-    subgraph "provide.ts Registration"
-        provide["provide()<br/>Instantiate all services<br/>with dependencies"]
-    end
-    
-    subgraph "Service Matrix"
-        direction TB
-        
-        StrategySchema["StrategySchemaService"]
-        StrategyConn["StrategyConnectionService"]
-        StrategyGlobal["StrategyGlobalService"]
-        StrategyValid["StrategyValidationService"]
-        
-        ExchangeSchema["ExchangeSchemaService"]
-        ExchangeConn["ExchangeConnectionService"]
-        ExchangeGlobal["ExchangeGlobalService"]
-        ExchangeValid["ExchangeValidationService"]
-        
-        BacktestLogic["BacktestLogicPrivateService"]
-        BacktestMD["BacktestMarkdownService"]
-        BacktestCmd["BacktestCommandService"]
-        
-        Logger["LoggerService"]
-        ExecContext["ExecutionContextService"]
-        MethodContext["MethodContextService"]
-    end
-    
-    subgraph "Aggregation Object"
-        backtest["backtest object<br/>{<br/>  strategySchemaService,<br/>  strategyConnectionService,<br/>  backtestLogicPrivateService,<br/>  ...<br/>}"]
-    end
-    
-    TYPES --> provide
-    provide --> StrategySchema
-    provide --> StrategyConn
-    provide --> StrategyGlobal
-    provide --> ExchangeSchema
-    provide --> BacktestLogic
-    provide --> Logger
-    
-    Logger -.injected into.-> BacktestLogic
-    ExecContext -.injected into.-> StrategyConn
-    StrategySchema -.injected into.-> StrategyConn
-    StrategyConn -.injected into.-> StrategyGlobal
-    
-    StrategySchema --> backtest
-    BacktestLogic --> backtest
-    BacktestMD --> backtest
-```
+![Mermaid Diagram](./diagrams\01_Overview_5.svg)
 
 **Service Organization Pattern**:
 
@@ -515,34 +217,7 @@ The atomic write pattern (write to `.tmp`, then rename) ensures that crashes dur
 
 The framework generates **markdown reports** with statistical analysis for each execution mode. Reports are accumulated via event subscription and calculated on-demand or saved to disk.
 
-```mermaid
-flowchart LR
-    subgraph "Event Flow"
-        Execution["BacktestLogicPrivateService<br/>or LiveLogicPrivateService"]
-        Emitter["signalBacktestEmitter<br/>or signalLiveEmitter"]
-        
-        Execution -.emits.-> Emitter
-    end
-    
-    subgraph "Markdown Services"
-        BacktestMD["BacktestMarkdownService<br/>ReportStorage per (symbol, strategy)"]
-        LiveMD["LiveMarkdownService<br/>ReportStorage per (symbol, strategy)"]
-        WalkerMD["WalkerMarkdownService<br/>ReportStorage per (symbol, walker)"]
-        
-        Emitter -.subscribes.-> BacktestMD
-        Emitter -.subscribes.-> LiveMD
-    end
-    
-    subgraph "Public API"
-        getData["Backtest.getData(symbol, strategyName)"]
-        getReport["Backtest.getReport(symbol, strategyName)"]
-        dump["Backtest.dump(symbol, strategyName, path)"]
-    end
-    
-    BacktestMD --> getData
-    BacktestMD --> getReport
-    BacktestMD --> dump
-```
+![Mermaid Diagram](./diagrams\01_Overview_6.svg)
 
 **Report Types**:
 

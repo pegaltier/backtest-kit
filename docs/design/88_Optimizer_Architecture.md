@@ -10,48 +10,7 @@ For details on data collection and pagination, see [Data Collection Pipeline](#1
 
 The Optimizer system consists of four primary components organized in a layered architecture:
 
-```mermaid
-graph TB
-    User["User Code"]
-    
-    subgraph "Public API Layer"
-        OptimizerAPI["Optimizer.getData()<br/>Optimizer.getCode()<br/>Optimizer.dump()"]
-    end
-    
-    subgraph "Service Layer"
-        OptimizerConnectionService["OptimizerConnectionService<br/>getOptimizer() [memoized]<br/>getData()<br/>getCode()<br/>dump()"]
-        OptimizerSchemaService["OptimizerSchemaService<br/>Registry: optimizerName → IOptimizerSchema"]
-        OptimizerTemplateService["OptimizerTemplateService<br/>11 default template methods"]
-    end
-    
-    subgraph "Client Layer"
-        ClientOptimizer["ClientOptimizer<br/>IOptimizerParams<br/>getData()<br/>getCode()<br/>dump()"]
-    end
-    
-    subgraph "Internal Functions"
-        GET_STRATEGY_DATA_FN["GET_STRATEGY_DATA_FN<br/>Data collection + LLM conversation"]
-        GET_STRATEGY_CODE_FN["GET_STRATEGY_CODE_FN<br/>11-section code assembly"]
-        GET_STRATEGY_DUMP_FN["GET_STRATEGY_DUMP_FN<br/>File system write"]
-        RESOLVE_PAGINATION_FN["RESOLVE_PAGINATION_FN<br/>Pagination handler"]
-    end
-    
-    User -->|"addOptimizer()"| OptimizerSchemaService
-    User -->|"Optimizer.getData/getCode/dump"| OptimizerAPI
-    
-    OptimizerAPI --> OptimizerConnectionService
-    
-    OptimizerConnectionService -->|"retrieves schema"| OptimizerSchemaService
-    OptimizerConnectionService -->|"retrieves defaults"| OptimizerTemplateService
-    OptimizerConnectionService -->|"creates/caches"| ClientOptimizer
-    
-    ClientOptimizer --> GET_STRATEGY_DATA_FN
-    ClientOptimizer --> GET_STRATEGY_CODE_FN
-    ClientOptimizer --> GET_STRATEGY_DUMP_FN
-    
-    GET_STRATEGY_DATA_FN --> RESOLVE_PAGINATION_FN
-    GET_STRATEGY_CODE_FN --> GET_STRATEGY_DATA_FN
-    GET_STRATEGY_DUMP_FN --> GET_STRATEGY_CODE_FN
-```
+![Mermaid Diagram](./diagrams\88_Optimizer_Architecture_0.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:1-448](), [src/lib/services/connection/OptimizerConnectionService.ts:1-175](), [src/lib/services/template/OptimizerTemplateService.ts:1-710]()
 
@@ -156,36 +115,7 @@ For schema service architecture details, see [Schema Services](#7.3).
 
 The template merging pattern allows users to override specific template methods while falling back to defaults for unspecified methods. This provides flexibility without requiring complete reimplementation.
 
-```mermaid
-graph LR
-    subgraph "User Configuration"
-        UserSchema["IOptimizerSchema<br/>template?: Partial&lt;IOptimizerTemplate&gt;"]
-    end
-    
-    subgraph "OptimizerConnectionService.getOptimizer()"
-        RetrieveSchema["Retrieve schema<br/>from OptimizerSchemaService"]
-        ExtractPartial["Extract rawTemplate<br/>= schema.template || {}"]
-        MergeDefaults["For each of 11 methods:<br/>method = rawTemplate.method<br/>|| templateService.method"]
-        CreateComplete["Create complete<br/>IOptimizerTemplate object"]
-        InstantiateClient["Instantiate ClientOptimizer<br/>with complete template"]
-    end
-    
-    subgraph "OptimizerTemplateService"
-        DefaultMethods["11 default template methods<br/>getTopBanner, getUserMessage,<br/>getAssistantMessage, etc."]
-    end
-    
-    subgraph "ClientOptimizer"
-        UseTemplate["Use params.template<br/>for code generation"]
-    end
-    
-    UserSchema --> RetrieveSchema
-    RetrieveSchema --> ExtractPartial
-    ExtractPartial --> MergeDefaults
-    DefaultMethods --> MergeDefaults
-    MergeDefaults --> CreateComplete
-    CreateComplete --> InstantiateClient
-    InstantiateClient --> UseTemplate
-```
+![Mermaid Diagram](./diagrams\88_Optimizer_Architecture_1.svg)
 
 **Implementation Example:**
 
@@ -229,54 +159,7 @@ This pattern ensures:
 
 The `getData` method collects data from all configured sources and builds LLM conversation histories for strategy generation.
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant API as "Optimizer.getData"
-    participant Conn as "OptimizerConnectionService"
-    participant Client as "ClientOptimizer"
-    participant DataFn as "GET_STRATEGY_DATA_FN"
-    participant PageFn as "RESOLVE_PAGINATION_FN"
-    participant Source as "IOptimizerSourceFn"
-    participant Emitter as "progressOptimizerEmitter"
-    
-    User->>API: getData(symbol, optimizerName)
-    API->>Conn: getData(symbol, optimizerName)
-    Conn->>Conn: getOptimizer(optimizerName)<br/>[memoized]
-    Conn->>Client: getData(symbol)
-    Client->>DataFn: execute
-    
-    loop For each rangeTrain
-        loop For each source
-            DataFn->>Emitter: emit progress<br/>(processedSources / totalSources)
-            DataFn->>PageFn: RESOLVE_PAGINATION_FN(fetch, filterData)
-            
-            loop Pagination
-                PageFn->>Source: fetch({symbol, startDate, endDate, limit, offset})
-                Source-->>PageFn: data page
-            end
-            
-            PageFn-->>DataFn: deduplicated data array
-            
-            alt Source is IOptimizerSource
-                DataFn->>DataFn: source.user(symbol, data, name)
-                DataFn->>DataFn: source.assistant(symbol, data, name)
-            else Source is IOptimizerSourceFn
-                DataFn->>DataFn: DEFAULT_USER_FN(symbol, data, name)
-                DataFn->>DataFn: DEFAULT_ASSISTANT_FN(symbol, data, name)
-            end
-            
-            DataFn->>DataFn: messageList.push({role:'user', content})<br/>messageList.push({role:'assistant', content})
-        end
-        
-        DataFn->>DataFn: getPrompt(symbol, messageList)
-        DataFn->>DataFn: strategyList.push({symbol, name, messages, strategy})
-    end
-    
-    DataFn->>Emitter: emit final progress (100%)
-    DataFn-->>Client: strategyList
-    Client-->>User: IOptimizerStrategy[]
-```
+![Mermaid Diagram](./diagrams\88_Optimizer_Architecture_2.svg)
 
 **Key Steps:**
 
@@ -294,29 +177,7 @@ sequenceDiagram
 
 The `getCode` method assembles executable strategy code from 11 template sections in a specific order.
 
-```mermaid
-graph TD
-    Start["getCode(symbol)"] --> GetData["getData(symbol)"]
-    GetData --> CreatePrefix["CREATE_PREFIX_FN()<br/>Generate random prefix"]
-    CreatePrefix --> InitSections["sections = []"]
-    
-    InitSections --> S1["1. getTopBanner(symbol)<br/>Imports + constants"]
-    S1 --> S2["2. getJsonDumpTemplate(symbol)<br/>dumpJson() function"]
-    S2 --> S3["3. getTextTemplate(symbol)<br/>text() LLM helper"]
-    S3 --> S4["4. getJsonTemplate(symbol)<br/>json() LLM helper"]
-    S4 --> S5["5. getExchangeTemplate(symbol, exchangeName)<br/>addExchange() call"]
-    
-    S5 --> S6["6. Loop rangeTrain:<br/>getFrameTemplate(symbol, frameName, interval, dates)<br/>addFrame() for training"]
-    S6 --> S7["7. getFrameTemplate(symbol, testFrameName, interval, rangeTest)<br/>addFrame() for testing"]
-    S7 --> S8["8. Loop strategyData:<br/>getStrategyTemplate(strategyName, interval, prompt)<br/>addStrategy() calls"]
-    
-    S8 --> S9["9. getWalkerTemplate(walkerName, exchangeName, testFrameName, strategies)<br/>addWalker() call"]
-    S9 --> S10["10. getLauncherTemplate(symbol, walkerName)<br/>Walker.background() + listeners"]
-    
-    S10 --> JoinSections["code = sections.join('\\n')"]
-    JoinSections --> CallbackCode["onCode callback<br/>(if provided)"]
-    CallbackCode --> ReturnCode["return code"]
-```
+![Mermaid Diagram](./diagrams\88_Optimizer_Architecture_3.svg)
 
 **Section Assembly Order:**
 
@@ -353,41 +214,7 @@ The prefix is generated via `CREATE_PREFIX_FN()` using base36 encoding [src/clie
 
 The `dump` method saves generated code to the file system with error handling and callbacks.
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Client as "ClientOptimizer"
-    participant CodeFn as "GET_STRATEGY_CODE_FN"
-    participant DumpFn as "GET_STRATEGY_DUMP_FN"
-    participant FS as "fs/promises"
-    participant Logger as "LoggerService"
-    
-    User->>Client: dump(symbol, path)
-    Client->>DumpFn: execute
-    DumpFn->>CodeFn: getCode(symbol)
-    CodeFn-->>DumpFn: generated code string
-    
-    DumpFn->>DumpFn: dir = join(process.cwd(), path)
-    
-    DumpFn->>FS: mkdir(dir, {recursive: true})
-    FS-->>DumpFn: directory created
-    
-    DumpFn->>DumpFn: filename = "{optimizerName}_{symbol}.mjs"
-    DumpFn->>DumpFn: filepath = join(dir, filename)
-    
-    DumpFn->>FS: writeFile(filepath, report, "utf-8")
-    
-    alt Write successful
-        FS-->>DumpFn: success
-        DumpFn->>Logger: info("Optimizer report saved: {filepath}")
-        DumpFn->>DumpFn: onDump callback (if provided)
-        DumpFn-->>User: void
-    else Write failed
-        FS-->>DumpFn: error
-        DumpFn->>Logger: warn("Failed to save optimizer report", error)
-        DumpFn-->>User: throw error
-    end
-```
+![Mermaid Diagram](./diagrams\88_Optimizer_Architecture_4.svg)
 
 **File Path Construction:**
 
@@ -443,41 +270,7 @@ The following symbols identify Optimizer-related services in the dependency inje
 
 **Service Composition:**
 
-```mermaid
-graph TB
-    subgraph "TYPES Symbol Registry"
-        T1["TYPES.loggerService"]
-        T2["TYPES.optimizerSchemaService"]
-        T3["TYPES.optimizerConnectionService"]
-        T4["TYPES.optimizerTemplateService"]
-    end
-    
-    subgraph "provide.ts Registration"
-        P1["LoggerService instance"]
-        P2["OptimizerSchemaService instance"]
-        P3["OptimizerConnectionService instance"]
-        P4["OptimizerTemplateService instance"]
-    end
-    
-    subgraph "OptimizerConnectionService Dependencies"
-        D1["inject&lt;LoggerService&gt;<br/>(TYPES.loggerService)"]
-        D2["inject&lt;OptimizerSchemaService&gt;<br/>(TYPES.optimizerSchemaService)"]
-        D3["inject&lt;OptimizerTemplateService&gt;<br/>(TYPES.optimizerTemplateService)"]
-    end
-    
-    T1 --> P1
-    T2 --> P2
-    T3 --> P3
-    T4 --> P4
-    
-    P1 --> D1
-    P2 --> D2
-    P4 --> D3
-    
-    D1 --> OptimizerConnectionService
-    D2 --> OptimizerConnectionService
-    D3 --> OptimizerConnectionService
-```
+![Mermaid Diagram](./diagrams\88_Optimizer_Architecture_5.svg)
 
 The Optimizer services follow the same dependency injection pattern as other framework components. For comprehensive coverage of the DI system, see [Dependency Injection System](#3.2).
 

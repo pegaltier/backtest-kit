@@ -12,45 +12,7 @@ For information about the event system that feeds these services, see [Event Sys
 
 The Markdown Services subsystem consists of three specialized service classes, each responsible for reporting on a specific execution mode:
 
-```mermaid
-graph TB
-    subgraph "Event Sources"
-        signalBacktestEmitter["signalBacktestEmitter"]
-        signalLiveEmitter["signalLiveEmitter"]
-        signalEmitter["signalEmitter"]
-    end
-    
-    subgraph "Markdown Services Layer"
-        BacktestMarkdownService["BacktestMarkdownService"]
-        LiveMarkdownService["LiveMarkdownService"]
-        ScheduleMarkdownService["ScheduleMarkdownService"]
-    end
-    
-    subgraph "Public API Classes"
-        BacktestClass["Backtest.getData/getReport/dump"]
-        LiveClass["Live.getData/getReport/dump"]
-        ScheduleClass["Schedule.getData/getReport/dump"]
-    end
-    
-    subgraph "Storage Layer"
-        BacktestStorage["ReportStorage<br/>(closed signals)"]
-        LiveStorage["ReportStorage<br/>(all events)"]
-        ScheduleStorage["ReportStorage<br/>(scheduled/cancelled)"]
-    end
-    
-    signalBacktestEmitter --> BacktestMarkdownService
-    signalLiveEmitter --> LiveMarkdownService
-    signalEmitter --> ScheduleMarkdownService
-    signalLiveEmitter --> ScheduleMarkdownService
-    
-    BacktestMarkdownService --> BacktestStorage
-    LiveMarkdownService --> LiveStorage
-    ScheduleMarkdownService --> ScheduleStorage
-    
-    BacktestClass --> BacktestMarkdownService
-    LiveClass --> LiveMarkdownService
-    ScheduleClass --> ScheduleMarkdownService
-```
+![Mermaid Diagram](./diagrams\45_Markdown_Services_0.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:370-532](), [src/lib/services/markdown/LiveMarkdownService.ts:567-736](), [src/lib/services/markdown/ScheduleMarkdownService.ts:374-493]()
 
@@ -68,62 +30,7 @@ graph TB
 
 The following diagram illustrates how trading events flow from execution contexts through emitters to markdown services, and finally to persistent reports:
 
-```mermaid
-graph LR
-    subgraph "Execution Layer"
-        BacktestRun["Backtest.run()"]
-        LiveRun["Live.run()"]
-    end
-    
-    subgraph "Event Emission"
-        BacktestLogic["BacktestLogicPrivateService"]
-        LiveLogic["LiveLogicPrivateService"]
-        BacktestEmit["signalBacktestEmitter.next()"]
-        LiveEmit["signalLiveEmitter.next()"]
-        GlobalEmit["signalEmitter.next()"]
-    end
-    
-    subgraph "Markdown Services"
-        BacktestMD["BacktestMarkdownService.tick()"]
-        LiveMD["LiveMarkdownService.tick()"]
-        ScheduleMD["ScheduleMarkdownService.tick()"]
-    end
-    
-    subgraph "Data Accumulation"
-        BacktestStore["ReportStorage._signalList[]"]
-        LiveStore["ReportStorage._eventList[]"]
-        ScheduleStore["ReportStorage._eventList[]"]
-    end
-    
-    subgraph "Report Generation"
-        GetData["getData()<br/>(statistics)"]
-        GetReport["getReport()<br/>(markdown)"]
-        Dump["dump()<br/>(file write)"]
-    end
-    
-    BacktestRun --> BacktestLogic
-    LiveRun --> LiveLogic
-    
-    BacktestLogic --> BacktestEmit
-    LiveLogic --> LiveEmit
-    LiveLogic --> GlobalEmit
-    
-    BacktestEmit --> BacktestMD
-    LiveEmit --> LiveMD
-    LiveEmit --> ScheduleMD
-    GlobalEmit --> ScheduleMD
-    
-    BacktestMD --> BacktestStore
-    LiveMD --> LiveStore
-    ScheduleMD --> ScheduleStore
-    
-    BacktestStore --> GetData
-    LiveStore --> GetData
-    ScheduleStore --> GetData
-    
-    GetData --> GetReport
-    GetReport --> Dump
-```
+![Mermaid Diagram](./diagrams\45_Markdown_Services_1.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:402-413](), [src/lib/services/markdown/LiveMarkdownService.ts:601-617](), [src/lib/services/markdown/ScheduleMarkdownService.ts:401-413]()
 
@@ -141,25 +48,7 @@ graph LR
 
 The service subscribes to `signalBacktestEmitter` during initialization using the `singleshot` pattern to ensure one-time setup:
 
-```mermaid
-sequenceDiagram
-    participant Init as BacktestMarkdownService.init()
-    participant Emitter as signalBacktestEmitter
-    participant Tick as tick() method
-    participant Storage as ReportStorage
-    
-    Init->>Emitter: subscribe(tick)
-    Note over Init: singleshot ensures<br/>this runs once
-    
-    loop Backtest Execution
-        Emitter->>Tick: IStrategyTickResult
-        alt action === "closed"
-            Tick->>Storage: addSignal(data)
-        else action !== "closed"
-            Tick-->>Tick: ignore
-        end
-    end
-```
+![Mermaid Diagram](./diagrams\45_Markdown_Services_2.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:526-529](), [src/lib/services/markdown/BacktestMarkdownService.ts:402-413]()
 
@@ -167,29 +56,7 @@ sequenceDiagram
 
 Each strategy gets an isolated `ReportStorage` instance via memoization:
 
-```mermaid
-graph TB
-    getStorage["getStorage = memoize()"]
-    
-    subgraph "Memoization Key"
-        strategyName["strategyName (string)"]
-    end
-    
-    subgraph "ReportStorage Instance"
-        signalList["_signalList: IStrategyTickResultClosed[]"]
-        addSignal["addSignal(data)"]
-        getData["getData(): BacktestStatistics"]
-        getReport["getReport(): string"]
-        dump["dump(): void"]
-    end
-    
-    strategyName --> getStorage
-    getStorage --> signalList
-    signalList --> addSignal
-    signalList --> getData
-    getData --> getReport
-    getReport --> dump
-```
+![Mermaid Diagram](./diagrams\45_Markdown_Services_3.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:378-381](), [src/lib/services/markdown/BacktestMarkdownService.ts:179-194]()
 
@@ -243,52 +110,7 @@ All numeric metrics use the `isUnsafe()` function to guard against `NaN`, `Infin
 
 ### Event Accumulation Logic
 
-```mermaid
-graph TB
-    tickEvent["tick(data: IStrategyTickResult)"]
-    
-    actionCheck{action type?}
-    
-    idleHandler["addIdleEvent(currentPrice)"]
-    openedHandler["addOpenedEvent(data)"]
-    activeHandler["addActiveEvent(data)"]
-    closedHandler["addClosedEvent(data)"]
-    
-    idleCheck{Last event is idle<br/>and no open/active<br/>after it?}
-    replaceIdle["Replace last idle event"]
-    appendIdle["Append new idle event"]
-    
-    findIndex["findIndex(signalId)"]
-    replaceEvent["Replace at index"]
-    appendEvent["Append to _eventList"]
-    
-    checkSize{length > MAX_EVENTS?}
-    trimQueue["shift() first element"]
-    
-    tickEvent --> actionCheck
-    
-    actionCheck -->|idle| idleHandler
-    actionCheck -->|opened| openedHandler
-    actionCheck -->|active| activeHandler
-    actionCheck -->|closed| closedHandler
-    
-    idleHandler --> idleCheck
-    idleCheck -->|yes| replaceIdle
-    idleCheck -->|no| appendIdle
-    appendIdle --> checkSize
-    
-    openedHandler --> appendEvent
-    appendEvent --> checkSize
-    
-    activeHandler --> findIndex
-    closedHandler --> findIndex
-    findIndex -->|found| replaceEvent
-    findIndex -->|not found| appendEvent
-    
-    checkSize -->|yes| trimQueue
-    checkSize -->|no| Done["Done"]
-    trimQueue --> Done
-```
+![Mermaid Diagram](./diagrams\45_Markdown_Services_4.svg)
 
 **Sources:** [src/lib/services/markdown/LiveMarkdownService.ts:239-373](), [src/lib/services/markdown/LiveMarkdownService.ts:222-224]()
 
@@ -347,19 +169,7 @@ cancellationRate = (totalCancelled / totalScheduled) × 100
 
 Each markdown service contains an internal `ReportStorage` class that implements the Controller-View pattern for data management:
 
-```mermaid
-graph TB
-    subgraph "ReportStorage Responsibilities"
-        DataModel["Data Model<br/>(_signalList / _eventList)"]
-        Controller["Controller<br/>(getData: statistics calculation)"]
-        View["View<br/>(getReport: markdown formatting)"]
-        Persistence["Persistence<br/>(dump: file write)"]
-    end
-    
-    DataModel --> Controller
-    Controller --> View
-    View --> Persistence
-```
+![Mermaid Diagram](./diagrams\45_Markdown_Services_5.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:179-341](), [src/lib/services/markdown/LiveMarkdownService.ts:229-535]()
 
@@ -375,35 +185,7 @@ Services use `functools-kit` memoization to create one `ReportStorage` instance 
 
 ### Calculation Flow
 
-```mermaid
-graph TB
-    rawData["Raw Event Data<br/>(signalList or eventList)"]
-    
-    filter["Filter by Criteria<br/>(e.g., closed only)"]
-    
-    basicStats["Calculate Basic Stats<br/>- totalSignals<br/>- winCount<br/>- lossCount<br/>- avgPnl<br/>- totalPnl"]
-    
-    volatility["Calculate Volatility<br/>- variance<br/>- stdDev"]
-    
-    sharpe["Calculate Sharpe Ratio<br/>sharpeRatio = avgPnl / stdDev<br/>annualized = sharpe × √365"]
-    
-    certainty["Calculate Certainty Ratio<br/>certaintyRatio = avgWin / |avgLoss|"]
-    
-    projection["Calculate Yearly Returns<br/>tradesPerYear = 365 / avgDurationDays<br/>expectedYearlyReturns = avgPnl × tradesPerYear"]
-    
-    safetyCheck{All values<br/>finite and valid?}
-    
-    output["Return Statistics<br/>(null for unsafe values)"]
-    
-    rawData --> filter
-    filter --> basicStats
-    basicStats --> volatility
-    volatility --> sharpe
-    sharpe --> certainty
-    certainty --> projection
-    projection --> safetyCheck
-    safetyCheck --> output
-```
+![Mermaid Diagram](./diagrams\45_Markdown_Services_6.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:202-269](), [src/lib/services/markdown/LiveMarkdownService.ts:381-464]()
 
@@ -427,31 +209,7 @@ graph TB
 
 All services generate markdown reports with column-based tables for event data:
 
-```mermaid
-graph LR
-    columns["Column[] definitions"]
-    eventData["Event data array"]
-    
-    header["Generate header row<br/>(col.label)"]
-    separator["Generate separator row<br/>('---')"]
-    rows["Generate data rows<br/>(col.format(event))"]
-    
-    table["Assemble markdown table<br/>| col1 | col2 | ... |"]
-    
-    stats["Append statistics section<br/>**Total signals:** N<br/>**Win rate:** X%<br/>..."]
-    
-    fullReport["Complete markdown string"]
-    
-    columns --> header
-    eventData --> rows
-    
-    header --> table
-    separator --> table
-    rows --> table
-    
-    table --> stats
-    stats --> fullReport
-```
+![Mermaid Diagram](./diagrams\45_Markdown_Services_7.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:104-177](), [src/lib/services/markdown/LiveMarkdownService.ts:145-220]()
 
@@ -485,34 +243,7 @@ The `dump()` method writes reports to disk with the following structure:
 
 Public API classes (`Backtest`, `Live`, `Schedule`) delegate to markdown services through the dependency injection container:
 
-```mermaid
-graph LR
-    subgraph "Public API"
-        BacktestClass["Backtest class"]
-        LiveClass["Live class"]
-        ScheduleClass["Schedule class"]
-    end
-    
-    subgraph "DI Container"
-        lib["backtest.backtestMarkdownService"]
-        lib2["backtest.liveMarkdownService"]
-        lib3["backtest.scheduleMarkdownService"]
-    end
-    
-    subgraph "Markdown Services"
-        BacktestMD["BacktestMarkdownService"]
-        LiveMD["LiveMarkdownService"]
-        ScheduleMD["ScheduleMarkdownService"]
-    end
-    
-    BacktestClass --> lib
-    LiveClass --> lib2
-    ScheduleClass --> lib3
-    
-    lib --> BacktestMD
-    lib2 --> LiveMD
-    lib3 --> ScheduleMD
-```
+![Mermaid Diagram](./diagrams\45_Markdown_Services_8.svg)
 
 **Sources:** [src/classes/Backtest.ts:1-134](), [src/classes/Live.ts:1-134](), [src/classes/Schedule.ts:1-135]()
 
@@ -538,42 +269,7 @@ graph LR
 
 ### Initialization Sequence
 
-```mermaid
-sequenceDiagram
-    participant User as User Code
-    participant API as Public API (Backtest/Live)
-    participant Logic as LogicPrivateService
-    participant Emitter as Event Emitter
-    participant Service as MarkdownService
-    participant Storage as ReportStorage
-    
-    User->>API: run() or background()
-    API->>Logic: execute strategy
-    
-    Logic->>Emitter: emit signal event
-    
-    Note over Service: Lazy initialization<br/>via singleshot
-    Emitter->>Service: tick(data)
-    
-    Service->>Service: init() [first call only]
-    Service->>Emitter: subscribe(tick)
-    
-    Service->>Storage: getStorage(strategyName)
-    Note over Storage: Memoized instance<br/>per strategy
-    
-    Storage->>Storage: addSignal/addEvent(data)
-    
-    loop Additional Events
-        Logic->>Emitter: emit signal event
-        Emitter->>Service: tick(data)
-        Service->>Storage: add to storage
-    end
-    
-    User->>API: getData() or dump()
-    API->>Service: getData() or dump()
-    Service->>Storage: getData() or dump()
-    Storage-->>User: Statistics or File Written
-```
+![Mermaid Diagram](./diagrams\45_Markdown_Services_9.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:526-529](), [src/lib/services/markdown/LiveMarkdownService.ts:730-733](), [src/lib/services/markdown/ScheduleMarkdownService.ts:465-474]()
 
@@ -583,24 +279,6 @@ sequenceDiagram
 
 All markdown services implement a `clear()` method to reset accumulated data:
 
-```mermaid
-graph TB
-    clearCall["clear(strategyName?)"]
-    
-    hasStrategy{strategyName<br/>provided?}
-    
-    clearSpecific["getStorage.clear(strategyName)"]
-    clearAll["getStorage.clear()"]
-    
-    clearMemoized["Clear memoization cache<br/>for specified key"]
-    clearAllMemoized["Clear all memoization<br/>cache entries"]
-    
-    clearCall --> hasStrategy
-    hasStrategy -->|yes| clearSpecific
-    hasStrategy -->|no| clearAll
-    
-    clearSpecific --> clearMemoized
-    clearAll --> clearAllMemoized
-```
+![Mermaid Diagram](./diagrams\45_Markdown_Services_10.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:508-513](), [src/lib/services/markdown/LiveMarkdownService.ts:712-717](), [src/lib/services/markdown/ScheduleMarkdownService.ts:465-470]()

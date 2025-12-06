@@ -12,58 +12,7 @@ For general signal lifecycle information, see [Signal Lifecycle Overview](#2.2).
 
 The Partial system operates as an event-driven subsystem that monitors active signals and emits milestone events when unrealized profit or loss reaches predefined thresholds.
 
-```mermaid
-graph TB
-    subgraph "Signal Execution Layer"
-        ClientStrategy["ClientStrategy<br/>tick() / backtest()"]
-        ActiveSignal["Active Signal Monitoring"]
-    end
-    
-    subgraph "Partial Tracking Core"
-        PartialConnection["PartialConnectionService<br/>Milestone detection"]
-        PartialCalc["Unrealized PnL Calculator<br/>Position-aware (LONG/SHORT)"]
-    end
-    
-    subgraph "Event Emission"
-        partialProfitSubject["partialProfitSubject<br/>Profit milestone events"]
-        partialLossSubject["partialLossSubject<br/>Loss milestone events"]
-    end
-    
-    subgraph "Callback System"
-        onPartialProfit["IStrategyCallbacks.onPartialProfit<br/>(symbol, signal, price, %, backtest)"]
-        onPartialLoss["IStrategyCallbacks.onPartialLoss<br/>(symbol, signal, price, %, backtest)"]
-    end
-    
-    subgraph "Event Listeners"
-        listenPartialProfit["listenPartialProfit()<br/>listenPartialProfitOnce()"]
-        listenPartialLoss["listenPartialLoss()<br/>listenPartialLossOnce()"]
-    end
-    
-    subgraph "Persistence & Reporting"
-        PartialMarkdown["PartialMarkdownService<br/>Event accumulation"]
-        PartialAdapter["PersistPartialAdapter<br/>Crash-safe storage"]
-        PartialFacade["Partial.getData()<br/>Partial.getReport()<br/>Partial.dump()"]
-    end
-    
-    ClientStrategy -->|active signal| ActiveSignal
-    ActiveSignal -->|current price| PartialConnection
-    PartialConnection -->|calculate PnL| PartialCalc
-    PartialCalc -->|milestone reached| partialProfitSubject
-    PartialCalc -->|milestone reached| partialLossSubject
-    
-    partialProfitSubject -->|notify| onPartialProfit
-    partialLossSubject -->|notify| onPartialLoss
-    
-    partialProfitSubject -->|notify| listenPartialProfit
-    partialLossSubject -->|notify| listenPartialLoss
-    
-    partialProfitSubject -->|accumulate| PartialMarkdown
-    partialLossSubject -->|accumulate| PartialMarkdown
-    partialProfitSubject -->|persist| PartialAdapter
-    partialLossSubject -->|persist| PartialAdapter
-    
-    PartialMarkdown -->|query| PartialFacade
-```
+![Mermaid Diagram](./diagrams\73_Partial_Profit_Loss_Tracking_0.svg)
 
 **Sources:** [README.md:1079-1217](), [test/e2e/partial.test.mjs:1-819]()
 
@@ -185,23 +134,7 @@ The system provides event listeners for external monitoring without requiring st
 
 ### Listener Functions
 
-```mermaid
-graph LR
-    partialProfitSubject["partialProfitSubject<br/>RxJS Subject"]
-    partialLossSubject["partialLossSubject<br/>RxJS Subject"]
-    
-    listenPartialProfit["listenPartialProfit(callback)<br/>Multi-fire subscription"]
-    listenPartialProfitOnce["listenPartialProfitOnce(callback)<br/>Single-fire subscription"]
-    
-    listenPartialLoss["listenPartialLoss(callback)<br/>Multi-fire subscription"]
-    listenPartialLossOnce["listenPartialLossOnce(callback)<br/>Single-fire subscription"]
-    
-    partialProfitSubject --> listenPartialProfit
-    partialProfitSubject --> listenPartialProfitOnce
-    
-    partialLossSubject --> listenPartialLoss
-    partialLossSubject --> listenPartialLossOnce
-```
+![Mermaid Diagram](./diagrams\73_Partial_Profit_Loss_Tracking_1.svg)
 
 ### API Reference
 
@@ -274,45 +207,7 @@ The `PartialMarkdownService` accumulates partial profit/loss events and generate
 
 ### Service Architecture
 
-```mermaid
-graph TB
-    subgraph "Event Sources"
-        partialProfitSubject["partialProfitSubject"]
-        partialLossSubject["partialLossSubject"]
-    end
-    
-    subgraph "PartialMarkdownService"
-        init["init()<br/>Subscribe to events"]
-        tick["tick(event)<br/>Process events"]
-        getStorage["getStorage(symbol)<br/>Memoized storage"]
-    end
-    
-    subgraph "ReportStorage (per symbol)"
-        eventList["_eventList: PartialEvent[]<br/>MAX_EVENTS = 250"]
-        addProfit["addProfitEvent(data)"]
-        addLoss["addLossEvent(data)"]
-        getData["getData()<br/>Calculate statistics"]
-        getReport["getReport(symbol)<br/>Generate markdown"]
-        dump["dump(symbol, path)<br/>Save to disk"]
-    end
-    
-    partialProfitSubject -->|subscribe| init
-    partialLossSubject -->|subscribe| init
-    
-    init --> tick
-    tick --> getStorage
-    getStorage --> eventList
-    
-    tick -->|profit event| addProfit
-    tick -->|loss event| addLoss
-    
-    addProfit --> eventList
-    addLoss --> eventList
-    
-    eventList --> getData
-    eventList --> getReport
-    getReport --> dump
-```
+![Mermaid Diagram](./diagrams\73_Partial_Profit_Loss_Tracking_2.svg)
 
 ### Storage Behavior
 
@@ -390,27 +285,7 @@ The `Partial` facade provides a unified interface for accessing partial profit/l
 
 ### Facade Methods
 
-```mermaid
-graph LR
-    User["User Code"]
-    
-    Partial["Partial Facade"]
-    
-    getData["getData(symbol)<br/>Returns PartialStatistics"]
-    getReport["getReport(symbol)<br/>Returns markdown string"]
-    dump["dump(symbol, path?)<br/>Saves to disk"]
-    
-    PartialMarkdown["PartialMarkdownService"]
-    
-    User -->|call| Partial
-    Partial --> getData
-    Partial --> getReport
-    Partial --> dump
-    
-    getData --> PartialMarkdown
-    getReport --> PartialMarkdown
-    dump --> PartialMarkdown
-```
+![Mermaid Diagram](./diagrams\73_Partial_Profit_Loss_Tracking_3.svg)
 
 ### API Reference
 
@@ -527,40 +402,7 @@ Partial profit/loss tracking enables dynamic position management strategies base
 
 ### Position Scaling Flow
 
-```mermaid
-sequenceDiagram
-    participant Strategy as ClientStrategy
-    participant Partial as PartialConnectionService
-    participant Callback as onPartialProfit
-    participant Exchange as Exchange API
-    
-    Strategy->>Strategy: Signal opened
-    
-    loop Active Signal Monitoring
-        Strategy->>Partial: Check current price
-        Partial->>Partial: Calculate unrealized PnL
-        
-        alt 10% profit reached
-            Partial->>Callback: onPartialProfit(symbol, signal, price, 10%, backtest)
-            Callback->>Exchange: Scale out 25% of position
-        end
-        
-        alt 20% profit reached
-            Partial->>Callback: onPartialProfit(symbol, signal, price, 20%, backtest)
-            Callback->>Exchange: Scale out 25% of position
-        end
-        
-        alt 30% profit reached
-            Partial->>Callback: onPartialProfit(symbol, signal, price, 30%, backtest)
-            Callback->>Exchange: Move stop loss to breakeven
-        end
-        
-        alt 50% profit reached
-            Partial->>Callback: onPartialProfit(symbol, signal, price, 50%, backtest)
-            Callback->>Exchange: Scale out remaining 50%
-        end
-    end
-```
+![Mermaid Diagram](./diagrams\73_Partial_Profit_Loss_Tracking_4.svg)
 
 ### Example: Tiered Exit Strategy
 
@@ -608,42 +450,7 @@ In **live mode**, partial profit/loss events are persisted to disk through `Pers
 
 ### Persistence Architecture
 
-```mermaid
-graph TB
-    subgraph "Event Generation"
-        PartialConnection["PartialConnectionService"]
-        partialProfitSubject["partialProfitSubject"]
-        partialLossSubject["partialLossSubject"]
-    end
-    
-    subgraph "Persistence Layer"
-        PersistPartialAdapter["PersistPartialAdapter<br/>extends PersistBase"]
-        writeValue["writeValue(entityId, event)<br/>Atomic file writes"]
-        readValue["readValue(entityId)<br/>Load from disk"]
-        hasValue["hasValue(entityId)<br/>Check existence"]
-        removeValue["removeValue(entityId)<br/>Delete event"]
-    end
-    
-    subgraph "File System"
-        PartialFiles["./logs/data/partial/<br/>symbol/<br/>event-id.json"]
-    end
-    
-    PartialConnection --> partialProfitSubject
-    PartialConnection --> partialLossSubject
-    
-    partialProfitSubject -->|persist| PersistPartialAdapter
-    partialLossSubject -->|persist| PersistPartialAdapter
-    
-    PersistPartialAdapter --> writeValue
-    PersistPartialAdapter --> readValue
-    PersistPartialAdapter --> hasValue
-    PersistPartialAdapter --> removeValue
-    
-    writeValue --> PartialFiles
-    readValue --> PartialFiles
-    hasValue --> PartialFiles
-    removeValue --> PartialFiles
-```
+![Mermaid Diagram](./diagrams\73_Partial_Profit_Loss_Tracking_5.svg)
 
 ### Persistence Behavior
 
@@ -756,38 +563,14 @@ Partial profit/loss tracking behaves differently for LONG and SHORT positions du
 
 ### LONG Position (Profit on Price Rise)
 
-```mermaid
-graph LR
-    priceOpen["priceOpen<br/>$100,000"]
-    profit10["10% Profit<br/>$110,000"]
-    profit20["20% Profit<br/>$120,000"]
-    profit30["30% Profit<br/>$130,000"]
-    takeProfit["Take Profit<br/>$150,000"]
-    
-    priceOpen -->|price rises| profit10
-    profit10 -->|price rises| profit20
-    profit20 -->|price rises| profit30
-    profit30 -->|price rises| takeProfit
-```
+![Mermaid Diagram](./diagrams\73_Partial_Profit_Loss_Tracking_6.svg)
 
 **Profit triggers:** When `currentPrice > priceOpen`
 **Loss triggers:** When `currentPrice < priceOpen`
 
 ### SHORT Position (Profit on Price Fall)
 
-```mermaid
-graph LR
-    priceOpen["priceOpen<br/>$100,000"]
-    profit10["10% Profit<br/>$90,000"]
-    profit20["20% Profit<br/>$80,000"]
-    profit30["30% Profit<br/>$70,000"]
-    takeProfit["Take Profit<br/>$50,000"]
-    
-    priceOpen -->|price falls| profit10
-    profit10 -->|price falls| profit20
-    profit20 -->|price falls| profit30
-    profit30 -->|price falls| takeProfit
-```
+![Mermaid Diagram](./diagrams\73_Partial_Profit_Loss_Tracking_7.svg)
 
 **Profit triggers:** When `currentPrice < priceOpen`
 **Loss triggers:** When `currentPrice > priceOpen`
@@ -812,40 +595,7 @@ The milestone detection algorithm ensures each level is triggered **exactly once
 
 ### Detection Logic
 
-```mermaid
-flowchart TD
-    Start["Active Signal Monitoring"]
-    CalcPnL["Calculate unrealizedPnlPercent<br/>LONG: (current - open) / open × 100<br/>SHORT: (open - current) / open × 100"]
-    CheckProfit{"PnL > 0?"}
-    CheckLoss{"PnL < 0?"}
-    
-    CalcLevel["milestoneLevel = floor(abs(PnL) / 10) × 10"]
-    CheckNew{"milestoneLevel > lastLevel?"}
-    
-    EmitProfit["Emit partialProfitSubject"]
-    EmitLoss["Emit partialLossSubject"]
-    UpdateLast["lastLevel = milestoneLevel"]
-    
-    Continue["Continue monitoring"]
-    
-    Start --> CalcPnL
-    CalcPnL --> CheckProfit
-    
-    CheckProfit -->|Yes| CalcLevel
-    CheckProfit -->|No| CheckLoss
-    
-    CheckLoss -->|Yes| CalcLevel
-    CheckLoss -->|No| Continue
-    
-    CalcLevel --> CheckNew
-    CheckNew -->|Yes| EmitProfit
-    CheckNew -->|No| Continue
-    
-    EmitProfit --> UpdateLast
-    EmitLoss --> UpdateLast
-    UpdateLast --> Continue
-    Continue --> CalcPnL
-```
+![Mermaid Diagram](./diagrams\73_Partial_Profit_Loss_Tracking_8.svg)
 
 ### Milestone Tracking State
 

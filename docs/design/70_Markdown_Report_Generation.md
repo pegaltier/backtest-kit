@@ -10,58 +10,7 @@ For statistical metric calculations (Sharpe Ratio, Certainty Ratio, etc.), see [
 
 The markdown generation system consists of three independent service classes that follow identical architectural patterns. Each service subscribes to event emitters, accumulates events in per-strategy storage, and provides three methods for data access (`getData`), report generation (`getReport`), and file persistence (`dump`).
 
-```mermaid
-graph TB
-    subgraph "Event Sources"
-        signalBacktestEmitter["signalBacktestEmitter<br/>(signalBacktestEmitter.ts)"]
-        signalLiveEmitter["signalLiveEmitter<br/>(signalLiveEmitter.ts)"]
-        signalEmitter["signalEmitter<br/>(signalEmitter.ts)"]
-    end
-    
-    subgraph "Markdown Services"
-        BacktestMarkdownService["BacktestMarkdownService<br/>getData/getReport/dump"]
-        LiveMarkdownService["LiveMarkdownService<br/>getData/getReport/dump"]
-        ScheduleMarkdownService["ScheduleMarkdownService<br/>getData/getReport/dump"]
-    end
-    
-    subgraph "Internal Storage"
-        BacktestReportStorage["ReportStorage<br/>symbol:strategy memoized"]
-        LiveReportStorage["ReportStorage<br/>symbol:strategy memoized"]
-        ScheduleReportStorage["ReportStorage<br/>symbol:strategy memoized"]
-    end
-    
-    subgraph "Public API"
-        BacktestAPI["Backtest.getData<br/>Backtest.getReport<br/>Backtest.dump"]
-        LiveAPI["Live.getData<br/>Live.getReport<br/>Live.dump"]
-        ScheduleAPI["Schedule.getData<br/>Schedule.getReport<br/>Schedule.dump"]
-    end
-    
-    subgraph "File System"
-        BacktestFiles["./dump/backtest/<br/>{strategyName}.md"]
-        LiveFiles["./dump/live/<br/>{strategyName}.md"]
-        ScheduleFiles["./dump/schedule/<br/>{strategyName}.md"]
-    end
-    
-    signalBacktestEmitter -->|"subscribe(tick)"| BacktestMarkdownService
-    signalLiveEmitter -->|"subscribe(tick)"| LiveMarkdownService
-    signalEmitter -->|"subscribe(tick)"| ScheduleMarkdownService
-    
-    BacktestMarkdownService -->|"getStorage(symbol, strategy)"| BacktestReportStorage
-    LiveMarkdownService -->|"getStorage(symbol, strategy)"| LiveReportStorage
-    ScheduleMarkdownService -->|"getStorage(symbol, strategy)"| ScheduleReportStorage
-    
-    BacktestReportStorage -->|"addSignal(closed)"| BacktestReportStorage
-    LiveReportStorage -->|"addIdleEvent<br/>addOpenedEvent<br/>addActiveEvent<br/>addClosedEvent"| LiveReportStorage
-    ScheduleReportStorage -->|"addScheduledEvent<br/>addCancelledEvent"| ScheduleReportStorage
-    
-    BacktestAPI -->|"delegates to"| BacktestMarkdownService
-    LiveAPI -->|"delegates to"| LiveMarkdownService
-    ScheduleAPI -->|"delegates to"| ScheduleMarkdownService
-    
-    BacktestMarkdownService -->|"dump()"| BacktestFiles
-    LiveMarkdownService -->|"dump()"| LiveFiles
-    ScheduleMarkdownService -->|"dump()"| ScheduleFiles
-```
+![Mermaid Diagram](./diagrams\70_Markdown_Report_Generation_0.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:1-545](), [src/lib/services/markdown/LiveMarkdownService.ts:1-749](), [src/lib/services/markdown/ScheduleMarkdownService.ts:1-548]()
 
@@ -75,27 +24,7 @@ Each markdown service subscribes to event emitters during initialization using t
 
 `BacktestMarkdownService` only accumulates `closed` events (signals that have reached TP, SL, or timeout). Idle, opened, and active events are ignored since backtest execution skips timeframes once a signal opens.
 
-```mermaid
-sequenceDiagram
-    participant ClientStrategy
-    participant signalBacktestEmitter
-    participant BacktestMarkdownService
-    participant ReportStorage
-    
-    Note over BacktestMarkdownService: init() called once
-    BacktestMarkdownService->>signalBacktestEmitter: subscribe(tick)
-    
-    ClientStrategy->>signalBacktestEmitter: emit({ action: "closed", signal, pnl })
-    signalBacktestEmitter->>BacktestMarkdownService: tick(data)
-    
-    BacktestMarkdownService->>BacktestMarkdownService: getStorage(symbol, strategyName)
-    Note over BacktestMarkdownService: Memoized by "symbol:strategy"
-    
-    BacktestMarkdownService->>ReportStorage: addSignal(data)
-    ReportStorage->>ReportStorage: _signalList.push(data)
-    
-    Note over ReportStorage: No event limit for backtest
-```
+![Mermaid Diagram](./diagrams\70_Markdown_Report_Generation_1.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:402-413](), [src/lib/services/markdown/BacktestMarkdownService.ts:538-541]()
 
@@ -103,53 +32,7 @@ sequenceDiagram
 
 `LiveMarkdownService` accumulates all four event types: `idle`, `opened`, `active`, and `closed`. The service implements special logic to replace consecutive idle events (no signal activity) to prevent unbounded memory growth, while preserving opened/active/closed events.
 
-```mermaid
-flowchart TB
-    tick["tick(data)"]
-    checkAction{"data.action?"}
-    
-    idle["addIdleEvent()"]
-    findLastIdle["Find last idle event"]
-    checkReplace{"Can replace?<br/>(no opened/active after)"}
-    replace["Replace last idle"]
-    push["Push new idle"]
-    
-    opened["addOpenedEvent()"]
-    active["addActiveEvent()"]
-    closed["addClosedEvent()"]
-    
-    pushEvent["Push event"]
-    findExisting["Find existing by signalId"]
-    replaceExisting["Replace existing event"]
-    trimQueue{"length > 250?"}
-    shift["Shift oldest event"]
-    
-    tick --> checkAction
-    checkAction -->|"idle"| idle
-    checkAction -->|"opened"| opened
-    checkAction -->|"active"| active
-    checkAction -->|"closed"| closed
-    
-    idle --> findLastIdle
-    findLastIdle --> checkReplace
-    checkReplace -->|"Yes"| replace
-    checkReplace -->|"No"| push
-    
-    replace --> trimQueue
-    push --> trimQueue
-    
-    opened --> pushEvent
-    pushEvent --> trimQueue
-    
-    active --> findExisting
-    closed --> findExisting
-    findExisting --> replaceExisting
-    replaceExisting --> trimQueue
-    
-    trimQueue -->|"Yes"| shift
-    trimQueue -->|"No"| End[End]
-    shift --> End
-```
+![Mermaid Diagram](./diagrams\70_Markdown_Report_Generation_2.svg)
 
 **Sources:** [src/lib/services/markdown/LiveMarkdownService.ts:239-266](), [src/lib/services/markdown/LiveMarkdownService.ts:299-329](), [src/lib/services/markdown/LiveMarkdownService.ts:337-373]()
 
@@ -218,47 +101,7 @@ The schedule service tracks scheduled signals and their cancellation metrics. Re
 
 All markdown services implement a consistent three-method API pattern: `getData()`, `getReport()`, and `dump()`. This separation of concerns enables flexible data access for different use cases.
 
-```mermaid
-classDiagram
-    class BacktestMarkdownService {
-        -getStorage(symbol, strategyName) ReportStorage
-        +getData(symbol, strategyName) BacktestStatistics
-        +getReport(symbol, strategyName) string
-        +dump(symbol, strategyName, path) void
-        +clear(ctx?) void
-        #init() void
-    }
-    
-    class LiveMarkdownService {
-        -getStorage(symbol, strategyName) ReportStorage
-        +getData(symbol, strategyName) LiveStatistics
-        +getReport(symbol, strategyName) string
-        +dump(symbol, strategyName, path) void
-        +clear(ctx?) void
-        #init() void
-    }
-    
-    class ScheduleMarkdownService {
-        -getStorage(symbol, strategyName) ReportStorage
-        +getData(symbol, strategyName) ScheduleStatistics
-        +getReport(symbol, strategyName) string
-        +dump(symbol, strategyName, path) void
-        +clear(ctx?) void
-        #init() void
-    }
-    
-    class ReportStorage {
-        -_signalList[] or _eventList[]
-        +addSignal() or addEvent()
-        +getData() Statistics
-        +getReport(strategyName) string
-        +dump(strategyName, path) void
-    }
-    
-    BacktestMarkdownService --> ReportStorage : delegates
-    LiveMarkdownService --> ReportStorage : delegates
-    ScheduleMarkdownService --> ReportStorage : delegates
-```
+![Mermaid Diagram](./diagrams\70_Markdown_Report_Generation_3.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:430-495](), [src/lib/services/markdown/LiveMarkdownService.ts:634-699](), [src/lib/services/markdown/ScheduleMarkdownService.ts:430-498]()
 
@@ -322,41 +165,7 @@ The `dump()` method writes markdown reports to disk using Node.js file system AP
 
 Tables are generated using a column configuration system that defines label, key, and formatting function for each column. The system maps event data to table rows using these column definitions.
 
-```mermaid
-flowchart LR
-    subgraph "Column Configuration"
-        columns["Column[]<br/>{key, label, format}"]
-    end
-    
-    subgraph "Data Source"
-        signalList["signalList or eventList"]
-    end
-    
-    subgraph "Table Generation"
-        header["Extract labels → Header row"]
-        separator["Generate '---' → Separator row"]
-        rows["Map events → Apply format() → Data rows"]
-    end
-    
-    subgraph "Markdown Assembly"
-        tableData["[header, separator, ...rows]"]
-        joinPipes["Join with ' | ' and wrap with '| |'"]
-        markdown["Markdown table string"]
-    end
-    
-    columns --> header
-    columns --> separator
-    columns --> rows
-    
-    signalList --> rows
-    
-    header --> tableData
-    separator --> tableData
-    rows --> tableData
-    
-    tableData --> joinPipes
-    joinPipes --> markdown
-```
+![Mermaid Diagram](./diagrams\70_Markdown_Report_Generation_4.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:289-296](), [src/lib/services/markdown/LiveMarkdownService.ts:483-490]()
 
@@ -517,27 +326,7 @@ The service subscribes to `signalEmitter` (universal emitter) instead of mode-sp
 
 All markdown services use the `singleshot` pattern from `functools-kit` to ensure event subscription happens exactly once. The `init()` method is marked protected and called automatically on first data access.
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Service
-    participant init
-    participant Emitter
-    
-    User->>Service: getData() / getReport() / dump()
-    Service->>Service: Check if init() called
-    
-    alt First call
-        Service->>init: Invoke init()
-        init->>Emitter: subscribe(tick)
-        Note over init: Marked as executed
-    else Subsequent calls
-        Note over Service: Skip init() - already executed
-    end
-    
-    Service->>Service: Process request
-    Service-->>User: Return result
-```
+![Mermaid Diagram](./diagrams\70_Markdown_Report_Generation_5.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:538-541](), [src/lib/services/markdown/LiveMarkdownService.ts:742-745](), [src/lib/services/markdown/ScheduleMarkdownService.ts:541-544]()
 

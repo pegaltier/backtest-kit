@@ -18,52 +18,7 @@ The framework organizes services into 11 functional categories, with most catego
 
 **Service Categories by Function:**
 
-```mermaid
-graph TB
-    subgraph "Execution Flow Layers"
-        Command["Command Services<br/>BacktestCommandService<br/>LiveCommandService<br/>WalkerCommandService"]
-        LogicPublic["Logic Public Services<br/>BacktestLogicPublicService<br/>LiveLogicPublicService<br/>WalkerLogicPublicService"]
-        LogicPrivate["Logic Private Services<br/>BacktestLogicPrivateService<br/>LiveLogicPrivateService<br/>WalkerLogicPrivateService"]
-    end
-    
-    subgraph "Component Instance Management"
-        Global["Global Services<br/>StrategyGlobalService<br/>ExchangeGlobalService<br/>FrameGlobalService<br/>RiskGlobalService<br/>SizingGlobalService<br/>OptimizerGlobalService<br/>PartialGlobalService"]
-        Connection["Connection Services<br/>StrategyConnectionService<br/>ExchangeConnectionService<br/>FrameConnectionService<br/>RiskConnectionService<br/>SizingConnectionService<br/>OptimizerConnectionService<br/>PartialConnectionService"]
-    end
-    
-    subgraph "Configuration & Validation"
-        Schema["Schema Services<br/>StrategySchemaService<br/>ExchangeSchemaService<br/>FrameSchemaService<br/>WalkerSchemaService<br/>RiskSchemaService<br/>SizingSchemaService<br/>OptimizerSchemaService"]
-        Validation["Validation Services<br/>StrategyValidationService<br/>ExchangeValidationService<br/>FrameValidationService<br/>WalkerValidationService<br/>RiskValidationService<br/>SizingValidationService<br/>OptimizerValidationService"]
-    end
-    
-    subgraph "Reporting & Code Generation"
-        Markdown["Markdown Services<br/>BacktestMarkdownService<br/>LiveMarkdownService<br/>ScheduleMarkdownService<br/>PerformanceMarkdownService<br/>WalkerMarkdownService<br/>HeatMarkdownService<br/>PartialMarkdownService"]
-        Template["Template Services<br/>OptimizerTemplateService"]
-    end
-    
-    subgraph "Infrastructure"
-        Base["Base Services<br/>LoggerService"]
-        Context["Context Services<br/>ExecutionContextService<br/>MethodContextService"]
-    end
-    
-    Command --> LogicPublic
-    LogicPublic --> LogicPrivate
-    LogicPrivate --> Global
-    Global --> Connection
-    Global --> Validation
-    Connection --> Schema
-    Validation --> Schema
-    LogicPrivate --> Markdown
-    Connection --> Template
-    
-    Global -.-> Context
-    Connection -.-> Context
-    LogicPrivate -.-> Context
-    
-    Global -.-> Base
-    Connection -.-> Base
-    LogicPrivate -.-> Base
-```
+![Mermaid Diagram](./diagrams\39_Service_Architecture_Overview_0.svg)
 
 **Sources:** [src/lib/core/types.ts:1-97](), [src/lib/index.ts:57-224]()
 
@@ -101,52 +56,7 @@ Services use Symbol-based dependency injection for type-safe resolution. Each se
 
 **DI Container Initialization Flow:**
 
-```mermaid
-graph TB
-    subgraph "1. Symbol Token Definition"
-        TypesFile["src/lib/core/types.ts"]
-        Token1["const connectionServices = {<br/>strategyConnectionService: Symbol('strategyConnectionService'),<br/>exchangeConnectionService: Symbol('exchangeConnectionService'),<br/>...}"]
-        Token2["const schemaServices = {<br/>strategySchemaService: Symbol('strategySchemaService'),<br/>exchangeSchemaService: Symbol('exchangeSchemaService'),<br/>...}"]
-        TypesExport["export const TYPES = {<br/>...connectionServices,<br/>...schemaServices,<br/>...}"]
-    end
-    
-    subgraph "2. Service Registration"
-        ProvideFile["src/lib/core/provide.ts"]
-        Provide1["provide(TYPES.strategyConnectionService,<br/>() => new StrategyConnectionService())"]
-        Provide2["provide(TYPES.strategySchemaService,<br/>() => new StrategySchemaService())"]
-        Provide3["provide(TYPES.exchangeConnectionService,<br/>() => new ExchangeConnectionService())"]
-    end
-    
-    subgraph "3. Service Injection"
-        IndexFile["src/lib/index.ts"]
-        Import["import './core/provide'<br/>import { inject, init } from './core/di'<br/>import TYPES from './core/types'"]
-        Inject1["strategyConnectionService: inject<StrategyConnectionService><br/>(TYPES.strategyConnectionService)"]
-        Inject2["strategySchemaService: inject<StrategySchemaService><br/>(TYPES.strategySchemaService)"]
-        InitCall["init()"]
-        Export["export const backtest = {<br/>...connectionServices,<br/>...schemaServices,<br/>...}"]
-    end
-    
-    TypesFile --> Token1
-    TypesFile --> Token2
-    Token1 --> TypesExport
-    Token2 --> TypesExport
-    
-    TypesExport --> ProvideFile
-    ProvideFile --> Provide1
-    ProvideFile --> Provide2
-    ProvideFile --> Provide3
-    
-    Provide1 --> IndexFile
-    Provide2 --> IndexFile
-    Provide3 --> IndexFile
-    
-    IndexFile --> Import
-    Import --> Inject1
-    Import --> Inject2
-    Inject1 --> InitCall
-    Inject2 --> InitCall
-    InitCall --> Export
-```
+![Mermaid Diagram](./diagrams\39_Service_Architecture_Overview_1.svg)
 
 The DI container resolves the dependency graph at initialization time via `init()` called in [src/lib/index.ts:226](). Services receive dependencies through constructor injection, with the `di-scoped` package handling singleton lifecycle and lazy initialization.
 
@@ -246,94 +156,7 @@ Services form a dependency chain from user-facing API functions to Client classe
 
 **Backtest Execution Flow:**
 
-```mermaid
-graph TB
-    User["User Code"]
-    
-    subgraph "API Layer (src/function/add.ts)"
-        AddStrategy["addStrategy(strategySchema)"]
-        AddExchange["addExchange(exchangeSchema)"]
-        AddFrame["addFrame(frameSchema)"]
-    end
-    
-    subgraph "API Layer (src/class/Backtest.ts)"
-        BacktestRun["Backtest.run(symbol, params)"]
-    end
-    
-    subgraph "Validation Layer"
-        StrVal["StrategyValidationService.addStrategy()"]
-        ExVal["ExchangeValidationService.addExchange()"]
-        FrVal["FrameValidationService.addFrame()"]
-    end
-    
-    subgraph "Schema Layer"
-        StrSchema["StrategySchemaService.register()"]
-        ExSchema["ExchangeSchemaService.register()"]
-        FrSchema["FrameSchemaService.register()"]
-    end
-    
-    subgraph "Command Layer"
-        BtCmd["BacktestCommandService.run()"]
-    end
-    
-    subgraph "Logic Public Layer"
-        BtLogicPub["BacktestLogicPublicService.run()"]
-    end
-    
-    subgraph "Logic Private Layer"
-        BtLogicPriv["BacktestLogicPrivateService.run()"]
-    end
-    
-    subgraph "Global Layer"
-        StrGlobal["StrategyGlobalService.tick()"]
-        ExGlobal["ExchangeGlobalService.getCandles()"]
-        FrGlobal["FrameGlobalService.getTimeframe()"]
-    end
-    
-    subgraph "Connection Layer"
-        StrConn["StrategyConnectionService.get()"]
-        ExConn["ExchangeConnectionService.get()"]
-        FrConn["FrameConnectionService.get()"]
-    end
-    
-    subgraph "Client Layer"
-        ClientStr["ClientStrategy.tick()"]
-        ClientEx["ClientExchange.getCandles()"]
-        ClientFr["ClientFrame.getTimeframe()"]
-    end
-    
-    User --> AddStrategy
-    User --> AddExchange
-    User --> AddFrame
-    User --> BacktestRun
-    
-    AddStrategy --> StrVal
-    AddStrategy --> StrSchema
-    AddExchange --> ExVal
-    AddExchange --> ExSchema
-    AddFrame --> FrVal
-    AddFrame --> FrSchema
-    
-    BacktestRun --> BtCmd
-    BtCmd --> BtLogicPub
-    BtLogicPub --> BtLogicPriv
-    
-    BtLogicPriv --> StrGlobal
-    BtLogicPriv --> ExGlobal
-    BtLogicPriv --> FrGlobal
-    
-    StrGlobal --> StrConn
-    ExGlobal --> ExConn
-    FrGlobal --> FrConn
-    
-    StrConn --> ClientStr
-    ExConn --> ClientEx
-    FrConn --> ClientFr
-    
-    StrConn -.-> StrSchema
-    ExConn -.-> ExSchema
-    FrConn -.-> FrSchema
-```
+![Mermaid Diagram](./diagrams\39_Service_Architecture_Overview_2.svg)
 
 The pattern is identical for Live and Walker modes, with `LiveCommandService`/`WalkerCommandService`, `LiveLogicPublicService`/`WalkerLogicPublicService`, and `LiveLogicPrivateService`/`WalkerLogicPrivateService` replacing the Backtest equivalents.
 
@@ -356,94 +179,7 @@ Services are organized around eight component types (Strategy, Exchange, Frame, 
 
 **Component Service Dependencies:**
 
-```mermaid
-graph TB
-    subgraph "Strategy Component Stack"
-        StrGlobal["StrategyGlobalService"]
-        StrConn["StrategyConnectionService"]
-        StrSchema["StrategySchemaService"]
-        StrVal["StrategyValidationService"]
-        ClientStr["ClientStrategy"]
-        
-        StrGlobal --> StrConn
-        StrGlobal --> StrVal
-        StrConn --> StrSchema
-        StrConn --> ClientStr
-        StrVal --> StrSchema
-    end
-    
-    subgraph "Exchange Component Stack"
-        ExGlobal["ExchangeGlobalService"]
-        ExConn["ExchangeConnectionService"]
-        ExSchema["ExchangeSchemaService"]
-        ExVal["ExchangeValidationService"]
-        ClientEx["ClientExchange"]
-        
-        ExGlobal --> ExConn
-        ExGlobal --> ExVal
-        ExConn --> ExSchema
-        ExConn --> ClientEx
-        ExVal --> ExSchema
-    end
-    
-    subgraph "Frame Component Stack"
-        FrGlobal["FrameGlobalService"]
-        FrConn["FrameConnectionService"]
-        FrSchema["FrameSchemaService"]
-        FrVal["FrameValidationService"]
-        ClientFr["ClientFrame"]
-        
-        FrGlobal --> FrConn
-        FrGlobal --> FrVal
-        FrConn --> FrSchema
-        FrConn --> ClientFr
-        FrVal --> FrSchema
-    end
-    
-    subgraph "Risk Component Stack"
-        RiskGlobal["RiskGlobalService"]
-        RiskConn["RiskConnectionService"]
-        RiskSchema["RiskSchemaService"]
-        RiskVal["RiskValidationService"]
-        ClientRisk["ClientRisk"]
-        
-        RiskGlobal --> RiskConn
-        RiskGlobal --> RiskVal
-        RiskConn --> RiskSchema
-        RiskConn --> ClientRisk
-        RiskVal --> RiskSchema
-    end
-    
-    subgraph "Sizing Component Stack"
-        SizingGlobal["SizingGlobalService"]
-        SizingConn["SizingConnectionService"]
-        SizingSchema["SizingSchemaService"]
-        SizingVal["SizingValidationService"]
-        ClientSizing["ClientSizing"]
-        
-        SizingGlobal --> SizingConn
-        SizingGlobal --> SizingVal
-        SizingConn --> SizingSchema
-        SizingConn --> ClientSizing
-        SizingVal --> SizingSchema
-    end
-    
-    subgraph "Optimizer Component Stack"
-        OptGlobal["OptimizerGlobalService"]
-        OptConn["OptimizerConnectionService"]
-        OptSchema["OptimizerSchemaService"]
-        OptVal["OptimizerValidationService"]
-        ClientOpt["ClientOptimizer"]
-        OptTmpl["OptimizerTemplateService"]
-        
-        OptGlobal --> OptConn
-        OptGlobal --> OptVal
-        OptConn --> OptSchema
-        OptConn --> ClientOpt
-        OptConn --> OptTmpl
-        OptVal --> OptSchema
-    end
-```
+![Mermaid Diagram](./diagrams\39_Service_Architecture_Overview_3.svg)
 
 Walker is a special case that uses Logic services instead of Global/Connection services, as it orchestrates multiple backtest runs rather than managing a single Client instance.
 
@@ -453,37 +189,7 @@ Walker is a special case that uses Logic services instead of Global/Connection s
 
 Services use `MethodContextService` and `ExecutionContextService` from `di-scoped` to propagate context without explicit parameters. The context flows through the service stack:
 
-```mermaid
-graph TB
-    User["User calls Backtest.run(symbol, context)"]
-    
-    BtGlobal["BacktestGlobalService.run()"]
-    BtLogicPub["BacktestLogicPublicService.run()"]
-    BtLogicPriv["BacktestLogicPrivateService.run()"]
-    
-    MethodWrap["MethodContextService.runAsyncIterator()<br/>Sets: strategyName, exchangeName, frameName"]
-    ExecWrap["ExecutionContextService.runInContext()<br/>Sets: symbol, when, backtest"]
-    
-    StrGlobal["StrategyGlobalService.tick()"]
-    StrConn["StrategyConnectionService.get()"]
-    ClientStr["ClientStrategy instance"]
-    
-    User --> BtGlobal
-    BtGlobal --> BtLogicPub
-    BtLogicPub --> MethodWrap
-    MethodWrap --> BtLogicPriv
-    BtLogicPriv --> ExecWrap
-    ExecWrap --> StrGlobal
-    StrGlobal --> StrConn
-    StrConn --> ClientStr
-    
-    Note1["Context available via DI<br/>in all services below this point"]
-    
-    ExecWrap -.-> Note1
-    Note1 -.-> StrGlobal
-    Note1 -.-> StrConn
-    Note1 -.-> ClientStr
-```
+![Mermaid Diagram](./diagrams\39_Service_Architecture_Overview_4.svg)
 
 Services at any depth can resolve `MethodContextService` or `ExecutionContextService` via DI to access context without it being passed as parameters. This enables clean APIs where strategy authors call `getCandles(symbol, interval, limit)` instead of `getCandles(symbol, interval, limit, context)`.
 

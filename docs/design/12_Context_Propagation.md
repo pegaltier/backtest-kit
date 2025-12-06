@@ -72,13 +72,7 @@ Both context services extend the `di-scoped` library's scoped class pattern, pro
 
 The context is stored in async local storage, making it accessible to all code within the callback/generator without explicit passing.
 
-```mermaid
-graph LR
-    Caller["Caller Code"] -->|"runInContext(callback, context)"| Scope["Scoped Context"]
-    Scope -->|"Executes"| Callback["callback()"]
-    Callback -->|"Accesses"| Instance["service.context"]
-    Instance -->|"Returns"| Context["{ symbol, when, backtest }"]
-```
+![Mermaid Diagram](./diagrams\12_Context_Propagation_0.svg)
 
 **Diagram: di-scoped Context Establishment**
 
@@ -106,23 +100,7 @@ inject<TMethodContextService>(TYPES.methodContextService);
 
 Context flows through the architecture layers in a cascade pattern:
 
-```mermaid
-graph TB
-    Logic["Logic Services<br/>(BacktestLogicPrivateService,<br/>LiveLogicPrivateService)"]
-    Global["Global Services<br/>(StrategyGlobalService,<br/>ExchangeGlobalService)"]
-    Connection["Connection Services<br/>(StrategyConnectionService,<br/>ExchangeConnectionService)"]
-    Client["Client Classes<br/>(ClientStrategy,<br/>ClientExchange)"]
-    
-    Logic -->|"1. runInContext()<br/>runAsyncIterator()"| Global
-    Global -->|"2. Accesses context<br/>via dependency injection"| Connection
-    Connection -->|"3. Passes context<br/>to constructor"| Client
-    Client -->|"4. Reads context properties<br/>(symbol, when, backtest)"| Operations["Operations<br/>(getCandles, tick, etc)"]
-    
-    style Logic fill:#f9f9f9
-    style Global fill:#f9f9f9
-    style Connection fill:#f9f9f9
-    style Client fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\12_Context_Propagation_1.svg)
 
 **Diagram: Context Propagation Through Layers**
 
@@ -165,31 +143,7 @@ MethodContextService.runAsyncIterator(
 
 Global services inject context into operations by accessing the context services via dependency injection and calling operations within the context scope:
 
-```mermaid
-graph TB
-    subgraph "StrategyGlobalService"
-        SG_Inject["Injected:<br/>ExecutionContextService<br/>MethodContextService"]
-        SG_Context["Read context properties"]
-        SG_Call["Call ConnectionService"]
-    end
-    
-    subgraph "StrategyConnectionService"
-        SC_Get["getStrategy()<br/>uses MethodContext"]
-        SC_Instance["Returns<br/>ClientStrategy instance"]
-    end
-    
-    subgraph "ClientStrategy"
-        CS_Params["Constructor receives:<br/>execution: ExecutionContextService<br/>method: MethodContextService"]
-        CS_Access["Accesses context:<br/>execution.context.symbol<br/>execution.context.when<br/>method.context.strategyName"]
-    end
-    
-    SG_Inject --> SG_Context
-    SG_Context --> SG_Call
-    SG_Call --> SC_Get
-    SC_Get --> SC_Instance
-    SC_Instance --> CS_Params
-    CS_Params --> CS_Access
-```
+![Mermaid Diagram](./diagrams\12_Context_Propagation_2.svg)
 
 **Diagram: Context Injection Through Global Services**
 
@@ -270,33 +224,7 @@ The following table shows common context usage patterns in ClientStrategy:
 
 Context is established and torn down at specific architectural boundaries:
 
-```mermaid
-sequenceDiagram
-    participant Logic as "BacktestLogicPrivateService"
-    participant ExecCtx as "ExecutionContextService"
-    participant MethCtx as "MethodContextService"
-    participant Global as "StrategyGlobalService"
-    participant Client as "ClientStrategy"
-    
-    Logic->>ExecCtx: "runInContext({ symbol, when, backtest })"
-    activate ExecCtx
-    
-    Logic->>MethCtx: "runAsyncIterator({ strategyName, exchangeName, frameName })"
-    activate MethCtx
-    
-    ExecCtx->>Global: "Context available in async local storage"
-    MethCtx->>Global: "Context available in async local storage"
-    
-    Global->>Client: "tick(symbol, strategyName)"
-    Note over Client: "Accesses context via:<br/>this.params.execution.context<br/>this.params.method.context"
-    
-    Client-->>Global: "Returns IStrategyTickResult"
-    Global-->>Logic: "Result propagated"
-    
-    deactivate MethCtx
-    deactivate ExecCtx
-    Note over ExecCtx,MethCtx: "Context destroyed after operation"
-```
+![Mermaid Diagram](./diagrams\12_Context_Propagation_3.svg)
 
 **Diagram: Context Lifecycle in Single Operation**
 
@@ -322,49 +250,7 @@ This nesting allows logic services to maintain stable routing while updating tem
 
 ### Context Service to Code Entities
 
-```mermaid
-graph TB
-    subgraph "Context Services (Singleton)"
-        EC["ExecutionContextService<br/>TYPES.executionContextService"]
-        MC["MethodContextService<br/>TYPES.methodContextService"]
-    end
-    
-    subgraph "Interface Definitions"
-        IEC["IExecutionContext<br/>(symbol, when, backtest)"]
-        IMC["IMethodContext<br/>(strategyName, exchangeName, frameName)"]
-    end
-    
-    subgraph "Type Aliases"
-        TEC["TExecutionContextService"]
-        TMC["TMethodContextService"]
-    end
-    
-    subgraph "Client Params Interfaces"
-        ISP["IStrategyParams<br/>.execution<br/>.method"]
-        IEP["IExchangeParams<br/>.execution"]
-    end
-    
-    subgraph "Injected Into"
-        CS["ClientStrategy<br/>src/client/ClientStrategy.ts"]
-        CE["ClientExchange<br/>src/client/ClientExchange.ts"]
-    end
-    
-    EC --> IEC
-    MC --> IMC
-    
-    EC --> TEC
-    MC --> TMC
-    
-    TEC --> ISP
-    TMC --> ISP
-    TEC --> IEP
-    
-    ISP --> CS
-    IEP --> CE
-    
-    style EC fill:#f9f9f9
-    style MC fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\12_Context_Propagation_4.svg)
 
 **Diagram: Context Service Code Entity Relationships**
 
@@ -374,38 +260,7 @@ graph TB
 
 The following diagram maps natural language concepts to actual code access patterns in `ClientStrategy`:
 
-```mermaid
-graph LR
-    subgraph "Natural Language Concepts"
-        NL_Symbol["Trading Symbol"]
-        NL_Time["Current Time"]
-        NL_Mode["Execution Mode"]
-        NL_StratName["Strategy Name"]
-        NL_ExchName["Exchange Name"]
-    end
-    
-    subgraph "Code Access Patterns"
-        CA_Symbol["this.params.execution<br/>.context.symbol"]
-        CA_Time["this.params.execution<br/>.context.when.getTime()"]
-        CA_Mode["this.params.execution<br/>.context.backtest"]
-        CA_StratName["this.params.method<br/>.context.strategyName"]
-        CA_ExchName["this.params.method<br/>.context.exchangeName"]
-    end
-    
-    subgraph "Usage Examples"
-        UE_Symbol["await exchange.getCandles(<br/>this.params.execution.context.symbol,<br/>...)"]
-        UE_Time["const currentTime = <br/>this.params.execution.context.when.getTime()"]
-        UE_Mode["if (this.params.execution.context.backtest) {<br/>  // skip persistence<br/>}"]
-        UE_StratName["strategyName: <br/>this.params.method.context.strategyName"]
-        UE_ExchName["exchangeName: <br/>this.params.method.context.exchangeName"]
-    end
-    
-    NL_Symbol --> CA_Symbol --> UE_Symbol
-    NL_Time --> CA_Time --> UE_Time
-    NL_Mode --> CA_Mode --> UE_Mode
-    NL_StratName --> CA_StratName --> UE_StratName
-    NL_ExchName --> CA_ExchName --> UE_ExchName
-```
+![Mermaid Diagram](./diagrams\12_Context_Propagation_5.svg)
 
 **Diagram: Context Access in ClientStrategy (Natural Language to Code)**
 

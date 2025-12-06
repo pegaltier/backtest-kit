@@ -24,37 +24,7 @@ Sources: [src/classes/Backtest.ts:1-232](), [docs/classes/BacktestUtils.md:1-63]
 
 The Backtest API serves as the entry point to a multi-layer execution pipeline:
 
-```mermaid
-graph TB
-    User["User Code"]
-    BacktestUtils["Backtest Singleton<br/>(BacktestUtils)"]
-    BacktestCmd["BacktestCommandService"]
-    BacktestLogicPub["BacktestLogicPublicService"]
-    BacktestLogicPriv["BacktestLogicPrivateService"]
-    StrategyGlobal["StrategyGlobalService"]
-    StrategyConn["StrategyConnectionService"]
-    ClientStrategy["ClientStrategy"]
-    BacktestMD["BacktestMarkdownService"]
-    
-    User -->|"run(symbol, context)"| BacktestUtils
-    BacktestUtils -->|"Validation + Clear"| BacktestMD
-    BacktestUtils -->|"Delegation"| BacktestCmd
-    BacktestCmd -->|"Context Validation"| BacktestLogicPub
-    BacktestLogicPub -->|"Wraps Private"| BacktestLogicPriv
-    BacktestLogicPriv -->|"tick() / backtest()"| StrategyGlobal
-    StrategyGlobal -->|"ExecutionContext Injection"| StrategyConn
-    StrategyConn -->|"Memoized Instance"| ClientStrategy
-    ClientStrategy -->|"Signals"| BacktestMD
-    
-    User -->|"getData() / getReport()"| BacktestUtils
-    BacktestUtils -->|"Query"| BacktestMD
-    BacktestMD -->|"Statistics"| User
-    
-    style BacktestUtils fill:#f9f9f9
-    style BacktestCmd fill:#f9f9f9
-    style BacktestLogicPriv fill:#f9f9f9
-    style ClientStrategy fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\17_Backtest_API_0.svg)
 
 **Key Flow Characteristics:**
 
@@ -108,40 +78,7 @@ interface IStrategyBacktestResult {
 
 **Execution Flow:**
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Backtest
-    participant BacktestCmd
-    participant LogicPriv as BacktestLogicPrivateService
-    participant FrameGlobal as FrameGlobalService
-    participant StrategyGlobal as StrategyGlobalService
-    participant Exchange as ClientExchange
-    
-    User->>Backtest: run(symbol, context)
-    Backtest->>Backtest: Clear markdown services
-    Backtest->>Backtest: Clear strategy cache
-    Backtest->>BacktestCmd: run(symbol, context)
-    BacktestCmd->>LogicPriv: execute(symbol, context)
-    
-    LogicPriv->>FrameGlobal: get(frameName)
-    FrameGlobal-->>LogicPriv: timeframes[]
-    
-    loop For each timeframe
-        LogicPriv->>StrategyGlobal: tick(symbol, timeframe, true)
-        StrategyGlobal-->>LogicPriv: tickResult
-        
-        alt Signal opened
-            LogicPriv->>Exchange: getNextCandles(symbol)
-            Exchange-->>LogicPriv: candles[]
-            LogicPriv->>StrategyGlobal: backtest(symbol, candles)
-            StrategyGlobal-->>LogicPriv: backtestResult
-            LogicPriv->>User: yield backtestResult
-        end
-    end
-    
-    LogicPriv-->>User: Generator completes
-```
+![Mermaid Diagram](./diagrams\17_Backtest_API_1.svg)
 
 **Example Usage:**
 
@@ -197,26 +134,7 @@ The returned function can be called to stop the backtest early. When cancelled, 
 
 **Cancellation Flow:**
 
-```mermaid
-stateDiagram-v2
-    [*] --> Running: background() called
-    Running --> Stopping: Cancel function invoked
-    Stopping --> CheckPending: stop() strategy
-    CheckPending --> EmitDone: No pending signal
-    CheckPending --> WaitPending: Pending signal exists
-    WaitPending --> EmitDone: Signal completes
-    EmitDone --> [*]
-    
-    note right of CheckPending
-        getPendingSignal() checks
-        if strategy has active signal
-    end note
-    
-    note right of EmitDone
-        doneBacktestSubject.next()
-        fired to notify listeners
-    end note
-```
+![Mermaid Diagram](./diagrams\17_Backtest_API_2.svg)
 
 **Example Usage:**
 
@@ -304,27 +222,7 @@ interface BacktestStatistics {
 
 **Calculation Flow:**
 
-```mermaid
-graph TB
-    getData["getData(symbol, strategyName)"]
-    BacktestMD["BacktestMarkdownService"]
-    Events["Accumulated Events"]
-    SafeMath["Safe Math Layer"]
-    Stats["Calculate Statistics"]
-    
-    getData --> BacktestMD
-    BacktestMD --> Events
-    Events --> SafeMath
-    SafeMath --> Stats
-    
-    Stats --> Sharpe["Sharpe Ratio<br/>mean(returns) / stdDev(returns)"]
-    Stats --> WinRate["Win Rate<br/>winningTrades / totalTrades"]
-    Stats --> Certainty["Certainty Ratio<br/>sharpe * sqrt(totalTrades)"]
-    Stats --> AvgPnl["Average PNL<br/>sum(pnl) / totalTrades"]
-    
-    style getData fill:#f9f9f9
-    style SafeMath fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\17_Backtest_API_3.svg)
 
 **Example Usage:**
 
@@ -481,25 +379,7 @@ dump(
 
 **Default Path Resolution:**
 
-```mermaid
-graph LR
-    Input["dump(strategyName, path?)"]
-    CheckPath{"path provided?"}
-    DefaultPath["./dump/backtest"]
-    CustomPath["Use provided path"]
-    CreateDir["Create directory<br/>if not exists"]
-    WriteFile["Write file<br/>{strategyName}.md"]
-    
-    Input --> CheckPath
-    CheckPath -->|No| DefaultPath
-    CheckPath -->|Yes| CustomPath
-    DefaultPath --> CreateDir
-    CustomPath --> CreateDir
-    CreateDir --> WriteFile
-    
-    style Input fill:#f9f9f9
-    style WriteFile fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\17_Backtest_API_4.svg)
 
 **Example Usage:**
 
@@ -536,44 +416,7 @@ Sources: [src/classes/Backtest.ts:186-210](), [docs/classes/BacktestUtils.md:56-
 
 The Backtest API emits events throughout execution for monitoring and callbacks:
 
-```mermaid
-graph TB
-    ClientStrategy["ClientStrategy<br/>backtest()"]
-    StrategyConn["StrategyConnectionService"]
-    
-    Emitter1["signalEmitter"]
-    Emitter2["signalBacktestEmitter"]
-    Emitter3["progressBacktestEmitter"]
-    Emitter4["performanceEmitter"]
-    Emitter5["doneBacktestSubject"]
-    
-    Listener1["listenSignal()"]
-    Listener2["listenSignalBacktest()"]
-    Listener3["listenBacktestProgress()"]
-    Listener4["listenPerformance()"]
-    Listener5["listenDoneBacktest()"]
-    
-    MD["BacktestMarkdownService"]
-    
-    ClientStrategy -->|"Signal closed"| StrategyConn
-    StrategyConn -->|"Emit"| Emitter1
-    StrategyConn -->|"Emit"| Emitter2
-    
-    StrategyConn -->|"Timeframe complete"| Emitter3
-    StrategyConn -->|"Timing metrics"| Emitter4
-    StrategyConn -->|"All complete"| Emitter5
-    
-    Emitter1 -.->|"Subscribe"| Listener1
-    Emitter2 -.->|"Subscribe"| Listener2
-    Emitter3 -.->|"Subscribe"| Listener3
-    Emitter4 -.->|"Subscribe"| Listener4
-    Emitter5 -.->|"Subscribe"| Listener5
-    
-    Emitter2 -.->|"Accumulate"| MD
-    
-    style ClientStrategy fill:#f9f9f9
-    style MD fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\17_Backtest_API_5.svg)
 
 **Available Event Listeners:**
 

@@ -29,47 +29,7 @@ All schema services follow identical patterns: singleton registration, `ToolRegi
 
 The following diagram illustrates the relationship between registration functions, schema services, and connection services:
 
-```mermaid
-graph TB
-    subgraph PublicAPI["Public API"]
-        AddStrategy["addStrategy()"]
-        AddExchange["addExchange()"]
-        AddFrame["addFrame()"]
-        AddWalker["addWalker()"]
-        AddSizing["addSizing()"]
-        AddRisk["addRisk()"]
-    end
-    
-    subgraph SchemaServices["Schema Services (ToolRegistry-based Registries)"]
-        StrategySchema["StrategySchemaService<br/>ToolRegistry&lt;IStrategySchema&gt;"]
-        ExchangeSchema["ExchangeSchemaService<br/>ToolRegistry&lt;IExchangeSchema&gt;"]
-        FrameSchema["FrameSchemaService<br/>ToolRegistry&lt;IFrameSchema&gt;"]
-        WalkerSchema["WalkerSchemaService<br/>ToolRegistry&lt;IWalkerSchema&gt;"]
-        SizingSchema["SizingSchemaService<br/>ToolRegistry&lt;ISizingSchema&gt;"]
-        RiskSchema["RiskSchemaService<br/>ToolRegistry&lt;IRiskSchema&gt;"]
-    end
-    
-    subgraph ConnectionServices["Connection Services (Consumers)"]
-        StrategyConn["StrategyConnectionService"]
-        ExchangeConn["ExchangeConnectionService"]
-        FrameConn["FrameConnectionService"]
-        SizingConn["SizingConnectionService"]
-        RiskConn["RiskConnectionService"]
-    end
-    
-    AddStrategy -->|"register()"| StrategySchema
-    AddExchange -->|"register()"| ExchangeSchema
-    AddFrame -->|"register()"| FrameSchema
-    AddWalker -->|"register()"| WalkerSchema
-    AddSizing -->|"register()"| SizingSchema
-    AddRisk -->|"register()"| RiskSchema
-    
-    StrategyConn -->|"get()"| StrategySchema
-    ExchangeConn -->|"get()"| ExchangeSchema
-    FrameConn -->|"get()"| FrameSchema
-    SizingConn -->|"get()"| SizingSchema
-    RiskConn -->|"get()"| RiskSchema
-```
+![Mermaid Diagram](./diagrams\41_Schema_Services_0.svg)
 
 **Diagram: Schema Service Registry Pattern**
 
@@ -113,22 +73,7 @@ interface IStrategySchema {
 
 The `addStrategy()` function registers a strategy schema into `StrategySchemaService`:
 
-```mermaid
-sequenceDiagram
-    participant User as "User Code"
-    participant AddFn as "addStrategy()"
-    participant Schema as "StrategySchemaService"
-    participant Map as "Internal Map"
-    
-    User->>AddFn: "addStrategy({strategyName, interval, getSignal})"
-    AddFn->>Schema: "getStrategySchemaService()"
-    Schema->>AddFn: "service instance"
-    AddFn->>Schema: "addStrategySchema(schema)"
-    Schema->>Map: "map.set(strategyName, schema)"
-    Map-->>Schema: "stored"
-    Schema-->>AddFn: "void"
-    AddFn-->>User: "void"
-```
+![Mermaid Diagram](./diagrams\41_Schema_Services_1.svg)
 
 **Diagram: Strategy Schema Registration Flow**
 
@@ -175,22 +120,7 @@ interface IExchangeSchema {
 
 The `addExchange()` function registers an exchange schema into `ExchangeSchemaService`:
 
-```mermaid
-sequenceDiagram
-    participant User as "User Code"
-    participant AddFn as "addExchange()"
-    participant Schema as "ExchangeSchemaService"
-    participant Map as "Internal Map"
-    
-    User->>AddFn: "addExchange({exchangeName, getCandles, formatPrice})"
-    AddFn->>Schema: "getExchangeSchemaService()"
-    Schema->>AddFn: "service instance"
-    AddFn->>Schema: "addExchangeSchema(schema)"
-    Schema->>Map: "map.set(exchangeName, schema)"
-    Map-->>Schema: "stored"
-    Schema-->>AddFn: "void"
-    AddFn-->>User: "void"
-```
+![Mermaid Diagram](./diagrams\41_Schema_Services_2.svg)
 
 **Diagram: Exchange Schema Registration Flow**
 
@@ -236,22 +166,7 @@ interface IFrameSchema {
 
 The `addFrame()` function registers a frame schema into `FrameSchemaService`:
 
-```mermaid
-sequenceDiagram
-    participant User as "User Code"
-    participant AddFn as "addFrame()"
-    participant Schema as "FrameSchemaService"
-    participant Map as "Internal Map"
-    
-    User->>AddFn: "addFrame({frameName, interval, startDate, endDate})"
-    AddFn->>Schema: "getFrameSchemaService()"
-    Schema->>AddFn: "service instance"
-    AddFn->>Schema: "addFrameSchema(schema)"
-    Schema->>Map: "map.set(frameName, schema)"
-    Map-->>Schema: "stored"
-    Schema-->>AddFn: "void"
-    AddFn-->>User: "void"
-```
+![Mermaid Diagram](./diagrams\41_Schema_Services_3.svg)
 
 **Diagram: Frame Schema Registration Flow**
 
@@ -456,20 +371,7 @@ Schema Services provide lookup methods that Connection Services call to retrieve
 
 ### Lookup Pattern
 
-```mermaid
-graph LR
-    MethodCtx["MethodContextService<br/>{strategyName, exchangeName, frameName}"]
-    ConnService["ConnectionService<br/>getStrategy/Exchange/Frame()"]
-    SchemaService["SchemaService<br/>Map.get(name)"]
-    Schema["IStrategySchema / IExchangeSchema / IFrameSchema"]
-    Client["ClientStrategy / ClientExchange / ClientFrame"]
-    
-    MethodCtx -->|"provides routing key"| ConnService
-    ConnService -->|"queries by name"| SchemaService
-    SchemaService -->|"returns schema"| ConnService
-    ConnService -->|"instantiates with schema"| Client
-    Schema -.->|"used as constructor param"| Client
-```
+![Mermaid Diagram](./diagrams\41_Schema_Services_4.svg)
 
 **Diagram: Schema Lookup Flow**
 
@@ -569,31 +471,7 @@ This makes all schema services accessible via `backtest.*SchemaService` for adva
 
 The following diagram shows the complete lifecycle from user registration to client instantiation:
 
-```mermaid
-sequenceDiagram
-    participant User as "User Application"
-    participant AddFn as "addStrategy()"
-    participant SchemaService as "StrategySchemaService"
-    participant ConnService as "StrategyConnectionService"
-    participant Client as "ClientStrategy"
-    participant BacktestLogic as "BacktestLogicPrivateService"
-    
-    Note over User,SchemaService: Startup Phase: Registration
-    User->>AddFn: "addStrategy(schema)"
-    AddFn->>SchemaService: "addStrategySchema(schema)"
-    SchemaService->>SchemaService: "map.set(strategyName, schema)"
-    
-    Note over BacktestLogic,Client: Runtime Phase: Instantiation
-    BacktestLogic->>ConnService: "getStrategy(strategyName)"
-    ConnService->>SchemaService: "getStrategySchema(strategyName)"
-    SchemaService-->>ConnService: "IStrategySchema"
-    ConnService->>Client: "new ClientStrategy(schema, logger, exchange)"
-    Client-->>ConnService: "instance"
-    ConnService->>ConnService: "memoize instance"
-    ConnService-->>BacktestLogic: "IStrategy"
-    
-    Note over BacktestLogic: Subsequent calls return memoized instance
-```
+![Mermaid Diagram](./diagrams\41_Schema_Services_5.svg)
 
 **Diagram: Complete Schema Registration and Instantiation Flow**
 

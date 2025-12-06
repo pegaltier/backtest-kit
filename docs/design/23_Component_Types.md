@@ -10,75 +10,7 @@ For information about how these components are instantiated and connected at run
 
 The framework organizes components into seven distinct types, each registered through a dedicated function and validated by a corresponding service. All schemas follow a consistent pattern: a required `name` field for unique identification, optional `note` field for documentation, required configuration parameters specific to the component type, and optional `callbacks` object for lifecycle hooks.
 
-```mermaid
-graph TB
-    subgraph "Registration Layer"
-        addStrategy["addStrategy(IStrategySchema)"]
-        addExchange["addExchange(IExchangeSchema)"]
-        addFrame["addFrame(IFrameSchema)"]
-        addRisk["addRisk(IRiskSchema)"]
-        addSizing["addSizing(ISizingSchema)"]
-        addWalker["addWalker(IWalkerSchema)"]
-        addOptimizer["addOptimizer(IOptimizerSchema)"]
-    end
-    
-    subgraph "Validation Services"
-        StrategyValidationService
-        ExchangeValidationService
-        FrameValidationService
-        RiskValidationService
-        SizingValidationService
-        WalkerValidationService
-        OptimizerValidationService
-    end
-    
-    subgraph "Schema Services"
-        StrategySchemaService["StrategySchemaService<br/>Map<StrategyName, IStrategySchema>"]
-        ExchangeSchemaService["ExchangeSchemaService<br/>Map<ExchangeName, IExchangeSchema>"]
-        FrameSchemaService["FrameSchemaService<br/>Map<FrameName, IFrameSchema>"]
-        RiskSchemaService["RiskSchemaService<br/>Map<RiskName, IRiskSchema>"]
-        SizingSchemaService["SizingSchemaService<br/>Map<SizingName, ISizingSchema>"]
-        WalkerSchemaService["WalkerSchemaService<br/>Map<WalkerName, IWalkerSchema>"]
-        OptimizerSchemaService["OptimizerSchemaService<br/>Map<OptimizerName, IOptimizerSchema>"]
-    end
-    
-    subgraph "Connection Services"
-        StrategyConnectionService["StrategyConnectionService<br/>getStrategy(name) → ClientStrategy"]
-        ExchangeConnectionService["ExchangeConnectionService<br/>getExchange(name) → ClientExchange"]
-        FrameConnectionService["FrameConnectionService<br/>getFrame(name) → ClientFrame"]
-        RiskConnectionService["RiskConnectionService<br/>getRisk(name) → ClientRisk"]
-        SizingConnectionService["SizingConnectionService<br/>getSizing(name) → ClientSizing"]
-        OptimizerConnectionService["OptimizerConnectionService<br/>getOptimizer(name) → ClientOptimizer"]
-    end
-    
-    addStrategy -->|validates| StrategyValidationService
-    addStrategy -->|stores| StrategySchemaService
-    
-    addExchange -->|validates| ExchangeValidationService
-    addExchange -->|stores| ExchangeSchemaService
-    
-    addFrame -->|validates| FrameValidationService
-    addFrame -->|stores| FrameSchemaService
-    
-    addRisk -->|validates| RiskValidationService
-    addRisk -->|stores| RiskSchemaService
-    
-    addSizing -->|validates| SizingValidationService
-    addSizing -->|stores| SizingSchemaService
-    
-    addWalker -->|validates| WalkerValidationService
-    addWalker -->|stores| WalkerSchemaService
-    
-    addOptimizer -->|validates| OptimizerValidationService
-    addOptimizer -->|stores| OptimizerSchemaService
-    
-    StrategySchemaService -.->|retrieves schema| StrategyConnectionService
-    ExchangeSchemaService -.->|retrieves schema| ExchangeConnectionService
-    FrameSchemaService -.->|retrieves schema| FrameConnectionService
-    RiskSchemaService -.->|retrieves schema| RiskConnectionService
-    SizingSchemaService -.->|retrieves schema| SizingConnectionService
-    OptimizerSchemaService -.->|retrieves schema| OptimizerConnectionService
-```
+![Mermaid Diagram](./diagrams\23_Component_Types_0.svg)
 
 **Sources:** [src/function/add.ts:1-444](), [src/lib/core/types.ts:1-97](), [src/lib/core/provide.ts:1-132](), [types.d.ts:226-833]()
 
@@ -103,39 +35,7 @@ All component schemas share a common structural pattern with three tiers of fiel
 
 Component registration follows a three-phase pipeline: user code calls an `add*` function with a schema object, the function delegates to a validation service that applies 10-30 validation rules depending on component type, and upon successful validation the schema is stored in a schema service for later retrieval by connection services during execution.
 
-```mermaid
-sequenceDiagram
-    participant User as "User Code"
-    participant AddFn as "add* Function<br/>(add.ts)"
-    participant Logger as "LoggerService"
-    participant Validator as "*ValidationService"
-    participant Schema as "*SchemaService"
-    participant Connection as "*ConnectionService<br/>(runtime)"
-    
-    User->>AddFn: addStrategy(schema)
-    AddFn->>Logger: info("add.addStrategy", schema)
-    
-    AddFn->>Validator: addStrategy(name, schema)
-    
-    Note over Validator: Validate required fields<br/>Validate configuration<br/>Validate callbacks<br/>Throw if invalid
-    
-    Validator-->>AddFn: void (or throw Error)
-    
-    AddFn->>Schema: register(name, schema)
-    
-    Note over Schema: Store in Map<name, schema><br/>Enable retrieval by name
-    
-    Schema-->>AddFn: void
-    AddFn-->>User: void
-    
-    Note over User,Connection: Later: during execution
-    
-    Connection->>Schema: get(name)
-    Schema-->>Connection: schema
-    
-    Connection->>Connection: new Client*(schema)
-    Connection-->>Connection: Memoized instance
-```
+![Mermaid Diagram](./diagrams\23_Component_Types_1.svg)
 
 **Sources:** [src/function/add.ts:52-64](), [src/function/add.ts:101-113](), [src/lib/services/validation/StrategyValidationService.ts](), [src/lib/services/schema/StrategySchemaService.ts](), [src/lib/services/connection/StrategyConnectionService.ts]()
 
@@ -216,48 +116,7 @@ interface ISignalRow extends ISignalDto {
 
 Strategy callbacks fire at eight distinct lifecycle points, providing hooks for logging, monitoring, and custom business logic. All callbacks receive the `backtest` boolean flag to distinguish between historical simulation and live trading.
 
-```mermaid
-stateDiagram-v2
-    [*] --> onTick: "Every tick()"
-    
-    onTick --> onIdle: "No signal, no active position"
-    onTick --> onSchedule: "Scheduled signal created"
-    onTick --> onOpen: "Signal opened immediately or activated"
-    onTick --> onActive: "Position monitoring (TP/SL check)"
-    onTick --> onPartialProfit: "Unrealized profit milestone"
-    onTick --> onPartialLoss: "Unrealized loss milestone"
-    onTick --> onClose: "Signal closed (TP/SL/timeout)"
-    onTick --> onCancel: "Scheduled signal cancelled"
-    
-    onIdle --> [*]
-    onSchedule --> [*]: "onWrite() also called"
-    onOpen --> [*]: "onWrite() also called"
-    onActive --> [*]
-    onPartialProfit --> [*]
-    onPartialLoss --> [*]
-    onClose --> [*]: "onWrite(null) also called"
-    onCancel --> [*]: "onWrite(null) also called"
-    
-    note right of onTick
-        Called on every tick regardless of state
-        Provides discriminated union result
-    end note
-    
-    note right of onSchedule
-        priceOpen specified, awaiting activation
-        Persisted to disk (live mode only)
-    end note
-    
-    note right of onOpen
-        Position opened (immediate or activated)
-        Risk.addSignal() called
-    end note
-    
-    note right of onClose
-        Includes closeReason + PnL calculation
-        Risk.removeSignal() called
-    end note
-```
+![Mermaid Diagram](./diagrams\23_Component_Types_2.svg)
 
 **Callback Interface:**
 
@@ -378,36 +237,7 @@ interface ICandleData {
 
 `ClientExchange` wraps the schema's `getCandles` function with additional logic: anomaly detection filters out incomplete candles with near-zero prices, retry logic handles transient API failures, and execution context determines whether to fetch backward (past candles) or forward (future candles for backtest fast-forward).
 
-```mermaid
-sequenceDiagram
-    participant Strategy as "ClientStrategy.tick()"
-    participant Exchange as "ClientExchange"
-    participant Schema as "IExchangeSchema.getCandles"
-    participant API as "External API<br/>(CCXT/DB/REST)"
-    
-    Strategy->>Exchange: getAveragePrice(symbol)
-    Exchange->>Exchange: executionContext.when
-    
-    Note over Exchange: Calculate 'since' date<br/>5 candles back from 'when'
-    
-    Exchange->>Exchange: Retry loop (3 attempts)
-    
-    loop Retry with delay
-        Exchange->>Schema: getCandles(symbol, "1m", since, 5)
-        Schema->>API: Fetch historical data
-        API-->>Schema: Raw candles
-        
-        alt Success
-            Schema-->>Exchange: ICandleData[]
-            Exchange->>Exchange: Anomaly detection<br/>Filter near-zero prices
-            Exchange-->>Strategy: VWAP calculated
-        else API Error
-            Schema-->>Exchange: throw Error
-            Exchange->>Exchange: Wait CC_GET_CANDLES_RETRY_DELAY_MS
-            Exchange->>Exchange: Retry (up to CC_GET_CANDLES_RETRY_COUNT)
-        end
-    end
-```
+![Mermaid Diagram](./diagrams\23_Component_Types_3.svg)
 
 **Anomaly Detection Logic:**
 
@@ -509,25 +339,7 @@ type FrameName = string;
 
 `ClientFrame.getTimeframe()` generates timestamps by starting at `startDate` and incrementing by `interval` milliseconds until exceeding `endDate`. The resulting array is chronologically ordered and used by `BacktestLogicPrivateService` for sequential strategy execution.
 
-```mermaid
-graph LR
-    Input["IFrameSchema<br/>startDate: 2024-01-01<br/>endDate: 2024-01-02<br/>interval: 1h"]
-    
-    ClientFrame["ClientFrame.getTimeframe()"]
-    
-    Generation["Timeframe Generation<br/>Loop: start + (n × intervalMs)<br/>until > endDate"]
-    
-    Output["Date[]<br/>[2024-01-01 00:00,<br/>2024-01-01 01:00,<br/>2024-01-01 02:00,<br/>...,<br/>2024-01-02 00:00]"]
-    
-    Input --> ClientFrame
-    ClientFrame --> Generation
-    Generation --> Output
-    
-    Output --> Callback["callbacks.onTimeframe"]
-    Callback --> BacktestLogic["BacktestLogicPrivateService"]
-    
-    BacktestLogic --> Iteration["for (when of timeframe)<br/>tick(symbol, when)"]
-```
+![Mermaid Diagram](./diagrams\23_Component_Types_4.svg)
 
 **Interval to Milliseconds Conversion:**
 
@@ -638,37 +450,7 @@ interface IRiskActivePosition {
 
 `ClientRisk.checkSignal()` is called twice per signal lifecycle: once before `getSignal()` (pre-generation check) and once at scheduled signal activation (pre-open check). Each validation in the `validations` array is executed sequentially with access to current portfolio state via `PersistRiskAdapter`.
 
-```mermaid
-sequenceDiagram
-    participant Strategy as "ClientStrategy"
-    participant Risk as "ClientRisk"
-    participant Persist as "PersistRiskAdapter"
-    participant Validation as "Custom Validation Fn"
-    
-    Strategy->>Risk: checkSignal(params)
-    
-    Risk->>Persist: Load active positions
-    Persist-->>Risk: activePositions[]
-    
-    Risk->>Risk: Build IRiskValidationPayload<br/>params + activePositionCount + activePositions
-    
-    loop For each validation
-        Risk->>Validation: validate(payload)
-        
-        alt Validation passes
-            Validation-->>Risk: void
-        else Validation fails
-            Validation-->>Risk: throw Error("reason")
-            Risk->>Risk: callbacks.onRejected(symbol, params)
-            Risk-->>Strategy: return false
-        end
-    end
-    
-    Risk->>Risk: callbacks.onAllowed(symbol, params)
-    Risk-->>Strategy: return true
-    
-    Note over Strategy: Signal allowed, proceed with creation
-```
+![Mermaid Diagram](./diagrams\23_Component_Types_5.svg)
 
 **Sources:** [src/client/ClientRisk.ts](), [types.d.ts:443-526]()
 
@@ -826,33 +608,7 @@ type SizingName = string;
 
 The three sizing methods optimize for different objectives: fixed-percentage maintains consistent risk per trade, Kelly Criterion maximizes long-term growth rate based on historical win rate, and ATR-based adjusts position size inversely to market volatility.
 
-```mermaid
-graph TB
-    Input["ISizingCalculateParams<br/>symbol, accountBalance,<br/>currentPrice, signal"]
-    
-    Method{method type}
-    
-    Fixed["Fixed Percentage<br/>position = (accountBalance × riskPercentage)<br/>÷ (priceOpen - priceStopLoss)"]
-    
-    Kelly["Kelly Criterion<br/>kelly = (p - q) ÷ b<br/>position = kellyMultiplier × kelly × accountBalance ÷ currentPrice"]
-    
-    ATR["ATR-Based<br/>atr = calculateATR(symbol)<br/>stopDistance = atr × atrMultiplier<br/>position = (accountBalance × riskPercentage)<br/>÷ stopDistance"]
-    
-    Constraints["Apply Constraints<br/>min ≤ position ≤ max<br/>position ≤ maxPositionPercentage"]
-    
-    Output["Position Quantity<br/>(formatted via exchange.formatQuantity)"]
-    
-    Input --> Method
-    Method -->|"fixed-percentage"| Fixed
-    Method -->|"kelly-criterion"| Kelly
-    Method -->|"atr-based"| ATR
-    
-    Fixed --> Constraints
-    Kelly --> Constraints
-    ATR --> Constraints
-    
-    Constraints --> Output
-```
+![Mermaid Diagram](./diagrams\23_Component_Types_6.svg)
 
 **Algorithm Details:**
 
@@ -977,44 +733,7 @@ type WalkerMetric =
 
 `WalkerLogicPrivateService` iterates through the strategies array sequentially, running a full backtest for each and collecting performance metrics. After all strategies complete, the walker identifies the best strategy by comparing metric values and emits the final results.
 
-```mermaid
-sequenceDiagram
-    participant User as "User Code"
-    participant Walker as "WalkerLogicPrivateService"
-    participant Backtest as "BacktestLogicPublicService"
-    participant Markdown as "BacktestMarkdownService"
-    participant Schema as "WalkerSchemaService"
-    
-    User->>Walker: run(symbol, walkerName)
-    Walker->>Schema: get(walkerName)
-    Schema-->>Walker: IWalkerSchema
-    
-    loop For each strategy in strategies[]
-        Walker->>Backtest: run(symbol, strategyName, exchangeName, frameName)
-        
-        Note over Backtest: Execute full backtest<br/>Iterate timeframe<br/>Call tick() repeatedly
-        
-        Backtest-->>Walker: AsyncGenerator<IStrategyTickResult>
-        
-        Walker->>Markdown: getData(strategyName)
-        Markdown-->>Walker: BacktestStatistics
-        
-        Walker->>Walker: Extract metric value<br/>(e.g., sharpeRatio)
-        
-        Walker->>Walker: Update bestStrategy if<br/>current metric > bestMetric
-        
-        Walker->>Walker: emit progressWalkerEmitter<br/>(strategyIndex / totalStrategies)
-        
-        Walker->>Walker: callbacks.onStrategyComplete(strategy, stats, metric)
-    end
-    
-    Walker->>Walker: Build WalkerStatistics<br/>bestStrategy, bestMetric, allResults
-    
-    Walker->>Walker: callbacks.onComplete(results)
-    Walker->>Walker: emit walkerCompleteSubject
-    
-    Walker-->>User: WalkerStatistics
-```
+![Mermaid Diagram](./diagrams\23_Component_Types_7.svg)
 
 **Sources:** [src/lib/services/logic/private/WalkerLogicPrivateService.ts](), [src/interfaces/Walker.interface.ts]()
 
@@ -1170,59 +889,7 @@ interface IOptimizerMessage {
 
 The optimizer iterates through training ranges and sources in nested loops: for each training range, it fetches data from each source (with pagination support), formats the data into user/assistant message pairs, and appends to the conversation history. After collecting all data, it calls `getPrompt()` with the complete message history to generate a strategy prompt for that training range.
 
-```mermaid
-graph TB
-    Start["Optimizer.dump(symbol, optimizerName, path)"]
-    
-    RangeTrain["For each rangeTrain"]
-    
-    Source["For each source"]
-    
-    Fetch["Paginated fetch loop<br/>offset += limit<br/>until data.length < limit"]
-    
-    Format{Source type}
-    
-    FnFormat["Function source:<br/>user: markdown table<br/>assistant: 'OK'"]
-    
-    ObjFormat["Object source:<br/>source.user(symbol, data)<br/>source.assistant(symbol, data)"]
-    
-    Append["Append to messageList[]<br/>{ role: 'user', content: ... }<br/>{ role: 'assistant', content: ... }"]
-    
-    NextSource{More sources?}
-    
-    Prompt["getPrompt(symbol, messageList)<br/>Generate strategy prompt from conversation"]
-    
-    Strategy["Append to strategyList[]<br/>{ rangeTrain, prompt }"]
-    
-    NextRange{More ranges?}
-    
-    Code["Generate code<br/>11 template methods<br/>Assemble complete .mjs file"]
-    
-    Write["Write to file system<br/>callbacks.onDump()"]
-    
-    Start --> RangeTrain
-    RangeTrain --> Source
-    Source --> Fetch
-    Fetch --> Format
-    
-    Format -->|function| FnFormat
-    Format -->|object| ObjFormat
-    
-    FnFormat --> Append
-    ObjFormat --> Append
-    
-    Append --> NextSource
-    NextSource -->|yes| Source
-    NextSource -->|no| Prompt
-    
-    Prompt --> Strategy
-    Strategy --> NextRange
-    
-    NextRange -->|yes| RangeTrain
-    NextRange -->|no| Code
-    
-    Code --> Write
-```
+![Mermaid Diagram](./diagrams\23_Component_Types_8.svg)
 
 **Pagination Logic:**
 
@@ -1446,36 +1113,7 @@ addOptimizer({
 
 Component types form a dependency graph where strategies reference exchanges and risk profiles, walkers reference strategies and frames, and optimizers generate complete component configurations. The framework enforces referential integrity at registration time by validating that referenced component names exist in their respective schema services.
 
-```mermaid
-graph TB
-    Strategy["IStrategySchema<br/>strategyName, interval,<br/>getSignal, riskName"]
-    
-    Exchange["IExchangeSchema<br/>exchangeName, getCandles,<br/>formatPrice, formatQuantity"]
-    
-    Frame["IFrameSchema<br/>frameName, interval,<br/>startDate, endDate"]
-    
-    Risk["IRiskSchema<br/>riskName, validations"]
-    
-    Sizing["ISizingSchema<br/>sizingName, method,<br/>position calculation"]
-    
-    Walker["IWalkerSchema<br/>walkerName, strategies[],<br/>exchangeName, frameName, metric"]
-    
-    Optimizer["IOptimizerSchema<br/>optimizerName, rangeTrain[],<br/>source[], getPrompt, template"]
-    
-    Strategy -.->|"optional riskName"| Risk
-    Strategy -.->|"uses at runtime"| Exchange
-    
-    Walker -->|"requires strategies[]"| Strategy
-    Walker -->|"requires exchangeName"| Exchange
-    Walker -->|"requires frameName"| Frame
-    
-    Optimizer -->|"generates"| Strategy
-    Optimizer -->|"generates"| Exchange
-    Optimizer -->|"generates"| Frame
-    Optimizer -->|"generates"| Walker
-    
-    Strategy -.->|"optional sizing"| Sizing
-```
+![Mermaid Diagram](./diagrams\23_Component_Types_9.svg)
 
 **Dependency Rules:**
 

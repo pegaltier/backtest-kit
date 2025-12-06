@@ -15,70 +15,7 @@ The optimization system enables:
 
 The optimizer system consists of four primary components that orchestrate data collection, LLM conversation building, code generation, and file export.
 
-```mermaid
-graph TB
-    subgraph "User API Layer"
-        addOptimizer["addOptimizer()<br/>Register IOptimizerSchema"]
-        OptimizerDump["Optimizer.dump()<br/>symbol, optimizerName, path"]
-        OptimizerData["Optimizer.getData()<br/>symbol, optimizerName"]
-        OptimizerCode["Optimizer.getCode()<br/>symbol, optimizerName"]
-    end
-    
-    subgraph "Service Layer"
-        OptimizerSchemaService["OptimizerSchemaService<br/>get(optimizerName)"]
-        OptimizerConnectionService["OptimizerConnectionService<br/>getOptimizer(optimizerName)<br/>Memoized instances"]
-        OptimizerTemplateService["OptimizerTemplateService<br/>Default templates<br/>11 generation methods"]
-    end
-    
-    subgraph "Client Layer"
-        ClientOptimizer["ClientOptimizer<br/>getData(symbol)<br/>getCode(symbol)<br/>dump(symbol, path)"]
-        OptimizerParams["IOptimizerParams<br/>rangeTrain, rangeTest<br/>source, getPrompt<br/>template, callbacks"]
-    end
-    
-    subgraph "Data Collection"
-        SourceFetch["IOptimizerSourceFn<br/>fetch(args)<br/>Pagination support"]
-        ResolvePagination["RESOLVE_PAGINATION_FN<br/>iterateDocuments<br/>distinctDocuments"]
-        StrategyData["GET_STRATEGY_DATA_FN<br/>Build message history<br/>Call getPrompt"]
-    end
-    
-    subgraph "Code Generation"
-        StrategyCode["GET_STRATEGY_CODE_FN<br/>Assemble 9 sections<br/>Template method calls"]
-        TemplateMethods["getTopBanner<br/>getJsonDumpTemplate<br/>getTextTemplate<br/>getJsonTemplate<br/>getExchangeTemplate<br/>getFrameTemplate<br/>getStrategyTemplate<br/>getWalkerTemplate<br/>getLauncherTemplate"]
-    end
-    
-    subgraph "Output"
-        GeneratedFile[".mjs file<br/>Executable strategy<br/>Walker comparison<br/>LLM integration"]
-        ProgressEmitter["progressOptimizerEmitter<br/>COMMIT_PROGRESS_FN"]
-    end
-    
-    addOptimizer --> OptimizerSchemaService
-    OptimizerDump --> OptimizerConnectionService
-    OptimizerData --> OptimizerConnectionService
-    OptimizerCode --> OptimizerConnectionService
-    
-    OptimizerConnectionService --> OptimizerSchemaService
-    OptimizerConnectionService --> OptimizerTemplateService
-    OptimizerConnectionService --> ClientOptimizer
-    OptimizerConnectionService --> OptimizerParams
-    
-    ClientOptimizer --> StrategyData
-    ClientOptimizer --> StrategyCode
-    ClientOptimizer --> ProgressEmitter
-    
-    OptimizerParams --> SourceFetch
-    StrategyData --> ResolvePagination
-    ResolvePagination --> SourceFetch
-    
-    StrategyCode --> TemplateMethods
-    OptimizerTemplateService -.->|"provides defaults"| TemplateMethods
-    
-    StrategyCode --> GeneratedFile
-    
-    style addOptimizer fill:#e1f5ff
-    style ClientOptimizer fill:#ffe1e1
-    style TemplateMethods fill:#fff4e1
-    style GeneratedFile fill:#e1ffe1
-```
+![Mermaid Diagram](./diagrams\87_AI-Powered_Strategy_Optimization_0.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:1-448](), [src/lib/services/connection/OptimizerConnectionService.ts:1-175](), [src/lib/services/template/OptimizerTemplateService.ts:1-710](), [src/interfaces/Optimizer.interface.ts:1-490]()
 
@@ -88,56 +25,7 @@ graph TB
 
 The optimizer follows a three-phase pipeline: data collection, LLM interaction, and code assembly.
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant OCS as OptimizerConnectionService
-    participant CO as ClientOptimizer
-    participant Source as IOptimizerSourceFn
-    participant Ollama as Ollama API
-    participant FS as File System
-    
-    User->>OCS: dump(symbol, optimizerName, path)
-    OCS->>OCS: getOptimizer(optimizerName)
-    Note over OCS: Memoized by optimizerName
-    OCS->>CO: new ClientOptimizer(params, onProgress)
-    
-    rect rgb(240, 240, 240)
-        Note over CO,Source: Phase 1: Data Collection
-        loop For each rangeTrain
-            loop For each source
-                CO->>Source: fetch({symbol, startDate, endDate, limit, offset})
-                Source-->>CO: IOptimizerData[]
-                CO->>CO: RESOLVE_PAGINATION_FN<br/>distinctDocuments, iterateDocuments
-                CO->>User: progressOptimizerEmitter.next()
-            end
-            CO->>Ollama: getPrompt(symbol, messageList)
-            Ollama-->>CO: Strategy recommendation
-        end
-    end
-    
-    rect rgb(240, 240, 240)
-        Note over CO: Phase 2: Code Assembly
-        CO->>CO: GET_STRATEGY_CODE_FN
-        loop 11 template methods
-            CO->>CO: template.getTopBanner(symbol)
-            CO->>CO: template.getJsonDumpTemplate(symbol)
-            CO->>CO: template.getTextTemplate(symbol)
-            CO->>CO: template.getJsonTemplate(symbol)
-            CO->>CO: template.getExchangeTemplate(symbol, exchangeName)
-            CO->>CO: template.getFrameTemplate(...)
-            CO->>CO: template.getStrategyTemplate(...)
-            CO->>CO: template.getWalkerTemplate(...)
-            CO->>CO: template.getLauncherTemplate(...)
-        end
-    end
-    
-    rect rgb(240, 240, 240)
-        Note over CO,FS: Phase 3: File Export
-        CO->>FS: writeFile(path, code)
-        CO->>User: callbacks?.onDump(symbol, filepath)
-    end
-```
+![Mermaid Diagram](./diagrams\87_AI-Powered_Strategy_Optimization_1.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:90-215](), [src/client/ClientOptimizer.ts:217-350](), [src/client/ClientOptimizer.ts:352-384]()
 
@@ -196,62 +84,7 @@ const configSource: IOptimizerSource = {
 
 The `ClientOptimizer` collects data from all sources across all training ranges, building a conversation history for the LLM.
 
-```mermaid
-flowchart TD
-    Start["GET_STRATEGY_DATA_FN<br/>symbol, ClientOptimizer"]
-    InitVars["Initialize:<br/>strategyList = []<br/>processedSources = 0"]
-    LoopRangeTrain{"For each<br/>rangeTrain"}
-    InitMessages["messageList = []"]
-    LoopSources{"For each<br/>source"}
-    
-    EmitProgress["progressOptimizerEmitter.next()<br/>processedSources / totalSources"]
-    CheckSourceType{"source is<br/>function?"}
-    
-    SimpleFetch["fetch = source<br/>name = 'unknown'<br/>user = DEFAULT_USER_FN<br/>assistant = DEFAULT_ASSISTANT_FN"]
-    ComplexFetch["fetch = source.fetch<br/>name = source.name<br/>user = source.user<br/>assistant = source.assistant"]
-    
-    ResolvePagination["RESOLVE_PAGINATION_FN<br/>iterateDocuments<br/>distinctDocuments<br/>limit = 25"]
-    CallbackSourceData["callbacks?.onSourceData<br/>symbol, name, data"]
-    
-    FormatMessages["Parallel:<br/>userContent = user(symbol, data, name)<br/>assistantContent = assistant(symbol, data, name)"]
-    PushMessages["messageList.push<br/>{role: 'user', content}<br/>{role: 'assistant', content}"]
-    
-    IncrementProcessed["processedSources++"]
-    
-    GetPrompt["strategy = getPrompt<br/>symbol, messageList"]
-    PushStrategy["strategyList.push<br/>{symbol, name, messages, strategy}"]
-    
-    FinalProgress["progressOptimizerEmitter.next<br/>progress = 1.0"]
-    CallbackData["callbacks?.onData<br/>symbol, strategyList"]
-    ReturnList["return strategyList"]
-    
-    Start --> InitVars
-    InitVars --> LoopRangeTrain
-    LoopRangeTrain -->|Yes| InitMessages
-    InitMessages --> LoopSources
-    LoopSources -->|Yes| EmitProgress
-    EmitProgress --> CheckSourceType
-    
-    CheckSourceType -->|Yes| SimpleFetch
-    CheckSourceType -->|No| ComplexFetch
-    
-    SimpleFetch --> ResolvePagination
-    ComplexFetch --> ResolvePagination
-    
-    ResolvePagination --> CallbackSourceData
-    CallbackSourceData --> FormatMessages
-    FormatMessages --> PushMessages
-    PushMessages --> IncrementProcessed
-    IncrementProcessed --> LoopSources
-    
-    LoopSources -->|No| GetPrompt
-    GetPrompt --> PushStrategy
-    PushStrategy --> LoopRangeTrain
-    
-    LoopRangeTrain -->|No| FinalProgress
-    FinalProgress --> CallbackData
-    CallbackData --> ReturnList
-```
+![Mermaid Diagram](./diagrams\87_AI-Powered_Strategy_Optimization_2.svg)
 
 ### Pagination Implementation
 
@@ -320,45 +153,7 @@ The `GET_STRATEGY_CODE_FN` assembles code sections in this order:
 
 The generated code integrates Ollama for runtime strategy generation with two helper functions: `text()` for analysis and `json()` for structured signals.
 
-```mermaid
-graph TB
-    subgraph "Generated Strategy Code"
-        getSignal["getSignal(symbol)<br/>Multi-timeframe analysis"]
-        GetCandles["getCandles(symbol, interval, limit)<br/>1m: 30 candles<br/>5m: 24 candles<br/>15m: 24 candles<br/>1h: 24 candles"]
-        FormatCandles["formatCandles(candles, timeframe)<br/>ISO timestamp + OHLCV"]
-        
-        BuildMessages["Build messages array:<br/>1. Analyze 1h candles<br/>2. Analyze 15m candles<br/>3. Analyze 5m candles<br/>4. Analyze 1m candles<br/>5. Request signal"]
-        
-        CallJson["json(messages)<br/>Structured output"]
-        DumpDebug["dumpJson(resultId, messages, result)<br/>./dump/strategy/{uuid}/"]
-    end
-    
-    subgraph "Ollama Integration"
-        TextFunction["text(messages)<br/>Model: deepseek-v3.1:671b<br/>System: Strategy analysis prompt"]
-        JsonFunction["json(messages)<br/>Model: deepseek-v3.1:671b<br/>Schema: ISignal format<br/>position, priceOpen, TP, SL"]
-        
-        OllamaAPI["new Ollama({<br/>host: 'https://ollama.com'<br/>Authorization: Bearer OLLAMA_API_KEY<br/>})"]
-    end
-    
-    subgraph "Signal Schema"
-        SignalFormat["Signal Format:<br/>position: 'wait' | 'long' | 'short'<br/>note: string<br/>priceOpen: number<br/>priceTakeProfit: number<br/>priceStopLoss: number<br/>minuteEstimatedTime: number"]
-    end
-    
-    getSignal --> GetCandles
-    GetCandles --> FormatCandles
-    FormatCandles --> BuildMessages
-    BuildMessages --> CallJson
-    CallJson --> JsonFunction
-    JsonFunction --> OllamaAPI
-    OllamaAPI --> SignalFormat
-    SignalFormat --> DumpDebug
-    
-    TextFunction --> OllamaAPI
-    
-    style getSignal fill:#e1f5ff
-    style JsonFunction fill:#ffe1e1
-    style SignalFormat fill:#e1ffe1
-```
+![Mermaid Diagram](./diagrams\87_AI-Powered_Strategy_Optimization_3.svg)
 
 ### JSON Schema Configuration
 
@@ -581,61 +376,7 @@ Events are emitted:
 
 The `OptimizerConnectionService` manages optimizer instances with memoization and template merging.
 
-```mermaid
-classDiagram
-    class OptimizerConnectionService {
-        -loggerService: LoggerService
-        -optimizerSchemaService: OptimizerSchemaService
-        -optimizerTemplateService: OptimizerTemplateService
-        +getOptimizer(optimizerName): ClientOptimizer
-        +getData(symbol, optimizerName): IOptimizerStrategy[]
-        +getCode(symbol, optimizerName): string
-        +dump(symbol, optimizerName, path): void
-    }
-    
-    class ClientOptimizer {
-        +params: IOptimizerParams
-        +onProgress: Function
-        +getData(symbol): IOptimizerStrategy[]
-        +getCode(symbol): string
-        +dump(symbol, path): void
-    }
-    
-    class OptimizerTemplateService {
-        +getTopBanner(symbol): string
-        +getUserMessage(symbol, data, name): string
-        +getAssistantMessage(symbol, data, name): string
-        +getWalkerTemplate(walkerName, ...): string
-        +getStrategyTemplate(strategyName, ...): string
-        +getExchangeTemplate(symbol, exchangeName): string
-        +getFrameTemplate(symbol, frameName, ...): string
-        +getLauncherTemplate(symbol, walkerName): string
-        +getTextTemplate(symbol): string
-        +getJsonTemplate(symbol): string
-        +getJsonDumpTemplate(symbol): string
-    }
-    
-    class OptimizerSchemaService {
-        +get(optimizerName): IOptimizerSchema
-    }
-    
-    class IOptimizerParams {
-        +optimizerName: OptimizerName
-        +logger: ILogger
-        +rangeTrain: IOptimizerRange[]
-        +rangeTest: IOptimizerRange
-        +source: Source[]
-        +getPrompt: Function
-        +template: IOptimizerTemplate
-        +callbacks: IOptimizerCallbacks
-    }
-    
-    OptimizerConnectionService --> ClientOptimizer : creates
-    OptimizerConnectionService --> OptimizerSchemaService : reads schema
-    OptimizerConnectionService --> OptimizerTemplateService : merges templates
-    OptimizerConnectionService --> IOptimizerParams : builds params
-    ClientOptimizer --> IOptimizerParams : uses
-```
+![Mermaid Diagram](./diagrams\87_AI-Powered_Strategy_Optimization_4.svg)
 
 ### Template Merging Logic
 

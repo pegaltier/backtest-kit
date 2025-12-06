@@ -14,157 +14,13 @@ The component registration system implements a three-stage pipeline that transfo
 
 ### Registration Flow Diagram
 
-```mermaid
-flowchart TB
-    User["User Code<br/>add* functions"]
-    
-    subgraph "src/function/add.ts"
-        AddStrategy["addStrategy()"]
-        AddExchange["addExchange()"]
-        AddFrame["addFrame()"]
-        AddWalker["addWalker()"]
-        AddSizing["addSizing()"]
-        AddRisk["addRisk()"]
-        AddOptimizer["addOptimizer()"]
-    end
-    
-    subgraph "Stage 1: Logging"
-        Logger["LoggerService<br/>backtest.loggerService.info()"]
-    end
-    
-    subgraph "Stage 2: Validation"
-        StratValidation["StrategyValidationService<br/>addStrategy()"]
-        ExchValidation["ExchangeValidationService<br/>addExchange()"]
-        FrameValidation["FrameValidationService<br/>addFrame()"]
-        WalkerValidation["WalkerValidationService<br/>addWalker()"]
-        SizingValidation["SizingValidationService<br/>addSizing()"]
-        RiskValidation["RiskValidationService<br/>addRisk()"]
-        OptimizerValidation["OptimizerValidationService<br/>addOptimizer()"]
-    end
-    
-    subgraph "Stage 3: Registration"
-        StratSchema["StrategySchemaService<br/>register()"]
-        ExchSchema["ExchangeSchemaService<br/>register()"]
-        FrameSchema["FrameSchemaService<br/>register()"]
-        WalkerSchema["WalkerSchemaService<br/>register()"]
-        SizingSchema["SizingSchemaService<br/>register()"]
-        RiskSchema["RiskSchemaService<br/>register()"]
-        OptimizerSchema["OptimizerSchemaService<br/>register()"]
-    end
-    
-    subgraph "Storage"
-        Registry["In-Memory Registry<br/>Map<Name, Schema>"]
-    end
-    
-    User --> AddStrategy
-    User --> AddExchange
-    User --> AddFrame
-    User --> AddWalker
-    User --> AddSizing
-    User --> AddRisk
-    User --> AddOptimizer
-    
-    AddStrategy --> Logger
-    AddExchange --> Logger
-    AddFrame --> Logger
-    AddWalker --> Logger
-    AddSizing --> Logger
-    AddRisk --> Logger
-    AddOptimizer --> Logger
-    
-    Logger --> StratValidation
-    Logger --> ExchValidation
-    Logger --> FrameValidation
-    Logger --> WalkerValidation
-    Logger --> SizingValidation
-    Logger --> RiskValidation
-    Logger --> OptimizerValidation
-    
-    StratValidation --> StratSchema
-    ExchValidation --> ExchSchema
-    FrameValidation --> FrameSchema
-    WalkerValidation --> WalkerSchema
-    SizingValidation --> SizingSchema
-    RiskValidation --> RiskSchema
-    OptimizerValidation --> OptimizerSchema
-    
-    StratSchema --> Registry
-    ExchSchema --> Registry
-    FrameSchema --> Registry
-    WalkerSchema --> Registry
-    SizingSchema --> Registry
-    RiskSchema --> Registry
-    OptimizerSchema --> Registry
-```
+![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_0.svg)
 
 **Sources:** [src/function/add.ts:1-444]()
 
 ### Component Lifecycle
 
-```mermaid
-stateDiagram-v2
-    [*] --> Unregistered: User creates schema object
-    
-    Unregistered --> Validating: add* function called
-    
-    state "Validation Stage" as Validating {
-        CheckRequired --> CheckTypes
-        CheckTypes --> CheckCallbacks
-        CheckCallbacks --> CheckLogic
-    }
-    
-    Validating --> ValidationFailed: Validation error
-    Validating --> Registered: Validation passes
-    
-    ValidationFailed --> [*]: Exception thrown
-    
-    state "Registered State" as Registered {
-        InMemory: Stored in SchemaService Map
-        Available: Retrievable by name
-    }
-    
-    Registered --> Retrieved: Execution mode starts
-    
-    state "Retrieved State" as Retrieved {
-        Instantiated: ConnectionService creates Client* instance
-        Memoized: Instance cached per symbol
-        Injected: Context services injected
-    }
-    
-    Retrieved --> Executing: tick() or backtest() called
-    
-    state "Executing State" as Executing {
-        Active: Processing signals
-        Monitoring: Tracking positions
-        Emitting: Publishing events
-    }
-    
-    Executing --> Completed: Execution finishes
-    Completed --> [*]
-    
-    note right of Validating
-        ValidationService checks:
-        - Required fields present
-        - Types correct
-        - Logic constraints valid
-        - Callbacks well-formed
-    end note
-    
-    note right of Registered
-        SchemaService stores:
-        - Map<Name, Schema>
-        - No duplicates allowed
-        - Immutable after registration
-    end note
-    
-    note right of Retrieved
-        ConnectionService creates:
-        - ClientStrategy instances
-        - ClientExchange instances
-        - ClientRisk instances
-        - Memoized per (symbol, name)
-    end note
-```
+![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_1.svg)
 
 **Sources:** [src/function/add.ts:52-444](), [src/lib/services/schema/*](), [src/lib/services/validation/*](), [src/lib/services/connection/*]()
 
@@ -249,32 +105,7 @@ Optional callbacks invoked during signal lifecycle transitions:
 
 ### Registration Process
 
-```mermaid
-sequenceDiagram
-    participant User as "User Code"
-    participant AddFn as "addStrategy()"
-    participant Logger as "LoggerService"
-    participant Validator as "StrategyValidationService"
-    participant Schema as "StrategySchemaService"
-    
-    User->>AddFn: Call with IStrategySchema
-    AddFn->>Logger: Log registration event
-    Logger-->>AddFn: Logged
-    
-    AddFn->>Validator: addStrategy(name, schema)
-    
-    Note over Validator: Validates:<br/>- strategyName present<br/>- interval valid<br/>- getSignal is function<br/>- callbacks well-formed<br/>- riskName exists if provided
-    
-    alt Validation Fails
-        Validator-->>User: Throw Error
-    else Validation Passes
-        Validator-->>AddFn: Valid
-        AddFn->>Schema: register(name, schema)
-        Schema->>Schema: Store in Map<Name, Schema>
-        Schema-->>AddFn: Registered
-        AddFn-->>User: Return (void)
-    end
-```
+![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_2.svg)
 
 **Sources:** [src/function/add.ts:52-64]()
 
@@ -510,30 +341,7 @@ Valid intervals for timeframe generation:
 
 ### Timeframe Generation Process
 
-```mermaid
-flowchart LR
-    Schema["IFrameSchema<br/>{startDate, endDate, interval}"]
-    Generator["ClientFrame.getTimeframe()"]
-    Array["Date[] timeframe"]
-    
-    Schema --> Generator
-    
-    subgraph "Generation Logic"
-        Start["currentDate = startDate"]
-        Check{"currentDate <= endDate?"}
-        Add["timestamps.push(currentDate)"]
-        Increment["currentDate += interval"]
-        Check -->|Yes| Add
-        Add --> Increment
-        Increment --> Check
-        Check -->|No| Done["Return timestamps"]
-    end
-    
-    Generator --> Start
-    Done --> Array
-    
-    Array --> Backtest["BacktestLogicPrivateService<br/>iterates timeframe"]
-```
+![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_3.svg)
 
 **Sources:** [src/function/add.ts:145-151]()
 
@@ -622,36 +430,7 @@ Metrics available for strategy comparison:
 
 ### Walker Execution Flow
 
-```mermaid
-sequenceDiagram
-    participant User as "User Code"
-    participant Walker as "WalkerLogicPrivateService"
-    participant Backtest as "BacktestLogicPublicService"
-    participant Markdown as "BacktestMarkdownService"
-    participant Compare as "Comparison Logic"
-    
-    User->>Walker: Walker.run(symbol, walkerName)
-    
-    loop For each strategy in strategies[]
-        Walker->>Backtest: Run full backtest
-        Backtest-->>Walker: Signals completed
-        
-        Walker->>Markdown: getData() for statistics
-        Markdown-->>Walker: BacktestStatistics
-        
-        Walker->>Compare: Extract metric value
-        Compare->>Compare: Compare to bestMetric
-        
-        alt New best found
-            Compare->>Compare: Update bestStrategy
-            Compare->>Compare: Update bestMetric
-        end
-        
-        Walker->>User: Yield WalkerContract (progress)
-    end
-    
-    Walker->>User: Return final WalkerContract
-```
+![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_4.svg)
 
 **Sources:** [src/function/add.ts:190-202]()
 
@@ -758,34 +537,7 @@ interface ISizingSchemaATRBased {
 
 ### Sizing Method Comparison
 
-```mermaid
-flowchart TB
-    subgraph "Fixed Percentage"
-        FP_Input["Account Balance<br/>Risk %"]
-        FP_Calc["Position Size =<br/>Balance × Risk% / SL Distance%"]
-        FP_Output["Fixed $ risk per trade"]
-        FP_Input --> FP_Calc --> FP_Output
-    end
-    
-    subgraph "Kelly Criterion"
-        KC_Input["Win Rate<br/>Avg Win/Loss<br/>Kelly Multiplier"]
-        KC_Calc["Kelly% = Win% - (Loss% / Win:Loss)<br/>Position = Kelly% × Multiplier"]
-        KC_Output["Dynamically sized<br/>based on edge"]
-        KC_Input --> KC_Calc --> KC_Output
-    end
-    
-    subgraph "ATR-Based"
-        ATR_Input["Account Balance<br/>ATR<br/>ATR Multiplier"]
-        ATR_Calc["Stop Distance = ATR × Multiplier<br/>Position = Risk$ / Stop Distance"]
-        ATR_Output["Volatility-adjusted<br/>position size"]
-        ATR_Input --> ATR_Calc --> ATR_Output
-    end
-    
-    Decision{"Choose Method"}
-    Decision -->|"Simple risk management"| FP_Input
-    Decision -->|"Optimize based on edge"| KC_Input
-    Decision -->|"Adapt to volatility"| ATR_Input
-```
+![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_5.svg)
 
 **Sources:** [src/function/add.ts:256-268]()
 
@@ -875,35 +627,7 @@ interface IRiskValidationPayload {
 
 ### Risk Validation Flow
 
-```mermaid
-sequenceDiagram
-    participant Strategy as "ClientStrategy"
-    participant Risk as "ClientRisk"
-    participant Validators as "Custom Validators"
-    participant Registry as "Active Position Registry"
-    
-    Strategy->>Risk: checkSignal(params)
-    
-    Risk->>Registry: Get activePositions[]
-    Registry-->>Risk: IRiskActivePosition[]
-    
-    Risk->>Risk: Build IRiskValidationPayload
-    
-    loop For each validation in validations[]
-        Risk->>Validators: validate(payload)
-        
-        alt Validation Passes
-            Validators-->>Risk: Return (void)
-        else Validation Fails
-            Validators-->>Risk: Throw Error
-            Risk->>Risk: Call onRejected callback
-            Risk-->>Strategy: Return false (rejected)
-        end
-    end
-    
-    Risk->>Risk: Call onAllowed callback
-    Risk-->>Strategy: Return true (allowed)
-```
+![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_6.svg)
 
 **Sources:** [src/function/add.ts:331-343]()
 
@@ -1039,64 +763,7 @@ type IOptimizerSourceFn = (
 
 ### Optimizer Data Collection Pipeline
 
-```mermaid
-flowchart TB
-    Start["Optimizer.dump(symbol)"]
-    
-    subgraph "Phase 1: Data Collection"
-        TrainLoop["For each rangeTrain"]
-        SourceLoop["For each source"]
-        Fetch["source.fetch()<br/>Get data"]
-        FormatUser["source.user()<br/>Format user message"]
-        FormatAssist["source.assistant()<br/>Format assistant message"]
-        Append["Append to messageList[]"]
-        
-        TrainLoop --> SourceLoop
-        SourceLoop --> Fetch
-        Fetch --> FormatUser
-        FormatUser --> FormatAssist
-        FormatAssist --> Append
-        Append --> SourceLoop
-    end
-    
-    subgraph "Phase 2: LLM Prompting"
-        BuildContext["Build conversation context"]
-        CallPrompt["getPrompt(symbol, messageList)"]
-        LLM["LLM generates strategy"]
-        AppendStrat["Append to strategyList[]"]
-        
-        BuildContext --> CallPrompt
-        CallPrompt --> LLM
-        LLM --> AppendStrat
-    end
-    
-    subgraph "Phase 3: Code Generation"
-        Banner["getTopBanner()"]
-        Helpers["getJsonDumpTemplate()<br/>getTextTemplate()<br/>getJsonTemplate()"]
-        Exchange["getExchangeTemplate()"]
-        Frames["getFrameTemplate() for each range"]
-        Strategies["getStrategyTemplate() for each strategy"]
-        Walker["getWalkerTemplate()"]
-        Launcher["getLauncherTemplate()"]
-        Assemble["Concatenate all templates"]
-        
-        Banner --> Helpers
-        Helpers --> Exchange
-        Exchange --> Frames
-        Frames --> Strategies
-        Strategies --> Walker
-        Walker --> Launcher
-        Launcher --> Assemble
-    end
-    
-    Write["fs.writeFile(path, code)"]
-    
-    Start --> TrainLoop
-    Append --> TrainLoop
-    TrainLoop --> BuildContext
-    AppendStrat --> Banner
-    Assemble --> Write
-```
+![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_7.svg)
 
 **Sources:** [src/function/add.ts:432-444]()
 
@@ -1219,89 +886,7 @@ The registration functions depend on two service categories that are injected vi
 
 ### Service Dependency Diagram
 
-```mermaid
-graph TB
-    subgraph "src/function/add.ts"
-        AddStrategy["addStrategy()"]
-        AddExchange["addExchange()"]
-        AddFrame["addFrame()"]
-        AddWalker["addWalker()"]
-        AddSizing["addSizing()"]
-        AddRisk["addRisk()"]
-        AddOptimizer["addOptimizer()"]
-    end
-    
-    subgraph "Validation Services (src/lib/services/validation/)"
-        StratVal["StrategyValidationService"]
-        ExchVal["ExchangeValidationService"]
-        FrameVal["FrameValidationService"]
-        WalkerVal["WalkerValidationService"]
-        SizingVal["SizingValidationService"]
-        RiskVal["RiskValidationService"]
-        OptimizerVal["OptimizerValidationService"]
-    end
-    
-    subgraph "Schema Services (src/lib/services/schema/)"
-        StratSchema["StrategySchemaService"]
-        ExchSchema["ExchangeSchemaService"]
-        FrameSchema["FrameSchemaService"]
-        WalkerSchema["WalkerSchemaService"]
-        SizingSchema["SizingSchemaService"]
-        RiskSchema["RiskSchemaService"]
-        OptimizerSchema["OptimizerSchemaService"]
-    end
-    
-    subgraph "backtest Object (src/lib/index.ts)"
-        Logger["loggerService"]
-        ValidationAgg["*ValidationService"]
-        SchemaAgg["*SchemaService"]
-    end
-    
-    AddStrategy --> Logger
-    AddStrategy --> StratVal
-    AddStrategy --> StratSchema
-    
-    AddExchange --> Logger
-    AddExchange --> ExchVal
-    AddExchange --> ExchSchema
-    
-    AddFrame --> Logger
-    AddFrame --> FrameVal
-    AddFrame --> FrameSchema
-    
-    AddWalker --> Logger
-    AddWalker --> WalkerVal
-    AddWalker --> WalkerSchema
-    
-    AddSizing --> Logger
-    AddSizing --> SizingVal
-    AddSizing --> SizingSchema
-    
-    AddRisk --> Logger
-    AddRisk --> RiskVal
-    AddRisk --> RiskSchema
-    
-    AddOptimizer --> Logger
-    AddOptimizer --> OptimizerVal
-    AddOptimizer --> OptimizerSchema
-    
-    Logger --> ValidationAgg
-    StratVal --> ValidationAgg
-    ExchVal --> ValidationAgg
-    FrameVal --> ValidationAgg
-    WalkerVal --> ValidationAgg
-    SizingVal --> ValidationAgg
-    RiskVal --> ValidationAgg
-    OptimizerVal --> ValidationAgg
-    
-    StratSchema --> SchemaAgg
-    ExchSchema --> SchemaAgg
-    FrameSchema --> SchemaAgg
-    WalkerSchema --> SchemaAgg
-    SizingSchema --> SchemaAgg
-    RiskSchema --> SchemaAgg
-    OptimizerSchema --> SchemaAgg
-```
+![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_8.svg)
 
 **Sources:** [src/function/add.ts:1-444](), [src/lib/index.ts:1-232](), [src/lib/core/provide.ts:1-132](), [src/lib/core/types.ts:1-97]()
 
@@ -1394,31 +979,7 @@ class SchemaService<T> {
 
 ### Registry Access Pattern
 
-```mermaid
-sequenceDiagram
-    participant User as "User Code"
-    participant Add as "add* function"
-    participant Schema as "SchemaService"
-    participant Execution as "Execution Mode<br/>(Backtest/Live/Walker)"
-    participant Connection as "ConnectionService"
-    participant Client as "Client* Instance"
-    
-    User->>Add: addStrategy(schema)
-    Add->>Schema: register(name, schema)
-    Schema->>Schema: _registry.set(name, schema)
-    
-    Note over Schema: Schema stored in memory
-    
-    User->>Execution: Backtest.run(symbol, ...)
-    Execution->>Connection: Get strategy instance
-    Connection->>Schema: get(strategyName)
-    Schema-->>Connection: IStrategySchema
-    Connection->>Client: new ClientStrategy(schema)
-    Client-->>Connection: instance
-    Connection-->>Execution: ClientStrategy
-    
-    Note over Client: Strategy executes<br/>with registered schema
-```
+![Mermaid Diagram](./diagrams\16_Component_Registration_Functions_9.svg)
 
 **Sources:** [src/lib/services/schema/*](), [src/lib/services/connection/*]()
 
