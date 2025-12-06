@@ -80,13 +80,13 @@ listenError((error) => {
 listenPartialProfit(({ symbol, price, level }) => {
   console.log(`${symbol} reached ${level}% profit at ${price}`);
   if (level === Constant.TP_LEVEL3) {
-    console.log("Close 33% at 25% profit");
+    console.log("Close 33% at 90% profit");
   }
   if (level === Constant.TP_LEVEL2) {
-    console.log("Close 33% at 50% profit");
+    console.log("Close 33% at 60% profit");
   }
   if (level === Constant.TP_LEVEL1) {
-    console.log("Close 34% at 100% profit");
+    console.log("Close 34% at 30% profit");
   }
 });
 
@@ -95,9 +95,9 @@ listenPartialLoss(({ symbol, price, level }) => {
 
   // Scale out at stop levels
   if (level === Constant.SL_LEVEL2) {
-    console.log("Close 50% at -50% loss");
+    console.log("Close 50% at -80% loss");
   }
   if (level === Constant.SL_LEVEL1) {
-    console.log("Close 50% at -100% loss");
+    console.log("Close 50% at -40% loss");
   }
 });
