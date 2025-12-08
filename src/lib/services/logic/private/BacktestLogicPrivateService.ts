@@ -91,6 +91,25 @@ export class BacktestLogicPrivateService {
         });
       }
 
+      // Check if strategy should stop before processing next frame
+      if (
+        await this.strategyGlobalService.getStopped(
+          symbol,
+          this.methodContextService.context.strategyName
+        )
+      ) {
+        this.loggerService.info(
+          "backtestLogicPrivateService stopped by user request (before tick)",
+          {
+            symbol,
+            when: when.toISOString(),
+            processedFrames: i,
+            totalFrames,
+          }
+        );
+        break;
+      }
+
       let result: IStrategyTickResult;
       try {
         result = await this.strategyGlobalService.tick(symbol, when, true);

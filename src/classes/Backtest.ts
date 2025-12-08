@@ -121,7 +121,7 @@ export class BacktestUtils {
       exitEmitter.next(new Error(getErrorMessage(error)))
     );
     return () => {
-      backtest.strategyGlobalService.stop({symbol, strategyName: context.strategyName});
+      backtest.strategyGlobalService.stop({symbol, strategyName: context.strategyName}, true);
       backtest.strategyGlobalService
         .getPendingSignal(symbol, context.strategyName)
         .then(async (pendingSignal) => {
@@ -164,7 +164,7 @@ export class BacktestUtils {
       symbol,
       strategyName,
     });
-    await backtest.strategyGlobalService.stop({ symbol, strategyName });
+    await backtest.strategyGlobalService.stop({ symbol, strategyName }, true);
   };
 
   /**

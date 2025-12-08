@@ -382,7 +382,7 @@ export interface IStrategy {
    * await cancel();
    * ```
    */
-  stop: (symbol: string, strategyName: StrategyName) => Promise<void>;
+  stop: (symbol: string, strategyName: StrategyName, backtest: boolean) => Promise<void>;
 }
 
 /**

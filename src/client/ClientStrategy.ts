@@ -2197,20 +2197,33 @@ export class ClientStrategy implements IStrategy {
    * // Existing signal will continue until natural close
    * ```
    */
-  public async stop(symbol: string, strategyName: StrategyName): Promise<void> {
+  public async stop(symbol: string, strategyName: StrategyName, backtest: boolean): Promise<void> {
     this.params.logger.debug("ClientStrategy stop", {
       symbol,
       strategyName,
       hasPendingSignal: this._pendingSignal !== null,
       hasScheduledSignal: this._scheduledSignal !== null,
+      backtest,
     });
 
     this._isStopped = true;
 
     // Clear scheduled signal if exists
-    if (this._scheduledSignal) {
-      await this.setScheduledSignal(null);
+    if (!this._scheduledSignal) {
+      return;
     }
+
+    this._scheduledSignal = null;
+
+    if (backtest) {
+      return;
+    }
+
+    await PersistScheduleAdapter.writeScheduleData(
+      this._scheduledSignal,
+      this.params.execution.context.symbol,
+      this.params.strategyName,
+    );
   }
 }
 

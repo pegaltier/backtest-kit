@@ -142,7 +142,7 @@ export class WalkerUtils {
     );
     return () => {
       for (const strategyName of walkerSchema.strategies) {
-        backtest.strategyGlobalService.stop({symbol, strategyName});
+        backtest.strategyGlobalService.stop({symbol, strategyName}, true);
         walkerStopSubject.next({ symbol, strategyName, walkerName: context.walkerName });
       }
       if (!isDone) {
@@ -191,7 +191,7 @@ export class WalkerUtils {
 
     for (const strategyName of walkerSchema.strategies) {
       await walkerStopSubject.next({ symbol, strategyName, walkerName });
-      await backtest.strategyGlobalService.stop({ symbol, strategyName });
+      await backtest.strategyGlobalService.stop({ symbol, strategyName }, true);
     }
   };
 

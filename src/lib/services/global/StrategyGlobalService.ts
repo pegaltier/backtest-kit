@@ -195,12 +195,13 @@ export class StrategyGlobalService {
    * @param strategyName - Name of strategy to stop
    * @returns Promise that resolves when stop flag is set
    */
-  public stop = async (ctx: { symbol: string; strategyName: StrategyName }): Promise<void> => {
+  public stop = async (ctx: { symbol: string; strategyName: StrategyName }, backtest: boolean): Promise<void> => {
     this.loggerService.log("strategyGlobalService stop", {
       ctx,
+      backtest,
     });
     await this.validate(ctx.symbol, ctx.strategyName);
-    return await this.strategyConnectionService.stop(ctx);
+    return await this.strategyConnectionService.stop(ctx, backtest);
   };
 
   /**
