@@ -5698,6 +5698,11 @@ declare class Performance {
  */
 declare class WalkerUtils {
     /**
+     * Memoized function to get or create WalkerInstance for a symbol-walker pair.
+     * Each symbol-walker combination gets its own isolated instance.
+     */
+    private _getInstance;
+    /**
      * Runs walker comparison for a symbol with context propagation.
      *
      * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
@@ -5798,6 +5803,24 @@ declare class WalkerUtils {
      * ```
      */
     dump: (symbol: string, walkerName: WalkerName, path?: string) => Promise<void>;
+    /**
+     * Lists all active walker instances with their current status.
+     *
+     * @returns Promise resolving to array of status objects for all instances
+     *
+     * @example
+     * ```typescript
+     * const statusList = await Walker.list();
+     * statusList.forEach(status => {
+     *   console.log(`${status.symbol} - ${status.walkerName}: ${status.status}`);
+     * });
+     * ```
+     */
+    list: () => Promise<{
+        symbol: string;
+        walkerName: string;
+        status: "pending" | "fulfilled" | "rejected" | "ready";
+    }[]>;
 }
 /**
  * Singleton instance of WalkerUtils for convenient walker operations.
