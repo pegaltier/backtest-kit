@@ -5,6 +5,7 @@ import { getErrorMessage } from "functools-kit";
 
 const BACKTEST_METHOD_NAME_RUN = "BacktestUtils.run";
 const BACKTEST_METHOD_NAME_BACKGROUND = "BacktestUtils.background";
+const BACKTEST_METHOD_NAME_STOP = "BacktestUtils.stop";
 const BACKTEST_METHOD_NAME_GET_REPORT = "BacktestUtils.getReport";
 const BACKTEST_METHOD_NAME_DUMP = "BacktestUtils.dump";
 
@@ -139,6 +140,31 @@ export class BacktestUtils {
         });
       isStopped = true;
     };
+  };
+
+  /**
+   * Stops the strategy from generating new signals.
+   *
+   * Sets internal flag to prevent strategy from opening new signals.
+   * Current active signal (if any) will complete normally.
+   * Backtest will stop at the next safe point (idle state or after signal closes).
+   *
+   * @param symbol - Trading pair symbol
+   * @param strategyName - Strategy name to stop
+   * @returns Promise that resolves when stop flag is set
+   *
+   * @example
+   * ```typescript
+   * // Stop strategy after some condition
+   * await Backtest.stop("BTCUSDT", "my-strategy");
+   * ```
+   */
+  public stop = async (symbol: string, strategyName: StrategyName): Promise<void> => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_STOP, {
+      symbol,
+      strategyName,
+    });
+    await backtest.strategyGlobalService.stop({ symbol, strategyName });
   };
 
   /**

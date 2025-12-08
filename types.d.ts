@@ -6611,6 +6611,17 @@ declare class StrategyConnectionService {
      */
     getPendingSignal: (symbol: string, strategyName: StrategyName) => Promise<ISignalRow | null>;
     /**
+     * Retrieves the stopped state of the strategy.
+     *
+     * Delegates to the underlying strategy instance to check if it has been
+     * marked as stopped and should cease operation.
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Name of the strategy
+     * @returns Promise resolving to true if strategy is stopped, false otherwise
+     */
+    getStopped: (symbol: string, strategyName: StrategyName) => Promise<boolean>;
+    /**
      * Executes live trading tick for current strategy.
      *
      * Waits for strategy initialization before processing tick.
@@ -7079,6 +7090,17 @@ declare class StrategyGlobalService {
      * @returns Promise resolving to pending signal or null
      */
     getPendingSignal: (symbol: string, strategyName: StrategyName) => Promise<ISignalRow | null>;
+    /**
+     * Checks if the strategy has been stopped.
+     *
+     * Validates strategy existence and delegates to connection service
+     * to retrieve the stopped state from the strategy instance.
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Name of the strategy
+     * @returns Promise resolving to true if strategy is stopped, false otherwise
+     */
+    getStopped: (symbol: string, strategyName: StrategyName) => Promise<boolean>;
     /**
      * Checks signal status at a specific timestamp.
      *

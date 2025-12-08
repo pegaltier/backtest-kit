@@ -9,6 +9,7 @@ import { getErrorMessage } from "functools-kit";
 
 const LIVE_METHOD_NAME_RUN = "LiveUtils.run";
 const LIVE_METHOD_NAME_BACKGROUND = "LiveUtils.background";
+const LIVE_METHOD_NAME_STOP = "LiveUtils.stop";
 const LIVE_METHOD_NAME_GET_REPORT = "LiveUtils.getReport";
 const LIVE_METHOD_NAME_DUMP = "LiveUtils.dump";
 
@@ -156,6 +157,31 @@ export class LiveUtils {
         });
       isStopped = true;
     };
+  };
+
+  /**
+   * Stops the strategy from generating new signals.
+   *
+   * Sets internal flag to prevent strategy from opening new signals.
+   * Current active signal (if any) will complete normally.
+   * Live trading will stop at the next safe point (idle/closed state).
+   *
+   * @param symbol - Trading pair symbol
+   * @param strategyName - Strategy name to stop
+   * @returns Promise that resolves when stop flag is set
+   *
+   * @example
+   * ```typescript
+   * // Stop live trading gracefully
+   * await Live.stop("BTCUSDT", "my-strategy");
+   * ```
+   */
+  public stop = async (symbol: string, strategyName: StrategyName): Promise<void> => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_STOP, {
+      symbol,
+      strategyName,
+    });
+    await backtest.strategyGlobalService.stop({ symbol, strategyName });
   };
 
   /**

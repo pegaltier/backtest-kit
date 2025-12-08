@@ -15,7 +15,7 @@ import {
   errorEmitter,
 } from "../../../../config/emitters";
 import { GLOBAL_CONFIG } from "../../../../config/params";
-import { errorData, getErrorMessage } from "functools-kit";
+import { and, errorData, getErrorMessage } from "functools-kit";
 
 /**
  * Private service for backtest orchestration using async generators.
@@ -107,6 +107,28 @@ export class BacktestLogicPrivateService {
         await errorEmitter.next(error);
         i++;
         continue;
+      }
+
+      // Check if strategy should stop when idle (no active signal)
+      if (
+        await and(
+          Promise.resolve(result.action === "idle"),
+          this.strategyGlobalService.getStopped(
+            symbol,
+            this.methodContextService.context.strategyName
+          )
+        )
+      ) {
+        this.loggerService.info(
+          "backtestLogicPrivateService stopped by user request (idle state)",
+          {
+            symbol,
+            when: when.toISOString(),
+            processedFrames: i,
+            totalFrames,
+          }
+        );
+        break;
       }
 
       // Если scheduled signal создан - обрабатываем через backtest()
@@ -238,6 +260,25 @@ export class BacktestLogicPrivateService {
         }
 
         yield backtestResult;
+
+        // Check if strategy should stop after signal is closed
+        if (
+          await this.strategyGlobalService.getStopped(
+            symbol,
+            this.methodContextService.context.strategyName
+          )
+        ) {
+          this.loggerService.info(
+            "backtestLogicPrivateService stopped by user request (after scheduled signal closed)",
+            {
+              symbol,
+              signalId: backtestResult.signal.id,
+              processedFrames: i,
+              totalFrames,
+            }
+          );
+          break;
+        }
       }
 
       // Если обычный сигнал открыт, вызываем backtest
@@ -349,6 +390,25 @@ export class BacktestLogicPrivateService {
         }
 
         yield backtestResult;
+
+        // Check if strategy should stop after signal is closed
+        if (
+          await this.strategyGlobalService.getStopped(
+            symbol,
+            this.methodContextService.context.strategyName
+          )
+        ) {
+          this.loggerService.info(
+            "backtestLogicPrivateService stopped by user request (after signal closed)",
+            {
+              symbol,
+              signalId: backtestResult.signal.id,
+              processedFrames: i,
+              totalFrames,
+            }
+          );
+          break;
+        }
       }
 
       // Track timeframe processing duration

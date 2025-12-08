@@ -336,6 +336,18 @@ export interface IStrategy {
   getPendingSignal: (symbol: string, strategyName: StrategyName) => Promise<ISignalRow | null>;
 
   /**
+   * Checks if the strategy has been stopped.
+   *
+   * Returns the stopped state indicating whether the strategy should
+   * cease processing new ticks or signals.
+   *
+   * @param symbol - Trading pair symbol
+   * @param strategyName - Name of the strategy
+   * @returns Promise resolving to true if strategy is stopped, false otherwise
+   */
+  getStopped: (symbol: string, strategyName: StrategyName) => Promise<boolean>;
+
+  /**
    * Fast backtest using historical candles.
    * Iterates through candles, calculates VWAP, checks TP/SL on each candle.
    *

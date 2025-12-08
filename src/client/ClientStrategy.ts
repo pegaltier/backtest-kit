@@ -1817,6 +1817,24 @@ export class ClientStrategy implements IStrategy {
   }
 
   /**
+   * Returns the stopped state of the strategy.
+   *
+   * Indicates whether the strategy has been explicitly stopped and should
+   * not continue processing new ticks or signals.
+   *
+   * @param symbol - Trading pair symbol
+   * @param strategyName - Name of the strategy
+   * @returns Promise resolving to true if strategy is stopped, false otherwise
+   */
+  public async getStopped(symbol: string, strategyName: StrategyName): Promise<boolean> {
+    this.params.logger.debug("ClientStrategy getStopped", {
+      symbol,
+      strategyName,
+    });
+    return this._isStopped;
+  }
+
+  /**
    * Performs a single tick of strategy execution.
    *
    * Flow (LIVE mode):

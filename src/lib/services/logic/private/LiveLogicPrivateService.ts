@@ -2,12 +2,14 @@ import { inject } from "../../../core/di";
 import LoggerService from "../../base/LoggerService";
 import TYPES from "../../../core/types";
 import StrategyGlobalService from "../../global/StrategyGlobalService";
-import { errorData, getErrorMessage, sleep } from "functools-kit";
+import { and, errorData, getErrorMessage, sleep } from "functools-kit";
 import { performanceEmitter, errorEmitter } from "../../../../config/emitters";
-import MethodContextService, {
-  TMethodContextService,
-} from "../../context/MethodContextService";
-import { IStrategyTickResult, IStrategyTickResultClosed, IStrategyTickResultOpened } from "../../../../interfaces/Strategy.interface";
+import { TMethodContextService } from "../../context/MethodContextService";
+import {
+  IStrategyTickResult,
+  IStrategyTickResultClosed,
+  IStrategyTickResultOpened,
+} from "../../../../interfaces/Strategy.interface";
 
 const TICK_TTL = 1 * 60 * 1_000 + 1;
 
@@ -73,18 +75,40 @@ export class LiveLogicPrivateService {
       try {
         result = await this.strategyGlobalService.tick(symbol, when, false);
       } catch (error) {
-        console.warn(`backtestLogicPrivateService tick failed when=${when.toISOString()} symbol=${symbol} strategyName=${this.methodContextService.context.strategyName} exchangeName=${this.methodContextService.context.exchangeName}`);
+        console.warn(
+          `backtestLogicPrivateService tick failed when=${when.toISOString()} symbol=${symbol} strategyName=${
+            this.methodContextService.context.strategyName
+          } exchangeName=${this.methodContextService.context.exchangeName}`
+        );
         this.loggerService.warn(
           "liveLogicPrivateService tick failed, retrying after sleep",
           {
             symbol,
             when: when.toISOString(),
-            error: errorData(error), message: getErrorMessage(error),
+            error: errorData(error),
+            message: getErrorMessage(error),
           }
         );
         await errorEmitter.next(error);
         await sleep(TICK_TTL);
         continue;
+      }
+
+      {
+        let isStopped = false;
+        isStopped = isStopped || result.action === "closed";
+        isStopped = isStopped || result.action === "idle";
+        if (
+          await and(
+            this.strategyGlobalService.getStopped(
+              symbol,
+              this.methodContextService.context.strategyName
+            ),
+            Promise.resolve(isStopped)
+          )
+        ) {
+          break;
+        }
       }
 
       this.loggerService.info("liveLogicPrivateService tick result", {

@@ -91,6 +91,28 @@ export class StrategyGlobalService {
   };
 
   /**
+   * Checks if the strategy has been stopped.
+   *
+   * Validates strategy existence and delegates to connection service
+   * to retrieve the stopped state from the strategy instance.
+   *
+   * @param symbol - Trading pair symbol
+   * @param strategyName - Name of the strategy
+   * @returns Promise resolving to true if strategy is stopped, false otherwise
+   */
+  public getStopped = async (
+    symbol: string,
+    strategyName: StrategyName
+  ): Promise<boolean> => {
+    this.loggerService.log("strategyGlobalService getStopped", {
+      symbol,
+      strategyName,
+    });
+    await this.validate(symbol, strategyName);
+    return await this.strategyConnectionService.getStopped(symbol, strategyName);
+  };
+
+  /**
    * Checks signal status at a specific timestamp.
    *
    * Wraps strategy tick() with execution context containing symbol, timestamp,

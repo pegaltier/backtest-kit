@@ -117,6 +117,25 @@ export class StrategyConnectionService {
   };
 
   /**
+   * Retrieves the stopped state of the strategy.
+   *
+   * Delegates to the underlying strategy instance to check if it has been
+   * marked as stopped and should cease operation.
+   *
+   * @param symbol - Trading pair symbol
+   * @param strategyName - Name of the strategy
+   * @returns Promise resolving to true if strategy is stopped, false otherwise
+   */
+  public getStopped = async (symbol: string, strategyName: StrategyName): Promise<boolean> => {
+    this.loggerService.log("strategyConnectionService getStopped", {
+      symbol,
+      strategyName,
+    });
+    const strategy = this.getStrategy(symbol, strategyName);
+    return await strategy.getStopped(symbol, strategyName);
+  }
+
+  /**
    * Executes live trading tick for current strategy.
    *
    * Waits for strategy initialization before processing tick.
