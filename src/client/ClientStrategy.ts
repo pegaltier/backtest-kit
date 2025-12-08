@@ -2208,21 +2208,28 @@ export class ClientStrategy implements IStrategy {
 
     this._isStopped = true;
 
-    // Clear scheduled signal if exists
-    if (!this._scheduledSignal) {
+    if (!this._pendingSignal) {
       return;
     }
 
-    this._scheduledSignal = null;
+    this._pendingSignal = null;
+
+    if (this.params.callbacks?.onWrite) {
+      this.params.callbacks.onWrite(
+        symbol,
+        this._pendingSignal,
+        backtest,
+      );
+    }
 
     if (backtest) {
       return;
     }
 
     await PersistScheduleAdapter.writeScheduleData(
-      this._scheduledSignal,
-      this.params.execution.context.symbol,
-      this.params.strategyName,
+      this._pendingSignal,
+      symbol,
+      strategyName,
     );
   }
 }
