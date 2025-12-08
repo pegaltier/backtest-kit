@@ -14,7 +14,7 @@ export const GLOBAL_CONFIG = {
    * Must be greater than trading fees to ensure profitable trades
    * Default: 0.3% (covers 2×0.1% fees + minimum profit margin)
    */
-  CC_MIN_TAKEPROFIT_DISTANCE_PERCENT: 0.1,
+  CC_MIN_TAKEPROFIT_DISTANCE_PERCENT: 0.3,
   /**
    * Minimum StopLoss distance from priceOpen (percentage)
    * Prevents signals from being immediately stopped out due to price volatility
