@@ -1,13 +1,51 @@
 import backtest from "../lib";
 import { StrategyName } from "../interfaces/Strategy.interface";
 import { exitEmitter, doneBacktestSubject } from "../config/emitters";
-import { getErrorMessage, memoize } from "functools-kit";
+import { getErrorMessage, memoize, singlerun } from "functools-kit";
 
 const BACKTEST_METHOD_NAME_RUN = "BacktestUtils.run";
 const BACKTEST_METHOD_NAME_BACKGROUND = "BacktestUtils.background";
 const BACKTEST_METHOD_NAME_STOP = "BacktestUtils.stop";
 const BACKTEST_METHOD_NAME_GET_REPORT = "BacktestUtils.getReport";
 const BACKTEST_METHOD_NAME_DUMP = "BacktestUtils.dump";
+const BACKTEST_METHOD_NAME_TASK = "BacktestUtils.task";
+const BACKTEST_METHOD_NAME_GET_STATUS = "BacktestUtils.getStatus";
+
+/**
+ * Internal task function that runs backtest and handles completion.
+ * Consumes backtest results and updates instance state flags.
+ *
+ * @param symbol - Trading pair symbol
+ * @param context - Execution context with strategy, exchange, and frame names
+ * @param self - BacktestInstance reference for state management
+ * @returns Promise that resolves when backtest completes
+ *
+ * @internal
+ */
+const INSTANCE_TASK_FN = async (
+  symbol: string,
+  context: {
+    strategyName: string;
+    exchangeName: string;
+    frameName: string;
+  },
+  self: BacktestInstance,
+) => {
+  for await (const _ of self.run(symbol, context)) {
+    if (self._isStopped) {
+      break;
+    }
+  }
+  if (!self._isDone) {
+    await doneBacktestSubject.next({
+      exchangeName: context.exchangeName,
+      strategyName: context.strategyName,
+      backtest: true,
+      symbol,
+    });
+  }
+  self._isDone = true;
+}
 
 /**
  * Instance class for backtest operations on a specific symbol-strategy pair.
@@ -29,6 +67,69 @@ const BACKTEST_METHOD_NAME_DUMP = "BacktestUtils.dump";
  * ```
  */
 export class BacktestInstance {
+  /** Internal flag indicating if backtest was stopped manually */
+  _isStopped = false;
+
+  /** Internal flag indicating if backtest task completed */
+  _isDone = false;
+
+  /**
+   * Creates a new BacktestInstance for a specific symbol-strategy pair.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param strategyName - Strategy name for this backtest instance
+   */
+  constructor(
+    readonly symbol: string,
+    readonly strategyName: StrategyName
+  ) { }
+
+  /**
+   * Internal singlerun task that executes the backtest.
+   * Ensures only one backtest run per instance using singlerun wrapper.
+   *
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategy, exchange, and frame names
+   * @returns Promise that resolves when backtest completes
+   *
+   * @internal
+   */
+  private task = singlerun(async (
+    symbol: string,
+    context: {
+      strategyName: string;
+      exchangeName: string;
+      frameName: string;
+    }
+  ) => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_TASK, {
+      symbol,
+      context,
+    });
+    return await INSTANCE_TASK_FN(symbol, context, this);
+  })
+
+  /**
+   * Gets the current status of this backtest instance.
+   *
+   * @returns Promise resolving to status object with symbol, strategyName, and task status
+   *
+   * @example
+   * ```typescript
+   * const instance = new BacktestInstance("BTCUSDT", "my-strategy");
+   * const status = await instance.getStatus();
+   * console.log(status.status); // "idle", "running", or "done"
+   * ```
+   */
+  public getStatus = async () => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_GET_STATUS);
+    return {
+      symbol: this.symbol,
+      strategyName: this.strategyName,
+      status: this.task.getStatus(),
+    }
+  }
+
   /**
    * Runs backtest for a symbol with context propagation.
    *
@@ -98,25 +199,7 @@ export class BacktestInstance {
       symbol,
       context,
     });
-    let isStopped = false;
-    let isDone = false;
-    const task = async () => {
-      for await (const _ of this.run(symbol, context)) {
-        if (isStopped) {
-          break;
-        }
-      }
-      if (!isDone) {
-        await doneBacktestSubject.next({
-          exchangeName: context.exchangeName,
-          strategyName: context.strategyName,
-          backtest: true,
-          symbol,
-        });
-      }
-      isDone = true;
-    };
-    task().catch((error) =>
+    this.task(symbol, context).catch((error) =>
       exitEmitter.next(new Error(getErrorMessage(error)))
     );
     return () => {
@@ -127,7 +210,7 @@ export class BacktestInstance {
           if (pendingSignal) {
             return;
           }
-          if (!isDone) {
+          if (!this._isDone) {
             await doneBacktestSubject.next({
               exchangeName: context.exchangeName,
               strategyName: context.strategyName,
@@ -135,9 +218,9 @@ export class BacktestInstance {
               symbol,
             });
           }
-          isDone = true;
+          this._isDone = true;
         });
-      isStopped = true;
+      this._isStopped = true;
     };
   };
 
@@ -265,11 +348,11 @@ export class BacktestUtils {
    * Memoized function to get or create BacktestInstance for a symbol-strategy pair.
    * Each symbol-strategy combination gets its own isolated instance.
    */
-  public getInstance = memoize<
+  private _getInstance = memoize<
     (symbol: string, strategyName: StrategyName) => BacktestInstance
   >(
     ([symbol, strategyName]) => `${symbol}:${strategyName}`,
-    () => new BacktestInstance()
+    (symbol: string, strategyName: StrategyName) => new BacktestInstance(symbol, strategyName)
   );
 
   /**
@@ -287,7 +370,7 @@ export class BacktestUtils {
       frameName: string;
     }
   ) => {
-    const instance = this.getInstance(symbol, context.strategyName);
+    const instance = this._getInstance(symbol, context.strategyName);
     return instance.run(symbol, context);
   };
 
@@ -320,7 +403,7 @@ export class BacktestUtils {
       frameName: string;
     }
   ) => {
-    const instance = this.getInstance(symbol, context.strategyName);
+    const instance = this._getInstance(symbol, context.strategyName);
     return instance.background(symbol, context);
   };
 
@@ -342,8 +425,8 @@ export class BacktestUtils {
    * ```
    */
   public stop = async (symbol: string, strategyName: StrategyName): Promise<void> => {
-    const instance = this.getInstance(symbol, strategyName);
-    return instance.stop(symbol, strategyName);
+    const instance = this._getInstance(symbol, strategyName);
+    return await instance.stop(symbol, strategyName);
   };
 
   /**
@@ -360,8 +443,8 @@ export class BacktestUtils {
    * ```
    */
   public getData = async (symbol: string, strategyName: StrategyName) => {
-    const instance = this.getInstance(symbol, strategyName);
-    return instance.getData(symbol, strategyName);
+    const instance = this._getInstance(symbol, strategyName);
+    return await instance.getData(symbol, strategyName);
   };
 
   /**
@@ -378,8 +461,8 @@ export class BacktestUtils {
    * ```
    */
   public getReport = async (symbol: string, strategyName: StrategyName): Promise<string> => {
-    const instance = this.getInstance(symbol, strategyName);
-    return instance.getReport(symbol, strategyName);
+    const instance = this._getInstance(symbol, strategyName);
+    return await instance.getReport(symbol, strategyName);
   };
 
   /**
@@ -403,9 +486,27 @@ export class BacktestUtils {
     strategyName: StrategyName,
     path?: string
   ): Promise<void> => {
-    const instance = this.getInstance(symbol, strategyName);
-    return instance.dump(symbol, strategyName, path);
+    const instance = this._getInstance(symbol, strategyName);
+    return await instance.dump(symbol, strategyName, path);
   };
+
+  /**
+   * Lists all active backtest instances with their current status.
+   *
+   * @returns Promise resolving to array of status objects for all instances
+   *
+   * @example
+   * ```typescript
+   * const statusList = await Backtest.list();
+   * statusList.forEach(status => {
+   *   console.log(`${status.symbol} - ${status.strategyName}: ${status.status}`);
+   * });
+   * ```
+   */
+  public list = async () => {
+    const instanceList = this._getInstance.values();
+    return await Promise.all(instanceList.map((instance) => instance.getStatus()));
+  }
 }
 
 /**
