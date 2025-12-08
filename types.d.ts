@@ -5343,6 +5343,11 @@ declare const Backtest: BacktestUtils;
  */
 declare class LiveUtils {
     /**
+     * Memoized function to get or create LiveInstance for a symbol-strategy pair.
+     * Each symbol-strategy combination gets its own isolated instance.
+     */
+    private _getInstance;
+    /**
      * Runs live trading for a symbol with context propagation.
      *
      * Infinite async generator with crash recovery support.
@@ -5444,6 +5449,24 @@ declare class LiveUtils {
      * ```
      */
     dump: (symbol: string, strategyName: StrategyName, path?: string) => Promise<void>;
+    /**
+     * Lists all active live trading instances with their current status.
+     *
+     * @returns Promise resolving to array of status objects for all instances
+     *
+     * @example
+     * ```typescript
+     * const statusList = await Live.list();
+     * statusList.forEach(status => {
+     *   console.log(`${status.symbol} - ${status.strategyName}: ${status.status}`);
+     * });
+     * ```
+     */
+    list: () => Promise<{
+        symbol: string;
+        strategyName: string;
+        status: "pending" | "fulfilled" | "rejected" | "ready";
+    }[]>;
 }
 /**
  * Singleton instance of LiveUtils for convenient live trading operations.

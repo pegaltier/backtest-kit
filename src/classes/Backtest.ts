@@ -31,6 +31,10 @@ const INSTANCE_TASK_FN = async (
   },
   self: BacktestInstance,
 ) => {
+  {
+    self._isStopped = false;
+    self._isDone = false;
+  }
   for await (const _ of self.run(symbol, context)) {
     if (self._isStopped) {
       break;
