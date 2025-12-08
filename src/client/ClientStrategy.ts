@@ -169,8 +169,21 @@ const VALIDATE_SIGNAL_FN = (signal: ISignalRow, currentPrice: number, isSchedule
       }
     }
 
+    // ЗАЩИТА ОТ СЛИШКОМ УЗКОГО STOPLOSS: минимальный буфер для избежания моментального закрытия
+    if (GLOBAL_CONFIG.CC_MIN_STOPLOSS_DISTANCE_PERCENT) {
+      const slDistancePercent =
+        ((signal.priceOpen - signal.priceStopLoss) / signal.priceOpen) * 100;
+      if (slDistancePercent < GLOBAL_CONFIG.CC_MIN_STOPLOSS_DISTANCE_PERCENT) {
+        errors.push(
+          `Long: StopLoss too close to priceOpen (${slDistancePercent.toFixed(3)}%). ` +
+            `Minimum distance: ${GLOBAL_CONFIG.CC_MIN_STOPLOSS_DISTANCE_PERCENT}% to avoid instant stop out on market volatility. ` +
+            `Current: SL=${signal.priceStopLoss}, Open=${signal.priceOpen}`
+        );
+      }
+    }
+
     // ЗАЩИТА ОТ ЭКСТРЕМАЛЬНОГО STOPLOSS: ограничиваем максимальный убыток
-    if (GLOBAL_CONFIG.CC_MAX_STOPLOSS_DISTANCE_PERCENT && GLOBAL_CONFIG.CC_MAX_STOPLOSS_DISTANCE_PERCENT) {
+    if (GLOBAL_CONFIG.CC_MAX_STOPLOSS_DISTANCE_PERCENT) {
       const slDistancePercent =
         ((signal.priceOpen - signal.priceStopLoss) / signal.priceOpen) * 100;
       if (slDistancePercent > GLOBAL_CONFIG.CC_MAX_STOPLOSS_DISTANCE_PERCENT) {
@@ -247,8 +260,21 @@ const VALIDATE_SIGNAL_FN = (signal: ISignalRow, currentPrice: number, isSchedule
       }
     }
 
+    // ЗАЩИТА ОТ СЛИШКОМ УЗКОГО STOPLOSS: минимальный буфер для избежания моментального закрытия
+    if (GLOBAL_CONFIG.CC_MIN_STOPLOSS_DISTANCE_PERCENT) {
+      const slDistancePercent =
+        ((signal.priceStopLoss - signal.priceOpen) / signal.priceOpen) * 100;
+      if (slDistancePercent < GLOBAL_CONFIG.CC_MIN_STOPLOSS_DISTANCE_PERCENT) {
+        errors.push(
+          `Short: StopLoss too close to priceOpen (${slDistancePercent.toFixed(3)}%). ` +
+            `Minimum distance: ${GLOBAL_CONFIG.CC_MIN_STOPLOSS_DISTANCE_PERCENT}% to avoid instant stop out on market volatility. ` +
+            `Current: SL=${signal.priceStopLoss}, Open=${signal.priceOpen}`
+        );
+      }
+    }
+
     // ЗАЩИТА ОТ ЭКСТРЕМАЛЬНОГО STOPLOSS: ограничиваем максимальный убыток
-    if (GLOBAL_CONFIG.CC_MAX_STOPLOSS_DISTANCE_PERCENT && GLOBAL_CONFIG.CC_MAX_STOPLOSS_DISTANCE_PERCENT) {
+    if (GLOBAL_CONFIG.CC_MAX_STOPLOSS_DISTANCE_PERCENT) {
       const slDistancePercent =
         ((signal.priceStopLoss - signal.priceOpen) / signal.priceOpen) * 100;
       if (slDistancePercent > GLOBAL_CONFIG.CC_MAX_STOPLOSS_DISTANCE_PERCENT) {
