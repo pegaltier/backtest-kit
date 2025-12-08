@@ -953,3 +953,162 @@ test("SHUTDOWN: Two walkers on same symbol - stop one doesn't affect other", asy
 
   pass(`SHUTDOWN TWO WALKERS: Walker A stopped (${walkerAArray.length}/2 strategies). Walker B continued (${walkerBArray.length}/2 strategies).`);
 });
+
+
+/**
+ * SHUTDOWN TEST #8: Backtest with getSignal always returning null
+ *
+ * Scenario:
+ * - Strategy getSignal always returns null (no signals generated)
+ * - Backtest should complete without hanging
+ * - No signals should be opened or closed
+ */
+test("SHUTDOWN: Backtest with getSignal always null - no signals", async ({ pass, fail }) => {
+  const signalsResults = {
+    opened: [],
+    closed: [],
+  };
+
+  const startTime = new Date("2024-01-01T00:00:00Z").getTime();
+  const intervalMs = 60000;
+  const basePrice = 95000;
+  const bufferMinutes = 4;
+  const bufferStartTime = startTime - bufferMinutes * intervalMs;
+
+  let allCandles = [];
+
+  // Buffer candles before frame start
+  for (let i = 0; i < bufferMinutes; i++) {
+    allCandles.push({
+      timestamp: bufferStartTime + i * intervalMs,
+      open: basePrice,
+      high: basePrice + 100,
+      low: basePrice - 100,
+      close: basePrice,
+      volume: 100,
+    });
+  }
+
+  // Frame candles (60 minutes)
+  for (let i = 0; i < 60; i++) {
+    const timestamp = startTime + i * intervalMs;
+    allCandles.push({
+      timestamp,
+      open: basePrice,
+      high: basePrice + 100,
+      low: basePrice - 100,
+      close: basePrice,
+      volume: 100,
+    });
+  }
+
+  addExchange({
+    exchangeName: "binance-shutdown-8",
+    getCandles: async (_symbol, _interval, since, limit) => {
+      const sinceIndex = Math.floor((since.getTime() - startTime) / intervalMs);
+      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
+      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+    },
+    formatPrice: async (_symbol, p) => p.toFixed(8),
+    formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
+  });
+
+  let getSignalCallCount = 0;
+
+  addStrategy({
+    strategyName: "test-shutdown-null-signal",
+    interval: "1m",
+    getSignal: async () => {
+      getSignalCallCount++;
+      // Slow getSignal to test early stop
+      await sleep(1_000);
+      // Always return null - no signals
+      return null;
+    },
+    callbacks: {
+      onOpen: (_symbol, data) => {
+        signalsResults.opened.push(data);
+      },
+      onClose: (_symbol, data, priceClose) => {
+        signalsResults.closed.push({ signal: data, priceClose });
+      },
+    },
+  });
+
+  addFrame({
+    frameName: "60m-shutdown-8",
+    interval: "1m",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-01T01:00:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  const doneBacktestPromise = new Promise((resolve) => {
+    listenDoneBacktest(() => {
+      awaitSubject.next();
+      resolve();
+    });
+  });
+
+  let errorCaught = null;
+  const unsubscribeError = listenError((error) => {
+    errorCaught = error;
+    awaitSubject.next();
+  });
+
+  const testStartTime = Date.now();
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-shutdown-null-signal",
+    exchangeName: "binance-shutdown-8",
+    frameName: "60m-shutdown-8",
+  });
+
+  // Stop after 2 seconds (before all 60 getSignal calls complete)
+  await sleep(2_000);
+  await Backtest.stop("BTCUSDT", "test-shutdown-null-signal");
+
+  // Race: listenDoneBacktest should fire before 3 seconds timeout
+  const raceResult = await Promise.race([
+    doneBacktestPromise.then(() => "done"),
+    sleep(3_000).then(() => "timeout"),
+  ]);
+
+  const elapsedTime = Date.now() - testStartTime;
+
+  unsubscribeError();
+
+  if (raceResult === "timeout") {
+    fail(`Backtest did not complete within 3 seconds after stop (elapsed: ${elapsedTime}ms)`);
+    return;
+  }
+
+  if (errorCaught) {
+    fail(`Error during backtest: ${errorCaught.message || errorCaught}`);
+    return;
+  }
+
+  // Should have no signals
+  if (signalsResults.opened.length !== 0) {
+    fail(`Expected 0 opened signals, got ${signalsResults.opened.length}`);
+    return;
+  }
+
+  if (signalsResults.closed.length !== 0) {
+    fail(`Expected 0 closed signals, got ${signalsResults.closed.length}`);
+    return;
+  }
+
+  // getSignal should be called at least once but not all 60 times (stopped early)
+  if (getSignalCallCount === 0) {
+    fail(`getSignal should be called at least once, got ${getSignalCallCount} calls`);
+    return;
+  }
+
+  if (getSignalCallCount >= 60) {
+    fail(`getSignal should be stopped early, but was called ${getSignalCallCount}/60 times`);
+    return;
+  }
+
+  pass(`SHUTDOWN NULL SIGNAL: Backtest stopped early. getSignal called ${getSignalCallCount}/60 times in ${elapsedTime}ms. Signals: opened=0, closed=0`);
+});
