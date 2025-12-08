@@ -1,5 +1,5 @@
 import { Subject } from "functools-kit";
-import { IStrategyTickResult, StrategyName } from "../interfaces/Strategy.interface";
+import { IStrategyTickResult } from "../interfaces/Strategy.interface";
 import { DoneContract } from "../contract/Done.contract";
 import { ProgressBacktestContract } from "../contract/ProgressBacktest.contract";
 import { ProgressWalkerContract } from "../contract/ProgressWalker.contract";
@@ -9,6 +9,7 @@ import { WalkerContract } from "../contract/Walker.contract";
 import { IWalkerResults } from "../interfaces/Walker.interface";
 import { PartialProfitContract } from "../contract/PartialProfit.contract";
 import { PartialLossContract } from "../contract/PartialLoss.contract";
+import { WalkerStopContract } from "../contract/WalkerStop.contract";
 
 /**
  * Global signal emitter for all trading events (live + backtest).
@@ -98,8 +99,10 @@ export const walkerCompleteSubject = new Subject<IWalkerResults>();
 /**
  * Walker stop emitter for walker cancellation events.
  * Emits when a walker comparison is stopped/cancelled.
+ *
+ * Includes walkerName to support multiple walkers running on the same symbol.
  */
-export const walkerStopSubject = new Subject<{ symbol: string; strategyName: StrategyName }>();
+export const walkerStopSubject = new Subject<WalkerStopContract>();
 
 /**
  * Validation emitter for risk validation errors.

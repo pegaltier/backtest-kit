@@ -5206,6 +5206,24 @@ declare class BacktestUtils {
         frameName: string;
     }) => () => void;
     /**
+     * Stops the strategy from generating new signals.
+     *
+     * Sets internal flag to prevent strategy from opening new signals.
+     * Current active signal (if any) will complete normally.
+     * Backtest will stop at the next safe point (idle state or after signal closes).
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Strategy name to stop
+     * @returns Promise that resolves when stop flag is set
+     *
+     * @example
+     * ```typescript
+     * // Stop strategy after some condition
+     * await Backtest.stop("BTCUSDT", "my-strategy");
+     * ```
+     */
+    stop: (symbol: string, strategyName: StrategyName) => Promise<void>;
+    /**
      * Gets statistical data from all closed signals for a symbol-strategy pair.
      *
      * @param symbol - Trading pair symbol
@@ -5340,6 +5358,24 @@ declare class LiveUtils {
         strategyName: string;
         exchangeName: string;
     }) => () => void;
+    /**
+     * Stops the strategy from generating new signals.
+     *
+     * Sets internal flag to prevent strategy from opening new signals.
+     * Current active signal (if any) will complete normally.
+     * Live trading will stop at the next safe point (idle/closed state).
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Strategy name to stop
+     * @returns Promise that resolves when stop flag is set
+     *
+     * @example
+     * ```typescript
+     * // Stop live trading gracefully
+     * await Live.stop("BTCUSDT", "my-strategy");
+     * ```
+     */
+    stop: (symbol: string, strategyName: StrategyName) => Promise<void>;
     /**
      * Gets statistical data from all live trading events for a symbol-strategy pair.
      *
@@ -5647,6 +5683,30 @@ declare class WalkerUtils {
     background: (symbol: string, context: {
         walkerName: string;
     }) => () => void;
+    /**
+     * Stops all strategies in the walker from generating new signals.
+     *
+     * Iterates through all strategies defined in walker schema and:
+     * 1. Sends stop signal via walkerStopSubject (interrupts current running strategy)
+     * 2. Sets internal stop flag for each strategy (prevents new signals)
+     *
+     * Current active signals (if any) will complete normally.
+     * Walker will stop at the next safe point.
+     *
+     * Supports multiple walkers running on the same symbol simultaneously.
+     * Stop signal is filtered by walkerName to prevent interference.
+     *
+     * @param symbol - Trading pair symbol
+     * @param walkerName - Walker name to stop
+     * @returns Promise that resolves when all stop flags are set
+     *
+     * @example
+     * ```typescript
+     * // Stop walker and all its strategies
+     * await Walker.stop("BTCUSDT", "my-walker");
+     * ```
+     */
+    stop: (symbol: string, walkerName: WalkerName) => Promise<void>;
     /**
      * Gets walker results data from all strategy comparisons.
      *
@@ -6223,6 +6283,36 @@ declare class ConstantUtils {
 declare const Constant: ConstantUtils;
 
 /**
+ * Contract for walker stop signal events.
+ *
+ * Emitted when Walker.stop() is called to interrupt a running walker.
+ * Contains metadata about which walker and strategy should be stopped.
+ *
+ * Supports multiple walkers running on the same symbol simultaneously
+ * by including walkerName for filtering.
+ *
+ * @example
+ * ```typescript
+ * import { walkerStopSubject } from "backtest-kit";
+ *
+ * walkerStopSubject
+ *   .filter((event) => event.symbol === "BTCUSDT")
+ *   .connect((event) => {
+ *     console.log("Walker stopped:", event.walkerName);
+ *     console.log("Strategy:", event.strategyName);
+ *   });
+ * ```
+ */
+interface WalkerStopContract {
+    /** symbol - Trading symbol (e.g., "BTCUSDT") */
+    symbol: string;
+    /** strategyName - Name of the strategy to stop */
+    strategyName: StrategyName;
+    /** walkerName - Name of the walker to stop (for filtering) */
+    walkerName: WalkerName;
+}
+
+/**
  * Global signal emitter for all trading events (live + backtest).
  * Emits all signal events regardless of execution mode.
  */
@@ -6296,11 +6386,10 @@ declare const walkerCompleteSubject: Subject<IWalkerResults>;
 /**
  * Walker stop emitter for walker cancellation events.
  * Emits when a walker comparison is stopped/cancelled.
+ *
+ * Includes walkerName to support multiple walkers running on the same symbol.
  */
-declare const walkerStopSubject: Subject<{
-    symbol: string;
-    strategyName: StrategyName;
-}>;
+declare const walkerStopSubject: Subject<WalkerStopContract>;
 /**
  * Validation emitter for risk validation errors.
  * Emits when risk validation functions throw errors during signal checking.

@@ -94,23 +94,6 @@ export class LiveLogicPrivateService {
         continue;
       }
 
-      {
-        let isStopped = false;
-        isStopped = isStopped || result.action === "closed";
-        isStopped = isStopped || result.action === "idle";
-        if (
-          await and(
-            this.strategyGlobalService.getStopped(
-              symbol,
-              this.methodContextService.context.strategyName
-            ),
-            Promise.resolve(isStopped)
-          )
-        ) {
-          break;
-        }
-      }
-
       this.loggerService.info("liveLogicPrivateService tick result", {
         symbol,
         action: result.action,
@@ -131,12 +114,31 @@ export class LiveLogicPrivateService {
       });
       previousEventTimestamp = currentTimestamp;
 
-      if (result.action === "active") {
+      // Check if strategy should stop when idle (no active signal)
+      if (result.action === "idle") {
+        if (
+          await and(
+            Promise.resolve(true),
+            this.strategyGlobalService.getStopped(
+              symbol,
+              this.methodContextService.context.strategyName
+            )
+          )
+        ) {
+          this.loggerService.info(
+            "liveLogicPrivateService stopped by user request (idle state)",
+            {
+              symbol,
+              when: when.toISOString(),
+            }
+          );
+          break;
+        }
         await sleep(TICK_TTL);
         continue;
       }
 
-      if (result.action === "idle") {
+      if (result.action === "active") {
         await sleep(TICK_TTL);
         continue;
       }
@@ -148,6 +150,25 @@ export class LiveLogicPrivateService {
 
       // Yield opened, closed results
       yield result as IStrategyTickResultClosed | IStrategyTickResultOpened;
+
+      // Check if strategy should stop after signal is closed
+      if (result.action === "closed") {
+        if (
+          await this.strategyGlobalService.getStopped(
+            symbol,
+            this.methodContextService.context.strategyName
+          )
+        ) {
+          this.loggerService.info(
+            "liveLogicPrivateService stopped by user request (after signal closed)",
+            {
+              symbol,
+              signalId: result.signal.id,
+            }
+          );
+          break;
+        }
+      }
 
       await sleep(TICK_TTL);
     }

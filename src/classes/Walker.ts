@@ -5,6 +5,7 @@ import { getErrorMessage } from "functools-kit";
 
 const WALKER_METHOD_NAME_RUN = "WalkerUtils.run";
 const WALKER_METHOD_NAME_BACKGROUND = "WalkerUtils.background";
+const WALKER_METHOD_NAME_STOP = "WalkerUtils.stop";
 const WALKER_METHOD_NAME_GET_DATA = "WalkerUtils.getData";
 const WALKER_METHOD_NAME_GET_REPORT = "WalkerUtils.getReport";
 const WALKER_METHOD_NAME_DUMP = "WalkerUtils.dump";
@@ -142,7 +143,7 @@ export class WalkerUtils {
     return () => {
       for (const strategyName of walkerSchema.strategies) {
         backtest.strategyGlobalService.stop({symbol, strategyName});
-        walkerStopSubject.next({ symbol, strategyName });
+        walkerStopSubject.next({ symbol, strategyName, walkerName: context.walkerName });
       }
       if (!isDone) {
         doneWalkerSubject.next({
@@ -155,6 +156,43 @@ export class WalkerUtils {
       isDone = true;
       isStopped = true;
     };
+  };
+
+  /**
+   * Stops all strategies in the walker from generating new signals.
+   *
+   * Iterates through all strategies defined in walker schema and:
+   * 1. Sends stop signal via walkerStopSubject (interrupts current running strategy)
+   * 2. Sets internal stop flag for each strategy (prevents new signals)
+   *
+   * Current active signals (if any) will complete normally.
+   * Walker will stop at the next safe point.
+   *
+   * Supports multiple walkers running on the same symbol simultaneously.
+   * Stop signal is filtered by walkerName to prevent interference.
+   *
+   * @param symbol - Trading pair symbol
+   * @param walkerName - Walker name to stop
+   * @returns Promise that resolves when all stop flags are set
+   *
+   * @example
+   * ```typescript
+   * // Stop walker and all its strategies
+   * await Walker.stop("BTCUSDT", "my-walker");
+   * ```
+   */
+  public stop = async (symbol: string, walkerName: WalkerName): Promise<void> => {
+    backtest.loggerService.info(WALKER_METHOD_NAME_STOP, {
+      symbol,
+      walkerName,
+    });
+
+    const walkerSchema = backtest.walkerSchemaService.get(walkerName);
+
+    for (const strategyName of walkerSchema.strategies) {
+      await walkerStopSubject.next({ symbol, strategyName, walkerName });
+      await backtest.strategyGlobalService.stop({ symbol, strategyName });
+    }
   };
 
   /**
