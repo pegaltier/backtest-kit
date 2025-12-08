@@ -1347,9 +1347,17 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
 }> => {
   const candlesCount = GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT;
   const maxTimeToWait = GLOBAL_CONFIG.CC_SCHEDULE_AWAIT_MINUTES * 60 * 1000;
+  const bufferCandlesCount = candlesCount - 1;
 
   for (let i = 0; i < candles.length; i++) {
     const candle = candles[i];
+
+    // КРИТИЧНО: Пропускаем первые bufferCandlesCount свечей (буфер для VWAP)
+    // BacktestLogicPrivateService запросил свечи начиная с (when - bufferMinutes)
+    if (i < bufferCandlesCount) {
+      continue;
+    }
+
     const recentCandles = candles.slice(Math.max(0, i - (candlesCount - 1)), i + 1);
     const averagePrice = GET_AVG_PRICE_FN(recentCandles);
 
@@ -1437,12 +1445,24 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
   candles: ICandleData[]
 ): Promise<IStrategyTickResultClosed | null> => {
   const candlesCount = GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT;
+  const bufferCandlesCount = candlesCount - 1;
 
-  for (let i = candlesCount - 1; i < candles.length; i++) {
-    const recentCandles = candles.slice(i - (candlesCount - 1), i + 1);
+  // КРИТИЧНО: проверяем TP/SL на КАЖДОЙ свече начиная после буфера
+  // Первые bufferCandlesCount свечей - это буфер для VWAP
+  for (let i = 0; i < candles.length; i++) {
+    const currentCandle = candles[i];
+    const currentCandleTimestamp = currentCandle.timestamp;
+
+    // КРИТИЧНО: Пропускаем первые bufferCandlesCount свечей (буфер для VWAP)
+    // BacktestLogicPrivateService запросил свечи начиная с (when - bufferMinutes)
+    if (i < bufferCandlesCount) {
+      continue;
+    }
+
+    // Берем последние candlesCount свечей для VWAP (включая буфер)
+    const startIndex = Math.max(0, i - (candlesCount - 1));
+    const recentCandles = candles.slice(startIndex, i + 1);
     const averagePrice = GET_AVG_PRICE_FN(recentCandles);
-    const currentCandleTimestamp = recentCandles[recentCandles.length - 1].timestamp;
-    const currentCandle = recentCandles[recentCandles.length - 1];
 
     let shouldClose = false;
     let closeReason: "time_expired" | "take_profit" | "stop_loss" | undefined;
@@ -1890,9 +1910,10 @@ export class ClientStrategy implements IStrategy {
    * 4. If cancelled: returns closed result with closeReason "cancelled"
    *
    * For pending signals:
-   * 1. Iterates through candles checking VWAP against TP/SL on each timeframe
-   * 2. Starts from index 4 (needs 5 candles for VWAP calculation)
-   * 3. Returns closed result (either TP/SL or time_expired)
+   * 1. Iterates through ALL candles starting from the first one
+   * 2. Checks TP/SL using candle.high/low (immediate detection)
+   * 3. VWAP calculated with dynamic window (1 to CC_AVG_PRICE_CANDLES_COUNT candles)
+   * 4. Returns closed result (either TP/SL or time_expired)
    *
    * @param candles - Array of candles to process
    * @returns Promise resolving to closed signal result with PNL
