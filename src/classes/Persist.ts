@@ -74,7 +74,7 @@ export type TPersistBase = InstanceType<typeof PersistBase>;
  */
 export type TPersistBaseCtor<
   EntityName extends string = string,
-  Entity extends IEntity = IEntity
+  Entity extends IEntity | null = IEntity
 > = new (entityName: EntityName, baseDir: string) => IPersistBase<Entity>;
 
 /**
@@ -91,7 +91,7 @@ export interface IEntity {}
  * Persistence interface for CRUD operations.
  * Implemented by PersistBase.
  */
-export interface IPersistBase<Entity extends IEntity = IEntity> {
+export interface IPersistBase<Entity extends IEntity | null = IEntity> {
   /**
    * Initialize persistence directory and validate existing files.
    * Uses singleshot to ensure one-time execution.

@@ -4711,7 +4711,7 @@ type TPersistBase = InstanceType<typeof PersistBase>;
  * Constructor type for PersistBase.
  * Used for custom persistence adapters.
  */
-type TPersistBaseCtor<EntityName extends string = string, Entity extends IEntity = IEntity> = new (entityName: EntityName, baseDir: string) => IPersistBase<Entity>;
+type TPersistBaseCtor<EntityName extends string = string, Entity extends IEntity | null = IEntity> = new (entityName: EntityName, baseDir: string) => IPersistBase<Entity>;
 /**
  * Entity identifier - string or number.
  */
@@ -4725,7 +4725,7 @@ interface IEntity {
  * Persistence interface for CRUD operations.
  * Implemented by PersistBase.
  */
-interface IPersistBase<Entity extends IEntity = IEntity> {
+interface IPersistBase<Entity extends IEntity | null = IEntity> {
     /**
      * Initialize persistence directory and validate existing files.
      * Uses singleshot to ensure one-time execution.

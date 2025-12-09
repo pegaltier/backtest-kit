@@ -198,7 +198,7 @@ test("Live.getReport returns markdown string", async ({ pass, fail }) => {
 
   await awaiter;
 
-  const report = await Live.getReport("test-strategy-live-report");
+  const report = await Live.getReport("BTCUSDT", "test-strategy-live-report");
 
   if (typeof report === "string" && report.includes("# Live Trading Report:")) {
     pass("Live.getReport returns markdown string");

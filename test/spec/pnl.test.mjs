@@ -129,7 +129,7 @@ test("getData returns BacktestStatistics structure", async ({ pass, fail }) => {
 
   await awaiter;
 
-  const stats = await Backtest.getData("test-strategy-stats");
+  const stats = await Backtest.getData("BTCUSDT", "test-strategy-stats");
 
   if (!stats) {
     fail("getData returned null");
@@ -210,7 +210,7 @@ test("getData calculates all statistical metrics", async ({ pass, fail }) => {
 
   await awaiter;
 
-  const stats = await Backtest.getData("test-strategy-metrics");
+  const stats = await Backtest.getData("BTCUSDT", "test-strategy-metrics");
 
   const requiredFields = [
     "signalList",
@@ -277,7 +277,7 @@ test("getData returns null for invalid metrics with safe math", async ({ pass, f
 
   await new Promise((resolve) => setTimeout(resolve, 100));
 
-  const stats = await Backtest.getData("test-strategy-safemath");
+  const stats = await Backtest.getData("BTCUSDT", "test-strategy-safemath");
 
   if (stats.totalSignals !== 0) {
     fail(`Expected 0 signals, got ${stats.totalSignals}`);

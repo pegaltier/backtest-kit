@@ -159,14 +159,6 @@ export class LiveInstance {
       context,
     });
 
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_RUN);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_RUN);
-
-    {
-      const { riskName } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_RUN);
-    }
-
     {
       backtest.liveMarkdownService.clear({ symbol, strategyName: context.strategyName });
       backtest.scheduleMarkdownService.clear({ symbol, strategyName: context.strategyName });
@@ -400,6 +392,16 @@ export class LiveUtils {
       exchangeName: string;
     }
   ) => {
+    {
+      backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_RUN);
+      backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_RUN);
+    }
+
+    {
+      const { riskName } = backtest.strategySchemaService.get(context.strategyName);
+      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_RUN);
+    }
+
     const instance = this._getInstance(symbol, context.strategyName);
     return instance.run(symbol, context);
   };
@@ -432,6 +434,9 @@ export class LiveUtils {
       exchangeName: string;
     }
   ) => {
+    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_BACKGROUND);
+    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_BACKGROUND);
+
     const instance = this._getInstance(symbol, context.strategyName);
     return instance.background(symbol, context);
   };
@@ -454,6 +459,8 @@ export class LiveUtils {
    * ```
    */
   public stop = async (symbol: string, strategyName: StrategyName): Promise<void> => {
+    backtest.strategyValidationService.validate(strategyName, LIVE_METHOD_NAME_STOP);
+
     const instance = this._getInstance(symbol, strategyName);
     return await instance.stop(symbol, strategyName);
   };
@@ -472,6 +479,8 @@ export class LiveUtils {
    * ```
    */
   public getData = async (symbol: string, strategyName: StrategyName) => {
+    backtest.strategyValidationService.validate(strategyName, "LiveUtils.getData");
+
     const instance = this._getInstance(symbol, strategyName);
     return await instance.getData(symbol, strategyName);
   };
@@ -490,6 +499,8 @@ export class LiveUtils {
    * ```
    */
   public getReport = async (symbol: string, strategyName: StrategyName): Promise<string> => {
+    backtest.strategyValidationService.validate(strategyName, LIVE_METHOD_NAME_GET_REPORT);
+
     const instance = this._getInstance(symbol, strategyName);
     return await instance.getReport(symbol, strategyName);
   };
@@ -515,6 +526,8 @@ export class LiveUtils {
     strategyName: StrategyName,
     path?: string
   ): Promise<void> => {
+    backtest.strategyValidationService.validate(strategyName, LIVE_METHOD_NAME_DUMP);
+
     const instance = this._getInstance(symbol, strategyName);
     return await instance.dump(symbol, strategyName, path);
   };
