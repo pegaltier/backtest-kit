@@ -46,6 +46,39 @@ partialConnectionService: any
 Connection service injected from DI container.
 Handles actual ClientPartial instance creation and management.
 
+### strategyValidationService
+
+```ts
+strategyValidationService: any
+```
+
+Strategy validation service for validating strategy existence.
+
+### strategySchemaService
+
+```ts
+strategySchemaService: any
+```
+
+Strategy schema service for retrieving strategy configuration.
+
+### riskValidationService
+
+```ts
+riskValidationService: any
+```
+
+Risk validation service for validating risk existence.
+
+### validate
+
+```ts
+validate: any
+```
+
+Validates strategy and associated risk configuration.
+Memoized to avoid redundant validations for the same strategy.
+
 ### profit
 
 ```ts

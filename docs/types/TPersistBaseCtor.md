@@ -6,7 +6,7 @@ group: docs
 # TPersistBaseCtor
 
 ```ts
-type TPersistBaseCtor<EntityName extends string = string, Entity extends IEntity = IEntity> = new (entityName: EntityName, baseDir: string) => IPersistBase<Entity>;
+type TPersistBaseCtor<EntityName extends string = string, Entity extends IEntity | null = IEntity> = new (entityName: EntityName, baseDir: string) => IPersistBase<Entity>;
 ```
 
 Constructor type for PersistBase.
