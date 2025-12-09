@@ -522,6 +522,15 @@ export class WalkerUtils {
   public stop = async (symbol: string, walkerName: WalkerName): Promise<void> => {
     backtest.walkerValidationService.validate(walkerName, WALKER_METHOD_NAME_STOP);
 
+    const walkerSchema = backtest.walkerSchemaService.get(walkerName);
+
+    for (const strategyName of walkerSchema.strategies) {
+      backtest.strategyValidationService.validate(strategyName, WALKER_METHOD_NAME_STOP);
+      const strategySchema = backtest.strategySchemaService.get(strategyName);
+      const riskName = strategySchema.riskName;
+      riskName && backtest.riskValidationService.validate(riskName, WALKER_METHOD_NAME_STOP);
+    }
+
     const instance = this._getInstance(symbol, walkerName);
     return await instance.stop(symbol, walkerName);
   };
@@ -545,6 +554,15 @@ export class WalkerUtils {
   ) => {
     backtest.walkerValidationService.validate(walkerName, WALKER_METHOD_NAME_GET_DATA);
 
+    const walkerSchema = backtest.walkerSchemaService.get(walkerName);
+
+    for (const strategyName of walkerSchema.strategies) {
+      backtest.strategyValidationService.validate(strategyName, WALKER_METHOD_NAME_GET_DATA);
+      const strategySchema = backtest.strategySchemaService.get(strategyName);
+      const riskName = strategySchema.riskName;
+      riskName && backtest.riskValidationService.validate(riskName, WALKER_METHOD_NAME_GET_DATA);
+    }
+
     const instance = this._getInstance(symbol, walkerName);
     return await instance.getData(symbol, walkerName);
   };
@@ -567,6 +585,15 @@ export class WalkerUtils {
     walkerName: WalkerName
   ): Promise<string> => {
     backtest.walkerValidationService.validate(walkerName, WALKER_METHOD_NAME_GET_REPORT);
+
+    const walkerSchema = backtest.walkerSchemaService.get(walkerName);
+
+    for (const strategyName of walkerSchema.strategies) {
+      backtest.strategyValidationService.validate(strategyName, WALKER_METHOD_NAME_GET_REPORT);
+      const strategySchema = backtest.strategySchemaService.get(strategyName);
+      const riskName = strategySchema.riskName;
+      riskName && backtest.riskValidationService.validate(riskName, WALKER_METHOD_NAME_GET_REPORT);
+    }
 
     const instance = this._getInstance(symbol, walkerName);
     return await instance.getReport(symbol, walkerName);
@@ -594,6 +621,15 @@ export class WalkerUtils {
     path?: string
   ): Promise<void> => {
     backtest.walkerValidationService.validate(walkerName, WALKER_METHOD_NAME_DUMP);
+
+    const walkerSchema = backtest.walkerSchemaService.get(walkerName);
+
+    for (const strategyName of walkerSchema.strategies) {
+      backtest.strategyValidationService.validate(strategyName, WALKER_METHOD_NAME_DUMP);
+      const strategySchema = backtest.strategySchemaService.get(strategyName);
+      const riskName = strategySchema.riskName;
+      riskName && backtest.riskValidationService.validate(riskName, WALKER_METHOD_NAME_DUMP);
+    }
 
     const instance = this._getInstance(symbol, walkerName);
     return await instance.dump(symbol, walkerName, path);
