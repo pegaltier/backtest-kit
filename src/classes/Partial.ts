@@ -66,6 +66,14 @@ export class PartialUtils {
    */
   public getData = async (symbol: string, strategyName: string) => {
     backtest.loggerService.info(PARTIAL_METHOD_NAME_GET_DATA, { symbol, strategyName });
+
+    backtest.strategyValidationService.validate(strategyName, PARTIAL_METHOD_NAME_GET_DATA);
+
+    {
+      const { riskName } = backtest.strategySchemaService.get(strategyName);
+      riskName && backtest.riskValidationService.validate(riskName, PARTIAL_METHOD_NAME_GET_DATA);
+    }
+
     return await backtest.partialMarkdownService.getData(symbol, strategyName);
   };
 
@@ -109,6 +117,14 @@ export class PartialUtils {
    */
   public getReport = async (symbol: string, strategyName: string): Promise<string> => {
     backtest.loggerService.info(PARTIAL_METHOD_NAME_GET_REPORT, { symbol, strategyName });
+
+    backtest.strategyValidationService.validate(strategyName, PARTIAL_METHOD_NAME_GET_REPORT);
+
+    {
+      const { riskName } = backtest.strategySchemaService.get(strategyName);
+      riskName && backtest.riskValidationService.validate(riskName, PARTIAL_METHOD_NAME_GET_REPORT);
+    }
+
     return await backtest.partialMarkdownService.getReport(symbol, strategyName);
   };
 
@@ -145,6 +161,14 @@ export class PartialUtils {
    */
   public dump = async (symbol: string, strategyName: string, path?: string): Promise<void> => {
     backtest.loggerService.info(PARTIAL_METHOD_NAME_DUMP, { symbol, strategyName, path });
+
+    backtest.strategyValidationService.validate(strategyName, PARTIAL_METHOD_NAME_DUMP);
+
+    {
+      const { riskName } = backtest.strategySchemaService.get(strategyName);
+      riskName && backtest.riskValidationService.validate(riskName, PARTIAL_METHOD_NAME_DUMP);
+    }
+
     await backtest.partialMarkdownService.dump(symbol, strategyName, path);
   };
 }

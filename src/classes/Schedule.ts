@@ -49,6 +49,14 @@ export class ScheduleUtils {
       symbol,
       strategyName,
     });
+
+    backtest.strategyValidationService.validate(strategyName, SCHEDULE_METHOD_NAME_GET_DATA);
+
+    {
+      const { riskName } = backtest.strategySchemaService.get(strategyName);
+      riskName && backtest.riskValidationService.validate(riskName, SCHEDULE_METHOD_NAME_GET_DATA);
+    }
+
     return await backtest.scheduleMarkdownService.getData(symbol, strategyName);
   };
 
@@ -70,6 +78,14 @@ export class ScheduleUtils {
       symbol,
       strategyName,
     });
+
+    backtest.strategyValidationService.validate(strategyName, SCHEDULE_METHOD_NAME_GET_REPORT);
+
+    {
+      const { riskName } = backtest.strategySchemaService.get(strategyName);
+      riskName && backtest.riskValidationService.validate(riskName, SCHEDULE_METHOD_NAME_GET_REPORT);
+    }
+
     return await backtest.scheduleMarkdownService.getReport(symbol, strategyName);
   };
 
@@ -99,6 +115,14 @@ export class ScheduleUtils {
       strategyName,
       path,
     });
+
+    backtest.strategyValidationService.validate(strategyName, SCHEDULE_METHOD_NAME_DUMP);
+
+    {
+      const { riskName } = backtest.strategySchemaService.get(strategyName);
+      riskName && backtest.riskValidationService.validate(riskName, SCHEDULE_METHOD_NAME_DUMP);
+    }
+
     await backtest.scheduleMarkdownService.dump(symbol, strategyName, path);
   };
 }

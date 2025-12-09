@@ -355,10 +355,10 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     return;
   }
 
-  // 3. Heat.getData(symbol, strategyName)
+  // 3. Heat.getData(strategyName)
   try {
-    const btcHeat = await Heat.getData("BTCUSDT", "test-facades-parallel");
-    const ethHeat = await Heat.getData("ETHUSDT", "test-facades-parallel");
+    const btcHeat = await Heat.getData("test-facades-parallel");
+    const ethHeat = await Heat.getData("test-facades-parallel");
 
     // Heat может быть пустым, но проверяем что вызов не падает
     if (!btcHeat || typeof btcHeat !== "object") {
@@ -454,10 +454,10 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     return;
   }
 
-  // 8. Heat.getReport(symbol, strategyName)
+  // 8. Heat.getReport(strategyName)
   try {
-    const btcHeatReport = await Heat.getReport("BTCUSDT", "test-facades-parallel");
-    const ethHeatReport = await Heat.getReport("ETHUSDT", "test-facades-parallel");
+    const btcHeatReport = await Heat.getReport("test-facades-parallel");
+    const ethHeatReport = await Heat.getReport("test-facades-parallel");
 
     if (typeof btcHeatReport !== "string" || btcHeatReport.length === 0) {
       fail("Heat: BTCUSDT getReport() returned invalid report");

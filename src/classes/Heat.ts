@@ -55,6 +55,14 @@ export class HeatUtils {
    */
   public getData = async (strategyName: StrategyName): Promise<IHeatmapStatistics> => {
     backtest.loggerService.info(HEAT_METHOD_NAME_GET_DATA, { strategyName });
+
+    backtest.strategyValidationService.validate(strategyName, HEAT_METHOD_NAME_GET_DATA);
+
+    {
+      const { riskName } = backtest.strategySchemaService.get(strategyName);
+      riskName && backtest.riskValidationService.validate(riskName, HEAT_METHOD_NAME_GET_DATA);
+    }
+
     return await backtest.heatMarkdownService.getData(strategyName);
   };
 
@@ -85,6 +93,14 @@ export class HeatUtils {
    */
   public getReport = async (strategyName: StrategyName): Promise<string> => {
     backtest.loggerService.info(HEAT_METHOD_NAME_GET_REPORT, { strategyName });
+
+    backtest.strategyValidationService.validate(strategyName, HEAT_METHOD_NAME_GET_REPORT);
+
+    {
+      const { riskName } = backtest.strategySchemaService.get(strategyName);
+      riskName && backtest.riskValidationService.validate(riskName, HEAT_METHOD_NAME_GET_REPORT);
+    }
+
     return await backtest.heatMarkdownService.getReport(strategyName);
   };
 
@@ -108,6 +124,14 @@ export class HeatUtils {
    */
   public dump = async (strategyName: StrategyName, path?: string): Promise<void> => {
     backtest.loggerService.info(HEAT_METHOD_NAME_DUMP, { strategyName, path });
+
+    backtest.strategyValidationService.validate(strategyName, HEAT_METHOD_NAME_DUMP);
+
+    {
+      const { riskName } = backtest.strategySchemaService.get(strategyName);
+      riskName && backtest.riskValidationService.validate(riskName, HEAT_METHOD_NAME_DUMP);
+    }
+
     await backtest.heatMarkdownService.dump(strategyName, path);
   };
 }

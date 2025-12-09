@@ -933,7 +933,14 @@ test("Partial.getReport generates markdown report with table", async ({ pass, fa
  * PARTIAL FACADE TEST #3: Empty statistics for nonexistent symbol
  */
 test("Partial.getData returns empty statistics for nonexistent symbol", async ({ pass, fail }) => {
-  const { Partial } = await import("../../build/index.mjs");
+  const { Partial, addStrategy } = await import("../../build/index.mjs");
+
+  // Register strategy first to pass validation
+  addStrategy({
+    strategyName: "nonexistent-strategy",
+    interval: "1m",
+    getSignal: async () => null,
+  });
 
   const stats = await Partial.getData("NONEXISTENT_SYMBOL_12345", "nonexistent-strategy");
 

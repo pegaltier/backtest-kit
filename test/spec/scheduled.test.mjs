@@ -64,7 +64,7 @@ test("Schedule.getData returns ScheduleStatistics structure", async ({ pass, fai
     // Consume all results
   }
 
-  const stats = await Schedule.getData("test-strategy-schedule-getdata");
+  const stats = await Schedule.getData("BTCUSDT", "test-strategy-schedule-getdata");
 
   if (
     stats &&
@@ -133,7 +133,7 @@ test("Schedule.getData calculates cancellation rate", async ({ pass, fail }) => 
     // Consume all results
   }
 
-  const stats = await Schedule.getData("test-strategy-schedule-metrics");
+  const stats = await Schedule.getData("BTCUSDT", "test-strategy-schedule-metrics");
 
   const hasAllMetrics =
     stats &&
@@ -191,7 +191,7 @@ test("Schedule.getData returns null for cancellation rate with empty data", asyn
     // Consume all results
   }
 
-  const stats = await Schedule.getData("test-strategy-schedule-safe");
+  const stats = await Schedule.getData("BTCUSDT", "test-strategy-schedule-safe");
 
   if (
     stats &&

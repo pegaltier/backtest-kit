@@ -66,6 +66,13 @@ export class Performance {
     symbol: string,
     strategyName: string
   ): Promise<PerformanceStatistics> {
+    backtest.strategyValidationService.validate(strategyName, "Performance.getData");
+
+    {
+      const { riskName } = backtest.strategySchemaService.get(strategyName);
+      riskName && backtest.riskValidationService.validate(riskName, "Performance.getData");
+    }
+
     return backtest.performanceMarkdownService.getData(symbol, strategyName);
   }
 
@@ -92,6 +99,13 @@ export class Performance {
    * ```
    */
   public static async getReport(symbol: string, strategyName: string): Promise<string> {
+    backtest.strategyValidationService.validate(strategyName, "Performance.getReport");
+
+    {
+      const { riskName } = backtest.strategySchemaService.get(strategyName);
+      riskName && backtest.riskValidationService.validate(riskName, "Performance.getReport");
+    }
+
     return backtest.performanceMarkdownService.getReport(symbol, strategyName);
   }
 
@@ -119,6 +133,13 @@ export class Performance {
     strategyName: string,
     path = "./dump/performance"
   ): Promise<void> {
+    backtest.strategyValidationService.validate(strategyName, "Performance.dump");
+
+    {
+      const { riskName } = backtest.strategySchemaService.get(strategyName);
+      riskName && backtest.riskValidationService.validate(riskName, "Performance.dump");
+    }
+
     return backtest.performanceMarkdownService.dump(symbol, strategyName, path);
   }
 }
