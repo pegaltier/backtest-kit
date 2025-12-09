@@ -49,6 +49,9 @@ export class OptimizerUtils {
       symbol,
       context,
     });
+
+    backtest.optimizerValidationService.validate(context.optimizerName, OPTIMIZER_METHOD_NAME_GET_DATA);
+
     return await backtest.optimizerGlobalService.getData(
       symbol,
       context.optimizerName
@@ -74,6 +77,9 @@ export class OptimizerUtils {
       symbol,
       context,
     });
+
+    backtest.optimizerValidationService.validate(context.optimizerName, OPTIMIZER_METHOD_NAME_GET_CODE);
+
     return await backtest.optimizerGlobalService.getCode(
       symbol,
       context.optimizerName
@@ -103,6 +109,9 @@ export class OptimizerUtils {
       context,
       path,
     });
+
+    backtest.optimizerValidationService.validate(context.optimizerName, OPTIMIZER_METHOD_NAME_DUMP);
+
     await backtest.optimizerGlobalService.dump(
       symbol,
       context.optimizerName,
