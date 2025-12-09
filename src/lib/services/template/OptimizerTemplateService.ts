@@ -295,6 +295,8 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
       ``,
       `        await dumpJson(resultId, messages, result);`,
       ``,
+      `        result.id = resultId;`,
+      ``,
       `        return result;`,
       `    },`,
       `});`
