@@ -541,6 +541,8 @@ declare const MethodContextService: (new () => {
 interface IRiskCheckArgs {
     /** Trading pair symbol (e.g., "BTCUSDT") */
     symbol: string;
+    /** Pending signal to apply */
+    pendingSignal: ISignalDto;
     /** Strategy name requesting to open a position */
     strategyName: StrategyName;
     /** Exchange name */
@@ -577,6 +579,8 @@ interface IRiskCallbacks {
  * Extends IRiskCheckArgs with portfolio state data.
  */
 interface IRiskValidationPayload extends IRiskCheckArgs {
+    /** Pending signal to apply */
+    pendingSignal: ISignalDto;
     /** Number of currently active positions across all strategies */
     activePositionCount: number;
     /** List of currently active positions across all strategies */

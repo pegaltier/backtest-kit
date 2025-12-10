@@ -351,19 +351,6 @@ const GET_SIGNAL_FN = trycatch(
     const currentPrice = await self.params.exchange.getAveragePrice(
       self.params.execution.context.symbol
     );
-    if (
-      await not(
-        self.params.risk.checkSignal({
-          symbol: self.params.execution.context.symbol,
-          strategyName: self.params.method.context.strategyName,
-          exchangeName: self.params.method.context.exchangeName,
-          currentPrice,
-          timestamp: currentTime,
-        })
-      )
-    ) {
-      return null;
-    }
     const timeoutMs = GLOBAL_CONFIG.CC_MAX_SIGNAL_GENERATION_SECONDS * 1_000;
     const signal = await Promise.race([
       self.params.getSignal(
@@ -381,7 +368,20 @@ const GET_SIGNAL_FN = trycatch(
     if (self._isStopped) {
       return null;
     }
-
+    if (
+      await not(
+        self.params.risk.checkSignal({
+          pendingSignal: signal,
+          symbol: self.params.execution.context.symbol,
+          strategyName: self.params.method.context.strategyName,
+          exchangeName: self.params.method.context.exchangeName,
+          currentPrice,
+          timestamp: currentTime,
+        })
+      )
+    ) {
+      return null;
+    }
     // Если priceOpen указан - проверяем нужно ли ждать активации или открыть сразу
     if (signal.priceOpen !== undefined) {
       // КРИТИЧЕСКАЯ ПРОВЕРКА: достигнут ли priceOpen?
@@ -706,6 +706,7 @@ const ACTIVATE_SCHEDULED_SIGNAL_FN = async (
     await not(
         self.params.risk.checkSignal({
           symbol: self.params.execution.context.symbol,
+          pendingSignal: scheduled,
           strategyName: self.params.method.context.strategyName,
           exchangeName: self.params.method.context.exchangeName,
           currentPrice: scheduled.priceOpen,
@@ -845,6 +846,7 @@ const OPEN_NEW_PENDING_SIGNAL_FN = async (
   if (
     await not(
       self.params.risk.checkSignal({
+        pendingSignal: signal,
         symbol: self.params.execution.context.symbol,
         strategyName: self.params.method.context.strategyName,
         exchangeName: self.params.method.context.exchangeName,
@@ -1272,6 +1274,7 @@ const ACTIVATE_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
   if (
     await not(
       self.params.risk.checkSignal({
+        pendingSignal: scheduled,
         symbol: self.params.execution.context.symbol,
         strategyName: self.params.method.context.strategyName,
         exchangeName: self.params.method.context.exchangeName,
