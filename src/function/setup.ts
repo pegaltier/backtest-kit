@@ -1,5 +1,5 @@
 import { getErrorMessage } from "functools-kit";
-import { GLOBAL_CONFIG, GlobalConfig } from "../config/params";
+import { DEFAULT_CONFIG, GLOBAL_CONFIG, GlobalConfig } from "../config/params";
 import { ILogger } from "../interfaces/Logger.interface";
 import backtest from "../lib";
 
@@ -48,4 +48,40 @@ export function setConfig(config: Partial<GlobalConfig>, _unsafe?: boolean) {
     Object.assign(GLOBAL_CONFIG, prevConfig);
     throw error;
   }
+}
+
+/**
+ * Retrieves a copy of the current global configuration.
+ * 
+ * Returns a shallow copy of the current GLOBAL_CONFIG to prevent accidental mutations.
+ * Use this to inspect the current configuration state without modifying it.
+ * 
+ * @returns {GlobalConfig} A copy of the current global configuration object
+ * 
+ * @example
+ * ```typescript
+ * const currentConfig = getConfig();
+ * console.log(currentConfig.CC_SCHEDULE_AWAIT_MINUTES);
+ * ```
+ */
+export function getConfig() {
+    return Object.assign({}, GLOBAL_CONFIG);
+}
+
+/**
+ * Retrieves the default configuration object for the framework.
+ * 
+ * Returns a reference to the default configuration with all preset values.
+ * Use this to see what configuration options are available and their default values.
+ * 
+ * @returns {GlobalConfig} The default configuration object
+ * 
+ * @example
+ * ```typescript
+ * const defaultConfig = getDefaultConfig();
+ * console.log(defaultConfig.CC_SCHEDULE_AWAIT_MINUTES);
+ * ```
+ */
+export function getDefaultConfig() {
+    return DEFAULT_CONFIG;
 }

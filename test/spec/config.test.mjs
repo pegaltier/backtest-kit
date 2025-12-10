@@ -1,0 +1,437 @@
+import { test } from "worker-testbed";
+import { setConfig, getDefaultConfig } from "../../build/index.mjs";
+
+test("ConfigValidationService: valid default config passes", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    pass("Default config validation passed");
+  } catch (error) {
+    fail(`Default config validation failed: ${error.message}`);
+  }
+});
+
+test("ConfigValidationService: negative slippage fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({ CC_PERCENT_SLIPPAGE: -0.1 });
+    fail("Should have thrown error for negative slippage");
+  } catch (error) {
+    if (error.message.includes("CC_PERCENT_SLIPPAGE must be a non-negative number")) {
+      pass("Correctly rejected negative slippage");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: negative fee fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({ CC_PERCENT_FEE: -0.1 });
+    fail("Should have thrown error for negative fee");
+  } catch (error) {
+    if (error.message.includes("CC_PERCENT_FEE must be a non-negative number")) {
+      pass("Correctly rejected negative fee");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: TP below cost coverage fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    // Set TP to 0.3% which is below 0.4% (0.2% slippage + 0.2% fees)
+    setConfig({
+      CC_PERCENT_SLIPPAGE: 0.1,
+      CC_PERCENT_FEE: 0.1,
+      CC_MIN_TAKEPROFIT_DISTANCE_PERCENT: 0.3,
+    });
+    fail("Should have thrown error for TP below cost coverage");
+  } catch (error) {
+    if (
+      error.message.includes("CC_MIN_TAKEPROFIT_DISTANCE_PERCENT") &&
+      error.message.includes("too low to cover trading costs")
+    ) {
+      pass("Correctly rejected TP below cost coverage");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: TP at exact cost coverage passes", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    // Set TP to 0.4% which exactly covers 0.2% slippage + 0.2% fees
+    setConfig({
+      CC_PERCENT_SLIPPAGE: 0.1,
+      CC_PERCENT_FEE: 0.1,
+      CC_MIN_TAKEPROFIT_DISTANCE_PERCENT: 0.4,
+    });
+    pass("Correctly accepted TP at exact cost coverage");
+  } catch (error) {
+    fail(`Should have passed for TP at cost coverage: ${error.message}`);
+  }
+});
+
+test("ConfigValidationService: MIN_SL > MAX_SL fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({
+      CC_MIN_STOPLOSS_DISTANCE_PERCENT: 10,
+      CC_MAX_STOPLOSS_DISTANCE_PERCENT: 5,
+    });
+    fail("Should have thrown error for MIN_SL > MAX_SL");
+  } catch (error) {
+    if (
+      error.message.includes("CC_MIN_STOPLOSS_DISTANCE_PERCENT") &&
+      error.message.includes("must be less than")
+    ) {
+      pass("Correctly rejected MIN_SL > MAX_SL");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: zero TP distance fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({ CC_MIN_TAKEPROFIT_DISTANCE_PERCENT: 0 });
+    fail("Should have thrown error for zero TP distance");
+  } catch (error) {
+    if (error.message.includes("CC_MIN_TAKEPROFIT_DISTANCE_PERCENT must be a positive number")) {
+      pass("Correctly rejected zero TP distance");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: negative signal lifetime fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({ CC_MAX_SIGNAL_LIFETIME_MINUTES: -100 });
+    fail("Should have thrown error for negative signal lifetime");
+  } catch (error) {
+    if (error.message.includes("CC_MAX_SIGNAL_LIFETIME_MINUTES must be a positive integer")) {
+      pass("Correctly rejected negative signal lifetime");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: non-integer candle count fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({ CC_AVG_PRICE_CANDLES_COUNT: 5.5 });
+    fail("Should have thrown error for non-integer candle count");
+  } catch (error) {
+    if (error.message.includes("CC_AVG_PRICE_CANDLES_COUNT must be a positive integer")) {
+      pass("Correctly rejected non-integer candle count");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: negative retry count fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({ CC_GET_CANDLES_RETRY_COUNT: -1 });
+    fail("Should have thrown error for negative retry count");
+  } catch (error) {
+    if (error.message.includes("CC_GET_CANDLES_RETRY_COUNT must be a non-negative integer")) {
+      pass("Correctly rejected negative retry count");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: zero MIN_SL fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({ CC_MIN_STOPLOSS_DISTANCE_PERCENT: 0 });
+    fail("Should have thrown error for zero MIN_SL");
+  } catch (error) {
+    if (error.message.includes("CC_MIN_STOPLOSS_DISTANCE_PERCENT must be a positive number")) {
+      pass("Correctly rejected zero MIN_SL");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: negative MIN_SL fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({ CC_MIN_STOPLOSS_DISTANCE_PERCENT: -5 });
+    fail("Should have thrown error for negative MIN_SL");
+  } catch (error) {
+    if (error.message.includes("CC_MIN_STOPLOSS_DISTANCE_PERCENT must be a positive number")) {
+      pass("Correctly rejected negative MIN_SL");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: zero MAX_SL fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({ CC_MAX_STOPLOSS_DISTANCE_PERCENT: 0 });
+    fail("Should have thrown error for zero MAX_SL");
+  } catch (error) {
+    if (error.message.includes("CC_MAX_STOPLOSS_DISTANCE_PERCENT must be a positive number")) {
+      pass("Correctly rejected zero MAX_SL");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: negative MAX_SL fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({ CC_MAX_STOPLOSS_DISTANCE_PERCENT: -10 });
+    fail("Should have thrown error for negative MAX_SL");
+  } catch (error) {
+    if (error.message.includes("CC_MAX_STOPLOSS_DISTANCE_PERCENT must be a positive number")) {
+      pass("Correctly rejected negative MAX_SL");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: zero SCHEDULE_AWAIT fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({ CC_SCHEDULE_AWAIT_MINUTES: 0 });
+    fail("Should have thrown error for zero SCHEDULE_AWAIT");
+  } catch (error) {
+    if (error.message.includes("CC_SCHEDULE_AWAIT_MINUTES must be a positive integer")) {
+      pass("Correctly rejected zero SCHEDULE_AWAIT");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: negative SCHEDULE_AWAIT fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({ CC_SCHEDULE_AWAIT_MINUTES: -50 });
+    fail("Should have thrown error for negative SCHEDULE_AWAIT");
+  } catch (error) {
+    if (error.message.includes("CC_SCHEDULE_AWAIT_MINUTES must be a positive integer")) {
+      pass("Correctly rejected negative SCHEDULE_AWAIT");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: zero MAX_SIGNAL_GENERATION fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({ CC_MAX_SIGNAL_GENERATION_SECONDS: 0 });
+    fail("Should have thrown error for zero MAX_SIGNAL_GENERATION");
+  } catch (error) {
+    if (error.message.includes("CC_MAX_SIGNAL_GENERATION_SECONDS must be a positive integer")) {
+      pass("Correctly rejected zero MAX_SIGNAL_GENERATION");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: negative MAX_SIGNAL_GENERATION fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({ CC_MAX_SIGNAL_GENERATION_SECONDS: -30 });
+    fail("Should have thrown error for negative MAX_SIGNAL_GENERATION");
+  } catch (error) {
+    if (error.message.includes("CC_MAX_SIGNAL_GENERATION_SECONDS must be a positive integer")) {
+      pass("Correctly rejected negative MAX_SIGNAL_GENERATION");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: zero AVG_PRICE_CANDLES fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({ CC_AVG_PRICE_CANDLES_COUNT: 0 });
+    fail("Should have thrown error for zero AVG_PRICE_CANDLES");
+  } catch (error) {
+    if (error.message.includes("CC_AVG_PRICE_CANDLES_COUNT must be a positive integer")) {
+      pass("Correctly rejected zero AVG_PRICE_CANDLES");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: negative AVG_PRICE_CANDLES fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({ CC_AVG_PRICE_CANDLES_COUNT: -5 });
+    fail("Should have thrown error for negative AVG_PRICE_CANDLES");
+  } catch (error) {
+    if (error.message.includes("CC_AVG_PRICE_CANDLES_COUNT must be a positive integer")) {
+      pass("Correctly rejected negative AVG_PRICE_CANDLES");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: negative RETRY_DELAY fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({ CC_GET_CANDLES_RETRY_DELAY_MS: -100 });
+    fail("Should have thrown error for negative RETRY_DELAY");
+  } catch (error) {
+    if (error.message.includes("CC_GET_CANDLES_RETRY_DELAY_MS must be a non-negative integer")) {
+      pass("Correctly rejected negative RETRY_DELAY");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: zero PRICE_ANOMALY_THRESHOLD fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({ CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR: 0 });
+    fail("Should have thrown error for zero PRICE_ANOMALY_THRESHOLD");
+  } catch (error) {
+    if (error.message.includes("CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR must be a positive integer")) {
+      pass("Correctly rejected zero PRICE_ANOMALY_THRESHOLD");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: negative PRICE_ANOMALY_THRESHOLD fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({ CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR: -1000 });
+    fail("Should have thrown error for negative PRICE_ANOMALY_THRESHOLD");
+  } catch (error) {
+    if (error.message.includes("CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR must be a positive integer")) {
+      pass("Correctly rejected negative PRICE_ANOMALY_THRESHOLD");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: zero MIN_CANDLES_FOR_MEDIAN fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({ CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN: 0 });
+    fail("Should have thrown error for zero MIN_CANDLES_FOR_MEDIAN");
+  } catch (error) {
+    if (error.message.includes("CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN must be a positive integer")) {
+      pass("Correctly rejected zero MIN_CANDLES_FOR_MEDIAN");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: negative MIN_CANDLES_FOR_MEDIAN fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({ CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN: -5 });
+    fail("Should have thrown error for negative MIN_CANDLES_FOR_MEDIAN");
+  } catch (error) {
+    if (error.message.includes("CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN must be a positive integer")) {
+      pass("Correctly rejected negative MIN_CANDLES_FOR_MEDIAN");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: non-integer SCHEDULE_AWAIT fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({ CC_SCHEDULE_AWAIT_MINUTES: 120.5 });
+    fail("Should have thrown error for non-integer SCHEDULE_AWAIT");
+  } catch (error) {
+    if (error.message.includes("CC_SCHEDULE_AWAIT_MINUTES must be a positive integer")) {
+      pass("Correctly rejected non-integer SCHEDULE_AWAIT");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: non-integer MAX_SIGNAL_LIFETIME fails", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({ CC_MAX_SIGNAL_LIFETIME_MINUTES: 1440.7 });
+    fail("Should have thrown error for non-integer MAX_SIGNAL_LIFETIME");
+  } catch (error) {
+    if (error.message.includes("CC_MAX_SIGNAL_LIFETIME_MINUTES must be a positive integer")) {
+      pass("Correctly rejected non-integer MAX_SIGNAL_LIFETIME");
+    } else {
+      fail(`Wrong error message: ${error.message}`);
+    }
+  }
+});
+
+test("ConfigValidationService: multiple errors aggregated", async ({ pass, fail }) => {
+  setConfig(getDefaultConfig());
+
+  try {
+    setConfig({
+      CC_PERCENT_SLIPPAGE: -0.1,
+      CC_PERCENT_FEE: -0.1,
+      CC_MIN_TAKEPROFIT_DISTANCE_PERCENT: -1,
+    });
+    fail("Should have thrown error for multiple invalid params");
+  } catch (error) {
+    const errorCount = (error.message.match(/\d+\./g) || []).length;
+    if (errorCount >= 3) {
+      pass(`Correctly aggregated ${errorCount} validation errors`);
+    } else {
+      fail(`Should have aggregated multiple errors, got: ${error.message}`);
+    }
+  }
+});

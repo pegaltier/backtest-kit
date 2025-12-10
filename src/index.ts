@@ -1,4 +1,9 @@
-export { setLogger, setConfig } from "./function/setup";
+export {
+  setLogger,
+  setConfig,
+  getConfig,
+  getDefaultConfig,
+} from "./function/setup";
 export {
   addExchange,
   addStrategy,
@@ -124,7 +129,7 @@ export {
   IOptimizerSource,
   IOptimizerStrategy,
   IOptimizerTemplate,
-} from "./interfaces/Optimizer.interface"
+} from "./interfaces/Optimizer.interface";
 
 export { MessageModel, MessageRole } from "./model/Message.model";
 

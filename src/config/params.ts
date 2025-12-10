@@ -104,6 +104,8 @@ export const GLOBAL_CONFIG = {
   CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN: 5,
 };
 
+export const DEFAULT_CONFIG = Object.freeze({...GLOBAL_CONFIG});
+
 /**
  * Type for global configuration object.
  */

@@ -168,6 +168,64 @@ declare function setLogger(logger: ILogger): void;
  * ```
  */
 declare function setConfig(config: Partial<GlobalConfig>, _unsafe?: boolean): void;
+/**
+ * Retrieves a copy of the current global configuration.
+ *
+ * Returns a shallow copy of the current GLOBAL_CONFIG to prevent accidental mutations.
+ * Use this to inspect the current configuration state without modifying it.
+ *
+ * @returns {GlobalConfig} A copy of the current global configuration object
+ *
+ * @example
+ * ```typescript
+ * const currentConfig = getConfig();
+ * console.log(currentConfig.CC_SCHEDULE_AWAIT_MINUTES);
+ * ```
+ */
+declare function getConfig(): {
+    CC_SCHEDULE_AWAIT_MINUTES: number;
+    CC_AVG_PRICE_CANDLES_COUNT: number;
+    CC_PERCENT_SLIPPAGE: number;
+    CC_PERCENT_FEE: number;
+    CC_MIN_TAKEPROFIT_DISTANCE_PERCENT: number;
+    CC_MIN_STOPLOSS_DISTANCE_PERCENT: number;
+    CC_MAX_STOPLOSS_DISTANCE_PERCENT: number;
+    CC_MAX_SIGNAL_LIFETIME_MINUTES: number;
+    CC_MAX_SIGNAL_GENERATION_SECONDS: number;
+    CC_GET_CANDLES_RETRY_COUNT: number;
+    CC_GET_CANDLES_RETRY_DELAY_MS: number;
+    CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR: number;
+    CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN: number;
+};
+/**
+ * Retrieves the default configuration object for the framework.
+ *
+ * Returns a reference to the default configuration with all preset values.
+ * Use this to see what configuration options are available and their default values.
+ *
+ * @returns {GlobalConfig} The default configuration object
+ *
+ * @example
+ * ```typescript
+ * const defaultConfig = getDefaultConfig();
+ * console.log(defaultConfig.CC_SCHEDULE_AWAIT_MINUTES);
+ * ```
+ */
+declare function getDefaultConfig(): Readonly<{
+    CC_SCHEDULE_AWAIT_MINUTES: number;
+    CC_AVG_PRICE_CANDLES_COUNT: number;
+    CC_PERCENT_SLIPPAGE: number;
+    CC_PERCENT_FEE: number;
+    CC_MIN_TAKEPROFIT_DISTANCE_PERCENT: number;
+    CC_MIN_STOPLOSS_DISTANCE_PERCENT: number;
+    CC_MAX_STOPLOSS_DISTANCE_PERCENT: number;
+    CC_MAX_SIGNAL_LIFETIME_MINUTES: number;
+    CC_MAX_SIGNAL_GENERATION_SECONDS: number;
+    CC_GET_CANDLES_RETRY_COUNT: number;
+    CC_GET_CANDLES_RETRY_DELAY_MS: number;
+    CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR: number;
+    CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN: number;
+}>;
 
 /**
  * Execution context containing runtime parameters for strategy/exchange operations.
@@ -9265,4 +9323,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type BacktestStatistics, type CandleInterval, Constant, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IHeatmapStatistics, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatistics, type MessageModel, type MessageRole, MethodContextService, Optimizer, Partial$1 as Partial, type PartialData, type PartialLossContract, type PartialProfitContract, type PartialStatistics, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatistics, PersistBase, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressOptimizerContract, type ProgressWalkerContract, type RiskData, Schedule, type ScheduleData, type ScheduleStatistics, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, Walker, type WalkerContract, type WalkerMetric, type WalkerStatistics, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, dumpSignal, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getDate, getMode, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, setConfig, setLogger };
+export { Backtest, type BacktestStatistics, type CandleInterval, Constant, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IHeatmapStatistics, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatistics, type MessageModel, type MessageRole, MethodContextService, Optimizer, Partial$1 as Partial, type PartialData, type PartialLossContract, type PartialProfitContract, type PartialStatistics, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatistics, PersistBase, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressOptimizerContract, type ProgressWalkerContract, type RiskData, Schedule, type ScheduleData, type ScheduleStatistics, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, Walker, type WalkerContract, type WalkerMetric, type WalkerStatistics, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, dumpSignal, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getConfig, getDate, getDefaultConfig, getMode, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, setConfig, setLogger };
