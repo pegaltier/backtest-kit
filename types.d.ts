@@ -7233,7 +7233,7 @@ declare class RiskConnectionService {
  *
  * Used internally by BacktestLogicPrivateService and LiveLogicPrivateService.
  */
-declare class ExchangeGlobalService {
+declare class ExchangeCoreService {
     private readonly loggerService;
     private readonly exchangeConnectionService;
     private readonly methodContextService;
@@ -7307,7 +7307,7 @@ declare class ExchangeGlobalService {
  *
  * Used internally by BacktestLogicPrivateService and LiveLogicPrivateService.
  */
-declare class StrategyGlobalService {
+declare class StrategyCoreService {
     private readonly loggerService;
     private readonly strategyConnectionService;
     private readonly strategySchemaService;
@@ -7404,7 +7404,7 @@ declare class StrategyGlobalService {
  * Wraps FrameConnectionService for timeframe generation.
  * Used internally by BacktestLogicPrivateService.
  */
-declare class FrameGlobalService {
+declare class FrameCoreService {
     private readonly loggerService;
     private readonly frameConnectionService;
     private readonly frameValidationService;
@@ -7828,9 +7828,9 @@ declare class WalkerSchemaService {
  */
 declare class BacktestLogicPrivateService {
     private readonly loggerService;
-    private readonly strategyGlobalService;
-    private readonly exchangeGlobalService;
-    private readonly frameGlobalService;
+    private readonly strategyCoreService;
+    private readonly exchangeCoreService;
+    private readonly frameCoreService;
     private readonly methodContextService;
     /**
      * Runs backtest for a symbol, streaming closed signals as async generator.
@@ -7867,7 +7867,7 @@ declare class BacktestLogicPrivateService {
  */
 declare class LiveLogicPrivateService {
     private readonly loggerService;
-    private readonly strategyGlobalService;
+    private readonly strategyCoreService;
     private readonly methodContextService;
     /**
      * Runs live trading for a symbol, streaming results as async generator.
@@ -9298,13 +9298,13 @@ declare const backtest: {
     liveCommandService: LiveCommandService;
     backtestCommandService: BacktestCommandService;
     walkerCommandService: WalkerCommandService;
-    exchangeGlobalService: ExchangeGlobalService;
-    strategyGlobalService: StrategyGlobalService;
-    frameGlobalService: FrameGlobalService;
     sizingGlobalService: SizingGlobalService;
     riskGlobalService: RiskGlobalService;
     optimizerGlobalService: OptimizerGlobalService;
     partialGlobalService: PartialGlobalService;
+    exchangeCoreService: ExchangeCoreService;
+    strategyCoreService: StrategyCoreService;
+    frameCoreService: FrameCoreService;
     exchangeSchemaService: ExchangeSchemaService;
     strategySchemaService: StrategySchemaService;
     frameSchemaService: FrameSchemaService;

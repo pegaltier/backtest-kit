@@ -24,7 +24,7 @@ export async function getCurrentTimeframe(symbol: string): Promise<Date[]> {
       "getCurrentTimeframe can only be used during backtest execution"
     );
   }
-  return await backtest.frameGlobalService.getTimeframe(
+  return await backtest.frameCoreService.getTimeframe(
     symbol,
     backtest.methodContextService.context.frameName
   );

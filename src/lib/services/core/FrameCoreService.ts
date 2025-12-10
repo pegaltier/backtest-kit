@@ -4,8 +4,9 @@ import TYPES from "../../core/types";
 import ExecutionContextService from "../context/ExecutionContextService";
 import FrameConnectionService from "../connection/FrameConnectionService";
 import FrameValidationService from "../validation/FrameValidationService";
+import MethodContextService from "../context/MethodContextService";
 
-const METHOD_NAME_GET_TIMEFRAME = "frameGlobalService getTimeframe";
+const METHOD_NAME_GET_TIMEFRAME = "frameCoreService getTimeframe";
 
 /**
  * Global service for frame operations.
@@ -13,7 +14,7 @@ const METHOD_NAME_GET_TIMEFRAME = "frameGlobalService getTimeframe";
  * Wraps FrameConnectionService for timeframe generation.
  * Used internally by BacktestLogicPrivateService.
  */
-export class FrameGlobalService {
+export class FrameCoreService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly frameConnectionService = inject<FrameConnectionService>(
     TYPES.frameConnectionService
@@ -33,9 +34,12 @@ export class FrameGlobalService {
       frameName,
       symbol,
     });
+    if (!MethodContextService.hasContext()) {
+      throw new Error("frameCoreService getTimeframe requires a method context");
+    }
     this.frameValidationService.validate(frameName, METHOD_NAME_GET_TIMEFRAME);
     return await this.frameConnectionService.getTimeframe(symbol, frameName);
   };
 }
 
-export default FrameGlobalService;
+export default FrameCoreService;

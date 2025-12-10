@@ -27,10 +27,13 @@ const schemaServices = {
     optimizerSchemaService: Symbol('optimizerSchemaService'),
 }
 
+const coreServices = {
+    exchangeCoreService: Symbol('exchangeCoreService'),
+    strategyCoreService: Symbol('strategyCoreService'),
+    frameCoreService: Symbol('frameCoreService'),
+}
+
 const globalServices = {
-    exchangeGlobalService: Symbol('exchangeGlobalService'),
-    strategyGlobalService: Symbol('strategyGlobalService'),
-    frameGlobalService: Symbol('frameGlobalService'),
     sizingGlobalService: Symbol('sizingGlobalService'),
     riskGlobalService: Symbol('riskGlobalService'),
     optimizerGlobalService: Symbol('optimizerGlobalService'),
@@ -86,6 +89,7 @@ export const TYPES = {
     ...contextServices,
     ...connectionServices,
     ...schemaServices,
+    ...coreServices,
     ...globalServices,
     ...commandServices,
     ...logicPrivateServices,

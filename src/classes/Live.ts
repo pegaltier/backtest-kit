@@ -169,7 +169,7 @@ export class LiveInstance {
     }
 
     {
-      backtest.strategyGlobalService.clear({ symbol, strategyName: context.strategyName });
+      backtest.strategyCoreService.clear({ symbol, strategyName: context.strategyName });
     }
 
     {
@@ -217,8 +217,8 @@ export class LiveInstance {
       exitEmitter.next(new Error(getErrorMessage(error)))
     );
     return () => {
-      backtest.strategyGlobalService.stop({symbol, strategyName: context.strategyName}, false);
-      backtest.strategyGlobalService
+      backtest.strategyCoreService.stop({symbol, strategyName: context.strategyName}, false);
+      backtest.strategyCoreService
         .getPendingSignal(symbol, context.strategyName)
         .then(async (pendingSignal) => {
           if (pendingSignal) {
@@ -260,7 +260,7 @@ export class LiveInstance {
       symbol,
       strategyName,
     });
-    await backtest.strategyGlobalService.stop({ symbol, strategyName }, false);
+    await backtest.strategyCoreService.stop({ symbol, strategyName }, false);
   };
 
   /**

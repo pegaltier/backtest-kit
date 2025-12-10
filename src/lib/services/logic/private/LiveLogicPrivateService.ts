@@ -1,7 +1,7 @@
 import { inject } from "../../../core/di";
 import LoggerService from "../../base/LoggerService";
 import TYPES from "../../../core/types";
-import StrategyGlobalService from "../../global/StrategyGlobalService";
+import StrategyCoreService from "../../core/StrategyCoreService";
 import { and, errorData, getErrorMessage, sleep } from "functools-kit";
 import { performanceEmitter, errorEmitter } from "../../../../config/emitters";
 import { TMethodContextService } from "../../context/MethodContextService";
@@ -31,8 +31,8 @@ const TICK_TTL = 1 * 60 * 1_000 + 1;
  */
 export class LiveLogicPrivateService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
-  private readonly strategyGlobalService = inject<StrategyGlobalService>(
-    TYPES.strategyGlobalService
+  private readonly strategyCoreService = inject<StrategyCoreService>(
+    TYPES.strategyCoreService
   );
   private readonly methodContextService = inject<TMethodContextService>(
     TYPES.methodContextService
@@ -73,7 +73,7 @@ export class LiveLogicPrivateService {
 
       let result: IStrategyTickResult;
       try {
-        result = await this.strategyGlobalService.tick(symbol, when, false);
+        result = await this.strategyCoreService.tick(symbol, when, false);
       } catch (error) {
         console.warn(
           `backtestLogicPrivateService tick failed when=${when.toISOString()} symbol=${symbol} strategyName=${
@@ -119,7 +119,7 @@ export class LiveLogicPrivateService {
         if (
           await and(
             Promise.resolve(true),
-            this.strategyGlobalService.getStopped(
+            this.strategyCoreService.getStopped(
               symbol,
               this.methodContextService.context.strategyName
             )
@@ -154,7 +154,7 @@ export class LiveLogicPrivateService {
       // Check if strategy should stop after signal is closed
       if (result.action === "closed") {
         if (
-          await this.strategyGlobalService.getStopped(
+          await this.strategyCoreService.getStopped(
             symbol,
             this.methodContextService.context.strategyName
           )

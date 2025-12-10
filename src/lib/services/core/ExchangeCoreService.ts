@@ -8,10 +8,11 @@ import {
 } from "../../../interfaces/Exchange.interface";
 import ExchangeConnectionService from "../connection/ExchangeConnectionService";
 import { TMethodContextService } from "../context/MethodContextService";
+import MethodContextService from "../context/MethodContextService";
 import ExchangeValidationService from "../validation/ExchangeValidationService";
 import { memoize, singleshot } from "functools-kit";
 
-const METHOD_NAME_VALIDATE = "exchangeGlobalService validate";
+const METHOD_NAME_VALIDATE = "exchangeCoreService validate";
 
 /**
  * Global service for exchange operations with execution context injection.
@@ -21,7 +22,7 @@ const METHOD_NAME_VALIDATE = "exchangeGlobalService validate";
  *
  * Used internally by BacktestLogicPrivateService and LiveLogicPrivateService.
  */
-export class ExchangeGlobalService {
+export class ExchangeCoreService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly exchangeConnectionService =
     inject<ExchangeConnectionService>(TYPES.exchangeConnectionService);
@@ -68,13 +69,16 @@ export class ExchangeGlobalService {
     when: Date,
     backtest: boolean
   ) => {
-    this.loggerService.log("exchangeGlobalService getCandles", {
+    this.loggerService.log("exchangeCoreService getCandles", {
       symbol,
       interval,
       limit,
       when,
       backtest,
     });
+    if (!MethodContextService.hasContext()) {
+      throw new Error("exchangeCoreService getCandles requires a method context");
+    }
     await this.validate(this.methodContextService.context.exchangeName);
     return await ExecutionContextService.runInContext(
       async () => {
@@ -109,13 +113,16 @@ export class ExchangeGlobalService {
     when: Date,
     backtest: boolean
   ) => {
-    this.loggerService.log("exchangeGlobalService getNextCandles", {
+    this.loggerService.log("exchangeCoreService getNextCandles", {
       symbol,
       interval,
       limit,
       when,
       backtest,
     });
+    if (!MethodContextService.hasContext()) {
+      throw new Error("exchangeCoreService getNextCandles requires a method context");
+    }
     await this.validate(this.methodContextService.context.exchangeName);
     return await ExecutionContextService.runInContext(
       async () => {
@@ -146,11 +153,14 @@ export class ExchangeGlobalService {
     when: Date,
     backtest: boolean
   ) => {
-    this.loggerService.log("exchangeGlobalService getAveragePrice", {
+    this.loggerService.log("exchangeCoreService getAveragePrice", {
       symbol,
       when,
       backtest,
     });
+    if (!MethodContextService.hasContext()) {
+      throw new Error("exchangeCoreService getAveragePrice requires a method context");
+    }
     await this.validate(this.methodContextService.context.exchangeName);
     return await ExecutionContextService.runInContext(
       async () => {
@@ -179,12 +189,15 @@ export class ExchangeGlobalService {
     when: Date,
     backtest: boolean
   ) => {
-    this.loggerService.log("exchangeGlobalService formatPrice", {
+    this.loggerService.log("exchangeCoreService formatPrice", {
       symbol,
       price,
       when,
       backtest,
     });
+    if (!MethodContextService.hasContext()) {
+      throw new Error("exchangeCoreService formatPrice requires a method context");
+    }
     await this.validate(this.methodContextService.context.exchangeName);
     return await ExecutionContextService.runInContext(
       async () => {
@@ -213,12 +226,15 @@ export class ExchangeGlobalService {
     when: Date,
     backtest: boolean
   ) => {
-    this.loggerService.log("exchangeGlobalService formatQuantity", {
+    this.loggerService.log("exchangeCoreService formatQuantity", {
       symbol,
       quantity,
       when,
       backtest,
     });
+    if (!MethodContextService.hasContext()) {
+      throw new Error("exchangeCoreService formatQuantity requires a method context");
+    }
     await this.validate(this.methodContextService.context.exchangeName);
     return await ExecutionContextService.runInContext(
       async () => {
@@ -236,4 +252,4 @@ export class ExchangeGlobalService {
   };
 }
 
-export default ExchangeGlobalService;
+export default ExchangeCoreService;

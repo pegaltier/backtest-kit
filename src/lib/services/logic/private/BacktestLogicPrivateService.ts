@@ -3,9 +3,9 @@ import LoggerService from "../../base/LoggerService";
 import TYPES from "../../../core/types";
 import { IStrategyBacktestResult, IStrategyTickResult } from "../../../../interfaces/Strategy.interface";
 import { ICandleData } from "../../../../interfaces/Exchange.interface";
-import StrategyGlobalService from "../../global/StrategyGlobalService";
-import ExchangeGlobalService from "../../global/ExchangeGlobalService";
-import FrameGlobalService from "../../global/FrameGlobalService";
+import StrategyCoreService from "../../core/StrategyCoreService";
+import ExchangeCoreService from "../../core/ExchangeCoreService";
+import FrameCoreService from "../../core/FrameCoreService";
 import MethodContextService, {
   TMethodContextService,
 } from "../../context/MethodContextService";
@@ -32,14 +32,14 @@ import { and, errorData, getErrorMessage } from "functools-kit";
  */
 export class BacktestLogicPrivateService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
-  private readonly strategyGlobalService = inject<StrategyGlobalService>(
-    TYPES.strategyGlobalService
+  private readonly strategyCoreService = inject<StrategyCoreService>(
+    TYPES.strategyCoreService
   );
-  private readonly exchangeGlobalService = inject<ExchangeGlobalService>(
-    TYPES.exchangeGlobalService
+  private readonly exchangeCoreService = inject<ExchangeCoreService>(
+    TYPES.exchangeCoreService
   );
-  private readonly frameGlobalService = inject<FrameGlobalService>(
-    TYPES.frameGlobalService
+  private readonly frameCoreService = inject<FrameCoreService>(
+    TYPES.frameCoreService
   );
   private readonly methodContextService = inject<TMethodContextService>(
     TYPES.methodContextService
@@ -66,7 +66,7 @@ export class BacktestLogicPrivateService {
 
     const backtestStartTime = performance.now();
 
-    const timeframes = await this.frameGlobalService.getTimeframe(
+    const timeframes = await this.frameCoreService.getTimeframe(
       symbol,
       this.methodContextService.context.frameName
     );
@@ -93,7 +93,7 @@ export class BacktestLogicPrivateService {
 
       // Check if strategy should stop before processing next frame
       if (
-        await this.strategyGlobalService.getStopped(
+        await this.strategyCoreService.getStopped(
           symbol,
           this.methodContextService.context.strategyName
         )
@@ -112,7 +112,7 @@ export class BacktestLogicPrivateService {
 
       let result: IStrategyTickResult;
       try {
-        result = await this.strategyGlobalService.tick(symbol, when, true);
+        result = await this.strategyCoreService.tick(symbol, when, true);
       } catch (error) {
         console.warn(`backtestLogicPrivateService tick failed, skipping timeframe when=${when.toISOString()} symbol=${symbol} strategyName=${this.methodContextService.context.strategyName} exchangeName=${this.methodContextService.context.exchangeName}`);
         this.loggerService.warn(
@@ -132,7 +132,7 @@ export class BacktestLogicPrivateService {
       if (
         await and(
           Promise.resolve(result.action === "idle"),
-          this.strategyGlobalService.getStopped(
+          this.strategyCoreService.getStopped(
             symbol,
             this.methodContextService.context.strategyName
           )
@@ -177,7 +177,7 @@ export class BacktestLogicPrivateService {
 
         let candles: ICandleData[];
         try {
-          candles = await this.exchangeGlobalService.getNextCandles(
+          candles = await this.exchangeCoreService.getNextCandles(
             symbol,
             "1m",
             candlesNeeded,
@@ -220,7 +220,7 @@ export class BacktestLogicPrivateService {
         // и если активируется - продолжит с TP/SL мониторингом
         let backtestResult: IStrategyBacktestResult;
         try {
-          backtestResult = await this.strategyGlobalService.backtest(
+          backtestResult = await this.strategyCoreService.backtest(
             symbol,
             candles,
             when,
@@ -282,7 +282,7 @@ export class BacktestLogicPrivateService {
 
         // Check if strategy should stop after signal is closed
         if (
-          await this.strategyGlobalService.getStopped(
+          await this.strategyCoreService.getStopped(
             symbol,
             this.methodContextService.context.strategyName
           )
@@ -320,7 +320,7 @@ export class BacktestLogicPrivateService {
 
         let candles: ICandleData[];
         try {
-          candles = await this.exchangeGlobalService.getNextCandles(
+          candles = await this.exchangeCoreService.getNextCandles(
             symbol,
             "1m",
             totalCandles,
@@ -358,7 +358,7 @@ export class BacktestLogicPrivateService {
         // Вызываем backtest - всегда возвращает closed
         let backtestResult: IStrategyBacktestResult;
         try {
-          backtestResult = await this.strategyGlobalService.backtest(
+          backtestResult = await this.strategyCoreService.backtest(
             symbol,
             candles,
             when,
@@ -412,7 +412,7 @@ export class BacktestLogicPrivateService {
 
         // Check if strategy should stop after signal is closed
         if (
-          await this.strategyGlobalService.getStopped(
+          await this.strategyCoreService.getStopped(
             symbol,
             this.methodContextService.context.strategyName
           )

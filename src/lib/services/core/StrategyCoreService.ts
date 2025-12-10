@@ -15,8 +15,9 @@ import StrategySchemaService from "../schema/StrategySchemaService";
 import RiskValidationService from "../validation/RiskValidationService";
 import StrategyValidationService from "../validation/StrategyValidationService";
 import { TMethodContextService } from "../context/MethodContextService";
+import MethodContextService from "../context/MethodContextService";
 
-const METHOD_NAME_VALIDATE = "strategyGlobalService validate";
+const METHOD_NAME_VALIDATE = "strategyCoreService validate";
 
 /**
  * Global service for strategy operations with execution context injection.
@@ -26,7 +27,7 @@ const METHOD_NAME_VALIDATE = "strategyGlobalService validate";
  *
  * Used internally by BacktestLogicPrivateService and LiveLogicPrivateService.
  */
-export class StrategyGlobalService {
+export class StrategyCoreService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly strategyConnectionService =
     inject<StrategyConnectionService>(TYPES.strategyConnectionService);
@@ -82,10 +83,13 @@ export class StrategyGlobalService {
     symbol: string,
     strategyName: StrategyName
   ): Promise<ISignalRow | null> => {
-    this.loggerService.log("strategyGlobalService getPendingSignal", {
+    this.loggerService.log("strategyCoreService getPendingSignal", {
       symbol,
       strategyName,
     });
+    if (!MethodContextService.hasContext()) {
+      throw new Error("strategyCoreService getPendingSignal requires a method context");
+    }
     await this.validate(symbol, strategyName);
     return await this.strategyConnectionService.getPendingSignal(symbol, strategyName);
   };
@@ -104,10 +108,13 @@ export class StrategyGlobalService {
     symbol: string,
     strategyName: StrategyName
   ): Promise<boolean> => {
-    this.loggerService.log("strategyGlobalService getStopped", {
+    this.loggerService.log("strategyCoreService getStopped", {
       symbol,
       strategyName,
     });
+    if (!MethodContextService.hasContext()) {
+      throw new Error("strategyCoreService getStopped requires a method context");
+    }
     await this.validate(symbol, strategyName);
     return await this.strategyConnectionService.getStopped(symbol, strategyName);
   };
@@ -128,11 +135,14 @@ export class StrategyGlobalService {
     when: Date,
     backtest: boolean
   ): Promise<IStrategyTickResult> => {
-    this.loggerService.log("strategyGlobalService tick", {
+    this.loggerService.log("strategyCoreService tick", {
       symbol,
       when,
       backtest,
     });
+    if (!MethodContextService.hasContext()) {
+      throw new Error("strategyCoreService tick requires a method context");
+    }
     const strategyName = this.methodContextService.context.strategyName;
     await this.validate(symbol, strategyName);
     return await ExecutionContextService.runInContext(
@@ -165,12 +175,15 @@ export class StrategyGlobalService {
     when: Date,
     backtest: boolean
   ): Promise<IStrategyBacktestResult> => {
-    this.loggerService.log("strategyGlobalService backtest", {
+    this.loggerService.log("strategyCoreService backtest", {
       symbol,
       candleCount: candles.length,
       when,
       backtest,
     });
+    if (!MethodContextService.hasContext()) {
+      throw new Error("strategyCoreService backtest requires a method context");
+    }
     const strategyName = this.methodContextService.context.strategyName;
     await this.validate(symbol, strategyName);
     return await ExecutionContextService.runInContext(
@@ -196,7 +209,7 @@ export class StrategyGlobalService {
    * @returns Promise that resolves when stop flag is set
    */
   public stop = async (ctx: { symbol: string; strategyName: StrategyName }, backtest: boolean): Promise<void> => {
-    this.loggerService.log("strategyGlobalService stop", {
+    this.loggerService.log("strategyCoreService stop", {
       ctx,
       backtest,
     });
@@ -213,7 +226,7 @@ export class StrategyGlobalService {
    * @param ctx - Optional context with symbol and strategyName (clears all if not provided)
    */
   public clear = async (ctx?: { symbol: string; strategyName: StrategyName }): Promise<void> => {
-    this.loggerService.log("strategyGlobalService clear", {
+    this.loggerService.log("strategyCoreService clear", {
       ctx,
     });
     if (ctx) {
@@ -223,4 +236,4 @@ export class StrategyGlobalService {
   };
 }
 
-export default StrategyGlobalService;
+export default StrategyCoreService;

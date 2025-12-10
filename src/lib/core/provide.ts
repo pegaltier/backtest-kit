@@ -6,9 +6,9 @@ import SizingConnectionService from "../services/connection/SizingConnectionServ
 import RiskConnectionService from "../services/connection/RiskConnectionService";
 import ExecutionContextService from "../services/context/ExecutionContextService";
 import MethodContextService from "../services/context/MethodContextService";
-import ExchangeGlobalService from "../services/global/ExchangeGlobalService";
-import StrategyGlobalService from "../services/global/StrategyGlobalService";
-import FrameGlobalService from "../services/global/FrameGlobalService";
+import ExchangeCoreService from "../services/core/ExchangeCoreService";
+import StrategyCoreService from "../services/core/StrategyCoreService";
+import FrameCoreService from "../services/core/FrameCoreService";
 import SizingGlobalService from "../services/global/SizingGlobalService";
 import RiskGlobalService from "../services/global/RiskGlobalService";
 import ExchangeSchemaService from "../services/schema/ExchangeSchemaService";
@@ -81,9 +81,12 @@ import ConfigValidationService from "../services/validation/ConfigValidationServ
 }
 
 {
-    provide(TYPES.exchangeGlobalService, () => new ExchangeGlobalService());
-    provide(TYPES.strategyGlobalService, () => new StrategyGlobalService());
-    provide(TYPES.frameGlobalService, () => new FrameGlobalService());
+    provide(TYPES.exchangeCoreService, () => new ExchangeCoreService());
+    provide(TYPES.strategyCoreService, () => new StrategyCoreService());
+    provide(TYPES.frameCoreService, () => new FrameCoreService());
+}
+
+{
     provide(TYPES.sizingGlobalService, () => new SizingGlobalService());
     provide(TYPES.riskGlobalService, () => new RiskGlobalService());
     provide(TYPES.optimizerGlobalService, () => new OptimizerGlobalService());

@@ -164,7 +164,7 @@ export class BacktestInstance {
     }
 
     {
-      backtest.strategyGlobalService.clear({ symbol, strategyName: context.strategyName });
+      backtest.strategyCoreService.clear({ symbol, strategyName: context.strategyName });
     }
 
     {
@@ -211,8 +211,8 @@ export class BacktestInstance {
       exitEmitter.next(new Error(getErrorMessage(error)))
     );
     return () => {
-      backtest.strategyGlobalService.stop({symbol, strategyName: context.strategyName}, true);
-      backtest.strategyGlobalService
+      backtest.strategyCoreService.stop({symbol, strategyName: context.strategyName}, true);
+      backtest.strategyCoreService
         .getPendingSignal(symbol, context.strategyName)
         .then(async (pendingSignal) => {
           if (pendingSignal) {
@@ -254,7 +254,7 @@ export class BacktestInstance {
       symbol,
       strategyName,
     });
-    await backtest.strategyGlobalService.stop({ symbol, strategyName }, true);
+    await backtest.strategyCoreService.stop({ symbol, strategyName }, true);
   };
 
   /**

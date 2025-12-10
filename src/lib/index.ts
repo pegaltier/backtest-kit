@@ -13,9 +13,9 @@ import ExecutionContextService, {
 import MethodContextService, {
   TMethodContextService,
 } from "./services/context/MethodContextService";
-import ExchangeGlobalService from "./services/global/ExchangeGlobalService";
-import StrategyGlobalService from "./services/global/StrategyGlobalService";
-import FrameGlobalService from "./services/global/FrameGlobalService";
+import ExchangeCoreService from "./services/core/ExchangeCoreService";
+import StrategyCoreService from "./services/core/StrategyCoreService";
+import FrameCoreService from "./services/core/FrameCoreService";
 import SizingGlobalService from "./services/global/SizingGlobalService";
 import RiskGlobalService from "./services/global/RiskGlobalService";
 import WalkerCommandService from "./services/command/WalkerCommandService";
@@ -109,14 +109,17 @@ const schemaServices = {
   ),
 };
 
+const coreServices = {
+  exchangeCoreService: inject<ExchangeCoreService>(
+    TYPES.exchangeCoreService
+  ),
+  strategyCoreService: inject<StrategyCoreService>(
+    TYPES.strategyCoreService
+  ),
+  frameCoreService: inject<FrameCoreService>(TYPES.frameCoreService),
+};
+
 const globalServices = {
-  exchangeGlobalService: inject<ExchangeGlobalService>(
-    TYPES.exchangeGlobalService
-  ),
-  strategyGlobalService: inject<StrategyGlobalService>(
-    TYPES.strategyGlobalService
-  ),
-  frameGlobalService: inject<FrameGlobalService>(TYPES.frameGlobalService),
   sizingGlobalService: inject<SizingGlobalService>(TYPES.sizingGlobalService),
   riskGlobalService: inject<RiskGlobalService>(TYPES.riskGlobalService),
   optimizerGlobalService: inject<OptimizerGlobalService>(
@@ -222,6 +225,7 @@ export const backtest = {
   ...contextServices,
   ...connectionServices,
   ...schemaServices,
+  ...coreServices,
   ...globalServices,
   ...commandServices,
   ...logicPrivateServices,
