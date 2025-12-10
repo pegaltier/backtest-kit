@@ -31,7 +31,7 @@ const WARN_KB = 100;
 const DUMP_SIGNAL_FN = async <Data extends ISignalDto>(
   signalId: ResultId,
   history: MessageModel[],
-  signal: ISignalDto,
+  signal: Data,
   outputDir = "./dump/strategy"
 ) => {
   // Extract system messages and system reminders from existing data
