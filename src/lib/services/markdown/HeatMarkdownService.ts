@@ -123,6 +123,9 @@ const columns: Column[] = [
   },
 ];
 
+/** Maximum number of signals to store per symbol in heatmap reports */
+const MAX_EVENTS = 250;
+
 /**
  * Storage class for accumulating closed signals per strategy and generating heatmap.
  * Maintains symbol-level statistics and provides portfolio-wide metrics.
@@ -143,7 +146,13 @@ class HeatmapStorage {
       this.symbolData.set(symbol, []);
     }
 
-    this.symbolData.get(symbol)!.push(data);
+    const signals = this.symbolData.get(symbol)!;
+    signals.push(data);
+
+    // Trim queue if exceeded MAX_EVENTS per symbol
+    if (signals.length > MAX_EVENTS) {
+      signals.shift();
+    }
   }
 
 
