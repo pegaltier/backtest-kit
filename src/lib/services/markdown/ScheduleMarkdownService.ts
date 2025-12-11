@@ -4,6 +4,7 @@ import {
   IStrategyTickResult,
   IStrategyTickResultScheduled,
   IStrategyTickResultCancelled,
+  IStrategyTickResultOpened,
   StrategyName,
 } from "../../../interfaces/Strategy.interface";
 import { inject } from "../../../lib/core/di";
@@ -15,13 +16,13 @@ import { toPlainString } from "../../../helpers/toPlainString";
 
 /**
  * Unified scheduled signal event data for report generation.
- * Contains all information about scheduled and cancelled events.
+ * Contains all information about scheduled, opened and cancelled events.
  */
 interface ScheduledEvent {
   /** Event timestamp in milliseconds (scheduledAt for scheduled/cancelled events) */
   timestamp: number;
   /** Event action type */
-  action: "scheduled" | "cancelled";
+  action: "scheduled" | "opened" | "cancelled";
   /** Trading pair symbol */
   symbol: string;
   /** Signal ID */
@@ -40,14 +41,14 @@ interface ScheduledEvent {
   stopLoss: number;
   /** Close timestamp (only for cancelled) */
   closeTimestamp?: number;
-  /** Duration in minutes (only for cancelled) */
+  /** Duration in minutes (only for cancelled/opened) */
   duration?: number;
 }
 
 /**
  * Statistical data calculated from scheduled signals.
  *
- * Provides metrics for scheduled signal tracking and cancellation analysis.
+ * Provides metrics for scheduled signal tracking, activation and cancellation analysis.
  *
  * @example
  * ```typescript
@@ -55,10 +56,11 @@ interface ScheduledEvent {
  *
  * console.log(`Total events: ${stats.totalEvents}`);
  * console.log(`Scheduled signals: ${stats.totalScheduled}`);
+ * console.log(`Opened signals: ${stats.totalOpened}`);
  * console.log(`Cancelled signals: ${stats.totalCancelled}`);
  * console.log(`Cancellation rate: ${stats.cancellationRate}%`);
  *
- * // Access raw event data (includes scheduled, cancelled)
+ * // Access raw event data (includes scheduled, opened, cancelled)
  * stats.eventList.forEach(event => {
  *   if (event.action === "cancelled") {
  *     console.log(`Cancelled signal: ${event.signalId}`);
@@ -67,14 +69,17 @@ interface ScheduledEvent {
  * ```
  */
 export interface ScheduleStatistics {
-  /** Array of all scheduled/cancelled events with full details */
+  /** Array of all scheduled/opened/cancelled events with full details */
   eventList: ScheduledEvent[];
 
-  /** Total number of all events (includes scheduled, cancelled) */
+  /** Total number of all events (includes scheduled, opened, cancelled) */
   totalEvents: number;
 
   /** Total number of scheduled signals */
   totalScheduled: number;
+
+  /** Total number of opened signals (activated from scheduled) */
+  totalOpened: number;
 
   /** Total number of cancelled signals */
   totalCancelled: number;
@@ -82,8 +87,14 @@ export interface ScheduleStatistics {
   /** Cancellation rate as percentage (0-100), null if no scheduled signals. Lower is better. */
   cancellationRate: number | null;
 
+  /** Activation rate as percentage (0-100), null if no scheduled signals. Higher is better. */
+  activationRate: number | null;
+
   /** Average waiting time for cancelled signals in minutes, null if no cancelled signals */
   avgWaitTime: number | null;
+
+  /** Average waiting time for opened signals in minutes, null if no opened signals */
+  avgActivationTime: number | null;
 }
 
 /**
@@ -195,6 +206,37 @@ class ReportStorage {
   }
 
   /**
+   * Adds an opened event to the storage.
+   *
+   * @param data - Opened tick result
+   */
+  public addOpenedEvent(data: IStrategyTickResultOpened) {
+    const durationMs = data.signal.pendingAt - data.signal.scheduledAt;
+    const durationMin = Math.round(durationMs / 60000);
+
+    const newEvent: ScheduledEvent = {
+      timestamp: data.signal.pendingAt,
+      action: "opened",
+      symbol: data.signal.symbol,
+      signalId: data.signal.id,
+      position: data.signal.position,
+      note: data.signal.note,
+      currentPrice: data.currentPrice,
+      priceOpen: data.signal.priceOpen,
+      takeProfit: data.signal.priceTakeProfit,
+      stopLoss: data.signal.priceStopLoss,
+      duration: durationMin,
+    };
+
+    this._eventList.push(newEvent);
+
+    // Trim queue if exceeded MAX_EVENTS
+    if (this._eventList.length > MAX_EVENTS) {
+      this._eventList.shift();
+    }
+  }
+
+  /**
    * Adds a cancelled event to the storage.
    *
    * @param data - Cancelled tick result
@@ -237,25 +279,36 @@ class ReportStorage {
         eventList: [],
         totalEvents: 0,
         totalScheduled: 0,
+        totalOpened: 0,
         totalCancelled: 0,
         cancellationRate: null,
+        activationRate: null,
         avgWaitTime: null,
+        avgActivationTime: null,
       };
     }
 
     const scheduledEvents = this._eventList.filter(
       (e) => e.action === "scheduled"
     );
+    const openedEvents = this._eventList.filter(
+      (e) => e.action === "opened"
+    );
     const cancelledEvents = this._eventList.filter(
       (e) => e.action === "cancelled"
     );
 
     const totalScheduled = scheduledEvents.length;
+    const totalOpened = openedEvents.length;
     const totalCancelled = cancelledEvents.length;
 
     // Calculate cancellation rate
     const cancellationRate =
       totalScheduled > 0 ? (totalCancelled / totalScheduled) * 100 : null;
+
+    // Calculate activation rate
+    const activationRate =
+      totalScheduled > 0 ? (totalOpened / totalScheduled) * 100 : null;
 
     // Calculate average wait time for cancelled signals
     const avgWaitTime =
@@ -264,13 +317,23 @@ class ReportStorage {
           totalCancelled
         : null;
 
+    // Calculate average activation time for opened signals
+    const avgActivationTime =
+      totalOpened > 0
+        ? openedEvents.reduce((sum, e) => sum + (e.duration || 0), 0) /
+          totalOpened
+        : null;
+
     return {
       eventList: this._eventList,
       totalEvents: this._eventList.length,
       totalScheduled,
+      totalOpened,
       totalCancelled,
       cancellationRate,
+      activationRate,
       avgWaitTime,
+      avgActivationTime,
     };
   }
 
@@ -307,8 +370,11 @@ class ReportStorage {
       "",
       `**Total events:** ${stats.totalEvents}`,
       `**Scheduled signals:** ${stats.totalScheduled}`,
+      `**Opened signals:** ${stats.totalOpened}`,
       `**Cancelled signals:** ${stats.totalCancelled}`,
+      `**Activation rate:** ${stats.activationRate === null ? "N/A" : `${stats.activationRate.toFixed(2)}% (higher is better)`}`,
       `**Cancellation rate:** ${stats.cancellationRate === null ? "N/A" : `${stats.cancellationRate.toFixed(2)}% (lower is better)`}`,
+      `**Average activation time:** ${stats.avgActivationTime === null ? "N/A" : `${stats.avgActivationTime.toFixed(2)} minutes`}`,
       `**Average wait time (cancelled):** ${stats.avgWaitTime === null ? "N/A" : `${stats.avgWaitTime.toFixed(2)} minutes`}`
     ].join("\n");
   }
@@ -375,10 +441,10 @@ export class ScheduleMarkdownService {
   );
 
   /**
-   * Processes tick events and accumulates scheduled/cancelled events.
-   * Should be called from signalLiveEmitter subscription.
+   * Processes tick events and accumulates scheduled/opened/cancelled events.
+   * Should be called from signalEmitter subscription.
    *
-   * Processes only scheduled and cancelled event types.
+   * Processes only scheduled, opened and cancelled event types.
    *
    * @param data - Tick result from strategy execution
    *
@@ -397,6 +463,12 @@ export class ScheduleMarkdownService {
 
     if (data.action === "scheduled") {
       storage.addScheduledEvent(data);
+    } else if (data.action === "opened") {
+      // Check if this opened signal was previously scheduled
+      // by checking if signal has scheduledAt != pendingAt
+      if (data.signal.scheduledAt !== data.signal.pendingAt) {
+        storage.addOpenedEvent(data);
+      }
     } else if (data.action === "cancelled") {
       storage.addCancelledEvent(data);
     }

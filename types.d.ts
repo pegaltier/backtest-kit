@@ -4079,13 +4079,13 @@ declare class LiveMarkdownService {
 
 /**
  * Unified scheduled signal event data for report generation.
- * Contains all information about scheduled and cancelled events.
+ * Contains all information about scheduled, opened and cancelled events.
  */
 interface ScheduledEvent {
     /** Event timestamp in milliseconds (scheduledAt for scheduled/cancelled events) */
     timestamp: number;
     /** Event action type */
-    action: "scheduled" | "cancelled";
+    action: "scheduled" | "opened" | "cancelled";
     /** Trading pair symbol */
     symbol: string;
     /** Signal ID */
@@ -4104,13 +4104,13 @@ interface ScheduledEvent {
     stopLoss: number;
     /** Close timestamp (only for cancelled) */
     closeTimestamp?: number;
-    /** Duration in minutes (only for cancelled) */
+    /** Duration in minutes (only for cancelled/opened) */
     duration?: number;
 }
 /**
  * Statistical data calculated from scheduled signals.
  *
- * Provides metrics for scheduled signal tracking and cancellation analysis.
+ * Provides metrics for scheduled signal tracking, activation and cancellation analysis.
  *
  * @example
  * ```typescript
@@ -4118,10 +4118,11 @@ interface ScheduledEvent {
  *
  * console.log(`Total events: ${stats.totalEvents}`);
  * console.log(`Scheduled signals: ${stats.totalScheduled}`);
+ * console.log(`Opened signals: ${stats.totalOpened}`);
  * console.log(`Cancelled signals: ${stats.totalCancelled}`);
  * console.log(`Cancellation rate: ${stats.cancellationRate}%`);
  *
- * // Access raw event data (includes scheduled, cancelled)
+ * // Access raw event data (includes scheduled, opened, cancelled)
  * stats.eventList.forEach(event => {
  *   if (event.action === "cancelled") {
  *     console.log(`Cancelled signal: ${event.signalId}`);
@@ -4130,18 +4131,24 @@ interface ScheduledEvent {
  * ```
  */
 interface ScheduleStatistics {
-    /** Array of all scheduled/cancelled events with full details */
+    /** Array of all scheduled/opened/cancelled events with full details */
     eventList: ScheduledEvent[];
-    /** Total number of all events (includes scheduled, cancelled) */
+    /** Total number of all events (includes scheduled, opened, cancelled) */
     totalEvents: number;
     /** Total number of scheduled signals */
     totalScheduled: number;
+    /** Total number of opened signals (activated from scheduled) */
+    totalOpened: number;
     /** Total number of cancelled signals */
     totalCancelled: number;
     /** Cancellation rate as percentage (0-100), null if no scheduled signals. Lower is better. */
     cancellationRate: number | null;
+    /** Activation rate as percentage (0-100), null if no scheduled signals. Higher is better. */
+    activationRate: number | null;
     /** Average waiting time for cancelled signals in minutes, null if no cancelled signals */
     avgWaitTime: number | null;
+    /** Average waiting time for opened signals in minutes, null if no opened signals */
+    avgActivationTime: number | null;
 }
 /**
  * Service for generating and saving scheduled signals markdown reports.
@@ -4173,10 +4180,10 @@ declare class ScheduleMarkdownService {
      */
     private getStorage;
     /**
-     * Processes tick events and accumulates scheduled/cancelled events.
-     * Should be called from signalLiveEmitter subscription.
+     * Processes tick events and accumulates scheduled/opened/cancelled events.
+     * Should be called from signalEmitter subscription.
      *
-     * Processes only scheduled and cancelled event types.
+     * Processes only scheduled, opened and cancelled event types.
      *
      * @param data - Tick result from strategy execution
      *
