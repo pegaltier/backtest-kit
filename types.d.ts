@@ -6708,7 +6708,23 @@ declare class ClientExchange implements IExchange {
      * @throws Error if no candles available
      */
     getAveragePrice(symbol: string): Promise<number>;
+    /**
+     * Formats quantity according to exchange-specific rules for the given symbol.
+     * Applies proper decimal precision and rounding based on symbol's lot size filters.
+     *
+     * @param symbol - Trading pair symbol
+     * @param quantity - Raw quantity to format
+     * @returns Promise resolving to formatted quantity as string
+     */
     formatQuantity(symbol: string, quantity: number): Promise<string>;
+    /**
+     * Formats price according to exchange-specific rules for the given symbol.
+     * Applies proper decimal precision and rounding based on symbol's price filters.
+     *
+     * @param symbol - Trading pair symbol
+     * @param price - Raw price to format
+     * @returns Promise resolving to formatted price as string
+     */
     formatPrice(symbol: string, price: number): Promise<string>;
 }
 

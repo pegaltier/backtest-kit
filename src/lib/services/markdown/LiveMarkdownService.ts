@@ -308,17 +308,11 @@ class ReportStorage {
   }
 
   /**
-   * Updates or adds an active event to the storage.
-   * Replaces the previous event with the same signalId.
+   * Adds an active event to the storage.
    *
    * @param data - Active tick result
    */
   public addActiveEvent(data: IStrategyTickResultActive) {
-    // Find existing event with the same signalId
-    const existingIndex = this._eventList.findIndex(
-      (event) => event.signalId === data.signal.id
-    );
-
     const newEvent: TickEvent = {
       timestamp: Date.now(),
       action: "active",
@@ -334,33 +328,22 @@ class ReportStorage {
       percentSl: data.percentSl,
     };
 
-    // Replace existing event or add new one
-    if (existingIndex !== -1) {
-      this._eventList[existingIndex] = newEvent;
-    } else {
-      this._eventList.push(newEvent);
+    this._eventList.push(newEvent);
 
-      // Trim queue if exceeded MAX_EVENTS
-      if (this._eventList.length > MAX_EVENTS) {
-        this._eventList.shift();
-      }
+    // Trim queue if exceeded MAX_EVENTS
+    if (this._eventList.length > MAX_EVENTS) {
+      this._eventList.shift();
     }
   }
 
   /**
-   * Updates or adds a closed event to the storage.
-   * Replaces the previous event with the same signalId.
+   * Adds a closed event to the storage.
    *
    * @param data - Closed tick result
    */
   public addClosedEvent(data: IStrategyTickResultClosed) {
     const durationMs = data.closeTimestamp - data.signal.pendingAt;
     const durationMin = Math.round(durationMs / 60000);
-
-    // Find existing event with the same signalId
-    const existingIndex = this._eventList.findIndex(
-      (event) => event.signalId === data.signal.id
-    );
 
     const newEvent: TickEvent = {
       timestamp: data.closeTimestamp,
@@ -378,16 +361,11 @@ class ReportStorage {
       duration: durationMin,
     };
 
-    // Replace existing event or add new one
-    if (existingIndex !== -1) {
-      this._eventList[existingIndex] = newEvent;
-    } else {
-      this._eventList.push(newEvent);
+    this._eventList.push(newEvent);
 
-      // Trim queue if exceeded MAX_EVENTS
-      if (this._eventList.length > MAX_EVENTS) {
-        this._eventList.shift();
-      }
+    // Trim queue if exceeded MAX_EVENTS
+    if (this._eventList.length > MAX_EVENTS) {
+      this._eventList.shift();
     }
   }
 

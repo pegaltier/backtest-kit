@@ -195,19 +195,13 @@ class ReportStorage {
   }
 
   /**
-   * Updates or adds a cancelled event to the storage.
-   * Replaces the previous event with the same signalId.
+   * Adds a cancelled event to the storage.
    *
    * @param data - Cancelled tick result
    */
   public addCancelledEvent(data: IStrategyTickResultCancelled) {
     const durationMs = data.closeTimestamp - data.signal.scheduledAt;
     const durationMin = Math.round(durationMs / 60000);
-
-    // Find existing event with the same signalId
-    const existingIndex = this._eventList.findIndex(
-      (event) => event.signalId === data.signal.id
-    );
 
     const newEvent: ScheduledEvent = {
       timestamp: data.closeTimestamp,
@@ -224,16 +218,11 @@ class ReportStorage {
       duration: durationMin,
     };
 
-    // Replace existing event or add new one
-    if (existingIndex !== -1) {
-      this._eventList[existingIndex] = newEvent;
-    } else {
-      this._eventList.push(newEvent);
+    this._eventList.push(newEvent);
 
-      // Trim queue if exceeded MAX_EVENTS
-      if (this._eventList.length > MAX_EVENTS) {
-        this._eventList.shift();
-      }
+    // Trim queue if exceeded MAX_EVENTS
+    if (this._eventList.length > MAX_EVENTS) {
+      this._eventList.shift();
     }
   }
 
