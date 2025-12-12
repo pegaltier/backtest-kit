@@ -128,7 +128,7 @@ listenPartialLoss(async (event) => {
     await Partial.dump(event.symbol, event.strategyName);
 });
 
-listenPartialProfit(async () => {
+listenPartialProfit(async (event) => {
     await Partial.dump(event.symbol, event.strategyName);
 });
 
