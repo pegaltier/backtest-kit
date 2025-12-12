@@ -261,19 +261,14 @@ class ReportStorage {
    * @param data - Walker contract with strategy result
    */
   public addResult(data: WalkerContract) {
+    this._totalStrategies = data.totalStrategies;
+    this._bestMetric = data.bestMetric;
+    this._bestStrategy = data.bestStrategy;
 
-    {
-      this._bestMetric = data.bestMetric;
-      this._bestStrategy = data.bestStrategy;
-      this._totalStrategies = data.totalStrategies;
-    }
-
-    // Update best stats only if this strategy is the current best
     if (data.strategyName === data.bestStrategy) {
       this._bestStats = data.stats;
     }
 
-    // Add strategy result to comparison list
     this._strategyResults.unshift({
       strategyName: data.strategyName,
       stats: data.stats,
