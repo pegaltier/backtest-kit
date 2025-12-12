@@ -6,6 +6,8 @@ import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { memoize, singleshot } from "functools-kit";
 import { riskSubject } from "../../../config/emitters";
+import { toPlainString } from "../../../helpers/toPlainString";
+import { GLOBAL_CONFIG } from "../../../config/params";
 
 /**
  * Risk rejection event data for report generation.
@@ -96,6 +98,12 @@ const columns: Column[] = [
     label: "Position",
     format: (data) => data.pendingSignal.position.toUpperCase(),
     isVisible: () => true,
+  },
+  {
+    key: "note",
+    label: "Note",
+    format: (data) => toPlainString(data.pendingSignal.note ?? "N/A"),
+    isVisible: () => GLOBAL_CONFIG.CC_REPORT_SHOW_SIGNAL_NOTE,
   },
   {
     key: "exchangeName",
