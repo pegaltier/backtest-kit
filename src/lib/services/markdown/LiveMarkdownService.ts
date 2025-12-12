@@ -309,6 +309,7 @@ class ReportStorage {
 
   /**
    * Adds an active event to the storage.
+   * Replaces the last active event with the same signalId.
    *
    * @param data - Active tick result
    */
@@ -328,6 +329,18 @@ class ReportStorage {
       percentSl: data.percentSl,
     };
 
+    // Find the last active event with the same signalId
+    const lastActiveIndex = this._eventList.findLastIndex(
+      (event) => event.action === "active" && event.signalId === data.signal.id
+    );
+
+    // Replace the last active event with the same signalId
+    if (lastActiveIndex !== -1) {
+      this._eventList[lastActiveIndex] = newEvent;
+      return;
+    }
+
+    // If no previous active event found, add new event
     this._eventList.push(newEvent);
 
     // Trim queue if exceeded MAX_EVENTS
