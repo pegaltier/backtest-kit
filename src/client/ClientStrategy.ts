@@ -1602,7 +1602,7 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
             averagePrice,
             Math.min(progressPercent, 100),
             self.params.execution.context.backtest,
-            self.params.execution.context.when
+            new Date(currentCandleTimestamp)
           );
 
           if (self.params.callbacks?.onPartialProfit) {
@@ -1625,7 +1625,7 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
             averagePrice,
             Math.min(progressPercent, 100),
             self.params.execution.context.backtest,
-            self.params.execution.context.when
+            new Date(currentCandleTimestamp)
           );
 
           if (self.params.callbacks?.onPartialLoss) {
@@ -1653,7 +1653,7 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
             averagePrice,
             Math.min(progressPercent, 100),
             self.params.execution.context.backtest,
-            self.params.execution.context.when
+            new Date(currentCandleTimestamp)
           );
 
           if (self.params.callbacks?.onPartialProfit) {
@@ -1678,7 +1678,7 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
             averagePrice,
             Math.min(progressPercent, 100),
             self.params.execution.context.backtest,
-            self.params.execution.context.when
+            new Date(currentCandleTimestamp)
           );
 
           if (self.params.callbacks?.onPartialLoss) {
