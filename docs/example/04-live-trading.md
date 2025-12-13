@@ -1,3 +1,8 @@
+---
+title: example/04_live_trading
+group: example
+---
+
 # Setting Up Live Trading
 
 This guide explains how to transition from backtesting to real trading using Live Trading mode in backtest-kit. You'll learn about continuous execution, crash recovery, and safe state management.

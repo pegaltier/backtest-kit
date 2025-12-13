@@ -1,3 +1,8 @@
+---
+title: example/02_first_backtest
+group: example
+---
+
 # Running Your First Backtest
 
 This guide will walk you through the process of creating and running your first backtest using backtest-kit. You'll learn how to set up all necessary components and get results from testing your strategy.

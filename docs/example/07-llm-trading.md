@@ -1,3 +1,8 @@
+---
+title: example/07_llm_trading
+group: example
+---
+
 # LLM Trading with Structured JSON Output
 
 This advanced guide explains how to use large language models (LLM) directly in trading strategies to generate signals in real-time. You will learn how to set up Ollama for structured JSON output and integrate AI analysis into the trading decision-making process.

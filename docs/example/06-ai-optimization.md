@@ -1,3 +1,8 @@
+---
+title: example/06_ai_optimization
+group: example
+---
+
 # AI Strategy Optimization
 
 This guide explains how to use the Optimizer system in backtest-kit to generate trading strategies using Large Language Models (LLMs). You'll learn how to set up Ollama, create data sources, and generate fully executable strategies.

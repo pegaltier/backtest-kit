@@ -1,3 +1,8 @@
+---
+title: example/05_risk_management
+group: example
+---
+
 # Risk Management
 
 This guide explains the risk management system in backtest-kit, which provides portfolio-level validation and position tracking to prevent excessive risk exposure.

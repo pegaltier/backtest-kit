@@ -1,3 +1,8 @@
+---
+title: example/03_understanding_signals
+group: example
+---
+
 # Understanding Trading Signals
 
 This guide explains the complete lifecycle of trading signals in backtest-kit - from generation to closure. Understanding the signal state machine is critical for building reliable trading strategies.

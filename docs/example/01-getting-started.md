@@ -1,3 +1,8 @@
+---
+title: example/01_getting_started
+group: example
+---
+
 # Getting Started with Backtest-Kit
 
 Welcome to the getting started guide for the backtest-kit framework! This guide will help you install the framework, set up your environment, and prepare to create your first trading strategies.
