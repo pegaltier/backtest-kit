@@ -122,7 +122,7 @@ addStrategy({
     const candles1m = await getCandles(symbol, "1m", 60);
 
     const messages = await getMessages(symbol, {
-      candles15m,
+      candles1h,
       candles15m,
       candles5m,
       candles1m,
