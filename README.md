@@ -179,7 +179,7 @@ Customize via `setConfig()`:
 
 ## Tested & Reliable
 
-244+ tests cover validation, recovery, reports, and events.
+280+ tests cover validation, recovery, reports, and events.
 
 ## 🤝 Contribute
 
