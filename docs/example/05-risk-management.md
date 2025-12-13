@@ -21,43 +21,7 @@ Risk management in backtest-kit is a validation system that checks signals **bef
 
 ## Risk Management Architecture
 
-```mermaid
-graph TB
-    subgraph "Strategy Layer"
-        Strategy["ClientStrategy<br/>tick()"]
-        GetSignal["getSignal()<br/>Custom Logic"]
-    end
-
-    subgraph "Risk Management Layer"
-        RiskCheck["ClientRisk<br/>checkSignal()"]
-        Validations["Risk Validations<br/>Rule Array"]
-        ActivePositions["Active Positions<br/>Tracking Across Strategies"]
-        PersistRisk["PersistRiskAdapter<br/>Protected Storage"]
-    end
-
-    subgraph "Validation Payload"
-        Payload["IRiskValidationPayload<br/>- symbol<br/>- pendingSignal<br/>- strategyName<br/>- currentPrice<br/>- activePositionCount<br/>- activePositions[]"]
-    end
-
-    subgraph "Event System"
-        RiskSubject["riskSubject<br/>Rejection Events"]
-        Callbacks["Risk Callbacks<br/>onRejected / onAllowed"]
-    end
-
-    Strategy --> GetSignal
-    GetSignal --> RiskCheck
-    RiskCheck --> Validations
-    RiskCheck --> ActivePositions
-
-    Validations --> Payload
-    ActivePositions --> Payload
-
-    Validations -->|"throw Error"| RiskSubject
-    Validations -->|"pass"| Strategy
-
-    RiskSubject --> Callbacks
-    ActivePositions --> PersistRisk
-```
+![Mermaid Diagram](./diagrams\05-risk-management_0.svg)
 
 ### Execution Flow
 
@@ -424,40 +388,7 @@ addRisk({
 
 ## Risk Check Flow Diagram
 
-```mermaid
-sequenceDiagram
-    participant Strategy as ClientStrategy
-    participant Risk as ClientRisk
-    participant Validations as Risk Validations
-    participant Persist as PersistRiskAdapter
-    participant Events as riskSubject
-
-    Strategy->>Strategy: getSignal() returns ISignalDto
-    Strategy->>Risk: checkSignal(params)
-
-    Risk->>Persist: Load active positions
-    Persist-->>Risk: activePositions[]
-
-    Risk->>Risk: Build IRiskValidationPayload
-
-    loop For each validation
-        Risk->>Validations: validate(payload)
-        alt Validation throws Error
-            Validations-->>Risk: throw Error("reason")
-            Risk->>Events: emit rejection event
-            Risk->>Risk: onRejected callback
-            Risk-->>Strategy: return false
-        else Validation passes
-            Validations-->>Risk: void (success)
-        end
-    end
-
-    Risk->>Risk: onAllowed callback
-    Risk-->>Strategy: return true
-    Strategy->>Strategy: Create signal
-    Strategy->>Risk: addSignal(symbol, context)
-    Risk->>Persist: Update active positions
-```
+![Mermaid Diagram](./diagrams\05-risk-management_1.svg)
 
 ---
 

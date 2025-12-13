@@ -6,31 +6,7 @@ This guide will walk you through the process of creating and running your first 
 
 The backtest-kit framework follows a two-phase lifecycle: **configuration** and **execution**. During configuration, you register components using `add*` functions. During execution, you run backtests and receive results.
 
-```mermaid
-graph TB
-    Start["Start"] --> Config["Configuration Phase"]
-
-    Config --> AddExchange["addExchange()<br/>Register data source"]
-    AddExchange --> AddStrategy["addStrategy()<br/>Register trading logic"]
-    AddStrategy --> AddFrame["addFrame()<br/>Define backtest period"]
-    AddFrame --> AddRisk["addRisk()<br/>(Optional) Risk rules"]
-
-    AddRisk --> Exec["Execution Phase"]
-
-    Exec --> Run["Backtest.run()<br/>Stream results"]
-    Exec --> Background["Backtest.background()<br/>Silent run"]
-
-    Run --> Events["Event Listeners<br/>listenSignalBacktest()<br/>listenDoneBacktest()"]
-    Background --> Events
-
-    Events --> Report["Reporting Phase"]
-
-    Report --> GetReport["Backtest.getReport()<br/>Generate markdown"]
-    Report --> Dump["Backtest.dump()<br/>Save to disk"]
-
-    GetReport --> End["End"]
-    Dump --> End
-```
+![Mermaid Diagram](./diagrams\02-first-backtest_0.svg)
 
 ---
 
@@ -315,19 +291,7 @@ The `Backtest` singleton provides methods for running backtests. The framework o
 
 ### Execution Methods Comparison
 
-```mermaid
-graph LR
-    subgraph "Backtest.run()"
-        RunStart["for await (const result of Backtest.run())"] --> RunYield["Yields each closed signal"]
-        RunYield --> RunProcess["Process result immediately"]
-    end
-
-    subgraph "Backtest.background()"
-        BgStart["const cancel = Backtest.background()"] --> BgSilent["Runs silently"]
-        BgSilent --> BgEvents["Events only"]
-        BgEvents --> BgCancel["Call cancel() to stop"]
-    end
-```
+![Mermaid Diagram](./diagrams\02-first-backtest_1.svg)
 
 ### Streaming Pattern: `Backtest.run()`
 
@@ -378,32 +342,7 @@ Event listeners allow you to react to backtest events asynchronously.
 
 ### Event Listener Functions
 
-```mermaid
-graph TB
-    subgraph "Signal Events"
-        LSB["listenSignalBacktest()<br/>All signal state changes"]
-        LSL["listenSignalLive()<br/>Live mode signals"]
-        LSG["listenSignalGlobal()<br/>All modes combined"]
-    end
-
-    subgraph "Progress Events"
-        LBP["listenBacktestProgress()<br/>Timestamp completion"]
-        LDB["listenDoneBacktest()<br/>Backtest completion"]
-    end
-
-    subgraph "Risk Events"
-        LR["listenRisk()<br/>Signal rejections"]
-    end
-
-    subgraph "Partial Close Events"
-        LPP["listenPartialProfit()<br/>TP level hits"]
-        LPL["listenPartialLoss()<br/>SL level hits"]
-    end
-
-    subgraph "Error Events"
-        LE["listenError()<br/>Unhandled errors"]
-    end
-```
+![Mermaid Diagram](./diagrams\02-first-backtest_2.svg)
 
 ### Signal Event Listener
 
@@ -464,18 +403,7 @@ After backtest completion, use reporting methods to analyze results.
 
 ### Reporting Methods
 
-```mermaid
-graph LR
-    subgraph "Backtest Singleton"
-        GetData["Backtest.getData()<br/>Returns stats object"]
-        GetReport["Backtest.getReport()<br/>Returns markdown string"]
-        Dump["Backtest.dump()<br/>Saves to ./dump/backtest/"]
-    end
-
-    GetData --> Stats["Stats object<br/>sharpeRatio, winRate,<br/>totalPNL, etc."]
-    GetReport --> MD["Markdown string<br/>Formatted report"]
-    Dump --> File["File on disk<br/>{strategyName}.md"]
-```
+![Mermaid Diagram](./diagrams\02-first-backtest_3.svg)
 
 ### Stats Object Structure
 
@@ -601,46 +529,7 @@ Backtest.background("BTCUSDT", {
 
 This diagram shows how configuration components transition into execution:
 
-```mermaid
-sequenceDiagram
-    participant User as User
-    participant Add as add* Functions
-    participant Schema as Schema Services
-    participant Backtest as Backtest.background()
-    participant Command as BacktestCommandService
-    participant Logic as BacktestLogicPrivateService
-    participant Strategy as StrategyCoreService
-    participant Exchange as ExchangeCoreService
-    participant Frame as FrameCoreService
-    participant Events as Event Emitters
-
-    User->>Add: addExchange(schema)
-    Add->>Schema: register exchangeName
-
-    User->>Add: addStrategy(schema)
-    Add->>Schema: register strategyName
-
-    User->>Add: addFrame(schema)
-    Add->>Schema: register frameName
-
-    User->>Backtest: background(symbol, context)
-    Backtest->>Command: run(symbol, context)
-    Command->>Logic: createGenerator()
-
-    loop Each timestamp
-        Logic->>Frame: getNextTimeframe()
-        Frame-->>Logic: when (Date)
-        Logic->>Strategy: tick(symbol, when)
-        Strategy->>Exchange: getCurrentPrice()
-        Strategy->>Exchange: getCandles()
-        Strategy-->>Logic: signal (if any)
-        Logic->>Events: emit signal event
-        Events-->>User: callback
-    end
-
-    Logic->>Events: emit completion event
-    Events-->>User: callback
-```
+![Mermaid Diagram](./diagrams\02-first-backtest_4.svg)
 
 ---
 

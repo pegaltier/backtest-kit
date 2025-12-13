@@ -76,57 +76,7 @@ OLLAMA_MODEL=deepseek-v3.1
 
 ## Optimizer System Architecture
 
-```mermaid
-graph TB
-    subgraph "User Configuration"
-        AddOpt[addOptimizer]
-        Schema[IOptimizerSchema]
-    end
-
-    subgraph "Public API"
-        OptimizerUtils[Optimizer.getData<br/>Optimizer.getCode<br/>Optimizer.dump]
-    end
-
-    subgraph "Service Layers"
-        Global[OptimizerGlobalService<br/>validation wrapper]
-        Connection[OptimizerConnectionService<br/>instance creation]
-        Client[ClientOptimizer<br/>core logic]
-    end
-
-    subgraph "Data Collection"
-        Sources[IOptimizerSource<br/>fetch functions]
-        Pagination[RESOLVE_PAGINATION_FN<br/>iterateDocuments]
-        Messages[MessageModel array<br/>conversation history]
-    end
-
-    subgraph "Code Generation"
-        Template[OptimizerTemplateService<br/>11 template methods]
-        Prompt[getPrompt<br/>strategy logic]
-        Code[Generated .mjs file]
-    end
-
-    subgraph "Execution Integration"
-        Walker[Walker System<br/>strategy comparison]
-        Backtest[Backtest System<br/>validation]
-    end
-
-    AddOpt --> Schema
-    Schema --> OptimizerUtils
-    OptimizerUtils --> Global
-    Global --> Connection
-    Connection --> Client
-
-    Client --> Sources
-    Sources --> Pagination
-    Pagination --> Messages
-    Messages --> Prompt
-
-    Prompt --> Template
-    Template --> Code
-
-    Code -.->|executes| Walker
-    Walker -.->|uses| Backtest
-```
+![Mermaid Diagram](./diagrams\06-ai-optimization_0.svg)
 
 ---
 
@@ -604,35 +554,7 @@ Walker.background("BTCUSDT", {
 
 Generated strategies use a 4-phase analysis pattern:
 
-```mermaid
-graph LR
-    subgraph "Phase 1: Medium-term"
-        M1h[1h Candles Analysis<br/>24 candles]
-    end
-
-    subgraph "Phase 2: Short-term"
-        M15m[15m Candles Analysis<br/>24 candles]
-    end
-
-    subgraph "Phase 3: Main"
-        M5m[5m Candles Analysis<br/>24 candles]
-    end
-
-    subgraph "Phase 4: Micro"
-        M1m[1m Candles Analysis<br/>30 candles]
-    end
-
-    subgraph "Phase 5: Signal"
-        Prompt[Apply Strategy Prompt<br/>Generate Signal]
-    end
-
-    M1h --> M15m
-    M15m --> M5m
-    M5m --> M1m
-    M1m --> Prompt
-
-    Prompt --> Signal[position: wait/long/short<br/>priceOpen, priceTakeProfit<br/>priceStopLoss, minuteEstimatedTime]
-```
+![Mermaid Diagram](./diagrams\06-ai-optimization_1.svg)
 
 ---
 

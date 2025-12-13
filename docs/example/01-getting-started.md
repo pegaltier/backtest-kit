@@ -86,24 +86,7 @@ npm install --save-dev dotenv-cli
 
 The framework supports both CommonJS and ES Modules:
 
-```mermaid
-graph TB
-    Package["backtest-kit<br/>npm package"]
-    CJS["build/index.cjs<br/>CommonJS entry"]
-    ESM["build/index.mjs<br/>ES Module entry"]
-    Types["types.d.ts<br/>TypeScript definitions"]
-
-    Package --> CJS
-    Package --> ESM
-    Package --> Types
-
-    CJSApp["require('backtest-kit')<br/>Node.js CommonJS"]
-    ESMApp["import { Backtest } from 'backtest-kit'<br/>ES Module / TypeScript"]
-
-    CJS --> CJSApp
-    ESM --> ESMApp
-    Types --> ESMApp
-```
+![Mermaid Diagram](./diagrams\01-getting-started_0.svg)
 
 **TypeScript projects** automatically use the ESM entry point with full type definitions.
 
@@ -162,36 +145,7 @@ setLogger({
 
 The framework provides 14 configurable parameters through `GLOBAL_CONFIG`:
 
-```mermaid
-graph LR
-    subgraph "Configuration Entry Points"
-        SetConfig["setConfig(config: Partial<GlobalConfig>)"]
-        GetConfig["getConfig(): GlobalConfig"]
-        GetDefault["getDefaultConfig(): GlobalConfig"]
-    end
-
-    subgraph "Global Config Storage"
-        GC["GLOBAL_CONFIG<br/>{14 parameters}"]
-    end
-
-    subgraph "Parameter Categories"
-        Signal["Signal Constraints<br/>CC_MIN_TAKEPROFIT_DISTANCE_PERCENT<br/>CC_MIN_STOPLOSS_DISTANCE_PERCENT<br/>CC_MAX_STOPLOSS_DISTANCE_PERCENT<br/>CC_MAX_SIGNAL_LIFETIME_MINUTES<br/>CC_SCHEDULE_AWAIT_MINUTES"]
-        Trading["Trading Costs<br/>CC_PERCENT_SLIPPAGE<br/>CC_PERCENT_FEE"]
-        Exchange["Exchange Settings<br/>CC_AVG_PRICE_CANDLES_COUNT<br/>CC_GET_CANDLES_RETRY_COUNT<br/>CC_GET_CANDLES_RETRY_DELAY_MS<br/>CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR<br/>CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN"]
-        Execution["Execution Limits<br/>CC_MAX_SIGNAL_GENERATION_SECONDS"]
-        Reporting["Report Options<br/>CC_REPORT_SHOW_SIGNAL_NOTE"]
-    end
-
-    SetConfig --> GC
-    GetConfig --> GC
-    GetDefault --> GC
-
-    GC --> Signal
-    GC --> Trading
-    GC --> Exchange
-    GC --> Execution
-    GC --> Reporting
-```
+![Mermaid Diagram](./diagrams\01-getting-started_1.svg)
 
 **Basic Configuration Example:**
 
@@ -238,43 +192,7 @@ setConfig({
 
 The framework uses `di-kit` and `di-scoped` for dependency management. All 75+ service instances are automatically created and wired through the DI container:
 
-```mermaid
-graph TB
-    subgraph "DI Container Setup"
-        TYPES["TYPES<br/>Symbol Registry<br/>(unique identifiers)"]
-        Provide["provide()<br/>Service Registration"]
-        Inject["inject()<br/>Service Resolution"]
-    end
-
-    subgraph "Service Categories"
-        Base["baseServices: 1<br/>LoggerService"]
-        Context["contextServices: 2<br/>MethodContextService<br/>ExecutionContextService"]
-        Connection["connectionServices: 7<br/>StrategyConnectionService<br/>ExchangeConnectionService<br/>etc."]
-        Schema["schemaServices: 7<br/>StrategySchemaService<br/>ExchangeSchemaService<br/>etc."]
-        Core["coreServices: 3<br/>StrategyCoreService<br/>ExchangeCoreService<br/>FrameCoreService"]
-        Global["globalServices: 4<br/>SizingGlobalService<br/>RiskGlobalService<br/>etc."]
-        Command["commandServices: 3<br/>BacktestCommandService<br/>LiveCommandService<br/>WalkerCommandService"]
-        Logic["logicServices: 6<br/>Public + private services"]
-        Markdown["markdownServices: 9<br/>Report generation"]
-        Validation["validationServices: 8<br/>Existence checks"]
-        Template["templateServices: 1<br/>Code generation"]
-    end
-
-    TYPES --> Provide
-    Provide --> Inject
-
-    Inject --> Base
-    Inject --> Context
-    Inject --> Connection
-    Inject --> Schema
-    Inject --> Core
-    Inject --> Global
-    Inject --> Command
-    Inject --> Logic
-    Inject --> Markdown
-    Inject --> Validation
-    Inject --> Template
-```
+![Mermaid Diagram](./diagrams\01-getting-started_2.svg)
 
 **Manual DI setup is not required.** The framework automatically manages service lifetimes and dependencies.
 

@@ -18,25 +18,7 @@ A trading signal is a structured instruction to open a position in the market. E
 
 Each signal progresses through one of six possible states. The framework strictly controls transitions between states.
 
-```mermaid
-stateDiagram-v2
-    [*] --> idle: "Strategy started"
-
-    idle --> scheduled: "getSignal() returns\nsignal with priceOpen"
-    idle --> opened: "getSignal() returns\nimmediate signal"
-    idle --> idle: "getSignal() returns null"
-
-    scheduled --> opened: "Price reached priceOpen\n(activation)"
-    scheduled --> cancelled: "Timeout OR\nSL before activation"
-
-    opened --> active: "Next tick\n(begin monitoring)"
-
-    active --> closed: "TP reached OR\nSL reached OR\ntime expired"
-    active --> active: "Monitoring continues\n(exit conditions not met)"
-
-    closed --> idle: "Signal completed\n(can create new)"
-    cancelled --> idle: "Scheduled signal cancelled\n(can create new)"
-```
+![Mermaid Diagram](./diagrams\03-understanding-signals_0.svg)
 
 **Critical constraint**: Only **one** signal can be active for a symbol-strategy pair at any given time. New signals wait until the previous signal reaches `closed` or `cancelled` state.
 
@@ -264,25 +246,7 @@ Activation and cancellation logic for scheduled signals differs between LONG and
 
 ### LONG Position Activation
 
-```mermaid
-flowchart TD
-    A["Scheduled LONG\npriceOpen = 42000\npriceStopLoss = 41000"] --> B["Monitor candles"]
-
-    B --> C{"Priority check:\ncandle.low <= priceStopLoss?"}
-    C -->|"Yes (low <= 41000)"| D["CANCEL scheduled\n(SL before activation)"]
-    C -->|"No"| E{"candle.low <= priceOpen?"}
-
-    E -->|"Yes (low <= 42000)"| F["ACTIVATE signal\n(price reached entry)"]
-    E -->|"No"| G["Continue monitoring"]
-
-    G --> H{"Timeout?\n(CC_SCHEDULE_AWAIT_MINUTES)"}
-    H -->|"Yes"| I["CANCEL scheduled\n(timeout)"]
-    H -->|"No"| B
-
-    D --> Z1["cancelled"]
-    F --> Z2["opened"]
-    I --> Z1
-```
+![Mermaid Diagram](./diagrams\03-understanding-signals_1.svg)
 
 **Key rule**: For LONG positions, stop-loss check has **priority** over activation check.
 
@@ -292,25 +256,7 @@ flowchart TD
 
 ### SHORT Position Activation
 
-```mermaid
-flowchart TD
-    A["Scheduled SHORT\npriceOpen = 42000\npriceStopLoss = 44000"] --> B["Monitor candles"]
-
-    B --> C{"Priority check:\ncandle.high >= priceStopLoss?"}
-    C -->|"Yes (high >= 44000)"| D["CANCEL scheduled\n(SL before activation)"]
-    C -->|"No"| E{"candle.high >= priceOpen?"}
-
-    E -->|"Yes (high >= 42000)"| F["ACTIVATE signal\n(price reached entry)"]
-    E -->|"No"| G["Continue monitoring"]
-
-    G --> H{"Timeout?\n(CC_SCHEDULE_AWAIT_MINUTES)"}
-    H -->|"Yes"| I["CANCEL scheduled\n(timeout)"]
-    H -->|"No"| B
-
-    D --> Z1["cancelled"]
-    F --> Z2["opened"]
-    I --> Z1
-```
+![Mermaid Diagram](./diagrams\03-understanding-signals_2.svg)
 
 **Key rule**: For SHORT positions, stop-loss check has **priority** over activation check.
 
@@ -513,41 +459,7 @@ When the live trading process restarts, signals are restored from disk:
 
 ## Exit Condition Check Diagram
 
-```mermaid
-flowchart TD
-    A["Active signal\n(monitoring)"] --> B["Get current VWAP price"]
-
-    B --> C{"LONG or SHORT?"}
-
-    C -->|"LONG"| D{"currentPrice >= TP?"}
-    C -->|"SHORT"| E{"currentPrice <= TP?"}
-
-    D -->|"Yes"| F["Close: take_profit"]
-    D -->|"No"| G{"currentPrice <= SL?"}
-
-    E -->|"Yes"| F
-    E -->|"No"| H{"currentPrice >= SL?"}
-
-    G -->|"Yes"| I["Close: stop_loss"]
-    G -->|"No"| J{"Time expired?"}
-
-    H -->|"Yes"| I
-    H -->|"No"| J
-
-    J -->|"Yes (currentTime - pendingAt\n> minuteEstimatedTime)"| K["Close: time_expired"]
-    J -->|"No"| L["Remain active\n(emit onActive)"]
-
-    F --> M["Calculate PNL with fees/slippage"]
-    I --> M
-    K --> M
-
-    M --> N["Call onClose callback"]
-    N --> O["closed state"]
-
-    L --> P["Call onActive callback"]
-    P --> Q["Continue monitoring"]
-    Q --> A
-```
+![Mermaid Diagram](./diagrams\03-understanding-signals_3.svg)
 
 ---
 

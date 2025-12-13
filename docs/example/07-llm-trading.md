@@ -18,49 +18,7 @@ LLM trading is an approach where a large language model analyzes market data and
 
 ## LLM Trading Architecture
 
-```mermaid
-graph TB
-    subgraph "Data Sources"
-        Candles["Candles<br/>1m, 5m, 15m, 30m, 1h"]
-        Indicators["Indicators<br/>RSI, MACD, BB, ADX"]
-        Support["Levels<br/>Support/Resistance"]
-        Volume["Volume<br/>Activity Analysis"]
-    end
-
-    subgraph "Context Formation"
-        Messages["Message Array<br/>user + assistant"]
-        Context["Context for LLM<br/>Technical Analysis"]
-    end
-
-    subgraph "LLM Processing"
-        Ollama["Ollama API<br/>deepseek-v3.1"]
-        Schema["JSON Schema<br/>Signal Structure"]
-        Validation["Validation<br/>format parameter"]
-    end
-
-    subgraph "Trading Signal"
-        Signal["Structured JSON<br/>position, priceOpen,<br/>priceTakeProfit,<br/>priceStopLoss,<br/>minuteEstimatedTime"]
-        Execute["Execution<br/>Backtest/Live"]
-    end
-
-    Candles --> Messages
-    Indicators --> Messages
-    Support --> Messages
-    Volume --> Messages
-
-    Messages --> Context
-    Context --> Ollama
-
-    Ollama --> Schema
-    Schema --> Validation
-    Validation --> Signal
-
-    Signal --> Execute
-
-    style Ollama fill:#e1ffe1
-    style Signal fill:#ffe1e1
-    style Execute fill:#e1f5ff
-```
+![Mermaid Diagram](./diagrams\07-llm-trading_0.svg)
 
 ---
 

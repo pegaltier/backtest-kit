@@ -182,38 +182,7 @@ One of the most powerful features of Live mode is automatic state recovery after
 
 ### How Recovery Works
 
-```mermaid
-sequenceDiagram
-    participant Process as Live Process
-    participant Client as ClientStrategy
-    participant Persist as PersistSignalAdapter
-    participant FS as Filesystem
-
-    Note over Process,FS: Normal execution
-
-    Process->>Client: tick()
-    Client->>Client: getSignal() returns new signal
-    Client->>Persist: writeSignalData(signal)
-    Persist->>FS: Write to temp file
-    Persist->>FS: Rename temp → actual (atomic)
-    Client-->>Process: IStrategyTickResultOpened
-
-    Note over Process,FS: Process crashes
-
-    Process->>Process: ❌ CRASH
-
-    Note over Process,FS: Process restarts
-
-    Process->>Client: tick() (first after restart)
-    Client->>Client: waitForInit()
-    Client->>Persist: readSignalData()
-    Persist->>FS: Read signal file
-    FS-->>Persist: Signal data
-    Persist-->>Client: Restored signal
-    Client->>Client: Set _pendingSignal
-    Client->>Client: callbacks.onActive()
-    Client-->>Process: Continue monitoring signal
-```
+![Mermaid Diagram](./diagrams\04-live-trading_0.svg)
 
 ### What Gets Persisted
 
