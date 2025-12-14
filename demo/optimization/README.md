@@ -25,7 +25,7 @@ Demonstrates AI-driven strategy optimization capabilities for:
   - Short-term (15m candles): Fast indicators and ROC metrics
   - Micro-term (1m candles): 60 candles with squeeze momentum and pressure index
 
-- **LLM Integration**: Ollama-powered strategy generation (gpt-oss:20b)
+- **LLM Integration**: Ollama-powered strategy generation (deepseek-v3.1:671b)
 - **Training/Testing Split**: 7-day training period → 1-day validation
 - **Walker Framework**: Automatic strategy comparison and ranking
 - **Progress Monitoring**: Real-time optimization tracking
@@ -39,7 +39,7 @@ Demonstrates AI-driven strategy optimization capabilities for:
 
 - **Runtime**: Node.js (ES Modules)
 - **Framework**: backtest-kit 1.4.3
-- **AI Provider**: Ollama (gpt-oss:20b model)
+- **AI Provider**: Ollama (deepseek-v3.1:671b model)
 - **Utilities**: functools-kit 1.0.93
 - **Data Source**: node-ccxt-dumper API
 
