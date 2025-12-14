@@ -28,43 +28,43 @@ constructor();
 ### loggerService
 
 ```ts
-loggerService: any
+loggerService: LoggerService
 ```
 
 ### executionContextService
 
 ```ts
-executionContextService: any
+executionContextService: { readonly context: IExecutionContext; }
 ```
 
 ### strategySchemaService
 
 ```ts
-strategySchemaService: any
+strategySchemaService: StrategySchemaService
 ```
 
 ### riskConnectionService
 
 ```ts
-riskConnectionService: any
+riskConnectionService: RiskConnectionService
 ```
 
 ### exchangeConnectionService
 
 ```ts
-exchangeConnectionService: any
+exchangeConnectionService: ExchangeConnectionService
 ```
 
 ### methodContextService
 
 ```ts
-methodContextService: any
+methodContextService: { readonly context: IMethodContext; }
 ```
 
 ### partialConnectionService
 
 ```ts
-partialConnectionService: any
+partialConnectionService: PartialConnectionService
 ```
 
 ### getStrategy

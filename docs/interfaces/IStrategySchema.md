@@ -59,3 +59,11 @@ riskName: string
 ```
 
 Optional risk profile identifier for risk management
+
+### riskList
+
+```ts
+riskList: string[]
+```
+
+Optional several risk profile list for risk management (if multiple required)
