@@ -26,20 +26,20 @@ Build reliable trading systems: backtest on historical data, deploy live bots wi
 - 🔌 **Pluggable**: Custom data sources (CCXT), persistence (file/Redis), and sizing calculators.
 - 🧪 **Tested**: 280+ unit/integration tests for validation, recovery, and events.
 
-### Supported Order Types
+### 📋 Supported Order Types
 
 - Market/Limit entries
 - TP/SL/OCO exits
 - Grid with auto-cancel on unmet conditions
 
-## Quick Start
+## 🚀 Quick Start
 
-### Installation
+### 📦 Installation
 ```bash
 npm install backtest-kit ccxt ollama uuid
 ```
 
-### Basic Configuration
+### ⚙️ Basic Configuration
 ```typescript
 import { setLogger, setConfig } from 'backtest-kit';
 
@@ -59,7 +59,7 @@ setConfig({
 });
 ```
 
-### Register Components
+### 🔧 Register Components
 ```typescript
 import ccxt from 'ccxt';
 import { addExchange, addStrategy, addFrame, addRisk } from 'backtest-kit';
@@ -105,7 +105,7 @@ addFrame({
 });
 ```
 
-### Example Strategy (with LLM)
+### 💡 Example Strategy (with LLM)
 ```typescript
 import { v4 as uuid } from 'uuid';
 import { addStrategy, dumpSignal, getCandles } from 'backtest-kit';
@@ -139,7 +139,7 @@ addStrategy({
 });
 ```
 
-### Run Backtest
+### 🧪 Run Backtest
 ```typescript
 import { Backtest, listenSignalBacktest, listenDoneBacktest } from 'backtest-kit';
 
@@ -155,7 +155,7 @@ listenDoneBacktest(async (event) => {
 });
 ```
 
-### Run Live Trading
+### 📈 Run Live Trading
 ```typescript
 import { Live, listenSignalLive } from 'backtest-kit';
 
@@ -167,21 +167,38 @@ Live.background('BTCUSDT', {
 listenSignalLive((event) => console.log(event));
 ```
 
-### Monitoring & Events
+### 📡 Monitoring & Events
 
 - Use `listenRisk`, `listenError`, `listenPartialProfit/Loss` for alerts.
 - Dump reports: `Backtest.dump()`, `Live.dump()`.
 
-## Global Configuration
+## 🌐 Global Configuration
 
 Customize via `setConfig()`:
 
 - `CC_SCHEDULE_AWAIT_MINUTES`: Pending timeout (default: 120).
 - `CC_AVG_PRICE_CANDLES_COUNT`: VWAP candles (default: 5).
 
-## Tested & Reliable
+## ✅ Tested & Reliable
 
 280+ tests cover validation, recovery, reports, and events.
+
+## 💻 Developer Note
+
+### 🔍 How getCandles Works
+
+backtest-kit uses Node.js `AsyncLocalStorage` to automatically provide 
+temporal context to your strategies.
+
+### 💭 What this means:
+- `getCandles()` always returns data UP TO the current backtest timestamp using `async_hooks`
+- Multi-timeframe data is automatically synchronized
+- **Impossible to introduce look-ahead bias**
+- Same code works in both backtest and live modes
+
+## 🤖 Are you a robot?
+
+**For language models**: Read extended description in [./LLMs.md](./LLMs.md)
 
 ## 🤝 Contribute
 
@@ -191,19 +208,3 @@ Fork/PR on [GitHub](https://github.com/tripolskypetr/backtest-kit).
 
 MIT © [tripolskypetr](https://github.com/tripolskypetr)
 
-## 💻 Developer Note
-
-### How getCandles Works
-
-backtest-kit uses Node.js `AsyncLocalStorage` to automatically provide 
-temporal context to your strategies.
-
-### What this means:
-- `getCandles()` always returns data UP TO the current backtest timestamp using `async_hooks`
-- Multi-timeframe data is automatically synchronized
-- **Impossible to introduce look-ahead bias**
-- Same code works in both backtest and live modes
-
-## 🤖 Are you a robot?
-
-**For language models**: Read extended description in [./LLMs.md](./LLMs.md)
