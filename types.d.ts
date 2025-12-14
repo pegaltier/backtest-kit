@@ -7358,6 +7358,307 @@ declare class ExchangeConnectionService implements IExchange {
 }
 
 /**
+ * Service for managing strategy schema registry.
+ *
+ * Uses ToolRegistry from functools-kit for type-safe schema storage.
+ * Strategies are registered via addStrategy() and retrieved by name.
+ */
+declare class StrategySchemaService {
+    readonly loggerService: LoggerService;
+    private _registry;
+    /**
+     * Registers a new strategy schema.
+     *
+     * @param key - Unique strategy name
+     * @param value - Strategy schema configuration
+     * @throws Error if strategy name already exists
+     */
+    register: (key: StrategyName, value: IStrategySchema) => void;
+    /**
+     * Validates strategy schema structure for required properties.
+     *
+     * Performs shallow validation to ensure all required properties exist
+     * and have correct types before registration in the registry.
+     *
+     * @param strategySchema - Strategy schema to validate
+     * @throws Error if strategyName is missing or not a string
+     * @throws Error if interval is missing or not a valid SignalInterval
+     * @throws Error if getSignal is missing or not a function
+     */
+    private validateShallow;
+    /**
+     * Overrides an existing strategy schema with partial updates.
+     *
+     * @param key - Strategy name to override
+     * @param value - Partial schema updates
+     * @returns Updated strategy schema
+     * @throws Error if strategy name doesn't exist
+     */
+    override: (key: StrategyName, value: Partial<IStrategySchema>) => IStrategySchema;
+    /**
+     * Retrieves a strategy schema by name.
+     *
+     * @param key - Strategy name
+     * @returns Strategy schema configuration
+     * @throws Error if strategy name doesn't exist
+     */
+    get: (key: StrategyName) => IStrategySchema;
+}
+
+/** Type for active position map */
+type RiskMap = Map<string, IRiskActivePosition>;
+/** Symbol indicating that positions need to be fetched from persistence */
+declare const POSITION_NEED_FETCH: unique symbol;
+/**
+ * ClientRisk implementation for portfolio-level risk management.
+ *
+ * Provides risk checking logic to prevent signals that violate configured limits:
+ * - Maximum concurrent positions (tracks across all strategies)
+ * - Custom validations with access to all active positions
+ *
+ * Multiple ClientStrategy instances share the same ClientRisk instance,
+ * allowing cross-strategy risk analysis.
+ *
+ * Used internally by strategy execution to validate signals before opening positions.
+ */
+declare class ClientRisk implements IRisk {
+    readonly params: IRiskParams;
+    /**
+     * Map of active positions tracked across all strategies.
+     * Key: `${strategyName}:${exchangeName}:${symbol}`
+     * Starts as POSITION_NEED_FETCH symbol, gets initialized on first use.
+     */
+    _activePositions: RiskMap | typeof POSITION_NEED_FETCH;
+    constructor(params: IRiskParams);
+    /**
+     * Initializes active positions by loading from persistence.
+     * Uses singleshot pattern to ensure initialization happens exactly once.
+     * Skips persistence in backtest mode.
+     */
+    private waitForInit;
+    /**
+     * Persists current active positions to disk.
+     */
+    private _updatePositions;
+    /**
+     * Registers a new opened signal.
+     * Called by StrategyConnectionService after signal is opened.
+     */
+    addSignal(symbol: string, context: {
+        strategyName: string;
+        riskName: string;
+    }): Promise<void>;
+    /**
+     * Removes a closed signal.
+     * Called by StrategyConnectionService when signal is closed.
+     */
+    removeSignal(symbol: string, context: {
+        strategyName: string;
+        riskName: string;
+    }): Promise<void>;
+    /**
+     * Checks if a signal should be allowed based on risk limits.
+     *
+     * Executes custom validations with access to:
+     * - Passthrough params from ClientStrategy (symbol, strategyName, exchangeName, currentPrice, timestamp)
+     * - Active positions via this.activePositions getter
+     *
+     * Returns false immediately if any validation throws error.
+     * Triggers callbacks (onRejected, onAllowed) based on result.
+     *
+     * @param params - Risk check arguments (passthrough from ClientStrategy)
+     * @returns Promise resolving to true if allowed, false if rejected
+     */
+    checkSignal: (params: IRiskCheckArgs) => Promise<boolean>;
+}
+
+/**
+ * Connection service routing risk operations to correct ClientRisk instance.
+ *
+ * Routes risk checking calls to the appropriate risk implementation
+ * based on the provided riskName parameter. Uses memoization to cache
+ * ClientRisk instances for performance.
+ *
+ * Key features:
+ * - Explicit risk routing via riskName parameter
+ * - Memoized ClientRisk instances by riskName
+ * - Risk limit validation for signals
+ *
+ * Note: riskName is empty string for strategies without risk configuration.
+ *
+ * @example
+ * ```typescript
+ * // Used internally by framework
+ * const result = await riskConnectionService.checkSignal(
+ *   {
+ *     symbol: "BTCUSDT",
+ *     positionSize: 0.5,
+ *     currentPrice: 50000,
+ *     portfolioBalance: 100000,
+ *     currentDrawdown: 5,
+ *     currentPositions: 3,
+ *     dailyPnl: -2,
+ *     currentSymbolExposure: 8
+ *   },
+ *   { riskName: "conservative" }
+ * );
+ * ```
+ */
+declare class RiskConnectionService {
+    private readonly loggerService;
+    private readonly riskSchemaService;
+    /**
+     * Retrieves memoized ClientRisk instance for given risk name.
+     *
+     * Creates ClientRisk on first call, returns cached instance on subsequent calls.
+     * Cache key is riskName string.
+     *
+     * @param riskName - Name of registered risk schema
+     * @returns Configured ClientRisk instance
+     */
+    getRisk: ((riskName: RiskName) => ClientRisk) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, ClientRisk>;
+    /**
+     * Checks if a signal should be allowed based on risk limits.
+     *
+     * Routes to appropriate ClientRisk instance based on provided context.
+     * Validates portfolio drawdown, symbol exposure, position count, and daily loss limits.
+     * ClientRisk will emit riskSubject event via onRejected callback when signal is rejected.
+     *
+     * @param params - Risk check arguments (portfolio state, position details)
+     * @param context - Execution context with risk name
+     * @returns Promise resolving to risk check result
+     */
+    checkSignal: (params: IRiskCheckArgs, context: {
+        riskName: RiskName;
+    }) => Promise<boolean>;
+    /**
+     * Registers an opened signal with the risk management system.
+     * Routes to appropriate ClientRisk instance.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Context information (strategyName, riskName)
+     */
+    addSignal: (symbol: string, context: {
+        strategyName: string;
+        riskName: RiskName;
+    }) => Promise<void>;
+    /**
+     * Removes a closed signal from the risk management system.
+     * Routes to appropriate ClientRisk instance.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Context information (strategyName, riskName)
+     */
+    removeSignal: (symbol: string, context: {
+        strategyName: string;
+        riskName: RiskName;
+    }) => Promise<void>;
+    /**
+     * Clears the cached ClientRisk instance for the given risk name.
+     *
+     * @param riskName - Name of the risk schema to clear from cache
+     */
+    clear: (riskName?: RiskName) => Promise<void>;
+}
+
+/**
+ * Connection service for partial profit/loss tracking.
+ *
+ * Provides memoized ClientPartial instances per signal ID.
+ * Acts as factory and lifetime manager for ClientPartial objects.
+ *
+ * Features:
+ * - Creates one ClientPartial instance per signal ID (memoized)
+ * - Configures instances with logger and event emitter callbacks
+ * - Delegates profit/loss/clear operations to appropriate ClientPartial
+ * - Cleans up memoized instances when signals are cleared
+ *
+ * Architecture:
+ * - Injected into ClientStrategy via PartialGlobalService
+ * - Uses memoize from functools-kit for instance caching
+ * - Emits events to partialProfitSubject/partialLossSubject
+ *
+ * @example
+ * ```typescript
+ * // Service injected via DI
+ * const service = inject<PartialConnectionService>(TYPES.partialConnectionService);
+ *
+ * // Called by ClientStrategy during signal monitoring
+ * await service.profit("BTCUSDT", signal, 55000, 10.0, false, new Date());
+ * // Creates or reuses ClientPartial for signal.id
+ * // Delegates to ClientPartial.profit()
+ *
+ * // When signal closes
+ * await service.clear("BTCUSDT", signal, 52000);
+ * // Clears signal state and removes memoized instance
+ * ```
+ */
+declare class PartialConnectionService implements IPartial {
+    /**
+     * Logger service injected from DI container.
+     */
+    private readonly loggerService;
+    /**
+     * Memoized factory function for ClientPartial instances.
+     *
+     * Creates one ClientPartial per signal ID with configured callbacks.
+     * Instances are cached until clear() is called.
+     *
+     * Key format: signalId
+     * Value: ClientPartial instance with logger and event emitters
+     */
+    private getPartial;
+    /**
+     * Processes profit state and emits events for newly reached profit levels.
+     *
+     * Retrieves or creates ClientPartial for signal ID, initializes it if needed,
+     * then delegates to ClientPartial.profit() method.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param data - Signal row data
+     * @param currentPrice - Current market price
+     * @param revenuePercent - Current profit percentage (positive value)
+     * @param backtest - True if backtest mode, false if live mode
+     * @param when - Event timestamp (current time for live, candle time for backtest)
+     * @returns Promise that resolves when profit processing is complete
+     */
+    profit: (symbol: string, data: ISignalRow, currentPrice: number, revenuePercent: number, backtest: boolean, when: Date) => Promise<void>;
+    /**
+     * Processes loss state and emits events for newly reached loss levels.
+     *
+     * Retrieves or creates ClientPartial for signal ID, initializes it if needed,
+     * then delegates to ClientPartial.loss() method.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param data - Signal row data
+     * @param currentPrice - Current market price
+     * @param lossPercent - Current loss percentage (negative value)
+     * @param backtest - True if backtest mode, false if live mode
+     * @param when - Event timestamp (current time for live, candle time for backtest)
+     * @returns Promise that resolves when loss processing is complete
+     */
+    loss: (symbol: string, data: ISignalRow, currentPrice: number, lossPercent: number, backtest: boolean, when: Date) => Promise<void>;
+    /**
+     * Clears partial profit/loss state when signal closes.
+     *
+     * Retrieves ClientPartial for signal ID, initializes if needed,
+     * delegates clear operation, then removes memoized instance.
+     *
+     * Sequence:
+     * 1. Get ClientPartial from memoize cache
+     * 2. Ensure initialization (waitForInit)
+     * 3. Call ClientPartial.clear() - removes state, persists to disk
+     * 4. Clear memoized instance - prevents memory leaks
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param data - Signal row data
+     * @param priceClose - Final closing price
+     * @returns Promise that resolves when clear is complete
+     */
+    clear: (symbol: string, data: ISignalRow, priceClose: number, backtest: boolean) => Promise<void>;
+}
+
+/**
  * Connection service routing strategy operations to correct ClientStrategy instance.
  *
  * Routes all IStrategy method calls to the appropriate strategy implementation
@@ -7378,13 +7679,17 @@ declare class ExchangeConnectionService implements IExchange {
  * ```
  */
 declare class StrategyConnectionService {
-    private readonly loggerService;
-    private readonly executionContextService;
-    private readonly strategySchemaService;
-    private readonly riskConnectionService;
-    private readonly exchangeConnectionService;
-    private readonly methodContextService;
-    private readonly partialConnectionService;
+    readonly loggerService: LoggerService;
+    readonly executionContextService: {
+        readonly context: IExecutionContext;
+    };
+    readonly strategySchemaService: StrategySchemaService;
+    readonly riskConnectionService: RiskConnectionService;
+    readonly exchangeConnectionService: ExchangeConnectionService;
+    readonly methodContextService: {
+        readonly context: IMethodContext;
+    };
+    readonly partialConnectionService: PartialConnectionService;
     /**
      * Retrieves memoized ClientStrategy instance for given symbol-strategy pair.
      *
@@ -7621,162 +7926,6 @@ declare class SizingConnectionService {
     calculate: (params: ISizingCalculateParams, context: {
         sizingName: SizingName;
     }) => Promise<number>;
-}
-
-/** Type for active position map */
-type RiskMap = Map<string, IRiskActivePosition>;
-/** Symbol indicating that positions need to be fetched from persistence */
-declare const POSITION_NEED_FETCH: unique symbol;
-/**
- * ClientRisk implementation for portfolio-level risk management.
- *
- * Provides risk checking logic to prevent signals that violate configured limits:
- * - Maximum concurrent positions (tracks across all strategies)
- * - Custom validations with access to all active positions
- *
- * Multiple ClientStrategy instances share the same ClientRisk instance,
- * allowing cross-strategy risk analysis.
- *
- * Used internally by strategy execution to validate signals before opening positions.
- */
-declare class ClientRisk implements IRisk {
-    readonly params: IRiskParams;
-    /**
-     * Map of active positions tracked across all strategies.
-     * Key: `${strategyName}:${exchangeName}:${symbol}`
-     * Starts as POSITION_NEED_FETCH symbol, gets initialized on first use.
-     */
-    _activePositions: RiskMap | typeof POSITION_NEED_FETCH;
-    constructor(params: IRiskParams);
-    /**
-     * Initializes active positions by loading from persistence.
-     * Uses singleshot pattern to ensure initialization happens exactly once.
-     * Skips persistence in backtest mode.
-     */
-    private waitForInit;
-    /**
-     * Persists current active positions to disk.
-     */
-    private _updatePositions;
-    /**
-     * Registers a new opened signal.
-     * Called by StrategyConnectionService after signal is opened.
-     */
-    addSignal(symbol: string, context: {
-        strategyName: string;
-        riskName: string;
-    }): Promise<void>;
-    /**
-     * Removes a closed signal.
-     * Called by StrategyConnectionService when signal is closed.
-     */
-    removeSignal(symbol: string, context: {
-        strategyName: string;
-        riskName: string;
-    }): Promise<void>;
-    /**
-     * Checks if a signal should be allowed based on risk limits.
-     *
-     * Executes custom validations with access to:
-     * - Passthrough params from ClientStrategy (symbol, strategyName, exchangeName, currentPrice, timestamp)
-     * - Active positions via this.activePositions getter
-     *
-     * Returns false immediately if any validation throws error.
-     * Triggers callbacks (onRejected, onAllowed) based on result.
-     *
-     * @param params - Risk check arguments (passthrough from ClientStrategy)
-     * @returns Promise resolving to true if allowed, false if rejected
-     */
-    checkSignal: (params: IRiskCheckArgs) => Promise<boolean>;
-}
-
-/**
- * Connection service routing risk operations to correct ClientRisk instance.
- *
- * Routes risk checking calls to the appropriate risk implementation
- * based on the provided riskName parameter. Uses memoization to cache
- * ClientRisk instances for performance.
- *
- * Key features:
- * - Explicit risk routing via riskName parameter
- * - Memoized ClientRisk instances by riskName
- * - Risk limit validation for signals
- *
- * Note: riskName is empty string for strategies without risk configuration.
- *
- * @example
- * ```typescript
- * // Used internally by framework
- * const result = await riskConnectionService.checkSignal(
- *   {
- *     symbol: "BTCUSDT",
- *     positionSize: 0.5,
- *     currentPrice: 50000,
- *     portfolioBalance: 100000,
- *     currentDrawdown: 5,
- *     currentPositions: 3,
- *     dailyPnl: -2,
- *     currentSymbolExposure: 8
- *   },
- *   { riskName: "conservative" }
- * );
- * ```
- */
-declare class RiskConnectionService {
-    private readonly loggerService;
-    private readonly riskSchemaService;
-    /**
-     * Retrieves memoized ClientRisk instance for given risk name.
-     *
-     * Creates ClientRisk on first call, returns cached instance on subsequent calls.
-     * Cache key is riskName string.
-     *
-     * @param riskName - Name of registered risk schema
-     * @returns Configured ClientRisk instance
-     */
-    getRisk: ((riskName: RiskName) => ClientRisk) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, ClientRisk>;
-    /**
-     * Checks if a signal should be allowed based on risk limits.
-     *
-     * Routes to appropriate ClientRisk instance based on provided context.
-     * Validates portfolio drawdown, symbol exposure, position count, and daily loss limits.
-     * ClientRisk will emit riskSubject event via onRejected callback when signal is rejected.
-     *
-     * @param params - Risk check arguments (portfolio state, position details)
-     * @param context - Execution context with risk name
-     * @returns Promise resolving to risk check result
-     */
-    checkSignal: (params: IRiskCheckArgs, context: {
-        riskName: RiskName;
-    }) => Promise<boolean>;
-    /**
-     * Registers an opened signal with the risk management system.
-     * Routes to appropriate ClientRisk instance.
-     *
-     * @param symbol - Trading pair symbol
-     * @param context - Context information (strategyName, riskName)
-     */
-    addSignal: (symbol: string, context: {
-        strategyName: string;
-        riskName: RiskName;
-    }) => Promise<void>;
-    /**
-     * Removes a closed signal from the risk management system.
-     * Routes to appropriate ClientRisk instance.
-     *
-     * @param symbol - Trading pair symbol
-     * @param context - Context information (strategyName, riskName)
-     */
-    removeSignal: (symbol: string, context: {
-        strategyName: string;
-        riskName: RiskName;
-    }) => Promise<void>;
-    /**
-     * Clears the cached ClientRisk instance for the given risk name.
-     *
-     * @param riskName - Name of the risk schema to clear from cache
-     */
-    clear: (riskName?: RiskName) => Promise<void>;
 }
 
 /**
@@ -8126,54 +8275,6 @@ declare class ExchangeSchemaService {
      * @throws Error if exchange name doesn't exist
      */
     get: (key: ExchangeName) => IExchangeSchema;
-}
-
-/**
- * Service for managing strategy schema registry.
- *
- * Uses ToolRegistry from functools-kit for type-safe schema storage.
- * Strategies are registered via addStrategy() and retrieved by name.
- */
-declare class StrategySchemaService {
-    readonly loggerService: LoggerService;
-    private _registry;
-    /**
-     * Registers a new strategy schema.
-     *
-     * @param key - Unique strategy name
-     * @param value - Strategy schema configuration
-     * @throws Error if strategy name already exists
-     */
-    register: (key: StrategyName, value: IStrategySchema) => void;
-    /**
-     * Validates strategy schema structure for required properties.
-     *
-     * Performs shallow validation to ensure all required properties exist
-     * and have correct types before registration in the registry.
-     *
-     * @param strategySchema - Strategy schema to validate
-     * @throws Error if strategyName is missing or not a string
-     * @throws Error if interval is missing or not a valid SignalInterval
-     * @throws Error if getSignal is missing or not a function
-     */
-    private validateShallow;
-    /**
-     * Overrides an existing strategy schema with partial updates.
-     *
-     * @param key - Strategy name to override
-     * @param value - Partial schema updates
-     * @returns Updated strategy schema
-     * @throws Error if strategy name doesn't exist
-     */
-    override: (key: StrategyName, value: Partial<IStrategySchema>) => IStrategySchema;
-    /**
-     * Retrieves a strategy schema by name.
-     *
-     * @param key - Strategy name
-     * @returns Strategy schema configuration
-     * @throws Error if strategy name doesn't exist
-     */
-    get: (key: StrategyName) => IStrategySchema;
 }
 
 /**
@@ -9526,103 +9627,6 @@ declare class OptimizerGlobalService {
      * @throws Error if optimizer not found
      */
     dump: (symbol: string, optimizerName: string, path?: string) => Promise<void>;
-}
-
-/**
- * Connection service for partial profit/loss tracking.
- *
- * Provides memoized ClientPartial instances per signal ID.
- * Acts as factory and lifetime manager for ClientPartial objects.
- *
- * Features:
- * - Creates one ClientPartial instance per signal ID (memoized)
- * - Configures instances with logger and event emitter callbacks
- * - Delegates profit/loss/clear operations to appropriate ClientPartial
- * - Cleans up memoized instances when signals are cleared
- *
- * Architecture:
- * - Injected into ClientStrategy via PartialGlobalService
- * - Uses memoize from functools-kit for instance caching
- * - Emits events to partialProfitSubject/partialLossSubject
- *
- * @example
- * ```typescript
- * // Service injected via DI
- * const service = inject<PartialConnectionService>(TYPES.partialConnectionService);
- *
- * // Called by ClientStrategy during signal monitoring
- * await service.profit("BTCUSDT", signal, 55000, 10.0, false, new Date());
- * // Creates or reuses ClientPartial for signal.id
- * // Delegates to ClientPartial.profit()
- *
- * // When signal closes
- * await service.clear("BTCUSDT", signal, 52000);
- * // Clears signal state and removes memoized instance
- * ```
- */
-declare class PartialConnectionService implements IPartial {
-    /**
-     * Logger service injected from DI container.
-     */
-    private readonly loggerService;
-    /**
-     * Memoized factory function for ClientPartial instances.
-     *
-     * Creates one ClientPartial per signal ID with configured callbacks.
-     * Instances are cached until clear() is called.
-     *
-     * Key format: signalId
-     * Value: ClientPartial instance with logger and event emitters
-     */
-    private getPartial;
-    /**
-     * Processes profit state and emits events for newly reached profit levels.
-     *
-     * Retrieves or creates ClientPartial for signal ID, initializes it if needed,
-     * then delegates to ClientPartial.profit() method.
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param data - Signal row data
-     * @param currentPrice - Current market price
-     * @param revenuePercent - Current profit percentage (positive value)
-     * @param backtest - True if backtest mode, false if live mode
-     * @param when - Event timestamp (current time for live, candle time for backtest)
-     * @returns Promise that resolves when profit processing is complete
-     */
-    profit: (symbol: string, data: ISignalRow, currentPrice: number, revenuePercent: number, backtest: boolean, when: Date) => Promise<void>;
-    /**
-     * Processes loss state and emits events for newly reached loss levels.
-     *
-     * Retrieves or creates ClientPartial for signal ID, initializes it if needed,
-     * then delegates to ClientPartial.loss() method.
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param data - Signal row data
-     * @param currentPrice - Current market price
-     * @param lossPercent - Current loss percentage (negative value)
-     * @param backtest - True if backtest mode, false if live mode
-     * @param when - Event timestamp (current time for live, candle time for backtest)
-     * @returns Promise that resolves when loss processing is complete
-     */
-    loss: (symbol: string, data: ISignalRow, currentPrice: number, lossPercent: number, backtest: boolean, when: Date) => Promise<void>;
-    /**
-     * Clears partial profit/loss state when signal closes.
-     *
-     * Retrieves ClientPartial for signal ID, initializes if needed,
-     * delegates clear operation, then removes memoized instance.
-     *
-     * Sequence:
-     * 1. Get ClientPartial from memoize cache
-     * 2. Ensure initialization (waitForInit)
-     * 3. Call ClientPartial.clear() - removes state, persists to disk
-     * 4. Clear memoized instance - prevents memory leaks
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param data - Signal row data
-     * @param priceClose - Final closing price
-     * @returns Promise that resolves when clear is complete
-     */
-    clear: (symbol: string, data: ISignalRow, priceClose: number, backtest: boolean) => Promise<void>;
 }
 
 /**
