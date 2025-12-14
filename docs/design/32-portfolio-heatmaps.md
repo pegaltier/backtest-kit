@@ -62,29 +62,7 @@ The `HeatMarkdownService` class implements the heatmap generation pipeline using
 
 ### Component Overview
 
-```mermaid
-graph TB
-    signalEmitter["signalEmitter<br/>(functools-kit Subject)"]
-    HeatService["HeatMarkdownService<br/>Main orchestrator"]
-    HeatStorage["HeatmapStorage<br/>Per-strategy data store"]
-    
-    signalEmitter -->|"subscribe(tick)"| HeatService
-    HeatService -->|"getStorage(strategyName)"| HeatStorage
-    
-    HeatStorage -->|"symbolData: Map&lt;symbol, signals[]&gt;"| SymbolMap["Per-Symbol Storage"]
-    
-    SymbolMap --> CalcStats["calculateSymbolStats()<br/>Compute IHeatmapRow"]
-    CalcStats --> Aggregation["Portfolio Aggregation<br/>Sum PNLs, Sharpe, etc."]
-    
-    Aggregation --> HeatStats["IHeatmapStatistics"]
-    
-    HeatService --> PublicAPI["Heat Facade<br/>getData/getReport/dump"]
-    PublicAPI --> HeatStats
-    
-    style HeatService fill:#e1f5ff
-    style HeatStorage fill:#fff4e1
-    style PublicAPI fill:#e8f5e9
-```
+![Mermaid Diagram](./diagrams\32-portfolio-heatmaps_0.svg)
 
 ### Key Classes and Methods
 
@@ -112,80 +90,7 @@ Located at [src/lib/services/markdown/HeatMarkdownService.ts:147-442](), this cl
 
 The following diagram shows how closed signals are processed into portfolio heatmap statistics:
 
-```mermaid
-graph TB
-    subgraph "Signal Generation"
-        BacktestRun["Backtest.run()<br/>Historical execution"]
-        LiveRun["Live.run()<br/>Real-time execution"]
-        ClientStrategy["ClientStrategy.backtest()<br/>Signal closure"]
-    end
-    
-    subgraph "Event Emission"
-        signalEmitter["signalEmitter.next()<br/>IStrategyTickResultClosed"]
-        signalBacktestEmitter["signalBacktestEmitter"]
-        signalLiveEmitter["signalLiveEmitter"]
-    end
-    
-    subgraph "HeatMarkdownService Processing"
-        TickHandler["tick(data: IStrategyTickResult)<br/>Filter action === 'closed'"]
-        GetStorage["getStorage(strategyName)<br/>Memoized per-strategy"]
-        AddSignal["HeatmapStorage.addSignal()<br/>Group by symbol"]
-    end
-    
-    subgraph "HeatmapStorage State"
-        SymbolDataMap["symbolData: Map&lt;symbol, signals[]&gt;<br/>BTCUSDT: [sig1, sig2, ...]<br/>ETHUSDT: [sig3, sig4, ...]"]
-        MaxEventsCheck["MAX_EVENTS = 250<br/>Trim old signals per symbol"]
-    end
-    
-    subgraph "Statistics Calculation"
-        CalcSymbol["calculateSymbolStats(symbol, signals)<br/>Per-symbol metrics"]
-        
-        CalcMetrics["Calculate:<br/>- totalPnl = sum(pnl)<br/>- winRate = wins/total<br/>- sharpeRatio = avgPnl/stdDev<br/>- profitFactor = sumWins/sumLosses<br/>- maxDrawdown = max decline<br/>- expectancy = winRate×avgWin - lossRate×avgLoss"]
-        
-        CalcSymbol --> CalcMetrics
-    end
-    
-    subgraph "Portfolio Aggregation"
-        AggregateLoop["Loop over all symbols"]
-        SumPortfolio["portfolioTotalPnl = Σ(symbol.totalPnl)<br/>portfolioTotalTrades = Σ(symbol.totalTrades)"]
-        
-        CalcPortfolioSharpe["portfolioSharpeRatio:<br/>1. Collect all PNL values<br/>2. Calculate portfolio stdDev<br/>3. Sharpe = avgPnl / stdDev"]
-        
-        AggregateLoop --> SumPortfolio
-        AggregateLoop --> CalcPortfolioSharpe
-    end
-    
-    subgraph "Output"
-        HeatStats["IHeatmapStatistics<br/>symbols: IHeatmapRow[]<br/>totalSymbols<br/>portfolioTotalPnl<br/>portfolioSharpeRatio<br/>portfolioTotalTrades"]
-        
-        MarkdownReport["Markdown Report<br/>- Symbol comparison table<br/>- Portfolio summary<br/>- Sorted by totalPnl"]
-    end
-    
-    BacktestRun --> ClientStrategy
-    LiveRun --> ClientStrategy
-    ClientStrategy --> signalEmitter
-    signalEmitter --> signalBacktestEmitter
-    signalEmitter --> signalLiveEmitter
-    
-    signalEmitter --> TickHandler
-    TickHandler --> GetStorage
-    GetStorage --> AddSignal
-    
-    AddSignal --> SymbolDataMap
-    SymbolDataMap --> MaxEventsCheck
-    
-    MaxEventsCheck --> CalcSymbol
-    CalcMetrics --> AggregateLoop
-    
-    SumPortfolio --> HeatStats
-    CalcPortfolioSharpe --> HeatStats
-    
-    HeatStats --> MarkdownReport
-    
-    style TickHandler fill:#e1f5ff
-    style CalcMetrics fill:#fff4e1
-    style HeatStats fill:#e8f5e9
-```
+![Mermaid Diagram](./diagrams\32-portfolio-heatmaps_1.svg)
 
 ---
 
@@ -333,35 +238,7 @@ The `Heat` class at [src/classes/Heat.ts]() provides a simplified public API for
 
 ### API Methods
 
-```mermaid
-graph LR
-    subgraph "Heat Facade (src/classes/Heat.ts)"
-        getData["Heat.getData(strategyName)<br/>Returns IHeatmapStatistics"]
-        getReport["Heat.getReport(strategyName)<br/>Returns markdown string"]
-        dump["Heat.dump(strategyName, path?)<br/>Writes to ./dump/heat/"]
-        clear["Heat.clear(strategyName?)<br/>Clears storage"]
-    end
-    
-    subgraph "HeatMarkdownService"
-        ServiceGetData["heatMarkdownService.getData(strategyName)"]
-        ServiceGetReport["heatMarkdownService.getReport(strategyName)"]
-        ServiceDump["heatMarkdownService.dump(strategyName, path)"]
-        ServiceClear["heatMarkdownService.clear(strategyName)"]
-    end
-    
-    getData --> ServiceGetData
-    getReport --> ServiceGetReport
-    dump --> ServiceDump
-    clear --> ServiceClear
-    
-    ServiceGetData --> Return1["IHeatmapStatistics<br/>Programmatic access"]
-    ServiceGetReport --> Return2["Markdown string<br/>Report text"]
-    ServiceDump --> Return3["File write<br/>.md file saved"]
-    ServiceClear --> Return4["void<br/>Storage cleared"]
-    
-    style getData fill:#e1f5ff
-    style Return1 fill:#e8f5e9
-```
+![Mermaid Diagram](./diagrams\32-portfolio-heatmaps_2.svg)
 
 ### Method Details
 
@@ -601,51 +478,7 @@ The heatmap service subscribes to the global `signalEmitter` at initialization, 
 
 ### Event Subscription Flow
 
-```mermaid
-graph TB
-    subgraph "Signal Generation Sources"
-        BacktestLogic["BacktestLogicPrivateService<br/>Backtest execution"]
-        LiveLogic["LiveLogicPrivateService<br/>Live execution"]
-        ClientStrategy["ClientStrategy.backtest()<br/>Signal closure detection"]
-    end
-    
-    subgraph "Event Emission"
-        EmitClosed["signalEmitter.next()<br/>IStrategyTickResultClosed"]
-        EmitBacktest["signalBacktestEmitter.next()"]
-        EmitLive["signalLiveEmitter.next()"]
-    end
-    
-    subgraph "HeatMarkdownService Subscription"
-        Init["HeatMarkdownService.init()<br/>singleshot initialization"]
-        Subscribe["signalEmitter.subscribe(this.tick)"]
-        TickFilter["tick(data)<br/>Filter: action === 'closed'"]
-    end
-    
-    subgraph "Storage Update"
-        GetStorage["getStorage(data.strategyName)<br/>Memoized per strategy"]
-        AddSignal["HeatmapStorage.addSignal(data)<br/>Group by symbol"]
-        UpdateMap["symbolData.get(symbol).unshift(data)"]
-    end
-    
-    ClientStrategy --> EmitClosed
-    EmitClosed --> EmitBacktest
-    EmitClosed --> EmitLive
-    
-    EmitClosed --> Subscribe
-    
-    Init --> Subscribe
-    Subscribe --> TickFilter
-    TickFilter --> GetStorage
-    GetStorage --> AddSignal
-    AddSignal --> UpdateMap
-    
-    BacktestLogic --> ClientStrategy
-    LiveLogic --> ClientStrategy
-    
-    style Init fill:#e1f5ff
-    style TickFilter fill:#fff4e1
-    style UpdateMap fill:#e8f5e9
-```
+![Mermaid Diagram](./diagrams\32-portfolio-heatmaps_3.svg)
 
 ### Initialization
 

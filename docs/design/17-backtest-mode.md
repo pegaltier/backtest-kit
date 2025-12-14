@@ -35,50 +35,7 @@ The system uses async generators for memory efficiency, yielding closed signals 
 
 ## Architecture Components
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        Backtest["Backtest (singleton)<br/>BacktestUtils class"]
-        BacktestInstance["BacktestInstance<br/>Per symbol-strategy isolation"]
-    end
-    
-    subgraph "Command Layer"
-        BacktestCommand["BacktestCommandService<br/>Validation orchestration"]
-    end
-    
-    subgraph "Logic Layer"
-        BacktestPublic["BacktestLogicPublicService<br/>Context setup wrapper"]
-        BacktestPrivate["BacktestLogicPrivateService<br/>Generator implementation"]
-    end
-    
-    subgraph "Core Services"
-        StrategyCore["StrategyCoreService<br/>tick() + backtest()"]
-        ExchangeCore["ExchangeCoreService<br/>getNextCandles()"]
-        FrameCore["FrameCoreService<br/>getTimeframe()"]
-    end
-    
-    subgraph "Markdown Services"
-        BacktestMarkdown["BacktestMarkdownService<br/>Statistics + Reports"]
-    end
-    
-    subgraph "Event System"
-        Emitters["signalBacktestEmitter<br/>progressBacktestEmitter<br/>doneBacktestSubject<br/>performanceEmitter"]
-    end
-    
-    Backtest -->|"memoize(symbol:strategy)"| BacktestInstance
-    BacktestInstance -->|"run(symbol, context)"| BacktestCommand
-    BacktestCommand --> BacktestPublic
-    BacktestPublic -->|"MethodContext.runInContext()"| BacktestPrivate
-    
-    BacktestPrivate -->|"getTimeframe()"| FrameCore
-    BacktestPrivate -->|"tick(symbol, when, true)"| StrategyCore
-    BacktestPrivate -->|"getNextCandles()"| ExchangeCore
-    StrategyCore -->|"backtest(candles)"| StrategyCore
-    
-    BacktestPrivate -->|"emit progress"| Emitters
-    StrategyCore -->|"emit signals"| Emitters
-    Emitters -->|"subscribe"| BacktestMarkdown
-```
+![Mermaid Diagram](./diagrams\17-backtest-mode_0.svg)
 
 **Component Responsibilities:**
 
@@ -97,60 +54,7 @@ graph TB
 
 ## Execution Flow
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Backtest as "Backtest.run()"
-    participant Instance as "BacktestInstance"
-    participant Command as "BacktestCommandService"
-    participant LogicPublic as "BacktestLogicPublicService"
-    participant LogicPrivate as "BacktestLogicPrivateService"
-    participant FrameCore as "FrameCoreService"
-    participant StrategyCore as "StrategyCoreService"
-    participant ExchangeCore as "ExchangeCoreService"
-    
-    User->>Backtest: run(symbol, {strategyName, exchangeName, frameName})
-    Backtest->>Backtest: validate schemas
-    Backtest->>Instance: getInstance(symbol, strategyName)
-    Instance->>Instance: clear markdown services
-    Instance->>Instance: clear strategy state
-    Instance->>Instance: clear risk state
-    Instance->>Command: run(symbol, context)
-    Command->>LogicPublic: run(symbol)
-    LogicPublic->>LogicPublic: MethodContext.runInContext()
-    LogicPublic->>LogicPrivate: run(symbol)*
-    
-    LogicPrivate->>FrameCore: getTimeframe(symbol, frameName)
-    FrameCore-->>LogicPrivate: Date[] timeframes
-    
-    loop For each timeframe (i < timeframes.length)
-        LogicPrivate->>LogicPrivate: emit progressBacktestEmitter
-        LogicPrivate->>LogicPrivate: check getStopped()
-        LogicPrivate->>StrategyCore: tick(symbol, when, true)
-        StrategyCore-->>LogicPrivate: IStrategyTickResult
-        
-        alt result.action === "opened"
-            LogicPrivate->>ExchangeCore: getNextCandles(symbol, "1m", totalCandles)
-            ExchangeCore-->>LogicPrivate: ICandleData[]
-            LogicPrivate->>StrategyCore: backtest(symbol, candles, when, true)
-            StrategyCore-->>LogicPrivate: IStrategyBacktestResult (closed)
-            LogicPrivate->>LogicPrivate: skip timeframes until closeTimestamp
-            LogicPrivate-->>User: yield closed result
-        end
-        
-        alt result.action === "scheduled"
-            LogicPrivate->>ExchangeCore: getNextCandles(with buffer + await minutes)
-            ExchangeCore-->>LogicPrivate: ICandleData[]
-            LogicPrivate->>StrategyCore: backtest(symbol, candles, when, true)
-            StrategyCore-->>LogicPrivate: IStrategyBacktestResult
-            LogicPrivate->>LogicPrivate: skip timeframes until closeTimestamp
-            LogicPrivate-->>User: yield result
-        end
-    end
-    
-    LogicPrivate->>LogicPrivate: emit doneBacktestSubject
-    LogicPrivate-->>User: generator complete
-```
+![Mermaid Diagram](./diagrams\17-backtest-mode_1.svg)
 
 **Execution Phases:**
 
@@ -173,28 +77,7 @@ The backtest generator iterates through a pre-generated array of `Date` objects 
 
 **Timeframe Generation:**
 
-```mermaid
-graph LR
-    FrameSchema["IFrameSchema<br/>{startDate, endDate, interval}"]
-    FrameCore["FrameCoreService.getTimeframe()"]
-    TimeframeArray["Date[] timeframes<br/>[t0, t1, t2, ..., tn]"]
-    
-    FrameSchema -->|"getTimeframe(symbol, frameName)"| FrameCore
-    FrameCore -->|"generate array"| TimeframeArray
-    
-    subgraph "Iteration Loop"
-        Loop["while (i < timeframes.length)"]
-        ProcessTick["tick(symbol, timeframes[i])"]
-        CheckResult["result.action?"]
-        SkipLogic["Skip to closeTimestamp"]
-    end
-    
-    TimeframeArray --> Loop
-    Loop --> ProcessTick
-    ProcessTick --> CheckResult
-    CheckResult -->|"opened/scheduled"| SkipLogic
-    SkipLogic -->|"i += skip_count"| Loop
-```
+![Mermaid Diagram](./diagrams\17-backtest-mode_2.svg)
 
 **Skip-to-Close Optimization:**
 
@@ -400,40 +283,7 @@ For a 30-day backtest with 100 signals, the generator approach uses ~99% less me
 
 Backtest Mode emits events throughout execution for monitoring and reporting:
 
-```mermaid
-graph TB
-    subgraph "Event Emitters"
-        SignalBacktest["signalBacktestEmitter<br/>Closed signals"]
-        ProgressBacktest["progressBacktestEmitter<br/>Timeframe progress"]
-        DoneBacktest["doneBacktestSubject<br/>Completion notification"]
-        Performance["performanceEmitter<br/>Duration metrics"]
-        Error["errorEmitter<br/>Recoverable errors"]
-    end
-    
-    subgraph "Logic Layer"
-        Loop["Timeframe iteration loop"]
-        TickCall["tick() call"]
-        BacktestCall["backtest() call"]
-        Completion["Loop completion"]
-    end
-    
-    subgraph "Subscribers"
-        BacktestMarkdown["BacktestMarkdownService<br/>Statistics calculation"]
-        ScheduleMarkdown["ScheduleMarkdownService<br/>Scheduled signal tracking"]
-        UserListeners["User-defined listeners<br/>listenSignalBacktest()"]
-    end
-    
-    Loop -->|"every iteration"| ProgressBacktest
-    TickCall -->|"on error"| Error
-    BacktestCall -->|"on closed"| SignalBacktest
-    BacktestCall -->|"on completion"| Performance
-    Completion -->|"end of loop"| DoneBacktest
-    
-    SignalBacktest --> BacktestMarkdown
-    SignalBacktest --> UserListeners
-    DoneBacktest --> UserListeners
-    ProgressBacktest --> UserListeners
-```
+![Mermaid Diagram](./diagrams\17-backtest-mode_3.svg)
 
 ### Event Types and Timing
 
@@ -663,29 +513,7 @@ Backtest Mode implements several optimizations for fast execution:
 
 The system tracks duration metrics via `performanceEmitter`:
 
-```mermaid
-graph LR
-    Start["performance.now()"]
-    
-    subgraph "Measured Operations"
-        TimeframeStart["Timeframe iteration start"]
-        TimeframeEnd["Timeframe iteration end"]
-        SignalStart["Signal processing start"]
-        SignalEnd["Signal processing end"]
-        BacktestStart["Total backtest start"]
-        BacktestEnd["Total backtest end"]
-    end
-    
-    TimeframeStart -->|"measure"| TimeframeEnd
-    SignalStart -->|"measure"| SignalEnd
-    BacktestStart -->|"measure"| BacktestEnd
-    
-    TimeframeEnd -->|"emit {metricType: 'backtest_timeframe'}"| PerformanceEmitter
-    SignalEnd -->|"emit {metricType: 'backtest_signal'}"| PerformanceEmitter
-    BacktestEnd -->|"emit {metricType: 'backtest_total'}"| PerformanceEmitter
-    
-    PerformanceEmitter["performanceEmitter"]
-```
+![Mermaid Diagram](./diagrams\17-backtest-mode_4.svg)
 
 Metrics emitted at:
 - [BacktestLogicPrivateService.ts:436-446]() - Timeframe duration

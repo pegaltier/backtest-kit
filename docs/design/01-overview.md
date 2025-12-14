@@ -40,26 +40,7 @@ The framework provides seven major feature categories:
 
 The framework implements four distinct execution modes, each optimized for specific use cases:
 
-```mermaid
-graph LR
-    subgraph "Finite Modes"
-        BT["Backtest<br/>Historical Simulation<br/>Fast Candle Processing"]
-        WK["Walker<br/>Strategy Comparison<br/>Sequential A/B Testing"]
-    end
-    
-    subgraph "Infinite Modes"
-        LV["Live<br/>Real-Time Trading<br/>Crash Recovery"]
-    end
-    
-    subgraph "Generative Modes"
-        OPT["Optimizer<br/>LLM Code Generation<br/>Multi-Timeframe Analysis"]
-    end
-    
-    BT --> |"yields closed signals"| RESULTS["Results"]
-    WK --> |"compares metrics"| RESULTS
-    LV --> |"yields opened/closed"| RESULTS
-    OPT --> |"generates .mjs files"| CODE["Executable Code"]
-```
+![Mermaid Diagram](./diagrams\01-overview_0.svg)
 
 **Backtest Mode** (`Backtest.run()`, `Backtest.background()`):
 - Iterates through pre-generated timeframes sequentially
@@ -95,24 +76,7 @@ For detailed implementation details, see [Execution Modes (Detailed)](./16-execu
 
 The framework uses a registration pattern for defining strategies, exchanges, data sources, and risk profiles:
 
-```mermaid
-graph TD
-    USER["User Code"] --> |"addStrategy()"| STRAT_SCHEMA["StrategySchemaService<br/>ToolRegistry Storage"]
-    USER --> |"addExchange()"| EXCH_SCHEMA["ExchangeSchemaService<br/>Configuration Registry"]
-    USER --> |"addFrame()"| FRAME_SCHEMA["FrameSchemaService<br/>Timeframe Definitions"]
-    USER --> |"addRisk()"| RISK_SCHEMA["RiskSchemaService<br/>Validation Rules"]
-    USER --> |"addSizing()"| SIZE_SCHEMA["SizingSchemaService<br/>Position Sizing Logic"]
-    USER --> |"addWalker()"| WALK_SCHEMA["WalkerSchemaService<br/>Comparison Config"]
-    USER --> |"addOptimizer()"| OPT_SCHEMA["OptimizerSchemaService<br/>Prompt Templates"]
-    
-    STRAT_SCHEMA --> VAL["Validation Layer"]
-    EXCH_SCHEMA --> VAL
-    FRAME_SCHEMA --> VAL
-    RISK_SCHEMA --> VAL
-    
-    VAL --> CONN["Connection Layer<br/>Memoized Clients"]
-    CONN --> EXEC["Execution Layer<br/>Logic Services"]
-```
+![Mermaid Diagram](./diagrams\01-overview_1.svg)
 
 **Registration Functions** (exported from [src/lib/index.ts]()):
 - `addStrategy(IStrategySchema)` - Define signal generation logic and lifecycle callbacks
@@ -125,30 +89,7 @@ graph TD
 
 ### Execution API
 
-```mermaid
-graph LR
-    subgraph "Synchronous Execution"
-        RUN_BT["Backtest.run()<br/>AsyncGenerator"]
-        RUN_LV["Live.run()<br/>AsyncGenerator"]
-        RUN_WK["Walker.run()<br/>AsyncGenerator"]
-        RUN_OPT["Optimizer.run()<br/>AsyncGenerator"]
-    end
-    
-    subgraph "Background Execution"
-        BG_BT["Backtest.background()<br/>Fire and Forget"]
-        BG_LV["Live.background()<br/>Fire and Forget"]
-        BG_WK["Walker.background()<br/>Fire and Forget"]
-    end
-    
-    RUN_BT --> |"for await"| CONSUME["User Consumption"]
-    RUN_LV --> |"for await"| CONSUME
-    RUN_WK --> |"for await"| CONSUME
-    RUN_OPT --> |"for await"| CONSUME
-    
-    BG_BT --> |"listenDoneBacktest()"| EVENTS["Event Listeners"]
-    BG_LV --> |"listenDoneLive()"| EVENTS
-    BG_WK --> |"listenWalkerComplete()"| EVENTS
-```
+![Mermaid Diagram](./diagrams\01-overview_2.svg)
 
 **Execution Methods**:
 - `Backtest.run(symbol, context)` - Synchronous backtest with generator iteration
@@ -160,19 +101,7 @@ graph LR
 
 ### Event Listener API
 
-```mermaid
-graph TD
-    EMIT["Event Emitters<br/>(signalEmitter, errorEmitter, etc.)"] --> Q["Queued Processing<br/>functools-kit"]
-    Q --> L1["listenSignal()<br/>All Signals"]
-    Q --> L2["listenSignalLive()<br/>Live Only"]
-    Q --> L3["listenSignalBacktest()<br/>Backtest Only"]
-    Q --> L4["listenError()<br/>Error Handling"]
-    Q --> L5["listenRisk()<br/>Validation Rejections"]
-    Q --> L6["listenPartialProfit()<br/>Profit Milestones"]
-    Q --> L7["listenPartialLoss()<br/>Loss Milestones"]
-    Q --> L8["listenDoneBacktest()<br/>Completion"]
-    Q --> L9["listenWalkerComplete()<br/>Best Strategy"]
-```
+![Mermaid Diagram](./diagrams\01-overview_3.svg)
 
 **Event Listeners** (all use queued async processing):
 - `listenSignal(fn)` - All signal events (idle, opened, active, closed)
@@ -191,56 +120,7 @@ graph TD
 
 The framework implements a five-layer architecture with clear separation of concerns:
 
-```mermaid
-graph TB
-    subgraph "Layer 1: Public API"
-        API["Public Functions<br/>addStrategy, addExchange, addFrame<br/>Backtest.run, Live.run, Walker.run<br/>listenSignal, listenError"]
-    end
-    
-    subgraph "Layer 2: Orchestration (Execution Modes)"
-        CMD_BT["BacktestCommandService<br/>Validation + Execution"]
-        CMD_LV["LiveCommandService<br/>Validation + Execution"]
-        CMD_WK["WalkerCommandService<br/>Validation + Execution"]
-    end
-    
-    subgraph "Layer 3: Service Layer (Dependency Injection)"
-        LOGIC["Logic Services<br/>BacktestLogicPublicService<br/>BacktestLogicPrivateService<br/>LiveLogicPublicService<br/>LiveLogicPrivateService<br/>WalkerLogicPublicService<br/>WalkerLogicPrivateService"]
-        GLOBAL["Global Services<br/>StrategyGlobalService<br/>RiskGlobalService<br/>SizingGlobalService<br/>PartialGlobalService<br/>OptimizerGlobalService"]
-        CORE["Core Services<br/>StrategyCoreService<br/>ExchangeCoreService<br/>FrameCoreService"]
-        CONN["Connection Services<br/>StrategyConnectionService<br/>ExchangeConnectionService<br/>FrameConnectionService<br/>RiskConnectionService<br/>SizingConnectionService<br/>PartialConnectionService<br/>OptimizerConnectionService"]
-        VAL["Validation Services<br/>StrategyValidationService<br/>ExchangeValidationService<br/>FrameValidationService<br/>RiskValidationService<br/>ConfigValidationService"]
-        SCHEMA["Schema Services<br/>StrategySchemaService<br/>ExchangeSchemaService<br/>FrameSchemaService<br/>RiskSchemaService<br/>WalkerSchemaService<br/>SizingSchemaService<br/>OptimizerSchemaService"]
-    end
-    
-    subgraph "Layer 4: Client Layer (Business Logic)"
-        CLIENT["ClientStrategy<br/>ClientExchange<br/>ClientFrame<br/>ClientRisk<br/>ClientSizing<br/>ClientPartial<br/>ClientOptimizer"]
-    end
-    
-    subgraph "Layer 5: Persistence & Events"
-        PERSIST["PersistSignalAdapter<br/>PersistScheduleAdapter<br/>PersistRiskAdapter<br/>PersistPartialAdapter"]
-        EVENTS["signalEmitter<br/>signalLiveEmitter<br/>signalBacktestEmitter<br/>errorEmitter<br/>riskSubject<br/>partialProfitSubject"]
-    end
-    
-    API --> CMD_BT
-    API --> CMD_LV
-    API --> CMD_WK
-    
-    CMD_BT --> LOGIC
-    CMD_LV --> LOGIC
-    CMD_WK --> LOGIC
-    
-    LOGIC --> CORE
-    LOGIC --> GLOBAL
-    CORE --> CONN
-    GLOBAL --> CONN
-    CONN --> SCHEMA
-    CONN --> CLIENT
-    VAL --> SCHEMA
-    
-    CLIENT --> PERSIST
-    CLIENT --> EVENTS
-    LOGIC --> EVENTS
-```
+![Mermaid Diagram](./diagrams\01-overview_4.svg)
 
 ### Layer Responsibilities
 
@@ -283,20 +163,7 @@ For detailed architecture documentation, see [System Architecture](./06-system-a
 
 The framework uses a custom DI container with Symbol-based keys and a centralized `backtest` aggregation object:
 
-```mermaid
-graph TD
-    TYPES["types.ts<br/>Symbol Definitions<br/>TYPES.loggerService<br/>TYPES.strategyConnectionService<br/>etc."] --> PROVIDE["provide.ts<br/>Service Registration<br/>provide() calls"]
-    PROVIDE --> BACKTEST["backtest object<br/>Singleton Export<br/>All services injected"]
-    
-    BACKTEST --> CMD["Command Services<br/>backtestCommandService<br/>liveCommandService<br/>walkerCommandService"]
-    BACKTEST --> LOGIC["Logic Services<br/>backtestLogicPublicService<br/>backtestLogicPrivateService<br/>etc."]
-    BACKTEST --> SCHEMA["Schema Services<br/>strategySchemaService<br/>exchangeSchemaService<br/>etc."]
-    BACKTEST --> VAL["Validation Services<br/>strategyValidationService<br/>exchangeValidationService<br/>etc."]
-    BACKTEST --> CONN["Connection Services<br/>strategyConnectionService<br/>exchangeConnectionService<br/>etc."]
-    BACKTEST --> CORE["Core Services<br/>strategyCoreService<br/>exchangeCoreService<br/>frameCoreService"]
-    BACKTEST --> GLOBAL["Global Services<br/>strategyGlobalService<br/>riskGlobalService<br/>etc."]
-    BACKTEST --> MD["Markdown Services<br/>backtestMarkdownService<br/>liveMarkdownService<br/>etc."]
-```
+![Mermaid Diagram](./diagrams\01-overview_5.svg)
 
 **Key DI Components**:
 - `types.ts` - Symbol-based service identifiers (e.g., `TYPES.strategyCoreService = Symbol.for("strategyCoreService")`)
@@ -312,51 +179,7 @@ For detailed DI documentation, see [Dependency Injection System](./08-dependency
 
 The framework uses a type-safe discriminated union for signal states:
 
-```mermaid
-stateDiagram-v2
-    [*] --> idle: No active signal
-    idle --> scheduled: Limit order created
-    scheduled --> opened: Price reaches priceOpen
-    scheduled --> cancelled: TP/SL hit before activation
-    opened --> active: Market order filled
-    active --> closed: TP/SL/timeout reached
-    closed --> [*]
-    
-    note right of idle
-        action: "idle"
-        currentPrice: number
-    end note
-    
-    note right of scheduled
-        action: "scheduled"
-        IScheduledSignalRow
-        scheduledAt, priceOpen
-    end note
-    
-    note right of opened
-        action: "opened"
-        ISignalRow
-        pendingAt, priceOpen
-    end note
-    
-    note right of active
-        action: "active"
-        ISignalRow
-        Monitoring TP/SL
-    end note
-    
-    note right of closed
-        action: "closed"
-        ISignalRow + closeReason
-        PNL calculated
-    end note
-    
-    note right of cancelled
-        action: "cancelled"
-        IScheduledSignalRow
-        No position opened
-    end note
-```
+![Mermaid Diagram](./diagrams\01-overview_6.svg)
 
 **Signal States**:
 - `idle` - No active signal, waiting for next signal generation
@@ -374,19 +197,7 @@ Each state is a discriminated union type with an `action` discriminator property
 
 The framework uses a global configuration object with economic viability validation:
 
-```mermaid
-graph LR
-    USER["setConfig()"] --> VAL["ConfigValidationService"]
-    VAL --> |"Validate slippage + fees"| CHECK1["Economic Viability"]
-    VAL --> |"Calculate min TP distance"| CHECK2["Minimum TP = slippage + fees + margin"]
-    CHECK1 --> GLOBAL["GLOBAL_CONFIG"]
-    CHECK2 --> GLOBAL
-    
-    GLOBAL --> USE1["Signal Validation"]
-    GLOBAL --> USE2["PNL Calculation"]
-    GLOBAL --> USE3["VWAP Candle Count"]
-    GLOBAL --> USE4["Schedule Timeout"]
-```
+![Mermaid Diagram](./diagrams\01-overview_7.svg)
 
 **Key Configuration Parameters**:
 - `CC_PERCENT_SLIPPAGE` - Slippage percentage (default: 0.1%)

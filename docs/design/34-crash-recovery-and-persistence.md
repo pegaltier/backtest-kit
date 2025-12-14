@@ -31,42 +31,7 @@ The crash recovery system follows a **persist-and-restart** architecture where t
 
 ## Persistence Layer Architecture
 
-```mermaid
-graph TB
-    subgraph "Live Trading Execution"
-        CS["ClientStrategy<br/>tick() + backtest()"]
-        CSI["ClientStrategy<br/>waitForInit()"]
-    end
-    
-    subgraph "Persistence Adapters"
-        PSA["PersistSignalAdapter<br/>ISignalRow state"]
-        PSchA["PersistScheduleAdapter<br/>IScheduledSignalRow state"]
-        PRA["PersistRiskAdapter<br/>Active positions"]
-        PPA["PersistPartialAdapter<br/>Profit/loss milestones"]
-    end
-    
-    subgraph "Base Class"
-        PBase["PersistBase<br/>EntityId type<br/>Atomic write logic"]
-    end
-    
-    subgraph "File System"
-        FS["./dump/<br/>JSON files<br/>Per-entity storage"]
-    end
-    
-    CSI -->|"readSignalData()"| PSA
-    CSI -->|"readScheduleData()"| PSchA
-    
-    CS -->|"writeSignalData()"| PSA
-    CS -->|"writeScheduleData()"| PSchA
-    
-    PSA --> PBase
-    PSchA --> PBase
-    PRA --> PBase
-    PPA --> PBase
-    
-    PBase -->|"Atomic writes"| FS
-    PBase -->|"Reads"| FS
-```
+![Mermaid Diagram](./diagrams\34-crash-recovery-and-persistence_0.svg)
 
 **Persistence Flow:**
 1. **On Startup:** `ClientStrategy.waitForInit()` calls `readSignalData()` and `readScheduleData()` to load persisted state
@@ -125,47 +90,7 @@ The `waitForInit()` method is called once per `ClientStrategy` instance before a
 
 ### waitForInit Implementation
 
-```mermaid
-sequenceDiagram
-    participant SC as StrategyConnectionService
-    participant CS as ClientStrategy
-    participant PSA as PersistSignalAdapter
-    participant PSchA as PersistScheduleAdapter
-    participant FS as File System
-    
-    SC->>CS: waitForInit()
-    Note over CS: Singleshot: runs once
-    
-    alt Backtest Mode
-        CS->>CS: return immediately
-        Note over CS: No persistence in backtest
-    end
-    
-    alt Live Mode
-        CS->>PSA: readSignalData(symbol, strategyName)
-        PSA->>FS: Read signal_{symbol}_{strategyName}.json
-        FS-->>PSA: ISignalRow | null
-        PSA-->>CS: pendingSignal
-        
-        CS->>PSchA: readScheduleData(symbol, strategyName)
-        PSchA->>FS: Read schedule_{symbol}_{strategyName}.json
-        FS-->>PSchA: IScheduledSignalRow | null
-        PSchA-->>CS: scheduledSignal
-        
-        alt Signal exists
-            CS->>CS: Set _pendingSignal
-            CS->>CS: Call onActive callback
-        end
-        
-        alt Schedule exists
-            CS->>CS: Set _scheduledSignal
-            CS->>CS: Call onSchedule callback
-        end
-    end
-    
-    SC->>CS: tick()
-    Note over CS: Proceeds with loaded state
-```
+![Mermaid Diagram](./diagrams\34-crash-recovery-and-persistence_1.svg)
 
 **Key Implementation Details:**
 ```typescript
@@ -222,53 +147,7 @@ const WAIT_FOR_INIT_FN = async (self: ClientStrategy) => {
 
 ## Signal State Persistence Flow
 
-```mermaid
-stateDiagram-v2
-    [*] --> ProcessStart
-    
-    ProcessStart --> waitForInit: Live.run() called
-    
-    waitForInit --> LoadSignal: readSignalData()
-    LoadSignal --> LoadSchedule: readScheduleData()
-    
-    LoadSchedule --> Idle: No persisted state
-    LoadSchedule --> Active: Pending signal loaded
-    LoadSchedule --> Scheduled: Scheduled signal loaded
-    
-    Idle --> GenerateSignal: tick() - interval elapsed
-    GenerateSignal --> ValidateRisk: getSignal() returns ISignalDto
-    ValidateRisk --> WriteSignal: Risk check passed
-    WriteSignal --> Active: writeSignalData()
-    
-    Active --> MonitorTP: tick() - check TP/SL
-    MonitorTP --> WriteClose: Take profit hit
-    MonitorTP --> WriteClose: Stop loss hit
-    MonitorTP --> WriteClose: Time expired
-    WriteClose --> Idle: writeSignalData(null)
-    
-    Scheduled --> CheckActivation: tick() - check priceOpen
-    CheckActivation --> WriteActivation: priceOpen reached
-    WriteActivation --> Active: writeSignalData()
-    CheckActivation --> WriteCancel: StopLoss hit before activation
-    WriteCancel --> Idle: writeScheduleData(null)
-    
-    Idle --> ProcessCrash: ❌ Crash
-    Active --> ProcessCrash: ❌ Crash
-    Scheduled --> ProcessCrash: ❌ Crash
-    
-    ProcessCrash --> ProcessRestart: Restart process
-    ProcessRestart --> waitForInit: Live.run() called again
-    
-    note right of WriteSignal
-        Atomic write to
-        signal_{symbol}_{strategy}.json
-    end note
-    
-    note right of WriteClose
-        Atomic write null
-        (deletes state)
-    end note
-```
+![Mermaid Diagram](./diagrams\34-crash-recovery-and-persistence_2.svg)
 
 **Persistence Triggers:**
 
@@ -340,39 +219,7 @@ The atomic write pattern ensures that persistence files are never corrupted, eve
 
 ### Atomic Write Sequence
 
-```mermaid
-sequenceDiagram
-    participant CS as ClientStrategy
-    participant PBase as PersistBase
-    participant FS as File System
-    
-    CS->>PBase: writeData(entityId, data)
-    
-    PBase->>PBase: Serialize data to JSON
-    Note over PBase: JSON.stringify(data)
-    
-    PBase->>FS: Write to temp file
-    Note over FS: {path}.tmp
-    
-    alt Write fails
-        FS-->>PBase: Error
-        PBase-->>CS: Throw error
-    end
-    
-    PBase->>FS: Atomic rename
-    Note over FS: rename({path}.tmp, {path})
-    
-    alt Rename fails
-        FS-->>PBase: Error
-        Note over PBase: Temp file remains
-        PBase-->>CS: Throw error
-    end
-    
-    FS-->>PBase: Success
-    PBase-->>CS: Success
-    
-    Note over CS,FS: File system guarantees<br/>rename is atomic
-```
+![Mermaid Diagram](./diagrams\34-crash-recovery-and-persistence_3.svg)
 
 **Why Atomic Renames Are Crash-Safe:**
 
@@ -396,50 +243,7 @@ The persistence system is tightly integrated with Live mode execution to ensure 
 
 ### Live Mode Execution with Persistence
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Live as Live.run()
-    participant LLP as LiveLogicPrivateService
-    participant SC as StrategyConnectionService
-    participant CS as ClientStrategy
-    participant PSA as PersistSignalAdapter
-    
-    User->>Live: Live.run("BTCUSDT", {...})
-    Live->>LLP: run(symbol, context)
-    
-    loop Infinite: while(true)
-        LLP->>SC: tick(symbol, strategyName)
-        SC->>CS: waitForInit()
-        Note over CS: Singleshot: runs once
-        CS->>PSA: readSignalData()
-        PSA-->>CS: Load persisted state
-        
-        SC->>CS: tick(symbol, strategyName)
-        
-        alt No Active Signal
-            CS->>CS: Check getSignal() interval
-            CS->>CS: Generate new signal
-            CS->>PSA: writeSignalData(signal)
-            Note over PSA: Atomic write
-        end
-        
-        alt Active Signal
-            CS->>CS: Monitor TP/SL/time
-            alt Signal closes
-                CS->>PSA: writeSignalData(null)
-                Note over PSA: Delete file
-            end
-        end
-        
-        CS-->>SC: IStrategyTickResult
-        SC-->>LLP: yield result
-        
-        LLP->>LLP: sleep(61 seconds)
-    end
-    
-    Note over Live,PSA: Process crash at any point<br/>State recoverable on restart
-```
+![Mermaid Diagram](./diagrams\34-crash-recovery-and-persistence_4.svg)
 
 **Crash Recovery Scenarios:**
 
@@ -535,37 +339,7 @@ The `waitForInit()` method uses the **singleshot pattern** from `functools-kit` 
 
 ### Singleshot Behavior
 
-```mermaid
-sequenceDiagram
-    participant SC as StrategyConnectionService
-    participant CS as ClientStrategy
-    participant Init as waitForInit()
-    participant FS as File System
-    
-    Note over CS: First call
-    SC->>CS: tick()
-    CS->>Init: waitForInit()
-    Note over Init: Not yet initialized
-    Init->>FS: Load persisted state
-    FS-->>Init: Data loaded
-    Init->>Init: Set _initialized flag
-    Init-->>CS: Complete
-    CS->>CS: Process tick
-    
-    Note over CS: Second call
-    SC->>CS: tick()
-    CS->>Init: waitForInit()
-    Note over Init: Already initialized
-    Init-->>CS: Return immediately
-    CS->>CS: Process tick
-    
-    Note over CS: Third call
-    SC->>CS: backtest()
-    CS->>Init: waitForInit()
-    Note over Init: Already initialized
-    Init-->>CS: Return immediately
-    CS->>CS: Process backtest
-```
+![Mermaid Diagram](./diagrams\34-crash-recovery-and-persistence_5.svg)
 
 **Implementation Pattern:**
 - `waitForInit()` wrapped with `singleshot()` from `functools-kit`

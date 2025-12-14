@@ -17,36 +17,7 @@ The Service Layer implements a dependency injection architecture where services 
 
 ## Service Category Diagram
 
-```mermaid
-graph TB
-    subgraph "11 Service Categories"
-        BASE["Base Services<br/>1 service"]
-        CONTEXT["Context Services<br/>2 services"]
-        SCHEMA["Schema Services<br/>7 services"]
-        VALIDATION["Validation Services<br/>8 services"]
-        CONNECTION["Connection Services<br/>7 services"]
-        CORE["Core Services<br/>3 services"]
-        GLOBAL["Global Services<br/>4 services"]
-        COMMAND["Command Services<br/>3 services"]
-        LOGIC["Logic Services<br/>6 services (3 public + 3 private)"]
-        MARKDOWN["Markdown Services<br/>9 services"]
-        TEMPLATE["Template Services<br/>1 service"]
-    end
-    
-    subgraph "Dependency Flow"
-        COMMAND --> LOGIC
-        LOGIC --> CORE
-        LOGIC --> GLOBAL
-        VALIDATION --> SCHEMA
-        CONNECTION --> SCHEMA
-        CORE --> CONNECTION
-        GLOBAL --> CONNECTION
-        MARKDOWN -.-> EVENTS[Event Emitters]
-    end
-    
-    BASE -.->|"Used by all"| CONTEXT
-    CONTEXT -.->|"Used by all"| SCHEMA
-```
+![Mermaid Diagram](./diagrams\09-service-categories_0.svg)
 
 ---
 
@@ -195,35 +166,7 @@ Connection services are **memoized client factories** that create and cache clie
 
 ### Connection Service Diagram
 
-```mermaid
-graph LR
-    CONN_STRAT["StrategyConnectionService"]
-    CONN_EXCH["ExchangeConnectionService"]
-    CONN_FRAME["FrameConnectionService"]
-    CONN_RISK["RiskConnectionService"]
-    
-    SCHEMA_STRAT["StrategySchemaService"]
-    SCHEMA_EXCH["ExchangeSchemaService"]
-    SCHEMA_FRAME["FrameSchemaService"]
-    SCHEMA_RISK["RiskSchemaService"]
-    
-    CLIENT_STRAT["ClientStrategy"]
-    CLIENT_EXCH["ClientExchange"]
-    CLIENT_FRAME["ClientFrame"]
-    CLIENT_RISK["ClientRisk"]
-    
-    CONN_STRAT -->|"lookup schema"| SCHEMA_STRAT
-    CONN_STRAT -->|"create + cache"| CLIENT_STRAT
-    
-    CONN_EXCH -->|"lookup schema"| SCHEMA_EXCH
-    CONN_EXCH -->|"create + cache"| CLIENT_EXCH
-    
-    CONN_FRAME -->|"lookup schema"| SCHEMA_FRAME
-    CONN_FRAME -->|"create + cache"| CLIENT_FRAME
-    
-    CONN_RISK -->|"lookup schema"| SCHEMA_RISK
-    CONN_RISK -->|"create + cache"| CLIENT_RISK
-```
+![Mermaid Diagram](./diagrams\09-service-categories_1.svg)
 
 ### Memoization Pattern
 
@@ -339,19 +282,7 @@ Command services are **high-level orchestrators** for the three execution modes.
 
 ### Command Service Workflow
 
-```mermaid
-graph TB
-    API["Public API<br/>(Backtest.run, Live.run, Walker.run)"]
-    CMD["Command Service<br/>(BacktestCommandService, etc)"]
-    VAL["Validation Services"]
-    LOGIC["Logic Service<br/>(Public)"]
-    
-    API --> CMD
-    CMD -->|"1. Validate inputs"| VAL
-    CMD -->|"2. Set context"| LOGIC
-    LOGIC -->|"3. Return generator"| CMD
-    CMD -->|"4. Return generator"| API
-```
+![Mermaid Diagram](./diagrams\09-service-categories_2.svg)
 
 ### BacktestCommandService
 
@@ -405,18 +336,7 @@ Logic services implement **execution flow** with a public/private split pattern.
 
 ### Public/Private Split Pattern
 
-```mermaid
-graph TB
-    PUBLIC["Logic Public Service<br/>(Context setup)"]
-    PRIVATE["Logic Private Service<br/>(Generator implementation)"]
-    METHOD_CTX["MethodContextService"]
-    EXEC_CTX["ExecutionContextService"]
-    
-    PUBLIC -->|"1. Set MethodContext"| METHOD_CTX
-    PUBLIC -->|"2. Delegate"| PRIVATE
-    PRIVATE -->|"3. Set ExecutionContext per iteration"| EXEC_CTX
-    PRIVATE -->|"4. Yield results"| PUBLIC
-```
+![Mermaid Diagram](./diagrams\09-service-categories_3.svg)
 
 ### BacktestLogicPublicService
 
@@ -618,19 +538,7 @@ generate(symbol: string, strategyData: IOptimizerStrategyData[]): string;
 
 The following diagram shows how services are registered via the DI system:
 
-```mermaid
-graph TB
-    TYPES["types.ts<br/>Symbol definitions"]
-    PROVIDE["provide.ts<br/>Service registration"]
-    INDEX["index.ts<br/>Service aggregation"]
-    BACKTEST["backtest object<br/>(exported)"]
-    
-    TYPES -->|"Define Symbols"| PROVIDE
-    PROVIDE -->|"provide(TYPES.x, () => new XService())"| INDEX
-    INDEX -->|"inject<XService>(TYPES.x)"| BACKTEST
-    
-    BACKTEST -->|"Used by"| PUBLIC_API["Public API Functions<br/>(addStrategy, Backtest.run, etc)"]
-```
+![Mermaid Diagram](./diagrams\09-service-categories_4.svg)
 
 ### Registration Pattern
 

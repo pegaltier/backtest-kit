@@ -29,44 +29,7 @@ All four execution modes follow a consistent architectural pattern with three pr
 
 ### Architecture Overview
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        BT["Backtest (singleton)"]
-        BTI["BacktestInstance (memoized)"]
-    end
-    
-    subgraph "Service Layer"
-        CMD["BacktestCommandService"]
-        PUB["BacktestLogicPublicService"]
-        PRIV["BacktestLogicPrivateService"]
-    end
-    
-    subgraph "Core Services"
-        STRAT["StrategyCoreService"]
-        EXCH["ExchangeCoreService"]
-        FRAME["FrameCoreService"]
-    end
-    
-    subgraph "Context Services"
-        MCTX["MethodContextService"]
-        ECTX["ExecutionContextService"]
-    end
-    
-    BT -->|"run(symbol, context)"| BTI
-    BTI -->|"validate + run()"| CMD
-    CMD -->|"context propagation"| MCTX
-    CMD -->|"async generator"| PUB
-    PUB -->|"async generator"| PRIV
-    
-    PRIV -->|"getTimeframe()"| FRAME
-    PRIV -->|"tick(symbol, when, true)"| STRAT
-    PRIV -->|"backtest(symbol, candles)"| STRAT
-    PRIV -->|"getNextCandles()"| EXCH
-    
-    MCTX -->|"strategyName, exchangeName, frameName"| PRIV
-    ECTX -->|"symbol, when, backtest=true"| STRAT
-```
+![Mermaid Diagram](./diagrams\16-execution-modes-detailed_0.svg)
 
 **Diagram: Backtest Mode Service Dependencies**
 
@@ -91,75 +54,7 @@ Each symbol-strategy pair is managed by a memoized `BacktestInstance` (keyed by 
 
 ### Execution Flow
 
-```mermaid
-graph TD
-    START["Backtest.run()"]
-    VALIDATE["Validate strategy, exchange, frame, risk"]
-    INSTANCE["Get/Create BacktestInstance"]
-    CLEAR["Clear markdown services & strategy state & risk state"]
-    COMMAND["BacktestCommandService.run()"]
-    
-    FRAME["FrameCoreService.getTimeframe()"]
-    LOOP["For each timeframe"]
-    PROGRESS["Emit progressBacktestEmitter"]
-    
-    TICK["StrategyCoreService.tick(when, backtest=true)"]
-    CHECK_RESULT{"result.action?"}
-    
-    IDLE["action: idle"]
-    SCHEDULED["action: scheduled"]
-    OPENED["action: opened"]
-    
-    FETCH_SCHED["getNextCandles(CC_SCHEDULE_AWAIT_MINUTES + minuteEstimatedTime + buffer)"]
-    BACKTEST_SCHED["StrategyCoreService.backtest() - handle activation/cancellation"]
-    
-    FETCH_OPEN["getNextCandles(minuteEstimatedTime + buffer)"]
-    BACKTEST["StrategyCoreService.backtest() - TP/SL monitoring"]
-    
-    SKIP["Skip timeframes until closeTimestamp"]
-    YIELD["Yield closed result"]
-    
-    CHECK_STOP{"getStopped()?"}
-    BREAK["Break loop"]
-    NEXT["i++"]
-    
-    DONE["Emit doneBacktestSubject"]
-    END["End generator"]
-    
-    START --> VALIDATE
-    VALIDATE --> INSTANCE
-    INSTANCE --> CLEAR
-    CLEAR --> COMMAND
-    COMMAND --> FRAME
-    FRAME --> LOOP
-    
-    LOOP --> PROGRESS
-    PROGRESS --> CHECK_STOP
-    CHECK_STOP -->|"Yes & Idle"| BREAK
-    CHECK_STOP -->|"No"| TICK
-    
-    TICK --> CHECK_RESULT
-    CHECK_RESULT -->|"idle"| IDLE
-    CHECK_RESULT -->|"scheduled"| SCHEDULED
-    CHECK_RESULT -->|"opened"| OPENED
-    
-    SCHEDULED --> FETCH_SCHED
-    FETCH_SCHED --> BACKTEST_SCHED
-    BACKTEST_SCHED --> SKIP
-    
-    OPENED --> FETCH_OPEN
-    FETCH_OPEN --> BACKTEST
-    BACKTEST --> SKIP
-    
-    SKIP --> YIELD
-    YIELD --> CHECK_STOP
-    
-    IDLE --> NEXT
-    NEXT --> LOOP
-    
-    BREAK --> DONE
-    DONE --> END
-```
+![Mermaid Diagram](./diagrams\16-execution-modes-detailed_1.svg)
 
 **Diagram: Backtest Execution Flow with Signal Type Handling**
 
@@ -288,52 +183,7 @@ riskList?.forEach((riskName) => backtest.riskGlobalService.clear(riskName));
 
 ### Architecture Overview
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        LV["Live (singleton)"]
-        LVI["LiveInstance (memoized)"]
-    end
-    
-    subgraph "Service Layer"
-        CMD["LiveCommandService"]
-        PUB["LiveLogicPublicService"]
-        PRIV["LiveLogicPrivateService"]
-    end
-    
-    subgraph "Core Services"
-        STRAT["StrategyCoreService"]
-    end
-    
-    subgraph "Persistence Layer"
-        PSA["PersistSignalAdapter"]
-        JSON["JSON files (atomic writes)"]
-    end
-    
-    subgraph "Context Services"
-        MCTX["MethodContextService"]
-        ECTX["ExecutionContextService"]
-    end
-    
-    LV -->|"run(symbol, context)"| LVI
-    LVI -->|"validate + run()"| CMD
-    CMD -->|"context propagation"| MCTX
-    CMD -->|"async generator"| PUB
-    PUB -->|"async generator"| PRIV
-    
-    PRIV -->|"while(true)"| PRIV
-    PRIV -->|"when = new Date()"| PRIV
-    PRIV -->|"tick(symbol, when, false)"| STRAT
-    PRIV -->|"sleep(TICK_TTL)"| PRIV
-    
-    STRAT -->|"waitForInit()"| PSA
-    STRAT -->|"setPendingSignal()"| PSA
-    PSA -->|"writeSignalData()"| JSON
-    PSA -->|"readSignalData()"| JSON
-    
-    MCTX -->|"strategyName, exchangeName"| PRIV
-    ECTX -->|"symbol, when, backtest=false"| STRAT
-```
+![Mermaid Diagram](./diagrams\16-execution-modes-detailed_2.svg)
 
 **Diagram: Live Mode Service Dependencies with Persistence**
 
@@ -361,78 +211,7 @@ Key differences from Backtest:
 
 ### Execution Flow
 
-```mermaid
-graph TD
-    START["Live.run()"]
-    VALIDATE["Validate strategy, exchange, risk"]
-    INSTANCE["Get/Create LiveInstance"]
-    CLEAR["Clear markdown services & strategy state & risk state"]
-    COMMAND["LiveCommandService.run()"]
-    
-    INFINITE["while(true) - Infinite Loop"]
-    WHEN["when = new Date()"]
-    
-    TICK["StrategyCoreService.tick(when, backtest=false)"]
-    WAIT_INIT["First tick: waitForInit() - load persisted state"]
-    CHECK_RESULT{"result.action?"}
-    
-    IDLE["action: idle"]
-    ACTIVE["action: active"]
-    SCHEDULED["action: scheduled"]
-    OPENED["action: opened"]
-    CLOSED["action: closed"]
-    
-    CHECK_STOP_IDLE{"getStopped() && idle?"}
-    BREAK["Break loop"]
-    
-    PERSIST["setPendingSignal() - write to disk"]
-    YIELD["Yield result"]
-    
-    CHECK_STOP_CLOSED{"getStopped() && closed?"}
-    
-    SLEEP["sleep(TICK_TTL) - 61 seconds"]
-    
-    DONE["Emit doneLiveSubject"]
-    END["End generator"]
-    
-    START --> VALIDATE
-    VALIDATE --> INSTANCE
-    INSTANCE --> CLEAR
-    CLEAR --> COMMAND
-    COMMAND --> INFINITE
-    
-    INFINITE --> WHEN
-    WHEN --> TICK
-    TICK --> WAIT_INIT
-    WAIT_INIT --> CHECK_RESULT
-    
-    CHECK_RESULT -->|"idle"| IDLE
-    CHECK_RESULT -->|"active"| ACTIVE
-    CHECK_RESULT -->|"scheduled"| SCHEDULED
-    CHECK_RESULT -->|"opened"| OPENED
-    CHECK_RESULT -->|"closed"| CLOSED
-    
-    IDLE --> CHECK_STOP_IDLE
-    CHECK_STOP_IDLE -->|"Yes"| BREAK
-    CHECK_STOP_IDLE -->|"No"| SLEEP
-    
-    ACTIVE --> SLEEP
-    SCHEDULED --> SLEEP
-    
-    OPENED --> PERSIST
-    PERSIST --> YIELD
-    YIELD --> SLEEP
-    
-    CLOSED --> PERSIST
-    PERSIST --> YIELD
-    YIELD --> CHECK_STOP_CLOSED
-    CHECK_STOP_CLOSED -->|"Yes"| BREAK
-    CHECK_STOP_CLOSED -->|"No"| SLEEP
-    
-    SLEEP --> INFINITE
-    BREAK --> DONE
-    DONE --> END
-```
+![Mermaid Diagram](./diagrams\16-execution-modes-detailed_3.svg)
 
 **Diagram: Live Mode Infinite Loop with Crash-Safe Persistence**
 
@@ -579,50 +358,7 @@ This prevents orphaned positions by waiting for natural close (TP/SL/time).
 
 ### State Management and Persistence Lifecycle
 
-```mermaid
-graph LR
-    subgraph "Process Lifecycle"
-        START["Process Start"]
-        RUN["Live.run()"]
-        INIT["waitForInit()"]
-        LOAD["Load from disk"]
-        TICK["tick() loop"]
-        OPEN["Signal opened"]
-        PERSIST["Write to disk"]
-        MONITOR["Monitor active"]
-        CLOSE["Signal closed"]
-        PERSIST2["Write closed to disk"]
-        CRASH["Process Crash"]
-    end
-    
-    subgraph "State Recovery"
-        RESTART["Process Restart"]
-        RUN2["Live.run()"]
-        INIT2["waitForInit()"]
-        LOAD2["Restore from disk"]
-        CONTINUE["Continue monitoring"]
-    end
-    
-    START --> RUN
-    RUN --> INIT
-    INIT --> LOAD
-    LOAD -->|"No file: null"| TICK
-    LOAD -->|"File exists: restore"| TICK
-    TICK --> OPEN
-    OPEN --> PERSIST
-    PERSIST --> MONITOR
-    MONITOR --> CLOSE
-    CLOSE --> PERSIST2
-    PERSIST2 --> TICK
-    
-    TICK -.->|"Crash"| CRASH
-    CRASH -.-> RESTART
-    RESTART --> RUN2
-    RUN2 --> INIT2
-    INIT2 --> LOAD2
-    LOAD2 --> CONTINUE
-    CONTINUE --> MONITOR
-```
+![Mermaid Diagram](./diagrams\16-execution-modes-detailed_4.svg)
 
 **Diagram: Live Mode Crash Recovery Lifecycle**
 
@@ -638,53 +374,7 @@ The persistence layer ensures:
 
 ### Architecture Overview
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        WK["Walker (singleton)"]
-        WKI["WalkerInstance (memoized)"]
-    end
-    
-    subgraph "Service Layer"
-        CMD["WalkerCommandService"]
-        PUB["WalkerLogicPublicService"]
-        PRIV["WalkerLogicPrivateService"]
-    end
-    
-    subgraph "Backtest Delegation"
-        BT_PUB["BacktestLogicPublicService"]
-        BT_PRIV["BacktestLogicPrivateService"]
-    end
-    
-    subgraph "Results Collection"
-        BT_MD["BacktestMarkdownService"]
-        WK_MD["WalkerMarkdownService"]
-    end
-    
-    subgraph "Stop Signal System"
-        STOP_SUB["walkerStopSubject"]
-        STOP_SET["Set<StrategyName>"]
-    end
-    
-    WK -->|"run(symbol, {walkerName})"| WKI
-    WKI -->|"validate all strategies"| CMD
-    CMD -->|"async generator"| PUB
-    PUB -->|"async generator"| PRIV
-    
-    PRIV -->|"for each strategy"| BT_PUB
-    BT_PUB --> BT_PRIV
-    BT_PRIV -->|"yields closed signals"| PRIV
-    
-    PRIV -->|"getData(symbol, strategyName)"| BT_MD
-    BT_MD -->|"statistics"| PRIV
-    
-    PRIV -->|"compare metric"| PRIV
-    PRIV -->|"track bestStrategy"| PRIV
-    PRIV -->|"yield WalkerContract"| WK_MD
-    
-    STOP_SUB -->|"filter by symbol+walkerName"| STOP_SET
-    PRIV -->|"check stoppedStrategies.has()"| STOP_SET
-```
+![Mermaid Diagram](./diagrams\16-execution-modes-detailed_5.svg)
 
 **Diagram: Walker Mode Architecture with Sequential Backtest Delegation**
 
@@ -725,85 +415,7 @@ interface IWalkerSchema {
 
 Walker mode runs one backtest per strategy sequentially:
 
-```mermaid
-graph TD
-    START["Walker.run()"]
-    SCHEMA["Get WalkerSchema"]
-    VALIDATE["Validate all strategies, exchange, frame"]
-    CLEAR["Clear markdown & strategy state for all"]
-    
-    INIT["strategiesTested = 0"]
-    INIT2["bestMetric = null"]
-    INIT3["bestStrategy = null"]
-    INIT4["stoppedStrategies = Set()"]
-    
-    SUBSCRIBE["Subscribe to walkerStopSubject"]
-    
-    LOOP["for strategy in strategies"]
-    CHECK_STOP{"stoppedStrategies.has(strategy)?"}
-    SKIP["Skip & break"]
-    
-    CALLBACK_START["onStrategyStart(strategyName)"]
-    BACKTEST["BacktestLogicPublicService.run()"]
-    CONSUME["await resolveDocuments(iterator)"]
-    
-    GET_STATS["BacktestMarkdownService.getData()"]
-    EXTRACT["Extract metric value"]
-    
-    COMPARE{"metricValue > bestMetric?"}
-    UPDATE["Update bestMetric, bestStrategy"]
-    
-    INCREMENT["strategiesTested++"]
-    
-    CONTRACT["Create WalkerContract"]
-    EMIT_PROGRESS["Emit progressWalkerEmitter"]
-    CALLBACK_COMPLETE["onStrategyComplete(stats)"]
-    EMIT_WALKER["Emit walkerEmitter"]
-    YIELD["Yield WalkerContract"]
-    
-    NEXT["Next strategy"]
-    
-    FINAL["Create final results"]
-    CALLBACK_FINAL["onComplete(finalResults)"]
-    EMIT_COMPLETE["Emit walkerCompleteSubject"]
-    
-    START --> SCHEMA
-    SCHEMA --> VALIDATE
-    VALIDATE --> CLEAR
-    CLEAR --> INIT
-    INIT --> INIT2
-    INIT2 --> INIT3
-    INIT3 --> INIT4
-    INIT4 --> SUBSCRIBE
-    SUBSCRIBE --> LOOP
-    
-    LOOP --> CHECK_STOP
-    CHECK_STOP -->|"Yes"| SKIP
-    CHECK_STOP -->|"No"| CALLBACK_START
-    
-    CALLBACK_START --> BACKTEST
-    BACKTEST --> CONSUME
-    CONSUME --> GET_STATS
-    GET_STATS --> EXTRACT
-    
-    EXTRACT --> COMPARE
-    COMPARE -->|"Yes"| UPDATE
-    COMPARE -->|"No"| INCREMENT
-    UPDATE --> INCREMENT
-    
-    INCREMENT --> CONTRACT
-    CONTRACT --> EMIT_PROGRESS
-    EMIT_PROGRESS --> CALLBACK_COMPLETE
-    CALLBACK_COMPLETE --> EMIT_WALKER
-    EMIT_WALKER --> YIELD
-    YIELD --> NEXT
-    
-    NEXT --> LOOP
-    SKIP --> FINAL
-    LOOP -->|"All done"| FINAL
-    FINAL --> CALLBACK_FINAL
-    CALLBACK_FINAL --> EMIT_COMPLETE
-```
+![Mermaid Diagram](./diagrams\16-execution-modes-detailed_6.svg)
 
 **Diagram: Walker Sequential Execution Flow**
 
@@ -1011,57 +623,7 @@ if (walkerSchema.callbacks?.onStrategyComplete) {
 
 Optimizer mode is distinct from the other execution modes - it does not execute strategies but generates them using LLM technology. The architecture is documented in the high-level diagrams but implementation files are not included in the provided sources.
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        OPT["Optimizer (singleton)"]
-    end
-    
-    subgraph "Service Layer"
-        OPT_GLOBAL["OptimizerGlobalService"]
-        OPT_CONN["OptimizerConnectionService"]
-        OPT_SCHEMA["OptimizerSchemaService"]
-    end
-    
-    subgraph "Client Layer"
-        OPT_CLIENT["ClientOptimizer"]
-    end
-    
-    subgraph "Template System"
-        TMPL["OptimizerTemplateService"]
-    end
-    
-    subgraph "Data Sources"
-        CCXT_DUMP["CCXT_DUMPER_URL"]
-        EXCH_API["Exchange API (getCandles)"]
-    end
-    
-    subgraph "LLM Integration"
-        OLLAMA["Ollama API"]
-        MODEL["deepseek-v3.1:671b"]
-    end
-    
-    subgraph "Output"
-        CODE[".mjs file with strategy"]
-        DUMP["./dump/{optimizerName}_{symbol}.mjs"]
-    end
-    
-    OPT -->|"run(symbol, optimizerName)"| OPT_GLOBAL
-    OPT_GLOBAL --> OPT_CONN
-    OPT_CONN --> OPT_CLIENT
-    OPT_CLIENT -->|"fetch multi-timeframe data"| CCXT_DUMP
-    OPT_CLIENT -->|"fallback"| EXCH_API
-    
-    OPT_CLIENT -->|"format data for LLM"| OPT_CLIENT
-    OPT_CLIENT -->|"getPrompt() callback"| OPT_CLIENT
-    OPT_CLIENT -->|"generate strategy code"| OLLAMA
-    OLLAMA -->|"use model"| MODEL
-    
-    MODEL -->|"generated code"| OPT_CLIENT
-    OPT_CLIENT -->|"merge with template"| TMPL
-    TMPL --> CODE
-    OPT -->|"dump()"| DUMP
-```
+![Mermaid Diagram](./diagrams\16-execution-modes-detailed_7.svg)
 
 **Diagram: Optimizer Mode Architecture (High-Level)**
 
@@ -1123,33 +685,7 @@ The Optimizer mode is not an execution mode in the traditional sense - it's a **
 
 All modes share core services but use them differently:
 
-```mermaid
-graph LR
-    subgraph "Shared Core Services"
-        STRAT["StrategyCoreService"]
-        EXCH["ExchangeCoreService"]
-        FRAME["FrameCoreService"]
-    end
-    
-    subgraph "Mode-Specific Logic"
-        BT_LOGIC["BacktestLogicPrivateService"]
-        LV_LOGIC["LiveLogicPrivateService"]
-        WK_LOGIC["WalkerLogicPrivateService"]
-        OPT_CLIENT["ClientOptimizer"]
-    end
-    
-    BT_LOGIC -->|"tick(), backtest()"| STRAT
-    BT_LOGIC -->|"getNextCandles()"| EXCH
-    BT_LOGIC -->|"getTimeframe()"| FRAME
-    
-    LV_LOGIC -->|"tick() only"| STRAT
-    LV_LOGIC -->|"No frame needed"| FRAME
-    
-    WK_LOGIC -->|"Delegates to"| BT_LOGIC
-    
-    OPT_CLIENT -->|"getCandles() batch"| EXCH
-    OPT_CLIENT -->|"No tick/backtest"| STRAT
-```
+![Mermaid Diagram](./diagrams\16-execution-modes-detailed_8.svg)
 
 **Diagram: Execution Mode Service Dependencies**
 

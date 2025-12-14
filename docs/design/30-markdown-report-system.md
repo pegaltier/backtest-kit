@@ -15,84 +15,7 @@ For information about the event system that feeds these reports, see [Event-Driv
 
 ## System Architecture Overview
 
-```mermaid
-graph TB
-    subgraph "Event Emitters"
-        SIGNAL_BACKTEST["signalBacktestEmitter"]
-        SIGNAL_LIVE["signalLiveEmitter"]
-        SIGNAL_ALL["signalEmitter"]
-        WALKER_EMIT["walkerEmitter"]
-        PERFORMANCE_EMIT["performanceEmitter"]
-        PARTIAL_PROFIT["partialProfitSubject"]
-        PARTIAL_LOSS["partialLossSubject"]
-        RISK_SUBJECT["riskSubject"]
-    end
-    
-    subgraph "Markdown Services"
-        BACKTEST_MD["BacktestMarkdownService"]
-        LIVE_MD["LiveMarkdownService"]
-        SCHEDULE_MD["ScheduleMarkdownService"]
-        WALKER_MD["WalkerMarkdownService"]
-        PERFORMANCE_MD["PerformanceMarkdownService"]
-        HEAT_MD["HeatMarkdownService"]
-        PARTIAL_MD["PartialMarkdownService"]
-        RISK_MD["RiskMarkdownService"]
-        OUTLINE_MD["OutlineMarkdownService"]
-    end
-    
-    subgraph "ReportStorage Pattern"
-        STORAGE["ReportStorage Class"]
-        MEMOIZE["Memoized getStorage()"]
-        EVENTS["_eventList / _signalList"]
-    end
-    
-    subgraph "Public API Methods"
-        GET_DATA["getData()"]
-        GET_REPORT["getReport()"]
-        DUMP["dump()"]
-        CLEAR["clear()"]
-    end
-    
-    subgraph "Output Files"
-        BACKTEST_FILE["./dump/backtest/*.md"]
-        LIVE_FILE["./dump/live/*.md"]
-        WALKER_FILE["./dump/walker/*.md"]
-        PERFORMANCE_FILE["./dump/performance/*.md"]
-        HEAT_FILE["./dump/heatmap/*.md"]
-    end
-    
-    SIGNAL_BACKTEST --> BACKTEST_MD
-    SIGNAL_LIVE --> LIVE_MD
-    SIGNAL_ALL --> SCHEDULE_MD
-    SIGNAL_ALL --> HEAT_MD
-    WALKER_EMIT --> WALKER_MD
-    PERFORMANCE_EMIT --> PERFORMANCE_MD
-    PARTIAL_PROFIT --> PARTIAL_MD
-    PARTIAL_LOSS --> PARTIAL_MD
-    RISK_SUBJECT --> RISK_MD
-    
-    BACKTEST_MD --> STORAGE
-    LIVE_MD --> STORAGE
-    SCHEDULE_MD --> STORAGE
-    WALKER_MD --> STORAGE
-    PERFORMANCE_MD --> STORAGE
-    HEAT_MD --> STORAGE
-    PARTIAL_MD --> STORAGE
-    
-    STORAGE --> MEMOIZE
-    STORAGE --> EVENTS
-    
-    BACKTEST_MD --> GET_DATA
-    BACKTEST_MD --> GET_REPORT
-    BACKTEST_MD --> DUMP
-    BACKTEST_MD --> CLEAR
-    
-    DUMP --> BACKTEST_FILE
-    DUMP --> LIVE_FILE
-    DUMP --> WALKER_FILE
-    DUMP --> PERFORMANCE_FILE
-    DUMP --> HEAT_FILE
-```
+![Mermaid Diagram](./diagrams\30-markdown-report-system_0.svg)
 
 The system implements a consistent **ReportStorage Pattern** across all 9 markdown services. Each service subscribes to specific event emitters, accumulates data in memoized storage instances, and provides three primary methods: `getData()` for retrieving statistics objects, `getReport()` for generating markdown strings, and `dump()` for saving reports to the filesystem.
 
@@ -118,63 +41,7 @@ The system implements a consistent **ReportStorage Pattern** across all 9 markdo
 
 ## ReportStorage Pattern Architecture
 
-```mermaid
-graph TB
-    subgraph "Markdown Service Class"
-        LOGGER["loggerService: LoggerService"]
-        GET_STORAGE["getStorage = memoize()"]
-        INIT["init = singleshot()"]
-        TICK["tick()"]
-        PUBLIC_GET_DATA["getData()"]
-        PUBLIC_GET_REPORT["getReport()"]
-        PUBLIC_DUMP["dump()"]
-        PUBLIC_CLEAR["clear()"]
-    end
-    
-    subgraph "ReportStorage Class"
-        EVENT_LIST["_eventList: Array"]
-        ADD_METHOD["addSignal() / addEvent()"]
-        CALC_STATS["getData(): Statistics"]
-        GEN_REPORT["getReport(): string"]
-        SAVE_REPORT["dump(): void"]
-    end
-    
-    subgraph "Column Configuration"
-        COLUMNS["columns: Column[]"]
-        COL_KEY["key: string"]
-        COL_LABEL["label: string"]
-        COL_FORMAT["format: (data) => string"]
-        COL_VISIBLE["isVisible: () => boolean"]
-    end
-    
-    subgraph "Statistics Interface"
-        STAT_LIST["eventList / signalList"]
-        STAT_TOTAL["totalEvents / totalSignals"]
-        STAT_METRICS["winRate, avgPnl, sharpeRatio, etc"]
-    end
-    
-    INIT --> TICK
-    GET_STORAGE --> EVENT_LIST
-    TICK --> ADD_METHOD
-    ADD_METHOD --> EVENT_LIST
-    
-    PUBLIC_GET_DATA --> CALC_STATS
-    PUBLIC_GET_REPORT --> GEN_REPORT
-    PUBLIC_DUMP --> SAVE_REPORT
-    PUBLIC_CLEAR --> GET_STORAGE
-    
-    CALC_STATS --> STAT_LIST
-    CALC_STATS --> STAT_TOTAL
-    CALC_STATS --> STAT_METRICS
-    
-    GEN_REPORT --> COLUMNS
-    COLUMNS --> COL_KEY
-    COLUMNS --> COL_LABEL
-    COLUMNS --> COL_FORMAT
-    COLUMNS --> COL_VISIBLE
-    
-    SAVE_REPORT --> GEN_REPORT
-```
+![Mermaid Diagram](./diagrams\30-markdown-report-system_1.svg)
 
 ### Pattern Components
 
@@ -234,38 +101,7 @@ Tables respect `CC_REPORT_SHOW_SIGNAL_NOTE` configuration for conditional column
 
 ## Event Flow and Data Accumulation
 
-```mermaid
-sequenceDiagram
-    participant Strategy as "ClientStrategy"
-    participant Emitter as "signalBacktestEmitter"
-    participant Service as "BacktestMarkdownService"
-    participant Storage as "ReportStorage"
-    participant FS as "File System"
-    
-    Note over Service: init() called on first use
-    Service->>Emitter: subscribe(this.tick)
-    
-    Strategy->>Emitter: emit(closedSignal)
-    Emitter->>Service: tick(closedSignal)
-    Service->>Service: getStorage(symbol, strategyName)
-    Service->>Storage: addSignal(closedSignal)
-    Storage->>Storage: _signalList.unshift(data)
-    Storage->>Storage: Check MAX_EVENTS (250)
-    Storage->>Storage: _signalList.pop() if needed
-    
-    Note over Service: User requests report
-    Service->>Storage: getData()
-    Storage->>Storage: Calculate statistics
-    Storage-->>Service: BacktestStatistics
-    
-    Service->>Storage: getReport()
-    Storage->>Storage: Generate markdown tables
-    Storage-->>Service: markdown string
-    
-    Service->>Storage: dump()
-    Storage->>FS: writeFile(filepath, markdown)
-    FS-->>Storage: Success
-```
+![Mermaid Diagram](./diagrams\30-markdown-report-system_2.svg)
 
 ### Memory Management Strategy
 
@@ -285,28 +121,7 @@ Each markdown service implements bounded queues to prevent memory leaks:
 
 Both `BacktestMarkdownService` and `LiveMarkdownService` calculate identical metrics:
 
-```mermaid
-graph LR
-    INPUT["Closed Signals Array"]
-    
-    BASIC["Basic Stats<br/>totalSignals<br/>winCount<br/>lossCount<br/>winRate"]
-    
-    PNL["P&L Metrics<br/>avgPnl<br/>totalPnl<br/>avgWin<br/>avgLoss"]
-    
-    RISK["Risk Metrics<br/>stdDev<br/>sharpeRatio<br/>annualizedSharpeRatio<br/>certaintyRatio"]
-    
-    RETURN["Return Projection<br/>avgDuration<br/>tradesPerYear<br/>expectedYearlyReturns"]
-    
-    INPUT --> BASIC
-    INPUT --> PNL
-    INPUT --> RISK
-    INPUT --> RETURN
-    
-    BASIC --> OUTPUT["Statistics Interface"]
-    PNL --> OUTPUT
-    RISK --> OUTPUT
-    RETURN --> OUTPUT
-```
+![Mermaid Diagram](./diagrams\30-markdown-report-system_3.svg)
 
 **Key Formulas:**
 
@@ -516,33 +331,7 @@ graph LR
 
 ## Column Configuration System
 
-```mermaid
-graph TB
-    COLUMNS["columns: Column[]"]
-    
-    KEY["key: string<br/>Unique identifier"]
-    LABEL["label: string<br/>Table header"]
-    FORMAT["format: (data) => string<br/>Cell formatting"]
-    VISIBLE["isVisible: () => boolean<br/>Conditional display"]
-    
-    COLUMNS --> KEY
-    COLUMNS --> LABEL
-    COLUMNS --> FORMAT
-    COLUMNS --> VISIBLE
-    
-    VISIBLE --> GLOBAL_CONFIG["GLOBAL_CONFIG.CC_REPORT_SHOW_SIGNAL_NOTE"]
-    
-    FORMAT --> HELPERS["toPlainString()<br/>str() formatter<br/>toFixed() precision"]
-    
-    TABLE_GEN["Table Generation"]
-    COLUMNS --> TABLE_GEN
-    
-    TABLE_GEN --> FILTER["Filter visible columns"]
-    TABLE_GEN --> HEADER["Build header row"]
-    TABLE_GEN --> SEPARATOR["Build separator row"]
-    TABLE_GEN --> ROWS["Map data through formatters"]
-    TABLE_GEN --> MARKDOWN["Join with | delimiters"]
-```
+![Mermaid Diagram](./diagrams\30-markdown-report-system_4.svg)
 
 ### Column Interface
 
@@ -586,40 +375,7 @@ interface Column {
 
 ## File Output Structure
 
-```mermaid
-graph TB
-    ROOT["Project Root"]
-    DUMP["./dump/"]
-    
-    BACKTEST_DIR["backtest/"]
-    LIVE_DIR["live/"]
-    SCHEDULE_DIR["schedule/"]
-    WALKER_DIR["walker/"]
-    PERFORMANCE_DIR["performance/"]
-    HEAT_DIR["heatmap/"]
-    PARTIAL_DIR["partial/"]
-    RISK_DIR["risk/"]
-    OUTLINE_DIR["outline/"]
-    
-    ROOT --> DUMP
-    DUMP --> BACKTEST_DIR
-    DUMP --> LIVE_DIR
-    DUMP --> SCHEDULE_DIR
-    DUMP --> WALKER_DIR
-    DUMP --> PERFORMANCE_DIR
-    DUMP --> HEAT_DIR
-    DUMP --> PARTIAL_DIR
-    DUMP --> RISK_DIR
-    DUMP --> OUTLINE_DIR
-    
-    BACKTEST_DIR --> BT_FILE["strategy-name.md"]
-    LIVE_DIR --> LV_FILE["strategy-name.md"]
-    SCHEDULE_DIR --> SC_FILE["strategy-name.md"]
-    WALKER_DIR --> WK_FILE["walker-name.md"]
-    PERFORMANCE_DIR --> PF_FILE["strategy-name.md"]
-    HEAT_DIR --> HT_FILE["strategy-name.md"]
-    PARTIAL_DIR --> PT_FILE["symbol_strategy-name.md"]
-```
+![Mermaid Diagram](./diagrams\30-markdown-report-system_5.svg)
 
 ### File Creation Process
 
@@ -650,32 +406,7 @@ All markdown services use Node.js filesystem APIs with atomic writes:
 
 Markdown services are accessed through public static methods on report classes:
 
-```mermaid
-graph LR
-    USER["User Code"]
-    
-    BACKTEST_CLASS["Backtest Class"]
-    LIVE_CLASS["Live Class"]
-    WALKER_CLASS["Walker Class"]
-    PERFORMANCE_CLASS["Performance Class"]
-    HEAT_CLASS["Heat Class"]
-    PARTIAL_CLASS["Partial Class"]
-    
-    BACKTEST_SERVICE["BacktestMarkdownService"]
-    LIVE_SERVICE["LiveMarkdownService"]
-    WALKER_SERVICE["WalkerMarkdownService"]
-    
-    USER --> BACKTEST_CLASS
-    USER --> LIVE_CLASS
-    USER --> WALKER_CLASS
-    USER --> PERFORMANCE_CLASS
-    USER --> HEAT_CLASS
-    USER --> PARTIAL_CLASS
-    
-    BACKTEST_CLASS --> BACKTEST_SERVICE
-    LIVE_CLASS --> LIVE_SERVICE
-    WALKER_CLASS --> WALKER_SERVICE
-```
+![Mermaid Diagram](./diagrams\30-markdown-report-system_6.svg)
 
 ### Method Signatures
 
@@ -845,40 +576,7 @@ await Heat.dump("my-strategy");
 
 ## Service Dependencies
 
-```mermaid
-graph TB
-    subgraph "Core Dependencies"
-        DI["Dependency Injection<br/>inject() from di"]
-        LOGGER["LoggerService<br/>TYPES.loggerService"]
-        TYPES["TYPES constants<br/>Symbol keys"]
-    end
-    
-    subgraph "Utility Libraries"
-        FUNCTOOLS["functools-kit<br/>memoize<br/>singleshot<br/>queued<br/>str"]
-        FS["Node.js fs/promises<br/>writeFile<br/>mkdir"]
-        PATH["Node.js path<br/>join"]
-    end
-    
-    subgraph "Internal Dependencies"
-        EMITTERS["Event Emitters<br/>signalBacktestEmitter<br/>signalLiveEmitter<br/>etc."]
-        INTERFACES["Type Interfaces<br/>IStrategyTickResult<br/>ISignalRow<br/>etc."]
-        HELPERS["Helper Functions<br/>toPlainString<br/>isUnsafe"]
-        GLOBAL_CONFIG["GLOBAL_CONFIG<br/>CC_REPORT_SHOW_SIGNAL_NOTE"]
-    end
-    
-    SERVICE["Markdown Service"]
-    
-    SERVICE --> DI
-    SERVICE --> LOGGER
-    SERVICE --> TYPES
-    SERVICE --> FUNCTOOLS
-    SERVICE --> FS
-    SERVICE --> PATH
-    SERVICE --> EMITTERS
-    SERVICE --> INTERFACES
-    SERVICE --> HELPERS
-    SERVICE --> GLOBAL_CONFIG
-```
+![Mermaid Diagram](./diagrams\30-markdown-report-system_7.svg)
 
 ### Dependency Details
 

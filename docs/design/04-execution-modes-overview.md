@@ -26,69 +26,7 @@ The framework implements four distinct execution modes, each with different char
 
 ## Mode Architecture Overview
 
-```mermaid
-graph TB
-    subgraph API["Public API Layer"]
-        BacktestClass["Backtest.run()<br/>Backtest.background()"]
-        LiveClass["Live.run()<br/>Live.background()"]
-        WalkerClass["Walker.run()<br/>Walker.background()"]
-        OptimizerClass["Optimizer.run()<br/>Optimizer.dump()"]
-    end
-    
-    subgraph Command["Command Service Layer"]
-        BacktestCmd["BacktestCommandService"]
-        LiveCmd["LiveCommandService"]
-        WalkerCmd["WalkerCommandService"]
-        OptimizerGlobal["OptimizerGlobalService"]
-    end
-    
-    subgraph Logic["Logic Service Layer"]
-        BacktestLogicPub["BacktestLogicPublicService"]
-        BacktestLogicPriv["BacktestLogicPrivateService"]
-        LiveLogicPub["LiveLogicPublicService"]
-        LiveLogicPriv["LiveLogicPrivateService"]
-        WalkerLogicPub["WalkerLogicPublicService"]
-        WalkerLogicPriv["WalkerLogicPrivateService"]
-    end
-    
-    subgraph Core["Core Execution"]
-        StrategyCore["StrategyCoreService<br/>tick() + backtest()"]
-        ExchangeCore["ExchangeCoreService<br/>getCandles()"]
-        FrameCore["FrameCoreService<br/>getTimeframe()"]
-    end
-    
-    subgraph Context["Context Services"]
-        ExecCtx["ExecutionContextService<br/>symbol, when, backtest"]
-        MethodCtx["MethodContextService<br/>strategyName, exchangeName, frameName"]
-    end
-    
-    BacktestClass --> BacktestCmd
-    LiveClass --> LiveCmd
-    WalkerClass --> WalkerCmd
-    OptimizerClass --> OptimizerGlobal
-    
-    BacktestCmd --> BacktestLogicPub
-    LiveCmd --> LiveLogicPub
-    WalkerCmd --> WalkerLogicPub
-    
-    BacktestLogicPub --> BacktestLogicPriv
-    LiveLogicPub --> LiveLogicPriv
-    WalkerLogicPub --> WalkerLogicPriv
-    
-    BacktestLogicPriv --> StrategyCore
-    BacktestLogicPriv --> ExchangeCore
-    BacktestLogicPriv --> FrameCore
-    
-    LiveLogicPriv --> StrategyCore
-    
-    WalkerLogicPriv --> BacktestLogicPub
-    
-    StrategyCore --> ExecCtx
-    ExchangeCore --> ExecCtx
-    BacktestLogicPriv --> MethodCtx
-    LiveLogicPriv --> MethodCtx
-    WalkerLogicPriv --> MethodCtx
-```
+![Mermaid Diagram](./diagrams\04-execution-modes-overview_0.svg)
 
 ## Backtest Mode
 
@@ -97,19 +35,7 @@ Executes a strategy against historical data to evaluate performance. Optimized f
 
 ### Key Characteristics
 
-```mermaid
-graph LR
-    Input["symbol<br/>strategyName<br/>exchangeName<br/>frameName"] --> Frame["FrameCoreService.getTimeframe()"]
-    Frame --> Loop["Iterate timeframes"]
-    Loop --> Tick["ClientStrategy.tick()"]
-    Tick --> Check{Signal opened?}
-    Check -->|No| Loop
-    Check -->|Yes| Candles["ExchangeCoreService.getNextCandles()"]
-    Candles --> FastBacktest["ClientStrategy.backtest()<br/>Fast processing"]
-    FastBacktest --> Skip["Skip to closeTimestamp"]
-    Skip --> Yield["yield closed signal"]
-    Yield --> Loop
-```
+![Mermaid Diagram](./diagrams\04-execution-modes-overview_1.svg)
 
 **Entry Point:** `Backtest.run(symbol, context)` where context contains `{ strategyName, exchangeName, frameName }`
 
@@ -133,20 +59,7 @@ Executes a strategy in real-time with crash-safe state persistence. Designed for
 
 ### Key Characteristics
 
-```mermaid
-graph LR
-    Input["symbol<br/>strategyName<br/>exchangeName"] --> Init["waitForInit()<br/>Load persisted state"]
-    Init --> Loop["Infinite while(true)"]
-    Loop --> Now["when = new Date()"]
-    Now --> Tick["ClientStrategy.tick()"]
-    Tick --> Persist["PersistSignalAdapter<br/>Atomic JSON write"]
-    Persist --> Yield["yield signal"]
-    Yield --> Sleep["sleep(61s)"]
-    Sleep --> Check{Stopped?}
-    Check -->|No| Loop
-    Check -->|Yes| Wait["Wait for closed"]
-    Wait --> Done["Done"]
-```
+![Mermaid Diagram](./diagrams\04-execution-modes-overview_2.svg)
 
 **Entry Point:** `Live.run(symbol, context)` where context contains `{ strategyName, exchangeName }`
 
@@ -175,19 +88,7 @@ Compares multiple strategies against the same historical data to identify the be
 
 ### Key Characteristics
 
-```mermaid
-graph LR
-    Input["symbol<br/>walkerName"] --> Schema["WalkerSchemaService<br/>Get strategy list"]
-    Schema --> Loop["for each strategy"]
-    Loop --> Backtest["BacktestLogicPublicService.run()"]
-    Backtest --> Stats["BacktestMarkdownService.getData()"]
-    Stats --> Compare["Compare metric values"]
-    Compare --> Track["Track bestStrategy"]
-    Track --> Yield["yield WalkerContract"]
-    Yield --> Next{More strategies?}
-    Next -->|Yes| Loop
-    Next -->|No| Complete["walkerCompleteSubject.next()"]
-```
+![Mermaid Diagram](./diagrams\04-execution-modes-overview_3.svg)
 
 **Entry Point:** `Walker.run(symbol, { walkerName })` where `walkerName` references a walker schema
 
@@ -224,16 +125,7 @@ Generates complete strategy code using LLM (Ollama API) based on historical mark
 
 ### Key Characteristics
 
-```mermaid
-graph LR
-    Input["symbol<br/>optimizerName"] --> Sources["Iterate data sources<br/>1h, 30m, 15m, 1m"]
-    Sources --> Fetch["Fetch candles<br/>CCXT_DUMPER_URL or Exchange API"]
-    Fetch --> Format["Format for LLM<br/>Markdown tables"]
-    Format --> Prompt["User getPrompt() callback"]
-    Prompt --> LLM["Ollama API<br/>deepseek-v3.1:671b"]
-    LLM --> Template["OptimizerTemplateService<br/>Generate .mjs file"]
-    Template --> Output["Complete executable code"]
-```
+![Mermaid Diagram](./diagrams\04-execution-modes-overview_4.svg)
 
 **Entry Point:** `Optimizer.run(symbol, { optimizerName })` where `optimizerName` references an optimizer schema
 
@@ -282,28 +174,7 @@ interface IOptimizerSchema {
 
 ### Signal Output Filtering
 
-```mermaid
-graph TB
-    subgraph Backtest["Backtest Mode"]
-        B_All["All tick types"] --> B_Filter["Filter: closed only"]
-        B_Filter --> B_Yield["yield closed signals"]
-    end
-    
-    subgraph Live["Live Mode"]
-        L_All["All tick types"] --> L_Filter["Filter: opened + closed"]
-        L_Filter --> L_Yield["yield opened/closed<br/>No idle/active"]
-    end
-    
-    subgraph Walker["Walker Mode"]
-        W_All["Backtest signals"] --> W_Stats["Aggregate to stats"]
-        W_Stats --> W_Yield["yield progress after each strategy"]
-    end
-    
-    subgraph Optimizer["Optimizer Mode"]
-        O_Candles["Historical candles"] --> O_LLM["LLM processing"]
-        O_LLM --> O_Code["return code string"]
-    end
-```
+![Mermaid Diagram](./diagrams\04-execution-modes-overview_5.svg)
 
 **Backtest Filtering Logic:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:80-95]()
 ```typescript
@@ -332,18 +203,7 @@ if (result.action === "opened" || result.action === "closed") {
 
 ### Live: Crash-Safe
 
-```mermaid
-graph LR
-    Tick["ClientStrategy.tick()"] --> Check{State changed?}
-    Check -->|Yes| Write["PersistSignalAdapter.writeSignalData()"]
-    Write --> Atomic["Atomic writeFile()"]
-    Atomic --> Disk["./dump/signals/<br/>{symbol}_{strategy}.json"]
-    Check -->|No| Continue["Continue"]
-    
-    Restart["Process restart"] --> Load["waitForInit()"]
-    Load --> Read["readFile()"]
-    Read --> Restore["Restore state"]
-```
+![Mermaid Diagram](./diagrams\04-execution-modes-overview_6.svg)
 
 **Persistence Implementation:** [src/classes/Persist.ts:1-372]()
 

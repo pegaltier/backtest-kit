@@ -106,27 +106,7 @@ addFrame({
 
 ### Registration Flow
 
-```mermaid
-graph TB
-    USER["User Code<br/>addFrame call"]
-    ADD["addFrame()<br/>src/function/add.ts"]
-    LOGGER["LoggerService<br/>Log registration"]
-    VALIDATION["FrameValidationService<br/>Validate schema"]
-    SCHEMA["FrameSchemaService<br/>Store schema"]
-    REGISTRY["Internal Registry<br/>Map&lt;frameName, IFrameSchema&gt;"]
-    
-    USER -->|"IFrameSchema"| ADD
-    ADD --> LOGGER
-    ADD --> VALIDATION
-    VALIDATION -->|"Check fields"| VALIDATION
-    VALIDATION -->|"Validate dates"| VALIDATION
-    VALIDATION -->|"Validate interval"| VALIDATION
-    ADD --> SCHEMA
-    SCHEMA -->|"register(frameName, schema)"| REGISTRY
-    
-    style USER fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style REGISTRY fill:#e1f5ff,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\24-timeframes-and-frames_0.svg)
 
 ### Discovery via listFrames
 
@@ -162,34 +142,7 @@ getTimeframe: (symbol: string, frameName: FrameName) => Promise<Date[]>
 
 ### Timeframe Generation Architecture
 
-```mermaid
-graph TB
-    BACKTEST["BacktestLogicPrivateService.run()"]
-    FRAME_CORE["FrameCoreService<br/>getTimeframe()"]
-    FRAME_CONN["FrameConnectionService<br/>Memoized ClientFrame"]
-    CLIENT_FRAME["ClientFrame<br/>implements IFrame"]
-    SCHEMA_SERVICE["FrameSchemaService<br/>Retrieve schema"]
-    GENERATOR["Timeframe Generator<br/>Date iteration logic"]
-    TIMEFRAME["Date[] Timeframe Array<br/>[timestamp1, timestamp2, ...]"]
-    CALLBACK["onTimeframe Callback<br/>Optional notification"]
-    
-    BACKTEST -->|"await getTimeframe(symbol, frameName)"| FRAME_CORE
-    FRAME_CORE -->|"Get memoized instance"| FRAME_CONN
-    FRAME_CONN -->|"Key: frameName"| FRAME_CONN
-    FRAME_CONN -->|"new ClientFrame(params)"| CLIENT_FRAME
-    CLIENT_FRAME -->|"Retrieve schema"| SCHEMA_SERVICE
-    CLIENT_FRAME -->|"Generate timestamps"| GENERATOR
-    GENERATOR -->|"startDate + interval * i"| GENERATOR
-    GENERATOR -->|"while timestamp <= endDate"| GENERATOR
-    GENERATOR --> TIMEFRAME
-    CLIENT_FRAME -->|"Invoke callback"| CALLBACK
-    CLIENT_FRAME --> TIMEFRAME
-    FRAME_CORE --> TIMEFRAME
-    BACKTEST -->|"Iterate through timeframes"| BACKTEST
-    
-    style TIMEFRAME fill:#e1f5ff,stroke:#333,stroke-width:2px
-    style BACKTEST fill:#fff4e1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\24-timeframes-and-frames_1.svg)
 
 ### Generation Algorithm
 
@@ -225,55 +178,7 @@ The frame system uses a layered service architecture with dependency injection f
 
 ### Service Layer Diagram
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        ADD_FRAME["addFrame()<br/>Function"]
-        LIST_FRAMES["listFrames()<br/>Function"]
-    end
-    
-    subgraph "Validation Layer"
-        FRAME_VAL["FrameValidationService<br/>addFrame() validation<br/>list() retrieval"]
-    end
-    
-    subgraph "Schema Layer"
-        FRAME_SCHEMA["FrameSchemaService<br/>register(frameName, schema)<br/>get(frameName)"]
-        REGISTRY["Registry Storage<br/>Map&lt;FrameName, IFrameSchema&gt;"]
-    end
-    
-    subgraph "Connection Layer"
-        FRAME_CONN["FrameConnectionService<br/>Memoized factory<br/>getFrame(frameName)"]
-        MEMO_CACHE["Memoization Cache<br/>Map&lt;FrameName, ClientFrame&gt;"]
-    end
-    
-    subgraph "Core Layer"
-        FRAME_CORE["FrameCoreService<br/>getTimeframe(symbol, frameName)"]
-    end
-    
-    subgraph "Client Layer"
-        CLIENT_FRAME["ClientFrame<br/>implements IFrame<br/>getTimeframe() implementation"]
-    end
-    
-    subgraph "Logic Layer"
-        BACKTEST_LOGIC["BacktestLogicPrivateService<br/>Consumes timeframes"]
-    end
-    
-    ADD_FRAME --> FRAME_VAL
-    LIST_FRAMES --> FRAME_VAL
-    FRAME_VAL --> FRAME_SCHEMA
-    FRAME_SCHEMA --> REGISTRY
-    
-    BACKTEST_LOGIC --> FRAME_CORE
-    FRAME_CORE --> FRAME_CONN
-    FRAME_CONN --> MEMO_CACHE
-    FRAME_CONN --> CLIENT_FRAME
-    CLIENT_FRAME --> FRAME_SCHEMA
-    CLIENT_FRAME --> REGISTRY
-    
-    style REGISTRY fill:#e1f5ff,stroke:#333,stroke-width:2px
-    style MEMO_CACHE fill:#e1f5ff,stroke:#333,stroke-width:2px
-    style CLIENT_FRAME fill:#fff4e1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\24-timeframes-and-frames_2.svg)
 
 ### Service Responsibilities
 
@@ -293,51 +198,7 @@ Frames drive the backtest execution loop by providing an ordered sequence of tim
 
 ### Backtest Iteration Flow
 
-```mermaid
-graph TB
-    START["BacktestLogicPrivateService.run(symbol)"]
-    GET_FRAME["frameCoreService.getTimeframe(symbol, frameName)"]
-    TIMEFRAMES["timeframes: Date[]<br/>Array of timestamps"]
-    INIT_LOOP["Initialize loop:<br/>i = 0"]
-    LOOP_CHECK{"i < timeframes.length?"}
-    GET_WHEN["when = timeframes[i]"]
-    PROGRESS["Emit progressBacktestEmitter<br/>{processedFrames: i, totalFrames, progress}"]
-    TICK["strategyCoreService.tick(symbol, when, true)"]
-    RESULT{"result.action?"}
-    IDLE["Action: idle<br/>Continue to next frame"]
-    OPENED["Action: opened<br/>Fetch candles<br/>Call backtest()"]
-    SCHEDULED["Action: scheduled<br/>Fetch candles<br/>Call backtest()"]
-    BACKTEST["backtest(symbol, candles, when)"]
-    CLOSE_TS["backtestResult.closeTimestamp"]
-    SKIP["Skip frames:<br/>while timeframes[i] < closeTimestamp"]
-    YIELD["yield backtestResult"]
-    INCREMENT["i++"]
-    END["Backtest complete"]
-    
-    START --> GET_FRAME
-    GET_FRAME --> TIMEFRAMES
-    TIMEFRAMES --> INIT_LOOP
-    INIT_LOOP --> LOOP_CHECK
-    LOOP_CHECK -->|"Yes"| GET_WHEN
-    LOOP_CHECK -->|"No"| END
-    GET_WHEN --> PROGRESS
-    PROGRESS --> TICK
-    TICK --> RESULT
-    RESULT -->|"idle"| IDLE
-    RESULT -->|"opened"| OPENED
-    RESULT -->|"scheduled"| SCHEDULED
-    IDLE --> INCREMENT
-    OPENED --> BACKTEST
-    SCHEDULED --> BACKTEST
-    BACKTEST --> CLOSE_TS
-    CLOSE_TS --> SKIP
-    SKIP --> YIELD
-    YIELD --> LOOP_CHECK
-    INCREMENT --> LOOP_CHECK
-    
-    style TIMEFRAMES fill:#e1f5ff,stroke:#333,stroke-width:2px
-    style YIELD fill:#fff4e1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\24-timeframes-and-frames_3.svg)
 
 ### Key Implementation Details
 
@@ -368,27 +229,7 @@ Frames are propagated through the execution context via `MethodContextService`, 
 
 ### Context Flow Architecture
 
-```mermaid
-graph TB
-    BACKTEST_CMD["BacktestCommandService<br/>Entry point"]
-    BACKTEST_PUB["BacktestLogicPublicService<br/>Context wrapper"]
-    METHOD_CTX["MethodContextService<br/>runAsyncIterator()"]
-    CONTEXT["IMethodContext<br/>{exchangeName, strategyName, frameName}"]
-    BACKTEST_PRIV["BacktestLogicPrivateService<br/>run() generator"]
-    FRAME_CORE["FrameCoreService<br/>getTimeframe()"]
-    GET_CONTEXT["methodContextService.context.frameName"]
-    
-    BACKTEST_CMD -->|"validate inputs"| BACKTEST_PUB
-    BACKTEST_PUB -->|"setup context"| METHOD_CTX
-    METHOD_CTX -->|"inject context"| CONTEXT
-    METHOD_CTX -->|"run generator"| BACKTEST_PRIV
-    BACKTEST_PRIV -->|"read frameName"| GET_CONTEXT
-    GET_CONTEXT -->|"frameName string"| FRAME_CORE
-    FRAME_CORE -->|"getTimeframe(symbol, frameName)"| FRAME_CORE
-    
-    style CONTEXT fill:#e1f5ff,stroke:#333,stroke-width:2px
-    style GET_CONTEXT fill:#fff4e1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\24-timeframes-and-frames_4.svg)
 
 ### Context Structure
 

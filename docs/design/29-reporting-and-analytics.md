@@ -17,52 +17,7 @@ The framework implements nine specialized markdown services, each responsible fo
 
 ### Service Categories
 
-```mermaid
-graph TB
-    subgraph "Signal Tracking Services"
-        BT["BacktestMarkdownService<br/>Closed signals only<br/>signalBacktestEmitter"]
-        LV["LiveMarkdownService<br/>All tick types<br/>signalLiveEmitter"]
-        SCH["ScheduleMarkdownService<br/>Scheduled/cancelled<br/>signalEmitter"]
-    end
-    
-    subgraph "Portfolio Analysis Services"
-        HT["HeatMarkdownService<br/>Per-symbol stats<br/>signalEmitter"]
-        PRT["PartialMarkdownService<br/>P/L milestones<br/>partialProfitSubject<br/>partialLossSubject"]
-    end
-    
-    subgraph "Comparison Services"
-        WK["WalkerMarkdownService<br/>Strategy comparison<br/>walkerEmitter"]
-    end
-    
-    subgraph "System Monitoring Services"
-        PRF["PerformanceMarkdownService<br/>Execution metrics<br/>performanceEmitter"]
-        RSK["RiskMarkdownService<br/>Risk rejections<br/>riskSubject"]
-        OUT["OutlineMarkdownService<br/>Config dump<br/>No emitter"]
-    end
-    
-    subgraph "Storage Pattern"
-        RS["ReportStorage<br/>Memoized per symbol:strategy<br/>MAX_EVENTS bounds"]
-    end
-    
-    subgraph "Public API"
-        BT_API["Backtest.getData()<br/>Backtest.getReport()<br/>Backtest.dump()"]
-        LV_API["Live.getData()<br/>Live.getReport()<br/>Live.dump()"]
-        HT_API["Heat.getData()<br/>Heat.getReport()<br/>Heat.dump()"]
-    end
-    
-    BT --> RS
-    LV --> RS
-    SCH --> RS
-    HT --> RS
-    PRT --> RS
-    WK --> RS
-    PRF --> RS
-    RSK --> RS
-    
-    BT_API --> BT
-    LV_API --> LV
-    HT_API --> HT
-```
+![Mermaid Diagram](./diagrams\29-reporting-and-analytics_0.svg)
 
 ### Service Summary Table
 
@@ -86,35 +41,7 @@ All markdown services use an internal `ReportStorage` class that implements a bo
 
 ### Storage Architecture
 
-```mermaid
-graph TB
-    subgraph "BacktestMarkdownService Instance"
-        GS["getStorage() memoized<br/>Key: symbol:strategyName<br/>Factory: new ReportStorage()"]
-        TICK["tick() private method<br/>Filters for closed signals"]
-    end
-    
-    subgraph "ReportStorage Instance"
-        LIST["_signalList: IStrategyTickResultClosed[]<br/>Bounded by MAX_EVENTS=250<br/>FIFO unshift/pop"]
-        ADD["addSignal(data)<br/>Unshift to front<br/>Pop from end if > MAX_EVENTS"]
-        GETDATA["getData(): Promise&lt;BacktestStatistics&gt;<br/>Calculate statistics<br/>Sharpe, win rate, etc."]
-        GETREP["getReport(strategyName): Promise&lt;string&gt;<br/>Generate markdown table<br/>Format with columns"]
-        DUMP["dump(strategyName, path)<br/>Write to ./dump/backtest/<br/>Create directory if needed"]
-    end
-    
-    subgraph "Event Subscription"
-        EMT["signalBacktestEmitter<br/>Subject&lt;IStrategyTickResult&gt;"]
-        INIT["init() singleshot<br/>Subscribe once on first use"]
-    end
-    
-    EMT -->|"subscribe(tick)"| INIT
-    INIT -->|"Automatic"| TICK
-    TICK -->|"action === 'closed'"| GS
-    GS -->|"Returns cached instance"| ADD
-    ADD -->|"Append to"| LIST
-    LIST -->|"Calculate from"| GETDATA
-    LIST -->|"Format from"| GETREP
-    GETREP -->|"Write to disk"| DUMP
-```
+![Mermaid Diagram](./diagrams\29-reporting-and-analytics_1.svg)
 
 ### Memoization Key Format
 
@@ -157,38 +84,7 @@ The following metrics appear in `BacktestStatistics`, `LiveStatistics`, and per-
 
 #### Risk-Adjusted Calculations
 
-```mermaid
-graph LR
-    subgraph "Data Collection"
-        SIGNALS["Closed Signals<br/>pnlPercentage<br/>duration"]
-    end
-    
-    subgraph "Basic Statistics"
-        AVG["avgPnl = Σpnl / n"]
-        STD["stdDev = √(Σ(pnl - avg)² / n)"]
-        WINS["wins = filter(pnl > 0)"]
-        LOSSES["losses = filter(pnl < 0)"]
-    end
-    
-    subgraph "Derived Metrics"
-        SHARPE["sharpeRatio = avgPnl / stdDev<br/>(risk-adjusted return)"]
-        CERT["certaintyRatio = avgWin / |avgLoss|<br/>(win/loss size ratio)"]
-        ANNUAL["annualizedSharpe = sharpe × √365<br/>(yearly projection)"]
-        EXPECT["expectedYearlyReturns<br/>= avgPnl × tradesPerYear"]
-    end
-    
-    SIGNALS --> AVG
-    SIGNALS --> STD
-    SIGNALS --> WINS
-    SIGNALS --> LOSSES
-    
-    AVG --> SHARPE
-    STD --> SHARPE
-    WINS --> CERT
-    LOSSES --> CERT
-    SHARPE --> ANNUAL
-    AVG --> EXPECT
-```
+![Mermaid Diagram](./diagrams\29-reporting-and-analytics_2.svg)
 
 ### Specialized Service Statistics
 
@@ -245,40 +141,7 @@ interface Column {
 
 ### Example: BacktestMarkdownService Columns
 
-```mermaid
-graph TB
-    subgraph "Column Definitions Array"
-        C1["signalId: data.signal.id"]
-        C2["symbol: data.signal.symbol"]
-        C3["position: data.signal.position.toUpperCase()"]
-        C4["note: toPlainString(data.signal.note)<br/>isVisible: CC_REPORT_SHOW_SIGNAL_NOTE"]
-        C5["openPrice: data.signal.priceOpen.toFixed(8)"]
-        C6["closePrice: data.currentPrice.toFixed(8)"]
-        C7["pnl: data.pnl.pnlPercentage.toFixed(2)%"]
-        C8["closeReason: data.closeReason"]
-        C9["duration: (closeTime - openTime) / 60000"]
-        C10["openTimestamp: new Date(pendingAt).toISOString()"]
-        C11["closeTimestamp: new Date(closeTimestamp).toISOString()"]
-    end
-    
-    subgraph "Table Generation Process"
-        FILTER["Filter columns<br/>visibleColumns = columns.filter(col => col.isVisible())"]
-        HEADER["Build header<br/>header = visibleColumns.map(col => col.label)"]
-        ROWS["Format rows<br/>rows = signals.map(signal =><br/>  visibleColumns.map(col => col.format(signal))"]
-        TABLE["Assemble markdown<br/>| header1 | header2 |<br/>| --- | --- |<br/>| row1col1 | row1col2 |"]
-    end
-    
-    C1 --> FILTER
-    C2 --> FILTER
-    C3 --> FILTER
-    C4 --> FILTER
-    C5 --> FILTER
-    
-    FILTER --> HEADER
-    FILTER --> ROWS
-    HEADER --> TABLE
-    ROWS --> TABLE
-```
+![Mermaid Diagram](./diagrams\29-reporting-and-analytics_3.svg)
 
 ### Dynamic Visibility Control
 
@@ -301,67 +164,11 @@ Markdown services initialize lazily using `singleshot()` to subscribe to relevan
 
 ### Initialization Pattern
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant BacktestDump as Backtest.dump()
-    participant Service as BacktestMarkdownService
-    participant Init as init() singleshot
-    participant Emitter as signalBacktestEmitter
-    participant Tick as tick() private
-    participant Storage as ReportStorage
-    
-    User->>BacktestDump: Call Backtest.dump(symbol, strategy)
-    BacktestDump->>Service: await dump(symbol, strategy)
-    Service->>Init: First access triggers init()
-    Init->>Emitter: subscribe(tick)
-    Note over Init,Emitter: Subscription established once
-    
-    loop Background Execution
-        Emitter->>Tick: Event: IStrategyTickResult
-        Tick->>Storage: addSignal(data) if closed
-        Storage->>Storage: Bounded append to _signalList
-    end
-    
-    Service->>Storage: getReport(strategyName)
-    Storage->>Service: Markdown string
-    Service->>User: Write to ./dump/backtest/
-```
+![Mermaid Diagram](./diagrams\29-reporting-and-analytics_4.svg)
 
 ### Service-to-Emitter Mapping
 
-```mermaid
-graph LR
-    subgraph "Event Emitters"
-        E1["signalBacktestEmitter<br/>Closed backtest signals"]
-        E2["signalLiveEmitter<br/>All live tick types"]
-        E3["signalEmitter<br/>All signals (live + backtest)"]
-        E4["partialProfitSubject<br/>Profit milestones"]
-        E5["partialLossSubject<br/>Loss milestones"]
-        E6["walkerEmitter<br/>Strategy results"]
-        E7["performanceEmitter<br/>Timing metrics"]
-        E8["riskSubject<br/>Risk rejections"]
-    end
-    
-    subgraph "Markdown Services"
-        S1["BacktestMarkdownService"]
-        S2["LiveMarkdownService"]
-        S3["ScheduleMarkdownService<br/>HeatMarkdownService"]
-        S4["PartialMarkdownService"]
-        S5["WalkerMarkdownService"]
-        S6["PerformanceMarkdownService"]
-        S7["RiskMarkdownService"]
-    end
-    
-    E1 -->|"subscribe(tick)"| S1
-    E2 -->|"subscribe(tick)"| S2
-    E3 -->|"subscribe(tick)"| S3
-    E4 -->|"subscribe(onProfit)"| S4
-    E5 -->|"subscribe(onLoss)"| S4
-    E6 -->|"subscribe(addResult)"| S5
-    E7 -->|"subscribe(addEvent)"| S6
-    E8 -->|"subscribe(addRejection)"| S7
-```
+![Mermaid Diagram](./diagrams\29-reporting-and-analytics_5.svg)
 
 ---
 
@@ -429,34 +236,7 @@ public dump = async (
 
 ### Facade Access Pattern
 
-```mermaid
-graph TB
-    subgraph "Public Facades"
-        BT_F["Backtest class<br/>static getData(symbol, strategy)<br/>static getReport(symbol, strategy)<br/>static dump(symbol, strategy)"]
-        LV_F["Live class<br/>static getData(symbol, strategy)<br/>static getReport(symbol, strategy)<br/>static dump(symbol, strategy)"]
-        HT_F["Heat class<br/>static getData(strategy)<br/>static getReport(strategy)<br/>static dump(strategy)"]
-    end
-    
-    subgraph "Service Layer (DI)"
-        BT_SRV["BacktestMarkdownService<br/>injected from TYPES.backtestMarkdownService"]
-        LV_SRV["LiveMarkdownService<br/>injected from TYPES.liveMarkdownService"]
-        HT_SRV["HeatMarkdownService<br/>injected from TYPES.heatMarkdownService"]
-    end
-    
-    subgraph "File System Output"
-        BT_FILE["./dump/backtest/{strategy}.md"]
-        LV_FILE["./dump/live/{strategy}.md"]
-        HT_FILE["./dump/heat/{strategy}.md"]
-    end
-    
-    BT_F -->|"Delegate to"| BT_SRV
-    LV_F -->|"Delegate to"| LV_SRV
-    HT_F -->|"Delegate to"| HT_SRV
-    
-    BT_SRV -->|"dump() writes to"| BT_FILE
-    LV_SRV -->|"dump() writes to"| LV_FILE
-    HT_SRV -->|"dump() writes to"| HT_FILE
-```
+![Mermaid Diagram](./diagrams\29-reporting-and-analytics_6.svg)
 
 ---
 
@@ -619,54 +399,5 @@ public clear = async (ctx?: {
 
 ## Integration with Execution Pipeline
 
-```mermaid
-graph TB
-    subgraph "Execution Layer"
-        BT_RUN["Backtest.run()<br/>Generator yields signals"]
-        LV_RUN["Live.run()<br/>Generator yields signals"]
-    end
-    
-    subgraph "Event Emission Layer"
-        EMIT_BT["signalBacktestEmitter.next(result)<br/>After tick() returns closed"]
-        EMIT_LV["signalLiveEmitter.next(result)<br/>After tick() returns any"]
-        EMIT_PERF["performanceEmitter.next(metrics)<br/>After operations complete"]
-        EMIT_RISK["riskSubject.next(rejection)<br/>When validation fails"]
-    end
-    
-    subgraph "Markdown Services Layer"
-        SRV_BT["BacktestMarkdownService<br/>tick() filters closed<br/>addSignal() to storage"]
-        SRV_LV["LiveMarkdownService<br/>tick() processes all<br/>addEvent() to storage"]
-        SRV_PERF["PerformanceMarkdownService<br/>addEvent() accumulates metrics"]
-        SRV_RISK["RiskMarkdownService<br/>addRejection() tracks failures"]
-    end
-    
-    subgraph "Storage Layer"
-        STORE["ReportStorage instances<br/>Memoized per symbol:strategy<br/>Bounded by MAX_EVENTS"]
-    end
-    
-    subgraph "Report Access Layer"
-        API_GET["getData() methods<br/>Calculate statistics<br/>Return typed objects"]
-        API_REP["getReport() methods<br/>Format markdown tables<br/>Return strings"]
-        API_DUMP["dump() methods<br/>Write to ./dump/<br/>Create directories"]
-    end
-    
-    BT_RUN -->|"Closed signals"| EMIT_BT
-    LV_RUN -->|"All tick types"| EMIT_LV
-    BT_RUN -->|"Execution timing"| EMIT_PERF
-    BT_RUN -->|"Risk rejections"| EMIT_RISK
-    
-    EMIT_BT -->|"subscribe()"| SRV_BT
-    EMIT_LV -->|"subscribe()"| SRV_LV
-    EMIT_PERF -->|"subscribe()"| SRV_PERF
-    EMIT_RISK -->|"subscribe()"| SRV_RISK
-    
-    SRV_BT -->|"addSignal()"| STORE
-    SRV_LV -->|"addEvent()"| STORE
-    SRV_PERF -->|"addEvent()"| STORE
-    SRV_RISK -->|"addRejection()"| STORE
-    
-    STORE -->|"Read from"| API_GET
-    STORE -->|"Read from"| API_REP
-    API_REP -->|"Write to disk"| API_DUMP
-```
+![Mermaid Diagram](./diagrams\29-reporting-and-analytics_7.svg)
 

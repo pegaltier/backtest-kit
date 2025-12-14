@@ -17,82 +17,7 @@ The event system implements a publish-subscribe pattern using `functools-kit` Su
 
 ### Event Flow Diagram
 
-```mermaid
-graph TB
-    subgraph Producers["Event Producers"]
-        CS["ClientStrategy<br/>(signal lifecycle)"]
-        CR["ClientRisk<br/>(rejections)"]
-        CP["ClientPartial<br/>(P/L milestones)"]
-        LOGIC["Logic Services<br/>(progress/completion)"]
-    end
-    
-    subgraph Emitters["Core Emitters<br/>(src/config/emitters.ts)"]
-        SIGNAL["signalEmitter"]
-        SIGNAL_LIVE["signalLiveEmitter"]
-        SIGNAL_BT["signalBacktestEmitter"]
-        ERROR["errorEmitter"]
-        EXIT["exitEmitter"]
-        DONE["doneLiveSubject<br/>doneBacktestSubject<br/>doneWalkerSubject"]
-        PROGRESS["progressBacktestEmitter<br/>progressWalkerEmitter<br/>progressOptimizerEmitter"]
-        WALKER["walkerEmitter<br/>walkerCompleteSubject"]
-        PARTIAL["partialProfitSubject<br/>partialLossSubject"]
-        RISK["riskSubject"]
-        PERF["performanceEmitter"]
-        VALID["validationSubject"]
-    end
-    
-    subgraph Listeners["Public Listeners<br/>(src/function/event.ts)"]
-        L_SIGNAL["listenSignal<br/>listenSignalOnce"]
-        L_SIGNAL_LIVE["listenSignalLive<br/>listenSignalLiveOnce"]
-        L_SIGNAL_BT["listenSignalBacktest<br/>listenSignalBacktestOnce"]
-        L_ERROR["listenError"]
-        L_EXIT["listenExit"]
-        L_DONE["listenDoneLive<br/>listenDoneBacktest<br/>listenDoneWalker<br/>(+ Once variants)"]
-        L_PROGRESS["listenBacktestProgress<br/>listenWalkerProgress<br/>listenOptimizerProgress"]
-        L_WALKER["listenWalker<br/>listenWalkerOnce<br/>listenWalkerComplete"]
-        L_PARTIAL["listenPartialProfit<br/>listenPartialLoss<br/>(+ Once variants)"]
-        L_RISK["listenRisk<br/>listenRiskOnce"]
-        L_PERF["listenPerformance"]
-        L_VALID["listenValidation"]
-    end
-    
-    subgraph Consumers["Internal Consumers"]
-        MD["Markdown Services<br/>(bounded queues)"]
-    end
-    
-    CS --> SIGNAL
-    CS --> SIGNAL_LIVE
-    CS --> SIGNAL_BT
-    CR --> RISK
-    CP --> PARTIAL
-    LOGIC --> DONE
-    LOGIC --> PROGRESS
-    LOGIC --> WALKER
-    LOGIC --> ERROR
-    LOGIC --> EXIT
-    LOGIC --> PERF
-    
-    SIGNAL --> L_SIGNAL
-    SIGNAL_LIVE --> L_SIGNAL_LIVE
-    SIGNAL_BT --> L_SIGNAL_BT
-    ERROR --> L_ERROR
-    EXIT --> L_EXIT
-    DONE --> L_DONE
-    PROGRESS --> L_PROGRESS
-    WALKER --> L_WALKER
-    PARTIAL --> L_PARTIAL
-    RISK --> L_RISK
-    PERF --> L_PERF
-    VALID --> L_VALID
-    
-    SIGNAL --> MD
-    SIGNAL_BT --> MD
-    SIGNAL_LIVE --> MD
-    WALKER --> MD
-    PARTIAL --> MD
-    RISK --> MD
-    PERF --> MD
-```
+![Mermaid Diagram](./diagrams\35-event-listeners-and-monitoring_0.svg)
 
 ---
 
@@ -149,15 +74,7 @@ The framework defines 18 event emitters organized by domain:
 
 All listener functions use the `queued` wrapper from `functools-kit` to ensure **sequential async execution**. This prevents race conditions when callbacks perform asynchronous operations.
 
-```mermaid
-graph LR
-    E1["Event 1"] --> Q["Queued Processor"]
-    E2["Event 2"] --> Q
-    E3["Event 3"] --> Q
-    Q --> CB1["Callback 1<br/>(async)"]
-    CB1 --> CB2["Callback 2<br/>(async)"]
-    CB2 --> CB3["Callback 3<br/>(async)"]
-```
+![Mermaid Diagram](./diagrams\35-event-listeners-and-monitoring_1.svg)
 
 ### Implementation Pattern
 
@@ -192,17 +109,7 @@ Signal listeners monitor trading signal state changes throughout the signal life
 
 ### Event Payload Structure
 
-```mermaid
-graph TB
-    ROOT["IStrategyTickResult<br/>(Discriminated Union)"]
-    
-    ROOT --> IDLE["action: 'idle'<br/>signal: null"]
-    ROOT --> SCHED["action: 'scheduled'<br/>signal: IScheduledSignalRow"]
-    ROOT --> OPEN["action: 'opened'<br/>signal: ISignalRow"]
-    ROOT --> ACTIVE["action: 'active'<br/>signal: ISignalRow"]
-    ROOT --> CLOSED["action: 'closed'<br/>signal: ISignalRow<br/>closeReason: 'take_profit' | 'stop_loss' | 'time_expired'<br/>pnl: IStrategyPnL"]
-    ROOT --> CANCEL["action: 'cancelled'<br/>signal: IScheduledSignalRow"]
-```
+![Mermaid Diagram](./diagrams\35-event-listeners-and-monitoring_2.svg)
 
 ### Usage Examples
 

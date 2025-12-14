@@ -65,50 +65,7 @@ This parameter controls:
 
 ## VWAP Calculation Flow
 
-```mermaid
-graph TB
-    subgraph "Strategy Execution Context"
-        STRAT["ClientStrategy.tick()"]
-        GET_SIGNAL["getSignal callback"]
-        GET_AVG["getAveragePrice()<br/>(public API)"]
-    end
-    
-    subgraph "Exchange Core Service"
-        EXCH_CORE["ExchangeCoreService"]
-        GET_CANDLES["getCandles(symbol, '1m', limit)"]
-        CALC_VWAP["Calculate VWAP<br/>Σ(TP × Vol) / Σ(Vol)"]
-    end
-    
-    subgraph "Exchange Connection"
-        CLIENT_EXCH["ClientExchange"]
-        USER_IMPL["User getCandles<br/>implementation"]
-    end
-    
-    subgraph "Data Quality Layer"
-        RETRY["Retry Logic<br/>CC_GET_CANDLES_RETRY_COUNT"]
-        ANOMALY["Anomaly Detection<br/>VALIDATE_NO_INCOMPLETE_CANDLES_FN"]
-        MEDIAN["Calculate reference price<br/>median or average"]
-    end
-    
-    STRAT --> GET_SIGNAL
-    GET_SIGNAL --> GET_AVG
-    GET_AVG --> EXCH_CORE
-    
-    EXCH_CORE --> GET_CANDLES
-    GET_CANDLES --> CLIENT_EXCH
-    CLIENT_EXCH --> USER_IMPL
-    
-    USER_IMPL --> RETRY
-    RETRY --> ANOMALY
-    ANOMALY --> MEDIAN
-    
-    MEDIAN --> CALC_VWAP
-    CALC_VWAP --> GET_AVG
-    
-    style GET_AVG fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style CALC_VWAP fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style ANOMALY fill:#ffe6e6,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\23-candle-data-and-vwap_0.svg)
 
 ---
 
@@ -183,54 +140,7 @@ Factor   | BTC Threshold | Catches Anomalies? | False Positives?
 
 ## Anomaly Detection Flow Diagram
 
-```mermaid
-graph TB
-    START["getCandles returns<br/>ICandleData[]"]
-    
-    CHECK_COUNT{"candles.length >= 5?<br/>(CC_MIN_CANDLES)"}
-    
-    USE_MEDIAN["Calculate median<br/>from all OHLC prices<br/>(robust to outliers)"]
-    USE_AVG["Calculate average<br/>from all OHLC prices<br/>(stable for n<20)"]
-    
-    CALC_THRESH["threshold = referencePrice /<br/>CC_ANOMALY_THRESHOLD_FACTOR<br/>(default: 1000)"]
-    
-    ITER["Iterate each candle<br/>and OHLC price"]
-    
-    CHECK_PRICE{"price < threshold?"}
-    
-    THROW["Throw Error<br/>'VALIDATE_NO_INCOMPLETE_CANDLES_FN<br/>found anomalously low price'"]
-    
-    RETRY{"Retry count<br/>< CC_RETRY_COUNT?"}
-    
-    DELAY["sleep(CC_RETRY_DELAY_MS)<br/>(default: 5000ms)"]
-    
-    SUCCESS["Return validated<br/>candles to VWAP<br/>calculation"]
-    
-    FAIL["Emit to errorEmitter<br/>Strategy execution stops"]
-    
-    START --> CHECK_COUNT
-    CHECK_COUNT -->|Yes| USE_MEDIAN
-    CHECK_COUNT -->|No| USE_AVG
-    
-    USE_MEDIAN --> CALC_THRESH
-    USE_AVG --> CALC_THRESH
-    
-    CALC_THRESH --> ITER
-    ITER --> CHECK_PRICE
-    
-    CHECK_PRICE -->|No| SUCCESS
-    CHECK_PRICE -->|Yes| THROW
-    
-    THROW --> RETRY
-    RETRY -->|Yes| DELAY
-    DELAY --> START
-    
-    RETRY -->|No| FAIL
-    
-    style THROW fill:#ffe6e6,stroke:#333,stroke-width:2px
-    style SUCCESS fill:#e6ffe6,stroke:#333,stroke-width:2px
-    style FAIL fill:#ffcccc,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\23-candle-data-and-vwap_1.svg)
 
 ---
 
@@ -253,35 +163,7 @@ The framework automatically retries `getCandles()` calls on:
 
 ### Retry Strategy
 
-```mermaid
-graph LR
-    ATTEMPT_1["Attempt 1<br/>Immediate"]
-    DELAY_1["Wait 5s"]
-    ATTEMPT_2["Attempt 2"]
-    DELAY_2["Wait 5s"]
-    ATTEMPT_3["Attempt 3"]
-    DELAY_3["Wait 5s"]
-    ATTEMPT_4["Attempt 4<br/>(Final)"]
-    
-    SUCCESS["Success<br/>Return candles"]
-    FAILURE["Emit errorEmitter<br/>Stop execution"]
-    
-    ATTEMPT_1 -->|Fail| DELAY_1
-    DELAY_1 --> ATTEMPT_2
-    ATTEMPT_2 -->|Fail| DELAY_2
-    DELAY_2 --> ATTEMPT_3
-    ATTEMPT_3 -->|Fail| DELAY_3
-    DELAY_3 --> ATTEMPT_4
-    
-    ATTEMPT_1 -->|Success| SUCCESS
-    ATTEMPT_2 -->|Success| SUCCESS
-    ATTEMPT_3 -->|Success| SUCCESS
-    ATTEMPT_4 -->|Success| SUCCESS
-    ATTEMPT_4 -->|Fail| FAILURE
-    
-    style SUCCESS fill:#e6ffe6,stroke:#333,stroke-width:2px
-    style FAILURE fill:#ffcccc,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\23-candle-data-and-vwap_2.svg)
 
 **Total Time Budget:** `3 retries × 5 seconds = 15 seconds` (plus request time)
 
@@ -300,48 +182,7 @@ When strategies generate signals, the entry price (`priceOpen`) is determined ba
 
 ### VWAP Usage in Backtest
 
-```mermaid
-graph TB
-    subgraph "Backtest Timeframe Iteration"
-        ITER["ClientStrategy.tick()<br/>when = timeframe[i]"]
-        CHECK_SIGNAL["Check interval throttle<br/>(e.g., every 5m)"]
-        GEN_SIGNAL["getSignal callback"]
-    end
-    
-    subgraph "Signal Creation Path"
-        IMMEDIATE{"priceOpen<br/>specified?"}
-        USE_VWAP["priceOpen = getAveragePrice()<br/>(VWAP from last 5 candles)"]
-        USE_CUSTOM["priceOpen = signal.priceOpen<br/>(scheduled for future entry)"]
-        CREATE["Create ISignalRow<br/>with priceOpen set"]
-    end
-    
-    subgraph "Signal Monitoring Path"
-        ACTIVE["Active signal monitoring"]
-        CHECK_TP["Check if VWAP >= priceTakeProfit"]
-        CHECK_SL["Check if VWAP <= priceStopLoss"]
-        CLOSE["Close signal<br/>priceClose = VWAP"]
-    end
-    
-    ITER --> CHECK_SIGNAL
-    CHECK_SIGNAL --> GEN_SIGNAL
-    GEN_SIGNAL --> IMMEDIATE
-    
-    IMMEDIATE -->|No| USE_VWAP
-    IMMEDIATE -->|Yes| USE_CUSTOM
-    
-    USE_VWAP --> CREATE
-    USE_CUSTOM --> CREATE
-    
-    CREATE --> ACTIVE
-    ACTIVE --> CHECK_TP
-    ACTIVE --> CHECK_SL
-    
-    CHECK_TP -->|Yes| CLOSE
-    CHECK_SL -->|Yes| CLOSE
-    
-    style USE_VWAP fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style CLOSE fill:#f9f9f9,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\23-candle-data-and-vwap_3.svg)
 
 **Key Points:**
 - VWAP provides realistic execution prices (not optimistic high/low)

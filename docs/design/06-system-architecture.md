@@ -21,78 +21,7 @@ The framework follows clean architecture principles with strict separation of co
 
 **Overall System Layers**
 
-```mermaid
-graph TB
-    subgraph "Layer 1: Public API"
-        PublicAPI["Public Functions<br/>addStrategy, addExchange, addFrame<br/>Backtest.run, Live.run, Walker.run<br/>listenSignal, listenError"]
-    end
-    
-    subgraph "Layer 2: Orchestration"
-        Backtest["Backtest<br/>Historical simulation"]
-        Live["Live<br/>Real-time trading"]
-        Walker["Walker<br/>Strategy comparison"]
-        Optimizer["Optimizer<br/>LLM code generation"]
-    end
-    
-    subgraph "Layer 3: Service (Dependency Injection)"
-        CommandServices["Command Services<br/>BacktestCommandService<br/>LiveCommandService<br/>WalkerCommandService"]
-        LogicServices["Logic Services<br/>BacktestLogicPublicService<br/>BacktestLogicPrivateService<br/>Generator patterns"]
-        GlobalServices["Global Services<br/>SizingGlobalService<br/>RiskGlobalService<br/>Context wrappers"]
-        CoreServices["Core Services<br/>StrategyCoreService<br/>ExchangeCoreService<br/>FrameCoreService"]
-        ConnectionServices["Connection Services<br/>StrategyConnectionService<br/>Memoized client factories"]
-        ValidationServices["Validation Services<br/>StrategyValidationService<br/>Schema enforcement"]
-        SchemaServices["Schema Services<br/>StrategySchemaService<br/>Configuration registry"]
-        MarkdownServices["Markdown Services<br/>BacktestMarkdownService<br/>Report generation"]
-    end
-    
-    subgraph "Layer 4: Client (Business Logic)"
-        ClientStrategy["ClientStrategy<br/>Signal lifecycle<br/>tick, backtest methods"]
-        ClientExchange["ClientExchange<br/>Data fetching<br/>VWAP calculation"]
-        ClientFrame["ClientFrame<br/>Timeframe generation"]
-        ClientRisk["ClientRisk<br/>Portfolio validation"]
-        ClientOptimizer["ClientOptimizer<br/>LLM integration"]
-        ClientPartial["ClientPartial<br/>P/L tracking"]
-    end
-    
-    subgraph "Layer 5: Persistence"
-        PersistSignal["PersistSignalAdapter<br/>JSON file I/O<br/>Atomic writes"]
-        PersistSchedule["PersistScheduleAdapter<br/>Scheduled signals"]
-        PersistRisk["PersistRiskAdapter<br/>Risk state"]
-        PersistPartial["PersistPartialAdapter<br/>Partial levels"]
-    end
-    
-    PublicAPI --> Backtest
-    PublicAPI --> Live
-    PublicAPI --> Walker
-    PublicAPI --> Optimizer
-    
-    Backtest --> CommandServices
-    Live --> CommandServices
-    Walker --> CommandServices
-    
-    CommandServices --> LogicServices
-    LogicServices --> GlobalServices
-    LogicServices --> CoreServices
-    
-    GlobalServices --> ConnectionServices
-    CoreServices --> ConnectionServices
-    ConnectionServices --> ValidationServices
-    ConnectionServices --> SchemaServices
-    
-    ConnectionServices --> ClientStrategy
-    ConnectionServices --> ClientExchange
-    ConnectionServices --> ClientFrame
-    ConnectionServices --> ClientRisk
-    ConnectionServices --> ClientOptimizer
-    ConnectionServices --> ClientPartial
-    
-    ClientStrategy --> PersistSignal
-    ClientStrategy --> PersistSchedule
-    ClientRisk --> PersistRisk
-    ClientPartial --> PersistPartial
-    
-    LogicServices --> MarkdownServices
-```
+![Mermaid Diagram](./diagrams\06-system-architecture_0.svg)
 
 ---
 
@@ -124,52 +53,7 @@ The framework uses a custom dependency injection container built around Symbol-b
 
 **Dependency Injection Components**
 
-```mermaid
-graph LR
-    subgraph "types.ts"
-        TYPES["TYPES object<br/>Symbol definitions"]
-        baseServices["baseServices<br/>loggerService: Symbol"]
-        contextServices["contextServices<br/>executionContextService: Symbol<br/>methodContextService: Symbol"]
-        schemaServices["schemaServices<br/>7 schema service Symbols"]
-        validationServices["validationServices<br/>8 validation service Symbols"]
-        connectionServices["connectionServices<br/>7 connection service Symbols"]
-        coreServices["coreServices<br/>3 core service Symbols"]
-        globalServices["globalServices<br/>4 global service Symbols"]
-        commandServices["commandServices<br/>3 command service Symbols"]
-        logicServices["logicPrivateServices + logicPublicServices<br/>6 logic service Symbols"]
-        markdownServices["markdownServices<br/>9 markdown service Symbols"]
-        templateServices["templateServices<br/>optimizerTemplateService: Symbol"]
-    end
-    
-    subgraph "provide.ts"
-        provideLoggerService["provide(TYPES.loggerService, () => new LoggerService())"]
-        provideStrategySchema["provide(TYPES.strategySchemaService, () => new StrategySchemaService())"]
-        provideStrategyConnection["provide(TYPES.strategyConnectionService, () => new StrategyConnectionService())"]
-        provideBacktestCommand["provide(TYPES.backtestCommandService, () => new BacktestCommandService())"]
-        provideMore["...50+ service registrations"]
-    end
-    
-    subgraph "lib/index.ts"
-        backtestObject["backtest = {...}<br/>Singleton aggregation object"]
-        inject["inject<T>(symbol: Symbol)<br/>Resolves service instances"]
-        init["init()<br/>Initialize DI container"]
-    end
-    
-    TYPES --> provideLoggerService
-    TYPES --> provideStrategySchema
-    TYPES --> provideStrategyConnection
-    TYPES --> provideBacktestCommand
-    TYPES --> provideMore
-    
-    provideLoggerService --> inject
-    provideStrategySchema --> inject
-    provideStrategyConnection --> inject
-    provideBacktestCommand --> inject
-    provideMore --> inject
-    
-    inject --> backtestObject
-    init --> backtestObject
-```
+![Mermaid Diagram](./diagrams\06-system-architecture_1.svg)
 
 ### Symbol-Based Keys
 
@@ -267,52 +151,7 @@ The client layer contains pure business logic implementations without DI depende
 
 **Client Layer Architecture**
 
-```mermaid
-graph TB
-    subgraph "Connection Services (Memoized Factories)"
-        StrategyConnectionService["StrategyConnectionService<br/>getStrategy(symbol, strategyName)<br/>Memoization key: symbol:strategyName"]
-        ExchangeConnectionService["ExchangeConnectionService<br/>getExchange(exchangeName)<br/>Memoization key: exchangeName"]
-        FrameConnectionService["FrameConnectionService<br/>getFrame(frameName)<br/>Memoization key: frameName"]
-        RiskConnectionService["RiskConnectionService<br/>getRisk(riskName)<br/>Memoization key: riskName"]
-        SizingConnectionService["SizingConnectionService<br/>getSizing(sizingName)<br/>Memoization key: sizingName"]
-        OptimizerConnectionService["OptimizerConnectionService<br/>getOptimizer(optimizerName)<br/>Memoization key: optimizerName"]
-        PartialConnectionService["PartialConnectionService<br/>getPartial(symbol)<br/>Memoization key: symbol"]
-    end
-    
-    subgraph "Client Implementations (Business Logic)"
-        ClientStrategy["ClientStrategy<br/>tick() - Signal generation throttling<br/>backtest() - Fast candle processing<br/>waitForInit() - State recovery"]
-        ClientExchange["ClientExchange<br/>getCandles() - Historical data<br/>getNextCandles() - Future data<br/>getAveragePrice() - VWAP calculation"]
-        ClientFrame["ClientFrame<br/>getTimeframe() - Date iteration<br/>Interval-based generation"]
-        ClientRisk["ClientRisk<br/>checkSignal() - Portfolio validation<br/>addSignal/removeSignal() - Position tracking"]
-        ClientSizing["ClientSizing<br/>calculate() - Position size logic<br/>Fixed/Kelly/ATR methods"]
-        ClientOptimizer["ClientOptimizer<br/>run() - Data collection<br/>generate() - LLM integration"]
-        ClientPartial["ClientPartial<br/>profit/loss() - Milestone tracking<br/>clear() - State cleanup"]
-    end
-    
-    subgraph "Schema Services (Configuration)"
-        StrategySchemaService["StrategySchemaService<br/>ToolRegistry pattern"]
-        ExchangeSchemaService["ExchangeSchemaService<br/>ToolRegistry pattern"]
-        FrameSchemaService["FrameSchemaService<br/>ToolRegistry pattern"]
-        RiskSchemaService["RiskSchemaService<br/>ToolRegistry pattern"]
-        SizingSchemaService["SizingSchemaService<br/>ToolRegistry pattern"]
-        OptimizerSchemaService["OptimizerSchemaService<br/>ToolRegistry pattern"]
-    end
-    
-    StrategySchemaService --> StrategyConnectionService
-    ExchangeSchemaService --> ExchangeConnectionService
-    FrameSchemaService --> FrameConnectionService
-    RiskSchemaService --> RiskConnectionService
-    SizingSchemaService --> SizingConnectionService
-    OptimizerSchemaService --> OptimizerConnectionService
-    
-    StrategyConnectionService --> ClientStrategy
-    ExchangeConnectionService --> ClientExchange
-    FrameConnectionService --> ClientFrame
-    RiskConnectionService --> ClientRisk
-    SizingConnectionService --> ClientSizing
-    OptimizerConnectionService --> ClientOptimizer
-    PartialConnectionService --> ClientPartial
-```
+![Mermaid Diagram](./diagrams\06-system-architecture_2.svg)
 
 ### Client Characteristics
 
@@ -341,54 +180,7 @@ This example shows how a backtest execution flows through the architectural laye
 
 **Backtest Execution Flow**
 
-```mermaid
-graph TB
-    User["User Code<br/>Backtest.run(symbol, context)"]
-    
-    BacktestClass["Backtest class<br/>src/classes/Backtest.ts<br/>Public API wrapper"]
-    
-    BacktestCommandService["BacktestCommandService<br/>src/lib/services/command/<br/>Validation + delegation"]
-    
-    ValidationServices["Validation Services<br/>strategyValidationService<br/>exchangeValidationService<br/>frameValidationService"]
-    
-    BacktestLogicPublic["BacktestLogicPublicService<br/>Context setup<br/>MethodContext wrapper"]
-    
-    BacktestLogicPrivate["BacktestLogicPrivateService<br/>Async generator implementation<br/>Timeframe iteration"]
-    
-    FrameCoreService["FrameCoreService<br/>Get timeframe array<br/>from FrameConnectionService"]
-    
-    StrategyCoreService["StrategyCoreService<br/>Execute tick() and backtest()<br/>from StrategyConnectionService"]
-    
-    ExchangeCoreService["ExchangeCoreService<br/>Fetch candles<br/>from ExchangeConnectionService"]
-    
-    ClientFrame["ClientFrame<br/>Generate Date[] array<br/>based on interval"]
-    
-    ClientStrategy["ClientStrategy<br/>tick() - Check for signal<br/>backtest() - Process candles"]
-    
-    ClientExchange["ClientExchange<br/>getNextCandles()<br/>VWAP calculation"]
-    
-    PersistSignal["PersistSignalAdapter<br/>JSON file writes<br/>(not used in backtest)"]
-    
-    MarkdownServices["BacktestMarkdownService<br/>Collect closed signals<br/>Generate statistics"]
-    
-    User --> BacktestClass
-    BacktestClass --> BacktestCommandService
-    BacktestCommandService --> ValidationServices
-    BacktestCommandService --> BacktestLogicPublic
-    BacktestLogicPublic --> BacktestLogicPrivate
-    
-    BacktestLogicPrivate --> FrameCoreService
-    BacktestLogicPrivate --> StrategyCoreService
-    BacktestLogicPrivate --> ExchangeCoreService
-    
-    FrameCoreService --> ClientFrame
-    StrategyCoreService --> ClientStrategy
-    ExchangeCoreService --> ClientExchange
-    
-    ClientStrategy -.->|backtest mode| PersistSignal
-    
-    BacktestLogicPrivate --> MarkdownServices
-```
+![Mermaid Diagram](./diagrams\06-system-architecture_3.svg)
 
 ### Execution Steps
 

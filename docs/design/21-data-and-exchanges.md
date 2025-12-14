@@ -15,47 +15,7 @@ This page documents how the backtest-kit framework integrates with external data
 
 The Exchange system provides an abstraction layer for fetching historical candle data from any source (CCXT, custom APIs, databases). The framework uses a three-tier architecture for exchange operations:
 
-```mermaid
-graph TB
-    subgraph "User Registration API"
-        ADD_EXCH["addExchange()<br/>(src/function/add.ts)"]
-    end
-    
-    subgraph "Schema Storage"
-        EXCH_SCHEMA["ExchangeSchemaService<br/>ToolRegistry pattern<br/>stores IExchangeSchema"]
-    end
-    
-    subgraph "Validation Layer"
-        EXCH_VAL["ExchangeValidationService<br/>validates schema structure<br/>memoized checks"]
-    end
-    
-    subgraph "Connection Factory"
-        EXCH_CONN["ExchangeConnectionService<br/>memoized by exchangeName<br/>creates ClientExchange"]
-    end
-    
-    subgraph "Client Layer"
-        CLIENT_EXCH["ClientExchange<br/>implements IExchange<br/>getCandles, getNextCandles<br/>getAveragePrice (VWAP)"]
-    end
-    
-    subgraph "Core Logic"
-        EXCH_CORE["ExchangeCoreService<br/>orchestrates operations<br/>delegates to ClientExchange"]
-    end
-    
-    subgraph "Data Source"
-        USER_IMPL["User-provided getCandles<br/>CCXT, REST API, Database"]
-    end
-    
-    ADD_EXCH -->|"registers"| EXCH_SCHEMA
-    EXCH_SCHEMA -->|"reads"| EXCH_VAL
-    EXCH_VAL -->|"validates"| EXCH_SCHEMA
-    EXCH_SCHEMA -->|"provides schema"| EXCH_CONN
-    EXCH_CONN -->|"instantiates with IExchangeParams"| CLIENT_EXCH
-    EXCH_CORE -->|"calls methods"| CLIENT_EXCH
-    CLIENT_EXCH -->|"invokes user callback"| USER_IMPL
-    
-    style CLIENT_EXCH fill:#e1f5ff,stroke:#333,stroke-width:3px
-    style EXCH_SCHEMA fill:#fff4e1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\21-data-and-exchanges_0.svg)
 
 **Key Components**:
 
@@ -78,22 +38,7 @@ graph TB
 
 Exchanges are registered via `addExchange()` with a schema defining four required callbacks:
 
-```mermaid
-graph LR
-    SCHEMA["IExchangeSchema"]
-    
-    GET_CANDLES["getCandles()<br/>fetch historical OHLCV<br/>returns Promise&lt;ICandleData[]&gt;"]
-    FORMAT_PRICE["formatPrice()<br/>exchange precision rules<br/>returns Promise&lt;string&gt;"]
-    FORMAT_QTY["formatQuantity()<br/>exchange precision rules<br/>returns Promise&lt;string&gt;"]
-    CALLBACKS["callbacks.onCandleData<br/>(optional)<br/>event emitted after fetch"]
-    
-    SCHEMA -->|"required"| GET_CANDLES
-    SCHEMA -->|"required"| FORMAT_PRICE
-    SCHEMA -->|"required"| FORMAT_QTY
-    SCHEMA -->|"optional"| CALLBACKS
-    
-    style SCHEMA fill:#fff4e1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\21-data-and-exchanges_1.svg)
 
 **Schema Definition** ([types.d.ts:327-363]()):
 
@@ -195,30 +140,7 @@ interface ICandleData {
 
 `ClientExchange.getAveragePrice()` calculates Volume-Weighted Average Price (VWAP) using the last N 1-minute candles, where N is configured via `CC_AVG_PRICE_CANDLES_COUNT` (default: 5).
 
-```mermaid
-graph TD
-    START["getAveragePrice(symbol)"]
-    
-    FETCH["fetch last N 1m candles<br/>getCandles(symbol, '1m', limit=N)"]
-    
-    VALIDATE["VALIDATE_NO_INCOMPLETE_CANDLES_FN<br/>check for price anomalies<br/>threshold: referencePrice / 1000"]
-    
-    CALC_TYPICAL["for each candle:<br/>typicalPrice = (high + low + close) / 3"]
-    
-    CALC_VWAP["VWAP = Σ(typicalPrice × volume) / Σ(volume)"]
-    
-    RETRY["retry logic<br/>CC_GET_CANDLES_RETRY_COUNT<br/>delay: CC_GET_CANDLES_RETRY_DELAY_MS"]
-    
-    START --> FETCH
-    FETCH --> VALIDATE
-    VALIDATE -->|"pass"| CALC_TYPICAL
-    VALIDATE -->|"fail"| RETRY
-    RETRY --> FETCH
-    CALC_TYPICAL --> CALC_VWAP
-    
-    style VALIDATE fill:#ffe1e1,stroke:#333,stroke-width:2px
-    style CALC_VWAP fill:#e1f5ff,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\21-data-and-exchanges_2.svg)
 
 **Implementation Details**:
 
@@ -258,28 +180,7 @@ graph TD
 
 `ClientExchange` implements the `IExchange` interface with four primary methods:
 
-```mermaid
-graph TB
-    IEXCHANGE["IExchange interface"]
-    
-    GET_CANDLES["getCandles(symbol, interval, limit)<br/>fetch historical candles<br/>backwards from ExecutionContext.when"]
-    
-    GET_NEXT["getNextCandles(symbol, interval, limit)<br/>fetch future candles<br/>forward from ExecutionContext.when<br/>(backtest mode only)"]
-    
-    GET_AVG["getAveragePrice(symbol)<br/>calculate VWAP<br/>last CC_AVG_PRICE_CANDLES_COUNT candles"]
-    
-    FORMAT_PRICE["formatPrice(symbol, price)<br/>delegate to schema callback"]
-    
-    FORMAT_QTY["formatQuantity(symbol, quantity)<br/>delegate to schema callback"]
-    
-    IEXCHANGE -->|"implements"| GET_CANDLES
-    IEXCHANGE -->|"implements"| GET_NEXT
-    IEXCHANGE -->|"implements"| GET_AVG
-    IEXCHANGE -->|"implements"| FORMAT_PRICE
-    IEXCHANGE -->|"implements"| FORMAT_QTY
-    
-    style GET_AVG fill:#e1f5ff,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\21-data-and-exchanges_3.svg)
 
 ### getCandles vs getNextCandles
 
@@ -300,46 +201,7 @@ graph TB
 
 The Frame system generates timestamp arrays for backtest iteration. Each frame defines a date range and interval for generating tick timestamps.
 
-```mermaid
-graph TB
-    subgraph "User Registration"
-        ADD_FRAME["addFrame()<br/>(src/function/add.ts)"]
-    end
-    
-    subgraph "Schema Storage"
-        FRAME_SCHEMA["FrameSchemaService<br/>stores IFrameSchema"]
-    end
-    
-    subgraph "Validation"
-        FRAME_VAL["FrameValidationService<br/>validates date range<br/>interval validation"]
-    end
-    
-    subgraph "Connection Factory"
-        FRAME_CONN["FrameConnectionService<br/>memoized by frameName<br/>creates ClientFrame"]
-    end
-    
-    subgraph "Client Layer"
-        CLIENT_FRAME["ClientFrame<br/>implements IFrame<br/>getTimeframe()"]
-    end
-    
-    subgraph "Core Logic"
-        FRAME_CORE["FrameCoreService<br/>orchestrates timeframe<br/>generation"]
-    end
-    
-    subgraph "Backtest Execution"
-        BACKTEST_LOGIC["BacktestLogicPrivateService<br/>iterates timestamps<br/>for strategy.tick()"]
-    end
-    
-    ADD_FRAME --> FRAME_SCHEMA
-    FRAME_SCHEMA --> FRAME_VAL
-    FRAME_VAL --> FRAME_SCHEMA
-    FRAME_SCHEMA --> FRAME_CONN
-    FRAME_CONN --> CLIENT_FRAME
-    FRAME_CORE --> CLIENT_FRAME
-    CLIENT_FRAME -->|"generates Date[]"| BACKTEST_LOGIC
-    
-    style CLIENT_FRAME fill:#e1f5ff,stroke:#333,stroke-width:3px
-```
+![Mermaid Diagram](./diagrams\21-data-and-exchanges_4.svg)
 
 ### IFrameSchema Structure
 
@@ -413,37 +275,7 @@ addFrame({
 
 The following diagram shows how Exchange and Frame components integrate during backtest execution:
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant BacktestLogic as BacktestLogicPrivateService
-    participant FrameCore as FrameCoreService
-    participant ClientFrame
-    participant StrategyCore as StrategyCoreService
-    participant ExchCore as ExchangeCoreService
-    participant ClientExch as ClientExchange
-    participant UserGetCandles as User getCandles
-    
-    User->>BacktestLogic: Backtest.run(symbol, {strategyName, exchangeName, frameName})
-    
-    BacktestLogic->>FrameCore: getTimeframe(symbol, frameName)
-    FrameCore->>ClientFrame: getTimeframe()
-    ClientFrame-->>FrameCore: Date[] (timestamps)
-    FrameCore-->>BacktestLogic: Date[] timeframes
-    
-    loop for each timestamp in timeframes
-        BacktestLogic->>StrategyCore: tick(symbol, timestamp)
-        StrategyCore->>ExchCore: getAveragePrice(symbol)
-        ExchCore->>ClientExch: getAveragePrice(symbol)
-        ClientExch->>UserGetCandles: getCandles(symbol, "1m", 5)
-        UserGetCandles-->>ClientExch: ICandleData[]
-        ClientExch-->>ExchCore: VWAP price
-        ExchCore-->>StrategyCore: price
-        StrategyCore-->>BacktestLogic: IStrategyTickResult
-    end
-    
-    BacktestLogic-->>User: generator yields results
-```
+![Mermaid Diagram](./diagrams\21-data-and-exchanges_5.svg)
 
 **Execution Context Injection**:
 - `BacktestLogicPrivateService` sets `ExecutionContextService.when = timestamp` before each `tick()` call
@@ -454,44 +286,7 @@ sequenceDiagram
 
 ## Exchange Data Flow and Caching
 
-```mermaid
-graph TB
-    subgraph "Public API"
-        GET_CANDLES_FN["getCandles(symbol, interval, limit)<br/>(src/function/exchange.ts)"]
-        GET_AVG_FN["getAveragePrice(symbol)<br/>(src/function/exchange.ts)"]
-    end
-    
-    subgraph "Service Layer"
-        EXCH_CORE["ExchangeCoreService<br/>orchestrates calls"]
-    end
-    
-    subgraph "Connection Layer"
-        EXCH_CONN["ExchangeConnectionService<br/>Map&lt;exchangeName, ClientExchange&gt;<br/>memoized instances"]
-    end
-    
-    subgraph "Client Layer"
-        CLIENT_EXCH["ClientExchange<br/>business logic<br/>anomaly detection<br/>VWAP calculation"]
-    end
-    
-    subgraph "Schema Storage"
-        SCHEMA["ExchangeSchemaService<br/>IExchangeSchema registry"]
-    end
-    
-    subgraph "User Implementation"
-        USER_IMPL["User getCandles callback<br/>CCXT, API, Database"]
-    end
-    
-    GET_CANDLES_FN --> EXCH_CORE
-    GET_AVG_FN --> EXCH_CORE
-    EXCH_CORE --> EXCH_CONN
-    EXCH_CONN -->|"cache miss: instantiate"| CLIENT_EXCH
-    EXCH_CONN -->|"cache hit: reuse"| CLIENT_EXCH
-    CLIENT_EXCH -->|"reads schema"| SCHEMA
-    CLIENT_EXCH -->|"invokes"| USER_IMPL
-    
-    style EXCH_CONN fill:#fff4e1,stroke:#333,stroke-width:2px
-    style CLIENT_EXCH fill:#e1f5ff,stroke:#333,stroke-width:3px
-```
+![Mermaid Diagram](./diagrams\21-data-and-exchanges_6.svg)
 
 **Memoization Strategy** ([src/lib/services/connection/ExchangeConnectionService.ts]()):
 - `ClientExchange` instances are cached by `exchangeName`

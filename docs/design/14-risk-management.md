@@ -129,65 +129,7 @@ Risk validation occurs at two points in the signal lifecycle: (1) when `getSigna
 
 ### Risk Validation Flow
 
-```mermaid
-graph TB
-    Start["ClientStrategy.tick() or<br/>scheduled signal activation"]
-    GetSignal["getSignal() returns<br/>ISignalDto or null"]
-    CheckNull{"Signal<br/>null?"}
-    RiskCheck["ClientRisk.checkSignal()<br/>IRiskCheckArgs"]
-    LoadState["Load active positions<br/>from PersistRiskAdapter"]
-    BuildPayload["Build IRiskValidationPayload<br/>with activePositionCount"]
-    IterateValidations["Iterate validations array"]
-    RunValidation["Execute validation(payload)"]
-    ValidationThrows{"Throws<br/>error?"}
-    EmitRejection["Emit riskSubject event<br/>Call callbacks.onRejected"]
-    ReturnFalse["Return false"]
-    NextValidation["Next validation"]
-    AllPassed{"All<br/>passed?"}
-    EmitAllowed["Call callbacks.onAllowed"]
-    ReturnTrue["Return true"]
-    CheckResult{"checkSignal<br/>= true?"}
-    CreateSignal["Create ISignalRow<br/>Set scheduledAt, pendingAt"]
-    ValidateSignal["VALIDATE_SIGNAL_FN()<br/>Price/TP/SL checks"]
-    AddPosition["risk.addSignal()<br/>Track in PersistRiskAdapter"]
-    PersistSignal["Persist to PersistSignalAdapter"]
-    EmitOpened["Emit signalEmitter<br/>action: opened"]
-    Discard["Discard signal<br/>Return null"]
-    End["Continue monitoring"]
-
-    Start --> GetSignal
-    GetSignal --> CheckNull
-    CheckNull -->|"Yes"| End
-    CheckNull -->|"No"| RiskCheck
-    
-    RiskCheck --> LoadState
-    LoadState --> BuildPayload
-    BuildPayload --> IterateValidations
-    IterateValidations --> RunValidation
-    RunValidation --> ValidationThrows
-    ValidationThrows -->|"Yes"| EmitRejection
-    EmitRejection --> ReturnFalse
-    ReturnFalse --> CheckResult
-    ValidationThrows -->|"No"| NextValidation
-    NextValidation --> AllPassed
-    AllPassed -->|"No"| RunValidation
-    AllPassed -->|"Yes"| EmitAllowed
-    EmitAllowed --> ReturnTrue
-    ReturnTrue --> CheckResult
-    
-    CheckResult -->|"false"| Discard
-    Discard --> End
-    CheckResult -->|"true"| CreateSignal
-    CreateSignal --> ValidateSignal
-    ValidateSignal --> AddPosition
-    AddPosition --> PersistSignal
-    PersistSignal --> EmitOpened
-    EmitOpened --> End
-    
-    style RiskCheck fill:#fff4e1,stroke:#333,stroke-width:2px
-    style EmitRejection fill:#ffcccc,stroke:#333,stroke-width:2px
-    style AddPosition fill:#e8f5e9,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\14-risk-management_0.svg)
 
 ---
 
@@ -197,39 +139,7 @@ The `IRiskCheckArgs` interface defines the parameters passed from `ClientStrateg
 
 ### IRiskCheckArgs vs IRiskValidationPayload
 
-```mermaid
-graph LR
-    subgraph "ClientStrategy Context"
-        StrategyArgs["symbol: string<br/>pendingSignal: ISignalDto<br/>strategyName: StrategyName<br/>exchangeName: ExchangeName<br/>currentPrice: number<br/>timestamp: number"]
-    end
-    
-    subgraph "IRiskCheckArgs"
-        CheckArgs["symbol<br/>pendingSignal<br/>strategyName<br/>exchangeName<br/>currentPrice<br/>timestamp"]
-    end
-    
-    subgraph "ClientRisk.checkSignal()"
-        LoadActivePos["Load active positions<br/>from PersistRiskAdapter"]
-        CountPos["Count activePositionCount"]
-    end
-    
-    subgraph "IRiskValidationPayload"
-        Payload["symbol<br/>pendingSignal<br/>strategyName<br/>exchangeName<br/>currentPrice<br/>timestamp<br/>activePositionCount<br/>activePositions[]"]
-    end
-    
-    subgraph "Validation Functions"
-        Validate["validate(payload)<br/>Throw or return void"]
-    end
-    
-    StrategyArgs --> CheckArgs
-    CheckArgs --> LoadActivePos
-    LoadActivePos --> CountPos
-    CountPos --> Payload
-    Payload --> Validate
-    
-    style CheckArgs fill:#e1f5ff,stroke:#333,stroke-width:2px
-    style Payload fill:#fff4e1,stroke:#333,stroke-width:2px
-    style Validate fill:#e8f5e9,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\14-risk-management_1.svg)
 
 **Key Distinction:**
 - `IRiskCheckArgs` - Input to `checkSignal()` from strategy
@@ -243,47 +153,7 @@ The risk system maintains a registry of active positions to enable cross-strateg
 
 ### Position Lifecycle
 
-```mermaid
-graph TB
-    SignalOpened["Signal opened<br/>action: opened"]
-    AddSignal["risk.addSignal(symbol, context)<br/>context: strategyName, riskName"]
-    LoadData["PersistRiskAdapter.readRiskData(symbol, riskName)<br/>Returns RiskData | null"]
-    CreateEntry["Create IRiskActivePosition<br/>signal, strategyName, exchangeName, openTimestamp"]
-    AppendArray["Append to positions array"]
-    Persist["PersistRiskAdapter.writeRiskData(symbol, riskName, data)<br/>Atomic JSON write"]
-    
-    SignalClosed["Signal closed<br/>action: closed"]
-    RemoveSignal["risk.removeSignal(symbol, context)"]
-    LoadData2["PersistRiskAdapter.readRiskData(symbol, riskName)"]
-    FilterArray["Filter out position<br/>by signal.id"]
-    Persist2["PersistRiskAdapter.writeRiskData(symbol, riskName, data)<br/>Updated positions array"]
-    
-    RiskCheck["During risk check"]
-    LoadAllRisks["Load all risk data<br/>for symbol"]
-    FlattenPositions["Flatten positions arrays<br/>from all risk profiles"]
-    CountPositions["activePositionCount = positions.length"]
-    PassToValidation["Pass to validation functions"]
-    
-    SignalOpened --> AddSignal
-    AddSignal --> LoadData
-    LoadData --> CreateEntry
-    CreateEntry --> AppendArray
-    AppendArray --> Persist
-    
-    SignalClosed --> RemoveSignal
-    RemoveSignal --> LoadData2
-    LoadData2 --> FilterArray
-    FilterArray --> Persist2
-    
-    RiskCheck --> LoadAllRisks
-    LoadAllRisks --> FlattenPositions
-    FlattenPositions --> CountPositions
-    CountPositions --> PassToValidation
-    
-    style Persist fill:#e8f5e9,stroke:#333,stroke-width:2px
-    style Persist2 fill:#e8f5e9,stroke:#333,stroke-width:2px
-    style CountPositions fill:#fff4e1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\14-risk-management_2.svg)
 
 ### RiskData Structure
 
@@ -312,60 +182,7 @@ interface IRiskActivePosition {
 
 The risk system uses dependency injection to route risk checks through memoized `ClientRisk` instances. Strategies reference risk profiles by `riskName`, and `RiskConnectionService` ensures singleton instances per risk profile.
 
-```mermaid
-graph TB
-    subgraph "Public API"
-        AddRisk["addRisk(IRiskSchema)<br/>Register risk profile"]
-    end
-    
-    subgraph "Schema Registry"
-        RiskSchemaService["RiskSchemaService<br/>Store IRiskSchema by riskName"]
-    end
-    
-    subgraph "Validation Service"
-        RiskValidationService["RiskValidationService<br/>Validate schema structure<br/>Memoized checks"]
-    end
-    
-    subgraph "Connection Service"
-        RiskConnectionService["RiskConnectionService<br/>Memoized ClientRisk instances<br/>Key: riskName"]
-    end
-    
-    subgraph "Client Implementation"
-        ClientRisk["ClientRisk<br/>checkSignal(IRiskCheckArgs)<br/>addSignal(symbol, context)<br/>removeSignal(symbol, context)"]
-    end
-    
-    subgraph "Persistence Layer"
-        PersistRiskAdapter["PersistRiskAdapter<br/>readRiskData(symbol, riskName)<br/>writeRiskData(symbol, riskName, data)<br/>File: ./dump/{symbol}_{riskName}_risk.json"]
-    end
-    
-    subgraph "Event System"
-        RiskSubject["riskSubject<br/>Emit rejection events<br/>RiskContract payload"]
-    end
-    
-    subgraph "Strategy Integration"
-        StrategySchema["IStrategySchema<br/>riskName?: RiskName<br/>riskList?: RiskName[]"]
-        StrategyConnection["StrategyConnectionService<br/>GET_RISK_FN()<br/>MergeRisk for riskList"]
-        ClientStrategy["ClientStrategy<br/>Calls risk.checkSignal()<br/>before signal creation"]
-    end
-    
-    AddRisk --> RiskValidationService
-    RiskValidationService --> RiskSchemaService
-    
-    StrategySchema --> StrategyConnection
-    StrategyConnection --> RiskConnectionService
-    RiskConnectionService --> ClientRisk
-    
-    ClientRisk --> PersistRiskAdapter
-    ClientRisk --> RiskSubject
-    
-    ClientStrategy --> ClientRisk
-    
-    RiskSchemaService -.->|"Read schema"| RiskConnectionService
-    
-    style RiskConnectionService fill:#fff4e1,stroke:#333,stroke-width:3px
-    style ClientRisk fill:#e1f5ff,stroke:#333,stroke-width:2px
-    style PersistRiskAdapter fill:#e8f5e9,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\14-risk-management_3.svg)
 
 **Key Components:**
 
@@ -421,53 +238,7 @@ const GET_RISK_FN = (dto, self) => {
 
 ### MergeRisk Behavior
 
-```mermaid
-graph TB
-    CheckSignal["MergeRisk.checkSignal(args)"]
-    IterateRisks["Iterate risks array"]
-    CallRisk["await risks[i].checkSignal(args)"]
-    CheckResult{"Result<br/>false?"}
-    ReturnFalse["Return false<br/>Signal rejected"]
-    NextRisk["Next risk profile"]
-    AllPassed{"All<br/>passed?"}
-    ReturnTrue["Return true<br/>Signal allowed"]
-    
-    AddSignal["MergeRisk.addSignal(symbol, context)"]
-    CallAdd["await risks[i].addSignal(symbol, context)"]
-    NextAdd["Next risk profile"]
-    AllAdded{"All<br/>added?"}
-    Done["Done"]
-    
-    RemoveSignal["MergeRisk.removeSignal(symbol, context)"]
-    CallRemove["await risks[i].removeSignal(symbol, context)"]
-    NextRemove["Next risk profile"]
-    AllRemoved{"All<br/>removed?"}
-    Done2["Done"]
-    
-    CheckSignal --> IterateRisks
-    IterateRisks --> CallRisk
-    CallRisk --> CheckResult
-    CheckResult -->|"Yes"| ReturnFalse
-    CheckResult -->|"No"| NextRisk
-    NextRisk --> AllPassed
-    AllPassed -->|"No"| CallRisk
-    AllPassed -->|"Yes"| ReturnTrue
-    
-    AddSignal --> CallAdd
-    CallAdd --> NextAdd
-    NextAdd --> AllAdded
-    AllAdded -->|"No"| CallAdd
-    AllAdded -->|"Yes"| Done
-    
-    RemoveSignal --> CallRemove
-    CallRemove --> NextRemove
-    NextRemove --> AllRemoved
-    AllRemoved -->|"No"| CallRemove
-    AllRemoved -->|"Yes"| Done2
-    
-    style ReturnFalse fill:#ffcccc,stroke:#333,stroke-width:2px
-    style ReturnTrue fill:#e8f5e9,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\14-risk-management_4.svg)
 
 **Usage Example:**
 ```typescript
@@ -495,37 +266,7 @@ Risk rejections emit events via `riskSubject` for monitoring and alerting. Subsc
 
 ### Risk Events
 
-```mermaid
-graph LR
-    subgraph "ClientRisk"
-        Validation["Validation throws error"]
-        EmitRejection["params.onRejected(symbol, params,<br/>activePositionCount, comment, timestamp)"]
-    end
-    
-    subgraph "Event Emitters"
-        RiskSubject["riskSubject.next(RiskContract)"]
-    end
-    
-    subgraph "Public Listeners"
-        ListenRisk["listenRisk((event) => void)<br/>Queued async processing"]
-        ListenRiskOnce["listenRiskOnce(filter, callback)<br/>One-time execution"]
-    end
-    
-    subgraph "Markdown Service"
-        RiskMarkdownService["RiskMarkdownService<br/>Accumulate rejection events<br/>MAX_EVENTS unbounded"]
-        GetReport["Risk.getReport(riskName)<br/>Generate markdown table"]
-    end
-    
-    Validation --> EmitRejection
-    EmitRejection --> RiskSubject
-    RiskSubject --> ListenRisk
-    RiskSubject --> ListenRiskOnce
-    RiskSubject --> RiskMarkdownService
-    RiskMarkdownService --> GetReport
-    
-    style RiskSubject fill:#fff4e1,stroke:#333,stroke-width:2px
-    style RiskMarkdownService fill:#e8f5e9,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\14-risk-management_5.svg)
 
 ### RiskContract Structure
 

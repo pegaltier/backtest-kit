@@ -28,23 +28,7 @@ The framework uses a **discriminated union type system** to represent trading si
 
 The discriminated union pattern enables **type-safe state handling** throughout the codebase. TypeScript's type narrowing automatically provides the correct type when checking `result.action === "closed"`, ensuring that only valid fields for that state are accessible.
 
-```mermaid
-graph LR
-    Idle["idle<br/>(action: 'idle')"]
-    Scheduled["scheduled<br/>(action: 'scheduled')"]
-    Opened["opened<br/>(action: 'opened')"]
-    Active["active<br/>(action: 'active')"]
-    Closed["closed<br/>(action: 'closed')"]
-    Cancelled["cancelled<br/>(action: 'cancelled')"]
-    
-    Idle -->|"getSignal returns<br/>ISignalDto with priceOpen"| Scheduled
-    Idle -->|"getSignal returns<br/>ISignalDto without priceOpen"| Opened
-    Scheduled -->|"currentPrice reaches priceOpen"| Opened
-    Scheduled -->|"CC_SCHEDULE_AWAIT_MINUTES exceeded"| Cancelled
-    Opened -->|"signal persisted,<br/>monitoring begins"| Active
-    Active -->|"TP/SL/time condition met"| Closed
-    Active -->|"continue monitoring"| Active
-```
+![Mermaid Diagram](./diagrams\02-core-concepts_0.svg)
 
 **Diagram: Signal State Transition Flow**
 
@@ -113,42 +97,7 @@ This context is set at the **outermost execution level** (around entire run call
 - Schema services to look up registered configurations
 - Validation services to check existence of referenced schemas
 
-```mermaid
-graph TB
-    subgraph "Public API"
-        BacktestRun["Backtest.run(symbol, context)"]
-        LiveRun["Live.run(symbol, context)"]
-    end
-    
-    subgraph "MethodContext Layer"
-        MethodCtx["MethodContextService.runAsyncIterator<br/>{strategyName, exchangeName, frameName}"]
-    end
-    
-    subgraph "Logic Loop"
-        TimeframeLoop["For each timeframe"]
-        InfiniteLoop["While true"]
-    end
-    
-    subgraph "ExecutionContext Layer"
-        ExecCtx["ExecutionContextService.runInContext<br/>{symbol, when, backtest}"]
-    end
-    
-    subgraph "Core Operations"
-        Tick["StrategyCoreService.tick()"]
-        GetCandles["ExchangeCoreService.getCandles()"]
-        GetAvgPrice["ClientExchange.getAveragePrice()"]
-    end
-    
-    BacktestRun --> MethodCtx
-    LiveRun --> MethodCtx
-    MethodCtx --> TimeframeLoop
-    MethodCtx --> InfiniteLoop
-    TimeframeLoop --> ExecCtx
-    InfiniteLoop --> ExecCtx
-    ExecCtx --> Tick
-    ExecCtx --> GetCandles
-    GetCandles --> GetAvgPrice
-```
+![Mermaid Diagram](./diagrams\02-core-concepts_1.svg)
 
 **Diagram: Context Propagation Through Execution Stack**
 
@@ -203,51 +152,7 @@ This guarantees that even if `fn` performs async work (database writes, API call
 
 ### Event Flow Pattern
 
-```mermaid
-graph TB
-    subgraph "Event Producers"
-        CS["ClientStrategy<br/>(tick/backtest methods)"]
-        CR["ClientRisk<br/>(checkSignal rejection)"]
-        CP["ClientPartial<br/>(profit/loss methods)"]
-        Logic["Logic Services<br/>(progress/completion)"]
-    end
-    
-    subgraph "Event Emitters"
-        SignalAll["signalEmitter"]
-        SignalLive["signalLiveEmitter"]
-        SignalBT["signalBacktestEmitter"]
-        Error["errorEmitter"]
-        Risk["riskSubject"]
-        Partial["partialProfitSubject<br/>partialLossSubject"]
-        Done["doneLiveSubject<br/>doneBacktestSubject"]
-        Progress["progressBacktestEmitter"]
-    end
-    
-    subgraph "Public Listeners"
-        ListenSig["listenSignal(fn)<br/>(queued processing)"]
-        ListenErr["listenError(fn)<br/>(queued processing)"]
-        ListenDone["listenDoneLive(fn)<br/>(queued processing)"]
-        ListenRisk["listenRisk(fn)<br/>(queued processing)"]
-    end
-    
-    subgraph "Internal Consumers"
-        MD["Markdown Services<br/>(report generation)"]
-    end
-    
-    CS -->|"emit tick result"| SignalAll
-    SignalAll -->|"filter by backtest flag"| SignalLive
-    SignalAll -->|"filter by backtest flag"| SignalBT
-    CR -->|"emit rejection"| Risk
-    CP -->|"emit milestone"| Partial
-    Logic -->|"emit completion"| Done
-    Logic -->|"emit progress"| Progress
-    
-    SignalAll --> ListenSig
-    SignalAll --> MD
-    Error --> ListenErr
-    Done --> ListenDone
-    Risk --> ListenRisk
-```
+![Mermaid Diagram](./diagrams\02-core-concepts_2.svg)
 
 **Diagram: Event System Data Flow with Queued Processing**
 
@@ -281,34 +186,7 @@ Listener functions come in **three variants**:
 
 The three core concepts work together to enable **type-safe, context-aware, event-driven execution**:
 
-```mermaid
-sequenceDiagram
-    participant API as "Public API<br/>(Backtest.run)"
-    participant Method as "MethodContextService<br/>{strategyName, exchangeName}"
-    participant Logic as "BacktestLogicPrivateService"
-    participant Exec as "ExecutionContextService<br/>{symbol, when, backtest=true}"
-    participant Strategy as "ClientStrategy.tick()"
-    participant Signal as "signalEmitter"
-    participant Listener as "User Listener<br/>(queued)"
-    
-    API->>Method: runAsyncIterator(context)
-    Method->>Logic: run(symbol)
-    Logic->>Exec: runInContext({symbol, when, backtest})
-    Exec->>Strategy: tick()
-    Strategy->>Strategy: Check signal state<br/>(discriminated union)
-    
-    alt Signal Closed
-        Strategy->>Signal: emit({action: "closed", ...})
-        Signal->>Listener: queued callback
-        Listener->>Listener: Process event<br/>(sequential, async-safe)
-    else Signal Active
-        Strategy->>Signal: emit({action: "active", ...})
-    end
-    
-    Exec-->>Logic: return result
-    Logic-->>Method: yield result
-    Method-->>API: stream result
-```
+![Mermaid Diagram](./diagrams\02-core-concepts_3.svg)
 
 **Diagram: Sequence Showing Integration of Signals, Contexts, and Events**
 

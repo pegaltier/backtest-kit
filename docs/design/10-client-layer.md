@@ -19,56 +19,7 @@ The Client Layer implements the business logic for six distinct domains. Each cl
 
 ### Client Layer Structure
 
-```mermaid
-graph TB
-    subgraph "Connection Services - Client Factories"
-        CONN_STRAT["StrategyConnectionService<br/>Memoized by symbol:strategyName"]
-        CONN_EXCH["ExchangeConnectionService<br/>Memoized by exchangeName"]
-        CONN_FRAME["FrameConnectionService<br/>Memoized by frameName"]
-        CONN_RISK["RiskConnectionService<br/>Memoized by riskName"]
-        CONN_OPT["OptimizerConnectionService<br/>Template merging"]
-        CONN_PARTIAL["PartialConnectionService<br/>Per-symbol tracking"]
-    end
-    
-    subgraph "Client Implementations - Business Logic"
-        CS["ClientStrategy<br/>src/client/ClientStrategy.ts<br/>Signal lifecycle management"]
-        CE["ClientExchange<br/>src/client/ClientExchange.ts<br/>Data fetching & VWAP"]
-        CF["ClientFrame<br/>src/client/ClientFrame.ts<br/>Timeframe generation"]
-        CR["ClientRisk<br/>src/client/ClientRisk.ts<br/>Portfolio validation"]
-        CO["ClientOptimizer<br/>src/client/ClientOptimizer.ts<br/>LLM code generation"]
-        CP["ClientPartial<br/>src/client/ClientPartial.ts<br/>Milestone tracking"]
-    end
-    
-    subgraph "Key Operations"
-        CS_OPS["tick()<br/>backtest()<br/>getPendingSignal()<br/>stop()"]
-        CE_OPS["getCandles()<br/>getNextCandles()<br/>getAveragePrice()<br/>formatPrice/Quantity()"]
-        CF_OPS["getTimeframe()"]
-        CR_OPS["checkSignal()<br/>addSignal()<br/>removeSignal()"]
-        CO_OPS["run()<br/>dump()"]
-        CP_OPS["profit()<br/>loss()<br/>clear()"]
-    end
-    
-    CONN_STRAT --> CS
-    CONN_EXCH --> CE
-    CONN_FRAME --> CF
-    CONN_RISK --> CR
-    CONN_OPT --> CO
-    CONN_PARTIAL --> CP
-    
-    CS --> CS_OPS
-    CE --> CE_OPS
-    CF --> CF_OPS
-    CR --> CR_OPS
-    CO --> CO_OPS
-    CP --> CP_OPS
-    
-    style CS fill:#fff4e1,stroke:#333,stroke-width:2px
-    style CE fill:#fff4e1,stroke:#333,stroke-width:2px
-    style CF fill:#fff4e1,stroke:#333,stroke-width:2px
-    style CR fill:#fff4e1,stroke:#333,stroke-width:2px
-    style CO fill:#fff4e1,stroke:#333,stroke-width:2px
-    style CP fill:#fff4e1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\10-client-layer_0.svg)
 
 ### Memoization Pattern
 
@@ -91,28 +42,7 @@ ClientStrategy implements the `IStrategy` interface and manages the complete sig
 
 ### Signal Lifecycle State Machine
 
-```mermaid
-stateDiagram-v2
-    [*] --> Idle
-    
-    Idle --> Scheduled: getSignal returns with priceOpen
-    Idle --> Opened: getSignal returns without priceOpen
-    
-    Scheduled --> Opened: Price reaches priceOpen
-    Scheduled --> Cancelled: Timeout or StopLoss breached
-    Scheduled --> Idle: Risk rejection on activation
-    
-    Opened --> Active: Monitoring begins
-    
-    Active --> Closed_TP: Price hits priceTakeProfit
-    Active --> Closed_SL: Price hits priceStopLoss
-    Active --> Closed_Time: minuteEstimatedTime exceeded
-    
-    Closed_TP --> Idle
-    Closed_SL --> Idle
-    Closed_Time --> Idle
-    Cancelled --> Idle
-```
+![Mermaid Diagram](./diagrams\10-client-layer_1.svg)
 
 ### Key Methods
 
@@ -187,22 +117,7 @@ ClientExchange implements the `IExchange` interface and provides market data acc
 
 ### Data Flow
 
-```mermaid
-graph TB
-    SCHEMA["IExchangeSchema<br/>User-provided getCandles"]
-    CLIENT["ClientExchange<br/>src/client/ClientExchange.ts"]
-    RETRY["Retry Logic<br/>CC_GET_CANDLES_RETRY_COUNT"]
-    ANOMALY["Anomaly Detection<br/>CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR"]
-    VWAP["VWAP Calculation<br/>CC_AVG_PRICE_CANDLES_COUNT"]
-    
-    SCHEMA -->|"getCandles()"| CLIENT
-    CLIENT --> RETRY
-    RETRY --> ANOMALY
-    ANOMALY --> VWAP
-    
-    RETRY -->|"Fails after retries"| ERROR["errorEmitter.next()"]
-    ANOMALY -->|"Price < median/1000"| ERROR
-```
+![Mermaid Diagram](./diagrams\10-client-layer_2.svg)
 
 ### Key Methods
 
@@ -249,17 +164,7 @@ ClientFrame implements the `IFrame` interface and generates arrays of timestamps
 
 ### Timeframe Generation
 
-```mermaid
-graph LR
-    SCHEMA["IFrameSchema<br/>startDate: Date<br/>endDate: Date<br/>interval: FrameInterval"]
-    CLIENT["ClientFrame<br/>src/client/ClientFrame.ts"]
-    ARRAY["Date[]<br/>Sequential timestamps"]
-    
-    SCHEMA -->|"getTimeframe()"| CLIENT
-    CLIENT --> GENERATE["Generate timestamps<br/>with interval spacing"]
-    GENERATE --> ARRAY
-    ARRAY -->|"onTimeframe callback"| USER["User notification"]
-```
+![Mermaid Diagram](./diagrams\10-client-layer_3.svg)
 
 ### Interval Mapping
 
@@ -286,26 +191,7 @@ ClientRisk implements the `IRisk` interface and enforces portfolio-level risk co
 
 ### Risk Validation Flow
 
-```mermaid
-graph TB
-    SIGNAL["New Signal<br/>ISignalDto"]
-    CHECK["checkSignal()<br/>IRiskCheckArgs"]
-    
-    VALIDATE["Execute Validations<br/>IRiskValidation[]"]
-    
-    STATE["Active Positions<br/>IRiskActivePosition[]"]
-    
-    PAYLOAD["IRiskValidationPayload<br/>pendingSignal<br/>activePositionCount<br/>activePositions"]
-    
-    SIGNAL --> CHECK
-    CHECK --> STATE
-    STATE --> PAYLOAD
-    CHECK --> VALIDATE
-    PAYLOAD --> VALIDATE
-    
-    VALIDATE -->|"All pass"| ALLOWED["Return true<br/>callbacks.onAllowed"]
-    VALIDATE -->|"Any throws"| REJECTED["Return false<br/>callbacks.onRejected<br/>riskSubject.next()"]
-```
+![Mermaid Diagram](./diagrams\10-client-layer_4.svg)
 
 ### Validation System
 
@@ -340,42 +226,7 @@ ClientPartial implements the `IPartial` interface and tracks profit/loss milesto
 
 ### Milestone Tracking Architecture
 
-```mermaid
-graph TB
-    SIGNAL["Active Signal<br/>ISignalRow"]
-    
-    MONITOR["ClientStrategy monitoring<br/>Calculate revenuePercent"]
-    
-    PROFIT["profit()<br/>revenuePercent > 0"]
-    LOSS["loss()<br/>revenuePercent < 0"]
-    
-    CHECK_PROF["Check profit levels<br/>10%, 20%, 30%, ..."]
-    CHECK_LOSS["Check loss levels<br/>10%, 20%, 30%, ..."]
-    
-    DEDUP_PROF["Set<PartialLevel><br/>profitLevels"]
-    DEDUP_LOSS["Set<PartialLevel><br/>lossLevels"]
-    
-    EMIT_PROF["partialProfitSubject.next()<br/>PartialProfitContract"]
-    EMIT_LOSS["partialLossSubject.next()<br/>PartialLossContract"]
-    
-    PERSIST["PersistPartialAdapter<br/>Serialize Sets to arrays"]
-    
-    SIGNAL --> MONITOR
-    MONITOR -->|"Profit"| PROFIT
-    MONITOR -->|"Loss"| LOSS
-    
-    PROFIT --> CHECK_PROF
-    LOSS --> CHECK_LOSS
-    
-    CHECK_PROF --> DEDUP_PROF
-    CHECK_LOSS --> DEDUP_LOSS
-    
-    DEDUP_PROF -->|"New level"| EMIT_PROF
-    DEDUP_LOSS -->|"New level"| EMIT_LOSS
-    
-    EMIT_PROF --> PERSIST
-    EMIT_LOSS --> PERSIST
-```
+![Mermaid Diagram](./diagrams\10-client-layer_5.svg)
 
 ### Deduplication Logic
 
@@ -417,32 +268,7 @@ ClientOptimizer implements the `IOptimizer` interface and orchestrates LLM-based
 
 ### Optimization Pipeline
 
-```mermaid
-graph TB
-    SOURCES["Data Sources<br/>IOptimizerSource[]<br/>1h, 30m, 15m, 1m"]
-    
-    FETCH["Fetch Historical Data<br/>CCXT_DUMPER_URL or<br/>ExchangeCoreService"]
-    
-    FORMAT["Format for LLM<br/>Markdown tables<br/>MessageModel[]"]
-    
-    PROMPT["getPrompt callback<br/>User-defined strategy logic"]
-    
-    LLM["Ollama API<br/>deepseek-v3.1:671b<br/>Generate strategy code"]
-    
-    TEMPLATE["OptimizerTemplateService<br/>Merge with template<br/>addExchange, addStrategy, Walker.background"]
-    
-    OUTPUT["Generated Code<br/>Complete .mjs file"]
-    
-    DUMP["Optimizer.dump()<br/>Write to filesystem<br/>./{optimizerName}_{symbol}.mjs"]
-    
-    SOURCES --> FETCH
-    FETCH --> FORMAT
-    FORMAT --> PROMPT
-    PROMPT --> LLM
-    LLM --> TEMPLATE
-    TEMPLATE --> OUTPUT
-    OUTPUT --> DUMP
-```
+![Mermaid Diagram](./diagrams\10-client-layer_6.svg)
 
 ### Data Source Iteration
 
@@ -498,37 +324,7 @@ All client instances are created and managed by their respective ConnectionServi
 
 ConnectionServices act as factories with memoization:
 
-```mermaid
-graph TB
-    CALL["Core/Logic Service calls<br/>strategyConnectionService.tick()"]
-    
-    MEMO_CHECK["Memoization Check<br/>Key: symbol:strategyName"]
-    
-    CACHE_HIT["Cache Hit<br/>Return existing ClientStrategy"]
-    CACHE_MISS["Cache Miss<br/>Create new ClientStrategy"]
-    
-    INJECT["Dependency Injection<br/>execution, method, logger,<br/>exchange, risk, partial"]
-    
-    SCHEMA["Retrieve from Schema Service<br/>StrategySchemaService.get()"]
-    
-    CONSTRUCT["new ClientStrategy(params)"]
-    
-    STORE["Store in memoize cache"]
-    
-    RETURN["Return instance"]
-    
-    CALL --> MEMO_CHECK
-    MEMO_CHECK -->|"Exists"| CACHE_HIT
-    MEMO_CHECK -->|"Missing"| CACHE_MISS
-    
-    CACHE_MISS --> SCHEMA
-    SCHEMA --> INJECT
-    INJECT --> CONSTRUCT
-    CONSTRUCT --> STORE
-    STORE --> RETURN
-    
-    CACHE_HIT --> RETURN
-```
+![Mermaid Diagram](./diagrams\10-client-layer_7.svg)
 
 ### Dependency Injection Pattern
 

@@ -15,65 +15,7 @@ For framework configuration details, see [Global Configuration Parameters](./26-
 
 The codebase includes three demonstration applications located in the `demo/` directory, each illustrating a different execution mode of the framework.
 
-```mermaid
-graph TB
-    subgraph "demo/ Directory"
-        BACKTEST["demo/backtest/<br/>Historical Testing"]
-        LIVE["demo/live/<br/>Real-Time Trading"]
-        OPT["demo/optimization/<br/>LLM Strategy Generation"]
-    end
-    
-    subgraph "Backtest Demo Files"
-        BT_PKG["package.json<br/>Dependencies"]
-        BT_SRC["src/index.mjs<br/>Main Entry"]
-    end
-    
-    subgraph "Live Demo Files"
-        LV_PKG["package.json<br/>Dependencies"]
-        LV_SRC["src/index.mjs<br/>Main Entry"]
-    end
-    
-    subgraph "Optimization Demo Files"
-        OPT_PKG["package.json<br/>Dependencies"]
-        OPT_SRC["src/index.mjs<br/>Main Entry"]
-        OPT_ENV[".env.example<br/>Configuration Template"]
-    end
-    
-    subgraph "Shared Dependencies"
-        BT_KIT["backtest-kit: 1.5.20<br/>Core Framework"]
-        CCXT["ccxt: 4.5.24<br/>Exchange Integration"]
-        OLLAMA["ollama: 0.6.3<br/>LLM API Client"]
-        UUID["uuid: 13.0.0<br/>ID Generation"]
-        FUNCTOOLS["functools-kit: 1.0.94<br/>Utilities"]
-    end
-    
-    BACKTEST --> BT_PKG
-    BACKTEST --> BT_SRC
-    
-    LIVE --> LV_PKG
-    LIVE --> LV_SRC
-    
-    OPT --> OPT_PKG
-    OPT --> OPT_SRC
-    OPT --> OPT_ENV
-    
-    BT_PKG --> BT_KIT
-    BT_PKG --> CCXT
-    BT_PKG --> UUID
-    BT_PKG --> FUNCTOOLS
-    
-    LV_PKG --> BT_KIT
-    LV_PKG --> CCXT
-    LV_PKG --> OLLAMA
-    LV_PKG --> UUID
-    LV_PKG --> FUNCTOOLS
-    
-    OPT_PKG --> BT_KIT
-    OPT_PKG --> CCXT
-    OPT_PKG --> OLLAMA
-    OPT_PKG --> UUID
-    OPT_PKG --> FUNCTOOLS
-```
+![Mermaid Diagram](./diagrams\37-demo-applications_0.svg)
 
 **Demo Application Comparison**
 
@@ -181,67 +123,7 @@ The live demo runs continuously, using `new Date()` for each tick's timestamp. S
 
 The optimization demo is the most complex, showcasing the framework's ability to generate trading strategies using large language models (LLMs). This demo fetches multi-timeframe historical data, formats it for LLM consumption, and generates executable strategy code.
 
-```mermaid
-graph TB
-    subgraph "demo/optimization/src/index.mjs"
-        MAIN["Main Entry Point"]
-        TRAIN["TRAIN_RANGE Array<br/>7 days for training"]
-        TEST["TEST_RANGE Object<br/>1 day for testing"]
-        SOURCE_LIST["SOURCE_LIST Array<br/>4 data sources"]
-        FETCH_HELPERS["arrayToMarkdownTable()<br/>Data formatting"]
-    end
-    
-    subgraph "addOptimizer() Configuration"
-        OPT_NAME["optimizerName"]
-        OPT_SOURCES["sources: SOURCE_LIST"]
-        OPT_PROMPT["getPrompt callback"]
-    end
-    
-    subgraph "SOURCE_LIST Items"
-        LONG_TERM["long-term-range<br/>1h candles, 48 lookback"]
-        SWING_TERM["swing-term-range<br/>30m candles, 96 lookback"]
-        SHORT_TERM["short-term-range<br/>15m candles, 60 lookback"]
-        MICRO_TERM["micro-term-range<br/>1m candles, 60 lookback"]
-    end
-    
-    subgraph "External Services"
-        DUMPER["CCXT_DUMPER_URL<br/>node-ccxt-dumper API"]
-        OLLAMA_API["Ollama API<br/>deepseek-v3.1:671b model"]
-    end
-    
-    subgraph "Optimizer Execution Flow"
-        ITER_SOURCES["Iterate sources<br/>OptimizerGlobalService"]
-        FETCH_DATA["fetch() callback<br/>fetchApi + CCXT_DUMPER_URL"]
-        FORMAT_MSG["Format LLM messages<br/>user() + assistant()"]
-        CALL_LLM["Ollama.chat()<br/>Generate strategy code"]
-        TEMPLATE["OptimizerTemplateService<br/>Wrap code in template"]
-        EXPORT["Optimizer.dump()<br/>Write .mjs file"]
-    end
-    
-    MAIN --> TRAIN
-    MAIN --> TEST
-    MAIN --> SOURCE_LIST
-    MAIN --> FETCH_HELPERS
-    
-    SOURCE_LIST --> LONG_TERM
-    SOURCE_LIST --> SWING_TERM
-    SOURCE_LIST --> SHORT_TERM
-    SOURCE_LIST --> MICRO_TERM
-    
-    MAIN --> OPT_NAME
-    MAIN --> OPT_SOURCES
-    MAIN --> OPT_PROMPT
-    
-    OPT_SOURCES --> ITER_SOURCES
-    ITER_SOURCES --> FETCH_DATA
-    FETCH_DATA --> DUMPER
-    FETCH_DATA --> FORMAT_MSG
-    FORMAT_MSG --> OPT_PROMPT
-    OPT_PROMPT --> CALL_LLM
-    CALL_LLM --> OLLAMA_API
-    CALL_LLM --> TEMPLATE
-    TEMPLATE --> EXPORT
-```
+![Mermaid Diagram](./diagrams\37-demo-applications_1.svg)
 
 **Data Source Configuration**
 
@@ -383,38 +265,7 @@ The `dotenv-cli` package (dev dependency) loads variables from `.env` before exe
 
 **Execution Flow Diagram**
 
-```mermaid
-graph LR
-    subgraph "Execution Command"
-        NPM["npm start"]
-    end
-    
-    subgraph "dotenv-cli"
-        LOAD_ENV["Load .env file"]
-        INJECT["Inject process.env"]
-    end
-    
-    subgraph "Node.js Runtime"
-        EXEC["node src/index.mjs"]
-    end
-    
-    subgraph "Demo Application"
-        IMPORT["Import backtest-kit"]
-        CONFIG["Configure components<br/>addExchange, addStrategy, etc."]
-        RUN["Execute mode<br/>Backtest/Live/Optimizer"]
-        LISTEN["Event listeners<br/>listenSignal*, listenDone*"]
-        OUTPUT["Generate output<br/>Reports/Files/Console"]
-    end
-    
-    NPM --> LOAD_ENV
-    LOAD_ENV --> INJECT
-    INJECT --> EXEC
-    EXEC --> IMPORT
-    IMPORT --> CONFIG
-    CONFIG --> RUN
-    RUN --> LISTEN
-    LISTEN --> OUTPUT
-```
+![Mermaid Diagram](./diagrams\37-demo-applications_2.svg)
 
 **Expected Outputs**
 

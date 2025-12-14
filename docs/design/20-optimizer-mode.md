@@ -137,56 +137,7 @@ The system automatically handles pagination using `iterateDocuments` from `funct
 
 ## System Architecture
 
-```mermaid
-graph TB
-    subgraph "Public API"
-        ADD["addOptimizer()<br/>(registration)"]
-        OPT_CLASS["Optimizer.getData()<br/>Optimizer.getCode()<br/>Optimizer.dump()"]
-    end
-    
-    subgraph "Validation Layer"
-        OPT_VAL["OptimizerValidationService<br/>validate()<br/>addOptimizer()"]
-    end
-    
-    subgraph "Schema Layer"
-        OPT_SCHEMA["OptimizerSchemaService<br/>register()<br/>get()<br/>ToolRegistry storage"]
-    end
-    
-    subgraph "Global Service Layer"
-        OPT_GLOBAL["OptimizerGlobalService<br/>getData()<br/>getCode()<br/>dump()"]
-    end
-    
-    subgraph "Connection Layer"
-        OPT_CONN["OptimizerConnectionService<br/>getOptimizer() [memoized]<br/>Template merging"]
-    end
-    
-    subgraph "Template Layer"
-        OPT_TEMPLATE["OptimizerTemplateService<br/>getTopBanner()<br/>getStrategyTemplate()<br/>getWalkerTemplate()<br/>etc."]
-    end
-    
-    subgraph "Client Layer"
-        CLIENT_OPT["ClientOptimizer<br/>getData()<br/>getCode()<br/>dump()"]
-    end
-    
-    subgraph "Event System"
-        PROGRESS_EMIT["progressOptimizerEmitter<br/>ProgressOptimizerContract"]
-    end
-    
-    ADD --> OPT_VAL
-    ADD --> OPT_SCHEMA
-    
-    OPT_CLASS --> OPT_VAL
-    OPT_CLASS --> OPT_GLOBAL
-    
-    OPT_GLOBAL --> OPT_VAL
-    OPT_GLOBAL --> OPT_CONN
-    
-    OPT_CONN --> OPT_SCHEMA
-    OPT_CONN --> OPT_TEMPLATE
-    OPT_CONN --> CLIENT_OPT
-    
-    CLIENT_OPT --> PROGRESS_EMIT
-```
+![Mermaid Diagram](./diagrams\20-optimizer-mode_0.svg)
 
 **Architecture Diagram: Optimizer Mode Component Structure**
 
@@ -209,60 +160,7 @@ The optimizer collects data through a multi-stage pipeline that iterates through
 
 ### Data Flow Diagram
 
-```mermaid
-graph TB
-    START["Optimizer.getData(symbol)"]
-    VALIDATE["OptimizerValidationService<br/>validate()"]
-    GET_SCHEMA["OptimizerSchemaService<br/>get(optimizerName)"]
-    GET_CLIENT["OptimizerConnectionService<br/>getOptimizer() [memoized]"]
-    
-    RANGE_LOOP["For each rangeTrain"]
-    SOURCE_LOOP["For each source"]
-    
-    EMIT_START["Emit progress event<br/>processedSources/totalSources"]
-    
-    FETCH["RESOLVE_PAGINATION_FN<br/>iterateDocuments()<br/>distinctDocuments()<br/>resolveDocuments()"]
-    
-    FORMAT_USER["Format user message<br/>user() or getUserMessage()"]
-    FORMAT_ASSIST["Format assistant message<br/>assistant() or getAssistantMessage()"]
-    
-    APPEND_MSG["Append to messageList<br/>{role: 'user', content}<br/>{role: 'assistant', content}"]
-    
-    CALLBACK_SOURCE["callbacks.onSourceData()<br/>(if defined)"]
-    
-    GET_PROMPT["getPrompt(symbol, messageList)<br/>Generate strategy logic"]
-    
-    APPEND_STRAT["Append to strategyList<br/>{symbol, name, messages, strategy}"]
-    
-    EMIT_END["Emit final progress<br/>progress: 1.0"]
-    
-    CALLBACK_DATA["callbacks.onData()<br/>(if defined)"]
-    
-    RETURN["Return IOptimizerStrategy[]"]
-    
-    START --> VALIDATE
-    VALIDATE --> GET_SCHEMA
-    GET_SCHEMA --> GET_CLIENT
-    GET_CLIENT --> RANGE_LOOP
-    
-    RANGE_LOOP --> SOURCE_LOOP
-    SOURCE_LOOP --> EMIT_START
-    EMIT_START --> FETCH
-    
-    FETCH --> CALLBACK_SOURCE
-    CALLBACK_SOURCE --> FORMAT_USER
-    FORMAT_USER --> FORMAT_ASSIST
-    FORMAT_ASSIST --> APPEND_MSG
-    
-    APPEND_MSG --> SOURCE_LOOP
-    SOURCE_LOOP --> GET_PROMPT
-    GET_PROMPT --> APPEND_STRAT
-    
-    APPEND_STRAT --> RANGE_LOOP
-    RANGE_LOOP --> EMIT_END
-    EMIT_END --> CALLBACK_DATA
-    CALLBACK_DATA --> RETURN
-```
+![Mermaid Diagram](./diagrams\20-optimizer-mode_1.svg)
 
 **Data Flow Diagram: Strategy Data Collection Process**
 
@@ -338,19 +236,7 @@ interface IOptimizerTemplate {
 
 ### Template Merging Process
 
-```mermaid
-graph LR
-    SCHEMA["IOptimizerSchema<br/>template: Partial"]
-    DEFAULT["OptimizerTemplateService<br/>Default implementations"]
-    CONN["OptimizerConnectionService<br/>getOptimizer()"]
-    MERGED["Complete IOptimizerTemplate<br/>All methods defined"]
-    CLIENT["ClientOptimizer<br/>Uses complete template"]
-    
-    SCHEMA -->|"Custom overrides"| CONN
-    DEFAULT -->|"Default implementations"| CONN
-    CONN -->|"Merge with ||="| MERGED
-    MERGED --> CLIENT
-```
+![Mermaid Diagram](./diagrams\20-optimizer-mode_2.svg)
 
 **Template Merging Diagram: How Custom and Default Templates Combine**
 
@@ -448,57 +334,7 @@ The `getCode()` method assembles all template sections into complete executable 
 
 ### Code Assembly Flow
 
-```mermaid
-graph TB
-    START["Optimizer.getCode(symbol)"]
-    GET_DATA["ClientOptimizer.getData()<br/>Fetch strategy data"]
-    CREATE_PREFIX["CREATE_PREFIX_FN()<br/>Generate unique prefix"]
-    
-    SECTIONS["sections: string[] = []"]
-    
-    BANNER["1. getTopBanner()<br/>Imports and constants"]
-    DUMP_HELPER["2. getJsonDumpTemplate()<br/>Debug logger function"]
-    TEXT_HELPER["3. getTextTemplate()<br/>LLM text helper"]
-    JSON_HELPER["4. getJsonTemplate()<br/>LLM JSON helper"]
-    
-    EXCHANGE["5. getExchangeTemplate()<br/>CCXT exchange config"]
-    
-    TRAIN_FRAMES["6. Loop rangeTrain<br/>getFrameTemplate() for each"]
-    TEST_FRAME["7. getFrameTemplate()<br/>Test frame"]
-    
-    STRATEGIES["8. Loop strategyData<br/>getStrategyTemplate() for each"]
-    
-    WALKER["9. getWalkerTemplate()<br/>Walker config with all strategies"]
-    LAUNCHER["10. getLauncherTemplate()<br/>Walker.background() + listeners"]
-    
-    JOIN["sections.join('\\n')<br/>Combine all sections"]
-    
-    CALLBACK["callbacks.onCode()<br/>(if defined)"]
-    RETURN["Return complete code string"]
-    
-    START --> GET_DATA
-    GET_DATA --> CREATE_PREFIX
-    CREATE_PREFIX --> SECTIONS
-    
-    SECTIONS --> BANNER
-    BANNER --> DUMP_HELPER
-    DUMP_HELPER --> TEXT_HELPER
-    TEXT_HELPER --> JSON_HELPER
-    
-    JSON_HELPER --> EXCHANGE
-    
-    EXCHANGE --> TRAIN_FRAMES
-    TRAIN_FRAMES --> TEST_FRAME
-    
-    TEST_FRAME --> STRATEGIES
-    
-    STRATEGIES --> WALKER
-    WALKER --> LAUNCHER
-    
-    LAUNCHER --> JOIN
-    JOIN --> CALLBACK
-    CALLBACK --> RETURN
-```
+![Mermaid Diagram](./diagrams\20-optimizer-mode_3.svg)
 
 **Code Assembly Diagram: How Template Sections Are Combined**
 
@@ -708,36 +544,7 @@ Total sources: `rangeTrain.length * source.length`
 
 ### Event Flow Diagram
 
-```mermaid
-graph TB
-    START["ClientOptimizer.getData()"]
-    CALC_TOTAL["totalSources = rangeTrain.length * source.length"]
-    INIT_COUNT["processedSources = 0"]
-    
-    RANGE_LOOP["For each rangeTrain"]
-    SOURCE_LOOP["For each source"]
-    
-    EMIT_START["progressOptimizerEmitter.next()<br/>progress: processedSources/totalSources"]
-    FETCH["Fetch and process source"]
-    INCREMENT["processedSources++"]
-    
-    DONE["All processing complete"]
-    EMIT_FINAL["progressOptimizerEmitter.next()<br/>progress: 1.0"]
-    
-    START --> CALC_TOTAL
-    CALC_TOTAL --> INIT_COUNT
-    INIT_COUNT --> RANGE_LOOP
-    
-    RANGE_LOOP --> SOURCE_LOOP
-    SOURCE_LOOP --> EMIT_START
-    EMIT_START --> FETCH
-    FETCH --> INCREMENT
-    INCREMENT --> SOURCE_LOOP
-    
-    SOURCE_LOOP --> RANGE_LOOP
-    RANGE_LOOP --> DONE
-    DONE --> EMIT_FINAL
-```
+![Mermaid Diagram](./diagrams\20-optimizer-mode_4.svg)
 
 **Progress Event Flow: Tracking Source Processing**
 

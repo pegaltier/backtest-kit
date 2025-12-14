@@ -43,60 +43,7 @@ demo/
 
 ## Demo Dependency Architecture
 
-```mermaid
-graph TB
-    subgraph "Demo Applications"
-        OPT["optimization demo<br/>demo/optimization/src/index.mjs"]
-        BT["backtest demo<br/>demo/backtest/src/index.mjs"]
-        LV["live demo<br/>demo/live/src/index.mjs"]
-    end
-    
-    subgraph "Core Dependencies"
-        BTKIT["backtest-kit@1.5.20<br/>Main framework"]
-        CCXT["ccxt@4.5.24<br/>Exchange connector"]
-        FUNC["functools-kit@1.0.94<br/>Utility functions"]
-        UUID["uuid@13.0.0<br/>ID generation"]
-        OLLAMA["ollama@0.6.3<br/>LLM client"]
-    end
-    
-    subgraph "Development Dependencies"
-        DOTENV["dotenv-cli@11.0.0<br/>Environment loader"]
-    end
-    
-    subgraph "External Services"
-        OLLAMA_SRV["Ollama API<br/>LLM inference"]
-        DUMPER["CCXT Dumper Service<br/>Historical data"]
-        EXCHANGES["Exchange APIs<br/>Market data"]
-    end
-    
-    OPT --> BTKIT
-    OPT --> CCXT
-    OPT --> FUNC
-    OPT --> UUID
-    OPT --> OLLAMA
-    OPT --> DOTENV
-    
-    BT --> BTKIT
-    BT --> CCXT
-    BT --> FUNC
-    BT --> UUID
-    BT --> OLLAMA
-    BT --> DOTENV
-    
-    LV --> BTKIT
-    LV --> CCXT
-    LV --> FUNC
-    LV --> UUID
-    LV --> OLLAMA
-    LV --> DOTENV
-    
-    OLLAMA --> OLLAMA_SRV
-    OPT --> DUMPER
-    CCXT --> EXCHANGES
-    
-    style BTKIT fill:#e1f5ff,stroke:#333,stroke-width:3px
-    style OPT fill:#ffe1e1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\39-running-demos_0.svg)
 
 ---
 
@@ -192,60 +139,7 @@ The optimization demo requires a running CCXT dumper service (referenced at [dem
 
 ### Optimization Demo Execution Flow
 
-```mermaid
-graph TB
-    START["npm start<br/>demo/optimization"]
-    
-    ENV["dotenv-cli loads .env<br/>OLLAMA_API_KEY<br/>CCXT_DUMPER_URL"]
-    
-    EXEC["node src/index.mjs"]
-    
-    subgraph "Demo Initialization"
-        ADD_OPT["addOptimizer call<br/>optimizerName<br/>sources array<br/>getPrompt callback"]
-        
-        SOURCES["SOURCE_LIST definition<br/>4 data sources<br/>fetch + format functions"]
-        
-        RANGES["TRAIN_RANGE array<br/>7 days training data<br/>TEST_RANGE object<br/>1 day test data"]
-    end
-    
-    subgraph "Execution Loop"
-        OPT_RUN["Optimizer.run call<br/>symbol + optimizerName"]
-        
-        FETCH["For each source:<br/>fetchApi from CCXT_DUMPER_URL<br/>arrayToMarkdownTable<br/>Format for LLM"]
-        
-        LLM["Ollama API call<br/>deepseek-v3.1:671b model<br/>Generate strategy code"]
-        
-        TEMPLATE["OptimizerTemplateService<br/>Merge LLM response<br/>Generate .mjs file"]
-        
-        EMIT["progressOptimizerEmitter<br/>processedSources<br/>totalSources<br/>progress percentage"]
-    end
-    
-    OUTPUT["Generated code output<br/>addExchange + addStrategy<br/>Walker.background calls"]
-    
-    DUMP["Optimizer.dump<br/>Write to file system<br/>./{optimizerName}_{symbol}.mjs"]
-    
-    START --> ENV
-    ENV --> EXEC
-    EXEC --> ADD_OPT
-    ADD_OPT --> SOURCES
-    ADD_OPT --> RANGES
-    
-    SOURCES --> OPT_RUN
-    RANGES --> OPT_RUN
-    
-    OPT_RUN --> FETCH
-    FETCH --> LLM
-    LLM --> TEMPLATE
-    
-    FETCH --> EMIT
-    
-    TEMPLATE --> OUTPUT
-    OUTPUT --> DUMP
-    
-    style START fill:#e1f5ff,stroke:#333,stroke-width:3px
-    style LLM fill:#e8f5e9,stroke:#333,stroke-width:2px
-    style OUTPUT fill:#fff4e1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\39-running-demos_1.svg)
 
 ---
 
@@ -318,30 +212,7 @@ npm start
 
 The optimization demo defines four data sources at [demo/optimization/src/index.mjs:66-298](), each with specific parameters:
 
-```mermaid
-graph LR
-    subgraph "SOURCE_LIST Array"
-        SRC1["long-term-range<br/>1h candles<br/>48h lookback<br/>RSI/MACD/ADX/ATR<br/>Bollinger/Stoch/Fib"]
-        
-        SRC2["swing-term-range<br/>30m candles<br/>48h lookback<br/>RSI/MACD/Bollinger<br/>Volume/Volatility"]
-        
-        SRC3["short-term-range<br/>15m candles<br/>RSI/MACD/CCI<br/>ROC/Support/Resistance"]
-        
-        SRC4["micro-term-range<br/>1m candles<br/>1h lookback<br/>Fast indicators<br/>Histogram/Width"]
-    end
-    
-    subgraph "Each Source Object"
-        NAME["name: string"]
-        FETCH["fetch: async function<br/>symbol, startDate, endDate<br/>limit, offset"]
-        USER["user: function<br/>symbol, data<br/>returns markdown"]
-        ASSISTANT["assistant: function<br/>returns confirmation"]
-    end
-    
-    SRC1 --> NAME
-    SRC1 --> FETCH
-    SRC1 --> USER
-    SRC1 --> ASSISTANT
-```
+![Mermaid Diagram](./diagrams\39-running-demos_2.svg)
 
 ### Training and Test Ranges
 

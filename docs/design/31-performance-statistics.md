@@ -30,68 +30,7 @@ The framework provides multiple statistics interfaces, each tailored to a specif
 
 The following diagram shows how raw signal data flows through the system to produce aggregated statistics:
 
-```mermaid
-graph TB
-    subgraph "Signal Generation"
-        SIGNALS["IStrategyTickResult<br/>closed signals"]
-        BT_EMITTER["signalBacktestEmitter"]
-        LIVE_EMITTER["signalLiveEmitter"]
-    end
-    
-    subgraph "Storage Layer"
-        BT_STORAGE["ReportStorage<br/>(BacktestMarkdownService)"]
-        LIVE_STORAGE["ReportStorage<br/>(LiveMarkdownService)"]
-        
-        BT_LIST["_signalList: IStrategyTickResultClosed[]"]
-        LIVE_LIST["_eventList: TickEvent[]"]
-    end
-    
-    subgraph "Aggregation"
-        AGGREGATE["getData() method"]
-        
-        BASIC["Basic Metrics<br/>totalSignals, winCount, lossCount"]
-        RATES["Rates<br/>winRate, avgPnl, totalPnl"]
-        VOLATILITY["Volatility<br/>stdDev (variance)"]
-        RISK_ADJ["Risk-Adjusted<br/>sharpeRatio, annualizedSharpeRatio"]
-        ADVANCED["Advanced<br/>certaintyRatio, expectedYearlyReturns"]
-    end
-    
-    subgraph "Safety Validation"
-        IS_UNSAFE["isUnsafe(value)<br/>checks NaN, Infinity"]
-        NULLIFY["Set to null if unsafe"]
-    end
-    
-    subgraph "Output"
-        STATS["BacktestStatistics | LiveStatistics<br/>all metrics + signalList/eventList"]
-    end
-    
-    SIGNALS --> BT_EMITTER
-    SIGNALS --> LIVE_EMITTER
-    
-    BT_EMITTER --> BT_STORAGE
-    LIVE_EMITTER --> LIVE_STORAGE
-    
-    BT_STORAGE --> BT_LIST
-    LIVE_STORAGE --> LIVE_LIST
-    
-    BT_LIST --> AGGREGATE
-    LIVE_LIST --> AGGREGATE
-    
-    AGGREGATE --> BASIC
-    BASIC --> RATES
-    RATES --> VOLATILITY
-    VOLATILITY --> RISK_ADJ
-    RISK_ADJ --> ADVANCED
-    
-    RATES --> IS_UNSAFE
-    VOLATILITY --> IS_UNSAFE
-    RISK_ADJ --> IS_UNSAFE
-    ADVANCED --> IS_UNSAFE
-    
-    IS_UNSAFE --> NULLIFY
-    
-    NULLIFY --> STATS
-```
+![Mermaid Diagram](./diagrams\31-performance-statistics_0.svg)
 
 ---
 
@@ -409,38 +348,7 @@ expectancy = (0.60 × 5%) + (0.40 × -3%) = 3.0% - 1.2% = 1.8%
 
 All numeric statistics use the `isUnsafe()` function to validate values before returning them. Invalid values are replaced with `null` to prevent displaying misleading data.
 
-```mermaid
-graph TB
-    CALC["Metric Calculation"]
-    CHECK["isUnsafe(value)"]
-    
-    TYPE_CHECK["typeof value !== 'number'"]
-    NAN_CHECK["isNaN(value)"]
-    FINITE_CHECK["!isFinite(value)"]
-    
-    UNSAFE["return true<br/>(unsafe)"]
-    SAFE["return false<br/>(safe)"]
-    
-    NULL["Set metric to null"]
-    VALUE["Keep calculated value"]
-    
-    CALC --> CHECK
-    
-    CHECK --> TYPE_CHECK
-    CHECK --> NAN_CHECK
-    CHECK --> FINITE_CHECK
-    
-    TYPE_CHECK -->|true| UNSAFE
-    NAN_CHECK -->|true| UNSAFE
-    FINITE_CHECK -->|true| UNSAFE
-    
-    TYPE_CHECK -->|false| SAFE
-    NAN_CHECK -->|false| SAFE
-    FINITE_CHECK -->|false| SAFE
-    
-    UNSAFE --> NULL
-    SAFE --> VALUE
-```
+![Mermaid Diagram](./diagrams\31-performance-statistics_1.svg)
 
 **Implementation:**
 ```typescript
@@ -488,65 +396,7 @@ return {
 
 Each markdown service provides a `getData()` method to retrieve statistics programmatically. These methods return the full statistics interface with all calculated metrics.
 
-```mermaid
-graph LR
-    subgraph "Public API"
-        BT_API["Backtest.getData()"]
-        LIVE_API["Live.getData()"]
-        SCHED_API["Schedule.getData()"]
-        HEAT_API["Heat.getData()"]
-        PERF_API["Performance.getData()"]
-        PARTIAL_API["Partial.getData()"]
-    end
-    
-    subgraph "Service Methods"
-        BT_SVC["BacktestMarkdownService.getData()"]
-        LIVE_SVC["LiveMarkdownService.getData()"]
-        SCHED_SVC["ScheduleMarkdownService.getData()"]
-        HEAT_SVC["HeatMarkdownService.getData()"]
-        PERF_SVC["PerformanceMarkdownService.getData()"]
-        PARTIAL_SVC["PartialMarkdownService.getData()"]
-    end
-    
-    subgraph "Storage"
-        BT_STORAGE["ReportStorage.getData()"]
-        LIVE_STORAGE["ReportStorage.getData()"]
-        SCHED_STORAGE["ReportStorage.getData()"]
-        HEAT_STORAGE["HeatmapStorage.getData()"]
-        PERF_STORAGE["PerformanceStorage.getData()"]
-        PARTIAL_STORAGE["ReportStorage.getData()"]
-    end
-    
-    subgraph "Output Types"
-        BT_OUT["BacktestStatistics"]
-        LIVE_OUT["LiveStatistics"]
-        SCHED_OUT["ScheduleStatistics"]
-        HEAT_OUT["IHeatmapStatistics"]
-        PERF_OUT["PerformanceStatistics"]
-        PARTIAL_OUT["PartialStatistics"]
-    end
-    
-    BT_API --> BT_SVC
-    LIVE_API --> LIVE_SVC
-    SCHED_API --> SCHED_SVC
-    HEAT_API --> HEAT_SVC
-    PERF_API --> PERF_SVC
-    PARTIAL_API --> PARTIAL_SVC
-    
-    BT_SVC --> BT_STORAGE
-    LIVE_SVC --> LIVE_STORAGE
-    SCHED_SVC --> SCHED_STORAGE
-    HEAT_SVC --> HEAT_STORAGE
-    PERF_SVC --> PERF_STORAGE
-    PARTIAL_SVC --> PARTIAL_STORAGE
-    
-    BT_STORAGE --> BT_OUT
-    LIVE_STORAGE --> LIVE_OUT
-    SCHED_STORAGE --> SCHED_OUT
-    HEAT_STORAGE --> HEAT_OUT
-    PERF_STORAGE --> PERF_OUT
-    PARTIAL_STORAGE --> PARTIAL_OUT
-```
+![Mermaid Diagram](./diagrams\31-performance-statistics_2.svg)
 
 **Backtest Statistics Example:**
 

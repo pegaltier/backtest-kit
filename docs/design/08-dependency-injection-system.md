@@ -21,88 +21,7 @@ The DI system consists of three core components:
 2. **Service Provider** - Registration mechanism using factory functions
 3. **Service Aggregation** - The `backtest` singleton object exposing all services
 
-```mermaid
-graph TB
-    subgraph "Symbol Registry (types.ts)"
-        TYPES_BASE["baseServices<br/>loggerService: Symbol"]
-        TYPES_CONTEXT["contextServices<br/>executionContextService: Symbol<br/>methodContextService: Symbol"]
-        TYPES_SCHEMA["schemaServices<br/>exchangeSchemaService: Symbol<br/>strategySchemaService: Symbol<br/>frameSchemaService: Symbol<br/>+4 more"]
-        TYPES_VALIDATION["validationServices<br/>exchangeValidationService: Symbol<br/>strategyValidationService: Symbol<br/>+6 more"]
-        TYPES_CONNECTION["connectionServices<br/>exchangeConnectionService: Symbol<br/>strategyConnectionService: Symbol<br/>+5 more"]
-        TYPES_CORE["coreServices<br/>exchangeCoreService: Symbol<br/>strategyCoreService: Symbol<br/>frameCoreService: Symbol"]
-        TYPES_GLOBAL["globalServices<br/>sizingGlobalService: Symbol<br/>riskGlobalService: Symbol<br/>+2 more"]
-        TYPES_COMMAND["commandServices<br/>liveCommandService: Symbol<br/>backtestCommandService: Symbol<br/>walkerCommandService: Symbol"]
-        TYPES_LOGIC["logicPrivateServices<br/>logicPublicServices<br/>6 symbols total"]
-        TYPES_MARKDOWN["markdownServices<br/>9 symbols total"]
-        TYPES_TEMPLATE["templateServices<br/>optimizerTemplateService: Symbol"]
-    end
-    
-    subgraph "Service Provider (provide.ts)"
-        PROVIDE_BASE["provide(TYPES.loggerService,<br/>() => new LoggerService())"]
-        PROVIDE_CONTEXT["provide(TYPES.executionContextService,<br/>() => new ExecutionContextService())<br/>provide(TYPES.methodContextService,<br/>() => new MethodContextService())"]
-        PROVIDE_SCHEMA["7 provide() calls<br/>Factory functions instantiate<br/>Schema services"]
-        PROVIDE_VALIDATION["8 provide() calls<br/>Factory functions instantiate<br/>Validation services"]
-        PROVIDE_CONNECTION["7 provide() calls<br/>Factory functions instantiate<br/>Connection services"]
-        PROVIDE_CORE["3 provide() calls<br/>Factory functions instantiate<br/>Core services"]
-        PROVIDE_GLOBAL["4 provide() calls<br/>Factory functions instantiate<br/>Global services"]
-        PROVIDE_COMMAND["3 provide() calls<br/>Factory functions instantiate<br/>Command services"]
-        PROVIDE_LOGIC["12 provide() calls<br/>Public/Private split<br/>6 services each"]
-        PROVIDE_MARKDOWN["9 provide() calls<br/>Factory functions instantiate<br/>Markdown services"]
-        PROVIDE_TEMPLATE["1 provide() call<br/>OptimizerTemplateService"]
-    end
-    
-    subgraph "Service Aggregation (index.ts)"
-        INJECT_BASE["baseServices<br/>inject<LoggerService>(TYPES.loggerService)"]
-        INJECT_CONTEXT["contextServices<br/>inject<TExecutionContextService>(...)<br/>inject<TMethodContextService>(...)"]
-        INJECT_SCHEMA["schemaServices<br/>7 inject() calls"]
-        INJECT_VALIDATION["validationServices<br/>8 inject() calls"]
-        INJECT_CONNECTION["connectionServices<br/>7 inject() calls"]
-        INJECT_CORE["coreServices<br/>3 inject() calls"]
-        INJECT_GLOBAL["globalServices<br/>4 inject() calls"]
-        INJECT_COMMAND["commandServices<br/>3 inject() calls"]
-        INJECT_LOGIC["logicPrivateServices<br/>logicPublicServices<br/>12 inject() calls"]
-        INJECT_MARKDOWN["markdownServices<br/>9 inject() calls"]
-        INJECT_TEMPLATE["templateServices<br/>1 inject() call"]
-        
-        BACKTEST["export const backtest = {<br/>...baseServices,<br/>...contextServices,<br/>...connectionServices,<br/>...schemaServices,<br/>...coreServices,<br/>...globalServices,<br/>...commandServices,<br/>...logicPrivateServices,<br/>...logicPublicServices,<br/>...markdownServices,<br/>...validationServices,<br/>...templateServices<br/>}"]
-    end
-    
-    TYPES_BASE --> PROVIDE_BASE
-    TYPES_CONTEXT --> PROVIDE_CONTEXT
-    TYPES_SCHEMA --> PROVIDE_SCHEMA
-    TYPES_VALIDATION --> PROVIDE_VALIDATION
-    TYPES_CONNECTION --> PROVIDE_CONNECTION
-    TYPES_CORE --> PROVIDE_CORE
-    TYPES_GLOBAL --> PROVIDE_GLOBAL
-    TYPES_COMMAND --> PROVIDE_COMMAND
-    TYPES_LOGIC --> PROVIDE_LOGIC
-    TYPES_MARKDOWN --> PROVIDE_MARKDOWN
-    TYPES_TEMPLATE --> PROVIDE_TEMPLATE
-    
-    PROVIDE_BASE --> INJECT_BASE
-    PROVIDE_CONTEXT --> INJECT_CONTEXT
-    PROVIDE_SCHEMA --> INJECT_SCHEMA
-    PROVIDE_VALIDATION --> INJECT_VALIDATION
-    PROVIDE_CONNECTION --> INJECT_CONNECTION
-    PROVIDE_CORE --> INJECT_CORE
-    PROVIDE_GLOBAL --> INJECT_GLOBAL
-    PROVIDE_COMMAND --> INJECT_COMMAND
-    PROVIDE_LOGIC --> INJECT_LOGIC
-    PROVIDE_MARKDOWN --> INJECT_MARKDOWN
-    PROVIDE_TEMPLATE --> INJECT_TEMPLATE
-    
-    INJECT_BASE --> BACKTEST
-    INJECT_CONTEXT --> BACKTEST
-    INJECT_SCHEMA --> BACKTEST
-    INJECT_VALIDATION --> BACKTEST
-    INJECT_CONNECTION --> BACKTEST
-    INJECT_CORE --> BACKTEST
-    INJECT_GLOBAL --> BACKTEST
-    INJECT_COMMAND --> BACKTEST
-    INJECT_LOGIC --> BACKTEST
-    INJECT_MARKDOWN --> BACKTEST
-    INJECT_TEMPLATE --> BACKTEST
-```
+![Mermaid Diagram](./diagrams\08-dependency-injection-system_0.svg)
 
 ---
 
@@ -174,17 +93,7 @@ The [src/lib/core/provide.ts]() file registers all services using the `provide()
 
 ### Registration Flow
 
-```mermaid
-graph LR
-    IMPORT["Import service classes<br/>LoggerService, ExchangeConnectionService,<br/>StrategySchemaService, etc."]
-    PROVIDE["provide(symbol, factory)<br/>Factory function returns<br/>new service instance"]
-    CONTAINER["DI Container<br/>Stores symbol → factory mapping"]
-    INIT["init()<br/>Called after all registrations<br/>Resolves dependencies"]
-    
-    IMPORT --> PROVIDE
-    PROVIDE --> CONTAINER
-    CONTAINER --> INIT
-```
+![Mermaid Diagram](./diagrams\08-dependency-injection-system_1.svg)
 
 ### Registration Examples by Category
 
@@ -243,40 +152,7 @@ The [src/lib/index.ts]() file creates the `backtest` aggregation object by injec
 
 ### Aggregation Structure
 
-```mermaid
-graph TB
-    subgraph "Service Injection (index.ts:60-219)"
-        BASE["baseServices = {<br/>loggerService: inject<LoggerService>(TYPES.loggerService)<br/>}"]
-        CONTEXT["contextServices = {<br/>executionContextService: inject<TExecutionContextService>(...),<br/>methodContextService: inject<TMethodContextService>(...)<br/>}"]
-        CONNECTION["connectionServices = {<br/>exchangeConnectionService: inject<ExchangeConnectionService>(...),<br/>strategyConnectionService: inject<StrategyConnectionService>(...),<br/>... 5 more<br/>}"]
-        SCHEMA["schemaServices = {<br/>exchangeSchemaService: inject<ExchangeSchemaService>(...),<br/>strategySchemaService: inject<StrategySchemaService>(...),<br/>... 5 more<br/>}"]
-        CORE["coreServices = {<br/>exchangeCoreService: inject<ExchangeCoreService>(...),<br/>strategyCoreService: inject<StrategyCoreService>(...),<br/>frameCoreService: inject<FrameCoreService>(...)<br/>}"]
-        GLOBAL["globalServices = {<br/>sizingGlobalService: inject<SizingGlobalService>(...),<br/>riskGlobalService: inject<RiskGlobalService>(...),<br/>... 2 more<br/>}"]
-        COMMAND["commandServices = {<br/>liveCommandService: inject<LiveCommandService>(...),<br/>backtestCommandService: inject<BacktestCommandService>(...),<br/>walkerCommandService: inject<WalkerCommandService>(...)<br/>}"]
-        LOGIC_PRIV["logicPrivateServices = {<br/>backtestLogicPrivateService: inject<BacktestLogicPrivateService>(...),<br/>liveLogicPrivateService: inject<LiveLogicPrivateService>(...),<br/>walkerLogicPrivateService: inject<WalkerLogicPrivateService>(...)<br/>}"]
-        LOGIC_PUB["logicPublicServices = {<br/>backtestLogicPublicService: inject<BacktestLogicPublicService>(...),<br/>liveLogicPublicService: inject<LiveLogicPublicService>(...),<br/>walkerLogicPublicService: inject<WalkerLogicPublicService>(...)<br/>}"]
-        MARKDOWN["markdownServices = {<br/>backtestMarkdownService: inject<BacktestMarkdownService>(...),<br/>liveMarkdownService: inject<LiveMarkdownService>(...),<br/>... 7 more<br/>}"]
-        VALIDATION["validationServices = {<br/>exchangeValidationService: inject<ExchangeValidationService>(...),<br/>strategyValidationService: inject<StrategyValidationService>(...),<br/>... 6 more<br/>}"]
-        TEMPLATE["templateServices = {<br/>optimizerTemplateService: inject<OptimizerTemplateService>(...)<br/>}"]
-    end
-    
-    subgraph "Aggregation (index.ts:221-234)"
-        BACKTEST_OBJ["export const backtest = {<br/>...baseServices,<br/>...contextServices,<br/>...connectionServices,<br/>...schemaServices,<br/>...coreServices,<br/>...globalServices,<br/>...commandServices,<br/>...logicPrivateServices,<br/>...logicPublicServices,<br/>...markdownServices,<br/>...validationServices,<br/>...templateServices,<br/>}<br/><br/>Total: 51 services"]
-    end
-    
-    BASE --> BACKTEST_OBJ
-    CONTEXT --> BACKTEST_OBJ
-    CONNECTION --> BACKTEST_OBJ
-    SCHEMA --> BACKTEST_OBJ
-    CORE --> BACKTEST_OBJ
-    GLOBAL --> BACKTEST_OBJ
-    COMMAND --> BACKTEST_OBJ
-    LOGIC_PRIV --> BACKTEST_OBJ
-    LOGIC_PUB --> BACKTEST_OBJ
-    MARKDOWN --> BACKTEST_OBJ
-    VALIDATION --> BACKTEST_OBJ
-    TEMPLATE --> BACKTEST_OBJ
-```
+![Mermaid Diagram](./diagrams\08-dependency-injection-system_2.svg)
 
 ### Initialization and Export
 
@@ -547,157 +423,7 @@ The Optimizer Template Service merges user-provided template overrides with defa
 
 The following diagram illustrates how services depend on each other within the DI system.
 
-```mermaid
-graph TB
-    subgraph "Public API Layer (function/)"
-        ADD["addStrategy, addExchange,<br/>addFrame, addWalker,<br/>addSizing, addRisk,<br/>addOptimizer"]
-        LIST["listStrategies,<br/>listExchanges,<br/>listFrames, etc."]
-        EVENT["listenSignal,<br/>listenError,<br/>listenPartialProfit, etc."]
-    end
-    
-    subgraph "Command Services"
-        LIVE_CMD["LiveCommandService"]
-        BACKTEST_CMD["BacktestCommandService"]
-        WALKER_CMD["WalkerCommandService"]
-    end
-    
-    subgraph "Logic Services (Public)"
-        LIVE_PUB["LiveLogicPublicService"]
-        BACKTEST_PUB["BacktestLogicPublicService"]
-        WALKER_PUB["WalkerLogicPublicService"]
-    end
-    
-    subgraph "Logic Services (Private)"
-        LIVE_PRIV["LiveLogicPrivateService"]
-        BACKTEST_PRIV["BacktestLogicPrivateService"]
-        WALKER_PRIV["WalkerLogicPrivateService"]
-    end
-    
-    subgraph "Core Services"
-        STRATEGY_CORE["StrategyCoreService<br/>tick(), backtest()"]
-        EXCHANGE_CORE["ExchangeCoreService<br/>getCandles(), VWAP"]
-        FRAME_CORE["FrameCoreService<br/>getTimeframe()"]
-    end
-    
-    subgraph "Connection Services"
-        STRATEGY_CONN["StrategyConnectionService<br/>Memoized ClientStrategy"]
-        EXCHANGE_CONN["ExchangeConnectionService<br/>Memoized ClientExchange"]
-        FRAME_CONN["FrameConnectionService<br/>Memoized ClientFrame"]
-        SIZING_CONN["SizingConnectionService<br/>Memoized ClientSizing"]
-        RISK_CONN["RiskConnectionService<br/>Memoized ClientRisk"]
-        OPTIMIZER_CONN["OptimizerConnectionService<br/>Memoized ClientOptimizer"]
-        PARTIAL_CONN["PartialConnectionService<br/>Memoized ClientPartial"]
-    end
-    
-    subgraph "Schema Services"
-        STRATEGY_SCHEMA["StrategySchemaService<br/>ToolRegistry pattern"]
-        EXCHANGE_SCHEMA["ExchangeSchemaService<br/>ToolRegistry pattern"]
-        FRAME_SCHEMA["FrameSchemaService<br/>ToolRegistry pattern"]
-        SIZING_SCHEMA["SizingSchemaService<br/>ToolRegistry pattern"]
-        RISK_SCHEMA["RiskSchemaService<br/>ToolRegistry pattern"]
-        OPTIMIZER_SCHEMA["OptimizerSchemaService<br/>ToolRegistry pattern"]
-        WALKER_SCHEMA["WalkerSchemaService<br/>ToolRegistry pattern"]
-    end
-    
-    subgraph "Validation Services"
-        STRATEGY_VAL["StrategyValidationService"]
-        EXCHANGE_VAL["ExchangeValidationService"]
-        FRAME_VAL["FrameValidationService"]
-        SIZING_VAL["SizingValidationService"]
-        RISK_VAL["RiskValidationService"]
-        OPTIMIZER_VAL["OptimizerValidationService"]
-        WALKER_VAL["WalkerValidationService"]
-        CONFIG_VAL["ConfigValidationService"]
-    end
-    
-    subgraph "Global Services"
-        SIZING_GLOBAL["SizingGlobalService"]
-        RISK_GLOBAL["RiskGlobalService"]
-        OPTIMIZER_GLOBAL["OptimizerGlobalService"]
-        PARTIAL_GLOBAL["PartialGlobalService"]
-    end
-    
-    subgraph "Markdown Services"
-        BACKTEST_MD["BacktestMarkdownService"]
-        LIVE_MD["LiveMarkdownService"]
-        WALKER_MD["WalkerMarkdownService"]
-        PARTIAL_MD["PartialMarkdownService"]
-        RISK_MD["RiskMarkdownService"]
-    end
-    
-    subgraph "Context Services"
-        EXEC_CTX["ExecutionContextService<br/>symbol, when, backtest"]
-        METHOD_CTX["MethodContextService<br/>strategyName, exchangeName,<br/>frameName"]
-    end
-    
-    subgraph "Base Services"
-        LOGGER["LoggerService"]
-    end
-    
-    ADD --> STRATEGY_VAL
-    ADD --> EXCHANGE_VAL
-    ADD --> STRATEGY_SCHEMA
-    ADD --> EXCHANGE_SCHEMA
-    
-    LIST --> STRATEGY_VAL
-    LIST --> EXCHANGE_VAL
-    
-    LIVE_CMD --> LIVE_PUB
-    BACKTEST_CMD --> BACKTEST_PUB
-    WALKER_CMD --> WALKER_PUB
-    
-    LIVE_PUB --> METHOD_CTX
-    LIVE_PUB --> LIVE_PRIV
-    BACKTEST_PUB --> METHOD_CTX
-    BACKTEST_PUB --> BACKTEST_PRIV
-    WALKER_PUB --> METHOD_CTX
-    WALKER_PUB --> WALKER_PRIV
-    
-    LIVE_PRIV --> STRATEGY_CORE
-    BACKTEST_PRIV --> STRATEGY_CORE
-    BACKTEST_PRIV --> EXCHANGE_CORE
-    BACKTEST_PRIV --> FRAME_CORE
-    WALKER_PRIV --> BACKTEST_PUB
-    
-    STRATEGY_CORE --> STRATEGY_CONN
-    STRATEGY_CORE --> EXEC_CTX
-    EXCHANGE_CORE --> EXCHANGE_CONN
-    EXCHANGE_CORE --> EXEC_CTX
-    FRAME_CORE --> FRAME_CONN
-    
-    STRATEGY_CONN --> STRATEGY_SCHEMA
-    STRATEGY_CONN --> RISK_CONN
-    STRATEGY_CONN --> PARTIAL_CONN
-    EXCHANGE_CONN --> EXCHANGE_SCHEMA
-    FRAME_CONN --> FRAME_SCHEMA
-    SIZING_CONN --> SIZING_SCHEMA
-    RISK_CONN --> RISK_SCHEMA
-    OPTIMIZER_CONN --> OPTIMIZER_SCHEMA
-    
-    STRATEGY_VAL --> STRATEGY_SCHEMA
-    EXCHANGE_VAL --> EXCHANGE_SCHEMA
-    FRAME_VAL --> FRAME_SCHEMA
-    SIZING_VAL --> SIZING_SCHEMA
-    RISK_VAL --> RISK_SCHEMA
-    OPTIMIZER_VAL --> OPTIMIZER_SCHEMA
-    WALKER_VAL --> WALKER_SCHEMA
-    
-    SIZING_GLOBAL --> SIZING_CONN
-    RISK_GLOBAL --> RISK_CONN
-    OPTIMIZER_GLOBAL --> OPTIMIZER_CONN
-    PARTIAL_GLOBAL --> PARTIAL_CONN
-    
-    BACKTEST_MD -.->|subscribes| EVENT
-    LIVE_MD -.->|subscribes| EVENT
-    WALKER_MD -.->|subscribes| EVENT
-    PARTIAL_MD -.->|subscribes| EVENT
-    RISK_MD -.->|subscribes| EVENT
-    
-    LOGGER -.->|used by| STRATEGY_CORE
-    LOGGER -.->|used by| EXCHANGE_CORE
-    LOGGER -.->|used by| LIVE_PRIV
-    LOGGER -.->|used by| BACKTEST_PRIV
-```
+![Mermaid Diagram](./diagrams\08-dependency-injection-system_3.svg)
 
 ### Dependency Resolution Order
 

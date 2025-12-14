@@ -31,45 +31,7 @@ All event communication flows through typed Subject instances exported from [src
 
 The framework organizes 18 event emitters into six functional categories. Each emitter is a `functools-kit` Subject instance that implements the Observable pattern.
 
-```mermaid
-graph TB
-    subgraph "Signal Events"
-        SE["signalEmitter<br/>IStrategyTickResult<br/>All signals"]
-        SLE["signalLiveEmitter<br/>IStrategyTickResult<br/>Live only"]
-        SBE["signalBacktestEmitter<br/>IStrategyTickResult<br/>Backtest only"]
-    end
-    
-    subgraph "Error Events"
-        ERR["errorEmitter<br/>Error<br/>Recoverable errors"]
-        EXIT["exitEmitter<br/>Error<br/>Fatal errors"]
-        VAL["validationSubject<br/>Error<br/>Risk validation"]
-    end
-    
-    subgraph "Completion Events"
-        DL["doneLiveSubject<br/>DoneContract<br/>Live complete"]
-        DB["doneBacktestSubject<br/>DoneContract<br/>Backtest complete"]
-        DW["doneWalkerSubject<br/>DoneContract<br/>Walker complete"]
-    end
-    
-    subgraph "Progress Events"
-        PB["progressBacktestEmitter<br/>ProgressBacktestContract<br/>Timeframe progress"]
-        PW["progressWalkerEmitter<br/>ProgressWalkerContract<br/>Strategy progress"]
-        PO["progressOptimizerEmitter<br/>ProgressOptimizerContract<br/>Source progress"]
-    end
-    
-    subgraph "Walker Events"
-        WE["walkerEmitter<br/>WalkerContract<br/>Strategy results"]
-        WC["walkerCompleteSubject<br/>IWalkerResults<br/>Final results"]
-        WS["walkerStopSubject<br/>WalkerStopContract<br/>Stop signals"]
-    end
-    
-    subgraph "Portfolio Events"
-        PP["partialProfitSubject<br/>PartialProfitContract<br/>Profit milestones"]
-        PL["partialLossSubject<br/>PartialLossContract<br/>Loss milestones"]
-        RS["riskSubject<br/>RiskContract<br/>Risk rejections"]
-        PERF["performanceEmitter<br/>PerformanceContract<br/>Execution metrics"]
-    end
-```
+![Mermaid Diagram](./diagrams\05-event-driven-architecture_0.svg)
 
 **Event Emitter Reference:**
 
@@ -99,51 +61,7 @@ graph TB
 
 Event producers are internal framework components that emit events during strategy execution, risk validation, and progress tracking. Understanding producers helps debug event flow and build custom event-driven logic.
 
-```mermaid
-graph LR
-    subgraph "Strategy Layer"
-        CS["ClientStrategy<br/>tick() / backtest()"]
-        CR["ClientRisk<br/>checkSignal()"]
-        CP["ClientPartial<br/>profit() / loss()"]
-    end
-    
-    subgraph "Logic Layer"
-        BLP["BacktestLogicPrivateService<br/>run()"]
-        LLP["LiveLogicPrivateService<br/>run()"]
-        WLP["WalkerLogicPrivateService<br/>run()"]
-    end
-    
-    subgraph "Global Layer"
-        OPT["OptimizerGlobalService<br/>optimize()"]
-    end
-    
-    CS -->|"IStrategyTickResult"| SE["signalEmitter"]
-    CS -->|"IStrategyTickResult"| SLE["signalLiveEmitter"]
-    CS -->|"IStrategyTickResult"| SBE["signalBacktestEmitter"]
-    
-    CR -->|"RiskContract"| RS["riskSubject"]
-    CR -->|"Error"| VAL["validationSubject"]
-    
-    CP -->|"PartialProfitContract"| PP["partialProfitSubject"]
-    CP -->|"PartialLossContract"| PL["partialLossSubject"]
-    
-    BLP -->|"ProgressBacktestContract"| PB["progressBacktestEmitter"]
-    BLP -->|"DoneContract"| DB["doneBacktestSubject"]
-    BLP -->|"PerformanceContract"| PERF["performanceEmitter"]
-    BLP -->|"Error"| ERR["errorEmitter / exitEmitter"]
-    
-    LLP -->|"DoneContract"| DL["doneLiveSubject"]
-    LLP -->|"PerformanceContract"| PERF
-    LLP -->|"Error"| ERR
-    
-    WLP -->|"WalkerContract"| WE["walkerEmitter"]
-    WLP -->|"IWalkerResults"| WC["walkerCompleteSubject"]
-    WLP -->|"ProgressWalkerContract"| PW["progressWalkerEmitter"]
-    WLP -->|"DoneContract"| DW["doneWalkerSubject"]
-    WLP -->|"Error"| ERR
-    
-    OPT -->|"ProgressOptimizerContract"| PO["progressOptimizerEmitter"]
-```
+![Mermaid Diagram](./diagrams\05-event-driven-architecture_1.svg)
 
 **Producer Emission Points:**
 
@@ -168,127 +86,13 @@ graph LR
 
 The most common event flow is signal events from strategy execution:
 
-```mermaid
-sequenceDiagram
-    participant User as User Code
-    participant BLP as BacktestLogicPrivateService
-    participant SCS as StrategyCoreService
-    participant CS as ClientStrategy
-    participant SE as signalEmitter
-    participant SBE as signalBacktestEmitter
-    participant BMS as BacktestMarkdownService
-    
-    User->>BLP: Backtest.run(...)
-    activate BLP
-    loop Each Timeframe
-        BLP->>SCS: tick(symbol, when)
-        activate SCS
-        SCS->>CS: tick()
-        activate CS
-        CS->>CS: Generate/monitor signal
-        CS-->>SCS: IStrategyTickResult
-        deactivate CS
-        SCS->>SE: emit(result)
-        SCS->>SBE: emit(result)
-        SCS-->>BLP: result
-        deactivate SCS
-    end
-    BLP->>BLP: doneBacktestSubject.emit(...)
-    deactivate BLP
-    
-    SE->>BMS: subscribe callback
-    SBE->>BMS: subscribe callback
-    BMS->>BMS: Accumulate statistics
-```
+![Mermaid Diagram](./diagrams\05-event-driven-architecture_2.svg)
 
 ## Event Listeners and Public API
 
 User code subscribes to events via listener functions exported from [src/function/event.ts](). Each listener function wraps a Subject subscription with queued async processing to ensure sequential execution even when callbacks are async.
 
-```mermaid
-graph TB
-    subgraph "User Code"
-        UC["User Callbacks<br/>async functions"]
-    end
-    
-    subgraph "Public API - src/function/event.ts"
-        LS["listenSignal(fn)"]
-        LSO["listenSignalOnce(filter, fn)"]
-        LSL["listenSignalLive(fn)"]
-        LSLO["listenSignalLiveOnce(filter, fn)"]
-        LSB["listenSignalBacktest(fn)"]
-        LSBO["listenSignalBacktestOnce(filter, fn)"]
-        LE["listenError(fn)"]
-        LEX["listenExit(fn)"]
-        LDL["listenDoneLive(fn)"]
-        LDLO["listenDoneLiveOnce(filter, fn)"]
-        LDB["listenDoneBacktest(fn)"]
-        LDBO["listenDoneBacktestOnce(filter, fn)"]
-        LDW["listenDoneWalker(fn)"]
-        LDWO["listenDoneWalkerOnce(filter, fn)"]
-        LBP["listenBacktestProgress(fn)"]
-        LWP["listenWalkerProgress(fn)"]
-        LOP["listenOptimizerProgress(fn)"]
-        LPF["listenPerformance(fn)"]
-        LW["listenWalker(fn)"]
-        LWO["listenWalkerOnce(filter, fn)"]
-        LWC["listenWalkerComplete(fn)"]
-        LV["listenValidation(fn)"]
-        LPP["listenPartialProfit(fn)"]
-        LPPO["listenPartialProfitOnce(filter, fn)"]
-        LPL["listenPartialLoss(fn)"]
-        LPLO["listenPartialLossOnce(filter, fn)"]
-        LR["listenRisk(fn)"]
-        LRO["listenRiskOnce(filter, fn)"]
-    end
-    
-    subgraph "Queued Wrapper - functools-kit"
-        Q["queued(async fn)<br/>Sequential execution<br/>Order preservation"]
-    end
-    
-    subgraph "Event Emitters"
-        SE["signalEmitter"]
-        SLE["signalLiveEmitter"]
-        SBE["signalBacktestEmitter"]
-        ERR["errorEmitter"]
-        EXIT["exitEmitter"]
-        DL["doneLiveSubject"]
-        DB["doneBacktestSubject"]
-        DW["doneWalkerSubject"]
-        PB["progressBacktestEmitter"]
-        PW["progressWalkerEmitter"]
-        PO["progressOptimizerEmitter"]
-        PERF["performanceEmitter"]
-        WE["walkerEmitter"]
-        WC["walkerCompleteSubject"]
-        VAL["validationSubject"]
-        PP["partialProfitSubject"]
-        PL["partialLossSubject"]
-        RS["riskSubject"]
-    end
-    
-    UC --> LS
-    UC --> LSO
-    UC --> LSL
-    UC --> LSLO
-    
-    LS --> Q
-    LSO --> Q
-    LSL --> Q
-    LSLO --> Q
-    
-    Q --> SE
-    Q --> SLE
-    Q --> SBE
-    Q --> ERR
-    
-    SE --> LS
-    SE --> LSO
-    SLE --> LSL
-    SLE --> LSLO
-    SBE --> LSB
-    SBE --> LSBO
-```
+![Mermaid Diagram](./diagrams\05-event-driven-architecture_3.svg)
 
 **Listener Function Patterns:**
 
@@ -364,56 +168,7 @@ unsubscribe();
 
 All listener functions wrap user callbacks with `queued()` from `functools-kit` to ensure sequential async execution. This prevents race conditions and maintains event ordering even when callbacks perform async operations like database writes or API calls.
 
-```mermaid
-graph TB
-    subgraph "Without Queued Wrapper - RACE CONDITION"
-        E1["Event 1<br/>emitted"]
-        E2["Event 2<br/>emitted"]
-        E3["Event 3<br/>emitted"]
-        C1["Callback 1<br/>starts async"]
-        C2["Callback 2<br/>starts async"]
-        C3["Callback 3<br/>starts async"]
-        F1["Callback 2<br/>finishes first"]
-        F2["Callback 3<br/>finishes second"]
-        F3["Callback 1<br/>finishes last"]
-        
-        E1 --> C1
-        E2 --> C2
-        E3 --> C3
-        C1 -.-> F3
-        C2 -.-> F1
-        C3 -.-> F2
-        
-        style F1 fill:#ffcccc
-        style F2 fill:#ffcccc
-        style F3 fill:#ffcccc
-    end
-    
-    subgraph "With Queued Wrapper - ORDERED EXECUTION"
-        Q1["Event 1<br/>emitted"]
-        Q2["Event 2<br/>emitted"]
-        Q3["Event 3<br/>emitted"]
-        QC1["Callback 1<br/>starts"]
-        QF1["Callback 1<br/>finishes"]
-        QC2["Callback 2<br/>starts"]
-        QF2["Callback 2<br/>finishes"]
-        QC3["Callback 3<br/>starts"]
-        QF3["Callback 3<br/>finishes"]
-        
-        Q1 --> QC1
-        QC1 --> QF1
-        QF1 --> Q2
-        Q2 --> QC2
-        QC2 --> QF2
-        QF2 --> Q3
-        Q3 --> QC3
-        QC3 --> QF3
-        
-        style QF1 fill:#ccffcc
-        style QF2 fill:#ccffcc
-        style QF3 fill:#ccffcc
-    end
-```
+![Mermaid Diagram](./diagrams\05-event-driven-architecture_4.svg)
 
 **Implementation Pattern:**
 
@@ -472,50 +227,7 @@ protected init = singleshot(async () => {
 
 Event payloads are strongly typed interfaces (contracts) that define the data structure emitted by each event. All contracts are defined in [types.d.ts]() and exported contract files in [src/contract/]().
 
-```mermaid
-graph TB
-    subgraph "Signal Events"
-        STR["IStrategyTickResult<br/>(Discriminated Union)"]
-        IDLE["IStrategyTickResultIdle<br/>action: 'idle'"]
-        SCHED["IStrategyTickResultScheduled<br/>action: 'scheduled'"]
-        OPEN["IStrategyTickResultOpened<br/>action: 'opened'"]
-        ACTV["IStrategyTickResultActive<br/>action: 'active'"]
-        CLSD["IStrategyTickResultClosed<br/>action: 'closed'"]
-        CNCL["IStrategyTickResultCancelled<br/>action: 'cancelled'"]
-        
-        STR --> IDLE
-        STR --> SCHED
-        STR --> OPEN
-        STR --> ACTV
-        STR --> CLSD
-        STR --> CNCL
-    end
-    
-    subgraph "Completion Events"
-        DONE["DoneContract<br/>backtest, symbol, strategyName<br/>exchangeName, frameName"]
-    end
-    
-    subgraph "Progress Events"
-        PB["ProgressBacktestContract<br/>symbol, strategyName<br/>processed, total"]
-        PW["ProgressWalkerContract<br/>symbol, walkerName<br/>strategiesCompleted, totalStrategies"]
-        PO["ProgressOptimizerContract<br/>symbol, optimizerName<br/>sourcesCompleted, totalSources"]
-    end
-    
-    subgraph "Walker Events"
-        WC["WalkerContract<br/>symbol, walkerName<br/>strategyName, stats<br/>bestStrategy, bestMetric"]
-        WR["IWalkerResults<br/>walkerName, symbol<br/>bestStrategy, bestMetric<br/>bestStats"]
-    end
-    
-    subgraph "Portfolio Events"
-        PP["PartialProfitContract<br/>symbol, data, price<br/>level, backtest"]
-        PL["PartialLossContract<br/>symbol, data, price<br/>level, backtest"]
-        RS["RiskContract<br/>symbol, params<br/>activePositionCount<br/>comment"]
-    end
-    
-    subgraph "Performance Events"
-        PERF["PerformanceContract<br/>strategyName, metricType<br/>duration, timestamp"]
-    end
-```
+![Mermaid Diagram](./diagrams\05-event-driven-architecture_5.svg)
 
 **Contract Definitions:**
 
@@ -553,53 +265,7 @@ if (event.action === 'closed') {
 
 Internal framework components subscribe to events for automated report generation and statistics collection. These consumers run transparently without user configuration.
 
-```mermaid
-graph LR
-    subgraph "Event Emitters"
-        SBE["signalBacktestEmitter"]
-        SLE["signalLiveEmitter"]
-        SE["signalEmitter"]
-        PP["partialProfitSubject"]
-        PL["partialLossSubject"]
-        RS["riskSubject"]
-        PERF["performanceEmitter"]
-        WE["walkerEmitter"]
-    end
-    
-    subgraph "Markdown Services - Internal Consumers"
-        BMS["BacktestMarkdownService<br/>MAX_EVENTS: 250<br/>Closed signals only"]
-        LMS["LiveMarkdownService<br/>MAX_EVENTS: 250<br/>All tick types"]
-        SMS["ScheduleMarkdownService<br/>MAX_EVENTS: 250<br/>Scheduled/cancelled"]
-        PMS["PartialMarkdownService<br/>MAX_EVENTS: 250<br/>Profit/loss milestones"]
-        RMS["RiskMarkdownService<br/>Unbounded<br/>Risk rejections"]
-        HMS["HeatMarkdownService<br/>Unbounded<br/>Symbol statistics"]
-        PERMS["PerformanceMarkdownService<br/>MAX_EVENTS: 10000<br/>Execution metrics"]
-        WMS["WalkerMarkdownService<br/>Unbounded<br/>Strategy comparison"]
-    end
-    
-    subgraph "Report Generation"
-        RPT["getData()<br/>getReport()<br/>dump()"]
-    end
-    
-    SBE -->|"subscribe(tick)"| BMS
-    SLE -->|"subscribe(tick)"| LMS
-    SE -->|"subscribe(tick)"| SMS
-    SE -->|"subscribe(tick)"| HMS
-    PP -->|"subscribe"| PMS
-    PL -->|"subscribe"| PMS
-    RS -->|"subscribe"| RMS
-    PERF -->|"subscribe"| PERMS
-    WE -->|"subscribe"| WMS
-    
-    BMS --> RPT
-    LMS --> RPT
-    SMS --> RPT
-    PMS --> RPT
-    RMS --> RPT
-    HMS --> RPT
-    PERMS --> RPT
-    WMS --> RPT
-```
+![Mermaid Diagram](./diagrams\05-event-driven-architecture_6.svg)
 
 **Markdown Service Subscriptions:**
 
@@ -672,126 +338,31 @@ This section demonstrates common event flow patterns for typical use cases.
 
 Subscribe to all signals regardless of execution mode:
 
-```mermaid
-sequenceDiagram
-    participant User as User Code
-    participant SE as signalEmitter
-    participant Q as queued()
-    participant CB as User Callback
-    
-    User->>SE: listenSignal(callback)
-    Note over User,SE: Returns unsubscribe function
-    
-    loop Strategy Execution
-        Note over SE: Signal emitted (any mode)
-        SE->>Q: emit(event)
-        Q->>Q: Wait for previous callback
-        Q->>CB: invoke(event)
-        CB-->>Q: complete
-    end
-    
-    User->>SE: unsubscribe()
-```
+![Mermaid Diagram](./diagrams\05-event-driven-architecture_7.svg)
 
 ### Pattern 2: Waiting for Specific Event
 
 Use `listenSignalOnce` to wait for a specific condition:
 
-```mermaid
-sequenceDiagram
-    participant User as User Code
-    participant SE as signalEmitter
-    participant F as filter()
-    participant O as once()
-    participant CB as User Callback
-    
-    User->>SE: listenSignalOnce(filter, callback)
-    Note over User,SE: Auto-unsubscribes after one match
-    
-    loop Until Match
-        SE->>F: emit(event)
-        alt Filter matches
-            F->>O: pass through
-            O->>CB: invoke(event)
-            CB-->>O: complete
-            O->>O: Auto-unsubscribe
-        else Filter rejects
-            F->>F: Discard event
-        end
-    end
-```
+![Mermaid Diagram](./diagrams\05-event-driven-architecture_8.svg)
 
 ### Pattern 3: Background Execution with Completion
 
 Start background task and wait for completion:
 
-```mermaid
-sequenceDiagram
-    participant User as User Code
-    participant BG as Backtest.background()
-    participant BLP as BacktestLogicPrivateService
-    participant DBS as doneBacktestSubject
-    participant CB as Completion Callback
-    
-    User->>DBS: listenDoneBacktest(callback)
-    User->>BG: start execution
-    
-    BG->>BLP: async generator execution
-    
-    loop Timeframes
-        BLP->>BLP: Process timeframe
-    end
-    
-    BLP->>DBS: emit(DoneContract)
-    DBS->>CB: invoke({ backtest: true, symbol, ... })
-    CB-->>User: Notify completion
-```
+![Mermaid Diagram](./diagrams\05-event-driven-architecture_9.svg)
 
 ### Pattern 4: Progress Tracking
 
 Monitor backtest or walker progress:
 
-```mermaid
-sequenceDiagram
-    participant User as User Code
-    participant PBE as progressBacktestEmitter
-    participant UI as Progress UI
-    
-    User->>PBE: listenBacktestProgress(callback)
-    
-    loop Each Timeframe
-        Note over PBE: Timeframe processed
-        PBE->>UI: { symbol, processed, total }
-        UI->>UI: Update progress bar
-        Note over UI: processed/total * 100%
-    end
-```
+![Mermaid Diagram](./diagrams\05-event-driven-architecture_10.svg)
 
 ### Pattern 5: Risk Rejection Monitoring
 
 Track signals rejected by risk management:
 
-```mermaid
-sequenceDiagram
-    participant CS as ClientStrategy
-    participant CR as ClientRisk
-    participant RS as riskSubject
-    participant Log as Logging System
-    
-    CS->>CR: checkSignal(params)
-    CR->>CR: Run validations
-    
-    alt Validation Fails
-        CR->>RS: emit(RiskContract)
-        Note over RS: Only rejections emitted
-        RS->>Log: { symbol, comment, activePositionCount }
-        Log->>Log: Record rejection
-        CR-->>CS: return false
-    else Validation Passes
-        Note over CR: No event emitted
-        CR-->>CS: return true
-    end
-```
+![Mermaid Diagram](./diagrams\05-event-driven-architecture_11.svg)
 
 The `riskSubject` only emits rejection events to prevent spam from allowed signals.
 
@@ -799,55 +370,13 @@ The `riskSubject` only emits rejection events to prevent spam from allowed signa
 
 Monitor profit/loss milestones:
 
-```mermaid
-sequenceDiagram
-    participant CS as ClientStrategy
-    participant CP as ClientPartial
-    participant PP as partialProfitSubject
-    participant PL as partialLossSubject
-    participant User as User Callback
-    
-    CS->>CP: profit(symbol, data, price, 15.5%, ...)
-    
-    CP->>CP: Check levels reached
-    Note over CP: 10% threshold crossed
-    CP->>PP: emit({ level: 10, ... })
-    PP->>User: Notify +10% profit
-    
-    Note over CP: Store in Set (dedup)
-    
-    CS->>CP: profit(symbol, data, price, 22.3%, ...)
-    CP->>CP: Check levels reached
-    Note over CP: 20% threshold crossed
-    CP->>PP: emit({ level: 20, ... })
-    PP->>User: Notify +20% profit
-    
-    Note over CP: 10% already emitted, skip
-```
+![Mermaid Diagram](./diagrams\05-event-driven-architecture_12.svg)
 
 ## Bidirectional Event: Walker Stop
 
 The `walkerStopSubject` is unique—it's bidirectional, allowing both user code and internal logic to communicate stop signals.
 
-```mermaid
-graph TB
-    subgraph "User Code"
-        UC["User Code<br/>Walker.stop(symbol, walkerName)"]
-    end
-    
-    subgraph "Walker Stop Subject"
-        WSS["walkerStopSubject<br/>(Bidirectional)"]
-    end
-    
-    subgraph "Walker Logic"
-        WLP["WalkerLogicPrivateService<br/>Subscribes to stop signals"]
-    end
-    
-    UC -->|"emit(WalkerStopContract)"| WSS
-    WSS -->|"subscribe"| WLP
-    WLP -->|"Checks symbol + walkerName"| WLP
-    WLP -->|"Break execution loop"| WLP
-```
+![Mermaid Diagram](./diagrams\05-event-driven-architecture_13.svg)
 
 **Stop Signal Flow:**
 

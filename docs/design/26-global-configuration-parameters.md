@@ -17,51 +17,7 @@ For details on how these parameters are validated for economic viability, see [E
 
 The 14 global configuration parameters are organized into five functional categories:
 
-```mermaid
-graph TB
-    GLOBAL["GLOBAL_CONFIG Object<br/>(src/config/params.ts)"]
-    
-    subgraph "Economic Parameters (4)"
-        SLIP["CC_PERCENT_SLIPPAGE<br/>Default: 0.1%"]
-        FEE["CC_PERCENT_FEE<br/>Default: 0.1%"]
-        TP["CC_MIN_TAKEPROFIT_DISTANCE_PERCENT<br/>Default: 0.5%"]
-        SL_MIN["CC_MIN_STOPLOSS_DISTANCE_PERCENT<br/>Default: 0.5%"]
-        SL_MAX["CC_MAX_STOPLOSS_DISTANCE_PERCENT<br/>Default: 20%"]
-    end
-    
-    subgraph "Signal Lifecycle (3)"
-        SCHED["CC_SCHEDULE_AWAIT_MINUTES<br/>Default: 120"]
-        LIFE["CC_MAX_SIGNAL_LIFETIME_MINUTES<br/>Default: 1440"]
-        GEN["CC_MAX_SIGNAL_GENERATION_SECONDS<br/>Default: 180"]
-    end
-    
-    subgraph "Data Fetching (4)"
-        AVG["CC_AVG_PRICE_CANDLES_COUNT<br/>Default: 5"]
-        RETRY["CC_GET_CANDLES_RETRY_COUNT<br/>Default: 3"]
-        DELAY["CC_GET_CANDLES_RETRY_DELAY_MS<br/>Default: 5000"]
-        ANOM["CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR<br/>Default: 1000"]
-        MED["CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN<br/>Default: 5"]
-    end
-    
-    subgraph "Reporting (1)"
-        NOTE["CC_REPORT_SHOW_SIGNAL_NOTE<br/>Default: false"]
-    end
-    
-    GLOBAL --> SLIP
-    GLOBAL --> FEE
-    GLOBAL --> TP
-    GLOBAL --> SL_MIN
-    GLOBAL --> SL_MAX
-    GLOBAL --> SCHED
-    GLOBAL --> LIFE
-    GLOBAL --> GEN
-    GLOBAL --> AVG
-    GLOBAL --> RETRY
-    GLOBAL --> DELAY
-    GLOBAL --> ANOM
-    GLOBAL --> MED
-    GLOBAL --> NOTE
-```
+![Mermaid Diagram](./diagrams\26-global-configuration-parameters_0.svg)
 
 ---
 
@@ -97,35 +53,7 @@ Total fee cost: **0.2%** (2 × 0.1%)
 
 ### Cost Breakdown Diagram
 
-```mermaid
-graph LR
-    subgraph "Round-Trip Trade Cost Structure"
-        ENTRY["Entry Transaction"]
-        EXIT["Exit Transaction"]
-        
-        ENTRY_SLIP["Slippage: 0.1%"]
-        ENTRY_FEE["Fee: 0.1%"]
-        EXIT_SLIP["Slippage: 0.1%"]
-        EXIT_FEE["Fee: 0.1%"]
-        
-        TOTAL_SLIP["Total Slippage: 0.2%"]
-        TOTAL_FEE["Total Fees: 0.2%"]
-        TOTAL_COST["Total Cost: 0.4%"]
-        
-        ENTRY --> ENTRY_SLIP
-        ENTRY --> ENTRY_FEE
-        EXIT --> EXIT_SLIP
-        EXIT --> EXIT_FEE
-        
-        ENTRY_SLIP --> TOTAL_SLIP
-        EXIT_SLIP --> TOTAL_SLIP
-        ENTRY_FEE --> TOTAL_FEE
-        EXIT_FEE --> TOTAL_FEE
-        
-        TOTAL_SLIP --> TOTAL_COST
-        TOTAL_FEE --> TOTAL_COST
-    end
-```
+![Mermaid Diagram](./diagrams\26-global-configuration-parameters_1.svg)
 
 ### Profitability Constraints
 
@@ -210,27 +138,7 @@ Prevents long-running or stuck signal generation routines from blocking executio
 
 ### Lifecycle State Diagram with Timeouts
 
-```mermaid
-stateDiagram-v2
-    [*] --> Idle
-    
-    Idle --> Scheduled: "getSignal returns ISignalDto<br/>with priceOpen set"
-    Idle --> Opened: "getSignal returns ISignalDto<br/>without priceOpen"
-    
-    Scheduled --> Opened: "Price reaches priceOpen"
-    Scheduled --> Cancelled: "CC_SCHEDULE_AWAIT_MINUTES<br/>timeout (default - 120 min)"
-    
-    Opened --> Closed: "Price hits TP/SL or<br/>CC_MAX_SIGNAL_LIFETIME_MINUTES<br/>timeout (default - 1440 min)"
-    
-    Cancelled --> [*]
-    Closed --> [*]
-    
-    note right of Idle
-        getSignal callback has
-        CC_MAX_SIGNAL_GENERATION_SECONDS
-        timeout (default - 180 sec)
-    end note
-```
+![Mermaid Diagram](./diagrams\26-global-configuration-parameters_2.svg)
 
 ---
 
@@ -310,45 +218,7 @@ Provides backoff time to avoid overwhelming failing APIs or to wait for transien
 
 ### Data Fetching Flow Diagram
 
-```mermaid
-graph TB
-    START["ClientExchange.getCandles call"]
-    
-    FETCH["Execute IExchangeSchema.getCandles"]
-    RETRY_CHECK{"Retry count < CC_GET_CANDLES_RETRY_COUNT"}
-    DELAY["Wait CC_GET_CANDLES_RETRY_DELAY_MS"]
-    ERROR["Throw Error"]
-    
-    VALIDATE["Validate candle data"]
-    COUNT_CHECK{"candles.length >= CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN"}
-    USE_MEDIAN["Calculate reference price using MEDIAN"]
-    USE_AVG["Calculate reference price using AVERAGE"]
-    
-    ANOM_CHECK{"Any price < reference / CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR"}
-    REJECT["Reject anomalous candles"]
-    ACCEPT["Accept valid candles"]
-    
-    VWAP["Calculate VWAP from CC_AVG_PRICE_CANDLES_COUNT candles"]
-    RETURN["Return candle data / VWAP"]
-    
-    START --> FETCH
-    FETCH -->|Success| VALIDATE
-    FETCH -->|Failure| RETRY_CHECK
-    RETRY_CHECK -->|Yes| DELAY
-    DELAY --> FETCH
-    RETRY_CHECK -->|No| ERROR
-    
-    VALIDATE --> COUNT_CHECK
-    COUNT_CHECK -->|Yes| USE_MEDIAN
-    COUNT_CHECK -->|No| USE_AVG
-    USE_MEDIAN --> ANOM_CHECK
-    USE_AVG --> ANOM_CHECK
-    
-    ANOM_CHECK -->|Yes| REJECT
-    ANOM_CHECK -->|No| ACCEPT
-    ACCEPT --> VWAP
-    VWAP --> RETURN
-```
+![Mermaid Diagram](./diagrams\26-global-configuration-parameters_3.svg)
 
 ---
 
@@ -396,51 +266,7 @@ When `false` (default), notes are hidden to reduce table width and improve reada
 
 Some parameters have mathematical relationships and dependencies that are enforced by validation:
 
-```mermaid
-graph TB
-    subgraph "Economic Viability Constraint"
-        SLIP["CC_PERCENT_SLIPPAGE<br/>Default: 0.1%"]
-        FEE["CC_PERCENT_FEE<br/>Default: 0.1%"]
-        TP["CC_MIN_TAKEPROFIT_DISTANCE_PERCENT<br/>Default: 0.5%"]
-        
-        COST["Total Round-Trip Cost<br/>= (SLIP × 2) + (FEE × 2)<br/>= 0.2% + 0.2% = 0.4%"]
-        
-        CONSTRAINT["CONSTRAINT:<br/>TP must be > Total Cost<br/>(0.5% > 0.4% ✓)"]
-        
-        SLIP --> COST
-        FEE --> COST
-        COST --> CONSTRAINT
-        TP --> CONSTRAINT
-    end
-    
-    subgraph "StopLoss Range Constraint"
-        SL_MIN["CC_MIN_STOPLOSS_DISTANCE_PERCENT<br/>Default: 0.5%"]
-        SL_MAX["CC_MAX_STOPLOSS_DISTANCE_PERCENT<br/>Default: 20%"]
-        
-        SL_CONSTRAINT["CONSTRAINT:<br/>MIN_SL < MAX_SL<br/>(0.5% < 20% ✓)"]
-        
-        SL_MIN --> SL_CONSTRAINT
-        SL_MAX --> SL_CONSTRAINT
-    end
-    
-    subgraph "Anomaly Detection Logic"
-        MEDIAN_MIN["CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN<br/>Default: 5"]
-        ANOM_FACTOR["CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR<br/>Default: 1000"]
-        
-        CANDLE_COUNT{"Candle count >= MEDIAN_MIN?"}
-        USE_MEDIAN["Use MEDIAN for reference"]
-        USE_AVG["Use AVERAGE for reference"]
-        
-        DETECT["Detect anomaly:<br/>price < reference / ANOM_FACTOR"]
-        
-        MEDIAN_MIN --> CANDLE_COUNT
-        CANDLE_COUNT -->|Yes| USE_MEDIAN
-        CANDLE_COUNT -->|No| USE_AVG
-        USE_MEDIAN --> DETECT
-        USE_AVG --> DETECT
-        ANOM_FACTOR --> DETECT
-    end
-```
+![Mermaid Diagram](./diagrams\26-global-configuration-parameters_4.svg)
 
 ---
 

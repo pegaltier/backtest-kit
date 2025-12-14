@@ -23,70 +23,7 @@ For general Optimizer system architecture, see [Optimizer Mode](./20-optimizer-m
 
 The optimization demo follows a structured pipeline from data collection through LLM inference to code generation:
 
-```mermaid
-graph TB
-    CONFIG["Configuration<br/>(index.mjs)"]
-    TRAIN["Training Ranges<br/>TRAIN_RANGE<br/>7 days (Nov 24-30)"]
-    TEST["Testing Range<br/>TEST_RANGE<br/>1 day (Dec 1)"]
-    
-    subgraph "Data Sources"
-        S1["long-term-range<br/>1h candles<br/>48 lookback"]
-        S2["swing-term-range<br/>30m candles<br/>96 lookback"]
-        S3["short-term-range<br/>15m candles<br/>192 lookback"]
-        S4["micro-term-range<br/>1m candles<br/>60 lookback"]
-    end
-    
-    subgraph "Data Collection (ClientOptimizer.getData)"
-        FETCH["RESOLVE_PAGINATION_FN<br/>iterateDocuments<br/>distinctDocuments<br/>ITERATION_LIMIT=25"]
-        DUMPER["CCXT_DUMPER_URL<br/>/view/long-term-range<br/>/view/swing-term-range<br/>/view/short-term-range<br/>/view/micro-term-range"]
-        FORMAT["arrayToMarkdownTable<br/>User/Assistant Messages"]
-    end
-    
-    subgraph "LLM Processing"
-        MESSAGES["MessageModel[]<br/>Conversation History"]
-        PROMPT["getPrompt callback<br/>text() function"]
-        OLLAMA["Ollama API<br/>deepseek-v3.1:671b<br/>think: true"]
-        STRATEGY["Strategy String<br/>Trading logic description"]
-    end
-    
-    subgraph "Code Generation (ClientOptimizer.getCode)"
-        TEMPLATE["OptimizerTemplateService<br/>getTopBanner<br/>getStrategyTemplate<br/>getWalkerTemplate<br/>etc."]
-        CODE["Generated .mjs File<br/>Executable strategy code"]
-    end
-    
-    subgraph "Output"
-        DUMP["Optimizer.dump<br/>btc-optimizer_BTCUSDT.mjs<br/>./generated directory"]
-    end
-    
-    CONFIG --> TRAIN
-    CONFIG --> TEST
-    CONFIG --> S1
-    CONFIG --> S2
-    CONFIG --> S3
-    CONFIG --> S4
-    
-    TRAIN --> FETCH
-    S1 --> FETCH
-    S2 --> FETCH
-    S3 --> FETCH
-    S4 --> FETCH
-    
-    FETCH --> DUMPER
-    DUMPER --> FORMAT
-    FORMAT --> MESSAGES
-    
-    MESSAGES --> PROMPT
-    PROMPT --> OLLAMA
-    OLLAMA --> STRATEGY
-    
-    STRATEGY --> TEMPLATE
-    TEMPLATE --> CODE
-    CODE --> DUMP
-    
-    style OLLAMA fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style CODE fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style DUMPER fill:#f9f9f9,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\38-optimization-demo_0.svg)
 
 **Workflow:**
 
@@ -116,25 +53,7 @@ The demo configures four data sources, each representing a different timeframe f
 
 Each source in `SOURCE_LIST` implements `IOptimizerSource` interface:
 
-```mermaid
-graph LR
-    SOURCE["IOptimizerSource"]
-    NAME["name: string<br/>'long-term-range'"]
-    FETCH["fetch: IOptimizerSourceFn<br/>Pagination support<br/>limit, offset params"]
-    USER["user: (symbol, data, name)<br/>Format markdown table<br/>with indicator descriptions"]
-    ASSISTANT["assistant: (symbol, data, name)<br/>Acknowledgment message<br/>'Данные получены'"]
-    
-    SOURCE --> NAME
-    SOURCE --> FETCH
-    SOURCE --> USER
-    SOURCE --> ASSISTANT
-    
-    FETCH --> URL["URL Construction<br/>symbol, startDate, endDate<br/>limit, offset"]
-    FETCH --> API["fetchApi(url)<br/>Returns {rows: data[]}"]
-    
-    USER --> TABLE["arrayToMarkdownTable(data)<br/>Format as pipe-delimited table"]
-    USER --> META["Metadata Section<br/>Indicator formulas<br/>Lookback periods"]
-```
+![Mermaid Diagram](./diagrams\38-optimization-demo_1.svg)
 
 **Fetch Function Example:**
 
@@ -161,32 +80,7 @@ The demo uses Ollama API with the `deepseek-v3.1:671b` model to generate trading
 
 ### Message Flow Sequence
 
-```mermaid
-sequenceDiagram
-    participant Demo as index.mjs
-    participant Source as Data Sources
-    participant Format as arrayToMarkdownTable
-    participant Messages as MessageModel[]
-    participant Prompt as getPrompt/text()
-    participant Ollama as Ollama API
-    participant Result as Strategy String
-
-    loop For each Training Range
-        loop For each Source (4 timeframes)
-            Demo->>Source: fetch(symbol, startDate, endDate, limit, offset)
-            Source->>Demo: data rows with indicators
-            Demo->>Format: arrayToMarkdownTable(data)
-            Format->>Demo: markdown table string
-            Demo->>Messages: Push user message (table + metadata)
-            Demo->>Messages: Push assistant message (acknowledgment)
-        end
-        Messages->>Prompt: Complete conversation history
-        Prompt->>Ollama: chat(model, messages, think: true)
-        Note over Ollama: System: "Напиши торговую стратегию"<br/>User: Multi-timeframe data (4 messages)<br/>User: "На каких условиях купить?"
-        Ollama->>Result: Strategy text (escaped)
-        Result->>Demo: strategyList.push({name, messages, strategy})
-    end
-```
+![Mermaid Diagram](./diagrams\38-optimization-demo_2.svg)
 
 ### Text Generation Function
 
@@ -233,39 +127,7 @@ The optimizer generates a complete executable Node.js script containing all nece
 
 ### Code Generation Pipeline
 
-```mermaid
-graph TB
-    DATA["IOptimizerStrategy[]<br/>From getData()"]
-    PREFIX["Random Prefix<br/>CREATE_PREFIX_FN()<br/>e.g., 'x7k2q'"]
-    
-    subgraph "Template Methods (OptimizerTemplateService)"
-        T1["getTopBanner<br/>Shebang + imports"]
-        T2["getJsonDumpTemplate<br/>dumpJson() helper"]
-        T3["getTextTemplate<br/>text() LLM function"]
-        T4["getJsonTemplate<br/>json() LLM function"]
-        T5["getExchangeTemplate<br/>addExchange + CCXT"]
-        T6["getFrameTemplate<br/>addFrame for train/test"]
-        T7["getStrategyTemplate<br/>addStrategy + getSignal"]
-        T8["getWalkerTemplate<br/>addWalker config"]
-        T9["getLauncherTemplate<br/>Walker.background + listeners"]
-    end
-    
-    OUTPUT["Generated .mjs File<br/>{optimizerName}_{symbol}.mjs"]
-    
-    DATA --> PREFIX
-    PREFIX --> T1
-    T1 --> T2
-    T2 --> T3
-    T3 --> T4
-    T4 --> T5
-    T5 --> T6
-    T6 --> T7
-    T7 --> T8
-    T8 --> T9
-    T9 --> OUTPUT
-    
-    T5 -.-> NAMES["Naming Convention<br/>{prefix}_exchange<br/>{prefix}_train_frame-{N}<br/>{prefix}_test_frame<br/>{prefix}_strategy-{N}<br/>{prefix}_walker"]
-```
+![Mermaid Diagram](./diagrams\38-optimization-demo_3.svg)
 
 ### Generated File Sections
 

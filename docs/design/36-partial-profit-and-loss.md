@@ -26,77 +26,7 @@ This differs from the final PNL calculated when signals close - partial tracking
 
 ## Component Architecture
 
-```mermaid
-graph TB
-    subgraph "Strategy Execution Layer"
-        CS["ClientStrategy<br/>[src/client/ClientStrategy.ts]"]
-        TICK["tick() method<br/>Signal monitoring"]
-        BACKTEST["backtest() method<br/>Candle processing"]
-    end
-    
-    subgraph "Partial Tracking Layer"
-        PC["PartialConnectionService<br/>[src/lib/services/connection/PartialConnectionService.ts]<br/>Memoized factory"]
-        CP["ClientPartial<br/>[src/client/ClientPartial.ts]<br/>Milestone logic"]
-        
-        PROFIT["profit() method<br/>Check profit levels"]
-        LOSS["loss() method<br/>Check loss levels"]
-        CLEAR["clear() method<br/>Remove on close"]
-    end
-    
-    subgraph "State Management"
-        STATE["_states Map<br/>symbol → IPartialState"]
-        PSTATE["IPartialState<br/>profitLevels: Set<PartialLevel><br/>lossLevels: Set<PartialLevel>"]
-        
-        PPA["PersistPartialAdapter<br/>[src/classes/Persist.ts]<br/>JSON persistence"]
-        PDATA["IPartialData<br/>Serialized arrays"]
-    end
-    
-    subgraph "Event Emission"
-        PPE["partialProfitSubject<br/>[src/config/emitters.ts:118]"]
-        PLE["partialLossSubject<br/>[src/config/emitters.ts:124]"]
-        
-        PPCONTRACT["PartialProfitContract<br/>symbol, data, level, price"]
-        PLCONTRACT["PartialLossContract<br/>symbol, data, level, price"]
-    end
-    
-    subgraph "Reporting Layer"
-        PMS["PartialMarkdownService<br/>[src/lib/services/markdown/PartialMarkdownService.ts]"]
-        STORAGE["ReportStorage<br/>_eventList: PartialEvent[]"]
-        STATS["PartialStatistics<br/>totalProfit/totalLoss"]
-    end
-    
-    CS --> PC
-    PC --> CP
-    
-    TICK --> PROFIT
-    TICK --> LOSS
-    BACKTEST --> PROFIT
-    BACKTEST --> LOSS
-    
-    PROFIT --> STATE
-    LOSS --> STATE
-    CLEAR --> STATE
-    
-    STATE --> PSTATE
-    PSTATE --> PPA
-    PPA --> PDATA
-    
-    PROFIT --> PPE
-    LOSS --> PLE
-    
-    PPE --> PPCONTRACT
-    PLE --> PLCONTRACT
-    
-    PPE --> PMS
-    PLE --> PMS
-    PMS --> STORAGE
-    STORAGE --> STATS
-    
-    style CP fill:#e1f5ff,stroke:#333,stroke-width:3px
-    style STATE fill:#fff4e1,stroke:#333,stroke-width:2px
-    style PPE fill:#e8f5e9,stroke:#333,stroke-width:2px
-    style PLE fill:#ffe1e1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\36-partial-profit-and-loss_0.svg)
 
 **Component Flow**: `ClientStrategy` invokes `ClientPartial` methods during signal monitoring. `ClientPartial` maintains in-memory Sets tracking which levels have been reached, persists state via `PersistPartialAdapter`, and emits events through `partialProfitSubject`/`partialLossSubject`. `PartialMarkdownService` subscribes to these subjects for reporting.
 
@@ -121,44 +51,7 @@ When a signal's unrealized profit or loss percentage crosses one of these thresh
 
 ## IPartial Interface and Methods
 
-```mermaid
-graph LR
-    subgraph "IPartial Interface"
-        PROFIT["profit(symbol, data, currentPrice,<br/>revenuePercent, backtest, when)<br/>→ Promise<void>"]
-        LOSS["loss(symbol, data, currentPrice,<br/>lossPercent, backtest, when)<br/>→ Promise<void>"]
-        CLEAR["clear(symbol, data, priceClose,<br/>backtest)<br/>→ Promise<void>"]
-    end
-    
-    subgraph "Method Behavior"
-        P_CHECK["Check revenuePercent<br/>Determine levels reached"]
-        P_EMIT["Emit new levels only<br/>via partialProfitSubject"]
-        P_PERSIST["Update _states Map<br/>Call persist()"]
-        
-        L_CHECK["Check lossPercent<br/>Determine levels reached"]
-        L_EMIT["Emit new levels only<br/>via partialLossSubject"]
-        L_PERSIST["Update _states Map<br/>Call persist()"]
-        
-        C_DELETE["Delete from _states Map"]
-        C_PERSIST["Write updated state"]
-        C_CLEAR_MEMO["Clear memoized instance<br/>in PartialConnectionService"]
-    end
-    
-    PROFIT --> P_CHECK
-    P_CHECK --> P_EMIT
-    P_EMIT --> P_PERSIST
-    
-    LOSS --> L_CHECK
-    L_CHECK --> L_EMIT
-    L_EMIT --> L_PERSIST
-    
-    CLEAR --> C_DELETE
-    C_DELETE --> C_PERSIST
-    C_PERSIST --> C_CLEAR_MEMO
-    
-    style PROFIT fill:#e8f5e9,stroke:#333,stroke-width:2px
-    style LOSS fill:#ffe1e1,stroke:#333,stroke-width:2px
-    style CLEAR fill:#fff4e1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\36-partial-profit-and-loss_1.svg)
 
 **Method Contracts**:
 
@@ -210,39 +103,7 @@ interface IPartialData {
 
 ## Integration with ClientStrategy
 
-```mermaid
-sequenceDiagram
-    participant CS as ClientStrategy.tick()
-    participant CP as ClientPartial
-    participant EMIT as Emitters
-    participant PERSIST as PersistPartialAdapter
-    
-    Note over CS: Active signal monitoring
-    CS->>CS: getAveragePrice(symbol)
-    CS->>CS: Calculate revenuePercent
-    
-    alt revenuePercent > 0
-        CS->>CP: profit(symbol, signal, price, revenue, backtest, when)
-        CP->>CP: Check new levels crossed
-        CP->>CP: Update _states Map
-        CP->>EMIT: partialProfitSubject.next(contract)
-        CP->>PERSIST: persist(symbol, _states)
-        CP-->>CS: void
-    else revenuePercent < 0
-        CS->>CP: loss(symbol, signal, price, loss, backtest, when)
-        CP->>CP: Check new levels crossed
-        CP->>CP: Update _states Map
-        CP->>EMIT: partialLossSubject.next(contract)
-        CP->>PERSIST: persist(symbol, _states)
-        CP-->>CS: void
-    end
-    
-    Note over CS: Signal closes (TP/SL/time_expired)
-    CS->>CP: clear(symbol, signal, priceClose, backtest)
-    CP->>CP: Delete from _states Map
-    CP->>PERSIST: persist(symbol, _states)
-    CP-->>CS: void
-```
+![Mermaid Diagram](./diagrams\36-partial-profit-and-loss_2.svg)
 
 **Invocation Points in ClientStrategy**:
 
@@ -326,43 +187,7 @@ class PartialConnectionService {
 
 ### PartialMarkdownService Architecture
 
-```mermaid
-graph TB
-    subgraph "Event Subscription"
-        PPE["partialProfitSubject"]
-        PLE["partialLossSubject"]
-    end
-    
-    subgraph "PartialMarkdownService"
-        TICK_PROFIT["tickProfit()<br/>Add profit event"]
-        TICK_LOSS["tickLoss()<br/>Add loss event"]
-        
-        STORAGE["ReportStorage<br/>Memoized by symbol:strategyName"]
-        EVENT_LIST["_eventList: PartialEvent[]<br/>MAX_EVENTS: 250"]
-    end
-    
-    subgraph "Public API"
-        GET_DATA["getData(symbol, strategyName)<br/>→ PartialStatistics"]
-        GET_REPORT["getReport(symbol, strategyName)<br/>→ Markdown string"]
-        DUMP["dump(symbol, strategyName, path)<br/>→ Write to disk"]
-    end
-    
-    PPE --> TICK_PROFIT
-    PLE --> TICK_LOSS
-    
-    TICK_PROFIT --> STORAGE
-    TICK_LOSS --> STORAGE
-    
-    STORAGE --> EVENT_LIST
-    
-    EVENT_LIST --> GET_DATA
-    EVENT_LIST --> GET_REPORT
-    GET_REPORT --> DUMP
-    
-    style STORAGE fill:#fff4e1,stroke:#333,stroke-width:2px
-    style GET_DATA fill:#e1f5ff,stroke:#333,stroke-width:2px
-    style DUMP fill:#e8f5e9,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\36-partial-profit-and-loss_3.svg)
 
 ### PartialStatistics Structure
 
@@ -497,29 +322,7 @@ Example file content:
 
 ### Recovery Flow
 
-```mermaid
-sequenceDiagram
-    participant CS as ClientStrategy
-    participant PC as PartialConnectionService
-    participant CP as ClientPartial
-    participant PPA as PersistPartialAdapter
-    
-    Note over CS: Live.run() starts
-    CS->>PC: getPartial(symbol)
-    PC->>CP: new ClientPartial()
-    CP->>CP: waitForInit()
-    CP->>PPA: readPartialData(symbol)
-    PPA->>PPA: Read {symbol}_partial.json
-    PPA-->>CP: Record<signalId, IPartialData>
-    
-    Note over CP: Convert arrays to Sets
-    loop For each signal
-        CP->>CP: _states.set(signalId, {<br/>profitLevels: new Set(data.profitLevels),<br/>lossLevels: new Set(data.lossLevels)<br/>})
-    end
-    
-    CP-->>CS: Ready for tick()
-    Note over CS: Resume monitoring with restored state
-```
+![Mermaid Diagram](./diagrams\36-partial-profit-and-loss_4.svg)
 
 **Atomic Write Pattern**: `PersistPartialAdapter` uses the same atomic write mechanism as `PersistSignalAdapter` - write to temp file, then rename to ensure no corruption on crash.
 

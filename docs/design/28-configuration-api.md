@@ -63,47 +63,7 @@ function getDefaultConfig(): Readonly<GlobalConfig>
 
 ## Configuration Flow Architecture
 
-```mermaid
-graph TB
-    User["User Code"]
-    SetConfig["setConfig(config, _unsafe)"]
-    Backup["Backup Current Config<br/>prevConfig = {...GLOBAL_CONFIG}"]
-    Merge["Merge Into GLOBAL_CONFIG<br/>Object.assign(GLOBAL_CONFIG, config)"]
-    CheckUnsafe{"_unsafe === true?"}
-    Validate["ConfigValidationService.validate()"]
-    ValidationOK{"Validation<br/>Passed?"}
-    Restore["Restore Backup<br/>Object.assign(GLOBAL_CONFIG, prevConfig)"]
-    ThrowError["throw Error"]
-    Active["New Config Active"]
-    GetConfig["getConfig()"]
-    GetDefault["getDefaultConfig()"]
-    Copy["Return Shallow Copy<br/>{...GLOBAL_CONFIG}"]
-    Frozen["Return Frozen<br/>DEFAULT_CONFIG"]
-    Services["Services Read GLOBAL_CONFIG<br/>ConfigValidationService<br/>StrategyCoreService<br/>ClientExchange<br/>toProfitLossDto"]
-    
-    User --> SetConfig
-    User --> GetConfig
-    User --> GetDefault
-    
-    SetConfig --> Backup
-    Backup --> Merge
-    Merge --> CheckUnsafe
-    CheckUnsafe -->|No| Validate
-    CheckUnsafe -->|Yes| Active
-    Validate --> ValidationOK
-    ValidationOK -->|Yes| Active
-    ValidationOK -->|No| Restore
-    Restore --> ThrowError
-    Active --> Services
-    
-    GetConfig --> Copy
-    GetDefault --> Frozen
-    
-    style SetConfig fill:#e1f5ff,stroke:#333,stroke-width:2px
-    style Validate fill:#ffe1e1,stroke:#333,stroke-width:2px
-    style ThrowError fill:#ffcccc,stroke:#333,stroke-width:2px
-    style Active fill:#e8f5e9,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\28-configuration-api_0.svg)
 
 ---
 
@@ -176,42 +136,7 @@ When `setConfig()` is called without the `_unsafe` parameter, the `ConfigValidat
 
 ### Validation Error Structure
 
-```mermaid
-graph LR
-    SetConfig["setConfig(invalid)"]
-    Validate["ConfigValidationService.validate()"]
-    Collect["Collect All Validation Errors<br/>const errors: string[] = []"]
-    Check1["Check CC_PERCENT_SLIPPAGE >= 0"]
-    Check2["Check CC_PERCENT_FEE >= 0"]
-    Check3["Check TP covers costs"]
-    Check4["Check MIN_SL < MAX_SL"]
-    CheckN["Check all other params..."]
-    HasErrors{"errors.length > 0?"}
-    Format["Format Error Message<br/>List all errors with numbers"]
-    Restore["Restore prevConfig"]
-    Throw["throw Error"]
-    Apply["Apply Config"]
-    
-    SetConfig --> Validate
-    Validate --> Collect
-    Collect --> Check1
-    Collect --> Check2
-    Collect --> Check3
-    Collect --> Check4
-    Collect --> CheckN
-    Check1 --> HasErrors
-    Check2 --> HasErrors
-    Check3 --> HasErrors
-    Check4 --> HasErrors
-    CheckN --> HasErrors
-    HasErrors -->|Yes| Format
-    HasErrors -->|No| Apply
-    Format --> Restore
-    Restore --> Throw
-    
-    style Validate fill:#ffe1e1,stroke:#333,stroke-width:2px
-    style Throw fill:#ffcccc,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\28-configuration-api_1.svg)
 
 ### Example Validation Errors
 
@@ -294,47 +219,7 @@ setConfig({
 
 The configuration system integrates with all execution modes through direct reads of `GLOBAL_CONFIG`. Changes take effect immediately for subsequent operations.
 
-```mermaid
-graph TB
-    subgraph "Configuration Sources"
-        DefaultConfig["DEFAULT_CONFIG<br/>(frozen, src/config/params.ts)"]
-        GlobalConfig["GLOBAL_CONFIG<br/>(mutable, runtime state)"]
-        UserConfig["User calls setConfig()"]
-    end
-    
-    subgraph "Validation Layer"
-        ConfigValidation["ConfigValidationService.validate()"]
-    end
-    
-    subgraph "Consumers - Core Logic"
-        StrategyCore["StrategyCoreService<br/>Reads: CC_MAX_SIGNAL_GENERATION_SECONDS<br/>CC_MAX_SIGNAL_LIFETIME_MINUTES"]
-        ExchangeCore["ExchangeCoreService<br/>Reads: CC_GET_CANDLES_RETRY_COUNT<br/>CC_GET_CANDLES_RETRY_DELAY_MS"]
-        ProfitLoss["toProfitLossDto()<br/>Reads: CC_PERCENT_SLIPPAGE<br/>CC_PERCENT_FEE"]
-    end
-    
-    subgraph "Consumers - Clients"
-        ClientStrategy["ClientStrategy<br/>Reads: CC_SCHEDULE_AWAIT_MINUTES<br/>CC_MAX_SIGNAL_LIFETIME_MINUTES"]
-        ClientExchange["ClientExchange.getAveragePrice()<br/>Reads: CC_AVG_PRICE_CANDLES_COUNT<br/>CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR"]
-    end
-    
-    subgraph "Consumers - Validation"
-        SignalValidation["VALIDATE_SIGNAL_FN<br/>Reads: CC_MIN_TAKEPROFIT_DISTANCE_PERCENT<br/>CC_MIN_STOPLOSS_DISTANCE_PERCENT<br/>CC_MAX_STOPLOSS_DISTANCE_PERCENT"]
-    end
-    
-    DefaultConfig -->|"Object.freeze()"| GlobalConfig
-    UserConfig -->|"setConfig()"| ConfigValidation
-    ConfigValidation -->|"validate()"| GlobalConfig
-    
-    GlobalConfig --> StrategyCore
-    GlobalConfig --> ExchangeCore
-    GlobalConfig --> ProfitLoss
-    GlobalConfig --> ClientStrategy
-    GlobalConfig --> ClientExchange
-    GlobalConfig --> SignalValidation
-    
-    style GlobalConfig fill:#e1f5ff,stroke:#333,stroke-width:3px
-    style ConfigValidation fill:#ffe1e1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\28-configuration-api_2.svg)
 
 ---
 

@@ -74,122 +74,11 @@ Callbacks fire at key points during walker execution: before starting each strat
 
 ### High-Level Walker Execution
 
-```mermaid
-graph TB
-    START["Walker.run(symbol, {walkerName})"]
-    VALIDATE["WalkerValidationService<br/>Validate walkerName"]
-    GET_SCHEMA["WalkerSchemaService.get()<br/>Retrieve walker configuration"]
-    VALIDATE_DEPS["Validate dependencies:<br/>- exchangeName<br/>- frameName<br/>- all strategies"]
-    CLEAR_STATE["Clear state for all strategies:<br/>- BacktestMarkdownService<br/>- ScheduleMarkdownService<br/>- StrategyCoreService<br/>- RiskGlobalService"]
-    WALKER_CMD["WalkerCommandService.run()<br/>Delegate to WalkerLogicPrivateService"]
-    
-    START --> VALIDATE
-    VALIDATE --> GET_SCHEMA
-    GET_SCHEMA --> VALIDATE_DEPS
-    VALIDATE_DEPS --> CLEAR_STATE
-    CLEAR_STATE --> WALKER_CMD
-    
-    subgraph "WalkerLogicPrivateService.run()"
-        INIT["Initialize tracking:<br/>bestMetric = null<br/>bestStrategy = null<br/>strategiesTested = 0"]
-        SUBSCRIBE["Subscribe to walkerStopSubject<br/>Filter by symbol + walkerName"]
-        LOOP_START["for each strategy in strategies[]"]
-        CHECK_STOP["Check if stopped<br/>via stoppedStrategies Set"]
-        CALLBACK_START["Call onStrategyStart callback"]
-        RUN_BACKTEST["BacktestLogicPublicService.run()<br/>Execute backtest for strategy"]
-        GET_STATS["BacktestMarkdownService.getData()<br/>Retrieve statistics"]
-        EXTRACT_METRIC["Extract metric value<br/>from stats[metric]"]
-        COMPARE["Compare with bestMetric<br/>Update if metricValue > bestMetric"]
-        INCREMENT["strategiesTested++"]
-        EMIT_PROGRESS["Emit progressWalkerEmitter"]
-        CALLBACK_COMPLETE["Call onStrategyComplete callback"]
-        EMIT_WALKER["Emit walkerEmitter"]
-        YIELD["yield WalkerContract"]
-        LOOP_END["Next strategy"]
-        UNSUBSCRIBE["Unsubscribe from walkerStopSubject"]
-        CALLBACK_FINAL["Call onComplete callback"]
-        EMIT_COMPLETE["Emit walkerCompleteSubject"]
-        
-        WALKER_CMD --> INIT
-        INIT --> SUBSCRIBE
-        SUBSCRIBE --> LOOP_START
-        LOOP_START --> CHECK_STOP
-        CHECK_STOP -->|stopped| UNSUBSCRIBE
-        CHECK_STOP -->|continue| CALLBACK_START
-        CALLBACK_START --> RUN_BACKTEST
-        RUN_BACKTEST -->|error| CALLBACK_COMPLETE
-        RUN_BACKTEST -->|success| GET_STATS
-        GET_STATS --> EXTRACT_METRIC
-        EXTRACT_METRIC --> COMPARE
-        COMPARE --> INCREMENT
-        INCREMENT --> EMIT_PROGRESS
-        EMIT_PROGRESS --> CALLBACK_COMPLETE
-        CALLBACK_COMPLETE --> EMIT_WALKER
-        EMIT_WALKER --> YIELD
-        YIELD --> LOOP_END
-        LOOP_END --> LOOP_START
-        LOOP_START -->|done| UNSUBSCRIBE
-        UNSUBSCRIBE --> CALLBACK_FINAL
-        CALLBACK_FINAL --> EMIT_COMPLETE
-    end
-    
-    style WALKER_CMD fill:#e1f5ff,stroke:#333,stroke-width:3px
-    style YIELD fill:#fff4e1,stroke:#333,stroke-width:2px
-    style COMPARE fill:#ffe1e1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\19-walker-mode_0.svg)
 
 ### Sequential Backtest Execution
 
-```mermaid
-graph LR
-    subgraph "Strategy 1"
-        S1_START["onStrategyStart"]
-        S1_BT["Run Backtest"]
-        S1_STATS["Get Statistics"]
-        S1_COMPARE["Compare Metric"]
-        S1_YIELD["Yield Progress"]
-        S1_COMPLETE["onStrategyComplete"]
-        
-        S1_START --> S1_BT
-        S1_BT --> S1_STATS
-        S1_STATS --> S1_COMPARE
-        S1_COMPARE --> S1_YIELD
-        S1_YIELD --> S1_COMPLETE
-    end
-    
-    subgraph "Strategy 2"
-        S2_START["onStrategyStart"]
-        S2_BT["Run Backtest"]
-        S2_STATS["Get Statistics"]
-        S2_COMPARE["Compare Metric"]
-        S2_YIELD["Yield Progress"]
-        S2_COMPLETE["onStrategyComplete"]
-        
-        S2_START --> S2_BT
-        S2_BT --> S2_STATS
-        S2_STATS --> S2_COMPARE
-        S2_COMPARE --> S2_YIELD
-        S2_YIELD --> S2_COMPLETE
-    end
-    
-    subgraph "Strategy N"
-        SN_START["onStrategyStart"]
-        SN_BT["Run Backtest"]
-        SN_STATS["Get Statistics"]
-        SN_COMPARE["Compare Metric"]
-        SN_YIELD["Yield Progress"]
-        SN_COMPLETE["onStrategyComplete"]
-        
-        SN_START --> SN_BT
-        SN_BT --> SN_STATS
-        SN_STATS --> SN_COMPARE
-        SN_COMPARE --> SN_YIELD
-        SN_YIELD --> SN_COMPLETE
-    end
-    
-    S1_COMPLETE --> S2_START
-    S2_COMPLETE -.->|...| SN_START
-    SN_COMPLETE --> FINAL["onComplete<br/>walkerCompleteSubject"]
-```
+![Mermaid Diagram](./diagrams\19-walker-mode_1.svg)
 
 Each strategy executes a complete backtest before the next strategy begins. Progress is yielded after each strategy completes, not during individual strategy execution.
 
@@ -270,49 +159,7 @@ The `bestStats` field contains the full statistics object for the winning strate
 
 ### Walker Event Emitters
 
-```mermaid
-graph TB
-    subgraph "Event Producers"
-        WALKER_LOGIC["WalkerLogicPrivateService"]
-    end
-    
-    subgraph "Event Emitters"
-        PROGRESS["progressWalkerEmitter<br/>ProgressWalkerContract<br/>After each strategy"]
-        WALKER["walkerEmitter<br/>WalkerContract<br/>After each strategy"]
-        COMPLETE["walkerCompleteSubject<br/>IWalkerResults<br/>When all strategies finish"]
-        DONE["doneWalkerSubject<br/>DoneContract<br/>Background execution complete"]
-        STOP["walkerStopSubject<br/>WalkerStopContract<br/>Bidirectional stop signals"]
-    end
-    
-    subgraph "Event Consumers"
-        LISTEN_PROGRESS["listenWalkerProgress()"]
-        LISTEN_WALKER["listenWalker()"]
-        LISTEN_WALKER_ONCE["listenWalkerOnce()"]
-        LISTEN_COMPLETE["listenWalkerComplete()"]
-        LISTEN_DONE["listenDoneWalker()"]
-        LISTEN_DONE_ONCE["listenDoneWalkerOnce()"]
-        MARKDOWN["WalkerMarkdownService"]
-    end
-    
-    WALKER_LOGIC --> PROGRESS
-    WALKER_LOGIC --> WALKER
-    WALKER_LOGIC --> COMPLETE
-    WALKER_LOGIC --> DONE
-    
-    PROGRESS --> LISTEN_PROGRESS
-    WALKER --> LISTEN_WALKER
-    WALKER --> LISTEN_WALKER_ONCE
-    WALKER --> MARKDOWN
-    COMPLETE --> LISTEN_COMPLETE
-    DONE --> LISTEN_DONE
-    DONE --> LISTEN_DONE_ONCE
-    
-    LISTEN_WALKER_ONCE -.->|user calls Walker stop| STOP
-    STOP -.->|filtered by symbol and walkerName| WALKER_LOGIC
-    
-    style STOP fill:#ffe1e1,stroke:#333,stroke-width:2px
-    style WALKER_LOGIC fill:#e1f5ff,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\19-walker-mode_2.svg)
 
 ### Progress Tracking
 
@@ -354,38 +201,7 @@ The `stoppedStrategies` Set accumulates stop signals for strategies in this walk
 
 ### Stop Propagation
 
-```mermaid
-graph TB
-    USER["User calls Walker.stop()"]
-    WALKER_STOP["Walker.stop() implementation"]
-    GET_SCHEMA["Get walker schema<br/>for strategy list"]
-    LOOP["For each strategy"]
-    EMIT_STOP["walkerStopSubject.next()<br/>{symbol, strategyName, walkerName}"]
-    STOP_FLAG["StrategyCoreService.stop()<br/>Set internal stop flag"]
-    
-    SUBSCRIBE["WalkerLogicPrivateService<br/>subscribed to walkerStopSubject"]
-    FILTER["Filter by symbol + walkerName"]
-    ADD_SET["Add strategyName to<br/>stoppedStrategies Set"]
-    CHECK["Check Set before<br/>starting next strategy"]
-    BREAK["Break loop if stopped"]
-    
-    USER --> WALKER_STOP
-    WALKER_STOP --> GET_SCHEMA
-    GET_SCHEMA --> LOOP
-    LOOP --> EMIT_STOP
-    EMIT_STOP --> STOP_FLAG
-    LOOP --> LOOP
-    
-    EMIT_STOP -.->|event| SUBSCRIBE
-    SUBSCRIBE --> FILTER
-    FILTER --> ADD_SET
-    
-    ADD_SET -.->|checked before each strategy| CHECK
-    CHECK --> BREAK
-    
-    style EMIT_STOP fill:#ffe1e1,stroke:#333,stroke-width:2px
-    style CHECK fill:#fff4e1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\19-walker-mode_3.svg)
 
 When `Walker.stop()` is called, it:
 1. Retrieves the walker schema to get the strategy list

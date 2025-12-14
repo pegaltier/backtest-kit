@@ -17,91 +17,7 @@ This page covers strategy schema definition, signal types, execution flow, and i
 
 ### Strategy System Component Hierarchy
 
-```mermaid
-graph TB
-    subgraph "Public API"
-        ADD_STRATEGY["addStrategy(IStrategySchema)"]
-        LIST_STRATEGIES["listStrategies()"]
-    end
-    
-    subgraph "Schema Registry"
-        STRATEGY_SCHEMA["StrategySchemaService"]
-        STRATEGY_VALIDATION["StrategyValidationService"]
-        STORAGE["Map<StrategyName, IStrategySchema>"]
-    end
-    
-    subgraph "Connection Layer"
-        STRATEGY_CONNECTION["StrategyConnectionService"]
-        MEMOIZE["memoize(symbol:strategyName)"]
-    end
-    
-    subgraph "Client Implementation"
-        CLIENT_STRATEGY["ClientStrategy"]
-        PENDING_SIGNAL["_pendingSignal: ISignalRow | null"]
-        SCHEDULED_SIGNAL["_scheduledSignal: IScheduledSignalRow | null"]
-        LAST_TIMESTAMP["_lastSignalTimestamp: number | null"]
-        IS_STOPPED["_isStopped: boolean"]
-    end
-    
-    subgraph "Signal Lifecycle"
-        TICK["tick(): IStrategyTickResult"]
-        BACKTEST["backtest(): IStrategyBacktestResult"]
-        GET_SIGNAL_FN["GET_SIGNAL_FN()"]
-        VALIDATE_SIGNAL["VALIDATE_SIGNAL_FN()"]
-    end
-    
-    subgraph "Risk Integration"
-        RISK_CHECK["IRisk.checkSignal()"]
-        RISK_ADD["IRisk.addSignal()"]
-        RISK_REMOVE["IRisk.removeSignal()"]
-        MERGE_RISK["MergeRisk"]
-    end
-    
-    subgraph "Persistence"
-        PERSIST_SIGNAL["PersistSignalAdapter"]
-        PERSIST_SCHEDULE["PersistScheduleAdapter"]
-        WAIT_INIT["waitForInit()"]
-    end
-    
-    subgraph "Event System"
-        SIGNAL_EMITTER["signalEmitter"]
-        SIGNAL_BACKTEST["signalBacktestEmitter"]
-        SIGNAL_LIVE["signalLiveEmitter"]
-        CALLBACKS["IStrategyCallbacks"]
-    end
-    
-    ADD_STRATEGY --> STRATEGY_VALIDATION
-    STRATEGY_VALIDATION --> STRATEGY_SCHEMA
-    STRATEGY_SCHEMA --> STORAGE
-    
-    STRATEGY_CONNECTION --> MEMOIZE
-    MEMOIZE --> CLIENT_STRATEGY
-    
-    CLIENT_STRATEGY --> PENDING_SIGNAL
-    CLIENT_STRATEGY --> SCHEDULED_SIGNAL
-    CLIENT_STRATEGY --> LAST_TIMESTAMP
-    CLIENT_STRATEGY --> IS_STOPPED
-    
-    CLIENT_STRATEGY --> TICK
-    CLIENT_STRATEGY --> BACKTEST
-    TICK --> GET_SIGNAL_FN
-    BACKTEST --> GET_SIGNAL_FN
-    GET_SIGNAL_FN --> VALIDATE_SIGNAL
-    
-    GET_SIGNAL_FN --> RISK_CHECK
-    CLIENT_STRATEGY --> RISK_ADD
-    CLIENT_STRATEGY --> RISK_REMOVE
-    RISK_CHECK --> MERGE_RISK
-    
-    CLIENT_STRATEGY --> WAIT_INIT
-    WAIT_INIT --> PERSIST_SIGNAL
-    WAIT_INIT --> PERSIST_SCHEDULE
-    
-    CLIENT_STRATEGY --> CALLBACKS
-    STRATEGY_CONNECTION --> SIGNAL_EMITTER
-    STRATEGY_CONNECTION --> SIGNAL_BACKTEST
-    STRATEGY_CONNECTION --> SIGNAL_LIVE
-```
+![Mermaid Diagram](./diagrams\11-strategy-system_0.svg)
 
 ---
 
@@ -174,88 +90,11 @@ addStrategy({
 
 ### Signal Type Hierarchy
 
-```mermaid
-graph TB
-    subgraph "User-Provided DTO"
-        DTO["ISignalDto"]
-        DTO_ID["id?: string"]
-        DTO_POSITION["position: long | short"]
-        DTO_OPEN["priceOpen?: number"]
-        DTO_TP["priceTakeProfit: number"]
-        DTO_SL["priceStopLoss: number"]
-        DTO_TIME["minuteEstimatedTime: number"]
-        DTO_NOTE["note?: string"]
-        
-        DTO --> DTO_ID
-        DTO --> DTO_POSITION
-        DTO --> DTO_OPEN
-        DTO --> DTO_TP
-        DTO --> DTO_SL
-        DTO --> DTO_TIME
-        DTO --> DTO_NOTE
-    end
-    
-    subgraph "System-Augmented Row"
-        ROW["ISignalRow"]
-        ROW_ID["id: string (UUID v4)"]
-        ROW_OPEN["priceOpen: number (required)"]
-        ROW_EXCHANGE["exchangeName: ExchangeName"]
-        ROW_STRATEGY["strategyName: StrategyName"]
-        ROW_SYMBOL["symbol: string"]
-        ROW_SCHEDULED["scheduledAt: number (ms)"]
-        ROW_PENDING["pendingAt: number (ms)"]
-        ROW_FLAG["_isScheduled: boolean"]
-        
-        ROW --> ROW_ID
-        ROW --> ROW_OPEN
-        ROW --> ROW_EXCHANGE
-        ROW --> ROW_STRATEGY
-        ROW --> ROW_SYMBOL
-        ROW --> ROW_SCHEDULED
-        ROW --> ROW_PENDING
-        ROW --> ROW_FLAG
-    end
-    
-    subgraph "Scheduled Variant"
-        SCHEDULED["IScheduledSignalRow"]
-        SCHEDULED_EXTENDS["extends ISignalRow"]
-        SCHEDULED_OPEN["priceOpen: number (entry price)"]
-        SCHEDULED_FLAG["_isScheduled: true"]
-        
-        SCHEDULED --> SCHEDULED_EXTENDS
-        SCHEDULED --> SCHEDULED_OPEN
-        SCHEDULED --> SCHEDULED_FLAG
-    end
-    
-    DTO -.->|"validated + augmented"| ROW
-    ROW -.->|"if priceOpen specified"| SCHEDULED
-```
+![Mermaid Diagram](./diagrams\11-strategy-system_1.svg)
 
 ### Signal State Machine
 
-```mermaid
-stateDiagram-v2
-    [*] --> Idle: No active signal
-    
-    Idle --> Scheduled: getSignal() returns<br/>signal with priceOpen
-    Idle --> Opened: getSignal() returns<br/>signal without priceOpen
-    
-    Scheduled --> Active: Price reaches priceOpen<br/>(activation)
-    Scheduled --> Cancelled: Timeout (CC_SCHEDULE_AWAIT_MINUTES)<br/>or SL hit before activation
-    Scheduled --> Scheduled: Monitoring (active state)
-    
-    Opened --> Active: Signal persisted<br/>and risk checked
-    
-    Active --> Closed_TP: Price >= priceTakeProfit (long)<br/>Price <= priceTakeProfit (short)
-    Active --> Closed_SL: Price <= priceStopLoss (long)<br/>Price >= priceStopLoss (short)
-    Active --> Closed_Time: minuteEstimatedTime expired
-    Active --> Active: Monitoring (idle state)
-    
-    Closed_TP --> Idle: PnL calculated
-    Closed_SL --> Idle: PnL calculated
-    Closed_Time --> Idle: PnL calculated
-    Cancelled --> Idle: No position opened
-```
+![Mermaid Diagram](./diagrams\11-strategy-system_2.svg)
 
 **Key Transitions**:
 
@@ -290,49 +129,7 @@ ClientStrategy provides two execution methods:
 
 ### tick() Execution Flow
 
-```mermaid
-graph TB
-    START["tick(symbol, strategyName)"]
-    CHECK_SCHEDULED{"Has<br/>scheduledSignal?"}
-    CHECK_PENDING{"Has<br/>pendingSignal?"}
-    CHECK_INTERVAL{"Interval<br/>elapsed?"}
-    GET_SIGNAL["Call getSignal()"]
-    RISK_CHECK{"Risk<br/>check<br/>passes?"}
-    CREATE_SIGNAL["Create ISignalRow"]
-    PERSIST_SIGNAL["Persist to disk"]
-    MONITOR_TP{"TP/SL/Time<br/>condition<br/>met?"}
-    CLOSE_SIGNAL["Close signal<br/>Calculate PnL"]
-    RETURN_IDLE["Return idle"]
-    RETURN_SCHEDULED["Return scheduled"]
-    RETURN_OPENED["Return opened"]
-    RETURN_ACTIVE["Return active"]
-    RETURN_CLOSED["Return closed"]
-    
-    START --> CHECK_SCHEDULED
-    CHECK_SCHEDULED -->|Yes| MONITOR_SCHEDULED["Monitor activation<br/>Check timeout<br/>Check SL"]
-    MONITOR_SCHEDULED --> CHECK_ACTIVATION{"Price<br/>reached<br/>priceOpen?"}
-    CHECK_ACTIVATION -->|Yes| ACTIVATE["Activate signal<br/>Update pendingAt"]
-    CHECK_ACTIVATION -->|No| CHECK_TIMEOUT{"Timeout<br/>or SL<br/>hit?"}
-    CHECK_TIMEOUT -->|Yes| CANCEL["Cancel scheduled"]
-    CHECK_TIMEOUT -->|No| RETURN_SCHEDULED
-    CANCEL --> RETURN_IDLE
-    ACTIVATE --> RETURN_OPENED
-    
-    CHECK_SCHEDULED -->|No| CHECK_PENDING
-    CHECK_PENDING -->|Yes| MONITOR_TP
-    MONITOR_TP -->|Yes| CLOSE_SIGNAL
-    MONITOR_TP -->|No| RETURN_ACTIVE
-    CLOSE_SIGNAL --> RETURN_CLOSED
-    
-    CHECK_PENDING -->|No| CHECK_INTERVAL
-    CHECK_INTERVAL -->|Yes| GET_SIGNAL
-    CHECK_INTERVAL -->|No| RETURN_IDLE
-    GET_SIGNAL --> RISK_CHECK
-    RISK_CHECK -->|No| RETURN_IDLE
-    RISK_CHECK -->|Yes| CREATE_SIGNAL
-    CREATE_SIGNAL --> PERSIST_SIGNAL
-    PERSIST_SIGNAL --> RETURN_OPENED
-```
+![Mermaid Diagram](./diagrams\11-strategy-system_3.svg)
 
 **Key Steps**:
 
@@ -346,35 +143,7 @@ graph TB
 
 The `backtest()` method optimizes historical simulation by skipping to signal close timestamps:
 
-```mermaid
-graph TB
-    START["backtest(candles[])"]
-    CALL_TICK["Call tick()"]
-    CHECK_RESULT{"Result<br/>action?"}
-    OPENED["opened"]
-    SCHEDULED["scheduled"]
-    
-    START --> CALL_TICK
-    CALL_TICK --> CHECK_RESULT
-    CHECK_RESULT -->|idle| RETURN_IDLE["Return idle<br/>(no signal)"]
-    CHECK_RESULT -->|opened| OPENED
-    CHECK_RESULT -->|scheduled| SCHEDULED
-    
-    OPENED --> FAST_LOOP["Fast candle loop"]
-    SCHEDULED --> MONITOR_ACTIVATION["Monitor activation"]
-    MONITOR_ACTIVATION --> CHECK_ACTIVATED{"Activated<br/>or cancelled?"}
-    CHECK_ACTIVATED -->|Cancelled| RETURN_CANCELLED["Return cancelled"]
-    CHECK_ACTIVATED -->|Activated| FAST_LOOP
-    
-    FAST_LOOP --> ITERATE["For each candle:"]
-    ITERATE --> GET_AVG["Calculate VWAP<br/>(high+low+close)/3"]
-    GET_AVG --> CHECK_TP_SL{"TP/SL<br/>hit?"}
-    CHECK_TP_SL -->|Yes| CLOSE["Close signal<br/>Calculate PnL"]
-    CHECK_TP_SL -->|No| CHECK_TIME{"Time<br/>expired?"}
-    CHECK_TIME -->|Yes| CLOSE
-    CHECK_TIME -->|No| ITERATE
-    CLOSE --> RETURN_CLOSED["Return closed"]
-```
+![Mermaid Diagram](./diagrams\11-strategy-system_4.svg)
 
 **Optimization**: Skip directly to `closeTimestamp` instead of processing every intermediate timeframe.
 
@@ -393,49 +162,11 @@ Strategies integrate risk management through two properties:
 
 **Combination Logic** (from `GET_RISK_FN`):
 
-```mermaid
-graph TB
-    START{"Check<br/>riskName &<br/>riskList"}
-    NO_RISK["NOOP_RISK<br/>(always allows)"]
-    SINGLE["Single IRisk<br/>from riskName"]
-    LIST["MergeRisk<br/>(riskList)"]
-    COMBINED["MergeRisk<br/>([riskName, ...riskList])"]
-    
-    START -->|"Neither"| NO_RISK
-    START -->|"Only riskName"| SINGLE
-    START -->|"Only riskList"| LIST
-    START -->|"Both"| COMBINED
-```
+![Mermaid Diagram](./diagrams\11-strategy-system_5.svg)
 
 ### Risk Check Flow
 
-```mermaid
-sequenceDiagram
-    participant CS as ClientStrategy
-    participant GS as GET_SIGNAL_FN
-    participant RC as IRisk.checkSignal
-    participant V as Validations[]
-    participant CB as Callbacks
-    
-    CS->>GS: Call getSignal()
-    GS->>CS: Return ISignalDto
-    CS->>RC: checkSignal(IRiskCheckArgs)
-    
-    loop For each validation
-        RC->>V: validate(payload)
-        alt Validation throws
-            V-->>RC: Error
-            RC->>CB: onRejected()
-            RC-->>CS: false
-        else Validation passes
-            V-->>RC: void
-        end
-    end
-    
-    RC->>CB: onAllowed()
-    RC-->>CS: true
-    CS->>CS: Create ISignalRow
-```
+![Mermaid Diagram](./diagrams\11-strategy-system_6.svg)
 
 **IRiskCheckArgs Payload**:
 
@@ -542,48 +273,7 @@ Strategies can register lifecycle hooks via the `callbacks` property:
 
 ### Event Emission Flow
 
-```mermaid
-graph TB
-    subgraph "ClientStrategy Callbacks"
-        CB_SCHEDULE["callbacks.onSchedule"]
-        CB_OPEN["callbacks.onOpen"]
-        CB_ACTIVE["callbacks.onActive"]
-        CB_CLOSE["callbacks.onClose"]
-        CB_TICK["callbacks.onTick"]
-    end
-    
-    subgraph "StrategyConnectionService"
-        SCS_TICK["tick() / backtest()"]
-        EMIT_LOGIC{"backtest<br/>mode?"}
-    end
-    
-    subgraph "Global Emitters"
-        SIGNAL_ALL["signalEmitter"]
-        SIGNAL_BT["signalBacktestEmitter"]
-        SIGNAL_LV["signalLiveEmitter"]
-    end
-    
-    subgraph "Public Listeners"
-        LISTEN_ALL["listenSignal()"]
-        LISTEN_BT["listenSignalBacktest()"]
-        LISTEN_LV["listenSignalLive()"]
-    end
-    
-    CB_SCHEDULE -.->|"User code"| CB_TICK
-    CB_OPEN -.->|"User code"| CB_TICK
-    CB_ACTIVE -.->|"User code"| CB_TICK
-    CB_CLOSE -.->|"User code"| CB_TICK
-    
-    CB_TICK --> SCS_TICK
-    SCS_TICK --> EMIT_LOGIC
-    EMIT_LOGIC -->|"true"| SIGNAL_BT
-    EMIT_LOGIC -->|"false"| SIGNAL_LV
-    EMIT_LOGIC --> SIGNAL_ALL
-    
-    SIGNAL_ALL --> LISTEN_ALL
-    SIGNAL_BT --> LISTEN_BT
-    SIGNAL_LV --> LISTEN_LV
-```
+![Mermaid Diagram](./diagrams\11-strategy-system_7.svg)
 
 ### Callback Usage Example
 
@@ -628,47 +318,7 @@ addStrategy({
 
 The connection layer routes strategy operations to memoized `ClientStrategy` instances:
 
-```mermaid
-graph TB
-    subgraph "StrategyConnectionService"
-        GET_STRATEGY["getStrategy(symbol, strategyName)"]
-        MEMOIZE_KEY["Key: symbol:strategyName"]
-        CACHE["Map<string, ClientStrategy>"]
-    end
-    
-    subgraph "ClientStrategy Instance"
-        CONSTRUCTOR["new ClientStrategy(IStrategyParams)"]
-        WAIT_INIT["waitForInit()"]
-        TICK_METHOD["tick()"]
-        BACKTEST_METHOD["backtest()"]
-        STOP_METHOD["stop()"]
-    end
-    
-    subgraph "Dependencies"
-        SCHEMA["StrategySchemaService.get()"]
-        EXCHANGE["ExchangeConnectionService"]
-        RISK["RiskConnectionService"]
-        PARTIAL["PartialConnectionService"]
-        EXECUTION["ExecutionContextService"]
-        METHOD["MethodContextService"]
-    end
-    
-    GET_STRATEGY --> MEMOIZE_KEY
-    MEMOIZE_KEY --> CACHE
-    CACHE -.->|"Cache miss"| CONSTRUCTOR
-    CACHE -.->|"Cache hit"| TICK_METHOD
-    
-    CONSTRUCTOR --> SCHEMA
-    CONSTRUCTOR --> EXCHANGE
-    CONSTRUCTOR --> RISK
-    CONSTRUCTOR --> PARTIAL
-    CONSTRUCTOR --> EXECUTION
-    CONSTRUCTOR --> METHOD
-    
-    CONSTRUCTOR --> WAIT_INIT
-    WAIT_INIT --> TICK_METHOD
-    WAIT_INIT --> BACKTEST_METHOD
-```
+![Mermaid Diagram](./diagrams\11-strategy-system_8.svg)
 
 **Memoization Key**: `${symbol}:${strategyName}` (e.g., `"BTCUSDT:momentum-scalper"`)
 
@@ -693,30 +343,7 @@ graph TB
 
 ClientStrategy integrates with `PersistSignalAdapter` and `PersistScheduleAdapter` for crash-safe state recovery:
 
-```mermaid
-sequenceDiagram
-    participant LV as Live.run()
-    participant CS as ClientStrategy
-    participant PSA as PersistSignalAdapter
-    participant PSch as PersistScheduleAdapter
-    
-    LV->>CS: waitForInit()
-    CS->>PSA: readSignalData(symbol, strategyName)
-    PSA-->>CS: ISignalRow | null
-    alt Pending signal exists
-        CS->>CS: _pendingSignal = restored
-        CS->>CS: callbacks.onActive()
-    end
-    
-    CS->>PSch: readScheduleData(symbol, strategyName)
-    PSch-->>CS: IScheduledSignalRow | null
-    alt Scheduled signal exists
-        CS->>CS: _scheduledSignal = restored
-        CS->>CS: callbacks.onSchedule()
-    end
-    
-    Note over CS: Ready for tick()
-```
+![Mermaid Diagram](./diagrams\11-strategy-system_9.svg)
 
 **File Paths**:
 - Pending: `./dump/signal_${symbol}_${strategyName}.json`

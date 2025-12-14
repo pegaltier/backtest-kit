@@ -49,44 +49,7 @@ Every trade incurs these costs regardless of direction (long/short) or outcome (
 
 ## Cost Calculation Model
 
-```mermaid
-graph TB
-    subgraph "Entry Transaction"
-        E1["priceOpen<br/>(Market Price)"]
-        E2["Apply Slippage<br/>LONG: × (1 + 0.1%)<br/>SHORT: × (1 - 0.1%)"]
-        E3["Apply Entry Fee<br/>× (1 + 0.1%)"]
-        E4["effectivePriceOpen"]
-        
-        E1 --> E2
-        E2 --> E3
-        E3 --> E4
-    end
-    
-    subgraph "Exit Transaction"
-        X1["priceClose<br/>(Exit Price)"]
-        X2["Apply Slippage<br/>LONG: × (1 - 0.1%)<br/>SHORT: × (1 + 0.1%)"]
-        X3["Apply Exit Fee<br/>× (1 - 0.1%)"]
-        X4["effectivePriceClose"]
-        
-        X1 --> X2
-        X2 --> X3
-        X3 --> X4
-    end
-    
-    subgraph "PNL Calculation - toProfitLossDto"
-        P1["Raw PNL"]
-        P2["LONG:<br/>((close - open) / open) × 100"]
-        P3["SHORT:<br/>((open - close) / open) × 100"]
-        P4["Final PNL<br/>(after all costs)"]
-        
-        E4 --> P1
-        X4 --> P1
-        P1 --> P2
-        P1 --> P3
-        P2 --> P4
-        P3 --> P4
-    end
-```
+![Mermaid Diagram](./diagrams\27-economic-viability-and-validation_0.svg)
 
 ### Implementation: toProfitLossDto
 ```typescript
@@ -113,46 +76,7 @@ The `ConfigValidationService` validates `GLOBAL_CONFIG` on every `setConfig()` c
 
 ### Architecture
 
-```mermaid
-graph TB
-    subgraph "Public API"
-        A["setConfig(config, _unsafe)"]
-    end
-    
-    subgraph "setup.ts"
-        B["Object.assign(GLOBAL_CONFIG, config)"]
-        C["configValidationService.validate()"]
-        D["Rollback on error"]
-    end
-    
-    subgraph "ConfigValidationService"
-        E["validate()"]
-        F["Collect all errors[]"]
-        
-        subgraph "Validation Rules"
-            V1["Percentage Validation<br/>Non-negative, finite"]
-            V2["Economic Viability Check<br/>TP >= slippage + fees"]
-            V3["Range Constraints<br/>MIN_SL < MAX_SL"]
-            V4["Integer Validation<br/>Timeouts, counts"]
-        end
-        
-        G["Throw aggregated errors"]
-    end
-    
-    A --> B
-    B --> C
-    C --> E
-    E --> F
-    F --> V1
-    F --> V2
-    F --> V3
-    F --> V4
-    V1 --> G
-    V2 --> G
-    V3 --> G
-    V4 --> G
-    G -.->|"Error"| D
-```
+![Mermaid Diagram](./diagrams\27-economic-viability-and-validation_1.svg)
 
 ### Validation Categories
 
@@ -222,39 +146,7 @@ Prevents configurations like `MIN_SL=10%, MAX_SL=5%` which create impossible con
 
 ## Validation Flow
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant setConfig
-    participant GLOBAL_CONFIG
-    participant ConfigValidationService
-    participant errors
-    
-    User->>setConfig: setConfig({CC_MIN_TAKEPROFIT_DISTANCE_PERCENT: 0.3})
-    setConfig->>GLOBAL_CONFIG: Backup current config
-    setConfig->>GLOBAL_CONFIG: Apply new values
-    
-    setConfig->>ConfigValidationService: validate()
-    ConfigValidationService->>errors: errors = []
-    
-    ConfigValidationService->>ConfigValidationService: Check CC_PERCENT_SLIPPAGE >= 0
-    ConfigValidationService->>ConfigValidationService: Check CC_PERCENT_FEE >= 0
-    
-    ConfigValidationService->>ConfigValidationService: Calculate minRequiredTpDistance<br/>(slippage*2 + fees*2 = 0.4%)
-    ConfigValidationService->>ConfigValidationService: TP (0.3%) < minRequired (0.4%)
-    ConfigValidationService->>errors: Add: "TP too low to cover costs"
-    
-    ConfigValidationService->>ConfigValidationService: Check MIN_SL < MAX_SL
-    ConfigValidationService->>ConfigValidationService: Check integer constraints
-    
-    ConfigValidationService->>errors: errors.length > 0?
-    errors-->>ConfigValidationService: Yes (1 error)
-    ConfigValidationService->>ConfigValidationService: Build error message
-    
-    ConfigValidationService-->>setConfig: throw Error("GLOBAL_CONFIG validation failed...")
-    setConfig->>GLOBAL_CONFIG: Rollback to backup
-    setConfig-->>User: throw error
-```
+![Mermaid Diagram](./diagrams\27-economic-viability-and-validation_2.svg)
 
 ### Error Output Example
 
@@ -276,28 +168,7 @@ The sanitize test suite [test/e2e/sanitize.test.mjs:1-1507]() validates that dan
 
 ### Critical Test Categories
 
-```mermaid
-graph TB
-    subgraph "Economic Viability Tests"
-        T1["Micro-profit eaten by fees<br/>TP too close to priceOpen<br/>scheduledCount=0, openedCount=0"]
-    end
-    
-    subgraph "Risk Protection Tests"
-        T2["Extreme StopLoss >20%<br/>Prevents catastrophic loss<br/>Signal rejected"]
-        T3["Excessive minuteEstimatedTime >30d<br/>Prevents eternal signals<br/>Strategy deadlock prevented"]
-    end
-    
-    subgraph "Data Integrity Tests"
-        T4["Negative prices rejected<br/>priceOpen=-42000<br/>Impossible trade prevented"]
-        T5["NaN/Infinity prices rejected<br/>priceOpen=NaN<br/>Calculation explosion prevented"]
-        T6["Incomplete Binance candles<br/>Anomalous prices detected<br/>Fake signals prevented"]
-    end
-    
-    subgraph "Baseline Tests"
-        T7["Basic LONG trading works<br/>scheduled → opened → closed<br/>PNL positive"]
-        T8["Basic SHORT trading works<br/>scheduled → opened → closed<br/>PNL positive"]
-    end
-```
+![Mermaid Diagram](./diagrams\27-economic-viability-and-validation_3.svg)
 
 ### Test 1: Micro-Profit Protection
 **Scenario:** Signal with `priceTakeProfit=42010, priceOpen=42000` (0.024% profit)
@@ -350,44 +221,7 @@ graph TB
 
 ## Configuration Validation Mapping
 
-```mermaid
-graph TB
-    subgraph "GLOBAL_CONFIG Parameters"
-        P1["CC_PERCENT_SLIPPAGE<br/>Default: 0.1%"]
-        P2["CC_PERCENT_FEE<br/>Default: 0.1%"]
-        P3["CC_MIN_TAKEPROFIT_DISTANCE_PERCENT<br/>Default: 0.5%"]
-        P4["CC_MIN_STOPLOSS_DISTANCE_PERCENT<br/>Default: 0.5%"]
-        P5["CC_MAX_STOPLOSS_DISTANCE_PERCENT<br/>Default: 20%"]
-        P6["CC_MAX_SIGNAL_LIFETIME_MINUTES<br/>Default: 1440"]
-    end
-    
-    subgraph "ConfigValidationService Rules"
-        R1["validate_slippage()<br/>Must be >= 0"]
-        R2["validate_fee()<br/>Must be >= 0"]
-        R3["validate_tp_distance()<br/>Must cover slippage+fees"]
-        R4["validate_sl_range()<br/>MIN < MAX"]
-        R5["validate_lifetime()<br/>Must be positive integer"]
-    end
-    
-    subgraph "Sanitize Tests"
-        T1["Micro-profit test<br/>Verifies TP rejection"]
-        T2["Extreme SL test<br/>Verifies MAX_SL enforcement"]
-        T3["Excessive time test<br/>Verifies lifetime limit"]
-    end
-    
-    P1 --> R1
-    P2 --> R2
-    P3 --> R3
-    P1 --> R3
-    P2 --> R3
-    P4 --> R4
-    P5 --> R4
-    P6 --> R5
-    
-    R3 --> T1
-    R4 --> T2
-    R5 --> T3
-```
+![Mermaid Diagram](./diagrams\27-economic-viability-and-validation_4.svg)
 
 ---
 

@@ -20,49 +20,7 @@ The framework implements a crash-safe persistence system that enables live tradi
 
 ### Persistence Layer Overview
 
-```mermaid
-graph TB
-    subgraph "Abstract Base"
-        PersistBase["PersistBase&lt;TEntity&gt;<br/>Abstract persistence adapter<br/>Generic entity storage"]
-    end
-    
-    subgraph "Concrete Adapters"
-        PersistSignalAdapter["PersistSignalAdapter<br/>Signal state persistence<br/>./dump/signal_{symbol}_{strategy}.json"]
-        PersistScheduleAdapter["PersistScheduleAdapter<br/>Scheduled signal persistence<br/>./dump/schedule_{symbol}_{strategy}.json"]
-        PersistRiskAdapter["PersistRiskAdapter<br/>Risk state persistence<br/>./dump/risk_{symbol}_{risk}.json"]
-        PersistPartialAdapter["PersistPartialAdapter<br/>Partial P/L persistence<br/>./dump/partial_{symbol}.json"]
-    end
-    
-    subgraph "Client Layer Consumers"
-        ClientStrategy["ClientStrategy<br/>Uses Signal + Schedule adapters<br/>waitForInit recovery"]
-        ClientRisk["ClientRisk<br/>Uses Risk adapter<br/>Position tracking"]
-        ClientPartial["ClientPartial<br/>Uses Partial adapter<br/>Milestone cache"]
-    end
-    
-    subgraph "Persistence Operations"
-        Write["write(entity)<br/>Atomic file write<br/>JSON.stringify"]
-        Read["read()<br/>File read + parse<br/>JSON.parse"]
-        Remove["remove()<br/>File deletion<br/>State cleanup"]
-    end
-    
-    PersistBase --> PersistSignalAdapter
-    PersistBase --> PersistScheduleAdapter
-    PersistBase --> PersistRiskAdapter
-    PersistBase --> PersistPartialAdapter
-    
-    PersistSignalAdapter --> ClientStrategy
-    PersistScheduleAdapter --> ClientStrategy
-    PersistRiskAdapter --> ClientRisk
-    PersistPartialAdapter --> ClientPartial
-    
-    PersistSignalAdapter --> Write
-    PersistSignalAdapter --> Read
-    PersistSignalAdapter --> Remove
-    
-    Write -.->|"Atomic operation"| FS["File System<br/>./dump/ directory<br/>JSON files"]
-    Read -.->|"On init"| FS
-    Remove -.->|"On close"| FS
-```
+![Mermaid Diagram](./diagrams\33-advanced-features_0.svg)
 
 , [src/client/ClientStrategy.ts:491-552](), Diagram 1 (Overall System Architecture)
 
@@ -88,41 +46,7 @@ graph TB
 
 **Recovery Flow**:
 
-```mermaid
-sequenceDiagram
-    participant Live as Live.run()
-    participant Strategy as ClientStrategy
-    participant SigAdapter as PersistSignalAdapter
-    participant SchAdapter as PersistScheduleAdapter
-    participant FS as File System
-    
-    Live->>Strategy: tick() first call
-    Strategy->>Strategy: waitForInit() (singleshot)
-    
-    alt Backtest Mode
-        Strategy->>Strategy: Skip persistence
-    else Live Mode
-        Strategy->>SigAdapter: readSignalData(symbol, strategy)
-        SigAdapter->>FS: Read signal_{symbol}_{strategy}.json
-        FS-->>SigAdapter: ISignalRow or null
-        SigAdapter-->>Strategy: Restored pending signal
-        
-        Strategy->>SchAdapter: readScheduleData(symbol, strategy)
-        SchAdapter->>FS: Read schedule_{symbol}_{strategy}.json
-        FS-->>SchAdapter: IScheduledSignalRow or null
-        SchAdapter-->>Strategy: Restored scheduled signal
-        
-        alt Signal Restored
-            Strategy->>Strategy: Set _pendingSignal
-            Strategy->>Strategy: Call onActive callback
-        end
-        
-        alt Scheduled Signal Restored
-            Strategy->>Strategy: Set _scheduledSignal
-            Strategy->>Strategy: Call onSchedule callback
-        end
-    end
-```
+![Mermaid Diagram](./diagrams\33-advanced-features_1.svg)
 
 ### Atomic Write Pattern
 
@@ -182,116 +106,7 @@ The framework provides a comprehensive pub/sub event system for monitoring strat
 
 ### Event Emitter Architecture
 
-```mermaid
-graph TB
-    subgraph "Event Producers"
-        CS["ClientStrategy<br/>tick(), backtest()<br/>Signal lifecycle"]
-        CE["ClientExchange<br/>getCandles()<br/>Data fetching"]
-        CR["ClientRisk<br/>checkSignal()<br/>Risk rejections"]
-        CP["ClientPartial<br/>profit(), loss()<br/>Milestone tracking"]
-        Logic["Logic Services<br/>Progress, completion<br/>Performance metrics"]
-    end
-    
-    subgraph "Core Emitters - functools-kit Subject"
-        SE["signalEmitter<br/>All signals<br/>IStrategyTickResult"]
-        SLE["signalLiveEmitter<br/>Live only<br/>IStrategyTickResult"]
-        SBE["signalBacktestEmitter<br/>Backtest only<br/>IStrategyTickResult"]
-        EE["errorEmitter<br/>Recoverable errors<br/>Error"]
-        ExE["exitEmitter<br/>Fatal errors<br/>Error"]
-        DLS["doneLiveSubject<br/>Live completion<br/>DoneContract"]
-        DBS["doneBacktestSubject<br/>Backtest completion<br/>DoneContract"]
-        DWS["doneWalkerSubject<br/>Walker completion<br/>DoneContract"]
-        PBE["progressBacktestEmitter<br/>Backtest progress<br/>ProgressBacktestContract"]
-        PWE["progressWalkerEmitter<br/>Walker progress<br/>ProgressWalkerContract"]
-        POE["progressOptimizerEmitter<br/>Optimizer progress<br/>ProgressOptimizerContract"]
-        PE["performanceEmitter<br/>Performance metrics<br/>PerformanceContract"]
-        WE["walkerEmitter<br/>Strategy results<br/>WalkerContract"]
-        WCS["walkerCompleteSubject<br/>Final results<br/>IWalkerResults"]
-        WSS["walkerStopSubject<br/>Stop signals<br/>WalkerStopContract"]
-        VS["validationSubject<br/>Validation errors<br/>Error"]
-        PPS["partialProfitSubject<br/>Profit milestones<br/>PartialProfitContract"]
-        PLS["partialLossSubject<br/>Loss milestones<br/>PartialLossContract"]
-        RS["riskSubject<br/>Risk rejections<br/>RiskContract"]
-    end
-    
-    subgraph "Public Listeners - Queued Processing"
-        LS["listenSignal()<br/>queued async<br/>All signals"]
-        LSO["listenSignalOnce()<br/>filter + once<br/>Conditional"]
-        LSLV["listenSignalLive()<br/>queued async<br/>Live only"]
-        LSLVO["listenSignalLiveOnce()<br/>filter + once<br/>Conditional"]
-        LSBT["listenSignalBacktest()<br/>queued async<br/>Backtest only"]
-        LSBTO["listenSignalBacktestOnce()<br/>filter + once<br/>Conditional"]
-        LE["listenError()<br/>queued async<br/>Error handling"]
-        LEx["listenExit()<br/>queued async<br/>Fatal errors"]
-        LDL["listenDoneLive()<br/>queued async<br/>Live completion"]
-        LDLO["listenDoneLiveOnce()<br/>filter + once<br/>Conditional"]
-        LDB["listenDoneBacktest()<br/>queued async<br/>Backtest completion"]
-        LDBO["listenDoneBacktestOnce()<br/>filter + once<br/>Conditional"]
-        LDW["listenDoneWalker()<br/>queued async<br/>Walker completion"]
-        LDWO["listenDoneWalkerOnce()<br/>filter + once<br/>Conditional"]
-        LBP["listenBacktestProgress()<br/>queued async<br/>Progress updates"]
-        LWP["listenWalkerProgress()<br/>queued async<br/>Progress updates"]
-        LOP["listenOptimizerProgress()<br/>queued async<br/>Progress updates"]
-        LP["listenPerformance()<br/>queued async<br/>Metrics tracking"]
-        LW["listenWalker()<br/>queued async<br/>Strategy results"]
-        LWO["listenWalkerOnce()<br/>filter + once<br/>Conditional"]
-        LWC["listenWalkerComplete()<br/>queued async<br/>Final results"]
-        LV["listenValidation()<br/>queued async<br/>Validation errors"]
-        LPP["listenPartialProfit()<br/>queued async<br/>Profit milestones"]
-        LPPO["listenPartialProfitOnce()<br/>filter + once<br/>Conditional"]
-        LPL["listenPartialLoss()<br/>queued async<br/>Loss milestones"]
-        LPLO["listenPartialLossOnce()<br/>filter + once<br/>Conditional"]
-        LR["listenRisk()<br/>queued async<br/>Risk rejections"]
-        LRO["listenRiskOnce()<br/>filter + once<br/>Conditional"]
-    end
-    
-    CS --> SE
-    CS --> SLE
-    CS --> SBE
-    CR --> RS
-    CP --> PPS
-    CP --> PLS
-    Logic --> PBE
-    Logic --> PWE
-    Logic --> POE
-    Logic --> DLS
-    Logic --> DBS
-    Logic --> DWS
-    Logic --> PE
-    Logic --> WE
-    Logic --> WCS
-    Logic --> EE
-    Logic --> ExE
-    
-    SE -.->|subscribe| LS
-    SE -.->|filter + once| LSO
-    SLE -.->|subscribe| LSLV
-    SLE -.->|filter + once| LSLVO
-    SBE -.->|subscribe| LSBT
-    SBE -.->|filter + once| LSBTO
-    EE -.->|subscribe| LE
-    ExE -.->|subscribe| LEx
-    DLS -.->|subscribe| LDL
-    DLS -.->|filter + once| LDLO
-    DBS -.->|subscribe| LDB
-    DBS -.->|filter + once| LDBO
-    DWS -.->|subscribe| LDW
-    DWS -.->|filter + once| LDWO
-    PBE -.->|subscribe| LBP
-    PWE -.->|subscribe| LWP
-    POE -.->|subscribe| LOP
-    PE -.->|subscribe| LP
-    WE -.->|subscribe| LW
-    WE -.->|filter + once| LWO
-    WCS -.->|subscribe| LWC
-    VS -.->|subscribe| LV
-    PPS -.->|subscribe| LPP
-    PPS -.->|filter + once| LPPO
-    PLS -.->|subscribe| LPL
-    PLS -.->|filter + once| LPLO
-    RS -.->|subscribe| LR
-    RS -.->|filter + once| LRO
-```
+![Mermaid Diagram](./diagrams\33-advanced-features_2.svg)
 
 , [src/function/event.ts:1-564](), Diagram 4 (Event System and Communication Flow)
 
@@ -455,67 +270,7 @@ The framework tracks unrealized profit and loss milestones during active trades,
 
 ### Partial Tracking Architecture
 
-```mermaid
-graph TB
-    subgraph "Client Implementation"
-        ClientPartial["ClientPartial<br/>Milestone tracking logic<br/>Set-based deduplication"]
-    end
-    
-    subgraph "State Management"
-        PartialState["IPartialState (in-memory)<br/>Map&lt;signalId, state&gt;<br/>profitLevels: Set&lt;PartialLevel&gt;<br/>lossLevels: Set&lt;PartialLevel&gt;"]
-        PartialData["IPartialData (serialized)<br/>profitLevels: PartialLevel[]<br/>lossLevels: PartialLevel[]<br/>JSON persistence"]
-    end
-    
-    subgraph "Persistence"
-        PersistPartialAdapter["PersistPartialAdapter<br/>./dump/partial_{symbol}.json<br/>Atomic writes"]
-    end
-    
-    subgraph "Event Emission"
-        PartialProfitSubject["partialProfitSubject<br/>Profit milestone events<br/>PartialProfitContract"]
-        PartialLossSubject["partialLossSubject<br/>Loss milestone events<br/>PartialLossContract"]
-    end
-    
-    subgraph "Public API Listeners"
-        ListenPartialProfit["listenPartialProfit()<br/>Queued processing<br/>All profit milestones"]
-        ListenPartialProfitOnce["listenPartialProfitOnce()<br/>Filter + once<br/>Conditional"]
-        ListenPartialLoss["listenPartialLoss()<br/>Queued processing<br/>All loss milestones"]
-        ListenPartialLossOnce["listenPartialLossOnce()<br/>Filter + once<br/>Conditional"]
-    end
-    
-    subgraph "Milestone Calculation"
-        CalcProfit["Calculate revenuePercent<br/>Compare to PartialLevel<br/>10, 20, 30, 40, 50, 60, 70, 80, 90, 100"]
-        CalcLoss["Calculate lossPercent<br/>Compare to PartialLevel<br/>10, 20, 30, 40, 50, 60, 70, 80, 90, 100"]
-    end
-    
-    subgraph "Strategy Integration"
-        ClientStrategy["ClientStrategy.tick()<br/>Monitor active signal<br/>Call partial.profit() or partial.loss()"]
-    end
-    
-    ClientStrategy -->|"revenuePercent &gt; 0"| ClientPartial
-    ClientStrategy -->|"revenuePercent &lt; 0"| ClientPartial
-    
-    ClientPartial -->|profit| CalcProfit
-    ClientPartial -->|loss| CalcLoss
-    
-    CalcProfit -->|"New milestone"| PartialState
-    CalcLoss -->|"New milestone"| PartialState
-    
-    PartialState -->|"Add to Set"| PartialState
-    PartialState -->|Serialize| PartialData
-    PartialData --> PersistPartialAdapter
-    
-    CalcProfit -->|"Emit event"| PartialProfitSubject
-    CalcLoss -->|"Emit event"| PartialLossSubject
-    
-    PartialProfitSubject -.->|subscribe| ListenPartialProfit
-    PartialProfitSubject -.->|filter + once| ListenPartialProfitOnce
-    PartialLossSubject -.->|subscribe| ListenPartialLoss
-    PartialLossSubject -.->|filter + once| ListenPartialLossOnce
-    
-    ClientStrategy -->|"Signal closes"| ClientPartial
-    ClientPartial -->|clear| PartialState
-    PartialState -->|"Remove signalId"| PersistPartialAdapter
-```
+![Mermaid Diagram](./diagrams\33-advanced-features_3.svg)
 
 , Diagram 4 (Event System and Communication Flow)
 
@@ -560,39 +315,7 @@ This ensures each milestone emits exactly once per signal, even across process r
 
 ### Profit Tracking Flow
 
-```mermaid
-sequenceDiagram
-    participant Strategy as ClientStrategy
-    participant Partial as ClientPartial
-    participant State as IPartialState (in-memory)
-    participant Adapter as PersistPartialAdapter
-    participant Emitter as partialProfitSubject
-    participant Listener as User Callback
-    
-    Strategy->>Strategy: tick() - active signal
-    Strategy->>Strategy: Calculate revenuePercent
-    
-    alt revenuePercent > 0
-        Strategy->>Partial: profit(symbol, data, currentPrice, revenuePercent, backtest, when)
-        
-        loop For each PartialLevel [10, 20, 30, ...]
-            Partial->>Partial: Check if revenuePercent >= level
-            
-            alt Level reached AND not in profitLevels Set
-                Partial->>State: Add level to profitLevels Set
-                Partial->>Adapter: write(serialized state)
-                Adapter->>FS: Atomic write to ./dump/partial_{symbol}.json
-                
-                Partial->>Emitter: next(PartialProfitContract)
-                Emitter->>Listener: Queued callback execution
-                
-                Note over Listener: User handles profit milestone<br/>(e.g., send Telegram alert)
-            else Level already in Set
-                Partial->>Partial: Skip (deduplication)
-            end
-        end
-    end
-```
+![Mermaid Diagram](./diagrams\33-advanced-features_4.svg)
 
 ### Loss Tracking Flow
 

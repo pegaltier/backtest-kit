@@ -15,48 +15,7 @@ For strategy-specific configuration, see [Defining Strategies](./12-defining-str
 
 The configuration system consists of a global configuration object, validation service, and API functions that ensure type safety and economic viability.
 
-```mermaid
-graph TB
-    subgraph "Configuration Storage"
-        GLOBAL_CONFIG["GLOBAL_CONFIG<br/>(src/config/params.ts)"]
-        DEFAULT_CONFIG["DEFAULT_CONFIG<br/>(Frozen Reference)"]
-    end
-    
-    subgraph "Public API - src/function/setup.ts"
-        setConfig["setConfig(config, _unsafe?)"]
-        getConfig["getConfig()"]
-        getDefaultConfig["getDefaultConfig()"]
-    end
-    
-    subgraph "Validation Layer"
-        ConfigValidationService["ConfigValidationService<br/>(Economic Viability Checks)"]
-    end
-    
-    subgraph "Consumers"
-        toProfitLossDto["toProfitLossDto<br/>(PnL Calculation)"]
-        ClientExchange["ClientExchange<br/>(VWAP, Retry Logic)"]
-        ClientStrategy["ClientStrategy<br/>(Signal Validation)"]
-        SignalValidation["Signal Validation Functions<br/>(TP/SL Distance Checks)"]
-        ScheduleValidation["Schedule Validation<br/>(Timeout Logic)"]
-        MarkdownServices["Markdown Services<br/>(Report Formatting)"]
-    end
-    
-    setConfig -->|"validates before apply"| ConfigValidationService
-    ConfigValidationService -->|"reads"| GLOBAL_CONFIG
-    ConfigValidationService -->|"throws on failure"| setConfig
-    setConfig -->|"modifies on success"| GLOBAL_CONFIG
-    setConfig -->|"rollback on error"| GLOBAL_CONFIG
-    
-    getConfig -->|"returns copy"| GLOBAL_CONFIG
-    getDefaultConfig -->|"returns frozen copy"| DEFAULT_CONFIG
-    
-    GLOBAL_CONFIG -->|"CC_PERCENT_SLIPPAGE<br/>CC_PERCENT_FEE"| toProfitLossDto
-    GLOBAL_CONFIG -->|"CC_AVG_PRICE_CANDLES_COUNT<br/>CC_GET_CANDLES_RETRY_COUNT<br/>CC_GET_CANDLES_RETRY_DELAY_MS"| ClientExchange
-    GLOBAL_CONFIG -->|"CC_MAX_SIGNAL_GENERATION_SECONDS<br/>CC_MAX_SIGNAL_LIFETIME_MINUTES"| ClientStrategy
-    GLOBAL_CONFIG -->|"CC_MIN_TAKEPROFIT_DISTANCE_PERCENT<br/>CC_MIN_STOPLOSS_DISTANCE_PERCENT<br/>CC_MAX_STOPLOSS_DISTANCE_PERCENT"| SignalValidation
-    GLOBAL_CONFIG -->|"CC_SCHEDULE_AWAIT_MINUTES"| ScheduleValidation
-    GLOBAL_CONFIG -->|"CC_REPORT_SHOW_SIGNAL_NOTE"| MarkdownServices
-```
+![Mermaid Diagram](./diagrams\25-configuration-system_0.svg)
 
 ---
 
@@ -91,29 +50,7 @@ The `GLOBAL_CONFIG` object contains 14 parameters organized into four categories
 
 The framework uses a realistic cost model that applies slippage and fees to both entry and exit prices. The economic parameters ensure that signals are profitable when TakeProfit is hit.
 
-```mermaid
-graph LR
-    subgraph "Cost Calculation"
-        Entry["Entry Price"]
-        Exit["Exit Price"]
-        
-        Entry -->|"+CC_PERCENT_SLIPPAGE (LONG)<br/>-CC_PERCENT_SLIPPAGE (SHORT)"| EntryWithSlippage["Entry with Slippage"]
-        Exit -->|"-CC_PERCENT_SLIPPAGE (LONG)<br/>+CC_PERCENT_SLIPPAGE (SHORT)"| ExitWithSlippage["Exit with Slippage"]
-        
-        EntryWithSlippage -->|"-CC_PERCENT_FEE"| EntryWithFees["Entry after Fees"]
-        ExitWithSlippage -->|"-CC_PERCENT_FEE"| ExitWithFees["Exit after Fees"]
-        
-        EntryWithFees --> PnL["PnL Calculation"]
-        ExitWithFees --> PnL
-        
-        PnL --> TotalCost["Total Cost = Slippage×2 + Fees×2"]
-    end
-    
-    subgraph "Minimum TP Distance Validation"
-        TotalCost --> MinTP["CC_MIN_TAKEPROFIT_DISTANCE_PERCENT<br/>Must be ≥ Total Cost"]
-        MinTP --> Validation["ConfigValidationService<br/>Ensures Profitable Trades"]
-    end
-```
+![Mermaid Diagram](./diagrams\25-configuration-system_1.svg)
 
 ### Cost Breakdown Example
 
@@ -134,33 +71,7 @@ The `ConfigValidationService` enforces constraints that prevent mathematically u
 
 ### Validation Rules
 
-```mermaid
-graph TB
-    subgraph "Validation Checks"
-        Check1["Slippage ≥ 0<br/>(CC_PERCENT_SLIPPAGE)"]
-        Check2["Fees ≥ 0<br/>(CC_PERCENT_FEE)"]
-        Check3["Min TP Distance > 0<br/>(CC_MIN_TAKEPROFIT_DISTANCE_PERCENT)"]
-        Check4["Min TP ≥ (Slippage×2 + Fees×2)<br/>(Economic Viability)"]
-        Check5["Min SL > 0<br/>(CC_MIN_STOPLOSS_DISTANCE_PERCENT)"]
-        Check6["Max SL > 0<br/>(CC_MAX_STOPLOSS_DISTANCE_PERCENT)"]
-        Check7["Min SL < Max SL<br/>(Range Consistency)"]
-        Check8["Schedule Timeout > 0<br/>(CC_SCHEDULE_AWAIT_MINUTES)"]
-        Check9["Signal Lifetime > 0<br/>(CC_MAX_SIGNAL_LIFETIME_MINUTES)"]
-        Check10["Generation Timeout > 0<br/>(CC_MAX_SIGNAL_GENERATION_SECONDS)"]
-        Check11["Candle Count > 0<br/>(CC_AVG_PRICE_CANDLES_COUNT)"]
-        Check12["Retry Count ≥ 0<br/>(CC_GET_CANDLES_RETRY_COUNT)"]
-        Check13["Retry Delay > 0<br/>(CC_GET_CANDLES_RETRY_DELAY_MS)"]
-        Check14["Anomaly Threshold > 0<br/>(CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR)"]
-        Check15["Min Candles for Median > 0<br/>(CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN)"]
-    end
-    
-    subgraph "Critical Validation"
-        Check4 -->|"MOST IMPORTANT"| EconomicViability["Ensures all TP signals<br/>are profitable after costs"]
-    end
-    
-    AllChecks["All 15 Checks"] --> Pass["Pass: Apply Config"]
-    AllChecks --> Fail["Fail: Throw Error<br/>Rollback to Previous Config"]
-```
+![Mermaid Diagram](./diagrams\25-configuration-system_2.svg)
 
 ### Key Validation: Economic Viability
 
@@ -318,49 +229,7 @@ Complete list of validation rules enforced by `ConfigValidationService`:
 
 Configuration parameters are used throughout signal validation to enforce economic constraints and safety limits.
 
-```mermaid
-graph TB
-    subgraph "Signal Generation Flow"
-        GetSignal["Strategy.getSignal()"]
-        SignalDto["ISignalDto<br/>(User-defined signal)"]
-    end
-    
-    subgraph "Signal Validation Functions"
-        V1["VALIDATE_SIGNAL_PRICE_POSITIVE_FN<br/>(Prices must be > 0)"]
-        V2["VALIDATE_SIGNAL_PRICE_FINITE_FN<br/>(No NaN/Infinity)"]
-        V3["VALIDATE_MIN_TAKEPROFIT_FN<br/>(TP distance ≥ CC_MIN_TAKEPROFIT_DISTANCE_PERCENT)"]
-        V4["VALIDATE_MIN_STOPLOSS_FN<br/>(SL distance ≥ CC_MIN_STOPLOSS_DISTANCE_PERCENT)"]
-        V5["VALIDATE_MAX_STOPLOSS_FN<br/>(SL distance ≤ CC_MAX_STOPLOSS_DISTANCE_PERCENT)"]
-        V6["VALIDATE_MIN_ESTIMATED_TIME_FN<br/>(minuteEstimatedTime ≤ CC_MAX_SIGNAL_LIFETIME_MINUTES)"]
-        V7["VALIDATE_SIGNAL_DIRECTION_FN<br/>(TP/SL correct for position direction)"]
-    end
-    
-    subgraph "Configuration Parameters Used"
-        Config["GLOBAL_CONFIG"]
-    end
-    
-    GetSignal --> SignalDto
-    SignalDto --> V1
-    V1 --> V2
-    V2 --> V3
-    V3 --> V4
-    V4 --> V5
-    V5 --> V6
-    V6 --> V7
-    
-    Config -->|"CC_MIN_TAKEPROFIT_DISTANCE_PERCENT"| V3
-    Config -->|"CC_MIN_STOPLOSS_DISTANCE_PERCENT"| V4
-    Config -->|"CC_MAX_STOPLOSS_DISTANCE_PERCENT"| V5
-    Config -->|"CC_MAX_SIGNAL_LIFETIME_MINUTES"| V6
-    
-    V7 --> Accept["Accept Signal"]
-    V1 --> Reject["Reject Signal<br/>(Validation Error)"]
-    V2 --> Reject
-    V3 --> Reject
-    V4 --> Reject
-    V5 --> Reject
-    V6 --> Reject
-```
+![Mermaid Diagram](./diagrams\25-configuration-system_3.svg)
 
 **Example Validation Errors**:
 
@@ -404,20 +273,7 @@ graph TB
 
 The `CC_AVG_PRICE_CANDLES_COUNT` parameter controls how many recent 1-minute candles are used for VWAP (Volume-Weighted Average Price) calculation.
 
-```mermaid
-graph LR
-    subgraph "ClientExchange.getAveragePrice"
-        Fetch["Fetch Last N Candles<br/>(1m interval)"]
-        N["N = CC_AVG_PRICE_CANDLES_COUNT<br/>(default: 5)"]
-        Calculate["Calculate VWAP<br/>Σ(Typical Price × Volume) / Σ(Volume)"]
-        TypicalPrice["Typical Price = (High + Low + Close) / 3"]
-    end
-    
-    N --> Fetch
-    Fetch --> TypicalPrice
-    TypicalPrice --> Calculate
-    Calculate --> VWAP["Return VWAP<br/>(Current Market Price)"]
-```
+![Mermaid Diagram](./diagrams\25-configuration-system_4.svg)
 
 **Formula**:
 
@@ -448,43 +304,7 @@ VWAP = 30129000 / 600 = **50215**
 
 Data fetching parameters control retry behavior and anomaly detection when fetching candles from exchanges.
 
-```mermaid
-graph TB
-    subgraph "ClientExchange.getCandles with Retry"
-        Start["getCandles(symbol, interval, limit)"]
-        Attempt["Attempt Fetch"]
-        Success["Return Candles"]
-        Failure["Fetch Failed"]
-        Retry["Retry Count < CC_GET_CANDLES_RETRY_COUNT?"]
-        Delay["Sleep(CC_GET_CANDLES_RETRY_DELAY_MS)"]
-        ThrowError["Throw Error"]
-    end
-    
-    subgraph "Anomaly Detection"
-        CheckAnomaly["Check for Anomalous Prices"]
-        CalculateReference["Calculate Reference Price<br/>(Median or Average)"]
-        CheckThreshold["Any price < Reference / CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR?"]
-        UseMedian["Use Median<br/>(if candles ≥ CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN)"]
-        UseAverage["Use Average<br/>(if candles < CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN)"]
-    end
-    
-    Start --> Attempt
-    Attempt --> Success
-    Attempt --> Failure
-    Failure --> Retry
-    Retry -->|"Yes"| Delay
-    Delay --> Attempt
-    Retry -->|"No"| ThrowError
-    
-    Success --> CheckAnomaly
-    CheckAnomaly --> CalculateReference
-    CalculateReference --> UseMedian
-    CalculateReference --> UseAverage
-    UseMedian --> CheckThreshold
-    UseAverage --> CheckThreshold
-    CheckThreshold -->|"Anomaly Found"| ThrowError
-    CheckThreshold -->|"All OK"| Return["Return Valid Candles"]
-```
+![Mermaid Diagram](./diagrams\25-configuration-system_5.svg)
 
 **Default Retry Configuration**:
 - `CC_GET_CANDLES_RETRY_COUNT = 3`: Retry up to 3 times on failure

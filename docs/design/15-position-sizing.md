@@ -124,75 +124,7 @@ Position Size = ($10,000 × 0.02) / ($500 × 2) = 0.2 BTC
 
 The sizing schema uses a discriminated union based on the `method` field. TypeScript enforces type safety, ensuring only valid parameters are provided for each method.
 
-```mermaid
-graph TB
-    subgraph "ISizingSchema Discriminated Union"
-        SCHEMA["ISizingSchema<br/>(Union Type)"]
-        FIXED["ISizingSchemaFixedPercentage<br/>method: 'fixed-percentage'"]
-        KELLY["ISizingSchemaKelly<br/>method: 'kelly-criterion'"]
-        ATR["ISizingSchemaATR<br/>method: 'atr-based'"]
-    end
-    
-    subgraph "Fixed Percentage Fields"
-        F_NAME["sizingName: SizingName"]
-        F_METHOD["method: 'fixed-percentage'"]
-        F_RISK["riskPercentage: number"]
-        F_MAX["maxPositionPercentage?: number"]
-        F_MIN["minPositionSize?: number"]
-        F_MAX_ABS["maxPositionSize?: number"]
-        F_CB["callbacks?: Partial&lt;ISizingCallbacks&gt;"]
-    end
-    
-    subgraph "Kelly Criterion Fields"
-        K_NAME["sizingName: SizingName"]
-        K_METHOD["method: 'kelly-criterion'"]
-        K_MULT["kellyMultiplier?: number<br/>default: 0.25"]
-        K_MAX["maxPositionPercentage?: number"]
-        K_MIN["minPositionSize?: number"]
-        K_MAX_ABS["maxPositionSize?: number"]
-        K_CB["callbacks?: Partial&lt;ISizingCallbacks&gt;"]
-    end
-    
-    subgraph "ATR-Based Fields"
-        A_NAME["sizingName: SizingName"]
-        A_METHOD["method: 'atr-based'"]
-        A_RISK["riskPercentage: number"]
-        A_MULT["atrMultiplier?: number<br/>default: 2"]
-        A_MAX["maxPositionPercentage?: number"]
-        A_MIN["minPositionSize?: number"]
-        A_MAX_ABS["maxPositionSize?: number"]
-        A_CB["callbacks?: Partial&lt;ISizingCallbacks&gt;"]
-    end
-    
-    SCHEMA --> FIXED
-    SCHEMA --> KELLY
-    SCHEMA --> ATR
-    
-    FIXED --> F_NAME
-    FIXED --> F_METHOD
-    FIXED --> F_RISK
-    FIXED --> F_MAX
-    FIXED --> F_MIN
-    FIXED --> F_MAX_ABS
-    FIXED --> F_CB
-    
-    KELLY --> K_NAME
-    KELLY --> K_METHOD
-    KELLY --> K_MULT
-    KELLY --> K_MAX
-    KELLY --> K_MIN
-    KELLY --> K_MAX_ABS
-    KELLY --> K_CB
-    
-    ATR --> A_NAME
-    ATR --> A_METHOD
-    ATR --> A_RISK
-    ATR --> A_MULT
-    ATR --> A_MAX
-    ATR --> A_MIN
-    ATR --> A_MAX_ABS
-    ATR --> A_CB
-```
+![Mermaid Diagram](./diagrams\15-position-sizing_0.svg)
 
 ### Registration with addSizing()
 
@@ -299,53 +231,7 @@ interface ISizingCalculateParamsATR {
 
 ### Position Sizing Service Dependencies
 
-```mermaid
-graph TB
-    subgraph "Public API"
-        ADD_SIZING["addSizing()<br/>src/function/add.ts"]
-        POSITION_SIZE["PositionSize.calculate()<br/>src/classes/PositionSize.ts"]
-    end
-    
-    subgraph "Validation Layer"
-        SIZING_VAL["SizingValidationService<br/>Validates schema structure"]
-    end
-    
-    subgraph "Schema Layer"
-        SIZING_SCHEMA["SizingSchemaService<br/>ToolRegistry pattern<br/>Stores ISizingSchema"]
-    end
-    
-    subgraph "Connection Layer"
-        SIZING_CONN["SizingConnectionService<br/>Memoized factory<br/>Key: sizingName"]
-    end
-    
-    subgraph "Client Layer"
-        CLIENT_SIZING["ClientSizing<br/>Implements ISizing<br/>calculate() logic"]
-    end
-    
-    subgraph "Global Layer"
-        SIZING_GLOBAL["SizingGlobalService<br/>Orchestrates calculation<br/>Injects ExecutionContext"]
-    end
-    
-    subgraph "Strategy Integration"
-        STRATEGY["ClientStrategy<br/>Uses sizing for signals"]
-        STRATEGY_SCHEMA["IStrategySchema<br/>Optional sizingName field"]
-    end
-    
-    ADD_SIZING --> SIZING_VAL
-    ADD_SIZING --> SIZING_SCHEMA
-    SIZING_VAL --> SIZING_SCHEMA
-    
-    POSITION_SIZE --> SIZING_GLOBAL
-    SIZING_GLOBAL --> SIZING_CONN
-    SIZING_CONN --> SIZING_SCHEMA
-    SIZING_CONN --> CLIENT_SIZING
-    
-    CLIENT_SIZING -.->|"reads config"| SIZING_SCHEMA
-    CLIENT_SIZING -.->|"calls onCalculate"| SIZING_SCHEMA
-    
-    STRATEGY --> SIZING_GLOBAL
-    STRATEGY_SCHEMA -.->|"references"| SIZING_SCHEMA
-```
+![Mermaid Diagram](./diagrams\15-position-sizing_1.svg)
 
 ### Memoization in SizingConnectionService
 
@@ -367,52 +253,7 @@ sizingName (e.g., "conservative", "kelly-optimal")
 
 ### Position Size Calculation Sequence
 
-```mermaid
-sequenceDiagram
-    participant User as User Code
-    participant PS as PositionSize.calculate()
-    participant SG as SizingGlobalService
-    participant SC as SizingConnectionService
-    participant CS as ClientSizing
-    participant SS as SizingSchemaService
-    participant CB as ISizingCallbacks
-    
-    User->>PS: calculate(symbol, sizingName, accountBalance, params)
-    PS->>SG: calculate(symbol, sizingName, accountBalance, params)
-    
-    Note over SG: Wraps in ExecutionContextService
-    
-    SG->>SC: getSizing(sizingName)
-    SC->>SS: get(sizingName)
-    SS-->>SC: ISizingSchema
-    
-    alt "Cache Hit"
-        SC-->>SG: Cached ClientSizing
-    else "Cache Miss"
-        SC->>CS: new ClientSizing(schema, logger)
-        CS-->>SC: ClientSizing instance
-        SC-->>SG: New ClientSizing (cached)
-    end
-    
-    SG->>CS: calculate(params)
-    
-    alt "Fixed Percentage"
-        Note over CS: (Balance × Risk%) / (Entry - StopLoss)
-    else "Kelly Criterion"
-        Note over CS: Balance × Kelly% × Multiplier
-    else "ATR-Based"
-        Note over CS: (Balance × Risk%) / (ATR × Multiplier)
-    end
-    
-    Note over CS: Apply constraints<br/>(min/max position size,<br/>max position %)
-    
-    CS->>CB: onCalculate(quantity, params)
-    CB-->>CS: void
-    
-    CS-->>SG: calculated quantity
-    SG-->>PS: quantity
-    PS-->>User: quantity
-```
+![Mermaid Diagram](./diagrams\15-position-sizing_2.svg)
 
 ### Constraint Application
 

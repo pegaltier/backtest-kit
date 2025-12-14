@@ -64,33 +64,7 @@ interface ICandleData {
 
 The following diagram shows how an exchange schema flows through validation and registration layers before becoming available for use:
 
-```mermaid
-graph TB
-    USER["User Code"]
-    ADD["addExchange()"]
-    VAL["ExchangeValidationService"]
-    SCHEMA["ExchangeSchemaService"]
-    CONN["ExchangeConnectionService"]
-    CLIENT["ClientExchange"]
-    CORE["ExchangeCoreService"]
-    
-    USER -->|"IExchangeSchema"| ADD
-    ADD -->|"Validate"| VAL
-    VAL -->|"Check exchangeName exists"| VAL
-    VAL -->|"Verify getCandles is function"| VAL
-    VAL -->|"Verify formatPrice/Quantity"| VAL
-    ADD -->|"Register"| SCHEMA
-    SCHEMA -->|"Store schema"| SCHEMA
-    
-    CORE -->|"Request by exchangeName"| CONN
-    CONN -->|"Lookup schema"| SCHEMA
-    CONN -->|"Create memoized"| CLIENT
-    CLIENT -->|"IExchangeParams"| CLIENT
-    
-    style ADD fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style VAL fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style SCHEMA fill:#f9f9f9,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\22-exchange-configuration_0.svg)
 
 **Diagram: Exchange Registration and Instantiation Flow**
 
@@ -121,27 +95,7 @@ The `IExchange` interface defines methods available to strategies:
 
 [ClientExchange:14]() wraps the user-provided schema with retry logic, anomaly detection, and context awareness:
 
-```mermaid
-graph LR
-    STRATEGY["ClientStrategy.tick()"]
-    CLIENT["ClientExchange"]
-    USER["User getCandles()"]
-    RETRY["Retry Logic"]
-    ANOMALY["Anomaly Detection"]
-    CONTEXT["ExecutionContextService"]
-    
-    STRATEGY -->|"getCandles()"| CLIENT
-    CLIENT -->|"Read when"| CONTEXT
-    CLIENT -->|"Calculate since"| CLIENT
-    CLIENT -->|"Try/catch"| RETRY
-    RETRY -->|"Call with params"| USER
-    USER -->|"ICandleData[]"| RETRY
-    RETRY -->|"Validate prices"| ANOMALY
-    ANOMALY -->|"Filter incomplete candles"| ANOMALY
-    ANOMALY -->|"Return valid candles"| STRATEGY
-    
-    style CLIENT fill:#f9f9f9,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\22-exchange-configuration_1.svg)
 
 **Diagram: ClientExchange Internal Flow**
 
@@ -190,47 +144,7 @@ Example: BTC at $50,000 median → threshold $50 → catches $0.01-1 anomalies
 
 The following diagram maps exchange-related services to their responsibilities:
 
-```mermaid
-graph TB
-    subgraph "Schema Layer"
-        ESCHEMA["ExchangeSchemaService"]
-    end
-    
-    subgraph "Validation Layer"
-        EVAL["ExchangeValidationService"]
-    end
-    
-    subgraph "Connection Layer"
-        ECONN["ExchangeConnectionService"]
-    end
-    
-    subgraph "Core Layer"
-        ECORE["ExchangeCoreService"]
-    end
-    
-    subgraph "Client Layer"
-        ECLIENT["ClientExchange"]
-    end
-    
-    subgraph "Context Services"
-        EXEC["ExecutionContextService"]
-        METHOD["MethodContextService"]
-    end
-    
-    EVAL -->|"Validates schema"| ESCHEMA
-    ECONN -->|"Reads schema"| ESCHEMA
-    ECONN -->|"Creates"| ECLIENT
-    ECORE -->|"Gets instance"| ECONN
-    ECORE -->|"Delegates to"| ECLIENT
-    ECLIENT -->|"Reads context"| EXEC
-    METHOD -->|"Provides exchangeName"| ECONN
-    
-    style ESCHEMA fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style EVAL fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style ECONN fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style ECORE fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style ECLIENT fill:#f9f9f9,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\22-exchange-configuration_2.svg)
 
 **Diagram: Exchange Service Dependency Graph**
 

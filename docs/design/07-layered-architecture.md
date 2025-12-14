@@ -17,73 +17,7 @@ For information about the dependency injection system that wires these layers to
 
 The framework implements a strict layered architecture with five distinct layers. Each layer has clear responsibilities and dependencies flow downward only—higher layers depend on lower layers, but not vice versa.
 
-```mermaid
-graph TB
-    subgraph "Layer 1: Public API"
-        API["Public Functions<br/>addStrategy(), addExchange(), addFrame()<br/>Backtest.run(), Live.run(), Walker.run()<br/>listenSignal(), listenError(), etc."]
-    end
-    
-    subgraph "Layer 2: Orchestration"
-        BT["Backtest Class<br/>Historical simulation"]
-        LV["Live Class<br/>Real-time trading"]
-        WK["Walker Class<br/>Strategy comparison"]
-        OPT["Optimizer Class<br/>LLM code generation"]
-    end
-    
-    subgraph "Layer 3: Service"
-        CMD["Command Services<br/>BacktestCommandService<br/>LiveCommandService<br/>WalkerCommandService"]
-        LOGIC["Logic Services<br/>Public/Private split<br/>Generator patterns"]
-        GLOBAL["Global Services<br/>Strategy, Risk, Sizing<br/>Partial, Optimizer"]
-        CORE["Core Services<br/>Strategy, Exchange, Frame<br/>Domain logic"]
-        CONN["Connection Services<br/>Memoized factories<br/>7 connection types"]
-        VAL["Validation Services<br/>Schema enforcement<br/>8 validators"]
-        SCHEMA["Schema Services<br/>Registry pattern<br/>7 schema types"]
-        MD["Markdown Services<br/>Report generation<br/>9 report types"]
-    end
-    
-    subgraph "Layer 4: Client"
-        CS["ClientStrategy<br/>Signal lifecycle"]
-        CE["ClientExchange<br/>Data fetching"]
-        CF["ClientFrame<br/>Timeframe generation"]
-        CR["ClientRisk<br/>Validation logic"]
-        CO["ClientOptimizer<br/>LLM integration"]
-        CP["ClientPartial<br/>P/L tracking"]
-    end
-    
-    subgraph "Layer 5: Persistence"
-        PSA["PersistSignalAdapter<br/>JSON file I/O"]
-        PSchA["PersistScheduleAdapter<br/>Scheduled signals"]
-        PRA["PersistRiskAdapter<br/>Risk state"]
-        PPA["PersistPartialAdapter<br/>Partial levels"]
-    end
-    
-    API --> BT
-    API --> LV
-    API --> WK
-    API --> OPT
-    
-    BT --> CMD
-    LV --> CMD
-    WK --> CMD
-    OPT --> GLOBAL
-    
-    CMD --> LOGIC
-    LOGIC --> GLOBAL
-    LOGIC --> CORE
-    GLOBAL --> CONN
-    CORE --> CONN
-    CONN --> CS
-    CONN --> CE
-    CONN --> CF
-    CONN --> CR
-    CONN --> CO
-    CONN --> CP
-    
-    CS --> PSA
-    CS --> PSchA
-    CR --> PRA
-    CP --> PPA
-```
+![Mermaid Diagram](./diagrams\07-layered-architecture_0.svg)
 
 , High-Level System Architecture Diagram 1
 
@@ -130,41 +64,7 @@ The Public API Layer provides user-facing functions that serve as the framework'
 
 The Orchestration Layer implements the four execution modes as public classes. Each class validates inputs and delegates to Command Services.
 
-```mermaid
-graph LR
-    subgraph "Backtest"
-        BT_CLASS["Backtest"]
-        BT_RUN["run(symbol, context)"]
-        BT_BG["background(symbol, context)"]
-    end
-    
-    subgraph "Live"
-        LV_CLASS["Live"]
-        LV_RUN["run(symbol, context)"]
-        LV_BG["background(symbol, context)"]
-    end
-    
-    subgraph "Walker"
-        WK_CLASS["Walker"]
-        WK_RUN["run(symbol, context)"]
-        WK_BG["background(symbol, context)"]
-    end
-    
-    subgraph "Optimizer"
-        OPT_CLASS["Optimizer"]
-        OPT_RUN["run(symbol, optimizerName)"]
-        OPT_DUMP["dump(symbol, optimizerName)"]
-    end
-    
-    BT_CLASS --> BT_RUN
-    BT_CLASS --> BT_BG
-    LV_CLASS --> LV_RUN
-    LV_CLASS --> LV_BG
-    WK_CLASS --> WK_RUN
-    WK_CLASS --> WK_BG
-    OPT_CLASS --> OPT_RUN
-    OPT_CLASS --> OPT_DUMP
-```
+![Mermaid Diagram](./diagrams\07-layered-architecture_1.svg)
 
 ### Execution Patterns
 
@@ -183,34 +83,7 @@ The Service Layer is the most complex layer, implementing dependency injection w
 
 ### Service Aggregation Structure
 
-```mermaid
-graph TB
-    BACKTEST["backtest object<br/>[src/lib/index.ts:221-234]()"]
-    
-    BASE["baseServices<br/>loggerService"]
-    CTX["contextServices<br/>executionContextService<br/>methodContextService"]
-    SCHEMA["schemaServices<br/>7 schema registries"]
-    VAL["validationServices<br/>8 validators"]
-    CONN["connectionServices<br/>7 memoized factories"]
-    CORE["coreServices<br/>3 domain services"]
-    GLOBAL["globalServices<br/>4 shared state managers"]
-    CMD["commandServices<br/>3 orchestrators"]
-    LOGIC["logicPublicServices<br/>logicPrivateServices<br/>6 execution services"]
-    MD["markdownServices<br/>9 report generators"]
-    TMPL["templateServices<br/>optimizerTemplateService"]
-    
-    BACKTEST --> BASE
-    BACKTEST --> CTX
-    BACKTEST --> SCHEMA
-    BACKTEST --> VAL
-    BACKTEST --> CONN
-    BACKTEST --> CORE
-    BACKTEST --> GLOBAL
-    BACKTEST --> CMD
-    BACKTEST --> LOGIC
-    BACKTEST --> MD
-    BACKTEST --> TMPL
-```
+![Mermaid Diagram](./diagrams\07-layered-architecture_2.svg)
 
 ### 3.1 Base Services
 
@@ -346,36 +219,7 @@ Generates code templates for optimizer output.
 
 The Client Layer contains pure business logic without dependency injection. Client classes use prototype methods for memory efficiency and are instantiated by Connection Services.
 
-```mermaid
-graph TB
-    subgraph "Client Instances"
-        CS["ClientStrategy<br/>Per symbol+strategy<br/>Memoized by StrategyConnectionService"]
-        CE["ClientExchange<br/>Per exchange<br/>Memoized by ExchangeConnectionService"]
-        CF["ClientFrame<br/>Per frame<br/>Memoized by FrameConnectionService"]
-        CR["ClientRisk<br/>Per risk profile<br/>Memoized by RiskConnectionService"]
-        CSZ["ClientSizing<br/>Per sizing config<br/>Memoized by SizingConnectionService"]
-        CO["ClientOptimizer<br/>Per optimizer<br/>Memoized by OptimizerConnectionService"]
-        CP["ClientPartial<br/>Per symbol<br/>Memoized by PartialConnectionService"]
-    end
-    
-    subgraph "Key Methods"
-        CS_TICK["tick()"]
-        CS_BT["backtest()"]
-        CS_INIT["waitForInit()"]
-        CE_CANDLES["getCandles()"]
-        CE_VWAP["getAveragePrice()"]
-        CF_TIME["getTimeframe()"]
-        CR_VALIDATE["validate()"]
-    end
-    
-    CS --> CS_TICK
-    CS --> CS_BT
-    CS --> CS_INIT
-    CE --> CE_CANDLES
-    CE --> CE_VWAP
-    CF --> CF_TIME
-    CR --> CR_VALIDATE
-```
+![Mermaid Diagram](./diagrams\07-layered-architecture_3.svg)
 
 ### Client Responsibilities
 
@@ -397,31 +241,7 @@ graph TB
 
 The Persistence Layer implements crash-safe state storage using atomic JSON file writes. All persistence adapters extend `PersistBase` and follow the singleshot initialization pattern.
 
-```mermaid
-graph LR
-    subgraph "Persistence Adapters"
-        PSA["PersistSignalAdapter<br/>./signals/{symbol}_{strategyName}.json"]
-        PSchA["PersistScheduleAdapter<br/>./schedules/{symbol}_{strategyName}.json"]
-        PRA["PersistRiskAdapter<br/>./risk/{riskName}.json"]
-        PPA["PersistPartialAdapter<br/>./partial/{symbol}_{strategyName}.json"]
-    end
-    
-    subgraph "Operations"
-        READ["readSignalData()"]
-        WRITE["writeSignalData()"]
-        DELETE["deleteSignalData()"]
-    end
-    
-    PSA --> READ
-    PSA --> WRITE
-    PSA --> DELETE
-    PSchA --> READ
-    PSchA --> WRITE
-    PRA --> READ
-    PRA --> WRITE
-    PPA --> READ
-    PPA --> WRITE
-```
+![Mermaid Diagram](./diagrams\07-layered-architecture_4.svg)
 
 ### Persistence Patterns
 
@@ -445,48 +265,7 @@ graph LR
 
 This diagram shows how a typical Backtest execution flows through all five layers:
 
-```mermaid
-sequenceDiagram
-    participant API as "Layer 1: Public API<br/>Backtest.run()"
-    participant CMD as "Layer 2: Orchestration<br/>BacktestCommandService"
-    participant LOGIC as "Layer 3: Service<br/>BacktestLogicPrivateService"
-    participant CORE as "Layer 3: Service<br/>StrategyCoreService"
-    participant CONN as "Layer 3: Service<br/>StrategyConnectionService"
-    participant CLIENT as "Layer 4: Client<br/>ClientStrategy"
-    participant PERSIST as "Layer 5: Persistence<br/>PersistSignalAdapter"
-    
-    API->>CMD: run(symbol, context)
-    CMD->>CMD: Validate strategyName, exchangeName, frameName
-    CMD->>LOGIC: run(symbol)
-    LOGIC->>LOGIC: Generate timeframe array
-    
-    loop For each timeframe
-        LOGIC->>CORE: tick(symbol, when)
-        CORE->>CONN: Get or create ClientStrategy instance
-        CONN->>CLIENT: new ClientStrategy()
-        CONN-->>CORE: Return memoized instance
-        CORE->>CLIENT: tick(symbol, when)
-        CLIENT->>CLIENT: Check signal generation throttle
-        CLIENT->>CLIENT: Call getSignal()
-        CLIENT-->>CORE: Return IStrategyTickResult
-        CORE-->>LOGIC: Return tick result
-        
-        alt Signal opened
-            CLIENT->>PERSIST: writeSignalData()
-            PERSIST->>PERSIST: Atomic file write
-            LOGIC->>CORE: backtest(signal, candles)
-            CORE->>CLIENT: backtest(candles)
-            CLIENT->>CLIENT: Fast candle processing
-            CLIENT->>PERSIST: deleteSignalData()
-            CLIENT-->>CORE: Return closed signal
-            LOGIC->>LOGIC: Skip to closeTimestamp
-        end
-        
-        LOGIC-->>CMD: yield tick result
-    end
-    
-    CMD-->>API: Return async generator
-```
+![Mermaid Diagram](./diagrams\07-layered-architecture_5.svg)
 
 , High-Level System Architecture Diagram 2
 
@@ -508,32 +287,7 @@ Dependencies flow strictly downward. This table shows which layers depend on whi
 
 Within the Service Layer, dependencies flow in this order:
 
-```mermaid
-graph TB
-    CMD["Command Services"]
-    LOGIC_PUB["Logic Public Services"]
-    LOGIC_PRIV["Logic Private Services"]
-    GLOBAL["Global Services"]
-    CORE["Core Services"]
-    CONN["Connection Services"]
-    VAL["Validation Services"]
-    SCHEMA["Schema Services"]
-    CTX["Context Services"]
-    BASE["Base Services"]
-    
-    CMD --> LOGIC_PUB
-    LOGIC_PUB --> LOGIC_PRIV
-    LOGIC_PRIV --> GLOBAL
-    LOGIC_PRIV --> CORE
-    GLOBAL --> CONN
-    CORE --> CONN
-    CONN --> VAL
-    CONN --> SCHEMA
-    VAL --> SCHEMA
-    VAL --> CTX
-    SCHEMA --> CTX
-    CTX --> BASE
-```
+![Mermaid Diagram](./diagrams\07-layered-architecture_6.svg)
 
 , High-Level System Architecture Diagram 3
 

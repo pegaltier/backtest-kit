@@ -15,60 +15,7 @@ For an overview of all execution modes and when to use each, see [Execution Mode
 
 Live mode implements a continuous monitoring system that executes indefinitely until manually stopped. Unlike backtest mode which iterates through pre-generated timeframes, live mode creates real-time dates and sleeps between iterations.
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        LiveUtils["Live.run()<br/>Live.background()<br/>Live.stop()"]
-        LiveInstance["LiveInstance<br/>Per symbol-strategy"]
-    end
-    
-    subgraph "Command Layer"
-        LiveCommandService["LiveCommandService<br/>Validation wrapper"]
-    end
-    
-    subgraph "Logic Layer"
-        LiveLogicPublicService["LiveLogicPublicService<br/>Context setup"]
-        LiveLogicPrivateService["LiveLogicPrivateService<br/>Infinite generator"]
-    end
-    
-    subgraph "Core Execution"
-        StrategyCoreService["StrategyCoreService.tick()<br/>Signal lifecycle"]
-        PersistSignalAdapter["PersistSignalAdapter<br/>Atomic file writes"]
-        ClientStrategy["ClientStrategy.waitForInit()<br/>State recovery"]
-    end
-    
-    subgraph "Time Management"
-        RealTime["new Date()<br/>Current timestamp"]
-        Sleep["sleep(TICK_TTL)<br/>61 seconds"]
-    end
-    
-    subgraph "Stop Mechanism"
-        StopFlag["_isStopped flag"]
-        GracefulWait["Wait for 'closed' action<br/>No forced exit"]
-    end
-    
-    LiveUtils --> LiveInstance
-    LiveInstance --> LiveCommandService
-    LiveCommandService --> LiveLogicPublicService
-    LiveLogicPublicService --> LiveLogicPrivateService
-    
-    LiveLogicPrivateService --> RealTime
-    LiveLogicPrivateService --> StrategyCoreService
-    LiveLogicPrivateService --> Sleep
-    LiveLogicPrivateService --> StopFlag
-    
-    StrategyCoreService --> ClientStrategy
-    StrategyCoreService --> PersistSignalAdapter
-    
-    ClientStrategy --> PersistSignalAdapter
-    
-    StopFlag --> GracefulWait
-    GracefulWait --> LiveLogicPrivateService
-    
-    style LiveLogicPrivateService fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style PersistSignalAdapter fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style ClientStrategy fill:#f9f9f9,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\18-live-trading-mode_0.svg)
 
 ---
 
@@ -78,47 +25,7 @@ Live mode uses an infinite `while(true)` loop in `LiveLogicPrivateService.run()`
 
 ### Loop Structure
 
-```mermaid
-graph TB
-    Start["while(true) loop begins"]
-    CreateDate["when = new Date()<br/>Real-time timestamp"]
-    Tick["strategyCoreService.tick()<br/>symbol, when, backtest=false"]
-    CheckAction{"result.action"}
-    
-    Idle["action === 'idle'<br/>Check stop flag"]
-    Active["action === 'active'<br/>Skip yield"]
-    Scheduled["action === 'scheduled'<br/>Skip yield"]
-    Opened["action === 'opened'<br/>Yield result"]
-    Closed["action === 'closed'<br/>Yield result"]
-    
-    CheckStop{"_isStopped?"}
-    Break["break loop<br/>Exit gracefully"]
-    Sleep["sleep(TICK_TTL)<br/>61 seconds"]
-    Continue["Continue to next iteration"]
-    
-    Start --> CreateDate
-    CreateDate --> Tick
-    Tick --> CheckAction
-    
-    CheckAction -->|idle| Idle
-    CheckAction -->|active| Active
-    CheckAction -->|scheduled| Scheduled
-    CheckAction -->|opened| Opened
-    CheckAction -->|closed| Closed
-    
-    Idle --> CheckStop
-    CheckStop -->|true| Break
-    CheckStop -->|false| Sleep
-    
-    Active --> Sleep
-    Scheduled --> Sleep
-    Opened --> Sleep
-    
-    Closed --> CheckStop
-    
-    Sleep --> Continue
-    Continue --> CreateDate
-```
+![Mermaid Diagram](./diagrams\18-live-trading-mode_1.svg)
 
 ### Tick Interval
 
@@ -161,26 +68,7 @@ Live mode persists signal state to disk after every tick, enabling recovery afte
 
 ### Persistence Flow
 
-```mermaid
-graph LR
-    Tick["tick() called"]
-    GetSignal["getSignal() checks state"]
-    WaitInit["waitForInit() loads from disk"]
-    ProcessTick["Process signal logic"]
-    SetPending["setPendingSignal() saves state"]
-    WriteFile["PersistSignalAdapter.writeSignalData()"]
-    AtomicWrite["Atomic file write<br/>./dump/persist/"]
-    
-    Tick --> GetSignal
-    GetSignal --> WaitInit
-    WaitInit --> ProcessTick
-    ProcessTick --> SetPending
-    SetPending --> WriteFile
-    WriteFile --> AtomicWrite
-    
-    style WaitInit fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style AtomicWrite fill:#f9f9f9,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\18-live-trading-mode_2.svg)
 
 ### PersistSignalAdapter
 
@@ -218,22 +106,7 @@ When a live process starts (or restarts after crash), `ClientStrategy.waitForIni
 
 ### Recovery Sequence
 
-```mermaid
-sequenceDiagram
-    participant Process as "New Process Start"
-    participant CS as "ClientStrategy"
-    participant PSA as "PersistSignalAdapter"
-    participant FS as "File System"
-    
-    Process->>CS: First tick() call
-    CS->>CS: waitForInit() runs once
-    CS->>PSA: readSignalData(symbol, strategyName)
-    PSA->>FS: Read JSON file
-    FS-->>PSA: Signal data or null
-    PSA-->>CS: Restore signal state
-    CS->>CS: Mark initialized
-    CS->>CS: Continue normal tick processing
-```
+![Mermaid Diagram](./diagrams\18-live-trading-mode_3.svg)
 
 ### Initialization Pattern
 
@@ -288,37 +161,7 @@ The loop checks the stop flag at two locations:
 
 ### Stop Flow Diagram
 
-```mermaid
-graph TB
-    UserCall["User calls Live.stop()<br/>or cancellation closure"]
-    SetFlag["Set _isStopped = true<br/>in strategyCoreService"]
-    
-    CheckIdle{"Current state<br/>is idle?"}
-    ExitImmediate["break loop<br/>Exit immediately"]
-    
-    CheckActive{"Current state<br/>is active/scheduled?"}
-    WaitClose["Continue monitoring<br/>Wait for position close"]
-    
-    CheckClosed{"Position<br/>closed?"}
-    ExitGraceful["break loop<br/>Exit after close"]
-    
-    ContinueLoop["Continue loop<br/>Keep monitoring"]
-    
-    UserCall --> SetFlag
-    SetFlag --> CheckIdle
-    
-    CheckIdle -->|Yes| ExitImmediate
-    CheckIdle -->|No| CheckActive
-    
-    CheckActive -->|Yes| WaitClose
-    CheckActive -->|No| ContinueLoop
-    
-    WaitClose --> CheckClosed
-    CheckClosed -->|Yes| ExitGraceful
-    CheckClosed -->|No| ContinueLoop
-    
-    ContinueLoop --> CheckIdle
-```
+![Mermaid Diagram](./diagrams\18-live-trading-mode_4.svg)
 
 ### Background Task Completion
 
@@ -356,60 +199,7 @@ The `LiveLogicPrivateService` class contains the core implementation of the infi
 
 The `run()` method is an async generator that yields `IStrategyTickResultOpened` or `IStrategyTickResultClosed`:
 
-```mermaid
-graph TB
-    Start["async *run(symbol: string)"]
-    InitTime["previousEventTimestamp = null"]
-    WhileTrue["while(true)"]
-    
-    StartTick["tickStartTime = performance.now()"]
-    CreateDate["when = new Date()"]
-    CallTick["result = await strategyCoreService.tick()"]
-    
-    ErrorCatch["catch error"]
-    LogError["Log error with errorEmitter"]
-    SleepError["await sleep(TICK_TTL)"]
-    ContinueError["continue loop"]
-    
-    TrackPerf["Emit performanceEmitter event<br/>metricType: 'live_tick'"]
-    
-    CheckAction{"result.action"}
-    HandleIdle["Check stop flag<br/>sleep(TICK_TTL)<br/>continue"]
-    HandleActive["sleep(TICK_TTL)<br/>continue"]
-    HandleScheduled["sleep(TICK_TTL)<br/>continue"]
-    HandleOpened["yield result<br/>sleep(TICK_TTL)"]
-    HandleClosed["yield result<br/>Check stop flag<br/>sleep(TICK_TTL)"]
-    
-    Start --> InitTime
-    InitTime --> WhileTrue
-    WhileTrue --> StartTick
-    StartTick --> CreateDate
-    CreateDate --> CallTick
-    
-    CallTick -->|error| ErrorCatch
-    ErrorCatch --> LogError
-    LogError --> SleepError
-    SleepError --> ContinueError
-    ContinueError --> WhileTrue
-    
-    CallTick -->|success| TrackPerf
-    TrackPerf --> CheckAction
-    
-    CheckAction -->|idle| HandleIdle
-    CheckAction -->|active| HandleActive
-    CheckAction -->|scheduled| HandleScheduled
-    CheckAction -->|opened| HandleOpened
-    CheckAction -->|closed| HandleClosed
-    
-    HandleIdle --> WhileTrue
-    HandleActive --> WhileTrue
-    HandleScheduled --> WhileTrue
-    HandleOpened --> WhileTrue
-    HandleClosed --> WhileTrue
-    
-    style CallTick fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style TrackPerf fill:#f9f9f9,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\18-live-trading-mode_5.svg)
 
 ### Error Handling
 
