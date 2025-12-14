@@ -5,28 +5,6 @@ group: design
 
 # Walker Mode
 
-# Walker Mode
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/classes/Backtest.ts](src/classes/Backtest.ts)
-- [src/classes/Live.ts](src/classes/Live.ts)
-- [src/classes/Walker.ts](src/classes/Walker.ts)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [src/lib/services/logic/private/BacktestLogicPrivateService.ts](src/lib/services/logic/private/BacktestLogicPrivateService.ts)
-- [src/lib/services/logic/private/LiveLogicPrivateService.ts](src/lib/services/logic/private/LiveLogicPrivateService.ts)
-- [src/lib/services/logic/private/WalkerLogicPrivateService.ts](src/lib/services/logic/private/WalkerLogicPrivateService.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 Walker Mode provides strategy comparison and A/B testing capabilities by executing multiple backtests sequentially and ranking strategies by a chosen metric. This execution mode automates the process of running the same backtest configuration across different strategies and identifying the best performer.
 
 For general execution mode concepts, see [Execution Modes Overview](./04-execution-modes-overview.md). For individual backtest mechanics, see [Backtest Mode](./17-backtest-mode.md). For LLM-based strategy generation, see [Optimizer Mode](./20-optimizer-mode.md).

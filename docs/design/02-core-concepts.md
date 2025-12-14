@@ -5,31 +5,6 @@ group: design
 
 # Core Concepts
 
-# Core Concepts
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [assets/uml.svg](assets/uml.svg)
-- [docs/classes/WalkerCommandService.md](docs/classes/WalkerCommandService.md)
-- [docs/interfaces/BacktestStatistics.md](docs/interfaces/BacktestStatistics.md)
-- [docs/interfaces/IStrategyCallbacks.md](docs/interfaces/IStrategyCallbacks.md)
-- [docs/interfaces/LiveStatistics.md](docs/interfaces/LiveStatistics.md)
-- [docs/internals.md](docs/internals.md)
-- [docs/types/IStrategyTickResult.md](docs/types/IStrategyTickResult.md)
-- [docs/uml.puml](docs/uml.puml)
-- [scripts/uml.mjs](scripts/uml.mjs)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 This document explains the three fundamental abstractions that underpin the entire backtest-kit framework: **signals**, **execution contexts**, and **event-driven communication**. Understanding these concepts is essential for working with any part of the system, as they form the foundation for all execution modes, strategy definitions, and data flows.
 
 For detailed information about specific signal states and transitions, see [Signal Lifecycle and State Machine](./03-signal-lifecycle-and-state-machine.md). For information about how execution modes utilize these concepts, see [Execution Modes Overview](./04-execution-modes-overview.md). For comprehensive coverage of the event system's capabilities, see [Event-Driven Architecture](./05-event-driven-architecture.md).

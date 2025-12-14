@@ -5,38 +5,6 @@ group: design
 
 # Demo Applications
 
-# Demo Applications
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [demo/backtest/package-lock.json](demo/backtest/package-lock.json)
-- [demo/backtest/package.json](demo/backtest/package.json)
-- [demo/live/package-lock.json](demo/live/package-lock.json)
-- [demo/live/package.json](demo/live/package.json)
-- [demo/optimization/.env.example](demo/optimization/.env.example)
-- [demo/optimization/.gitignore](demo/optimization/.gitignore)
-- [demo/optimization/package-lock.json](demo/optimization/package-lock.json)
-- [demo/optimization/package.json](demo/optimization/package.json)
-- [demo/optimization/src/index.mjs](demo/optimization/src/index.mjs)
-- [package-lock.json](package-lock.json)
-- [package.json](package.json)
-- [src/contract/ProgressOptimizer.contract.ts](src/contract/ProgressOptimizer.contract.ts)
-- [src/interfaces/Heatmap.interface.ts](src/interfaces/Heatmap.interface.ts)
-- [test/e2e/defend.test.mjs](test/e2e/defend.test.mjs)
-- [test/e2e/risk.test.mjs](test/e2e/risk.test.mjs)
-- [test/index.mjs](test/index.mjs)
-- [test/mock/getMockCandles.mjs](test/mock/getMockCandles.mjs)
-- [test/spec/heat.test.mjs](test/spec/heat.test.mjs)
-- [test/spec/list.test.mjs](test/spec/list.test.mjs)
-
-</details>
-
-
-
 This page documents the included demo applications that showcase the framework's capabilities. The demos provide practical examples of backtesting, live trading, and LLM-based strategy optimization using real market data and executable code.
 
 For framework configuration details, see [Global Configuration Parameters](./26-global-configuration-parameters.md). For execution mode details, see [Execution Modes Overview](./04-execution-modes-overview.md) and the detailed execution mode pages ([Backtest Mode](./17-backtest-mode.md), [Live Trading Mode](./18-live-trading-mode.md), [Optimizer Mode](./20-optimizer-mode.md)).

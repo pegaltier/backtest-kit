@@ -5,32 +5,6 @@ group: design
 
 # Service Categories
 
-# Service Categories
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [assets/uml.svg](assets/uml.svg)
-- [docs/classes/WalkerCommandService.md](docs/classes/WalkerCommandService.md)
-- [docs/interfaces/BacktestStatistics.md](docs/interfaces/BacktestStatistics.md)
-- [docs/interfaces/IStrategyCallbacks.md](docs/interfaces/IStrategyCallbacks.md)
-- [docs/interfaces/LiveStatistics.md](docs/interfaces/LiveStatistics.md)
-- [docs/internals.md](docs/internals.md)
-- [docs/types/IStrategyTickResult.md](docs/types/IStrategyTickResult.md)
-- [docs/uml.puml](docs/uml.puml)
-- [scripts/uml.mjs](scripts/uml.mjs)
-- [src/function/add.ts](src/function/add.ts)
-- [src/function/list.ts](src/function/list.ts)
-- [src/lib/core/provide.ts](src/lib/core/provide.ts)
-- [src/lib/core/types.ts](src/lib/core/types.ts)
-- [src/lib/index.ts](src/lib/index.ts)
-
-</details>
-
-
-
 This page documents the 11 service categories that comprise the Service Layer in the backtest-kit architecture. Each category serves a distinct architectural role, from configuration storage to business logic execution. For information about the overall layered architecture, see [Layered Architecture](./07-layered-architecture.md). For details on how services are registered via dependency injection, see [Dependency Injection System](./08-dependency-injection-system.md).
 
 ---

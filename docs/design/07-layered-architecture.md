@@ -5,32 +5,6 @@ group: design
 
 # Layered Architecture
 
-# Layered Architecture
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [assets/uml.svg](assets/uml.svg)
-- [docs/classes/WalkerCommandService.md](docs/classes/WalkerCommandService.md)
-- [docs/interfaces/BacktestStatistics.md](docs/interfaces/BacktestStatistics.md)
-- [docs/interfaces/IStrategyCallbacks.md](docs/interfaces/IStrategyCallbacks.md)
-- [docs/interfaces/LiveStatistics.md](docs/interfaces/LiveStatistics.md)
-- [docs/internals.md](docs/internals.md)
-- [docs/types/IStrategyTickResult.md](docs/types/IStrategyTickResult.md)
-- [docs/uml.puml](docs/uml.puml)
-- [scripts/uml.mjs](scripts/uml.mjs)
-- [src/function/add.ts](src/function/add.ts)
-- [src/function/list.ts](src/function/list.ts)
-- [src/lib/core/provide.ts](src/lib/core/provide.ts)
-- [src/lib/core/types.ts](src/lib/core/types.ts)
-- [src/lib/index.ts](src/lib/index.ts)
-
-</details>
-
-
-
 ## Purpose and Scope
 
 This document describes the five-layer architecture of backtest-kit, explaining the responsibilities and boundaries of each layer: Public API, Orchestration, Service, Client, and Persistence. Each layer has specific concerns and dependencies flow unidirectionally from top to bottom.

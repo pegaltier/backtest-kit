@@ -5,36 +5,6 @@ group: design
 
 # System Architecture
 
-# System Architecture
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [assets/uml.svg](assets/uml.svg)
-- [docs/classes/WalkerCommandService.md](docs/classes/WalkerCommandService.md)
-- [docs/interfaces/BacktestStatistics.md](docs/interfaces/BacktestStatistics.md)
-- [docs/interfaces/IStrategyCallbacks.md](docs/interfaces/IStrategyCallbacks.md)
-- [docs/interfaces/LiveStatistics.md](docs/interfaces/LiveStatistics.md)
-- [docs/internals.md](docs/internals.md)
-- [docs/types/IStrategyTickResult.md](docs/types/IStrategyTickResult.md)
-- [docs/uml.puml](docs/uml.puml)
-- [scripts/uml.mjs](scripts/uml.mjs)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/add.ts](src/function/add.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/function/list.ts](src/function/list.ts)
-- [src/index.ts](src/index.ts)
-- [src/lib/core/provide.ts](src/lib/core/provide.ts)
-- [src/lib/core/types.ts](src/lib/core/types.ts)
-- [src/lib/index.ts](src/lib/index.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 This document provides an overview of the backtest-kit framework's architectural patterns, including its layered design, dependency injection system, service organization, and the central `backtest` aggregation object. This page focuses on structural patterns and component organization rather than specific features or execution flows.
 
 For detailed information about:

@@ -5,34 +5,6 @@ group: design
 
 # Signal Lifecycle and State Machine
 
-# Signal Lifecycle and State Machine
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [assets/uml.svg](assets/uml.svg)
-- [docs/classes/WalkerCommandService.md](docs/classes/WalkerCommandService.md)
-- [docs/interfaces/BacktestStatistics.md](docs/interfaces/BacktestStatistics.md)
-- [docs/interfaces/IStrategyCallbacks.md](docs/interfaces/IStrategyCallbacks.md)
-- [docs/interfaces/LiveStatistics.md](docs/interfaces/LiveStatistics.md)
-- [docs/internals.md](docs/internals.md)
-- [docs/types/IStrategyTickResult.md](docs/types/IStrategyTickResult.md)
-- [docs/uml.puml](docs/uml.puml)
-- [scripts/uml.mjs](scripts/uml.mjs)
-- [src/client/ClientStrategy.ts](src/client/ClientStrategy.ts)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [src/interfaces/Strategy.interface.ts](src/interfaces/Strategy.interface.ts)
-- [src/lib/services/connection/StrategyConnectionService.ts](src/lib/services/connection/StrategyConnectionService.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 ## Purpose and Scope
 
 This document describes the complete lifecycle of trading signals in backtest-kit, including the state machine that governs signal progression from creation through closure. It covers the discriminated union type system used for type-safe state handling, state transition conditions, scheduled vs immediate signal flows, and crash-safe persistence mechanisms.

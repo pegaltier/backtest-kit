@@ -5,27 +5,6 @@ group: design
 
 # Dependency Injection System
 
-# Dependency Injection System
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/add.ts](src/function/add.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/function/list.ts](src/function/list.ts)
-- [src/index.ts](src/index.ts)
-- [src/lib/core/provide.ts](src/lib/core/provide.ts)
-- [src/lib/core/types.ts](src/lib/core/types.ts)
-- [src/lib/index.ts](src/lib/index.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 ## Purpose and Scope
 
 The Dependency Injection (DI) system provides centralized service management for the backtest-kit framework. It uses Symbol-based keys for type-safe service registration and retrieval, aggregating all services into a single `backtest` object that serves as the framework's service locator. This page documents the DI container implementation, service registration patterns, the aggregation object structure, and the 11 service categories.

@@ -5,38 +5,6 @@ group: design
 
 # Candle Data and VWAP
 
-# Candle Data and VWAP
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/config/params.ts](src/config/params.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/function/setup.ts](src/function/setup.ts)
-- [src/helpers/toProfitLossDto.ts](src/helpers/toProfitLossDto.ts)
-- [src/index.ts](src/index.ts)
-- [src/interfaces/Heatmap.interface.ts](src/interfaces/Heatmap.interface.ts)
-- [src/lib/services/validation/ConfigValidationService.ts](src/lib/services/validation/ConfigValidationService.ts)
-- [test/config/setup.mjs](test/config/setup.mjs)
-- [test/e2e/config.test.mjs](test/e2e/config.test.mjs)
-- [test/e2e/defend.test.mjs](test/e2e/defend.test.mjs)
-- [test/e2e/risk.test.mjs](test/e2e/risk.test.mjs)
-- [test/e2e/sanitize.test.mjs](test/e2e/sanitize.test.mjs)
-- [test/index.mjs](test/index.mjs)
-- [test/mock/getMockCandles.mjs](test/mock/getMockCandles.mjs)
-- [test/spec/config.test.mjs](test/spec/config.test.mjs)
-- [test/spec/heat.test.mjs](test/spec/heat.test.mjs)
-- [test/spec/list.test.mjs](test/spec/list.test.mjs)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 This page documents the candlestick data structure (`ICandleData`), Volume-Weighted Average Price (VWAP) calculation for realistic trade execution pricing, and data quality mechanisms including anomaly detection and retry logic for handling incomplete or failed candle fetches.
 
 For exchange configuration and data source integration, see [Exchange Configuration](./22-exchange-configuration.md). For timeframe generation and backtest iteration, see [Timeframes and Frames](./24-timeframes-and-frames.md).

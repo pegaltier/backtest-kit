@@ -5,32 +5,6 @@ group: design
 
 # Defining Strategies
 
-# Defining Strategies
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [docs/classes/StrategyConnectionService.md](docs/classes/StrategyConnectionService.md)
-- [docs/index.md](docs/index.md)
-- [docs/interfaces/IStrategy.md](docs/interfaces/IStrategy.md)
-- [docs/interfaces/IStrategySchema.md](docs/interfaces/IStrategySchema.md)
-- [docs/types/IStrategyBacktestResult.md](docs/types/IStrategyBacktestResult.md)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/add.ts](src/function/add.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/function/list.ts](src/function/list.ts)
-- [src/index.ts](src/index.ts)
-- [src/lib/core/provide.ts](src/lib/core/provide.ts)
-- [src/lib/core/types.ts](src/lib/core/types.ts)
-- [src/lib/index.ts](src/lib/index.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 This page documents how to define and register trading strategies in the framework. It covers the `IStrategySchema` structure, the `addStrategy()` registration function, the `getSignal` callback for signal generation, interval-based throttling, and lifecycle callbacks for strategy events.
 
 For information about how strategies are executed internally, see [Strategy Execution Flow](./13-strategy-execution-flow.md). For risk management integration, see [Risk Management](./14-risk-management.md). For position sizing integration, see [Position Sizing](./15-position-sizing.md).

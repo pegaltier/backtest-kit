@@ -5,38 +5,6 @@ group: design
 
 # Data and Exchanges
 
-# Data and Exchanges
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/config/params.ts](src/config/params.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/function/setup.ts](src/function/setup.ts)
-- [src/helpers/toProfitLossDto.ts](src/helpers/toProfitLossDto.ts)
-- [src/index.ts](src/index.ts)
-- [src/interfaces/Heatmap.interface.ts](src/interfaces/Heatmap.interface.ts)
-- [src/lib/services/validation/ConfigValidationService.ts](src/lib/services/validation/ConfigValidationService.ts)
-- [test/config/setup.mjs](test/config/setup.mjs)
-- [test/e2e/config.test.mjs](test/e2e/config.test.mjs)
-- [test/e2e/defend.test.mjs](test/e2e/defend.test.mjs)
-- [test/e2e/risk.test.mjs](test/e2e/risk.test.mjs)
-- [test/e2e/sanitize.test.mjs](test/e2e/sanitize.test.mjs)
-- [test/index.mjs](test/index.mjs)
-- [test/mock/getMockCandles.mjs](test/mock/getMockCandles.mjs)
-- [test/spec/config.test.mjs](test/spec/config.test.mjs)
-- [test/spec/heat.test.mjs](test/spec/heat.test.mjs)
-- [test/spec/list.test.mjs](test/spec/list.test.mjs)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 This page documents how the backtest-kit framework integrates with external data sources, fetches historical market data, calculates price metrics like VWAP, and manages timeframes for backtesting. It covers the Exchange system (data source abstraction), Frame system (timeframe generation), and the candle data structures used throughout the framework.
 
 **Scope**: This page focuses on data acquisition and time management. For strategy execution logic, see [Strategy System](./11-strategy-system.md). For execution mode details (how Backtest/Live modes consume this data), see [Execution Modes (Detailed)](./16-execution-modes-detailed.md).

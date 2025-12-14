@@ -5,37 +5,6 @@ group: design
 
 # Portfolio Heatmaps
 
-# Portfolio Heatmaps
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [src/interfaces/Heatmap.interface.ts](src/interfaces/Heatmap.interface.ts)
-- [src/lib/services/markdown/BacktestMarkdownService.ts](src/lib/services/markdown/BacktestMarkdownService.ts)
-- [src/lib/services/markdown/HeatMarkdownService.ts](src/lib/services/markdown/HeatMarkdownService.ts)
-- [src/lib/services/markdown/LiveMarkdownService.ts](src/lib/services/markdown/LiveMarkdownService.ts)
-- [src/lib/services/markdown/PartialMarkdownService.ts](src/lib/services/markdown/PartialMarkdownService.ts)
-- [src/lib/services/markdown/PerformanceMarkdownService.ts](src/lib/services/markdown/PerformanceMarkdownService.ts)
-- [src/lib/services/markdown/ScheduleMarkdownService.ts](src/lib/services/markdown/ScheduleMarkdownService.ts)
-- [src/lib/services/markdown/WalkerMarkdownService.ts](src/lib/services/markdown/WalkerMarkdownService.ts)
-- [test/e2e/defend.test.mjs](test/e2e/defend.test.mjs)
-- [test/e2e/risk.test.mjs](test/e2e/risk.test.mjs)
-- [test/index.mjs](test/index.mjs)
-- [test/mock/getMockCandles.mjs](test/mock/getMockCandles.mjs)
-- [test/spec/heat.test.mjs](test/spec/heat.test.mjs)
-- [test/spec/list.test.mjs](test/spec/list.test.mjs)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 Portfolio heatmaps provide symbol-level performance analysis across all trading strategies. This system aggregates closed signals by trading pair (symbol) and calculates comprehensive statistics for each symbol, enabling portfolio-wide comparison and risk assessment. Unlike per-strategy reports (see [Performance Statistics](./31-performance-statistics.md)), heatmaps focus on symbol-level aggregation, answering questions like "Which symbols perform best across all strategies?" and "What is the portfolio's total exposure per symbol?".
 
 For individual strategy performance metrics, see [Performance Statistics](./31-performance-statistics.md). For live trading reports, see [Reporting and Analytics](./29-reporting-and-analytics.md).

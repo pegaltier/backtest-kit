@@ -5,30 +5,6 @@ group: design
 
 # Global Configuration Parameters
 
-# Global Configuration Parameters
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/config/params.ts](src/config/params.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/function/setup.ts](src/function/setup.ts)
-- [src/helpers/toProfitLossDto.ts](src/helpers/toProfitLossDto.ts)
-- [src/index.ts](src/index.ts)
-- [src/lib/services/validation/ConfigValidationService.ts](src/lib/services/validation/ConfigValidationService.ts)
-- [test/config/setup.mjs](test/config/setup.mjs)
-- [test/e2e/config.test.mjs](test/e2e/config.test.mjs)
-- [test/e2e/sanitize.test.mjs](test/e2e/sanitize.test.mjs)
-- [test/spec/config.test.mjs](test/spec/config.test.mjs)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 ## Overview and Scope
 
 This page documents all global configuration parameters in `GLOBAL_CONFIG`, which control system-wide behavior for backtesting, live trading, data fetching, and economic calculations. These parameters affect signal validation, cost modeling, timeout enforcement, and report generation across all execution modes.

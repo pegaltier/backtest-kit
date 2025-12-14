@@ -5,38 +5,6 @@ group: design
 
 # Configuration System
 
-# Configuration System
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/config/params.ts](src/config/params.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/function/setup.ts](src/function/setup.ts)
-- [src/helpers/toProfitLossDto.ts](src/helpers/toProfitLossDto.ts)
-- [src/index.ts](src/index.ts)
-- [src/interfaces/Heatmap.interface.ts](src/interfaces/Heatmap.interface.ts)
-- [src/lib/services/validation/ConfigValidationService.ts](src/lib/services/validation/ConfigValidationService.ts)
-- [test/config/setup.mjs](test/config/setup.mjs)
-- [test/e2e/config.test.mjs](test/e2e/config.test.mjs)
-- [test/e2e/defend.test.mjs](test/e2e/defend.test.mjs)
-- [test/e2e/risk.test.mjs](test/e2e/risk.test.mjs)
-- [test/e2e/sanitize.test.mjs](test/e2e/sanitize.test.mjs)
-- [test/index.mjs](test/index.mjs)
-- [test/mock/getMockCandles.mjs](test/mock/getMockCandles.mjs)
-- [test/spec/config.test.mjs](test/spec/config.test.mjs)
-- [test/spec/heat.test.mjs](test/spec/heat.test.mjs)
-- [test/spec/list.test.mjs](test/spec/list.test.mjs)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 The Configuration System provides centralized management of global parameters that control framework behavior, economic constraints, and safety limits. It enforces economic viability validation to prevent unprofitable trading configurations and provides runtime configuration updates with automatic rollback on validation failure.
 
 For strategy-specific configuration, see [Defining Strategies](./12-defining-strategies.md). For risk management configuration, see [Risk Management](./14-risk-management.md). For exchange and frame configuration, see [Exchange Configuration](./22-exchange-configuration.md) and [Timeframes and Frames](./24-timeframes-and-frames.md).

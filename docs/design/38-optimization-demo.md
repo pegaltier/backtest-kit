@@ -5,31 +5,6 @@ group: design
 
 # Optimization Demo
 
-# Optimization Demo
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [demo/optimization/.env.example](demo/optimization/.env.example)
-- [demo/optimization/.gitignore](demo/optimization/.gitignore)
-- [demo/optimization/src/index.mjs](demo/optimization/src/index.mjs)
-- [src/classes/Optimizer.ts](src/classes/Optimizer.ts)
-- [src/client/ClientOptimizer.ts](src/client/ClientOptimizer.ts)
-- [src/contract/ProgressOptimizer.contract.ts](src/contract/ProgressOptimizer.contract.ts)
-- [src/interfaces/Optimizer.interface.ts](src/interfaces/Optimizer.interface.ts)
-- [src/lib/services/connection/OptimizerConnectionService.ts](src/lib/services/connection/OptimizerConnectionService.ts)
-- [src/lib/services/global/OptimizerGlobalService.ts](src/lib/services/global/OptimizerGlobalService.ts)
-- [src/lib/services/schema/OptimizerSchemaService.ts](src/lib/services/schema/OptimizerSchemaService.ts)
-- [src/lib/services/template/OptimizerTemplateService.ts](src/lib/services/template/OptimizerTemplateService.ts)
-- [src/lib/services/validation/OptimizerValidationService.ts](src/lib/services/validation/OptimizerValidationService.ts)
-- [src/model/Message.model.ts](src/model/Message.model.ts)
-
-</details>
-
-
-
 ## Purpose and Scope
 
 The optimization demo demonstrates the **LLM-based strategy generation** capabilities of backtest-kit. This demo uses historical market data from multiple timeframes to generate trading strategies via Large Language Model (LLM) inference, then produces executable strategy code that can be backtested using the Walker mode.

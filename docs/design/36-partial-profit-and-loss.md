@@ -5,32 +5,6 @@ group: design
 
 # Partial Profit and Loss
 
-# Partial Profit and Loss
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/client/ClientStrategy.ts](src/client/ClientStrategy.ts)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [src/interfaces/Strategy.interface.ts](src/interfaces/Strategy.interface.ts)
-- [src/lib/services/connection/StrategyConnectionService.ts](src/lib/services/connection/StrategyConnectionService.ts)
-- [src/lib/services/markdown/BacktestMarkdownService.ts](src/lib/services/markdown/BacktestMarkdownService.ts)
-- [src/lib/services/markdown/HeatMarkdownService.ts](src/lib/services/markdown/HeatMarkdownService.ts)
-- [src/lib/services/markdown/LiveMarkdownService.ts](src/lib/services/markdown/LiveMarkdownService.ts)
-- [src/lib/services/markdown/PartialMarkdownService.ts](src/lib/services/markdown/PartialMarkdownService.ts)
-- [src/lib/services/markdown/PerformanceMarkdownService.ts](src/lib/services/markdown/PerformanceMarkdownService.ts)
-- [src/lib/services/markdown/ScheduleMarkdownService.ts](src/lib/services/markdown/ScheduleMarkdownService.ts)
-- [src/lib/services/markdown/WalkerMarkdownService.ts](src/lib/services/markdown/WalkerMarkdownService.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 This page documents the partial profit/loss tracking system, which monitors intermediate milestone levels (10%, 20%, 30%, etc.) as trading signals move toward their take profit or stop loss targets. The system emits events when signals reach these thresholds, enabling real-time monitoring and analytics for unrealized gains/losses.
 
 For information about final profit/loss calculation when signals close, see [Signal Lifecycle and State Machine](./03-signal-lifecycle-and-state-machine.md). For event subscription patterns, see [Event Listeners and Monitoring](./35-event-listeners-and-monitoring.md).

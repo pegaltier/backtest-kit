@@ -5,34 +5,6 @@ group: design
 
 # Economic Viability and Validation
 
-# Economic Viability and Validation
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [src/config/params.ts](src/config/params.ts)
-- [src/function/setup.ts](src/function/setup.ts)
-- [src/helpers/toProfitLossDto.ts](src/helpers/toProfitLossDto.ts)
-- [src/interfaces/Heatmap.interface.ts](src/interfaces/Heatmap.interface.ts)
-- [src/lib/services/validation/ConfigValidationService.ts](src/lib/services/validation/ConfigValidationService.ts)
-- [test/config/setup.mjs](test/config/setup.mjs)
-- [test/e2e/config.test.mjs](test/e2e/config.test.mjs)
-- [test/e2e/defend.test.mjs](test/e2e/defend.test.mjs)
-- [test/e2e/risk.test.mjs](test/e2e/risk.test.mjs)
-- [test/e2e/sanitize.test.mjs](test/e2e/sanitize.test.mjs)
-- [test/index.mjs](test/index.mjs)
-- [test/mock/getMockCandles.mjs](test/mock/getMockCandles.mjs)
-- [test/spec/config.test.mjs](test/spec/config.test.mjs)
-- [test/spec/heat.test.mjs](test/spec/heat.test.mjs)
-- [test/spec/list.test.mjs](test/spec/list.test.mjs)
-
-</details>
-
-
-
 ## Purpose and Scope
 
 This document explains the framework's configuration validation system that ensures trading strategies are economically viable before execution. It covers the cost model (slippage and fees), minimum profit requirements, the `ConfigValidationService` implementation, and validation rules that prevent unprofitable or dangerous configurations.

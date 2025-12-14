@@ -5,35 +5,6 @@ group: design
 
 # Optimizer Mode
 
-# Optimizer Mode
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [demo/optimization/.env.example](demo/optimization/.env.example)
-- [demo/optimization/.gitignore](demo/optimization/.gitignore)
-- [demo/optimization/src/index.mjs](demo/optimization/src/index.mjs)
-- [src/classes/Optimizer.ts](src/classes/Optimizer.ts)
-- [src/client/ClientOptimizer.ts](src/client/ClientOptimizer.ts)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/contract/ProgressOptimizer.contract.ts](src/contract/ProgressOptimizer.contract.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [src/interfaces/Optimizer.interface.ts](src/interfaces/Optimizer.interface.ts)
-- [src/lib/services/connection/OptimizerConnectionService.ts](src/lib/services/connection/OptimizerConnectionService.ts)
-- [src/lib/services/global/OptimizerGlobalService.ts](src/lib/services/global/OptimizerGlobalService.ts)
-- [src/lib/services/schema/OptimizerSchemaService.ts](src/lib/services/schema/OptimizerSchemaService.ts)
-- [src/lib/services/template/OptimizerTemplateService.ts](src/lib/services/template/OptimizerTemplateService.ts)
-- [src/lib/services/validation/OptimizerValidationService.ts](src/lib/services/validation/OptimizerValidationService.ts)
-- [src/model/Message.model.ts](src/model/Message.model.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 **Purpose**: This page documents the Optimizer execution mode, which generates executable trading strategies using Large Language Model (LLM) integration. Unlike other execution modes that run strategies directly, Optimizer Mode produces complete strategy code files by collecting multi-timeframe historical data, formatting it for LLM consumption via the Ollama API, and assembling executable `.mjs` files with integrated Walker-based backtesting.
 
 For information about executing strategies in historical simulation, see [Backtest Mode](./17-backtest-mode.md). For comparing multiple strategies, see [Walker Mode](./19-walker-mode.md). For LLM-based strategy definition, see [Defining Strategies](./12-defining-strategies.md).

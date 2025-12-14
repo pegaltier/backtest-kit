@@ -5,30 +5,6 @@ group: design
 
 # Client Layer
 
-# Client Layer
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [docs/classes/StrategyConnectionService.md](docs/classes/StrategyConnectionService.md)
-- [docs/index.md](docs/index.md)
-- [docs/interfaces/IStrategy.md](docs/interfaces/IStrategy.md)
-- [docs/interfaces/IStrategySchema.md](docs/interfaces/IStrategySchema.md)
-- [docs/types/IStrategyBacktestResult.md](docs/types/IStrategyBacktestResult.md)
-- [src/client/ClientStrategy.ts](src/client/ClientStrategy.ts)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [src/interfaces/Strategy.interface.ts](src/interfaces/Strategy.interface.ts)
-- [src/lib/services/connection/StrategyConnectionService.ts](src/lib/services/connection/StrategyConnectionService.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 ## Purpose and Scope
 
 The Client Layer contains the six core business logic implementations that execute domain operations. These clients are instantiated and managed by ConnectionServices in the Service Layer (see [Service Categories](./09-service-categories.md)) and consume configuration from Schema services. Each client encapsulates a specific domain responsibility: strategy execution, exchange data access, timeframe generation, risk validation, optimizer orchestration, and partial profit/loss tracking.

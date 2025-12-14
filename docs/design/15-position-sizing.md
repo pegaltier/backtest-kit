@@ -5,27 +5,6 @@ group: design
 
 # Position Sizing
 
-# Position Sizing
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/add.ts](src/function/add.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/function/list.ts](src/function/list.ts)
-- [src/index.ts](src/index.ts)
-- [src/lib/core/provide.ts](src/lib/core/provide.ts)
-- [src/lib/core/types.ts](src/lib/core/types.ts)
-- [src/lib/index.ts](src/lib/index.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 Position sizing determines how much capital to allocate to each trading signal. This page documents the position sizing system, including the three built-in sizing methods (fixed-percentage, Kelly Criterion, ATR-based), schema registration, calculation flow, and service architecture.
 
 For information about risk management and portfolio-level position limits, see [Risk Management](./14-risk-management.md). For strategy configuration that uses position sizing, see [Defining Strategies](./12-defining-strategies.md).

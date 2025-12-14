@@ -5,35 +5,6 @@ group: design
 
 # Configuration API
 
-# Configuration API
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/config/params.ts](src/config/params.ts)
-- [src/function/add.ts](src/function/add.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/function/list.ts](src/function/list.ts)
-- [src/function/setup.ts](src/function/setup.ts)
-- [src/helpers/toProfitLossDto.ts](src/helpers/toProfitLossDto.ts)
-- [src/index.ts](src/index.ts)
-- [src/lib/core/provide.ts](src/lib/core/provide.ts)
-- [src/lib/core/types.ts](src/lib/core/types.ts)
-- [src/lib/index.ts](src/lib/index.ts)
-- [src/lib/services/validation/ConfigValidationService.ts](src/lib/services/validation/ConfigValidationService.ts)
-- [test/config/setup.mjs](test/config/setup.mjs)
-- [test/e2e/config.test.mjs](test/e2e/config.test.mjs)
-- [test/e2e/sanitize.test.mjs](test/e2e/sanitize.test.mjs)
-- [test/spec/config.test.mjs](test/spec/config.test.mjs)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
-
 This page documents the public API functions for configuring the framework's global parameters at runtime. For descriptions of individual configuration parameters, see [Global Configuration Parameters](./26-global-configuration-parameters.md). For details on how configuration values are validated, see [Economic Viability and Validation](./27-economic-viability-and-validation.md).
 
 ---
