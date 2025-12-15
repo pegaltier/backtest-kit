@@ -187,16 +187,44 @@ Customize via `setConfig()`:
 
 ## 💻 Developer Note
 
+Backtest Kit is **not a data-processing library** - it is a **time execution engine**. Think of the engine as an **async stream of time**, where your strategy is evaluated step by step.
+
 ### 🔍 How getCandles Works
 
 backtest-kit uses Node.js `AsyncLocalStorage` to automatically provide 
-temporal context to your strategies.
+temporal time context to your strategies.
 
 ### 💭 What this means:
 - `getCandles()` always returns data UP TO the current backtest timestamp using `async_hooks`
 - Multi-timeframe data is automatically synchronized
 - **Impossible to introduce look-ahead bias**
 - Same code works in both backtest and live modes
+
+
+## 🧠 Two Ways to Run the Engine
+
+Backtest Kit exposes the same runtime in two equivalent forms. Both approaches use **the same engine and guarantees** - only the consumption model differs.
+
+### 1️⃣ Event-driven (background execution)
+
+Suitable for production bots, monitoring, and long-running processes.
+
+```typescript
+Backtest.background('BTCUSDT', config);
+
+listenSignalBacktest(event => { /* handle signals */ });
+listenDoneBacktest(event => { /* finalize / dump report */ });
+```
+
+### 2️⃣ Async Iterator (pull-based execution)
+
+Suitable for research, scripting, testing, and LLM agents.
+
+```typescript
+for await (const event of Backtest.run('BTCUSDT', config)) {
+  // signal | trade | progress | done
+}
+```
 
 ## 🤖 Are you a robot?
 
