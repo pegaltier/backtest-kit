@@ -34,6 +34,8 @@ Build reliable trading systems: backtest on historical data, deploy live bots wi
 
 ## 🚀 Quick Start
 
+> Link to [the source code](https://github.com/tripolskypetr/backtest-kit/tree/master/demo)
+
 ### 📦 Installation
 ```bash
 npm install backtest-kit ccxt ollama uuid
