@@ -15,23 +15,14 @@ import { signalEmitter, signalLiveEmitter } from "../../../config/emitters";
 import { toPlainString } from "../../../helpers/toPlainString";
 import { GLOBAL_CONFIG } from "../../../config/params";
 import { ScheduleStatisticsModel, ScheduledEvent } from "../../../model/ScheduleStatistics.model";
+import { ColumnModel } from "../../../model/Column.model";
 
 /**
  * Column configuration for markdown table generation.
  * Defines how to extract and format data from scheduled events.
  */
-interface Column {
-  /** Unique column identifier */
-  key: string;
-  /** Display label for column header */
-  label: string;
-  /** Formatting function to convert event data to string */
-  format: (data: ScheduledEvent) => string;
-  /** Function to determine if column should be visible */
-  isVisible: () => boolean;
-}
 
-const columns: Column[] = [
+const columns: ColumnModel<ScheduledEvent>[] = [
   {
     key: "timestamp",
     label: "Timestamp",

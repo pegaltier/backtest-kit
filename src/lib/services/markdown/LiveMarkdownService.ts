@@ -15,6 +15,7 @@ import { signalLiveEmitter } from "../../../config/emitters";
 import { toPlainString } from "../../../helpers/toPlainString";
 import { GLOBAL_CONFIG } from "../../../config/params";
 import { LiveStatisticsModel, TickEvent } from "../../../model/LiveStatistics.model";
+import { ColumnModel } from "../../../model/Column.model";
 
 /**
  * Checks if a value is unsafe for display (not a number, NaN, or Infinity).
@@ -39,18 +40,8 @@ function isUnsafe(value: number | null): boolean {
  * Column configuration for markdown table generation.
  * Defines how to extract and format data from tick events.
  */
-interface Column {
-  /** Unique column identifier */
-  key: string;
-  /** Display label for column header */
-  label: string;
-  /** Formatting function to convert event data to string */
-  format: (data: TickEvent) => string;
-  /** Function to determine if column should be visible */
-  isVisible: () => boolean;
-}
 
-const columns: Column[] = [
+const columns: ColumnModel<TickEvent>[] = [
   {
     key: "timestamp",
     label: "Timestamp",

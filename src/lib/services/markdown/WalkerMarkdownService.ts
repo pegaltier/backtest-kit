@@ -14,6 +14,7 @@ import { walkerEmitter } from "../../../config/emitters";
 import { WalkerContract } from "../../../contract/Walker.contract";
 import { BacktestStatisticsModel } from "../../../model/BacktestStatistics.model";
 import { WalkerStatisticsModel, IStrategyResult } from "../../../model/WalkerStatistics.model";
+import { ColumnModel } from "../../../model/Column.model";
 
 /**
  * Checks if a value is unsafe for display (not a number, NaN, or Infinity).
@@ -79,21 +80,6 @@ interface StrategyColumn {
   label: string;
   /** Formatting function to convert strategy result data to string */
   format: (data: IStrategyResult, index: number) => string;
-  /** Function to determine if column should be visible */
-  isVisible: () => boolean;
-}
-
-/**
- * Column configuration for PNL table generation.
- * Defines how to extract and format data from signal data.
- */
-interface SignalColumn {
-  /** Unique column identifier */
-  key: string;
-  /** Display label for column header */
-  label: string;
-  /** Formatting function to convert signal data to string */
-  format: (data: SignalData) => string;
   /** Function to determine if column should be visible */
   isVisible: () => boolean;
 }
@@ -183,7 +169,7 @@ function createStrategyColumns(metric: WalkerMetric): StrategyColumn[] {
  * Column configuration for PNL table.
  * Defines all columns for displaying closed signals across strategies.
  */
-const pnlColumns: SignalColumn[] = [
+const pnlColumns: ColumnModel<SignalData>[] = [
   {
     key: "strategy",
     label: "Strategy",

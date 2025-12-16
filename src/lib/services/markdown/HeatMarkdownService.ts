@@ -12,6 +12,7 @@ import { memoize, singleshot, str } from "functools-kit";
 import { signalEmitter } from "../../../config/emitters";
 import { IHeatmapRow } from "../../../interfaces/Heatmap.interface";
 import { HeatmapStatisticsModel } from "../../../model/HeatmapStatistics.model";
+import { ColumnModel } from "../../../model/Column.model";
 
 const HEATMAP_METHOD_NAME_GET_DATA = "HeatMarkdownService.getData";
 const HEATMAP_METHOD_NAME_GET_REPORT = "HeatMarkdownService.getReport";
@@ -22,16 +23,6 @@ const HEATMAP_METHOD_NAME_CLEAR = "HeatMarkdownService.clear";
  * Column configuration for heatmap markdown table generation.
  * Defines how to extract and format data from heatmap rows.
  */
-interface Column {
-  /** Unique column identifier */
-  key: string;
-  /** Display label for column header */
-  label: string;
-  /** Formatting function to convert heatmap row data to string */
-  format: (data: IHeatmapRow) => string;
-  /** Function to determine if column should be visible */
-  isVisible: () => boolean;
-}
 
 /**
  * Checks if a value is unsafe for display (not a number, NaN, or Infinity).
@@ -52,7 +43,7 @@ function isUnsafe(value: number | null): boolean {
   return false;
 }
 
-const columns: Column[] = [
+const columns: ColumnModel<IHeatmapRow>[] = [
   {
     key: "symbol",
     label: "Symbol",

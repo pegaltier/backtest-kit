@@ -9,23 +9,14 @@ import { riskSubject } from "../../../config/emitters";
 import { toPlainString } from "../../../helpers/toPlainString";
 import { GLOBAL_CONFIG } from "../../../config/params";
 import { RiskStatisticsModel, RiskEvent } from "../../../model/RiskStatistics.model";
+import { ColumnModel } from "../../../model/Column.model";
 
 /**
  * Column configuration for markdown table generation.
  * Defines how to extract and format data from risk events.
  */
-interface Column {
-  /** Unique column identifier */
-  key: string;
-  /** Display label for column header */
-  label: string;
-  /** Formatting function to convert event data to string */
-  format: (data: RiskEvent) => string;
-  /** Function to determine if column should be visible */
-  isVisible: () => boolean;
-}
 
-const columns: Column[] = [
+const columns: ColumnModel<RiskEvent>[] = [
   {
     key: "symbol",
     label: "Symbol",

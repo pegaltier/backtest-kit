@@ -131,6 +131,7 @@ export {
 } from "./interfaces/Optimizer.interface";
 
 export { MessageModel, MessageRole } from "./model/Message.model";
+export type { ColumnModel } from "./model/Column.model";
 
 export type { BacktestStatisticsModel } from "./model/BacktestStatistics.model";
 export type { LiveStatisticsModel } from "./model/LiveStatistics.model";

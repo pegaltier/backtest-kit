@@ -10,6 +10,7 @@ import TYPES from "../../../lib/core/types";
 import { memoize, singleshot } from "functools-kit";
 import { performanceEmitter } from "../../../config/emitters";
 import { PerformanceStatisticsModel, MetricStats } from "../../../model/PerformanceStatistics.model";
+import { ColumnModel } from "../../../model/Column.model";
 
 /**
  * Checks if a value is unsafe for display (not a number, NaN, or Infinity).
@@ -40,18 +41,8 @@ function percentile(sortedArray: number[], p: number): number {
  * Column configuration for performance metrics table generation.
  * Defines how to extract and format data from metric statistics.
  */
-interface Column {
-  /** Unique column identifier */
-  key: string;
-  /** Display label for column header */
-  label: string;
-  /** Formatting function to convert metric stats to string */
-  format: (data: MetricStats) => string;
-  /** Function to determine if column should be visible */
-  isVisible: () => boolean;
-}
 
-const columns: Column[] = [
+const columns: ColumnModel<MetricStats>[] = [
   {
     key: "metricType",
     label: "Metric Type",

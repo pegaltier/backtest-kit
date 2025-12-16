@@ -12,22 +12,13 @@ import { memoize, singleshot } from "functools-kit";
 import { signalBacktestEmitter } from "../../../config/emitters";
 import { toPlainString } from "../../../helpers/toPlainString";
 import { GLOBAL_CONFIG } from "../../../config/params";
+import { ColumnModel } from "../../../model/Column.model";
 import { BacktestStatisticsModel } from "../../../model/BacktestStatistics.model";
 
 /**
  * Column configuration for markdown table generation.
  * Defines how to extract and format data from closed signals.
  */
-interface Column {
-  /** Unique column identifier */
-  key: string;
-  /** Display label for column header */
-  label: string;
-  /** Formatting function to convert signal data to string */
-  format: (data: IStrategyTickResultClosed) => string;
-  /** Function to determine if column should be visible */
-  isVisible: () => boolean;
-}
 
 /**
  * Checks if a value is unsafe for display (not a number, NaN, or Infinity).
@@ -48,7 +39,7 @@ function isUnsafe(value: number | null): boolean {
   return false;
 }
 
-const columns: Column[] = [
+const columns: ColumnModel<IStrategyTickResultClosed>[] = [
   {
     key: "signalId",
     label: "Signal ID",
