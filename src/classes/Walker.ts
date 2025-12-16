@@ -2,6 +2,7 @@ import backtest from "../lib";
 import { WalkerName } from "../interfaces/Walker.interface";
 import { exitEmitter, doneWalkerSubject, walkerStopSubject } from "../config/emitters";
 import { getErrorMessage, memoize, randomString, singlerun } from "functools-kit";
+import { StrategyColumn, PnlColumn } from "../lib/services/markdown/WalkerMarkdownService";
 
 const WALKER_METHOD_NAME_RUN = "WalkerUtils.run";
 const WALKER_METHOD_NAME_BACKGROUND = "WalkerUtils.background";
@@ -322,6 +323,8 @@ export class WalkerInstance {
    *
    * @param symbol - Trading symbol
    * @param walkerName - Walker name to generate report for
+   * @param strategyColumns - Optional strategy columns configuration
+   * @param pnlColumns - Optional PNL columns configuration
    * @returns Promise resolving to markdown formatted report string
    *
    * @example
@@ -333,7 +336,9 @@ export class WalkerInstance {
    */
   public getReport = async (
     symbol: string,
-    walkerName: WalkerName
+    walkerName: WalkerName,
+    strategyColumns?: StrategyColumn[],
+    pnlColumns?: PnlColumn[]
   ): Promise<string> => {
     backtest.loggerService.info(WALKER_METHOD_NAME_GET_REPORT, {
       symbol,
@@ -349,7 +354,9 @@ export class WalkerInstance {
       {
         exchangeName: walkerSchema.exchangeName,
         frameName: walkerSchema.frameName,
-      }
+      },
+      strategyColumns,
+      pnlColumns
     );
   };
 
@@ -359,6 +366,8 @@ export class WalkerInstance {
    * @param symbol - Trading symbol
    * @param walkerName - Walker name to save report for
    * @param path - Optional directory path to save report (default: "./dump/walker")
+   * @param strategyColumns - Optional strategy columns configuration
+   * @param pnlColumns - Optional PNL columns configuration
    *
    * @example
    * ```typescript
@@ -373,7 +382,9 @@ export class WalkerInstance {
   public dump = async (
     symbol: string,
     walkerName: WalkerName,
-    path?: string
+    path?: string,
+    strategyColumns?: StrategyColumn[],
+    pnlColumns?: PnlColumn[]
   ): Promise<void> => {
     backtest.loggerService.info(WALKER_METHOD_NAME_DUMP, {
       symbol,
@@ -391,7 +402,9 @@ export class WalkerInstance {
         exchangeName: walkerSchema.exchangeName,
         frameName: walkerSchema.frameName,
       },
-      path
+      path,
+      strategyColumns,
+      pnlColumns
     );
   };
 }
@@ -577,6 +590,8 @@ export class WalkerUtils {
    *
    * @param symbol - Trading symbol
    * @param walkerName - Walker name to generate report for
+   * @param strategyColumns - Optional strategy columns configuration
+   * @param pnlColumns - Optional PNL columns configuration
    * @returns Promise resolving to markdown formatted report string
    *
    * @example
@@ -587,7 +602,9 @@ export class WalkerUtils {
    */
   public getReport = async (
     symbol: string,
-    walkerName: WalkerName
+    walkerName: WalkerName,
+    strategyColumns?: StrategyColumn[],
+    pnlColumns?: PnlColumn[]
   ): Promise<string> => {
     backtest.walkerValidationService.validate(walkerName, WALKER_METHOD_NAME_GET_REPORT);
 
@@ -601,7 +618,7 @@ export class WalkerUtils {
     }
 
     const instance = this._getInstance(symbol, walkerName);
-    return await instance.getReport(symbol, walkerName);
+    return await instance.getReport(symbol, walkerName, strategyColumns, pnlColumns);
   };
 
   /**
@@ -610,6 +627,8 @@ export class WalkerUtils {
    * @param symbol - Trading symbol
    * @param walkerName - Walker name to save report for
    * @param path - Optional directory path to save report (default: "./dump/walker")
+   * @param strategyColumns - Optional strategy columns configuration
+   * @param pnlColumns - Optional PNL columns configuration
    *
    * @example
    * ```typescript
@@ -623,7 +642,9 @@ export class WalkerUtils {
   public dump = async (
     symbol: string,
     walkerName: WalkerName,
-    path?: string
+    path?: string,
+    strategyColumns?: StrategyColumn[],
+    pnlColumns?: PnlColumn[]
   ): Promise<void> => {
     backtest.walkerValidationService.validate(walkerName, WALKER_METHOD_NAME_DUMP);
 
@@ -637,7 +658,7 @@ export class WalkerUtils {
     }
 
     const instance = this._getInstance(symbol, walkerName);
-    return await instance.dump(symbol, walkerName, path);
+    return await instance.dump(symbol, walkerName, path, strategyColumns, pnlColumns);
   };
 
   /**

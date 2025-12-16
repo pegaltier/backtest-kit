@@ -1,4 +1,5 @@
 import backtest from "../lib";
+import { Columns } from "../lib/services/markdown/PartialMarkdownService";
 
 const PARTIAL_METHOD_NAME_GET_DATA = "PartialUtils.getData";
 const PARTIAL_METHOD_NAME_GET_REPORT = "PartialUtils.getReport";
@@ -96,6 +97,7 @@ export class PartialUtils {
    *
    * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
    * @param strategyName - Strategy name (e.g., "my-strategy")
+   * @param columns - Optional columns configuration for the report
    * @returns Promise resolving to markdown formatted report string
    *
    * @example
@@ -116,7 +118,7 @@ export class PartialUtils {
    * // **Loss events:** 1
    * ```
    */
-  public getReport = async (symbol: string, strategyName: string): Promise<string> => {
+  public getReport = async (symbol: string, strategyName: string, columns?: Columns[]): Promise<string> => {
     backtest.loggerService.info(PARTIAL_METHOD_NAME_GET_REPORT, { symbol, strategyName });
 
     backtest.strategyValidationService.validate(strategyName, PARTIAL_METHOD_NAME_GET_REPORT);
@@ -127,7 +129,7 @@ export class PartialUtils {
       riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, PARTIAL_METHOD_NAME_GET_REPORT));
     }
 
-    return await backtest.partialMarkdownService.getReport(symbol, strategyName);
+    return await backtest.partialMarkdownService.getReport(symbol, strategyName, columns);
   };
 
   /**
@@ -145,6 +147,7 @@ export class PartialUtils {
    * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
    * @param strategyName - Strategy name (e.g., "my-strategy")
    * @param path - Output directory path (default: "./dump/partial")
+   * @param columns - Optional columns configuration for the report
    * @returns Promise that resolves when file is written
    *
    * @example
@@ -161,7 +164,7 @@ export class PartialUtils {
    * }
    * ```
    */
-  public dump = async (symbol: string, strategyName: string, path?: string): Promise<void> => {
+  public dump = async (symbol: string, strategyName: string, path?: string, columns?: Columns[]): Promise<void> => {
     backtest.loggerService.info(PARTIAL_METHOD_NAME_DUMP, { symbol, strategyName, path });
 
     backtest.strategyValidationService.validate(strategyName, PARTIAL_METHOD_NAME_DUMP);
@@ -172,7 +175,7 @@ export class PartialUtils {
       riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, PARTIAL_METHOD_NAME_DUMP));
     }
 
-    await backtest.partialMarkdownService.dump(symbol, strategyName, path);
+    await backtest.partialMarkdownService.dump(symbol, strategyName, path, columns);
   };
 }
 

@@ -6,6 +6,7 @@ import {
 import backtest from "../lib";
 import { exitEmitter, doneLiveSubject } from "../config/emitters";
 import { getErrorMessage, memoize, randomString, singlerun } from "functools-kit";
+import { Columns } from "../lib/services/markdown/LiveMarkdownService";
 
 const LIVE_METHOD_NAME_RUN = "LiveUtils.run";
 const LIVE_METHOD_NAME_BACKGROUND = "LiveUtils.background";
@@ -292,6 +293,7 @@ export class LiveInstance {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to generate report for
+   * @param columns - Optional columns configuration for the report
    * @returns Promise resolving to markdown formatted report string
    *
    * @example
@@ -301,12 +303,12 @@ export class LiveInstance {
    * console.log(markdown);
    * ```
    */
-  public getReport = async (symbol: string, strategyName: StrategyName): Promise<string> => {
+  public getReport = async (symbol: string, strategyName: StrategyName, columns?: Columns[]): Promise<string> => {
     backtest.loggerService.info(LIVE_METHOD_NAME_GET_REPORT, {
       symbol,
       strategyName,
     });
-    return await backtest.liveMarkdownService.getReport(symbol, strategyName);
+    return await backtest.liveMarkdownService.getReport(symbol, strategyName, columns);
   };
 
   /**
@@ -315,6 +317,7 @@ export class LiveInstance {
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to save report for
    * @param path - Optional directory path to save report (default: "./dump/live")
+   * @param columns - Optional columns configuration for the report
    *
    * @example
    * ```typescript
@@ -329,14 +332,15 @@ export class LiveInstance {
   public dump = async (
     symbol: string,
     strategyName: StrategyName,
-    path?: string
+    path?: string,
+    columns?: Columns[]
   ): Promise<void> => {
     backtest.loggerService.info(LIVE_METHOD_NAME_DUMP, {
       symbol,
       strategyName,
       path,
     });
-    await backtest.liveMarkdownService.dump(symbol, strategyName, path);
+    await backtest.liveMarkdownService.dump(symbol, strategyName, path, columns);
   };
 }
 
@@ -515,6 +519,7 @@ export class LiveUtils {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to generate report for
+   * @param columns - Optional columns configuration for the report
    * @returns Promise resolving to markdown formatted report string
    *
    * @example
@@ -523,7 +528,7 @@ export class LiveUtils {
    * console.log(markdown);
    * ```
    */
-  public getReport = async (symbol: string, strategyName: StrategyName): Promise<string> => {
+  public getReport = async (symbol: string, strategyName: StrategyName, columns?: Columns[]): Promise<string> => {
     backtest.strategyValidationService.validate(strategyName, LIVE_METHOD_NAME_GET_REPORT);
 
     {
@@ -533,7 +538,7 @@ export class LiveUtils {
     }
 
     const instance = this._getInstance(symbol, strategyName);
-    return await instance.getReport(symbol, strategyName);
+    return await instance.getReport(symbol, strategyName, columns);
   };
 
   /**
@@ -542,6 +547,7 @@ export class LiveUtils {
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to save report for
    * @param path - Optional directory path to save report (default: "./dump/live")
+   * @param columns - Optional columns configuration for the report
    *
    * @example
    * ```typescript
@@ -555,7 +561,8 @@ export class LiveUtils {
   public dump = async (
     symbol: string,
     strategyName: StrategyName,
-    path?: string
+    path?: string,
+    columns?: Columns[]
   ): Promise<void> => {
     backtest.strategyValidationService.validate(strategyName, LIVE_METHOD_NAME_DUMP);
 
@@ -566,7 +573,7 @@ export class LiveUtils {
     }
 
     const instance = this._getInstance(symbol, strategyName);
-    return await instance.dump(symbol, strategyName, path);
+    return await instance.dump(symbol, strategyName, path, columns);
   };
 
   /**

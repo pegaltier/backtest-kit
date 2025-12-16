@@ -1,6 +1,7 @@
 import backtest from "../lib";
 import { HeatmapStatisticsModel } from "../model/HeatmapStatistics.model";
 import { StrategyName } from "../interfaces/Strategy.interface";
+import { Columns } from "../lib/services/markdown/HeatMarkdownService";
 
 const HEAT_METHOD_NAME_GET_DATA = "HeatUtils.getData";
 const HEAT_METHOD_NAME_GET_REPORT = "HeatUtils.getReport";
@@ -74,6 +75,7 @@ export class HeatUtils {
    * Symbols are sorted by Total PNL descending.
    *
    * @param strategyName - Strategy name to generate heatmap report for
+   * @param columns - Optional columns configuration for the report
    * @returns Promise resolving to markdown formatted report string
    *
    * @example
@@ -92,7 +94,7 @@ export class HeatUtils {
    * // ...
    * ```
    */
-  public getReport = async (strategyName: StrategyName): Promise<string> => {
+  public getReport = async (strategyName: StrategyName, columns?: Columns[]): Promise<string> => {
     backtest.loggerService.info(HEAT_METHOD_NAME_GET_REPORT, { strategyName });
 
     backtest.strategyValidationService.validate(strategyName, HEAT_METHOD_NAME_GET_REPORT);
@@ -103,7 +105,7 @@ export class HeatUtils {
       riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, HEAT_METHOD_NAME_GET_REPORT));
     }
 
-    return await backtest.heatMarkdownService.getReport(strategyName);
+    return await backtest.heatMarkdownService.getReport(strategyName, columns);
   };
 
   /**
@@ -114,6 +116,7 @@ export class HeatUtils {
    *
    * @param strategyName - Strategy name to save heatmap report for
    * @param path - Optional directory path to save report (default: "./dump/heatmap")
+   * @param columns - Optional columns configuration for the report
    *
    * @example
    * ```typescript
@@ -124,7 +127,7 @@ export class HeatUtils {
    * await Heat.dump("my-strategy", "./reports");
    * ```
    */
-  public dump = async (strategyName: StrategyName, path?: string): Promise<void> => {
+  public dump = async (strategyName: StrategyName, path?: string, columns?: Columns[]): Promise<void> => {
     backtest.loggerService.info(HEAT_METHOD_NAME_DUMP, { strategyName, path });
 
     backtest.strategyValidationService.validate(strategyName, HEAT_METHOD_NAME_DUMP);
@@ -135,7 +138,7 @@ export class HeatUtils {
       riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, HEAT_METHOD_NAME_DUMP));
     }
 
-    await backtest.heatMarkdownService.dump(strategyName, path);
+    await backtest.heatMarkdownService.dump(strategyName, path, columns);
   };
 }
 

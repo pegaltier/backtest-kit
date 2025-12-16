@@ -4760,6 +4760,153 @@ declare class PersistPartialUtils {
  */
 declare const PersistPartialAdapter: PersistPartialUtils;
 
+type Columns$6 = ColumnModel<IStrategyTickResultClosed>;
+/**
+ * Service for generating and saving backtest markdown reports.
+ *
+ * Features:
+ * - Listens to signal events via onTick callback
+ * - Accumulates closed signals per strategy using memoized storage
+ * - Generates markdown tables with detailed signal information
+ * - Saves reports to disk in logs/backtest/{strategyName}.md
+ *
+ * @example
+ * ```typescript
+ * const service = new BacktestMarkdownService();
+ *
+ * // Add to strategy callbacks
+ * addStrategy({
+ *   strategyName: "my-strategy",
+ *   callbacks: {
+ *     onTick: (symbol, result, backtest) => {
+ *       service.tick(result);
+ *     }
+ *   }
+ * });
+ *
+ * // After backtest, generate and save report
+ * await service.saveReport("my-strategy");
+ * ```
+ */
+declare class BacktestMarkdownService {
+    /** Logger service for debug output */
+    private readonly loggerService;
+    /**
+     * Memoized function to get or create ReportStorage for a symbol-strategy pair.
+     * Each symbol-strategy combination gets its own isolated storage instance.
+     */
+    private getStorage;
+    /**
+     * Processes tick events and accumulates closed signals.
+     * Should be called from IStrategyCallbacks.onTick.
+     *
+     * Only processes closed signals - opened signals are ignored.
+     *
+     * @param data - Tick result from strategy execution (opened or closed)
+     *
+     * @example
+     * ```typescript
+     * const service = new BacktestMarkdownService();
+     *
+     * callbacks: {
+     *   onTick: (symbol, result, backtest) => {
+     *     service.tick(result);
+     *   }
+     * }
+     * ```
+     */
+    private tick;
+    /**
+     * Gets statistical data from all closed signals for a symbol-strategy pair.
+     * Delegates to ReportStorage.getData().
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Strategy name to get data for
+     * @returns Statistical data object with all metrics
+     *
+     * @example
+     * ```typescript
+     * const service = new BacktestMarkdownService();
+     * const stats = await service.getData("BTCUSDT", "my-strategy");
+     * console.log(stats.sharpeRatio, stats.winRate);
+     * ```
+     */
+    getData: (symbol: string, strategyName: StrategyName) => Promise<BacktestStatisticsModel>;
+    /**
+     * Generates markdown report with all closed signals for a symbol-strategy pair.
+     * Delegates to ReportStorage.generateReport().
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Strategy name to generate report for
+     * @param columns - Column configuration for formatting the table
+     * @returns Markdown formatted report string with table of all closed signals
+     *
+     * @example
+     * ```typescript
+     * const service = new BacktestMarkdownService();
+     * const markdown = await service.getReport("BTCUSDT", "my-strategy");
+     * console.log(markdown);
+     * ```
+     */
+    getReport: (symbol: string, strategyName: StrategyName, columns?: Columns$6[]) => Promise<string>;
+    /**
+     * Saves symbol-strategy report to disk.
+     * Creates directory if it doesn't exist.
+     * Delegates to ReportStorage.dump().
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Strategy name to save report for
+     * @param path - Directory path to save report (default: "./dump/backtest")
+     * @param columns - Column configuration for formatting the table
+     *
+     * @example
+     * ```typescript
+     * const service = new BacktestMarkdownService();
+     *
+     * // Save to default path: ./dump/backtest/my-strategy.md
+     * await service.dump("BTCUSDT", "my-strategy");
+     *
+     * // Save to custom path: ./custom/path/my-strategy.md
+     * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
+     * ```
+     */
+    dump: (symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$6[]) => Promise<void>;
+    /**
+     * Clears accumulated signal data from storage.
+     * If ctx is provided, clears only that specific symbol-strategy pair's data.
+     * If nothing is provided, clears all data.
+     *
+     * @param ctx - Optional context with symbol and strategyName
+     *
+     * @example
+     * ```typescript
+     * const service = new BacktestMarkdownService();
+     *
+     * // Clear specific symbol-strategy pair
+     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy" });
+     *
+     * // Clear all data
+     * await service.clear();
+     * ```
+     */
+    clear: (ctx?: {
+        symbol: string;
+        strategyName: StrategyName;
+    }) => Promise<void>;
+    /**
+     * Initializes the service by subscribing to backtest signal events.
+     * Uses singleshot to ensure initialization happens only once.
+     * Automatically called on first use.
+     *
+     * @example
+     * ```typescript
+     * const service = new BacktestMarkdownService();
+     * await service.init(); // Subscribe to backtest events
+     * ```
+     */
+    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+}
+
 /**
  * Utility class for backtest operations.
  *
@@ -4860,6 +5007,7 @@ declare class BacktestUtils {
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to generate report for
+     * @param columns - Optional columns configuration for the report
      * @returns Promise resolving to markdown formatted report string
      *
      * @example
@@ -4868,13 +5016,14 @@ declare class BacktestUtils {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, columns?: Columns$6[]) => Promise<string>;
     /**
      * Saves strategy report to disk.
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to save report for
      * @param path - Optional directory path to save report (default: "./dump/backtest")
+     * @param columns - Optional columns configuration for the report
      *
      * @example
      * ```typescript
@@ -4885,7 +5034,7 @@ declare class BacktestUtils {
      * await Backtest.dump("BTCUSDT", "my-strategy", "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, path?: string) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$6[]) => Promise<void>;
     /**
      * Lists all active backtest instances with their current status.
      *
@@ -4925,6 +5074,158 @@ declare class BacktestUtils {
  * ```
  */
 declare const Backtest: BacktestUtils;
+
+type Columns$5 = ColumnModel<TickEvent>;
+/**
+ * Service for generating and saving live trading markdown reports.
+ *
+ * Features:
+ * - Listens to all signal events via onTick callback
+ * - Accumulates all events (idle, opened, active, closed) per strategy
+ * - Generates markdown tables with detailed event information
+ * - Provides trading statistics (win rate, average PNL)
+ * - Saves reports to disk in logs/live/{strategyName}.md
+ *
+ * @example
+ * ```typescript
+ * const service = new LiveMarkdownService();
+ *
+ * // Add to strategy callbacks
+ * addStrategy({
+ *   strategyName: "my-strategy",
+ *   callbacks: {
+ *     onTick: (symbol, result, backtest) => {
+ *       if (!backtest) {
+ *         service.tick(result);
+ *       }
+ *     }
+ *   }
+ * });
+ *
+ * // Later: generate and save report
+ * await service.dump("my-strategy");
+ * ```
+ */
+declare class LiveMarkdownService {
+    /** Logger service for debug output */
+    private readonly loggerService;
+    /**
+     * Memoized function to get or create ReportStorage for a symbol-strategy pair.
+     * Each symbol-strategy combination gets its own isolated storage instance.
+     */
+    private getStorage;
+    /**
+     * Processes tick events and accumulates all event types.
+     * Should be called from IStrategyCallbacks.onTick.
+     *
+     * Processes all event types: idle, opened, active, closed.
+     *
+     * @param data - Tick result from strategy execution
+     *
+     * @example
+     * ```typescript
+     * const service = new LiveMarkdownService();
+     *
+     * callbacks: {
+     *   onTick: (symbol, result, backtest) => {
+     *     if (!backtest) {
+     *       service.tick(result);
+     *     }
+     *   }
+     * }
+     * ```
+     */
+    private tick;
+    /**
+     * Gets statistical data from all live trading events for a symbol-strategy pair.
+     * Delegates to ReportStorage.getData().
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Strategy name to get data for
+     * @returns Statistical data object with all metrics
+     *
+     * @example
+     * ```typescript
+     * const service = new LiveMarkdownService();
+     * const stats = await service.getData("BTCUSDT", "my-strategy");
+     * console.log(stats.sharpeRatio, stats.winRate);
+     * ```
+     */
+    getData: (symbol: string, strategyName: StrategyName) => Promise<LiveStatisticsModel>;
+    /**
+     * Generates markdown report with all events for a symbol-strategy pair.
+     * Delegates to ReportStorage.getReport().
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Strategy name to generate report for
+     * @param columns - Column configuration for formatting the table
+     * @returns Markdown formatted report string with table of all events
+     *
+     * @example
+     * ```typescript
+     * const service = new LiveMarkdownService();
+     * const markdown = await service.getReport("BTCUSDT", "my-strategy");
+     * console.log(markdown);
+     * ```
+     */
+    getReport: (symbol: string, strategyName: StrategyName, columns?: Columns$5[]) => Promise<string>;
+    /**
+     * Saves symbol-strategy report to disk.
+     * Creates directory if it doesn't exist.
+     * Delegates to ReportStorage.dump().
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Strategy name to save report for
+     * @param path - Directory path to save report (default: "./dump/live")
+     * @param columns - Column configuration for formatting the table
+     *
+     * @example
+     * ```typescript
+     * const service = new LiveMarkdownService();
+     *
+     * // Save to default path: ./dump/live/my-strategy.md
+     * await service.dump("BTCUSDT", "my-strategy");
+     *
+     * // Save to custom path: ./custom/path/my-strategy.md
+     * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
+     * ```
+     */
+    dump: (symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$5[]) => Promise<void>;
+    /**
+     * Clears accumulated event data from storage.
+     * If ctx is provided, clears only that specific symbol-strategy pair's data.
+     * If nothing is provided, clears all data.
+     *
+     * @param ctx - Optional context with symbol and strategyName
+     *
+     * @example
+     * ```typescript
+     * const service = new LiveMarkdownService();
+     *
+     * // Clear specific symbol-strategy pair
+     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy" });
+     *
+     * // Clear all data
+     * await service.clear();
+     * ```
+     */
+    clear: (ctx?: {
+        symbol: string;
+        strategyName: StrategyName;
+    }) => Promise<void>;
+    /**
+     * Initializes the service by subscribing to live signal events.
+     * Uses singleshot to ensure initialization happens only once.
+     * Automatically called on first use.
+     *
+     * @example
+     * ```typescript
+     * const service = new LiveMarkdownService();
+     * await service.init(); // Subscribe to live events
+     * ```
+     */
+    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+}
 
 /**
  * Utility class for live trading operations.
@@ -5037,6 +5338,7 @@ declare class LiveUtils {
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to generate report for
+     * @param columns - Optional columns configuration for the report
      * @returns Promise resolving to markdown formatted report string
      *
      * @example
@@ -5045,13 +5347,14 @@ declare class LiveUtils {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, columns?: Columns$5[]) => Promise<string>;
     /**
      * Saves strategy report to disk.
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to save report for
      * @param path - Optional directory path to save report (default: "./dump/live")
+     * @param columns - Optional columns configuration for the report
      *
      * @example
      * ```typescript
@@ -5062,7 +5365,7 @@ declare class LiveUtils {
      * await Live.dump("BTCUSDT", "my-strategy", "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, path?: string) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$5[]) => Promise<void>;
     /**
      * Lists all active live trading instances with their current status.
      *
@@ -5099,6 +5402,142 @@ declare class LiveUtils {
  * ```
  */
 declare const Live: LiveUtils;
+
+type Columns$4 = ColumnModel<ScheduledEvent>;
+/**
+ * Service for generating and saving scheduled signals markdown reports.
+ *
+ * Features:
+ * - Listens to scheduled and cancelled signal events via signalLiveEmitter
+ * - Accumulates all events (scheduled, cancelled) per strategy
+ * - Generates markdown tables with detailed event information
+ * - Provides statistics (cancellation rate, average wait time)
+ * - Saves reports to disk in logs/schedule/{strategyName}.md
+ *
+ * @example
+ * ```typescript
+ * const service = new ScheduleMarkdownService();
+ *
+ * // Service automatically subscribes to signalLiveEmitter on init
+ * // No manual callback setup needed
+ *
+ * // Later: generate and save report
+ * await service.dump("my-strategy");
+ * ```
+ */
+declare class ScheduleMarkdownService {
+    /** Logger service for debug output */
+    private readonly loggerService;
+    /**
+     * Memoized function to get or create ReportStorage for a symbol-strategy pair.
+     * Each symbol-strategy combination gets its own isolated storage instance.
+     */
+    private getStorage;
+    /**
+     * Processes tick events and accumulates scheduled/opened/cancelled events.
+     * Should be called from signalEmitter subscription.
+     *
+     * Processes only scheduled, opened and cancelled event types.
+     *
+     * @param data - Tick result from strategy execution
+     *
+     * @example
+     * ```typescript
+     * const service = new ScheduleMarkdownService();
+     * // Service automatically subscribes in init()
+     * ```
+     */
+    private tick;
+    /**
+     * Gets statistical data from all scheduled signal events for a symbol-strategy pair.
+     * Delegates to ReportStorage.getData().
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Strategy name to get data for
+     * @returns Statistical data object with all metrics
+     *
+     * @example
+     * ```typescript
+     * const service = new ScheduleMarkdownService();
+     * const stats = await service.getData("BTCUSDT", "my-strategy");
+     * console.log(stats.cancellationRate, stats.avgWaitTime);
+     * ```
+     */
+    getData: (symbol: string, strategyName: StrategyName) => Promise<ScheduleStatisticsModel>;
+    /**
+     * Generates markdown report with all scheduled events for a symbol-strategy pair.
+     * Delegates to ReportStorage.getReport().
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Strategy name to generate report for
+     * @param columns - Column configuration for formatting the table
+     * @returns Markdown formatted report string with table of all events
+     *
+     * @example
+     * ```typescript
+     * const service = new ScheduleMarkdownService();
+     * const markdown = await service.getReport("BTCUSDT", "my-strategy");
+     * console.log(markdown);
+     * ```
+     */
+    getReport: (symbol: string, strategyName: StrategyName, columns?: Columns$4[]) => Promise<string>;
+    /**
+     * Saves symbol-strategy report to disk.
+     * Creates directory if it doesn't exist.
+     * Delegates to ReportStorage.dump().
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Strategy name to save report for
+     * @param path - Directory path to save report (default: "./dump/schedule")
+     * @param columns - Column configuration for formatting the table
+     *
+     * @example
+     * ```typescript
+     * const service = new ScheduleMarkdownService();
+     *
+     * // Save to default path: ./dump/schedule/my-strategy.md
+     * await service.dump("BTCUSDT", "my-strategy");
+     *
+     * // Save to custom path: ./custom/path/my-strategy.md
+     * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
+     * ```
+     */
+    dump: (symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$4[]) => Promise<void>;
+    /**
+     * Clears accumulated event data from storage.
+     * If ctx is provided, clears only that specific symbol-strategy pair's data.
+     * If nothing is provided, clears all data.
+     *
+     * @param ctx - Optional context with symbol and strategyName
+     *
+     * @example
+     * ```typescript
+     * const service = new ScheduleMarkdownService();
+     *
+     * // Clear specific symbol-strategy pair
+     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy" });
+     *
+     * // Clear all data
+     * await service.clear();
+     * ```
+     */
+    clear: (ctx?: {
+        symbol: string;
+        strategyName: StrategyName;
+    }) => Promise<void>;
+    /**
+     * Initializes the service by subscribing to live signal events.
+     * Uses singleshot to ensure initialization happens only once.
+     * Automatically called on first use.
+     *
+     * @example
+     * ```typescript
+     * const service = new ScheduleMarkdownService();
+     * await service.init(); // Subscribe to live events
+     * ```
+     */
+    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+}
 
 /**
  * Utility class for scheduled signals reporting operations.
@@ -5145,6 +5584,7 @@ declare class ScheduleUtils {
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to generate report for
+     * @param columns - Optional columns configuration for the report
      * @returns Promise resolving to markdown formatted report string
      *
      * @example
@@ -5153,13 +5593,14 @@ declare class ScheduleUtils {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, columns?: Columns$4[]) => Promise<string>;
     /**
      * Saves strategy report to disk.
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to save report for
      * @param path - Optional directory path to save report (default: "./dump/schedule")
+     * @param columns - Optional columns configuration for the report
      *
      * @example
      * ```typescript
@@ -5170,7 +5611,7 @@ declare class ScheduleUtils {
      * await Schedule.dump("BTCUSDT", "my-strategy", "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, path?: string) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$4[]) => Promise<void>;
 }
 /**
  * Singleton instance of ScheduleUtils for convenient scheduled signals reporting.
@@ -5184,6 +5625,115 @@ declare class ScheduleUtils {
  * ```
  */
 declare const Schedule: ScheduleUtils;
+
+type Columns$3 = ColumnModel<MetricStats>;
+/**
+ * Service for collecting and analyzing performance metrics.
+ *
+ * Features:
+ * - Listens to performance events via performanceEmitter
+ * - Accumulates metrics per strategy
+ * - Calculates aggregated statistics (avg, min, max, percentiles)
+ * - Generates markdown reports with bottleneck analysis
+ * - Saves reports to disk in logs/performance/{strategyName}.md
+ *
+ * @example
+ * ```typescript
+ * import { listenPerformance } from "backtest-kit";
+ *
+ * // Subscribe to performance events
+ * listenPerformance((event) => {
+ *   console.log(`${event.metricType}: ${event.duration.toFixed(2)}ms`);
+ * });
+ *
+ * // After execution, generate report
+ * const stats = await Performance.getData("my-strategy");
+ * console.log("Bottlenecks:", stats.metricStats);
+ *
+ * // Save report to disk
+ * await Performance.dump("BTCUSDT", "my-strategy");
+ * ```
+ */
+declare class PerformanceMarkdownService {
+    /** Logger service for debug output */
+    private readonly loggerService;
+    /**
+     * Memoized function to get or create PerformanceStorage for a symbol-strategy pair.
+     * Each symbol-strategy combination gets its own isolated storage instance.
+     */
+    private getStorage;
+    /**
+     * Processes performance events and accumulates metrics.
+     * Should be called from performance tracking code.
+     *
+     * @param event - Performance event with timing data
+     */
+    private track;
+    /**
+     * Gets aggregated performance statistics for a symbol-strategy pair.
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Strategy name to get data for
+     * @returns Performance statistics with aggregated metrics
+     *
+     * @example
+     * ```typescript
+     * const stats = await performanceService.getData("BTCUSDT", "my-strategy");
+     * console.log("Total time:", stats.totalDuration);
+     * console.log("Slowest operation:", Object.values(stats.metricStats)
+     *   .sort((a, b) => b.avgDuration - a.avgDuration)[0]);
+     * ```
+     */
+    getData: (symbol: string, strategyName: string) => Promise<PerformanceStatisticsModel>;
+    /**
+     * Generates markdown report with performance analysis.
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Strategy name to generate report for
+     * @param columns - Column configuration for formatting the table
+     * @returns Markdown formatted report string
+     *
+     * @example
+     * ```typescript
+     * const markdown = await performanceService.getReport("BTCUSDT", "my-strategy");
+     * console.log(markdown);
+     * ```
+     */
+    getReport: (symbol: string, strategyName: string, columns?: Columns$3[]) => Promise<string>;
+    /**
+     * Saves performance report to disk.
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Strategy name to save report for
+     * @param path - Directory path to save report
+     * @param columns - Column configuration for formatting the table
+     *
+     * @example
+     * ```typescript
+     * // Save to default path: ./dump/performance/my-strategy.md
+     * await performanceService.dump("BTCUSDT", "my-strategy");
+     *
+     * // Save to custom path
+     * await performanceService.dump("BTCUSDT", "my-strategy", "./custom/path");
+     * ```
+     */
+    dump: (symbol: string, strategyName: string, path?: string, columns?: Columns$3[]) => Promise<void>;
+    /**
+     * Clears accumulated performance data from storage.
+     *
+     * @param symbol - Optional trading pair symbol
+     * @param strategyName - Optional strategy name
+     */
+    clear: (ctx?: {
+        symbol: string;
+        strategyName: string;
+    }) => Promise<void>;
+    /**
+     * Initializes the service by subscribing to performance events.
+     * Uses singleshot to ensure initialization happens only once.
+     */
+    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+}
 
 /**
  * Performance class provides static methods for performance metrics analysis.
@@ -5257,6 +5807,7 @@ declare class Performance {
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to generate report for
+     * @param columns - Optional columns configuration for the report
      * @returns Markdown formatted report string
      *
      * @example
@@ -5269,7 +5820,7 @@ declare class Performance {
      * await fs.writeFile("performance-report.md", markdown);
      * ```
      */
-    static getReport(symbol: string, strategyName: string): Promise<string>;
+    static getReport(symbol: string, strategyName: string, columns?: Columns$3[]): Promise<string>;
     /**
      * Saves performance report to disk.
      *
@@ -5279,6 +5830,7 @@ declare class Performance {
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to save report for
      * @param path - Optional custom directory path
+     * @param columns - Optional columns configuration for the report
      *
      * @example
      * ```typescript
@@ -5289,7 +5841,151 @@ declare class Performance {
      * await Performance.dump("BTCUSDT", "my-strategy", "./reports/perf");
      * ```
      */
-    static dump(symbol: string, strategyName: string, path?: string): Promise<void>;
+    static dump(symbol: string, strategyName: string, path?: string, columns?: Columns$3[]): Promise<void>;
+}
+
+type StrategyColumn = ColumnModel<IStrategyResult>;
+type PnlColumn = ColumnModel<SignalData$1>;
+/**
+ * Service for generating and saving walker markdown reports.
+ *
+ * Features:
+ * - Listens to walker events via tick callback
+ * - Accumulates strategy results per walker using memoized storage
+ * - Generates markdown tables with detailed strategy comparison
+ * - Saves reports to disk in logs/walker/{walkerName}.md
+ *
+ * @example
+ * ```typescript
+ * const service = new WalkerMarkdownService();
+ * const results = await service.getData("my-walker");
+ * await service.dump("my-walker");
+ * ```
+ */
+declare class WalkerMarkdownService {
+    /** Logger service for debug output */
+    private readonly loggerService;
+    /**
+     * Memoized function to get or create ReportStorage for a walker.
+     * Each walker gets its own isolated storage instance.
+     */
+    private getStorage;
+    /**
+     * Processes walker progress events and accumulates strategy results.
+     * Should be called from walkerEmitter.
+     *
+     * @param data - Walker contract from walker execution
+     *
+     * @example
+     * ```typescript
+     * const service = new WalkerMarkdownService();
+     * walkerEmitter.subscribe((data) => service.tick(data));
+     * ```
+     */
+    private tick;
+    /**
+     * Gets walker results data from all strategy results.
+     * Delegates to ReportStorage.getData().
+     *
+     * @param walkerName - Walker name to get data for
+     * @param symbol - Trading symbol
+     * @param metric - Metric being optimized
+     * @param context - Context with exchangeName and frameName
+     * @returns Walker results data object with all metrics
+     *
+     * @example
+     * ```typescript
+     * const service = new WalkerMarkdownService();
+     * const results = await service.getData("my-walker", "BTCUSDT", "sharpeRatio", { exchangeName: "binance", frameName: "1d" });
+     * console.log(results.bestStrategy, results.bestMetric);
+     * ```
+     */
+    getData: (walkerName: WalkerName, symbol: string, metric: WalkerMetric, context: {
+        exchangeName: string;
+        frameName: string;
+    }) => Promise<WalkerCompleteContract>;
+    /**
+     * Generates markdown report with all strategy results for a walker.
+     * Delegates to ReportStorage.getReport().
+     *
+     * @param walkerName - Walker name to generate report for
+     * @param symbol - Trading symbol
+     * @param metric - Metric being optimized
+     * @param context - Context with exchangeName and frameName
+     * @param strategyColumns - Column configuration for strategy comparison table
+     * @param pnlColumns - Column configuration for PNL table
+     * @returns Markdown formatted report string
+     *
+     * @example
+     * ```typescript
+     * const service = new WalkerMarkdownService();
+     * const markdown = await service.getReport("my-walker", "BTCUSDT", "sharpeRatio", { exchangeName: "binance", frameName: "1d" });
+     * console.log(markdown);
+     * ```
+     */
+    getReport: (walkerName: WalkerName, symbol: string, metric: WalkerMetric, context: {
+        exchangeName: string;
+        frameName: string;
+    }, strategyColumns?: StrategyColumn[], pnlColumns?: PnlColumn[]) => Promise<string>;
+    /**
+     * Saves walker report to disk.
+     * Creates directory if it doesn't exist.
+     * Delegates to ReportStorage.dump().
+     *
+     * @param walkerName - Walker name to save report for
+     * @param symbol - Trading symbol
+     * @param metric - Metric being optimized
+     * @param context - Context with exchangeName and frameName
+     * @param path - Directory path to save report (default: "./dump/walker")
+     * @param strategyColumns - Column configuration for strategy comparison table
+     * @param pnlColumns - Column configuration for PNL table
+     *
+     * @example
+     * ```typescript
+     * const service = new WalkerMarkdownService();
+     *
+     * // Save to default path: ./dump/walker/my-walker.md
+     * await service.dump("my-walker", "BTCUSDT", "sharpeRatio", { exchangeName: "binance", frameName: "1d" });
+     *
+     * // Save to custom path: ./custom/path/my-walker.md
+     * await service.dump("my-walker", "BTCUSDT", "sharpeRatio", { exchangeName: "binance", frameName: "1d" }, "./custom/path");
+     * ```
+     */
+    dump: (walkerName: WalkerName, symbol: string, metric: WalkerMetric, context: {
+        exchangeName: string;
+        frameName: string;
+    }, path?: string, strategyColumns?: StrategyColumn[], pnlColumns?: PnlColumn[]) => Promise<void>;
+    /**
+     * Clears accumulated result data from storage.
+     * If walkerName is provided, clears only that walker's data.
+     * If walkerName is omitted, clears all walkers' data.
+     *
+     * @param walkerName - Optional walker name to clear specific walker data
+     *
+     * @example
+     * ```typescript
+     * const service = new WalkerMarkdownService();
+     *
+     * // Clear specific walker data
+     * await service.clear("my-walker");
+     *
+     * // Clear all walkers' data
+     * await service.clear();
+     * ```
+     */
+    clear: (walkerName?: WalkerName) => Promise<void>;
+    /**
+     * Initializes the service by subscribing to walker events.
+     * Uses singleshot to ensure initialization happens only once.
+     * Automatically called on first use.
+     *
+     * @example
+     * ```typescript
+     * const service = new WalkerMarkdownService();
+     * await service.init(); // Subscribe to walker events
+     * ```
+     */
+    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
 }
 
 /**
@@ -5392,6 +6088,8 @@ declare class WalkerUtils {
      *
      * @param symbol - Trading symbol
      * @param walkerName - Walker name to generate report for
+     * @param strategyColumns - Optional strategy columns configuration
+     * @param pnlColumns - Optional PNL columns configuration
      * @returns Promise resolving to markdown formatted report string
      *
      * @example
@@ -5400,13 +6098,15 @@ declare class WalkerUtils {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, walkerName: WalkerName) => Promise<string>;
+    getReport: (symbol: string, walkerName: WalkerName, strategyColumns?: StrategyColumn[], pnlColumns?: PnlColumn[]) => Promise<string>;
     /**
      * Saves walker report to disk.
      *
      * @param symbol - Trading symbol
      * @param walkerName - Walker name to save report for
      * @param path - Optional directory path to save report (default: "./dump/walker")
+     * @param strategyColumns - Optional strategy columns configuration
+     * @param pnlColumns - Optional PNL columns configuration
      *
      * @example
      * ```typescript
@@ -5417,7 +6117,7 @@ declare class WalkerUtils {
      * await Walker.dump("BTCUSDT", "my-walker", "./custom/path");
      * ```
      */
-    dump: (symbol: string, walkerName: WalkerName, path?: string) => Promise<void>;
+    dump: (symbol: string, walkerName: WalkerName, path?: string, strategyColumns?: StrategyColumn[], pnlColumns?: PnlColumn[]) => Promise<void>;
     /**
      * Lists all active walker instances with their current status.
      *
@@ -5454,6 +6154,150 @@ declare class WalkerUtils {
  * ```
  */
 declare const Walker: WalkerUtils;
+
+type Columns$2 = ColumnModel<IHeatmapRow>;
+/**
+ * Portfolio Heatmap Markdown Service.
+ *
+ * Subscribes to signalEmitter and aggregates statistics across all symbols per strategy.
+ * Provides portfolio-wide metrics and per-symbol breakdowns.
+ *
+ * Features:
+ * - Real-time aggregation of closed signals
+ * - Per-symbol statistics (Total PNL, Sharpe Ratio, Max Drawdown, Trades)
+ * - Portfolio-wide aggregated metrics per strategy
+ * - Markdown table report generation
+ * - Safe math (handles NaN/Infinity gracefully)
+ * - Strategy-based navigation using memoized storage
+ *
+ * @example
+ * ```typescript
+ * const service = new HeatMarkdownService();
+ *
+ * // Service automatically tracks all closed signals per strategy
+ * const stats = await service.getData("my-strategy");
+ * console.log(`Portfolio Total PNL: ${stats.portfolioTotalPnl}%`);
+ *
+ * // Generate and save report
+ * await service.dump("my-strategy", "./reports");
+ * ```
+ */
+declare class HeatMarkdownService {
+    /** Logger service for debug output */
+    private readonly loggerService;
+    /**
+     * Memoized function to get or create HeatmapStorage for a strategy.
+     * Each strategy gets its own isolated heatmap storage instance.
+     */
+    private getStorage;
+    /**
+     * Processes tick events and accumulates closed signals.
+     * Should be called from signal emitter subscription.
+     *
+     * Only processes closed signals - opened signals are ignored.
+     *
+     * @param data - Tick result from strategy execution (closed signals only)
+     */
+    private tick;
+    /**
+     * Gets aggregated portfolio heatmap statistics for a strategy.
+     *
+     * @param strategyName - Strategy name to get heatmap data for
+     * @returns Promise resolving to heatmap statistics with per-symbol and portfolio-wide metrics
+     *
+     * @example
+     * ```typescript
+     * const service = new HeatMarkdownService();
+     * const stats = await service.getData("my-strategy");
+     *
+     * console.log(`Total symbols: ${stats.totalSymbols}`);
+     * console.log(`Portfolio PNL: ${stats.portfolioTotalPnl}%`);
+     *
+     * stats.symbols.forEach(row => {
+     *   console.log(`${row.symbol}: ${row.totalPnl}% (${row.totalTrades} trades)`);
+     * });
+     * ```
+     */
+    getData: (strategyName: StrategyName) => Promise<HeatmapStatisticsModel>;
+    /**
+     * Generates markdown report with portfolio heatmap table for a strategy.
+     *
+     * @param strategyName - Strategy name to generate heatmap report for
+     * @param columns - Column configuration for formatting the table
+     * @returns Promise resolving to markdown formatted report string
+     *
+     * @example
+     * ```typescript
+     * const service = new HeatMarkdownService();
+     * const markdown = await service.getReport("my-strategy");
+     * console.log(markdown);
+     * // Output:
+     * // # Portfolio Heatmap: my-strategy
+     * //
+     * // **Total Symbols:** 5 | **Portfolio PNL:** +45.3% | **Portfolio Sharpe:** 1.85 | **Total Trades:** 120
+     * //
+     * // | Symbol | Total PNL | Sharpe | Max DD | Trades |
+     * // |--------|-----------|--------|--------|--------|
+     * // | BTCUSDT | +15.5% | 2.10 | -2.5% | 45 |
+     * // | ETHUSDT | +12.3% | 1.85 | -3.1% | 38 |
+     * // ...
+     * ```
+     */
+    getReport: (strategyName: StrategyName, columns?: Columns$2[]) => Promise<string>;
+    /**
+     * Saves heatmap report to disk for a strategy.
+     *
+     * Creates directory if it doesn't exist.
+     * Default filename: {strategyName}.md
+     *
+     * @param strategyName - Strategy name to save heatmap report for
+     * @param path - Optional directory path to save report (default: "./dump/heatmap")
+     * @param columns - Column configuration for formatting the table
+     *
+     * @example
+     * ```typescript
+     * const service = new HeatMarkdownService();
+     *
+     * // Save to default path: ./dump/heatmap/my-strategy.md
+     * await service.dump("my-strategy");
+     *
+     * // Save to custom path: ./reports/my-strategy.md
+     * await service.dump("my-strategy", "./reports");
+     * ```
+     */
+    dump: (strategyName: StrategyName, path?: string, columns?: Columns$2[]) => Promise<void>;
+    /**
+     * Clears accumulated heatmap data from storage.
+     * If strategyName is provided, clears only that strategy's data.
+     * If strategyName is omitted, clears all strategies' data.
+     *
+     * @param strategyName - Optional strategy name to clear specific strategy data
+     *
+     * @example
+     * ```typescript
+     * const service = new HeatMarkdownService();
+     *
+     * // Clear specific strategy data
+     * await service.clear("my-strategy");
+     *
+     * // Clear all strategies' data
+     * await service.clear();
+     * ```
+     */
+    clear: (strategyName?: StrategyName) => Promise<void>;
+    /**
+     * Initializes the service by subscribing to signal events.
+     * Uses singleshot to ensure initialization happens only once.
+     * Automatically called on first use.
+     *
+     * @example
+     * ```typescript
+     * const service = new HeatMarkdownService();
+     * await service.init(); // Subscribe to signal events
+     * ```
+     */
+    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+}
 
 /**
  * Utility class for portfolio heatmap operations.
@@ -5510,6 +6354,7 @@ declare class HeatUtils {
      * Symbols are sorted by Total PNL descending.
      *
      * @param strategyName - Strategy name to generate heatmap report for
+     * @param columns - Optional columns configuration for the report
      * @returns Promise resolving to markdown formatted report string
      *
      * @example
@@ -5528,7 +6373,7 @@ declare class HeatUtils {
      * // ...
      * ```
      */
-    getReport: (strategyName: StrategyName) => Promise<string>;
+    getReport: (strategyName: StrategyName, columns?: Columns$2[]) => Promise<string>;
     /**
      * Saves heatmap report to disk for a strategy.
      *
@@ -5537,6 +6382,7 @@ declare class HeatUtils {
      *
      * @param strategyName - Strategy name to save heatmap report for
      * @param path - Optional directory path to save report (default: "./dump/heatmap")
+     * @param columns - Optional columns configuration for the report
      *
      * @example
      * ```typescript
@@ -5547,7 +6393,7 @@ declare class HeatUtils {
      * await Heat.dump("my-strategy", "./reports");
      * ```
      */
-    dump: (strategyName: StrategyName, path?: string) => Promise<void>;
+    dump: (strategyName: StrategyName, path?: string, columns?: Columns$2[]) => Promise<void>;
 }
 /**
  * Singleton instance of HeatUtils for convenient heatmap operations.
@@ -5739,6 +6585,153 @@ declare class OptimizerUtils {
  */
 declare const Optimizer: OptimizerUtils;
 
+type Columns$1 = ColumnModel<PartialEvent>;
+/**
+ * Service for generating and saving partial profit/loss markdown reports.
+ *
+ * Features:
+ * - Listens to partial profit and loss events via partialProfitSubject/partialLossSubject
+ * - Accumulates all events (profit, loss) per symbol-strategy pair
+ * - Generates markdown tables with detailed event information
+ * - Provides statistics (total profit/loss events)
+ * - Saves reports to disk in dump/partial/{symbol}_{strategyName}.md
+ *
+ * @example
+ * ```typescript
+ * const service = new PartialMarkdownService();
+ *
+ * // Service automatically subscribes to subjects on init
+ * // No manual callback setup needed
+ *
+ * // Later: generate and save report
+ * await service.dump("BTCUSDT", "my-strategy");
+ * ```
+ */
+declare class PartialMarkdownService {
+    /** Logger service for debug output */
+    private readonly loggerService;
+    /**
+     * Memoized function to get or create ReportStorage for a symbol-strategy pair.
+     * Each symbol-strategy combination gets its own isolated storage instance.
+     */
+    private getStorage;
+    /**
+     * Processes profit events and accumulates them.
+     * Should be called from partialProfitSubject subscription.
+     *
+     * @param data - Profit event data
+     *
+     * @example
+     * ```typescript
+     * const service = new PartialMarkdownService();
+     * // Service automatically subscribes in init()
+     * ```
+     */
+    private tickProfit;
+    /**
+     * Processes loss events and accumulates them.
+     * Should be called from partialLossSubject subscription.
+     *
+     * @param data - Loss event data
+     *
+     * @example
+     * ```typescript
+     * const service = new PartialMarkdownService();
+     * // Service automatically subscribes in init()
+     * ```
+     */
+    private tickLoss;
+    /**
+     * Gets statistical data from all partial profit/loss events for a symbol-strategy pair.
+     * Delegates to ReportStorage.getData().
+     *
+     * @param symbol - Trading pair symbol to get data for
+     * @param strategyName - Strategy name to get data for
+     * @returns Statistical data object with all metrics
+     *
+     * @example
+     * ```typescript
+     * const service = new PartialMarkdownService();
+     * const stats = await service.getData("BTCUSDT", "my-strategy");
+     * console.log(stats.totalProfit, stats.totalLoss);
+     * ```
+     */
+    getData: (symbol: string, strategyName: string) => Promise<PartialStatisticsModel>;
+    /**
+     * Generates markdown report with all partial events for a symbol-strategy pair.
+     * Delegates to ReportStorage.getReport().
+     *
+     * @param symbol - Trading pair symbol to generate report for
+     * @param strategyName - Strategy name to generate report for
+     * @param columns - Column configuration for formatting the table
+     * @returns Markdown formatted report string with table of all events
+     *
+     * @example
+     * ```typescript
+     * const service = new PartialMarkdownService();
+     * const markdown = await service.getReport("BTCUSDT", "my-strategy");
+     * console.log(markdown);
+     * ```
+     */
+    getReport: (symbol: string, strategyName: string, columns?: Columns$1[]) => Promise<string>;
+    /**
+     * Saves symbol-strategy report to disk.
+     * Creates directory if it doesn't exist.
+     * Delegates to ReportStorage.dump().
+     *
+     * @param symbol - Trading pair symbol to save report for
+     * @param strategyName - Strategy name to save report for
+     * @param path - Directory path to save report (default: "./dump/partial")
+     * @param columns - Column configuration for formatting the table
+     *
+     * @example
+     * ```typescript
+     * const service = new PartialMarkdownService();
+     *
+     * // Save to default path: ./dump/partial/BTCUSDT_my-strategy.md
+     * await service.dump("BTCUSDT", "my-strategy");
+     *
+     * // Save to custom path: ./custom/path/BTCUSDT_my-strategy.md
+     * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
+     * ```
+     */
+    dump: (symbol: string, strategyName: string, path?: string, columns?: Columns$1[]) => Promise<void>;
+    /**
+     * Clears accumulated event data from storage.
+     * If ctx is provided, clears only that specific symbol-strategy pair's data.
+     * If nothing is provided, clears all data.
+     *
+     * @param ctx - Optional context with symbol and strategyName
+     *
+     * @example
+     * ```typescript
+     * const service = new PartialMarkdownService();
+     *
+     * // Clear specific symbol-strategy pair
+     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy" });
+     *
+     * // Clear all data
+     * await service.clear();
+     * ```
+     */
+    clear: (ctx?: {
+        symbol: string;
+        strategyName: string;
+    }) => Promise<void>;
+    /**
+     * Initializes the service by subscribing to partial profit/loss events.
+     * Uses singleshot to ensure initialization happens only once.
+     * Automatically called on first use.
+     *
+     * @example
+     * ```typescript
+     * const service = new PartialMarkdownService();
+     * await service.init(); // Subscribe to profit/loss events
+     * ```
+     */
+    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+}
+
 /**
  * Utility class for accessing partial profit/loss reports and statistics.
  *
@@ -5818,6 +6811,7 @@ declare class PartialUtils {
      *
      * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
      * @param strategyName - Strategy name (e.g., "my-strategy")
+     * @param columns - Optional columns configuration for the report
      * @returns Promise resolving to markdown formatted report string
      *
      * @example
@@ -5838,7 +6832,7 @@ declare class PartialUtils {
      * // **Loss events:** 1
      * ```
      */
-    getReport: (symbol: string, strategyName: string) => Promise<string>;
+    getReport: (symbol: string, strategyName: string, columns?: Columns$1[]) => Promise<string>;
     /**
      * Generates and saves markdown report to file.
      *
@@ -5854,6 +6848,7 @@ declare class PartialUtils {
      * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
      * @param strategyName - Strategy name (e.g., "my-strategy")
      * @param path - Output directory path (default: "./dump/partial")
+     * @param columns - Optional columns configuration for the report
      * @returns Promise that resolves when file is written
      *
      * @example
@@ -5870,7 +6865,7 @@ declare class PartialUtils {
      * }
      * ```
      */
-    dump: (symbol: string, strategyName: string, path?: string) => Promise<void>;
+    dump: (symbol: string, strategyName: string, path?: string, columns?: Columns$1[]) => Promise<void>;
 }
 /**
  * Global singleton instance of PartialUtils.
@@ -5967,6 +6962,140 @@ declare class ConstantUtils {
  */
 declare const Constant: ConstantUtils;
 
+type Columns = ColumnModel<RiskEvent>;
+/**
+ * Service for generating and saving risk rejection markdown reports.
+ *
+ * Features:
+ * - Listens to risk rejection events via riskSubject
+ * - Accumulates all rejection events per symbol-strategy pair
+ * - Generates markdown tables with detailed rejection information
+ * - Provides statistics (total rejections, by symbol, by strategy)
+ * - Saves reports to disk in dump/risk/{symbol}_{strategyName}.md
+ *
+ * @example
+ * ```typescript
+ * const service = new RiskMarkdownService();
+ *
+ * // Service automatically subscribes to subjects on init
+ * // No manual callback setup needed
+ *
+ * // Later: generate and save report
+ * await service.dump("BTCUSDT", "my-strategy");
+ * ```
+ */
+declare class RiskMarkdownService {
+    /** Logger service for debug output */
+    private readonly loggerService;
+    /**
+     * Memoized function to get or create ReportStorage for a symbol-strategy pair.
+     * Each symbol-strategy combination gets its own isolated storage instance.
+     */
+    private getStorage;
+    /**
+     * Processes risk rejection events and accumulates them.
+     * Should be called from riskSubject subscription.
+     *
+     * @param data - Risk rejection event data
+     *
+     * @example
+     * ```typescript
+     * const service = new RiskMarkdownService();
+     * // Service automatically subscribes in init()
+     * ```
+     */
+    private tickRejection;
+    /**
+     * Gets statistical data from all risk rejection events for a symbol-strategy pair.
+     * Delegates to ReportStorage.getData().
+     *
+     * @param symbol - Trading pair symbol to get data for
+     * @param strategyName - Strategy name to get data for
+     * @returns Statistical data object with all metrics
+     *
+     * @example
+     * ```typescript
+     * const service = new RiskMarkdownService();
+     * const stats = await service.getData("BTCUSDT", "my-strategy");
+     * console.log(stats.totalRejections, stats.bySymbol);
+     * ```
+     */
+    getData: (symbol: string, strategyName: string) => Promise<RiskStatisticsModel>;
+    /**
+     * Generates markdown report with all risk rejection events for a symbol-strategy pair.
+     * Delegates to ReportStorage.getReport().
+     *
+     * @param symbol - Trading pair symbol to generate report for
+     * @param strategyName - Strategy name to generate report for
+     * @param columns - Column configuration for formatting the table
+     * @returns Markdown formatted report string with table of all events
+     *
+     * @example
+     * ```typescript
+     * const service = new RiskMarkdownService();
+     * const markdown = await service.getReport("BTCUSDT", "my-strategy");
+     * console.log(markdown);
+     * ```
+     */
+    getReport: (symbol: string, strategyName: string, columns?: Columns[]) => Promise<string>;
+    /**
+     * Saves symbol-strategy report to disk.
+     * Creates directory if it doesn't exist.
+     * Delegates to ReportStorage.dump().
+     *
+     * @param symbol - Trading pair symbol to save report for
+     * @param strategyName - Strategy name to save report for
+     * @param path - Directory path to save report (default: "./dump/risk")
+     * @param columns - Column configuration for formatting the table
+     *
+     * @example
+     * ```typescript
+     * const service = new RiskMarkdownService();
+     *
+     * // Save to default path: ./dump/risk/BTCUSDT_my-strategy.md
+     * await service.dump("BTCUSDT", "my-strategy");
+     *
+     * // Save to custom path: ./custom/path/BTCUSDT_my-strategy.md
+     * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
+     * ```
+     */
+    dump: (symbol: string, strategyName: string, path?: string, columns?: Columns[]) => Promise<void>;
+    /**
+     * Clears accumulated event data from storage.
+     * If ctx is provided, clears only that specific symbol-strategy pair's data.
+     * If nothing is provided, clears all data.
+     *
+     * @param ctx - Optional context with symbol and strategyName
+     *
+     * @example
+     * ```typescript
+     * const service = new RiskMarkdownService();
+     *
+     * // Clear specific symbol-strategy pair
+     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy" });
+     *
+     * // Clear all data
+     * await service.clear();
+     * ```
+     */
+    clear: (ctx?: {
+        symbol: string;
+        strategyName: string;
+    }) => Promise<void>;
+    /**
+     * Initializes the service by subscribing to risk rejection events.
+     * Uses singleshot to ensure initialization happens only once.
+     * Automatically called on first use.
+     *
+     * @example
+     * ```typescript
+     * const service = new RiskMarkdownService();
+     * await service.init(); // Subscribe to rejection events
+     * ```
+     */
+    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+}
+
 /**
  * Utility class for accessing risk rejection reports and statistics.
  *
@@ -6045,6 +7174,7 @@ declare class RiskUtils {
      *
      * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
      * @param strategyName - Strategy name (e.g., "my-strategy")
+     * @param columns - Optional columns configuration for the report
      * @returns Promise resolving to markdown formatted report string
      *
      * @example
@@ -6068,7 +7198,7 @@ declare class RiskUtils {
      * // - my-strategy: 1
      * ```
      */
-    getReport: (symbol: string, strategyName: string) => Promise<string>;
+    getReport: (symbol: string, strategyName: string, columns?: Columns[]) => Promise<string>;
     /**
      * Generates and saves markdown report to file.
      *
@@ -6084,6 +7214,7 @@ declare class RiskUtils {
      * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
      * @param strategyName - Strategy name (e.g., "my-strategy")
      * @param path - Output directory path (default: "./dump/risk")
+     * @param columns - Optional columns configuration for the report
      * @returns Promise that resolves when file is written
      *
      * @example
@@ -6100,7 +7231,7 @@ declare class RiskUtils {
      * }
      * ```
      */
-    dump: (symbol: string, strategyName: string, path?: string) => Promise<void>;
+    dump: (symbol: string, strategyName: string, path?: string, columns?: Columns[]) => Promise<void>;
 }
 /**
  * Global singleton instance of RiskUtils.
@@ -7941,838 +9072,6 @@ declare class BacktestCommandService {
     }) => AsyncGenerator<IStrategyBacktestResult, void, unknown>;
 }
 
-type Columns$6 = ColumnModel<IStrategyTickResultClosed>;
-/**
- * Service for generating and saving backtest markdown reports.
- *
- * Features:
- * - Listens to signal events via onTick callback
- * - Accumulates closed signals per strategy using memoized storage
- * - Generates markdown tables with detailed signal information
- * - Saves reports to disk in logs/backtest/{strategyName}.md
- *
- * @example
- * ```typescript
- * const service = new BacktestMarkdownService();
- *
- * // Add to strategy callbacks
- * addStrategy({
- *   strategyName: "my-strategy",
- *   callbacks: {
- *     onTick: (symbol, result, backtest) => {
- *       service.tick(result);
- *     }
- *   }
- * });
- *
- * // After backtest, generate and save report
- * await service.saveReport("my-strategy");
- * ```
- */
-declare class BacktestMarkdownService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Memoized function to get or create ReportStorage for a symbol-strategy pair.
-     * Each symbol-strategy combination gets its own isolated storage instance.
-     */
-    private getStorage;
-    /**
-     * Processes tick events and accumulates closed signals.
-     * Should be called from IStrategyCallbacks.onTick.
-     *
-     * Only processes closed signals - opened signals are ignored.
-     *
-     * @param data - Tick result from strategy execution (opened or closed)
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestMarkdownService();
-     *
-     * callbacks: {
-     *   onTick: (symbol, result, backtest) => {
-     *     service.tick(result);
-     *   }
-     * }
-     * ```
-     */
-    private tick;
-    /**
-     * Gets statistical data from all closed signals for a symbol-strategy pair.
-     * Delegates to ReportStorage.getData().
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to get data for
-     * @returns Statistical data object with all metrics
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestMarkdownService();
-     * const stats = await service.getData("BTCUSDT", "my-strategy");
-     * console.log(stats.sharpeRatio, stats.winRate);
-     * ```
-     */
-    getData: (symbol: string, strategyName: StrategyName) => Promise<BacktestStatisticsModel>;
-    /**
-     * Generates markdown report with all closed signals for a symbol-strategy pair.
-     * Delegates to ReportStorage.generateReport().
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to generate report for
-     * @param columns - Column configuration for formatting the table
-     * @returns Markdown formatted report string with table of all closed signals
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestMarkdownService();
-     * const markdown = await service.getReport("BTCUSDT", "my-strategy");
-     * console.log(markdown);
-     * ```
-     */
-    getReport: (symbol: string, strategyName: StrategyName, columns?: Columns$6[]) => Promise<string>;
-    /**
-     * Saves symbol-strategy report to disk.
-     * Creates directory if it doesn't exist.
-     * Delegates to ReportStorage.dump().
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to save report for
-     * @param path - Directory path to save report (default: "./dump/backtest")
-     * @param columns - Column configuration for formatting the table
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestMarkdownService();
-     *
-     * // Save to default path: ./dump/backtest/my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy");
-     *
-     * // Save to custom path: ./custom/path/my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
-     * ```
-     */
-    dump: (symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$6[]) => Promise<void>;
-    /**
-     * Clears accumulated signal data from storage.
-     * If ctx is provided, clears only that specific symbol-strategy pair's data.
-     * If nothing is provided, clears all data.
-     *
-     * @param ctx - Optional context with symbol and strategyName
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestMarkdownService();
-     *
-     * // Clear specific symbol-strategy pair
-     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy" });
-     *
-     * // Clear all data
-     * await service.clear();
-     * ```
-     */
-    clear: (ctx?: {
-        symbol: string;
-        strategyName: StrategyName;
-    }) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to backtest signal events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestMarkdownService();
-     * await service.init(); // Subscribe to backtest events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-}
-
-type Columns$5 = ColumnModel<TickEvent>;
-/**
- * Service for generating and saving live trading markdown reports.
- *
- * Features:
- * - Listens to all signal events via onTick callback
- * - Accumulates all events (idle, opened, active, closed) per strategy
- * - Generates markdown tables with detailed event information
- * - Provides trading statistics (win rate, average PNL)
- * - Saves reports to disk in logs/live/{strategyName}.md
- *
- * @example
- * ```typescript
- * const service = new LiveMarkdownService();
- *
- * // Add to strategy callbacks
- * addStrategy({
- *   strategyName: "my-strategy",
- *   callbacks: {
- *     onTick: (symbol, result, backtest) => {
- *       if (!backtest) {
- *         service.tick(result);
- *       }
- *     }
- *   }
- * });
- *
- * // Later: generate and save report
- * await service.dump("my-strategy");
- * ```
- */
-declare class LiveMarkdownService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Memoized function to get or create ReportStorage for a symbol-strategy pair.
-     * Each symbol-strategy combination gets its own isolated storage instance.
-     */
-    private getStorage;
-    /**
-     * Processes tick events and accumulates all event types.
-     * Should be called from IStrategyCallbacks.onTick.
-     *
-     * Processes all event types: idle, opened, active, closed.
-     *
-     * @param data - Tick result from strategy execution
-     *
-     * @example
-     * ```typescript
-     * const service = new LiveMarkdownService();
-     *
-     * callbacks: {
-     *   onTick: (symbol, result, backtest) => {
-     *     if (!backtest) {
-     *       service.tick(result);
-     *     }
-     *   }
-     * }
-     * ```
-     */
-    private tick;
-    /**
-     * Gets statistical data from all live trading events for a symbol-strategy pair.
-     * Delegates to ReportStorage.getData().
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to get data for
-     * @returns Statistical data object with all metrics
-     *
-     * @example
-     * ```typescript
-     * const service = new LiveMarkdownService();
-     * const stats = await service.getData("BTCUSDT", "my-strategy");
-     * console.log(stats.sharpeRatio, stats.winRate);
-     * ```
-     */
-    getData: (symbol: string, strategyName: StrategyName) => Promise<LiveStatisticsModel>;
-    /**
-     * Generates markdown report with all events for a symbol-strategy pair.
-     * Delegates to ReportStorage.getReport().
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to generate report for
-     * @param columns - Column configuration for formatting the table
-     * @returns Markdown formatted report string with table of all events
-     *
-     * @example
-     * ```typescript
-     * const service = new LiveMarkdownService();
-     * const markdown = await service.getReport("BTCUSDT", "my-strategy");
-     * console.log(markdown);
-     * ```
-     */
-    getReport: (symbol: string, strategyName: StrategyName, columns?: Columns$5[]) => Promise<string>;
-    /**
-     * Saves symbol-strategy report to disk.
-     * Creates directory if it doesn't exist.
-     * Delegates to ReportStorage.dump().
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to save report for
-     * @param path - Directory path to save report (default: "./dump/live")
-     * @param columns - Column configuration for formatting the table
-     *
-     * @example
-     * ```typescript
-     * const service = new LiveMarkdownService();
-     *
-     * // Save to default path: ./dump/live/my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy");
-     *
-     * // Save to custom path: ./custom/path/my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
-     * ```
-     */
-    dump: (symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$5[]) => Promise<void>;
-    /**
-     * Clears accumulated event data from storage.
-     * If ctx is provided, clears only that specific symbol-strategy pair's data.
-     * If nothing is provided, clears all data.
-     *
-     * @param ctx - Optional context with symbol and strategyName
-     *
-     * @example
-     * ```typescript
-     * const service = new LiveMarkdownService();
-     *
-     * // Clear specific symbol-strategy pair
-     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy" });
-     *
-     * // Clear all data
-     * await service.clear();
-     * ```
-     */
-    clear: (ctx?: {
-        symbol: string;
-        strategyName: StrategyName;
-    }) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to live signal events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new LiveMarkdownService();
-     * await service.init(); // Subscribe to live events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-}
-
-type Columns$4 = ColumnModel<ScheduledEvent>;
-/**
- * Service for generating and saving scheduled signals markdown reports.
- *
- * Features:
- * - Listens to scheduled and cancelled signal events via signalLiveEmitter
- * - Accumulates all events (scheduled, cancelled) per strategy
- * - Generates markdown tables with detailed event information
- * - Provides statistics (cancellation rate, average wait time)
- * - Saves reports to disk in logs/schedule/{strategyName}.md
- *
- * @example
- * ```typescript
- * const service = new ScheduleMarkdownService();
- *
- * // Service automatically subscribes to signalLiveEmitter on init
- * // No manual callback setup needed
- *
- * // Later: generate and save report
- * await service.dump("my-strategy");
- * ```
- */
-declare class ScheduleMarkdownService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Memoized function to get or create ReportStorage for a symbol-strategy pair.
-     * Each symbol-strategy combination gets its own isolated storage instance.
-     */
-    private getStorage;
-    /**
-     * Processes tick events and accumulates scheduled/opened/cancelled events.
-     * Should be called from signalEmitter subscription.
-     *
-     * Processes only scheduled, opened and cancelled event types.
-     *
-     * @param data - Tick result from strategy execution
-     *
-     * @example
-     * ```typescript
-     * const service = new ScheduleMarkdownService();
-     * // Service automatically subscribes in init()
-     * ```
-     */
-    private tick;
-    /**
-     * Gets statistical data from all scheduled signal events for a symbol-strategy pair.
-     * Delegates to ReportStorage.getData().
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to get data for
-     * @returns Statistical data object with all metrics
-     *
-     * @example
-     * ```typescript
-     * const service = new ScheduleMarkdownService();
-     * const stats = await service.getData("BTCUSDT", "my-strategy");
-     * console.log(stats.cancellationRate, stats.avgWaitTime);
-     * ```
-     */
-    getData: (symbol: string, strategyName: StrategyName) => Promise<ScheduleStatisticsModel>;
-    /**
-     * Generates markdown report with all scheduled events for a symbol-strategy pair.
-     * Delegates to ReportStorage.getReport().
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to generate report for
-     * @param columns - Column configuration for formatting the table
-     * @returns Markdown formatted report string with table of all events
-     *
-     * @example
-     * ```typescript
-     * const service = new ScheduleMarkdownService();
-     * const markdown = await service.getReport("BTCUSDT", "my-strategy");
-     * console.log(markdown);
-     * ```
-     */
-    getReport: (symbol: string, strategyName: StrategyName, columns?: Columns$4[]) => Promise<string>;
-    /**
-     * Saves symbol-strategy report to disk.
-     * Creates directory if it doesn't exist.
-     * Delegates to ReportStorage.dump().
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to save report for
-     * @param path - Directory path to save report (default: "./dump/schedule")
-     * @param columns - Column configuration for formatting the table
-     *
-     * @example
-     * ```typescript
-     * const service = new ScheduleMarkdownService();
-     *
-     * // Save to default path: ./dump/schedule/my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy");
-     *
-     * // Save to custom path: ./custom/path/my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
-     * ```
-     */
-    dump: (symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$4[]) => Promise<void>;
-    /**
-     * Clears accumulated event data from storage.
-     * If ctx is provided, clears only that specific symbol-strategy pair's data.
-     * If nothing is provided, clears all data.
-     *
-     * @param ctx - Optional context with symbol and strategyName
-     *
-     * @example
-     * ```typescript
-     * const service = new ScheduleMarkdownService();
-     *
-     * // Clear specific symbol-strategy pair
-     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy" });
-     *
-     * // Clear all data
-     * await service.clear();
-     * ```
-     */
-    clear: (ctx?: {
-        symbol: string;
-        strategyName: StrategyName;
-    }) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to live signal events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new ScheduleMarkdownService();
-     * await service.init(); // Subscribe to live events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-}
-
-type Columns$3 = ColumnModel<MetricStats>;
-/**
- * Service for collecting and analyzing performance metrics.
- *
- * Features:
- * - Listens to performance events via performanceEmitter
- * - Accumulates metrics per strategy
- * - Calculates aggregated statistics (avg, min, max, percentiles)
- * - Generates markdown reports with bottleneck analysis
- * - Saves reports to disk in logs/performance/{strategyName}.md
- *
- * @example
- * ```typescript
- * import { listenPerformance } from "backtest-kit";
- *
- * // Subscribe to performance events
- * listenPerformance((event) => {
- *   console.log(`${event.metricType}: ${event.duration.toFixed(2)}ms`);
- * });
- *
- * // After execution, generate report
- * const stats = await Performance.getData("my-strategy");
- * console.log("Bottlenecks:", stats.metricStats);
- *
- * // Save report to disk
- * await Performance.dump("BTCUSDT", "my-strategy");
- * ```
- */
-declare class PerformanceMarkdownService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Memoized function to get or create PerformanceStorage for a symbol-strategy pair.
-     * Each symbol-strategy combination gets its own isolated storage instance.
-     */
-    private getStorage;
-    /**
-     * Processes performance events and accumulates metrics.
-     * Should be called from performance tracking code.
-     *
-     * @param event - Performance event with timing data
-     */
-    private track;
-    /**
-     * Gets aggregated performance statistics for a symbol-strategy pair.
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to get data for
-     * @returns Performance statistics with aggregated metrics
-     *
-     * @example
-     * ```typescript
-     * const stats = await performanceService.getData("BTCUSDT", "my-strategy");
-     * console.log("Total time:", stats.totalDuration);
-     * console.log("Slowest operation:", Object.values(stats.metricStats)
-     *   .sort((a, b) => b.avgDuration - a.avgDuration)[0]);
-     * ```
-     */
-    getData: (symbol: string, strategyName: string) => Promise<PerformanceStatisticsModel>;
-    /**
-     * Generates markdown report with performance analysis.
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to generate report for
-     * @param columns - Column configuration for formatting the table
-     * @returns Markdown formatted report string
-     *
-     * @example
-     * ```typescript
-     * const markdown = await performanceService.getReport("BTCUSDT", "my-strategy");
-     * console.log(markdown);
-     * ```
-     */
-    getReport: (symbol: string, strategyName: string, columns?: Columns$3[]) => Promise<string>;
-    /**
-     * Saves performance report to disk.
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to save report for
-     * @param path - Directory path to save report
-     * @param columns - Column configuration for formatting the table
-     *
-     * @example
-     * ```typescript
-     * // Save to default path: ./dump/performance/my-strategy.md
-     * await performanceService.dump("BTCUSDT", "my-strategy");
-     *
-     * // Save to custom path
-     * await performanceService.dump("BTCUSDT", "my-strategy", "./custom/path");
-     * ```
-     */
-    dump: (symbol: string, strategyName: string, path?: string, columns?: Columns$3[]) => Promise<void>;
-    /**
-     * Clears accumulated performance data from storage.
-     *
-     * @param symbol - Optional trading pair symbol
-     * @param strategyName - Optional strategy name
-     */
-    clear: (ctx?: {
-        symbol: string;
-        strategyName: string;
-    }) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to performance events.
-     * Uses singleshot to ensure initialization happens only once.
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-}
-
-type StrategyColumn = ColumnModel<IStrategyResult>;
-type PnlColumn = ColumnModel<SignalData$1>;
-/**
- * Service for generating and saving walker markdown reports.
- *
- * Features:
- * - Listens to walker events via tick callback
- * - Accumulates strategy results per walker using memoized storage
- * - Generates markdown tables with detailed strategy comparison
- * - Saves reports to disk in logs/walker/{walkerName}.md
- *
- * @example
- * ```typescript
- * const service = new WalkerMarkdownService();
- * const results = await service.getData("my-walker");
- * await service.dump("my-walker");
- * ```
- */
-declare class WalkerMarkdownService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Memoized function to get or create ReportStorage for a walker.
-     * Each walker gets its own isolated storage instance.
-     */
-    private getStorage;
-    /**
-     * Processes walker progress events and accumulates strategy results.
-     * Should be called from walkerEmitter.
-     *
-     * @param data - Walker contract from walker execution
-     *
-     * @example
-     * ```typescript
-     * const service = new WalkerMarkdownService();
-     * walkerEmitter.subscribe((data) => service.tick(data));
-     * ```
-     */
-    private tick;
-    /**
-     * Gets walker results data from all strategy results.
-     * Delegates to ReportStorage.getData().
-     *
-     * @param walkerName - Walker name to get data for
-     * @param symbol - Trading symbol
-     * @param metric - Metric being optimized
-     * @param context - Context with exchangeName and frameName
-     * @returns Walker results data object with all metrics
-     *
-     * @example
-     * ```typescript
-     * const service = new WalkerMarkdownService();
-     * const results = await service.getData("my-walker", "BTCUSDT", "sharpeRatio", { exchangeName: "binance", frameName: "1d" });
-     * console.log(results.bestStrategy, results.bestMetric);
-     * ```
-     */
-    getData: (walkerName: WalkerName, symbol: string, metric: WalkerMetric, context: {
-        exchangeName: string;
-        frameName: string;
-    }) => Promise<WalkerCompleteContract>;
-    /**
-     * Generates markdown report with all strategy results for a walker.
-     * Delegates to ReportStorage.getReport().
-     *
-     * @param walkerName - Walker name to generate report for
-     * @param symbol - Trading symbol
-     * @param metric - Metric being optimized
-     * @param context - Context with exchangeName and frameName
-     * @param strategyColumns - Column configuration for strategy comparison table
-     * @param pnlColumns - Column configuration for PNL table
-     * @returns Markdown formatted report string
-     *
-     * @example
-     * ```typescript
-     * const service = new WalkerMarkdownService();
-     * const markdown = await service.getReport("my-walker", "BTCUSDT", "sharpeRatio", { exchangeName: "binance", frameName: "1d" });
-     * console.log(markdown);
-     * ```
-     */
-    getReport: (walkerName: WalkerName, symbol: string, metric: WalkerMetric, context: {
-        exchangeName: string;
-        frameName: string;
-    }, strategyColumns?: StrategyColumn[], pnlColumns?: PnlColumn[]) => Promise<string>;
-    /**
-     * Saves walker report to disk.
-     * Creates directory if it doesn't exist.
-     * Delegates to ReportStorage.dump().
-     *
-     * @param walkerName - Walker name to save report for
-     * @param symbol - Trading symbol
-     * @param metric - Metric being optimized
-     * @param context - Context with exchangeName and frameName
-     * @param path - Directory path to save report (default: "./dump/walker")
-     * @param strategyColumns - Column configuration for strategy comparison table
-     * @param pnlColumns - Column configuration for PNL table
-     *
-     * @example
-     * ```typescript
-     * const service = new WalkerMarkdownService();
-     *
-     * // Save to default path: ./dump/walker/my-walker.md
-     * await service.dump("my-walker", "BTCUSDT", "sharpeRatio", { exchangeName: "binance", frameName: "1d" });
-     *
-     * // Save to custom path: ./custom/path/my-walker.md
-     * await service.dump("my-walker", "BTCUSDT", "sharpeRatio", { exchangeName: "binance", frameName: "1d" }, "./custom/path");
-     * ```
-     */
-    dump: (walkerName: WalkerName, symbol: string, metric: WalkerMetric, context: {
-        exchangeName: string;
-        frameName: string;
-    }, path?: string, strategyColumns?: StrategyColumn[], pnlColumns?: PnlColumn[]) => Promise<void>;
-    /**
-     * Clears accumulated result data from storage.
-     * If walkerName is provided, clears only that walker's data.
-     * If walkerName is omitted, clears all walkers' data.
-     *
-     * @param walkerName - Optional walker name to clear specific walker data
-     *
-     * @example
-     * ```typescript
-     * const service = new WalkerMarkdownService();
-     *
-     * // Clear specific walker data
-     * await service.clear("my-walker");
-     *
-     * // Clear all walkers' data
-     * await service.clear();
-     * ```
-     */
-    clear: (walkerName?: WalkerName) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to walker events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new WalkerMarkdownService();
-     * await service.init(); // Subscribe to walker events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-}
-
-type Columns$2 = ColumnModel<IHeatmapRow>;
-/**
- * Portfolio Heatmap Markdown Service.
- *
- * Subscribes to signalEmitter and aggregates statistics across all symbols per strategy.
- * Provides portfolio-wide metrics and per-symbol breakdowns.
- *
- * Features:
- * - Real-time aggregation of closed signals
- * - Per-symbol statistics (Total PNL, Sharpe Ratio, Max Drawdown, Trades)
- * - Portfolio-wide aggregated metrics per strategy
- * - Markdown table report generation
- * - Safe math (handles NaN/Infinity gracefully)
- * - Strategy-based navigation using memoized storage
- *
- * @example
- * ```typescript
- * const service = new HeatMarkdownService();
- *
- * // Service automatically tracks all closed signals per strategy
- * const stats = await service.getData("my-strategy");
- * console.log(`Portfolio Total PNL: ${stats.portfolioTotalPnl}%`);
- *
- * // Generate and save report
- * await service.dump("my-strategy", "./reports");
- * ```
- */
-declare class HeatMarkdownService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Memoized function to get or create HeatmapStorage for a strategy.
-     * Each strategy gets its own isolated heatmap storage instance.
-     */
-    private getStorage;
-    /**
-     * Processes tick events and accumulates closed signals.
-     * Should be called from signal emitter subscription.
-     *
-     * Only processes closed signals - opened signals are ignored.
-     *
-     * @param data - Tick result from strategy execution (closed signals only)
-     */
-    private tick;
-    /**
-     * Gets aggregated portfolio heatmap statistics for a strategy.
-     *
-     * @param strategyName - Strategy name to get heatmap data for
-     * @returns Promise resolving to heatmap statistics with per-symbol and portfolio-wide metrics
-     *
-     * @example
-     * ```typescript
-     * const service = new HeatMarkdownService();
-     * const stats = await service.getData("my-strategy");
-     *
-     * console.log(`Total symbols: ${stats.totalSymbols}`);
-     * console.log(`Portfolio PNL: ${stats.portfolioTotalPnl}%`);
-     *
-     * stats.symbols.forEach(row => {
-     *   console.log(`${row.symbol}: ${row.totalPnl}% (${row.totalTrades} trades)`);
-     * });
-     * ```
-     */
-    getData: (strategyName: StrategyName) => Promise<HeatmapStatisticsModel>;
-    /**
-     * Generates markdown report with portfolio heatmap table for a strategy.
-     *
-     * @param strategyName - Strategy name to generate heatmap report for
-     * @param columns - Column configuration for formatting the table
-     * @returns Promise resolving to markdown formatted report string
-     *
-     * @example
-     * ```typescript
-     * const service = new HeatMarkdownService();
-     * const markdown = await service.getReport("my-strategy");
-     * console.log(markdown);
-     * // Output:
-     * // # Portfolio Heatmap: my-strategy
-     * //
-     * // **Total Symbols:** 5 | **Portfolio PNL:** +45.3% | **Portfolio Sharpe:** 1.85 | **Total Trades:** 120
-     * //
-     * // | Symbol | Total PNL | Sharpe | Max DD | Trades |
-     * // |--------|-----------|--------|--------|--------|
-     * // | BTCUSDT | +15.5% | 2.10 | -2.5% | 45 |
-     * // | ETHUSDT | +12.3% | 1.85 | -3.1% | 38 |
-     * // ...
-     * ```
-     */
-    getReport: (strategyName: StrategyName, columns?: Columns$2[]) => Promise<string>;
-    /**
-     * Saves heatmap report to disk for a strategy.
-     *
-     * Creates directory if it doesn't exist.
-     * Default filename: {strategyName}.md
-     *
-     * @param strategyName - Strategy name to save heatmap report for
-     * @param path - Optional directory path to save report (default: "./dump/heatmap")
-     * @param columns - Column configuration for formatting the table
-     *
-     * @example
-     * ```typescript
-     * const service = new HeatMarkdownService();
-     *
-     * // Save to default path: ./dump/heatmap/my-strategy.md
-     * await service.dump("my-strategy");
-     *
-     * // Save to custom path: ./reports/my-strategy.md
-     * await service.dump("my-strategy", "./reports");
-     * ```
-     */
-    dump: (strategyName: StrategyName, path?: string, columns?: Columns$2[]) => Promise<void>;
-    /**
-     * Clears accumulated heatmap data from storage.
-     * If strategyName is provided, clears only that strategy's data.
-     * If strategyName is omitted, clears all strategies' data.
-     *
-     * @param strategyName - Optional strategy name to clear specific strategy data
-     *
-     * @example
-     * ```typescript
-     * const service = new HeatMarkdownService();
-     *
-     * // Clear specific strategy data
-     * await service.clear("my-strategy");
-     *
-     * // Clear all strategies' data
-     * await service.clear();
-     * ```
-     */
-    clear: (strategyName?: StrategyName) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to signal events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new HeatMarkdownService();
-     * await service.init(); // Subscribe to signal events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-}
-
 /**
  * Service for managing and validating exchange configurations.
  *
@@ -9471,153 +9770,6 @@ declare class OptimizerGlobalService {
     dump: (symbol: string, optimizerName: string, path?: string) => Promise<void>;
 }
 
-type Columns$1 = ColumnModel<PartialEvent>;
-/**
- * Service for generating and saving partial profit/loss markdown reports.
- *
- * Features:
- * - Listens to partial profit and loss events via partialProfitSubject/partialLossSubject
- * - Accumulates all events (profit, loss) per symbol-strategy pair
- * - Generates markdown tables with detailed event information
- * - Provides statistics (total profit/loss events)
- * - Saves reports to disk in dump/partial/{symbol}_{strategyName}.md
- *
- * @example
- * ```typescript
- * const service = new PartialMarkdownService();
- *
- * // Service automatically subscribes to subjects on init
- * // No manual callback setup needed
- *
- * // Later: generate and save report
- * await service.dump("BTCUSDT", "my-strategy");
- * ```
- */
-declare class PartialMarkdownService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Memoized function to get or create ReportStorage for a symbol-strategy pair.
-     * Each symbol-strategy combination gets its own isolated storage instance.
-     */
-    private getStorage;
-    /**
-     * Processes profit events and accumulates them.
-     * Should be called from partialProfitSubject subscription.
-     *
-     * @param data - Profit event data
-     *
-     * @example
-     * ```typescript
-     * const service = new PartialMarkdownService();
-     * // Service automatically subscribes in init()
-     * ```
-     */
-    private tickProfit;
-    /**
-     * Processes loss events and accumulates them.
-     * Should be called from partialLossSubject subscription.
-     *
-     * @param data - Loss event data
-     *
-     * @example
-     * ```typescript
-     * const service = new PartialMarkdownService();
-     * // Service automatically subscribes in init()
-     * ```
-     */
-    private tickLoss;
-    /**
-     * Gets statistical data from all partial profit/loss events for a symbol-strategy pair.
-     * Delegates to ReportStorage.getData().
-     *
-     * @param symbol - Trading pair symbol to get data for
-     * @param strategyName - Strategy name to get data for
-     * @returns Statistical data object with all metrics
-     *
-     * @example
-     * ```typescript
-     * const service = new PartialMarkdownService();
-     * const stats = await service.getData("BTCUSDT", "my-strategy");
-     * console.log(stats.totalProfit, stats.totalLoss);
-     * ```
-     */
-    getData: (symbol: string, strategyName: string) => Promise<PartialStatisticsModel>;
-    /**
-     * Generates markdown report with all partial events for a symbol-strategy pair.
-     * Delegates to ReportStorage.getReport().
-     *
-     * @param symbol - Trading pair symbol to generate report for
-     * @param strategyName - Strategy name to generate report for
-     * @param columns - Column configuration for formatting the table
-     * @returns Markdown formatted report string with table of all events
-     *
-     * @example
-     * ```typescript
-     * const service = new PartialMarkdownService();
-     * const markdown = await service.getReport("BTCUSDT", "my-strategy");
-     * console.log(markdown);
-     * ```
-     */
-    getReport: (symbol: string, strategyName: string, columns?: Columns$1[]) => Promise<string>;
-    /**
-     * Saves symbol-strategy report to disk.
-     * Creates directory if it doesn't exist.
-     * Delegates to ReportStorage.dump().
-     *
-     * @param symbol - Trading pair symbol to save report for
-     * @param strategyName - Strategy name to save report for
-     * @param path - Directory path to save report (default: "./dump/partial")
-     * @param columns - Column configuration for formatting the table
-     *
-     * @example
-     * ```typescript
-     * const service = new PartialMarkdownService();
-     *
-     * // Save to default path: ./dump/partial/BTCUSDT_my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy");
-     *
-     * // Save to custom path: ./custom/path/BTCUSDT_my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
-     * ```
-     */
-    dump: (symbol: string, strategyName: string, path?: string, columns?: Columns$1[]) => Promise<void>;
-    /**
-     * Clears accumulated event data from storage.
-     * If ctx is provided, clears only that specific symbol-strategy pair's data.
-     * If nothing is provided, clears all data.
-     *
-     * @param ctx - Optional context with symbol and strategyName
-     *
-     * @example
-     * ```typescript
-     * const service = new PartialMarkdownService();
-     *
-     * // Clear specific symbol-strategy pair
-     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy" });
-     *
-     * // Clear all data
-     * await service.clear();
-     * ```
-     */
-    clear: (ctx?: {
-        symbol: string;
-        strategyName: string;
-    }) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to partial profit/loss events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new PartialMarkdownService();
-     * await service.init(); // Subscribe to profit/loss events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-}
-
 /**
  * Global service for partial profit/loss tracking.
  *
@@ -9816,140 +9968,6 @@ declare class ConfigValidationService {
      * @throws Error if configuration is invalid
      */
     validate: () => void;
-}
-
-type Columns = ColumnModel<RiskEvent>;
-/**
- * Service for generating and saving risk rejection markdown reports.
- *
- * Features:
- * - Listens to risk rejection events via riskSubject
- * - Accumulates all rejection events per symbol-strategy pair
- * - Generates markdown tables with detailed rejection information
- * - Provides statistics (total rejections, by symbol, by strategy)
- * - Saves reports to disk in dump/risk/{symbol}_{strategyName}.md
- *
- * @example
- * ```typescript
- * const service = new RiskMarkdownService();
- *
- * // Service automatically subscribes to subjects on init
- * // No manual callback setup needed
- *
- * // Later: generate and save report
- * await service.dump("BTCUSDT", "my-strategy");
- * ```
- */
-declare class RiskMarkdownService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Memoized function to get or create ReportStorage for a symbol-strategy pair.
-     * Each symbol-strategy combination gets its own isolated storage instance.
-     */
-    private getStorage;
-    /**
-     * Processes risk rejection events and accumulates them.
-     * Should be called from riskSubject subscription.
-     *
-     * @param data - Risk rejection event data
-     *
-     * @example
-     * ```typescript
-     * const service = new RiskMarkdownService();
-     * // Service automatically subscribes in init()
-     * ```
-     */
-    private tickRejection;
-    /**
-     * Gets statistical data from all risk rejection events for a symbol-strategy pair.
-     * Delegates to ReportStorage.getData().
-     *
-     * @param symbol - Trading pair symbol to get data for
-     * @param strategyName - Strategy name to get data for
-     * @returns Statistical data object with all metrics
-     *
-     * @example
-     * ```typescript
-     * const service = new RiskMarkdownService();
-     * const stats = await service.getData("BTCUSDT", "my-strategy");
-     * console.log(stats.totalRejections, stats.bySymbol);
-     * ```
-     */
-    getData: (symbol: string, strategyName: string) => Promise<RiskStatisticsModel>;
-    /**
-     * Generates markdown report with all risk rejection events for a symbol-strategy pair.
-     * Delegates to ReportStorage.getReport().
-     *
-     * @param symbol - Trading pair symbol to generate report for
-     * @param strategyName - Strategy name to generate report for
-     * @param columns - Column configuration for formatting the table
-     * @returns Markdown formatted report string with table of all events
-     *
-     * @example
-     * ```typescript
-     * const service = new RiskMarkdownService();
-     * const markdown = await service.getReport("BTCUSDT", "my-strategy");
-     * console.log(markdown);
-     * ```
-     */
-    getReport: (symbol: string, strategyName: string, columns?: Columns[]) => Promise<string>;
-    /**
-     * Saves symbol-strategy report to disk.
-     * Creates directory if it doesn't exist.
-     * Delegates to ReportStorage.dump().
-     *
-     * @param symbol - Trading pair symbol to save report for
-     * @param strategyName - Strategy name to save report for
-     * @param path - Directory path to save report (default: "./dump/risk")
-     * @param columns - Column configuration for formatting the table
-     *
-     * @example
-     * ```typescript
-     * const service = new RiskMarkdownService();
-     *
-     * // Save to default path: ./dump/risk/BTCUSDT_my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy");
-     *
-     * // Save to custom path: ./custom/path/BTCUSDT_my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
-     * ```
-     */
-    dump: (symbol: string, strategyName: string, path?: string, columns?: Columns[]) => Promise<void>;
-    /**
-     * Clears accumulated event data from storage.
-     * If ctx is provided, clears only that specific symbol-strategy pair's data.
-     * If nothing is provided, clears all data.
-     *
-     * @param ctx - Optional context with symbol and strategyName
-     *
-     * @example
-     * ```typescript
-     * const service = new RiskMarkdownService();
-     *
-     * // Clear specific symbol-strategy pair
-     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy" });
-     *
-     * // Clear all data
-     * await service.clear();
-     * ```
-     */
-    clear: (ctx?: {
-        symbol: string;
-        strategyName: string;
-    }) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to risk rejection events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new RiskMarkdownService();
-     * await service.init(); // Subscribe to rejection events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
 }
 
 declare const backtest: {

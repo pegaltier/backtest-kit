@@ -1,5 +1,6 @@
 import { StrategyName } from "../interfaces/Strategy.interface";
 import backtest from "../lib";
+import { Columns } from "../lib/services/markdown/ScheduleMarkdownService";
 
 const SCHEDULE_METHOD_NAME_GET_DATA = "ScheduleUtils.getData";
 const SCHEDULE_METHOD_NAME_GET_REPORT = "ScheduleUtils.getReport";
@@ -66,6 +67,7 @@ export class ScheduleUtils {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to generate report for
+   * @param columns - Optional columns configuration for the report
    * @returns Promise resolving to markdown formatted report string
    *
    * @example
@@ -74,7 +76,7 @@ export class ScheduleUtils {
    * console.log(markdown);
    * ```
    */
-  public getReport = async (symbol: string, strategyName: StrategyName): Promise<string> => {
+  public getReport = async (symbol: string, strategyName: StrategyName, columns?: Columns[]): Promise<string> => {
     backtest.loggerService.info(SCHEDULE_METHOD_NAME_GET_REPORT, {
       symbol,
       strategyName,
@@ -88,7 +90,7 @@ export class ScheduleUtils {
       riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, SCHEDULE_METHOD_NAME_GET_REPORT));
     }
 
-    return await backtest.scheduleMarkdownService.getReport(symbol, strategyName);
+    return await backtest.scheduleMarkdownService.getReport(symbol, strategyName, columns);
   };
 
   /**
@@ -97,6 +99,7 @@ export class ScheduleUtils {
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to save report for
    * @param path - Optional directory path to save report (default: "./dump/schedule")
+   * @param columns - Optional columns configuration for the report
    *
    * @example
    * ```typescript
@@ -110,7 +113,8 @@ export class ScheduleUtils {
   public dump = async (
     symbol: string,
     strategyName: StrategyName,
-    path?: string
+    path?: string,
+    columns?: Columns[]
   ): Promise<void> => {
     backtest.loggerService.info(SCHEDULE_METHOD_NAME_DUMP, {
       symbol,
@@ -126,7 +130,7 @@ export class ScheduleUtils {
       riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, SCHEDULE_METHOD_NAME_DUMP));
     }
 
-    await backtest.scheduleMarkdownService.dump(symbol, strategyName, path);
+    await backtest.scheduleMarkdownService.dump(symbol, strategyName, path, columns);
   };
 }
 

@@ -2,6 +2,7 @@ import backtest from "../lib";
 import { StrategyName } from "../interfaces/Strategy.interface";
 import { exitEmitter, doneBacktestSubject } from "../config/emitters";
 import { getErrorMessage, memoize, randomString, singlerun } from "functools-kit";
+import { Columns } from "../lib/services/markdown/BacktestMarkdownService";
 
 const BACKTEST_METHOD_NAME_RUN = "BacktestUtils.run";
 const BACKTEST_METHOD_NAME_BACKGROUND = "BacktestUtils.background";
@@ -285,6 +286,7 @@ export class BacktestInstance {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to generate report for
+   * @param columns - Optional columns configuration for the report
    * @returns Promise resolving to markdown formatted report string
    *
    * @example
@@ -294,12 +296,12 @@ export class BacktestInstance {
    * console.log(markdown);
    * ```
    */
-  public getReport = async (symbol: string, strategyName: StrategyName): Promise<string> => {
+  public getReport = async (symbol: string, strategyName: StrategyName, columns?: Columns[]): Promise<string> => {
     backtest.loggerService.info(BACKTEST_METHOD_NAME_GET_REPORT, {
       symbol,
       strategyName,
     });
-    return await backtest.backtestMarkdownService.getReport(symbol, strategyName);
+    return await backtest.backtestMarkdownService.getReport(symbol, strategyName, columns);
   };
 
   /**
@@ -308,6 +310,7 @@ export class BacktestInstance {
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to save report for
    * @param path - Optional directory path to save report (default: "./dump/backtest")
+   * @param columns - Optional columns configuration for the report
    *
    * @example
    * ```typescript
@@ -322,14 +325,15 @@ export class BacktestInstance {
   public dump = async (
     symbol: string,
     strategyName: StrategyName,
-    path?: string
+    path?: string,
+    columns?: Columns[]
   ): Promise<void> => {
     backtest.loggerService.info(BACKTEST_METHOD_NAME_DUMP, {
       symbol,
       strategyName,
       path,
     });
-    await backtest.backtestMarkdownService.dump(symbol, strategyName, path);
+    await backtest.backtestMarkdownService.dump(symbol, strategyName, path, columns);
   };
 }
 
@@ -499,6 +503,7 @@ export class BacktestUtils {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to generate report for
+   * @param columns - Optional columns configuration for the report
    * @returns Promise resolving to markdown formatted report string
    *
    * @example
@@ -507,7 +512,7 @@ export class BacktestUtils {
    * console.log(markdown);
    * ```
    */
-  public getReport = async (symbol: string, strategyName: StrategyName): Promise<string> => {
+  public getReport = async (symbol: string, strategyName: StrategyName, columns?: Columns[]): Promise<string> => {
     backtest.strategyValidationService.validate(strategyName, BACKTEST_METHOD_NAME_GET_REPORT);
 
     {
@@ -517,7 +522,7 @@ export class BacktestUtils {
     }
 
     const instance = this._getInstance(symbol, strategyName);
-    return await instance.getReport(symbol, strategyName);
+    return await instance.getReport(symbol, strategyName, columns);
   };
 
   /**
@@ -526,6 +531,7 @@ export class BacktestUtils {
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to save report for
    * @param path - Optional directory path to save report (default: "./dump/backtest")
+   * @param columns - Optional columns configuration for the report
    *
    * @example
    * ```typescript
@@ -539,7 +545,8 @@ export class BacktestUtils {
   public dump = async (
     symbol: string,
     strategyName: StrategyName,
-    path?: string
+    path?: string,
+    columns?: Columns[]
   ): Promise<void> => {
     backtest.strategyValidationService.validate(strategyName, BACKTEST_METHOD_NAME_DUMP);
 
@@ -550,7 +557,7 @@ export class BacktestUtils {
     }
 
     const instance = this._getInstance(symbol, strategyName);
-    return await instance.dump(symbol, strategyName, path);
+    return await instance.dump(symbol, strategyName, path, columns);
   };
 
   /**

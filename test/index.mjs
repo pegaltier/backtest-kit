@@ -38,6 +38,7 @@ import "./spec/backtest.test.mjs";
 import "./spec/pnl.test.mjs";
 import "./spec/optimizer.test.mjs"
 import "./spec/config.test.mjs"
+import "./spec/columns.test.mjs"
 
 run(import.meta.url, () => {
     console.log("All tests are finished");

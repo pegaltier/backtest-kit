@@ -1,5 +1,6 @@
 import { IRisk, IRiskCheckArgs } from "../interfaces/Risk.interface";
 import backtest from "../lib";
+import { Columns } from "../lib/services/markdown/RiskMarkdownService";
 
 const RISK_METHOD_NAME_GET_DATA = "RiskUtils.getData";
 const RISK_METHOD_NAME_GET_REPORT = "RiskUtils.getReport";
@@ -215,6 +216,7 @@ export class RiskUtils {
    *
    * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
    * @param strategyName - Strategy name (e.g., "my-strategy")
+   * @param columns - Optional columns configuration for the report
    * @returns Promise resolving to markdown formatted report string
    *
    * @example
@@ -240,7 +242,8 @@ export class RiskUtils {
    */
   public getReport = async (
     symbol: string,
-    strategyName: string
+    strategyName: string,
+    columns?: Columns[]
   ): Promise<string> => {
     backtest.loggerService.info(RISK_METHOD_NAME_GET_REPORT, {
       symbol,
@@ -262,7 +265,7 @@ export class RiskUtils {
       riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, RISK_METHOD_NAME_GET_REPORT));
     }
 
-    return await backtest.riskMarkdownService.getReport(symbol, strategyName);
+    return await backtest.riskMarkdownService.getReport(symbol, strategyName, columns);
   };
 
   /**
@@ -280,6 +283,7 @@ export class RiskUtils {
    * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
    * @param strategyName - Strategy name (e.g., "my-strategy")
    * @param path - Output directory path (default: "./dump/risk")
+   * @param columns - Optional columns configuration for the report
    * @returns Promise that resolves when file is written
    *
    * @example
@@ -299,7 +303,8 @@ export class RiskUtils {
   public dump = async (
     symbol: string,
     strategyName: string,
-    path?: string
+    path?: string,
+    columns?: Columns[]
   ): Promise<void> => {
     backtest.loggerService.info(RISK_METHOD_NAME_DUMP, {
       symbol,
@@ -322,7 +327,7 @@ export class RiskUtils {
       riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, RISK_METHOD_NAME_DUMP));
     }
 
-    await backtest.riskMarkdownService.dump(symbol, strategyName, path);
+    await backtest.riskMarkdownService.dump(symbol, strategyName, path, columns);
   };
 }
 

@@ -1,5 +1,6 @@
 import backtest from "../lib";
 import { PerformanceStatisticsModel } from "../model/PerformanceStatistics.model";
+import { Columns } from "../lib/services/markdown/PerformanceMarkdownService";
 
 const PERFORMANCE_METHOD_NAME_GET_DATA = "Performance.getData";
 const PERFORMANCE_METHOD_NAME_GET_REPORT = "Performance.getReport";
@@ -91,6 +92,7 @@ export class Performance {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to generate report for
+   * @param columns - Optional columns configuration for the report
    * @returns Markdown formatted report string
    *
    * @example
@@ -103,7 +105,7 @@ export class Performance {
    * await fs.writeFile("performance-report.md", markdown);
    * ```
    */
-  public static async getReport(symbol: string, strategyName: string): Promise<string> {
+  public static async getReport(symbol: string, strategyName: string, columns?: Columns[]): Promise<string> {
     backtest.strategyValidationService.validate(strategyName, PERFORMANCE_METHOD_NAME_GET_REPORT);
 
     {
@@ -112,7 +114,7 @@ export class Performance {
       riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, PERFORMANCE_METHOD_NAME_GET_REPORT));
     }
 
-    return backtest.performanceMarkdownService.getReport(symbol, strategyName);
+    return backtest.performanceMarkdownService.getReport(symbol, strategyName, columns);
   }
 
   /**
@@ -124,6 +126,7 @@ export class Performance {
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to save report for
    * @param path - Optional custom directory path
+   * @param columns - Optional columns configuration for the report
    *
    * @example
    * ```typescript
@@ -137,7 +140,8 @@ export class Performance {
   public static async dump(
     symbol: string,
     strategyName: string,
-    path = "./dump/performance"
+    path = "./dump/performance",
+    columns?: Columns[]
   ): Promise<void> {
     backtest.strategyValidationService.validate(strategyName, PERFORMANCE_METHOD_NAME_DUMP);
 
@@ -147,7 +151,7 @@ export class Performance {
       riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, PERFORMANCE_METHOD_NAME_DUMP));
     }
 
-    return backtest.performanceMarkdownService.dump(symbol, strategyName, path);
+    return backtest.performanceMarkdownService.dump(symbol, strategyName, path, columns);
   }
 }
 
