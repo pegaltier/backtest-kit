@@ -223,7 +223,7 @@ for await (const event of Backtest.run('BTCUSDT', config)) {
 }
 ```
 
-## 🆚 Think of it as...
+## ⚔️ Think of it as...
 
 **Open-source QuantConnect without the vendor lock-in**
 
