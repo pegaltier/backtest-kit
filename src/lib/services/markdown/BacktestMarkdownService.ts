@@ -153,8 +153,8 @@ class ReportStorage {
     const visibleColumns = backtest_columns.filter((col) => col.isVisible());
     const header = visibleColumns.map((col) => col.label);
     const separator = visibleColumns.map(() => "---");
-    const rows = this._signalList.map((closedSignal) =>
-      visibleColumns.map((col) => col.format(closedSignal))
+    const rows = this._signalList.map((closedSignal, index) =>
+      visibleColumns.map((col) => col.format(closedSignal, index))
     );
 
     const tableData = [header, separator, ...rows];

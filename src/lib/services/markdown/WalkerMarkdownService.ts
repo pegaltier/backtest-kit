@@ -128,8 +128,8 @@ class ReportStorage {
     const separator = visibleColumns.map(() => "---");
 
     // Build table rows
-    const rows = topStrategies.map((result) =>
-      visibleColumns.map((col) => col.format(result))
+    const rows = topStrategies.map((result, index) =>
+      visibleColumns.map((col) => col.format(result, index))
     );
 
     const tableData = [header, separator, ...rows];
@@ -175,8 +175,8 @@ class ReportStorage {
     const separator = visibleColumns.map(() => "---");
 
     // Build table rows
-    const rows = allSignals.map((signal) =>
-      visibleColumns.map((col) => col.format(signal))
+    const rows = allSignals.map((signal, index) =>
+      visibleColumns.map((col) => col.format(signal, index))
     );
 
     const tableData = [header, separator, ...rows];

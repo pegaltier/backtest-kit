@@ -40,6 +40,12 @@ export function formatMetric(value: number | null): string {
  */
 export const walker_strategy_columns: ColumnModel<IStrategyResult>[] = [
   {
+    key: "rank",
+    label: "Rank",
+    format: (_data, index) => `${index + 1}`,
+    isVisible: () => true,
+  },
+  {
     key: "strategy",
     label: "Strategy",
     format: (data) => data.strategyName,

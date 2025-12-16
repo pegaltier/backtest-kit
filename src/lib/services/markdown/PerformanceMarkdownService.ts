@@ -176,8 +176,8 @@ class PerformanceStorage {
     const visibleColumns = performance_columns.filter((col) => col.isVisible());
     const header = visibleColumns.map((col) => col.label);
     const separator = visibleColumns.map(() => "---");
-    const rows = sortedMetrics.map((metric) =>
-      visibleColumns.map((col) => col.format(metric))
+    const rows = sortedMetrics.map((metric, index) =>
+      visibleColumns.map((col) => col.format(metric, index))
     );
 
     const tableData = [header, separator, ...rows];

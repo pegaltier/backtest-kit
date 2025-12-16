@@ -140,8 +140,8 @@ class ReportStorage {
     const visibleColumns = partial_columns.filter((col) => col.isVisible());
     const header = visibleColumns.map((col) => col.label);
     const separator = visibleColumns.map(() => "---");
-    const rows = this._eventList.map((event) =>
-      visibleColumns.map((col) => col.format(event))
+    const rows = this._eventList.map((event, index) =>
+      visibleColumns.map((col) => col.format(event, index))
     );
 
     const tableData = [header, separator, ...rows];
