@@ -4171,6 +4171,28 @@ interface PerformanceStatisticsModel {
 }
 
 /**
+ * Signal data for PNL table.
+ * Represents a single closed signal with essential trading information.
+ */
+interface SignalData$1 {
+    /** Strategy that generated this signal */
+    strategyName: StrategyName;
+    /** Unique signal identifier */
+    signalId: string;
+    /** Trading pair symbol */
+    symbol: string;
+    /** Position type (long/short) */
+    position: string;
+    /** PNL as percentage */
+    pnl: number;
+    /** Reason why signal was closed */
+    closeReason: string;
+    /** Timestamp when signal opened */
+    openTime: number;
+    /** Timestamp when signal closed */
+    closeTime: number;
+}
+/**
  * Strategy result entry for comparison table.
  * Contains strategy name, full statistics, and metric value for ranking.
  */
@@ -7919,6 +7941,7 @@ declare class BacktestCommandService {
     }) => AsyncGenerator<IStrategyBacktestResult, void, unknown>;
 }
 
+type Columns$6 = ColumnModel<IStrategyTickResultClosed>;
 /**
  * Service for generating and saving backtest markdown reports.
  *
@@ -7996,6 +8019,7 @@ declare class BacktestMarkdownService {
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to generate report for
+     * @param columns - Column configuration for formatting the table
      * @returns Markdown formatted report string with table of all closed signals
      *
      * @example
@@ -8005,7 +8029,7 @@ declare class BacktestMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, columns?: Columns$6[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -8014,6 +8038,7 @@ declare class BacktestMarkdownService {
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to save report for
      * @param path - Directory path to save report (default: "./dump/backtest")
+     * @param columns - Column configuration for formatting the table
      *
      * @example
      * ```typescript
@@ -8026,7 +8051,7 @@ declare class BacktestMarkdownService {
      * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, path?: string) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$6[]) => Promise<void>;
     /**
      * Clears accumulated signal data from storage.
      * If ctx is provided, clears only that specific symbol-strategy pair's data.
@@ -8063,6 +8088,7 @@ declare class BacktestMarkdownService {
     protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
 }
 
+type Columns$5 = ColumnModel<TickEvent>;
 /**
  * Service for generating and saving live trading markdown reports.
  *
@@ -8145,6 +8171,7 @@ declare class LiveMarkdownService {
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to generate report for
+     * @param columns - Column configuration for formatting the table
      * @returns Markdown formatted report string with table of all events
      *
      * @example
@@ -8154,7 +8181,7 @@ declare class LiveMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, columns?: Columns$5[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -8163,6 +8190,7 @@ declare class LiveMarkdownService {
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to save report for
      * @param path - Directory path to save report (default: "./dump/live")
+     * @param columns - Column configuration for formatting the table
      *
      * @example
      * ```typescript
@@ -8175,7 +8203,7 @@ declare class LiveMarkdownService {
      * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, path?: string) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$5[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
      * If ctx is provided, clears only that specific symbol-strategy pair's data.
@@ -8212,6 +8240,7 @@ declare class LiveMarkdownService {
     protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
 }
 
+type Columns$4 = ColumnModel<ScheduledEvent>;
 /**
  * Service for generating and saving scheduled signals markdown reports.
  *
@@ -8278,6 +8307,7 @@ declare class ScheduleMarkdownService {
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to generate report for
+     * @param columns - Column configuration for formatting the table
      * @returns Markdown formatted report string with table of all events
      *
      * @example
@@ -8287,7 +8317,7 @@ declare class ScheduleMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, columns?: Columns$4[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -8296,6 +8326,7 @@ declare class ScheduleMarkdownService {
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to save report for
      * @param path - Directory path to save report (default: "./dump/schedule")
+     * @param columns - Column configuration for formatting the table
      *
      * @example
      * ```typescript
@@ -8308,7 +8339,7 @@ declare class ScheduleMarkdownService {
      * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, path?: string) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$4[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
      * If ctx is provided, clears only that specific symbol-strategy pair's data.
@@ -8345,6 +8376,7 @@ declare class ScheduleMarkdownService {
     protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
 }
 
+type Columns$3 = ColumnModel<MetricStats>;
 /**
  * Service for collecting and analyzing performance metrics.
  *
@@ -8408,6 +8440,7 @@ declare class PerformanceMarkdownService {
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to generate report for
+     * @param columns - Column configuration for formatting the table
      * @returns Markdown formatted report string
      *
      * @example
@@ -8416,13 +8449,14 @@ declare class PerformanceMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: string) => Promise<string>;
+    getReport: (symbol: string, strategyName: string, columns?: Columns$3[]) => Promise<string>;
     /**
      * Saves performance report to disk.
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to save report for
      * @param path - Directory path to save report
+     * @param columns - Column configuration for formatting the table
      *
      * @example
      * ```typescript
@@ -8433,7 +8467,7 @@ declare class PerformanceMarkdownService {
      * await performanceService.dump("BTCUSDT", "my-strategy", "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: string, path?: string) => Promise<void>;
+    dump: (symbol: string, strategyName: string, path?: string, columns?: Columns$3[]) => Promise<void>;
     /**
      * Clears accumulated performance data from storage.
      *
@@ -8451,6 +8485,8 @@ declare class PerformanceMarkdownService {
     protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
 }
 
+type StrategyColumn = ColumnModel<IStrategyResult>;
+type PnlColumn = ColumnModel<SignalData$1>;
 /**
  * Service for generating and saving walker markdown reports.
  *
@@ -8517,6 +8553,8 @@ declare class WalkerMarkdownService {
      * @param symbol - Trading symbol
      * @param metric - Metric being optimized
      * @param context - Context with exchangeName and frameName
+     * @param strategyColumns - Column configuration for strategy comparison table
+     * @param pnlColumns - Column configuration for PNL table
      * @returns Markdown formatted report string
      *
      * @example
@@ -8529,7 +8567,7 @@ declare class WalkerMarkdownService {
     getReport: (walkerName: WalkerName, symbol: string, metric: WalkerMetric, context: {
         exchangeName: string;
         frameName: string;
-    }) => Promise<string>;
+    }, strategyColumns?: StrategyColumn[], pnlColumns?: PnlColumn[]) => Promise<string>;
     /**
      * Saves walker report to disk.
      * Creates directory if it doesn't exist.
@@ -8540,6 +8578,8 @@ declare class WalkerMarkdownService {
      * @param metric - Metric being optimized
      * @param context - Context with exchangeName and frameName
      * @param path - Directory path to save report (default: "./dump/walker")
+     * @param strategyColumns - Column configuration for strategy comparison table
+     * @param pnlColumns - Column configuration for PNL table
      *
      * @example
      * ```typescript
@@ -8555,7 +8595,7 @@ declare class WalkerMarkdownService {
     dump: (walkerName: WalkerName, symbol: string, metric: WalkerMetric, context: {
         exchangeName: string;
         frameName: string;
-    }, path?: string) => Promise<void>;
+    }, path?: string, strategyColumns?: StrategyColumn[], pnlColumns?: PnlColumn[]) => Promise<void>;
     /**
      * Clears accumulated result data from storage.
      * If walkerName is provided, clears only that walker's data.
@@ -8589,6 +8629,7 @@ declare class WalkerMarkdownService {
     protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
 }
 
+type Columns$2 = ColumnModel<IHeatmapRow>;
 /**
  * Portfolio Heatmap Markdown Service.
  *
@@ -8656,6 +8697,7 @@ declare class HeatMarkdownService {
      * Generates markdown report with portfolio heatmap table for a strategy.
      *
      * @param strategyName - Strategy name to generate heatmap report for
+     * @param columns - Column configuration for formatting the table
      * @returns Promise resolving to markdown formatted report string
      *
      * @example
@@ -8675,7 +8717,7 @@ declare class HeatMarkdownService {
      * // ...
      * ```
      */
-    getReport: (strategyName: StrategyName) => Promise<string>;
+    getReport: (strategyName: StrategyName, columns?: Columns$2[]) => Promise<string>;
     /**
      * Saves heatmap report to disk for a strategy.
      *
@@ -8684,6 +8726,7 @@ declare class HeatMarkdownService {
      *
      * @param strategyName - Strategy name to save heatmap report for
      * @param path - Optional directory path to save report (default: "./dump/heatmap")
+     * @param columns - Column configuration for formatting the table
      *
      * @example
      * ```typescript
@@ -8696,7 +8739,7 @@ declare class HeatMarkdownService {
      * await service.dump("my-strategy", "./reports");
      * ```
      */
-    dump: (strategyName: StrategyName, path?: string) => Promise<void>;
+    dump: (strategyName: StrategyName, path?: string, columns?: Columns$2[]) => Promise<void>;
     /**
      * Clears accumulated heatmap data from storage.
      * If strategyName is provided, clears only that strategy's data.
@@ -9428,6 +9471,7 @@ declare class OptimizerGlobalService {
     dump: (symbol: string, optimizerName: string, path?: string) => Promise<void>;
 }
 
+type Columns$1 = ColumnModel<PartialEvent>;
 /**
  * Service for generating and saving partial profit/loss markdown reports.
  *
@@ -9505,6 +9549,7 @@ declare class PartialMarkdownService {
      *
      * @param symbol - Trading pair symbol to generate report for
      * @param strategyName - Strategy name to generate report for
+     * @param columns - Column configuration for formatting the table
      * @returns Markdown formatted report string with table of all events
      *
      * @example
@@ -9514,7 +9559,7 @@ declare class PartialMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: string) => Promise<string>;
+    getReport: (symbol: string, strategyName: string, columns?: Columns$1[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -9523,6 +9568,7 @@ declare class PartialMarkdownService {
      * @param symbol - Trading pair symbol to save report for
      * @param strategyName - Strategy name to save report for
      * @param path - Directory path to save report (default: "./dump/partial")
+     * @param columns - Column configuration for formatting the table
      *
      * @example
      * ```typescript
@@ -9535,7 +9581,7 @@ declare class PartialMarkdownService {
      * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: string, path?: string) => Promise<void>;
+    dump: (symbol: string, strategyName: string, path?: string, columns?: Columns$1[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
      * If ctx is provided, clears only that specific symbol-strategy pair's data.
@@ -9772,6 +9818,7 @@ declare class ConfigValidationService {
     validate: () => void;
 }
 
+type Columns = ColumnModel<RiskEvent>;
 /**
  * Service for generating and saving risk rejection markdown reports.
  *
@@ -9836,6 +9883,7 @@ declare class RiskMarkdownService {
      *
      * @param symbol - Trading pair symbol to generate report for
      * @param strategyName - Strategy name to generate report for
+     * @param columns - Column configuration for formatting the table
      * @returns Markdown formatted report string with table of all events
      *
      * @example
@@ -9845,7 +9893,7 @@ declare class RiskMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: string) => Promise<string>;
+    getReport: (symbol: string, strategyName: string, columns?: Columns[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -9854,6 +9902,7 @@ declare class RiskMarkdownService {
      * @param symbol - Trading pair symbol to save report for
      * @param strategyName - Strategy name to save report for
      * @param path - Directory path to save report (default: "./dump/risk")
+     * @param columns - Column configuration for formatting the table
      *
      * @example
      * ```typescript
@@ -9866,7 +9915,7 @@ declare class RiskMarkdownService {
      * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: string, path?: string) => Promise<void>;
+    dump: (symbol: string, strategyName: string, path?: string, columns?: Columns[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
      * If ctx is provided, clears only that specific symbol-strategy pair's data.

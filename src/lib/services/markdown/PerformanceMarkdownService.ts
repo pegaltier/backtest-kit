@@ -10,7 +10,10 @@ import TYPES from "../../../lib/core/types";
 import { memoize, singleshot } from "functools-kit";
 import { performanceEmitter } from "../../../config/emitters";
 import { PerformanceStatisticsModel, MetricStats } from "../../../model/PerformanceStatistics.model";
+import { ColumnModel } from "../../../model/Column.model";
 import { performance_columns } from "../../../assets/performance.columns";
+
+export type Columns = ColumnModel<MetricStats>;
 
 /**
  * Checks if a value is unsafe for display (not a number, NaN, or Infinity).
@@ -154,9 +157,13 @@ class PerformanceStorage {
    * Generates markdown report with performance statistics.
    *
    * @param strategyName - Strategy name
+   * @param columns - Column configuration for formatting the table
    * @returns Markdown formatted report
    */
-  public async getReport(strategyName: string): Promise<string> {
+  public async getReport(
+    strategyName: string,
+    columns: Columns[] = performance_columns
+  ): Promise<string> {
     const stats = await this.getData(strategyName);
 
     if (stats.totalEvents === 0) {
@@ -173,7 +180,7 @@ class PerformanceStorage {
     );
 
     // Generate summary table using Column interface
-    const visibleColumns = performance_columns.filter((col) => col.isVisible());
+    const visibleColumns = columns.filter((col) => col.isVisible());
     const header = visibleColumns.map((col) => col.label);
     const separator = visibleColumns.map(() => "---");
     const rows = await Promise.all(
@@ -215,12 +222,14 @@ class PerformanceStorage {
    *
    * @param strategyName - Strategy name
    * @param path - Directory path to save report
+   * @param columns - Column configuration for formatting the table
    */
   public async dump(
     strategyName: string,
-    path = "./dump/performance"
+    path = "./dump/performance",
+    columns: Columns[] = performance_columns
   ): Promise<void> {
-    const markdown = await this.getReport(strategyName);
+    const markdown = await this.getReport(strategyName, columns);
 
     try {
       const dir = join(process.cwd(), path);
@@ -326,6 +335,7 @@ export class PerformanceMarkdownService {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to generate report for
+   * @param columns - Column configuration for formatting the table
    * @returns Markdown formatted report string
    *
    * @example
@@ -334,13 +344,17 @@ export class PerformanceMarkdownService {
    * console.log(markdown);
    * ```
    */
-  public getReport = async (symbol: string, strategyName: string): Promise<string> => {
+  public getReport = async (
+    symbol: string,
+    strategyName: string,
+    columns: Columns[] = performance_columns
+  ): Promise<string> => {
     this.loggerService.log("performanceMarkdownService getReport", {
       symbol,
       strategyName,
     });
     const storage = this.getStorage(symbol, strategyName);
-    return storage.getReport(strategyName);
+    return storage.getReport(strategyName, columns);
   };
 
   /**
@@ -349,6 +363,7 @@ export class PerformanceMarkdownService {
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to save report for
    * @param path - Directory path to save report
+   * @param columns - Column configuration for formatting the table
    *
    * @example
    * ```typescript
@@ -362,7 +377,8 @@ export class PerformanceMarkdownService {
   public dump = async (
     symbol: string,
     strategyName: string,
-    path = "./dump/performance"
+    path = "./dump/performance",
+    columns: Columns[] = performance_columns
   ): Promise<void> => {
     this.loggerService.log("performanceMarkdownService dump", {
       symbol,
@@ -370,7 +386,7 @@ export class PerformanceMarkdownService {
       path,
     });
     const storage = this.getStorage(symbol, strategyName);
-    await storage.dump(strategyName, path);
+    await storage.dump(strategyName, path, columns);
   };
 
   /**

@@ -12,7 +12,10 @@ import { memoize, singleshot, str } from "functools-kit";
 import { signalEmitter } from "../../../config/emitters";
 import { IHeatmapRow } from "../../../interfaces/Heatmap.interface";
 import { HeatmapStatisticsModel } from "../../../model/HeatmapStatistics.model";
+import { ColumnModel } from "../../../model/Column.model";
 import { heat_columns } from "../../../assets/heat.columns";
+
+export type Columns = ColumnModel<IHeatmapRow>;
 
 const HEATMAP_METHOD_NAME_GET_DATA = "HeatMarkdownService.getData";
 const HEATMAP_METHOD_NAME_GET_REPORT = "HeatMarkdownService.getReport";
@@ -299,9 +302,13 @@ class HeatmapStorage {
    * Generates markdown report with portfolio heatmap table (View).
    *
    * @param strategyName - Strategy name for report title
+   * @param columns - Column configuration for formatting the table
    * @returns Promise resolving to markdown formatted report string
    */
-  public async getReport(strategyName: StrategyName): Promise<string> {
+  public async getReport(
+    strategyName: StrategyName,
+    columns: Columns[] = heat_columns
+  ): Promise<string> {
     const data = await this.getData();
 
     if (data.symbols.length === 0) {
@@ -312,7 +319,7 @@ class HeatmapStorage {
       ].join("\n");
     }
 
-    const visibleColumns = heat_columns.filter((col) => col.isVisible());
+    const visibleColumns = columns.filter((col) => col.isVisible());
     const header = visibleColumns.map((col) => col.label);
     const separator = visibleColumns.map(() => "---");
     const rows = await Promise.all(
@@ -338,12 +345,14 @@ class HeatmapStorage {
    *
    * @param strategyName - Strategy name for filename
    * @param path - Directory path to save report (default: "./dump/heatmap")
+   * @param columns - Column configuration for formatting the table
    */
   public async dump(
     strategyName: StrategyName,
-    path = "./dump/heatmap"
+    path = "./dump/heatmap",
+    columns: Columns[] = heat_columns
   ): Promise<void> {
-    const markdown = await this.getReport(strategyName);
+    const markdown = await this.getReport(strategyName, columns);
 
     try {
       const dir = join(process.cwd(), path);
@@ -453,6 +462,7 @@ export class HeatMarkdownService {
    * Generates markdown report with portfolio heatmap table for a strategy.
    *
    * @param strategyName - Strategy name to generate heatmap report for
+   * @param columns - Column configuration for formatting the table
    * @returns Promise resolving to markdown formatted report string
    *
    * @example
@@ -472,12 +482,15 @@ export class HeatMarkdownService {
    * // ...
    * ```
    */
-  public getReport = async (strategyName: StrategyName): Promise<string> => {
+  public getReport = async (
+    strategyName: StrategyName,
+    columns: Columns[] = heat_columns
+  ): Promise<string> => {
     this.loggerService.log(HEATMAP_METHOD_NAME_GET_REPORT, {
       strategyName,
     });
     const storage = this.getStorage(strategyName);
-    return storage.getReport(strategyName);
+    return storage.getReport(strategyName, columns);
   };
 
   /**
@@ -488,6 +501,7 @@ export class HeatMarkdownService {
    *
    * @param strategyName - Strategy name to save heatmap report for
    * @param path - Optional directory path to save report (default: "./dump/heatmap")
+   * @param columns - Column configuration for formatting the table
    *
    * @example
    * ```typescript
@@ -502,14 +516,15 @@ export class HeatMarkdownService {
    */
   public dump = async (
     strategyName: StrategyName,
-    path = "./dump/heatmap"
+    path = "./dump/heatmap",
+    columns: Columns[] = heat_columns
   ): Promise<void> => {
     this.loggerService.log(HEATMAP_METHOD_NAME_DUMP, {
       strategyName,
       path,
     });
     const storage = this.getStorage(strategyName);
-    await storage.dump(strategyName, path);
+    await storage.dump(strategyName, path, columns);
   };
 
   /**

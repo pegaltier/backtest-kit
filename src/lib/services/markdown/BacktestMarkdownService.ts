@@ -11,7 +11,10 @@ import TYPES from "../../../lib/core/types";
 import { memoize, singleshot } from "functools-kit";
 import { signalBacktestEmitter } from "../../../config/emitters";
 import { BacktestStatisticsModel } from "../../../model/BacktestStatistics.model";
+import { ColumnModel } from "../../../model/Column.model";
 import { backtest_columns } from "../../../assets/backtest.columns";
+
+export type Columns = ColumnModel<IStrategyTickResultClosed>;
 
 /**
  * Checks if a value is unsafe for display (not a number, NaN, or Infinity).
@@ -137,9 +140,13 @@ class ReportStorage {
    * Generates markdown report with all closed signals for a strategy (View).
    *
    * @param strategyName - Strategy name
+   * @param columns - Column configuration for formatting the table
    * @returns Markdown formatted report with all signals
    */
-  public async getReport(strategyName: StrategyName): Promise<string> {
+  public async getReport(
+    strategyName: StrategyName,
+    columns: Columns[] = backtest_columns
+  ): Promise<string> {
     const stats = await this.getData();
 
     if (stats.totalSignals === 0) {
@@ -150,7 +157,7 @@ class ReportStorage {
       ].join("\n");
     }
 
-    const visibleColumns = backtest_columns.filter((col) => col.isVisible());
+    const visibleColumns = columns.filter((col) => col.isVisible());
     const header = visibleColumns.map((col) => col.label);
     const separator = visibleColumns.map(() => "---");
     const rows = await Promise.all(
@@ -185,12 +192,14 @@ class ReportStorage {
    *
    * @param strategyName - Strategy name
    * @param path - Directory path to save report (default: "./dump/backtest")
+   * @param columns - Column configuration for formatting the table
    */
   public async dump(
     strategyName: StrategyName,
-    path = "./dump/backtest"
+    path = "./dump/backtest",
+    columns: Columns[] = backtest_columns
   ): Promise<void> {
-    const markdown = await this.getReport(strategyName);
+    const markdown = await this.getReport(strategyName, columns);
 
     try {
       const dir = join(process.cwd(), path);
@@ -309,6 +318,7 @@ export class BacktestMarkdownService {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to generate report for
+   * @param columns - Column configuration for formatting the table
    * @returns Markdown formatted report string with table of all closed signals
    *
    * @example
@@ -318,13 +328,17 @@ export class BacktestMarkdownService {
    * console.log(markdown);
    * ```
    */
-  public getReport = async (symbol: string, strategyName: StrategyName): Promise<string> => {
+  public getReport = async (
+    symbol: string,
+    strategyName: StrategyName,
+    columns: Columns[] = backtest_columns
+  ): Promise<string> => {
     this.loggerService.log("backtestMarkdownService getReport", {
       symbol,
       strategyName,
     });
     const storage = this.getStorage(symbol, strategyName);
-    return storage.getReport(strategyName);
+    return storage.getReport(strategyName, columns);
   };
 
   /**
@@ -335,6 +349,7 @@ export class BacktestMarkdownService {
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to save report for
    * @param path - Directory path to save report (default: "./dump/backtest")
+   * @param columns - Column configuration for formatting the table
    *
    * @example
    * ```typescript
@@ -350,7 +365,8 @@ export class BacktestMarkdownService {
   public dump = async (
     symbol: string,
     strategyName: StrategyName,
-    path = "./dump/backtest"
+    path = "./dump/backtest",
+    columns: Columns[] = backtest_columns
   ): Promise<void> => {
     this.loggerService.log("backtestMarkdownService dump", {
       symbol,
@@ -358,7 +374,7 @@ export class BacktestMarkdownService {
       path,
     });
     const storage = this.getStorage(symbol, strategyName);
-    await storage.dump(strategyName, path);
+    await storage.dump(strategyName, path, columns);
   };
 
   /**

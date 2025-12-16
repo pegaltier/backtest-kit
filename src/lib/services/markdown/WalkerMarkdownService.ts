@@ -18,10 +18,14 @@ import {
   SignalData,
 } from "../../../model/WalkerStatistics.model";
 import { BacktestStatisticsModel } from "../../../model/BacktestStatistics.model";
+import { ColumnModel } from "../../../model/Column.model";
 import {
   walker_strategy_columns,
   walker_pnl_columns,
 } from "../../../assets/walker.columns";
+
+export type StrategyColumn = ColumnModel<IStrategyResult>;
+export type PnlColumn = ColumnModel<SignalData>;
 
 /**
  * Checks if a value is unsafe for display (not a number, NaN, or Infinity).
@@ -132,9 +136,13 @@ class ReportStorage {
    * Sorts strategies by metric value and formats as markdown table.
    *
    * @param topN - Number of top strategies to include (default: 10)
+   * @param columns - Column configuration for formatting the strategy comparison table
    * @returns Markdown formatted comparison table
    */
-  private async getComparisonTable(topN: number = 10): Promise<string> {
+  private async getComparisonTable(
+    topN: number = 10,
+    columns: StrategyColumn[] = walker_strategy_columns
+  ): Promise<string> {
     if (this._strategyResults.length === 0) {
       return "No strategy results available.";
     }
@@ -150,7 +158,7 @@ class ReportStorage {
     const topStrategies = sortedResults.slice(0, topN);
 
     // Get columns configuration
-    const visibleColumns = walker_strategy_columns.filter((col) => col.isVisible());
+    const visibleColumns = columns.filter((col) => col.isVisible());
 
     // Build table header
     const header = visibleColumns.map((col) => col.label);
@@ -171,9 +179,12 @@ class ReportStorage {
    * Generates PNL table showing all closed signals across all strategies (View).
    * Collects all signals from all strategies and formats as markdown table.
    *
+   * @param columns - Column configuration for formatting the PNL table
    * @returns Markdown formatted PNL table
    */
-  private async getPnlTable(): Promise<string> {
+  private async getPnlTable(
+    columns: PnlColumn[] = walker_pnl_columns
+  ): Promise<string> {
     if (this._strategyResults.length === 0) {
       return "No strategy results available.";
     }
@@ -201,7 +212,7 @@ class ReportStorage {
     }
 
     // Build table header
-    const visibleColumns = walker_pnl_columns.filter((col) => col.isVisible());
+    const visibleColumns = columns.filter((col) => col.isVisible());
     const header = visibleColumns.map((col) => col.label);
     const separator = visibleColumns.map(() => "---");
 
@@ -223,6 +234,8 @@ class ReportStorage {
    * @param symbol - Trading symbol
    * @param metric - Metric being optimized
    * @param context - Context with exchangeName and frameName
+   * @param strategyColumns - Column configuration for strategy comparison table
+   * @param pnlColumns - Column configuration for PNL table
    * @returns Markdown formatted report with all results
    */
   public async getReport(
@@ -231,7 +244,9 @@ class ReportStorage {
     context: {
       exchangeName: string;
       frameName: string;
-    }
+    },
+    strategyColumns: StrategyColumn[] = walker_strategy_columns,
+    pnlColumns: PnlColumn[] = walker_pnl_columns
   ): Promise<string> {
     const results = await this.getData(symbol, metric, context);
 
@@ -254,11 +269,11 @@ class ReportStorage {
       "",
       "## Top Strategies Comparison",
       "",
-      await this.getComparisonTable(10),
+      await this.getComparisonTable(10, strategyColumns),
       "",
       "## All Signals (PNL Table)",
       "",
-      await this.getPnlTable(),
+      await this.getPnlTable(pnlColumns),
       "",
       "**Note:** Higher values are better for all metrics except Standard Deviation (lower is better)."
     ].join("\n");
@@ -271,6 +286,8 @@ class ReportStorage {
    * @param metric - Metric being optimized
    * @param context - Context with exchangeName and frameName
    * @param path - Directory path to save report (default: "./dump/walker")
+   * @param strategyColumns - Column configuration for strategy comparison table
+   * @param pnlColumns - Column configuration for PNL table
    */
   public async dump(
     symbol: string,
@@ -279,9 +296,11 @@ class ReportStorage {
       exchangeName: string;
       frameName: string;
     },
-    path = "./dump/walker"
+    path = "./dump/walker",
+    strategyColumns: StrategyColumn[] = walker_strategy_columns,
+    pnlColumns: PnlColumn[] = walker_pnl_columns
   ): Promise<void> {
-    const markdown = await this.getReport(symbol, metric, context);
+    const markdown = await this.getReport(symbol, metric, context, strategyColumns, pnlColumns);
 
     try {
       const dir = join(process.cwd(), path);
@@ -392,6 +411,8 @@ export class WalkerMarkdownService {
    * @param symbol - Trading symbol
    * @param metric - Metric being optimized
    * @param context - Context with exchangeName and frameName
+   * @param strategyColumns - Column configuration for strategy comparison table
+   * @param pnlColumns - Column configuration for PNL table
    * @returns Markdown formatted report string
    *
    * @example
@@ -408,7 +429,9 @@ export class WalkerMarkdownService {
     context: {
       exchangeName: string;
       frameName: string;
-    }
+    },
+    strategyColumns: StrategyColumn[] = walker_strategy_columns,
+    pnlColumns: PnlColumn[] = walker_pnl_columns
   ): Promise<string> => {
     this.loggerService.log("walkerMarkdownService getReport", {
       walkerName,
@@ -417,7 +440,7 @@ export class WalkerMarkdownService {
       context,
     });
     const storage = this.getStorage(walkerName);
-    return storage.getReport(symbol, metric, context);
+    return storage.getReport(symbol, metric, context, strategyColumns, pnlColumns);
   };
 
   /**
@@ -430,6 +453,8 @@ export class WalkerMarkdownService {
    * @param metric - Metric being optimized
    * @param context - Context with exchangeName and frameName
    * @param path - Directory path to save report (default: "./dump/walker")
+   * @param strategyColumns - Column configuration for strategy comparison table
+   * @param pnlColumns - Column configuration for PNL table
    *
    * @example
    * ```typescript
@@ -450,7 +475,9 @@ export class WalkerMarkdownService {
       exchangeName: string;
       frameName: string;
     },
-    path = "./dump/walker"
+    path = "./dump/walker",
+    strategyColumns: StrategyColumn[] = walker_strategy_columns,
+    pnlColumns: PnlColumn[] = walker_pnl_columns
   ): Promise<void> => {
     this.loggerService.log("walkerMarkdownService dump", {
       walkerName,
@@ -460,7 +487,7 @@ export class WalkerMarkdownService {
       path,
     });
     const storage = this.getStorage(walkerName);
-    await storage.dump(symbol, metric, context, path);
+    await storage.dump(symbol, metric, context, path, strategyColumns, pnlColumns);
   };
 
   /**

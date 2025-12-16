@@ -13,7 +13,10 @@ import TYPES from "../../../lib/core/types";
 import { memoize, singleshot } from "functools-kit";
 import { signalEmitter, signalLiveEmitter } from "../../../config/emitters";
 import { ScheduleStatisticsModel, ScheduledEvent } from "../../../model/ScheduleStatistics.model";
+import { ColumnModel } from "../../../model/Column.model";
 import { schedule_columns } from "../../../assets/schedule.columns";
+
+export type Columns = ColumnModel<ScheduledEvent>;
 
 /** Maximum number of events to store in schedule reports */
 const MAX_EVENTS = 250;
@@ -187,9 +190,13 @@ class ReportStorage {
    * Generates markdown report with all scheduled events for a strategy (View).
    *
    * @param strategyName - Strategy name
+   * @param columns - Column configuration for formatting the table
    * @returns Markdown formatted report with all events
    */
-  public async getReport(strategyName: StrategyName): Promise<string> {
+  public async getReport(
+    strategyName: StrategyName,
+    columns: Columns[] = schedule_columns
+  ): Promise<string> {
     const stats = await this.getData();
 
     if (stats.totalEvents === 0) {
@@ -200,7 +207,7 @@ class ReportStorage {
       ].join("\n");
     }
 
-    const visibleColumns = schedule_columns.filter((col) => col.isVisible());
+    const visibleColumns = columns.filter((col) => col.isVisible());
     const header = visibleColumns.map((col) => col.label);
     const separator = visibleColumns.map(() => "---");
     const rows = await Promise.all(
@@ -233,12 +240,14 @@ class ReportStorage {
    *
    * @param strategyName - Strategy name
    * @param path - Directory path to save report (default: "./dump/schedule")
+   * @param columns - Column configuration for formatting the table
    */
   public async dump(
     strategyName: StrategyName,
-    path = "./dump/schedule"
+    path = "./dump/schedule",
+    columns: Columns[] = schedule_columns
   ): Promise<void> {
-    const markdown = await this.getReport(strategyName);
+    const markdown = await this.getReport(strategyName, columns);
 
     try {
       const dir = join(process.cwd(), path);
@@ -356,6 +365,7 @@ export class ScheduleMarkdownService {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to generate report for
+   * @param columns - Column configuration for formatting the table
    * @returns Markdown formatted report string with table of all events
    *
    * @example
@@ -365,13 +375,17 @@ export class ScheduleMarkdownService {
    * console.log(markdown);
    * ```
    */
-  public getReport = async (symbol: string, strategyName: StrategyName): Promise<string> => {
+  public getReport = async (
+    symbol: string,
+    strategyName: StrategyName,
+    columns: Columns[] = schedule_columns
+  ): Promise<string> => {
     this.loggerService.log("scheduleMarkdownService getReport", {
       symbol,
       strategyName,
     });
     const storage = this.getStorage(symbol, strategyName);
-    return storage.getReport(strategyName);
+    return storage.getReport(strategyName, columns);
   };
 
   /**
@@ -382,6 +396,7 @@ export class ScheduleMarkdownService {
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to save report for
    * @param path - Directory path to save report (default: "./dump/schedule")
+   * @param columns - Column configuration for formatting the table
    *
    * @example
    * ```typescript
@@ -397,7 +412,8 @@ export class ScheduleMarkdownService {
   public dump = async (
     symbol: string,
     strategyName: StrategyName,
-    path = "./dump/schedule"
+    path = "./dump/schedule",
+    columns: Columns[] = schedule_columns
   ): Promise<void> => {
     this.loggerService.log("scheduleMarkdownService dump", {
       symbol,
@@ -405,7 +421,7 @@ export class ScheduleMarkdownService {
       path,
     });
     const storage = this.getStorage(symbol, strategyName);
-    await storage.dump(strategyName, path);
+    await storage.dump(strategyName, path, columns);
   };
 
   /**

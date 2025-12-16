@@ -13,7 +13,10 @@ import TYPES from "../../../lib/core/types";
 import { memoize, singleshot } from "functools-kit";
 import { signalLiveEmitter } from "../../../config/emitters";
 import { LiveStatisticsModel, TickEvent } from "../../../model/LiveStatistics.model";
+import { ColumnModel } from "../../../model/Column.model";
 import { live_columns } from "../../../assets/live.columns";
+
+export type Columns = ColumnModel<TickEvent>;
 
 /**
  * Checks if a value is unsafe for display (not a number, NaN, or Infinity).
@@ -275,9 +278,13 @@ class ReportStorage {
    * Generates markdown report with all tick events for a strategy (View).
    *
    * @param strategyName - Strategy name
+   * @param columns - Column configuration for formatting the table
    * @returns Markdown formatted report with all events
    */
-  public async getReport(strategyName: StrategyName): Promise<string> {
+  public async getReport(
+    strategyName: StrategyName,
+    columns: Columns[] = live_columns
+  ): Promise<string> {
     const stats = await this.getData();
 
     if (stats.totalEvents === 0) {
@@ -288,7 +295,7 @@ class ReportStorage {
       ].join("\n");
     }
 
-    const visibleColumns = live_columns.filter((col) => col.isVisible());
+    const visibleColumns = columns.filter((col) => col.isVisible());
     const header = visibleColumns.map((col) => col.label);
     const separator = visibleColumns.map(() => "---");
     const rows = await Promise.all(
@@ -323,12 +330,14 @@ class ReportStorage {
    *
    * @param strategyName - Strategy name
    * @param path - Directory path to save report (default: "./dump/live")
+   * @param columns - Column configuration for formatting the table
    */
   public async dump(
     strategyName: StrategyName,
-    path = "./dump/live"
+    path = "./dump/live",
+    columns: Columns[] = live_columns
   ): Promise<void> {
-    const markdown = await this.getReport(strategyName);
+    const markdown = await this.getReport(strategyName, columns);
 
     try {
       const dir = join(process.cwd(), path);
@@ -457,6 +466,7 @@ export class LiveMarkdownService {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to generate report for
+   * @param columns - Column configuration for formatting the table
    * @returns Markdown formatted report string with table of all events
    *
    * @example
@@ -466,13 +476,17 @@ export class LiveMarkdownService {
    * console.log(markdown);
    * ```
    */
-  public getReport = async (symbol: string, strategyName: StrategyName): Promise<string> => {
+  public getReport = async (
+    symbol: string,
+    strategyName: StrategyName,
+    columns: Columns[] = live_columns
+  ): Promise<string> => {
     this.loggerService.log("liveMarkdownService getReport", {
       symbol,
       strategyName,
     });
     const storage = this.getStorage(symbol, strategyName);
-    return storage.getReport(strategyName);
+    return storage.getReport(strategyName, columns);
   };
 
   /**
@@ -483,6 +497,7 @@ export class LiveMarkdownService {
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to save report for
    * @param path - Directory path to save report (default: "./dump/live")
+   * @param columns - Column configuration for formatting the table
    *
    * @example
    * ```typescript
@@ -498,7 +513,8 @@ export class LiveMarkdownService {
   public dump = async (
     symbol: string,
     strategyName: StrategyName,
-    path = "./dump/live"
+    path = "./dump/live",
+    columns: Columns[] = live_columns
   ): Promise<void> => {
     this.loggerService.log("liveMarkdownService dump", {
       symbol,
@@ -506,7 +522,7 @@ export class LiveMarkdownService {
       path,
     });
     const storage = this.getStorage(symbol, strategyName);
-    await storage.dump(strategyName, path);
+    await storage.dump(strategyName, path, columns);
   };
 
   /**

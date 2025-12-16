@@ -6,7 +6,10 @@ import TYPES from "../../../lib/core/types";
 import { memoize, singleshot } from "functools-kit";
 import { riskSubject } from "../../../config/emitters";
 import { RiskStatisticsModel, RiskEvent } from "../../../model/RiskStatistics.model";
+import { ColumnModel } from "../../../model/Column.model";
 import { risk_columns } from "../../../assets/risk.columns";
+
+export type Columns = ColumnModel<RiskEvent>;
 
 /** Maximum number of events to store in risk reports */
 const MAX_EVENTS = 250;
@@ -69,9 +72,14 @@ class ReportStorage {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name
+   * @param columns - Column configuration for formatting the table
    * @returns Markdown formatted report with all events
    */
-  public async getReport(symbol: string, strategyName: string): Promise<string> {
+  public async getReport(
+    symbol: string,
+    strategyName: string,
+    columns: Columns[] = risk_columns
+  ): Promise<string> {
     const stats = await this.getData();
 
     if (stats.totalRejections === 0) {
@@ -82,7 +90,7 @@ class ReportStorage {
       ].join("\n");
     }
 
-    const visibleColumns = risk_columns.filter((col) => col.isVisible());
+    const visibleColumns = columns.filter((col) => col.isVisible());
     const header = visibleColumns.map((col) => col.label);
     const separator = visibleColumns.map(() => "---");
     const rows = await Promise.all(
@@ -115,9 +123,15 @@ class ReportStorage {
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name
    * @param path - Directory path to save report (default: "./dump/risk")
+   * @param columns - Column configuration for formatting the table
    */
-  public async dump(symbol: string, strategyName: string, path = "./dump/risk"): Promise<void> {
-    const markdown = await this.getReport(symbol, strategyName);
+  public async dump(
+    symbol: string,
+    strategyName: string,
+    path = "./dump/risk",
+    columns: Columns[] = risk_columns
+  ): Promise<void> {
+    const markdown = await this.getReport(symbol, strategyName, columns);
 
     try {
       const dir = join(process.cwd(), path);
@@ -219,6 +233,7 @@ export class RiskMarkdownService {
    *
    * @param symbol - Trading pair symbol to generate report for
    * @param strategyName - Strategy name to generate report for
+   * @param columns - Column configuration for formatting the table
    * @returns Markdown formatted report string with table of all events
    *
    * @example
@@ -228,13 +243,17 @@ export class RiskMarkdownService {
    * console.log(markdown);
    * ```
    */
-  public getReport = async (symbol: string, strategyName: string): Promise<string> => {
+  public getReport = async (
+    symbol: string,
+    strategyName: string,
+    columns: Columns[] = risk_columns
+  ): Promise<string> => {
     this.loggerService.log("riskMarkdownService getReport", {
       symbol,
       strategyName,
     });
     const storage = this.getStorage(symbol, strategyName);
-    return storage.getReport(symbol, strategyName);
+    return storage.getReport(symbol, strategyName, columns);
   };
 
   /**
@@ -245,6 +264,7 @@ export class RiskMarkdownService {
    * @param symbol - Trading pair symbol to save report for
    * @param strategyName - Strategy name to save report for
    * @param path - Directory path to save report (default: "./dump/risk")
+   * @param columns - Column configuration for formatting the table
    *
    * @example
    * ```typescript
@@ -260,7 +280,8 @@ export class RiskMarkdownService {
   public dump = async (
     symbol: string,
     strategyName: string,
-    path = "./dump/risk"
+    path = "./dump/risk",
+    columns: Columns[] = risk_columns
   ): Promise<void> => {
     this.loggerService.log("riskMarkdownService dump", {
       symbol,
@@ -268,7 +289,7 @@ export class RiskMarkdownService {
       path,
     });
     const storage = this.getStorage(symbol, strategyName);
-    await storage.dump(symbol, strategyName, path);
+    await storage.dump(symbol, strategyName, path, columns);
   };
 
   /**
