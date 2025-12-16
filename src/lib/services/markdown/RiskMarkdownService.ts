@@ -10,8 +10,6 @@ import { toPlainString } from "../../../helpers/toPlainString";
 import { GLOBAL_CONFIG } from "../../../config/params";
 import { RiskStatistics, RiskEvent } from "../../../model/RiskStatistics.model";
 
-export type { RiskStatistics } from "../../../model/RiskStatistics.model";
-
 /**
  * Column configuration for markdown table generation.
  * Defines how to extract and format data from risk events.

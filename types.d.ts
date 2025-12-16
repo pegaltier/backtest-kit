@@ -1151,150 +1151,6 @@ interface BacktestStatistics {
 }
 
 /**
- * Service for generating and saving backtest markdown reports.
- *
- * Features:
- * - Listens to signal events via onTick callback
- * - Accumulates closed signals per strategy using memoized storage
- * - Generates markdown tables with detailed signal information
- * - Saves reports to disk in logs/backtest/{strategyName}.md
- *
- * @example
- * ```typescript
- * const service = new BacktestMarkdownService();
- *
- * // Add to strategy callbacks
- * addStrategy({
- *   strategyName: "my-strategy",
- *   callbacks: {
- *     onTick: (symbol, result, backtest) => {
- *       service.tick(result);
- *     }
- *   }
- * });
- *
- * // After backtest, generate and save report
- * await service.saveReport("my-strategy");
- * ```
- */
-declare class BacktestMarkdownService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Memoized function to get or create ReportStorage for a symbol-strategy pair.
-     * Each symbol-strategy combination gets its own isolated storage instance.
-     */
-    private getStorage;
-    /**
-     * Processes tick events and accumulates closed signals.
-     * Should be called from IStrategyCallbacks.onTick.
-     *
-     * Only processes closed signals - opened signals are ignored.
-     *
-     * @param data - Tick result from strategy execution (opened or closed)
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestMarkdownService();
-     *
-     * callbacks: {
-     *   onTick: (symbol, result, backtest) => {
-     *     service.tick(result);
-     *   }
-     * }
-     * ```
-     */
-    private tick;
-    /**
-     * Gets statistical data from all closed signals for a symbol-strategy pair.
-     * Delegates to ReportStorage.getData().
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to get data for
-     * @returns Statistical data object with all metrics
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestMarkdownService();
-     * const stats = await service.getData("BTCUSDT", "my-strategy");
-     * console.log(stats.sharpeRatio, stats.winRate);
-     * ```
-     */
-    getData: (symbol: string, strategyName: StrategyName) => Promise<BacktestStatistics>;
-    /**
-     * Generates markdown report with all closed signals for a symbol-strategy pair.
-     * Delegates to ReportStorage.generateReport().
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to generate report for
-     * @returns Markdown formatted report string with table of all closed signals
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestMarkdownService();
-     * const markdown = await service.getReport("BTCUSDT", "my-strategy");
-     * console.log(markdown);
-     * ```
-     */
-    getReport: (symbol: string, strategyName: StrategyName) => Promise<string>;
-    /**
-     * Saves symbol-strategy report to disk.
-     * Creates directory if it doesn't exist.
-     * Delegates to ReportStorage.dump().
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to save report for
-     * @param path - Directory path to save report (default: "./dump/backtest")
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestMarkdownService();
-     *
-     * // Save to default path: ./dump/backtest/my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy");
-     *
-     * // Save to custom path: ./custom/path/my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
-     * ```
-     */
-    dump: (symbol: string, strategyName: StrategyName, path?: string) => Promise<void>;
-    /**
-     * Clears accumulated signal data from storage.
-     * If ctx is provided, clears only that specific symbol-strategy pair's data.
-     * If nothing is provided, clears all data.
-     *
-     * @param ctx - Optional context with symbol and strategyName
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestMarkdownService();
-     *
-     * // Clear specific symbol-strategy pair
-     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy" });
-     *
-     * // Clear all data
-     * await service.clear();
-     * ```
-     */
-    clear: (ctx?: {
-        symbol: string;
-        strategyName: StrategyName;
-    }) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to backtest signal events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestMarkdownService();
-     * await service.init(); // Subscribe to backtest events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-}
-
-/**
  * Optimization metric for comparing strategies.
  * Higher values are always better (metric is maximized).
  */
@@ -4021,22 +3877,6 @@ interface IHeatmapRow {
     /** Expectancy: (winRate * avgWin) - (lossRate * avgLoss) */
     expectancy: number | null;
 }
-/**
- * Portfolio heatmap statistics structure.
- * Contains aggregated data for all symbols in the portfolio.
- */
-interface IHeatmapStatistics {
-    /** Array of symbol statistics */
-    symbols: IHeatmapRow[];
-    /** Total number of symbols tracked */
-    totalSymbols: number;
-    /** Portfolio-wide total PNL */
-    portfolioTotalPnl: number | null;
-    /** Portfolio-wide Sharpe Ratio */
-    portfolioSharpeRatio: number | null;
-    /** Portfolio-wide total trades */
-    portfolioTotalTrades: number;
-}
 
 /**
  * Unified tick event data for report generation.
@@ -4127,12 +3967,21 @@ interface LiveStatistics {
 }
 
 /**
- * Type alias for heatmap statistics.
- *
- * Re-exports IHeatmapStatistics from Heatmap.interface for consistent API surface.
- * Used for portfolio-wide metrics and per-symbol performance tracking.
+ * Portfolio heatmap statistics structure.
+ * Contains aggregated data for all symbols in the portfolio.
  */
-type HeatmapStatistics = IHeatmapStatistics;
+interface HeatmapStatistics {
+    /** Array of symbol statistics */
+    symbols: IHeatmapRow[];
+    /** Total number of symbols tracked */
+    totalSymbols: number;
+    /** Portfolio-wide total PNL */
+    portfolioTotalPnl: number | null;
+    /** Portfolio-wide Sharpe Ratio */
+    portfolioSharpeRatio: number | null;
+    /** Portfolio-wide total trades */
+    portfolioTotalTrades: number;
+}
 
 /**
  * Unified scheduled signal event data for report generation.
@@ -5249,112 +5098,6 @@ declare class ScheduleUtils {
 declare const Schedule: ScheduleUtils;
 
 /**
- * Service for collecting and analyzing performance metrics.
- *
- * Features:
- * - Listens to performance events via performanceEmitter
- * - Accumulates metrics per strategy
- * - Calculates aggregated statistics (avg, min, max, percentiles)
- * - Generates markdown reports with bottleneck analysis
- * - Saves reports to disk in logs/performance/{strategyName}.md
- *
- * @example
- * ```typescript
- * import { listenPerformance } from "backtest-kit";
- *
- * // Subscribe to performance events
- * listenPerformance((event) => {
- *   console.log(`${event.metricType}: ${event.duration.toFixed(2)}ms`);
- * });
- *
- * // After execution, generate report
- * const stats = await Performance.getData("my-strategy");
- * console.log("Bottlenecks:", stats.metricStats);
- *
- * // Save report to disk
- * await Performance.dump("BTCUSDT", "my-strategy");
- * ```
- */
-declare class PerformanceMarkdownService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Memoized function to get or create PerformanceStorage for a symbol-strategy pair.
-     * Each symbol-strategy combination gets its own isolated storage instance.
-     */
-    private getStorage;
-    /**
-     * Processes performance events and accumulates metrics.
-     * Should be called from performance tracking code.
-     *
-     * @param event - Performance event with timing data
-     */
-    private track;
-    /**
-     * Gets aggregated performance statistics for a symbol-strategy pair.
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to get data for
-     * @returns Performance statistics with aggregated metrics
-     *
-     * @example
-     * ```typescript
-     * const stats = await performanceService.getData("BTCUSDT", "my-strategy");
-     * console.log("Total time:", stats.totalDuration);
-     * console.log("Slowest operation:", Object.values(stats.metricStats)
-     *   .sort((a, b) => b.avgDuration - a.avgDuration)[0]);
-     * ```
-     */
-    getData: (symbol: string, strategyName: string) => Promise<PerformanceStatistics>;
-    /**
-     * Generates markdown report with performance analysis.
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to generate report for
-     * @returns Markdown formatted report string
-     *
-     * @example
-     * ```typescript
-     * const markdown = await performanceService.getReport("BTCUSDT", "my-strategy");
-     * console.log(markdown);
-     * ```
-     */
-    getReport: (symbol: string, strategyName: string) => Promise<string>;
-    /**
-     * Saves performance report to disk.
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to save report for
-     * @param path - Directory path to save report
-     *
-     * @example
-     * ```typescript
-     * // Save to default path: ./dump/performance/my-strategy.md
-     * await performanceService.dump("BTCUSDT", "my-strategy");
-     *
-     * // Save to custom path
-     * await performanceService.dump("BTCUSDT", "my-strategy", "./custom/path");
-     * ```
-     */
-    dump: (symbol: string, strategyName: string, path?: string) => Promise<void>;
-    /**
-     * Clears accumulated performance data from storage.
-     *
-     * @param symbol - Optional trading pair symbol
-     * @param strategyName - Optional strategy name
-     */
-    clear: (ctx?: {
-        symbol: string;
-        strategyName: string;
-    }) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to performance events.
-     * Uses singleshot to ensure initialization happens only once.
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-}
-
-/**
  * Performance class provides static methods for performance metrics analysis.
  *
  * Features:
@@ -5671,7 +5414,7 @@ declare class HeatUtils {
      * });
      * ```
      */
-    getData: (strategyName: StrategyName) => Promise<IHeatmapStatistics>;
+    getData: (strategyName: StrategyName) => Promise<HeatmapStatistics>;
     /**
      * Generates markdown report with portfolio heatmap table for a strategy.
      *
@@ -8111,6 +7854,150 @@ declare class BacktestCommandService {
 }
 
 /**
+ * Service for generating and saving backtest markdown reports.
+ *
+ * Features:
+ * - Listens to signal events via onTick callback
+ * - Accumulates closed signals per strategy using memoized storage
+ * - Generates markdown tables with detailed signal information
+ * - Saves reports to disk in logs/backtest/{strategyName}.md
+ *
+ * @example
+ * ```typescript
+ * const service = new BacktestMarkdownService();
+ *
+ * // Add to strategy callbacks
+ * addStrategy({
+ *   strategyName: "my-strategy",
+ *   callbacks: {
+ *     onTick: (symbol, result, backtest) => {
+ *       service.tick(result);
+ *     }
+ *   }
+ * });
+ *
+ * // After backtest, generate and save report
+ * await service.saveReport("my-strategy");
+ * ```
+ */
+declare class BacktestMarkdownService {
+    /** Logger service for debug output */
+    private readonly loggerService;
+    /**
+     * Memoized function to get or create ReportStorage for a symbol-strategy pair.
+     * Each symbol-strategy combination gets its own isolated storage instance.
+     */
+    private getStorage;
+    /**
+     * Processes tick events and accumulates closed signals.
+     * Should be called from IStrategyCallbacks.onTick.
+     *
+     * Only processes closed signals - opened signals are ignored.
+     *
+     * @param data - Tick result from strategy execution (opened or closed)
+     *
+     * @example
+     * ```typescript
+     * const service = new BacktestMarkdownService();
+     *
+     * callbacks: {
+     *   onTick: (symbol, result, backtest) => {
+     *     service.tick(result);
+     *   }
+     * }
+     * ```
+     */
+    private tick;
+    /**
+     * Gets statistical data from all closed signals for a symbol-strategy pair.
+     * Delegates to ReportStorage.getData().
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Strategy name to get data for
+     * @returns Statistical data object with all metrics
+     *
+     * @example
+     * ```typescript
+     * const service = new BacktestMarkdownService();
+     * const stats = await service.getData("BTCUSDT", "my-strategy");
+     * console.log(stats.sharpeRatio, stats.winRate);
+     * ```
+     */
+    getData: (symbol: string, strategyName: StrategyName) => Promise<BacktestStatistics>;
+    /**
+     * Generates markdown report with all closed signals for a symbol-strategy pair.
+     * Delegates to ReportStorage.generateReport().
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Strategy name to generate report for
+     * @returns Markdown formatted report string with table of all closed signals
+     *
+     * @example
+     * ```typescript
+     * const service = new BacktestMarkdownService();
+     * const markdown = await service.getReport("BTCUSDT", "my-strategy");
+     * console.log(markdown);
+     * ```
+     */
+    getReport: (symbol: string, strategyName: StrategyName) => Promise<string>;
+    /**
+     * Saves symbol-strategy report to disk.
+     * Creates directory if it doesn't exist.
+     * Delegates to ReportStorage.dump().
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Strategy name to save report for
+     * @param path - Directory path to save report (default: "./dump/backtest")
+     *
+     * @example
+     * ```typescript
+     * const service = new BacktestMarkdownService();
+     *
+     * // Save to default path: ./dump/backtest/my-strategy.md
+     * await service.dump("BTCUSDT", "my-strategy");
+     *
+     * // Save to custom path: ./custom/path/my-strategy.md
+     * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
+     * ```
+     */
+    dump: (symbol: string, strategyName: StrategyName, path?: string) => Promise<void>;
+    /**
+     * Clears accumulated signal data from storage.
+     * If ctx is provided, clears only that specific symbol-strategy pair's data.
+     * If nothing is provided, clears all data.
+     *
+     * @param ctx - Optional context with symbol and strategyName
+     *
+     * @example
+     * ```typescript
+     * const service = new BacktestMarkdownService();
+     *
+     * // Clear specific symbol-strategy pair
+     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy" });
+     *
+     * // Clear all data
+     * await service.clear();
+     * ```
+     */
+    clear: (ctx?: {
+        symbol: string;
+        strategyName: StrategyName;
+    }) => Promise<void>;
+    /**
+     * Initializes the service by subscribing to backtest signal events.
+     * Uses singleshot to ensure initialization happens only once.
+     * Automatically called on first use.
+     *
+     * @example
+     * ```typescript
+     * const service = new BacktestMarkdownService();
+     * await service.init(); // Subscribe to backtest events
+     * ```
+     */
+    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+}
+
+/**
  * Service for generating and saving live trading markdown reports.
  *
  * Features:
@@ -8393,6 +8280,112 @@ declare class ScheduleMarkdownService {
 }
 
 /**
+ * Service for collecting and analyzing performance metrics.
+ *
+ * Features:
+ * - Listens to performance events via performanceEmitter
+ * - Accumulates metrics per strategy
+ * - Calculates aggregated statistics (avg, min, max, percentiles)
+ * - Generates markdown reports with bottleneck analysis
+ * - Saves reports to disk in logs/performance/{strategyName}.md
+ *
+ * @example
+ * ```typescript
+ * import { listenPerformance } from "backtest-kit";
+ *
+ * // Subscribe to performance events
+ * listenPerformance((event) => {
+ *   console.log(`${event.metricType}: ${event.duration.toFixed(2)}ms`);
+ * });
+ *
+ * // After execution, generate report
+ * const stats = await Performance.getData("my-strategy");
+ * console.log("Bottlenecks:", stats.metricStats);
+ *
+ * // Save report to disk
+ * await Performance.dump("BTCUSDT", "my-strategy");
+ * ```
+ */
+declare class PerformanceMarkdownService {
+    /** Logger service for debug output */
+    private readonly loggerService;
+    /**
+     * Memoized function to get or create PerformanceStorage for a symbol-strategy pair.
+     * Each symbol-strategy combination gets its own isolated storage instance.
+     */
+    private getStorage;
+    /**
+     * Processes performance events and accumulates metrics.
+     * Should be called from performance tracking code.
+     *
+     * @param event - Performance event with timing data
+     */
+    private track;
+    /**
+     * Gets aggregated performance statistics for a symbol-strategy pair.
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Strategy name to get data for
+     * @returns Performance statistics with aggregated metrics
+     *
+     * @example
+     * ```typescript
+     * const stats = await performanceService.getData("BTCUSDT", "my-strategy");
+     * console.log("Total time:", stats.totalDuration);
+     * console.log("Slowest operation:", Object.values(stats.metricStats)
+     *   .sort((a, b) => b.avgDuration - a.avgDuration)[0]);
+     * ```
+     */
+    getData: (symbol: string, strategyName: string) => Promise<PerformanceStatistics>;
+    /**
+     * Generates markdown report with performance analysis.
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Strategy name to generate report for
+     * @returns Markdown formatted report string
+     *
+     * @example
+     * ```typescript
+     * const markdown = await performanceService.getReport("BTCUSDT", "my-strategy");
+     * console.log(markdown);
+     * ```
+     */
+    getReport: (symbol: string, strategyName: string) => Promise<string>;
+    /**
+     * Saves performance report to disk.
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Strategy name to save report for
+     * @param path - Directory path to save report
+     *
+     * @example
+     * ```typescript
+     * // Save to default path: ./dump/performance/my-strategy.md
+     * await performanceService.dump("BTCUSDT", "my-strategy");
+     *
+     * // Save to custom path
+     * await performanceService.dump("BTCUSDT", "my-strategy", "./custom/path");
+     * ```
+     */
+    dump: (symbol: string, strategyName: string, path?: string) => Promise<void>;
+    /**
+     * Clears accumulated performance data from storage.
+     *
+     * @param symbol - Optional trading pair symbol
+     * @param strategyName - Optional strategy name
+     */
+    clear: (ctx?: {
+        symbol: string;
+        strategyName: string;
+    }) => Promise<void>;
+    /**
+     * Initializes the service by subscribing to performance events.
+     * Uses singleshot to ensure initialization happens only once.
+     */
+    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+}
+
+/**
  * Service for generating and saving walker markdown reports.
  *
  * Features:
@@ -8592,7 +8585,7 @@ declare class HeatMarkdownService {
      * });
      * ```
      */
-    getData: (strategyName: StrategyName) => Promise<IHeatmapStatistics>;
+    getData: (strategyName: StrategyName) => Promise<HeatmapStatistics>;
     /**
      * Generates markdown report with portfolio heatmap table for a strategy.
      *
@@ -9902,4 +9895,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type BacktestStatistics, type CandleInterval, Constant, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatistics, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IHeatmapStatistics, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatistics, type MessageModel, type MessageRole, MethodContextService, Optimizer, Partial$1 as Partial, type PartialData, type PartialLossContract, type PartialProfitContract, type PartialStatistics, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatistics, PersistBase, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressOptimizerContract, type ProgressWalkerContract, Risk, type RiskContract, type RiskData, type RiskStatistics, Schedule, type ScheduleData, type ScheduleStatistics, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, Walker, type WalkerContract, type WalkerMetric, type WalkerStatistics, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, dumpSignal, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getConfig, getDate, getDefaultConfig, getMode, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, setConfig, setLogger };
+export { Backtest, type BacktestStatistics, type CandleInterval, Constant, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatistics, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatistics, type MessageModel, type MessageRole, MethodContextService, Optimizer, Partial$1 as Partial, type PartialData, type PartialLossContract, type PartialProfitContract, type PartialStatistics, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatistics, PersistBase, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressOptimizerContract, type ProgressWalkerContract, Risk, type RiskContract, type RiskData, type RiskStatistics, Schedule, type ScheduleData, type ScheduleStatistics, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, Walker, type WalkerContract, type WalkerMetric, type WalkerStatistics, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, dumpSignal, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getConfig, getDate, getDefaultConfig, getMode, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, setConfig, setLogger };

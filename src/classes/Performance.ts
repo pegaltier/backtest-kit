@@ -1,5 +1,5 @@
 import backtest from "../lib";
-import { PerformanceStatistics } from "../lib/services/markdown/PerformanceMarkdownService";
+import { PerformanceStatistics } from "../model/PerformanceStatistics.model";
 
 const PERFORMANCE_METHOD_NAME_GET_DATA = "Performance.getData";
 const PERFORMANCE_METHOD_NAME_GET_REPORT = "Performance.getReport";

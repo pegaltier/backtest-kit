@@ -1,9 +1,22 @@
-import { IHeatmapStatistics } from "../interfaces/Heatmap.interface";
+import { IHeatmapRow } from "../interfaces/Heatmap.interface";
 
 /**
- * Type alias for heatmap statistics.
- *
- * Re-exports IHeatmapStatistics from Heatmap.interface for consistent API surface.
- * Used for portfolio-wide metrics and per-symbol performance tracking.
+ * Portfolio heatmap statistics structure.
+ * Contains aggregated data for all symbols in the portfolio.
  */
-export type HeatmapStatistics = IHeatmapStatistics;
+export interface HeatmapStatistics {
+  /** Array of symbol statistics */
+  symbols: IHeatmapRow[];
+
+  /** Total number of symbols tracked */
+  totalSymbols: number;
+
+  /** Portfolio-wide total PNL */
+  portfolioTotalPnl: number | null;
+
+  /** Portfolio-wide Sharpe Ratio */
+  portfolioSharpeRatio: number | null;
+
+  /** Portfolio-wide total trades */
+  portfolioTotalTrades: number;
+}

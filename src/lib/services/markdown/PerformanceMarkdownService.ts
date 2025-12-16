@@ -11,8 +11,6 @@ import { memoize, singleshot } from "functools-kit";
 import { performanceEmitter } from "../../../config/emitters";
 import { PerformanceStatistics, MetricStats } from "../../../model/PerformanceStatistics.model";
 
-export type { PerformanceStatistics } from "../../../model/PerformanceStatistics.model";
-
 /**
  * Checks if a value is unsafe for display (not a number, NaN, or Infinity).
  */

@@ -12,8 +12,6 @@ import {
 } from "../../../config/emitters";
 import { PartialStatistics, PartialEvent } from "../../../model/PartialStatistics.model";
 
-export type { PartialStatistics } from "../../../model/PartialStatistics.model";
-
 /**
  * Column configuration for markdown table generation.
  * Defines how to extract and format data from partial events.

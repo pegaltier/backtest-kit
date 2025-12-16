@@ -1,7 +1,7 @@
 import { StrategyName } from "./Strategy.interface";
 import { FrameName } from "./Frame.interface";
 import { ExchangeName } from "./Exchange.interface";
-import { BacktestStatistics } from "../lib/services/markdown/BacktestMarkdownService";
+import { BacktestStatistics } from "../model/BacktestStatistics.model";
 
 /**
  * Optimization metric for comparing strategies.

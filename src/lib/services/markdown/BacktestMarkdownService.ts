@@ -14,8 +14,6 @@ import { toPlainString } from "../../../helpers/toPlainString";
 import { GLOBAL_CONFIG } from "../../../config/params";
 import { BacktestStatistics } from "../../../model/BacktestStatistics.model";
 
-export type { BacktestStatistics } from "../../../model/BacktestStatistics.model";
-
 /**
  * Column configuration for markdown table generation.
  * Defines how to extract and format data from closed signals.

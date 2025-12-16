@@ -116,10 +116,7 @@ export {
   IWalkerStrategyResult,
 } from "./interfaces/Walker.interface";
 
-export {
-  IHeatmapRow,
-  IHeatmapStatistics,
-} from "./interfaces/Heatmap.interface";
+export { IHeatmapRow } from "./interfaces/Heatmap.interface";
 
 export {
   IOptimizerCallbacks,

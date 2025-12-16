@@ -1,5 +1,5 @@
 import backtest from "../lib";
-import { IHeatmapStatistics } from "../interfaces/Heatmap.interface";
+import { HeatmapStatistics } from "../model/HeatmapStatistics.model";
 import { StrategyName } from "../interfaces/Strategy.interface";
 
 const HEAT_METHOD_NAME_GET_DATA = "HeatUtils.getData";
@@ -53,7 +53,7 @@ export class HeatUtils {
    * });
    * ```
    */
-  public getData = async (strategyName: StrategyName): Promise<IHeatmapStatistics> => {
+  public getData = async (strategyName: StrategyName): Promise<HeatmapStatistics> => {
     backtest.loggerService.info(HEAT_METHOD_NAME_GET_DATA, { strategyName });
 
     backtest.strategyValidationService.validate(strategyName, HEAT_METHOD_NAME_GET_DATA);

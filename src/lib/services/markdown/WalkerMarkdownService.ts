@@ -15,8 +15,6 @@ import { WalkerContract } from "../../../contract/Walker.contract";
 import { BacktestStatistics } from "../../../model/BacktestStatistics.model";
 import { WalkerStatistics, IStrategyResult } from "../../../model/WalkerStatistics.model";
 
-export type { WalkerStatistics } from "../../../model/WalkerStatistics.model";
-
 /**
  * Checks if a value is unsafe for display (not a number, NaN, or Infinity).
  */

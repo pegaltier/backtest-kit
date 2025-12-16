@@ -16,8 +16,6 @@ import { toPlainString } from "../../../helpers/toPlainString";
 import { GLOBAL_CONFIG } from "../../../config/params";
 import { LiveStatistics, TickEvent } from "../../../model/LiveStatistics.model";
 
-export type { LiveStatistics } from "../../../model/LiveStatistics.model";
-
 /**
  * Checks if a value is unsafe for display (not a number, NaN, or Infinity).
  *
