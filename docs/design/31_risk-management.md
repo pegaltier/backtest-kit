@@ -1,3 +1,8 @@
+---
+title: design/31_risk-management
+group: design
+---
+
 # Risk Management
 
 ## Purpose and Scope

@@ -1,3 +1,8 @@
+---
+title: design/46_advanced-features
+group: design
+---
+
 # Advanced Features
 
 This page documents advanced capabilities in Backtest Kit that extend beyond basic strategy backtesting. These features enable AI-driven strategy development, automated code generation, crash-safe persistence, and custom storage backends.

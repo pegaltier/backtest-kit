@@ -1,3 +1,8 @@
+---
+title: design/63_service-layer-interfaces
+group: design
+---
+
 # Service Layer Interfaces
 
 ## Purpose and Scope

@@ -1,3 +1,8 @@
+---
+title: design/37_exchange-configuration
+group: design
+---
+
 # Exchange Configuration
 
 ## Purpose

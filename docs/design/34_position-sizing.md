@@ -1,3 +1,8 @@
+---
+title: design/34_position-sizing
+group: design
+---
+
 # Position Sizing
 
 ## Purpose and Scope

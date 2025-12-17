@@ -1,3 +1,8 @@
+---
+title: design/42_markdown-reports
+group: design
+---
+
 # Markdown Reports
 
 This page covers the markdown report generation system in Backtest Kit. The framework provides eight specialized markdown services that accumulate event data, calculate statistics, and generate formatted reports. Each service exposes three methods: `getData()` for raw statistics, `getReport()` for markdown-formatted strings, and `dump()` for saving reports to disk.

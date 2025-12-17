@@ -1,3 +1,8 @@
+---
+title: design/21_backtest-mode
+group: design
+---
+
 # Backtest Mode
 
 **Purpose**: This document explains the historical simulation mode of Backtest Kit, covering timeframe iteration, fast backtest optimization, progress tracking, and deterministic execution. For real-time trading, see [Live Trading Mode](./20_execution-modes.md). For strategy comparison, see [Walker](./20_execution-modes.md).

@@ -1,3 +1,8 @@
+---
+title: design/17_connection-services-memoization
+group: design
+---
+
 # Connection Services & Memoization
 
 ## Purpose and Scope

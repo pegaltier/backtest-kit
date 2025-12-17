@@ -1,3 +1,8 @@
+---
+title: design/18_event-system-architecture
+group: design
+---
+
 # Event System Architecture
 
 ## Purpose and Scope

@@ -1,3 +1,8 @@
+---
+title: design/40_reporting-monitoring
+group: design
+---
+
 # Reporting & Monitoring
 
 ## Purpose and Scope

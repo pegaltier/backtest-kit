@@ -1,3 +1,8 @@
+---
+title: design/62_statistics-contract-types
+group: design
+---
+
 # Statistics & Contract Types
 
 This page documents the statistics models and event contract types used throughout Backtest Kit. Statistics models aggregate and analyze signal data from backtests, live trading, and walker comparisons. Contract types define the payload structures emitted by event subjects during execution.

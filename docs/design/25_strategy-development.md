@@ -1,3 +1,8 @@
+---
+title: design/25_strategy-development
+group: design
+---
+
 # Strategy Development
 
 ## Purpose and Scope

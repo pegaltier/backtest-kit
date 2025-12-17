@@ -1,3 +1,8 @@
+---
+title: design/16_client-layer
+group: design
+---
+
 # Client Layer
 
 ## Purpose and Scope

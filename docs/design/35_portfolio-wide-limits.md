@@ -1,3 +1,8 @@
+---
+title: design/35_portfolio-wide-limits
+group: design
+---
+
 # Portfolio-Wide Limits
 
 ## Purpose and Scope

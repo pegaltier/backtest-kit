@@ -1,3 +1,8 @@
+---
+title: design/30_interval-throttling
+group: design
+---
+
 # Interval Throttling
 
 This document explains the signal generation throttling mechanism that controls how frequently strategies can call `getSignal`. Throttling prevents signal spam, reduces computational load, and aligns with realistic trading frequencies.

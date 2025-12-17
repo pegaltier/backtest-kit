@@ -1,3 +1,8 @@
+---
+title: design/38_candle-data-validation
+group: design
+---
+
 # Candle Data & Validation
 
 ## Purpose and Scope

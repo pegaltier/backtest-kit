@@ -1,3 +1,8 @@
+---
+title: design/51_custom-persistence-backends
+group: design
+---
+
 # Custom Persistence Backends
 
 ## Purpose and Scope

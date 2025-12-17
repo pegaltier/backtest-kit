@@ -1,3 +1,8 @@
+---
+title: design/08_core-concepts
+group: design
+---
+
 # Core Concepts
 
 This document explains the fundamental concepts that underpin the entire backtest-kit framework. Understanding these concepts is essential for developing strategies, managing risk, and interpreting results.

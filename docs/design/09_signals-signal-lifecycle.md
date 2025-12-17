@@ -1,3 +1,8 @@
+---
+title: design/09_signals-signal-lifecycle
+group: design
+---
+
 # Signals & Signal Lifecycle
 
 ## Purpose and Scope

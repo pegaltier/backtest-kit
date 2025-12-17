@@ -1,3 +1,8 @@
+---
+title: design/53_global_config-parameters
+group: design
+---
+
 # GLOBAL_CONFIG Parameters
 
 ## Purpose and Scope

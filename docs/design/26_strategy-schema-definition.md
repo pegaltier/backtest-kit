@@ -1,3 +1,8 @@
+---
+title: design/26_strategy-schema-definition
+group: design
+---
+
 # Strategy Schema Definition
 
 This page documents the `IStrategySchema` interface, which defines the complete configuration for a trading strategy in Backtest Kit. The schema specifies signal generation logic, execution intervals, lifecycle callbacks, and risk management integration.

@@ -1,3 +1,8 @@
+---
+title: design/50_crash-recovery-persistence
+group: design
+---
+
 # Crash Recovery & Persistence
 
 This document describes the crash-safe persistence system that enables live trading strategies to survive system crashes, process restarts, and unexpected failures. When a live trading bot restarts, it can seamlessly restore active signals and continue monitoring positions without data loss or duplicate trades.

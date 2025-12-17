@@ -1,3 +1,8 @@
+---
+title: design/49_code-generation-templates
+group: design
+---
+
 # Code Generation & Templates
 
 This document covers the template system used by the Optimizer to generate executable strategy code. It explains the `IOptimizerTemplate` interface, the default `OptimizerTemplateService` implementation, how templates are assembled into complete `.mjs` files, and how to customize code generation for specific use cases.

@@ -1,3 +1,8 @@
+---
+title: design/36_exchanges-data-sources
+group: design
+---
+
 # Exchanges & Data Sources
 
 ## Purpose and Scope

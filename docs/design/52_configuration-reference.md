@@ -1,3 +1,8 @@
+---
+title: design/52_configuration-reference
+group: design
+---
+
 # Configuration Reference
 
 This page documents the global configuration system in Backtest Kit, including all `GLOBAL_CONFIG` parameters, their purposes, default values, and how they affect system behavior. Configuration controls signal validation, cost simulation, data fetching, and reporting across all execution modes.

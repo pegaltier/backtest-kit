@@ -1,3 +1,8 @@
+---
+title: design/24_async-generator-patterns
+group: design
+---
+
 # Async Generator Patterns
 
 This page documents the async generator patterns used throughout Backtest Kit's execution modes to enable memory-efficient streaming, early termination, and progressive result delivery. Async generators are the core architectural pattern that allows the framework to process large backtests without accumulating results in memory and support graceful shutdown in live trading.

@@ -1,3 +1,8 @@
+---
+title: design/22_live-trading-mode
+group: design
+---
+
 # Live Trading Mode
 
 **Purpose**: This page documents the Live Trading Mode execution system, covering real-time signal execution, crash recovery, persistence, graceful shutdown, and the infinite loop architecture.

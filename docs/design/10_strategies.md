@@ -1,3 +1,8 @@
+---
+title: design/10_strategies
+group: design
+---
+
 # Strategies
 
 ## Purpose and Scope

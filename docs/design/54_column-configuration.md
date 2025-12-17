@@ -1,3 +1,8 @@
+---
+title: design/54_column-configuration
+group: design
+---
+
 # Column Configuration
 
 Column configuration in Backtest Kit provides a flexible system for customizing the markdown table output in all reporting services. This system uses a generic `ColumnModel` interface to define how data is extracted, formatted, and displayed in markdown reports across different execution modes (backtest, live, walker) and report types (performance, heatmap, risk, etc.).

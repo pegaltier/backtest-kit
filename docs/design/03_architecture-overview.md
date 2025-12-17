@@ -1,3 +1,8 @@
+---
+title: design/03_architecture-overview
+group: design
+---
+
 # Architecture Overview
 
 This page describes the high-level system architecture of Backtest Kit, focusing on the layered design and how components interact. It covers the dependency injection system, service organization, client layer structure, and data flow patterns.

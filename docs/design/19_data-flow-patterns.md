@@ -1,3 +1,8 @@
+---
+title: design/19_data-flow-patterns
+group: design
+---
+
 # Data Flow Patterns
 
 ## Purpose and Scope

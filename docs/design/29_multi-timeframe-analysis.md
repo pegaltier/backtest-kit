@@ -1,3 +1,8 @@
+---
+title: design/29_multi-timeframe-analysis
+group: design
+---
+
 # Multi-Timeframe Analysis
 
 ## Purpose and Scope

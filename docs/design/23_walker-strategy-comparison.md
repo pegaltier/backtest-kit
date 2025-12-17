@@ -1,3 +1,8 @@
+---
+title: design/23_walker-strategy-comparison
+group: design
+---
+
 # Walker (Strategy Comparison)
 
 The Walker execution mode enables systematic comparison of multiple trading strategies on the same market data. Unlike Backtest mode ([5.1](./20_execution-modes.md)) which tests a single strategy, or Live mode ([5.2](./20_execution-modes.md)) which executes real-time trading, Walker orchestrates sequential backtests for multiple strategies and ranks them by a configurable performance metric. This allows data-driven strategy selection and hyperparameter optimization.

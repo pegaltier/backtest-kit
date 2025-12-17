@@ -1,3 +1,8 @@
+---
+title: design/13_vwap-pricing-data-handling
+group: design
+---
+
 # VWAP Pricing & Data Handling
 
 ## Purpose and Scope

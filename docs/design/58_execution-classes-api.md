@@ -1,3 +1,8 @@
+---
+title: design/58_execution-classes-api
+group: design
+---
+
 # Execution Classes API
 
 This page documents the public execution classes that orchestrate backtest, live trading, and strategy comparison operations. These are the primary entry points for running trading strategies after configuration via global functions (see [Global Functions](./56_api-reference.md)).

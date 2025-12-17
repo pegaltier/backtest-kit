@@ -1,3 +1,8 @@
+---
+title: design/48_optimizer-system
+group: design
+---
+
 # Optimizer System
 
 ## Purpose and Scope

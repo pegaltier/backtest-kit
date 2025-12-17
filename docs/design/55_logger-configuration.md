@@ -1,3 +1,8 @@
+---
+title: design/55_logger-configuration
+group: design
+---
+
 # Logger Configuration
 
 This page documents the logging system in Backtest Kit, covering the `ILogger` interface, the `setLogger` function, and how logging integrates with the framework's dependency injection system. For general configuration parameters, see [GLOBAL_CONFIG Parameters](./52_configuration-reference.md).

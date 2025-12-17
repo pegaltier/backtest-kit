@@ -1,3 +1,8 @@
+---
+title: design/60_core-interfaces
+group: design
+---
+
 # Core Interfaces
 
 This page documents the schema interfaces that define the core configuration contracts for Backtest Kit. These interfaces are used to register strategies, exchanges, timeframes, risk profiles, walkers, position sizing rules, and optimizer configurations via the `add*` family of functions (see [Global Functions](./56_api-reference.md)).

@@ -1,3 +1,8 @@
+---
+title: design/14_architecture-deep-dive
+group: design
+---
+
 # Architecture Deep Dive
 
 ## Purpose and Scope

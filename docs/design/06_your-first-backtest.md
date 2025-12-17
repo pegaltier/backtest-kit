@@ -1,3 +1,8 @@
+---
+title: design/06_your-first-backtest
+group: design
+---
+
 # Your First Backtest
 
 ## Purpose and Scope

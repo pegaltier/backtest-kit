@@ -1,3 +1,8 @@
+---
+title: design/15_service-layer-dependency-injection
+group: design
+---
+
 # Service Layer & Dependency Injection
 
 This page documents the service layer architecture and dependency injection (DI) system that powers the backtest-kit framework. The service layer provides a structured approach to organizing business logic, managing dependencies, and enabling testability through inversion of control.

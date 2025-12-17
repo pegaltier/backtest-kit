@@ -1,3 +1,8 @@
+---
+title: design/05_installation-setup
+group: design
+---
+
 # Installation & Setup
 
 This page covers the installation of Backtest Kit and the initial configuration required to start developing trading strategies. Topics include system requirements, package installation, peer dependencies, TypeScript configuration, and project structure setup. For a complete working example and your first backtest implementation, see [Your First Backtest](./04_getting-started.md).

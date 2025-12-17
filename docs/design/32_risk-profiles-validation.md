@@ -1,3 +1,8 @@
+---
+title: design/32_risk-profiles-validation
+group: design
+---
+
 # Risk Profiles & Validation
 
 This page covers the **risk profile system** in Backtest Kit: defining custom validation rules via `IRiskSchema`, combining multiple risk profiles with `MergeRisk`, and the lifecycle methods (`checkSignal`, `addSignal`, `removeSignal`) that track portfolio-wide risk state.

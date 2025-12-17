@@ -1,3 +1,8 @@
+---
+title: design/27_signal-generation-getsignal
+group: design
+---
+
 # Signal Generation (getSignal)
 
 This document explains how to implement the `getSignal` function, which is the core signal generation logic for trading strategies in Backtest Kit. The `getSignal` function analyzes market conditions and returns trading signals or null when no opportunity exists.

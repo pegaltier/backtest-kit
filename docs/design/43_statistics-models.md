@@ -1,3 +1,8 @@
+---
+title: design/43_statistics-models
+group: design
+---
+
 # Statistics Models
 
 ## Purpose and Scope

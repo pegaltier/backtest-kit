@@ -1,3 +1,8 @@
+---
+title: design/61_signal-result-types
+group: design
+---
+
 # Signal & Result Types
 
 ## Purpose

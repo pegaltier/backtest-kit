@@ -1,3 +1,8 @@
+---
+title: design/59_reporting-classes-api
+group: design
+---
+
 # Reporting Classes API
 
 This page documents the specialized reporting classes that provide access to trading statistics and analysis reports. These classes are wrappers around markdown services and offer three primary methods: `getData()`, `getReport()`, and `dump()`.

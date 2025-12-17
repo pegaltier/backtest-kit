@@ -1,3 +1,8 @@
+---
+title: design/41_event-listeners
+group: design
+---
+
 # Event Listeners
 
 ## Purpose and Scope

@@ -1,3 +1,8 @@
+---
+title: design/04_getting-started
+group: design
+---
+
 # Getting Started
 
 This page provides a practical guide to installing Backtest Kit and running your first backtest. It covers installation, project setup, component registration, and execution patterns. For advanced topics like strategy development or risk management, see [Strategy Development](./25_strategy-development.md) and [Risk Management](./31_risk-management.md). For architectural details about how the system works internally, see [Architecture Deep Dive](./14_architecture-deep-dive.md).

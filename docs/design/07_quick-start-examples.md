@@ -1,3 +1,8 @@
+---
+title: design/07_quick-start-examples
+group: design
+---
+
 # Quick Start Examples
 
 This page provides minimal working code examples demonstrating the three primary execution modes in Backtest Kit. Each example is self-contained and can be run immediately after installation.

@@ -1,3 +1,8 @@
+---
+title: design/47_llm-powered-strategy-generation
+group: design
+---
+
 # LLM-Powered Strategy Generation
 
 ## Purpose and Scope

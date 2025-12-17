@@ -1,3 +1,8 @@
+---
+title: design/33_signal-validation-pipeline
+group: design
+---
+
 # Signal Validation Pipeline
 
 ## Purpose and Scope

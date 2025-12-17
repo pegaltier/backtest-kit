@@ -1,3 +1,8 @@
+---
+title: design/56_api-reference
+group: design
+---
+
 # API Reference
 
 This document provides a comprehensive reference to all public APIs exposed by Backtest Kit. It organizes functions, classes, interfaces, and types by functional area to help you navigate the framework's capabilities.

@@ -1,3 +1,8 @@
+---
+title: design/44_performance-tracking
+group: design
+---
+
 # Performance Tracking
 
 ## Purpose and Scope

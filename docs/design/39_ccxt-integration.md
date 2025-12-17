@@ -1,3 +1,8 @@
+---
+title: design/39_ccxt-integration
+group: design
+---
+
 # CCXT Integration
 
 This document explains how Backtest Kit integrates with the CCXT library to fetch market data from cryptocurrency exchanges. CCXT (CryptoCurrency eXchange Trading) serves as the primary data source implementation for the framework, providing historical OHLCV (Open, High, Low, Close, Volume) candle data.

@@ -1,3 +1,8 @@
+---
+title: design/57_global-functions
+group: design
+---
+
 # Global Functions
 
 Global functions are the primary user-facing API for configuring and interacting with Backtest Kit. These functions provide a declarative interface for registering components, configuring system behavior, subscribing to events, and accessing framework utilities. All global functions are exported from the main package entry point and operate on the singleton service layer.
