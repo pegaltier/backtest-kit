@@ -20,6 +20,7 @@ import "./e2e/timing.test.mjs";
 import "./e2e/risk.test.mjs";
 import "./e2e/scheduled.test.mjs";
 import "./e2e/config.test.mjs";
+import "./e2e/columns.test.mjs";
 
 import "./spec/live.test.mjs";
 import "./spec/scheduled.test.mjs";
