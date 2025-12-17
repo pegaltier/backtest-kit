@@ -193,5 +193,6 @@ export { Risk } from "./classes/Risk";
 export * as emitters from "./config/emitters";
 
 export { type GlobalConfig } from "./config/params";
+export { type ColumnConfig } from "./config/columns";
 
 export { backtest as lib } from "./lib";
