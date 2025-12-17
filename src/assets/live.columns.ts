@@ -3,6 +3,42 @@ import { TickEvent } from "../model/LiveStatistics.model";
 import { toPlainString } from "../helpers/toPlainString";
 import { GLOBAL_CONFIG } from "../config/params";
 
+/**
+ * Column configuration for live trading markdown reports.
+ *
+ * Defines the table structure for displaying real-time trading events in live trading reports.
+ * Each column specifies how to format and display live trading event data fields.
+ *
+ * Used by {@link LiveMarkdownService} to generate markdown tables showing:
+ * - Event information (timestamp, action type)
+ * - Signal identification (symbol, signal ID, position)
+ * - Price data (current price, open price, take profit, stop loss)
+ * - Performance metrics (PNL percentage, close reason, duration)
+ * - Position tracking (percentage to TP/SL)
+ *
+ * @remarks
+ * This configuration tracks all event types: idle, opened, active, and closed signals.
+ * The "note" column visibility is controlled by {@link GLOBAL_CONFIG.CC_REPORT_SHOW_SIGNAL_NOTE}.
+ *
+ * @example
+ * ```typescript
+ * import { live_columns } from "./assets/live.columns";
+ *
+ * // Use with LiveMarkdownService
+ * const service = new LiveMarkdownService();
+ * await service.getReport("BTCUSDT", "my-strategy", live_columns);
+ *
+ * // Or customize for minimal display
+ * const customColumns = live_columns.filter(col =>
+ *   ["timestamp", "action", "symbol", "pnl"].includes(col.key)
+ * );
+ * await service.getReport("BTCUSDT", "my-strategy", customColumns);
+ * ```
+ *
+ * @see {@link LiveMarkdownService} for usage in report generation
+ * @see {@link ColumnModel} for column interface definition
+ * @see {@link TickEvent} for data structure
+ */
 export const live_columns: ColumnModel<TickEvent>[] = [
   {
     key: "timestamp",

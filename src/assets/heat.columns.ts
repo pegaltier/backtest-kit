@@ -2,6 +2,41 @@ import { IHeatmapRow } from "../interfaces/Heatmap.interface";
 import { ColumnModel } from "../model/Column.model";
 import { str } from "functools-kit";
 
+/**
+ * Column configuration for portfolio heatmap markdown reports.
+ *
+ * Defines the table structure for displaying aggregated per-symbol statistics in portfolio heatmap reports.
+ * Each column specifies how to format and display portfolio performance metrics across different trading symbols.
+ *
+ * Used by {@link HeatMarkdownService} to generate markdown tables showing:
+ * - Symbol identification
+ * - Performance metrics (Total PNL, Sharpe Ratio, Profit Factor, Expectancy)
+ * - Risk metrics (Win Rate, Average Win/Loss, Max Drawdown)
+ * - Trading activity (Total Trades, Win/Loss Streaks)
+ *
+ * @remarks
+ * This configuration is used to create portfolio-wide views that aggregate statistics per symbol.
+ * The heatmap service automatically sorts symbols by Sharpe Ratio (best performers first).
+ *
+ * @example
+ * ```typescript
+ * import { heat_columns } from "./assets/heat.columns";
+ *
+ * // Use with HeatMarkdownService
+ * const service = new HeatMarkdownService();
+ * await service.getReport("my-strategy", heat_columns);
+ *
+ * // Or customize to show only key metrics
+ * const customColumns = heat_columns.filter(col =>
+ *   ["symbol", "totalPnl", "sharpeRatio", "totalTrades"].includes(col.key)
+ * );
+ * await service.getReport("my-strategy", customColumns);
+ * ```
+ *
+ * @see {@link HeatMarkdownService} for usage in report generation
+ * @see {@link ColumnModel} for column interface definition
+ * @see {@link IHeatmapRow} for data structure
+ */
 export const heat_columns: ColumnModel<IHeatmapRow>[] = [
   {
     key: "symbol",

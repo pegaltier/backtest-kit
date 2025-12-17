@@ -1,6 +1,42 @@
 import { ColumnModel } from "../model/Column.model";
 import { MetricStats } from "../model/PerformanceStatistics.model";
 
+/**
+ * Column configuration for performance metrics markdown reports.
+ *
+ * Defines the table structure for displaying performance statistics and timing metrics in performance reports.
+ * Each column specifies how to format and display aggregated performance data for different metric types.
+ *
+ * Used by {@link PerformanceMarkdownService} to generate markdown tables showing:
+ * - Metric identification (metric type)
+ * - Execution statistics (count, total duration, average, min, max)
+ * - Distribution metrics (standard deviation, median, percentiles)
+ * - Wait time statistics (average, min, max wait times between events)
+ *
+ * @remarks
+ * This configuration helps identify performance bottlenecks in strategy execution.
+ * The service automatically sorts metrics by total duration to highlight the slowest operations.
+ * All durations are measured in milliseconds.
+ *
+ * @example
+ * ```typescript
+ * import { performance_columns } from "./assets/performance.columns";
+ *
+ * // Use with PerformanceMarkdownService
+ * const service = new PerformanceMarkdownService();
+ * await service.getReport("BTCUSDT", "my-strategy", performance_columns);
+ *
+ * // Or customize for bottleneck analysis
+ * const customColumns = performance_columns.filter(col =>
+ *   ["metricType", "count", "avgDuration", "maxDuration", "p95"].includes(col.key)
+ * );
+ * await service.getReport("BTCUSDT", "my-strategy", customColumns);
+ * ```
+ *
+ * @see {@link PerformanceMarkdownService} for usage in report generation
+ * @see {@link ColumnModel} for column interface definition
+ * @see {@link MetricStats} for data structure
+ */
 export const performance_columns: ColumnModel<MetricStats>[] = [
   {
     key: "metricType",

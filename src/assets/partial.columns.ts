@@ -3,6 +3,43 @@ import { PartialEvent } from "../model/PartialStatistics.model";
 import { toPlainString } from "../helpers/toPlainString";
 import { GLOBAL_CONFIG } from "../config/params";
 
+/**
+ * Column configuration for partial profit/loss markdown reports.
+ *
+ * Defines the table structure for displaying partial position exit events in trading reports.
+ * Each column specifies how to format and display partial profit and loss level events.
+ *
+ * Used by {@link PartialMarkdownService} to generate markdown tables showing:
+ * - Event information (action type: profit or loss)
+ * - Signal identification (symbol, strategy name, signal ID, position)
+ * - Exit level information (percentage level reached)
+ * - Price data (current price at partial exit)
+ * - Timing information (timestamp, mode: backtest or live)
+ *
+ * @remarks
+ * This configuration tracks partial position exits at predefined profit/loss levels.
+ * The "note" column visibility is controlled by {@link GLOBAL_CONFIG.CC_REPORT_SHOW_SIGNAL_NOTE}.
+ * Useful for analyzing risk management strategies and partial exit performance.
+ *
+ * @example
+ * ```typescript
+ * import { partial_columns } from "./assets/partial.columns";
+ *
+ * // Use with PartialMarkdownService
+ * const service = new PartialMarkdownService();
+ * await service.getReport("BTCUSDT", "my-strategy", partial_columns);
+ *
+ * // Or customize to show only key fields
+ * const customColumns = partial_columns.filter(col =>
+ *   ["action", "symbol", "level", "timestamp"].includes(col.key)
+ * );
+ * await service.getReport("BTCUSDT", "my-strategy", customColumns);
+ * ```
+ *
+ * @see {@link PartialMarkdownService} for usage in report generation
+ * @see {@link ColumnModel} for column interface definition
+ * @see {@link PartialEvent} for data structure
+ */
 export const partial_columns: ColumnModel<PartialEvent>[] = [
   {
     key: "action",

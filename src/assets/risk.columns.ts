@@ -3,6 +3,42 @@ import { RiskEvent } from "../model/RiskStatistics.model";
 import { toPlainString } from "../helpers/toPlainString";
 import { GLOBAL_CONFIG } from "../config/params";
 
+/**
+ * Column configuration for risk management markdown reports.
+ *
+ * Defines the table structure for displaying risk rejection events in risk management reports.
+ * Each column specifies how to format and display signals that were rejected due to risk limits.
+ *
+ * Used by {@link RiskMarkdownService} to generate markdown tables showing:
+ * - Signal identification (symbol, strategy name, signal ID, position)
+ * - Exchange information (exchange name, active position count)
+ * - Price data (open price, take profit, stop loss, current price)
+ * - Rejection details (rejection reason/comment, timestamp)
+ *
+ * @remarks
+ * This configuration helps analyze when and why the risk management system rejected signals.
+ * The "note" column visibility is controlled by {@link GLOBAL_CONFIG.CC_REPORT_SHOW_SIGNAL_NOTE}.
+ * Useful for tuning risk parameters and understanding risk control effectiveness.
+ *
+ * @example
+ * ```typescript
+ * import { risk_columns } from "./assets/risk.columns";
+ *
+ * // Use with RiskMarkdownService
+ * const service = new RiskMarkdownService();
+ * await service.getReport("BTCUSDT", "my-strategy", risk_columns);
+ *
+ * // Or customize to focus on rejection reasons
+ * const customColumns = risk_columns.filter(col =>
+ *   ["symbol", "strategyName", "comment", "activePositionCount", "timestamp"].includes(col.key)
+ * );
+ * await service.getReport("BTCUSDT", "my-strategy", customColumns);
+ * ```
+ *
+ * @see {@link RiskMarkdownService} for usage in report generation
+ * @see {@link ColumnModel} for column interface definition
+ * @see {@link RiskEvent} for data structure
+ */
 export const risk_columns: ColumnModel<RiskEvent>[] = [
   {
     key: "symbol",

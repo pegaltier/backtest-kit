@@ -5,8 +5,40 @@ import {
 } from "../model/WalkerStatistics.model";
 
 /**
- * Static column configuration for walker strategy comparison table.
- * Contains all columns for comparing strategies with a generic "Metric" header.
+ * Column configuration for walker strategy comparison table in markdown reports.
+ *
+ * Defines the table structure for displaying strategy comparison results in walker backtest reports.
+ * Each column specifies how to format and display aggregated strategy performance metrics.
+ *
+ * Used by {@link WalkerMarkdownService} to generate markdown tables showing:
+ * - Strategy ranking and identification
+ * - Optimization metric value (generic "Metric" column)
+ * - Performance statistics (Total Signals, Win Rate, Average PNL, Total PNL)
+ * - Risk metrics (Sharpe Ratio, Standard Deviation)
+ *
+ * @remarks
+ * This configuration is used in walker reports to compare multiple strategy configurations.
+ * The "Metric" column displays the value of the metric being optimized (Sharpe, PNL, etc.).
+ * Strategies are automatically sorted by metric value (best performers first).
+ *
+ * @example
+ * ```typescript
+ * import { walker_strategy_columns } from "./assets/walker.columns";
+ *
+ * // Use with WalkerMarkdownService for strategy comparison
+ * const service = new WalkerMarkdownService();
+ * await service.getReport(
+ *   "my-walker",
+ *   "BTCUSDT",
+ *   "sharpeRatio",
+ *   { exchangeName: "binance", frameName: "1d" },
+ *   walker_strategy_columns
+ * );
+ * ```
+ *
+ * @see {@link WalkerMarkdownService} for usage in report generation
+ * @see {@link ColumnModel} for column interface definition
+ * @see {@link IStrategyResult} for data structure
  */
 export const walker_strategy_columns: ColumnModel<IStrategyResult>[] = [
   {
@@ -82,8 +114,40 @@ export const walker_strategy_columns: ColumnModel<IStrategyResult>[] = [
 ];
 
 /**
- * Column configuration for PNL table.
- * Defines all columns for displaying closed signals across strategies.
+ * Column configuration for walker PNL table in markdown reports.
+ *
+ * Defines the table structure for displaying all closed signals across all strategies in walker backtest reports.
+ * Each column specifies how to format and display individual signal trade data.
+ *
+ * Used by {@link WalkerMarkdownService} to generate markdown tables showing:
+ * - Strategy identification for each signal
+ * - Signal details (signal ID, symbol, position)
+ * - Trade performance (PNL percentage, close reason)
+ * - Timing information (open time, close time)
+ *
+ * @remarks
+ * This configuration aggregates all signals from all tested strategies into a single comprehensive table.
+ * Useful for detailed analysis of individual trades across different strategy configurations.
+ *
+ * @example
+ * ```typescript
+ * import { walker_pnl_columns } from "./assets/walker.columns";
+ *
+ * // Use with WalkerMarkdownService for signal-level analysis
+ * const service = new WalkerMarkdownService();
+ * await service.getReport(
+ *   "my-walker",
+ *   "BTCUSDT",
+ *   "sharpeRatio",
+ *   { exchangeName: "binance", frameName: "1d" },
+ *   undefined, // use default strategy columns
+ *   walker_pnl_columns
+ * );
+ * ```
+ *
+ * @see {@link WalkerMarkdownService} for usage in report generation
+ * @see {@link ColumnModel} for column interface definition
+ * @see {@link SignalData} for data structure
  */
 export const walker_pnl_columns: ColumnModel<SignalData>[] = [
   {

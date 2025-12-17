@@ -3,6 +3,42 @@ import { ScheduledEvent } from "../model/ScheduleStatistics.model";
 import { toPlainString } from "../helpers/toPlainString";
 import { GLOBAL_CONFIG } from "../config/params";
 
+/**
+ * Column configuration for scheduled signals markdown reports.
+ *
+ * Defines the table structure for displaying scheduled, opened, and cancelled signal events.
+ * Each column specifies how to format and display signal scheduling and activation data.
+ *
+ * Used by {@link ScheduleMarkdownService} to generate markdown tables showing:
+ * - Event information (timestamp, action: scheduled/opened/cancelled)
+ * - Signal identification (symbol, signal ID, position)
+ * - Price data (current price, entry price, take profit, stop loss)
+ * - Timing information (wait time in minutes before activation or cancellation)
+ *
+ * @remarks
+ * This configuration tracks the lifecycle of scheduled signals from creation to activation or cancellation.
+ * The "note" column visibility is controlled by {@link GLOBAL_CONFIG.CC_REPORT_SHOW_SIGNAL_NOTE}.
+ * Helps analyze signal scheduling effectiveness and cancellation patterns.
+ *
+ * @example
+ * ```typescript
+ * import { schedule_columns } from "./assets/schedule.columns";
+ *
+ * // Use with ScheduleMarkdownService
+ * const service = new ScheduleMarkdownService();
+ * await service.getReport("BTCUSDT", "my-strategy", schedule_columns);
+ *
+ * // Or customize for timing analysis
+ * const customColumns = schedule_columns.filter(col =>
+ *   ["timestamp", "action", "symbol", "duration"].includes(col.key)
+ * );
+ * await service.getReport("BTCUSDT", "my-strategy", customColumns);
+ * ```
+ *
+ * @see {@link ScheduleMarkdownService} for usage in report generation
+ * @see {@link ColumnModel} for column interface definition
+ * @see {@link ScheduledEvent} for data structure
+ */
 export const schedule_columns: ColumnModel<ScheduledEvent>[] = [
   {
     key: "timestamp",

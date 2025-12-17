@@ -3,6 +3,39 @@ import { ColumnModel } from "../model/Column.model";
 import { toPlainString } from "../helpers/toPlainString";
 import { GLOBAL_CONFIG } from "../config/params";
 
+/**
+ * Column configuration for backtest markdown reports.
+ *
+ * Defines the table structure for displaying closed trading signals in backtest reports.
+ * Each column specifies how to format and display specific signal data fields.
+ *
+ * Used by {@link BacktestMarkdownService} to generate markdown tables showing:
+ * - Signal identification (ID, symbol, position)
+ * - Price levels (open, close, take profit, stop loss)
+ * - Performance metrics (PNL percentage, close reason)
+ * - Timing information (duration, timestamps)
+ *
+ * @remarks
+ * Columns can be conditionally visible based on {@link GLOBAL_CONFIG} settings.
+ * For example, the "note" column visibility is controlled by `CC_REPORT_SHOW_SIGNAL_NOTE`.
+ *
+ * @example
+ * ```typescript
+ * import { backtest_columns } from "./assets/backtest.columns";
+ *
+ * // Use with BacktestMarkdownService
+ * const service = new BacktestMarkdownService();
+ * await service.getReport("BTCUSDT", "my-strategy", backtest_columns);
+ *
+ * // Or customize columns
+ * const customColumns = backtest_columns.filter(col => col.key !== "note");
+ * await service.getReport("BTCUSDT", "my-strategy", customColumns);
+ * ```
+ *
+ * @see {@link BacktestMarkdownService} for usage in report generation
+ * @see {@link ColumnModel} for column interface definition
+ * @see {@link IStrategyTickResultClosed} for data structure
+ */
 export const backtest_columns: ColumnModel<IStrategyTickResultClosed>[] = [
   {
     key: "signalId",
