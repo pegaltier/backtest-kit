@@ -14,7 +14,7 @@ import { memoize, singleshot } from "functools-kit";
 import { signalEmitter, signalLiveEmitter } from "../../../config/emitters";
 import { ScheduleStatisticsModel, ScheduledEvent } from "../../../model/ScheduleStatistics.model";
 import { ColumnModel } from "../../../model/Column.model";
-import { schedule_columns } from "../../../assets/schedule.columns";
+import { COLUMN_CONFIG } from "../../../config/columns";
 
 export type Columns = ColumnModel<ScheduledEvent>;
 
@@ -195,7 +195,7 @@ class ReportStorage {
    */
   public async getReport(
     strategyName: StrategyName,
-    columns: Columns[] = schedule_columns
+    columns: Columns[] = COLUMN_CONFIG.schedule_columns
   ): Promise<string> {
     const stats = await this.getData();
 
@@ -250,7 +250,7 @@ class ReportStorage {
   public async dump(
     strategyName: StrategyName,
     path = "./dump/schedule",
-    columns: Columns[] = schedule_columns
+    columns: Columns[] = COLUMN_CONFIG.schedule_columns
   ): Promise<void> {
     const markdown = await this.getReport(strategyName, columns);
 
@@ -383,7 +383,7 @@ export class ScheduleMarkdownService {
   public getReport = async (
     symbol: string,
     strategyName: StrategyName,
-    columns: Columns[] = schedule_columns
+    columns: Columns[] = COLUMN_CONFIG.schedule_columns
   ): Promise<string> => {
     this.loggerService.log("scheduleMarkdownService getReport", {
       symbol,
@@ -418,7 +418,7 @@ export class ScheduleMarkdownService {
     symbol: string,
     strategyName: StrategyName,
     path = "./dump/schedule",
-    columns: Columns[] = schedule_columns
+    columns: Columns[] = COLUMN_CONFIG.schedule_columns
   ): Promise<void> => {
     this.loggerService.log("scheduleMarkdownService dump", {
       symbol,

@@ -13,7 +13,7 @@ import { signalEmitter } from "../../../config/emitters";
 import { IHeatmapRow } from "../../../interfaces/Heatmap.interface";
 import { HeatmapStatisticsModel } from "../../../model/HeatmapStatistics.model";
 import { ColumnModel } from "../../../model/Column.model";
-import { heat_columns } from "../../../assets/heat.columns";
+import { COLUMN_CONFIG } from "../../../config/columns";
 
 export type Columns = ColumnModel<IHeatmapRow>;
 
@@ -307,7 +307,7 @@ class HeatmapStorage {
    */
   public async getReport(
     strategyName: StrategyName,
-    columns: Columns[] = heat_columns
+    columns: Columns[] = COLUMN_CONFIG.heat_columns
   ): Promise<string> {
     const data = await this.getData();
 
@@ -355,7 +355,7 @@ class HeatmapStorage {
   public async dump(
     strategyName: StrategyName,
     path = "./dump/heatmap",
-    columns: Columns[] = heat_columns
+    columns: Columns[] = COLUMN_CONFIG.heat_columns
   ): Promise<void> {
     const markdown = await this.getReport(strategyName, columns);
 
@@ -489,7 +489,7 @@ export class HeatMarkdownService {
    */
   public getReport = async (
     strategyName: StrategyName,
-    columns: Columns[] = heat_columns
+    columns: Columns[] = COLUMN_CONFIG.heat_columns
   ): Promise<string> => {
     this.loggerService.log(HEATMAP_METHOD_NAME_GET_REPORT, {
       strategyName,
@@ -522,7 +522,7 @@ export class HeatMarkdownService {
   public dump = async (
     strategyName: StrategyName,
     path = "./dump/heatmap",
-    columns: Columns[] = heat_columns
+    columns: Columns[] = COLUMN_CONFIG.heat_columns
   ): Promise<void> => {
     this.loggerService.log(HEATMAP_METHOD_NAME_DUMP, {
       strategyName,

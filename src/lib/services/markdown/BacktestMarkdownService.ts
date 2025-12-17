@@ -12,7 +12,7 @@ import { memoize, singleshot } from "functools-kit";
 import { signalBacktestEmitter } from "../../../config/emitters";
 import { BacktestStatisticsModel } from "../../../model/BacktestStatistics.model";
 import { ColumnModel } from "../../../model/Column.model";
-import { backtest_columns } from "../../../assets/backtest.columns";
+import { COLUMN_CONFIG } from "../../../config/columns";
 
 export type Columns = ColumnModel<IStrategyTickResultClosed>;
 
@@ -145,7 +145,7 @@ class ReportStorage {
    */
   public async getReport(
     strategyName: StrategyName,
-    columns: Columns[] = backtest_columns
+    columns: Columns[] = COLUMN_CONFIG.backtest_columns
   ): Promise<string> {
     const stats = await this.getData();
 
@@ -202,7 +202,7 @@ class ReportStorage {
   public async dump(
     strategyName: StrategyName,
     path = "./dump/backtest",
-    columns: Columns[] = backtest_columns
+    columns: Columns[] = COLUMN_CONFIG.backtest_columns
   ): Promise<void> {
     const markdown = await this.getReport(strategyName, columns);
 
@@ -336,7 +336,7 @@ export class BacktestMarkdownService {
   public getReport = async (
     symbol: string,
     strategyName: StrategyName,
-    columns: Columns[] = backtest_columns
+    columns: Columns[] = COLUMN_CONFIG.backtest_columns
   ): Promise<string> => {
     this.loggerService.log("backtestMarkdownService getReport", {
       symbol,
@@ -371,7 +371,7 @@ export class BacktestMarkdownService {
     symbol: string,
     strategyName: StrategyName,
     path = "./dump/backtest",
-    columns: Columns[] = backtest_columns
+    columns: Columns[] = COLUMN_CONFIG.backtest_columns
   ): Promise<void> => {
     this.loggerService.log("backtestMarkdownService dump", {
       symbol,

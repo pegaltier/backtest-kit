@@ -14,7 +14,7 @@ import { memoize, singleshot } from "functools-kit";
 import { signalLiveEmitter } from "../../../config/emitters";
 import { LiveStatisticsModel, TickEvent } from "../../../model/LiveStatistics.model";
 import { ColumnModel } from "../../../model/Column.model";
-import { live_columns } from "../../../assets/live.columns";
+import { COLUMN_CONFIG } from "../../../config/columns";
 
 export type Columns = ColumnModel<TickEvent>;
 
@@ -283,7 +283,7 @@ class ReportStorage {
    */
   public async getReport(
     strategyName: StrategyName,
-    columns: Columns[] = live_columns
+    columns: Columns[] = COLUMN_CONFIG.live_columns
   ): Promise<string> {
     const stats = await this.getData();
 
@@ -340,7 +340,7 @@ class ReportStorage {
   public async dump(
     strategyName: StrategyName,
     path = "./dump/live",
-    columns: Columns[] = live_columns
+    columns: Columns[] = COLUMN_CONFIG.live_columns
   ): Promise<void> {
     const markdown = await this.getReport(strategyName, columns);
 
@@ -484,7 +484,7 @@ export class LiveMarkdownService {
   public getReport = async (
     symbol: string,
     strategyName: StrategyName,
-    columns: Columns[] = live_columns
+    columns: Columns[] = COLUMN_CONFIG.live_columns
   ): Promise<string> => {
     this.loggerService.log("liveMarkdownService getReport", {
       symbol,
@@ -519,7 +519,7 @@ export class LiveMarkdownService {
     symbol: string,
     strategyName: StrategyName,
     path = "./dump/live",
-    columns: Columns[] = live_columns
+    columns: Columns[] = COLUMN_CONFIG.live_columns
   ): Promise<void> => {
     this.loggerService.log("liveMarkdownService dump", {
       symbol,

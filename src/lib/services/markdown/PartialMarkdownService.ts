@@ -15,7 +15,7 @@ import {
   PartialEvent,
 } from "../../../model/PartialStatistics.model";
 import { ColumnModel } from "../../../model/Column.model";
-import { partial_columns } from "../../../assets/partial.columns";
+import { COLUMN_CONFIG } from "../../../config/columns";
 
 export type Columns = ColumnModel<PartialEvent>;
 
@@ -133,7 +133,7 @@ class ReportStorage {
   public async getReport(
     symbol: string,
     strategyName: string,
-    columns: Columns[] = partial_columns
+    columns: Columns[] = COLUMN_CONFIG.partial_columns
   ): Promise<string> {
     const stats = await this.getData();
 
@@ -185,7 +185,7 @@ class ReportStorage {
     symbol: string,
     strategyName: string,
     path = "./dump/partial",
-    columns: Columns[] = partial_columns
+    columns: Columns[] = COLUMN_CONFIG.partial_columns
   ): Promise<void> {
     const markdown = await this.getReport(symbol, strategyName, columns);
 
@@ -349,7 +349,7 @@ export class PartialMarkdownService {
   public getReport = async (
     symbol: string,
     strategyName: string,
-    columns: Columns[] = partial_columns
+    columns: Columns[] = COLUMN_CONFIG.partial_columns
   ): Promise<string> => {
     this.loggerService.log("partialMarkdownService getReport", {
       symbol,
@@ -384,7 +384,7 @@ export class PartialMarkdownService {
     symbol: string,
     strategyName: string,
     path = "./dump/partial",
-    columns: Columns[] = partial_columns
+    columns: Columns[] = COLUMN_CONFIG.partial_columns
   ): Promise<void> => {
     this.loggerService.log("partialMarkdownService dump", {
       symbol,

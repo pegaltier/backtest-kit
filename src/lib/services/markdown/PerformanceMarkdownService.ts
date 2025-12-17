@@ -11,7 +11,7 @@ import { memoize, singleshot } from "functools-kit";
 import { performanceEmitter } from "../../../config/emitters";
 import { PerformanceStatisticsModel, MetricStats } from "../../../model/PerformanceStatistics.model";
 import { ColumnModel } from "../../../model/Column.model";
-import { performance_columns } from "../../../assets/performance.columns";
+import { COLUMN_CONFIG } from "../../../config/columns";
 
 export type Columns = ColumnModel<MetricStats>;
 
@@ -162,7 +162,7 @@ class PerformanceStorage {
    */
   public async getReport(
     strategyName: string,
-    columns: Columns[] = performance_columns
+    columns: Columns[] = COLUMN_CONFIG.performance_columns
   ): Promise<string> {
     const stats = await this.getData(strategyName);
 
@@ -232,7 +232,7 @@ class PerformanceStorage {
   public async dump(
     strategyName: string,
     path = "./dump/performance",
-    columns: Columns[] = performance_columns
+    columns: Columns[] = COLUMN_CONFIG.performance_columns
   ): Promise<void> {
     const markdown = await this.getReport(strategyName, columns);
 
@@ -352,7 +352,7 @@ export class PerformanceMarkdownService {
   public getReport = async (
     symbol: string,
     strategyName: string,
-    columns: Columns[] = performance_columns
+    columns: Columns[] = COLUMN_CONFIG.performance_columns
   ): Promise<string> => {
     this.loggerService.log("performanceMarkdownService getReport", {
       symbol,
@@ -383,7 +383,7 @@ export class PerformanceMarkdownService {
     symbol: string,
     strategyName: string,
     path = "./dump/performance",
-    columns: Columns[] = performance_columns
+    columns: Columns[] = COLUMN_CONFIG.performance_columns
   ): Promise<void> => {
     this.loggerService.log("performanceMarkdownService dump", {
       symbol,

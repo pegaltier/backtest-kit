@@ -7,7 +7,7 @@ import { memoize, singleshot } from "functools-kit";
 import { riskSubject } from "../../../config/emitters";
 import { RiskStatisticsModel, RiskEvent } from "../../../model/RiskStatistics.model";
 import { ColumnModel } from "../../../model/Column.model";
-import { risk_columns } from "../../../assets/risk.columns";
+import { COLUMN_CONFIG } from "../../../config/columns";
 
 export type Columns = ColumnModel<RiskEvent>;
 
@@ -78,7 +78,7 @@ class ReportStorage {
   public async getReport(
     symbol: string,
     strategyName: string,
-    columns: Columns[] = risk_columns
+    columns: Columns[] = COLUMN_CONFIG.risk_columns
   ): Promise<string> {
     const stats = await this.getData();
 
@@ -134,7 +134,7 @@ class ReportStorage {
     symbol: string,
     strategyName: string,
     path = "./dump/risk",
-    columns: Columns[] = risk_columns
+    columns: Columns[] = COLUMN_CONFIG.risk_columns
   ): Promise<void> {
     const markdown = await this.getReport(symbol, strategyName, columns);
 
@@ -251,7 +251,7 @@ export class RiskMarkdownService {
   public getReport = async (
     symbol: string,
     strategyName: string,
-    columns: Columns[] = risk_columns
+    columns: Columns[] = COLUMN_CONFIG.risk_columns
   ): Promise<string> => {
     this.loggerService.log("riskMarkdownService getReport", {
       symbol,
@@ -286,7 +286,7 @@ export class RiskMarkdownService {
     symbol: string,
     strategyName: string,
     path = "./dump/risk",
-    columns: Columns[] = risk_columns
+    columns: Columns[] = COLUMN_CONFIG.risk_columns
   ): Promise<void> => {
     this.loggerService.log("riskMarkdownService dump", {
       symbol,
