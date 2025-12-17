@@ -50,12 +50,13 @@ import OptimizerSchemaService from "./services/schema/OptimizerSchemaService";
 import OptimizerValidationService from "./services/validation/OptimizerValidationService";
 import OptimizerConnectionService from "./services/connection/OptimizerConnectionService";
 import OptimizerGlobalService from "./services/global/OptimizerGlobalService";
-import { PartialConnectionService } from "./services/connection/PartialConnectionService";
+import PartialConnectionService from "./services/connection/PartialConnectionService";
 import PartialMarkdownService from "./services/markdown/PartialMarkdownService";
 import PartialGlobalService from "./services/global/PartialGlobalService";
 import OutlineMarkdownService from "./services/markdown/OutlineMarkdownService";
 import ConfigValidationService from "./services/validation/ConfigValidationService";
 import RiskMarkdownService from "./services/markdown/RiskMarkdownService";
+import ColumnValidationService from "./services/validation/ColumnValidationService";
 
 const baseServices = {
   loggerService: inject<LoggerService>(TYPES.loggerService),
@@ -209,6 +210,9 @@ const validationServices = {
   ),
   configValidationService: inject<ConfigValidationService>(
     TYPES.configValidationService
+  ),
+  columnValidationService: inject<ColumnValidationService>(
+    TYPES.columnValidationService
   ),
 };
 

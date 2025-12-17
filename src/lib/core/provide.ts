@@ -51,6 +51,7 @@ import PartialGlobalService from "../services/global/PartialGlobalService";
 import OutlineMarkdownService from "../services/markdown/OutlineMarkdownService";
 import ConfigValidationService from "../services/validation/ConfigValidationService";
 import RiskMarkdownService from "../services/markdown/RiskMarkdownService";
+import ColumnValidationService from "../services/validation/ColumnValidationService";
 
 {
     provide(TYPES.loggerService, () => new LoggerService());
@@ -133,6 +134,7 @@ import RiskMarkdownService from "../services/markdown/RiskMarkdownService";
     provide(TYPES.riskValidationService, () => new RiskValidationService());
     provide(TYPES.optimizerValidationService, () => new OptimizerValidationService());
     provide(TYPES.configValidationService, () => new ConfigValidationService());
+    provide(TYPES.columnValidationService, () => new ColumnValidationService());
 }
 
 {

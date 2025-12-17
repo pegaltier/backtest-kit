@@ -79,6 +79,7 @@ const validationServices = {
     riskValidationService: Symbol('riskValidationService'),
     optimizerValidationService: Symbol('optimizerValidationService'),
     configValidationService: Symbol('configValidationService'),
+    columnValidationService: Symbol('columnValidationService'),
 }
 
 const templateServices = {

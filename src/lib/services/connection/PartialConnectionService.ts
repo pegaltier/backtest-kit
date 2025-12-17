@@ -258,3 +258,5 @@ export class PartialConnectionService implements IPartial {
     this.getPartial.clear(data.id);
   };
 }
+
+export default PartialConnectionService;
