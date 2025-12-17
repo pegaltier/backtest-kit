@@ -32,7 +32,6 @@ All connection services follow the same pattern:
 3. **Routing**: Delegate method calls to cached client
 4. **Event Emission**: Broadcast results to event system
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:1-309](), [src/lib/index.ts:74-96](), [src/lib/core/types.ts:10-18]()
 
 ---
 
@@ -86,7 +85,6 @@ graph TB
 - **FrameConnectionService**: `frameName` (one instance per timeframe configuration)
 - **RiskConnectionService**: `riskName` (one instance per risk profile)
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:120-151](), [functools-kit documentation](https://www.npmjs.com/package/functools-kit)
 
 ---
 
@@ -123,7 +121,6 @@ graph TB
     Client -->|"reads"| MethodCtx
 ```
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:89-151]()
 
 ### Key Methods
 
@@ -168,7 +165,6 @@ private getStrategy = memoize(
 4. **Dependency Injection**: Passes all required services to ClientStrategy constructor
 5. **Risk Merging**: Uses `GET_RISK_FN` to handle single `riskName` or multiple `riskList` profiles
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:120-151]()
 
 #### tick (Live Execution Router)
 
@@ -208,7 +204,6 @@ public tick = async (
 5. **Event Emission**: Broadcasts result to mode-specific and global emitters
 6. **Return**: Passes result back to caller
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:207-228]()
 
 #### backtest (Backtest Router)
 
@@ -244,7 +239,6 @@ public backtest = async (
 - Only emits to `signalBacktestEmitter` and `signalEmitter` (no live emitter)
 - Returns `IStrategyBacktestResult` (always closed or cancelled, never idle/active)
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:241-261]()
 
 #### clear (Cache Management)
 
@@ -274,7 +268,6 @@ public clear = async (ctx?: {
 - **Reset State**: Forces fresh ClientStrategy on next call (useful for testing)
 - **Memory Management**: Release resources for strategies no longer needed
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:292-305]()
 
 ---
 
@@ -298,7 +291,6 @@ Manages `ClientExchange` instances for fetching market data.
 - Retries failed requests with `retry()` from `functools-kit`
 - Validates candle completeness (detects missing timestamps)
 
-**Sources:** Files not shown, but follows same pattern as StrategyConnectionService
 
 ### FrameConnectionService
 
@@ -314,7 +306,6 @@ Manages `ClientFrame` instances for timeframe generation.
 - Validates that endDate > startDate
 - Ensures interval divides evenly into total duration
 
-**Sources:** Files not shown, but follows same pattern as StrategyConnectionService
 
 ### RiskConnectionService
 
@@ -333,7 +324,6 @@ Manages `ClientRisk` instances for risk validation.
 - Supports `MergeRisk` for combining multiple risk profiles
 - Uses `RiskGlobalService` for portfolio-wide tracking
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:33-67]() shows risk merging logic
 
 ### PartialConnectionService
 
@@ -352,7 +342,6 @@ Manages a singleton `ClientPartial` instance for partial profit/loss tracking.
 - Prevents duplicate emissions for same milestone
 - Used by `ClientStrategy.tick()` to monitor unrealized P&L
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:106-108]()
 
 ### OptimizerConnectionService
 
@@ -371,7 +360,6 @@ Manages `ClientOptimizer` instances for LLM-based strategy generation.
 - Manages conversation history across multiple data sources
 - Emits progress events during data collection
 
-**Sources:** Files not shown, but follows same pattern as StrategyConnectionService
 
 ---
 
@@ -407,7 +395,6 @@ stateDiagram-v2
     end note
 ```
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:292-305]()
 
 ### Memory Implications
 
@@ -429,7 +416,6 @@ For a backtest with 100 symbols and 5 strategies:
 - **Long-Running Live**: Call `clear()` periodically to release unused strategies
 - **Testing**: Call `clear()` between tests to ensure clean state
 
-**Sources:** [src/client/ClientStrategy.ts:1-1544]() shows internal state
 
 ---
 
@@ -495,7 +481,6 @@ graph TB
     ClientStrategy -->|"uses"| PartialConn
 ```
 
-**Sources:** [src/lib/index.ts:1-246](), [src/lib/core/provide.ts:1-143]()
 
 ### Dependency Injection Pattern
 
@@ -522,7 +507,6 @@ class StrategyCoreService {
 3. Connection Services inject other services (Schema, Context, etc.)
 4. Clients receive fully-configured dependencies via constructor
 
-**Sources:** [src/lib/core/provide.ts:66-72](), [src/lib/core/types.ts:10-18](), [src/lib/index.ts:74-96]()
 
 ---
 
@@ -549,7 +533,6 @@ This separation enables:
 - Swapping caching strategies without changing business logic
 - Centralizing event emission logic
 
-**Sources:** Architecture inferred from overall system design
 
 ---
 
@@ -572,4 +555,3 @@ The memoization strategy prevents redundant instantiation, preserves client stat
 - Cache management via `clear()` enables testing and memory control
 - Connection Services are stateless routers, not stateful coordinators
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:1-309](), [src/lib/index.ts:74-96](), [src/lib/core/types.ts:10-18](), [src/lib/core/provide.ts:66-72]()

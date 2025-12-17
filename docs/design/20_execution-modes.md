@@ -21,7 +21,6 @@ Backtest Kit provides three distinct execution modes, each optimized for differe
 
 All three modes share the same core execution components (`StrategyCoreService`, `ClientStrategy`) to ensure identical signal logic between testing and production.
 
-**Sources:** [src/classes/Backtest.ts:1-601](), [src/classes/Live.ts:1-600](), [src/classes/Walker.ts:1-600](), Diagram 2 from high-level architecture
 
 ---
 
@@ -87,7 +86,6 @@ graph TB
 
 This diagram shows how each execution mode uses mode-specific orchestration services while sharing the same core strategy execution logic. Instance management ensures isolated state per symbol-strategy or symbol-walker pair.
 
-**Sources:** [src/classes/Backtest.ts:359-600](), [src/classes/Live.ts:376-600](), [src/classes/Walker.ts:431-600](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:1-347](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:1-179](), [src/lib/services/logic/private/WalkerLogicPrivateService.ts:1-235]()
 
 ---
 
@@ -115,7 +113,6 @@ const cancel = Backtest.background(symbol, {
 
 Both methods delegate to `BacktestInstance` which maintains isolated state per `symbol:strategyName` pair using memoization.
 
-**Sources:** [src/classes/Backtest.ts:378-400](), [src/classes/Backtest.ts:423-443]()
 
 ### Orchestration Flow
 
@@ -173,7 +170,6 @@ graph TB
 
 This diagram shows the complete backtest loop including the "fast backtest" optimization that skips timeframes while a signal is active.
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:62-347]()
 
 ### Fast Backtest Optimization
 
@@ -186,7 +182,6 @@ When a signal opens, the orchestrator switches to "fast mode":
 
 This optimization dramatically improves performance for long-running signals by avoiding per-minute `tick()` calls during active signal monitoring.
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:154-295]()
 
 ### Progress Tracking
 
@@ -203,7 +198,6 @@ await progressBacktestEmitter.next({
 
 Consumer code can listen via `listenProgressBacktest()` to display real-time progress indicators.
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:84-92]()
 
 ### Graceful Shutdown
 
@@ -214,7 +208,6 @@ Backtest supports graceful shutdown via `Backtest.stop(symbol, strategyName)`:
 - Current active signal completes normally before stopping
 - Prevents partial results from incomplete backtests
 
-**Sources:** [src/classes/Backtest.ts:254-260](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:95-111](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:132-150]()
 
 ---
 
@@ -247,7 +240,6 @@ const cancel = Live.background(symbol, {
 
 Both methods delegate to `LiveInstance` which maintains isolated state per `symbol:strategyName` pair.
 
-**Sources:** [src/classes/Live.ts:398-418](), [src/classes/Live.ts:441-459]()
 
 ### Orchestration Flow
 
@@ -296,7 +288,6 @@ graph TB
 
 This diagram shows the infinite loop pattern with sleep intervals and graceful shutdown checkpoints.
 
-**Sources:** [src/lib/services/logic/private/LiveLogicPrivateService.ts:63-175]()
 
 ### Sleep Interval Configuration
 
@@ -308,7 +299,6 @@ const TICK_TTL = 1 * 60 * 1_000 + 1; // 1 minute + 1ms
 
 This interval balances responsiveness with API rate limiting. The extra 1ms prevents exact-minute boundary issues.
 
-**Sources:** [src/lib/services/logic/private/LiveLogicPrivateService.ts:14]()
 
 ### Crash-Safe Persistence
 
@@ -321,7 +311,6 @@ Live mode automatically persists active signals to disk for crash recovery:
 
 This ensures crash recovery without data loss or duplicate positions.
 
-**Sources:** Referenced in Diagram 3 from high-level architecture, implemented in ClientStrategy
 
 ### Result Streaming
 
@@ -344,7 +333,6 @@ if (result.action === "scheduled") {
 yield result as IStrategyTickResultClosed | IStrategyTickResultOpened;
 ```
 
-**Sources:** [src/lib/services/logic/private/LiveLogicPrivateService.ts:141-152]()
 
 ### Graceful Shutdown
 
@@ -356,7 +344,6 @@ Live mode supports graceful shutdown via `Live.stop(symbol, strategyName)`:
 
 This ensures positions close properly before the trading bot terminates.
 
-**Sources:** [src/classes/Live.ts:261-267](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:119-136](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:155-171]()
 
 ---
 
@@ -393,7 +380,6 @@ addWalker({
 });
 ```
 
-**Sources:** [src/classes/Walker.ts:466-485](), [src/classes/Walker.ts:505-527]()
 
 ### Orchestration Flow
 
@@ -449,7 +435,6 @@ graph TB
 
 This diagram shows the sequential strategy testing pattern with real-time metric comparison and progressive result streaming.
 
-**Sources:** [src/lib/services/logic/private/WalkerLogicPrivateService.ts:68-235]()
 
 ### Metric Comparison
 
@@ -477,7 +462,6 @@ if (bestMetric === null || metricValue > bestMetric) {
 }
 ```
 
-**Sources:** [src/lib/services/logic/private/WalkerLogicPrivateService.ts:172-188]()
 
 ### Progressive Result Streaming
 
@@ -501,7 +485,6 @@ yield contract;
 
 Consumer code receives incremental updates as each strategy finishes.
 
-**Sources:** [src/lib/services/logic/private/WalkerLogicPrivateService.ts:192-208]()
 
 ### Multi-Walker Stop Signals
 
@@ -520,7 +503,6 @@ const unsubscribe = walkerStopSubject
 
 This prevents crosstalk when running multiple optimization experiments simultaneously.
 
-**Sources:** [src/lib/services/logic/private/WalkerLogicPrivateService.ts:98-111]()
 
 ### Strategy Callbacks
 
@@ -544,7 +526,6 @@ addWalker({
 });
 ```
 
-**Sources:** [src/lib/services/logic/private/WalkerLogicPrivateService.ts:129-131](), [src/lib/services/logic/private/WalkerLogicPrivateService.ts:190-192]()
 
 ---
 
@@ -560,7 +541,6 @@ All three execution modes use async generators for memory-efficient streaming. T
 | Live | **Infinite** - never completes naturally | Only stops via graceful shutdown | Supported via `break` in consumer or `Live.stop()` |
 | Walker | **Finite** - ends after last strategy | Automatically completes when all strategies tested | Supported via `break` in consumer or `Walker.stop()` |
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:62-347](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:63-175](), [src/lib/services/logic/private/WalkerLogicPrivateService.ts:68-235]()
 
 ### Memory Efficiency
 
@@ -582,7 +562,6 @@ for await (const result of backtestLogic.run(symbol)) {
 
 This is critical for large backtests with thousands of signals.
 
-**Sources:** General async generator pattern, implemented in [src/lib/services/logic/private/BacktestLogicPrivateService.ts:62]()
 
 ### Early Termination Support
 
@@ -600,7 +579,6 @@ for await (const result of Backtest.run(symbol, context)) {
 
 Consumer break triggers generator cleanup (destructors, unsubscriptions) without requiring explicit shutdown.
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:62-347]()
 
 ### Background Execution Pattern
 
@@ -632,7 +610,6 @@ public background = (symbol: string, context: any) => {
 
 The `singlerun` wrapper from `functools-kit` ensures only one execution per instance and provides status tracking.
 
-**Sources:** [src/classes/Backtest.ts:105-118](), [src/classes/Backtest.ts:200-235]()
 
 ---
 
@@ -691,7 +668,6 @@ This diagram shows how mode-specific orchestration services converge on the same
 
 This architecture ensures **identical behavior** between backtest simulation and live trading, preventing discrepancies that could lead to unexpected production results.
 
-**Sources:** [src/lib/services/core/StrategyCoreService.ts]() (referenced but not provided), [src/lib/services/connection/StrategyConnectionService.ts]() (referenced but not provided)
 
 ---
 
@@ -733,7 +709,6 @@ Walker.run(symbol, {
 });
 ```
 
-**Sources:** [src/classes/Backtest.ts:378-400](), [src/classes/Live.ts:398-418](), [src/classes/Walker.ts:466-485]()
 
 ---
 
@@ -751,4 +726,3 @@ Use the following criteria to choose the appropriate execution mode:
 | Strategy development iteration | **Backtest** | Fastest feedback loop during development |
 | Paper trading / dry run | **Live** with mock exchange | Real-time behavior without capital risk |
 
-**Sources:** General architectural patterns from [src/classes/Backtest.ts:1-601](), [src/classes/Live.ts:1-600](), [src/classes/Walker.ts:1-600]()

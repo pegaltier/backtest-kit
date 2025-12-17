@@ -38,7 +38,6 @@ These intervals are defined as a union type in the type system:
 type SignalInterval = "1m" | "3m" | "5m" | "15m" | "30m" | "1h";
 ```
 
-**Sources**: [types.d.ts:12-18](), [src/interfaces/Strategy.interface.ts:12-18]()
 
 ## Throttling Architecture
 
@@ -57,7 +56,6 @@ graph TD
     H -->|"used in"| F
 ```
 
-**Sources**: [src/client/ClientStrategy.ts:34-41](), [src/client/ClientStrategy.ts:332-476]()
 
 ### State Management
 
@@ -70,7 +68,6 @@ private _lastSignalTimestamp: number | null = null;
 
 This timestamp is checked on every `tick()` call before invoking the user-defined `getSignal` function.
 
-**Sources**: [src/client/ClientStrategy.ts]()
 
 ## Implementation Details
 
@@ -91,7 +88,6 @@ const INTERVAL_MINUTES: Record<SignalInterval, number> = {
 
 This table is used to convert the user-specified interval into milliseconds for timestamp comparison.
 
-**Sources**: [src/client/ClientStrategy.ts:34-41]()
 
 ### Throttling Logic Flow
 
@@ -126,7 +122,6 @@ sequenceDiagram
     end
 ```
 
-**Sources**: [src/client/ClientStrategy.ts:332-353]()
 
 ### Actual Implementation Code
 
@@ -156,7 +151,6 @@ const currentTime = self.params.execution.context.when.getTime();
 3. Throttled ticks return `null` immediately without executing strategy logic
 4. Error in `getSignal` doesn't prevent timestamp update (prevents retry storms)
 
-**Sources**: [src/client/ClientStrategy.ts:340-353]()
 
 ## Throttling vs Signal Queue
 
@@ -194,7 +188,6 @@ graph TD
 
 Even with throttling allowing a new `getSignal` call, the new signal waits if a previous signal is still active. Both mechanisms work together to ensure controlled, sequential signal processing.
 
-**Sources**: [src/client/ClientStrategy.ts:332-476](), test examples in [test/README.md:1-674]()
 
 ## Configuration in Strategy Schema
 
@@ -212,7 +205,6 @@ interface IStrategySchema {
 }
 ```
 
-**Sources**: [types.d.ts:728-747](), [src/interfaces/Strategy.interface.ts:132-151]()
 
 ### Basic Example
 
@@ -242,7 +234,6 @@ addStrategy({
 });
 ```
 
-**Sources**: [src/function/add.ts]() (addStrategy function)
 
 ## Choosing the Right Interval
 
@@ -271,7 +262,6 @@ graph TD
     style J fill:#e1f5ff
 ```
 
-**Sources**: Pattern analysis from [src/client/ClientStrategy.ts:34-41]()
 
 ### Selection Guidelines
 
@@ -285,7 +275,6 @@ graph TD
 
 **Rule of Thumb**: Match your throttling interval to your analysis timeframe. If you analyze 15-minute candles, use a `"15m"` interval.
 
-**Sources**: Best practices derived from system design
 
 ### Common Anti-Patterns
 
@@ -322,7 +311,6 @@ addStrategy({
 });
 ```
 
-**Sources**: [src/function/exchange.ts]() (getCandles implementation)
 
 **❌ Anti-Pattern: Over-Throttling**
 
@@ -343,7 +331,6 @@ addStrategy({
 - Doesn't match strategy's time horizon
 - Likely to enter after optimal moment
 
-**Sources**: System design patterns
 
 ## Performance Implications
 
@@ -365,7 +352,6 @@ The throttling interval directly controls the number of `getSignal` invocations:
 - **Same portfolio with `"15m"`**: 10 × 96 = 960 calls/day (**66% reduction**)
 - **Same portfolio with `"1h"`**: 10 × 24 = 240 calls/day (**92% reduction**)
 
-**Sources**: Calculated from [src/client/ClientStrategy.ts:34-41]()
 
 ### Backtest Performance
 
@@ -387,7 +373,6 @@ For a 30-day backtest analyzing 20 symbols:
 - `"5m"` interval: 30 × 288 × 20 = 172,800 calls
 - `"15m"` interval: 30 × 96 × 20 = 57,600 calls
 
-**Sources**: [src/lib/services/logic/private/BacktestLogicPrivateService.ts]()
 
 ### Network and API Impact
 
@@ -401,7 +386,6 @@ When using external data sources (e.g., CCXT exchange APIs), throttling reduces 
 
 Most exchanges have rate limits (e.g., Binance: 1,200 requests/minute). Proper throttling prevents hitting these limits.
 
-**Sources**: Integration patterns from [src/interfaces/Exchange.interface.ts:122-155]()
 
 ## Live Trading Behavior
 
@@ -446,7 +430,6 @@ sequenceDiagram
 - 10:04:00 → `tick()` called → Throttled (skipped)
 - 10:05:00 → `tick()` called → `getSignal()` executed
 
-**Sources**: [src/lib/services/logic/private/LiveLogicPrivateService.ts]()
 
 ### Error Handling and Throttling
 
@@ -477,7 +460,6 @@ const GET_SIGNAL_FN = trycatch(
 - Strategy gets another chance after interval expires
 - Errors are logged via `errorEmitter` for monitoring
 
-**Sources**: [src/client/ClientStrategy.ts:332-476]()
 
 ## Interaction with Fast Backtest
 
@@ -511,7 +493,6 @@ graph TD
 
 **Key Point**: Throttling only applies to **signal generation**, not signal monitoring. Once a signal is active, every candle is checked for TP/SL/time_expired conditions.
 
-**Sources**: [src/client/ClientStrategy.ts:1204-1447]() (backtest method)
 
 ## Advanced Patterns
 
@@ -543,7 +524,6 @@ addStrategy({
 - Skips computation during unfavorable conditions
 - Effectively creates dynamic throttling via `return null`
 
-**Sources**: Pattern derived from [src/interfaces/Strategy.interface.ts:144]()
 
 ### Multi-Timeframe Interval Selection
 
@@ -580,7 +560,6 @@ addStrategy({
 - Lower timeframes (1m, 5m) are fetched fresh each time
 - Prevents redundant analysis of unchanged 15m data
 
-**Sources**: [src/function/exchange.ts]() (getCandles implementation)
 
 ## Debugging Throttling Issues
 
@@ -593,7 +572,6 @@ addStrategy({
 | Delayed entries | Interval too long for market conditions | Decrease interval OR adjust strategy logic |
 | Backtest too slow | `"1m"` interval on long timeframe | Increase interval (e.g., `"5m"` or `"15m"`) |
 
-**Sources**: Analysis of common patterns
 
 ### Diagnostic Logging
 
@@ -629,7 +607,6 @@ addStrategy({
 
 Notice `onTick` is called every minute, but `getSignal` is only called every 5 minutes.
 
-**Sources**: [types.d.ts:700-723]() (IStrategyCallbacks interface)
 
 ## Best Practices Summary
 
@@ -650,5 +627,3 @@ Notice `onTick` is called every minute, but `getSignal` is only called every 5 m
 - [ ] Considered API rate limits if using external data sources
 - [ ] Added logging to verify throttling behavior
 - [ ] Documented interval choice in strategy `note` field
-
-**Sources**: System design analysis from [src/client/ClientStrategy.ts:34-41](), [types.d.ts:12-18]()

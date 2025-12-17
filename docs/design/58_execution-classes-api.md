@@ -66,7 +66,6 @@ Each Utils class maintains a memoized factory that caches Instance objects by ke
 
 This ensures that multiple calls to `run()` or `background()` for the same symbol-strategy pair reuse the same Instance object, preserving execution state across calls.
 
-Sources: [src/classes/Backtest.ts:359-399](), [src/classes/Live.ts:376-417](), [src/classes/Walker.ts:431-471]()
 
 ---
 
@@ -133,7 +132,6 @@ Each Instance maintains:
 - `_isDone`: Completion flag indicating execution finished
 - `task`: Singlerun-wrapped function ensuring single concurrent execution
 
-Sources: [src/classes/Backtest.ts:74-93](), [src/classes/Live.ts:79-98](), [src/classes/Walker.ts:72-91]()
 
 ### Task Execution Flow
 
@@ -162,7 +160,6 @@ graph TD
     EmitDone --> SetDone
 ```
 
-Sources: [src/classes/Backtest.ts:26-53](), [src/classes/Live.ts:31-57](), [src/classes/Walker.ts:27-53]()
 
 ---
 
@@ -204,7 +201,6 @@ for await (const result of Backtest.run("BTCUSDT", {
 - Uses fast-backtest optimization to skip frames while signal is active
 - Stops when frame iteration completes or `stop()` is called
 
-Sources: [src/classes/Backtest.ts:378-400](), [src/classes/Backtest.ts:149-178]()
 
 #### background()
 
@@ -239,7 +235,6 @@ cancel();
 - Cancellation checks for pending signal before emitting done event
 - Errors are caught and emitted to `exitEmitter`
 
-Sources: [src/classes/Backtest.ts:423-443](), [src/classes/Backtest.ts:200-235]()
 
 #### stop()
 
@@ -263,7 +258,6 @@ await Backtest.stop("BTCUSDT", "my-strategy");
 - Does NOT force-close active signals
 - Backtest loop checks `_isStopped` after each frame and exits at next idle state
 
-Sources: [src/classes/Backtest.ts:462-473](), [src/classes/Backtest.ts:254-260]()
 
 #### getData()
 
@@ -284,7 +278,6 @@ Backtest.getData(
 - `totalTrades`: Number of closed signals
 - Additional metrics (avg trade duration, profit factor, etc.)
 
-Sources: [src/classes/Backtest.ts:488-499](), [src/classes/Backtest.ts:276-282]()
 
 #### getReport()
 
@@ -307,7 +300,6 @@ Optional array of `ColumnModel` objects to customize report columns. Each column
 
 **Default Columns:** Signal ID, Symbol, Position, Open Price, Take Profit, Stop Loss, Close Price, PNL %, Close Reason, Open Time, Close Time, Duration, Note
 
-Sources: [src/classes/Backtest.ts:515-526](), [src/classes/Backtest.ts:299-305](), [test/spec/columns.test.mjs:15-112]()
 
 #### dump()
 
@@ -324,7 +316,6 @@ Backtest.dump(
 
 **Default Path:** `./dump/backtest/{strategyName}.md`
 
-Sources: [src/classes/Backtest.ts:545-561](), [src/classes/Backtest.ts:325-337]()
 
 #### list()
 
@@ -347,7 +338,6 @@ instances.forEach(inst => {
 });
 ```
 
-Sources: [src/classes/Backtest.ts:576-579]()
 
 ### Backtest Execution Flow
 
@@ -380,7 +370,6 @@ sequenceDiagram
     BacktestInstance->>BacktestInstance: Set _isDone = true
 ```
 
-Sources: [src/classes/Backtest.ts:149-178](), [src/classes/Backtest.ts:378-400]()
 
 ---
 
@@ -425,7 +414,6 @@ for await (const result of Live.run("BTCUSDT", {
 - Persists opened signals to disk for crash recovery
 - Restores persisted signal on startup
 
-Sources: [src/classes/Live.ts:398-417](), [src/classes/Live.ts:156-186]()
 
 #### background()
 
@@ -460,7 +448,6 @@ process.on("SIGINT", () => {
 - Cancellation waits for active signal to close before emitting done event
 - Crash recovery: persisted signals restored on next startup
 
-Sources: [src/classes/Live.ts:441-459](), [src/classes/Live.ts:208-242]()
 
 #### stop()
 
@@ -485,7 +472,6 @@ await Live.stop("BTCUSDT", "my-strategy");
 - Active signal continues monitoring until natural closure
 - Loop exits after signal closes (checked in `INSTANCE_TASK_FN`)
 
-Sources: [src/classes/Live.ts:478-489](), [src/classes/Live.ts:261-267]()
 
 #### getData()
 
@@ -501,7 +487,6 @@ Live.getData(
 **Returns:**
 Statistics covering all signal lifecycle events, not just closed signals like backtest.
 
-Sources: [src/classes/Live.ts:504-515](), [src/classes/Live.ts:283-289]()
 
 #### getReport()
 
@@ -521,7 +506,6 @@ Live.getReport(
 - Includes "cancelled" events (scheduled signals that never activated)
 - Real-time data with current timestamps
 
-Sources: [src/classes/Live.ts:531-542](), [src/classes/Live.ts:306-312]()
 
 #### dump()
 
@@ -538,7 +522,6 @@ Live.dump(
 
 **Default Path:** `./dump/live/{strategyName}.md`
 
-Sources: [src/classes/Live.ts:561-577](), [src/classes/Live.ts:332-344]()
 
 ### Live Execution Flow
 
@@ -589,7 +572,6 @@ sequenceDiagram
     Note over CommandService: Loop exits only on stop() + closed signal
 ```
 
-Sources: [src/classes/Live.ts:156-186]()
 
 ---
 
@@ -642,7 +624,6 @@ for await (const progress of Walker.run("BTCUSDT", {
 - Compares strategies using specified metric (default: `sharpeRatio`)
 - Yields progress event after each strategy completes
 
-Sources: [src/classes/Walker.ts:450-472](), [src/classes/Walker.ts:145-194]()
 
 #### background()
 
@@ -672,7 +653,6 @@ cancel();
 - Cancellation sends stop signal to all strategies via `walkerStopSubject`
 - Prevents interference when multiple walkers run on same symbol simultaneously
 
-Sources: [src/classes/Walker.ts:493-515](), [src/classes/Walker.ts:214-246]()
 
 #### stop()
 
@@ -691,7 +671,6 @@ Walker.stop(
 - Calls `strategyCoreService.stop()` for each strategy
 - Supports multiple concurrent walkers on same symbol (filtered by `walkerName`)
 
-Sources: [src/classes/Walker.ts:540-554](), [src/classes/Walker.ts:271-283]()
 
 #### getData()
 
@@ -711,7 +690,6 @@ Walker.getData(
 - `metric`: Metric used for comparison
 - Per-strategy statistics (Sharpe ratio, win rate, total PNL, etc.)
 
-Sources: [src/classes/Walker.ts:569-586](), [src/classes/Walker.ts:299-319]()
 
 #### getReport()
 
@@ -736,7 +714,6 @@ Walker.getReport(
 3. Winner highlighted
 4. Per-strategy PNL breakdown tables
 
-Sources: [src/classes/Walker.ts:603-622](), [src/classes/Walker.ts:337-361]()
 
 #### dump()
 
@@ -754,7 +731,6 @@ Walker.dump(
 
 **Default Path:** `./dump/walker/{walkerName}.md`
 
-Sources: [src/classes/Walker.ts:642-662](), [src/classes/Walker.ts:382-409]()
 
 ### Walker Execution Flow
 
@@ -799,7 +775,6 @@ sequenceDiagram
     WalkerInstance->>WalkerInstance: Set _isDone = true
 ```
 
-Sources: [src/classes/Walker.ts:145-194]()
 
 ---
 
@@ -817,7 +792,6 @@ Sources: [src/classes/Walker.ts:145-194]()
 | `dump` | `symbol: string`<br/>`strategyName: string`<br/>`path?: string`<br/>`columns?: Columns[]` | `Promise<void>` | Save report to disk |
 | `list` | None | `Promise<Array<StatusObject>>` | List all backtest instances |
 
-Sources: [src/classes/Backtest.ts:359-580]()
 
 ### Live Class
 
@@ -831,7 +805,6 @@ Sources: [src/classes/Backtest.ts:359-580]()
 | `dump` | `symbol: string`<br/>`strategyName: string`<br/>`path?: string`<br/>`columns?: Columns[]` | `Promise<void>` | Save report to disk |
 | `list` | None | `Promise<Array<StatusObject>>` | List all live instances |
 
-Sources: [src/classes/Live.ts:376-595]()
 
 ### Walker Class
 
@@ -845,7 +818,6 @@ Sources: [src/classes/Live.ts:376-595]()
 | `dump` | `symbol: string`<br/>`walkerName: string`<br/>`path?: string`<br/>`strategyColumns?: StrategyColumn[]`<br/>`pnlColumns?: PnlColumn[]` | `Promise<void>` | Save report to disk |
 | `list` | None | `Promise<Array<StatusObject>>` | List all walker instances |
 
-Sources: [src/classes/Walker.ts:431-680]()
 
 ---
 
@@ -876,7 +848,6 @@ graph LR
     Stopped --> Done
 ```
 
-Sources: [src/classes/Backtest.ts:74-82](), [src/classes/Live.ts:79-87](), [src/classes/Walker.ts:72-80]()
 
 ### Task Singlerun Wrapper
 
@@ -894,7 +865,6 @@ private task = singlerun(async (symbol, context) => {
 - Returns existing promise if task already running
 - Provides status via `task.getStatus()`: `"idle" | "running" | "done"`
 
-Sources: [src/classes/Backtest.ts:105-118](), [src/classes/Live.ts:110-122](), [src/classes/Walker.ts:103-114]()
 
 ### getStatus() Method
 
@@ -915,7 +885,6 @@ const status = await instance.getStatus();
 - `"running"`: Execution in progress
 - `"done"`: Execution completed
 
-Sources: [src/classes/Backtest.ts:132-140](), [src/classes/Live.ts:136-144](), [src/classes/Walker.ts:128-136]()
 
 ---
 
@@ -946,7 +915,6 @@ graph TD
 **Validation Failures:**
 If any schema is not registered, validation throws error with helpful message indicating which schema is missing and which method was called.
 
-Sources: [src/classes/Backtest.ts:387-396](), [src/classes/Live.ts:406-414](), [src/classes/Walker.ts:456-468]()
 
 ### Error Emission
 
@@ -968,7 +936,6 @@ graph LR
 - Users can subscribe to errors via `listenError()` and `listenExit()`
 - Distinguishes between recoverable errors (`errorEmitter`) and fatal errors (`exitEmitter`)
 
-Sources: [src/classes/Backtest.ts:212-214](), [src/classes/Live.ts:219-221](), [src/classes/Walker.ts:227-229]()
 
 ---
 
@@ -1055,5 +1022,3 @@ graph TB
 4. **Reporting**: Markdown services collect events and generate reports
 5. **State Management**: Core services manage strategy/risk state
 6. **Cleanup**: Clear services before each new execution
-
-Sources: [src/classes/Backtest.ts:163-176](), [src/classes/Live.ts:169-183](), [src/classes/Walker.ts:163-187]()

@@ -84,7 +84,6 @@ graph TB
     Core --> Emitters
 ```
 
-Sources: [README.md:1-255](), [src/lib/index.ts:1-246](), [src/lib/core/types.ts:1-105](), [docs/internals.md:1-132]()
 
 ## Dependency Injection System
 
@@ -121,7 +120,6 @@ graph LR
 | **Markdown Services** | `backtestMarkdownService`, `liveMarkdownService` | Singleton | Event subscribers for reporting |
 | **Template Services** | `optimizerTemplateService` | Singleton | Code generation for optimizer |
 
-Sources: [src/lib/core/types.ts:1-105](), [src/lib/core/provide.ts:1-143](), [docs/internals.md:27-40]()
 
 ### Service Registration Pattern
 
@@ -147,7 +145,6 @@ export const backtest = {
 
 The `init()` function is called at module load to trigger service initialization: [src/lib/index.ts:240]().
 
-Sources: [src/lib/core/provide.ts:1-143](), [src/lib/index.ts:61-246]()
 
 ## Service Layer Architecture
 
@@ -222,7 +219,6 @@ graph TD
     StratVal --> RiskVal
 ```
 
-Sources: [src/lib/core/provide.ts:1-143](), [docs/uml.puml:1-1101]()
 
 ### Context Propagation Services
 
@@ -240,7 +236,6 @@ Two context services use `di-scoped` library to propagate ambient information th
 
 Both services wrap execution blocks using `runInContext()` method that leverages Node.js `AsyncLocalStorage` for context isolation.
 
-Sources: [src/lib/index.ts:10-15](), [docs/internals.md:27-40]()
 
 ### Connection Services (Memoized Factories)
 
@@ -273,7 +268,6 @@ This pattern ensures:
 - State preservation across multiple strategy executions
 - Fast lookup for repeated access
 
-Sources: [src/lib/index.ts:74-96](), [docs/internals.md:32-35]()
 
 ## Client Layer (Pure Business Logic)
 
@@ -291,7 +285,6 @@ The client layer contains pure TypeScript classes with no dependency injection. 
 | `ClientPartial` | [src/lib/client/ClientPartial.ts]() | Profit/loss milestone tracking | `checkPartials()` |
 | `ClientOptimizer` | [src/lib/client/ClientOptimizer.ts]() | LLM-powered strategy generation | `getData()`, `getCode()` |
 
-Sources: [docs/internals.md:30-31]()
 
 ### ClientStrategy Signal Processing Flow
 
@@ -322,7 +315,6 @@ stateDiagram-v2
 
 The `tick()` method at [src/lib/client/ClientStrategy.ts]() orchestrates the entire signal lifecycle with interval throttling to prevent spam.
 
-Sources: [docs/internals.md:54-82]()
 
 ## Public API Layer
 
@@ -390,7 +382,6 @@ Each execution class provides three consumption patterns:
 2. **Background Execution**: `Backtest.background(...)` with event listeners
 3. **Statistics/Reports**: `getData()`, `getReport()`, `dump()` methods
 
-Sources: [src/class/Backtest.ts](), [src/class/Live.ts](), [src/class/Walker.ts](), [README.md:201-225]()
 
 ## Event-Driven Architecture
 
@@ -471,7 +462,6 @@ graph LR
 
 All user event listeners use `functools-kit` `queued` wrapper ([src/function/listen.ts]()) to ensure sequential async processing, preventing race conditions during high-frequency event emission.
 
-Sources: [docs/internals.md:83-90](), [README.md:173-177]()
 
 ## Data Flow Patterns
 
@@ -528,7 +518,6 @@ Key characteristics:
 - Bulk candle processing via `backtest()` method
 - All events buffered in markdown services (max 250 per key)
 
-Sources: [docs/internals.md:54-67](), [src/services/logic/private/BacktestLogicPrivateService.ts]()
 
 ### Live Trading Data Flow
 
@@ -589,7 +578,6 @@ Key characteristics:
 - Graceful shutdown: waits for `IStrategyTickResultClosed` before exiting
 - Real-time VWAP pricing from last 5 1-minute candles
 
-Sources: [docs/internals.md:68-82](), [src/services/logic/private/LiveLogicPrivateService.ts]()
 
 ### Walker Strategy Comparison Flow
 
@@ -635,7 +623,6 @@ Key characteristics:
 - Progress events via `walkerEmitter` after each strategy
 - Final comparison results via `walkerCompleteSubject`
 
-Sources: [src/services/logic/private/WalkerLogicPrivateService.ts](), [docs/classes/WalkerCommandService.md:1-80]()
 
 ## Summary
 
@@ -651,5 +638,3 @@ The Backtest Kit architecture achieves production-readiness through:
 8. **Crash Recovery**: Atomic file writes with state restoration on startup
 
 The architecture enables identical code to run in backtest and live modes while maintaining determinism, testability, and extensibility.
-
-Sources: [README.md:1-255](), [docs/internals.md:1-132](), [src/lib/index.ts:1-246]()

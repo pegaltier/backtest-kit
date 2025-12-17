@@ -25,7 +25,6 @@ Global functions are organized into six functional categories:
 | **Exchange Utilities** | `getCandles`, `getAveragePrice`, `formatPrice`, `formatQuantity` | Data fetching and formatting |
 | **Debugging** | `dumpSignal` | Logging and analysis |
 
-**Sources:** [README.md:36-176](), [docs/index.md:84-141](), [src/function/add.ts:1-500](), [src/function/list.ts:1-261]()
 
 ---
 
@@ -158,7 +157,6 @@ graph TB
 6. **Connection Services** create and cache client instances (memoized factories)
 7. **Event System** broadcasts events to registered listeners via Subject pattern
 
-**Sources:** [src/function/add.ts:1-500](), [src/lib/index.ts:1-246](), [src/lib/core/types.ts:1-105](), [src/lib/core/provide.ts:1-143]()
 
 ---
 
@@ -200,7 +198,6 @@ setLogger({
 **Internal Flow:**
 The logger is stored in `LoggerService` ([src/services/base/LoggerService]()), which is injected as a dependency throughout the service layer. All services access logging via `backtest.loggerService`.
 
-**Sources:** [README.md:46-55](), [docs/index.md:86]()
 
 ---
 
@@ -247,7 +244,6 @@ Configuration is validated by `ConfigValidationService` ([src/services/validatio
 - Lookback periods are positive integers
 - Thresholds are within valid ranges
 
-**Sources:** [README.md:57-63](), [docs/types/GlobalConfig.md:1-10]()
 
 ---
 
@@ -261,7 +257,6 @@ Returns the current global configuration object with all parameters. Useful for 
 
 **Returns:** Complete `GlobalConfig` object with all parameters
 
-**Sources:** [docs/index.md:88]()
 
 ---
 
@@ -275,7 +270,6 @@ Returns the default global configuration object. Useful for resetting configurat
 
 **Returns:** Default `GlobalConfig` object with framework defaults
 
-**Sources:** [docs/index.md:89]()
 
 ---
 
@@ -314,7 +308,6 @@ setColumns({
 **Internal Validation:**
 Column configuration is validated by `ColumnValidationService` ([src/services/validation/ColumnValidationService]()) which ensures all keys are valid column names.
 
-**Sources:** [docs/index.md:90](), [docs/types/ColumnConfig.md:1-10]()
 
 ---
 
@@ -328,7 +321,6 @@ Returns the current column visibility configuration.
 
 **Returns:** Complete `ColumnConfig` object
 
-**Sources:** [docs/index.md:91]()
 
 ---
 
@@ -342,7 +334,6 @@ Returns the default column visibility configuration.
 
 **Returns:** Default `ColumnConfig` object
 
-**Sources:** [docs/index.md:92]()
 
 ---
 
@@ -386,7 +377,6 @@ graph TB
 4. `SchemaService` stores validated schema in `ToolRegistry` instance
 5. Later, `ConnectionService` retrieves schema and creates client instances on-demand (memoized)
 
-**Sources:** [src/function/add.ts:52-343]()
 
 ---
 
@@ -470,7 +460,6 @@ addStrategy({
 **Storage:**
 `StrategySchemaService` ([src/services/schema/StrategySchemaService]()) stores schema in `ToolRegistry` instance, enabling later retrieval by `StrategyConnectionService`.
 
-**Sources:** [src/function/add.ts:52-64](), [README.md:111-143](), [docs/interfaces/IStrategySchema.md:1-70]()
 
 ---
 
@@ -544,7 +533,6 @@ addExchange({
 **Storage:**
 `ExchangeSchemaService` ([src/services/schema/ExchangeSchemaService]()) stores schema in `ToolRegistry` instance.
 
-**Sources:** [src/function/add.ts:101-113](), [README.md:70-80](), [docs/interfaces/IExchangeSchema.md:1-50]()
 
 ---
 
@@ -597,7 +585,6 @@ addFrame({
 **Storage:**
 `FrameSchemaService` ([src/services/schema/FrameSchemaService]()) stores schema in `ToolRegistry` instance.
 
-**Sources:** [src/function/add.ts:145-151](), [README.md:102-108](), [docs/interfaces/IFrameSchema.md:1-40]()
 
 ---
 
@@ -657,7 +644,6 @@ addWalker({
 **Storage:**
 `WalkerSchemaService` ([src/services/schema/WalkerSchemaService]()) stores schema in `ToolRegistry` instance.
 
-**Sources:** [src/function/add.ts:190-202](), [docs/interfaces/IWalkerSchema.md:1-50]()
 
 ---
 
@@ -753,7 +739,6 @@ addSizing({
 **Storage:**
 `SizingSchemaService` ([src/services/schema/SizingSchemaService]()) stores schema in `ToolRegistry` instance.
 
-**Sources:** [src/function/add.ts:256-268](), [docs/interfaces/ISizingSchema.md:1-100]()
 
 ---
 
@@ -840,7 +825,6 @@ addRisk({
 **Storage:**
 `RiskSchemaService` ([src/services/schema/RiskSchemaService]()) stores schema in `ToolRegistry` instance.
 
-**Sources:** [src/function/add.ts:331-343](), [README.md:82-100](), [docs/interfaces/IRiskSchema.md:1-70]()
 
 ---
 
@@ -939,7 +923,6 @@ addOptimizer({
 **Storage:**
 `OptimizerSchemaService` ([src/services/schema/OptimizerSchemaService]()) stores schema in `ToolRegistry` instance.
 
-**Sources:** [src/function/add.ts:345-500](), [docs/interfaces/IOptimizerSchema.md:1-100]()
 
 ---
 
@@ -971,7 +954,6 @@ All list functions share the same pattern:
 3. ValidationService retrieves schemas from SchemaService
 4. Returns array of schema objects
 
-**Sources:** [src/function/list.ts:1-261]()
 
 ---
 
@@ -990,7 +972,6 @@ console.log(exchanges.map(e => e.exchangeName));
 // ["binance", "coinbase", ...]
 ```
 
-**Sources:** [src/function/list.ts:43-46]()
 
 ---
 
@@ -1009,7 +990,6 @@ console.log(strategies.map(s => s.strategyName));
 // ["sma-crossover", "rsi-divergence", ...]
 ```
 
-**Sources:** [src/function/list.ts:78-81]()
 
 ---
 
@@ -1032,7 +1012,6 @@ console.log(frames.map(f => ({
 })));
 ```
 
-**Sources:** [src/function/list.ts:108-111]()
 
 ---
 
@@ -1054,7 +1033,6 @@ console.log(walkers.map(w => ({
 })));
 ```
 
-**Sources:** [src/function/list.ts:139-142]()
 
 ---
 
@@ -1075,7 +1053,6 @@ console.log(sizings.map(s => ({
 })));
 ```
 
-**Sources:** [src/function/list.ts:179-182]()
 
 ---
 
@@ -1096,7 +1073,6 @@ console.log(risks.map(r => ({
 })));
 ```
 
-**Sources:** [src/function/list.ts:216-219]()
 
 ---
 
@@ -1114,7 +1090,6 @@ const optimizers = await listOptimizers();
 console.log(optimizers.map(o => o.optimizerName));
 ```
 
-**Sources:** [src/function/list.ts:257-260]()
 
 ---
 
@@ -1209,7 +1184,6 @@ graph TB
 
 All listener callbacks are wrapped with `functools-kit` `queued()` to ensure sequential execution even when multiple events fire rapidly.
 
-**Sources:** [README.md:173-176](), [docs/index.md:107-134]()
 
 ---
 
@@ -1260,7 +1234,6 @@ Backtest.background('BTCUSDT', {
 });
 ```
 
-**Sources:** [docs/index.md:107-112]()
 
 ---
 
@@ -1311,7 +1284,6 @@ listenDoneBacktest(async (event) => {
 });
 ```
 
-**Sources:** [docs/index.md:115-120](), [README.md:156-159]()
 
 ---
 
@@ -1372,7 +1344,6 @@ listenBacktestProgress((event) => {
 });
 ```
 
-**Sources:** [docs/index.md:121-123]()
 
 ---
 
@@ -1405,7 +1376,6 @@ listenRisk((event) => {
 });
 ```
 
-**Sources:** [docs/index.md:133-134]()
 
 ---
 
@@ -1452,7 +1422,6 @@ listenPartialLoss((event) => {
 });
 ```
 
-**Sources:** [docs/index.md:129-132]()
 
 ---
 
@@ -1489,7 +1458,6 @@ listenPerformance((event) => {
 });
 ```
 
-**Sources:** [docs/index.md:124]()
 
 ---
 
@@ -1523,7 +1491,6 @@ listenExit((error) => {
 });
 ```
 
-**Sources:** [docs/index.md:113-114]()
 
 ---
 
@@ -1571,7 +1538,6 @@ listenWalkerComplete((event) => {
 Walker.background('BTCUSDT', { walkerName: 'llm-optimizer' });
 ```
 
-**Sources:** [docs/index.md:125-127]()
 
 ---
 
@@ -1629,7 +1595,6 @@ graph TB
 3. **Strategy Code** accesses context via global functions
 4. **No Parameters Required** - context is automatically available
 
-**Sources:** [docs/index.md:139-140]()
 
 ---
 
@@ -1664,7 +1629,6 @@ addStrategy({
 **Internal Access:**
 `getDate()` retrieves `when` from `ExecutionContextService.context.when` ([src/services/context/ExecutionContextService]()).
 
-**Sources:** [docs/index.md:139]()
 
 ---
 
@@ -1704,7 +1668,6 @@ addStrategy({
 **Internal Access:**
 `getMode()` retrieves `backtest` from `ExecutionContextService.context.backtest` ([src/services/context/ExecutionContextService]()).
 
-**Sources:** [docs/index.md:140]()
 
 ---
 
@@ -1763,7 +1726,6 @@ graph TB
 4. **ClientExchange** delegates to user-defined schema functions
 5. **Schema Functions** fetch data from CCXT or custom sources
 
-**Sources:** [docs/index.md:135-138]()
 
 ---
 
@@ -1830,7 +1792,6 @@ In backtest mode, `getCandles()` automatically enforces temporal context by only
 5. Validates candle data (anomaly detection, completeness checks)
 6. Returns filtered candles
 
-**Sources:** [docs/index.md:135](), [README.md:189-198](), [README.md:123-127]()
 
 ---
 
@@ -1887,7 +1848,6 @@ addStrategy({
 4. Otherwise, fetches last 5 1m candles and calculates VWAP
 5. Returns VWAP price
 
-**Sources:** [docs/index.md:136]()
 
 ---
 
@@ -1931,7 +1891,6 @@ addStrategy({
 3. Calls `ClientExchange.formatPrice()` which delegates to `IExchangeSchema.formatPrice()`
 4. Returns formatted string
 
-**Sources:** [docs/index.md:137]()
 
 ---
 
@@ -1975,7 +1934,6 @@ addStrategy({
 3. Calls `ClientExchange.formatQuantity()` which delegates to `IExchangeSchema.formatQuantity()`
 4. Returns formatted string
 
-**Sources:** [docs/index.md:138]()
 
 ---
 
@@ -2049,7 +2007,6 @@ addStrategy({
 - Auditing signal generation decisions
 - Training data collection
 
-**Sources:** [docs/index.md:141](), [README.md:136-140]()
 
 ---
 
@@ -2086,4 +2043,3 @@ addStrategy({
 | `getDate()` | `backtest.executionContextService.context.when` | Retrieve execution timestamp |
 | `getMode()` | `backtest.executionContextService.context.backtest` | Retrieve execution mode flag |
 
-**Sources:** [src/lib/index.ts:225-246](), [src/lib/core/types.ts:1-105](), [src/lib/core/provide.ts:1-143]()

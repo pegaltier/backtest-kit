@@ -50,7 +50,6 @@ graph LR
 - **Immediate signals**: `priceOpen` omitted or equals current price → opens immediately at VWAP
 - **Scheduled signals**: `priceOpen` specified and differs from current price → enters "scheduled" state [types.d.ts:694-697]()
 
-Sources: [types.d.ts:650-697]()
 
 ---
 
@@ -130,7 +129,6 @@ Before any signal activates, it passes through 7 validation checks enforced by `
 
 **Key Safety Rule**: Scheduled signals check for SL breach **before** checking for activation. This prevents "open-and-immediately-stop" scenarios.
 
-Sources: [types.d.ts:650-697](), High-level diagrams (Diagram 3)
 
 ---
 
@@ -197,7 +195,6 @@ switch (result.action) {
 }
 ```
 
-Sources: [types.d.ts:768-888]()
 
 ---
 
@@ -268,7 +265,6 @@ Optional lifecycle hooks [types.d.ts:702-723]():
 | `onPartialProfit` | Profit milestone reached | `data: ISignalRow, revenuePercent` |
 | `onPartialLoss` | Loss milestone reached | `data: ISignalRow, lossPercent` |
 
-Sources: [types.d.ts:728-747](), [types.d.ts:702-723]()
 
 ---
 
@@ -365,7 +361,6 @@ MethodContextService.runAsyncIterator(
 | Connection Services | Neither | `MethodContext` | Route to correct client |
 | Client Layer | Neither | `ExecutionContext` | Access runtime params |
 
-Sources: [types.d.ts:11-18](), [types.d.ts:38-44](), [types.d.ts:302-309](), [types.d.ts:330-336](), High-level diagrams (Diagram 1)
 
 ---
 
@@ -453,7 +448,6 @@ This design enables:
 - **Streaming**: Real-time processing of results
 - **Backpressure**: Generator only produces when consumer is ready
 
-Sources: [README.md:186-199](), High-level diagrams (Diagram 1), [types.d.ts:11-18]()
 
 ---
 
@@ -533,7 +527,6 @@ interface IStrategyPnL {
 - Costs: 0.4%
 - Net PNL: **3.6%**
 
-Sources: [types.d.ts:195-204](), [README.md:183](), [src/client/ClientExchange.ts]()
 
 ---
 
@@ -574,7 +567,6 @@ graph LR
 
 This optimization prevents thousands of unnecessary ticks while a signal is active.
 
-Sources: [src/client/ClientStrategy.ts](), High-level diagrams (Diagram 3)
 
 ---
 
@@ -589,5 +581,3 @@ Sources: [src/client/ClientStrategy.ts](), High-level diagrams (Diagram 3)
 | **Method Context** | `MethodContextService`, `IMethodContext` | Schema routing (strategy/exchange/frame names) | [Execution Contexts](./08_core-concepts.md) |
 | **Time Execution** | Async generators, context propagation | Stream of time preventing look-ahead bias | [Time Execution Engine](./08_core-concepts.md) |
 | **VWAP Pricing** | `ClientExchange.getAveragePrice()` | Realistic entry/exit pricing | [VWAP Pricing & Data Handling](./08_core-concepts.md) |
-
-Sources: [types.d.ts:1-1000](), High-level diagrams (all)

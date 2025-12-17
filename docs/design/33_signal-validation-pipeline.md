@@ -11,7 +11,6 @@ This page documents the multi-stage validation pipeline that every trading signa
 
 For information about defining custom risk validation rules beyond the built-in checks, see [Risk Profiles & Validation](./31_risk-management.md). For portfolio-wide position limits and concurrent signal management, see [Portfolio-Wide Limits](./31_risk-management.md).
 
-**Sources:** [src/client/ClientStrategy.ts:45-330](), [src/config/params.ts:1-122](), [README.md:17-29]()
 
 ---
 
@@ -63,7 +62,6 @@ graph TD
 
 The validation occurs in `VALIDATE_SIGNAL_FN` within `ClientStrategy`, called from `GET_SIGNAL_FN` before signal creation. Each stage checks specific constraints and accumulates error messages. If any validation fails, an error with all violation descriptions is thrown, preventing signal execution.
 
-**Sources:** [src/client/ClientStrategy.ts:45-330](), [src/client/ClientStrategy.ts:332-476]()
 
 ---
 
@@ -82,7 +80,6 @@ The first validation stage ensures all required `ISignalRow` fields are present 
 | `_isScheduled` | Boolean (not null/undefined) | "_isScheduled is required" |
 | `position` | "long" or "short" | 'position must be "long" or "short"' |
 
-**Sources:** [src/client/ClientStrategy.ts:49-68]()
 
 ---
 
@@ -124,7 +121,6 @@ graph LR
    - Rejects zero: "must be positive, got 0"
    - Rejects negative: "must be positive, got -1234"
 
-**Sources:** [src/client/ClientStrategy.ts:71-109]()
 
 ---
 
@@ -146,7 +142,6 @@ if (priceStopLoss >= priceOpen) {
 
 **Rationale**: For long positions, profit is made when price rises above entry, losses occur when price falls below entry.
 
-**Sources:** [src/client/ClientStrategy.ts:112-122]()
 
 ### SHORT Position Requirements
 
@@ -164,7 +159,6 @@ if (priceStopLoss <= priceOpen) {
 
 **Rationale**: For short positions, profit is made when price falls below entry, losses occur when price rises above entry.
 
-**Sources:** [src/client/ClientStrategy.ts:203-213]()
 
 ---
 
@@ -188,7 +182,6 @@ if (currentPrice >= priceTakeProfit) {
 
 **Valid state for LONG**: `priceStopLoss < currentPrice < priceTakeProfit`
 
-**Sources:** [src/client/ClientStrategy.ts:125-141]()
 
 **SHORT Immediate Signal Checks:**
 ```typescript
@@ -204,7 +197,6 @@ if (currentPrice <= priceTakeProfit) {
 
 **Valid state for SHORT**: `priceTakeProfit < currentPrice < priceStopLoss`
 
-**Sources:** [src/client/ClientStrategy.ts:216-232]()
 
 ### For Scheduled (Limit) Signals
 
@@ -222,7 +214,6 @@ if (priceOpen >= priceTakeProfit) {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:144-160]()
 
 **SHORT Scheduled Signal Checks:**
 ```typescript
@@ -236,7 +227,6 @@ if (priceOpen <= priceTakeProfit) {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:235-251]()
 
 ---
 
@@ -275,7 +265,6 @@ if (tpDistancePercent < CC_MIN_TAKEPROFIT_DISTANCE_PERCENT) {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:163-173](), [src/client/ClientStrategy.ts:254-264](), [src/config/params.ts:26-37]()
 
 ### Minimum StopLoss Distance
 
@@ -301,7 +290,6 @@ if (slDistancePercent < CC_MIN_STOPLOSS_DISTANCE_PERCENT) {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:176-186](), [src/client/ClientStrategy.ts:267-277](), [src/config/params.ts:38-43]()
 
 ### Maximum StopLoss Distance
 
@@ -329,7 +317,6 @@ if (slDistancePercent > CC_MAX_STOPLOSS_DISTANCE_PERCENT) {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:189-199](), [src/client/ClientStrategy.ts:280-290](), [src/config/params.ts:44-49]()
 
 ---
 
@@ -356,7 +343,6 @@ if (minuteEstimatedTime > CC_MAX_SIGNAL_LIFETIME_MINUTES) {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:306-315](), [src/config/params.ts:50-55]()
 
 ### Time Parameter Validation
 
@@ -367,7 +353,6 @@ if (minuteEstimatedTime > CC_MAX_SIGNAL_LIFETIME_MINUTES) {
 **scheduledAt and pendingAt Requirements:**
 - Must be positive timestamps: `> 0`
 
-**Sources:** [src/client/ClientStrategy.ts:294-322]()
 
 ---
 
@@ -395,7 +380,6 @@ setConfig({
 });
 ```
 
-**Sources:** [src/config/params.ts:1-122]()
 
 ---
 
@@ -456,7 +440,6 @@ if (await not(
 
 For details on implementing custom risk validation logic, see [Risk Profiles & Validation](./31_risk-management.md).
 
-**Sources:** [src/client/ClientStrategy.ts:374-387](), [src/interfaces/Risk.interface.ts]()
 
 ---
 
@@ -511,7 +494,6 @@ graph TD
 
 **Implementation Location:** `ExchangeCoreService.getCandles()` performs anomaly detection before returning candles to strategies.
 
-**Sources:** [src/config/params.ts:76-104](), [src/lib/services/core/ExchangeCoreService.ts]()
 
 ---
 
@@ -582,7 +564,6 @@ flowchart TD
 3. **Risk Validation**: `IRisk.checkSignal` applies custom portfolio/strategy rules
 4. **Persistence**: Only opened signals persist; scheduled signals remain ephemeral until activation
 
-**Sources:** [src/client/ClientStrategy.ts:332-476](), [src/config/params.ts:56-64]()
 
 ---
 
@@ -622,7 +603,6 @@ minuteEstimatedTime too large (50000 minutes = 34.7 days). Maximum: 1440 minutes
 
 **Handling**: Errors are caught in `GET_SIGNAL_FN`, logged via `errorEmitter`, and signal is rejected (returns `null`).
 
-**Sources:** [src/client/ClientStrategy.ts:324-330](), [src/client/ClientStrategy.ts:463-476]()
 
 ---
 
@@ -653,4 +633,3 @@ setConfig({
 // Signal should be rejected, scheduledCount and openedCount remain 0
 ```
 
-**Sources:** [test/e2e/sanitize.test.mjs:1-340](), [test/e2e/edge.test.mjs](), [test/spec/validation.test.mjs]()

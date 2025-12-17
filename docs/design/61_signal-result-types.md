@@ -11,7 +11,6 @@ This page documents the core type definitions for signals and strategy execution
 
 For strategy development and the `getSignal` function contract, see [Strategy Development](./25_strategy-development.md). For signal lifecycle state transitions, see [Signals & Signal Lifecycle](./08_core-concepts.md). For schema interface definitions, see [Core Interfaces](./56_api-reference.md).
 
-**Sources:** [types.d.ts:641-892](), [src/index.ts:74-88]()
 
 ---
 
@@ -73,7 +72,6 @@ graph TD
     CLOSED -.->|"contains"| REASON
 ```
 
-**Sources:** [types.d.ts:641-892]()
 
 ---
 
@@ -109,7 +107,6 @@ interface ISignalDto {
 - If `priceOpen` is **omitted**: Signal opens immediately at current VWAP price
 - If `priceOpen` is **specified**: Signal becomes "scheduled", waiting for price to reach entry point
 
-**Sources:** [types.d.ts:647-665]()
 
 ---
 
@@ -143,7 +140,6 @@ interface ISignalRow extends ISignalDto {
 | `symbol` | `string` | Trading pair symbol |
 | `_isScheduled` | `boolean` | Internal runtime marker indicating scheduled state |
 
-**Sources:** [types.d.ts:667-687]()
 
 ---
 
@@ -164,7 +160,6 @@ interface IScheduledSignalRow extends ISignalRow {
 4. If price reaches `priceOpen` without hitting SL → converts to regular `ISignalRow` (action: "opened")
 5. If SL hit before activation or time expires → action: "cancelled"
 
-**Sources:** [types.d.ts:689-697]()
 
 ---
 
@@ -217,7 +212,6 @@ function handleTickResult(result: IStrategyTickResult) {
 }
 ```
 
-**Sources:** [types.d.ts:888]()
 
 ---
 
@@ -240,7 +234,6 @@ interface IStrategyTickResultIdle {
 - No active or scheduled signal exists
 - `getSignal()` returned `null` or throttling prevents new signal generation
 
-**Sources:** [types.d.ts:767-781]()
 
 ---
 
@@ -264,7 +257,6 @@ interface IStrategyTickResultScheduled {
 - Signal passed validation
 - Price has not yet reached `priceOpen`
 
-**Sources:** [types.d.ts:783-799]()
 
 ---
 
@@ -289,7 +281,6 @@ interface IStrategyTickResultOpened {
 - Signal persisted to crash-safe storage
 - TP/SL monitoring begins
 
-**Sources:** [types.d.ts:801-817]()
 
 ---
 
@@ -322,7 +313,6 @@ interface IStrategyTickResultActive {
 - Neither TP nor SL has been reached
 - Time limit not yet expired
 
-**Sources:** [types.d.ts:819-839]()
 
 ---
 
@@ -357,7 +347,6 @@ interface IStrategyTickResultClosed {
 - SL reached: `closeReason === "stop_loss"`
 - Time expired: `closeReason === "time_expired"`
 
-**Sources:** [types.d.ts:841-863]()
 
 ---
 
@@ -386,7 +375,6 @@ interface IStrategyTickResultCancelled {
 - No PNL calculation (position never opened)
 - Uses `IScheduledSignalRow` instead of `ISignalRow`
 
-**Sources:** [types.d.ts:865-883]()
 
 ---
 
@@ -419,7 +407,6 @@ if (result.action === "closed") {
 }
 ```
 
-**Sources:** [types.d.ts:890-892](), [docs/types/IStrategyBacktestResult.md:9-12]()
 
 ---
 
@@ -457,7 +444,6 @@ Fee and slippage percentages are defined in `GLOBAL_CONFIG`:
 - `CC_PERCENT_FEE`: Default 0.1%
 - `CC_PERCENT_SLIPPAGE`: Default 0.1%
 
-**Sources:** [types.d.ts:754-763]()
 
 ---
 
@@ -493,7 +479,6 @@ if (result.action === "closed") {
 }
 ```
 
-**Sources:** [types.d.ts:752]()
 
 ---
 
@@ -524,7 +509,6 @@ function analyzeResult(result: IStrategyTickResult) {
 }
 ```
 
-**Sources:** [types.d.ts:888]()
 
 ---
 
@@ -556,7 +540,6 @@ listenSignal((result) => {
 });
 ```
 
-**Sources:** [src/function/event.ts:70-73](), [types.d.ts:888]()
 
 ---
 
@@ -618,7 +601,6 @@ graph TB
     BT_CANCEL -.->|"part of"| BT_UNION
 ```
 
-**Sources:** [types.d.ts:641-892]()
 
 ---
 
@@ -640,7 +622,6 @@ All result types share these common fields:
 - `IStrategyTickResultScheduled`, `IStrategyTickResultCancelled`: `signal` is `IScheduledSignalRow`
 - `IStrategyTickResultOpened`, `IStrategyTickResultActive`, `IStrategyTickResultClosed`: `signal` is `ISignalRow`
 
-**Sources:** [types.d.ts:767-883]()
 
 ---
 
@@ -689,4 +670,3 @@ graph LR
 4. Markdown services subscribe and accumulate results for statistics
 5. User listeners receive results through `listenSignal*()` functions with queued processing
 
-**Sources:** [src/config/emitters.ts:15-31](), [src/function/event.ts:70-221]()

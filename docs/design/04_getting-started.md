@@ -22,7 +22,6 @@ Backtest Kit requires **TypeScript 5.0 or higher** as a peer dependency. The fra
 | `functools-kit` | Utility functions (memoize, singlerun, queued) |
 | `get-moment-stamp` | Timestamp formatting |
 
-Sources: [package.json:71-79]()
 
 ### Installation Command
 
@@ -35,7 +34,6 @@ npm install backtest-kit ccxt ollama uuid
 - `ollama` - LLM integration for AI-powered strategies (optional)
 - `uuid` - Signal ID generation (recommended)
 
-Sources: [README.md:41-43](), [demo/backtest/package.json:8-13]()
 
 ### TypeScript Configuration
 
@@ -52,7 +50,6 @@ Ensure your `tsconfig.json` targets ES2020 or higher and enables `esModuleIntero
 }
 ```
 
-Sources: [package.json:71-73]()
 
 ### Project Structure
 
@@ -67,7 +64,6 @@ my-trading-bot/
 
 Use `.mjs` extension for ES modules or set `"type": "module"` in `package.json`.
 
-Sources: [demo/backtest/package.json:4](), [demo/live/package.json:4]()
 
 ---
 
@@ -96,7 +92,6 @@ setConfig({
 
 The `setLogger` function allows custom logger injection. The `setConfig` function sets global validation thresholds and fee parameters that apply to all strategies.
 
-Sources: [README.md:46-63]()
 
 ### Step 2: Register an Exchange
 
@@ -122,7 +117,6 @@ addExchange({
 
 The framework calls `getCandles` with temporal context automatically managed via `AsyncLocalStorage`. This prevents look-ahead bias.
 
-Sources: [README.md:66-80]()
 
 ### Step 3: Register a Risk Profile
 
@@ -155,7 +149,6 @@ addRisk({
 
 Each validation function throws an error to reject a signal or returns normally to approve it.
 
-Sources: [README.md:82-101]()
 
 ### Step 4: Register a Timeframe
 
@@ -174,7 +167,6 @@ addFrame({
 
 The `interval` determines how frequently the strategy's `getSignal` function is called (after throttling).
 
-Sources: [README.md:102-109]()
 
 ### Step 5: Create a Strategy
 
@@ -216,7 +208,6 @@ addStrategy({
 
 The `getSignal` function has access to `getCandles` and `getAveragePrice` helper functions that automatically use the current temporal context.
 
-Sources: [README.md:111-143]()
 
 ### Step 6: Run the Backtest
 
@@ -262,7 +253,6 @@ for await (const event of Backtest.run('BTCUSDT', {
 await Backtest.dump('BTCUSDT', 'simple-strategy');
 ```
 
-Sources: [README.md:145-177](), [src/classes/Backtest.ts:378-400]()
 
 ### Component Registration Flow
 
@@ -286,7 +276,6 @@ flowchart TD
     ConnectionServices --> Execution["BacktestLogicPrivateService<br/>executes strategy"]
 ```
 
-Sources: [README.md:46-177](), [src/classes/Backtest.ts:378-400]()
 
 ---
 
@@ -365,7 +354,6 @@ Backtest.background('BTCUSDT', {
 });
 ```
 
-Sources: [README.md:36-159](), [test/spec/columns.test.mjs:15-112]()
 
 ### Live Trading Setup
 
@@ -392,7 +380,6 @@ listenSignalLive((event) => {
 
 The `Live` class automatically persists signals to disk for crash recovery. The system polls every minute using `Date.now()` for temporal context.
 
-Sources: [README.md:161-171](), [src/classes/Live.ts:398-418]()
 
 ### Execution Mode Comparison
 
@@ -435,7 +422,6 @@ graph TD
     STRAT --> RISK
 ```
 
-Sources: [src/classes/Backtest.ts:378-400](), [src/classes/Live.ts:398-418]()
 
 ### Walker (Strategy Comparison)
 
@@ -468,7 +454,6 @@ Walker.background('BTCUSDT', {
 
 Walker runs each strategy sequentially and emits progress updates after each completion.
 
-Sources: [src/classes/Walker.ts:145-194]()
 
 ---
 
@@ -495,7 +480,6 @@ Sources: [src/classes/Walker.ts:145-194]()
 | `getCandles()` | Get candles with temporal context | [src/index.ts]() |
 | `getAveragePrice()` | Get VWAP price | [src/index.ts]() |
 
-Sources: [README.md:36-177](), [src/classes/Backtest.ts](), [src/classes/Live.ts](), [src/classes/Walker.ts]()
 
 ---
 
@@ -515,7 +499,6 @@ graph LR
 
 When `getCandles` is called inside `getSignal`, it automatically reads the current `when` timestamp from `AsyncLocalStorage` and only returns data up to that point. This prevents future data leakage.
 
-Sources: [README.md:186-199]()
 
 ### Event-Driven vs Async Iterator
 
@@ -533,13 +516,11 @@ The framework exposes two consumption models:
 
 Both use the same underlying `BacktestLogicPrivateService` implementation.
 
-Sources: [README.md:201-224]()
 
 ### Crash Recovery
 
 Only **opened** signals are persisted to disk via `PersistSignalAdapter`. Scheduled signals remain in memory. On restart, `Live.run()` calls `waitForInit()` to restore persisted signals before starting the execution loop.
 
-Sources: [README.md:19-20]()
 
 ---
 
@@ -549,5 +530,3 @@ Sources: [README.md:19-20]()
 - **Risk Management:** See [Risk Management](./31_risk-management.md) for custom validation rules and portfolio limits
 - **Live Trading:** See [Live Trading Mode](./20_execution-modes.md) for production deployment, persistence, and monitoring
 - **Architecture:** See [Architecture Deep Dive](./14_architecture-deep-dive.md) for service layer, dependency injection, and internal systems
-
-Sources: [README.md](), [src/classes/Backtest.ts](), [src/classes/Live.ts]()

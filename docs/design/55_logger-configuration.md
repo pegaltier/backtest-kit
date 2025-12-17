@@ -37,7 +37,6 @@ interface ILogger {
 
 Each method accepts variadic arguments, allowing flexible logging of primitives, objects, and error instances. The framework does not enforce a specific log format or structure—implementations can serialize arguments as needed.
 
-**Sources:** [README.md:47-55]()
 
 ---
 
@@ -103,7 +102,6 @@ setLogger({
 
 This routes framework logs to Winston, enabling features like log rotation, remote transports, and structured metadata.
 
-**Sources:** [README.md:47-55]()
 
 ---
 
@@ -143,7 +141,6 @@ graph TB
     BACKTEST_OBJ --> LIST_EXCHANGES
 ```
 
-**Sources:** [src/lib/core/types.ts:1-3](), [src/lib/core/provide.ts:56-58](), [src/lib/index.ts:1-4, 61-63, 225-238]()
 
 ### Logger Service Injection Pattern
 
@@ -159,7 +156,6 @@ This pattern ensures:
 - Consistent access pattern across 11 service categories
 - Easy mocking in tests
 
-**Sources:** [src/lib/index.ts:61-63, 225-238]()
 
 ---
 
@@ -177,7 +173,6 @@ const LIST_EXCHANGES_METHOD_NAME = "list.listExchanges";
 
 These constants follow a `namespace.methodName` pattern, grouping related operations.
 
-**Sources:** [src/function/add.ts:10-16](), [src/function/list.ts:10-16]()
 
 ### Logging in Configuration Functions
 
@@ -204,7 +199,6 @@ export function addStrategy(strategySchema: IStrategySchema) {
 - **Level:** `info`
 - **Payload:** Full `strategySchema` object with `strategyName`, `interval`, `getSignal`, callbacks, etc.
 
-**Sources:** [src/function/add.ts:52-64]()
 
 #### addExchange Example
 
@@ -229,7 +223,6 @@ export function addExchange(exchangeSchema: IExchangeSchema) {
 - **Level:** `info`
 - **Payload:** Full `exchangeSchema` object with `exchangeName`, `getCandles`, `formatPrice`, callbacks, etc.
 
-**Sources:** [src/function/add.ts:101-113]()
 
 ### Logging in List Functions
 
@@ -245,7 +238,6 @@ export async function listExchanges(): Promise<IExchangeSchema[]> {
 - **Level:** `log`
 - **Payload:** None (informational only)
 
-**Sources:** [src/function/list.ts:43-46]()
 
 ### Log Level Usage Patterns
 
@@ -256,7 +248,6 @@ export async function listExchanges(): Promise<IExchangeSchema[]> {
 | `info` | Configuration changes | `addStrategy()`, `addExchange()`, `addFrame()` |
 | `warn` | Non-fatal issues | (Not observed in provided code) |
 
-**Sources:** [src/function/add.ts:52-444](), [src/function/list.ts:43-260]()
 
 ---
 
@@ -280,7 +271,6 @@ sequenceDiagram
     ADD_FUNC-->>USER: "Strategy registered"
 ```
 
-**Sources:** [src/function/add.ts:52-64](), [src/lib/index.ts:61-63]()
 
 ---
 
@@ -305,7 +295,6 @@ The following table lists all method name constants defined in the configuration
 | `LIST_RISKS_METHOD_NAME` | `"list.listRisks"` | `listRisks()` | log | [src/function/list.ts:15, 217]() |
 | `LIST_OPTIMIZERS_METHOD_NAME` | `"list.listOptimizers"` | `listOptimizers()` | log | [src/function/list.ts:16, 258]() |
 
-**Sources:** [src/function/add.ts:10-16](), [src/function/list.ts:10-16]()
 
 ---
 
@@ -400,7 +389,6 @@ setLogger({
 
 Dual-writes logs to console and a remote monitoring service.
 
-**Sources:** [README.md:47-55]()
 
 ---
 
@@ -435,7 +423,6 @@ const baseServices = {
 
 This makes the logger accessible to all internal services via `backtest.loggerService`.
 
-**Sources:** [src/lib/index.ts:61-63, 225-238]()
 
 ---
 
@@ -484,7 +471,6 @@ Logger calls are synchronous and block execution. For high-frequency operations:
 2. Implement async loggers that queue writes
 3. Disable logging entirely in production
 
-**Sources:** [src/function/add.ts:52-444](), [src/function/list.ts:43-260]()
 
 ---
 
@@ -502,7 +488,6 @@ The logger operates independently of the event system (`signalEmitter`, `errorEm
 
 For more on events, see [Event System Architecture](./14_architecture-deep-dive.md).
 
-**Sources:** [src/lib/index.ts:66-72]()
 
 ---
 

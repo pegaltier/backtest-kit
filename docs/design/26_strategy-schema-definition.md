@@ -15,7 +15,6 @@ For information about implementing the `getSignal` function and signal generatio
 
 The `IStrategySchema` interface serves as the registration contract for trading strategies. When you call `addStrategy()`, you provide an object conforming to this schema, which is validated and stored in `StrategySchemaService`. The framework uses this schema to instantiate `ClientStrategy` objects that execute your trading logic.
 
-**Sources:** [types.d.ts:724-747](), [src/index.ts:11-18]()
 
 ---
 
@@ -33,7 +32,6 @@ The strategy schema consists of seven primary properties:
 | `riskName` | `string` | No | Single risk profile identifier |
 | `riskList` | `string[]` | No | Multiple risk profile identifiers |
 
-**Sources:** [types.d.ts:724-747]()
 
 ### Strategy Schema Component Relationships
 
@@ -78,7 +76,6 @@ graph TB
     RiskList -.->|passed to| ClientStrat
 ```
 
-**Sources:** [types.d.ts:724-747](), [src/function/add.ts:1-100](), [docs/classes/StrategyConnectionService.md:1-145]()
 
 ---
 
@@ -94,7 +91,6 @@ The `strategyName` property is a unique string identifier for your strategy. Thi
 
 **Validation:** The `StrategyValidationService` checks for duplicate strategy names during registration.
 
-**Sources:** [types.d.ts:730](), [types.d.ts:896]()
 
 ### note
 
@@ -104,7 +100,6 @@ The `note` property provides optional documentation for developers. This string 
 **Required:** No  
 **Purpose:** Human-readable description, implementation notes, version tracking
 
-**Sources:** [types.d.ts:732]()
 
 ---
 
@@ -132,7 +127,6 @@ When `ClientStrategy.tick()` is called repeatedly (in live mode), the framework 
 
 **Important:** The interval does NOT affect how often the framework calls `tick()` in live mode. It only controls when `getSignal` is re-evaluated. The framework calls `tick()` approximately every `TICK_TTL` (1 minute + 1ms by default).
 
-**Sources:** [types.d.ts:645](), [types.d.ts:734]()
 
 ### Throttling Implementation Flow
 
@@ -158,7 +152,6 @@ graph TB
     CheckInterval -.-> Note1
 ```
 
-**Sources:** [types.d.ts:645](), [types.d.ts:734]()
 
 ---
 
@@ -180,7 +173,6 @@ getSignal: (symbol: string, when: Date) => Promise<ISignalDto | null>
 - `ISignalDto` object: A valid signal to execute
 - `null`: No signal at this time
 
-**Sources:** [types.d.ts:740]()
 
 ### ISignalDto Structure
 
@@ -196,7 +188,6 @@ The returned signal must conform to `ISignalDto`:
 | `priceStopLoss` | `number` | Yes | Stop loss exit |
 | `minuteEstimatedTime` | `number` | Yes | Max lifetime in minutes |
 
-**Sources:** [types.d.ts:647-665]()
 
 ### Signal Return Semantics
 
@@ -223,7 +214,6 @@ When `priceOpen` **is provided**, the signal becomes scheduled. The framework:
 
 **Critical:** Scheduled signals are **not persisted** until activation. If the system crashes, scheduled signals are lost. Only opened signals persist.
 
-**Sources:** [types.d.ts:740](), [types.d.ts:647-665]()
 
 ### Signal Generation Decision Tree
 
@@ -258,7 +248,6 @@ graph TB
     RiskCheck -->|Scheduled| CreateScheduled
 ```
 
-**Sources:** [types.d.ts:740](), [types.d.ts:647-665]()
 
 ---
 
@@ -289,7 +278,6 @@ For signals with `priceOpen`:
 - `priceOpen` must be reachable (not already past SL threshold)
 - Scheduled signals that don't activate within `CC_SCHEDULE_AWAIT_MINUTES` (default 120) are auto-cancelled
 
-**Sources:** [types.d.ts:647-665]()
 
 ---
 
@@ -315,7 +303,6 @@ The `callbacks` property allows you to register event handlers that are invoked 
 | `onPartialProfit` | Profit milestone hit | `symbol, data, currentPrice, revenuePercent, backtest` |
 | `onPartialLoss` | Loss milestone hit | `symbol, data, currentPrice, lossPercent, backtest` |
 
-**Sources:** [types.d.ts:699-723]()
 
 ### Callback Lifecycle Flow
 
@@ -357,7 +344,6 @@ stateDiagram-v2
     onCancel --> [*]
 ```
 
-**Sources:** [types.d.ts:699-723]()
 
 ### Callback Use Cases
 
@@ -368,7 +354,6 @@ stateDiagram-v2
 - **onSchedule/onCancel:** Pending order tracking, limit order monitoring
 - **onPartialProfit/onPartialLoss:** Risk adjustment, partial profit taking alerts
 
-**Sources:** [types.d.ts:699-723]()
 
 ---
 
@@ -390,7 +375,6 @@ Specify a single risk profile identifier:
 
 The framework instantiates `ClientRisk` with the specified profile and calls `checkSignal()` before opening positions.
 
-**Sources:** [types.d.ts:744]()
 
 ### Multiple Risk Profiles (riskList)
 
@@ -406,7 +390,6 @@ Specify multiple risk profiles that must **all** approve:
 
 The framework instantiates `MergeRisk` which aggregates validations from all profiles. A signal is rejected if **any** profile rejects it.
 
-**Sources:** [types.d.ts:746]()
 
 ### Risk Check Flow
 
@@ -434,7 +417,6 @@ graph TB
     RiskCheck -.-> Note1
 ```
 
-**Sources:** [types.d.ts:744-746](), [types.d.ts:413-426]()
 
 ### Risk vs No Risk
 
@@ -446,7 +428,6 @@ graph TB
 | Event Emission | Emits to `riskSubject` on rejection | No risk events |
 | Use Case | Complex multi-strategy portfolios | Simple single-strategy systems |
 
-**Sources:** [types.d.ts:744-746]()
 
 ---
 
@@ -476,7 +457,6 @@ addStrategy({
 });
 ```
 
-**Sources:** [README.md:66-142](), [src/index.ts:11-18]()
 
 ### Internal Storage and Retrieval
 
@@ -486,7 +466,6 @@ addStrategy({
 4. During execution, `StrategyConnectionService` retrieves schemas and instantiates `ClientStrategy` objects
 5. `ClientStrategy` uses the schema's `getSignal` function and callbacks
 
-**Sources:** [src/function/add.ts:1-100](), [docs/classes/StrategyConnectionService.md:1-145]()
 
 ### Runtime Instantiation
 
@@ -523,7 +502,6 @@ graph TB
     Memoize -.-> Note1
 ```
 
-**Sources:** [docs/classes/StrategyConnectionService.md:70-80](), [src/function/add.ts:1-100]()
 
 ---
 
@@ -537,7 +515,6 @@ When `addStrategy()` is called, the framework validates:
 4. **riskName/riskList mutual exclusivity:** Cannot specify both simultaneously
 5. **Referenced risk profiles exist:** If `riskName` or `riskList` specified, those profiles must be registered via `addRisk()`
 
-**Sources:** [src/function/add.ts:1-100]()
 
 ---
 
@@ -593,7 +570,6 @@ addStrategy({
 });
 ```
 
-**Sources:** [README.md:66-142](), [types.d.ts:724-747]()
 
 ---
 
@@ -610,4 +586,3 @@ addStrategy({
 | `StrategyConnectionService` | [docs/classes/StrategyConnectionService.md:1-145]() | Instance routing |
 | `ClientStrategy` | [types.d.ts:724-747]() | Strategy execution implementation |
 
-**Sources:** [types.d.ts:724-747](), [src/index.ts:11-18](), [docs/classes/StrategyConnectionService.md:1-145]()

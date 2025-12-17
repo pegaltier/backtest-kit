@@ -16,7 +16,6 @@ For detailed documentation on specific API categories, see:
 - **[Statistics & Contract Types](./56_api-reference.md)** - Types for performance metrics and event payloads
 - **[Service Layer Interfaces](./56_api-reference.md)** - Internal service interfaces for advanced usage
 
-**Sources:** [src/index.ts:1-199](), [types.d.ts:1-1000](), [README.md:1-255]()
 
 ---
 
@@ -30,7 +29,6 @@ The Backtest Kit API is organized into three layers:
 | **Execution Layer** | Running backtests and live trading | `Backtest`, `Live`, `Walker`, `Optimizer` classes with `run()` and `background()` methods |
 | **Monitoring Layer** | Event listeners and report generation | `listenSignal*()`, `listenDone*()`, `listenPartialProfit()`, `listenRisk()`, report classes (`Performance`, `Heat`, `Schedule`, `Partial`, `Risk`) |
 
-**Sources:** [src/index.ts:1-67](), [src/function/setup.ts:1-100](), [src/function/add.ts:1-200](), [src/function/event.ts:1-500]()
 
 ---
 
@@ -96,7 +94,6 @@ graph TB
     style OptimizerClass fill:#f9f9f9
 ```
 
-**Sources:** [src/index.ts:1-199](), [src/classes/Backtest.ts:1-100](), [src/classes/Live.ts:1-100](), [src/classes/Walker.ts:1-100]()
 
 ---
 
@@ -163,7 +160,6 @@ graph TB
     style BacktestStats fill:#f9f9f9
 ```
 
-**Sources:** [types.d.ts:80-896](), [src/interfaces/Strategy.interface.ts:1-300](), [src/model/BacktestStatistics.model.ts:1-100]()
 
 ---
 
@@ -179,7 +175,6 @@ graph TB
 | `setColumns(columns: Partial<ColumnConfig>)` | Customize report column visibility | `void` |
 | `getColumns()` | Retrieve current column configuration | `ColumnConfig` |
 
-**Sources:** [src/function/setup.ts:1-200](), [src/config/params.ts:1-100](), [src/config/columns.ts:1-100]()
 
 ### Component Registration
 
@@ -193,7 +188,6 @@ graph TB
 | `addSizing(schema: ISizingSchema)` | `ISizingSchema` | Register position sizing calculator |
 | `addOptimizer(schema: IOptimizerSchema)` | `IOptimizerSchema` | Register LLM-powered strategy generator |
 
-**Sources:** [src/function/add.ts:1-200](), [types.d.ts:120-970]()
 
 ### Execution Classes
 
@@ -204,7 +198,6 @@ graph TB
 | `Walker` | `run()`, `background()`, `stop()`, `getData()`, `getReport()`, `dump()` | Multi-strategy comparison and ranking |
 | `Optimizer` | `getData()`, `getCode()`, `dump()` | LLM-powered strategy generation |
 
-**Sources:** [src/classes/Backtest.ts:1-200](), [src/classes/Live.ts:1-200](), [src/classes/Walker.ts:1-200](), [src/classes/Optimizer.ts:1-200]()
 
 ### Event Listeners
 
@@ -226,7 +219,6 @@ graph TB
 | `listenError(fn)` | `Error` | Recoverable errors |
 | `listenExit(fn)` | `Error` | Fatal errors |
 
-**Sources:** [src/function/event.ts:1-500](), [src/config/emitters.ts:1-133]()
 
 ---
 
@@ -324,7 +316,6 @@ graph LR
     style BacktestMarkdownService fill:#f9f9f9
 ```
 
-**Sources:** [src/config/emitters.ts:1-133](), [src/function/event.ts:1-500](), [src/lib/services/markdown/BacktestMarkdownService.ts:1-100]()
 
 ---
 
@@ -381,7 +372,6 @@ graph TB
     style StrategyConnectionService2 fill:#f9f9f9
 ```
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:1-200](), [src/lib/services/schema/StrategySchemaService.ts:1-100](), [src/lib/client/ClientStrategy.ts:1-500]()
 
 ---
 
@@ -431,7 +421,6 @@ class Backtest {
 }
 ```
 
-**Sources:** [src/classes/Backtest.ts:1-200](), [types.d.ts:1100-1200]()
 
 ### Live Class
 
@@ -475,7 +464,6 @@ class Live {
 }
 ```
 
-**Sources:** [src/classes/Live.ts:1-200](), [types.d.ts:1200-1300]()
 
 ### Walker Class
 
@@ -514,7 +502,6 @@ class Walker {
 }
 ```
 
-**Sources:** [src/classes/Walker.ts:1-200](), [types.d.ts:1300-1400]()
 
 ---
 
@@ -551,7 +538,6 @@ listenSignal((event) => {
 });
 ```
 
-**Sources:** [types.d.ts:768-893](), [src/interfaces/Strategy.interface.ts:1-300]()
 
 ---
 
@@ -578,7 +564,6 @@ interface BacktestStatisticsModel {
 }
 ```
 
-**Sources:** [types.d.ts:918-943](), [src/model/BacktestStatistics.model.ts:1-100]()
 
 ### LiveStatisticsModel
 
@@ -591,7 +576,6 @@ interface LiveStatisticsModel extends BacktestStatisticsModel {
 }
 ```
 
-**Sources:** [types.d.ts:1400-1500](), [src/model/LiveStatistics.model.ts:1-100]()
 
 ### WalkerStatisticsModel
 
@@ -609,7 +593,6 @@ interface IWalkerStrategyResult {
 }
 ```
 
-**Sources:** [types.d.ts:1180-1250](), [src/model/WalkerStatistics.model.ts:1-100]()
 
 ---
 
@@ -631,7 +614,6 @@ interface IExecutionContext {
 
 Functions like `getCandles()` automatically access this context without explicit parameters.
 
-**Sources:** [types.d.ts:6-49](), [src/lib/services/context/ExecutionContextService.ts:1-100]()
 
 ### MethodContextService
 
@@ -647,7 +629,6 @@ interface IMethodContext {
 
 Connection services use this to route operations to correct schema instances.
 
-**Sources:** [types.d.ts:297-336](), [src/lib/services/context/MethodContextService.ts:1-100]()
 
 ---
 
@@ -674,7 +655,6 @@ abstract class PersistBase<T> {
 
 All adapters use atomic file writes to `./persist/{entityId}.json` by default.
 
-**Sources:** [src/classes/Persist.ts:1-500](), [types.d.ts:1600-1800]()
 
 ---
 
@@ -697,7 +677,6 @@ const myLogger: ILogger = {
 setLogger(myLogger);
 ```
 
-**Sources:** [types.d.ts:52-77](), [src/function/setup.ts:1-50]()
 
 ### Custom Persistence
 
@@ -721,7 +700,6 @@ class RedisPersistAdapter<T> extends PersistBase<T> {
 }
 ```
 
-**Sources:** [src/classes/Persist.ts:1-200](), [types.d.ts:1600-1700]()
 
 ---
 
@@ -761,7 +739,6 @@ setConfig({
 });
 ```
 
-**Sources:** [src/config/params.ts:1-200](), [types.d.ts:2000-2100]()
 
 ---
 
@@ -793,7 +770,6 @@ setColumns({
 });
 ```
 
-**Sources:** [src/config/columns.ts:1-300](), [types.d.ts:2100-2200]()
 
 ---
 
@@ -815,4 +791,3 @@ lib.backtestLogicPrivateService;
 
 See **[Service Layer Interfaces](./56_api-reference.md)** for detailed service documentation.
 
-**Sources:** [src/lib/index.ts:1-500](), [types.d.ts:2200-2500]()

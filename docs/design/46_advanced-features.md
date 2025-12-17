@@ -85,7 +85,6 @@ graph TB
     style CODE_GEN fill:#f9f9f9,stroke:#333,stroke-width:2px
 ```
 
-**Sources**: [src/interfaces/Optimizer.interface.ts:1-314](), [src/client/ClientOptimizer.ts:1-256](), [src/lib/services/connection/OptimizerConnectionService.ts:1-116]()
 
 ### Message Model Structure
 
@@ -101,7 +100,6 @@ Messages are accumulated as `MessageModel[]` arrays, where each message contains
 - `role`: `"assistant" | "system" | "user"`
 - `content`: String content of the message
 
-**Sources**: [src/model/Message.model.ts:1-26](), [src/interfaces/Optimizer.interface.ts:95-122]()
 
 ### Data Source Configuration
 
@@ -122,7 +120,6 @@ type IOptimizerSourceFn<Data extends IOptimizerData> =
 
 Data must include unique `id` field for deduplication. The system automatically handles pagination using `iterateDocuments` and deduplicates using `distinctDocuments`.
 
-**Sources**: [src/interfaces/Optimizer.interface.ts:46-94](), [src/client/ClientOptimizer.ts:70-88]()
 
 ### Custom Message Formatters
 
@@ -139,7 +136,6 @@ interface IOptimizerSource<Data> {
 
 If not provided, defaults to `OptimizerTemplateService.getUserMessage` and `getAssistantMessage`.
 
-**Sources**: [src/interfaces/Optimizer.interface.ts:128-178](), [src/client/ClientOptimizer.ts:34-60]()
 
 ---
 
@@ -216,7 +212,6 @@ graph TB
     style TEMPLATE_SVC fill:#f9f9f9,stroke:#333,stroke-width:2px
 ```
 
-**Sources**: [src/classes/Optimizer.ts:1-135](), [src/lib/services/global/OptimizerGlobalService.ts:1-105](), [src/lib/services/connection/OptimizerConnectionService.ts:1-116]()
 
 ### Optimizer Schema Definition
 
@@ -237,7 +232,6 @@ Each `IOptimizerRange` defines:
 - `endDate`: End of time range (inclusive)
 - `note?`: Optional description
 
-**Sources**: [src/interfaces/Optimizer.interface.ts:312-377](), [src/lib/services/schema/OptimizerSchemaService.ts:1-97]()
 
 ### Data Collection Flow
 
@@ -280,7 +274,6 @@ sequenceDiagram
     CLIENT-->>USER: IOptimizerStrategy[]
 ```
 
-**Sources**: [src/client/ClientOptimizer.ts:70-215](), [src/interfaces/Optimizer.interface.ts:92-94]()
 
 ### Progress Tracking
 
@@ -302,7 +295,6 @@ Events are emitted:
 
 Subscribe via `listenOptimizerProgress((event) => { ... })`.
 
-**Sources**: [src/client/ClientOptimizer.ts:99-114](), [src/client/ClientOptimizer.ts:201-208](), [src/function/event.ts:275-286]()
 
 ---
 
@@ -330,7 +322,6 @@ The template system generates executable strategy code by assembling TypeScript/
 
 All methods are `async` and return `string | Promise<string>`.
 
-**Sources**: [src/interfaces/Optimizer.interface.ts:238-339](), [src/lib/services/template/OptimizerTemplateService.ts:1-591]()
 
 ### Generated Code Structure
 
@@ -374,7 +365,6 @@ graph TB
     style STRATEGIES fill:#f9f9f9,stroke:#333,stroke-width:2px
 ```
 
-**Sources**: [src/client/ClientOptimizer.ts:217-302](), [src/lib/services/template/OptimizerTemplateService.ts:36-591]()
 
 ### Strategy Template Composition
 
@@ -388,7 +378,6 @@ The `getStrategyTemplate` method generates a complete strategy with:
 
 The generated strategy includes automatic candle formatting, progressive timeframe analysis, and unique signal ID assignment.
 
-**Sources**: [src/lib/services/template/OptimizerTemplateService.ts:167-303](), [demo/optimization/package.json:1-19]()
 
 ### Template Customization
 
@@ -410,7 +399,6 @@ addOptimizer({
 
 The system merges custom templates with defaults from `OptimizerTemplateService`.
 
-**Sources**: [src/lib/services/connection/OptimizerConnectionService.ts:59-98](), [src/interfaces/Optimizer.interface.ts:238-339]()
 
 ### Security: Code Injection Prevention
 
@@ -426,7 +414,6 @@ const escapedPrompt = String(plainPrompt)
 
 Applied to: `strategyName`, `exchangeName`, `frameName`, `interval`, `prompt`, etc.
 
-**Sources**: [src/lib/services/template/OptimizerTemplateService.ts:180-192](), [src/lib/services/template/OptimizerTemplateService.ts:324-326]()
 
 ---
 
@@ -489,7 +476,6 @@ graph TB
     style FILES fill:#f9f9f9,stroke:#333,stroke-width:2px
 ```
 
-**Sources**: [types.d.ts:1655-1843](), [src/classes/Persist.ts referenced in types]()
 
 ### PersistBase Interface
 
@@ -510,7 +496,6 @@ interface IPersistBase<Value extends object = any> {
 
 All operations are async. `waitForInit` ensures storage is ready before operations.
 
-**Sources**: [types.d.ts:1655-1726]()
 
 ### Signal Persistence
 
@@ -525,7 +510,6 @@ Signals are persisted when opened and deleted when closed:
 
 **Key Design Decision**: Only **opened** signals are persisted. Scheduled signals remain in memory. This prevents bloat and ensures only active positions are recovered.
 
-**Sources**: [types.d.ts:1728-1775](), [types.d.ts:686-697]()
 
 ### Partial Profit/Loss Persistence
 
@@ -540,7 +524,6 @@ interface IPartialData {
 
 Stored by `signalId` to track which profit/loss milestones have been emitted. Prevents duplicate partial events after crashes.
 
-**Sources**: [types.d.ts:499-516](), [types.d.ts:1821-1843]()
 
 ### Risk Position Tracking
 
@@ -559,7 +542,6 @@ interface RiskData {
 
 Stored by `symbol` to maintain cross-strategy position limits. Enables recovery of risk state after crashes.
 
-**Sources**: [types.d.ts:1793-1819](), [types.d.ts:359-369]()
 
 ### Atomic Write Implementation
 
@@ -573,7 +555,6 @@ This ensures:
 - Crash during write leaves old file intact
 - POSIX filesystem guarantees atomic rename
 
-**Sources**: [types.d.ts:1688-1709](), [types.d.ts:1718-1726]()
 
 ### Initialization Flow
 
@@ -608,7 +589,6 @@ sequenceDiagram
     ADAPTER-->>CLIENT: Ready
 ```
 
-**Sources**: [types.d.ts:1718-1726]()
 
 ---
 
@@ -667,7 +647,6 @@ class PersistRedis extends PersistBase<any> {
 }
 ```
 
-**Sources**: [types.d.ts:1655-1726]()
 
 ### Custom Adapter Example
 
@@ -684,7 +663,6 @@ const customAdapter = new PersistSignalAdapterRedis();
 // Use in ClientStrategy initialization
 ```
 
-**Sources**: [types.d.ts:1728-1775]()
 
 ### Storage Backend Requirements
 
@@ -698,7 +676,6 @@ Any custom backend must guarantee:
 | **Per-entity isolation** | No cross-contamination between symbols/strategies |
 | **Async initialization** | Support connection pools, authentication |
 
-**Sources**: [types.d.ts:1655-1726]()
 
 ### Performance Considerations
 
@@ -718,7 +695,6 @@ Trade-offs:
 - External dependency vs self-contained
 - Scalability vs simplicity
 
-**Sources**: [types.d.ts:1655-1843]()
 
 ---
 

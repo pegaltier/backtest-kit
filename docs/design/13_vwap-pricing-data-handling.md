@@ -38,7 +38,6 @@ Simple Average = Σ(price_i) / n
 
 When all candles have zero volume (low-liquidity assets), the system falls back to a simple arithmetic mean.
 
-Sources: [src/config/params.ts:8-11](), [README.md:22]()
 
 ---
 
@@ -87,7 +86,6 @@ graph LR
 
 **Diagram: Candle Buffer Data Flow**
 
-Sources: [src/config/params.ts:8-11](), [README.md:189-199]()
 
 ---
 
@@ -123,7 +121,6 @@ graph TD
 
 **Diagram: Candle Validation Pipeline**
 
-Sources: [src/config/params.ts:76-104]()
 
 ---
 
@@ -173,7 +170,6 @@ From the configuration comments:
 
 With 5 candles × 4 price points (OHLC) = **20 data points**, the median is statistically reliable.
 
-Sources: [src/config/params.ts:76-104]()
 
 ---
 
@@ -221,7 +217,6 @@ stateDiagram-v2
 - Small dataset (<5 candles, uses average)
 - Valid data on first attempt
 
-Sources: [src/config/params.ts:66-74]()
 
 ---
 
@@ -260,7 +255,6 @@ When fewer than 5 candles are available (e.g., newly listed asset, beginning of 
 
 **Rationale**: Median requires minimum 7-10 data points for statistical stability. With <5 candles (20 price points), average is more stable.
 
-Sources: [test/e2e/edge.test.mjs:148-283](), [src/config/params.ts:92-103]()
 
 ---
 
@@ -304,7 +298,6 @@ sequenceDiagram
 
 **Diagram: VWAP Price Discovery Sequence**
 
-Sources: [README.md:189-199]()
 
 ---
 
@@ -336,7 +329,6 @@ setConfig({
 
 **Warning**: Changing `CC_AVG_PRICE_CANDLES_COUNT` affects execution realism. Larger buffers smooth out price volatility but may miss short-term opportunities. Smaller buffers are more responsive but may be affected by single-candle anomalies.
 
-Sources: [src/config/params.ts:1-122]()
 
 ---
 
@@ -370,7 +362,6 @@ Difference: 8.33 points (0.02%)
 
 Over hundreds of trades, this difference compounds significantly.
 
-Sources: [README.md:22]()
 
 ---
 
@@ -411,7 +402,6 @@ The test suite includes comprehensive anomaly detection coverage:
 - NaN/Infinity price rejection
 - Extreme price validation
 
-Sources: [test/e2e/edge.test.mjs:148-283](), [src/config/params.ts:76-90]()
 
 ---
 
@@ -436,7 +426,6 @@ Sources: [test/e2e/edge.test.mjs:148-283](), [src/config/params.ts:76-90]()
 - **Live Mode**: One `getCandles()` call per tick (~1 minute with default config)
 - **Retry Impact**: Failed calls trigger 3× more requests, mitigated by 5s delay
 
-Sources: [src/config/params.ts:1-122](), [README.md:186-199]()
 
 ---
 
@@ -488,7 +477,6 @@ graph TD
 
 **Critical Principle**: Anomalies in candle data **never** cause signal execution. They either retry or fail the signal entirely, preventing trades based on bad data.
 
-Sources: [test/e2e/sanitize.test.mjs](), [src/config/params.ts:66-104]()
 
 ---
 
@@ -506,5 +494,3 @@ VWAP Pricing & Data Handling in Backtest Kit provides:
 **Key Takeaway**: The system prioritizes **data integrity** over speed. If data cannot be validated, the signal is rejected rather than executed with potentially incorrect prices.
 
 For implementation details of the `getCandles` interface, see [Exchange Configuration](./36_exchanges-data-sources.md). For how VWAP integrates with signal pricing, see [Signals & Signal Lifecycle](./08_core-concepts.md).
-
-Sources: [README.md:1-255](), [src/config/params.ts:1-122]()

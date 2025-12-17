@@ -76,7 +76,6 @@ graph TB
 
 4. **Validation Context**: During `checkSignal()`, `RiskGlobalService` provides the current portfolio state through `IRiskValidationPayload`
 
-**Sources:** [src/lib/services/connection/RiskConnectionService.ts](), [src/lib/services/global/RiskGlobalService.ts](), [types.d.ts:413-479](), [src/function/add.ts:270-343]()
 
 ---
 
@@ -138,7 +137,6 @@ sequenceDiagram
 
 **Important:** Only **opened** signals are tracked. Scheduled signals (waiting for `priceOpen`) are NOT added to the position registry until they activate.
 
-**Sources:** [types.d.ts:358-369](), [src/lib/services/global/RiskGlobalService.ts](), [src/classes/Risk.ts:42-116]()
 
 ---
 
@@ -196,7 +194,6 @@ interface IRiskActivePosition {
 }
 ```
 
-**Sources:** [types.d.ts:382-397](), [types.d.ts:358-369](), [types.d.ts:342-356]()
 
 ---
 
@@ -273,7 +270,6 @@ graph TB
     style Allow fill:#ccffcc,stroke:#00cc00,stroke-width:2px
 ```
 
-**Sources:** [types.d.ts:394-397](), [types.d.ts:382-397](), [src/function/add.ts:289-343]()
 
 ---
 
@@ -443,7 +439,6 @@ addRisk({
 });
 ```
 
-**Sources:** [types.d.ts:382-397](), [src/function/add.ts:289-343]()
 
 ---
 
@@ -556,7 +551,6 @@ sequenceDiagram
 
 **Key Point:** All risk checks execute in parallel via `Promise.all()`, and the signal is only allowed if all checks pass (logical AND operation).
 
-**Sources:** [src/classes/Risk.ts:42-116](), [types.d.ts:743-747](), [src/function/add.ts:270-343]()
 
 ---
 
@@ -640,7 +634,6 @@ stateDiagram-v2
 | **Register Position** | [src/lib/client/ClientRisk.ts]() `addSignal()` | Calls `RiskGlobalService.addPosition()` |
 | **Unregister Position** | [src/lib/client/ClientRisk.ts]() `removeSignal()` | Calls `RiskGlobalService.removePosition()` |
 
-**Sources:** [src/lib/client/ClientStrategy.ts](), [src/lib/client/ClientRisk.ts](), [src/lib/services/global/RiskGlobalService.ts](), [types.d.ts:448-479]()
 
 ---
 
@@ -694,7 +687,6 @@ await Risk.dump("BTCUSDT", "my-strategy", "./reports");
 | `byStrategy` | `Record<string, number>` | Rejection count per strategy |
 | `eventList` | `RiskContract[]` | All rejection events (max 250) |
 
-**Sources:** [src/classes/Risk.ts:153-244](), [src/function/event.ts:42-43](), [src/config/emitters.ts:131]()
 
 ---
 
@@ -738,7 +730,6 @@ const riskCheck = await Promise.all(
 return riskCheck.every((isSafe) => isSafe);
 ```
 
-**Sources:** [src/lib/services/connection/RiskConnectionService.ts](), [src/classes/Risk.ts:59-67](), [src/lib/services/global/RiskGlobalService.ts]()
 
 ---
 
@@ -898,4 +889,3 @@ Backtest.background("BTCUSDT", {
 4. Max 5 positions opened in any 30-minute window
 5. Long/short imbalance never exceeds 4
 
-**Sources:** [types.d.ts:382-426](), [src/function/add.ts:270-343](), [src/classes/Risk.ts:42-116]()

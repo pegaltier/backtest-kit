@@ -22,7 +22,6 @@ Key characteristics:
 - **Graceful shutdown**: Waits for active signals to close before stopping
 - **Fixed polling interval**: Checks signal status every 1 minute + 1ms
 
-**Sources**: [src/lib/services/logic/private/LiveLogicPrivateService.ts:1-179](), [src/classes/Live.ts:1-600](), [README.md:161-171]()
 
 ---
 
@@ -83,7 +82,6 @@ graph TD
     Break --> Done
 ```
 
-**Sources**: [src/lib/services/logic/private/LiveLogicPrivateService.ts:63-175](), [src/classes/Live.ts:31-57]()
 
 ### Core Loop Implementation
 
@@ -99,7 +97,6 @@ The infinite loop in `LiveLogicPrivateService.run()` implements the following se
 | 6 | Sleep for `TICK_TTL` (1 minute + 1ms) | [LiveLogicPrivateService.ts:137-173]() |
 | 7 | Check stop conditions before continuing | [LiveLogicPrivateService.ts:119-135]() |
 
-**Sources**: [src/lib/services/logic/private/LiveLogicPrivateService.ts:63-175]()
 
 ### Sleep Interval Configuration
 
@@ -114,7 +111,6 @@ The `TICK_TTL` constant defines the polling interval. The additional 1ms prevent
 - Balances responsiveness vs. API rate limits
 - Sufficient for monitoring TP/SL/time_expired conditions
 
-**Sources**: [src/lib/services/logic/private/LiveLogicPrivateService.ts:14]()
 
 ---
 
@@ -151,7 +147,6 @@ graph LR
     Kill -.->|"Restart"| Restart
 ```
 
-**Sources**: [src/classes/Live.ts:147-161](), [README.md:19-20]()
 
 ### Persistence Strategy
 
@@ -170,7 +165,6 @@ Live Mode implements **crash-safe persistence** through the following mechanisms
 
 **Critical**: Only `opened` signals are persisted. This prevents storage bloat while ensuring all active positions can be recovered.
 
-**Sources**: [Diagram 3 in high-level architecture](), [src/classes/Live.ts:147-161]()
 
 #### Recovery Process
 
@@ -191,7 +185,6 @@ The recovery process is **transparent** to the strategy code. When `Live.run()` 
 3. If persisted signal exists, it's restored
 4. Tick continues monitoring the restored signal's TP/SL/time conditions
 
-**Sources**: [README.md:149-161](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:63-76]()
 
 #### Atomic Write Guarantees
 
@@ -211,7 +204,6 @@ Implementations must ensure:
 - `hasValue()` returns true only after successful `writeValue()`
 - `readValue()` returns complete signal data or throws
 
-**Sources**: [Diagram 1 in high-level architecture - Persistence & Configuration cluster]()
 
 ---
 
@@ -241,7 +233,6 @@ stateDiagram-v2
     EmitDone --> [*]
 ```
 
-**Sources**: [src/classes/Live.ts:156-169](), [src/classes/Live.ts:222-241]()
 
 ### Stop Mechanism Implementation
 
@@ -264,7 +255,6 @@ The `false` parameter indicates **live mode**, which affects behavior:
 - Does not force immediate cancellation
 - Allows TP/SL/time_expired conditions to complete
 
-**Sources**: [src/classes/Live.ts:261-267]()
 
 #### 2. Checking Stop Condition
 
@@ -290,7 +280,6 @@ if (result.action === "closed") {
 }
 ```
 
-**Sources**: [src/lib/services/logic/private/LiveLogicPrivateService.ts:118-171]()
 
 #### 3. Background Task Stop Handler
 
@@ -309,7 +298,6 @@ The cancellation closure:
 3. Only emits `doneLiveSubject` if signal is closed
 4. Waits for natural completion before returning
 
-**Sources**: [src/classes/Live.ts:222-241]()
 
 ### Stop Behavior Comparison
 
@@ -320,7 +308,6 @@ The cancellation closure:
 | Scheduled signal exists | No | Waits for activation or cancellation | Yes, after resolution |
 | Multiple stop calls | Idempotent | First stop wins | Once, after close |
 
-**Sources**: [src/classes/Live.ts:156-169](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:156-171]()
 
 ---
 
@@ -370,7 +357,6 @@ classDiagram
     LiveCommandService --> LiveLogicPrivateService: wraps
 ```
 
-**Sources**: [src/classes/Live.ts:79-600]()
 
 ### Method Reference
 
@@ -408,7 +394,6 @@ for await (const result of Live.run("BTCUSDT", {
 - Clears risk global service for associated risks
 - Returns instance-specific generator via `_getInstance()`
 
-**Sources**: [src/classes/Live.ts:398-418]()
 
 #### Live.background()
 
@@ -441,7 +426,6 @@ cancel(); // Waits for active signal to close
 - Catches errors and emits to `exitEmitter`
 - Uses `singlerun` wrapper to prevent duplicate executions
 
-**Sources**: [src/classes/Live.ts:441-459]()
 
 #### Live.stop()
 
@@ -466,7 +450,6 @@ await Live.stop("BTCUSDT", "my-strategy");
 - Allows active signals to complete normally
 - Safe to call multiple times (idempotent)
 
-**Sources**: [src/classes/Live.ts:478-489]()
 
 #### Live.getData()
 
@@ -486,7 +469,6 @@ public getData(
 - Sharpe ratio, win rate, max drawdown
 - Average signal lifetime
 
-**Sources**: [src/classes/Live.ts:504-515]()
 
 #### Live.getReport()
 
@@ -506,7 +488,6 @@ public getReport(
 - Profit/loss analysis
 - Risk-adjusted metrics
 
-**Sources**: [src/classes/Live.ts:531-542]()
 
 #### Live.dump()
 
@@ -530,7 +511,6 @@ await Live.dump("BTCUSDT", "my-strategy", "./reports");
 // Saves to: ./reports/my-strategy.md
 ```
 
-**Sources**: [src/classes/Live.ts:561-577]()
 
 #### Live.list()
 
@@ -553,7 +533,6 @@ statusList.forEach(status => {
 });
 ```
 
-**Sources**: [src/classes/Live.ts:579-600]()
 
 ---
 
@@ -594,7 +573,6 @@ stateDiagram-v2
     end note
 ```
 
-**Sources**: [src/classes/Live.ts:79-145]()
 
 ### Instance Isolation
 
@@ -617,7 +595,6 @@ private _getInstance = memoize<
 - Each instance maintains independent `_isStopped` and `_isDone` flags
 - Each instance has its own `task` (singlerun wrapper)
 
-**Sources**: [src/classes/Live.ts:381-386]()
 
 ### Task Status Tracking
 
@@ -637,7 +614,6 @@ private task = singlerun(async (
 - `"running"`: Currently executing
 - `"done"`: Execution completed
 
-**Sources**: [src/classes/Live.ts:110-122]()
 
 ---
 
@@ -671,7 +647,6 @@ graph TD
     Result -->|"closed + stopped"| DoneEmit
 ```
 
-**Sources**: [src/lib/services/logic/private/LiveLogicPrivateService.ts:97-115]()
 
 ### Event Types and Payloads
 
@@ -683,7 +658,6 @@ graph TD
 | `errorEmitter` | Tick failure | `error`, `symbol`, `when`, `message` | Error monitoring |
 | `doneLiveSubject` | Stopped + closed | `symbol`, `strategyName`, `exchangeName`, `backtest=false` | Completion tracking |
 
-**Sources**: [src/lib/services/logic/private/LiveLogicPrivateService.ts:92-115](), [Diagram 5 in high-level architecture]()
 
 ### Listening to Events
 
@@ -716,7 +690,6 @@ listenError((error) => {
 });
 ```
 
-**Sources**: [README.md:170-176]()
 
 ---
 
@@ -737,7 +710,6 @@ listenError((error) => {
 | **Generator Type** | Infinite | Finite |
 | **Stop Behavior** | Graceful (waits for close) | Immediate (can stop mid-signal) |
 
-**Sources**: [Diagram 2 in high-level architecture](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:1-179](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:1-400]()
 
 ### Method Signature Differences
 
@@ -757,7 +729,6 @@ Live.run(symbol, {
 });
 ```
 
-**Sources**: [src/classes/Backtest.ts:378-400](), [src/classes/Live.ts:398-418]()
 
 ### Context Propagation Difference
 
@@ -785,7 +756,6 @@ The `backtest` flag affects:
 - Fast backtest availability
 - Candle fetching strategy
 
-**Sources**: [Diagram 1 in high-level architecture - Context Services]()
 
 ---
 
@@ -813,7 +783,6 @@ try {
 - Sleep interval allows transient issues to resolve
 - Error is logged and emitted for monitoring
 
-**Sources**: [src/lib/services/logic/private/LiveLogicPrivateService.ts:75-95]()
 
 ### Signal State Filtering
 
@@ -845,7 +814,6 @@ yield result as IStrategyTickResultClosed | IStrategyTickResultOpened;
 - `scheduled`: Waiting for activation, no action needed
 - `opened`/`closed`: **Actionable events** for user code
 
-**Sources**: [src/lib/services/logic/private/LiveLogicPrivateService.ts:118-152]()
 
 ### Performance Tracking
 
@@ -870,7 +838,6 @@ These metrics enable:
 - Tracking API call latency
 - Generating performance reports via `Performance.getData()`
 
-**Sources**: [src/lib/services/logic/private/LiveLogicPrivateService.ts:103-115]()
 
 ---
 
@@ -909,7 +876,6 @@ app.get("/health", async (req, res) => {
 });
 ```
 
-**Sources**: [README.md:49-56](), [README.md:175-176]()
 
 ### Graceful Process Shutdown
 
@@ -935,7 +901,6 @@ process.on("SIGTERM", () => {
 });
 ```
 
-**Sources**: [src/classes/Live.ts:222-241]()
 
 ### Monitoring Active Positions
 
@@ -969,8 +934,5 @@ listenSignalLive((event) => {
 });
 ```
 
-**Sources**: [README.md:170-171]()
 
 ---
-
-**Sources**: [src/classes/Live.ts:1-600](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:1-179](), [README.md:161-171](), [Diagram 2 in high-level architecture]()

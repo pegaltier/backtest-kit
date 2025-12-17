@@ -15,7 +15,6 @@ Execution contexts solve the parameter drilling problem in deeply nested call st
 
 The framework uses the `di-scoped` library to implement lexical scoping for context values. When a context is set using `runInContext()` or `runAsyncIterator()`, all code executed within that scope can access the context via the `.context` property without it being passed as an explicit parameter.
 
-**Sources:** [types.d.ts:5-18](), [types.d.ts:296-309]()
 
 ## The Two Context Types
 
@@ -31,7 +30,6 @@ The framework uses the `di-scoped` library to implement lexical scoping for cont
 
 The `ExecutionContext` is set at the innermost execution loop level where individual ticks are processed. It provides temporal context that prevents look-ahead bias by ensuring all operations use the correct "current time."
 
-**Sources:** [types.d.ts:11-18]()
 
 ### MethodContext
 
@@ -45,7 +43,6 @@ The `ExecutionContext` is set at the innermost execution loop level where indivi
 
 The `MethodContext` is set at the orchestration layer (backtest/live/walker logic services) and determines which memoized client instances are retrieved from connection services.
 
-**Sources:** [types.d.ts:302-309]()
 
 ## Context Services Architecture
 
@@ -91,7 +88,6 @@ graph TB
     MCS --> EXPORT_MC
 ```
 
-**Sources:** [src/lib/core/types.ts:5-8](), [src/lib/core/provide.ts:60-63](), [src/lib/index.ts:66-71]()
 
 ## Context Propagation with di-scoped
 
@@ -129,7 +125,6 @@ MethodContextService.runAsyncIterator(
 
 This establishes context for the entire generator lifetime, allowing all yielded values to access the same schema routing information.
 
-**Sources:** [types.d.ts:27-36](), [types.d.ts:318-328]()
 
 ## Context Flow Through Execution Layers
 
@@ -218,7 +213,6 @@ graph TB
     FRAME_CONN --> CLIENT_FRAME
 ```
 
-**Sources:** [src/lib/index.ts:131-163](), [src/index.ts:162-163]()
 
 ## Context Access Patterns
 
@@ -243,7 +237,6 @@ async getCandles(symbol: string, interval: CandleInterval, limit: number) {
 }
 ```
 
-**Sources:** [types.d.ts:105-110]()
 
 ### Accessing MethodContext in Connection Services
 
@@ -258,7 +251,6 @@ const schema = this.strategySchemaService.get(strategyName);
 
 This pattern allows connection services to route operations to the correct client instances without schema names being passed through every function call.
 
-**Sources:** [types.d.ts:330-336]()
 
 ## Context Propagation in Backtest vs Live
 
@@ -299,7 +291,6 @@ The key difference:
 
 Both modes use the same `StrategyCoreService.tick()` and `ClientStrategy` implementations, but behavior differs based on the `backtest` flag in the context.
 
-**Sources:** Diagram 2 from high-level architecture
 
 ## MethodContext Propagation in Walker Mode
 
@@ -329,7 +320,6 @@ graph TB
 
 Walker establishes an outer MethodContext with empty schema names, then for each strategy creates a nested inner MethodContext with the specific strategyName/exchangeName/frameName. This allows each backtest to run in isolated context.
 
-**Sources:** Diagram 2 from high-level architecture
 
 ## Benefits of Context Propagation
 
@@ -368,7 +358,6 @@ By making `when` available via context, the framework ensures all operations use
 
 MethodContext allows connection services to retrieve the correct schema and instantiate clients once per strategyName:exchangeName combination. Without MethodContext, each service would need to explicitly pass schema names through the call hierarchy.
 
-**Sources:** [types.d.ts:6-18](), [types.d.ts:297-309]()
 
 ## Integration with Dependency Injection
 
@@ -381,7 +370,6 @@ Context services are registered in the DI container like other services:
 
 However, unlike typical services, context services manage **scoped state** using `di-scoped`. The service instances themselves are singletons, but the `.context` property value is scoped to the current execution context established by `runInContext()` or `runAsyncIterator()`.
 
-**Sources:** [src/lib/core/types.ts:5-8](), [src/lib/core/provide.ts:60-63]()
 
 ## Code Reference Table
 
@@ -396,4 +384,3 @@ However, unlike typical services, context services manage **scoped state** using
 | Context services export | [src/lib/index.ts]() | 66-71, 162-163 |
 | IExchangeParams using ExecutionContext | [types.d.ts]() | 105-110 |
 
-**Sources:** [types.d.ts:11-18](), [types.d.ts:302-309](), [types.d.ts:38-49](), [types.d.ts:330-336](), [src/lib/core/provide.ts:60-63](), [src/lib/core/types.ts:5-8](), [src/lib/index.ts:66-71](), [src/lib/index.ts:162-163](), [types.d.ts:105-110]()

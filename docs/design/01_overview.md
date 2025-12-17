@@ -7,7 +7,6 @@ group: design
 
 This document provides a high-level introduction to Backtest Kit, a production-ready TypeScript framework for building and testing trading strategies. It covers the framework's purpose, key architectural principles, and system organization. For practical usage examples, see [Getting Started](./04_getting-started.md). For detailed architectural patterns, see [Architecture Deep Dive](./14_architecture-deep-dive.md).
 
-**Sources:** [README.md:1-29](), [docs/internals.md:1-27]()
 
 ## What is Backtest Kit?
 
@@ -26,7 +25,6 @@ The framework treats market data as an **async stream of time**, processing each
 | **Execution Model** | Event-driven with streaming results |
 | **Data Access** | Context-aware temporal queries |
 
-**Sources:** [README.md:3-15](), [README.md:185-199](), [docs/internals.md:10-26]()
 
 ## Core Problems Solved
 
@@ -36,19 +34,16 @@ Traditional backtesting frameworks allow strategies to accidentally access futur
 
 When `getCandles()` is called, it automatically retrieves only data up to the current backtest timestamp using `async_hooks` context propagation. The same code runs identically in live mode, where "current time" is `new Date()`.
 
-**Sources:** [README.md:185-199]()
 
 ### 2. Crash-Safe Live Trading
 
 Live trading systems must recover state after crashes without data loss or duplicate trades. Backtest Kit implements atomic persistence through `PersistSignalAdapter`, which writes signal state to disk synchronously only for opened positions. If the process crashes, `waitForInit()` restores the active signal on restart.
 
-**Sources:** [README.md:19-20](), [docs/internals.md:23]()
 
 ### 3. Production-Code Validation
 
 Strategies require rigorous validation before risking capital. Backtest Kit enforces multi-stage validation through `GLOBAL_CONFIG` parameters that check take-profit/stop-loss logic, price sanity, risk/reward ratios, and portfolio limits. Invalid signals are rejected before execution.
 
-**Sources:** [README.md:21](), [docs/internals.md:19]()
 
 ### 4. Mode-Agnostic Strategy Development
 
@@ -58,7 +53,6 @@ Developers should write strategy logic once, not maintain separate codebases for
 - Identical signal validation and lifecycle management
 - Same event system for monitoring
 
-**Sources:** [README.md:19](), [docs/internals.md:30-38]()
 
 ## Key Architectural Principles
 
@@ -102,7 +96,6 @@ ExecutionContextService.runInContext(() => {
 }, { symbol, when, backtest: true });
 ```
 
-**Sources:** [README.md:185-199](), [docs/internals.md:47-50](), [docs/internals.md:54-67]()
 
 ### Crash-Safe Persistence
 
@@ -139,7 +132,6 @@ graph TD
 
 The `PersistBase` abstract class can be extended for custom storage backends (Redis, MongoDB) by implementing `readSignalData()`, `writeSignalData()`, and `deleteSignalData()` methods.
 
-**Sources:** [docs/internals.md:23](), [docs/internals.md:38](), [docs/internals.md:50-51]()
 
 ### Signal Lifecycle State Machine
 
@@ -182,7 +174,6 @@ type IStrategyTickResult =
 
 This eliminates optional field bugs and enables exhaustive pattern matching in TypeScript.
 
-**Sources:** [docs/internals.md:16](), [docs/types/IStrategyTickResult.md:1-14](), [docs/internals.md:44-45]()
 
 ### Event-Driven Architecture
 
@@ -234,7 +225,6 @@ graph LR
 
 All event listeners use `functools-kit` `queued` wrapper to ensure sequential processing even when callback functions contain async operations. This prevents race conditions during high-frequency event emission.
 
-**Sources:** [docs/internals.md:24](), [docs/internals.md:39](), [docs/internals.md:52-53](), [docs/internals.md:83-89]()
 
 ## System Architecture Layers
 
@@ -351,7 +341,6 @@ graph TD
 | **Schema Services** | `StrategySchemaService`, `ExchangeSchemaService` | Configuration storage using ToolRegistry pattern |
 | **Persistence** | `PersistSignalAdapter`, `PersistBase` | Crash-safe atomic file writes, pluggable storage backends |
 
-**Sources:** [docs/internals.md:28-39](), [docs/uml.puml:1-484](), [docs/classes/WalkerCommandService.md:1-79]()
 
 ## Dependency Injection Architecture
 
@@ -408,7 +397,6 @@ The framework organizes services into 11 categories:
 10. **Markdown Services**: Event-driven report generation
 11. **Template Services**: Code generation for LLM integration
 
-**Sources:** [docs/internals.md:31-38]()
 
 ## Execution Modes Overview
 
@@ -475,7 +463,6 @@ graph TB
 
 All three modes call the same `StrategyCoreService.tick()` method, ensuring identical signal generation and validation logic across environments.
 
-**Sources:** [docs/internals.md:54-82]()
 
 ## Technology Stack
 
@@ -499,7 +486,6 @@ The framework requires TypeScript 5.0+ as a peer dependency. Users must also ins
 
 Unlike cloud-based platforms (QuantConnect, etc.), Backtest Kit is fully self-hosted with no external API dependencies. All execution, data processing, and persistence occur in your environment.
 
-**Sources:** [package.json:74-79](), [README.md:228-236]()
 
 ## Data Flow Summary
 
@@ -516,7 +502,6 @@ The framework follows a consistent data flow pattern regardless of execution mod
 9. **Event Emission**: Emit to `signalEmitter`, `signalBacktestEmitter`, `signalLiveEmitter`
 10. **Report Generation**: `MarkdownServices` accumulate events and calculate statistics
 
-**Sources:** [docs/internals.md:54-82]()
 
 ## Key Interfaces Overview
 
@@ -541,4 +526,3 @@ if (result.action === "closed") {
 }
 ```
 
-**Sources:** [docs/interfaces/IStrategyCallbacks.md:1-92](), [docs/types/IStrategyTickResult.md:1-14](), [docs/interfaces/BacktestStatistics.md:1-110](), [docs/interfaces/LiveStatistics.md:1-118]()

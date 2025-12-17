@@ -66,7 +66,6 @@ graph TB
 | `note` | string | No | Developer documentation |
 | `callbacks` | `Partial<IExchangeCallbacks>` | No | Lifecycle event callbacks |
 
-**Sources:** [types.d.ts:119-155](), [src/interfaces/Exchange.interface.ts]()
 
 ---
 
@@ -109,7 +108,6 @@ addExchange({
 - All required methods must be provided
 - Methods must return promises
 
-**Sources:** [src/function/add.ts](), [types.d.ts:119-155](), [README.md:70-80]()
 
 ---
 
@@ -154,7 +152,6 @@ graph LR
 
 **Temporal Context:** The `since` parameter represents the current execution timestamp. In backtest mode, it corresponds to the frame iteration timestamp. In live mode, it's the current time minus the requested lookback. This ensures **look-ahead bias prevention** - strategies can never access future data.
 
-**Sources:** [types.d.ts:82-100](), [types.d.ts:128-136]()
 
 ---
 
@@ -218,7 +215,6 @@ graph TB
 - `ExecutionContextService` provides temporal context automatically
 - `ExchangeConnectionService` memoizes `ClientExchange` instances by `exchangeName`
 
-**Sources:** [src/function/exchange.ts](), [src/client/ClientExchange.ts](), [src/lib/services/core/ExchangeCoreService.ts]()
 
 ---
 
@@ -264,7 +260,6 @@ graph TB
 // 4. Partial profit/loss calculations
 ```
 
-**Sources:** [types.d.ts:196-204](), [src/client/ClientExchange.ts](), [src/config/params.ts:6-11]()
 
 ---
 
@@ -323,7 +318,6 @@ graph TB
 // Normal candle with close=$49,500 → VALID (49500 > 50)
 ```
 
-**Sources:** [src/config/params.ts:77-104](), [src/client/ClientExchange.ts]()
 
 ---
 
@@ -373,7 +367,6 @@ graph TB
 - HTTP 500/502/503 (server errors)
 - Anomaly detection failures
 
-**Sources:** [src/config/params.ts:66-74](), [src/client/ClientExchange.ts]()
 
 ---
 
@@ -406,7 +399,6 @@ formatQuantity: async (symbol: string, quantity: number) => Promise<string>
 - Order placement (live trading)
 - Position size calculations
 
-**Sources:** [types.d.ts:138-152](), [types.d.ts:180-194]()
 
 ---
 
@@ -494,7 +486,6 @@ Object.entries(exchanges).forEach(([name, instance]) => {
 });
 ```
 
-**Sources:** [README.md:70-80](), [demo/backtest/src/setup/exchange.mjs](), [types.d.ts:119-155]()
 
 ---
 
@@ -564,7 +555,6 @@ graph TB
    - **Client (ClientExchange):** Framework-provided validation, retry, VWAP
    - **Service (ExchangeConnectionService):** Lifecycle management, routing
 
-**Sources:** [src/client/ClientExchange.ts](), [src/lib/services/connection/ExchangeConnectionService.ts](), [types.d.ts:102-110]()
 
 ---
 
@@ -592,7 +582,6 @@ setConfig({
 });
 ```
 
-**Sources:** [src/config/params.ts:6-104](), [src/function/setup.ts]()
 
 ---
 
@@ -651,7 +640,6 @@ addExchange({
 - Debugging data quality issues
 - Performance profiling
 
-**Sources:** [types.d.ts:112-117](), [types.d.ts:153-154]()
 
 ---
 
@@ -714,4 +702,3 @@ addExchange({
 });
 ```
 
-**Sources:** [types.d.ts:119-155](), [README.md:70-80]()

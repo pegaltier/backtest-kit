@@ -21,7 +21,6 @@ The position sizing system provides pluggable strategies for determining trade q
 - Integration with exchange precision formatting
 - Position size analytics and reporting via `PositionSize` class
 
-Sources: [src/index.ts:96-104](), [types.d.ts:1-200]()
 
 ---
 
@@ -99,7 +98,6 @@ graph TB
 | `SizingConnectionService` | Memoized factory for creating sizing calculator instances |
 | `PositionSize` class | Public API for running calculations and generating reports |
 
-Sources: [src/index.ts:93-104](), [src/index.ts:187](), [types.d.ts:93-104]()
 
 ---
 
@@ -182,7 +180,6 @@ classDiagram
     IPositionSizeATRParams <.. ISizingSchemaATR : runtime
 ```
 
-Sources: [types.d.ts:93-104]()
 
 ---
 
@@ -242,7 +239,6 @@ addSizing({
 2. Calculate stop loss distance as percentage: `|priceOpen - priceStopLoss| / priceOpen`
 3. Compute quantity: `riskAmount / (slDistance * priceOpen)`
 
-Sources: [types.d.ts:93-104](), [src/index.ts:96-104]()
 
 ---
 
@@ -314,7 +310,6 @@ addSizing({
 - Cap at `maxKellyFraction` to prevent over-leveraging
 - Negative Kelly (no edge) returns 0 position size
 
-Sources: [types.d.ts:93-104]()
 
 ---
 
@@ -395,7 +390,6 @@ addSizing({
 - Increases position size during stable markets
 - Maintains consistent risk across varying market conditions
 
-Sources: [types.d.ts:93-104](), [src/function/exchange.ts:59]()
 
 ---
 
@@ -454,7 +448,6 @@ sequenceDiagram
    - Calculated quantity validated against portfolio-level risk limits
    - See [Portfolio-Wide Limits](./31_risk-management.md) for risk integration
 
-Sources: [src/index.ts:17](), [src/function/exchange.ts:63-65]()
 
 ---
 
@@ -504,7 +497,6 @@ addSizing({
 });
 ```
 
-Sources: [src/function/add.ts:17](), [src/index.ts:96-104]()
 
 ---
 
@@ -545,7 +537,6 @@ addStrategy({
 4. `calculate()` called with current market context
 5. Returned quantity formatted and used for order execution
 
-Sources: [src/index.ts:11-17](), [types.d.ts:728-747]()
 
 ---
 
@@ -574,7 +565,6 @@ const sizings = listSizings();
 console.log(sizings); // ['fixed-2pct', 'kelly-quarter']
 ```
 
-Sources: [src/function/list.ts:23-25]()
 
 ---
 
@@ -635,7 +625,6 @@ PositionSize.background('BTCUSDT', {
 });
 ```
 
-Sources: [src/classes/PositionSize:1-100]()
 
 ---
 
@@ -713,7 +702,6 @@ await PositionSize.dump('BTCUSDT', 'kelly-quarter', './reports/position-size.md'
 
 Default path: `./dump/position-size/{symbol}_{sizingName}.md`
 
-Sources: [src/classes/PositionSize:1-200]()
 
 ---
 
@@ -780,7 +768,6 @@ addStrategy({
 3. Risk validations run with calculated quantity
 4. If risk validation fails, signal rejected (see [Signal Validation Pipeline](./31_risk-management.md))
 
-Sources: [types.d.ts:413-426](), [types.d.ts:728-747]()
 
 ---
 
@@ -820,7 +807,6 @@ for await (const result of PositionSize.run('BTCUSDT', {
 }
 ```
 
-Sources: [src/classes/PositionSize:1-100]()
 
 ---
 
@@ -881,7 +867,6 @@ addSizing({
 - Return 0 for "no position" scenarios
 - Consider exchange precision limits
 
-Sources: [src/function/exchange.ts:59-65]()
 
 ---
 
@@ -925,7 +910,6 @@ addRisk({
 });
 ```
 
-Sources: [types.d.ts:380-396](), [types.d.ts:413-446]()
 
 ---
 
@@ -944,5 +928,3 @@ The position sizing system provides:
 - [Risk Validation Pipeline](./31_risk-management.md) - How sizing interacts with risk checks
 - [Signals & Signal Lifecycle](./08_core-concepts.md) - Signal execution flow
 - [Exchange Configuration](./36_exchanges-data-sources.md) - Quantity formatting and precision
-
-Sources: [src/index.ts:93-104](), [src/index.ts:187](), [src/function/add.ts:17]()

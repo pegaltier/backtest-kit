@@ -70,7 +70,6 @@ graph TB
     PB -.->|"can use"| CUSTOM
 ```
 
-**Sources**: [test/config/setup.mjs:13-87](), [docs/internals.md:38](), [README.md:20]()
 
 ### Adapter Responsibilities
 
@@ -81,7 +80,6 @@ graph TB
 | `PersistScheduleAdapter` | Schedule metadata | Scheduled signals created | Pending order details (ephemeral) |
 | `PersistPartialAdapter` | Profit/loss milestones | Partial levels hit | 10%, 20%, 30%+ profit/loss events |
 
-**Sources**: [test/config/setup.mjs:13-87]()
 
 ---
 
@@ -130,7 +128,6 @@ classDiagram
     PersistSignalAdapter ..> PersistBase : uses
 ```
 
-**Sources**: [test/config/setup.mjs:13-30](), [docs/internals.md:38]()
 
 ### Method Contracts
 
@@ -160,7 +157,6 @@ classDiagram
 - Called when signals close
 - Must be idempotent (safe to call on non-existent keys)
 
-**Sources**: [test/config/setup.mjs:15-29]()
 
 ---
 
@@ -213,7 +209,6 @@ stateDiagram-v2
     end note
 ```
 
-**Sources**: [test/e2e/persist.test.mjs:1-300](), [docs/internals.md:78](), [README.md:20]()
 
 ### Key State Transitions
 
@@ -232,7 +227,6 @@ stateDiagram-v2
 - `ClientStrategy.waitForInit()` calls `PersistSignalAdapter.readSignalData()`
 - Signal state restored, monitoring continues from last known state
 
-**Sources**: [test/e2e/persist.test.mjs:36-50]()
 
 ---
 
@@ -265,7 +259,6 @@ sequenceDiagram
     Note over CS: Continue monitoring<br/>Signal persisted
 ```
 
-**Sources**: [README.md:20](), [docs/internals.md:38]()
 
 ### Why Atomic Writes Matter
 
@@ -284,7 +277,6 @@ atomic_rename("signal.tmp", "signal.json")  # Atomic OS operation
 
 The `rename()` system call is atomic on POSIX systems. Either the old file exists (before rename) or the new file exists (after rename). There's no intermediate state where the file is partially written.
 
-**Sources**: [README.md:20]()
 
 ---
 
@@ -334,7 +326,6 @@ sequenceDiagram
     end
 ```
 
-**Sources**: [test/e2e/persist.test.mjs:23-94](), [docs/internals.md:74-81]()
 
 ### Recovery Scenarios
 
@@ -379,7 +370,6 @@ After restart:
 - No collision between strategies
 ```
 
-**Sources**: [test/e2e/persist.test.mjs:23-150]()
 
 ---
 
@@ -433,7 +423,6 @@ The framework includes a default file-based persistence implementation. It store
 }
 ```
 
-**Sources**: [test/e2e/persist.test.mjs:33-57]()
 
 ---
 
@@ -467,7 +456,6 @@ graph TB
     TICK --> PNL
 ```
 
-**Sources**: [test/e2e/persist.test.mjs:1-300](), [test/config/setup.mjs:13-87]()
 
 ### Example Test: LONG Signal TP After Restart
 
@@ -519,7 +507,6 @@ Live.background("BTCUSDT", { strategyName, exchangeName });
 // closeReason === "take_profit"
 ```
 
-**Sources**: [test/e2e/persist.test.mjs:25-94]()
 
 ### Test Coverage Matrix
 
@@ -532,7 +519,6 @@ Live.background("BTCUSDT", { strategyName, exchangeName });
 | PERSIST #5 | Time expired after restart | Signal restores, closes by time expiration |
 | PERSIST #6 | No persisted data | hasValue()=false, starts fresh |
 
-**Sources**: [test/e2e/persist.test.mjs:1-300]()
 
 ---
 
@@ -565,7 +551,6 @@ This approach ensures:
 - Faster test execution
 - No file system side effects
 
-**Sources**: [test/config/setup.mjs:13-87]()
 
 ---
 
@@ -617,7 +602,6 @@ graph TB
     BT -.->|reads| Note2
 ```
 
-**Sources**: [docs/internals.md:54-81](), [test/config/setup.mjs:13-87]()
 
 ### ClientStrategy Integration
 
@@ -636,7 +620,6 @@ graph TB
 - When signal closes, triggers `PersistSignalAdapter.deleteSignalData()`
 - Cleanup ensures no stale data remains
 
-**Sources**: [docs/internals.md:54-81]()
 
 ---
 
@@ -663,7 +646,6 @@ setConfig({
 | `CC_PERCENT_FEE` | 0.1 | Fee applied to PNL calculations (persisted in closed signal data) |
 | `CC_PERCENT_SLIPPAGE` | 0.1 | Slippage applied to PNL (persisted in closed signal data) |
 
-**Sources**: [src/config/params.ts:1-122](), [test/config/setup.mjs:89-102]()
 
 ---
 
@@ -757,7 +739,6 @@ test("PERSIST: Signal closes by SL after restart", async () => { /* ... */ });
 test("PERSIST: Signal closes by time after restart", async () => { /* ... */ });
 ```
 
-**Sources**: [test/e2e/persist.test.mjs:1-300](), [README.md:20]()
 
 ---
 
@@ -789,7 +770,6 @@ test("PERSIST: Signal closes by time after restart", async () => { /* ... */ });
 - For high-frequency strategies, consider in-memory caching
 - Redis backend recommended for < 1ms persistence latency
 
-**Sources**: [docs/internals.md:38](), [test/README.md:7-26]()
 
 ---
 
@@ -809,5 +789,3 @@ Key integration points:
 - `ClientStrategy.tick()` - Delete on signal close
 
 For custom backend implementation, see [Custom Persistence Backends](./46_advanced-features.md).
-
-**Sources**: [README.md:20](), [docs/internals.md:38](), [test/e2e/persist.test.mjs:1-300]()

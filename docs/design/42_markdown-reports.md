@@ -26,7 +26,6 @@ The framework provides eight markdown service classes that follow a consistent a
 
 All services automatically subscribe to their respective emitters during initialization using the `singleshot` pattern to ensure one-time subscription.
 
-Sources: [src/lib/services/markdown/BacktestMarkdownService.ts:1-464](), [src/lib/services/markdown/LiveMarkdownService.ts:1-612](), [src/lib/services/markdown/WalkerMarkdownService.ts:1-606]()
 
 ## Service Architecture and Data Flow
 
@@ -105,7 +104,6 @@ graph TB
     RiskStore --> RiskAPI
 ```
 
-Sources: [src/lib/services/markdown/BacktestMarkdownService.ts:282-461](), [src/classes/Backtest.ts:1-601](), [src/classes/Live.ts:1-614]()
 
 ## Common API Pattern
 
@@ -159,7 +157,6 @@ await Backtest.dump("BTCUSDT", "my-strategy", "./reports");
 await Backtest.dump("BTCUSDT", "my-strategy", "./reports", customColumns);
 ```
 
-Sources: [src/classes/Backtest.ts:276-337](), [src/classes/Live.ts:283-344](), [src/classes/Walker.ts:249-313]()
 
 ## Backtest Reports
 
@@ -225,7 +222,6 @@ Generated markdown includes:
    - `**Certainty Ratio:** {certaintyRatio} (higher is better)`
    - `**Expected Yearly Returns:** {expectedYearlyReturns}% (higher is better)`
 
-Sources: [src/lib/services/markdown/BacktestMarkdownService.ts:76-253](), [src/classes/Backtest.ts:276-337]()
 
 ## Live Trading Reports
 
@@ -284,7 +280,6 @@ const markdown = await Live.getReport("BTCUSDT", "my-strategy");
 await Live.dump("BTCUSDT", "my-strategy");
 ```
 
-Sources: [src/lib/services/markdown/LiveMarkdownService.ts:78-391](), [src/classes/Live.ts:283-344]()
 
 ## Walker Comparison Reports
 
@@ -381,7 +376,6 @@ await Walker.dump("BTCUSDT", "my-walker");
 **Note:** Higher values are better for all metrics except Standard Deviation (lower is better).
 ```
 
-Sources: [src/lib/services/markdown/WalkerMarkdownService.ts:124-388](), [src/classes/Walker.ts:249-313]()
 
 ## Specialized Report Services
 
@@ -411,7 +405,6 @@ console.log("Metrics by type:", stats.metricStats);
 await Performance.dump("BTCUSDT", "my-strategy");
 ```
 
-Sources: [src/lib/services/markdown/PerformanceMarkdownService.ts:81-283](), [src/classes/Performance.ts:1-159]()
 
 ### Heatmap Reports
 
@@ -450,7 +443,6 @@ stats.symbols.forEach(row => {
 await Heat.dump("my-strategy");
 ```
 
-Sources: [src/lib/services/markdown/HeatMarkdownService.ts:82-406](), [src/classes/Heat.ts:1-148]()
 
 ### Schedule Reports
 
@@ -478,7 +470,6 @@ console.log("Avg activation:", stats.avgActivationTime);
 await Schedule.dump("BTCUSDT", "my-strategy");
 ```
 
-Sources: [src/lib/services/markdown/ScheduleMarkdownService.ts:59-301](), [src/classes/Schedule.ts:1-149]()
 
 ### Partial Reports
 
@@ -503,7 +494,6 @@ console.log("Loss events:", stats.totalLoss);
 await Partial.dump("BTCUSDT", "my-strategy");
 ```
 
-Sources: [src/lib/services/markdown/PartialMarkdownService.ts:60-236](), [src/classes/Partial.ts:1-193]()
 
 ### Risk Reports
 
@@ -529,7 +519,6 @@ console.log("By symbol:", stats.bySymbol);
 await Risk.dump("BTCUSDT", "my-strategy");
 ```
 
-Sources: [src/lib/services/markdown/RiskMarkdownService.ts:52-185](), [src/classes/Risk.ts:153-246]()
 
 ## Column Customization
 
@@ -564,7 +553,6 @@ The `T` type parameter corresponds to the data model for each service:
 - Partial: `PartialEvent`
 - Risk: `RiskEvent`
 
-Sources: [src/model/Column.model.ts:1-39]()
 
 ### Column Type Definitions
 
@@ -597,7 +585,6 @@ graph LR
     ColModel --> RiskCol
 ```
 
-Sources: [src/lib/services/markdown/BacktestMarkdownService.ts:17-48](), [src/lib/services/markdown/LiveMarkdownService.ts:19-50](), [src/lib/services/markdown/WalkerMarkdownService.ts:24-88]()
 
 ### Custom Column Examples
 
@@ -684,7 +671,6 @@ const strategyColumns = [
 await Walker.getReport("BTCUSDT", "my-walker", strategyColumns);
 ```
 
-Sources: [test/spec/columns.test.mjs:69-112](), [test/spec/columns.test.mjs:169-182]()
 
 ## Default Column Configuration
 
@@ -717,7 +703,6 @@ public async getReport(
 }
 ```
 
-Sources: [src/lib/services/markdown/BacktestMarkdownService.ts:177-180]()
 
 ## Report Storage and Memory Management
 
@@ -789,7 +774,6 @@ if (lastActiveIndex !== -1) {
 }
 ```
 
-Sources: [src/lib/services/markdown/BacktestMarkdownService.ts:85-92](), [src/lib/services/markdown/LiveMarkdownService.ts:88-115](), [src/lib/services/markdown/LiveMarkdownService.ts:148-182]()
 
 ### Clearing Storage
 
@@ -816,7 +800,6 @@ Storage is automatically cleared at the start of each execution:
 }
 ```
 
-Sources: [src/lib/services/markdown/BacktestMarkdownService.ts:434-444](), [src/classes/Backtest.ts:163-176]()
 
 ## File System Output
 
@@ -870,7 +853,6 @@ Process:
 4. Write UTF-8 encoded file
 5. Log success/failure to console
 
-Sources: [src/lib/services/markdown/BacktestMarkdownService.ts:233-252]()
 
 ## Event Subscription and Initialization
 
@@ -900,7 +882,6 @@ private tick = async (data: IStrategyTickResult) => {
 
 The `singleshot` wrapper ensures subscription happens only once, even if the service is accessed multiple times.
 
-Sources: [src/lib/services/markdown/BacktestMarkdownService.ts:457-460](), [src/lib/services/markdown/BacktestMarkdownService.ts:314-325]()
 
 ## Safe Math and Statistics
 
@@ -947,5 +928,3 @@ Null values display as "N/A":
 ```
 
 This ensures reports are always readable even with insufficient data or calculation edge cases.
-
-Sources: [src/lib/services/markdown/BacktestMarkdownService.ts:56-67](), [src/lib/services/markdown/BacktestMarkdownService.ts:154-167](), [src/lib/services/markdown/BacktestMarkdownService.ts:216-217]()

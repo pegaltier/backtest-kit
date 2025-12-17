@@ -62,7 +62,6 @@ graph TD
     HEAT --> HEAT_Fields
 ```
 
-**Sources:** [types.d.ts:918-943](), [types.d.ts:1095-1098](), [types.d.ts:1153-1172](), [types.d.ts:1209-1218](), [src/index.ts:139-146]()
 
 ---
 
@@ -129,7 +128,6 @@ stats.signalList.forEach(signal => {
 });
 ```
 
-**Sources:** [types.d.ts:918-943](), [src/index.ts:139]()
 
 ---
 
@@ -159,7 +157,6 @@ console.log(`Win rate: ${stats.winRate?.toFixed(2)}%`);
 console.log(`Total PNL: ${stats.totalPnl?.toFixed(2)}%`);
 ```
 
-**Sources:** [types.d.ts:918-943](), [src/index.ts:140]()
 
 ---
 
@@ -242,7 +239,6 @@ if (stats.bestStats) {
 }
 ```
 
-**Sources:** [types.d.ts:1095-1098](), [types.d.ts:1080-1088](), [types.d.ts:949](), [src/index.ts:144]()
 
 ---
 
@@ -283,7 +279,6 @@ interface ScheduledEvent {
 }
 ```
 
-**Sources:** [types.d.ts:1104-1130](), [types.d.ts:1153-1172](), [src/index.ts:142]()
 
 ### RiskStatisticsModel
 
@@ -311,7 +306,6 @@ interface RiskEvent {
 }
 ```
 
-**Sources:** [types.d.ts:1178-1195](), [types.d.ts:1209-1218](), [src/index.ts:146]()
 
 ### PartialStatisticsModel
 
@@ -325,7 +319,6 @@ Aggregates partial profit/loss milestone events for unrealized P&L tracking.
 | `totalLossEvents` | `number` | Total count of loss milestones reached |
 | `byLevel` | `Record<PartialLevel, number>` | Event count grouped by percentage level (10, 20, 30, etc.) |
 
-**Sources:** [src/index.ts:145]()
 
 ### PerformanceStatisticsModel
 
@@ -344,7 +337,6 @@ Each metric type aggregation includes:
 - `minDuration`: Minimum duration (ms)
 - `maxDuration`: Maximum duration (ms)
 
-**Sources:** [src/index.ts:143]()
 
 ### HeatmapStatisticsModel
 
@@ -356,7 +348,6 @@ Provides portfolio-wide aggregated statistics across multiple symbols and strate
 | `totalRows` | `number` | Total number of rows |
 | Additional aggregated statistics | Various | Cross-symbol aggregations |
 
-**Sources:** [src/index.ts:141]()
 
 ---
 
@@ -433,7 +424,6 @@ graph TD
     EXIT_EMT --> EXIT_TYPE
 ```
 
-**Sources:** [src/config/emitters.ts:1-133]()
 
 ---
 
@@ -469,7 +459,6 @@ listenDoneBacktest((event) => {
 });
 ```
 
-**Sources:** [src/config/emitters.ts:50-62](), [src/function/event.ts:308-344]()
 
 ---
 
@@ -524,7 +513,6 @@ listenPerformance((event) => {
 });
 ```
 
-**Sources:** [types.d.ts:1231-1270](), [src/config/emitters.ts:86](), [src/function/event.ts:610-613](), [src/index.ts:158-160]()
 
 ---
 
@@ -544,7 +532,6 @@ Emitted during backtest execution to track frame processing progress.
 | `totalFrames` | `number` | Total number of timeframes to process |
 | `progress` | `number` | Progress ratio (0.0 to 1.0) |
 
-**Sources:** [src/config/emitters.ts:68](), [src/function/event.ts:509-512]()
 
 ### ProgressWalkerContract
 
@@ -558,7 +545,6 @@ Emitted during walker execution to track strategy comparison progress.
 | `totalStrategies` | `number` | Total number of strategies to test |
 | `progress` | `number` | Progress ratio (0.0 to 1.0) |
 
-**Sources:** [src/config/emitters.ts:74](), [src/function/event.ts:544-547]()
 
 ### ProgressOptimizerContract
 
@@ -572,7 +558,6 @@ Emitted during optimizer execution to track data source processing.
 | `totalSources` | `number` | Total number of data sources |
 | `progress` | `number` | Progress ratio (0.0 to 1.0) |
 
-**Sources:** [src/config/emitters.ts:80](), [src/function/event.ts:573-576]()
 
 ---
 
@@ -608,7 +593,6 @@ listenWalker((event) => {
 });
 ```
 
-**Sources:** [src/config/emitters.ts:92](), [src/function/event.ts:645-648]()
 
 ---
 
@@ -651,7 +635,6 @@ listenWalkerComplete((results) => {
 });
 ```
 
-**Sources:** [types.d.ts:1034-1053](), [src/config/emitters.ts:98](), [src/function/event.ts:728-731]()
 
 ---
 
@@ -675,7 +658,6 @@ Emitted when a signal reaches a profit milestone (10%, 20%, 30%, etc.).
 type PartialLevel = 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90 | 100;
 ```
 
-**Sources:** [types.d.ts:486-497](), [src/config/emitters.ts:118](), [src/function/event.ts:786-789]()
 
 ### PartialLossContract
 
@@ -715,7 +697,6 @@ listenPartialLoss((event) => {
 });
 ```
 
-**Sources:** [src/config/emitters.ts:118-124](), [src/function/event.ts:786-789](), [src/function/event.ts:853-856]()
 
 ---
 
@@ -762,7 +743,6 @@ listenRisk((event) => {
 });
 ```
 
-**Sources:** [src/config/emitters.ts:131](), [src/function/event.ts:924-927](), [types.d.ts:1178-1195]()
 
 ---
 
@@ -801,7 +781,6 @@ const displaySharpe = stats.sharpeRatio?.toFixed(3) ?? "N/A";
 console.log(`Sharpe Ratio: ${displaySharpe}`);
 ```
 
-**Sources:** [types.d.ts:918-943](), [types.d.ts:1153-1172]()
 
 ---
 
@@ -863,7 +842,6 @@ graph TD
 5. **API Access**: `getData()` methods trigger statistics calculation from accumulated events
 6. **Models**: Markdown services compute derived metrics and return statistics models
 
-**Sources:** [src/config/emitters.ts:1-133](), [types.d.ts:918-943]()
 
 ---
 
@@ -883,4 +861,3 @@ graph TD
 | `PartialLossContract` | `partialLossSubject` | Loss milestones | `level`, `data`, `currentPrice` |
 | `RiskContract` | `riskSubject` | Risk rejections | `pendingSignal`, `comment`, `activePositionCount` |
 
-**Sources:** [src/config/emitters.ts:1-133](), [src/function/event.ts:1-969](), [src/index.ts:148-160]()

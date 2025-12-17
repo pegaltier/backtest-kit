@@ -18,7 +18,6 @@ For information about the Optimizer system architecture, see [Optimizer System](
 - Complete executable code generation with Walker comparison
 - Debug logging of LLM conversations to `./dump/strategy/`
 
-**Sources:** [README.md:111-143](), [src/interfaces/Optimizer.interface.ts:1-483]()
 
 ---
 
@@ -94,7 +93,6 @@ graph TB
 6. **Generation**: `ClientOptimizer.getCode()` uses templates to generate executable code
 7. **Export**: `ClientOptimizer.dump()` writes `.mjs` file to disk
 
-**Sources:** [src/client/ClientOptimizer.ts:1-459](), [src/lib/services/template/OptimizerTemplateService.ts:1-732](), [src/lib/services/connection/OptimizerConnectionService.ts:1-175]()
 
 ---
 
@@ -114,7 +112,6 @@ The `IOptimizerSchema` interface defines the complete optimizer configuration, i
 | `template` | `Partial<IOptimizerTemplate>` | No | Custom template method overrides |
 | `callbacks` | `Partial<IOptimizerCallbacks>` | No | Lifecycle event hooks |
 
-**Sources:** [src/interfaces/Optimizer.interface.ts:376-433]()
 
 ### IOptimizerRange Time Periods
 
@@ -128,7 +125,6 @@ interface IOptimizerRange {
 
 **Multiple Training Ranges**: Each range in `rangeTrain` generates a separate strategy variant. For example, configuring three ranges produces three strategies that are compared in the generated Walker.
 
-**Sources:** [src/interfaces/Optimizer.interface.ts:12-32]()
 
 ### IOptimizerSource Data Fetching
 
@@ -170,7 +166,6 @@ const source: IOptimizerSource = {
 };
 ```
 
-**Sources:** [src/interfaces/Optimizer.interface.ts:86-186]()
 
 ---
 
@@ -226,7 +221,6 @@ The system uses `functools-kit` utilities for automatic pagination with deduplic
 2. `distinctDocuments()` - Deduplicates by `data.id` field
 3. `resolveDocuments()` - Materializes all pages into array
 
-**Sources:** [src/client/ClientOptimizer.ts:70-88](), [src/client/ClientOptimizer.ts:99-215]()
 
 ### Message Building
 
@@ -245,7 +239,6 @@ For each source in each training range, the system creates a user-assistant mess
 - [src/client/ClientOptimizer.ts:34-41]() - `DEFAULT_USER_FN`
 - [src/client/ClientOptimizer.ts:43-60]() - `DEFAULT_ASSISTANT_FN`
 
-**Sources:** [src/client/ClientOptimizer.ts:99-215](), [src/interfaces/Optimizer.interface.ts:126-177]()
 
 ---
 
@@ -324,7 +317,6 @@ async function text(messages) {
 }
 ```
 
-**Sources:** [src/lib/services/template/OptimizerTemplateService.ts:555-612]()
 
 ### json() Template with Signal Schema
 
@@ -384,7 +376,6 @@ async function json(messages) {
 }
 ```
 
-**Sources:** [src/lib/services/template/OptimizerTemplateService.ts:614-732]()
 
 ### Debug Logging - dumpJson()
 
@@ -397,7 +388,6 @@ The `dumpJson()` function saves LLM conversations and results to `./dump/strateg
 
 **Warning System**: Logs warning if user message exceeds `WARN_KB = 100` kilobytes
 
-**Sources:** [src/lib/services/template/OptimizerTemplateService.ts:452-546]()
 
 ---
 
@@ -469,7 +459,6 @@ graph TD
 2. Validate schema structure [src/lib/services/schema/OptimizerSchemaService.ts:41-67]()
 3. Store in `ToolRegistry` [src/lib/services/schema/OptimizerSchemaService.ts:28-32]()
 
-**Sources:** [src/lib/services/validation/OptimizerValidationService.ts:1-72](), [src/lib/services/schema/OptimizerSchemaService.ts:1-97]()
 
 ### Phase 2: Data Collection
 
@@ -493,7 +482,6 @@ graph TD
 
 **Progress Events**: Emits `ProgressOptimizerContract` via `progressOptimizerEmitter` [src/client/ClientOptimizer.ts:108-114]()
 
-**Sources:** [src/client/ClientOptimizer.ts:99-215](), [src/classes/Optimizer.ts:42-59]()
 
 ### Phase 3: Code Generation
 
@@ -517,7 +505,6 @@ graph TD
 
 **Prefix Generation**: Uses random prefix to prevent naming conflicts [src/client/ClientOptimizer.ts:22](), [src/client/ClientOptimizer.ts:228]()
 
-**Sources:** [src/client/ClientOptimizer.ts:217-350](), [src/lib/services/template/OptimizerTemplateService.ts:1-732]()
 
 ### Phase 4: File Export
 
@@ -531,7 +518,6 @@ graph TD
 
 **Default Path**: Current working directory (`./`)
 
-**Sources:** [src/client/ClientOptimizer.ts:360-384](), [src/classes/Optimizer.ts:100-120]()
 
 ---
 
@@ -594,7 +580,6 @@ graph TB
     style AddWalker fill:#e1f5ff,stroke:#0066cc,stroke-width:2px
 ```
 
-**Sources:** [src/client/ClientOptimizer.ts:217-350]()
 
 ### Multi-Timeframe Strategy Template
 
@@ -673,7 +658,6 @@ addStrategy({
 });
 ```
 
-**Sources:** [src/lib/services/template/OptimizerTemplateService.ts:168-304]()
 
 ### Walker Comparison Setup
 
@@ -729,7 +713,6 @@ listenError((error) => {
 });
 ```
 
-**Sources:** [src/lib/services/template/OptimizerTemplateService.ts:395-443]()
 
 ---
 
@@ -788,7 +771,6 @@ addOptimizer({
 });
 ```
 
-**Sources:** [README.md:111-143](), [src/interfaces/Optimizer.interface.ts:376-433]()
 
 ### Advanced Configuration with Custom Templates
 
@@ -952,7 +934,6 @@ addOptimizer({
 });
 ```
 
-**Sources:** [src/interfaces/Optimizer.interface.ts:126-237](), [src/interfaces/Optimizer.interface.ts:376-433]()
 
 ---
 
@@ -966,7 +947,6 @@ addOptimizer({
 | `getCode()` | `async (symbol: string, context: { optimizerName: string }) => string` | Generates executable code |
 | `dump()` | `async (symbol: string, context: { optimizerName: string }, path?: string) => void` | Saves code to file |
 
-**Sources:** [src/classes/Optimizer.ts:1-135]()
 
 ### Event Emitters
 
@@ -993,7 +973,6 @@ interface ProgressOptimizerContract {
 }
 ```
 
-**Sources:** [src/contract/ProgressOptimizer.contract.ts](), [src/client/ClientOptimizer.ts:108-114]()
 
 ### Template Method Reference
 
@@ -1013,7 +992,6 @@ All template methods return `string | Promise<string>` and can be overridden in 
 | `getJsonTemplate()` | `symbol` | LLM JSON helper |
 | `getJsonDumpTemplate()` | `symbol` | Debug logging helper |
 
-**Sources:** [src/interfaces/Optimizer.interface.ts:238-374]()
 
 ---
 
@@ -1058,7 +1036,6 @@ await Optimizer.dump("BTCUSDT", { optimizerName: "market-conditions" }, "./outpu
 // Best strategy: abc123_strategy-2 (Sideways market variant)
 ```
 
-**Sources:** [src/lib/services/template/OptimizerTemplateService.ts:122-157](), [src/lib/services/template/OptimizerTemplateService.ts:395-443]()
 
 ### Custom Data Source with Pagination
 
@@ -1122,7 +1099,6 @@ addOptimizer({
 
 **Deduplication**: The `id` field is used by `distinctDocuments()` to remove duplicates when pages overlap.
 
-**Sources:** [src/client/ClientOptimizer.ts:70-88](), [src/interfaces/Optimizer.interface.ts:36-44]()
 
 ### Custom Message Formatting
 
@@ -1182,7 +1158,6 @@ addOptimizer({
 });
 ```
 
-**Sources:** [src/interfaces/Optimizer.interface.ts:126-177](), [src/client/ClientOptimizer.ts:34-60]()
 
 ---
 
@@ -1197,7 +1172,6 @@ addOptimizer({
 
 **Message Size Warning**: The `dumpJson()` function warns when user messages exceed 100KB [src/lib/services/template/OptimizerTemplateService.ts:508-515]()
 
-**Sources:** [src/client/ClientOptimizer.ts:70-88]()
 
 ### Memoization
 
@@ -1208,7 +1182,6 @@ addOptimizer({
 
 **Memoization Key**: `[optimizerName]` [src/lib/services/connection/OptimizerConnectionService.ts:59-112]()
 
-**Sources:** [src/lib/services/connection/OptimizerConnectionService.ts:59-112]()
 
 ### Pagination Efficiency
 
@@ -1222,4 +1195,3 @@ addOptimizer({
 - APIs with cursor-based pagination
 - Datasets with 100-10,000 total records
 
-**Sources:** [src/client/ClientOptimizer.ts:19]()

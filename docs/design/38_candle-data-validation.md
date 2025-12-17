@@ -39,7 +39,6 @@ interface ICandleData {
 | `close` | `number` | Last trade price in period | VWAP calculation, trend analysis |
 | `volume` | `number` | Total volume traded | VWAP weighting, liquidity assessment |
 
-**Sources:** [types.d.ts:87-100]()
 
 ---
 
@@ -74,7 +73,6 @@ graph TD
     ExecCtx -.->|"provides when (Date)"| Exchange
 ```
 
-**Sources:** [types.d.ts:11-18](), [types.d.ts:159-205]()
 
 ---
 
@@ -108,7 +106,6 @@ Wait: 5000ms
 Attempt 3: Success → return candles
 ```
 
-**Sources:** [src/config/params.ts:66-74]()
 
 ---
 
@@ -162,7 +159,6 @@ graph TD
     Discard --> FilterLoop
 ```
 
-**Sources:** [src/config/params.ts:76-104]()
 
 ### Threshold Calculation
 
@@ -210,7 +206,6 @@ The factor of 1000 provides optimal balance:
 - **Preserves flash crashes**: Even -90% crash ($5,000) passes threshold
 - **Works across assets**: Scales with price (BTC $50k vs ETH $3k)
 
-**Sources:** [src/config/params.ts:76-89]()
 
 ---
 
@@ -262,7 +257,6 @@ With < 5 candles → Use Average (faster, no statistical advantage)
 With ≥ 5 candles → Use Median (outlier protection)
 ```
 
-**Sources:** [src/config/params.ts:91-104]()
 
 ---
 
@@ -333,7 +327,6 @@ graph TB
     LogWarn --> ValidData
 ```
 
-**Sources:** [types.d.ts:159-205](), [src/config/params.ts:66-104]()
 
 ---
 
@@ -372,7 +365,6 @@ setConfig({
 });
 ```
 
-**Sources:** [src/config/params.ts:1-114]()
 
 ---
 
@@ -422,7 +414,6 @@ addExchange({
 });
 ```
 
-**Sources:** [types.d.ts:119-155]()
 
 ---
 
@@ -459,7 +450,6 @@ listenError((error) => {
 });
 ```
 
-**Sources:** [src/config/emitters.ts:34-44](), [src/function/event.ts:223-250]()
 
 ---
 

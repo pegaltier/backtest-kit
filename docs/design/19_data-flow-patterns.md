@@ -42,7 +42,6 @@ graph LR
     WalkVal -->|"store in ToolRegistry"| WalkSchema["WalkerSchemaService"]
 ```
 
-**Sources:** [src/lib/services/global/StrategyGlobalService.ts](), [src/lib/services/schema/StrategySchemaService.ts](), [src/lib/services/validation/StrategyValidationService.ts]()
 
 ### Data Transformation: User Objects to Schema Entries
 
@@ -54,7 +53,6 @@ graph LR
 | `IRiskSchema` | `RiskValidationService` checks for duplicate names | Stored in `ToolRegistry<IRiskSchema>` | `riskName: string` |
 | `IWalkerSchema` | `WalkerValidationService` validates strategy list | Stored in `ToolRegistry<IWalkerSchema>` | `walkerName: string` |
 
-**Sources:** [src/interfaces/Strategy.interface.ts:132-151](), [src/interfaces/Exchange.interface.ts](), [src/interfaces/Frame.interface.ts](), [src/interfaces/Risk.interface.ts](), [src/interfaces/Walker.interface.ts]()
 
 ---
 
@@ -89,7 +87,6 @@ graph TB
     ExecCtx --> StratCore["StrategyCoreService.tick()"]
 ```
 
-**Sources:** [src/lib/services/command/BacktestCommandService.ts](), [src/lib/services/logic/public/BacktestLogicPublicService.ts](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:62-78](), [src/lib/services/context/MethodContextService.ts](), [src/lib/services/context/ExecutionContextService.ts]()
 
 ### Context Propagation Pattern
 
@@ -105,7 +102,6 @@ graph LR
     Services --> ExchCore["ExchangeCoreService<br/>reads contexts"]
 ```
 
-**Sources:** [src/lib/services/context/MethodContextService.ts](), [src/lib/services/context/ExecutionContextService.ts](), [src/lib/services/core/StrategyCoreService.ts]()
 
 ---
 
@@ -157,7 +153,6 @@ graph TB
     RiskCheck -->|"fail"| ReturnNull
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:332-476](), [src/lib/services/connection/StrategyConnectionService.ts:207-228](), [src/lib/services/core/StrategyCoreService.ts]()
 
 ### Signal Validation Pipeline
 
@@ -173,7 +168,6 @@ The `VALIDATE_SIGNAL_FN` performs comprehensive validation before any signal act
 | 6. SL Max Distance | SL not too far (risk limit) | `CC_MAX_STOPLOSS_DISTANCE_PERCENT` | Risk too high |
 | 7. Signal Lifetime | Duration within limits | `CC_MAX_SIGNAL_LIFETIME_MINUTES` | Signal too long (blocks risk) |
 
-**Sources:** [src/client/ClientStrategy.ts:45-330](), [src/config/params.ts]()
 
 ---
 
@@ -226,7 +220,6 @@ graph TB
     Sleep --> LiveLoop
 ```
 
-**Sources:** [src/lib/services/logic/private/LiveLogicPrivateService.ts:63-175](), [src/client/ClientStrategy.ts:901-1023](), [src/helpers/toProfitLossDto.ts]()
 
 ### Backtest Mode Fast Processing Flow
 
@@ -258,7 +251,6 @@ graph TB
     TimeExpired --> ReturnClosed
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:1190-1484](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:304-431]()
 
 ---
 
@@ -294,7 +286,6 @@ graph LR
     HeatMd --> Storage
 ```
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:217-227](), [src/config/emitters.ts](), [src/lib/services/markdown/BacktestMarkdownService.ts](), [src/lib/services/markdown/LiveMarkdownService.ts]()
 
 ### Event Filtering and Storage Pattern
 
@@ -309,7 +300,6 @@ Each markdown service subscribes to specific events and maintains a bounded even
 | `PartialMarkdownService` | Partial profit/loss events | 250 events | `${symbol}:${strategyName}` |
 | `RiskMarkdownService` | Risk rejection events | 250 events | `${symbol}:${strategyName}` |
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts](), [src/lib/services/markdown/LiveMarkdownService.ts](), [src/classes/ReportStorage.ts]()
 
 ---
 
@@ -344,7 +334,6 @@ graph TB
     CalcYearly --> ReturnStats["Return BacktestStatisticsModel"]
 ```
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts](), [src/model/BacktestStatisticsModel.ts](), [src/helpers/safeDiv.ts]()
 
 ### Report Formatting and Dump
 
@@ -363,7 +352,6 @@ graph LR
     GetReport --> WritePath["./dump/backtest/<br/>write {symbol}_{strategyName}.md"]
 ```
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts](), [src/classes/BacktestCommandService.ts]()
 
 ---
 
@@ -386,7 +374,6 @@ graph LR
     FileRead --> Restore["Restore _pendingSignal<br/>call onActive callback"]
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:491-552](), [src/classes/Persist.ts]()
 
 ### Memoization and Caching Pattern
 
@@ -403,7 +390,6 @@ graph TB
     CheckCache -->|"no"| CreateClient
 ```
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:120-151]()
 
 ---
 
@@ -458,4 +444,3 @@ graph TB
     E3 --> F1
 ```
 
-**Sources:** All service files in [src/lib/services/](), [src/client/ClientStrategy.ts](), [src/classes/]()

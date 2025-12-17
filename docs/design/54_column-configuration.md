@@ -83,7 +83,6 @@ classDiagram
     ColumnModel~T~ <|.. RiskColumns
 ```
 
-**Sources:** [src/model/Column.model.ts:1-39]()
 
 ### Property Descriptions
 
@@ -108,7 +107,6 @@ export type Columns = ColumnModel<IStrategyTickResultClosed>;
 
 Formats closed signal data with PNL information, close reason, timestamps, and trade details.
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:17-48]()
 
 ### Live Trading Columns
 
@@ -118,7 +116,6 @@ export type Columns = ColumnModel<TickEvent>;
 
 Formats live trading events including idle, opened, active, and closed states with real-time pricing.
 
-**Sources:** [src/lib/services/markdown/LiveMarkdownService.ts:19-50]()
 
 ### Walker Columns
 
@@ -132,7 +129,6 @@ export type PnlColumn = ColumnModel<SignalData>;
 - `StrategyColumn`: Formats strategy comparison metrics (win rate, Sharpe ratio, trade counts)
 - `PnlColumn`: Formats individual signal PNL data across all strategies
 
-**Sources:** [src/lib/services/markdown/WalkerMarkdownService.ts:24-88]()
 
 ### Heatmap Columns
 
@@ -142,7 +138,6 @@ export type Columns = ColumnModel<IHeatmapRow>;
 
 Formats per-symbol portfolio statistics (total PNL, Sharpe ratio, max drawdown, trade counts).
 
-**Sources:** [src/lib/services/markdown/HeatMarkdownService.ts:18-49]()
 
 ### Performance Columns
 
@@ -152,7 +147,6 @@ export type Columns = ColumnModel<MetricStats>;
 
 Formats performance metric statistics (average duration, min/max, percentiles, wait times).
 
-**Sources:** [src/lib/services/markdown/PerformanceMarkdownService.ts:16-47]()
 
 ### Schedule Columns
 
@@ -162,7 +156,6 @@ export type Columns = ColumnModel<ScheduledEvent>;
 
 Formats scheduled and cancelled signal events with timing and activation data.
 
-**Sources:** [src/lib/services/markdown/ScheduleMarkdownService.ts:19-50]()
 
 ### Partial Columns
 
@@ -172,7 +165,6 @@ export type Columns = ColumnModel<PartialEvent>;
 
 Formats partial profit/loss exit events with level information and symbol details.
 
-**Sources:** [src/lib/services/markdown/PartialMarkdownService.ts:20-51]()
 
 ### Risk Columns
 
@@ -182,7 +174,6 @@ export type Columns = ColumnModel<RiskEvent>;
 
 Formats risk rejection events with rejection reasons and context.
 
-**Sources:** [src/lib/services/markdown/RiskMarkdownService.ts:12-43]()
 
 ---
 
@@ -232,7 +223,6 @@ graph TB
     risk --> RiskMarkdownService
 ```
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:15](), [src/lib/services/markdown/LiveMarkdownService.ts:17](), [src/lib/services/markdown/WalkerMarkdownService.ts:22](), [src/lib/services/markdown/HeatMarkdownService.ts:16](), [src/lib/services/markdown/PerformanceMarkdownService.ts:14](), [src/lib/services/markdown/ScheduleMarkdownService.ts:17](), [src/lib/services/markdown/PartialMarkdownService.ts:18](), [src/lib/services/markdown/RiskMarkdownService.ts:10]()
 
 ---
 
@@ -268,7 +258,6 @@ const markdown = await Backtest.getReport("BTCUSDT", "my-strategy", customColumn
 await Backtest.dump("BTCUSDT", "my-strategy", "./reports", customColumns);
 ```
 
-**Sources:** [test/spec/columns.test.mjs:69-95](), [test/spec/columns.test.mjs:168-190]()
 
 ### Live.getReport / Live.dump
 
@@ -291,7 +280,6 @@ const liveColumns = [
 const markdown = await Live.getReport("BTCUSDT", "my-strategy", liveColumns);
 ```
 
-**Sources:** [src/classes/Live.ts:306-312](), [src/classes/Live.ts:531-542]()
 
 ### Walker.getReport / Walker.dump
 
@@ -324,7 +312,6 @@ const markdown = await Walker.getReport(
 );
 ```
 
-**Sources:** [src/classes/Walker.ts:273-282]()
 
 ### Other Reporting Classes
 
@@ -347,7 +334,6 @@ await Partial.dump("BTCUSDT", "my-strategy", "./reports", customColumns);
 await Risk.dump("BTCUSDT", "my-strategy", "./reports", customColumns);
 ```
 
-**Sources:** [src/classes/Performance.ts:108-118](), [src/classes/Heat.ts:97-108](), [src/classes/Schedule.ts:79-94](), [src/classes/Partial.ts:121-133](), [src/classes/Risk.ts:168-180]()
 
 ---
 
@@ -389,7 +375,6 @@ sequenceDiagram
     Storage-->>Service: markdown string
 ```
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:191-206]()
 
 ### Example: Conditional Visibility
 
@@ -427,7 +412,6 @@ for (const col of columns) {
 }
 ```
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:191-196](), [src/lib/services/markdown/LiveMarkdownService.ts:329-334]()
 
 ---
 
@@ -458,7 +442,6 @@ Most formatting is synchronous:
 }
 ```
 
-**Sources:** [test/spec/columns.test.mjs:78-82]()
 
 ### Asynchronous Formatting
 
@@ -493,7 +476,6 @@ This pattern ensures:
 2. Row-level parallelism (all rows formatted simultaneously)
 3. Column-level parallelism (all columns in a row formatted simultaneously)
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:199-203](), [src/lib/services/markdown/LiveMarkdownService.ts:337-341]()
 
 ---
 
@@ -537,7 +519,6 @@ graph TB
     Table3 --> Output
 ```
 
-**Sources:** [src/classes/Backtest.ts:299-305](), [src/classes/Live.ts:306-312](), [src/classes/Walker.ts:273-282]()
 
 ### Default Column Resolution
 
@@ -569,7 +550,6 @@ public getReport = async (
 
 Note: Some methods use default parameters, others pass `undefined` to let the service apply defaults.
 
-**Sources:** [src/classes/Backtest.ts:299-305](), [src/classes/Live.ts:306-312]()
 
 ### Service-Level Column Processing
 
@@ -613,7 +593,6 @@ public async getReport(
 }
 ```
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:177-224](), [src/lib/services/markdown/LiveMarkdownService.ts:315-362]()
 
 ---
 
@@ -699,7 +678,6 @@ console.log(markdown);
 // ...
 ```
 
-**Sources:** [test/spec/columns.test.mjs:15-112]()
 
 ---
 
@@ -715,4 +693,3 @@ console.log(markdown);
 | **Public API** | All reporting methods accept optional `columns` parameter |
 | **Processing Flow** | Filter visible → Format cells → Build markdown table |
 
-**Sources:** [src/model/Column.model.ts:1-39](), [src/lib/services/markdown/BacktestMarkdownService.ts:17-48](), [src/lib/services/markdown/LiveMarkdownService.ts:19-50](), [src/lib/services/markdown/WalkerMarkdownService.ts:24-88](), [src/lib/services/markdown/HeatMarkdownService.ts:18-49](), [src/lib/services/markdown/PerformanceMarkdownService.ts:16-47](), [src/lib/services/markdown/ScheduleMarkdownService.ts:19-50](), [src/lib/services/markdown/PartialMarkdownService.ts:20-51](), [src/lib/services/markdown/RiskMarkdownService.ts:12-43]()

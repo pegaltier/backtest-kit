@@ -37,7 +37,6 @@ interface ISignalDto {
 }
 ```
 
-**Sources:** [types.d.ts:649-665](), [src/interfaces/Strategy.interface.ts:24-39]()
 
 ### ISignalRow Structure
 
@@ -60,7 +59,6 @@ interface ISignalRow extends ISignalDto {
 - `scheduledAt`: Always set when signal is created
 - `pendingAt`: Set to `scheduledAt` initially, updated to actual activation time when scheduled signal activates
 
-**Sources:** [types.d.ts:670-687](), [src/interfaces/Strategy.interface.ts:45-62]()
 
 ---
 
@@ -103,7 +101,6 @@ stateDiagram-v2
     Rejected --> Idle
 ```
 
-**Sources:** [types.d.ts:301-308](), [src/client/ClientStrategy.ts:45-476](), High-level Diagram 3
 
 ### State Descriptions
 
@@ -118,7 +115,6 @@ stateDiagram-v2
 
 **Critical Constraint:** Only ONE active signal per symbol at any time. New signals wait until current signal closes.
 
-**Sources:** [types.d.ts:768-883](), [src/client/ClientStrategy.ts:554-1500]()
 
 ---
 
@@ -152,7 +148,6 @@ graph TB
     Pass --> CreateSignal["Create ISignalRow"]
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:45-330](), [src/config/params.ts:1-110]()
 
 ### Stage Details
 
@@ -170,7 +165,6 @@ if (signal.position !== "long" && signal.position !== "short") {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:48-69]()
 
 #### Stage 2: Positive Price Check
 
@@ -182,7 +176,6 @@ if (!isFinite(currentPrice) || currentPrice <= 0) {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:72-109]()
 
 #### Stage 3: TP/SL Logic Validation
 
@@ -208,7 +201,6 @@ if (signal.position === "long") {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:111-250]()
 
 #### Stage 4: Minimum TP Distance
 
@@ -230,7 +222,6 @@ if (tpDistancePercent < GLOBAL_CONFIG.CC_MIN_TAKEPROFIT_DISTANCE_PERCENT) {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:163-173](), [src/config/params.ts:27-36]()
 
 #### Stage 5: SL Range Validation
 
@@ -252,7 +243,6 @@ if (slDistancePercent > GLOBAL_CONFIG.CC_MAX_STOPLOSS_DISTANCE_PERCENT) {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:176-199](), [src/config/params.ts:38-49]()
 
 #### Stage 6: Lifetime Limit
 
@@ -268,7 +258,6 @@ if (signal.minuteEstimatedTime > GLOBAL_CONFIG.CC_MAX_SIGNAL_LIFETIME_MINUTES) {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:306-315](), [src/config/params.ts:51-55]()
 
 #### Stage 7: Risk Validation
 
@@ -288,7 +277,6 @@ if (!riskPassed) {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:374-386](), [types.d.ts:339-397]()
 
 ---
 
@@ -336,7 +324,6 @@ if (signal.position === "short" && currentPrice >= signal.priceOpen) {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:389-461](), [src/lib/services/connection/StrategyConnectionService.ts:120-151]()
 
 ### Scheduled Signal Monitoring
 
@@ -386,7 +373,6 @@ else if (currentPrice >= scheduled.priceOpen) {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:610-644](), [src/client/ClientStrategy.ts:554-608]()
 
 ### Active Signal Monitoring
 
@@ -428,7 +414,6 @@ During active monitoring, the framework tracks milestones:
 
 Each level emitted once per signal via `ClientPartial` deduplication.
 
-**Sources:** [src/client/ClientStrategy.ts:813-1130](), [types.d.ts:548-638]()
 
 ---
 
@@ -445,7 +430,6 @@ The framework uses two separate persistence adapters:
 
 **Critical:** Scheduled signals NOT persisted to `PersistSignalAdapter` until activation.
 
-**Sources:** [src/classes/Persist.ts](), [src/client/ClientStrategy.ts:491-552]()
 
 ### Crash Recovery Flow
 
@@ -516,7 +500,6 @@ All persistence operations are atomic (write-delete patterns):
 4. **Scheduled Activates:** Delete from `PersistScheduleAdapter` → Write to `PersistSignalAdapter`
 5. **Scheduled Cancels:** Delete from `PersistScheduleAdapter`
 
-**Sources:** [src/client/ClientStrategy.ts:491-552](), [src/classes/Persist.ts]()
 
 ---
 
@@ -546,7 +529,6 @@ All persistence operations are atomic (write-delete patterns):
 // 7. Monitor for TP/SL/time_expired
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:445-461](), [test/e2e/sequence.test.mjs:29-150]()
 
 ### Example 2: Scheduled SHORT Signal
 
@@ -578,7 +560,6 @@ All persistence operations are atomic (write-delete patterns):
 //    - Emit "opened" event
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:389-442](), [test/e2e/scheduled.test.mjs]()
 
 ### Example 3: Scheduled Signal Cancellation
 
@@ -606,7 +587,6 @@ All persistence operations are atomic (write-delete patterns):
 // → CANCELLED (exceeded wait time)
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:554-608](), [test/e2e/edge.test.mjs:24-100]()
 
 ### Example 4: Validation Failure - Micro-Profit
 
@@ -627,7 +607,6 @@ All persistence operations are atomic (write-delete patterns):
 // Signal rejected, no position opened
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:163-173](), [test/e2e/sanitize.test.mjs:27-150]()
 
 ---
 
@@ -689,4 +668,3 @@ async tick() {
 }
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:813-1130](), [test/README.md:19-23]()

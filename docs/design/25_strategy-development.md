@@ -54,7 +54,6 @@ graph TD
     style GetSignal fill:#f9f9f9
 ```
 
-**Sources:** [types.d.ts:726-751](), [src/interfaces/Strategy.interface.ts:128-151](), [src/client/ClientStrategy.ts:332-476]()
 
 ## Strategy Anatomy: Core Components
 
@@ -82,7 +81,6 @@ graph LR
     style Schema fill:#f9f9f9
 ```
 
-**Sources:** [types.d.ts:726-751](), [src/interfaces/Strategy.interface.ts:128-151]()
 
 ### Signal Data Transfer Object (ISignalDto)
 
@@ -98,7 +96,6 @@ The `getSignal` function returns an `ISignalDto` with the following structure:
 | `minuteEstimatedTime` | number | Required | Maximum signal lifetime in minutes |
 | `note` | string | Optional | Human-readable signal rationale |
 
-**Sources:** [types.d.ts:647-665](), [src/interfaces/Strategy.interface.ts:20-39]()
 
 ## Complete Working Example
 
@@ -169,7 +166,6 @@ addStrategy({
 });
 ```
 
-**Sources:** [README.md:110-143](), [types.d.ts:726-751]()
 
 ## Strategy Registration and Execution Flow
 
@@ -211,7 +207,6 @@ graph TD
 3. **Memoization** - [src/lib/services/connection/StrategyConnectionService.ts:120-151]() creates cached `ClientStrategy` instances per symbol-strategy pair
 4. **Execution** - [src/client/ClientStrategy.ts]() implements the `IStrategy` interface with `tick()` and `backtest()` methods
 
-**Sources:** [src/function/add.ts](), [src/lib/services/connection/StrategyConnectionService.ts:89-151]()
 
 ### Code Entity Mapping: Strategy Execution Path
 
@@ -271,7 +266,6 @@ graph TB
 | `VALIDATE_SIGNAL_FN` | src/client/ClientStrategy.ts:45-330 | Multi-stage signal validation (TP/SL, prices, lifetime) |
 | `IStrategySchema.getSignal` | User code | Developer-implemented signal generation logic |
 
-**Sources:** [src/function/add.ts](), [src/client/ClientStrategy.ts:1-1400](), [src/lib/services/connection/StrategyConnectionService.ts:89-151]()
 
 ## Strategy Execution: tick() vs backtest()
 
@@ -309,7 +303,6 @@ graph TD
 
 **Used by:** Live.run(), Backtest.run() (minute-by-minute iteration)
 
-**Sources:** [src/client/ClientStrategy.ts:1001-1253]()
 
 ### backtest() Method - Fast Historical Processing
 
@@ -340,7 +333,6 @@ graph TD
 
 **Performance:** Skips timeframes during active signal monitoring, processes only until signal closes
 
-**Sources:** [src/client/ClientStrategy.ts:1255-1400](), [src/client/ClientStrategy.ts:478-489]()
 
 ## Signal Validation: VALIDATE_SIGNAL_FN
 
@@ -363,7 +355,6 @@ The framework performs comprehensive validation on all signals before they activ
 - `CC_MIN_TAKEPROFIT_DISTANCE_PERCENT`: 0.2% (covers 0.1% fee + 0.1% slippage)
 - `CC_MAX_SIGNAL_LIFETIME_MINUTES`: 10080 (7 days)
 
-**Sources:** [src/client/ClientStrategy.ts:45-330](), [src/config/params.ts]()
 
 ### Validation Error Examples
 
@@ -399,7 +390,6 @@ The framework performs comprehensive validation on all signals before they activ
 // Error: "minuteEstimatedTime too large (20160 minutes = 14.0 days). Maximum: 10080 minutes (7 days)"
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:163-199]()
 
 ## Scheduled Signals: Delayed Entry
 
@@ -447,7 +437,6 @@ stateDiagram-v2
 | Risk check timing | At creation | At activation (after priceOpen reached) |
 | Timeout | `minuteEstimatedTime` starts at open | `CC_SCHEDULE_AWAIT_MINUTES` before activation |
 
-**Sources:** [src/client/ClientStrategy.ts:389-443](), [src/client/ClientStrategy.ts:554-608]()
 
 ### Scheduled Signal Example
 
@@ -481,7 +470,6 @@ addStrategy({
 
 **Monitoring Logic:** [src/client/ClientStrategy.ts:610-644]() checks SL **before** priceOpen to prevent "activate-and-immediately-cancel" scenarios.
 
-**Sources:** [types.d.ts:693-697](), [src/client/ClientStrategy.ts:681-774]()
 
 ## Best Practices
 
@@ -508,7 +496,6 @@ getSignal: async (symbol: string, when: Date) => {
 }
 ```
 
-**Sources:** [README.md:186-199](), [src/lib/services/context/ExecutionContextService.ts]()
 
 ### 2. Choose Appropriate Interval Throttling
 
@@ -521,7 +508,6 @@ The `interval` parameter determines minimum time between `getSignal()` calls. Ch
 | News/sentiment analysis | 5m - 30m | API rate limits, data freshness |
 | High-frequency patterns | 1m | Need rapid signal generation |
 
-**Sources:** [types.d.ts:642-646](), [src/client/ClientStrategy.ts:340-353]()
 
 ### 3. Handle Insufficient Data Gracefully
 
@@ -539,7 +525,6 @@ getSignal: async (symbol: string, when: Date) => {
 }
 ```
 
-**Sources:** [demo/backtest/src/strategy.mjs](), [README.md:123-127]()
 
 ### 4. Use Lifecycle Callbacks for Monitoring
 
@@ -580,7 +565,6 @@ addStrategy({
 
 Available callbacks: `onTick`, `onOpen`, `onActive`, `onIdle`, `onClose`, `onSchedule`, `onCancel`, `onPartialProfit`, `onPartialLoss`, `onWrite`
 
-**Sources:** [types.d.ts:698-726](), [src/interfaces/Strategy.interface.ts:96-126]()
 
 ### 5. Integrate Risk Management
 
@@ -608,7 +592,6 @@ addStrategy({
 });
 ```
 
-**Sources:** [types.d.ts:743-750](), [src/lib/services/connection/StrategyConnectionService.ts:33-67]()
 
 ### 6. Test with Walker Mode
 
@@ -633,7 +616,6 @@ await Walker.run('BTCUSDT', { walkerName: 'ma-comparison' });
 // Returns ranked results by Sharpe ratio
 ```
 
-**Sources:** [README.md](), [Walker section in page 5.3](./20_execution-modes.md)
 
 ---
 

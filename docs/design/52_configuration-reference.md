@@ -45,7 +45,6 @@ graph TD
     TimeoutServices --> StrategyCore["StrategyCoreService"]
 ```
 
-Sources: [src/config/params.ts:1-122](), [README.md:46-63]()
 
 ---
 
@@ -71,7 +70,6 @@ setConfig({
 }, true);  // Reset to defaults first, then apply overrides
 ```
 
-Sources: [README.md:46-63](), [test/config/setup.mjs:89-102]()
 
 ---
 
@@ -96,7 +94,6 @@ Total:  -0.4% cost per round trip
 
 To achieve profitable trades, `priceTakeProfit` must provide at least 0.5% distance from `priceOpen` to cover these costs plus minimum profit margin.
 
-Sources: [src/config/params.ts:13-24]()
 
 ---
 
@@ -157,7 +154,6 @@ getSignal: async () => ({
 // Reason: TP distance (0.024%) < CC_MIN_TAKEPROFIT_DISTANCE_PERCENT (0.5%)
 ```
 
-Sources: [src/config/params.ts:25-56](), [test/e2e/sanitize.test.mjs:27-122]()
 
 ---
 
@@ -210,7 +206,6 @@ graph LR
     Attempt3 -->|Fail| FinalFail
 ```
 
-Sources: [src/config/params.ts:66-104]()
 
 ---
 
@@ -239,7 +234,6 @@ Where:
 2. **Signal Closure**: TP/SL prices are compared against VWAP (not raw candle close)
 3. **PNL Calculation**: Entry and exit prices use VWAP for realistic execution simulation
 
-Sources: [src/config/params.ts:6-11]()
 
 ---
 
@@ -273,7 +267,6 @@ stateDiagram-v2
     end note
 ```
 
-Sources: [src/config/params.ts:3-6](), [src/config/params.ts:57-64]()
 
 ---
 
@@ -305,7 +298,6 @@ When `CC_REPORT_SHOW_SIGNAL_NOTE = false` (default):
 | ETHUSDT  | short    | 3000    | 2800    | 3200    | opened |
 ```
 
-Sources: [src/config/params.ts:106-114]()
 
 ---
 
@@ -354,7 +346,6 @@ graph TD
     DataFetch -->|Max wait time| TotalRetryTime["Total: 3 attempts × 5 sec = 15 sec<br/>before final failure"]
 ```
 
-Sources: [src/config/params.ts:25-56]()
 
 ---
 
@@ -383,7 +374,6 @@ export const DEFAULT_CONFIG = Object.freeze({
 
 This object is frozen to prevent accidental mutations. Use `setConfig()` to apply changes.
 
-Sources: [src/config/params.ts:116-122]()
 
 ---
 
@@ -404,7 +394,6 @@ setConfig({
 
 This allows testing extreme edge cases without validation interference.
 
-Sources: [test/config/setup.mjs:89-102]()
 
 ---
 
@@ -450,7 +439,6 @@ setConfig({
 });
 ```
 
-Sources: [README.md:56-63]()
 
 ---
 
@@ -476,5 +464,3 @@ export type GlobalConfig = {
 ```
 
 All configuration parameters are strongly typed. TypeScript will enforce correct parameter names and types when calling `setConfig()`.
-
-Sources: [src/config/params.ts:118-122]()

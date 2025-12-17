@@ -19,7 +19,6 @@ Backtest Kit requires specific versions of Node.js and TypeScript to function co
 | TypeScript | 5.0.0 | 5.9.0+ | Peer dependency for type safety |
 | npm | 7.0.0+ | Latest | Package manager |
 
-**Sources:** [package.json:72-73](), [demo/backtest/package-lock.json:49-51]()
 
 ---
 
@@ -40,7 +39,6 @@ This installs the core framework with its runtime dependencies:
 - `functools-kit` (v1.0.94): Utility functions including `queued` wrapper for event handlers
 - `get-moment-stamp` (v1.1.1): Timestamp utilities
 
-**Sources:** [package.json:74-79](), [README.md:40-43]()
 
 ### Dependency Tree
 
@@ -81,7 +79,6 @@ graph TB
 - **functools-kit**: Provides the `queued` wrapper that ensures sequential execution of async callbacks in event listeners
 - **get-moment-stamp**: Handles timestamp conversions between Date objects and numeric millisecond stamps
 
-**Sources:** [package.json:74-79](), [package-lock.json:650-680]()
 
 ---
 
@@ -112,7 +109,6 @@ npx tsc --version
 
 Expected output: `Version 5.0.0` or higher.
 
-**Sources:** [package.json:71-73](), [demo/backtest/package-lock.json:226-238]()
 
 ---
 
@@ -134,7 +130,6 @@ npm install --save-dev dotenv-cli
 | `uuid` | 13.0.0+ | Signal ID generation | Unique identifiers for signals |
 | `dotenv-cli` | 11.0.0+ | Environment variable management | API keys, configuration |
 
-**Sources:** [README.md:42](), [demo/backtest/package.json:8-17](), [demo/optimization/package.json:8-17]()
 
 ### Package Installation Flow
 
@@ -193,7 +188,6 @@ graph TD
 6. Create project structure and TypeScript configuration
 7. Import framework functions and begin development
 
-**Sources:** [README.md:40-43](), [demo/backtest/package.json:1-18]()
 
 ---
 
@@ -234,7 +228,6 @@ Create a `tsconfig.json` file in your project root:
 
 The framework's [types.d.ts]() contains over 3000 lines of type definitions. Setting `skipLibCheck: true` reduces compilation time without sacrificing type safety for your code.
 
-**Sources:** [package.json:51-52](), [README.md:46-47]()
 
 ---
 
@@ -291,7 +284,6 @@ setConfig({
 // addStrategy({ ... });
 ```
 
-**Sources:** [README.md:46-63](), [demo/backtest/package.json:4-6]()
 
 ### Module Type Configuration
 
@@ -320,7 +312,6 @@ npm install --save-dev ts-node
 node --loader ts-node/esm src/index.ts
 ```
 
-**Sources:** [demo/backtest/package.json:4-6](), [demo/optimization/package.json:4-6]()
 
 ---
 
@@ -399,7 +390,6 @@ The framework exports the following categories from [src/index.ts]():
 - `getCandles(symbol, interval, limit)`: Fetch historical data with temporal context
 - `dumpSignal()`: Persist signal data for debugging
 
-**Sources:** [README.md:66-69](), [README.md:147-171](), [src/index.ts:1-50]()
 
 ---
 
@@ -450,7 +440,6 @@ Add to `package.json` scripts:
 }
 ```
 
-**Sources:** [demo/backtest/package.json:6](), [demo/optimization/package.json:6]()
 
 ---
 
@@ -488,7 +477,6 @@ npm install --save-dev typescript
 - **Windows:** Install Visual Studio Build Tools
 - **macOS/Linux:** Ensure `python3` and `make` are available
 
-**Sources:** [package.json:71-73](), [demo/backtest/package-lock.json:40-51]()
 
 ---
 
@@ -503,4 +491,3 @@ After completing installation and setup:
 
 The framework is now installed and ready for development. The next page demonstrates creating a complete backtest with strategy registration, exchange configuration, and execution.
 
-**Sources:** [README.md:36-159](), [package.json:1-80]()

@@ -34,7 +34,6 @@ The system supports multiple training ranges, custom message formatters, and tem
 | `OptimizerGlobalService` | Public entry point with validation |
 | `Optimizer` class | Static API exposing `getData()`, `getCode()`, `dump()` |
 
-Sources: [src/interfaces/Optimizer.interface.ts:1-490](), [src/client/ClientOptimizer.ts:1-448](), [src/lib/services/template/OptimizerTemplateService.ts:1-716](), [src/classes/Optimizer.ts:1-135]()
 
 ---
 
@@ -108,7 +107,6 @@ graph TB
 - **Validation**: `OptimizerValidationService` maintains a `Map<OptimizerName, IOptimizerSchema>` for existence checks ([src/lib/services/validation/OptimizerValidationService.ts:15-34]())
 - **Schema Storage**: `OptimizerSchemaService` uses `ToolRegistry` for immutable schema management ([src/lib/services/schema/OptimizerSchemaService.ts:16-32]())
 
-Sources: [src/lib/services/connection/OptimizerConnectionService.ts:1-175](), [src/lib/services/global/OptimizerGlobalService.ts:1-105](), [src/lib/services/validation/OptimizerValidationService.ts:1-72](), [src/lib/services/schema/OptimizerSchemaService.ts:1-97]()
 
 ---
 
@@ -160,7 +158,6 @@ const allData = await resolveDocuments(distinct);
 
 **Deduplication Key**: All data must implement `IOptimizerData` with unique `id: string | number` ([src/interfaces/Optimizer.interface.ts:38-44]()).
 
-Sources: [src/interfaces/Optimizer.interface.ts:46-186](), [src/client/ClientOptimizer.ts:70-88]()
 
 ---
 
@@ -222,7 +219,6 @@ const DEFAULT_ASSISTANT_FN = async (symbol, data, name, self) => {
 - User: `"Прочитай данные и скажи ОК\n\n" + JSON.stringify(data)`
 - Assistant: `"ОК"`
 
-Sources: [src/client/ClientOptimizer.ts:99-215](), [src/lib/services/template/OptimizerTemplateService.ts:77-110]()
 
 ---
 
@@ -289,7 +285,6 @@ addStrategy({
 });
 ```
 
-Sources: [src/interfaces/Optimizer.interface.ts:239-374](), [src/lib/services/template/OptimizerTemplateService.ts:27-716]()
 
 ---
 
@@ -345,7 +340,6 @@ The output `.mjs` file contains:
 - Strategies: `{prefix}_strategy-1`, `{prefix}_strategy-2`, ...
 - Walker: `{prefix}_walker`
 
-Sources: [src/client/ClientOptimizer.ts:225-350]()
 
 ---
 
@@ -423,7 +417,6 @@ await Optimizer.dump("BTCUSDT", {
 // Creates: ./output/my-optimizer_BTCUSDT.mjs
 ```
 
-Sources: [src/classes/Optimizer.ts:1-135](), [src/function/event.ts:514-557]()
 
 ---
 
@@ -459,7 +452,6 @@ Sources: [src/classes/Optimizer.ts:1-135](), [src/function/event.ts:514-557]()
 | `onDump` | `(symbol, filepath)` | After file written to disk |
 | `onSourceData` | `(symbol, sourceName, data[], startDate, endDate)` | After each source fetch |
 
-Sources: [src/interfaces/Optimizer.interface.ts:377-433]()
 
 ---
 
@@ -483,7 +475,6 @@ interface ProgressOptimizerContract {
 
 Events are emitted via `progressOptimizerEmitter` ([src/config/emitters.ts:80]()) and accessible through `listenOptimizerProgress()` ([src/function/event.ts:514-557]()).
 
-Sources: [src/client/ClientOptimizer.ts:104-208](), [src/lib/services/connection/OptimizerConnectionService.ts:20-21]()
 
 ---
 
@@ -526,7 +517,6 @@ public getOptimizer = memoize(
 - Template methods use custom implementation or default
 - Progress emitted via `COMMIT_PROGRESS_FN` callback
 
-Sources: [src/lib/services/connection/OptimizerConnectionService.ts:59-113]()
 
 ### OptimizerValidationService
 
@@ -553,7 +543,6 @@ public validate = memoize(
 );
 ```
 
-Sources: [src/lib/services/validation/OptimizerValidationService.ts:13-59]()
 
 ### OptimizerSchemaService
 
@@ -583,7 +572,6 @@ private validateShallow = (optimizerSchema: IOptimizerSchema) => {
 };
 ```
 
-Sources: [src/lib/services/schema/OptimizerSchemaService.ts:16-67]()
 
 ---
 
@@ -606,5 +594,3 @@ The system throws errors at multiple levels:
 **Pagination Errors**:
 - Invalid `limit` or `offset` (handled by `iterateDocuments`)
 - Duplicate IDs ignored via `distinctDocuments`
-
-Sources: [src/lib/services/schema/OptimizerSchemaService.ts:41-67](), [src/lib/services/validation/OptimizerValidationService.ts:44-59](), [src/client/ClientOptimizer.ts:360-384]()

@@ -53,7 +53,6 @@ Returns `Promise<ICandleData[]>` where `ICandleData` contains:
 - ✅ Multi-timeframe: All intervals automatically synchronized to same point in time
 - ✅ Same code: Identical behavior between backtest and live trading
 
-**Sources**: [README.md:187-199](), [src/interfaces/Strategy.interface.ts:144]()
 
 ---
 
@@ -98,7 +97,6 @@ addStrategy({
 });
 ```
 
-**Sources**: [README.md:112-142]()
 
 ### Timeframe Relationship Diagram
 
@@ -144,7 +142,6 @@ graph TD
     ENTRY --> DECISION
 ```
 
-**Sources**: [README.md:189-198](), [src/interfaces/Strategy.interface.ts:144]()
 
 ---
 
@@ -194,7 +191,6 @@ graph TD
 
 **Key insight**: The `when` timestamp is set once at the start of each tick, then automatically available throughout the call stack. User code never needs to pass or track timestamps manually.
 
-**Sources**: [README.md:189-199](), [src/lib/services/context/ExecutionContextService.ts:1-100](), [src/client/ClientStrategy.ts:354-363]()
 
 ### Temporal Filtering in Code
 
@@ -207,7 +203,6 @@ The temporal filtering happens at the exchange service layer. When `getCandles()
 5. Framework filters: `candles.filter(c => c.timestamp <= context.when)`
 6. Returns only historical candles to user code
 
-**Sources**: [src/lib/services/context/ExecutionContextService.ts:1-50](), [src/client/ClientExchange.ts:1-200]()
 
 ---
 
@@ -248,7 +243,6 @@ getSignal: async (symbol) => {
 }
 ```
 
-**Sources**: [README.md:112-142]()
 
 ### Pattern 2: Multi-Timeframe Support/Resistance
 
@@ -310,7 +304,6 @@ getSignal: async (symbol) => {
 }
 ```
 
-**Sources**: [README.md:112-142]()
 
 ---
 
@@ -342,7 +335,6 @@ In live trading mode, `getCandles()` makes real API calls to exchanges. Be aware
 - **Candle limit parameter**: Larger limits may hit rate limits faster
 - **Multiple symbols**: Each symbol makes separate API calls
 
-**Sources**: [src/client/ClientExchange.ts:1-300](), [src/client/ClientStrategy.ts:340-353]()
 
 ---
 
@@ -408,7 +400,6 @@ graph TB
 - **ClientExchange**: Implements actual data retrieval and filtering
 - **Memoization**: Caches results by `symbol:interval:limit` key
 
-**Sources**: [src/lib/services/core/ExchangeCoreService.ts:1-100](), [src/client/ClientExchange.ts:1-300](), [src/lib/services/context/ExecutionContextService.ts:1-50]()
 
 ---
 
@@ -443,7 +434,6 @@ In this example:
 - ✅ When called, it analyzes 1-hour, 15-minute, AND 5-minute candles
 - ✅ All timeframes automatically synchronized to same execution timestamp
 
-**Sources**: [src/interfaces/Strategy.interface.ts:8-18](), [src/interfaces/Strategy.interface.ts:132-151](), [src/client/ClientStrategy.ts:34-42]()
 
 ---
 
@@ -488,7 +478,6 @@ Different timeframes may not always align perfectly. For example:
 
 The framework handles this automatically - all intervals are aligned to their natural boundaries.
 
-**Sources**: [src/client/ClientExchange.ts:100-200](), [README.md:189-199]()
 
 ---
 
@@ -539,7 +528,6 @@ for await (const event of Backtest.run('BTCUSDT', {
 }
 ```
 
-**Sources**: [README.md:145-159](), [test/e2e/other.test.mjs:1-100]()
 
 ---
 
@@ -568,5 +556,3 @@ for await (const event of Backtest.run('BTCUSDT', {
 - [ ] Results stored in variables to avoid redundant calls
 - [ ] Indicators pre-calculated outside loops
 - [ ] Rate limiting considered for live trading
-
-**Sources**: [README.md:17-29](), [README.md:178-184](), [src/client/ClientStrategy.ts:340-476]()

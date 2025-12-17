@@ -11,7 +11,6 @@ This document describes the eight statistics model interfaces that aggregate and
 
 For information about the markdown services that generate these statistics, see [Markdown Reports](./40_reporting-monitoring.md). For details on the event system that feeds data into statistics calculation, see [Event Listeners](./40_reporting-monitoring.md).
 
-**Sources:** [src/index.ts:139-146](), [types.d.ts:918-943]()
 
 ---
 
@@ -57,7 +56,6 @@ graph TB
     HeatService --> Storage
 ```
 
-**Sources:** [src/index.ts:139-146](), [src/lib/services/markdown/BacktestMarkdownService.ts:76-93](), [src/lib/services/markdown/LiveMarkdownService.ts:78-215]()
 
 ---
 
@@ -82,7 +80,6 @@ The `BacktestStatisticsModel` interface defines the canonical structure for back
 | `certaintyRatio` | `number \| null` | avgWin / \|avgLoss\| | **Higher is better** |
 | `expectedYearlyReturns` | `number \| null` | Projected annual returns based on trade frequency | **Higher is better** |
 
-**Sources:** [types.d.ts:918-943]()
 
 ### Calculation Implementation
 
@@ -134,7 +131,6 @@ graph TD
     X --> Y["Return BacktestStatisticsModel<br/>null for unsafe values"]
 ```
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:100-168]()
 
 ### Safe Math Enforcement
 
@@ -151,7 +147,6 @@ function isUnsafe(value: number | null): boolean {
 
 This ensures reports display "N/A" instead of invalid numeric values.
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:56-67](), [src/lib/services/markdown/BacktestMarkdownService.ts:159-166]()
 
 ---
 
@@ -175,7 +170,6 @@ The `TickEvent` type (defined in [src/model/LiveStatistics.model.ts]()) supports
 - `"active"`: Signal being monitored (with `percentTp`, `percentSl`)
 - `"closed"`: Signal completed (with `pnl`, `closeReason`, `duration`)
 
-**Sources:** [src/lib/services/markdown/LiveMarkdownService.ts:223-306](), [src/model/LiveStatistics.model.ts]()
 
 ### Event Replacement Strategy
 
@@ -187,7 +181,6 @@ The `LiveMarkdownService.ReportStorage` implements intelligent event deduplicati
 
 This maintains a 250-event maximum per symbol-strategy pair [LiveMarkdownService.ts:72]() while preserving event history.
 
-**Sources:** [src/lib/services/markdown/LiveMarkdownService.ts:78-215]()
 
 ---
 
@@ -234,7 +227,6 @@ classDiagram
     BacktestStatisticsModel --> "*" SignalData : extracted from signalList
 ```
 
-**Sources:** [src/model/WalkerStatistics.model.ts](), [src/lib/services/markdown/WalkerMarkdownService.ts:124-192]()
 
 ### Calculation Flow
 
@@ -259,7 +251,6 @@ type WalkerMetric =
 
 **Higher values always indicate better performance** for all metrics.
 
-**Sources:** [types.d.ts:949](), [src/lib/services/markdown/WalkerMarkdownService.ts:124-192]()
 
 ---
 
@@ -281,7 +272,6 @@ The `ScheduleStatisticsModel` tracks scheduled signal lifecycle events: creation
 | `avgWaitTime` | `number \| null` | Average minutes until cancellation |
 | `avgActivationTime` | `number \| null` | Average minutes until activation |
 
-**Sources:** [src/model/ScheduleStatistics.model.ts](), [src/lib/services/markdown/ScheduleMarkdownService.ts:156-218]()
 
 ### Event Processing Logic
 
@@ -293,7 +283,6 @@ The service [ScheduleMarkdownService.ts:351-369]() filters events intelligently:
 
 This prevents double-counting immediate signals that were never scheduled.
 
-**Sources:** [src/lib/services/markdown/ScheduleMarkdownService.ts:59-301]()
 
 ---
 
@@ -324,13 +313,11 @@ Each `PartialEvent` contains:
 | `level` | `PartialLevel` | Milestone level (10, 20, ..., 100) |
 | `backtest` | `boolean` | Execution mode |
 
-**Sources:** [src/model/PartialStatistics.model.ts](), [src/lib/services/markdown/PartialMarkdownService.ts:60-154]()
 
 ### Deduplication via Set-Based Tracking
 
 Partial events are emitted by `ClientPartial` [types.d.ts:548-639]() which uses Set-based deduplication to ensure each level emits only once per signal. The markdown service simply accumulates these deduplicated events.
 
-**Sources:** [src/lib/services/markdown/PartialMarkdownService.ts:60-154](), [types.d.ts:548-639]()
 
 ---
 
@@ -357,7 +344,6 @@ Each `RiskEvent` contains:
 | `activePositionCount` | `number` | Active positions at rejection |
 | `comment` | `string` | Rejection reason |
 
-**Sources:** [src/model/RiskStatistics.model.ts](), [src/lib/services/markdown/RiskMarkdownService.ts:52-99]()
 
 ### Aggregation Logic
 
@@ -375,7 +361,6 @@ for (const event of this._eventList) {
 
 This enables identification of which symbols or strategies trigger rejections most frequently.
 
-**Sources:** [src/lib/services/markdown/RiskMarkdownService.ts:75-99]()
 
 ---
 
@@ -424,7 +409,6 @@ classDiagram
     PerformanceStatisticsModel "1" --> "*" PerformanceContract : events
 ```
 
-**Sources:** [src/model/PerformanceStatistics.model.ts](), [src/contract/Performance.contract.ts]()
 
 ### Percentile Calculation
 
@@ -446,7 +430,6 @@ This computes P95 and P99 response times for each `PerformanceMetricType`:
 - `"live.tick"`: Live tick processing duration
 - And others defined by the system
 
-**Sources:** [src/lib/services/markdown/PerformanceMarkdownService.ts:68-72](), [src/lib/services/markdown/PerformanceMarkdownService.ts:104-184]()
 
 ---
 
@@ -488,7 +471,6 @@ classDiagram
     HeatmapStatisticsModel "1" --> "*" IHeatmapRow : symbols
 ```
 
-**Sources:** [src/model/HeatmapStatistics.model.ts](), [src/interfaces/Heatmap.interface.ts]()
 
 ### Per-Symbol Calculation
 
@@ -504,7 +486,6 @@ Each `IHeatmapRow` [HeatMarkdownService.ts:115-271]() is calculated independentl
 
 All metrics undergo safe math validation [HeatMarkdownService.ts:242-251]().
 
-**Sources:** [src/lib/services/markdown/HeatMarkdownService.ts:115-271]()
 
 ### Portfolio Aggregation
 
@@ -516,7 +497,6 @@ Portfolio-wide metrics [HeatMarkdownService.ts:278-330]() are computed as:
 
 Symbols are sorted by Sharpe Ratio descending (best performers first, nulls last).
 
-**Sources:** [src/lib/services/markdown/HeatMarkdownService.ts:278-330]()
 
 ---
 
@@ -546,7 +526,6 @@ graph LR
     I --> J["File System<br/>(./dump/*)"]
 ```
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:76-253](), [src/lib/services/markdown/LiveMarkdownService.ts:78-391]()
 
 ### Pattern 2: Memoized Storage Factory
 
@@ -561,7 +540,6 @@ private getStorage = memoize<(symbol: string, strategyName: string) => ReportSto
 
 This ensures each symbol-strategy pair has isolated storage with a maximum of 250 events [BacktestMarkdownService.ts:70](), [LiveMarkdownService.ts:72]().
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:290-293](), [src/lib/services/markdown/LiveMarkdownService.ts:431-434]()
 
 ### Pattern 3: Safe Math Validation
 
@@ -590,7 +568,6 @@ return {
 
 Markdown reports display "N/A" for null values [BacktestMarkdownService.ts:215-222]().
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:56-67](), [src/lib/services/markdown/LiveMarkdownService.ts:58-69](), [src/lib/services/markdown/HeatMarkdownService.ts:62-73]()
 
 ### Pattern 4: Singleshot Initialization
 
@@ -605,7 +582,6 @@ protected init = singleshot(async () => {
 
 This prevents duplicate subscriptions even if multiple instances are created or methods called multiple times.
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:457-460](), [src/lib/services/markdown/LiveMarkdownService.ts:605-608]()
 
 ---
 
@@ -632,4 +608,3 @@ These TypeScript interfaces are used by:
 
 All models are accessed via the public API classes documented in [Reporting Classes API](./56_api-reference.md).
 
-**Sources:** [src/index.ts:139-146](), [types.d.ts:918-943]()

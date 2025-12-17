@@ -99,7 +99,6 @@ graph TB
 | `exitEmitter` | `Subject<Error>` | Error object | Fatal error occurs |
 | `validationSubject` | `Subject<Error>` | Error object | Validation throws |
 
-**Sources:** [src/config/emitters.ts:1-119]()
 
 ### Event Listeners
 
@@ -167,7 +166,6 @@ unsubSignal();
 unsubPerf();
 ```
 
-**Sources:** [src/function/event.ts:1-641](), [src/config/emitters.ts:1-119]()
 
 ---
 
@@ -257,7 +255,6 @@ graph TB
     getReport --> dump
 ```
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:1-464](), [src/lib/services/markdown/LiveMarkdownService.ts:1-612]()
 
 ### Service Responsibilities
 
@@ -278,7 +275,6 @@ graph TB
 - Expected yearly returns based on average trade duration
 - Max 250 signals per symbol-strategy pair
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:72-253]()
 
 #### LiveMarkdownService
 
@@ -297,7 +293,6 @@ graph TB
 - Calculates live trading statistics including real-time PNL tracking
 - Max 250 events per symbol-strategy pair
 
-**Sources:** [src/lib/services/markdown/LiveMarkdownService.ts:78-391]()
 
 #### WalkerMarkdownService
 
@@ -316,7 +311,6 @@ graph TB
 - Generates consolidated PNL table across all strategies
 - No event limit (unlimited strategies)
 
-**Sources:** [src/lib/services/markdown/WalkerMarkdownService.ts:124-388]()
 
 #### ScheduleMarkdownService
 
@@ -335,7 +329,6 @@ graph TB
 - Measures average wait time before activation or cancellation
 - Max 250 events per symbol-strategy pair
 
-**Sources:** [src/lib/services/markdown/ScheduleMarkdownService.ts:59-301]()
 
 #### HeatMarkdownService
 
@@ -354,7 +347,6 @@ graph TB
 - Advanced metrics: Win/Loss streaks, Expectancy, Average Win/Loss
 - Max 250 signals per symbol (within strategy)
 
-**Sources:** [src/lib/services/markdown/HeatMarkdownService.ts:82-387]()
 
 #### PerformanceMarkdownService
 
@@ -373,7 +365,6 @@ graph TB
 - Tracks wait times between consecutive events of same type
 - Max 10000 events per symbol-strategy pair (higher limit for profiling)
 
-**Sources:** [src/lib/services/markdown/PerformanceMarkdownService.ts:81-283]()
 
 #### PartialMarkdownService
 
@@ -391,7 +382,6 @@ graph TB
 - Enables real-time unrealized PNL alerts
 - Max 250 events per symbol-strategy pair
 
-**Sources:** [src/lib/services/markdown/PartialMarkdownService.ts:60-236]()
 
 #### RiskMarkdownService
 
@@ -409,7 +399,6 @@ graph TB
 - Includes rejection reason from validation comment
 - Max 250 events per symbol-strategy pair
 
-**Sources:** [src/lib/services/markdown/RiskMarkdownService.ts:52-185]()
 
 ---
 
@@ -489,7 +478,6 @@ interface BacktestStatisticsModel {
 
 **Expected Yearly Returns:** Projects annual returns based on average trade duration. Formula: `avgPnl * (365 / avgDurationDays)`. Assumes consistent trading frequency.
 
-**Sources:** [types.d.ts:918-943](), [src/lib/services/markdown/BacktestMarkdownService.ts:100-168]()
 
 ### LiveStatisticsModel
 
@@ -516,7 +504,6 @@ interface LiveStatisticsModel {
 - `eventList` contains all actions: `idle`, `opened`, `active`, `closed`
 - Statistics calculated only from closed events for consistency
 
-**Sources:** [src/model/LiveStatistics.model.ts:1-100](), [src/lib/services/markdown/LiveMarkdownService.ts:223-306]()
 
 ### WalkerStatisticsModel
 
@@ -544,7 +531,6 @@ interface IStrategyResult {
 }
 ```
 
-**Sources:** [src/model/WalkerStatistics.model.ts:1-50](), [src/lib/services/markdown/WalkerMarkdownService.ts:169-192]()
 
 ### HeatmapStatisticsModel
 
@@ -585,7 +571,6 @@ interface IHeatmapRow {
 
 **Expectancy:** Expected value per trade. Formula: `(winRate * avgWin) + (lossRate * avgLoss)`. Positive values indicate edge.
 
-**Sources:** [src/model/HeatmapStatistics.model.ts:1-40](), [src/lib/services/markdown/HeatMarkdownService.ts:115-271]()
 
 ### PerformanceStatisticsModel
 
@@ -622,7 +607,6 @@ interface MetricStats {
 
 Used for identifying outliers and tail latency problems.
 
-**Sources:** [src/model/PerformanceStatistics.model.ts:1-40](), [src/lib/services/markdown/PerformanceMarkdownService.ts:104-185]()
 
 ---
 
@@ -711,7 +695,6 @@ await Backtest.dump("BTCUSDT", "my-strategy"); // ./dump/backtest/my-strategy.md
 await Backtest.dump("BTCUSDT", "my-strategy", "./custom/path"); // Custom directory
 ```
 
-**Sources:** [src/classes/Backtest.ts:276-337](), [src/classes/Live.ts:283-344](), [src/classes/Walker.ts:201-298]()
 
 ### Utility Classes
 
@@ -808,7 +791,6 @@ await Heat.dump("my-strategy", "./reports/heatmap");
 await Schedule.dump("BTCUSDT", "my-strategy", "./reports/schedule");
 ```
 
-**Sources:** [src/classes/Performance.ts:70-128](), [src/classes/Heat.ts:57-115](), [src/classes/Schedule.ts:48-106](), [src/classes/Partial.ts:57-115](), [src/classes/Risk.ts:85-143]()
 
 ---
 
@@ -827,7 +809,6 @@ interface ColumnModel<T extends object = any> {
 }
 ```
 
-**Sources:** [src/model/Column.model.ts:26-38]()
 
 ### Column Configuration System
 
@@ -969,7 +950,6 @@ setColumns(customConfig);
 setColumns(getDefaultColumns());
 ```
 
-**Sources:** [src/index.ts:5-8](), [src/config/columns.ts:1-500]() (inferred)
 
 ---
 
@@ -1027,7 +1007,6 @@ graph TB
 | PartialMarkdownService | `${symbol}:${strategyName}` | 250 |
 | RiskMarkdownService | `${symbol}:${strategyName}` | 250 |
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:290-293](), [src/lib/services/markdown/LiveMarkdownService.ts:431-434](), [src/lib/services/markdown/PerformanceMarkdownService.ts:75]()
 
 ### File System Persistence
 
@@ -1072,7 +1051,6 @@ public async dump(
 }
 ```
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:233-252](), [src/lib/services/markdown/LiveMarkdownService.ts:549-562]()
 
 ### Clearing Accumulated Data
 
@@ -1097,7 +1075,6 @@ await backtest.walkerMarkdownService.clear();
 
 Clearing is automatically invoked at the start of `Backtest.run()`, `Live.run()`, and `Walker.run()` to ensure fresh data accumulation.
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:434-444](), [src/classes/Backtest.ts:163-164]()
 
 ---
 
@@ -1204,4 +1181,3 @@ Clearing is automatically invoked at the start of `Backtest.run()`, `Live.run()`
 ...
 ```
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:177-224](), [src/lib/services/markdown/LiveMarkdownService.ts:315-362](), [src/lib/services/markdown/WalkerMarkdownService.ts:311-350](), [src/lib/services/markdown/PerformanceMarkdownService.ts:194-254]()

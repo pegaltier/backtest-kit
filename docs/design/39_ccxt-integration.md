@@ -21,7 +21,6 @@ CCXT is a JavaScript/TypeScript library that provides a unified API for interact
 - **Quantity Formatting**: CCXT exchanges handle symbol-specific quantity precision
 - **No Trading**: Backtest Kit does not use CCXT for order placement or account management
 
-**Sources:** [README.md:67-80](), [package.json:1-81]()
 
 ---
 
@@ -72,7 +71,6 @@ graph TB
 4. Strategy calls `getCandles()` → triggers CCXT `fetchOHLCV()`
 5. CCXT returns nested arrays → mapped to `ICandleData` objects
 
-**Sources:** [README.md:67-80](), [src/lib/services/template/OptimizerTemplateService.ts:307-342]()
 
 ---
 
@@ -126,7 +124,6 @@ addExchange({
 });
 ```
 
-**Sources:** [README.md:67-80]()
 
 ---
 
@@ -178,7 +175,6 @@ interface ICandleData {
 }
 ```
 
-**Sources:** [README.md:73-76](), [src/lib/services/template/OptimizerTemplateService.ts:331-336]()
 
 ---
 
@@ -234,7 +230,6 @@ getCandles: async (symbol, interval, since, limit) => {
 }
 ```
 
-**Sources:** [README.md:73-76](), [src/lib/services/template/OptimizerTemplateService.ts:331-336]()
 
 ---
 
@@ -309,7 +304,6 @@ addExchange({
 });
 ```
 
-**Sources:** [README.md:78-79](), [src/lib/services/template/OptimizerTemplateService.ts:338-339]()
 
 ---
 
@@ -366,7 +360,6 @@ addExchange({
 - **Hardcoded Binance**: Currently generates Binance-specific code (could be parameterized in future)
 - **Simple Formatters**: Uses basic `toFixed()` for price/quantity formatting
 
-**Sources:** [src/lib/services/template/OptimizerTemplateService.ts:307-342]()
 
 ---
 
@@ -431,7 +424,6 @@ const exchange = new ccxt.binance({
 - Consider implementing a caching layer for frequently accessed data
 - Use the framework's built-in candle buffering (handled by `ClientExchange`)
 
-**Sources:** [README.md:67-80]()
 
 ---
 
@@ -530,7 +522,6 @@ addExchange({
 });
 ```
 
-**Sources:** [README.md:67-80]()
 
 ---
 
@@ -578,7 +569,6 @@ addExchange({
 });
 ```
 
-**Sources:** [README.md:73-76]()
 
 ---
 
@@ -639,7 +629,6 @@ getCandles: async (symbol, interval, since, limit) => {
 }
 ```
 
-**Sources:** [README.md:67-80]()
 
 ---
 
@@ -697,7 +686,6 @@ if (!exchange.has[symbol]) {
 
 **Solution:** This is expected behavior. The framework's time execution engine handles alignment automatically.
 
-**Sources:** [README.md:67-80]()
 
 ---
 
@@ -793,7 +781,6 @@ addOptimizer({
 });
 ```
 
-**Sources:** [src/lib/services/template/OptimizerTemplateService.ts:314-342](), [src/interfaces/Optimizer.interface.ts:242-305]()
 
 ---
 
@@ -816,4 +803,3 @@ CCXT integration in Backtest Kit provides:
 
 For advanced exchange configuration patterns, see [Exchange Configuration](./36_exchanges-data-sources.md). For data validation and anomaly detection, see [Candle Data & Validation](./36_exchanges-data-sources.md).
 
-**Sources:** [README.md:67-80](), [src/lib/services/template/OptimizerTemplateService.ts:307-342](), [package.json:1-81]()

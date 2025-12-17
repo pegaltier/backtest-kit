@@ -11,7 +11,6 @@ This page documents all configuration parameters in the `GLOBAL_CONFIG` object, 
 
 For information about customizing report columns, see [Column Configuration](./52_configuration-reference.md). For logger configuration, see [Logger Configuration](./52_configuration-reference.md). For strategy-level configuration, see [Strategy Schema Definition](./25_strategy-development.md).
 
-**Sources:** [src/config/params.ts:1-122]()
 
 ---
 
@@ -69,7 +68,6 @@ graph TB
 
 The `GLOBAL_CONFIG` object serves as the single source of truth for system-wide parameters. Parameters are enforced at multiple layers: signal validation (before execution), execution (during trading), and data fetching (during candle retrieval). The `setConfig()` function allows runtime modification, with optional reset to `DEFAULT_CONFIG`.
 
-**Sources:** [src/config/params.ts:1-122](), [test/config/setup.mjs:89-102]()
 
 ---
 
@@ -104,7 +102,6 @@ setConfig({
 
 **Important:** Configuration changes affect all subsequent signal validations and executions. Changes do not affect already-opened signals.
 
-**Sources:** [src/config/params.ts:1-122](), [test/config/setup.mjs:89-102](), [test/e2e/sanitize.test.mjs:30-32]()
 
 ---
 
@@ -135,7 +132,6 @@ SHORT PNL = ((priceOpen / priceClose) - 1) * 100
 - Slippage (2 × 0.1%): -0.2%
 - **Net profit: ~1.98%**
 
-**Sources:** [src/config/params.ts:13-24](), [test/config/setup.mjs:92-93]()
 
 ---
 
@@ -184,7 +180,6 @@ graph TB
 
 Every signal passes through seven validation stages before execution. Any failure results in immediate rejection with error logging and risk event emission.
 
-**Sources:** [src/config/params.ts:26-55](), [test/e2e/sanitize.test.mjs:27-122]()
 
 ---
 
@@ -229,7 +224,6 @@ Must be >= CC_MIN_TAKEPROFIT_DISTANCE_PERCENT
 
 **Test Coverage:** [test/e2e/sanitize.test.mjs:27-122]() demonstrates rejection of micro-profit signals (0.024% TP distance).
 
-**Sources:** [src/config/params.ts:26-37](), [test/e2e/sanitize.test.mjs:27-122]()
 
 ---
 
@@ -249,7 +243,6 @@ Must be >= CC_MIN_STOPLOSS_DISTANCE_PERCENT
 
 **Rationale:** Normal market fluctuations can move price ±0.3% without trend change. A 0.5% minimum prevents "instant stop-out" scenarios where price briefly touches SL on noise.
 
-**Sources:** [src/config/params.ts:39-43]()
 
 ---
 
@@ -288,7 +281,6 @@ Must be <= CC_MAX_STOPLOSS_DISTANCE_PERCENT
 
 **Test Coverage:** [test/e2e/sanitize.test.mjs:134-229]() demonstrates rejection of extreme StopLoss (-52% risk).
 
-**Sources:** [src/config/params.ts:44-49](), [test/e2e/sanitize.test.mjs:134-229]()
 
 ---
 
@@ -332,7 +324,6 @@ minuteEstimatedTime <= CC_MAX_SIGNAL_LIFETIME_MINUTES
 
 **Test Coverage:** [test/e2e/sanitize.test.mjs:241-339]() demonstrates rejection of excessive lifetime (50,000 minutes).
 
-**Sources:** [src/config/params.ts:51-55](), [test/e2e/sanitize.test.mjs:241-339]()
 
 ---
 
@@ -354,7 +345,6 @@ On each tick:
 
 **Use Case:** Prevents scheduled signals from waiting indefinitely if market moves away from `priceOpen` entry level.
 
-**Sources:** [src/config/params.ts:3-6]()
 
 ---
 
@@ -366,7 +356,6 @@ On each tick:
 
 **Note:** This timeout is documented but enforcement depends on execution environment. Used primarily for monitoring and alerting.
 
-**Sources:** [src/config/params.ts:57-64]()
 
 ---
 
@@ -425,7 +414,6 @@ graph TB
 
 Candle fetching uses exponential backoff with configurable retry count and delay. Maximum 3 attempts by default before failure.
 
-**Sources:** [src/config/params.ts:66-74]()
 
 ---
 
@@ -453,7 +441,6 @@ while (attempts < CC_GET_CANDLES_RETRY_COUNT) {
 
 **Test Configuration:** [test/config/setup.mjs:98]() sets this to `1` in tests for speed.
 
-**Sources:** [src/config/params.ts:66-69](), [test/config/setup.mjs:98]()
 
 ---
 
@@ -467,7 +454,6 @@ while (attempts < CC_GET_CANDLES_RETRY_COUNT) {
 
 **Test Configuration:** [test/config/setup.mjs:99]() sets this to `100` (100ms) in tests for speed.
 
-**Sources:** [src/config/params.ts:70-74](), [test/config/setup.mjs:99]()
 
 ---
 
@@ -501,7 +487,6 @@ const vwap = totalVolume > 0
 
 **Test Coverage:** [test/e2e/edge.test.mjs:148-283]() tests VWAP calculation with zero volume.
 
-**Sources:** [src/config/params.ts:8-11](), [test/e2e/edge.test.mjs:148-283]()
 
 ---
 
@@ -555,7 +540,6 @@ for (const candle of candles) {
 
 **Test Coverage:** [test/e2e/sanitize.test.mjs:666-784]() tests rejection of incomplete Binance candles with anomalous prices ($0.1 vs $42,000 median).
 
-**Sources:** [src/config/params.ts:76-89](), [test/e2e/sanitize.test.mjs:666-784]()
 
 ---
 
@@ -585,7 +569,6 @@ if (candles.length >= 5) {
 }
 ```
 
-**Sources:** [src/config/params.ts:91-104]()
 
 ---
 
@@ -625,7 +608,6 @@ const signal = {
 };
 ```
 
-**Sources:** [src/config/params.ts:106-113]()
 
 ---
 
@@ -648,7 +630,6 @@ const signal = {
 | `CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN` | `5` | number | Anomaly Detection | Median vs average calculation cutoff |
 | `CC_REPORT_SHOW_SIGNAL_NOTE` | `false` | boolean | Reporting | Note column visibility |
 
-**Sources:** [src/config/params.ts:1-114]()
 
 ---
 
@@ -680,7 +661,6 @@ setConfig({
 });
 ```
 
-**Sources:** [src/config/params.ts:1-114]()
 
 ---
 
@@ -699,7 +679,6 @@ setConfig({
 
 **Warning:** Aggressive settings may produce unrealistic results. Always validate strategies with production settings before live trading.
 
-**Sources:** [src/config/params.ts:1-114]()
 
 ---
 
@@ -717,7 +696,6 @@ setConfig({
 }, true);  // Reset to defaults first
 ```
 
-**Sources:** [test/config/setup.mjs:89-102]()
 
 ---
 
@@ -742,7 +720,6 @@ Object.keys(DEFAULT_CONFIG).forEach(key => {
 setConfig({}, true);  // Empty config + reset = full default restoration
 ```
 
-**Sources:** [src/config/params.ts:116-122]()
 
 ---
 
@@ -795,7 +772,6 @@ graph LR
 
 Configuration parameters are enforced at three primary points: (1) validation layer during signal creation, (2) execution layer during PNL calculation, (3) data fetching layer during candle retrieval. Each layer reads directly from `GLOBAL_CONFIG` at execution time.
 
-**Sources:** [src/config/params.ts:1-122]()
 
 ---
 
@@ -807,4 +783,3 @@ For additional configuration options, see:
 - **Strategy Configuration**: [Strategy Schema Definition](./25_strategy-development.md) - Per-strategy settings (interval, callbacks, risk profiles)
 - **Risk Configuration**: [Risk Profiles & Validation](./31_risk-management.md) - Custom validation rules and portfolio limits
 
-**Sources:** [src/config/params.ts:1-122]()

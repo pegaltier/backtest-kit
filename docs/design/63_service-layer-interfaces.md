@@ -79,7 +79,6 @@ graph TB
     CONN_PARTIAL -.returns.-> IFACE_PARTIAL
 ```
 
-**Sources:** [types.d.ts:1-900](), [docs/internals.md:28-53]()
 
 ---
 
@@ -115,7 +114,6 @@ const strategy: IStrategy = strategyConnectionService.getStrategy(symbol, strate
 const result = await strategy.tick(symbol);
 ```
 
-**Sources:** [docs/interfaces/IStrategy.md:1-55](), [types.d.ts:6-20]()
 
 ---
 
@@ -148,7 +146,6 @@ The `IExchange` interface defines data access and formatting operations for exch
 - Retry logic with exponential backoff
 - VWAP calculation using last 5 1-minute candles
 
-**Sources:** [types.d.ts:160-205](), [types.d.ts:87-155]()
 
 ---
 
@@ -185,7 +182,6 @@ const timeframes = await frame.getTimeframe(symbol, frameName);
 // Returns: [Date(2024-01-01 00:00), Date(2024-01-01 00:01), ...]
 ```
 
-**Sources:** [types.d.ts:280-289](), [types.d.ts:262-275]()
 
 ---
 
@@ -273,7 +269,6 @@ sequenceDiagram
     Risk-->>Strat: return true
 ```
 
-**Sources:** [types.d.ts:448-479](), [types.d.ts:339-426]()
 
 ---
 
@@ -353,7 +348,6 @@ interface IPartialData {
 
 Stored as: `Map<signalId, IPartialData>` in `PersistPartialAdapter`
 
-**Sources:** [types.d.ts:548-639](), [types.d.ts:486-516]()
 
 ---
 
@@ -436,7 +430,6 @@ key = riskName;  // "portfolio-limit"
 key = `${symbol}:${signalId}`;  // "BTCUSDT:uuid-v4-here"
 ```
 
-**Sources:** [docs/classes/StrategyConnectionService.md:1-145](), [types.d.ts:1-900]()
 
 ---
 
@@ -505,7 +498,6 @@ sequenceDiagram
     Core-->>Logic: IStrategyTickResult
 ```
 
-**Sources:** [docs/internals.md:28-53](), [types.d.ts:1-900]()
 
 ---
 
@@ -552,7 +544,6 @@ Aggregates partial profit/loss events across symbols for portfolio-wide reportin
 
 Manages LLM connection pool and prompt history for strategy optimization. Implements conversation state management for iterative code generation.
 
-**Sources:** [types.d.ts:339-479](), [types.d.ts:486-639]()
 
 ---
 
@@ -640,7 +631,6 @@ const strategyCore = lib.strategyCoreService;
 const strategyConnection = lib.strategyConnectionService;
 ```
 
-**Sources:** [docs/internals.md:41-53](), [src/index.ts:198]()
 
 ---
 
@@ -727,7 +717,6 @@ if (backtest) {
 }
 ```
 
-**Sources:** [types.d.ts:6-49](), [types.d.ts:297-336]()
 
 ---
 
@@ -758,7 +747,6 @@ type IStrategyTickResult =
 4. Check scheduled signal exists → monitor activation/cancellation
 5. Call `getSignal()` → validate → persist → return opened
 
-**Sources:** [docs/interfaces/IStrategy.md:14-21](), [types.d.ts:767-888]()
 
 #### backtest(candles: ICandleData[]): Promise<IStrategyBacktestResult>
 
@@ -777,7 +765,6 @@ type IStrategyBacktestResult =
 2. For each candle: calculate VWAP, check TP/SL, emit partial events
 3. Return closed/cancelled result when signal completes
 
-**Sources:** [docs/interfaces/IStrategy.md:33-43](), [types.d.ts:892]()
 
 ---
 
@@ -797,7 +784,6 @@ Fetches historical candles backward from execution context time.
 - Calculates `since = when - (interval * limit)`
 - Caches candles in buffer (up to 500)
 
-**Sources:** [types.d.ts:160-169]()
 
 #### getAveragePrice(symbol): Promise<number>
 
@@ -809,7 +795,6 @@ Typical Price = (High + Low + Close) / 3
 VWAP = Σ(Typical Price × Volume) / Σ(Volume)
 ```
 
-**Sources:** [types.d.ts:196-204]()
 
 ---
 
@@ -836,7 +821,6 @@ const validation: IRiskValidationFn = (payload) => {
 };
 ```
 
-**Sources:** [types.d.ts:452-458]()
 
 ---
 
@@ -863,7 +847,6 @@ await partial.profit(..., 23.7, ...);
 // Emits: 20% profit event (10% already emitted)
 ```
 
-**Sources:** [types.d.ts:549-581]()
 
 ---
 
@@ -877,4 +860,3 @@ await partial.profit(..., 23.7, ...);
 | `IRisk` | `ClientRisk`, `MergeRisk` | Risk validation and tracking | `checkSignal`, `addSignal`, `removeSignal` |
 | `IPartial` | `ClientPartial` | Profit/loss milestone tracking | `profit`, `loss`, `clear` |
 
-**Sources:** [types.d.ts:160-639](), [docs/interfaces/IStrategy.md:1-55]()

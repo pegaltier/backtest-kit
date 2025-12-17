@@ -28,7 +28,6 @@ The generator pattern is implemented at two layers:
 | **Private Logic** | `BacktestLogicPrivateService`, `LiveLogicPrivateService`, `WalkerLogicPrivateService` | Core generator implementation with `async *run()` methods |
 | **Public Logic** | `BacktestLogicPublicService`, `LiveLogicPublicService`, `WalkerLogicPublicService` | Context propagation wrappers that call private services |
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:1-481](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:1-179](), [src/lib/services/logic/private/WalkerLogicPrivateService.ts:1-263](), [docs/internals.md:22-23]()
 
 ---
 
@@ -104,7 +103,6 @@ graph TB
 - **Only terminates on explicit stop**: Checks `getStopped()` flag: [src/lib/services/logic/private/LiveLogicPrivateService.ts:122-136]()
 - **Graceful shutdown**: Waits for signal to close before breaking: [src/lib/services/logic/private/LiveLogicPrivateService.ts:155-170]()
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:62-477](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:63-175](), [src/lib/services/logic/private/WalkerLogicPrivateService.ts:68-259]()
 
 ---
 
@@ -204,7 +202,6 @@ For scheduled signals (`priceOpen` not yet reached), the generator:
 - Tracks signal duration: Start when opened/scheduled, end when closed: [src/lib/services/logic/private/BacktestLogicPrivateService.ts:155](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:259]()
 - Emits `performanceEmitter` events: [src/lib/services/logic/private/BacktestLogicPrivateService.ts:391-401]()
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:62-477](), [docs/internals.md:54-66]()
 
 ---
 
@@ -333,7 +330,6 @@ This ensures:
 - Tracks delta: `previousTimestamp` for inter-tick timing: [src/lib/services/logic/private/LiveLogicPrivateService.ts:68]()
 - Emits `performanceEmitter` with `metricType: "live_tick"`: [src/lib/services/logic/private/LiveLogicPrivateService.ts:105-115]()
 
-**Sources:** [src/lib/services/logic/private/LiveLogicPrivateService.ts:63-175](), [docs/internals.md:69-82]()
 
 ---
 
@@ -508,7 +504,6 @@ const finalResults = {
 await walkerCompleteSubject.next(finalResults);
 ```
 
-**Sources:** [src/lib/services/logic/private/WalkerLogicPrivateService.ts:68-259]()
 
 ---
 
@@ -565,7 +560,6 @@ The framework's generators maintain constant memory by:
 
 The generator pattern enables processing multi-year backtests (hundreds of thousands of signals) with minimal memory footprint.
 
-**Sources:** [docs/internals.md:22](), [docs/internals.md:44](), [docs/internals.md:98](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:62-477]()
 
 ---
 
@@ -684,7 +678,6 @@ This allows:
 - **Symbol isolation**: Filter by `symbol` AND `walkerName`
 - **No active signal disruption**: Check happens before backtest starts
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:95-110](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:132-150](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:413-430](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:118-170](), [src/lib/services/logic/private/WalkerLogicPrivateService.ts:98-126]()
 
 ---
 
@@ -790,7 +783,6 @@ graph LR
 - **Global emission**: `errorEmitter` broadcasts to subscribers
 - **User notification**: `listenError()` callbacks can handle errors: [docs/internals.md:87]()
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:114-129](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:179-202](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:74-95](), [src/lib/services/logic/private/WalkerLogicPrivateService.ts:143-161]()
 
 ---
 
@@ -890,7 +882,6 @@ Context propagation enables generators to:
 3. **Support nested calls**: Context automatically flows to all nested services
 4. **Enable lazy initialization**: Services can access context when needed
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:84-92](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:79-81](), [docs/internals.md:47]()
 
 ---
 
@@ -1036,4 +1027,3 @@ This dual approach enables:
 - **Observability**: Event listeners (markdown services) can monitor independently
 - **Decoupling**: Consumer and observers are independent
 
-**Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:411](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:152](), [src/lib/services/logic/private/WalkerLogicPrivateService.ts:231](), [docs/types/IStrategyTickResult.md:1-14]()

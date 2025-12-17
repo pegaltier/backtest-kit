@@ -22,7 +22,6 @@ The heatmap system aggregates closed signals from all symbols traded by a strate
 - Markdown table generation sorted by performance
 - Safe math handling (NaN/Infinity protection)
 
-Sources: [src/lib/services/markdown/HeatMarkdownService.ts:1-606](), [src/classes/Heat.ts:1-148]()
 
 ---
 
@@ -97,7 +96,6 @@ graph TD
 5. `getData()` calculates per-symbol statistics and aggregates portfolio metrics
 6. `Heat` class provides convenient public API wrapping the service
 
-Sources: [src/lib/services/markdown/HeatMarkdownService.ts:434-606](), [src/classes/Heat.ts:33-148]()
 
 ---
 
@@ -142,7 +140,6 @@ interface HeatmapStatisticsModel {
 
 **Safe Math:** All numeric fields are nullable. The `isUnsafe()` function [src/lib/services/markdown/HeatMarkdownService.ts:62-73]() checks for `NaN`, `Infinity`, or non-numeric values and converts them to `null` to prevent rendering issues.
 
-Sources: [src/interfaces/Heatmap.interface.ts](), [src/model/HeatmapStatistics.model.ts](), [src/lib/services/markdown/HeatMarkdownService.ts:108-271]()
 
 ---
 
@@ -233,7 +230,6 @@ for (const signal of signals) {
 }
 ```
 
-Sources: [src/lib/services/markdown/HeatMarkdownService.ts:115-271]()
 
 ---
 
@@ -274,7 +270,6 @@ symbols.sort((a, b) => {
 });
 ```
 
-Sources: [src/lib/services/markdown/HeatMarkdownService.ts:278-330]()
 
 ---
 
@@ -323,7 +318,6 @@ const customColumn = {
 
 Only columns with `isVisible() === true` are rendered. This allows dynamic column filtering based on runtime conditions.
 
-Sources: [src/lib/services/markdown/HeatMarkdownService.ts:339-377](), [src/config/columns.ts](), [src/model/Column.model.ts:1-39]()
 
 ---
 
@@ -414,7 +408,6 @@ const losers = stats.symbols.filter(s => s.totalPnl !== null && s.totalPnl < 0);
 console.log(`Underperforming symbols: ${losers.length}`);
 ```
 
-Sources: [src/classes/Heat.ts:33-148](), [test/spec/columns.test.mjs:1-218]()
 
 ---
 
@@ -473,7 +466,6 @@ This is useful for:
 - Resetting statistics mid-session
 - Isolating multiple backtest executions
 
-Sources: [src/lib/services/markdown/HeatMarkdownService.ts:82-105](), [src/lib/services/markdown/HeatMarkdownService.ts:442-445](), [src/lib/services/markdown/HeatMarkdownService.ts:579-591]()
 
 ---
 
@@ -556,7 +548,6 @@ Multiple markdown services subscribe to `signalEmitter` simultaneously:
 
 Each service filters events independently and maintains separate storage.
 
-Sources: [src/lib/services/markdown/HeatMarkdownService.ts:455-466](), [src/lib/services/markdown/HeatMarkdownService.ts:593-606](), [src/config/emitters.ts]()
 
 ---
 
@@ -603,7 +594,6 @@ public async dump(
 
 The heatmap uses strategy name only (not symbol) because it aggregates across all symbols.
 
-Sources: [src/lib/services/markdown/HeatMarkdownService.ts:386-405]()
 
 ---
 
@@ -674,7 +664,6 @@ graph TD
 
 This ensures all referenced entities exist before attempting data access, preventing runtime errors.
 
-Sources: [src/classes/Heat.ts:33-148](), [src/lib/services/markdown/HeatMarkdownService.ts:487-567]()
 
 ---
 
@@ -691,5 +680,3 @@ Sources: [src/classes/Heat.ts:33-148](), [src/lib/services/markdown/HeatMarkdown
 | **Statistics** | 15 per symbol + portfolio | Win rate, Sharpe, total PNL | Per-strategy comparison table |
 
 The heatmap complements other reporting services by answering the question: "How does this strategy perform across my entire portfolio?"
-
-Sources: [src/lib/services/markdown/HeatMarkdownService.ts:1-606](), [src/lib/services/markdown/BacktestMarkdownService.ts:1-464](), [src/lib/services/markdown/WalkerMarkdownService.ts:1-606]()

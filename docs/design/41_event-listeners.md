@@ -125,7 +125,6 @@ graph TB
     listenPartialLoss --> queued
 ```
 
-**Sources:** [src/config/emitters.ts:1-133](), [src/function/event.ts:1-400](), [types.d.ts:1-50]()
 
 ---
 
@@ -154,7 +153,6 @@ All emitters are instances of `Subject` from `functools-kit` and are exported fr
 | `partialLossSubject` | `Subject<PartialLossContract>` | Loss milestone events (10%, 20%, etc) | ClientPartial |
 | `riskSubject` | `Subject<RiskContract>` | Signal rejection due to risk limits | ClientRisk |
 
-**Sources:** [src/config/emitters.ts:15-132](), [types.d.ts:1-50]()
 
 ---
 
@@ -250,7 +248,6 @@ graph LR
 | `listenExit` | `fn: (error: Error) => void` | `unsubscribe: () => void` | Fatal errors requiring termination |
 | `listenValidation` | `fn: (error: Error) => void` | `unsubscribe: () => void` | Risk validation errors |
 
-**Sources:** [src/function/event.ts:45-400](), [types.d.ts:1-50]()
 
 ---
 
@@ -419,7 +416,6 @@ interface PerformanceContract {
 }
 ```
 
-**Sources:** [types.d.ts:765-893](), [src/contract/*.contract.ts:1-100]()
 
 ---
 
@@ -570,7 +566,6 @@ listenExit((error) => {
 });
 ```
 
-**Sources:** [src/function/event.ts:45-400](), [README.md:145-178]()
 
 ---
 
@@ -613,7 +608,6 @@ export function listenSignal(fn: (event: IStrategyTickResult) => void) {
 }
 ```
 
-**Sources:** [src/function/event.ts:1-400]()
 
 ---
 
@@ -663,7 +657,6 @@ listenSignalOnce(
 );
 ```
 
-**Sources:** [src/function/event.ts:107-113]()
 
 ---
 
@@ -687,7 +680,6 @@ graph LR
 
 Each markdown service maintains a `ReportStorage` instance that stores up to 250 events per `symbol:strategyName` key to prevent memory bloat during long-running executions.
 
-**Sources:** [types.d.ts:1-50]()
 
 ---
 
@@ -782,4 +774,3 @@ listenRisk((event) => {
 });
 ```
 
-**Sources:** [src/function/event.ts:1-400](), [README.md:173-177]()

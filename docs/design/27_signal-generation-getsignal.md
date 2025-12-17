@@ -29,7 +29,6 @@ getSignal: (symbol: string, when: Date) => Promise<ISignalDto | null>
 
 The framework calls `getSignal` at intervals specified by the strategy's `interval` property [types.d.ts:734](). Interval throttling ensures the function is not called more frequently than configured, preventing signal spam.
 
-**Sources:** [src/interfaces/Strategy.interface.ts:139-144](), [types.d.ts:728-747]()
 
 ---
 
@@ -54,7 +53,6 @@ The `ISignalDto` interface defines the structure returned by `getSignal`. All fi
 
 If `priceOpen` is omitted, the signal opens immediately at current VWAP. If `priceOpen` is specified, the signal becomes scheduled and waits for price to reach entry point.
 
-**Sources:** [src/interfaces/Strategy.interface.ts:20-39](), [types.d.ts:641-665]()
 
 ---
 
@@ -102,7 +100,6 @@ Scheduled signals are cancelled if:
 
 The activation check happens in [src/client/ClientStrategy.ts:389-443]() within `GET_SIGNAL_FN`.
 
-**Sources:** [src/client/ClientStrategy.ts:332-462](), [src/interfaces/Strategy.interface.ts:64-73]()
 
 ---
 
@@ -147,7 +144,6 @@ When `getCandles()` is called within `getSignal`, it automatically uses the temp
 
 This temporal isolation works identically in both backtest and live modes, ensuring strategies behave consistently across environments.
 
-**Sources:** [types.d.ts:6-18](), [src/interfaces/Strategy.interface.ts:139-144](), [README.md:189-199]()
 
 ---
 
@@ -190,7 +186,6 @@ async function getSignal(symbol: string, when: Date): Promise<ISignalDto | null>
 
 For detailed multi-timeframe analysis patterns, see [Multi-Timeframe Analysis](./25_strategy-development.md).
 
-**Sources:** [src/function/exchange.ts:29-47](), [types.d.ts:82-100]()
 
 ---
 
@@ -243,7 +238,6 @@ When `getSignal` returns a signal object, the framework:
 
 Validation failures result in the signal being rejected without opening any position. Risk check failures are logged and emitted via `riskSubject`.
 
-**Sources:** [src/client/ClientStrategy.ts:332-476](), [src/interfaces/Strategy.interface.ts:139-144]()
 
 ---
 
@@ -335,7 +329,6 @@ Validates `minuteEstimatedTime <= CC_MAX_SIGNAL_LIFETIME_MINUTES` to prevent ete
 
 These parameters are configurable via `setConfig()`. See [GLOBAL_CONFIG Parameters](./52_configuration-reference.md) for complete configuration reference.
 
-**Sources:** [src/client/ClientStrategy.ts:45-330](), [src/config/params.ts:1-100]()
 
 ---
 
@@ -399,7 +392,6 @@ function calculateSMA(candles: ICandleData[]): number {
 }
 ```
 
-**Sources:** [demo/backtest/src/index.mjs:1-100](), [README.md:112-143]()
 
 ---
 
@@ -454,7 +446,6 @@ In this example:
 4. If price reaches support, signal activates and opens position
 5. If price never reaches support or SL is breached first, signal cancels
 
-**Sources:** [src/interfaces/Strategy.interface.ts:139-144](), [src/client/ClientStrategy.ts:389-443]()
 
 ---
 
@@ -517,7 +508,6 @@ function calculateIndicators(candles1h, candles15m) {
 
 The LLM analyzes market conditions and returns a structured signal object matching `ISignalDto`. For complete LLM integration examples, see the demo projects at [demo/optimization/]() and [demo/backtest/]().
 
-**Sources:** [README.md:111-142](), [demo/optimization/src/index.mjs:1-200]()
 
 ---
 
@@ -568,4 +558,3 @@ sequenceDiagram
     end
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:332-476](), [src/lib/services/connection/StrategyConnectionService.ts:206-228]()

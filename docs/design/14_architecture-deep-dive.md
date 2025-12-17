@@ -57,7 +57,6 @@ graph TB
     TEMPLATE --> TYPES_EXPORT
 ```
 
-Sources: [src/lib/core/types.ts:1-105]()
 
 ### Service Provider Registration
 
@@ -79,7 +78,6 @@ Service factories are registered via the `provide()` function, which associates 
 | Markdown Services | `provide(TYPES.backtestMarkdownService, () => new BacktestMarkdownService())` | `BacktestMarkdownService` |
 | Template Services | `provide(TYPES.optimizerTemplateService, () => new OptimizerTemplateService())` | `OptimizerTemplateService` |
 
-Sources: [src/lib/core/provide.ts:56-142]()
 
 ### Service Injection and the Backtest Aggregator
 
@@ -123,7 +121,6 @@ const logger = backtest.loggerService;
 const context = backtest.executionContextService.context;
 ```
 
-Sources: [src/lib/index.ts:61-238]()
 
 ## Service Layer Organization
 
@@ -215,7 +212,6 @@ graph TB
     SCHEMA --> TEMPLATE
 ```
 
-Sources: [src/lib/index.ts:61-238](), [src/lib/core/provide.ts:1-143]()
 
 ### Service Category Implementation Details
 
@@ -284,7 +280,6 @@ class LoggerService {
 - Calculate statistics on demand
 - Generate formatted markdown tables
 
-Sources: [types.d.ts:1-100](), [src/lib/core/provide.ts:56-142]()
 
 ## Context Propagation Architecture
 
@@ -382,7 +377,6 @@ The `di-scoped` library manages context scope boundaries:
 - `runAsyncIterator(generator, context)` - Execute async generator with context
 - Context automatically available to all code within callback/generator scope
 
-Sources: [types.d.ts:6-49](), [types.d.ts:296-337]()
 
 ## Memoization Strategy
 
@@ -478,7 +472,6 @@ class ConnectionService {
 }
 ```
 
-Sources: [src/lib/index.ts:74-96](), [types.d.ts:102-209]()
 
 ## Service Dependency Graph
 
@@ -583,7 +576,6 @@ graph LR
     BASE -.->|used by| CORE
 ```
 
-Sources: [src/lib/index.ts:61-238](), [docs/uml.puml:1-507]()
 
 ## Initialization Flow
 
@@ -659,7 +651,6 @@ export { backtest };  // Export service accessors
 | **inject() Function** | Service injection in constructors | `inject(TYPES.loggerService)` |
 | **backtest Object** | External API implementation | `backtest.strategySchemaService.get(name)` |
 
-Sources: [src/lib/index.ts:1-246](), [src/lib/core/provide.ts:1-143]()
 
 ## Type Safety and IntelliSense
 
@@ -711,5 +702,3 @@ graph TB
 ```
 
 Full type safety is maintained from user-facing API through internal service layer to client implementations, ensuring compile-time error detection and rich IDE support.
-
-Sources: [types.d.ts:1-100](), [src/index.ts:1-199]()

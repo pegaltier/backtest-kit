@@ -19,7 +19,6 @@ The `IStrategyCallbacks` interface defines 10 optional lifecycle hooks that fire
 - Scoped to the specific strategy instance
 - Receives both backtest and live mode events
 
-**Sources:** [src/interfaces/Strategy.interface.ts:100-126](), [types.d.ts:699-723]()
 
 ---
 
@@ -78,7 +77,6 @@ graph TB
     style Invocation fill:#e8f4f8,stroke:#333,stroke-width:2px
 ```
 
-**Sources:** [src/interfaces/Strategy.interface.ts:100-126](), [src/client/ClientStrategy.ts:1-1700]()
 
 ---
 
@@ -110,7 +108,6 @@ onTick: (symbol: string, result: IStrategyTickResult, backtest: boolean) => void
 - [src/client/ClientStrategy.ts:765-772]() - After scheduled signal activation
 - [src/client/ClientStrategy.ts:792-799]() - During scheduled signal monitoring
 
-**Sources:** [src/interfaces/Strategy.interface.ts:102](), [types.d.ts:704]()
 
 ---
 
@@ -140,7 +137,6 @@ onOpen: (symbol: string, data: ISignalRow, currentPrice: number, backtest: boole
 - [src/client/ClientStrategy.ts:747-754]() - After scheduled signal activation
 - [src/client/ClientStrategy.ts:862-869]() - After immediate signal creation
 
-**Sources:** [src/interfaces/Strategy.interface.ts:104](), [types.d.ts:706]()
 
 ---
 
@@ -170,7 +166,6 @@ onActive: (symbol: string, data: ISignalRow, currentPrice: number, backtest: boo
 - [src/client/ClientStrategy.ts:512-522]() - During crash recovery initialization
 - [src/client/ClientStrategy.ts:906-916]() - During active signal monitoring in tick()
 
-**Sources:** [src/interfaces/Strategy.interface.ts:106](), [types.d.ts:708]()
 
 ---
 
@@ -198,7 +193,6 @@ onIdle: (symbol: string, currentPrice: number, backtest: boolean) => void
 **Invocation Points:**
 - [src/client/ClientStrategy.ts:924-936]() - When no signal exists during tick()
 
-**Sources:** [src/interfaces/Strategy.interface.ts:108](), [types.d.ts:710]()
 
 ---
 
@@ -227,7 +221,6 @@ onClose: (symbol: string, data: ISignalRow, priceClose: number, backtest: boolea
 **Invocation Points:**
 - [src/client/ClientStrategy.ts:988-998]() - After signal closes via TP/SL/time
 
-**Sources:** [src/interfaces/Strategy.interface.ts:110-115](), [types.d.ts:712]()
 
 ---
 
@@ -257,7 +250,6 @@ onSchedule: (symbol: string, data: IScheduledSignalRow, currentPrice: number, ba
 - [src/client/ClientStrategy.ts:540-550]() - During crash recovery for persisted scheduled signals
 - [src/client/ClientStrategy.ts:827-837]() - After scheduled signal creation
 
-**Sources:** [src/interfaces/Strategy.interface.ts:117](), [types.d.ts:714]()
 
 ---
 
@@ -287,7 +279,6 @@ onCancel: (symbol: string, data: IScheduledSignalRow, currentPrice: number, back
 - [src/client/ClientStrategy.ts:580-587]() - After scheduled signal timeout
 - Implicitly during scheduled signal SL breach (before activation)
 
-**Sources:** [src/interfaces/Strategy.interface.ts:119](), [types.d.ts:716]()
 
 ---
 
@@ -316,7 +307,6 @@ onWrite: (symbol: string, data: ISignalRow | null, backtest: boolean) => void
 - [src/client/ClientStrategy.ts:1029-1053]() - In `setPendingSignal` method
 - [src/client/ClientStrategy.ts:1055-1079]() - In `setScheduledSignal` method
 
-**Sources:** [src/interfaces/Strategy.interface.ts:121](), [types.d.ts:718]()
 
 ---
 
@@ -347,7 +337,6 @@ onPartialProfit: (symbol: string, data: ISignalRow, currentPrice: number, revenu
 - Via `ClientPartial.profit()` method during signal monitoring
 - Only emits when crossing 10%, 20%, 30%... thresholds (deduplication via Set)
 
-**Sources:** [src/interfaces/Strategy.interface.ts:123](), [types.d.ts:720]()
 
 ---
 
@@ -378,7 +367,6 @@ onPartialLoss: (symbol: string, data: ISignalRow, currentPrice: number, lossPerc
 - Via `ClientPartial.loss()` method during signal monitoring
 - Only emits when crossing -10%, -20%, -30%... thresholds (deduplication via Set)
 
-**Sources:** [src/interfaces/Strategy.interface.ts:125](), [types.d.ts:722]()
 
 ---
 
@@ -486,7 +474,6 @@ stateDiagram-v2
     end note
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:554-1000]()
 
 ---
 
@@ -546,7 +533,6 @@ listenSignal((event) => {
 });
 ```
 
-**Sources:** [src/interfaces/Strategy.interface.ts:100-126](), [src/function/event.ts:1-700]()
 
 ---
 
@@ -606,7 +592,6 @@ graph TB
 
 3. **Context Propagation:** The `backtest` flag propagates from `ExecutionContextService` to callbacks, enabling mode-specific logic
 
-**Sources:** [src/lib/services/connection/StrategyConnectionService.ts:89-150](), [src/client/ClientStrategy.ts:1-1700]()
 
 ---
 
@@ -715,7 +700,6 @@ addStrategy({
 });
 ```
 
-**Sources:** [src/interfaces/Strategy.interface.ts:128-151]()
 
 ---
 
@@ -751,7 +735,6 @@ const GET_SIGNAL_FN = trycatch(
 ```
 [src/client/ClientStrategy.ts:332-476]()
 
-**Sources:** [src/client/ClientStrategy.ts:332-476](), [src/client/ClientStrategy.ts:554-1000]()
 
 ---
 
@@ -810,7 +793,6 @@ addStrategy({
 });
 ```
 
-**Sources:** [src/interfaces/Strategy.interface.ts:102](), [src/interfaces/Strategy.interface.ts:121]()
 
 ---
 
@@ -853,4 +835,3 @@ setInterval(() => {
 }, 1000);
 ```
 
-**Sources:** [src/client/ClientStrategy.ts:554-1000]()

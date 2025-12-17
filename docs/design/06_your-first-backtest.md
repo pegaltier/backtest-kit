@@ -94,7 +94,6 @@ graph TB
 
 **Component Registration Flow**: User code registers schemas via global functions. Schemas are stored in schema services. During execution, services are retrieved and instantiated into client objects.
 
-**Sources**: [README.md:65-159](), [src/classes/Backtest.ts:359-601]()
 
 ---
 
@@ -142,7 +141,6 @@ The `getCandles` function receives:
 - `since`: Start date (Date object)
 - `limit`: Number of candles to fetch
 
-**Sources**: [README.md:70-80](), [src/lib/services/schema/ExchangeSchemaService.ts]()
 
 ---
 
@@ -208,7 +206,6 @@ graph LR
 
 **Validation Stages**: Signals pass through schema validation (structural checks), global config validation (distance/lifetime limits), and custom risk validations before scheduling.
 
-**Sources**: [README.md:83-100](), [test/e2e/sanitize.test.mjs:26-122]()
 
 ---
 
@@ -240,7 +237,6 @@ addFrame({
 
 **Execution Model**: The backtest engine iterates through time from `startDate` to `endDate` at `interval` increments. Each tick represents one minute of simulated time. The strategy's `interval` parameter (separate from frame interval) determines how often `getSignal()` is called.
 
-**Sources**: [README.md:103-108](), [src/lib/services/logic/backtest/BacktestLogicPrivateService.ts]()
 
 ---
 
@@ -330,7 +326,6 @@ sequenceDiagram
 
 **Interval Throttling**: Even though `tick()` is called every minute, `getSignal()` only executes at `interval` frequency (e.g., every 5 minutes for `interval: '5m'`). This prevents signal spam.
 
-**Sources**: [README.md:112-143](), [src/classes/Backtest.ts:149-178]()
 
 ---
 
@@ -416,7 +411,6 @@ graph TB
 
 **Two Consumption Models**: `Backtest.background()` runs asynchronously and emits events. `Backtest.run()` returns an async generator for pull-based consumption. Both use the same underlying `BacktestLogicPrivateService`.
 
-**Sources**: [README.md:145-159](), [src/classes/Backtest.ts:200-235](), [src/classes/Backtest.ts:378-400]()
 
 ---
 
@@ -469,7 +463,6 @@ await Backtest.dump('BTCUSDT', 'simple-momentum', './reports/my-backtest');
 
 **Report Contents**: The markdown report includes a summary section with key statistics, a detailed table of all closed signals (with timestamps, prices, PNL, holding time), and performance metrics.
 
-**Sources**: [src/classes/Backtest.ts:276-282](), [src/classes/Backtest.ts:299-305](), [src/classes/Backtest.ts:325-337]()
 
 ---
 
@@ -563,7 +556,6 @@ Backtest.background('BTCUSDT', {
 });
 ```
 
-**Sources**: [README.md:46-159](), [demo/backtest/package.json:1-18]()
 
 ---
 
@@ -585,7 +577,6 @@ Only **one active signal per symbol** is allowed at any time. New signals wait i
 
 `getCandles()` only returns data **up to the current `when` timestamp**. It's architecturally impossible to access future data during backtesting.
 
-**Sources**: [README.md:186-199](), [test/README.md:6-24]()
 
 ---
 
@@ -596,5 +587,3 @@ Only **one active signal per symbol** is allowed at any time. New signals wait i
 - Read [Strategy Development](./25_strategy-development.md) for advanced techniques
 - Study [Risk Management](./31_risk-management.md) for portfolio protection
 - Review [Execution Modes](./20_execution-modes.md) to understand Live and Walker modes
-
-**Sources**: [README.md:1-254]()

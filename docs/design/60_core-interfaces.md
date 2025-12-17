@@ -74,7 +74,6 @@ graph LR
     OptimizerConn -.->|"reads"| OptimizerSchema
 ```
 
-Sources: [types.d.ts:728-969](), [src/index.ts:10-18]()
 
 **Schema Interface Categories**
 
@@ -88,7 +87,6 @@ Sources: [types.d.ts:728-969](), [src/index.ts:10-18]()
 | **Sizing** | `ISizingSchema` | `addSizing()` | Defines position sizing calculation method |
 | **Optimizer** | `IOptimizerSchema` | `addOptimizer()` | Defines LLM-based strategy generation parameters |
 
-Sources: [types.d.ts:728-969](), [src/index.ts:10-18]()
 
 ---
 
@@ -113,7 +111,6 @@ type SignalInterval = "1m" | "3m" | "5m" | "15m" | "30m" | "1h";
 type StrategyName = string;
 ```
 
-Sources: [types.d.ts:728-747](), [types.d.ts:645](), [types.d.ts:896]()
 
 **Property Reference**
 
@@ -127,7 +124,6 @@ Sources: [types.d.ts:728-747](), [types.d.ts:645](), [types.d.ts:896]()
 | `riskName` | `RiskName` | ✗ | Single risk profile to apply before signal creation |
 | `riskList` | `RiskName[]` | ✗ | Multiple risk profiles to merge and apply (alternative to `riskName`) |
 
-Sources: [types.d.ts:728-747]()
 
 **getSignal Function Contract**
 
@@ -147,7 +143,6 @@ getSignal: (symbol: string, when: Date) => Promise<ISignalDto | null>
 
 Inside `getSignal`, use `getCandles()` to fetch historical data for analysis (see [Exchange Functions](./56_api-reference.md)).
 
-Sources: [types.d.ts:740]()
 
 **Signal Generation Flow**
 
@@ -177,7 +172,6 @@ graph TD
     PriceOpen -->|"No, use VWAP"| Opened
 ```
 
-Sources: [types.d.ts:728-747]()
 
 **Strategy Callbacks**
 
@@ -211,7 +205,6 @@ interface IStrategyCallbacks {
 | `onPartialProfit` | Profit milestone reached (10%, 20%, etc.) | Track unrealized gains |
 | `onPartialLoss` | Loss milestone reached (-10%, -20%, etc.) | Track unrealized losses |
 
-Sources: [types.d.ts:702-723]()
 
 **Example: Simple Moving Average Crossover Strategy**
 
@@ -259,7 +252,6 @@ addStrategy({
 });
 ```
 
-Sources: [types.d.ts:728-747]()
 
 ---
 
@@ -292,7 +284,6 @@ interface ICandleData {
 }
 ```
 
-Sources: [types.d.ts:122-155](), [types.d.ts:82](), [types.d.ts:87-100]()
 
 **Property Reference**
 
@@ -305,7 +296,6 @@ Sources: [types.d.ts:122-155](), [types.d.ts:82](), [types.d.ts:87-100]()
 | `formatPrice` | `function` | ✓ | Format price according to exchange precision rules |
 | `callbacks` | `Partial<IExchangeCallbacks>` | ✗ | Event hooks (onCandleData) |
 
-Sources: [types.d.ts:122-155]()
 
 **getCandles Function Contract**
 
@@ -324,7 +314,6 @@ getCandles: (symbol: string, interval: CandleInterval, since: Date, limit: numbe
   - Must detect and handle anomalous prices (validated by ClientExchange)
   - Should implement retry logic for API failures
 
-Sources: [types.d.ts:136]()
 
 **Data Flow: Exchange to VWAP Calculation**
 
@@ -347,7 +336,6 @@ graph LR
     Buffer --> VWAP
 ```
 
-Sources: [types.d.ts:122-155]()
 
 **Example: CCXT Integration**
 
@@ -390,7 +378,6 @@ addExchange({
 });
 ```
 
-Sources: [types.d.ts:122-155]()
 
 ---
 
@@ -414,7 +401,6 @@ type FrameName = string;
 type FrameInterval = "1m" | "3m" | "5m" | "15m" | "30m" | "1h" | "2h" | "4h" | "6h" | "8h" | "12h" | "1d" | "3d";
 ```
 
-Sources: [types.d.ts:262-275](), [types.d.ts:219]()
 
 **Property Reference**
 
@@ -427,7 +413,6 @@ Sources: [types.d.ts:262-275](), [types.d.ts:219]()
 | `endDate` | `Date` | ✓ | End of backtest period (inclusive) |
 | `callbacks` | `Partial<IFrameCallbacks>` | ✗ | Event hooks (onTimeframe) |
 
-Sources: [types.d.ts:262-275]()
 
 **Timeframe Generation**
 
@@ -447,7 +432,6 @@ graph LR
     Backtest --> Loop
 ```
 
-Sources: [types.d.ts:262-275]()
 
 **Example: Multiple Time Ranges**
 
@@ -482,7 +466,6 @@ addFrame({
 });
 ```
 
-Sources: [types.d.ts:262-275]()
 
 ---
 
@@ -518,7 +501,6 @@ interface IRiskValidationPayload extends IRiskCheckArgs {
 }
 ```
 
-Sources: [types.d.ts:417-426](), [types.d.ts:395-411]()
 
 **Property Reference**
 
@@ -529,7 +511,6 @@ Sources: [types.d.ts:417-426](), [types.d.ts:395-411]()
 | `callbacks` | `Partial<IRiskCallbacks>` | ✗ | Event hooks (onRejected, onAllowed) |
 | `validations` | Array | ✓ | Validation functions or objects with `validate` function and `note` |
 
-Sources: [types.d.ts:417-426]()
 
 **Validation Function Contract**
 
@@ -553,7 +534,6 @@ Validation functions receive a payload with:
 - **Throw error**: Signal is rejected, `riskSubject` emits rejection event
 - **Return void**: Signal is allowed to proceed
 
-Sources: [types.d.ts:395-411]()
 
 **Risk Validation Pipeline**
 
@@ -583,7 +563,6 @@ graph TD
     Loop -->|"All passed"| Allow
 ```
 
-Sources: [types.d.ts:417-426]()
 
 **Example: Conservative Risk Profile**
 
@@ -637,7 +616,6 @@ addRisk({
 });
 ```
 
-Sources: [types.d.ts:417-426]()
 
 **MergeRisk Pattern**
 
@@ -651,7 +629,6 @@ addStrategy({
 });
 ```
 
-Sources: [types.d.ts:746]()
 
 ---
 
@@ -676,7 +653,6 @@ type WalkerName = string;
 type WalkerMetric = "sharpeRatio" | "annualizedSharpeRatio" | "winRate" | "totalPnl" | "certaintyRatio" | "avgPnl" | "expectedYearlyReturns";
 ```
 
-Sources: [types.d.ts:954-969](), [types.d.ts:949]()
 
 **Property Reference**
 
@@ -690,7 +666,6 @@ Sources: [types.d.ts:954-969](), [types.d.ts:949]()
 | `metric` | `WalkerMetric` | ✗ | Optimization metric (default: "sharpeRatio") |
 | `callbacks` | `Partial<IWalkerCallbacks>` | ✗ | Event hooks (onStrategyStart, onStrategyComplete) |
 
-Sources: [types.d.ts:954-969]()
 
 **Walker Execution Flow**
 
@@ -722,7 +697,6 @@ graph TD
     Loop -->|"All complete"| Done
 ```
 
-Sources: [types.d.ts:954-969]()
 
 **Optimization Metrics**
 
@@ -736,7 +710,6 @@ Sources: [types.d.ts:954-969]()
 | `avgPnl` | `totalPnl / totalSignals` | ✓ |
 | `expectedYearlyReturns` | Based on avg trade duration and PNL | ✓ |
 
-Sources: [types.d.ts:949]()
 
 **Example: Strategy Comparison**
 
@@ -772,7 +745,6 @@ const results = await Walker.run("BTCUSDT", { walkerName: "ma-comparison" });
 console.log(`Best strategy: ${results.bestStrategy} (${results.bestMetric})`);
 ```
 
-Sources: [types.d.ts:954-969]()
 
 ---
 
@@ -872,7 +844,6 @@ addSizing({
 });
 ```
 
-Sources: Referenced in [src/index.ts:93-103]()
 
 ---
 
@@ -908,7 +879,6 @@ interface IOptimizerStrategy {
 }
 ```
 
-Sources: Referenced in [src/index.ts:124-134]()
 
 **Property Reference**
 
@@ -943,7 +913,6 @@ graph TD
     Template --> SaveFile
 ```
 
-Sources: Referenced in [src/index.ts:124-134]()
 
 **Example: Strategy Evolution**
 
@@ -990,7 +959,6 @@ addOptimizer({
 });
 ```
 
-Sources: Referenced in [src/index.ts:124-134]()
 
 ---
 
@@ -1047,7 +1015,6 @@ graph TB
     SignalRow -->|"wrapped in"| TickResult
 ```
 
-Sources: [types.d.ts:11-969]()
 
 **Registration and Retrieval Pattern**
 
@@ -1075,7 +1042,6 @@ graph LR
 | **Connect** | `StrategyConnectionService` | `ExchangeConnectionService` | `FrameConnectionService` | `RiskConnectionService` | — | `SizingConnectionService` | `OptimizerConnectionService` |
 | **Client** | `ClientStrategy` | `ClientExchange` | `ClientFrame` | `ClientRisk` | — | `ClientSizing` | `ClientOptimizer` |
 
-Sources: [src/index.ts:10-18](), [types.d.ts:728-969]()
 
 ---
 
@@ -1086,5 +1052,3 @@ Sources: [src/index.ts:10-18](), [types.d.ts:728-969]()
 - **[Signal & Result Types](./56_api-reference.md)**: `ISignalDto`, `ISignalRow`, `IStrategyTickResult` interfaces
 - **[Statistics & Contract Types](./56_api-reference.md)**: Result models and event contracts
 - **[Service Layer Interfaces](./56_api-reference.md)**: Internal service interfaces for advanced usage
-
-Sources: [types.d.ts:1-969](), [src/index.ts:1-199]()

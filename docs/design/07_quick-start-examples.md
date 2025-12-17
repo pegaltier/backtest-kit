@@ -145,7 +145,6 @@ graph TD
     BTMd --> File
 ```
 
-**Sources:**
 - [README.md:40-159]()
 - [src/classes/Backtest.ts:200-235]()
 - [src/classes/Backtest.ts:423-443]()
@@ -229,7 +228,6 @@ console.log('Live trading started. Press Ctrl+C to stop gracefully.');
 | **Completion event** | `doneBacktestSubject` | `doneLiveSubject` (only when stopped + no active signal) |
 | **Use case** | Historical testing, strategy validation | Production trading, real money |
 
-**Sources:**
 - [README.md:161-171]()
 - [src/classes/Live.ts:208-242]()
 - [src/classes/Live.ts:441-459]()
@@ -394,7 +392,6 @@ sequenceDiagram
 | `maxDrawdown` | Largest peak-to-trough decline | Risk tolerance assessment |
 | `avgPnlPerTrade` | Average profit per trade | Efficiency per signal |
 
-**Sources:**
 - [src/classes/Walker.ts:145-194]()
 - [src/classes/Walker.ts:214-246]()
 - [src/lib/services/walker/WalkerLogicPrivateService.ts]()
@@ -549,7 +546,6 @@ graph LR
 - Callbacks cannot block strategy execution
 - Unsubscribe by calling returned function: `const unsub = listenSignal(...); unsub();`
 
-**Sources:**
 - [README.md:174-176]()
 - [src/index.ts:200-249]()
 - [src/config/emitters.ts]()
@@ -658,7 +654,6 @@ graph TB
 | **Push (background)** | Production bots, monitoring dashboards, multi-strategy portfolios, fire-and-forget execution |
 | **Pull (run)** | Research, testing, LLM agents, conditional logic, early termination, sequential workflows |
 
-**Sources:**
 - [README.md:201-224]()
 - [src/classes/Backtest.ts:378-400]()
 - [src/classes/Backtest.ts:423-443]()
@@ -752,7 +747,6 @@ graph TD
 - Default value is 0.3% which covers 0.1% fee + 0.1% slippage + 0.1% buffer
 - `CC_MAX_PRICE_ANOMALY_PERCENTAGE` protects against bad data causing unrealistic backtest results
 
-**Sources:**
 - [README.md:45-63]()
 - [README.md:178-184]()
 - [src/config/params.ts:17-95]()
@@ -784,7 +778,6 @@ npx tsx example.ts
 node --loader tsx example.ts
 ```
 
-**Sources:**
 - [README.md:40-43]()
 - [package.json:71-79]()
 - [demo/backtest/package.json]()

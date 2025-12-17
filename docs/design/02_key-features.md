@@ -59,7 +59,6 @@ graph TB
 
 **Diagram: Temporal Context Propagation for Look-Ahead Bias Prevention**
 
-Sources: [README.md:186-199](), [src/lib/services/context/ExecutionContextService.ts](), [src/api/getCandles.ts]()
 
 ---
 
@@ -116,7 +115,6 @@ graph LR
 - **Live**: Uses `LiveLogicPrivateService.generate()` [src/lib/services/logic/private/LiveLogicPrivateService.ts:50-150]() with infinite `while(true)` loop. Polls every `TICK_TTL` (61000ms). Persists signals for crash recovery.
 - **Walker**: Uses `WalkerLogicPrivateService.generate()` [src/lib/services/logic/private/WalkerLogicPrivateService.ts:50-150]() to run multiple backtests sequentially, collect statistics from `BacktestMarkdownService`, and compare using configurable metrics.
 
-Sources: [src/classes/Backtest.ts](), [src/classes/Live.ts](), [src/classes/Walker.ts](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts](), [src/lib/services/logic/private/LiveLogicPrivateService.ts](), [src/lib/services/logic/private/WalkerLogicPrivateService.ts]()
 
 ---
 
@@ -190,7 +188,6 @@ graph TB
 | `CC_PERCENT_FEE` | 0.1% | Trading fee percentage |
 | `CC_PERCENT_SLIPPAGE` | 0.1% | Expected slippage |
 
-Sources: [src/client/ClientStrategy.ts:200-400](), [src/config/params.ts:1-100](), [src/client/ClientRisk.ts](), [src/lib/services/core/ExchangeCoreService.ts]()
 
 ---
 
@@ -222,7 +219,6 @@ persist_{symbol}_{strategyName}_{exchangeName}.json
 
 Example: `persist_BTCUSDT_myStrategy_binance.json`
 
-Sources: [src/lib/services/persist/PersistSignalAdapter.ts](), [src/client/ClientStrategy.ts:500-600](), [src/interfaces/Persist.interface.ts]()
 
 ---
 
@@ -292,7 +288,6 @@ addRisk({
 - `MergeRisk` [src/client/MergeRisk.ts:1-100]() combines multiple risk profiles using logical AND
 - `RiskGlobalService` [src/lib/services/global/RiskGlobalService.ts]() maintains portfolio-wide state
 
-Sources: [README.md:83-100](), [src/client/ClientRisk.ts](), [src/client/MergeRisk.ts](), [src/lib/services/global/RiskGlobalService.ts]()
 
 ---
 
@@ -394,7 +389,6 @@ addStrategy({
 });
 ```
 
-Sources: [src/lib/services/template/OptimizerTemplateService.ts](), [src/client/ClientOptimizer.ts](), [src/interfaces/Optimizer.interface.ts](), [README.md:111-143]()
 
 ---
 
@@ -443,7 +437,6 @@ addExchange({
 2. Incomplete candle filtering (volume = 0 or prices missing)
 3. Retry logic with exponential backoff
 
-Sources: [README.md:70-80](), [src/client/ClientExchange.ts](), [src/lib/services/core/ExchangeCoreService.ts](), [src/interfaces/Exchange.interface.ts]()
 
 ---
 
@@ -523,7 +516,6 @@ From [README.md:175-176](), listeners use `functools-kit` `queued` wrapper for s
 
 Markdown services [src/lib/services/markdown/]() subscribe to emitters and accumulate events in `ReportStorage` (max 250 per key) for report generation.
 
-Sources: [src/config/emitters.ts](), [src/api/listeners/](), [README.md:175-176](), [src/lib/services/markdown/]()
 
 ---
 
@@ -570,7 +562,6 @@ Backtest.background('BTCUSDT', config);
 listenSignalBacktest(event => { /* handle */ });
 ```
 
-Sources: [README.md:201-224](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts](), [src/lib/services/logic/private/LiveLogicPrivateService.ts]()
 
 ---
 
@@ -601,7 +592,6 @@ Using last `CC_AVG_PRICE_CANDLES_COUNT` (default: 5) 1-minute candles.
 | `CC_AVG_PRICE_CANDLES_COUNT` | 5 | Number of 1m candles for VWAP |
 | `CC_SCHEDULED_PRICE_TOLERANCE_PERCENT` | 0.1% | Tolerance for scheduled activation |
 
-Sources: [src/client/ClientExchange.ts:150-200](), [src/config/params.ts:40-50]()
 
 ---
 
@@ -650,7 +640,6 @@ From [README.md:226-236]():
 | **Fees** | None | Subscription required |
 | **Extensibility** | Full code access | Limited to API |
 
-Sources: [package.json:1-80](), [README.md:226-236]()
 
 ---
 
@@ -687,7 +676,6 @@ Live.run('BTCUSDT', { strategyName: 'my-strategy', ... });
 | **Time source** | Frame timestamps | `new Date()` |
 | **Execution speed** | Fast-forward possible | Real-time only |
 
-Sources: [README.md:19](), [src/lib/services/context/ExecutionContextService.ts]()
 
 ---
 
@@ -705,7 +693,6 @@ From [README.md:243]():
 
 Tests use `worker-testbed` [package.json:69]() for isolated execution environments.
 
-Sources: [README.md:243](), [package.json:69]()
 
 ---
 
@@ -721,5 +708,3 @@ Sources: [README.md:243](), [package.json:69]()
 | **Events** | 13 emitters in `emitters.ts` | [src/config/emitters.ts]() |
 | **Reporting** | Markdown services, `ReportStorage` | [src/lib/services/markdown/]() |
 | **Data Sources** | `ClientExchange`, CCXT integration | [src/client/ClientExchange.ts]() |
-
-Sources: All files in [src/]() directory

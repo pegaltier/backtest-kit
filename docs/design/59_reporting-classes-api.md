@@ -23,7 +23,6 @@ The framework provides five reporting classes for analyzing different aspects of
 
 Each class is a singleton utility that delegates to its corresponding markdown service, which automatically accumulates events via event emitter subscriptions.
 
-**Sources:** [src/classes/Performance.ts:1-159](), [src/classes/Heat.ts:1-148](), [src/classes/Risk.ts:1-202](), [src/classes/Schedule.ts:1-149](), [src/classes/Partial.ts:1-186]()
 
 ## Common API Pattern
 
@@ -42,7 +41,6 @@ await ReportingClass.dump(...args, path?, columns?);
 
 Each method performs strategy validation before delegating to its markdown service. The `columns` parameter allows customization of report table structure.
 
-**Sources:** [src/classes/Performance.ts:70-155](), [src/classes/Heat.ts:57-139]()
 
 ## Class Hierarchy and Data Flow
 
@@ -108,7 +106,6 @@ graph TD
     PLEmit --> PartialMD
 ```
 
-**Sources:** [src/classes/Performance.ts:40-156](), [src/lib/services/markdown/PerformanceMarkdownService.ts:312-459](), [src/lib/services/markdown/HeatMarkdownService.ts:434-587]()
 
 ## Performance Class
 
@@ -135,7 +132,6 @@ Returns aggregated performance statistics grouped by metric type. Each metric in
 - `metricStats: Record<PerformanceMetricType, MetricStats>`
 - `events: PerformanceContract[]`
 
-**Sources:** [src/classes/Performance.ts:70-83]()
 
 #### `Performance.getReport(symbol, strategyName, columns?): Promise<string>`
 
@@ -151,7 +147,6 @@ Generates markdown report with:
 
 **Returns:** Markdown formatted report string
 
-**Sources:** [src/classes/Performance.ts:108-118]()
 
 #### `Performance.dump(symbol, strategyName, path?, columns?): Promise<void>`
 
@@ -163,7 +158,6 @@ Saves performance report to disk. Default path: `./dump/performance/{strategyNam
 - `path?: string` - Custom directory path
 - `columns?: Columns[]` - Optional custom column configuration
 
-**Sources:** [src/classes/Performance.ts:140-155]()
 
 ### Data Collection
 
@@ -175,7 +169,6 @@ Performance metrics are collected via `performanceEmitter` which broadcasts `Per
 
 Maximum 10,000 events stored per symbol-strategy pair.
 
-**Sources:** [src/lib/services/markdown/PerformanceMarkdownService.ts:74-97](), [src/lib/services/markdown/PerformanceMarkdownService.ts:331-340]()
 
 ## Heat Class
 
@@ -201,7 +194,6 @@ Symbols are sorted by Sharpe Ratio (best performers first).
 - `portfolioSharpeRatio: number | null`
 - `portfolioTotalTrades: number`
 
-**Sources:** [src/classes/Heat.ts:57-69](), [src/lib/services/markdown/HeatMarkdownService.ts:278-330]()
 
 #### `Heat.getReport(strategyName, columns?): Promise<string>`
 
@@ -213,7 +205,6 @@ Generates markdown heatmap table with portfolio summary header.
 
 **Returns:** Markdown formatted heatmap report
 
-**Sources:** [src/classes/Heat.ts:97-109]()
 
 #### `Heat.dump(strategyName, path?, columns?): Promise<void>`
 
@@ -224,7 +215,6 @@ Saves heatmap report to disk. Default path: `./dump/heatmap/{strategyName}.md`
 - `path?: string` - Custom directory path
 - `columns?: Columns[]` - Optional custom column configuration
 
-**Sources:** [src/classes/Heat.ts:130-139]()
 
 ### Data Collection
 
@@ -232,7 +222,6 @@ Heat data is collected via `signalEmitter` which broadcasts all closed signals. 
 
 Maximum 250 signals stored per symbol.
 
-**Sources:** [src/lib/services/markdown/HeatMarkdownService.ts:455-466](), [src/lib/services/markdown/HeatMarkdownService.ts:82-105]()
 
 ## Risk Class
 
@@ -254,7 +243,6 @@ Returns risk rejection statistics with aggregations by symbol and by strategy.
 - `bySymbol: Record<string, number>` - Rejection count per symbol
 - `byStrategy: Record<string, number>` - Rejection count per strategy
 
-**Sources:** [src/classes/Risk.ts:156-171](), [src/lib/services/markdown/RiskMarkdownService.ts:75-99]()
 
 #### `Risk.getReport(symbol, strategyName, columns?): Promise<string>`
 
@@ -267,7 +255,6 @@ Generates markdown report with rejection event table and summary statistics brok
 
 **Returns:** Markdown formatted report string
 
-**Sources:** [src/classes/Risk.ts:185-197]()
 
 #### `Risk.dump(symbol, strategyName, path?, columns?): Promise<void>`
 
@@ -279,7 +266,6 @@ Saves risk rejection report to disk. Default filename: `{symbol}_{strategyName}.
 - `path?: string` - Custom directory path (default: `./dump/risk`)
 - `columns?: Columns[]` - Optional custom column configuration
 
-**Sources:** [src/classes/Risk.ts:211-223]()
 
 ### MergeRisk Class
 
@@ -293,7 +279,6 @@ new MergeRisk(riskList: IRisk[])
 
 Creates a merged risk profile from multiple `IRisk` instances.
 
-**Sources:** [src/classes/Risk.ts:42-48]()
 
 #### `checkSignal(params): Promise<boolean>`
 
@@ -304,19 +289,16 @@ Returns `true` only if ALL child risk profiles approve the signal (logical AND).
 
 **Returns:** `true` if all risks pass, `false` if any risk rejects
 
-**Sources:** [src/classes/Risk.ts:59-67]()
 
 #### `addSignal(symbol, context): Promise<void>`
 
 Propagates signal registration to all child risk profiles in parallel.
 
-**Sources:** [src/classes/Risk.ts:79-90]()
 
 #### `removeSignal(symbol, context): Promise<void>`
 
 Propagates signal removal to all child risk profiles in parallel.
 
-**Sources:** [src/classes/Risk.ts:102-116]()
 
 ### Data Collection
 
@@ -332,7 +314,6 @@ Risk rejection events are collected via `riskSubject` which emits `RiskEvent` ob
 
 Maximum 250 events stored per symbol-strategy pair.
 
-**Sources:** [src/lib/services/markdown/RiskMarkdownService.ts:52-68](), [src/lib/services/markdown/RiskMarkdownService.ts:233-240]()
 
 ## Schedule Class
 
@@ -359,7 +340,6 @@ Returns scheduled signal statistics including cancellation rate and average wait
 - `avgWaitTime: number | null` - Minutes until cancellation
 - `avgActivationTime: number | null` - Minutes until activation
 
-**Sources:** [src/classes/Schedule.ts:48-63](), [src/lib/services/markdown/ScheduleMarkdownService.ts:156-218]()
 
 #### `Schedule.getReport(symbol, strategyName, columns?): Promise<string>`
 
@@ -372,7 +352,6 @@ Generates markdown report with scheduled event table and summary statistics show
 
 **Returns:** Markdown formatted report string
 
-**Sources:** [src/classes/Schedule.ts:79-94]()
 
 #### `Schedule.dump(symbol, strategyName, path?, columns?): Promise<void>`
 
@@ -384,7 +363,6 @@ Saves schedule report to disk. Default path: `./dump/schedule/{strategyName}.md`
 - `path?: string` - Custom directory path
 - `columns?: Columns[]` - Optional custom column configuration
 
-**Sources:** [src/classes/Schedule.ts:113-134]()
 
 ### Data Collection
 
@@ -395,7 +373,6 @@ Schedule data is collected via `signalEmitter` which broadcasts all signal event
 
 Maximum 250 events stored per symbol-strategy pair.
 
-**Sources:** [src/lib/services/markdown/ScheduleMarkdownService.ts:351-369](), [src/lib/services/markdown/ScheduleMarkdownService.ts:52-149]()
 
 ## Partial Class
 
@@ -417,7 +394,6 @@ Returns partial profit/loss event statistics.
 - `totalProfit: number` - Count of profit milestone events
 - `totalLoss: number` - Count of loss milestone events
 
-**Sources:** [src/classes/Partial.ts:68-80](), [src/lib/services/markdown/PartialMarkdownService.ts:135-154]()
 
 #### `Partial.getReport(symbol, strategyName, columns?): Promise<string>`
 
@@ -435,7 +411,6 @@ Generates markdown report with partial event table showing:
 
 **Returns:** Markdown formatted report string
 
-**Sources:** [src/classes/Partial.ts:121-133]()
 
 #### `Partial.dump(symbol, strategyName, path?, columns?): Promise<void>`
 
@@ -447,7 +422,6 @@ Saves partial report to disk. Default filename: `{symbol}_{strategyName}.md`
 - `path?: string` - Custom directory path (default: `./dump/partial`)
 - `columns?: Columns[]` - Optional custom column configuration
 
-**Sources:** [src/classes/Partial.ts:148-159]()
 
 ### Data Collection
 
@@ -468,7 +442,6 @@ Each event contains:
 
 Maximum 250 events stored per symbol-strategy pair.
 
-**Sources:** [src/lib/services/markdown/PartialMarkdownService.ts:284-338](), [src/lib/services/markdown/PartialMarkdownService.ts:60-128]()
 
 ## Column Configuration
 
@@ -485,7 +458,6 @@ interface ColumnModel<T extends object = any> {
 }
 ```
 
-**Sources:** [src/model/Column.model.ts:26-38]()
 
 ### Column Type Aliases
 
@@ -503,7 +475,6 @@ Each markdown service defines a type alias for its column configuration:
 | `ScheduleMarkdownService` | `Columns` | `ScheduledEvent` |
 | `PartialMarkdownService` | `Columns` | `PartialEvent` |
 
-**Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:48](), [src/lib/services/markdown/LiveMarkdownService.ts:50](), [src/lib/services/markdown/PerformanceMarkdownService.ts:47]()
 
 ### Default Column Configuration
 
@@ -524,7 +495,6 @@ const walkerStrategyColumns = COLUMN_CONFIG.walker_strategy_columns;
 const walkerPnlColumns = COLUMN_CONFIG.walker_pnl_columns;
 ```
 
-**Sources:** [src/config/columns.ts]() (referenced in multiple markdown services)
 
 ### Custom Column Example
 
@@ -561,7 +531,6 @@ const markdown = await Performance.getReport(
 );
 ```
 
-**Sources:** [test/spec/columns.test.mjs:69-112]()
 
 ## API Method Signature Patterns
 
@@ -591,7 +560,6 @@ dump(
 ): Promise<void>
 ```
 
-**Sources:** [src/classes/Performance.ts:70-155](), [src/classes/Risk.ts:156-223]()
 
 ### Strategy Scope
 
@@ -615,7 +583,6 @@ dump(
 ): Promise<void>
 ```
 
-**Sources:** [src/classes/Heat.ts:57-139]()
 
 ## Statistics Models Reference
 
@@ -650,7 +617,6 @@ Each reporting class returns a specific statistics model from its `getData()` me
 }
 ```
 
-**Sources:** [src/lib/services/markdown/PerformanceMarkdownService.ts:104-185]()
 
 ### HeatmapStatisticsModel
 
@@ -684,7 +650,6 @@ Each reporting class returns a specific statistics model from its `getData()` me
 }
 ```
 
-**Sources:** [src/lib/services/markdown/HeatMarkdownService.ts:278-330](), [src/lib/services/markdown/HeatMarkdownService.ts:108-271]()
 
 ### RiskStatisticsModel
 
@@ -709,7 +674,6 @@ Each reporting class returns a specific statistics model from its `getData()` me
 }
 ```
 
-**Sources:** [src/lib/services/markdown/RiskMarkdownService.ts:75-99]()
 
 ### ScheduleStatisticsModel
 
@@ -743,7 +707,6 @@ Each reporting class returns a specific statistics model from its `getData()` me
 }
 ```
 
-**Sources:** [src/lib/services/markdown/ScheduleMarkdownService.ts:156-218]()
 
 ### PartialStatisticsModel
 
@@ -769,7 +732,6 @@ Each reporting class returns a specific statistics model from its `getData()` me
 }
 ```
 
-**Sources:** [src/lib/services/markdown/PartialMarkdownService.ts:135-154]()
 
 ## Storage and Memory Management
 
@@ -785,7 +747,6 @@ All markdown services implement a consistent storage pattern with memory limits:
 
 Storage instances are created and cached using `memoize` pattern from `functools-kit`. When the event limit is exceeded, the oldest events are removed (FIFO queue).
 
-**Sources:** [src/lib/services/markdown/PerformanceMarkdownService.ts:75-97](), [src/lib/services/markdown/HeatMarkdownService.ts:76-105](), [src/lib/services/markdown/RiskMarkdownService.ts:46-68]()
 
 ## Complete Usage Example
 
@@ -842,4 +803,3 @@ await Schedule.dump("BTCUSDT", "my-strategy");
 await Partial.dump("BTCUSDT", "my-strategy");
 ```
 
-**Sources:** [src/classes/Performance.ts:18-38](), [src/classes/Heat.ts:18-31]()

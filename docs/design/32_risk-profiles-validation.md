@@ -23,7 +23,6 @@ Risk profiles enable **portfolio-level risk management** beyond per-signal valid
 
 Risk profiles are **registered once** via `addRisk()` and then **referenced** by strategies using `riskName` or `riskList` fields in `IStrategySchema`.
 
-**Sources:** [types.d.ts:414-426](), [README.md:82-100]()
 
 ---
 
@@ -48,7 +47,6 @@ interface IRiskSchema {
 - **`callbacks`**: Optional lifecycle hooks for rejected/allowed signals
 - **`note`**: Developer comment for documentation
 
-**Sources:** [types.d.ts:414-426]()
 
 ---
 
@@ -104,7 +102,6 @@ addRisk({
 });
 ```
 
-**Sources:** [types.d.ts:392-412](), [README.md:82-100]()
 
 ---
 
@@ -144,7 +141,6 @@ interface IRiskActivePosition {
 - **`symbol`**, **`strategyName`**, **`exchangeName`**: Context information
 - **`timestamp`**: Current time (milliseconds)
 
-**Sources:** [types.d.ts:339-390]()
 
 ---
 
@@ -185,7 +181,6 @@ graph TD
     style Allow fill:#efe,stroke:#0c0
 ```
 
-**Sources:** [types.d.ts:448-479](), [src/lib/services/core/StrategyCoreService.ts]()
 
 ---
 
@@ -213,7 +208,6 @@ interface IRisk {
 
 **When Called:** Before opening a new position (after signal validation pipeline passes)
 
-**Sources:** [types.d.ts:452-458]()
 
 ---
 
@@ -228,7 +222,6 @@ interface IRisk {
 
 **When Called:** Immediately after opening a signal (when action = "opened")
 
-**Sources:** [types.d.ts:460-468]()
 
 ---
 
@@ -243,7 +236,6 @@ interface IRisk {
 
 **When Called:** Immediately after closing a signal (when action = "closed")
 
-**Sources:** [types.d.ts:470-478]()
 
 ---
 
@@ -283,7 +275,6 @@ stateDiagram-v2
     end note
 ```
 
-**Sources:** [types.d.ts:448-479]()
 
 ---
 
@@ -366,7 +357,6 @@ addRisk({
 });
 ```
 
-**Sources:** [README.md:82-100]()
 
 ---
 
@@ -405,7 +395,6 @@ addRisk({
 
 **Note:** These are **schema-level callbacks** (defined in `IRiskSchema`). They differ from the **service-level `onRejected` callback** in `IRiskParams`, which is used internally to emit events to `riskSubject`.
 
-**Sources:** [types.d.ts:371-378](), [types.d.ts:428-446]()
 
 ---
 
@@ -445,7 +434,6 @@ class MergeRisk implements IRisk {
 - **`addSignal`**: Propagates to **all** child risks in parallel
 - **`removeSignal`**: Propagates to **all** child risks in parallel
 
-**Sources:** [src/classes/Risk.ts:42-111]()
 
 ---
 
@@ -476,7 +464,6 @@ const mergedRisk = new MergeRisk(risks);
 const canTrade = await mergedRisk.checkSignal(params);  // All must pass
 ```
 
-**Sources:** [types.d.ts:728-747](), [src/classes/Risk.ts:42-111]()
 
 ---
 
@@ -515,7 +502,6 @@ graph TB
     style Rejected fill:#fee,stroke:#c00
 ```
 
-**Sources:** [src/classes/Risk.ts:42-111]()
 
 ---
 
@@ -555,7 +541,6 @@ listenRisk((event) => {
 });
 ```
 
-**Sources:** [src/config/emitters.ts:126-131](), [src/function/event.ts:332-366]()
 
 ---
 
@@ -581,7 +566,6 @@ try {
 }
 ```
 
-**Sources:** [types.d.ts:428-446]()
 
 ---
 
@@ -618,7 +602,6 @@ addStrategy({
 
 **Note:** You **cannot use both** `riskName` and `riskList` in the same strategy. Use `riskList` for multiple risks.
 
-**Sources:** [types.d.ts:728-747]()
 
 ---
 
@@ -662,7 +645,6 @@ graph TD
     style riskSubject fill:#fff3cd,stroke:#856404
 ```
 
-**Sources:** [src/function/add.ts](), [src/lib/client/ClientRisk.ts](), [src/classes/Risk.ts:42-111](), [src/config/emitters.ts:126-131](), [types.d.ts:339-479]()
 
 ---
 
@@ -701,7 +683,6 @@ Risk validations use **exception-based control flow**:
 - **Parallel execution**: `MergeRisk` runs child risk checks in parallel via `Promise.all()`
 - **Early exit**: Sequential validation stops at first failure
 
-**Sources:** [src/lib/client/ClientRisk.ts](), [src/lib/services/connection/RiskConnectionService.ts]()
 
 ---
 
@@ -716,7 +697,6 @@ Risk validations use **exception-based control flow**:
 | **Performance** | Direct execution | Small overhead from composite pattern |
 | **Callbacks** | Per-risk callbacks fire | Each child risk's callbacks fire independently |
 
-**Sources:** [src/classes/Risk.ts:42-111](), [src/lib/client/ClientRisk.ts]()
 
 ---
 
@@ -730,4 +710,3 @@ Risk validations use **exception-based control flow**:
 - **Lifecycle**: `checkSignal()` → `addSignal()` → `removeSignal()`
 - **Events**: Rejected signals emit to `riskSubject` (listen via `listenRisk()`)
 
-**Sources:** [types.d.ts:339-479](), [src/classes/Risk.ts:42-111](), [src/lib/client/ClientRisk.ts](), [README.md:82-100]()

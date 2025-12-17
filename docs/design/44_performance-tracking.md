@@ -11,7 +11,6 @@ Performance tracking provides execution timing metrics for profiling strategy op
 
 This page covers performance event emission, event listening, statistics calculation, and report generation. For general event system architecture, see [9.1 Event Listeners](./40_reporting-monitoring.md). For other monitoring capabilities, see [9.2 Markdown Reports](./40_reporting-monitoring.md) and [9.3 Statistics Models](./40_reporting-monitoring.md).
 
-**Sources:** [src/lib/services/markdown/PerformanceMarkdownService.ts:1-460](), [types.d.ts:156-160]()
 
 ---
 
@@ -76,7 +75,6 @@ graph TB
     style METRICS fill:#e8e8e8,stroke:#333,stroke-width:2px
 ```
 
-**Sources:** [src/lib/services/markdown/PerformanceMarkdownService.ts:312-460](), [src/config/emitters.ts:82-86](), [src/function/event.ts:531-556]()
 
 ---
 
@@ -97,7 +95,6 @@ Performance events use the `PerformanceContract` type to capture timing informat
 - Framework typically uses values like: `"tick"`, `"backtest"`, `"getSignal"`, `"getCandles"`, `"getAveragePrice"`
 - Custom strategies can emit custom metric types
 
-**Sources:** [types.d.ts:156-160](), [src/contract/Performance.contract.ts]()
 
 ---
 
@@ -130,7 +127,6 @@ The framework automatically emits events for:
 - **getCandles calls**: Data fetching timing
 - **getAveragePrice calls**: VWAP calculation timing
 
-**Sources:** [src/config/emitters.ts:82-86](), [src/lib/services/markdown/PerformanceMarkdownService.ts:331-340]()
 
 ---
 
@@ -156,7 +152,6 @@ unsubscribe();
 
 The callback receives a `PerformanceContract` object for each event. Events are processed sequentially even if the callback is async, preventing race conditions.
 
-**Sources:** [src/function/event.ts:531-556]()
 
 ---
 
@@ -222,7 +217,6 @@ graph TB
 3. **Automatic Trimming**: When capacity is exceeded, oldest events are removed
 4. **Singleshot Init**: Service initializes once and subscribes to `performanceEmitter`
 
-**Sources:** [src/lib/services/markdown/PerformanceMarkdownService.ts:312-460](), [src/lib/services/markdown/PerformanceMarkdownService.ts:81-283]()
 
 ---
 
@@ -267,7 +261,6 @@ This measures the interval between consecutive events of the same `metricType`, 
 - Idle periods where no operations occur
 - Bottlenecks causing delays between operations
 
-**Sources:** [src/lib/services/markdown/PerformanceMarkdownService.ts:104-184](), [src/lib/services/markdown/PerformanceMarkdownService.ts:66-72]()
 
 ---
 
@@ -297,7 +290,6 @@ graph LR
     style FIELDS fill:#f0f0f0,stroke:#333,stroke-width:2px
 ```
 
-**Sources:** [src/model/PerformanceStatistics.model.ts](), [types.d.ts:1-10000]()
 
 ---
 
@@ -335,7 +327,6 @@ bottlenecks.forEach((metric, i) => {
 });
 ```
 
-**Sources:** [src/classes/Performance.ts](), [src/lib/services/markdown/PerformanceMarkdownService.ts:357-367]()
 
 ---
 
@@ -390,7 +381,6 @@ The generated markdown includes:
 **Note:** All durations are in milliseconds. P95/P99 represent 95th and 99th percentile response times. Wait times show the interval between consecutive events of the same type.
 ```
 
-**Sources:** [src/lib/services/markdown/PerformanceMarkdownService.ts:194-254](), [src/lib/services/markdown/PerformanceMarkdownService.ts:383-394]()
 
 ---
 
@@ -430,7 +420,6 @@ const report = await Performance.getReport(
 );
 ```
 
-**Sources:** [src/lib/services/markdown/PerformanceMarkdownService.ts:14-47](), [src/config/columns.ts](), [src/model/Column.model.ts:1-39]()
 
 ---
 
@@ -456,7 +445,6 @@ Clearing is useful when:
 - Managing memory in long-running processes
 - Resetting data after configuration changes
 
-**Sources:** [src/lib/services/markdown/PerformanceMarkdownService.ts:434-452]()
 
 ---
 
@@ -518,7 +506,6 @@ graph TB
 
 Custom strategies can emit additional metric types by calling `performanceEmitter.emit()` directly.
 
-**Sources:** [src/lib/services/markdown/PerformanceMarkdownService.ts:1-460](), [src/config/emitters.ts:82-86]()
 
 ---
 
@@ -545,7 +532,6 @@ This ensures that performance reports remain stable even with:
 - Empty event lists
 - Division by zero scenarios
 
-**Sources:** [src/lib/services/markdown/PerformanceMarkdownService.ts:49-63]()
 
 ---
 
@@ -574,7 +560,6 @@ public addEvent(event: PerformanceContract) {
 
 For long-running live trading or extensive backtests, the 10,000 event limit prevents unbounded memory growth while retaining sufficient recent history for analysis.
 
-**Sources:** [src/lib/services/markdown/PerformanceMarkdownService.ts:75-97]()
 
 ---
 
@@ -638,4 +623,3 @@ await Performance.dump("BTCUSDT", "my-strategy");
 console.log("\nReport saved to: ./dump/performance/my-strategy.md");
 ```
 
-**Sources:** [src/lib/services/markdown/PerformanceMarkdownService.ts:286-311](), [src/function/event.ts:531-556]()

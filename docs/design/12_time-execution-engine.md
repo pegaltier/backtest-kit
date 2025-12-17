@@ -26,7 +26,6 @@ This is implemented using Node.js `AsyncLocalStorage` via the `di-scoped` librar
 
 The `when` field in `ExecutionContextService` is the key to the entire time execution model. Every data access operation reads this value to determine "what time is it right now?" and returns only data up to that point.
 
-**Sources:** [README.md:185-198](), [docs/internals.md:42-52]()
 
 ---
 
@@ -81,7 +80,6 @@ graph TB
 
 The diagram shows how temporal context flows from orchestration through strategy execution to data access. The dashed lines represent ambient context propagation via `AsyncLocalStorage`, while solid lines represent direct function calls.
 
-**Sources:** [docs/internals.md:54-81](), High-level architecture diagrams (Diagram 1, 3, 4)
 
 ---
 
@@ -124,7 +122,6 @@ The backtest engine iterates through pre-generated timeframes, setting the execu
 - Strategies can **skip timeframes** after signal opens using fast backtest optimization
 - The `when` value is always **in the past** relative to real-world time
 
-**Sources:** [docs/internals.md:54-67](), Diagram 2 from high-level architecture
 
 ---
 
@@ -169,7 +166,6 @@ The live engine continuously polls at regular intervals, setting the execution c
 - The `when` value is always **now** relative to real-world time
 - Implements **crash recovery** via persistence between ticks
 
-**Sources:** [docs/internals.md:69-82](), Diagram 2 from high-level architecture
 
 ---
 
@@ -220,7 +216,6 @@ In backtest mode, if `when = "2025-01-15 14:30:00"`:
 
 Each timeframe respects the **same temporal boundary** but rounds down to its interval.
 
-**Sources:** [README.md:123-134](), [README.md:189-198]()
 
 ---
 
@@ -290,7 +285,6 @@ The temporal context mechanism works identically in backtest and live modes:
 
 This means strategies tested in backtest mode will behave identically in live mode, with the same temporal guarantees.
 
-**Sources:** [README.md:185-198](), [docs/internals.md:54-81]()
 
 ---
 
@@ -368,7 +362,6 @@ The time execution engine is implemented through a layered service architecture 
 | `ClientStrategy` | Executes user's `getSignal()` function with ambient context | Client layer |
 | `ClientExchange` | Fetches candles respecting temporal boundary from context | Client layer |
 
-**Sources:** [docs/internals.md:28-40](), Diagram 4 from high-level architecture
 
 ---
 
@@ -444,7 +437,6 @@ listenSignalBacktest(event => {
 
 Both consumption patterns receive the same time-ordered stream of events.
 
-**Sources:** [README.md:201-224](), [docs/internals.md:42-52]()
 
 ---
 
@@ -486,7 +478,6 @@ It is architecturally impossible to access data from beyond the current `when` t
 
 When requesting multiple timeframes in the same tick, all are synchronized to the same temporal boundary, preventing data misalignment between timeframes.
 
-**Sources:** [README.md:185-198](), [docs/internals.md:91-102]()
 
 ---
 
@@ -530,7 +521,6 @@ addStrategy({
 
 In backtest mode, `getCandles()` returns historical data up to the current frame timestamp. In live mode, it returns historical data up to `new Date()`. The same code works in both modes with identical temporal guarantees.
 
-**Sources:** [README.md:111-142]()
 
 ---
 
@@ -543,4 +533,3 @@ The Time Execution Engine interacts with other architectural components:
 - **VWAP Pricing** ([#3.5](./08_core-concepts.md)) - How realistic pricing integrates with temporal context
 - **Signal Lifecycle** ([#3.1](./08_core-concepts.md)) - How signals evolve through time-bound state transitions
 
-**Sources:** High-level architecture diagrams, [docs/internals.md:1-131]()

@@ -27,7 +27,6 @@ Strategies are stateless algorithms—they do not maintain position tracking or 
 | **Mode-Agnostic** | Same code executes in backtest and live modes via temporal context |
 | **Risk-Aware** | Optional `riskName` or `riskList` for portfolio-level validation |
 
-Sources: [types.d.ts:728-747]()
 
 ---
 
@@ -61,7 +60,6 @@ interface IStrategySchema {
 | `riskName` | `RiskName` | No | Single risk profile for validation (mutually exclusive with `riskList`) |
 | `riskList` | `RiskName[]` | No | Multiple risk profiles; all must pass validation |
 
-Sources: [types.d.ts:728-747](), [src/index.ts:79-88]()
 
 ---
 
@@ -107,7 +105,6 @@ interface ISignalDto {
 
 When no trading opportunity exists, `getSignal` returns `null`. This is the normal case when market conditions don't meet strategy criteria. The framework handles this gracefully by transitioning to "idle" state and emitting an `IStrategyTickResultIdle` event.
 
-Sources: [types.d.ts:649-665](), [types.d.ts:728-747]()
 
 ---
 
@@ -178,7 +175,6 @@ graph TB
 7. Risk validation checks portfolio constraints
 8. Final `IStrategyTickResult` emits to event system
 
-Sources: [types.d.ts:728-747](), [docs/classes/StrategyConnectionService.md:1-145](), [src/function/add.ts]()
 
 ---
 
@@ -248,7 +244,6 @@ graph TD
 5. **Risk Validation**: Portfolio-level constraints from `ClientRisk`
 6. **priceOpen Logic**: Determines immediate vs. scheduled signal behavior
 
-Sources: [types.d.ts:728-747](), [types.d.ts:649-665]()
 
 ---
 
@@ -294,7 +289,6 @@ interface IStrategyCallbacks {
 - All callbacks receive `backtest` boolean to distinguish execution mode
 - Callbacks are synchronous; avoid blocking operations
 
-Sources: [types.d.ts:699-723]()
 
 ---
 
@@ -326,7 +320,6 @@ Throttling is enforced in `ClientStrategy.tick()` by comparing current timestamp
 - **Higher intervals (30m, 1h)**: Suitable for swing strategies, reduces noise
 - **Recommendation**: Match interval to strategy timeframe; a strategy analyzing hourly candles should use `1h` interval
 
-Sources: [types.d.ts:643-645](), [types.d.ts:728-747]()
 
 ---
 
@@ -406,7 +399,6 @@ Risk profiles access additional portfolio state via `IRiskValidationPayload`:
 - `activePositionCount`: Total open positions across all strategies
 - `activePositions`: List of active signals with metadata
 
-Sources: [types.d.ts:728-747](), [types.d.ts:413-426](), [types.d.ts:339-356]()
 
 ---
 
@@ -444,7 +436,6 @@ The "fast backtest" optimization skips timeframes while a signal is active, jump
 
 Only "opened" signals persist to storage (via `PersistSignalAdapter`). Scheduled signals remain ephemeral until activation. This enables crash recovery without data bloat.
 
-Sources: High-level system diagrams provided, [types.d.ts:728-747]()
 
 ---
 
@@ -528,7 +519,6 @@ graph TB
 - **StrategyConnectionService**: Routes to memoized `ClientStrategy` instances by `symbol:strategyName` key
 - **ClientStrategy**: Implements `IStrategy` interface, executes `getSignal` and manages signal state machine
 
-Sources: [src/function/add.ts](), [types.d.ts:728-747](), [docs/classes/StrategyConnectionService.md:1-145]()
 
 ---
 
@@ -552,7 +542,6 @@ This table maps conceptual strategy components to concrete code entities:
 | Implementation | `ClientStrategy` | [docs/classes/ClientExchange.md]() | Strategy instance with tick/backtest methods |
 | Risk Integration | `ClientRisk` | [docs/classes/ClientRisk.md]() | Signal validation |
 
-Sources: [types.d.ts:728-747](), [docs/classes/StrategyConnectionService.md:1-145]()
 
 ---
 
@@ -572,5 +561,3 @@ Strategies in Backtest Kit are:
 The `getSignal` function is the core contract: it receives temporal context implicitly, accesses market data via `getCandles()`, and returns trading signals that the framework validates, persists, and monitors through completion.
 
 For practical implementation guidance, see [Strategy Development](./25_strategy-development.md). For detailed `getSignal` patterns, see [Signal Generation (getSignal)](./25_strategy-development.md).
-
-Sources: [types.d.ts:728-747](), [types.d.ts:649-665](), [README.md:1-255]()

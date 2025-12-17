@@ -25,7 +25,6 @@ The exchange system provides market data abstraction through three key component
 
 An exchange schema must implement methods for fetching candles (`getCandles`), formatting prices and quantities according to exchange precision rules, and optionally handling lifecycle callbacks.
 
-**Sources:** [types.d.ts:82-209](), [README.md:70-80]()
 
 ---
 
@@ -56,7 +55,6 @@ graph TB
 
 The user defines an `IExchangeSchema` and registers it via `addExchange()`. The system validates uniqueness, stores the schema in `ToolRegistry`, and creates a memoized `ClientExchange` instance during execution. Strategies access exchange methods through `getCandles()` and `getAveragePrice()` helper functions.
 
-**Sources:** [types.d.ts:122-155](), [src/function/add.ts](), [src/client/ClientExchange.ts]()
 
 ---
 
@@ -109,7 +107,6 @@ classDiagram
 
 The schema consists of four required methods and one optional callbacks object. All methods are async to support API calls or database queries.
 
-**Sources:** [types.d.ts:122-155](), [types.d.ts:82-100](), [types.d.ts:114-117]()
 
 ---
 
@@ -158,7 +155,6 @@ getCandles: async (symbol, interval, since, limit) => {
 }
 ```
 
-**Sources:** [types.d.ts:128-137](), [README.md:73-77]()
 
 ---
 
@@ -192,7 +188,6 @@ formatPrice: async (symbol, price) => {
 }
 ```
 
-**Sources:** [types.d.ts:146-152](), [README.md:78]()
 
 ---
 
@@ -226,7 +221,6 @@ formatQuantity: async (symbol, quantity) => {
 }
 ```
 
-**Sources:** [types.d.ts:139-145](), [README.md:79]()
 
 ---
 
@@ -257,7 +251,6 @@ addExchange({
 });
 ```
 
-**Sources:** [types.d.ts:114-117](), [types.d.ts:154]()
 
 ---
 
@@ -296,7 +289,6 @@ The registration process validates uniqueness to prevent accidental overwrites, 
 - All required methods (`getCandles`, `formatPrice`, `formatQuantity`) must be provided
 - Callbacks are optional
 
-**Sources:** [src/function/add.ts](), [src/lib/services/validation/ExchangeValidationService.ts](), [src/lib/services/schema/ExchangeSchemaService.ts]()
 
 ---
 
@@ -333,7 +325,6 @@ graph TB
 - **VWAP Calculation:** Default uses 5 one-minute candles (configurable via `CC_AVG_PRICE_CANDLES_COUNT`)
 - **Callback Invocation:** `onCandleData` triggered after successful `getCandles()` execution
 
-**Sources:** [src/client/ClientExchange.ts](), [types.d.ts:102-110](), [types.d.ts:157-205]()
 
 ---
 
@@ -370,7 +361,6 @@ setConfig({
 - **Signal Monitoring:** Checking take profit and stop loss conditions
 - **Scheduled Signal Activation:** Determining when `priceOpen` is reached
 
-**Sources:** [types.d.ts:196-204](), [src/config/params.ts](), [src/client/ClientExchange.ts]()
 
 ---
 
@@ -418,7 +408,6 @@ The framework uses dependency injection to automatically route strategy calls to
 - `formatPrice(symbol, price)` - Format price for logging
 - `formatQuantity(symbol, quantity)` - Format quantity for logging
 
-**Sources:** [src/function/exchange.ts](), [src/lib/services/connection/ExchangeConnectionService.ts](), [src/lib/services/context/ExecutionContextService.ts]()
 
 ---
 
@@ -504,7 +493,6 @@ addExchange({
 });
 ```
 
-**Sources:** [README.md:70-80](), [demo/backtest/src/exchange.mjs](), [demo/live/src/exchange.mjs]()
 
 ---
 
@@ -589,7 +577,6 @@ addStrategy({
 });
 ```
 
-**Sources:** [src/client/ClientExchange.ts](), [src/lib/services/connection/ExchangeConnectionService.ts]()
 
 ---
 
@@ -606,4 +593,3 @@ The exchange configuration system provides flexible market data abstraction thro
 
 For specific integration patterns with CCXT, see [CCXT Integration](./36_exchanges-data-sources.md). For details on candle data structure and validation, see [Candle Data & Validation](./36_exchanges-data-sources.md).
 
-**Sources:** [types.d.ts:82-209](), [README.md:70-80](), [src/client/ClientExchange.ts](), [src/function/add.ts]()

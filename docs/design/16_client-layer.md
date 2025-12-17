@@ -68,7 +68,6 @@ graph TB
 | **Interface Contracts** | Each client implements specific interface | Type safety and clear API boundaries |
 | **Stateful Instances** | Each client maintains internal state (e.g., `_pendingSignal`) | Encapsulates signal lifecycle |
 
-Sources: [src/client/ClientStrategy.ts:1-1390](), [src/lib/services/connection/StrategyConnectionService.ts:1-309](), [types.d.ts:318-394]()
 
 ---
 
@@ -146,7 +145,6 @@ interface IStrategyParams {
 }
 ```
 
-Sources: [src/client/ClientStrategy.ts:1-1390](), [src/interfaces/Strategy.interface.ts:76-95](), [types.d.ts:318-389]()
 
 ---
 
@@ -204,7 +202,6 @@ If total volume is zero (illiquid market), falls back to simple average of close
 | **Exchange Precision** | `formatPrice()`, `formatQuantity()` | Delegates to user schema |
 | **Anomaly Detection** | Validates candle data | Checks for NaN, Infinity, incomplete candles |
 
-Sources: [src/client/ClientExchange.ts]() (inferred from types), [types.d.ts:159-205](), [src/client/ClientStrategy.ts:478-489]()
 
 ---
 
@@ -249,7 +246,6 @@ The `getTimeframe()` method generates timestamps by:
 
 This deterministic array enables backtest orchestration to iterate through history minute-by-minute (or at configured interval granularity).
 
-Sources: [types.d.ts:219-294](), [src/interfaces/Frame.interface.ts]() (inferred from types)
 
 ---
 
@@ -309,7 +305,6 @@ interface IRiskValidationPayload {
 4. **Position Tracking**: `addSignal()` after opening, `removeSignal()` after closing
 5. **Event Emission**: Rejected signals emit to `riskSubject`
 
-Sources: [types.d.ts:339-483](), [src/client/ClientRisk.ts]() (inferred from types), [src/lib/services/connection/StrategyConnectionService.ts:27-31]()
 
 ---
 
@@ -368,7 +363,6 @@ Price rises to $65,000 → 30% profit → Emit partialProfitSubject (level 30)
 - **Disk Persistence**: `PersistPartialAdapter` serializes Sets to arrays
 - **Crash Recovery**: State restored on `waitForInit()`
 
-Sources: [types.d.ts:486-639](), [src/client/ClientPartial.ts]() (inferred from types)
 
 ---
 
@@ -426,7 +420,6 @@ class ClientStrategy {
 | **Prototype Methods** | ~1KB (state only) | ~100KB |
 | **Savings** | 98% reduction | 98% reduction |
 
-Sources: [src/client/ClientStrategy.ts:1-100](), [docs/internals.md:30]()
 
 ---
 
@@ -518,7 +511,6 @@ Connection Services expose a `clear()` method to invalidate cached instances:
 
 This is useful for resetting state during testing or releasing resources.
 
-Sources: [src/lib/services/connection/StrategyConnectionService.ts:120-151](), [src/lib/services/connection/StrategyConnectionService.ts:292-305]()
 
 ---
 
@@ -540,5 +532,3 @@ The Client Layer follows a **pure business logic** pattern:
 - Stateful instances encapsulate domain logic
 
 This design separates concerns between orchestration (Service Layer) and execution (Client Layer), enabling testability, maintainability, and memory-optimized performance.
-
-Sources: [src/client/ClientStrategy.ts:1-1390](), [src/lib/services/connection/StrategyConnectionService.ts:1-309](), [types.d.ts:1-1500]()

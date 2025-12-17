@@ -29,7 +29,6 @@ interface IWalkerSchema {
 }
 ```
 
-**Sources:** [types.d.ts:954-969]()
 
 ### Supported Metrics
 
@@ -45,7 +44,6 @@ Walker supports seven optimization metrics, all maximized (higher is better):
 | `avgPnl` | `WalkerMetric` | Mean profit/loss per trade |
 | `expectedYearlyReturns` | `WalkerMetric` | Annualized return projection |
 
-**Sources:** [types.d.ts:949]()
 
 ### Callback Hooks
 
@@ -61,7 +59,6 @@ interface IWalkerCallbacks {
 }
 ```
 
-**Sources:** [types.d.ts:974-979]()
 
 ---
 
@@ -129,7 +126,6 @@ graph TB
     style WalkerLogicPriv fill:#e0e0e0,stroke:#333,stroke-width:2px
 ```
 
-**Sources:** [src/classes/Walker.ts:1-650](), [src/lib/services/logic/private/WalkerLogicPrivateService.ts:1-264]()
 
 ### Sequential Backtest Flow
 
@@ -172,7 +168,6 @@ sequenceDiagram
     WalkerLogicPrivateService-->>User: Return final results
 ```
 
-**Sources:** [src/lib/services/logic/private/WalkerLogicPrivateService.ts:68-175]()
 
 ---
 
@@ -194,7 +189,6 @@ The core orchestration logic in `WalkerLogicPrivateService` follows this algorit
 7. **Early Termination**: Check `walkerStopSubject` for stop signals
 8. **Completion**: Emit `walkerCompleteSubject` with final ranking
 
-**Sources:** [src/lib/services/logic/private/WalkerLogicPrivateService.ts:68-175]()
 
 ### Stop Signal Handling
 
@@ -221,7 +215,6 @@ const stopPromise = resolveDocuments(
 const shouldStop = await Promise.race([backtestPromise, stopPromise]);
 ```
 
-**Sources:** [src/classes/Walker.ts:271-283](), [src/lib/services/logic/private/WalkerLogicPrivateService.ts:100-122]()
 
 ---
 
@@ -252,7 +245,6 @@ Each strategy result includes:
 - Extracted `metricValue` for the optimization metric
 - `rank` based on metric value (1 = best)
 
-**Sources:** [src/model/WalkerStatistics.model.ts:1-54]()
 
 ### Real-Time Progress Tracking
 
@@ -274,7 +266,6 @@ interface WalkerContract {
 }
 ```
 
-**Sources:** [src/contract/Walker.contract.ts:1-48]()
 
 ### Markdown Report Generation
 
@@ -288,7 +279,6 @@ Walker reports display comparative statistics in tabular format:
 
 The best strategy (by selected metric) is marked with ⭐.
 
-**Sources:** [src/lib/services/markdown/WalkerMarkdownService.ts:1-300]()
 
 ---
 
@@ -312,7 +302,6 @@ for await (const progress of Walker.run("BTCUSDT", {
 }
 ```
 
-**Sources:** [src/classes/Walker.ts:378-429]()
 
 ### Walker.background() - Fire-and-Forget
 
@@ -335,7 +324,6 @@ listenWalkerComplete((results) => {
 });
 ```
 
-**Sources:** [src/classes/Walker.ts:431-481]()
 
 ### Walker.stop() - Graceful Cancellation
 
@@ -347,7 +335,6 @@ await Walker.stop("BTCUSDT", "my-optimizer");
 // Subsequent strategies will not execute
 ```
 
-**Sources:** [src/classes/Walker.ts:483-529]()
 
 ### Walker.getData() - Retrieve Results
 
@@ -366,7 +353,6 @@ results.strategyResults
   });
 ```
 
-**Sources:** [src/classes/Walker.ts:531-568]()
 
 ### Walker.getReport() - Generate Markdown
 
@@ -391,7 +377,6 @@ console.log(markdown);
 // | ... | ... | ... | ... |
 ```
 
-**Sources:** [src/classes/Walker.ts:570-616]()
 
 ### Walker.dump() - Save to Disk
 
@@ -405,7 +390,6 @@ await Walker.dump("BTCUSDT", "my-optimizer", "./custom/reports");
 // Saves to: ./custom/reports/my-optimizer.md
 ```
 
-**Sources:** [src/classes/Walker.ts:618-650]()
 
 ---
 
@@ -441,7 +425,6 @@ graph TB
 
 Each strategy execution updates `context.strategyName` while preserving `exchangeName` and `frameName`. This ensures consistent exchange and timeframe across all strategy comparisons.
 
-**Sources:** [src/lib/services/logic/private/WalkerLogicPrivateService.ts:68-175](), [src/lib/services/context/MethodContextService.ts:1-100]()
 
 ---
 
@@ -491,7 +474,6 @@ graph LR
     walkerStop -.->|cancellation| WalkerLogic
 ```
 
-**Sources:** [src/config/emitters.ts:1-150](), [src/function/event.ts:1-800]()
 
 ---
 
@@ -534,7 +516,6 @@ for (const strategyName of walkerSchema.strategies) {
 
 This ensures each walker run starts with clean state, preventing contamination from previous executions.
 
-**Sources:** [src/classes/Walker.ts:363-370](), [src/classes/Walker.ts:162-187]()
 
 ---
 
@@ -552,7 +533,6 @@ Walker and Optimizer ([10.2](./46_advanced-features.md)) serve different purpose
 
 Walker is used for **quantitative comparison** of known strategies. Optimizer is used for **automated strategy creation** using AI.
 
-**Sources:** [src/classes/Walker.ts:1-650](), [src/classes/Optimizer.ts:1-500]()
 
 ---
 
@@ -585,7 +565,6 @@ public async *run(symbol: string, strategies: StrategyName[], metric: WalkerMetr
 
 Only `BacktestStatisticsModel` (aggregate metrics) is retained per strategy, not individual signals.
 
-**Sources:** [src/lib/services/logic/private/WalkerLogicPrivateService.ts:68-175]()
 
 ### Parallel Execution Not Supported
 
@@ -600,7 +579,6 @@ Walker.background("BNBUSDT", { walkerName: "optimizer-group-3" });
 
 Each walker operates independently with its own state.
 
-**Sources:** [src/lib/services/logic/private/WalkerLogicPrivateService.ts:68-175]()
 
 ---
 
@@ -659,4 +637,3 @@ Walker.background("BTCUSDT", {
 });
 ```
 
-**Sources:** [src/function/add.ts:1-200](), [src/classes/Walker.ts:1-650](), [src/function/event.ts:1-800]()

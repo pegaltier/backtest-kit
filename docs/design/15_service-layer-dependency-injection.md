@@ -23,7 +23,6 @@ The service layer acts as the glue between the public API (addStrategy, Backtest
 
 The framework uses a custom DI container rather than a third-party library to maintain zero runtime dependencies and optimize for the specific patterns needed (memoization, context services, lazy initialization).
 
-**Sources**: [docs/internals.md:28-39](), [src/lib/index.ts:1-246]()
 
 ---
 
@@ -143,7 +142,6 @@ init();
 
 The `init()` call at the end triggers initialization of the DI container. After this point, any access to `backtest.loggerService` will instantiate the service (if not already created) and return the singleton instance.
 
-**Sources**: [src/lib/core/types.ts:1-105](), [src/lib/core/provide.ts:1-143](), [src/lib/index.ts:1-246]()
 
 ---
 
@@ -216,7 +214,6 @@ graph TB
     STRAT_FACTORY -.->|"creates"| STRAT_INST
 ```
 
-**Sources**: [src/lib/core/types.ts:1-105](), [src/lib/core/provide.ts:1-143](), [src/lib/index.ts:1-246]()
 
 ---
 
@@ -243,7 +240,6 @@ The framework organizes services into 11 distinct categories, each with a specif
 
 **Total Services**: 52
 
-**Sources**: [src/lib/core/types.ts:1-105](), [src/lib/index.ts:61-238]()
 
 ---
 
@@ -286,7 +282,6 @@ MethodContextService.runInContext(() => {
 }, { strategyName, exchangeName, frameName });
 ```
 
-**Sources**: [docs/internals.md:47](), [src/lib/index.ts:65-72]()
 
 ### 3. Schema Services
 
@@ -317,7 +312,6 @@ backtest.strategySchemaService.register(
 const schema = backtest.strategySchemaService.get(strategyName);
 ```
 
-**Sources**: [src/function/add.ts:52-64](), [src/lib/index.ts:98-112]()
 
 ### 4. Validation Services
 
@@ -350,7 +344,6 @@ await backtest.frameValidationService.assertExist(frameName);
 const strategies = await backtest.strategyValidationService.list();
 ```
 
-**Sources**: [src/function/list.ts:78-81](), [src/lib/index.ts:189-217]()
 
 ### 5. Connection Services
 
@@ -369,7 +362,6 @@ const strategies = await backtest.strategyValidationService.list();
 
 **Memoization Pattern**: See [Connection Services & Memoization](./14_architecture-deep-dive.md) for details.
 
-**Sources**: [docs/internals.md:34](), [src/lib/index.ts:74-96]()
 
 ### 6. Core Services
 
@@ -397,7 +389,6 @@ strategyCoreService.tick() {
 }
 ```
 
-**Sources**: [src/lib/index.ts:114-118]()
 
 ### 7. Global Services
 
@@ -417,7 +408,6 @@ strategyCoreService.tick() {
 // which has access to RiskGlobalService for portfolio-wide limits
 ```
 
-**Sources**: [src/lib/index.ts:120-129]()
 
 ### 8. Logic Services (Private)
 
@@ -443,7 +433,6 @@ async *run(symbol: string) {
 }
 ```
 
-**Sources**: [docs/internals.md:36](), [src/lib/index.ts:141-151]()
 
 ### 9. Logic Services (Public)
 
@@ -465,7 +454,6 @@ async *run(symbol: string, context: IMethodContext) {
 }
 ```
 
-**Sources**: [src/lib/index.ts:153-163]()
 
 ### 10. Command Services
 
@@ -488,7 +476,6 @@ run(symbol: string, context: IMethodContext) {
 }
 ```
 
-**Sources**: [src/lib/index.ts:131-139]()
 
 ### 11. Markdown Services
 
@@ -521,7 +508,6 @@ getReport() {
 }
 ```
 
-**Sources**: [docs/internals.md:37](), [src/lib/index.ts:165-187]()
 
 ### 12. Template Services
 
@@ -534,7 +520,6 @@ getReport() {
 
 **Code Generation Pattern**: See [Code Generation & Templates](./46_advanced-features.md) for details.
 
-**Sources**: [src/lib/index.ts:219-223]()
 
 ---
 
@@ -610,7 +595,6 @@ graph TB
 4. **Infrastructure Services**: Base and Context services have no dependencies (except each other)
 5. **Reporting Independence**: Markdown services subscribe to events but don't block execution
 
-**Sources**: [docs/internals.md:28-53](), [src/lib/index.ts:1-246]()
 
 ---
 
@@ -669,7 +653,6 @@ await someFunction();
 expect(mockLogger.info).toHaveBeenCalledWith(...);
 ```
 
-**Sources**: [src/lib/index.ts:225-246]()
 
 ---
 
@@ -744,7 +727,6 @@ This pattern enables:
 - **Clear dependency graph**: Dependencies are explicit in constructor
 - **Easy testing**: Can mock dependencies by replacing them on `backtest` object
 
-**Sources**: [src/lib/index.ts:1-246](), [src/lib/core/provide.ts:1-143]()
 
 ---
 
@@ -783,7 +765,6 @@ TypeScript ensures:
 - Factory returns type compatible with `LoggerService`
 - Access via `backtest.loggerService` returns correct type
 
-**Sources**: [src/lib/index.ts:61-238]()
 
 ---
 
@@ -802,5 +783,3 @@ The service layer architecture provides:
 | **Lazy Instantiation** | Services created on first access | Fast startup, low memory footprint |
 
 The combination of these patterns creates a maintainable, testable, and performant architecture that scales from simple backtests to complex multi-strategy live trading systems.
-
-**Sources**: [docs/internals.md:28-53](), [src/lib/index.ts:1-246](), [src/lib/core/types.ts:1-105](), [src/lib/core/provide.ts:1-143]()

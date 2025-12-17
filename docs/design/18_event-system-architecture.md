@@ -27,7 +27,6 @@ The framework provides 13 distinct `Subject` emitters organized by functional ar
 
 **Three-Tier Signal Emission**: The system emits each signal event to three subjects simultaneously. This enables consumers to selectively subscribe to all signals (`signalEmitter`), only backtest signals (`signalBacktestEmitter`), or only live signals (`signalLiveEmitter`) without filtering logic.
 
-Sources: [src/config/emitters.ts:15-31](), [types.d.ts:888-892]()
 
 ---
 
@@ -42,7 +41,6 @@ Sources: [src/config/emitters.ts:15-31](), [types.d.ts:888-892]()
 
 **Completion Events**: Each execution mode has its own completion subject that emits a `DoneContract` containing context about what finished (symbol, strategyName, exchangeName, backtest flag).
 
-Sources: [src/config/emitters.ts:47-68](), [src/function/event.ts:157-249]()
 
 ---
 
@@ -57,7 +55,6 @@ Sources: [src/config/emitters.ts:47-68](), [src/function/event.ts:157-249]()
 
 **Walker Progress**: `walkerEmitter` emits after each strategy completes, providing incremental results. `walkerCompleteSubject` emits once with final aggregated results for all strategies.
 
-Sources: [src/config/emitters.ts:88-106](), [src/lib/services/markdown/WalkerMarkdownService.ts:420-438]()
 
 ---
 
@@ -71,7 +68,6 @@ Sources: [src/config/emitters.ts:88-106](), [src/lib/services/markdown/WalkerMar
 
 **Rejection-Only Emission**: `riskSubject` emits ONLY when signals fail validation, preventing spam from allowed signals.
 
-Sources: [src/config/emitters.ts:114-131](), [types.d.ts:486-497]()
 
 ---
 
@@ -86,7 +82,6 @@ Sources: [src/config/emitters.ts:114-131](), [types.d.ts:486-497]()
 
 **Error Severity Distinction**: `errorEmitter` allows execution to continue (e.g., single tick failure in live mode), while `exitEmitter` signals unrecoverable errors that should terminate the process.
 
-Sources: [src/config/emitters.ts:33-86](), [src/function/event.ts:251-282]()
 
 ---
 
@@ -190,7 +185,6 @@ graph TB
 2. **Selective Subscription**: Consumers choose which emitters to subscribe to based on their needs.
 3. **Automatic Initialization**: Markdown services use `singleshot(async () => emitter.subscribe(this.tick))` pattern for lazy subscription.
 
-Sources: [src/config/emitters.ts:1-133](), [src/lib/services/markdown/BacktestMarkdownService.ts:456-460](), [src/lib/services/markdown/LiveMarkdownService.ts:605-608]()
 
 ---
 
@@ -258,7 +252,6 @@ graph TB
 | `PartialMarkdownService` | `partialProfit/LossSubject` | `${symbol}:${strategyName}` | Partial level events | 250 |
 | `RiskMarkdownService` | `riskSubject` | `${symbol}:${strategyName}` | Rejection events | 250 |
 
-Sources: [src/lib/services/markdown/BacktestMarkdownService.ts:282-461](), [src/lib/services/markdown/LiveMarkdownService.ts:423-609](), [src/lib/services/markdown/HeatMarkdownService.ts:434-465]()
 
 ---
 
@@ -318,7 +311,6 @@ classDiagram
 
 **Idle Event Optimization**: `LiveReportStorage` replaces the last idle event instead of accumulating all idle ticks, preventing memory bloat during long idle periods [src/lib/services/markdown/LiveMarkdownService.ts:88-115]().
 
-Sources: [src/lib/services/markdown/BacktestMarkdownService.ts:72-253](), [src/lib/services/markdown/LiveMarkdownService.ts:78-391](), [src/lib/services/markdown/HeatMarkdownService.ts:82-406]()
 
 ---
 
@@ -378,7 +370,6 @@ graph TB
 
 **Why Queued Processing?**: Without `queued()`, async callbacks can execute concurrently, causing race conditions in database writes, file operations, or shared state mutations. The `queued()` wrapper from `functools-kit` ensures callbacks execute sequentially.
 
-Sources: [src/function/event.ts:14-14](), [src/function/event.ts:70-73]()
 
 ---
 
@@ -430,7 +421,6 @@ listenWalkerComplete(fn: (contract: WalkerCompleteContract) => void): () => void
 
 All listener functions return an unsubscribe function that can be called to stop listening.
 
-Sources: [src/function/event.ts:45-456](), [src/index.ts:28-57]()
 
 ---
 
@@ -457,7 +447,6 @@ Each variant contains:
 - `currentPrice`: Current VWAP price
 - `strategyName`, `exchangeName`, `symbol`: Context information
 
-Sources: [types.d.ts:767-888]()
 
 ---
 
@@ -475,7 +464,6 @@ interface DoneContract {
 
 Emitted by `doneBacktestSubject`, `doneLiveSubject`, `doneWalkerSubject` to signal completion of background execution.
 
-Sources: [types.d.ts:1000-1019]()
 
 ---
 
@@ -509,7 +497,6 @@ interface WalkerContract {
 }
 ```
 
-Sources: [types.d.ts:1043-1079](), [types.d.ts:1091-1138]()
 
 ---
 
@@ -540,7 +527,6 @@ interface PartialProfitContract {
 }
 ```
 
-Sources: [types.d.ts:1190-1232]()
 
 ---
 
@@ -588,7 +574,6 @@ graph TB
 
 **Idle Event Deduplication**: `LiveMarkdownService` implements additional optimization by replacing consecutive idle events instead of accumulating them [src/lib/services/markdown/LiveMarkdownService.ts:99-105]().
 
-Sources: [src/lib/services/markdown/BacktestMarkdownService.ts:69-92](), [src/lib/services/markdown/LiveMarkdownService.ts:88-115](), [src/lib/services/markdown/PerformanceMarkdownService.ts:74-96]()
 
 ---
 
@@ -643,7 +628,6 @@ listenRisk((rejection) => {
 });
 ```
 
-Sources: [src/function/event.ts:54-105](), [src/function/event.ts:370-399]()
 
 ---
 
@@ -686,7 +670,6 @@ graph TB
 - `BTCUSDT:my-strategy` and `ETHUSDT:my-strategy` accumulate separately
 - `BTCUSDT:strategy-a` and `BTCUSDT:strategy-b` accumulate separately
 
-Sources: [src/lib/services/markdown/BacktestMarkdownService.ts:286-293](), [src/lib/services/markdown/LiveMarkdownService.ts:427-434](), [src/lib/services/markdown/HeatMarkdownService.ts:438-445]()
 
 ---
 
@@ -706,7 +689,6 @@ Sources: [src/lib/services/markdown/BacktestMarkdownService.ts:286-293](), [src/
 
 **Circular Buffer Pattern**: `unshift()` + `pop()` implements a circular buffer that discards old data automatically, preventing unbounded growth during long-running live trading.
 
-Sources: [src/lib/services/markdown/BacktestMarkdownService.ts:69-70](), [src/lib/services/markdown/PerformanceMarkdownService.ts:75-75]()
 
 ---
 
@@ -723,5 +705,3 @@ The event system provides:
 7. **Memoized Storage**: Isolated accumulation per symbol-strategy pair
 
 The architecture decouples event producers from consumers, enabling flexible monitoring, reporting, and integration without modifying core execution logic.
-
-Sources: [src/config/emitters.ts:1-133](), [src/function/event.ts:1-456](), [src/lib/services/markdown/BacktestMarkdownService.ts:1-464](), [src/lib/services/markdown/LiveMarkdownService.ts:1-612]()

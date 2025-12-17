@@ -62,7 +62,6 @@ The `ClientStrategy` class uses `PersistSignalAdapter` for all persistence opera
 - **Lazy Initialization**: Defers I/O until first signal is opened
 - **Error Handling**: Propagates storage errors to the event system
 
-Sources: High-level diagrams from context, [docs/internals.md]()
 
 ---
 
@@ -128,7 +127,6 @@ The `ISignalRow` type contains all signal state:
 
 Implementations must serialize/deserialize this object correctly, preserving numeric precision for prices.
 
-Sources: [docs/internals.md](), High-level architecture diagrams
 
 ---
 
@@ -198,7 +196,6 @@ The file-based implementation uses a **write-to-temporary-then-rename** pattern:
 
 Each strategy gets its own directory to organize signals. The composite key `(strategyName, symbol)` maps to the file path.
 
-Sources: [docs/internals.md](), README.md references to crash-safe persistence
 
 ---
 
@@ -309,7 +306,6 @@ const redisClient = new Redis({
 const persistRedis = new PersistRedis(redisClient, 7 * 24 * 3600); // 7-day TTL
 ```
 
-Sources: Architecture diagrams, general Redis best practices
 
 ---
 
@@ -449,7 +445,6 @@ The MongoDB implementation uses **upsert** (update-or-insert) for atomic writes:
 
 The TTL index uses MongoDB's native expiration feature to clean up abandoned signals automatically.
 
-Sources: MongoDB best practices, [docs/internals.md]()
 
 ---
 
@@ -591,7 +586,6 @@ async writeMultipleSignals(signals: Array<{
 }
 ```
 
-Sources: PostgreSQL documentation, SQL best practices
 
 ---
 
@@ -697,7 +691,6 @@ else {
 }
 ```
 
-Sources: [docs/internals.md](), README.md configuration examples
 
 ---
 
@@ -771,7 +764,6 @@ async function testAtomicity(persist: PersistBase) {
 }
 ```
 
-Sources: [docs/internals.md](), crash recovery patterns
 
 ---
 
@@ -851,7 +843,6 @@ listenError((error) => {
 });
 ```
 
-Sources: [docs/internals.md](), event system architecture
 
 ---
 
@@ -987,7 +978,6 @@ Target performance for live trading:
 - **Writes**: < 50ms per operation
 - **Deletes**: < 50ms per operation
 
-Sources: Performance optimization patterns, [docs/internals.md]()
 
 ---
 
@@ -1205,7 +1195,6 @@ This approach verifies that:
 2. Signal is loaded on restart via `waitForInit()`
 3. Strategy continues monitoring from previous state
 
-Sources: Testing best practices, [docs/internals.md]()
 
 ---
 
@@ -1231,5 +1220,3 @@ Custom persistence backends extend Backtest Kit's crash-safe storage to any syst
 - [ ] Monitor via `errorEmitter` events
 
 Custom backends integrate seamlessly through the `PersistSignalAdapter`, which handles lazy initialization, caching, and error propagation. The adapter ensures consistent behavior whether using file storage, Redis, or any other backend.
-
-Sources: All previous sections

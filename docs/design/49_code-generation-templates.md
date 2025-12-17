@@ -40,7 +40,6 @@ graph TB
     style Client fill:#f9f9f9,stroke:#333,stroke-width:2px
 ```
 
-Sources: [src/lib/services/template/OptimizerTemplateService.ts:27-713](), [src/client/ClientOptimizer.ts:217-350](), [src/lib/services/connection/OptimizerConnectionService.ts:59-113]()
 
 ---
 
@@ -64,7 +63,6 @@ The `IOptimizerTemplate` interface defines 11 template methods that generate dif
 | `getJsonTemplate` | symbol | LLM JSON generation helper | `async json()` function with schema |
 | `getJsonDumpTemplate` | symbol | Debug output helper | `async dumpJson()` function |
 
-Sources: [src/interfaces/Optimizer.interface.ts:238-374]()
 
 **Template Method Dependencies**
 
@@ -95,7 +93,6 @@ graph TB
     style Launcher fill:#f9f9f9,stroke:#333,stroke-width:2px
 ```
 
-Sources: [src/client/ClientOptimizer.ts:225-342]()
 
 ---
 
@@ -125,7 +122,6 @@ The `OptimizerTemplateService` class provides default implementations for all `I
 | `getJsonTemplate` | Ollama chat with signal schema (position, note, prices, time) | None (static schema) |
 | `getJsonDumpTemplate` | Saves messages to numbered markdown files with size warnings | None (dynamic paths) |
 
-Sources: [src/lib/services/template/OptimizerTemplateService.ts:27-716]()
 
 **getStrategyTemplate Multi-Timeframe Flow**
 
@@ -191,7 +187,6 @@ graph TB
     style Return fill:#f9f9f9,stroke:#333,stroke-width:2px
 ```
 
-Sources: [src/lib/services/template/OptimizerTemplateService.ts:168-303]()
 
 ---
 
@@ -223,7 +218,6 @@ The `ClientOptimizer.getCode` method orchestrates template calls to assemble a c
 - **Strategies**: `{prefix}_strategy-{N}` (e.g., `"a1b2c3_strategy-1"`)
 - **Walker**: `{prefix}_walker`
 
-Sources: [src/client/ClientOptimizer.ts:217-350]()
 
 **Code Generation Data Flow**
 
@@ -279,7 +273,6 @@ graph TB
     style Output fill:#f9f9f9,stroke:#333,stroke-width:2px
 ```
 
-Sources: [src/client/ClientOptimizer.ts:225-350]()
 
 ---
 
@@ -314,7 +307,6 @@ graph TB
     style Merged fill:#f9f9f9,stroke:#333,stroke-width:2px
 ```
 
-Sources: [src/lib/services/connection/OptimizerConnectionService.ts:59-113]()
 
 **Custom Template Example**
 
@@ -385,7 +377,6 @@ const {
 
 Any method not provided in `schema.template` automatically uses the default implementation.
 
-Sources: [src/lib/services/connection/OptimizerConnectionService.ts:59-113](), [src/interfaces/Optimizer.interface.ts:426-427]()
 
 ---
 
@@ -618,7 +609,6 @@ graph TB
     style S10 fill:#f9f9f9,stroke:#333,stroke-width:2px
 ```
 
-Sources: [src/client/ClientOptimizer.ts:225-350](), [src/lib/services/template/OptimizerTemplateService.ts:27-716]()
 
 ---
 
@@ -729,7 +719,6 @@ graph TB
     style CallDump fill:#f9f9f9,stroke:#333,stroke-width:2px
 ```
 
-Sources: [src/lib/services/template/OptimizerTemplateService.ts:168-303](), [src/lib/services/template/OptimizerTemplateService.ts:629-712](), [src/lib/services/template/OptimizerTemplateService.ts:452-546]()
 
 ---
 
@@ -781,7 +770,6 @@ The escaping prevents several attack vectors:
 
 All user-controlled inputs (names, prompts, symbols) are escaped before code generation.
 
-Sources: [src/lib/services/template/OptimizerTemplateService.ts:136-147](), [src/lib/services/template/OptimizerTemplateService.ts:183-192](), [src/lib/services/template/OptimizerTemplateService.ts:324-326](), [src/lib/services/template/OptimizerTemplateService.ts:370-375](), [src/lib/services/template/OptimizerTemplateService.ts:402-407](), [src/lib/services/template/OptimizerTemplateService.ts:561-565]()
 
 ---
 
@@ -872,7 +860,6 @@ This enables users to:
 - Update strategy registries
 - Send notifications
 
-Sources: [src/client/ClientOptimizer.ts:360-384](), [src/client/ClientOptimizer.ts:438-444]()
 
 ---
 
@@ -971,7 +958,6 @@ graph TB
     style Execute fill:#f9f9f9,stroke:#333,stroke-width:2px
 ```
 
-Sources: [src/classes/Optimizer.ts:1-135](), [src/lib/services/global/OptimizerGlobalService.ts:1-105](), [src/lib/services/connection/OptimizerConnectionService.ts:1-175]()
 
 ---
 
@@ -1000,5 +986,3 @@ The template system integrates with the broader optimizer architecture as follow
 - **Client Layer**: `ClientOptimizer` calls template methods to generate code sections
 - **Template Layer**: `OptimizerTemplateService` provides sensible defaults
 - **Validation Layer**: `OptimizerValidationService` ensures optimizer exists before template usage
-
-Sources: [src/interfaces/Optimizer.interface.ts:376-433](), [src/lib/services/template/OptimizerTemplateService.ts:14-26](), [src/lib/services/connection/OptimizerConnectionService.ts:41-49](), [src/client/ClientOptimizer.ts:387-397]()

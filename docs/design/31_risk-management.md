@@ -50,7 +50,6 @@ graph TB
     style REJ fill:#ffcccc
 ```
 
-**Sources:** [types.d.ts:342-479](), [src/config/params.ts:1-122](), [src/config/emitters.ts:131]()
 
 ---
 
@@ -98,7 +97,6 @@ The validation payload provides complete context for risk decisions:
 | `activePositionCount` | `number` | Total active signals across all strategies |
 | `activePositions` | `IRiskActivePosition[]` | Details of active positions |
 
-**Sources:** [types.d.ts:382-390](), [types.d.ts:359-369]()
 
 ---
 
@@ -149,7 +147,6 @@ graph LR
     style PASS fill:#ccffcc
 ```
 
-**Sources:** [src/config/params.ts:26-55](), [test/e2e/sanitize.test.mjs:1-500]()
 
 ### Validation Stage Details
 
@@ -185,7 +182,6 @@ Ensures TP is far enough from `priceOpen` to cover transaction costs:
 // After fees/slippage, this would be a loss!
 ```
 
-**Sources:** [src/config/params.ts:26-36](), [test/e2e/sanitize.test.mjs:27-122]()
 
 #### 4. Minimum SL Distance (`CC_MIN_STOPLOSS_DISTANCE_PERCENT`)
 Default: **0.5%**
@@ -204,7 +200,6 @@ Caps catastrophic losses from extreme SL values. A single signal cannot risk mor
 // One signal could lose half the portfolio!
 ```
 
-**Sources:** [src/config/params.ts:42-49](), [test/e2e/sanitize.test.mjs:134-229]()
 
 #### 6. Lifetime Limit (`CC_MAX_SIGNAL_LIFETIME_MINUTES`)
 Default: **1440 minutes (1 day)**
@@ -215,12 +210,10 @@ Prevents "eternal signals" that block risk limits indefinitely:
 // Exceeds 1440 minute limit → REJECTED
 ```
 
-**Sources:** [src/config/params.ts:51-55](), [test/e2e/sanitize.test.mjs:241-329]()
 
 #### 7. Candle Data Anomaly Detection
 Validates that historical candle data contains no anomalous prices (e.g., incomplete candles with near-zero prices from API glitches). Uses `CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR` (default: 1000) to detect outliers.
 
-**Sources:** [src/config/params.ts:76-104]()
 
 ---
 
@@ -289,7 +282,6 @@ addStrategy({
 });
 ```
 
-**Sources:** [types.d.ts:728-747](), [README.md:82-100]()
 
 ### Portfolio-Wide Validation Example
 
@@ -319,7 +311,6 @@ addRisk({
 });
 ```
 
-**Sources:** [types.d.ts:382-390]()
 
 ---
 
@@ -368,7 +359,6 @@ graph TB
     style PAYLOAD fill:#e1f5ff
 ```
 
-**Sources:** [types.d.ts:359-369](), [types.d.ts:451-479]()
 
 ### IRiskActivePosition Structure
 
@@ -399,7 +389,6 @@ interface IRisk {
 | `addSignal()` | When signal opens (priceOpen reached) | Registers active position |
 | `removeSignal()` | When signal closes (TP/SL/time) | Removes active position |
 
-**Sources:** [types.d.ts:451-479]()
 
 ---
 
@@ -446,7 +435,6 @@ addStrategy({
 
 All three profiles (`conservative`, `portfolio-limit`, `trading-hours`) will be validated sequentially. If any validation throws an error, the signal is rejected.
 
-**Sources:** [types.d.ts:728-747]()
 
 ---
 
@@ -502,7 +490,6 @@ sequenceDiagram
     end
 ```
 
-**Sources:** [src/config/emitters.ts:126-131](), [types.d.ts:431-445](), [src/function/event.ts:338-356]()
 
 ---
 
@@ -537,7 +524,6 @@ sequenceDiagram
 |-----------|---------|-------------|
 | `CC_SCHEDULE_AWAIT_MINUTES` | 120 | Maximum time to wait for scheduled signal activation |
 
-**Sources:** [src/config/params.ts:1-122]()
 
 ---
 
@@ -578,7 +564,6 @@ graph TB
 
 **Important:** Risk validation errors are **non-fatal**. The system continues executing and will attempt to generate new signals on the next tick (subject to `interval` throttling).
 
-**Sources:** [types.d.ts:395-412](), [types.d.ts:372-377]()
 
 ---
 
@@ -624,7 +609,6 @@ Adjust validation thresholds based on asset class:
 - **Forex**: Tighter distances (0.2% might be sufficient)
 - **Stocks**: May need looser SL max (30% instead of 20%)
 
-**Sources:** [src/config/params.ts:1-122](), [README.md:82-100]()
 
 ---
 

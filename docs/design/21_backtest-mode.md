@@ -26,7 +26,6 @@ Backtest mode executes strategies against historical market data to evaluate per
 | **Persistence** | None - signals exist only in memory |
 | **Results** | All closed signals returned at completion |
 
-**Sources**: [README.md:17-29](), [src/classes/Backtest.ts:1-601]()
 
 ---
 
@@ -70,7 +69,6 @@ Consumes results internally without yielding. Useful for:
 - Callback-based processing via strategy callbacks
 - Background batch processing
 
-**Sources**: [src/classes/Backtest.ts:374-443](), [README.md:145-159]()
 
 ---
 
@@ -146,7 +144,6 @@ graph TB
 - **`FrameCoreService`**: Generates discrete timeframes from `IFrameSchema`
 - **`StrategyCoreService`**: Executes strategy logic with context propagation
 
-**Sources**: [src/classes/Backtest.ts:359-601](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:1-374]()
 
 ---
 
@@ -224,7 +221,6 @@ graph TB
 | `when` | `Date` | Current timestamp being processed |
 | `result` | `IStrategyTickResult` | Result from `tick()` call |
 
-**Sources**: [src/lib/services/logic/private/BacktestLogicPrivateService.ts:62-374]()
 
 ---
 
@@ -299,7 +295,6 @@ const result = await strategyCoreService.backtest(
 | **With Optimization** | 1 `backtest()` call + frame skip | ~50ms |
 | **Speedup** | ~12x faster | |
 
-**Sources**: [src/lib/services/logic/private/BacktestLogicPrivateService.ts:154-255](), [README.md:187-199]()
 
 ---
 
@@ -350,7 +345,6 @@ for await (const signal of Backtest.run("BTCUSDT", context)) {
 
 **Frequency**: Emitted on every frame iteration (typically 1-minute intervals). For a 24-hour backtest at 1-minute resolution, expect 1,440 progress events.
 
-**Sources**: [src/lib/services/logic/private/BacktestLogicPrivateService.ts:82-92](), [src/config/emitters.ts]()
 
 ---
 
@@ -414,7 +408,6 @@ Backtest mode:
 
 **Reproducibility Guarantee**: Given identical inputs (symbol, strategy, exchange, frame), backtest mode produces byte-identical output across runs.
 
-**Sources**: [src/lib/services/context/ExecutionContextService.ts](), [src/lib/services/core/FrameCoreService.ts](), [README.md:187-199]()
 
 ---
 
@@ -485,7 +478,6 @@ interface IStrategyBacktestResult {
 }
 ```
 
-**Sources**: [src/lib/services/core/StrategyCoreService.ts](), [src/lib/clients/ClientStrategy.ts]()
 
 ---
 
@@ -542,7 +534,6 @@ try {
 
 This ensures a single bad candle or strategy error doesn't halt the entire backtest.
 
-**Sources**: [src/classes/Backtest.ts:387-396](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:114-129]()
 
 ---
 
@@ -591,7 +582,6 @@ private task = singlerun(async (symbol, context) => {
 
 Attempting to start a second backtest on the same instance while one is running will queue the request.
 
-**Sources**: [src/classes/Backtest.ts:364-369](), [src/classes/Backtest.ts:105-118]()
 
 ---
 
@@ -628,7 +618,6 @@ await Backtest.dump("BTCUSDT", "my-strategy");
 | `sharpeRatio` | Risk-adjusted return metric |
 | `sortinoRatio` | Downside deviation adjusted return |
 
-**Sources**: [src/classes/Backtest.ts:276-337](), [src/lib/services/markdown/BacktestMarkdownService.ts](), [src/model/BacktestStatistics.model.ts]()
 
 ---
 
