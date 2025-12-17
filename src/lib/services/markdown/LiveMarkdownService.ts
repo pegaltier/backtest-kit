@@ -16,6 +16,37 @@ import { LiveStatisticsModel, TickEvent } from "../../../model/LiveStatistics.mo
 import { ColumnModel } from "../../../model/Column.model";
 import { COLUMN_CONFIG } from "../../../config/columns";
 
+/**
+ * Type alias for column configuration used in live trading markdown reports.
+ * 
+ * Represents a column model specifically designed to format and display
+ * real-time trading events in markdown tables.
+ * 
+ * @typeParam TickEvent - The live trading event data type containing
+ *   signal information, timestamps, and trade details from active positions
+ * 
+ * @example
+ * ```typescript
+ * // Column to display event timestamp
+ * const timestampColumn: Columns = {
+ *   key: "timestamp",
+ *   label: "Time",
+ *   format: (event) => new Date(event.timestamp).toISOString(),
+ *   isVisible: () => true
+ * };
+ * 
+ * // Column to display event action type
+ * const actionColumn: Columns = {
+ *   key: "action",
+ *   label: "Action",
+ *   format: (event) => event.action,
+ *   isVisible: () => true
+ * };
+ * ```
+ * 
+ * @see ColumnModel for the base interface
+ * @see TickEvent for the event data structure
+ */
 export type Columns = ColumnModel<TickEvent>;
 
 /**

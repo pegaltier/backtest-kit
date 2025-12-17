@@ -21,7 +21,70 @@ import { BacktestStatisticsModel } from "../../../model/BacktestStatistics.model
 import { ColumnModel } from "../../../model/Column.model";
 import { COLUMN_CONFIG } from "../../../config/columns";
 
+/**
+ * Type alias for column configuration used in walker strategy markdown reports.
+ * 
+ * Represents a column model specifically designed to format and display
+ * walker backtest strategy results in markdown tables.
+ * 
+ * @typeParam IStrategyResult - The walker strategy result data type containing
+ *   strategy name, performance metrics, and aggregated trade statistics
+ * 
+ * @example
+ * ```typescript
+ * // Column to display strategy name
+ * const strategyColumn: StrategyColumn = {
+ *   key: "strategyName",
+ *   label: "Strategy",
+ *   format: (result) => result.strategyName,
+ *   isVisible: () => true
+ * };
+ * 
+ * // Column to display total trades
+ * const tradesColumn: StrategyColumn = {
+ *   key: "totalTrades",
+ *   label: "Total Trades",
+ *   format: (result) => result.totalTrades.toString(),
+ *   isVisible: () => true
+ * };
+ * ```
+ * 
+ * @see ColumnModel for the base interface
+ * @see IStrategyResult for the strategy result data structure
+ */
 export type StrategyColumn = ColumnModel<IStrategyResult>;
+
+/**
+ * Type alias for column configuration used in walker PNL markdown reports.
+ * 
+ * Represents a column model specifically designed to format and display
+ * walker backtest signal PNL data in markdown tables.
+ * 
+ * @typeParam SignalData - The signal PNL data type containing
+ *   signal information and PNL details from individual trades
+ * 
+ * @example
+ * ```typescript
+ * // Column to display signal ID
+ * const signalIdColumn: PnlColumn = {
+ *   key: "signalId",
+ *   label: "Signal ID",
+ *   format: (signal) => signal.signalId,
+ *   isVisible: () => true
+ * };
+ * 
+ * // Column to display PNL percentage
+ * const pnlColumn: PnlColumn = {
+ *   key: "pnl",
+ *   label: "PNL %",
+ *   format: (signal) => signal.pnl.toFixed(2) + '%',
+ *   isVisible: () => true
+ * };
+ * ```
+ * 
+ * @see ColumnModel for the base interface
+ * @see SignalData for the signal data structure
+ */
 export type PnlColumn = ColumnModel<SignalData>;
 
 /**

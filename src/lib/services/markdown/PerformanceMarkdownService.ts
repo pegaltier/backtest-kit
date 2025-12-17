@@ -13,6 +13,37 @@ import { PerformanceStatisticsModel, MetricStats } from "../../../model/Performa
 import { ColumnModel } from "../../../model/Column.model";
 import { COLUMN_CONFIG } from "../../../config/columns";
 
+/**
+ * Type alias for column configuration used in performance metrics markdown reports.
+ * 
+ * Represents a column model specifically designed to format and display
+ * performance statistics for various trading metrics in markdown tables.
+ * 
+ * @typeParam MetricStats - The performance metric statistics data type containing
+ *   aggregated statistics for a specific performance metric
+ * 
+ * @example
+ * ```typescript
+ * // Column to display metric name
+ * const metricColumn: Columns = {
+ *   key: "metric",
+ *   label: "Metric",
+ *   format: (stat) => stat.metric,
+ *   isVisible: () => true
+ * };
+ * 
+ * // Column to display average value
+ * const avgColumn: Columns = {
+ *   key: "average",
+ *   label: "Average",
+ *   format: (stat) => stat.average.toFixed(2),
+ *   isVisible: () => true
+ * };
+ * ```
+ * 
+ * @see ColumnModel for the base interface
+ * @see MetricStats for the metric data structure
+ */
 export type Columns = ColumnModel<MetricStats>;
 
 /**

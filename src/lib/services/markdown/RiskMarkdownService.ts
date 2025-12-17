@@ -9,6 +9,37 @@ import { RiskStatisticsModel, RiskEvent } from "../../../model/RiskStatistics.mo
 import { ColumnModel } from "../../../model/Column.model";
 import { COLUMN_CONFIG } from "../../../config/columns";
 
+/**
+ * Type alias for column configuration used in risk management markdown reports.
+ * 
+ * Represents a column model specifically designed to format and display
+ * risk rejection events in markdown tables.
+ * 
+ * @typeParam RiskEvent - The risk event data type containing
+ *   risk rejection details, symbol, and rejection reason
+ * 
+ * @example
+ * ```typescript
+ * // Column to display symbol
+ * const symbolColumn: Columns = {
+ *   key: "symbol",
+ *   label: "Symbol",
+ *   format: (event) => event.symbol,
+ *   isVisible: () => true
+ * };
+ * 
+ * // Column to display rejection reason
+ * const reasonColumn: Columns = {
+ *   key: "reason",
+ *   label: "Rejection Reason",
+ *   format: (event) => event.reason,
+ *   isVisible: () => true
+ * };
+ * ```
+ * 
+ * @see ColumnModel for the base interface
+ * @see RiskEvent for the event data structure
+ */
 export type Columns = ColumnModel<RiskEvent>;
 
 /** Maximum number of events to store in risk reports */

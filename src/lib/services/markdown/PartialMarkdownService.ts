@@ -17,6 +17,37 @@ import {
 import { ColumnModel } from "../../../model/Column.model";
 import { COLUMN_CONFIG } from "../../../config/columns";
 
+/**
+ * Type alias for column configuration used in partial profit/loss markdown reports.
+ * 
+ * Represents a column model specifically designed to format and display
+ * partial position exit events in markdown tables.
+ * 
+ * @typeParam PartialEvent - The partial exit event data type containing
+ *   profit/loss level information, symbol, and timing details
+ * 
+ * @example
+ * ```typescript
+ * // Column to display symbol
+ * const symbolColumn: Columns = {
+ *   key: "symbol",
+ *   label: "Symbol",
+ *   format: (event) => event.symbol,
+ *   isVisible: () => true
+ * };
+ * 
+ * // Column to display profit level
+ * const levelColumn: Columns = {
+ *   key: "level",
+ *   label: "Exit Level",
+ *   format: (event) => event.level.toString(),
+ *   isVisible: () => true
+ * };
+ * ```
+ * 
+ * @see ColumnModel for the base interface
+ * @see PartialEvent for the event data structure
+ */
 export type Columns = ColumnModel<PartialEvent>;
 
 /** Maximum number of events to store in partial reports */

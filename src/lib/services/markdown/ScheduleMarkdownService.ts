@@ -16,6 +16,37 @@ import { ScheduleStatisticsModel, ScheduledEvent } from "../../../model/Schedule
 import { ColumnModel } from "../../../model/Column.model";
 import { COLUMN_CONFIG } from "../../../config/columns";
 
+/**
+ * Type alias for column configuration used in scheduled events markdown reports.
+ * 
+ * Represents a column model specifically designed to format and display
+ * scheduled and cancelled signal events in markdown tables.
+ * 
+ * @typeParam ScheduledEvent - The scheduled event data type containing
+ *   signal scheduling information, cancellation details, and timing
+ * 
+ * @example
+ * ```typescript
+ * // Column to display event type
+ * const typeColumn: Columns = {
+ *   key: "type",
+ *   label: "Type",
+ *   format: (event) => event.type,
+ *   isVisible: () => true
+ * };
+ * 
+ * // Column to display scheduled time
+ * const timeColumn: Columns = {
+ *   key: "time",
+ *   label: "Scheduled Time",
+ *   format: (event) => new Date(event.timestamp).toISOString(),
+ *   isVisible: () => true
+ * };
+ * ```
+ * 
+ * @see ColumnModel for the base interface
+ * @see ScheduledEvent for the event data structure
+ */
 export type Columns = ColumnModel<ScheduledEvent>;
 
 /** Maximum number of events to store in schedule reports */

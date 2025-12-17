@@ -15,6 +15,37 @@ import { HeatmapStatisticsModel } from "../../../model/HeatmapStatistics.model";
 import { ColumnModel } from "../../../model/Column.model";
 import { COLUMN_CONFIG } from "../../../config/columns";
 
+/**
+ * Type alias for column configuration used in heatmap markdown reports.
+ * 
+ * Represents a column model specifically designed to format and display
+ * per-symbol portfolio statistics in markdown tables.
+ * 
+ * @typeParam IHeatmapRow - The heatmap row data type containing aggregated
+ *   statistics per symbol (PNL, Sharpe Ratio, Max Drawdown, trade counts)
+ * 
+ * @example
+ * ```typescript
+ * // Column to display symbol name
+ * const symbolColumn: Columns = {
+ *   key: "symbol",
+ *   label: "Symbol",
+ *   format: (row) => row.symbol,
+ *   isVisible: () => true
+ * };
+ * 
+ * // Column to display portfolio PNL
+ * const pnlColumn: Columns = {
+ *   key: "totalPnl",
+ *   label: "Total PNL %",
+ *   format: (row) => row.totalPnl !== null ? row.totalPnl.toFixed(2) + '%' : 'N/A',
+ *   isVisible: () => true
+ * };
+ * ```
+ * 
+ * @see ColumnModel for the base interface
+ * @see IHeatmapRow for the row data structure
+ */
 export type Columns = ColumnModel<IHeatmapRow>;
 
 const HEATMAP_METHOD_NAME_GET_DATA = "HeatMarkdownService.getData";

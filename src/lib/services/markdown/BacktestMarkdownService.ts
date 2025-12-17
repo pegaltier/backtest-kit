@@ -14,6 +14,37 @@ import { BacktestStatisticsModel } from "../../../model/BacktestStatistics.model
 import { ColumnModel } from "../../../model/Column.model";
 import { COLUMN_CONFIG } from "../../../config/columns";
 
+/**
+ * Type alias for column configuration used in backtest markdown reports.
+ * 
+ * Represents a column model specifically designed to format and display
+ * closed backtest signals in markdown tables.
+ * 
+ * @typeParam IStrategyTickResultClosed - The closed signal data type containing
+ *   PNL information, close reason, timestamps, and other trade details
+ * 
+ * @example
+ * ```typescript
+ * // Column to display signal ID
+ * const signalIdColumn: Columns = {
+ *   key: "signalId",
+ *   label: "Signal ID",
+ *   format: (signal) => signal.signal.id,
+ *   isVisible: () => true
+ * };
+ * 
+ * // Column to display PNL percentage
+ * const pnlColumn: Columns = {
+ *   key: "pnl",
+ *   label: "PNL %",
+ *   format: (signal) => `${signal.pnl.pnlPercentage.toFixed(2)}%`,
+ *   isVisible: () => true
+ * };
+ * ```
+ * 
+ * @see ColumnModel for the base interface
+ * @see IStrategyTickResultClosed for the signal data structure
+ */
 export type Columns = ColumnModel<IStrategyTickResultClosed>;
 
 /**
