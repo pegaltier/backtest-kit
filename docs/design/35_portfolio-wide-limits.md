@@ -55,9 +55,9 @@ graph TB
     
     CR -->|"addSignal(symbol, context)"| RGS
     CR -->|"removeSignal(symbol, context)"| RGS
-    CR -->|"checkSignal(params)"<br/>"queries active positions"| RGS
-    
-    RGS -->|"builds IRiskValidationPayload<br/>with activePositionCount<br/>and activePositions array"| CR
+    CR -->|"checkSignal(params) - queries active positions"| RGS
+
+    RGS -->|"builds IRiskValidationPayload with activePositionCount and activePositions array"| CR
     
     style RGS fill:#f9f9f9,stroke:#333,stroke-width:2px
     style CR fill:#e8f4f8,stroke:#333,stroke-width:2px

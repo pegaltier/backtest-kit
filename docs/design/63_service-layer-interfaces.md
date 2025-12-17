@@ -323,10 +323,10 @@ stateDiagram-v2
 
 ```mermaid
 graph TD
-    A["profit(revenuePercent)"] --> B{revenuePercent >= 10?}
+    A["profit called with revenuePercent"] --> B{revenuePercent >= 10?}
     B -->|No| C[Return without event]
     B -->|Yes| D[Calculate levels reached]
-    D --> E[levels = 10, 20, 30... up to floor(revenuePercent/10) * 10]
+    D --> E["levels = 10, 20, 30... up to floor of revenuePercent divided by 10 times 10"]
     E --> F{For each level}
     F --> G{Already in profitLevels Set?}
     G -->|Yes| H[Skip level]

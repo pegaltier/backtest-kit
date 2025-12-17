@@ -420,23 +420,23 @@ Signals progress through different states during backtest execution. The behavio
 ```mermaid
 stateDiagram-v2
     [*] --> Idle
-    
+
     Idle --> Scheduled: tick() returns action='scheduled'<br/>(priceOpen not reached)
     Idle --> Opened: tick() returns action='opened'<br/>(priceOpen reached immediately)
-    
-    Scheduled --> Cancelled: backtest() detects:<br/>- SL hit before activation<br/>- timeout (CC_SCHEDULE_AWAIT_MINUTES)<br/>- manual cancellation
-    Scheduled --> Opened: backtest() detects:<br/>price reaches priceOpen
-    
-    Opened --> Closed: backtest() detects:<br/>- priceTakeProfit reached<br/>- priceStopLoss reached<br/>- minuteEstimatedTime expired
-    
+
+    Scheduled --> Cancelled: backtest() detects<br/>SL hit before activation or<br/>timeout or manual cancellation
+    Scheduled --> Opened: backtest() detects<br/>price reaches priceOpen
+
+    Opened --> Closed: backtest() detects<br/>priceTakeProfit reached or<br/>priceStopLoss reached or<br/>minuteEstimatedTime expired
+
     Cancelled --> Idle: No PNL calculated
     Closed --> Idle: PNL calculated, yield result
-    
+
     note right of Scheduled
         NOT persisted<br/>
         Monitored in bulk via backtest()
     end note
-    
+
     note right of Opened
         NOT persisted (backtest mode)<br/>
         Processed in single backtest() call
