@@ -3,6 +3,9 @@ export {
   setConfig,
   getConfig,
   getDefaultConfig,
+  setColumns,
+  getColumns,
+  getDefaultColumns,
 } from "./function/setup";
 export {
   addExchange,

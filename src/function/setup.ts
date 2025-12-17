@@ -1,5 +1,6 @@
 import { getErrorMessage } from "functools-kit";
 import { DEFAULT_CONFIG, GLOBAL_CONFIG, GlobalConfig } from "../config/params";
+import { COLUMN_CONFIG, DEFAULT_COLUMNS, ColumnConfig } from "../config/columns";
 import { ILogger } from "../interfaces/Logger.interface";
 import backtest from "../lib";
 
@@ -85,4 +86,80 @@ export function getConfig() {
  */
 export function getDefaultConfig() {
     return DEFAULT_CONFIG;
+}
+
+/**
+ * Sets custom column configurations for markdown report generation.
+ *
+ * Allows overriding default column definitions for any report type.
+ * All columns are validated before assignment to ensure structural correctness.
+ *
+ * @param columns - Partial column configuration object to override default column settings
+ * @param _unsafe - Skip column validations - required for testbed
+ * 
+ * @example
+ * ```typescript
+ * setColumns({
+ *   backtest_columns: [
+ *     {
+ *       key: "customId",
+ *       label: "Custom ID",
+ *       format: (data) => data.signal.id,
+ *       isVisible: () => true
+ *     }
+ *   ],
+ * });
+ * ```
+ * 
+ * @throws {Error} If column configuration is invalid
+ */
+export function setColumns(columns: Partial<ColumnConfig>, _unsafe?: boolean) {
+  const prevConfig = Object.assign({}, COLUMN_CONFIG);
+  try {
+    Object.assign(COLUMN_CONFIG, columns);
+    !_unsafe && backtest.columnValidationService.validate();
+  } catch (error) {
+    console.warn(
+      `backtest-kit setColumns failed: ${getErrorMessage(error)}`,
+      columns
+    );
+    Object.assign(COLUMN_CONFIG, prevConfig);
+    throw error;
+  }
+}
+
+/**
+ * Retrieves a copy of the current column configuration.
+ * 
+ * Returns a shallow copy of the current COLUMN_CONFIG to prevent accidental mutations.
+ * Use this to inspect the current column definitions without modifying them.
+ * 
+ * @returns {ColumnConfig} A copy of the current column configuration object
+ * 
+ * @example
+ * ```typescript
+ * const currentColumns = getColumns();
+ * console.log(currentColumns.backtest_columns.length);
+ * ```
+ */
+export function getColumns() {
+    return Object.assign({}, COLUMN_CONFIG);
+}
+
+/**
+ * Retrieves the default column configuration object for the framework.
+ * 
+ * Returns a reference to the default column definitions with all preset values.
+ * Use this to see what column options are available and their default definitions.
+ * 
+ * @returns {ColumnConfig} The default column configuration object
+ * 
+ * @example
+ * ```typescript
+ * const defaultColumns = getDefaultColumns();
+ * console.log(defaultColumns.backtest_columns);
+ * ```
+ */
+export function getDefaultColumns() {
+    return DEFAULT_COLUMNS;
 }
