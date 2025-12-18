@@ -5,7 +5,7 @@ group: private
 
 # backtest-kit api reference
 
-![schema](../assets/uml.svg)
+![schema](../../assets/uml.svg)
 
 **Overview:**
 

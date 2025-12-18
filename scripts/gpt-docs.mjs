@@ -30,7 +30,7 @@ const GPT_FUNCTION_PROMPT =
 const HEADER_CONTENT =
   "# backtest-kit api reference\n" +
   "\n" +
-  "![schema](../assets/uml.svg)\n" +
+  "![schema](../../assets/uml.svg)\n" +
   "\n" +
   "**Overview:**\n" +
   "\n" +
