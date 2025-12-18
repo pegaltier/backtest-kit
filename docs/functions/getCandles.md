@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/getCandles
+title: docs/function/getCandles
 group: docs
 ---
 

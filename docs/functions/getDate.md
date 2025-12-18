@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/getDate
+title: docs/function/getDate
 group: docs
 ---
 

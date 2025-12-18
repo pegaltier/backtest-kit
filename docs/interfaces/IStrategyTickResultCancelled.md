@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IStrategyTickResultCancelled
+title: docs/interface/IStrategyTickResultCancelled
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/addSizing
+title: docs/function/addSizing
 group: docs
 ---
 

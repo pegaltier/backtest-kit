@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/RiskMarkdownService
+title: docs/class/RiskMarkdownService
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/setConfig
+title: docs/function/setConfig
 group: docs
 ---
 

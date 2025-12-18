@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/RiskStatisticsModel
+title: docs/interface/RiskStatisticsModel
 group: docs
 ---
 

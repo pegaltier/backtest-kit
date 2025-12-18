@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/WalkerUtils
+title: docs/class/WalkerUtils
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IRiskSchema
+title: docs/interface/IRiskSchema
 group: docs
 ---
 

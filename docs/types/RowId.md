@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/RowId
+title: docs/type/RowId
 group: docs
 ---
 

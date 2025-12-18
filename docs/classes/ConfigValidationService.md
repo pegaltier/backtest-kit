@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/ConfigValidationService
+title: docs/class/ConfigValidationService
 group: docs
 ---
 

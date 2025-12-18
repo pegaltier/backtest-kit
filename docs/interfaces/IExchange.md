@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IExchange
+title: docs/interface/IExchange
 group: docs
 ---
 

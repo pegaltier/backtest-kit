@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/PartialEvent
+title: docs/interface/PartialEvent
 group: docs
 ---
 

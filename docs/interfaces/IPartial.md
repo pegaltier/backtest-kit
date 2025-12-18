@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IPartial
+title: docs/interface/IPartial
 group: docs
 ---
 

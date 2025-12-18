@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/listExchanges
+title: docs/function/listExchanges
 group: docs
 ---
 

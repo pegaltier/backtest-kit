@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/SignalData$1
+title: docs/interface/SignalData$1
 group: docs
 ---
 

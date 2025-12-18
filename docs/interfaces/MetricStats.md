@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/MetricStats
+title: docs/interface/MetricStats
 group: docs
 ---
 

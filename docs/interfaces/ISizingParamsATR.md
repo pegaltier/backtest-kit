@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/ISizingParamsATR
+title: docs/interface/ISizingParamsATR
 group: docs
 ---
 

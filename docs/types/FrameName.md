@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/FrameName
+title: docs/type/FrameName
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/PartialUtils
+title: docs/class/PartialUtils
 group: docs
 ---
 

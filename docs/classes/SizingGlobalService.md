@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/SizingGlobalService
+title: docs/class/SizingGlobalService
 group: docs
 ---
 

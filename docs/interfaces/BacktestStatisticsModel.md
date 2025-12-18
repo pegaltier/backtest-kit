@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/BacktestStatisticsModel
+title: docs/interface/BacktestStatisticsModel
 group: docs
 ---
 

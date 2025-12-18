@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/StrategyColumn
+title: docs/type/StrategyColumn
 group: docs
 ---
 

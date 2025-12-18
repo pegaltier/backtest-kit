@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/formatQuantity
+title: docs/function/formatQuantity
 group: docs
 ---
 

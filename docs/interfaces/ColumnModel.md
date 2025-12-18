@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/ColumnModel
+title: docs/interface/ColumnModel
 group: docs
 ---
 

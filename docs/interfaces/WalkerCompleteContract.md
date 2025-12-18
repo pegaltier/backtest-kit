@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/WalkerCompleteContract
+title: docs/interface/WalkerCompleteContract
 group: docs
 ---
 

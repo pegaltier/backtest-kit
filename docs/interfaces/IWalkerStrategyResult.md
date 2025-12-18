@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IWalkerStrategyResult
+title: docs/interface/IWalkerStrategyResult
 group: docs
 ---
 

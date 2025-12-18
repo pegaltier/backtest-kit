@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/OptimizerGlobalService
+title: docs/class/OptimizerGlobalService
 group: docs
 ---
 

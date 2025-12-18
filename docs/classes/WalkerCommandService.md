@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/WalkerCommandService
+title: docs/class/WalkerCommandService
 group: docs
 ---
 

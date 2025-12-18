@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/addStrategy
+title: docs/function/addStrategy
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/listenRiskOnce
+title: docs/function/listenRiskOnce
 group: docs
 ---
 

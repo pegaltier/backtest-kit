@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/PartialProfitContract
+title: docs/interface/PartialProfitContract
 group: docs
 ---
 

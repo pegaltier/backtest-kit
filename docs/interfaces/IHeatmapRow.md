@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IHeatmapRow
+title: docs/interface/IHeatmapRow
 group: docs
 ---
 

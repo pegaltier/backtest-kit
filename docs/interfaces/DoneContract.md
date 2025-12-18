@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/DoneContract
+title: docs/interface/DoneContract
 group: docs
 ---
 

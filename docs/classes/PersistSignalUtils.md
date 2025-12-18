@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/PersistSignalUtils
+title: docs/class/PersistSignalUtils
 group: docs
 ---
 

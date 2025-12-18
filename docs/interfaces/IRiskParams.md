@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IRiskParams
+title: docs/interface/IRiskParams
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/FrameSchemaService
+title: docs/class/FrameSchemaService
 group: docs
 ---
 

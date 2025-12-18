@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/GlobalConfig
+title: docs/type/GlobalConfig
 group: docs
 ---
 

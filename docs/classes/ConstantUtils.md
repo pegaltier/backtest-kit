@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/ConstantUtils
+title: docs/class/ConstantUtils
 group: docs
 ---
 

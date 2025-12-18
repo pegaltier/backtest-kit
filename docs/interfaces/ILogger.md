@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/ILogger
+title: docs/interface/ILogger
 group: docs
 ---
 

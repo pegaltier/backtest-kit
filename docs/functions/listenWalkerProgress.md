@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/listenWalkerProgress
+title: docs/function/listenWalkerProgress
 group: docs
 ---
 

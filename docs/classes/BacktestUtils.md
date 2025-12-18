@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/BacktestUtils
+title: docs/class/BacktestUtils
 group: docs
 ---
 

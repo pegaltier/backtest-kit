@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/listenOptimizerProgress
+title: docs/function/listenOptimizerProgress
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/ProgressBacktestContract
+title: docs/interface/ProgressBacktestContract
 group: docs
 ---
 

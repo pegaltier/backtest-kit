@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IPositionSizeATRParams
+title: docs/interface/IPositionSizeATRParams
 group: docs
 ---
 

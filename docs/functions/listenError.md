@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/listenError
+title: docs/function/listenError
 group: docs
 ---
 

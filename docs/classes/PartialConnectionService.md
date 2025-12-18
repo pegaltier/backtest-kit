@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/PartialConnectionService
+title: docs/class/PartialConnectionService
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IPositionSizeFixedPercentageParams
+title: docs/interface/IPositionSizeFixedPercentageParams
 group: docs
 ---
 

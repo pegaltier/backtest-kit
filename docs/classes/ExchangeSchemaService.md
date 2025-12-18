@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/ExchangeSchemaService
+title: docs/class/ExchangeSchemaService
 group: docs
 ---
 

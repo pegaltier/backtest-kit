@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/HeatMarkdownService
+title: docs/class/HeatMarkdownService
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/ScheduleStatisticsModel
+title: docs/interface/ScheduleStatisticsModel
 group: docs
 ---
 

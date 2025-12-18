@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/ISizingCalculateParamsBase
+title: docs/interface/ISizingCalculateParamsBase
 group: docs
 ---
 

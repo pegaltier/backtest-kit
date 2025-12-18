@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/PersistPartialUtils
+title: docs/class/PersistPartialUtils
 group: docs
 ---
 

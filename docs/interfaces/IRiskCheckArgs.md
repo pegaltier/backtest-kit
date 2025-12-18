@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IRiskCheckArgs
+title: docs/interface/IRiskCheckArgs
 group: docs
 ---
 

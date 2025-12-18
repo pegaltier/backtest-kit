@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/SizingName
+title: docs/type/SizingName
 group: docs
 ---
 

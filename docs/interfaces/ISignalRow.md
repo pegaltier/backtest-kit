@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/ISignalRow
+title: docs/interface/ISignalRow
 group: docs
 ---
 

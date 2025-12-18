@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/FrameValidationService
+title: docs/class/FrameValidationService
 group: docs
 ---
 

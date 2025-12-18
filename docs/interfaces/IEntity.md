@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IEntity
+title: docs/interface/IEntity
 group: docs
 ---
 

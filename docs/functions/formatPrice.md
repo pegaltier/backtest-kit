@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/formatPrice
+title: docs/function/formatPrice
 group: docs
 ---
 

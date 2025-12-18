@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/RiskSchemaService
+title: docs/class/RiskSchemaService
 group: docs
 ---
 

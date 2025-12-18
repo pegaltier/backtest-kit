@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/LoggerService
+title: docs/class/LoggerService
 group: docs
 ---
 

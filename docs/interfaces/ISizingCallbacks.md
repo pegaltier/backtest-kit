@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/ISizingCallbacks
+title: docs/interface/ISizingCallbacks
 group: docs
 ---
 

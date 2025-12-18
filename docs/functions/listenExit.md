@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/listenExit
+title: docs/function/listenExit
 group: docs
 ---
 

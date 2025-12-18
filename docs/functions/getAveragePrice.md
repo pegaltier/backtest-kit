@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/getAveragePrice
+title: docs/function/getAveragePrice
 group: docs
 ---
 

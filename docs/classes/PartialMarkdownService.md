@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/PartialMarkdownService
+title: docs/class/PartialMarkdownService
 group: docs
 ---
 

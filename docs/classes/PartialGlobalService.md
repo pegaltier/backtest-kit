@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/PartialGlobalService
+title: docs/class/PartialGlobalService
 group: docs
 ---
 

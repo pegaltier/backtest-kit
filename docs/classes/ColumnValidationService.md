@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/ColumnValidationService
+title: docs/class/ColumnValidationService
 group: docs
 ---
 

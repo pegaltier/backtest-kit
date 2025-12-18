@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/OptimizerValidationService
+title: docs/class/OptimizerValidationService
 group: docs
 ---
 

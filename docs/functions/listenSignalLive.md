@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/listenSignalLive
+title: docs/function/listenSignalLive
 group: docs
 ---
 

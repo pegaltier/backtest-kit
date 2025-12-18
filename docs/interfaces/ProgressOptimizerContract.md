@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/ProgressOptimizerContract
+title: docs/interface/ProgressOptimizerContract
 group: docs
 ---
 

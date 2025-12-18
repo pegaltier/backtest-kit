@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IOptimizerCallbacks
+title: docs/interface/IOptimizerCallbacks
 group: docs
 ---
 

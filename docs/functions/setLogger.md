@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/setLogger
+title: docs/function/setLogger
 group: docs
 ---
 

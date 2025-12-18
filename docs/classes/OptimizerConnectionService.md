@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/OptimizerConnectionService
+title: docs/class/OptimizerConnectionService
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/ClientRisk
+title: docs/class/ClientRisk
 group: docs
 ---
 

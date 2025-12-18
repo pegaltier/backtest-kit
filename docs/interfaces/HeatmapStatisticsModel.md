@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/HeatmapStatisticsModel
+title: docs/interface/HeatmapStatisticsModel
 group: docs
 ---
 

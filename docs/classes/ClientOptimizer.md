@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/ClientOptimizer
+title: docs/class/ClientOptimizer
 group: docs
 ---
 

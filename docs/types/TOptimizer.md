@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/TOptimizer
+title: docs/type/TOptimizer
 group: docs
 ---
 

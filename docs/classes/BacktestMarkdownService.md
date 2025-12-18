@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/BacktestMarkdownService
+title: docs/class/BacktestMarkdownService
 group: docs
 ---
 

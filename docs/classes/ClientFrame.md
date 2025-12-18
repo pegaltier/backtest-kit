@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/ClientFrame
+title: docs/class/ClientFrame
 group: docs
 ---
 

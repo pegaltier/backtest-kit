@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/IStrategyBacktestResult
+title: docs/type/IStrategyBacktestResult
 group: docs
 ---
 

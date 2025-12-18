@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IScheduledSignalRow
+title: docs/interface/IScheduledSignalRow
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/WalkerStatisticsModel
+title: docs/interface/WalkerStatisticsModel
 group: docs
 ---
 

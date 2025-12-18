@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/PartialData
+title: docs/type/PartialData
 group: docs
 ---
 

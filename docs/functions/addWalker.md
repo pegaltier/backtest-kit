@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/addWalker
+title: docs/function/addWalker
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IWalkerSchema
+title: docs/interface/IWalkerSchema
 group: docs
 ---
 

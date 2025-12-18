@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/FrameConnectionService
+title: docs/class/FrameConnectionService
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IRiskValidation
+title: docs/interface/IRiskValidation
 group: docs
 ---
 

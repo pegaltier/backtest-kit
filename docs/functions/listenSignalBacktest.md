@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/listenSignalBacktest
+title: docs/function/listenSignalBacktest
 group: docs
 ---
 

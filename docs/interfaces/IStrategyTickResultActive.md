@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IStrategyTickResultActive
+title: docs/interface/IStrategyTickResultActive
 group: docs
 ---
 

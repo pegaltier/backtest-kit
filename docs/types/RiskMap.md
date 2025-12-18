@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/RiskMap
+title: docs/type/RiskMap
 group: docs
 ---
 

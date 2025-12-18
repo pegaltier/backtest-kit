@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IExchangeSchema
+title: docs/interface/IExchangeSchema
 group: docs
 ---
 

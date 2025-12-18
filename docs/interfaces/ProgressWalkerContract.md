@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/ProgressWalkerContract
+title: docs/interface/ProgressWalkerContract
 group: docs
 ---
 

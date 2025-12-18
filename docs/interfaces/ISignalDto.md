@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/ISignalDto
+title: docs/interface/ISignalDto
 group: docs
 ---
 

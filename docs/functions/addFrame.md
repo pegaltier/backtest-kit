@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/addFrame
+title: docs/function/addFrame
 group: docs
 ---
 

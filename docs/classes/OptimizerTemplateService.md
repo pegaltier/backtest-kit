@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/OptimizerTemplateService
+title: docs/class/OptimizerTemplateService
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/listenValidation
+title: docs/function/listenValidation
 group: docs
 ---
 

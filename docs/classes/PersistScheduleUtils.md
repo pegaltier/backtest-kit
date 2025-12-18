@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/PersistScheduleUtils
+title: docs/class/PersistScheduleUtils
 group: docs
 ---
 

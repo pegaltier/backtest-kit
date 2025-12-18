@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/RiskGlobalService
+title: docs/class/RiskGlobalService
 group: docs
 ---
 

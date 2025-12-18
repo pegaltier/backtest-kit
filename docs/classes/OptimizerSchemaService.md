@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/OptimizerSchemaService
+title: docs/class/OptimizerSchemaService
 group: docs
 ---
 

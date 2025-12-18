@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/ClientSizing
+title: docs/class/ClientSizing
 group: docs
 ---
 

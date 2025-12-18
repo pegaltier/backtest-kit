@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/listWalkers
+title: docs/function/listWalkers
 group: docs
 ---
 

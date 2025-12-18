@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/LiveCommandService
+title: docs/class/LiveCommandService
 group: docs
 ---
 

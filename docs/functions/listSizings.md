@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/listSizings
+title: docs/function/listSizings
 group: docs
 ---
 

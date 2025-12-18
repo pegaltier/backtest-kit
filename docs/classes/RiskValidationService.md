@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/RiskValidationService
+title: docs/class/RiskValidationService
 group: docs
 ---
 

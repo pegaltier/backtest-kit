@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IOptimizerFetchArgs
+title: docs/interface/IOptimizerFetchArgs
 group: docs
 ---
 

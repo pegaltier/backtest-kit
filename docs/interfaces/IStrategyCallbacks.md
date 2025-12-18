@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IStrategyCallbacks
+title: docs/interface/IStrategyCallbacks
 group: docs
 ---
 

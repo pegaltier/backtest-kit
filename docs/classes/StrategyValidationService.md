@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/StrategyValidationService
+title: docs/class/StrategyValidationService
 group: docs
 ---
 

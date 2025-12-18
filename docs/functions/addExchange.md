@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/addExchange
+title: docs/function/addExchange
 group: docs
 ---
 

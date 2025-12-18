@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/listenDoneWalker
+title: docs/function/listenDoneWalker
 group: docs
 ---
 

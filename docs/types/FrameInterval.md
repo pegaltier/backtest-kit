@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/FrameInterval
+title: docs/type/FrameInterval
 group: docs
 ---
 

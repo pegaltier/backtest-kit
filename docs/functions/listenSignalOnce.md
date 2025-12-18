@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/listenSignalOnce
+title: docs/function/listenSignalOnce
 group: docs
 ---
 

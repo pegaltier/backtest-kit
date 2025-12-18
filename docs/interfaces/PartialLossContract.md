@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/PartialLossContract
+title: docs/interface/PartialLossContract
 group: docs
 ---
 

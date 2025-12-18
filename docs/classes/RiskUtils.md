@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/RiskUtils
+title: docs/class/RiskUtils
 group: docs
 ---
 

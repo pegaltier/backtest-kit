@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/OptimizerName
+title: docs/type/OptimizerName
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/ISizingParamsFixedPercentage
+title: docs/interface/ISizingParamsFixedPercentage
 group: docs
 ---
 

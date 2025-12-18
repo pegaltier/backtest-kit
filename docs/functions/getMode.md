@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/getMode
+title: docs/function/getMode
 group: docs
 ---
 

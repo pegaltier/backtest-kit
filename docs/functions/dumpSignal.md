@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/dumpSignal
+title: docs/function/dumpSignal
 group: docs
 ---
 

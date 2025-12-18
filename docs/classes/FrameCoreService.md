@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/FrameCoreService
+title: docs/class/FrameCoreService
 group: docs
 ---
 

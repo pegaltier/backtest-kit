@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/getDefaultColumns
+title: docs/function/getDefaultColumns
 group: docs
 ---
 

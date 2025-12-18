@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/ISizingParams
+title: docs/type/ISizingParams
 group: docs
 ---
 

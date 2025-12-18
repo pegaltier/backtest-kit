@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/CandleInterval
+title: docs/type/CandleInterval
 group: docs
 ---
 

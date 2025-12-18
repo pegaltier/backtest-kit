@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/WalkerValidationService
+title: docs/class/WalkerValidationService
 group: docs
 ---
 

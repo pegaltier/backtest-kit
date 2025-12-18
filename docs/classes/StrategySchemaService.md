@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/StrategySchemaService
+title: docs/class/StrategySchemaService
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/PerformanceStatisticsModel
+title: docs/interface/PerformanceStatisticsModel
 group: docs
 ---
 

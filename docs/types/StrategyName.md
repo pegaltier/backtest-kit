@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/StrategyName
+title: docs/type/StrategyName
 group: docs
 ---
 

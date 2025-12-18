@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/listenPartialProfit
+title: docs/function/listenPartialProfit
 group: docs
 ---
 

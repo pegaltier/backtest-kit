@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/HeatUtils
+title: docs/class/HeatUtils
 group: docs
 ---
 

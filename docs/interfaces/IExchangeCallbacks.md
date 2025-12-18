@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IExchangeCallbacks
+title: docs/interface/IExchangeCallbacks
 group: docs
 ---
 

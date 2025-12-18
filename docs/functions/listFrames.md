@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/listFrames
+title: docs/function/listFrames
 group: docs
 ---
 

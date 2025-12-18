@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/ISizingSchemaBase
+title: docs/interface/ISizingSchemaBase
 group: docs
 ---
 

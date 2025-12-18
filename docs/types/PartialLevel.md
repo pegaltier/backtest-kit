@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/PartialLevel
+title: docs/type/PartialLevel
 group: docs
 ---
 

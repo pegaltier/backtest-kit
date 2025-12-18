@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IPersistBase
+title: docs/interface/IPersistBase
 group: docs
 ---
 

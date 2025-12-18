@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IStrategyTickResultScheduled
+title: docs/interface/IStrategyTickResultScheduled
 group: docs
 ---
 

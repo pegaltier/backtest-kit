@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/ExchangeName
+title: docs/type/ExchangeName
 group: docs
 ---
 

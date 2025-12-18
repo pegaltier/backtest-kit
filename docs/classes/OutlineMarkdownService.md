@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/OutlineMarkdownService
+title: docs/class/OutlineMarkdownService
 group: docs
 ---
 

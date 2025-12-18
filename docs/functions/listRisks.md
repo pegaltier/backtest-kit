@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/listRisks
+title: docs/function/listRisks
 group: docs
 ---
 

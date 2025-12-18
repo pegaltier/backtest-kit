@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/PerformanceMetricType
+title: docs/type/PerformanceMetricType
 group: docs
 ---
 

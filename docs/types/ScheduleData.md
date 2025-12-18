@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/ScheduleData
+title: docs/type/ScheduleData
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/listOptimizers
+title: docs/function/listOptimizers
 group: docs
 ---
 

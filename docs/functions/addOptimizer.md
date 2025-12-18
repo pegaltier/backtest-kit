@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/addOptimizer
+title: docs/function/addOptimizer
 group: docs
 ---
 

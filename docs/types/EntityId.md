@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/EntityId
+title: docs/type/EntityId
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/ISizingSchemaKelly
+title: docs/interface/ISizingSchemaKelly
 group: docs
 ---
 

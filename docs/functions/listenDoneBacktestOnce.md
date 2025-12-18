@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/listenDoneBacktestOnce
+title: docs/function/listenDoneBacktestOnce
 group: docs
 ---
 

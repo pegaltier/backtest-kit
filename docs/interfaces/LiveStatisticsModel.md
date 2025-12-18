@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/LiveStatisticsModel
+title: docs/interface/LiveStatisticsModel
 group: docs
 ---
 

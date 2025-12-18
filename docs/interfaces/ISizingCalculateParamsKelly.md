@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/ISizingCalculateParamsKelly
+title: docs/interface/ISizingCalculateParamsKelly
 group: docs
 ---
 

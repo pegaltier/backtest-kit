@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/ExchangeCoreService
+title: docs/class/ExchangeCoreService
 group: docs
 ---
 

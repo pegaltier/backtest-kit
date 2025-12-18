@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/LiveMarkdownService
+title: docs/class/LiveMarkdownService
 group: docs
 ---
 

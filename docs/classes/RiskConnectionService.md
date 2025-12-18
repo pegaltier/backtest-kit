@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/RiskConnectionService
+title: docs/class/RiskConnectionService
 group: docs
 ---
 

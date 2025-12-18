@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/WalkerLogicPrivateService
+title: docs/class/WalkerLogicPrivateService
 group: docs
 ---
 

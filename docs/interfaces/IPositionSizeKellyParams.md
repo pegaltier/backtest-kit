@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IPositionSizeKellyParams
+title: docs/interface/IPositionSizeKellyParams
 group: docs
 ---
 

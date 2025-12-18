@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/ISizing
+title: docs/interface/ISizing
 group: docs
 ---
 

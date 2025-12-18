@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/ClientExchange
+title: docs/class/ClientExchange
 group: docs
 ---
 

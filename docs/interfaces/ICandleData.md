@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/ICandleData
+title: docs/interface/ICandleData
 group: docs
 ---
 

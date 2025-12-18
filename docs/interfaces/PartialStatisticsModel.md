@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/PartialStatisticsModel
+title: docs/interface/PartialStatisticsModel
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/TPersistBaseCtor
+title: docs/type/TPersistBaseCtor
 group: docs
 ---
 

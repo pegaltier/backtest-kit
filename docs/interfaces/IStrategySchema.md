@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IStrategySchema
+title: docs/interface/IStrategySchema
 group: docs
 ---
 

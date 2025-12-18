@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/RiskContract
+title: docs/interface/RiskContract
 group: docs
 ---
 

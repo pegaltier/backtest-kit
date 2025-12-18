@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/SizingSchemaService
+title: docs/class/SizingSchemaService
 group: docs
 ---
 

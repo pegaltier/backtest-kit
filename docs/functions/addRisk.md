@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/addRisk
+title: docs/function/addRisk
 group: docs
 ---
 

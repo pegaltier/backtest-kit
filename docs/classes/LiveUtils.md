@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/LiveUtils
+title: docs/class/LiveUtils
 group: docs
 ---
 

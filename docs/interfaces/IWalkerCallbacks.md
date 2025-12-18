@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IWalkerCallbacks
+title: docs/interface/IWalkerCallbacks
 group: docs
 ---
 

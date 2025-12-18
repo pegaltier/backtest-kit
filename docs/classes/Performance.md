@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/Performance
+title: docs/class/Performance
 group: docs
 ---
 

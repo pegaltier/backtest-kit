@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/PersistRiskUtils
+title: docs/class/PersistRiskUtils
 group: docs
 ---
 

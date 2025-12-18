@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/SizingConnectionService
+title: docs/class/SizingConnectionService
 group: docs
 ---
 

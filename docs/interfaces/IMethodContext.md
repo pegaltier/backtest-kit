@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IMethodContext
+title: docs/interface/IMethodContext
 group: docs
 ---
 

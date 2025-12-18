@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/SizingValidationService
+title: docs/class/SizingValidationService
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/WalkerMetric
+title: docs/type/WalkerMetric
 group: docs
 ---
 

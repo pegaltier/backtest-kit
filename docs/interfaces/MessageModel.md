@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/MessageModel
+title: docs/interface/MessageModel
 group: docs
 ---
 

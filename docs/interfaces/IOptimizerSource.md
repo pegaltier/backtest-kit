@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IOptimizerSource
+title: docs/interface/IOptimizerSource
 group: docs
 ---
 

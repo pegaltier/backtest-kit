@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/LiveLogicPrivateService
+title: docs/class/LiveLogicPrivateService
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/PositionSizeUtils
+title: docs/class/PositionSizeUtils
 group: docs
 ---
 

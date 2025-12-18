@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/ScheduleUtils
+title: docs/class/ScheduleUtils
 group: docs
 ---
 

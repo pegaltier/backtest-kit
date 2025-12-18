@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IOptimizerFilterArgs
+title: docs/interface/IOptimizerFilterArgs
 group: docs
 ---
 

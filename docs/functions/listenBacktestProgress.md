@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/listenBacktestProgress
+title: docs/function/listenBacktestProgress
 group: docs
 ---
 

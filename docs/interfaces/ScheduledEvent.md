@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/ScheduledEvent
+title: docs/interface/ScheduledEvent
 group: docs
 ---
 

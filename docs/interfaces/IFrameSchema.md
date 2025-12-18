@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IFrameSchema
+title: docs/interface/IFrameSchema
 group: docs
 ---
 

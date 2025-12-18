@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/WalkerName
+title: docs/type/WalkerName
 group: docs
 ---
 

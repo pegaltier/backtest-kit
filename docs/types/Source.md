@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/Source
+title: docs/type/Source
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/TPersistBase
+title: docs/type/TPersistBase
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/TickEvent
+title: docs/interface/TickEvent
 group: docs
 ---
 

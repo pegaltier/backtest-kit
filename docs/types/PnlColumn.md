@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/PnlColumn
+title: docs/type/PnlColumn
 group: docs
 ---
 

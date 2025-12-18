@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/PerformanceMarkdownService
+title: docs/class/PerformanceMarkdownService
 group: docs
 ---
 

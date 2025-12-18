@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/ISizingSchema
+title: docs/type/ISizingSchema
 group: docs
 ---
 

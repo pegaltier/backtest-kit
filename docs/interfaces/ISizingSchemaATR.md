@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/ISizingSchemaATR
+title: docs/interface/ISizingSchemaATR
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/PerformanceContract
+title: docs/interface/PerformanceContract
 group: docs
 ---
 

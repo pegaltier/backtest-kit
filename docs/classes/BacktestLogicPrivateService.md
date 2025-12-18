@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/BacktestLogicPrivateService
+title: docs/class/BacktestLogicPrivateService
 group: docs
 ---
 

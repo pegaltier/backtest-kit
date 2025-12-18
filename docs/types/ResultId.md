@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/ResultId
+title: docs/type/ResultId
 group: docs
 ---
 

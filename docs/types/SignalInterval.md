@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/SignalInterval
+title: docs/type/SignalInterval
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IRiskCallbacks
+title: docs/interface/IRiskCallbacks
 group: docs
 ---
 

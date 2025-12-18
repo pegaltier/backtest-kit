@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IRiskActivePosition
+title: docs/interface/IRiskActivePosition
 group: docs
 ---
 

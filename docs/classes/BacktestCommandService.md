@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/BacktestCommandService
+title: docs/class/BacktestCommandService
 group: docs
 ---
 

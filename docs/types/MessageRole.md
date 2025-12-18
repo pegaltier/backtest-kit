@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/MessageRole
+title: docs/type/MessageRole
 group: docs
 ---
 

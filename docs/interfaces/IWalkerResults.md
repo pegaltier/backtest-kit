@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IWalkerResults
+title: docs/interface/IWalkerResults
 group: docs
 ---
 

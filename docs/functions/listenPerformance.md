@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/listenPerformance
+title: docs/function/listenPerformance
 group: docs
 ---
 

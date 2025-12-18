@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/ISizingSchemaFixedPercentage
+title: docs/interface/ISizingSchemaFixedPercentage
 group: docs
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IOptimizerSchema
+title: docs/interface/IOptimizerSchema
 group: docs
 ---
 

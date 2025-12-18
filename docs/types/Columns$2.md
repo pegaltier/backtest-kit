@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/Columns$2
+title: docs/type/Columns$2
 group: docs
 ---
 

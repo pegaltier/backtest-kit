@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/RiskEvent
+title: docs/interface/RiskEvent
 group: docs
 ---
 

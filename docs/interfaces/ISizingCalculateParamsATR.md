@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/ISizingCalculateParamsATR
+title: docs/interface/ISizingCalculateParamsATR
 group: docs
 ---
 

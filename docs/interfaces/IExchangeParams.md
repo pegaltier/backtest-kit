@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IExchangeParams
+title: docs/interface/IExchangeParams
 group: docs
 ---
 

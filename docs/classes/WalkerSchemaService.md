@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/WalkerSchemaService
+title: docs/class/WalkerSchemaService
 group: docs
 ---
 

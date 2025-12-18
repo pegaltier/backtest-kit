@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/class/ExchangeValidationService
+title: docs/class/ExchangeValidationService
 group: docs
 ---
 

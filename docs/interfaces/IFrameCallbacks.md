@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/interface/IFrameCallbacks
+title: docs/interface/IFrameCallbacks
 group: docs
 ---
 

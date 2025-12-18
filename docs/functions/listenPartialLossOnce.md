@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/listenPartialLossOnce
+title: docs/function/listenPartialLossOnce
 group: docs
 ---
 

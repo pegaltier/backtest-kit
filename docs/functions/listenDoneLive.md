@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/function/listenDoneLive
+title: docs/function/listenDoneLive
 group: docs
 ---
 

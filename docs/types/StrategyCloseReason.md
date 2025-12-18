@@ -1,5 +1,5 @@
 ---
-title: docs/api-reference/type/StrategyCloseReason
+title: docs/type/StrategyCloseReason
 group: docs
 ---
 
