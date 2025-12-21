@@ -67,7 +67,7 @@ test("Heat.getData returns heatmap statistics for strategy", async ({ pass, fail
     // Just consume
   }
 
-  const stats = await Heat.getData("test-strategy-heat-1");
+  const stats = await Heat.getData("test-strategy-heat-1", true);
 
   if (
     stats &&
@@ -138,7 +138,7 @@ test("Heat heatmap includes per-symbol statistics", async ({ pass, fail }) => {
     // Just consume
   }
 
-  const stats = await Heat.getData("test-strategy-heat-2");
+  const stats = await Heat.getData("test-strategy-heat-2", true);
 
   const btcRow = stats.symbols.find(s => s.symbol === "BTCUSDT");
   const ethRow = stats.symbols.find(s => s.symbol === "ETHUSDT");
@@ -206,7 +206,7 @@ test("Heat.getReport generates markdown report", async ({ pass, fail }) => {
     // Just consume
   }
 
-  const markdown = await Heat.getReport("test-strategy-heat-3");
+  const markdown = await Heat.getReport("test-strategy-heat-3", true);
 
   if (
     markdown &&
@@ -296,7 +296,7 @@ test("Heat calculates portfolio-wide metrics", async ({ pass, fail }) => {
     // Just consume
   }
 
-  const stats = await Heat.getData("test-strategy-heat-4");
+  const stats = await Heat.getData("test-strategy-heat-4", true);
 
   // Note: portfolioSharpeRatio will be null because each symbol only has 1 trade,
   // which is insufficient to calculate stdDev (requires > 1 trade per symbol)
@@ -360,7 +360,7 @@ test("Heat calculates extended metrics correctly", async ({ pass, fail }) => {
     // Just consume
   }
 
-  const stats = await Heat.getData("test-strategy-heat-extended");
+  const stats = await Heat.getData("test-strategy-heat-extended", true);
   const btcRow = stats.symbols.find(s => s.symbol === "BTCUSDT");
 
   if (
@@ -435,7 +435,7 @@ test("Heat sorts symbols by Sharpe Ratio descending", async ({ pass, fail }) => 
     // Just consume
   }
 
-  const stats = await Heat.getData("test-strategy-heat-6");
+  const stats = await Heat.getData("test-strategy-heat-6", true);
 
   if (stats.symbols.length < 2) {
     fail("Need at least 2 symbols for sorting test");

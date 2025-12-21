@@ -64,7 +64,7 @@ test("Schedule.getData returns ScheduleStatistics structure", async ({ pass, fai
     // Consume all results
   }
 
-  const stats = await Schedule.getData("BTCUSDT", "test-strategy-schedule-getdata");
+  const stats = await Schedule.getData("BTCUSDT", "test-strategy-schedule-getdata", true);
 
   if (
     stats &&
@@ -133,7 +133,7 @@ test("Schedule.getData calculates cancellation rate", async ({ pass, fail }) => 
     // Consume all results
   }
 
-  const stats = await Schedule.getData("BTCUSDT", "test-strategy-schedule-metrics");
+  const stats = await Schedule.getData("BTCUSDT", "test-strategy-schedule-metrics", true);
 
   const hasAllMetrics =
     stats &&
@@ -191,7 +191,7 @@ test("Schedule.getData returns null for cancellation rate with empty data", asyn
     // Consume all results
   }
 
-  const stats = await Schedule.getData("BTCUSDT", "test-strategy-schedule-safe");
+  const stats = await Schedule.getData("BTCUSDT", "test-strategy-schedule-safe", true);
 
   if (
     stats &&
@@ -344,7 +344,7 @@ test("Schedule.getData tracks scheduled signal lifecycle", async ({ pass, fail }
 
   await awaiter;
 
-  const stats = await Schedule.getData("BTCUSDT", "test-strategy-schedule-lifecycle");
+  const stats = await Schedule.getData("BTCUSDT", "test-strategy-schedule-lifecycle", true);
 
   if (
     stats &&

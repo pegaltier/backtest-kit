@@ -361,8 +361,8 @@ test("MARKDOWN PARALLEL: All markdown services work with multi-symbol isolation"
 
   // 1. ScheduleMarkdownService - проверяем getData()
   try {
-    const btcScheduleData = await Schedule.getData("BTCUSDT", "test-markdown-parallel");
-    const ethScheduleData = await Schedule.getData("ETHUSDT", "test-markdown-parallel");
+    const btcScheduleData = await Schedule.getData("BTCUSDT", "test-markdown-parallel", true);
+    const ethScheduleData = await Schedule.getData("ETHUSDT", "test-markdown-parallel", true);
 
     if (btcScheduleData.totalScheduled === 0) {
       fail("ScheduleMarkdownService: BTCUSDT should have scheduled events");
@@ -394,8 +394,8 @@ test("MARKDOWN PARALLEL: All markdown services work with multi-symbol isolation"
 
   // 2. PerformanceMarkdownService - проверяем getData()
   try {
-    const btcPerfData = await Performance.getData("BTCUSDT", "test-markdown-parallel");
-    const ethPerfData = await Performance.getData("ETHUSDT", "test-markdown-parallel");
+    const btcPerfData = await Performance.getData("BTCUSDT", "test-markdown-parallel", true);
+    const ethPerfData = await Performance.getData("ETHUSDT", "test-markdown-parallel", true);
 
     if (btcPerfData.totalEvents === 0) {
       fail("PerformanceMarkdownService: BTCUSDT should have events");
@@ -427,8 +427,8 @@ test("MARKDOWN PARALLEL: All markdown services work with multi-symbol isolation"
 
   // 3. PartialMarkdownService - проверяем getData()
   try {
-    const btcPartialData = await Partial.getData("BTCUSDT", "test-markdown-parallel");
-    const ethPartialData = await Partial.getData("ETHUSDT", "test-markdown-parallel");
+    const btcPartialData = await Partial.getData("BTCUSDT", "test-markdown-parallel", true);
+    const ethPartialData = await Partial.getData("ETHUSDT", "test-markdown-parallel", true);
 
     // Partial может быть пустым если не было partial profit/loss событий
     // Но проверяем изоляцию если есть данные
@@ -454,8 +454,8 @@ test("MARKDOWN PARALLEL: All markdown services work with multi-symbol isolation"
 
   // 4. HeatMarkdownService - проверяем getData()
   try {
-    const btcHeatData = await Heat.getData("test-markdown-parallel");
-    const ethHeatData = await Heat.getData("test-markdown-parallel");
+    const btcHeatData = await Heat.getData("test-markdown-parallel", true);
+    const ethHeatData = await Heat.getData("test-markdown-parallel", true);
 
     // Heat может быть пустым, но проверяем что вызов не падает
     // и возвращает структуру данных

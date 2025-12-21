@@ -1,4 +1,4 @@
-import backtest from "../lib";
+import bt from "../lib";
 import { HeatmapStatisticsModel } from "../model/HeatmapStatistics.model";
 import { StrategyName } from "../interfaces/Strategy.interface";
 import { Columns } from "../lib/services/markdown/HeatMarkdownService";
@@ -54,18 +54,18 @@ export class HeatUtils {
    * });
    * ```
    */
-  public getData = async (strategyName: StrategyName): Promise<HeatmapStatisticsModel> => {
-    backtest.loggerService.info(HEAT_METHOD_NAME_GET_DATA, { strategyName });
+  public getData = async (strategyName: StrategyName, backtest: boolean): Promise<HeatmapStatisticsModel> => {
+    bt.loggerService.info(HEAT_METHOD_NAME_GET_DATA, { strategyName });
 
-    backtest.strategyValidationService.validate(strategyName, HEAT_METHOD_NAME_GET_DATA);
+    bt.strategyValidationService.validate(strategyName, HEAT_METHOD_NAME_GET_DATA);
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, HEAT_METHOD_NAME_GET_DATA);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, HEAT_METHOD_NAME_GET_DATA));
+      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
+      riskName && bt.riskValidationService.validate(riskName, HEAT_METHOD_NAME_GET_DATA);
+      riskList && riskList.forEach((riskName) => bt.riskValidationService.validate(riskName, HEAT_METHOD_NAME_GET_DATA));
     }
 
-    return await backtest.heatMarkdownService.getData(strategyName);
+    return await bt.heatMarkdownService.getData(strategyName, backtest);
   };
 
   /**
@@ -94,18 +94,18 @@ export class HeatUtils {
    * // ...
    * ```
    */
-  public getReport = async (strategyName: StrategyName, columns?: Columns[]): Promise<string> => {
-    backtest.loggerService.info(HEAT_METHOD_NAME_GET_REPORT, { strategyName });
+  public getReport = async (strategyName: StrategyName, backtest: boolean, columns?: Columns[]): Promise<string> => {
+    bt.loggerService.info(HEAT_METHOD_NAME_GET_REPORT, { strategyName });
 
-    backtest.strategyValidationService.validate(strategyName, HEAT_METHOD_NAME_GET_REPORT);
+    bt.strategyValidationService.validate(strategyName, HEAT_METHOD_NAME_GET_REPORT);
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, HEAT_METHOD_NAME_GET_REPORT);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, HEAT_METHOD_NAME_GET_REPORT));
+      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
+      riskName && bt.riskValidationService.validate(riskName, HEAT_METHOD_NAME_GET_REPORT);
+      riskList && riskList.forEach((riskName) => bt.riskValidationService.validate(riskName, HEAT_METHOD_NAME_GET_REPORT));
     }
 
-    return await backtest.heatMarkdownService.getReport(strategyName, columns);
+    return await bt.heatMarkdownService.getReport(strategyName, backtest, columns);
   };
 
   /**
@@ -127,18 +127,18 @@ export class HeatUtils {
    * await Heat.dump("my-strategy", "./reports");
    * ```
    */
-  public dump = async (strategyName: StrategyName, path?: string, columns?: Columns[]): Promise<void> => {
-    backtest.loggerService.info(HEAT_METHOD_NAME_DUMP, { strategyName, path });
+  public dump = async (strategyName: StrategyName, backtest: boolean, path?: string, columns?: Columns[]): Promise<void> => {
+    bt.loggerService.info(HEAT_METHOD_NAME_DUMP, { strategyName, path });
 
-    backtest.strategyValidationService.validate(strategyName, HEAT_METHOD_NAME_DUMP);
+    bt.strategyValidationService.validate(strategyName, HEAT_METHOD_NAME_DUMP);
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, HEAT_METHOD_NAME_DUMP);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, HEAT_METHOD_NAME_DUMP));
+      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
+      riskName && bt.riskValidationService.validate(riskName, HEAT_METHOD_NAME_DUMP);
+      riskList && riskList.forEach((riskName) => bt.riskValidationService.validate(riskName, HEAT_METHOD_NAME_DUMP));
     }
 
-    await backtest.heatMarkdownService.dump(strategyName, path, columns);
+    await bt.heatMarkdownService.dump(strategyName, backtest, path, columns);
   };
 }
 

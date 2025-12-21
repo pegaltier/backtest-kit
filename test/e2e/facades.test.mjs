@@ -289,10 +289,10 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
   // ПРОВЕРКА ВСЕХ ПУБЛИЧНЫХ ФАСАДОВ
   // ========================================
 
-  // 1. Schedule.getData(symbol, strategyName)
+  // 1. Schedule.getData(symbol, strategyName, backtest)
   try {
-    const btcSchedule = await Schedule.getData("BTCUSDT", "test-facades-parallel");
-    const ethSchedule = await Schedule.getData("ETHUSDT", "test-facades-parallel");
+    const btcSchedule = await Schedule.getData("BTCUSDT", "test-facades-parallel", true);
+    const ethSchedule = await Schedule.getData("ETHUSDT", "test-facades-parallel", true);
 
     if (btcSchedule.totalScheduled === 0) {
       fail("Schedule: BTCUSDT should have scheduled signals");
@@ -322,10 +322,10 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     return;
   }
 
-  // 2. Performance.getData(symbol, strategyName)
+  // 2. Performance.getData(symbol, strategyName, backtest)
   try {
-    const btcPerf = await Performance.getData("BTCUSDT", "test-facades-parallel");
-    const ethPerf = await Performance.getData("ETHUSDT", "test-facades-parallel");
+    const btcPerf = await Performance.getData("BTCUSDT", "test-facades-parallel", true);
+    const ethPerf = await Performance.getData("ETHUSDT", "test-facades-parallel", true);
 
     if (btcPerf.totalEvents === 0) {
       fail("Performance: BTCUSDT should have events");
@@ -355,10 +355,10 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     return;
   }
 
-  // 3. Heat.getData(strategyName)
+  // 3. Heat.getData(strategyName, backtest)
   try {
-    const btcHeat = await Heat.getData("test-facades-parallel");
-    const ethHeat = await Heat.getData("test-facades-parallel");
+    const btcHeat = await Heat.getData("test-facades-parallel", true);
+    const ethHeat = await Heat.getData("test-facades-parallel", true);
 
     // Heat может быть пустым, но проверяем что вызов не падает
     if (!btcHeat || typeof btcHeat !== "object") {
@@ -375,10 +375,10 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     return;
   }
 
-  // 4. Partial.getData(symbol, strategyName)
+  // 4. Partial.getData(symbol, strategyName, backtest)
   try {
-    const btcPartial = await Partial.getData("BTCUSDT", "test-facades-parallel");
-    const ethPartial = await Partial.getData("ETHUSDT", "test-facades-parallel");
+    const btcPartial = await Partial.getData("BTCUSDT", "test-facades-parallel", true);
+    const ethPartial = await Partial.getData("ETHUSDT", "test-facades-parallel", true);
 
     // Partial может быть пустым, но проверяем изоляцию если есть данные
     if (btcPartial.eventList.length > 0) {
@@ -405,10 +405,10 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
   // Пропускаем - требует регистрации sizing schema через addSizing()
   // API принимает symbol как первый параметр - это уже проверено в других местах
 
-  // 6. Schedule.getReport(symbol, strategyName)
+  // 6. Schedule.getReport(symbol, strategyName, backtest)
   try {
-    const btcReport = await Schedule.getReport("BTCUSDT", "test-facades-parallel");
-    const ethReport = await Schedule.getReport("ETHUSDT", "test-facades-parallel");
+    const btcReport = await Schedule.getReport("BTCUSDT", "test-facades-parallel", true);
+    const ethReport = await Schedule.getReport("ETHUSDT", "test-facades-parallel", true);
 
     if (typeof btcReport !== "string" || btcReport.length === 0) {
       fail("Schedule: BTCUSDT getReport() returned invalid report");
@@ -435,10 +435,10 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     return;
   }
 
-  // 7. Performance.getReport(symbol, strategyName)
+  // 7. Performance.getReport(symbol, strategyName, backtest)
   try {
-    const btcPerfReport = await Performance.getReport("BTCUSDT", "test-facades-parallel");
-    const ethPerfReport = await Performance.getReport("ETHUSDT", "test-facades-parallel");
+    const btcPerfReport = await Performance.getReport("BTCUSDT", "test-facades-parallel", true);
+    const ethPerfReport = await Performance.getReport("ETHUSDT", "test-facades-parallel", true);
 
     if (typeof btcPerfReport !== "string" || btcPerfReport.length === 0) {
       fail("Performance: BTCUSDT getReport() returned invalid report");
@@ -454,10 +454,10 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     return;
   }
 
-  // 8. Heat.getReport(strategyName)
+  // 8. Heat.getReport(strategyName, backtest)
   try {
-    const btcHeatReport = await Heat.getReport("test-facades-parallel");
-    const ethHeatReport = await Heat.getReport("test-facades-parallel");
+    const btcHeatReport = await Heat.getReport("test-facades-parallel", true);
+    const ethHeatReport = await Heat.getReport("test-facades-parallel", true);
 
     if (typeof btcHeatReport !== "string" || btcHeatReport.length === 0) {
       fail("Heat: BTCUSDT getReport() returned invalid report");
@@ -473,10 +473,10 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     return;
   }
 
-  // 9. Partial.getReport(symbol, strategyName)
+  // 9. Partial.getReport(symbol, strategyName, backtest)
   try {
-    const btcPartialReport = await Partial.getReport("BTCUSDT", "test-facades-parallel");
-    const ethPartialReport = await Partial.getReport("ETHUSDT", "test-facades-parallel");
+    const btcPartialReport = await Partial.getReport("BTCUSDT", "test-facades-parallel", true);
+    const ethPartialReport = await Partial.getReport("ETHUSDT", "test-facades-parallel", true);
 
     if (typeof btcPartialReport !== "string" || btcPartialReport.length === 0) {
       fail("Partial: BTCUSDT getReport() returned invalid report");

@@ -6550,8 +6550,8 @@ declare class HeatMarkdownService {
     /** Logger service for debug output */
     private readonly loggerService;
     /**
-     * Memoized function to get or create HeatmapStorage for a strategy.
-     * Each strategy gets its own isolated heatmap storage instance.
+     * Memoized function to get or create HeatmapStorage for a strategy and backtest mode.
+     * Each strategy + backtest mode combination gets its own isolated heatmap storage instance.
      */
     private getStorage;
     /**
@@ -6567,12 +6567,13 @@ declare class HeatMarkdownService {
      * Gets aggregated portfolio heatmap statistics for a strategy.
      *
      * @param strategyName - Strategy name to get heatmap data for
+     * @param backtest - True if backtest mode, false if live mode
      * @returns Promise resolving to heatmap statistics with per-symbol and portfolio-wide metrics
      *
      * @example
      * ```typescript
      * const service = new HeatMarkdownService();
-     * const stats = await service.getData("my-strategy");
+     * const stats = await service.getData("my-strategy", true);
      *
      * console.log(`Total symbols: ${stats.totalSymbols}`);
      * console.log(`Portfolio PNL: ${stats.portfolioTotalPnl}%`);
@@ -6582,18 +6583,19 @@ declare class HeatMarkdownService {
      * });
      * ```
      */
-    getData: (strategyName: StrategyName) => Promise<HeatmapStatisticsModel>;
+    getData: (strategyName: StrategyName, backtest: boolean) => Promise<HeatmapStatisticsModel>;
     /**
      * Generates markdown report with portfolio heatmap table for a strategy.
      *
      * @param strategyName - Strategy name to generate heatmap report for
+     * @param backtest - True if backtest mode, false if live mode
      * @param columns - Column configuration for formatting the table
      * @returns Promise resolving to markdown formatted report string
      *
      * @example
      * ```typescript
      * const service = new HeatMarkdownService();
-     * const markdown = await service.getReport("my-strategy");
+     * const markdown = await service.getReport("my-strategy", true);
      * console.log(markdown);
      * // Output:
      * // # Portfolio Heatmap: my-strategy
@@ -6607,7 +6609,7 @@ declare class HeatMarkdownService {
      * // ...
      * ```
      */
-    getReport: (strategyName: StrategyName, columns?: Columns$2[]) => Promise<string>;
+    getReport: (strategyName: StrategyName, backtest: boolean, columns?: Columns$2[]) => Promise<string>;
     /**
      * Saves heatmap report to disk for a strategy.
      *
@@ -6615,6 +6617,7 @@ declare class HeatMarkdownService {
      * Default filename: {strategyName}.md
      *
      * @param strategyName - Strategy name to save heatmap report for
+     * @param backtest - True if backtest mode, false if live mode
      * @param path - Optional directory path to save report (default: "./dump/heatmap")
      * @param columns - Column configuration for formatting the table
      *
@@ -6623,32 +6626,35 @@ declare class HeatMarkdownService {
      * const service = new HeatMarkdownService();
      *
      * // Save to default path: ./dump/heatmap/my-strategy.md
-     * await service.dump("my-strategy");
+     * await service.dump("my-strategy", true);
      *
      * // Save to custom path: ./reports/my-strategy.md
-     * await service.dump("my-strategy", "./reports");
+     * await service.dump("my-strategy", true, "./reports");
      * ```
      */
-    dump: (strategyName: StrategyName, path?: string, columns?: Columns$2[]) => Promise<void>;
+    dump: (strategyName: StrategyName, backtest: boolean, path?: string, columns?: Columns$2[]) => Promise<void>;
     /**
      * Clears accumulated heatmap data from storage.
-     * If strategyName is provided, clears only that strategy's data.
-     * If strategyName is omitted, clears all strategies' data.
+     * If ctx is provided, clears only that strategy+backtest combination's data.
+     * If ctx is omitted, clears all data.
      *
-     * @param strategyName - Optional strategy name to clear specific strategy data
+     * @param ctx - Optional context with strategyName and backtest to clear specific data
      *
      * @example
      * ```typescript
      * const service = new HeatMarkdownService();
      *
-     * // Clear specific strategy data
-     * await service.clear("my-strategy");
+     * // Clear specific strategy+backtest data
+     * await service.clear({ strategyName: "my-strategy", backtest: true });
      *
-     * // Clear all strategies' data
+     * // Clear all data
      * await service.clear();
      * ```
      */
-    clear: (strategyName?: StrategyName) => Promise<void>;
+    clear: (ctx?: {
+        strategyName: StrategyName;
+        backtest: boolean;
+    }) => Promise<void>;
     /**
      * Initializes the service by subscribing to signal events.
      * Uses singleshot to ensure initialization happens only once.
@@ -6710,7 +6716,7 @@ declare class HeatUtils {
      * });
      * ```
      */
-    getData: (strategyName: StrategyName) => Promise<HeatmapStatisticsModel>;
+    getData: (strategyName: StrategyName, backtest: boolean) => Promise<HeatmapStatisticsModel>;
     /**
      * Generates markdown report with portfolio heatmap table for a strategy.
      *
@@ -6737,7 +6743,7 @@ declare class HeatUtils {
      * // ...
      * ```
      */
-    getReport: (strategyName: StrategyName, columns?: Columns$2[]) => Promise<string>;
+    getReport: (strategyName: StrategyName, backtest: boolean, columns?: Columns$2[]) => Promise<string>;
     /**
      * Saves heatmap report to disk for a strategy.
      *
@@ -6757,7 +6763,7 @@ declare class HeatUtils {
      * await Heat.dump("my-strategy", "./reports");
      * ```
      */
-    dump: (strategyName: StrategyName, path?: string, columns?: Columns$2[]) => Promise<void>;
+    dump: (strategyName: StrategyName, backtest: boolean, path?: string, columns?: Columns$2[]) => Promise<void>;
 }
 /**
  * Singleton instance of HeatUtils for convenient heatmap operations.
