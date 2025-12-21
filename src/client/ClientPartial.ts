@@ -94,7 +94,7 @@ const HANDLE_PROFIT_FN = async (
   }
 
   if (shouldPersist) {
-    await self._persistState(symbol, data.strategyName, backtest);
+    await self._persistState(symbol, data.strategyName);
   }
 };
 
@@ -167,7 +167,7 @@ const HANDLE_LOSS_FN = async (
   }
 
   if (shouldPersist) {
-    await self._persistState(symbol, data.strategyName, backtest);
+    await self._persistState(symbol, data.strategyName);
   }
 };
 
@@ -184,17 +184,23 @@ const HANDLE_LOSS_FN = async (
  * @param backtest - True if backtest mode, false if live mode
  * @param self - ClientPartial instance reference
  */
-const WAIT_FOR_INIT_FN = async (symbol: string, strategyName: string, backtest: boolean, self: ClientPartial) => {
-  self.params.logger.debug("ClientPartial waitForInit", { symbol, strategyName, backtest });
+const WAIT_FOR_INIT_FN = async (symbol: string, strategyName: string, self: ClientPartial) => {
+  self.params.logger.debug("ClientPartial waitForInit", {
+    symbol,
+    strategyName,
+    backtest: self.params.backtest
+  });
 
-  if (self._states === NEED_FETCH) {
+  if (self._states !== NEED_FETCH) {
     throw new Error(
-      "ClientPartial not initialized. Call waitForInit() before using."
+      "ClientPartial WAIT_FOR_INIT_FN should be called once!"
     );
   }
 
+  self._states = new Map();
+
   // Skip persistence in backtest mode
-  if (backtest) {
+  if (self.params.backtest) {
     self.params.logger.debug("ClientPartial waitForInit: skipping persist read in backtest mode");
     return;
   }
@@ -287,9 +293,7 @@ export class ClientPartial implements IPartial {
    *
    * @param params - Partial parameters (logger, onProfit, onLoss callbacks)
    */
-  constructor(readonly params: IPartialParams) {
-    this._states = new Map();
-  }
+  constructor(readonly params: IPartialParams) {}
 
   /**
    * Initializes partial state by loading from disk.
@@ -312,7 +316,7 @@ export class ClientPartial implements IPartial {
    * ```
    */
   public waitForInit = singleshot(
-    async (symbol: string, strategyName: string, backtest: boolean) => await WAIT_FOR_INIT_FN(symbol, strategyName, backtest, this)
+    async (symbol: string, strategyName: string) => await WAIT_FOR_INIT_FN(symbol, strategyName, this)
   );
 
   /**
@@ -330,8 +334,8 @@ export class ClientPartial implements IPartial {
    * @param backtest - True if backtest mode
    * @returns Promise that resolves when persistence is complete
    */
-  public async _persistState(symbol: string, strategyName: string, backtest: boolean): Promise<void> {
-    if (backtest) {
+  public async _persistState(symbol: string, strategyName: string): Promise<void> {
+    if (this.params.backtest) {
       return;
     }
     this.params.logger.debug("ClientPartial persistState", { symbol, strategyName });
@@ -509,7 +513,7 @@ export class ClientPartial implements IPartial {
       );
     }
     this._states.delete(data.id);
-    await this._persistState(symbol, data.strategyName, backtest);
+    await this._persistState(symbol, data.strategyName);
   }
 }
 

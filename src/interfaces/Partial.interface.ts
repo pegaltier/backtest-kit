@@ -68,6 +68,11 @@ export interface IPartialParams {
   logger: ILogger;
 
   /**
+   * True if backtest mode, false if live mode.
+   */
+  backtest: boolean;
+
+  /**
    * Callback invoked when a signal reaches a new profit level.
    * Called before emitting to partialProfitSubject.
    *
