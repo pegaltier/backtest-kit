@@ -166,8 +166,8 @@ export class LiveInstance {
     });
 
     {
-      backtest.liveMarkdownService.clear({ symbol, strategyName: context.strategyName });
-      backtest.scheduleMarkdownService.clear({ symbol, strategyName: context.strategyName });
+      backtest.liveMarkdownService.clear({ symbol, strategyName: context.strategyName, backtest: false });
+      backtest.scheduleMarkdownService.clear({ symbol, strategyName: context.strategyName, backtest: false });
     }
 
     {
@@ -285,7 +285,7 @@ export class LiveInstance {
       symbol,
       strategyName,
     });
-    return await backtest.liveMarkdownService.getData(symbol, strategyName);
+    return await backtest.liveMarkdownService.getData(symbol, strategyName, false);
   };
 
   /**
@@ -308,7 +308,7 @@ export class LiveInstance {
       symbol,
       strategyName,
     });
-    return await backtest.liveMarkdownService.getReport(symbol, strategyName, columns);
+    return await backtest.liveMarkdownService.getReport(symbol, strategyName, false, columns);
   };
 
   /**
@@ -340,7 +340,7 @@ export class LiveInstance {
       strategyName,
       path,
     });
-    await backtest.liveMarkdownService.dump(symbol, strategyName, path, columns);
+    await backtest.liveMarkdownService.dump(symbol, strategyName, false, path, columns);
   };
 }
 

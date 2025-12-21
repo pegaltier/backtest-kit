@@ -1,4 +1,4 @@
-import backtest from "../lib";
+import bt from "../lib";
 import { Columns } from "../lib/services/markdown/PartialMarkdownService";
 
 const PARTIAL_METHOD_NAME_GET_DATA = "PartialUtils.getData";
@@ -65,18 +65,18 @@ export class PartialUtils {
    * }
    * ```
    */
-  public getData = async (symbol: string, strategyName: string) => {
-    backtest.loggerService.info(PARTIAL_METHOD_NAME_GET_DATA, { symbol, strategyName });
+  public getData = async (symbol: string, strategyName: string, backtest: boolean) => {
+    bt.loggerService.info(PARTIAL_METHOD_NAME_GET_DATA, { symbol, strategyName });
 
-    backtest.strategyValidationService.validate(strategyName, PARTIAL_METHOD_NAME_GET_DATA);
+    bt.strategyValidationService.validate(strategyName, PARTIAL_METHOD_NAME_GET_DATA);
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, PARTIAL_METHOD_NAME_GET_DATA);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, PARTIAL_METHOD_NAME_GET_DATA));
+      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
+      riskName && bt.riskValidationService.validate(riskName, PARTIAL_METHOD_NAME_GET_DATA);
+      riskList && riskList.forEach((riskName) => bt.riskValidationService.validate(riskName, PARTIAL_METHOD_NAME_GET_DATA));
     }
 
-    return await backtest.partialMarkdownService.getData(symbol, strategyName);
+    return await bt.partialMarkdownService.getData(symbol, strategyName, backtest);
   };
 
   /**
@@ -118,18 +118,18 @@ export class PartialUtils {
    * // **Loss events:** 1
    * ```
    */
-  public getReport = async (symbol: string, strategyName: string, columns?: Columns[]): Promise<string> => {
-    backtest.loggerService.info(PARTIAL_METHOD_NAME_GET_REPORT, { symbol, strategyName });
+  public getReport = async (symbol: string, strategyName: string, backtest: boolean, columns?: Columns[]): Promise<string> => {
+    bt.loggerService.info(PARTIAL_METHOD_NAME_GET_REPORT, { symbol, strategyName });
 
-    backtest.strategyValidationService.validate(strategyName, PARTIAL_METHOD_NAME_GET_REPORT);
+    bt.strategyValidationService.validate(strategyName, PARTIAL_METHOD_NAME_GET_REPORT);
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, PARTIAL_METHOD_NAME_GET_REPORT);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, PARTIAL_METHOD_NAME_GET_REPORT));
+      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
+      riskName && bt.riskValidationService.validate(riskName, PARTIAL_METHOD_NAME_GET_REPORT);
+      riskList && riskList.forEach((riskName) => bt.riskValidationService.validate(riskName, PARTIAL_METHOD_NAME_GET_REPORT));
     }
 
-    return await backtest.partialMarkdownService.getReport(symbol, strategyName, columns);
+    return await bt.partialMarkdownService.getReport(symbol, strategyName, backtest, columns);
   };
 
   /**
@@ -164,18 +164,18 @@ export class PartialUtils {
    * }
    * ```
    */
-  public dump = async (symbol: string, strategyName: string, path?: string, columns?: Columns[]): Promise<void> => {
-    backtest.loggerService.info(PARTIAL_METHOD_NAME_DUMP, { symbol, strategyName, path });
+  public dump = async (symbol: string, strategyName: string, backtest: boolean, path?: string, columns?: Columns[]): Promise<void> => {
+    bt.loggerService.info(PARTIAL_METHOD_NAME_DUMP, { symbol, strategyName, path });
 
-    backtest.strategyValidationService.validate(strategyName, PARTIAL_METHOD_NAME_DUMP);
+    bt.strategyValidationService.validate(strategyName, PARTIAL_METHOD_NAME_DUMP);
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, PARTIAL_METHOD_NAME_DUMP);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, PARTIAL_METHOD_NAME_DUMP));
+      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
+      riskName && bt.riskValidationService.validate(riskName, PARTIAL_METHOD_NAME_DUMP);
+      riskList && riskList.forEach((riskName) => bt.riskValidationService.validate(riskName, PARTIAL_METHOD_NAME_DUMP));
     }
 
-    await backtest.partialMarkdownService.dump(symbol, strategyName, path, columns);
+    await bt.partialMarkdownService.dump(symbol, strategyName, backtest, path, columns);
   };
 }
 

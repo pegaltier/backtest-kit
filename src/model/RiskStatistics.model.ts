@@ -21,6 +21,8 @@ export interface RiskEvent {
   activePositionCount: number;
   /** Rejection reason from validation note */
   comment: string;
+  /** Whether this event is from backtest mode (true) or live mode (false) */
+  backtest: boolean;
 }
 
 /**

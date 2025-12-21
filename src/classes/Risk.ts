@@ -1,5 +1,5 @@
 import { IRisk, IRiskCheckArgs } from "../interfaces/Risk.interface";
-import backtest from "../lib";
+import bt from "../lib";
 import { Columns } from "../lib/services/markdown/RiskMarkdownService";
 
 const RISK_METHOD_NAME_GET_DATA = "RiskUtils.getData";
@@ -57,7 +57,7 @@ export class MergeRisk implements IRisk {
    * @returns Promise resolving to true if all risks approve, false if any risk rejects
    */
   public async checkSignal(params: IRiskCheckArgs): Promise<boolean> {
-    backtest.loggerService.info("MergeRisk checkSignal", {
+    bt.loggerService.info("MergeRisk checkSignal", {
       params,
     });
     const riskCheck = await Promise.all(
@@ -80,7 +80,7 @@ export class MergeRisk implements IRisk {
     symbol: string,
     context: { strategyName: string; riskName: string }
   ) {
-    backtest.loggerService.info("MergeRisk addSignal", {
+    bt.loggerService.info("MergeRisk addSignal", {
       symbol,
       context,
     });
@@ -103,7 +103,7 @@ export class MergeRisk implements IRisk {
     symbol: string,
     context: { strategyName: string; riskName: string }
   ) {
-    backtest.loggerService.info("MergeRisk removeSignal", {
+    bt.loggerService.info("MergeRisk removeSignal", {
       symbol,
       context,
     });
@@ -175,28 +175,28 @@ export class RiskUtils {
    * }
    * ```
    */
-  public getData = async (symbol: string, strategyName: string) => {
-    backtest.loggerService.info(RISK_METHOD_NAME_GET_DATA, {
+  public getData = async (symbol: string, strategyName: string, backtest: boolean) => {
+    bt.loggerService.info(RISK_METHOD_NAME_GET_DATA, {
       symbol,
       strategyName,
     });
 
-    backtest.strategyValidationService.validate(
+    bt.strategyValidationService.validate(
       strategyName,
       RISK_METHOD_NAME_GET_DATA
     );
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
       riskName &&
-        backtest.riskValidationService.validate(
+        bt.riskValidationService.validate(
           riskName,
           RISK_METHOD_NAME_GET_DATA
         );
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, RISK_METHOD_NAME_GET_DATA));
+      riskList && riskList.forEach((riskName) => bt.riskValidationService.validate(riskName, RISK_METHOD_NAME_GET_DATA));
     }
 
-    return await backtest.riskMarkdownService.getData(symbol, strategyName);
+    return await bt.riskMarkdownService.getData(symbol, strategyName, backtest);
   };
 
   /**
@@ -243,29 +243,30 @@ export class RiskUtils {
   public getReport = async (
     symbol: string,
     strategyName: string,
+    backtest: boolean,
     columns?: Columns[]
   ): Promise<string> => {
-    backtest.loggerService.info(RISK_METHOD_NAME_GET_REPORT, {
+    bt.loggerService.info(RISK_METHOD_NAME_GET_REPORT, {
       symbol,
       strategyName,
     });
 
-    backtest.strategyValidationService.validate(
+    bt.strategyValidationService.validate(
       strategyName,
       RISK_METHOD_NAME_GET_REPORT
     );
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
       riskName &&
-        backtest.riskValidationService.validate(
+        bt.riskValidationService.validate(
           riskName,
           RISK_METHOD_NAME_GET_REPORT
         );
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, RISK_METHOD_NAME_GET_REPORT));
+      riskList && riskList.forEach((riskName) => bt.riskValidationService.validate(riskName, RISK_METHOD_NAME_GET_REPORT));
     }
 
-    return await backtest.riskMarkdownService.getReport(symbol, strategyName, columns);
+    return await bt.riskMarkdownService.getReport(symbol, strategyName, backtest, columns);
   };
 
   /**
@@ -303,31 +304,32 @@ export class RiskUtils {
   public dump = async (
     symbol: string,
     strategyName: string,
+    backtest: boolean,
     path?: string,
     columns?: Columns[]
   ): Promise<void> => {
-    backtest.loggerService.info(RISK_METHOD_NAME_DUMP, {
+    bt.loggerService.info(RISK_METHOD_NAME_DUMP, {
       symbol,
       strategyName,
       path,
     });
 
-    backtest.strategyValidationService.validate(
+    bt.strategyValidationService.validate(
       strategyName,
       RISK_METHOD_NAME_DUMP
     );
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
       riskName &&
-        backtest.riskValidationService.validate(
+        bt.riskValidationService.validate(
           riskName,
           RISK_METHOD_NAME_DUMP
         );
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, RISK_METHOD_NAME_DUMP));
+      riskList && riskList.forEach((riskName) => bt.riskValidationService.validate(riskName, RISK_METHOD_NAME_DUMP));
     }
 
-    await backtest.riskMarkdownService.dump(symbol, strategyName, path, columns);
+    await bt.riskMarkdownService.dump(symbol, strategyName, backtest, path, columns);
   };
 }
 

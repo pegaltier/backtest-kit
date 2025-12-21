@@ -231,7 +231,7 @@ export class ClientRisk implements IRisk {
 
     if (!isValid) {
       // Call params.onRejected for riskSubject emission
-      await this.params.onRejected(params.symbol, params, riskMap.size, rejectionNote, Date.now());
+      await this.params.onRejected(params.symbol, params, riskMap.size, rejectionNote, Date.now(), this.params.backtest);
 
       // Call schema callbacks.onRejected if defined
       if (this.params.callbacks?.onRejected) {

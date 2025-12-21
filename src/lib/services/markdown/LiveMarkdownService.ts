@@ -425,11 +425,11 @@ export class LiveMarkdownService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
   /**
-   * Memoized function to get or create ReportStorage for a symbol-strategy pair.
-   * Each symbol-strategy combination gets its own isolated storage instance.
+   * Memoized function to get or create ReportStorage for a symbol-strategy-backtest triple.
+   * Each symbol-strategy-backtest combination gets its own isolated storage instance.
    */
-  private getStorage = memoize<(symbol: string, strategyName: string) => ReportStorage>(
-    ([symbol, strategyName]) => `${symbol}:${strategyName}`,
+  private getStorage = memoize<(symbol: string, strategyName: string, backtest: boolean) => ReportStorage>(
+    ([symbol, strategyName, backtest]) => `${symbol}:${strategyName}:${backtest ? "backtest" : "live"}`,
     () => new ReportStorage()
   );
 
@@ -459,7 +459,7 @@ export class LiveMarkdownService {
       data,
     });
 
-    const storage = this.getStorage(data.symbol, data.strategyName);
+    const storage = this.getStorage(data.symbol, data.strategyName, false);
 
     if (data.action === "idle") {
       storage.addIdleEvent(data.currentPrice);
@@ -478,21 +478,23 @@ export class LiveMarkdownService {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to get data for
+   * @param backtest - True if backtest mode, false if live mode
    * @returns Statistical data object with all metrics
    *
    * @example
    * ```typescript
    * const service = new LiveMarkdownService();
-   * const stats = await service.getData("BTCUSDT", "my-strategy");
+   * const stats = await service.getData("BTCUSDT", "my-strategy", false);
    * console.log(stats.sharpeRatio, stats.winRate);
    * ```
    */
-  public getData = async (symbol: string, strategyName: StrategyName): Promise<LiveStatisticsModel> => {
+  public getData = async (symbol: string, strategyName: StrategyName, backtest: boolean): Promise<LiveStatisticsModel> => {
     this.loggerService.log("liveMarkdownService getData", {
       symbol,
       strategyName,
+      backtest,
     });
-    const storage = this.getStorage(symbol, strategyName);
+    const storage = this.getStorage(symbol, strategyName, backtest);
     return storage.getData();
   };
 
@@ -502,26 +504,29 @@ export class LiveMarkdownService {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to generate report for
+   * @param backtest - True if backtest mode, false if live mode
    * @param columns - Column configuration for formatting the table
    * @returns Markdown formatted report string with table of all events
    *
    * @example
    * ```typescript
    * const service = new LiveMarkdownService();
-   * const markdown = await service.getReport("BTCUSDT", "my-strategy");
+   * const markdown = await service.getReport("BTCUSDT", "my-strategy", false);
    * console.log(markdown);
    * ```
    */
   public getReport = async (
     symbol: string,
     strategyName: StrategyName,
+    backtest: boolean,
     columns: Columns[] = COLUMN_CONFIG.live_columns
   ): Promise<string> => {
     this.loggerService.log("liveMarkdownService getReport", {
       symbol,
       strategyName,
+      backtest,
     });
-    const storage = this.getStorage(symbol, strategyName);
+    const storage = this.getStorage(symbol, strategyName, backtest);
     return storage.getReport(strategyName, columns);
   };
 
@@ -532,6 +537,7 @@ export class LiveMarkdownService {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to save report for
+   * @param backtest - True if backtest mode, false if live mode
    * @param path - Directory path to save report (default: "./dump/live")
    * @param columns - Column configuration for formatting the table
    *
@@ -540,51 +546,53 @@ export class LiveMarkdownService {
    * const service = new LiveMarkdownService();
    *
    * // Save to default path: ./dump/live/my-strategy.md
-   * await service.dump("BTCUSDT", "my-strategy");
+   * await service.dump("BTCUSDT", "my-strategy", false);
    *
    * // Save to custom path: ./custom/path/my-strategy.md
-   * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
+   * await service.dump("BTCUSDT", "my-strategy", false, "./custom/path");
    * ```
    */
   public dump = async (
     symbol: string,
     strategyName: StrategyName,
+    backtest: boolean,
     path = "./dump/live",
     columns: Columns[] = COLUMN_CONFIG.live_columns
   ): Promise<void> => {
     this.loggerService.log("liveMarkdownService dump", {
       symbol,
       strategyName,
+      backtest,
       path,
     });
-    const storage = this.getStorage(symbol, strategyName);
+    const storage = this.getStorage(symbol, strategyName, backtest);
     await storage.dump(strategyName, path, columns);
   };
 
   /**
    * Clears accumulated event data from storage.
-   * If ctx is provided, clears only that specific symbol-strategy pair's data.
+   * If ctx is provided, clears only that specific symbol-strategy-backtest triple's data.
    * If nothing is provided, clears all data.
    *
-   * @param ctx - Optional context with symbol and strategyName
+   * @param ctx - Optional context with symbol, strategyName, and backtest
    *
    * @example
    * ```typescript
    * const service = new LiveMarkdownService();
    *
-   * // Clear specific symbol-strategy pair
-   * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy" });
+   * // Clear specific symbol-strategy-backtest triple
+   * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy", backtest: false });
    *
    * // Clear all data
    * await service.clear();
    * ```
    */
-  public clear = async (ctx?: { symbol: string; strategyName: StrategyName }) => {
+  public clear = async (ctx?: { symbol: string; strategyName: StrategyName; backtest: boolean }) => {
     this.loggerService.log("liveMarkdownService clear", {
       ctx,
     });
     if (ctx) {
-      const key = `${ctx.symbol}:${ctx.strategyName}`;
+      const key = `${ctx.symbol}:${ctx.strategyName}:${ctx.backtest ? "backtest" : "live"}`;
       this.getStorage.clear(key);
     } else {
       this.getStorage.clear();

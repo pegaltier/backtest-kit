@@ -192,8 +192,8 @@ export class WalkerInstance {
     // Clear backtest data for all strategies
     for (const strategyName of walkerSchema.strategies) {
       {
-        backtest.backtestMarkdownService.clear({ symbol, strategyName });
-        backtest.scheduleMarkdownService.clear({ symbol, strategyName });
+        backtest.backtestMarkdownService.clear({ symbol, strategyName, backtest: true, });
+        backtest.scheduleMarkdownService.clear({ symbol, strategyName, backtest: true });
       }
 
       {

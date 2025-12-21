@@ -594,6 +594,7 @@ const CHECK_SCHEDULED_SIGNAL_TIMEOUT_FN = async (
     strategyName: self.params.method.context.strategyName,
     exchangeName: self.params.method.context.exchangeName,
     symbol: self.params.execution.context.symbol,
+    backtest: self.params.execution.context.backtest,
   };
 
   if (self.params.callbacks?.onTick) {
@@ -665,6 +666,7 @@ const CANCEL_SCHEDULED_SIGNAL_BY_STOPLOSS_FN = async (
     exchangeName: self.params.method.context.exchangeName,
     symbol: self.params.execution.context.symbol,
     currentPrice: currentPrice,
+    backtest: self.params.execution.context.backtest,
   };
 
   if (self.params.callbacks?.onTick) {
@@ -760,6 +762,7 @@ const ACTIVATE_SCHEDULED_SIGNAL_FN = async (
     exchangeName: self.params.method.context.exchangeName,
     symbol: self.params.execution.context.symbol,
     currentPrice: self._pendingSignal.priceOpen,
+    backtest: self.params.execution.context.backtest,
   };
 
   if (self.params.callbacks?.onTick) {
@@ -787,6 +790,7 @@ const RETURN_SCHEDULED_SIGNAL_ACTIVE_FN = async (
     symbol: self.params.execution.context.symbol,
     percentTp: 0,
     percentSl: 0,
+    backtest: self.params.execution.context.backtest,
   };
 
   if (self.params.callbacks?.onTick) {
@@ -832,6 +836,7 @@ const OPEN_NEW_SCHEDULED_SIGNAL_FN = async (
     exchangeName: self.params.method.context.exchangeName,
     symbol: self.params.execution.context.symbol,
     currentPrice: currentPrice,
+    backtest: self.params.execution.context.backtest,
   };
 
   if (self.params.callbacks?.onTick) {
@@ -885,6 +890,7 @@ const OPEN_NEW_PENDING_SIGNAL_FN = async (
     exchangeName: self.params.method.context.exchangeName,
     symbol: self.params.execution.context.symbol,
     currentPrice: signal.priceOpen,
+    backtest: self.params.execution.context.backtest,
   };
 
   if (self.params.callbacks?.onTick) {
@@ -1009,6 +1015,7 @@ const CLOSE_PENDING_SIGNAL_FN = async (
     strategyName: self.params.method.context.strategyName,
     exchangeName: self.params.method.context.exchangeName,
     symbol: self.params.execution.context.symbol,
+    backtest: self.params.execution.context.backtest,
   };
 
   if (self.params.callbacks?.onTick) {
@@ -1152,6 +1159,7 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
     symbol: self.params.execution.context.symbol,
     percentTp,
     percentSl,
+    backtest: self.params.execution.context.backtest,
   };
 
   if (self.params.callbacks?.onTick) {
@@ -1184,6 +1192,7 @@ const RETURN_IDLE_FN = async (
     exchangeName: self.params.method.context.exchangeName,
     symbol: self.params.execution.context.symbol,
     currentPrice: currentPrice,
+    backtest: self.params.execution.context.backtest,
   };
 
   if (self.params.callbacks?.onTick) {
@@ -1233,6 +1242,7 @@ const CANCEL_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
     strategyName: self.params.method.context.strategyName,
     exchangeName: self.params.method.context.exchangeName,
     symbol: self.params.execution.context.symbol,
+    backtest: self.params.execution.context.backtest,
   };
 
   if (self.params.callbacks?.onTick) {
@@ -1393,6 +1403,7 @@ const CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN = async (
     strategyName: self.params.method.context.strategyName,
     exchangeName: self.params.method.context.exchangeName,
     symbol: self.params.execution.context.symbol,
+    backtest: self.params.execution.context.backtest,
   };
 
   if (self.params.callbacks?.onTick) {
@@ -2117,6 +2128,7 @@ export class ClientStrategy implements IStrategy {
             strategyName: this.params.method.context.strategyName,
             exchangeName: this.params.method.context.exchangeName,
             symbol: this.params.execution.context.symbol,
+            backtest: this.params.execution.context.backtest,
           };
 
           return result as any; // Cast to IStrategyBacktestResult (which includes Active)

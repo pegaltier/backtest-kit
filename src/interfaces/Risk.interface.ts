@@ -124,13 +124,15 @@ export interface IRiskParams extends IRiskSchema {
    * @param activePositionCount - Number of active positions at rejection time
    * @param comment - Rejection reason from validation note or "N/A"
    * @param timestamp - Event timestamp in milliseconds
+   * @param backtest - True if backtest mode, false if live mode
    */
   onRejected: (
     symbol: string,
     params: IRiskCheckArgs,
     activePositionCount: number,
     comment: string,
-    timestamp: number
+    timestamp: number,
+    backtest: boolean
   ) => void | Promise<void>;
 }
 

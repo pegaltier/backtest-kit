@@ -1,4 +1,4 @@
-import backtest from "../lib";
+import bt from "../lib";
 import { PerformanceStatisticsModel } from "../model/PerformanceStatistics.model";
 import { Columns } from "../lib/services/markdown/PerformanceMarkdownService";
 
@@ -24,7 +24,7 @@ const PERFORMANCE_METHOD_NAME_DUMP = "Performance.dump";
  *   console.log(`${event.metricType}: ${event.duration.toFixed(2)}ms`);
  * });
  *
- * // Run backtest...
+ * // Run bt...
  *
  * // Get aggregated statistics
  * const stats = await Performance.getData("my-strategy");
@@ -69,17 +69,18 @@ export class Performance {
    */
   public static async getData(
     symbol: string,
-    strategyName: string
+    strategyName: string,
+    backtest: boolean,
   ): Promise<PerformanceStatisticsModel> {
-    backtest.strategyValidationService.validate(strategyName, PERFORMANCE_METHOD_NAME_GET_DATA);
+    bt.strategyValidationService.validate(strategyName, PERFORMANCE_METHOD_NAME_GET_DATA);
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, PERFORMANCE_METHOD_NAME_GET_DATA);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, PERFORMANCE_METHOD_NAME_GET_DATA));
+      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
+      riskName && bt.riskValidationService.validate(riskName, PERFORMANCE_METHOD_NAME_GET_DATA);
+      riskList && riskList.forEach((riskName) => bt.riskValidationService.validate(riskName, PERFORMANCE_METHOD_NAME_GET_DATA));
     }
 
-    return backtest.performanceMarkdownService.getData(symbol, strategyName);
+    return bt.performanceMarkdownService.getData(symbol, strategyName, backtest);
   }
 
   /**
@@ -105,16 +106,16 @@ export class Performance {
    * await fs.writeFile("performance-report.md", markdown);
    * ```
    */
-  public static async getReport(symbol: string, strategyName: string, columns?: Columns[]): Promise<string> {
-    backtest.strategyValidationService.validate(strategyName, PERFORMANCE_METHOD_NAME_GET_REPORT);
+  public static async getReport(symbol: string, strategyName: string, backtest: boolean, columns?: Columns[]): Promise<string> {
+    bt.strategyValidationService.validate(strategyName, PERFORMANCE_METHOD_NAME_GET_REPORT);
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, PERFORMANCE_METHOD_NAME_GET_REPORT);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, PERFORMANCE_METHOD_NAME_GET_REPORT));
+      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
+      riskName && bt.riskValidationService.validate(riskName, PERFORMANCE_METHOD_NAME_GET_REPORT);
+      riskList && riskList.forEach((riskName) => bt.riskValidationService.validate(riskName, PERFORMANCE_METHOD_NAME_GET_REPORT));
     }
 
-    return backtest.performanceMarkdownService.getReport(symbol, strategyName, columns);
+    return bt.performanceMarkdownService.getReport(symbol, strategyName, backtest, columns);
   }
 
   /**
@@ -140,18 +141,19 @@ export class Performance {
   public static async dump(
     symbol: string,
     strategyName: string,
+    backtest: boolean,
     path = "./dump/performance",
     columns?: Columns[]
   ): Promise<void> {
-    backtest.strategyValidationService.validate(strategyName, PERFORMANCE_METHOD_NAME_DUMP);
+    bt.strategyValidationService.validate(strategyName, PERFORMANCE_METHOD_NAME_DUMP);
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, PERFORMANCE_METHOD_NAME_DUMP);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, PERFORMANCE_METHOD_NAME_DUMP));
+      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
+      riskName && bt.riskValidationService.validate(riskName, PERFORMANCE_METHOD_NAME_DUMP);
+      riskList && riskList.forEach((riskName) => bt.riskValidationService.validate(riskName, PERFORMANCE_METHOD_NAME_DUMP));
     }
 
-    return backtest.performanceMarkdownService.dump(symbol, strategyName, path, columns);
+    return bt.performanceMarkdownService.dump(symbol, strategyName, backtest, path, columns);
   }
 }
 

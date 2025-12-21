@@ -95,6 +95,12 @@ export interface RiskContract {
    * ```
    */
   timestamp: number;
+
+  /**
+   * Whether this event is from backtest mode (true) or live mode (false).
+   * Used to separate backtest and live risk rejection tracking.
+   */
+  backtest: boolean;
 }
 
 export default RiskContract;

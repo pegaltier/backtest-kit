@@ -185,6 +185,8 @@ export interface IStrategyTickResultIdle {
   symbol: string;
   /** Current VWAP price during idle state */
   currentPrice: number;
+  /** Whether this event is from backtest mode (true) or live mode (false) */
+  backtest: boolean;
 }
 
 /**
@@ -204,6 +206,8 @@ export interface IStrategyTickResultScheduled {
   symbol: string;
   /** Current VWAP price when scheduled signal created */
   currentPrice: number;
+  /** Whether this event is from backtest mode (true) or live mode (false) */
+  backtest: boolean;
 }
 
 /**
@@ -223,6 +227,8 @@ export interface IStrategyTickResultOpened {
   symbol: string;
   /** Current VWAP price at signal open */
   currentPrice: number;
+  /** Whether this event is from backtest mode (true) or live mode (false) */
+  backtest: boolean;
 }
 
 /**
@@ -246,6 +252,8 @@ export interface IStrategyTickResultActive {
   percentTp: number;
   /** Percentage progress towards stop loss (0-100%, 0 if moving towards TP) */
   percentSl: number;
+  /** Whether this event is from backtest mode (true) or live mode (false) */
+  backtest: boolean;
 }
 
 /**
@@ -271,6 +279,8 @@ export interface IStrategyTickResultClosed {
   exchangeName: ExchangeName;
   /** Trading pair symbol (e.g., "BTCUSDT") */
   symbol: string;
+  /** Whether this event is from backtest mode (true) or live mode (false) */
+  backtest: boolean;
 }
 
 /**
@@ -292,6 +302,8 @@ export interface IStrategyTickResultCancelled {
   exchangeName: ExchangeName;
   /** Trading pair symbol (e.g., "BTCUSDT") */
   symbol: string;
+  /** Whether this event is from backtest mode (true) or live mode (false) */
+  backtest: boolean;
 }
 
 /**

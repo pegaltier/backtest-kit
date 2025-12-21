@@ -18,13 +18,15 @@ import { riskSubject } from "../../../config/emitters";
  * @param activePositionCount - Number of active positions at rejection time
  * @param comment - Rejection reason from validation note or "N/A"
  * @param timestamp - Event timestamp in milliseconds
+ * @param backtest - True if backtest mode, false if live mode
  */
 const COMMIT_REJECTION_FN = async (
   symbol: string,
   params: IRiskCheckArgs,
   activePositionCount: number,
   comment: string,
-  timestamp: number
+  timestamp: number,
+  backtest: boolean
 ) =>
   await riskSubject.next({
     symbol,
@@ -35,6 +37,7 @@ const COMMIT_REJECTION_FN = async (
     activePositionCount,
     comment,
     timestamp,
+    backtest,
   });
 
 /**

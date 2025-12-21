@@ -314,11 +314,11 @@ export class PerformanceMarkdownService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
   /**
-   * Memoized function to get or create PerformanceStorage for a symbol-strategy pair.
-   * Each symbol-strategy combination gets its own isolated storage instance.
+   * Memoized function to get or create PerformanceStorage for a symbol-strategy-backtest triple.
+   * Each symbol-strategy-backtest combination gets its own isolated storage instance.
    */
-  private getStorage = memoize<(symbol: string, strategyName: string) => PerformanceStorage>(
-    ([symbol, strategyName]) => `${symbol}:${strategyName}`,
+  private getStorage = memoize<(symbol: string, strategyName: string, backtest: boolean) => PerformanceStorage>(
+    ([symbol, strategyName, backtest]) => `${symbol}:${strategyName}:${backtest ? "backtest" : "live"}`,
     () => new PerformanceStorage()
   );
 
@@ -335,7 +335,7 @@ export class PerformanceMarkdownService {
 
     const symbol = event.symbol || "global";
     const strategyName = event.strategyName || "global";
-    const storage = this.getStorage(symbol, strategyName);
+    const storage = this.getStorage(symbol, strategyName, event.backtest);
     storage.addEvent(event);
   };
 
@@ -344,11 +344,12 @@ export class PerformanceMarkdownService {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to get data for
+   * @param backtest - True if backtest mode, false if live mode
    * @returns Performance statistics with aggregated metrics
    *
    * @example
    * ```typescript
-   * const stats = await performanceService.getData("BTCUSDT", "my-strategy");
+   * const stats = await performanceService.getData("BTCUSDT", "my-strategy", false);
    * console.log("Total time:", stats.totalDuration);
    * console.log("Slowest operation:", Object.values(stats.metricStats)
    *   .sort((a, b) => b.avgDuration - a.avgDuration)[0]);
@@ -356,13 +357,15 @@ export class PerformanceMarkdownService {
    */
   public getData = async (
     symbol: string,
-    strategyName: string
+    strategyName: string,
+    backtest: boolean
   ): Promise<PerformanceStatisticsModel> => {
     this.loggerService.log("performanceMarkdownService getData", {
       symbol,
       strategyName,
+      backtest,
     });
-    const storage = this.getStorage(symbol, strategyName);
+    const storage = this.getStorage(symbol, strategyName, backtest);
     return storage.getData(strategyName);
   };
 
@@ -371,25 +374,28 @@ export class PerformanceMarkdownService {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to generate report for
+   * @param backtest - True if backtest mode, false if live mode
    * @param columns - Column configuration for formatting the table
    * @returns Markdown formatted report string
    *
    * @example
    * ```typescript
-   * const markdown = await performanceService.getReport("BTCUSDT", "my-strategy");
+   * const markdown = await performanceService.getReport("BTCUSDT", "my-strategy", false);
    * console.log(markdown);
    * ```
    */
   public getReport = async (
     symbol: string,
     strategyName: string,
+    backtest: boolean,
     columns: Columns[] = COLUMN_CONFIG.performance_columns
   ): Promise<string> => {
     this.loggerService.log("performanceMarkdownService getReport", {
       symbol,
       strategyName,
+      backtest,
     });
-    const storage = this.getStorage(symbol, strategyName);
+    const storage = this.getStorage(symbol, strategyName, backtest);
     return storage.getReport(strategyName, columns);
   };
 
@@ -398,47 +404,49 @@ export class PerformanceMarkdownService {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to save report for
+   * @param backtest - True if backtest mode, false if live mode
    * @param path - Directory path to save report
    * @param columns - Column configuration for formatting the table
    *
    * @example
    * ```typescript
    * // Save to default path: ./dump/performance/my-strategy.md
-   * await performanceService.dump("BTCUSDT", "my-strategy");
+   * await performanceService.dump("BTCUSDT", "my-strategy", false);
    *
    * // Save to custom path
-   * await performanceService.dump("BTCUSDT", "my-strategy", "./custom/path");
+   * await performanceService.dump("BTCUSDT", "my-strategy", false, "./custom/path");
    * ```
    */
   public dump = async (
     symbol: string,
     strategyName: string,
+    backtest: boolean,
     path = "./dump/performance",
     columns: Columns[] = COLUMN_CONFIG.performance_columns
   ): Promise<void> => {
     this.loggerService.log("performanceMarkdownService dump", {
       symbol,
       strategyName,
+      backtest,
       path,
     });
-    const storage = this.getStorage(symbol, strategyName);
+    const storage = this.getStorage(symbol, strategyName, backtest);
     await storage.dump(strategyName, path, columns);
   };
 
   /**
    * Clears accumulated performance data from storage.
    *
-   * @param symbol - Optional trading pair symbol
-   * @param strategyName - Optional strategy name
+   * @param ctx - Optional context with symbol, strategyName, and backtest
    */
-  public clear = async (ctx?: { symbol: string; strategyName: string; }) => {
+  public clear = async (ctx?: { symbol: string; strategyName: string; backtest: boolean }) => {
     this.loggerService.log("performanceMarkdownService clear", {
       ctx,
     });
     if (ctx) {
-      const key = `${ctx.symbol}:${ctx.strategyName}`;
+      const key = `${ctx.symbol}:${ctx.strategyName}:${ctx.backtest ? "backtest" : "live"}`;
       this.getStorage.clear(key);
-    } {
+    } else {
       this.getStorage.clear();
     }
   };

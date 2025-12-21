@@ -443,8 +443,9 @@ interface IRiskParams extends IRiskSchema {
      * @param activePositionCount - Number of active positions at rejection time
      * @param comment - Rejection reason from validation note or "N/A"
      * @param timestamp - Event timestamp in milliseconds
+     * @param backtest - True if backtest mode, false if live mode
      */
-    onRejected: (symbol: string, params: IRiskCheckArgs, activePositionCount: number, comment: string, timestamp: number) => void | Promise<void>;
+    onRejected: (symbol: string, params: IRiskCheckArgs, activePositionCount: number, comment: string, timestamp: number, backtest: boolean) => void | Promise<void>;
 }
 /**
  * Risk interface implemented by ClientRisk.
@@ -780,6 +781,8 @@ interface IStrategyTickResultIdle {
     symbol: string;
     /** Current VWAP price during idle state */
     currentPrice: number;
+    /** Whether this event is from backtest mode (true) or live mode (false) */
+    backtest: boolean;
 }
 /**
  * Tick result: scheduled signal created, waiting for price to reach entry point.
@@ -798,6 +801,8 @@ interface IStrategyTickResultScheduled {
     symbol: string;
     /** Current VWAP price when scheduled signal created */
     currentPrice: number;
+    /** Whether this event is from backtest mode (true) or live mode (false) */
+    backtest: boolean;
 }
 /**
  * Tick result: new signal just created.
@@ -816,6 +821,8 @@ interface IStrategyTickResultOpened {
     symbol: string;
     /** Current VWAP price at signal open */
     currentPrice: number;
+    /** Whether this event is from backtest mode (true) or live mode (false) */
+    backtest: boolean;
 }
 /**
  * Tick result: signal is being monitored.
@@ -838,6 +845,8 @@ interface IStrategyTickResultActive {
     percentTp: number;
     /** Percentage progress towards stop loss (0-100%, 0 if moving towards TP) */
     percentSl: number;
+    /** Whether this event is from backtest mode (true) or live mode (false) */
+    backtest: boolean;
 }
 /**
  * Tick result: signal closed with PNL.
@@ -862,6 +871,8 @@ interface IStrategyTickResultClosed {
     exchangeName: ExchangeName;
     /** Trading pair symbol (e.g., "BTCUSDT") */
     symbol: string;
+    /** Whether this event is from backtest mode (true) or live mode (false) */
+    backtest: boolean;
 }
 /**
  * Tick result: scheduled signal cancelled without opening position.
@@ -882,6 +893,8 @@ interface IStrategyTickResultCancelled {
     exchangeName: ExchangeName;
     /** Trading pair symbol (e.g., "BTCUSDT") */
     symbol: string;
+    /** Whether this event is from backtest mode (true) or live mode (false) */
+    backtest: boolean;
 }
 /**
  * Discriminated union of all tick results.
@@ -1194,6 +1207,8 @@ interface RiskEvent {
     activePositionCount: number;
     /** Rejection reason from validation note */
     comment: string;
+    /** Whether this event is from backtest mode (true) or live mode (false) */
+    backtest: boolean;
 }
 /**
  * Statistical data calculated from risk rejection events.
@@ -3373,6 +3388,11 @@ interface RiskContract {
      * ```
      */
     timestamp: number;
+    /**
+     * Whether this event is from backtest mode (true) or live mode (false).
+     * Used to separate backtest and live risk rejection tracking.
+     */
+    backtest: boolean;
 }
 
 /**
@@ -4935,8 +4955,8 @@ declare class BacktestMarkdownService {
     /** Logger service for debug output */
     private readonly loggerService;
     /**
-     * Memoized function to get or create ReportStorage for a symbol-strategy pair.
-     * Each symbol-strategy combination gets its own isolated storage instance.
+     * Memoized function to get or create ReportStorage for a symbol-strategy-backtest triple.
+     * Each symbol-strategy-backtest combination gets its own isolated storage instance.
      */
     private getStorage;
     /**
@@ -4965,33 +4985,35 @@ declare class BacktestMarkdownService {
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to get data for
+     * @param backtest - True if backtest mode, false if live mode
      * @returns Statistical data object with all metrics
      *
      * @example
      * ```typescript
      * const service = new BacktestMarkdownService();
-     * const stats = await service.getData("BTCUSDT", "my-strategy");
+     * const stats = await service.getData("BTCUSDT", "my-strategy", true);
      * console.log(stats.sharpeRatio, stats.winRate);
      * ```
      */
-    getData: (symbol: string, strategyName: StrategyName) => Promise<BacktestStatisticsModel>;
+    getData: (symbol: string, strategyName: StrategyName, backtest: boolean) => Promise<BacktestStatisticsModel>;
     /**
      * Generates markdown report with all closed signals for a symbol-strategy pair.
      * Delegates to ReportStorage.generateReport().
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to generate report for
+     * @param backtest - True if backtest mode, false if live mode
      * @param columns - Column configuration for formatting the table
      * @returns Markdown formatted report string with table of all closed signals
      *
      * @example
      * ```typescript
      * const service = new BacktestMarkdownService();
-     * const markdown = await service.getReport("BTCUSDT", "my-strategy");
+     * const markdown = await service.getReport("BTCUSDT", "my-strategy", true);
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, columns?: Columns$6[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, backtest: boolean, columns?: Columns$6[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -4999,6 +5021,7 @@ declare class BacktestMarkdownService {
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to save report for
+     * @param backtest - True if backtest mode, false if live mode
      * @param path - Directory path to save report (default: "./dump/backtest")
      * @param columns - Column configuration for formatting the table
      *
@@ -5007,26 +5030,26 @@ declare class BacktestMarkdownService {
      * const service = new BacktestMarkdownService();
      *
      * // Save to default path: ./dump/backtest/my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy");
+     * await service.dump("BTCUSDT", "my-strategy", true);
      *
      * // Save to custom path: ./custom/path/my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
+     * await service.dump("BTCUSDT", "my-strategy", true, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$6[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, backtest: boolean, path?: string, columns?: Columns$6[]) => Promise<void>;
     /**
      * Clears accumulated signal data from storage.
-     * If ctx is provided, clears only that specific symbol-strategy pair's data.
+     * If ctx is provided, clears only that specific symbol-strategy-backtest triple's data.
      * If nothing is provided, clears all data.
      *
-     * @param ctx - Optional context with symbol and strategyName
+     * @param ctx - Optional context with symbol, strategyName, and backtest
      *
      * @example
      * ```typescript
      * const service = new BacktestMarkdownService();
      *
-     * // Clear specific symbol-strategy pair
-     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy" });
+     * // Clear specific symbol-strategy-backtest triple
+     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy", backtest: true });
      *
      * // Clear all data
      * await service.clear();
@@ -5035,6 +5058,7 @@ declare class BacktestMarkdownService {
     clear: (ctx?: {
         symbol: string;
         strategyName: StrategyName;
+        backtest: boolean;
     }) => Promise<void>;
     /**
      * Initializes the service by subscribing to backtest signal events.
@@ -5284,8 +5308,8 @@ declare class LiveMarkdownService {
     /** Logger service for debug output */
     private readonly loggerService;
     /**
-     * Memoized function to get or create ReportStorage for a symbol-strategy pair.
-     * Each symbol-strategy combination gets its own isolated storage instance.
+     * Memoized function to get or create ReportStorage for a symbol-strategy-backtest triple.
+     * Each symbol-strategy-backtest combination gets its own isolated storage instance.
      */
     private getStorage;
     /**
@@ -5316,33 +5340,35 @@ declare class LiveMarkdownService {
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to get data for
+     * @param backtest - True if backtest mode, false if live mode
      * @returns Statistical data object with all metrics
      *
      * @example
      * ```typescript
      * const service = new LiveMarkdownService();
-     * const stats = await service.getData("BTCUSDT", "my-strategy");
+     * const stats = await service.getData("BTCUSDT", "my-strategy", false);
      * console.log(stats.sharpeRatio, stats.winRate);
      * ```
      */
-    getData: (symbol: string, strategyName: StrategyName) => Promise<LiveStatisticsModel>;
+    getData: (symbol: string, strategyName: StrategyName, backtest: boolean) => Promise<LiveStatisticsModel>;
     /**
      * Generates markdown report with all events for a symbol-strategy pair.
      * Delegates to ReportStorage.getReport().
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to generate report for
+     * @param backtest - True if backtest mode, false if live mode
      * @param columns - Column configuration for formatting the table
      * @returns Markdown formatted report string with table of all events
      *
      * @example
      * ```typescript
      * const service = new LiveMarkdownService();
-     * const markdown = await service.getReport("BTCUSDT", "my-strategy");
+     * const markdown = await service.getReport("BTCUSDT", "my-strategy", false);
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, columns?: Columns$5[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, backtest: boolean, columns?: Columns$5[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -5350,6 +5376,7 @@ declare class LiveMarkdownService {
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to save report for
+     * @param backtest - True if backtest mode, false if live mode
      * @param path - Directory path to save report (default: "./dump/live")
      * @param columns - Column configuration for formatting the table
      *
@@ -5358,26 +5385,26 @@ declare class LiveMarkdownService {
      * const service = new LiveMarkdownService();
      *
      * // Save to default path: ./dump/live/my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy");
+     * await service.dump("BTCUSDT", "my-strategy", false);
      *
      * // Save to custom path: ./custom/path/my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
+     * await service.dump("BTCUSDT", "my-strategy", false, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$5[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, backtest: boolean, path?: string, columns?: Columns$5[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
-     * If ctx is provided, clears only that specific symbol-strategy pair's data.
+     * If ctx is provided, clears only that specific symbol-strategy-backtest triple's data.
      * If nothing is provided, clears all data.
      *
-     * @param ctx - Optional context with symbol and strategyName
+     * @param ctx - Optional context with symbol, strategyName, and backtest
      *
      * @example
      * ```typescript
      * const service = new LiveMarkdownService();
      *
-     * // Clear specific symbol-strategy pair
-     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy" });
+     * // Clear specific symbol-strategy-backtest triple
+     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy", backtest: false });
      *
      * // Clear all data
      * await service.clear();
@@ -5386,6 +5413,7 @@ declare class LiveMarkdownService {
     clear: (ctx?: {
         symbol: string;
         strategyName: StrategyName;
+        backtest: boolean;
     }) => Promise<void>;
     /**
      * Initializes the service by subscribing to live signal events.
@@ -5634,8 +5662,8 @@ declare class ScheduleMarkdownService {
     /** Logger service for debug output */
     private readonly loggerService;
     /**
-     * Memoized function to get or create ReportStorage for a symbol-strategy pair.
-     * Each symbol-strategy combination gets its own isolated storage instance.
+     * Memoized function to get or create ReportStorage for a symbol-strategy-backtest triple.
+     * Each symbol-strategy-backtest combination gets its own isolated storage instance.
      */
     private getStorage;
     /**
@@ -5659,33 +5687,35 @@ declare class ScheduleMarkdownService {
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to get data for
+     * @param backtest - True if backtest mode, false if live mode
      * @returns Statistical data object with all metrics
      *
      * @example
      * ```typescript
      * const service = new ScheduleMarkdownService();
-     * const stats = await service.getData("BTCUSDT", "my-strategy");
+     * const stats = await service.getData("BTCUSDT", "my-strategy", false);
      * console.log(stats.cancellationRate, stats.avgWaitTime);
      * ```
      */
-    getData: (symbol: string, strategyName: StrategyName) => Promise<ScheduleStatisticsModel>;
+    getData: (symbol: string, strategyName: StrategyName, backtest: boolean) => Promise<ScheduleStatisticsModel>;
     /**
      * Generates markdown report with all scheduled events for a symbol-strategy pair.
      * Delegates to ReportStorage.getReport().
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to generate report for
+     * @param backtest - True if backtest mode, false if live mode
      * @param columns - Column configuration for formatting the table
      * @returns Markdown formatted report string with table of all events
      *
      * @example
      * ```typescript
      * const service = new ScheduleMarkdownService();
-     * const markdown = await service.getReport("BTCUSDT", "my-strategy");
+     * const markdown = await service.getReport("BTCUSDT", "my-strategy", false);
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, columns?: Columns$4[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, backtest: boolean, columns?: Columns$4[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -5693,6 +5723,7 @@ declare class ScheduleMarkdownService {
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to save report for
+     * @param backtest - True if backtest mode, false if live mode
      * @param path - Directory path to save report (default: "./dump/schedule")
      * @param columns - Column configuration for formatting the table
      *
@@ -5701,26 +5732,26 @@ declare class ScheduleMarkdownService {
      * const service = new ScheduleMarkdownService();
      *
      * // Save to default path: ./dump/schedule/my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy");
+     * await service.dump("BTCUSDT", "my-strategy", false);
      *
      * // Save to custom path: ./custom/path/my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
+     * await service.dump("BTCUSDT", "my-strategy", false, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$4[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, backtest: boolean, path?: string, columns?: Columns$4[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
-     * If ctx is provided, clears only that specific symbol-strategy pair's data.
+     * If ctx is provided, clears only that specific symbol-strategy-backtest triple's data.
      * If nothing is provided, clears all data.
      *
-     * @param ctx - Optional context with symbol and strategyName
+     * @param ctx - Optional context with symbol, strategyName, and backtest
      *
      * @example
      * ```typescript
      * const service = new ScheduleMarkdownService();
      *
-     * // Clear specific symbol-strategy pair
-     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy" });
+     * // Clear specific symbol-strategy-backtest triple
+     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy", backtest: false });
      *
      * // Clear all data
      * await service.clear();
@@ -5729,6 +5760,7 @@ declare class ScheduleMarkdownService {
     clear: (ctx?: {
         symbol: string;
         strategyName: StrategyName;
+        backtest: boolean;
     }) => Promise<void>;
     /**
      * Initializes the service by subscribing to live signal events.
@@ -5783,7 +5815,7 @@ declare class ScheduleUtils {
      * console.log(stats.cancellationRate, stats.avgWaitTime);
      * ```
      */
-    getData: (symbol: string, strategyName: StrategyName) => Promise<ScheduleStatisticsModel>;
+    getData: (symbol: string, strategyName: StrategyName, backtest: boolean) => Promise<ScheduleStatisticsModel>;
     /**
      * Generates markdown report with all scheduled events for a symbol-strategy pair.
      *
@@ -5798,7 +5830,7 @@ declare class ScheduleUtils {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, columns?: Columns$4[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, backtest: boolean, columns?: Columns$4[]) => Promise<string>;
     /**
      * Saves strategy report to disk.
      *
@@ -5816,7 +5848,7 @@ declare class ScheduleUtils {
      * await Schedule.dump("BTCUSDT", "my-strategy", "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$4[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, backtest: boolean, path?: string, columns?: Columns$4[]) => Promise<void>;
 }
 /**
  * Singleton instance of ScheduleUtils for convenient scheduled signals reporting.
@@ -5894,8 +5926,8 @@ declare class PerformanceMarkdownService {
     /** Logger service for debug output */
     private readonly loggerService;
     /**
-     * Memoized function to get or create PerformanceStorage for a symbol-strategy pair.
-     * Each symbol-strategy combination gets its own isolated storage instance.
+     * Memoized function to get or create PerformanceStorage for a symbol-strategy-backtest triple.
+     * Each symbol-strategy-backtest combination gets its own isolated storage instance.
      */
     private getStorage;
     /**
@@ -5910,59 +5942,62 @@ declare class PerformanceMarkdownService {
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to get data for
+     * @param backtest - True if backtest mode, false if live mode
      * @returns Performance statistics with aggregated metrics
      *
      * @example
      * ```typescript
-     * const stats = await performanceService.getData("BTCUSDT", "my-strategy");
+     * const stats = await performanceService.getData("BTCUSDT", "my-strategy", false);
      * console.log("Total time:", stats.totalDuration);
      * console.log("Slowest operation:", Object.values(stats.metricStats)
      *   .sort((a, b) => b.avgDuration - a.avgDuration)[0]);
      * ```
      */
-    getData: (symbol: string, strategyName: string) => Promise<PerformanceStatisticsModel>;
+    getData: (symbol: string, strategyName: string, backtest: boolean) => Promise<PerformanceStatisticsModel>;
     /**
      * Generates markdown report with performance analysis.
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to generate report for
+     * @param backtest - True if backtest mode, false if live mode
      * @param columns - Column configuration for formatting the table
      * @returns Markdown formatted report string
      *
      * @example
      * ```typescript
-     * const markdown = await performanceService.getReport("BTCUSDT", "my-strategy");
+     * const markdown = await performanceService.getReport("BTCUSDT", "my-strategy", false);
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: string, columns?: Columns$3[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: string, backtest: boolean, columns?: Columns$3[]) => Promise<string>;
     /**
      * Saves performance report to disk.
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name to save report for
+     * @param backtest - True if backtest mode, false if live mode
      * @param path - Directory path to save report
      * @param columns - Column configuration for formatting the table
      *
      * @example
      * ```typescript
      * // Save to default path: ./dump/performance/my-strategy.md
-     * await performanceService.dump("BTCUSDT", "my-strategy");
+     * await performanceService.dump("BTCUSDT", "my-strategy", false);
      *
      * // Save to custom path
-     * await performanceService.dump("BTCUSDT", "my-strategy", "./custom/path");
+     * await performanceService.dump("BTCUSDT", "my-strategy", false, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: string, path?: string, columns?: Columns$3[]) => Promise<void>;
+    dump: (symbol: string, strategyName: string, backtest: boolean, path?: string, columns?: Columns$3[]) => Promise<void>;
     /**
      * Clears accumulated performance data from storage.
      *
-     * @param symbol - Optional trading pair symbol
-     * @param strategyName - Optional strategy name
+     * @param ctx - Optional context with symbol, strategyName, and backtest
      */
     clear: (ctx?: {
         symbol: string;
         strategyName: string;
+        backtest: boolean;
     }) => Promise<void>;
     /**
      * Initializes the service by subscribing to performance events.
@@ -5989,7 +6024,7 @@ declare class PerformanceMarkdownService {
  *   console.log(`${event.metricType}: ${event.duration.toFixed(2)}ms`);
  * });
  *
- * // Run backtest...
+ * // Run bt...
  *
  * // Get aggregated statistics
  * const stats = await Performance.getData("my-strategy");
@@ -6032,7 +6067,7 @@ declare class Performance {
      * }
      * ```
      */
-    static getData(symbol: string, strategyName: string): Promise<PerformanceStatisticsModel>;
+    static getData(symbol: string, strategyName: string, backtest: boolean): Promise<PerformanceStatisticsModel>;
     /**
      * Generates markdown report with performance analysis.
      *
@@ -6056,7 +6091,7 @@ declare class Performance {
      * await fs.writeFile("performance-report.md", markdown);
      * ```
      */
-    static getReport(symbol: string, strategyName: string, columns?: Columns$3[]): Promise<string>;
+    static getReport(symbol: string, strategyName: string, backtest: boolean, columns?: Columns$3[]): Promise<string>;
     /**
      * Saves performance report to disk.
      *
@@ -6077,7 +6112,7 @@ declare class Performance {
      * await Performance.dump("BTCUSDT", "my-strategy", "./reports/perf");
      * ```
      */
-    static dump(symbol: string, strategyName: string, path?: string, columns?: Columns$3[]): Promise<void>;
+    static dump(symbol: string, strategyName: string, backtest: boolean, path?: string, columns?: Columns$3[]): Promise<void>;
 }
 
 /**
@@ -6971,8 +7006,8 @@ declare class PartialMarkdownService {
     /** Logger service for debug output */
     private readonly loggerService;
     /**
-     * Memoized function to get or create ReportStorage for a symbol-strategy pair.
-     * Each symbol-strategy combination gets its own isolated storage instance.
+     * Memoized function to get or create ReportStorage for a symbol-strategy-backtest triple.
+     * Each symbol-strategy-backtest combination gets its own isolated storage instance.
      */
     private getStorage;
     /**
@@ -7007,33 +7042,35 @@ declare class PartialMarkdownService {
      *
      * @param symbol - Trading pair symbol to get data for
      * @param strategyName - Strategy name to get data for
+     * @param backtest - True if backtest mode, false if live mode
      * @returns Statistical data object with all metrics
      *
      * @example
      * ```typescript
      * const service = new PartialMarkdownService();
-     * const stats = await service.getData("BTCUSDT", "my-strategy");
+     * const stats = await service.getData("BTCUSDT", "my-strategy", false);
      * console.log(stats.totalProfit, stats.totalLoss);
      * ```
      */
-    getData: (symbol: string, strategyName: string) => Promise<PartialStatisticsModel>;
+    getData: (symbol: string, strategyName: string, backtest: boolean) => Promise<PartialStatisticsModel>;
     /**
      * Generates markdown report with all partial events for a symbol-strategy pair.
      * Delegates to ReportStorage.getReport().
      *
      * @param symbol - Trading pair symbol to generate report for
      * @param strategyName - Strategy name to generate report for
+     * @param backtest - True if backtest mode, false if live mode
      * @param columns - Column configuration for formatting the table
      * @returns Markdown formatted report string with table of all events
      *
      * @example
      * ```typescript
      * const service = new PartialMarkdownService();
-     * const markdown = await service.getReport("BTCUSDT", "my-strategy");
+     * const markdown = await service.getReport("BTCUSDT", "my-strategy", false);
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: string, columns?: Columns$1[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: string, backtest: boolean, columns?: Columns$1[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -7041,6 +7078,7 @@ declare class PartialMarkdownService {
      *
      * @param symbol - Trading pair symbol to save report for
      * @param strategyName - Strategy name to save report for
+     * @param backtest - True if backtest mode, false if live mode
      * @param path - Directory path to save report (default: "./dump/partial")
      * @param columns - Column configuration for formatting the table
      *
@@ -7049,26 +7087,26 @@ declare class PartialMarkdownService {
      * const service = new PartialMarkdownService();
      *
      * // Save to default path: ./dump/partial/BTCUSDT_my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy");
+     * await service.dump("BTCUSDT", "my-strategy", false);
      *
      * // Save to custom path: ./custom/path/BTCUSDT_my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
+     * await service.dump("BTCUSDT", "my-strategy", false, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: string, path?: string, columns?: Columns$1[]) => Promise<void>;
+    dump: (symbol: string, strategyName: string, backtest: boolean, path?: string, columns?: Columns$1[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
-     * If ctx is provided, clears only that specific symbol-strategy pair's data.
+     * If ctx is provided, clears only that specific symbol-strategy-backtest triple's data.
      * If nothing is provided, clears all data.
      *
-     * @param ctx - Optional context with symbol and strategyName
+     * @param ctx - Optional context with symbol, strategyName, and backtest
      *
      * @example
      * ```typescript
      * const service = new PartialMarkdownService();
      *
-     * // Clear specific symbol-strategy pair
-     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy" });
+     * // Clear specific symbol-strategy-backtest triple
+     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy", backtest: false });
      *
      * // Clear all data
      * await service.clear();
@@ -7077,6 +7115,7 @@ declare class PartialMarkdownService {
     clear: (ctx?: {
         symbol: string;
         strategyName: string;
+        backtest: boolean;
     }) => Promise<void>;
     /**
      * Initializes the service by subscribing to partial profit/loss events.
@@ -7152,7 +7191,7 @@ declare class PartialUtils {
      * }
      * ```
      */
-    getData: (symbol: string, strategyName: string) => Promise<PartialStatisticsModel>;
+    getData: (symbol: string, strategyName: string, backtest: boolean) => Promise<PartialStatisticsModel>;
     /**
      * Generates markdown report with all partial profit/loss events for a symbol-strategy pair.
      *
@@ -7192,7 +7231,7 @@ declare class PartialUtils {
      * // **Loss events:** 1
      * ```
      */
-    getReport: (symbol: string, strategyName: string, columns?: Columns$1[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: string, backtest: boolean, columns?: Columns$1[]) => Promise<string>;
     /**
      * Generates and saves markdown report to file.
      *
@@ -7225,7 +7264,7 @@ declare class PartialUtils {
      * }
      * ```
      */
-    dump: (symbol: string, strategyName: string, path?: string, columns?: Columns$1[]) => Promise<void>;
+    dump: (symbol: string, strategyName: string, backtest: boolean, path?: string, columns?: Columns$1[]) => Promise<void>;
 }
 /**
  * Global singleton instance of PartialUtils.
@@ -7379,8 +7418,8 @@ declare class RiskMarkdownService {
     /** Logger service for debug output */
     private readonly loggerService;
     /**
-     * Memoized function to get or create ReportStorage for a symbol-strategy pair.
-     * Each symbol-strategy combination gets its own isolated storage instance.
+     * Memoized function to get or create ReportStorage for a symbol-strategy-backtest triple.
+     * Each symbol-strategy-backtest combination gets its own isolated storage instance.
      */
     private getStorage;
     /**
@@ -7402,33 +7441,35 @@ declare class RiskMarkdownService {
      *
      * @param symbol - Trading pair symbol to get data for
      * @param strategyName - Strategy name to get data for
+     * @param backtest - True if backtest mode, false if live mode
      * @returns Statistical data object with all metrics
      *
      * @example
      * ```typescript
      * const service = new RiskMarkdownService();
-     * const stats = await service.getData("BTCUSDT", "my-strategy");
+     * const stats = await service.getData("BTCUSDT", "my-strategy", false);
      * console.log(stats.totalRejections, stats.bySymbol);
      * ```
      */
-    getData: (symbol: string, strategyName: string) => Promise<RiskStatisticsModel>;
+    getData: (symbol: string, strategyName: string, backtest: boolean) => Promise<RiskStatisticsModel>;
     /**
      * Generates markdown report with all risk rejection events for a symbol-strategy pair.
      * Delegates to ReportStorage.getReport().
      *
      * @param symbol - Trading pair symbol to generate report for
      * @param strategyName - Strategy name to generate report for
+     * @param backtest - True if backtest mode, false if live mode
      * @param columns - Column configuration for formatting the table
      * @returns Markdown formatted report string with table of all events
      *
      * @example
      * ```typescript
      * const service = new RiskMarkdownService();
-     * const markdown = await service.getReport("BTCUSDT", "my-strategy");
+     * const markdown = await service.getReport("BTCUSDT", "my-strategy", false);
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: string, columns?: Columns[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: string, backtest: boolean, columns?: Columns[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -7436,6 +7477,7 @@ declare class RiskMarkdownService {
      *
      * @param symbol - Trading pair symbol to save report for
      * @param strategyName - Strategy name to save report for
+     * @param backtest - True if backtest mode, false if live mode
      * @param path - Directory path to save report (default: "./dump/risk")
      * @param columns - Column configuration for formatting the table
      *
@@ -7444,26 +7486,26 @@ declare class RiskMarkdownService {
      * const service = new RiskMarkdownService();
      *
      * // Save to default path: ./dump/risk/BTCUSDT_my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy");
+     * await service.dump("BTCUSDT", "my-strategy", false);
      *
      * // Save to custom path: ./custom/path/BTCUSDT_my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy", "./custom/path");
+     * await service.dump("BTCUSDT", "my-strategy", false, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: string, path?: string, columns?: Columns[]) => Promise<void>;
+    dump: (symbol: string, strategyName: string, backtest: boolean, path?: string, columns?: Columns[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
-     * If ctx is provided, clears only that specific symbol-strategy pair's data.
+     * If ctx is provided, clears only that specific symbol-strategy-backtest triple's data.
      * If nothing is provided, clears all data.
      *
-     * @param ctx - Optional context with symbol and strategyName
+     * @param ctx - Optional context with symbol, strategyName, and backtest
      *
      * @example
      * ```typescript
      * const service = new RiskMarkdownService();
      *
-     * // Clear specific symbol-strategy pair
-     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy" });
+     * // Clear specific symbol-strategy-backtest triple
+     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy", backtest: false });
      *
      * // Clear all data
      * await service.clear();
@@ -7472,6 +7514,7 @@ declare class RiskMarkdownService {
     clear: (ctx?: {
         symbol: string;
         strategyName: string;
+        backtest: boolean;
     }) => Promise<void>;
     /**
      * Initializes the service by subscribing to risk rejection events.
@@ -7547,7 +7590,7 @@ declare class RiskUtils {
      * }
      * ```
      */
-    getData: (symbol: string, strategyName: string) => Promise<RiskStatisticsModel>;
+    getData: (symbol: string, strategyName: string, backtest: boolean) => Promise<RiskStatisticsModel>;
     /**
      * Generates markdown report with all risk rejection events for a symbol-strategy pair.
      *
@@ -7589,7 +7632,7 @@ declare class RiskUtils {
      * // - my-strategy: 1
      * ```
      */
-    getReport: (symbol: string, strategyName: string, columns?: Columns[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: string, backtest: boolean, columns?: Columns[]) => Promise<string>;
     /**
      * Generates and saves markdown report to file.
      *
@@ -7622,7 +7665,7 @@ declare class RiskUtils {
      * }
      * ```
      */
-    dump: (symbol: string, strategyName: string, path?: string, columns?: Columns[]) => Promise<void>;
+    dump: (symbol: string, strategyName: string, backtest: boolean, path?: string, columns?: Columns[]) => Promise<void>;
 }
 /**
  * Global singleton instance of RiskUtils.
