@@ -171,7 +171,7 @@ export class PartialConnectionService implements IPartial {
       when,
     });
     const partial = this.getPartial(data.id);
-    await partial.waitForInit(symbol, data.strategyName);
+    await partial.waitForInit(symbol, data.strategyName, backtest);
     return await partial.profit(
       symbol,
       data,
@@ -213,7 +213,7 @@ export class PartialConnectionService implements IPartial {
       when,
     });
     const partial = this.getPartial(data.id);
-    await partial.waitForInit(symbol, data.strategyName);
+    await partial.waitForInit(symbol, data.strategyName, backtest);
     return await partial.loss(
       symbol,
       data,
@@ -253,7 +253,7 @@ export class PartialConnectionService implements IPartial {
       priceClose,
     });
     const partial = this.getPartial(data.id);
-    await partial.waitForInit(symbol, data.strategyName);
+    await partial.waitForInit(symbol, data.strategyName, backtest);
     await partial.clear(symbol, data, priceClose, backtest);
     this.getPartial.clear(data.id);
   };

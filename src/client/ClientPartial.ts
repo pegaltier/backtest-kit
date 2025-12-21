@@ -177,17 +177,26 @@ const HANDLE_LOSS_FN = async (
  * Loads persisted partial state from disk and restores in-memory Maps.
  * Converts serialized arrays back to Sets for O(1) lookups.
  *
+ * ONLY runs in LIVE mode (backtest=false). In backtest mode, state is not persisted.
+ *
  * @param symbol - Trading pair symbol
  * @param strategyName - Strategy identifier
+ * @param backtest - True if backtest mode, false if live mode
  * @param self - ClientPartial instance reference
  */
-const WAIT_FOR_INIT_FN = async (symbol: string, strategyName: string, self: ClientPartial) => {
-  self.params.logger.debug("ClientPartial waitForInit", { symbol, strategyName });
+const WAIT_FOR_INIT_FN = async (symbol: string, strategyName: string, backtest: boolean, self: ClientPartial) => {
+  self.params.logger.debug("ClientPartial waitForInit", { symbol, strategyName, backtest });
 
   if (self._states === NEED_FETCH) {
     throw new Error(
       "ClientPartial not initialized. Call waitForInit() before using."
     );
+  }
+
+  // Skip persistence in backtest mode
+  if (backtest) {
+    self.params.logger.debug("ClientPartial waitForInit: skipping persist read in backtest mode");
+    return;
   }
 
   const partialData = await PersistPartialAdapter.readPartialData(symbol, strategyName);
@@ -292,17 +301,18 @@ export class ClientPartial implements IPartial {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy identifier
+   * @param backtest - True if backtest mode, false if live mode
    * @returns Promise that resolves when initialization is complete
    *
    * @example
    * ```typescript
    * const partial = new ClientPartial(params);
-   * await partial.waitForInit("BTCUSDT", "my-strategy"); // Load persisted state
+   * await partial.waitForInit("BTCUSDT", "my-strategy", false); // Load persisted state (live mode)
    * // Now profit()/loss() can be called
    * ```
    */
   public waitForInit = singleshot(
-    async (symbol: string, strategyName: string) => await WAIT_FOR_INIT_FN(symbol, strategyName, this)
+    async (symbol: string, strategyName: string, backtest: boolean) => await WAIT_FOR_INIT_FN(symbol, strategyName, backtest, this)
   );
 
   /**
