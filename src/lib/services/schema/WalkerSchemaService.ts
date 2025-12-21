@@ -75,6 +75,21 @@ export class WalkerSchemaService {
         `walker schema validation failed: strategies array cannot be empty for walkerName=${walkerSchema.walkerName}`
       );
     }
+
+    if (
+      walkerSchema.strategies &&
+      walkerSchema.strategies.length !== new Set(walkerSchema.strategies).size
+    ) {
+      throw new Error(
+        `walker schema validation failed: found duplicate strategies for walkerName=${walkerSchema.walkerName} strategies=[${walkerSchema.strategies}]`
+      );
+    }
+
+    if (walkerSchema.strategies?.some((value) => typeof value !== "string")) {
+      throw new Error(
+        `walker schema validation failed: invalid strategies for walkerName=${walkerSchema.walkerName} strategies=[${walkerSchema.strategies}]`
+      );
+    }
   };
 
   /**
