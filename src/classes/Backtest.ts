@@ -160,8 +160,12 @@ export class BacktestInstance {
     });
 
     {
-      backtest.backtestMarkdownService.clear({ symbol, strategyName: context.strategyName, backtest: true });
-      backtest.scheduleMarkdownService.clear({ symbol, strategyName: context.strategyName, backtest: true });
+      backtest.backtestMarkdownService.clear(true, { symbol, strategyName: context.strategyName });
+      backtest.liveMarkdownService.clear(true, { symbol, strategyName: context.strategyName });
+      backtest.scheduleMarkdownService.clear(true, { symbol, strategyName: context.strategyName });
+      backtest.performanceMarkdownService.clear(true, { symbol, strategyName: context.strategyName });
+      backtest.partialMarkdownService.clear(true, { symbol, strategyName: context.strategyName });
+      backtest.riskMarkdownService.clear(true, { symbol, strategyName: context.strategyName });
     }
 
     {

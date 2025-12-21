@@ -166,8 +166,12 @@ export class LiveInstance {
     });
 
     {
-      backtest.liveMarkdownService.clear({ symbol, strategyName: context.strategyName, backtest: false });
-      backtest.scheduleMarkdownService.clear({ symbol, strategyName: context.strategyName, backtest: false });
+      backtest.backtestMarkdownService.clear(false, { symbol, strategyName: context.strategyName });
+      backtest.liveMarkdownService.clear(false, { symbol, strategyName: context.strategyName });
+      backtest.scheduleMarkdownService.clear(false, { symbol, strategyName: context.strategyName });
+      backtest.performanceMarkdownService.clear(false, { symbol, strategyName: context.strategyName });
+      backtest.partialMarkdownService.clear(false, { symbol, strategyName: context.strategyName });
+      backtest.riskMarkdownService.clear(false, { symbol, strategyName: context.strategyName });
     }
 
     {

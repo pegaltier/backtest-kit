@@ -437,14 +437,16 @@ export class PerformanceMarkdownService {
   /**
    * Clears accumulated performance data from storage.
    *
-   * @param ctx - Optional context with symbol, strategyName, and backtest
+   * @param backtest - Backtest mode flag
+   * @param ctx - Optional context with symbol and strategyName
    */
-  public clear = async (ctx?: { symbol: string; strategyName: string; backtest: boolean }) => {
+  public clear = async (backtest: boolean, ctx?: { symbol: string; strategyName: string }) => {
     this.loggerService.log("performanceMarkdownService clear", {
+      backtest,
       ctx,
     });
     if (ctx) {
-      const key = `${ctx.symbol}:${ctx.strategyName}:${ctx.backtest ? "backtest" : "live"}`;
+      const key = `${ctx.symbol}:${ctx.strategyName}:${backtest ? "backtest" : "live"}`;
       this.getStorage.clear(key);
     } else {
       this.getStorage.clear();

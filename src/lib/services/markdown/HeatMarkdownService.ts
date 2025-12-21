@@ -577,25 +577,27 @@ export class HeatMarkdownService {
    * If ctx is provided, clears only that strategy+backtest combination's data.
    * If ctx is omitted, clears all data.
    *
-   * @param ctx - Optional context with strategyName and backtest to clear specific data
+   * @param backtest - Backtest mode flag
+   * @param ctx - Optional context with strategyName to clear specific data
    *
    * @example
    * ```typescript
    * const service = new HeatMarkdownService();
    *
    * // Clear specific strategy+backtest data
-   * await service.clear({ strategyName: "my-strategy", backtest: true });
+   * await service.clear(true, { strategyName: "my-strategy" });
    *
    * // Clear all data
    * await service.clear();
    * ```
    */
-  public clear = async (ctx?: { strategyName: StrategyName; backtest: boolean }) => {
+  public clear = async (backtest: boolean, ctx?: { strategyName: StrategyName }) => {
     this.loggerService.log(HEATMAP_METHOD_NAME_CLEAR, {
+      backtest,
       ctx,
     });
     if (ctx) {
-      const key = `${ctx.strategyName}:${ctx.backtest ? "backtest" : "live"}`;
+      const key = `${ctx.strategyName}:${backtest ? "backtest" : "live"}`;
       this.getStorage.clear(key);
     } else {
       this.getStorage.clear();

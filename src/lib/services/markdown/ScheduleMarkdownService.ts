@@ -474,25 +474,27 @@ export class ScheduleMarkdownService {
    * If ctx is provided, clears only that specific symbol-strategy-backtest triple's data.
    * If nothing is provided, clears all data.
    *
-   * @param ctx - Optional context with symbol, strategyName, and backtest
+   * @param backtest - Backtest mode flag
+   * @param ctx - Optional context with symbol and strategyName
    *
    * @example
    * ```typescript
    * const service = new ScheduleMarkdownService();
    *
    * // Clear specific symbol-strategy-backtest triple
-   * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy", backtest: false });
+   * await service.clear(false, { symbol: "BTCUSDT", strategyName: "my-strategy" });
    *
    * // Clear all data
    * await service.clear();
    * ```
    */
-  public clear = async (ctx?: { symbol: string; strategyName: StrategyName; backtest: boolean }) => {
+  public clear = async (backtest: boolean, ctx?: { symbol: string; strategyName: StrategyName }) => {
     this.loggerService.log("scheduleMarkdownService clear", {
+      backtest,
       ctx,
     });
     if (ctx) {
-      const key = `${ctx.symbol}:${ctx.strategyName}:${ctx.backtest ? "backtest" : "live"}`;
+      const key = `${ctx.symbol}:${ctx.strategyName}:${backtest ? "backtest" : "live"}`;
       this.getStorage.clear(key);
     } else {
       this.getStorage.clear();
