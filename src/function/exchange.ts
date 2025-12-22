@@ -1,4 +1,7 @@
-import backtest from "../lib/index";
+import backtest, {
+  ExecutionContextService,
+  MethodContextService,
+} from "../lib";
 import { CandleInterval, ICandleData } from "../interfaces/Exchange.interface";
 
 const GET_CANDLES_METHOD_NAME = "exchange.getCandles";
@@ -7,6 +10,32 @@ const FORMAT_PRICE_METHOD_NAME = "exchange.formatPrice";
 const FORMAT_QUANTITY_METHOD_NAME = "exchange.formatQuantity";
 const GET_DATE_METHOD_NAME = "exchange.getDate";
 const GET_MODE_METHOD_NAME = "exchange.getMode";
+const HAS_TRADE_CONTEXT_METHOD_NAME = "exchange.hasTradeContext";
+
+/**
+ * Checks if trade context is active (execution and method contexts).
+ *
+ * Returns true when both contexts are active, which is required for calling
+ * exchange functions like getCandles, getAveragePrice, formatPrice, formatQuantity,
+ * getDate, and getMode.
+ *
+ * @returns true if trade context is active, false otherwise
+ *
+ * @example
+ * ```typescript
+ * import { hasTradeContext, getCandles } from "backtest-kit";
+ *
+ * if (hasTradeContext()) {
+ *   const candles = await getCandles("BTCUSDT", "1m", 100);
+ * } else {
+ *   console.log("Trade context not active");
+ * }
+ * ```
+ */
+export function hasTradeContext(): boolean {
+  backtest.loggerService.info(HAS_TRADE_CONTEXT_METHOD_NAME);
+  return ExecutionContextService.hasContext() && MethodContextService.hasContext();
+}
 
 /**
  * Fetches historical candle data from the registered exchange.
@@ -35,6 +64,12 @@ export async function getCandles(
     interval,
     limit,
   });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("getCandles requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("getCandles requires a method context");
+  }
   return await backtest.exchangeConnectionService.getCandles(
     symbol,
     interval,
@@ -64,6 +99,12 @@ export async function getAveragePrice(symbol: string): Promise<number> {
   backtest.loggerService.info(GET_AVERAGE_PRICE_METHOD_NAME, {
     symbol,
   });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("getAveragePrice requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("getAveragePrice requires a method context");
+  }
   return await backtest.exchangeConnectionService.getAveragePrice(symbol);
 }
 
@@ -90,6 +131,9 @@ export async function formatPrice(
     symbol,
     price,
   });
+  if (!MethodContextService.hasContext()) {
+    throw new Error("formatPrice requires a method context");
+  }
   return await backtest.exchangeConnectionService.formatPrice(symbol, price);
 }
 
@@ -116,6 +160,9 @@ export async function formatQuantity(
     symbol,
     quantity,
   });
+  if (!MethodContextService.hasContext()) {
+    throw new Error("formatQuantity requires a method context");
+  }
   return await backtest.exchangeConnectionService.formatQuantity(
     symbol,
     quantity
@@ -138,6 +185,9 @@ export async function formatQuantity(
  */
 export async function getDate() {
   backtest.loggerService.info(GET_DATE_METHOD_NAME);
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("getDate requires an execution context");
+  }
   const { when } = backtest.executionContextService.context;
   return new Date(when.getTime());
 }
@@ -159,8 +209,11 @@ export async function getDate() {
  */
 export async function getMode(): Promise<"backtest" | "live"> {
   backtest.loggerService.info(GET_MODE_METHOD_NAME);
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("getMode requires an execution context");
+  }
   const { backtest: bt } = backtest.executionContextService.context;
   return bt ? "backtest" : "live";
 }
 
-export default { getCandles, getAveragePrice, getDate, getMode };
+export default { getCandles, getAveragePrice, getDate, getMode, hasTradeContext };

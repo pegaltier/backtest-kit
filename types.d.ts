@@ -4180,6 +4180,27 @@ declare function listenRisk(fn: (event: RiskContract) => void): () => void;
 declare function listenRiskOnce(filterFn: (event: RiskContract) => boolean, fn: (event: RiskContract) => void): () => void;
 
 /**
+ * Checks if trade context is active (execution and method contexts).
+ *
+ * Returns true when both contexts are active, which is required for calling
+ * exchange functions like getCandles, getAveragePrice, formatPrice, formatQuantity,
+ * getDate, and getMode.
+ *
+ * @returns true if trade context is active, false otherwise
+ *
+ * @example
+ * ```typescript
+ * import { hasTradeContext, getCandles } from "backtest-kit";
+ *
+ * if (hasTradeContext()) {
+ *   const candles = await getCandles("BTCUSDT", "1m", 100);
+ * } else {
+ *   console.log("Trade context not active");
+ * }
+ * ```
+ */
+declare function hasTradeContext(): boolean;
+/**
  * Fetches historical candle data from the registered exchange.
  *
  * Candles are fetched backwards from the current execution context time.
@@ -7690,6 +7711,91 @@ declare class RiskUtils {
 declare const Risk: RiskUtils;
 
 /**
+ * Utility class for exchange operations.
+ *
+ * Provides simplified access to exchange schema methods with validation.
+ * Exported as singleton instance for convenient usage.
+ *
+ * @example
+ * ```typescript
+ * import { Exchange } from "./classes/Exchange";
+ *
+ * const candles = await Exchange.getCandles("BTCUSDT", "1m", new Date(), 100, {
+ *   exchangeName: "binance"
+ * });
+ * const formatted = await Exchange.formatQuantity("BTCUSDT", 0.001, {
+ *   exchangeName: "binance"
+ * });
+ * ```
+ */
+declare class ExchangeUtils {
+    /**
+     * Memoized function to get or create ExchangeInstance for an exchange.
+     * Each exchange gets its own isolated instance.
+     */
+    private _getInstance;
+    /**
+     * Fetch candles from data source (API or database).
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param interval - Candle time interval (e.g., "1m", "1h")
+     * @param since - Start date for candle fetching
+     * @param limit - Maximum number of candles to fetch
+     * @param context - Execution context with exchange name
+     * @returns Promise resolving to array of OHLCV candle data
+     */
+    getCandles: (symbol: string, interval: CandleInterval, since: Date, limit: number, context: {
+        exchangeName: ExchangeName;
+    }) => Promise<ICandleData[]>;
+    /**
+     * Format quantity according to exchange precision rules.
+     *
+     * @param symbol - Trading pair symbol
+     * @param quantity - Raw quantity value
+     * @param context - Execution context with exchange name
+     * @returns Promise resolving to formatted quantity string
+     */
+    formatQuantity: (symbol: string, quantity: number, context: {
+        exchangeName: ExchangeName;
+    }) => Promise<string>;
+    /**
+     * Format price according to exchange precision rules.
+     *
+     * @param symbol - Trading pair symbol
+     * @param price - Raw price value
+     * @param context - Execution context with exchange name
+     * @returns Promise resolving to formatted price string
+     */
+    formatPrice: (symbol: string, price: number, context: {
+        exchangeName: ExchangeName;
+    }) => Promise<string>;
+}
+/**
+ * Singleton instance of ExchangeUtils for convenient exchange operations.
+ *
+ * @example
+ * ```typescript
+ * import { Exchange } from "./classes/Exchange";
+ *
+ * // Using static-like API with context
+ * const candles = await Exchange.getCandles("BTCUSDT", "1m", new Date(), 100, {
+ *   exchangeName: "binance"
+ * });
+ * const qty = await Exchange.formatQuantity("BTCUSDT", 0.001, {
+ *   exchangeName: "binance"
+ * });
+ * const price = await Exchange.formatPrice("BTCUSDT", 50000.123, {
+ *   exchangeName: "binance"
+ * });
+ *
+ * // Using instance API (no context needed, exchange set in constructor)
+ * const binance = new ExchangeInstance("binance");
+ * const candles2 = await binance.getCandles("BTCUSDT", "1m", new Date(), 100);
+ * ```
+ */
+declare const Exchange: ExchangeUtils;
+
+/**
  * Contract for walker stop signal events.
  *
  * Emitted when Walker.stop() is called to interrupt a running walker.
@@ -10524,4 +10630,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type BacktestStatisticsModel, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type DoneContract, type EntityId, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatisticsModel, type MessageModel, type MessageRole, MethodContextService, Optimizer, Partial$1 as Partial, type PartialData, type PartialLossContract, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressOptimizerContract, type ProgressWalkerContract, Risk, type RiskContract, type RiskData, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type WalkerStatisticsModel, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, dumpSignal, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, setColumns, setConfig, setLogger };
+export { Backtest, type BacktestStatisticsModel, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatisticsModel, type MessageModel, type MessageRole, MethodContextService, Optimizer, Partial$1 as Partial, type PartialData, type PartialLossContract, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressOptimizerContract, type ProgressWalkerContract, Risk, type RiskContract, type RiskData, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type WalkerStatisticsModel, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, dumpSignal, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, setColumns, setConfig, setLogger };

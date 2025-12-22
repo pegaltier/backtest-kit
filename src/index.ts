@@ -62,6 +62,7 @@ export {
   getMode,
   formatPrice,
   formatQuantity,
+  hasTradeContext,
 } from "./function/exchange";
 export { dumpSignal } from "./function/dump";
 
@@ -189,6 +190,7 @@ export { Optimizer } from "./classes/Optimizer";
 export { Partial } from "./classes/Partial";
 export { Constant } from "./classes/Constant";
 export { Risk } from "./classes/Risk";
+export { Exchange } from "./classes/Exchange";
 
 export * as emitters from "./config/emitters";
 
