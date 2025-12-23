@@ -121,16 +121,18 @@ export class CacheInstance<T extends Function = Function> {
     backtest.loggerService.debug(CACHE_METHOD_NAME_RUN, { args });
     const step = INTERVAL_MINUTES[this.interval];
 
-    if (!step) {
-      throw new Error(
-        `CacheInstance unknown cache ttl interval=${this.interval}`
-      );
-    }
-    if (!MethodContextService.hasContext()) {
-      throw new Error("CacheInstance run requires method context");
-    }
-    if (!ExecutionContextService.hasContext()) {
-      throw new Error("CacheInstance run requires execution context");
+    {
+      if (!MethodContextService.hasContext()) {
+        throw new Error("CacheInstance run requires method context");
+      }
+      if (!ExecutionContextService.hasContext()) {
+        throw new Error("CacheInstance run requires execution context");
+      }
+      if (!step) {
+        throw new Error(
+          `CacheInstance unknown cache ttl interval=${this.interval}`
+        );
+      }
     }
 
     const key = createKey(
