@@ -144,7 +144,7 @@ export class CacheInstance<T extends Function = Function> {
     if (cached) {
       const stepMs = step * 60 * 1000;
       const elapsed = currentWhen.getTime() - cached.when.getTime();
-      if (elapsed < stepMs) {
+      if (elapsed >= 0 && elapsed < stepMs) {
         return cached;
       }
     }
