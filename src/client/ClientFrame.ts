@@ -46,16 +46,23 @@ const GET_TIMEFRAME_FN = async (symbol: string, self: ClientFrame) => {
     throw new Error(`ClientFrame unknown interval: ${interval}`);
   }
 
+  // Get current date at the start of today (00:00:00) for comparison
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+
+  // Ensure endDate doesn't go beyond today
+  const effectiveEndDate = endDate > today ? today : endDate;
+
   const timeframes: Date[] = [];
   let currentDate = new Date(startDate);
 
-  while (currentDate <= endDate) {
+  while (currentDate <= effectiveEndDate) {
     timeframes.push(new Date(currentDate));
     currentDate = new Date(currentDate.getTime() + intervalMinutes * 60 * 1000);
   }
 
   if (self.params.callbacks?.onTimeframe) {
-    self.params.callbacks.onTimeframe(timeframes, startDate, endDate, interval);
+    self.params.callbacks.onTimeframe(timeframes, startDate, effectiveEndDate, interval);
   }
 
   return timeframes;
