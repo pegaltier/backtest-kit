@@ -30,7 +30,7 @@ Each function gets its own isolated cache instance.
 ### fn
 
 ```ts
-fn: <T extends Function>(run: T, interval: CandleInterval) => Function
+fn: <T extends Function>(run: T, context: { interval: CandleInterval; }) => Function
 ```
 
 Wrap a function with caching based on timeframe intervals.
