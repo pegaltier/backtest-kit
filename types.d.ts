@@ -7863,7 +7863,9 @@ declare class CacheUtils {
      * const result2 = cachedCalculate("BTCUSDT", 14); // Cached (same 15m interval)
      * ```
      */
-    fn: <T extends Function>(run: T, interval: CandleInterval) => Function;
+    fn: <T extends Function>(run: T, context: {
+        interval: CandleInterval;
+    }) => Function;
 }
 /**
  * Singleton instance of CacheUtils for convenient function caching.

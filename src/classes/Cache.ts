@@ -1,8 +1,5 @@
 import { memoize } from "functools-kit";
-import {
-  CandleInterval,
-  ExchangeName,
-} from "../interfaces/Exchange.interface";
+import { CandleInterval, ExchangeName } from "../interfaces/Exchange.interface";
 import { StrategyName } from "../interfaces/Strategy.interface";
 import backtest, {
   ExecutionContextService,
@@ -200,14 +197,16 @@ export class CacheUtils {
    */
   public fn = <T extends Function>(
     run: T,
-    interval: CandleInterval
+    context: {
+      interval: CandleInterval;
+    }
   ): Function => {
     backtest.loggerService.debug(CACHE_METHOD_NAME_FN, {
-      interval,
+      context,
     });
 
     return (...args: Parameters<T>): ReturnType<T> => {
-      const instance = this._getInstance(run, interval);
+      const instance = this._getInstance(run, context.interval);
       return instance.run(...args).value;
     };
   };
