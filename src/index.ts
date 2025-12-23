@@ -191,6 +191,7 @@ export { Partial } from "./classes/Partial";
 export { Constant } from "./classes/Constant";
 export { Risk } from "./classes/Risk";
 export { Exchange } from "./classes/Exchange";
+export { Cache } from "./classes/Cache";
 
 export * as emitters from "./config/emitters";
 
