@@ -2,6 +2,103 @@ import * as di_scoped from 'di-scoped';
 import * as functools_kit from 'functools-kit';
 import { Subject } from 'functools-kit';
 
+/**
+ * Type alias for enum objects with string key-value pairs
+ */
+type Enum = Record<string, string>;
+/**
+ * Type alias for ValidateArgs with any enum type
+ */
+type Args = ValidateArgs<any>;
+/**
+ * Interface defining validation arguments for all entity types.
+ *
+ * Each property accepts an enum object where values will be validated
+ * against registered entities in their respective validation services.
+ *
+ * @template T - Enum type extending Record<string, string>
+ */
+interface ValidateArgs<T = Enum> {
+    /**
+     * Exchange name enum to validate
+     * @example { BINANCE: "binance", BYBIT: "bybit" }
+     */
+    ExchangeName?: T;
+    /**
+     * Frame (timeframe) name enum to validate
+     * @example { Q1_2024: "2024-Q1", Q2_2024: "2024-Q2" }
+     */
+    FrameName?: T;
+    /**
+     * Strategy name enum to validate
+     * @example { MOMENTUM_BTC: "momentum-btc" }
+     */
+    StrategyName?: T;
+    /**
+     * Risk profile name enum to validate
+     * @example { CONSERVATIVE: "conservative", AGGRESSIVE: "aggressive" }
+     */
+    RiskName?: T;
+    /**
+     * Sizing strategy name enum to validate
+     * @example { FIXED_1000: "fixed-1000" }
+     */
+    SizingName?: T;
+    /**
+     * Optimizer name enum to validate
+     * @example { GRID_SEARCH: "grid-search" }
+     */
+    OptimizerName?: T;
+    /**
+     * Walker (parameter sweep) name enum to validate
+     * @example { RSI_SWEEP: "rsi-sweep" }
+     */
+    WalkerName?: T;
+}
+/**
+ * Validates the existence of all provided entity names across validation services.
+ *
+ * This function accepts enum objects for various entity types (exchanges, frames,
+ * strategies, risks, sizings, optimizers, walkers) and validates that each entity
+ * name exists in its respective registry. Validation results are memoized for performance.
+ *
+ * Use this before running backtests or optimizations to ensure all referenced
+ * entities are properly registered and configured.
+ *
+ * @public
+ * @param args - Partial validation arguments containing entity name enums to validate
+ * @throws {Error} If any entity name is not found in its validation service
+ *
+ * @example
+ * ```typescript
+ * // Define your entity name enums
+ * enum ExchangeName {
+ *   BINANCE = "binance",
+ *   BYBIT = "bybit"
+ * }
+ *
+ * enum StrategyName {
+ *   MOMENTUM_BTC = "momentum-btc"
+ * }
+ *
+ * // Validate all entities before running backtest
+ * validate({
+ *   ExchangeName,
+ *   StrategyName,
+ * });
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Validate specific entity types
+ * validate({
+ *   RiskName: { CONSERVATIVE: "conservative" },
+ *   SizingName: { FIXED_1000: "fixed-1000" },
+ * });
+ * ```
+ */
+declare function validate(args: Partial<Args>): void;
+
 declare const GLOBAL_CONFIG: {
     /**
      * Time to wait for scheduled signal to activate (in minutes)
@@ -10778,4 +10875,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type BacktestStatisticsModel, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatisticsModel, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressOptimizerContract, type ProgressWalkerContract, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type ScheduledEvent, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, type TickEvent, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, dumpSignal, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, setColumns, setConfig, setLogger };
+export { Backtest, type BacktestStatisticsModel, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatisticsModel, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressOptimizerContract, type ProgressWalkerContract, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type ScheduledEvent, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, type TickEvent, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, dumpSignal, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, setColumns, setConfig, setLogger, validate };

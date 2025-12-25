@@ -1,4 +1,7 @@
 export {
+  validate,
+} from "./function/validate";
+export {
   setLogger,
   setConfig,
   getConfig,
