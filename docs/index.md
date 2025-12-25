@@ -85,6 +85,7 @@ group: docs
 
 ## Functions
 
+- [validate](functions/validate.md)
 - [setLogger](functions/setLogger.md)
 - [setConfig](functions/setConfig.md)
 - [getConfig](functions/getConfig.md)
@@ -145,8 +146,9 @@ group: docs
 
 ## Interfaces
 
-- [IExecutionContext](interfaces/IExecutionContext.md)
+- [ValidateArgs](interfaces/ValidateArgs.md)
 - [ILogger](interfaces/ILogger.md)
+- [IExecutionContext](interfaces/IExecutionContext.md)
 - [ICandleData](interfaces/ICandleData.md)
 - [IExchangeParams](interfaces/IExchangeParams.md)
 - [IExchangeCallbacks](interfaces/IExchangeCallbacks.md)
@@ -181,14 +183,11 @@ group: docs
 - [IStrategyTickResultClosed](interfaces/IStrategyTickResultClosed.md)
 - [IStrategyTickResultCancelled](interfaces/IStrategyTickResultCancelled.md)
 - [BacktestStatisticsModel](interfaces/BacktestStatisticsModel.md)
+- [WalkerCompleteContract](interfaces/WalkerCompleteContract.md)
 - [IWalkerSchema](interfaces/IWalkerSchema.md)
 - [IWalkerCallbacks](interfaces/IWalkerCallbacks.md)
 - [IWalkerStrategyResult](interfaces/IWalkerStrategyResult.md)
 - [IWalkerResults](interfaces/IWalkerResults.md)
-- [WalkerCompleteContract](interfaces/WalkerCompleteContract.md)
-- [SignalData$1](interfaces/SignalData$1.md)
-- [IStrategyResult](interfaces/IStrategyResult.md)
-- [WalkerStatisticsModel](interfaces/WalkerStatisticsModel.md)
 - [ISizingCalculateParamsBase](interfaces/ISizingCalculateParamsBase.md)
 - [IPositionSizeFixedPercentageParams](interfaces/IPositionSizeFixedPercentageParams.md)
 - [IPositionSizeKellyParams](interfaces/IPositionSizeKellyParams.md)
@@ -236,6 +235,9 @@ group: docs
 - [ScheduleStatisticsModel](interfaces/ScheduleStatisticsModel.md)
 - [MetricStats](interfaces/MetricStats.md)
 - [PerformanceStatisticsModel](interfaces/PerformanceStatisticsModel.md)
+- [SignalData$1](interfaces/SignalData$1.md)
+- [IStrategyResult](interfaces/IStrategyResult.md)
+- [WalkerStatisticsModel](interfaces/WalkerStatisticsModel.md)
 - [PartialEvent](interfaces/PartialEvent.md)
 - [PartialStatisticsModel](interfaces/PartialStatisticsModel.md)
 - [RiskEvent](interfaces/RiskEvent.md)
@@ -246,6 +248,10 @@ group: docs
 
 ## Types
 
+- [Enum](types/Enum.md)
+- [Args](types/Args.md)
+- [GlobalConfig](types/GlobalConfig.md)
+- [ColumnConfig](types/ColumnConfig.md)
 - [TExecutionContextService](types/TExecutionContextService.md)
 - [CandleInterval](types/CandleInterval.md)
 - [ExchangeName](types/ExchangeName.md)
@@ -260,8 +266,6 @@ group: docs
 - [StrategyName](types/StrategyName.md)
 - [WalkerMetric](types/WalkerMetric.md)
 - [WalkerName](types/WalkerName.md)
-- [GlobalConfig](types/GlobalConfig.md)
-- [ColumnConfig](types/ColumnConfig.md)
 - [ISizingCalculateParams](types/ISizingCalculateParams.md)
 - [ISizingParams](types/ISizingParams.md)
 - [ISizingSchema](types/ISizingSchema.md)

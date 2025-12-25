@@ -35,7 +35,7 @@ Each symbol-strategy combination gets its own isolated instance.
 ### run
 
 ```ts
-run: (symbol: string, context: { strategyName: string; exchangeName: string; }) => AsyncGenerator<IStrategyTickResultOpened | IStrategyTickResultClosed, void, unknown>
+run: (symbol: string, context: { strategyName: string; exchangeName: string; }) => AsyncGenerator<IStrategyTickResultClosed | IStrategyTickResultOpened, void, unknown>
 ```
 
 Runs live trading for a symbol with context propagation.
