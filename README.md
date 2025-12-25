@@ -35,7 +35,7 @@ Build reliable trading systems: backtest on historical data, deploy live bots wi
 
 ## 🚀 Quick Start
 
-> Link to [the demo app](https://github.com/tripolskypetr/backtest-kit/tree/master/demo)
+> Link to  👉 [the demo app](https://github.com/tripolskypetr/backtest-kit/tree/master/demo) 👈
 
 ### 📦 Installation
 ```bash
