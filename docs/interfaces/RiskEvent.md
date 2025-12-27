@@ -66,10 +66,18 @@ activePositionCount: number
 
 Number of active positions at rejection time
 
-### comment
+### rejectionId
 
 ```ts
-comment: string
+rejectionId: string
+```
+
+Unique identifier for this rejection instance (null if validation threw exception without custom ID)
+
+### rejectionNote
+
+```ts
+rejectionNote: string
 ```
 
 Rejection reason from validation note

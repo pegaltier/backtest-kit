@@ -29,7 +29,7 @@ True if backtest mode, false if live mode
 ### onRejected
 
 ```ts
-onRejected: (symbol: string, params: IRiskCheckArgs, activePositionCount: number, comment: string, timestamp: number, backtest: boolean) => void | Promise<void>
+onRejected: (symbol: string, params: IRiskCheckArgs, activePositionCount: number, rejectionResult: IRiskRejectionResult, timestamp: number, backtest: boolean) => void | Promise<...>
 ```
 
 Callback invoked when a signal is rejected due to risk limits.
