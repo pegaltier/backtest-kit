@@ -3,6 +3,12 @@ import { ISignalDto, ISignalRow, StrategyName } from "./Strategy.interface";
 import { ExchangeName } from "./Exchange.interface";
 
 /**
+ * Risk rejection result type.
+ * Can be void, null, or an IRiskRejectionResult object.
+ */
+export type RiskRejection = void | IRiskRejectionResult | null;
+
+/**
  * Risk check arguments for evaluating whether to allow opening a new position.
  * Called BEFORE signal creation to validate if conditions allow new signals.
  * Contains only passthrough arguments from ClientStrategy context.
@@ -64,11 +70,23 @@ export interface IRiskValidationPayload extends IRiskCheckArgs {
 }
 
 /**
+ * Risk validation rejection result.
+ * Returned when validation fails, contains debugging information.
+ */
+export interface IRiskRejectionResult {
+  /** Unique identifier for this rejection instance */
+  id: string | null;
+  /** Human-readable reason for rejection */
+  note: string;
+}
+
+/**
  * Risk validation function type.
- * Validates risk parameters and throws error if validation fails.
+ * Returns null/void if validation passes, IRiskRejectionResult if validation fails.
+ * Can also throw error which will be caught and converted to IRiskRejectionResult.
  */
 export interface IRiskValidationFn {
-  (payload: IRiskValidationPayload): void | Promise<void>;
+  (payload: IRiskValidationPayload): RiskRejection | Promise<RiskRejection>;
 }
 
 /**
@@ -122,7 +140,7 @@ export interface IRiskParams extends IRiskSchema {
    * @param symbol - Trading pair symbol
    * @param params - Risk check arguments
    * @param activePositionCount - Number of active positions at rejection time
-   * @param comment - Rejection reason from validation note or "N/A"
+   * @param rejectionResult - Rejection result with id and note
    * @param timestamp - Event timestamp in milliseconds
    * @param backtest - True if backtest mode, false if live mode
    */
@@ -130,7 +148,7 @@ export interface IRiskParams extends IRiskSchema {
     symbol: string,
     params: IRiskCheckArgs,
     activePositionCount: number,
-    comment: string,
+    rejectionResult: IRiskRejectionResult,
     timestamp: number,
     backtest: boolean
   ) => void | Promise<void>;

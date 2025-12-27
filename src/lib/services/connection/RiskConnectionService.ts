@@ -1,7 +1,7 @@
 import { inject } from "../../core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../core/types";
-import { RiskName, IRiskCheckArgs } from "../../../interfaces/Risk.interface";
+import { RiskName, IRiskCheckArgs, IRiskRejectionResult } from "../../../interfaces/Risk.interface";
 import { memoize } from "functools-kit";
 import ClientRisk from "../../../client/ClientRisk";
 import RiskSchemaService from "../schema/RiskSchemaService";
@@ -16,7 +16,7 @@ import { riskSubject } from "../../../config/emitters";
  * @param symbol - Trading pair symbol
  * @param params - Risk check arguments
  * @param activePositionCount - Number of active positions at rejection time
- * @param comment - Rejection reason from validation note or "N/A"
+ * @param rejectionResult - Rejection result with id and note
  * @param timestamp - Event timestamp in milliseconds
  * @param backtest - True if backtest mode, false if live mode
  */
@@ -24,7 +24,7 @@ const COMMIT_REJECTION_FN = async (
   symbol: string,
   params: IRiskCheckArgs,
   activePositionCount: number,
-  comment: string,
+  rejectionResult: IRiskRejectionResult,
   timestamp: number,
   backtest: boolean
 ) =>
@@ -35,7 +35,8 @@ const COMMIT_REJECTION_FN = async (
     exchangeName: params.exchangeName,
     currentPrice: params.currentPrice,
     activePositionCount,
-    comment,
+    rejectionId: rejectionResult.id,
+    rejectionNote: rejectionResult.note,
     timestamp,
     backtest,
   });

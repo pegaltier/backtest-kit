@@ -19,8 +19,10 @@ export interface RiskEvent {
   currentPrice: number;
   /** Number of active positions at rejection time */
   activePositionCount: number;
+  /** Unique identifier for this rejection instance (null if validation threw exception without custom ID) */
+  rejectionId: string | null;
   /** Rejection reason from validation note */
-  comment: string;
+  rejectionNote: string;
   /** Whether this event is from backtest mode (true) or live mode (false) */
   backtest: boolean;
 }

@@ -13,11 +13,13 @@ import { GLOBAL_CONFIG } from "../config/params";
  * - Signal identification (symbol, strategy name, signal ID, position)
  * - Exchange information (exchange name, active position count)
  * - Price data (open price, take profit, stop loss, current price)
- * - Rejection details (rejection reason/comment, timestamp)
+ * - Rejection details (rejection ID, rejection reason, timestamp)
  *
  * @remarks
  * This configuration helps analyze when and why the risk management system rejected signals.
- * The "note" column visibility is controlled by {@link GLOBAL_CONFIG.CC_REPORT_SHOW_SIGNAL_NOTE}.
+ * - The "note" column (signal note) visibility is controlled by {@link GLOBAL_CONFIG.CC_REPORT_SHOW_SIGNAL_NOTE}.
+ * - The "rejectionNote" column (rejection reason) is always visible as it contains critical risk information.
+ * - The "rejectionId" can be used to correlate rejections with signal IDs for debugging.
  * Useful for tuning risk parameters and understanding risk control effectiveness.
  *
  * @example
@@ -30,7 +32,7 @@ import { GLOBAL_CONFIG } from "../config/params";
  *
  * // Or customize to focus on rejection reasons
  * const customColumns = risk_columns.filter(col =>
- *   ["symbol", "strategyName", "comment", "activePositionCount", "timestamp"].includes(col.key)
+ *   ["symbol", "strategyName", "rejectionId", "rejectionNote", "activePositionCount", "timestamp"].includes(col.key)
  * );
  * await service.getReport("BTCUSDT", "my-strategy", customColumns);
  * ```
@@ -59,16 +61,16 @@ export const risk_columns: ColumnModel<RiskEvent>[] = [
     isVisible: () => true,
   },
   {
-    key: "position",
-    label: "Position",
-    format: (data) => data.pendingSignal.position.toUpperCase(),
-    isVisible: () => true,
-  },
-  {
     key: "note",
     label: "Note",
     format: (data) => toPlainString(data.pendingSignal.note ?? "N/A"),
     isVisible: () => GLOBAL_CONFIG.CC_REPORT_SHOW_SIGNAL_NOTE,
+  },
+  {
+    key: "position",
+    label: "Position",
+    format: (data) => data.pendingSignal.position.toUpperCase(),
+    isVisible: () => true,
   },
   {
     key: "exchangeName",
@@ -116,9 +118,15 @@ export const risk_columns: ColumnModel<RiskEvent>[] = [
     isVisible: () => true,
   },
   {
-    key: "comment",
-    label: "Reason",
-    format: (data) => data.comment,
+    key: "rejectionId",
+    label: "ID",
+    format: (data) => data.rejectionId ?? "N/A",
+    isVisible: () => true,
+  },
+  {
+    key: "rejectionNote",
+    label: "Rejection Reason",
+    format: (data) => data.rejectionNote,
     isVisible: () => true,
   },
   {

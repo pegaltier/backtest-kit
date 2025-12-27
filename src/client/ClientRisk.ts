@@ -1,21 +1,27 @@
 import {
-  errorData,
-  getErrorMessage,
-  not,
   singleshot,
+  getErrorMessage,
+  isObject,
   trycatch,
+  errorData,
 } from "functools-kit";
 import {
   IRisk,
   IRiskParams,
   IRiskCheckArgs,
-  IRiskValidationFn,
   IRiskValidationPayload,
   IRiskActivePosition,
+  IRiskRejectionResult,
+  RiskRejection,
+  IRiskValidationFn,
 } from "../interfaces/Risk.interface";
-import backtest from "../lib";
-import { validationSubject } from "../config/emitters";
 import { PersistRiskAdapter } from "../classes/Persist";
+import backtest from "src/lib";
+import { validationSubject } from "src/config/emitters";
+import { get } from "src/utils/get";
+
+/** Symbol indicating that a signal was rejected */
+const SYMBOL_REJECTED = Symbol("rejected");
 
 /** Type for active position map */
 type RiskMap = Map<string, IRiskActivePosition>;
@@ -29,12 +35,14 @@ const GET_KEY_FN = (strategyName: string, symbol: string) =>
 
 /** Wrapper to execute risk validation function with error handling */
 const DO_VALIDATION_FN = trycatch(
-  async (validation: IRiskValidationFn, params: IRiskValidationPayload) => {
-    await validation(params);
-    return true;
+  async (
+    validation: IRiskValidationFn,
+    params: IRiskValidationPayload
+  ): Promise<RiskRejection> => {
+    return await validation(params);
   },
   {
-    defaultValue: false,
+    defaultValue: SYMBOL_REJECTED,
     fallback: (error) => {
       const message = "ClientRisk exception thrown";
       const payload = {
@@ -56,7 +64,9 @@ const DO_VALIDATION_FN = trycatch(
  * In backtest mode, initializes with empty Map. In live mode, reads from persist storage.
  */
 export const WAIT_FOR_INIT_FN = async (self: ClientRisk): Promise<void> => {
-  self.params.logger.debug("ClientRisk waitForInit", { backtest: self.params.backtest });
+  self.params.logger.debug("ClientRisk waitForInit", {
+    backtest: self.params.backtest,
+  });
 
   if (self.params.backtest) {
     self._activePositions = new Map();
@@ -204,34 +214,47 @@ export class ClientRisk implements IRisk {
       activePositions: Array.from(riskMap.values()),
     };
 
-    // Execute custom validations
-    let isValid = true;
-    let rejectionNote = "N/A";
+    let rejectionResult: IRiskRejectionResult | null = null;
+
     if (this.params.validations) {
       for (const validation of this.params.validations) {
-        if (
-          not(
-            await DO_VALIDATION_FN(
-              typeof validation === "function"
-                ? validation
-                : validation.validate,
-              payload
-            )
-          )
-        ) {
-          isValid = false;
-          // Capture note from validation if available
-          if (typeof validation !== "function" && validation.note) {
-            rejectionNote = validation.note;
-          }
+        const rejection = await DO_VALIDATION_FN(
+          typeof validation === "function" ? validation : validation.validate,
+          payload
+        );
+
+        if (!rejection) {
+          continue;
+        }
+
+        if (typeof rejection === "symbol") {
+          rejectionResult = {
+            id: null,
+            note: "note" in validation ? validation.note : "Validation failed",
+          };
+          break;
+        }
+
+        if (isObject(rejection)) {
+          rejectionResult = {
+            id: get(rejection, "id") || null,
+            note: get(rejection, "note") || "Validation rejected the signal",
+          };
           break;
         }
       }
     }
 
-    if (!isValid) {
+    if (rejectionResult) {
       // Call params.onRejected for riskSubject emission
-      await this.params.onRejected(params.symbol, params, riskMap.size, rejectionNote, Date.now(), this.params.backtest);
+      await this.params.onRejected(
+        params.symbol,
+        params,
+        riskMap.size,
+        rejectionResult,
+        Date.now(),
+        this.params.backtest
+      );
 
       // Call schema callbacks.onRejected if defined
       if (this.params.callbacks?.onRejected) {
