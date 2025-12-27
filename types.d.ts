@@ -763,7 +763,7 @@ declare const MethodContextService: (new () => {
  * Risk rejection result type.
  * Can be void, null, or an IRiskRejectionResult object.
  */
-type RiskRejection = void | IRiskRejectionResult | null;
+type RiskRejection = void | IRiskRejectionResult | string | null;
 /**
  * Risk check arguments for evaluating whether to allow opening a new position.
  * Called BEFORE signal creation to validate if conditions allow new signals.

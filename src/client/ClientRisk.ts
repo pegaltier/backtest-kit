@@ -260,7 +260,7 @@ export class ClientRisk implements IRisk {
         params,
         riskMap.size,
         rejectionResult,
-        Date.now(),
+        params.timestamp,
         this.params.backtest
       );
 
