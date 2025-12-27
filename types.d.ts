@@ -5372,7 +5372,7 @@ declare class BacktestUtils {
         id: string;
         symbol: string;
         strategyName: string;
-        status: "rejected" | "pending" | "fulfilled" | "ready";
+        status: "pending" | "fulfilled" | "rejected" | "ready";
     }[]>;
 }
 /**
@@ -5738,7 +5738,7 @@ declare class LiveUtils {
         id: string;
         symbol: string;
         strategyName: string;
-        status: "rejected" | "pending" | "fulfilled" | "ready";
+        status: "pending" | "fulfilled" | "rejected" | "ready";
     }[]>;
 }
 /**
@@ -6621,7 +6621,7 @@ declare class WalkerUtils {
         id: string;
         symbol: string;
         walkerName: string;
-        status: "rejected" | "pending" | "fulfilled" | "ready";
+        status: "pending" | "fulfilled" | "rejected" | "ready";
     }[]>;
 }
 /**

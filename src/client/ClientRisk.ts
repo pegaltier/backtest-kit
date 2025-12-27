@@ -20,9 +20,6 @@ import backtest from "src/lib";
 import { validationSubject } from "src/config/emitters";
 import { get } from "src/utils/get";
 
-/** Symbol indicating that a signal was rejected */
-const SYMBOL_REJECTED = Symbol("rejected");
-
 /** Type for active position map */
 type RiskMap = Map<string, IRiskActivePosition>;
 
@@ -34,27 +31,24 @@ const GET_KEY_FN = (strategyName: string, symbol: string) =>
   `${strategyName}:${symbol}`;
 
 /** Wrapper to execute risk validation function with error handling */
-const DO_VALIDATION_FN = trycatch(
-  async (
-    validation: IRiskValidationFn,
-    params: IRiskValidationPayload
-  ): Promise<RiskRejection> => {
+const DO_VALIDATION_FN = async (
+  validation: IRiskValidationFn,
+  params: IRiskValidationPayload
+): Promise<RiskRejection> => {
+  try {
     return await validation(params);
-  },
-  {
-    defaultValue: SYMBOL_REJECTED,
-    fallback: (error) => {
-      const message = "ClientRisk exception thrown";
-      const payload = {
-        error: errorData(error),
-        message: getErrorMessage(error),
-      };
-      backtest.loggerService.warn(message, payload);
-      console.warn(message, payload);
-      validationSubject.next(error);
-    },
+  } catch (error) {
+    const message = "ClientRisk exception thrown";
+    const payload = {
+      error: errorData(error),
+      message: getErrorMessage(error),
+    };
+    backtest.loggerService.warn(message, payload);
+    console.warn(message, payload);
+    validationSubject.next(error);
+    return payload.message;
   }
-);
+};
 
 /**
  * Initializes active positions by reading from persistence.
@@ -227,18 +221,14 @@ export class ClientRisk implements IRisk {
           continue;
         }
 
-        if (typeof rejection === "symbol") {
-          rejectionResult = {
-            id: null,
-            note: "note" in validation ? validation.note : "Validation failed",
-          };
-          break;
-        }
-
         if (typeof rejection === "string") {
           rejectionResult = {
             id: null,
-            note: rejection,
+            note: rejection
+              ? rejection
+              : "note" in validation
+              ? validation.note
+              : "Validation failed",
           };
           break;
         }

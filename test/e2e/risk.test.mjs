@@ -854,7 +854,7 @@ test("listenRisk captures rejection events with correct data", async ({ pass, fa
       event.symbol === "BTCUSDT" &&
       isValidStrategy &&
       event.exchangeName === "binance-integration-listen-risk" &&
-      event.rejectionNote === "Max 2 positions allowed" &&
+      event.rejectionNote === "Maximum 2 positions allowed" &&
       event.activePositionCount >= 2 &&
       typeof event.currentPrice === "number" &&
       typeof event.timestamp === "number" &&
@@ -916,7 +916,7 @@ test("listenRiskOnce with filter for specific rejection condition", async ({ pas
   listenRiskOnce(
     (event) => event.symbol === "BTCUSDT",
     (event) => {
-      btcRejectionCaptured = event.rejectionNote === "BTC/ETH trading blocked";
+      btcRejectionCaptured = event.rejectionNote === "BTCUSDT trading blocked";
     }
   );
 
@@ -924,7 +924,7 @@ test("listenRiskOnce with filter for specific rejection condition", async ({ pas
   listenRiskOnce(
     (event) => event.symbol === "ETHUSDT",
     (event) => {
-      ethRejectionCaptured = event.rejectionNote === "BTC/ETH trading blocked";
+      ethRejectionCaptured = event.rejectionNote === "ETHUSDT trading blocked";
     }
   );
 
@@ -1078,7 +1078,7 @@ test("Risk.getData returns correct statistics after rejections", async ({ pass, 
     stats.eventList.length === stats.totalRejections &&
     stats.bySymbol["BTCUSDT"] === stats.totalRejections &&
     stats.byStrategy["test-strategy-get-data-2"] === stats.totalRejections &&
-    stats.eventList.every((event) => event.rejectionNote === "Maximum 1 position allowed")
+    stats.eventList.every((event) => event.rejectionNote === "Max 1 position")
   ) {
     pass(`Risk.getData returns correct stats: ${stats.totalRejections} rejections tracked`);
     return;
@@ -1184,7 +1184,7 @@ test("Risk.getReport generates markdown with correct table structure", async ({ 
   const hasTitle = report.includes("# Risk Rejection Report: ETHUSDT:test-strategy-get-report-2");
   const hasTableHeader = report.includes("| Symbol |") && report.includes("| Rejection Reason |");
   const hasSymbolColumn = report.includes("| ETHUSDT |");
-  const hasReasonColumn = report.includes("Portfolio limit reached");
+  const hasReasonColumn = report.includes("Max 1");
   const hasStatistics = report.includes("**Total rejections:**");
   const hasBySymbol = report.includes("## Rejections by Symbol");
   const hasByStrategy = report.includes("## Rejections by Strategy");
@@ -1295,7 +1295,7 @@ test("RejectionNote field captures validation note in rejection events", async (
   await awaitSubject.toPromise();
   // await sleep(2000);
 
-  if (rejectionNotes.length > 0 && rejectionNotes.every((c) => c === "Custom rejection reason for testing")) {
+  if (rejectionNotes.length > 0 && rejectionNotes.every((c) => c === "Limit exceeded")) {
     pass(`All ${rejectionNotes.length} rejection events captured correct rejectionNote from validation note`);
     return;
   }
