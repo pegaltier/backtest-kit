@@ -1139,6 +1139,14 @@ interface IScheduledSignalRow extends ISignalRow {
     priceOpen: number;
 }
 /**
+ * Scheduled signal row with cancellation ID.
+ * Extends IScheduledSignalRow to include optional cancelId for user-initiated cancellations.
+ */
+interface IScheduledSignalCancelRow extends IScheduledSignalRow {
+    /** Cancellation ID (only for user-initiated cancellations) */
+    cancelId?: string;
+}
+/**
  * Optional lifecycle callbacks for signal events.
  * Called when signals are opened, active, idle, closed, scheduled, or cancelled.
  */
@@ -1195,6 +1203,11 @@ interface IStrategySchema {
  * Used in discriminated union for type-safe handling.
  */
 type StrategyCloseReason = "time_expired" | "take_profit" | "stop_loss";
+/**
+ * Reason why scheduled signal was cancelled.
+ * Used in discriminated union for type-safe handling.
+ */
+type StrategyCancelReason = "timeout" | "price_reject" | "user";
 /**
  * Profit and loss calculation result.
  * Includes adjusted prices with fees (0.1%) and slippage (0.1%).
@@ -1337,6 +1350,10 @@ interface IStrategyTickResultCancelled {
     symbol: string;
     /** Whether this event is from backtest mode (true) or live mode (false) */
     backtest: boolean;
+    /** Reason for cancellation */
+    reason: StrategyCancelReason;
+    /** Optional cancellation ID (provided when user calls Backtest.cancel() or Live.cancel()) */
+    cancelId?: string;
 }
 /**
  * Discriminated union of all tick results.
@@ -4488,6 +4505,10 @@ interface ScheduledEvent {
     closeTimestamp?: number;
     /** Duration in minutes (only for cancelled/opened) */
     duration?: number;
+    /** Cancellation reason (only for cancelled events) */
+    cancelReason?: "timeout" | "price_reject" | "user";
+    /** Cancellation ID (only for user-initiated cancellations) */
+    cancelId?: string;
 }
 /**
  * Statistical data calculated from scheduled signals.
@@ -5448,15 +5469,16 @@ declare class BacktestUtils {
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name
+     * @param cancelId - Optional cancellation ID for tracking user-initiated cancellations
      * @returns Promise that resolves when scheduled signal is cancelled
      *
      * @example
      * ```typescript
-     * // Cancel scheduled signal
-     * await Backtest.cancel("BTCUSDT", "my-strategy");
+     * // Cancel scheduled signal with custom ID
+     * await Backtest.cancel("BTCUSDT", "my-strategy", "manual-cancel-001");
      * ```
      */
-    cancel: (symbol: string, strategyName: StrategyName) => Promise<void>;
+    cancel: (symbol: string, strategyName: StrategyName, cancelId?: string) => Promise<void>;
     /**
      * Gets statistical data from all closed signals for a symbol-strategy pair.
      *
@@ -5832,15 +5854,16 @@ declare class LiveUtils {
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy name
+     * @param cancelId - Optional cancellation ID for tracking user-initiated cancellations
      * @returns Promise that resolves when scheduled signal is cancelled
      *
      * @example
      * ```typescript
-     * // Cancel scheduled signal in live trading
-     * await Live.cancel("BTCUSDT", "my-strategy");
+     * // Cancel scheduled signal in live trading with custom ID
+     * await Live.cancel("BTCUSDT", "my-strategy", "manual-cancel-001");
      * ```
      */
-    cancel: (symbol: string, strategyName: StrategyName) => Promise<void>;
+    cancel: (symbol: string, strategyName: StrategyName, cancelId?: string) => Promise<void>;
     /**
      * Gets statistical data from all live trading events for a symbol-strategy pair.
      *
@@ -9081,12 +9104,13 @@ declare class StrategyConnectionService {
      *
      * @param backtest - Whether running in backtest mode
      * @param ctx - Context with symbol and strategyName
+     * @param cancelId - Optional cancellation ID for user-initiated cancellations
      * @returns Promise that resolves when scheduled signal is cancelled
      */
     cancel: (backtest: boolean, ctx: {
         symbol: string;
         strategyName: StrategyName;
-    }) => Promise<void>;
+    }, cancelId?: string) => Promise<void>;
 }
 
 /**
@@ -9421,12 +9445,13 @@ declare class StrategyCoreService {
      *
      * @param backtest - Whether running in backtest mode
      * @param ctx - Context with symbol and strategyName
+     * @param cancelId - Optional cancellation ID for user-initiated cancellations
      * @returns Promise that resolves when scheduled signal is cancelled
      */
     cancel: (backtest: boolean, ctx: {
         symbol: string;
         strategyName: StrategyName;
-    }) => Promise<void>;
+    }, cancelId?: string) => Promise<void>;
     /**
      * Clears the memoized ClientStrategy instance from cache.
      *
@@ -11137,4 +11162,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type BacktestStatisticsModel, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatisticsModel, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, type PingContract, PositionSize, type ProgressBacktestContract, type ProgressOptimizerContract, type ProgressWalkerContract, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type ScheduledEvent, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, type TickEvent, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, dumpSignal, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenPing, listenPingOnce, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, setColumns, setConfig, setLogger, validate };
+export { Backtest, type BacktestStatisticsModel, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatisticsModel, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, type PingContract, PositionSize, type ProgressBacktestContract, type ProgressOptimizerContract, type ProgressWalkerContract, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type ScheduledEvent, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, type TickEvent, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, dumpSignal, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenPing, listenPingOnce, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, setColumns, setConfig, setLogger, validate };

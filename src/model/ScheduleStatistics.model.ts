@@ -27,6 +27,10 @@ export interface ScheduledEvent {
   closeTimestamp?: number;
   /** Duration in minutes (only for cancelled/opened) */
   duration?: number;
+  /** Cancellation reason (only for cancelled events) */
+  cancelReason?: "timeout" | "price_reject" | "user";
+  /** Cancellation ID (only for user-initiated cancellations) */
+  cancelId?: string;
 }
 
 /**

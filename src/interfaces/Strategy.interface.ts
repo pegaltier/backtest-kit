@@ -73,6 +73,15 @@ export interface IScheduledSignalRow extends ISignalRow {
 }
 
 /**
+ * Scheduled signal row with cancellation ID.
+ * Extends IScheduledSignalRow to include optional cancelId for user-initiated cancellations.
+ */
+export interface IScheduledSignalCancelRow extends IScheduledSignalRow {
+  /** Cancellation ID (only for user-initiated cancellations) */
+  cancelId?: string;
+}
+
+/**
  * Strategy parameters passed to ClientStrategy constructor.
  * Combines schema with runtime dependencies.
  */
@@ -159,6 +168,12 @@ export interface IStrategySchema {
  * Used in discriminated union for type-safe handling.
  */
 export type StrategyCloseReason = "time_expired" | "take_profit" | "stop_loss";
+
+/**
+ * Reason why scheduled signal was cancelled.
+ * Used in discriminated union for type-safe handling.
+ */
+export type StrategyCancelReason = "timeout" | "price_reject" | "user";
 
 /**
  * Profit and loss calculation result.
@@ -308,6 +323,10 @@ export interface IStrategyTickResultCancelled {
   symbol: string;
   /** Whether this event is from backtest mode (true) or live mode (false) */
   backtest: boolean;
+  /** Reason for cancellation */
+  reason: StrategyCancelReason;
+  /** Optional cancellation ID (provided when user calls Backtest.cancel() or Live.cancel()) */
+  cancelId?: string;
 }
 
 /**

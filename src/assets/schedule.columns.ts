@@ -14,11 +14,16 @@ import { GLOBAL_CONFIG } from "../config/params";
  * - Signal identification (symbol, signal ID, position)
  * - Price data (current price, entry price, take profit, stop loss)
  * - Timing information (wait time in minutes before activation or cancellation)
+ * - Cancellation details (reason: timeout/stoploss/user, optional user cancel ID)
  *
  * @remarks
  * This configuration tracks the lifecycle of scheduled signals from creation to activation or cancellation.
  * The "note" column visibility is controlled by {@link GLOBAL_CONFIG.CC_REPORT_SHOW_SIGNAL_NOTE}.
  * Helps analyze signal scheduling effectiveness and cancellation patterns.
+ *
+ * Cancellation tracking includes:
+ * - cancelReason: "timeout" (expired wait time), "price_reject" (price hit SL), "user" (manual cancellation)
+ * - cancelId: Optional ID provided when calling Backtest.cancel() or Live.cancel()
  *
  * @example
  * ```typescript
@@ -28,9 +33,9 @@ import { GLOBAL_CONFIG } from "../config/params";
  * const service = new ScheduleMarkdownService();
  * await service.getReport("BTCUSDT", "my-strategy", schedule_columns);
  *
- * // Or customize for timing analysis
+ * // Or customize for cancellation analysis
  * const customColumns = schedule_columns.filter(col =>
- *   ["timestamp", "action", "symbol", "duration"].includes(col.key)
+ *   ["timestamp", "action", "cancelReason", "cancelId"].includes(col.key)
  * );
  * await service.getReport("BTCUSDT", "my-strategy", customColumns);
  * ```
@@ -106,6 +111,19 @@ export const schedule_columns: ColumnModel<ScheduledEvent>[] = [
     label: "Wait Time (min)",
     format: (data) =>
       data.duration !== undefined ? `${data.duration}` : "N/A",
+    isVisible: () => true,
+  },
+  {
+    key: "cancelReason",
+    label: "Cancel Reason",
+    format: (data) =>
+      data.cancelReason ? data.cancelReason.toUpperCase() : "N/A",
+    isVisible: () => true,
+  },
+  {
+    key: "cancelId",
+    label: "Cancel ID",
+    format: (data) => data.cancelId ?? "N/A",
     isVisible: () => true,
   },
 ];
