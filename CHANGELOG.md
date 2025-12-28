@@ -1,3 +1,151 @@
+# Enhanced Risk Management (v1.6.1, 28/12/2025)
+
+> Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/1.6.1)
+
+
+**Advanced Risk Reporting & Analysis** 📊🛡️
+
+Comprehensive risk management system with detailed reporting and validation! The new `Risk` utility class provides extensive analytics for risk rejection tracking and exposure monitoring. Generate markdown reports with complete history of rejected signals, risk validations, and detailed statistics. Features include the `MergeRisk` composite pattern for combining multiple risk profiles with logical AND validation. ✨
+
+```ts
+import { Risk } from "backtest-kit";
+
+// Get risk rejection statistics for a symbol
+const stats = await Risk.getData("BTCUSDT", "my-strategy");
+
+// Generate markdown risk report
+const report = await Risk.getReport("BTCUSDT", "my-strategy");
+
+// Save risk report to disk
+await Risk.dump("BTCUSDT", "my-strategy"); // ./dump/risk/BTCUSDT_my-strategy.md
+```
+
+**Schedule Reporting Enhancements** 📅
+
+Enhanced scheduled signal reporting with detailed statistics! Track cancellation rates, average wait times, and complete history of scheduled orders. The `Schedule` utility class provides access to all schedule events including pending, activated, and cancelled signals. 🎯
+
+```ts
+import { Schedule } from "backtest-kit";
+
+// Get schedule statistics
+const stats = await Schedule.getData("BTCUSDT", "my-strategy");
+console.log(`Cancellation rate: ${stats.cancellationRate}%`);
+console.log(`Average wait time: ${stats.avgWaitTime} minutes`);
+
+// Generate markdown schedule report
+const report = await Schedule.getReport("BTCUSDT", "my-strategy");
+
+// Save to disk
+await Schedule.dump("BTCUSDT", "my-strategy"); // ./dump/schedule/BTCUSDT_my-strategy.md
+```
+
+**Caching & Performance** ⚡💾
+
+New `Cache` utility class provides intelligent memoization for expensive operations! Candle data, price calculations, and exchange queries are automatically cached with timeframe-based invalidation. Memory-optimized storage prevents duplicate API calls during backtest and live trading modes. Cache is integrated automatically - no manual configuration needed! 🚀
+
+```ts
+import { Cache } from "backtest-kit";
+
+const fetchMicroTermMath = Cache.fn(lib.microTermMathService.getReport, {
+  interval: "1m",
+});
+
+const commitMicroTermMath = trycatch(
+  async (symbol: string, history: History) => {
+    const microTermMath = await fetchMicroTermMath(symbol);
+    await history.push(
+      {
+        role: "user",
+        content: str.newline(
+          "=== HISTORICAL 1-MINUTE CANDLE DATA ===",
+          "",
+          microTermMath
+        ),
+      },
+      {
+        role: "assistant",
+        content: "Historical 1-minute candle data has been received.",
+      }
+    );
+  },
+  {
+    fallback: () => Cache.clear(fetchMicroTermMath),
+  }
+);
+```
+
+**Exchange Utilities** 🔧
+
+New `Exchange` utility class provides helper functions for exchange-specific operations! The `ExchangeInstance` class offers methods for formatting prices and quantities according to exchange precision rules, integrated seamlessly with CCXT. 📈
+
+```ts
+import { Exchange } from "backtest-kit";
+
+// Get exchange instance for specific exchange
+const binance = Exchange.get("binance");
+
+// Format price with exchange precision
+const formattedPrice = await binance.formatPrice("BTCUSDT", 43521.123456);
+
+// Format quantity with exchange precision
+const formattedQty = await binance.formatQuantity("BTCUSDT", 0.123456789);
+```
+
+**LLM-Powered Signal Cancellation** 🤖🚫
+
+New `listenPing` event enables dynamic signal cancellation based on LLM analysis! Monitor scheduled signals in real-time and cancel them if market conditions change. Perfect for avoiding Second-Order Chaos when thousands of bots trigger the same levels. Integrate with Ollama or OpenAI to analyze market context every minute and cancel signals before they activate. 🎯
+
+```ts
+import {
+  listenPing,
+  Backtest,
+  getAveragePrice
+} from "backtest-kit";
+import { json } from "agent-swarm-kit";
+
+// Listen to ping events for scheduled signals
+listenPing(async (event) => {
+  if (event.backtest) {
+    console.log(`[Backtest] Monitoring ${event.symbol} signal #${event.data.id}`);
+    console.log(`Strategy: ${event.strategyName}, Price: ${event.data.priceOpen}`);
+
+    // Get current market conditions
+    const currentPrice = await getAveragePrice(event.symbol);
+
+    // Ask LLM to re-evaluate signal validity
+    const { data, error } = await json("SignalReview", {
+      symbol: event.symbol,
+      signalId: event.data.id,
+      position: event.data.position,
+      priceOpen: event.data.priceOpen,
+      currentPrice,
+      timestamp: event.timestamp,
+    });
+
+    if (error) {
+      console.error("LLM validation error:", error);
+      return;
+    }
+
+    // Cancel signal if LLM detects bot cluster trap
+    if (data.recommendation === "cancel") {
+      console.log(`🚫 LLM detected trap: ${data.reasoning}`);
+      console.log(`Cancelling signal #${event.data.id}...`);
+
+      await Backtest.cancel(
+        event.symbol,
+        event.strategyName
+      );
+
+      console.log(`✅ Signal #${event.data.id} cancelled`);
+    }
+  }
+});
+```
+
+
+
+
 # Partial Profit/Loss Tracking (v1.4.0, 03/12/2025)
 
 > Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/1.4.0)
