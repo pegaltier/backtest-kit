@@ -837,6 +837,7 @@ const RETURN_SCHEDULED_SIGNAL_ACTIVE_FN = async (
     self.params.execution.context.symbol,
     self.params.method.context.strategyName,
     self.params.method.context.exchangeName,
+    scheduled,
     self.params.execution.context.backtest,
     self.params.execution.context.when.getTime()
   );
@@ -845,6 +846,7 @@ const RETURN_SCHEDULED_SIGNAL_ACTIVE_FN = async (
   if (self.params.callbacks?.onPing) {
     await self.params.callbacks.onPing(
       self.params.execution.context.symbol,
+      scheduled,
       self.params.execution.context.when,
       self.params.execution.context.backtest
     );
@@ -1598,6 +1600,7 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
       self.params.execution.context.symbol,
       self.params.method.context.strategyName,
       self.params.method.context.exchangeName,
+      scheduled,
       self.params.execution.context.backtest,
       candle.timestamp
     );
@@ -1606,6 +1609,7 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
     if (self.params.callbacks?.onPing) {
       await self.params.callbacks.onPing(
         self.params.execution.context.symbol,
+        scheduled,
         new Date(candle.timestamp),
         self.params.execution.context.backtest
       );

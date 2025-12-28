@@ -1,3 +1,5 @@
+import { IScheduledSignalRow } from "../interfaces/Strategy.interface";
+
 /**
  * Contract for ping events during scheduled signal monitoring.
  *
@@ -18,6 +20,7 @@
  * listenPing((event) => {
  *   console.log(`[${event.backtest ? "Backtest" : "Live"}] Ping for ${event.symbol}`);
  *   console.log(`Strategy: ${event.strategyName}, Exchange: ${event.exchangeName}`);
+ *   console.log(`Signal ID: ${event.data.id}, priceOpen: ${event.data.priceOpen}`);
  *   console.log(`Timestamp: ${new Date(event.timestamp).toISOString()}`);
  * });
  *
@@ -46,6 +49,12 @@ export interface PingContract {
    * Identifies which exchange this ping event belongs to.
    */
   exchangeName: string;
+
+  /**
+   * Complete scheduled signal row data.
+   * Contains all signal information: id, position, priceOpen, priceTakeProfit, priceStopLoss, etc.
+   */
+  data: IScheduledSignalRow;
 
   /**
    * Execution mode flag.

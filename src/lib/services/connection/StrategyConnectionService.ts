@@ -80,6 +80,7 @@ const GET_RISK_FN = (
  * @param symbol - Trading pair symbol
  * @param strategyName - Strategy name that is monitoring this scheduled signal
  * @param exchangeName - Exchange name where this scheduled signal is being executed
+ * @param data - Scheduled signal row data
  * @param backtest - True if backtest mode
  * @param timestamp - Event timestamp in milliseconds
  */
@@ -87,6 +88,7 @@ const COMMIT_PING_FN = async (
   symbol: string,
   strategyName: string,
   exchangeName: string,
+  data: IScheduledSignalRow,
   backtest: boolean,
   timestamp: number
 ) =>
@@ -94,6 +96,7 @@ const COMMIT_PING_FN = async (
     symbol,
     strategyName,
     exchangeName,
+    data,
     backtest,
     timestamp,
   });

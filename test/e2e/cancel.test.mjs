@@ -488,7 +488,7 @@ test("Cancel scheduled signal after 5 onPing calls in backtest", async ({ pass, 
       onOpen: () => {
         openedCount++;
       },
-      onPing: async (_symbol, when, _backtest) => {
+      onPing: async (_symbol, _data, when, _backtest) => {
         pingCount++;
         pingTimestamps.push(when.getTime());
 

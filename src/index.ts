@@ -57,6 +57,8 @@ export {
   listenOptimizerProgress,
   listenRisk,
   listenRiskOnce,
+  listenPing,
+  listenPingOnce,
 } from "./function/event";
 export {
   getCandles,
