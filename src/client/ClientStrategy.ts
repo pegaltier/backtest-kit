@@ -22,6 +22,7 @@ import {
   IStrategyBacktestResult,
   SignalInterval,
   StrategyName,
+  StrategyCancelReason,
 } from "../interfaces/Strategy.interface";
 import toProfitLossDto from "../helpers/toProfitLossDto";
 import { ICandleData } from "../interfaces/Exchange.interface";
@@ -636,6 +637,7 @@ const CHECK_SCHEDULED_SIGNAL_TIMEOUT_FN = async (
     exchangeName: self.params.method.context.exchangeName,
     symbol: self.params.execution.context.symbol,
     backtest: self.params.execution.context.backtest,
+    reason: "timeout",
   };
 
   if (self.params.callbacks?.onTick) {
@@ -718,6 +720,7 @@ const CANCEL_SCHEDULED_SIGNAL_BY_STOPLOSS_FN = async (
     exchangeName: self.params.method.context.exchangeName,
     symbol: self.params.execution.context.symbol,
     backtest: self.params.execution.context.backtest,
+    reason: "stoploss",
   };
 
   if (self.params.callbacks?.onTick) {
@@ -1293,7 +1296,8 @@ const CANCEL_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
   self: ClientStrategy,
   scheduled: IScheduledSignalRow,
   averagePrice: number,
-  closeTimestamp: number
+  closeTimestamp: number,
+  reason: StrategyCancelReason
 ): Promise<IStrategyTickResultCancelled> => {
   self.params.logger.info(
     "ClientStrategy backtest scheduled signal cancelled",
@@ -1303,6 +1307,7 @@ const CANCEL_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
       closeTimestamp,
       averagePrice,
       priceStopLoss: scheduled.priceStopLoss,
+      reason,
     }
   );
 
@@ -1326,6 +1331,7 @@ const CANCEL_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
     exchangeName: self.params.method.context.exchangeName,
     symbol: self.params.execution.context.symbol,
     backtest: self.params.execution.context.backtest,
+    reason,
   };
 
   if (self.params.callbacks?.onTick) {
@@ -1533,7 +1539,8 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
         self,
         scheduled,
         averagePrice,
-        candle.timestamp
+        candle.timestamp,
+        "user"
       );
       return { activated: false, cancelled: true, activationIndex: i, result };
     }
@@ -1545,7 +1552,8 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
         self,
         scheduled,
         averagePrice,
-        candle.timestamp
+        candle.timestamp,
+        "timeout"
       );
       return { activated: false, cancelled: true, activationIndex: i, result };
     }
@@ -1592,7 +1600,8 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
         self,
         scheduled,
         averagePrice,
-        candle.timestamp
+        candle.timestamp,
+        "stoploss"
       );
       return { activated: false, cancelled: true, activationIndex: i, result };
     }
@@ -2047,6 +2056,7 @@ export class ClientStrategy implements IStrategy {
         exchangeName: this.params.method.context.exchangeName,
         symbol: this.params.execution.context.symbol,
         backtest: this.params.execution.context.backtest,
+        reason: "user",
       };
 
       return result;
@@ -2223,6 +2233,7 @@ export class ClientStrategy implements IStrategy {
         exchangeName: this.params.method.context.exchangeName,
         symbol: this.params.execution.context.symbol,
         backtest: true,
+        reason: "user",
       };
 
       return cancelledResult;
@@ -2338,7 +2349,8 @@ export class ClientStrategy implements IStrategy {
           this,
           scheduled,
           lastPrice,
-          lastCandleTimestamp
+          lastCandleTimestamp,
+          "timeout"
         );
       }
     }

@@ -161,6 +161,12 @@ export interface IStrategySchema {
 export type StrategyCloseReason = "time_expired" | "take_profit" | "stop_loss";
 
 /**
+ * Reason why scheduled signal was cancelled.
+ * Used in discriminated union for type-safe handling.
+ */
+export type StrategyCancelReason = "timeout" | "stoploss" | "user";
+
+/**
  * Profit and loss calculation result.
  * Includes adjusted prices with fees (0.1%) and slippage (0.1%).
  */
@@ -308,6 +314,8 @@ export interface IStrategyTickResultCancelled {
   symbol: string;
   /** Whether this event is from backtest mode (true) or live mode (false) */
   backtest: boolean;
+  /** Reason for cancellation */
+  reason: StrategyCancelReason;
 }
 
 /**
