@@ -281,20 +281,22 @@ export class BacktestInstance {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name
+   * @param cancelId - Optional cancellation ID for tracking user-initiated cancellations
    * @returns Promise that resolves when scheduled signal is cancelled
    *
    * @example
    * ```typescript
    * const instance = new BacktestInstance();
-   * await instance.cancel("BTCUSDT", "my-strategy");
+   * await instance.cancel("BTCUSDT", "my-strategy", "manual-cancel-001");
    * ```
    */
-  public cancel = async (symbol: string, strategyName: StrategyName): Promise<void> => {
+  public cancel = async (symbol: string, strategyName: StrategyName, cancelId?: string): Promise<void> => {
     backtest.loggerService.info("BacktestInstance.cancel", {
       symbol,
       strategyName,
+      cancelId,
     });
-    await backtest.strategyCoreService.cancel(true, { symbol, strategyName });
+    await backtest.strategyCoreService.cancel(true, { symbol, strategyName }, cancelId);
   };
 
   /**
@@ -519,15 +521,16 @@ export class BacktestUtils {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name
+   * @param cancelId - Optional cancellation ID for tracking user-initiated cancellations
    * @returns Promise that resolves when scheduled signal is cancelled
    *
    * @example
    * ```typescript
-   * // Cancel scheduled signal
-   * await Backtest.cancel("BTCUSDT", "my-strategy");
+   * // Cancel scheduled signal with custom ID
+   * await Backtest.cancel("BTCUSDT", "my-strategy", "manual-cancel-001");
    * ```
    */
-  public cancel = async (symbol: string, strategyName: StrategyName): Promise<void> => {
+  public cancel = async (symbol: string, strategyName: StrategyName, cancelId?: string): Promise<void> => {
     backtest.strategyValidationService.validate(strategyName, "BacktestUtils.cancel");
 
     {
@@ -537,7 +540,7 @@ export class BacktestUtils {
     }
 
     const instance = this._getInstance(symbol, strategyName);
-    return await instance.cancel(symbol, strategyName);
+    return await instance.cancel(symbol, strategyName, cancelId);
   };
 
   /**

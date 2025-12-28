@@ -73,6 +73,15 @@ export interface IScheduledSignalRow extends ISignalRow {
 }
 
 /**
+ * Scheduled signal row with cancellation ID.
+ * Extends IScheduledSignalRow to include optional cancelId for user-initiated cancellations.
+ */
+export interface IScheduledSignalCancelRow extends IScheduledSignalRow {
+  /** Cancellation ID (only for user-initiated cancellations) */
+  cancelId?: string;
+}
+
+/**
  * Strategy parameters passed to ClientStrategy constructor.
  * Combines schema with runtime dependencies.
  */
@@ -316,6 +325,8 @@ export interface IStrategyTickResultCancelled {
   backtest: boolean;
   /** Reason for cancellation */
   reason: StrategyCancelReason;
+  /** Optional cancellation ID (provided when user calls Backtest.cancel() or Live.cancel()) */
+  cancelId?: string;
 }
 
 /**

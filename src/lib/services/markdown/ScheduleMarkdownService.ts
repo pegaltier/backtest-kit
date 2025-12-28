@@ -138,6 +138,8 @@ class ReportStorage {
       stopLoss: data.signal.priceStopLoss,
       closeTimestamp: data.closeTimestamp,
       duration: durationMin,
+      cancelReason: data.reason,
+      cancelId: data.cancelId,
     };
 
     this._eventList.unshift(newEvent);

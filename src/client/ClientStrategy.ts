@@ -11,6 +11,7 @@ import {
   IStrategy,
   ISignalRow,
   IScheduledSignalRow,
+  IScheduledSignalCancelRow,
   IStrategyParams,
   IStrategyTickResult,
   IStrategyTickResultIdle,
@@ -1855,7 +1856,7 @@ export class ClientStrategy implements IStrategy {
   _lastSignalTimestamp: number | null = null;
 
   _scheduledSignal: IScheduledSignalRow | null = null;
-  _cancelledSignal: IScheduledSignalRow | null = null;
+  _cancelledSignal: IScheduledSignalCancelRow | null = null;
 
   constructor(readonly params: IStrategyParams) {}
 
@@ -2057,6 +2058,7 @@ export class ClientStrategy implements IStrategy {
         symbol: this.params.execution.context.symbol,
         backtest: this.params.execution.context.backtest,
         reason: "user",
+        cancelId: cancelledSignal.cancelId,
       };
 
       return result;
@@ -2234,6 +2236,7 @@ export class ClientStrategy implements IStrategy {
         symbol: this.params.execution.context.symbol,
         backtest: true,
         reason: "user",
+        cancelId: cancelledSignal.cancelId,
       };
 
       return cancelledResult;
@@ -2463,17 +2466,20 @@ export class ClientStrategy implements IStrategy {
    * // Strategy continues, can generate new signals
    * ```
    */
-  public async cancel(symbol: string, strategyName: StrategyName, backtest: boolean): Promise<void> {
+  public async cancel(symbol: string, strategyName: StrategyName, backtest: boolean, cancelId?: string): Promise<void> {
     this.params.logger.debug("ClientStrategy cancel", {
       symbol,
       strategyName,
       hasScheduledSignal: this._scheduledSignal !== null,
       backtest,
+      cancelId,
     });
 
     // Save cancelled signal for next tick to emit cancelled event
     if (this._scheduledSignal) {
-      this._cancelledSignal = this._scheduledSignal;
+      this._cancelledSignal = Object.assign({}, this._scheduledSignal, {
+        cancelId,
+      });
       this._scheduledSignal = null;
     }
 

@@ -108,4 +108,17 @@ export const schedule_columns: ColumnModel<ScheduledEvent>[] = [
       data.duration !== undefined ? `${data.duration}` : "N/A",
     isVisible: () => true,
   },
+  {
+    key: "cancelReason",
+    label: "Cancel Reason",
+    format: (data) =>
+      data.cancelReason ? data.cancelReason.toUpperCase() : "N/A",
+    isVisible: () => true,
+  },
+  {
+    key: "cancelId",
+    label: "Cancel ID",
+    format: (data) => data.cancelId ?? "N/A",
+    isVisible: () => true,
+  },
 ];

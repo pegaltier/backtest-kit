@@ -254,15 +254,17 @@ export class StrategyCoreService {
    *
    * @param backtest - Whether running in backtest mode
    * @param ctx - Context with symbol and strategyName
+   * @param cancelId - Optional cancellation ID for user-initiated cancellations
    * @returns Promise that resolves when scheduled signal is cancelled
    */
-  public cancel = async (backtest: boolean, ctx: { symbol: string; strategyName: StrategyName }): Promise<void> => {
+  public cancel = async (backtest: boolean, ctx: { symbol: string; strategyName: StrategyName }, cancelId?: string): Promise<void> => {
     this.loggerService.log("strategyCoreService cancel", {
       ctx,
       backtest,
+      cancelId,
     });
     await this.validate(ctx.symbol, ctx.strategyName);
-    return await this.strategyConnectionService.cancel(backtest, ctx);
+    return await this.strategyConnectionService.cancel(backtest, ctx, cancelId);
   };
 
   /**
