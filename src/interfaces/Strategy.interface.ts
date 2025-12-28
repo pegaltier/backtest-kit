@@ -91,6 +91,8 @@ export interface IStrategyParams extends IStrategySchema {
   execution: TExecutionContextService;
   /** Method context service (strategyName, exchangeName, frameName) */
   method: TMethodContextService;
+  /** System callback for ping events (emits to pingSubject) */
+  onPing: (symbol: string, strategyName: string, exchangeName: string, data: IScheduledSignalRow, backtest: boolean, timestamp: number) => Promise<void>;
 }
 
 /**
@@ -123,6 +125,8 @@ export interface IStrategyCallbacks {
   onPartialProfit: (symbol: string, data: ISignalRow, currentPrice: number, revenuePercent: number, backtest: boolean) => void;
   /** Called when signal is in partial loss state (price moved against position but not hit SL yet) */
   onPartialLoss: (symbol: string, data: ISignalRow, currentPrice: number, lossPercent: number, backtest: boolean) => void;
+  /** Called every minute regardless of strategy interval (for custom monitoring like checking if signal should be cancelled) */
+  onPing: (symbol: string, data: IScheduledSignalRow, when: Date, backtest: boolean) => void | Promise<void>;
 }
 
 /**

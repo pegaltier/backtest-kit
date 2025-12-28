@@ -57,6 +57,8 @@ export {
   listenOptimizerProgress,
   listenRisk,
   listenRiskOnce,
+  listenPing,
+  listenPingOnce,
 } from "./function/event";
 export {
   getCandles,
@@ -158,6 +160,7 @@ export { ProgressOptimizerContract } from "./contract/ProgressOptimizer.contract
 export { DoneContract } from "./contract/Done.contract";
 export { RiskContract } from "./contract/Risk.contract";
 export { ProgressBacktestContract } from "./contract/ProgressBacktest.contract";
+export { PingContract } from "./contract/Ping.contract";
 export {
   PerformanceContract,
   PerformanceMetricType,
