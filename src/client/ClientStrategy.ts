@@ -2189,6 +2189,15 @@ export class ClientStrategy implements IStrategy {
       const cancelledSignal = this._cancelledSignal;
       this._cancelledSignal = null; // Clear after using
 
+      if (this.params.callbacks?.onCancel) {
+        this.params.callbacks.onCancel(
+          this.params.execution.context.symbol,
+          cancelledSignal,
+          currentPrice,
+          this.params.execution.context.backtest
+        );
+      }
+
       const cancelledResult: IStrategyTickResultCancelled = {
         action: "cancelled",
         signal: cancelledSignal,
