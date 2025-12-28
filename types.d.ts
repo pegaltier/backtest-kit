@@ -5443,6 +5443,40 @@ declare class BacktestUtils {
         frameName: string;
     }) => () => void;
     /**
+     * Retrieves the currently active pending signal for the strategy.
+     * If no active signal exists, returns null.
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Name of strategy to get pending signal for
+     * @returns Promise resolving to pending signal or null
+     *
+     * @example
+     * ```typescript
+     * const pending = await Backtest.getPendingSignal("BTCUSDT", "my-strategy");
+     * if (pending) {
+     *   console.log("Active signal:", pending.id);
+     * }
+     * ```
+     */
+    getPendingSignal: (symbol: string, strategyName: StrategyName) => Promise<ISignalRow>;
+    /**
+     * Retrieves the currently active scheduled signal for the strategy.
+     * If no scheduled signal exists, returns null.
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Name of strategy to get scheduled signal for
+     * @returns Promise resolving to scheduled signal or null
+     *
+     * @example
+     * ```typescript
+     * const scheduled = await Backtest.getScheduledSignal("BTCUSDT", "my-strategy");
+     * if (scheduled) {
+     *   console.log("Scheduled signal:", scheduled.id);
+     * }
+     * ```
+     */
+    getScheduledSignal: (symbol: string, strategyName: StrategyName) => Promise<IScheduledSignalRow>;
+    /**
      * Stops the strategy from generating new signals.
      *
      * Sets internal flag to prevent strategy from opening new signals.
@@ -5827,6 +5861,40 @@ declare class LiveUtils {
         strategyName: string;
         exchangeName: string;
     }) => () => void;
+    /**
+     * Retrieves the currently active pending signal for the strategy.
+     * If no active signal exists, returns null.
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Name of strategy to get pending signal for
+     * @returns Promise resolving to pending signal or null
+     *
+     * @example
+     * ```typescript
+     * const pending = await Live.getPendingSignal("BTCUSDT", "my-strategy");
+     * if (pending) {
+     *   console.log("Active signal:", pending.id);
+     * }
+     * ```
+     */
+    getPendingSignal: (symbol: string, strategyName: StrategyName) => Promise<ISignalRow>;
+    /**
+     * Retrieves the currently active scheduled signal for the strategy.
+     * If no scheduled signal exists, returns null.
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Name of strategy to get scheduled signal for
+     * @returns Promise resolving to scheduled signal or null
+     *
+     * @example
+     * ```typescript
+     * const scheduled = await Live.getScheduledSignal("BTCUSDT", "my-strategy");
+     * if (scheduled) {
+     *   console.log("Scheduled signal:", scheduled.id);
+     * }
+     * ```
+     */
+    getScheduledSignal: (symbol: string, strategyName: StrategyName) => Promise<IScheduledSignalRow>;
     /**
      * Stops the strategy from generating new signals.
      *
