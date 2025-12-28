@@ -89,3 +89,11 @@ onPartialLoss: (symbol: string, data: ISignalRow, currentPrice: number, lossPerc
 ```
 
 Called when signal is in partial loss state (price moved against position but not hit SL yet)
+
+### onPing
+
+```ts
+onPing: (symbol: string, data: IScheduledSignalRow, when: Date, backtest: boolean) => void | Promise<void>
+```
+
+Called every minute regardless of strategy interval (for custom monitoring like checking if signal should be cancelled)

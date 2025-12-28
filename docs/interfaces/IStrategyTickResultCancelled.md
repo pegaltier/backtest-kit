@@ -73,3 +73,19 @@ backtest: boolean
 ```
 
 Whether this event is from backtest mode (true) or live mode (false)
+
+### reason
+
+```ts
+reason: StrategyCancelReason
+```
+
+Reason for cancellation
+
+### cancelId
+
+```ts
+cancelId: string
+```
+
+Optional cancellation ID (provided when user calls Backtest.cancel() or Live.cancel())

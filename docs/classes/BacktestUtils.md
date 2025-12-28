@@ -46,6 +46,24 @@ Runs backtest in background without yielding results.
 Consumes all backtest results internally without exposing them.
 Useful for running backtests for side effects only (callbacks, logging).
 
+### getPendingSignal
+
+```ts
+getPendingSignal: (symbol: string, strategyName: string) => Promise<ISignalRow>
+```
+
+Retrieves the currently active pending signal for the strategy.
+If no active signal exists, returns null.
+
+### getScheduledSignal
+
+```ts
+getScheduledSignal: (symbol: string, strategyName: string) => Promise<IScheduledSignalRow>
+```
+
+Retrieves the currently active scheduled signal for the strategy.
+If no scheduled signal exists, returns null.
+
 ### stop
 
 ```ts
@@ -57,6 +75,18 @@ Stops the strategy from generating new signals.
 Sets internal flag to prevent strategy from opening new signals.
 Current active signal (if any) will complete normally.
 Backtest will stop at the next safe point (idle state or after signal closes).
+
+### cancel
+
+```ts
+cancel: (symbol: string, strategyName: string, cancelId?: string) => Promise<void>
+```
+
+Cancels the scheduled signal without stopping the strategy.
+
+Clears the scheduled signal (waiting for priceOpen activation).
+Does NOT affect active pending signals or strategy operation.
+Does NOT set stop flag - strategy can continue generating new signals.
 
 ### getData
 
@@ -85,7 +115,7 @@ Saves strategy report to disk.
 ### list
 
 ```ts
-list: () => Promise<{ id: string; symbol: string; strategyName: string; status: "rejected" | "pending" | "fulfilled" | "ready"; }[]>
+list: () => Promise<{ id: string; symbol: string; strategyName: string; status: "pending" | "fulfilled" | "rejected" | "ready"; }[]>
 ```
 
 Lists all active backtest instances with their current status.

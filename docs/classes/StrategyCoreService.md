@@ -77,6 +77,16 @@ Retrieves the currently active pending signal for the symbol.
 If no active signal exists, returns null.
 Used internally for monitoring TP/SL and time expiration.
 
+### getScheduledSignal
+
+```ts
+getScheduledSignal: (backtest: boolean, symbol: string, strategyName: string) => Promise<IScheduledSignalRow>
+```
+
+Retrieves the currently active scheduled signal for the symbol.
+If no scheduled signal exists, returns null.
+Used internally for monitoring scheduled signal activation.
+
 ### getStopped
 
 ```ts
@@ -119,6 +129,18 @@ stop: (backtest: boolean, ctx: { symbol: string; strategyName: string; }) => Pro
 Stops the strategy from generating new signals.
 
 Delegates to StrategyConnectionService.stop() to set internal flag.
+Does not require execution context.
+
+### cancel
+
+```ts
+cancel: (backtest: boolean, ctx: { symbol: string; strategyName: string; }, cancelId?: string) => Promise<void>
+```
+
+Cancels the scheduled signal without stopping the strategy.
+
+Delegates to StrategyConnectionService.cancel() to clear scheduled signal
+and emit cancelled event through emitters.
 Does not require execution context.
 
 ### clear

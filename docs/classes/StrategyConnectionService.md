@@ -88,6 +88,16 @@ Retrieves the currently active pending signal for the strategy.
 If no active signal exists, returns null.
 Used internally for monitoring TP/SL and time expiration.
 
+### getScheduledSignal
+
+```ts
+getScheduledSignal: (backtest: boolean, symbol: string, strategyName: string) => Promise<IScheduledSignalRow>
+```
+
+Retrieves the currently active scheduled signal for the strategy.
+If no scheduled signal exists, returns null.
+Used internally for monitoring scheduled signal activation.
+
 ### getStopped
 
 ```ts
@@ -142,3 +152,17 @@ Clears the memoized ClientStrategy instance from cache.
 
 Forces re-initialization of strategy on next getStrategy call.
 Useful for resetting strategy state or releasing resources.
+
+### cancel
+
+```ts
+cancel: (backtest: boolean, ctx: { symbol: string; strategyName: string; }, cancelId?: string) => Promise<void>
+```
+
+Cancels the scheduled signal for the specified strategy.
+
+Delegates to ClientStrategy.cancel() which clears the scheduled signal
+without stopping the strategy or affecting pending signals.
+
+Note: Cancelled event will be emitted on next tick() call when strategy
+detects the scheduled signal was cancelled.

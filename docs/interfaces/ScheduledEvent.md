@@ -105,3 +105,19 @@ duration: number
 ```
 
 Duration in minutes (only for cancelled/opened)
+
+### cancelReason
+
+```ts
+cancelReason: "timeout" | "price_reject" | "user"
+```
+
+Cancellation reason (only for cancelled events)
+
+### cancelId
+
+```ts
+cancelId: string
+```
+
+Cancellation ID (only for user-initiated cancellations)
