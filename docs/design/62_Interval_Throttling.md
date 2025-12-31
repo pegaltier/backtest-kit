@@ -48,7 +48,7 @@ backtest-kit supports six predefined throttling intervals, each enforcing a mini
 
 ### Architecture Diagram
 
-![Mermaid Diagram](./diagrams\62_Interval_Throttling_0.svg)
+![Mermaid Diagram](./diagrams/62_Interval_Throttling_0.svg)
 
 **Diagram: Interval Throttling Decision Flow**
 
@@ -148,7 +148,7 @@ addStrategy({
 
 In backtest mode, `ClientStrategy.tick()` is called once per candle iteration. The throttle ensures `getSignal()` only executes when the time difference between candles exceeds the configured interval:
 
-![Mermaid Diagram](./diagrams\62_Interval_Throttling_1.svg)
+![Mermaid Diagram](./diagrams/62_Interval_Throttling_1.svg)
 
 **Diagram: Interval Throttling in Backtest Mode**
 
@@ -160,7 +160,7 @@ In backtest mode, `ClientStrategy.tick()` is called once per candle iteration. T
 
 In live mode, `ClientStrategy.tick()` is called continuously in a loop with `TICK_TTL` sleep intervals (typically 1 minute). The throttle prevents redundant `getSignal()` executions between meaningful time boundaries:
 
-![Mermaid Diagram](./diagrams\62_Interval_Throttling_2.svg)
+![Mermaid Diagram](./diagrams/62_Interval_Throttling_2.svg)
 
 **Diagram: Interval Throttling in Live Mode Loop**
 

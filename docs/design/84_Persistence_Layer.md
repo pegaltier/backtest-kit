@@ -38,7 +38,7 @@ For information about Live mode execution flow, see [Live Trading](#10). For sig
 
 The persistence layer implements a pluggable adapter pattern with atomic file writes to prevent data corruption during crashes.
 
-![Mermaid Diagram](./diagrams\84_Persistence_Layer_0.svg)
+![Mermaid Diagram](./diagrams/84_Persistence_Layer_0.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:28](), [docs/internals.md:38]()
 
@@ -69,7 +69,7 @@ Abstract base class providing atomic write operations and storage interface. All
 
 Manages persistence of active signals (opened → active → closed lifecycle).
 
-![Mermaid Diagram](./diagrams\84_Persistence_Layer_1.svg)
+![Mermaid Diagram](./diagrams/84_Persistence_Layer_1.svg)
 
 **File Path Pattern:**
 ```
@@ -102,7 +102,7 @@ Manages persistence of active signals (opened → active → closed lifecycle).
 
 Manages persistence of scheduled signals (awaiting price activation).
 
-![Mermaid Diagram](./diagrams\84_Persistence_Layer_2.svg)
+![Mermaid Diagram](./diagrams/84_Persistence_Layer_2.svg)
 
 **File Path Pattern:**
 ```
@@ -135,7 +135,7 @@ Manages persistence of scheduled signals (awaiting price activation).
 
 When a live trading process restarts, the persistence layer automatically restores all active and scheduled signals.
 
-![Mermaid Diagram](./diagrams\84_Persistence_Layer_3.svg)
+![Mermaid Diagram](./diagrams/84_Persistence_Layer_3.svg)
 
 **Recovery Validation:**
 The system validates that restored signals match the current strategy configuration:
@@ -154,7 +154,7 @@ The system validates that restored signals match the current strategy configurat
 
 ### When Persistence Occurs
 
-![Mermaid Diagram](./diagrams\84_Persistence_Layer_4.svg)
+![Mermaid Diagram](./diagrams/84_Persistence_Layer_4.svg)
 
 **Persistence Operations:**
 
@@ -174,7 +174,7 @@ The system validates that restored signals match the current strategy configurat
 
 The persistence layer uses atomic file operations to prevent corruption during crashes.
 
-![Mermaid Diagram](./diagrams\84_Persistence_Layer_5.svg)
+![Mermaid Diagram](./diagrams/84_Persistence_Layer_5.svg)
 
 **Atomic Operation Sequence:**
 
@@ -210,7 +210,7 @@ Persistence behavior differs fundamentally between execution modes:
 | Performance | Optimized (no I/O) | I/O overhead acceptable |
 | File writes | None | Every signal state change |
 
-![Mermaid Diagram](./diagrams\84_Persistence_Layer_6.svg)
+![Mermaid Diagram](./diagrams/84_Persistence_Layer_6.svg)
 
 **Conditional Execution Check:**
 
@@ -233,7 +233,7 @@ The persistence layer supports custom storage backends through the `PersistBase`
 
 ### Extension Points
 
-![Mermaid Diagram](./diagrams\84_Persistence_Layer_7.svg)
+![Mermaid Diagram](./diagrams/84_Persistence_Layer_7.svg)
 
 ### Implementation Example
 
@@ -417,7 +417,7 @@ Persistence operations are wrapped in error handling to prevent crashes from pro
 
 ### Error Propagation
 
-![Mermaid Diagram](./diagrams\84_Persistence_Layer_8.svg)
+![Mermaid Diagram](./diagrams/84_Persistence_Layer_8.svg)
 
 **Error Logging Payload:**
 ```typescript
@@ -492,6 +492,6 @@ Persistence adds I/O overhead to live trading operations. The framework optimize
 
 Persistence operations integrate seamlessly with the signal lifecycle state machine.
 
-![Mermaid Diagram](./diagrams\84_Persistence_Layer_9.svg)
+![Mermaid Diagram](./diagrams/84_Persistence_Layer_9.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:491-552](), [src/client/ClientStrategy.ts:740](), [src/client/ClientStrategy.ts:1000]()

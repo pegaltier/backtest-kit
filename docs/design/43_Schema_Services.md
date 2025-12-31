@@ -62,7 +62,7 @@ All schema services follow identical structural patterns but store different sch
 
 ## Service Architecture Integration
 
-![Mermaid Diagram](./diagrams\43_Schema_Services_0.svg)
+![Mermaid Diagram](./diagrams/43_Schema_Services_0.svg)
 
 **Diagram: Schema Services in the Service Layer Hierarchy**
 
@@ -84,7 +84,7 @@ Each schema service implements the **ToolRegistry pattern** for in-memory storag
 
 ### Core ToolRegistry Interface
 
-![Mermaid Diagram](./diagrams\43_Schema_Services_1.svg)
+![Mermaid Diagram](./diagrams/43_Schema_Services_1.svg)
 
 **Diagram: ToolRegistry Storage Operations**
 
@@ -98,7 +98,7 @@ The ToolRegistry pattern provides a simple but consistent API across all schema 
 
 The registration flow is consistent across all component types. Here is the detailed flow for strategy registration:
 
-![Mermaid Diagram](./diagrams\43_Schema_Services_2.svg)
+![Mermaid Diagram](./diagrams/43_Schema_Services_2.svg)
 
 **Diagram: Strategy Registration Sequence**
 
@@ -112,7 +112,7 @@ The registration flow shows the orchestration between validation and storage. Va
 
 Connection services are the primary consumers of schema services. They retrieve stored schemas to create memoized client instances:
 
-![Mermaid Diagram](./diagrams\43_Schema_Services_3.svg)
+![Mermaid Diagram](./diagrams/43_Schema_Services_3.svg)
 
 **Diagram: Schema Retrieval and Client Instantiation Flow**
 
@@ -247,7 +247,7 @@ Connection services use `MethodContextService` to determine which schema to retr
 
 Schema services are registered in the DI container as singleton instances:
 
-![Mermaid Diagram](./diagrams\43_Schema_Services_4.svg)
+![Mermaid Diagram](./diagrams/43_Schema_Services_4.svg)
 
 **Diagram: Schema Services Dependency Injection Flow**
 
@@ -261,7 +261,7 @@ Schema services are registered once at application startup via `provide()` calls
 
 Schema services support **schema replacement** through re-registration. When `register(name, schema)` is called with an existing name, the new schema overwrites the old one:
 
-![Mermaid Diagram](./diagrams\43_Schema_Services_5.svg)
+![Mermaid Diagram](./diagrams/43_Schema_Services_5.svg)
 
 **Diagram: Schema Override and Cache Invalidation**
 

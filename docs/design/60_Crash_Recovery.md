@@ -57,7 +57,7 @@ The crash recovery system prevents all these issues by:
 
 The crash recovery system uses two specialized persistence adapters:
 
-![Mermaid Diagram](./diagrams\60_Crash_Recovery_0.svg)
+![Mermaid Diagram](./diagrams/60_Crash_Recovery_0.svg)
 
 ### Persistence Timing
 
@@ -77,7 +77,7 @@ The crash recovery system uses two specialized persistence adapters:
 
 When `ClientStrategy` initializes in Live mode, the `waitForInit()` function restores persisted signals before processing any ticks:
 
-![Mermaid Diagram](./diagrams\60_Crash_Recovery_1.svg)
+![Mermaid Diagram](./diagrams/60_Crash_Recovery_1.svg)
 
 ### Code Entity Mapping: Restoration Functions
 
@@ -123,7 +123,7 @@ The most important aspect of crash recovery is preserving timing information. Ev
 
 Without crash recovery, this timing bug occurs:
 
-![Mermaid Diagram](./diagrams\60_Crash_Recovery_2.svg)
+![Mermaid Diagram](./diagrams/60_Crash_Recovery_2.svg)
 
 ### Code: How Timing Is Preserved
 
@@ -182,7 +182,7 @@ const remainingTime = expectedTime - elapsedTime;
 
 Crash recovery is **disabled in Backtest mode** to maximize performance:
 
-![Mermaid Diagram](./diagrams\60_Crash_Recovery_3.svg)
+![Mermaid Diagram](./diagrams/60_Crash_Recovery_3.svg)
 
 ### Code Entity Mapping: Backtest Early Return
 
@@ -206,7 +206,7 @@ Crash recovery is **disabled in Backtest mode** to maximize performance:
 
 The persistence layer uses atomic file writes to prevent partial/corrupted data:
 
-![Mermaid Diagram](./diagrams\60_Crash_Recovery_4.svg)
+![Mermaid Diagram](./diagrams/60_Crash_Recovery_4.svg)
 
 The atomic write pattern ensures:
 - **No partial writes**: Either full new data or old data, never corrupted

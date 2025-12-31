@@ -35,7 +35,7 @@ For broader markdown report generation architecture and event subscription patte
 
 The performance tracking system follows a publish-subscribe pattern where code execution emits timing events that are collected, aggregated, and analyzed by `PerformanceMarkdownService`.
 
-![Mermaid Diagram](./diagrams\73_Performance_Metrics_0.svg)
+![Mermaid Diagram](./diagrams/73_Performance_Metrics_0.svg)
 
 **Flow Description**:
 
@@ -78,7 +78,7 @@ Common metric types used throughout the system:
 
 ## PerformanceMarkdownService Implementation
 
-![Mermaid Diagram](./diagrams\73_Performance_Metrics_1.svg)
+![Mermaid Diagram](./diagrams/73_Performance_Metrics_1.svg)
 
 ### Class Structure
 
@@ -123,7 +123,7 @@ Each symbol-strategy combination maintains isolated storage, preventing cross-co
 
 ### Statistical Calculations
 
-![Mermaid Diagram](./diagrams\73_Performance_Metrics_2.svg)
+![Mermaid Diagram](./diagrams/73_Performance_Metrics_2.svg)
 
 ### Metric Definitions
 
@@ -162,7 +162,7 @@ function percentile(sortedArray: number[], p: number): number {
 
 ### Markdown Report Structure
 
-![Mermaid Diagram](./diagrams\73_Performance_Metrics_3.svg)
+![Mermaid Diagram](./diagrams/73_Performance_Metrics_3.svg)
 
 ### Bottleneck Analysis
 

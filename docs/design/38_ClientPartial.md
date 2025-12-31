@@ -33,7 +33,7 @@ For signal lifecycle state management, see [ClientStrategy](#6.1). For persisten
 
 ClientPartial operates within a multi-layered service architecture that separates concerns between core logic, instance management, and global coordination.
 
-![Mermaid Diagram](./diagrams\38_ClientPartial_0.svg)
+![Mermaid Diagram](./diagrams/38_ClientPartial_0.svg)
 
 **Sources**: [src/client/ClientPartial.ts:1-538](), [src/lib/services/connection/PartialConnectionService.ts:1-267](), [src/lib/services/global/PartialGlobalService.ts:1-205](), [src/classes/Persist.ts:662-740]()
 
@@ -66,7 +66,7 @@ ClientPartial is the core implementation that tracks profit/loss milestones for 
 
 ### State Structures
 
-![Mermaid Diagram](./diagrams\38_ClientPartial_1.svg)
+![Mermaid Diagram](./diagrams/38_ClientPartial_1.svg)
 
 **Type Definitions**:
 
@@ -97,7 +97,7 @@ type PartialLevel = 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90 | 100;
 
 The profit detection algorithm iterates through predefined profit levels and checks which have been reached but not yet recorded. When a new level is detected, it adds the level to the Set, invokes the callback, and persists state.
 
-![Mermaid Diagram](./diagrams\38_ClientPartial_2.svg)
+![Mermaid Diagram](./diagrams/38_ClientPartial_2.svg)
 
 **Implementation**: The `HANDLE_PROFIT_FN` function at [src/client/ClientPartial.ts:44-105]() implements this logic. It uses a `for` loop over `PROFIT_LEVELS` constant defined at [src/client/ClientPartial.ts:22]().
 
@@ -131,7 +131,7 @@ for (const level of LOSS_LEVELS) {
 
 PartialConnectionService acts as a factory for ClientPartial instances with memoization to ensure one instance per signal. The memoization key combines `signalId` and `backtest` mode.
 
-![Mermaid Diagram](./diagrams\38_ClientPartial_3.svg)
+![Mermaid Diagram](./diagrams/38_ClientPartial_3.svg)
 
 **Memoization Implementation**:
 
@@ -200,7 +200,7 @@ Each file is a `Record<signalId, IPartialData>` where multiple signals for the s
 
 ### Initialization Flow
 
-![Mermaid Diagram](./diagrams\38_ClientPartial_4.svg)
+![Mermaid Diagram](./diagrams/38_ClientPartial_4.svg)
 
 **Key Points**:
 1. `waitForInit()` is wrapped with `singleshot` to ensure one-time execution per `(symbol, strategyName)` tuple
@@ -216,7 +216,7 @@ Each file is a `Record<signalId, IPartialData>` where multiple signals for the s
 
 ClientStrategy invokes ClientPartial methods during signal monitoring when calculating profit/loss percentages. The integration occurs in the signal state machine's "active" state.
 
-![Mermaid Diagram](./diagrams\38_ClientPartial_5.svg)
+![Mermaid Diagram](./diagrams/38_ClientPartial_5.svg)
 
 **ClientStrategy Constructor Injection**:
 
@@ -241,7 +241,7 @@ The `partial` parameter is injected into ClientStrategy through `IStrategyParams
 
 ClientPartial emits events through callback functions passed via `IPartialParams`. These callbacks are configured by PartialConnectionService to emit to RxJS Subjects.
 
-![Mermaid Diagram](./diagrams\38_ClientPartial_6.svg)
+![Mermaid Diagram](./diagrams/38_ClientPartial_6.svg)
 
 **Sources**: [src/lib/services/connection/PartialConnectionService.ts:28-83](), [src/config/emitters.ts:115-124]()
 

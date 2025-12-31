@@ -76,7 +76,7 @@ The peer dependency requirement is declared in [package.json:71-73]() and inheri
 
 The following packages are automatically installed as dependencies:
 
-![Mermaid Diagram](./diagrams\03_Installation_and_Setup_0.svg)
+![Mermaid Diagram](./diagrams/03_Installation_and_Setup_0.svg)
 
 | Package | Purpose | Used By |
 |---------|---------|---------|
@@ -147,7 +147,7 @@ npm install dotenv-cli
 
 `backtest-kit` supports both CommonJS and ES Modules:
 
-![Mermaid Diagram](./diagrams\03_Installation_and_Setup_1.svg)
+![Mermaid Diagram](./diagrams/03_Installation_and_Setup_1.svg)
 
 ### CommonJS (require)
 
@@ -416,7 +416,7 @@ This validates that [types.d.ts]() is correctly resolved by the TypeScript compi
 
 ### Complete Public API Import Map
 
-![Mermaid Diagram](./diagrams\03_Installation_and_Setup_2.svg)
+![Mermaid Diagram](./diagrams/03_Installation_and_Setup_2.svg)
 
 **Typical Import Statement:**
 

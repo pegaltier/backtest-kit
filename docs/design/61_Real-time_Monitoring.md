@@ -28,7 +28,7 @@ For information about the overall live execution flow, see [10.1](#10.1). For cr
 
 The monitoring loop is implemented in `LiveLogicPrivateService` as an infinite `while(true)` loop that continuously evaluates signal status. Each iteration creates a real-time timestamp with `new Date()`, calls `tick()` to evaluate signal state, emits events, and sleeps for `TICK_TTL` before the next iteration.
 
-![Mermaid Diagram](./diagrams\61_Real-time_Monitoring_0.svg)
+![Mermaid Diagram](./diagrams/61_Real-time_Monitoring_0.svg)
 
 **Key Components:**
 
@@ -54,7 +54,7 @@ The monitoring loop is implemented in `LiveLogicPrivateService` as an infinite `
 
 The `tick()` method evaluates the current signal state by checking for pending signals, validating scheduled signals, or generating new signals via `getSignal()`. The evaluation is wrapped in an execution context containing symbol, timestamp, and backtest flag.
 
-![Mermaid Diagram](./diagrams\61_Real-time_Monitoring_1.svg)
+![Mermaid Diagram](./diagrams/61_Real-time_Monitoring_1.svg)
 
 **Validation Chain:**
 
@@ -78,7 +78,7 @@ The signal validation process runs multiple checks sequentially before allowing 
 
 The monitoring system emits events through RxJS Subjects for external observers to track execution without coupling to internal logic. Events are emitted at multiple points during tick evaluation and are processed sequentially via `queued()` wrapper.
 
-![Mermaid Diagram](./diagrams\61_Real-time_Monitoring_2.svg)
+![Mermaid Diagram](./diagrams/61_Real-time_Monitoring_2.svg)
 
 **Event Types and Payloads:**
 
@@ -117,7 +117,7 @@ The `queued()` wrapper guarantees that:
 
 Each tick iteration emits performance metrics to track execution duration and detect bottlenecks. The metrics include operation type, duration, timestamp, and delta from the previous event.
 
-![Mermaid Diagram](./diagrams\61_Real-time_Monitoring_3.svg)
+![Mermaid Diagram](./diagrams/61_Real-time_Monitoring_3.svg)
 
 **Performance Contract Fields:**
 
@@ -147,7 +147,7 @@ The `previousTimestamp` field enables calculating time between events for monito
 
 The monitoring loop implements graceful error handling to ensure that transient failures do not stop live trading execution. Errors are logged, emitted for external observers, and followed by a sleep before retry.
 
-![Mermaid Diagram](./diagrams\61_Real-time_Monitoring_4.svg)
+![Mermaid Diagram](./diagrams/61_Real-time_Monitoring_4.svg)
 
 **Error Handling Strategy:**
 
@@ -182,7 +182,7 @@ symbol=${symbol} strategyName=${strategyName} exchangeName=${exchangeName}
 
 The monitoring loop handles each signal state differently, with varying sleep durations and yield behavior. Understanding state-specific behavior is critical for efficient monitoring.
 
-![Mermaid Diagram](./diagrams\61_Real-time_Monitoring_5.svg)
+![Mermaid Diagram](./diagrams/61_Real-time_Monitoring_5.svg)
 
 **State Behavior Summary:**
 

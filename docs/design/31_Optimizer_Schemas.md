@@ -39,7 +39,7 @@ Sources: [src/interfaces/Optimizer.interface.ts:380-433](), [src/function/add.ts
 
 ## Schema Structure Overview
 
-![Mermaid Diagram](./diagrams\31_Optimizer_Schemas_0.svg)
+![Mermaid Diagram](./diagrams/31_Optimizer_Schemas_0.svg)
 
 **Diagram: IOptimizerSchema Structure and Registration Flow**
 
@@ -349,7 +349,7 @@ interface IOptimizerCallbacks {
 
 **Callback Invocation in `ClientOptimizer`:**
 
-![Mermaid Diagram](./diagrams\31_Optimizer_Schemas_1.svg)
+![Mermaid Diagram](./diagrams/31_Optimizer_Schemas_1.svg)
 
 **Diagram: Callback Invocation Points in ClientOptimizer**
 
@@ -556,7 +556,7 @@ listenOptimizerProgress((event) => {
 
 #### Code Assembly Pipeline
 
-![Mermaid Diagram](./diagrams\31_Optimizer_Schemas_2.svg)
+![Mermaid Diagram](./diagrams/31_Optimizer_Schemas_2.svg)
 
 **Diagram: Code Generation Pipeline**
 
@@ -640,7 +640,7 @@ Sources: [src/lib/services/schema/OptimizerSchemaService.ts:28-67](), [src/lib/s
 
 ## Schema Lifecycle
 
-![Mermaid Diagram](./diagrams\31_Optimizer_Schemas_3.svg)
+![Mermaid Diagram](./diagrams/31_Optimizer_Schemas_3.svg)
 
 **Diagram: Schema Registration and Retrieval Flow**
 

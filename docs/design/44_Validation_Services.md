@@ -31,13 +31,13 @@ For information about how validated schemas are stored and retrieved, see [Schem
 
 ### Validation Services in the DI System
 
-![Mermaid Diagram](./diagrams\44_Validation_Services_0.svg)
+![Mermaid Diagram](./diagrams/44_Validation_Services_0.svg)
 
 **Sources:** [src/function/add.ts:54-56](), [src/function/add.ts:103-105](), [src/lib/index.ts:143-150](), [src/lib/core/types.ts:59-66]()
 
 ### Validation Flow: Registration to Execution
 
-![Mermaid Diagram](./diagrams\44_Validation_Services_1.svg)
+![Mermaid Diagram](./diagrams/44_Validation_Services_1.svg)
 
 **Sources:** [src/function/add.ts:50-62](), [test/e2e/defend.test.mjs:544-641](), [test/e2e/sanitize.test.mjs:27-131]()
 
@@ -89,7 +89,7 @@ The `addComponent` method (named `addStrategy`, `addExchange`, etc.) is called b
 
 Schema validation occurs when a component is registered via an `add*` function. The validation flow follows this sequence:
 
-![Mermaid Diagram](./diagrams\44_Validation_Services_2.svg)
+![Mermaid Diagram](./diagrams/44_Validation_Services_2.svg)
 
 **Sources:** [src/function/add.ts:50-62](), [src/function/add.ts:99-111]()
 
@@ -161,7 +161,7 @@ The function is invoked within `GET_SIGNAL_FN` at [src/client/ClientStrategy.ts:
 
 **Runtime Signal Validation Flow**
 
-![Mermaid Diagram](./diagrams\44_Validation_Services_3.svg)
+![Mermaid Diagram](./diagrams/44_Validation_Services_3.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:41-261](), [src/client/ClientStrategy.ts:263-396](), [test/e2e/defend.test.mjs:25-145](), [test/e2e/sanitize.test.mjs:27-131]()
 </thinking>
@@ -566,7 +566,7 @@ Schema validation errors, in contrast, throw immediately at registration time an
 
 ### Validation → Schema Storage Flow
 
-![Mermaid Diagram](./diagrams\44_Validation_Services_4.svg)
+![Mermaid Diagram](./diagrams/44_Validation_Services_4.svg)
 
 After a schema passes validation:
 1. It's stored in the corresponding `*SchemaService` (see [Schema Services](#7.3))

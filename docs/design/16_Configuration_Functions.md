@@ -40,7 +40,7 @@ All configuration functions are idempotent and can be called multiple times. The
 
 ## Configuration Flow Architecture
 
-![Mermaid Diagram](./diagrams\16_Configuration_Functions_0.svg)
+![Mermaid Diagram](./diagrams/16_Configuration_Functions_0.svg)
 
 **Analysis**: Configuration functions operate at the topmost layer of the system. `setLogger()` injects a custom logger into the DI container, replacing the default `LoggerService` implementation. `setConfig()` and `setColumns()` update memoized stores that are read by validation and markdown services. All configuration is immutable after initial setup.
 
@@ -399,7 +399,7 @@ console.log("Modified columns:", modified);
 
 ## Configuration Lifecycle
 
-![Mermaid Diagram](./diagrams\16_Configuration_Functions_1.svg)
+![Mermaid Diagram](./diagrams/16_Configuration_Functions_1.svg)
 
 **Analysis**: Configuration functions must be called in order during initialization phase, before any component registration. Once components are registered, configuration changes do not affect them. This ensures consistent behavior across execution modes and prevents unexpected runtime changes.
 
@@ -416,7 +416,7 @@ console.log("Modified columns:", modified);
 
 ## Configuration Validation
 
-![Mermaid Diagram](./diagrams\16_Configuration_Functions_2.svg)
+![Mermaid Diagram](./diagrams/16_Configuration_Functions_2.svg)
 
 **Analysis**: Both `setConfig()` and `setColumns()` invoke validation services before accepting changes. `ConfigValidationService` enforces type safety, range constraints, and logical consistency. `ColumnValidationService` validates boolean flags and column name spelling. Invalid configurations throw errors immediately, preventing silent failures during execution.
 

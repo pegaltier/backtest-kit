@@ -32,7 +32,7 @@ This approach enables loose coupling between services, simplifies testing throug
 
 ### DI Flow Architecture
 
-![Mermaid Diagram](./diagrams\12_Dependency_Injection_System_0.svg)
+![Mermaid Diagram](./diagrams/12_Dependency_Injection_System_0.svg)
 
 **Sources**: [src/lib/core/types.ts:1-105](), [src/lib/core/provide.ts:1-143](), [src/lib/index.ts:1-246]()
 
@@ -44,7 +44,7 @@ The `TYPES` object contains Symbol-based identifiers for all services in the sys
 
 ### TYPES Structure
 
-![Mermaid Diagram](./diagrams\12_Dependency_Injection_System_1.svg)
+![Mermaid Diagram](./diagrams/12_Dependency_Injection_System_1.svg)
 
 The TYPES registry is divided into logical categories matching the service layer architecture. Each symbol is created using JavaScript's `Symbol()` constructor with a descriptive string identifier for debugging purposes.
 
@@ -98,7 +98,7 @@ Service resolution uses the `inject<T>()` function to create lazy, memoized acce
 
 ### Injection and Export Pattern
 
-![Mermaid Diagram](./diagrams\12_Dependency_Injection_System_2.svg)
+![Mermaid Diagram](./diagrams/12_Dependency_Injection_System_2.svg)
 
 ### Service Access Example
 
@@ -160,7 +160,7 @@ The DI system initialization occurs in [src/lib/index.ts:240]() via the `init()`
 
 ### Module Initialization Sequence
 
-![Mermaid Diagram](./diagrams\12_Dependency_Injection_System_3.svg)
+![Mermaid Diagram](./diagrams/12_Dependency_Injection_System_3.svg)
 
 **Key Points**:
 
@@ -180,7 +180,7 @@ Services depend on each other through constructor injection or method calls. The
 
 ### Typical Dependency Chain Example
 
-![Mermaid Diagram](./diagrams\12_Dependency_Injection_System_4.svg)
+![Mermaid Diagram](./diagrams/12_Dependency_Injection_System_4.svg)
 
 ### Cross-Service Dependencies
 

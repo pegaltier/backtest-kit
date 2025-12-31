@@ -34,7 +34,7 @@ For information about strategy schemas that consume exchange data, see [Strategy
 
 The `IExchangeSchema` interface specifies the contract for all exchange implementations. It consists of three core functions and optional lifecycle callbacks.
 
-![Mermaid Diagram](./diagrams\26_Exchange_Schemas_0.svg)
+![Mermaid Diagram](./diagrams/26_Exchange_Schemas_0.svg)
 
 **Sources:** [types.d.ts:80-155]()
 
@@ -101,7 +101,7 @@ formatQuantity: (
 
 Each candle represents aggregated trading data for a specific time interval.
 
-![Mermaid Diagram](./diagrams\26_Exchange_Schemas_1.svg)
+![Mermaid Diagram](./diagrams/26_Exchange_Schemas_1.svg)
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -127,7 +127,7 @@ VWAP = Σ(Typical Price × Volume) / Σ(Volume)
 
 Exchange schemas are registered via `addExchange()` and stored in `ExchangeSchemaService` using the `ToolRegistry` pattern.
 
-![Mermaid Diagram](./diagrams\26_Exchange_Schemas_2.svg)
+![Mermaid Diagram](./diagrams/26_Exchange_Schemas_2.svg)
 
 **Sources:** [src/function/add.ts:1-50](), [src/lib/services/global/ExchangeGlobalService.ts:1-100](), [src/lib/services/schema/ExchangeSchemaService.ts:1-50]()
 
@@ -137,7 +137,7 @@ Exchange schemas are registered via `addExchange()` and stored in `ExchangeSchem
 
 `ExchangeConnectionService` creates and memoizes `ClientExchange` instances using a composite key strategy.
 
-![Mermaid Diagram](./diagrams\26_Exchange_Schemas_3.svg)
+![Mermaid Diagram](./diagrams/26_Exchange_Schemas_3.svg)
 
 **Memoization Key:** `${symbol}:${exchangeName}:${backtest}`
 
@@ -154,7 +154,7 @@ This ensures separate exchange instances for:
 
 Exchange candles flow through multiple layers before reaching strategies.
 
-![Mermaid Diagram](./diagrams\26_Exchange_Schemas_4.svg)
+![Mermaid Diagram](./diagrams/26_Exchange_Schemas_4.svg)
 
 **Temporal Isolation:** `ClientExchange` automatically filters candles to ensure `candle.timestamp <= ExecutionContextService.context.when`. This prevents look-ahead bias in backtesting.
 
@@ -258,7 +258,7 @@ addExchange({
 
 The `ClientExchange` class implements the `IExchange` interface and provides additional functionality:
 
-![Mermaid Diagram](./diagrams\26_Exchange_Schemas_5.svg)
+![Mermaid Diagram](./diagrams/26_Exchange_Schemas_5.svg)
 
 **Additional Methods:**
 
@@ -303,7 +303,7 @@ return totalValue / totalVolume;
 
 `ClientExchange` enforces temporal isolation to prevent look-ahead bias during backtesting.
 
-![Mermaid Diagram](./diagrams\26_Exchange_Schemas_6.svg)
+![Mermaid Diagram](./diagrams/26_Exchange_Schemas_6.svg)
 
 **Implementation:** [src/client/ClientExchange.ts:70-120]()
 

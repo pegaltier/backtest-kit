@@ -51,7 +51,7 @@ The markdown generation system consists of seven independent service classes tha
 
 **Markdown Services Architecture**
 
-![Mermaid Diagram](./diagrams\72_Markdown_Report_Generation_0.svg)
+![Mermaid Diagram](./diagrams/72_Markdown_Report_Generation_0.svg)
 
 **Common Service Pattern**
 
@@ -79,7 +79,7 @@ All markdown services implement the same architectural pattern: a public service
 
 **Pattern Structure**
 
-![Mermaid Diagram](./diagrams\72_Markdown_Report_Generation_1.svg)
+![Mermaid Diagram](./diagrams/72_Markdown_Report_Generation_1.svg)
 
 **Key Responsibilities:**
 - **Service Class**: Event subscription, storage routing, memoization management
@@ -97,7 +97,7 @@ All markdown services implement bounded queues to prevent unbounded memory growt
 
 **Queue Management**
 
-![Mermaid Diagram](./diagrams\72_Markdown_Report_Generation_2.svg)
+![Mermaid Diagram](./diagrams/72_Markdown_Report_Generation_2.svg)
 
 **Memory Characteristics:**
 
@@ -131,7 +131,7 @@ Each markdown service subscribes to event emitters during initialization using t
 
 **Initialization Sequence**
 
-![Mermaid Diagram](./diagrams\72_Markdown_Report_Generation_3.svg)
+![Mermaid Diagram](./diagrams/72_Markdown_Report_Generation_3.svg)
 
 The `singleshot` wrapper ensures thread-safe initialization without locks by leveraging JavaScript's single-threaded event loop. Multiple concurrent calls to `getData()` will queue behind the first call's initialization.
 
@@ -162,7 +162,7 @@ private tick = async (data: IStrategyTickResult) => {
 
 **Event Routing with Idle Deduplication**
 
-![Mermaid Diagram](./diagrams\72_Markdown_Report_Generation_4.svg)
+![Mermaid Diagram](./diagrams/72_Markdown_Report_Generation_4.svg)
 
 **Idle Event Deduplication Logic:**
 
@@ -291,7 +291,7 @@ All markdown services expose three public methods for data access, report genera
 
 **API Contract**
 
-![Mermaid Diagram](./diagrams\72_Markdown_Report_Generation_5.svg)
+![Mermaid Diagram](./diagrams/72_Markdown_Report_Generation_5.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:342-414](), [src/lib/services/markdown/LiveMarkdownService.ts:490-562](), [src/lib/services/markdown/ScheduleMarkdownService.ts:386-461]()
 
@@ -413,7 +413,7 @@ The `dump()` method writes markdown reports to disk using Node.js file system AP
 
 Tables are generated using a column configuration system that defines label, key, and formatting function for each column. The system maps event data to table rows using these column definitions.
 
-![Mermaid Diagram](./diagrams\72_Markdown_Report_Generation_6.svg)
+![Mermaid Diagram](./diagrams/72_Markdown_Report_Generation_6.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:289-296](), [src/lib/services/markdown/LiveMarkdownService.ts:483-490]()
 
@@ -572,7 +572,7 @@ Schedule processes two action types related to limit orders:
 
 All markdown services use the `singleshot` pattern from `functools-kit` to ensure event subscription happens exactly once. The `init()` method is marked protected and called automatically on first data access.
 
-![Mermaid Diagram](./diagrams\72_Markdown_Report_Generation_7.svg)
+![Mermaid Diagram](./diagrams/72_Markdown_Report_Generation_7.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:538-541](), [src/lib/services/markdown/LiveMarkdownService.ts:742-745](), [src/lib/services/markdown/ScheduleMarkdownService.ts:541-544]()
 

@@ -36,7 +36,7 @@ Sources: [src/lib/services/logic/private/WalkerLogicPrivateService.ts:1-255](), 
 
 ## Execution Flow
 
-![Mermaid Diagram](./diagrams\63_Walker_Mode_0.svg)
+![Mermaid Diagram](./diagrams/63_Walker_Mode_0.svg)
 
 **Diagram: Sequential Strategy Execution and Metric Comparison**
 
@@ -140,7 +140,7 @@ Sources: [src/lib/services/logic/private/WalkerLogicPrivateService.ts:168-186]()
 
 ## Walker Contract and Progress Tracking
 
-![Mermaid Diagram](./diagrams\63_Walker_Mode_1.svg)
+![Mermaid Diagram](./diagrams/63_Walker_Mode_1.svg)
 
 **Diagram: WalkerContract Construction and Event Flow**
 
@@ -257,7 +257,7 @@ Sources: [docs/classes/WalkerUtils.md](), [src/lib/utils/WalkerUtils.ts](), [src
 
 ## Integration with Backtest System
 
-![Mermaid Diagram](./diagrams\63_Walker_Mode_2.svg)
+![Mermaid Diagram](./diagrams/63_Walker_Mode_2.svg)
 
 **Diagram: Walker's Layered Integration with Backtest System**
 

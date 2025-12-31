@@ -29,7 +29,7 @@ For information about the event system that feeds these services, see [3.4](#3.4
 
 All Markdown Services follow a consistent architecture with three layers: **Event Subscription**, **Storage Accumulation**, and **Report Generation**. Each service subscribes to specific event emitters during initialization, maintains memoized storage instances per symbol-strategy pair, and provides methods to retrieve statistics or generate markdown reports.
 
-![Mermaid Diagram](./diagrams\47_Markdown_Services_0.svg)
+![Mermaid Diagram](./diagrams/47_Markdown_Services_0.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:1-571](), [src/lib/services/markdown/LiveMarkdownService.ts:1-778](), [src/lib/services/markdown/ScheduleMarkdownService.ts:1-625](), [src/lib/services/markdown/PartialMarkdownService.ts:1-481](), [src/lib/services/markdown/WalkerMarkdownService.ts:1-675](), [src/lib/services/markdown/HeatMarkdownService.ts:1-599](), [src/lib/services/markdown/PerformanceMarkdownService.ts:1-506]()
 
@@ -51,7 +51,7 @@ All Markdown Services follow a consistent architecture with three layers: **Even
 
 All Markdown Services implement a consistent internal structure with a memoized `ReportStorage` class that handles data accumulation and report generation. The service layer provides dependency injection integration and event subscription.
 
-![Mermaid Diagram](./diagrams\47_Markdown_Services_1.svg)
+![Mermaid Diagram](./diagrams/47_Markdown_Services_1.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:196-367](), [src/lib/services/markdown/LiveMarkdownService.ts:260-564]()
 
@@ -118,7 +118,7 @@ interface BacktestStatistics {
 
 ### Data Flow
 
-![Mermaid Diagram](./diagrams\47_Markdown_Services_2.svg)
+![Mermaid Diagram](./diagrams/47_Markdown_Services_2.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:428-439](), [src/lib/services/markdown/BacktestMarkdownService.ts:227-295]()
 
@@ -139,7 +139,7 @@ Tracks all tick events from live trading including idle, opened, active, and clo
 
 The service implements smart idle event deduplication to prevent idle event spam while preserving important state transitions:
 
-![Mermaid Diagram](./diagrams\47_Markdown_Services_3.svg)
+![Mermaid Diagram](./diagrams/47_Markdown_Services_3.svg)
 
 **Sources:** [src/lib/services/markdown/LiveMarkdownService.ts:274-301]()
 
@@ -193,7 +193,7 @@ interface ScheduleStatistics {
 
 ### Event Processing Logic
 
-![Mermaid Diagram](./diagrams\47_Markdown_Services_4.svg)
+![Mermaid Diagram](./diagrams/47_Markdown_Services_4.svg)
 
 **Sources:** [src/lib/services/markdown/ScheduleMarkdownService.ts:472-490]()
 
@@ -223,7 +223,7 @@ interface PartialStatistics {
 
 ### Event Flow
 
-![Mermaid Diagram](./diagrams\47_Markdown_Services_5.svg)
+![Mermaid Diagram](./diagrams/47_Markdown_Services_5.svg)
 
 **Sources:** [src/lib/services/markdown/PartialMarkdownService.ts:341-380]()
 
@@ -259,7 +259,7 @@ interface IStrategyResult {
 
 The service dynamically creates column configuration based on the optimization metric:
 
-![Mermaid Diagram](./diagrams\47_Markdown_Services_6.svg)
+![Mermaid Diagram](./diagrams/47_Markdown_Services_6.svg)
 
 **Sources:** [src/lib/services/markdown/WalkerMarkdownService.ts:131-203](), [src/lib/services/markdown/WalkerMarkdownService.ts:342-372](), [src/lib/services/markdown/WalkerMarkdownService.ts:380-419]()
 
@@ -308,7 +308,7 @@ interface IHeatmapRow {
 
 ### Portfolio Metrics Calculation
 
-![Mermaid Diagram](./diagrams\47_Markdown_Services_7.svg)
+![Mermaid Diagram](./diagrams/47_Markdown_Services_7.svg)
 
 **Sources:** [src/lib/services/markdown/HeatMarkdownService.ts:180-336](), [src/lib/services/markdown/HeatMarkdownService.ts:343-395]()
 
@@ -422,7 +422,7 @@ const columns: Column[] = [
 
 ### Table Generation Process
 
-![Mermaid Diagram](./diagrams\47_Markdown_Services_8.svg)
+![Mermaid Diagram](./diagrams/47_Markdown_Services_8.svg)
 
 The generated markdown follows this format:
 
@@ -534,6 +534,6 @@ Naming conventions:
 
 Markdown Services are automatically initialized and subscribed to their respective emitters. The initialization occurs lazily via `singleshot` wrapper, ensuring subscriptions happen only once regardless of how many times the service is accessed.
 
-![Mermaid Diagram](./diagrams\47_Markdown_Services_9.svg)
+![Mermaid Diagram](./diagrams/47_Markdown_Services_9.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:564-567](), [src/lib/services/markdown/LiveMarkdownService.ts:771-774](), [src/lib/services/markdown/ScheduleMarkdownService.ts:618-621]()

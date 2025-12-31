@@ -51,7 +51,7 @@ Each adapter accepts a custom constructor via `use*Adapter()` methods, enabling 
 
 ## Persistence System Architecture
 
-![Mermaid Diagram](./diagrams\87_Custom_Persistence_Backends_0.svg)
+![Mermaid Diagram](./diagrams/87_Custom_Persistence_Backends_0.svg)
 
 **Architecture:** Each adapter uses a factory pattern with constructor type `TPersistBaseCtor`. Custom backends register by calling `use*Adapter(CustomConstructor)` which replaces the factory. Instances are memoized per entity name using `memoize()` from functools-kit.
 
@@ -101,7 +101,7 @@ interface IPersistBase<Entity extends IEntity | null = IEntity> {
 
 The default `PersistBase` class provides file-based storage with atomic writes:
 
-![Mermaid Diagram](./diagrams\87_Custom_Persistence_Backends_1.svg)
+![Mermaid Diagram](./diagrams/87_Custom_Persistence_Backends_1.svg)
 
 ### Atomic Write Pattern
 
@@ -309,7 +309,7 @@ PersistPartialAdapter.usePersistPartialAdapter(RedisPersist);
 
 ## Data Flow and Lifecycle
 
-![Mermaid Diagram](./diagrams\87_Custom_Persistence_Backends_2.svg)
+![Mermaid Diagram](./diagrams/87_Custom_Persistence_Backends_2.svg)
 
 **Lifecycle Guarantees:**
 

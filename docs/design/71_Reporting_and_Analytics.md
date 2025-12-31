@@ -38,7 +38,7 @@ Additionally, the framework provides performance profiling via `performanceEmitt
 
 **Reporting System Architecture Diagram**
 
-![Mermaid Diagram](./diagrams\71_Reporting_and_Analytics_0.svg)
+![Mermaid Diagram](./diagrams/71_Reporting_and_Analytics_0.svg)
 
 **Sources**: [src/lib/services/markdown/BacktestMarkdownService.ts:1-533](), [src/lib/services/markdown/LiveMarkdownService.ts:1-737](), [src/lib/services/markdown/ScheduleMarkdownService.ts:1-535](), [src/config/emitters.ts:1-81](), [src/classes/Backtest.ts:1-208](), [src/classes/Live.ts:1-220](), [src/classes/Walker.ts:1-274](), [src/classes/Schedule.ts:1-135]()
 
@@ -150,7 +150,7 @@ Scheduled signals are created when `signal.priceOpen` is specified (price must r
 
 Both services define their reports using a `Column` interface that specifies extraction and formatting logic:
 
-![Mermaid Diagram](./diagrams\71_Reporting_and_Analytics_1.svg)
+![Mermaid Diagram](./diagrams/71_Reporting_and_Analytics_1.svg)
 
 **Sources**: [src/lib/services/markdown/BacktestMarkdownService.ts:18-100](), [src/lib/services/markdown/LiveMarkdownService.ts:53-137]()
 
@@ -254,7 +254,7 @@ The table is sorted descending by the selected metric, making it easy to identif
 
 Both services use an internal `ReportStorage` class to manage data accumulation:
 
-![Mermaid Diagram](./diagrams\71_Reporting_and_Analytics_2.svg)
+![Mermaid Diagram](./diagrams/71_Reporting_and_Analytics_2.svg)
 
 **Sources**: [src/lib/services/markdown/BacktestMarkdownService.ts:106-179](), [src/lib/services/markdown/LiveMarkdownService.ts:143-331]()
 
@@ -280,7 +280,7 @@ Each closed signal is appended to the `_signalList` array without modification.
 
 The live service implements an update-or-append model to handle signal state transitions:
 
-![Mermaid Diagram](./diagrams\71_Reporting_and_Analytics_3.svg)
+![Mermaid Diagram](./diagrams/71_Reporting_and_Analytics_3.svg)
 
 This design ensures that each signal appears only once in the final report, showing its most recent state.
 
@@ -519,7 +519,7 @@ All markdown services expose a `getReport()` method that returns a markdown-form
 
 **Report Generation Flow Diagram**
 
-![Mermaid Diagram](./diagrams\71_Reporting_and_Analytics_4.svg)
+![Mermaid Diagram](./diagrams/71_Reporting_and_Analytics_4.svg)
 
 **Usage Example**
 
@@ -638,7 +638,7 @@ await Walker.clear();
 
 Both services use the `singleshot` decorator from `functools-kit` to ensure initialization happens exactly once:
 
-![Mermaid Diagram](./diagrams\71_Reporting_and_Analytics_5.svg)
+![Mermaid Diagram](./diagrams/71_Reporting_and_Analytics_5.svg)
 
 The `init()` method is protected and automatically invoked on first service use. It subscribes the service's `tick()` method to the appropriate signal emitter.
 
@@ -646,7 +646,7 @@ The `init()` method is protected and automatically invoked on first service use.
 
 ### Event Emitter Binding
 
-![Mermaid Diagram](./diagrams\71_Reporting_and_Analytics_6.svg)
+![Mermaid Diagram](./diagrams/71_Reporting_and_Analytics_6.svg)
 
 The emitters are defined in `src/config/emitters.ts` and use the event system to decouple signal generation from report accumulation.
 
@@ -701,7 +701,7 @@ return str.newline(
 
 The markdown services operate completely independently from the main execution loop:
 
-![Mermaid Diagram](./diagrams\71_Reporting_and_Analytics_7.svg)
+![Mermaid Diagram](./diagrams/71_Reporting_and_Analytics_7.svg)
 
 This architecture ensures that report generation never blocks strategy execution or impacts performance. The event-driven design allows reports to be generated incrementally as signals close, rather than requiring post-processing of execution results.
 

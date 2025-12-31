@@ -33,7 +33,7 @@ The Walker API provides methods for running comparative strategy backtests acros
 
 The Walker API follows the same architectural pattern as Backtest and Live APIs, consisting of an instance class for isolated execution and a utility class providing convenient singleton access.
 
-![Mermaid Diagram](./diagrams\20_Walker_API_0.svg)
+![Mermaid Diagram](./diagrams/20_Walker_API_0.svg)
 
 **Sources**: [src/classes/Walker.ts:1-677]()
 
@@ -191,7 +191,7 @@ stop(symbol: string, walkerName: WalkerName): Promise<void>
 5. Supports multiple walkers on same symbol (filtered by `walkerName`)
 
 **Stop Signal Flow**:
-![Mermaid Diagram](./diagrams\20_Walker_API_1.svg)
+![Mermaid Diagram](./diagrams/20_Walker_API_1.svg)
 
 **Example**:
 ```typescript
@@ -386,7 +386,7 @@ statusList.forEach(status => {
 
 The walker orchestrates multiple strategy backtests sequentially, aggregating results and tracking the best performer by configured metric.
 
-![Mermaid Diagram](./diagrams\20_Walker_API_2.svg)
+![Mermaid Diagram](./diagrams/20_Walker_API_2.svg)
 
 **Sequential Processing**: Strategies are tested one at a time to ensure deterministic results and consistent resource usage. Each backtest completes fully before the next begins.
 
@@ -400,7 +400,7 @@ Walker instances are memoized by `symbol:walkerName` key to ensure isolation and
 
 ### Memoization Pattern
 
-![Mermaid Diagram](./diagrams\20_Walker_API_3.svg)
+![Mermaid Diagram](./diagrams/20_Walker_API_3.svg)
 
 **Benefits**:
 - Each symbol-walker combination maintains isolated state
@@ -416,7 +416,7 @@ Walker instances are memoized by `symbol:walkerName` key to ensure isolation and
 
 The `task` method wraps walker execution with `singlerun` to prevent concurrent execution of the same walker instance.
 
-![Mermaid Diagram](./diagrams\20_Walker_API_4.svg)
+![Mermaid Diagram](./diagrams/20_Walker_API_4.svg)
 
 **Sources**: [src/classes/Walker.ts:112-125]()
 
@@ -497,7 +497,7 @@ interface WalkerContract {
 
 ### Event Flow
 
-![Mermaid Diagram](./diagrams\20_Walker_API_5.svg)
+![Mermaid Diagram](./diagrams/20_Walker_API_5.svg)
 
 **Sources**: [src/classes/Walker.ts:156-219](), [docs/interfaces/WalkerStopContract.md:1-41]()
 
@@ -707,7 +707,7 @@ try {
 
 Walker internally uses the Backtest API for each strategy execution. Understanding this relationship clarifies the architecture.
 
-![Mermaid Diagram](./diagrams\20_Walker_API_6.svg)
+![Mermaid Diagram](./diagrams/20_Walker_API_6.svg)
 
 **Key Differences**:
 - **Backtest**: Single strategy, yields all closed signals

@@ -64,7 +64,7 @@ Sources: [src/classes/Persist.ts:1-100](), [src/classes/Persist.ts:504-622](), [
 
 **Multi-Domain Persistence System**
 
-![Mermaid Diagram](./diagrams\21_Persistence_Utilities_0.svg)
+![Mermaid Diagram](./diagrams/21_Persistence_Utilities_0.svg)
 
 **Diagram 1: Multi-Domain Persistence Architecture**
 
@@ -142,7 +142,7 @@ Sources: [src/classes/Persist.ts:179-501]()
 
 **Crash-Safe File Writes Using Temp → Rename**
 
-![Mermaid Diagram](./diagrams\21_Persistence_Utilities_1.svg)
+![Mermaid Diagram](./diagrams/21_Persistence_Utilities_1.svg)
 
 **Diagram 2: Atomic Write Sequence Ensuring Crash Safety**
 
@@ -173,7 +173,7 @@ Sources: [src/classes/Persist.ts:295-314](), [src/utils/writeFileAtomic.ts]()
 
 **Auto-Cleanup of Corrupted Files on Initialization**
 
-![Mermaid Diagram](./diagrams\21_Persistence_Utilities_2.svg)
+![Mermaid Diagram](./diagrams/21_Persistence_Utilities_2.svg)
 
 **Diagram 3: Self-Healing Validation During Initialization**
 
@@ -748,7 +748,7 @@ Sources: [src/classes/Persist.ts:922-928]()
 
 **Live Trading Restart Sequence**
 
-![Mermaid Diagram](./diagrams\21_Persistence_Utilities_3.svg)
+![Mermaid Diagram](./diagrams/21_Persistence_Utilities_3.svg)
 
 **Diagram 4: Complete Crash Recovery Flow with Multi-Domain State Restoration**
 
@@ -879,7 +879,7 @@ Sources: [src/lib/services/markdown/ScheduleMarkdownService.ts:543-575]()
 
 The Schedule API automatically subscribes to signal events and filters for scheduled lifecycle events:
 
-![Mermaid Diagram](./diagrams\21_Persistence_Utilities_4.svg)
+![Mermaid Diagram](./diagrams/21_Persistence_Utilities_4.svg)
 
 **Diagram: Schedule Event Data Flow from Signal Scheduling to Public API**
 
@@ -910,7 +910,7 @@ Sources: [src/lib/services/markdown/PartialMarkdownService.ts:1-520](), [src/lib
 
 Both APIs are implemented as markdown services that aggregate event data into queryable statistics:
 
-![Mermaid Diagram](./diagrams\21_Persistence_Utilities_5.svg)
+![Mermaid Diagram](./diagrams/21_Persistence_Utilities_5.svg)
 
 **Diagram: Service Architecture Connecting Strategy Execution to Public APIs**
 
@@ -1073,7 +1073,7 @@ Sources: [src/lib/services/markdown/ScheduleMarkdownService.ts:286-352](), [src/
 
 ## Integration with Other APIs
 
-![Mermaid Diagram](./diagrams\21_Persistence_Utilities_6.svg)
+![Mermaid Diagram](./diagrams/21_Persistence_Utilities_6.svg)
 
 **Diagram: Integration of Partial and Schedule APIs with Other Framework Components**
 

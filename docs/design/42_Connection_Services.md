@@ -29,7 +29,7 @@ For information about the client implementations that connection services instan
 
 Connection services sit between the global service layer and client implementations, acting as intelligent routers and instance factories. They inject dependencies into clients and ensure proper initialization before operation execution.
 
-![Mermaid Diagram](./diagrams\42_Connection_Services_0.svg)
+![Mermaid Diagram](./diagrams/42_Connection_Services_0.svg)
 
 **Sources**: 
 - [src/lib/services/connection/StrategyConnectionService.ts:1-325]()
@@ -102,7 +102,7 @@ The `backtest` flag in keys ensures that live trading and backtesting never shar
 
 Client instances follow a consistent lifecycle managed by their connection service:
 
-![Mermaid Diagram](./diagrams\42_Connection_Services_1.svg)
+![Mermaid Diagram](./diagrams/42_Connection_Services_1.svg)
 
 ### Initialization Pattern
 
@@ -165,7 +165,7 @@ Cache clearing is essential for:
 
 The service injects multiple dependencies into each `ClientStrategy`:
 
-![Mermaid Diagram](./diagrams\42_Connection_Services_2.svg)
+![Mermaid Diagram](./diagrams/42_Connection_Services_2.svg)
 
 **Injected Dependencies**:
 - `execution`: `ExecutionContextService` for temporal isolation (symbol, timestamp, backtest flag)
@@ -277,7 +277,7 @@ These methods are used by:
 
 Each signal gets its own `ClientPartial` instance to track its profit/loss milestones:
 
-![Mermaid Diagram](./diagrams\42_Connection_Services_3.svg)
+![Mermaid Diagram](./diagrams/42_Connection_Services_3.svg)
 
 The per-signal isolation ensures that:
 - Profit/loss levels are tracked independently for each position
@@ -385,7 +385,7 @@ This two-step cleanup ensures:
 
 Connection services are primarily accessed through utility classes (`Backtest`, `Live`, `Walker`), which provide user-facing APIs. The utility classes follow a consistent pattern:
 
-![Mermaid Diagram](./diagrams\42_Connection_Services_4.svg)
+![Mermaid Diagram](./diagrams/42_Connection_Services_4.svg)
 
 ### Validation Before Delegation
 

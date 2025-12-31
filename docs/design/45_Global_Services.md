@@ -45,7 +45,7 @@ Global Services occupy a specific niche in the service architecture distinct fro
 
 ### Architectural Position
 
-![Mermaid Diagram](./diagrams\45_Global_Services_0.svg)
+![Mermaid Diagram](./diagrams/45_Global_Services_0.svg)
 
 **Purpose**: This diagram shows how Global Services fit between client classes and connection services. Unlike `add*` functions which access schema/validation services directly, global services provide validated entry points for runtime operations.
 
@@ -73,7 +73,7 @@ All Global Services follow a consistent three-step pattern for public methods:
 
 ### Implementation Pattern
 
-![Mermaid Diagram](./diagrams\45_Global_Services_1.svg)
+![Mermaid Diagram](./diagrams/45_Global_Services_1.svg)
 
 **Purpose**: This diagram shows the standard three-step pattern that all Global Service methods follow: log the operation, validate component existence, then delegate to the corresponding Connection Service.
 
@@ -128,7 +128,7 @@ All Global Services inject three types of dependencies via the DI container:
 
 ### Injected Dependencies
 
-![Mermaid Diagram](./diagrams\45_Global_Services_2.svg)
+![Mermaid Diagram](./diagrams/45_Global_Services_2.svg)
 
 **Purpose**: This diagram shows the dependency injection pattern used by PartialGlobalService. All dependencies are injected using the `inject()` function with TYPES symbols.
 
@@ -173,7 +173,7 @@ Global Services use memoization to avoid redundant validation calls for the same
 
 ### Validation Caching Pattern
 
-![Mermaid Diagram](./diagrams\45_Global_Services_3.svg)
+![Mermaid Diagram](./diagrams/45_Global_Services_3.svg)
 
 **Purpose**: This sequence diagram shows how memoization prevents redundant validation. The first call performs validation and caches the result. Subsequent calls for the same strategy return immediately from cache.
 
@@ -226,7 +226,7 @@ PartialGlobalService coordinates partial profit/loss milestone tracking. It vali
 
 ### Service Overview
 
-![Mermaid Diagram](./diagrams\45_Global_Services_4.svg)
+![Mermaid Diagram](./diagrams/45_Global_Services_4.svg)
 
 **Purpose**: This diagram shows PartialGlobalService's role in the partial tracking system. ClientStrategy calls the global service, which validates and delegates to PartialConnectionService, which manages ClientPartial instances.
 
@@ -314,7 +314,7 @@ Global Services are primarily used by client classes during runtime execution, n
 
 ### Usage Pattern: ClientStrategy → PartialGlobalService
 
-![Mermaid Diagram](./diagrams\45_Global_Services_5.svg)
+![Mermaid Diagram](./diagrams/45_Global_Services_5.svg)
 
 **Purpose**: This sequence diagram shows the complete call chain from ClientStrategy through PartialGlobalService to ClientPartial. Global Services act as validated entry points, not as direct public APIs.
 
@@ -493,7 +493,7 @@ Each Global Service manages exactly one component type or execution mode:
 
 ## Delegation Flow Summary
 
-![Mermaid Diagram](./diagrams\45_Global_Services_6.svg)
+![Mermaid Diagram](./diagrams/45_Global_Services_6.svg)
 
 **Purpose**: This diagram summarizes the complete delegation flow for both Component and Execution Global Services. Both types perform validation first, but Component services delegate to Connection Services while Execution services delegate to Logic Services.
 

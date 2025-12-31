@@ -73,7 +73,7 @@ interface ISchemaPattern {
 
 **Diagram: Schema Registration Pipeline**
 
-![Mermaid Diagram](./diagrams\24_Component_Schemas_0.svg)
+![Mermaid Diagram](./diagrams/24_Component_Schemas_0.svg)
 
 **Storage Structure:**
 
@@ -114,7 +114,7 @@ Schema validation occurs at registration time via dedicated validation services.
 
 Component registration follows a three-phase pipeline: user code calls an `add*` function with a schema object, the function delegates to a validation service that applies 10-30 validation rules depending on component type, and upon successful validation the schema is stored in a schema service for later retrieval by connection services during execution.
 
-![Mermaid Diagram](./diagrams\24_Component_Schemas_1.svg)
+![Mermaid Diagram](./diagrams/24_Component_Schemas_1.svg)
 
 **Sources:** [src/function/add.ts:52-64](), [src/function/add.ts:101-113](), [src/lib/core/types.ts:11-14](), [src/lib/core/provide.ts:64-72]()
 
@@ -899,7 +899,7 @@ interface IOptimizerData {
 
 The optimizer iterates through training ranges and sources in nested loops: for each training range, it fetches data from each source (with pagination support), formats the data into user/assistant message pairs, and appends to the conversation history. After collecting all data, it calls `getPrompt()` with the complete message history to generate a strategy prompt for that training range.
 
-![Mermaid Diagram](./diagrams\24_Component_Schemas_2.svg)
+![Mermaid Diagram](./diagrams/24_Component_Schemas_2.svg)
 
 **Pagination Logic:**
 
@@ -1123,7 +1123,7 @@ addOptimizer({
 
 Component types form a dependency graph where strategies reference exchanges and risk profiles, walkers reference strategies and frames, and optimizers generate complete component configurations. The framework enforces referential integrity at registration time by validating that referenced component names exist in their respective schema services.
 
-![Mermaid Diagram](./diagrams\24_Component_Schemas_3.svg)
+![Mermaid Diagram](./diagrams/24_Component_Schemas_3.svg)
 
 **Dependency Rules:**
 

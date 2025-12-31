@@ -40,7 +40,7 @@ This document covers the internal implementation of `ClientRisk` and how it inte
 | `addSignal` | Tracks new active position | After signal validation passes |
 | `removeSignal` | Removes position from tracking | When signal closes (TP/SL/timeout) |
 
-![Mermaid Diagram](./diagrams\36_ClientRisk_0.svg)
+![Mermaid Diagram](./diagrams/36_ClientRisk_0.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:376-387](), [src/client/ClientStrategy.ts:712-729](), [src/client/ClientStrategy.ts:742-745](), [src/client/ClientStrategy.ts:995-998]()
 
@@ -50,7 +50,7 @@ This document covers the internal implementation of `ClientRisk` and how it inte
 
 `ClientRisk` wraps user-defined risk schemas registered via `addRisk()`. Each schema contains an array of validation rules that are executed sequentially:
 
-![Mermaid Diagram](./diagrams\36_ClientRisk_1.svg)
+![Mermaid Diagram](./diagrams/36_ClientRisk_1.svg)
 
 **Sources:** [demo/live/src/index.mjs:37-78](), [demo/backtest/src/index.mjs:37-82]()
 
@@ -75,7 +75,7 @@ interface ICheckSignalPayload {
 
 ### Validation Execution Sequence
 
-![Mermaid Diagram](./diagrams\36_ClientRisk_2.svg)
+![Mermaid Diagram](./diagrams/36_ClientRisk_2.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:376-387](), [src/client/ClientStrategy.ts:712-729]()
 
@@ -141,7 +141,7 @@ Ensures favorable risk-reward ratio:
 
 `ClientRisk` maintains active position counts per symbol-strategy pair to enforce concurrent position limits:
 
-![Mermaid Diagram](./diagrams\36_ClientRisk_3.svg)
+![Mermaid Diagram](./diagrams/36_ClientRisk_3.svg)
 
 ### Position Tracking Methods
 
@@ -152,7 +152,7 @@ Ensures favorable risk-reward ratio:
 
 ### Integration Points
 
-![Mermaid Diagram](./diagrams\36_ClientRisk_4.svg)
+![Mermaid Diagram](./diagrams/36_ClientRisk_4.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:742-745](), [src/client/ClientStrategy.ts:867-870](), [src/client/ClientStrategy.ts:995-998]()
 
@@ -162,7 +162,7 @@ Ensures favorable risk-reward ratio:
 
 `ClientRisk` implements a **fail-fast** validation pattern where the first validation failure immediately stops execution:
 
-![Mermaid Diagram](./diagrams\36_ClientRisk_5.svg)
+![Mermaid Diagram](./diagrams/36_ClientRisk_5.svg)
 
 This pattern ensures:
 1. **Early termination** on first rule violation
@@ -196,7 +196,7 @@ This allows strategies to operate without risk management while maintaining the 
 
 `ClientRisk` instances are managed by `RiskConnectionService`, which provides routing and memoization:
 
-![Mermaid Diagram](./diagrams\36_ClientRisk_6.svg)
+![Mermaid Diagram](./diagrams/36_ClientRisk_6.svg)
 
 The connection service ensures:
 - **One instance per risk profile** via memoization
@@ -211,7 +211,7 @@ The connection service ensures:
 
 When validation fails, `ClientRisk` emits rejection events through the `riskSubject` event emitter:
 
-![Mermaid Diagram](./diagrams\36_ClientRisk_7.svg)
+![Mermaid Diagram](./diagrams/36_ClientRisk_7.svg)
 
 ### Risk Event Structure
 

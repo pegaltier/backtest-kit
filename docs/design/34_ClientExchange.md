@@ -35,7 +35,7 @@ This document covers the implementation details of `ClientExchange` including it
 
 ### Integration in System Architecture
 
-![Mermaid Diagram](./diagrams\34_ClientExchange_0.svg)
+![Mermaid Diagram](./diagrams/34_ClientExchange_0.svg)
 
 **Sources:** [src/client/ClientExchange.ts:179-372](), [src/lib/services/global/ExchangeGlobalService.ts:1-100](), [src/lib/services/connection/ExchangeConnectionService.ts:1-80]()
 
@@ -102,7 +102,7 @@ async getCandles(
 
 #### Time Calculation Logic
 
-![Mermaid Diagram](./diagrams\34_ClientExchange_1.svg)
+![Mermaid Diagram](./diagrams/34_ClientExchange_1.svg)
 
 **Implementation Details:**
 
@@ -142,7 +142,7 @@ async getNextCandles(
 
 #### Backtest vs Live Behavior
 
-![Mermaid Diagram](./diagrams\34_ClientExchange_2.svg)
+![Mermaid Diagram](./diagrams/34_ClientExchange_2.svg)
 
 **Implementation Details:**
 
@@ -176,7 +176,7 @@ async getAveragePrice(symbol: string): Promise<number>
 
 #### VWAP Calculation Algorithm
 
-![Mermaid Diagram](./diagrams\34_ClientExchange_3.svg)
+![Mermaid Diagram](./diagrams/34_ClientExchange_3.svg)
 
 **Implementation Details:**
 
@@ -231,7 +231,7 @@ The `VALIDATE_NO_INCOMPLETE_CANDLES_FN` function detects anomalous candles that 
 
 #### Validation Algorithm
 
-![Mermaid Diagram](./diagrams\34_ClientExchange_4.svg)
+![Mermaid Diagram](./diagrams/34_ClientExchange_4.svg)
 
 **Validation Checks:** [src/client/ClientExchange.ts:31-105]()
 
@@ -260,7 +260,7 @@ The `GET_CANDLES_FN` helper implements automatic retry with exponential backoff 
 
 #### Retry Flow
 
-![Mermaid Diagram](./diagrams\34_ClientExchange_5.svg)
+![Mermaid Diagram](./diagrams/34_ClientExchange_5.svg)
 
 **Configuration Parameters:**
 - `CC_GET_CANDLES_RETRY_COUNT`: Number of retry attempts (default: 3) [src/config/params.ts:15]()
@@ -276,7 +276,7 @@ The `GET_CANDLES_FN` helper implements automatic retry with exponential backoff 
 
 ### ExecutionContext Usage
 
-![Mermaid Diagram](./diagrams\34_ClientExchange_6.svg)
+![Mermaid Diagram](./diagrams/34_ClientExchange_6.svg)
 
 **Key Context Dependencies:**
 

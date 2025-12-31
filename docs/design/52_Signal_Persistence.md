@@ -41,7 +41,7 @@ This page documents the persistence layer specifically for signal state manageme
 
 The signal persistence system operates across two independent domains to maintain crash safety:
 
-![Mermaid Diagram](./diagrams\52_Signal_Persistence_0.svg)
+![Mermaid Diagram](./diagrams/52_Signal_Persistence_0.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:1-1500](), [src/classes/Persist.ts:504-622]()
 
@@ -107,7 +107,7 @@ Signal persistence uses a hierarchical directory structure to isolate signals by
 
 The persistence layer uses an atomic write pattern to guarantee crash-safe operations. This pattern ensures that files are never left in a partially-written state:
 
-![Mermaid Diagram](./diagrams\52_Signal_Persistence_1.svg)
+![Mermaid Diagram](./diagrams/52_Signal_Persistence_1.svg)
 
 **Atomic Write Guarantees:**
 
@@ -124,7 +124,7 @@ The persistence layer uses an atomic write pattern to guarantee crash-safe opera
 
 Signal persistence is tightly integrated with the `ClientStrategy` state machine. Writes occur automatically after state transitions:
 
-![Mermaid Diagram](./diagrams\52_Signal_Persistence_2.svg)
+![Mermaid Diagram](./diagrams/52_Signal_Persistence_2.svg)
 
 **Persistence Trigger Points:**
 
@@ -144,7 +144,7 @@ Signal persistence is tightly integrated with the `ClientStrategy` state machine
 
 When a live trading process restarts after a crash, the `waitForInit()` method restores signal state from disk:
 
-![Mermaid Diagram](./diagrams\52_Signal_Persistence_3.svg)
+![Mermaid Diagram](./diagrams/52_Signal_Persistence_3.svg)
 
 **Validation During Initialization:**
 
@@ -305,7 +305,7 @@ await PersistSignalAdapter.writeSignalData(signal, symbol, strategy);
 
 The persistence layer supports custom adapters for alternative storage systems (Redis, MongoDB, S3, etc.):
 
-![Mermaid Diagram](./diagrams\52_Signal_Persistence_4.svg)
+![Mermaid Diagram](./diagrams/52_Signal_Persistence_4.svg)
 
 **Custom Adapter Example:**
 

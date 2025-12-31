@@ -36,7 +36,7 @@ The framework organizes services into 11 functional categories, with most catego
 
 **Service Categories by Function:**
 
-![Mermaid Diagram](./diagrams\41_Service_Architecture_Overview_0.svg)
+![Mermaid Diagram](./diagrams/41_Service_Architecture_Overview_0.svg)
 
 **Sources:** [src/lib/core/types.ts:1-97](), [src/lib/index.ts:57-224]()
 
@@ -74,7 +74,7 @@ Services use Symbol-based dependency injection for type-safe resolution. Each se
 
 **DI Container Initialization Flow:**
 
-![Mermaid Diagram](./diagrams\41_Service_Architecture_Overview_1.svg)
+![Mermaid Diagram](./diagrams/41_Service_Architecture_Overview_1.svg)
 
 The DI container resolves the dependency graph at initialization time via `init()` called in [src/lib/index.ts:226](). Services receive dependencies through constructor injection, with the `di-scoped` package handling singleton lifecycle and lazy initialization.
 
@@ -174,7 +174,7 @@ Services form a dependency chain from user-facing API functions to Client classe
 
 **Backtest Execution Flow:**
 
-![Mermaid Diagram](./diagrams\41_Service_Architecture_Overview_2.svg)
+![Mermaid Diagram](./diagrams/41_Service_Architecture_Overview_2.svg)
 
 The pattern is identical for Live and Walker modes, with `LiveCommandService`/`WalkerCommandService`, `LiveLogicPublicService`/`WalkerLogicPublicService`, and `LiveLogicPrivateService`/`WalkerLogicPrivateService` replacing the Backtest equivalents.
 
@@ -197,7 +197,7 @@ Services are organized around eight component types (Strategy, Exchange, Frame, 
 
 **Component Service Dependencies:**
 
-![Mermaid Diagram](./diagrams\41_Service_Architecture_Overview_3.svg)
+![Mermaid Diagram](./diagrams/41_Service_Architecture_Overview_3.svg)
 
 Walker is a special case that uses Logic services instead of Global/Connection services, as it orchestrates multiple backtest runs rather than managing a single Client instance.
 
@@ -207,7 +207,7 @@ Walker is a special case that uses Logic services instead of Global/Connection s
 
 Services use `MethodContextService` and `ExecutionContextService` from `di-scoped` to propagate context without explicit parameters. The context flows through the service stack:
 
-![Mermaid Diagram](./diagrams\41_Service_Architecture_Overview_4.svg)
+![Mermaid Diagram](./diagrams/41_Service_Architecture_Overview_4.svg)
 
 Services at any depth can resolve `MethodContextService` or `ExecutionContextService` via DI to access context without it being passed as parameters. This enables clean APIs where strategy authors call `getCandles(symbol, interval, limit)` instead of `getCandles(symbol, interval, limit, context)`.
 

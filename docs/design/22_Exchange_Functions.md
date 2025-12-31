@@ -122,7 +122,7 @@ The diagram below shows how exchange helper functions integrate with the service
 
 **Diagram: Exchange Function Call Flow**
 
-![Mermaid Diagram](./diagrams\22_Exchange_Functions_0.svg)
+![Mermaid Diagram](./diagrams/22_Exchange_Functions_0.svg)
 
 **Sources**: [types.d.ts:6-49]() (ExecutionContextService), [types.d.ts:296-336]() (MethodContextService), Diagram 1 from high-level overview
 
@@ -198,7 +198,7 @@ The diagram below illustrates how temporal isolation is maintained when exchange
 
 **Diagram: Temporal Isolation in Exchange Functions**
 
-![Mermaid Diagram](./diagrams\22_Exchange_Functions_1.svg)
+![Mermaid Diagram](./diagrams/22_Exchange_Functions_1.svg)
 
 **Key Points**:
 

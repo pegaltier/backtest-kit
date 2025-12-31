@@ -46,7 +46,7 @@ Traditional backtesting frameworks require manual timestamp management, making i
 
 ## Architecture Overview: Context Propagation
 
-![Mermaid Diagram](./diagrams\09_Temporal_Isolation_and_Look-Ahead_Prevention_0.svg)
+![Mermaid Diagram](./diagrams/09_Temporal_Isolation_and_Look-Ahead_Prevention_0.svg)
 
 **Key Components**:
 
@@ -64,7 +64,7 @@ Traditional backtesting frameworks require manual timestamp management, making i
 
 ### Data Access Timeline
 
-![Mermaid Diagram](./diagrams\09_Temporal_Isolation_and_Look-Ahead_Prevention_1.svg)
+![Mermaid Diagram](./diagrams/09_Temporal_Isolation_and_Look-Ahead_Prevention_1.svg)
 
 ### Filtering Logic Sequence
 
@@ -143,7 +143,7 @@ await ExecutionContextService.runInContext(
 
 ### getCandles()
 
-![Mermaid Diagram](./diagrams\09_Temporal_Isolation_and_Look-Ahead_Prevention_2.svg)
+![Mermaid Diagram](./diagrams/09_Temporal_Isolation_and_Look-Ahead_Prevention_2.svg)
 
 **Function Signature**:
 ```typescript
@@ -231,7 +231,7 @@ const candles1h = await getCandles(symbol, "1h", 24);  // Last 24 hours
 
 ### Automatic Synchronization
 
-![Mermaid Diagram](./diagrams\09_Temporal_Isolation_and_Look-Ahead_Prevention_3.svg)
+![Mermaid Diagram](./diagrams/09_Temporal_Isolation_and_Look-Ahead_Prevention_3.svg)
 
 **Guarantee**: All data fetched within a single `runInContext()` callback shares the same temporal boundary. Look-ahead bias across timeframes is architecturally impossible.
 
@@ -309,7 +309,7 @@ Live.background("BTCUSDT", {
 
 ### AsyncLocalStorage Behavior
 
-![Mermaid Diagram](./diagrams\09_Temporal_Isolation_and_Look-Ahead_Prevention_4.svg)
+![Mermaid Diagram](./diagrams/09_Temporal_Isolation_and_Look-Ahead_Prevention_4.svg)
 
 **Key Characteristics**:
 1. **No explicit parameter passing**: `when` timestamp never appears in user function signatures

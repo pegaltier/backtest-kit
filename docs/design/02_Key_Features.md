@@ -31,7 +31,7 @@ For installation and setup instructions, see [Installation and Setup](#1.2). For
 
 The framework supports three distinct execution modes that share identical strategy code through context propagation:
 
-![Mermaid Diagram](./diagrams\02_Key_Features_0.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_0.svg)
 
 **Sources:** [README.md:17-18](), [docs/internals.md:54-81](), [High-Level System Architecture Diagram 2]()
 
@@ -87,7 +87,7 @@ await Walker.stop("BTCUSDT", "walker-name");
 
 Live trading mode uses atomic file writes with automatic recovery to ensure no duplicate signals or lost state after process crashes:
 
-![Mermaid Diagram](./diagrams\02_Key_Features_1.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_1.svg)
 
 **Sources:** [README.md:19](), [README.md:426](), [docs/internals.md:25]()
 
@@ -137,7 +137,7 @@ Custom adapters must implement the `PersistBase` interface:
 
 Signals are validated before execution to prevent invalid trades:
 
-![Mermaid Diagram](./diagrams\02_Key_Features_2.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_2.svg)
 
 **Sources:** [README.md:21-22](), [README.md:236](), [docs/internals.md:19](), [test/e2e/defend.test.mjs:545-642]()
 
@@ -151,7 +151,7 @@ Validation implementation in [src/client/Strategy.client.ts]() uses the `VALIDAT
 
 The signal lifecycle is implemented as a discriminated union with compile-time type safety:
 
-![Mermaid Diagram](./diagrams\02_Key_Features_3.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_3.svg)
 
 **Sources:** [README.md:27](), [Signal Lifecycle State Machine Diagram](), [docs/internals.md:16]()
 
@@ -215,7 +215,7 @@ Signals with `priceOpen` defined become scheduled (limit orders) waiting for pri
 
 All entry/exit decisions use Volume-Weighted Average Price from the last 5 one-minute candles for realistic simulation:
 
-![Mermaid Diagram](./diagrams\02_Key_Features_4.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_4.svg)
 
 **Sources:** [README.md:25](), [docs/internals.md:18]()
 
@@ -245,7 +245,7 @@ When a signal opens, the backtest skips ahead to the estimated close time rather
 
 The dependency injection system memoizes service instances by configuration key:
 
-![Mermaid Diagram](./diagrams\02_Key_Features_5.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_5.svg)
 
 **Sources:** [docs/internals.md:46](), [Service Architecture & Dependency Injection Diagram]()
 
@@ -297,7 +297,7 @@ Implementation: [src/services/markdown/]()
 
 Nine types of markdown reports are automatically generated:
 
-![Mermaid Diagram](./diagrams\02_Key_Features_6.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_6.svg)
 
 **Sources:** [Event System & Reporting Architecture Diagram](), [docs/internals.md:37]()
 
@@ -387,7 +387,7 @@ Helps identify bottlenecks in:
 
 The risk management system coordinates across strategies and symbols:
 
-![Mermaid Diagram](./diagrams\02_Key_Features_7.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_7.svg)
 
 **Sources:** [README.md:43](), [README.md:674-768]()
 
@@ -413,7 +413,7 @@ Implementation: [src/client/Risk.client.ts]()
 
 Three position sizing methods with configurable constraints:
 
-![Mermaid Diagram](./diagrams\02_Key_Features_8.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_8.svg)
 
 **Sources:** [README.md:41](), [README.md:589-673]()
 
@@ -488,7 +488,7 @@ Implementation: [src/client/Exchange.client.ts]()
 
 Components are registered by name and lazily instantiated at runtime:
 
-![Mermaid Diagram](./diagrams\02_Key_Features_9.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_9.svg)
 
 **Sources:** [README.md:191-222](), [README.md:234](), [docs/internals.md:32-36]()
 
@@ -507,7 +507,7 @@ Components are registered by name and lazily instantiated at runtime:
 
 Async context propagation eliminates need for explicit parameter passing:
 
-![Mermaid Diagram](./diagrams\02_Key_Features_10.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_10.svg)
 
 **Sources:** [README.md:31](), [docs/internals.md:47-50]()
 
@@ -554,7 +554,7 @@ The framework includes extensive test coverage across multiple dimensions:
 
 Critical defensive tests ensure correct behavior in complex scenarios:
 
-![Mermaid Diagram](./diagrams\02_Key_Features_11.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_11.svg)
 
 **Sources:** [test/e2e/defend.test.mjs:16-146](), [test/e2e/defend.test.mjs:148-278](), [test/e2e/defend.test.mjs:281-439](), [test/e2e/defend.test.mjs:446-537](), [test/e2e/defend.test.mjs:545-642]()
 
@@ -588,7 +588,7 @@ Implementation in statistics calculation functions: [src/services/markdown/]()
 
 LLM-powered strategy generation from historical data:
 
-![Mermaid Diagram](./diagrams\02_Key_Features_12.svg)
+![Mermaid Diagram](./diagrams/02_Key_Features_12.svg)
 
 **Sources:** [README.md:51](), [AI-Driven Strategy Generation Diagram]()
 

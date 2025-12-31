@@ -66,7 +66,7 @@ backtest-kit implements a layered architecture with 50+ services organized into 
 
 **System Architecture Diagram**:
 
-![Mermaid Diagram](./diagrams\01_Overview_0.svg)
+![Mermaid Diagram](./diagrams/01_Overview_0.svg)
 
 **Layer Responsibilities**:
 
@@ -91,7 +91,7 @@ backtest-kit provides three execution modes with distinct data flow and persiste
 
 **Execution Mode Comparison**:
 
-![Mermaid Diagram](./diagrams\01_Overview_1.svg)
+![Mermaid Diagram](./diagrams/01_Overview_1.svg)
 
 **Mode Characteristics**:
 
@@ -116,7 +116,7 @@ All modes use `ExecutionContextService` with `AsyncLocalStorage` to propagate:
 
 The framework uses dependency inversion for component registration. Components are defined separately and wired together at runtime using string identifiers:
 
-![Mermaid Diagram](./diagrams\01_Overview_2.svg)
+![Mermaid Diagram](./diagrams/01_Overview_2.svg)
 
 **Registration Example** (from codebase pattern):
 
@@ -152,7 +152,7 @@ Signals progress through a type-safe state machine implemented as TypeScript dis
 
 **Signal State Machine**:
 
-![Mermaid Diagram](./diagrams\01_Overview_3.svg)
+![Mermaid Diagram](./diagrams/01_Overview_3.svg)
 
 **TypeScript Interfaces**:
 
@@ -183,7 +183,7 @@ backtest-kit implements an event-driven architecture using RxJS `Subject` instan
 
 **Event Flow Diagram**:
 
-![Mermaid Diagram](./diagrams\01_Overview_4.svg)
+![Mermaid Diagram](./diagrams/01_Overview_4.svg)
 
 **Queued Processing**:
 
@@ -225,7 +225,7 @@ Each event emitter has a corresponding TypeScript interface:
 
 The framework is built on the following core dependencies:
 
-![Mermaid Diagram](./diagrams\01_Overview_5.svg)
+![Mermaid Diagram](./diagrams/01_Overview_5.svg)
 
 **Key Dependencies**:
 
@@ -275,7 +275,7 @@ backtest-kit/
 
 The framework includes comprehensive test coverage across multiple categories:
 
-![Mermaid Diagram](./diagrams\01_Overview_6.svg)
+![Mermaid Diagram](./diagrams/01_Overview_6.svg)
 
 **Test Categories**:
 

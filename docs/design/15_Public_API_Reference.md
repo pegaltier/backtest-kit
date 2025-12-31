@@ -31,7 +31,7 @@ For detailed implementation details of the underlying service architecture, see 
 
 The public API is organized into six functional groups, all exported from the main entry point:
 
-![Mermaid Diagram](./diagrams\15_Public_API_Reference_0.svg)
+![Mermaid Diagram](./diagrams/15_Public_API_Reference_0.svg)
 
 **Public API Groups:**
 
@@ -50,7 +50,7 @@ The public API is organized into six functional groups, all exported from the ma
 
 This diagram maps public API functions to their concrete implementations in the codebase:
 
-![Mermaid Diagram](./diagrams\15_Public_API_Reference_1.svg)
+![Mermaid Diagram](./diagrams/15_Public_API_Reference_1.svg)
 
 **Sources:** [src/index.ts:1-56](), [src/function/add.ts](), [src/classes/Backtest.ts](), [src/classes/Live.ts](), [src/function/exchange.ts](), [src/function/event.ts]()
 

@@ -37,7 +37,7 @@ Sources: [src/lib/services/markdown/HeatMarkdownService.ts:1-609]()
 
 ## System Architecture
 
-![Mermaid Diagram](./diagrams\76_Heatmap_Analytics_0.svg)
+![Mermaid Diagram](./diagrams/76_Heatmap_Analytics_0.svg)
 
 **Service Integration**: `HeatMarkdownService` is instantiated via the dependency injection system and subscribes to `signalEmitter` on first use. Unlike `BacktestMarkdownService` and `LiveMarkdownService` which use `symbol:strategyName` as storage keys, `HeatMarkdownService` uses only `strategyName` as the key because it aggregates across all symbols.
 
@@ -95,7 +95,7 @@ Sources: [src/model/HeatmapStatistics.model.ts](), [src/lib/services/markdown/He
 
 ## Signal Accumulation Flow
 
-![Mermaid Diagram](./diagrams\76_Heatmap_Analytics_1.svg)
+![Mermaid Diagram](./diagrams/76_Heatmap_Analytics_1.svg)
 
 **Event Filtering**: The `tick` method only processes signals where `action === "closed"` [src/lib/services/markdown/HeatMarkdownService.ts:460-462](). Idle, opened, active, and scheduled signals are ignored.
 
@@ -154,7 +154,7 @@ Sources: [src/lib/services/markdown/HeatMarkdownService.ts:115-271]()
 
 ## Portfolio Aggregation
 
-![Mermaid Diagram](./diagrams\76_Heatmap_Analytics_2.svg)
+![Mermaid Diagram](./diagrams/76_Heatmap_Analytics_2.svg)
 
 The `getData` method [src/lib/services/markdown/HeatMarkdownService.ts:278-330]() performs three operations:
 
@@ -298,7 +298,7 @@ Sources: [src/lib/services/markdown/HeatMarkdownService.ts:49](), [src/model/Col
 
 ## Integration with Other Services
 
-![Mermaid Diagram](./diagrams\76_Heatmap_Analytics_3.svg)
+![Mermaid Diagram](./diagrams/76_Heatmap_Analytics_3.svg)
 
 **Key Differences**:
 

@@ -120,7 +120,7 @@ Sources: [src/helpers/toProfitLossDto.ts](), [types.d.ts:17-28]()
 
 ## PnL Calculation Process
 
-![Mermaid Diagram](./diagrams\53_PnL_Calculation_0.svg)
+![Mermaid Diagram](./diagrams/53_PnL_Calculation_0.svg)
 
 Sources: [src/helpers/toProfitLossDto.ts](), [src/client/ClientStrategy.ts:26]()
 
@@ -301,7 +301,7 @@ Sources: [types.d.ts:30-52](), [src/client/ClientStrategy.ts:163-173](), [src/cl
 
 ## PnL Calculation Flow
 
-![Mermaid Diagram](./diagrams\53_PnL_Calculation_1.svg)
+![Mermaid Diagram](./diagrams/53_PnL_Calculation_1.svg)
 
 Sources: [src/client/ClientStrategy.ts](), [src/helpers/toProfitLossDto.ts]()
 
@@ -311,7 +311,7 @@ Sources: [src/client/ClientStrategy.ts](), [src/helpers/toProfitLossDto.ts]()
 
 PnL calculation occurs at the final stage of the signal lifecycle:
 
-![Mermaid Diagram](./diagrams\53_PnL_Calculation_2.svg)
+![Mermaid Diagram](./diagrams/53_PnL_Calculation_2.svg)
 
 **Close Reasons and PnL**:
 

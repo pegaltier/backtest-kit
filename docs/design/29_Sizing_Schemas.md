@@ -36,7 +36,7 @@ For information about how strategies reference sizing, see [Strategy Schemas](#5
 
 The `ISizingSchema` type is a discriminated union using the `method` field as the discriminator. Each method has specific required and optional parameters suited to its calculation algorithm.
 
-![Mermaid Diagram](./diagrams\29_Sizing_Schemas_0.svg)
+![Mermaid Diagram](./diagrams/29_Sizing_Schemas_0.svg)
 
 **Sources:** [types.d.ts:59-70](), [src/index.ts:58-70]()
 
@@ -46,7 +46,7 @@ The `ISizingSchema` type is a discriminated union using the `method` field as th
 
 Sizing schemas are registered via `addSizing()`, which stores them in `SizingSchemaService` and validates them through `SizingValidationService`. Strategies reference sizing configurations by name, triggering lazy instantiation of `ClientSizing` via `SizingConnectionService`.
 
-![Mermaid Diagram](./diagrams\29_Sizing_Schemas_1.svg)
+![Mermaid Diagram](./diagrams/29_Sizing_Schemas_1.svg)
 
 **Sources:** [src/function/add.ts:254-266](), [src/lib/index.ts:72-77]()
 
@@ -187,7 +187,7 @@ addSizing({
 
 All sizing methods support optional position size constraints to enforce portfolio-level limits:
 
-![Mermaid Diagram](./diagrams\29_Sizing_Schemas_2.svg)
+![Mermaid Diagram](./diagrams/29_Sizing_Schemas_2.svg)
 
 ### Constraint Parameters
 
@@ -205,7 +205,7 @@ All sizing methods support optional position size constraints to enforce portfol
 
 When calculating position size, `ClientSizing` receives method-specific parameters through the discriminated union `ISizingCalculateParams`:
 
-![Mermaid Diagram](./diagrams\29_Sizing_Schemas_3.svg)
+![Mermaid Diagram](./diagrams/29_Sizing_Schemas_3.svg)
 
 **Sources:** [types.d.ts:59-70]()
 
@@ -226,7 +226,7 @@ interface ISizingCallbacks {
 
 ### Callback Invocation
 
-![Mermaid Diagram](./diagrams\29_Sizing_Schemas_4.svg)
+![Mermaid Diagram](./diagrams/29_Sizing_Schemas_4.svg)
 
 **Sources:** [types.d.ts:202-266]()
 
@@ -255,7 +255,7 @@ addStrategy({
 
 ### Service Interaction
 
-![Mermaid Diagram](./diagrams\29_Sizing_Schemas_5.svg)
+![Mermaid Diagram](./diagrams/29_Sizing_Schemas_5.svg)
 
 **Sources:** [types.d.ts:616-633](), [src/lib/index.ts:1-170]()
 
@@ -276,7 +276,7 @@ The sizing system follows the standard service layer pattern with Schema, Valida
 
 `SizingConnectionService` memoizes `ClientSizing` instances to ensure singleton behavior per sizing name:
 
-![Mermaid Diagram](./diagrams\29_Sizing_Schemas_6.svg)
+![Mermaid Diagram](./diagrams/29_Sizing_Schemas_6.svg)
 
 **Sources:** [src/lib/index.ts:72-77](), [src/lib/core/types.ts:14-16](), [src/lib/core/provide.ts:57-58]()
 

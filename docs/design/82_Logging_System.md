@@ -30,7 +30,7 @@ This document covers the logging interface contract, custom logger configuration
 
 ## Architecture Overview
 
-![Mermaid Diagram](./diagrams\82_Logging_System_0.svg)
+![Mermaid Diagram](./diagrams/82_Logging_System_0.svg)
 
 **Diagram 1: Logging System Architecture**
 
@@ -115,7 +115,7 @@ The framework includes a default `LoggerService` implementation that is register
 
 ### Service Registration
 
-![Mermaid Diagram](./diagrams\82_Logging_System_1.svg)
+![Mermaid Diagram](./diagrams/82_Logging_System_1.svg)
 
 **Diagram 2: LoggerService Registration Flow**
 
@@ -161,7 +161,7 @@ const baseServices = {
 
 ### Service Access Pattern
 
-![Mermaid Diagram](./diagrams\82_Logging_System_2.svg)
+![Mermaid Diagram](./diagrams/82_Logging_System_2.svg)
 
 **Diagram 3: Logger Injection Pattern**
 
@@ -227,7 +227,7 @@ export function listenSignal(fn: (event: IStrategyTickResult) => void) {
 
 ### Common Logging Points
 
-![Mermaid Diagram](./diagrams\82_Logging_System_3.svg)
+![Mermaid Diagram](./diagrams/82_Logging_System_3.svg)
 
 **Diagram 4: Logging Points Across Framework Layers**
 

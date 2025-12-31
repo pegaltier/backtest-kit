@@ -31,7 +31,7 @@ This guide demonstrates a minimal working example of the backtest-kit framework.
 
 A minimal backtest workflow consists of four registration steps followed by execution:
 
-![Mermaid Diagram](./diagrams\04_Quick_Start_Guide_0.svg)
+![Mermaid Diagram](./diagrams/04_Quick_Start_Guide_0.svg)
 
 **Sources:** [src/index.ts:1-10](), [types.d.ts:1-100]()
 
@@ -377,7 +377,7 @@ Backtest.background("BTCUSDT", {
 
 ## Execution Flow Diagram
 
-![Mermaid Diagram](./diagrams\04_Quick_Start_Guide_1.svg)
+![Mermaid Diagram](./diagrams/04_Quick_Start_Guide_1.svg)
 
 **Sources:** [src/lib/services/logic/BacktestLogicPrivateService.ts:1-200](), [src/client/ClientStrategy.ts:1-100]()
 

@@ -26,7 +26,7 @@ For information about executing Walker operations, see [Walker API](#4.5). For d
 
 Walker schemas are registered using the `IWalkerSchema` interface, which specifies a collection of strategies to compare, a metric for ranking, and the execution environment.
 
-![Mermaid Diagram](./diagrams\30_Walker_Schemas_0.svg)
+![Mermaid Diagram](./diagrams/30_Walker_Schemas_0.svg)
 
 **Sources:** [types.d.ts:1486-1530]()
 
@@ -167,7 +167,7 @@ callbacks?: Partial<IWalkerCallbacks>;
 
 Walker execution emits events at key lifecycle points via the `IWalkerCallbacks` interface.
 
-![Mermaid Diagram](./diagrams\30_Walker_Schemas_1.svg)
+![Mermaid Diagram](./diagrams/30_Walker_Schemas_1.svg)
 
 ### onStrategy Callback
 
@@ -265,7 +265,7 @@ listenWalkerComplete((walkerName, results) => {
 
 Walker schemas are registered using the `addWalker()` function, which validates the configuration and stores it in the `WalkerSchemaService` registry.
 
-![Mermaid Diagram](./diagrams\30_Walker_Schemas_2.svg)
+![Mermaid Diagram](./diagrams/30_Walker_Schemas_2.svg)
 
 **Basic registration:**
 ```typescript
@@ -332,7 +332,7 @@ The `strategies` array order determines execution sequence, which affects:
 
 **Execution diagram:**
 
-![Mermaid Diagram](./diagrams\30_Walker_Schemas_3.svg)
+![Mermaid Diagram](./diagrams/30_Walker_Schemas_3.svg)
 
 **Best practice:** Place high-priority or baseline strategies first in the array for earlier feedback during long-running comparisons.
 
@@ -342,7 +342,7 @@ The `strategies` array order determines execution sequence, which affects:
 
 Walker schemas are consumed by the Walker execution pipeline during `Walker.run()` or `Walker.background()` operations.
 
-![Mermaid Diagram](./diagrams\30_Walker_Schemas_4.svg)
+![Mermaid Diagram](./diagrams/30_Walker_Schemas_4.svg)
 
 **Execution flow:**
 1. User calls `Walker.run(walkerName)`

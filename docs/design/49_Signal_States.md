@@ -33,7 +33,7 @@ For information about the complete signal lifecycle flow and state transitions, 
 
 The signal state machine consists of six mutually exclusive states, represented as a discriminated union with the `action` field as the discriminator:
 
-![Mermaid Diagram](./diagrams\49_Signal_States_0.svg)
+![Mermaid Diagram](./diagrams/49_Signal_States_0.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:1-1500](), [types.d.ts:770-895]()
 
@@ -164,7 +164,7 @@ The scheduled state can transition to:
 
 ### Activation Logic
 
-![Mermaid Diagram](./diagrams\49_Signal_States_1.svg)
+![Mermaid Diagram](./diagrams/49_Signal_States_1.svg)
 
 ### Price Activation Conditions
 
@@ -304,7 +304,7 @@ Only one of `percentTp` or `percentSl` is non-zero at any given time, depending 
 
 ### Exit Conditions Monitoring
 
-![Mermaid Diagram](./diagrams\49_Signal_States_2.svg)
+![Mermaid Diagram](./diagrams/49_Signal_States_2.svg)
 
 ### Partial Profit/Loss Tracking
 
@@ -550,7 +550,7 @@ Cancelled state creation occurs in:
 
 The following diagram maps signal states to their implementation in `ClientStrategy`:
 
-![Mermaid Diagram](./diagrams\49_Signal_States_3.svg)
+![Mermaid Diagram](./diagrams/49_Signal_States_3.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:1-1500]()
 
@@ -652,7 +652,7 @@ In live trading mode (when `execution.context.backtest === false`), signal state
 
 ### Persistence Workflow
 
-![Mermaid Diagram](./diagrams\49_Signal_States_4.svg)
+![Mermaid Diagram](./diagrams/49_Signal_States_4.svg)
 
 For detailed information on persistence mechanics, see [Signal Persistence](#8.4) and [Crash Recovery](#10.2).
 

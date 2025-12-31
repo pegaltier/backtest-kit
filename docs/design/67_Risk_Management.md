@@ -61,7 +61,7 @@ Validation functions receive `IRiskValidationPayload` containing complete contex
 
 The payload passed to validation functions contains both signal details and portfolio state.
 
-![Mermaid Diagram](./diagrams\67_Risk_Management_0.svg)
+![Mermaid Diagram](./diagrams/67_Risk_Management_0.svg)
 
 ### Payload Fields
 
@@ -84,7 +84,7 @@ Validation functions throw `Error` to reject signals. The error message becomes 
 
 The risk validation system integrates with the signal lifecycle at two critical points: signal generation and scheduled signal activation.
 
-![Mermaid Diagram](./diagrams\67_Risk_Management_1.svg)
+![Mermaid Diagram](./diagrams/67_Risk_Management_1.svg)
 
 ### Two-Stage Risk Checking
 
@@ -101,7 +101,7 @@ This dual-check prevents race conditions where portfolio state changes between s
 
 `ClientRisk` implements the `IRisk` interface and manages portfolio-wide position tracking.
 
-![Mermaid Diagram](./diagrams\67_Risk_Management_2.svg)
+![Mermaid Diagram](./diagrams/67_Risk_Management_2.svg)
 
 ### Position Tracking Key Format
 
@@ -134,7 +134,7 @@ interface IRisk {
 
 Active positions are persisted to disk to survive process crashes in live mode.
 
-![Mermaid Diagram](./diagrams\67_Risk_Management_3.svg)
+![Mermaid Diagram](./diagrams/67_Risk_Management_3.svg)
 
 ### Atomic Persistence Pattern
 
@@ -157,7 +157,7 @@ This prevents partial writes during crashes.
 
 Risk rejections emit events to `riskSubject` for monitoring and alerting.
 
-![Mermaid Diagram](./diagrams\67_Risk_Management_4.svg)
+![Mermaid Diagram](./diagrams/67_Risk_Management_4.svg)
 
 ### RiskContract Structure
 
@@ -308,7 +308,7 @@ addRisk({
 
 Risk validation integrates with multiple strategy lifecycle points.
 
-![Mermaid Diagram](./diagrams\67_Risk_Management_5.svg)
+![Mermaid Diagram](./diagrams/67_Risk_Management_5.svg)
 
 ### Multiple Risk Profiles (riskList)
 
@@ -358,7 +358,7 @@ These parameters are enforced by `VALIDATE_SIGNAL_FN` before risk validation:
 
 Validation errors are caught and handled gracefully:
 
-![Mermaid Diagram](./diagrams\67_Risk_Management_6.svg)
+![Mermaid Diagram](./diagrams/67_Risk_Management_6.svg)
 
 ### Error Propagation
 

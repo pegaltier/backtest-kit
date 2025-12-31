@@ -43,7 +43,7 @@ The framework calculates statistics at three levels:
 
 **Statistics Calculation Flow**
 
-![Mermaid Diagram](./diagrams\74_Statistics_Calculation_0.svg)
+![Mermaid Diagram](./diagrams/74_Statistics_Calculation_0.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:1-571](), [src/lib/services/markdown/LiveMarkdownService.ts:1-778](), [src/lib/services/markdown/HeatMarkdownService.ts:1-625]()
 
@@ -494,7 +494,7 @@ All numeric statistics are validated using the `isUnsafe()` function to prevent 
 
 **Safe Math Validation Logic**
 
-![Mermaid Diagram](./diagrams\74_Statistics_Calculation_1.svg)
+![Mermaid Diagram](./diagrams/74_Statistics_Calculation_1.svg)
 
 **Implementation:**
 
@@ -561,7 +561,7 @@ Different execution modes calculate statistics with mode-specific nuances:
 
 **Backtest vs Live Statistics Interfaces**
 
-![Mermaid Diagram](./diagrams\74_Statistics_Calculation_2.svg)
+![Mermaid Diagram](./diagrams/74_Statistics_Calculation_2.svg)
 
 **Key Differences:**
 
@@ -586,7 +586,7 @@ Different execution modes calculate statistics with mode-specific nuances:
 
 **Service-to-Statistics Mapping**
 
-![Mermaid Diagram](./diagrams\74_Statistics_Calculation_3.svg)
+![Mermaid Diagram](./diagrams/74_Statistics_Calculation_3.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:428-439](), [src/lib/services/markdown/LiveMarkdownService.ts:630-646](), [src/lib/services/markdown/HeatMarkdownService.ts:507-524]()
 

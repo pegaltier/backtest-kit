@@ -31,7 +31,7 @@ Signal generation is the entry point for all trading decisions. The `getSignal` 
 
 ### Signal Generation Flow Diagram
 
-![Mermaid Diagram](./diagrams\50_Signal_Generation_and_Validation_0.svg)
+![Mermaid Diagram](./diagrams/50_Signal_Generation_and_Validation_0.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:332-476]()
 
@@ -80,7 +80,7 @@ The validation function `VALIDATE_SIGNAL_FN` performs comprehensive safety check
 
 ### Validation Layers
 
-![Mermaid Diagram](./diagrams\50_Signal_Generation_and_Validation_1.svg)
+![Mermaid Diagram](./diagrams/50_Signal_Generation_and_Validation_1.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:45-330]()
 
@@ -147,7 +147,7 @@ Logic validation enforces the mathematical relationships between prices based on
 
 ### LONG Position Rules
 
-![Mermaid Diagram](./diagrams\50_Signal_Generation_and_Validation_2.svg)
+![Mermaid Diagram](./diagrams/50_Signal_Generation_and_Validation_2.svg)
 
 **LONG Position Requirements**:
 1. **Basic**: `priceStopLoss < priceOpen < priceTakeProfit`
@@ -173,7 +173,7 @@ Long scheduled: priceOpen (40000) <= priceStopLoss (40500).
 
 ### SHORT Position Rules
 
-![Mermaid Diagram](./diagrams\50_Signal_Generation_and_Validation_3.svg)
+![Mermaid Diagram](./diagrams/50_Signal_Generation_and_Validation_3.svg)
 
 **SHORT Position Requirements**:
 1. **Basic**: `priceTakeProfit < priceOpen < priceStopLoss`
@@ -308,7 +308,7 @@ The signal generation logic determines whether to create an immediate entry (`_i
 
 ### Signal Type Decision Tree
 
-![Mermaid Diagram](./diagrams\50_Signal_Generation_and_Validation_4.svg)
+![Mermaid Diagram](./diagrams/50_Signal_Generation_and_Validation_4.svg)
 
 ### Immediate Entry (Market Order)
 
@@ -371,7 +371,7 @@ After the internal validation checks pass, the signal must also pass risk manage
 
 ### Risk Check Flow
 
-![Mermaid Diagram](./diagrams\50_Signal_Generation_and_Validation_5.svg)
+![Mermaid Diagram](./diagrams/50_Signal_Generation_and_Validation_5.svg)
 
 **Risk Check Parameters** (`IRiskCheckArgs`):
 - `symbol`: Trading pair
@@ -401,7 +401,7 @@ Validation errors are caught by `trycatch()` wrapper around `GET_SIGNAL_FN`, pre
 
 ### Error Handling Flow
 
-![Mermaid Diagram](./diagrams\50_Signal_Generation_and_Validation_6.svg)
+![Mermaid Diagram](./diagrams/50_Signal_Generation_and_Validation_6.svg)
 
 **Error Handling Behavior**:
 1. **Catch**: `trycatch()` wrapper catches all exceptions in signal generation

@@ -33,7 +33,7 @@ For information about the broader Optimizer architecture and data collection pip
 
 The Optimizer uses a train/test split philosophy analogous to machine learning:
 
-![Mermaid Diagram](./diagrams\95_Training_vs_Testing_Ranges_0.svg)
+![Mermaid Diagram](./diagrams/95_Training_vs_Testing_Ranges_0.svg)
 
 **Key Insight**: Each training range represents a distinct market regime. By generating strategies from multiple regimes, the system produces diverse trading logic. The testing range acts as a held-out validation set to identify which strategy generalizes best to unseen market conditions.
 
@@ -63,7 +63,7 @@ For each training range, the Optimizer:
 3. **Generates strategy prompt** by calling `getPrompt()` with the complete conversation history
 4. **Creates strategy variant** with unique name derived from range index
 
-![Mermaid Diagram](./diagrams\95_Training_vs_Testing_Ranges_1.svg)
+![Mermaid Diagram](./diagrams/95_Training_vs_Testing_Ranges_1.svg)
 
 **Sources**: [src/client/ClientOptimizer.ts:99-214](), [src/client/ClientOptimizer.ts:70-88]()
 
@@ -137,7 +137,7 @@ The Optimizer translates training/testing ranges into executable TypeScript code
 
 ### Frame Generation Mapping
 
-![Mermaid Diagram](./diagrams\95_Training_vs_Testing_Ranges_2.svg)
+![Mermaid Diagram](./diagrams/95_Training_vs_Testing_Ranges_2.svg)
 
 **Frame Naming Convention**:
 - Training frames: `{prefix}_train_frame-{index}` where index starts at 1
@@ -147,7 +147,7 @@ The Optimizer translates training/testing ranges into executable TypeScript code
 
 ### Strategy Generation Mapping
 
-![Mermaid Diagram](./diagrams\95_Training_vs_Testing_Ranges_3.svg)
+![Mermaid Diagram](./diagrams/95_Training_vs_Testing_Ranges_3.svg)
 
 **Strategy Naming Convention**: `{prefix}_strategy-{index}` where index starts at 1 and matches the order of `strategyData` array.
 
@@ -179,7 +179,7 @@ The Walker compares all generated strategies on the testing range to identify th
 
 ### Execution Flow
 
-![Mermaid Diagram](./diagrams\95_Training_vs_Testing_Ranges_4.svg)
+![Mermaid Diagram](./diagrams/95_Training_vs_Testing_Ranges_4.svg)
 
 **Metric Selection**: The Walker uses `sharpeRatio` as the default comparison metric (configurable via `IWalkerSchema.metric`). Strategies are ranked in descending order, and the highest metric wins.
 

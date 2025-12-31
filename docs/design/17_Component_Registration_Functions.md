@@ -40,7 +40,7 @@ All component registration functions follow a uniform three-step pattern: loggin
 
 ### Common Registration Pattern
 
-![Mermaid Diagram](./diagrams\17_Component_Registration_Functions_0.svg)
+![Mermaid Diagram](./diagrams/17_Component_Registration_Functions_0.svg)
 
 **Sources:** [src/function/add.ts:52-64](), [src/function/add.ts:101-113](), [src/lib/index.ts:1-246]()
 
@@ -70,7 +70,7 @@ function addStrategy(strategySchema: IStrategySchema): void
 
 **Registration Flow:**
 
-![Mermaid Diagram](./diagrams\17_Component_Registration_Functions_1.svg)
+![Mermaid Diagram](./diagrams/17_Component_Registration_Functions_1.svg)
 
 **Usage Example:**
 ```typescript
@@ -129,7 +129,7 @@ function addExchange(exchangeSchema: IExchangeSchema): void
 
 **Integration with CCXT:**
 
-![Mermaid Diagram](./diagrams\17_Component_Registration_Functions_2.svg)
+![Mermaid Diagram](./diagrams/17_Component_Registration_Functions_2.svg)
 
 **Usage Example:**
 ```typescript
@@ -184,7 +184,7 @@ function addFrame(frameSchema: IFrameSchema): void
 
 **Timeframe Generation Flow:**
 
-![Mermaid Diagram](./diagrams\17_Component_Registration_Functions_3.svg)
+![Mermaid Diagram](./diagrams/17_Component_Registration_Functions_3.svg)
 
 **Usage Example:**
 ```typescript
@@ -232,7 +232,7 @@ function addRisk(riskSchema: IRiskSchema): void
 
 **Risk Validation Structure:**
 
-![Mermaid Diagram](./diagrams\17_Component_Registration_Functions_4.svg)
+![Mermaid Diagram](./diagrams/17_Component_Registration_Functions_4.svg)
 
 **IRiskValidation Types:**
 
@@ -305,7 +305,7 @@ function addSizing(sizingSchema: ISizingSchema): void
 
 **Discriminated Union Structure:**
 
-![Mermaid Diagram](./diagrams\17_Component_Registration_Functions_5.svg)
+![Mermaid Diagram](./diagrams/17_Component_Registration_Functions_5.svg)
 
 **Parameters by Method:**
 
@@ -381,7 +381,7 @@ function addWalker(walkerSchema: IWalkerSchema): void
 
 **Walker Execution Flow:**
 
-![Mermaid Diagram](./diagrams\17_Component_Registration_Functions_6.svg)
+![Mermaid Diagram](./diagrams/17_Component_Registration_Functions_6.svg)
 
 **Available Metrics:**
 
@@ -451,7 +451,7 @@ function addOptimizer(optimizerSchema: IOptimizerSchema): void
 
 **Optimizer Data Collection Flow:**
 
-![Mermaid Diagram](./diagrams\17_Component_Registration_Functions_7.svg)
+![Mermaid Diagram](./diagrams/17_Component_Registration_Functions_7.svg)
 
 **IOptimizerSource Types:**
 
@@ -531,7 +531,7 @@ addOptimizer({
 
 Components must be registered in a specific order due to inter-component references. The dependency graph ensures that referenced components exist before dependent components are registered.
 
-![Mermaid Diagram](./diagrams\17_Component_Registration_Functions_8.svg)
+![Mermaid Diagram](./diagrams/17_Component_Registration_Functions_8.svg)
 
 **Registration Order Requirements:**
 
@@ -553,7 +553,7 @@ Component registration performs validation in two phases: **registration-time va
 
 ### Registration-Time Validation
 
-![Mermaid Diagram](./diagrams\17_Component_Registration_Functions_9.svg)
+![Mermaid Diagram](./diagrams/17_Component_Registration_Functions_9.svg)
 
 **Registration-Time Checks:**
 
@@ -569,7 +569,7 @@ Component registration performs validation in two phases: **registration-time va
 
 ### Runtime Validation
 
-![Mermaid Diagram](./diagrams\17_Component_Registration_Functions_10.svg)
+![Mermaid Diagram](./diagrams/17_Component_Registration_Functions_10.svg)
 
 **Runtime Checks:**
 
@@ -591,7 +591,7 @@ All registered schemas are stored in `ToolRegistry` instances within their respe
 
 ### ToolRegistry Pattern
 
-![Mermaid Diagram](./diagrams\17_Component_Registration_Functions_11.svg)
+![Mermaid Diagram](./diagrams/17_Component_Registration_Functions_11.svg)
 
 **ToolRegistry Methods:**
 

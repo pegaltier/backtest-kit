@@ -107,7 +107,7 @@ The Optimizer system consists of four primary components organized in a layered 
 
 **Diagram: Optimizer Service Layer Hierarchy**
 
-![Mermaid Diagram](./diagrams\91_Optimizer_Architecture_0.svg)
+![Mermaid Diagram](./diagrams/91_Optimizer_Architecture_0.svg)
 
 **Key Architectural Patterns:**
 
@@ -125,7 +125,7 @@ The Optimizer system consists of four primary components organized in a layered 
 
 **Diagram: getData() Method Call Chain**
 
-![Mermaid Diagram](./diagrams\91_Optimizer_Architecture_1.svg)
+![Mermaid Diagram](./diagrams/91_Optimizer_Architecture_1.svg)
 
 **Sources:** [src/classes/Optimizer.ts:42-59](), [src/lib/services/global/OptimizerGlobalService.ts:37-50](), [src/lib/services/connection/OptimizerConnectionService.ts:59-132](), [src/client/ClientOptimizer.ts:410-415]()
 
@@ -355,7 +355,7 @@ export interface IOptimizerParams extends IOptimizerSchema {
 
 **Diagram: GET_STRATEGY_DATA_FN Execution**
 
-![Mermaid Diagram](./diagrams\91_Optimizer_Architecture_2.svg)
+![Mermaid Diagram](./diagrams/91_Optimizer_Architecture_2.svg)
 
 **Key Data Structures:**
 
@@ -479,7 +479,7 @@ For schema service architecture details, see [Schema Services](#7.3).
 
 **Diagram: Template Merging Process**
 
-![Mermaid Diagram](./diagrams\91_Optimizer_Architecture_3.svg)
+![Mermaid Diagram](./diagrams/91_Optimizer_Architecture_3.svg)
 
 **Implementation:**
 
@@ -552,7 +552,7 @@ addOptimizer({
 
 The `getData` method collects data from all configured sources and builds LLM conversation histories for strategy generation.
 
-![Mermaid Diagram](./diagrams\91_Optimizer_Architecture_4.svg)
+![Mermaid Diagram](./diagrams/91_Optimizer_Architecture_4.svg)
 
 **Key Steps:**
 
@@ -570,7 +570,7 @@ The `getData` method collects data from all configured sources and builds LLM co
 
 **Diagram: GET_STRATEGY_CODE_FN Section Assembly**
 
-![Mermaid Diagram](./diagrams\91_Optimizer_Architecture_5.svg)
+![Mermaid Diagram](./diagrams/91_Optimizer_Architecture_5.svg)
 
 **Identifier Naming Convention:**
 
@@ -605,7 +605,7 @@ All generated identifiers use a random base36 prefix to prevent collisions [src/
 
 **Diagram: GET_STRATEGY_DUMP_FN File Write**
 
-![Mermaid Diagram](./diagrams\91_Optimizer_Architecture_6.svg)
+![Mermaid Diagram](./diagrams/91_Optimizer_Architecture_6.svg)
 
 **File Path Construction:**
 
@@ -660,7 +660,7 @@ The following symbols identify Optimizer-related services in the dependency inje
 
 **Service Composition:**
 
-![Mermaid Diagram](./diagrams\91_Optimizer_Architecture_7.svg)
+![Mermaid Diagram](./diagrams/91_Optimizer_Architecture_7.svg)
 
 The Optimizer services follow the same dependency injection pattern as other framework components. For comprehensive coverage of the DI system, see [Dependency Injection System](#3.2).
 

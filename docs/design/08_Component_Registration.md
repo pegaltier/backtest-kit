@@ -36,7 +36,7 @@ For detailed API documentation of each registration function and its parameters,
 
 The registration system follows a consistent three-step pattern:
 
-![Mermaid Diagram](./diagrams\08_Component_Registration_0.svg)
+![Mermaid Diagram](./diagrams/08_Component_Registration_0.svg)
 
 **Diagram: Component Registration Flow**
 
@@ -77,7 +77,7 @@ All registration functions share a consistent naming pattern: `add<ComponentType
 
 Each registration function follows an identical implementation pattern:
 
-![Mermaid Diagram](./diagrams\08_Component_Registration_1.svg)
+![Mermaid Diagram](./diagrams/08_Component_Registration_1.svg)
 
 **Diagram: Registration Function Execution Flow**
 
@@ -136,7 +136,7 @@ If validation fails, an error is thrown and the schema is **not** registered.
 
 Schema services use `ToolRegistry` from `di-kit` to store component configurations:
 
-![Mermaid Diagram](./diagrams\08_Component_Registration_2.svg)
+![Mermaid Diagram](./diagrams/08_Component_Registration_2.svg)
 
 **Diagram: ToolRegistry Usage in Schema Services**
 
@@ -181,7 +181,7 @@ All schema services are registered as singletons in the DI container:
 
 A typical backtest setup registers multiple components with dependencies between them:
 
-![Mermaid Diagram](./diagrams\08_Component_Registration_3.svg)
+![Mermaid Diagram](./diagrams/08_Component_Registration_3.svg)
 
 **Diagram: Component Registration Dependencies**
 
@@ -269,7 +269,7 @@ Backtest.background("BTCUSDT", {
 
 ### Validation Service Architecture
 
-![Mermaid Diagram](./diagrams\08_Component_Registration_4.svg)
+![Mermaid Diagram](./diagrams/08_Component_Registration_4.svg)
 
 **Diagram: Validation Service Processing**
 
@@ -337,7 +337,7 @@ export function addStrategy(strategySchema: IStrategySchema) {
 
 Registered schemas are retrieved by **connection services**, which create **client instances** on demand:
 
-![Mermaid Diagram](./diagrams\08_Component_Registration_5.svg)
+![Mermaid Diagram](./diagrams/08_Component_Registration_5.svg)
 
 **Diagram: Schema Retrieval During Execution**
 
@@ -401,7 +401,7 @@ Understanding the separation between **registration phase** and **execution phas
 
 **Execution is imperative:** Framework orchestrates component usage based on execution mode (backtest/live/walker).
 
-![Mermaid Diagram](./diagrams\08_Component_Registration_6.svg)
+![Mermaid Diagram](./diagrams/08_Component_Registration_6.svg)
 
 **Diagram: Registration and Execution Sequence**
 

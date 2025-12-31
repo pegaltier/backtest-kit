@@ -67,7 +67,7 @@ The logger is stored in `LoggerService` and injected throughout the system via t
 
 ### Dependency Injection Pattern
 
-![Mermaid Diagram](./diagrams\81_Cross-Cutting_Concerns_0.svg)
+![Mermaid Diagram](./diagrams/81_Cross-Cutting_Concerns_0.svg)
 
 **Sources:** [types.d.ts:52-77](), [src/lib/services/base/LoggerService.ts](), [src/lib/core/types.ts]()
 
@@ -120,7 +120,7 @@ The error handling system distinguishes between recoverable and fatal errors, pr
 
 ### Error Classification
 
-![Mermaid Diagram](./diagrams\81_Cross-Cutting_Concerns_1.svg)
+![Mermaid Diagram](./diagrams/81_Cross-Cutting_Concerns_1.svg)
 
 **Sources:** [src/config/emitters.ts:36-44](), [src/config/emitters.ts:109-112](), [src/function/event.ts:223-279]()
 
@@ -220,7 +220,7 @@ try {
 
 ### Validation Error Handling
 
-![Mermaid Diagram](./diagrams\81_Cross-Cutting_Concerns_2.svg)
+![Mermaid Diagram](./diagrams/81_Cross-Cutting_Concerns_2.svg)
 
 **Sources:** [src/client/ClientRisk.ts](), [src/lib/services/validation/RiskValidationService.ts](), [src/config/emitters.ts:109-112]()
 
@@ -234,7 +234,7 @@ The persistence layer provides crash-safe storage for live trading state using a
 
 `PersistBase` is the foundation for all persistence adapters, implementing CRUD operations with automatic directory management and corruption recovery.
 
-![Mermaid Diagram](./diagrams\81_Cross-Cutting_Concerns_3.svg)
+![Mermaid Diagram](./diagrams/81_Cross-Cutting_Concerns_3.svg)
 
 **Sources:** [src/classes/Persist.ts:179-501]()
 
@@ -253,7 +253,7 @@ The persistence layer provides crash-safe storage for live trading state using a
 
 The atomic write pattern ensures that files are never left in a corrupted state, even if the process crashes during write operations.
 
-![Mermaid Diagram](./diagrams\81_Cross-Cutting_Concerns_4.svg)
+![Mermaid Diagram](./diagrams/81_Cross-Cutting_Concerns_4.svg)
 
 **Sources:** [src/classes/Persist.ts:295-314](), [src/utils/writeFileAtomic.ts]()
 
@@ -297,7 +297,7 @@ for await (const key of self.keys()) {
 
 ### Crash Recovery Integration
 
-![Mermaid Diagram](./diagrams\81_Cross-Cutting_Concerns_5.svg)
+![Mermaid Diagram](./diagrams/81_Cross-Cutting_Concerns_5.svg)
 
 **Sources:** [src/client/ClientStrategy.ts](), [src/client/ClientRisk.ts](), [src/client/ClientPartial.ts](), [src/classes/Persist.ts:132-153]()
 

@@ -86,7 +86,7 @@ All metrics assume higher values indicate better performance. No metrics use asc
 
 ### WalkerLogicPrivateService.run() Flow
 
-![Mermaid Diagram](./diagrams\65_Strategy_Comparison_0.svg)
+![Mermaid Diagram](./diagrams/65_Strategy_Comparison_0.svg)
 
 ### Key Implementation Details
 
@@ -187,7 +187,7 @@ The contract is constructed at [src/lib/services/logic/private/WalkerLogicPrivat
 
 ### Contract Emission Flow
 
-![Mermaid Diagram](./diagrams\65_Strategy_Comparison_1.svg)
+![Mermaid Diagram](./diagrams/65_Strategy_Comparison_1.svg)
 
 Three emissions occur per strategy:
 1. **progressWalkerEmitter** - Numeric progress (count, percentage)
@@ -313,7 +313,7 @@ interface IWalkerResults {
 
 ### Event Emission Sequence
 
-![Mermaid Diagram](./diagrams\65_Strategy_Comparison_2.svg)
+![Mermaid Diagram](./diagrams/65_Strategy_Comparison_2.svg)
 
 ### Listener Functions
 
@@ -338,7 +338,7 @@ Walker retrieves statistics for each strategy by calling `BacktestMarkdownServic
 
 ### Statistics Retrieval Flow
 
-![Mermaid Diagram](./diagrams\65_Strategy_Comparison_3.svg)
+![Mermaid Diagram](./diagrams/65_Strategy_Comparison_3.svg)
 
 ### BacktestStatistics Interface
 
@@ -417,7 +417,7 @@ This ensures each strategy starts with clean state and no leftover data from pre
 
 **WalkerMarkdownService Component Diagram:**
 
-![Mermaid Diagram](./diagrams\65_Strategy_Comparison_4.svg)
+![Mermaid Diagram](./diagrams/65_Strategy_Comparison_4.svg)
 
 **Sources:** [src/lib/services/markdown/WalkerMarkdownService.ts:519-530](), [src/lib/services/markdown/WalkerMarkdownService.ts:264-298]()
 

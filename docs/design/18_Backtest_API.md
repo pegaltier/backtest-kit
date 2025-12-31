@@ -55,7 +55,7 @@ The `Backtest` singleton [src/classes/Backtest.ts:586]() is an instance of `Back
 
 Each unique `symbol:strategyName` combination gets its own `BacktestInstance` [src/classes/Backtest.ts:73-333]() with isolated state and execution context.
 
-![Mermaid Diagram](./diagrams\18_Backtest_API_0.svg)
+![Mermaid Diagram](./diagrams/18_Backtest_API_0.svg)
 
 **Key Flow Characteristics:**
 
@@ -110,7 +110,7 @@ interface IStrategyBacktestResult {
 
 **Execution Flow:**
 
-![Mermaid Diagram](./diagrams\18_Backtest_API_1.svg)
+![Mermaid Diagram](./diagrams/18_Backtest_API_1.svg)
 
 **Example Usage:**
 
@@ -166,7 +166,7 @@ The returned function can be called to stop the backtest early. When cancelled, 
 
 **Cancellation Flow:**
 
-![Mermaid Diagram](./diagrams\18_Backtest_API_2.svg)
+![Mermaid Diagram](./diagrams/18_Backtest_API_2.svg)
 
 **Example Usage:**
 
@@ -255,7 +255,7 @@ interface BacktestStatistics {
 
 **Calculation Flow:**
 
-![Mermaid Diagram](./diagrams\18_Backtest_API_3.svg)
+![Mermaid Diagram](./diagrams/18_Backtest_API_3.svg)
 
 **Example Usage:**
 
@@ -413,7 +413,7 @@ stop(
 
 **Stop Flow:**
 
-![Mermaid Diagram](./diagrams\18_Backtest_API_4.svg)
+![Mermaid Diagram](./diagrams/18_Backtest_API_4.svg)
 
 **Example Usage:**
 
@@ -473,7 +473,7 @@ dump(
 
 **Default Path Resolution:**
 
-![Mermaid Diagram](./diagrams\18_Backtest_API_5.svg)
+![Mermaid Diagram](./diagrams/18_Backtest_API_5.svg)
 
 **Example Usage:**
 
@@ -584,7 +584,7 @@ Sources: [src/classes/Backtest.ts:562-565](), [src/classes/Backtest.ts:131-139](
 
 The Backtest API emits events throughout execution for monitoring and callbacks:
 
-![Mermaid Diagram](./diagrams\18_Backtest_API_6.svg)
+![Mermaid Diagram](./diagrams/18_Backtest_API_6.svg)
 
 **Available Event Listeners:**
 

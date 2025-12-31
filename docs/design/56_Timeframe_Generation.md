@@ -62,7 +62,7 @@ The generated timeframe array will contain timestamps starting at `startDate` an
 
 The `FrameInterval` type defines supported tick granularities for timeframe generation. Each interval determines the temporal resolution of the backtest.
 
-![Mermaid Diagram](./diagrams\56_Timeframe_Generation_0.svg)
+![Mermaid Diagram](./diagrams/56_Timeframe_Generation_0.svg)
 
 **Interval Duration Mapping:**
 
@@ -92,7 +92,7 @@ The `FrameInterval` type defines supported tick granularities for timeframe gene
 
 The frame system follows a layered architecture where schemas are registered, validated, and then used to instantiate `ClientFrame` instances that generate timestamp arrays.
 
-![Mermaid Diagram](./diagrams\56_Timeframe_Generation_1.svg)
+![Mermaid Diagram](./diagrams/56_Timeframe_Generation_1.svg)
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:69-72]()
 
@@ -104,7 +104,7 @@ The `FrameCoreService` acts as the entry point for timeframe retrieval during ba
 
 ### Timeframe Retrieval Flow
 
-![Mermaid Diagram](./diagrams\56_Timeframe_Generation_2.svg)
+![Mermaid Diagram](./diagrams/56_Timeframe_Generation_2.svg)
 
 **Key Points:**
 
@@ -123,7 +123,7 @@ The `ClientFrame` class implements the timestamp generation logic based on the c
 
 ### Timestamp Generation Algorithm
 
-![Mermaid Diagram](./diagrams\56_Timeframe_Generation_3.svg)
+![Mermaid Diagram](./diagrams/56_Timeframe_Generation_3.svg)
 
 **Generation Process:**
 
@@ -165,7 +165,7 @@ The generated timeframe array drives the backtest execution loop in `BacktestLog
 
 ### Backtest Loop with Timeframe
 
-![Mermaid Diagram](./diagrams\56_Timeframe_Generation_4.svg)
+![Mermaid Diagram](./diagrams/56_Timeframe_Generation_4.svg)
 
 **Execution Flow in BacktestLogicPrivateService:**
 
@@ -264,7 +264,7 @@ The `FrameValidationService` ensures that registered `IFrameSchema` objects meet
 
 ### Validation Rules
 
-![Mermaid Diagram](./diagrams\56_Timeframe_Generation_5.svg)
+![Mermaid Diagram](./diagrams/56_Timeframe_Generation_5.svg)
 
 **Key Validation Checks:**
 

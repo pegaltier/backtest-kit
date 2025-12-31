@@ -82,7 +82,7 @@ If immediate activation conditions are met, the signal transitions directly to "
 
 ## Scheduled Signal Lifecycle
 
-![Mermaid Diagram](./diagrams\51_Scheduled_Signals_0.svg)
+![Mermaid Diagram](./diagrams/51_Scheduled_Signals_0.svg)
 
 **Key state transitions:**
 
@@ -101,7 +101,7 @@ If immediate activation conditions are met, the signal transitions directly to "
 
 Scheduled signals activate when market price reaches the specified `priceOpen`. The activation logic differs by position type:
 
-![Mermaid Diagram](./diagrams\51_Scheduled_Signals_1.svg)
+![Mermaid Diagram](./diagrams/51_Scheduled_Signals_1.svg)
 
 ### Activation Priority
 
@@ -177,7 +177,7 @@ if (elapsedTime >= maxTimeToWait) {
 
 If price moves against the position and hits `priceStopLoss` **before** reaching `priceOpen`, the scheduled signal is cancelled. This prevents opening positions that are already in a losing state.
 
-![Mermaid Diagram](./diagrams\51_Scheduled_Signals_2.svg)
+![Mermaid Diagram](./diagrams/51_Scheduled_Signals_2.svg)
 
 **Pre-activation cancellation is critical** because it prevents the following scenario:
 1. LONG scheduled at priceOpen=42000, StopLoss=40000
@@ -254,7 +254,7 @@ Scheduled signals are persisted to disk using `PersistScheduleAdapter`, enabling
 
 ### Persistence Architecture
 
-![Mermaid Diagram](./diagrams\51_Scheduled_Signals_3.svg)
+![Mermaid Diagram](./diagrams/51_Scheduled_Signals_3.svg)
 
 ### File Structure
 
@@ -303,7 +303,7 @@ Scheduled signals undergo **additional validation** beyond immediate signals bec
 
 ### Scheduled-Specific Validations
 
-![Mermaid Diagram](./diagrams\51_Scheduled_Signals_4.svg)
+![Mermaid Diagram](./diagrams/51_Scheduled_Signals_4.svg)
 
 ### Critical Validation: Position Validity at priceOpen
 

@@ -53,7 +53,7 @@ Live Trading provides:
 
 ### High-Level Architecture
 
-![Mermaid Diagram](./diagrams\58_Live_Trading_0.svg)
+![Mermaid Diagram](./diagrams/58_Live_Trading_0.svg)
 
 **Sources:** [src/classes/Live.ts:347-376](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:14-181]()
 
@@ -61,7 +61,7 @@ Live Trading provides:
 
 The core live trading loop is implemented in `LiveLogicPrivateService.run()`:
 
-![Mermaid Diagram](./diagrams\58_Live_Trading_1.svg)
+![Mermaid Diagram](./diagrams/58_Live_Trading_1.svg)
 
 **Sources:** [src/lib/services/logic/private/LiveLogicPrivateService.ts:14-181]()
 
@@ -69,7 +69,7 @@ The core live trading loop is implemented in `LiveLogicPrivateService.run()`:
 
 The `LiveUtils` class provides a singleton interface for live trading operations:
 
-![Mermaid Diagram](./diagrams\58_Live_Trading_2.svg)
+![Mermaid Diagram](./diagrams/58_Live_Trading_2.svg)
 
 **Sources:** [src/classes/Live.ts:376-596](), [src/classes/Live.ts:79-345]()
 
@@ -92,7 +92,7 @@ Live Trading persists four types of state to disk after every tick:
 
 All persistence uses the atomic write pattern to prevent data corruption:
 
-![Mermaid Diagram](./diagrams\58_Live_Trading_3.svg)
+![Mermaid Diagram](./diagrams/58_Live_Trading_3.svg)
 
 **Sources:** [src/classes/Persist.ts]() (referenced in diagrams)
 
@@ -100,7 +100,7 @@ All persistence uses the atomic write pattern to prevent data corruption:
 
 When a live trading process restarts after a crash:
 
-![Mermaid Diagram](./diagrams\58_Live_Trading_4.svg)
+![Mermaid Diagram](./diagrams/58_Live_Trading_4.svg)
 
 **Sources:** [src/client/ClientStrategy.ts]() (referenced in architecture diagrams), [src/lib/services/connection/PartialConnectionService.ts]() (persistence architecture)
 
@@ -108,7 +108,7 @@ When a live trading process restarts after a crash:
 
 `PersistBase` validates all JSON files on initialization:
 
-![Mermaid Diagram](./diagrams\58_Live_Trading_5.svg)
+![Mermaid Diagram](./diagrams/58_Live_Trading_5.svg)
 
 **Sources:** [src/classes/Persist.ts]() (referenced in Diagram 5 of architecture overview)
 
@@ -130,7 +130,7 @@ Each tick evaluates the current signal state and returns a discriminated union:
 
 ### Signal State Transitions in Live Mode
 
-![Mermaid Diagram](./diagrams\58_Live_Trading_6.svg)
+![Mermaid Diagram](./diagrams/58_Live_Trading_6.svg)
 
 **Sources:** [src/client/ClientStrategy.ts]() (signal lifecycle), [src/lib/services/logic/private/LiveLogicPrivateService.ts:62-177]()
 
@@ -138,7 +138,7 @@ Each tick evaluates the current signal state and returns a discriminated union:
 
 Live mode emits events to three distinct channels:
 
-![Mermaid Diagram](./diagrams\58_Live_Trading_7.svg)
+![Mermaid Diagram](./diagrams/58_Live_Trading_7.svg)
 
 **Sources:** [src/lib/services/connection/StrategyConnectionService.ts:216-238](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:102-115]()
 
@@ -173,7 +173,7 @@ addStrategy({
 
 ### Throttling Mechanism
 
-![Mermaid Diagram](./diagrams\58_Live_Trading_8.svg)
+![Mermaid Diagram](./diagrams/58_Live_Trading_8.svg)
 
 **Sources:** [src/client/ClientStrategy.ts]() (referenced in architecture), [src/interfaces/Strategy.interface.ts]() (interval types)
 

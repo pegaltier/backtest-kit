@@ -48,7 +48,7 @@ Backtest mode simulates strategy execution against historical market data to eva
 
 ### Execution Flow
 
-![Mermaid Diagram](./diagrams\06_Execution_Modes_0.svg)
+![Mermaid Diagram](./diagrams/06_Execution_Modes_0.svg)
 
 **Diagram: Backtest Mode Execution Flow**
 
@@ -116,7 +116,7 @@ Live mode executes strategies against real-time market data with full crash reco
 
 ### Execution Flow
 
-![Mermaid Diagram](./diagrams\06_Execution_Modes_1.svg)
+![Mermaid Diagram](./diagrams/06_Execution_Modes_1.svg)
 
 **Diagram: Live Mode Execution Flow with Crash Recovery**
 
@@ -206,7 +206,7 @@ Walker mode enables A/B testing of multiple strategies on the same symbol and ti
 
 ### Execution Flow
 
-![Mermaid Diagram](./diagrams\06_Execution_Modes_2.svg)
+![Mermaid Diagram](./diagrams/06_Execution_Modes_2.svg)
 
 **Diagram: Walker Mode Strategy Comparison Flow**
 
@@ -284,7 +284,7 @@ Walker generates markdown reports showing:
 
 The `backtest` flag in `IExecutionContext` determines execution mode throughout the system. This flag propagates via `ExecutionContextService` using `AsyncLocalStorage` for implicit context passing.
 
-![Mermaid Diagram](./diagrams\06_Execution_Modes_3.svg)
+![Mermaid Diagram](./diagrams/06_Execution_Modes_3.svg)
 
 **Diagram: Context Propagation and Mode Selection**
 
@@ -342,7 +342,7 @@ This ensures complete isolation between modes - they never share state or interf
 
 ### Decision Matrix
 
-![Mermaid Diagram](./diagrams\06_Execution_Modes_4.svg)
+![Mermaid Diagram](./diagrams/06_Execution_Modes_4.svg)
 
 **Diagram: Execution Mode Selection Guide**
 

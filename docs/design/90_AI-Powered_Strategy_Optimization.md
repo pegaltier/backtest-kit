@@ -49,7 +49,7 @@ Sources: [src/interfaces/Optimizer.interface.ts:379-433](), [src/client/ClientOp
 
 ## Architecture Components
 
-![Mermaid Diagram](./diagrams\90_AI-Powered_Strategy_Optimization_0.svg)
+![Mermaid Diagram](./diagrams/90_AI-Powered_Strategy_Optimization_0.svg)
 
 **Component Responsibilities:**
 
@@ -68,7 +68,7 @@ Sources: [src/lib/services/connection/OptimizerConnectionService.ts:17-114](), [
 
 The `IOptimizerSchema` defines the complete optimizer configuration. Registration is performed via the `addOptimizer` function (see [Component Registration](#2.3)).
 
-![Mermaid Diagram](./diagrams\90_AI-Powered_Strategy_Optimization_1.svg)
+![Mermaid Diagram](./diagrams/90_AI-Powered_Strategy_Optimization_1.svg)
 
 **Schema Fields:**
 
@@ -111,7 +111,7 @@ Sources: [src/interfaces/Optimizer.interface.ts:377-433](), [src/interfaces/Opti
 
 The optimizer executes through three primary methods: `getData()`, `getCode()`, and `dump()`. Each builds upon the previous.
 
-![Mermaid Diagram](./diagrams\90_AI-Powered_Strategy_Optimization_2.svg)
+![Mermaid Diagram](./diagrams/90_AI-Powered_Strategy_Optimization_2.svg)
 
 **Step-by-Step Process:**
 
@@ -130,7 +130,7 @@ Sources: [src/client/ClientOptimizer.ts:99-214](), [src/client/ClientOptimizer.t
 
 The `Optimizer` singleton provides three methods for strategy generation:
 
-![Mermaid Diagram](./diagrams\90_AI-Powered_Strategy_Optimization_3.svg)
+![Mermaid Diagram](./diagrams/90_AI-Powered_Strategy_Optimization_3.svg)
 
 **Example Usage:**
 
@@ -195,7 +195,7 @@ The optimizer outputs a complete `.mjs` file with all required components. The f
 
 **Generated File Structure:**
 
-![Mermaid Diagram](./diagrams\90_AI-Powered_Strategy_Optimization_4.svg)
+![Mermaid Diagram](./diagrams/90_AI-Powered_Strategy_Optimization_4.svg)
 
 **Code Section Mapping:**
 
@@ -398,7 +398,7 @@ The generated code includes a Walker configuration that automatically compares a
 
 **Walker Integration Flow:**
 
-![Mermaid Diagram](./diagrams\90_AI-Powered_Strategy_Optimization_5.svg)
+![Mermaid Diagram](./diagrams/90_AI-Powered_Strategy_Optimization_5.svg)
 
 The generated launcher code includes:
 - `listenWalkerProgress()` - Monitor comparison progress

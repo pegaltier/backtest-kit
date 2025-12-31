@@ -40,7 +40,7 @@ Validations execute synchronously in the order defined and can reject signals by
 
 ## Risk Validation Architecture
 
-![Mermaid Diagram](./diagrams\88_Custom_Risk_Validations_0.svg)
+![Mermaid Diagram](./diagrams/88_Custom_Risk_Validations_0.svg)
 
 **Validation Timing**: Risk validations execute **after** signal generation but **before** position opening. This ensures that portfolio state is current and no capital is committed until all checks pass.
 
@@ -83,7 +83,7 @@ The `IRiskValidation` interface has two properties:
 
 ## IRiskValidationPayload Structure
 
-![Mermaid Diagram](./diagrams\88_Custom_Risk_Validations_1.svg)
+![Mermaid Diagram](./diagrams/88_Custom_Risk_Validations_1.svg)
 
 ### Payload Properties
 
@@ -302,7 +302,7 @@ Allow or forbid opposing positions on same symbol:
 
 ## Validation Execution Sequence
 
-![Mermaid Diagram](./diagrams\88_Custom_Risk_Validations_2.svg)
+![Mermaid Diagram](./diagrams/88_Custom_Risk_Validations_2.svg)
 
 **Execution Rules**:
 
@@ -408,7 +408,7 @@ Validations can be async for external lookups:
 
 ## Integration with Position Lifecycle
 
-![Mermaid Diagram](./diagrams\88_Custom_Risk_Validations_3.svg)
+![Mermaid Diagram](./diagrams/88_Custom_Risk_Validations_3.svg)
 
 **Lifecycle Integration Points**:
 

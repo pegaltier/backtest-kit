@@ -43,7 +43,7 @@ Event Source → Subject.next() → Queued Listener → User Callback
 
 **Event Emitter Diagram**
 
-![Mermaid Diagram](./diagrams\14_Event_System_0.svg)
+![Mermaid Diagram](./diagrams/14_Event_System_0.svg)
 
 **Sources:** [src/config/emitters.ts:1-81](), [src/function/event.ts:1-647]()
 
@@ -187,7 +187,7 @@ export function listenSignal(fn: (event: IStrategyTickResult) => void) {
 
 **Queued Processing Flow**
 
-![Mermaid Diagram](./diagrams\14_Event_System_1.svg)
+![Mermaid Diagram](./diagrams/14_Event_System_1.svg)
 
 **Sources:** [src/function/event.ts:58](), [src/function/event.ts:9]()
 
@@ -199,7 +199,7 @@ export function listenSignal(fn: (event: IStrategyTickResult) => void) {
 
 **Backtest Signal Event Flow**
 
-![Mermaid Diagram](./diagrams\14_Event_System_2.svg)
+![Mermaid Diagram](./diagrams/14_Event_System_2.svg)
 
 **Key Emission Points:**
 
@@ -213,7 +213,7 @@ export function listenSignal(fn: (event: IStrategyTickResult) => void) {
 
 **Live Signal Event Flow**
 
-![Mermaid Diagram](./diagrams\14_Event_System_3.svg)
+![Mermaid Diagram](./diagrams/14_Event_System_3.svg)
 
 **Key Emission Points:**
 
@@ -227,7 +227,7 @@ export function listenSignal(fn: (event: IStrategyTickResult) => void) {
 
 **Walker Progress Event Flow**
 
-![Mermaid Diagram](./diagrams\14_Event_System_4.svg)
+![Mermaid Diagram](./diagrams/14_Event_System_4.svg)
 
 **Key Emission Points:**
 

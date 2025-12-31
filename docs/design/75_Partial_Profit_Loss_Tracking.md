@@ -48,7 +48,7 @@ The partial tracking system monitors active trading signals and emits events whe
 
 ### Data Flow
 
-![Mermaid Diagram](./diagrams\75_Partial_Profit_Loss_Tracking_0.svg)
+![Mermaid Diagram](./diagrams/75_Partial_Profit_Loss_Tracking_0.svg)
 
 **Sources**: [src/client/ClientPartial.ts:1-478](), [src/lib/services/connection/PartialConnectionService.ts:1-267](), [src/lib/services/global/PartialGlobalService.ts:1-205](), [src/lib/services/markdown/PartialMarkdownService.ts:1-478]()
 
@@ -95,7 +95,7 @@ State is stored in a `Map<signalId, IPartialState>` within each `ClientPartial` 
 
 ### Initialization Pattern
 
-![Mermaid Diagram](./diagrams\75_Partial_Profit_Loss_Tracking_1.svg)
+![Mermaid Diagram](./diagrams/75_Partial_Profit_Loss_Tracking_1.svg)
 
 The initialization uses a sentinel value `NEED_FETCH` to ensure `waitForInit()` is called before operations. The `singleshot` pattern from `functools-kit` guarantees initialization happens exactly once per symbol-strategy combination.
 
@@ -121,7 +121,7 @@ The `HANDLE_PROFIT_FN` and `HANDLE_LOSS_FN` functions iterate through level arra
 
 ### Method Flow Diagram
 
-![Mermaid Diagram](./diagrams\75_Partial_Profit_Loss_Tracking_2.svg)
+![Mermaid Diagram](./diagrams/75_Partial_Profit_Loss_Tracking_2.svg)
 
 **Sources**: [src/client/ClientPartial.ts:159-227](), [src/lib/services/connection/PartialConnectionService.ts:159-227]()
 
@@ -173,7 +173,7 @@ Partial state is persisted to disk for crash recovery in live trading mode. Back
 
 ### Persistence Architecture
 
-![Mermaid Diagram](./diagrams\75_Partial_Profit_Loss_Tracking_3.svg)
+![Mermaid Diagram](./diagrams/75_Partial_Profit_Loss_Tracking_3.svg)
 
 ### Persistence Flow
 
@@ -213,7 +213,7 @@ The markdown service subscribes to partial profit/loss events and generates repo
 
 ### Event Accumulation
 
-![Mermaid Diagram](./diagrams\75_Partial_Profit_Loss_Tracking_4.svg)
+![Mermaid Diagram](./diagrams/75_Partial_Profit_Loss_Tracking_4.svg)
 
 ### ReportStorage Class
 
@@ -294,7 +294,7 @@ await this.params.partial.clear(symbol, signal, closePrice, backtest);
 
 ### Service Layer Hierarchy
 
-![Mermaid Diagram](./diagrams\75_Partial_Profit_Loss_Tracking_5.svg)
+![Mermaid Diagram](./diagrams/75_Partial_Profit_Loss_Tracking_5.svg)
 
 The hierarchy follows the standard service layer pattern:
 1. **Global Service**: Entry point with validation and logging

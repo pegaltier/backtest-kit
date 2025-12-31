@@ -68,7 +68,7 @@ setConfig({
 
 The `GlobalConfig` type defines runtime parameters that affect profit/loss calculations, price execution, and validation logic across all strategies and exchanges.
 
-![Mermaid Diagram](./diagrams\77_Configuration_0.svg)
+![Mermaid Diagram](./diagrams/77_Configuration_0.svg)
 
 **Configuration Properties**:
 
@@ -106,7 +106,7 @@ For SHORT positions:
   pnlPercentage = ((adjustedPriceOpen - adjustedPriceClose) / adjustedPriceOpen) × 100
 ```
 
-![Mermaid Diagram](./diagrams\77_Configuration_1.svg)
+![Mermaid Diagram](./diagrams/77_Configuration_1.svg)
 
 **Example: Conservative vs Aggressive Configuration**
 ```typescript
@@ -137,7 +137,7 @@ VWAP = Σ(Typical Price × Volume) / Σ(Volume)
 where Typical Price = (High + Low + Close) / 3
 ```
 
-![Mermaid Diagram](./diagrams\77_Configuration_2.svg)
+![Mermaid Diagram](./diagrams/77_Configuration_2.svg)
 
 **Configuration Impact**:
 
@@ -164,7 +164,7 @@ setConfig({
 
 Validation parameters enforce minimum and maximum distances between entry price and take profit/stop loss targets. These prevent unrealistic signals with impossible profit targets or insufficient risk management.
 
-![Mermaid Diagram](./diagrams\77_Configuration_3.svg)
+![Mermaid Diagram](./diagrams/77_Configuration_3.svg)
 
 **Validation Parameters**:
 
@@ -209,7 +209,7 @@ setConfig({
 
 Timing parameters control signal lifecycle durations and live mode execution frequency. These prevent signals from remaining active indefinitely and control the rate of market data queries.
 
-![Mermaid Diagram](./diagrams\77_Configuration_4.svg)
+![Mermaid Diagram](./diagrams/77_Configuration_4.svg)
 
 **Timing Parameters**:
 
@@ -367,7 +367,7 @@ setColumns(allColumns);
 
 Configuration values are validated on initialization to prevent invalid system behavior. The `ConfigValidationService` ensures all parameters are within acceptable ranges.
 
-![Mermaid Diagram](./diagrams\77_Configuration_5.svg)
+![Mermaid Diagram](./diagrams/77_Configuration_5.svg)
 
 **Validation Ranges**:
 

@@ -45,7 +45,7 @@ Backtesting is designed for speed and reproducibility. It processes historical d
 
 The backtest system is organized into distinct layers that separate API concerns from execution logic:
 
-![Mermaid Diagram](./diagrams\54_Backtesting_0.svg)
+![Mermaid Diagram](./diagrams/54_Backtesting_0.svg)
 
 The `BacktestUtils` singleton provides the main entry point, with memoized `BacktestInstance` objects managing isolated execution per symbol-strategy pair. The logic layer orchestrates timeframe iteration and signal processing, delegating to core services for strategy execution, candle fetching, and timeframe generation.
 
@@ -55,7 +55,7 @@ The `BacktestUtils` singleton provides the main entry point, with memoized `Back
 
 The backtest execution follows a multi-stage flow that processes historical timeframes sequentially:
 
-![Mermaid Diagram](./diagrams\54_Backtesting_1.svg)
+![Mermaid Diagram](./diagrams/54_Backtesting_1.svg)
 
 The flow consists of several key phases:
 
@@ -442,7 +442,7 @@ The signal is effectively abandoned, and processing continues with remaining tim
 
 Before a backtest runs, all components must be registered and validated:
 
-![Mermaid Diagram](./diagrams\54_Backtesting_2.svg)
+![Mermaid Diagram](./diagrams/54_Backtesting_2.svg)
 
 If any validation fails, an error is thrown immediately before execution begins. This fail-fast approach ensures configuration errors are caught early.
 

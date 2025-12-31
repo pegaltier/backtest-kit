@@ -32,7 +32,7 @@ The backtest execution follows a pipeline where `BacktestLogicPrivateService` or
 
 **High-Level Execution Sequence**
 
-![Mermaid Diagram](./diagrams\55_Backtest_Execution_Flow_0.svg)
+![Mermaid Diagram](./diagrams/55_Backtest_Execution_Flow_0.svg)
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:1-123](), [src/lib/services/logic/public/BacktestLogicPublicService.ts:1-70]()
 
@@ -44,7 +44,7 @@ The backtest execution involves multiple service layers with clear separation of
 
 **Service Layer Interaction Diagram**
 
-![Mermaid Diagram](./diagrams\55_Backtest_Execution_Flow_1.svg)
+![Mermaid Diagram](./diagrams/55_Backtest_Execution_Flow_1.svg)
 
 **Sources:** [src/lib/services/logic/public/BacktestLogicPublicService.ts:1-70](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:1-123](), [src/lib/services/context/MethodContextService.ts:1-56]()
 
@@ -110,7 +110,7 @@ The service iterates through the timeframe array using a while loop with manual 
 
 **Iteration Loop with Progress and Stop Checking**
 
-![Mermaid Diagram](./diagrams\55_Backtest_Execution_Flow_2.svg)
+![Mermaid Diagram](./diagrams/55_Backtest_Execution_Flow_2.svg)
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:78-453]()
 
@@ -122,7 +122,7 @@ When a strategy returns a signal with `priceOpen` set (limit order), the backtes
 
 **Scheduled Signal Lifecycle in Backtest**
 
-![Mermaid Diagram](./diagrams\55_Backtest_Execution_Flow_3.svg)
+![Mermaid Diagram](./diagrams/55_Backtest_Execution_Flow_3.svg)
 
 **Candle Count Calculation for Scheduled Signals**
 
@@ -148,7 +148,7 @@ When a strategy returns a signal without `priceOpen` (market order), the signal 
 
 **Opened Signal Candle Fetching**
 
-![Mermaid Diagram](./diagrams\55_Backtest_Execution_Flow_4.svg)
+![Mermaid Diagram](./diagrams/55_Backtest_Execution_Flow_4.svg)
 
 The buffer start time is calculated as:
 
@@ -170,7 +170,7 @@ When a signal opens or activates, the backtest flow transitions to fast-forward 
 
 **Fast-Forward Execution Flow**
 
-![Mermaid Diagram](./diagrams\55_Backtest_Execution_Flow_5.svg)
+![Mermaid Diagram](./diagrams/55_Backtest_Execution_Flow_5.svg)
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:306-414]()
 
@@ -234,7 +234,7 @@ while (
 
 **Skipping Example Visualization**
 
-![Mermaid Diagram](./diagrams\55_Backtest_Execution_Flow_6.svg)
+![Mermaid Diagram](./diagrams/55_Backtest_Execution_Flow_6.svg)
 
 This skipping ensures:
 1. No duplicate signals during an active signal's lifetime
@@ -292,7 +292,7 @@ The following diagram traces a complete execution from the Public API through al
 
 **End-to-End Execution Trace**
 
-![Mermaid Diagram](./diagrams\55_Backtest_Execution_Flow_7.svg)
+![Mermaid Diagram](./diagrams/55_Backtest_Execution_Flow_7.svg)
 
 **Sources:** [src/classes/Backtest.ts:149-177](), [src/lib/services/logic/private/BacktestLogicPrivateService.ts:62-481]()
 
@@ -327,7 +327,7 @@ The backtest execution checks for stop signals at multiple safe points to allow 
 
 **Stop Check Points**
 
-![Mermaid Diagram](./diagrams\55_Backtest_Execution_Flow_8.svg)
+![Mermaid Diagram](./diagrams/55_Backtest_Execution_Flow_8.svg)
 
 Stop checking ensures:
 1. Active signals complete their lifecycle (not interrupted mid-execution)
@@ -345,7 +345,7 @@ The backtest execution includes error handling at the tick level to prevent sing
 
 **Error Handling Flow**
 
-![Mermaid Diagram](./diagrams\55_Backtest_Execution_Flow_9.svg)
+![Mermaid Diagram](./diagrams/55_Backtest_Execution_Flow_9.svg)
 
 **Error Scenarios and Handling**
 

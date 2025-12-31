@@ -33,7 +33,7 @@ Client implementations sit between the **connection service layer** and the **tr
 
 ### System Layer Hierarchy
 
-![Mermaid Diagram](./diagrams\32_Client_Implementations_0.svg)
+![Mermaid Diagram](./diagrams/32_Client_Implementations_0.svg)
 
 **Sources:** [src/lib/services/connection/StrategyConnectionService.ts:1-325](), [src/client/ClientStrategy.ts:1-100]()
 
@@ -55,7 +55,7 @@ Client implementations sit between the **connection service layer** and the **tr
 
 ### Instance Creation and Memoization
 
-![Mermaid Diagram](./diagrams\32_Client_Implementations_1.svg)
+![Mermaid Diagram](./diagrams/32_Client_Implementations_1.svg)
 
 **Sources:** [src/lib/services/connection/StrategyConnectionService.ts:123-156](), [src/client/ClientStrategy.ts:1074-1140]()
 
@@ -81,7 +81,7 @@ Client implementations sit between the **connection service layer** and the **tr
 
 ### Signal Generation with Throttling
 
-![Mermaid Diagram](./diagrams\32_Client_Implementations_2.svg)
+![Mermaid Diagram](./diagrams/32_Client_Implementations_2.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:332-476](), [src/client/ClientStrategy.ts:34-41]()
 
@@ -89,7 +89,7 @@ Client implementations sit between the **connection service layer** and the **tr
 
 Scheduled signals (limit orders) require special handling for activation and cancellation. The logic checks both price conditions and stop loss violations.
 
-![Mermaid Diagram](./diagrams\32_Client_Implementations_3.svg)
+![Mermaid Diagram](./diagrams/32_Client_Implementations_3.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:610-644](), [src/client/ClientStrategy.ts:646-679](), [src/client/ClientStrategy.ts:681-774]()
 
@@ -126,7 +126,7 @@ Scheduled signals (limit orders) require special handling for activation and can
 
 The system uses **Volume Weighted Average Price (VWAP)** instead of simple close prices for realistic execution simulation. VWAP is calculated from the last `CC_AVG_PRICE_CANDLES_COUNT` (default: 5) one-minute candles.
 
-![Mermaid Diagram](./diagrams\32_Client_Implementations_4.svg)
+![Mermaid Diagram](./diagrams/32_Client_Implementations_4.svg)
 
 **Formula (from [src/client/ClientStrategy.ts:478-489]()):
 ```
@@ -163,7 +163,7 @@ If `totalVolume === 0`, fallback to simple average: `Σ(close) / candles.length`
 
 ### Validation Chain Execution
 
-![Mermaid Diagram](./diagrams\32_Client_Implementations_5.svg)
+![Mermaid Diagram](./diagrams/32_Client_Implementations_5.svg)
 
 ### Position Tracking with Persistence
 
@@ -217,7 +217,7 @@ All methods respect constraints from `ISizingSchema`:
 
 ### Monitoring Flow
 
-![Mermaid Diagram](./diagrams\32_Client_Implementations_6.svg)
+![Mermaid Diagram](./diagrams/32_Client_Implementations_6.svg)
 
 **State Persistence:** `./dump/data/partial/{strategy}/{symbol}.json` stores already-emitted milestones to prevent duplicate events after crash recovery.
 
@@ -231,7 +231,7 @@ All methods respect constraints from `ISizingSchema`:
 
 ### Timeframe Generation
 
-![Mermaid Diagram](./diagrams\32_Client_Implementations_7.svg)
+![Mermaid Diagram](./diagrams/32_Client_Implementations_7.svg)
 
 **Example:**
 - `startDate`: 2025-01-01 00:00:00
@@ -249,7 +249,7 @@ All methods respect constraints from `ISizingSchema`:
 
 ### Architecture
 
-![Mermaid Diagram](./diagrams\32_Client_Implementations_8.svg)
+![Mermaid Diagram](./diagrams/32_Client_Implementations_8.svg)
 
 ### Data Source Pattern
 
@@ -373,10 +373,10 @@ await signalLiveEmitter.next(tickResult);
 
 ### Initialization Sequence
 
-![Mermaid Diagram](./diagrams\32_Client_Implementations_9.svg)
+![Mermaid Diagram](./diagrams/32_Client_Implementations_9.svg)
 
 ### Cleanup and Disposal
 
-![Mermaid Diagram](./diagrams\32_Client_Implementations_10.svg)
+![Mermaid Diagram](./diagrams/32_Client_Implementations_10.svg)
 
 **Sources:** [src/lib/services/connection/StrategyConnectionService.ts:284-321](), [src/classes/Backtest.ts:254-260]()

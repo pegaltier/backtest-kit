@@ -35,7 +35,7 @@ For information about the optimizer schema configuration and registration, see [
 
 Data sources provide the training data that feeds into the LLM conversation. Each source must implement the `IOptimizerSourceFn` interface, which supports pagination through `limit` and `offset` parameters. Sources can be either simple functions or full configuration objects with custom message formatters.
 
-![Mermaid Diagram](./diagrams\39_ClientOptimizer_0.svg)
+![Mermaid Diagram](./diagrams/39_ClientOptimizer_0.svg)
 
 **Data Flow:**
 1. `fetch()` retrieves paginated data with `limit=25` (ITERATION_LIMIT)
@@ -63,7 +63,7 @@ Each training range produces one strategy variant. All variants are compared usi
 
 Message history follows the standard LLM conversation format with three roles: `system`, `user`, and `assistant`. For each data source within each training range, the optimizer appends a user-assistant message pair. This builds context progressively across all sources.
 
-![Mermaid Diagram](./diagrams\39_ClientOptimizer_1.svg)
+![Mermaid Diagram](./diagrams/39_ClientOptimizer_1.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:99-215](), [src/model/Message.model.ts:1-26]()
 
@@ -73,7 +73,7 @@ Message history follows the standard LLM conversation format with three roles: `
 
 The `getData()` method orchestrates the entire data collection pipeline, building strategy metadata with full conversation context.
 
-![Mermaid Diagram](./diagrams\39_ClientOptimizer_2.svg)
+![Mermaid Diagram](./diagrams/39_ClientOptimizer_2.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:99-215](), [src/client/ClientOptimizer.ts:410-415]()
 
@@ -131,7 +131,7 @@ source.assistant(symbol, data, name) → custom formatted string
 
 The `getCode()` method generates complete executable strategy files by assembling multiple template sections.
 
-![Mermaid Diagram](./diagrams\39_ClientOptimizer_3.svg)
+![Mermaid Diagram](./diagrams/39_ClientOptimizer_3.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:225-350](), [src/client/ClientOptimizer.ts:424-429]()
 
@@ -166,7 +166,7 @@ The code generation follows a strict nine-section structure:
 
 Templates are provided via `IOptimizerParams.template`, which merges custom overrides with defaults from `OptimizerTemplateService`. Each template method returns a string of executable code:
 
-![Mermaid Diagram](./diagrams\39_ClientOptimizer_4.svg)
+![Mermaid Diagram](./diagrams/39_ClientOptimizer_4.svg)
 
 **Template Method Signatures:**
 ```typescript
@@ -257,7 +257,7 @@ listenError(...);
 
 `ClientOptimizer` emits progress events during data collection via the `onProgress` callback provided in the constructor. Progress tracks source processing, not code generation.
 
-![Mermaid Diagram](./diagrams\39_ClientOptimizer_5.svg)
+![Mermaid Diagram](./diagrams/39_ClientOptimizer_5.svg)
 
 **Progress Contract Structure:**
 
@@ -287,7 +287,7 @@ progress = totalSources > 0 ? processedSources / totalSources : 0
 
 `IOptimizerCallbacks` provides hooks for monitoring and validating optimizer operations. All callbacks are optional and async-compatible.
 
-![Mermaid Diagram](./diagrams\39_ClientOptimizer_6.svg)
+![Mermaid Diagram](./diagrams/39_ClientOptimizer_6.svg)
 
 **Callback Signatures:**
 
@@ -327,7 +327,7 @@ addOptimizer({
 
 ### Constructor and Dependencies
 
-![Mermaid Diagram](./diagrams\39_ClientOptimizer_7.svg)
+![Mermaid Diagram](./diagrams/39_ClientOptimizer_7.svg)
 
 **Constructor:**
 ```typescript

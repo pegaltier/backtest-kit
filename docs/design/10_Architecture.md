@@ -37,7 +37,7 @@ The architecture supports three primary execution modes:
 
 ### Architectural Layers
 
-![Mermaid Diagram](./diagrams\10_Architecture_0.svg)
+![Mermaid Diagram](./diagrams/10_Architecture_0.svg)
 
 **Sources:** [src/lib/index.ts:1-246](), [src/lib/core/types.ts:1-105](), [src/lib/core/provide.ts:1-143]()
 
@@ -45,7 +45,7 @@ The architecture supports three primary execution modes:
 
 The system uses a custom dependency injection container that maps TYPES symbols to service factory functions. All services are registered at module load time and instantiated lazily on first access.
 
-![Mermaid Diagram](./diagrams\10_Architecture_1.svg)
+![Mermaid Diagram](./diagrams/10_Architecture_1.svg)
 
 **Example Registration:**
 ```typescript
@@ -88,7 +88,7 @@ Each layer has specific responsibilities and communicates only with adjacent lay
 
 Connection services use factory pattern to create client instances. Memoization ensures proper instance isolation based on composite keys.
 
-![Mermaid Diagram](./diagrams\10_Architecture_2.svg)
+![Mermaid Diagram](./diagrams/10_Architecture_2.svg)
 
 **Key Construction Examples:**
 - Backtest strategy: `"BTCUSDT:my-strategy:true"`
@@ -106,7 +106,7 @@ This ensures that:
 
 Two scoped services provide implicit parameter passing without manual threading:
 
-![Mermaid Diagram](./diagrams\10_Architecture_3.svg)
+![Mermaid Diagram](./diagrams/10_Architecture_3.svg)
 
 **ExecutionContextService** provides runtime parameters:
 - `symbol`: Trading pair (e.g., "BTCUSDT")
@@ -126,7 +126,7 @@ This pattern eliminates the need to pass these parameters explicitly through eve
 
 The system uses RxJS Subjects as a central event bus for decoupled communication between components.
 
-![Mermaid Diagram](./diagrams\10_Architecture_4.svg)
+![Mermaid Diagram](./diagrams/10_Architecture_4.svg)
 
 **Event Hierarchy:**
 - `signalEmitter`: Broadcasts ALL signals (backtest + live)
@@ -144,7 +144,7 @@ All listener callbacks are wrapped with `queued()` from functools-kit, ensuring 
 
 The following diagram shows how data flows through the system during a backtest execution:
 
-![Mermaid Diagram](./diagrams\10_Architecture_5.svg)
+![Mermaid Diagram](./diagrams/10_Architecture_5.svg)
 
 **Key Observations:**
 1. **MethodContextService** wraps the generator to provide schema context
@@ -250,7 +250,7 @@ This pattern:
 
 The following diagram shows how risk management integrates across layers:
 
-![Mermaid Diagram](./diagrams\10_Architecture_6.svg)
+![Mermaid Diagram](./diagrams/10_Architecture_6.svg)
 
 **Key Interactions:**
 1. **Registration**: User calls `addRisk()` → validates → stores in SchemaService

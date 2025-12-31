@@ -45,7 +45,7 @@ The `Live` object is a singleton instance of `LiveUtils` that provides five prim
 
 ## Live Execution Model
 
-![Mermaid Diagram](./diagrams\19_Live_Trading_API_0.svg)
+![Mermaid Diagram](./diagrams/19_Live_Trading_API_0.svg)
 
 Live trading executes an infinite polling loop where each iteration calls `tick()` with the current timestamp. The loop sleeps for `TICK_TTL` (61 seconds by default) between iterations to prevent excessive API calls. Only `opened` and `closed` signals are yielded to the consumer; `idle`, `active`, and `scheduled` states trigger sleep without yielding.
 
@@ -163,7 +163,7 @@ Live.dump(
 
 ## Crash Recovery Architecture
 
-![Mermaid Diagram](./diagrams\19_Live_Trading_API_1.svg)
+![Mermaid Diagram](./diagrams/19_Live_Trading_API_1.svg)
 
 Live trading persists critical state at each lifecycle transition to enable crash recovery. When the process restarts, `ClientStrategy.waitForInit()` blocks until persisted state is loaded from disk. If an active signal exists, monitoring of TP/SL/timeout conditions resumes seamlessly.
 
@@ -198,7 +198,7 @@ Each persistence adapter implements `IPersistBase` interface with atomic `writeV
 
 ## Service Delegation Chain
 
-![Mermaid Diagram](./diagrams\19_Live_Trading_API_2.svg)
+![Mermaid Diagram](./diagrams/19_Live_Trading_API_2.svg)
 
 The Live API follows a multi-tier service architecture where each layer adds specific functionality:
 

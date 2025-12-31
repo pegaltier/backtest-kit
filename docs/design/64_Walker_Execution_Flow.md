@@ -32,7 +32,7 @@ Sources: [src/lib/services/logic/private/WalkerLogicPrivateService.ts:1-254]()
 
 ## Execution Architecture
 
-![Mermaid Diagram](./diagrams\64_Walker_Execution_Flow_0.svg)
+![Mermaid Diagram](./diagrams/64_Walker_Execution_Flow_0.svg)
 
 **Diagram: Walker Execution Architecture** - Shows the layered architecture from API entry point through orchestration, strategy execution, statistics extraction, and callback lifecycle.
 
@@ -64,7 +64,7 @@ Sources: [src/lib/services/logic/private/WalkerLogicPrivateService.ts:70-252]()
 
 ### State Machine for Single Strategy Execution
 
-![Mermaid Diagram](./diagrams\64_Walker_Execution_Flow_1.svg)
+![Mermaid Diagram](./diagrams/64_Walker_Execution_Flow_1.svg)
 
 **Diagram: State Machine for Single Strategy in Walker** - Shows the complete lifecycle of a single strategy execution within the walker loop, from callback invocation through metric extraction to progress emission.
 
@@ -92,7 +92,7 @@ This context is injected into `MethodContextService` and flows through the entir
 
 The orchestration follows this sequence:
 
-![Mermaid Diagram](./diagrams\64_Walker_Execution_Flow_2.svg)
+![Mermaid Diagram](./diagrams/64_Walker_Execution_Flow_2.svg)
 
 **Diagram: Backtest Orchestration Sequence** - Shows the message flow from walker through backtest execution to statistics extraction.
 
@@ -275,7 +275,7 @@ The walker schema supports four lifecycle callbacks that execute at specific poi
 
 ### Callback Invocation Points
 
-![Mermaid Diagram](./diagrams\64_Walker_Execution_Flow_3.svg)
+![Mermaid Diagram](./diagrams/64_Walker_Execution_Flow_3.svg)
 
 **Diagram: Walker Callback Invocation Points** - Shows the four callback types and when they execute during the walker lifecycle.
 

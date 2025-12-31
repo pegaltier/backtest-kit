@@ -69,7 +69,7 @@ Sources: [types.d.ts:358-369](), [src/client/ClientStrategy.ts:742-745](), [src/
 
 ## Position Tracking Architecture
 
-![Mermaid Diagram](./diagrams\70_Position_Tracking_0.svg)
+![Mermaid Diagram](./diagrams/70_Position_Tracking_0.svg)
 
 **Figure 1: Position Tracking Architecture** - Multiple `ClientStrategy` instances share a single `ClientRisk` instance through `RiskConnectionService` memoization. Each symbol maintains a `Set` of position keys identifying active strategies.
 
@@ -79,7 +79,7 @@ Sources: [src/client/ClientStrategy.ts:1-96](), [src/lib/services/connection/Str
 
 ## Position Lifecycle in Risk Management
 
-![Mermaid Diagram](./diagrams\70_Position_Tracking_1.svg)
+![Mermaid Diagram](./diagrams/70_Position_Tracking_1.svg)
 
 **Figure 2: Position Lifecycle with Risk Tracking** - Positions are added to the risk registry immediately after validation and removed when closed. The registry state is synchronized with the signal lifecycle.
 
@@ -227,7 +227,7 @@ Sources: [src/client/ClientStrategy.ts:376-384](), [src/client/ClientStrategy.ts
 
 The `maxConcurrentPositions` parameter enforces a hard limit on total open positions across all strategies sharing a risk profile:
 
-![Mermaid Diagram](./diagrams\70_Position_Tracking_2.svg)
+![Mermaid Diagram](./diagrams/70_Position_Tracking_2.svg)
 
 **Figure 3: Concurrent Position Limit Enforcement** - The risk system counts all active positions across symbols and strategies. When the limit is reached, new signals are rejected regardless of symbol or strategy.
 
@@ -262,7 +262,7 @@ Sources: [src/function/add.ts:270-343](), [src/client/ClientStrategy.ts:374-387]
 
 The position registry enables cross-strategy risk analysis by providing access to all active positions in custom validation functions:
 
-![Mermaid Diagram](./diagrams\70_Position_Tracking_3.svg)
+![Mermaid Diagram](./diagrams/70_Position_Tracking_3.svg)
 
 **Figure 4: Cross-Strategy Validation** - Custom validation functions can analyze the complete portfolio state when evaluating new signals, enabling correlation checks and exposure limits.
 
@@ -427,7 +427,7 @@ When `ClientStrategy` restores from disk in live mode, it does NOT call `risk.ad
 
 **Crash Recovery Synchronization:**
 
-![Mermaid Diagram](./diagrams\70_Position_Tracking_4.svg)
+![Mermaid Diagram](./diagrams/70_Position_Tracking_4.svg)
 
 **Why No `addSignal()` Call:**
 
@@ -617,7 +617,7 @@ Sources: [types.d.ts:358-369](), [types.d.ts:623-627](), [src/classes/Persist.ts
 
 ## Position Tracking in Service Architecture
 
-![Mermaid Diagram](./diagrams\70_Position_Tracking_5.svg)
+![Mermaid Diagram](./diagrams/70_Position_Tracking_5.svg)
 
 **Figure 5: Position Tracking in Service Architecture** - Position tracking is integrated throughout the service layers, from connection services to markdown reporting.
 

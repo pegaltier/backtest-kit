@@ -91,7 +91,7 @@ The `onTimeframe` callback fires after timeframe array generation, providing the
 
 ## Supported Frame Intervals
 
-![Mermaid Diagram](./diagrams\35_ClientFrame_0.svg)
+![Mermaid Diagram](./diagrams/35_ClientFrame_0.svg)
 
 **Interval Millisecond Conversion**:
 
@@ -117,7 +117,7 @@ The `onTimeframe` callback fires after timeframe array generation, providing the
 
 ## Frame System Architecture
 
-![Mermaid Diagram](./diagrams\35_ClientFrame_1.svg)
+![Mermaid Diagram](./diagrams/35_ClientFrame_1.svg)
 
 **Architecture Layers**:
 
@@ -133,7 +133,7 @@ The `onTimeframe` callback fires after timeframe array generation, providing the
 
 ## Timeframe Generation Algorithm
 
-![Mermaid Diagram](./diagrams\35_ClientFrame_2.svg)
+![Mermaid Diagram](./diagrams/35_ClientFrame_2.svg)
 
 **Algorithm Steps**:
 
@@ -167,7 +167,7 @@ For `startDate = 2024-01-01T00:00:00Z`, `endDate = 2024-01-01T02:00:00Z`, `inter
 
 ## Service Integration Pattern
 
-![Mermaid Diagram](./diagrams\35_ClientFrame_3.svg)
+![Mermaid Diagram](./diagrams/35_ClientFrame_3.svg)
 
 **Connection Service Responsibilities**:
 
@@ -195,7 +195,7 @@ const frame2 = frameConnectionService.getFrame("1d-backtest");
 
 ## Integration with Backtest Execution
 
-![Mermaid Diagram](./diagrams\35_ClientFrame_4.svg)
+![Mermaid Diagram](./diagrams/35_ClientFrame_4.svg)
 
 **Execution Flow**:
 

@@ -35,7 +35,7 @@ For detailed information about:
 
 The framework implements a type-safe state machine using discriminated unions. Every signal passes through well-defined states from creation to closure. The `action` field serves as the discriminator for type safety.
 
-![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_0.svg)
+![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_0.svg)
 
 **Key States:**
 - `idle`: No active signal, strategy waiting to generate new signal
@@ -53,7 +53,7 @@ The framework implements a type-safe state machine using discriminated unions. E
 
 The framework uses two primary signal types with a clear transformation flow:
 
-![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_1.svg)
+![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_1.svg)
 
 ### ISignalDto
 
@@ -101,7 +101,7 @@ Extends `ISignalRow` for signals awaiting price activation. The `pendingAt` fiel
 
 The transition from idle begins when `getSignal` returns a non-null signal. The framework performs interval throttling based on the strategy's configured `interval` field.
 
-![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_2.svg)
+![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_2.svg)
 
 **Interval Throttling Logic:**
 
@@ -152,7 +152,7 @@ if (shouldActivateImmediately) {
 
 Scheduled signals monitor three conditions on each tick: price activation, StopLoss hit, and timeout expiration.
 
-![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_3.svg)
+![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_3.svg)
 
 **Priority Order:**
 
@@ -196,7 +196,7 @@ if (elapsedTime >= maxTimeToWait) {
 
 The opened state is transient. After signal validation, the framework persists the signal (in live mode) and transitions to active monitoring:
 
-![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_4.svg)
+![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_4.svg)
 
 **Validation Rules:**
 
@@ -245,7 +245,7 @@ if (!isScheduled && isFinite(currentPrice)) {
 
 Active signals monitor three completion conditions on each tick: TakeProfit hit, StopLoss hit, or time expiration.
 
-![Mermaid Diagram](./diagrams\07_Signal_Lifecycle_Overview_5.svg)
+![Mermaid Diagram](./diagrams/07_Signal_Lifecycle_Overview_5.svg)
 
 **Time Calculation:**
 

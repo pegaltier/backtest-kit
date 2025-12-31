@@ -34,7 +34,7 @@ The framework employs a two-tier validation system to ensure signal integrity an
 
 ### System Architecture
 
-![Mermaid Diagram](./diagrams\69_Risk_Validation_0.svg)
+![Mermaid Diagram](./diagrams/69_Risk_Validation_0.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:45-476](), [src/client/ClientRisk.ts](), [types.d.ts:338-485]()
 
@@ -71,7 +71,7 @@ The `VALIDATE_SIGNAL_FN` in `ClientStrategy` performs comprehensive structural v
 
 The validation enforces strict price ordering based on position direction:
 
-![Mermaid Diagram](./diagrams\69_Risk_Validation_1.svg)
+![Mermaid Diagram](./diagrams/69_Risk_Validation_1.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:111-291]()
 
@@ -119,7 +119,7 @@ if (slDistancePercent > GLOBAL_CONFIG.CC_MAX_STOPLOSS_DISTANCE_PERCENT) {
 
 A critical protection prevents signals that would close immediately after opening:
 
-![Mermaid Diagram](./diagrams\69_Risk_Validation_2.svg)
+![Mermaid Diagram](./diagrams/69_Risk_Validation_2.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:124-160](), [src/client/ClientStrategy.ts:215-250]()
 
@@ -131,7 +131,7 @@ After passing built-in validation, signals are evaluated against user-defined ri
 
 ### Type Definitions and Relationships
 
-![Mermaid Diagram](./diagrams\69_Risk_Validation_3.svg)
+![Mermaid Diagram](./diagrams/69_Risk_Validation_3.svg)
 
 **Sources:** [types.d.ts:338-485](), [src/interfaces/Risk.interface.ts](), [src/client/ClientRisk.ts]()
 
@@ -143,7 +143,7 @@ The `ClientRisk.checkSignal()` method executes custom risk validations sequentia
 
 #### ClientRisk.checkSignal Implementation Flow
 
-![Mermaid Diagram](./diagrams\69_Risk_Validation_4.svg)
+![Mermaid Diagram](./diagrams/69_Risk_Validation_4.svg)
 
 **Sources:** [src/client/ClientRisk.ts](), [src/client/ClientStrategy.ts:374-387](), [src/config/emitters.ts:112-131]()
 
@@ -256,7 +256,7 @@ Risk validation occurs at **two critical checkpoints** in the signal lifecycle t
 
 ### Checkpoint Locations in ClientStrategy
 
-![Mermaid Diagram](./diagrams\69_Risk_Validation_5.svg)
+![Mermaid Diagram](./diagrams/69_Risk_Validation_5.svg)
 
 ### Checkpoint 1: Signal Generation
 
@@ -327,7 +327,7 @@ if (
 
 The validation system implements a **fail-fast pattern** where rejected signals immediately abort signal creation and emit rejection events for monitoring:
 
-![Mermaid Diagram](./diagrams\69_Risk_Validation_6.svg)
+![Mermaid Diagram](./diagrams/69_Risk_Validation_6.svg)
 
 **Rejection Event Structure:**
 
@@ -473,7 +473,7 @@ setConfig({
 
 Risk validation integrates seamlessly with the signal state machine:
 
-![Mermaid Diagram](./diagrams\69_Risk_Validation_7.svg)
+![Mermaid Diagram](./diagrams/69_Risk_Validation_7.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:332-476](), [src/client/ClientStrategy.ts:681-774]()
 
@@ -508,7 +508,7 @@ interface IRiskCallbacks {
 
 ### Callback Invocation Flow
 
-![Mermaid Diagram](./diagrams\69_Risk_Validation_8.svg)
+![Mermaid Diagram](./diagrams/69_Risk_Validation_8.svg)
 
 **Sources:** [src/client/ClientRisk.ts](), [src/config/emitters.ts:112-131]()
 

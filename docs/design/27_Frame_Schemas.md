@@ -76,7 +76,7 @@ The `FrameInterval` type defines the granularity of timestamp generation. Each i
 
 ### Supported Intervals
 
-![Mermaid Diagram](./diagrams\27_Frame_Schemas_0.svg)
+![Mermaid Diagram](./diagrams/27_Frame_Schemas_0.svg)
 
 ### Interval Type Definition
 
@@ -107,7 +107,7 @@ type FrameInterval =
 
 Frame schemas are consumed by `ClientFrame` to generate arrays of `Date` objects representing backtest timestamps. The `FrameCoreService` orchestrates this generation.
 
-![Mermaid Diagram](./diagrams\27_Frame_Schemas_1.svg)
+![Mermaid Diagram](./diagrams/27_Frame_Schemas_1.svg)
 
 ### Generation Algorithm
 
@@ -234,7 +234,7 @@ Frames are registered via the `addFrame()` public API function and referenced by
 
 ### Registration Flow
 
-![Mermaid Diagram](./diagrams\27_Frame_Schemas_2.svg)
+![Mermaid Diagram](./diagrams/27_Frame_Schemas_2.svg)
 
 ### Registration Example
 
@@ -305,7 +305,7 @@ The `FrameConnectionService` provides dependencies when instantiating `ClientFra
 
 ### ClientFrame Instantiation
 
-![Mermaid Diagram](./diagrams\27_Frame_Schemas_3.svg)
+![Mermaid Diagram](./diagrams/27_Frame_Schemas_3.svg)
 
 **Sources**: [types.d.ts:221-227]()
 
@@ -360,7 +360,7 @@ await Backtest.run("BTCUSDT", {
 
 Frames integrate with the backtest system through the `BacktestLogicPrivateService`, which uses generated timeframes to drive strategy simulation.
 
-![Mermaid Diagram](./diagrams\27_Frame_Schemas_4.svg)
+![Mermaid Diagram](./diagrams/27_Frame_Schemas_4.svg)
 
 ### Execution Context Propagation
 

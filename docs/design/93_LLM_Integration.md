@@ -42,7 +42,7 @@ The optimizer integrates with **Ollama** hosting the `deepseek-v3.1:671b` model.
 
 **LLM Integration Data Flow**
 
-![Mermaid Diagram](./diagrams\93_LLM_Integration_0.svg)
+![Mermaid Diagram](./diagrams/93_LLM_Integration_0.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:99-215](), [src/lib/services/template/OptimizerTemplateService.ts:1-27](), [src/lib/services/template/OptimizerTemplateService.ts:168-304]()
 
@@ -54,7 +54,7 @@ The `GET_STRATEGY_DATA_FN` function in `ClientOptimizer` builds conversation his
 
 **Message Construction Flow in GET_STRATEGY_DATA_FN**
 
-![Mermaid Diagram](./diagrams\93_LLM_Integration_1.svg)
+![Mermaid Diagram](./diagrams/93_LLM_Integration_1.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:99-215]()
 
@@ -117,7 +117,7 @@ The `getTextTemplate()` method generates a `text(messages)` helper for fundament
 
 **text() Function Structure**
 
-![Mermaid Diagram](./diagrams\93_LLM_Integration_2.svg)
+![Mermaid Diagram](./diagrams/93_LLM_Integration_2.svg)
 
 **Sources:** [src/lib/services/template/OptimizerTemplateService.ts:555-612]()
 
@@ -153,7 +153,7 @@ The `getJsonTemplate()` method generates a `json(messages)` helper that enforces
 
 **json() Function Structure**
 
-![Mermaid Diagram](./diagrams\93_LLM_Integration_3.svg)
+![Mermaid Diagram](./diagrams/93_LLM_Integration_3.svg)
 
 **Sources:** [src/lib/services/template/OptimizerTemplateService.ts:629-712]()
 
@@ -177,7 +177,7 @@ The `getStrategyTemplate()` method generates `addStrategy()` calls where `getSig
 
 **getSignal() Execution Flow**
 
-![Mermaid Diagram](./diagrams\93_LLM_Integration_4.svg)
+![Mermaid Diagram](./diagrams/93_LLM_Integration_4.svg)
 
 **Sources:** [src/lib/services/template/OptimizerTemplateService.ts:194-302]()
 
@@ -214,7 +214,7 @@ The `json()` helper function passes a `format` parameter to `ollama.chat()` that
 
 **ollama.chat() format Parameter Structure**
 
-![Mermaid Diagram](./diagrams\93_LLM_Integration_5.svg)
+![Mermaid Diagram](./diagrams/93_LLM_Integration_5.svg)
 
 **Sources:** [src/lib/services/template/OptimizerTemplateService.ts:675-705]()
 
@@ -254,7 +254,7 @@ The system message in `json()` provides detailed trading rules split into four s
 
 **Template Method Resolution in OptimizerConnectionService**
 
-![Mermaid Diagram](./diagrams\93_LLM_Integration_6.svg)
+![Mermaid Diagram](./diagrams/93_LLM_Integration_6.svg)
 
 **Sources:** [src/lib/services/connection/OptimizerConnectionService.ts:59-113]()
 
@@ -297,7 +297,7 @@ The `getJsonDumpTemplate()` method generates an `async dumpJson(resultId, histor
 
 **dumpJson() Execution Flow**
 
-![Mermaid Diagram](./diagrams\93_LLM_Integration_7.svg)
+![Mermaid Diagram](./diagrams/93_LLM_Integration_7.svg)
 
 **Sources:** [src/lib/services/template/OptimizerTemplateService.ts:457-544]()
 
@@ -341,7 +341,7 @@ The generated LLM-based strategies integrate seamlessly with the backtest-kit ex
 
 **Signal Execution Flow**
 
-![Mermaid Diagram](./diagrams\93_LLM_Integration_8.svg)
+![Mermaid Diagram](./diagrams/93_LLM_Integration_8.svg)
 
 **Generated Strategy Example**
 
