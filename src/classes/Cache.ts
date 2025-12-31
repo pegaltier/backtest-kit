@@ -47,11 +47,11 @@ type Key = `${StrategyName}:${ExchangeName}:${"backtest" | "live"}`;
  * @param backtest - Whether running in backtest mode
  * @returns Cache key string
  */
-const createKey = (
+const CREATE_KEY_FN = (
   strategyName: StrategyName,
   exchangeName: ExchangeName,
   backtest: boolean
-): Key => `${strategyName}:${exchangeName}:${backtest ? "backtest" : "live"}`;
+): Key => `${strategyName}:${exchangeName}:${backtest ? "backtest" : "live"}` as const;
 
 /**
  * Cached value with timestamp.
@@ -145,7 +145,7 @@ export class CacheInstance<T extends Function = Function> {
       }
     }
 
-    const key = createKey(
+    const key = CREATE_KEY_FN(
       backtest.methodContextService.context.strategyName,
       backtest.methodContextService.context.exchangeName,
       backtest.executionContextService.context.backtest
@@ -191,7 +191,7 @@ export class CacheInstance<T extends Function = Function> {
    * ```
    */
   public clear = () => {
-    const key = createKey(
+    const key = CREATE_KEY_FN(
       backtest.methodContextService.context.strategyName,
       backtest.methodContextService.context.exchangeName,
       backtest.executionContextService.context.backtest
