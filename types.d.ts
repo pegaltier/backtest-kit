@@ -110,350 +110,6 @@ interface ValidateArgs<T = Enum> {
  */
 declare function validate(args?: Partial<Args>): Promise<void>;
 
-declare const GLOBAL_CONFIG: {
-    /**
-     * Time to wait for scheduled signal to activate (in minutes)
-     * If signal does not activate within this time, it will be cancelled.
-     */
-    CC_SCHEDULE_AWAIT_MINUTES: number;
-    /**
-     * Number of candles to use for average price calculation (VWAP)
-     * Default: 5 candles (last 5 minutes when using 1m interval)
-     */
-    CC_AVG_PRICE_CANDLES_COUNT: number;
-    /**
-     * Slippage percentage applied to entry and exit prices.
-     * Simulates market impact and order book depth.
-     * Applied twice (entry and exit) for realistic execution simulation.
-     * Default: 0.1% per transaction
-     */
-    CC_PERCENT_SLIPPAGE: number;
-    /**
-     * Fee percentage charged per transaction.
-     * Applied twice (entry and exit) for total fee calculation.
-     * Default: 0.1% per transaction (total 0.2%)
-     */
-    CC_PERCENT_FEE: number;
-    /**
-     * Minimum TakeProfit distance from priceOpen (percentage)
-     * Must be greater than (slippage + fees) to ensure profitable trades
-     *
-     * Calculation:
-     * - Slippage effect: ~0.2% (0.1% × 2 transactions)
-     * - Fees: 0.2% (0.1% × 2 transactions)
-     * - Minimum profit buffer: 0.1%
-     * - Total: 0.5%
-     *
-     * Default: 0.5% (covers all costs + minimum profit margin)
-     */
-    CC_MIN_TAKEPROFIT_DISTANCE_PERCENT: number;
-    /**
-     * Minimum StopLoss distance from priceOpen (percentage)
-     * Prevents signals from being immediately stopped out due to price volatility
-     * Default: 0.5% (buffer to avoid instant stop loss on normal market fluctuations)
-     */
-    CC_MIN_STOPLOSS_DISTANCE_PERCENT: number;
-    /**
-     * Maximum StopLoss distance from priceOpen (percentage)
-     * Prevents catastrophic losses from extreme StopLoss values
-     * Default: 20% (one signal cannot lose more than 20% of position)
-     */
-    CC_MAX_STOPLOSS_DISTANCE_PERCENT: number;
-    /**
-     * Maximum signal lifetime in minutes
-     * Prevents eternal signals that block risk limits for weeks/months
-     * Default: 1440 minutes (1 day)
-     */
-    CC_MAX_SIGNAL_LIFETIME_MINUTES: number;
-    /**
-     * Maximum time allowed for signal generation (in seconds).
-     * Prevents long-running or stuck signal generation routines from blocking
-     * execution or consuming resources indefinitely. If generation exceeds this
-     * threshold the attempt should be aborted, logged and optionally retried.
-     *
-     * Default: 180 seconds (3 minutes)
-     */
-    CC_MAX_SIGNAL_GENERATION_SECONDS: number;
-    /**
-     * Number of retries for getCandles function
-     * Default: 3 retries
-     */
-    CC_GET_CANDLES_RETRY_COUNT: number;
-    /**
-     * Delay between retries for getCandles function (in milliseconds)
-     * Default: 5000 ms (5 seconds)
-     */
-    CC_GET_CANDLES_RETRY_DELAY_MS: number;
-    /**
-     * Maximum allowed deviation factor for price anomaly detection.
-     * Price should not be more than this factor lower than reference price.
-     *
-     * Reasoning:
-     * - Incomplete candles from Binance API typically have prices near 0 (e.g., $0.01-1)
-     * - Normal BTC price ranges: $20,000-100,000
-     * - Factor 1000 catches prices below $20-100 when median is $20,000-100,000
-     * - Factor 100 would be too permissive (allows $200 when median is $20,000)
-     * - Factor 10000 might be too strict for low-cap altcoins
-     *
-     * Example: BTC at $50,000 median → threshold $50 (catches $0.01-1 anomalies)
-     */
-    CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR: number;
-    /**
-     * Minimum number of candles required for reliable median calculation.
-     * Below this threshold, use simple average instead of median.
-     *
-     * Reasoning:
-     * - Each candle provides 4 price points (OHLC)
-     * - 5 candles = 20 price points, sufficient for robust median calculation
-     * - Below 5 candles, single anomaly can heavily skew median
-     * - Statistical rule of thumb: minimum 7-10 data points for median stability
-     * - Average is more stable than median for small datasets (n < 20)
-     *
-     * Example: 3 candles = 12 points (use average), 5 candles = 20 points (use median)
-     */
-    CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN: number;
-    /**
-     * Controls visibility of signal notes in markdown report tables.
-     * When enabled, the "Note" column will be displayed in all markdown reports
-     * (backtest, live, schedule, risk, etc.)
-     *
-     * Default: false (notes are hidden to reduce table width and improve readability)
-     */
-    CC_REPORT_SHOW_SIGNAL_NOTE: boolean;
-};
-/**
- * Type for global configuration object.
- */
-type GlobalConfig = typeof GLOBAL_CONFIG;
-
-/**
- * Mapping of available table/markdown reports to their column definitions.
- *
- * Each property references a column definition object imported from
- * `src/assets/*.columns`. These are used by markdown/report generators
- * (backtest, live, schedule, risk, heat, performance, partial, walker).
- */
-declare const COLUMN_CONFIG: {
-    /** Columns used in backtest markdown tables and reports */
-    backtest_columns: ColumnModel<IStrategyTickResultClosed>[];
-    /** Columns used by heatmap / heat reports */
-    heat_columns: ColumnModel<IHeatmapRow>[];
-    /** Columns for live trading reports and logs */
-    live_columns: ColumnModel<TickEvent>[];
-    /** Columns for partial-results / incremental reports */
-    partial_columns: ColumnModel<PartialEvent>[];
-    /** Columns for performance summary reports */
-    performance_columns: ColumnModel<MetricStats>[];
-    /** Columns for risk-related reports */
-    risk_columns: ColumnModel<RiskEvent>[];
-    /** Columns for scheduled report output */
-    schedule_columns: ColumnModel<ScheduledEvent>[];
-    /** Walker: PnL summary columns */
-    walker_pnl_columns: ColumnModel<SignalData$1>[];
-    /** Walker: strategy-level summary columns */
-    walker_strategy_columns: ColumnModel<IStrategyResult>[];
-};
-/**
- * Type for the column configuration object.
- */
-type ColumnConfig = typeof COLUMN_CONFIG;
-
-/**
- * Interface representing a logging mechanism for the swarm system.
- * Provides methods to record messages at different severity levels, used across components like agents, sessions, states, storage, swarms, history, embeddings, completions, and policies.
- * Logs are utilized to track lifecycle events (e.g., initialization, disposal), operational details (e.g., tool calls, message emissions), validation outcomes (e.g., policy checks), and errors (e.g., persistence failures), aiding in debugging, monitoring, and auditing.
-*/
-interface ILogger {
-    /**
-     * Logs a general-purpose message.
-     * Used throughout the swarm system to record significant events or state changes, such as agent execution, session connections, or storage updates.
-     */
-    log(topic: string, ...args: any[]): void;
-    /**
-     * Logs a debug-level message.
-     * Employed for detailed diagnostic information, such as intermediate states during agent tool calls, swarm navigation changes, or embedding creation processes, typically enabled in development or troubleshooting scenarios.
-     */
-    debug(topic: string, ...args: any[]): void;
-    /**
-     * Logs an info-level message.
-     * Used to record informational updates, such as successful completions, policy validations, or history commits, providing a high-level overview of system activity without excessive detail.
-     */
-    info(topic: string, ...args: any[]): void;
-    /**
-     * Logs a warning-level message.
-     * Used to record potentially problematic situations that don't prevent execution but may require attention, such as missing data, unexpected conditions, or deprecated usage.
-     */
-    warn(topic: string, ...args: any[]): void;
-}
-
-/**
- * Sets custom logger implementation for the framework.
- *
- * All log messages from internal services will be forwarded to the provided logger
- * with automatic context injection (strategyName, exchangeName, symbol, etc.).
- *
- * @param logger - Custom logger implementing ILogger interface
- *
- * @example
- * ```typescript
- * setLogger({
- *   log: (topic, ...args) => console.log(topic, args),
- *   debug: (topic, ...args) => console.debug(topic, args),
- *   info: (topic, ...args) => console.info(topic, args),
- * });
- * ```
- */
-declare function setLogger(logger: ILogger): void;
-/**
- * Sets global configuration parameters for the framework.
- * @param config - Partial configuration object to override default settings
- * @param _unsafe - Skip config validations - required for testbed
- *
- * @example
- * ```typescript
- * setConfig({
- *   CC_SCHEDULE_AWAIT_MINUTES: 90,
- * });
- * ```
- */
-declare function setConfig(config: Partial<GlobalConfig>, _unsafe?: boolean): void;
-/**
- * Retrieves a copy of the current global configuration.
- *
- * Returns a shallow copy of the current GLOBAL_CONFIG to prevent accidental mutations.
- * Use this to inspect the current configuration state without modifying it.
- *
- * @returns {GlobalConfig} A copy of the current global configuration object
- *
- * @example
- * ```typescript
- * const currentConfig = getConfig();
- * console.log(currentConfig.CC_SCHEDULE_AWAIT_MINUTES);
- * ```
- */
-declare function getConfig(): {
-    CC_SCHEDULE_AWAIT_MINUTES: number;
-    CC_AVG_PRICE_CANDLES_COUNT: number;
-    CC_PERCENT_SLIPPAGE: number;
-    CC_PERCENT_FEE: number;
-    CC_MIN_TAKEPROFIT_DISTANCE_PERCENT: number;
-    CC_MIN_STOPLOSS_DISTANCE_PERCENT: number;
-    CC_MAX_STOPLOSS_DISTANCE_PERCENT: number;
-    CC_MAX_SIGNAL_LIFETIME_MINUTES: number;
-    CC_MAX_SIGNAL_GENERATION_SECONDS: number;
-    CC_GET_CANDLES_RETRY_COUNT: number;
-    CC_GET_CANDLES_RETRY_DELAY_MS: number;
-    CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR: number;
-    CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN: number;
-    CC_REPORT_SHOW_SIGNAL_NOTE: boolean;
-};
-/**
- * Retrieves the default configuration object for the framework.
- *
- * Returns a reference to the default configuration with all preset values.
- * Use this to see what configuration options are available and their default values.
- *
- * @returns {GlobalConfig} The default configuration object
- *
- * @example
- * ```typescript
- * const defaultConfig = getDefaultConfig();
- * console.log(defaultConfig.CC_SCHEDULE_AWAIT_MINUTES);
- * ```
- */
-declare function getDefaultConfig(): Readonly<{
-    CC_SCHEDULE_AWAIT_MINUTES: number;
-    CC_AVG_PRICE_CANDLES_COUNT: number;
-    CC_PERCENT_SLIPPAGE: number;
-    CC_PERCENT_FEE: number;
-    CC_MIN_TAKEPROFIT_DISTANCE_PERCENT: number;
-    CC_MIN_STOPLOSS_DISTANCE_PERCENT: number;
-    CC_MAX_STOPLOSS_DISTANCE_PERCENT: number;
-    CC_MAX_SIGNAL_LIFETIME_MINUTES: number;
-    CC_MAX_SIGNAL_GENERATION_SECONDS: number;
-    CC_GET_CANDLES_RETRY_COUNT: number;
-    CC_GET_CANDLES_RETRY_DELAY_MS: number;
-    CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR: number;
-    CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN: number;
-    CC_REPORT_SHOW_SIGNAL_NOTE: boolean;
-}>;
-/**
- * Sets custom column configurations for markdown report generation.
- *
- * Allows overriding default column definitions for any report type.
- * All columns are validated before assignment to ensure structural correctness.
- *
- * @param columns - Partial column configuration object to override default column settings
- * @param _unsafe - Skip column validations - required for testbed
- *
- * @example
- * ```typescript
- * setColumns({
- *   backtest_columns: [
- *     {
- *       key: "customId",
- *       label: "Custom ID",
- *       format: (data) => data.signal.id,
- *       isVisible: () => true
- *     }
- *   ],
- * });
- * ```
- *
- * @throws {Error} If column configuration is invalid
- */
-declare function setColumns(columns: Partial<ColumnConfig>, _unsafe?: boolean): void;
-/**
- * Retrieves a copy of the current column configuration for markdown report generation.
- *
- * Returns a shallow copy of the current COLUMN_CONFIG to prevent accidental mutations.
- * Use this to inspect the current column definitions without modifying them.
- *
- * @returns {ColumnConfig} A copy of the current column configuration object
- *
- * @example
- * ```typescript
- * const currentColumns = getColumns();
- * console.log(currentColumns.backtest_columns.length);
- * ```
- */
-declare function getColumns(): {
-    backtest_columns: ColumnModel<IStrategyTickResultClosed>[];
-    heat_columns: ColumnModel<IHeatmapRow>[];
-    live_columns: ColumnModel<TickEvent>[];
-    partial_columns: ColumnModel<PartialEvent>[];
-    performance_columns: ColumnModel<MetricStats>[];
-    risk_columns: ColumnModel<RiskEvent>[];
-    schedule_columns: ColumnModel<ScheduledEvent>[];
-    walker_pnl_columns: ColumnModel<SignalData$1>[];
-    walker_strategy_columns: ColumnModel<IStrategyResult>[];
-};
-/**
- * Retrieves the default column configuration object for markdown report generation.
- *
- * Returns a reference to the default column definitions with all preset values.
- * Use this to see what column options are available and their default definitions.
- *
- * @returns {ColumnConfig} The default column configuration object
- *
- * @example
- * ```typescript
- * const defaultColumns = getDefaultColumns();
- * console.log(defaultColumns.backtest_columns);
- * ```
- */
-declare function getDefaultColumns(): Readonly<{
-    backtest_columns: ColumnModel<IStrategyTickResultClosed>[];
-    heat_columns: ColumnModel<IHeatmapRow>[];
-    live_columns: ColumnModel<TickEvent>[];
-    partial_columns: ColumnModel<PartialEvent>[];
-    performance_columns: ColumnModel<MetricStats>[];
-    risk_columns: ColumnModel<RiskEvent>[];
-    schedule_columns: ColumnModel<ScheduledEvent>[];
-    walker_pnl_columns: ColumnModel<SignalData$1>[];
-    walker_strategy_columns: ColumnModel<IStrategyResult>[];
-}>;
-
 /**
  * Execution context containing runtime parameters for strategy/exchange operations.
  *
@@ -499,6 +155,34 @@ declare const ExecutionContextService: (new () => {
  * Used for dependency injection type annotations.
  */
 type TExecutionContextService = InstanceType<typeof ExecutionContextService>;
+
+/**
+ * Interface representing a logging mechanism for the swarm system.
+ * Provides methods to record messages at different severity levels, used across components like agents, sessions, states, storage, swarms, history, embeddings, completions, and policies.
+ * Logs are utilized to track lifecycle events (e.g., initialization, disposal), operational details (e.g., tool calls, message emissions), validation outcomes (e.g., policy checks), and errors (e.g., persistence failures), aiding in debugging, monitoring, and auditing.
+*/
+interface ILogger {
+    /**
+     * Logs a general-purpose message.
+     * Used throughout the swarm system to record significant events or state changes, such as agent execution, session connections, or storage updates.
+     */
+    log(topic: string, ...args: any[]): void;
+    /**
+     * Logs a debug-level message.
+     * Employed for detailed diagnostic information, such as intermediate states during agent tool calls, swarm navigation changes, or embedding creation processes, typically enabled in development or troubleshooting scenarios.
+     */
+    debug(topic: string, ...args: any[]): void;
+    /**
+     * Logs an info-level message.
+     * Used to record informational updates, such as successful completions, policy validations, or history commits, providing a high-level overview of system activity without excessive detail.
+     */
+    info(topic: string, ...args: any[]): void;
+    /**
+     * Logs a warning-level message.
+     * Used to record potentially problematic situations that don't prevent execution but may require attention, such as missing data, unexpected conditions, or deprecated usage.
+     */
+    warn(topic: string, ...args: any[]): void;
+}
 
 /**
  * Candle time interval for fetching historical data.
@@ -1368,6 +1052,368 @@ type IStrategyBacktestResult = IStrategyTickResultClosed | IStrategyTickResultCa
  * Unique strategy identifier.
  */
 type StrategyName = string;
+
+/**
+ * Stops the strategy from generating new signals.
+ *
+ * Sets internal flag to prevent strategy from opening new signals.
+ * Current active signal (if any) will complete normally.
+ * Backtest/Live mode will stop at the next safe point (idle state or after signal closes).
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @param strategyName - Strategy name to stop
+ * @returns Promise that resolves when stop flag is set
+ *
+ * @example
+ * ```typescript
+ * import { stop } from "backtest-kit";
+ *
+ * // Stop strategy after some condition
+ * await stop("BTCUSDT", "my-strategy");
+ * ```
+ */
+declare function stop(symbol: string, strategyName: StrategyName): Promise<void>;
+/**
+ * Cancels the scheduled signal without stopping the strategy.
+ *
+ * Clears the scheduled signal (waiting for priceOpen activation).
+ * Does NOT affect active pending signals or strategy operation.
+ * Does NOT set stop flag - strategy can continue generating new signals.
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @param strategyName - Strategy name
+ * @param cancelId - Optional cancellation ID for tracking user-initiated cancellations
+ * @returns Promise that resolves when scheduled signal is cancelled
+ *
+ * @example
+ * ```typescript
+ * import { cancel } from "backtest-kit";
+ *
+ * // Cancel scheduled signal with custom ID
+ * await cancel("BTCUSDT", "my-strategy", "manual-cancel-001");
+ * ```
+ */
+declare function cancel(symbol: string, strategyName: StrategyName, cancelId?: string): Promise<void>;
+
+declare const GLOBAL_CONFIG: {
+    /**
+     * Time to wait for scheduled signal to activate (in minutes)
+     * If signal does not activate within this time, it will be cancelled.
+     */
+    CC_SCHEDULE_AWAIT_MINUTES: number;
+    /**
+     * Number of candles to use for average price calculation (VWAP)
+     * Default: 5 candles (last 5 minutes when using 1m interval)
+     */
+    CC_AVG_PRICE_CANDLES_COUNT: number;
+    /**
+     * Slippage percentage applied to entry and exit prices.
+     * Simulates market impact and order book depth.
+     * Applied twice (entry and exit) for realistic execution simulation.
+     * Default: 0.1% per transaction
+     */
+    CC_PERCENT_SLIPPAGE: number;
+    /**
+     * Fee percentage charged per transaction.
+     * Applied twice (entry and exit) for total fee calculation.
+     * Default: 0.1% per transaction (total 0.2%)
+     */
+    CC_PERCENT_FEE: number;
+    /**
+     * Minimum TakeProfit distance from priceOpen (percentage)
+     * Must be greater than (slippage + fees) to ensure profitable trades
+     *
+     * Calculation:
+     * - Slippage effect: ~0.2% (0.1% × 2 transactions)
+     * - Fees: 0.2% (0.1% × 2 transactions)
+     * - Minimum profit buffer: 0.1%
+     * - Total: 0.5%
+     *
+     * Default: 0.5% (covers all costs + minimum profit margin)
+     */
+    CC_MIN_TAKEPROFIT_DISTANCE_PERCENT: number;
+    /**
+     * Minimum StopLoss distance from priceOpen (percentage)
+     * Prevents signals from being immediately stopped out due to price volatility
+     * Default: 0.5% (buffer to avoid instant stop loss on normal market fluctuations)
+     */
+    CC_MIN_STOPLOSS_DISTANCE_PERCENT: number;
+    /**
+     * Maximum StopLoss distance from priceOpen (percentage)
+     * Prevents catastrophic losses from extreme StopLoss values
+     * Default: 20% (one signal cannot lose more than 20% of position)
+     */
+    CC_MAX_STOPLOSS_DISTANCE_PERCENT: number;
+    /**
+     * Maximum signal lifetime in minutes
+     * Prevents eternal signals that block risk limits for weeks/months
+     * Default: 1440 minutes (1 day)
+     */
+    CC_MAX_SIGNAL_LIFETIME_MINUTES: number;
+    /**
+     * Maximum time allowed for signal generation (in seconds).
+     * Prevents long-running or stuck signal generation routines from blocking
+     * execution or consuming resources indefinitely. If generation exceeds this
+     * threshold the attempt should be aborted, logged and optionally retried.
+     *
+     * Default: 180 seconds (3 minutes)
+     */
+    CC_MAX_SIGNAL_GENERATION_SECONDS: number;
+    /**
+     * Number of retries for getCandles function
+     * Default: 3 retries
+     */
+    CC_GET_CANDLES_RETRY_COUNT: number;
+    /**
+     * Delay between retries for getCandles function (in milliseconds)
+     * Default: 5000 ms (5 seconds)
+     */
+    CC_GET_CANDLES_RETRY_DELAY_MS: number;
+    /**
+     * Maximum allowed deviation factor for price anomaly detection.
+     * Price should not be more than this factor lower than reference price.
+     *
+     * Reasoning:
+     * - Incomplete candles from Binance API typically have prices near 0 (e.g., $0.01-1)
+     * - Normal BTC price ranges: $20,000-100,000
+     * - Factor 1000 catches prices below $20-100 when median is $20,000-100,000
+     * - Factor 100 would be too permissive (allows $200 when median is $20,000)
+     * - Factor 10000 might be too strict for low-cap altcoins
+     *
+     * Example: BTC at $50,000 median → threshold $50 (catches $0.01-1 anomalies)
+     */
+    CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR: number;
+    /**
+     * Minimum number of candles required for reliable median calculation.
+     * Below this threshold, use simple average instead of median.
+     *
+     * Reasoning:
+     * - Each candle provides 4 price points (OHLC)
+     * - 5 candles = 20 price points, sufficient for robust median calculation
+     * - Below 5 candles, single anomaly can heavily skew median
+     * - Statistical rule of thumb: minimum 7-10 data points for median stability
+     * - Average is more stable than median for small datasets (n < 20)
+     *
+     * Example: 3 candles = 12 points (use average), 5 candles = 20 points (use median)
+     */
+    CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN: number;
+    /**
+     * Controls visibility of signal notes in markdown report tables.
+     * When enabled, the "Note" column will be displayed in all markdown reports
+     * (backtest, live, schedule, risk, etc.)
+     *
+     * Default: false (notes are hidden to reduce table width and improve readability)
+     */
+    CC_REPORT_SHOW_SIGNAL_NOTE: boolean;
+};
+/**
+ * Type for global configuration object.
+ */
+type GlobalConfig = typeof GLOBAL_CONFIG;
+
+/**
+ * Mapping of available table/markdown reports to their column definitions.
+ *
+ * Each property references a column definition object imported from
+ * `src/assets/*.columns`. These are used by markdown/report generators
+ * (backtest, live, schedule, risk, heat, performance, partial, walker).
+ */
+declare const COLUMN_CONFIG: {
+    /** Columns used in backtest markdown tables and reports */
+    backtest_columns: ColumnModel<IStrategyTickResultClosed>[];
+    /** Columns used by heatmap / heat reports */
+    heat_columns: ColumnModel<IHeatmapRow>[];
+    /** Columns for live trading reports and logs */
+    live_columns: ColumnModel<TickEvent>[];
+    /** Columns for partial-results / incremental reports */
+    partial_columns: ColumnModel<PartialEvent>[];
+    /** Columns for performance summary reports */
+    performance_columns: ColumnModel<MetricStats>[];
+    /** Columns for risk-related reports */
+    risk_columns: ColumnModel<RiskEvent>[];
+    /** Columns for scheduled report output */
+    schedule_columns: ColumnModel<ScheduledEvent>[];
+    /** Walker: PnL summary columns */
+    walker_pnl_columns: ColumnModel<SignalData$1>[];
+    /** Walker: strategy-level summary columns */
+    walker_strategy_columns: ColumnModel<IStrategyResult>[];
+};
+/**
+ * Type for the column configuration object.
+ */
+type ColumnConfig = typeof COLUMN_CONFIG;
+
+/**
+ * Sets custom logger implementation for the framework.
+ *
+ * All log messages from internal services will be forwarded to the provided logger
+ * with automatic context injection (strategyName, exchangeName, symbol, etc.).
+ *
+ * @param logger - Custom logger implementing ILogger interface
+ *
+ * @example
+ * ```typescript
+ * setLogger({
+ *   log: (topic, ...args) => console.log(topic, args),
+ *   debug: (topic, ...args) => console.debug(topic, args),
+ *   info: (topic, ...args) => console.info(topic, args),
+ * });
+ * ```
+ */
+declare function setLogger(logger: ILogger): void;
+/**
+ * Sets global configuration parameters for the framework.
+ * @param config - Partial configuration object to override default settings
+ * @param _unsafe - Skip config validations - required for testbed
+ *
+ * @example
+ * ```typescript
+ * setConfig({
+ *   CC_SCHEDULE_AWAIT_MINUTES: 90,
+ * });
+ * ```
+ */
+declare function setConfig(config: Partial<GlobalConfig>, _unsafe?: boolean): void;
+/**
+ * Retrieves a copy of the current global configuration.
+ *
+ * Returns a shallow copy of the current GLOBAL_CONFIG to prevent accidental mutations.
+ * Use this to inspect the current configuration state without modifying it.
+ *
+ * @returns {GlobalConfig} A copy of the current global configuration object
+ *
+ * @example
+ * ```typescript
+ * const currentConfig = getConfig();
+ * console.log(currentConfig.CC_SCHEDULE_AWAIT_MINUTES);
+ * ```
+ */
+declare function getConfig(): {
+    CC_SCHEDULE_AWAIT_MINUTES: number;
+    CC_AVG_PRICE_CANDLES_COUNT: number;
+    CC_PERCENT_SLIPPAGE: number;
+    CC_PERCENT_FEE: number;
+    CC_MIN_TAKEPROFIT_DISTANCE_PERCENT: number;
+    CC_MIN_STOPLOSS_DISTANCE_PERCENT: number;
+    CC_MAX_STOPLOSS_DISTANCE_PERCENT: number;
+    CC_MAX_SIGNAL_LIFETIME_MINUTES: number;
+    CC_MAX_SIGNAL_GENERATION_SECONDS: number;
+    CC_GET_CANDLES_RETRY_COUNT: number;
+    CC_GET_CANDLES_RETRY_DELAY_MS: number;
+    CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR: number;
+    CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN: number;
+    CC_REPORT_SHOW_SIGNAL_NOTE: boolean;
+};
+/**
+ * Retrieves the default configuration object for the framework.
+ *
+ * Returns a reference to the default configuration with all preset values.
+ * Use this to see what configuration options are available and their default values.
+ *
+ * @returns {GlobalConfig} The default configuration object
+ *
+ * @example
+ * ```typescript
+ * const defaultConfig = getDefaultConfig();
+ * console.log(defaultConfig.CC_SCHEDULE_AWAIT_MINUTES);
+ * ```
+ */
+declare function getDefaultConfig(): Readonly<{
+    CC_SCHEDULE_AWAIT_MINUTES: number;
+    CC_AVG_PRICE_CANDLES_COUNT: number;
+    CC_PERCENT_SLIPPAGE: number;
+    CC_PERCENT_FEE: number;
+    CC_MIN_TAKEPROFIT_DISTANCE_PERCENT: number;
+    CC_MIN_STOPLOSS_DISTANCE_PERCENT: number;
+    CC_MAX_STOPLOSS_DISTANCE_PERCENT: number;
+    CC_MAX_SIGNAL_LIFETIME_MINUTES: number;
+    CC_MAX_SIGNAL_GENERATION_SECONDS: number;
+    CC_GET_CANDLES_RETRY_COUNT: number;
+    CC_GET_CANDLES_RETRY_DELAY_MS: number;
+    CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR: number;
+    CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN: number;
+    CC_REPORT_SHOW_SIGNAL_NOTE: boolean;
+}>;
+/**
+ * Sets custom column configurations for markdown report generation.
+ *
+ * Allows overriding default column definitions for any report type.
+ * All columns are validated before assignment to ensure structural correctness.
+ *
+ * @param columns - Partial column configuration object to override default column settings
+ * @param _unsafe - Skip column validations - required for testbed
+ *
+ * @example
+ * ```typescript
+ * setColumns({
+ *   backtest_columns: [
+ *     {
+ *       key: "customId",
+ *       label: "Custom ID",
+ *       format: (data) => data.signal.id,
+ *       isVisible: () => true
+ *     }
+ *   ],
+ * });
+ * ```
+ *
+ * @throws {Error} If column configuration is invalid
+ */
+declare function setColumns(columns: Partial<ColumnConfig>, _unsafe?: boolean): void;
+/**
+ * Retrieves a copy of the current column configuration for markdown report generation.
+ *
+ * Returns a shallow copy of the current COLUMN_CONFIG to prevent accidental mutations.
+ * Use this to inspect the current column definitions without modifying them.
+ *
+ * @returns {ColumnConfig} A copy of the current column configuration object
+ *
+ * @example
+ * ```typescript
+ * const currentColumns = getColumns();
+ * console.log(currentColumns.backtest_columns.length);
+ * ```
+ */
+declare function getColumns(): {
+    backtest_columns: ColumnModel<IStrategyTickResultClosed>[];
+    heat_columns: ColumnModel<IHeatmapRow>[];
+    live_columns: ColumnModel<TickEvent>[];
+    partial_columns: ColumnModel<PartialEvent>[];
+    performance_columns: ColumnModel<MetricStats>[];
+    risk_columns: ColumnModel<RiskEvent>[];
+    schedule_columns: ColumnModel<ScheduledEvent>[];
+    walker_pnl_columns: ColumnModel<SignalData$1>[];
+    walker_strategy_columns: ColumnModel<IStrategyResult>[];
+};
+/**
+ * Retrieves the default column configuration object for markdown report generation.
+ *
+ * Returns a reference to the default column definitions with all preset values.
+ * Use this to see what column options are available and their default definitions.
+ *
+ * @returns {ColumnConfig} The default column configuration object
+ *
+ * @example
+ * ```typescript
+ * const defaultColumns = getDefaultColumns();
+ * console.log(defaultColumns.backtest_columns);
+ * ```
+ */
+declare function getDefaultColumns(): Readonly<{
+    backtest_columns: ColumnModel<IStrategyTickResultClosed>[];
+    heat_columns: ColumnModel<IHeatmapRow>[];
+    live_columns: ColumnModel<TickEvent>[];
+    partial_columns: ColumnModel<PartialEvent>[];
+    performance_columns: ColumnModel<MetricStats>[];
+    risk_columns: ColumnModel<RiskEvent>[];
+    schedule_columns: ColumnModel<ScheduledEvent>[];
+    walker_pnl_columns: ColumnModel<SignalData$1>[];
+    walker_strategy_columns: ColumnModel<IStrategyResult>[];
+}>;
 
 /**
  * Statistical data calculated from backtest results.
@@ -11230,4 +11276,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type BacktestStatisticsModel, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatisticsModel, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, type PingContract, PositionSize, type ProgressBacktestContract, type ProgressOptimizerContract, type ProgressWalkerContract, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type ScheduledEvent, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, type TickEvent, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, dumpSignal, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenPing, listenPingOnce, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, setColumns, setConfig, setLogger, validate };
+export { Backtest, type BacktestStatisticsModel, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatisticsModel, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, type PingContract, PositionSize, type ProgressBacktestContract, type ProgressOptimizerContract, type ProgressWalkerContract, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type ScheduledEvent, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, type TickEvent, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, cancel, dumpSignal, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenPing, listenPingOnce, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, setColumns, setConfig, setLogger, stop, validate };

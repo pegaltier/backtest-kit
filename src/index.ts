@@ -2,6 +2,10 @@ export {
   validate,
 } from "./function/validate";
 export {
+  stop,
+  cancel,
+} from "./function/strategy";
+export {
   setLogger,
   setConfig,
   getConfig,
