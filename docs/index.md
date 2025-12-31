@@ -86,6 +86,8 @@ group: docs
 ## Functions
 
 - [validate](functions/validate.md)
+- [stop](functions/stop.md)
+- [cancel](functions/cancel.md)
 - [setLogger](functions/setLogger.md)
 - [setConfig](functions/setConfig.md)
 - [getConfig](functions/getConfig.md)
@@ -149,8 +151,8 @@ group: docs
 ## Interfaces
 
 - [ValidateArgs](interfaces/ValidateArgs.md)
-- [ILogger](interfaces/ILogger.md)
 - [IExecutionContext](interfaces/IExecutionContext.md)
+- [ILogger](interfaces/ILogger.md)
 - [ICandleData](interfaces/ICandleData.md)
 - [IExchangeParams](interfaces/IExchangeParams.md)
 - [IExchangeCallbacks](interfaces/IExchangeCallbacks.md)
@@ -255,8 +257,6 @@ group: docs
 
 - [Enum](types/Enum.md)
 - [Args](types/Args.md)
-- [GlobalConfig](types/GlobalConfig.md)
-- [ColumnConfig](types/ColumnConfig.md)
 - [TExecutionContextService](types/TExecutionContextService.md)
 - [CandleInterval](types/CandleInterval.md)
 - [ExchangeName](types/ExchangeName.md)
@@ -271,6 +271,8 @@ group: docs
 - [IStrategyTickResult](types/IStrategyTickResult.md)
 - [IStrategyBacktestResult](types/IStrategyBacktestResult.md)
 - [StrategyName](types/StrategyName.md)
+- [GlobalConfig](types/GlobalConfig.md)
+- [ColumnConfig](types/ColumnConfig.md)
 - [WalkerMetric](types/WalkerMetric.md)
 - [WalkerName](types/WalkerName.md)
 - [ISizingCalculateParams](types/ISizingCalculateParams.md)
