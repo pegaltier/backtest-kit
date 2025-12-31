@@ -39,6 +39,14 @@ type Function = (...args: any[]) => any;
  */
 type Key = `${StrategyName}:${ExchangeName}:${"backtest" | "live"}`;
 
+/**
+ * Create a cache key string from strategy name, exchange name, and backtest mode.
+ *
+ * @param strategyName - Name of the strategy
+ * @param exchangeName - Name of the exchange
+ * @param backtest - Whether running in backtest mode
+ * @returns Cache key string
+ */
 const createKey = (
   strategyName: StrategyName,
   exchangeName: ExchangeName,
