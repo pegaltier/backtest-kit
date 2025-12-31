@@ -263,64 +263,64 @@ After passing built-in validation, signals are evaluated against user-defined ri
 ```mermaid
 classDiagram
     class IRisk {
-        <<interface>>
-        +checkSignal(params: IRiskCheckArgs) Promise~boolean~
-        +addSignal(symbol: string, ctx: object) Promise~void~
-        +removeSignal(symbol: string, ctx: object) Promise~void~
+        interface
+        checkSignal params Promise boolean
+        addSignal symbol ctx Promise void
+        removeSignal symbol ctx Promise void
     }
-    
+
     class IRiskCheckArgs {
-        +symbol: string
-        +pendingSignal: ISignalDto
-        +strategyName: StrategyName
-        +exchangeName: ExchangeName
-        +currentPrice: number
-        +timestamp: number
+        symbol: string
+        pendingSignal: ISignalDto
+        strategyName: StrategyName
+        exchangeName: ExchangeName
+        currentPrice: number
+        timestamp: number
     }
-    
+
     class IRiskValidationPayload {
-        <<extends IRiskCheckArgs>>
-        +activePositionCount: number
-        +activePositions: IRiskActivePosition[]
+        extends IRiskCheckArgs
+        activePositionCount: number
+        activePositions: IRiskActivePosition[]
     }
-    
+
     class IRiskActivePosition {
-        +signal: ISignalRow
-        +strategyName: string
-        +exchangeName: string
-        +openTimestamp: number
+        signal: ISignalRow
+        strategyName: string
+        exchangeName: string
+        openTimestamp: number
     }
-    
+
     class IRiskValidationFn {
-        <<type>>
-        (payload: IRiskValidationPayload) void | Promise~void~
+        type
+        payload IRiskValidationPayload void or Promise void
     }
-    
+
     class IRiskValidation {
-        +validate: IRiskValidationFn
-        +note?: string
+        validate: IRiskValidationFn
+        note optional string
     }
-    
+
     class IRiskCallbacks {
-        +onRejected: (symbol, params, count, comment, ts) => void
-        +onAllowed: (symbol, params) => void
+        onRejected: function
+        onAllowed: function
     }
-    
+
     class IRiskSchema {
-        +riskName: RiskName
-        +note?: string
-        +validations: (IRiskValidation | IRiskValidationFn)[]
-        +callbacks?: Partial~IRiskCallbacks~
+        riskName: RiskName
+        note optional string
+        validations: array IRiskValidation
+        callbacks optional Partial IRiskCallbacks
     }
-    
+
     class ClientRisk {
-        -_activePositionsMap: Map
-        -params: IRiskParams
-        +checkSignal(params: IRiskCheckArgs) Promise~boolean~
-        +addSignal(symbol, ctx) Promise~void~
-        +removeSignal(symbol, ctx) Promise~void~
+        _activePositionsMap: Map
+        params: IRiskParams
+        checkSignal params Promise boolean
+        addSignal symbol ctx Promise void
+        removeSignal symbol ctx Promise void
     }
-    
+
     IRisk <|.. ClientRisk : implements
     IRiskCheckArgs <|-- IRiskValidationPayload : extends
     IRiskValidationPayload ..> IRiskActivePosition : contains

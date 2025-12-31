@@ -393,35 +393,35 @@ await sleep(TICK_TTL);
 
 ```mermaid
 sequenceDiagram
-    participant Loop as "while(true)"
-    participant Time as "System Clock"
-    participant Tick as "tick()"
-    participant Sleep as "sleep(TICK_TTL)"
-    
+    participant WhileLoop as while true loop
+    participant Time as System Clock
+    participant Tick as tick function
+    participant Sleep as sleep TICK_TTL
+
     Note over Time: 00:00:00.000
-    Loop->>Time: when = new Date()
-    Loop->>Tick: strategyGlobalService.tick(symbol, when, false)
-    Tick-->>Loop: IStrategyTickResult (action: "idle")
-    
-    Note over Loop: Check action type<br/>Result: idle (not yielded)
-    
-    Loop->>Sleep: await sleep(61000)
+    WhileLoop->>Time: when = new Date
+    WhileLoop->>Tick: strategyGlobalService.tick symbol when false
+    Tick-->>WhileLoop: IStrategyTickResult action: idle
+
+    Note over WhileLoop: Check action type<br/>Result: idle not yielded
+
+    WhileLoop->>Sleep: await sleep 61000
     Note over Sleep: Pause execution<br/>61 seconds
-    Sleep-->>Loop: Resume
-    
+    Sleep-->>WhileLoop: Resume
+
     Note over Time: 00:01:01.000
-    Loop->>Time: when = new Date()
-    Loop->>Tick: strategyGlobalService.tick(symbol, when, false)
-    Tick-->>Loop: IStrategyTickResult (action: "opened")
-    
-    Note over Loop: Check action type<br/>Result: opened (yielded)
-    
-    Loop->>Loop: yield result
-    Loop->>Sleep: await sleep(61000)
-    Sleep-->>Loop: Resume
-    
+    WhileLoop->>Time: when = new Date
+    WhileLoop->>Tick: strategyGlobalService.tick symbol when false
+    Tick-->>WhileLoop: IStrategyTickResult action: opened
+
+    Note over WhileLoop: Check action type<br/>Result: opened yielded
+
+    WhileLoop->>WhileLoop: yield result
+    WhileLoop->>Sleep: await sleep 61000
+    Sleep-->>WhileLoop: Resume
+
     Note over Time: 00:02:02.000
-    Loop->>Time: when = new Date()
+    WhileLoop->>Time: when = new Date
 ```
 
 **Sources**: [src/lib/services/logic/private/LiveLogicPrivateService.ts:12](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:86-128]()

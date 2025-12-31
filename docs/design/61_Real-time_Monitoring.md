@@ -30,40 +30,40 @@ The monitoring loop is implemented in `LiveLogicPrivateService` as an infinite `
 
 ```mermaid
 graph TB
-    START["LiveLogicPrivateService.run()"] --> LOOP_START["while(true)"]
-    
-    LOOP_START --> CREATE_TIMESTAMP["when = new Date()<br/>Real-time timestamp"]
-    CREATE_TIMESTAMP --> CALL_TICK["strategyCoreService.tick()<br/>symbol, when, backtest=false"]
-    
+    START["LiveLogicPrivateService.run"] --> LOOP_START["while true"]
+
+    LOOP_START --> CREATE_TIMESTAMP["when = new Date<br/>Real-time timestamp"]
+    CREATE_TIMESTAMP --> CALL_TICK["strategyCoreService.tick<br/>symbol when backtest=false"]
+
     CALL_TICK --> CHECK_ERROR{"Error?"}
-    CHECK_ERROR -->|Yes| LOG_ERROR["Log warning<br/>errorEmitter.next(error)"]
-    LOG_ERROR --> SLEEP_ERROR["sleep(TICK_TTL)"]
+    CHECK_ERROR -->|Yes| LOG_ERROR["Log warning<br/>errorEmitter.next error"]
+    LOG_ERROR --> SLEEP_ERROR["sleep TICK_TTL"]
     SLEEP_ERROR --> LOOP_START
-    
-    CHECK_ERROR -->|No| EMIT_PERF["performanceEmitter.next()<br/>metricType: 'live_tick'<br/>duration: tick time"]
-    
+
+    CHECK_ERROR -->|No| EMIT_PERF["performanceEmitter.next<br/>metricType: live_tick<br/>duration: tick time"]
+
     EMIT_PERF --> CHECK_ACTION{"result.action"}
-    
-    CHECK_ACTION -->|"idle"| CHECK_STOPPED_IDLE{"getStopped()?"}
+
+    CHECK_ACTION -->|idle| CHECK_STOPPED_IDLE{"getStopped?"}
     CHECK_STOPPED_IDLE -->|Yes| BREAK_IDLE["break<br/>Exit loop"]
-    CHECK_STOPPED_IDLE -->|No| SLEEP_IDLE["sleep(TICK_TTL)"]
+    CHECK_STOPPED_IDLE -->|No| SLEEP_IDLE["sleep TICK_TTL"]
     SLEEP_IDLE --> LOOP_START
-    
-    CHECK_ACTION -->|"active"| SLEEP_ACTIVE["sleep(TICK_TTL)"]
+
+    CHECK_ACTION -->|active| SLEEP_ACTIVE["sleep TICK_TTL"]
     SLEEP_ACTIVE --> LOOP_START
-    
-    CHECK_ACTION -->|"scheduled"| SLEEP_SCHEDULED["sleep(TICK_TTL)"]
+
+    CHECK_ACTION -->|scheduled| SLEEP_SCHEDULED["sleep TICK_TTL"]
     SLEEP_SCHEDULED --> LOOP_START
-    
-    CHECK_ACTION -->|"opened"<br/>or<br/>"closed"| YIELD["yield result<br/>Emit to generator consumer"]
-    
-    YIELD --> CHECK_CLOSED{"action === 'closed'"}
-    CHECK_CLOSED -->|Yes| CHECK_STOPPED_CLOSED{"getStopped()?"}
+
+    CHECK_ACTION -->|opened or closed| YIELD["yield result<br/>Emit to generator consumer"]
+
+    YIELD --> CHECK_CLOSED{"action equals closed"}
+    CHECK_CLOSED -->|Yes| CHECK_STOPPED_CLOSED{"getStopped?"}
     CHECK_STOPPED_CLOSED -->|Yes| BREAK_CLOSED["break<br/>Exit loop"]
-    CHECK_STOPPED_CLOSED -->|No| SLEEP_YIELD["sleep(TICK_TTL)"]
+    CHECK_STOPPED_CLOSED -->|No| SLEEP_YIELD["sleep TICK_TTL"]
     CHECK_CLOSED -->|No| SLEEP_YIELD
     SLEEP_YIELD --> LOOP_START
-    
+
     BREAK_IDLE --> END["Generator completes"]
     BREAK_CLOSED --> END
 ```

@@ -395,12 +395,12 @@ interface IOptimizerCallbacks {
 ```mermaid
 sequenceDiagram
     participant User
-    participant getData["ClientOptimizer<br/>.getData()"]
-    participant getCode["ClientOptimizer<br/>.getCode()"]
-    participant dump["ClientOptimizer<br/>.dump()"]
-    
+    participant getData["ClientOptimizer.getData()"]
+    participant getCode["ClientOptimizer.getCode()"]
+    participant dump["ClientOptimizer.dump()"]
+
     User->>getData: symbol
-    
+
     loop rangeTrain.forEach
         loop source.forEach
             getData->>getData: fetch + format data
@@ -408,15 +408,15 @@ sequenceDiagram
         end
         getData->>getData: getPrompt(symbol, messages)
     end
-    
+
     getData->>getData: callbacks.onData<br/>[src/client/ClientOptimizer.ts:210]
     getData-->>User: IOptimizerStrategy[]
-    
+
     User->>getCode: symbol
     getCode->>getCode: Assemble code sections
     getCode->>getCode: callbacks.onCode<br/>[src/client/ClientOptimizer.ts:345]
     getCode-->>User: code string
-    
+
     User->>dump: symbol, path
     dump->>dump: writeFile(filepath, code)
     dump->>dump: callbacks.onDump<br/>[src/client/ClientOptimizer.ts:377]

@@ -792,7 +792,7 @@ sequenceDiagram
     participant GetSignal as "GET_SIGNAL_FN"
     participant Scheduled as "_scheduledSignal"
     participant CheckPrice as "CHECK_SCHEDULED_SIGNAL_PRICE_ACTIVATION_FN"
-    participant Activate as "ACTIVATE_SCHEDULED_SIGNAL_FN"
+    participant ActivateFn as "ACTIVATE_SCHEDULED_SIGNAL_FN"
     participant Active as "_pendingSignal"
     participant Monitor as "CHECK_PENDING_SIGNAL_COMPLETION_FN"
     
@@ -810,12 +810,12 @@ sequenceDiagram
     
     Scheduled->>CheckPrice: Check every tick (line 610-644)
     CheckPrice->>CheckPrice: currentPrice <= priceOpen (LONG)<br/>OR currentPrice >= priceOpen (SHORT)
-    CheckPrice-->>Activate: shouldActivate = true
-    
-    Activate->>Activate: T2 = activationTimestamp
-    Note over Activate: CRITICAL UPDATE<br/>at line 734-738
-    Activate->>Active: pendingAt = T2
-    Activate->>Active: scheduledAt remains T1
+    CheckPrice->>ActivateFn: shouldActivate = true
+
+    ActivateFn->>ActivateFn: T2 = activationTimestamp
+    Note over ActivateFn: CRITICAL UPDATE<br/>at line 734-738
+    ActivateFn->>Active: pendingAt = T2
+    ActivateFn->>Active: scheduledAt remains T1
     
     Note over Active: NOW ACTIVE<br/>pendingAt reflects actual activation<br/>Duration counts from T2, not T1
     

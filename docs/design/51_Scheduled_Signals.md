@@ -84,22 +84,22 @@ If immediate activation conditions are met, the signal transitions directly to "
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Scheduled: "getSignal() returns signal with priceOpen<br/>Price has NOT reached priceOpen yet"
-    
-    Scheduled --> Pending: "Price reaches priceOpen<br/>(LONG: currentPrice <= priceOpen)<br/>(SHORT: currentPrice >= priceOpen)<br/>Risk.checkSignal() passes"
-    
-    Scheduled --> Cancelled_Timeout: "elapsedTime >= CC_SCHEDULE_AWAIT_MINUTES<br/>(default 120 minutes)"
-    
-    Scheduled --> Cancelled_StopLoss: "LONG: currentPrice <= priceStopLoss<br/>SHORT: currentPrice >= priceStopLoss<br/>(StopLoss hit BEFORE priceOpen)"
-    
-    Scheduled --> Cancelled_Risk: "Price reaches priceOpen<br/>BUT Risk.checkSignal() fails"
-    
-    Pending --> Active: "Position opened<br/>Monitoring TP/SL/time"
-    
-    Cancelled_Timeout --> [*]: "Signal removed<br/>No PNL impact"
-    Cancelled_StopLoss --> [*]: "Signal removed<br/>No PNL impact"
-    Cancelled_Risk --> [*]: "Signal removed<br/>No PNL impact"
-    
+    [*] --> Scheduled: getSignal returns signal with priceOpen
+
+    Scheduled --> Pending: Price reaches priceOpen and risk passes
+
+    Scheduled --> Cancelled_Timeout: Timeout exceeded
+
+    Scheduled --> Cancelled_StopLoss: StopLoss hit before activation
+
+    Scheduled --> Cancelled_Risk: Price reached but risk rejected
+
+    Pending --> Active: Position opened
+
+    Cancelled_Timeout --> [*]: Signal removed
+    Cancelled_StopLoss --> [*]: Signal removed
+    Cancelled_Risk --> [*]: Signal removed
+
     note right of Scheduled
         IStrategyTickResultScheduled
         scheduledAt: creation timestamp
@@ -107,7 +107,7 @@ stateDiagram-v2
         _isScheduled: true
         Persisted in PersistScheduleAdapter
     end note
-    
+
     note right of Pending
         IStrategyTickResultOpened
         scheduledAt: original timestamp
@@ -115,7 +115,7 @@ stateDiagram-v2
         _isScheduled: false
         Moved to PersistSignalAdapter
     end note
-    
+
     note left of Cancelled_StopLoss
         Prevents opening positions
         that would immediately lose

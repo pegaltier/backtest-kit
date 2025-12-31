@@ -203,35 +203,35 @@ The live trading infinite loop uses `TICK_TTL` to control iteration frequency:
 
 ```mermaid
 sequenceDiagram
-    participant Loop as "Live Loop"
-    participant Strategy as "StrategyCoreService.tick()"
-    participant Sleep as "sleep(TICK_TTL)"
-    participant State as "Signal State"
-    
-    Loop->>Strategy: tick(symbol, new Date(), false)
-    Strategy-->>Loop: IStrategyTickResult
-    
-    alt action === "idle"
-        Loop->>State: No active signal
-        Loop->>Sleep: sleep(60,001 ms)
-        Sleep-->>Loop: Resume
-    else action === "active"
-        Loop->>State: Monitoring TP/SL
-        Loop->>Sleep: sleep(60,001 ms)
-        Sleep-->>Loop: Resume
-    else action === "opened"
-        Loop->>State: New position
-        State-->>Loop: Yield opened result
-        Loop->>Sleep: sleep(60,001 ms)
-        Sleep-->>Loop: Resume
-    else action === "closed"
-        Loop->>State: Position closed
-        State-->>Loop: Yield closed result
-        Loop->>Sleep: sleep(60,001 ms)
-        Sleep-->>Loop: Resume
+    participant LiveLoop as Live Loop
+    participant Strategy as StrategyCoreService.tick
+    participant Sleep as sleep TICK_TTL
+    participant State as Signal State
+
+    LiveLoop->>Strategy: tick symbol new Date false
+    Strategy-->>LiveLoop: IStrategyTickResult
+
+    alt action equals idle
+        LiveLoop->>State: No active signal
+        LiveLoop->>Sleep: sleep 60,001 ms
+        Sleep-->>LiveLoop: Resume
+    else action equals active
+        LiveLoop->>State: Monitoring TP/SL
+        LiveLoop->>Sleep: sleep 60,001 ms
+        Sleep-->>LiveLoop: Resume
+    else action equals opened
+        LiveLoop->>State: New position
+        State-->>LiveLoop: Yield opened result
+        LiveLoop->>Sleep: sleep 60,001 ms
+        Sleep-->>LiveLoop: Resume
+    else action equals closed
+        LiveLoop->>State: Position closed
+        State-->>LiveLoop: Yield closed result
+        LiveLoop->>Sleep: sleep 60,001 ms
+        Sleep-->>LiveLoop: Resume
     end
-    
-    Loop->>Loop: Next iteration
+
+    LiveLoop->>LiveLoop: Next iteration
 ```
 
 **Performance Implications**:

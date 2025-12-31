@@ -49,12 +49,12 @@ graph TB
     
     subgraph "Client Implementation Layer"
         CP[ClientPartial<br/>Milestone tracking<br/>State management]
-        STATE["_states: Map&lt;signalId, IPartialState&gt;<br/>profitLevels: Set&lt;PartialLevel&gt;<br/>lossLevels: Set&lt;PartialLevel&gt;"]
+        STATE["_states: Map(signalId, IPartialState)<br/>profitLevels: Set(PartialLevel)<br/>lossLevels: Set(PartialLevel)"]
     end
     
     subgraph "Persistence Layer"
-        PPA[PersistPartialAdapter<br/>./dump/data/partial/<br/>{symbol}_{strategy}/levels.json]
-        ATOMIC[writeFileAtomic<br/>Atomic file writes<br/>tmp → rename pattern]
+        PPA["PersistPartialAdapter<br/>./dump/data/partial/<br/>symbol_strategy/levels.json"]
+        ATOMIC["writeFileAtomic<br/>Atomic file writes<br/>tmp to rename pattern"]
     end
     
     subgraph "Event System"
@@ -261,7 +261,7 @@ graph TB
     KEY1 --> INST1
     KEY2 --> INST2
     
-    CLEAR -->|getPartial.clear(key)| MEMO
+    CLEAR -->|clear cache entry| MEMO
     
     NOTE1["Same signalId but different<br/>backtest mode = separate instances<br/>Prevents state contamination"]
     NOTE2["clear() removes memoized entry<br/>Prevents memory leaks<br/>after signal closes"]

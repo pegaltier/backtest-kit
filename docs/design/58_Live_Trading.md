@@ -449,31 +449,31 @@ addStrategy({
 
 ```mermaid
 sequenceDiagram
-    participant LOOP as LiveLogicPrivateService
+    participant LiveSvc as LiveLogicPrivateService
     participant CS as ClientStrategy
-    participant STRAT as Strategy.getSignal()
-    
-    Note over LOOP: Tick 1: 14:00:00
-    LOOP->>CS: tick(when=14:00:00)
-    CS->>CS: Check interval (5m)<br/>Last called: null
-    CS->>STRAT: getSignal(payload)
+    participant STRAT as Strategy.getSignal
+
+    Note over LiveSvc: Tick 1: 14:00:00
+    LiveSvc->>CS: tick when=14:00:00
+    CS->>CS: Check interval 5m<br/>Last called: null
+    CS->>STRAT: getSignal payload
     STRAT-->>CS: ISignalDto
     CS->>CS: Update _lastSignalTime = 14:00:00
-    CS-->>LOOP: IStrategyTickResult
-    
-    Note over LOOP: Tick 2: 14:01:01
-    LOOP->>CS: tick(when=14:01:01)
-    CS->>CS: Check interval (5m)<br/>Last called: 14:00:00<br/>Elapsed: 1 min < 5 min
-    CS->>CS: Skip getSignal()
-    CS-->>LOOP: IStrategyTickResult (previous state)
-    
-    Note over LOOP: Tick 3: 14:05:01
-    LOOP->>CS: tick(when=14:05:01)
-    CS->>CS: Check interval (5m)<br/>Last called: 14:00:00<br/>Elapsed: 5 min >= 5 min
-    CS->>STRAT: getSignal(payload)
+    CS-->>LiveSvc: IStrategyTickResult
+
+    Note over LiveSvc: Tick 2: 14:01:01
+    LiveSvc->>CS: tick when=14:01:01
+    CS->>CS: Check interval 5m<br/>Last called: 14:00:00<br/>Elapsed: 1 min less than 5 min
+    CS->>CS: Skip getSignal
+    CS-->>LiveSvc: IStrategyTickResult previous state
+
+    Note over LiveSvc: Tick 3: 14:05:01
+    LiveSvc->>CS: tick when=14:05:01
+    CS->>CS: Check interval 5m<br/>Last called: 14:00:00<br/>Elapsed: 5 min or more
+    CS->>STRAT: getSignal payload
     STRAT-->>CS: ISignalDto
     CS->>CS: Update _lastSignalTime = 14:05:01
-    CS-->>LOOP: IStrategyTickResult
+    CS-->>LiveSvc: IStrategyTickResult
 ```
 
 **Sources:** [src/client/ClientStrategy.ts]() (referenced in architecture), [src/interfaces/Strategy.interface.ts]() (interval types)

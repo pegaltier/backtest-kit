@@ -56,18 +56,18 @@ classDiagram
     class IRiskSchema {
         +RiskName riskName
         +string? note
-        +(IRiskValidation or IRiskValidationFn)[] validations
-        +Partial~IRiskCallbacks~? callbacks
+        +"(IRiskValidation|IRiskValidationFn)[]" validations
+        +"Partial&lt;IRiskCallbacks&gt;?" callbacks
     }
-    
+
     class IRiskValidation {
         +IRiskValidationFn validate
         +string? note
     }
-    
+
     class IRiskValidationFn {
         <<interface>>
-        (payload: IRiskValidationPayload): void or Promise~void~
+        +"(payload: IRiskValidationPayload): void|Promise&lt;void&gt;" getSignal
     }
     
     class IRiskCallbacks {

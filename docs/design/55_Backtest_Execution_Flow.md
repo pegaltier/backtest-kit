@@ -360,35 +360,35 @@ When a signal opens or activates, the backtest flow transitions to fast-forward 
 
 ```mermaid
 sequenceDiagram
-    participant Loop as "BacktestLogicPrivateService"
-    participant StratCore as "StrategyCoreService"
-    participant ExchCore as "ExchangeCoreService"
-    participant ClientStrat as "ClientStrategy"
-    
-    Loop->>StratCore: "tick(symbol, when, true)"
-    StratCore->>ClientStrat: "tick()"
-    ClientStrat-->>StratCore: "{action: 'opened', signal}"
-    StratCore-->>Loop: "IStrategyTickResultOpened"
-    
-    Note over Loop: Signal detected<br/>minuteEstimatedTime = 60
-    
-    Loop->>ExchCore: "getNextCandles(symbol, '1m', bufferMinutes+60, bufferStartTime)"
-    ExchCore-->>Loop: "ICandleData[] (65 candles with buffer)"
-    
-    Note over Loop: Pass candles to backtest
-    
-    Loop->>StratCore: "backtest(symbol, candles, when, true)"
-    StratCore->>ClientStrat: "backtest(candles)"
-    
+    participant LogicSvc as BacktestLogicPrivateService
+    participant StratCore as StrategyCoreService
+    participant ExchCore as ExchangeCoreService
+    participant ClientStrat as ClientStrategy
+
+    LogicSvc->>StratCore: tick(symbol, when, true)
+    StratCore->>ClientStrat: tick()
+    ClientStrat-->>StratCore: action: opened, signal
+    StratCore-->>LogicSvc: IStrategyTickResultOpened
+
+    Note over LogicSvc: Signal detected<br/>minuteEstimatedTime = 60
+
+    LogicSvc->>ExchCore: getNextCandles(symbol, 1m, bufferMinutes+60, bufferStartTime)
+    ExchCore-->>LogicSvc: ICandleData[] 65 candles with buffer
+
+    Note over LogicSvc: Pass candles to backtest
+
+    LogicSvc->>StratCore: backtest(symbol, candles, when, true)
+    StratCore->>ClientStrat: backtest(candles)
+
     Note over ClientStrat: Iterate through candles<br/>Calculate VWAP<br/>Check TP/SL hits
-    
-    ClientStrat-->>StratCore: "{action: 'closed', closeTimestamp, pnl}"
-    StratCore-->>Loop: "IStrategyBacktestResult"
-    
-    Note over Loop: Skip timeframes<br/>until closeTimestamp
-    Loop->>Loop: "while (timeframes[i] < closeTimestamp) i++"
-    
-    Loop->>Loop: "yield backtestResult"
+
+    ClientStrat-->>StratCore: action: closed, closeTimestamp, pnl
+    StratCore-->>LogicSvc: IStrategyBacktestResult
+
+    Note over LogicSvc: Skip timeframes<br/>until closeTimestamp
+    LogicSvc->>LogicSvc: while timeframes[i] less than closeTimestamp i++
+
+    LogicSvc->>LogicSvc: yield backtestResult
 ```
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:306-414]()

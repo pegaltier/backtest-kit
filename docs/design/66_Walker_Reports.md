@@ -690,31 +690,31 @@ Walker reports are automatically populated during walker execution. No manual in
 
 ```mermaid
 graph TB
-    User["Walker.run(symbol, {walkerName})"]
+    User["Walker.run symbol walkerName"]
     WalkerCommand["WalkerCommandService"]
     WalkerLogic["WalkerLogicPrivateService"]
-    
+
     subgraph "For Each Strategy"
-        Backtest["BacktestCommandService.run()"]
+        Backtest["BacktestCommandService.run"]
         Complete["Strategy backtest completes"]
         Extract["Extract BacktestStatisticsModel"]
         Emit["Emit WalkerContract"]
     end
-    
-    WalkerMD["WalkerMarkdownService<br/>(subscribed to walkerEmitter)"]
-    Storage["ReportStorage<br/>(accumulates results)"]
-    
+
+    WalkerMD["WalkerMarkdownService<br/>subscribed to walkerEmitter"]
+    Storage["ReportStorage<br/>accumulates results"]
+
     User --> WalkerCommand
     WalkerCommand --> WalkerLogic
     WalkerLogic --> Backtest
     Backtest --> Complete
     Complete --> Extract
     Extract --> Emit
-    
+
     Emit -->|via walkerEmitter| WalkerMD
-    WalkerMD -->|addResult()| Storage
-    
-    Storage -.ready for.-> ReportGen["Walker.getReport()"]
+    WalkerMD -->|addResult| Storage
+
+    Storage -.ready for.-> ReportGen["Walker.getReport"]
 ```
 
 **Sources:** [src/lib/services/markdown/WalkerMarkdownService.ts:431-438](), [src/classes/Walker.ts:1-631]()

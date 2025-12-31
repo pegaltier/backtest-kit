@@ -291,36 +291,36 @@ sequenceDiagram
     participant ClientExchange
     participant ExecutionContext["ExecutionContextService"]
     participant UserGetCandles["IExchangeSchema.getCandles"]
-    participant ExternalAPI["External API<br/>(CCXT, Database, etc.)"]
-    
+    participant ExternalAPI as External API
+
     Strategy->>ExchangeConnection: getExchange(symbol, exchangeName)
     ExchangeConnection->>ClientExchange: new ClientExchange(params)
-    
+
     Strategy->>ClientExchange: getCandles(symbol, "1m", 30)
-    
+
     ClientExchange->>ExecutionContext: context.when
     ExecutionContext-->>ClientExchange: Date (current execution time)
-    
-    Note over ClientExchange: Calculate 'since' date<br/>when - (limit × interval)
-    
+
+    Note over ClientExchange: Calculate 'since' date<br/>when - limit * interval
+
     ClientExchange->>UserGetCandles: getCandles(symbol, "1m", since, 30)
     UserGetCandles->>ExternalAPI: fetchOHLCV(symbol, "1m", since.getTime(), 30)
     ExternalAPI-->>UserGetCandles: OHLCV array
     UserGetCandles-->>ClientExchange: ICandleData[]
-    
-    Note over ClientExchange: Temporal validation:<br/>Filter candles where<br/>timestamp <= context.when
-    
+
+    Note over ClientExchange: Temporal validation:<br/>Filter candles where timestamp <= context.when
+
     ClientExchange-->>Strategy: ICandleData[] (filtered)
-    
+
     Strategy->>ClientExchange: getAveragePrice(symbol)
-    
+
     Note over ClientExchange: Fetch last 5 1-minute candles
-    
+
     ClientExchange->>UserGetCandles: getCandles(symbol, "1m", since, 5)
     UserGetCandles-->>ClientExchange: ICandleData[]
-    
-    Note over ClientExchange: Calculate VWAP:<br/>Σ(((H+L+C)/3) × Vol) / Σ(Vol)
-    
+
+    Note over ClientExchange: Calculate VWAP:<br/>Sum((H+L+C)/3 * Vol) / Sum(Vol)
+
     ClientExchange-->>Strategy: number (VWAP price)
 ```
 

@@ -210,39 +210,39 @@ Scheduled signals (limit orders) require special handling for activation and can
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Scheduled: getSignal() returns<br/>priceOpen specified
-    
+    [*] --> Scheduled: getSignal() returns
+
     Scheduled --> CheckActivation: Every tick
-    
+
     CheckActivation --> CheckStopLoss: Evaluate conditions
-    
-    CheckStopLoss --> Cancelled: currentPrice violates SL<br/>(LONG: price <= SL)<br/>(SHORT: price >= SL)
-    
+
+    CheckStopLoss --> Cancelled: currentPrice violates SL
+
     CheckStopLoss --> CheckPriceOpen: SL not violated
-    
-    CheckPriceOpen --> Activated: LONG: currentPrice <= priceOpen<br/>SHORT: currentPrice >= priceOpen
-    
-    CheckPriceOpen --> Timeout: Time > CC_SCHEDULE_AWAIT_MINUTES
-    
-    CheckPriceOpen --> Scheduled: Conditions not met<br/>Continue monitoring
-    
+
+    CheckPriceOpen --> Activated: Price condition met
+
+    CheckPriceOpen --> Timeout: Time exceeds AWAIT_MINUTES
+
+    CheckPriceOpen --> Scheduled: Conditions not met
+
     Activated --> RiskCheck: Verify risk limits
-    
-    RiskCheck --> Pending: Risk approved<br/>Position opened
-    
+
+    RiskCheck --> Pending: Risk approved
+
     RiskCheck --> Cancelled: Risk rejected
-    
+
     Timeout --> Cancelled: Max wait time exceeded
-    
+
     Cancelled --> [*]: Signal removed
     Pending --> [*]: Monitor TP/SL
-    
+
     note right of CheckStopLoss
         CRITICAL: StopLoss check
         happens BEFORE activation
         Prevents opening losing positions
     end note
-    
+
     note right of Activated
         pendingAt timestamp updated
         scheduledAt preserved
@@ -290,23 +290,17 @@ graph TB
     subgraph "getAveragePrice() Flow"
         START["getAveragePrice(symbol)"]
         CTX["ExecutionContextService<br/>current timestamp"]
-        FETCH["getCandles(symbol, '1m', ..., 5)<br/>Last 5 one-minute candles"]
-        CALC["Calculate VWAP<br/>Σ(typical_price × volume) / Σ(volume)<br/>typical_price = (high + low + close) / 3"]
+        FETCH["getCandles(symbol, 1m, ..., 5)<br/>Last 5 one-minute candles"]
+        CALC["Calculate VWAP<br/>Sum(typical_price * volume) / Sum(volume)<br/>typical_price = (high + low + close) / 3"]
         FALLBACK["If total volume = 0<br/>Simple average of close prices"]
         RETURN["Return VWAP"]
     end
-    
+
     START --> CTX
     CTX --> FETCH
     FETCH --> CALC
     CALC --> FALLBACK
     FALLBACK --> RETURN
-    
-    note right of CALC
-        More realistic than close price
-        Accounts for liquidity
-        Simulates slippage naturally
-    end note
 ```
 
 **Formula (from [src/client/ClientStrategy.ts:478-489]()):
@@ -476,20 +470,14 @@ graph TB
 graph LR
     subgraph "ClientFrame.getTimeframes()"
         START["IFrameSchema<br/>startDate<br/>endDate<br/>interval"]
-        PARSE["Parse interval<br/>1m = 60000ms<br/>1h = 3600000ms"]
+        PARSE["Parse interval<br/>1m converts to 60000ms<br/>1h converts to 3600000ms"]
         ITERATE["Loop from startDate<br/>to endDate<br/>step by interval"]
         GENERATE["Yield Date objects<br/>for each timeframe"]
     end
-    
+
     START --> PARSE
     PARSE --> ITERATE
     ITERATE --> GENERATE
-    
-    note right of ITERATE
-        Async generator pattern
-        Memory efficient
-        Lazy evaluation
-    end note
 ```
 
 **Example:**
@@ -713,24 +701,18 @@ sequenceDiagram
 graph TB
     subgraph "Cleanup Sequence"
         STOP["stop() called"]
-        FLAG["Set _isStopped = true"]
+        FLAG["Set isStopped flag to true"]
         WAIT["Wait for active signal<br/>to complete naturally"]
         CLEAR["Connection service<br/>clear() method"]
         REMOVE["Remove from memoize cache"]
         GC["Eligible for garbage collection"]
     end
-    
+
     STOP --> FLAG
     FLAG --> WAIT
     WAIT --> CLEAR
     CLEAR --> REMOVE
     REMOVE --> GC
-    
-    note right of WAIT
-        Graceful shutdown
-        Active signals close via TP/SL/time
-        No forced interruption
-    end note
 ```
 
 **Sources:** [src/lib/services/connection/StrategyConnectionService.ts:284-321](), [src/classes/Backtest.ts:254-260]()

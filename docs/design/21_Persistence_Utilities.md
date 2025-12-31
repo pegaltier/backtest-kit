@@ -210,28 +210,28 @@ graph LR
     subgraph "Write Sequence"
         START[writeValue called]
         SERIALIZE[JSON.stringify entity]
-        TEMP[Write to<br/>{file}.json.tmp]
+        TEMP["Write to<br/>file.json.tmp"]
         FSYNC[fsync to disk]
-        RENAME[Atomic rename<br/>tmp → final]
+        RENAME["Atomic rename<br/>tmp to final"]
         SUCCESS[Write complete]
     end
-    
+
     subgraph "Guarantees"
         G1[No partial writes]
         G2[All-or-nothing]
-        G3[Old state preserved<br/>on crash]
+        G3["Old state preserved<br/>on crash"]
     end
-    
+
     START --> SERIALIZE
     SERIALIZE --> TEMP
     TEMP --> FSYNC
     FSYNC --> RENAME
     RENAME --> SUCCESS
-    
+
     SUCCESS --> G1
     SUCCESS --> G2
     SUCCESS --> G3
-    
+
     style RENAME fill:#e1ffe1,stroke:#333,stroke-width:3px
     style G1 fill:#fff4e1,stroke:#333,stroke-width:2px
     style G2 fill:#fff4e1,stroke:#333,stroke-width:2px

@@ -138,7 +138,7 @@ graph TB
     end
     
     subgraph "Configuration"
-        COLUMNS[Column[] array<br/>- key, label, format<br/>- isVisible function]
+        COLUMNS["Column array<br/>- key, label, format<br/>- isVisible function"]
         INTERFACES[Statistics interfaces<br/>- totalEvents, winRate<br/>- sharpeRatio, etc]
     end
     
@@ -521,7 +521,7 @@ interface IHeatmapRow {
 ```mermaid
 graph TB
     A[Receive closed signal] --> B{Get symbol storage}
-    B --> C[Map<symbol, signals[]>]
+    B --> C["Map(symbol, signals array)"]
     C --> D[Add signal to symbol array]
     D --> E{Length > MAX_EVENTS 250?}
     E -->|Yes| F[Pop oldest]
