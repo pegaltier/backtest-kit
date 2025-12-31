@@ -26,12 +26,23 @@ import RiskConnectionService from "./RiskConnectionService";
 import { PartialConnectionService } from "./PartialConnectionService";
 import { MergeRisk } from "../../../classes/Risk";
 
+/**
+ * No-operation IRisk implementation.
+ * Always allows signals and performs no actions.
+ */
 const NOOP_RISK: IRisk = {
   checkSignal: () => Promise.resolve(true),
   addSignal: () => Promise.resolve(),
   removeSignal: () => Promise.resolve(),
 };
 
+/**
+ * Determines the appropriate IRisk instance based on provided riskName and riskList.
+ * @param dto - Object containing riskName and riskList
+ * @param backtest - Whether running in backtest mode
+ * @param self - Reference to StrategyConnectionService instance
+ * @returns Configured IRisk instance (single or merged)
+ */
 const GET_RISK_FN = (
   dto: {
     riskName: RiskName;
