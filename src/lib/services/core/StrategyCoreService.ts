@@ -88,9 +88,6 @@ export class StrategyCoreService {
       symbol,
       strategyName,
     });
-    if (!MethodContextService.hasContext()) {
-      throw new Error("strategyCoreService getPendingSignal requires a method context");
-    }
     await this.validate(symbol, strategyName);
     return await this.strategyConnectionService.getPendingSignal(backtest, symbol, strategyName);
   };
@@ -113,9 +110,6 @@ export class StrategyCoreService {
       symbol,
       strategyName,
     });
-    if (!MethodContextService.hasContext()) {
-      throw new Error("strategyCoreService getScheduledSignal requires a method context");
-    }
     await this.validate(symbol, strategyName);
     return await this.strategyConnectionService.getScheduledSignal(backtest, symbol, strategyName);
   };
@@ -140,9 +134,6 @@ export class StrategyCoreService {
       strategyName,
       backtest,
     });
-    if (!MethodContextService.hasContext()) {
-      throw new Error("strategyCoreService getStopped requires a method context");
-    }
     await this.validate(symbol, strategyName);
     return await this.strategyConnectionService.getStopped(backtest, symbol, strategyName);
   };
