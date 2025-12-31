@@ -506,7 +506,7 @@ const GET_SIGNAL_FN = trycatch(
   {
     defaultValue: null,
     fallback: (error) => {
-      const message = "ClientStrategy exception thrown";
+      const message = "ClientStrategy GET_SIGNAL_FN thrown";
       const payload = {
         error: errorData(error),
         message: getErrorMessage(error),
@@ -831,7 +831,7 @@ const ACTIVATE_SCHEDULED_SIGNAL_FN = async (
   return result;
 };
 
-const CALL_PING_CALLBACKS_FN = async (
+const CALL_PING_CALLBACKS_FN = trycatch(async (
   self: ClientStrategy,
   scheduled: IScheduledSignalRow,
   timestamp: number
@@ -855,7 +855,18 @@ const CALL_PING_CALLBACKS_FN = async (
       self.params.execution.context.backtest
     );
   }
-};
+}, {
+  fallback: (error) => {
+    const message = "ClientStrategy CALL_PING_CALLBACKS_FN thrown";
+    const payload = {
+      error: errorData(error),
+      message: getErrorMessage(error),
+    };
+    backtest.loggerService.warn(message, payload);
+    console.warn(message, payload);
+    errorEmitter.next(error);
+  }
+});
 
 const RETURN_SCHEDULED_SIGNAL_ACTIVE_FN = async (
   self: ClientStrategy,
