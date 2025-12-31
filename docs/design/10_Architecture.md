@@ -1,22 +1,9 @@
+---
+title: design/10_architecture
+group: design
+---
+
 # Architecture
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/add.ts](src/function/add.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [src/lib/core/provide.ts](src/lib/core/provide.ts)
-- [src/lib/core/types.ts](src/lib/core/types.ts)
-- [src/lib/index.ts](src/lib/index.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 This document describes the overall architecture of backtest-kit, including its layered design, dependency injection system, context propagation mechanisms, and event-driven patterns. The architecture is designed to support three execution modes (Backtest, Live, Walker) while maintaining temporal isolation, crash recovery, and clean separation of concerns.
 

@@ -1,29 +1,9 @@
+---
+title: design/03_installation_and_setup
+group: design
+---
+
 # Installation and Setup
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [demo/backtest/package-lock.json](demo/backtest/package-lock.json)
-- [demo/backtest/package.json](demo/backtest/package.json)
-- [demo/backtest/src/index.mjs](demo/backtest/src/index.mjs)
-- [demo/live/package-lock.json](demo/live/package-lock.json)
-- [demo/live/package.json](demo/live/package.json)
-- [demo/live/src/index.mjs](demo/live/src/index.mjs)
-- [demo/optimization/package-lock.json](demo/optimization/package-lock.json)
-- [demo/optimization/package.json](demo/optimization/package.json)
-- [package-lock.json](package-lock.json)
-- [package.json](package.json)
-- [src/client/ClientStrategy.ts](src/client/ClientStrategy.ts)
-- [src/interfaces/Strategy.interface.ts](src/interfaces/Strategy.interface.ts)
-- [test/e2e/defend.test.mjs](test/e2e/defend.test.mjs)
-- [test/index.mjs](test/index.mjs)
-
-</details>
-
-
 
 This document provides instructions for installing `backtest-kit` and configuring a new project. It covers package installation, peer dependencies, module formats, TypeScript configuration, and project structure recommendations.
 

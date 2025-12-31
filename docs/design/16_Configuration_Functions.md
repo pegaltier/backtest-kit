@@ -1,22 +1,9 @@
+---
+title: design/16_configuration_functions
+group: design
+---
+
 # Configuration Functions
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/add.ts](src/function/add.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [src/lib/core/provide.ts](src/lib/core/provide.ts)
-- [src/lib/core/types.ts](src/lib/core/types.ts)
-- [src/lib/index.ts](src/lib/index.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 This page documents the global configuration functions that control system-wide behavior across all execution modes (Backtest, Live, Walker). These functions must be called before registering components or executing strategies.
 

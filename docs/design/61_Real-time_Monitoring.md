@@ -1,22 +1,9 @@
+---
+title: design/61_real-time_monitoring
+group: design
+---
+
 # Real-time Monitoring
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [src/lib/services/core/StrategyCoreService.ts](src/lib/services/core/StrategyCoreService.ts)
-- [src/lib/services/logic/private/BacktestLogicPrivateService.ts](src/lib/services/logic/private/BacktestLogicPrivateService.ts)
-- [src/lib/services/logic/private/LiveLogicPrivateService.ts](src/lib/services/logic/private/LiveLogicPrivateService.ts)
-- [src/lib/services/logic/private/WalkerLogicPrivateService.ts](src/lib/services/logic/private/WalkerLogicPrivateService.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 Real-time monitoring is the continuous process of evaluating signal states during live trading execution. The system uses an infinite loop with periodic sleep intervals to check signal status, emit events, collect performance metrics, and handle errors without interrupting execution. This page covers the monitoring loop architecture, tick evaluation, event emission, and state-specific monitoring behavior.
 

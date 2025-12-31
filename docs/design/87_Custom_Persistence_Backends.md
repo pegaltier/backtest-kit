@@ -1,30 +1,9 @@
+---
+title: design/87_custom_persistence_backends
+group: design
+---
+
 # Custom Persistence Backends
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [docs/classes/BacktestUtils.md](docs/classes/BacktestUtils.md)
-- [docs/classes/LiveUtils.md](docs/classes/LiveUtils.md)
-- [docs/classes/StrategyConnectionService.md](docs/classes/StrategyConnectionService.md)
-- [docs/classes/WalkerUtils.md](docs/classes/WalkerUtils.md)
-- [docs/index.md](docs/index.md)
-- [docs/interfaces/IStrategySchema.md](docs/interfaces/IStrategySchema.md)
-- [docs/interfaces/WalkerStopContract.md](docs/interfaces/WalkerStopContract.md)
-- [docs/types/IStrategyBacktestResult.md](docs/types/IStrategyBacktestResult.md)
-- [docs/types/TPersistBaseCtor.md](docs/types/TPersistBaseCtor.md)
-- [src/classes/Persist.ts](src/classes/Persist.ts)
-- [src/client/ClientPartial.ts](src/client/ClientPartial.ts)
-- [src/contract/PartialLoss.contract.ts](src/contract/PartialLoss.contract.ts)
-- [src/contract/PartialProfit.contract.ts](src/contract/PartialProfit.contract.ts)
-- [src/interfaces/Partial.interface.ts](src/interfaces/Partial.interface.ts)
-- [src/lib/services/connection/PartialConnectionService.ts](src/lib/services/connection/PartialConnectionService.ts)
-- [src/lib/services/global/PartialGlobalService.ts](src/lib/services/global/PartialGlobalService.ts)
-
-</details>
-
-
 
 This page documents how to implement custom persistence backends for backtest-kit's crash recovery system. It covers the `IPersistBase` interface, adapter registration, and integration with external storage systems like Redis, MongoDB, or cloud storage.
 

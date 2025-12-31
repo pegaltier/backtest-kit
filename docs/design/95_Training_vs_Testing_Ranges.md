@@ -1,27 +1,9 @@
+---
+title: design/95_training_vs_testing_ranges
+group: design
+---
+
 # Training vs Testing Ranges
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/classes/Backtest.ts](src/classes/Backtest.ts)
-- [src/classes/Live.ts](src/classes/Live.ts)
-- [src/classes/Optimizer.ts](src/classes/Optimizer.ts)
-- [src/classes/Walker.ts](src/classes/Walker.ts)
-- [src/client/ClientOptimizer.ts](src/client/ClientOptimizer.ts)
-- [src/interfaces/Optimizer.interface.ts](src/interfaces/Optimizer.interface.ts)
-- [src/lib/services/connection/OptimizerConnectionService.ts](src/lib/services/connection/OptimizerConnectionService.ts)
-- [src/lib/services/connection/StrategyConnectionService.ts](src/lib/services/connection/StrategyConnectionService.ts)
-- [src/lib/services/global/OptimizerGlobalService.ts](src/lib/services/global/OptimizerGlobalService.ts)
-- [src/lib/services/schema/OptimizerSchemaService.ts](src/lib/services/schema/OptimizerSchemaService.ts)
-- [src/lib/services/template/OptimizerTemplateService.ts](src/lib/services/template/OptimizerTemplateService.ts)
-- [src/lib/services/validation/OptimizerValidationService.ts](src/lib/services/validation/OptimizerValidationService.ts)
-- [src/model/Message.model.ts](src/model/Message.model.ts)
-
-</details>
-
-
 
 ## Purpose and Scope
 

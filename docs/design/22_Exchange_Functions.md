@@ -1,27 +1,9 @@
+---
+title: design/22_exchange_functions
+group: design
+---
+
 # Exchange Functions
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [docs/classes/BacktestUtils.md](docs/classes/BacktestUtils.md)
-- [docs/classes/LiveUtils.md](docs/classes/LiveUtils.md)
-- [docs/classes/StrategyConnectionService.md](docs/classes/StrategyConnectionService.md)
-- [docs/classes/WalkerUtils.md](docs/classes/WalkerUtils.md)
-- [docs/index.md](docs/index.md)
-- [docs/interfaces/IStrategySchema.md](docs/interfaces/IStrategySchema.md)
-- [docs/interfaces/WalkerStopContract.md](docs/interfaces/WalkerStopContract.md)
-- [docs/types/IStrategyBacktestResult.md](docs/types/IStrategyBacktestResult.md)
-- [docs/types/TPersistBaseCtor.md](docs/types/TPersistBaseCtor.md)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 This page documents the exchange helper functions provided by the framework for working with exchange data within strategy code. The primary focus is on the formatting functions `formatPrice` and `formatQuantity`, which enable strategies to display prices and quantities according to exchange-specific precision rules.
 

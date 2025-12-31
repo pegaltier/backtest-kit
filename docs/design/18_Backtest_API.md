@@ -1,27 +1,9 @@
+---
+title: design/18_backtest_api
+group: design
+---
+
 # Backtest API
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [docs/classes/BacktestUtils.md](docs/classes/BacktestUtils.md)
-- [docs/classes/LiveUtils.md](docs/classes/LiveUtils.md)
-- [docs/classes/StrategyConnectionService.md](docs/classes/StrategyConnectionService.md)
-- [docs/classes/WalkerUtils.md](docs/classes/WalkerUtils.md)
-- [docs/index.md](docs/index.md)
-- [docs/interfaces/IStrategySchema.md](docs/interfaces/IStrategySchema.md)
-- [docs/interfaces/WalkerStopContract.md](docs/interfaces/WalkerStopContract.md)
-- [docs/types/IStrategyBacktestResult.md](docs/types/IStrategyBacktestResult.md)
-- [docs/types/TPersistBaseCtor.md](docs/types/TPersistBaseCtor.md)
-- [src/classes/Backtest.ts](src/classes/Backtest.ts)
-- [src/classes/Live.ts](src/classes/Live.ts)
-- [src/classes/Walker.ts](src/classes/Walker.ts)
-- [src/lib/services/connection/StrategyConnectionService.ts](src/lib/services/connection/StrategyConnectionService.ts)
-
-</details>
-
-
 
 This document describes the public API for historical backtesting operations provided by the `Backtest` singleton. The Backtest API enables testing trading strategies against historical market data with statistical analysis and markdown report generation.
 

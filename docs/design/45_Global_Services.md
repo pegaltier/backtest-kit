@@ -1,25 +1,9 @@
+---
+title: design/45_global_services
+group: design
+---
+
 # Global Services
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/classes/Persist.ts](src/classes/Persist.ts)
-- [src/client/ClientPartial.ts](src/client/ClientPartial.ts)
-- [src/contract/PartialLoss.contract.ts](src/contract/PartialLoss.contract.ts)
-- [src/contract/PartialProfit.contract.ts](src/contract/PartialProfit.contract.ts)
-- [src/function/add.ts](src/function/add.ts)
-- [src/interfaces/Partial.interface.ts](src/interfaces/Partial.interface.ts)
-- [src/lib/core/provide.ts](src/lib/core/provide.ts)
-- [src/lib/core/types.ts](src/lib/core/types.ts)
-- [src/lib/index.ts](src/lib/index.ts)
-- [src/lib/services/connection/PartialConnectionService.ts](src/lib/services/connection/PartialConnectionService.ts)
-- [src/lib/services/global/PartialGlobalService.ts](src/lib/services/global/PartialGlobalService.ts)
-
-</details>
-
-
 
 Global Services provide entry points for runtime operations that require validation and delegation to connection services. Unlike schema services (which store configurations) and command services (which orchestrate execution), global services act as facades that coordinate validation, logging, and delegation for specific subsystems.
 

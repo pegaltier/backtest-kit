@@ -1,29 +1,9 @@
+---
+title: design/04_quick_start_guide
+group: design
+---
+
 # Quick Start Guide
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [demo/backtest/package-lock.json](demo/backtest/package-lock.json)
-- [demo/backtest/package.json](demo/backtest/package.json)
-- [demo/backtest/src/index.mjs](demo/backtest/src/index.mjs)
-- [demo/live/package-lock.json](demo/live/package-lock.json)
-- [demo/live/package.json](demo/live/package.json)
-- [demo/live/src/index.mjs](demo/live/src/index.mjs)
-- [demo/optimization/package-lock.json](demo/optimization/package-lock.json)
-- [demo/optimization/package.json](demo/optimization/package.json)
-- [package-lock.json](package-lock.json)
-- [package.json](package.json)
-- [src/client/ClientStrategy.ts](src/client/ClientStrategy.ts)
-- [src/interfaces/Strategy.interface.ts](src/interfaces/Strategy.interface.ts)
-- [test/e2e/defend.test.mjs](test/e2e/defend.test.mjs)
-- [test/index.mjs](test/index.mjs)
-
-</details>
-
-
 
 This guide demonstrates a minimal working example of the backtest-kit framework. You'll learn how to register a strategy, configure an exchange data source, set up a timeframe, and execute a backtest. For installation instructions, see [Installation and Setup](#1.2). For deeper understanding of execution modes and lifecycle concepts, see [Core Concepts](#2) and [Component Registration](#2.3).
 

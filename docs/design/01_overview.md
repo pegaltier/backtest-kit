@@ -1,38 +1,14 @@
+---
+title: design/01_overview
+group: design
+---
+
+---
+title: design/01_overview
+group: design
+---
+
 # Overview
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [demo/backtest/package-lock.json](demo/backtest/package-lock.json)
-- [demo/backtest/package.json](demo/backtest/package.json)
-- [demo/backtest/src/index.mjs](demo/backtest/src/index.mjs)
-- [demo/live/package-lock.json](demo/live/package-lock.json)
-- [demo/live/package.json](demo/live/package.json)
-- [demo/live/src/index.mjs](demo/live/src/index.mjs)
-- [demo/optimization/package-lock.json](demo/optimization/package-lock.json)
-- [demo/optimization/package.json](demo/optimization/package.json)
-- [docs/classes/BacktestUtils.md](docs/classes/BacktestUtils.md)
-- [docs/classes/LiveUtils.md](docs/classes/LiveUtils.md)
-- [docs/classes/StrategyConnectionService.md](docs/classes/StrategyConnectionService.md)
-- [docs/classes/WalkerUtils.md](docs/classes/WalkerUtils.md)
-- [docs/index.md](docs/index.md)
-- [docs/interfaces/IStrategySchema.md](docs/interfaces/IStrategySchema.md)
-- [docs/interfaces/WalkerStopContract.md](docs/interfaces/WalkerStopContract.md)
-- [docs/types/IStrategyBacktestResult.md](docs/types/IStrategyBacktestResult.md)
-- [docs/types/TPersistBaseCtor.md](docs/types/TPersistBaseCtor.md)
-- [package-lock.json](package-lock.json)
-- [package.json](package.json)
-- [src/client/ClientStrategy.ts](src/client/ClientStrategy.ts)
-- [src/interfaces/Strategy.interface.ts](src/interfaces/Strategy.interface.ts)
-- [test/e2e/defend.test.mjs](test/e2e/defend.test.mjs)
-- [test/index.mjs](test/index.mjs)
-
-</details>
-
-
 
 **Purpose**: This page introduces backtest-kit, a TypeScript framework for backtesting and live trading algorithmic strategies. It covers the framework's architecture, execution modes, and core components.
 

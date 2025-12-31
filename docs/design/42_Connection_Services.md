@@ -1,25 +1,9 @@
+---
+title: design/42_connection_services
+group: design
+---
+
 # Connection Services
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/classes/Backtest.ts](src/classes/Backtest.ts)
-- [src/classes/Live.ts](src/classes/Live.ts)
-- [src/classes/Persist.ts](src/classes/Persist.ts)
-- [src/classes/Walker.ts](src/classes/Walker.ts)
-- [src/client/ClientPartial.ts](src/client/ClientPartial.ts)
-- [src/contract/PartialLoss.contract.ts](src/contract/PartialLoss.contract.ts)
-- [src/contract/PartialProfit.contract.ts](src/contract/PartialProfit.contract.ts)
-- [src/interfaces/Partial.interface.ts](src/interfaces/Partial.interface.ts)
-- [src/lib/services/connection/PartialConnectionService.ts](src/lib/services/connection/PartialConnectionService.ts)
-- [src/lib/services/connection/StrategyConnectionService.ts](src/lib/services/connection/StrategyConnectionService.ts)
-- [src/lib/services/global/PartialGlobalService.ts](src/lib/services/global/PartialGlobalService.ts)
-
-</details>
-
-
 
 Connection Services form the factory layer in backtest-kit's service architecture. They create, cache, and manage client implementation instances, routing operations from global services to the appropriate client based on execution context. This layer uses memoization to ensure singleton behavior per unique identifier combination (e.g., `symbol:strategyName:backtest`), preventing duplicate instantiation and maintaining consistent state across the system.
 

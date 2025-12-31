@@ -1,27 +1,9 @@
+---
+title: design/23_event_listeners
+group: design
+---
+
 # Event Listeners
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [docs/classes/BacktestUtils.md](docs/classes/BacktestUtils.md)
-- [docs/classes/LiveUtils.md](docs/classes/LiveUtils.md)
-- [docs/classes/StrategyConnectionService.md](docs/classes/StrategyConnectionService.md)
-- [docs/classes/WalkerUtils.md](docs/classes/WalkerUtils.md)
-- [docs/index.md](docs/index.md)
-- [docs/interfaces/IStrategySchema.md](docs/interfaces/IStrategySchema.md)
-- [docs/interfaces/WalkerStopContract.md](docs/interfaces/WalkerStopContract.md)
-- [docs/types/IStrategyBacktestResult.md](docs/types/IStrategyBacktestResult.md)
-- [docs/types/TPersistBaseCtor.md](docs/types/TPersistBaseCtor.md)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 This page documents all event listener functions available in the public API for subscribing to framework events. Event listeners enable real-time monitoring of signal lifecycle, execution progress, completion events, performance metrics, and errors.
 

@@ -1,22 +1,9 @@
+---
+title: design/77_configuration
+group: design
+---
+
 # Configuration
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/add.ts](src/function/add.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [src/lib/core/provide.ts](src/lib/core/provide.ts)
-- [src/lib/core/types.ts](src/lib/core/types.ts)
-- [src/lib/index.ts](src/lib/index.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 This page documents the global configuration system in backtest-kit, including runtime parameters, validation thresholds, timing constants, and report formatting options. These configuration values control core trading logic, risk management boundaries, and output presentation.
 

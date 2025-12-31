@@ -1,30 +1,9 @@
+---
+title: design/75_partial_profit_loss_tracking
+group: design
+---
+
 # Partial Profit/Loss Tracking
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/classes/Persist.ts](src/classes/Persist.ts)
-- [src/client/ClientPartial.ts](src/client/ClientPartial.ts)
-- [src/contract/PartialLoss.contract.ts](src/contract/PartialLoss.contract.ts)
-- [src/contract/PartialProfit.contract.ts](src/contract/PartialProfit.contract.ts)
-- [src/interfaces/Partial.interface.ts](src/interfaces/Partial.interface.ts)
-- [src/lib/services/connection/PartialConnectionService.ts](src/lib/services/connection/PartialConnectionService.ts)
-- [src/lib/services/global/PartialGlobalService.ts](src/lib/services/global/PartialGlobalService.ts)
-- [src/lib/services/markdown/BacktestMarkdownService.ts](src/lib/services/markdown/BacktestMarkdownService.ts)
-- [src/lib/services/markdown/HeatMarkdownService.ts](src/lib/services/markdown/HeatMarkdownService.ts)
-- [src/lib/services/markdown/LiveMarkdownService.ts](src/lib/services/markdown/LiveMarkdownService.ts)
-- [src/lib/services/markdown/PartialMarkdownService.ts](src/lib/services/markdown/PartialMarkdownService.ts)
-- [src/lib/services/markdown/PerformanceMarkdownService.ts](src/lib/services/markdown/PerformanceMarkdownService.ts)
-- [src/lib/services/markdown/RiskMarkdownService.ts](src/lib/services/markdown/RiskMarkdownService.ts)
-- [src/lib/services/markdown/ScheduleMarkdownService.ts](src/lib/services/markdown/ScheduleMarkdownService.ts)
-- [src/lib/services/markdown/WalkerMarkdownService.ts](src/lib/services/markdown/WalkerMarkdownService.ts)
-- [src/model/Column.model.ts](src/model/Column.model.ts)
-
-</details>
-
-
 
 **Purpose**: This document describes the partial profit/loss tracking system that monitors trading signals and emits events when they reach percentage-based profit or loss milestones (10%, 20%, 30%, etc.). This enables tracking partial take-profit and stop-loss behavior, generating detailed reports, and monitoring strategy performance at granular levels.
 

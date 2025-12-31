@@ -1,27 +1,9 @@
+---
+title: design/85_advanced_topics
+group: design
+---
+
 # Advanced Topics
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/classes/Optimizer.ts](src/classes/Optimizer.ts)
-- [src/client/ClientOptimizer.ts](src/client/ClientOptimizer.ts)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [src/interfaces/Optimizer.interface.ts](src/interfaces/Optimizer.interface.ts)
-- [src/lib/services/connection/OptimizerConnectionService.ts](src/lib/services/connection/OptimizerConnectionService.ts)
-- [src/lib/services/global/OptimizerGlobalService.ts](src/lib/services/global/OptimizerGlobalService.ts)
-- [src/lib/services/schema/OptimizerSchemaService.ts](src/lib/services/schema/OptimizerSchemaService.ts)
-- [src/lib/services/template/OptimizerTemplateService.ts](src/lib/services/template/OptimizerTemplateService.ts)
-- [src/lib/services/validation/OptimizerValidationService.ts](src/lib/services/validation/OptimizerValidationService.ts)
-- [src/model/Message.model.ts](src/model/Message.model.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 This document covers advanced integration patterns and customization techniques for the backtest-kit framework. It explains how to implement custom exchange data sources, integrate alternative persistence backends, and design multi-symbol trading strategies with shared state management.
 

@@ -1,28 +1,9 @@
+---
+title: design/27_frame_schemas
+group: design
+---
+
 # Frame Schemas
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [demo/backtest/package-lock.json](demo/backtest/package-lock.json)
-- [demo/backtest/package.json](demo/backtest/package.json)
-- [demo/backtest/src/index.mjs](demo/backtest/src/index.mjs)
-- [demo/live/package-lock.json](demo/live/package-lock.json)
-- [demo/live/package.json](demo/live/package.json)
-- [demo/live/src/index.mjs](demo/live/src/index.mjs)
-- [demo/optimization/package-lock.json](demo/optimization/package-lock.json)
-- [demo/optimization/package.json](demo/optimization/package.json)
-- [package-lock.json](package-lock.json)
-- [package.json](package.json)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 ## Purpose and Scope
 

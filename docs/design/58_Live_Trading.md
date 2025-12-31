@@ -1,22 +1,9 @@
+---
+title: design/58_live_trading
+group: design
+---
+
 # Live Trading
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/classes/Backtest.ts](src/classes/Backtest.ts)
-- [src/classes/Live.ts](src/classes/Live.ts)
-- [src/classes/Walker.ts](src/classes/Walker.ts)
-- [src/lib/services/connection/StrategyConnectionService.ts](src/lib/services/connection/StrategyConnectionService.ts)
-- [src/lib/services/core/StrategyCoreService.ts](src/lib/services/core/StrategyCoreService.ts)
-- [src/lib/services/logic/private/BacktestLogicPrivateService.ts](src/lib/services/logic/private/BacktestLogicPrivateService.ts)
-- [src/lib/services/logic/private/LiveLogicPrivateService.ts](src/lib/services/logic/private/LiveLogicPrivateService.ts)
-- [src/lib/services/logic/private/WalkerLogicPrivateService.ts](src/lib/services/logic/private/WalkerLogicPrivateService.ts)
-
-</details>
-
-
 
 Live Trading mode executes trading strategies in real-time against current market conditions with automatic crash recovery. Unlike Backtest mode (see [Backtesting](#9)), which simulates historical data, Live mode operates continuously with `Date.now()` timestamps and persists state to disk after every tick. This enables production-grade trading that survives process crashes, power failures, and system restarts.
 

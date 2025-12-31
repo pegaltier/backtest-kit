@@ -1,23 +1,9 @@
+---
+title: design/51_scheduled_signals
+group: design
+---
+
 # Scheduled Signals
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [src/client/ClientStrategy.ts](src/client/ClientStrategy.ts)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [src/interfaces/Strategy.interface.ts](src/interfaces/Strategy.interface.ts)
-- [test/e2e/defend.test.mjs](test/e2e/defend.test.mjs)
-- [test/index.mjs](test/index.mjs)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 Scheduled signals are limit orders that wait for price to reach a specific entry point (`priceOpen`) before activating. Unlike immediate signals that open at current market price, scheduled signals remain in a "scheduled" state until market conditions satisfy the entry criteria or the signal is cancelled due to timeout or adverse price movement.
 

@@ -1,28 +1,9 @@
+---
+title: design/24_component_schemas
+group: design
+---
+
 # Component Schemas
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [demo/backtest/package-lock.json](demo/backtest/package-lock.json)
-- [demo/backtest/package.json](demo/backtest/package.json)
-- [demo/backtest/src/index.mjs](demo/backtest/src/index.mjs)
-- [demo/live/package-lock.json](demo/live/package-lock.json)
-- [demo/live/package.json](demo/live/package.json)
-- [demo/live/src/index.mjs](demo/live/src/index.mjs)
-- [demo/optimization/package-lock.json](demo/optimization/package-lock.json)
-- [demo/optimization/package.json](demo/optimization/package.json)
-- [package-lock.json](package-lock.json)
-- [package.json](package.json)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 Component schemas are TypeScript interface definitions that specify the structure and configuration requirements for all registerable components in backtest-kit. Each schema defines required fields, optional parameters, and callback hooks for a specific component type. Schemas are validated at registration time and stored in schema services for dependency injection during execution.
 

@@ -1,28 +1,9 @@
+---
+title: design/26_exchange_schemas
+group: design
+---
+
 # Exchange Schemas
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [demo/backtest/package-lock.json](demo/backtest/package-lock.json)
-- [demo/backtest/package.json](demo/backtest/package.json)
-- [demo/backtest/src/index.mjs](demo/backtest/src/index.mjs)
-- [demo/live/package-lock.json](demo/live/package-lock.json)
-- [demo/live/package.json](demo/live/package.json)
-- [demo/live/src/index.mjs](demo/live/src/index.mjs)
-- [demo/optimization/package-lock.json](demo/optimization/package-lock.json)
-- [demo/optimization/package.json](demo/optimization/package.json)
-- [package-lock.json](package-lock.json)
-- [package.json](package.json)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 Exchange schemas define market data sources for backtesting and live trading. An exchange provides historical candle data (OHLCV) and formatting functions for prices and quantities. Exchanges are registered via `addExchange()` and instantiated as `ClientExchange` instances by the connection service layer.
 

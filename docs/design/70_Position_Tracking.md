@@ -1,25 +1,9 @@
+---
+title: design/70_position_tracking
+group: design
+---
+
 # Position Tracking
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/classes/Persist.ts](src/classes/Persist.ts)
-- [src/client/ClientPartial.ts](src/client/ClientPartial.ts)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/contract/PartialLoss.contract.ts](src/contract/PartialLoss.contract.ts)
-- [src/contract/PartialProfit.contract.ts](src/contract/PartialProfit.contract.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [src/interfaces/Partial.interface.ts](src/interfaces/Partial.interface.ts)
-- [src/lib/services/connection/PartialConnectionService.ts](src/lib/services/connection/PartialConnectionService.ts)
-- [src/lib/services/global/PartialGlobalService.ts](src/lib/services/global/PartialGlobalService.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 ## Purpose and Scope
 

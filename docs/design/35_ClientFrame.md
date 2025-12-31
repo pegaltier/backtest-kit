@@ -1,22 +1,9 @@
+---
+title: design/35_clientframe
+group: design
+---
+
 # ClientFrame
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/classes/Backtest.ts](src/classes/Backtest.ts)
-- [src/classes/Live.ts](src/classes/Live.ts)
-- [src/classes/Walker.ts](src/classes/Walker.ts)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [src/lib/services/connection/StrategyConnectionService.ts](src/lib/services/connection/StrategyConnectionService.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 **Purpose**: ClientFrame implements timeframe generation for backtesting by creating arrays of timestamps spaced according to configured intervals. It transforms frame schemas (startDate, endDate, interval) into concrete arrays of Date objects that BacktestLogicPrivateService iterates through during historical simulation.
 

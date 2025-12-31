@@ -1,25 +1,9 @@
+---
+title: design/81_cross-cutting_concerns
+group: design
+---
+
 # Cross-Cutting Concerns
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/classes/Persist.ts](src/classes/Persist.ts)
-- [src/client/ClientPartial.ts](src/client/ClientPartial.ts)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/contract/PartialLoss.contract.ts](src/contract/PartialLoss.contract.ts)
-- [src/contract/PartialProfit.contract.ts](src/contract/PartialProfit.contract.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [src/interfaces/Partial.interface.ts](src/interfaces/Partial.interface.ts)
-- [src/lib/services/connection/PartialConnectionService.ts](src/lib/services/connection/PartialConnectionService.ts)
-- [src/lib/services/global/PartialGlobalService.ts](src/lib/services/global/PartialGlobalService.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 This page documents system-wide concerns that affect multiple components across the backtest-kit architecture. These concerns include logging, error handling, and persistence, which are not specific to any single component but are fundamental to the system's operation.
 

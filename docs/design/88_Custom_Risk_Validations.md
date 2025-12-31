@@ -1,23 +1,9 @@
+---
+title: design/88_custom_risk_validations
+group: design
+---
+
 # Custom Risk Validations
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [src/client/ClientStrategy.ts](src/client/ClientStrategy.ts)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [src/interfaces/Strategy.interface.ts](src/interfaces/Strategy.interface.ts)
-- [test/e2e/defend.test.mjs](test/e2e/defend.test.mjs)
-- [test/index.mjs](test/index.mjs)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 Custom risk validations allow you to define portfolio-level constraints and business rules that prevent signals from opening positions when specific conditions are not met. This guide covers how to implement custom validation functions using the `IRiskValidation` interface with access to `IRiskValidationPayload`.
 

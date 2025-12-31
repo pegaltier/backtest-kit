@@ -1,22 +1,9 @@
+---
+title: design/06_execution_modes
+group: design
+---
+
 # Execution Modes
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [src/classes/Backtest.ts](src/classes/Backtest.ts)
-- [src/classes/Live.ts](src/classes/Live.ts)
-- [src/classes/Walker.ts](src/classes/Walker.ts)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [src/lib/services/connection/StrategyConnectionService.ts](src/lib/services/connection/StrategyConnectionService.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 This page describes the three execution modes available in backtest-kit: **Backtest**, **Live**, and **Walker**. Each mode provides distinct behavior for data handling, state persistence, and execution flow. Understanding these modes is essential for choosing the correct execution strategy for different use cases.
 

@@ -1,28 +1,9 @@
+---
+title: design/68_risk_profiles
+group: design
+---
+
 # Risk Profiles
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [demo/backtest/package-lock.json](demo/backtest/package-lock.json)
-- [demo/backtest/package.json](demo/backtest/package.json)
-- [demo/backtest/src/index.mjs](demo/backtest/src/index.mjs)
-- [demo/live/package-lock.json](demo/live/package-lock.json)
-- [demo/live/package.json](demo/live/package.json)
-- [demo/live/src/index.mjs](demo/live/src/index.mjs)
-- [demo/optimization/package-lock.json](demo/optimization/package-lock.json)
-- [demo/optimization/package.json](demo/optimization/package.json)
-- [package-lock.json](package-lock.json)
-- [package.json](package.json)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 This page documents the `IRiskSchema` structure and validation function system used to implement portfolio-level risk controls in backtest-kit. Risk profiles enable custom validation logic including maximum concurrent position limits, risk/reward ratio requirements, symbol filtering, and cross-position analysis. Multiple strategies can share a single risk profile by referencing the same `riskName`. For risk validation execution flow, see [Risk Validation](#12.2). For position tracking implementation details, see [Position Tracking](#12.3). For risk schema registration API, see [Risk Schemas](#5.4).
 

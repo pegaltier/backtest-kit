@@ -1,23 +1,9 @@
+---
+title: design/50_signal_generation_and_validation
+group: design
+---
+
 # Signal Generation and Validation
-
-<details>
-<summary>Relevant source files</summary>
-
-The following files were used as context for generating this wiki page:
-
-- [README.md](README.md)
-- [src/client/ClientStrategy.ts](src/client/ClientStrategy.ts)
-- [src/config/emitters.ts](src/config/emitters.ts)
-- [src/function/event.ts](src/function/event.ts)
-- [src/index.ts](src/index.ts)
-- [src/interfaces/Strategy.interface.ts](src/interfaces/Strategy.interface.ts)
-- [test/e2e/defend.test.mjs](test/e2e/defend.test.mjs)
-- [test/index.mjs](test/index.mjs)
-- [types.d.ts](types.d.ts)
-
-</details>
-
-
 
 This page documents the signal generation process and the multi-layer validation pipeline that ensures all trading signals meet safety and logical requirements before execution. Signal generation occurs in the `getSignal` function defined in `IStrategySchema`, and validation is performed by `VALIDATE_SIGNAL_FN` within `ClientStrategy`.
 
