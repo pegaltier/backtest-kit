@@ -831,42 +831,45 @@ const ACTIVATE_SCHEDULED_SIGNAL_FN = async (
   return result;
 };
 
-const CALL_PING_CALLBACKS_FN = trycatch(async (
-  self: ClientStrategy,
-  scheduled: IScheduledSignalRow,
-  timestamp: number
-): Promise<void> => {
-  // Call system onPing callback first (emits to pingSubject)
-  await self.params.onPing(
-    self.params.execution.context.symbol,
-    self.params.method.context.strategyName,
-    self.params.method.context.exchangeName,
-    scheduled,
-    self.params.execution.context.backtest,
-    timestamp
-  );
-
-  // Call user onPing callback only if signal is still active (not cancelled, not activated)
-  if (self.params.callbacks?.onPing) {
-    await self.params.callbacks.onPing(
+const CALL_PING_CALLBACKS_FN = trycatch(
+  async (
+    self: ClientStrategy,
+    scheduled: IScheduledSignalRow,
+    timestamp: number
+  ): Promise<void> => {
+    // Call system onPing callback first (emits to pingSubject)
+    await self.params.onPing(
       self.params.execution.context.symbol,
+      self.params.method.context.strategyName,
+      self.params.method.context.exchangeName,
       scheduled,
-      new Date(timestamp),
-      self.params.execution.context.backtest
+      self.params.execution.context.backtest,
+      timestamp
     );
+
+    // Call user onPing callback only if signal is still active (not cancelled, not activated)
+    if (self.params.callbacks?.onPing) {
+      await self.params.callbacks.onPing(
+        self.params.execution.context.symbol,
+        scheduled,
+        new Date(timestamp),
+        self.params.execution.context.backtest
+      );
+    }
+  },
+  {
+    fallback: (error) => {
+      const message = "ClientStrategy CALL_PING_CALLBACKS_FN thrown";
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
   }
-}, {
-  fallback: (error) => {
-    const message = "ClientStrategy CALL_PING_CALLBACKS_FN thrown";
-    const payload = {
-      error: errorData(error),
-      message: getErrorMessage(error),
-    };
-    backtest.loggerService.warn(message, payload);
-    console.warn(message, payload);
-    errorEmitter.next(error);
-  }
-});
+);
 
 const RETURN_SCHEDULED_SIGNAL_ACTIVE_FN = async (
   self: ClientStrategy,
