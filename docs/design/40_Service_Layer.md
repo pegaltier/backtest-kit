@@ -51,98 +51,7 @@ Additional service categories exist for execution modes:
 
 ## Service Categories
 
-```mermaid
-graph TB
-    subgraph "Base Services"
-        Logger["LoggerService<br/>Structured logging"]
-    end
-    
-    subgraph "Context Services"
-        ExecCtx["ExecutionContextService<br/>symbol, when, backtest"]
-        MethodCtx["MethodContextService<br/>strategyName, exchangeName, frameName"]
-    end
-    
-    subgraph "Connection Services"
-        StratConn["StrategyConnectionService<br/>Memoized ClientStrategy instances<br/>tick(), backtest(), stop()"]
-        ExchConn["ExchangeConnectionService<br/>Memoized ClientExchange instances<br/>getCandles(), formatPrice()"]
-        RiskConn["RiskConnectionService<br/>Memoized ClientRisk instances<br/>checkSignal(), addSignal()"]
-        SizingConn["SizingConnectionService<br/>Memoized ClientSizing instances<br/>calculate()"]
-        FrameConn["FrameConnectionService<br/>Memoized ClientFrame instances<br/>getTimeframes()"]
-        OptimizerConn["OptimizerConnectionService<br/>Memoized ClientOptimizer instances<br/>getData(), getCode()"]
-        PartialConn["PartialConnectionService<br/>Memoized ClientPartial instances<br/>check()"]
-    end
-    
-    subgraph "Schema Services"
-        StratSchema["StrategySchemaService<br/>Registry: name → IStrategySchema<br/>register(), get()"]
-        ExchSchema["ExchangeSchemaService<br/>Registry: name → IExchangeSchema"]
-        FrameSchema["FrameSchemaService<br/>Registry: name → IFrameSchema"]
-        WalkerSchema["WalkerSchemaService<br/>Registry: name → IWalkerSchema"]
-        SizingSchema["SizingSchemaService<br/>Registry: name → ISizingSchema"]
-        RiskSchema["RiskSchemaService<br/>Registry: name → IRiskSchema"]
-        OptimizerSchema["OptimizerSchemaService<br/>Registry: name → IOptimizerSchema"]
-    end
-    
-    subgraph "Global Services"
-        StratGlobal["StrategyGlobalService<br/>Context injection wrapper<br/>tick(), backtest() with context"]
-        ExchGlobal["ExchangeGlobalService<br/>Context injection wrapper<br/>getCandles() with context"]
-        FrameGlobal["FrameGlobalService<br/>Context injection wrapper<br/>getTimeframes() with context"]
-        RiskGlobal["RiskGlobalService<br/>Context injection wrapper<br/>checkSignal() with context"]
-        SizingGlobal["SizingGlobalService<br/>Context injection wrapper<br/>calculate() with context"]
-        OptimizerGlobal["OptimizerGlobalService<br/>Context injection wrapper<br/>getData() with context"]
-        PartialGlobal["PartialGlobalService<br/>Context injection wrapper<br/>check() with context"]
-    end
-    
-    subgraph "Validation Services"
-        StratValid["StrategyValidationService<br/>30+ signal rules<br/>validate(), addStrategy()"]
-        ExchValid["ExchangeValidationService<br/>Schema validation<br/>validate(), addExchange()"]
-        FrameValid["FrameValidationService<br/>Schema validation<br/>validate(), addFrame()"]
-        WalkerValid["WalkerValidationService<br/>Schema validation<br/>validate(), addWalker()"]
-        SizingValid["SizingValidationService<br/>Schema validation<br/>validate(), addSizing()"]
-        RiskValid["RiskValidationService<br/>Schema validation<br/>validate(), addRisk()"]
-        OptimizerValid["OptimizerValidationService<br/>Schema validation<br/>validate(), addOptimizer()"]
-    end
-    
-    subgraph "Command Services"
-        BacktestCmd["BacktestCommandService<br/>Validation + delegation<br/>run()"]
-        LiveCmd["LiveCommandService<br/>Validation + delegation<br/>run()"]
-        WalkerCmd["WalkerCommandService<br/>Validation + delegation<br/>run()"]
-    end
-    
-    subgraph "Logic Services"
-        BacktestLogicPriv["BacktestLogicPrivateService<br/>Internal implementation<br/>AsyncGenerator execution"]
-        BacktestLogicPub["BacktestLogicPublicService<br/>External contract<br/>run() entry point"]
-        LiveLogicPriv["LiveLogicPrivateService<br/>Internal implementation<br/>Infinite loop + persistence"]
-        LiveLogicPub["LiveLogicPublicService<br/>External contract<br/>run() entry point"]
-        WalkerLogicPriv["WalkerLogicPrivateService<br/>Internal implementation<br/>Strategy iteration"]
-        WalkerLogicPub["WalkerLogicPublicService<br/>External contract<br/>run() entry point"]
-    end
-    
-    subgraph "Markdown Services"
-        BacktestMD["BacktestMarkdownService<br/>Event accumulation<br/>Statistics calculation<br/>getData(), getReport(), dump()"]
-        LiveMD["LiveMarkdownService<br/>Event accumulation<br/>Statistics calculation"]
-        ScheduleMD["ScheduleMarkdownService<br/>Scheduled signal tracking<br/>Cancellation analysis"]
-        WalkerMD["WalkerMarkdownService<br/>Strategy comparison<br/>Metric ranking"]
-        PartialMD["PartialMarkdownService<br/>Partial profit/loss tracking<br/>Milestone analysis"]
-        PerfMD["PerformanceMarkdownService<br/>Timing metrics<br/>Bottleneck detection"]
-        HeatMD["HeatMarkdownService<br/>Timeframe heat analysis"]
-    end
-    
-    subgraph "Template Services"
-        OptimizerTmpl["OptimizerTemplateService<br/>Code generation templates<br/>getStrategyTemplate(), etc."]
-    end
-    
-    Logger -.->|injected into| StratConn
-    ExecCtx -.->|injected into| StratConn
-    MethodCtx -.->|injected into| StratGlobal
-    
-    StratSchema -.->|injected into| StratConn
-    StratConn -.->|injected into| StratGlobal
-    StratGlobal -.->|injected into| BacktestCmd
-    BacktestCmd -.->|injected into| BacktestLogicPub
-    BacktestLogicPub -.->|injected into| BacktestLogicPriv
-    
-    StratValid -.->|used by| BacktestCmd
-```
+![Mermaid Diagram](./diagrams\40_Service_Layer_0.svg)
 
 ### Connection Services
 
@@ -279,46 +188,7 @@ For details on AI optimization, see [AI-Powered Strategy Optimization](#16.5).
 
 ## Service Registration and Injection
 
-```mermaid
-graph LR
-    subgraph "Registration Phase"
-        TYPES["TYPES Symbol Registry<br/>src/lib/core/types.ts<br/>~60 unique symbols"]
-        Provide["provide.ts<br/>Service instantiation<br/>Factory functions"]
-        
-        TYPES -->|"provides keys"| Provide
-    end
-    
-    subgraph "Service Instantiation"
-        Provide -->|"provide(TYPES.loggerService, () => new LoggerService())"| Logger["LoggerService<br/>instance"]
-        Provide -->|"provide(TYPES.strategyConnectionService, ...)"| StratConn["StrategyConnectionService<br/>instance"]
-        Provide -->|"provide(TYPES.strategySchemaService, ...)"| StratSchema["StrategySchemaService<br/>instance"]
-        Provide -->|"provide(TYPES.strategyGlobalService, ...)"| StratGlobal["StrategyGlobalService<br/>instance"]
-        Provide -->|"provide(TYPES.backtestLogicPrivateService, ...)"| BacktestLogic["BacktestLogicPrivateService<br/>instance"]
-    end
-    
-    subgraph "Dependency Injection"
-        StratConn -->|"inject<LoggerService>(TYPES.loggerService)"| Logger
-        StratConn -->|"inject<StrategySchemaService>(TYPES.strategySchemaService)"| StratSchema
-        StratGlobal -->|"inject<StrategyConnectionService>(TYPES.strategyConnectionService)"| StratConn
-        BacktestLogic -->|"inject<StrategyGlobalService>(TYPES.strategyGlobalService)"| StratGlobal
-    end
-    
-    subgraph "Aggregation"
-        Index["src/lib/index.ts<br/>backtest object"]
-        
-        Logger -->|"inject<LoggerService>(TYPES.loggerService)"| Index
-        StratConn -->|"inject<StrategyConnectionService>(...)"| Index
-        StratSchema -->|"inject<StrategySchemaService>(...)"| Index
-        StratGlobal -->|"inject<StrategyGlobalService>(...)"| Index
-        BacktestLogic -->|"inject<BacktestLogicPrivateService>(...)"| Index
-    end
-    
-    subgraph "User Access"
-        UserCode["User Code<br/>import backtest"]
-        
-        Index -->|"export default backtest"| UserCode
-    end
-```
+![Mermaid Diagram](./diagrams\40_Service_Layer_1.svg)
 
 The registration process follows three phases:
 
@@ -387,76 +257,7 @@ The Backtest, Live, and Walker utility classes ([src/classes/Backtest.ts](), [sr
 
 Services follow a strict layering pattern to prevent circular dependencies:
 
-```mermaid
-graph TB
-    subgraph "Layer 1: Base Infrastructure"
-        Logger["LoggerService"]
-        ExecCtx["ExecutionContextService"]
-        MethodCtx["MethodContextService"]
-    end
-    
-    subgraph "Layer 2: Schema Registry"
-        StratSchema["StrategySchemaService"]
-        ExchSchema["ExchangeSchemaService"]
-        RiskSchema["RiskSchemaService"]
-    end
-    
-    subgraph "Layer 3: Validation"
-        StratValid["StrategyValidationService"]
-        ExchValid["ExchangeValidationService"]
-        RiskValid["RiskValidationService"]
-    end
-    
-    subgraph "Layer 4: Connection"
-        StratConn["StrategyConnectionService<br/>Creates ClientStrategy"]
-        ExchConn["ExchangeConnectionService<br/>Creates ClientExchange"]
-        RiskConn["RiskConnectionService<br/>Creates ClientRisk"]
-    end
-    
-    subgraph "Layer 5: Global Wrappers"
-        StratGlobal["StrategyGlobalService<br/>Injects context"]
-        ExchGlobal["ExchangeGlobalService<br/>Injects context"]
-        RiskGlobal["RiskGlobalService<br/>Injects context"]
-    end
-    
-    subgraph "Layer 6: Command Entry Points"
-        BacktestCmd["BacktestCommandService"]
-        LiveCmd["LiveCommandService"]
-        WalkerCmd["WalkerCommandService"]
-    end
-    
-    subgraph "Layer 7: Logic Implementation"
-        BacktestLogicPub["BacktestLogicPublicService"]
-        BacktestLogicPriv["BacktestLogicPrivateService"]
-        LiveLogicPub["LiveLogicPublicService"]
-        LiveLogicPriv["LiveLogicPrivateService"]
-    end
-    
-    subgraph "Layer 8: Reporting"
-        BacktestMD["BacktestMarkdownService"]
-        LiveMD["LiveMarkdownService"]
-    end
-    
-    Logger -->|"injected into"| StratConn
-    ExecCtx -->|"injected into"| StratConn
-    
-    StratSchema -->|"injected into"| StratConn
-    StratSchema -->|"injected into"| StratValid
-    
-    StratValid -->|"injected into"| StratGlobal
-    StratConn -->|"injected into"| StratGlobal
-    
-    StratGlobal -->|"injected into"| BacktestCmd
-    ExchGlobal -->|"injected into"| BacktestCmd
-    
-    BacktestCmd -->|"injected into"| BacktestLogicPub
-    BacktestLogicPub -->|"injected into"| BacktestLogicPriv
-    
-    StratGlobal -->|"called by"| BacktestLogicPriv
-    ExchGlobal -->|"called by"| BacktestLogicPriv
-    
-    BacktestLogicPriv -->|"emits to"| BacktestMD
-```
+![Mermaid Diagram](./diagrams\40_Service_Layer_2.svg)
 
 **Layering Rules:**
 

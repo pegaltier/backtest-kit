@@ -43,70 +43,7 @@ For strategy schema definitions, see [Strategy Schemas](#5.1). For signal state 
 
 `ClientStrategy` is instantiated by `StrategyConnectionService` with memoization per symbol-strategy pair. The class maintains internal state for pending and scheduled signals while delegating to injected dependencies for exchange data, risk validation, and persistence.
 
-```mermaid
-classDiagram
-    class ClientStrategy {
-        -_isStopped: boolean
-        -_pendingSignal: ISignalRow | null
-        -_scheduledSignal: IScheduledSignalRow | null
-        -_lastSignalTimestamp: number | null
-        +waitForInit() Promise~void~
-        +tick(symbol, strategyName) Promise~IStrategyTickResult~
-        +backtest(symbol, strategyName, candles) Promise~IStrategyBacktestResult~
-        +stop(symbol, strategyName) Promise~void~
-        +setPendingSignal(signal) Promise~void~
-        +setScheduledSignal(signal) Promise~void~
-        +getPendingSignal(symbol, strategyName) Promise~ISignalRow~
-    }
-    
-    class IStrategyParams {
-        +strategyName: StrategyName
-        +interval: SignalInterval
-        +getSignal(symbol, when) Promise~ISignalDto~
-        +exchange: IExchange
-        +risk: IRisk
-        +partial: IPartial
-        +execution: TExecutionContextService
-        +method: TMethodContextService
-        +logger: ILogger
-        +callbacks: IStrategyCallbacks
-        +riskName: RiskName
-    }
-    
-    class IExchange {
-        +getAveragePrice(symbol) Promise~number~
-        +getNextCandles(symbol, interval, limit) Promise~ICandleData[]~
-    }
-    
-    class IRisk {
-        +checkSignal(params) Promise~boolean~
-        +addSignal(symbol, context) Promise~void~
-        +removeSignal(symbol, context) Promise~void~
-    }
-    
-    class IPartial {
-        +profit(symbol, data, price, percent, backtest, when) Promise~void~
-        +loss(symbol, data, price, percent, backtest, when) Promise~void~
-        +clear(symbol, data, price) Promise~void~
-    }
-    
-    class PersistSignalAdapter {
-        +readSignalData(symbol, strategyName) Promise~ISignalRow~
-        +writeSignalData(signal, symbol, strategyName) Promise~void~
-    }
-    
-    class PersistScheduleAdapter {
-        +readScheduleData(symbol, strategyName) Promise~IScheduledSignalRow~
-        +writeScheduleData(signal, symbol, strategyName) Promise~void~
-    }
-    
-    ClientStrategy --> IStrategyParams : params
-    ClientStrategy ..> IExchange : uses
-    ClientStrategy ..> IRisk : uses
-    ClientStrategy ..> IPartial : uses
-    ClientStrategy ..> PersistSignalAdapter : persists to
-    ClientStrategy ..> PersistScheduleAdapter : persists to
-```
+![Mermaid Diagram](./diagrams\33_ClientStrategy_0.svg)
 
 **State Variables:**
 - `_isStopped`: Flag set by `stop()` to prevent new signal generation
@@ -124,65 +61,7 @@ The strategy manages signals through a state machine with two parallel tracks: s
 
 ### State-to-Code Mapping
 
-```mermaid
-stateDiagram-v2
-    [*] --> Idle: "_pendingSignal=null<br/>_scheduledSignal=null"
-    
-    Idle --> Throttled: "_lastSignalTimestamp<br/>check fails"
-    Throttled --> Idle: "return null"
-    
-    Idle --> RiskCheck: "GET_SIGNAL_FN<br/>called"
-    RiskCheck --> Idle: "risk.checkSignal()<br/>returns false"
-    
-    RiskCheck --> GetSignal: "getSignal()<br/>invoked"
-    GetSignal --> Idle: "returns null"
-    
-    GetSignal --> Scheduled: "IScheduledSignalRow<br/>_scheduledSignal=signal<br/>PersistScheduleAdapter"
-    GetSignal --> Opened: "ISignalRow<br/>_pendingSignal=signal<br/>PersistSignalAdapter"
-    
-    state Scheduled {
-        [*] --> AwaitingActivation
-        AwaitingActivation --> Cancelled: "CHECK_SCHEDULED_SIGNAL_TIMEOUT_FN<br/>IStrategyTickResultCancelled"
-        AwaitingActivation --> Cancelled: "CANCEL_SCHEDULED_SIGNAL_BY_STOPLOSS_FN<br/>currentPrice <= priceStopLoss"
-        AwaitingActivation --> PendingActivation: "CHECK_SCHEDULED_SIGNAL_PRICE_ACTIVATION_FN<br/>shouldActivate=true"
-        PendingActivation --> Cancelled: "risk.checkSignal()<br/>returns false"
-        PendingActivation --> Opened: "ACTIVATE_SCHEDULED_SIGNAL_FN<br/>IStrategyTickResultOpened"
-    }
-    
-    state Opened {
-        [*] --> Active
-    }
-    
-    state Active {
-        [*] --> Monitoring
-        Monitoring --> PartialProfit: "ClientPartial.profit()<br/>callbacks.onPartialProfit"
-        Monitoring --> PartialLoss: "ClientPartial.loss()<br/>callbacks.onPartialLoss"
-        PartialProfit --> Monitoring
-        PartialLoss --> Monitoring
-        Monitoring --> ClosedTP: "CHECK_PENDING_SIGNAL_COMPLETION_FN<br/>currentPrice >= priceTakeProfit"
-        Monitoring --> ClosedSL: "CHECK_PENDING_SIGNAL_COMPLETION_FN<br/>currentPrice <= priceStopLoss"
-        Monitoring --> ClosedTimeout: "CHECK_PENDING_SIGNAL_COMPLETION_FN<br/>elapsedTime >= minuteEstimatedTime"
-    }
-    
-    Cancelled --> [*]: "IStrategyTickResultCancelled<br/>_scheduledSignal=null"
-    ClosedTP --> [*]: "IStrategyTickResultClosed<br/>closeReason=take_profit<br/>_pendingSignal=null"
-    ClosedSL --> [*]: "IStrategyTickResultClosed<br/>closeReason=stop_loss<br/>_pendingSignal=null"
-    ClosedTimeout --> [*]: "IStrategyTickResultClosed<br/>closeReason=time_expired<br/>_pendingSignal=null"
-    
-    note right of Scheduled
-        State Variable: _scheduledSignal
-        Type: IScheduledSignalRow | null
-        Persistence: PersistScheduleAdapter
-        Methods: setScheduledSignal()
-    end note
-    
-    note right of Active
-        State Variable: _pendingSignal
-        Type: ISignalRow | null
-        Persistence: PersistSignalAdapter
-        Methods: setPendingSignal()
-    end note
-```
+![Mermaid Diagram](./diagrams\33_ClientStrategy_1.svg)
 
 ### State Variables and Types
 
@@ -214,14 +93,7 @@ stateDiagram-v2
 
 **Throttling Implementation:**
 
-```mermaid
-flowchart LR
-    Start["tick() called"] --> CheckTime{"currentTime -<br/>_lastSignalTimestamp<br/>< intervalMs?"}
-    CheckTime -->|Yes| ReturnNull["return null<br/>(throttled)"]
-    CheckTime -->|No| UpdateTime["_lastSignalTimestamp =<br/>currentTime"]
-    UpdateTime --> CallGetSignal["await getSignal()"]
-    CallGetSignal --> ProcessSignal["Process signal"]
-```
+![Mermaid Diagram](./diagrams\33_ClientStrategy_2.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:32-39](), [src/client/ClientStrategy.ts:271-284](), [src/interfaces/Strategy.interface.ts:12-18]()
 
@@ -247,37 +119,7 @@ await strategy.waitForInit();
 
 **State Restoration Flow:**
 
-```mermaid
-sequenceDiagram
-    participant LS as LiveLogicPrivateService
-    participant CS as ClientStrategy
-    participant PSA as PersistSignalAdapter
-    participant PSCHA as PersistScheduleAdapter
-    
-    LS->>CS: waitForInit()
-    
-    alt backtest mode
-        CS-->>LS: return (no-op)
-    else live mode
-        CS->>PSA: readSignalData(symbol, strategyName)
-        PSA-->>CS: ISignalRow | null
-        
-        alt pending signal exists
-            CS->>CS: _pendingSignal = restored signal
-            CS->>CS: callbacks.onActive()
-        end
-        
-        CS->>PSCHA: readScheduleData(symbol, strategyName)
-        PSCHA-->>CS: IScheduledSignalRow | null
-        
-        alt scheduled signal exists
-            CS->>CS: _scheduledSignal = restored signal
-            CS->>CS: callbacks.onSchedule()
-        end
-        
-        CS-->>LS: initialized
-    end
-```
+![Mermaid Diagram](./diagrams\33_ClientStrategy_3.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:411-472](), [src/client/ClientStrategy.ts:1532]()
 
@@ -289,57 +131,7 @@ Performs a single iteration of strategy execution, handling signal generation, v
 
 ### Execution Flow (Live Mode)
 
-```mermaid
-flowchart TD
-    Start["tick(symbol, strategyName)"] --> CheckStopped{"_isStopped?"}
-    CheckStopped -->|Yes| ReturnIdle1["RETURN_IDLE_FN"]
-    
-    CheckStopped -->|No| HasScheduled{"_scheduledSignal &&<br/>!_pendingSignal?"}
-    
-    HasScheduled -->|Yes| CheckTimeout["CHECK_SCHEDULED_SIGNAL_TIMEOUT_FN"]
-    CheckTimeout --> TimeoutResult{"timeout?"}
-    TimeoutResult -->|Yes| ReturnCancelled1["return IStrategyTickResultCancelled"]
-    
-    TimeoutResult -->|No| CheckActivation["CHECK_SCHEDULED_SIGNAL_PRICE_ACTIVATION_FN"]
-    CheckActivation --> ActivationCheck{"shouldActivate?<br/>shouldCancel?"}
-    
-    ActivationCheck -->|shouldCancel| CancelScheduled["CANCEL_SCHEDULED_SIGNAL_BY_STOPLOSS_FN"]
-    CancelScheduled --> ReturnIdle2["return IStrategyTickResultIdle"]
-    
-    ActivationCheck -->|shouldActivate| ActivateScheduled["ACTIVATE_SCHEDULED_SIGNAL_FN"]
-    ActivateScheduled --> ActivateResult{"activated?"}
-    ActivateResult -->|Yes| ReturnOpened1["return IStrategyTickResultOpened"]
-    ActivateResult -->|No| ReturnIdle3["return IStrategyTickResultIdle"]
-    
-    ActivationCheck -->|neither| ReturnActive1["RETURN_SCHEDULED_SIGNAL_ACTIVE_FN"]
-    ReturnActive1 --> ReturnActiveResult1["return IStrategyTickResultActive"]
-    
-    HasScheduled -->|No| HasPending{"_pendingSignal?"}
-    
-    HasPending -->|No| GetSignal["GET_SIGNAL_FN"]
-    GetSignal --> SignalResult{"signal?"}
-    
-    SignalResult -->|null| ReturnIdle4["RETURN_IDLE_FN"]
-    
-    SignalResult -->|IScheduledSignalRow| SetScheduled["setScheduledSignal(signal)"]
-    SetScheduled --> OpenScheduled["OPEN_NEW_SCHEDULED_SIGNAL_FN"]
-    OpenScheduled --> ReturnScheduled["return IStrategyTickResultScheduled"]
-    
-    SignalResult -->|ISignalRow| SetPending["setPendingSignal(signal)"]
-    SetPending --> OpenPending["OPEN_NEW_PENDING_SIGNAL_FN"]
-    OpenPending --> OpenResult{"risk approved?"}
-    OpenResult -->|Yes| ReturnOpened2["return IStrategyTickResultOpened"]
-    OpenResult -->|No| ClearPending["setPendingSignal(null)"]
-    ClearPending --> ReturnIdle5["return IStrategyTickResultIdle"]
-    
-    HasPending -->|Yes| GetVWAP["exchange.getAveragePrice()"]
-    GetVWAP --> CheckCompletion["CHECK_PENDING_SIGNAL_COMPLETION_FN"]
-    CheckCompletion --> CompletionResult{"closed?"}
-    
-    CompletionResult -->|Yes| ReturnClosed["return IStrategyTickResultClosed"]
-    CompletionResult -->|No| ReturnActive2["RETURN_PENDING_SIGNAL_ACTIVE_FN"]
-    ReturnActive2 --> ReturnActiveResult2["return IStrategyTickResultActive"]
-```
+![Mermaid Diagram](./diagrams\33_ClientStrategy_4.svg)
 
 **Key Decision Points:**
 1. **Stopped check**: Early return if `stop()` was called
@@ -357,90 +149,13 @@ Fast-forwards through historical candle data to simulate signal lifecycle withou
 
 ### Backtest Flow
 
-```mermaid
-flowchart TD
-    Start["backtest(symbol, strategyName, candles)"] --> ValidateContext{"backtest context?"}
-    ValidateContext -->|No| ThrowError1["throw Error:<br/>'running in live context'"]
-    
-    ValidateContext -->|Yes| HasSignal{"_pendingSignal ||<br/>_scheduledSignal?"}
-    HasSignal -->|No| ThrowError2["throw Error:<br/>'no pending or scheduled signal'"]
-    
-    HasSignal -->|Yes| TypeCheck{"signal type?"}
-    
-    TypeCheck -->|scheduled| ProcessScheduled["PROCESS_SCHEDULED_SIGNAL_CANDLES_FN"]
-    ProcessScheduled --> ScheduledResult{"result?"}
-    
-    ScheduledResult -->|cancelled| ReturnCancelled["return IStrategyTickResultCancelled"]
-    
-    ScheduledResult -->|activated| SliceCandles["remainingCandles =<br/>candles.slice(activationIndex + 1)"]
-    SliceCandles --> CheckRemaining{"remainingCandles.length > 0?"}
-    
-    CheckRemaining -->|No| CalculateLastPrice["lastPrice = GET_AVG_PRICE_FN"]
-    CalculateLastPrice --> CloseImmediate["CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN<br/>('time_expired')"]
-    CloseImmediate --> ReturnClosed1["return IStrategyTickResultClosed"]
-    
-    CheckRemaining -->|Yes| UpdateCandles["candles = remainingCandles"]
-    UpdateCandles --> ProcessPending["PROCESS_PENDING_SIGNAL_CANDLES_FN"]
-    
-    ScheduledResult -->|still_waiting| CheckTimeout{"timeout?"}
-    CheckTimeout -->|Yes| CancelTimeout["CANCEL_SCHEDULED_SIGNAL_IN_BACKTEST_FN"]
-    CancelTimeout --> ReturnCancelled2["return IStrategyTickResultCancelled"]
-    CheckTimeout -->|No| ReturnActive["return IStrategyTickResultActive"]
-    
-    TypeCheck -->|pending| ProcessPending
-    
-    ProcessPending --> PendingResult{"closed?"}
-    PendingResult -->|Yes| ReturnClosed2["return IStrategyTickResultClosed"]
-    
-    PendingResult -->|No| GetLastPrice["lastPrice = GET_AVG_PRICE_FN(candles)"]
-    GetLastPrice --> CloseTimeout["CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN<br/>('time_expired')"]
-    CloseTimeout --> ReturnClosed3["return IStrategyTickResultClosed"]
-```
+![Mermaid Diagram](./diagrams\33_ClientStrategy_5.svg)
 
 **Scheduled Signal Processing Logic:**
 
 For scheduled signals, the backtest must first determine if/when activation occurs:
 
-```mermaid
-sequenceDiagram
-    participant BT as backtest()
-    participant PSSCF as PROCESS_SCHEDULED_SIGNAL_CANDLES_FN
-    participant Candles as Candle Array
-    
-    BT->>PSSCF: process scheduled signal
-    
-    loop for each candle
-        PSSCF->>Candles: get candle[i]
-        PSSCF->>PSSCF: calculate VWAP
-        
-        alt timeout reached
-            PSSCF->>PSSCF: CANCEL_SCHEDULED_SIGNAL_IN_BACKTEST_FN
-            PSSCF-->>BT: { cancelled: true, result }
-        else LONG: candle.low <= priceStopLoss
-            Note over PSSCF: SL hit BEFORE activation
-            PSSCF->>PSSCF: CANCEL_SCHEDULED_SIGNAL_IN_BACKTEST_FN
-            PSSCF-->>BT: { cancelled: true, result }
-        else SHORT: candle.high >= priceStopLoss
-            Note over PSSCF: SL hit BEFORE activation
-            PSSCF->>PSSCF: CANCEL_SCHEDULED_SIGNAL_IN_BACKTEST_FN
-            PSSCF-->>BT: { cancelled: true, result }
-        else LONG: candle.low <= priceOpen
-            Note over PSSCF: Activation reached
-            PSSCF->>PSSCF: ACTIVATE_SCHEDULED_SIGNAL_IN_BACKTEST_FN
-            PSSCF-->>BT: { activated: true, activationIndex: i }
-        else SHORT: candle.high >= priceOpen
-            Note over PSSCF: Activation reached
-            PSSCF->>PSSCF: ACTIVATE_SCHEDULED_SIGNAL_IN_BACKTEST_FN
-            PSSCF-->>BT: { activated: true, activationIndex: i }
-        else still waiting
-            Note over PSSCF: Continue to next candle
-        end
-    end
-    
-    alt not activated and not cancelled
-        PSSCF-->>BT: { activated: false, cancelled: false }
-    end
-```
+![Mermaid Diagram](./diagrams\33_ClientStrategy_6.svg)
 
 **VWAP Calculation Window:**
 
@@ -468,27 +183,7 @@ Gracefully stops new signal generation while allowing active positions to close 
 - Clears `_scheduledSignal` if exists (not yet activated)
 - Does **NOT** force-close `_pendingSignal` (continues monitoring)
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant CS as ClientStrategy
-    participant PSA as PersistScheduleAdapter
-    
-    User->>CS: stop(symbol, strategyName)
-    CS->>CS: _isStopped = true
-    
-    alt _scheduledSignal exists
-        CS->>PSA: setScheduledSignal(null)
-        PSA->>PSA: delete schedule file
-        PSA-->>CS: done
-    end
-    
-    Note over CS: _pendingSignal NOT cleared<br/>Will continue monitoring<br/>until TP/SL/time_expired
-    
-    CS-->>User: stopped
-    
-    Note over User,CS: Subsequent tick() calls will:<br/>1. Skip getSignal()<br/>2. Continue monitoring _pendingSignal<br/>3. Return idle after signal closes
-```
+![Mermaid Diagram](./diagrams\33_ClientStrategy_7.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:1969-1983]()
 
@@ -498,42 +193,7 @@ sequenceDiagram
 
 The `GET_SIGNAL_FN` helper orchestrates multi-stage validation before creating signals.
 
-```mermaid
-flowchart TD
-    Start["GET_SIGNAL_FN(self)"] --> CheckStopped{"_isStopped?"}
-    CheckStopped -->|Yes| ReturnNull1["return null"]
-    
-    CheckStopped -->|No| CheckInterval["Check interval throttling"]
-    CheckInterval --> IntervalCheck{"elapsed > interval?"}
-    IntervalCheck -->|No| ReturnNull2["return null (throttled)"]
-    
-    IntervalCheck -->|Yes| UpdateTimestamp["_lastSignalTimestamp = currentTime"]
-    UpdateTimestamp --> GetVWAP["currentPrice = exchange.getAveragePrice()"]
-    
-    GetVWAP --> RiskCheck["risk.checkSignal(params)"]
-    RiskCheck --> RiskResult{"approved?"}
-    RiskResult -->|No| ReturnNull3["return null (risk rejected)"]
-    
-    RiskResult -->|Yes| CallGetSignal["signalDto = await getSignal(symbol, when)"]
-    CallGetSignal --> DtoResult{"signalDto?"}
-    DtoResult -->|null| ReturnNull4["return null (no signal)"]
-    
-    DtoResult -->|ISignalDto| CheckPriceOpen{"priceOpen provided?"}
-    
-    CheckPriceOpen -->|Yes| CheckActivation{"priceOpen already<br/>reached by currentPrice?"}
-    
-    CheckActivation -->|Yes| CreateImmediate["Create ISignalRow<br/>with priceOpen from DTO<br/>_isScheduled = false"]
-    CreateImmediate --> ValidateImmediate["VALIDATE_SIGNAL_FN(signal, currentPrice, false)"]
-    ValidateImmediate --> ReturnImmediate["return ISignalRow"]
-    
-    CheckActivation -->|No| CreateScheduled["Create IScheduledSignalRow<br/>_isScheduled = true"]
-    CreateScheduled --> ValidateScheduled["VALIDATE_SIGNAL_FN(scheduled, currentPrice, true)"]
-    ValidateScheduled --> ReturnScheduled["return IScheduledSignalRow"]
-    
-    CheckPriceOpen -->|No| CreateStandard["Create ISignalRow<br/>priceOpen = currentPrice<br/>_isScheduled = false"]
-    CreateStandard --> ValidateStandard["VALIDATE_SIGNAL_FN(signal, currentPrice, false)"]
-    ValidateStandard --> ReturnStandard["return ISignalRow"]
-```
+![Mermaid Diagram](./diagrams\33_ClientStrategy_8.svg)
 
 **Validation Stages:**
 
@@ -570,47 +230,7 @@ if (signal.position === undefined || signal.position === null) {
 
 ### Price Validation Rules
 
-```mermaid
-flowchart TD
-    Start["VALIDATE_SIGNAL_FN(signal, currentPrice, isScheduled)"] --> ValidateFields["Validate required fields"]
-    
-    ValidateFields --> ValidateNaN["Check NaN/Infinity:<br/>- currentPrice<br/>- priceOpen<br/>- priceTakeProfit<br/>- priceStopLoss"]
-    
-    ValidateNaN --> ValidatePositive["Check positive values:<br/>All prices > 0"]
-    
-    ValidatePositive --> PositionCheck{"position?"}
-    
-    PositionCheck -->|long| LongChecks["LONG Validations:<br/>- TP > Open<br/>- SL < Open"]
-    
-    LongChecks --> LongDistanceTP["TP Distance Check:<br/>(TP - Open) / Open * 100<br/>> CC_MIN_TAKEPROFIT_DISTANCE_PERCENT"]
-    
-    LongDistanceTP --> LongDistanceSL["SL Distance Check:<br/>(Open - SL) / Open * 100<br/>< CC_MAX_STOPLOSS_DISTANCE_PERCENT"]
-    
-    LongDistanceSL --> LongImmediate{"isScheduled?"}
-    LongImmediate -->|No| LongCurrentPrice["Current Price Checks:<br/>- currentPrice < SL → error<br/>- currentPrice > TP → error"]
-    
-    PositionCheck -->|short| ShortChecks["SHORT Validations:<br/>- TP < Open<br/>- SL > Open"]
-    
-    ShortChecks --> ShortDistanceTP["TP Distance Check:<br/>(Open - TP) / Open * 100<br/>> CC_MIN_TAKEPROFIT_DISTANCE_PERCENT"]
-    
-    ShortDistanceTP --> ShortDistanceSL["SL Distance Check:<br/>(SL - Open) / Open * 100<br/>< CC_MAX_STOPLOSS_DISTANCE_PERCENT"]
-    
-    ShortDistanceSL --> ShortImmediate{"isScheduled?"}
-    ShortImmediate -->|No| ShortCurrentPrice["Current Price Checks:<br/>- currentPrice > SL → error<br/>- currentPrice < TP → error"]
-    
-    LongImmediate -->|Yes| TimeChecks
-    ShortImmediate -->|Yes| TimeChecks
-    LongCurrentPrice --> TimeChecks
-    ShortCurrentPrice --> TimeChecks
-    
-    TimeChecks["Time Validation:<br/>- minuteEstimatedTime > 0<br/>- Integer value<br/>- < CC_MAX_SIGNAL_LIFETIME_MINUTES"]
-    
-    TimeChecks --> TimestampChecks["Timestamp Validation:<br/>- scheduledAt > 0<br/>- pendingAt > 0"]
-    
-    TimestampChecks --> ErrorCheck{"errors.length > 0?"}
-    ErrorCheck -->|Yes| ThrowError["throw Error with all errors"]
-    ErrorCheck -->|No| Success["Validation passed"]
-```
+![Mermaid Diagram](./diagrams\33_ClientStrategy_9.svg)
 
 ### Configuration Parameters
 
@@ -640,48 +260,7 @@ Scheduled signals implement delayed entry at specific price points with pre-acti
 
 ### Activation Decision Tree
 
-```mermaid
-flowchart TD
-    Start["Scheduled Signal Monitoring"] --> GetPrice["currentPrice = exchange.getAveragePrice()"]
-    
-    GetPrice --> CheckTimeout{"elapsedTime ><br/>CC_SCHEDULE_AWAIT_MINUTES?"}
-    CheckTimeout -->|Yes| CancelTimeout["Cancel by timeout"]
-    CancelTimeout --> EmitCancelled1["Emit IStrategyTickResultCancelled"]
-    
-    CheckTimeout -->|No| PositionCheck{"position?"}
-    
-    PositionCheck -->|long| LongLogic["LONG Logic:<br/>- Waiting for price to DROP<br/>- priceOpen > priceStopLoss"]
-    
-    LongLogic --> LongCheck{"candle state?"}
-    LongCheck -->|"low <= priceStopLoss"| CancelLongSL["Cancel (SL hit)"]
-    CancelLongSL --> EmitCancelled2["Emit IStrategyTickResultCancelled"]
-    
-    LongCheck -->|"low <= priceOpen"| ActivateLong["Activate signal"]
-    ActivateLong --> LongRisk["risk.checkSignal()"]
-    LongRisk --> LongRiskResult{"approved?"}
-    LongRiskResult -->|No| CancelLongRisk["Cancel (risk rejected)"]
-    CancelLongRisk --> EmitCancelled3["Emit IStrategyTickResultCancelled"]
-    LongRiskResult -->|Yes| OpenLong["Convert to pending signal<br/>pendingAt = activationTime"]
-    OpenLong --> EmitOpened1["Emit IStrategyTickResultOpened"]
-    
-    LongCheck -->|"still waiting"| EmitActive1["Emit IStrategyTickResultActive"]
-    
-    PositionCheck -->|short| ShortLogic["SHORT Logic:<br/>- Waiting for price to RISE<br/>- priceOpen < priceStopLoss"]
-    
-    ShortLogic --> ShortCheck{"candle state?"}
-    ShortCheck -->|"high >= priceStopLoss"| CancelShortSL["Cancel (SL hit)"]
-    CancelShortSL --> EmitCancelled4["Emit IStrategyTickResultCancelled"]
-    
-    ShortCheck -->|"high >= priceOpen"| ActivateShort["Activate signal"]
-    ActivateShort --> ShortRisk["risk.checkSignal()"]
-    ShortRisk --> ShortRiskResult{"approved?"}
-    ShortRiskResult -->|No| CancelShortRisk["Cancel (risk rejected)"]
-    CancelShortRisk --> EmitCancelled5["Emit IStrategyTickResultCancelled"]
-    ShortRiskResult -->|Yes| OpenShort["Convert to pending signal<br/>pendingAt = activationTime"]
-    OpenShort --> EmitOpened2["Emit IStrategyTickResultOpened"]
-    
-    ShortCheck -->|"still waiting"| EmitActive2["Emit IStrategyTickResultActive"]
-```
+![Mermaid Diagram](./diagrams\33_ClientStrategy_10.svg)
 
 ### Cancellation Priority Logic
 
@@ -721,88 +300,13 @@ Once activated, pending signals are continuously monitored for Take Profit, Stop
 
 ### TP/SL Check Logic
 
-```mermaid
-flowchart TD
-    Start["Pending Signal Monitoring"] --> GetVWAP["currentPrice = exchange.getAveragePrice()"]
-    
-    GetVWAP --> CheckTime["elapsedTime = currentTime - pendingAt"]
-    CheckTime --> TimeExpired{"elapsedTime ><br/>minuteEstimatedTime?"}
-    TimeExpired -->|Yes| CloseTimeout["Close 'time_expired'<br/>priceClose = currentPrice"]
-    
-    TimeExpired -->|No| PositionType{"position?"}
-    
-    PositionType -->|long| LongTP{"currentPrice ><br/>priceTakeProfit?"}
-    LongTP -->|Yes| CloseLongTP["Close 'take_profit'<br/>priceClose = priceTakeProfit"]
-    
-    LongTP -->|No| LongSL{"currentPrice <<br/>priceStopLoss?"}
-    LongSL -->|Yes| CloseLongSL["Close 'stop_loss'<br/>priceClose = priceStopLoss"]
-    
-    LongSL -->|No| LongPartial["Calculate revenue %:<br/>(currentPrice - priceOpen) / priceOpen * 100"]
-    LongPartial --> LongPartialCheck{"revenue > 0?"}
-    LongPartialCheck -->|Yes| LongProfit["partial.profit()<br/>onPartialProfit callback"]
-    LongPartialCheck -->|No| LongLoss["partial.loss()<br/>onPartialLoss callback"]
-    
-    PositionType -->|short| ShortTP{"currentPrice <<br/>priceTakeProfit?"}
-    ShortTP -->|Yes| CloseShortTP["Close 'take_profit'<br/>priceClose = priceTakeProfit"]
-    
-    ShortTP -->|No| ShortSL{"currentPrice ><br/>priceStopLoss?"}
-    ShortSL -->|Yes| CloseShortSL["Close 'stop_loss'<br/>priceClose = priceStopLoss"]
-    
-    ShortSL -->|No| ShortPartial["Calculate revenue %:<br/>(priceOpen - currentPrice) / priceOpen * 100"]
-    ShortPartial --> ShortPartialCheck{"revenue > 0?"}
-    ShortPartialCheck -->|Yes| ShortProfit["partial.profit()<br/>onPartialProfit callback"]
-    ShortPartialCheck -->|No| ShortLoss["partial.loss()<br/>onPartialLoss callback"]
-    
-    LongProfit --> ContinueActive1["Return IStrategyTickResultActive"]
-    LongLoss --> ContinueActive2["Return IStrategyTickResultActive"]
-    ShortProfit --> ContinueActive3["Return IStrategyTickResultActive"]
-    ShortLoss --> ContinueActive4["Return IStrategyTickResultActive"]
-    
-    CloseTimeout --> CalculatePnL1["Calculate PnL"]
-    CloseLongTP --> CalculatePnL2["Calculate PnL"]
-    CloseLongSL --> CalculatePnL3["Calculate PnL"]
-    CloseShortTP --> CalculatePnL4["Calculate PnL"]
-    CloseShortSL --> CalculatePnL5["Calculate PnL"]
-    
-    CalculatePnL1 --> Cleanup1["Clean up state"]
-    CalculatePnL2 --> Cleanup1
-    CalculatePnL3 --> Cleanup1
-    CalculatePnL4 --> Cleanup1
-    CalculatePnL5 --> Cleanup1
-    
-    Cleanup1 --> EmitClosed["Emit IStrategyTickResultClosed"]
-```
+![Mermaid Diagram](./diagrams\33_ClientStrategy_11.svg)
 
 ### Closure Cleanup Sequence
 
 When a signal closes, multiple cleanup operations execute:
 
-```mermaid
-sequenceDiagram
-    participant CS as ClientStrategy
-    participant Partial as ClientPartial
-    participant Risk as ClientRisk
-    participant PSA as PersistSignalAdapter
-    participant CB as Callbacks
-    
-    CS->>CS: Calculate PnL (toProfitLossDto)
-    
-    CS->>CB: onClose(symbol, signal, priceClose, backtest)
-    
-    CS->>Partial: clear(symbol, signal, priceClose)
-    Note over Partial: Remove profit/loss<br/>level tracking
-    
-    CS->>Risk: removeSignal(symbol, { strategyName, riskName })
-    Note over Risk: Decrement active<br/>position count
-    
-    CS->>CS: setPendingSignal(null)
-    CS->>PSA: writeSignalData(null, symbol, strategyName)
-    Note over PSA: Delete signal file<br/>(live mode only)
-    
-    CS->>CB: onTick(symbol, IStrategyTickResultClosed, backtest)
-    
-    CS-->>CS: Return IStrategyTickResultClosed
-```
+![Mermaid Diagram](./diagrams\33_ClientStrategy_12.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:817-876](), [src/client/ClientStrategy.ts:878-938](), [src/client/ClientStrategy.ts:940-1022]()
 
@@ -814,29 +318,7 @@ sequenceDiagram
 
 ### Persistence Adapters
 
-```mermaid
-classDiagram
-    class PersistSignalAdapter {
-        +readSignalData(symbol, strategyName) Promise~ISignalRow~
-        +writeSignalData(signal, symbol, strategyName) Promise~void~
-    }
-    
-    class PersistScheduleAdapter {
-        +readScheduleData(symbol, strategyName) Promise~IScheduledSignalRow~
-        +writeScheduleData(signal, symbol, strategyName) Promise~void~
-    }
-    
-    class PersistBase {
-        <<interface>>
-        +readValue(key) Promise~string~
-        +writeValue(key, value) Promise~void~
-        +hasValue(key) Promise~boolean~
-        +removeValue(key) Promise~void~
-    }
-    
-    PersistSignalAdapter ..> PersistBase : uses
-    PersistScheduleAdapter ..> PersistBase : uses
-```
+![Mermaid Diagram](./diagrams\33_ClientStrategy_13.svg)
 
 ### Write Operations
 
@@ -932,82 +414,7 @@ for (const when of timeframes) {
 
 **Method-to-Helper Mapping:**
 
-```mermaid
-graph TB
-    subgraph "Public Methods"
-        TICK["tick()"]
-        BACKTEST["backtest()"]
-        WAIT["waitForInit()"]
-        STOP["stop()"]
-    end
-    
-    subgraph "Core Helper Functions"
-        GET_SIGNAL["GET_SIGNAL_FN<br/>Signal generation pipeline"]
-        VALIDATE["VALIDATE_SIGNAL_FN<br/>30+ validation rules"]
-        WAIT_INIT["WAIT_FOR_INIT_FN<br/>State restoration"]
-    end
-    
-    subgraph "Scheduled Signal Helpers"
-        CHECK_TIMEOUT["CHECK_SCHEDULED_SIGNAL_TIMEOUT_FN"]
-        CHECK_ACTIVATION["CHECK_SCHEDULED_SIGNAL_PRICE_ACTIVATION_FN"]
-        CANCEL_SL["CANCEL_SCHEDULED_SIGNAL_BY_STOPLOSS_FN"]
-        ACTIVATE["ACTIVATE_SCHEDULED_SIGNAL_FN"]
-        RETURN_SCH_ACTIVE["RETURN_SCHEDULED_SIGNAL_ACTIVE_FN"]
-        OPEN_SCHEDULED["OPEN_NEW_SCHEDULED_SIGNAL_FN"]
-    end
-    
-    subgraph "Pending Signal Helpers"
-        CHECK_COMPLETION["CHECK_PENDING_SIGNAL_COMPLETION_FN"]
-        CLOSE["CLOSE_PENDING_SIGNAL_FN"]
-        RETURN_PEND_ACTIVE["RETURN_PENDING_SIGNAL_ACTIVE_FN"]
-        OPEN_PENDING["OPEN_NEW_PENDING_SIGNAL_FN"]
-    end
-    
-    subgraph "Backtest-Specific Helpers"
-        CANCEL_BT["CANCEL_SCHEDULED_SIGNAL_IN_BACKTEST_FN"]
-        ACTIVATE_BT["ACTIVATE_SCHEDULED_SIGNAL_IN_BACKTEST_FN"]
-        CLOSE_BT["CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN"]
-        PROCESS_SCH["PROCESS_SCHEDULED_SIGNAL_CANDLES_FN"]
-        PROCESS_PEND["PROCESS_PENDING_SIGNAL_CANDLES_FN"]
-    end
-    
-    subgraph "Utility Helpers"
-        GET_AVG["GET_AVG_PRICE_FN"]
-        RETURN_IDLE["RETURN_IDLE_FN"]
-    end
-    
-    TICK --> GET_SIGNAL
-    TICK --> CHECK_TIMEOUT
-    TICK --> CHECK_ACTIVATION
-    TICK --> CHECK_COMPLETION
-    
-    BACKTEST --> PROCESS_SCH
-    BACKTEST --> PROCESS_PEND
-    
-    WAIT --> WAIT_INIT
-    
-    GET_SIGNAL --> VALIDATE
-    
-    CHECK_ACTIVATION --> CANCEL_SL
-    CHECK_ACTIVATION --> ACTIVATE
-    CHECK_ACTIVATION --> RETURN_SCH_ACTIVE
-    
-    GET_SIGNAL --> OPEN_SCHEDULED
-    GET_SIGNAL --> OPEN_PENDING
-    
-    CHECK_COMPLETION --> CLOSE
-    CHECK_COMPLETION --> RETURN_PEND_ACTIVE
-    
-    PROCESS_SCH --> CANCEL_BT
-    PROCESS_SCH --> ACTIVATE_BT
-    
-    PROCESS_PEND --> CLOSE_BT
-    
-    BACKTEST --> GET_AVG
-    CLOSE_BT --> GET_AVG
-    
-    TICK --> RETURN_IDLE
-```
+![Mermaid Diagram](./diagrams\33_ClientStrategy_14.svg)
 
 ### Function Reference Table
 
@@ -1212,55 +619,7 @@ for await (const result of Live.run("BTCUSDT", {
 
 ## Integration with Other Components
 
-```mermaid
-graph TB
-    subgraph "Service Layer"
-        SSS[StrategySchemaService<br/>Component registry]
-        SCS[StrategyConnectionService<br/>Instance memoization]
-        SGS[StrategyGlobalService<br/>Context injection]
-    end
-    
-    subgraph "ClientStrategy Instance"
-        CS[ClientStrategy]
-        State["Internal State:<br/>_pendingSignal<br/>_scheduledSignal<br/>_lastSignalTimestamp<br/>_isStopped"]
-    end
-    
-    subgraph "Dependencies"
-        CE[ClientExchange<br/>VWAP calculation]
-        CR[ClientRisk<br/>Position validation]
-        CP[ClientPartial<br/>Milestone tracking]
-        PSA[PersistSignalAdapter<br/>Signal storage]
-        PSCHA[PersistScheduleAdapter<br/>Schedule storage]
-    end
-    
-    subgraph "Execution Engines"
-        BLP[BacktestLogicPrivateService<br/>Historical simulation]
-        LLP[LiveLogicPrivateService<br/>Real-time trading]
-    end
-    
-    subgraph "Event System"
-        Emitters["Event Emitters:<br/>signalEmitter<br/>signalBacktestEmitter<br/>signalLiveEmitter"]
-    end
-    
-    SSS -->|getSchema| SCS
-    SCS -->|instantiates| CS
-    SGS -->|wraps| CS
-    
-    CS --> State
-    CS -->|getAveragePrice| CE
-    CS -->|checkSignal| CR
-    CS -->|profit/loss/clear| CP
-    CS -->|read/write| PSA
-    CS -->|read/write| PSCHA
-    
-    BLP -->|tick/backtest| SGS
-    LLP -->|tick| SGS
-    
-    CS -->|emits| Emitters
-    
-    style CS fill:#e1f5ff
-    style State fill:#fff4e1
-```
+![Mermaid Diagram](./diagrams\33_ClientStrategy_15.svg)
 
 **Component Interaction Pattern:**
 1. **Schema Registration**: `addStrategy()` → `StrategySchemaService.addSchema()`

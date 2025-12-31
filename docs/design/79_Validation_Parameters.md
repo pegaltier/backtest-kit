@@ -57,24 +57,7 @@ Even hitting take profit results in a net loss because the gross profit fails to
 
 ### Validation Logic
 
-```mermaid
-flowchart TB
-    ValidateSignal["VALIDATE_SIGNAL_FN"]
-    CheckPosition{"Position type?"}
-    LongTP["Calculate long TP distance:<br/>tpDistancePercent = <br/>(priceTakeProfit - priceOpen)<br/>/ priceOpen * 100"]
-    ShortTP["Calculate short TP distance:<br/>tpDistancePercent = <br/>(priceOpen - priceTakeProfit)<br/>/ priceOpen * 100"]
-    CheckMin{"tpDistancePercent <<br/>CC_MIN_TAKEPROFIT_<br/>DISTANCE_PERCENT?"}
-    ThrowError["Throw validation error:<br/>'TakeProfit too close to priceOpen'"]
-    Pass["Continue validation"]
-    
-    ValidateSignal --> CheckPosition
-    CheckPosition -->|long| LongTP
-    CheckPosition -->|short| ShortTP
-    LongTP --> CheckMin
-    ShortTP --> CheckMin
-    CheckMin -->|Yes| ThrowError
-    CheckMin -->|No| Pass
-```
+![Mermaid Diagram](./diagrams\79_Validation_Parameters_0.svg)
 
 **Diagram: Take Profit Distance Validation Flow**
 
@@ -134,24 +117,7 @@ Even with correct market direction, tight stop losses guarantee losses from nois
 
 ### Validation Logic
 
-```mermaid
-flowchart TB
-    ValidateSignal["VALIDATE_SIGNAL_FN"]
-    CheckPosition{"Position type?"}
-    LongSL["Calculate long SL distance:<br/>slDistancePercent = <br/>(priceOpen - priceStopLoss)<br/>/ priceOpen * 100"]
-    ShortSL["Calculate short SL distance:<br/>slDistancePercent = <br/>(priceStopLoss - priceOpen)<br/>/ priceOpen * 100"]
-    CheckMin{"slDistancePercent <<br/>CC_MIN_STOPLOSS_<br/>DISTANCE_PERCENT?"}
-    ThrowError["Throw validation error:<br/>'StopLoss too close to priceOpen'"]
-    Pass["Continue validation"]
-    
-    ValidateSignal --> CheckPosition
-    CheckPosition -->|long| LongSL
-    CheckPosition -->|short| ShortSL
-    LongSL --> CheckMin
-    ShortSL --> CheckMin
-    CheckMin -->|Yes| ThrowError
-    CheckMin -->|No| Pass
-```
+![Mermaid Diagram](./diagrams\79_Validation_Parameters_1.svg)
 
 **Diagram: Minimum Stop Loss Distance Validation Flow**
 
@@ -208,24 +174,7 @@ Excessively wide stop losses can expose the portfolio to catastrophic single-tra
 
 ### Validation Logic
 
-```mermaid
-flowchart TB
-    ValidateSignal["VALIDATE_SIGNAL_FN"]
-    CheckPosition{"Position type?"}
-    LongSL["Calculate long SL distance:<br/>slDistancePercent = <br/>(priceOpen - priceStopLoss)<br/>/ priceOpen * 100"]
-    ShortSL["Calculate short SL distance:<br/>slDistancePercent = <br/>(priceStopLoss - priceOpen)<br/>/ priceOpen * 100"]
-    CheckMax{"slDistancePercent ><br/>CC_MAX_STOPLOSS_<br/>DISTANCE_PERCENT?"}
-    ThrowError["Throw validation error:<br/>'StopLoss too far from priceOpen'"]
-    Pass["Continue validation"]
-    
-    ValidateSignal --> CheckPosition
-    CheckPosition -->|long| LongSL
-    CheckPosition -->|short| ShortSL
-    LongSL --> CheckMax
-    ShortSL --> CheckMax
-    CheckMax -->|Yes| ThrowError
-    CheckMax -->|No| Pass
-```
+![Mermaid Diagram](./diagrams\79_Validation_Parameters_2.svg)
 
 **Diagram: Stop Loss Distance Validation Flow**
 
@@ -282,19 +231,7 @@ Signals with excessively long `minuteEstimatedTime` can create strategy deadlock
 
 ### Validation Logic
 
-```mermaid
-flowchart TB
-    ValidateSignal["VALIDATE_SIGNAL_FN"]
-    CheckLifetime{"minuteEstimatedTime ><br/>CC_MAX_SIGNAL_<br/>LIFETIME_MINUTES?"}
-    CalculateDays["Calculate human-readable time:<br/>days = minuteEstimatedTime / 60 / 24"]
-    ThrowError["Throw validation error:<br/>'minuteEstimatedTime too large...<br/>Eternal signals block risk limits'"]
-    Pass["Continue validation"]
-    
-    ValidateSignal --> CheckLifetime
-    CheckLifetime -->|Yes| CalculateDays
-    CheckLifetime -->|No| Pass
-    CalculateDays --> ThrowError
-```
+![Mermaid Diagram](./diagrams\79_Validation_Parameters_3.svg)
 
 **Diagram: Signal Lifetime Validation Flow**
 
@@ -330,38 +267,7 @@ The default value of `1440 minutes` (1 day):
 
 The following diagram shows how validation parameters integrate into the signal generation pipeline:
 
-```mermaid
-flowchart TB
-    GetSignal["strategy.getSignal():<br/>User returns ISignalDto"]
-    Augment["GET_SIGNAL_FN augments:<br/>id, timestamps, symbol,<br/>strategyName, exchangeName"]
-    ValidateSignal["VALIDATE_SIGNAL_FN"]
-    CheckNaN["Check NaN/Infinity/Negative:<br/>isFinite(prices)"]
-    CheckPositive["Check positive prices:<br/>prices > 0"]
-    CheckLogic["Check position logic:<br/>long: TP > Open > SL<br/>short: SL > Open > TP"]
-    CheckTPDist["Check TP distance:<br/>tpDistance >= CC_MIN_TAKEPROFIT_DISTANCE_PERCENT"]
-    CheckSLDist["Check SL distance:<br/>slDistance <= CC_MAX_STOPLOSS_DISTANCE_PERCENT"]
-    CheckLifetime["Check lifetime:<br/>minuteEstimatedTime <= CC_MAX_SIGNAL_LIFETIME_MINUTES"]
-    ErrorArray{"errors.length > 0?"}
-    ThrowError["Throw Error with all<br/>accumulated error messages"]
-    RiskCheck["Risk profile checkSignal()"]
-    ReturnSignal["Return validated ISignalRow"]
-    
-    GetSignal --> Augment
-    Augment --> ValidateSignal
-    ValidateSignal --> CheckNaN
-    CheckNaN --> CheckPositive
-    CheckPositive --> CheckLogic
-    CheckLogic --> CheckTPDist
-    CheckTPDist --> CheckMinSLDist
-    CheckMinSLDist["Check min SL distance:<br/>slDistance >= CC_MIN_STOPLOSS_DISTANCE_PERCENT"]
-    CheckMinSLDist --> CheckMaxSLDist
-    CheckMaxSLDist["Check max SL distance:<br/>slDistance <= CC_MAX_STOPLOSS_DISTANCE_PERCENT"]
-    CheckMaxSLDist --> CheckLifetime
-    CheckLifetime --> ErrorArray
-    ErrorArray -->|Yes| ThrowError
-    ErrorArray -->|No| RiskCheck
-    RiskCheck --> ReturnSignal
-```
+![Mermaid Diagram](./diagrams\79_Validation_Parameters_4.svg)
 
 **Diagram: Complete Signal Validation Flow with Validation Parameters**
 
@@ -526,24 +432,7 @@ The table below summarizes default values, their safety guarantees, and when to 
 
 These validation parameters work in conjunction with risk profile limits (see [Risk Profiles](#12.1)):
 
-```mermaid
-flowchart TB
-    SignalGen["Signal Generation"]
-    ValidateParams["Validation Parameters:<br/>CC_MIN_TAKEPROFIT_DISTANCE_PERCENT<br/>CC_MIN_STOPLOSS_DISTANCE_PERCENT<br/>CC_MAX_STOPLOSS_DISTANCE_PERCENT<br/>CC_MAX_SIGNAL_LIFETIME_MINUTES"]
-    RiskProfile["Risk Profile:<br/>maxConcurrentPositions<br/>custom validations"]
-    ValidateParamsPass{"Validation<br/>passes?"}
-    RiskCheckPass{"Risk check<br/>passes?"}
-    SignalOpened["Signal Opened"]
-    SignalRejected["Signal Rejected"]
-    
-    SignalGen --> ValidateParams
-    ValidateParams --> ValidateParamsPass
-    ValidateParamsPass -->|Yes| RiskProfile
-    ValidateParamsPass -->|No| SignalRejected
-    RiskProfile --> RiskCheckPass
-    RiskCheckPass -->|Yes| SignalOpened
-    RiskCheckPass -->|No| SignalRejected
-```
+![Mermaid Diagram](./diagrams\79_Validation_Parameters_5.svg)
 
 **Diagram: Validation Parameters as First Line of Defense**
 

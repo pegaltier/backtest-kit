@@ -57,35 +57,7 @@ The crash recovery system prevents all these issues by:
 
 The crash recovery system uses two specialized persistence adapters:
 
-```mermaid
-graph TB
-    subgraph "ClientStrategy State"
-        PENDING["_pendingSignal: ISignalRow | null<br/>(Active position)"]
-        SCHEDULED["_scheduledSignal: IScheduledSignalRow | null<br/>(Awaiting activation)"]
-    end
-    
-    subgraph "Persistence Adapters"
-        PSA["PersistSignalAdapter<br/>Atomic file writes<br/>Path: ./dump/signal/"]
-        PSCH["PersistScheduleAdapter<br/>Atomic file writes<br/>Path: ./dump/schedule/"]
-    end
-    
-    subgraph "Disk Storage"
-        SIGNAL_FILE["signal_{symbol}_{strategyName}.json<br/>{<br/>  id, position, priceOpen,<br/>  priceTakeProfit, priceStopLoss,<br/>  scheduledAt, pendingAt,<br/>  exchangeName, strategyName<br/>}"]
-        SCHEDULE_FILE["schedule_{symbol}_{strategyName}.json<br/>{<br/>  id, position, priceOpen,<br/>  priceTakeProfit, priceStopLoss,<br/>  scheduledAt, pendingAt,<br/>  exchangeName, strategyName,<br/>  _isScheduled: true<br/>}"]
-    end
-    
-    PENDING -->|"setPendingSignal(signal)"| PSA
-    PSA -->|"writeValue()"| SIGNAL_FILE
-    
-    SCHEDULED -->|"setScheduledSignal(signal)"| PSCH
-    PSCH -->|"writeValue()"| SCHEDULE_FILE
-    
-    SIGNAL_FILE -->|"readValue()"| PSA
-    PSA -->|"waitForInit()"| PENDING
-    
-    SCHEDULE_FILE -->|"readValue()"| PSCH
-    PSCH -->|"waitForInit()"| SCHEDULED
-```
+![Mermaid Diagram](./diagrams\60_Crash_Recovery_0.svg)
 
 ### Persistence Timing
 
@@ -105,45 +77,7 @@ graph TB
 
 When `ClientStrategy` initializes in Live mode, the `waitForInit()` function restores persisted signals before processing any ticks:
 
-```mermaid
-sequenceDiagram
-    participant SC as StrategyConnectionService
-    participant CS as ClientStrategy
-    participant PSA as PersistSignalAdapter
-    participant PSCH as PersistScheduleAdapter
-    participant CB as Callbacks
-    
-    SC->>CS: tick(symbol, strategyName)
-    CS->>CS: waitForInit()
-    
-    Note over CS: Check execution context
-    CS->>CS: if (backtest) return early
-    
-    Note over CS,PSA: Restore Pending Signal
-    CS->>PSA: readSignalData(symbol, strategyName)
-    PSA-->>CS: pendingSignal or null
-    
-    alt Signal exists and matches
-        CS->>CS: Validate exchangeName
-        CS->>CS: Validate strategyName
-        CS->>CS: this._pendingSignal = pendingSignal
-        CS->>CB: callbacks?.onActive(symbol, pendingSignal, currentPrice, false)
-    end
-    
-    Note over CS,PSCH: Restore Scheduled Signal
-    CS->>PSCH: readScheduleData(symbol, strategyName)
-    PSCH-->>CS: scheduledSignal or null
-    
-    alt Signal exists and matches
-        CS->>CS: Validate exchangeName
-        CS->>CS: Validate strategyName
-        CS->>CS: this._scheduledSignal = scheduledSignal
-        CS->>CB: callbacks?.onSchedule(symbol, scheduledSignal, currentPrice, false)
-    end
-    
-    CS-->>SC: Initialization complete
-    SC->>CS: Continue with tick processing
-```
+![Mermaid Diagram](./diagrams\60_Crash_Recovery_1.svg)
 
 ### Code Entity Mapping: Restoration Functions
 
@@ -189,35 +123,7 @@ The most important aspect of crash recovery is preserving timing information. Ev
 
 Without crash recovery, this timing bug occurs:
 
-```mermaid
-graph LR
-    subgraph "Before Crash"
-        T1["T1: Signal created<br/>scheduledAt = T1"]
-        T2["T2: Signal activated<br/>pendingAt = T2<br/>minuteEstimatedTime = 1440m"]
-        T3["T3: Process crashes<br/>(signal lost)"]
-    end
-    
-    subgraph "After Restart WITHOUT Recovery"
-        T4["T4: Process restarts<br/>Signal recreated<br/>pendingAt = T4"]
-        T5["T5: Signal expires IMMEDIATELY<br/>elapsedTime = T4 - T1 > 1440m<br/>Financial loss from fees"]
-    end
-    
-    subgraph "After Restart WITH Recovery"
-        T6["T4: Process restarts<br/>Signal RESTORED<br/>pendingAt = T2 (original)"]
-        T7["T5: Signal expires correctly<br/>elapsedTime = now - T2<br/>Full 1440m lifetime preserved"]
-    end
-    
-    T1 --> T2
-    T2 --> T3
-    T3 --> T4
-    T4 --> T5
-    
-    T3 --> T6
-    T6 --> T7
-    
-    style T5 fill:#ffcccc
-    style T7 fill:#ccffcc
-```
+![Mermaid Diagram](./diagrams\60_Crash_Recovery_2.svg)
 
 ### Code: How Timing Is Preserved
 
@@ -276,37 +182,7 @@ const remainingTime = expectedTime - elapsedTime;
 
 Crash recovery is **disabled in Backtest mode** to maximize performance:
 
-```mermaid
-graph TB
-    subgraph "Mode Detection"
-        CHECK["executionContextService.context.backtest"]
-    end
-    
-    subgraph "Backtest Mode: No Persistence"
-        BT_INIT["waitForInit() returns immediately"]
-        BT_SET["setPendingSignal() does NOT write to disk"]
-        BT_MEM["All state in-memory only"]
-        BT_FAST["Fast iteration, deterministic results"]
-    end
-    
-    subgraph "Live Mode: Full Persistence"
-        LV_INIT["waitForInit() reads from disk"]
-        LV_SET["setPendingSignal() writes atomically"]
-        LV_DISK["State persisted to ./dump/signal/"]
-        LV_CRASH["Survives process crashes"]
-    end
-    
-    CHECK -->|"true"| BT_INIT
-    CHECK -->|"false"| LV_INIT
-    
-    BT_INIT --> BT_SET
-    BT_SET --> BT_MEM
-    BT_MEM --> BT_FAST
-    
-    LV_INIT --> LV_SET
-    LV_SET --> LV_DISK
-    LV_DISK --> LV_CRASH
-```
+![Mermaid Diagram](./diagrams\60_Crash_Recovery_3.svg)
 
 ### Code Entity Mapping: Backtest Early Return
 
@@ -330,31 +206,7 @@ graph TB
 
 The persistence layer uses atomic file writes to prevent partial/corrupted data:
 
-```mermaid
-graph LR
-    subgraph "Atomic Write Process"
-        DATA["Signal Data<br/>JSON object"]
-        TEMP["Write to temp file<br/>signal_BTCUSDT_temp.json"]
-        RENAME["Atomic rename<br/>temp → signal_BTCUSDT.json"]
-        FINAL["Final file<br/>signal_BTCUSDT.json"]
-    end
-    
-    subgraph "Crash Safety"
-        C1["Crash before rename:<br/>Old file intact"]
-        C2["Crash after rename:<br/>New file complete"]
-        C3["Never: Partial data"]
-    end
-    
-    DATA --> TEMP
-    TEMP --> RENAME
-    RENAME --> FINAL
-    
-    TEMP -.->|"Crash"| C1
-    FINAL -.->|"Crash"| C2
-    RENAME -.->|"Never"| C3
-    
-    style C3 fill:#ffcccc
-```
+![Mermaid Diagram](./diagrams\60_Crash_Recovery_4.svg)
 
 The atomic write pattern ensures:
 - **No partial writes**: Either full new data or old data, never corrupted

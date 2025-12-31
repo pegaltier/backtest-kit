@@ -33,51 +33,7 @@ For signal lifecycle state management, see [ClientStrategy](#6.1). For persisten
 
 ClientPartial operates within a multi-layered service architecture that separates concerns between core logic, instance management, and global coordination.
 
-```mermaid
-graph TB
-    subgraph "Strategy Layer"
-        STRAT[ClientStrategy<br/>Signal monitoring<br/>tick/backtest methods]
-    end
-    
-    subgraph "Global Service Layer"
-        PGLOBAL[PartialGlobalService<br/>Entry point<br/>Validation & logging]
-    end
-    
-    subgraph "Connection Service Layer"
-        PCONN[PartialConnectionService<br/>Factory & lifecycle<br/>Memoized instances]
-    end
-    
-    subgraph "Client Implementation Layer"
-        CP[ClientPartial<br/>Milestone tracking<br/>State management]
-        STATE["_states: Map(signalId, IPartialState)<br/>profitLevels: Set(PartialLevel)<br/>lossLevels: Set(PartialLevel)"]
-    end
-    
-    subgraph "Persistence Layer"
-        PPA["PersistPartialAdapter<br/>./dump/data/partial/<br/>symbol_strategy/levels.json"]
-        ATOMIC["writeFileAtomic<br/>Atomic file writes<br/>tmp to rename pattern"]
-    end
-    
-    subgraph "Event System"
-        PROFIT_SUB[partialProfitSubject<br/>PartialProfitContract]
-        LOSS_SUB[partialLossSubject<br/>PartialLossContract]
-    end
-    
-    STRAT -->|profit/loss/clear| PGLOBAL
-    PGLOBAL -->|delegates| PCONN
-    PCONN -->|getPartial memoized| CP
-    CP -->|manages| STATE
-    CP -->|waitForInit reads| PPA
-    CP -->|_persistState writes| PPA
-    PPA -->|uses| ATOMIC
-    CP -->|onProfit callback| PROFIT_SUB
-    CP -->|onLoss callback| LOSS_SUB
-    
-    NOTE1["Memoization key:<br/>signalId:backtest<br/>One instance per signal"]
-    NOTE2["Live mode only:<br/>No persistence<br/>in backtest"]
-    
-    PCONN -.-> NOTE1
-    PPA -.-> NOTE2
-```
+![Mermaid Diagram](./diagrams\38_ClientPartial_0.svg)
 
 **Sources**: [src/client/ClientPartial.ts:1-538](), [src/lib/services/connection/PartialConnectionService.ts:1-267](), [src/lib/services/global/PartialGlobalService.ts:1-205](), [src/classes/Persist.ts:662-740]()
 
@@ -110,29 +66,7 @@ ClientPartial is the core implementation that tracks profit/loss milestones for 
 
 ### State Structures
 
-```mermaid
-graph LR
-    subgraph "In-Memory State (IPartialState)"
-        STATE["IPartialState<br/>per signal ID"]
-        PROFIT["profitLevels:<br/>Set&lt;PartialLevel&gt;<br/>{10, 20, 30}"]
-        LOSS["lossLevels:<br/>Set&lt;PartialLevel&gt;<br/>{10, 20}"]
-        STATE --> PROFIT
-        STATE --> LOSS
-    end
-    
-    subgraph "Persisted State (IPartialData)"
-        PDATA["IPartialData<br/>JSON serializable"]
-        PPROFIT["profitLevels:<br/>PartialLevel[]<br/>[10, 20, 30]"]
-        PLOSS["lossLevels:<br/>PartialLevel[]<br/>[10, 20]"]
-        PDATA --> PPROFIT
-        PDATA --> PLOSS
-    end
-    
-    STATE -.serialize.-> PDATA
-    PDATA -.deserialize.-> STATE
-    
-    NOTE["Sets provide O(1)<br/>deduplication<br/>Arrays for JSON"]
-```
+![Mermaid Diagram](./diagrams\38_ClientPartial_1.svg)
 
 **Type Definitions**:
 
@@ -163,43 +97,7 @@ type PartialLevel = 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90 | 100;
 
 The profit detection algorithm iterates through predefined profit levels and checks which have been reached but not yet recorded. When a new level is detected, it adds the level to the Set, invokes the callback, and persists state.
 
-```mermaid
-stateDiagram-v2
-    [*] --> Monitoring: Signal opened
-    
-    Monitoring --> CheckLevels: profit() called<br/>revenuePercent > 0
-    
-    CheckLevels --> Level10: revenuePercent >= 10<br/>!profitLevels.has(10)
-    CheckLevels --> Level20: revenuePercent >= 20<br/>!profitLevels.has(20)
-    CheckLevels --> Level30: revenuePercent >= 30<br/>!profitLevels.has(30)
-    CheckLevels --> NoNewLevels: All reached levels<br/>already recorded
-    
-    Level10 --> EmitEvent10: Add 10 to profitLevels<br/>Call onProfit(level=10)
-    Level20 --> EmitEvent20: Add 20 to profitLevels<br/>Call onProfit(level=20)
-    Level30 --> EmitEvent30: Add 30 to profitLevels<br/>Call onProfit(level=30)
-    
-    EmitEvent10 --> PersistState
-    EmitEvent20 --> PersistState
-    EmitEvent30 --> PersistState
-    NoNewLevels --> Monitoring
-    
-    PersistState --> WriteJSON: Convert Sets to Arrays<br/>PersistPartialAdapter.writePartialData
-    WriteJSON --> Monitoring: Atomic write complete
-    
-    note right of CheckLevels
-        PROFIT_LEVELS array:
-        [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-        
-        Iteration checks all levels
-        even if multiple crossed in single tick
-    end note
-    
-    note right of PersistState
-        Skip persistence in backtest mode
-        Live mode: ./dump/data/partial/
-        {symbol}_{strategy}/levels.json
-    end note
-```
+![Mermaid Diagram](./diagrams\38_ClientPartial_2.svg)
 
 **Implementation**: The `HANDLE_PROFIT_FN` function at [src/client/ClientPartial.ts:44-105]() implements this logic. It uses a `for` loop over `PROFIT_LEVELS` constant defined at [src/client/ClientPartial.ts:22]().
 
@@ -233,39 +131,7 @@ for (const level of LOSS_LEVELS) {
 
 PartialConnectionService acts as a factory for ClientPartial instances with memoization to ensure one instance per signal. The memoization key combines `signalId` and `backtest` mode.
 
-```mermaid
-graph TB
-    subgraph "Memoization Cache"
-        MEMO["getPartial memoized function<br/>Key: signalId:backtest<br/>Key: signalId:live"]
-    end
-    
-    subgraph "Instance Creation"
-        KEY1["signal-abc123:backtest"]
-        KEY2["signal-abc123:live"]
-        INST1[ClientPartial instance 1<br/>backtest=true<br/>signalId=abc123]
-        INST2[ClientPartial instance 2<br/>backtest=false<br/>signalId=abc123]
-    end
-    
-    subgraph "Operations"
-        PROFIT["profit()"]
-        LOSS["loss()"]
-        CLEAR["clear()"]
-    end
-    
-    PROFIT -->|retrieve instance| MEMO
-    LOSS -->|retrieve instance| MEMO
-    CLEAR -->|retrieve instance| MEMO
-    
-    MEMO -->|first call| KEY1
-    MEMO -->|first call| KEY2
-    KEY1 --> INST1
-    KEY2 --> INST2
-    
-    CLEAR -->|clear cache entry| MEMO
-    
-    NOTE1["Same signalId but different<br/>backtest mode = separate instances<br/>Prevents state contamination"]
-    NOTE2["clear() removes memoized entry<br/>Prevents memory leaks<br/>after signal closes"]
-```
+![Mermaid Diagram](./diagrams\38_ClientPartial_3.svg)
 
 **Memoization Implementation**:
 
@@ -334,44 +200,7 @@ Each file is a `Record<signalId, IPartialData>` where multiple signals for the s
 
 ### Initialization Flow
 
-```mermaid
-sequenceDiagram
-    participant CS as ClientStrategy
-    participant PG as PartialGlobalService
-    participant PC as PartialConnectionService
-    participant CP as ClientPartial
-    participant PPA as PersistPartialAdapter
-    participant FS as File System
-    
-    CS->>PG: profit(symbol, signal, ...)
-    PG->>PC: profit(symbol, signal, ...)
-    PC->>PC: getPartial(signalId, backtest)<br/>memoized
-    PC->>CP: new ClientPartial(params)<br/>if not cached
-    PC->>CP: waitForInit(symbol, strategyName)
-    
-    alt First call (singleshot)
-        CP->>CP: _states = NEED_FETCH
-        CP->>CP: Execute WAIT_FOR_INIT_FN
-        
-        alt Backtest mode
-            CP->>CP: _states = new Map()<br/>Skip persistence read
-        else Live mode
-            CP->>PPA: readPartialData(symbol, strategyName)
-            PPA->>FS: Read ./dump/data/partial/{symbol}_{strategy}/levels.json
-            FS-->>PPA: JSON content
-            PPA-->>CP: Record<signalId, IPartialData>
-            CP->>CP: Convert arrays to Sets<br/>Populate _states Map
-        end
-    else Already initialized
-        CP->>CP: Return immediately<br/>singleshot cached
-    end
-    
-    CP-->>PC: Initialized
-    PC->>CP: profit(...) delegation
-    CP->>CP: Check profit levels<br/>Emit events
-    CP->>PPA: _persistState(symbol, strategyName)
-    PPA->>FS: writeFileAtomic(levels.json)
-```
+![Mermaid Diagram](./diagrams\38_ClientPartial_4.svg)
 
 **Key Points**:
 1. `waitForInit()` is wrapped with `singleshot` to ensure one-time execution per `(symbol, strategyName)` tuple
@@ -387,44 +216,7 @@ sequenceDiagram
 
 ClientStrategy invokes ClientPartial methods during signal monitoring when calculating profit/loss percentages. The integration occurs in the signal state machine's "active" state.
 
-```mermaid
-graph TB
-    subgraph "ClientStrategy Signal Monitoring"
-        TICK[tick method<br/>Called every interval]
-        ACTIVE[Signal in active state<br/>Monitoring TP/SL]
-        CALC[Calculate revenuePercent<br/>VWAP vs priceOpen]
-        CHECK{revenuePercent<br/>sign?}
-    end
-    
-    subgraph "Partial Tracking"
-        PROFIT[params.partial.profit<br/>symbol, signal, price,<br/>revenuePercent, when]
-        LOSS[params.partial.loss<br/>symbol, signal, price,<br/>lossPercent, when]
-    end
-    
-    subgraph "State Updates"
-        EMIT_PROFIT[Emit partialProfitSubject<br/>for new levels]
-        EMIT_LOSS[Emit partialLossSubject<br/>for new levels]
-        PERSIST[Persist state to disk<br/>Live mode only]
-    end
-    
-    TICK --> ACTIVE
-    ACTIVE --> CALC
-    CALC --> CHECK
-    CHECK -->|> 0| PROFIT
-    CHECK -->|< 0| LOSS
-    CHECK -->|= 0| ACTIVE
-    
-    PROFIT --> EMIT_PROFIT
-    LOSS --> EMIT_LOSS
-    
-    EMIT_PROFIT --> PERSIST
-    EMIT_LOSS --> PERSIST
-    
-    PERSIST --> ACTIVE
-    
-    NOTE1["ClientStrategy constructor<br/>receives PartialGlobalService<br/>via IStrategyParams.partial"]
-    NOTE2["Revenue calculation:<br/>(currentPrice - priceOpen)<br/>/ priceOpen * 100"]
-```
+![Mermaid Diagram](./diagrams\38_ClientPartial_5.svg)
 
 **ClientStrategy Constructor Injection**:
 
@@ -449,40 +241,7 @@ The `partial` parameter is injected into ClientStrategy through `IStrategyParams
 
 ClientPartial emits events through callback functions passed via `IPartialParams`. These callbacks are configured by PartialConnectionService to emit to RxJS Subjects.
 
-```mermaid
-graph LR
-    subgraph "ClientPartial"
-        PROFIT_LOGIC[HANDLE_PROFIT_FN<br/>Level detection]
-        LOSS_LOGIC[HANDLE_LOSS_FN<br/>Level detection]
-    end
-    
-    subgraph "Callbacks (IPartialParams)"
-        ON_PROFIT[params.onProfit<br/>COMMIT_PROFIT_FN]
-        ON_LOSS[params.onLoss<br/>COMMIT_LOSS_FN]
-    end
-    
-    subgraph "RxJS Subjects"
-        PROFIT_SUB[partialProfitSubject<br/>Subject&lt;PartialProfitContract&gt;]
-        LOSS_SUB[partialLossSubject<br/>Subject&lt;PartialLossContract&gt;]
-    end
-    
-    subgraph "Event Consumers"
-        LISTEN_PROFIT[listenPartialProfit<br/>listenPartialProfitOnce]
-        LISTEN_LOSS[listenPartialLoss<br/>listenPartialLossOnce]
-        MARKDOWN[PartialMarkdownService<br/>Report generation]
-    end
-    
-    PROFIT_LOGIC -->|line 89| ON_PROFIT
-    LOSS_LOGIC -->|line 168| ON_LOSS
-    
-    ON_PROFIT -->|line 38-47| PROFIT_SUB
-    ON_LOSS -->|line 64-83| LOSS_SUB
-    
-    PROFIT_SUB --> LISTEN_PROFIT
-    LOSS_SUB --> LISTEN_LOSS
-    PROFIT_SUB --> MARKDOWN
-    LOSS_SUB --> MARKDOWN
-```
+![Mermaid Diagram](./diagrams\38_ClientPartial_6.svg)
 
 **Sources**: [src/lib/services/connection/PartialConnectionService.ts:28-83](), [src/config/emitters.ts:115-124]()
 

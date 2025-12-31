@@ -34,60 +34,7 @@ The framework employs a two-tier validation system to ensure signal integrity an
 
 ### System Architecture
 
-```mermaid
-graph TB
-    subgraph "IStrategySchema.getSignal"
-        GetSignal["getSignal()"]
-        SignalDto["Returns ISignalDto"]
-    end
-    
-    subgraph "ClientStrategy.GET_SIGNAL_FN [332-476]"
-        ValidateSignal["VALIDATE_SIGNAL_FN [45-330]"]
-        CheckRequired["Required fields:<br/>id, symbol, position, priceOpen,<br/>priceTakeProfit, priceStopLoss"]
-        CheckFinite["isFinite() checks:<br/>NaN, Infinity protection"]
-        CheckPriceLogic["Price ordering:<br/>Long: SL < Open < TP<br/>Short: TP < Open < SL"]
-        CheckDistances["CC_MIN_TAKEPROFIT_DISTANCE_PERCENT<br/>CC_MIN_STOPLOSS_DISTANCE_PERCENT<br/>CC_MAX_STOPLOSS_DISTANCE_PERCENT"]
-        CheckLifetime["CC_MAX_SIGNAL_LIFETIME_MINUTES<br/>minuteEstimatedTime validation"]
-        CheckImmediate["Immediate close protection:<br/>Long: SL < currentPrice < TP<br/>Short: TP < currentPrice < SL"]
-    end
-    
-    subgraph "ClientRisk.checkSignal [src/client/ClientRisk.ts]"
-        RiskCheck["checkSignal(IRiskCheckArgs)"]
-        BuildPayload["Build IRiskValidationPayload:<br/>pendingSignal + activePositionCount<br/>+ activePositions[]"]
-        ValidationLoop["Sequential validation loop:<br/>for (validation of validations)"]
-        CallValidate["validation.validate(payload)"]
-        OnAllowed["callbacks.onAllowed()"]
-        OnRejected["callbacks.onRejected()"]
-    end
-    
-    subgraph "Result"
-        SignalRow["ISignalRow created<br/>Signal opened"]
-        Rejected["return null<br/>Signal rejected"]
-    end
-    
-    GetSignal --> SignalDto
-    SignalDto --> ValidateSignal
-    ValidateSignal --> CheckRequired
-    CheckRequired --> CheckFinite
-    CheckFinite --> CheckPriceLogic
-    CheckPriceLogic --> CheckDistances
-    CheckDistances --> CheckLifetime
-    CheckLifetime --> CheckImmediate
-    
-    CheckImmediate -->|"Pass"| RiskCheck
-    CheckImmediate -->|"Fail (throw Error)"| Rejected
-    
-    RiskCheck --> BuildPayload
-    BuildPayload --> ValidationLoop
-    ValidationLoop --> CallValidate
-    
-    CallValidate -->|"No throw"| ValidationLoop
-    CallValidate -->|"All pass"| OnAllowed
-    CallValidate -->|"throw Error"| OnRejected
-    
-    OnAllowed --> SignalRow
-    OnRejected --> Rejected
-```
+![Mermaid Diagram](./diagrams\69_Risk_Validation_0.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:45-476](), [src/client/ClientRisk.ts](), [types.d.ts:338-485]()
 
@@ -124,46 +71,7 @@ The `VALIDATE_SIGNAL_FN` in `ClientStrategy` performs comprehensive structural v
 
 The validation enforces strict price ordering based on position direction:
 
-```mermaid
-stateDiagram-v2
-    [*] --> ValidateLong: position === "long"
-    [*] --> ValidateShort: position === "short"
-    
-    state ValidateLong {
-        [*] --> CheckTPAboveOpen
-        CheckTPAboveOpen --> CheckSLBelowOpen: TP > Open
-        CheckSLBelowOpen --> CheckCurrentPrice: SL < Open
-        CheckCurrentPrice --> [*]: SL < Current < TP
-        
-        CheckTPAboveOpen --> Error1: TP <= Open
-        CheckSLBelowOpen --> Error2: SL >= Open
-        CheckCurrentPrice --> Error3: Current <= SL
-        CheckCurrentPrice --> Error4: Current >= TP
-    }
-    
-    state ValidateShort {
-        [*] --> CheckTPBelowOpen
-        CheckTPBelowOpen --> CheckSLAboveOpen: TP < Open
-        CheckSLAboveOpen --> CheckCurrentPrice2: SL > Open
-        CheckCurrentPrice2 --> [*]: TP < Current < SL
-        
-        CheckTPBelowOpen --> Error5: TP >= Open
-        CheckSLAboveOpen --> Error6: SL <= Open
-        CheckCurrentPrice2 --> Error7: Current >= SL
-        CheckCurrentPrice2 --> Error8: Current <= TP
-    }
-    
-    Error1 --> Rejected: "priceTakeProfit must be > priceOpen"
-    Error2 --> Rejected: "priceStopLoss must be < priceOpen"
-    Error3 --> Rejected: "currentPrice <= SL (instant stop)"
-    Error4 --> Rejected: "currentPrice >= TP (opportunity passed)"
-    Error5 --> Rejected: "priceTakeProfit must be < priceOpen"
-    Error6 --> Rejected: "priceStopLoss must be > priceOpen"
-    Error7 --> Rejected: "currentPrice >= SL (instant stop)"
-    Error8 --> Rejected: "currentPrice <= TP (opportunity passed)"
-    
-    Rejected --> [*]
-```
+![Mermaid Diagram](./diagrams\69_Risk_Validation_1.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:111-291]()
 
@@ -211,44 +119,7 @@ if (slDistancePercent > GLOBAL_CONFIG.CC_MAX_STOPLOSS_DISTANCE_PERCENT) {
 
 A critical protection prevents signals that would close immediately after opening:
 
-```mermaid
-graph TB
-    subgraph "Immediate Signal (priceOpen undefined)"
-        CheckImmediate["Check currentPrice<br/>vs TP/SL"]
-        ValidLong["LONG: SL < current < TP"]
-        ValidShort["SHORT: TP < current < SL"]
-        InvalidLong["LONG: current <= SL<br/>OR current >= TP"]
-        InvalidShort["SHORT: current >= SL<br/>OR current <= TP"]
-    end
-    
-    subgraph "Scheduled Signal (priceOpen defined)"
-        CheckScheduled["Check priceOpen<br/>vs TP/SL"]
-        ValidLongSched["LONG: SL < priceOpen < TP"]
-        ValidShortSched["SHORT: TP < priceOpen < SL"]
-        InvalidLongSched["LONG: priceOpen <= SL<br/>OR priceOpen >= TP"]
-        InvalidShortSched["SHORT: priceOpen >= SL<br/>OR priceOpen <= TP"]
-    end
-    
-    CheckImmediate --> ValidLong
-    CheckImmediate --> ValidShort
-    CheckImmediate --> InvalidLong
-    CheckImmediate --> InvalidShort
-    
-    CheckScheduled --> ValidLongSched
-    CheckScheduled --> ValidShortSched
-    CheckScheduled --> InvalidLongSched
-    CheckScheduled --> InvalidShortSched
-    
-    ValidLong --> Pass["✓ Pass"]
-    ValidShort --> Pass
-    ValidLongSched --> Pass
-    ValidShortSched --> Pass
-    
-    InvalidLong --> Reject["✗ Reject<br/>'Signal would close immediately'"]
-    InvalidShort --> Reject
-    InvalidLongSched --> Reject
-    InvalidShortSched --> Reject
-```
+![Mermaid Diagram](./diagrams\69_Risk_Validation_2.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:124-160](), [src/client/ClientStrategy.ts:215-250]()
 
@@ -260,76 +131,7 @@ After passing built-in validation, signals are evaluated against user-defined ri
 
 ### Type Definitions and Relationships
 
-```mermaid
-classDiagram
-    class IRisk {
-        interface
-        checkSignal params Promise boolean
-        addSignal symbol ctx Promise void
-        removeSignal symbol ctx Promise void
-    }
-
-    class IRiskCheckArgs {
-        symbol: string
-        pendingSignal: ISignalDto
-        strategyName: StrategyName
-        exchangeName: ExchangeName
-        currentPrice: number
-        timestamp: number
-    }
-
-    class IRiskValidationPayload {
-        extends IRiskCheckArgs
-        activePositionCount: number
-        activePositions: IRiskActivePosition[]
-    }
-
-    class IRiskActivePosition {
-        signal: ISignalRow
-        strategyName: string
-        exchangeName: string
-        openTimestamp: number
-    }
-
-    class IRiskValidationFn {
-        type
-        payload IRiskValidationPayload void or Promise void
-    }
-
-    class IRiskValidation {
-        validate: IRiskValidationFn
-        note optional string
-    }
-
-    class IRiskCallbacks {
-        onRejected: function
-        onAllowed: function
-    }
-
-    class IRiskSchema {
-        riskName: RiskName
-        note optional string
-        validations: array IRiskValidation
-        callbacks optional Partial IRiskCallbacks
-    }
-
-    class ClientRisk {
-        _activePositionsMap: Map
-        params: IRiskParams
-        checkSignal params Promise boolean
-        addSignal symbol ctx Promise void
-        removeSignal symbol ctx Promise void
-    }
-
-    IRisk <|.. ClientRisk : implements
-    IRiskCheckArgs <|-- IRiskValidationPayload : extends
-    IRiskValidationPayload ..> IRiskActivePosition : contains
-    IRiskValidation ..> IRiskValidationFn : uses
-    IRiskSchema ..> IRiskValidation : contains array
-    IRiskSchema ..> IRiskCallbacks : optional
-    ClientRisk ..> IRiskSchema : constructed from
-    ClientRisk ..> IRiskValidationPayload : builds
-```
+![Mermaid Diagram](./diagrams\69_Risk_Validation_3.svg)
 
 **Sources:** [types.d.ts:338-485](), [src/interfaces/Risk.interface.ts](), [src/client/ClientRisk.ts]()
 
@@ -341,64 +143,7 @@ The `ClientRisk.checkSignal()` method executes custom risk validations sequentia
 
 #### ClientRisk.checkSignal Implementation Flow
 
-```mermaid
-sequenceDiagram
-    participant CS as ClientStrategy.GET_SIGNAL_FN
-    participant CR as ClientRisk.checkSignal
-    participant MAP as _activePositionsMap
-    participant V1 as validations[0].validate
-    participant V2 as validations[1].validate
-    participant VN as validations[n].validate
-    participant CB1 as callbacks.onAllowed
-    participant CB2 as callbacks.onRejected
-    participant RS as riskSubject
-    participant VS as validationSubject
-    
-    CS->>CR: checkSignal(IRiskCheckArgs)
-    Note over CR: Build IRiskValidationPayload
-    CR->>MAP: Get activePositionCount
-    CR->>MAP: Get activePositions[]
-    Note over CR: payload = {...params, activePositionCount, activePositions}
-    
-    CR->>V1: validate(payload)
-    alt V1 passes (no throw)
-        V1-->>CR: return
-        CR->>V2: validate(payload)
-        
-        alt V2 passes (no throw)
-            V2-->>CR: return
-            CR->>VN: validate(payload)
-            
-            alt VN passes (all pass)
-                VN-->>CR: return
-                CR->>CB1: onAllowed(symbol, params)
-                CR-->>CS: return true
-                Note over CS: Signal proceeds to creation
-            else VN fails (throw Error)
-                VN-->>CR: throw Error("reason")
-                CR->>VS: validationSubject.next(error)
-                CR->>CB2: onRejected(symbol, params, count, note, ts)
-                CR->>RS: riskSubject.next(rejection)
-                CR-->>CS: return false
-                Note over CS: return null (signal rejected)
-            end
-        else V2 fails (throw Error)
-            V2-->>CR: throw Error("reason")
-            CR->>VS: validationSubject.next(error)
-            CR->>CB2: onRejected(symbol, params, count, note, ts)
-            CR->>RS: riskSubject.next(rejection)
-            CR-->>CS: return false
-            Note over CS: return null (signal rejected)
-        end
-    else V1 fails (throw Error)
-        V1-->>CR: throw Error("reason")
-        CR->>VS: validationSubject.next(error)
-        CR->>CB2: onRejected(symbol, params, count, note, ts)
-        CR->>RS: riskSubject.next(rejection)
-        CR-->>CS: return false
-        Note over CS: return null (signal rejected)
-    end
-```
+![Mermaid Diagram](./diagrams\69_Risk_Validation_4.svg)
 
 **Sources:** [src/client/ClientRisk.ts](), [src/client/ClientStrategy.ts:374-387](), [src/config/emitters.ts:112-131]()
 
@@ -511,91 +256,7 @@ Risk validation occurs at **two critical checkpoints** in the signal lifecycle t
 
 ### Checkpoint Locations in ClientStrategy
 
-```mermaid
-stateDiagram-v2
-    [*] --> Idle
-    
-    Idle --> GET_SIGNAL_FN: "Strategy interval elapsed"
-    
-    state GET_SIGNAL_FN {
-        state "Line 332-476" as GSFN
-        [*] --> CallGetSignal
-        CallGetSignal --> VALIDATE_SIGNAL_FN: "ISignalDto returned"
-        
-        state VALIDATE_SIGNAL_FN {
-            state "Lines 45-330" as VSF
-            [*] --> StructuralChecks
-            StructuralChecks --> [*]: "All pass"
-            StructuralChecks --> ThrowError: "Any fail"
-        }
-        
-        VALIDATE_SIGNAL_FN --> CheckRisk: "Structural validation passes"
-        
-        state CheckRisk {
-            state "Lines 374-387" as CR1
-            [*] --> CallCheckSignal1
-            CallCheckSignal1 --> BuildIRiskCheckArgs1
-            BuildIRiskCheckArgs1 --> ClientRiskCheckSignal1
-            ClientRiskCheckSignal1 --> [*]: "return true"
-            ClientRiskCheckSignal1 --> ReturnFalse1: "return false"
-        }
-        
-        CheckRisk --> CreateSignalRow: "risk.checkSignal() === true"
-        CreateSignalRow --> [*]
-        
-        ThrowError --> ReturnNull1: "catch block"
-        ReturnFalse1 --> ReturnNull1
-        ReturnNull1 --> [*]
-    }
-    
-    GET_SIGNAL_FN --> Scheduled: "priceOpen specified"
-    GET_SIGNAL_FN --> Opened: "priceOpen undefined"
-    GET_SIGNAL_FN --> Idle: "Validation failed (return null)"
-    
-    Scheduled --> ACTIVATE_SCHEDULED_SIGNAL_FN
-    
-    state ACTIVATE_SCHEDULED_SIGNAL_FN {
-        state "Lines 681-774" as ASSF
-        [*] --> CheckStopped
-        CheckStopped --> CheckRiskAtActivation: "Not stopped"
-        
-        state CheckRiskAtActivation {
-            state "Lines 711-729" as CR2
-            [*] --> CallCheckSignal2
-            CallCheckSignal2 --> BuildIRiskCheckArgs2
-            BuildIRiskCheckArgs2 --> ClientRiskCheckSignal2
-            ClientRiskCheckSignal2 --> [*]: "return true"
-            ClientRiskCheckSignal2 --> ReturnNull2: "return false"
-        }
-        
-        CheckRiskAtActivation --> UpdatePendingAt: "risk.checkSignal() === true"
-        UpdatePendingAt --> SetPendingSignal
-        SetPendingSignal --> AddSignalToRisk
-        AddSignalToRisk --> [*]
-        
-        ReturnNull2 --> [*]
-    }
-    
-    ACTIVATE_SCHEDULED_SIGNAL_FN --> Opened: "Activation + risk check passes"
-    ACTIVATE_SCHEDULED_SIGNAL_FN --> Idle: "Risk check fails (return null)"
-    
-    Opened --> Active
-    Active --> Closed
-    Closed --> Idle
-    
-    note right of CheckRisk
-        First checkpoint:
-        IRiskCheckArgs with
-        currentPrice at generation time
-    end note
-    
-    note right of CheckRiskAtActivation
-        Second checkpoint:
-        IRiskCheckArgs with
-        currentPrice = scheduled.priceOpen
-        at activation time
-    end note
-```
+![Mermaid Diagram](./diagrams\69_Risk_Validation_5.svg)
 
 ### Checkpoint 1: Signal Generation
 
@@ -666,40 +327,7 @@ if (
 
 The validation system implements a **fail-fast pattern** where rejected signals immediately abort signal creation and emit rejection events for monitoring:
 
-```mermaid
-graph LR
-    subgraph "Validation Flow"
-        Start["getSignal()<br/>returns ISignalDto"]
-        V1["VALIDATE_SIGNAL_FN"]
-        V2["risk.checkSignal()"]
-        Success["ISignalRow created<br/>Signal opened"]
-    end
-    
-    subgraph "Failure Paths"
-        F1["Built-in validation fails"]
-        F2["Custom risk fails"]
-        Emit["riskEmitter.next()"]
-        Null["return null"]
-        Idle["Strategy stays idle"]
-    end
-    
-    Start --> V1
-    V1 -->|"Pass"| V2
-    V1 -->|"Fail"| F1
-    V2 -->|"Pass"| Success
-    V2 -->|"Fail"| F2
-    
-    F1 --> Emit
-    F2 --> Emit
-    Emit --> Null
-    Null --> Idle
-    
-    style F1 fill:#fee
-    style F2 fill:#fee
-    style Emit fill:#fee
-    style Null fill:#fee
-    style Idle fill:#eef
-```
+![Mermaid Diagram](./diagrams\69_Risk_Validation_6.svg)
 
 **Rejection Event Structure:**
 
@@ -845,60 +473,7 @@ setConfig({
 
 Risk validation integrates seamlessly with the signal state machine:
 
-```mermaid
-stateDiagram-v2
-    [*] --> Idle
-    
-    Idle --> ValidateGeneration: "getSignal() returns signal"
-    
-    state ValidateGeneration {
-        [*] --> BuiltInCheck
-        BuiltInCheck --> CustomRiskCheck: "VALIDATE_SIGNAL_FN passes"
-        CustomRiskCheck --> [*]: "risk.checkSignal() passes"
-    }
-    
-    ValidateGeneration --> Scheduled: "Validation passes + priceOpen set"
-    ValidateGeneration --> Opened: "Validation passes + priceOpen undefined"
-    ValidateGeneration --> RejectedGeneration: "Validation fails"
-    
-    Scheduled --> AwaitActivation
-    
-    state AwaitActivation {
-        [*] --> MonitorPrice
-        MonitorPrice --> ValidateActivation: "priceOpen reached"
-        
-        state ValidateActivation {
-            [*] --> ReCheckRisk
-            ReCheckRisk --> [*]: "risk.checkSignal() passes"
-        }
-        
-        ValidateActivation --> [*]: "Re-validation passes"
-        ValidateActivation --> RejectedActivation: "Re-validation fails"
-    }
-    
-    AwaitActivation --> Opened: "Activation validation passes"
-    AwaitActivation --> Cancelled: "Activation validation fails"
-    
-    Opened --> Active: "Position created"
-    Active --> Closed: "TP/SL/timeout"
-    
-    RejectedGeneration --> Idle: "riskEmitter.next(rejection)"
-    RejectedActivation --> Idle: "riskEmitter.next(rejection)"
-    Cancelled --> Idle
-    Closed --> Idle
-    
-    note right of ValidateGeneration
-        First validation checkpoint:
-        - Structure (VALIDATE_SIGNAL_FN)
-        - Custom rules (risk.checkSignal)
-    end note
-    
-    note right of ValidateActivation
-        Second validation checkpoint:
-        - Only custom rules (risk.checkSignal)
-        - Market conditions may have changed
-    end note
-```
+![Mermaid Diagram](./diagrams\69_Risk_Validation_7.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:332-476](), [src/client/ClientStrategy.ts:681-774]()
 
@@ -933,38 +508,7 @@ interface IRiskCallbacks {
 
 ### Callback Invocation Flow
 
-```mermaid
-sequenceDiagram
-    participant CS as ClientStrategy
-    participant CR as ClientRisk.checkSignal
-    participant VL as Validation Loop
-    participant V as validation.validate
-    participant CBA as callbacks.onAllowed
-    participant CBR as callbacks.onRejected
-    participant RS as riskSubject
-    participant VS as validationSubject
-    
-    CS->>CR: checkSignal(IRiskCheckArgs)
-    CR->>VL: Execute validation chain
-    
-    alt All validations pass
-        VL->>CR: No throw (success)
-        CR->>CBA: onAllowed(symbol, params)
-        Note over CBA: Optional callback<br/>for allowed signals
-        CR-->>CS: return true
-    else Any validation fails
-        VL->>V: validate(payload)
-        V-->>VL: throw Error("reason")
-        VL->>VS: validationSubject.next(error)
-        Note over VS: Emits to listenValidation()
-        VL->>CBR: onRejected(symbol, params, count, note, ts)
-        Note over CBR: Required callback<br/>with rejection details
-        VL->>RS: riskSubject.next(rejection)
-        Note over RS: Emits to listenRisk()
-        VL-->>CR: return from catch block
-        CR-->>CS: return false
-    end
-```
+![Mermaid Diagram](./diagrams\69_Risk_Validation_8.svg)
 
 **Sources:** [src/client/ClientRisk.ts](), [src/config/emitters.ts:112-131]()
 

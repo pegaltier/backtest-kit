@@ -31,32 +31,7 @@ For installation and setup instructions, see [Installation and Setup](#1.2). For
 
 The framework supports three distinct execution modes that share identical strategy code through context propagation:
 
-```mermaid
-graph TB
-    Strategy["Strategy Code<br/>(getSignal function)"]
-    
-    subgraph "Execution Modes"
-        Backtest["Backtest Mode<br/>BacktestLogicPrivateService<br/>Historical data iteration"]
-        Live["Live Mode<br/>LiveLogicPrivateService<br/>Real-time execution"]
-        Walker["Walker Mode<br/>WalkerLogicPrivateService<br/>Strategy comparison"]
-    end
-    
-    subgraph "Context Services"
-        ExecCtx["ExecutionContextService<br/>symbol, when, backtest flag"]
-        MethodCtx["MethodContextService<br/>strategyName, exchangeName"]
-    end
-    
-    Strategy --> Backtest
-    Strategy --> Live
-    Strategy --> Walker
-    
-    ExecCtx --> Strategy
-    MethodCtx --> Strategy
-    
-    Backtest --> |"Deterministic results"| BacktestOut["IStrategyBacktestResult"]
-    Live --> |"All states + persistence"| LiveOut["IStrategyTickResult"]
-    Walker --> |"Ranked strategies"| WalkerOut["WalkerContract"]
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_0.svg)
 
 **Sources:** [README.md:17-18](), [docs/internals.md:54-81](), [High-Level System Architecture Diagram 2]()
 
@@ -112,16 +87,7 @@ await Walker.stop("BTCUSDT", "walker-name");
 
 Live trading mode uses atomic file writes with automatic recovery to ensure no duplicate signals or lost state after process crashes:
 
-```mermaid
-graph LR
-    Signal["New Signal"] --> Validate["Validate Signal<br/>VALIDATE_SIGNAL_FN"]
-    Validate --> Persist["Atomic Write<br/>PersistSignalAdapter"]
-    Persist --> TempFile["Write to .tmp file"]
-    TempFile --> Rename["Atomic rename<br/>replaces original"]
-    Rename --> Recovery["Crash Recovery<br/>waitForInit restores state"]
-    
-    Recovery --> Resume["Resume execution<br/>from last persisted state"]
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_1.svg)
 
 **Sources:** [README.md:19](), [README.md:426](), [docs/internals.md:25]()
 
@@ -171,34 +137,7 @@ Custom adapters must implement the `PersistBase` interface:
 
 Signals are validated before execution to prevent invalid trades:
 
-```mermaid
-graph TB
-    GetSignal["getSignal() returns ISignalDto"] --> ValidatePrice["Price Logic Validation"]
-    
-    ValidatePrice --> CheckLong{{"position === 'long'?"}}
-    CheckLong -->|Yes| LongChecks["TP > priceOpen > SL<br/>All prices positive"]
-    CheckLong -->|No| ShortChecks["SL > priceOpen > TP<br/>All prices positive"]
-    
-    LongChecks --> CheckDistance["Distance Validation"]
-    ShortChecks --> CheckDistance
-    
-    CheckDistance --> MinTP["CC_MIN_TAKEPROFIT_DISTANCE_PERCENT"]
-    CheckDistance --> MaxTP["CC_MAX_TAKEPROFIT_DISTANCE_PERCENT"]
-    CheckDistance --> MinSL["CC_MIN_STOPLOSS_DISTANCE_PERCENT"]
-    CheckDistance --> MaxSL["CC_MAX_STOPLOSS_DISTANCE_PERCENT"]
-    
-    MinTP --> CheckTime["Timestamp Validation"]
-    MaxTP --> CheckTime
-    MinSL --> CheckTime
-    MaxSL --> CheckTime
-    
-    CheckTime --> ValidTime["priceOpenTimestamp < current time"]
-    ValidTime --> RiskCheck["Risk Management Validation"]
-    
-    RiskCheck --> CustomRisk["Custom validation functions<br/>from IRiskSchema.validations"]
-    CustomRisk --> Pass["Validation Passed<br/>Signal opens"]
-    CustomRisk --> Fail["Validation Failed<br/>Signal rejected"]
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_2.svg)
 
 **Sources:** [README.md:21-22](), [README.md:236](), [docs/internals.md:19](), [test/e2e/defend.test.mjs:545-642]()
 
@@ -212,38 +151,7 @@ Validation implementation in [src/client/Strategy.client.ts]() uses the `VALIDAT
 
 The signal lifecycle is implemented as a discriminated union with compile-time type safety:
 
-```mermaid
-stateDiagram-v2
-    [*] --> idle: No active position
-    
-    idle --> scheduled: priceOpen defined<br/>(limit order)
-    idle --> opened: priceOpen undefined<br/>(market order)
-    
-    scheduled --> opened: Price reaches priceOpen
-    scheduled --> cancelled: SL hit OR timeout<br/>(CC_SCHEDULE_AWAIT_MINUTES)
-    
-    opened --> active: Validation passed<br/>State persisted
-    opened --> idle: Validation failed
-    
-    active --> closed: TP/SL hit OR<br/>time expired
-    
-    cancelled --> idle: onCancel callback
-    closed --> idle: onClose callback
-    
-    note right of scheduled
-        Monitoring:
-        - priceOpen reached?
-        - SL hit before activation?
-        - Timeout (120 min default)
-    end note
-    
-    note right of active
-        Monitoring:
-        - priceTakeProfit hit?
-        - priceStopLoss hit?
-        - minuteEstimatedTime expired?
-    end note
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_3.svg)
 
 **Sources:** [README.md:27](), [Signal Lifecycle State Machine Diagram](), [docs/internals.md:16]()
 
@@ -307,17 +215,7 @@ Signals with `priceOpen` defined become scheduled (limit orders) waiting for pri
 
 All entry/exit decisions use Volume-Weighted Average Price from the last 5 one-minute candles for realistic simulation:
 
-```mermaid
-graph LR
-    Exchange["Exchange Service"] --> Fetch["Fetch 5x 1m candles"]
-    Fetch --> Calculate["Calculate VWAP<br/>Σ(price × volume) / Σ(volume)"]
-    Calculate --> Entry["Entry Price<br/>(if no priceOpen)"]
-    Calculate --> Exit["Exit Price<br/>(TP/SL checks)"]
-    
-    Entry --> PNL["PNL Calculation"]
-    Exit --> PNL
-    PNL --> Fees["Apply fees (0.1%)<br/>Apply slippage (0.1%)"]
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_4.svg)
 
 **Sources:** [README.md:25](), [docs/internals.md:18]()
 
@@ -347,23 +245,7 @@ When a signal opens, the backtest skips ahead to the estimated close time rather
 
 The dependency injection system memoizes service instances by configuration key:
 
-```mermaid
-graph TB
-    Request["Strategy Request<br/>symbol: BTCUSDT<br/>strategyName: my-strategy"]
-    
-    Connection["StrategyConnectionService"]
-    
-    Cache{{"Cache check:<br/>BTCUSDT:my-strategy"}}
-    
-    Request --> Connection
-    Connection --> Cache
-    
-    Cache -->|Hit| Return["Return cached<br/>ClientStrategy instance"]
-    Cache -->|Miss| Create["Create new<br/>ClientStrategy instance"]
-    
-    Create --> Store["Store in cache<br/>key: BTCUSDT:my-strategy"]
-    Store --> Return
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_5.svg)
 
 **Sources:** [docs/internals.md:46](), [Service Architecture & Dependency Injection Diagram]()
 
@@ -415,42 +297,7 @@ Implementation: [src/services/markdown/]()
 
 Nine types of markdown reports are automatically generated:
 
-```mermaid
-graph TB
-    Events["Event Emitters"] --> Aggregation["Markdown Services"]
-    
-    subgraph "Report Types"
-        Backtest["BacktestMarkdownService<br/>Closed signals only"]
-        Live["LiveMarkdownService<br/>All states (idle/opened/active/closed)"]
-        Schedule["ScheduleMarkdownService<br/>Scheduled signals + cancellations"]
-        Partial["PartialMarkdownService<br/>Partial profit/loss milestones"]
-        Walker["WalkerMarkdownService<br/>Strategy comparison rankings"]
-        Heat["HeatMarkdownService<br/>Portfolio cross-symbol analysis"]
-        Risk["RiskMarkdownService<br/>Rejected signals"]
-        Performance["PerformanceMarkdownService<br/>Execution bottlenecks"]
-        Config["ConfigMarkdownService<br/>Configuration dump"]
-    end
-    
-    Aggregation --> Backtest
-    Aggregation --> Live
-    Aggregation --> Schedule
-    Aggregation --> Partial
-    Aggregation --> Walker
-    Aggregation --> Heat
-    Aggregation --> Risk
-    Aggregation --> Performance
-    Aggregation --> Config
-    
-    Backtest --> Files["./dump/*.md files"]
-    Live --> Files
-    Schedule --> Files
-    Partial --> Files
-    Walker --> Files
-    Heat --> Files
-    Risk --> Files
-    Performance --> Files
-    Config --> Files
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_6.svg)
 
 **Sources:** [Event System & Reporting Architecture Diagram](), [docs/internals.md:37]()
 
@@ -540,24 +387,7 @@ Helps identify bottlenecks in:
 
 The risk management system coordinates across strategies and symbols:
 
-```mermaid
-graph TB
-    Signal["New Signal Generated"] --> Risk["Risk Validation"]
-    
-    Risk --> Validations["Execute validation chain<br/>IRiskSchema.validations[]"]
-    
-    Validations --> Check1["Validation 1<br/>(e.g., max positions)"]
-    Check1 -->|Pass| Check2["Validation 2<br/>(e.g., symbol filter)"]
-    Check2 -->|Pass| Check3["Validation 3<br/>(e.g., time window)"]
-    Check3 -->|Pass| Allowed["Signal Allowed<br/>onAllowed callback"]
-    
-    Check1 -->|Fail| Rejected["Signal Rejected<br/>onRejected callback"]
-    Check2 -->|Fail| Rejected
-    Check3 -->|Fail| Rejected
-    
-    Allowed --> Persist["Persist Signal<br/>PersistSignalAdapter"]
-    Rejected --> Emit["Emit risk event<br/>listenRisk"]
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_7.svg)
 
 **Sources:** [README.md:43](), [README.md:674-768]()
 
@@ -583,30 +413,7 @@ Implementation: [src/client/Risk.client.ts]()
 
 Three position sizing methods with configurable constraints:
 
-```mermaid
-graph TB
-    Signal["Signal with entry/SL prices"] --> Method{{"Sizing Method"}}
-    
-    Method -->|Fixed %| Fixed["Fixed Percentage<br/>Risk 2% of account"]
-    Method -->|Kelly| Kelly["Kelly Criterion<br/>Optimal bet sizing"]
-    Method -->|ATR| ATR["ATR-Based<br/>Volatility-adjusted"]
-    
-    Fixed --> Calc1["quantity = accountBalance × riskPercentage / (entryPrice - stopLoss)"]
-    Kelly --> Calc2["quantity = accountBalance × kellyFraction × winRate / (entryPrice - stopLoss)"]
-    ATR --> Calc3["quantity = accountBalance × riskPercentage / (atrMultiplier × atr)"]
-    
-    Calc1 --> Constraints["Apply Constraints"]
-    Calc2 --> Constraints
-    Calc3 --> Constraints
-    
-    Constraints --> MinPos["minPositionSize"]
-    Constraints --> MaxPos["maxPositionSize"]
-    Constraints --> MaxPct["maxPositionPercentage"]
-    
-    MinPos --> Final["Final Position Size"]
-    MaxPos --> Final
-    MaxPct --> Final
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_8.svg)
 
 **Sources:** [README.md:41](), [README.md:589-673]()
 
@@ -681,28 +488,7 @@ Implementation: [src/client/Exchange.client.ts]()
 
 Components are registered by name and lazily instantiated at runtime:
 
-```mermaid
-graph TB
-    Register["Component Registration"] --> Schema["Schema Service<br/>(ToolRegistry)"]
-    
-    subgraph "Registration Phase"
-        AddStrategy["addStrategy()"] --> StrategySchema["StrategySchemaService"]
-        AddExchange["addExchange()"] --> ExchangeSchema["ExchangeSchemaService"]
-        AddFrame["addFrame()"] --> FrameSchema["FrameSchemaService"]
-        AddRisk["addRisk()"] --> RiskSchema["RiskSchemaService"]
-    end
-    
-    subgraph "Execution Phase"
-        Request["Backtest.run(symbol, context)"] --> Validate["Validation Service"]
-        Validate --> Connection["Connection Service<br/>(Memoized)"]
-        Connection --> Client["Client Instance<br/>(ClientStrategy)"]
-    end
-    
-    StrategySchema --> Validate
-    ExchangeSchema --> Validate
-    FrameSchema --> Validate
-    RiskSchema --> Validate
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_9.svg)
 
 **Sources:** [README.md:191-222](), [README.md:234](), [docs/internals.md:32-36]()
 
@@ -721,24 +507,7 @@ graph TB
 
 Async context propagation eliminates need for explicit parameter passing:
 
-```mermaid
-graph TB
-    Entry["Public API Entry Point"] --> MethodCtx["MethodContextService.runInContext()"]
-    
-    MethodCtx --> |"Sets: strategyName,<br/>exchangeName, frameName"| ExecCtx["ExecutionContextService.runInContext()"]
-    
-    ExecCtx --> |"Sets: symbol, when,<br/>backtest flag"| Strategy["Strategy Execution"]
-    
-    Strategy --> GetSignal["getSignal(symbol, when)"]
-    
-    GetSignal --> Helper["Helper Function<br/>(e.g., getAveragePrice)"]
-    
-    Helper --> ReadCtx["Read ExecutionContextService"]
-    ReadCtx --> |"Retrieves: symbol, when,<br/>backtest"| ExchangeCall["Exchange.getCandles()"]
-    
-    ExchangeCall --> ReadMethod["Read MethodContextService"]
-    ReadMethod --> |"Retrieves: exchangeName"| ExchangeImpl["ClientExchange instance"]
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_10.svg)
 
 **Sources:** [README.md:31](), [docs/internals.md:47-50]()
 
@@ -785,20 +554,7 @@ The framework includes extensive test coverage across multiple dimensions:
 
 Critical defensive tests ensure correct behavior in complex scenarios:
 
-```mermaid
-graph TB
-    Defense["Defensive Tests"] --> Scenario1["LONG limit order<br/>activates before SL"]
-    Defense --> Scenario2["SHORT limit order<br/>activates before SL"]
-    Defense --> Scenario3["Activation and TP<br/>on same candle"]
-    Defense --> Scenario4["Timeout at exact<br/>boundary (120 min)"]
-    Defense --> Scenario5["Invalid TP/SL<br/>price relationships"]
-    
-    Scenario1 --> Verify1["Verifies: Signal opens,<br/>then closes by SL"]
-    Scenario2 --> Verify2["Verifies: Signal opens,<br/>then closes by SL"]
-    Scenario3 --> Verify3["Verifies: PNL calculated<br/>correctly, timing distinct"]
-    Scenario4 --> Verify4["Verifies: Cancellation<br/>releases risk limits"]
-    Scenario5 --> Verify5["Verifies: Validation<br/>rejects invalid signals"]
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_11.svg)
 
 **Sources:** [test/e2e/defend.test.mjs:16-146](), [test/e2e/defend.test.mjs:148-278](), [test/e2e/defend.test.mjs:281-439](), [test/e2e/defend.test.mjs:446-537](), [test/e2e/defend.test.mjs:545-642]()
 
@@ -832,30 +588,7 @@ Implementation in statistics calculation functions: [src/services/markdown/]()
 
 LLM-powered strategy generation from historical data:
 
-```mermaid
-graph TB
-    Input["Input Configuration"] --> Ranges["Training Ranges<br/>(date periods)"]
-    Input --> Sources["Data Sources<br/>(candles, indicators)"]
-    Input --> Prompt["Strategy Prompt<br/>(trading rules)"]
-    
-    Ranges --> Iterate["Iterate Ranges<br/>(Jan, Feb, Mar...)"]
-    Sources --> Fetch["Fetch & Format Data"]
-    
-    Iterate --> Context["Multi-timeframe Context"]
-    Fetch --> Context
-    
-    Context --> Format["1h → 15m → 5m → 1m<br/>Progressive detail"]
-    Prompt --> LLM["Ollama API<br/>(deepseek-v3.1:671b)"]
-    Format --> LLM
-    
-    LLM --> JSON["JSON Schema Mode<br/>Structured output"]
-    JSON --> Template["Code Templates"]
-    
-    Template --> Assemble["Assemble .mjs File"]
-    Assemble --> Output["Executable Strategy<br/>{name}_{symbol}.mjs"]
-    
-    Output --> Walker["Walker.background()<br/>Test generated strategies"]
-```
+![Mermaid Diagram](./diagrams\02_Key_Features_12.svg)
 
 **Sources:** [README.md:51](), [AI-Driven Strategy Generation Diagram]()
 

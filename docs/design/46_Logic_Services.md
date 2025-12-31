@@ -36,60 +36,7 @@ Logic Services are organized into three execution mode families, each with Priva
 
 **Public Services** wrap Private Services with `MethodContextService` to provide implicit context propagation, allowing downstream functions to access `strategyName`, `exchangeName`, and `frameName` without explicit parameters.
 
-```mermaid
-graph TB
-    subgraph "Public Service Layer"
-        BLP[BacktestLogicPublicService<br/>run with context]
-        LLP[LiveLogicPublicService<br/>run with context]
-        WLP[WalkerLogicPublicService<br/>run with context]
-    end
-    
-    subgraph "Context Management"
-        MCS[MethodContextService<br/>strategyName<br/>exchangeName<br/>frameName]
-    end
-    
-    subgraph "Private Service Layer"
-        BLPS["BacktestLogicPrivateService<br/>run(symbol)<br/>AsyncGenerator"]
-        LLPS["LiveLogicPrivateService<br/>run(symbol)<br/>AsyncGenerator"]
-        WLPS["WalkerLogicPrivateService<br/>run(symbol, strategies, metric, context)<br/>AsyncGenerator"]
-    end
-    
-    subgraph "Global Services"
-        SGS[StrategyGlobalService<br/>tick, backtest]
-        EGS[ExchangeGlobalService<br/>getNextCandles]
-        FGS[FrameGlobalService<br/>getTimeframe]
-    end
-    
-    subgraph "Schema Services"
-        WSS[WalkerSchemaService<br/>get walker config]
-    end
-    
-    subgraph "Markdown Services"
-        BMS[BacktestMarkdownService<br/>getData for stats]
-    end
-    
-    BLP -->|injects context| MCS
-    LLP -->|injects context| MCS
-    WLP -->|injects context| MCS
-    
-    MCS -->|delegates to| BLPS
-    MCS -->|delegates to| LLPS
-    MCS -->|delegates to| WLPS
-    
-    BLPS -->|calls| SGS
-    BLPS -->|calls| EGS
-    BLPS -->|calls| FGS
-    
-    LLPS -->|calls| SGS
-    
-    WLPS -->|calls| BLP
-    WLPS -->|reads| WSS
-    WLPS -->|reads| BMS
-    
-    BLPS -->|yields| BacktestResults["IStrategyBacktestResult[]"]
-    LLPS -->|yields| LiveResults["IStrategyTickResultOpened<br/>IStrategyTickResultClosed"]
-    WLPS -->|yields| WalkerResults["WalkerContract[]"]
-```
+![Mermaid Diagram](./diagrams\46_Logic_Services_0.svg)
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:1-387](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:1-134](), [src/lib/services/logic/private/WalkerLogicPrivateService.ts:1-255]()
 
@@ -162,41 +109,7 @@ This pattern allows downstream functions like `getCandles()` and `getSignal()` t
 
 ### Execution Flow
 
-```mermaid
-flowchart TB
-    Start[run symbol] --> GetTimeframes["FrameGlobalService.getTimeframe()"]
-    GetTimeframes --> InitLoop["i = 0<br/>while i < timeframes.length"]
-    
-    InitLoop --> EmitProgress["progressBacktestEmitter.next()"]
-    EmitProgress --> Tick["StrategyGlobalService.tick(when, true)"]
-    
-    Tick --> CheckResult{"result.action?"}
-    
-    CheckResult -->|idle| IncLoop["i++"]
-    CheckResult -->|scheduled| FetchScheduleCandles["getNextCandles('1m'<br/>CC_SCHEDULE_AWAIT_MINUTES<br/>+ minuteEstimatedTime + 1)"]
-    CheckResult -->|opened| FetchOpenedCandles["getNextCandles('1m'<br/>minuteEstimatedTime)"]
-    
-    FetchScheduleCandles --> BacktestSchedule["StrategyGlobalService.backtest(candles)"]
-    FetchOpenedCandles --> BacktestOpened["StrategyGlobalService.backtest(candles)"]
-    
-    BacktestSchedule --> LogClosed["Log signal closed"]
-    BacktestOpened --> LogClosed
-    
-    LogClosed --> EmitPerf["performanceEmitter.next()"]
-    EmitPerf --> SkipFrames["Skip timeframes<br/>until closeTimestamp"]
-    
-    SkipFrames --> YieldResult["yield backtestResult"]
-    YieldResult --> IncLoop
-    
-    IncLoop --> CheckEnd{"i < timeframes.length?"}
-    CheckEnd -->|Yes| InitLoop
-    CheckEnd -->|No| FinalProgress["Emit 100% progress"]
-    FinalProgress --> End[Complete]
-    
-    Tick -.->|error| LogError["errorEmitter.next()<br/>i++<br/>continue"]
-    FetchScheduleCandles -.->|error| LogError
-    BacktestSchedule -.->|error| LogError
-```
+![Mermaid Diagram](./diagrams\46_Logic_Services_1.svg)
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:62-384]()
 
@@ -272,36 +185,7 @@ All operations are wrapped in try-catch blocks that emit errors via `errorEmitte
 
 ### Execution Flow
 
-```mermaid
-flowchart TB
-    Start[run symbol] --> InitLoop["while true"]
-    
-    InitLoop --> CreateDate["when = new Date()"]
-    CreateDate --> Tick["StrategyGlobalService.tick(when, false)"]
-    
-    Tick --> CheckAction{"result.action?"}
-    
-    CheckAction -->|idle| Sleep1["sleep TICK_TTL 61s"]
-    CheckAction -->|active| Sleep2["sleep TICK_TTL 61s"]
-    CheckAction -->|scheduled| Sleep3["sleep TICK_TTL 61s"]
-    CheckAction -->|opened| EmitPerf1["performanceEmitter.next()"]
-    CheckAction -->|closed| EmitPerf2["performanceEmitter.next()"]
-    
-    EmitPerf1 --> Yield1["yield result"]
-    EmitPerf2 --> Yield2["yield result"]
-    
-    Yield1 --> Sleep4["sleep TICK_TTL 61s"]
-    Yield2 --> Sleep5["sleep TICK_TTL 61s"]
-    
-    Sleep1 --> InitLoop
-    Sleep2 --> InitLoop
-    Sleep3 --> InitLoop
-    Sleep4 --> InitLoop
-    Sleep5 --> InitLoop
-    
-    Tick -.->|error| LogError["errorEmitter.next()<br/>sleep TICK_TTL<br/>continue"]
-    LogError --> InitLoop
-```
+![Mermaid Diagram](./diagrams\46_Logic_Services_2.svg)
 
 **Sources:** [src/lib/services/logic/private/LiveLogicPrivateService.ts:61-130]()
 
@@ -377,45 +261,7 @@ try {
 
 ### Execution Flow
 
-```mermaid
-flowchart TB
-    Start[run symbol, strategies, metric, context] --> GetSchema["WalkerSchemaService.get(walkerName)"]
-    GetSchema --> Init["bestMetric = null<br/>bestStrategy = null<br/>strategiesTested = 0"]
-    
-    Init --> ForEach["for strategyName in strategies"]
-    
-    ForEach --> OnStart["walkerSchema.callbacks?.onStrategyStart()"]
-    OnStart --> RunBacktest["BacktestLogicPublicService.run(symbol, context)"]
-    
-    RunBacktest --> Await["await resolveDocuments(iterator)"]
-    Await --> GetStats["BacktestMarkdownService.getData(symbol, strategyName)"]
-    
-    GetStats --> ExtractMetric["Extract stats[metric]<br/>Validate is finite number"]
-    ExtractMetric --> Compare{"metricValue > bestMetric?"}
-    
-    Compare -->|Yes| UpdateBest["bestMetric = metricValue<br/>bestStrategy = strategyName"]
-    Compare -->|No| IncCounter
-    UpdateBest --> IncCounter["strategiesTested++"]
-    
-    IncCounter --> EmitProgress["progressWalkerEmitter.next()"]
-    EmitProgress --> OnComplete["walkerSchema.callbacks?.onStrategyComplete()"]
-    
-    OnComplete --> EmitWalker["walkerEmitter.next(walkerContract)"]
-    EmitWalker --> Yield["yield walkerContract"]
-    
-    Yield --> CheckDone{"More strategies?"}
-    CheckDone -->|Yes| ForEach
-    CheckDone -->|No| FinalResults["Build finalResults with bestStrategy"]
-    
-    FinalResults --> OnCompleteAll["walkerSchema.callbacks?.onComplete()"]
-    OnCompleteAll --> EmitComplete["walkerCompleteSubject.next()"]
-    EmitComplete --> End[Complete]
-    
-    RunBacktest -.->|error| OnError["walkerSchema.callbacks?.onStrategyError()<br/>errorEmitter.next()<br/>continue"]
-    OnError --> CheckDone
-    
-    Await -.->|walkerStopSubject| Cancel["Break loop<br/>return"]
-```
+![Mermaid Diagram](./diagrams\46_Logic_Services_3.svg)
 
 **Sources:** [src/lib/services/logic/private/WalkerLogicPrivateService.ts:70-251]()
 
@@ -526,34 +372,7 @@ All Logic Services use AsyncGenerator functions (`async *`) for memory-efficient
 
 ### AsyncGenerator Pattern
 
-```mermaid
-graph LR
-    subgraph "Producer: BacktestLogicPrivateService"
-        Loop["for each timeframe"]
-        Tick["tick()"]
-        Process["Process signal"]
-        Yield["yield result"]
-        
-        Loop --> Tick
-        Tick --> Process
-        Process --> Yield
-        Yield --> Loop
-    end
-    
-    subgraph "Consumer: User Code"
-        ForAwait["for await"]
-        Handle["Handle result"]
-        BreakCheck{"Early exit?"}
-        
-        ForAwait --> Handle
-        Handle --> BreakCheck
-        BreakCheck -->|break| Stop["Generator stopped"]
-        BreakCheck -->|continue| ForAwait
-    end
-    
-    Yield -.->|streams| ForAwait
-    Stop -.->|cancels| Loop
-```
+![Mermaid Diagram](./diagrams\46_Logic_Services_4.svg)
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:62](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:61](), [src/lib/services/logic/private/WalkerLogicPrivateService.ts:70]()
 
@@ -699,45 +518,7 @@ await performanceEmitter.next({
 
 Logic Services coordinate execution by orchestrating calls to Global Services, Schema Services, and Markdown Services.
 
-```mermaid
-graph TB
-    subgraph "Logic Services"
-        BacktestLogic[BacktestLogicPrivateService]
-        LiveLogic[LiveLogicPrivateService]
-        WalkerLogic[WalkerLogicPrivateService]
-    end
-    
-    subgraph "Global Services"
-        StrategyGlobal[StrategyGlobalService]
-        ExchangeGlobal[ExchangeGlobalService]
-        FrameGlobal[FrameGlobalService]
-    end
-    
-    subgraph "Schema Services"
-        WalkerSchema[WalkerSchemaService]
-    end
-    
-    subgraph "Markdown Services"
-        BacktestMarkdown[BacktestMarkdownService]
-    end
-    
-    subgraph "Context Services"
-        MethodContext[MethodContextService]
-    end
-    
-    BacktestLogic -->|getTimeframe| FrameGlobal
-    BacktestLogic -->|tick, backtest| StrategyGlobal
-    BacktestLogic -->|getNextCandles| ExchangeGlobal
-    BacktestLogic -->|read context| MethodContext
-    
-    LiveLogic -->|tick| StrategyGlobal
-    LiveLogic -->|read context| MethodContext
-    
-    WalkerLogic -->|get schema| WalkerSchema
-    WalkerLogic -->|run backtest| BacktestLogic
-    WalkerLogic -->|getData| BacktestMarkdown
-    WalkerLogic -->|read context| MethodContext
-```
+![Mermaid Diagram](./diagrams\46_Logic_Services_5.svg)
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:35-46](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:31-37](), [src/lib/services/logic/private/WalkerLogicPrivateService.ts:31-40]()
 

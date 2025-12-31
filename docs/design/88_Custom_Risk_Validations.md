@@ -40,60 +40,7 @@ Validations execute synchronously in the order defined and can reject signals by
 
 ## Risk Validation Architecture
 
-```mermaid
-graph TB
-    subgraph "Signal Generation Layer"
-        GETSIGNAL["ClientStrategy.getSignal()"]
-        SIGNALDTO["ISignalDto<br/>(from user strategy)"]
-    end
-    
-    subgraph "Risk Validation Pipeline"
-        CHECKSIGNAL["ClientRisk.checkSignal()"]
-        VALPAYLOAD["IRiskValidationPayload<br/>(context + portfolio state)"]
-        
-        subgraph "Validation Chain Execution"
-            VAL1["validation[0].validate()"]
-            VAL2["validation[1].validate()"]
-            VALN["validation[n].validate()"]
-        end
-        
-        RESULT{{"Pass or Throw"}}
-    end
-    
-    subgraph "Position Management"
-        ADDSIGNAL["ClientRisk.addSignal()"]
-        ACTIVEMAP["_activePositionsMap<br/>(portfolio tracking)"]
-        PERSIST["PersistRiskAdapter<br/>(crash recovery)"]
-    end
-    
-    subgraph "Signal Lifecycle"
-        OPENED["IStrategyTickResultOpened"]
-        REJECTED["Signal rejected<br/>(not opened)"]
-        RISKEVENT["riskSubject.next()<br/>(rejection event)"]
-    end
-    
-    GETSIGNAL --> SIGNALDTO
-    SIGNALDTO --> CHECKSIGNAL
-    
-    CHECKSIGNAL --> VALPAYLOAD
-    VALPAYLOAD --> VAL1
-    VAL1 --> VAL2
-    VAL2 --> VALN
-    VALN --> RESULT
-    
-    RESULT -->|"All pass"| ADDSIGNAL
-    RESULT -->|"Any throws"| REJECTED
-    
-    ADDSIGNAL --> ACTIVEMAP
-    ADDSIGNAL --> PERSIST
-    ADDSIGNAL --> OPENED
-    
-    REJECTED --> RISKEVENT
-    
-    style VALPAYLOAD fill:#e1f5ff,stroke:#333,stroke-width:2px
-    style RESULT fill:#fff4e1,stroke:#333,stroke-width:2px
-    style ACTIVEMAP fill:#e1ffe1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\88_Custom_Risk_Validations_0.svg)
 
 **Validation Timing**: Risk validations execute **after** signal generation but **before** position opening. This ensures that portfolio state is current and no capital is committed until all checks pass.
 
@@ -136,40 +83,7 @@ The `IRiskValidation` interface has two properties:
 
 ## IRiskValidationPayload Structure
 
-```mermaid
-graph TB
-    subgraph "IRiskValidationPayload"
-        subgraph "Base Arguments (IRiskCheckArgs)"
-            SYMBOL["symbol: string<br/>(e.g., 'BTCUSDT')"]
-            PENDING["pendingSignal: ISignalDto<br/>(signal to validate)"]
-            STRATEGY["strategyName: string"]
-            EXCHANGE["exchangeName: string"]
-            PRICE["currentPrice: number<br/>(VWAP)"]
-            TIME["timestamp: number<br/>(milliseconds)"]
-        end
-        
-        subgraph "Portfolio State Extensions"
-            COUNT["activePositionCount: number<br/>(cross-strategy total)"]
-            POSITIONS["activePositions: IRiskActivePosition[]<br/>(all open positions)"]
-        end
-    end
-    
-    subgraph "IRiskActivePosition Elements"
-        ASIGNAL["signal: ISignalRow"]
-        ASTRATEGY["strategyName: string"]
-        AEXCHANGE["exchangeName: string"]
-        ATIMESTAMP["openTimestamp: number"]
-    end
-    
-    POSITIONS --> ASIGNAL
-    POSITIONS --> ASTRATEGY
-    POSITIONS --> AEXCHANGE
-    POSITIONS --> ATIMESTAMP
-    
-    style PENDING fill:#e1f5ff,stroke:#333,stroke-width:2px
-    style COUNT fill:#fff4e1,stroke:#333,stroke-width:2px
-    style POSITIONS fill:#e1ffe1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\88_Custom_Risk_Validations_1.svg)
 
 ### Payload Properties
 
@@ -388,53 +302,7 @@ Allow or forbid opposing positions on same symbol:
 
 ## Validation Execution Sequence
 
-```mermaid
-sequenceDiagram
-    participant Strategy as ClientStrategy
-    participant Risk as ClientRisk
-    participant Val1 as validation[0]
-    participant Val2 as validation[1]
-    participant ValN as validation[n]
-    participant Events as riskSubject
-    participant Position as _activePositionsMap
-    
-    Strategy->>Risk: checkSignal(params)
-    
-    Note over Risk: Build IRiskValidationPayload<br/>with activePositions
-    
-    Risk->>Val1: validate(payload)
-    
-    alt Validation 1 Passes
-        Val1-->>Risk: return (no error)
-        Risk->>Val2: validate(payload)
-        
-        alt Validation 2 Passes
-            Val2-->>Risk: return (no error)
-            Risk->>ValN: validate(payload)
-            
-            alt Validation N Passes
-                ValN-->>Risk: return (no error)
-                Risk-->>Strategy: return true
-                Note over Strategy: Proceed to<br/>open position
-                Strategy->>Risk: addSignal()
-                Risk->>Position: Track position
-            else Validation N Fails
-                ValN-->>Risk: throw Error("reason")
-                Risk->>Events: emit rejection
-                Risk-->>Strategy: return false
-                Note over Strategy: Signal rejected<br/>(not opened)
-            end
-        else Validation 2 Fails
-            Val2-->>Risk: throw Error("reason")
-            Risk->>Events: emit rejection
-            Risk-->>Strategy: return false
-        end
-    else Validation 1 Fails
-        Val1-->>Risk: throw Error("reason")
-        Risk->>Events: emit rejection
-        Risk-->>Strategy: return false
-    end
-```
+![Mermaid Diagram](./diagrams\88_Custom_Risk_Validations_2.svg)
 
 **Execution Rules**:
 
@@ -540,61 +408,7 @@ Validations can be async for external lookups:
 
 ## Integration with Position Lifecycle
 
-```mermaid
-graph TB
-    subgraph "Signal Generation (ClientStrategy)"
-        GEN["getSignal()<br/>Returns ISignalDto"]
-        VALIDATE["Validation Check"]
-    end
-    
-    subgraph "Risk Validation (ClientRisk)"
-        CHECK["checkSignal()"]
-        
-        subgraph "Validation Loop"
-            V1["validation 1"]
-            V2["validation 2"]
-            VN["validation n"]
-        end
-        
-        PASS{{"All Pass?"}}
-    end
-    
-    subgraph "Position Management"
-        ADD["addSignal()<br/>Track in _activePositionsMap"]
-        PERSIST["PersistRiskAdapter<br/>Atomic write"]
-        STRATEGY_OPEN["Strategy opens position<br/>IStrategyTickResultOpened"]
-    end
-    
-    subgraph "Position Closure"
-        MONITOR["Monitoring TP/SL/Time"]
-        CLOSE["Signal closes"]
-        REMOVE["removeSignal()<br/>Remove from _activePositionsMap"]
-        PERSIST_UPDATE["PersistRiskAdapter<br/>Update state"]
-    end
-    
-    GEN --> VALIDATE
-    VALIDATE --> CHECK
-    
-    CHECK --> V1
-    V1 --> V2
-    V2 --> VN
-    VN --> PASS
-    
-    PASS -->|"Yes"| ADD
-    PASS -->|"No"| REJECT["Signal rejected<br/>riskSubject.next()"]
-    
-    ADD --> PERSIST
-    ADD --> STRATEGY_OPEN
-    
-    STRATEGY_OPEN --> MONITOR
-    MONITOR --> CLOSE
-    CLOSE --> REMOVE
-    REMOVE --> PERSIST_UPDATE
-    
-    style CHECK fill:#e1f5ff,stroke:#333,stroke-width:2px
-    style ADD fill:#e1ffe1,stroke:#333,stroke-width:2px
-    style REMOVE fill:#fff4e1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\88_Custom_Risk_Validations_3.svg)
 
 **Lifecycle Integration Points**:
 

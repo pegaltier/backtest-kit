@@ -61,46 +61,7 @@ Validation functions receive `IRiskValidationPayload` containing complete contex
 
 The payload passed to validation functions contains both signal details and portfolio state.
 
-```mermaid
-graph TB
-    subgraph "IRiskCheckArgs (Signal Context)"
-        A1["symbol: string"]
-        A2["pendingSignal: ISignalDto"]
-        A3["strategyName: StrategyName"]
-        A4["exchangeName: ExchangeName"]
-        A5["currentPrice: number"]
-        A6["timestamp: number"]
-    end
-    
-    subgraph "IRiskValidationPayload (Extended)"
-        B1["...IRiskCheckArgs<br/>(all signal context)"]
-        B2["activePositionCount: number"]
-        B3["activePositions: IRiskActivePosition[]"]
-    end
-    
-    subgraph "IRiskActivePosition (Portfolio State)"
-        C1["signal: ISignalRow"]
-        C2["strategyName: string"]
-        C3["exchangeName: string"]
-        C4["openTimestamp: number"]
-    end
-    
-    A1 --> B1
-    A2 --> B1
-    A3 --> B1
-    A4 --> B1
-    A5 --> B1
-    A6 --> B1
-    
-    B3 --> C1
-    B3 --> C2
-    B3 --> C3
-    B3 --> C4
-    
-    B1 -.inherits.-> A1
-    
-    style B1 fill:#f9f9f9,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\67_Risk_Management_0.svg)
 
 ### Payload Fields
 
@@ -123,69 +84,7 @@ Validation functions throw `Error` to reject signals. The error message becomes 
 
 The risk validation system integrates with the signal lifecycle at two critical points: signal generation and scheduled signal activation.
 
-```mermaid
-stateDiagram-v2
-    [*] --> GetSignal: "Strategy.getSignal()"
-    
-    GetSignal --> ValidateDto: "ISignalDto returned"
-    
-    ValidateDto --> CheckRisk1: "Signal structure valid"
-    
-    state CheckRisk1 {
-        [*] --> LoadRisks: "Load risk profiles"
-        LoadRisks --> RunValidations: "Execute validation chain"
-        RunValidations --> CheckCount: "Check activePositionCount"
-        CheckCount --> CheckCustom: "Run custom validations"
-        CheckCustom --> [*]: "All validations passed"
-    }
-    
-    CheckRisk1 --> Rejected1: "Validation throws Error"
-    CheckRisk1 --> CreateScheduled: "Validation passed"
-    
-    CreateScheduled --> ScheduledState: "priceOpen specified"
-    CreateScheduled --> OpenedState: "priceOpen omitted"
-    
-    ScheduledState --> CheckActivation: "Price reaches priceOpen"
-    
-    state CheckActivation {
-        [*] --> CheckRisk2: "Re-validate at activation"
-        CheckRisk2 --> [*]: "Risk check passed"
-    }
-    
-    CheckActivation --> Rejected2: "Risk check failed"
-    CheckActivation --> OpenedState: "Risk check passed"
-    
-    OpenedState --> AddPosition: "Risk.addSignal()"
-    
-    AddPosition --> ActiveMonitoring: "Position tracking active"
-    
-    ActiveMonitoring --> RemovePosition: "Signal closes"
-    
-    RemovePosition --> [*]: "Risk.removeSignal()"
-    
-    Rejected1 --> EmitRiskEvent: "riskSubject.next()"
-    Rejected2 --> EmitRiskEvent
-    
-    EmitRiskEvent --> [*]: "listenRisk callbacks fired"
-    
-    note right of CheckRisk1
-        ClientStrategy.GET_SIGNAL_FN
-        Lines 376-387
-        not(risk.checkSignal())
-    end note
-    
-    note right of CheckActivation
-        ClientStrategy.ACTIVATE_SCHEDULED_SIGNAL_FN
-        Lines 712-729
-        Re-check at activation time
-    end note
-    
-    note right of AddPosition
-        ClientRisk.addSignal()
-        Updates _activePositionsMap
-        Persists to PersistRiskAdapter
-    end note
-```
+![Mermaid Diagram](./diagrams\67_Risk_Management_1.svg)
 
 ### Two-Stage Risk Checking
 
@@ -202,45 +101,7 @@ This dual-check prevents race conditions where portfolio state changes between s
 
 `ClientRisk` implements the `IRisk` interface and manages portfolio-wide position tracking.
 
-```mermaid
-graph TB
-    subgraph "ClientRisk Internal State"
-        MAP["_activePositionsMap<br/>Map&lt;string, IRiskActivePosition&gt;<br/>Key: symbol:strategyName:riskName"]
-        PERSIST["PersistRiskAdapter<br/>./dump/data/risk/{riskName}.json"]
-    end
-    
-    subgraph "Public Methods"
-        CHECK["checkSignal(params)<br/>Validates against all rules<br/>Returns boolean"]
-        ADD["addSignal(symbol, context)<br/>Adds to _activePositionsMap<br/>Persists to disk"]
-        REMOVE["removeSignal(symbol, context)<br/>Removes from _activePositionsMap<br/>Persists to disk"]
-    end
-    
-    subgraph "Validation Execution"
-        LOAD["Load activePositions from Map"]
-        RUN["Run validations array"]
-        CATCH["Catch validation errors"]
-        EMIT["Emit to riskSubject"]
-        CALLBACK["Call onRejected callback"]
-    end
-    
-    CHECK --> LOAD
-    LOAD --> RUN
-    RUN --> CATCH
-    CATCH --> EMIT
-    CATCH --> CALLBACK
-    CATCH --> RETURN_FALSE["Return false"]
-    
-    RUN --> RETURN_TRUE["Return true<br/>(no errors)"]
-    
-    ADD --> MAP
-    MAP --> PERSIST
-    
-    REMOVE --> MAP
-    MAP --> PERSIST
-    
-    style MAP fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style PERSIST fill:#e1ffe1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\67_Risk_Management_2.svg)
 
 ### Position Tracking Key Format
 
@@ -273,36 +134,7 @@ interface IRisk {
 
 Active positions are persisted to disk to survive process crashes in live mode.
 
-```mermaid
-graph LR
-    subgraph "Live Mode Crash Recovery"
-        CRASH["Process crashes"]
-        RESTART["Live.background restarts"]
-        LOAD["PersistRiskAdapter.readPositionData"]
-        RESTORE["_activePositionsMap restored"]
-    end
-    
-    subgraph "Position State Files"
-        FILE1["./dump/data/risk/risk1.json"]
-        FILE2["./dump/data/risk/risk2.json"]
-        FILE3["./dump/data/risk/risk3.json"]
-    end
-    
-    subgraph "File Contents (RiskData)"
-        STRUCTURE["Record&lt;EntityId, IRiskActivePosition&gt;<br/><br/>EntityId = symbol:strategyName:riskName<br/><br/>IRiskActivePosition:<br/>- signal: ISignalRow<br/>- strategyName: string<br/>- exchangeName: string<br/>- openTimestamp: number"]
-    end
-    
-    CRASH --> RESTART
-    RESTART --> LOAD
-    LOAD --> FILE1
-    LOAD --> FILE2
-    LOAD --> FILE3
-    FILE1 --> STRUCTURE
-    LOAD --> RESTORE
-    
-    style FILE1 fill:#e1ffe1,stroke:#333,stroke-width:2px
-    style STRUCTURE fill:#f9f9f9,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\67_Risk_Management_3.svg)
 
 ### Atomic Persistence Pattern
 
@@ -325,31 +157,7 @@ This prevents partial writes during crashes.
 
 Risk rejections emit events to `riskSubject` for monitoring and alerting.
 
-```mermaid
-sequenceDiagram
-    participant Strategy as "ClientStrategy"
-    participant Risk as "ClientRisk"
-    participant Emit as "riskSubject"
-    participant Listener as "listenRisk callbacks"
-    
-    Strategy->>Risk: checkSignal(params)
-    
-    Risk->>Risk: Run validation chain
-    
-    alt Validation throws Error
-        Risk->>Risk: Catch error
-        Risk->>Risk: Extract error.message
-        Risk->>Risk: Call onRejected callback
-        Risk->>Emit: riskSubject.next(RiskContract)
-        Emit->>Listener: Notify all subscribers
-        Risk-->>Strategy: return false
-    else All validations pass
-        Risk->>Risk: Call onAllowed callback
-        Risk-->>Strategy: return true
-    end
-    
-    Note over Emit: RiskContract contains:<br/>- symbol<br/>- pendingSignal<br/>- strategyName<br/>- exchangeName<br/>- currentPrice<br/>- activePositionCount<br/>- comment (rejection reason)<br/>- timestamp
-```
+![Mermaid Diagram](./diagrams\67_Risk_Management_4.svg)
 
 ### RiskContract Structure
 
@@ -500,59 +308,7 @@ addRisk({
 
 Risk validation integrates with multiple strategy lifecycle points.
 
-```mermaid
-graph TB
-    subgraph "Strategy Registration"
-        REG["addStrategy({ riskName, riskList })"]
-        SCHEMA["StrategySchemaService"]
-    end
-    
-    subgraph "Signal Generation"
-        GET["getSignal() returns ISignalDto"]
-        VALIDATE["VALIDATE_SIGNAL_FN<br/>Type/price/logic checks"]
-        RISK_CHECK["Risk.checkSignal()<br/>Portfolio-level validation"]
-    end
-    
-    subgraph "Scheduled Signal Activation"
-        SCHED["_scheduledSignal waiting"]
-        PRICE["Price reaches priceOpen"]
-        RISK_RECHECK["Risk.checkSignal()<br/>Re-validate at activation"]
-    end
-    
-    subgraph "Position Management"
-        OPEN["Signal opens (pending/active)"]
-        ADD["Risk.addSignal()<br/>Track in _activePositionsMap"]
-        MONITOR["Monitor TP/SL/time"]
-        CLOSE["Signal closes"]
-        REMOVE["Risk.removeSignal()<br/>Remove from tracking"]
-    end
-    
-    REG --> SCHEMA
-    SCHEMA --> GET
-    
-    GET --> VALIDATE
-    VALIDATE --> RISK_CHECK
-    
-    RISK_CHECK --> SCHED
-    RISK_CHECK --> OPEN
-    
-    SCHED --> PRICE
-    PRICE --> RISK_RECHECK
-    
-    RISK_RECHECK --> OPEN
-    
-    OPEN --> ADD
-    ADD --> MONITOR
-    
-    MONITOR --> CLOSE
-    CLOSE --> REMOVE
-    
-    RISK_CHECK -.rejects.-> EMIT1["riskSubject.next()"]
-    RISK_RECHECK -.rejects.-> EMIT2["riskSubject.next()"]
-    
-    style RISK_CHECK fill:#ffe1e1,stroke:#333,stroke-width:2px
-    style RISK_RECHECK fill:#ffe1e1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\67_Risk_Management_5.svg)
 
 ### Multiple Risk Profiles (riskList)
 
@@ -602,29 +358,7 @@ These parameters are enforced by `VALIDATE_SIGNAL_FN` before risk validation:
 
 Validation errors are caught and handled gracefully:
 
-```mermaid
-sequenceDiagram
-    participant Strategy as "ClientStrategy"
-    participant Risk as "ClientRisk"
-    participant Validation as "Validation Function"
-    participant Emitter as "validationSubject"
-    
-    Strategy->>Risk: checkSignal(params)
-    Risk->>Validation: validate(payload)
-    
-    alt Validation throws Error
-        Validation-->>Risk: throw Error("reason")
-        Risk->>Risk: Catch error
-        Risk->>Emitter: validationSubject.next(error)
-        Risk->>Risk: Call onRejected callback
-        Risk->>Risk: Emit to riskSubject
-        Risk-->>Strategy: return false
-    else Validation succeeds
-        Validation-->>Risk: return void
-        Risk->>Risk: Call onAllowed callback
-        Risk-->>Strategy: return true
-    end
-```
+![Mermaid Diagram](./diagrams\67_Risk_Management_6.svg)
 
 ### Error Propagation
 

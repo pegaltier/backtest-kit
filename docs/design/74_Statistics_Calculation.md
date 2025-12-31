@@ -43,56 +43,7 @@ The framework calculates statistics at three levels:
 
 **Statistics Calculation Flow**
 
-```mermaid
-graph TB
-    subgraph "Signal Events"
-        CLOSED["IStrategyTickResultClosed<br/>action: closed<br/>pnl.pnlPercentage<br/>closeTimestamp<br/>signal.pendingAt"]
-    end
-    
-    subgraph "Storage Layer"
-        BT_STORAGE["BacktestMarkdownService<br/>ReportStorage<br/>_signalList[]"]
-        LIVE_STORAGE["LiveMarkdownService<br/>ReportStorage<br/>_eventList[]"]
-        HEAT_STORAGE["HeatMarkdownService<br/>HeatmapStorage<br/>symbolData Map"]
-    end
-    
-    subgraph "Calculation Layer"
-        BASIC["Basic Metrics<br/>winCount, lossCount<br/>avgPnl, totalPnl<br/>winRate"]
-        VARIANCE["Variance Calculation<br/>Σ(pnl - avgPnl)² / n"]
-        STDDEV["Standard Deviation<br/>√variance"]
-        SHARPE["Sharpe Ratio<br/>avgPnl / stdDev"]
-        ANNUALIZED["Annualized Sharpe<br/>sharpe × √365"]
-        CERTAINTY["Certainty Ratio<br/>avgWin / |avgLoss|"]
-        YEARLY["Expected Yearly Returns<br/>(365 / avgDurationDays) × avgPnl"]
-    end
-    
-    subgraph "Safe Math Layer"
-        CHECK["isUnsafe()<br/>NaN check<br/>Infinity check<br/>Type check"]
-        NULLIFY["Return null<br/>for unsafe values"]
-    end
-    
-    CLOSED --> BT_STORAGE
-    CLOSED --> LIVE_STORAGE
-    CLOSED --> HEAT_STORAGE
-    
-    BT_STORAGE --> BASIC
-    LIVE_STORAGE --> BASIC
-    HEAT_STORAGE --> BASIC
-    
-    BASIC --> VARIANCE
-    VARIANCE --> STDDEV
-    STDDEV --> SHARPE
-    SHARPE --> ANNUALIZED
-    BASIC --> CERTAINTY
-    BASIC --> YEARLY
-    
-    BASIC --> CHECK
-    SHARPE --> CHECK
-    ANNUALIZED --> CHECK
-    CERTAINTY --> CHECK
-    YEARLY --> CHECK
-    
-    CHECK --> NULLIFY
-```
+![Mermaid Diagram](./diagrams\74_Statistics_Calculation_0.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:1-571](), [src/lib/services/markdown/LiveMarkdownService.ts:1-778](), [src/lib/services/markdown/HeatMarkdownService.ts:1-625]()
 
@@ -543,34 +494,7 @@ All numeric statistics are validated using the `isUnsafe()` function to prevent 
 
 **Safe Math Validation Logic**
 
-```mermaid
-graph TB
-    INPUT["Calculated Metric<br/>(e.g., sharpeRatio)"]
-    
-    CHECK_NULL["Check: value === null?"]
-    CHECK_TYPE["Check: typeof value !== 'number'?"]
-    CHECK_NAN["Check: isNaN(value)?"]
-    CHECK_FINITE["Check: !isFinite(value)?"]
-    
-    UNSAFE["Return true<br/>(value is unsafe)"]
-    SAFE["Return false<br/>(value is safe)"]
-    
-    NULLIFY["Set metric to null<br/>in statistics object"]
-    USE["Keep calculated value<br/>in statistics object"]
-    
-    INPUT --> CHECK_NULL
-    CHECK_NULL -->|Yes| UNSAFE
-    CHECK_NULL -->|No| CHECK_TYPE
-    CHECK_TYPE -->|Yes| UNSAFE
-    CHECK_TYPE -->|No| CHECK_NAN
-    CHECK_NAN -->|Yes| UNSAFE
-    CHECK_NAN -->|No| CHECK_FINITE
-    CHECK_FINITE -->|Yes| UNSAFE
-    CHECK_FINITE -->|No| SAFE
-    
-    UNSAFE --> NULLIFY
-    SAFE --> USE
-```
+![Mermaid Diagram](./diagrams\74_Statistics_Calculation_1.svg)
 
 **Implementation:**
 
@@ -637,29 +561,7 @@ Different execution modes calculate statistics with mode-specific nuances:
 
 **Backtest vs Live Statistics Interfaces**
 
-```mermaid
-graph LR
-    subgraph "Backtest Mode"
-        BT_CLOSED["Closed Signals Only<br/>IStrategyTickResultClosed[]"]
-        BT_STATS["BacktestStatistics<br/>totalSignals<br/>winRate<br/>avgPnl<br/>sharpeRatio<br/>certaintyRatio<br/>expectedYearlyReturns"]
-    end
-    
-    subgraph "Live Mode"
-        LIVE_ALL["All Event Types<br/>idle, opened, active, closed"]
-        LIVE_CLOSED["Filter: action === 'closed'"]
-        LIVE_STATS["LiveStatistics<br/>totalEvents<br/>totalClosed<br/>Same metrics as Backtest"]
-    end
-    
-    subgraph "Portfolio (Heat)"
-        HEAT_MULTI["Multi-Symbol Data<br/>Map<string, IStrategyTickResultClosed[]>"]
-        HEAT_STATS["IHeatmapStatistics<br/>Per-symbol: IHeatmapRow[]<br/>Additional metrics:<br/>profitFactor<br/>expectancy<br/>maxDrawdown<br/>maxWinStreak/maxLossStreak"]
-    end
-    
-    BT_CLOSED --> BT_STATS
-    LIVE_ALL --> LIVE_CLOSED
-    LIVE_CLOSED --> LIVE_STATS
-    HEAT_MULTI --> HEAT_STATS
-```
+![Mermaid Diagram](./diagrams\74_Statistics_Calculation_2.svg)
 
 **Key Differences:**
 
@@ -684,56 +586,7 @@ graph LR
 
 **Service-to-Statistics Mapping**
 
-```mermaid
-graph TB
-    subgraph "Signal Events"
-        SIG_BT["signalBacktestEmitter<br/>IStrategyTickResult"]
-        SIG_LIVE["signalLiveEmitter<br/>IStrategyTickResult"]
-        SIG_ALL["signalEmitter<br/>(all modes)"]
-    end
-    
-    subgraph "BacktestMarkdownService"
-        BT_TICK["tick()<br/>Filter: action === 'closed'"]
-        BT_STORAGE["ReportStorage<br/>_signalList: IStrategyTickResultClosed[]"]
-        BT_GETDATA["getData()<br/>BacktestStatistics"]
-        BT_METRICS["Metrics:<br/>• winRate<br/>• avgPnl, totalPnl<br/>• stdDev<br/>• sharpeRatio<br/>• annualizedSharpeRatio<br/>• certaintyRatio<br/>• expectedYearlyReturns"]
-    end
-    
-    subgraph "LiveMarkdownService"
-        LIVE_TICK["tick()<br/>All actions"]
-        LIVE_STORAGE["ReportStorage<br/>_eventList: TickEvent[]"]
-        LIVE_GETDATA["getData()<br/>LiveStatistics"]
-        LIVE_FILTER["Filter closed events<br/>for calculation"]
-        LIVE_METRICS["Same metrics as<br/>BacktestMarkdownService"]
-    end
-    
-    subgraph "HeatMarkdownService"
-        HEAT_TICK["tick()<br/>Filter: action === 'closed'"]
-        HEAT_STORAGE["HeatmapStorage<br/>symbolData: Map<string, []>"]
-        HEAT_GETDATA["getData()<br/>IHeatmapStatistics"]
-        HEAT_SYMBOL["calculateSymbolStats()<br/>Per-symbol IHeatmapRow"]
-        HEAT_METRICS["Extended metrics:<br/>• profitFactor<br/>• expectancy<br/>• maxDrawdown<br/>• maxWinStreak<br/>• maxLossStreak<br/>+ all basic metrics"]
-        HEAT_PORTFOLIO["Portfolio aggregation<br/>portfolioTotalPnl<br/>portfolioSharpeRatio"]
-    end
-    
-    SIG_BT --> BT_TICK
-    BT_TICK --> BT_STORAGE
-    BT_STORAGE --> BT_GETDATA
-    BT_GETDATA --> BT_METRICS
-    
-    SIG_LIVE --> LIVE_TICK
-    LIVE_TICK --> LIVE_STORAGE
-    LIVE_STORAGE --> LIVE_GETDATA
-    LIVE_GETDATA --> LIVE_FILTER
-    LIVE_FILTER --> LIVE_METRICS
-    
-    SIG_ALL --> HEAT_TICK
-    HEAT_TICK --> HEAT_STORAGE
-    HEAT_STORAGE --> HEAT_GETDATA
-    HEAT_GETDATA --> HEAT_SYMBOL
-    HEAT_SYMBOL --> HEAT_METRICS
-    HEAT_METRICS --> HEAT_PORTFOLIO
-```
+![Mermaid Diagram](./diagrams\74_Statistics_Calculation_3.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:428-439](), [src/lib/services/markdown/LiveMarkdownService.ts:630-646](), [src/lib/services/markdown/HeatMarkdownService.ts:507-524]()
 

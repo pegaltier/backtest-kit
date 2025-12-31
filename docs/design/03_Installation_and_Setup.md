@@ -76,31 +76,7 @@ The peer dependency requirement is declared in [package.json:71-73]() and inheri
 
 The following packages are automatically installed as dependencies:
 
-```mermaid
-graph TB
-    BT["backtest-kit@1.5.26"]
-    DI["di-kit@^1.0.18"]
-    DS["di-scoped@^1.0.20"]
-    FK["functools-kit@^1.0.94"]
-    GM["get-moment-stamp@^1.1.1"]
-    
-    BT --> DI
-    BT --> DS
-    BT --> FK
-    BT --> GM
-    
-    note1["Dependency injection container<br/>Singleton management"]
-    note2["Scoped DI with AsyncLocalStorage<br/>Context propagation"]
-    note3["Utility functions<br/>trycatch, memoize, queued"]
-    note4["Timestamp formatting<br/>Human-readable dates"]
-    
-    DI -.provides.-> note1
-    DS -.provides.-> note2
-    FK -.provides.-> note3
-    GM -.provides.-> note4
-    
-    style BT fill:#f9f9f9,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\03_Installation_and_Setup_0.svg)
 
 | Package | Purpose | Used By |
 |---------|---------|---------|
@@ -171,35 +147,7 @@ npm install dotenv-cli
 
 `backtest-kit` supports both CommonJS and ES Modules:
 
-```mermaid
-graph LR
-    subgraph "Import Resolution"
-        REQ["require('backtest-kit')"]
-        IMP["import { ... } from 'backtest-kit'"]
-    end
-    
-    subgraph "Build Artifacts"
-        CJS["build/index.cjs<br/>CommonJS bundle"]
-        ESM["build/index.mjs<br/>ES Module bundle"]
-        DTS["types.d.ts<br/>TypeScript definitions"]
-    end
-    
-    subgraph "Source"
-        SRC["src/index.ts<br/>TypeScript source"]
-    end
-    
-    REQ --> CJS
-    IMP --> ESM
-    CJS -.types.-> DTS
-    ESM -.types.-> DTS
-    
-    SRC --> CJS
-    SRC --> ESM
-    SRC --> DTS
-    
-    style CJS fill:#f9f9f9,stroke:#333,stroke-width:1px
-    style ESM fill:#f9f9f9,stroke:#333,stroke-width:1px
-```
+![Mermaid Diagram](./diagrams\03_Installation_and_Setup_1.svg)
 
 ### CommonJS (require)
 
@@ -468,38 +416,7 @@ This validates that [types.d.ts]() is correctly resolved by the TypeScript compi
 
 ### Complete Public API Import Map
 
-```mermaid
-graph TB
-    subgraph "backtest-kit Public API"
-        CONFIG["Configuration Functions<br/>setLogger, setConfig, setColumns<br/>getConfig, getColumns"]
-        
-        REGISTER["Registration Functions<br/>addStrategy, addExchange<br/>addFrame, addRisk, addSizing<br/>addWalker, addOptimizer"]
-        
-        UTILS["Execution Classes<br/>Backtest, Live, Walker<br/>Partial, Schedule, Risk"]
-        
-        LISTENERS["Event Listeners<br/>listenSignal*, listenDone*<br/>listenError, listenProgress*<br/>listenRisk, listenPartial*"]
-        
-        HELPERS["Helper Functions<br/>getCandles, dumpSignal<br/>formatPrice, formatQuantity"]
-        
-        CONSTANTS["Constants<br/>Constant.TP_LEVEL1/2/3<br/>Constant.SL_LEVEL1/2"]
-        
-        PERSIST["Persistence Utilities<br/>PersistSignalUtils<br/>PersistRiskUtils<br/>PersistScheduleUtils<br/>PersistPartialUtils"]
-    end
-    
-    subgraph "Entry Point"
-        INDEX["src/index.ts"]
-    end
-    
-    INDEX --> CONFIG
-    INDEX --> REGISTER
-    INDEX --> UTILS
-    INDEX --> LISTENERS
-    INDEX --> HELPERS
-    INDEX --> CONSTANTS
-    INDEX --> PERSIST
-    
-    style INDEX fill:#f9f9f9,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\03_Installation_and_Setup_2.svg)
 
 **Typical Import Statement:**
 

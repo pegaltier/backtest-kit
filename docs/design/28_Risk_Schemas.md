@@ -51,66 +51,7 @@ Risk schemas are registered via `addRisk()` and referenced by strategies via the
 
 ### IRiskSchema Interface
 
-```mermaid
-classDiagram
-    class IRiskSchema {
-        +RiskName riskName
-        +string? note
-        +"(IRiskValidation|IRiskValidationFn)[]" validations
-        +"Partial&lt;IRiskCallbacks&gt;?" callbacks
-    }
-
-    class IRiskValidation {
-        +IRiskValidationFn validate
-        +string? note
-    }
-
-    class IRiskValidationFn {
-        <<interface>>
-        +"(payload: IRiskValidationPayload): void|Promise&lt;void&gt;" getSignal
-    }
-    
-    class IRiskCallbacks {
-        +onRejected(symbol: string, params: IRiskCheckArgs): void
-        +onAllowed(symbol: string, params: IRiskCheckArgs): void
-    }
-    
-    class IRiskValidationPayload {
-        +string symbol
-        +ISignalDto pendingSignal
-        +StrategyName strategyName
-        +ExchangeName exchangeName
-        +number currentPrice
-        +number timestamp
-        +number activePositionCount
-        +IRiskActivePosition[] activePositions
-    }
-    
-    class IRiskCheckArgs {
-        +string symbol
-        +ISignalDto pendingSignal
-        +StrategyName strategyName
-        +ExchangeName exchangeName
-        +number currentPrice
-        +number timestamp
-    }
-    
-    class IRiskActivePosition {
-        +ISignalRow signal
-        +string strategyName
-        +string exchangeName
-        +number openTimestamp
-    }
-    
-    IRiskSchema --> IRiskValidation
-    IRiskSchema --> IRiskValidationFn
-    IRiskSchema --> IRiskCallbacks
-    IRiskValidation --> IRiskValidationFn
-    IRiskValidationFn --> IRiskValidationPayload
-    IRiskValidationPayload --|> IRiskCheckArgs
-    IRiskCallbacks --> IRiskCheckArgs
-    IRiskValidationPayload --> IRiskActivePosition
-```
+![Mermaid Diagram](./diagrams\28_Risk_Schemas_0.svg)
 
 **Diagram: Risk Schema Type Hierarchy**
 
@@ -197,52 +138,7 @@ Validation functions receive a payload with all risk check context:
 
 ### Validation Execution Flow
 
-```mermaid
-flowchart TB
-    Start["ClientStrategy.tick()"]
-    CheckRisk["riskGlobalService.checkSignal()"]
-    GetClient["RiskConnectionService.getRisk()"]
-    InitPos["Initialize _activePositions<br/>(if POSITION_NEED_FETCH)"]
-    BuildPayload["Build IRiskValidationPayload<br/>(params + activePositionCount + activePositions)"]
-    
-    LoopStart{"More<br/>validations?"}
-    GetValidation["Get next validation<br/>(function or object.validate)"]
-    WrapValidation["DO_VALIDATION_FN wrapper"]
-    Execute["Execute validation function"]
-    
-    ThrowError{"Throws<br/>error?"}
-    MarkInvalid["isValid = false"]
-    Continue["Continue to next"]
-    
-    AllValid{"isValid<br/>true?"}
-    CallRejected["callbacks.onRejected()"]
-    ReturnFalse["return false"]
-    CallAllowed["callbacks.onAllowed()"]
-    ReturnTrue["return true"]
-    
-    Start --> CheckRisk
-    CheckRisk --> GetClient
-    GetClient --> InitPos
-    InitPos --> BuildPayload
-    BuildPayload --> LoopStart
-    
-    LoopStart -->|Yes| GetValidation
-    GetValidation --> WrapValidation
-    WrapValidation --> Execute
-    
-    Execute --> ThrowError
-    ThrowError -->|Yes| MarkInvalid
-    ThrowError -->|No| Continue
-    
-    MarkInvalid --> AllValid
-    Continue --> LoopStart
-    
-    LoopStart -->|No| AllValid
-    AllValid -->|No| CallRejected
-    CallRejected --> ReturnFalse
-    AllValid -->|Yes| CallAllowed
-    CallAllowed --> ReturnTrue
-```
+![Mermaid Diagram](./diagrams\28_Risk_Schemas_1.svg)
 
 **Diagram: Risk Validation Execution Flow**
 
@@ -286,29 +182,7 @@ interface IRiskActivePosition {
 
 ### Position Lifecycle
 
-```mermaid
-stateDiagram-v2
-    [*] --> Idle: ClientRisk created
-    
-    Idle --> Initialized: waitForInit() called<br/>Load from persistence
-    
-    Initialized --> CheckingSignal: checkSignal() called
-    CheckingSignal --> ValidationRunning: Build payload with<br/>activePositionCount
-    ValidationRunning --> Rejected: Validation throws error
-    ValidationRunning --> Allowed: All validations pass
-    
-    Rejected --> CheckingSignal: New signal check
-    Allowed --> PositionAdded: addSignal() called<br/>by StrategyConnectionService
-    
-    PositionAdded --> Persisted: _updatePositions()<br/>atomic write to disk
-    Persisted --> Active: Position monitored
-    
-    Active --> CheckingSignal: New signal check<br/>(position visible in payload)
-    Active --> PositionRemoved: removeSignal() called<br/>by StrategyConnectionService
-    
-    PositionRemoved --> Persisted2: _updatePositions()<br/>atomic write to disk
-    Persisted2 --> CheckingSignal: Ready for new signals
-```
+![Mermaid Diagram](./diagrams\28_Risk_Schemas_2.svg)
 
 **Diagram: Position Tracking Lifecycle**
 
@@ -334,27 +208,7 @@ Position tracking operations:
 
 Each `riskName` maintains independent position tracking:
 
-```mermaid
-graph TB
-    subgraph "Risk Profile: conservative"
-        ConservativeMap["Map&lt;string, IRiskActivePosition&gt;<br/>_activePositions"]
-        ConservativePos1["'strategy1:BTCUSDT'"]
-        ConservativePos2["'strategy2:ETHUSDT'"]
-        ConservativeMap --> ConservativePos1
-        ConservativeMap --> ConservativePos2
-    end
-    
-    subgraph "Risk Profile: aggressive"
-        AggressiveMap["Map&lt;string, IRiskActivePosition&gt;<br/>_activePositions"]
-        AggressivePos1["'strategy3:BTCUSDT'"]
-        AggressiveMap --> AggressivePos1
-    end
-    
-    RiskConnectionService["RiskConnectionService.getRisk()"]
-    
-    RiskConnectionService -->|"memoize('conservative')"| ConservativeMap
-    RiskConnectionService -->|"memoize('aggressive')"| AggressiveMap
-```
+![Mermaid Diagram](./diagrams\28_Risk_Schemas_3.svg)
 
 **Diagram: Risk Profile Isolation via Memoization**
 
@@ -415,22 +269,7 @@ addRisk({
 
 ### Registration via addRisk()
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant addRisk
-    participant RiskValidationService
-    participant RiskSchemaService
-    
-    User->>addRisk: addRisk(schema)
-    addRisk->>RiskValidationService: addRisk(riskName, schema)
-    RiskValidationService->>RiskValidationService: Check for duplicate riskName
-    RiskValidationService-->>addRisk: Validation complete
-    addRisk->>RiskSchemaService: register(riskName, schema)
-    RiskSchemaService->>RiskSchemaService: Store in ToolRegistry
-    RiskSchemaService-->>addRisk: Registration complete
-    addRisk-->>User: Risk profile registered
-```
+![Mermaid Diagram](./diagrams\28_Risk_Schemas_4.svg)
 
 **Diagram: Risk Schema Registration Flow**
 
@@ -522,22 +361,7 @@ Multiple strategies can share the same risk profile, enabling cross-strategy pos
 
 Risk position data is persisted to disk in live mode to enable crash recovery:
 
-```mermaid
-flowchart LR
-    ClientRisk["ClientRisk"]
-    UpdatePos["_updatePositions()"]
-    PersistRiskAdapter["PersistRiskAdapter"]
-    FileSystem["risk-{riskName}.json"]
-    
-    ClientRisk -->|"addSignal()"| UpdatePos
-    ClientRisk -->|"removeSignal()"| UpdatePos
-    UpdatePos -->|"writePositionData()"| PersistRiskAdapter
-    PersistRiskAdapter -->|"Atomic write"| FileSystem
-    
-    FileSystem -.->|"On restart"| PersistRiskAdapter
-    PersistRiskAdapter -.->|"readPositionData()"| ClientRisk
-    ClientRisk -.->|"waitForInit()"| ClientRisk
-```
+![Mermaid Diagram](./diagrams\28_Risk_Schemas_5.svg)
 
 **Diagram: Risk Position Persistence Flow**
 
@@ -585,36 +409,7 @@ This format allows direct conversion to/from the internal `Map<string, IRiskActi
 
 ## Service Architecture
 
-```mermaid
-graph TB
-    addRisk["addRisk()<br/>(Public API)"]
-    
-    RiskValidationService["RiskValidationService<br/>addRisk(), validate()"]
-    RiskSchemaService["RiskSchemaService<br/>ToolRegistry storage"]
-    
-    RiskGlobalService["RiskGlobalService<br/>checkSignal(), addSignal(),<br/>removeSignal()"]
-    
-    RiskConnectionService["RiskConnectionService<br/>getRisk() memoization"]
-    
-    ClientRisk["ClientRisk<br/>_activePositions Map<br/>checkSignal() logic"]
-    
-    PersistRiskAdapter["PersistRiskAdapter<br/>Atomic file writes"]
-    
-    addRisk --> RiskValidationService
-    addRisk --> RiskSchemaService
-    
-    RiskGlobalService --> RiskValidationService
-    RiskGlobalService --> RiskConnectionService
-    
-    RiskConnectionService --> RiskSchemaService
-    RiskConnectionService --> ClientRisk
-    
-    ClientRisk --> PersistRiskAdapter
-    
-    style addRisk fill:#e1f5ff
-    style ClientRisk fill:#f0e1ff
-    style PersistRiskAdapter fill:#e1ffe1
-```
+![Mermaid Diagram](./diagrams\28_Risk_Schemas_6.svg)
 
 **Diagram: Risk Management Service Architecture**
 

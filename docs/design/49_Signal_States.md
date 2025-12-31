@@ -33,60 +33,7 @@ For information about the complete signal lifecycle flow and state transitions, 
 
 The signal state machine consists of six mutually exclusive states, represented as a discriminated union with the `action` field as the discriminator:
 
-```mermaid
-stateDiagram-v2
-    [*] --> idle: "Strategy initialized"
-    
-    idle --> scheduled: "getSignal() returns<br/>ISignalDto with priceOpen"
-    idle --> opened: "getSignal() returns<br/>ISignalDto without priceOpen"
-    
-    scheduled --> opened: "currentPrice reaches priceOpen<br/>(limit order fills)"
-    scheduled --> cancelled: "StopLoss hit OR timeout<br/>(before priceOpen reached)"
-    scheduled --> idle: "Risk validation fails<br/>at activation attempt"
-    
-    opened --> active: "Position monitoring begins<br/>(same tick as opened)"
-    
-    active --> closed: "TP reached OR<br/>SL reached OR<br/>time_expired"
-    
-    closed --> idle: "Signal complete<br/>Risk.removeSignal() called"
-    cancelled --> idle: "Signal discarded<br/>No position opened"
-    
-    note right of idle
-        IStrategyTickResultIdle
-        action: "idle"
-        signal: null
-    end note
-    
-    note right of scheduled
-        IStrategyTickResultScheduled
-        action: "scheduled"
-        signal._isScheduled: true
-    end note
-    
-    note right of opened
-        IStrategyTickResultOpened
-        action: "opened"
-        First tick after position opens
-    end note
-    
-    note right of active
-        IStrategyTickResultActive
-        action: "active"
-        Monitoring TP/SL/time
-    end note
-    
-    note right of closed
-        IStrategyTickResultClosed
-        action: "closed"
-        closeReason: StrategyCloseReason
-    end note
-    
-    note right of cancelled
-        IStrategyTickResultCancelled
-        action: "cancelled"
-        Scheduled signal never activated
-    end note
-```
+![Mermaid Diagram](./diagrams\49_Signal_States_0.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:1-1500](), [types.d.ts:770-895]()
 
@@ -217,23 +164,7 @@ The scheduled state can transition to:
 
 ### Activation Logic
 
-```mermaid
-flowchart TD
-    A["Scheduled signal<br/>in tick loop"] --> B{"currentPrice reached<br/>priceOpen?"}
-    B -->|No| C{"StopLoss hit?"}
-    C -->|Yes| D["Transition to<br/>cancelled"]
-    C -->|No| E{"Timeout exceeded<br/>(120 min)?"}
-    E -->|Yes| D
-    E -->|No| F["Remain scheduled<br/>(wait next tick)"]
-    
-    B -->|Yes| G{"Risk.checkSignal()<br/>passes?"}
-    G -->|No| H["Transition to idle<br/>(validation failed)"]
-    G -->|Yes| I["Transition to opened<br/>(position activated)"]
-    
-    style I fill:#90EE90
-    style D fill:#FFB6C1
-    style H fill:#FFB6C1
-```
+![Mermaid Diagram](./diagrams\49_Signal_States_1.svg)
 
 ### Price Activation Conditions
 
@@ -373,20 +304,7 @@ Only one of `percentTp` or `percentSl` is non-zero at any given time, depending 
 
 ### Exit Conditions Monitoring
 
-```mermaid
-flowchart TD
-    A["Active signal<br/>in tick loop"] --> B{"Take Profit<br/>reached?"}
-    B -->|Yes| C["Transition to closed<br/>closeReason: take_profit"]
-    B -->|No| D{"Stop Loss<br/>reached?"}
-    D -->|Yes| E["Transition to closed<br/>closeReason: stop_loss"]
-    D -->|No| F{"Time expired<br/>(minuteEstimatedTime)?"}
-    F -->|Yes| G["Transition to closed<br/>closeReason: time_expired"]
-    F -->|No| H["Remain active<br/>(continue monitoring)"]
-    
-    style C fill:#90EE90
-    style E fill:#FFB6C1
-    style G fill:#FFD700
-```
+![Mermaid Diagram](./diagrams\49_Signal_States_2.svg)
 
 ### Partial Profit/Loss Tracking
 
@@ -632,57 +550,7 @@ Cancelled state creation occurs in:
 
 The following diagram maps signal states to their implementation in `ClientStrategy`:
 
-```mermaid
-flowchart TD
-    subgraph "ClientStrategy Methods"
-        TICK["ClientStrategy.tick()<br/>[src/client/ClientStrategy.ts:820-1229]"]
-        GET_SIGNAL["GET_SIGNAL_FN()<br/>[src/client/ClientStrategy.ts:332-476]"]
-        WAIT_INIT["WAIT_FOR_INIT_FN()<br/>[src/client/ClientStrategy.ts:491-552]"]
-        CHECK_TIMEOUT["CHECK_SCHEDULED_SIGNAL_TIMEOUT_FN()<br/>[src/client/ClientStrategy.ts:554-608]"]
-        CHECK_ACTIVATION["CHECK_SCHEDULED_SIGNAL_PRICE_ACTIVATION_FN()<br/>[src/client/ClientStrategy.ts:610-644]"]
-        CANCEL_SL["CANCEL_SCHEDULED_SIGNAL_BY_STOPLOSS_FN()<br/>[src/client/ClientStrategy.ts:646-679]"]
-        ACTIVATE["ACTIVATE_SCHEDULED_SIGNAL_FN()<br/>[src/client/ClientStrategy.ts:681-774]"]
-        OPEN_SCHEDULED["OPEN_NEW_SCHEDULED_SIGNAL_FN()<br/>[src/client/ClientStrategy.ts:803-860]"]
-        OPEN_IMMEDIATE["OPEN_NEW_IMMEDIATE_SIGNAL_FN()<br/>[src/client/ClientStrategy.ts:915-1000]"]
-        MONITOR_ACTIVE["MONITOR_ACTIVE_SIGNAL_FN()<br/>[src/client/ClientStrategy.ts:1002-1085]"]
-        CLOSE["CLOSE_SIGNAL_FN()<br/>[src/client/ClientStrategy.ts:1087-1229]"]
-    end
-    
-    subgraph "State Results"
-        IDLE["IStrategyTickResultIdle"]
-        SCHEDULED["IStrategyTickResultScheduled"]
-        OPENED["IStrategyTickResultOpened"]
-        ACTIVE["IStrategyTickResultActive"]
-        CLOSED["IStrategyTickResultClosed"]
-        CANCELLED["IStrategyTickResultCancelled"]
-    end
-    
-    TICK --> GET_SIGNAL
-    GET_SIGNAL -->|"No signal"| IDLE
-    GET_SIGNAL -->|"With priceOpen"| OPEN_SCHEDULED
-    GET_SIGNAL -->|"Without priceOpen"| OPEN_IMMEDIATE
-    
-    OPEN_SCHEDULED --> SCHEDULED
-    
-    TICK --> CHECK_TIMEOUT
-    CHECK_TIMEOUT -->|"Timeout"| CANCELLED
-    
-    TICK --> CHECK_ACTIVATION
-    CHECK_ACTIVATION -->|"SL hit"| CANCEL_SL
-    CANCEL_SL --> IDLE
-    CHECK_ACTIVATION -->|"Price reached"| ACTIVATE
-    ACTIVATE --> OPENED
-    
-    OPEN_IMMEDIATE --> OPENED
-    
-    TICK --> MONITOR_ACTIVE
-    MONITOR_ACTIVE -->|"TP/SL/Time hit"| CLOSE
-    MONITOR_ACTIVE -->|"Still monitoring"| ACTIVE
-    
-    CLOSE --> CLOSED
-    
-    WAIT_INIT -.->|"Restore state<br/>in live mode"| TICK
-```
+![Mermaid Diagram](./diagrams\49_Signal_States_3.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:1-1500]()
 
@@ -784,33 +652,7 @@ In live trading mode (when `execution.context.backtest === false`), signal state
 
 ### Persistence Workflow
 
-```mermaid
-sequenceDiagram
-    participant CS as "ClientStrategy"
-    participant PSA as "PersistSignalAdapter"
-    participant PSC as "PersistScheduleAdapter"
-    participant FS as "File System"
-    
-    Note over CS: Signal transitions to scheduled
-    CS->>PSC: writeScheduleData(signal)
-    PSC->>FS: Write to ./dump/data/schedule/
-    
-    Note over CS: Scheduled signal activates → opened
-    CS->>PSC: writeScheduleData(null)
-    PSC->>FS: Delete schedule file
-    CS->>PSA: writeSignalData(signal)
-    PSA->>FS: Write to ./dump/data/signal/
-    
-    Note over CS: Process crashes
-    Note over CS: Process restarts
-    CS->>PSA: readSignalData()
-    PSA->>FS: Read from ./dump/data/signal/
-    PSA-->>CS: Restored signal (active state)
-    
-    Note over CS: Signal closes
-    CS->>PSA: writeSignalData(null)
-    PSA->>FS: Delete signal file
-```
+![Mermaid Diagram](./diagrams\49_Signal_States_4.svg)
 
 For detailed information on persistence mechanics, see [Signal Persistence](#8.4) and [Crash Recovery](#10.2).
 

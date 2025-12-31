@@ -64,70 +64,7 @@ Sources: [src/classes/Persist.ts:1-100](), [src/classes/Persist.ts:504-622](), [
 
 **Multi-Domain Persistence System**
 
-```mermaid
-graph TB
-    subgraph "Client Layer"
-        CS[ClientStrategy]
-        CR[ClientRisk]
-        CP[ClientPartial]
-    end
-    
-    subgraph "Adapter Singletons"
-        PSA[PersistSignalAdapter]
-        PRA[PersistRiskAdapter]
-        PSCA[PersistScheduleAdapter]
-        PPA[PersistPartialAdapter]
-    end
-    
-    subgraph "Utility Classes"
-        PSU[PersistSignalUtils]
-        PRU[PersistRiskUtils]
-        PSCU[PersistScheduleUtils]
-        PPU[PersistPartialUtils]
-    end
-    
-    subgraph "Base Implementation"
-        PB[PersistBase]
-        ATOMIC[writeFileAtomic]
-        VALIDATE[Auto-validation on init]
-    end
-    
-    subgraph "File System"
-        FS_SIGNAL["./dump/data/signal/<br/>{symbol}_{strategyName}/<br/>{symbol}.json"]
-        FS_RISK["./dump/data/risk/<br/>{riskName}/<br/>positions.json"]
-        FS_SCHEDULE["./dump/data/schedule/<br/>{symbol}_{strategyName}/<br/>{symbol}.json"]
-        FS_PARTIAL["./dump/data/partial/<br/>{symbol}_{strategyName}/<br/>levels.json"]
-    end
-    
-    CS -->|readSignalData<br/>writeSignalData| PSA
-    CS -->|readScheduleData<br/>writeScheduleData| PSCA
-    CR -->|readPositionData<br/>writePositionData| PRA
-    CP -->|readPartialData<br/>writePartialData| PPA
-    
-    PSA -.singleton instance.-> PSU
-    PRA -.singleton instance.-> PRU
-    PSCA -.singleton instance.-> PSCU
-    PPA -.singleton instance.-> PPU
-    
-    PSU --> PB
-    PRU --> PB
-    PSCU --> PB
-    PPU --> PB
-    
-    PB --> ATOMIC
-    PB --> VALIDATE
-    
-    PSU --> FS_SIGNAL
-    PRU --> FS_RISK
-    PSCU --> FS_SCHEDULE
-    PPU --> FS_PARTIAL
-    
-    style PSA fill:#e1f5ff,stroke:#333,stroke-width:2px
-    style PRA fill:#e1f5ff,stroke:#333,stroke-width:2px
-    style PSCA fill:#e1f5ff,stroke:#333,stroke-width:2px
-    style PPA fill:#e1f5ff,stroke:#333,stroke-width:2px
-    style ATOMIC fill:#e1ffe1,stroke:#333,stroke-width:3px
-```
+![Mermaid Diagram](./diagrams\21_Persistence_Utilities_0.svg)
 
 **Diagram 1: Multi-Domain Persistence Architecture**
 
@@ -205,38 +142,7 @@ Sources: [src/classes/Persist.ts:179-501]()
 
 **Crash-Safe File Writes Using Temp → Rename**
 
-```mermaid
-graph LR
-    subgraph "Write Sequence"
-        START[writeValue called]
-        SERIALIZE[JSON.stringify entity]
-        TEMP["Write to<br/>file.json.tmp"]
-        FSYNC[fsync to disk]
-        RENAME["Atomic rename<br/>tmp to final"]
-        SUCCESS[Write complete]
-    end
-
-    subgraph "Guarantees"
-        G1[No partial writes]
-        G2[All-or-nothing]
-        G3["Old state preserved<br/>on crash"]
-    end
-
-    START --> SERIALIZE
-    SERIALIZE --> TEMP
-    TEMP --> FSYNC
-    FSYNC --> RENAME
-    RENAME --> SUCCESS
-
-    SUCCESS --> G1
-    SUCCESS --> G2
-    SUCCESS --> G3
-
-    style RENAME fill:#e1ffe1,stroke:#333,stroke-width:3px
-    style G1 fill:#fff4e1,stroke:#333,stroke-width:2px
-    style G2 fill:#fff4e1,stroke:#333,stroke-width:2px
-    style G3 fill:#fff4e1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\21_Persistence_Utilities_1.svg)
 
 **Diagram 2: Atomic Write Sequence Ensuring Crash Safety**
 
@@ -267,39 +173,7 @@ Sources: [src/classes/Persist.ts:295-314](), [src/utils/writeFileAtomic.ts]()
 
 **Auto-Cleanup of Corrupted Files on Initialization**
 
-```mermaid
-graph TB
-    subgraph "Initialization Flow"
-        INIT[waitForInit called]
-        MKDIR[Create directory<br/>recursive]
-        ITERATE[Iterate all<br/>.json files]
-        VALIDATE[Try JSON.parse<br/>for each file]
-    end
-    
-    subgraph "Validation Outcomes"
-        VALID[Valid JSON<br/>Keep file]
-        INVALID[Invalid/Corrupted<br/>Delete file]
-        RETRY[Retry deletion<br/>5 attempts]
-    end
-    
-    subgraph "Result"
-        CLEAN[Clean state<br/>Only valid files]
-    end
-    
-    INIT --> MKDIR
-    MKDIR --> ITERATE
-    ITERATE --> VALIDATE
-    
-    VALIDATE -->|Parse success| VALID
-    VALIDATE -->|Parse failure| INVALID
-    INVALID --> RETRY
-    
-    VALID --> CLEAN
-    RETRY --> CLEAN
-    
-    style VALIDATE fill:#fff4e1,stroke:#333,stroke-width:2px
-    style CLEAN fill:#e1ffe1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\21_Persistence_Utilities_2.svg)
 
 **Diagram 3: Self-Healing Validation During Initialization**
 
@@ -874,66 +748,7 @@ Sources: [src/classes/Persist.ts:922-928]()
 
 **Live Trading Restart Sequence**
 
-```mermaid
-graph TB
-    subgraph "Before Crash"
-        LIVE1[Live.background running]
-        TICK1[Strategy.tick called]
-        STATE1[Signal state change]
-        PERSIST1[Persistence writes]
-    end
-    
-    subgraph "Crash Event"
-        CRASH[Process crashes<br/>SIGKILL / OOM / Power loss]
-    end
-    
-    subgraph "After Restart"
-        RESTART[Live.background called]
-        INIT[ClientStrategy.waitForInit]
-        LOAD_SIGNAL[PersistSignalAdapter<br/>readSignalData]
-        LOAD_SCHEDULE[PersistScheduleAdapter<br/>readScheduleData]
-        LOAD_PARTIAL[PersistPartialAdapter<br/>readPartialData]
-    end
-    
-    subgraph "Risk Recovery"
-        INIT_RISK[ClientRisk.waitForInit]
-        LOAD_RISK[PersistRiskAdapter<br/>readPositionData]
-        RESTORE_MAP[Restore _activePositionsMap]
-    end
-    
-    subgraph "Resume Trading"
-        TICK2[Strategy.tick continues]
-        MONITOR[Monitor active signals<br/>TP/SL/time checks]
-        NEW_PERSIST[Persist new state changes]
-    end
-    
-    LIVE1 --> TICK1
-    TICK1 --> STATE1
-    STATE1 --> PERSIST1
-    PERSIST1 -.crash occurs.-> CRASH
-    
-    CRASH --> RESTART
-    RESTART --> INIT
-    INIT --> LOAD_SIGNAL
-    INIT --> LOAD_SCHEDULE
-    INIT --> LOAD_PARTIAL
-    
-    INIT --> INIT_RISK
-    INIT_RISK --> LOAD_RISK
-    LOAD_RISK --> RESTORE_MAP
-    
-    LOAD_SIGNAL --> TICK2
-    LOAD_SCHEDULE --> TICK2
-    LOAD_PARTIAL --> TICK2
-    RESTORE_MAP --> TICK2
-    
-    TICK2 --> MONITOR
-    MONITOR --> NEW_PERSIST
-    
-    style CRASH fill:#ffe1e1,stroke:#333,stroke-width:2px
-    style PERSIST1 fill:#e1ffe1,stroke:#333,stroke-width:2px
-    style NEW_PERSIST fill:#e1ffe1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\21_Persistence_Utilities_3.svg)
 
 **Diagram 4: Complete Crash Recovery Flow with Multi-Domain State Restoration**
 
@@ -1064,52 +879,7 @@ Sources: [src/lib/services/markdown/ScheduleMarkdownService.ts:543-575]()
 
 The Schedule API automatically subscribes to signal events and filters for scheduled lifecycle events:
 
-```mermaid
-graph LR
-    subgraph "Signal Generation"
-        GS["getSignal()<br/>(with priceOpen)"]
-        CREATE[Create Scheduled Signal]
-    end
-    
-    subgraph "Monitoring Phase"
-        WAIT[Monitor Price]
-        CHECK["Check:<br/>priceOpen reached?<br/>SL hit?<br/>Timeout?"]
-    end
-    
-    subgraph "Activation or Cancellation"
-        OPEN[Opened Event]
-        CANCEL[Cancelled Event]
-    end
-    
-    subgraph "Event Emission"
-        SE[signalEmitter]
-    end
-    
-    subgraph "Markdown Service"
-        SMS[ScheduleMarkdownService]
-        STORAGE[ReportStorage]
-    end
-    
-    subgraph "Public API"
-        API["Schedule.getData()<br/>Schedule.getReport()<br/>Schedule.dump()"]
-    end
-    
-    GS --> CREATE
-    CREATE -->|action=scheduled| SE
-    CREATE --> WAIT
-    WAIT --> CHECK
-    CHECK -->|price reached| OPEN
-    CHECK -->|SL/timeout| CANCEL
-    OPEN -->|action=opened| SE
-    CANCEL -->|action=cancelled| SE
-    
-    SE --> SMS
-    SMS --> STORAGE
-    STORAGE --> API
-    
-    style SE fill:#f9f9f9
-    style API fill:#e1f5ff
-```
+![Mermaid Diagram](./diagrams\21_Persistence_Utilities_4.svg)
 
 **Diagram: Schedule Event Data Flow from Signal Scheduling to Public API**
 
@@ -1140,54 +910,7 @@ Sources: [src/lib/services/markdown/PartialMarkdownService.ts:1-520](), [src/lib
 
 Both APIs are implemented as markdown services that aggregate event data into queryable statistics:
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        PARTIAL_API["Partial<br/>getData/getReport/dump"]
-        SCHEDULE_API["Schedule<br/>getData/getReport/dump"]
-    end
-    
-    subgraph "Markdown Services"
-        PMS[PartialMarkdownService]
-        SMS[ScheduleMarkdownService]
-    end
-    
-    subgraph "Storage Layer"
-        P_STORAGE["ReportStorage<br/>(memoized per symbol:strategy)"]
-        S_STORAGE["ReportStorage<br/>(memoized per symbol:strategy)"]
-    end
-    
-    subgraph "Event Subjects"
-        PPE[partialProfitSubject]
-        PLE[partialLossSubject]
-        SE[signalEmitter]
-    end
-    
-    subgraph "Strategy Execution"
-        CS[ClientStrategy]
-        MONITOR["tick() / backtest()"]
-    end
-    
-    PARTIAL_API --> PMS
-    SCHEDULE_API --> SMS
-    
-    PMS --> P_STORAGE
-    SMS --> S_STORAGE
-    
-    PPE --> PMS
-    PLE --> PMS
-    SE --> SMS
-    
-    MONITOR --> PPE
-    MONITOR --> PLE
-    MONITOR --> SE
-    CS --> MONITOR
-    
-    style PARTIAL_API fill:#e1f5ff
-    style SCHEDULE_API fill:#e1f5ff
-    style P_STORAGE fill:#fff4e1
-    style S_STORAGE fill:#fff4e1
-```
+![Mermaid Diagram](./diagrams\21_Persistence_Utilities_5.svg)
 
 **Diagram: Service Architecture Connecting Strategy Execution to Public APIs**
 
@@ -1350,54 +1073,7 @@ Sources: [src/lib/services/markdown/ScheduleMarkdownService.ts:286-352](), [src/
 
 ## Integration with Other APIs
 
-```mermaid
-graph TB
-    subgraph "Strategy Configuration"
-        ADD_STRAT[addStrategy]
-        CALLBACKS["callbacks:<br/>onPartialProfit<br/>onPartialLoss<br/>onSchedule<br/>onOpen<br/>onCancel"]
-    end
-    
-    subgraph "Execution APIs"
-        BACKTEST[Backtest.run/background]
-        LIVE[Live.run/background]
-    end
-    
-    subgraph "Event Listeners"
-        LISTEN_PP[listenPartialProfit]
-        LISTEN_PL[listenPartialLoss]
-        LISTEN_SIG[listenSignal]
-    end
-    
-    subgraph "Reporting APIs"
-        PARTIAL["Partial<br/>getData/getReport/dump"]
-        SCHEDULE["Schedule<br/>getData/getReport/dump"]
-        BACKTEST_DATA[Backtest.getData]
-        LIVE_DATA[Live.getData]
-    end
-    
-    ADD_STRAT --> CALLBACKS
-    CALLBACKS --> BACKTEST
-    CALLBACKS --> LIVE
-    
-    BACKTEST --> LISTEN_PP
-    BACKTEST --> LISTEN_PL
-    BACKTEST --> LISTEN_SIG
-    LIVE --> LISTEN_PP
-    LIVE --> LISTEN_PL
-    LIVE --> LISTEN_SIG
-    
-    LISTEN_PP -.aggregates to.-> PARTIAL
-    LISTEN_PL -.aggregates to.-> PARTIAL
-    LISTEN_SIG -.aggregates to.-> SCHEDULE
-    
-    BACKTEST -.closed signals.-> BACKTEST_DATA
-    LIVE -.all signals.-> LIVE_DATA
-    
-    style PARTIAL fill:#e1f5ff
-    style SCHEDULE fill:#e1f5ff
-    style BACKTEST_DATA fill:#f0f0f0
-    style LIVE_DATA fill:#f0f0f0
-```
+![Mermaid Diagram](./diagrams\21_Persistence_Utilities_6.svg)
 
 **Diagram: Integration of Partial and Schedule APIs with Other Framework Components**
 

@@ -32,54 +32,7 @@ This approach enables loose coupling between services, simplifies testing throug
 
 ### DI Flow Architecture
 
-```mermaid
-graph TB
-    subgraph "Service Definition Phase"
-        CLASS["Service Class Definition<br/>(e.g., StrategySchemaService)"]
-        SYMBOL["TYPES Symbol<br/>Symbol('strategySchemaService')"]
-        FACTORY["Factory Function<br/>() => new StrategySchemaService()"]
-    end
-    
-    subgraph "Registration Phase [src/lib/core/provide.ts]"
-        PROVIDE["provide(symbol, factory)<br/>Stores factory in container"]
-        CONTAINER["DI Container<br/>Map<Symbol, Factory>"]
-    end
-    
-    subgraph "Resolution Phase [src/lib/index.ts]"
-        INJECT["inject<T>(symbol)<br/>Returns () => T"]
-        LAZY["Lazy Evaluation<br/>Factory called on first access"]
-        MEMOIZE["Memoization<br/>Same instance returned"]
-    end
-    
-    subgraph "Consumer Usage"
-        EXPORT["Exported Service Accessor<br/>backtest.strategySchemaService"]
-        ACCESS["First Access<br/>Triggers instantiation"]
-        INSTANCE["Service Instance<br/>StrategySchemaService instance"]
-    end
-    
-    CLASS --> SYMBOL
-    SYMBOL --> FACTORY
-    FACTORY --> PROVIDE
-    PROVIDE --> CONTAINER
-    
-    SYMBOL --> INJECT
-    CONTAINER --> INJECT
-    INJECT --> LAZY
-    LAZY --> MEMOIZE
-    MEMOIZE --> EXPORT
-    
-    EXPORT --> ACCESS
-    ACCESS --> INSTANCE
-    INSTANCE -.cached.-> MEMOIZE
-    
-    NOTE1["Single source of truth<br/>for service identifiers"]
-    NOTE2["One-time setup<br/>during module initialization"]
-    NOTE3["Services created only<br/>when first accessed"]
-    
-    SYMBOL -.-> NOTE1
-    PROVIDE -.-> NOTE2
-    LAZY -.-> NOTE3
-```
+![Mermaid Diagram](./diagrams\12_Dependency_Injection_System_0.svg)
 
 **Sources**: [src/lib/core/types.ts:1-105](), [src/lib/core/provide.ts:1-143](), [src/lib/index.ts:1-246]()
 
@@ -91,68 +44,7 @@ The `TYPES` object contains Symbol-based identifiers for all services in the sys
 
 ### TYPES Structure
 
-```mermaid
-graph LR
-    subgraph "src/lib/core/types.ts"
-        TYPES["TYPES Object<br/>Aggregates all symbols"]
-        
-        subgraph "Base Services"
-            BS1["Symbol('loggerService')"]
-        end
-        
-        subgraph "Context Services"
-            CS1["Symbol('executionContextService')"]
-            CS2["Symbol('methodContextService')"]
-        end
-        
-        subgraph "Connection Services"
-            CON1["Symbol('exchangeConnectionService')"]
-            CON2["Symbol('strategyConnectionService')"]
-            CON3["Symbol('frameConnectionService')"]
-            CON4["Symbol('sizingConnectionService')"]
-            CON5["Symbol('riskConnectionService')"]
-            CON6["Symbol('optimizerConnectionService')"]
-            CON7["Symbol('partialConnectionService')"]
-        end
-        
-        subgraph "Schema Services"
-            SCH1["Symbol('exchangeSchemaService')"]
-            SCH2["Symbol('strategySchemaService')"]
-            SCH3["Symbol('frameSchemaService')"]
-            SCH4["Symbol('walkerSchemaService')"]
-            SCH5["Symbol('sizingSchemaService')"]
-            SCH6["Symbol('riskSchemaService')"]
-            SCH7["Symbol('optimizerSchemaService')"]
-        end
-        
-        subgraph "Core Services"
-            COR1["Symbol('exchangeCoreService')"]
-            COR2["Symbol('strategyCoreService')"]
-            COR3["Symbol('frameCoreService')"]
-        end
-        
-        TYPES --> BS1
-        TYPES --> CS1
-        TYPES --> CS2
-        TYPES --> CON1
-        TYPES --> CON2
-        TYPES --> CON3
-        TYPES --> CON4
-        TYPES --> CON5
-        TYPES --> CON6
-        TYPES --> CON7
-        TYPES --> SCH1
-        TYPES --> SCH2
-        TYPES --> SCH3
-        TYPES --> SCH4
-        TYPES --> SCH5
-        TYPES --> SCH6
-        TYPES --> SCH7
-        TYPES --> COR1
-        TYPES --> COR2
-        TYPES --> COR3
-    end
-```
+![Mermaid Diagram](./diagrams\12_Dependency_Injection_System_1.svg)
 
 The TYPES registry is divided into logical categories matching the service layer architecture. Each symbol is created using JavaScript's `Symbol()` constructor with a descriptive string identifier for debugging purposes.
 
@@ -206,44 +98,7 @@ Service resolution uses the `inject<T>()` function to create lazy, memoized acce
 
 ### Injection and Export Pattern
 
-```mermaid
-graph TB
-    subgraph "Service Injection [src/lib/index.ts:61-237]"
-        INJ_SCHEMA["inject<StrategySchemaService><br/>(TYPES.strategySchemaService)"]
-        INJ_CONN["inject<StrategyConnectionService><br/>(TYPES.strategyConnectionService)"]
-        INJ_VAL["inject<StrategyValidationService><br/>(TYPES.strategyValidationService)"]
-    end
-    
-    subgraph "Service Aggregation"
-        AGG_SCHEMA["schemaServices = {<br/>strategySchemaService: injector,<br/>...other schemas<br/>}"]
-        AGG_CONN["connectionServices = {<br/>strategyConnectionService: injector,<br/>...other connections<br/>}"]
-        AGG_VAL["validationServices = {<br/>strategyValidationService: injector,<br/>...other validations<br/>}"]
-    end
-    
-    subgraph "Final Export [line 225]"
-        EXPORT["backtest = {<br/>...baseServices,<br/>...contextServices,<br/>...connectionServices,<br/>...schemaServices,<br/>...coreServices,<br/>...globalServices,<br/>...commandServices,<br/>...logicPrivateServices,<br/>...logicPublicServices,<br/>...markdownServices,<br/>...validationServices,<br/>...templateServices<br/>}"]
-    end
-    
-    subgraph "Consumer Usage Example"
-        IMPORT["import backtest from 'backtest-kit'"]
-        ACCESS["backtest.strategySchemaService.register(...)"]
-        LAZY["First access triggers<br/>factory function call"]
-        SINGLETON["Subsequent accesses<br/>return cached instance"]
-    end
-    
-    INJ_SCHEMA --> AGG_SCHEMA
-    INJ_CONN --> AGG_CONN
-    INJ_VAL --> AGG_VAL
-    
-    AGG_SCHEMA --> EXPORT
-    AGG_CONN --> EXPORT
-    AGG_VAL --> EXPORT
-    
-    EXPORT --> IMPORT
-    IMPORT --> ACCESS
-    ACCESS --> LAZY
-    LAZY --> SINGLETON
-```
+![Mermaid Diagram](./diagrams\12_Dependency_Injection_System_2.svg)
 
 ### Service Access Example
 
@@ -305,48 +160,7 @@ The DI system initialization occurs in [src/lib/index.ts:240]() via the `init()`
 
 ### Module Initialization Sequence
 
-```mermaid
-sequenceDiagram
-    participant App as "Application Code"
-    participant Index as "src/lib/index.ts"
-    participant Provide as "src/lib/core/provide.ts"
-    participant DI as "DI Container"
-    participant Types as "TYPES Registry"
-    
-    Note over Index: Module import begins
-    Index->>Provide: import "./core/provide"
-    Note over Provide: Execute all provide() calls
-    Provide->>Types: Read TYPES symbols
-    Types-->>Provide: Return Symbol identifiers
-    
-    loop For each service
-        Provide->>DI: provide(symbol, factory)
-        DI->>DI: Store symbol → factory mapping
-    end
-    
-    Note over Index: Service injection phase
-    
-    loop For each service category
-        Index->>DI: inject<ServiceType>(symbol)
-        DI-->>Index: Return lazy accessor
-        Index->>Index: Aggregate into category object
-    end
-    
-    Index->>Index: Merge all categories into backtest object
-    Index->>DI: init()
-    DI->>DI: Finalize container setup
-    
-    Note over Index: Export backtest object
-    Index-->>App: export default backtest
-    
-    Note over App: First service access
-    App->>Index: backtest.strategySchemaService.register(...)
-    Index->>DI: Resolve strategySchemaService
-    DI->>DI: Execute factory: new StrategySchemaService()
-    DI->>DI: Cache instance for future access
-    DI-->>Index: Return service instance
-    Index-->>App: Return service instance
-```
+![Mermaid Diagram](./diagrams\12_Dependency_Injection_System_3.svg)
 
 **Key Points**:
 
@@ -366,40 +180,7 @@ Services depend on each other through constructor injection or method calls. The
 
 ### Typical Dependency Chain Example
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        ADD_STRAT["addStrategy()<br/>src/function/add.ts:52"]
-    end
-    
-    subgraph "Service Access via DI"
-        LOGGER["backtest.loggerService<br/>LoggerService instance"]
-        VAL["backtest.strategyValidationService<br/>StrategyValidationService instance"]
-        SCHEMA["backtest.strategySchemaService<br/>StrategySchemaService instance"]
-    end
-    
-    subgraph "Service Internal Dependencies"
-        VAL_DEPS["StrategyValidationService may access:<br/>- LoggerService (logging)<br/>- StrategySchemaService (existing checks)"]
-        SCHEMA_DEPS["StrategySchemaService uses:<br/>- ToolRegistry pattern<br/>- No external dependencies"]
-    end
-    
-    subgraph "Client Instance Creation"
-        CONN["StrategyConnectionService<br/>Factory for ClientStrategy"]
-        CLIENT["ClientStrategy<br/>Created per symbol/strategy/mode"]
-        CLIENT_DEPS["ClientStrategy dependencies:<br/>- ExecutionContextService<br/>- MethodContextService<br/>- ExchangeCoreService<br/>- RiskGlobalService<br/>- SizingGlobalService"]
-    end
-    
-    ADD_STRAT --> LOGGER
-    ADD_STRAT --> VAL
-    ADD_STRAT --> SCHEMA
-    
-    VAL --> VAL_DEPS
-    SCHEMA --> SCHEMA_DEPS
-    
-    SCHEMA -.strategy registered.-> CONN
-    CONN -.creates.-> CLIENT
-    CLIENT --> CLIENT_DEPS
-```
+![Mermaid Diagram](./diagrams\12_Dependency_Injection_System_4.svg)
 
 ### Cross-Service Dependencies
 

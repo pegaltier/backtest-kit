@@ -48,32 +48,7 @@ Backtest mode simulates strategy execution against historical market data to eva
 
 ### Execution Flow
 
-```mermaid
-graph TB
-    User["User Code"]
-    BacktestUtils["BacktestUtils<br/>(src/classes/Backtest.ts)"]
-    BacktestCommand["BacktestCommandService<br/>(command layer)"]
-    BacktestLogic["BacktestLogicPrivateService<br/>(logic layer)"]
-    FrameCore["FrameCoreService<br/>(generates timeframes)"]
-    StrategyCore["StrategyCoreService<br/>(signal processing)"]
-    ClientStrategy["ClientStrategy<br/>(backtest method)"]
-    ExchangeConn["ExchangeConnectionService<br/>(VWAP pricing)"]
-    
-    User -->|"Backtest.run(symbol, {<br/>strategyName,<br/>exchangeName,<br/>frameName})"| BacktestUtils
-    BacktestUtils -->|"validates schemas"| BacktestCommand
-    BacktestCommand -->|"orchestrates"| BacktestLogic
-    BacktestLogic -->|"getTimeframe()"| FrameCore
-    FrameCore -->|"Date[] timestamps"| BacktestLogic
-    BacktestLogic -->|"for each timestamp"| StrategyCore
-    StrategyCore -->|"backtest(candles)"| ClientStrategy
-    ClientStrategy -->|"getCandles()"| ExchangeConn
-    ClientStrategy -->|"getAveragePrice()"| ExchangeConn
-    ClientStrategy -->|"IStrategyBacktestResult"| BacktestLogic
-    BacktestLogic -->|"yield closed signal"| User
-    
-    style BacktestUtils fill:#f9f9f9
-    style ClientStrategy fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\06_Execution_Modes_0.svg)
 
 **Diagram: Backtest Mode Execution Flow**
 
@@ -141,37 +116,7 @@ Live mode executes strategies against real-time market data with full crash reco
 
 ### Execution Flow
 
-```mermaid
-graph TB
-    User["User Code"]
-    LiveUtils["LiveUtils<br/>(src/classes/Live.ts)"]
-    LiveCommand["LiveCommandService<br/>(command layer)"]
-    LiveLogic["LiveLogicPrivateService<br/>(logic layer)"]
-    StrategyCore["StrategyCoreService<br/>(signal processing)"]
-    ClientStrategy["ClientStrategy<br/>(tick method + waitForInit)"]
-    PersistSignal["PersistSignalAdapter<br/>(atomic file writes)"]
-    PersistRisk["PersistRiskAdapter<br/>(portfolio state)"]
-    ExchangeConn["ExchangeConnectionService<br/>(real-time VWAP)"]
-    
-    User -->|"Live.run(symbol, {<br/>strategyName,<br/>exchangeName})"| LiveUtils
-    LiveUtils -->|"validates schemas"| LiveCommand
-    LiveCommand -->|"orchestrates infinite loop"| LiveLogic
-    LiveLogic -->|"waitForInit()<br/>(loads from disk)"| ClientStrategy
-    ClientStrategy -->|"read ./dump/data/signal/"| PersistSignal
-    ClientStrategy -->|"read ./dump/data/risk/"| PersistRisk
-    LiveLogic -->|"tick() every TICK_TTL"| StrategyCore
-    StrategyCore -->|"tick(symbol, strategy)"| ClientStrategy
-    ClientStrategy -->|"getCandles(Date.now())"| ExchangeConn
-    ClientStrategy -->|"IStrategyTickResult"| LiveLogic
-    ClientStrategy -->|"write state after tick"| PersistSignal
-    ClientStrategy -->|"write risk state"| PersistRisk
-    LiveLogic -->|"yield opened/closed"| User
-    
-    style LiveUtils fill:#f9f9f9
-    style ClientStrategy fill:#f9f9f9
-    style PersistSignal fill:#e8f5e9
-    style PersistRisk fill:#e8f5e9
-```
+![Mermaid Diagram](./diagrams\06_Execution_Modes_1.svg)
 
 **Diagram: Live Mode Execution Flow with Crash Recovery**
 
@@ -261,33 +206,7 @@ Walker mode enables A/B testing of multiple strategies on the same symbol and ti
 
 ### Execution Flow
 
-```mermaid
-graph TB
-    User["User Code"]
-    WalkerUtils["WalkerUtils<br/>(src/classes/Walker.ts)"]
-    WalkerCommand["WalkerCommandService<br/>(command layer)"]
-    WalkerLogic["WalkerLogicPrivateService<br/>(logic layer)"]
-    WalkerSchema["WalkerSchemaService<br/>(IWalkerSchema config)"]
-    BacktestLogic["BacktestLogicPrivateService<br/>(per-strategy execution)"]
-    WalkerMarkdown["WalkerMarkdownService<br/>(comparison report)"]
-    BacktestMarkdown["BacktestMarkdownService<br/>(per-strategy stats)"]
-    
-    User -->|"Walker.run(symbol, {<br/>walkerName})"| WalkerUtils
-    WalkerUtils -->|"validates walker schema"| WalkerCommand
-    WalkerCommand -->|"orchestrates"| WalkerLogic
-    WalkerLogic -->|"get strategies[]"| WalkerSchema
-    WalkerSchema -->|"strategies, metric,<br/>exchangeName, frameName"| WalkerLogic
-    WalkerLogic -->|"for each strategy"| BacktestLogic
-    BacktestLogic -->|"run backtest<br/>(backtest=true)"| WalkerLogic
-    WalkerLogic -->|"extract metric value"| BacktestMarkdown
-    BacktestMarkdown -->|"sharpeRatio, totalPnl,<br/>winRate, etc."| WalkerLogic
-    WalkerLogic -->|"rank strategies"| WalkerMarkdown
-    WalkerMarkdown -->|"comparison table"| WalkerLogic
-    WalkerLogic -->|"yield progress + best"| User
-    
-    style WalkerUtils fill:#f9f9f9
-    style WalkerLogic fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\06_Execution_Modes_2.svg)
 
 **Diagram: Walker Mode Strategy Comparison Flow**
 
@@ -365,31 +284,7 @@ Walker generates markdown reports showing:
 
 The `backtest` flag in `IExecutionContext` determines execution mode throughout the system. This flag propagates via `ExecutionContextService` using `AsyncLocalStorage` for implicit context passing.
 
-```mermaid
-graph TB
-    API["Backtest.run() / Live.run() / Walker.run()"]
-    CommandService["CommandService<br/>(Backtest/Live/Walker)"]
-    ExecutionContext["ExecutionContextService<br/>(AsyncLocalStorage)"]
-    StrategyConn["StrategyConnectionService<br/>(routes by backtest flag)"]
-    ClientStrategy["ClientStrategy<br/>(separate instances)"]
-    RiskConn["RiskConnectionService<br/>(routes by backtest flag)"]
-    ClientRisk["ClientRisk<br/>(separate instances)"]
-    PersistAdapter["PersistSignalAdapter<br/>(enabled only if backtest=false)"]
-    
-    API -->|"set backtest flag"| CommandService
-    CommandService -->|"runInContext({backtest})"| ExecutionContext
-    ExecutionContext -->|"context available"| StrategyConn
-    ExecutionContext -->|"context available"| RiskConn
-    
-    StrategyConn -->|"getStrategy(symbol, name, backtest)"| ClientStrategy
-    RiskConn -->|"getRisk(name, backtest)"| ClientRisk
-    
-    ClientStrategy -->|"if backtest=false"| PersistAdapter
-    ClientRisk -->|"if backtest=false"| PersistAdapter
-    
-    style ExecutionContext fill:#f9f9f9
-    style PersistAdapter fill:#e8f5e9
-```
+![Mermaid Diagram](./diagrams\06_Execution_Modes_3.svg)
 
 **Diagram: Context Propagation and Mode Selection**
 
@@ -447,31 +342,7 @@ This ensures complete isolation between modes - they never share state or interf
 
 ### Decision Matrix
 
-```mermaid
-graph TD
-    Start{{"What is your goal?"}}
-    
-    Start -->|"Test strategy against<br/>historical data"| Historical
-    Start -->|"Execute strategy with<br/>real money"| Production
-    Start -->|"Compare multiple<br/>strategies"| Compare
-    
-    Historical{{"Need to test<br/>multiple strategies?"}}
-    Historical -->|"No, single strategy"| Backtest["Use Backtest Mode<br/><br/>• Backtest.run(symbol, {<br/>  strategyName,<br/>  exchangeName,<br/>  frameName<br/>})<br/><br/>✓ Fast execution<br/>✓ No disk I/O<br/>✓ Ideal for iteration"]
-    Historical -->|"Yes, compare strategies"| Walker["Use Walker Mode<br/><br/>• Walker.run(symbol, {<br/>  walkerName<br/>})<br/><br/>✓ Automated comparison<br/>✓ Metric-based ranking<br/>✓ Consistent timeframes"]
-    
-    Compare{{"Optimize across<br/>parameters?"}}
-    Compare -->|"No, fixed strategies"| Walker
-    Compare -->|"Yes, generate variants"| Optimizer["Use Optimizer Mode<br/>(see 16.5)<br/><br/>✓ LLM-based generation<br/>✓ Multiple train ranges<br/>✓ Auto-testing"]
-    
-    Production{{"Is fault tolerance<br/>critical?"}}
-    Production -->|"Yes, production env"| Live["Use Live Mode<br/><br/>• Live.run(symbol, {<br/>  strategyName,<br/>  exchangeName<br/>})<br/><br/>✓ Crash recovery<br/>✓ State persistence<br/>✓ Real-time execution"]
-    Production -->|"No, testing only"| BacktestPaper["Use Backtest Mode<br/>(paper trading)<br/><br/>✓ No risk<br/>✓ Faster than live<br/>✗ No persistence"]
-    
-    style Backtest fill:#e3f2fd
-    style Live fill:#ffebee
-    style Walker fill:#f3e5f5
-    style Optimizer fill:#fff3e0
-```
+![Mermaid Diagram](./diagrams\06_Execution_Modes_4.svg)
 
 **Diagram: Execution Mode Selection Guide**
 

@@ -45,59 +45,7 @@ Backtesting is designed for speed and reproducibility. It processes historical d
 
 The backtest system is organized into distinct layers that separate API concerns from execution logic:
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        BU["BacktestUtils<br/>(singleton)"]
-        BI["BacktestInstance<br/>(per symbol:strategy)"]
-    end
-    
-    subgraph "Command Layer"
-        BCS["BacktestCommandService"]
-    end
-    
-    subgraph "Logic Layer"
-        BLPUB["BacktestLogicPublicService"]
-        BLPRIV["BacktestLogicPrivateService"]
-    end
-    
-    subgraph "Core Services"
-        STRAT["StrategyCoreService<br/>tick(), backtest()"]
-        EXCH["ExchangeCoreService<br/>getNextCandles()"]
-        FRAME["FrameCoreService<br/>getTimeframe()"]
-    end
-    
-    subgraph "Client Implementations"
-        CS["ClientStrategy<br/>backtest() method"]
-    end
-    
-    subgraph "Context & State"
-        EXEC_CTX["ExecutionContextService<br/>symbol, when, backtest=true"]
-        METH_CTX["MethodContextService<br/>strategyName, exchangeName, frameName"]
-    end
-    
-    subgraph "Reporting"
-        BMS["BacktestMarkdownService<br/>Aggregates closed signals"]
-        SMS["ScheduleMarkdownService<br/>Tracks scheduled signals"]
-    end
-    
-    BU --> BI
-    BI --> BCS
-    BCS --> BLPUB
-    BLPUB --> BLPRIV
-    
-    BLPRIV --> STRAT
-    BLPRIV --> EXCH
-    BLPRIV --> FRAME
-    
-    STRAT --> CS
-    
-    EXEC_CTX --> CS
-    METH_CTX --> STRAT
-    
-    STRAT --> BMS
-    STRAT --> SMS
-```
+![Mermaid Diagram](./diagrams\54_Backtesting_0.svg)
 
 The `BacktestUtils` singleton provides the main entry point, with memoized `BacktestInstance` objects managing isolated execution per symbol-strategy pair. The logic layer orchestrates timeframe iteration and signal processing, delegating to core services for strategy execution, candle fetching, and timeframe generation.
 
@@ -107,63 +55,7 @@ The `BacktestUtils` singleton provides the main entry point, with memoized `Back
 
 The backtest execution follows a multi-stage flow that processes historical timeframes sequentially:
 
-```mermaid
-graph TB
-    START["BacktestUtils.run()<br/>or background()"]
-    VALIDATE["Validate Components<br/>strategy, exchange, frame, risk"]
-    CLEAR["Clear State<br/>BacktestMarkdownService.clear()<br/>ScheduleMarkdownService.clear()<br/>StrategyCoreService.clear()"]
-    GET_FRAMES["FrameCoreService.getTimeframe()<br/>Returns Date[] array"]
-    
-    ITERATE["Iterate Timeframes<br/>while i < timeframes.length"]
-    EMIT_PROGRESS["progressBacktestEmitter.next()<br/>progress = i / totalFrames"]
-    CHECK_STOP["Check getStopped()<br/>User requested stop?"]
-    
-    TICK["StrategyCoreService.tick()<br/>when = timeframes[i]<br/>backtest = true"]
-    
-    IDLE["action = 'idle'<br/>No signal"]
-    SCHEDULED["action = 'scheduled'<br/>Limit order awaiting activation"]
-    OPENED["action = 'opened'<br/>Market order executed"]
-    
-    FETCH_CANDLES["ExchangeCoreService.getNextCandles()<br/>Fetch 1m candles with buffer<br/>bufferMinutes = CC_AVG_PRICE_CANDLES_COUNT - 1"]
-    
-    BACKTEST["StrategyCoreService.backtest()<br/>Simulate signal lifecycle<br/>Return closed/cancelled result"]
-    
-    SKIP["Skip Timeframes<br/>while timeframes[i] < closeTimestamp"]
-    
-    YIELD["yield result<br/>IStrategyBacktestResult"]
-    
-    INCREMENT["i++<br/>Next timeframe"]
-    
-    DONE["Generator completes<br/>All timeframes processed"]
-    
-    START --> VALIDATE
-    VALIDATE --> CLEAR
-    CLEAR --> GET_FRAMES
-    GET_FRAMES --> ITERATE
-    
-    ITERATE --> EMIT_PROGRESS
-    EMIT_PROGRESS --> CHECK_STOP
-    CHECK_STOP -->|Yes| DONE
-    CHECK_STOP -->|No| TICK
-    
-    TICK --> IDLE
-    TICK --> SCHEDULED
-    TICK --> OPENED
-    
-    IDLE --> CHECK_STOP
-    
-    SCHEDULED --> FETCH_CANDLES
-    OPENED --> FETCH_CANDLES
-    
-    FETCH_CANDLES --> BACKTEST
-    
-    BACKTEST --> SKIP
-    SKIP --> YIELD
-    YIELD --> CHECK_STOP
-    
-    CHECK_STOP -->|After close| INCREMENT
-    INCREMENT --> ITERATE
-```
+![Mermaid Diagram](./diagrams\54_Backtesting_1.svg)
 
 The flow consists of several key phases:
 
@@ -550,26 +442,7 @@ The signal is effectively abandoned, and processing continues with remaining tim
 
 Before a backtest runs, all components must be registered and validated:
 
-```mermaid
-graph LR
-    START["Backtest.run()"]
-    
-    VAL_STRAT["StrategyValidationService.validate()<br/>strategyName exists?"]
-    VAL_EXCH["ExchangeValidationService.validate()<br/>exchangeName exists?"]
-    VAL_FRAME["FrameValidationService.validate()<br/>frameName exists?"]
-    VAL_RISK["RiskValidationService.validate()<br/>riskName exists? (optional)"]
-    
-    GET_SCHEMA["StrategySchemaService.get()<br/>Extract riskName"]
-    
-    RUN["BacktestInstance.run()"]
-    
-    START --> VAL_STRAT
-    VAL_STRAT --> VAL_EXCH
-    VAL_EXCH --> VAL_FRAME
-    VAL_FRAME --> GET_SCHEMA
-    GET_SCHEMA --> VAL_RISK
-    VAL_RISK --> RUN
-```
+![Mermaid Diagram](./diagrams\54_Backtesting_2.svg)
 
 If any validation fails, an error is thrown immediately before execution begins. This fail-fast approach ensures configuration errors are caught early.
 

@@ -40,67 +40,7 @@ All configuration functions are idempotent and can be called multiple times. The
 
 ## Configuration Flow Architecture
 
-```mermaid
-graph TB
-    subgraph "User API Layer"
-        setLogger["setLogger(logger: ILogger)"]
-        setConfig["setConfig(config: Partial<GlobalConfig>)"]
-        getConfig["getConfig(): GlobalConfig"]
-        setColumns["setColumns(columns: Partial<ColumnConfig>)"]
-        getColumns["getColumns(): ColumnConfig"]
-    end
-    
-    subgraph "Internal Services Layer"
-        LoggerService["LoggerService<br/>baseServices.loggerService<br/>TYPES.loggerService"]
-        ConfigStore["Global Config Store<br/>src/config/params.ts<br/>Memoized defaults"]
-        ColumnStore["Column Config Store<br/>src/config/columns.ts<br/>Memoized defaults"]
-    end
-    
-    subgraph "Component Layer"
-        ConnectionServices["Connection Services<br/>ExchangeConnectionService<br/>StrategyConnectionService<br/>RiskConnectionService"]
-        ValidationServices["Validation Services<br/>ConfigValidationService<br/>ColumnValidationService<br/>Signal validators"]
-        ClientImplementations["Client Implementations<br/>ClientStrategy<br/>ClientExchange<br/>ClientRisk"]
-    end
-    
-    subgraph "Execution Layer"
-        BacktestLogic["BacktestLogicPrivateService<br/>Uses config for validation"]
-        LiveLogic["LiveLogicPrivateService<br/>Uses config for validation"]
-        MarkdownServices["Markdown Services<br/>Uses columns for reports"]
-    end
-    
-    setLogger --> LoggerService
-    setConfig --> ConfigStore
-    getConfig --> ConfigStore
-    setColumns --> ColumnStore
-    getColumns --> ColumnStore
-    
-    LoggerService --> ConnectionServices
-    LoggerService --> ValidationServices
-    LoggerService --> ClientImplementations
-    
-    ConfigStore --> ValidationServices
-    ConfigStore --> ClientImplementations
-    
-    ColumnStore --> MarkdownServices
-    
-    ConnectionServices --> BacktestLogic
-    ConnectionServices --> LiveLogic
-    ValidationServices --> ClientImplementations
-    
-    ClientImplementations --> BacktestLogic
-    ClientImplementations --> LiveLogic
-    
-    MarkdownServices --> BacktestLogic
-    MarkdownServices --> LiveLogic
-    
-    Note1["Logger: Injected via DI<br/>Used for debug/info/warn/log"]
-    Note2["Config: Validated on set<br/>Affects signal validation"]
-    Note3["Columns: Controls report output<br/>Affects markdown generation"]
-    
-    LoggerService -.-> Note1
-    ConfigStore -.-> Note2
-    ColumnStore -.-> Note3
-```
+![Mermaid Diagram](./diagrams\16_Configuration_Functions_0.svg)
 
 **Analysis**: Configuration functions operate at the topmost layer of the system. `setLogger()` injects a custom logger into the DI container, replacing the default `LoggerService` implementation. `setConfig()` and `setColumns()` update memoized stores that are read by validation and markdown services. All configuration is immutable after initial setup.
 
@@ -459,64 +399,7 @@ console.log("Modified columns:", modified);
 
 ## Configuration Lifecycle
 
-```mermaid
-graph TB
-    subgraph "Initialization Phase"
-        Start["Application Start"]
-        SetLogger["setLogger(customLogger)"]
-        SetConfig["setConfig(globalConfig)"]
-        SetColumns["setColumns(columnConfig)"]
-    end
-    
-    subgraph "Registration Phase"
-        AddExchange["addExchange()"]
-        AddStrategy["addStrategy()"]
-        AddRisk["addRisk()"]
-        AddFrame["addFrame()"]
-    end
-    
-    subgraph "Validation Phase"
-        ValidateExchange["ExchangeValidationService<br/>Checks config constraints"]
-        ValidateStrategy["StrategyValidationService<br/>Uses CC_MIN_TAKEPROFIT_DISTANCE"]
-        ValidateRisk["RiskValidationService<br/>Uses validation params"]
-    end
-    
-    subgraph "Execution Phase"
-        BacktestRun["Backtest.run()<br/>Uses slippage, fees, VWAP count"]
-        LiveRun["Live.run()<br/>Uses TICK_TTL, signal lifetime"]
-        GenerateReport["Generate Markdown<br/>Uses column config"]
-    end
-    
-    Start --> SetLogger
-    SetLogger --> SetConfig
-    SetConfig --> SetColumns
-    SetColumns --> AddExchange
-    
-    AddExchange --> ValidateExchange
-    AddStrategy --> ValidateStrategy
-    AddRisk --> ValidateRisk
-    
-    ValidateExchange --> BacktestRun
-    ValidateStrategy --> BacktestRun
-    ValidateRisk --> BacktestRun
-    
-    ValidateExchange --> LiveRun
-    ValidateStrategy --> LiveRun
-    ValidateRisk --> LiveRun
-    
-    BacktestRun --> GenerateReport
-    LiveRun --> GenerateReport
-    
-    Note1["Configuration is immutable<br/>after registration begins"]
-    Note2["Logger affects all<br/>debug output"]
-    Note3["Config affects<br/>validation and execution"]
-    Note4["Columns affect<br/>report output only"]
-    
-    AddExchange -.-> Note1
-    SetLogger -.-> Note2
-    SetConfig -.-> Note3
-    SetColumns -.-> Note4
-```
+![Mermaid Diagram](./diagrams\16_Configuration_Functions_1.svg)
 
 **Analysis**: Configuration functions must be called in order during initialization phase, before any component registration. Once components are registered, configuration changes do not affect them. This ensures consistent behavior across execution modes and prevents unexpected runtime changes.
 
@@ -533,50 +416,7 @@ graph TB
 
 ## Configuration Validation
 
-```mermaid
-graph LR
-    subgraph "User Input"
-        UserConfig["Partial<GlobalConfig><br/>User-provided values"]
-        UserColumns["Partial<ColumnConfig><br/>User-provided flags"]
-    end
-    
-    subgraph "Validation Services"
-        ConfigValidation["ConfigValidationService<br/>TYPES.configValidationService"]
-        ColumnValidation["ColumnValidationService<br/>TYPES.columnValidationService"]
-    end
-    
-    subgraph "Validation Rules"
-        TypeCheck["Type validation<br/>number, boolean, string"]
-        RangeCheck["Range validation<br/>0 < percentage < 100"]
-        LogicCheck["Logic validation<br/>MIN < MAX constraints"]
-    end
-    
-    subgraph "Error Handling"
-        ThrowError["Throw validation error<br/>Prevent invalid config"]
-        LogWarning["Log warning<br/>Non-critical issues"]
-    end
-    
-    UserConfig --> ConfigValidation
-    UserColumns --> ColumnValidation
-    
-    ConfigValidation --> TypeCheck
-    ConfigValidation --> RangeCheck
-    ConfigValidation --> LogicCheck
-    
-    ColumnValidation --> TypeCheck
-    
-    TypeCheck -->|Invalid| ThrowError
-    RangeCheck -->|Out of range| ThrowError
-    LogicCheck -->|Inconsistent| ThrowError
-    
-    TypeCheck -->|Valid| LogWarning
-    
-    Note1["Example: slippage must be<br/>between 0 and 100"]
-    Note2["Example: CC_MIN_TAKEPROFIT<br/>< CC_MAX_STOPLOSS"]
-    
-    RangeCheck -.-> Note1
-    LogicCheck -.-> Note2
-```
+![Mermaid Diagram](./diagrams\16_Configuration_Functions_2.svg)
 
 **Analysis**: Both `setConfig()` and `setColumns()` invoke validation services before accepting changes. `ConfigValidationService` enforces type safety, range constraints, and logical consistency. `ColumnValidationService` validates boolean flags and column name spelling. Invalid configurations throw errors immediately, preventing silent failures during execution.
 

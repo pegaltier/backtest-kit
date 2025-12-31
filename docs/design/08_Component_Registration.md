@@ -36,16 +36,7 @@ For detailed API documentation of each registration function and its parameters,
 
 The registration system follows a consistent three-step pattern:
 
-```mermaid
-graph LR
-    USER["User Code"] -->|"calls"| ADD["add* Function"]
-    ADD -->|"validates"| VALID["Validation Service"]
-    ADD -->|"stores"| SCHEMA["Schema Service"]
-    SCHEMA -->|"persists"| REGISTRY["ToolRegistry"]
-    
-    CONN["Connection Service"] -->|"retrieves"| SCHEMA
-    CLIENT["Client Implementation"] -->|"uses"| CONN
-```
+![Mermaid Diagram](./diagrams\08_Component_Registration_0.svg)
 
 **Diagram: Component Registration Flow**
 
@@ -86,21 +77,7 @@ All registration functions share a consistent naming pattern: `add<ComponentType
 
 Each registration function follows an identical implementation pattern:
 
-```mermaid
-graph TB
-    START["add*(schema)"]
-    LOG["loggerService.info<br/>(method name, schema)"]
-    VALIDATE["validationService.add*<br/>(name, schema)"]
-    STORE["schemaService.register<br/>(name, schema)"]
-    END["Registration Complete"]
-    
-    START --> LOG
-    LOG --> VALIDATE
-    VALIDATE --> STORE
-    STORE --> END
-    
-    VALIDATE -->|"validation fails"| THROW["throw Error"]
-```
+![Mermaid Diagram](./diagrams\08_Component_Registration_1.svg)
 
 **Diagram: Registration Function Execution Flow**
 
@@ -159,24 +136,7 @@ If validation fails, an error is thrown and the schema is **not** registered.
 
 Schema services use `ToolRegistry` from `di-kit` to store component configurations:
 
-```mermaid
-graph TB
-    subgraph "StrategySchemaService"
-        REGISTRY["ToolRegistry<br/>&lt;IStrategySchema&gt;"]
-        REG_METHOD["register(name, schema)"]
-        GET_METHOD["get(name)"]
-        HAS_METHOD["has(name)"]
-    end
-    
-    ADD["addStrategy()"] -->|"stores"| REG_METHOD
-    REG_METHOD -->|"key: strategyName"| REGISTRY
-    
-    CONN["StrategyConnectionService"] -->|"retrieves"| GET_METHOD
-    GET_METHOD -->|"returns schema"| REGISTRY
-    
-    VALID["StrategyValidationService"] -->|"checks existence"| HAS_METHOD
-    HAS_METHOD -->|"boolean"| REGISTRY
-```
+![Mermaid Diagram](./diagrams\08_Component_Registration_2.svg)
 
 **Diagram: ToolRegistry Usage in Schema Services**
 
@@ -221,35 +181,7 @@ All schema services are registered as singletons in the DI container:
 
 A typical backtest setup registers multiple components with dependencies between them:
 
-```mermaid
-graph TB
-    START["Application Start"]
-    
-    EX["addExchange<br/>(exchangeName: 'binance')"]
-    FRAME["addFrame<br/>(frameName: '1d-test')"]
-    RISK["addRisk<br/>(riskName: 'conservative')"]
-    SIZE["addSizing<br/>(sizingName: 'fixed')"]
-    STRAT["addStrategy<br/>(strategyName: 'rsi-macd'<br/>riskName: 'conservative')"]
-    WALK["addWalker<br/>(walkerName: 'optimizer'<br/>strategies: ['rsi-macd']<br/>exchangeName: 'binance'<br/>frameName: '1d-test')"]
-    
-    START --> EX
-    START --> FRAME
-    START --> RISK
-    START --> SIZE
-    
-    EX --> STRAT
-    RISK --> STRAT
-    SIZE --> STRAT
-    
-    STRAT --> WALK
-    FRAME --> WALK
-    EX --> WALK
-    
-    WALK --> EXEC["Execute<br/>Backtest.run()"]
-    
-    style STRAT fill:#f9f9f9
-    style WALK fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\08_Component_Registration_3.svg)
 
 **Diagram: Component Registration Dependencies**
 
@@ -337,27 +269,7 @@ Backtest.background("BTCUSDT", {
 
 ### Validation Service Architecture
 
-```mermaid
-graph TB
-    ADD["add*(schema)"]
-    VALID_SVC["ValidationService"]
-    
-    subgraph "Validation Checks"
-        TYPE["Type Validation<br/>(field types, required fields)"]
-        BIZ["Business Logic<br/>(value ranges, constraints)"]
-        REF["Reference Validation<br/>(check dependencies exist)"]
-        MEMO["Memoized Result<br/>(cache by component name)"]
-    end
-    
-    ADD -->|"calls validate"| VALID_SVC
-    VALID_SVC --> TYPE
-    TYPE --> BIZ
-    BIZ --> REF
-    REF --> MEMO
-    
-    MEMO -->|"valid"| STORE["SchemaService.register()"]
-    REF -->|"invalid"| THROW["throw Error"]
-```
+![Mermaid Diagram](./diagrams\08_Component_Registration_4.svg)
 
 **Diagram: Validation Service Processing**
 
@@ -425,21 +337,7 @@ export function addStrategy(strategySchema: IStrategySchema) {
 
 Registered schemas are retrieved by **connection services**, which create **client instances** on demand:
 
-```mermaid
-graph TB
-    subgraph "Configuration Phase"
-        ADD["addStrategy()"] -->|"stores"| SCHEMA_SVC["StrategySchemaService"]
-    end
-    
-    subgraph "Execution Phase"
-        EXEC["Backtest.run()"] -->|"requests client"| CONN_SVC["StrategyConnectionService"]
-        CONN_SVC -->|"retrieves schema"| SCHEMA_SVC
-        CONN_SVC -->|"creates instance"| CLIENT["ClientStrategy"]
-        CLIENT -->|"uses schema"| LOGIC["getSignal() execution"]
-    end
-    
-    SCHEMA_SVC -->|"provides schema"| CONN_SVC
-```
+![Mermaid Diagram](./diagrams\08_Component_Registration_5.svg)
 
 **Diagram: Schema Retrieval During Execution**
 
@@ -503,31 +401,7 @@ Understanding the separation between **registration phase** and **execution phas
 
 **Execution is imperative:** Framework orchestrates component usage based on execution mode (backtest/live/walker).
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant AddFunc as "add* Function"
-    participant ValidSvc as "Validation Service"
-    participant SchemaSvc as "Schema Service"
-    participant ConnSvc as "Connection Service"
-    participant Client as "Client Class"
-    
-    Note over User,SchemaSvc: REGISTRATION PHASE
-    User->>AddFunc: addStrategy(schema)
-    AddFunc->>ValidSvc: validate(schema)
-    ValidSvc-->>AddFunc: validation result
-    AddFunc->>SchemaSvc: register(name, schema)
-    SchemaSvc-->>User: registration complete
-    
-    Note over User,Client: EXECUTION PHASE
-    User->>ConnSvc: Backtest.run(symbol, params)
-    ConnSvc->>SchemaSvc: get(strategyName)
-    SchemaSvc-->>ConnSvc: return schema
-    ConnSvc->>Client: new ClientStrategy(schema)
-    Client-->>ConnSvc: client instance
-    ConnSvc->>Client: execute strategy logic
-    Client-->>User: execution results
-```
+![Mermaid Diagram](./diagrams\08_Component_Registration_6.svg)
 
 **Diagram: Registration and Execution Sequence**
 

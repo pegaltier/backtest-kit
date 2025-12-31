@@ -71,28 +71,7 @@ Scheduled signals transition to `cancelled` state when:
 - Timeout expires: `(Date.now() - scheduledAt) > CC_SCHEDULE_AWAIT_MINUTES * 60 * 1000`
 - Pre-activation stop loss: Stop loss price would be hit before `priceOpen` is reached
 
-```mermaid
-graph TB
-    Start["Scheduled Signal Created<br/>scheduledAt timestamp set"]
-    Check["Each tick: Check price<br/>vs priceOpen"]
-    Timeout{"Elapsed time ><br/>CC_SCHEDULE_AWAIT_MINUTES?"}
-    PriceReached{"Current price<br/>reached priceOpen?"}
-    SLCheck{"Stop loss would be<br/>hit before activation?"}
-    
-    Activate["Activate Signal<br/>Transition to pending"]
-    Cancel["Cancel Signal<br/>Transition to cancelled"]
-    Continue["Wait for next tick"]
-    
-    Start --> Check
-    Check --> Timeout
-    Timeout -->|Yes| Cancel
-    Timeout -->|No| PriceReached
-    PriceReached -->|Yes| SLCheck
-    SLCheck -->|Yes| Cancel
-    SLCheck -->|No| Activate
-    PriceReached -->|No| Continue
-    Continue --> Check
-```
+![Mermaid Diagram](./diagrams\80_Timing_Parameters_0.svg)
 
 **Sources**: 
 - [src/lib/services/logic/private/BacktestLogicPrivateService.ts:155-178]()
@@ -133,35 +112,7 @@ The first condition to be met triggers `closeReason: "time_expired"`.
 
 In backtest mode, the system fetches exactly `minuteEstimatedTime` candles after signal opens, avoiding unnecessary processing of longer timeframes. If a signal would exceed `CC_MAX_SIGNAL_LIFETIME_MINUTES`, it's capped at the global limit.
 
-```mermaid
-graph TB
-    Open["Signal Opened<br/>pendingAt = timestamp"]
-    Monitor["Monitor TP/SL/Time<br/>Each candle/tick"]
-    
-    CheckTP{"Current price<br/>reached TP?"}
-    CheckSL{"Current price<br/>reached SL?"}
-    CheckTime{"Elapsed time >=<br/>minuteEstimatedTime?"}
-    CheckMaxTime{"Elapsed time >=<br/>CC_MAX_SIGNAL_LIFETIME_MINUTES?"}
-    
-    CloseTP["Close Signal<br/>closeReason: take_profit"]
-    CloseSL["Close Signal<br/>closeReason: stop_loss"]
-    CloseTime["Close Signal<br/>closeReason: time_expired"]
-    CloseMaxTime["Close Signal<br/>closeReason: time_expired<br/>(hard limit enforced)"]
-    
-    Continue["Continue monitoring"]
-    
-    Open --> Monitor
-    Monitor --> CheckTP
-    CheckTP -->|Yes| CloseTP
-    CheckTP -->|No| CheckSL
-    CheckSL -->|Yes| CloseSL
-    CheckSL -->|No| CheckTime
-    CheckTime -->|Yes| CloseTime
-    CheckTime -->|No| CheckMaxTime
-    CheckMaxTime -->|Yes| CloseMaxTime
-    CheckMaxTime -->|No| Continue
-    Continue --> Monitor
-```
+![Mermaid Diagram](./diagrams\80_Timing_Parameters_1.svg)
 
 **Sources**:
 - [types.d.ts:666]() (minuteEstimatedTime field)
@@ -201,38 +152,7 @@ The extra millisecond ensures ticks always fall slightly after minute boundaries
 
 The live trading infinite loop uses `TICK_TTL` to control iteration frequency:
 
-```mermaid
-sequenceDiagram
-    participant LiveLoop as Live Loop
-    participant Strategy as StrategyCoreService.tick
-    participant Sleep as sleep TICK_TTL
-    participant State as Signal State
-
-    LiveLoop->>Strategy: tick symbol new Date false
-    Strategy-->>LiveLoop: IStrategyTickResult
-
-    alt action equals idle
-        LiveLoop->>State: No active signal
-        LiveLoop->>Sleep: sleep 60,001 ms
-        Sleep-->>LiveLoop: Resume
-    else action equals active
-        LiveLoop->>State: Monitoring TP/SL
-        LiveLoop->>Sleep: sleep 60,001 ms
-        Sleep-->>LiveLoop: Resume
-    else action equals opened
-        LiveLoop->>State: New position
-        State-->>LiveLoop: Yield opened result
-        LiveLoop->>Sleep: sleep 60,001 ms
-        Sleep-->>LiveLoop: Resume
-    else action equals closed
-        LiveLoop->>State: Position closed
-        State-->>LiveLoop: Yield closed result
-        LiveLoop->>Sleep: sleep 60,001 ms
-        Sleep-->>LiveLoop: Resume
-    end
-
-    LiveLoop->>LiveLoop: Next iteration
-```
+![Mermaid Diagram](./diagrams\80_Timing_Parameters_2.svg)
 
 **Performance Implications**:
 
@@ -272,22 +192,7 @@ For example, with `interval: "5m"`:
 
 The backtest system coordinates all timing parameters to efficiently process historical data. When a signal opens, the system calculates the exact number of candles needed:
 
-```mermaid
-graph LR
-    subgraph "Candle Fetch Calculation"
-        Start["Signal Opens at<br/>timestamp 'when'"]
-        Buffer["Buffer Minutes<br/>CC_AVG_PRICE_CANDLES_COUNT - 1"]
-        Await["Await Period<br/>(scheduled only)<br/>CC_SCHEDULE_AWAIT_MINUTES"]
-        Duration["Signal Duration<br/>minuteEstimatedTime"]
-        
-        Total["Total Candles<br/>= buffer + await + duration + 1"]
-    end
-    
-    Start --> Buffer
-    Buffer --> Await
-    Await --> Duration
-    Duration --> Total
-```
+![Mermaid Diagram](./diagrams\80_Timing_Parameters_3.svg)
 
 **Formula for Candle Count**:
 
@@ -318,26 +223,7 @@ candlesNeeded = (CC_AVG_PRICE_CANDLES_COUNT - 1) + minuteEstimatedTime
 
 After a signal closes, the backtest loop skips timeframes until reaching `closeTimestamp`:
 
-```mermaid
-graph TD
-    Process["Processing timeframe[i]"]
-    SignalOpen{"Signal opened<br/>at timeframe[i]?"}
-    FetchCandles["Fetch candlesNeeded<br/>from Exchange"]
-    Backtest["Run backtest()<br/>Returns closeTimestamp"]
-    
-    Skip["Skip timeframes<br/>while timeframe[i] < closeTimestamp"]
-    Yield["Yield closed result"]
-    NextFrame["i++ continue to<br/>next timeframe"]
-    
-    Process --> SignalOpen
-    SignalOpen -->|No| NextFrame
-    SignalOpen -->|Yes| FetchCandles
-    FetchCandles --> Backtest
-    Backtest --> Skip
-    Skip --> Yield
-    Yield --> NextFrame
-    NextFrame --> Process
-```
+![Mermaid Diagram](./diagrams\80_Timing_Parameters_4.svg)
 
 This optimization prevents redundant tick() calls during the signal's active period, significantly improving backtest performance.
 
@@ -352,42 +238,7 @@ This optimization prevents redundant tick() calls during the signal's active per
 
 Live mode continuously monitors signals in real-time, recalculating elapsed time on each tick:
 
-```mermaid
-graph TB
-    subgraph "Live Mode Timing Loop"
-        Start["Start Live Loop"]
-        CreateDate["when = new Date()"]
-        Tick["Call tick(symbol, when, false)"]
-        
-        Result{"Result Action?"}
-        
-        Idle["Idle: No signal<br/>Sleep TICK_TTL"]
-        Active["Active: Monitoring<br/>Check elapsed time<br/>Sleep TICK_TTL"]
-        Opened["Opened: New signal<br/>pendingAt = now<br/>Yield result<br/>Sleep TICK_TTL"]
-        Closed["Closed: Complete<br/>Yield result<br/>Sleep TICK_TTL"]
-        Scheduled["Scheduled: Waiting<br/>Check timeout<br/>Sleep TICK_TTL"]
-        
-        Loop["Next Iteration"]
-    end
-    
-    Start --> CreateDate
-    CreateDate --> Tick
-    Tick --> Result
-    
-    Result -->|idle| Idle
-    Result -->|active| Active
-    Result -->|opened| Opened
-    Result -->|closed| Closed
-    Result -->|scheduled| Scheduled
-    
-    Idle --> Loop
-    Active --> Loop
-    Opened --> Loop
-    Closed --> Loop
-    Scheduled --> Loop
-    
-    Loop --> CreateDate
-```
+![Mermaid Diagram](./diagrams\80_Timing_Parameters_5.svg)
 
 **Elapsed Time Tracking**:
 

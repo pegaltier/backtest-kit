@@ -69,46 +69,7 @@ Sources: [types.d.ts:358-369](), [src/client/ClientStrategy.ts:742-745](), [src/
 
 ## Position Tracking Architecture
 
-```mermaid
-graph TB
-    subgraph "ClientStrategy Instances (Memoized)"
-        CS1["ClientStrategy<br/>symbol=BTCUSDT<br/>strategyName=rsi-strategy"]
-        CS2["ClientStrategy<br/>symbol=BTCUSDT<br/>strategyName=macd-strategy"]
-        CS3["ClientStrategy<br/>symbol=ETHUSDT<br/>strategyName=rsi-strategy"]
-    end
-    
-    subgraph "RiskConnectionService (Memoization Layer)"
-        RCS["RiskConnectionService<br/>getRisk(riskName)"]
-    end
-    
-    subgraph "ClientRisk Instance (Shared)"
-        CR["ClientRisk<br/>riskName=conservative<br/>maxConcurrentPositions=5"]
-        REGISTRY["Position Registry<br/>Map&lt;symbol, Set&lt;PositionKey&gt;&gt;"]
-    end
-    
-    subgraph "Position Keys"
-        PK1["PositionKey<br/>{strategyName, riskName}"]
-        PK2["PositionKey<br/>{strategyName, riskName}"]
-        PK3["PositionKey<br/>{strategyName, riskName}"]
-    end
-    
-    CS1 -->|"params.risk"| RCS
-    CS2 -->|"params.risk"| RCS
-    CS3 -->|"params.risk"| RCS
-    
-    RCS -->|"returns same instance"| CR
-    
-    CR --> REGISTRY
-    
-    REGISTRY -->|"BTCUSDT: Set()"| PK1
-    REGISTRY -->|"BTCUSDT: Set()"| PK2
-    REGISTRY -->|"ETHUSDT: Set()"| PK3
-    
-    CS1 -.->|"addSignal(symbol, key)"| REGISTRY
-    CS1 -.->|"removeSignal(symbol, key)"| REGISTRY
-    CS2 -.->|"addSignal(symbol, key)"| REGISTRY
-    CS3 -.->|"removeSignal(symbol, key)"| REGISTRY
-```
+![Mermaid Diagram](./diagrams\70_Position_Tracking_0.svg)
 
 **Figure 1: Position Tracking Architecture** - Multiple `ClientStrategy` instances share a single `ClientRisk` instance through `RiskConnectionService` memoization. Each symbol maintains a `Set` of position keys identifying active strategies.
 
@@ -118,69 +79,7 @@ Sources: [src/client/ClientStrategy.ts:1-96](), [src/lib/services/connection/Str
 
 ## Position Lifecycle in Risk Management
 
-```mermaid
-stateDiagram-v2
-    [*] --> Idle: "No active position"
-    
-    Idle --> Validating: "getSignal returns signal"
-    
-    state Validating {
-        [*] --> CheckingRisk
-        CheckingRisk --> RiskCheckPass: "risk.checkSignal() = true"
-        CheckingRisk --> RiskCheckFail: "risk.checkSignal() = false"
-        
-        note right of CheckingRisk
-            Checks:
-            - maxConcurrentPositions
-            - Custom validations
-            - Has access to all active positions
-        end note
-    }
-    
-    RiskCheckFail --> Idle: "Signal rejected"
-    
-    RiskCheckPass --> Registering: "Signal validated"
-    
-    state Registering {
-        [*] --> CallingAddSignal
-        CallingAddSignal --> PositionTracked: "risk.addSignal(symbol, key)"
-        
-        note right of CallingAddSignal
-            key = {
-              strategyName,
-              riskName
-            }
-        end note
-    }
-    
-    PositionTracked --> Active: "Position registered"
-    
-    state Active {
-        [*] --> Monitoring
-        Monitoring --> CheckTP_SL: "Every tick"
-        CheckTP_SL --> Monitoring: "No exit conditions"
-        CheckTP_SL --> [*]: "TP/SL/time_expired"
-    }
-    
-    Active --> Deregistering: "Position closed"
-    
-    state Deregistering {
-        [*] --> CallingRemoveSignal
-        CallingRemoveSignal --> PositionUntracked: "risk.removeSignal(symbol, key)"
-    }
-    
-    PositionUntracked --> Idle: "Position removed from registry"
-    Idle --> [*]
-    
-    note left of Registering
-        ClientStrategy.ts:742-745 (scheduled activation)
-        ClientStrategy.ts:867-870 (immediate signal)
-    end note
-    
-    note right of Deregistering
-        ClientStrategy.ts:995-998
-    end note
-```
+![Mermaid Diagram](./diagrams\70_Position_Tracking_1.svg)
 
 **Figure 2: Position Lifecycle with Risk Tracking** - Positions are added to the risk registry immediately after validation and removed when closed. The registry state is synchronized with the signal lifecycle.
 
@@ -328,36 +227,7 @@ Sources: [src/client/ClientStrategy.ts:376-384](), [src/client/ClientStrategy.ts
 
 The `maxConcurrentPositions` parameter enforces a hard limit on total open positions across all strategies sharing a risk profile:
 
-```mermaid
-graph LR
-    subgraph "Risk Profile: conservative"
-        LIMIT["maxConcurrentPositions = 5"]
-    end
-    
-    subgraph "Active Positions (BTCUSDT)"
-        P1["rsi-strategy"]
-        P2["macd-strategy"]
-        P3["ema-strategy"]
-    end
-    
-    subgraph "Active Positions (ETHUSDT)"
-        P4["rsi-strategy"]
-        P5["macd-strategy"]
-    end
-    
-    subgraph "New Signal Check"
-        CHECK["checkSignal()<br/>Current: 5 positions<br/>Limit: 5 positions"]
-        RESULT["Result: REJECTED<br/>Limit reached"]
-    end
-    
-    LIMIT --> CHECK
-    P1 --> CHECK
-    P2 --> CHECK
-    P3 --> CHECK
-    P4 --> CHECK
-    P5 --> CHECK
-    CHECK --> RESULT
-```
+![Mermaid Diagram](./diagrams\70_Position_Tracking_2.svg)
 
 **Figure 3: Concurrent Position Limit Enforcement** - The risk system counts all active positions across symbols and strategies. When the limit is reached, new signals are rejected regardless of symbol or strategy.
 
@@ -392,34 +262,7 @@ Sources: [src/function/add.ts:270-343](), [src/client/ClientStrategy.ts:374-387]
 
 The position registry enables cross-strategy risk analysis by providing access to all active positions in custom validation functions:
 
-```mermaid
-graph TB
-    subgraph "Strategy A (BTCUSDT)"
-        SA["ClientStrategy<br/>rsi-strategy"]
-        SA_SIGNAL["New Signal<br/>position=long<br/>priceOpen=50000"]
-    end
-    
-    subgraph "Strategy B (BTCUSDT)"
-        SB["ClientStrategy<br/>macd-strategy"]
-        SB_ACTIVE["Active Position<br/>position=long<br/>priceOpen=49500"]
-    end
-    
-    subgraph "Strategy C (ETHUSDT)"
-        SC["ClientStrategy<br/>rsi-strategy"]
-        SC_ACTIVE["Active Position<br/>position=short<br/>priceOpen=3000"]
-    end
-    
-    subgraph "ClientRisk (Shared)"
-        REGISTRY["Position Registry<br/>BTCUSDT: 1 position<br/>ETHUSDT: 1 position"]
-        VALIDATE["Custom Validation<br/>Check correlation<br/>Check exposure"]
-    end
-    
-    SA_SIGNAL -->|"checkSignal()"| VALIDATE
-    SB_ACTIVE -->|"registered in"| REGISTRY
-    SC_ACTIVE -->|"registered in"| REGISTRY
-    REGISTRY --> VALIDATE
-    VALIDATE -->|"return true/false"| SA
-```
+![Mermaid Diagram](./diagrams\70_Position_Tracking_3.svg)
 
 **Figure 4: Cross-Strategy Validation** - Custom validation functions can analyze the complete portfolio state when evaluating new signals, enabling correlation checks and exposure limits.
 
@@ -584,32 +427,7 @@ When `ClientStrategy` restores from disk in live mode, it does NOT call `risk.ad
 
 **Crash Recovery Synchronization:**
 
-```mermaid
-sequenceDiagram
-    participant Process as "Process Crash"
-    participant CS as "ClientStrategy"
-    participant CR as "ClientRisk"
-    participant PSA as "PersistSignalAdapter"
-    participant PRA as "PersistRiskAdapter"
-    
-    Note over Process: Process crashes with active position
-    
-    Note over CS,PRA: Process restarts
-    
-    CS->>PSA: waitForInit()
-    PSA->>PSA: readSignalData(symbol, strategyName)
-    PSA-->>CS: ISignalRow (restored signal)
-    CS->>CS: _pendingSignal = signal
-    Note over CS: Signal state restored
-    
-    CR->>PRA: waitForInit()
-    PRA->>PRA: readPositionData(riskName)
-    PRA-->>CR: Array<[symbol, IRiskActivePosition[]]>
-    CR->>CR: _activePositionsMap = new Map(data)
-    Note over CR: Position registry restored
-    
-    Note over CS,CR: Both restored independently<br/>No addSignal() call needed
-```
+![Mermaid Diagram](./diagrams\70_Position_Tracking_4.svg)
 
 **Why No `addSignal()` Call:**
 
@@ -799,45 +617,7 @@ Sources: [types.d.ts:358-369](), [types.d.ts:623-627](), [src/classes/Persist.ts
 
 ## Position Tracking in Service Architecture
 
-```mermaid
-graph TB
-    subgraph "Connection Layer"
-        SCS["StrategyConnectionService<br/>getStrategy() - memoized"]
-        RCS["RiskConnectionService<br/>getRisk() - memoized"]
-    end
-    
-    subgraph "Client Layer"
-        CS["ClientStrategy<br/>Symbol-scoped instance"]
-        CR["ClientRisk<br/>Risk profile instance"]
-    end
-    
-    subgraph "Registry Operations"
-        ADD["addSignal(symbol, key)<br/>Called on position open"]
-        REMOVE["removeSignal(symbol, key)<br/>Called on position close"]
-        CHECK["checkSignal(params)<br/>Called before validation"]
-    end
-    
-    subgraph "Event System"
-        EMITTER["signalEmitter<br/>signalBacktestEmitter<br/>signalLiveEmitter"]
-        MARKDOWN["BacktestMarkdownService<br/>LiveMarkdownService<br/>RiskMarkdownService"]
-    end
-    
-    SCS -->|"creates"| CS
-    SCS -->|"injects risk"| RCS
-    RCS -->|"returns shared instance"| CR
-    CS -->|"params.risk"| CR
-    
-    CS -->|"on signal open"| ADD
-    CS -->|"on signal close"| REMOVE
-    CS -->|"before open"| CHECK
-    
-    ADD --> CR
-    REMOVE --> CR
-    CHECK --> CR
-    
-    CS -->|"emits results"| EMITTER
-    EMITTER -->|"aggregates"| MARKDOWN
-```
+![Mermaid Diagram](./diagrams\70_Position_Tracking_5.svg)
 
 **Figure 5: Position Tracking in Service Architecture** - Position tracking is integrated throughout the service layers, from connection services to markdown reporting.
 

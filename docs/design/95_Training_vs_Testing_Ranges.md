@@ -33,38 +33,7 @@ For information about the broader Optimizer architecture and data collection pip
 
 The Optimizer uses a train/test split philosophy analogous to machine learning:
 
-```mermaid
-graph TB
-    subgraph "Historical Data Timeline"
-        T1["Training Period 1<br/>2024-01 to 2024-02<br/>Bull Market"]
-        T2["Training Period 2<br/>2024-03 to 2024-04<br/>Bear Market"]
-        T3["Training Period 3<br/>2024-05 to 2024-06<br/>Sideways Market"]
-        TEST["Testing Period<br/>2024-07 to 2024-08<br/>Unseen Data"]
-    end
-    
-    subgraph "Strategy Generation"
-        S1["Strategy Variant 1<br/>Optimized for Bull"]
-        S2["Strategy Variant 2<br/>Optimized for Bear"]
-        S3["Strategy Variant 3<br/>Optimized for Sideways"]
-    end
-    
-    subgraph "Evaluation"
-        WALKER["Walker Comparison<br/>Runs all strategies<br/>on test period"]
-        BEST["Best Strategy<br/>Highest sharpeRatio<br/>on test data"]
-    end
-    
-    T1 -.generates.-> S1
-    T2 -.generates.-> S2
-    T3 -.generates.-> S3
-    
-    S1 --> WALKER
-    S2 --> WALKER
-    S3 --> WALKER
-    
-    WALKER --> BEST
-    
-    TEST -.evaluation data.-> WALKER
-```
+![Mermaid Diagram](./diagrams\95_Training_vs_Testing_Ranges_0.svg)
 
 **Key Insight**: Each training range represents a distinct market regime. By generating strategies from multiple regimes, the system produces diverse trading logic. The testing range acts as a held-out validation set to identify which strategy generalizes best to unseen market conditions.
 
@@ -94,23 +63,7 @@ For each training range, the Optimizer:
 3. **Generates strategy prompt** by calling `getPrompt()` with the complete conversation history
 4. **Creates strategy variant** with unique name derived from range index
 
-```mermaid
-sequenceDiagram
-    participant CLIENT as ClientOptimizer
-    participant SOURCE as IOptimizerSource
-    participant LLM as getPrompt Function
-    
-    loop For each rangeTrain
-        loop For each source
-            CLIENT->>SOURCE: RESOLVE_PAGINATION_FN<br/>(startDate, endDate)
-            SOURCE-->>CLIENT: Data array with IDs
-            CLIENT->>CLIENT: Format to MessageModel<br/>(user/assistant pairs)
-        end
-        CLIENT->>LLM: getPrompt(symbol, messages)
-        LLM-->>CLIENT: Strategy prompt string
-        CLIENT->>CLIENT: Push to strategyList<br/>IOptimizerStrategy
-    end
-```
+![Mermaid Diagram](./diagrams\95_Training_vs_Testing_Ranges_1.svg)
 
 **Sources**: [src/client/ClientOptimizer.ts:99-214](), [src/client/ClientOptimizer.ts:70-88]()
 
@@ -184,24 +137,7 @@ The Optimizer translates training/testing ranges into executable TypeScript code
 
 ### Frame Generation Mapping
 
-```mermaid
-graph LR
-    subgraph "Schema Configuration"
-        RT["rangeTrain[0]<br/>2024-01 to 2024-02"]
-        RT2["rangeTrain[1]<br/>2024-03 to 2024-04"]
-        RT3["rangeTest<br/>2024-07 to 2024-08"]
-    end
-    
-    subgraph "Generated Code Entities"
-        TF1["addFrame({<br/>frameName: prefix_train_frame-1<br/>interval: 1m<br/>startDate/endDate<br/>})"]
-        TF2["addFrame({<br/>frameName: prefix_train_frame-2<br/>interval: 1m<br/>startDate/endDate<br/>})"]
-        TEST["addFrame({<br/>frameName: prefix_test_frame<br/>interval: 1m<br/>startDate/endDate<br/>})"]
-    end
-    
-    RT --> TF1
-    RT2 --> TF2
-    RT3 --> TEST
-```
+![Mermaid Diagram](./diagrams\95_Training_vs_Testing_Ranges_2.svg)
 
 **Frame Naming Convention**:
 - Training frames: `{prefix}_train_frame-{index}` where index starts at 1
@@ -211,27 +147,7 @@ graph LR
 
 ### Strategy Generation Mapping
 
-```mermaid
-graph TB
-    subgraph "Strategy Data"
-        SD1["strategyData[0]<br/>strategy: Bull market prompt<br/>messages: Conversation history"]
-        SD2["strategyData[1]<br/>strategy: Bear market prompt<br/>messages: Conversation history"]
-    end
-    
-    subgraph "Generated Code"
-        S1["addStrategy({<br/>strategyName: prefix_strategy-1<br/>interval: 5m<br/>getSignal: Multi-timeframe LLM<br/>})"]
-        S2["addStrategy({<br/>strategyName: prefix_strategy-2<br/>interval: 5m<br/>getSignal: Multi-timeframe LLM<br/>})"]
-    end
-    
-    subgraph "Walker Configuration"
-        W["addWalker({<br/>walkerName: prefix_walker<br/>exchangeName: prefix_exchange<br/>frameName: prefix_test_frame<br/>strategies: [prefix_strategy-1, prefix_strategy-2]<br/>})"]
-    end
-    
-    SD1 --> S1
-    SD2 --> S2
-    S1 --> W
-    S2 --> W
-```
+![Mermaid Diagram](./diagrams\95_Training_vs_Testing_Ranges_3.svg)
 
 **Strategy Naming Convention**: `{prefix}_strategy-{index}` where index starts at 1 and matches the order of `strategyData` array.
 
@@ -263,36 +179,7 @@ The Walker compares all generated strategies on the testing range to identify th
 
 ### Execution Flow
 
-```mermaid
-sequenceDiagram
-    participant LAUNCHER as Launcher Code
-    participant WALKER as Walker.background
-    participant BT as Backtest
-    participant FRAME as prefix_test_frame
-    participant STRAT1 as prefix_strategy-1
-    participant STRAT2 as prefix_strategy-2
-    participant METRICS as Metric Calculation
-    
-    LAUNCHER->>WALKER: Walker.background(symbol, {walkerName})
-    
-    loop For each strategy
-        WALKER->>FRAME: Load candles (rangeTest dates)
-        WALKER->>BT: Backtest.run(symbol, {strategyName, frameName})
-        BT->>STRAT1: Execute getSignal on test data
-        STRAT1-->>BT: Signals with TP/SL
-        BT-->>WALKER: Closed signals with PNL
-        WALKER->>METRICS: Calculate sharpeRatio
-        
-        WALKER->>BT: Backtest.run(symbol, {strategyName: strategy-2, frameName})
-        BT->>STRAT2: Execute getSignal on test data
-        STRAT2-->>BT: Signals with TP/SL
-        BT-->>WALKER: Closed signals with PNL
-        WALKER->>METRICS: Calculate sharpeRatio
-    end
-    
-    WALKER->>WALKER: Compare metrics, find max
-    WALKER-->>LAUNCHER: listenWalkerComplete({bestStrategy})
-```
+![Mermaid Diagram](./diagrams\95_Training_vs_Testing_Ranges_4.svg)
 
 **Metric Selection**: The Walker uses `sharpeRatio` as the default comparison metric (configurable via `IWalkerSchema.metric`). Strategies are ranked in descending order, and the highest metric wins.
 

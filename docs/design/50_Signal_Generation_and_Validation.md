@@ -31,56 +31,7 @@ Signal generation is the entry point for all trading decisions. The `getSignal` 
 
 ### Signal Generation Flow Diagram
 
-```mermaid
-graph TB
-    TICK["ClientStrategy.tick()"]
-    THROTTLE{"Interval\nthrottling\npassed?"}
-    SIGNAL_FN["getSignal(symbol, when)"]
-    NULL_CHECK{"Signal\nreturned?"}
-    DTO["ISignalDto\n{position, priceOpen?, priceTakeProfit, priceStopLoss, minuteEstimatedTime, note?, id?}"]
-    RISK_CHECK["ClientRisk.checkSignal()"]
-    RISK_OK{"Risk\nallowed?"}
-    PRICE_CHECK{"priceOpen\nspecified?"}
-    ACTIVATION_CHECK{"Price already\nreached\npriceOpen?"}
-    
-    IMMEDIATE["Create ISignalRow\n(immediate entry)\n_isScheduled=false\npriceOpen=currentPrice"]
-    SCHEDULED["Create IScheduledSignalRow\n(limit order)\n_isScheduled=true\npriceOpen from DTO"]
-    SCHEDULED_IMM["Create ISignalRow\n(immediate entry)\n_isScheduled=false\npriceOpen from DTO"]
-    
-    VALIDATE["VALIDATE_SIGNAL_FN()"]
-    VALIDATE_OK{"Validation\npassed?"}
-    RETURN["Return signal"]
-    RETURN_NULL["Return null"]
-    
-    TICK --> THROTTLE
-    THROTTLE -->|"No (too soon)"| RETURN_NULL
-    THROTTLE -->|"Yes"| SIGNAL_FN
-    SIGNAL_FN --> NULL_CHECK
-    NULL_CHECK -->|"null"| RETURN_NULL
-    NULL_CHECK -->|"ISignalDto"| DTO
-    DTO --> RISK_CHECK
-    RISK_CHECK --> RISK_OK
-    RISK_OK -->|"No (rejected)"| RETURN_NULL
-    RISK_OK -->|"Yes"| PRICE_CHECK
-    
-    PRICE_CHECK -->|"No (undefined)"| IMMEDIATE
-    PRICE_CHECK -->|"Yes"| ACTIVATION_CHECK
-    
-    ACTIVATION_CHECK -->|"Yes (immediate)"| SCHEDULED_IMM
-    ACTIVATION_CHECK -->|"No (wait for price)"| SCHEDULED
-    
-    IMMEDIATE --> VALIDATE
-    SCHEDULED --> VALIDATE
-    SCHEDULED_IMM --> VALIDATE
-    
-    VALIDATE --> VALIDATE_OK
-    VALIDATE_OK -->|"Yes"| RETURN
-    VALIDATE_OK -->|"No (throws error)"| RETURN_NULL
-    
-    style VALIDATE fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style RISK_CHECK fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style DTO fill:#e1f5ff,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\50_Signal_Generation_and_Validation_0.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:332-476]()
 
@@ -129,111 +80,7 @@ The validation function `VALIDATE_SIGNAL_FN` performs comprehensive safety check
 
 ### Validation Layers
 
-```mermaid
-graph TB
-    START["VALIDATE_SIGNAL_FN(signal, currentPrice, isScheduled)"]
-    
-    subgraph "Layer 1: Type Validation"
-        TYPE_ID["id is non-empty string?"]
-        TYPE_EXCHANGE["exchangeName defined?"]
-        TYPE_STRATEGY["strategyName defined?"]
-        TYPE_SYMBOL["symbol is non-empty string?"]
-        TYPE_SCHEDULED["_isScheduled defined?"]
-        TYPE_POSITION["position is 'long' or 'short'?"]
-    end
-    
-    subgraph "Layer 2: Price Validation (NaN/Infinity Protection)"
-        PRICE_CURRENT["currentPrice is finite > 0?"]
-        PRICE_OPEN["priceOpen is finite > 0?"]
-        PRICE_TP["priceTakeProfit is finite > 0?"]
-        PRICE_SL["priceStopLoss is finite > 0?"]
-    end
-    
-    subgraph "Layer 3: Logic Validation (Position-Specific)"
-        LONG_LOGIC["LONG: TP > priceOpen > SL?"]
-        SHORT_LOGIC["SHORT: TP < priceOpen < SL?"]
-        LONG_IMM["LONG immediate: SL < currentPrice < TP?"]
-        SHORT_IMM["SHORT immediate: TP < currentPrice < SL?"]
-        LONG_SCHED["LONG scheduled: SL < priceOpen < TP?"]
-        SHORT_SCHED["SHORT scheduled: TP < priceOpen < SL?"]
-    end
-    
-    subgraph "Layer 4: Distance Validation (Global Config)"
-        TP_MIN["TP distance >= CC_MIN_TAKEPROFIT_DISTANCE_PERCENT?"]
-        SL_MIN["SL distance >= CC_MIN_STOPLOSS_DISTANCE_PERCENT?"]
-        SL_MAX["SL distance <= CC_MAX_STOPLOSS_DISTANCE_PERCENT?"]
-    end
-    
-    subgraph "Layer 5: Time Validation"
-        TIME_POSITIVE["minuteEstimatedTime > 0?"]
-        TIME_INTEGER["minuteEstimatedTime is integer?"]
-        TIME_MAX["minuteEstimatedTime <= CC_MAX_SIGNAL_LIFETIME_MINUTES?"]
-        TIMESTAMP_SCHEDULED["scheduledAt > 0?"]
-        TIMESTAMP_PENDING["pendingAt > 0?"]
-    end
-    
-    PASS["Validation passed\nReturn signal"]
-    FAIL["Validation failed\nThrow Error with message"]
-    
-    START --> TYPE_ID
-    TYPE_ID --> TYPE_EXCHANGE
-    TYPE_EXCHANGE --> TYPE_STRATEGY
-    TYPE_STRATEGY --> TYPE_SYMBOL
-    TYPE_SYMBOL --> TYPE_SCHEDULED
-    TYPE_SCHEDULED --> TYPE_POSITION
-    
-    TYPE_POSITION --> PRICE_CURRENT
-    PRICE_CURRENT --> PRICE_OPEN
-    PRICE_OPEN --> PRICE_TP
-    PRICE_TP --> PRICE_SL
-    
-    PRICE_SL --> LONG_LOGIC
-    LONG_LOGIC --> SHORT_LOGIC
-    SHORT_LOGIC --> LONG_IMM
-    LONG_IMM --> SHORT_IMM
-    SHORT_IMM --> LONG_SCHED
-    LONG_SCHED --> SHORT_SCHED
-    
-    SHORT_SCHED --> TP_MIN
-    TP_MIN --> SL_MIN
-    SL_MIN --> SL_MAX
-    
-    SL_MAX --> TIME_POSITIVE
-    TIME_POSITIVE --> TIME_INTEGER
-    TIME_INTEGER --> TIME_MAX
-    TIME_MAX --> TIMESTAMP_SCHEDULED
-    TIMESTAMP_SCHEDULED --> TIMESTAMP_PENDING
-    
-    TIMESTAMP_PENDING -->|"All checks passed"| PASS
-    
-    TYPE_ID -->|"Any check fails"| FAIL
-    TYPE_EXCHANGE -->|"Any check fails"| FAIL
-    TYPE_STRATEGY -->|"Any check fails"| FAIL
-    TYPE_SYMBOL -->|"Any check fails"| FAIL
-    TYPE_SCHEDULED -->|"Any check fails"| FAIL
-    TYPE_POSITION -->|"Any check fails"| FAIL
-    PRICE_CURRENT -->|"Any check fails"| FAIL
-    PRICE_OPEN -->|"Any check fails"| FAIL
-    PRICE_TP -->|"Any check fails"| FAIL
-    PRICE_SL -->|"Any check fails"| FAIL
-    LONG_LOGIC -->|"Any check fails"| FAIL
-    SHORT_LOGIC -->|"Any check fails"| FAIL
-    LONG_IMM -->|"Any check fails"| FAIL
-    SHORT_IMM -->|"Any check fails"| FAIL
-    LONG_SCHED -->|"Any check fails"| FAIL
-    SHORT_SCHED -->|"Any check fails"| FAIL
-    TP_MIN -->|"Any check fails"| FAIL
-    SL_MIN -->|"Any check fails"| FAIL
-    SL_MAX -->|"Any check fails"| FAIL
-    TIME_POSITIVE -->|"Any check fails"| FAIL
-    TIME_INTEGER -->|"Any check fails"| FAIL
-    TIME_MAX -->|"Any check fails"| FAIL
-    TIMESTAMP_SCHEDULED -->|"Any check fails"| FAIL
-    TIMESTAMP_PENDING -->|"Any check fails"| FAIL
-    
-    style PASS fill:#e1ffe1,stroke:#333,stroke-width:2px
-    style FAIL fill:#ffe1e1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\50_Signal_Generation_and_Validation_1.svg)
 
 **Sources**: [src/client/ClientStrategy.ts:45-330]()
 
@@ -300,22 +147,7 @@ Logic validation enforces the mathematical relationships between prices based on
 
 ### LONG Position Rules
 
-```mermaid
-graph LR
-    SL["StopLoss\n(priceStopLoss)"]
-    OPEN["Entry\n(priceOpen)"]
-    CURRENT["Current\n(currentPrice)"]
-    TP["TakeProfit\n(priceTakeProfit)"]
-    
-    SL -.->|"must be <"| OPEN
-    OPEN -.->|"must be <"| TP
-    
-    SL -.->|"immediate: must be <"| CURRENT
-    CURRENT -.->|"immediate: must be <"| TP
-    
-    SL -.->|"scheduled: must be <"| OPEN
-    OPEN -.->|"scheduled: must be <"| TP
-```
+![Mermaid Diagram](./diagrams\50_Signal_Generation_and_Validation_2.svg)
 
 **LONG Position Requirements**:
 1. **Basic**: `priceStopLoss < priceOpen < priceTakeProfit`
@@ -341,22 +173,7 @@ Long scheduled: priceOpen (40000) <= priceStopLoss (40500).
 
 ### SHORT Position Rules
 
-```mermaid
-graph LR
-    TP["TakeProfit\n(priceTakeProfit)"]
-    OPEN["Entry\n(priceOpen)"]
-    CURRENT["Current\n(currentPrice)"]
-    SL["StopLoss\n(priceStopLoss)"]
-    
-    TP -.->|"must be <"| OPEN
-    OPEN -.->|"must be <"| SL
-    
-    TP -.->|"immediate: must be <"| CURRENT
-    CURRENT -.->|"immediate: must be <"| SL
-    
-    TP -.->|"scheduled: must be <"| OPEN
-    OPEN -.->|"scheduled: must be <"| SL
-```
+![Mermaid Diagram](./diagrams\50_Signal_Generation_and_Validation_3.svg)
 
 **SHORT Position Requirements**:
 1. **Basic**: `priceTakeProfit < priceOpen < priceStopLoss`
@@ -491,68 +308,7 @@ The signal generation logic determines whether to create an immediate entry (`_i
 
 ### Signal Type Decision Tree
 
-```mermaid
-graph TB
-    DTO["getSignal returns ISignalDto"]
-    PRICE_OPEN_PRESENT{"priceOpen\nspecified?"}
-    
-    subgraph "Immediate Entry Path"
-        IMM_NO_PRICE["priceOpen undefined"]
-        IMM_SET_PRICE["Set priceOpen = currentPrice"]
-        IMM_CREATE["Create ISignalRow\n_isScheduled = false\nscheduledAt = currentTime\npendingAt = currentTime"]
-    end
-    
-    subgraph "Scheduled Entry Logic"
-        SCHED_PRICE["priceOpen defined in DTO"]
-        SCHED_CHECK{"Price activation\ncheck"}
-        
-        subgraph "LONG Activation Check"
-            LONG_CHECK["position === 'long'"]
-            LONG_ACTIVATE{"currentPrice <= priceOpen?"}
-        end
-        
-        subgraph "SHORT Activation Check"
-            SHORT_CHECK["position === 'short'"]
-            SHORT_ACTIVATE{"currentPrice >= priceOpen?"}
-        end
-        
-        SCHED_IMM["Immediate activation\nCreate ISignalRow\n_isScheduled = false\npriceOpen from DTO\nscheduledAt = currentTime\npendingAt = currentTime"]
-        
-        SCHED_WAIT["Wait for activation\nCreate IScheduledSignalRow\n_isScheduled = true\npriceOpen from DTO\nscheduledAt = currentTime\npendingAt = currentTime (temp)"]
-    end
-    
-    VALIDATE["VALIDATE_SIGNAL_FN"]
-    RETURN["Return signal"]
-    
-    DTO --> PRICE_OPEN_PRESENT
-    PRICE_OPEN_PRESENT -->|"No"| IMM_NO_PRICE
-    PRICE_OPEN_PRESENT -->|"Yes"| SCHED_PRICE
-    
-    IMM_NO_PRICE --> IMM_SET_PRICE
-    IMM_SET_PRICE --> IMM_CREATE
-    
-    SCHED_PRICE --> SCHED_CHECK
-    SCHED_CHECK --> LONG_CHECK
-    SCHED_CHECK --> SHORT_CHECK
-    
-    LONG_CHECK --> LONG_ACTIVATE
-    LONG_ACTIVATE -->|"Yes (price fell)"| SCHED_IMM
-    LONG_ACTIVATE -->|"No (wait for drop)"| SCHED_WAIT
-    
-    SHORT_CHECK --> SHORT_ACTIVATE
-    SHORT_ACTIVATE -->|"Yes (price rose)"| SCHED_IMM
-    SHORT_ACTIVATE -->|"No (wait for rise)"| SCHED_WAIT
-    
-    IMM_CREATE --> VALIDATE
-    SCHED_IMM --> VALIDATE
-    SCHED_WAIT --> VALIDATE
-    
-    VALIDATE --> RETURN
-    
-    style IMM_CREATE fill:#e1f5ff,stroke:#333,stroke-width:2px
-    style SCHED_IMM fill:#e1f5ff,stroke:#333,stroke-width:2px
-    style SCHED_WAIT fill:#fff4e1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\50_Signal_Generation_and_Validation_4.svg)
 
 ### Immediate Entry (Market Order)
 
@@ -615,43 +371,7 @@ After the internal validation checks pass, the signal must also pass risk manage
 
 ### Risk Check Flow
 
-```mermaid
-sequenceDiagram
-    participant GS as GET_SIGNAL_FN
-    participant DTO as ISignalDto
-    participant CR as ClientRisk
-    participant VA as IRiskValidation[]
-    participant CB as Callbacks
-    
-    GS->>GS: getSignal() returns signal
-    GS->>GS: VALIDATE_SIGNAL_FN() passes
-    GS->>CR: checkSignal(params)
-    
-    CR->>CR: Build IRiskValidationPayload
-    Note over CR: payload = {pendingSignal, activePositionCount, activePositions, ...}
-    
-    CR->>VA: Execute validations array
-    
-    loop Each validation
-        VA->>VA: validate(payload)
-        alt Validation throws error
-            VA-->>CR: Error thrown
-            CR->>CR: Catch error
-            CR->>CB: onRejected(symbol, params)
-            CR-->>GS: return false
-        end
-    end
-    
-    alt All validations passed
-        VA-->>CR: All passed
-        CR->>CB: onAllowed(symbol, params)
-        CR-->>GS: return true
-        GS->>GS: Create ISignalRow/IScheduledSignalRow
-    else Any validation failed
-        CR-->>GS: return false
-        GS-->>GS: Return null (no signal)
-    end
-```
+![Mermaid Diagram](./diagrams\50_Signal_Generation_and_Validation_5.svg)
 
 **Risk Check Parameters** (`IRiskCheckArgs`):
 - `symbol`: Trading pair
@@ -681,31 +401,7 @@ Validation errors are caught by `trycatch()` wrapper around `GET_SIGNAL_FN`, pre
 
 ### Error Handling Flow
 
-```mermaid
-graph TB
-    GET_SIGNAL["GET_SIGNAL_FN()"]
-    TRYCATCH["trycatch wrapper"]
-    VALIDATE["VALIDATE_SIGNAL_FN()"]
-    THROW{"Error\nthrown?"}
-    
-    LOG["Log to logger.warn()"]
-    EMIT["Emit to errorEmitter"]
-    RETURN_NULL["Return null (no signal)"]
-    RETURN_SIGNAL["Return validated signal"]
-    
-    GET_SIGNAL --> TRYCATCH
-    TRYCATCH --> VALIDATE
-    VALIDATE --> THROW
-    
-    THROW -->|"Yes (validation failed)"| LOG
-    LOG --> EMIT
-    EMIT --> RETURN_NULL
-    
-    THROW -->|"No (validation passed)"| RETURN_SIGNAL
-    
-    style RETURN_NULL fill:#ffe1e1,stroke:#333,stroke-width:2px
-    style RETURN_SIGNAL fill:#e1ffe1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\50_Signal_Generation_and_Validation_6.svg)
 
 **Error Handling Behavior**:
 1. **Catch**: `trycatch()` wrapper catches all exceptions in signal generation

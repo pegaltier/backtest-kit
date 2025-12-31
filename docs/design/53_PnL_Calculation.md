@@ -120,47 +120,7 @@ Sources: [src/helpers/toProfitLossDto.ts](), [types.d.ts:17-28]()
 
 ## PnL Calculation Process
 
-```mermaid
-graph TB
-    subgraph "Input"
-        A["ISignalRow<br/>(position, priceOpen,<br/>priceTakeProfit, priceStopLoss)"]
-        B["priceClose<br/>(actual close price)"]
-        C["closeReason<br/>(take_profit | stop_loss | time_expired)"]
-    end
-    
-    subgraph "Configuration"
-        D["CC_PERCENT_FEE<br/>(default: 0.1%)"]
-        E["CC_PERCENT_SLIPPAGE<br/>(default: 0.1%)"]
-    end
-    
-    subgraph "Price Adjustment"
-        F["Adjust priceOpen<br/>(apply entry fees + slippage)"]
-        G["Adjust priceClose<br/>(apply exit fees + slippage)"]
-    end
-    
-    subgraph "PnL Calculation"
-        H["Calculate percentage<br/>(position-aware formula)"]
-    end
-    
-    subgraph "Output"
-        I["IStrategyPnL<br/>{pnlPercentage,<br/>priceOpen: adjusted,<br/>priceClose: adjusted}"]
-    end
-    
-    A --> F
-    B --> G
-    D --> F
-    D --> G
-    E --> F
-    E --> G
-    F --> H
-    G --> H
-    A --> H
-    H --> I
-    C -.metadata.-> I
-    
-    style I fill:#f9f9f9
-    style A fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\53_PnL_Calculation_0.svg)
 
 Sources: [src/helpers/toProfitLossDto.ts](), [src/client/ClientStrategy.ts:26]()
 
@@ -341,39 +301,7 @@ Sources: [types.d.ts:30-52](), [src/client/ClientStrategy.ts:163-173](), [src/cl
 
 ## PnL Calculation Flow
 
-```mermaid
-sequenceDiagram
-    participant S as ClientStrategy
-    participant M as Monitoring Logic
-    participant H as toProfitLossDto
-    participant E as signalEmitter
-    
-    Note over S: Signal in active state
-    
-    M->>M: Check VWAP price
-    alt Take Profit Hit
-        M->>M: closeReason = "take_profit"<br/>priceClose = priceTakeProfit
-    else Stop Loss Hit
-        M->>M: closeReason = "stop_loss"<br/>priceClose = priceStopLoss
-    else Time Expired
-        M->>M: closeReason = "time_expired"<br/>priceClose = currentPrice
-    end
-    
-    M->>H: toProfitLossDto(signal, priceClose)
-    
-    Note over H: Apply fees + slippage<br/>to both prices
-    
-    H->>H: adjustedPriceOpen = priceOpen × (1 ± costs)
-    H->>H: adjustedPriceClose = priceClose × (1 ∓ costs)
-    H->>H: pnlPercentage = calculate(adjusted prices)
-    
-    H-->>M: IStrategyPnL<br/>{pnlPercentage, priceOpen, priceClose}
-    
-    M->>S: Create IStrategyTickResultClosed
-    S->>E: Emit closed signal with PnL
-    
-    Note over E: Event listeners receive<br/>signal with PnL data
-```
+![Mermaid Diagram](./diagrams\53_PnL_Calculation_1.svg)
 
 Sources: [src/client/ClientStrategy.ts](), [src/helpers/toProfitLossDto.ts]()
 
@@ -383,28 +311,7 @@ Sources: [src/client/ClientStrategy.ts](), [src/helpers/toProfitLossDto.ts]()
 
 PnL calculation occurs at the final stage of the signal lifecycle:
 
-```mermaid
-stateDiagram-v2
-    [*] --> idle
-    idle --> scheduled: priceOpen specified
-    idle --> opened: immediate entry
-    scheduled --> opened: price reached
-    scheduled --> cancelled: timeout/SL hit
-    opened --> active: validation passed
-    active --> closed: TP/SL/time_expired
-    
-    state closed {
-        [*] --> CalculatePnL
-        CalculatePnL --> ApplyFees: Apply entry fees
-        ApplyFees --> ApplySlippage: Apply entry slippage
-        ApplySlippage --> ApplyExitCosts: Apply exit fees + slippage
-        ApplyExitCosts --> ComputePercentage: Calculate percentage
-        ComputePercentage --> [*]: Return IStrategyPnL
-    }
-    
-    closed --> idle: Ready for next signal
-    cancelled --> idle
-```
+![Mermaid Diagram](./diagrams\53_PnL_Calculation_2.svg)
 
 **Close Reasons and PnL**:
 

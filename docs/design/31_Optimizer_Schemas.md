@@ -39,50 +39,7 @@ Sources: [src/interfaces/Optimizer.interface.ts:380-433](), [src/function/add.ts
 
 ## Schema Structure Overview
 
-```mermaid
-graph TB
-    subgraph "addOptimizer Registration Flow"
-        AddOpt["addOptimizer(schema)"]
-        OptimizerSchemaService["OptimizerSchemaService<br/>.register()"]
-        OptimizerValidationService["OptimizerValidationService<br/>.addOptimizer()"]
-    end
-    
-    subgraph "IOptimizerSchema Required Fields"
-        OptName["optimizerName: OptimizerName"]
-        RangeTrain["rangeTrain: IOptimizerRange[]<br/>startDate, endDate"]
-        RangeTest["rangeTest: IOptimizerRange<br/>startDate, endDate"]
-        Source["source: Source[]<br/>IOptimizerSourceFn | IOptimizerSource"]
-        GetPrompt["getPrompt(symbol, messages)<br/>=> string | Promise<string>"]
-    end
-    
-    subgraph "IOptimizerSchema Optional Fields"
-        Template["template?: Partial<IOptimizerTemplate><br/>11 code generation methods"]
-        Callbacks["callbacks?: Partial<IOptimizerCallbacks><br/>onData, onCode, onDump, onSourceData"]
-        Note["note?: string"]
-    end
-    
-    subgraph "Runtime Usage"
-        OptimizerUtils["Optimizer.getData/getCode/dump"]
-        OptimizerConnectionService["OptimizerConnectionService<br/>.getOptimizer(optimizerName)"]
-        ClientOptimizer["new ClientOptimizer(params)"]
-    end
-    
-    AddOpt --> OptimizerSchemaService
-    OptimizerSchemaService --> OptimizerValidationService
-    
-    OptimizerSchemaService -.stores.-> OptName
-    OptimizerSchemaService -.stores.-> RangeTrain
-    OptimizerSchemaService -.stores.-> RangeTest
-    OptimizerSchemaService -.stores.-> Source
-    OptimizerSchemaService -.stores.-> GetPrompt
-    OptimizerSchemaService -.stores.-> Template
-    OptimizerSchemaService -.stores.-> Callbacks
-    OptimizerSchemaService -.stores.-> Note
-    
-    OptimizerUtils --> OptimizerConnectionService
-    OptimizerConnectionService -.retrieves.-> OptimizerSchemaService
-    OptimizerConnectionService --> ClientOptimizer
-```
+![Mermaid Diagram](./diagrams\31_Optimizer_Schemas_0.svg)
 
 **Diagram: IOptimizerSchema Structure and Registration Flow**
 
@@ -392,36 +349,7 @@ interface IOptimizerCallbacks {
 
 **Callback Invocation in `ClientOptimizer`:**
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant getData["ClientOptimizer.getData()"]
-    participant getCode["ClientOptimizer.getCode()"]
-    participant dump["ClientOptimizer.dump()"]
-
-    User->>getData: symbol
-
-    loop rangeTrain.forEach
-        loop source.forEach
-            getData->>getData: fetch + format data
-            getData->>getData: callbacks.onSourceData<br/>[src/client/ClientOptimizer.ts:122]
-        end
-        getData->>getData: getPrompt(symbol, messages)
-    end
-
-    getData->>getData: callbacks.onData<br/>[src/client/ClientOptimizer.ts:210]
-    getData-->>User: IOptimizerStrategy[]
-
-    User->>getCode: symbol
-    getCode->>getCode: Assemble code sections
-    getCode->>getCode: callbacks.onCode<br/>[src/client/ClientOptimizer.ts:345]
-    getCode-->>User: code string
-
-    User->>dump: symbol, path
-    dump->>dump: writeFile(filepath, code)
-    dump->>dump: callbacks.onDump<br/>[src/client/ClientOptimizer.ts:377]
-    dump-->>User: void
-```
+![Mermaid Diagram](./diagrams\31_Optimizer_Schemas_1.svg)
 
 **Diagram: Callback Invocation Points in ClientOptimizer**
 
@@ -628,41 +556,7 @@ listenOptimizerProgress((event) => {
 
 #### Code Assembly Pipeline
 
-```mermaid
-graph TB
-    Start["Optimizer.getCode(symbol, optimizerName)"]
-    GetData["getData()<br/>Fetch all source data"]
-    
-    subgraph "Code Section Assembly (11 parts)"
-        Banner["1. getTopBanner<br/>Shebang + imports"]
-        DumpJson["2. getJsonDumpTemplate<br/>dumpJson() helper"]
-        Text["3. getTextTemplate<br/>text() LLM helper"]
-        Json["4. getJsonTemplate<br/>json() LLM helper"]
-        Exchange["5. getExchangeTemplate<br/>addExchange() call"]
-        TrainFrames["6. getFrameTemplate × rangeTrain.length<br/>Training frames"]
-        TestFrame["7. getFrameTemplate<br/>Test frame"]
-        Strategies["8. getStrategyTemplate × strategies.length<br/>Strategy definitions"]
-        Walker["9. getWalkerTemplate<br/>addWalker() comparison"]
-        Launcher["10. getLauncherTemplate<br/>Walker.background() + listeners"]
-    end
-    
-    OnCode["callbacks.onCode(symbol, code)"]
-    End["Return code string"]
-    
-    Start --> GetData
-    GetData --> Banner
-    Banner --> DumpJson
-    DumpJson --> Text
-    Text --> Json
-    Json --> Exchange
-    Exchange --> TrainFrames
-    TrainFrames --> TestFrame
-    TestFrame --> Strategies
-    Strategies --> Walker
-    Walker --> Launcher
-    Launcher --> OnCode
-    OnCode --> End
-```
+![Mermaid Diagram](./diagrams\31_Optimizer_Schemas_2.svg)
 
 **Diagram: Code Generation Pipeline**
 
@@ -746,40 +640,7 @@ Sources: [src/lib/services/schema/OptimizerSchemaService.ts:28-67](), [src/lib/s
 
 ## Schema Lifecycle
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant addOptimizer["addOptimizer()"]
-    participant OptimizerValidationService
-    participant OptimizerSchemaService
-    participant OptimizerGlobalService
-    participant OptimizerConnectionService
-    participant ClientOptimizer
-    
-    User->>addOptimizer: schema
-    addOptimizer->>OptimizerSchemaService: .register(optimizerName, schema)
-    OptimizerSchemaService->>OptimizerSchemaService: .validateShallow(schema)<br/>[OptimizerSchemaService.ts:41-67]
-    OptimizerSchemaService->>OptimizerValidationService: .addOptimizer(name, schema)<br/>[OptimizerValidationService.ts:25-34]
-    OptimizerValidationService->>OptimizerValidationService: Check duplicate in _optimizerMap
-    OptimizerValidationService-->>OptimizerSchemaService: Stored
-    OptimizerSchemaService-->>addOptimizer: Success
-    addOptimizer-->>User: Registered
-    
-    User->>OptimizerGlobalService: Optimizer.getData(symbol, name)
-    OptimizerGlobalService->>OptimizerValidationService: .validate(optimizerName)<br/>[OptimizerValidationService.ts:44-59]
-    OptimizerValidationService-->>OptimizerGlobalService: Valid
-    OptimizerGlobalService->>OptimizerConnectionService: .getData(symbol, optimizerName)
-    OptimizerConnectionService->>OptimizerConnectionService: .getOptimizer(optimizerName)<br/>memoized [ConnectionService.ts:59-113]
-    OptimizerConnectionService->>OptimizerSchemaService: .get(optimizerName)
-    OptimizerSchemaService-->>OptimizerConnectionService: schema
-    OptimizerConnectionService->>OptimizerConnectionService: Merge template with defaults
-    OptimizerConnectionService->>ClientOptimizer: new ClientOptimizer(params)
-    ClientOptimizer-->>OptimizerConnectionService: instance (cached)
-    OptimizerConnectionService->>ClientOptimizer: .getData(symbol)
-    ClientOptimizer-->>OptimizerConnectionService: IOptimizerStrategy[]
-    OptimizerConnectionService-->>OptimizerGlobalService: IOptimizerStrategy[]
-    OptimizerGlobalService-->>User: IOptimizerStrategy[]
-```
+![Mermaid Diagram](./diagrams\31_Optimizer_Schemas_3.svg)
 
 **Diagram: Schema Registration and Retrieval Flow**
 

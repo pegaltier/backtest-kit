@@ -49,60 +49,7 @@ The template system is defined by the `IOptimizerTemplate` interface, which spec
 
 **Template System Diagram:**
 
-```mermaid
-graph TB
-    Interface[IOptimizerTemplate Interface<br/>11 method signatures]
-    
-    DefaultImpl[OptimizerTemplateService<br/>Default implementations]
-    
-    CustomImpl[Custom Template Overrides<br/>schema.template = Partial]
-    
-    Merger[OptimizerConnectionService<br/>Template merging logic]
-    
-    FinalTemplate[Complete IOptimizerTemplate<br/>Resolved implementation]
-    
-    Assembly[ClientOptimizer.getCode<br/>Code assembly pipeline]
-    
-    Output[Generated .mjs file<br/>Executable strategy]
-    
-    Interface -->|implements| DefaultImpl
-    Interface -->|partial override| CustomImpl
-    
-    DefaultImpl -->|merge with| Merger
-    CustomImpl -->|merge with| Merger
-    
-    Merger -->|produces| FinalTemplate
-    
-    FinalTemplate -->|used by| Assembly
-    
-    Assembly -->|generates| Output
-    
-    subgraph "Template Methods"
-        Method1[getTopBanner]
-        Method2[getJsonDumpTemplate]
-        Method3[getTextTemplate]
-        Method4[getJsonTemplate]
-        Method5[getExchangeTemplate]
-        Method6[getFrameTemplate]
-        Method7[getStrategyTemplate]
-        Method8[getWalkerTemplate]
-        Method9[getLauncherTemplate]
-        Method10[getUserMessage]
-        Method11[getAssistantMessage]
-    end
-    
-    FinalTemplate -.->|contains| Method1
-    FinalTemplate -.->|contains| Method2
-    FinalTemplate -.->|contains| Method3
-    FinalTemplate -.->|contains| Method4
-    FinalTemplate -.->|contains| Method5
-    FinalTemplate -.->|contains| Method6
-    FinalTemplate -.->|contains| Method7
-    FinalTemplate -.->|contains| Method8
-    FinalTemplate -.->|contains| Method9
-    FinalTemplate -.->|contains| Method10
-    FinalTemplate -.->|contains| Method11
-```
+![Mermaid Diagram](./diagrams\94_Strategy_Code_Generation_0.svg)
 
 Sources: [src/interfaces/Optimizer.interface.ts:238-374](), [src/lib/services/template/OptimizerTemplateService.ts:14-26](), [src/lib/services/connection/OptimizerConnectionService.ts:59-112]()
 
@@ -333,63 +280,7 @@ The assembly pipeline in `GET_STRATEGY_CODE_FN` calls template methods in a spec
 
 **Assembly Sequence Diagram:**
 
-```mermaid
-sequenceDiagram
-    participant Caller as ClientOptimizer.getCode
-    participant Pipeline as GET_STRATEGY_CODE_FN
-    participant Template as IOptimizerTemplate
-    participant Sections as sections: string[]
-    
-    Caller->>Pipeline: getCode(symbol)
-    Pipeline->>Pipeline: getData(symbol)
-    Pipeline->>Pipeline: prefix = CREATE_PREFIX_FN()
-    
-    Note over Pipeline,Sections: Phase 1: Initialization
-    Pipeline->>Template: getTopBanner(symbol)
-    Template-->>Sections: imports + constants
-    
-    Note over Pipeline,Sections: Phase 2: Helper Functions
-    Pipeline->>Template: getJsonDumpTemplate(symbol)
-    Template-->>Sections: async dumpJson() function
-    
-    Pipeline->>Template: getTextTemplate(symbol)
-    Template-->>Sections: async text() function
-    
-    Pipeline->>Template: getJsonTemplate(symbol)
-    Template-->>Sections: async json() function
-    
-    Note over Pipeline,Sections: Phase 3: Exchange
-    Pipeline->>Template: getExchangeTemplate(symbol, exchangeName)
-    Template-->>Sections: addExchange() call
-    
-    Note over Pipeline,Sections: Phase 4: Training Frames
-    loop For each rangeTrain
-        Pipeline->>Template: getFrameTemplate(symbol, frameName, interval, dates)
-        Template-->>Sections: addFrame() call
-    end
-    
-    Note over Pipeline,Sections: Phase 5: Test Frame
-    Pipeline->>Template: getFrameTemplate(symbol, testFrameName, interval, dates)
-    Template-->>Sections: addFrame() call
-    
-    Note over Pipeline,Sections: Phase 6: Strategies
-    loop For each strategy in strategyData
-        Pipeline->>Template: getStrategyTemplate(name, interval, prompt)
-        Template-->>Sections: addStrategy() with LLM
-    end
-    
-    Note over Pipeline,Sections: Phase 7: Walker
-    Pipeline->>Template: getWalkerTemplate(walkerName, exchange, frame, strategies)
-    Template-->>Sections: addWalker() call
-    
-    Note over Pipeline,Sections: Phase 8: Launcher
-    Pipeline->>Template: getLauncherTemplate(symbol, walkerName)
-    Template-->>Sections: Walker.background() + listeners
-    
-    Pipeline->>Pipeline: code = sections.join("\n")
-    Pipeline->>Pipeline: callbacks?.onCode(symbol, code)
-    Pipeline-->>Caller: return code
-```
+![Mermaid Diagram](./diagrams\94_Strategy_Code_Generation_1.svg)
 
 **Pipeline Implementation Details:**
 
@@ -415,39 +306,7 @@ Templates can be partially overridden in the optimizer schema by providing a `te
 
 **Template Merging Diagram:**
 
-```mermaid
-graph TB
-    Schema[IOptimizerSchema<br/>schema.template = Partial]
-    
-    Service[OptimizerConnectionService<br/>getOptimizer method]
-    
-    Default[OptimizerTemplateService<br/>11 default methods]
-    
-    Merge[Template Merging Logic<br/>Destructure with defaults]
-    
-    Final[Complete IOptimizerTemplate<br/>All 11 methods resolved]
-    
-    Client[ClientOptimizer<br/>Uses merged template]
-    
-    Schema -->|template: rawTemplate| Service
-    Default -->|inject| Service
-    
-    Service -->|rawTemplate fields| Merge
-    Service -->|default fields| Merge
-    
-    Merge -->|produces| Final
-    
-    Final -->|passed to| Client
-    
-    subgraph "Merge Logic"
-        Custom[Custom: rawTemplate.getStrategyTemplate]
-        Fallback[Fallback: templateService.getStrategyTemplate]
-        Result[Result: getStrategyTemplate]
-        
-        Custom -->|if defined| Result
-        Fallback -->|else| Result
-    end
-```
+![Mermaid Diagram](./diagrams\94_Strategy_Code_Generation_2.svg)
 
 **Example: Custom Strategy Template**
 
@@ -587,55 +446,7 @@ The generated code integrates seamlessly with backtest-kit's execution modes. Th
 
 **Execution Flow:**
 
-```mermaid
-graph TB
-    Generated[Generated .mjs file]
-    
-    Execute[node generated_file.mjs]
-    
-    ComponentReg[Component Registration<br/>addExchange, addFrame,<br/>addStrategy, addWalker]
-    
-    WalkerBg[Walker.background<br/>symbol, walkerName]
-    
-    Backtest[BacktestLogicPrivateService<br/>Sequential strategy execution]
-    
-    Strategy1[Strategy 1<br/>Multi-timeframe LLM analysis]
-    Strategy2[Strategy 2<br/>Multi-timeframe LLM analysis]
-    StrategyN[Strategy N<br/>Multi-timeframe LLM analysis]
-    
-    Report[Walker Report<br/>Best strategy by metric]
-    
-    Dump[Auto-dump via<br/>listenWalkerComplete]
-    
-    Generated -->|execute| Execute
-    Execute -->|registers| ComponentReg
-    ComponentReg -->|launches| WalkerBg
-    
-    WalkerBg -->|iterates| Backtest
-    
-    Backtest -->|runs| Strategy1
-    Backtest -->|runs| Strategy2
-    Backtest -->|runs| StrategyN
-    
-    Strategy1 -->|metrics| Report
-    Strategy2 -->|metrics| Report
-    StrategyN -->|metrics| Report
-    
-    Report -->|triggers| Dump
-    
-    subgraph "Strategy Execution"
-        GetCandles[getCandles<br/>1m, 5m, 15m, 1h]
-        Messages[Build message history<br/>Progressive timeframe analysis]
-        JSON[json function<br/>Call Ollama with schema]
-        Signal[Return structured signal<br/>position, prices, time]
-        
-        GetCandles --> Messages
-        Messages --> JSON
-        JSON --> Signal
-    end
-    
-    Strategy1 -.->|contains| GetCandles
-```
+![Mermaid Diagram](./diagrams\94_Strategy_Code_Generation_3.svg)
 
 The generated strategies use environment-based authentication (`process.env.OLLAMA_API_KEY`) for Ollama API access, allowing the same code to run in different environments without modification.
 

@@ -62,34 +62,7 @@ The generated timeframe array will contain timestamps starting at `startDate` an
 
 The `FrameInterval` type defines supported tick granularities for timeframe generation. Each interval determines the temporal resolution of the backtest.
 
-```mermaid
-graph LR
-    subgraph "Minute Intervals"
-        M1["1m<br/>(1 minute)"]
-        M3["3m<br/>(3 minutes)"]
-        M5["5m<br/>(5 minutes)"]
-        M15["15m<br/>(15 minutes)"]
-        M30["30m<br/>(30 minutes)"]
-    end
-    
-    subgraph "Hour Intervals"
-        H1["1h<br/>(1 hour)"]
-        H2["2h<br/>(2 hours)"]
-        H4["4h<br/>(4 hours)"]
-        H6["6h<br/>(6 hours)"]
-        H8["8h<br/>(8 hours)"]
-        H12["12h<br/>(12 hours)"]
-    end
-    
-    subgraph "Day Intervals"
-        D1["1d<br/>(1 day)"]
-        D3["3d<br/>(3 days)"]
-    end
-    
-    M1 --> M3 --> M5 --> M15 --> M30
-    M30 --> H1 --> H2 --> H4 --> H6 --> H8 --> H12
-    H12 --> D1 --> D3
-```
+![Mermaid Diagram](./diagrams\56_Timeframe_Generation_0.svg)
 
 **Interval Duration Mapping:**
 
@@ -119,39 +92,7 @@ graph LR
 
 The frame system follows a layered architecture where schemas are registered, validated, and then used to instantiate `ClientFrame` instances that generate timestamp arrays.
 
-```mermaid
-graph TB
-    subgraph "Public API"
-        addFrame["addFrame()<br/>src/function/add.ts"]
-    end
-    
-    subgraph "Service Layer"
-        FrameGlobalService["FrameGlobalService<br/>Validation & Logging"]
-        FrameValidationService["FrameValidationService<br/>Schema Validation"]
-        FrameSchemaService["FrameSchemaService<br/>Schema Registry"]
-        FrameConnectionService["FrameConnectionService<br/>ClientFrame Factory"]
-        FrameCoreService["FrameCoreService<br/>Context Injection"]
-    end
-    
-    subgraph "Client Layer"
-        ClientFrame["ClientFrame<br/>src/client/ClientFrame.ts<br/>Timestamp Generation"]
-    end
-    
-    subgraph "Execution"
-        BacktestLogicPrivateService["BacktestLogicPrivateService<br/>src/lib/services/logic/private/<br/>BacktestLogicPrivateService.ts"]
-    end
-    
-    addFrame -->|registers| FrameGlobalService
-    FrameGlobalService -->|validates| FrameValidationService
-    FrameGlobalService -->|stores| FrameSchemaService
-    
-    FrameCoreService -->|retrieves schema| FrameSchemaService
-    FrameCoreService -->|creates instance| FrameConnectionService
-    FrameConnectionService -->|memoizes| ClientFrame
-    
-    BacktestLogicPrivateService -->|"getTimeframe(symbol, frameName)"| FrameCoreService
-    ClientFrame -->|"Date[]"| BacktestLogicPrivateService
-```
+![Mermaid Diagram](./diagrams\56_Timeframe_Generation_1.svg)
 
 **Sources:** [src/lib/services/logic/private/BacktestLogicPrivateService.ts:69-72]()
 
@@ -163,33 +104,7 @@ The `FrameCoreService` acts as the entry point for timeframe retrieval during ba
 
 ### Timeframe Retrieval Flow
 
-```mermaid
-sequenceDiagram
-    participant BLPS as BacktestLogicPrivateService
-    participant FCS as FrameCoreService
-    participant FConS as FrameConnectionService
-    participant FSS as FrameSchemaService
-    participant CF as ClientFrame
-    
-    BLPS->>FCS: getTimeframe(symbol, frameName)
-    FCS->>FSS: get(frameName)
-    FSS-->>FCS: IFrameSchema
-    FCS->>FConS: getFrame(frameName, symbol)
-    FConS->>FConS: Check memoization cache
-    
-    alt Cache miss
-        FConS->>CF: new ClientFrame(IFrameParams)
-        FConS->>FConS: Memoize with key "frameName:symbol"
-    end
-    
-    FConS-->>FCS: ClientFrame instance
-    FCS->>CF: getTimeframe(symbol, frameName)
-    CF->>CF: Generate timestamps from<br/>startDate to endDate<br/>with interval spacing
-    CF-->>FCS: Date[]
-    FCS-->>BLPS: Date[]
-    
-    Note over BLPS: Iterates through timeframe<br/>calling tick() at each timestamp
-```
+![Mermaid Diagram](./diagrams\56_Timeframe_Generation_2.svg)
 
 **Key Points:**
 
@@ -208,19 +123,7 @@ The `ClientFrame` class implements the timestamp generation logic based on the c
 
 ### Timestamp Generation Algorithm
 
-```mermaid
-graph TD
-    Start["Start: ClientFrame.getTimeframe()"] --> Init["Initialize:<br/>current = startDate<br/>timeframe = []"]
-    Init --> Check["current <= endDate?"]
-    Check -->|Yes| Push["timeframe.push(new Date(current))"]
-    Push --> Increment["current += intervalMilliseconds"]
-    Increment --> Check
-    Check -->|No| Callback["onTimeframe callback<br/>(if configured)"]
-    Callback --> Return["Return: timeframe array"]
-    
-    style Start fill:#e1f5ff
-    style Return fill:#e1ffe1
-```
+![Mermaid Diagram](./diagrams\56_Timeframe_Generation_3.svg)
 
 **Generation Process:**
 
@@ -262,32 +165,7 @@ The generated timeframe array drives the backtest execution loop in `BacktestLog
 
 ### Backtest Loop with Timeframe
 
-```mermaid
-graph LR
-    subgraph "Timeframe Generation"
-        FCS["FrameCoreService.getTimeframe()"]
-        Timeframes["Date[] timeframe<br/>[2024-01-01T00:00:00Z,<br/>2024-01-01T01:00:00Z,<br/>2024-01-01T02:00:00Z,<br/>...]"]
-    end
-    
-    subgraph "Backtest Loop"
-        Index["let i = 0"]
-        Loop["while (i < timeframes.length)"]
-        When["when = timeframes[i]"]
-        Tick["StrategyCoreService.tick(symbol, when, true)"]
-        Result["IStrategyTickResult"]
-        Increment["i++"]
-    end
-    
-    FCS --> Timeframes
-    Timeframes --> Index
-    Index --> Loop
-    Loop -->|true| When
-    When --> Tick
-    Tick --> Result
-    Result --> Increment
-    Increment --> Loop
-    Loop -->|false| Done["Backtest Complete"]
-```
+![Mermaid Diagram](./diagrams\56_Timeframe_Generation_4.svg)
 
 **Execution Flow in BacktestLogicPrivateService:**
 
@@ -386,22 +264,7 @@ The `FrameValidationService` ensures that registered `IFrameSchema` objects meet
 
 ### Validation Rules
 
-```mermaid
-graph TD
-    Start["Frame Validation"] --> CheckName["frameName<br/>must be non-empty string"]
-    CheckName --> CheckInterval["interval<br/>must be valid FrameInterval"]
-    CheckInterval --> CheckDates["startDate < endDate"]
-    CheckDates --> CheckTypes["startDate and endDate<br/>must be Date objects"]
-    CheckTypes --> Pass["Validation Passed"]
-    
-    CheckName -->|fail| Error["Throw validation error"]
-    CheckInterval -->|fail| Error
-    CheckDates -->|fail| Error
-    CheckTypes -->|fail| Error
-    
-    Pass --> Store["Store in FrameSchemaService"]
-    Error --> Reject["Registration rejected"]
-```
+![Mermaid Diagram](./diagrams\56_Timeframe_Generation_5.svg)
 
 **Key Validation Checks:**
 

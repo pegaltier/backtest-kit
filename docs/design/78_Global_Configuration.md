@@ -33,43 +33,7 @@ The framework uses a singleton `GLOBAL_CONFIG` object to store runtime parameter
 
 ### GLOBAL_CONFIG Definition
 
-```mermaid
-graph TB
-    subgraph "GLOBAL_CONFIG Object"
-        Config["GLOBAL_CONFIG<br/>src/config/params.ts"]
-        
-        subgraph "Signal Validation Parameters"
-            P3["CC_MIN_TAKEPROFIT_DISTANCE_PERCENT<br/>number (default: 0.3)"]
-            P4["CC_MAX_STOPLOSS_DISTANCE_PERCENT<br/>number (default: 20)"]
-            P5["CC_MAX_SIGNAL_LIFETIME_MINUTES<br/>number (default: 1440)"]
-        end
-        
-        subgraph "Scheduling Parameters"
-            P1["CC_SCHEDULE_AWAIT_MINUTES<br/>number (default: 120)"]
-        end
-        
-        subgraph "Exchange Data Parameters"
-            P2["CC_AVG_PRICE_CANDLES_COUNT<br/>number (default: 5)"]
-            P6["CC_GET_CANDLES_RETRY_COUNT<br/>number (default: 3)"]
-            P7["CC_GET_CANDLES_RETRY_DELAY_MS<br/>number (default: 5000)"]
-            P8["CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR<br/>number (default: 1000)"]
-            P9["CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN<br/>number (default: 5)"]
-        end
-        
-        Config --> P1
-        Config --> P2
-        Config --> P3
-        Config --> P4
-        Config --> P5
-        Config --> P6
-        Config --> P7
-        Config --> P8
-        Config --> P9
-    end
-    
-    TypeDef["GlobalConfig<br/>(typeof GLOBAL_CONFIG)<br/>types.d.ts"]
-    Config -.->|type derived from| TypeDef
-```
+![Mermaid Diagram](./diagrams\78_Global_Configuration_0.svg)
 
 **GLOBAL_CONFIG Parameter Summary**
 
@@ -114,21 +78,7 @@ setConfig(config: Partial<GlobalConfig>): Promise<void>
 
 **Code Flow:**
 
-```mermaid
-graph LR
-    UserCode["User Code<br/>setConfig()"]
-    SetConfigFn["setConfig()<br/>types.d.ts:135"]
-    GlobalConfig["GLOBAL_CONFIG<br/>src/config/params.ts"]
-    ValidateSignal["VALIDATE_SIGNAL_FN<br/>ClientStrategy.ts:41"]
-    GetCandles["ClientExchange.getCandles()<br/>exchange retry logic"]
-    ScheduleTimeout["CHECK_SCHEDULED_SIGNAL_TIMEOUT_FN<br/>ClientStrategy.ts:474"]
-    
-    UserCode -->|calls| SetConfigFn
-    SetConfigFn -->|updates| GlobalConfig
-    GlobalConfig -->|read by| ValidateSignal
-    GlobalConfig -->|read by| GetCandles
-    GlobalConfig -->|read by| ScheduleTimeout
-```
+![Mermaid Diagram](./diagrams\78_Global_Configuration_1.svg)
 
 Sources: [types.d.ts:124-135](), [src/client/ClientStrategy.ts:30](), [src/client/ClientStrategy.ts:474-528]()
 
@@ -150,28 +100,7 @@ Sources: [types.d.ts:124-135](), [src/client/ClientStrategy.ts:30](), [src/clien
 
 **Validation Flow:**
 
-```mermaid
-graph TB
-    ScheduledSignal["Scheduled Signal Created<br/>(action='scheduled')"]
-    MonitorLoop["Monitoring Loop<br/>(tick or backtest)"]
-    CheckTimeout["Calculate Elapsed Time<br/>(currentTime - scheduledAt)"]
-    TimeoutCheck{"Elapsed >= CC_SCHEDULE_AWAIT_MINUTES?"}
-    CancelSignal["Cancel Signal<br/>(action='cancelled')"]
-    CheckPrice["Check if priceOpen Reached"]
-    PriceReached{"Price Reached?"}
-    ActivateSignal["Activate Signal<br/>(action='opened')"]
-    ContinueMonitoring["Continue Monitoring"]
-    
-    ScheduledSignal --> MonitorLoop
-    MonitorLoop --> CheckTimeout
-    CheckTimeout --> TimeoutCheck
-    TimeoutCheck -->|Yes| CancelSignal
-    TimeoutCheck -->|No| CheckPrice
-    CheckPrice --> PriceReached
-    PriceReached -->|Yes| ActivateSignal
-    PriceReached -->|No| ContinueMonitoring
-    ContinueMonitoring --> MonitorLoop
-```
+![Mermaid Diagram](./diagrams\78_Global_Configuration_2.svg)
 
 **Example:**
 ```typescript
@@ -199,19 +128,7 @@ Sources: [src/config/params.ts:3-6](), [types.d.ts:7-10](), [test/e2e/defend.tes
 
 **VWAP Calculation Flow:**
 
-```mermaid
-graph LR
-    GetAveragePrice["getAveragePrice(symbol)"]
-    FetchCandles["getCandles(symbol, '1m', CC_AVG_PRICE_CANDLES_COUNT)"]
-    Calculate["For each candle:<br/>typicalPrice = (high + low + close) / 3<br/>weightedPrice = typicalPrice × volume"]
-    Aggregate["VWAP = Σ(weightedPrice) / Σ(volume)"]
-    Return["Return VWAP"]
-    
-    GetAveragePrice --> FetchCandles
-    FetchCandles --> Calculate
-    Calculate --> Aggregate
-    Aggregate --> Return
-```
+![Mermaid Diagram](./diagrams\78_Global_Configuration_3.svg)
 
 **Example:**
 ```typescript
@@ -239,19 +156,7 @@ Sources: [src/config/params.ts:8-10](), [types.d.ts:12-15](), [types.d.ts:264-27
 
 **Validation Logic:**
 
-```mermaid
-graph TB
-    ValidateSignal["VALIDATE_SIGNAL_FN<br/>(signal validation)"]
-    CalculateDistance["Calculate TP Distance<br/>Long: (priceTakeProfit - priceOpen) / priceOpen × 100<br/>Short: (priceOpen - priceTakeProfit) / priceOpen × 100"]
-    CheckDistance{"Distance >= CC_MIN_TAKEPROFIT_DISTANCE_PERCENT?"}
-    Accept["Accept Signal"]
-    Reject["Reject Signal<br/>(throw validation error)"]
-    
-    ValidateSignal --> CalculateDistance
-    CalculateDistance --> CheckDistance
-    CheckDistance -->|Yes| Accept
-    CheckDistance -->|No| Reject
-```
+![Mermaid Diagram](./diagrams\78_Global_Configuration_4.svg)
 
 **Example:**
 ```typescript
@@ -279,19 +184,7 @@ Sources: [src/config/params.ts:12-17](), [types.d.ts:17-21](), [test/e2e/sanitiz
 
 **Validation Logic:**
 
-```mermaid
-graph TB
-    ValidateSignal["VALIDATE_SIGNAL_FN<br/>(signal validation)"]
-    CalculateDistance["Calculate SL Distance<br/>Long: (priceOpen - priceStopLoss) / priceOpen × 100<br/>Short: (priceStopLoss - priceOpen) / priceOpen × 100"]
-    CheckDistance{"Distance <= CC_MAX_STOPLOSS_DISTANCE_PERCENT?"}
-    Accept["Accept Signal"]
-    Reject["Reject Signal<br/>(throw validation error)"]
-    
-    ValidateSignal --> CalculateDistance
-    CalculateDistance --> CheckDistance
-    CheckDistance -->|Yes| Accept
-    CheckDistance -->|No| Reject
-```
+![Mermaid Diagram](./diagrams\78_Global_Configuration_5.svg)
 
 **Example:**
 ```typescript
@@ -320,34 +213,7 @@ Sources: [src/config/params.ts:19-23](), [types.d.ts:23-27](), [test/e2e/sanitiz
 
 **Lifecycle Monitoring:**
 
-```mermaid
-graph TB
-    ActiveSignal["Active Signal<br/>(action='active')"]
-    MonitorLoop["Monitoring Loop<br/>(tick or backtest)"]
-    CheckLifetime["Calculate Signal Age<br/>(currentTime - pendingAt)"]
-    LifetimeCheck{"Age >= CC_MAX_SIGNAL_LIFETIME_MINUTES?"}
-    CheckTP["Check TakeProfit"]
-    CheckSL["Check StopLoss"]
-    TPReached{"TP Reached?"}
-    SLReached{"SL Reached?"}
-    CloseTimeExpired["Close Signal<br/>(closeReason='time_expired')"]
-    CloseTP["Close Signal<br/>(closeReason='take_profit')"]
-    CloseSL["Close Signal<br/>(closeReason='stop_loss')"]
-    ContinueMonitoring["Continue Monitoring"]
-    
-    ActiveSignal --> MonitorLoop
-    MonitorLoop --> CheckLifetime
-    CheckLifetime --> LifetimeCheck
-    LifetimeCheck -->|Yes| CloseTimeExpired
-    LifetimeCheck -->|No| CheckTP
-    CheckTP --> TPReached
-    TPReached -->|Yes| CloseTP
-    TPReached -->|No| CheckSL
-    CheckSL --> SLReached
-    SLReached -->|Yes| CloseSL
-    SLReached -->|No| ContinueMonitoring
-    ContinueMonitoring --> MonitorLoop
-```
+![Mermaid Diagram](./diagrams\78_Global_Configuration_6.svg)
 
 **Example:**
 ```typescript
@@ -375,24 +241,7 @@ Sources: [src/config/params.ts:25-29](), [types.d.ts:29-34](), [test/e2e/sanitiz
 
 **Retry Logic Flow:**
 
-```mermaid
-graph TB
-    GetCandles["ClientExchange.getCandles()<br/>called"]
-    AttemptFetch["Attempt Fetch<br/>(attempt counter)"]
-    Success{"Fetch Success?"}
-    ReturnData["Return Candle Data"]
-    CheckRetries{"Retries < CC_GET_CANDLES_RETRY_COUNT?"}
-    Wait["Wait CC_GET_CANDLES_RETRY_DELAY_MS"]
-    ThrowError["Throw Error<br/>(all retries exhausted)"]
-    
-    GetCandles --> AttemptFetch
-    AttemptFetch --> Success
-    Success -->|Yes| ReturnData
-    Success -->|No| CheckRetries
-    CheckRetries -->|Yes| Wait
-    CheckRetries -->|No| ThrowError
-    Wait --> AttemptFetch
-```
+![Mermaid Diagram](./diagrams\78_Global_Configuration_7.svg)
 
 **Example:**
 ```typescript
@@ -452,26 +301,7 @@ Sources: [types.d.ts:39-43]()
 
 **Anomaly Detection Logic:**
 
-```mermaid
-graph TB
-    FetchCandles["Fetch Candle Data<br/>from Exchange"]
-    ExtractPrices["Extract All OHLC Prices<br/>(4 prices per candle)"]
-    CheckCount{"Candles >= CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN?"}
-    CalcMedian["Calculate Median Price<br/>(referencePrice)"]
-    CalcAverage["Calculate Average Price<br/>(referencePrice)"]
-    CalcThreshold["Calculate Threshold<br/>referencePrice / CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR"]
-    FilterCandles["Filter Candles<br/>(remove if any price < threshold)"]
-    ReturnFiltered["Return Filtered Candles"]
-    
-    FetchCandles --> ExtractPrices
-    ExtractPrices --> CheckCount
-    CheckCount -->|Yes| CalcMedian
-    CheckCount -->|No| CalcAverage
-    CalcMedian --> CalcThreshold
-    CalcAverage --> CalcThreshold
-    CalcThreshold --> FilterCandles
-    FilterCandles --> ReturnFiltered
-```
+![Mermaid Diagram](./diagrams\78_Global_Configuration_8.svg)
 
 **Example:**
 ```typescript
@@ -506,20 +336,7 @@ Sources: [types.d.ts:44-57]()
 
 **Statistical Method Selection:**
 
-```mermaid
-graph TB
-    CandleData["Candle Data<br/>(n candles)"]
-    CheckCount{"n >= CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN?"}
-    UseMedian["Use Median<br/>(robust to outliers)"]
-    UseAverage["Use Average<br/>(stable for small n)"]
-    CalcReference["Calculate Reference Price"]
-    
-    CandleData --> CheckCount
-    CheckCount -->|Yes| UseMedian
-    CheckCount -->|No| UseAverage
-    UseMedian --> CalcReference
-    UseAverage --> CalcReference
-```
+![Mermaid Diagram](./diagrams\78_Global_Configuration_9.svg)
 
 **Example:**
 ```typescript
@@ -537,61 +354,7 @@ Sources: [types.d.ts:58-72]()
 
 The configuration system follows a simple write-once-read-many pattern, where configuration parameters are read by validation and monitoring logic throughout the framework.
 
-```mermaid
-graph TB
-    subgraph "Configuration Layer"
-        SetConfig["setConfig()<br/>types.d.ts:135"]
-        GlobalConfig["GLOBAL_CONFIG<br/>src/config/params.ts:1-30"]
-    end
-    
-    subgraph "Validation Layer"
-        ValidateSignal["VALIDATE_SIGNAL_FN<br/>ClientStrategy.ts:41"]
-        CheckTP["CC_MIN_TAKEPROFIT_DISTANCE_PERCENT<br/>ClientStrategy.ts:138-148"]
-        CheckSL["CC_MAX_STOPLOSS_DISTANCE_PERCENT<br/>ClientStrategy.ts:151-161"]
-        CheckLifetime["CC_MAX_SIGNAL_LIFETIME_MINUTES<br/>ClientStrategy.ts:237-246"]
-    end
-    
-    subgraph "Exchange Layer"
-        GetCandles["ClientExchange.getCandles()"]
-        RetryLogic["Retry Logic<br/>CC_GET_CANDLES_RETRY_COUNT<br/>CC_GET_CANDLES_RETRY_DELAY_MS"]
-        AnomalyDetection["Anomaly Detection<br/>CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR<br/>CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN"]
-        GetAveragePrice["ClientExchange.getAveragePrice()<br/>CC_AVG_PRICE_CANDLES_COUNT"]
-    end
-    
-    subgraph "Strategy Execution Layer"
-        ClientStrategyTick["ClientStrategy.tick()<br/>ClientStrategy.ts:1639"]
-        CheckExpiration["CHECK_PENDING_SIGNAL_COMPLETION_FN<br/>ClientStrategy.ts:817<br/>CC_MAX_SIGNAL_LIFETIME_MINUTES"]
-        BacktestLogic["BacktestLogicPrivateService"]
-        LiveLogic["LiveLogicPrivateService"]
-    end
-    
-    subgraph "Scheduled Signal Layer"
-        ScheduledTimeout["CHECK_SCHEDULED_SIGNAL_TIMEOUT_FN<br/>ClientStrategy.ts:474<br/>CC_SCHEDULE_AWAIT_MINUTES"]
-        ProcessScheduled["PROCESS_SCHEDULED_SIGNAL_CANDLES_FN<br/>ClientStrategy.ts:1263<br/>CC_SCHEDULE_AWAIT_MINUTES"]
-    end
-    
-    SetConfig -->|updates| GlobalConfig
-    
-    GlobalConfig -->|read by| ValidateSignal
-    ValidateSignal --> CheckTP
-    ValidateSignal --> CheckSL
-    ValidateSignal --> CheckLifetime
-    
-    GlobalConfig -->|read by| GetCandles
-    GetCandles --> RetryLogic
-    GetCandles --> AnomalyDetection
-    
-    GlobalConfig -->|read by| GetAveragePrice
-    
-    GlobalConfig -->|read by| ClientStrategyTick
-    ClientStrategyTick --> CheckExpiration
-    
-    GlobalConfig -->|read by| ScheduledTimeout
-    GlobalConfig -->|read by| ProcessScheduled
-    
-    BacktestLogic --> ClientStrategyTick
-    LiveLogic --> ClientStrategyTick
-```
+![Mermaid Diagram](./diagrams\78_Global_Configuration_10.svg)
 
 **Configuration Consumers by Code Entity:**
 

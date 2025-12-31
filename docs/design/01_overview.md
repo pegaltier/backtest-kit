@@ -66,79 +66,7 @@ backtest-kit implements a layered architecture with 50+ services organized into 
 
 **System Architecture Diagram**:
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        API["Public Functions<br/>addStrategy(), addExchange()<br/>addRisk(), addFrame()<br/>setConfig(), setLogger()"]
-        UTILS["Utility Classes<br/>BacktestUtils, LiveUtils<br/>WalkerUtils, OptimizerUtils"]
-        LISTENERS["Event Listeners<br/>listenSignal(), listenError()<br/>listenPartialProfit(), listenRisk()"]
-    end
-    
-    subgraph "Command Services"
-        BTCMD["BacktestCommandService"]
-        LVCMD["LiveCommandService"]
-        WKCMD["WalkerCommandService"]
-    end
-    
-    subgraph "Logic Services"
-        BTLOGIC["BacktestLogicPrivateService<br/>BacktestLogicPublicService"]
-        LVLOGIC["LiveLogicPrivateService<br/>LiveLogicPublicService"]
-        WKLOGIC["WalkerLogicPrivateService<br/>WalkerLogicPublicService"]
-    end
-    
-    subgraph "Connection Services"
-        STRATCONN["StrategyConnectionService"]
-        EXCHCONN["ExchangeConnectionService"]
-        RISKCONN["RiskConnectionService"]
-        PARTIALCONN["PartialConnectionService"]
-    end
-    
-    subgraph "Core Services"
-        STRATCORE["StrategyCoreService"]
-        EXCHCORE["ExchangeCoreService"]
-        FRAMECORE["FrameCoreService"]
-    end
-    
-    subgraph "Schema Services"
-        STRATSCHEMA["StrategySchemaService"]
-        EXCHSCHEMA["ExchangeSchemaService"]
-        RISKSCHEMA["RiskSchemaService"]
-        FRAMESCHEMA["FrameSchemaService"]
-    end
-    
-    subgraph "Client Implementations"
-        CS["ClientStrategy<br/>tick(), backtest(), stop()"]
-        CE["ClientExchange<br/>getCandles(), getAveragePrice()"]
-        CR["ClientRisk<br/>checkSignal(), addSignal()"]
-        CP["ClientPartial<br/>track(), clear()"]
-    end
-    
-    subgraph "Persistence Layer"
-        PSA["PersistSignalAdapter"]
-        PRA["PersistRiskAdapter"]
-        PSCHA["PersistScheduleAdapter"]
-        PPA["PersistPartialAdapter"]
-    end
-    
-    API --> STRATSCHEMA
-    API --> EXCHSCHEMA
-    UTILS --> BTCMD
-    UTILS --> LVCMD
-    BTCMD --> BTLOGIC
-    LVCMD --> LVLOGIC
-    BTLOGIC --> STRATCORE
-    LVLOGIC --> STRATCORE
-    STRATCORE --> STRATCONN
-    STRATCONN --> CS
-    EXCHCORE --> EXCHCONN
-    EXCHCONN --> CE
-    RISKCONN --> CR
-    PARTIALCONN --> CP
-    CS --> PSA
-    CR --> PRA
-    CS --> PSCHA
-    CP --> PPA
-```
+![Mermaid Diagram](./diagrams\01_Overview_0.svg)
 
 **Layer Responsibilities**:
 
@@ -163,43 +91,7 @@ backtest-kit provides three execution modes with distinct data flow and persiste
 
 **Execution Mode Comparison**:
 
-```mermaid
-graph TB
-    subgraph "Backtest Mode"
-        BT_INPUT["FrameCoreService<br/>generates timeframes<br/>from startDate to endDate"]
-        BT_EXEC["BacktestLogicPrivateService.execute()<br/>Iterates candles<br/>Fast-forward on signal open"]
-        BT_CLIENT["ClientStrategy.backtest()<br/>Returns IStrategyBacktestResult"]
-        BT_OUTPUT["signalBacktestEmitter<br/>Emits closed/cancelled signals"]
-        
-        BT_INPUT --> BT_EXEC
-        BT_EXEC --> BT_CLIENT
-        BT_CLIENT --> BT_OUTPUT
-    end
-    
-    subgraph "Live Mode"
-        LV_INPUT["Date.now() every tick<br/>TICK_TTL = 60000ms"]
-        LV_EXEC["LiveLogicPrivateService.loop()<br/>Infinite while loop<br/>sleep between ticks"]
-        LV_CLIENT["ClientStrategy.tick()<br/>Returns IStrategyTickResult"]
-        LV_PERSIST["PersistSignalAdapter.writeSignalData()<br/>Atomic file writes to ./dump/data/signal/"]
-        LV_OUTPUT["signalLiveEmitter<br/>Emits all signal states"]
-        
-        LV_INPUT --> LV_EXEC
-        LV_EXEC --> LV_CLIENT
-        LV_CLIENT --> LV_PERSIST
-        LV_CLIENT --> LV_OUTPUT
-    end
-    
-    subgraph "Walker Mode"
-        WK_INPUT["WalkerSchemaService<br/>strategies array + metric"]
-        WK_EXEC["WalkerLogicPrivateService.execute()<br/>Sequential backtests<br/>for each strategy"]
-        WK_RANK["Rank by metric<br/>sharpeRatio, totalPnl, winRate"]
-        WK_OUTPUT["walkerCompleteSubject<br/>Emits WalkerCompleteContract"]
-        
-        WK_INPUT --> WK_EXEC
-        WK_EXEC --> WK_RANK
-        WK_RANK --> WK_OUTPUT
-    end
-```
+![Mermaid Diagram](./diagrams\01_Overview_1.svg)
 
 **Mode Characteristics**:
 
@@ -224,46 +116,7 @@ All modes use `ExecutionContextService` with `AsyncLocalStorage` to propagate:
 
 The framework uses dependency inversion for component registration. Components are defined separately and wired together at runtime using string identifiers:
 
-```mermaid
-graph TB
-    subgraph "Schema Registration"
-        ADDEX["addExchange(IExchangeSchema)"]
-        ADDSTR["addStrategy(IStrategySchema)"]
-        ADDFR["addFrame(IFrameSchema)"]
-        ADDRISK["addRisk(IRiskSchema)"]
-        ADDSZ["addSizing(ISizingSchema)"]
-    end
-    
-    subgraph "Schema Services"
-        TOOL["ToolRegistry<br/>Immutable storage"]
-    end
-    
-    subgraph "Connection Services"
-        EXCHCONN["ExchangeConnectionService<br/>Finds exchange by name"]
-        STRATCONN["StrategyConnectionService<br/>Finds strategy by name<br/>Memoized per symbol:strategy"]
-        RISKCONN["RiskConnectionService<br/>Finds risk by name"]
-    end
-    
-    subgraph "Client Instances"
-        CE["ClientExchange<br/>getCandles()<br/>formatPrice()"]
-        CS["ClientStrategy<br/>tick()<br/>backtest()"]
-        CR["ClientRisk<br/>checkSignal()"]
-    end
-    
-    ADDEX --> TOOL
-    ADDSTR --> TOOL
-    ADDFR --> TOOL
-    ADDRISK --> TOOL
-    ADDSZ --> TOOL
-    
-    TOOL --> EXCHCONN
-    TOOL --> STRATCONN
-    TOOL --> RISKCONN
-    
-    EXCHCONN --> CE
-    STRATCONN --> CS
-    RISKCONN --> CR
-```
+![Mermaid Diagram](./diagrams\01_Overview_2.svg)
 
 **Registration Example** (from codebase pattern):
 
@@ -299,42 +152,7 @@ Signals progress through a type-safe state machine implemented as TypeScript dis
 
 **Signal State Machine**:
 
-```mermaid
-stateDiagram-v2
-    [*] --> IStrategyTickResultIdle: "No active position"
-    
-    IStrategyTickResultIdle --> IStrategyTickResultScheduled: "getSignal() returns ISignalDto<br/>with priceOpen specified"
-    IStrategyTickResultIdle --> IStrategyTickResultOpened: "getSignal() returns ISignalDto<br/>without priceOpen"
-    
-    IStrategyTickResultScheduled --> IStrategyTickResultOpened: "currentPrice reaches priceOpen<br/>Risk.checkSignal() passes"
-    IStrategyTickResultScheduled --> IStrategyTickResultCancelled: "currentPrice hits priceStopLoss<br/>OR CC_SCHEDULE_AWAIT_MINUTES timeout"
-    
-    IStrategyTickResultOpened --> IStrategyTickResultActive: "Risk.checkSignal() passes<br/>Risk.addSignal() called<br/>PersistSignalAdapter.writeSignalData()"
-    IStrategyTickResultOpened --> IStrategyTickResultIdle: "Risk.checkSignal() fails"
-    
-    IStrategyTickResultActive --> IStrategyTickResultClosed: "TP/SL hit OR<br/>minuteEstimatedTime expired"
-    
-    IStrategyTickResultCancelled --> IStrategyTickResultIdle: "onCancel callback<br/>PersistScheduleAdapter cleared"
-    IStrategyTickResultClosed --> IStrategyTickResultIdle: "onClose callback<br/>Risk.removeSignal() called<br/>PersistSignalAdapter cleared"
-    
-    note right of IStrategyTickResultScheduled
-        IScheduledSignalRow stored in
-        PersistScheduleAdapter
-        Monitoring via currentPrice:
-        - priceOpen reached?
-        - priceStopLoss hit?
-        - scheduledAt + CC_SCHEDULE_AWAIT_MINUTES
-    end note
-    
-    note right of IStrategyTickResultActive
-        ISignalRow stored in
-        PersistSignalAdapter
-        Monitoring via currentPrice:
-        - priceTakeProfit reached?
-        - priceStopLoss reached?
-        - pendingAt + minuteEstimatedTime
-    end note
-```
+![Mermaid Diagram](./diagrams\01_Overview_3.svg)
 
 **TypeScript Interfaces**:
 
@@ -365,71 +183,7 @@ backtest-kit implements an event-driven architecture using RxJS `Subject` instan
 
 **Event Flow Diagram**:
 
-```mermaid
-graph TB
-    subgraph "Event Sources"
-        STRAT["ClientStrategy.tick()<br/>ClientStrategy.backtest()"]
-        RISK["ClientRisk.checkSignal()"]
-        PARTIAL["ClientPartial.track()"]
-        WALKER["WalkerLogicPrivateService.execute()"]
-        PERF["PerformanceContract timing"]
-    end
-    
-    subgraph "Event Emitters (RxJS Subjects)"
-        SE["signalEmitter: Subject<br/>All signals (backtest + live)"]
-        SBE["signalBacktestEmitter: Subject<br/>Backtest signals only"]
-        SLE["signalLiveEmitter: Subject<br/>Live signals only"]
-        RE["riskSubject: Subject<br/>Risk rejections"]
-        PPE["partialProfitSubject: Subject<br/>TP milestones"]
-        PLE["partialLossSubject: Subject<br/>SL milestones"]
-        WE["walkerCompleteSubject: Subject<br/>Walker results"]
-        PE["performanceEmitter: Subject<br/>Timing metrics"]
-        ERR["errorEmitter: Subject<br/>Errors"]
-    end
-    
-    subgraph "Listener Functions (Public API)"
-        LS["listenSignal(callback)<br/>listenSignalOnce(callback)"]
-        LSB["listenSignalBacktest(callback)<br/>listenSignalBacktestOnce(callback)"]
-        LSL["listenSignalLive(callback)<br/>listenSignalLiveOnce(callback)"]
-        LR["listenRisk(callback)<br/>listenRiskOnce(callback)"]
-        LPP["listenPartialProfit(callback)<br/>listenPartialProfitOnce(callback)"]
-        LPL["listenPartialLoss(callback)<br/>listenPartialLossOnce(callback)"]
-        LW["listenWalkerComplete(callback)"]
-        LP["listenPerformance(callback)"]
-        LE["listenError(callback)"]
-    end
-    
-    subgraph "Markdown Aggregators"
-        BMS["BacktestMarkdownService<br/>Subscribes to signalBacktestEmitter<br/>Bounded queue MAX_EVENTS=250"]
-        LMS["LiveMarkdownService<br/>Subscribes to signalLiveEmitter<br/>Accumulates all tick events"]
-        WMS["WalkerMarkdownService<br/>Subscribes to walkerCompleteSubject<br/>Stores strategy comparison"]
-        HMS["HeatMarkdownService<br/>Subscribes to signalEmitter<br/>Cross-symbol aggregation"]
-    end
-    
-    STRAT --> SE
-    STRAT --> SBE
-    STRAT --> SLE
-    RISK --> RE
-    PARTIAL --> PPE
-    PARTIAL --> PLE
-    WALKER --> WE
-    STRAT --> PE
-    
-    SE --> LS
-    SBE --> LSB
-    SLE --> LSL
-    RE --> LR
-    PPE --> LPP
-    PLE --> LPL
-    WE --> LW
-    PE --> LP
-    ERR --> LE
-    
-    SE --> BMS
-    SE --> LMS
-    SE --> HMS
-    WE --> WMS
-```
+![Mermaid Diagram](./diagrams\01_Overview_4.svg)
 
 **Queued Processing**:
 
@@ -471,32 +225,7 @@ Each event emitter has a corresponding TypeScript interface:
 
 The framework is built on the following core dependencies:
 
-```mermaid
-graph TB
-    subgraph "Framework Core"
-        BK["backtest-kit"]
-    end
-    
-    subgraph "Dependency Injection"
-        DI["di-kit v1.0.18<br/>Symbol-based registration"]
-        SCOPED["di-scoped v1.0.20<br/>Async context propagation"]
-    end
-    
-    subgraph "Reactive & Utilities"
-        FUNC["functools-kit v1.0.94<br/>Subject, queued, singleshot"]
-        STAMP["get-moment-stamp v1.1.1<br/>Timestamp formatting"]
-    end
-    
-    subgraph "AI Integration"
-        OLLAMA["ollama v0.6.3<br/>LLM strategy generation"]
-    end
-    
-    BK --> DI
-    BK --> SCOPED
-    BK --> FUNC
-    BK --> STAMP
-    BK --> OLLAMA
-```
+![Mermaid Diagram](./diagrams\01_Overview_5.svg)
 
 **Key Dependencies**:
 
@@ -546,28 +275,7 @@ backtest-kit/
 
 The framework includes comprehensive test coverage across multiple categories:
 
-```mermaid
-graph TB
-    subgraph "E2E Tests"
-        E2E_DEF["defend.test.mjs<br/>Edge cases & limit orders"]
-        E2E_RISK["risk.test.mjs<br/>Risk validation"]
-        E2E_SCHED["scheduled.test.mjs<br/>Scheduled signals"]
-        E2E_PER["persist.test.mjs<br/>Crash recovery"]
-    end
-    
-    subgraph "Spec Tests"
-        SPEC_BT["backtest.test.mjs<br/>Backtest execution"]
-        SPEC_LV["live.test.mjs<br/>Live trading"]
-        SPEC_WK["walker.test.mjs<br/>Strategy comparison"]
-        SPEC_HT["heat.test.mjs<br/>Heatmap analytics"]
-        SPEC_PNL["pnl.test.mjs<br/>PNL calculation"]
-    end
-    
-    subgraph "Test Infrastructure"
-        MOCK["getMockCandles.mjs<br/>Mock data generator"]
-        SETUP["setup.mjs<br/>Test configuration"]
-    end
-```
+![Mermaid Diagram](./diagrams\01_Overview_6.svg)
 
 **Test Categories**:
 

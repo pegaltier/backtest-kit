@@ -35,66 +35,7 @@ The framework's architecture naturally supports multi-symbol strategies through 
 3. **Context propagation** - `ExecutionContextService` injects the current symbol into each operation
 4. **Per-symbol persistence** - Signal files are stored separately for each symbol
 
-```mermaid
-graph TB
-    subgraph "User Code"
-        Symbols["Symbols Array<br/>['BTCUSDT', 'ETHUSDT', 'SOLUSDT']"]
-    end
-    
-    subgraph "Async Generator per Symbol"
-        LiveBTC["Live.run('BTCUSDT', context)"]
-        LiveETH["Live.run('ETHUSDT', context)"]
-        LiveSOL["Live.run('SOLUSDT', context)"]
-    end
-    
-    subgraph "Service Layer (Shared)"
-        MethodCtx["MethodContextService<br/>{strategyName, exchangeName}"]
-        StratConn["StrategyConnectionService<br/>getStrategy(symbol, strategyName)"]
-    end
-    
-    subgraph "Client Instances (Per Symbol)"
-        ClientStratBTC["ClientStrategy<br/>(BTCUSDT:my-strategy)"]
-        ClientStratETH["ClientStrategy<br/>(ETHUSDT:my-strategy)"]
-        ClientStratSOL["ClientStrategy<br/>(SOLUSDT:my-strategy)"]
-    end
-    
-    subgraph "Execution Context (Per-Symbol)"
-        ExecBTC["ExecutionContextService<br/>{symbol: 'BTCUSDT', when, backtest}"]
-        ExecETH["ExecutionContextService<br/>{symbol: 'ETHUSDT', when, backtest}"]
-        ExecSOL["ExecutionContextService<br/>{symbol: 'SOLUSDT', when, backtest}"]
-    end
-    
-    subgraph "Persistence (Isolated)"
-        PersistBTC["./signals/my-strategy/BTCUSDT.json"]
-        PersistETH["./signals/my-strategy/ETHUSDT.json"]
-        PersistSOL["./signals/my-strategy/SOLUSDT.json"]
-    end
-    
-    Symbols --> LiveBTC
-    Symbols --> LiveETH
-    Symbols --> LiveSOL
-    
-    LiveBTC --> MethodCtx
-    LiveETH --> MethodCtx
-    LiveSOL --> MethodCtx
-    
-    MethodCtx --> StratConn
-    StratConn --> ClientStratBTC
-    StratConn --> ClientStratETH
-    StratConn --> ClientStratSOL
-    
-    LiveBTC --> ExecBTC
-    LiveETH --> ExecETH
-    LiveSOL --> ExecSOL
-    
-    ExecBTC --> ClientStratBTC
-    ExecETH --> ClientStratETH
-    ExecSOL --> ClientStratSOL
-    
-    ClientStratBTC --> PersistBTC
-    ClientStratETH --> PersistETH
-    ClientStratSOL --> PersistSOL
-```
+![Mermaid Diagram](./diagrams\89_Multi-Symbol_Strategies_0.svg)
 
 **Sources:** [types.d.ts:57-64](), [types.d.ts:315-323](), [types.d.ts:1069-1107]()
 
@@ -129,45 +70,7 @@ await Promise.all(
 
 ### Execution Flow Diagram
 
-```mermaid
-sequenceDiagram
-    participant App
-    participant PromiseAll as "Promise.all()"
-    participant LiveBTC as "Live.run('BTCUSDT')"
-    participant LiveETH as "Live.run('ETHUSDT')"
-    participant StratConn as "StrategyConnectionService"
-    participant ClientStratBTC as "ClientStrategy (BTCUSDT:my-strategy)"
-    participant ClientStratETH as "ClientStrategy (ETHUSDT:my-strategy)"
-    participant PersistBTC as "BTCUSDT.json"
-    participant PersistETH as "ETHUSDT.json"
-    
-    App->>PromiseAll: Start parallel execution
-    PromiseAll->>LiveBTC: Start BTCUSDT generator
-    PromiseAll->>LiveETH: Start ETHUSDT generator
-    
-    LiveBTC->>StratConn: getStrategy('BTCUSDT', 'my-strategy')
-    StratConn-->>ClientStratBTC: Create/retrieve instance (key: BTCUSDT:my-strategy)
-    LiveETH->>StratConn: getStrategy('ETHUSDT', 'my-strategy')
-    StratConn-->>ClientStratETH: Create/retrieve instance (key: ETHUSDT:my-strategy)
-    
-    par Parallel Execution
-        loop Every 1 minute
-            LiveBTC->>ClientStratBTC: tick(symbol='BTCUSDT')
-            ClientStratBTC->>PersistBTC: readSignalData('my-strategy', 'BTCUSDT')
-            PersistBTC-->>ClientStratBTC: Existing signal or null
-            ClientStratBTC-->>LiveBTC: {action, signal, currentPrice}
-            LiveBTC-->>App: yield result
-        end
-    and
-        loop Every 1 minute
-            LiveETH->>ClientStratETH: tick(symbol='ETHUSDT')
-            ClientStratETH->>PersistETH: readSignalData('my-strategy', 'ETHUSDT')
-            PersistETH-->>ClientStratETH: Existing signal or null
-            ClientStratETH-->>LiveETH: {action, signal, currentPrice}
-            LiveETH-->>App: yield result
-        end
-    end
-```
+![Mermaid Diagram](./diagrams\89_Multi-Symbol_Strategies_1.svg)
 
 **Sources:** [README.md:692-715](), [types.d.ts:1264-1333]()
 
@@ -198,44 +101,7 @@ Each `(strategyName, symbol)` pair maintains completely isolated signal state. T
 
 ### State Isolation Flow
 
-```mermaid
-graph LR
-    subgraph "Live.run('BTCUSDT')"
-        ExecBTC["ExecutionContextService<br/>{symbol: 'BTCUSDT'}"]
-        TickBTC["ClientStrategy.tick()"]
-    end
-    
-    subgraph "Live.run('ETHUSDT')"
-        ExecETH["ExecutionContextService<br/>{symbol: 'ETHUSDT'}"]
-        TickETH["ClientStrategy.tick()"]
-    end
-    
-    subgraph "Per-Symbol ClientStrategy Instances"
-        GetSignalBTC["ClientStrategy (BTCUSDT)<br/>getSignal() with symbol='BTCUSDT'"]
-        GetSignalETH["ClientStrategy (ETHUSDT)<br/>getSignal() with symbol='ETHUSDT'"]
-        ReadState["PersistSignalAdapter.readSignalData()"]
-        WriteState["PersistSignalAdapter.writeSignalData()"]
-    end
-    
-    subgraph "Isolated Persistence"
-        FileBTC["BTCUSDT.json"]
-        FileETH["ETHUSDT.json"]
-    end
-    
-    ExecBTC --> TickBTC
-    ExecETH --> TickETH
-    
-    TickBTC --> GetSignalBTC
-    TickETH --> GetSignalETH
-    
-    GetSignalBTC --> ReadState
-    GetSignalETH --> ReadState
-    ReadState -->|symbol='BTCUSDT'| FileBTC
-    ReadState -->|symbol='ETHUSDT'| FileETH
-    
-    WriteState -->|symbol='BTCUSDT'| FileBTC
-    WriteState -->|symbol='ETHUSDT'| FileETH
-```
+![Mermaid Diagram](./diagrams\89_Multi-Symbol_Strategies_2.svg)
 
 **Sources:** [types.d.ts:1086-1107](), [types.d.ts:57-64]()
 
@@ -256,47 +122,7 @@ The framework uses memoization to cache `ClientStrategy` instances per `(symbol,
 
 ### Instance Architecture per Symbol
 
-```mermaid
-graph TB
-    subgraph "3 Symbols Running"
-        S1["BTCUSDT<br/>Live.run()"]
-        S2["ETHUSDT<br/>Live.run()"]
-        S3["SOLUSDT<br/>Live.run()"]
-    end
-    
-    subgraph "Per-Symbol ClientStrategy Instances"
-        CS1["ClientStrategy<br/>(BTCUSDT:my-strategy)"]
-        CS2["ClientStrategy<br/>(ETHUSDT:my-strategy)"]
-        CS3["ClientStrategy<br/>(SOLUSDT:my-strategy)"]
-    end
-    
-    subgraph "Shared Service Instances"
-        CE["ClientExchange<br/>(1 instance)"]
-        Schema["StrategySchemaService<br/>(1 registry)"]
-    end
-    
-    subgraph "Per-Symbol State"
-        State1["BTCUSDT.json<br/>(signal state)"]
-        State2["ETHUSDT.json<br/>(signal state)"]
-        State3["SOLUSDT.json<br/>(signal state)"]
-    end
-    
-    S1 --> CS1
-    S2 --> CS2
-    S3 --> CS3
-    
-    CS1 --> CE
-    CS2 --> CE
-    CS3 --> CE
-    
-    CS1 --> Schema
-    CS2 --> Schema
-    CS3 --> Schema
-    
-    CS1 --> State1
-    CS2 --> State2
-    CS3 --> State3
-```
+![Mermaid Diagram](./diagrams\89_Multi-Symbol_Strategies_3.svg)
 
 **Memory Usage:**
 - **ClientStrategy instances:** 3 (one per symbol-strategy pair: `BTCUSDT:my-strategy`, `ETHUSDT:my-strategy`, `SOLUSDT:my-strategy`)
@@ -355,31 +181,7 @@ process.on("SIGINT", () => {
 
 ### Event Listener Flow
 
-```mermaid
-sequenceDiagram
-    participant App
-    participant BG1 as "Live.background('BTCUSDT')"
-    participant BG2 as "Live.background('ETHUSDT')"
-    participant EventBus as "Signal Event Bus"
-    participant Listener as "listenSignalLive()"
-    
-    App->>BG1: Start background execution
-    App->>BG2: Start background execution
-    App->>Listener: Register event listener
-    
-    par Background Execution
-        loop Every 1 minute
-            BG1->>EventBus: Emit signal event<br/>{action, signal.symbol='BTCUSDT'}
-        end
-    and
-        loop Every 1 minute
-            BG2->>EventBus: Emit signal event<br/>{action, signal.symbol='ETHUSDT'}
-        end
-    end
-    
-    EventBus->>Listener: Forward events sequentially
-    Listener->>App: Process event with symbol
-```
+![Mermaid Diagram](./diagrams\89_Multi-Symbol_Strategies_4.svg)
 
 **Sources:** [types.d.ts:1264-1333](), [types.d.ts:707-749]()
 
@@ -408,27 +210,7 @@ Average PNL: +1.45%
 
 ### Report Accumulation Pattern
 
-```mermaid
-graph LR
-    subgraph "Multiple Symbols"
-        BTC["Live.run('BTCUSDT')"]
-        ETH["Live.run('ETHUSDT')"]
-        SOL["Live.run('SOLUSDT')"]
-    end
-    
-    subgraph "Reporting Service"
-        LiveMD["LiveMarkdownService<br/>(per strategyName)"]
-        Accum["Accumulated Events Array<br/>strategyName='my-strategy'"]
-    end
-    
-    BTC -->|"event + symbol"| LiveMD
-    ETH -->|"event + symbol"| LiveMD
-    SOL -->|"event + symbol"| LiveMD
-    
-    LiveMD --> Accum
-    
-    Accum -->|"Live.getReport('my-strategy')"| Report["Markdown Report<br/>(all symbols aggregated)"]
-```
+![Mermaid Diagram](./diagrams\89_Multi-Symbol_Strategies_5.svg)
 
 ### Symbol Filtering in Reports
 
@@ -647,34 +429,7 @@ Each symbol's state is persisted independently. If the entire process crashes:
 
 On restart, all symbols resume from their last persisted state with no signal duplication.
 
-```mermaid
-sequenceDiagram
-    participant Process
-    participant LiveBTC as "Live.run('BTCUSDT')"
-    participant LiveETH as "Live.run('ETHUSDT')"
-    participant DiskBTC as "BTCUSDT.json"
-    participant DiskETH as "ETHUSDT.json"
-    
-    Process->>LiveBTC: Start with active signal
-    Process->>LiveETH: Start with active signal
-    
-    LiveBTC->>DiskBTC: Write signal state
-    LiveETH->>DiskETH: Write signal state
-    
-    Note over Process: ⚠️ PROCESS CRASH
-    
-    Process->>Process: Restart
-    Process->>LiveBTC: Restart
-    Process->>LiveETH: Restart
-    
-    LiveBTC->>DiskBTC: Read signal state
-    DiskBTC-->>LiveBTC: Restored signal
-    LiveETH->>DiskETH: Read signal state
-    DiskETH-->>LiveETH: Restored signal
-    
-    LiveBTC->>Process: Resume monitoring
-    LiveETH->>Process: Resume monitoring
-```
+![Mermaid Diagram](./diagrams\89_Multi-Symbol_Strategies_6.svg)
 
 **Sources:** [types.d.ts:1069-1125](), [README.md:170-194]()
 

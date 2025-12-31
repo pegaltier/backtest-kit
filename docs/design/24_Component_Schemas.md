@@ -73,33 +73,7 @@ interface ISchemaPattern {
 
 **Diagram: Schema Registration Pipeline**
 
-```mermaid
-graph TB
-    UserCode["User Code<br/>addStrategy(schema)"]
-    
-    AddFunction["src/function/add.ts<br/>addStrategy()"]
-    
-    ValidationService["StrategyValidationService<br/>validate schema structure"]
-    
-    SchemaService["StrategySchemaService<br/>Map<string, IStrategySchema>"]
-    
-    ConnectionService["StrategyConnectionService<br/>getStrategy(name)"]
-    
-    ClientClass["ClientStrategy<br/>new ClientStrategy(params)"]
-    
-    UserCode -->|"calls"| AddFunction
-    AddFunction -->|"validates"| ValidationService
-    ValidationService -->|"if valid"| SchemaService
-    SchemaService -->|"stores"| Schema["schema stored in Map"]
-    
-    Runtime["Runtime Execution<br/>Backtest.run()"]
-    Runtime -->|"retrieves"| ConnectionService
-    ConnectionService -->|"get(name)"| SchemaService
-    SchemaService -->|"returns IStrategySchema"| ConnectionService
-    ConnectionService -->|"instantiates"| ClientClass
-    
-    ValidationService -.->|"if invalid"| Error["throw validation error"]
-```
+![Mermaid Diagram](./diagrams\24_Component_Schemas_0.svg)
 
 **Storage Structure:**
 
@@ -140,39 +114,7 @@ Schema validation occurs at registration time via dedicated validation services.
 
 Component registration follows a three-phase pipeline: user code calls an `add*` function with a schema object, the function delegates to a validation service that applies 10-30 validation rules depending on component type, and upon successful validation the schema is stored in a schema service for later retrieval by connection services during execution.
 
-```mermaid
-sequenceDiagram
-    participant User as "User Code"
-    participant AddFn as "add* Function<br/>(add.ts)"
-    participant Logger as "LoggerService"
-    participant Validator as "*ValidationService"
-    participant Schema as "*SchemaService"
-    participant Connection as "*ConnectionService<br/>(runtime)"
-    
-    User->>AddFn: addStrategy(schema)
-    AddFn->>Logger: info("add.addStrategy", schema)
-    
-    AddFn->>Validator: addStrategy(name, schema)
-    
-    Note over Validator: Validate required fields<br/>Validate configuration<br/>Validate callbacks<br/>Throw if invalid
-    
-    Validator-->>AddFn: void (or throw Error)
-    
-    AddFn->>Schema: register(name, schema)
-    
-    Note over Schema: Store in Map<name, schema><br/>Enable retrieval by name
-    
-    Schema-->>AddFn: void
-    AddFn-->>User: void
-    
-    Note over User,Connection: Later: during execution
-    
-    Connection->>Schema: get(name)
-    Schema-->>Connection: schema
-    
-    Connection->>Connection: new Client*(schema)
-    Connection-->>Connection: Memoized instance
-```
+![Mermaid Diagram](./diagrams\24_Component_Schemas_1.svg)
 
 **Sources:** [src/function/add.ts:52-64](), [src/function/add.ts:101-113](), [src/lib/core/types.ts:11-14](), [src/lib/core/provide.ts:64-72]()
 
@@ -957,59 +899,7 @@ interface IOptimizerData {
 
 The optimizer iterates through training ranges and sources in nested loops: for each training range, it fetches data from each source (with pagination support), formats the data into user/assistant message pairs, and appends to the conversation history. After collecting all data, it calls `getPrompt()` with the complete message history to generate a strategy prompt for that training range.
 
-```mermaid
-graph TB
-    Start["Optimizer.dump(symbol, optimizerName, path)"]
-    
-    RangeTrain["For each rangeTrain"]
-    
-    Source["For each source"]
-    
-    Fetch["Paginated fetch loop<br/>offset += limit<br/>until data.length < limit"]
-    
-    Format{Source type}
-    
-    FnFormat["Function source:<br/>user: markdown table<br/>assistant: 'OK'"]
-    
-    ObjFormat["Object source:<br/>source.user(symbol, data)<br/>source.assistant(symbol, data)"]
-    
-    Append["Append to messageList[]<br/>{ role: 'user', content: ... }<br/>{ role: 'assistant', content: ... }"]
-    
-    NextSource{More sources?}
-    
-    Prompt["getPrompt(symbol, messageList)<br/>Generate strategy prompt from conversation"]
-    
-    Strategy["Append to strategyList[]<br/>{ rangeTrain, prompt }"]
-    
-    NextRange{More ranges?}
-    
-    Code["Generate code<br/>11 template methods<br/>Assemble complete .mjs file"]
-    
-    Write["Write to file system<br/>callbacks.onDump()"]
-    
-    Start --> RangeTrain
-    RangeTrain --> Source
-    Source --> Fetch
-    Fetch --> Format
-    
-    Format -->|function| FnFormat
-    Format -->|object| ObjFormat
-    
-    FnFormat --> Append
-    ObjFormat --> Append
-    
-    Append --> NextSource
-    NextSource -->|yes| Source
-    NextSource -->|no| Prompt
-    
-    Prompt --> Strategy
-    Strategy --> NextRange
-    
-    NextRange -->|yes| RangeTrain
-    NextRange -->|no| Code
-    
-    Code --> Write
-```
+![Mermaid Diagram](./diagrams\24_Component_Schemas_2.svg)
 
 **Pagination Logic:**
 
@@ -1233,36 +1123,7 @@ addOptimizer({
 
 Component types form a dependency graph where strategies reference exchanges and risk profiles, walkers reference strategies and frames, and optimizers generate complete component configurations. The framework enforces referential integrity at registration time by validating that referenced component names exist in their respective schema services.
 
-```mermaid
-graph TB
-    Strategy["IStrategySchema<br/>strategyName, interval,<br/>getSignal, riskName"]
-    
-    Exchange["IExchangeSchema<br/>exchangeName, getCandles,<br/>formatPrice, formatQuantity"]
-    
-    Frame["IFrameSchema<br/>frameName, interval,<br/>startDate, endDate"]
-    
-    Risk["IRiskSchema<br/>riskName, validations"]
-    
-    Sizing["ISizingSchema<br/>sizingName, method,<br/>position calculation"]
-    
-    Walker["IWalkerSchema<br/>walkerName, strategies[],<br/>exchangeName, frameName, metric"]
-    
-    Optimizer["IOptimizerSchema<br/>optimizerName, rangeTrain[],<br/>source[], getPrompt, template"]
-    
-    Strategy -.->|"optional riskName"| Risk
-    Strategy -.->|"uses at runtime"| Exchange
-    
-    Walker -->|"requires strategies[]"| Strategy
-    Walker -->|"requires exchangeName"| Exchange
-    Walker -->|"requires frameName"| Frame
-    
-    Optimizer -->|"generates"| Strategy
-    Optimizer -->|"generates"| Exchange
-    Optimizer -->|"generates"| Frame
-    Optimizer -->|"generates"| Walker
-    
-    Strategy -.->|"optional sizing"| Sizing
-```
+![Mermaid Diagram](./diagrams\24_Component_Schemas_3.svg)
 
 **Dependency Rules:**
 

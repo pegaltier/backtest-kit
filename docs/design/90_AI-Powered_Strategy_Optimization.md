@@ -49,72 +49,7 @@ Sources: [src/interfaces/Optimizer.interface.ts:379-433](), [src/client/ClientOp
 
 ## Architecture Components
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        API["OptimizerUtils<br/>(Optimizer.getData/getCode/dump)"]
-    end
-    
-    subgraph "Service Layer"
-        GLOBAL["OptimizerGlobalService<br/>Validation + Delegation"]
-        VALIDATION["OptimizerValidationService<br/>Registry Check"]
-        CONNECTION["OptimizerConnectionService<br/>Instance Memoization"]
-        SCHEMA["OptimizerSchemaService<br/>ToolRegistry Storage"]
-        TEMPLATE["OptimizerTemplateService<br/>Default Templates"]
-    end
-    
-    subgraph "Client Layer"
-        CLIENT["ClientOptimizer<br/>Core Logic"]
-        GET_DATA["GET_STRATEGY_DATA_FN<br/>Data Collection"]
-        GET_CODE["GET_STRATEGY_CODE_FN<br/>Code Assembly"]
-        GET_DUMP["GET_STRATEGY_DUMP_FN<br/>File Export"]
-    end
-    
-    subgraph "Data Processing"
-        PAGINATION["RESOLVE_PAGINATION_FN<br/>iterateDocuments +<br/>distinctDocuments"]
-        SOURCES["IOptimizerSource[]<br/>fetch + user + assistant"]
-    end
-    
-    subgraph "Template System"
-        TOP["getTopBanner<br/>Imports"]
-        HELPERS["getTextTemplate<br/>getJsonTemplate<br/>getJsonDumpTemplate"]
-        COMPONENTS["getExchangeTemplate<br/>getFrameTemplate<br/>getStrategyTemplate<br/>getWalkerTemplate<br/>getLauncherTemplate"]
-    end
-    
-    subgraph "Output"
-        MJS["{optimizerName}_{symbol}.mjs<br/>Executable Strategy"]
-        PROGRESS["progressOptimizerEmitter<br/>Event Stream"]
-    end
-    
-    API --> GLOBAL
-    GLOBAL --> VALIDATION
-    GLOBAL --> CONNECTION
-    CONNECTION --> SCHEMA
-    CONNECTION --> TEMPLATE
-    CONNECTION --> CLIENT
-    
-    CLIENT --> GET_DATA
-    CLIENT --> GET_CODE
-    CLIENT --> GET_DUMP
-    
-    GET_DATA --> PAGINATION
-    PAGINATION --> SOURCES
-    
-    GET_CODE --> GET_DATA
-    GET_CODE --> TOP
-    GET_CODE --> HELPERS
-    GET_CODE --> COMPONENTS
-    
-    GET_DUMP --> GET_CODE
-    GET_DUMP --> MJS
-    
-    CLIENT --> PROGRESS
-    
-    style API fill:#e1f5ff
-    style CLIENT fill:#f0e1ff
-    style TEMPLATE fill:#fff4e1
-    style MJS fill:#e8f5e9
-```
+![Mermaid Diagram](./diagrams\90_AI-Powered_Strategy_Optimization_0.svg)
 
 **Component Responsibilities:**
 
@@ -133,49 +68,7 @@ Sources: [src/lib/services/connection/OptimizerConnectionService.ts:17-114](), [
 
 The `IOptimizerSchema` defines the complete optimizer configuration. Registration is performed via the `addOptimizer` function (see [Component Registration](#2.3)).
 
-```mermaid
-graph LR
-    subgraph "IOptimizerSchema Structure"
-        SCHEMA["IOptimizerSchema"]
-        
-        META["optimizerName: string<br/>note?: string"]
-        RANGES["rangeTrain: IOptimizerRange[]<br/>rangeTest: IOptimizerRange"]
-        SOURCES["source: Source[]"]
-        PROMPT["getPrompt: function"]
-        TEMPLATE["template?: Partial&lt;IOptimizerTemplate&gt;"]
-        CALLBACKS["callbacks?: Partial&lt;IOptimizerCallbacks&gt;"]
-        
-        SCHEMA --> META
-        SCHEMA --> RANGES
-        SCHEMA --> SOURCES
-        SCHEMA --> PROMPT
-        SCHEMA --> TEMPLATE
-        SCHEMA --> CALLBACKS
-    end
-    
-    subgraph "IOptimizerRange"
-        RANGE["startDate: Date<br/>endDate: Date<br/>note?: string"]
-    end
-    
-    subgraph "Source Types"
-        SRC_FN["IOptimizerSourceFn<br/>Simple fetch function"]
-        SRC_OBJ["IOptimizerSource<br/>fetch + user + assistant<br/>formatters"]
-    end
-    
-    subgraph "IOptimizerTemplate"
-        TMPL["11 Template Methods<br/>getTopBanner<br/>getUserMessage<br/>getAssistantMessage<br/>getStrategyTemplate<br/>etc."]
-    end
-    
-    subgraph "IOptimizerCallbacks"
-        CB["onData<br/>onCode<br/>onDump<br/>onSourceData"]
-    end
-    
-    RANGES --> RANGE
-    SOURCES --> SRC_FN
-    SOURCES --> SRC_OBJ
-    TEMPLATE --> TMPL
-    CALLBACKS --> CB
-```
+![Mermaid Diagram](./diagrams\90_AI-Powered_Strategy_Optimization_1.svg)
 
 **Schema Fields:**
 
@@ -218,61 +111,7 @@ Sources: [src/interfaces/Optimizer.interface.ts:377-433](), [src/interfaces/Opti
 
 The optimizer executes through three primary methods: `getData()`, `getCode()`, and `dump()`. Each builds upon the previous.
 
-```mermaid
-sequenceDiagram
-    participant API as Optimizer.getData/getCode/dump
-    participant GLOBAL as OptimizerGlobalService
-    participant VALID as OptimizerValidationService
-    participant CONN as OptimizerConnectionService
-    participant CLIENT as ClientOptimizer
-    participant SCHEMA as OptimizerSchemaService
-    participant TEMPL as OptimizerTemplateService
-    
-    Note over API,CLIENT: Registration Phase (via addOptimizer)
-    API->>SCHEMA: register(schema)
-    SCHEMA->>SCHEMA: validateShallow()
-    SCHEMA->>VALID: addOptimizer()
-    
-    Note over API,CLIENT: Execution Phase
-    API->>GLOBAL: getData(symbol, {optimizerName})
-    GLOBAL->>VALID: validate(optimizerName)
-    GLOBAL->>CONN: getData(symbol, optimizerName)
-    
-    CONN->>CONN: getOptimizer(optimizerName) [memoized]
-    CONN->>SCHEMA: get(optimizerName)
-    CONN->>TEMPL: get default templates
-    CONN->>CONN: merge custom + default templates
-    CONN->>CLIENT: new ClientOptimizer(params, onProgress)
-    
-    CLIENT->>CLIENT: GET_STRATEGY_DATA_FN()
-    loop For each rangeTrain
-        loop For each source
-            CLIENT->>CLIENT: RESOLVE_PAGINATION_FN(fetch)
-            CLIENT->>CLIENT: iterateDocuments + distinctDocuments
-            CLIENT->>CLIENT: format user/assistant messages
-            CLIENT->>CLIENT: callbacks.onSourceData()
-        end
-        CLIENT->>CLIENT: getPrompt(messages)
-    end
-    CLIENT->>CLIENT: callbacks.onData(strategyData)
-    CLIENT-->>API: IOptimizerStrategy[]
-    
-    Note over API,CLIENT: Code Generation
-    API->>CLIENT: getCode(symbol)
-    CLIENT->>CLIENT: getData(symbol)
-    CLIENT->>CLIENT: GET_STRATEGY_CODE_FN()
-    CLIENT->>TEMPL: getTopBanner/getTextTemplate/etc.
-    CLIENT->>CLIENT: assemble code sections
-    CLIENT->>CLIENT: callbacks.onCode(code)
-    CLIENT-->>API: string (generated code)
-    
-    Note over API,CLIENT: File Export
-    API->>CLIENT: dump(symbol, path)
-    CLIENT->>CLIENT: getCode(symbol)
-    CLIENT->>CLIENT: mkdir + writeFile
-    CLIENT->>CLIENT: callbacks.onDump(filepath)
-    CLIENT-->>API: void
-```
+![Mermaid Diagram](./diagrams\90_AI-Powered_Strategy_Optimization_2.svg)
 
 **Step-by-Step Process:**
 
@@ -291,32 +130,7 @@ Sources: [src/client/ClientOptimizer.ts:99-214](), [src/client/ClientOptimizer.t
 
 The `Optimizer` singleton provides three methods for strategy generation:
 
-```mermaid
-graph LR
-    subgraph "Optimizer API"
-        GET_DATA["Optimizer.getData(symbol, context)<br/>Returns: IOptimizerStrategy[]"]
-        GET_CODE["Optimizer.getCode(symbol, context)<br/>Returns: string"]
-        DUMP["Optimizer.dump(symbol, context, path)<br/>Returns: void"]
-    end
-    
-    subgraph "Context Parameter"
-        CTX["{ optimizerName: string }"]
-    end
-    
-    subgraph "Returns"
-        STRATS["IOptimizerStrategy[]<br/>symbol + name + messages + strategy"]
-        CODE["Generated .mjs Code<br/>Complete executable file"]
-        FILE["{optimizerName}_{symbol}.mjs<br/>Written to filesystem"]
-    end
-    
-    GET_DATA --> STRATS
-    GET_CODE --> CODE
-    DUMP --> FILE
-    
-    GET_DATA --> CTX
-    GET_CODE --> CTX
-    DUMP --> CTX
-```
+![Mermaid Diagram](./diagrams\90_AI-Powered_Strategy_Optimization_3.svg)
 
 **Example Usage:**
 
@@ -381,49 +195,7 @@ The optimizer outputs a complete `.mjs` file with all required components. The f
 
 **Generated File Structure:**
 
-```mermaid
-graph TB
-    subgraph "Generated .mjs File"
-        SHEBANG["#!/usr/bin/env node"]
-        IMPORTS["Imports<br/>Ollama, ccxt, backtest-kit,<br/>fs, uuid, path"]
-        CONSTANTS["Constants<br/>WARN_KB = 100"]
-        
-        HELPERS["Helper Functions"]
-        DUMP_JSON["dumpJson()<br/>Debug output to ./dump/strategy"]
-        TEXT["text()<br/>LLM text generation"]
-        JSON["json()<br/>LLM structured output"]
-        
-        CONFIG["Component Registration"]
-        EXCHANGE["addExchange()<br/>CCXT Binance integration"]
-        FRAMES["addFrame() x N<br/>Train frames + Test frame"]
-        STRATEGIES["addStrategy() x N<br/>Multi-timeframe getSignal()"]
-        WALKER["addWalker()<br/>Strategy comparison"]
-        
-        LAUNCHER["Launcher Code"]
-        EXEC["Walker.background()"]
-        LISTENERS["Event Listeners<br/>listenSignalBacktest<br/>listenBacktestProgress<br/>listenWalkerProgress<br/>listenWalkerComplete<br/>listenDoneBacktest<br/>listenError"]
-        
-        SHEBANG --> IMPORTS
-        IMPORTS --> CONSTANTS
-        CONSTANTS --> HELPERS
-        
-        HELPERS --> DUMP_JSON
-        HELPERS --> TEXT
-        HELPERS --> JSON
-        
-        HELPERS --> CONFIG
-        
-        CONFIG --> EXCHANGE
-        CONFIG --> FRAMES
-        CONFIG --> STRATEGIES
-        CONFIG --> WALKER
-        
-        CONFIG --> LAUNCHER
-        
-        LAUNCHER --> EXEC
-        LAUNCHER --> LISTENERS
-    end
-```
+![Mermaid Diagram](./diagrams\90_AI-Powered_Strategy_Optimization_4.svg)
 
 **Code Section Mapping:**
 
@@ -626,23 +398,7 @@ The generated code includes a Walker configuration that automatically compares a
 
 **Walker Integration Flow:**
 
-```mermaid
-graph LR
-    OPT["Optimizer.dump()"]
-    MJS["{optimizerName}_{symbol}.mjs"]
-    EXEC["node {file}.mjs"]
-    WALKER["Walker.background()"]
-    COMPARE["Strategy Comparison"]
-    BEST["Best Strategy Selection"]
-    
-    OPT --> MJS
-    MJS --> EXEC
-    EXEC --> WALKER
-    WALKER --> COMPARE
-    COMPARE --> BEST
-    
-    BEST -.-> REPORT["./dump/walker/<br/>Performance Reports"]
-```
+![Mermaid Diagram](./diagrams\90_AI-Powered_Strategy_Optimization_5.svg)
 
 The generated launcher code includes:
 - `listenWalkerProgress()` - Monitor comparison progress

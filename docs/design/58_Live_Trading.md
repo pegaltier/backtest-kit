@@ -53,42 +53,7 @@ Live Trading provides:
 
 ### High-Level Architecture
 
-```mermaid
-graph TB
-    USER["User Code"]
-    LIVE_UTILS["LiveUtils (Singleton)"]
-    LIVE_INSTANCE["LiveInstance"]
-    LIVE_CMD["LiveCommandService"]
-    LIVE_LOGIC["LiveLogicPrivateService"]
-    STRAT_CORE["StrategyCoreService"]
-    STRAT_CONN["StrategyConnectionService"]
-    CLIENT_STRAT["ClientStrategy"]
-    PERSIST["PersistSignalAdapter<br/>PersistRiskAdapter<br/>PersistScheduleAdapter<br/>PersistPartialAdapter"]
-    
-    USER -->|"Live.run(symbol, {strategyName, exchangeName})"| LIVE_UTILS
-    USER -->|"Live.background()"| LIVE_UTILS
-    
-    LIVE_UTILS -->|"validate & delegate"| LIVE_INSTANCE
-    LIVE_INSTANCE -->|"run()"| LIVE_CMD
-    LIVE_CMD -->|"MethodContextService.runInContext()"| LIVE_LOGIC
-    
-    LIVE_LOGIC -->|"while(true) loop"| LIVE_LOGIC
-    LIVE_LOGIC -->|"tick(symbol, new Date())"| STRAT_CORE
-    STRAT_CORE -->|"ExecutionContextService.runInContext()"| STRAT_CONN
-    STRAT_CONN -->|"getStrategy() memoized"| CLIENT_STRAT
-    
-    CLIENT_STRAT -->|"waitForInit() loads state"| PERSIST
-    CLIENT_STRAT -->|"tick() returns result"| STRAT_CONN
-    CLIENT_STRAT -->|"writeSignalData() after tick"| PERSIST
-    
-    STRAT_CONN -->|"IStrategyTickResult"| STRAT_CORE
-    STRAT_CORE -->|"IStrategyTickResult"| LIVE_LOGIC
-    LIVE_LOGIC -->|"yield opened/closed"| LIVE_CMD
-    LIVE_CMD -->|"async generator"| LIVE_INSTANCE
-    LIVE_INSTANCE -->|"async generator"| USER
-    
-    LIVE_LOGIC -->|"sleep(TICK_TTL)"| LIVE_LOGIC
-```
+![Mermaid Diagram](./diagrams\58_Live_Trading_0.svg)
 
 **Sources:** [src/classes/Live.ts:347-376](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:14-181]()
 
@@ -96,62 +61,7 @@ graph TB
 
 The core live trading loop is implemented in `LiveLogicPrivateService.run()`:
 
-```mermaid
-stateDiagram-v2
-    [*] --> Initialize
-    
-    Initialize --> CreateTimestamp: while(true)
-    CreateTimestamp --> Tick: when = new Date()
-    
-    Tick --> CheckError: strategyCoreService.tick()
-    CheckError --> Sleep1: Error caught
-    CheckError --> ProcessResult: Success
-    
-    Sleep1 --> CreateTimestamp: sleep(TICK_TTL)
-    
-    ProcessResult --> CheckIdle: result.action?
-    
-    CheckIdle --> CheckStop1: action === "idle"
-    CheckIdle --> Sleep2: action === "active"
-    CheckIdle --> Sleep3: action === "scheduled"
-    CheckIdle --> YieldResult: action === "opened" | "closed"
-    
-    CheckStop1 --> Break1: getStopped() === true
-    CheckStop1 --> Sleep2: getStopped() === false
-    
-    Sleep2 --> CreateTimestamp: sleep(TICK_TTL)
-    Sleep3 --> CreateTimestamp: sleep(TICK_TTL)
-    
-    YieldResult --> CheckClosed: yield result
-    CheckClosed --> CheckStop2: action === "closed"
-    CheckClosed --> Sleep2: action === "opened"
-    
-    CheckStop2 --> Break2: getStopped() === true
-    CheckStop2 --> Sleep2: getStopped() === false
-    
-    Break1 --> [*]: Loop exits
-    Break2 --> [*]: Loop exits
-    
-    note right of CreateTimestamp
-        Real-time timestamp
-        new Date() = current time
-    end note
-    
-    note right of Tick
-        ExecutionContextService
-        injects {symbol, when, backtest: false}
-    end note
-    
-    note right of YieldResult
-        Only yields "opened" | "closed"
-        Skips "idle", "active", "scheduled"
-    end note
-    
-    note right of Sleep2
-        TICK_TTL = 1 * 60 * 1000 + 1
-        ~60 seconds between ticks
-    end note
-```
+![Mermaid Diagram](./diagrams\58_Live_Trading_1.svg)
 
 **Sources:** [src/lib/services/logic/private/LiveLogicPrivateService.ts:14-181]()
 
@@ -159,41 +69,7 @@ stateDiagram-v2
 
 The `LiveUtils` class provides a singleton interface for live trading operations:
 
-```mermaid
-classDiagram
-    class LiveUtils {
-        -_getInstance: memoize~LiveInstance~
-        +run(symbol, context) AsyncGenerator
-        +background(symbol, context) CancelFn
-        +stop(symbol, strategyName) Promise~void~
-        +getData(symbol, strategyName) Promise~StatsData~
-        +getReport(symbol, strategyName) Promise~string~
-        +dump(symbol, strategyName, path?) Promise~void~
-        +list() Promise~Status[]~
-    }
-    
-    class LiveInstance {
-        +id: string
-        +symbol: string
-        +strategyName: StrategyName
-        +_isStopped: boolean
-        +_isDone: boolean
-        -task: singlerun
-        +run(symbol, context) AsyncGenerator
-        +background(symbol, context) CancelFn
-        +stop(symbol, strategyName) Promise~void~
-        +getData(symbol, strategyName) Promise~StatsData~
-        +getReport(symbol, strategyName) Promise~string~
-        +dump(symbol, strategyName, path?) Promise~void~
-        +getStatus() Promise~Status~
-    }
-    
-    LiveUtils --> LiveInstance : creates via memoize
-    
-    note for LiveUtils "Singleton exported as 'Live'\nValidates schemas before delegation\nMemoizes instances by symbol:strategyName"
-    
-    note for LiveInstance "One instance per symbol-strategy pair\nIsolated state management\nsinglerun prevents concurrent runs"
-```
+![Mermaid Diagram](./diagrams\58_Live_Trading_2.svg)
 
 **Sources:** [src/classes/Live.ts:376-596](), [src/classes/Live.ts:79-345]()
 
@@ -216,25 +92,7 @@ Live Trading persists four types of state to disk after every tick:
 
 All persistence uses the atomic write pattern to prevent data corruption:
 
-```mermaid
-sequenceDiagram
-    participant CS as ClientStrategy
-    participant PSA as PersistSignalAdapter
-    participant PB as PersistBase
-    participant FS as File System
-    
-    CS->>PSA: writeSignalData(signal)
-    PSA->>PB: write(filePath, data)
-    PB->>FS: writeFile(filePath + ".tmp")
-    PB->>FS: fsync(tmpFile)
-    FS-->>PB: sync complete
-    PB->>FS: rename(tmpFile, filePath)
-    FS-->>PB: atomic rename
-    PB-->>PSA: write complete
-    PSA-->>CS: state persisted
-    
-    Note over PB,FS: Temp file pattern ensures<br/>all-or-nothing writes
-```
+![Mermaid Diagram](./diagrams\58_Live_Trading_3.svg)
 
 **Sources:** [src/classes/Persist.ts]() (referenced in diagrams)
 
@@ -242,41 +100,7 @@ sequenceDiagram
 
 When a live trading process restarts after a crash:
 
-```mermaid
-sequenceDiagram
-    participant USER as User Code
-    participant LIVE as Live.run()
-    participant CS as ClientStrategy
-    participant PSA as PersistSignalAdapter
-    participant FS as File System
-    
-    USER->>LIVE: Live.run(symbol, {strategyName, exchangeName})
-    LIVE->>CS: getStrategy(symbol, strategyName, backtest=false)
-    
-    Note over CS: New ClientStrategy instance created
-    
-    LIVE->>CS: tick(symbol, strategyName)
-    CS->>CS: waitForInit()
-    
-    CS->>PSA: readSignalData(symbol, strategyName)
-    PSA->>FS: readFile(./dump/data/signal/{strategy}/{symbol}.json)
-    FS-->>PSA: JSON data (or null if not exists)
-    PSA-->>CS: ISignalRow | null
-    
-    alt Signal found on disk
-        CS->>CS: Restore _currentSignal
-        CS->>CS: Set pendingAt timestamp
-        Note over CS: Position is now active<br/>Resume monitoring TP/SL
-    else No signal found
-        CS->>CS: _currentSignal = null
-        Note over CS: Idle state<br/>Ready for new signal
-    end
-    
-    CS-->>LIVE: IStrategyTickResult
-    LIVE-->>USER: yield result
-    
-    Note over USER,FS: Trading resumes exactly<br/>where it left off
-```
+![Mermaid Diagram](./diagrams\58_Live_Trading_4.svg)
 
 **Sources:** [src/client/ClientStrategy.ts]() (referenced in architecture diagrams), [src/lib/services/connection/PartialConnectionService.ts]() (persistence architecture)
 
@@ -284,37 +108,7 @@ sequenceDiagram
 
 `PersistBase` validates all JSON files on initialization:
 
-```mermaid
-flowchart TB
-    START["waitForInit()"]
-    READ["readFile(filePath)"]
-    PARSE["JSON.parse(content)"]
-    VALIDATE["Schema validation"]
-    
-    ERROR_PARSE["Parse error"]
-    ERROR_SCHEMA["Schema error"]
-    
-    DELETE["Delete corrupted file"]
-    LOG["Log error"]
-    RETURN_NULL["return null"]
-    RETURN_DATA["return data"]
-    
-    START --> READ
-    READ --> PARSE
-    PARSE -->|"Success"| VALIDATE
-    PARSE -->|"Parse fails"| ERROR_PARSE
-    
-    VALIDATE -->|"Valid"| RETURN_DATA
-    VALIDATE -->|"Invalid"| ERROR_SCHEMA
-    
-    ERROR_PARSE --> DELETE
-    ERROR_SCHEMA --> DELETE
-    DELETE --> LOG
-    LOG --> RETURN_NULL
-    
-    note1["Self-healing:<br/>Corrupted files are<br/>automatically cleaned up"]
-    DELETE -.-> note1
-```
+![Mermaid Diagram](./diagrams\58_Live_Trading_5.svg)
 
 **Sources:** [src/classes/Persist.ts]() (referenced in Diagram 5 of architecture overview)
 
@@ -336,48 +130,7 @@ Each tick evaluates the current signal state and returns a discriminated union:
 
 ### Signal State Transitions in Live Mode
 
-```mermaid
-stateDiagram-v2
-    [*] --> Idle: "Process starts"
-    
-    Idle --> Scheduled: "getSignal() returns priceOpen"
-    Idle --> Opened: "getSignal() returns no priceOpen"
-    
-    Scheduled --> Opened: "Price activates (tick N)"
-    Scheduled --> Cancelled: "Timeout or SL would hit"
-    Scheduled --> Scheduled: "Waiting (tick N+1...N+M)"
-    
-    Opened --> Active: "Position opened (tick N)"
-    Active --> Active: "Monitoring (tick N+1...N+M)"
-    Active --> Closed: "TP/SL/time hit (tick N+M)"
-    
-    Closed --> Idle: "PNL calculated"
-    Cancelled --> Idle: "Signal removed"
-    
-    note right of Scheduled
-        PersistScheduleAdapter
-        saves scheduled signal
-        Survives crashes
-    end note
-    
-    note right of Opened
-        PersistSignalAdapter
-        saves opened signal
-        User code receives yield
-    end note
-    
-    note right of Active
-        Signal state persisted
-        after every tick
-        TP/SL checked continuously
-    end note
-    
-    note right of Closed
-        Final state persisted
-        User code receives yield
-        Then cleared from disk
-    end note
-```
+![Mermaid Diagram](./diagrams\58_Live_Trading_6.svg)
 
 **Sources:** [src/client/ClientStrategy.ts]() (signal lifecycle), [src/lib/services/logic/private/LiveLogicPrivateService.ts:62-177]()
 
@@ -385,34 +138,7 @@ stateDiagram-v2
 
 Live mode emits events to three distinct channels:
 
-```mermaid
-graph LR
-    TICK["tick() result"]
-    
-    LIVE_EM["signalLiveEmitter"]
-    ALL_EM["signalEmitter"]
-    PERF_EM["performanceEmitter"]
-    
-    LIVE_LIST["listenSignalLive()"]
-    ALL_LIST["listenSignal()"]
-    PERF_LIST["listenPerformance()"]
-    
-    TICK --> LIVE_EM
-    TICK --> ALL_EM
-    TICK --> PERF_EM
-    
-    LIVE_EM --> LIVE_LIST
-    ALL_EM --> ALL_LIST
-    PERF_EM --> PERF_LIST
-    
-    note1["Live-only signals<br/>Excludes backtest data"]
-    note2["All signals<br/>Includes live + backtest"]
-    note3["Timing metrics<br/>tick duration, timestamps"]
-    
-    LIVE_EM -.-> note1
-    ALL_EM -.-> note2
-    PERF_EM -.-> note3
-```
+![Mermaid Diagram](./diagrams\58_Live_Trading_7.svg)
 
 **Sources:** [src/lib/services/connection/StrategyConnectionService.ts:216-238](), [src/lib/services/logic/private/LiveLogicPrivateService.ts:102-115]()
 
@@ -447,34 +173,7 @@ addStrategy({
 
 ### Throttling Mechanism
 
-```mermaid
-sequenceDiagram
-    participant LiveSvc as LiveLogicPrivateService
-    participant CS as ClientStrategy
-    participant STRAT as Strategy.getSignal
-
-    Note over LiveSvc: Tick 1: 14:00:00
-    LiveSvc->>CS: tick when=14:00:00
-    CS->>CS: Check interval 5m<br/>Last called: null
-    CS->>STRAT: getSignal payload
-    STRAT-->>CS: ISignalDto
-    CS->>CS: Update _lastSignalTime = 14:00:00
-    CS-->>LiveSvc: IStrategyTickResult
-
-    Note over LiveSvc: Tick 2: 14:01:01
-    LiveSvc->>CS: tick when=14:01:01
-    CS->>CS: Check interval 5m<br/>Last called: 14:00:00<br/>Elapsed: 1 min less than 5 min
-    CS->>CS: Skip getSignal
-    CS-->>LiveSvc: IStrategyTickResult previous state
-
-    Note over LiveSvc: Tick 3: 14:05:01
-    LiveSvc->>CS: tick when=14:05:01
-    CS->>CS: Check interval 5m<br/>Last called: 14:00:00<br/>Elapsed: 5 min or more
-    CS->>STRAT: getSignal payload
-    STRAT-->>CS: ISignalDto
-    CS->>CS: Update _lastSignalTime = 14:05:01
-    CS-->>LiveSvc: IStrategyTickResult
-```
+![Mermaid Diagram](./diagrams\58_Live_Trading_8.svg)
 
 **Sources:** [src/client/ClientStrategy.ts]() (referenced in architecture), [src/interfaces/Strategy.interface.ts]() (interval types)
 

@@ -35,26 +35,7 @@ For information about the optimizer schema configuration and registration, see [
 
 Data sources provide the training data that feeds into the LLM conversation. Each source must implement the `IOptimizerSourceFn` interface, which supports pagination through `limit` and `offset` parameters. Sources can be either simple functions or full configuration objects with custom message formatters.
 
-```mermaid
-graph TB
-    SOURCE["IOptimizerSource"]
-    FETCH["fetch: IOptimizerSourceFn"]
-    DATA["IOptimizerData[]"]
-    PAGINATE["RESOLVE_PAGINATION_FN"]
-    DEDUPE["distinctDocuments"]
-    
-    SOURCE --> FETCH
-    SOURCE --> USER["user?: formatter"]
-    SOURCE --> ASSISTANT["assistant?: formatter"]
-    
-    FETCH --> PAGINATE
-    PAGINATE --> DEDUPE
-    DEDUPE --> DATA
-    
-    DATA --> MSG["MessageModel[]"]
-    USER --> MSG
-    ASSISTANT --> MSG
-```
+![Mermaid Diagram](./diagrams\39_ClientOptimizer_0.svg)
 
 **Data Flow:**
 1. `fetch()` retrieves paginated data with `limit=25` (ITERATION_LIMIT)
@@ -82,36 +63,7 @@ Each training range produces one strategy variant. All variants are compared usi
 
 Message history follows the standard LLM conversation format with three roles: `system`, `user`, and `assistant`. For each data source within each training range, the optimizer appends a user-assistant message pair. This builds context progressively across all sources.
 
-```mermaid
-graph LR
-    R1["Training Range 1"]
-    R2["Training Range 2"]
-    
-    S1["Source 1"]
-    S2["Source 2"]
-    
-    M1["User: Data 1<br/>Assistant: OK"]
-    M2["User: Data 2<br/>Assistant: OK"]
-    M3["User: Data 1<br/>Assistant: OK"]
-    M4["User: Data 2<br/>Assistant: OK"]
-    
-    PROMPT1["getPrompt() → Strategy 1"]
-    PROMPT2["getPrompt() → Strategy 2"]
-    
-    R1 --> S1
-    R1 --> S2
-    S1 --> M1
-    S2 --> M2
-    M1 --> PROMPT1
-    M2 --> PROMPT1
-    
-    R2 --> S1
-    R2 --> S2
-    S1 --> M3
-    S2 --> M4
-    M3 --> PROMPT2
-    M4 --> PROMPT2
-```
+![Mermaid Diagram](./diagrams\39_ClientOptimizer_1.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:99-215](), [src/model/Message.model.ts:1-26]()
 
@@ -121,54 +73,7 @@ graph LR
 
 The `getData()` method orchestrates the entire data collection pipeline, building strategy metadata with full conversation context.
 
-```mermaid
-graph TB
-    START["ClientOptimizer.getData(symbol)"]
-    RANGES["Iterate rangeTrain[]"]
-    SOURCES["Iterate source[]"]
-    
-    CHECK_TYPE{"Source type?"}
-    FUNC["Function source"]
-    OBJ["Object source"]
-    
-    FETCH["RESOLVE_PAGINATION_FN"]
-    DEFAULT_FMT["DEFAULT_USER_FN<br/>DEFAULT_ASSISTANT_FN"]
-    CUSTOM_FMT["source.user()<br/>source.assistant()"]
-    
-    APPEND["Append MessageModel[]"]
-    CALLBACK1["callbacks.onSourceData?"]
-    CALLBACK2["callbacks.onData?"]
-    
-    PROMPT["getPrompt(messages)"]
-    STRATEGY["IOptimizerStrategy"]
-    RETURN["Return IOptimizerStrategy[]"]
-    
-    START --> RANGES
-    RANGES --> SOURCES
-    SOURCES --> CHECK_TYPE
-    
-    CHECK_TYPE -->|"typeof function"| FUNC
-    CHECK_TYPE -->|"object"| OBJ
-    
-    FUNC --> FETCH
-    OBJ --> FETCH
-    
-    FETCH --> CALLBACK1
-    CALLBACK1 --> DEFAULT_FMT
-    CALLBACK1 --> CUSTOM_FMT
-    
-    DEFAULT_FMT --> APPEND
-    CUSTOM_FMT --> APPEND
-    
-    APPEND --> SOURCES
-    SOURCES -->|"All sources"| PROMPT
-    
-    PROMPT --> STRATEGY
-    STRATEGY --> RANGES
-    
-    RANGES -->|"All ranges"| CALLBACK2
-    CALLBACK2 --> RETURN
-```
+![Mermaid Diagram](./diagrams\39_ClientOptimizer_2.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:99-215](), [src/client/ClientOptimizer.ts:410-415]()
 
@@ -226,50 +131,7 @@ source.assistant(symbol, data, name) → custom formatted string
 
 The `getCode()` method generates complete executable strategy files by assembling multiple template sections.
 
-```mermaid
-graph TB
-    START["ClientOptimizer.getCode(symbol)"]
-    GET_DATA["getData(symbol)"]
-    STRATEGY_DATA["IOptimizerStrategy[]"]
-    PREFIX["CREATE_PREFIX_FN()"]
-    
-    SECTIONS["Assemble sections[]"]
-    
-    T1["getTopBanner()<br/>Imports & constants"]
-    T2["getJsonDumpTemplate()<br/>Debug helper"]
-    T3["getTextTemplate()<br/>LLM text helper"]
-    T4["getJsonTemplate()<br/>LLM JSON helper"]
-    T5["getExchangeTemplate()<br/>CCXT integration"]
-    T6["getFrameTemplate()<br/>Train frames loop"]
-    T7["getFrameTemplate()<br/>Test frame"]
-    T8["getStrategyTemplate()<br/>Strategies loop"]
-    T9["getWalkerTemplate()<br/>Comparison config"]
-    T10["getLauncherTemplate()<br/>Event listeners"]
-    
-    JOIN["sections.join('\\n')"]
-    CALLBACK["callbacks.onCode?"]
-    RETURN["Return string"]
-    
-    START --> GET_DATA
-    GET_DATA --> STRATEGY_DATA
-    STRATEGY_DATA --> PREFIX
-    PREFIX --> SECTIONS
-    
-    SECTIONS --> T1
-    T1 --> T2
-    T2 --> T3
-    T3 --> T4
-    T4 --> T5
-    T5 --> T6
-    T6 --> T7
-    T7 --> T8
-    T8 --> T9
-    T9 --> T10
-    
-    T10 --> JOIN
-    JOIN --> CALLBACK
-    CALLBACK --> RETURN
-```
+![Mermaid Diagram](./diagrams\39_ClientOptimizer_3.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:225-350](), [src/client/ClientOptimizer.ts:424-429]()
 
@@ -304,19 +166,7 @@ The code generation follows a strict nine-section structure:
 
 Templates are provided via `IOptimizerParams.template`, which merges custom overrides with defaults from `OptimizerTemplateService`. Each template method returns a string of executable code:
 
-```mermaid
-graph LR
-    SCHEMA["IOptimizerSchema<br/>template?: Partial"]
-    DEFAULTS["OptimizerTemplateService<br/>Full implementation"]
-    MERGE["OptimizerConnectionService<br/>Merge logic"]
-    COMPLETE["IOptimizerTemplate<br/>Complete instance"]
-    CLIENT["ClientOptimizer<br/>params.template"]
-    
-    SCHEMA --> MERGE
-    DEFAULTS --> MERGE
-    MERGE --> COMPLETE
-    COMPLETE --> CLIENT
-```
+![Mermaid Diagram](./diagrams\39_ClientOptimizer_4.svg)
 
 **Template Method Signatures:**
 ```typescript
@@ -407,17 +257,7 @@ listenError(...);
 
 `ClientOptimizer` emits progress events during data collection via the `onProgress` callback provided in the constructor. Progress tracks source processing, not code generation.
 
-```mermaid
-graph LR
-    SOURCE_START["Start source processing"]
-    EMIT["onProgress(contract)"]
-    EMITTER["progressOptimizerEmitter"]
-    LISTENER["listenOptimizerProgress()"]
-    
-    SOURCE_START --> EMIT
-    EMIT --> EMITTER
-    EMITTER --> LISTENER
-```
+![Mermaid Diagram](./diagrams\39_ClientOptimizer_5.svg)
 
 **Progress Contract Structure:**
 
@@ -447,33 +287,7 @@ progress = totalSources > 0 ? processedSources / totalSources : 0
 
 `IOptimizerCallbacks` provides hooks for monitoring and validating optimizer operations. All callbacks are optional and async-compatible.
 
-```mermaid
-graph TB
-    GET_DATA["getData()"]
-    GET_CODE["getCode()"]
-    DUMP["dump()"]
-    
-    CB1["onSourceData<br/>(per source)"]
-    CB2["onData<br/>(all strategies)"]
-    CB3["onCode<br/>(generated code)"]
-    CB4["onDump<br/>(file written)"]
-    
-    FETCH["Fetch from source"]
-    STRATEGY["Build IOptimizerStrategy[]"]
-    CODE["Generate code string"]
-    FILE["Write .mjs file"]
-    
-    GET_DATA --> FETCH
-    FETCH --> CB1
-    CB1 --> STRATEGY
-    STRATEGY --> CB2
-    
-    GET_CODE --> CODE
-    CODE --> CB3
-    
-    DUMP --> FILE
-    FILE --> CB4
-```
+![Mermaid Diagram](./diagrams\39_ClientOptimizer_6.svg)
 
 **Callback Signatures:**
 
@@ -513,29 +327,7 @@ addOptimizer({
 
 ### Constructor and Dependencies
 
-```mermaid
-classDiagram
-    class ClientOptimizer {
-        +params: IOptimizerParams
-        +onProgress: callback
-        +getData(symbol) Promise~IOptimizerStrategy[]~
-        +getCode(symbol) Promise~string~
-        +dump(symbol, path) Promise~void~
-    }
-    
-    class IOptimizerParams {
-        +optimizerName: string
-        +logger: ILogger
-        +rangeTrain: IOptimizerRange[]
-        +rangeTest: IOptimizerRange
-        +source: Source[]
-        +getPrompt: function
-        +template: IOptimizerTemplate
-        +callbacks?: IOptimizerCallbacks
-    }
-    
-    ClientOptimizer --> IOptimizerParams
-```
+![Mermaid Diagram](./diagrams\39_ClientOptimizer_7.svg)
 
 **Constructor:**
 ```typescript

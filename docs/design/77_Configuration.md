@@ -68,57 +68,7 @@ setConfig({
 
 The `GlobalConfig` type defines runtime parameters that affect profit/loss calculations, price execution, and validation logic across all strategies and exchanges.
 
-```mermaid
-graph TB
-    subgraph "Configuration Inputs"
-        USER["setConfig() call"]
-        DEFAULT["getDefaultConfig()"]
-    end
-    
-    subgraph "GlobalConfig Properties"
-        SLIPPAGE["slippage: number<br/>Price execution impact"]
-        FEES["fees: number<br/>Trading commission"]
-        VWAP_COUNT["vwapCandleCount: number<br/>Candles for VWAP calc"]
-        TP_DIST["minTakeProfitDistancePercent: number<br/>Min TP distance"]
-        SL_MIN["minStopLossDistancePercent: number<br/>Min SL distance"]
-        SL_MAX["maxStopLossDistancePercent: number<br/>Max SL distance"]
-        SCHEDULE_WAIT["scheduleAwaitMinutes: number<br/>Scheduled signal timeout"]
-        SIGNAL_LIFE["maxSignalLifetimeMinutes: number<br/>Active signal timeout"]
-        TICK_TTL["tickTTL: number<br/>Live mode sleep interval"]
-    end
-    
-    subgraph "System Consumers"
-        PNL["IStrategyPnL calculation<br/>ClientStrategy.ts"]
-        VWAP["getAveragePrice()<br/>ClientExchange.ts"]
-        VAL["Signal validation<br/>StrategyCoreService.ts"]
-        LIVE["Live tick loop<br/>LiveLogicPrivateService.ts"]
-        SCHEDULE["Scheduled signal timeout<br/>ClientStrategy.ts"]
-    end
-    
-    USER --> SLIPPAGE
-    USER --> FEES
-    USER --> VWAP_COUNT
-    USER --> TP_DIST
-    USER --> SL_MIN
-    USER --> SL_MAX
-    USER --> SCHEDULE_WAIT
-    USER --> SIGNAL_LIFE
-    USER --> TICK_TTL
-    
-    DEFAULT -.fallback.-> SLIPPAGE
-    DEFAULT -.fallback.-> FEES
-    DEFAULT -.fallback.-> VWAP_COUNT
-    
-    SLIPPAGE --> PNL
-    FEES --> PNL
-    VWAP_COUNT --> VWAP
-    TP_DIST --> VAL
-    SL_MIN --> VAL
-    SL_MAX --> VAL
-    SCHEDULE_WAIT --> SCHEDULE
-    SIGNAL_LIFE --> SCHEDULE
-    TICK_TTL --> LIVE
-```
+![Mermaid Diagram](./diagrams\77_Configuration_0.svg)
 
 **Configuration Properties**:
 
@@ -156,39 +106,7 @@ For SHORT positions:
   pnlPercentage = ((adjustedPriceOpen - adjustedPriceClose) / adjustedPriceOpen) × 100
 ```
 
-```mermaid
-graph LR
-    subgraph "Signal Open"
-        RAW_OPEN["Raw priceOpen<br/>50000"]
-        SLIP_OPEN["Apply slippage<br/>+0.1%"]
-        FEES_OPEN["Apply fees<br/>+0.1%"]
-        ADJ_OPEN["Adjusted Open<br/>50100"]
-    end
-    
-    subgraph "Signal Close"
-        RAW_CLOSE["Raw priceClose<br/>51000"]
-        SLIP_CLOSE["Apply slippage<br/>-0.1%"]
-        FEES_CLOSE["Apply fees<br/>-0.1%"]
-        ADJ_CLOSE["Adjusted Close<br/>50898"]
-    end
-    
-    subgraph "PNL Result"
-        CALC["Calculate %<br/>(50898-50100)/50100"]
-        RESULT["pnlPercentage<br/>1.59%"]
-    end
-    
-    RAW_OPEN --> SLIP_OPEN
-    SLIP_OPEN --> FEES_OPEN
-    FEES_OPEN --> ADJ_OPEN
-    
-    RAW_CLOSE --> SLIP_CLOSE
-    SLIP_CLOSE --> FEES_CLOSE
-    FEES_CLOSE --> ADJ_CLOSE
-    
-    ADJ_OPEN --> CALC
-    ADJ_CLOSE --> CALC
-    CALC --> RESULT
-```
+![Mermaid Diagram](./diagrams\77_Configuration_1.svg)
 
 **Example: Conservative vs Aggressive Configuration**
 ```typescript
@@ -219,41 +137,7 @@ VWAP = Σ(Typical Price × Volume) / Σ(Volume)
 where Typical Price = (High + Low + Close) / 3
 ```
 
-```mermaid
-graph TB
-    subgraph "Candle Fetching"
-        REQ["getAveragePrice(symbol)"]
-        FETCH["getCandles(symbol, '1m', limit)"]
-        LIMIT["limit = vwapCandleCount"]
-    end
-    
-    subgraph "VWAP Calculation"
-        CANDLES["Last N candles<br/>[c1, c2, ..., cN]"]
-        TYPICAL["Typical Price per candle<br/>(high + low + close) / 3"]
-        WEIGHTED["Weighted sum<br/>Σ(typical × volume)"]
-        VOLUME_SUM["Volume sum<br/>Σ(volume)"]
-        VWAP["VWAP result<br/>weighted / volumeSum"]
-    end
-    
-    subgraph "Signal Processing"
-        ENTRY["priceOpen = VWAP"]
-        EXIT_TP["priceTakeProfit check"]
-        EXIT_SL["priceStopLoss check"]
-    end
-    
-    REQ --> FETCH
-    LIMIT --> FETCH
-    FETCH --> CANDLES
-    CANDLES --> TYPICAL
-    TYPICAL --> WEIGHTED
-    CANDLES --> VOLUME_SUM
-    WEIGHTED --> VWAP
-    VOLUME_SUM --> VWAP
-    
-    VWAP --> ENTRY
-    VWAP --> EXIT_TP
-    VWAP --> EXIT_SL
-```
+![Mermaid Diagram](./diagrams\77_Configuration_2.svg)
 
 **Configuration Impact**:
 
@@ -280,57 +164,7 @@ setConfig({
 
 Validation parameters enforce minimum and maximum distances between entry price and take profit/stop loss targets. These prevent unrealistic signals with impossible profit targets or insufficient risk management.
 
-```mermaid
-graph TB
-    subgraph "Signal DTO Input"
-        SIGNAL["ISignalDto<br/>position, priceOpen<br/>priceTakeProfit<br/>priceStopLoss"]
-    end
-    
-    subgraph "Validation Constants"
-        MIN_TP["minTakeProfitDistancePercent<br/>Default: 0.5%"]
-        MIN_SL["minStopLossDistancePercent<br/>Default: 0.3%"]
-        MAX_SL["maxStopLossDistancePercent<br/>Default: 10%"]
-    end
-    
-    subgraph "Distance Calculations"
-        CALC_TP["TP Distance %<br/>abs(TP - Open) / Open × 100"]
-        CALC_SL["SL Distance %<br/>abs(SL - Open) / Open × 100"]
-    end
-    
-    subgraph "Validation Checks"
-        CHECK_MIN_TP["TP Distance >= minTakeProfitDistancePercent"]
-        CHECK_MIN_SL["SL Distance >= minStopLossDistancePercent"]
-        CHECK_MAX_SL["SL Distance <= maxStopLossDistancePercent"]
-        CHECK_DIRECTION["TP direction matches position<br/>LONG: TP > Open<br/>SHORT: TP < Open"]
-    end
-    
-    subgraph "Validation Result"
-        PASS["Signal Validated<br/>Proceed to risk check"]
-        FAIL["ValidationError<br/>Signal rejected"]
-    end
-    
-    SIGNAL --> CALC_TP
-    SIGNAL --> CALC_SL
-    
-    MIN_TP --> CHECK_MIN_TP
-    MIN_SL --> CHECK_MIN_SL
-    MAX_SL --> CHECK_MAX_SL
-    
-    CALC_TP --> CHECK_MIN_TP
-    CALC_TP --> CHECK_DIRECTION
-    CALC_SL --> CHECK_MIN_SL
-    CALC_SL --> CHECK_MAX_SL
-    
-    CHECK_MIN_TP --> PASS
-    CHECK_MIN_SL --> PASS
-    CHECK_MAX_SL --> PASS
-    CHECK_DIRECTION --> PASS
-    
-    CHECK_MIN_TP -.reject.-> FAIL
-    CHECK_MIN_SL -.reject.-> FAIL
-    CHECK_MAX_SL -.reject.-> FAIL
-    CHECK_DIRECTION -.reject.-> FAIL
-```
+![Mermaid Diagram](./diagrams\77_Configuration_3.svg)
 
 **Validation Parameters**:
 
@@ -375,52 +209,7 @@ setConfig({
 
 Timing parameters control signal lifecycle durations and live mode execution frequency. These prevent signals from remaining active indefinitely and control the rate of market data queries.
 
-```mermaid
-graph TB
-    subgraph "Scheduled Signal Timing"
-        CREATE["Signal created<br/>scheduledAt timestamp"]
-        WAIT["Waiting for priceOpen<br/>Price monitoring loop"]
-        CHECK_TIMEOUT["Check elapsed time<br/>now - scheduledAt"]
-        TIMEOUT_LIMIT["scheduleAwaitMinutes<br/>Default: 60 min"]
-        CANCEL["Signal cancelled<br/>action: 'cancelled'"]
-        ACTIVATE["Price reached<br/>Signal becomes pending"]
-    end
-    
-    subgraph "Active Signal Timing"
-        PENDING["Signal pending<br/>pendingAt timestamp"]
-        MONITOR["Monitor TP/SL<br/>Active state loop"]
-        CHECK_LIFE["Check elapsed time<br/>now - pendingAt"]
-        LIFE_LIMIT["maxSignalLifetimeMinutes<br/>Default: 1440 min (24h)"]
-        EXPIRE["Signal closed<br/>closeReason: 'time_expired'"]
-        TP_SL["TP/SL reached<br/>closeReason: 'take_profit' | 'stop_loss'"]
-    end
-    
-    subgraph "Live Mode Timing"
-        LOOP_START["Live tick loop iteration"]
-        TICK["Process all strategies<br/>ClientStrategy.tick()"]
-        SLEEP["Sleep interval"]
-        TTL["tickTTL<br/>Default: 60000 ms (1 min)"]
-        LOOP_END["Next iteration"]
-    end
-    
-    CREATE --> WAIT
-    WAIT --> CHECK_TIMEOUT
-    CHECK_TIMEOUT --> CANCEL
-    CHECK_TIMEOUT --> ACTIVATE
-    TIMEOUT_LIMIT --> CHECK_TIMEOUT
-    
-    PENDING --> MONITOR
-    MONITOR --> CHECK_LIFE
-    CHECK_LIFE --> EXPIRE
-    CHECK_LIFE --> TP_SL
-    LIFE_LIMIT --> CHECK_LIFE
-    
-    LOOP_START --> TICK
-    TICK --> SLEEP
-    TTL --> SLEEP
-    SLEEP --> LOOP_END
-    LOOP_END -.loop.-> LOOP_START
-```
+![Mermaid Diagram](./diagrams\77_Configuration_4.svg)
 
 **Timing Parameters**:
 
@@ -578,63 +367,7 @@ setColumns(allColumns);
 
 Configuration values are validated on initialization to prevent invalid system behavior. The `ConfigValidationService` ensures all parameters are within acceptable ranges.
 
-```mermaid
-graph TB
-    subgraph "Configuration Input"
-        USER_CONFIG["setConfig(config)"]
-    end
-    
-    subgraph "ConfigValidationService"
-        VALIDATE["validate(config)"]
-        
-        CHECK_SLIP["Validate slippage<br/>0 <= value <= 1"]
-        CHECK_FEES["Validate fees<br/>0 <= value <= 1"]
-        CHECK_VWAP["Validate vwapCandleCount<br/>1 <= value <= 60"]
-        CHECK_TP["Validate minTakeProfitDistancePercent<br/>0 < value <= 100"]
-        CHECK_SL_MIN["Validate minStopLossDistancePercent<br/>0 < value <= 100"]
-        CHECK_SL_MAX["Validate maxStopLossDistancePercent<br/>0 < value <= 100"]
-        CHECK_SCHEDULE["Validate scheduleAwaitMinutes<br/>value > 0"]
-        CHECK_LIFE["Validate maxSignalLifetimeMinutes<br/>value > 0"]
-        CHECK_TTL["Validate tickTTL<br/>value >= 1000"]
-    end
-    
-    subgraph "Schema Services"
-        STORE["Store validated config<br/>in SchemaService"]
-    end
-    
-    subgraph "Validation Result"
-        PASS["Configuration stored<br/>System ready"]
-        FAIL["ValidationError thrown<br/>System halts"]
-    end
-    
-    USER_CONFIG --> VALIDATE
-    
-    VALIDATE --> CHECK_SLIP
-    VALIDATE --> CHECK_FEES
-    VALIDATE --> CHECK_VWAP
-    VALIDATE --> CHECK_TP
-    VALIDATE --> CHECK_SL_MIN
-    VALIDATE --> CHECK_SL_MAX
-    VALIDATE --> CHECK_SCHEDULE
-    VALIDATE --> CHECK_LIFE
-    VALIDATE --> CHECK_TTL
-    
-    CHECK_SLIP --> PASS
-    CHECK_FEES --> PASS
-    CHECK_VWAP --> PASS
-    CHECK_TP --> PASS
-    CHECK_SL_MIN --> PASS
-    CHECK_SL_MAX --> PASS
-    CHECK_SCHEDULE --> PASS
-    CHECK_LIFE --> PASS
-    CHECK_TTL --> PASS
-    
-    CHECK_SLIP -.invalid.-> FAIL
-    CHECK_FEES -.invalid.-> FAIL
-    CHECK_VWAP -.invalid.-> FAIL
-    
-    PASS --> STORE
-```
+![Mermaid Diagram](./diagrams\77_Configuration_5.svg)
 
 **Validation Ranges**:
 

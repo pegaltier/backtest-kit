@@ -91,44 +91,7 @@ The `onTimeframe` callback fires after timeframe array generation, providing the
 
 ## Supported Frame Intervals
 
-```mermaid
-graph LR
-    subgraph "Minute Intervals"
-        M1["1m<br/>(1 minute)"]
-        M3["3m<br/>(3 minutes)"]
-        M5["5m<br/>(5 minutes)"]
-        M15["15m<br/>(15 minutes)"]
-        M30["30m<br/>(30 minutes)"]
-    end
-    
-    subgraph "Hour Intervals"
-        H1["1h<br/>(1 hour)"]
-        H2["2h<br/>(2 hours)"]
-        H4["4h<br/>(4 hours)"]
-        H6["6h<br/>(6 hours)"]
-        H8["8h<br/>(8 hours)"]
-        H12["12h<br/>(12 hours)"]
-    end
-    
-    subgraph "Day Intervals"
-        D1["1d<br/>(1 day)"]
-        D3["3d<br/>(3 days)"]
-    end
-    
-    FrameInterval["FrameInterval Type"] --> M1
-    FrameInterval --> M3
-    FrameInterval --> M5
-    FrameInterval --> M15
-    FrameInterval --> M30
-    FrameInterval --> H1
-    FrameInterval --> H2
-    FrameInterval --> H4
-    FrameInterval --> H6
-    FrameInterval --> H8
-    FrameInterval --> H12
-    FrameInterval --> D1
-    FrameInterval --> D3
-```
+![Mermaid Diagram](./diagrams\35_ClientFrame_0.svg)
 
 **Interval Millisecond Conversion**:
 
@@ -154,54 +117,7 @@ graph LR
 
 ## Frame System Architecture
 
-```mermaid
-graph TB
-    subgraph "Public API"
-        AddFrame["addFrame(schema: IFrameSchema)"]
-        BacktestRun["Backtest.run(symbol, context)"]
-        BacktestBackground["Backtest.background(symbol, context)"]
-    end
-    
-    subgraph "Schema Layer"
-        FrameSchemaService["FrameSchemaService<br/>ToolRegistry pattern<br/>Stores IFrameSchema"]
-        FrameValidationService["FrameValidationService<br/>Registration validation<br/>Memoized checks"]
-    end
-    
-    subgraph "Connection Layer"
-        FrameConnectionService["FrameConnectionService<br/>Factory + Memoization<br/>getFrame(frameName)"]
-    end
-    
-    subgraph "Client Implementation"
-        ClientFrame["ClientFrame<br/>implements IFrame<br/>getTimeframe() method"]
-    end
-    
-    subgraph "Core Logic"
-        FrameCoreService["FrameCoreService<br/>Interval conversion<br/>Date iteration logic"]
-    end
-    
-    subgraph "Execution Layer"
-        BacktestLogicPrivateService["BacktestLogicPrivateService<br/>Consumes timeframe array<br/>Iterates through dates"]
-        BacktestCommandService["BacktestCommandService<br/>Orchestrates backtest<br/>Context propagation"]
-    end
-    
-    AddFrame --> FrameValidationService
-    FrameValidationService --> FrameSchemaService
-    
-    BacktestRun --> FrameValidationService
-    BacktestRun --> BacktestCommandService
-    BacktestBackground --> BacktestCommandService
-    
-    BacktestCommandService --> BacktestLogicPrivateService
-    BacktestLogicPrivateService --> FrameConnectionService
-    
-    FrameConnectionService --> FrameSchemaService
-    FrameConnectionService --> ClientFrame
-    
-    ClientFrame --> FrameCoreService
-    
-    FrameCoreService -.generates.-> Timeframe["Date[] array<br/>Timestamp sequence"]
-    Timeframe -.consumed by.-> BacktestLogicPrivateService
-```
+![Mermaid Diagram](./diagrams\35_ClientFrame_1.svg)
 
 **Architecture Layers**:
 
@@ -217,39 +133,7 @@ graph TB
 
 ## Timeframe Generation Algorithm
 
-```mermaid
-graph TB
-    Start["getTimeframe(symbol, frameName)"]
-    
-    GetSchema["FrameSchemaService.get(frameName)<br/>Retrieve IFrameSchema"]
-    
-    ConvertInterval["FrameCoreService<br/>Convert interval string to milliseconds<br/>'1m' → 60000, '1h' → 3600000"]
-    
-    InitArray["timeframe: Date[] = []"]
-    
-    SetCurrent["current = startDate.getTime()"]
-    
-    CheckEnd{"current <= endDate.getTime()"}
-    
-    AddTimestamp["timeframe.push(new Date(current))"]
-    
-    Increment["current += intervalMs"]
-    
-    Callback["callbacks?.onTimeframe?.<br/>(timeframe, startDate, endDate, interval)"]
-    
-    Return["return timeframe"]
-    
-    Start --> GetSchema
-    GetSchema --> ConvertInterval
-    ConvertInterval --> InitArray
-    InitArray --> SetCurrent
-    SetCurrent --> CheckEnd
-    CheckEnd -->|Yes| AddTimestamp
-    AddTimestamp --> Increment
-    Increment --> CheckEnd
-    CheckEnd -->|No| Callback
-    Callback --> Return
-```
+![Mermaid Diagram](./diagrams\35_ClientFrame_2.svg)
 
 **Algorithm Steps**:
 
@@ -283,51 +167,7 @@ For `startDate = 2024-01-01T00:00:00Z`, `endDate = 2024-01-01T02:00:00Z`, `inter
 
 ## Service Integration Pattern
 
-```mermaid
-graph TB
-    subgraph "Dependency Injection Container"
-        TYPES["TYPES.frameCoreService<br/>TYPES.frameConnectionService<br/>TYPES.frameSchemaService"]
-        Provide["provide() registration<br/>inject() resolution"]
-    end
-    
-    subgraph "FrameConnectionService"
-        GetFrame["getFrame(frameName)<br/>Memoized factory method"]
-        MemoCache["memoize cache<br/>Key: frameName<br/>Value: ClientFrame"]
-    end
-    
-    subgraph "ClientFrame Instance"
-        Constructor["new ClientFrame(params)<br/>params: IFrameParams"]
-        GetTimeframe["getTimeframe(symbol, frameName)"]
-        Logger["LoggerService instance<br/>Debug logging"]
-    end
-    
-    subgraph "FrameCoreService"
-        IntervalLogic["Interval conversion<br/>Date iteration<br/>Array generation"]
-    end
-    
-    subgraph "BacktestLogicPrivateService"
-        Run["async *run(symbol, context)<br/>Async generator"]
-        IterateFrame["for (const when of timeframe)<br/>Process each timestamp"]
-    end
-    
-    TYPES --> Provide
-    Provide --> GetFrame
-    
-    GetFrame -->|Cache miss| Constructor
-    GetFrame -->|Cache hit| MemoCache
-    Constructor --> MemoCache
-    MemoCache --> GetTimeframe
-    
-    GetTimeframe --> IntervalLogic
-    IntervalLogic -.generates.-> TimeframeArray["Date[] timeframe"]
-    
-    Run --> GetFrame
-    Run --> GetTimeframe
-    TimeframeArray --> IterateFrame
-    
-    Logger -.logs to.-> Constructor
-    Logger -.logs to.-> GetTimeframe
-```
+![Mermaid Diagram](./diagrams\35_ClientFrame_3.svg)
 
 **Connection Service Responsibilities**:
 
@@ -355,40 +195,7 @@ const frame2 = frameConnectionService.getFrame("1d-backtest");
 
 ## Integration with Backtest Execution
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Backtest
-    participant BacktestCommandService
-    participant BacktestLogicPrivateService
-    participant FrameConnectionService
-    participant ClientFrame
-    participant FrameCoreService
-    participant StrategyCoreService
-    
-    User->>Backtest: run(symbol, context)
-    Backtest->>BacktestCommandService: run(symbol, context)
-    BacktestCommandService->>BacktestLogicPrivateService: run*(symbol, context)
-    
-    BacktestLogicPrivateService->>FrameConnectionService: getFrame(frameName)
-    FrameConnectionService->>ClientFrame: new ClientFrame(params)
-    ClientFrame-->>FrameConnectionService: instance
-    
-    BacktestLogicPrivateService->>ClientFrame: getTimeframe(symbol, frameName)
-    ClientFrame->>FrameCoreService: convert interval + iterate dates
-    FrameCoreService-->>ClientFrame: Date[] timeframe
-    ClientFrame->>ClientFrame: callbacks?.onTimeframe?.(...)
-    ClientFrame-->>BacktestLogicPrivateService: Date[] timeframe
-    
-    loop For each timestamp in timeframe
-        BacktestLogicPrivateService->>BacktestLogicPrivateService: ExecutionContextService.runInContext
-        BacktestLogicPrivateService->>StrategyCoreService: backtest(symbol, strategyName, candles)
-        StrategyCoreService-->>BacktestLogicPrivateService: IStrategyBacktestResult
-        BacktestLogicPrivateService->>User: yield result
-    end
-    
-    BacktestLogicPrivateService-->>User: Complete (async generator exhausted)
-```
+![Mermaid Diagram](./diagrams\35_ClientFrame_4.svg)
 
 **Execution Flow**:
 

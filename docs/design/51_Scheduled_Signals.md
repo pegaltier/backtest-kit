@@ -82,47 +82,7 @@ If immediate activation conditions are met, the signal transitions directly to "
 
 ## Scheduled Signal Lifecycle
 
-```mermaid
-stateDiagram-v2
-    [*] --> Scheduled: getSignal returns signal with priceOpen
-
-    Scheduled --> Pending: Price reaches priceOpen and risk passes
-
-    Scheduled --> Cancelled_Timeout: Timeout exceeded
-
-    Scheduled --> Cancelled_StopLoss: StopLoss hit before activation
-
-    Scheduled --> Cancelled_Risk: Price reached but risk rejected
-
-    Pending --> Active: Position opened
-
-    Cancelled_Timeout --> [*]: Signal removed
-    Cancelled_StopLoss --> [*]: Signal removed
-    Cancelled_Risk --> [*]: Signal removed
-
-    note right of Scheduled
-        IStrategyTickResultScheduled
-        scheduledAt: creation timestamp
-        pendingAt: equals scheduledAt (temporary)
-        _isScheduled: true
-        Persisted in PersistScheduleAdapter
-    end note
-
-    note right of Pending
-        IStrategyTickResultOpened
-        scheduledAt: original timestamp
-        pendingAt: activation timestamp
-        _isScheduled: false
-        Moved to PersistSignalAdapter
-    end note
-
-    note left of Cancelled_StopLoss
-        Prevents opening positions
-        that would immediately lose
-        Critical protection for
-        volatile market conditions
-    end note
-```
+![Mermaid Diagram](./diagrams\51_Scheduled_Signals_0.svg)
 
 **Key state transitions:**
 
@@ -141,43 +101,7 @@ stateDiagram-v2
 
 Scheduled signals activate when market price reaches the specified `priceOpen`. The activation logic differs by position type:
 
-```mermaid
-graph TB
-    subgraph "LONG Position Activation"
-        L_SCHEDULED["Scheduled LONG<br/>priceOpen=42000<br/>priceStopLoss=40000"]
-        L_CHECK_SL{"currentPrice <=<br/>priceStopLoss?"}
-        L_CHECK_OPEN{"currentPrice <=<br/>priceOpen?"}
-        L_CANCEL["Cancel (StopLoss hit)"]
-        L_ACTIVATE["Activate at priceOpen"]
-        L_WAIT["Continue waiting"]
-        
-        L_SCHEDULED --> L_CHECK_SL
-        L_CHECK_SL -->|"Yes (price=39000)"| L_CANCEL
-        L_CHECK_SL -->|"No"| L_CHECK_OPEN
-        L_CHECK_OPEN -->|"Yes (price=41500)"| L_ACTIVATE
-        L_CHECK_OPEN -->|"No (price=43000)"| L_WAIT
-    end
-    
-    subgraph "SHORT Position Activation"
-        S_SCHEDULED["Scheduled SHORT<br/>priceOpen=42000<br/>priceStopLoss=44000"]
-        S_CHECK_SL{"currentPrice >=<br/>priceStopLoss?"}
-        S_CHECK_OPEN{"currentPrice >=<br/>priceOpen?"}
-        S_CANCEL["Cancel (StopLoss hit)"]
-        S_ACTIVATE["Activate at priceOpen"]
-        S_WAIT["Continue waiting"]
-        
-        S_SCHEDULED --> S_CHECK_SL
-        S_CHECK_SL -->|"Yes (price=45000)"| S_CANCEL
-        S_CHECK_SL -->|"No"| S_CHECK_OPEN
-        S_CHECK_OPEN -->|"Yes (price=42500)"| S_ACTIVATE
-        S_CHECK_OPEN -->|"No (price=40000)"| S_WAIT
-    end
-    
-    style L_CANCEL fill:#ffcccc
-    style S_CANCEL fill:#ffcccc
-    style L_ACTIVATE fill:#ccffcc
-    style S_ACTIVATE fill:#ccffcc
-```
+![Mermaid Diagram](./diagrams\51_Scheduled_Signals_1.svg)
 
 ### Activation Priority
 
@@ -253,37 +177,7 @@ if (elapsedTime >= maxTimeToWait) {
 
 If price moves against the position and hits `priceStopLoss` **before** reaching `priceOpen`, the scheduled signal is cancelled. This prevents opening positions that are already in a losing state.
 
-```mermaid
-graph TB
-    subgraph "LONG: Pre-Activation Cancellation"
-        L_START["Price: 45000<br/>Scheduled LONG<br/>priceOpen=42000<br/>priceStopLoss=40000"]
-        L_PRICE_DROPS["Price drops to 39000"]
-        L_SKIP_OPEN["Price NEVER reaches priceOpen=42000"]
-        L_HIT_SL["Price hits priceStopLoss=40000"]
-        L_CANCEL["Signal CANCELLED<br/>(not opened, no loss)"]
-        
-        L_START --> L_PRICE_DROPS
-        L_PRICE_DROPS --> L_SKIP_OPEN
-        L_PRICE_DROPS --> L_HIT_SL
-        L_HIT_SL --> L_CANCEL
-    end
-    
-    subgraph "SHORT: Pre-Activation Cancellation"
-        S_START["Price: 40000<br/>Scheduled SHORT<br/>priceOpen=42000<br/>priceStopLoss=44000"]
-        S_PRICE_RISES["Price rises to 45000"]
-        S_SKIP_OPEN["Price NEVER reaches priceOpen=42000"]
-        S_HIT_SL["Price hits priceStopLoss=44000"]
-        S_CANCEL["Signal CANCELLED<br/>(not opened, no loss)"]
-        
-        S_START --> S_PRICE_RISES
-        S_PRICE_RISES --> S_SKIP_OPEN
-        S_PRICE_RISES --> S_HIT_SL
-        S_HIT_SL --> S_CANCEL
-    end
-    
-    style L_CANCEL fill:#ffcccc
-    style S_CANCEL fill:#ffcccc
-```
+![Mermaid Diagram](./diagrams\51_Scheduled_Signals_2.svg)
 
 **Pre-activation cancellation is critical** because it prevents the following scenario:
 1. LONG scheduled at priceOpen=42000, StopLoss=40000
@@ -360,45 +254,7 @@ Scheduled signals are persisted to disk using `PersistScheduleAdapter`, enabling
 
 ### Persistence Architecture
 
-```mermaid
-graph TB
-    subgraph "Scheduled Signal Persistence"
-        CREATE["getSignal() creates<br/>IScheduledSignalRow"]
-        WRITE_SCHED["PersistScheduleAdapter.writeScheduleData()<br/>./dump/data/schedule/{strategy}/{symbol}.json"]
-        MONITOR["Monitor price every tick<br/>Check activation/cancellation"]
-        
-        ACTIVATE["Price reaches priceOpen<br/>Activate signal"]
-        CANCEL["Timeout or SL hit<br/>Cancel signal"]
-        
-        WRITE_PEND["PersistSignalAdapter.writeSignalData()<br/>./dump/data/signal/{strategy}/{symbol}.json"]
-        DELETE_SCHED["PersistScheduleAdapter.writeScheduleData(null)<br/>Remove from schedule file"]
-        
-        CRASH[("Process Crash")]
-        RESTART["Live.background() restart"]
-        READ_SCHED["PersistScheduleAdapter.readScheduleData()<br/>Load scheduled signal"]
-        RESTORE_MONITOR["Resume monitoring<br/>Continue waiting for activation"]
-    end
-    
-    CREATE --> WRITE_SCHED
-    WRITE_SCHED --> MONITOR
-    
-    MONITOR --> ACTIVATE
-    MONITOR --> CANCEL
-    
-    ACTIVATE --> WRITE_PEND
-    ACTIVATE --> DELETE_SCHED
-    
-    CANCEL --> DELETE_SCHED
-    
-    MONITOR -.crash.-> CRASH
-    CRASH --> RESTART
-    RESTART --> READ_SCHED
-    READ_SCHED --> RESTORE_MONITOR
-    RESTORE_MONITOR --> MONITOR
-    
-    style CRASH fill:#ffcccc
-    style RESTART fill:#ccffcc
-```
+![Mermaid Diagram](./diagrams\51_Scheduled_Signals_3.svg)
 
 ### File Structure
 
@@ -447,41 +303,7 @@ Scheduled signals undergo **additional validation** beyond immediate signals bec
 
 ### Scheduled-Specific Validations
 
-```mermaid
-graph TB
-    SIGNAL["IScheduledSignalRow<br/>priceOpen specified<br/>_isScheduled=true"]
-    
-    V1["Validate priceOpen is finite"]
-    V2["Validate priceOpen > 0"]
-    V3_LONG["LONG: Validate SL < priceOpen < TP"]
-    V3_SHORT["SHORT: Validate TP < priceOpen < SL"]
-    V4_LONG["LONG: Validate priceOpen NOT between<br/>priceStopLoss and priceTakeProfit"]
-    V4_SHORT["SHORT: Validate priceOpen NOT between<br/>priceTakeProfit and priceStopLoss"]
-    V5["Validate distance checks<br/>(CC_MIN_TAKEPROFIT_DISTANCE_PERCENT)"]
-    
-    PASS["Signal created"]
-    FAIL["Error thrown<br/>Signal rejected"]
-    
-    SIGNAL --> V1
-    V1 -->|"Pass"| V2
-    V1 -->|"Fail"| FAIL
-    V2 -->|"Pass"| V3_LONG
-    V2 -->|"Pass"| V3_SHORT
-    V2 -->|"Fail"| FAIL
-    V3_LONG -->|"Pass"| V4_LONG
-    V3_SHORT -->|"Pass"| V4_SHORT
-    V3_LONG -->|"Fail"| FAIL
-    V3_SHORT -->|"Fail"| FAIL
-    V4_LONG -->|"Pass"| V5
-    V4_SHORT -->|"Pass"| V5
-    V4_LONG -->|"Fail"| FAIL
-    V4_SHORT -->|"Fail"| FAIL
-    V5 -->|"Pass"| PASS
-    V5 -->|"Fail"| FAIL
-    
-    style PASS fill:#ccffcc
-    style FAIL fill:#ffcccc
-```
+![Mermaid Diagram](./diagrams\51_Scheduled_Signals_4.svg)
 
 ### Critical Validation: Position Validity at priceOpen
 

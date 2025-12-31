@@ -28,45 +28,7 @@ For information about the overall live execution flow, see [10.1](#10.1). For cr
 
 The monitoring loop is implemented in `LiveLogicPrivateService` as an infinite `while(true)` loop that continuously evaluates signal status. Each iteration creates a real-time timestamp with `new Date()`, calls `tick()` to evaluate signal state, emits events, and sleeps for `TICK_TTL` before the next iteration.
 
-```mermaid
-graph TB
-    START["LiveLogicPrivateService.run"] --> LOOP_START["while true"]
-
-    LOOP_START --> CREATE_TIMESTAMP["when = new Date<br/>Real-time timestamp"]
-    CREATE_TIMESTAMP --> CALL_TICK["strategyCoreService.tick<br/>symbol when backtest=false"]
-
-    CALL_TICK --> CHECK_ERROR{"Error?"}
-    CHECK_ERROR -->|Yes| LOG_ERROR["Log warning<br/>errorEmitter.next error"]
-    LOG_ERROR --> SLEEP_ERROR["sleep TICK_TTL"]
-    SLEEP_ERROR --> LOOP_START
-
-    CHECK_ERROR -->|No| EMIT_PERF["performanceEmitter.next<br/>metricType: live_tick<br/>duration: tick time"]
-
-    EMIT_PERF --> CHECK_ACTION{"result.action"}
-
-    CHECK_ACTION -->|idle| CHECK_STOPPED_IDLE{"getStopped?"}
-    CHECK_STOPPED_IDLE -->|Yes| BREAK_IDLE["break<br/>Exit loop"]
-    CHECK_STOPPED_IDLE -->|No| SLEEP_IDLE["sleep TICK_TTL"]
-    SLEEP_IDLE --> LOOP_START
-
-    CHECK_ACTION -->|active| SLEEP_ACTIVE["sleep TICK_TTL"]
-    SLEEP_ACTIVE --> LOOP_START
-
-    CHECK_ACTION -->|scheduled| SLEEP_SCHEDULED["sleep TICK_TTL"]
-    SLEEP_SCHEDULED --> LOOP_START
-
-    CHECK_ACTION -->|opened or closed| YIELD["yield result<br/>Emit to generator consumer"]
-
-    YIELD --> CHECK_CLOSED{"action equals closed"}
-    CHECK_CLOSED -->|Yes| CHECK_STOPPED_CLOSED{"getStopped?"}
-    CHECK_STOPPED_CLOSED -->|Yes| BREAK_CLOSED["break<br/>Exit loop"]
-    CHECK_STOPPED_CLOSED -->|No| SLEEP_YIELD["sleep TICK_TTL"]
-    CHECK_CLOSED -->|No| SLEEP_YIELD
-    SLEEP_YIELD --> LOOP_START
-
-    BREAK_IDLE --> END["Generator completes"]
-    BREAK_CLOSED --> END
-```
+![Mermaid Diagram](./diagrams\61_Real-time_Monitoring_0.svg)
 
 **Key Components:**
 
@@ -92,72 +54,7 @@ graph TB
 
 The `tick()` method evaluates the current signal state by checking for pending signals, validating scheduled signals, or generating new signals via `getSignal()`. The evaluation is wrapped in an execution context containing symbol, timestamp, and backtest flag.
 
-```mermaid
-graph TB
-    TICK_START["strategyCoreService.tick()"] --> VALIDATE["validate(symbol, strategyName)<br/>Memoized validation"]
-    
-    VALIDATE --> WRAP_CONTEXT["ExecutionContextService.runInContext()"]
-    
-    WRAP_CONTEXT --> INJECT["Inject context:<br/>symbol, when, backtest=false"]
-    
-    INJECT --> DELEGATE["strategyConnectionService.tick()"]
-    
-    DELEGATE --> GET_INSTANCE["getStrategy(symbol, strategyName)<br/>Memoized ClientStrategy instance"]
-    
-    GET_INSTANCE --> CALL_TICK["clientStrategy.tick(symbol, when)"]
-    
-    CALL_TICK --> GET_PENDING["Check _pendingSignal<br/>from PersistSignalAdapter"]
-    
-    GET_PENDING --> HAS_PENDING{"Has pending<br/>signal?"}
-    
-    HAS_PENDING -->|Yes| GET_SCHEDULED["Check _scheduledSignal<br/>from PersistScheduleAdapter"]
-    HAS_PENDING -->|No| GET_SCHEDULED
-    
-    GET_SCHEDULED --> HAS_SCHEDULED{"Has scheduled<br/>signal?"}
-    
-    HAS_SCHEDULED -->|Yes| CHECK_ACTIVATION["Check priceOpen<br/>against currentPrice"]
-    CHECK_ACTIVATION --> ACTIVATE{"Price reached<br/>priceOpen?"}
-    ACTIVATE -->|Yes| CONVERT_PENDING["Convert scheduled → pending<br/>Set pendingAt = when.getTime()"]
-    CONVERT_PENDING --> RETURN_OPENED["Return IStrategyTickResultOpened<br/>action: 'opened'"]
-    
-    ACTIVATE -->|No| CHECK_TIMEOUT["Check timeout<br/>CC_SCHEDULE_AWAIT_MINUTES"]
-    CHECK_TIMEOUT --> TIMEOUT{"Timeout<br/>reached?"}
-    TIMEOUT -->|Yes| RETURN_CANCELLED["Return IStrategyTickResultCancelled<br/>action: 'cancelled'"]
-    TIMEOUT -->|No| RETURN_SCHEDULED["Return IStrategyTickResultScheduled<br/>action: 'scheduled'"]
-    
-    HAS_PENDING -->|No| CHECK_INTERVAL["Check lastGeneratedAt<br/>vs interval throttle"]
-    CHECK_INTERVAL --> THROTTLED{"Within<br/>interval?"}
-    THROTTLED -->|Yes| RETURN_IDLE_THROTTLE["Return IStrategyTickResultIdle<br/>action: 'idle'"]
-    THROTTLED -->|No| CALL_GET_SIGNAL["schema.getSignal(symbol, when)"]
-    
-    CALL_GET_SIGNAL --> GET_SIGNAL_RESULT{"Result?"}
-    GET_SIGNAL_RESULT -->|null| RETURN_IDLE_NULL["Return IStrategyTickResultIdle<br/>action: 'idle'"]
-    
-    GET_SIGNAL_RESULT -->|ISignalDto| VALIDATE_SIGNAL["Validate signal<br/>Type, price, logic, distance, risk"]
-    VALIDATE_SIGNAL --> HAS_PRICE_OPEN{"priceOpen<br/>specified?"}
-    
-    HAS_PRICE_OPEN -->|Yes| CREATE_SCHEDULED["Create IScheduledSignalRow<br/>Set scheduledAt, _isScheduled"]
-    CREATE_SCHEDULED --> RETURN_SCHEDULED
-    
-    HAS_PRICE_OPEN -->|No| CREATE_PENDING["Create ISignalRow<br/>Set pendingAt = scheduledAt"]
-    CREATE_PENDING --> RETURN_OPENED
-    
-    HAS_PENDING -->|Yes, existing| MONITOR["Monitor TP/SL/time_expired"]
-    MONITOR --> CHECK_TP{"priceTakeProfit<br/>reached?"}
-    CHECK_TP -->|Yes| CLOSE_TP["Close with PNL<br/>closeReason: 'take_profit'"]
-    CLOSE_TP --> RETURN_CLOSED_TP["Return IStrategyTickResultClosed<br/>action: 'closed'"]
-    
-    CHECK_TP -->|No| CHECK_SL{"priceStopLoss<br/>reached?"}
-    CHECK_SL -->|Yes| CLOSE_SL["Close with PNL<br/>closeReason: 'stop_loss'"]
-    CLOSE_SL --> RETURN_CLOSED_SL["Return IStrategyTickResultClosed<br/>action: 'closed'"]
-    
-    CHECK_SL -->|No| CHECK_TIME{"minuteEstimatedTime<br/>exceeded?"}
-    CHECK_TIME -->|Yes| CLOSE_TIME["Close with PNL<br/>closeReason: 'time_expired'"]
-    CLOSE_TIME --> RETURN_CLOSED_TIME["Return IStrategyTickResultClosed<br/>action: 'closed'"]
-    
-    CHECK_TIME -->|No| CALC_PROGRESS["Calculate percentTp, percentSl"]
-    CALC_PROGRESS --> RETURN_ACTIVE["Return IStrategyTickResultActive<br/>action: 'active'"]
-```
+![Mermaid Diagram](./diagrams\61_Real-time_Monitoring_1.svg)
 
 **Validation Chain:**
 
@@ -181,52 +78,7 @@ The signal validation process runs multiple checks sequentially before allowing 
 
 The monitoring system emits events through RxJS Subjects for external observers to track execution without coupling to internal logic. Events are emitted at multiple points during tick evaluation and are processed sequentially via `queued()` wrapper.
 
-```mermaid
-graph TB
-    subgraph "Emission Points in LiveLogicPrivateService"
-        TICK_START["tick() called"] --> TICK_RESULT["result received"]
-        TICK_RESULT --> EMIT_PERF["performanceEmitter.next()<br/>live_tick metrics"]
-        TICK_RESULT --> EMIT_SIGNAL["signalEmitter.next(result)<br/>signalLiveEmitter.next(result)"]
-        TICK_RESULT --> CHECK_ERROR{"Error caught?"}
-        CHECK_ERROR -->|Yes| EMIT_ERROR["errorEmitter.next(error)"]
-    end
-    
-    subgraph "Emission Points in ClientStrategy"
-        STRATEGY_TICK["clientStrategy.tick()"] --> EMIT_IDLE["callbacks?.onIdle()<br/>signalEmitter"]
-        STRATEGY_TICK --> EMIT_SCHEDULED["callbacks?.onSchedule()<br/>signalEmitter"]
-        STRATEGY_TICK --> EMIT_OPENED["callbacks?.onOpen()<br/>signalEmitter"]
-        STRATEGY_TICK --> EMIT_ACTIVE["callbacks?.onActive()<br/>signalEmitter"]
-        STRATEGY_TICK --> EMIT_CLOSED["callbacks?.onClose()<br/>signalEmitter"]
-        STRATEGY_TICK --> EMIT_CANCELLED["callbacks?.onCancel()<br/>signalEmitter"]
-    end
-    
-    subgraph "Emission Points in ClientPartial"
-        PARTIAL_CHECK["partial.profit()/loss()"] --> CHECK_LEVELS["Check milestone levels<br/>10%, 20%, 30%, etc"]
-        CHECK_LEVELS --> EMIT_PARTIAL_PROFIT["partialProfitSubject.next()<br/>level, data, price"]
-        CHECK_LEVELS --> EMIT_PARTIAL_LOSS["partialLossSubject.next()<br/>level, data, price"]
-    end
-    
-    subgraph "Emission Points in ClientRisk"
-        RISK_CHECK["risk.checkSignal()"] --> VALIDATION_FAIL{"Validation<br/>failed?"}
-        VALIDATION_FAIL -->|Yes| EMIT_RISK["riskSubject.next()<br/>rejection details"]
-        VALIDATION_FAIL -->|No| EMIT_ALLOWED["callbacks?.onAllowed()<br/>NOT emitted to riskSubject"]
-    end
-    
-    subgraph "Listener Functions (Public API)"
-        LISTEN_SIGNAL["listenSignal(fn)<br/>listenSignalLive(fn)"]
-        LISTEN_ERROR["listenError(fn)"]
-        LISTEN_PERF["listenPerformance(fn)"]
-        LISTEN_PARTIAL["listenPartialProfit(fn)<br/>listenPartialLoss(fn)"]
-        LISTEN_RISK["listenRisk(fn)"]
-    end
-    
-    EMIT_SIGNAL --> LISTEN_SIGNAL
-    EMIT_ERROR --> LISTEN_ERROR
-    EMIT_PERF --> LISTEN_PERF
-    EMIT_PARTIAL_PROFIT --> LISTEN_PARTIAL
-    EMIT_PARTIAL_LOSS --> LISTEN_PARTIAL
-    EMIT_RISK --> LISTEN_RISK
-```
+![Mermaid Diagram](./diagrams\61_Real-time_Monitoring_2.svg)
 
 **Event Types and Payloads:**
 
@@ -265,26 +117,7 @@ The `queued()` wrapper guarantees that:
 
 Each tick iteration emits performance metrics to track execution duration and detect bottlenecks. The metrics include operation type, duration, timestamp, and delta from the previous event.
 
-```mermaid
-graph TB
-    START["Tick iteration starts"] --> RECORD_START["tickStartTime = performance.now()"]
-    
-    RECORD_START --> EXECUTE["Execute tick()"]
-    
-    EXECUTE --> RECORD_END["tickEndTime = performance.now()"]
-    
-    RECORD_END --> CALC_DURATION["duration = tickEndTime - tickStartTime"]
-    
-    CALC_DURATION --> GET_TIMESTAMP["currentTimestamp = Date.now()"]
-    
-    GET_TIMESTAMP --> EMIT["performanceEmitter.next()"]
-    
-    EMIT --> CONTRACT["PerformanceContract:<br/>timestamp: currentTimestamp<br/>previousTimestamp: previousEventTimestamp<br/>metricType: 'live_tick'<br/>duration: duration<br/>strategyName: strategyName<br/>exchangeName: exchangeName<br/>symbol: symbol<br/>backtest: false"]
-    
-    CONTRACT --> UPDATE["previousEventTimestamp = currentTimestamp"]
-    
-    UPDATE --> NEXT_TICK["Continue to next tick"]
-```
+![Mermaid Diagram](./diagrams\61_Real-time_Monitoring_3.svg)
 
 **Performance Contract Fields:**
 
@@ -314,28 +147,7 @@ The `previousTimestamp` field enables calculating time between events for monito
 
 The monitoring loop implements graceful error handling to ensure that transient failures do not stop live trading execution. Errors are logged, emitted for external observers, and followed by a sleep before retry.
 
-```mermaid
-graph TB
-    TICK_CALL["strategyCoreService.tick()"] --> TRY_BLOCK["try { ... }"]
-    
-    TRY_BLOCK --> TICK_EXECUTE["Execute tick logic"]
-    
-    TICK_EXECUTE --> CATCH{"Error<br/>thrown?"}
-    
-    CATCH -->|No| SUCCESS["result received<br/>Continue normal flow"]
-    
-    CATCH -->|Yes| CONSOLE_WARN["console.warn()<br/>Log to stderr with details"]
-    
-    CONSOLE_WARN --> LOGGER_WARN["loggerService.warn()<br/>'tick failed, retrying after sleep'"]
-    
-    LOGGER_WARN --> EMIT_ERROR["errorEmitter.next(error)"]
-    
-    EMIT_ERROR --> SLEEP_RETRY["sleep(TICK_TTL)"]
-    
-    SLEEP_RETRY --> CONTINUE["continue<br/>Skip to next iteration"]
-    
-    CONTINUE --> TICK_CALL
-```
+![Mermaid Diagram](./diagrams\61_Real-time_Monitoring_4.svg)
 
 **Error Handling Strategy:**
 
@@ -370,37 +182,7 @@ symbol=${symbol} strategyName=${strategyName} exchangeName=${exchangeName}
 
 The monitoring loop handles each signal state differently, with varying sleep durations and yield behavior. Understanding state-specific behavior is critical for efficient monitoring.
 
-```mermaid
-graph TB
-    TICK_RESULT["tick() returns<br/>IStrategyTickResult"] --> CHECK_ACTION{"result.action"}
-    
-    CHECK_ACTION -->|"idle"| IDLE_NODE["State: Idle<br/>No active signal"]
-    IDLE_NODE --> CHECK_STOPPED_IDLE{"getStopped()?"}
-    CHECK_STOPPED_IDLE -->|Yes| LOG_STOP_IDLE["Log: 'stopped by user request (idle state)'"]
-    LOG_STOP_IDLE --> BREAK_IDLE["break<br/>Exit generator"]
-    CHECK_STOPPED_IDLE -->|No| SLEEP_IDLE["sleep(TICK_TTL)<br/>continue"]
-    
-    CHECK_ACTION -->|"scheduled"| SCHEDULED_NODE["State: Scheduled<br/>Waiting for priceOpen"]
-    SCHEDULED_NODE --> SLEEP_SCHEDULED["sleep(TICK_TTL)<br/>continue<br/>NOT yielded"]
-    
-    CHECK_ACTION -->|"active"| ACTIVE_NODE["State: Active<br/>Monitoring TP/SL"]
-    ACTIVE_NODE --> SLEEP_ACTIVE["sleep(TICK_TTL)<br/>continue<br/>NOT yielded"]
-    
-    CHECK_ACTION -->|"opened"| OPENED_NODE["State: Opened<br/>New signal created"]
-    OPENED_NODE --> YIELD_OPENED["yield result<br/>Emit to consumer"]
-    YIELD_OPENED --> SLEEP_OPENED["sleep(TICK_TTL)<br/>continue"]
-    
-    CHECK_ACTION -->|"closed"| CLOSED_NODE["State: Closed<br/>Signal completed"]
-    CLOSED_NODE --> YIELD_CLOSED["yield result<br/>Emit to consumer"]
-    YIELD_CLOSED --> CHECK_STOPPED_CLOSED{"getStopped()?"}
-    CHECK_STOPPED_CLOSED -->|Yes| LOG_STOP_CLOSED["Log: 'stopped by user request<br/>(after signal closed)'"]
-    LOG_STOP_CLOSED --> BREAK_CLOSED["break<br/>Exit generator"]
-    CHECK_STOPPED_CLOSED -->|No| SLEEP_CLOSED["sleep(TICK_TTL)<br/>continue"]
-    
-    CHECK_ACTION -->|"cancelled"| CANCELLED_NODE["State: Cancelled<br/>Scheduled signal expired"]
-    CANCELLED_NODE --> YIELD_CANCELLED["yield result<br/>Emit to consumer"]
-    YIELD_CANCELLED --> SLEEP_CANCELLED["sleep(TICK_TTL)<br/>continue"]
-```
+![Mermaid Diagram](./diagrams\61_Real-time_Monitoring_5.svg)
 
 **State Behavior Summary:**
 

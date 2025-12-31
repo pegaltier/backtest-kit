@@ -30,54 +30,7 @@ This document covers the logging interface contract, custom logger configuration
 
 ## Architecture Overview
 
-```mermaid
-graph TB
-    subgraph "Public API"
-        setLogger["setLogger(logger: ILogger)"]
-        ILogger["ILogger Interface<br/>log, debug, info, warn"]
-    end
-    
-    subgraph "Dependency Injection"
-        TYPES["TYPES.loggerService<br/>Symbol('loggerService')"]
-        provide["provide(TYPES.loggerService)"]
-        inject["inject&lt;LoggerService&gt;(TYPES.loggerService)"]
-    end
-    
-    subgraph "Base Services"
-        LoggerService["LoggerService<br/>Default Implementation"]
-    end
-    
-    subgraph "Framework Services"
-        ConnectionServices["Connection Services<br/>ExchangeConnectionService<br/>StrategyConnectionService<br/>FrameConnectionService"]
-        CoreServices["Core Services<br/>ExchangeCoreService<br/>StrategyCoreService<br/>FrameCoreService"]
-        LogicServices["Logic Services<br/>BacktestLogicPrivateService<br/>LiveLogicPrivateService<br/>WalkerLogicPrivateService"]
-        MarkdownServices["Markdown Services<br/>BacktestMarkdownService<br/>LiveMarkdownService<br/>ScheduleMarkdownService"]
-        CommandServices["Command Services<br/>BacktestCommandService<br/>LiveCommandService<br/>WalkerCommandService"]
-    end
-    
-    subgraph "Client Implementations"
-        ClientStrategy["ClientStrategy<br/>Signal lifecycle logging"]
-        ClientExchange["ClientExchange<br/>Candle fetch logging"]
-        ClientRisk["ClientRisk<br/>Risk validation logging"]
-    end
-    
-    setLogger --> LoggerService
-    ILogger -.implements.- LoggerService
-    
-    provide --> TYPES
-    inject --> TYPES
-    TYPES --> LoggerService
-    
-    LoggerService --> ConnectionServices
-    LoggerService --> CoreServices
-    LoggerService --> LogicServices
-    LoggerService --> MarkdownServices
-    LoggerService --> CommandServices
-    
-    ConnectionServices --> ClientStrategy
-    ConnectionServices --> ClientExchange
-    ConnectionServices --> ClientRisk
-```
+![Mermaid Diagram](./diagrams\82_Logging_System_0.svg)
 
 **Diagram 1: Logging System Architecture**
 
@@ -162,15 +115,7 @@ The framework includes a default `LoggerService` implementation that is register
 
 ### Service Registration
 
-```mermaid
-graph LR
-    provide["provide(TYPES.loggerService)"]
-    LoggerService["new LoggerService()"]
-    inject["inject&lt;LoggerService&gt;"]
-    
-    provide --> LoggerService
-    LoggerService --> inject
-```
+![Mermaid Diagram](./diagrams\82_Logging_System_1.svg)
 
 **Diagram 2: LoggerService Registration Flow**
 
@@ -216,17 +161,7 @@ const baseServices = {
 
 ### Service Access Pattern
 
-```mermaid
-graph TB
-    Service["Framework Service<br/>(e.g., BacktestCommandService)"]
-    inject["inject&lt;LoggerService&gt;(TYPES.loggerService)"]
-    container["DI Container"]
-    LoggerService["LoggerService Instance"]
-    
-    Service -->|requests| inject
-    inject -->|resolves from| container
-    container -->|returns| LoggerService
-```
+![Mermaid Diagram](./diagrams\82_Logging_System_2.svg)
 
 **Diagram 3: Logger Injection Pattern**
 
@@ -292,31 +227,7 @@ export function listenSignal(fn: (event: IStrategyTickResult) => void) {
 
 ### Common Logging Points
 
-```mermaid
-graph TB
-    subgraph "API Entry Points"
-        APIEntry["Public API Functions<br/>addStrategy, addExchange<br/>Backtest.run, Live.run"]
-    end
-    
-    subgraph "Event Registration"
-        EventReg["Event Listeners<br/>listenSignal, listenError<br/>listenPartialProfit"]
-    end
-    
-    subgraph "Service Operations"
-        ServiceOps["Service Methods<br/>Schema registration<br/>Validation checks<br/>Data fetching"]
-    end
-    
-    subgraph "Client Operations"
-        ClientOps["Client Methods<br/>getSignal execution<br/>Candle fetching<br/>Risk validation"]
-    end
-    
-    LoggerService["LoggerService"]
-    
-    APIEntry -->|info| LoggerService
-    EventReg -->|log| LoggerService
-    ServiceOps -->|debug/info| LoggerService
-    ClientOps -->|debug/info| LoggerService
-```
+![Mermaid Diagram](./diagrams\82_Logging_System_3.svg)
 
 **Diagram 4: Logging Points Across Framework Layers**
 

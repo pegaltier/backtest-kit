@@ -76,30 +76,7 @@ The `FrameInterval` type defines the granularity of timestamp generation. Each i
 
 ### Supported Intervals
 
-```mermaid
-graph LR
-    subgraph "Minute Intervals"
-        M1["1m<br/>1 minute"]
-        M3["3m<br/>3 minutes"]
-        M5["5m<br/>5 minutes"]
-        M15["15m<br/>15 minutes"]
-        M30["30m<br/>30 minutes"]
-    end
-    
-    subgraph "Hour Intervals"
-        H1["1h<br/>1 hour"]
-        H2["2h<br/>2 hours"]
-        H4["4h<br/>4 hours"]
-        H6["6h<br/>6 hours"]
-        H8["8h<br/>8 hours"]
-        H12["12h<br/>12 hours"]
-    end
-    
-    subgraph "Day Intervals"
-        D1["1d<br/>1 day"]
-        D3["3d<br/>3 days"]
-    end
-```
+![Mermaid Diagram](./diagrams\27_Frame_Schemas_0.svg)
 
 ### Interval Type Definition
 
@@ -130,39 +107,7 @@ type FrameInterval =
 
 Frame schemas are consumed by `ClientFrame` to generate arrays of `Date` objects representing backtest timestamps. The `FrameCoreService` orchestrates this generation.
 
-```mermaid
-graph TB
-    Schema["IFrameSchema<br/>{frameName, interval, startDate, endDate}"]
-    AddFrame["addFrame()<br/>Function API"]
-    SchemaService["FrameSchemaService<br/>ToolRegistry storage"]
-    
-    ConnectionService["FrameConnectionService<br/>Factory pattern"]
-    ClientFrame["ClientFrame<br/>Implements IFrame"]
-    
-    CoreService["FrameCoreService<br/>Timeframe generation logic"]
-    GetTimeframe["getTimeframe()<br/>Returns Date[]"]
-    
-    Timestamps["Date[]<br/>Backtest timestamps"]
-    
-    BacktestLogic["BacktestLogicPrivateService<br/>Iterates timestamps"]
-    StrategyTick["ClientStrategy.backtest()<br/>Process each timestamp"]
-    
-    Schema --> AddFrame
-    AddFrame --> SchemaService
-    
-    SchemaService --> ConnectionService
-    ConnectionService --> ClientFrame
-    
-    ClientFrame --> CoreService
-    CoreService --> GetTimeframe
-    GetTimeframe --> Timestamps
-    
-    Timestamps --> BacktestLogic
-    BacktestLogic --> StrategyTick
-    
-    OnTimeframe["onTimeframe callback<br/>Optional monitoring"]
-    GetTimeframe -.emits.-> OnTimeframe
-```
+![Mermaid Diagram](./diagrams\27_Frame_Schemas_1.svg)
 
 ### Generation Algorithm
 
@@ -289,33 +234,7 @@ Frames are registered via the `addFrame()` public API function and referenced by
 
 ### Registration Flow
 
-```mermaid
-graph TB
-    UserCode["User Code<br/>addFrame() call"]
-    
-    AddFrameAPI["addFrame()<br/>src/function/add.ts"]
-    
-    FrameGlobal["FrameGlobalService<br/>Entry point + validation"]
-    
-    FrameValidation["FrameValidationService<br/>Memoized schema validation"]
-    
-    FrameSchema["FrameSchemaService<br/>ToolRegistry storage"]
-    
-    MethodContext["MethodContextService<br/>Scoped context propagation"]
-    
-    FrameConnection["FrameConnectionService<br/>Factory + memoization"]
-    
-    ClientFrame["ClientFrame instance<br/>Cached by frameName"]
-    
-    UserCode --> AddFrameAPI
-    AddFrameAPI --> FrameGlobal
-    FrameGlobal --> FrameValidation
-    FrameValidation --> FrameSchema
-    
-    FrameSchema -.retrieved by.-> MethodContext
-    MethodContext --> FrameConnection
-    FrameConnection --> ClientFrame
-```
+![Mermaid Diagram](./diagrams\27_Frame_Schemas_2.svg)
 
 ### Registration Example
 
@@ -386,22 +305,7 @@ The `FrameConnectionService` provides dependencies when instantiating `ClientFra
 
 ### ClientFrame Instantiation
 
-```mermaid
-graph LR
-    Schema["Frame Schema<br/>(from registry)"]
-    Logger["LoggerService<br/>(from DI)"]
-    
-    Params["IFrameParams<br/>{...schema, logger}"]
-    
-    ClientFrameCtor["new ClientFrame()<br/>Constructor"]
-    
-    Instance["ClientFrame Instance<br/>Cached by frameName"]
-    
-    Schema --> Params
-    Logger --> Params
-    Params --> ClientFrameCtor
-    ClientFrameCtor --> Instance
-```
+![Mermaid Diagram](./diagrams\27_Frame_Schemas_3.svg)
 
 **Sources**: [types.d.ts:221-227]()
 
@@ -456,50 +360,7 @@ await Backtest.run("BTCUSDT", {
 
 Frames integrate with the backtest system through the `BacktestLogicPrivateService`, which uses generated timeframes to drive strategy simulation.
 
-```mermaid
-graph TB
-    BacktestRun["Backtest.run()<br/>User API call"]
-    
-    BacktestCommand["BacktestCommandService<br/>Orchestration"]
-    
-    BacktestLogic["BacktestLogicPrivateService<br/>Backtest orchestration"]
-    
-    FrameConnection["FrameConnectionService<br/>Get ClientFrame instance"]
-    
-    GetTimeframe["clientFrame.getTimeframe()<br/>Generate timestamps"]
-    
-    Timeframe["Date[]<br/>Backtest timestamps"]
-    
-    ExecutionContext["ExecutionContextService<br/>Set {symbol, when, backtest: true}"]
-    
-    IterateLoop["for (when of timeframe)<br/>Iterate each timestamp"]
-    
-    StrategyConnection["StrategyConnectionService<br/>Get ClientStrategy instance"]
-    
-    StrategyBacktest["clientStrategy.backtest()<br/>Process timestamp"]
-    
-    SignalResult["IStrategyBacktestResult<br/>Closed or Cancelled"]
-    
-    Emit["signalBacktestEmitter<br/>Emit result"]
-    
-    BacktestRun --> BacktestCommand
-    BacktestCommand --> BacktestLogic
-    
-    BacktestLogic --> FrameConnection
-    FrameConnection --> GetTimeframe
-    GetTimeframe --> Timeframe
-    
-    Timeframe --> IterateLoop
-    
-    IterateLoop --> ExecutionContext
-    ExecutionContext --> StrategyConnection
-    StrategyConnection --> StrategyBacktest
-    
-    StrategyBacktest --> SignalResult
-    SignalResult --> Emit
-    
-    Emit -.next iteration.-> IterateLoop
-```
+![Mermaid Diagram](./diagrams\27_Frame_Schemas_4.svg)
 
 ### Execution Context Propagation
 

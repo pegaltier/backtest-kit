@@ -67,42 +67,7 @@ The logger is stored in `LoggerService` and injected throughout the system via t
 
 ### Dependency Injection Pattern
 
-```mermaid
-graph TB
-    USER["User Code<br/>setLogger(customLogger)"]
-    LOGGER_SVC["LoggerService<br/>Singleton instance<br/>TYPES.loggerService"]
-    
-    subgraph "Service Layer Injection"
-        STRAT_SVC["StrategyGlobalService<br/>inject(TYPES.loggerService)"]
-        EXCH_SVC["ExchangeGlobalService<br/>inject(TYPES.loggerService)"]
-        RISK_SVC["RiskGlobalService<br/>inject(TYPES.loggerService)"]
-        PARTIAL_SVC["PartialConnectionService<br/>inject(TYPES.loggerService)"]
-    end
-    
-    subgraph "Client Layer Injection"
-        CLIENT_STRAT["ClientStrategy<br/>params.logger"]
-        CLIENT_EXCH["ClientExchange<br/>params.logger"]
-        CLIENT_RISK["ClientRisk<br/>params.logger"]
-        CLIENT_PARTIAL["ClientPartial<br/>params.logger"]
-    end
-    
-    USER --> LOGGER_SVC
-    
-    LOGGER_SVC --> STRAT_SVC
-    LOGGER_SVC --> EXCH_SVC
-    LOGGER_SVC --> RISK_SVC
-    LOGGER_SVC --> PARTIAL_SVC
-    
-    STRAT_SVC --> CLIENT_STRAT
-    EXCH_SVC --> CLIENT_EXCH
-    RISK_SVC --> CLIENT_RISK
-    PARTIAL_SVC --> CLIENT_PARTIAL
-    
-    CLIENT_STRAT -.logs.-> LOGGER_SVC
-    CLIENT_EXCH -.logs.-> LOGGER_SVC
-    CLIENT_RISK -.logs.-> LOGGER_SVC
-    CLIENT_PARTIAL -.logs.-> LOGGER_SVC
-```
+![Mermaid Diagram](./diagrams\81_Cross-Cutting_Concerns_0.svg)
 
 **Sources:** [types.d.ts:52-77](), [src/lib/services/base/LoggerService.ts](), [src/lib/core/types.ts]()
 
@@ -155,36 +120,7 @@ The error handling system distinguishes between recoverable and fatal errors, pr
 
 ### Error Classification
 
-```mermaid
-graph TB
-    ERROR["Error Occurs"]
-    
-    RECOVERABLE{"Recoverable?"}
-    FATAL{"Fatal?"}
-    
-    ERROR_EMIT["errorEmitter.next(error)<br/>Background task continues"]
-    EXIT_EMIT["exitEmitter.next(error)<br/>Execution terminates"]
-    VALIDATION_EMIT["validationSubject.next(error)<br/>Signal rejected"]
-    
-    LISTEN_ERROR["listenError()<br/>User callback<br/>Logging, alerts, monitoring"]
-    LISTEN_EXIT["listenExit()<br/>User callback<br/>Critical alerts, cleanup"]
-    LISTEN_VALIDATION["listenValidation()<br/>User callback<br/>Risk monitoring"]
-    
-    ERROR --> RECOVERABLE
-    
-    RECOVERABLE -->|Yes| ERROR_EMIT
-    RECOVERABLE -->|No| FATAL
-    
-    FATAL -->|Yes| EXIT_EMIT
-    FATAL -->|Risk Validation| VALIDATION_EMIT
-    
-    ERROR_EMIT --> LISTEN_ERROR
-    EXIT_EMIT --> LISTEN_EXIT
-    VALIDATION_EMIT --> LISTEN_VALIDATION
-    
-    LISTEN_ERROR -.->|Continues| BG_TASK["Background Task<br/>Live.background()<br/>Backtest.background()"]
-    LISTEN_EXIT -.->|Terminates| BG_TASK
-```
+![Mermaid Diagram](./diagrams\81_Cross-Cutting_Concerns_1.svg)
 
 **Sources:** [src/config/emitters.ts:36-44](), [src/config/emitters.ts:109-112](), [src/function/event.ts:223-279]()
 
@@ -284,38 +220,7 @@ try {
 
 ### Validation Error Handling
 
-```mermaid
-graph TB
-    SIGNAL["Signal Generation<br/>getSignal() returns ISignalDto"]
-    
-    VALIDATE["Validation Chain"]
-    
-    TYPE_VAL["Type Validation<br/>Schema validation"]
-    PRICE_VAL["Price Validation<br/>TP/SL distances"]
-    LOGIC_VAL["Logic Validation<br/>Price relationships"]
-    RISK_VAL["Risk Validation<br/>Portfolio limits"]
-    
-    SUCCESS["Signal Accepted<br/>State: opened"]
-    REJECT["Signal Rejected<br/>validationSubject.next(error)"]
-    
-    CALLBACK_REJECT["schema.callbacks.onRejected()"]
-    LISTEN_VAL["listenValidation() subscribers"]
-    
-    SIGNAL --> VALIDATE
-    VALIDATE --> TYPE_VAL
-    TYPE_VAL -->|Pass| PRICE_VAL
-    PRICE_VAL -->|Pass| LOGIC_VAL
-    LOGIC_VAL -->|Pass| RISK_VAL
-    RISK_VAL -->|Pass| SUCCESS
-    
-    TYPE_VAL -->|Fail| REJECT
-    PRICE_VAL -->|Fail| REJECT
-    LOGIC_VAL -->|Fail| REJECT
-    RISK_VAL -->|Fail| REJECT
-    
-    REJECT --> CALLBACK_REJECT
-    REJECT --> LISTEN_VAL
-```
+![Mermaid Diagram](./diagrams\81_Cross-Cutting_Concerns_2.svg)
 
 **Sources:** [src/client/ClientRisk.ts](), [src/lib/services/validation/RiskValidationService.ts](), [src/config/emitters.ts:109-112]()
 
@@ -329,41 +234,7 @@ The persistence layer provides crash-safe storage for live trading state using a
 
 `PersistBase` is the foundation for all persistence adapters, implementing CRUD operations with automatic directory management and corruption recovery.
 
-```mermaid
-graph TB
-    subgraph "PersistBase Core"
-        CTOR["constructor(entityName, baseDir)<br/>_directory = baseDir/entityName"]
-        WAIT_INIT["waitForInit(initial)<br/>Create directory<br/>Validate existing files<br/>Auto-cleanup corrupted"]
-        
-        READ["readValue(entityId)<br/>Read JSON file<br/>Parse and return"]
-        WRITE["writeValue(entityId, entity)<br/>Atomic write<br/>tmp → rename"]
-        HAS["hasValue(entityId)<br/>Check file existence"]
-        REMOVE["removeValue(entityId)<br/>Delete file"]
-        
-        KEYS["keys() AsyncGenerator<br/>Yield sorted entity IDs"]
-        VALUES["values() AsyncGenerator<br/>Yield sorted entities"]
-    end
-    
-    subgraph "Concrete Adapters"
-        SIGNAL["PersistSignalAdapter<br/>./dump/data/signal/{symbol}_{strategy}/<br/>SignalData = ISignalRow | null"]
-        RISK["PersistRiskAdapter<br/>./dump/data/risk/{riskName}/<br/>RiskData = IRiskActivePosition[]"]
-        SCHEDULE["PersistScheduleAdapter<br/>./dump/data/schedule/{symbol}_{strategy}/<br/>ScheduleData = IScheduledSignalRow[]"]
-        PARTIAL["PersistPartialAdapter<br/>./dump/data/partial/{symbol}_{strategy}/<br/>PartialData = Record<signalId, IPartialData>"]
-    end
-    
-    CTOR --> WAIT_INIT
-    WAIT_INIT --> READ
-    WAIT_INIT --> WRITE
-    WAIT_INIT --> HAS
-    WAIT_INIT --> REMOVE
-    WAIT_INIT --> KEYS
-    WAIT_INIT --> VALUES
-    
-    PersistBase --> SIGNAL
-    PersistBase --> RISK
-    PersistBase --> SCHEDULE
-    PersistBase --> PARTIAL
-```
+![Mermaid Diagram](./diagrams\81_Cross-Cutting_Concerns_3.svg)
 
 **Sources:** [src/classes/Persist.ts:179-501]()
 
@@ -382,31 +253,7 @@ graph TB
 
 The atomic write pattern ensures that files are never left in a corrupted state, even if the process crashes during write operations.
 
-```mermaid
-sequenceDiagram
-    participant Client
-    participant PersistBase
-    participant writeFileAtomic
-    participant FileSystem
-    
-    Client->>PersistBase: writeValue(entityId, entity)
-    PersistBase->>PersistBase: JSON.stringify(entity)
-    PersistBase->>writeFileAtomic: writeFileAtomic(filePath, data)
-    
-    writeFileAtomic->>FileSystem: Write to temp file<br/>filePath.tmp
-    FileSystem-->>writeFileAtomic: Write complete
-    
-    writeFileAtomic->>FileSystem: fsync()<br/>Force disk write
-    FileSystem-->>writeFileAtomic: Sync complete
-    
-    writeFileAtomic->>FileSystem: rename(tmp, final)<br/>Atomic operation
-    FileSystem-->>writeFileAtomic: Rename complete
-    
-    writeFileAtomic-->>PersistBase: Success
-    PersistBase-->>Client: Write complete
-    
-    Note over FileSystem: If crash occurs before rename:<br/>Old file remains intact<br/>Temp file is orphaned<br/>If crash during rename:<br/>OS guarantees atomicity
-```
+![Mermaid Diagram](./diagrams\81_Cross-Cutting_Concerns_4.svg)
 
 **Sources:** [src/classes/Persist.ts:295-314](), [src/utils/writeFileAtomic.ts]()
 
@@ -450,37 +297,7 @@ for await (const key of self.keys()) {
 
 ### Crash Recovery Integration
 
-```mermaid
-graph TB
-    CRASH["Process Crashes<br/>SIGKILL, OOM, power loss"]
-    
-    RESTART["Process Restarts<br/>Live.background() called"]
-    
-    subgraph "State Recovery"
-        SIGNAL_INIT["ClientStrategy.waitForInit()<br/>PersistSignalAdapter.readSignalData()"]
-        RISK_INIT["ClientRisk.waitForInit()<br/>PersistRiskAdapter.readPositionData()"]
-        SCHEDULE_INIT["ClientStrategy.waitForInit()<br/>PersistScheduleAdapter.readScheduleData()"]
-        PARTIAL_INIT["ClientPartial.waitForInit()<br/>PersistPartialAdapter.readPartialData()"]
-    end
-    
-    RECOVERED["State Restored<br/>Execution resumes<br/>from last persisted state"]
-    
-    CRASH --> RESTART
-    
-    RESTART --> SIGNAL_INIT
-    RESTART --> RISK_INIT
-    RESTART --> SCHEDULE_INIT
-    RESTART --> PARTIAL_INIT
-    
-    SIGNAL_INIT --> RECOVERED
-    RISK_INIT --> RECOVERED
-    SCHEDULE_INIT --> RECOVERED
-    PARTIAL_INIT --> RECOVERED
-    
-    NOTE1["Files validated on init<br/>Corrupted files auto-removed<br/>Valid state always loaded"]
-    
-    SIGNAL_INIT -.-> NOTE1
-```
+![Mermaid Diagram](./diagrams\81_Cross-Cutting_Concerns_5.svg)
 
 **Sources:** [src/client/ClientStrategy.ts](), [src/client/ClientRisk.ts](), [src/client/ClientPartial.ts](), [src/classes/Persist.ts:132-153]()
 

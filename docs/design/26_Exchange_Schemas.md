@@ -34,48 +34,7 @@ For information about strategy schemas that consume exchange data, see [Strategy
 
 The `IExchangeSchema` interface specifies the contract for all exchange implementations. It consists of three core functions and optional lifecycle callbacks.
 
-```mermaid
-classDiagram
-    class IExchangeSchema {
-        +string exchangeName
-        +string? note
-        +getCandles(symbol, interval, since, limit) Promise~ICandleData[]~
-        +formatQuantity(symbol, quantity) Promise~string~
-        +formatPrice(symbol, price) Promise~string~
-        +Partial~IExchangeCallbacks~? callbacks
-    }
-    
-    class IExchangeCallbacks {
-        +onCandleData(symbol, interval, since, limit, data) void
-    }
-    
-    class ICandleData {
-        +number timestamp
-        +number open
-        +number high
-        +number low
-        +number close
-        +number volume
-    }
-    
-    class CandleInterval {
-        <<enumeration>>
-        1m
-        3m
-        5m
-        15m
-        30m
-        1h
-        2h
-        4h
-        6h
-        8h
-    }
-    
-    IExchangeSchema --> IExchangeCallbacks : callbacks
-    IExchangeSchema --> ICandleData : returns
-    IExchangeSchema --> CandleInterval : uses
-```
+![Mermaid Diagram](./diagrams\26_Exchange_Schemas_0.svg)
 
 **Sources:** [types.d.ts:80-155]()
 
@@ -142,31 +101,7 @@ formatQuantity: (
 
 Each candle represents aggregated trading data for a specific time interval.
 
-```mermaid
-graph LR
-    subgraph ICandleData["ICandleData Structure"]
-        timestamp["timestamp<br/>(Unix milliseconds)"]
-        open["open<br/>(Opening price)"]
-        high["high<br/>(Highest price)"]
-        low["low<br/>(Lowest price)"]
-        close["close<br/>(Closing price)"]
-        volume["volume<br/>(Trading volume)"]
-    end
-    
-    timestamp --> VWAP["VWAP Calculation"]
-    open --> VWAP
-    high --> VWAP
-    low --> VWAP
-    close --> VWAP
-    volume --> VWAP
-    
-    VWAP --> TypicalPrice["Typical Price = (H + L + C) / 3"]
-    VWAP --> WeightedSum["Σ(Typical Price × Volume)"]
-    VWAP --> TotalVolume["Σ(Volume)"]
-    
-    WeightedSum --> Result["VWAP = Weighted Sum / Total Volume"]
-    TotalVolume --> Result
-```
+![Mermaid Diagram](./diagrams\26_Exchange_Schemas_1.svg)
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -192,30 +127,7 @@ VWAP = Σ(Typical Price × Volume) / Σ(Volume)
 
 Exchange schemas are registered via `addExchange()` and stored in `ExchangeSchemaService` using the `ToolRegistry` pattern.
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant addExchange["addExchange()"]
-    participant ExchangeGlobalService
-    participant ExchangeValidationService
-    participant ExchangeSchemaService
-    participant ToolRegistry
-    
-    User->>addExchange: IExchangeSchema
-    addExchange->>ExchangeGlobalService: addExchange(schema)
-    ExchangeGlobalService->>ExchangeValidationService: validate(schema)
-    
-    alt Validation fails
-        ExchangeValidationService-->>User: throw Error
-    end
-    
-    ExchangeValidationService->>ExchangeSchemaService: addExchange(schema)
-    ExchangeSchemaService->>ToolRegistry: set(exchangeName, schema)
-    ToolRegistry-->>ExchangeSchemaService: stored
-    ExchangeSchemaService-->>User: void
-    
-    Note over ToolRegistry: Schema stored for later<br/>ClientExchange instantiation
-```
+![Mermaid Diagram](./diagrams\26_Exchange_Schemas_2.svg)
 
 **Sources:** [src/function/add.ts:1-50](), [src/lib/services/global/ExchangeGlobalService.ts:1-100](), [src/lib/services/schema/ExchangeSchemaService.ts:1-50]()
 
@@ -225,49 +137,7 @@ sequenceDiagram
 
 `ExchangeConnectionService` creates and memoizes `ClientExchange` instances using a composite key strategy.
 
-```mermaid
-graph TB
-    subgraph Registration["1. Registration Phase"]
-        addExchange["addExchange()"]
-        ExchangeSchemaService["ExchangeSchemaService<br/>ToolRegistry storage"]
-        
-        addExchange -->|store| ExchangeSchemaService
-    end
-    
-    subgraph Connection["2. Connection Phase"]
-        ExchangeConnectionService["ExchangeConnectionService<br/>getExchange()"]
-        CompositeKey["Composite Key:<br/>symbol:exchangeName:backtest"]
-        Memoize["memoize() cache"]
-        
-        ExchangeConnectionService -->|generate| CompositeKey
-        CompositeKey -->|lookup| Memoize
-    end
-    
-    subgraph Instantiation["3. Instantiation Phase"]
-        ExchangeSchemaService2["ExchangeSchemaService<br/>retrieve schema"]
-        ClientExchange["new ClientExchange(params)"]
-        IExchange["IExchange instance"]
-        
-        ExchangeSchemaService2 -->|schema| ClientExchange
-        ClientExchange -->|implements| IExchange
-    end
-    
-    subgraph Usage["4. Usage Phase"]
-        Strategy["ClientStrategy.tick()"]
-        getCandles["exchange.getCandles()"]
-        getAveragePrice["exchange.getAveragePrice()"]
-        VWAP["VWAP calculation"]
-        
-        Strategy -->|calls| getCandles
-        Strategy -->|calls| getAveragePrice
-        getAveragePrice -->|uses| VWAP
-    end
-    
-    ExchangeSchemaService -.->|provides schema| ExchangeSchemaService2
-    Memoize -->|cache miss| ClientExchange
-    Memoize -->|cache hit| IExchange
-    IExchange -->|used by| Strategy
-```
+![Mermaid Diagram](./diagrams\26_Exchange_Schemas_3.svg)
 
 **Memoization Key:** `${symbol}:${exchangeName}:${backtest}`
 
@@ -284,45 +154,7 @@ This ensures separate exchange instances for:
 
 Exchange candles flow through multiple layers before reaching strategies.
 
-```mermaid
-sequenceDiagram
-    participant Strategy["ClientStrategy.tick()"]
-    participant ExchangeConnection["ExchangeConnectionService"]
-    participant ClientExchange
-    participant ExecutionContext["ExecutionContextService"]
-    participant UserGetCandles["IExchangeSchema.getCandles"]
-    participant ExternalAPI as External API
-
-    Strategy->>ExchangeConnection: getExchange(symbol, exchangeName)
-    ExchangeConnection->>ClientExchange: new ClientExchange(params)
-
-    Strategy->>ClientExchange: getCandles(symbol, "1m", 30)
-
-    ClientExchange->>ExecutionContext: context.when
-    ExecutionContext-->>ClientExchange: Date (current execution time)
-
-    Note over ClientExchange: Calculate 'since' date<br/>when - limit * interval
-
-    ClientExchange->>UserGetCandles: getCandles(symbol, "1m", since, 30)
-    UserGetCandles->>ExternalAPI: fetchOHLCV(symbol, "1m", since.getTime(), 30)
-    ExternalAPI-->>UserGetCandles: OHLCV array
-    UserGetCandles-->>ClientExchange: ICandleData[]
-
-    Note over ClientExchange: Temporal validation:<br/>Filter candles where timestamp <= context.when
-
-    ClientExchange-->>Strategy: ICandleData[] (filtered)
-
-    Strategy->>ClientExchange: getAveragePrice(symbol)
-
-    Note over ClientExchange: Fetch last 5 1-minute candles
-
-    ClientExchange->>UserGetCandles: getCandles(symbol, "1m", since, 5)
-    UserGetCandles-->>ClientExchange: ICandleData[]
-
-    Note over ClientExchange: Calculate VWAP:<br/>Sum((H+L+C)/3 * Vol) / Sum(Vol)
-
-    ClientExchange-->>Strategy: number (VWAP price)
-```
+![Mermaid Diagram](./diagrams\26_Exchange_Schemas_4.svg)
 
 **Temporal Isolation:** `ClientExchange` automatically filters candles to ensure `candle.timestamp <= ExecutionContextService.context.when`. This prevents look-ahead bias in backtesting.
 
@@ -426,42 +258,7 @@ addExchange({
 
 The `ClientExchange` class implements the `IExchange` interface and provides additional functionality:
 
-```mermaid
-classDiagram
-    class IExchange {
-        <<interface>>
-        +getCandles(symbol, interval, limit) Promise~ICandleData[]~
-        +getNextCandles(symbol, interval, limit) Promise~ICandleData[]~
-        +formatQuantity(symbol, quantity) Promise~string~
-        +formatPrice(symbol, price) Promise~string~
-        +getAveragePrice(symbol) Promise~number~
-    }
-    
-    class ClientExchange {
-        -IExchangeParams params
-        -ILogger logger
-        -TExecutionContextService execution
-        +getCandles(symbol, interval, limit) Promise~ICandleData[]~
-        +getNextCandles(symbol, interval, limit) Promise~ICandleData[]~
-        +formatQuantity(symbol, quantity) Promise~string~
-        +formatPrice(symbol, price) Promise~string~
-        +getAveragePrice(symbol) Promise~number~
-        -_calculateSince(interval, limit, when) Date
-        -_filterCandlesByTime(candles, when) ICandleData[]
-    }
-    
-    class IExchangeParams {
-        +string exchangeName
-        +getCandles function
-        +formatQuantity function
-        +formatPrice function
-        +ILogger logger
-        +TExecutionContextService execution
-    }
-    
-    IExchange <|.. ClientExchange : implements
-    ClientExchange --> IExchangeParams : uses
-```
+![Mermaid Diagram](./diagrams\26_Exchange_Schemas_5.svg)
 
 **Additional Methods:**
 
@@ -506,46 +303,7 @@ return totalValue / totalVolume;
 
 `ClientExchange` enforces temporal isolation to prevent look-ahead bias during backtesting.
 
-```mermaid
-graph TB
-    subgraph Input["Input Parameters"]
-        When["ExecutionContextService.context.when<br/>(Current execution time)"]
-        Interval["CandleInterval (e.g., '1m')"]
-        Limit["limit (e.g., 30)"]
-    end
-    
-    subgraph Calculation["Since Calculation"]
-        IntervalMs["Convert interval to milliseconds<br/>(1m = 60000ms)"]
-        Duration["duration = limit × intervalMs"]
-        Since["since = when - duration"]
-    end
-    
-    subgraph Fetch["Data Fetch"]
-        GetCandles["IExchangeSchema.getCandles(symbol, interval, since, limit)"]
-        RawCandles["Raw ICandleData[]"]
-    end
-    
-    subgraph Filter["Temporal Filter"]
-        FilterLogic["Filter: candle.timestamp <= when"]
-        FilteredCandles["Filtered ICandleData[]"]
-    end
-    
-    When --> Since
-    Interval --> IntervalMs
-    Limit --> Duration
-    IntervalMs --> Duration
-    Duration --> Since
-    
-    Since --> GetCandles
-    GetCandles --> RawCandles
-    
-    RawCandles --> FilterLogic
-    When --> FilterLogic
-    FilterLogic --> FilteredCandles
-    
-    Note1["Prevents accessing future data<br/>in backtest execution"]
-    FilterLogic -.-> Note1
-```
+![Mermaid Diagram](./diagrams\26_Exchange_Schemas_6.svg)
 
 **Implementation:** [src/client/ClientExchange.ts:70-120]()
 

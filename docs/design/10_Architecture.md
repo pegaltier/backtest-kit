@@ -37,90 +37,7 @@ The architecture supports three primary execution modes:
 
 ### Architectural Layers
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        API["Public Functions<br/>add*, listen*, set*<br/>Declarative registration"]
-        UTILS["Utility Classes<br/>Backtest, Live, Walker<br/>Schedule, Performance, Heat<br/>PositionSize, Optimizer, Partial, Risk"]
-    end
-    
-    subgraph "Command Layer"
-        CMD_BT["BacktestCommandService<br/>Orchestrate backtest execution<br/>Progress tracking"]
-        CMD_LV["LiveCommandService<br/>Orchestrate live execution<br/>Crash recovery coordination"]
-        CMD_WK["WalkerCommandService<br/>Orchestrate walker execution<br/>Strategy comparison"]
-    end
-    
-    subgraph "Logic Layer"
-        LOGIC_PRI["Logic Private Services<br/>BacktestLogicPrivateService<br/>LiveLogicPrivateService<br/>WalkerLogicPrivateService<br/>Internal algorithms"]
-        LOGIC_PUB["Logic Public Services<br/>BacktestLogicPublicService<br/>LiveLogicPublicService<br/>WalkerLogicPublicService<br/>API wrappers with validation"]
-    end
-    
-    subgraph "Global Layer"
-        GLOBAL["Global Services<br/>SizingGlobalService<br/>RiskGlobalService<br/>OptimizerGlobalService<br/>PartialGlobalService<br/>Facades for subsystems"]
-    end
-    
-    subgraph "Connection Layer"
-        CONN["Connection Services<br/>StrategyConnectionService<br/>ExchangeConnectionService<br/>FrameConnectionService<br/>RiskConnectionService<br/>SizingConnectionService<br/>OptimizerConnectionService<br/>PartialConnectionService<br/>Factory + Memoization"]
-    end
-    
-    subgraph "Core Layer"
-        CORE["Core Services<br/>StrategyCoreService<br/>ExchangeCoreService<br/>FrameCoreService<br/>Domain logic"]
-    end
-    
-    subgraph "Schema Layer"
-        SCHEMA["Schema Services<br/>StrategySchemaService<br/>ExchangeSchemaService<br/>FrameSchemaService<br/>RiskSchemaService<br/>SizingSchemaService<br/>WalkerSchemaService<br/>OptimizerSchemaService<br/>ToolRegistry storage"]
-    end
-    
-    subgraph "Validation Layer"
-        VALID["Validation Services<br/>StrategyValidationService<br/>ExchangeValidationService<br/>FrameValidationService<br/>RiskValidationService<br/>SizingValidationService<br/>WalkerValidationService<br/>OptimizerValidationService<br/>ConfigValidationService<br/>ColumnValidationService<br/>Business rules enforcement"]
-    end
-    
-    subgraph "Markdown Layer"
-        MD["Markdown Services<br/>BacktestMarkdownService<br/>LiveMarkdownService<br/>WalkerMarkdownService<br/>ScheduleMarkdownService<br/>PerformanceMarkdownService<br/>HeatMarkdownService<br/>PartialMarkdownService<br/>RiskMarkdownService<br/>OutlineMarkdownService<br/>Report generation"]
-    end
-    
-    subgraph "Client Layer"
-        CLIENT["Client Implementations<br/>ClientStrategy<br/>ClientExchange<br/>ClientFrame<br/>ClientRisk<br/>ClientSizing<br/>ClientPartial<br/>ClientOptimizer<br/>Business logic execution"]
-    end
-    
-    subgraph "Context Layer"
-        CTX["Context Services<br/>ExecutionContextService<br/>MethodContextService<br/>AsyncLocalStorage propagation"]
-    end
-    
-    API --> VALID
-    API --> SCHEMA
-    UTILS --> CMD_BT
-    UTILS --> CMD_LV
-    UTILS --> CMD_WK
-    
-    CMD_BT --> LOGIC_PUB
-    CMD_LV --> LOGIC_PUB
-    CMD_WK --> LOGIC_PUB
-    
-    LOGIC_PUB --> LOGIC_PRI
-    LOGIC_PRI --> GLOBAL
-    LOGIC_PRI --> CORE
-    LOGIC_PRI --> CTX
-    
-    GLOBAL --> CONN
-    GLOBAL --> VALID
-    
-    CORE --> CONN
-    CONN --> CLIENT
-    CONN --> SCHEMA
-    
-    CLIENT --> CTX
-    
-    LOGIC_PRI -.generates data.-> MD
-    
-    style API fill:#f9f9f9
-    style UTILS fill:#f9f9f9
-    style CMD_BT fill:#f0f0f0
-    style CMD_LV fill:#f0f0f0
-    style CMD_WK fill:#f0f0f0
-    style LOGIC_PRI fill:#e8e8e8
-    style LOGIC_PUB fill:#e8e8e8
-```
+![Mermaid Diagram](./diagrams\10_Architecture_0.svg)
 
 **Sources:** [src/lib/index.ts:1-246](), [src/lib/core/types.ts:1-105](), [src/lib/core/provide.ts:1-143]()
 
@@ -128,25 +45,7 @@ graph TB
 
 The system uses a custom dependency injection container that maps TYPES symbols to service factory functions. All services are registered at module load time and instantiated lazily on first access.
 
-```mermaid
-graph LR
-    subgraph "DI Container Flow"
-        TYPES["TYPES Symbols<br/>Symbol('strategySchemaService')<br/>Symbol('strategyConnectionService')<br/>Symbol('strategyCoreService')<br/>etc."]
-        
-        PROVIDE["provide() Registration<br/>provide(TYPES.x, () => new Service())"]
-        
-        INJECT["inject() Resolution<br/>inject&lt;ServiceType&gt;(TYPES.x)"]
-        
-        MEMO["Memoization<br/>Single instance per type<br/>Lazy initialization"]
-        
-        SERVICE["Service Instance<br/>StrategySchemaService<br/>StrategyConnectionService<br/>etc."]
-    end
-    
-    TYPES --> PROVIDE
-    PROVIDE --> MEMO
-    INJECT --> MEMO
-    MEMO --> SERVICE
-```
+![Mermaid Diagram](./diagrams\10_Architecture_1.svg)
 
 **Example Registration:**
 ```typescript
@@ -189,27 +88,7 @@ Each layer has specific responsibilities and communicates only with adjacent lay
 
 Connection services use factory pattern to create client instances. Memoization ensures proper instance isolation based on composite keys.
 
-```mermaid
-graph TD
-    subgraph "Connection Service Pattern"
-        CONN["StrategyConnectionService<br/>Factory with memoized cache"]
-        
-        KEY["Composite Key<br/>symbol:strategyName:backtest<br/>BTCUSDT:my-strategy:true"]
-        
-        CACHE["Memoized Cache<br/>Map&lt;string, ClientStrategy&gt;<br/>Singleton per key"]
-        
-        SCHEMA["StrategySchemaService<br/>retrieve(strategyName)"]
-        
-        CLIENT["ClientStrategy Instance<br/>Unique per key<br/>Contains state"]
-    end
-    
-    CONN -->|"generate key"| KEY
-    KEY -->|"check cache"| CACHE
-    CACHE -->|"miss: create"| SCHEMA
-    SCHEMA -->|"construct"| CLIENT
-    CLIENT -->|"store"| CACHE
-    CACHE -->|"hit: return"| CLIENT
-```
+![Mermaid Diagram](./diagrams\10_Architecture_2.svg)
 
 **Key Construction Examples:**
 - Backtest strategy: `"BTCUSDT:my-strategy:true"`
@@ -227,30 +106,7 @@ This ensures that:
 
 Two scoped services provide implicit parameter passing without manual threading:
 
-```mermaid
-graph TB
-    subgraph "Execution Context"
-        EXEC_SCOPE["ExecutionContextService<br/>di-scoped with AsyncLocalStorage"]
-        
-        EXEC_DATA["Context Data<br/>{ symbol: 'BTCUSDT',<br/>when: Date,<br/>backtest: true }"]
-        
-        EXEC_USAGE["Usage in Clients<br/>ClientExchange.getCandles()<br/>ClientStrategy.tick()<br/>Implicit access to context"]
-    end
-    
-    subgraph "Method Context"
-        METHOD_SCOPE["MethodContextService<br/>di-scoped with AsyncLocalStorage"]
-        
-        METHOD_DATA["Context Data<br/>{ strategyName: 'my-strategy',<br/>exchangeName: 'binance',<br/>frameName: '1d-backtest' }"]
-        
-        METHOD_USAGE["Usage in Services<br/>ConnectionServices<br/>Retrieve correct schema"]
-    end
-    
-    EXEC_SCOPE --> EXEC_DATA
-    EXEC_DATA --> EXEC_USAGE
-    
-    METHOD_SCOPE --> METHOD_DATA
-    METHOD_DATA --> METHOD_USAGE
-```
+![Mermaid Diagram](./diagrams\10_Architecture_3.svg)
 
 **ExecutionContextService** provides runtime parameters:
 - `symbol`: Trading pair (e.g., "BTCUSDT")
@@ -270,66 +126,7 @@ This pattern eliminates the need to pass these parameters explicitly through eve
 
 The system uses RxJS Subjects as a central event bus for decoupled communication between components.
 
-```mermaid
-graph TB
-    subgraph "Event Producers"
-        STRAT["ClientStrategy<br/>Signal state changes"]
-        BT["BacktestLogicPrivateService<br/>Progress updates"]
-        LV["LiveLogicPrivateService<br/>Completion events"]
-        WK["WalkerLogicPrivateService<br/>Walker progress"]
-        RISK["ClientRisk<br/>Risk rejections"]
-        PARTIAL["ClientPartial<br/>Profit/loss levels"]
-    end
-    
-    subgraph "Event Emitters (RxJS Subjects)"
-        SIG_EM["signalEmitter<br/>All signals"]
-        SIG_BT_EM["signalBacktestEmitter<br/>Backtest signals"]
-        SIG_LV_EM["signalLiveEmitter<br/>Live signals"]
-        PROG_BT["progressBacktestEmitter"]
-        PROG_WK["progressWalkerEmitter"]
-        DONE_BT["doneBacktestSubject"]
-        DONE_LV["doneLiveSubject"]
-        DONE_WK["doneWalkerSubject"]
-        RISK_SUB["riskSubject"]
-        PARTIAL_PROF["partialProfitSubject"]
-        PARTIAL_LOSS["partialLossSubject"]
-    end
-    
-    subgraph "Event Consumers"
-        LISTEN["Listener Functions<br/>listenSignal()<br/>listenSignalBacktest()<br/>listenSignalLive()<br/>listenDoneBacktest()<br/>listenRisk()<br/>etc."]
-        MD_BT["BacktestMarkdownService<br/>Report generation"]
-        MD_LV["LiveMarkdownService<br/>Report generation"]
-        MD_WK["WalkerMarkdownService<br/>Report generation"]
-        USER["User Code<br/>Custom callbacks"]
-    end
-    
-    STRAT -.emit.-> SIG_EM
-    STRAT -.emit.-> SIG_BT_EM
-    STRAT -.emit.-> SIG_LV_EM
-    BT -.emit.-> PROG_BT
-    BT -.emit.-> DONE_BT
-    LV -.emit.-> DONE_LV
-    WK -.emit.-> PROG_WK
-    WK -.emit.-> DONE_WK
-    RISK -.emit.-> RISK_SUB
-    PARTIAL -.emit.-> PARTIAL_PROF
-    PARTIAL -.emit.-> PARTIAL_LOSS
-    
-    SIG_EM --> LISTEN
-    SIG_BT_EM --> LISTEN
-    SIG_LV_EM --> LISTEN
-    PROG_BT --> LISTEN
-    DONE_BT --> LISTEN
-    DONE_LV --> LISTEN
-    DONE_WK --> LISTEN
-    RISK_SUB --> LISTEN
-    
-    SIG_BT_EM --> MD_BT
-    SIG_LV_EM --> MD_LV
-    DONE_WK --> MD_WK
-    
-    LISTEN --> USER
-```
+![Mermaid Diagram](./diagrams\10_Architecture_4.svg)
 
 **Event Hierarchy:**
 - `signalEmitter`: Broadcasts ALL signals (backtest + live)
@@ -347,58 +144,7 @@ All listener callbacks are wrapped with `queued()` from functools-kit, ensuring 
 
 The following diagram shows how data flows through the system during a backtest execution:
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Backtest_Class as "Backtest Utility Class"
-    participant BacktestCommandService
-    participant BacktestLogicPublicService
-    participant BacktestLogicPrivateService
-    participant MethodContextService
-    participant StrategyConnectionService
-    participant ClientStrategy
-    participant ExecutionContextService
-    participant ExchangeConnectionService
-    participant ClientExchange
-    participant FrameConnectionService
-    participant ClientFrame
-    participant signalBacktestEmitter
-    participant BacktestMarkdownService
-    
-    User->>Backtest_Class: Backtest.run(symbol, params)
-    Backtest_Class->>BacktestCommandService: run(symbol, params)
-    BacktestCommandService->>BacktestLogicPublicService: run(symbol, params)
-    BacktestLogicPublicService->>MethodContextService: runAsyncIterator(generator, context)
-    MethodContextService->>BacktestLogicPrivateService: execute backtest generator
-    
-    BacktestLogicPrivateService->>FrameConnectionService: getFrame(frameName)
-    FrameConnectionService-->>BacktestLogicPrivateService: ClientFrame instance
-    BacktestLogicPrivateService->>ClientFrame: getTimeframe(symbol, frameName)
-    ClientFrame-->>BacktestLogicPrivateService: timeframe: Date[]
-    
-    loop For each timestamp in timeframe
-        BacktestLogicPrivateService->>ExecutionContextService: runInContext({ symbol, when, backtest: true })
-        ExecutionContextService->>StrategyConnectionService: getStrategy(symbol, strategyName)
-        StrategyConnectionService-->>ExecutionContextService: ClientStrategy instance
-        
-        ExecutionContextService->>ClientStrategy: tick(symbol, when)
-        ClientStrategy->>ExchangeConnectionService: getExchange(exchangeName)
-        ExchangeConnectionService-->>ClientStrategy: ClientExchange instance
-        ClientStrategy->>ClientExchange: getAveragePrice(symbol)
-        ClientExchange->>ClientExchange: getCandles(symbol, "1m", 5)
-        ClientExchange-->>ClientStrategy: VWAP price
-        
-        ClientStrategy->>ClientStrategy: Process signal state machine
-        ClientStrategy->>signalBacktestEmitter: emit(tickResult)
-        signalBacktestEmitter->>BacktestMarkdownService: receive signal event
-        ClientStrategy-->>BacktestLogicPrivateService: yield tickResult
-    end
-    
-    BacktestLogicPrivateService-->>BacktestLogicPublicService: AsyncGenerator completed
-    BacktestLogicPublicService-->>BacktestCommandService: execution complete
-    BacktestCommandService-->>Backtest_Class: statistics
-    Backtest_Class-->>User: BacktestStatisticsModel
-```
+![Mermaid Diagram](./diagrams\10_Architecture_5.svg)
 
 **Key Observations:**
 1. **MethodContextService** wraps the generator to provide schema context
@@ -504,51 +250,7 @@ This pattern:
 
 The following diagram shows how risk management integrates across layers:
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant addRisk_Function as "addRisk() Function"
-    participant RiskValidationService
-    participant RiskSchemaService
-    participant ClientStrategy
-    participant RiskConnectionService
-    participant ClientRisk
-    participant PersistRiskAdapter
-    participant riskSubject
-    
-    User->>addRisk_Function: addRisk(riskSchema)
-    addRisk_Function->>RiskValidationService: validate schema
-    RiskValidationService-->>addRisk_Function: validation passed
-    addRisk_Function->>RiskSchemaService: register(riskName, schema)
-    RiskSchemaService-->>User: registered
-    
-    Note over ClientStrategy: Later, during signal generation...
-    
-    ClientStrategy->>ClientStrategy: getSignal() returns signal
-    ClientStrategy->>RiskConnectionService: getRisk(riskName)
-    RiskConnectionService->>RiskSchemaService: retrieve(riskName)
-    RiskSchemaService-->>RiskConnectionService: schema
-    RiskConnectionService->>ClientRisk: new ClientRisk(params)
-    ClientRisk->>PersistRiskAdapter: waitForInit(symbol)
-    PersistRiskAdapter->>PersistRiskAdapter: load state from disk
-    PersistRiskAdapter-->>ClientRisk: initialized
-    ClientRisk-->>RiskConnectionService: instance (memoized)
-    RiskConnectionService-->>ClientStrategy: ClientRisk instance
-    
-    ClientStrategy->>ClientRisk: checkSignal(params)
-    ClientRisk->>ClientRisk: run validation chain
-    
-    alt Validation passes
-        ClientRisk-->>ClientStrategy: true
-        ClientStrategy->>ClientRisk: addSignal(symbol, context)
-        ClientRisk->>PersistRiskAdapter: persist portfolio state
-        ClientStrategy->>ClientStrategy: open signal
-    else Validation fails
-        ClientRisk->>riskSubject: emit rejection event
-        ClientRisk-->>ClientStrategy: false
-        ClientStrategy->>ClientStrategy: reject signal
-    end
-```
+![Mermaid Diagram](./diagrams\10_Architecture_6.svg)
 
 **Key Interactions:**
 1. **Registration**: User calls `addRisk()` → validates → stores in SchemaService

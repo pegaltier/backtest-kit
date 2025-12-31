@@ -35,61 +35,7 @@ For broader markdown report generation architecture and event subscription patte
 
 The performance tracking system follows a publish-subscribe pattern where code execution emits timing events that are collected, aggregated, and analyzed by `PerformanceMarkdownService`.
 
-```mermaid
-graph TB
-    subgraph "Code Execution Layer"
-        STRATEGY["ClientStrategy.tick()"]
-        EXCHANGE["ClientExchange.getCandles()"]
-        RISK["ClientRisk.checkSignal()"]
-        SIZING["ClientSizing.calculate()"]
-        BACKTEST["BacktestLogicPrivateService"]
-        LIVE["LiveLogicPrivateService"]
-    end
-    
-    subgraph "Event Emission"
-        EMIT["performanceEmitter.next()"]
-        CONTRACT["PerformanceContract<br/>{metricType, duration, timestamp, previousTimestamp}"]
-    end
-    
-    subgraph "PerformanceMarkdownService"
-        TRACK["track()<br/>Receives events"]
-        STORAGE["PerformanceStorage<br/>Memoized per symbol-strategy"]
-        QUEUE["_events Array<br/>Max 10,000 events"]
-    end
-    
-    subgraph "Statistical Analysis"
-        CALC["getData()<br/>Calculate statistics"]
-        METRICS["MetricStats<br/>count, avgDuration, p95, p99<br/>stdDev, waitTimes"]
-        GROUP["Group by metricType"]
-    end
-    
-    subgraph "Report Generation"
-        REPORT["getReport()<br/>Generate markdown"]
-        TABLE["Markdown Table<br/>Sorted by totalDuration"]
-        DUMP["dump()<br/>Save to disk"]
-    end
-    
-    STRATEGY --> EMIT
-    EXCHANGE --> EMIT
-    RISK --> EMIT
-    SIZING --> EMIT
-    BACKTEST --> EMIT
-    LIVE --> EMIT
-    
-    EMIT --> CONTRACT
-    CONTRACT --> TRACK
-    
-    TRACK --> STORAGE
-    STORAGE --> QUEUE
-    
-    QUEUE --> CALC
-    CALC --> GROUP
-    GROUP --> METRICS
-    
-    METRICS --> REPORT
-    REPORT --> TABLE
-    TABLE --> DUMP
-```
+![Mermaid Diagram](./diagrams\73_Performance_Metrics_0.svg)
 
 **Flow Description**:
 
@@ -132,44 +78,7 @@ Common metric types used throughout the system:
 
 ## PerformanceMarkdownService Implementation
 
-```mermaid
-graph TB
-    subgraph "PerformanceMarkdownService Class"
-        LOGGER["loggerService: LoggerService<br/>Dependency injected"]
-        GET_STORAGE["getStorage()<br/>Memoized function<br/>Key: symbol:strategyName"]
-        TRACK["track(event: PerformanceContract)<br/>Add event to storage"]
-        GET_DATA["getData(symbol, strategyName)<br/>Returns PerformanceStatisticsModel"]
-        GET_REPORT["getReport(symbol, strategyName, columns)<br/>Returns markdown string"]
-        DUMP["dump(symbol, strategyName, path, columns)<br/>Saves report to disk"]
-        CLEAR["clear(ctx?)<br/>Clears storage"]
-        INIT["init()<br/>Singleshot subscription"]
-    end
-    
-    subgraph "PerformanceStorage Class"
-        EVENTS["_events: PerformanceContract[]<br/>Max 10,000 events"]
-        ADD_EVENT["addEvent(event)<br/>Unshift to array, trim if exceeded"]
-        CALC_DATA["getData(strategyName)<br/>Calculate statistics"]
-        CALC_REPORT["getReport(strategyName, columns)<br/>Generate markdown"]
-        CALC_DUMP["dump(strategyName, path, columns)<br/>Write to file"]
-    end
-    
-    subgraph "Event Subscription"
-        EMITTER["performanceEmitter<br/>Subject&lt;PerformanceContract&gt;"]
-        SUBSCRIBE["subscribe(track)<br/>Called once via singleshot"]
-    end
-    
-    GET_STORAGE --> EVENTS
-    TRACK --> ADD_EVENT
-    GET_DATA --> CALC_DATA
-    GET_REPORT --> CALC_REPORT
-    DUMP --> CALC_DUMP
-    
-    INIT --> SUBSCRIBE
-    SUBSCRIBE --> EMITTER
-    EMITTER --> TRACK
-    
-    ADD_EVENT --> EVENTS
-```
+![Mermaid Diagram](./diagrams\73_Performance_Metrics_1.svg)
 
 ### Class Structure
 
@@ -214,78 +123,7 @@ Each symbol-strategy combination maintains isolated storage, preventing cross-co
 
 ### Statistical Calculations
 
-```mermaid
-graph TB
-    subgraph "Input Data"
-        EVENTS["_events: PerformanceContract[]<br/>All performance events"]
-    end
-    
-    subgraph "Grouping Phase"
-        GROUP["Group by metricType<br/>Map&lt;PerformanceMetricType, PerformanceContract[]&gt;"]
-    end
-    
-    subgraph "Duration Statistics"
-        DURATIONS["durations = events.map(e => e.duration)<br/>Sort ascending"]
-        TOTAL_DUR["totalDuration = sum(durations)"]
-        AVG_DUR["avgDuration = totalDuration / count"]
-        MIN_DUR["minDuration = durations[0]"]
-        MAX_DUR["maxDuration = durations[length-1]"]
-        VARIANCE["variance = sum((d - avg)²) / count"]
-        STDDEV["stdDev = sqrt(variance)"]
-    end
-    
-    subgraph "Percentile Calculations"
-        MEDIAN["median = percentile(durations, 50)"]
-        P95["p95 = percentile(durations, 95)"]
-        P99["p99 = percentile(durations, 99)"]
-        FUNC["percentile(sorted, p)<br/>index = ceil(length * p / 100) - 1<br/>return sorted[max(0, index)]"]
-    end
-    
-    subgraph "Wait Time Analysis"
-        WAIT["waitTimes = []<br/>For each event with previousTimestamp<br/>waitTime = timestamp - previousTimestamp"]
-        AVG_WAIT["avgWaitTime = mean(waitTimes)"]
-        MIN_WAIT["minWaitTime = min(waitTimes)"]
-        MAX_WAIT["maxWaitTime = max(waitTimes)"]
-    end
-    
-    subgraph "Output"
-        STATS["MetricStats<br/>{metricType, count, totalDuration,<br/>avgDuration, minDuration, maxDuration,<br/>stdDev, median, p95, p99,<br/>avgWaitTime, minWaitTime, maxWaitTime}"]
-    end
-    
-    EVENTS --> GROUP
-    GROUP --> DURATIONS
-    
-    DURATIONS --> TOTAL_DUR
-    DURATIONS --> AVG_DUR
-    DURATIONS --> MIN_DUR
-    DURATIONS --> MAX_DUR
-    DURATIONS --> VARIANCE
-    VARIANCE --> STDDEV
-    
-    DURATIONS --> MEDIAN
-    DURATIONS --> P95
-    DURATIONS --> P99
-    MEDIAN --> FUNC
-    P95 --> FUNC
-    P99 --> FUNC
-    
-    GROUP --> WAIT
-    WAIT --> AVG_WAIT
-    WAIT --> MIN_WAIT
-    WAIT --> MAX_WAIT
-    
-    TOTAL_DUR --> STATS
-    AVG_DUR --> STATS
-    MIN_DUR --> STATS
-    MAX_DUR --> STATS
-    STDDEV --> STATS
-    MEDIAN --> STATS
-    P95 --> STATS
-    P99 --> STATS
-    AVG_WAIT --> STATS
-    MIN_WAIT --> STATS
-    MAX_WAIT --> STATS
-```
+![Mermaid Diagram](./diagrams\73_Performance_Metrics_2.svg)
 
 ### Metric Definitions
 
@@ -324,38 +162,7 @@ function percentile(sortedArray: number[], p: number): number {
 
 ### Markdown Report Structure
 
-```mermaid
-graph TB
-    subgraph "Report Header"
-        TITLE["# Performance Report: {strategyName}"]
-        SUMMARY["**Total events:** {totalEvents}<br/>**Total execution time:** {totalDuration}ms<br/>**Number of metric types:** {count}"]
-    end
-    
-    subgraph "Time Distribution"
-        DIST_TITLE["## Time Distribution"]
-        PERCENTAGES["- **{metricType}**: {percentage}% ({totalDuration}ms total)"]
-        SORTED["Sorted by totalDuration descending"]
-    end
-    
-    subgraph "Detailed Metrics Table"
-        TABLE_TITLE["## Detailed Metrics"]
-        TABLE_HEADER["| Metric | Count | Avg (ms) | Min (ms) | Max (ms) | P95 (ms) | P99 (ms) | StdDev | Avg Wait (ms) |"]
-        TABLE_ROWS["One row per metricType<br/>Sorted by totalDuration descending"]
-    end
-    
-    subgraph "Footer"
-        NOTE["**Note:** All durations in milliseconds.<br/>P95/P99 represent 95th and 99th percentile response times.<br/>Wait times show interval between consecutive events of same type."]
-    end
-    
-    TITLE --> SUMMARY
-    SUMMARY --> DIST_TITLE
-    DIST_TITLE --> PERCENTAGES
-    PERCENTAGES --> SORTED
-    SORTED --> TABLE_TITLE
-    TABLE_TITLE --> TABLE_HEADER
-    TABLE_HEADER --> TABLE_ROWS
-    TABLE_ROWS --> NOTE
-```
+![Mermaid Diagram](./diagrams\73_Performance_Metrics_3.svg)
 
 ### Bottleneck Analysis
 

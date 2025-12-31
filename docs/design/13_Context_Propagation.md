@@ -30,27 +30,7 @@ For information about how these context services integrate with the dependency i
 
 Without context propagation, every function in the execution path would need explicit parameters for runtime context (symbol, timestamp, backtest flag) and schema identifiers (strategyName, exchangeName, frameName). This creates maintenance burden and tight coupling.
 
-```mermaid
-graph TB
-    subgraph "Without Context Propagation - Manual Parameter Threading"
-        API["Public API<br/>Backtest.run()"]
-        LOGIC["BacktestLogicPrivateService<br/>execute()"]
-        CONN["StrategyConnectionService<br/>getStrategy()"]
-        CLIENT["ClientStrategy<br/>tick()"]
-        CORE["StrategyCoreService<br/>getCandles()"]
-        SCHEMA["ExchangeSchemaService<br/>get()"]
-        
-        API -->|"symbol, strategyName,<br/>exchangeName, frameName,<br/>when, backtest"| LOGIC
-        LOGIC -->|"symbol, strategyName,<br/>exchangeName, when,<br/>backtest"| CONN
-        CONN -->|"symbol, when,<br/>backtest"| CLIENT
-        CLIENT -->|"symbol, when,<br/>backtest, exchangeName"| CORE
-        CORE -->|"exchangeName"| SCHEMA
-    end
-    
-    NOTE1["Problem: Every function<br/>needs 5+ parameters<br/>Tight coupling<br/>Hard to maintain"]
-    
-    CLIENT -.-> NOTE1
-```
+![Mermaid Diagram](./diagrams\13_Context_Propagation_0.svg)
 
 **Sources**: [types.d.ts:5-49](), [types.d.ts:296-336]()
 
@@ -65,36 +45,7 @@ The system uses two scoped context services to eliminate parameter threading:
 | `ExecutionContextService` | Runtime execution | `symbol`, `when`, `backtest` | Core services, Client implementations | Temporal isolation, preventing access to future data |
 | `MethodContextService` | Schema routing | `strategyName`, `exchangeName`, `frameName` | Connection services, Global services | Instance selection, memoization keys |
 
-```mermaid
-graph TB
-    subgraph "Context Propagation - Implicit Parameter Passing"
-        API["Public API<br/>Backtest.run()"]
-        EXEC_CTX["ExecutionContextService<br/>{symbol, when, backtest}"]
-        METHOD_CTX["MethodContextService<br/>{strategyName, exchangeName, frameName}"]
-        LOGIC["BacktestLogicPrivateService"]
-        CONN["StrategyConnectionService"]
-        CLIENT["ClientStrategy"]
-        CORE["StrategyCoreService"]
-        EXCHANGE["ClientExchange"]
-        
-        API -->|"runInContext()<br/>runAsyncIterator()"| EXEC_CTX
-        API -->|"runInContext()<br/>runAsyncIterator()"| METHOD_CTX
-        
-        EXEC_CTX -.->|"implicit access<br/>via .context"| LOGIC
-        METHOD_CTX -.->|"implicit access<br/>via .context"| CONN
-        
-        LOGIC --> CONN
-        CONN --> CLIENT
-        CLIENT --> CORE
-        CORE --> EXCHANGE
-        
-        EXCHANGE -.->|"reads .context.symbol<br/>.context.when<br/>.context.backtest"| EXEC_CTX
-    end
-    
-    NOTE1["Benefit: No parameter threading<br/>Loose coupling<br/>Easy to maintain"]
-    
-    EXCHANGE -.-> NOTE1
-```
+![Mermaid Diagram](./diagrams\13_Context_Propagation_1.svg)
 
 **Sources**: [types.d.ts:5-49](), [types.d.ts:296-336](), [src/lib/index.ts:66-72]()
 
@@ -126,23 +77,7 @@ interface IExecutionContext {
 
 The `when` property is **critical** for preventing look-ahead bias during backtesting. When `ClientExchange.getCandles()` is called, it uses `when` to fetch only historical data up to that timestamp, never future data.
 
-```mermaid
-graph LR
-    subgraph "Backtest Execution at 2024-01-15 10:00"
-        WHEN["ExecutionContextService.context.when<br/>= 2024-01-15 10:00"]
-        EXCHANGE["ClientExchange.getCandles()"]
-        VALID["Returns candles:<br/>2024-01-15 09:00<br/>2024-01-15 09:30<br/>2024-01-15 10:00"]
-        INVALID["NEVER returns:<br/>2024-01-15 10:30<br/>2024-01-15 11:00<br/>(future data)"]
-        
-        WHEN --> EXCHANGE
-        EXCHANGE --> VALID
-        EXCHANGE -.X.-> INVALID
-    end
-    
-    NOTE1["Temporal Isolation:<br/>Strategies can only see<br/>data from the past<br/>relative to 'when' timestamp"]
-    
-    VALID -.-> NOTE1
-```
+![Mermaid Diagram](./diagrams\13_Context_Propagation_2.svg)
 
 **Sources**: [types.d.ts:5-49](), [types.d.ts:159-205]()
 
@@ -166,29 +101,7 @@ interface IMethodContext {
 
 Connection services use `MethodContextService.context` to build composite memoization keys, ensuring separate instances for different execution contexts.
 
-```mermaid
-graph TB
-    subgraph "StrategyConnectionService Memoization"
-        METHOD_CTX["MethodContextService.context<br/>{strategyName, exchangeName, frameName}"]
-        GET_STRATEGY["getStrategy(symbol)"]
-        KEY["Composite Key:<br/>'BTCUSDT:my-strategy:backtest'"]
-        MEMO["memoize() cache"]
-        INSTANCE1["ClientStrategy instance 1<br/>for BTCUSDT + my-strategy + backtest"]
-        INSTANCE2["ClientStrategy instance 2<br/>for ETHUSDT + my-strategy + backtest"]
-        INSTANCE3["ClientStrategy instance 3<br/>for BTCUSDT + my-strategy + live"]
-        
-        METHOD_CTX --> GET_STRATEGY
-        GET_STRATEGY --> KEY
-        KEY --> MEMO
-        MEMO --> INSTANCE1
-        MEMO --> INSTANCE2
-        MEMO --> INSTANCE3
-    end
-    
-    NOTE1["Each combination of<br/>(symbol, strategyName, exchangeName, backtest)<br/>gets its own isolated instance"]
-    
-    MEMO -.-> NOTE1
-```
+![Mermaid Diagram](./diagrams\13_Context_Propagation_3.svg)
 
 **Sources**: [types.d.ts:296-336]()
 
@@ -235,33 +148,7 @@ The `IScopedClassRun` interface provides two key methods for wrapping execution:
 
 Backtest execution wraps the entire backtest iteration in both `ExecutionContextService` and `MethodContextService` contexts. The `when` parameter advances through timeframes, and `backtest` is always `true`.
 
-```mermaid
-sequenceDiagram
-    participant API as Backtest.run()
-    participant LOGIC as BacktestLogicPrivateService
-    participant EXEC_CTX as ExecutionContextService
-    participant METHOD_CTX as MethodContextService
-    participant STRATEGY as ClientStrategy
-    participant EXCHANGE as ClientExchange
-    
-    API->>LOGIC: run(symbol, {strategyName, exchangeName, frameName})
-    LOGIC->>METHOD_CTX: runAsyncIterator(generator, {strategyName, exchangeName, frameName})
-    METHOD_CTX->>EXEC_CTX: runAsyncIterator(generator, {symbol, when, backtest: true})
-    
-    loop For each timeframe timestamp
-        EXEC_CTX->>STRATEGY: tick(symbol, when)
-        STRATEGY->>EXEC_CTX: Read .context.symbol, .context.when
-        STRATEGY->>EXCHANGE: getCandles(symbol, interval, limit)
-        EXCHANGE->>EXEC_CTX: Read .context.when for temporal filtering
-        EXCHANGE-->>STRATEGY: Historical candles up to 'when'
-        STRATEGY-->>EXEC_CTX: Return tick result
-        Note over EXEC_CTX: Advance 'when' to next timeframe
-    end
-    
-    EXEC_CTX-->>METHOD_CTX: Complete iteration
-    METHOD_CTX-->>LOGIC: Backtest results
-    LOGIC-->>API: Statistics
-```
+![Mermaid Diagram](./diagrams\13_Context_Propagation_4.svg)
 
 **Sources**: [types.d.ts:27-36](), [types.d.ts:319-328]()
 
@@ -271,31 +158,7 @@ sequenceDiagram
 
 Live execution wraps each tick in execution context with `when` set to `Date.now()` and `backtest` set to `false`. The method context remains constant throughout the live session.
 
-```mermaid
-sequenceDiagram
-    participant API as Live.background()
-    participant LOGIC as LiveLogicPrivateService
-    participant EXEC_CTX as ExecutionContextService
-    participant METHOD_CTX as MethodContextService
-    participant STRATEGY as ClientStrategy
-    participant EXCHANGE as ClientExchange
-    
-    API->>LOGIC: background(symbol, {strategyName, exchangeName})
-    LOGIC->>METHOD_CTX: runInContext(fn, {strategyName, exchangeName, frameName: ""})
-    
-    loop Infinite loop (every 1 minute)
-        Note over LOGIC: when = new Date() (current time)
-        LOGIC->>EXEC_CTX: runInContext(fn, {symbol, when, backtest: false})
-        EXEC_CTX->>STRATEGY: tick(symbol, when)
-        STRATEGY->>EXEC_CTX: Read .context.symbol, .context.when, .context.backtest
-        STRATEGY->>EXCHANGE: getAveragePrice(symbol)
-        EXCHANGE->>EXEC_CTX: Read .context.when
-        EXCHANGE-->>STRATEGY: Current VWAP price
-        STRATEGY-->>EXEC_CTX: Return tick result
-        EXEC_CTX-->>LOGIC: Tick result
-        Note over LOGIC: Sleep 60 seconds
-    end
-```
+![Mermaid Diagram](./diagrams\13_Context_Propagation_5.svg)
 
 **Sources**: [types.d.ts:27-36](), [types.d.ts:319-328]()
 
@@ -305,34 +168,7 @@ sequenceDiagram
 
 Connection services use `MethodContextService.context` to retrieve the correct schema and build composite memoization keys for client instances.
 
-```mermaid
-graph TB
-    subgraph "StrategyConnectionService.getStrategy()"
-        START["getStrategy(symbol)"]
-        READ_METHOD["Read MethodContextService.context<br/>{strategyName, exchangeName, frameName}"]
-        READ_EXEC["Read ExecutionContextService.context<br/>{backtest}"]
-        GET_SCHEMA["strategySchemaService.get(strategyName)"]
-        BUILD_KEY["Build memoization key:<br/>'symbol:strategyName:backtest'"]
-        MEMOIZE["memoize() - check cache"]
-        HIT["Cache hit:<br/>return existing instance"]
-        MISS["Cache miss:<br/>create new ClientStrategy"]
-        INJECT_EXEC["Inject ExecutionContextService<br/>into ClientStrategy"]
-        
-        START --> READ_METHOD
-        READ_METHOD --> READ_EXEC
-        READ_EXEC --> GET_SCHEMA
-        GET_SCHEMA --> BUILD_KEY
-        BUILD_KEY --> MEMOIZE
-        MEMOIZE -->|"found"| HIT
-        MEMOIZE -->|"not found"| MISS
-        MISS --> INJECT_EXEC
-        INJECT_EXEC --> HIT
-    end
-    
-    NOTE1["Context services enable:<br/>1. Automatic schema routing<br/>2. Proper instance isolation<br/>3. Dependency injection"]
-    
-    INJECT_EXEC -.-> NOTE1
-```
+![Mermaid Diagram](./diagrams\13_Context_Propagation_6.svg)
 
 **Sources**: [types.d.ts:296-336]()
 
@@ -342,56 +178,7 @@ graph TB
 
 The following diagram shows how execution and method contexts flow through the service layer architecture, from public API down to client implementations.
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        API["Backtest.run()<br/>Live.background()"]
-    end
-    
-    subgraph "Command Services"
-        CMD["BacktestCommandService<br/>LiveCommandService"]
-    end
-    
-    subgraph "Logic Services"
-        LOGIC["BacktestLogicPrivateService<br/>LiveLogicPrivateService"]
-    end
-    
-    subgraph "Context Services - Implicit Propagation"
-        EXEC_CTX["ExecutionContextService<br/>{symbol, when, backtest}"]
-        METHOD_CTX["MethodContextService<br/>{strategyName, exchangeName, frameName}"]
-    end
-    
-    subgraph "Connection Services"
-        CONN["StrategyConnectionService<br/>ExchangeConnectionService"]
-    end
-    
-    subgraph "Client Implementations"
-        CLIENT["ClientStrategy<br/>ClientExchange<br/>ClientRisk"]
-    end
-    
-    subgraph "Schema Services"
-        SCHEMA["StrategySchemaService<br/>ExchangeSchemaService"]
-    end
-    
-    API -->|"symbol, strategyName,<br/>exchangeName, frameName"| CMD
-    CMD -->|"wrap in<br/>runInContext()<br/>runAsyncIterator()"| METHOD_CTX
-    CMD -->|"wrap in<br/>runInContext()<br/>runAsyncIterator()"| EXEC_CTX
-    
-    METHOD_CTX -.->|"implicit access"| LOGIC
-    EXEC_CTX -.->|"implicit access"| LOGIC
-    
-    LOGIC --> CONN
-    
-    CONN -.->|"read .context<br/>for schema routing"| METHOD_CTX
-    CONN --> SCHEMA
-    CONN --> CLIENT
-    
-    CLIENT -.->|"read .context<br/>for runtime params"| EXEC_CTX
-    
-    NOTE1["No explicit parameter passing<br/>after initial context setup"]
-    
-    CLIENT -.-> NOTE1
-```
+![Mermaid Diagram](./diagrams\13_Context_Propagation_7.svg)
 
 **Sources**: [src/lib/index.ts:1-246](), [src/lib/core/types.ts:1-105]()
 
@@ -411,34 +198,7 @@ graph TB
 
 ### Implementation Details
 
-```mermaid
-graph TB
-    subgraph "AsyncLocalStorage Under the Hood"
-        ASYNC_LOCAL["Node.js AsyncLocalStorage"]
-        DI_SCOPED["di-scoped library<br/>IScopedClassRun interface"]
-        EXEC_SERVICE["ExecutionContextService"]
-        METHOD_SERVICE["MethodContextService"]
-        
-        ASYNC_LOCAL --> DI_SCOPED
-        DI_SCOPED --> EXEC_SERVICE
-        DI_SCOPED --> METHOD_SERVICE
-    end
-    
-    subgraph "Context Access Pattern"
-        CLIENT["ClientExchange.getCandles()"]
-        INJECT["Injected ExecutionContextService<br/>in constructor"]
-        READ["this.execution.context.when<br/>this.execution.context.symbol"]
-        FILTER["Filter candles <= when timestamp"]
-        
-        CLIENT --> INJECT
-        INJECT --> READ
-        READ --> FILTER
-    end
-    
-    NOTE1["AsyncLocalStorage provides<br/>isolated storage per async context<br/>No global state pollution"]
-    
-    ASYNC_LOCAL -.-> NOTE1
-```
+![Mermaid Diagram](./diagrams\13_Context_Propagation_8.svg)
 
 **Sources**: [types.d.ts:38-44](), [types.d.ts:330-336](), [types.d.ts:105-110]()
 
@@ -478,33 +238,7 @@ interface IExchangeParams extends IExchangeSchema {
 }
 ```
 
-```mermaid
-graph LR
-    subgraph "DI Container"
-        PROVIDE["provide(TYPES.executionContextService)"]
-        INJECT["inject<TExecutionContextService>()"]
-    end
-    
-    subgraph "Connection Service"
-        CONN["ExchangeConnectionService.getExchange()"]
-        CREATE["new ClientExchange({<br/>...schema,<br/>execution: executionContextService<br/>})"]
-    end
-    
-    subgraph "Client Implementation"
-        CLIENT["ClientExchange"]
-        USE["this.execution.context.when<br/>this.execution.context.symbol"]
-    end
-    
-    PROVIDE --> INJECT
-    INJECT --> CONN
-    CONN --> CREATE
-    CREATE --> CLIENT
-    CLIENT --> USE
-    
-    NOTE1["Context service injected<br/>once at construction<br/>Used throughout lifetime"]
-    
-    USE -.-> NOTE1
-```
+![Mermaid Diagram](./diagrams\13_Context_Propagation_9.svg)
 
 **Sources**: [src/lib/core/types.ts:5-8](), [src/lib/core/provide.ts:61-63](), [types.d.ts:105-110](), [src/index.ts:162-163]()
 

@@ -40,27 +40,7 @@ All component registration functions follow a uniform three-step pattern: loggin
 
 ### Common Registration Pattern
 
-```mermaid
-graph TB
-    USER["User Code<br/>add* function call"]
-    LOGGER["LoggerService<br/>loggerService.info()"]
-    VALIDATOR["Validation Service<br/>*ValidationService.add*()"]
-    SCHEMA["Schema Service<br/>*SchemaService.register()"]
-    REGISTRY["ToolRegistry<br/>In-memory storage"]
-    
-    USER -->|"1. Call with schema"| LOGGER
-    LOGGER -->|"2. Log method name + schema"| VALIDATOR
-    VALIDATOR -->|"3. Validate schema structure"| SCHEMA
-    SCHEMA -->|"4. Store in registry"| REGISTRY
-    
-    VALIDATOR -.->|"Throws error if invalid"| ERROR["Error emitted<br/>errorEmitter"]
-    
-    note1["Example: addStrategy()"]
-    note2["All add* functions use<br/>identical flow"]
-    
-    USER -.-> note1
-    note1 -.-> note2
-```
+![Mermaid Diagram](./diagrams\17_Component_Registration_Functions_0.svg)
 
 **Sources:** [src/function/add.ts:52-64](), [src/function/add.ts:101-113](), [src/lib/index.ts:1-246]()
 
@@ -90,27 +70,7 @@ function addStrategy(strategySchema: IStrategySchema): void
 
 **Registration Flow:**
 
-```mermaid
-sequenceDiagram
-    participant U as User Code
-    participant AS as addStrategy
-    participant SV as StrategyValidationService
-    participant SS as StrategySchemaService
-    participant TR as ToolRegistry
-
-    U->>AS: addStrategy(strategySchema)
-    AS->>SV: addStrategy(name, schema)
-    SV->>SV: Validate interval
-    SV->>SV: Validate getSignal function
-    SV->>SV: Validate riskName/riskList
-    SV->>SV: Validate callbacks structure
-    SV-->>AS: Validation passed
-    AS->>SS: register(name, schema)
-    SS->>TR: Store schema by name
-    TR-->>SS: Stored
-    SS-->>AS: Registered
-    AS-->>U: Complete
-```
+![Mermaid Diagram](./diagrams\17_Component_Registration_Functions_1.svg)
 
 **Usage Example:**
 ```typescript
@@ -169,23 +129,7 @@ function addExchange(exchangeSchema: IExchangeSchema): void
 
 **Integration with CCXT:**
 
-```mermaid
-graph LR
-    AE["addExchange()<br/>Registration"]
-    GC["getCandles()<br/>User implementation"]
-    CCXT["ccxt.binance()<br/>Exchange API"]
-    OHLCV["fetchOHLCV()<br/>Raw data"]
-    MAP["Array.map()<br/>Transform to ICandle"]
-    
-    AE -->|"Stores"| GC
-    GC -->|"1. Create instance"| CCXT
-    CCXT -->|"2. Fetch OHLCV"| OHLCV
-    OHLCV -->|"3. Transform"| MAP
-    MAP -->|"4. Return ICandle[]"| GC
-    
-    note["Format: [timestamp, open,<br/>high, low, close, volume]"]
-    OHLCV -.-> note
-```
+![Mermaid Diagram](./diagrams\17_Component_Registration_Functions_2.svg)
 
 **Usage Example:**
 ```typescript
@@ -240,26 +184,7 @@ function addFrame(frameSchema: IFrameSchema): void
 
 **Timeframe Generation Flow:**
 
-```mermaid
-graph TB
-    AF["addFrame()<br/>frameName: test_frame"]
-    FCS["FrameCoreService<br/>generateTimeframe()"]
-    START["startDate<br/>2025-12-01 00:00:00"]
-    END["endDate<br/>2025-12-01 23:59:59"]
-    INTERVAL["interval: 1m"]
-    
-    TF["Timeframe Array<br/>[timestamp1, timestamp2, ...]"]
-    
-    AF -->|"Stores schema"| FCS
-    FCS -->|"Uses"| START
-    FCS -->|"Uses"| END
-    FCS -->|"Uses"| INTERVAL
-    
-    FCS -->|"Generates"| TF
-    
-    note["Each timestamp is 1 minute apart<br/>Total: 1440 timeframes (24h)"]
-    TF -.-> note
-```
+![Mermaid Diagram](./diagrams\17_Component_Registration_Functions_3.svg)
 
 **Usage Example:**
 ```typescript
@@ -307,30 +232,7 @@ function addRisk(riskSchema: IRiskSchema): void
 
 **Risk Validation Structure:**
 
-```mermaid
-graph TB
-    AR["addRisk()<br/>riskName: demo_risk"]
-    VAL1["Validation 1<br/>TP distance >= 1%"]
-    VAL2["Validation 2<br/>RR ratio >= 2:1"]
-    VAL3["Validation 3<br/>Max concurrent positions"]
-    
-    CS["ClientStrategy<br/>getSignal()"]
-    CR["ClientRisk<br/>checkSignal()"]
-    
-    AR -->|"Stores"| VAL1
-    AR -->|"Stores"| VAL2
-    AR -->|"Stores"| VAL3
-    
-    CS -->|"1. Generate signal"| CR
-    CR -->|"2. Validate"| VAL1
-    VAL1 -->|"3. If pass"| VAL2
-    VAL2 -->|"4. If pass"| VAL3
-    VAL3 -->|"5. If pass"| ALLOW["Signal allowed"]
-    
-    VAL1 -.->|"Throw error"| REJECT["Signal rejected"]
-    VAL2 -.->|"Throw error"| REJECT
-    VAL3 -.->|"Throw error"| REJECT
-```
+![Mermaid Diagram](./diagrams\17_Component_Registration_Functions_4.svg)
 
 **IRiskValidation Types:**
 
@@ -403,27 +305,7 @@ function addSizing(sizingSchema: ISizingSchema): void
 
 **Discriminated Union Structure:**
 
-```mermaid
-graph TB
-    AS["addSizing()<br/>sizingSchema"]
-    
-    METHOD{"method field"}
-    
-    FIXED["fixed-percentage<br/>riskPercentage"]
-    KELLY["kelly-criterion<br/>kellyMultiplier"]
-    ATR["atr-based<br/>riskPercentage + atrMultiplier"]
-    
-    COMMON["Common fields:<br/>sizingName<br/>maxPositionPercentage<br/>minPositionSize<br/>maxPositionSize<br/>callbacks"]
-    
-    AS --> METHOD
-    METHOD -->|"fixed-percentage"| FIXED
-    METHOD -->|"kelly-criterion"| KELLY
-    METHOD -->|"atr-based"| ATR
-    
-    FIXED --> COMMON
-    KELLY --> COMMON
-    ATR --> COMMON
-```
+![Mermaid Diagram](./diagrams\17_Component_Registration_Functions_5.svg)
 
 **Parameters by Method:**
 
@@ -499,30 +381,7 @@ function addWalker(walkerSchema: IWalkerSchema): void
 
 **Walker Execution Flow:**
 
-```mermaid
-sequenceDiagram
-    participant U as User Code
-    participant W as Walker.run()
-    participant WLP as WalkerLogicPrivateService
-    participant BLP as BacktestLogicPrivateService
-    participant WMS as WalkerMarkdownService
-
-    U->>W: Walker.run(symbol, walkerName)
-    W->>WLP: execute(symbol, walkerName)
-    
-    loop For each strategy
-        WLP->>BLP: execute(symbol, strategyName, exchangeName, frameName)
-        BLP-->>WLP: BacktestCompleteContract
-        WLP->>WLP: Extract metric value
-        WLP->>WLP: Store result
-    end
-    
-    WLP->>WLP: Sort by metric
-    WLP->>WLP: Identify best performer
-    WLP-->>W: WalkerCompleteContract
-    W->>WMS: Generate comparison report
-    WMS-->>U: Report available
-```
+![Mermaid Diagram](./diagrams\17_Component_Registration_Functions_6.svg)
 
 **Available Metrics:**
 
@@ -592,50 +451,7 @@ function addOptimizer(optimizerSchema: IOptimizerSchema): void
 
 **Optimizer Data Collection Flow:**
 
-```mermaid
-graph TB
-    AO["addOptimizer()<br/>optimizerName"]
-    RANGE1["rangeTrain[0]<br/>Bull market period"]
-    RANGE2["rangeTrain[1]<br/>Bear market period"]
-    
-    SOURCE1["source[0]<br/>Historical backtests"]
-    SOURCE2["source[1]<br/>Market indicators"]
-    
-    FETCH1["fetch()<br/>Paginated data"]
-    FETCH2["fetch()<br/>Paginated data"]
-    
-    FORMAT1["user() / assistant()<br/>Message formatting"]
-    FORMAT2["user() / assistant()<br/>Message formatting"]
-    
-    MESSAGES["MessageModel[]<br/>Conversation history"]
-    
-    PROMPT["getPrompt()<br/>Strategy specification"]
-    
-    TEMPLATE["OptimizerTemplateService<br/>Code generation"]
-    
-    CODE["Executable .mjs file<br/>Complete backtest"]
-    
-    AO --> RANGE1
-    AO --> RANGE2
-    AO --> SOURCE1
-    AO --> SOURCE2
-    
-    RANGE1 --> FETCH1
-    RANGE2 --> FETCH2
-    
-    SOURCE1 --> FETCH1
-    SOURCE2 --> FETCH2
-    
-    FETCH1 --> FORMAT1
-    FETCH2 --> FORMAT2
-    
-    FORMAT1 --> MESSAGES
-    FORMAT2 --> MESSAGES
-    
-    MESSAGES --> PROMPT
-    PROMPT --> TEMPLATE
-    TEMPLATE --> CODE
-```
+![Mermaid Diagram](./diagrams\17_Component_Registration_Functions_7.svg)
 
 **IOptimizerSource Types:**
 
@@ -715,35 +531,7 @@ addOptimizer({
 
 Components must be registered in a specific order due to inter-component references. The dependency graph ensures that referenced components exist before dependent components are registered.
 
-```mermaid
-graph TB
-    EXCHANGE["addExchange()<br/>No dependencies"]
-    FRAME["addFrame()<br/>No dependencies"]
-    RISK["addRisk()<br/>No dependencies"]
-    SIZING["addSizing()<br/>No dependencies"]
-    
-    STRATEGY["addStrategy()<br/>Requires: riskName"]
-    
-    WALKER["addWalker()<br/>Requires: exchangeName,<br/>frameName, strategies[]"]
-    
-    OPTIMIZER["addOptimizer()<br/>No dependencies<br/>(generates strategies)"]
-    
-    EXCHANGE -.->|"Optional"| STRATEGY
-    RISK -->|"Required"| STRATEGY
-    SIZING -.->|"Optional"| STRATEGY
-    
-    EXCHANGE -->|"Required"| WALKER
-    FRAME -->|"Required"| WALKER
-    STRATEGY -->|"Required"| WALKER
-    
-    style EXCHANGE fill:#e1f5ff
-    style FRAME fill:#e1f5ff
-    style RISK fill:#e1f5ff
-    style SIZING fill:#e1f5ff
-    style STRATEGY fill:#fff4e1
-    style WALKER fill:#ffe1e1
-    style OPTIMIZER fill:#f0e1ff
-```
+![Mermaid Diagram](./diagrams\17_Component_Registration_Functions_8.svg)
 
 **Registration Order Requirements:**
 
@@ -765,30 +553,7 @@ Component registration performs validation in two phases: **registration-time va
 
 ### Registration-Time Validation
 
-```mermaid
-graph TB
-    ADD["add* function call"]
-    VS["Validation Service<br/>*ValidationService.add*()"]
-    
-    STRUCT["Structural validation<br/>Required fields present<br/>Correct types"]
-    
-    REF["Reference validation<br/>Linked components exist<br/>Names are unique"]
-    
-    LOGIC["Logical validation<br/>Numeric constraints<br/>Valid enums"]
-    
-    STORE["Schema Service<br/>register()"]
-    
-    ERROR["Throw error<br/>Registration fails"]
-    
-    ADD --> VS
-    VS --> STRUCT
-    STRUCT -->|"Pass"| REF
-    STRUCT -.->|"Fail"| ERROR
-    REF -->|"Pass"| LOGIC
-    REF -.->|"Fail"| ERROR
-    LOGIC -->|"Pass"| STORE
-    LOGIC -.->|"Fail"| ERROR
-```
+![Mermaid Diagram](./diagrams\17_Component_Registration_Functions_9.svg)
 
 **Registration-Time Checks:**
 
@@ -804,36 +569,7 @@ graph TB
 
 ### Runtime Validation
 
-```mermaid
-graph TB
-    SIGNAL["getSignal() called<br/>Returns ISignalDto"]
-    
-    TYPE["Type validation<br/>position: long/short/wait<br/>Prices are numbers"]
-    
-    PRICE["Price validation<br/>TP > Open (long)<br/>SL < Open (long)"]
-    
-    DISTANCE["Distance validation<br/>TP >= CC_MIN_TAKEPROFIT_DISTANCE_PERCENT<br/>SL within bounds"]
-    
-    TIME["Time validation<br/>minuteEstimatedTime reasonable<br/>scheduledAt recent"]
-    
-    RISK["Risk validation<br/>Custom validations<br/>Portfolio constraints"]
-    
-    ALLOW["Signal allowed<br/>Proceed to opening"]
-    
-    REJECT["Signal rejected<br/>Emit validation error"]
-    
-    SIGNAL --> TYPE
-    TYPE -->|"Pass"| PRICE
-    TYPE -.->|"Fail"| REJECT
-    PRICE -->|"Pass"| DISTANCE
-    PRICE -.->|"Fail"| REJECT
-    DISTANCE -->|"Pass"| TIME
-    DISTANCE -.->|"Fail"| REJECT
-    TIME -->|"Pass"| RISK
-    TIME -.->|"Fail"| REJECT
-    RISK -->|"Pass"| ALLOW
-    RISK -.->|"Fail"| REJECT
-```
+![Mermaid Diagram](./diagrams\17_Component_Registration_Functions_10.svg)
 
 **Runtime Checks:**
 
@@ -855,29 +591,7 @@ All registered schemas are stored in `ToolRegistry` instances within their respe
 
 ### ToolRegistry Pattern
 
-```mermaid
-graph TB
-    ADD["add* function call"]
-    SS["Schema Service<br/>*SchemaService"]
-    TR["ToolRegistry<br/>Map<string, Schema>"]
-    
-    REG["register(name, schema)"]
-    GET["has(name)<br/>get(name)"]
-    KEYS["keys()<br/>values()"]
-    
-    ADD --> SS
-    SS --> REG
-    REG --> TR
-    
-    TR -.-> GET
-    TR -.-> KEYS
-    
-    note1["Singleton per schema type<br/>Shared across execution modes"]
-    note2["No persistence<br/>Lost on process exit"]
-    
-    TR -.-> note1
-    TR -.-> note2
-```
+![Mermaid Diagram](./diagrams\17_Component_Registration_Functions_11.svg)
 
 **ToolRegistry Methods:**
 

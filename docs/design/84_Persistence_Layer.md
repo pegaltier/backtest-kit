@@ -38,37 +38,7 @@ For information about Live mode execution flow, see [Live Trading](#10). For sig
 
 The persistence layer implements a pluggable adapter pattern with atomic file writes to prevent data corruption during crashes.
 
-```mermaid
-graph TB
-    subgraph "Client Layer"
-        CS["ClientStrategy"]
-    end
-    
-    subgraph "Persistence Adapters"
-        PSA["PersistSignalAdapter<br/>(Active Signals)"]
-        PSCHA["PersistScheduleAdapter<br/>(Scheduled Signals)"]
-    end
-    
-    subgraph "Base Classes"
-        PB["PersistBase<br/>(Abstract)"]
-    end
-    
-    subgraph "Storage Backends"
-        FS["File System<br/>(Default)"]
-        CUSTOM["Custom Backends<br/>(Redis, MongoDB, etc.)"]
-    end
-    
-    CS -->|"setPendingSignal()"| PSA
-    CS -->|"setScheduledSignal()"| PSCHA
-    CS -->|"readSignalData()"| PSA
-    CS -->|"readScheduleData()"| PSCHA
-    
-    PSA --> PB
-    PSCHA --> PB
-    
-    PB --> FS
-    PB -.->|"Extensible"| CUSTOM
-```
+![Mermaid Diagram](./diagrams\84_Persistence_Layer_0.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:28](), [docs/internals.md:38]()
 
@@ -99,18 +69,7 @@ Abstract base class providing atomic write operations and storage interface. All
 
 Manages persistence of active signals (opened → active → closed lifecycle).
 
-```mermaid
-graph LR
-    WRITE["writeSignalData()"]
-    READ["readSignalData()"]
-    DELETE["deleteSignalData()"]
-    
-    FILE["./dump/persist/{symbol}_{strategyName}.json"]
-    
-    WRITE -->|"Atomic write"| FILE
-    READ -->|"On init"| FILE
-    DELETE -->|"On close"| FILE
-```
+![Mermaid Diagram](./diagrams\84_Persistence_Layer_1.svg)
 
 **File Path Pattern:**
 ```
@@ -143,18 +102,7 @@ graph LR
 
 Manages persistence of scheduled signals (awaiting price activation).
 
-```mermaid
-graph LR
-    WRITE["writeScheduleData()"]
-    READ["readScheduleData()"]
-    DELETE["deleteScheduleData()"]
-    
-    FILE["./dump/schedule/{symbol}_{strategyName}.json"]
-    
-    WRITE -->|"Atomic write"| FILE
-    READ -->|"On init"| FILE
-    DELETE -->|"On activation/cancellation"| FILE
-```
+![Mermaid Diagram](./diagrams\84_Persistence_Layer_2.svg)
 
 **File Path Pattern:**
 ```
@@ -187,36 +135,7 @@ graph LR
 
 When a live trading process restarts, the persistence layer automatically restores all active and scheduled signals.
 
-```mermaid
-sequenceDiagram
-    participant LT as Live.background()
-    participant CS as ClientStrategy
-    participant PSA as PersistSignalAdapter
-    participant PSCHA as PersistScheduleAdapter
-    participant FS as File System
-    
-    LT->>CS: First tick()
-    CS->>CS: waitForInit()
-    
-    CS->>PSA: readSignalData(symbol, strategyName)
-    PSA->>FS: Read ./dump/persist/{symbol}_{strategyName}.json
-    FS-->>PSA: JSON data or null
-    PSA-->>CS: ISignalRow or null
-    
-    Note over CS: Restore _pendingSignal
-    
-    CS->>PSCHA: readScheduleData(symbol, strategyName)
-    PSCHA->>FS: Read ./dump/schedule/{symbol}_{strategyName}.json
-    FS-->>PSCHA: JSON data or null
-    PSCHA-->>CS: IScheduledSignalRow or null
-    
-    Note over CS: Restore _scheduledSignal
-    
-    CS->>CS: Call onActive(pendingSignal) if restored
-    CS->>CS: Call onSchedule(scheduledSignal) if restored
-    
-    CS-->>LT: Ready for normal operation
-```
+![Mermaid Diagram](./diagrams\84_Persistence_Layer_3.svg)
 
 **Recovery Validation:**
 The system validates that restored signals match the current strategy configuration:
@@ -235,46 +154,7 @@ The system validates that restored signals match the current strategy configurat
 
 ### When Persistence Occurs
 
-```mermaid
-stateDiagram-v2
-    [*] --> Idle: No persistence
-    
-    Idle --> Scheduled: writeScheduleData()
-    Idle --> Opened: writeSignalData()
-    
-    state Scheduled {
-        [*] --> Waiting
-        note right of Waiting
-            File: ./dump/schedule/...json
-            Persisted until activation
-        end note
-    }
-    
-    Scheduled --> Opened: deleteScheduleData()<br/>writeSignalData()
-    Scheduled --> Cancelled: deleteScheduleData()
-    
-    state Opened {
-        [*] --> Validating
-        note right of Validating
-            Atomic write prevents
-            partial data corruption
-        end note
-    }
-    
-    Opened --> Active: File confirmed
-    
-    state Active {
-        [*] --> Monitoring
-        note right of Monitoring
-            File: ./dump/persist/...json
-            Continuously monitored
-        end note
-    }
-    
-    Active --> Closed: deleteSignalData()
-    Cancelled --> Idle: No persistence
-    Closed --> Idle: No persistence
-```
+![Mermaid Diagram](./diagrams\84_Persistence_Layer_4.svg)
 
 **Persistence Operations:**
 
@@ -294,29 +174,7 @@ stateDiagram-v2
 
 The persistence layer uses atomic file operations to prevent corruption during crashes.
 
-```mermaid
-sequenceDiagram
-    participant CS as ClientStrategy
-    participant PSA as PersistSignalAdapter
-    participant PB as PersistBase
-    participant FS as File System
-    
-    CS->>PSA: writeSignalData(signal)
-    PSA->>PB: writeData(filePath, signal)
-    
-    Note over PB: Generate temp file path
-    PB->>FS: Write to temp file (atomic)
-    FS-->>PB: Write complete
-    
-    Note over PB: Rename temp → final (atomic)
-    PB->>FS: rename(temp, final)
-    FS-->>PB: Rename complete
-    
-    PB-->>PSA: Success
-    PSA-->>CS: Signal persisted
-    
-    Note over CS,FS: If crash occurs during write,<br/>either old file or no file exists.<br/>Never partial/corrupt data.
-```
+![Mermaid Diagram](./diagrams\84_Persistence_Layer_5.svg)
 
 **Atomic Operation Sequence:**
 
@@ -352,30 +210,7 @@ Persistence behavior differs fundamentally between execution modes:
 | Performance | Optimized (no I/O) | I/O overhead acceptable |
 | File writes | None | Every signal state change |
 
-```mermaid
-graph TB
-    subgraph "Backtest Mode"
-        BT_STRAT["ClientStrategy"]
-        BT_MEM["In-Memory State"]
-        
-        BT_STRAT -->|"Fast execution"| BT_MEM
-        
-        note1["No persistence calls<br/>backtest flag = true<br/>Deterministic results"]
-    end
-    
-    subgraph "Live Mode"
-        LV_STRAT["ClientStrategy"]
-        LV_MEM["In-Memory State"]
-        LV_PERSIST["Persistence Layer"]
-        LV_DISK["Disk Storage"]
-        
-        LV_STRAT --> LV_MEM
-        LV_STRAT -->|"Every state change"| LV_PERSIST
-        LV_PERSIST -->|"Atomic writes"| LV_DISK
-        
-        note2["Persistent state<br/>backtest flag = false<br/>Crash recovery enabled"]
-    end
-```
+![Mermaid Diagram](./diagrams\84_Persistence_Layer_6.svg)
 
 **Conditional Execution Check:**
 
@@ -398,41 +233,7 @@ The persistence layer supports custom storage backends through the `PersistBase`
 
 ### Extension Points
 
-```mermaid
-classDiagram
-    class PersistBase {
-        <<abstract>>
-        +writeData(filePath, data)*
-        +readData(filePath)*
-        +deleteData(filePath)*
-        +ensureDirectory(dirPath)*
-    }
-    
-    class FileSystemBackend {
-        +writeData(filePath, data)
-        +readData(filePath)
-        +deleteData(filePath)
-        +ensureDirectory(dirPath)
-    }
-    
-    class RedisBackend {
-        +writeData(key, data)
-        +readData(key)
-        +deleteData(key)
-        +ensureDirectory(namespace)
-    }
-    
-    class MongoDBBackend {
-        +writeData(collection, data)
-        +readData(collection)
-        +deleteData(collection)
-        +ensureDirectory(database)
-    }
-    
-    PersistBase <|-- FileSystemBackend
-    PersistBase <|-- RedisBackend
-    PersistBase <|-- MongoDBBackend
-```
+![Mermaid Diagram](./diagrams\84_Persistence_Layer_7.svg)
 
 ### Implementation Example
 
@@ -616,21 +417,7 @@ Persistence operations are wrapped in error handling to prevent crashes from pro
 
 ### Error Propagation
 
-```mermaid
-graph TB
-    WR["writeData()"]
-    ERR["Error occurs"]
-    LOG["Log error"]
-    EMIT["errorEmitter.next()"]
-    CONT["Continue execution"]
-    
-    WR --> ERR
-    ERR --> LOG
-    LOG --> EMIT
-    EMIT --> CONT
-    
-    note["Errors logged but don't crash<br/>Live mode continues operation<br/>Signal state may be lost"]
-```
+![Mermaid Diagram](./diagrams\84_Persistence_Layer_8.svg)
 
 **Error Logging Payload:**
 ```typescript
@@ -705,53 +492,6 @@ Persistence adds I/O overhead to live trading operations. The framework optimize
 
 Persistence operations integrate seamlessly with the signal lifecycle state machine.
 
-```mermaid
-stateDiagram-v2
-    direction LR
-    
-    [*] --> CheckInit: waitForInit()
-    CheckInit --> RestorePending: readSignalData()
-    CheckInit --> RestoreScheduled: readScheduleData()
-    RestorePending --> Idle: No data
-    RestorePending --> Active: Data found
-    RestoreScheduled --> Idle: No data
-    RestoreScheduled --> Scheduled: Data found
-    
-    Idle --> GetSignal: tick()
-    GetSignal --> Idle: null returned
-    GetSignal --> WriteScheduled: Scheduled signal
-    GetSignal --> WritePending: Immediate signal
-    
-    WriteScheduled --> Scheduled: writeScheduleData()
-    WritePending --> Opened: writeSignalData()
-    
-    Scheduled --> CheckActivation: Monitor price
-    CheckActivation --> Scheduled: Not reached
-    CheckActivation --> DeleteScheduled: Price reached
-    CheckActivation --> CancelScheduled: Timeout/SL
-    
-    DeleteScheduled --> WritePending: writeSignalData()
-    CancelScheduled --> DeleteScheduledFile: deleteScheduleData()
-    DeleteScheduledFile --> Idle
-    
-    WritePending --> Active
-    Opened --> Active
-    Active --> Monitor: Check TP/SL
-    Monitor --> Active: Not reached
-    Monitor --> DeletePending: Reached
-    
-    DeletePending --> Closed: deleteSignalData()
-    Closed --> Idle
-    
-    note right of RestorePending
-        Crash recovery point
-        Restores active signals
-    end note
-    
-    note right of RestoreScheduled
-        Crash recovery point
-        Restores scheduled signals
-    end note
-```
+![Mermaid Diagram](./diagrams\84_Persistence_Layer_9.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:491-552](), [src/client/ClientStrategy.ts:740](), [src/client/ClientStrategy.ts:1000]()

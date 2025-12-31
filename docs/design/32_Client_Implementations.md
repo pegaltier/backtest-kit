@@ -33,55 +33,7 @@ Client implementations sit between the **connection service layer** and the **tr
 
 ### System Layer Hierarchy
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        ADD["addStrategy()<br/>addExchange()<br/>addRisk()"]
-        UTIL["Backtest.run()<br/>Live.run()<br/>Walker.run()"]
-    end
-    
-    subgraph "Service Layer"
-        SCHEMA["Schema Services<br/>StrategySchemaService<br/>ExchangeSchemaService"]
-        CONN["Connection Services<br/>StrategyConnectionService<br/>ExchangeConnectionService"]
-        CMD["Command Services<br/>BacktestCommandService<br/>LiveCommandService"]
-    end
-    
-    subgraph "Client Implementation Layer"
-        CSTRAT["ClientStrategy<br/>Signal generation<br/>State machine<br/>Validation"]
-        CEXCH["ClientExchange<br/>Candle fetching<br/>VWAP calculation<br/>Temporal isolation"]
-        CRISK["ClientRisk<br/>Validation chain<br/>Position tracking"]
-        CSIZE["ClientSizing<br/>Position sizing<br/>Kelly/ATR/Fixed"]
-        CPART["ClientPartial<br/>TP/SL milestones<br/>Progress tracking"]
-        CFRAME["ClientFrame<br/>Timeframe generation"]
-        COPT["ClientOptimizer<br/>LLM integration<br/>Code generation"]
-    end
-    
-    subgraph "External Dependencies"
-        PERSIST["PersistSignalAdapter<br/>PersistRiskAdapter<br/>Atomic file I/O"]
-        EMIT["RxJS Emitters<br/>signalEmitter<br/>errorEmitter"]
-        CONTEXT["ExecutionContextService<br/>MethodContextService<br/>AsyncLocalStorage"]
-    end
-    
-    ADD --> SCHEMA
-    UTIL --> CMD
-    CMD --> CONN
-    CONN --> CSTRAT
-    CONN --> CEXCH
-    CONN --> CRISK
-    
-    CSTRAT --> CEXCH
-    CSTRAT --> CRISK
-    CSTRAT --> CSIZE
-    CSTRAT --> CPART
-    
-    CSTRAT --> PERSIST
-    CSTRAT --> EMIT
-    CSTRAT --> CONTEXT
-    
-    style CSTRAT fill:#e1f5ff,stroke:#333,stroke-width:3px
-    style CEXCH fill:#fff4e1,stroke:#333,stroke-width:2px
-    style CRISK fill:#ffe1e1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\32_Client_Implementations_0.svg)
 
 **Sources:** [src/lib/services/connection/StrategyConnectionService.ts:1-325](), [src/client/ClientStrategy.ts:1-100]()
 
@@ -103,36 +55,7 @@ graph TB
 
 ### Instance Creation and Memoization
 
-```mermaid
-graph LR
-    subgraph "StrategyConnectionService"
-        GET["getStrategy()<br/>memoized function"]
-        KEY["Cache Key<br/>symbol:strategyName:backtest"]
-    end
-    
-    subgraph "ClientStrategy Instance"
-        CONS["new ClientStrategy()<br/>IStrategyParams"]
-        STATE["Internal State<br/>_pendingSignal<br/>_scheduledSignal<br/>_isStopped<br/>_lastSignalTimestamp"]
-    end
-    
-    subgraph "Dependencies Injected"
-        EXEC["execution: ExecutionContextService<br/>context.symbol<br/>context.when<br/>context.backtest"]
-        METH["method: MethodContextService<br/>context.strategyName<br/>context.exchangeName"]
-        EXCH["exchange: IExchange<br/>getCandles()<br/>getAveragePrice()"]
-        RISK["risk: IRisk<br/>checkSignal()<br/>addSignal()<br/>removeSignal()"]
-        PART["partial: IPartial<br/>monitor()<br/>clear()"]
-    end
-    
-    GET --> KEY
-    KEY --> CONS
-    CONS --> EXEC
-    CONS --> METH
-    CONS --> EXCH
-    CONS --> RISK
-    CONS --> PART
-    
-    STATE -.stored in.-> CONS
-```
+![Mermaid Diagram](./diagrams\32_Client_Implementations_1.svg)
 
 **Sources:** [src/lib/services/connection/StrategyConnectionService.ts:123-156](), [src/client/ClientStrategy.ts:1074-1140]()
 
@@ -158,49 +81,7 @@ graph LR
 
 ### Signal Generation with Throttling
 
-```mermaid
-sequenceDiagram
-    participant Tick as tick() call
-    participant GSF as GET_SIGNAL_FN
-    participant Throttle as Interval Check
-    participant User as getSignal()
-    participant Timeout as Race Condition
-    participant Risk as risk.checkSignal()
-    participant Result as Return Signal
-    
-    Tick->>GSF: Request signal
-    GSF->>Throttle: Check _lastSignalTimestamp
-    
-    alt Interval not elapsed
-        Throttle-->>GSF: return null (throttled)
-        GSF-->>Tick: null
-    else Interval elapsed
-        GSF->>User: Call user's getSignal()
-        GSF->>Timeout: Race with CC_MAX_SIGNAL_GENERATION_SECONDS
-        
-        alt User returns in time
-            User-->>GSF: ISignalDto or null
-        else Timeout
-            Timeout-->>GSF: TIMEOUT_SYMBOL
-            GSF-->>Tick: throw Error("Timeout")
-        end
-        
-        alt Signal returned
-            GSF->>Risk: checkSignal(pendingSignal)
-            
-            alt Risk approved
-                Risk-->>GSF: true
-                GSF->>Result: Validate and return
-                Result-->>Tick: ISignalRow or IScheduledSignalRow
-            else Risk rejected
-                Risk-->>GSF: false
-                GSF-->>Tick: null
-            end
-        else null returned
-            GSF-->>Tick: null
-        end
-    end
-```
+![Mermaid Diagram](./diagrams\32_Client_Implementations_2.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:332-476](), [src/client/ClientStrategy.ts:34-41]()
 
@@ -208,47 +89,7 @@ sequenceDiagram
 
 Scheduled signals (limit orders) require special handling for activation and cancellation. The logic checks both price conditions and stop loss violations.
 
-```mermaid
-stateDiagram-v2
-    [*] --> Scheduled: getSignal() returns
-
-    Scheduled --> CheckActivation: Every tick
-
-    CheckActivation --> CheckStopLoss: Evaluate conditions
-
-    CheckStopLoss --> Cancelled: currentPrice violates SL
-
-    CheckStopLoss --> CheckPriceOpen: SL not violated
-
-    CheckPriceOpen --> Activated: Price condition met
-
-    CheckPriceOpen --> Timeout: Time exceeds AWAIT_MINUTES
-
-    CheckPriceOpen --> Scheduled: Conditions not met
-
-    Activated --> RiskCheck: Verify risk limits
-
-    RiskCheck --> Pending: Risk approved
-
-    RiskCheck --> Cancelled: Risk rejected
-
-    Timeout --> Cancelled: Max wait time exceeded
-
-    Cancelled --> [*]: Signal removed
-    Pending --> [*]: Monitor TP/SL
-
-    note right of CheckStopLoss
-        CRITICAL: StopLoss check
-        happens BEFORE activation
-        Prevents opening losing positions
-    end note
-
-    note right of Activated
-        pendingAt timestamp updated
-        scheduledAt preserved
-        Duration calculated correctly
-    end note
-```
+![Mermaid Diagram](./diagrams\32_Client_Implementations_3.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:610-644](), [src/client/ClientStrategy.ts:646-679](), [src/client/ClientStrategy.ts:681-774]()
 
@@ -285,23 +126,7 @@ stateDiagram-v2
 
 The system uses **Volume Weighted Average Price (VWAP)** instead of simple close prices for realistic execution simulation. VWAP is calculated from the last `CC_AVG_PRICE_CANDLES_COUNT` (default: 5) one-minute candles.
 
-```mermaid
-graph TB
-    subgraph "getAveragePrice() Flow"
-        START["getAveragePrice(symbol)"]
-        CTX["ExecutionContextService<br/>current timestamp"]
-        FETCH["getCandles(symbol, 1m, ..., 5)<br/>Last 5 one-minute candles"]
-        CALC["Calculate VWAP<br/>Sum(typical_price * volume) / Sum(volume)<br/>typical_price = (high + low + close) / 3"]
-        FALLBACK["If total volume = 0<br/>Simple average of close prices"]
-        RETURN["Return VWAP"]
-    end
-
-    START --> CTX
-    CTX --> FETCH
-    FETCH --> CALC
-    CALC --> FALLBACK
-    FALLBACK --> RETURN
-```
+![Mermaid Diagram](./diagrams\32_Client_Implementations_4.svg)
 
 **Formula (from [src/client/ClientStrategy.ts:478-489]()):
 ```
@@ -338,39 +163,7 @@ If `totalVolume === 0`, fallback to simple average: `Σ(close) / candles.length`
 
 ### Validation Chain Execution
 
-```mermaid
-sequenceDiagram
-    participant CS as ClientStrategy
-    participant CR as ClientRisk
-    participant Chain as Validation Array
-    participant V1 as Validation 1
-    participant V2 as Validation 2
-    participant VN as Validation N
-    participant Callback as onAllowed/onRejected
-    
-    CS->>CR: checkSignal(payload)
-    CR->>Chain: Iterate validations
-    
-    loop Each validation
-        Chain->>V1: Execute validation fn
-        
-        alt Validation passes
-            V1-->>Chain: No error thrown
-            Chain->>V2: Continue to next
-        else Validation fails
-            V1-->>Chain: throw Error(reason)
-            Chain-->>CR: Validation failed
-            CR->>Callback: onRejected(payload, error)
-            CR-->>CS: return false
-        end
-    end
-    
-    alt All validations passed
-        Chain-->>CR: Success
-        CR->>Callback: onAllowed(payload)
-        CR-->>CS: return true
-    end
-```
+![Mermaid Diagram](./diagrams\32_Client_Implementations_5.svg)
 
 ### Position Tracking with Persistence
 
@@ -424,35 +217,7 @@ All methods respect constraints from `ISizingSchema`:
 
 ### Monitoring Flow
 
-```mermaid
-graph TB
-    subgraph "ClientPartial.monitor()"
-        START["monitor(symbol, signal, currentPrice)"]
-        CALC_TP["Calculate progress toward TP<br/>percentTp = progress%"]
-        CALC_SL["Calculate progress toward SL<br/>percentSl = progress%"]
-        CHECK_TP["Check if crossed TP milestone"]
-        CHECK_SL["Check if crossed SL milestone"]
-        EMIT_TP["Emit partialProfitSubject"]
-        EMIT_SL["Emit partialLossSubject"]
-        CALLBACK_TP["Call onPartialProfit callback"]
-        CALLBACK_SL["Call onPartialLoss callback"]
-        PERSIST["Save to PersistPartialAdapter"]
-    end
-    
-    START --> CALC_TP
-    START --> CALC_SL
-    CALC_TP --> CHECK_TP
-    CALC_SL --> CHECK_SL
-    
-    CHECK_TP -->|Milestone crossed| EMIT_TP
-    CHECK_SL -->|Milestone crossed| EMIT_SL
-    
-    EMIT_TP --> CALLBACK_TP
-    EMIT_SL --> CALLBACK_SL
-    
-    CALLBACK_TP --> PERSIST
-    CALLBACK_SL --> PERSIST
-```
+![Mermaid Diagram](./diagrams\32_Client_Implementations_6.svg)
 
 **State Persistence:** `./dump/data/partial/{strategy}/{symbol}.json` stores already-emitted milestones to prevent duplicate events after crash recovery.
 
@@ -466,19 +231,7 @@ graph TB
 
 ### Timeframe Generation
 
-```mermaid
-graph LR
-    subgraph "ClientFrame.getTimeframes()"
-        START["IFrameSchema<br/>startDate<br/>endDate<br/>interval"]
-        PARSE["Parse interval<br/>1m converts to 60000ms<br/>1h converts to 3600000ms"]
-        ITERATE["Loop from startDate<br/>to endDate<br/>step by interval"]
-        GENERATE["Yield Date objects<br/>for each timeframe"]
-    end
-
-    START --> PARSE
-    PARSE --> ITERATE
-    ITERATE --> GENERATE
-```
+![Mermaid Diagram](./diagrams\32_Client_Implementations_7.svg)
 
 **Example:**
 - `startDate`: 2025-01-01 00:00:00
@@ -496,47 +249,7 @@ graph LR
 
 ### Architecture
 
-```mermaid
-graph TB
-    subgraph "ClientOptimizer Flow"
-        SCHEMA["IOptimizerSchema<br/>rangeTrain<br/>rangeTest<br/>source<br/>getPrompt<br/>template"]
-        FETCH["Fetch data from sources<br/>iterateDocuments()<br/>distinctDocuments()"]
-        FORMAT["Format as MessageModel<br/>user/assistant pairs"]
-        PROMPT["Call getPrompt()<br/>Analyze conversation history"]
-        TEMPLATE["OptimizerTemplateService<br/>Generate code sections"]
-        OUTPUT["Complete .mjs file<br/>Executable strategy"]
-    end
-    
-    subgraph "Generated Code Sections"
-        BANNER["Top banner<br/>Imports, constants"]
-        HELPERS["Helper functions<br/>dumpJson, text, json"]
-        EXCHANGE["addExchange()<br/>CCXT configuration"]
-        FRAMES["addFrame()<br/>Train + Test periods"]
-        STRATEGIES["addStrategy()<br/>Multi-timeframe analysis"]
-        WALKER["addWalker()<br/>Strategy comparison"]
-        LAUNCHER["Event listeners<br/>Execution trigger"]
-    end
-    
-    SCHEMA --> FETCH
-    FETCH --> FORMAT
-    FORMAT --> PROMPT
-    PROMPT --> TEMPLATE
-    TEMPLATE --> BANNER
-    TEMPLATE --> HELPERS
-    TEMPLATE --> EXCHANGE
-    TEMPLATE --> FRAMES
-    TEMPLATE --> STRATEGIES
-    TEMPLATE --> WALKER
-    TEMPLATE --> LAUNCHER
-    
-    BANNER --> OUTPUT
-    HELPERS --> OUTPUT
-    EXCHANGE --> OUTPUT
-    FRAMES --> OUTPUT
-    STRATEGIES --> OUTPUT
-    WALKER --> OUTPUT
-    LAUNCHER --> OUTPUT
-```
+![Mermaid Diagram](./diagrams\32_Client_Implementations_8.svg)
 
 ### Data Source Pattern
 
@@ -660,59 +373,10 @@ await signalLiveEmitter.next(tickResult);
 
 ### Initialization Sequence
 
-```mermaid
-sequenceDiagram
-    participant API as Public API
-    participant Schema as Schema Service
-    participant Conn as Connection Service
-    participant Client as Client Instance
-    participant Persist as Persistence Layer
-    
-    API->>Schema: addStrategy(schema)
-    Schema->>Schema: Store in ToolRegistry
-    
-    Note over Conn: First call triggers instantiation
-    
-    Conn->>Conn: getStrategy() memoized lookup
-    
-    alt Cache miss
-        Conn->>Schema: Get schema by name
-        Schema-->>Conn: IStrategySchema
-        Conn->>Client: new ClientStrategy(params)
-        Client->>Client: Initialize internal state
-        
-        alt Live mode
-            Client->>Persist: waitForInit()
-            Persist->>Persist: Read persisted state
-            Persist-->>Client: Restored state or null
-        end
-        
-        Conn->>Conn: Cache instance
-    else Cache hit
-        Conn->>Conn: Return cached instance
-    end
-    
-    Conn-->>API: Client ready for operations
-```
+![Mermaid Diagram](./diagrams\32_Client_Implementations_9.svg)
 
 ### Cleanup and Disposal
 
-```mermaid
-graph TB
-    subgraph "Cleanup Sequence"
-        STOP["stop() called"]
-        FLAG["Set isStopped flag to true"]
-        WAIT["Wait for active signal<br/>to complete naturally"]
-        CLEAR["Connection service<br/>clear() method"]
-        REMOVE["Remove from memoize cache"]
-        GC["Eligible for garbage collection"]
-    end
-
-    STOP --> FLAG
-    FLAG --> WAIT
-    WAIT --> CLEAR
-    CLEAR --> REMOVE
-    REMOVE --> GC
-```
+![Mermaid Diagram](./diagrams\32_Client_Implementations_10.svg)
 
 **Sources:** [src/lib/services/connection/StrategyConnectionService.ts:284-321](), [src/classes/Backtest.ts:254-260]()

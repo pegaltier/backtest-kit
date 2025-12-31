@@ -29,73 +29,7 @@ For information about the event system that feeds these services, see [3.4](#3.4
 
 All Markdown Services follow a consistent architecture with three layers: **Event Subscription**, **Storage Accumulation**, and **Report Generation**. Each service subscribes to specific event emitters during initialization, maintains memoized storage instances per symbol-strategy pair, and provides methods to retrieve statistics or generate markdown reports.
 
-```mermaid
-graph TB
-    subgraph "Event Sources"
-        SBE[signalBacktestEmitter]
-        SLE[signalLiveEmitter]
-        SE[signalEmitter]
-        PPE[partialProfitSubject]
-        PLE[partialLossSubject]
-        WE[walkerEmitter]
-        PERFE[performanceEmitter]
-    end
-    
-    subgraph "Markdown Services"
-        BMS[BacktestMarkdownService]
-        LMS[LiveMarkdownService]
-        SMS[ScheduleMarkdownService]
-        PMS[PartialMarkdownService]
-        WMS[WalkerMarkdownService]
-        HMS[HeatMarkdownService]
-        PERFMS[PerformanceMarkdownService]
-    end
-    
-    subgraph "Storage Layer"
-        BREPORT[ReportStorage<br/>Closed signals]
-        LREPORT[ReportStorage<br/>All events]
-        SREPORT[ReportStorage<br/>Scheduled events]
-        PREPORT[ReportStorage<br/>Partial events]
-        WREPORT[ReportStorage<br/>Walker results]
-        HREPORT[HeatmapStorage<br/>Symbol aggregation]
-        PERFREPORT[PerformanceStorage<br/>Metrics]
-    end
-    
-    subgraph "Output Files"
-        BFILES[./dump/backtest/*.md]
-        LFILES[./dump/live/*.md]
-        SFILES[./dump/schedule/*.md]
-        PFILES[./dump/partial/*.md]
-        WFILES[./dump/walker/*.md]
-        HFILES[./dump/heatmap/*.md]
-        PERFFILES[./dump/performance/*.md]
-    end
-    
-    SBE --> BMS
-    SLE --> LMS
-    SE --> SMS
-    SE --> HMS
-    PPE --> PMS
-    PLE --> PMS
-    WE --> WMS
-    PERFE --> PERFMS
-    
-    BMS --> BREPORT
-    LMS --> LREPORT
-    SMS --> SREPORT
-    PMS --> PREPORT
-    WMS --> WREPORT
-    HMS --> HREPORT
-    PERFMS --> PERFREPORT
-    
-    BREPORT --> BFILES
-    LREPORT --> LFILES
-    SREPORT --> SFILES
-    PREPORT --> PFILES
-    WREPORT --> WFILES
-    HREPORT --> HFILES
-    PERFREPORT --> PERFFILES
-```
+![Mermaid Diagram](./diagrams\47_Markdown_Services_0.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:1-571](), [src/lib/services/markdown/LiveMarkdownService.ts:1-778](), [src/lib/services/markdown/ScheduleMarkdownService.ts:1-625](), [src/lib/services/markdown/PartialMarkdownService.ts:1-481](), [src/lib/services/markdown/WalkerMarkdownService.ts:1-675](), [src/lib/services/markdown/HeatMarkdownService.ts:1-599](), [src/lib/services/markdown/PerformanceMarkdownService.ts:1-506]()
 
@@ -117,52 +51,7 @@ graph TB
 
 All Markdown Services implement a consistent internal structure with a memoized `ReportStorage` class that handles data accumulation and report generation. The service layer provides dependency injection integration and event subscription.
 
-```mermaid
-graph TB
-    subgraph "Service Layer (DI-Enabled)"
-        SERVICE[MarkdownService<br/>- inject LoggerService<br/>- singleshot init]
-        GETSTORAGE[getStorage<br/>memoized function]
-        TICK[tick method<br/>private]
-        GETDATA[getData method<br/>public]
-        GETREPORT[getReport method<br/>public]
-        DUMP[dump method<br/>public]
-        CLEAR[clear method<br/>public]
-    end
-    
-    subgraph "Storage Layer (Pure Business Logic)"
-        REPORTSTORAGE[ReportStorage<br/>- _eventList array<br/>- MAX_EVENTS constant]
-        ADDEVENT[addEvent methods]
-        GETDATA_STORAGE[getData<br/>calculates statistics]
-        GETREPORT_STORAGE[getReport<br/>generates markdown]
-        DUMP_STORAGE[dump<br/>writes to disk]
-    end
-    
-    subgraph "Configuration"
-        COLUMNS["Column array<br/>- key, label, format<br/>- isVisible function"]
-        INTERFACES[Statistics interfaces<br/>- totalEvents, winRate<br/>- sharpeRatio, etc]
-    end
-    
-    SERVICE --> GETSTORAGE
-    SERVICE --> TICK
-    SERVICE --> GETDATA
-    SERVICE --> GETREPORT
-    SERVICE --> DUMP
-    SERVICE --> CLEAR
-    
-    GETSTORAGE --> REPORTSTORAGE
-    TICK --> GETSTORAGE
-    GETDATA --> GETSTORAGE
-    GETREPORT --> GETSTORAGE
-    DUMP --> GETSTORAGE
-    
-    REPORTSTORAGE --> ADDEVENT
-    REPORTSTORAGE --> GETDATA_STORAGE
-    REPORTSTORAGE --> GETREPORT_STORAGE
-    REPORTSTORAGE --> DUMP_STORAGE
-    
-    GETDATA_STORAGE --> INTERFACES
-    GETREPORT_STORAGE --> COLUMNS
-```
+![Mermaid Diagram](./diagrams\47_Markdown_Services_1.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:196-367](), [src/lib/services/markdown/LiveMarkdownService.ts:260-564]()
 
@@ -229,34 +118,7 @@ interface BacktestStatistics {
 
 ### Data Flow
 
-```mermaid
-sequenceDiagram
-    participant Backtest as BacktestLogicPrivateService
-    participant Emitter as signalBacktestEmitter
-    participant Service as BacktestMarkdownService
-    participant Storage as ReportStorage
-    participant Disk as ./dump/backtest/*.md
-    
-    Backtest->>Emitter: emit(IStrategyTickResultClosed)
-    Emitter->>Service: tick(data)
-    Service->>Service: filter: action === "closed"
-    Service->>Storage: getStorage(symbol, strategyName)
-    Service->>Storage: addSignal(data)
-    Storage->>Storage: _signalList.unshift(data)
-    Storage->>Storage: trim if > MAX_EVENTS (250)
-    
-    Note over Service: Later: generate report
-    Service->>Storage: getData()
-    Storage->>Storage: calculate statistics
-    Storage-->>Service: BacktestStatistics
-    
-    Service->>Storage: getReport(strategyName)
-    Storage->>Storage: format markdown table
-    Storage-->>Service: markdown string
-    
-    Service->>Storage: dump(strategyName, path)
-    Storage->>Disk: writeFile(filepath)
-```
+![Mermaid Diagram](./diagrams\47_Markdown_Services_2.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:428-439](), [src/lib/services/markdown/BacktestMarkdownService.ts:227-295]()
 
@@ -277,24 +139,7 @@ Tracks all tick events from live trading including idle, opened, active, and clo
 
 The service implements smart idle event deduplication to prevent idle event spam while preserving important state transitions:
 
-```mermaid
-graph TD
-    A[Receive idle event] --> B{Find last idle index}
-    B --> C{Idle exists?}
-    C -->|No| D[Add new idle event]
-    C -->|Yes| E{Check events after last idle}
-    E --> F{Any opened/active after?}
-    F -->|Yes| D
-    F -->|No| G[Replace last idle event]
-    
-    D --> H[Unshift to eventList]
-    H --> I{Length > MAX_EVENTS?}
-    I -->|Yes| J[Pop oldest event]
-    I -->|No| K[Done]
-    J --> K
-    
-    G --> K
-```
+![Mermaid Diagram](./diagrams\47_Markdown_Services_3.svg)
 
 **Sources:** [src/lib/services/markdown/LiveMarkdownService.ts:274-301]()
 
@@ -348,27 +193,7 @@ interface ScheduleStatistics {
 
 ### Event Processing Logic
 
-```mermaid
-graph TB
-    A[Receive tick event] --> B{action type?}
-    B -->|scheduled| C[Add scheduled event]
-    B -->|opened| D{scheduledAt != pendingAt?}
-    B -->|cancelled| E[Add cancelled event]
-    B -->|other| F[Ignore]
-    
-    D -->|Yes| G[Calculate duration]
-    D -->|No| F
-    G --> H[Add opened event]
-    
-    C --> I[Store to eventList]
-    E --> I
-    H --> I
-    
-    I --> J{Length > MAX_EVENTS?}
-    J -->|Yes| K[Pop oldest]
-    J -->|No| L[Done]
-    K --> L
-```
+![Mermaid Diagram](./diagrams\47_Markdown_Services_4.svg)
 
 **Sources:** [src/lib/services/markdown/ScheduleMarkdownService.ts:472-490]()
 
@@ -398,30 +223,7 @@ interface PartialStatistics {
 
 ### Event Flow
 
-```mermaid
-sequenceDiagram
-    participant Strategy as ClientStrategy
-    participant PPE as partialProfitSubject
-    participant PLE as partialLossSubject
-    participant Service as PartialMarkdownService
-    participant Storage as ReportStorage
-    
-    Strategy->>Strategy: Check price movement
-    Strategy->>Strategy: Calculate percentTp/percentSl
-    
-    alt Profit milestone reached
-        Strategy->>PPE: emit({signal, currentPrice, level, backtest})
-        PPE->>Service: tickProfit(data)
-        Service->>Storage: addProfitEvent(data)
-    else Loss milestone reached
-        Strategy->>PLE: emit({signal, currentPrice, level, backtest})
-        PLE->>Service: tickLoss(data)
-        Service->>Storage: addLossEvent(data)
-    end
-    
-    Storage->>Storage: _eventList.unshift(event)
-    Storage->>Storage: trim if > MAX_EVENTS (250)
-```
+![Mermaid Diagram](./diagrams\47_Markdown_Services_5.svg)
 
 **Sources:** [src/lib/services/markdown/PartialMarkdownService.ts:341-380]()
 
@@ -457,19 +259,7 @@ interface IStrategyResult {
 
 The service dynamically creates column configuration based on the optimization metric:
 
-```mermaid
-graph LR
-    A[WalkerContract events] --> B[Accumulate strategy results]
-    B --> C[Sort by metric value descending]
-    C --> D[Take top N 10]
-    D --> E[Create dynamic columns]
-    E --> F[Rank, Strategy, Metric, Signals, Win Rate, Avg PNL, Total PNL, Sharpe, Std Dev]
-    F --> G[Format markdown table]
-    
-    A --> H[Collect all closed signals]
-    H --> I[Strategy, Signal ID, Symbol, Position, PNL, Close Reason, Open Time, Close Time]
-    I --> J[Format PNL table]
-```
+![Mermaid Diagram](./diagrams\47_Markdown_Services_6.svg)
 
 **Sources:** [src/lib/services/markdown/WalkerMarkdownService.ts:131-203](), [src/lib/services/markdown/WalkerMarkdownService.ts:342-372](), [src/lib/services/markdown/WalkerMarkdownService.ts:380-419]()
 
@@ -518,29 +308,7 @@ interface IHeatmapRow {
 
 ### Portfolio Metrics Calculation
 
-```mermaid
-graph TB
-    A[Receive closed signal] --> B{Get symbol storage}
-    B --> C["Map(symbol, signals array)"]
-    C --> D[Add signal to symbol array]
-    D --> E{Length > MAX_EVENTS 250?}
-    E -->|Yes| F[Pop oldest]
-    E -->|No| G[Done adding]
-    
-    H[getData called] --> I[Iterate all symbols]
-    I --> J[Calculate per-symbol stats]
-    J --> K[Total PNL, Sharpe, Drawdown, PF, Expectancy, etc]
-    K --> L[Sort by Sharpe Ratio]
-    
-    L --> M[Calculate portfolio aggregates]
-    M --> N[Sum all totalPnl]
-    M --> O[Weighted Sharpe by trade count]
-    M --> P[Sum all trades]
-    
-    N --> Q[IHeatmapStatistics]
-    O --> Q
-    P --> Q
-```
+![Mermaid Diagram](./diagrams\47_Markdown_Services_7.svg)
 
 **Sources:** [src/lib/services/markdown/HeatMarkdownService.ts:180-336](), [src/lib/services/markdown/HeatMarkdownService.ts:343-395]()
 
@@ -654,16 +422,7 @@ const columns: Column[] = [
 
 ### Table Generation Process
 
-```mermaid
-graph LR
-    A[Column configuration] --> B[Filter by isVisible]
-    B --> C[Extract labels for header]
-    C --> D[Create separator row ---]
-    D --> E[Map events through formatters]
-    E --> F[Build tableData array]
-    F --> G[Join rows with pipes]
-    G --> H[Markdown table string]
-```
+![Mermaid Diagram](./diagrams\47_Markdown_Services_8.svg)
 
 The generated markdown follows this format:
 
@@ -775,30 +534,6 @@ Naming conventions:
 
 Markdown Services are automatically initialized and subscribed to their respective emitters. The initialization occurs lazily via `singleshot` wrapper, ensuring subscriptions happen only once regardless of how many times the service is accessed.
 
-```mermaid
-sequenceDiagram
-    participant API as Public API
-    participant Service as MarkdownService
-    participant Init as init (singleshot)
-    participant Emitter as Event Emitter
-    participant Tick as tick method
-    participant Storage as ReportStorage
-    
-    API->>Service: First access (getData/getReport/dump)
-    Service->>Init: Call init()
-    Init->>Init: Check if already initialized
-    Init->>Emitter: subscribe(this.tick)
-    
-    Note over Emitter: Events flow continuously
-    Emitter->>Tick: emit(event data)
-    Tick->>Service: getStorage(symbol, strategyName)
-    Service-->>Tick: ReportStorage instance
-    Tick->>Storage: addEvent(data)
-    
-    API->>Service: getData(symbol, strategyName)
-    Service->>Storage: getData()
-    Storage-->>Service: Statistics
-    Service-->>API: Statistics
-```
+![Mermaid Diagram](./diagrams\47_Markdown_Services_9.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:564-567](), [src/lib/services/markdown/LiveMarkdownService.ts:771-774](), [src/lib/services/markdown/ScheduleMarkdownService.ts:618-621]()

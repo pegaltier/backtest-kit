@@ -35,46 +35,7 @@ This document covers the implementation details of `ClientExchange` including it
 
 ### Integration in System Architecture
 
-```mermaid
-graph TB
-    subgraph "Service Layer"
-        ECS["ExchangeConnectionService<br/>Memoization & routing"]
-        EGS["ExchangeGlobalService<br/>Context injection wrapper"]
-        ECS -->|instantiates| CE
-        EGS -->|delegates to| ECS
-    end
-    
-    subgraph "Client Layer"
-        CE["ClientExchange<br/>getCandles()<br/>getNextCandles()<br/>getAveragePrice()"]
-    end
-    
-    subgraph "Data Sources"
-        CCXT["CCXT Exchange<br/>Binance, Bybit, etc."]
-        Custom["Custom Data Source<br/>Database, REST API"]
-        CCXT_Dumper["CCXT Dumper<br/>Historical archives"]
-    end
-    
-    subgraph "Context System"
-        ExecutionContext["ExecutionContextService<br/>symbol, when, backtest"]
-    end
-    
-    subgraph "Consumers"
-        Strategy["ClientStrategy<br/>tick(), backtest()"]
-        BacktestLogic["BacktestLogicPrivateService<br/>getNextCandles() for signals"]
-        LiveLogic["LiveLogicPrivateService<br/>Real-time data"]
-    end
-    
-    ExecutionContext -->|provides when| CE
-    CE -->|delegates| CCXT
-    CE -->|delegates| Custom
-    CE -->|delegates| CCXT_Dumper
-    
-    Strategy -->|calls| EGS
-    BacktestLogic -->|calls| EGS
-    LiveLogic -->|calls| EGS
-    
-    EGS -->|injects context| CE
-```
+![Mermaid Diagram](./diagrams\34_ClientExchange_0.svg)
 
 **Sources:** [src/client/ClientExchange.ts:179-372](), [src/lib/services/global/ExchangeGlobalService.ts:1-100](), [src/lib/services/connection/ExchangeConnectionService.ts:1-80]()
 
@@ -141,26 +102,7 @@ async getCandles(
 
 #### Time Calculation Logic
 
-```mermaid
-sequenceDiagram
-    participant Strategy as "ClientStrategy"
-    participant CE as "ClientExchange"
-    participant EC as "ExecutionContextService"
-    participant DataSource as "Data Provider"
-    
-    Strategy->>CE: getCandles("BTCUSDT", "1m", 100)
-    CE->>EC: context.when
-    EC-->>CE: Date(2024-01-15 12:00:00)
-    
-    Note over CE: Calculate since time:<br/>when - (interval * limit)<br/>12:00:00 - (1m * 100) = 10:20:00
-    
-    CE->>DataSource: getCandles("BTCUSDT", "1m", since=10:20:00, limit=100)
-    DataSource-->>CE: candles[10:20:00 to 12:00:00]
-    
-    Note over CE: Filter candles:<br/>timestamp >= since<br/>timestamp <= when
-    
-    CE-->>Strategy: filteredCandles[100]
-```
+![Mermaid Diagram](./diagrams\34_ClientExchange_1.svg)
 
 **Implementation Details:**
 
@@ -200,32 +142,7 @@ async getNextCandles(
 
 #### Backtest vs Live Behavior
 
-```mermaid
-graph TB
-    subgraph "Backtest Mode"
-        BT_Context["when = Date(2024-01-01)"]
-        BT_Request["getNextCandles('BTCUSDT', '1m', 120)"]
-        BT_Check{"endTime > now?"}
-        BT_Fetch["Fetch candles from when to endTime"]
-        BT_Return["Return candles"]
-        
-        BT_Context --> BT_Request
-        BT_Request --> BT_Check
-        BT_Check -->|No<br/>Historical data| BT_Fetch
-        BT_Fetch --> BT_Return
-    end
-    
-    subgraph "Live Mode"
-        Live_Context["when = Date.now()"]
-        Live_Request["getNextCandles('BTCUSDT', '1m', 120)"]
-        Live_Check{"endTime > now?"}
-        Live_Empty["Return []"]
-        
-        Live_Context --> Live_Request
-        Live_Request --> Live_Check
-        Live_Check -->|Yes<br/>Future data| Live_Empty
-    end
-```
+![Mermaid Diagram](./diagrams\34_ClientExchange_2.svg)
 
 **Implementation Details:**
 
@@ -259,31 +176,7 @@ async getAveragePrice(symbol: string): Promise<number>
 
 #### VWAP Calculation Algorithm
 
-```mermaid
-flowchart TB
-    Start["getAveragePrice('BTCUSDT')"]
-    FetchCandles["getCandles('BTCUSDT', '1m', CC_AVG_PRICE_CANDLES_COUNT)"]
-    CheckEmpty{"candles.length === 0?"}
-    ThrowError["throw Error: no candles data"]
-    
-    CalcTypical["For each candle:<br/>typicalPrice = (high + low + close) / 3"]
-    SumPriceVol["sumPriceVolume += typicalPrice * volume"]
-    SumVolume["totalVolume += volume"]
-    
-    CheckVolume{"totalVolume === 0?"}
-    SimpleMean["Return average of close prices:<br/>sum(close) / candles.length"]
-    VWAP["Return VWAP:<br/>sumPriceVolume / totalVolume"]
-    
-    Start --> FetchCandles
-    FetchCandles --> CheckEmpty
-    CheckEmpty -->|Yes| ThrowError
-    CheckEmpty -->|No| CalcTypical
-    CalcTypical --> SumPriceVol
-    SumPriceVol --> SumVolume
-    SumVolume --> CheckVolume
-    CheckVolume -->|Yes| SimpleMean
-    CheckVolume -->|No| VWAP
-```
+![Mermaid Diagram](./diagrams\34_ClientExchange_3.svg)
 
 **Implementation Details:**
 
@@ -338,49 +231,7 @@ The `VALIDATE_NO_INCOMPLETE_CANDLES_FN` function detects anomalous candles that 
 
 #### Validation Algorithm
 
-```mermaid
-flowchart TB
-    Start["VALIDATE_NO_INCOMPLETE_CANDLES_FN(candles)"]
-    CheckEmpty{"candles.length === 0?"}
-    ReturnOK1["return (valid)"]
-    
-    CalcReference["Calculate reference price:<br/>- >= CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN:<br/>  use median of OHLC<br/>- < threshold: use average of OHLC"]
-    
-    CheckRefZero{"referencePrice === 0?"}
-    ThrowRefError["throw Error: all prices zero"]
-    
-    CalcThreshold["minValidPrice = referencePrice /<br/>CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR"]
-    
-    LoopCandles["For each candle[i]:"]
-    CheckFinite{"All OHLCV values finite?"}
-    ThrowFiniteError["throw Error: invalid numeric values"]
-    
-    CheckPositive{"All OHLCV > 0?<br/>(volume >= 0)"}
-    ThrowPositiveError["throw Error: zero or negative values"]
-    
-    CheckAnomaly{"All OHLC >= minValidPrice?"}
-    ThrowAnomalyError["throw Error: anomalously low price"]
-    
-    NextCandle["Next candle"]
-    ReturnOK2["return (valid)"]
-    
-    Start --> CheckEmpty
-    CheckEmpty -->|Yes| ReturnOK1
-    CheckEmpty -->|No| CalcReference
-    CalcReference --> CheckRefZero
-    CheckRefZero -->|Yes| ThrowRefError
-    CheckRefZero -->|No| CalcThreshold
-    CalcThreshold --> LoopCandles
-    LoopCandles --> CheckFinite
-    CheckFinite -->|No| ThrowFiniteError
-    CheckFinite -->|Yes| CheckPositive
-    CheckPositive -->|No| ThrowPositiveError
-    CheckPositive -->|Yes| CheckAnomaly
-    CheckAnomaly -->|No| ThrowAnomalyError
-    CheckAnomaly -->|Yes| NextCandle
-    NextCandle -->|More candles| CheckFinite
-    NextCandle -->|Done| ReturnOK2
-```
+![Mermaid Diagram](./diagrams\34_ClientExchange_4.svg)
 
 **Validation Checks:** [src/client/ClientExchange.ts:31-105]()
 
@@ -409,37 +260,7 @@ The `GET_CANDLES_FN` helper implements automatic retry with exponential backoff 
 
 #### Retry Flow
 
-```mermaid
-sequenceDiagram
-    participant CE as "ClientExchange"
-    participant Retry as "GET_CANDLES_FN"
-    participant Validate as "VALIDATE_NO_INCOMPLETE_CANDLES_FN"
-    participant Provider as "Data Provider"
-    
-    CE->>Retry: Request candles
-    
-    loop For i = 0 to CC_GET_CANDLES_RETRY_COUNT
-        Retry->>Provider: getCandles(symbol, interval, since, limit)
-        
-        alt Success
-            Provider-->>Retry: candles[]
-            Retry->>Validate: Validate candles
-            
-            alt Valid
-                Validate-->>Retry: OK
-                Retry-->>CE: candles[]
-            else Invalid
-                Validate-->>Retry: throw Error
-                Note over Retry: Log warning<br/>Sleep CC_GET_CANDLES_RETRY_DELAY_MS
-            end
-        else Failure
-            Provider-->>Retry: throw Error
-            Note over Retry: Log warning<br/>Sleep CC_GET_CANDLES_RETRY_DELAY_MS
-        end
-    end
-    
-    Retry-->>CE: throw lastError
-```
+![Mermaid Diagram](./diagrams\34_ClientExchange_5.svg)
 
 **Configuration Parameters:**
 - `CC_GET_CANDLES_RETRY_COUNT`: Number of retry attempts (default: 3) [src/config/params.ts:15]()
@@ -455,26 +276,7 @@ sequenceDiagram
 
 ### ExecutionContext Usage
 
-```mermaid
-graph LR
-    subgraph "ExecutionContextService"
-        When["context.when<br/>Date object"]
-        Symbol["context.symbol<br/>Trading pair"]
-        Backtest["context.backtest<br/>boolean flag"]
-    end
-    
-    subgraph "ClientExchange Methods"
-        GetCandles["getCandles()<br/>Fetch backwards from when"]
-        GetNext["getNextCandles()<br/>Fetch forwards from when"]
-        GetAvg["getAveragePrice()<br/>Use when as upper bound"]
-    end
-    
-    When -->|determines since time| GetCandles
-    When -->|determines start time| GetNext
-    When -->|determines upper bound| GetAvg
-    
-    Backtest -->|affects getNextCandles behavior| GetNext
-```
+![Mermaid Diagram](./diagrams\34_ClientExchange_6.svg)
 
 **Key Context Dependencies:**
 

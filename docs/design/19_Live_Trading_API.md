@@ -45,60 +45,7 @@ The `Live` object is a singleton instance of `LiveUtils` that provides five prim
 
 ## Live Execution Model
 
-```mermaid
-flowchart TB
-    Start["Live.run(symbol, context)"]
-    Init["Initialize Services<br/>Clear markdown/schedule<br/>Clear strategy cache<br/>Clear risk cache"]
-    Delegate["LiveCommandService.run()"]
-    Public["LiveLogicPublicService.run()"]
-    Private["LiveLogicPrivateService.run()"]
-    
-    Loop["Infinite while(true) Loop"]
-    Now["when = new Date()"]
-    Tick["StrategyGlobalService.tick(symbol, when, false)"]
-    Result["IStrategyTickResult"]
-    
-    Idle["action === 'idle'"]
-    Active["action === 'active'"]
-    Scheduled["action === 'scheduled'"]
-    Opened["action === 'opened'"]
-    Closed["action === 'closed'"]
-    
-    Sleep["sleep(TICK_TTL)<br/>Default: 61 seconds"]
-    Yield["yield result"]
-    
-    Recovery["Crash Recovery<br/>Load persisted state<br/>PersistSignalAdapter<br/>PersistScheduleAdapter<br/>PersistRiskAdapter"]
-    
-    Start --> Init
-    Init --> Delegate
-    Delegate --> Public
-    Public --> Private
-    Private --> Recovery
-    Recovery --> Loop
-    
-    Loop --> Now
-    Now --> Tick
-    Tick --> Result
-    
-    Result --> Idle
-    Result --> Active
-    Result --> Scheduled
-    Result --> Opened
-    Result --> Closed
-    
-    Idle --> Sleep
-    Active --> Sleep
-    Scheduled --> Sleep
-    Opened --> Yield
-    Closed --> Yield
-    
-    Sleep --> Loop
-    Yield --> Sleep
-    
-    style Opened fill:#e1f5ff
-    style Closed fill:#e1ffe1
-    style Recovery fill:#fff4e1
-```
+![Mermaid Diagram](./diagrams\19_Live_Trading_API_0.svg)
 
 Live trading executes an infinite polling loop where each iteration calls `tick()` with the current timestamp. The loop sleeps for `TICK_TTL` (61 seconds by default) between iterations to prevent excessive API calls. Only `opened` and `closed` signals are yielded to the consumer; `idle`, `active`, and `scheduled` states trigger sleep without yielding.
 
@@ -216,54 +163,7 @@ Live.dump(
 
 ## Crash Recovery Architecture
 
-```mermaid
-graph TB
-    subgraph "State Persistence"
-        PersistSignal["PersistSignalAdapter<br/>Active signal state<br/>priceOpen, priceTP, priceSL"]
-        PersistSchedule["PersistScheduleAdapter<br/>Scheduled signals<br/>Pending activation"]
-        PersistRisk["PersistRiskAdapter<br/>Active positions<br/>Portfolio state"]
-        PersistPartial["PersistPartialAdapter<br/>Partial profit/loss<br/>Milestone tracking"]
-    end
-    
-    subgraph "Strategy Lifecycle"
-        Init["ClientStrategy.waitForInit()"]
-        ReadState["Read persisted state<br/>from disk/DB"]
-        RestoreSignal["Restore active signal<br/>if exists"]
-        RestoreSchedule["Restore scheduled signals<br/>if exist"]
-        ContinueMonitoring["Continue TP/SL/timeout<br/>monitoring"]
-    end
-    
-    subgraph "Atomic Writes"
-        OnSchedule["onSchedule callback<br/>Write scheduled signal"]
-        OnOpen["onOpen callback<br/>Write active signal<br/>Remove from schedule"]
-        OnActive["onActive callback<br/>Update signal state"]
-        OnClose["onClose callback<br/>Remove signal"]
-        OnCancel["onCancel callback<br/>Remove scheduled signal"]
-    end
-    
-    Init --> ReadState
-    ReadState --> PersistSignal
-    ReadState --> PersistSchedule
-    ReadState --> PersistRisk
-    ReadState --> PersistPartial
-    
-    PersistSignal --> RestoreSignal
-    PersistSchedule --> RestoreSchedule
-    RestoreSignal --> ContinueMonitoring
-    RestoreSchedule --> ContinueMonitoring
-    
-    ContinueMonitoring --> OnSchedule
-    ContinueMonitoring --> OnOpen
-    ContinueMonitoring --> OnActive
-    ContinueMonitoring --> OnClose
-    ContinueMonitoring --> OnCancel
-    
-    OnSchedule --> PersistSchedule
-    OnOpen --> PersistSignal
-    OnActive --> PersistSignal
-    OnClose --> PersistSignal
-    OnCancel --> PersistSchedule
-```
+![Mermaid Diagram](./diagrams\19_Live_Trading_API_1.svg)
 
 Live trading persists critical state at each lifecycle transition to enable crash recovery. When the process restarts, `ClientStrategy.waitForInit()` blocks until persisted state is loaded from disk. If an active signal exists, monitoring of TP/SL/timeout conditions resumes seamlessly.
 
@@ -298,27 +198,7 @@ Each persistence adapter implements `IPersistBase` interface with atomic `writeV
 
 ## Service Delegation Chain
 
-```mermaid
-flowchart LR
-    LiveUtils["Live.run()<br/>LiveUtils"]
-    LiveCmd["LiveCommandService.run()<br/>Validation + Routing"]
-    LivePub["LiveLogicPublicService.run()<br/>Context Injection"]
-    LivePriv["LiveLogicPrivateService.run()<br/>Infinite Loop Implementation"]
-    StratGlobal["StrategyGlobalService.tick()<br/>ExecutionContext Wrapper"]
-    StratConn["StrategyConnectionService.tick()<br/>Memoized Instance Routing"]
-    ClientStrat["ClientStrategy.tick()<br/>Signal State Machine"]
-    
-    LiveUtils --> LiveCmd
-    LiveCmd --> LivePub
-    LivePub --> LivePriv
-    LivePriv --> StratGlobal
-    StratGlobal --> StratConn
-    StratConn --> ClientStrat
-    
-    Emit["signalLiveEmitter<br/>signalEmitter<br/>doneLiveSubject"]
-    
-    ClientStrat -.->|emits| Emit
-```
+![Mermaid Diagram](./diagrams\19_Live_Trading_API_2.svg)
 
 The Live API follows a multi-tier service architecture where each layer adds specific functionality:
 

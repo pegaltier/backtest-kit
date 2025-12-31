@@ -48,50 +48,7 @@ backtest-kit supports six predefined throttling intervals, each enforcing a mini
 
 ### Architecture Diagram
 
-```mermaid
-graph TB
-    subgraph "Strategy Execution Flow"
-        TICK["strategy.tick()<br/>(called every minute)"]
-        GET_SIGNAL["GET_SIGNAL_FN<br/>Signal generation wrapper"]
-        CHECK_INTERVAL["Check Interval Throttle"]
-        TIMESTAMP_CHECK{{"currentTime - lastSignalTimestamp<br/>< intervalMs?"}}
-        RETURN_NULL["return null<br/>(throttled)"]
-        UPDATE_TIMESTAMP["Update _lastSignalTimestamp"]
-        CALL_GET_SIGNAL["Execute user getSignal()"]
-        VALIDATE["Validate signal"]
-        RETURN_SIGNAL["return ISignalRow"]
-    end
-    
-    subgraph "State Storage"
-        LAST_TIMESTAMP["_lastSignalTimestamp<br/>(instance variable)"]
-        INTERVAL_CONFIG["interval: SignalInterval<br/>(from IStrategySchema)"]
-        INTERVAL_MINUTES["INTERVAL_MINUTES<br/>(lookup table)"]
-    end
-    
-    subgraph "Context Propagation"
-        EXEC_CTX["ExecutionContextService<br/>context.when (current time)"]
-    end
-    
-    TICK --> GET_SIGNAL
-    GET_SIGNAL --> CHECK_INTERVAL
-    CHECK_INTERVAL --> EXEC_CTX
-    CHECK_INTERVAL --> INTERVAL_CONFIG
-    CHECK_INTERVAL --> INTERVAL_MINUTES
-    CHECK_INTERVAL --> LAST_TIMESTAMP
-    CHECK_INTERVAL --> TIMESTAMP_CHECK
-    
-    TIMESTAMP_CHECK -->|"Yes (too soon)"| RETURN_NULL
-    TIMESTAMP_CHECK -->|"No (enough time passed)"| UPDATE_TIMESTAMP
-    
-    UPDATE_TIMESTAMP --> LAST_TIMESTAMP
-    UPDATE_TIMESTAMP --> CALL_GET_SIGNAL
-    CALL_GET_SIGNAL --> VALIDATE
-    VALIDATE --> RETURN_SIGNAL
-    
-    style TIMESTAMP_CHECK fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style RETURN_NULL fill:#ffe1e1,stroke:#333,stroke-width:2px
-    style RETURN_SIGNAL fill:#e1ffe1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\62_Interval_Throttling_0.svg)
 
 **Diagram: Interval Throttling Decision Flow**
 
@@ -191,39 +148,7 @@ addStrategy({
 
 In backtest mode, `ClientStrategy.tick()` is called once per candle iteration. The throttle ensures `getSignal()` only executes when the time difference between candles exceeds the configured interval:
 
-```mermaid
-sequenceDiagram
-    participant Frame as FrameCoreService
-    participant Tick as ClientStrategy.tick()
-    participant GetSignal as GET_SIGNAL_FN
-    participant User as User's getSignal()
-    
-    Note over Frame: Iterating candles at 1-minute intervals
-    
-    Frame->>Tick: tick() @ 00:00:00
-    Tick->>GetSignal: Check interval
-    GetSignal->>GetSignal: _lastSignalTimestamp = null
-    Note over GetSignal: First call, no throttle
-    GetSignal->>User: Execute getSignal()
-    User-->>GetSignal: Return signal
-    GetSignal->>GetSignal: _lastSignalTimestamp = 00:00:00
-    GetSignal-->>Tick: Return signal
-    
-    Frame->>Tick: tick() @ 00:01:00
-    Tick->>GetSignal: Check interval (interval='5m')
-    GetSignal->>GetSignal: 00:01:00 - 00:00:00 = 1min
-    Note over GetSignal: 1min < 5min, throttled
-    GetSignal-->>Tick: return null (throttled)
-    
-    Frame->>Tick: tick() @ 00:05:00
-    Tick->>GetSignal: Check interval
-    GetSignal->>GetSignal: 00:05:00 - 00:00:00 = 5min
-    Note over GetSignal: 5min >= 5min, allow
-    GetSignal->>User: Execute getSignal()
-    User-->>GetSignal: Return signal
-    GetSignal->>GetSignal: _lastSignalTimestamp = 00:05:00
-    GetSignal-->>Tick: Return signal
-```
+![Mermaid Diagram](./diagrams\62_Interval_Throttling_1.svg)
 
 **Diagram: Interval Throttling in Backtest Mode**
 
@@ -235,31 +160,7 @@ sequenceDiagram
 
 In live mode, `ClientStrategy.tick()` is called continuously in a loop with `TICK_TTL` sleep intervals (typically 1 minute). The throttle prevents redundant `getSignal()` executions between meaningful time boundaries:
 
-```mermaid
-graph LR
-    subgraph "Live Trading Loop"
-        LOOP_START["Loop iteration"]
-        SLEEP["sleep(TICK_TTL)<br/>(60 seconds)"]
-        TICK["strategy.tick()"]
-        CHECK_THROTTLE["Check interval throttle"]
-        THROTTLED{{"Throttled?"}}
-        SKIP["Skip getSignal()<br/>(return null)"]
-        EXECUTE["Execute getSignal()"]
-    end
-    
-    LOOP_START --> TICK
-    TICK --> CHECK_THROTTLE
-    CHECK_THROTTLE --> THROTTLED
-    THROTTLED -->|Yes| SKIP
-    THROTTLED -->|No| EXECUTE
-    SKIP --> SLEEP
-    EXECUTE --> SLEEP
-    SLEEP --> LOOP_START
-    
-    style THROTTLED fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style SKIP fill:#ffe1e1,stroke:#333,stroke-width:2px
-    style EXECUTE fill:#e1ffe1,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\62_Interval_Throttling_2.svg)
 
 **Diagram: Interval Throttling in Live Mode Loop**
 

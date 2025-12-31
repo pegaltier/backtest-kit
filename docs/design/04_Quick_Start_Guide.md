@@ -31,26 +31,7 @@ This guide demonstrates a minimal working example of the backtest-kit framework.
 
 A minimal backtest workflow consists of four registration steps followed by execution:
 
-```mermaid
-graph TB
-    addExchange["addExchange()<br/>Register data source"]
-    addFrame["addFrame()<br/>Define backtest period"]
-    addStrategy["addStrategy()<br/>Define signal logic"]
-    BacktestRun["Backtest.run()<br/>Execute simulation"]
-    Results["Get Statistics<br/>Backtest.getData()"]
-    
-    addExchange --> addFrame
-    addFrame --> addStrategy
-    addStrategy --> BacktestRun
-    BacktestRun --> Results
-    
-    addExchange -.->|"IExchangeSchema"| ExchangeName["exchangeName: 'binance'"]
-    addFrame -.->|"IFrameSchema"| FrameName["frameName: '1d-test'"]
-    addStrategy -.->|"IStrategySchema"| StrategyName["strategyName: 'my-strategy'"]
-    BacktestRun -.->|references| ExchangeName
-    BacktestRun -.->|references| FrameName
-    BacktestRun -.->|references| StrategyName
-```
+![Mermaid Diagram](./diagrams\04_Quick_Start_Guide_0.svg)
 
 **Sources:** [src/index.ts:1-10](), [types.d.ts:1-100]()
 
@@ -396,51 +377,7 @@ Backtest.background("BTCUSDT", {
 
 ## Execution Flow Diagram
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant BacktestLogicPrivateService
-    participant FrameGlobalService
-    participant StrategyGlobalService
-    participant ClientStrategy
-    participant ClientExchange
-    participant signalBacktestEmitter
-    
-    User->>BacktestLogicPrivateService: Backtest.run(symbol, options)
-    BacktestLogicPrivateService->>FrameGlobalService: getTimeframe(symbol, frameName)
-    FrameGlobalService-->>BacktestLogicPrivateService: timeframes[Date[]]
-    
-    loop For each timeframe
-        BacktestLogicPrivateService->>StrategyGlobalService: tick(symbol, strategyName)
-        StrategyGlobalService->>ClientStrategy: tick(symbol, strategyName)
-        ClientStrategy->>ClientExchange: getAveragePrice(symbol)
-        ClientExchange-->>ClientStrategy: currentPrice
-        
-        alt No active signal
-            ClientStrategy->>ClientStrategy: getSignal()
-            ClientStrategy-->>StrategyGlobalService: IStrategyTickResultOpened
-        else Active signal
-            ClientStrategy->>ClientExchange: getAveragePrice(symbol)
-            ClientExchange-->>ClientStrategy: currentPrice
-            ClientStrategy->>ClientStrategy: Check TP/SL/Timeout
-            ClientStrategy-->>StrategyGlobalService: IStrategyTickResultActive|Closed
-        end
-        
-        StrategyGlobalService-->>BacktestLogicPrivateService: result
-        BacktestLogicPrivateService->>signalBacktestEmitter: emit(result)
-        BacktestLogicPrivateService->>User: yield result
-        
-        alt Signal opened
-            BacktestLogicPrivateService->>ClientExchange: getNextCandles(symbol, interval, limit)
-            ClientExchange-->>BacktestLogicPrivateService: futureCandles[]
-            BacktestLogicPrivateService->>ClientStrategy: backtest(symbol, strategyName, futureCandles)
-            ClientStrategy-->>BacktestLogicPrivateService: IStrategyBacktestResult
-            BacktestLogicPrivateService->>BacktestLogicPrivateService: Skip timeframes until close
-        end
-    end
-    
-    BacktestLogicPrivateService->>User: AsyncGenerator complete
-```
+![Mermaid Diagram](./diagrams\04_Quick_Start_Guide_1.svg)
 
 **Sources:** [src/lib/services/logic/BacktestLogicPrivateService.ts:1-200](), [src/client/ClientStrategy.ts:1-100]()
 

@@ -45,55 +45,7 @@ Global Services occupy a specific niche in the service architecture distinct fro
 
 ### Architectural Position
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        AddFunctions["add* functions<br/>addStrategy, addRisk, etc."]
-        ClientClasses["Client Classes<br/>ClientStrategy, ClientRisk"]
-    end
-    
-    subgraph "Global Services Layer"
-        RGS["RiskGlobalService"]
-        SGS["SizingGlobalService"]
-        PGS["PartialGlobalService"]
-        OGS["OptimizerGlobalService"]
-    end
-    
-    subgraph "Validation Layer"
-        ValidationServices["*ValidationService<br/>Schema existence checks"]
-    end
-    
-    subgraph "Connection Layer"
-        ConnectionServices["*ConnectionService<br/>Memoized client instances"]
-    end
-    
-    subgraph "Schema Layer"
-        SchemaServices["*SchemaService<br/>ToolRegistry storage"]
-    end
-    
-    AddFunctions -->|"Direct access"| ValidationServices
-    AddFunctions -->|"Direct access"| SchemaServices
-    
-    ClientClasses -->|"Runtime delegation"| RGS
-    ClientClasses -->|"Runtime delegation"| PGS
-    
-    RGS --> ValidationServices
-    SGS --> ValidationServices
-    PGS --> ValidationServices
-    OGS --> ValidationServices
-    
-    RGS --> ConnectionServices
-    SGS --> ConnectionServices
-    PGS --> ConnectionServices
-    OGS --> ConnectionServices
-    
-    ConnectionServices --> SchemaServices
-    
-    style RGS fill:#f9f9f9
-    style SGS fill:#f9f9f9
-    style PGS fill:#f9f9f9
-    style OGS fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\45_Global_Services_0.svg)
 
 **Purpose**: This diagram shows how Global Services fit between client classes and connection services. Unlike `add*` functions which access schema/validation services directly, global services provide validated entry points for runtime operations.
 
@@ -121,20 +73,7 @@ All Global Services follow a consistent three-step pattern for public methods:
 
 ### Implementation Pattern
 
-```mermaid
-graph LR
-    subgraph "PartialGlobalService.profit() Example"
-        Input["Method Called<br/>profit(symbol, data, ...)"]
-        Log["1. Log Operation<br/>loggerService.log()"]
-        Validate["2. Validate Strategy<br/>validate(strategyName)"]
-        Delegate["3. Delegate to Connection<br/>partialConnectionService.profit()"]
-    end
-    
-    Input --> Log
-    Log --> Validate
-    Validate --> Delegate
-    Delegate --> Return["Return Result"]
-```
+![Mermaid Diagram](./diagrams\45_Global_Services_1.svg)
 
 **Purpose**: This diagram shows the standard three-step pattern that all Global Service methods follow: log the operation, validate component existence, then delegate to the corresponding Connection Service.
 
@@ -189,25 +128,7 @@ All Global Services inject three types of dependencies via the DI container:
 
 ### Injected Dependencies
 
-```mermaid
-graph TB
-    subgraph "PartialGlobalService Dependencies"
-        PGS["PartialGlobalService"]
-        
-        Logger["LoggerService<br/>Logging operations"]
-        Conn["PartialConnectionService<br/>Client instance factory"]
-        
-        StratVal["StrategyValidationService<br/>Strategy validation"]
-        StratSchema["StrategySchemaService<br/>Strategy retrieval"]
-        RiskVal["RiskValidationService<br/>Risk validation"]
-    end
-    
-    PGS -->|"inject(TYPES.loggerService)"| Logger
-    PGS -->|"inject(TYPES.partialConnectionService)"| Conn
-    PGS -->|"inject(TYPES.strategyValidationService)"| StratVal
-    PGS -->|"inject(TYPES.strategySchemaService)"| StratSchema
-    PGS -->|"inject(TYPES.riskValidationService)"| RiskVal
-```
+![Mermaid Diagram](./diagrams\45_Global_Services_2.svg)
 
 **Purpose**: This diagram shows the dependency injection pattern used by PartialGlobalService. All dependencies are injected using the `inject()` function with TYPES symbols.
 
@@ -252,40 +173,7 @@ Global Services use memoization to avoid redundant validation calls for the same
 
 ### Validation Caching Pattern
 
-```mermaid
-sequenceDiagram
-    participant CS as ClientStrategy
-    participant PGS as PartialGlobalService
-    participant MemoValidate as validate() memoized
-    participant SVS as StrategyValidationService
-    participant PCS as PartialConnectionService
-    
-    Note over CS,PCS: First call for "my-strategy"
-    CS->>PGS: profit(symbol, data, ...)
-    PGS->>PGS: loggerService.log()
-    PGS->>MemoValidate: validate("my-strategy", source)
-    
-    MemoValidate->>SVS: validate("my-strategy", source)
-    SVS-->>MemoValidate: validation complete
-    Note over MemoValidate: Cache result for "my-strategy"
-    MemoValidate-->>PGS: validated
-    
-    PGS->>PCS: profit(symbol, data, ...)
-    PCS-->>PGS: result
-    PGS-->>CS: result
-    
-    Note over CS,PCS: Second call for "my-strategy"
-    CS->>PGS: profit(symbol, data2, ...)
-    PGS->>PGS: loggerService.log()
-    PGS->>MemoValidate: validate("my-strategy", source)
-    
-    Note over MemoValidate: Return cached result instantly
-    MemoValidate-->>PGS: validated (cached)
-    
-    PGS->>PCS: profit(symbol, data2, ...)
-    PCS-->>PGS: result
-    PGS-->>CS: result
-```
+![Mermaid Diagram](./diagrams\45_Global_Services_3.svg)
 
 **Purpose**: This sequence diagram shows how memoization prevents redundant validation. The first call performs validation and caches the result. Subsequent calls for the same strategy return immediately from cache.
 
@@ -338,45 +226,7 @@ PartialGlobalService coordinates partial profit/loss milestone tracking. It vali
 
 ### Service Overview
 
-```mermaid
-graph TB
-    subgraph "ClientStrategy Execution"
-        CS["ClientStrategy.tick()"]
-        Monitor["Monitor active signal<br/>Calculate revenuePercent"]
-    end
-    
-    subgraph "PartialGlobalService"
-        PGS_Profit["profit()<br/>Log + Validate + Delegate"]
-        PGS_Loss["loss()<br/>Log + Validate + Delegate"]
-        PGS_Clear["clear()<br/>Log + Validate + Delegate"]
-        PGS_Validate["validate() memoized<br/>Check strategy + risks"]
-    end
-    
-    subgraph "PartialConnectionService"
-        PCS["getPartial() memoized<br/>One ClientPartial per signal ID"]
-        CP["ClientPartial<br/>Track profit/loss levels"]
-    end
-    
-    subgraph "Event System"
-        Events["partialProfitSubject<br/>partialLossSubject"]
-    end
-    
-    CS --> Monitor
-    Monitor -->|"revenuePercent > 0"| PGS_Profit
-    Monitor -->|"revenuePercent < 0"| PGS_Loss
-    CS -->|"Signal closes"| PGS_Clear
-    
-    PGS_Profit --> PGS_Validate
-    PGS_Loss --> PGS_Validate
-    PGS_Clear --> PGS_Validate
-    
-    PGS_Profit --> PCS
-    PGS_Loss --> PCS
-    PGS_Clear --> PCS
-    
-    PCS --> CP
-    CP --> Events
-```
+![Mermaid Diagram](./diagrams\45_Global_Services_4.svg)
 
 **Purpose**: This diagram shows PartialGlobalService's role in the partial tracking system. ClientStrategy calls the global service, which validates and delegates to PartialConnectionService, which manages ClientPartial instances.
 
@@ -464,41 +314,7 @@ Global Services are primarily used by client classes during runtime execution, n
 
 ### Usage Pattern: ClientStrategy → PartialGlobalService
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant ClientStrategy
-    participant PartialGlobalService
-    participant PartialConnectionService
-    participant ClientPartial
-    participant Events
-    
-    Note over User,Events: Signal monitoring in ClientStrategy.tick()
-    
-    User->>ClientStrategy: new ClientStrategy(params)
-    Note over ClientStrategy: params.partial = PartialGlobalService (injected)
-    
-    ClientStrategy->>ClientStrategy: Monitor active signal
-    Note over ClientStrategy: Calculate revenuePercent
-    
-    ClientStrategy->>PartialGlobalService: profit(symbol, data, currentPrice, 15.5, false, when)
-    PartialGlobalService->>PartialGlobalService: Log operation
-    PartialGlobalService->>PartialGlobalService: validate(strategyName) - memoized
-    PartialGlobalService->>PartialConnectionService: profit(...)
-    
-    PartialConnectionService->>PartialConnectionService: getPartial(signalId, backtest) - memoized
-    PartialConnectionService->>ClientPartial: profit(...)
-    
-    ClientPartial->>ClientPartial: Check profit levels (10%, 20%, ...)
-    Note over ClientPartial: 10% already emitted, emit 20%
-    
-    ClientPartial->>Events: partialProfitSubject.next({level: 20, ...})
-    Events-->>User: Event emitted to listeners
-    
-    ClientPartial-->>PartialConnectionService: complete
-    PartialConnectionService-->>PartialGlobalService: complete
-    PartialGlobalService-->>ClientStrategy: complete
-```
+![Mermaid Diagram](./diagrams\45_Global_Services_5.svg)
 
 **Purpose**: This sequence diagram shows the complete call chain from ClientStrategy through PartialGlobalService to ClientPartial. Global Services act as validated entry points, not as direct public APIs.
 
@@ -677,45 +493,7 @@ Each Global Service manages exactly one component type or execution mode:
 
 ## Delegation Flow Summary
 
-```mermaid
-graph TB
-    User["User Code"]
-    
-    subgraph "Global Services Layer"
-        CompGlobal["Component Global Services<br/>Strategy, Exchange, Risk, etc."]
-        ExecGlobal["Execution Global Services<br/>Backtest, Live"]
-    end
-    
-    subgraph "Validation Layer"
-        Validation["*ValidationService<br/>Schema validation<br/>Memoized checks"]
-    end
-    
-    subgraph "Connection/Logic Layer"
-        Connection["*ConnectionService<br/>Memoized client instances"]
-        Logic["*LogicPublicService<br/>Context management"]
-    end
-    
-    subgraph "Client Layer"
-        Clients["Client Classes<br/>Business logic implementation"]
-    end
-    
-    User -->|"Component operations"| CompGlobal
-    User -->|"Execution operations"| ExecGlobal
-    
-    CompGlobal -->|"1. Validate"| Validation
-    CompGlobal -->|"2. Delegate"| Connection
-    
-    ExecGlobal -->|"1. Validate"| Validation
-    ExecGlobal -->|"2. Delegate"| Logic
-    
-    Connection --> Clients
-    Logic --> Connection
-    Connection -->|"Return results"| CompGlobal
-    Logic -->|"Return results"| ExecGlobal
-    
-    CompGlobal -->|"Results"| User
-    ExecGlobal -->|"Results"| User
-```
+![Mermaid Diagram](./diagrams\45_Global_Services_6.svg)
 
 **Purpose**: This diagram summarizes the complete delegation flow for both Component and Execution Global Services. Both types perform validation first, but Component services delegate to Connection Services while Execution services delegate to Logic Services.
 

@@ -46,62 +46,7 @@ Traditional backtesting frameworks require manual timestamp management, making i
 
 ## Architecture Overview: Context Propagation
 
-```mermaid
-graph TB
-    subgraph "User Code Layer"
-        STRATEGY["Strategy.getSignal(symbol, when)"]
-        GET_CANDLES["getCandles(symbol, interval, limit)"]
-        GET_PRICE["getAveragePrice(symbol)"]
-        GET_DATE["getDate()"]
-        GET_MODE["getMode()"]
-    end
-    
-    subgraph "Execution Engine"
-        BT_LOGIC["BacktestLogicPrivateService<br/>Iterates timeframe<br/>Sets context per tick"]
-        LIVE_LOGIC["LiveLogicPrivateService<br/>Uses Date.now()<br/>Sets context continuously"]
-        WALKER["WalkerLogicPrivateService<br/>Delegates to Backtest"]
-    end
-    
-    subgraph "Context Layer (AsyncLocalStorage)"
-        EXEC_CTX["ExecutionContextService<br/>runInContext(callback, context)"]
-        CTX_STORAGE["IExecutionContext<br/>{ symbol, when, backtest }"]
-    end
-    
-    subgraph "Client Implementations"
-        CLIENT_STRATEGY["ClientStrategy.tick()<br/>Reads context.when<br/>Throttles getSignal"]
-        CLIENT_EXCHANGE["ClientExchange.getCandles()<br/>Filters data <= context.when<br/>Returns historical only"]
-        CLIENT_FRAME["ClientFrame.getTimeframe()<br/>Generates timestamps<br/>For backtest iteration"]
-    end
-    
-    subgraph "Data Sources"
-        EXCHANGE_SCHEMA["ExchangeSchema.getCandles<br/>(CCXT, database, mock)"]
-        CANDLES["OHLCV Candle Data<br/>Sorted by timestamp"]
-    end
-    
-    BT_LOGIC -->|"runInContext<br/>{when: frameTimestamp}"| EXEC_CTX
-    LIVE_LOGIC -->|"runInContext<br/>{when: Date.now()}"| EXEC_CTX
-    WALKER --> BT_LOGIC
-    
-    EXEC_CTX -->|"Stores in AsyncLocalStorage"| CTX_STORAGE
-    
-    STRATEGY --> GET_CANDLES
-    STRATEGY --> GET_PRICE
-    STRATEGY --> GET_DATE
-    STRATEGY --> GET_MODE
-    
-    GET_CANDLES -->|"Reads context.when"| CLIENT_EXCHANGE
-    GET_PRICE -->|"Reads context.when"| CLIENT_EXCHANGE
-    GET_DATE -->|"Returns context.when"| CTX_STORAGE
-    GET_MODE -->|"Returns context.backtest"| CTX_STORAGE
-    
-    CLIENT_STRATEGY -->|"Uses context.when"| STRATEGY
-    CLIENT_EXCHANGE -->|"Filters by context.when"| EXCHANGE_SCHEMA
-    EXCHANGE_SCHEMA --> CANDLES
-    
-    style EXEC_CTX fill:#f9f,stroke:#333,stroke-width:3px
-    style CTX_STORAGE fill:#ff9,stroke:#333,stroke-width:2px
-    style CLIENT_EXCHANGE fill:#9ff,stroke:#333,stroke-width:2px
-```
+![Mermaid Diagram](./diagrams\09_Temporal_Isolation_and_Look-Ahead_Prevention_0.svg)
 
 **Key Components**:
 
@@ -119,66 +64,7 @@ graph TB
 
 ### Data Access Timeline
 
-```mermaid
-graph LR
-    subgraph "Historical Data (Exchange)"
-        C1["Candle<br/>12:00"]
-        C2["Candle<br/>12:01"]
-        C3["Candle<br/>12:02"]
-        C4["Candle<br/>12:03"]
-        C5["Candle<br/>12:04"]
-        C6["Candle<br/>12:05"]
-        C7["Candle<br/>12:06"]
-        C8["Candle<br/>12:07"]
-    end
-    
-    subgraph "Backtest Execution"
-        T1["Tick 1<br/>context.when=12:02"]
-        T2["Tick 2<br/>context.when=12:03"]
-        T3["Tick 3<br/>context.when=12:04"]
-    end
-    
-    subgraph "Accessible Data"
-        A1["getCandles()<br/>returns [12:00, 12:01, 12:02]"]
-        A2["getCandles()<br/>returns [12:00, 12:01, 12:02, 12:03]"]
-        A3["getCandles()<br/>returns [12:00, 12:01, 12:02, 12:03, 12:04]"]
-    end
-    
-    subgraph "Future Data (BLOCKED)"
-        BLOCK1["12:03-12:07<br/>NOT ACCESSIBLE"]
-        BLOCK2["12:04-12:07<br/>NOT ACCESSIBLE"]
-        BLOCK3["12:05-12:07<br/>NOT ACCESSIBLE"]
-    end
-    
-    T1 -->|"Filter: timestamp <= 12:02"| A1
-    T2 -->|"Filter: timestamp <= 12:03"| A2
-    T3 -->|"Filter: timestamp <= 12:04"| A3
-    
-    T1 -.->|"Blocked"| BLOCK1
-    T2 -.->|"Blocked"| BLOCK2
-    T3 -.->|"Blocked"| BLOCK3
-    
-    C1 --> A1
-    C2 --> A1
-    C3 --> A1
-    
-    C1 --> A2
-    C2 --> A2
-    C3 --> A2
-    C4 --> A2
-    
-    C1 --> A3
-    C2 --> A3
-    C3 --> A3
-    C4 --> A3
-    C5 --> A3
-    
-    C4 -.-> BLOCK1
-    C5 -.-> BLOCK1
-    C6 -.-> BLOCK1
-    C7 -.-> BLOCK1
-    C8 -.-> BLOCK1
-```
+![Mermaid Diagram](./diagrams\09_Temporal_Isolation_and_Look-Ahead_Prevention_1.svg)
 
 ### Filtering Logic Sequence
 
@@ -257,29 +143,7 @@ await ExecutionContextService.runInContext(
 
 ### getCandles()
 
-```mermaid
-graph TD
-    USER["User Code<br/>getCandles('BTCUSDT', '1h', 24)"]
-    GLOBAL["StrategyGlobalService.getCandles()"]
-    CONNECTION["StrategyConnectionService"]
-    CLIENT["ClientExchange instance"]
-    READ_CTX["execution.context.when"]
-    FILTER["candles.filter(c => c.timestamp <= when)"]
-    SCHEMA["ExchangeSchema.getCandles()"]
-    DATA["Raw OHLCV Data"]
-    
-    USER --> GLOBAL
-    GLOBAL --> CONNECTION
-    CONNECTION --> CLIENT
-    CLIENT --> READ_CTX
-    CLIENT --> SCHEMA
-    SCHEMA --> DATA
-    DATA --> FILTER
-    FILTER --> CLIENT
-    CLIENT --> USER
-    
-    READ_CTX -.->|"Provides temporal boundary"| FILTER
-```
+![Mermaid Diagram](./diagrams\09_Temporal_Isolation_and_Look-Ahead_Prevention_2.svg)
 
 **Function Signature**:
 ```typescript
@@ -367,32 +231,7 @@ const candles1h = await getCandles(symbol, "1h", 24);  // Last 24 hours
 
 ### Automatic Synchronization
 
-```mermaid
-graph TD
-    CTX["ExecutionContext<br/>when = 2024-01-01 12:30:00"]
-    
-    CALL1["getCandles('1m', 30)"]
-    CALL2["getCandles('5m', 24)"]
-    CALL3["getCandles('1h', 24)"]
-    
-    FILTER1["Filter: timestamp <= 12:30<br/>Returns 12:01-12:30"]
-    FILTER2["Filter: timestamp <= 12:30<br/>Returns 10:35-12:30"]
-    FILTER3["Filter: timestamp <= 12:30<br/>Returns 01/01 12:00-12:00"]
-    
-    SYNC["All data aligned to same<br/>'when' timestamp<br/>IMPOSSIBLE to access future"]
-    
-    CTX --> CALL1
-    CTX --> CALL2
-    CTX --> CALL3
-    
-    CALL1 --> FILTER1
-    CALL2 --> FILTER2
-    CALL3 --> FILTER3
-    
-    FILTER1 --> SYNC
-    FILTER2 --> SYNC
-    FILTER3 --> SYNC
-```
+![Mermaid Diagram](./diagrams\09_Temporal_Isolation_and_Look-Ahead_Prevention_3.svg)
 
 **Guarantee**: All data fetched within a single `runInContext()` callback shares the same temporal boundary. Look-ahead bias across timeframes is architecturally impossible.
 
@@ -470,32 +309,7 @@ Live.background("BTCUSDT", {
 
 ### AsyncLocalStorage Behavior
 
-```mermaid
-sequenceDiagram
-    participant Engine as BacktestLogicPrivateService
-    participant CtxService as ExecutionContextService
-    participant ALS as AsyncLocalStorage
-    participant Strategy as ClientStrategy.tick()
-    participant UserCode as getSignal()
-    participant Exchange as ClientExchange.getCandles()
-    participant Schema as ExchangeSchema.getCandles()
-    
-    Engine->>CtxService: runInContext(callback, {when: T1})
-    CtxService->>ALS: store.run(context, callback)
-    ALS->>Strategy: Execute callback
-    Strategy->>UserCode: Call getSignal(symbol, when)
-    UserCode->>Exchange: getCandles("BTCUSDT", "1h", 24)
-    Exchange->>ALS: Read context (implicit)
-    ALS-->>Exchange: {symbol, when: T1, backtest: true}
-    Exchange->>Schema: Fetch raw candles
-    Schema-->>Exchange: All available candles
-    Exchange->>Exchange: Filter: timestamp <= T1
-    Exchange-->>UserCode: Historical candles only
-    UserCode-->>Strategy: Signal or null
-    Strategy-->>ALS: Callback completes
-    ALS->>CtxService: Context destroyed
-    CtxService-->>Engine: Result
-```
+![Mermaid Diagram](./diagrams\09_Temporal_Isolation_and_Look-Ahead_Prevention_4.svg)
 
 **Key Characteristics**:
 1. **No explicit parameter passing**: `when` timestamp never appears in user function signatures

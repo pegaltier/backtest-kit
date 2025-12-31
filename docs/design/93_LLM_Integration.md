@@ -42,51 +42,7 @@ The optimizer integrates with **Ollama** hosting the `deepseek-v3.1:671b` model.
 
 **LLM Integration Data Flow**
 
-```mermaid
-graph TB
-    subgraph "ClientOptimizer Data Collection"
-        GET_STRATEGY_DATA_FN["GET_STRATEGY_DATA_FN<br/>Iterates rangeTrain"]
-        RESOLVE_PAGINATION_FN["RESOLVE_PAGINATION_FN<br/>iterateDocuments<br/>distinctDocuments"]
-        DEFAULT_USER_FN["DEFAULT_USER_FN<br/>source.user()"]
-        DEFAULT_ASSISTANT_FN["DEFAULT_ASSISTANT_FN<br/>source.assistant()"]
-    end
-    
-    subgraph "OptimizerTemplateService"
-        getUserMessage["getUserMessage()<br/>Default formatter"]
-        getAssistantMessage["getAssistantMessage()<br/>Default formatter"]
-        getTextTemplate["getTextTemplate()<br/>Generates text() helper"]
-        getJsonTemplate["getJsonTemplate()<br/>Generates json() helper"]
-        getJsonDumpTemplate["getJsonDumpTemplate()<br/>Generates dumpJson() helper"]
-    end
-    
-    subgraph "Generated Strategy Code"
-        getSignal["addStrategy.getSignal<br/>Multi-timeframe analysis"]
-        text_helper["async text(messages)"]
-        json_helper["async json(messages)"]
-        dumpJson_helper["async dumpJson(resultId, history, result)"]
-    end
-    
-    subgraph "Ollama API"
-        ollama_chat["ollama.chat()<br/>model: deepseek-v3.1:671b<br/>host: https://ollama.com"]
-        json_format["format: JSON schema<br/>position, priceOpen,<br/>priceTakeProfit, priceStopLoss"]
-    end
-    
-    GET_STRATEGY_DATA_FN --> RESOLVE_PAGINATION_FN
-    RESOLVE_PAGINATION_FN --> DEFAULT_USER_FN
-    RESOLVE_PAGINATION_FN --> DEFAULT_ASSISTANT_FN
-    DEFAULT_USER_FN --> getUserMessage
-    DEFAULT_ASSISTANT_FN --> getAssistantMessage
-    
-    getTextTemplate --> text_helper
-    getJsonTemplate --> json_helper
-    getJsonDumpTemplate --> dumpJson_helper
-    
-    getSignal --> json_helper
-    json_helper --> ollama_chat
-    json_helper --> json_format
-    json_format --> ollama_chat
-    ollama_chat --> dumpJson_helper
-```
+![Mermaid Diagram](./diagrams\93_LLM_Integration_0.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:99-215](), [src/lib/services/template/OptimizerTemplateService.ts:1-27](), [src/lib/services/template/OptimizerTemplateService.ts:168-304]()
 
@@ -98,45 +54,7 @@ The `GET_STRATEGY_DATA_FN` function in `ClientOptimizer` builds conversation his
 
 **Message Construction Flow in GET_STRATEGY_DATA_FN**
 
-```mermaid
-graph TB
-    START["GET_STRATEGY_DATA_FN(symbol, self)"]
-    ITERATE_RANGES["for (rangeTrain)"]
-    ITERATE_SOURCES["for (source)"]
-    CHECK_TYPE["typeof source === 'function'"]
-    
-    subgraph "Function Source Branch"
-        FETCH_FN["RESOLVE_PAGINATION_FN(source, filterData)"]
-        USER_DEFAULT["DEFAULT_USER_FN(symbol, data, name, self)"]
-        ASST_DEFAULT["DEFAULT_ASSISTANT_FN(symbol, data, name, self)"]
-    end
-    
-    subgraph "Object Source Branch"
-        FETCH_OBJ["RESOLVE_PAGINATION_FN(source.fetch, filterData)"]
-        USER_CUSTOM["source.user(symbol, data, name, self)"]
-        ASST_CUSTOM["source.assistant(symbol, data, name, self)"]
-    end
-    
-    PUSH_MSG["messageList.push({role: 'user', content},<br/>{role: 'assistant', content})"]
-    GET_PROMPT["getPrompt(symbol, messageList)"]
-    STRATEGY_OBJ["strategyList.push({symbol, name,<br/>messages, strategy})"]
-    
-    START --> ITERATE_RANGES
-    ITERATE_RANGES --> ITERATE_SOURCES
-    ITERATE_SOURCES --> CHECK_TYPE
-    CHECK_TYPE -->|true| FETCH_FN
-    CHECK_TYPE -->|false| FETCH_OBJ
-    FETCH_FN --> USER_DEFAULT
-    FETCH_FN --> ASST_DEFAULT
-    FETCH_OBJ --> USER_CUSTOM
-    FETCH_OBJ --> ASST_CUSTOM
-    USER_DEFAULT --> PUSH_MSG
-    ASST_DEFAULT --> PUSH_MSG
-    USER_CUSTOM --> PUSH_MSG
-    ASST_CUSTOM --> PUSH_MSG
-    PUSH_MSG --> GET_PROMPT
-    GET_PROMPT --> STRATEGY_OBJ
-```
+![Mermaid Diagram](./diagrams\93_LLM_Integration_1.svg)
 
 **Sources:** [src/client/ClientOptimizer.ts:99-215]()
 
@@ -199,23 +117,7 @@ The `getTextTemplate()` method generates a `text(messages)` helper for fundament
 
 **text() Function Structure**
 
-```mermaid
-graph TB
-    text_call["text(messages)"]
-    ollama_init["ollama = new Ollama({host, headers})"]
-    system_msg["Prepend system message:<br/>'В ответ напиши торговую стратегию<br/>где нет ничего лишнего'"]
-    user_final["Append user message:<br/>'На каких условиях мне купить {symbol}?<br/>Дай анализ рынка на основе<br/>поддержки/сопротивления'"]
-    ollama_chat["response = await ollama.chat({<br/>model: 'deepseek-v3.1:671b',<br/>messages: [system, ...messages, user]<br/>})"]
-    extract["content = response.message.content.trim()"]
-    escape["return content with escaped<br/>backslashes, backticks, dollars, quotes"]
-    
-    text_call --> ollama_init
-    ollama_init --> system_msg
-    system_msg --> user_final
-    user_final --> ollama_chat
-    ollama_chat --> extract
-    extract --> escape
-```
+![Mermaid Diagram](./diagrams\93_LLM_Integration_2.svg)
 
 **Sources:** [src/lib/services/template/OptimizerTemplateService.ts:555-612]()
 
@@ -251,23 +153,7 @@ The `getJsonTemplate()` method generates a `json(messages)` helper that enforces
 
 **json() Function Structure**
 
-```mermaid
-graph TB
-    json_call["json(messages)"]
-    ollama_init["ollama = new Ollama({host, headers})"]
-    system_msg["Prepend system message with<br/>trading rules (position types,<br/>price levels, time estimates)"]
-    format_schema["Define format object:<br/>{type: 'object', properties: {...},<br/>required: [6 fields]}"]
-    ollama_chat["response = await ollama.chat({<br/>model: 'deepseek-v3.1:671b',<br/>messages: [system, ...messages],<br/>format: format_schema<br/>})"]
-    parse_json["jsonResponse = JSON.parse(<br/>response.message.content.trim()<br/>)"]
-    return["return jsonResponse"]
-    
-    json_call --> ollama_init
-    ollama_init --> system_msg
-    system_msg --> format_schema
-    format_schema --> ollama_chat
-    ollama_chat --> parse_json
-    parse_json --> return
-```
+![Mermaid Diagram](./diagrams\93_LLM_Integration_3.svg)
 
 **Sources:** [src/lib/services/template/OptimizerTemplateService.ts:629-712]()
 
@@ -291,48 +177,7 @@ The `getStrategyTemplate()` method generates `addStrategy()` calls where `getSig
 
 **getSignal() Execution Flow**
 
-```mermaid
-graph TB
-    getSignal_start["getSignal: async (symbol) => {...}"]
-    init_messages["const messages = []"]
-    
-    subgraph "Data Loading Phase"
-        fetch_1m["microTermCandles = await getCandles(symbol, '1m', 30)"]
-        fetch_5m["mainTermCandles = await getCandles(symbol, '5m', 24)"]
-        fetch_15m["shortTermCandles = await getCandles(symbol, '15m', 24)"]
-        fetch_1h["mediumTermCandles = await getCandles(symbol, '1h', 24)"]
-    end
-    
-    subgraph "Message Building Phase"
-        msg1["messages.push({user: '1h analysis'},<br/>{assistant: 'Тренд 1h проанализирован'})"]
-        msg2["messages.push({user: '15m analysis'},<br/>{assistant: 'Тренд 15m проанализирован'})"]
-        msg3["messages.push({user: '5m analysis'},<br/>{assistant: 'Таймфрейм 5m проанализирован'})"]
-        msg4["messages.push({user: '1m analysis'},<br/>{assistant: 'Микроструктура 1m проанализирована'})"]
-        msg5["messages.push({user: strategy prompt<br/>with escapedPrompt})"]
-    end
-    
-    uuid_gen["const resultId = uuid()"]
-    json_call["const result = await json(messages)"]
-    dump_call["await dumpJson(resultId, messages, result)"]
-    set_id["result.id = resultId"]
-    return["return result"]
-    
-    getSignal_start --> init_messages
-    init_messages --> fetch_1m
-    init_messages --> fetch_5m
-    init_messages --> fetch_15m
-    init_messages --> fetch_1h
-    fetch_1h --> msg1
-    msg1 --> msg2
-    msg2 --> msg3
-    msg3 --> msg4
-    msg4 --> msg5
-    msg5 --> uuid_gen
-    uuid_gen --> json_call
-    json_call --> dump_call
-    dump_call --> set_id
-    set_id --> return
-```
+![Mermaid Diagram](./diagrams\93_LLM_Integration_4.svg)
 
 **Sources:** [src/lib/services/template/OptimizerTemplateService.ts:194-302]()
 
@@ -369,30 +214,7 @@ The `json()` helper function passes a `format` parameter to `ollama.chat()` that
 
 **ollama.chat() format Parameter Structure**
 
-```mermaid
-graph TB
-    format_obj["format: { type: 'object' }"]
-    properties["properties: {}"]
-    required["required: string[]"]
-    
-    subgraph "Six Required Properties"
-        position["position:<br/>{type: 'string',<br/>enum: ['wait', 'long', 'short'],<br/>description: 'Trade decision'}"]
-        note["note:<br/>{type: 'string',<br/>description: 'Professional recommendation'}"]
-        priceOpen["priceOpen:<br/>{type: 'number',<br/>description: 'Entry price'}"]
-        priceTP["priceTakeProfit:<br/>{type: 'number',<br/>description: 'Take profit target'}"]
-        priceSL["priceStopLoss:<br/>{type: 'number',<br/>description: 'Stop loss exit'}"]
-        timeEst["minuteEstimatedTime:<br/>{type: 'number',<br/>description: 'Expected duration (max 360)'}"]
-    end
-    
-    format_obj --> properties
-    format_obj --> required
-    properties --> position
-    properties --> note
-    properties --> priceOpen
-    properties --> priceTP
-    properties --> priceSL
-    properties --> timeEst
-```
+![Mermaid Diagram](./diagrams\93_LLM_Integration_5.svg)
 
 **Sources:** [src/lib/services/template/OptimizerTemplateService.ts:675-705]()
 
@@ -432,29 +254,7 @@ The system message in `json()` provides detailed trading rules split into four s
 
 **Template Method Resolution in OptimizerConnectionService**
 
-```mermaid
-graph TB
-    getOptimizer["OptimizerConnectionService.getOptimizer(optimizerName)"]
-    get_schema["optimizerSchemaService.get(optimizerName)"]
-    extract_template["Extract schema.template (rawTemplate)"]
-    
-    subgraph "Template Merging"
-        defaults["OptimizerTemplateService defaults"]
-        override_check["For each IOptimizerTemplate method"]
-        use_custom["rawTemplate.method || defaults.method"]
-        merged["Complete IOptimizerTemplate object"]
-    end
-    
-    new_client["new ClientOptimizer({...params,<br/>template: merged})"]
-    
-    getOptimizer --> get_schema
-    get_schema --> extract_template
-    extract_template --> defaults
-    defaults --> override_check
-    override_check --> use_custom
-    use_custom --> merged
-    merged --> new_client
-```
+![Mermaid Diagram](./diagrams\93_LLM_Integration_6.svg)
 
 **Sources:** [src/lib/services/connection/OptimizerConnectionService.ts:59-113]()
 
@@ -497,33 +297,7 @@ The `getJsonDumpTemplate()` method generates an `async dumpJson(resultId, histor
 
 **dumpJson() Execution Flow**
 
-```mermaid
-graph TB
-    dumpJson_call["dumpJson(resultId, history, result, outputDir='./dump/strategy')"]
-    filter_msgs["systemMessages = history.filter(m => m.role === 'system')<br/>userMessages = history.filter(m => m.role === 'user')"]
-    subfolderPath["subfolderPath = path.join(outputDir, resultId)"]
-    check_exists["await fs.access(subfolderPath)"]
-    exists["Folder exists"]
-    not_exists["Folder does not exist"]
-    mkdir["await fs.mkdir(subfolderPath, {recursive: true})"]
-    
-    subgraph "File Writing Phase"
-        write_system["Write 00_system_prompt.md<br/>ResultId + Output JSON + System messages"]
-        write_user["Write 01_user_message.md, 02_, etc.<br/>Promise.all(userMessages.map(...))<br/>Check message size vs WARN_KB"]
-        write_output["Write XX_llm_output.md<br/>ResultId + Full output JSON"]
-    end
-    
-    dumpJson_call --> filter_msgs
-    filter_msgs --> subfolderPath
-    subfolderPath --> check_exists
-    check_exists -->|success| exists
-    check_exists -->|error| not_exists
-    exists --> dumpJson_call
-    not_exists --> mkdir
-    mkdir --> write_system
-    write_system --> write_user
-    write_user --> write_output
-```
+![Mermaid Diagram](./diagrams\93_LLM_Integration_7.svg)
 
 **Sources:** [src/lib/services/template/OptimizerTemplateService.ts:457-544]()
 
@@ -567,26 +341,7 @@ The generated LLM-based strategies integrate seamlessly with the backtest-kit ex
 
 **Signal Execution Flow**
 
-```mermaid
-sequenceDiagram
-    participant Strategy as ClientStrategy
-    participant GetSignal as getSignal()
-    participant LLM as json(messages)
-    participant Dump as dumpSignal()
-    participant Validation as RiskValidation
-    
-    Strategy->>GetSignal: Call with symbol
-    GetSignal->>GetSignal: Build multi-timeframe messages
-    GetSignal->>LLM: json(messages)
-    LLM-->>GetSignal: { position, prices, time }
-    GetSignal->>GetSignal: Generate UUID
-    GetSignal->>Dump: dumpSignal(uuid, messages, result)
-    Dump-->>GetSignal: Debug files written
-    GetSignal->>GetSignal: Set result.id = uuid
-    GetSignal-->>Strategy: Return signal
-    Strategy->>Validation: Validate signal
-    Validation-->>Strategy: Accept/Reject
-```
+![Mermaid Diagram](./diagrams\93_LLM_Integration_8.svg)
 
 **Generated Strategy Example**
 

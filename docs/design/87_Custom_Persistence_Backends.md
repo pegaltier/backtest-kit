@@ -51,84 +51,7 @@ Each adapter accepts a custom constructor via `use*Adapter()` methods, enabling 
 
 ## Persistence System Architecture
 
-```mermaid
-graph TB
-    subgraph "Client Layer"
-        CS[ClientStrategy]
-        CR[ClientRisk]
-        CP[ClientPartial]
-    end
-    
-    subgraph "Adapter Singletons"
-        PSA[PersistSignalAdapter<br/>PersistSignalUtils]
-        PRA[PersistRiskAdapter<br/>PersistRiskUtils]
-        PSCA[PersistScheduleAdapter<br/>PersistScheduleUtils]
-        PPA[PersistPartialAdapter<br/>PersistPartialUtils]
-    end
-    
-    subgraph "Factory Pattern"
-        PSA_FACTORY["PersistSignalFactory: TPersistBaseCtor"]
-        PRA_FACTORY["PersistRiskFactory: TPersistBaseCtor"]
-        PSCA_FACTORY["PersistScheduleFactory: TPersistBaseCtor"]
-        PPA_FACTORY["PersistPartialFactory: TPersistBaseCtor"]
-    end
-    
-    subgraph "Storage Instances (Memoized)"
-        PSI[PersistBase Instance<br/>symbol_strategyName]
-        PRI[PersistBase Instance<br/>riskName]
-        PSCI[PersistBase Instance<br/>symbol_strategyName]
-        PPI[PersistBase Instance<br/>symbol_strategyName]
-    end
-    
-    subgraph "IPersistBase Interface"
-        INTERFACE["readValue(entityId)<br/>writeValue(entityId, entity)<br/>hasValue(entityId)<br/>waitForInit(initial)"]
-    end
-    
-    subgraph "Default Implementation"
-        DEFAULT["PersistBase<br/>File-based storage<br/>writeFileAtomic<br/>./dump/data/{type}/"]
-    end
-    
-    subgraph "Custom Implementations"
-        REDIS["RedisPersist<br/>extends PersistBase<br/>Redis client"]
-        MONGO["MongoPersist<br/>extends PersistBase<br/>MongoDB driver"]
-        S3["S3Persist<br/>extends PersistBase<br/>AWS SDK"]
-    end
-    
-    CS -->|writeSignalData| PSA
-    CS -->|readSignalData| PSA
-    CR -->|writePositionData| PRA
-    CR -->|readPositionData| PRA
-    CS -->|writeScheduleData| PSCA
-    CS -->|readScheduleData| PSCA
-    CP -->|writePartialData| PPA
-    CP -->|readPartialData| PPA
-    
-    PSA --> PSA_FACTORY
-    PRA --> PRA_FACTORY
-    PSCA --> PSCA_FACTORY
-    PPA --> PPA_FACTORY
-    
-    PSA_FACTORY -->|Reflect.construct| PSI
-    PRA_FACTORY -->|Reflect.construct| PRI
-    PSCA_FACTORY -->|Reflect.construct| PSCI
-    PPA_FACTORY -->|Reflect.construct| PPI
-    
-    PSI --> INTERFACE
-    PRI --> INTERFACE
-    PSCI --> INTERFACE
-    PPI --> INTERFACE
-    
-    INTERFACE -.default.-> DEFAULT
-    INTERFACE -.custom.-> REDIS
-    INTERFACE -.custom.-> MONGO
-    INTERFACE -.custom.-> S3
-    
-    USER[User Code]
-    USER -->|usePersistSignalAdapter| PSA
-    USER -->|usePersistRiskAdapter| PRA
-    USER -->|usePersistScheduleAdapter| PSCA
-    USER -->|usePersistPartialAdapter| PPA
-```
+![Mermaid Diagram](./diagrams\87_Custom_Persistence_Backends_0.svg)
 
 **Architecture:** Each adapter uses a factory pattern with constructor type `TPersistBaseCtor`. Custom backends register by calling `use*Adapter(CustomConstructor)` which replaces the factory. Instances are memoized per entity name using `memoize()` from functools-kit.
 
@@ -178,38 +101,7 @@ interface IPersistBase<Entity extends IEntity | null = IEntity> {
 
 The default `PersistBase` class provides file-based storage with atomic writes:
 
-```mermaid
-graph LR
-    subgraph "PersistBase Implementation"
-        CTOR["constructor(entityName, baseDir)<br/>Default: ./logs/data"]
-        DIR["_directory: string<br/>join(baseDir, entityName)"]
-        FILEPATH["_getFilePath(entityId)<br/>{dir}/{entityId}.json"]
-        
-        WAIT["waitForInit(initial)<br/>singleshot pattern<br/>mkdir + validation"]
-        READ["readValue(entityId)<br/>fs.readFile + JSON.parse"]
-        HAS["hasValue(entityId)<br/>fs.access check"]
-        WRITE["writeValue(entityId, entity)<br/>writeFileAtomic"]
-        
-        REMOVE["removeValue(entityId)<br/>fs.unlink"]
-        REMOVE_ALL["removeAll()<br/>Deletes all .json files"]
-        VALUES["values()<br/>AsyncGenerator"]
-        KEYS["keys()<br/>AsyncGenerator"]
-        FILTER["filter(predicate)<br/>AsyncGenerator"]
-        TAKE["take(total, predicate)<br/>AsyncGenerator"]
-    end
-    
-    CTOR --> DIR
-    DIR --> FILEPATH
-    
-    WAIT --> MKDIR["fs.mkdir recursive"]
-    WAIT --> VALIDATE["Validate existing files<br/>Auto-cleanup corrupted"]
-    
-    WRITE --> ATOMIC["writeFileAtomic<br/>tmp → rename pattern"]
-    
-    VALUES --> KEYS
-    FILTER --> VALUES
-    TAKE --> VALUES
-```
+![Mermaid Diagram](./diagrams\87_Custom_Persistence_Backends_1.svg)
 
 ### Atomic Write Pattern
 
@@ -417,65 +309,7 @@ PersistPartialAdapter.usePersistPartialAdapter(RedisPersist);
 
 ## Data Flow and Lifecycle
 
-```mermaid
-sequenceDiagram
-    participant Live as Live.background()
-    participant CS as ClientStrategy
-    participant PSA as PersistSignalAdapter
-    participant Factory as PersistSignalFactory
-    participant Storage as Custom Storage Instance
-    participant Backend as Redis/Mongo/S3
-    
-    Note over Live,Backend: Initialization Phase
-    Live->>CS: new ClientStrategy()
-    CS->>CS: waitForInit(symbol, strategyName)
-    CS->>PSA: readSignalData(symbol, strategyName)
-    PSA->>Factory: Reflect.construct(CustomPersist)
-    Factory->>Storage: new CustomPersist(entityName, baseDir)
-    Storage->>Backend: connect()
-    Storage->>Backend: validate existing data
-    Storage-->>PSA: initialized
-    PSA->>Storage: hasValue(symbol)
-    Storage->>Backend: EXISTS signal:BTCUSDT
-    Backend-->>Storage: true/false
-    alt Signal exists
-        PSA->>Storage: readValue(symbol)
-        Storage->>Backend: GET signal:BTCUSDT
-        Backend-->>Storage: serialized ISignalRow
-        Storage-->>PSA: ISignalRow | null
-    else No signal
-        Storage-->>PSA: null
-    end
-    PSA-->>CS: ISignalRow | null
-    CS->>CS: restore state
-    
-    Note over Live,Backend: Live Trading Loop
-    loop Every TICK_TTL
-        Live->>CS: tick(symbol, strategyName)
-        CS->>CS: getSignal() evaluation
-        alt Signal state changed
-            CS->>PSA: writeSignalData(signal, symbol, strategyName)
-            PSA->>Storage: writeValue(symbol, signal)
-            Storage->>Backend: SET signal:BTCUSDT {...}
-            Backend-->>Storage: OK
-            Storage-->>PSA: success
-            PSA-->>CS: persisted
-        end
-        CS-->>Live: IStrategyTickResult
-    end
-    
-    Note over Live,Backend: Crash and Recovery
-    Live->>Live: Process crashes
-    Note over Backend: Data preserved in backend
-    Live->>CS: Process restarts → new ClientStrategy()
-    CS->>PSA: readSignalData(symbol, strategyName)
-    PSA->>Storage: readValue(symbol)
-    Storage->>Backend: GET signal:BTCUSDT
-    Backend-->>Storage: serialized ISignalRow
-    Storage-->>PSA: ISignalRow
-    PSA-->>CS: restored signal
-    CS->>CS: resume monitoring from last state
-```
+![Mermaid Diagram](./diagrams\87_Custom_Persistence_Backends_2.svg)
 
 **Lifecycle Guarantees:**
 

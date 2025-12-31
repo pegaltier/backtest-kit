@@ -48,64 +48,7 @@ The partial tracking system monitors active trading signals and emits events whe
 
 ### Data Flow
 
-```mermaid
-graph TB
-    subgraph "Signal Monitoring"
-        CS["ClientStrategy.tick()"]
-        MONITOR["Monitor active signals<br/>Calculate revenuePercent"]
-    end
-    
-    subgraph "Partial Tracking Logic"
-        PGS["PartialGlobalService<br/>validate + delegate"]
-        PCS["PartialConnectionService<br/>getPartial() memoized"]
-        CP["ClientPartial<br/>_states: Map&lt;signalId, IPartialState&gt;"]
-    end
-    
-    subgraph "Level Detection"
-        PROFIT["HANDLE_PROFIT_FN<br/>Check PROFIT_LEVELS[10,20...100]<br/>Set-based deduplication"]
-        LOSS["HANDLE_LOSS_FN<br/>Check LOSS_LEVELS[10,20...100]<br/>Set-based deduplication"]
-    end
-    
-    subgraph "Event Emission"
-        PPE["partialProfitSubject<br/>emit PartialProfitContract"]
-        PLE["partialLossSubject<br/>emit PartialLossContract"]
-    end
-    
-    subgraph "Persistence Layer"
-        PERSIST["PersistPartialAdapter<br/>writePartialData()<br/>Atomic file writes"]
-        DISK["./dump/data/partial/<br/>{strategy}/{symbol}.json"]
-    end
-    
-    subgraph "Consumers"
-        PMS["PartialMarkdownService<br/>Accumulate events<br/>MAX_EVENTS=250"]
-        USER["listenPartialProfit()<br/>listenPartialLoss()"]
-    end
-    
-    CS --> MONITOR
-    MONITOR -->|"revenuePercent > 0"| PGS
-    MONITOR -->|"revenuePercent < 0"| PGS
-    
-    PGS --> PCS
-    PCS -->|"getPartial(signalId, backtest)"| CP
-    
-    CP -->|"profit()"| PROFIT
-    CP -->|"loss()"| LOSS
-    
-    PROFIT -->|"New level reached"| PPE
-    LOSS -->|"New level reached"| PLE
-    
-    PROFIT -->|"State changed"| PERSIST
-    LOSS -->|"State changed"| PERSIST
-    
-    PERSIST --> DISK
-    
-    PPE --> PMS
-    PLE --> PMS
-    PPE --> USER
-    PLE --> USER
-    
-    DISK -->|"waitForInit()"| CP
-```
+![Mermaid Diagram](./diagrams\75_Partial_Profit_Loss_Tracking_0.svg)
 
 **Sources**: [src/client/ClientPartial.ts:1-478](), [src/lib/services/connection/PartialConnectionService.ts:1-267](), [src/lib/services/global/PartialGlobalService.ts:1-205](), [src/lib/services/markdown/PartialMarkdownService.ts:1-478]()
 
@@ -152,21 +95,7 @@ State is stored in a `Map<signalId, IPartialState>` within each `ClientPartial` 
 
 ### Initialization Pattern
 
-```mermaid
-graph LR
-    subgraph "Lifecycle"
-        CTOR["new ClientPartial(params)<br/>_states = NEED_FETCH"]
-        INIT["waitForInit(symbol, strategyName)<br/>singleshot pattern"]
-        LOAD["Load from PersistPartialAdapter<br/>Only in live mode"]
-        RESTORE["Restore Map&lt;signalId, IPartialState&gt;<br/>Convert arrays to Sets"]
-        READY["Ready for profit()/loss() calls"]
-    end
-    
-    CTOR --> INIT
-    INIT --> LOAD
-    LOAD --> RESTORE
-    RESTORE --> READY
-```
+![Mermaid Diagram](./diagrams\75_Partial_Profit_Loss_Tracking_1.svg)
 
 The initialization uses a sentinel value `NEED_FETCH` to ensure `waitForInit()` is called before operations. The `singleshot` pattern from `functools-kit` guarantees initialization happens exactly once per symbol-strategy combination.
 
@@ -192,32 +121,7 @@ The `HANDLE_PROFIT_FN` and `HANDLE_LOSS_FN` functions iterate through level arra
 
 ### Method Flow Diagram
 
-```mermaid
-sequenceDiagram
-    participant CS as ClientStrategy
-    participant PGS as PartialGlobalService
-    participant PCS as PartialConnectionService
-    participant CP as ClientPartial
-    participant PA as PersistPartialAdapter
-    participant EMT as partialProfitSubject
-    
-    Note over CS: Signal at 50000, price rises to 55000
-    CS->>PGS: profit(symbol, signal, 55000, 10.0, false, Date)
-    PGS->>PCS: profit(...args)
-    PCS->>CP: getPartial(signalId, backtest)<br/>Memoized factory
-    PCS->>CP: waitForInit(symbol, strategyName)
-    CP->>PA: readPartialData(symbol, strategyName)
-    PA-->>CP: Restore previous state
-    PCS->>CP: profit(symbol, signal, 55000, 10.0, false, Date)
-    
-    Note over CP: Check PROFIT_LEVELS [10, 20, 30...]
-    CP->>CP: level=10 not in profitLevels Set
-    CP->>CP: state.profitLevels.add(10)
-    CP->>EMT: onProfit(symbol, strategyName, exchangeName,<br/>signal, 55000, 10, false, timestamp)
-    EMT-->>PartialMarkdownService: Event accumulated
-    CP->>PA: writePartialData(data, symbol, strategyName)
-    PA-->>CP: Atomic write complete
-```
+![Mermaid Diagram](./diagrams\75_Partial_Profit_Loss_Tracking_2.svg)
 
 **Sources**: [src/client/ClientPartial.ts:159-227](), [src/lib/services/connection/PartialConnectionService.ts:159-227]()
 
@@ -269,36 +173,7 @@ Partial state is persisted to disk for crash recovery in live trading mode. Back
 
 ### Persistence Architecture
 
-```mermaid
-graph TB
-    subgraph "In-Memory State"
-        MAP["Map&lt;signalId, IPartialState&gt;<br/>profitLevels: Set&lt;PartialLevel&gt;<br/>lossLevels: Set&lt;PartialLevel&gt;"]
-    end
-    
-    subgraph "Serialization"
-        CONVERT["Convert to IPartialData<br/>Sets → Arrays<br/>Map → Record"]
-        JSON["JSON.stringify()<br/>Serialized data"]
-    end
-    
-    subgraph "Atomic Write"
-        TEMP["Write to .tmp file<br/>{symbol}_{strategy}.json.tmp"]
-        FSYNC["fsync() to disk"]
-        RENAME["rename() to final<br/>{symbol}_{strategy}.json"]
-    end
-    
-    subgraph "File Structure"
-        DISK["./dump/data/partial/<br/>{strategy}/{symbol}.json"]
-    end
-    
-    MAP --> CONVERT
-    CONVERT --> JSON
-    JSON --> TEMP
-    TEMP --> FSYNC
-    FSYNC --> RENAME
-    RENAME --> DISK
-    
-    DISK -.Load on init.-> MAP
-```
+![Mermaid Diagram](./diagrams\75_Partial_Profit_Loss_Tracking_3.svg)
 
 ### Persistence Flow
 
@@ -338,45 +213,7 @@ The markdown service subscribes to partial profit/loss events and generates repo
 
 ### Event Accumulation
 
-```mermaid
-graph LR
-    subgraph "Event Subscription"
-        PPE["partialProfitSubject"]
-        PLE["partialLossSubject"]
-    end
-    
-    subgraph "Service Methods"
-        INIT["init()<br/>singleshot subscription"]
-        TICK_P["tickProfit(event)<br/>Process profit events"]
-        TICK_L["tickLoss(event)<br/>Process loss events"]
-    end
-    
-    subgraph "Storage"
-        MEMO["getStorage(symbol, strategyName)<br/>Memoized ReportStorage"]
-        STORAGE["ReportStorage<br/>_eventList: PartialEvent[]<br/>MAX_EVENTS=250"]
-    end
-    
-    subgraph "Report Generation"
-        DATA["getData(symbol, strategyName)<br/>PartialStatisticsModel"]
-        REPORT["getReport(symbol, strategyName)<br/>Markdown table"]
-        DUMP["dump(symbol, strategyName, path)<br/>Save to disk"]
-    end
-    
-    PPE -->|"subscribe"| INIT
-    PLE -->|"subscribe"| INIT
-    
-    INIT --> TICK_P
-    INIT --> TICK_L
-    
-    TICK_P --> MEMO
-    TICK_L --> MEMO
-    
-    MEMO --> STORAGE
-    
-    STORAGE --> DATA
-    DATA --> REPORT
-    REPORT --> DUMP
-```
+![Mermaid Diagram](./diagrams\75_Partial_Profit_Loss_Tracking_4.svg)
 
 ### ReportStorage Class
 
@@ -457,28 +294,7 @@ await this.params.partial.clear(symbol, signal, closePrice, backtest);
 
 ### Service Layer Hierarchy
 
-```mermaid
-graph TD
-    subgraph "Strategy Layer"
-        CS["ClientStrategy<br/>Monitor signals<br/>Calculate revenuePercent"]
-    end
-    
-    subgraph "Global Layer"
-        PGS["PartialGlobalService<br/>Validate strategy/risk<br/>Delegate to connection"]
-    end
-    
-    subgraph "Connection Layer"
-        PCS["PartialConnectionService<br/>Memoized factory<br/>Instance lifecycle"]
-    end
-    
-    subgraph "Client Layer"
-        CP["ClientPartial<br/>State management<br/>Level detection<br/>Event emission"]
-    end
-    
-    CS -->|"IStrategyParams.partial"| PGS
-    PGS -->|"inject via DI"| PCS
-    PCS -->|"getPartial(signalId, backtest)"| CP
-```
+![Mermaid Diagram](./diagrams\75_Partial_Profit_Loss_Tracking_5.svg)
 
 The hierarchy follows the standard service layer pattern:
 1. **Global Service**: Entry point with validation and logging

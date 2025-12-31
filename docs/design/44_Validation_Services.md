@@ -31,96 +31,13 @@ For information about how validated schemas are stored and retrieved, see [Schem
 
 ### Validation Services in the DI System
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        addStrategy["addStrategy()"]
-        addExchange["addExchange()"]
-        addFrame["addFrame()"]
-        addRisk["addRisk()"]
-        addSizing["addSizing()"]
-        addWalker["addWalker()"]
-    end
-    
-    subgraph "Validation Layer"
-        StrategyValidation["StrategyValidationService"]
-        ExchangeValidation["ExchangeValidationService"]
-        FrameValidation["FrameValidationService"]
-        RiskValidation["RiskValidationService"]
-        SizingValidation["SizingValidationService"]
-        WalkerValidation["WalkerValidationService"]
-    end
-    
-    subgraph "Schema Storage Layer"
-        StrategySchema["StrategySchemaService"]
-        ExchangeSchema["ExchangeSchemaService"]
-        FrameSchema["FrameSchemaService"]
-        RiskSchema["RiskSchemaService"]
-        SizingSchema["SizingSchemaService"]
-        WalkerSchema["WalkerSchemaService"]
-    end
-    
-    subgraph "Execution Layer"
-        GlobalServices["*GlobalService classes"]
-        LogicServices["*LogicPrivate/LogicPublic"]
-        ClientClasses["Client* classes"]
-    end
-    
-    addStrategy --> StrategyValidation
-    addExchange --> ExchangeValidation
-    addFrame --> FrameValidation
-    addRisk --> RiskValidation
-    addSizing --> SizingValidation
-    addWalker --> WalkerValidation
-    
-    StrategyValidation --> StrategySchema
-    ExchangeValidation --> ExchangeSchema
-    FrameValidation --> FrameSchema
-    RiskValidation --> RiskSchema
-    SizingValidation --> SizingSchema
-    WalkerValidation --> WalkerSchema
-    
-    StrategySchema --> GlobalServices
-    GlobalServices --> LogicServices
-    LogicServices --> ClientClasses
-```
+![Mermaid Diagram](./diagrams\44_Validation_Services_0.svg)
 
 **Sources:** [src/function/add.ts:54-56](), [src/function/add.ts:103-105](), [src/lib/index.ts:143-150](), [src/lib/core/types.ts:59-66]()
 
 ### Validation Flow: Registration to Execution
 
-```mermaid
-stateDiagram-v2
-    [*] --> ComponentRegistration
-    
-    ComponentRegistration --> SchemaValidation: "add* function called"
-    
-    state SchemaValidation {
-        [*] --> ValidateStructure
-        ValidateStructure --> ValidateReferences: "Check schema fields"
-        ValidateReferences --> Memoize: "Check dependencies exist"
-        Memoize --> [*]: "Cache validation result"
-    }
-    
-    SchemaValidation --> SchemaStorage: "Validation passes"
-    SchemaValidation --> ErrorEmission: "Validation fails"
-    
-    SchemaStorage --> RuntimeExecution
-    
-    state RuntimeExecution {
-        [*] --> SignalGeneration
-        SignalGeneration --> SignalValidation
-        SignalValidation --> RiskValidation
-        RiskValidation --> [*]: "All checks pass"
-    }
-    
-    RuntimeExecution --> Execution: "Signal approved"
-    RuntimeExecution --> SignalRejection: "Validation fails"
-    
-    ErrorEmission --> [*]
-    SignalRejection --> [*]
-    Execution --> [*]
-```
+![Mermaid Diagram](./diagrams\44_Validation_Services_1.svg)
 
 **Sources:** [src/function/add.ts:50-62](), [test/e2e/defend.test.mjs:544-641](), [test/e2e/sanitize.test.mjs:27-131]()
 
@@ -172,28 +89,7 @@ The `addComponent` method (named `addStrategy`, `addExchange`, etc.) is called b
 
 Schema validation occurs when a component is registered via an `add*` function. The validation flow follows this sequence:
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant addFunction as "add* function"
-    participant ValidationService as "*ValidationService"
-    participant SchemaService as "*SchemaService"
-    participant Logger
-    
-    User->>addFunction: "Register component"
-    addFunction->>Logger: "Log registration"
-    addFunction->>ValidationService: "addComponent(name, schema)"
-    
-    ValidationService->>ValidationService: "Validate schema structure"
-    
-    alt Validation passes
-        ValidationService->>ValidationService: "Memoize result"
-        addFunction->>SchemaService: "register(name, schema)"
-        SchemaService-->>User: "Component registered"
-    else Validation fails
-        ValidationService-->>User: "Throw validation error"
-    end
-```
+![Mermaid Diagram](./diagrams\44_Validation_Services_2.svg)
 
 **Sources:** [src/function/add.ts:50-62](), [src/function/add.ts:99-111]()
 
@@ -265,48 +161,7 @@ The function is invoked within `GET_SIGNAL_FN` at [src/client/ClientStrategy.ts:
 
 **Runtime Signal Validation Flow**
 
-```mermaid
-graph TB
-    GetSignalFn["GET_SIGNAL_FN<br/>(src/client/ClientStrategy.ts:263-396)"]
-    CheckInterval["Check interval throttling<br/>INTERVAL_MINUTES map"]
-    CheckRisk["Risk.checkSignal()<br/>Pre-generation validation"]
-    CallGetSignal["Execute strategy.getSignal()"]
-    AugmentMetadata["Augment with id, timestamps,<br/>exchangeName, strategyName"]
-    ValidateSignal["VALIDATE_SIGNAL_FN<br/>(src/client/ClientStrategy.ts:41-261)"]
-    
-    subgraph "30+ Validation Rules"
-        RequiredFields["Required field checks:<br/>id, position, symbol"]
-        PriceChecks["Price validation:<br/>isFinite(), > 0"]
-        PositionLogic["Position-specific logic:<br/>LONG vs SHORT"]
-        TPSLDistances["TP/SL distance validation:<br/>CC_MIN_TAKEPROFIT_DISTANCE_PERCENT<br/>CC_MAX_STOPLOSS_DISTANCE_PERCENT"]
-        LifetimeCheck["Lifetime validation:<br/>CC_MAX_SIGNAL_LIFETIME_MINUTES"]
-        EdgeCaseChecks["Edge case protection:<br/>currentPrice vs TP/SL"]
-    end
-    
-    Approved["Signal Approved<br/>Returns ISignalRow"]
-    Rejected["Signal Rejected<br/>Returns null via trycatch"]
-    
-    GetSignalFn --> CheckInterval
-    CheckInterval --> CheckRisk
-    CheckRisk --> CallGetSignal
-    CallGetSignal --> AugmentMetadata
-    AugmentMetadata --> ValidateSignal
-    
-    ValidateSignal --> RequiredFields
-    RequiredFields --> PriceChecks
-    PriceChecks --> PositionLogic
-    PositionLogic --> TPSLDistances
-    TPSLDistances --> LifetimeCheck
-    LifetimeCheck --> EdgeCaseChecks
-    
-    EdgeCaseChecks --> Approved
-    RequiredFields --> Rejected
-    PriceChecks --> Rejected
-    PositionLogic --> Rejected
-    TPSLDistances --> Rejected
-    LifetimeCheck --> Rejected
-    EdgeCaseChecks --> Rejected
-```
+![Mermaid Diagram](./diagrams\44_Validation_Services_3.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:41-261](), [src/client/ClientStrategy.ts:263-396](), [test/e2e/defend.test.mjs:25-145](), [test/e2e/sanitize.test.mjs:27-131]()
 </thinking>
@@ -711,21 +566,7 @@ Schema validation errors, in contrast, throw immediately at registration time an
 
 ### Validation → Schema Storage Flow
 
-```mermaid
-graph LR
-    User["User Code"]
-    Add["add* function"]
-    Validation["*ValidationService"]
-    Schema["*SchemaService"]
-    Connection["*ConnectionService"]
-    Client["Client* class"]
-    
-    User --> Add
-    Add --> Validation
-    Validation --> Schema
-    Schema --> Connection
-    Connection --> Client
-```
+![Mermaid Diagram](./diagrams\44_Validation_Services_4.svg)
 
 After a schema passes validation:
 1. It's stored in the corresponding `*SchemaService` (see [Schema Services](#7.3))

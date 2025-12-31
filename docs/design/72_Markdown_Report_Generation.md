@@ -51,73 +51,7 @@ The markdown generation system consists of seven independent service classes tha
 
 **Markdown Services Architecture**
 
-```mermaid
-graph TB
-    subgraph "Event Emitters"
-        SBE["signalBacktestEmitter"]
-        SLE["signalLiveEmitter"]
-        SE["signalEmitter"]
-        PPE["partialProfitSubject"]
-        PLE["partialLossSubject"]
-        WE["walkerEmitter"]
-        PE["performanceEmitter"]
-    end
-    
-    subgraph "Markdown Services"
-        BMS["BacktestMarkdownService"]
-        LMS["LiveMarkdownService"]
-        SMS["ScheduleMarkdownService"]
-        PMS["PartialMarkdownService"]
-        WMS["WalkerMarkdownService"]
-        HMS["HeatMarkdownService"]
-        PERFMS["PerformanceMarkdownService"]
-    end
-    
-    subgraph "Storage Layer (Memoized)"
-        BStorage["ReportStorage<br/>symbol:strategy"]
-        LStorage["ReportStorage<br/>symbol:strategy"]
-        SStorage["ReportStorage<br/>symbol:strategy"]
-        PStorage["ReportStorage<br/>symbol:strategy"]
-        WStorage["ReportStorage<br/>walkerName"]
-        HStorage["HeatmapStorage<br/>strategyName"]
-        PerfStorage["PerformanceStorage<br/>symbol:strategy"]
-    end
-    
-    subgraph "File Outputs"
-        BFiles["./dump/backtest/*.md"]
-        LFiles["./dump/live/*.md"]
-        SFiles["./dump/schedule/*.md"]
-        PFiles["./dump/partial/*.md"]
-        WFiles["./dump/walker/*.md"]
-        HFiles["./dump/heatmap/*.md"]
-        PerfFiles["./dump/performance/*.md"]
-    end
-    
-    SBE -->|"subscribe(tick)"| BMS
-    SLE -->|"subscribe(tick)"| LMS
-    SE -->|"subscribe(tick)"| SMS
-    SE -->|"subscribe(tick)"| HMS
-    PPE -->|"subscribe(tickProfit)"| PMS
-    PLE -->|"subscribe(tickLoss)"| PMS
-    WE -->|"subscribe(tick)"| WMS
-    PE -->|"subscribe(track)"| PERFMS
-    
-    BMS --> BStorage
-    LMS --> LStorage
-    SMS --> SStorage
-    PMS --> PStorage
-    WMS --> WStorage
-    HMS --> HStorage
-    PERFMS --> PerfStorage
-    
-    BMS --> BFiles
-    LMS --> LFiles
-    SMS --> SFiles
-    PMS --> PFiles
-    WMS --> WFiles
-    HMS --> HFiles
-    PERFMS --> PerfFiles
-```
+![Mermaid Diagram](./diagrams\72_Markdown_Report_Generation_0.svg)
 
 **Common Service Pattern**
 
@@ -145,37 +79,7 @@ All markdown services implement the same architectural pattern: a public service
 
 **Pattern Structure**
 
-```mermaid
-classDiagram
-    class MarkdownService {
-        -getStorage(key) ReportStorage
-        -tick(event) void
-        +getData(key) Statistics
-        +getReport(key) string
-        +dump(key, path) void
-        +clear(key?) void
-        #init() void
-    }
-    
-    class ReportStorage {
-        -_eventList Event[]
-        +addEvent(event) void
-        +getData() Statistics
-        +getReport(name) string
-        +dump(name, path) void
-    }
-    
-    class Memoization {
-        +memoize(keyFn, factory)
-        +clear(key?)
-    }
-    
-    MarkdownService --> ReportStorage : "creates via memoize"
-    MarkdownService --> Memoization : "uses"
-    
-    note for MarkdownService "Facade: routes events to storage\nby composite key (symbol:strategy)"
-    note for ReportStorage "Encapsulates: event queue,\nstatistics calculation,\nmarkdown generation"
-```
+![Mermaid Diagram](./diagrams\72_Markdown_Report_Generation_1.svg)
 
 **Key Responsibilities:**
 - **Service Class**: Event subscription, storage routing, memoization management
@@ -193,23 +97,7 @@ All markdown services implement bounded queues to prevent unbounded memory growt
 
 **Queue Management**
 
-```mermaid
-flowchart TB
-    newEvent["New event arrives"]
-    unshift["_eventList.unshift(event)"]
-    checkSize{"_eventList.length > MAX_EVENTS?"}
-    pop["_eventList.pop()"]
-    done["Event stored"]
-    
-    newEvent --> unshift
-    unshift --> checkSize
-    checkSize -->|"Yes (>250)"| pop
-    checkSize -->|"No (≤250)"| done
-    pop --> done
-    
-    note1["Newest events at index 0<br/>Oldest events removed first"]
-    pop -.-> note1
-```
+![Mermaid Diagram](./diagrams\72_Markdown_Report_Generation_2.svg)
 
 **Memory Characteristics:**
 
@@ -243,43 +131,7 @@ Each markdown service subscribes to event emitters during initialization using t
 
 **Initialization Sequence**
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Service
-    participant singleshot
-    participant Emitter
-    participant Storage
-    
-    Note over Service: First method call (getData/getReport/dump)
-    User->>Service: getData(symbol, strategy)
-    Service->>singleshot: Check if init() executed
-    
-    alt First call ever
-        singleshot->>Emitter: subscribe(tick)
-        Note over singleshot: Mark as executed
-        singleshot-->>Service: Subscription complete
-    else Already initialized
-        singleshot-->>Service: Skip subscription
-    end
-    
-    Service->>Service: getStorage(symbol, strategy)
-    Note over Service: Memoize lookup by key
-    
-    alt Storage exists
-        Service->>Storage: Return existing instance
-    else Storage missing
-        Service->>Storage: new ReportStorage()
-        Note over Service: Cache in memoize
-    end
-    
-    Storage-->>Service: Storage instance
-    Service-->>User: Statistics data
-    
-    Note over Emitter: Future events automatically routed
-    Emitter->>Service: tick(event)
-    Service->>Storage: addEvent(event)
-```
+![Mermaid Diagram](./diagrams\72_Markdown_Report_Generation_3.svg)
 
 The `singleshot` wrapper ensures thread-safe initialization without locks by leveraging JavaScript's single-threaded event loop. Multiple concurrent calls to `getData()` will queue behind the first call's initialization.
 
@@ -310,56 +162,7 @@ private tick = async (data: IStrategyTickResult) => {
 
 **Event Routing with Idle Deduplication**
 
-```mermaid
-flowchart TB
-    tick["tick(data)"]
-    checkAction{"data.action?"}
-    
-    idle["addIdleEvent()"]
-    findLastIdle["Find last idle index"]
-    checkOpenedAfter{"Any opened/active<br/>after last idle?"}
-    replaceIdle["Replace last idle event"]
-    pushNewIdle["Push new idle event"]
-    
-    opened["addOpenedEvent()"]
-    active["addActiveEvent()"]
-    closed["addClosedEvent()"]
-    
-    findSignalId["Find by signalId"]
-    replaceEvent["Replace existing event"]
-    pushEvent["Push new event"]
-    
-    checkBounded{"length > MAX_EVENTS?"}
-    popOldest["pop() oldest event"]
-    done["Done"]
-    
-    tick --> checkAction
-    checkAction -->|"idle"| idle
-    checkAction -->|"opened"| opened
-    checkAction -->|"active"| active
-    checkAction -->|"closed"| closed
-    
-    idle --> findLastIdle
-    findLastIdle --> checkOpenedAfter
-    checkOpenedAfter -->|"No - can replace"| replaceIdle
-    checkOpenedAfter -->|"Yes - must preserve"| pushNewIdle
-    
-    replaceIdle --> checkBounded
-    pushNewIdle --> checkBounded
-    
-    opened --> pushEvent
-    pushEvent --> checkBounded
-    
-    active --> findSignalId
-    findSignalId --> replaceEvent
-    closed --> findSignalId
-    
-    replaceEvent --> checkBounded
-    
-    checkBounded -->|"Yes (>250)"| popOldest
-    checkBounded -->|"No (≤250)"| done
-    popOldest --> done
-```
+![Mermaid Diagram](./diagrams\72_Markdown_Report_Generation_4.svg)
 
 **Idle Event Deduplication Logic:**
 
@@ -488,40 +291,7 @@ All markdown services expose three public methods for data access, report genera
 
 **API Contract**
 
-```mermaid
-classDiagram
-    class MarkdownServiceAPI {
-        <<interface>>
-        +getData(key) Statistics
-        +getReport(key, columns?) string
-        +dump(key, path?, columns?) void
-        +clear(key?) void
-    }
-    
-    class BacktestMarkdownService {
-        +getData(symbol, strategy) BacktestStatisticsModel
-        +getReport(symbol, strategy, columns?) string
-        +dump(symbol, strategy, path?, columns?) void
-    }
-    
-    class LiveMarkdownService {
-        +getData(symbol, strategy) LiveStatisticsModel
-        +getReport(symbol, strategy, columns?) string
-        +dump(symbol, strategy, path?, columns?) void
-    }
-    
-    class WalkerMarkdownService {
-        +getData(walker, symbol, metric, ctx) WalkerStatisticsModel
-        +getReport(walker, symbol, metric, ctx, cols?) string
-        +dump(walker, symbol, metric, ctx, path?, cols?) void
-    }
-    
-    MarkdownServiceAPI <|.. BacktestMarkdownService
-    MarkdownServiceAPI <|.. LiveMarkdownService
-    MarkdownServiceAPI <|.. WalkerMarkdownService
-    
-    note for MarkdownServiceAPI "All services follow same pattern:\n1. getData: raw statistics\n2. getReport: markdown string\n3. dump: write to disk"
-```
+![Mermaid Diagram](./diagrams\72_Markdown_Report_Generation_5.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:342-414](), [src/lib/services/markdown/LiveMarkdownService.ts:490-562](), [src/lib/services/markdown/ScheduleMarkdownService.ts:386-461]()
 
@@ -643,41 +413,7 @@ The `dump()` method writes markdown reports to disk using Node.js file system AP
 
 Tables are generated using a column configuration system that defines label, key, and formatting function for each column. The system maps event data to table rows using these column definitions.
 
-```mermaid
-flowchart LR
-    subgraph "Column Configuration"
-        columns["Column[]<br/>{key, label, format}"]
-    end
-    
-    subgraph "Data Source"
-        signalList["signalList or eventList"]
-    end
-    
-    subgraph "Table Generation"
-        header["Extract labels → Header row"]
-        separator["Generate '---' → Separator row"]
-        rows["Map events → Apply format() → Data rows"]
-    end
-    
-    subgraph "Markdown Assembly"
-        tableData["[header, separator, ...rows]"]
-        joinPipes["Join with ' | ' and wrap with '| |'"]
-        markdown["Markdown table string"]
-    end
-    
-    columns --> header
-    columns --> separator
-    columns --> rows
-    
-    signalList --> rows
-    
-    header --> tableData
-    separator --> tableData
-    rows --> tableData
-    
-    tableData --> joinPipes
-    joinPipes --> markdown
-```
+![Mermaid Diagram](./diagrams\72_Markdown_Report_Generation_6.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:289-296](), [src/lib/services/markdown/LiveMarkdownService.ts:483-490]()
 
@@ -836,27 +572,7 @@ Schedule processes two action types related to limit orders:
 
 All markdown services use the `singleshot` pattern from `functools-kit` to ensure event subscription happens exactly once. The `init()` method is marked protected and called automatically on first data access.
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Service
-    participant init
-    participant Emitter
-    
-    User->>Service: getData() / getReport() / dump()
-    Service->>Service: Check if init() called
-    
-    alt First call
-        Service->>init: Invoke init()
-        init->>Emitter: subscribe(tick)
-        Note over init: Marked as executed
-    else Subsequent calls
-        Note over Service: Skip init() - already executed
-    end
-    
-    Service->>Service: Process request
-    Service-->>User: Return result
-```
+![Mermaid Diagram](./diagrams\72_Markdown_Report_Generation_7.svg)
 
 **Sources:** [src/lib/services/markdown/BacktestMarkdownService.ts:538-541](), [src/lib/services/markdown/LiveMarkdownService.ts:742-745](), [src/lib/services/markdown/ScheduleMarkdownService.ts:541-544]()
 

@@ -33,61 +33,7 @@ The Walker API provides methods for running comparative strategy backtests acros
 
 The Walker API follows the same architectural pattern as Backtest and Live APIs, consisting of an instance class for isolated execution and a utility class providing convenient singleton access.
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        WALKER_SINGLETON["Walker<br/>(singleton)"]
-        WALKER_UTILS["WalkerUtils<br/>(utility class)"]
-    end
-    
-    subgraph "Instance Layer"
-        GET_INSTANCE["_getInstance()<br/>(memoized)"]
-        WALKER_INST["WalkerInstance<br/>(per symbol-walker)"]
-    end
-    
-    subgraph "Internal Execution"
-        TASK["task()<br/>(singlerun wrapper)"]
-        TASK_FN["INSTANCE_TASK_FN<br/>(task implementation)"]
-    end
-    
-    subgraph "Service Layer"
-        WALKER_CMD["walkerCommandService"]
-        WALKER_LOGIC["WalkerLogicPublicService"]
-        BACKTEST_LOGIC["BacktestLogicPublicService"]
-    end
-    
-    subgraph "Schema & Validation"
-        WALKER_SCHEMA["walkerSchemaService"]
-        WALKER_VAL["walkerValidationService"]
-        STRATEGY_VAL["strategyValidationService"]
-        EXCHANGE_VAL["exchangeValidationService"]
-    end
-    
-    subgraph "Reporting"
-        WALKER_MD["walkerMarkdownService"]
-        BACKTEST_MD["backtestMarkdownService"]
-    end
-    
-    WALKER_SINGLETON -->|"exports"| WALKER_UTILS
-    WALKER_UTILS -->|"uses"| GET_INSTANCE
-    GET_INSTANCE -->|"creates/caches"| WALKER_INST
-    
-    WALKER_INST -->|"run()"| WALKER_CMD
-    WALKER_INST -->|"background()"| TASK
-    TASK -->|"executes"| TASK_FN
-    TASK_FN -->|"consumes"| WALKER_INST
-    
-    WALKER_CMD --> WALKER_LOGIC
-    WALKER_LOGIC -->|"sequential backtests"| BACKTEST_LOGIC
-    
-    WALKER_UTILS -->|"validates"| WALKER_VAL
-    WALKER_UTILS -->|"validates"| STRATEGY_VAL
-    WALKER_UTILS -->|"validates"| EXCHANGE_VAL
-    WALKER_UTILS -->|"retrieves"| WALKER_SCHEMA
-    
-    WALKER_INST -->|"getData/getReport"| WALKER_MD
-    WALKER_INST -->|"clears"| BACKTEST_MD
-```
+![Mermaid Diagram](./diagrams\20_Walker_API_0.svg)
 
 **Sources**: [src/classes/Walker.ts:1-677]()
 
@@ -245,26 +191,7 @@ stop(symbol: string, walkerName: WalkerName): Promise<void>
 5. Supports multiple walkers on same symbol (filtered by `walkerName`)
 
 **Stop Signal Flow**:
-```mermaid
-sequenceDiagram
-    participant API as "Walker.stop()"
-    participant Schema as "walkerSchemaService"
-    participant Subject as "walkerStopSubject"
-    participant Strategy as "strategyCoreService"
-    
-    API->>Schema: "get(walkerName)"
-    Schema-->>API: "{ strategies: [...] }"
-    
-    loop "For each strategy"
-        API->>Subject: "next({ symbol, strategyName, walkerName })"
-        API->>Strategy: "stop({ symbol, strategyName }, true)"
-        Note over Strategy: "Sets _isStopped flag"
-        Note over Strategy: "Backtest mode: true"
-    end
-    
-    Note over API: "Returns after all stops set"
-    Note over Strategy: "Active signals complete naturally"
-```
+![Mermaid Diagram](./diagrams\20_Walker_API_1.svg)
 
 **Example**:
 ```typescript
@@ -459,43 +386,7 @@ statusList.forEach(status => {
 
 The walker orchestrates multiple strategy backtests sequentially, aggregating results and tracking the best performer by configured metric.
 
-```mermaid
-graph TB
-    START["Walker.run()<br/>or Walker.background()"]
-    VALIDATE["Validate Components"]
-    CLEAR["Clear Cached Data"]
-    SCHEMA["Load Walker Schema"]
-    LOOP_START["For Each Strategy"]
-    BACKTEST["Run Backtest"]
-    AGGREGATE["Aggregate Results"]
-    COMPARE["Compare Metrics"]
-    UPDATE["Update Best"]
-    YIELD["Yield Progress"]
-    LOOP_END{"More<br/>Strategies?"}
-    DONE["Emit Done Event"]
-    END["Complete"]
-    
-    START --> VALIDATE
-    VALIDATE -->|"walker, exchange,<br/>frame, strategies"| CLEAR
-    CLEAR -->|"walker markdown,<br/>backtest markdown,<br/>strategy core"| SCHEMA
-    SCHEMA --> LOOP_START
-    LOOP_START --> BACKTEST
-    BACKTEST -->|"BacktestLogicPublicService"| AGGREGATE
-    AGGREGATE -->|"Collect closed signals"| COMPARE
-    COMPARE -->|"Calculate metric"| UPDATE
-    UPDATE --> YIELD
-    YIELD --> LOOP_END
-    LOOP_END -->|"Yes"| LOOP_START
-    LOOP_END -->|"No"| DONE
-    DONE --> END
-    
-    subgraph "Per Strategy"
-        BACKTEST
-        AGGREGATE
-        COMPARE
-        UPDATE
-    end
-```
+![Mermaid Diagram](./diagrams\20_Walker_API_2.svg)
 
 **Sequential Processing**: Strategies are tested one at a time to ensure deterministic results and consistent resource usage. Each backtest completes fully before the next begins.
 
@@ -509,27 +400,7 @@ Walker instances are memoized by `symbol:walkerName` key to ensure isolation and
 
 ### Memoization Pattern
 
-```mermaid
-graph LR
-    CALL1["Walker.run<br/>(BTCUSDT, walker1)"]
-    CALL2["Walker.background<br/>(BTCUSDT, walker1)"]
-    CALL3["Walker.run<br/>(ETHUSDT, walker1)"]
-    
-    MEMO["_getInstance<br/>(memoized)"]
-    
-    INST1["WalkerInstance<br/>BTCUSDT:walker1"]
-    INST2["WalkerInstance<br/>ETHUSDT:walker1"]
-    
-    CALL1 --> MEMO
-    CALL2 --> MEMO
-    CALL3 --> MEMO
-    
-    MEMO -->|"key: BTCUSDT:walker1"| INST1
-    MEMO -->|"key: ETHUSDT:walker1"| INST2
-    
-    CALL1 -.->|"same instance"| INST1
-    CALL2 -.->|"same instance"| INST1
-```
+![Mermaid Diagram](./diagrams\20_Walker_API_3.svg)
 
 **Benefits**:
 - Each symbol-walker combination maintains isolated state
@@ -545,29 +416,7 @@ graph LR
 
 The `task` method wraps walker execution with `singlerun` to prevent concurrent execution of the same walker instance.
 
-```mermaid
-stateDiagram-v2
-    [*] --> Ready: "new WalkerInstance()"
-    
-    Ready --> Pending: "task() called"
-    Pending --> Fulfilled: "Execution succeeds"
-    Pending --> Rejected: "Execution fails"
-    
-    Fulfilled --> Ready: "task() called again"
-    Rejected --> Ready: "task() called again"
-    
-    Pending --> Pending: "task() called<br/>(returns same promise)"
-    
-    note right of Pending
-        singlerun ensures only
-        one execution at a time
-    end note
-    
-    note right of Ready
-        Multiple calls create
-        new promises
-    end note
-```
+![Mermaid Diagram](./diagrams\20_Walker_API_4.svg)
 
 **Sources**: [src/classes/Walker.ts:112-125]()
 
@@ -648,26 +497,7 @@ interface WalkerContract {
 
 ### Event Flow
 
-```mermaid
-sequenceDiagram
-    participant Walker as "Walker.run()"
-    participant Logic as "WalkerLogicPrivateService"
-    participant Backtest as "BacktestLogicPublicService"
-    participant Subject as "walkerEmitter"
-    
-    Walker->>Logic: "Execute walker"
-    
-    loop "For each strategy"
-        Logic->>Backtest: "Run backtest"
-        Backtest-->>Logic: "Results"
-        Logic->>Logic: "Calculate metrics"
-        Logic->>Logic: "Update best"
-        Logic->>Subject: "emit progress"
-        Subject-->>Walker: "yield WalkerContract"
-    end
-    
-    Logic-->>Walker: "Complete"
-```
+![Mermaid Diagram](./diagrams\20_Walker_API_5.svg)
 
 **Sources**: [src/classes/Walker.ts:156-219](), [docs/interfaces/WalkerStopContract.md:1-41]()
 
@@ -877,31 +707,7 @@ try {
 
 Walker internally uses the Backtest API for each strategy execution. Understanding this relationship clarifies the architecture.
 
-```mermaid
-graph TB
-    WALKER["Walker.run()"]
-    WALKER_LOGIC["WalkerLogicPrivateService"]
-    BACKTEST_LOGIC["BacktestLogicPublicService"]
-    BACKTEST_PRIVATE["BacktestLogicPrivateService"]
-    STRATEGY["ClientStrategy"]
-    
-    WALKER --> WALKER_LOGIC
-    WALKER_LOGIC -->|"Sequential loop"| BACKTEST_LOGIC
-    BACKTEST_LOGIC --> BACKTEST_PRIVATE
-    BACKTEST_PRIVATE --> STRATEGY
-    
-    WALKER_LOGIC -.->|"Aggregates results"| WALKER_LOGIC
-    WALKER_LOGIC -.->|"Compares metrics"| WALKER_LOGIC
-    WALKER_LOGIC -.->|"Tracks best"| WALKER_LOGIC
-    
-    note1["Walker orchestrates"]
-    note2["Backtest executes"]
-    note3["Strategy generates signals"]
-    
-    WALKER_LOGIC -.-> note1
-    BACKTEST_PRIVATE -.-> note2
-    STRATEGY -.-> note3
-```
+![Mermaid Diagram](./diagrams\20_Walker_API_6.svg)
 
 **Key Differences**:
 - **Backtest**: Single strategy, yields all closed signals

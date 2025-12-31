@@ -37,69 +37,7 @@ Sources: [src/lib/services/markdown/HeatMarkdownService.ts:1-609]()
 
 ## System Architecture
 
-```mermaid
-graph TB
-    subgraph "Event Sources"
-        SE[signalEmitter<br/>All closed signals]
-    end
-    
-    subgraph "HeatMarkdownService"
-        HMS[HeatMarkdownService<br/>Public API]
-        INIT[init method<br/>singleshot subscription]
-        TICK[tick method<br/>Filter closed signals]
-        GETSTORAGE[getStorage memoized<br/>Key: strategyName]
-    end
-    
-    subgraph "Storage Layer"
-        HS1[HeatmapStorage<br/>strategy-1]
-        HS2[HeatmapStorage<br/>strategy-2]
-        HS3[HeatmapStorage<br/>strategy-N]
-        
-        SYMBOLDATA[symbolData: Map<br/>symbol -> signals array]
-        ADDSIGNAL[addSignal method<br/>Per-symbol MAX_EVENTS=250]
-    end
-    
-    subgraph "Statistics Calculation"
-        CALCSTATS[calculateSymbolStats<br/>Per-symbol metrics]
-        GETDATA[getData method<br/>Portfolio aggregation]
-    end
-    
-    subgraph "Output Generation"
-        GETREPORT[getReport method<br/>Markdown with tables]
-        DUMP[dump method<br/>Write to disk]
-        COLUMNS[COLUMN_CONFIG.heat_columns<br/>Display configuration]
-    end
-    
-    SE -->|subscribe| INIT
-    INIT --> TICK
-    TICK -->|closed signals only| GETSTORAGE
-    
-    GETSTORAGE -->|strategy-1| HS1
-    GETSTORAGE -->|strategy-2| HS2
-    GETSTORAGE -->|strategy-N| HS3
-    
-    HS1 --> SYMBOLDATA
-    HS2 --> SYMBOLDATA
-    HS3 --> SYMBOLDATA
-    
-    SYMBOLDATA --> ADDSIGNAL
-    
-    HMS -->|getData| GETDATA
-    HMS -->|getReport| GETREPORT
-    HMS -->|dump| DUMP
-    
-    GETDATA --> CALCSTATS
-    CALCSTATS --> SYMBOLDATA
-    
-    GETREPORT --> GETDATA
-    GETREPORT --> COLUMNS
-    
-    DUMP --> GETREPORT
-    
-    style HMS fill:#f9f9f9
-    style SYMBOLDATA fill:#f9f9f9
-    style CALCSTATS fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\76_Heatmap_Analytics_0.svg)
 
 **Service Integration**: `HeatMarkdownService` is instantiated via the dependency injection system and subscribes to `signalEmitter` on first use. Unlike `BacktestMarkdownService` and `LiveMarkdownService` which use `symbol:strategyName` as storage keys, `HeatMarkdownService` uses only `strategyName` as the key because it aggregates across all symbols.
 
@@ -157,35 +95,7 @@ Sources: [src/model/HeatmapStatistics.model.ts](), [src/lib/services/markdown/He
 
 ## Signal Accumulation Flow
 
-```mermaid
-sequenceDiagram
-    participant Strat as ClientStrategy
-    participant Emitter as signalEmitter
-    participant HMS as HeatMarkdownService
-    participant Storage as HeatmapStorage
-    participant Map as symbolData Map
-    
-    Strat->>Emitter: emit(IStrategyTickResultClosed)
-    Emitter->>HMS: tick(data)
-    
-    alt data.action !== "closed"
-        HMS->>HMS: return early
-    else data.action === "closed"
-        HMS->>HMS: getStorage(data.strategyName)
-        HMS->>Storage: addSignal(data)
-        Storage->>Map: get(data.symbol)
-        
-        alt symbol not in map
-            Storage->>Map: set(symbol, [])
-        end
-        
-        Storage->>Map: signals.unshift(data)
-        
-        alt signals.length > MAX_EVENTS
-            Storage->>Map: signals.pop()
-        end
-    end
-```
+![Mermaid Diagram](./diagrams\76_Heatmap_Analytics_1.svg)
 
 **Event Filtering**: The `tick` method only processes signals where `action === "closed"` [src/lib/services/markdown/HeatMarkdownService.ts:460-462](). Idle, opened, active, and scheduled signals are ignored.
 
@@ -244,32 +154,7 @@ Sources: [src/lib/services/markdown/HeatMarkdownService.ts:115-271]()
 
 ## Portfolio Aggregation
 
-```mermaid
-graph LR
-    subgraph "Per-Symbol Stats"
-        SYM1["Symbol: BTCUSDT<br/>totalPnl: 12.5<br/>sharpeRatio: 1.8<br/>totalTrades: 45"]
-        SYM2["Symbol: ETHUSDT<br/>totalPnl: 8.3<br/>sharpeRatio: 1.5<br/>totalTrades: 38"]
-        SYM3["Symbol: SOLUSDT<br/>totalPnl: -2.1<br/>sharpeRatio: 0.8<br/>totalTrades: 22"]
-    end
-    
-    subgraph "Aggregation Logic"
-        AGG["getData method<br/>Portfolio calculation"]
-    end
-    
-    subgraph "Portfolio Metrics"
-        PTOTAL["portfolioTotalPnl:<br/>12.5 + 8.3 + (-2.1) = 18.7"]
-        PTRADES["portfolioTotalTrades:<br/>45 + 38 + 22 = 105"]
-        PSHARPE["portfolioSharpeRatio:<br/>(1.8×45 + 1.5×38 + 0.8×22) / 105 = 1.52"]
-    end
-    
-    SYM1 --> AGG
-    SYM2 --> AGG
-    SYM3 --> AGG
-    
-    AGG --> PTOTAL
-    AGG --> PTRADES
-    AGG --> PSHARPE
-```
+![Mermaid Diagram](./diagrams\76_Heatmap_Analytics_2.svg)
 
 The `getData` method [src/lib/services/markdown/HeatMarkdownService.ts:278-330]() performs three operations:
 
@@ -413,38 +298,7 @@ Sources: [src/lib/services/markdown/HeatMarkdownService.ts:49](), [src/model/Col
 
 ## Integration with Other Services
 
-```mermaid
-graph TB
-    subgraph "Strategy Execution"
-        CS[ClientStrategy.tick]
-    end
-    
-    subgraph "Event System"
-        SE[signalEmitter<br/>broadcasts to all]
-        SBE[signalBacktestEmitter]
-        SLE[signalLiveEmitter]
-    end
-    
-    subgraph "Markdown Services"
-        BMS[BacktestMarkdownService<br/>Per symbol-strategy]
-        LMS[LiveMarkdownService<br/>Per symbol-strategy]
-        HMS[HeatMarkdownService<br/>Per strategy, all symbols]
-    end
-    
-    CS -->|emit closed signal| SE
-    SE --> SBE
-    SE --> SLE
-    
-    SE -->|subscribe| BMS
-    SBE -->|subscribe| BMS
-    
-    SE -->|subscribe| LMS
-    SLE -->|subscribe| LMS
-    
-    SE -->|subscribe| HMS
-    
-    style HMS fill:#f9f9f9
-```
+![Mermaid Diagram](./diagrams\76_Heatmap_Analytics_3.svg)
 
 **Key Differences**:
 

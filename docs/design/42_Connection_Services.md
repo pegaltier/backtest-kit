@@ -29,59 +29,7 @@ For information about the client implementations that connection services instan
 
 Connection services sit between the global service layer and client implementations, acting as intelligent routers and instance factories. They inject dependencies into clients and ensure proper initialization before operation execution.
 
-```mermaid
-graph TB
-    subgraph "Global Service Layer"
-        GSS["StrategyGlobalService<br/>Entry point for strategy operations"]
-        GPS["PartialGlobalService<br/>Entry point for partial tracking"]
-        GRS["RiskGlobalService<br/>Entry point for risk management"]
-    end
-    
-    subgraph "Connection Service Layer (Factory)"
-        SCS["StrategyConnectionService<br/>getStrategy memoized factory"]
-        PCS["PartialConnectionService<br/>getPartial memoized factory"]
-        RCS["RiskConnectionService<br/>getRisk memoized factory"]
-        ECS["ExchangeConnectionService<br/>getExchange memoized factory"]
-    end
-    
-    subgraph "Client Implementation Layer"
-        CS["ClientStrategy<br/>Signal state machine"]
-        CP["ClientPartial<br/>Profit/loss levels"]
-        CR["ClientRisk<br/>Position tracking"]
-        CE["ClientExchange<br/>Market data"]
-    end
-    
-    subgraph "Schema Services (Data Source)"
-        SSS["StrategySchemaService<br/>Strategy configurations"]
-        ESS["ExchangeSchemaService<br/>Exchange configurations"]
-        RSS["RiskSchemaService<br/>Risk configurations"]
-    end
-    
-    GSS -->|"delegates"| SCS
-    GPS -->|"delegates"| PCS
-    GRS -->|"delegates"| RCS
-    
-    SCS -->|"creates/caches"| CS
-    PCS -->|"creates/caches"| CP
-    RCS -->|"creates/caches"| CR
-    ECS -->|"creates/caches"| CE
-    
-    SCS -.->|"reads config"| SSS
-    PCS -.->|"reads config"| SSS
-    RCS -.->|"reads config"| RSS
-    ECS -.->|"reads config"| ESS
-    
-    CS -->|"uses"| CE
-    CS -->|"uses"| CR
-    CS -->|"uses"| CP
-    
-    note1["Key pattern:<br/>Memoize by composite keys<br/>symbol:strategyName:backtest"]
-    note2["Instance lifecycle:<br/>create → initialize → operate → clear"]
-    
-    SCS -.-> note1
-    PCS -.-> note1
-    CS -.-> note2
-```
+![Mermaid Diagram](./diagrams\42_Connection_Services_0.svg)
 
 **Sources**: 
 - [src/lib/services/connection/StrategyConnectionService.ts:1-325]()
@@ -154,50 +102,7 @@ The `backtest` flag in keys ensures that live trading and backtesting never shar
 
 Client instances follow a consistent lifecycle managed by their connection service:
 
-```mermaid
-stateDiagram-v2
-    [*] --> NotCreated: Initial state
-    
-    NotCreated --> Creating: First call to getX()
-    Creating --> Cached: Factory function executes
-    
-    Cached --> Initializing: Operation called (tick, profit, etc)
-    Initializing --> Ready: waitForInit() completes
-    
-    Ready --> Operating: Process requests
-    Operating --> Operating: Subsequent operations
-    
-    Operating --> Clearing: clear() called
-    Clearing --> NotCreated: Memoize cache entry removed
-    
-    note right of Creating
-        Factory function:
-        - Read schema
-        - Inject dependencies
-        - Construct client instance
-    end note
-    
-    note right of Initializing
-        waitForInit():
-        - Load persisted state (live only)
-        - Validate configuration
-        - One-time setup (singleshot)
-    end note
-    
-    note right of Operating
-        Route operations:
-        - tick() / backtest()
-        - profit() / loss()
-        - checkSignal() / addSignal()
-    end note
-    
-    note right of Clearing
-        Cleanup:
-        - Clear persisted state
-        - Remove memoize entry
-        - Release resources
-    end note
-```
+![Mermaid Diagram](./diagrams\42_Connection_Services_1.svg)
 
 ### Initialization Pattern
 
@@ -260,37 +165,7 @@ Cache clearing is essential for:
 
 The service injects multiple dependencies into each `ClientStrategy`:
 
-```mermaid
-graph LR
-    SCS["StrategyConnectionService<br/>getStrategy()"]
-    
-    CS["ClientStrategy<br/>instance"]
-    
-    ECS["ExchangeConnectionService"]
-    RCS["RiskConnectionService"]
-    PCS["PartialConnectionService"]
-    EXCS["ExecutionContextService"]
-    MCS["MethodContextService"]
-    LS["LoggerService"]
-    
-    SSS["StrategySchemaService<br/>Configuration source"]
-    
-    SCS -->|"reads config"| SSS
-    SCS -->|"creates"| CS
-    SCS -->|"injects"| ECS
-    SCS -->|"injects"| RCS
-    SCS -->|"injects"| PCS
-    SCS -->|"injects"| EXCS
-    SCS -->|"injects"| MCS
-    SCS -->|"injects"| LS
-    
-    ECS --> CS
-    RCS --> CS
-    PCS --> CS
-    EXCS --> CS
-    MCS --> CS
-    LS --> CS
-```
+![Mermaid Diagram](./diagrams\42_Connection_Services_2.svg)
 
 **Injected Dependencies**:
 - `execution`: `ExecutionContextService` for temporal isolation (symbol, timestamp, backtest flag)
@@ -402,36 +277,7 @@ These methods are used by:
 
 Each signal gets its own `ClientPartial` instance to track its profit/loss milestones:
 
-```mermaid
-graph TB
-    subgraph "PartialConnectionService"
-        PCSmem["getPartial memoize cache<br/>Key: signalId:backtest"]
-    end
-    
-    subgraph "Active Signals"
-        sig1["Signal abc123<br/>LONG @ $50000"]
-        sig2["Signal def456<br/>SHORT @ $55000"]
-        sig3["Signal ghi789<br/>LONG @ $52000"]
-    end
-    
-    subgraph "ClientPartial Instances"
-        cp1["ClientPartial<br/>signalId: abc123<br/>profitLevels: {10, 20}<br/>lossLevels: {}"]
-        cp2["ClientPartial<br/>signalId: def456<br/>profitLevels: {}<br/>lossLevels: {10}"]
-        cp3["ClientPartial<br/>signalId: ghi789<br/>profitLevels: {10}<br/>lossLevels: {}"]
-    end
-    
-    sig1 -->|"cached by"| PCSmem
-    sig2 -->|"cached by"| PCSmem
-    sig3 -->|"cached by"| PCSmem
-    
-    PCSmem -->|"abc123:live"| cp1
-    PCSmem -->|"def456:live"| cp2
-    PCSmem -->|"ghi789:live"| cp3
-    
-    note1["Each signal tracks<br/>its own milestone progress<br/>independently"]
-    
-    cp1 -.-> note1
-```
+![Mermaid Diagram](./diagrams\42_Connection_Services_3.svg)
 
 The per-signal isolation ensures that:
 - Profit/loss levels are tracked independently for each position
@@ -539,61 +385,7 @@ This two-step cleanup ensures:
 
 Connection services are primarily accessed through utility classes (`Backtest`, `Live`, `Walker`), which provide user-facing APIs. The utility classes follow a consistent pattern:
 
-```mermaid
-graph TB
-    subgraph "Utility Class Layer"
-        BU["BacktestUtils<br/>Singleton instance"]
-        LU["LiveUtils<br/>Singleton instance"]
-        WU["WalkerUtils<br/>Singleton instance"]
-    end
-    
-    subgraph "Instance Layer"
-        BI["BacktestInstance<br/>Per symbol:strategy"]
-        LI["LiveInstance<br/>Per symbol:strategy"]
-        WI["WalkerInstance<br/>Per symbol:walker"]
-    end
-    
-    subgraph "Connection Services"
-        SCS["StrategyConnectionService"]
-        RCS["RiskConnectionService"]
-        ECS["ExchangeConnectionService"]
-        PCS["PartialConnectionService"]
-    end
-    
-    subgraph "Client Implementations"
-        CS["ClientStrategy"]
-        CR["ClientRisk"]
-        CE["ClientExchange"]
-        CP["ClientPartial"]
-    end
-    
-    BU -->|"memoized getInstance"| BI
-    LU -->|"memoized getInstance"| LI
-    WU -->|"memoized getInstance"| WI
-    
-    BI -->|"delegates to"| SCS
-    LI -->|"delegates to"| SCS
-    WI -->|"delegates to"| SCS
-    
-    SCS -->|"getStrategy()"| CS
-    SCS -->|"uses"| RCS
-    SCS -->|"uses"| ECS
-    SCS -->|"uses"| PCS
-    
-    RCS -->|"getRisk()"| CR
-    ECS -->|"getExchange()"| CE
-    PCS -->|"getPartial()"| CP
-    
-    note1["Utility classes provide<br/>user-facing API:<br/>run(), background(), stop()<br/>getData(), getReport(), dump()"]
-    
-    note2["Instances isolate state<br/>per symbol:strategy:<br/>BacktestInstance, LiveInstance"]
-    
-    note3["Connection services<br/>manage client lifecycle:<br/>create, initialize, operate, clear"]
-    
-    BU -.-> note1
-    BI -.-> note2
-    SCS -.-> note3
-```
+![Mermaid Diagram](./diagrams\42_Connection_Services_4.svg)
 
 ### Validation Before Delegation
 

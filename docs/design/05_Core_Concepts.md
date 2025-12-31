@@ -35,72 +35,7 @@ backtest-kit provides three execution modes that share strategy and exchange com
 
 ### Mode Comparison Diagram
 
-```mermaid
-graph TB
-    subgraph BacktestMode["Backtest Mode"]
-        B_Entry["Backtest.run()<br/>(Public API)"]
-        B_Command["BacktestCommandService"]
-        B_Logic["BacktestLogicPrivateService"]
-        B_Frame["FrameCoreService.getTimeframe()"]
-        B_Loop["For each timestamp in array"]
-        B_Strategy["ClientStrategy.tick()"]
-        B_Fast["ClientStrategy.backtest()<br/>(fast-forward)"]
-        B_Result["yield IStrategyTickResultClosed"]
-        
-        B_Entry --> B_Command
-        B_Command --> B_Logic
-        B_Logic --> B_Frame
-        B_Frame --> B_Loop
-        B_Loop --> B_Strategy
-        B_Strategy --> B_Fast
-        B_Fast --> B_Result
-        B_Result --> B_Loop
-    end
-    
-    subgraph LiveMode["Live Mode"]
-        L_Entry["Live.run()<br/>(Public API)"]
-        L_Command["LiveCommandService"]
-        L_Logic["LiveLogicPrivateService"]
-        L_Time["new Date()<br/>(real-time)"]
-        L_Loop["while(true) infinite loop"]
-        L_Strategy["ClientStrategy.tick()"]
-        L_Persist["PersistSignalAdapter.writeSignalData()"]
-        L_Result["yield IStrategyTickResult<br/>(all states)"]
-        L_Sleep["sleep(TICK_TTL)"]
-        
-        L_Entry --> L_Command
-        L_Command --> L_Logic
-        L_Logic --> L_Time
-        L_Time --> L_Loop
-        L_Loop --> L_Strategy
-        L_Strategy --> L_Persist
-        L_Persist --> L_Result
-        L_Result --> L_Sleep
-        L_Sleep --> L_Loop
-    end
-    
-    subgraph WalkerMode["Walker Mode"]
-        W_Entry["Walker.run()<br/>(Public API)"]
-        W_Command["WalkerCommandService"]
-        W_Logic["WalkerLogicPrivateService"]
-        W_Schema["WalkerSchemaService.getSchema()"]
-        W_Loop["For each strategy in list"]
-        W_Backtest["BacktestLogicPublicService.run()"]
-        W_Stats["BacktestMarkdownService.getData()"]
-        W_Compare["Compare by WalkerMetric"]
-        W_Result["yield WalkerContract"]
-        
-        W_Entry --> W_Command
-        W_Command --> W_Logic
-        W_Logic --> W_Schema
-        W_Schema --> W_Loop
-        W_Loop --> W_Backtest
-        W_Backtest --> W_Stats
-        W_Stats --> W_Compare
-        W_Compare --> W_Result
-        W_Result --> W_Loop
-    end
-```
+![Mermaid Diagram](./diagrams\05_Core_Concepts_0.svg)
 
 **Sources:** [src/classes/Backtest.ts:1-208](), [src/classes/Live.ts:1-220](), [src/classes/Walker.ts:1-274](), [src/lib/services/command/BacktestCommandService.ts](), [src/lib/services/command/LiveCommandService.ts](), [src/lib/services/command/WalkerCommandService.ts](), [src/lib/services/logic/BacktestLogicPrivateService.ts](), [src/lib/services/logic/LiveLogicPrivateService.ts](), [src/lib/services/logic/WalkerLogicPrivateService.ts]()
 
@@ -201,53 +136,7 @@ This guarantees:
 
 ### Event Flow Diagram
 
-```mermaid
-graph LR
-    subgraph "Event Sources"
-        Strategy["ClientStrategy.tick()<br/>ClientStrategy.backtest()"]
-        Risk["ClientRisk.checkSignal()"]
-        Partial["ClientPartial.profit()<br/>ClientPartial.loss()"]
-        Walker["WalkerLogicPrivateService"]
-    end
-    
-    subgraph "Event Emitters"
-        SignalEmit["signalEmitter<br/>signalBacktestEmitter<br/>signalLiveEmitter"]
-        RiskEmit["riskSubject"]
-        PartialEmit["partialProfitSubject<br/>partialLossSubject"]
-        DoneEmit["doneBacktestSubject<br/>doneLiveSubject<br/>doneWalkerSubject"]
-        WalkerEmit["walkerEmitter<br/>walkerCompleteSubject"]
-    end
-    
-    subgraph "Event Consumers"
-        Listen["listenSignal()<br/>listenSignalBacktest()<br/>listenSignalLive()"]
-        ListenRisk["listenRisk()"]
-        ListenPartial["listenPartialProfit()<br/>listenPartialLoss()"]
-        ListenDone["listenDoneBacktest()<br/>listenDoneLive()<br/>listenDoneWalker()"]
-        ListenWalker["listenWalker()<br/>listenWalkerComplete()"]
-    end
-    
-    subgraph "Queued Processing"
-        Queue["queued() wrapper<br/>Sequential async execution"]
-    end
-    
-    Strategy --> SignalEmit
-    Risk --> RiskEmit
-    Partial --> PartialEmit
-    Walker --> DoneEmit
-    Walker --> WalkerEmit
-    
-    SignalEmit --> Queue
-    RiskEmit --> Queue
-    PartialEmit --> Queue
-    DoneEmit --> Queue
-    WalkerEmit --> Queue
-    
-    Queue --> Listen
-    Queue --> ListenRisk
-    Queue --> ListenPartial
-    Queue --> ListenDone
-    Queue --> ListenWalker
-```
+![Mermaid Diagram](./diagrams\05_Core_Concepts_1.svg)
 
 **Sources:** [src/client/ClientStrategy.ts](), [src/client/ClientRisk.ts](), [src/client/ClientPartial.ts](), [src/lib/services/logic/WalkerLogicPrivateService.ts](), [src/function/event.ts](), [src/config/emitters.ts]()
 
@@ -272,61 +161,7 @@ Signals progress through a state machine implemented as a discriminated union of
 
 ### State Machine Diagram
 
-```mermaid
-stateDiagram-v2
-    [*] --> Idle
-    
-    Idle --> Scheduled: "getSignal() returns<br/>ISignalDto with priceOpen"
-    Idle --> Opened: "getSignal() returns<br/>ISignalDto without priceOpen"
-    
-    Scheduled --> Opened: "Price reaches priceOpen<br/>(activation)"
-    Scheduled --> Cancelled: "Timeout after<br/>CC_SCHEDULE_AWAIT_MINUTES<br/>or StopLoss hit"
-    
-    Opened --> Active: "Position monitoring begins"
-    
-    Active --> Closed: "TP/SL hit or<br/>time_expired"
-    Active --> Active: "Continue monitoring"
-    
-    Closed --> [*]
-    Cancelled --> [*]
-    
-    note right of Idle
-        IStrategyTickResultIdle
-        action: "idle"
-        signal: null
-    end note
-    
-    note right of Scheduled
-        IStrategyTickResultScheduled
-        action: "scheduled"
-        signal: IScheduledSignalRow
-    end note
-    
-    note right of Opened
-        IStrategyTickResultOpened
-        action: "opened"
-        signal: ISignalRow
-    end note
-    
-    note right of Active
-        IStrategyTickResultActive
-        action: "active"
-        signal: ISignalRow
-    end note
-    
-    note right of Closed
-        IStrategyTickResultClosed
-        action: "closed"
-        closeReason: "take_profit" | "stop_loss" | "time_expired"
-        pnl: IStrategyPnL
-    end note
-    
-    note right of Cancelled
-        IStrategyTickResultCancelled
-        action: "cancelled"
-        signal: IScheduledSignalRow
-    end note
-```
+![Mermaid Diagram](./diagrams\05_Core_Concepts_2.svg)
 
 **Sources:** [src/interfaces/Strategy.interface.ts:159-296](), [src/client/ClientStrategy.ts:40-895](), Diagram 5 from high-level architecture
 
@@ -370,63 +205,7 @@ backtest-kit uses a registration-based architecture where components are defined
 
 ### Component Registration Flow
 
-```mermaid
-graph LR
-    subgraph "User Code"
-        AddStrategy["addStrategy(IStrategySchema)"]
-        AddExchange["addExchange(IExchangeSchema)"]
-        AddFrame["addFrame(IFrameSchema)"]
-        AddRisk["addRisk(IRiskSchema)"]
-    end
-    
-    subgraph "Schema Services"
-        StrategySchema["StrategySchemaService<br/>ToolRegistry pattern"]
-        ExchangeSchema["ExchangeSchemaService<br/>ToolRegistry pattern"]
-        FrameSchema["FrameSchemaService<br/>ToolRegistry pattern"]
-        RiskSchema["RiskSchemaService<br/>ToolRegistry pattern"]
-    end
-    
-    subgraph "Validation Services"
-        StrategyValidation["StrategyValidationService<br/>validate() memoized"]
-        ExchangeValidation["ExchangeValidationService<br/>validate() memoized"]
-        FrameValidation["FrameValidationService<br/>validate() memoized"]
-        RiskValidation["RiskValidationService<br/>validate() memoized"]
-    end
-    
-    subgraph "Connection Services"
-        StrategyConnection["StrategyConnectionService<br/>getStrategy() memoized"]
-        ExchangeConnection["ExchangeConnectionService<br/>getExchange() memoized"]
-        FrameConnection["FrameConnectionService<br/>getFrame() memoized"]
-        RiskConnection["RiskConnectionService<br/>getRisk() memoized"]
-    end
-    
-    subgraph "Client Instances"
-        ClientStrategy["ClientStrategy<br/>tick(), backtest()"]
-        ClientExchange["ClientExchange<br/>getCandles(), getAveragePrice()"]
-        ClientFrame["ClientFrame<br/>getTimeframe()"]
-        ClientRisk["ClientRisk<br/>checkSignal()"]
-    end
-    
-    AddStrategy --> StrategySchema
-    AddExchange --> ExchangeSchema
-    AddFrame --> FrameSchema
-    AddRisk --> RiskSchema
-    
-    StrategySchema --> StrategyValidation
-    ExchangeSchema --> ExchangeValidation
-    FrameSchema --> FrameValidation
-    RiskSchema --> RiskValidation
-    
-    StrategyValidation --> StrategyConnection
-    ExchangeValidation --> ExchangeConnection
-    FrameValidation --> FrameConnection
-    RiskValidation --> RiskConnection
-    
-    StrategyConnection --> ClientStrategy
-    ExchangeConnection --> ClientExchange
-    FrameConnection --> ClientFrame
-    RiskConnection --> ClientRisk
-```
+![Mermaid Diagram](./diagrams\05_Core_Concepts_3.svg)
 
 **Sources:** [src/index.ts:1-131](), [src/lib/services/connection/StrategyConnectionService.ts:76-94](), Diagram 2 from high-level architecture
 
@@ -449,35 +228,7 @@ Each schema is stored in a corresponding `*SchemaService` using the ToolRegistry
 
 The framework uses memoized Connection Services to lazily instantiate Client classes:
 
-```mermaid
-graph TB
-    subgraph "Schema Storage"
-        Schema["IStrategySchema<br/>{ strategyName, interval, getSignal }"]
-    end
-    
-    subgraph "Connection Service Layer"
-        Connection["StrategyConnectionService<br/>getStrategy(strategyName)"]
-        Memoize["memoize() by strategyName"]
-    end
-    
-    subgraph "Client Instance"
-        Client["ClientStrategy<br/>{ _pendingSignal, _scheduledSignal }"]
-        Tick["tick(symbol)"]
-        Backtest["backtest(candles)"]
-    end
-    
-    Schema --> Connection
-    Connection --> Memoize
-    Memoize --> Client
-    Client --> Tick
-    Client --> Backtest
-    
-    Note1["First call: creates instance"]
-    Note2["Subsequent calls: returns cached"]
-    
-    Memoize -.-> Note1
-    Memoize -.-> Note2
-```
+![Mermaid Diagram](./diagrams\05_Core_Concepts_4.svg)
 
 **Sources:** [src/lib/services/connection/StrategyConnectionService.ts:76-94](), [src/client/ClientStrategy.ts:1-1092]()
 
@@ -569,26 +320,7 @@ This two-context design separates:
 
 ### Context Flow Example
 
-```mermaid
-graph TB
-    User["User calls<br/>Backtest.run(symbol, context)"]
-    
-    Public["BacktestGlobalService.run()"]
-    MethodWrap["MethodContextService<br/>.runAsyncIterator()"]
-    Private["BacktestLogicPrivateService.run()"]
-    ExecWrap["ExecutionContextService<br/>.runInContext()"]
-    
-    Operation["strategy.tick()<br/>NO context parameters"]
-    
-    Resolve["Di-scoped resolves:<br/>executionContextService.context<br/>methodContextService.context"]
-    
-    User --> Public
-    Public --> MethodWrap
-    MethodWrap --> Private
-    Private --> ExecWrap
-    ExecWrap --> Operation
-    Operation --> Resolve
-```
+![Mermaid Diagram](./diagrams\05_Core_Concepts_5.svg)
 
 **Sources:** [src/lib/services/context/ExecutionContextService.ts](), [src/lib/services/context/MethodContextService.ts](), Diagram 6 from high-level architecture
 

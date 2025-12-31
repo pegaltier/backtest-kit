@@ -62,81 +62,7 @@ All schema services follow identical structural patterns but store different sch
 
 ## Service Architecture Integration
 
-```mermaid
-graph TB
-    subgraph "Public API Layer"
-        ADD_STRAT["addStrategy(schema)"]
-        ADD_EXCH["addExchange(schema)"]
-        ADD_FRAME["addFrame(schema)"]
-        ADD_RISK["addRisk(schema)"]
-        ADD_SIZING["addSizing(schema)"]
-        ADD_WALKER["addWalker(schema)"]
-        ADD_OPT["addOptimizer(schema)"]
-    end
-    
-    subgraph "Validation Layer"
-        VAL_STRAT["StrategyValidationService<br/>.addStrategy()"]
-        VAL_EXCH["ExchangeValidationService<br/>.addExchange()"]
-        VAL_FRAME["FrameValidationService<br/>.addFrame()"]
-        VAL_RISK["RiskValidationService<br/>.addRisk()"]
-        VAL_SIZING["SizingValidationService<br/>.addSizing()"]
-        VAL_WALKER["WalkerValidationService<br/>.addWalker()"]
-        VAL_OPT["OptimizerValidationService<br/>.addOptimizer()"]
-    end
-    
-    subgraph "Schema Services (Storage Layer)"
-        SCHEMA_STRAT["StrategySchemaService<br/>.register(name, schema)"]
-        SCHEMA_EXCH["ExchangeSchemaService<br/>.register(name, schema)"]
-        SCHEMA_FRAME["FrameSchemaService<br/>.register(name, schema)"]
-        SCHEMA_RISK["RiskSchemaService<br/>.register(name, schema)"]
-        SCHEMA_SIZING["SizingSchemaService<br/>.register(name, schema)"]
-        SCHEMA_WALKER["WalkerSchemaService<br/>.register(name, schema)"]
-        SCHEMA_OPT["OptimizerSchemaService<br/>.register(name, schema)"]
-    end
-    
-    subgraph "In-Memory Storage"
-        REGISTRY["ToolRegistry Pattern<br/>Map&lt;name, schema&gt;"]
-    end
-    
-    subgraph "Connection Layer (Consumers)"
-        CONN_STRAT["StrategyConnectionService<br/>.getStrategy(name)"]
-        CONN_EXCH["ExchangeConnectionService<br/>.getExchange(name)"]
-        CONN_FRAME["FrameConnectionService<br/>.getFrame(name)"]
-        CONN_RISK["RiskConnectionService<br/>.getRisk(name)"]
-        CONN_SIZING["SizingConnectionService<br/>.getSizing(name)"]
-        CONN_OPT["OptimizerConnectionService<br/>.getOptimizer(name)"]
-    end
-    
-    ADD_STRAT --> VAL_STRAT
-    ADD_STRAT --> SCHEMA_STRAT
-    ADD_EXCH --> VAL_EXCH
-    ADD_EXCH --> SCHEMA_EXCH
-    ADD_FRAME --> VAL_FRAME
-    ADD_FRAME --> SCHEMA_FRAME
-    ADD_RISK --> VAL_RISK
-    ADD_RISK --> SCHEMA_RISK
-    ADD_SIZING --> VAL_SIZING
-    ADD_SIZING --> SCHEMA_SIZING
-    ADD_WALKER --> VAL_WALKER
-    ADD_WALKER --> SCHEMA_WALKER
-    ADD_OPT --> VAL_OPT
-    ADD_OPT --> SCHEMA_OPT
-    
-    SCHEMA_STRAT --> REGISTRY
-    SCHEMA_EXCH --> REGISTRY
-    SCHEMA_FRAME --> REGISTRY
-    SCHEMA_RISK --> REGISTRY
-    SCHEMA_SIZING --> REGISTRY
-    SCHEMA_WALKER --> REGISTRY
-    SCHEMA_OPT --> REGISTRY
-    
-    CONN_STRAT -.retrieves.-> SCHEMA_STRAT
-    CONN_EXCH -.retrieves.-> SCHEMA_EXCH
-    CONN_FRAME -.retrieves.-> SCHEMA_FRAME
-    CONN_RISK -.retrieves.-> SCHEMA_RISK
-    CONN_SIZING -.retrieves.-> SCHEMA_SIZING
-    CONN_OPT -.retrieves.-> SCHEMA_OPT
-```
+![Mermaid Diagram](./diagrams\43_Schema_Services_0.svg)
 
 **Diagram: Schema Services in the Service Layer Hierarchy**
 
@@ -158,21 +84,7 @@ Each schema service implements the **ToolRegistry pattern** for in-memory storag
 
 ### Core ToolRegistry Interface
 
-```mermaid
-graph LR
-    subgraph "ToolRegistry&lt;TSchema&gt;"
-        STORE["Map&lt;name, schema&gt;<br/>Private storage"]
-        REGISTER["register(name, schema)<br/>Store in map"]
-        GET["get(name)<br/>Retrieve from map<br/>Throw if not found"]
-        LIST["list()<br/>Return Array&lt;name&gt;"]
-        HAS["has(name)<br/>Check existence"]
-    end
-    
-    REGISTER --> STORE
-    GET --> STORE
-    LIST --> STORE
-    HAS --> STORE
-```
+![Mermaid Diagram](./diagrams\43_Schema_Services_1.svg)
 
 **Diagram: ToolRegistry Storage Operations**
 
@@ -186,27 +98,7 @@ The ToolRegistry pattern provides a simple but consistent API across all schema 
 
 The registration flow is consistent across all component types. Here is the detailed flow for strategy registration:
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant addStrategy
-    participant LoggerService
-    participant StrategyValidationService
-    participant StrategySchemaService
-    participant ToolRegistry
-    
-    User->>addStrategy: addStrategy(strategySchema)
-    addStrategy->>LoggerService: info("add.addStrategy", schema)
-    addStrategy->>StrategyValidationService: addStrategy(name, schema)
-    Note over StrategyValidationService: Validate schema structure<br/>Check required fields<br/>Validate interval values<br/>See Validation Services
-    StrategyValidationService-->>addStrategy: (throws if invalid)
-    addStrategy->>StrategySchemaService: register(strategyName, schema)
-    StrategySchemaService->>ToolRegistry: set(name, schema)
-    Note over ToolRegistry: Store in Map<br/>Overwrites if exists
-    ToolRegistry-->>StrategySchemaService: void
-    StrategySchemaService-->>addStrategy: void
-    addStrategy-->>User: void (success)
-```
+![Mermaid Diagram](./diagrams\43_Schema_Services_2.svg)
 
 **Diagram: Strategy Registration Sequence**
 
@@ -220,34 +112,7 @@ The registration flow shows the orchestration between validation and storage. Va
 
 Connection services are the primary consumers of schema services. They retrieve stored schemas to create memoized client instances:
 
-```mermaid
-graph TB
-    subgraph "Connection Service Request"
-        CTX["MethodContextService<br/>strategyName: 'my-strategy'<br/>exchangeName: 'binance'<br/>frameName: '1d-backtest'"]
-        CONN["StrategyConnectionService<br/>.getStrategy()"]
-    end
-    
-    subgraph "Schema Retrieval"
-        SCHEMA["StrategySchemaService<br/>.get('my-strategy')"]
-        REGISTRY["ToolRegistry<br/>Map.get('my-strategy')"]
-    end
-    
-    subgraph "Retrieved Schema Data"
-        STRAT_SCHEMA["IStrategySchema {<br/>strategyName: 'my-strategy'<br/>interval: '5m'<br/>getSignal: async fn<br/>callbacks?: {...}<br/>riskName?: 'conservative'<br/>}"]
-    end
-    
-    subgraph "Client Instantiation"
-        CLIENT["new ClientStrategy({<br/>...schema,<br/>logger,<br/>execution,<br/>method<br/>})"]
-        MEMOIZE["memoize() cache<br/>Key: 'BTCUSDT:my-strategy:true'"]
-    end
-    
-    CTX --> CONN
-    CONN --> SCHEMA
-    SCHEMA --> REGISTRY
-    REGISTRY --> STRAT_SCHEMA
-    STRAT_SCHEMA --> CLIENT
-    CLIENT --> MEMOIZE
-```
+![Mermaid Diagram](./diagrams\43_Schema_Services_3.svg)
 
 **Diagram: Schema Retrieval and Client Instantiation Flow**
 
@@ -382,66 +247,7 @@ Connection services use `MethodContextService` to determine which schema to retr
 
 Schema services are registered in the DI container as singleton instances:
 
-```mermaid
-graph TB
-    subgraph "DI Registration (src/lib/core/provide.ts)"
-        REG_STRAT["provide(TYPES.strategySchemaService,<br/>() => new StrategySchemaService())"]
-        REG_EXCH["provide(TYPES.exchangeSchemaService,<br/>() => new ExchangeSchemaService())"]
-        REG_FRAME["provide(TYPES.frameSchemaService,<br/>() => new FrameSchemaService())"]
-        REG_RISK["provide(TYPES.riskSchemaService,<br/>() => new RiskSchemaService())"]
-        REG_SIZING["provide(TYPES.sizingSchemaService,<br/>() => new SizingSchemaService())"]
-        REG_WALKER["provide(TYPES.walkerSchemaService,<br/>() => new WalkerSchemaService())"]
-        REG_OPT["provide(TYPES.optimizerSchemaService,<br/>() => new OptimizerSchemaService())"]
-    end
-    
-    subgraph "TYPES Symbols (src/lib/core/types.ts)"
-        SYM_STRAT["TYPES.strategySchemaService<br/>Symbol('strategySchemaService')"]
-        SYM_EXCH["TYPES.exchangeSchemaService<br/>Symbol('exchangeSchemaService')"]
-        SYM_FRAME["TYPES.frameSchemaService<br/>Symbol('frameSchemaService')"]
-        SYM_RISK["TYPES.riskSchemaService<br/>Symbol('riskSchemaService')"]
-        SYM_SIZING["TYPES.sizingSchemaService<br/>Symbol('sizingSchemaService')"]
-        SYM_WALKER["TYPES.walkerSchemaService<br/>Symbol('walkerSchemaService')"]
-        SYM_OPT["TYPES.optimizerSchemaService<br/>Symbol('optimizerSchemaService')"]
-    end
-    
-    subgraph "Service Injection (src/lib/index.ts)"
-        INJ_STRAT["inject&lt;StrategySchemaService&gt;<br/>(TYPES.strategySchemaService)"]
-        INJ_EXCH["inject&lt;ExchangeSchemaService&gt;<br/>(TYPES.exchangeSchemaService)"]
-        INJ_FRAME["inject&lt;FrameSchemaService&gt;<br/>(TYPES.frameSchemaService)"]
-        INJ_RISK["inject&lt;RiskSchemaService&gt;<br/>(TYPES.riskSchemaService)"]
-        INJ_SIZING["inject&lt;SizingSchemaService&gt;<br/>(TYPES.sizingSchemaService)"]
-        INJ_WALKER["inject&lt;WalkerSchemaService&gt;<br/>(TYPES.walkerSchemaService)"]
-        INJ_OPT["inject&lt;OptimizerSchemaService&gt;<br/>(TYPES.optimizerSchemaService)"]
-    end
-    
-    subgraph "Exported Services"
-        EXPORT["backtest.strategySchemaService<br/>backtest.exchangeSchemaService<br/>backtest.frameSchemaService<br/>backtest.riskSchemaService<br/>backtest.sizingSchemaService<br/>backtest.walkerSchemaService<br/>backtest.optimizerSchemaService"]
-    end
-    
-    REG_STRAT --> SYM_STRAT
-    REG_EXCH --> SYM_EXCH
-    REG_FRAME --> SYM_FRAME
-    REG_RISK --> SYM_RISK
-    REG_SIZING --> SYM_SIZING
-    REG_WALKER --> SYM_WALKER
-    REG_OPT --> SYM_OPT
-    
-    SYM_STRAT --> INJ_STRAT
-    SYM_EXCH --> INJ_EXCH
-    SYM_FRAME --> INJ_FRAME
-    SYM_RISK --> INJ_RISK
-    SYM_SIZING --> INJ_SIZING
-    SYM_WALKER --> INJ_WALKER
-    SYM_OPT --> INJ_OPT
-    
-    INJ_STRAT --> EXPORT
-    INJ_EXCH --> EXPORT
-    INJ_FRAME --> EXPORT
-    INJ_RISK --> EXPORT
-    INJ_SIZING --> EXPORT
-    INJ_WALKER --> EXPORT
-    INJ_OPT --> EXPORT
-```
+![Mermaid Diagram](./diagrams\43_Schema_Services_4.svg)
 
 **Diagram: Schema Services Dependency Injection Flow**
 
@@ -455,34 +261,7 @@ Schema services are registered once at application startup via `provide()` calls
 
 Schema services support **schema replacement** through re-registration. When `register(name, schema)` is called with an existing name, the new schema overwrites the old one:
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant addStrategy
-    participant StrategySchemaService
-    participant ToolRegistry
-    participant ConnectionService
-    
-    User->>addStrategy: addStrategy({ strategyName: "v1", ... })
-    addStrategy->>StrategySchemaService: register("v1", schemaV1)
-    StrategySchemaService->>ToolRegistry: Map.set("v1", schemaV1)
-    
-    Note over User,ToolRegistry: Later: User wants to update strategy
-    
-    User->>addStrategy: addStrategy({ strategyName: "v1", ... })
-    addStrategy->>StrategySchemaService: register("v1", schemaV2)
-    StrategySchemaService->>ToolRegistry: Map.set("v1", schemaV2)
-    Note over ToolRegistry: Overwrites existing schema
-    
-    Note over User,ToolRegistry: Later: Connection service retrieves schema
-    
-    ConnectionService->>StrategySchemaService: get("v1")
-    StrategySchemaService->>ToolRegistry: Map.get("v1")
-    ToolRegistry-->>StrategySchemaService: schemaV2 (updated)
-    StrategySchemaService-->>ConnectionService: schemaV2
-    
-    Note over ConnectionService: Memoization cache is cleared<br/>on schema update, so new<br/>instances use updated schema
-```
+![Mermaid Diagram](./diagrams\43_Schema_Services_5.svg)
 
 **Diagram: Schema Override and Cache Invalidation**
 

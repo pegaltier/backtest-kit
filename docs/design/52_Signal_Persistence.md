@@ -41,48 +41,7 @@ This page documents the persistence layer specifically for signal state manageme
 
 The signal persistence system operates across two independent domains to maintain crash safety:
 
-```mermaid
-graph TB
-    subgraph "ClientStrategy State"
-        PS["_pendingSignal<br/>ISignalRow | null<br/>(Active position)"]
-        SS["_scheduledSignal<br/>IScheduledSignalRow | null<br/>(Limit order)"]
-    end
-    
-    subgraph "Persistence Layer"
-        PSA["PersistSignalAdapter<br/>Singleton utility"]
-        PSCH["PersistScheduleAdapter<br/>Singleton utility"]
-        
-        PSA_BASE["PersistBase<SignalData><br/>./dump/data/signal/"]
-        PSCH_BASE["PersistBase<ScheduledData><br/>./dump/data/schedule/"]
-    end
-    
-    subgraph "Disk Storage"
-        SIG_FILE["signal/{strategy}/{symbol}.json<br/>ISignalRow | null"]
-        SCH_FILE["schedule/{strategy}/{symbol}.json<br/>IScheduledSignalRow | null"]
-    end
-    
-    PS -->|"setPendingSignal()"| PSA
-    SS -->|"setScheduledSignal()"| PSCH
-    
-    PSA --> PSA_BASE
-    PSCH --> PSCH_BASE
-    
-    PSA_BASE -->|"writeValue(symbol, signal)"| SIG_FILE
-    PSCH_BASE -->|"writeValue(symbol, scheduled)"| SCH_FILE
-    
-    SIG_FILE -.->|"readSignalData(symbol, strategy)"| PSA
-    SCH_FILE -.->|"readScheduleData(symbol, strategy)"| PSCH
-    
-    PSA -.->|"waitForInit()"| PS
-    PSCH -.->|"waitForInit()"| SS
-    
-    NOTE1["Write: After every state change<br/>Read: On initialization only"]
-    NOTE2["Atomic pattern prevents<br/>partial writes on crash"]
-    
-    PSA_BASE -.-> NOTE2
-    PSCH_BASE -.-> NOTE2
-    PS -.-> NOTE1
-```
+![Mermaid Diagram](./diagrams\52_Signal_Persistence_0.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:1-1500](), [src/classes/Persist.ts:504-622]()
 
@@ -148,37 +107,7 @@ Signal persistence uses a hierarchical directory structure to isolate signals by
 
 The persistence layer uses an atomic write pattern to guarantee crash-safe operations. This pattern ensures that files are never left in a partially-written state:
 
-```mermaid
-sequenceDiagram
-    participant CS as ClientStrategy
-    participant PSA as PersistSignalAdapter
-    participant PB as PersistBase
-    participant WFA as writeFileAtomic
-    participant FS as File System
-    
-    CS->>CS: setPendingSignal(signal)
-    
-    alt Live Mode (backtest=false)
-        CS->>PSA: writeSignalData(signal, symbol, strategy)
-        PSA->>PB: writeValue(symbol, signal)
-        PB->>PB: getFilePath(symbol)<br/>→ signal/BTCUSDT_strategy/BTCUSDT.json
-        PB->>WFA: writeFileAtomic(filePath, JSON.stringify(signal))
-        
-        Note over WFA,FS: Atomic Write Sequence
-        WFA->>FS: Write to temp file<br/>→ BTCUSDT.json.tmp
-        WFA->>FS: fsync() to flush buffer
-        WFA->>FS: rename(tmp → final)<br/>→ BTCUSDT.json
-        
-        Note over FS: OS guarantees atomic rename<br/>Either old or new file visible
-        
-        FS-->>WFA: Success
-        WFA-->>PB: Success
-        PB-->>PSA: Success
-        PSA-->>CS: Success
-    else Backtest Mode (backtest=true)
-        CS->>CS: Skip persistence<br/>(in-memory only)
-    end
-```
+![Mermaid Diagram](./diagrams\52_Signal_Persistence_1.svg)
 
 **Atomic Write Guarantees:**
 
@@ -195,37 +124,7 @@ sequenceDiagram
 
 Signal persistence is tightly integrated with the `ClientStrategy` state machine. Writes occur automatically after state transitions:
 
-```mermaid
-stateDiagram-v2
-    [*] --> Idle
-    
-    Idle --> Scheduled: getSignal returns<br/>IScheduledSignalRow<br/>→ setScheduledSignal(signal)
-    Idle --> Pending: getSignal returns<br/>ISignalRow<br/>→ setPendingSignal(signal)
-    
-    Scheduled --> Pending: Price reaches priceOpen<br/>→ setScheduledSignal(null)<br/>→ setPendingSignal(signal)
-    Scheduled --> Idle: Timeout or SL hit<br/>→ setScheduledSignal(null)
-    
-    Pending --> Closed: TP/SL/Time reached<br/>→ setPendingSignal(null)
-    
-    Closed --> Idle
-    
-    note right of Scheduled
-        Persisted to:
-        ./dump/data/schedule/
-        {strategy}/{symbol}.json
-    end note
-    
-    note right of Pending
-        Persisted to:
-        ./dump/data/signal/
-        {strategy}/{symbol}.json
-    end note
-    
-    note right of Idle
-        Both files contain null
-        or do not exist
-    end note
-```
+![Mermaid Diagram](./diagrams\52_Signal_Persistence_2.svg)
 
 **Persistence Trigger Points:**
 
@@ -245,59 +144,7 @@ stateDiagram-v2
 
 When a live trading process restarts after a crash, the `waitForInit()` method restores signal state from disk:
 
-```mermaid
-sequenceDiagram
-    participant USER as User Code
-    participant LIVE as Live.background()
-    participant CS as ClientStrategy
-    participant PSA as PersistSignalAdapter
-    participant PSCH as PersistScheduleAdapter
-    participant DISK as File System
-    
-    USER->>LIVE: Live.background("BTCUSDT", config)
-    LIVE->>CS: new ClientStrategy(params)
-    CS->>CS: _pendingSignal = null<br/>_scheduledSignal = null
-    
-    LIVE->>CS: waitForInit(symbol, strategyName)
-    
-    Note over CS,DISK: Check backtest flag
-    
-    alt Live Mode (backtest=false)
-        CS->>PSA: readSignalData(symbol, strategy)
-        PSA->>DISK: Read signal/{strategy}/{symbol}.json
-        
-        alt Signal File Exists
-            DISK-->>PSA: ISignalRow data
-            PSA-->>CS: signal
-            CS->>CS: _pendingSignal = signal
-            CS->>CS: callbacks.onActive(signal)
-        else Signal File Not Found
-            DISK-->>PSA: null
-            PSA-->>CS: null
-        end
-        
-        CS->>PSCH: readScheduleData(symbol, strategy)
-        PSCH->>DISK: Read schedule/{strategy}/{symbol}.json
-        
-        alt Schedule File Exists
-            DISK-->>PSCH: IScheduledSignalRow data
-            PSCH-->>CS: scheduled
-            CS->>CS: _scheduledSignal = scheduled
-            CS->>CS: callbacks.onSchedule(scheduled)
-        else Schedule File Not Found
-            DISK-->>PSCH: null
-            PSCH-->>CS: null
-        end
-        
-    else Backtest Mode (backtest=true)
-        CS->>CS: Skip disk reads<br/>(no persistence in backtest)
-    end
-    
-    CS-->>LIVE: Initialization complete
-    LIVE->>CS: Begin tick() loop
-    
-    Note over CS: Execution resumes exactly<br/>where it left off before crash
-```
+![Mermaid Diagram](./diagrams\52_Signal_Persistence_3.svg)
 
 **Validation During Initialization:**
 
@@ -458,33 +305,7 @@ await PersistSignalAdapter.writeSignalData(signal, symbol, strategy);
 
 The persistence layer supports custom adapters for alternative storage systems (Redis, MongoDB, S3, etc.):
 
-```mermaid
-graph LR
-    subgraph "Default Implementation"
-        DEF_PSA["PersistSignalAdapter<br/>(default)"]
-        DEF_PB["PersistBase<br/>(file system)"]
-    end
-    
-    subgraph "Custom Implementation"
-        CUSTOM["usePersistSignalAdapter()"]
-        REDIS["RedisPersist<br/>extends PersistBase"]
-        MONGO["MongoPersist<br/>extends PersistBase"]
-        S3["S3Persist<br/>extends PersistBase"]
-    end
-    
-    DEF_PSA --> DEF_PB
-    CUSTOM -.registers.-> REDIS
-    CUSTOM -.registers.-> MONGO
-    CUSTOM -.registers.-> S3
-    
-    REDIS -->|"implements"| IPersistBase
-    MONGO -->|"implements"| IPersistBase
-    S3 -->|"implements"| IPersistBase
-    
-    DEF_PB -->|"implements"| IPersistBase
-    
-    IPersistBase["IPersistBase Interface<br/>- waitForInit()<br/>- readValue()<br/>- writeValue()<br/>- hasValue()"]
-```
+![Mermaid Diagram](./diagrams\52_Signal_Persistence_4.svg)
 
 **Custom Adapter Example:**
 

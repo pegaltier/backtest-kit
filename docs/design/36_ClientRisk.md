@@ -40,39 +40,7 @@ This document covers the internal implementation of `ClientRisk` and how it inte
 | `addSignal` | Tracks new active position | After signal validation passes |
 | `removeSignal` | Removes position from tracking | When signal closes (TP/SL/timeout) |
 
-```mermaid
-graph TB
-    subgraph "IRisk Interface Contract"
-        CS[checkSignal<br/>Validation]
-        AS[addSignal<br/>Position Tracking]
-        RS[removeSignal<br/>Position Removal]
-    end
-    
-    subgraph "ClientStrategy Integration"
-        GET_SIGNAL[GET_SIGNAL_FN]
-        OPEN[OPEN_NEW_PENDING_SIGNAL_FN]
-        ACTIVATE[ACTIVATE_SCHEDULED_SIGNAL_FN]
-        CLOSE[CLOSE_PENDING_SIGNAL_FN]
-    end
-    
-    subgraph "Risk Validation Payload"
-        PAYLOAD["pendingSignal: ISignalDto<br/>symbol: string<br/>strategyName: string<br/>exchangeName: string<br/>currentPrice: number<br/>timestamp: number"]
-    end
-    
-    GET_SIGNAL --> CS
-    OPEN --> CS
-    ACTIVATE --> CS
-    
-    CS --> PAYLOAD
-    
-    OPEN --> AS
-    ACTIVATE --> AS
-    
-    CLOSE --> RS
-    
-    CS -->|"true: pass"| AS
-    CS -->|"false: reject"| GET_SIGNAL
-```
+![Mermaid Diagram](./diagrams\36_ClientRisk_0.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:376-387](), [src/client/ClientStrategy.ts:712-729](), [src/client/ClientStrategy.ts:742-745](), [src/client/ClientStrategy.ts:995-998]()
 
@@ -82,35 +50,7 @@ graph TB
 
 `ClientRisk` wraps user-defined risk schemas registered via `addRisk()`. Each schema contains an array of validation rules that are executed sequentially:
 
-```mermaid
-graph LR
-    subgraph "Risk Schema Structure"
-        SCHEMA["IRiskSchema<br/>riskName: string<br/>validations: Array"]
-    end
-    
-    subgraph "Validation Rule"
-        RULE["validate: function<br/>note: string<br/>onReject?: callback"]
-    end
-    
-    subgraph "ClientRisk Execution"
-        LOOP[Iterate Validations]
-        EXEC[Execute validate]
-        CHECK{Pass?}
-        NEXT[Next Rule]
-        REJECT[Emit riskSubject]
-        PASS[Return true]
-    end
-    
-    SCHEMA --> RULE
-    RULE --> LOOP
-    LOOP --> EXEC
-    EXEC --> CHECK
-    CHECK -->|Yes| NEXT
-    NEXT --> EXEC
-    CHECK -->|No| REJECT
-    REJECT -->|false| PASS
-    NEXT -->|All Pass| PASS
-```
+![Mermaid Diagram](./diagrams\36_ClientRisk_1.svg)
 
 **Sources:** [demo/live/src/index.mjs:37-78](), [demo/backtest/src/index.mjs:37-82]()
 
@@ -135,36 +75,7 @@ interface ICheckSignalPayload {
 
 ### Validation Execution Sequence
 
-```mermaid
-sequenceDiagram
-    participant CS as ClientStrategy
-    participant CR as ClientRisk
-    participant V1 as Validation Rule 1
-    participant V2 as Validation Rule 2
-    participant RE as riskSubject
-    
-    CS->>CR: checkSignal(payload)
-    CR->>V1: validate(payload)
-    
-    alt Validation 1 Fails
-        V1-->>CR: throw Error
-        CR->>RE: emit rejection event
-        Note over RE: onReject callback fired
-        CR-->>CS: return false
-    else Validation 1 Passes
-        V1-->>CR: return (void)
-        CR->>V2: validate(payload)
-        
-        alt Validation 2 Fails
-            V2-->>CR: throw Error
-            CR->>RE: emit rejection event
-            CR-->>CS: return false
-        else Validation 2 Passes
-            V2-->>CR: return (void)
-            CR-->>CS: return true
-        end
-    end
-```
+![Mermaid Diagram](./diagrams\36_ClientRisk_2.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:376-387](), [src/client/ClientStrategy.ts:712-729]()
 
@@ -230,36 +141,7 @@ Ensures favorable risk-reward ratio:
 
 `ClientRisk` maintains active position counts per symbol-strategy pair to enforce concurrent position limits:
 
-```mermaid
-graph TB
-    subgraph "Position Lifecycle"
-        OPEN[Signal Opened]
-        ADD[addSignal]
-        TRACK["Active Positions Map<br/>{symbol:strategyName: count}"]
-        ACTIVE[Position Monitored]
-        CLOSE[Signal Closed]
-        REMOVE[removeSignal]
-    end
-    
-    subgraph "Position Limit Enforcement"
-        CHECK[checkSignal]
-        COUNT{Count >= Max?}
-        REJECT[Reject Signal]
-        ALLOW[Allow Signal]
-    end
-    
-    OPEN --> ADD
-    ADD --> TRACK
-    TRACK --> ACTIVE
-    ACTIVE --> CLOSE
-    CLOSE --> REMOVE
-    REMOVE --> TRACK
-    
-    CHECK --> COUNT
-    COUNT -->|Yes| REJECT
-    COUNT -->|No| ALLOW
-    ALLOW --> OPEN
-```
+![Mermaid Diagram](./diagrams\36_ClientRisk_3.svg)
 
 ### Position Tracking Methods
 
@@ -270,28 +152,7 @@ graph TB
 
 ### Integration Points
 
-```mermaid
-graph LR
-    subgraph "ClientStrategy Signal Opening"
-        VALIDATE[VALIDATE_SIGNAL_FN]
-        RISK_CHECK[risk.checkSignal]
-        ADD_POS[risk.addSignal]
-        PERSIST[setPendingSignal]
-    end
-    
-    subgraph "ClientStrategy Signal Closing"
-        CLOSE[CLOSE_PENDING_SIGNAL_FN]
-        REMOVE_POS[risk.removeSignal]
-        CLEAR[setPendingSignal null]
-    end
-    
-    VALIDATE --> RISK_CHECK
-    RISK_CHECK -->|pass| ADD_POS
-    ADD_POS --> PERSIST
-    
-    CLOSE --> REMOVE_POS
-    REMOVE_POS --> CLEAR
-```
+![Mermaid Diagram](./diagrams\36_ClientRisk_4.svg)
 
 **Sources:** [src/client/ClientStrategy.ts:742-745](), [src/client/ClientStrategy.ts:867-870](), [src/client/ClientStrategy.ts:995-998]()
 
@@ -301,29 +162,7 @@ graph LR
 
 `ClientRisk` implements a **fail-fast** validation pattern where the first validation failure immediately stops execution:
 
-```mermaid
-graph TB
-    START[checkSignal called]
-    V1{Validation 1}
-    V2{Validation 2}
-    V3{Validation 3}
-    EMIT1[Emit riskSubject]
-    EMIT2[Emit riskSubject]
-    EMIT3[Emit riskSubject]
-    REJECT[Return false]
-    PASS[Return true]
-    
-    START --> V1
-    V1 -->|Fail| EMIT1
-    EMIT1 --> REJECT
-    V1 -->|Pass| V2
-    V2 -->|Fail| EMIT2
-    EMIT2 --> REJECT
-    V2 -->|Pass| V3
-    V3 -->|Fail| EMIT3
-    EMIT3 --> REJECT
-    V3 -->|Pass| PASS
-```
+![Mermaid Diagram](./diagrams\36_ClientRisk_5.svg)
 
 This pattern ensures:
 1. **Early termination** on first rule violation
@@ -357,36 +196,7 @@ This allows strategies to operate without risk management while maintaining the 
 
 `ClientRisk` instances are managed by `RiskConnectionService`, which provides routing and memoization:
 
-```mermaid
-graph TB
-    subgraph "Service Layer"
-        RCS[RiskConnectionService]
-        GET_RISK[getRisk]
-        MEMO[Memoized Instances]
-    end
-    
-    subgraph "Client Layer"
-        CR1[ClientRisk<br/>riskName: demo_risk]
-        CR2[ClientRisk<br/>riskName: conservative]
-        NOOP[NOOP_RISK]
-    end
-    
-    subgraph "Strategy Usage"
-        STRAT1[ClientStrategy<br/>riskName: demo_risk]
-        STRAT2[ClientStrategy<br/>riskName: conservative]
-        STRAT3[ClientStrategy<br/>riskName: null]
-    end
-    
-    RCS --> GET_RISK
-    GET_RISK --> MEMO
-    MEMO --> CR1
-    MEMO --> CR2
-    MEMO --> NOOP
-    
-    STRAT1 --> CR1
-    STRAT2 --> CR2
-    STRAT3 --> NOOP
-```
+![Mermaid Diagram](./diagrams\36_ClientRisk_6.svg)
 
 The connection service ensures:
 - **One instance per risk profile** via memoization
@@ -401,23 +211,7 @@ The connection service ensures:
 
 When validation fails, `ClientRisk` emits rejection events through the `riskSubject` event emitter:
 
-```mermaid
-sequenceDiagram
-    participant CS as ClientStrategy
-    participant CR as ClientRisk
-    participant RS as riskSubject
-    participant LISTENER as listenRisk
-    
-    CS->>CR: checkSignal(payload)
-    CR->>CR: Execute validation
-    
-    alt Validation Fails
-        CR->>RS: emit rejection event
-        RS->>LISTENER: notify subscribers
-        Note over LISTENER: onReject callback<br/>Risk.dump() called
-        CR-->>CS: return false
-    end
-```
+![Mermaid Diagram](./diagrams\36_ClientRisk_7.svg)
 
 ### Risk Event Structure
 

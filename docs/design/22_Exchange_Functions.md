@@ -122,52 +122,7 @@ The diagram below shows how exchange helper functions integrate with the service
 
 **Diagram: Exchange Function Call Flow**
 
-```mermaid
-graph TB
-    Strategy["Strategy Code<br/>(getSignal function)"]
-    FormatPrice["formatPrice()<br/>formatQuantity()"]
-    GetCandles["getCandles()"]
-    GetAvgPrice["getAveragePrice()"]
-    GetDate["getDate()"]
-    GetMode["getMode()"]
-    
-    ExecContext["ExecutionContextService<br/>(symbol, when, backtest)"]
-    MethodContext["MethodContextService<br/>(strategyName, exchangeName, frameName)"]
-    
-    ExchangeGlobal["ExchangeGlobalService"]
-    ExchangeConnection["ExchangeConnectionService"]
-    ClientExchange["ClientExchange"]
-    
-    ExchangeSchema["IExchangeSchema<br/>(user-defined functions)"]
-    
-    Strategy --> FormatPrice
-    Strategy --> GetCandles
-    Strategy --> GetAvgPrice
-    Strategy --> GetDate
-    Strategy --> GetMode
-    
-    FormatPrice --> MethodContext
-    GetCandles --> MethodContext
-    GetAvgPrice --> MethodContext
-    
-    GetDate --> ExecContext
-    GetMode --> ExecContext
-    
-    MethodContext --> ExchangeGlobal
-    ExchangeGlobal --> ExchangeConnection
-    ExchangeConnection --> ClientExchange
-    
-    ClientExchange --> ExecContext
-    ClientExchange --> ExchangeSchema
-    
-    Note1["Formatting functions<br/>delegate to exchange schema"]
-    Note2["Context functions<br/>read from AsyncLocalStorage"]
-    Note3["All data access respects<br/>temporal isolation"]
-    
-    FormatPrice -.-> Note1
-    GetDate -.-> Note2
-    ClientExchange -.-> Note3
-```
+![Mermaid Diagram](./diagrams\22_Exchange_Functions_0.svg)
 
 **Sources**: [types.d.ts:6-49]() (ExecutionContextService), [types.d.ts:296-336]() (MethodContextService), Diagram 1 from high-level overview
 
@@ -243,48 +198,7 @@ The diagram below illustrates how temporal isolation is maintained when exchange
 
 **Diagram: Temporal Isolation in Exchange Functions**
 
-```mermaid
-graph TB
-    subgraph "Backtest Execution at T=2024-01-15"
-        BacktestLogic["BacktestLogicPrivateService<br/>Processing timeframe[100]"]
-        ContextSet["ExecutionContextService.runInContext()<br/>symbol='BTCUSDT'<br/>when=2024-01-15<br/>backtest=true"]
-    end
-    
-    subgraph "Strategy Execution"
-        GetSignal["strategy.getSignal()<br/>(user code)"]
-        CallGetCandles["getCandles('BTCUSDT', '1h', 24)"]
-        CallGetAvgPrice["getAveragePrice('BTCUSDT')"]
-    end
-    
-    subgraph "Service Layer"
-        ClientExchangeGetCandles["ClientExchange.getCandles()"]
-        CheckContext["Read ExecutionContextService.context.when<br/>= 2024-01-15"]
-        FetchBackwards["Fetch candles BEFORE 2024-01-15<br/>(24 hours back)"]
-    end
-    
-    subgraph "Data Source"
-        ExchangeSchemaGetCandles["IExchangeSchema.getCandles()<br/>(user-defined API call)"]
-        HistoricalData["Historical candle data<br/>2024-01-14 to 2024-01-15"]
-    end
-    
-    BacktestLogic --> ContextSet
-    ContextSet --> GetSignal
-    GetSignal --> CallGetCandles
-    GetSignal --> CallGetAvgPrice
-    
-    CallGetCandles --> ClientExchangeGetCandles
-    CallGetAvgPrice --> ClientExchangeGetCandles
-    
-    ClientExchangeGetCandles --> CheckContext
-    CheckContext --> FetchBackwards
-    FetchBackwards --> ExchangeSchemaGetCandles
-    
-    ExchangeSchemaGetCandles --> HistoricalData
-    
-    Note1["Temporal isolation ensures<br/>strategies cannot access<br/>data after 'when' timestamp"]
-    
-    CheckContext -.-> Note1
-```
+![Mermaid Diagram](./diagrams\22_Exchange_Functions_1.svg)
 
 **Key Points**:
 
