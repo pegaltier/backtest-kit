@@ -73,9 +73,9 @@ Removes a closed signal from the risk management system.
 ### clear
 
 ```ts
-clear: (backtest: boolean, riskName?: string) => Promise<void>
+clear: (backtest: boolean, ctx?: { riskName: string; }) => Promise<void>
 ```
 
 Clears risk data.
-If riskName is provided, clears data for that specific risk instance.
-If no riskName is provided, clears all risk data.
+If ctx is provided, clears data for that specific risk instance.
+If no ctx is provided, clears all risk data.

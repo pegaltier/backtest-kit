@@ -41,7 +41,7 @@ riskSchemaService: any
 ### getRisk
 
 ```ts
-getRisk: ((riskName: string, backtest: boolean) => ClientRisk) & IClearableMemoize<string> & IControlMemoize<string, ClientRisk>
+getRisk: ((riskName: string, backtest: boolean) => ClientRisk) & IClearableMemoize<`${string}:backtest` | `${string}:live`> & IControlMemoize<`${string}:backtest` | `${string}:live`, ClientRisk>
 ```
 
 Retrieves memoized ClientRisk instance for given risk name and backtest mode.
@@ -82,7 +82,7 @@ Routes to appropriate ClientRisk instance.
 ### clear
 
 ```ts
-clear: (backtest: boolean, riskName?: string) => Promise<void>
+clear: (backtest: boolean, ctx?: { riskName: string; }) => Promise<void>
 ```
 
 Clears the cached ClientRisk instance for the given risk name.
