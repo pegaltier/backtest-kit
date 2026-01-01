@@ -26,17 +26,18 @@ const MAX_NOTIFICATIONS = 250;
 const CREATE_KEY_FN = () => randomString();
 
 /**
- * Utility class for notification history management.
+ * Instance class for notification history management.
  *
- * Provides centralized notification collection from all emitters/subjects.
+ * Contains all business logic for notification collection from emitters/subjects.
  * Stores notifications in chronological order with automatic limit management.
  *
  * @example
  * ```typescript
- * import { Notification } from "./classes/Notification";
+ * const instance = new NotificationInstance();
+ * await instance.waitForInit();
  *
  * // Get all notifications
- * const all = Notification.getAll();
+ * const all = instance.getData();
  *
  * // Process notifications with type discrimination
  * all.forEach(notification => {
@@ -56,17 +57,12 @@ const CREATE_KEY_FN = () => randomString();
  * });
  *
  * // Clear history
- * Notification.clear();
+ * instance.clear();
  * ```
  */
-export class NotificationUtils {
+export class NotificationInstance {
   /** Internal notification history storage (newest first) */
   private _notifications: NotificationModel[] = [];
-
-  /** Initializes notification system on first use */
-  constructor() {
-    this.init();
-  }
 
   /**
    * Adds notification to history with automatic limit management.
@@ -314,7 +310,7 @@ export class NotificationUtils {
    *
    * @example
    * ```typescript
-   * const notifications = Notification.getAll();
+   * const notifications = instance.getData();
    *
    * notifications.forEach(notification => {
    *   switch (notification.type) {
@@ -339,7 +335,7 @@ export class NotificationUtils {
    *
    * @example
    * ```typescript
-   * Notification.clear();
+   * instance.clear();
    * ```
    */
   public clear(): void {
@@ -351,7 +347,7 @@ export class NotificationUtils {
    * Uses singleshot to ensure initialization happens only once.
    * Automatically called on first use.
    */
-  protected init = singleshot(async () => {
+  public waitForInit = singleshot(async () => {
     // Signal events
     signalEmitter.subscribe(this._handleSignal);
 
@@ -377,6 +373,86 @@ export class NotificationUtils {
 }
 
 /**
+ * Public facade for notification operations.
+ *
+ * Automatically calls waitForInit on each userspace method call.
+ * Provides simplified access to notification instance methods.
+ *
+ * @example
+ * ```typescript
+ * import { Notification } from "./classes/Notification";
+ *
+ * // Get all notifications
+ * const all = await Notification.getData();
+ *
+ * // Process notifications with type discrimination
+ * all.forEach(notification => {
+ *   switch (notification.type) {
+ *     case "signal.closed":
+ *       console.log(`Closed: ${notification.pnlPercentage}%`);
+ *       break;
+ *     case "partial.loss":
+ *       if (notification.level >= 30) {
+ *         alert("High loss!");
+ *       }
+ *       break;
+ *     case "risk.rejection":
+ *       console.warn(notification.rejectionNote);
+ *       break;
+ *   }
+ * });
+ *
+ * // Clear history
+ * await Notification.clear();
+ * ```
+ */
+export class NotificationUtils {
+  /** Internal instance containing business logic */
+  private _instance = new NotificationInstance();
+
+  /**
+   * Returns all notifications in chronological order (newest first).
+   *
+   * @returns Array of strongly-typed notification objects
+   *
+   * @example
+   * ```typescript
+   * const notifications = await Notification.getData();
+   *
+   * notifications.forEach(notification => {
+   *   switch (notification.type) {
+   *     case "signal.closed":
+   *       console.log(`${notification.symbol}: ${notification.pnlPercentage}%`);
+   *       break;
+   *     case "partial.loss":
+   *       if (notification.level >= 30) {
+   *         console.warn(`High loss: ${notification.symbol}`);
+   *       }
+   *       break;
+   *   }
+   * });
+   * ```
+   */
+  public async getData(): Promise<NotificationModel[]> {
+    await this._instance.waitForInit();
+    return this._instance.getData();
+  }
+
+  /**
+   * Clears all notification history.
+   *
+   * @example
+   * ```typescript
+   * await Notification.clear();
+   * ```
+   */
+  public async clear(): Promise<void> {
+    await this._instance.waitForInit();
+    this._instance.clear();
+  }
+}
+
+/**
  * Singleton instance of NotificationUtils for convenient notification access.
  *
  * @example
@@ -384,7 +460,7 @@ export class NotificationUtils {
  * import { Notification } from "./classes/Notification";
  *
  * // Get all notifications
- * const all = Notification.getAll();
+ * const all = await Notification.getData();
  *
  * // Filter by type using type discrimination
  * const closedSignals = all.filter(n => n.type === "signal.closed");
@@ -393,7 +469,7 @@ export class NotificationUtils {
  * );
  *
  * // Clear history
- * Notification.clear();
+ * await Notification.clear();
  * ```
  */
 export const Notification = new NotificationUtils();

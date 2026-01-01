@@ -4418,6 +4418,242 @@ interface ColumnModel<T extends object = any> {
 }
 
 /**
+ * Signal opened notification.
+ * Emitted when a new trading position is opened.
+ */
+interface SignalOpenedNotification {
+    type: "signal.opened";
+    id: string;
+    timestamp: number;
+    backtest: boolean;
+    symbol: string;
+    strategyName: StrategyName;
+    exchangeName: ExchangeName;
+    signalId: string;
+    position: "long" | "short";
+    priceOpen: number;
+    priceTakeProfit: number;
+    priceStopLoss: number;
+    note?: string;
+}
+/**
+ * Signal closed notification.
+ * Emitted when a trading position is closed (TP/SL hit).
+ */
+interface SignalClosedNotification {
+    type: "signal.closed";
+    id: string;
+    timestamp: number;
+    backtest: boolean;
+    symbol: string;
+    strategyName: StrategyName;
+    exchangeName: ExchangeName;
+    signalId: string;
+    position: "long" | "short";
+    priceOpen: number;
+    priceClose: number;
+    pnlPercentage: number;
+    closeReason: string;
+    duration: number;
+    note?: string;
+}
+/**
+ * Partial profit notification.
+ * Emitted when signal reaches profit level milestone (10%, 20%, etc).
+ */
+interface PartialProfitNotification {
+    type: "partial.profit";
+    id: string;
+    timestamp: number;
+    backtest: boolean;
+    symbol: string;
+    strategyName: StrategyName;
+    exchangeName: ExchangeName;
+    signalId: string;
+    level: PartialLevel;
+    currentPrice: number;
+    priceOpen: number;
+    position: "long" | "short";
+}
+/**
+ * Partial loss notification.
+ * Emitted when signal reaches loss level milestone (-10%, -20%, etc).
+ */
+interface PartialLossNotification {
+    type: "partial.loss";
+    id: string;
+    timestamp: number;
+    backtest: boolean;
+    symbol: string;
+    strategyName: StrategyName;
+    exchangeName: ExchangeName;
+    signalId: string;
+    level: PartialLevel;
+    currentPrice: number;
+    priceOpen: number;
+    position: "long" | "short";
+}
+/**
+ * Risk rejection notification.
+ * Emitted when a signal is rejected due to risk management rules.
+ */
+interface RiskRejectionNotification {
+    type: "risk.rejection";
+    id: string;
+    timestamp: number;
+    backtest: boolean;
+    symbol: string;
+    strategyName: StrategyName;
+    exchangeName: ExchangeName;
+    rejectionNote: string;
+    rejectionId: string | null;
+    activePositionCount: number;
+    currentPrice: number;
+    pendingSignal: ISignalDto;
+}
+/**
+ * Scheduled signal notification.
+ * Emitted when a signal is scheduled for future execution.
+ */
+interface SignalScheduledNotification {
+    type: "signal.scheduled";
+    id: string;
+    timestamp: number;
+    backtest: boolean;
+    symbol: string;
+    strategyName: StrategyName;
+    exchangeName: ExchangeName;
+    signalId: string;
+    position: "long" | "short";
+    priceOpen: number;
+    scheduledAt: number;
+    currentPrice: number;
+}
+/**
+ * Signal cancelled notification.
+ * Emitted when a scheduled signal is cancelled before activation.
+ */
+interface SignalCancelledNotification {
+    type: "signal.cancelled";
+    id: string;
+    timestamp: number;
+    backtest: boolean;
+    symbol: string;
+    strategyName: StrategyName;
+    exchangeName: ExchangeName;
+    signalId: string;
+    position: "long" | "short";
+    cancelReason: string;
+    cancelId: string;
+    duration: number;
+}
+/**
+ * Backtest completed notification.
+ * Emitted when backtest execution completes.
+ */
+interface BacktestDoneNotification {
+    type: "backtest.done";
+    id: string;
+    timestamp: number;
+    backtest: true;
+    symbol: string;
+    strategyName: StrategyName;
+    exchangeName: ExchangeName;
+}
+/**
+ * Live trading completed notification.
+ * Emitted when live trading execution completes.
+ */
+interface LiveDoneNotification {
+    type: "live.done";
+    id: string;
+    timestamp: number;
+    backtest: false;
+    symbol: string;
+    strategyName: StrategyName;
+    exchangeName: ExchangeName;
+}
+/**
+ * Error notification.
+ * Emitted for recoverable errors in background tasks.
+ */
+interface InfoErrorNotification {
+    type: "error.info";
+    id: string;
+    error: object;
+    message: string;
+    timestamp: number;
+    backtest: boolean;
+}
+/**
+ * Critical error notification.
+ * Emitted for fatal errors requiring process termination.
+ */
+interface CriticalErrorNotification {
+    type: "error.critical";
+    id: string;
+    error: object;
+    message: string;
+    timestamp: number;
+    backtest: boolean;
+}
+/**
+ * Validation error notification.
+ * Emitted when risk validation functions throw errors.
+ */
+interface ValidationErrorNotification {
+    type: "error.validation";
+    id: string;
+    error: object;
+    message: string;
+    timestamp: number;
+    backtest: boolean;
+}
+/**
+ * Progress update notification.
+ * Emitted during backtest execution.
+ */
+interface ProgressBacktestNotification {
+    type: "progress.backtest";
+    id: string;
+    timestamp: number;
+    backtest: true;
+    exchangeName: ExchangeName;
+    strategyName: StrategyName;
+    symbol: string;
+    totalFrames: number;
+    processedFrames: number;
+    progress: number;
+}
+/**
+ * Root discriminated union of all notification types.
+ * Type discrimination is done via the `type` field.
+ *
+ * @example
+ * ```typescript
+ * function handleNotification(notification: NotificationModel) {
+ *   switch (notification.type) {
+ *     case "signal.opened":
+ *       console.log(`Position opened: ${notification.signalId}`);
+ *       break;
+ *     case "signal.closed":
+ *       console.log(`PNL: ${notification.pnlPercentage}%`);
+ *       break;
+ *     case "partial.loss":
+ *       if (notification.level >= 30) {
+ *         console.warn("High loss alert!");
+ *       }
+ *       break;
+ *     case "risk.rejection":
+ *       console.error(`Signal rejected: ${notification.rejectionNote}`);
+ *       break;
+ *   }
+ * }
+ * ```
+ */
+type NotificationModel = SignalOpenedNotification | SignalClosedNotification | PartialProfitNotification | PartialLossNotification | RiskRejectionNotification | SignalScheduledNotification | SignalCancelledNotification | BacktestDoneNotification | LiveDoneNotification | InfoErrorNotification | CriticalErrorNotification | ValidationErrorNotification | ProgressBacktestNotification;
+
+/**
  * Unified tick event data for report generation.
  * Contains all information about a tick event regardless of action type.
  */
@@ -8380,6 +8616,99 @@ declare class CacheUtils {
 declare const Cache: CacheUtils;
 
 /**
+ * Public facade for notification operations.
+ *
+ * Automatically calls waitForInit on each userspace method call.
+ * Provides simplified access to notification instance methods.
+ *
+ * @example
+ * ```typescript
+ * import { Notification } from "./classes/Notification";
+ *
+ * // Get all notifications
+ * const all = await Notification.getData();
+ *
+ * // Process notifications with type discrimination
+ * all.forEach(notification => {
+ *   switch (notification.type) {
+ *     case "signal.closed":
+ *       console.log(`Closed: ${notification.pnlPercentage}%`);
+ *       break;
+ *     case "partial.loss":
+ *       if (notification.level >= 30) {
+ *         alert("High loss!");
+ *       }
+ *       break;
+ *     case "risk.rejection":
+ *       console.warn(notification.rejectionNote);
+ *       break;
+ *   }
+ * });
+ *
+ * // Clear history
+ * await Notification.clear();
+ * ```
+ */
+declare class NotificationUtils {
+    /** Internal instance containing business logic */
+    private _instance;
+    /**
+     * Returns all notifications in chronological order (newest first).
+     *
+     * @returns Array of strongly-typed notification objects
+     *
+     * @example
+     * ```typescript
+     * const notifications = await Notification.getData();
+     *
+     * notifications.forEach(notification => {
+     *   switch (notification.type) {
+     *     case "signal.closed":
+     *       console.log(`${notification.symbol}: ${notification.pnlPercentage}%`);
+     *       break;
+     *     case "partial.loss":
+     *       if (notification.level >= 30) {
+     *         console.warn(`High loss: ${notification.symbol}`);
+     *       }
+     *       break;
+     *   }
+     * });
+     * ```
+     */
+    getData(): Promise<NotificationModel[]>;
+    /**
+     * Clears all notification history.
+     *
+     * @example
+     * ```typescript
+     * await Notification.clear();
+     * ```
+     */
+    clear(): Promise<void>;
+}
+/**
+ * Singleton instance of NotificationUtils for convenient notification access.
+ *
+ * @example
+ * ```typescript
+ * import { Notification } from "./classes/Notification";
+ *
+ * // Get all notifications
+ * const all = await Notification.getData();
+ *
+ * // Filter by type using type discrimination
+ * const closedSignals = all.filter(n => n.type === "signal.closed");
+ * const highLosses = all.filter(n =>
+ *   n.type === "partial.loss" && n.level >= 30
+ * );
+ *
+ * // Clear history
+ * await Notification.clear();
+ * ```
+ */
+declare const Notification: NotificationUtils;
+
+/**
  * Contract for walker stop signal events.
  *
  * Emitted when Walker.stop() is called to interrupt a running walker.
@@ -11282,4 +11611,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type BacktestStatisticsModel, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, Live, type LiveStatisticsModel, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, type PingContract, PositionSize, type ProgressBacktestContract, type ProgressOptimizerContract, type ProgressWalkerContract, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type ScheduledEvent, type SignalData, type SignalInterval, type TPersistBase, type TPersistBaseCtor, type TickEvent, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, cancel, dumpSignal, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenPing, listenPingOnce, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, setColumns, setConfig, setLogger, stop, validate };
+export { Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, type PingContract, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TPersistBase, type TPersistBaseCtor, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, cancel, dumpSignal, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenPing, listenPingOnce, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, setColumns, setConfig, setLogger, stop, validate };
