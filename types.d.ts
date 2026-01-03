@@ -5869,6 +5869,8 @@ declare class BacktestUtils {
         id: string;
         symbol: string;
         strategyName: string;
+        exchangeName: string;
+        frameName: string;
         status: "pending" | "fulfilled" | "rejected" | "ready";
     }[]>;
 }
@@ -6288,6 +6290,7 @@ declare class LiveUtils {
         id: string;
         symbol: string;
         strategyName: string;
+        exchangeName: string;
         status: "pending" | "fulfilled" | "rejected" | "ready";
     }[]>;
 }

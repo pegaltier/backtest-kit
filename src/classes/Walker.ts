@@ -97,7 +97,10 @@ export class WalkerInstance {
    * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
    * @param walkerName - Walker name for this walker instance
    */
-  constructor(readonly symbol: string, readonly walkerName: WalkerName) {}
+  constructor(
+    readonly symbol: string,
+    readonly walkerName: WalkerName
+  ) {}
 
   /**
    * Internal singlerun task that executes the walker.
@@ -285,168 +288,6 @@ export class WalkerInstance {
     };
   };
 
-  /**
-   * Stops all strategies in the walker from generating new signals.
-   *
-   * Iterates through all strategies defined in walker schema and:
-   * 1. Sends stop signal via walkerStopSubject (interrupts current running strategy)
-   * 2. Sets internal stop flag for each strategy (prevents new signals)
-   *
-   * Current active signals (if any) will complete normally.
-   * Walker will stop at the next safe point.
-   *
-   * Supports multiple walkers running on the same symbol simultaneously.
-   * Stop signal is filtered by walkerName to prevent interference.
-   *
-   * @param symbol - Trading pair symbol
-   * @param walkerName - Walker name to stop
-   * @returns Promise that resolves when all stop flags are set
-   *
-   * @example
-   * ```typescript
-   * const instance = new WalkerInstance();
-   * await instance.stop("BTCUSDT", "my-walker");
-   * ```
-   */
-  public stop = async (
-    symbol: string,
-    walkerName: WalkerName
-  ): Promise<void> => {
-    backtest.loggerService.info(WALKER_METHOD_NAME_STOP, {
-      symbol,
-      walkerName,
-    });
-
-    const walkerSchema = backtest.walkerSchemaService.get(walkerName);
-
-    for (const strategyName of walkerSchema.strategies) {
-      await walkerStopSubject.next({ symbol, strategyName, walkerName });
-      await backtest.strategyCoreService.stop(true, { symbol, strategyName });
-    }
-  };
-
-  /**
-   * Gets walker results data from all strategy comparisons.
-   *
-   * @param symbol - Trading symbol
-   * @param walkerName - Walker name to get data for
-   * @returns Promise resolving to walker results data object
-   *
-   * @example
-   * ```typescript
-   * const instance = new WalkerInstance();
-   * const results = await instance.getData("BTCUSDT", "my-walker");
-   * console.log(results.bestStrategy, results.bestMetric);
-   * ```
-   */
-  public getData = async (symbol: string, walkerName: WalkerName) => {
-    backtest.loggerService.info(WALKER_METHOD_NAME_GET_DATA, {
-      symbol,
-      walkerName,
-    });
-
-    const walkerSchema = backtest.walkerSchemaService.get(walkerName);
-
-    return await backtest.walkerMarkdownService.getData(
-      walkerName,
-      symbol,
-      walkerSchema.metric || "sharpeRatio",
-      {
-        exchangeName: walkerSchema.exchangeName,
-        frameName: walkerSchema.frameName,
-      }
-    );
-  };
-
-  /**
-   * Generates markdown report with all strategy comparisons for a walker.
-   *
-   * @param symbol - Trading symbol
-   * @param walkerName - Walker name to generate report for
-   * @param strategyColumns - Optional strategy columns configuration
-   * @param pnlColumns - Optional PNL columns configuration
-   * @returns Promise resolving to markdown formatted report string
-   *
-   * @example
-   * ```typescript
-   * const instance = new WalkerInstance();
-   * const markdown = await instance.getReport("BTCUSDT", "my-walker");
-   * console.log(markdown);
-   * ```
-   */
-  public getReport = async (
-    symbol: string,
-    walkerName: WalkerName,
-    strategyColumns?: StrategyColumn[],
-    pnlColumns?: PnlColumn[]
-  ): Promise<string> => {
-    backtest.loggerService.info(WALKER_METHOD_NAME_GET_REPORT, {
-      symbol,
-      walkerName,
-    });
-
-    const walkerSchema = backtest.walkerSchemaService.get(walkerName);
-
-    return await backtest.walkerMarkdownService.getReport(
-      walkerName,
-      symbol,
-      walkerSchema.metric || "sharpeRatio",
-      {
-        exchangeName: walkerSchema.exchangeName,
-        frameName: walkerSchema.frameName,
-      },
-      strategyColumns,
-      pnlColumns
-    );
-  };
-
-  /**
-   * Saves walker report to disk.
-   *
-   * @param symbol - Trading symbol
-   * @param walkerName - Walker name to save report for
-   * @param path - Optional directory path to save report (default: "./dump/walker")
-   * @param strategyColumns - Optional strategy columns configuration
-   * @param pnlColumns - Optional PNL columns configuration
-   *
-   * @example
-   * ```typescript
-   * const instance = new WalkerInstance();
-   * // Save to default path: ./dump/walker/my-walker.md
-   * await instance.dump("BTCUSDT", "my-walker");
-   *
-   * // Save to custom path: ./custom/path/my-walker.md
-   * await instance.dump("BTCUSDT", "my-walker", "./custom/path");
-   * ```
-   */
-  public dump = async (
-    symbol: string,
-    walkerName: WalkerName,
-    path?: string,
-    strategyColumns?: StrategyColumn[],
-    pnlColumns?: PnlColumn[]
-  ): Promise<void> => {
-    backtest.loggerService.info(WALKER_METHOD_NAME_DUMP, {
-      symbol,
-      walkerName,
-      path,
-    });
-
-    const walkerSchema = backtest.walkerSchemaService.get(walkerName);
-
-    await backtest.walkerMarkdownService.dump(
-      walkerName,
-      symbol,
-      walkerSchema.metric || "sharpeRatio",
-      {
-        exchangeName: walkerSchema.exchangeName,
-        frameName: walkerSchema.frameName,
-      },
-      path,
-      strategyColumns,
-      pnlColumns
-    );
-  };
 }
 
 /**
@@ -473,9 +314,7 @@ export class WalkerUtils {
    * Memoized function to get or create WalkerInstance for a symbol-walker pair.
    * Each symbol-walker combination gets its own isolated instance.
    */
-  private _getInstance = memoize<
-    (symbol: string, walkerName: WalkerName) => WalkerInstance
-  >(
+  private _getInstance = memoize(
     ([symbol, walkerName]) => `${symbol}:${walkerName}`,
     (symbol: string, walkerName: WalkerName) =>
       new WalkerInstance(symbol, walkerName)
@@ -656,8 +495,10 @@ export class WalkerUtils {
         );
     }
 
-    const instance = this._getInstance(symbol, walkerName);
-    return await instance.stop(symbol, walkerName);
+    for (const strategyName of walkerSchema.strategies) {
+      await walkerStopSubject.next({ symbol, strategyName, walkerName });
+      await backtest.strategyCoreService.stop(true, { symbol, strategyName });
+    }
   };
 
   /**
@@ -702,8 +543,15 @@ export class WalkerUtils {
         );
     }
 
-    const instance = this._getInstance(symbol, walkerName);
-    return await instance.getData(symbol, walkerName);
+    return await backtest.walkerMarkdownService.getData(
+      walkerName,
+      symbol,
+      walkerSchema.metric || "sharpeRatio",
+      {
+        exchangeName: walkerSchema.exchangeName,
+        frameName: walkerSchema.frameName,
+      }
+    );
   };
 
   /**
@@ -755,10 +603,14 @@ export class WalkerUtils {
         );
     }
 
-    const instance = this._getInstance(symbol, walkerName);
-    return await instance.getReport(
-      symbol,
+    return await backtest.walkerMarkdownService.getReport(
       walkerName,
+      symbol,
+      walkerSchema.metric || "sharpeRatio",
+      {
+        exchangeName: walkerSchema.exchangeName,
+        frameName: walkerSchema.frameName,
+      },
       strategyColumns,
       pnlColumns
     );
@@ -817,10 +669,14 @@ export class WalkerUtils {
         );
     }
 
-    const instance = this._getInstance(symbol, walkerName);
-    return await instance.dump(
-      symbol,
+    await backtest.walkerMarkdownService.dump(
       walkerName,
+      symbol,
+      walkerSchema.metric || "sharpeRatio",
+      {
+        exchangeName: walkerSchema.exchangeName,
+        frameName: walkerSchema.frameName,
+      },
       path,
       strategyColumns,
       pnlColumns
