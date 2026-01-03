@@ -249,6 +249,7 @@ group: docs
 - [CriticalErrorNotification](interfaces/CriticalErrorNotification.md)
 - [ValidationErrorNotification](interfaces/ValidationErrorNotification.md)
 - [ProgressBacktestNotification](interfaces/ProgressBacktestNotification.md)
+- [BootstrapNotification](interfaces/BootstrapNotification.md)
 - [TickEvent](interfaces/TickEvent.md)
 - [LiveStatisticsModel](interfaces/LiveStatisticsModel.md)
 - [HeatmapStatisticsModel](interfaces/HeatmapStatisticsModel.md)
