@@ -1977,10 +1977,9 @@ export class ClientStrategy implements IStrategy {
    * If no signal is pending, returns null.
    * @returns Promise resolving to the pending signal or null.
    */
-  public async getPendingSignal(symbol: string, strategyName: StrategyName): Promise<ISignalRow | null> {
+  public async getPendingSignal(symbol: string): Promise<ISignalRow | null> {
     this.params.logger.debug("ClientStrategy getPendingSignal", {
       symbol,
-      strategyName,
     });
     return this._pendingSignal;
   }
@@ -1990,10 +1989,9 @@ export class ClientStrategy implements IStrategy {
    * If no scheduled signal exists, returns null.
    * @returns Promise resolving to the scheduled signal or null.
    */
-  public async getScheduledSignal(symbol: string, strategyName: StrategyName): Promise<IScheduledSignalRow | null> {
+  public async getScheduledSignal(symbol: string): Promise<IScheduledSignalRow | null> {
     this.params.logger.debug("ClientStrategy getScheduledSignal", {
       symbol,
-      strategyName,
     });
     return this._scheduledSignal;
   }
@@ -2005,13 +2003,12 @@ export class ClientStrategy implements IStrategy {
    * not continue processing new ticks or signals.
    *
    * @param symbol - Trading pair symbol
-   * @param strategyName - Name of the strategy
    * @returns Promise resolving to true if strategy is stopped, false otherwise
    */
-  public async getStopped(symbol: string, strategyName: StrategyName): Promise<boolean> {
+  public async getStopped(symbol: string): Promise<boolean> {
     this.params.logger.debug("ClientStrategy getStopped", {
       symbol,
-      strategyName,
+      strategyName: this.params.method.context.strategyName,
     });
     return this._isStopped;
   }
@@ -2458,13 +2455,11 @@ export class ClientStrategy implements IStrategy {
    * // Existing signal will continue until natural close
    * ```
    */
-  public async stop(symbol: string, strategyName: StrategyName, backtest: boolean): Promise<void> {
+  public async stop(symbol: string): Promise<void> {
     this.params.logger.debug("ClientStrategy stop", {
       symbol,
-      strategyName,
       hasPendingSignal: this._pendingSignal !== null,
       hasScheduledSignal: this._scheduledSignal !== null,
-      backtest,
     });
 
     this._isStopped = true;
@@ -2476,14 +2471,14 @@ export class ClientStrategy implements IStrategy {
 
     this._scheduledSignal = null;
 
-    if (backtest) {
+    if (this.params.execution.context.backtest) {
       return;
     }
 
     await PersistScheduleAdapter.writeScheduleData(
       this._scheduledSignal,
       symbol,
-      strategyName,
+      this.params.method.context.strategyName,
     );
   }
 
@@ -2508,12 +2503,12 @@ export class ClientStrategy implements IStrategy {
    * // Strategy continues, can generate new signals
    * ```
    */
-  public async cancel(symbol: string, strategyName: StrategyName, backtest: boolean, cancelId?: string): Promise<void> {
+  public async cancel(symbol: string, cancelId?: string): Promise<void> {
     this.params.logger.debug("ClientStrategy cancel", {
       symbol,
-      strategyName,
+      strategyName: this.params.method.context.strategyName,
       hasScheduledSignal: this._scheduledSignal !== null,
-      backtest,
+      backtest: this.params.execution.context.backtest,
       cancelId,
     });
 
@@ -2525,14 +2520,14 @@ export class ClientStrategy implements IStrategy {
       this._scheduledSignal = null;
     }
 
-    if (backtest) {
+    if (this.params.execution.context.backtest) {
       return;
     }
 
     await PersistScheduleAdapter.writeScheduleData(
       this._scheduledSignal,
       symbol,
-      strategyName,
+      this.params.method.context.strategyName,
     );
   }
 }

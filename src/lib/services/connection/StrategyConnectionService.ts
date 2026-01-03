@@ -249,7 +249,7 @@ export class StrategyConnectionService {
       backtest,
     });
     const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
-    return await strategy.getPendingSignal(symbol, context.strategyName);
+    return await strategy.getPendingSignal(symbol);
   };
 
   /**
@@ -274,7 +274,7 @@ export class StrategyConnectionService {
       backtest,
     });
     const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
-    return await strategy.getScheduledSignal(symbol, context.strategyName);
+    return await strategy.getScheduledSignal(symbol);
   };
 
   /**
@@ -299,7 +299,7 @@ export class StrategyConnectionService {
       backtest,
     });
     const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
-    return await strategy.getStopped(symbol, context.strategyName);
+    return await strategy.getStopped(symbol);
   };
 
   /**
@@ -396,7 +396,7 @@ export class StrategyConnectionService {
       context,
     });
     const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
-    await strategy.stop(symbol, context.strategyName, backtest);
+    await strategy.stop(symbol);
   };
 
   /**
@@ -454,7 +454,7 @@ export class StrategyConnectionService {
       cancelId,
     });
     const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
-    await strategy.cancel(symbol, context.strategyName, backtest, cancelId);
+    await strategy.cancel(symbol, cancelId);
   };
 }
 
