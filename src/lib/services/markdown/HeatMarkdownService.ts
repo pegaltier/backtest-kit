@@ -608,30 +608,28 @@ export class HeatMarkdownService {
 
   /**
    * Clears accumulated heatmap data from storage.
-   * If ctx is provided, clears only that exchangeName+frameName+backtest combination's data.
-   * If ctx is omitted, clears all data.
+   * If payload is provided, clears only that exchangeName+frameName+backtest combination's data.
+   * If payload is omitted, clears all data.
    *
-   * @param backtest - Backtest mode flag
-   * @param ctx - Optional context with exchangeName and frameName to clear specific data
+   * @param payload - Optional payload with exchangeName, frameName, backtest to clear specific data
    *
    * @example
    * ```typescript
    * const service = new HeatMarkdownService();
    *
    * // Clear specific exchange+frame+backtest data
-   * await service.clear(true, { exchangeName: "binance", frameName: "frame1" });
+   * await service.clear({ exchangeName: "binance", frameName: "frame1", backtest: true });
    *
    * // Clear all data
    * await service.clear();
    * ```
    */
-  public clear = async (backtest: boolean, ctx?: { exchangeName: string; frameName: string }) => {
+  public clear = async (payload?: { exchangeName: string; frameName: string; backtest: boolean }) => {
     this.loggerService.log(HEATMAP_METHOD_NAME_CLEAR, {
-      backtest,
-      ctx,
+      payload,
     });
-    if (ctx) {
-      const key = CREATE_KEY_FN(ctx.exchangeName, ctx.frameName, backtest);
+    if (payload) {
+      const key = CREATE_KEY_FN(payload.exchangeName, payload.frameName, payload.backtest);
       this.getStorage.clear(key);
     } else {
       this.getStorage.clear();

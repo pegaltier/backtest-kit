@@ -179,41 +179,47 @@ export class BacktestInstance {
     });
 
     {
-      backtest.backtestMarkdownService.clear(true, {
+      backtest.backtestMarkdownService.clear({
         symbol,
         strategyName: context.strategyName,
         exchangeName: context.exchangeName,
         frameName: context.frameName,
+        backtest: true,
       });
-      backtest.liveMarkdownService.clear(true, {
+      backtest.liveMarkdownService.clear({
         symbol,
         strategyName: context.strategyName,
         exchangeName: context.exchangeName,
         frameName: context.frameName,
+        backtest: true,
       });
-      backtest.scheduleMarkdownService.clear(true, {
+      backtest.scheduleMarkdownService.clear({
         symbol,
         strategyName: context.strategyName,
         exchangeName: context.exchangeName,
         frameName: context.frameName,
+        backtest: true,
       });
-      backtest.performanceMarkdownService.clear(true, {
+      backtest.performanceMarkdownService.clear({
         symbol,
         strategyName: context.strategyName,
         exchangeName: context.exchangeName,
         frameName: context.frameName,
+        backtest: true,
       });
-      backtest.partialMarkdownService.clear(true, {
+      backtest.partialMarkdownService.clear({
         symbol,
         strategyName: context.strategyName,
         exchangeName: context.exchangeName,
         frameName: context.frameName,
+        backtest: true,
       });
-      backtest.riskMarkdownService.clear(true, {
+      backtest.riskMarkdownService.clear({
         symbol,
         strategyName: context.strategyName,
         exchangeName: context.exchangeName,
         frameName: context.frameName,
+        backtest: true,
       });
     }
 
@@ -231,17 +237,19 @@ export class BacktestInstance {
       const { riskName, riskList } = backtest.strategySchemaService.get(
         context.strategyName
       );
-      riskName && backtest.riskGlobalService.clear(true, {
+      riskName && backtest.riskGlobalService.clear({
         riskName,
         exchangeName: context.exchangeName,
         frameName: context.frameName,
+        backtest: true,
       });
       riskList &&
         riskList.forEach((riskName) =>
-          backtest.riskGlobalService.clear(true, {
+          backtest.riskGlobalService.clear({
             riskName,
             exchangeName: context.exchangeName,
             frameName: context.frameName,
+            backtest: true,
           })
         );
     }

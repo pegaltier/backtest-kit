@@ -5668,28 +5668,28 @@ declare class BacktestMarkdownService {
     dump: (symbol: string, strategyName: StrategyName, exchangeName: string, frameName: string, backtest: boolean, path?: string, columns?: Columns$6[]) => Promise<void>;
     /**
      * Clears accumulated signal data from storage.
-     * If ctx is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
+     * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
      * If nothing is provided, clears all data.
      *
-     * @param backtest - Backtest mode flag
-     * @param ctx - Optional context with symbol, strategyName, exchangeName, frameName
+     * @param payload - Optional payload with symbol, strategyName, exchangeName, frameName, backtest
      *
      * @example
      * ```typescript
      * const service = new BacktestMarkdownService();
      *
      * // Clear specific combination
-     * await service.clear(true, { symbol: "BTCUSDT", strategyName: "my-strategy", exchangeName: "binance", frameName: "1h" });
+     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy", exchangeName: "binance", frameName: "1h", backtest: true });
      *
      * // Clear all data
      * await service.clear();
      * ```
      */
-    clear: (backtest: boolean, ctx?: {
+    clear: (payload?: {
         symbol: string;
         strategyName: StrategyName;
         exchangeName: string;
         frameName: string;
+        backtest: boolean;
     }) => Promise<void>;
     /**
      * Initializes the service by subscribing to backtest signal events.
@@ -6143,28 +6143,28 @@ declare class LiveMarkdownService {
     dump: (symbol: string, strategyName: StrategyName, exchangeName: string, frameName: string, backtest: boolean, path?: string, columns?: Columns$5[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
-     * If ctx is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
+     * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
      * If nothing is provided, clears all data.
      *
-     * @param backtest - Backtest mode flag
-     * @param ctx - Optional context with symbol, strategyName, exchangeName, frameName
+     * @param payload - Optional payload with symbol, strategyName, exchangeName, frameName, backtest
      *
      * @example
      * ```typescript
      * const service = new LiveMarkdownService();
      *
      * // Clear specific combination
-     * await service.clear(false, { symbol: "BTCUSDT", strategyName: "my-strategy", exchangeName: "binance", frameName: "1h" });
+     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy", exchangeName: "binance", frameName: "1h", backtest: false });
      *
      * // Clear all data
      * await service.clear();
      * ```
      */
-    clear: (backtest: boolean, ctx?: {
+    clear: (payload?: {
         symbol: string;
         strategyName: StrategyName;
         exchangeName: string;
         frameName: string;
+        backtest: boolean;
     }) => Promise<void>;
     /**
      * Initializes the service by subscribing to live signal events.
@@ -6604,28 +6604,28 @@ declare class ScheduleMarkdownService {
     dump: (symbol: string, strategyName: StrategyName, exchangeName: string, frameName: string, backtest: boolean, path?: string, columns?: Columns$4[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
-     * If ctx is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
+     * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
      * If nothing is provided, clears all data.
      *
-     * @param backtest - Backtest mode flag
-     * @param ctx - Optional context with symbol, strategyName, exchangeName, frameName
+     * @param payload - Optional payload with symbol, strategyName, exchangeName, frameName, backtest
      *
      * @example
      * ```typescript
      * const service = new ScheduleMarkdownService();
      *
      * // Clear specific combination
-     * await service.clear(false, { symbol: "BTCUSDT", strategyName: "my-strategy", exchangeName: "binance", frameName: "1h" });
+     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy", exchangeName: "binance", frameName: "1h", backtest: false });
      *
      * // Clear all data
      * await service.clear();
      * ```
      */
-    clear: (backtest: boolean, ctx?: {
+    clear: (payload?: {
         symbol: string;
         strategyName: StrategyName;
         exchangeName: string;
         frameName: string;
+        backtest: boolean;
     }) => Promise<void>;
     /**
      * Initializes the service by subscribing to live signal events.
@@ -6875,14 +6875,14 @@ declare class PerformanceMarkdownService {
     /**
      * Clears accumulated performance data from storage.
      *
-     * @param backtest - Backtest mode flag
-     * @param ctx - Optional context with symbol, strategyName, exchangeName, frameName
+     * @param payload - Optional payload with symbol, strategyName, exchangeName, frameName, backtest
      */
-    clear: (backtest: boolean, ctx?: {
+    clear: (payload?: {
         symbol: string;
         strategyName: string;
         exchangeName: string;
         frameName: string;
+        backtest: boolean;
     }) => Promise<void>;
     /**
      * Initializes the service by subscribing to performance events.
@@ -7537,26 +7537,26 @@ declare class HeatMarkdownService {
     dump: (strategyName: StrategyName, exchangeName: string, frameName: string, backtest: boolean, path?: string, columns?: Columns$2[]) => Promise<void>;
     /**
      * Clears accumulated heatmap data from storage.
-     * If ctx is provided, clears only that exchangeName+frameName+backtest combination's data.
-     * If ctx is omitted, clears all data.
+     * If payload is provided, clears only that exchangeName+frameName+backtest combination's data.
+     * If payload is omitted, clears all data.
      *
-     * @param backtest - Backtest mode flag
-     * @param ctx - Optional context with exchangeName and frameName to clear specific data
+     * @param payload - Optional payload with exchangeName, frameName, backtest to clear specific data
      *
      * @example
      * ```typescript
      * const service = new HeatMarkdownService();
      *
      * // Clear specific exchange+frame+backtest data
-     * await service.clear(true, { exchangeName: "binance", frameName: "frame1" });
+     * await service.clear({ exchangeName: "binance", frameName: "frame1", backtest: true });
      *
      * // Clear all data
      * await service.clear();
      * ```
      */
-    clear: (backtest: boolean, ctx?: {
+    clear: (payload?: {
         exchangeName: string;
         frameName: string;
+        backtest: boolean;
     }) => Promise<void>;
     /**
      * Initializes the service by subscribing to signal events.
@@ -8038,28 +8038,28 @@ declare class PartialMarkdownService {
     dump: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean, path?: string, columns?: Columns$1[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
-     * If ctx is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
+     * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
      * If nothing is provided, clears all data.
      *
-     * @param backtest - Backtest mode flag
-     * @param ctx - Optional context with symbol, strategyName, exchangeName, frameName
+     * @param payload - Optional payload with symbol, strategyName, exchangeName, frameName, backtest
      *
      * @example
      * ```typescript
      * const service = new PartialMarkdownService();
      *
      * // Clear specific combination
-     * await service.clear(false, { symbol: "BTCUSDT", strategyName: "my-strategy", exchangeName: "binance", frameName: "1h" });
+     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy", exchangeName: "binance", frameName: "1h", backtest: false });
      *
      * // Clear all data
      * await service.clear();
      * ```
      */
-    clear: (backtest: boolean, ctx?: {
+    clear: (payload?: {
         symbol: string;
         strategyName: string;
         exchangeName: string;
         frameName: string;
+        backtest: boolean;
     }) => Promise<void>;
     /**
      * Initializes the service by subscribing to partial profit/loss events.
@@ -8457,28 +8457,28 @@ declare class RiskMarkdownService {
     dump: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean, path?: string, columns?: Columns[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
-     * If ctx is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
+     * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
      * If nothing is provided, clears all data.
      *
-     * @param backtest - Backtest mode flag
-     * @param ctx - Optional context with symbol, strategyName, exchangeName, frameName
+     * @param payload - Optional payload with symbol, strategyName, exchangeName, frameName, backtest
      *
      * @example
      * ```typescript
      * const service = new RiskMarkdownService();
      *
      * // Clear specific combination
-     * await service.clear(false, { symbol: "BTCUSDT", strategyName: "my-strategy", exchangeName: "binance", frameName: "1h" });
+     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy", exchangeName: "binance", frameName: "1h", backtest: false });
      *
      * // Clear all data
      * await service.clear();
      * ```
      */
-    clear: (backtest: boolean, ctx?: {
+    clear: (payload?: {
         symbol: string;
         strategyName: string;
         exchangeName: string;
         frameName: string;
+        backtest: boolean;
     }) => Promise<void>;
     /**
      * Initializes the service by subscribing to risk rejection events.
@@ -9594,13 +9594,13 @@ declare class RiskConnectionService {
     /**
      * Clears the cached ClientRisk instance for the given risk name.
      *
-     * @param backtest - Whether running in backtest mode
-     * @param ctx - Optional context with riskName, exchangeName, frameName (clears all if not provided)
+     * @param payload - Optional payload with riskName, exchangeName, frameName, backtest (clears all if not provided)
      */
-    clear: (backtest: boolean, ctx?: {
+    clear: (payload?: {
         riskName: RiskName;
         exchangeName: string;
         frameName: string;
+        backtest: boolean;
     }) => Promise<void>;
 }
 
@@ -10360,15 +10360,15 @@ declare class RiskGlobalService {
     }) => Promise<void>;
     /**
      * Clears risk data.
-     * If ctx is provided, clears data for that specific risk instance.
-     * If no ctx is provided, clears all risk data.
-     * @param backtest - Whether running in backtest mode
-     * @param ctx - Optional context with riskName, exchangeName, frameName (clears all if not provided)
+     * If payload is provided, clears data for that specific risk instance.
+     * If no payload is provided, clears all risk data.
+     * @param payload - Optional payload with riskName, exchangeName, frameName, backtest (clears all if not provided)
      */
-    clear: (backtest: boolean, ctx?: {
+    clear: (payload?: {
         riskName: RiskName;
         exchangeName: string;
         frameName: string;
+        backtest: boolean;
     }) => Promise<void>;
 }
 

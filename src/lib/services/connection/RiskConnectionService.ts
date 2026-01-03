@@ -202,19 +202,16 @@ export class RiskConnectionService {
   /**
    * Clears the cached ClientRisk instance for the given risk name.
    *
-   * @param backtest - Whether running in backtest mode
-   * @param ctx - Optional context with riskName, exchangeName, frameName (clears all if not provided)
+   * @param payload - Optional payload with riskName, exchangeName, frameName, backtest (clears all if not provided)
    */
   public clear = async (
-    backtest: boolean,
-    ctx?: { riskName: RiskName; exchangeName: string; frameName: string }
+    payload?: { riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
   ): Promise<void> => {
     this.loggerService.log("riskConnectionService clear", {
-      ctx,
-      backtest,
+      payload,
     });
-    if (ctx) {
-      const key = CREATE_KEY_FN(ctx.riskName, ctx.exchangeName, ctx.frameName, backtest);
+    if (payload) {
+      const key = CREATE_KEY_FN(payload.riskName, payload.exchangeName, payload.frameName, payload.backtest);
       this.getRisk.clear(key);
     } else {
       this.getRisk.clear();
