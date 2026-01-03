@@ -836,8 +836,6 @@ interface IRiskCheckArgs {
  * Active position tracked by ClientRisk for cross-strategy analysis.
  */
 interface IRiskActivePosition {
-    /** Signal details for the active position */
-    signal: ISignalRow;
     /** Strategy name owning the position */
     strategyName: string;
     /** Exchange name */
@@ -9480,6 +9478,7 @@ declare class ClientRisk implements IRisk {
     addSignal(symbol: string, context: {
         strategyName: string;
         riskName: string;
+        exchangeName: string;
     }): Promise<void>;
     /**
      * Removes a closed signal.
@@ -9488,6 +9487,7 @@ declare class ClientRisk implements IRisk {
     removeSignal(symbol: string, context: {
         strategyName: string;
         riskName: string;
+        exchangeName: string;
     }): Promise<void>;
     /**
      * Checks if a signal should be allowed based on risk limits.

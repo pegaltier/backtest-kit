@@ -34,8 +34,6 @@ export interface IRiskCheckArgs {
  * Active position tracked by ClientRisk for cross-strategy analysis.
  */
 export interface IRiskActivePosition {
-  /** Signal details for the active position */
-  signal: ISignalRow;
   /** Strategy name owning the position */
   strategyName: string;
   /** Exchange name */
