@@ -45,12 +45,12 @@ export class RiskGlobalService {
    * Checks if a signal should be allowed based on risk limits.
    *
    * @param params - Risk check arguments (portfolio state, position details)
-   * @param context - Execution context with risk name
+   * @param context - Execution context with risk name, exchangeName, frameName and backtest mode
    * @returns Promise resolving to risk check result
    */
   public checkSignal = async (
     params: IRiskCheckArgs,
-    context: { riskName: RiskName; backtest: boolean }
+    context: { riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
   ) => {
     this.loggerService.log("riskGlobalService checkSignal", {
       symbol: params.symbol,
@@ -64,11 +64,11 @@ export class RiskGlobalService {
    * Registers an opened signal with the risk management system.
    *
    * @param symbol - Trading pair symbol
-   * @param context - Context information (strategyName, riskName)
+   * @param context - Context information (strategyName, riskName, exchangeName, frameName, backtest)
    */
   public addSignal = async (
     symbol: string,
-    context: { strategyName: string; riskName: RiskName; backtest: boolean }
+    context: { strategyName: string; riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
   ) => {
     this.loggerService.log("riskGlobalService addSignal", {
       symbol,
@@ -82,11 +82,11 @@ export class RiskGlobalService {
    * Removes a closed signal from the risk management system.
    *
    * @param symbol - Trading pair symbol
-   * @param context - Context information (strategyName, riskName)
+   * @param context - Context information (strategyName, riskName, exchangeName, frameName, backtest)
    */
   public removeSignal = async (
     symbol: string,
-    context: { strategyName: string; riskName: RiskName; backtest: boolean }
+    context: { strategyName: string; riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
   ) => {
     this.loggerService.log("riskGlobalService removeSignal", {
       symbol,

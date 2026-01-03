@@ -825,6 +825,8 @@ interface IRiskCheckArgs {
     strategyName: StrategyName;
     /** Exchange name */
     exchangeName: ExchangeName;
+    /** Frame name */
+    frameName: string;
     /** Current VWAP price */
     currentPrice: number;
     /** Current timestamp */
@@ -950,21 +952,25 @@ interface IRisk {
      * Register a new opened signal/position.
      *
      * @param symbol - Trading pair symbol
-     * @param context - Context information (strategyName, riskName)
+     * @param context - Context information (strategyName, riskName, exchangeName, frameName)
      */
     addSignal: (symbol: string, context: {
         strategyName: string;
         riskName: string;
+        exchangeName: string;
+        frameName: string;
     }) => Promise<void>;
     /**
      * Remove a closed signal/position.
      *
      * @param symbol - Trading pair symbol
-     * @param context - Context information (strategyName, riskName)
+     * @param context - Context information (strategyName, riskName, exchangeName, frameName)
      */
     removeSignal: (symbol: string, context: {
         strategyName: string;
         riskName: string;
+        exchangeName: string;
+        frameName: string;
     }) => Promise<void>;
 }
 /**
@@ -9527,8 +9533,6 @@ declare class ClientRisk implements IRisk {
 declare class RiskConnectionService {
     private readonly loggerService;
     private readonly riskSchemaService;
-    private readonly methodContextService;
-    private readonly executionContextService;
     /**
      * Retrieves memoized ClientRisk instance for given risk name, exchange, frame and backtest mode.
      *
@@ -9550,11 +9554,13 @@ declare class RiskConnectionService {
      * ClientRisk will emit riskSubject event via onRejected callback when signal is rejected.
      *
      * @param params - Risk check arguments (portfolio state, position details)
-     * @param context - Execution context with risk name and backtest mode
+     * @param context - Execution context with risk name, exchangeName, frameName and backtest mode
      * @returns Promise resolving to risk check result
      */
     checkSignal: (params: IRiskCheckArgs, context: {
         riskName: RiskName;
+        exchangeName: string;
+        frameName: string;
         backtest: boolean;
     }) => Promise<boolean>;
     /**
@@ -9562,11 +9568,13 @@ declare class RiskConnectionService {
      * Routes to appropriate ClientRisk instance.
      *
      * @param symbol - Trading pair symbol
-     * @param context - Context information (strategyName, riskName, backtest)
+     * @param context - Context information (strategyName, riskName, exchangeName, frameName, backtest)
      */
     addSignal: (symbol: string, context: {
         strategyName: string;
         riskName: RiskName;
+        exchangeName: string;
+        frameName: string;
         backtest: boolean;
     }) => Promise<void>;
     /**
@@ -9574,11 +9582,13 @@ declare class RiskConnectionService {
      * Routes to appropriate ClientRisk instance.
      *
      * @param symbol - Trading pair symbol
-     * @param context - Context information (strategyName, riskName, backtest)
+     * @param context - Context information (strategyName, riskName, exchangeName, frameName, backtest)
      */
     removeSignal: (symbol: string, context: {
         strategyName: string;
         riskName: RiskName;
+        exchangeName: string;
+        frameName: string;
         backtest: boolean;
     }) => Promise<void>;
     /**
@@ -10313,33 +10323,39 @@ declare class RiskGlobalService {
      * Checks if a signal should be allowed based on risk limits.
      *
      * @param params - Risk check arguments (portfolio state, position details)
-     * @param context - Execution context with risk name
+     * @param context - Execution context with risk name, exchangeName, frameName and backtest mode
      * @returns Promise resolving to risk check result
      */
     checkSignal: (params: IRiskCheckArgs, context: {
         riskName: RiskName;
+        exchangeName: string;
+        frameName: string;
         backtest: boolean;
     }) => Promise<boolean>;
     /**
      * Registers an opened signal with the risk management system.
      *
      * @param symbol - Trading pair symbol
-     * @param context - Context information (strategyName, riskName)
+     * @param context - Context information (strategyName, riskName, exchangeName, frameName, backtest)
      */
     addSignal: (symbol: string, context: {
         strategyName: string;
         riskName: RiskName;
+        exchangeName: string;
+        frameName: string;
         backtest: boolean;
     }) => Promise<void>;
     /**
      * Removes a closed signal from the risk management system.
      *
      * @param symbol - Trading pair symbol
-     * @param context - Context information (strategyName, riskName)
+     * @param context - Context information (strategyName, riskName, exchangeName, frameName, backtest)
      */
     removeSignal: (symbol: string, context: {
         strategyName: string;
         riskName: RiskName;
+        exchangeName: string;
+        frameName: string;
         backtest: boolean;
     }) => Promise<void>;
     /**

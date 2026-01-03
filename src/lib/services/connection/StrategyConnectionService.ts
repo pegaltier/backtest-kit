@@ -364,12 +364,13 @@ export class StrategyConnectionService {
     await strategy.waitForInit();
     const tick = await strategy.backtest(symbol, context.strategyName, candles);
     {
-      // Wrap tick result with frameName for markdown services
-      const tickWithFrame = { ...tick, frameName: context.frameName };
       if (this.executionContextService.context.backtest) {
-        await signalBacktestEmitter.next(tickWithFrame);
+        await signalBacktestEmitter.next(tick);
       }
-      await signalEmitter.next(tickWithFrame);
+      if (!this.executionContextService.context.backtest) {
+        await signalLiveEmitter.next(tick);
+      }
+      await signalEmitter.next(tick);
     }
     return tick;
   };

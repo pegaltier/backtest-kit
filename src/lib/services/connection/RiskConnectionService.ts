@@ -6,8 +6,6 @@ import { memoize } from "functools-kit";
 import ClientRisk from "../../../client/ClientRisk";
 import RiskSchemaService from "../schema/RiskSchemaService";
 import { riskSubject } from "../../../config/emitters";
-import { TMethodContextService } from "../context/MethodContextService";
-import { TExecutionContextService } from "../context/ExecutionContextService";
 
 /**
  * Creates a unique key for memoizing ClientRisk instances.
@@ -106,12 +104,6 @@ export class RiskConnectionService {
   private readonly riskSchemaService = inject<RiskSchemaService>(
     TYPES.riskSchemaService
   );
-  private readonly methodContextService = inject<TMethodContextService>(
-    TYPES.methodContextService
-  );
-  private readonly executionContextService = inject<TExecutionContextService>(
-    TYPES.executionContextService
-  );
 
   /**
    * Retrieves memoized ClientRisk instance for given risk name, exchange, frame and backtest mode.
@@ -157,21 +149,18 @@ export class RiskConnectionService {
    * ClientRisk will emit riskSubject event via onRejected callback when signal is rejected.
    *
    * @param params - Risk check arguments (portfolio state, position details)
-   * @param context - Execution context with risk name and backtest mode
+   * @param context - Execution context with risk name, exchangeName, frameName and backtest mode
    * @returns Promise resolving to risk check result
    */
   public checkSignal = async (
     params: IRiskCheckArgs,
-    context: { riskName: RiskName; backtest: boolean }
+    context: { riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
   ) => {
-    const { exchangeName, frameName } = this.methodContextService.context;
     this.loggerService.log("riskConnectionService checkSignal", {
       symbol: params.symbol,
       context,
-      exchangeName,
-      frameName,
     });
-    return await this.getRisk(context.riskName, exchangeName, frameName, context.backtest).checkSignal(params);
+    return await this.getRisk(context.riskName, context.exchangeName, context.frameName, context.backtest).checkSignal(params);
   };
 
   /**
@@ -179,20 +168,17 @@ export class RiskConnectionService {
    * Routes to appropriate ClientRisk instance.
    *
    * @param symbol - Trading pair symbol
-   * @param context - Context information (strategyName, riskName, backtest)
+   * @param context - Context information (strategyName, riskName, exchangeName, frameName, backtest)
    */
   public addSignal = async (
     symbol: string,
-    context: { strategyName: string; riskName: RiskName; backtest: boolean }
+    context: { strategyName: string; riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
   ) => {
-    const { exchangeName, frameName } = this.methodContextService.context;
     this.loggerService.log("riskConnectionService addSignal", {
       symbol,
       context,
-      exchangeName,
-      frameName,
     });
-    await this.getRisk(context.riskName, exchangeName, frameName, context.backtest).addSignal(symbol, context);
+    await this.getRisk(context.riskName, context.exchangeName, context.frameName, context.backtest).addSignal(symbol, context);
   };
 
   /**
@@ -200,20 +186,17 @@ export class RiskConnectionService {
    * Routes to appropriate ClientRisk instance.
    *
    * @param symbol - Trading pair symbol
-   * @param context - Context information (strategyName, riskName, backtest)
+   * @param context - Context information (strategyName, riskName, exchangeName, frameName, backtest)
    */
   public removeSignal = async (
     symbol: string,
-    context: { strategyName: string; riskName: RiskName; backtest: boolean }
+    context: { strategyName: string; riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
   ) => {
-    const { exchangeName, frameName } = this.methodContextService.context;
     this.loggerService.log("riskConnectionService removeSignal", {
       symbol,
       context,
-      exchangeName,
-      frameName,
     });
-    await this.getRisk(context.riskName, exchangeName, frameName, context.backtest).removeSignal(symbol, context);
+    await this.getRisk(context.riskName, context.exchangeName, context.frameName, context.backtest).removeSignal(symbol, context);
   };
 
   /**

@@ -421,6 +421,7 @@ const GET_SIGNAL_FN = trycatch(
           symbol: self.params.execution.context.symbol,
           strategyName: self.params.method.context.strategyName,
           exchangeName: self.params.method.context.exchangeName,
+          frameName: self.params.method.context.frameName,
           currentPrice,
           timestamp: currentTime,
         })
@@ -774,6 +775,7 @@ const ACTIVATE_SCHEDULED_SIGNAL_FN = async (
           pendingSignal: scheduled,
           strategyName: self.params.method.context.strategyName,
           exchangeName: self.params.method.context.exchangeName,
+          frameName: self.params.method.context.frameName,
           currentPrice: scheduled.priceOpen,
           timestamp: activationTime,
       })
@@ -801,6 +803,8 @@ const ACTIVATE_SCHEDULED_SIGNAL_FN = async (
   await self.params.risk.addSignal(self.params.execution.context.symbol, {
     strategyName: self.params.method.context.strategyName,
     riskName: self.params.riskName,
+    exchangeName: self.params.method.context.exchangeName,
+    frameName: self.params.method.context.frameName,
   });
 
   if (self.params.callbacks?.onOpen) {
@@ -967,6 +971,7 @@ const OPEN_NEW_PENDING_SIGNAL_FN = async (
         symbol: self.params.execution.context.symbol,
         strategyName: self.params.method.context.strategyName,
         exchangeName: self.params.method.context.exchangeName,
+        frameName: self.params.method.context.frameName,
         currentPrice: signal.priceOpen,
         timestamp: self.params.execution.context.when.getTime(),
       })
@@ -978,6 +983,8 @@ const OPEN_NEW_PENDING_SIGNAL_FN = async (
   await self.params.risk.addSignal(self.params.execution.context.symbol, {
     strategyName: self.params.method.context.strategyName,
     riskName: self.params.riskName,
+    exchangeName: self.params.method.context.exchangeName,
+    frameName: self.params.method.context.frameName,
   });
 
   if (self.params.callbacks?.onOpen) {
@@ -1108,6 +1115,8 @@ const CLOSE_PENDING_SIGNAL_FN = async (
   await self.params.risk.removeSignal(self.params.execution.context.symbol, {
     strategyName: self.params.method.context.strategyName,
     riskName: self.params.riskName,
+    exchangeName: self.params.method.context.exchangeName,
+    frameName: self.params.method.context.frameName,
   });
 
   await self.setPendingSignal(null);
@@ -1408,6 +1417,7 @@ const ACTIVATE_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
         symbol: self.params.execution.context.symbol,
         strategyName: self.params.method.context.strategyName,
         exchangeName: self.params.method.context.exchangeName,
+        frameName: self.params.method.context.frameName,
         currentPrice: scheduled.priceOpen,
         timestamp: activationTime,
       })
@@ -1435,6 +1445,8 @@ const ACTIVATE_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
   await self.params.risk.addSignal(self.params.execution.context.symbol, {
     strategyName: self.params.method.context.strategyName,
     riskName: self.params.riskName,
+    exchangeName: self.params.method.context.exchangeName,
+    frameName: self.params.method.context.frameName,
   });
 
   if (self.params.callbacks?.onOpen) {
@@ -1503,6 +1515,8 @@ const CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN = async (
   await self.params.risk.removeSignal(self.params.execution.context.symbol, {
     strategyName: self.params.method.context.strategyName,
     riskName: self.params.riskName,
+    exchangeName: self.params.method.context.exchangeName,
+    frameName: self.params.method.context.frameName,
   });
 
   await self.setPendingSignal(null);

@@ -76,12 +76,12 @@ export class MergeRisk implements IRisk {
    * Used to track active positions across all risk management systems.
    *
    * @param symbol - Trading pair symbol
-   * @param context - Context with strategyName and riskName
+   * @param context - Context with strategyName, riskName, exchangeName and frameName
    * @returns Promise that resolves when all risks have registered the signal
    */
   public async addSignal(
     symbol: string,
-    context: { strategyName: string; riskName: string }
+    context: { strategyName: string; riskName: string; exchangeName: string; frameName: string }
   ) {
     bt.loggerService.info("MergeRisk addSignal", {
       symbol,
@@ -99,12 +99,12 @@ export class MergeRisk implements IRisk {
    * Used to update risk state when a position closes.
    *
    * @param symbol - Trading pair symbol
-   * @param context - Context with strategyName and riskName
+   * @param context - Context with strategyName, riskName, exchangeName and frameName
    * @returns Promise that resolves when all risks have removed the signal
    */
   public async removeSignal(
     symbol: string,
-    context: { strategyName: string; riskName: string }
+    context: { strategyName: string; riskName: string; exchangeName: string; frameName: string }
   ) {
     bt.loggerService.info("MergeRisk removeSignal", {
       symbol,

@@ -22,6 +22,8 @@ export interface IRiskCheckArgs {
   strategyName: StrategyName;
   /** Exchange name */
   exchangeName: ExchangeName;
+  /** Frame name */
+  frameName: string;
   /** Current VWAP price */
   currentPrice: number;
   /** Current timestamp */
@@ -171,17 +173,17 @@ export interface IRisk {
    * Register a new opened signal/position.
    *
    * @param symbol - Trading pair symbol
-   * @param context - Context information (strategyName, riskName)
+   * @param context - Context information (strategyName, riskName, exchangeName, frameName)
    */
-  addSignal: (symbol: string, context: { strategyName: string; riskName: string }) => Promise<void>;
+  addSignal: (symbol: string, context: { strategyName: string; riskName: string; exchangeName: string; frameName: string }) => Promise<void>;
 
   /**
    * Remove a closed signal/position.
    *
    * @param symbol - Trading pair symbol
-   * @param context - Context information (strategyName, riskName)
+   * @param context - Context information (strategyName, riskName, exchangeName, frameName)
    */
-  removeSignal: (symbol: string, context: { strategyName: string; riskName: string }) => Promise<void>;
+  removeSignal: (symbol: string, context: { strategyName: string; riskName: string; exchangeName: string; frameName: string }) => Promise<void>;
 }
 
 /**
