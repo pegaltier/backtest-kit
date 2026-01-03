@@ -516,7 +516,6 @@ export class BacktestUtils {
    */
   public getPendingSignal = async (
     symbol: string,
-    strategyName: StrategyName,
     context: {
       strategyName: string;
       exchangeName: string;
@@ -524,13 +523,13 @@ export class BacktestUtils {
     }
   ) => {
     backtest.strategyValidationService.validate(
-      strategyName,
+      context.strategyName,
       BACKTEST_METHOD_NAME_GET_PENDING_SIGNAL
     );
 
     {
       const { riskName, riskList } =
-        backtest.strategySchemaService.get(strategyName);
+        backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
           riskName,
@@ -548,11 +547,7 @@ export class BacktestUtils {
     return await backtest.strategyCoreService.getPendingSignal(
       true,
       symbol,
-      {
-        strategyName: context.strategyName,
-        exchangeName: context.exchangeName,
-        frameName: context.frameName,
-      }
+      context
     );
   };
 
@@ -574,7 +569,6 @@ export class BacktestUtils {
    */
   public getScheduledSignal = async (
     symbol: string,
-    strategyName: StrategyName,
     context: {
       strategyName: string;
       exchangeName: string;
@@ -582,13 +576,13 @@ export class BacktestUtils {
     }
   ) => {
     backtest.strategyValidationService.validate(
-      strategyName,
+      context.strategyName,
       BACKTEST_METHOD_NAME_GET_SCHEDULED_SIGNAL
     );
 
     {
       const { riskName, riskList } =
-        backtest.strategySchemaService.get(strategyName);
+        backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
           riskName,
@@ -606,11 +600,7 @@ export class BacktestUtils {
     return await backtest.strategyCoreService.getScheduledSignal(
       true,
       symbol,
-      {
-        strategyName: context.strategyName,
-        exchangeName: context.exchangeName,
-        frameName: context.frameName,
-      }
+      context
     );
   };
 
@@ -638,7 +628,6 @@ export class BacktestUtils {
    */
   public stop = async (
     symbol: string,
-    strategyName: StrategyName,
     context: {
       strategyName: string;
       exchangeName: string;
@@ -646,13 +635,13 @@ export class BacktestUtils {
     }
   ): Promise<void> => {
     backtest.strategyValidationService.validate(
-      strategyName,
+      context.strategyName,
       BACKTEST_METHOD_NAME_STOP
     );
 
     {
       const { riskName, riskList } =
-        backtest.strategySchemaService.get(strategyName);
+        backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
           riskName,
@@ -667,11 +656,7 @@ export class BacktestUtils {
         );
     }
 
-    await backtest.strategyCoreService.stop(true, symbol, {
-      strategyName,
-      exchangeName: context.exchangeName,
-      frameName: context.frameName
-    });
+    await backtest.strategyCoreService.stop(true, symbol, context);
   };
 
   /**
@@ -699,7 +684,6 @@ export class BacktestUtils {
    */
   public cancel = async (
     symbol: string,
-    strategyName: StrategyName,
     context: {
       strategyName: string;
       exchangeName: string;
@@ -708,13 +692,13 @@ export class BacktestUtils {
     cancelId?: string
   ): Promise<void> => {
     backtest.strategyValidationService.validate(
-      strategyName,
+      context.strategyName,
       BACKTEST_METHOD_NAME_CANCEL
     );
 
     {
       const { riskName, riskList } =
-        backtest.strategySchemaService.get(strategyName);
+        backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
           riskName,
@@ -732,7 +716,7 @@ export class BacktestUtils {
     await backtest.strategyCoreService.cancel(
       true,
       symbol,
-      { strategyName, exchangeName: context.exchangeName, frameName: context.frameName },
+      context,
       cancelId
     );
   };
@@ -757,7 +741,6 @@ export class BacktestUtils {
    */
   public getData = async (
     symbol: string,
-    strategyName: StrategyName,
     context: {
       strategyName: string;
       exchangeName: string;
@@ -765,13 +748,13 @@ export class BacktestUtils {
     }
   ) => {
     backtest.strategyValidationService.validate(
-      strategyName,
+      context.strategyName,
       BACKTEST_METHOD_NAME_GET_DATA
     );
 
     {
       const { riskName, riskList } =
-        backtest.strategySchemaService.get(strategyName);
+        backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
           riskName,
@@ -788,7 +771,7 @@ export class BacktestUtils {
 
     return await backtest.backtestMarkdownService.getData(
       symbol,
-      strategyName,
+      context.strategyName,
       context.exchangeName,
       context.frameName,
       true
@@ -816,7 +799,6 @@ export class BacktestUtils {
    */
   public getReport = async (
     symbol: string,
-    strategyName: StrategyName,
     context: {
       strategyName: string;
       exchangeName: string;
@@ -825,13 +807,13 @@ export class BacktestUtils {
     columns?: Columns[]
   ): Promise<string> => {
     backtest.strategyValidationService.validate(
-      strategyName,
+      context.strategyName,
       BACKTEST_METHOD_NAME_GET_REPORT
     );
 
     {
       const { riskName, riskList } =
-        backtest.strategySchemaService.get(strategyName);
+        backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
           riskName,
@@ -848,7 +830,7 @@ export class BacktestUtils {
 
     return await backtest.backtestMarkdownService.getReport(
       symbol,
-      strategyName,
+      context.strategyName,
       context.exchangeName,
       context.frameName,
       true,
@@ -884,7 +866,6 @@ export class BacktestUtils {
    */
   public dump = async (
     symbol: string,
-    strategyName: StrategyName,
     context: {
       strategyName: string;
       exchangeName: string;
@@ -894,13 +875,13 @@ export class BacktestUtils {
     columns?: Columns[]
   ): Promise<void> => {
     backtest.strategyValidationService.validate(
-      strategyName,
+      context.strategyName,
       BACKTEST_METHOD_NAME_DUMP
     );
 
     {
       const { riskName, riskList } =
-        backtest.strategySchemaService.get(strategyName);
+        backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
           riskName,
@@ -917,7 +898,7 @@ export class BacktestUtils {
 
     await backtest.backtestMarkdownService.dump(
       symbol,
-      strategyName,
+      context.strategyName,
       context.exchangeName,
       context.frameName,
       true,

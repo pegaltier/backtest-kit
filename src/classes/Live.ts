@@ -416,20 +416,16 @@ export class LiveUtils {
    * }
    * ```
    */
-  public getPendingSignal = async (symbol: string, strategyName: StrategyName, context: { strategyName: string; exchangeName: string; frameName: string }) => {
-    backtest.strategyValidationService.validate(strategyName, LIVE_METHOD_NAME_GET_PENDING_SIGNAL);
+  public getPendingSignal = async (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string }) => {
+    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_PENDING_SIGNAL);
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
       riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_PENDING_SIGNAL);
       riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_PENDING_SIGNAL));
     }
 
-    return await backtest.strategyCoreService.getPendingSignal(false, symbol, {
-      strategyName: context.strategyName,
-      exchangeName: context.exchangeName,
-      frameName: context.frameName,
-    });
+    return await backtest.strategyCoreService.getPendingSignal(false, symbol, context);
   };
 
   /**
@@ -448,20 +444,16 @@ export class LiveUtils {
    * }
    * ```
    */
-  public getScheduledSignal = async (symbol: string, strategyName: StrategyName, context: { strategyName: string; exchangeName: string; frameName: string }) => {
-    backtest.strategyValidationService.validate(strategyName, LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL);
+  public getScheduledSignal = async (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string }) => {
+    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL);
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
       riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL);
       riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL));
     }
 
-    return await backtest.strategyCoreService.getScheduledSignal(false, symbol, {
-      strategyName: context.strategyName,
-      exchangeName: context.exchangeName,
-      frameName: context.frameName,
-    });
+    return await backtest.strategyCoreService.getScheduledSignal(false, symbol, context);
   };
 
   /**
@@ -483,26 +475,21 @@ export class LiveUtils {
    */
   public stop = async (
     symbol: string,
-    strategyName: StrategyName,
     context: {
       strategyName: string;
       exchangeName: string;
       frameName: string;
     }
   ): Promise<void> => {
-    backtest.strategyValidationService.validate(strategyName, LIVE_METHOD_NAME_STOP);
+    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_STOP);
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
       riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_STOP);
       riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_STOP));
     }
 
-    await backtest.strategyCoreService.stop(false, symbol, {
-      strategyName,
-      exchangeName: context.exchangeName,
-      frameName: context.frameName
-    });
+    await backtest.strategyCoreService.stop(false, symbol, context);
   };
 
   /**
@@ -530,7 +517,6 @@ export class LiveUtils {
    */
   public cancel = async (
     symbol: string,
-    strategyName: StrategyName,
     context: {
       strategyName: string;
       exchangeName: string;
@@ -538,19 +524,15 @@ export class LiveUtils {
     },
     cancelId?: string
   ): Promise<void> => {
-    backtest.strategyValidationService.validate(strategyName, LIVE_METHOD_NAME_CANCEL);
+    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_CANCEL);
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
       riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_CANCEL);
       riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_CANCEL));
     }
 
-    await backtest.strategyCoreService.cancel(false, symbol, {
-      strategyName,
-      exchangeName: context.exchangeName,
-      frameName: context.frameName
-    }, cancelId);
+    await backtest.strategyCoreService.cancel(false, symbol, context, cancelId);
   };
 
   /**
