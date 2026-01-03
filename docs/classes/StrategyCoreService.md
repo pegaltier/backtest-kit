@@ -50,12 +50,6 @@ riskValidationService: any
 strategyValidationService: any
 ```
 
-### methodContextService
-
-```ts
-methodContextService: any
-```
-
 ### validate
 
 ```ts
@@ -70,7 +64,7 @@ Logs validation activity.
 ### getPendingSignal
 
 ```ts
-getPendingSignal: (backtest: boolean, symbol: string, strategyName: string) => Promise<ISignalRow>
+getPendingSignal: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<ISignalRow>
 ```
 
 Retrieves the currently active pending signal for the symbol.
@@ -80,7 +74,7 @@ Used internally for monitoring TP/SL and time expiration.
 ### getScheduledSignal
 
 ```ts
-getScheduledSignal: (backtest: boolean, symbol: string, strategyName: string) => Promise<IScheduledSignalRow>
+getScheduledSignal: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<IScheduledSignalRow>
 ```
 
 Retrieves the currently active scheduled signal for the symbol.
@@ -90,7 +84,7 @@ Used internally for monitoring scheduled signal activation.
 ### getStopped
 
 ```ts
-getStopped: (backtest: boolean, symbol: string, strategyName: string) => Promise<boolean>
+getStopped: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
 ```
 
 Checks if the strategy has been stopped.
@@ -101,7 +95,7 @@ to retrieve the stopped state from the strategy instance.
 ### tick
 
 ```ts
-tick: (symbol: string, when: Date, backtest: boolean) => Promise<IStrategyTickResult>
+tick: (symbol: string, when: Date, backtest: boolean, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<IStrategyTickResult>
 ```
 
 Checks signal status at a specific timestamp.
@@ -112,7 +106,7 @@ and backtest mode flag.
 ### backtest
 
 ```ts
-backtest: (symbol: string, candles: ICandleData[], when: Date, backtest: boolean) => Promise<IStrategyBacktestResult>
+backtest: (symbol: string, candles: ICandleData[], when: Date, backtest: boolean, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<IStrategyBacktestResult>
 ```
 
 Runs fast backtest against candle array.
@@ -123,7 +117,7 @@ timestamp, and backtest mode flag.
 ### stop
 
 ```ts
-stop: (backtest: boolean, ctx: { symbol: string; strategyName: string; }) => Promise<void>
+stop: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<void>
 ```
 
 Stops the strategy from generating new signals.
@@ -134,7 +128,7 @@ Does not require execution context.
 ### cancel
 
 ```ts
-cancel: (backtest: boolean, ctx: { symbol: string; strategyName: string; }, cancelId?: string) => Promise<void>
+cancel: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }, cancelId?: string) => Promise<void>
 ```
 
 Cancels the scheduled signal without stopping the strategy.
@@ -146,7 +140,7 @@ Does not require execution context.
 ### clear
 
 ```ts
-clear: (backtest: boolean, ctx?: { symbol: string; strategyName: string; }) => Promise<void>
+clear: (payload?: { symbol: string; strategyName: string; exchangeName: string; frameName: string; backtest: boolean; }) => Promise<void>
 ```
 
 Clears the memoized ClientStrategy instance from cache.

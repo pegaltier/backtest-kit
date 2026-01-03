@@ -42,6 +42,14 @@ strategyName: string
 
 Unique strategy identifier for execution
 
+### frameName
+
+```ts
+frameName: string
+```
+
+Unique frame identifier for execution (empty string for live mode)
+
 ### scheduledAt
 
 ```ts

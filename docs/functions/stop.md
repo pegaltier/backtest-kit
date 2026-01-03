@@ -6,7 +6,7 @@ group: docs
 # stop
 
 ```ts
-declare function stop(symbol: string, strategyName: StrategyName): Promise<void>;
+declare function stop(symbol: string): Promise<void>;
 ```
 
 Stops the strategy from generating new signals.
@@ -22,4 +22,3 @@ Automatically detects backtest/live mode from execution context.
 | Parameter | Description |
 |-----------|-------------|
 | `symbol` | Trading pair symbol |
-| `strategyName` | Strategy name to stop |

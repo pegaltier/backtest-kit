@@ -46,6 +46,15 @@ strategyName: string
 Strategy name requesting to open a position.
 Identifies which strategy attempted to create the signal.
 
+### frameName
+
+```ts
+frameName: FrameName$1
+```
+
+Frame name used in backtest execution.
+Identifies which frame this signal was for in backtest execution.
+
 ### exchangeName
 
 ```ts

@@ -40,8 +40,8 @@ Logger service for debug output
 getStorage: any
 ```
 
-Memoized function to get or create HeatmapStorage for a strategy and backtest mode.
-Each strategy + backtest mode combination gets its own isolated heatmap storage instance.
+Memoized function to get or create HeatmapStorage for exchange, frame and backtest mode.
+Each exchangeName + frameName + backtest mode combination gets its own isolated heatmap storage instance.
 
 ### tick
 
@@ -57,26 +57,26 @@ Only processes closed signals - opened signals are ignored.
 ### getData
 
 ```ts
-getData: (strategyName: string, backtest: boolean) => Promise<HeatmapStatisticsModel>
+getData: (exchangeName: string, frameName: string, backtest: boolean) => Promise<HeatmapStatisticsModel>
 ```
 
-Gets aggregated portfolio heatmap statistics for a strategy.
+Gets aggregated portfolio heatmap statistics.
 
 ### getReport
 
 ```ts
-getReport: (strategyName: string, backtest: boolean, columns?: Columns$2[]) => Promise<string>
+getReport: (strategyName: string, exchangeName: string, frameName: string, backtest: boolean, columns?: Columns$2[]) => Promise<string>
 ```
 
-Generates markdown report with portfolio heatmap table for a strategy.
+Generates markdown report with portfolio heatmap table.
 
 ### dump
 
 ```ts
-dump: (strategyName: string, backtest: boolean, path?: string, columns?: Columns$2[]) => Promise<void>
+dump: (strategyName: string, exchangeName: string, frameName: string, backtest: boolean, path?: string, columns?: Columns$2[]) => Promise<void>
 ```
 
-Saves heatmap report to disk for a strategy.
+Saves heatmap report to disk.
 
 Creates directory if it doesn't exist.
 Default filename: {strategyName}.md
@@ -84,12 +84,12 @@ Default filename: {strategyName}.md
 ### clear
 
 ```ts
-clear: (backtest: boolean, ctx?: { strategyName: string; }) => Promise<void>
+clear: (payload?: { exchangeName: string; frameName: string; backtest: boolean; }) => Promise<void>
 ```
 
 Clears accumulated heatmap data from storage.
-If ctx is provided, clears only that strategy+backtest combination's data.
-If ctx is omitted, clears all data.
+If payload is provided, clears only that exchangeName+frameName+backtest combination's data.
+If payload is omitted, clears all data.
 
 ### init
 

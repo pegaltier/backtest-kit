@@ -43,6 +43,14 @@ exchangeName: string
 
 Exchange name
 
+### frameName
+
+```ts
+frameName: string
+```
+
+Frame name
+
 ### currentPrice
 
 ```ts

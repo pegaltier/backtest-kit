@@ -49,7 +49,7 @@ Useful for running backtests for side effects only (callbacks, logging).
 ### getPendingSignal
 
 ```ts
-getPendingSignal: (symbol: string, strategyName: string) => Promise<ISignalRow>
+getPendingSignal: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<ISignalRow>
 ```
 
 Retrieves the currently active pending signal for the strategy.
@@ -58,7 +58,7 @@ If no active signal exists, returns null.
 ### getScheduledSignal
 
 ```ts
-getScheduledSignal: (symbol: string, strategyName: string) => Promise<IScheduledSignalRow>
+getScheduledSignal: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<IScheduledSignalRow>
 ```
 
 Retrieves the currently active scheduled signal for the strategy.
@@ -67,7 +67,7 @@ If no scheduled signal exists, returns null.
 ### stop
 
 ```ts
-stop: (symbol: string, strategyName: string) => Promise<void>
+stop: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<void>
 ```
 
 Stops the strategy from generating new signals.
@@ -79,7 +79,7 @@ Backtest will stop at the next safe point (idle state or after signal closes).
 ### cancel
 
 ```ts
-cancel: (symbol: string, strategyName: string, cancelId?: string) => Promise<void>
+cancel: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }, cancelId?: string) => Promise<void>
 ```
 
 Cancels the scheduled signal without stopping the strategy.
@@ -91,7 +91,7 @@ Does NOT set stop flag - strategy can continue generating new signals.
 ### getData
 
 ```ts
-getData: (symbol: string, strategyName: string) => Promise<BacktestStatisticsModel>
+getData: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<BacktestStatisticsModel>
 ```
 
 Gets statistical data from all closed signals for a symbol-strategy pair.
@@ -99,7 +99,7 @@ Gets statistical data from all closed signals for a symbol-strategy pair.
 ### getReport
 
 ```ts
-getReport: (symbol: string, strategyName: string, columns?: Columns$6[]) => Promise<string>
+getReport: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }, columns?: Columns$6[]) => Promise<string>
 ```
 
 Generates markdown report with all closed signals for a symbol-strategy pair.
@@ -107,7 +107,7 @@ Generates markdown report with all closed signals for a symbol-strategy pair.
 ### dump
 
 ```ts
-dump: (symbol: string, strategyName: string, path?: string, columns?: Columns$6[]) => Promise<void>
+dump: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }, path?: string, columns?: Columns$6[]) => Promise<void>
 ```
 
 Saves strategy report to disk.
@@ -115,7 +115,7 @@ Saves strategy report to disk.
 ### list
 
 ```ts
-list: () => Promise<{ id: string; symbol: string; strategyName: string; status: "pending" | "fulfilled" | "rejected" | "ready"; }[]>
+list: () => Promise<{ id: string; symbol: string; strategyName: string; exchangeName: string; frameName: string; status: "pending" | "fulfilled" | "rejected" | "ready"; }[]>
 ```
 
 Lists all active backtest instances with their current status.

@@ -46,6 +46,15 @@ exchangeName: string
 Exchange name where this signal is being executed.
 Identifies which exchange this profit event belongs to.
 
+### frameName
+
+```ts
+frameName: string
+```
+
+Frame name where this signal is being executed.
+Identifies which frame this profit event belongs to (empty string for live mode).
+
 ### data
 
 ```ts

@@ -50,6 +50,14 @@ exchangeName: string
 
 Exchange name
 
+### frameName
+
+```ts
+frameName: string
+```
+
+Time frame name
+
 ### currentPrice
 
 ```ts

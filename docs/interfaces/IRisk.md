@@ -21,7 +21,7 @@ Check if a signal should be allowed based on risk limits.
 ### addSignal
 
 ```ts
-addSignal: (symbol: string, context: { strategyName: string; riskName: string; }) => Promise<void>
+addSignal: (symbol: string, context: { strategyName: string; riskName: string; exchangeName: string; frameName: string; }) => Promise<void>
 ```
 
 Register a new opened signal/position.
@@ -29,7 +29,7 @@ Register a new opened signal/position.
 ### removeSignal
 
 ```ts
-removeSignal: (symbol: string, context: { strategyName: string; riskName: string; }) => Promise<void>
+removeSignal: (symbol: string, context: { strategyName: string; riskName: string; exchangeName: string; frameName: string; }) => Promise<void>
 ```
 
 Remove a closed signal/position.

@@ -49,7 +49,7 @@ Logs validation activity.
 ### checkSignal
 
 ```ts
-checkSignal: (params: IRiskCheckArgs, context: { riskName: string; backtest: boolean; }) => Promise<boolean>
+checkSignal: (params: IRiskCheckArgs, payload: { riskName: string; exchangeName: string; frameName: string; backtest: boolean; }) => Promise<boolean>
 ```
 
 Checks if a signal should be allowed based on risk limits.
@@ -57,7 +57,7 @@ Checks if a signal should be allowed based on risk limits.
 ### addSignal
 
 ```ts
-addSignal: (symbol: string, context: { strategyName: string; riskName: string; backtest: boolean; }) => Promise<void>
+addSignal: (symbol: string, payload: { strategyName: string; riskName: string; exchangeName: string; frameName: string; backtest: boolean; }) => Promise<void>
 ```
 
 Registers an opened signal with the risk management system.
@@ -65,7 +65,7 @@ Registers an opened signal with the risk management system.
 ### removeSignal
 
 ```ts
-removeSignal: (symbol: string, context: { strategyName: string; riskName: string; backtest: boolean; }) => Promise<void>
+removeSignal: (symbol: string, payload: { strategyName: string; riskName: string; exchangeName: string; frameName: string; backtest: boolean; }) => Promise<void>
 ```
 
 Removes a closed signal from the risk management system.
@@ -73,9 +73,9 @@ Removes a closed signal from the risk management system.
 ### clear
 
 ```ts
-clear: (backtest: boolean, ctx?: { riskName: string; }) => Promise<void>
+clear: (payload?: { riskName: string; exchangeName: string; frameName: string; backtest: boolean; }) => Promise<void>
 ```
 
 Clears risk data.
-If ctx is provided, clears data for that specific risk instance.
-If no ctx is provided, clears all risk data.
+If payload is provided, clears data for that specific risk instance.
+If no payload is provided, clears all risk data.
