@@ -1172,6 +1172,8 @@ interface ISignalRow extends ISignalDto {
     exchangeName: ExchangeName;
     /** Unique strategy identifier for execution */
     strategyName: StrategyName;
+    /** Unique frame identifier for execution (empty string for live mode) */
+    frameName: FrameName;
     /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
     scheduledAt: number;
     /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
@@ -2927,6 +2929,8 @@ interface PerformanceContract {
     strategyName: string;
     /** Exchange name associated with this metric */
     exchangeName: string;
+    /** Frame name associated with this metric (empty string for live mode) */
+    frameName: string;
     /** Trading symbol associated with this metric */
     symbol: string;
     /** Whether this metric is from backtest mode (true) or live mode (false) */
@@ -3011,6 +3015,11 @@ interface PartialProfitContract {
      * Identifies which exchange this profit event belongs to.
      */
     exchangeName: string;
+    /**
+     * Frame name where this signal is being executed.
+     * Identifies which frame this profit event belongs to (empty string for live mode).
+     */
+    frameName: string;
     /**
      * Complete signal row data.
      * Contains all signal information: id, position, priceOpen, priceTakeProfit, priceStopLoss, etc.
@@ -3106,6 +3115,11 @@ interface PartialLossContract {
      * Identifies which exchange this loss event belongs to.
      */
     exchangeName: string;
+    /**
+     * Frame name where this signal is being executed.
+     * Identifies which frame this loss event belongs to (empty string for live mode).
+     */
+    frameName: string;
     /**
      * Complete signal row data.
      * Contains all signal information: id, position, priceOpen, priceTakeProfit, priceStopLoss, etc.
@@ -5784,7 +5798,7 @@ declare class BacktestUtils {
      * }
      * ```
      */
-    getPendingSignal: (symbol: string, strategyName: StrategyName, context: {
+    getPendingSignal: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
         frameName: string;
@@ -5805,7 +5819,7 @@ declare class BacktestUtils {
      * }
      * ```
      */
-    getScheduledSignal: (symbol: string, strategyName: StrategyName, context: {
+    getScheduledSignal: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
         frameName: string;
@@ -5832,7 +5846,7 @@ declare class BacktestUtils {
      * });
      * ```
      */
-    stop: (symbol: string, strategyName: StrategyName, context: {
+    stop: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
         frameName: string;
@@ -5860,7 +5874,7 @@ declare class BacktestUtils {
      * }, "manual-cancel-001");
      * ```
      */
-    cancel: (symbol: string, strategyName: StrategyName, context: {
+    cancel: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
         frameName: string;
@@ -5883,7 +5897,7 @@ declare class BacktestUtils {
      * console.log(stats.sharpeRatio, stats.winRate);
      * ```
      */
-    getData: (symbol: string, strategyName: StrategyName, context: {
+    getData: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
         frameName: string;
@@ -5907,7 +5921,7 @@ declare class BacktestUtils {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, context: {
+    getReport: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
         frameName: string;
@@ -5938,7 +5952,7 @@ declare class BacktestUtils {
      * }, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, context: {
+    dump: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
         frameName: string;
@@ -6270,10 +6284,9 @@ declare class LiveUtils {
      * }
      * ```
      */
-    getPendingSignal: (symbol: string, strategyName: StrategyName, context: {
+    getPendingSignal: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
-        frameName: string;
     }) => Promise<ISignalRow>;
     /**
      * Retrieves the currently active scheduled signal for the strategy.
@@ -6291,10 +6304,9 @@ declare class LiveUtils {
      * }
      * ```
      */
-    getScheduledSignal: (symbol: string, strategyName: StrategyName, context: {
+    getScheduledSignal: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
-        frameName: string;
     }) => Promise<IScheduledSignalRow>;
     /**
      * Stops the strategy from generating new signals.
@@ -6313,10 +6325,9 @@ declare class LiveUtils {
      * await Live.stop("BTCUSDT", "my-strategy");
      * ```
      */
-    stop: (symbol: string, strategyName: StrategyName, context: {
+    stop: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
-        frameName: string;
     }) => Promise<void>;
     /**
      * Cancels the scheduled signal without stopping the strategy.
@@ -6341,10 +6352,9 @@ declare class LiveUtils {
      * }, "manual-cancel-001");
      * ```
      */
-    cancel: (symbol: string, strategyName: StrategyName, context: {
+    cancel: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
-        frameName: string;
     }, cancelId?: string) => Promise<void>;
     /**
      * Gets statistical data from all live trading events for a symbol-strategy pair.
@@ -6364,10 +6374,9 @@ declare class LiveUtils {
      * console.log(stats.sharpeRatio, stats.winRate);
      * ```
      */
-    getData: (symbol: string, strategyName: StrategyName, context: {
+    getData: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
-        frameName: string;
     }) => Promise<LiveStatisticsModel>;
     /**
      * Generates markdown report with all events for a symbol-strategy pair.
@@ -6388,10 +6397,9 @@ declare class LiveUtils {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, context: {
+    getReport: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
-        frameName: string;
     }, columns?: Columns$5[]) => Promise<string>;
     /**
      * Saves strategy report to disk.
@@ -6419,10 +6427,9 @@ declare class LiveUtils {
      * }, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, context: {
+    dump: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
-        frameName: string;
     }, path?: string, columns?: Columns$5[]) => Promise<void>;
     /**
      * Lists all active live trading instances with their current status.
@@ -6680,7 +6687,7 @@ declare class ScheduleUtils {
      * console.log(stats.cancellationRate, stats.avgWaitTime);
      * ```
      */
-    getData: (symbol: string, strategyName: StrategyName, context: {
+    getData: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
         frameName: string;
@@ -6699,7 +6706,7 @@ declare class ScheduleUtils {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, context: {
+    getReport: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
         frameName: string;
@@ -6721,7 +6728,7 @@ declare class ScheduleUtils {
      * await Schedule.dump("BTCUSDT", "my-strategy", "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, context: {
+    dump: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
         frameName: string;
@@ -6811,7 +6818,7 @@ declare class PerformanceMarkdownService {
      * Processes performance events and accumulates metrics.
      * Should be called from performance tracking code.
      *
-     * @param event - Performance event with timing data and frameName wrapper
+     * @param event - Performance event with timing data
      */
     private track;
     /**
@@ -6952,7 +6959,7 @@ declare class Performance {
      * }
      * ```
      */
-    static getData(symbol: string, strategyName: string, context: {
+    static getData(symbol: string, context: {
         strategyName: string;
         exchangeName: string;
         frameName: string;
@@ -6980,7 +6987,7 @@ declare class Performance {
      * await fs.writeFile("performance-report.md", markdown);
      * ```
      */
-    static getReport(symbol: string, strategyName: string, context: {
+    static getReport(symbol: string, context: {
         strategyName: string;
         exchangeName: string;
         frameName: string;
@@ -7005,7 +7012,7 @@ declare class Performance {
      * await Performance.dump("BTCUSDT", "my-strategy", "./reports/perf");
      * ```
      */
-    static dump(symbol: string, strategyName: string, context: {
+    static dump(symbol: string, context: {
         strategyName: string;
         exchangeName: string;
         frameName: string;
@@ -8135,7 +8142,7 @@ declare class PartialUtils {
      * }
      * ```
      */
-    getData: (symbol: string, strategyName: string, context: {
+    getData: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
         frameName: string;
@@ -8179,7 +8186,7 @@ declare class PartialUtils {
      * // **Loss events:** 1
      * ```
      */
-    getReport: (symbol: string, strategyName: string, context: {
+    getReport: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
         frameName: string;
@@ -8216,7 +8223,7 @@ declare class PartialUtils {
      * }
      * ```
      */
-    dump: (symbol: string, strategyName: string, context: {
+    dump: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
         frameName: string;
@@ -8554,7 +8561,7 @@ declare class RiskUtils {
      * }
      * ```
      */
-    getData: (symbol: string, strategyName: string, context: {
+    getData: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
         frameName: string;
@@ -8600,7 +8607,7 @@ declare class RiskUtils {
      * // - my-strategy: 1
      * ```
      */
-    getReport: (symbol: string, strategyName: string, context: {
+    getReport: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
         frameName: string;
@@ -8637,7 +8644,7 @@ declare class RiskUtils {
      * }
      * ```
      */
-    dump: (symbol: string, strategyName: string, context: {
+    dump: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
         frameName: string;
