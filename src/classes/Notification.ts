@@ -348,6 +348,13 @@ export class NotificationInstance {
    * Automatically called on first use.
    */
   public waitForInit = singleshot(async () => {
+    // Add bootstrap notification to mark initialization
+    this._addNotification({
+      type: "bootstrap",
+      id: CREATE_KEY_FN(),
+      timestamp: Date.now(),
+    });
+
     // Signal events
     signalEmitter.subscribe(this._handleSignal);
 

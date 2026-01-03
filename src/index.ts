@@ -149,6 +149,7 @@ export { ColumnModel } from "./model/Column.model";
 
 export {
   NotificationModel,
+  BootstrapNotification,
   BacktestDoneNotification,
   CriticalErrorNotification,
   InfoErrorNotification,
