@@ -113,6 +113,7 @@ export class LiveLogicPrivateService {
         duration: tickEndTime - tickStartTime,
         strategyName: this.methodContextService.context.strategyName,
         exchangeName: this.methodContextService.context.exchangeName,
+        frameName: this.methodContextService.context.frameName,
         symbol,
         backtest: false,
       });

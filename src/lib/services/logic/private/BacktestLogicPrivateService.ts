@@ -284,6 +284,7 @@ export class BacktestLogicPrivateService {
           duration: signalEndTime - signalStartTime,
           strategyName: this.methodContextService.context.strategyName,
           exchangeName: this.methodContextService.context.exchangeName,
+          frameName: this.methodContextService.context.frameName,
           symbol,
           backtest: true,
         });
@@ -424,6 +425,7 @@ export class BacktestLogicPrivateService {
           duration: signalEndTime - signalStartTime,
           strategyName: this.methodContextService.context.strategyName,
           exchangeName: this.methodContextService.context.exchangeName,
+          frameName: this.methodContextService.context.frameName,
           symbol,
           backtest: true,
         });
@@ -474,6 +476,7 @@ export class BacktestLogicPrivateService {
         duration: timeframeEndTime - timeframeStartTime,
         strategyName: this.methodContextService.context.strategyName,
         exchangeName: this.methodContextService.context.exchangeName,
+        frameName: this.methodContextService.context.frameName,
         symbol,
         backtest: true,
       });
@@ -504,6 +507,7 @@ export class BacktestLogicPrivateService {
       duration: backtestEndTime - backtestStartTime,
       strategyName: this.methodContextService.context.strategyName,
       exchangeName: this.methodContextService.context.exchangeName,
+      frameName: this.methodContextService.context.frameName,
       symbol,
       backtest: true,
     });

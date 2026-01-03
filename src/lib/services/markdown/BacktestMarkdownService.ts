@@ -334,7 +334,7 @@ export class BacktestMarkdownService {
    * }
    * ```
    */
-  private tick = async (data: IStrategyTickResult & { frameName: string }) => {
+  private tick = async (data: IStrategyTickResult) => {
     this.loggerService.log("backtestMarkdownService tick", {
       data,
     });

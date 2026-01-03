@@ -373,7 +373,7 @@ export class ScheduleMarkdownService {
    * // Service automatically subscribes in init()
    * ```
    */
-  private tick = async (data: IStrategyTickResult & { frameName: string }) => {
+  private tick = async (data: IStrategyTickResult) => {
     this.loggerService.log("scheduleMarkdownService tick", {
       data,
     });

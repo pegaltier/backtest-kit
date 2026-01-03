@@ -477,7 +477,7 @@ export class LiveMarkdownService {
    * }
    * ```
    */
-  private tick = async (data: IStrategyTickResult & { frameName: string }) => {
+  private tick = async (data: IStrategyTickResult) => {
     this.loggerService.log("liveMarkdownService tick", {
       data,
     });

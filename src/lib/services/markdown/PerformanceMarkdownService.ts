@@ -350,9 +350,9 @@ export class PerformanceMarkdownService {
    * Processes performance events and accumulates metrics.
    * Should be called from performance tracking code.
    *
-   * @param event - Performance event with timing data and frameName wrapper
+   * @param event - Performance event with timing data
    */
-  private track = async (event: PerformanceContract & { frameName: string }) => {
+  private track = async (event: PerformanceContract) => {
     this.loggerService.log("performanceMarkdownService track", {
       event,
     });

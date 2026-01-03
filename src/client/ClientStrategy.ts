@@ -452,6 +452,7 @@ const GET_SIGNAL_FN = trycatch(
           symbol: self.params.execution.context.symbol,
           exchangeName: self.params.method.context.exchangeName,
           strategyName: self.params.method.context.strategyName,
+          frameName: self.params.method.context.frameName,
           scheduledAt: currentTime,
           pendingAt: currentTime, // Для immediate signal оба времени одинаковые
           _isScheduled: false,
@@ -475,6 +476,7 @@ const GET_SIGNAL_FN = trycatch(
         symbol: self.params.execution.context.symbol,
         exchangeName: self.params.method.context.exchangeName,
         strategyName: self.params.method.context.strategyName,
+        frameName: self.params.method.context.frameName,
         scheduledAt: currentTime,
         pendingAt: currentTime, // Временно, обновится при активации
         _isScheduled: true,
@@ -494,6 +496,7 @@ const GET_SIGNAL_FN = trycatch(
       symbol: self.params.execution.context.symbol,
       exchangeName: self.params.method.context.exchangeName,
       strategyName: self.params.method.context.strategyName,
+      frameName: self.params.method.context.frameName,
       scheduledAt: currentTime,
       pendingAt: currentTime, // Для immediate signal оба времени одинаковые
       _isScheduled: false,

@@ -52,6 +52,8 @@ export interface ISignalRow extends ISignalDto {
   exchangeName: ExchangeName;
   /** Unique strategy identifier for execution */
   strategyName: StrategyName;
+  /** Unique frame identifier for execution (empty string for live mode) */
+  frameName: FrameName;
   /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
   scheduledAt: number;
   /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */

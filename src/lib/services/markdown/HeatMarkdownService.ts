@@ -471,7 +471,7 @@ export class HeatMarkdownService {
    *
    * @param data - Tick result from strategy execution (closed signals only)
    */
-  private tick = async (data: IStrategyTickResult & { frameName: string }) => {
+  private tick = async (data: IStrategyTickResult) => {
     this.loggerService.log("heatMarkdownService tick", {
       data,
     });

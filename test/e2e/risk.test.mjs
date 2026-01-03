@@ -1182,7 +1182,11 @@ test("Risk.getReport generates markdown with correct table structure", async ({ 
   await awaitSubject.toPromise();
   // await sleep(2000);
 
-  const report = await Risk.getReport("ETHUSDT", "test-strategy-get-report-2", true);
+  const report = await Risk.getReport("ETHUSDT", {
+    strategyName: "test-strategy-get-report-2",
+    exchangeName: "binance-integration-get-report",
+    frameName: "2d-get-report",
+  }, true);
 
   // Verify report structure
   const hasTitle = report.includes("# Risk Rejection Report: ETHUSDT:test-strategy-get-report-2");

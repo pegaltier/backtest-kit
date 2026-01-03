@@ -188,7 +188,11 @@ test("Backtest.dump accepts custom columns", async ({ pass, fail }) => {
   try {
     await Backtest.dump(
       "BTCUSDT",
-      "test-strategy-custom-dump",
+      {
+        strategyName: "test-strategy-custom-dump",
+        exchangeName: "binance-mock-custom-dump",
+        frameName: "1d-backtest-custom-dump",
+      },
       "./test/temp",
       customColumns
     );
