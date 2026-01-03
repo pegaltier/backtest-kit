@@ -69,7 +69,6 @@ export class Performance {
    */
   public static async getData(
     symbol: string,
-    strategyName: string,
     context: {
       strategyName: string;
       exchangeName: string;
@@ -77,15 +76,15 @@ export class Performance {
     },
     backtest = false,
   ): Promise<PerformanceStatisticsModel> {
-    bt.strategyValidationService.validate(strategyName, PERFORMANCE_METHOD_NAME_GET_DATA);
+    bt.strategyValidationService.validate(context.strategyName, PERFORMANCE_METHOD_NAME_GET_DATA);
 
     {
-      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = bt.strategySchemaService.get(context.strategyName);
       riskName && bt.riskValidationService.validate(riskName, PERFORMANCE_METHOD_NAME_GET_DATA);
       riskList && riskList.forEach((riskName) => bt.riskValidationService.validate(riskName, PERFORMANCE_METHOD_NAME_GET_DATA));
     }
 
-    return bt.performanceMarkdownService.getData(symbol, strategyName, context.exchangeName, context.frameName, backtest);
+    return bt.performanceMarkdownService.getData(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
   }
 
   /**
@@ -113,7 +112,6 @@ export class Performance {
    */
   public static async getReport(
     symbol: string,
-    strategyName: string,
     context: {
       strategyName: string;
       exchangeName: string;
@@ -122,15 +120,15 @@ export class Performance {
     backtest = false,
     columns?: Columns[]
   ): Promise<string> {
-    bt.strategyValidationService.validate(strategyName, PERFORMANCE_METHOD_NAME_GET_REPORT);
+    bt.strategyValidationService.validate(context.strategyName, PERFORMANCE_METHOD_NAME_GET_REPORT);
 
     {
-      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = bt.strategySchemaService.get(context.strategyName);
       riskName && bt.riskValidationService.validate(riskName, PERFORMANCE_METHOD_NAME_GET_REPORT);
       riskList && riskList.forEach((riskName) => bt.riskValidationService.validate(riskName, PERFORMANCE_METHOD_NAME_GET_REPORT));
     }
 
-    return bt.performanceMarkdownService.getReport(symbol, strategyName, context.exchangeName, context.frameName, backtest, columns);
+    return bt.performanceMarkdownService.getReport(symbol, context.strategyName, context.exchangeName, context.frameName, backtest, columns);
   }
 
   /**
@@ -155,7 +153,6 @@ export class Performance {
    */
   public static async dump(
     symbol: string,
-    strategyName: string,
     context: {
       strategyName: string;
       exchangeName: string;
@@ -165,15 +162,15 @@ export class Performance {
     path = "./dump/performance",
     columns?: Columns[]
   ): Promise<void> {
-    bt.strategyValidationService.validate(strategyName, PERFORMANCE_METHOD_NAME_DUMP);
+    bt.strategyValidationService.validate(context.strategyName, PERFORMANCE_METHOD_NAME_DUMP);
 
     {
-      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = bt.strategySchemaService.get(context.strategyName);
       riskName && bt.riskValidationService.validate(riskName, PERFORMANCE_METHOD_NAME_DUMP);
       riskList && riskList.forEach((riskName) => bt.riskValidationService.validate(riskName, PERFORMANCE_METHOD_NAME_DUMP));
     }
 
-    return bt.performanceMarkdownService.dump(symbol, strategyName, context.exchangeName, context.frameName, backtest, path, columns);
+    return bt.performanceMarkdownService.dump(symbol, context.strategyName, context.exchangeName, context.frameName, backtest, path, columns);
   }
 }
 

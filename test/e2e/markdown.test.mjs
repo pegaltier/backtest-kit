@@ -316,8 +316,16 @@ test("MARKDOWN PARALLEL: All markdown services work with multi-symbol isolation"
 
   // 0. BacktestMarkdownService - проверяем getData() и getReport()
   try {
-    const btcBacktestData = await Backtest.getData("BTCUSDT", "test-markdown-parallel");
-    const ethBacktestData = await Backtest.getData("ETHUSDT", "test-markdown-parallel");
+    const btcBacktestData = await Backtest.getData("BTCUSDT", {
+      strategyName: "test-markdown-parallel",
+      exchangeName: "binance-markdown-parallel",
+      frameName: "1h-markdown-parallel",
+    });
+    const ethBacktestData = await Backtest.getData("ETHUSDT", {
+      strategyName: "test-markdown-parallel",
+      exchangeName: "binance-markdown-parallel",
+      frameName: "1h-markdown-parallel",
+    });
 
     // Verify data exists and has valid structure
     if (!btcBacktestData || typeof btcBacktestData !== "object") {
@@ -331,8 +339,16 @@ test("MARKDOWN PARALLEL: All markdown services work with multi-symbol isolation"
     }
 
     // Verify getReport() works and returns non-empty markdown
-    const btcBacktestReport = await Backtest.getReport("BTCUSDT", "test-markdown-parallel");
-    const ethBacktestReport = await Backtest.getReport("ETHUSDT", "test-markdown-parallel");
+    const btcBacktestReport = await Backtest.getReport("BTCUSDT", {
+      strategyName: "test-markdown-parallel",
+      exchangeName: "binance-markdown-parallel",
+      frameName: "1h-markdown-parallel",
+    });
+    const ethBacktestReport = await Backtest.getReport("ETHUSDT", {
+      strategyName: "test-markdown-parallel",
+      exchangeName: "binance-markdown-parallel",
+      frameName: "1h-markdown-parallel",
+    });
 
     if (typeof btcBacktestReport !== "string" || btcBacktestReport.length === 0) {
       fail("BacktestMarkdownService: BTCUSDT getReport() returned invalid report");
@@ -361,8 +377,16 @@ test("MARKDOWN PARALLEL: All markdown services work with multi-symbol isolation"
 
   // 1. ScheduleMarkdownService - проверяем getData()
   try {
-    const btcScheduleData = await Schedule.getData("BTCUSDT", "test-markdown-parallel", true);
-    const ethScheduleData = await Schedule.getData("ETHUSDT", "test-markdown-parallel", true);
+    const btcScheduleData = await Schedule.getData("BTCUSDT", {
+      strategyName: "test-markdown-parallel",
+      exchangeName: "binance-markdown-parallel",
+      frameName: "1h-markdown-parallel",
+    }, true);
+    const ethScheduleData = await Schedule.getData("ETHUSDT", {
+      strategyName: "test-markdown-parallel",
+      exchangeName: "binance-markdown-parallel",
+      frameName: "1h-markdown-parallel",
+    }, true);
 
     if (btcScheduleData.totalScheduled === 0) {
       fail("ScheduleMarkdownService: BTCUSDT should have scheduled events");
@@ -394,8 +418,16 @@ test("MARKDOWN PARALLEL: All markdown services work with multi-symbol isolation"
 
   // 2. PerformanceMarkdownService - проверяем getData()
   try {
-    const btcPerfData = await Performance.getData("BTCUSDT", "test-markdown-parallel", true);
-    const ethPerfData = await Performance.getData("ETHUSDT", "test-markdown-parallel", true);
+    const btcPerfData = await Performance.getData("BTCUSDT", {
+      strategyName: "test-markdown-parallel",
+      exchangeName: "binance-markdown-parallel",
+      frameName: "1h-markdown-parallel",
+    }, true);
+    const ethPerfData = await Performance.getData("ETHUSDT", {
+      strategyName: "test-markdown-parallel",
+      exchangeName: "binance-markdown-parallel",
+      frameName: "1h-markdown-parallel",
+    }, true);
 
     if (btcPerfData.totalEvents === 0) {
       fail("PerformanceMarkdownService: BTCUSDT should have events");
@@ -427,8 +459,16 @@ test("MARKDOWN PARALLEL: All markdown services work with multi-symbol isolation"
 
   // 3. PartialMarkdownService - проверяем getData()
   try {
-    const btcPartialData = await Partial.getData("BTCUSDT", "test-markdown-parallel", true);
-    const ethPartialData = await Partial.getData("ETHUSDT", "test-markdown-parallel", true);
+    const btcPartialData = await Partial.getData("BTCUSDT", {
+      strategyName: "test-markdown-parallel",
+      exchangeName: "binance-markdown-parallel",
+      frameName: "1h-markdown-parallel",
+    }, true);
+    const ethPartialData = await Partial.getData("ETHUSDT", {
+      strategyName: "test-markdown-parallel",
+      exchangeName: "binance-markdown-parallel",
+      frameName: "1h-markdown-parallel",
+    }, true);
 
     // Partial может быть пустым если не было partial profit/loss событий
     // Но проверяем изоляцию если есть данные
@@ -454,8 +494,14 @@ test("MARKDOWN PARALLEL: All markdown services work with multi-symbol isolation"
 
   // 4. HeatMarkdownService - проверяем getData()
   try {
-    const btcHeatData = await Heat.getData("test-markdown-parallel", true);
-    const ethHeatData = await Heat.getData("test-markdown-parallel", true);
+    const btcHeatData = await Heat.getData("test-markdown-parallel", {
+      exchangeName: "binance-markdown-parallel",
+      frameName: "1h-markdown-parallel",
+    }, true);
+    const ethHeatData = await Heat.getData("test-markdown-parallel", {
+      exchangeName: "binance-markdown-parallel",
+      frameName: "1h-markdown-parallel",
+    }, true);
 
     // Heat может быть пустым, но проверяем что вызов не падает
     // и возвращает структуру данных
@@ -698,8 +744,14 @@ test("LIVE MARKDOWN: LiveMarkdownService works with persist storage", async ({ p
 
   // Проверка LiveMarkdownService
   try {
-    const btcLiveData = await Live.getData("BTCUSDT", "test-live-markdown");
-    const ethLiveData = await Live.getData("ETHUSDT", "test-live-markdown");
+    const btcLiveData = await Live.getData("BTCUSDT", {
+      strategyName: "test-live-markdown",
+      exchangeName: "binance-live-markdown",
+    });
+    const ethLiveData = await Live.getData("ETHUSDT", {
+      strategyName: "test-live-markdown",
+      exchangeName: "binance-live-markdown",
+    });
 
     // Verify data exists and has valid structure
     if (!btcLiveData || typeof btcLiveData !== "object") {
@@ -713,8 +765,14 @@ test("LIVE MARKDOWN: LiveMarkdownService works with persist storage", async ({ p
     }
 
     // Verify getReport() works and returns non-empty markdown
-    const btcLiveReport = await Live.getReport("BTCUSDT", "test-live-markdown");
-    const ethLiveReport = await Live.getReport("ETHUSDT", "test-live-markdown");
+    const btcLiveReport = await Live.getReport("BTCUSDT", {
+      strategyName: "test-live-markdown",
+      exchangeName: "binance-live-markdown",
+    });
+    const ethLiveReport = await Live.getReport("ETHUSDT", {
+      strategyName: "test-live-markdown",
+      exchangeName: "binance-live-markdown",
+    });
 
     if (typeof btcLiveReport !== "string" || btcLiveReport.length === 0) {
       fail("LiveMarkdownService: BTCUSDT getReport() returned invalid report");

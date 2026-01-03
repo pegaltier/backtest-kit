@@ -775,7 +775,11 @@ test("Partial.getData returns partial profit/loss statistics for symbol", async 
     return;
   }
 
-  const stats = await Partial.getData("BTCUSDT", "test-partial-facade-1", true);
+  const stats = await Partial.getData("BTCUSDT", {
+    strategyName: "test-partial-facade-1",
+    exchangeName: "binance-partial-facade-1",
+    frameName: "25m-partial-facade-1",
+  }, true);
 
   if (
     stats &&
@@ -909,7 +913,11 @@ test("Partial.getReport generates markdown report with table", async ({ pass, fa
     return;
   }
 
-  const markdown = await Partial.getReport("ETHUSDT", "test-partial-facade-2", true);
+  const markdown = await Partial.getReport("ETHUSDT", {
+    strategyName: "test-partial-facade-2",
+    exchangeName: "binance-partial-facade-2",
+    frameName: "25m-partial-facade-2",
+  }, true);
 
   if (
     markdown &&
@@ -942,7 +950,11 @@ test("Partial.getData returns empty statistics for nonexistent symbol", async ({
     getSignal: async () => null,
   });
 
-  const stats = await Partial.getData("NONEXISTENT_SYMBOL_12345", "nonexistent-strategy", true);
+  const stats = await Partial.getData("NONEXISTENT_SYMBOL_12345", {
+    strategyName: "nonexistent-strategy",
+    exchangeName: "nonexistent-exchange",
+    frameName: "nonexistent-frame",
+  }, true);
 
   if (
     stats &&

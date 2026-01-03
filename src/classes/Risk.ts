@@ -180,7 +180,6 @@ export class RiskUtils {
    */
   public getData = async (
     symbol: string,
-    strategyName: string,
     context: {
       strategyName: string;
       exchangeName: string;
@@ -190,16 +189,16 @@ export class RiskUtils {
   ) => {
     bt.loggerService.info(RISK_METHOD_NAME_GET_DATA, {
       symbol,
-      strategyName,
+      strategyName: context.strategyName,
     });
 
     bt.strategyValidationService.validate(
-      strategyName,
+      context.strategyName,
       RISK_METHOD_NAME_GET_DATA
     );
 
     {
-      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = bt.strategySchemaService.get(context.strategyName);
       riskName &&
         bt.riskValidationService.validate(riskName, RISK_METHOD_NAME_GET_DATA);
       riskList &&
@@ -208,7 +207,7 @@ export class RiskUtils {
         );
     }
 
-    return await bt.riskMarkdownService.getData(symbol, strategyName, context.exchangeName, context.frameName, backtest);
+    return await bt.riskMarkdownService.getData(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
   };
 
   /**
@@ -254,7 +253,6 @@ export class RiskUtils {
    */
   public getReport = async (
     symbol: string,
-    strategyName: string,
     context: {
       strategyName: string;
       exchangeName: string;
@@ -265,16 +263,16 @@ export class RiskUtils {
   ): Promise<string> => {
     bt.loggerService.info(RISK_METHOD_NAME_GET_REPORT, {
       symbol,
-      strategyName,
+      strategyName: context.strategyName,
     });
 
     bt.strategyValidationService.validate(
-      strategyName,
+      context.strategyName,
       RISK_METHOD_NAME_GET_REPORT
     );
 
     {
-      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = bt.strategySchemaService.get(context.strategyName);
       riskName &&
         bt.riskValidationService.validate(
           riskName,
@@ -291,7 +289,7 @@ export class RiskUtils {
 
     return await bt.riskMarkdownService.getReport(
       symbol,
-      strategyName,
+      context.strategyName,
       context.exchangeName,
       context.frameName,
       backtest,
@@ -333,7 +331,6 @@ export class RiskUtils {
    */
   public dump = async (
     symbol: string,
-    strategyName: string,
     context: {
       strategyName: string;
       exchangeName: string;
@@ -345,14 +342,14 @@ export class RiskUtils {
   ): Promise<void> => {
     bt.loggerService.info(RISK_METHOD_NAME_DUMP, {
       symbol,
-      strategyName,
+      strategyName: context.strategyName,
       path,
     });
 
-    bt.strategyValidationService.validate(strategyName, RISK_METHOD_NAME_DUMP);
+    bt.strategyValidationService.validate(context.strategyName, RISK_METHOD_NAME_DUMP);
 
     {
-      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = bt.strategySchemaService.get(context.strategyName);
       riskName &&
         bt.riskValidationService.validate(riskName, RISK_METHOD_NAME_DUMP);
       riskList &&
@@ -363,7 +360,7 @@ export class RiskUtils {
 
     await bt.riskMarkdownService.dump(
       symbol,
-      strategyName,
+      context.strategyName,
       context.exchangeName,
       context.frameName,
       backtest,

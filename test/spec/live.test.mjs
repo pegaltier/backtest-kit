@@ -76,7 +76,10 @@ test("Live.getData returns LiveStatistics structure", async ({ pass, fail }) => 
 
   await awaiter;
 
-  const stats = await Live.getData("BTCUSDT", "test-strategy-live-getdata");
+  const stats = await Live.getData("BTCUSDT", {
+    strategyName: "test-strategy-live-getdata",
+    exchangeName: "binance-mock-live-getdata",
+  });
 
   if (
     stats &&
@@ -160,7 +163,10 @@ test("Live.getData calculates all statistical metrics", async ({ pass, fail }) =
 
   await awaiter;
 
-  const stats = await Live.getData("BTCUSDT", "test-strategy-live-metrics");
+  const stats = await Live.getData("BTCUSDT", {
+    strategyName: "test-strategy-live-metrics",
+    exchangeName: "binance-mock-live-metrics",
+  });
 
   const hasAllMetrics =
     stats &&
@@ -220,7 +226,10 @@ test("Live.getData returns null for invalid metrics with safe math", async ({ pa
 
   await awaiter;
 
-  const stats = await Live.getData("BTCUSDT", "test-strategy-live-safe");
+  const stats = await Live.getData("BTCUSDT", {
+    strategyName: "test-strategy-live-safe",
+    exchangeName: "binance-mock-live-safe",
+  });
 
   if (
     stats &&
