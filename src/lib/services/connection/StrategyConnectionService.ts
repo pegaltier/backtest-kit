@@ -396,7 +396,7 @@ export class StrategyConnectionService {
       context,
     });
     const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
-    await strategy.stop(symbol);
+    await strategy.stop(symbol, backtest);
   };
 
   /**
@@ -454,7 +454,7 @@ export class StrategyConnectionService {
       cancelId,
     });
     const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
-    await strategy.cancel(symbol, cancelId);
+    await strategy.cancel(symbol, backtest, cancelId);
   };
 }
 

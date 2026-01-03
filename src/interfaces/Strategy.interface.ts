@@ -441,7 +441,7 @@ export interface IStrategy {
    * await cancel();
    * ```
    */
-  stop: (symbol: string) => Promise<void>;
+  stop: (symbol: string, backtest: boolean) => Promise<void>;
 
   /**
    * Cancels the scheduled signal without stopping the strategy.
@@ -463,7 +463,7 @@ export interface IStrategy {
    * // Strategy continues, can generate new signals
    * ```
    */
-  cancel: (symbol: string, cancelId?: string) => Promise<void>;
+  cancel: (symbol: string, backtest: boolean, cancelId?: string) => Promise<void>;
 }
 
 /**

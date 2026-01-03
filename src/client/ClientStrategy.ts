@@ -2458,7 +2458,7 @@ export class ClientStrategy implements IStrategy {
    * // Existing signal will continue until natural close
    * ```
    */
-  public async stop(symbol: string): Promise<void> {
+  public async stop(symbol: string, backtest: boolean): Promise<void> {
     this.params.logger.debug("ClientStrategy stop", {
       symbol,
       hasPendingSignal: this._pendingSignal !== null,
@@ -2474,7 +2474,7 @@ export class ClientStrategy implements IStrategy {
 
     this._scheduledSignal = null;
 
-    if (this.params.execution.context.backtest) {
+    if (backtest) {
       return;
     }
 
@@ -2506,12 +2506,10 @@ export class ClientStrategy implements IStrategy {
    * // Strategy continues, can generate new signals
    * ```
    */
-  public async cancel(symbol: string, cancelId?: string): Promise<void> {
+  public async cancel(symbol: string, backtest: boolean, cancelId?: string): Promise<void> {
     this.params.logger.debug("ClientStrategy cancel", {
       symbol,
-      strategyName: this.params.method.context.strategyName,
       hasScheduledSignal: this._scheduledSignal !== null,
-      backtest: this.params.execution.context.backtest,
       cancelId,
     });
 
@@ -2523,7 +2521,7 @@ export class ClientStrategy implements IStrategy {
       this._scheduledSignal = null;
     }
 
-    if (this.params.execution.context.backtest) {
+    if (backtest) {
       return;
     }
 
