@@ -149,18 +149,18 @@ export class RiskConnectionService {
    * ClientRisk will emit riskSubject event via onRejected callback when signal is rejected.
    *
    * @param params - Risk check arguments (portfolio state, position details)
-   * @param context - Execution context with risk name, exchangeName, frameName and backtest mode
+   * @param payload - Execution payload with risk name, exchangeName, frameName and backtest mode
    * @returns Promise resolving to risk check result
    */
   public checkSignal = async (
     params: IRiskCheckArgs,
-    context: { riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
+    payload: { riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
   ) => {
     this.loggerService.log("riskConnectionService checkSignal", {
       symbol: params.symbol,
-      context,
+      payload,
     });
-    return await this.getRisk(context.riskName, context.exchangeName, context.frameName, context.backtest).checkSignal(params);
+    return await this.getRisk(payload.riskName, payload.exchangeName, payload.frameName, payload.backtest).checkSignal(params);
   };
 
   /**
@@ -168,17 +168,17 @@ export class RiskConnectionService {
    * Routes to appropriate ClientRisk instance.
    *
    * @param symbol - Trading pair symbol
-   * @param context - Context information (strategyName, riskName, exchangeName, frameName, backtest)
+   * @param payload - Payload information (strategyName, riskName, exchangeName, frameName, backtest)
    */
   public addSignal = async (
     symbol: string,
-    context: { strategyName: string; riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
+    payload: { strategyName: string; riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
   ) => {
     this.loggerService.log("riskConnectionService addSignal", {
       symbol,
-      context,
+      payload,
     });
-    await this.getRisk(context.riskName, context.exchangeName, context.frameName, context.backtest).addSignal(symbol, context);
+    await this.getRisk(payload.riskName, payload.exchangeName, payload.frameName, payload.backtest).addSignal(symbol, payload);
   };
 
   /**
@@ -186,17 +186,17 @@ export class RiskConnectionService {
    * Routes to appropriate ClientRisk instance.
    *
    * @param symbol - Trading pair symbol
-   * @param context - Context information (strategyName, riskName, exchangeName, frameName, backtest)
+   * @param payload - Payload information (strategyName, riskName, exchangeName, frameName, backtest)
    */
   public removeSignal = async (
     symbol: string,
-    context: { strategyName: string; riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
+    payload: { strategyName: string; riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
   ) => {
     this.loggerService.log("riskConnectionService removeSignal", {
       symbol,
-      context,
+      payload,
     });
-    await this.getRisk(context.riskName, context.exchangeName, context.frameName, context.backtest).removeSignal(symbol, context);
+    await this.getRisk(payload.riskName, payload.exchangeName, payload.frameName, payload.backtest).removeSignal(symbol, payload);
   };
 
   /**

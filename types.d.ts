@@ -9554,10 +9554,10 @@ declare class RiskConnectionService {
      * ClientRisk will emit riskSubject event via onRejected callback when signal is rejected.
      *
      * @param params - Risk check arguments (portfolio state, position details)
-     * @param context - Execution context with risk name, exchangeName, frameName and backtest mode
+     * @param payload - Execution payload with risk name, exchangeName, frameName and backtest mode
      * @returns Promise resolving to risk check result
      */
-    checkSignal: (params: IRiskCheckArgs, context: {
+    checkSignal: (params: IRiskCheckArgs, payload: {
         riskName: RiskName;
         exchangeName: string;
         frameName: string;
@@ -9568,9 +9568,9 @@ declare class RiskConnectionService {
      * Routes to appropriate ClientRisk instance.
      *
      * @param symbol - Trading pair symbol
-     * @param context - Context information (strategyName, riskName, exchangeName, frameName, backtest)
+     * @param payload - Payload information (strategyName, riskName, exchangeName, frameName, backtest)
      */
-    addSignal: (symbol: string, context: {
+    addSignal: (symbol: string, payload: {
         strategyName: string;
         riskName: RiskName;
         exchangeName: string;
@@ -9582,9 +9582,9 @@ declare class RiskConnectionService {
      * Routes to appropriate ClientRisk instance.
      *
      * @param symbol - Trading pair symbol
-     * @param context - Context information (strategyName, riskName, exchangeName, frameName, backtest)
+     * @param payload - Payload information (strategyName, riskName, exchangeName, frameName, backtest)
      */
-    removeSignal: (symbol: string, context: {
+    removeSignal: (symbol: string, payload: {
         strategyName: string;
         riskName: RiskName;
         exchangeName: string;
@@ -10323,10 +10323,10 @@ declare class RiskGlobalService {
      * Checks if a signal should be allowed based on risk limits.
      *
      * @param params - Risk check arguments (portfolio state, position details)
-     * @param context - Execution context with risk name, exchangeName, frameName and backtest mode
+     * @param payload - Execution payload with risk name, exchangeName, frameName and backtest mode
      * @returns Promise resolving to risk check result
      */
-    checkSignal: (params: IRiskCheckArgs, context: {
+    checkSignal: (params: IRiskCheckArgs, payload: {
         riskName: RiskName;
         exchangeName: string;
         frameName: string;
@@ -10336,9 +10336,9 @@ declare class RiskGlobalService {
      * Registers an opened signal with the risk management system.
      *
      * @param symbol - Trading pair symbol
-     * @param context - Context information (strategyName, riskName, exchangeName, frameName, backtest)
+     * @param payload - Payload information (strategyName, riskName, exchangeName, frameName, backtest)
      */
-    addSignal: (symbol: string, context: {
+    addSignal: (symbol: string, payload: {
         strategyName: string;
         riskName: RiskName;
         exchangeName: string;
@@ -10349,9 +10349,9 @@ declare class RiskGlobalService {
      * Removes a closed signal from the risk management system.
      *
      * @param symbol - Trading pair symbol
-     * @param context - Context information (strategyName, riskName, exchangeName, frameName, backtest)
+     * @param payload - Payload information (strategyName, riskName, exchangeName, frameName, backtest)
      */
-    removeSignal: (symbol: string, context: {
+    removeSignal: (symbol: string, payload: {
         strategyName: string;
         riskName: RiskName;
         exchangeName: string;

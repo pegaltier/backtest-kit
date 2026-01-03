@@ -45,55 +45,55 @@ export class RiskGlobalService {
    * Checks if a signal should be allowed based on risk limits.
    *
    * @param params - Risk check arguments (portfolio state, position details)
-   * @param context - Execution context with risk name, exchangeName, frameName and backtest mode
+   * @param payload - Execution payload with risk name, exchangeName, frameName and backtest mode
    * @returns Promise resolving to risk check result
    */
   public checkSignal = async (
     params: IRiskCheckArgs,
-    context: { riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
+    payload: { riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
   ) => {
     this.loggerService.log("riskGlobalService checkSignal", {
       symbol: params.symbol,
-      context,
+      payload,
     });
-    await this.validate(context.riskName);
-    return await this.riskConnectionService.checkSignal(params, context);
+    await this.validate(payload.riskName);
+    return await this.riskConnectionService.checkSignal(params, payload);
   };
 
   /**
    * Registers an opened signal with the risk management system.
    *
    * @param symbol - Trading pair symbol
-   * @param context - Context information (strategyName, riskName, exchangeName, frameName, backtest)
+   * @param payload - Payload information (strategyName, riskName, exchangeName, frameName, backtest)
    */
   public addSignal = async (
     symbol: string,
-    context: { strategyName: string; riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
+    payload: { strategyName: string; riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
   ) => {
     this.loggerService.log("riskGlobalService addSignal", {
       symbol,
-      context,
+      payload,
     });
-    await this.validate(context.riskName);
-    await this.riskConnectionService.addSignal(symbol, context);
+    await this.validate(payload.riskName);
+    await this.riskConnectionService.addSignal(symbol, payload);
   };
 
   /**
    * Removes a closed signal from the risk management system.
    *
    * @param symbol - Trading pair symbol
-   * @param context - Context information (strategyName, riskName, exchangeName, frameName, backtest)
+   * @param payload - Payload information (strategyName, riskName, exchangeName, frameName, backtest)
    */
   public removeSignal = async (
     symbol: string,
-    context: { strategyName: string; riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
+    payload: { strategyName: string; riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
   ) => {
     this.loggerService.log("riskGlobalService removeSignal", {
       symbol,
-      context,
+      payload,
     });
-    await this.validate(context.riskName);
-    await this.riskConnectionService.removeSignal(symbol, context);
+    await this.validate(payload.riskName);
+    await this.riskConnectionService.removeSignal(symbol, payload);
   };
 
   /**
