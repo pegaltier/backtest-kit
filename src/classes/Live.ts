@@ -297,7 +297,8 @@ export class LiveUtils {
    * Each symbol-strategy combination gets its own isolated instance.
    */
   private _getInstance = memoize(
-    ([symbol, strategyName]) => `${symbol}:${strategyName}`,
+    ([symbol, strategyName, exchangeName]) =>
+      `${symbol}:${strategyName}:${exchangeName}`,
     (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName) =>
       new LiveInstance(symbol, strategyName, exchangeName)
   );
