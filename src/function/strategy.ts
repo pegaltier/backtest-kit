@@ -2,10 +2,12 @@ import backtest, {
   ExecutionContextService,
   MethodContextService,
 } from "../lib";
-import { StrategyName } from "../interfaces/Strategy.interface";
+import { getAveragePrice } from "./exchange";
 
 const STOP_METHOD_NAME = "strategy.stop";
 const CANCEL_METHOD_NAME = "strategy.cancel";
+const PARTIAL_PROFIT_METHOD_NAME = "strategy.partialProfit";
+const PARTIAL_LOSS_METHOD_NAME = "strategy.partialLoss";
 
 /**
  * Stops the strategy from generating new signals.
@@ -92,4 +94,106 @@ export async function cancel(symbol: string, cancelId?: string): Promise<void> {
   );
 }
 
-export default { stop, cancel };
+/**
+ * Executes partial close at profit level (moving toward TP).
+ *
+ * Closes a percentage of the active pending position at profit.
+ * Price must be moving toward take profit (in profit direction).
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @param percentToClose - Percentage of position to close (0-100, absolute value)
+ * @returns Promise that resolves when state is updated
+ *
+ * @throws Error if currentPrice is not in profit direction:
+ *   - LONG: currentPrice must be > priceOpen
+ *   - SHORT: currentPrice must be < priceOpen
+ *
+ * @example
+ * ```typescript
+ * import { partialProfit } from "backtest-kit";
+ *
+ * // Close 30% of LONG position at profit
+ * await partialProfit("BTCUSDT", 30, 45000);
+ * ```
+ */
+export async function partialProfit(
+  symbol: string,
+  percentToClose: number,
+): Promise<void> {
+  backtest.loggerService.info(PARTIAL_PROFIT_METHOD_NAME, {
+    symbol,
+    percentToClose,
+  });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("partialProfit requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("partialProfit requires a method context");
+  }
+  const currentPrice = await getAveragePrice(symbol);
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } =
+    backtest.methodContextService.context;
+  await backtest.strategyCoreService.partialProfit(
+    isBacktest,
+    symbol,
+    percentToClose,
+    currentPrice,
+    { exchangeName, frameName, strategyName }
+  );
+}
+
+/**
+ * Executes partial close at loss level (moving toward SL).
+ *
+ * Closes a percentage of the active pending position at loss.
+ * Price must be moving toward stop loss (in loss direction).
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @param percentToClose - Percentage of position to close (0-100, absolute value)
+ * @returns Promise that resolves when state is updated
+ *
+ * @throws Error if currentPrice is not in loss direction:
+ *   - LONG: currentPrice must be < priceOpen
+ *   - SHORT: currentPrice must be > priceOpen
+ *
+ * @example
+ * ```typescript
+ * import { partialLoss } from "backtest-kit";
+ *
+ * // Close 40% of LONG position at loss
+ * await partialLoss("BTCUSDT", 40, 38000);
+ * ```
+ */
+export async function partialLoss(
+  symbol: string,
+  percentToClose: number,
+): Promise<void> {
+  backtest.loggerService.info(PARTIAL_LOSS_METHOD_NAME, {
+    symbol,
+    percentToClose,
+  });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("partialLoss requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("partialLoss requires a method context");
+  }
+  const currentPrice = await getAveragePrice(symbol);
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } =
+    backtest.methodContextService.context;
+  await backtest.strategyCoreService.partialLoss(
+    isBacktest,
+    symbol,
+    percentToClose,
+    currentPrice,
+    { exchangeName, frameName, strategyName }
+  );
+}
+
+export default { stop, cancel, partialProfit, partialLoss };

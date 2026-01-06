@@ -155,6 +155,56 @@ declare function stop(symbol: string): Promise<void>;
  * ```
  */
 declare function cancel(symbol: string, cancelId?: string): Promise<void>;
+/**
+ * Executes partial close at profit level (moving toward TP).
+ *
+ * Closes a percentage of the active pending position at profit.
+ * Price must be moving toward take profit (in profit direction).
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @param percentToClose - Percentage of position to close (0-100, absolute value)
+ * @returns Promise that resolves when state is updated
+ *
+ * @throws Error if currentPrice is not in profit direction:
+ *   - LONG: currentPrice must be > priceOpen
+ *   - SHORT: currentPrice must be < priceOpen
+ *
+ * @example
+ * ```typescript
+ * import { partialProfit } from "backtest-kit";
+ *
+ * // Close 30% of LONG position at profit
+ * await partialProfit("BTCUSDT", 30, 45000);
+ * ```
+ */
+declare function partialProfit(symbol: string, percentToClose: number): Promise<void>;
+/**
+ * Executes partial close at loss level (moving toward SL).
+ *
+ * Closes a percentage of the active pending position at loss.
+ * Price must be moving toward stop loss (in loss direction).
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @param percentToClose - Percentage of position to close (0-100, absolute value)
+ * @returns Promise that resolves when state is updated
+ *
+ * @throws Error if currentPrice is not in loss direction:
+ *   - LONG: currentPrice must be < priceOpen
+ *   - SHORT: currentPrice must be > priceOpen
+ *
+ * @example
+ * ```typescript
+ * import { partialLoss } from "backtest-kit";
+ *
+ * // Close 40% of LONG position at loss
+ * await partialLoss("BTCUSDT", 40, 38000);
+ * ```
+ */
+declare function partialLoss(symbol: string, percentToClose: number): Promise<void>;
 
 declare const GLOBAL_CONFIG: {
     /**
@@ -9922,6 +9972,70 @@ declare class StrategyConnectionService {
         exchangeName: string;
         frameName: string;
     }, cancelId?: string) => Promise<void>;
+    /**
+     * Executes partial close at profit level (moving toward TP).
+     *
+     * Closes a percentage of the pending position at the current price, recording it as a "profit" type partial.
+     * The partial close is tracked in `_partial` array for weighted PNL calculation when position fully closes.
+     *
+     * Delegates to ClientStrategy.partialProfit() with current execution context.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @param percentToClose - Percentage of position to close (0-100, absolute value)
+     * @param currentPrice - Current market price for this partial close
+     * @returns Promise that resolves when state is updated and persisted
+     *
+     * @example
+     * ```typescript
+     * // Close 30% of position at profit
+     * await strategyConnectionService.partialProfit(
+     *   false,
+     *   "BTCUSDT",
+     *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" },
+     *   30,
+     *   45000
+     * );
+     * ```
+     */
+    partialProfit: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: string;
+        frameName: string;
+    }) => Promise<void>;
+    /**
+     * Executes partial close at loss level (moving toward SL).
+     *
+     * Closes a percentage of the pending position at the current price, recording it as a "loss" type partial.
+     * The partial close is tracked in `_partial` array for weighted PNL calculation when position fully closes.
+     *
+     * Delegates to ClientStrategy.partialLoss() with current execution context.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @param percentToClose - Percentage of position to close (0-100, absolute value)
+     * @param currentPrice - Current market price for this partial close
+     * @returns Promise that resolves when state is updated and persisted
+     *
+     * @example
+     * ```typescript
+     * // Close 40% of position at loss
+     * await strategyConnectionService.partialLoss(
+     *   false,
+     *   "BTCUSDT",
+     *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" },
+     *   40,
+     *   38000
+     * );
+     * ```
+     */
+    partialLoss: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: string;
+        frameName: string;
+    }) => Promise<void>;
 }
 
 /**
@@ -10305,6 +10419,70 @@ declare class StrategyCoreService {
         exchangeName: string;
         frameName: string;
         backtest: boolean;
+    }) => Promise<void>;
+    /**
+     * Executes partial close at profit level (moving toward TP).
+     *
+     * Validates strategy existence and delegates to connection service
+     * to close a percentage of the pending position at profit.
+     *
+     * Does not require execution context as this is a direct state mutation.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param percentToClose - Percentage of position to close (0-100, absolute value)
+     * @param currentPrice - Current market price for this partial close (must be in profit direction)
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise that resolves when state is updated and persisted
+     *
+     * @example
+     * ```typescript
+     * // Close 30% of position at profit
+     * await strategyCoreService.partialProfit(
+     *   false,
+     *   "BTCUSDT",
+     *   30,
+     *   45000,
+     *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
+     * );
+     * ```
+     */
+    partialProfit: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: string;
+        frameName: string;
+    }) => Promise<void>;
+    /**
+     * Executes partial close at loss level (moving toward SL).
+     *
+     * Validates strategy existence and delegates to connection service
+     * to close a percentage of the pending position at loss.
+     *
+     * Does not require execution context as this is a direct state mutation.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param percentToClose - Percentage of position to close (0-100, absolute value)
+     * @param currentPrice - Current market price for this partial close (must be in loss direction)
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise that resolves when state is updated and persisted
+     *
+     * @example
+     * ```typescript
+     * // Close 40% of position at loss
+     * await strategyCoreService.partialLoss(
+     *   false,
+     *   "BTCUSDT",
+     *   40,
+     *   38000,
+     *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
+     * );
+     * ```
+     */
+    partialLoss: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: string;
+        frameName: string;
     }) => Promise<void>;
 }
 
@@ -12015,4 +12193,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, type BootstrapNotification, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, type PingContract, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TPersistBase, type TPersistBaseCtor, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, cancel, dumpSignal, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenPing, listenPingOnce, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, setColumns, setConfig, setLogger, stop, validate };
+export { Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, type BootstrapNotification, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, type PingContract, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TPersistBase, type TPersistBaseCtor, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, cancel, dumpSignal, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenPing, listenPingOnce, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, partialLoss, partialProfit, setColumns, setConfig, setLogger, stop, validate };

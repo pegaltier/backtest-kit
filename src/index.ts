@@ -4,6 +4,8 @@ export {
 export {
   stop,
   cancel,
+  partialLoss,
+  partialProfit,
 } from "./function/strategy";
 export {
   setLogger,
