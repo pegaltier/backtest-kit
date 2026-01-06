@@ -1264,13 +1264,21 @@ const CALL_PARTIAL_PROFIT_CALLBACKS_FN = trycatch(
     backtest: boolean
   ): Promise<void> => {
     await ExecutionContextService.runInContext(async () => {
+      await self.params.partial.profit(
+        symbol,
+        signal,
+        currentPrice,
+        percentTp,
+        backtest,
+        new Date(timestamp),
+      );
       if (self.params.callbacks?.onPartialProfit) {
         self.params.callbacks.onPartialProfit(
-          self.params.execution.context.symbol,
+          symbol,
           signal,
           currentPrice,
           percentTp,
-          self.params.execution.context.backtest
+          backtest
         );
       }
     }, {
@@ -1304,13 +1312,21 @@ const CALL_PARTIAL_LOSS_CALLBACKS_FN = trycatch(
     backtest: boolean
   ): Promise<void> => {
     await ExecutionContextService.runInContext(async () => {
+      await self.params.partial.loss(
+        symbol,
+        signal,
+        currentPrice,
+        percentSl,
+        backtest,
+        new Date(timestamp)
+      );
       if (self.params.callbacks?.onPartialLoss) {
         self.params.callbacks.onPartialLoss(
-          self.params.execution.context.symbol,
+          symbol,
           signal,
           currentPrice,
           percentSl,
-          self.params.execution.context.backtest
+          backtest
         );
       }
     }, {
@@ -1633,15 +1649,6 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
         const progressPercent = (currentDistance / tpDistance) * 100;
         percentTp = Math.min(progressPercent, 100);
 
-        await self.params.partial.profit(
-          self.params.execution.context.symbol,
-          signal,
-          currentPrice,
-          percentTp,
-          self.params.execution.context.backtest,
-          self.params.execution.context.when
-        );
-
         await CALL_PARTIAL_PROFIT_CALLBACKS_FN(
           self,
           self.params.execution.context.symbol,
@@ -1656,16 +1663,6 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
         const slDistance = signal.priceOpen - signal.priceStopLoss;
         const progressPercent = (Math.abs(currentDistance) / slDistance) * 100;
         percentSl = Math.min(progressPercent, 100);
-
-        await self.params.partial.loss(
-          self.params.execution.context.symbol,
-          signal,
-          currentPrice,
-          percentSl,
-          self.params.execution.context.backtest,
-          self.params.execution.context.when
-        );
-
         await CALL_PARTIAL_LOSS_CALLBACKS_FN(
           self,
           self.params.execution.context.symbol,
@@ -1685,16 +1682,6 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
         const tpDistance = signal.priceOpen - signal.priceTakeProfit;
         const progressPercent = (currentDistance / tpDistance) * 100;
         percentTp = Math.min(progressPercent, 100);
-
-        await self.params.partial.profit(
-          self.params.execution.context.symbol,
-          signal,
-          currentPrice,
-          percentTp,
-          self.params.execution.context.backtest,
-          self.params.execution.context.when
-        );
-
         await CALL_PARTIAL_PROFIT_CALLBACKS_FN(
           self,
           self.params.execution.context.symbol,
@@ -1711,16 +1698,6 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
         const slDistance = signal.priceStopLoss - signal.priceOpen;
         const progressPercent = (Math.abs(currentDistance) / slDistance) * 100;
         percentSl = Math.min(progressPercent, 100);
-
-        await self.params.partial.loss(
-          self.params.execution.context.symbol,
-          signal,
-          currentPrice,
-          percentSl,
-          self.params.execution.context.backtest,
-          self.params.execution.context.when
-        );
-
         await CALL_PARTIAL_LOSS_CALLBACKS_FN(
           self,
           self.params.execution.context.symbol,
@@ -2227,16 +2204,6 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
           // Moving towards TP
           const tpDistance = signal.priceTakeProfit - signal.priceOpen;
           const progressPercent = (currentDistance / tpDistance) * 100;
-
-          await self.params.partial.profit(
-            self.params.execution.context.symbol,
-            signal,
-            averagePrice,
-            Math.min(progressPercent, 100),
-            self.params.execution.context.backtest,
-            new Date(currentCandleTimestamp)
-          );
-
           await CALL_PARTIAL_PROFIT_CALLBACKS_FN(
             self,
             self.params.execution.context.symbol,
@@ -2250,16 +2217,6 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
           // Moving towards SL
           const slDistance = signal.priceOpen - signal.priceStopLoss;
           const progressPercent = (Math.abs(currentDistance) / slDistance) * 100;
-
-          await self.params.partial.loss(
-            self.params.execution.context.symbol,
-            signal,
-            averagePrice,
-            Math.min(progressPercent, 100),
-            self.params.execution.context.backtest,
-            new Date(currentCandleTimestamp)
-          );
-
           await CALL_PARTIAL_LOSS_CALLBACKS_FN(
             self,
             self.params.execution.context.symbol,
@@ -2279,15 +2236,6 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
           const tpDistance = signal.priceOpen - signal.priceTakeProfit;
           const progressPercent = (currentDistance / tpDistance) * 100;
 
-          await self.params.partial.profit(
-            self.params.execution.context.symbol,
-            signal,
-            averagePrice,
-            Math.min(progressPercent, 100),
-            self.params.execution.context.backtest,
-            new Date(currentCandleTimestamp)
-          );
-
           await CALL_PARTIAL_PROFIT_CALLBACKS_FN(
             self,
             self.params.execution.context.symbol,
@@ -2303,16 +2251,6 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
           // Moving towards SL
           const slDistance = signal.priceStopLoss - signal.priceOpen;
           const progressPercent = (Math.abs(currentDistance) / slDistance) * 100;
-
-          await self.params.partial.loss(
-            self.params.execution.context.symbol,
-            signal,
-            averagePrice,
-            Math.min(progressPercent, 100),
-            self.params.execution.context.backtest,
-            new Date(currentCandleTimestamp)
-          );
-
           await CALL_PARTIAL_LOSS_CALLBACKS_FN(
             self,
             self.params.execution.context.symbol,
