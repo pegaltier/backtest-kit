@@ -76,7 +76,7 @@ export const heat_columns: ColumnModel<IHeatmapRow>[] = [
     key: "winRate",
     label: "WR",
     format: (data) =>
-      data.winRate !== null ? str(data.winRate, "%.1f%%") : "N/A",
+      data.winRate !== null ? str(data.winRate, "%") : "N/A",
     isVisible: () => true,
   },
   {
@@ -97,7 +97,7 @@ export const heat_columns: ColumnModel<IHeatmapRow>[] = [
     key: "maxDrawdown",
     label: "Max DD",
     format: (data) =>
-      data.maxDrawdown !== null ? str(-data.maxDrawdown) : "N/A",
+      data.maxDrawdown !== null ? str(-data.maxDrawdown, "%") : "N/A",
     isVisible: () => true,
   },
   {
