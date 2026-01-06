@@ -1952,7 +1952,59 @@ test("PARTIAL FUNCTION: partialProfit() closes 30% of LONG position", async ({ p
     return;
   }
 
-  pass("partialProfit() WORKS: 30% position closed successfully");
+  // Проверяем наличие поля _partial в сигнале
+  const data = await Backtest.getData("BTCUSDT", {
+    strategyName: "test-function-partial-profit",
+    exchangeName: "binance-function-partial-profit",
+    frameName: "40m-function-partial-profit",
+  });
+
+// console.log("[TEST #11] getData result:", JSON.stringify(data, null, 2));
+
+  if (!data.signalList || data.signalList.length === 0) {
+    fail("No signals found in backtest data");
+    return;
+  }
+
+  const signal = data.signalList[0].signal;
+// console.log("[TEST #11] signal:", JSON.stringify(signal, null, 2));
+
+  if (!signal._partial) {
+    fail("Field _partial is missing in signal");
+    return;
+  }
+
+// console.log("[TEST #11] signal._partial:", JSON.stringify(signal._partial, null, 2));
+
+  if (!Array.isArray(signal._partial)) {
+    fail("Field _partial is not an array");
+    return;
+  }
+
+  if (signal._partial.length !== 1) {
+    fail(`Expected 1 partial close, got ${signal._partial.length}`);
+    return;
+  }
+
+  const partial = signal._partial[0];
+// console.log("[TEST #11] partial[0]:", JSON.stringify(partial, null, 2));
+
+  if (partial.type !== "profit") {
+    fail(`Expected type 'profit', got '${partial.type}'`);
+    return;
+  }
+
+  if (partial.percent !== 30) {
+    fail(`Expected percent 30, got ${partial.percent}`);
+    return;
+  }
+
+  if (typeof partial.price !== "number") {
+    fail(`Expected price to be a number, got ${typeof partial.price}`);
+    return;
+  }
+
+  pass("partialProfit() WORKS: 30% position closed successfully, _partial field validated");
 });
 
 
@@ -2112,7 +2164,59 @@ test("PARTIAL FUNCTION: partialLoss() closes 40% of LONG position", async ({ pas
     return;
   }
 
-  pass("partialLoss() WORKS: 40% position closed successfully");
+  // Проверяем наличие поля _partial в сигнале
+  const data = await Backtest.getData("BTCUSDT", {
+    strategyName: "test-function-partial-loss",
+    exchangeName: "binance-function-partial-loss",
+    frameName: "40m-function-partial-loss",
+  });
+
+  // console.log("[TEST #12] getData result:", JSON.stringify(data, null, 2));
+
+  if (!data.signalList || data.signalList.length === 0) {
+    fail("No signals found in backtest data");
+    return;
+  }
+
+  const signal = data.signalList[0].signal;
+  // console.log("[TEST #12] signal:", JSON.stringify(signal, null, 2));
+
+  if (!signal._partial) {
+    fail("Field _partial is missing in signal");
+    return;
+  }
+
+  // console.log("[TEST #12] signal._partial:", JSON.stringify(signal._partial, null, 2));
+
+  if (!Array.isArray(signal._partial)) {
+    fail("Field _partial is not an array");
+    return;
+  }
+
+  if (signal._partial.length !== 1) {
+    fail(`Expected 1 partial close, got ${signal._partial.length}`);
+    return;
+  }
+
+  const partial = signal._partial[0];
+  // console.log("[TEST #12] partial[0]:", JSON.stringify(partial, null, 2));
+
+  if (partial.type !== "loss") {
+    fail(`Expected type 'loss', got '${partial.type}'`);
+    return;
+  }
+
+  if (partial.percent !== 40) {
+    fail(`Expected percent 40, got ${partial.percent}`);
+    return;
+  }
+
+  if (typeof partial.price !== "number") {
+    fail(`Expected price to be a number, got ${typeof partial.price}`);
+    return;
+  }
+
+  pass("partialLoss() WORKS: 40% position closed successfully, _partial field validated");
 });
 
 
@@ -2274,7 +2378,77 @@ test("PARTIAL FUNCTION: Multiple partialProfit calls (30% + 40%)", async ({ pass
     return;
   }
 
-  pass("Multiple partialProfit() WORKS: 30% + 40% = 70% closed");
+  // Проверяем наличие поля _partial в сигнале
+  const data = await Backtest.getData("BTCUSDT", {
+    strategyName: "test-function-partial-multiple",
+    exchangeName: "binance-function-multiple-partial",
+    frameName: "40m-function-multiple-partial",
+  });
+
+  console.log("[TEST #13] getData result:", JSON.stringify(data, null, 2));
+
+  if (!data.signalList || data.signalList.length === 0) {
+    fail("No signals found in backtest data");
+    return;
+  }
+
+  const signal = data.signalList[0].signal;
+  // console.log("[TEST #13] signal:", JSON.stringify(signal, null, 2));
+
+  if (!signal._partial) {
+    fail("Field _partial is missing in signal");
+    return;
+  }
+
+  // console.log("[TEST #13] signal._partial:", JSON.stringify(signal._partial, null, 2));
+
+  if (!Array.isArray(signal._partial)) {
+    fail("Field _partial is not an array");
+    return;
+  }
+
+  if (signal._partial.length !== 2) {
+    fail(`Expected 2 partial closes, got ${signal._partial.length}`);
+    return;
+  }
+
+  const partial1 = signal._partial[0];
+  console.log("[TEST #13] partial[0]:", JSON.stringify(partial1, null, 2));
+
+  if (partial1.type !== "profit") {
+    fail(`Expected first type 'profit', got '${partial1.type}'`);
+    return;
+  }
+
+  if (partial1.percent !== 30) {
+    fail(`Expected first percent 30, got ${partial1.percent}`);
+    return;
+  }
+
+  if (typeof partial1.price !== "number") {
+    fail(`Expected first price to be a number, got ${typeof partial1.price}`);
+    return;
+  }
+
+  const partial2 = signal._partial[1];
+  console.log("[TEST #13] partial[1]:", JSON.stringify(partial2, null, 2));
+
+  if (partial2.type !== "profit") {
+    fail(`Expected second type 'profit', got '${partial2.type}'`);
+    return;
+  }
+
+  if (partial2.percent !== 40) {
+    fail(`Expected second percent 40, got ${partial2.percent}`);
+    return;
+  }
+
+  if (typeof partial2.price !== "number") {
+    fail(`Expected second price to be a number, got ${typeof partial2.price}`);
+    return;
+  }
+
+  pass("Multiple partialProfit() WORKS: 30% + 40% = 70% closed, _partial field validated");
 });
 
 
@@ -2429,5 +2603,57 @@ test("PARTIAL FUNCTION: partialProfit() works for SHORT position", async ({ pass
     return;
   }
 
-  pass("partialProfit() SHORT WORKS: 30% position closed successfully");
+  // Проверяем наличие поля _partial в сигнале
+  const data = await Backtest.getData("BTCUSDT", {
+    strategyName: "test-function-short-profit",
+    exchangeName: "binance-function-short-profit",
+    frameName: "40m-function-short-profit",
+  });
+
+  // console.log("[TEST #14] getData result:", JSON.stringify(data, null, 2));
+
+  if (!data.signalList || data.signalList.length === 0) {
+    fail("No signals found in backtest data");
+    return;
+  }
+
+  const signal = data.signalList[0].signal;
+  // console.log("[TEST #14] signal:", JSON.stringify(signal, null, 2));
+
+  if (!signal._partial) {
+    fail("Field _partial is missing in signal");
+    return;
+  }
+
+  // console.log("[TEST #14] signal._partial:", JSON.stringify(signal._partial, null, 2));
+
+  if (!Array.isArray(signal._partial)) {
+    fail("Field _partial is not an array");
+    return;
+  }
+
+  if (signal._partial.length !== 1) {
+    fail(`Expected 1 partial close, got ${signal._partial.length}`);
+    return;
+  }
+
+  const partial = signal._partial[0];
+  // console.log("[TEST #14] partial[0]:", JSON.stringify(partial, null, 2));
+
+  if (partial.type !== "profit") {
+    fail(`Expected type 'profit', got '${partial.type}'`);
+    return;
+  }
+
+  if (partial.percent !== 30) {
+    fail(`Expected percent 30, got ${partial.percent}`);
+    return;
+  }
+
+  if (typeof partial.price !== "number") {
+    fail(`Expected price to be a number, got ${typeof partial.price}`);
+    return;
+  }
+
+  pass("partialProfit() SHORT WORKS: 30% position closed successfully, _partial field validated");
 });
