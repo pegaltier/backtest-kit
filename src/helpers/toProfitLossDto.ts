@@ -40,8 +40,8 @@ import { GLOBAL_CONFIG } from "../config/params";
  *     position: "long",
  *     priceOpen: 100,
  *     _partial: [
- *       { type: "profit", percent: 30, price: 120, timestamp: 1000 }, // +20% on 30%
- *       { type: "profit", percent: 40, price: 115, timestamp: 2000 }, // +15% on 40%
+ *       { type: "profit", percent: 30, price: 120 }, // +20% on 30%
+ *       { type: "profit", percent: 40, price: 115 }, // +15% on 40%
  *     ],
  *   },
  *   105 // final close at +5% for remaining 30%

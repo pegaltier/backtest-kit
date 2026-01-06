@@ -632,12 +632,10 @@ const PARTIAL_PROFIT_FN = (
   }
 
   // Add new partial close entry
-  const timestamp = self.params.execution.context.when.getTime();
   signal._partial.push({
     type: "profit",
     percent: percentToClose,
     price: currentPrice,
-    timestamp,
   });
 
   self.params.logger.info("PARTIAL_PROFIT_FN executed", {
@@ -683,12 +681,10 @@ const PARTIAL_LOSS_FN = (
   }
 
   // Add new partial close entry
-  const timestamp = self.params.execution.context.when.getTime();
   signal._partial.push({
     type: "loss",
     percent: percentToClose,
     price: currentPrice,
-    timestamp,
   });
 
   self.params.logger.warn("PARTIAL_LOSS_FN executed", {
@@ -2636,7 +2632,39 @@ export class ClientStrategy implements IStrategy {
 
   /**
    * Executes partial close at profit level (moving toward TP).
-   * Updates signal state and persists changes.
+   *
+   * Closes a percentage of the pending position at the current price, recording it as a "profit" type partial.
+   * The partial close is tracked in `_partial` array for weighted PNL calculation when position fully closes.
+   *
+   * Behavior:
+   * - Adds entry to signal's `_partial` array with type "profit"
+   * - Validates percentToClose is in range (0, 100]
+   * - Silently skips if total closed would exceed 100%
+   * - Persists updated signal state (backtest and live modes)
+   * - Calls onWrite callback for persistence testing
+   *
+   * Validation:
+   * - Throws if no pending signal exists
+   * - Throws if percentToClose is not a finite number
+   * - Throws if percentToClose <= 0 or > 100
+   * - Throws if currentPrice is not a positive finite number
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param percentToClose - Percentage of position to close (0-100, absolute value)
+   * @param currentPrice - Current market price for this partial close
+   * @param backtest - Whether running in backtest mode (controls persistence)
+   * @returns Promise that resolves when state is updated and persisted
+   *
+   * @example
+   * ```typescript
+   * // Close 30% of position at profit (moving toward TP)
+   * await strategy.partialProfit("BTCUSDT", 30, 45000, false);
+   *
+   * // Later close another 20%
+   * await strategy.partialProfit("BTCUSDT", 20, 46000, false);
+   *
+   * // Final close will calculate weighted PNL from all partials
+   * ```
    */
   public async partialProfit(
     symbol: string,
@@ -2687,13 +2715,65 @@ export class ClientStrategy implements IStrategy {
     // Execute partial close logic
     PARTIAL_PROFIT_FN(this, this._pendingSignal, percentToClose, currentPrice);
 
-    // Persist updated signal state
-    await this.setPendingSignal(this._pendingSignal);
+    // Persist updated signal state (inline setPendingSignal content)
+    // Note: this._pendingSignal already mutated by PARTIAL_PROFIT_FN, no reassignment needed
+    this.params.logger.debug("ClientStrategy setPendingSignal (inline)", {
+      pendingSignal: this._pendingSignal,
+    });
+
+    // Call onWrite callback for testing persist storage
+    if (this.params.callbacks?.onWrite) {
+      this.params.callbacks.onWrite(
+        this.params.execution.context.symbol,
+        this._pendingSignal,
+        backtest
+      );
+    }
+
+    if (!backtest) {
+      await PersistSignalAdapter.writeSignalData(
+        this._pendingSignal,
+        this.params.execution.context.symbol,
+        this.params.strategyName,
+      );
+    }
   }
 
   /**
    * Executes partial close at loss level (moving toward SL).
-   * Updates signal state and persists changes.
+   *
+   * Closes a percentage of the pending position at the current price, recording it as a "loss" type partial.
+   * The partial close is tracked in `_partial` array for weighted PNL calculation when position fully closes.
+   *
+   * Behavior:
+   * - Adds entry to signal's `_partial` array with type "loss"
+   * - Validates percentToClose is in range (0, 100]
+   * - Silently skips if total closed would exceed 100%
+   * - Persists updated signal state (backtest and live modes)
+   * - Calls onWrite callback for persistence testing
+   *
+   * Validation:
+   * - Throws if no pending signal exists
+   * - Throws if percentToClose is not a finite number
+   * - Throws if percentToClose <= 0 or > 100
+   * - Throws if currentPrice is not a positive finite number
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param percentToClose - Percentage of position to close (0-100, absolute value)
+   * @param currentPrice - Current market price for this partial close
+   * @param backtest - Whether running in backtest mode (controls persistence)
+   * @returns Promise that resolves when state is updated and persisted
+   *
+   * @example
+   * ```typescript
+   * // Close 40% of position at loss (moving toward SL)
+   * await strategy.partialLoss("BTCUSDT", 40, 38000, false);
+   *
+   * // Later close another 30%
+   * await strategy.partialLoss("BTCUSDT", 30, 37000, false);
+   *
+   * // Final close will calculate weighted PNL from all partials
+   * ```
    */
   public async partialLoss(
     symbol: string,
@@ -2744,8 +2824,28 @@ export class ClientStrategy implements IStrategy {
     // Execute partial close logic
     PARTIAL_LOSS_FN(this, this._pendingSignal, percentToClose, currentPrice);
 
-    // Persist updated signal state
-    await this.setPendingSignal(this._pendingSignal);
+    // Persist updated signal state (inline setPendingSignal content)
+    // Note: this._pendingSignal already mutated by PARTIAL_LOSS_FN, no reassignment needed
+    this.params.logger.debug("ClientStrategy setPendingSignal (inline)", {
+      pendingSignal: this._pendingSignal,
+    });
+
+    // Call onWrite callback for testing persist storage
+    if (this.params.callbacks?.onWrite) {
+      this.params.callbacks.onWrite(
+        this.params.execution.context.symbol,
+        this._pendingSignal,
+        backtest
+      );
+    }
+
+    if (!backtest) {
+      await PersistSignalAdapter.writeSignalData(
+        this._pendingSignal,
+        this.params.execution.context.symbol,
+        this.params.strategyName,
+      );
+    }
   }
 }
 

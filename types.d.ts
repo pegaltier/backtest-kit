@@ -1181,7 +1181,7 @@ interface ISignalRow extends ISignalDto {
     _isScheduled: boolean;
     /**
      * History of partial closes for PNL calculation.
-     * Each entry contains type (profit/loss), percent closed, price, and timestamp.
+     * Each entry contains type (profit/loss), percent closed, and price.
      * Used to calculate weighted PNL: Σ(percent_i × pnl_i) for each partial + (remaining% × final_pnl)
      *
      * Computed values (derived from this array):
@@ -1196,8 +1196,6 @@ interface ISignalRow extends ISignalDto {
         percent: number;
         /** Price at which this partial was executed */
         price: number;
-        /** Timestamp in milliseconds when partial was executed */
-        timestamp: number;
     }>;
 }
 /**
