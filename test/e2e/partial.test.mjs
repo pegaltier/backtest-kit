@@ -2381,11 +2381,11 @@ test("PARTIAL FUNCTION: Multiple partialProfit calls (30% + 40%)", async ({ pass
   // Проверяем наличие поля _partial в сигнале
   const data = await Backtest.getData("BTCUSDT", {
     strategyName: "test-function-partial-multiple",
-    exchangeName: "binance-function-multiple-partial",
-    frameName: "40m-function-multiple-partial",
+    exchangeName: "binance-function-partial-multiple",
+    frameName: "50m-function-partial-multiple",
   });
 
-  console.log("[TEST #13] getData result:", JSON.stringify(data, null, 2));
+  // console.log("[TEST #13] getData result:", JSON.stringify(data, null, 2));
 
   if (!data.signalList || data.signalList.length === 0) {
     fail("No signals found in backtest data");
@@ -2413,7 +2413,7 @@ test("PARTIAL FUNCTION: Multiple partialProfit calls (30% + 40%)", async ({ pass
   }
 
   const partial1 = signal._partial[0];
-  console.log("[TEST #13] partial[0]:", JSON.stringify(partial1, null, 2));
+  // console.log("[TEST #13] partial[0]:", JSON.stringify(partial1, null, 2));
 
   if (partial1.type !== "profit") {
     fail(`Expected first type 'profit', got '${partial1.type}'`);
@@ -2431,7 +2431,7 @@ test("PARTIAL FUNCTION: Multiple partialProfit calls (30% + 40%)", async ({ pass
   }
 
   const partial2 = signal._partial[1];
-  console.log("[TEST #13] partial[1]:", JSON.stringify(partial2, null, 2));
+  // console.log("[TEST #13] partial[1]:", JSON.stringify(partial2, null, 2));
 
   if (partial2.type !== "profit") {
     fail(`Expected second type 'profit', got '${partial2.type}'`);
