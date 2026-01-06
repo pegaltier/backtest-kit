@@ -10,6 +10,7 @@ import {
 import {
   IStrategy,
   ISignalRow,
+  ISignalDto,
   IScheduledSignalRow,
   IScheduledSignalCancelRow,
   IStrategyParams,
@@ -416,15 +417,14 @@ const GET_SIGNAL_FN = trycatch(
     }
     if (
       await not(
-        self.params.risk.checkSignal({
-          pendingSignal: signal,
-          symbol: self.params.execution.context.symbol,
-          strategyName: self.params.method.context.strategyName,
-          exchangeName: self.params.method.context.exchangeName,
-          frameName: self.params.method.context.frameName,
+        CALL_RISK_CHECK_SIGNAL_FN(
+          self,
+          self.params.execution.context.symbol,
+          signal,
           currentPrice,
-          timestamp: currentTime,
-        })
+          currentTime,
+          self.params.execution.context.backtest
+        )
       )
     ) {
       return null;
@@ -875,15 +875,14 @@ const ACTIVATE_SCHEDULED_SIGNAL_FN = async (
   });
   if (
     await not(
-        self.params.risk.checkSignal({
-          symbol: self.params.execution.context.symbol,
-          pendingSignal: scheduled,
-          strategyName: self.params.method.context.strategyName,
-          exchangeName: self.params.method.context.exchangeName,
-          frameName: self.params.method.context.frameName,
-          currentPrice: scheduled.priceOpen,
-          timestamp: activationTime,
-      })
+      CALL_RISK_CHECK_SIGNAL_FN(
+        self,
+        self.params.execution.context.symbol,
+        scheduled,
+        scheduled.priceOpen,
+        activationTime,
+        self.params.execution.context.backtest
+      )
     )
   ) {
     self.params.logger.info("ClientStrategy scheduled signal rejected by risk", {
@@ -1357,6 +1356,46 @@ const CALL_PARTIAL_CLEAR_FN = trycatch(
   }
 );
 
+const CALL_RISK_CHECK_SIGNAL_FN = trycatch(
+  async (
+    self: ClientStrategy,
+    symbol: string,
+    pendingSignal: ISignalDto | ISignalRow | IScheduledSignalRow,
+    currentPrice: number,
+    timestamp: number,
+    backtest: boolean
+  ): Promise<boolean> => {
+    return await ExecutionContextService.runInContext(async () => {
+      return await self.params.risk.checkSignal({
+        pendingSignal,
+        symbol: symbol,
+        strategyName: self.params.method.context.strategyName,
+        exchangeName: self.params.method.context.exchangeName,
+        frameName: self.params.method.context.frameName,
+        currentPrice,
+        timestamp,
+      });
+    }, {
+      when: new Date(timestamp),
+      symbol: symbol,
+      backtest: backtest,
+    });
+  },
+  {
+    defaultValue: false,
+    fallback: (error) => {
+      const message = "ClientStrategy CALL_RISK_CHECK_SIGNAL_FN thrown";
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+  }
+);
+
 const CALL_PARTIAL_PROFIT_CALLBACKS_FN = trycatch(
   async (
     self: ClientStrategy,
@@ -1549,15 +1588,14 @@ const OPEN_NEW_PENDING_SIGNAL_FN = async (
 
   if (
     await not(
-      self.params.risk.checkSignal({
-        pendingSignal: signal,
-        symbol: self.params.execution.context.symbol,
-        strategyName: self.params.method.context.strategyName,
-        exchangeName: self.params.method.context.exchangeName,
-        frameName: self.params.method.context.frameName,
-        currentPrice: signal.priceOpen,
-        timestamp: currentTime,
-      })
+      CALL_RISK_CHECK_SIGNAL_FN(
+        self,
+        self.params.execution.context.symbol,
+        signal,
+        signal.priceOpen,
+        currentTime,
+        self.params.execution.context.backtest
+      )
     )
   ) {
     return null;
@@ -1964,15 +2002,14 @@ const ACTIVATE_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
 
   if (
     await not(
-      self.params.risk.checkSignal({
-        pendingSignal: scheduled,
-        symbol: self.params.execution.context.symbol,
-        strategyName: self.params.method.context.strategyName,
-        exchangeName: self.params.method.context.exchangeName,
-        frameName: self.params.method.context.frameName,
-        currentPrice: scheduled.priceOpen,
-        timestamp: activationTime,
-      })
+      CALL_RISK_CHECK_SIGNAL_FN(
+        self,
+        self.params.execution.context.symbol,
+        scheduled,
+        scheduled.priceOpen,
+        activationTime,
+        self.params.execution.context.backtest
+      )
     )
   ) {
     self.params.logger.info("ClientStrategy backtest scheduled signal rejected by risk", {
