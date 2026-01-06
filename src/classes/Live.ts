@@ -419,6 +419,10 @@ export class LiveUtils {
    * ```
    */
   public getPendingSignal = async (symbol: string, context: { strategyName: string; exchangeName: string; }) => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_GET_PENDING_SIGNAL, {
+      symbol,
+      context,
+    });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_PENDING_SIGNAL);
 
     {
@@ -451,6 +455,10 @@ export class LiveUtils {
    * ```
    */
   public getScheduledSignal = async (symbol: string, context: { strategyName: string; exchangeName: string; }) => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL, {
+      symbol,
+      context,
+    });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL);
 
     {
@@ -490,6 +498,10 @@ export class LiveUtils {
       exchangeName: string;
     }
   ): Promise<void> => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_STOP, {
+      symbol,
+      context,
+    });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_STOP);
 
     {
@@ -536,6 +548,11 @@ export class LiveUtils {
     },
     cancelId?: string
   ): Promise<void> => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_CANCEL, {
+      symbol,
+      context,
+      cancelId,
+    });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_CANCEL);
 
     {
@@ -585,6 +602,12 @@ export class LiveUtils {
       exchangeName: string;
     }
   ): Promise<void> => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_PARTIAL_PROFIT, {
+      symbol,
+      percentToClose,
+      currentPrice,
+      context,
+    });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_PARTIAL_PROFIT);
 
     {
@@ -634,6 +657,12 @@ export class LiveUtils {
       exchangeName: string;
     }
   ): Promise<void> => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_PARTIAL_LOSS, {
+      symbol,
+      percentToClose,
+      currentPrice,
+      context,
+    });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_PARTIAL_LOSS);
 
     {
@@ -674,7 +703,11 @@ export class LiveUtils {
       exchangeName: string;
     }
   ) => {
-    backtest.strategyValidationService.validate(context.strategyName, "LiveUtils.getData");
+    backtest.loggerService.info(LIVE_METHOD_NAME_GET_DATA, {
+      symbol,
+      context,
+    });
+    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_DATA);
 
     {
       const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
@@ -712,6 +745,10 @@ export class LiveUtils {
     },
     columns?: Columns[]
   ): Promise<string> => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_GET_REPORT, {
+      symbol,
+      context,
+    });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_REPORT);
 
     {
@@ -758,6 +795,11 @@ export class LiveUtils {
     path?: string,
     columns?: Columns[]
   ): Promise<void> => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_DUMP, {
+      symbol,
+      context,
+      path,
+    });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_DUMP);
 
     {

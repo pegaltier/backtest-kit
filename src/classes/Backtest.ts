@@ -524,6 +524,10 @@ export class BacktestUtils {
       frameName: string;
     }
   ) => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_GET_PENDING_SIGNAL, {
+      symbol,
+      context,
+    });
     backtest.strategyValidationService.validate(
       context.strategyName,
       BACKTEST_METHOD_NAME_GET_PENDING_SIGNAL
@@ -577,6 +581,10 @@ export class BacktestUtils {
       frameName: string;
     }
   ) => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_GET_SCHEDULED_SIGNAL, {
+      symbol,
+      context,
+    });
     backtest.strategyValidationService.validate(
       context.strategyName,
       BACKTEST_METHOD_NAME_GET_SCHEDULED_SIGNAL
@@ -636,6 +644,10 @@ export class BacktestUtils {
       frameName: string;
     }
   ): Promise<void> => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_STOP, {
+      symbol,
+      context,
+    });
     backtest.strategyValidationService.validate(
       context.strategyName,
       BACKTEST_METHOD_NAME_STOP
@@ -693,6 +705,11 @@ export class BacktestUtils {
     },
     cancelId?: string
   ): Promise<void> => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_CANCEL, {
+      symbol,
+      context,
+      cancelId,
+    });
     backtest.strategyValidationService.validate(
       context.strategyName,
       BACKTEST_METHOD_NAME_CANCEL
@@ -759,6 +776,12 @@ export class BacktestUtils {
       frameName: string;
     }
   ): Promise<void> => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_PARTIAL_PROFIT, {
+      symbol,
+      percentToClose,
+      currentPrice,
+      context,
+    });
     backtest.strategyValidationService.validate(
       context.strategyName,
       BACKTEST_METHOD_NAME_PARTIAL_PROFIT
@@ -826,6 +849,12 @@ export class BacktestUtils {
       frameName: string;
     }
   ): Promise<void> => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_PARTIAL_LOSS, {
+      symbol,
+      percentToClose,
+      currentPrice,
+      context,
+    });
     backtest.strategyValidationService.validate(
       context.strategyName,
       BACKTEST_METHOD_NAME_PARTIAL_LOSS
@@ -883,6 +912,10 @@ export class BacktestUtils {
       frameName: string;
     }
   ) => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_GET_DATA, {
+      symbol,
+      context,
+    });
     backtest.strategyValidationService.validate(
       context.strategyName,
       BACKTEST_METHOD_NAME_GET_DATA
@@ -942,6 +975,10 @@ export class BacktestUtils {
     },
     columns?: Columns[]
   ): Promise<string> => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_GET_REPORT, {
+      symbol,
+      context,
+    });
     backtest.strategyValidationService.validate(
       context.strategyName,
       BACKTEST_METHOD_NAME_GET_REPORT
@@ -1010,6 +1047,11 @@ export class BacktestUtils {
     path?: string,
     columns?: Columns[]
   ): Promise<void> => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_DUMP, {
+      symbol,
+      context,
+      path,
+    });
     backtest.strategyValidationService.validate(
       context.strategyName,
       BACKTEST_METHOD_NAME_DUMP
