@@ -598,6 +598,108 @@ const WAIT_FOR_INIT_FN = async (self: ClientStrategy) => {
   }
 };
 
+const PARTIAL_PROFIT_FN = (
+  self: ClientStrategy,
+  signal: ISignalRow,
+  percentToClose: number,
+  currentPrice: number
+): void => {
+  // Initialize partial array if not present
+  if (!signal._partial) signal._partial = [];
+
+  // Calculate current totals (computed values)
+  const tpClosed = signal._partial
+    .filter((p) => p.type === "profit")
+    .reduce((sum, p) => sum + p.percent, 0);
+  const slClosed = signal._partial
+    .filter((p) => p.type === "loss")
+    .reduce((sum, p) => sum + p.percent, 0);
+  const totalClosed = tpClosed + slClosed;
+
+  // Check if would exceed 100% total closed
+  const newTotalClosed = totalClosed + percentToClose;
+  if (newTotalClosed > 100) {
+    self.params.logger.warn(
+      "PARTIAL_PROFIT_FN: would exceed 100% closed, skipping",
+      {
+        signalId: signal.id,
+        currentTotalClosed: totalClosed,
+        percentToClose,
+        newTotalClosed,
+      }
+    );
+    return;
+  }
+
+  // Add new partial close entry
+  const timestamp = self.params.execution.context.when.getTime();
+  signal._partial.push({
+    type: "profit",
+    percent: percentToClose,
+    price: currentPrice,
+    timestamp,
+  });
+
+  self.params.logger.info("PARTIAL_PROFIT_FN executed", {
+    signalId: signal.id,
+    percentClosed: percentToClose,
+    totalClosed: newTotalClosed,
+    currentPrice,
+    tpClosed: tpClosed + percentToClose,
+  });
+};
+
+const PARTIAL_LOSS_FN = (
+  self: ClientStrategy,
+  signal: ISignalRow,
+  percentToClose: number,
+  currentPrice: number
+): void => {
+  // Initialize partial array if not present
+  if (!signal._partial) signal._partial = [];
+
+  // Calculate current totals (computed values)
+  const tpClosed = signal._partial
+    .filter((p) => p.type === "profit")
+    .reduce((sum, p) => sum + p.percent, 0);
+  const slClosed = signal._partial
+    .filter((p) => p.type === "loss")
+    .reduce((sum, p) => sum + p.percent, 0);
+  const totalClosed = tpClosed + slClosed;
+
+  // Check if would exceed 100% total closed
+  const newTotalClosed = totalClosed + percentToClose;
+  if (newTotalClosed > 100) {
+    self.params.logger.warn(
+      "PARTIAL_LOSS_FN: would exceed 100% closed, skipping",
+      {
+        signalId: signal.id,
+        currentTotalClosed: totalClosed,
+        percentToClose,
+        newTotalClosed,
+      }
+    );
+    return;
+  }
+
+  // Add new partial close entry
+  const timestamp = self.params.execution.context.when.getTime();
+  signal._partial.push({
+    type: "loss",
+    percent: percentToClose,
+    price: currentPrice,
+    timestamp,
+  });
+
+  self.params.logger.warn("PARTIAL_LOSS_FN executed", {
+    signalId: signal.id,
+    percentClosed: percentToClose,
+    totalClosed: newTotalClosed,
+    currentPrice,
+    slClosed: slClosed + percentToClose,
+  });
+};
+
 const CHECK_SCHEDULED_SIGNAL_TIMEOUT_FN = async (
   self: ClientStrategy,
   scheduled: IScheduledSignalRow,
@@ -2530,6 +2632,120 @@ export class ClientStrategy implements IStrategy {
       symbol,
       this.params.method.context.strategyName,
     );
+  }
+
+  /**
+   * Executes partial close at profit level (moving toward TP).
+   * Updates signal state and persists changes.
+   */
+  public async partialProfit(
+    symbol: string,
+    percentToClose: number,
+    currentPrice: number,
+    backtest: boolean
+  ): Promise<void> {
+    this.params.logger.debug("ClientStrategy partialProfit", {
+      symbol,
+      percentToClose,
+      currentPrice,
+      hasPendingSignal: this._pendingSignal !== null,
+    });
+
+    // Validation: must have pending signal
+    if (!this._pendingSignal) {
+      throw new Error(
+        `ClientStrategy partialProfit: No pending signal exists for symbol=${symbol}`
+      );
+    }
+
+    // Validation: percentToClose must be valid
+    if (typeof percentToClose !== "number" || !isFinite(percentToClose)) {
+      throw new Error(
+        `ClientStrategy partialProfit: percentToClose must be a finite number, got ${percentToClose} (${typeof percentToClose})`
+      );
+    }
+
+    if (percentToClose <= 0) {
+      throw new Error(
+        `ClientStrategy partialProfit: percentToClose must be > 0, got ${percentToClose}`
+      );
+    }
+
+    if (percentToClose > 100) {
+      throw new Error(
+        `ClientStrategy partialProfit: percentToClose must be <= 100, got ${percentToClose}`
+      );
+    }
+
+    // Validation: currentPrice must be valid
+    if (typeof currentPrice !== "number" || !isFinite(currentPrice) || currentPrice <= 0) {
+      throw new Error(
+        `ClientStrategy partialProfit: currentPrice must be a positive finite number, got ${currentPrice}`
+      );
+    }
+
+    // Execute partial close logic
+    PARTIAL_PROFIT_FN(this, this._pendingSignal, percentToClose, currentPrice);
+
+    // Persist updated signal state
+    await this.setPendingSignal(this._pendingSignal);
+  }
+
+  /**
+   * Executes partial close at loss level (moving toward SL).
+   * Updates signal state and persists changes.
+   */
+  public async partialLoss(
+    symbol: string,
+    percentToClose: number,
+    currentPrice: number,
+    backtest: boolean
+  ): Promise<void> {
+    this.params.logger.debug("ClientStrategy partialLoss", {
+      symbol,
+      percentToClose,
+      currentPrice,
+      hasPendingSignal: this._pendingSignal !== null,
+    });
+
+    // Validation: must have pending signal
+    if (!this._pendingSignal) {
+      throw new Error(
+        `ClientStrategy partialLoss: No pending signal exists for symbol=${symbol}`
+      );
+    }
+
+    // Validation: percentToClose must be valid
+    if (typeof percentToClose !== "number" || !isFinite(percentToClose)) {
+      throw new Error(
+        `ClientStrategy partialLoss: percentToClose must be a finite number, got ${percentToClose} (${typeof percentToClose})`
+      );
+    }
+
+    if (percentToClose <= 0) {
+      throw new Error(
+        `ClientStrategy partialLoss: percentToClose must be > 0, got ${percentToClose}`
+      );
+    }
+
+    if (percentToClose > 100) {
+      throw new Error(
+        `ClientStrategy partialLoss: percentToClose must be <= 100, got ${percentToClose}`
+      );
+    }
+
+    // Validation: currentPrice must be valid
+    if (typeof currentPrice !== "number" || !isFinite(currentPrice) || currentPrice <= 0) {
+      throw new Error(
+        `ClientStrategy partialLoss: currentPrice must be a positive finite number, got ${currentPrice}`
+      );
+    }
+
+    // Execute partial close logic
+    PARTIAL_LOSS_FN(this, this._pendingSignal, percentToClose, currentPrice);
+
+    // Persist updated signal state
+    await this.setPendingSignal(this._pendingSignal);
   }
 }
 

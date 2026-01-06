@@ -1179,6 +1179,26 @@ interface ISignalRow extends ISignalDto {
     symbol: string;
     /** Internal runtime marker for scheduled signals */
     _isScheduled: boolean;
+    /**
+     * History of partial closes for PNL calculation.
+     * Each entry contains type (profit/loss), percent closed, price, and timestamp.
+     * Used to calculate weighted PNL: Σ(percent_i × pnl_i) for each partial + (remaining% × final_pnl)
+     *
+     * Computed values (derived from this array):
+     * - _tpClosed: Sum of all "profit" type partial close percentages
+     * - _slClosed: Sum of all "loss" type partial close percentages
+     * - _totalClosed: Sum of all partial close percentages (profit + loss)
+     */
+    _partial?: Array<{
+        /** Type of partial close: profit (moving toward TP) or loss (moving toward SL) */
+        type: "profit" | "loss";
+        /** Percentage of position closed (0-100) */
+        percent: number;
+        /** Price at which this partial was executed */
+        price: number;
+        /** Timestamp in milliseconds when partial was executed */
+        timestamp: number;
+    }>;
 }
 /**
  * Scheduled signal row for delayed entry at specific price.
