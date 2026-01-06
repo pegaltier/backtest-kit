@@ -55,14 +55,14 @@ export const heat_columns: ColumnModel<IHeatmapRow>[] = [
     key: "sharpeRatio",
     label: "Sharpe",
     format: (data) =>
-      data.sharpeRatio !== null ? str(data.sharpeRatio, "%.2f") : "N/A",
+      data.sharpeRatio !== null ? str(data.sharpeRatio) : "N/A",
     isVisible: () => true,
   },
   {
     key: "profitFactor",
     label: "PF",
     format: (data) =>
-      data.profitFactor !== null ? str(data.profitFactor, "%.2f") : "N/A",
+      data.profitFactor !== null ? str(data.profitFactor) : "N/A",
     isVisible: () => true,
   },
   {
@@ -97,7 +97,7 @@ export const heat_columns: ColumnModel<IHeatmapRow>[] = [
     key: "maxDrawdown",
     label: "Max DD",
     format: (data) =>
-      data.maxDrawdown !== null ? str(-data.maxDrawdown, "%.2f%%") : "N/A",
+      data.maxDrawdown !== null ? str(-data.maxDrawdown) : "N/A",
     isVisible: () => true,
   },
   {
