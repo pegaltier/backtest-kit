@@ -487,6 +487,10 @@ export class WalkerUtils {
     symbol: string,
     walkerName: WalkerName
   ): Promise<void> => {
+    backtest.loggerService.info(WALKER_METHOD_NAME_STOP, {
+      symbol,
+      walkerName,
+    });
     backtest.walkerValidationService.validate(
       walkerName,
       WALKER_METHOD_NAME_STOP
@@ -539,6 +543,10 @@ export class WalkerUtils {
    * ```
    */
   public getData = async (symbol: string, walkerName: WalkerName) => {
+    backtest.loggerService.info(WALKER_METHOD_NAME_GET_DATA, {
+      symbol,
+      walkerName,
+    });
     backtest.walkerValidationService.validate(
       walkerName,
       WALKER_METHOD_NAME_GET_DATA
@@ -599,6 +607,10 @@ export class WalkerUtils {
     strategyColumns?: StrategyColumn[],
     pnlColumns?: PnlColumn[]
   ): Promise<string> => {
+    backtest.loggerService.info(WALKER_METHOD_NAME_GET_REPORT, {
+      symbol,
+      walkerName,
+    });
     backtest.walkerValidationService.validate(
       walkerName,
       WALKER_METHOD_NAME_GET_REPORT
@@ -665,6 +677,11 @@ export class WalkerUtils {
     strategyColumns?: StrategyColumn[],
     pnlColumns?: PnlColumn[]
   ): Promise<void> => {
+    backtest.loggerService.info(WALKER_METHOD_NAME_DUMP, {
+      symbol,
+      walkerName,
+      path,
+    });
     backtest.walkerValidationService.validate(
       walkerName,
       WALKER_METHOD_NAME_DUMP
