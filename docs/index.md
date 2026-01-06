@@ -89,6 +89,8 @@ group: docs
 - [validate](functions/validate.md)
 - [stop](functions/stop.md)
 - [cancel](functions/cancel.md)
+- [partialProfit](functions/partialProfit.md)
+- [partialLoss](functions/partialLoss.md)
 - [setLogger](functions/setLogger.md)
 - [setConfig](functions/setConfig.md)
 - [getConfig](functions/getConfig.md)

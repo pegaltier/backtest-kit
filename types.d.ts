@@ -5945,6 +5945,68 @@ declare class BacktestUtils {
         frameName: string;
     }, cancelId?: string) => Promise<void>;
     /**
+     * Executes partial close at profit level (moving toward TP).
+     *
+     * Closes a percentage of the active pending position at profit.
+     * Price must be moving toward take profit (in profit direction).
+     *
+     * @param symbol - Trading pair symbol
+     * @param percentToClose - Percentage of position to close (0-100, absolute value)
+     * @param currentPrice - Current market price for this partial close
+     * @param context - Execution context with strategyName, exchangeName, and frameName
+     * @returns Promise that resolves when state is updated
+     *
+     * @throws Error if currentPrice is not in profit direction:
+     *   - LONG: currentPrice must be > priceOpen
+     *   - SHORT: currentPrice must be < priceOpen
+     *
+     * @example
+     * ```typescript
+     * // Close 30% of LONG position at profit
+     * await Backtest.partialProfit("BTCUSDT", 30, 45000, {
+     *   exchangeName: "binance",
+     *   frameName: "frame1",
+     *   strategyName: "my-strategy"
+     * });
+     * ```
+     */
+    partialProfit: (symbol: string, percentToClose: number, currentPrice: number, context: {
+        strategyName: string;
+        exchangeName: string;
+        frameName: string;
+    }) => Promise<void>;
+    /**
+     * Executes partial close at loss level (moving toward SL).
+     *
+     * Closes a percentage of the active pending position at loss.
+     * Price must be moving toward stop loss (in loss direction).
+     *
+     * @param symbol - Trading pair symbol
+     * @param percentToClose - Percentage of position to close (0-100, absolute value)
+     * @param currentPrice - Current market price for this partial close
+     * @param context - Execution context with strategyName, exchangeName, and frameName
+     * @returns Promise that resolves when state is updated
+     *
+     * @throws Error if currentPrice is not in loss direction:
+     *   - LONG: currentPrice must be < priceOpen
+     *   - SHORT: currentPrice must be > priceOpen
+     *
+     * @example
+     * ```typescript
+     * // Close 40% of LONG position at loss
+     * await Backtest.partialLoss("BTCUSDT", 40, 38000, {
+     *   exchangeName: "binance",
+     *   frameName: "frame1",
+     *   strategyName: "my-strategy"
+     * });
+     * ```
+     */
+    partialLoss: (symbol: string, percentToClose: number, currentPrice: number, context: {
+        strategyName: string;
+        exchangeName: string;
+        frameName: string;
+    }) => Promise<void>;
+    /**
      * Gets statistical data from all closed signals for a symbol-strategy pair.
      *
      * @param symbol - Trading pair symbol
@@ -6421,6 +6483,64 @@ declare class LiveUtils {
         strategyName: string;
         exchangeName: string;
     }, cancelId?: string) => Promise<void>;
+    /**
+     * Executes partial close at profit level (moving toward TP).
+     *
+     * Closes a percentage of the active pending position at profit.
+     * Price must be moving toward take profit (in profit direction).
+     *
+     * @param symbol - Trading pair symbol
+     * @param percentToClose - Percentage of position to close (0-100, absolute value)
+     * @param currentPrice - Current market price for this partial close
+     * @param context - Execution context with strategyName and exchangeName
+     * @returns Promise that resolves when state is updated
+     *
+     * @throws Error if currentPrice is not in profit direction:
+     *   - LONG: currentPrice must be > priceOpen
+     *   - SHORT: currentPrice must be < priceOpen
+     *
+     * @example
+     * ```typescript
+     * // Close 30% of LONG position at profit
+     * await Live.partialProfit("BTCUSDT", 30, 45000, {
+     *   exchangeName: "binance",
+     *   strategyName: "my-strategy"
+     * });
+     * ```
+     */
+    partialProfit: (symbol: string, percentToClose: number, currentPrice: number, context: {
+        strategyName: string;
+        exchangeName: string;
+    }) => Promise<void>;
+    /**
+     * Executes partial close at loss level (moving toward SL).
+     *
+     * Closes a percentage of the active pending position at loss.
+     * Price must be moving toward stop loss (in loss direction).
+     *
+     * @param symbol - Trading pair symbol
+     * @param percentToClose - Percentage of position to close (0-100, absolute value)
+     * @param currentPrice - Current market price for this partial close
+     * @param context - Execution context with strategyName and exchangeName
+     * @returns Promise that resolves when state is updated
+     *
+     * @throws Error if currentPrice is not in loss direction:
+     *   - LONG: currentPrice must be < priceOpen
+     *   - SHORT: currentPrice must be > priceOpen
+     *
+     * @example
+     * ```typescript
+     * // Close 40% of LONG position at loss
+     * await Live.partialLoss("BTCUSDT", 40, 38000, {
+     *   exchangeName: "binance",
+     *   strategyName: "my-strategy"
+     * });
+     * ```
+     */
+    partialLoss: (symbol: string, percentToClose: number, currentPrice: number, context: {
+        strategyName: string;
+        exchangeName: string;
+    }) => Promise<void>;
     /**
      * Gets statistical data from all live trading events for a symbol-strategy pair.
      *

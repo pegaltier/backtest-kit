@@ -81,3 +81,18 @@ _isScheduled: boolean
 ```
 
 Internal runtime marker for scheduled signals
+
+### _partial
+
+```ts
+_partial: { type: "profit" | "loss"; percent: number; price: number; }[]
+```
+
+History of partial closes for PNL calculation.
+Each entry contains type (profit/loss), percent closed, and price.
+Used to calculate weighted PNL: Σ(percent_i × pnl_i) for each partial + (remaining% × final_pnl)
+
+Computed values (derived from this array):
+- _tpClosed: Sum of all "profit" type partial close percentages
+- _slClosed: Sum of all "loss" type partial close percentages
+- _totalClosed: Sum of all partial close percentages (profit + loss)
