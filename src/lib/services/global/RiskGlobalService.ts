@@ -2,9 +2,18 @@ import { inject } from "../../core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../core/types";
 import RiskConnectionService from "../connection/RiskConnectionService";
-import { IRiskCheckArgs, RiskName } from "../../../interfaces/Risk.interface";
+import { IRisk, IRiskCheckArgs, RiskName } from "../../../interfaces/Risk.interface";
 import { memoize } from "functools-kit";
 import RiskValidationService from "../validation/RiskValidationService";
+
+/**
+ * Type definition for risk methods.
+ * Maps all keys of IRisk to any type.
+ * Used for dynamic method routing in RiskGlobalService.
+ */
+type TRisk = {
+  [key in keyof IRisk]: any;
+};
 
 /**
  * Global service for risk operations.
@@ -12,7 +21,7 @@ import RiskValidationService from "../validation/RiskValidationService";
  * Wraps RiskConnectionService for risk limit validation.
  * Used internally by strategy execution and public API.
  */
-export class RiskGlobalService {
+export class RiskGlobalService implements TRisk {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly riskConnectionService = inject<RiskConnectionService>(
     TYPES.riskConnectionService

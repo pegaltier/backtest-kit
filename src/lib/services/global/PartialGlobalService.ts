@@ -7,6 +7,16 @@ import StrategyValidationService from "../validation/StrategyValidationService";
 import StrategySchemaService from "../schema/StrategySchemaService";
 import RiskValidationService from "../validation/RiskValidationService";
 import { memoize } from "functools-kit";
+import { IPartial } from "src/interfaces/Partial.interface";
+
+/**
+ * Type definition for partial methods.
+ * Maps all keys of IPartial to any type.
+ * Used for dynamic method routing in PartialGlobalService.
+ */
+type TPartial = {
+  [key in keyof IPartial]: any;
+};
 
 /**
  * Global service for partial profit/loss tracking.
@@ -37,7 +47,7 @@ import { memoize } from "functools-kit";
  * // Logs at global level → delegates to PartialConnectionService
  * ```
  */
-export class PartialGlobalService {
+export class PartialGlobalService implements TPartial {
   /**
    * Logger service injected from DI container.
    * Used for logging operations at global service level.

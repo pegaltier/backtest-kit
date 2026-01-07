@@ -2,10 +2,19 @@ import { inject } from "../../core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../core/types";
 import SizingConnectionService from "../connection/SizingConnectionService";
-import { ISizingCalculateParams, SizingName } from "../../../interfaces/Sizing.interface";
+import { ISizing, ISizingCalculateParams, SizingName } from "../../../interfaces/Sizing.interface";
 import SizingValidationService from "../validation/SizingValidationService";
 
 const METHOD_NAME_CALCULATE = "sizingGlobalService calculate";
+
+/**
+ * Type definition for sizing methods.
+ * Maps all keys of ISizing to any type.
+ * Used for dynamic method routing in SizingGlobalService.
+ */
+type TSizing = {
+  [key in keyof ISizing]: any;
+};
 
 /**
  * Global service for sizing operations.
@@ -13,7 +22,7 @@ const METHOD_NAME_CALCULATE = "sizingGlobalService calculate";
  * Wraps SizingConnectionService for position size calculation.
  * Used internally by strategy execution and public API.
  */
-export class SizingGlobalService {
+export class SizingGlobalService implements TSizing {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly sizingConnectionService = inject<SizingConnectionService>(
     TYPES.sizingConnectionService

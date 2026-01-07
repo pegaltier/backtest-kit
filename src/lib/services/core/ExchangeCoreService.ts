@@ -5,6 +5,7 @@ import ExecutionContextService from "../context/ExecutionContextService";
 import {
   CandleInterval,
   ExchangeName,
+  IExchange,
 } from "../../../interfaces/Exchange.interface";
 import ExchangeConnectionService from "../connection/ExchangeConnectionService";
 import { TMethodContextService } from "../context/MethodContextService";
@@ -15,6 +16,15 @@ import { memoize, singleshot } from "functools-kit";
 const METHOD_NAME_VALIDATE = "exchangeCoreService validate";
 
 /**
+ * Type definition for exchange methods.
+ * Maps all keys of IExchange to any type.
+ * Used for dynamic method routing in ExchangeCoreService.
+ */
+type TExchange = {
+  [key in keyof IExchange]: any;
+};
+
+/**
  * Global service for exchange operations with execution context injection.
  *
  * Wraps ExchangeConnectionService with ExecutionContextService to inject
@@ -22,7 +32,7 @@ const METHOD_NAME_VALIDATE = "exchangeCoreService validate";
  *
  * Used internally by BacktestLogicPrivateService and LiveLogicPrivateService.
  */
-export class ExchangeCoreService {
+export class ExchangeCoreService implements TExchange {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly exchangeConnectionService =
     inject<ExchangeConnectionService>(TYPES.exchangeConnectionService);

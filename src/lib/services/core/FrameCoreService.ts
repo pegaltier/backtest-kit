@@ -5,8 +5,18 @@ import ExecutionContextService from "../context/ExecutionContextService";
 import FrameConnectionService from "../connection/FrameConnectionService";
 import FrameValidationService from "../validation/FrameValidationService";
 import MethodContextService from "../context/MethodContextService";
+import { IFrame } from "src/interfaces/Frame.interface";
 
 const METHOD_NAME_GET_TIMEFRAME = "frameCoreService getTimeframe";
+
+/**
+ * Type definition for frame methods.
+ * Maps all keys of IFrame to any type.
+ * Used for dynamic method routing in FrameCoreService.
+ */
+type TFrame = {
+  [key in keyof IFrame]: any;
+};
 
 /**
  * Global service for frame operations.
@@ -14,7 +24,7 @@ const METHOD_NAME_GET_TIMEFRAME = "frameCoreService getTimeframe";
  * Wraps FrameConnectionService for timeframe generation.
  * Used internally by BacktestLogicPrivateService.
  */
-export class FrameCoreService {
+export class FrameCoreService implements TFrame {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly frameConnectionService = inject<FrameConnectionService>(
     TYPES.frameConnectionService

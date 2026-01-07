@@ -8,6 +8,7 @@ import {
   IStrategyBacktestResult,
   IStrategyTickResult,
   StrategyName,
+  IStrategy,
 } from "../../../interfaces/Strategy.interface";
 import StrategyConnectionService from "../connection/StrategyConnectionService";
 import { ICandleData } from "../../../interfaces/Exchange.interface";
@@ -19,6 +20,15 @@ import StrategyValidationService from "../validation/StrategyValidationService";
 const METHOD_NAME_VALIDATE = "strategyCoreService validate";
 
 /**
+ * Type definition for strategy methods.
+ * Maps all keys of IStrategy to any type.
+ * Used for dynamic method routing in StrategyCoreService.
+ */
+type TStrategy = {
+  [key in keyof IStrategy]: any;
+};
+
+/**
  * Global service for strategy operations with execution context injection.
  *
  * Wraps StrategyConnectionService with ExecutionContextService to inject
@@ -26,7 +36,7 @@ const METHOD_NAME_VALIDATE = "strategyCoreService validate";
  *
  * Used internally by BacktestLogicPrivateService and LiveLogicPrivateService.
  */
-export class StrategyCoreService {
+export class StrategyCoreService implements TStrategy {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly strategyConnectionService =
     inject<StrategyConnectionService>(TYPES.strategyConnectionService);
