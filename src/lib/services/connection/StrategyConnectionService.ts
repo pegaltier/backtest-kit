@@ -25,6 +25,7 @@ import { IRisk, RiskName } from "../../../interfaces/Risk.interface";
 import RiskConnectionService from "./RiskConnectionService";
 import { PartialConnectionService } from "./PartialConnectionService";
 import { MergeRisk } from "../../../classes/Risk";
+import { TMethodContextService } from "../context/MethodContextService";
 
 /**
  * No-operation IRisk implementation.
@@ -173,6 +174,7 @@ export class StrategyConnectionService implements TStrategy {
   public readonly executionContextService = inject<TExecutionContextService>(
     TYPES.executionContextService
   );
+  public readonly methodContextService = inject<TMethodContextService>(TYPES.methodContextService);
   public readonly strategySchemaService = inject<StrategySchemaService>(
     TYPES.strategySchemaService
   );
@@ -214,7 +216,7 @@ export class StrategyConnectionService implements TStrategy {
         symbol,
         interval,
         execution: this.executionContextService,
-        method: { context: { strategyName, exchangeName, frameName } },
+        method: this.methodContextService,
         logger: this.loggerService,
         partial: this.partialConnectionService,
         exchange: this.exchangeConnectionService,
