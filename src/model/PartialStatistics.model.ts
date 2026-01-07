@@ -1,4 +1,4 @@
-import { StrategyName } from "src/interfaces/Strategy.interface";
+import { StrategyName } from "../interfaces/Strategy.interface";
 import { PartialLevel } from "../interfaces/Partial.interface";
 
 /**

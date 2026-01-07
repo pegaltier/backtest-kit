@@ -15,8 +15,8 @@ import {
   errorEmitter,
 } from "../../../../config/emitters";
 import { errorData, getErrorMessage, resolveDocuments } from "functools-kit";
-import { ExchangeName } from "src/interfaces/Exchange.interface";
-import { FrameName } from "src/interfaces/Frame.interface";
+import { ExchangeName } from "../../../../interfaces/Exchange.interface";
+import { FrameName } from "../../../../interfaces/Frame.interface";
 
 /**
  * Private service for walker orchestration (strategy comparison).

@@ -1,9 +1,9 @@
 import bt from "../lib";
 import { PerformanceStatisticsModel } from "../model/PerformanceStatistics.model";
 import { Columns } from "../lib/services/markdown/PerformanceMarkdownService";
-import { StrategyName } from "src/interfaces/Strategy.interface";
-import { ExchangeName } from "src/interfaces/Exchange.interface";
-import { FrameName } from "src/interfaces/Frame.interface";
+import { StrategyName } from "../interfaces/Strategy.interface";
+import { ExchangeName } from "../interfaces/Exchange.interface";
+import { FrameName } from "../interfaces/Frame.interface";
 
 const PERFORMANCE_METHOD_NAME_GET_DATA = "Performance.getData";
 const PERFORMANCE_METHOD_NAME_GET_REPORT = "Performance.getReport";

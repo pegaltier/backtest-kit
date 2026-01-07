@@ -1,8 +1,8 @@
-import { StrategyName } from "src/interfaces/Strategy.interface";
+import { StrategyName } from "../interfaces/Strategy.interface";
 import bt from "../lib";
 import { Columns } from "../lib/services/markdown/ScheduleMarkdownService";
-import { ExchangeName } from "src/interfaces/Exchange.interface";
-import { FrameName } from "src/interfaces/Frame.interface";
+import { ExchangeName } from "../interfaces/Exchange.interface";
+import { FrameName } from "../interfaces/Frame.interface";
 
 const SCHEDULE_METHOD_NAME_GET_DATA = "ScheduleUtils.getData";
 const SCHEDULE_METHOD_NAME_GET_REPORT = "ScheduleUtils.getReport";

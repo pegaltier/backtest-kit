@@ -9,8 +9,8 @@ import {
   partialProfitSubject,
   partialLossSubject,
 } from "../../../config/emitters";
-import { ExchangeName } from "src/interfaces/Exchange.interface";
-import { FrameName } from "src/interfaces/Frame.interface";
+import { ExchangeName } from "../../../interfaces/Exchange.interface";
+import { FrameName } from "../../../interfaces/Frame.interface";
 
 /**
  * Creates a unique key for memoizing ClientPartial instances.

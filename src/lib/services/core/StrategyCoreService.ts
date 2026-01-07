@@ -16,7 +16,7 @@ import { memoize } from "functools-kit";
 import StrategySchemaService from "../schema/StrategySchemaService";
 import RiskValidationService from "../validation/RiskValidationService";
 import StrategyValidationService from "../validation/StrategyValidationService";
-import { FrameName } from "src/interfaces/Frame.interface";
+import { FrameName } from "../../../interfaces/Frame.interface";
 
 const METHOD_NAME_VALIDATE = "strategyCoreService validate";
 

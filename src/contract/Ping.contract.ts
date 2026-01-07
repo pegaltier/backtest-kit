@@ -1,4 +1,4 @@
-import { ExchangeName } from "src/interfaces/Exchange.interface";
+import { ExchangeName } from "../interfaces/Exchange.interface";
 import { IScheduledSignalRow, StrategyName } from "../interfaces/Strategy.interface";
 
 /**

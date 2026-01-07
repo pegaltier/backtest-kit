@@ -9,9 +9,9 @@ import WalkerSchemaService from "../schema/WalkerSchemaService";
 import WalkerValidationService from "../validation/WalkerValidationService";
 import StrategySchemaService from "../schema/StrategySchemaService";
 import RiskValidationService from "../validation/RiskValidationService";
-import { ExchangeName } from "src/interfaces/Exchange.interface";
-import { FrameName } from "src/interfaces/Frame.interface";
-import { WalkerName } from "src/interfaces/Walker.interface";
+import { ExchangeName } from "../../../interfaces/Exchange.interface";
+import { FrameName } from "../../../interfaces/Frame.interface";
+import { WalkerName } from "../../../interfaces/Walker.interface";
 
 const METHOD_NAME_RUN = "walkerCommandService run";
 

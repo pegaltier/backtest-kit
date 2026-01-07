@@ -8,8 +8,8 @@ import StrategySchemaService from "../schema/StrategySchemaService";
 import RiskValidationService from "../validation/RiskValidationService";
 import { memoize } from "functools-kit";
 import { IPartial } from "../../../interfaces/Partial.interface";
-import { FrameName } from "src/interfaces/Frame.interface";
-import { ExchangeName } from "src/interfaces/Exchange.interface";
+import { FrameName } from "../../../interfaces/Frame.interface";
+import { ExchangeName } from "../../../interfaces/Exchange.interface";
 
 /**
  * Type definition for partial methods.

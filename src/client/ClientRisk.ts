@@ -20,8 +20,8 @@ import { PersistRiskAdapter } from "../classes/Persist";
 import backtest from "../lib";
 import { validationSubject } from "../config/emitters";
 import { get } from "../utils/get";
-import { ExchangeName } from "src/interfaces/Exchange.interface";
-import { StrategyName } from "src/interfaces/Strategy.interface";
+import { ExchangeName } from "../interfaces/Exchange.interface";
+import { StrategyName } from "../interfaces/Strategy.interface";
 
 /** Type for active position map */
 type RiskMap = Map<string, IRiskActivePosition>;

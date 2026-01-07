@@ -1,9 +1,9 @@
 import bt from "../lib";
 import { HeatmapStatisticsModel } from "../model/HeatmapStatistics.model";
 import { Columns } from "../lib/services/markdown/HeatMarkdownService";
-import { StrategyName } from "src/interfaces/Strategy.interface";
-import { ExchangeName } from "src/interfaces/Exchange.interface";
-import { FrameName } from "src/interfaces/Frame.interface";
+import { StrategyName } from "../interfaces/Strategy.interface";
+import { ExchangeName } from "../interfaces/Exchange.interface";
+import { FrameName } from "../interfaces/Frame.interface";
 
 const HEAT_METHOD_NAME_GET_DATA = "HeatUtils.getData";
 const HEAT_METHOD_NAME_GET_REPORT = "HeatUtils.getReport";

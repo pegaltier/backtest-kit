@@ -26,7 +26,7 @@ import RiskConnectionService from "./RiskConnectionService";
 import { PartialConnectionService } from "./PartialConnectionService";
 import { MergeRisk } from "../../../classes/Risk";
 import { TMethodContextService } from "../context/MethodContextService";
-import { FrameName } from "src/interfaces/Frame.interface";
+import { FrameName } from "../../../interfaces/Frame.interface";
 
 /**
  * No-operation IRisk implementation.

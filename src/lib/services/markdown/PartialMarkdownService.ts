@@ -16,8 +16,8 @@ import {
 } from "../../../model/PartialStatistics.model";
 import { ColumnModel } from "../../../model/Column.model";
 import { COLUMN_CONFIG } from "../../../config/columns";
-import { ExchangeName } from "src/interfaces/Exchange.interface";
-import { FrameName } from "src/interfaces/Frame.interface";
+import { ExchangeName } from "../../../interfaces/Exchange.interface";
+import { FrameName } from "../../../interfaces/Frame.interface";
 
 /**
  * Type alias for column configuration used in partial profit/loss markdown reports.

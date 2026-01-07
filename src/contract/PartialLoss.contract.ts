@@ -1,7 +1,7 @@
 import { ISignalRow, StrategyName } from "../interfaces/Strategy.interface";
 import { PartialLevel } from "../interfaces/Partial.interface";
-import { ExchangeName } from "src/interfaces/Exchange.interface";
-import { FrameName } from "src/interfaces/Frame.interface";
+import { ExchangeName } from "../interfaces/Exchange.interface";
+import { FrameName } from "../interfaces/Frame.interface";
 
 /**
  * Contract for partial loss level events.

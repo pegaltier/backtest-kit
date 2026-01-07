@@ -5,9 +5,9 @@ import RiskConnectionService from "../connection/RiskConnectionService";
 import { IRisk, IRiskCheckArgs, RiskName } from "../../../interfaces/Risk.interface";
 import { memoize } from "functools-kit";
 import RiskValidationService from "../validation/RiskValidationService";
-import { ExchangeName } from "src/interfaces/Exchange.interface";
-import { FrameName } from "src/interfaces/Frame.interface";
-import { StrategyName } from "src/interfaces/Strategy.interface";
+import { ExchangeName } from "../../../interfaces/Exchange.interface";
+import { FrameName } from "../../../interfaces/Frame.interface";
+import { StrategyName } from "../../../interfaces/Strategy.interface";
 
 /**
  * Type definition for risk methods.

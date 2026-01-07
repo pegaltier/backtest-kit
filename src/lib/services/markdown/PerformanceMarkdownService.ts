@@ -13,8 +13,8 @@ import { performanceEmitter } from "../../../config/emitters";
 import { PerformanceStatisticsModel, MetricStats } from "../../../model/PerformanceStatistics.model";
 import { ColumnModel } from "../../../model/Column.model";
 import { COLUMN_CONFIG } from "../../../config/columns";
-import { ExchangeName } from "src/interfaces/Exchange.interface";
-import { FrameName } from "src/interfaces/Frame.interface";
+import { ExchangeName } from "../../../interfaces/Exchange.interface";
+import { FrameName } from "../../../interfaces/Frame.interface";
 
 /**
  * Type alias for column configuration used in performance metrics markdown reports.

@@ -3,9 +3,9 @@ import LoggerService from "../../base/LoggerService";
 import TYPES from "../../../core/types";
 import BacktestLogicPrivateService from "../private/BacktestLogicPrivateService";
 import MethodContextService from "../../context/MethodContextService";
-import { StrategyName } from "src/interfaces/Strategy.interface";
-import { ExchangeName } from "src/interfaces/Exchange.interface";
-import { FrameName } from "src/interfaces/Frame.interface";
+import { StrategyName } from "../../../../interfaces/Strategy.interface";
+import { ExchangeName } from "../../../../interfaces/Exchange.interface";
+import { FrameName } from "../../../../interfaces/Frame.interface";
 
 /**
  * Public service for backtest orchestration with context management.

@@ -10,9 +10,9 @@ import {
   ExchangeName,
 } from "../../../interfaces/Exchange.interface";
 import { toPlainString } from "../../../helpers/toPlainString";
-import { FrameName } from "src/interfaces/Frame.interface";
-import { StrategyName } from "src/interfaces/Strategy.interface";
-import { WalkerName } from "src/interfaces/Walker.interface";
+import { FrameName } from "../../../interfaces/Frame.interface";
+import { StrategyName } from "../../../interfaces/Strategy.interface";
+import { WalkerName } from "../../../interfaces/Walker.interface";
 
 /**
  * Default template service for generating optimizer code snippets.

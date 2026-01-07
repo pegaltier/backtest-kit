@@ -7,9 +7,9 @@ import ExchangeValidationService from "../validation/ExchangeValidationService";
 import FrameValidationService from "../validation/FrameValidationService";
 import StrategySchemaService from "../schema/StrategySchemaService";
 import RiskValidationService from "../validation/RiskValidationService";
-import { StrategyName } from "src/interfaces/Strategy.interface";
-import { ExchangeName } from "src/interfaces/Exchange.interface";
-import { FrameName } from "src/interfaces/Frame.interface";
+import { StrategyName } from "../../../interfaces/Strategy.interface";
+import { ExchangeName } from "../../../interfaces/Exchange.interface";
+import { FrameName } from "../../../interfaces/Frame.interface";
 
 const METHOD_NAME_RUN = "backtestCommandService run";
 

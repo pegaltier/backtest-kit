@@ -3,8 +3,8 @@ import LoggerService from "../../base/LoggerService";
 import TYPES from "../../../core/types";
 import LiveLogicPrivateService from "../private/LiveLogicPrivateService";
 import MethodContextService from "../../context/MethodContextService";
-import { StrategyName } from "src/interfaces/Strategy.interface";
-import { ExchangeName } from "src/interfaces/Exchange.interface";
+import { StrategyName } from "../../../../interfaces/Strategy.interface";
+import { ExchangeName } from "../../../../interfaces/Exchange.interface";
 
 /**
  * Public service for live trading orchestration with context management.

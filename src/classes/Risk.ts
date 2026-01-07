@@ -2,9 +2,9 @@ import { not } from "functools-kit";
 import { IRisk, IRiskCheckArgs, RiskName } from "../interfaces/Risk.interface";
 import bt from "../lib";
 import { Columns } from "../lib/services/markdown/RiskMarkdownService";
-import { StrategyName } from "src/interfaces/Strategy.interface";
-import { ExchangeName } from "src/interfaces/Exchange.interface";
-import { FrameName } from "src/interfaces/Frame.interface";
+import { StrategyName } from "../interfaces/Strategy.interface";
+import { ExchangeName } from "../interfaces/Exchange.interface";
+import { FrameName } from "../interfaces/Frame.interface";
 
 const RISK_METHOD_NAME_GET_DATA = "RiskUtils.getData";
 const RISK_METHOD_NAME_GET_REPORT = "RiskUtils.getReport";

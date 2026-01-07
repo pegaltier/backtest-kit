@@ -1,5 +1,5 @@
-import { ExchangeName } from "src/interfaces/Exchange.interface";
-import { StrategyName } from "src/interfaces/Strategy.interface";
+import { ExchangeName } from "../interfaces/Exchange.interface";
+import { StrategyName } from "../interfaces/Strategy.interface";
 
 /**
  * Contract for backtest progress events.
