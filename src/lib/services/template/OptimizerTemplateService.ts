@@ -428,7 +428,7 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
       ``,
       `listenWalkerComplete((results) => {`,
       `    console.log("Walker completed:", results.bestStrategy);`,
-      `    Walker.dump(results.symbol, results.walkerName);`,
+      `    Walker.dump(results.symbol, { walkerName: results.walkerName });`,
       `});`,
       ``,
       `listenDoneBacktest((event) => {`,
