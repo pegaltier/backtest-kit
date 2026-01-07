@@ -11,6 +11,7 @@ import {
   IStrategyBacktestResult,
   IStrategyTickResult,
   StrategyName,
+  IStrategy,
 } from "../../../interfaces/Strategy.interface";
 import StrategySchemaService from "../schema/StrategySchemaService";
 import ExchangeConnectionService from "./ExchangeConnectionService";
@@ -139,6 +140,15 @@ const COMMIT_PING_FN = async (
   });
 
 /**
+ * Type definition for strategy methods.
+ * Maps all keys of IStrategy to any type.
+ * Used for dynamic method routing in StrategyConnectionService.
+ */
+type TStrategy = {
+  [key in keyof IStrategy]: any;
+};
+
+/**
  * Connection service routing strategy operations to correct ClientStrategy instance.
  *
  * Routes all IStrategy method calls to the appropriate strategy implementation
@@ -158,7 +168,7 @@ const COMMIT_PING_FN = async (
  * // Routes to correct strategy instance for symbol-strategy pair
  * ```
  */
-export class StrategyConnectionService {
+export class StrategyConnectionService implements TStrategy {
   public readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   public readonly executionContextService = inject<TExecutionContextService>(
     TYPES.executionContextService
