@@ -1,9 +1,4 @@
 import * as di_scoped from 'di-scoped';
-import * as src_interfaces_Strategy_interface from 'src/interfaces/Strategy.interface';
-import { StrategyName as StrategyName$1 } from 'src/interfaces/Strategy.interface';
-import { ExchangeName as ExchangeName$1 } from 'src/interfaces/Exchange.interface';
-import { FrameName as FrameName$1 } from 'src/interfaces/Frame.interface';
-import { WalkerName as WalkerName$1 } from 'src/interfaces/Walker.interface';
 import * as functools_kit from 'functools-kit';
 import { Subject } from 'functools-kit';
 
@@ -3020,11 +3015,11 @@ declare function listOptimizers(): Promise<IOptimizerSchema[]>;
  */
 interface DoneContract {
     /** exchangeName - Name of the exchange used in execution */
-    exchangeName: ExchangeName$1;
+    exchangeName: ExchangeName;
     /** strategyName - Name of the strategy that completed */
-    strategyName: StrategyName$1;
+    strategyName: StrategyName;
     /** frameName - Name of the frame (empty string for live mode) */
-    frameName: FrameName$1;
+    frameName: FrameName;
     /** backtest - True if backtest mode, false if live mode */
     backtest: boolean;
     /** symbol - Trading symbol (e.g., "BTCUSDT") */
@@ -3049,9 +3044,9 @@ interface DoneContract {
  */
 interface ProgressBacktestContract {
     /** exchangeName - Name of the exchange used in execution */
-    exchangeName: ExchangeName$1;
+    exchangeName: ExchangeName;
     /** strategyName - Name of the strategy being executed */
-    strategyName: StrategyName$1;
+    strategyName: StrategyName;
     /** symbol - Trading symbol (e.g., "BTCUSDT") */
     symbol: string;
     /** totalFrames - Total number of frames to process */
@@ -3080,11 +3075,11 @@ interface ProgressBacktestContract {
  */
 interface ProgressWalkerContract {
     /** walkerName - Name of the walker being executed */
-    walkerName: WalkerName$1;
+    walkerName: WalkerName;
     /** exchangeName - Name of the exchange used in execution */
-    exchangeName: ExchangeName$1;
+    exchangeName: ExchangeName;
     /** frameName - Name of the frame being used */
-    frameName: FrameName$1;
+    frameName: FrameName;
     /** symbol - Trading symbol (e.g., "BTCUSDT") */
     symbol: string;
     /** totalStrategies - Total number of strategies to process */
@@ -3162,11 +3157,11 @@ interface PerformanceContract {
     /** Duration of the operation in milliseconds */
     duration: number;
     /** Strategy name associated with this metric */
-    strategyName: StrategyName$1;
+    strategyName: StrategyName;
     /** Exchange name associated with this metric */
-    exchangeName: ExchangeName$1;
+    exchangeName: ExchangeName;
     /** Frame name associated with this metric (empty string for live mode) */
-    frameName: FrameName$1;
+    frameName: FrameName;
     /** Trading symbol associated with this metric */
     symbol: string;
     /** Whether this metric is from backtest mode (true) or live mode (false) */
@@ -3183,7 +3178,7 @@ interface WalkerContract {
     /** Exchange name */
     exchangeName: ExchangeName;
     /** Frame name */
-    frameName: FrameName$1;
+    frameName: FrameName;
     /** Symbol being tested */
     symbol: string;
     /** Strategy that just completed */
@@ -3250,12 +3245,12 @@ interface PartialProfitContract {
      * Exchange name where this signal is being executed.
      * Identifies which exchange this profit event belongs to.
      */
-    exchangeName: ExchangeName$1;
+    exchangeName: ExchangeName;
     /**
      * Frame name where this signal is being executed.
      * Identifies which frame this profit event belongs to (empty string for live mode).
      */
-    frameName: FrameName$1;
+    frameName: FrameName;
     /**
      * Complete signal row data.
      * Contains all signal information: id, position, priceOpen, priceTakeProfit, priceStopLoss, etc.
@@ -3350,12 +3345,12 @@ interface PartialLossContract {
      * Exchange name where this signal is being executed.
      * Identifies which exchange this loss event belongs to.
      */
-    exchangeName: ExchangeName$1;
+    exchangeName: ExchangeName;
     /**
      * Frame name where this signal is being executed.
      * Identifies which frame this loss event belongs to (empty string for live mode).
      */
-    frameName: FrameName$1;
+    frameName: FrameName;
     /**
      * Complete signal row data.
      * Contains all signal information: id, position, priceOpen, priceTakeProfit, priceStopLoss, etc.
@@ -3559,7 +3554,7 @@ interface PingContract {
      * Exchange name where this scheduled signal is being monitored.
      * Identifies which exchange this ping event belongs to.
      */
-    exchangeName: ExchangeName$1;
+    exchangeName: ExchangeName;
     /**
      * Complete scheduled signal row data.
      * Contains all signal information: id, position, priceOpen, priceTakeProfit, priceStopLoss, etc.
@@ -5156,7 +5151,7 @@ interface MetricStats {
  */
 interface PerformanceStatisticsModel {
     /** Strategy name */
-    strategyName: StrategyName$1;
+    strategyName: StrategyName;
     /** Total number of performance events recorded */
     totalEvents: number;
     /** Total execution time across all metrics (ms) */
@@ -5224,7 +5219,7 @@ interface PartialEvent {
     /** Trading pair symbol */
     symbol: string;
     /** Strategy name */
-    strategyName: StrategyName$1;
+    strategyName: StrategyName;
     /** Signal ID */
     signalId: string;
     /** Position type */
@@ -5275,9 +5270,9 @@ interface RiskEvent {
     /** Strategy name */
     strategyName: StrategyName;
     /** Exchange name */
-    exchangeName: ExchangeName$1;
+    exchangeName: ExchangeName;
     /** Time frame name */
-    frameName: FrameName$1;
+    frameName: FrameName;
     /** Current market price */
     currentPrice: number;
     /** Number of active positions at rejection time */
@@ -5870,7 +5865,7 @@ declare class BacktestMarkdownService {
      * console.log(stats.sharpeRatio, stats.winRate);
      * ```
      */
-    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName$1, frameName: FrameName$1, backtest: boolean) => Promise<BacktestStatisticsModel>;
+    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<BacktestStatisticsModel>;
     /**
      * Generates markdown report with all closed signals for a symbol-strategy pair.
      * Delegates to ReportStorage.generateReport().
@@ -5890,7 +5885,7 @@ declare class BacktestMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName$1, frameName: FrameName$1, backtest: boolean, columns?: Columns$6[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$6[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -5915,7 +5910,7 @@ declare class BacktestMarkdownService {
      * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", true, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName$1, frameName: FrameName$1, backtest: boolean, path?: string, columns?: Columns$6[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$6[]) => Promise<void>;
     /**
      * Clears accumulated signal data from storage.
      * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
@@ -5937,8 +5932,8 @@ declare class BacktestMarkdownService {
     clear: (payload?: {
         symbol: string;
         strategyName: StrategyName;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
     /**
@@ -6407,7 +6402,7 @@ declare class LiveMarkdownService {
      * console.log(stats.sharpeRatio, stats.winRate);
      * ```
      */
-    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName$1, frameName: FrameName$1, backtest: boolean) => Promise<LiveStatisticsModel>;
+    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<LiveStatisticsModel>;
     /**
      * Generates markdown report with all events for a symbol-strategy pair.
      * Delegates to ReportStorage.getReport().
@@ -6427,7 +6422,7 @@ declare class LiveMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName$1, frameName: FrameName$1, backtest: boolean, columns?: Columns$5[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$5[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -6452,7 +6447,7 @@ declare class LiveMarkdownService {
      * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", false, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName$1, frameName: FrameName$1, backtest: boolean, path?: string, columns?: Columns$5[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$5[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
      * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
@@ -6474,8 +6469,8 @@ declare class LiveMarkdownService {
     clear: (payload?: {
         symbol: string;
         strategyName: StrategyName;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
     /**
@@ -6919,7 +6914,7 @@ declare class ScheduleMarkdownService {
      * console.log(stats.cancellationRate, stats.avgWaitTime);
      * ```
      */
-    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName$1, frameName: FrameName$1, backtest: boolean) => Promise<ScheduleStatisticsModel>;
+    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<ScheduleStatisticsModel>;
     /**
      * Generates markdown report with all scheduled events for a symbol-strategy pair.
      * Delegates to ReportStorage.getReport().
@@ -6939,7 +6934,7 @@ declare class ScheduleMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName$1, frameName: FrameName$1, backtest: boolean, columns?: Columns$4[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$4[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -6964,7 +6959,7 @@ declare class ScheduleMarkdownService {
      * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", false, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName$1, frameName: FrameName$1, backtest: boolean, path?: string, columns?: Columns$4[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$4[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
      * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
@@ -6986,8 +6981,8 @@ declare class ScheduleMarkdownService {
     clear: (payload?: {
         symbol: string;
         strategyName: StrategyName;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
     /**
@@ -7044,9 +7039,9 @@ declare class ScheduleUtils {
      * ```
      */
     getData: (symbol: string, context: {
-        strategyName: StrategyName$1;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
     }, backtest?: boolean) => Promise<ScheduleStatisticsModel>;
     /**
      * Generates markdown report with all scheduled events for a symbol-strategy pair.
@@ -7063,9 +7058,9 @@ declare class ScheduleUtils {
      * ```
      */
     getReport: (symbol: string, context: {
-        strategyName: StrategyName$1;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
     }, backtest?: boolean, columns?: Columns$4[]) => Promise<string>;
     /**
      * Saves strategy report to disk.
@@ -7085,9 +7080,9 @@ declare class ScheduleUtils {
      * ```
      */
     dump: (symbol: string, context: {
-        strategyName: StrategyName$1;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
     }, backtest?: boolean, path?: string, columns?: Columns$4[]) => Promise<void>;
 }
 /**
@@ -7195,7 +7190,7 @@ declare class PerformanceMarkdownService {
      *   .sort((a, b) => b.avgDuration - a.avgDuration)[0]);
      * ```
      */
-    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName$1, frameName: FrameName$1, backtest: boolean) => Promise<PerformanceStatisticsModel>;
+    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<PerformanceStatisticsModel>;
     /**
      * Generates markdown report with performance analysis.
      *
@@ -7213,7 +7208,7 @@ declare class PerformanceMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName$1, frameName: FrameName$1, backtest: boolean, columns?: Columns$3[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$3[]) => Promise<string>;
     /**
      * Saves performance report to disk.
      *
@@ -7234,7 +7229,7 @@ declare class PerformanceMarkdownService {
      * await performanceService.dump("BTCUSDT", "my-strategy", "binance", "1h", false, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName$1, frameName: FrameName$1, backtest: boolean, path?: string, columns?: Columns$3[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$3[]) => Promise<void>;
     /**
      * Clears accumulated performance data from storage.
      *
@@ -7243,8 +7238,8 @@ declare class PerformanceMarkdownService {
     clear: (payload?: {
         symbol: string;
         strategyName: StrategyName;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
     /**
@@ -7316,9 +7311,9 @@ declare class Performance {
      * ```
      */
     static getData(symbol: string, context: {
-        strategyName: StrategyName$1;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
     }, backtest?: boolean): Promise<PerformanceStatisticsModel>;
     /**
      * Generates markdown report with performance analysis.
@@ -7344,9 +7339,9 @@ declare class Performance {
      * ```
      */
     static getReport(symbol: string, context: {
-        strategyName: StrategyName$1;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
     }, backtest?: boolean, columns?: Columns$3[]): Promise<string>;
     /**
      * Saves performance report to disk.
@@ -7369,9 +7364,9 @@ declare class Performance {
      * ```
      */
     static dump(symbol: string, context: {
-        strategyName: StrategyName$1;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
     }, backtest?: boolean, path?: string, columns?: Columns$3[]): Promise<void>;
 }
 
@@ -7494,8 +7489,8 @@ declare class WalkerMarkdownService {
      * ```
      */
     getData: (walkerName: WalkerName, symbol: string, metric: WalkerMetric, context: {
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
     }) => Promise<WalkerCompleteContract>;
     /**
      * Generates markdown report with all strategy results for a walker.
@@ -7517,8 +7512,8 @@ declare class WalkerMarkdownService {
      * ```
      */
     getReport: (walkerName: WalkerName, symbol: string, metric: WalkerMetric, context: {
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
     }, strategyColumns?: StrategyColumn[], pnlColumns?: PnlColumn[]) => Promise<string>;
     /**
      * Saves walker report to disk.
@@ -7545,8 +7540,8 @@ declare class WalkerMarkdownService {
      * ```
      */
     dump: (walkerName: WalkerName, symbol: string, metric: WalkerMetric, context: {
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
     }, path?: string, strategyColumns?: StrategyColumn[], pnlColumns?: PnlColumn[]) => Promise<void>;
     /**
      * Clears accumulated result data from storage.
@@ -7852,7 +7847,7 @@ declare class HeatMarkdownService {
      * });
      * ```
      */
-    getData: (exchangeName: ExchangeName$1, frameName: FrameName$1, backtest: boolean) => Promise<HeatmapStatisticsModel>;
+    getData: (exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<HeatmapStatisticsModel>;
     /**
      * Generates markdown report with portfolio heatmap table.
      *
@@ -7880,7 +7875,7 @@ declare class HeatMarkdownService {
      * // ...
      * ```
      */
-    getReport: (strategyName: StrategyName, exchangeName: ExchangeName$1, frameName: FrameName$1, backtest: boolean, columns?: Columns$2[]) => Promise<string>;
+    getReport: (strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$2[]) => Promise<string>;
     /**
      * Saves heatmap report to disk.
      *
@@ -7905,7 +7900,7 @@ declare class HeatMarkdownService {
      * await service.dump("my-strategy", "binance", "frame1", true, "./reports");
      * ```
      */
-    dump: (strategyName: StrategyName, exchangeName: ExchangeName$1, frameName: FrameName$1, backtest: boolean, path?: string, columns?: Columns$2[]) => Promise<void>;
+    dump: (strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$2[]) => Promise<void>;
     /**
      * Clears accumulated heatmap data from storage.
      * If payload is provided, clears only that exchangeName+frameName+backtest combination's data.
@@ -7925,8 +7920,8 @@ declare class HeatMarkdownService {
      * ```
      */
     clear: (payload?: {
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
     /**
@@ -8008,9 +8003,9 @@ declare class HeatUtils {
      * ```
      */
     getData: (context: {
-        strategyName: StrategyName$1;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
     }, backtest?: boolean) => Promise<HeatmapStatisticsModel>;
     /**
      * Generates markdown report with portfolio heatmap table for a strategy.
@@ -8044,9 +8039,9 @@ declare class HeatUtils {
      * ```
      */
     getReport: (context: {
-        strategyName: StrategyName$1;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
     }, backtest?: boolean, columns?: Columns$2[]) => Promise<string>;
     /**
      * Saves heatmap report to disk for a strategy.
@@ -8077,9 +8072,9 @@ declare class HeatUtils {
      * ```
      */
     dump: (context: {
-        strategyName: StrategyName$1;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
     }, backtest?: boolean, path?: string, columns?: Columns$2[]) => Promise<void>;
 }
 /**
@@ -8385,7 +8380,7 @@ declare class PartialMarkdownService {
      * console.log(stats.totalProfit, stats.totalLoss);
      * ```
      */
-    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName$1, frameName: FrameName$1, backtest: boolean) => Promise<PartialStatisticsModel>;
+    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<PartialStatisticsModel>;
     /**
      * Generates markdown report with all partial events for a symbol-strategy pair.
      * Delegates to ReportStorage.getReport().
@@ -8405,7 +8400,7 @@ declare class PartialMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName$1, frameName: FrameName$1, backtest: boolean, columns?: Columns$1[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$1[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -8430,7 +8425,7 @@ declare class PartialMarkdownService {
      * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", false, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName$1, frameName: FrameName$1, backtest: boolean, path?: string, columns?: Columns$1[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$1[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
      * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
@@ -8452,8 +8447,8 @@ declare class PartialMarkdownService {
     clear: (payload?: {
         symbol: string;
         strategyName: StrategyName;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
     /**
@@ -8531,9 +8526,9 @@ declare class PartialUtils {
      * ```
      */
     getData: (symbol: string, context: {
-        strategyName: StrategyName$1;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
     }, backtest?: boolean) => Promise<PartialStatisticsModel>;
     /**
      * Generates markdown report with all partial profit/loss events for a symbol-strategy pair.
@@ -8575,9 +8570,9 @@ declare class PartialUtils {
      * ```
      */
     getReport: (symbol: string, context: {
-        strategyName: StrategyName$1;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
     }, backtest?: boolean, columns?: Columns$1[]) => Promise<string>;
     /**
      * Generates and saves markdown report to file.
@@ -8612,9 +8607,9 @@ declare class PartialUtils {
      * ```
      */
     dump: (symbol: string, context: {
-        strategyName: StrategyName$1;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
     }, backtest?: boolean, path?: string, columns?: Columns$1[]) => Promise<void>;
 }
 /**
@@ -8804,7 +8799,7 @@ declare class RiskMarkdownService {
      * console.log(stats.totalRejections, stats.bySymbol);
      * ```
      */
-    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName$1, frameName: FrameName$1, backtest: boolean) => Promise<RiskStatisticsModel>;
+    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<RiskStatisticsModel>;
     /**
      * Generates markdown report with all risk rejection events for a symbol-strategy pair.
      * Delegates to ReportStorage.getReport().
@@ -8824,7 +8819,7 @@ declare class RiskMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName$1, frameName: FrameName$1, backtest: boolean, columns?: Columns[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -8849,7 +8844,7 @@ declare class RiskMarkdownService {
      * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", false, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName$1, frameName: FrameName$1, backtest: boolean, path?: string, columns?: Columns[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
      * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
@@ -8871,8 +8866,8 @@ declare class RiskMarkdownService {
     clear: (payload?: {
         symbol: string;
         strategyName: StrategyName;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
     /**
@@ -8950,9 +8945,9 @@ declare class RiskUtils {
      * ```
      */
     getData: (symbol: string, context: {
-        strategyName: StrategyName$1;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
     }, backtest?: boolean) => Promise<RiskStatisticsModel>;
     /**
      * Generates markdown report with all risk rejection events for a symbol-strategy pair.
@@ -8996,9 +8991,9 @@ declare class RiskUtils {
      * ```
      */
     getReport: (symbol: string, context: {
-        strategyName: StrategyName$1;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
     }, backtest?: boolean, columns?: Columns[]) => Promise<string>;
     /**
      * Generates and saves markdown report to file.
@@ -9033,9 +9028,9 @@ declare class RiskUtils {
      * ```
      */
     dump: (symbol: string, context: {
-        strategyName: StrategyName$1;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
     }, backtest?: boolean, path?: string, columns?: Columns[]) => Promise<void>;
 }
 /**
@@ -9866,18 +9861,18 @@ declare class ClientRisk implements IRisk {
      * Called by StrategyConnectionService after signal is opened.
      */
     addSignal(symbol: string, context: {
-        strategyName: StrategyName$1;
+        strategyName: StrategyName;
         riskName: RiskName;
-        exchangeName: ExchangeName$1;
+        exchangeName: ExchangeName;
     }): Promise<void>;
     /**
      * Removes a closed signal.
      * Called by StrategyConnectionService when signal is closed.
      */
     removeSignal(symbol: string, context: {
-        strategyName: StrategyName$1;
+        strategyName: StrategyName;
         riskName: RiskName;
-        exchangeName: ExchangeName$1;
+        exchangeName: ExchangeName;
     }): Promise<void>;
     /**
      * Checks if a signal should be allowed based on risk limits.
@@ -9950,7 +9945,7 @@ declare class RiskConnectionService implements TRisk$1 {
      * @param backtest - True if backtest mode, false if live mode
      * @returns Configured ClientRisk instance
      */
-    getRisk: ((riskName: RiskName, exchangeName: ExchangeName$1, frameName: FrameName$1, backtest: boolean) => ClientRisk) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, ClientRisk>;
+    getRisk: ((riskName: RiskName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ClientRisk) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, ClientRisk>;
     /**
      * Checks if a signal should be allowed based on risk limits.
      *
@@ -9964,8 +9959,8 @@ declare class RiskConnectionService implements TRisk$1 {
      */
     checkSignal: (params: IRiskCheckArgs, payload: {
         riskName: RiskName;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
         backtest: boolean;
     }) => Promise<boolean>;
     /**
@@ -9976,10 +9971,10 @@ declare class RiskConnectionService implements TRisk$1 {
      * @param payload - Payload information (strategyName, riskName, exchangeName, frameName, backtest)
      */
     addSignal: (symbol: string, payload: {
-        strategyName: StrategyName$1;
+        strategyName: StrategyName;
         riskName: RiskName;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
     /**
@@ -9990,10 +9985,10 @@ declare class RiskConnectionService implements TRisk$1 {
      * @param payload - Payload information (strategyName, riskName, exchangeName, frameName, backtest)
      */
     removeSignal: (symbol: string, payload: {
-        strategyName: StrategyName$1;
+        strategyName: StrategyName;
         riskName: RiskName;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
     /**
@@ -10003,8 +9998,8 @@ declare class RiskConnectionService implements TRisk$1 {
      */
     clear: (payload?: {
         riskName: RiskName;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
 }
@@ -10174,7 +10169,7 @@ declare class StrategyConnectionService implements TStrategy$1 {
     getPendingSignal: (backtest: boolean, symbol: string, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-        frameName: FrameName$1;
+        frameName: FrameName;
     }) => Promise<ISignalRow | null>;
     /**
      * Retrieves the currently active scheduled signal for the strategy.
@@ -10190,7 +10185,7 @@ declare class StrategyConnectionService implements TStrategy$1 {
     getScheduledSignal: (backtest: boolean, symbol: string, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-        frameName: FrameName$1;
+        frameName: FrameName;
     }) => Promise<IScheduledSignalRow | null>;
     /**
      * Retrieves the stopped state of the strategy.
@@ -10206,7 +10201,7 @@ declare class StrategyConnectionService implements TStrategy$1 {
     getStopped: (backtest: boolean, symbol: string, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-        frameName: FrameName$1;
+        frameName: FrameName;
     }) => Promise<boolean>;
     /**
      * Executes live trading tick for current strategy.
@@ -10221,7 +10216,7 @@ declare class StrategyConnectionService implements TStrategy$1 {
     tick: (symbol: string, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-        frameName: FrameName$1;
+        frameName: FrameName;
     }) => Promise<IStrategyTickResult>;
     /**
      * Executes backtest for current strategy with provided candles.
@@ -10237,7 +10232,7 @@ declare class StrategyConnectionService implements TStrategy$1 {
     backtest: (symbol: string, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-        frameName: FrameName$1;
+        frameName: FrameName;
     }, candles: ICandleData[]) => Promise<IStrategyBacktestResult>;
     /**
      * Stops the specified strategy from generating new signals.
@@ -10253,7 +10248,7 @@ declare class StrategyConnectionService implements TStrategy$1 {
     stop: (backtest: boolean, symbol: string, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-        frameName: FrameName$1;
+        frameName: FrameName;
     }) => Promise<void>;
     /**
      * Clears the memoized ClientStrategy instance from cache.
@@ -10267,7 +10262,7 @@ declare class StrategyConnectionService implements TStrategy$1 {
         symbol: string;
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-        frameName: FrameName$1;
+        frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
     /**
@@ -10288,7 +10283,7 @@ declare class StrategyConnectionService implements TStrategy$1 {
     cancel: (backtest: boolean, symbol: string, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-        frameName: FrameName$1;
+        frameName: FrameName;
     }, cancelId?: string) => Promise<void>;
     /**
      * Executes partial close at profit level (moving toward TP).
@@ -10320,7 +10315,7 @@ declare class StrategyConnectionService implements TStrategy$1 {
     partialProfit: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-        frameName: FrameName$1;
+        frameName: FrameName;
     }) => Promise<void>;
     /**
      * Executes partial close at loss level (moving toward SL).
@@ -10352,7 +10347,7 @@ declare class StrategyConnectionService implements TStrategy$1 {
     partialLoss: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-        frameName: FrameName$1;
+        frameName: FrameName;
     }) => Promise<void>;
 }
 
@@ -10645,7 +10640,7 @@ declare class StrategyCoreService implements TStrategy {
     getPendingSignal: (backtest: boolean, symbol: string, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-        frameName: FrameName$1;
+        frameName: FrameName;
     }) => Promise<ISignalRow | null>;
     /**
      * Retrieves the currently active scheduled signal for the symbol.
@@ -10660,7 +10655,7 @@ declare class StrategyCoreService implements TStrategy {
     getScheduledSignal: (backtest: boolean, symbol: string, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-        frameName: FrameName$1;
+        frameName: FrameName;
     }) => Promise<IScheduledSignalRow | null>;
     /**
      * Checks if the strategy has been stopped.
@@ -10676,7 +10671,7 @@ declare class StrategyCoreService implements TStrategy {
     getStopped: (backtest: boolean, symbol: string, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-        frameName: FrameName$1;
+        frameName: FrameName;
     }) => Promise<boolean>;
     /**
      * Checks signal status at a specific timestamp.
@@ -10693,7 +10688,7 @@ declare class StrategyCoreService implements TStrategy {
     tick: (symbol: string, when: Date, backtest: boolean, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-        frameName: FrameName$1;
+        frameName: FrameName;
     }) => Promise<IStrategyTickResult>;
     /**
      * Runs fast backtest against candle array.
@@ -10711,7 +10706,7 @@ declare class StrategyCoreService implements TStrategy {
     backtest: (symbol: string, candles: ICandleData[], when: Date, backtest: boolean, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-        frameName: FrameName$1;
+        frameName: FrameName;
     }) => Promise<IStrategyBacktestResult>;
     /**
      * Stops the strategy from generating new signals.
@@ -10727,7 +10722,7 @@ declare class StrategyCoreService implements TStrategy {
     stop: (backtest: boolean, symbol: string, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-        frameName: FrameName$1;
+        frameName: FrameName;
     }) => Promise<void>;
     /**
      * Cancels the scheduled signal without stopping the strategy.
@@ -10745,7 +10740,7 @@ declare class StrategyCoreService implements TStrategy {
     cancel: (backtest: boolean, symbol: string, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-        frameName: FrameName$1;
+        frameName: FrameName;
     }, cancelId?: string) => Promise<void>;
     /**
      * Clears the memoized ClientStrategy instance from cache.
@@ -10759,7 +10754,7 @@ declare class StrategyCoreService implements TStrategy {
         symbol: string;
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-        frameName: FrameName$1;
+        frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
     /**
@@ -10792,7 +10787,7 @@ declare class StrategyCoreService implements TStrategy {
     partialProfit: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-        frameName: FrameName$1;
+        frameName: FrameName;
     }) => Promise<void>;
     /**
      * Executes partial close at loss level (moving toward SL).
@@ -10824,7 +10819,7 @@ declare class StrategyCoreService implements TStrategy {
     partialLoss: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-        frameName: FrameName$1;
+        frameName: FrameName;
     }) => Promise<void>;
 }
 
@@ -10920,8 +10915,8 @@ declare class RiskGlobalService implements TRisk {
      */
     checkSignal: (params: IRiskCheckArgs, payload: {
         riskName: RiskName;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
         backtest: boolean;
     }) => Promise<boolean>;
     /**
@@ -10931,10 +10926,10 @@ declare class RiskGlobalService implements TRisk {
      * @param payload - Payload information (strategyName, riskName, exchangeName, frameName, backtest)
      */
     addSignal: (symbol: string, payload: {
-        strategyName: StrategyName$1;
+        strategyName: StrategyName;
         riskName: RiskName;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
     /**
@@ -10944,10 +10939,10 @@ declare class RiskGlobalService implements TRisk {
      * @param payload - Payload information (strategyName, riskName, exchangeName, frameName, backtest)
      */
     removeSignal: (symbol: string, payload: {
-        strategyName: StrategyName$1;
+        strategyName: StrategyName;
         riskName: RiskName;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
     /**
@@ -10958,8 +10953,8 @@ declare class RiskGlobalService implements TRisk {
      */
     clear: (payload?: {
         riskName: RiskName;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
 }
@@ -10987,9 +10982,9 @@ declare class WalkerCommandService {
      * @param context - Walker context with strategies and metric
      */
     run: (symbol: string, context: {
-        walkerName: WalkerName$1;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        walkerName: WalkerName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
     }) => AsyncGenerator<WalkerContract, any, any>;
 }
 
@@ -11358,8 +11353,8 @@ declare class WalkerLogicPrivateService {
      * ```
      */
     run(symbol: string, strategies: StrategyName[], metric: WalkerMetric, context: {
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
         walkerName: WalkerName;
     }): AsyncGenerator<WalkerContract>;
 }
@@ -11402,10 +11397,10 @@ declare class BacktestLogicPublicService {
      * @returns Async generator yielding closed signals with PNL
      */
     run: (symbol: string, context: {
-        strategyName: StrategyName$1;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
-    }) => AsyncGenerator<src_interfaces_Strategy_interface.IStrategyBacktestResult, void, unknown>;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => AsyncGenerator<IStrategyBacktestResult, void, unknown>;
 }
 
 /**
@@ -11454,9 +11449,9 @@ declare class LiveLogicPublicService {
      * @returns Infinite async generator yielding opened and closed signals
      */
     run: (symbol: string, context: {
-        strategyName: StrategyName$1;
-        exchangeName: ExchangeName$1;
-    }) => AsyncGenerator<src_interfaces_Strategy_interface.IStrategyTickResultOpened | src_interfaces_Strategy_interface.IStrategyTickResultClosed, void, unknown>;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+    }) => AsyncGenerator<IStrategyTickResultOpened | IStrategyTickResultClosed, void, unknown>;
 }
 
 /**
@@ -11493,9 +11488,9 @@ declare class WalkerLogicPublicService {
      * @param context - Walker context with strategies and metric
      */
     run: (symbol: string, context: {
-        walkerName: WalkerName$1;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
+        walkerName: WalkerName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
     }) => AsyncGenerator<WalkerContract, any, any>;
 }
 
@@ -11522,9 +11517,9 @@ declare class LiveCommandService {
      * @returns Infinite async generator yielding opened and closed signals
      */
     run: (symbol: string, context: {
-        strategyName: StrategyName$1;
-        exchangeName: ExchangeName$1;
-    }) => AsyncGenerator<src_interfaces_Strategy_interface.IStrategyTickResultOpened | src_interfaces_Strategy_interface.IStrategyTickResultClosed, void, unknown>;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+    }) => AsyncGenerator<IStrategyTickResultOpened | IStrategyTickResultClosed, void, unknown>;
 }
 
 /**
@@ -11549,10 +11544,10 @@ declare class BacktestCommandService {
      * @returns Async generator yielding closed signals with PNL
      */
     run: (symbol: string, context: {
-        strategyName: StrategyName$1;
-        exchangeName: ExchangeName$1;
-        frameName: FrameName$1;
-    }) => AsyncGenerator<src_interfaces_Strategy_interface.IStrategyBacktestResult, void, unknown>;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => AsyncGenerator<IStrategyBacktestResult, void, unknown>;
 }
 
 /**
@@ -11955,7 +11950,7 @@ declare class OptimizerTemplateService implements IOptimizerTemplate {
      * @param strategies - Array of strategy names to compare
      * @returns Generated addWalker() call
      */
-    getWalkerTemplate: (walkerName: WalkerName$1, exchangeName: ExchangeName, frameName: FrameName$1, strategies: string[]) => Promise<string>;
+    getWalkerTemplate: (walkerName: WalkerName, exchangeName: ExchangeName, frameName: FrameName, strategies: string[]) => Promise<string>;
     /**
      * Generates Strategy configuration with LLM integration.
      * Includes multi-timeframe analysis and signal generation.
@@ -11965,7 +11960,7 @@ declare class OptimizerTemplateService implements IOptimizerTemplate {
      * @param prompt - Strategy logic from getPrompt()
      * @returns Generated addStrategy() call with getSignal() function
      */
-    getStrategyTemplate: (strategyName: StrategyName$1, interval: CandleInterval, prompt: string) => Promise<string>;
+    getStrategyTemplate: (strategyName: StrategyName, interval: CandleInterval, prompt: string) => Promise<string>;
     /**
      * Generates Exchange configuration code.
      * Uses CCXT Binance with standard formatters.
@@ -11985,7 +11980,7 @@ declare class OptimizerTemplateService implements IOptimizerTemplate {
      * @param endDate - Frame end date
      * @returns Generated addFrame() call
      */
-    getFrameTemplate: (symbol: string, frameName: FrameName$1, interval: CandleInterval, startDate: Date, endDate: Date) => Promise<string>;
+    getFrameTemplate: (symbol: string, frameName: FrameName, interval: CandleInterval, startDate: Date, endDate: Date) => Promise<string>;
     /**
      * Generates launcher code to run Walker with event listeners.
      * Includes progress tracking and completion handlers.
@@ -11994,7 +11989,7 @@ declare class OptimizerTemplateService implements IOptimizerTemplate {
      * @param walkerName - Walker name to launch
      * @returns Generated Walker.background() call with listeners
      */
-    getLauncherTemplate: (symbol: string, walkerName: WalkerName$1) => Promise<string>;
+    getLauncherTemplate: (symbol: string, walkerName: WalkerName) => Promise<string>;
     /**
      * Generates dumpJson() helper function for debug output.
      * Saves LLM conversations and results to ./dump/strategy/{resultId}/
