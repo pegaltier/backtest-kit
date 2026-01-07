@@ -14,11 +14,14 @@ import {
   IRiskRejectionResult,
   RiskRejection,
   IRiskValidationFn,
+  RiskName,
 } from "../interfaces/Risk.interface";
 import { PersistRiskAdapter } from "../classes/Persist";
 import backtest from "../lib";
 import { validationSubject } from "../config/emitters";
 import { get } from "../utils/get";
+import { ExchangeName } from "src/interfaces/Exchange.interface";
+import { StrategyName } from "src/interfaces/Strategy.interface";
 
 /** Type for active position map */
 type RiskMap = Map<string, IRiskActivePosition>;
@@ -27,7 +30,7 @@ type RiskMap = Map<string, IRiskActivePosition>;
 const POSITION_NEED_FETCH = Symbol("risk-need-fetch");
 
 /** Key generator for active position map */
-const CREATE_NAME_FN = (strategyName: string, exchangeName: string, symbol: string) =>
+const CREATE_NAME_FN = (strategyName: StrategyName, exchangeName: ExchangeName, symbol: string) =>
   `${strategyName}_${exchangeName}_${symbol}` as const;
 
 /** Wrapper to execute risk validation function with error handling */
@@ -127,7 +130,7 @@ export class ClientRisk implements IRisk {
    */
   public async addSignal(
     symbol: string,
-    context: { strategyName: string; riskName: string; exchangeName: string; }
+    context: { strategyName: StrategyName; riskName: RiskName; exchangeName: ExchangeName; }
   ) {
     this.params.logger.debug("ClientRisk addSignal", {
       symbol,
@@ -156,7 +159,7 @@ export class ClientRisk implements IRisk {
    */
   public async removeSignal(
     symbol: string,
-    context: { strategyName: string; riskName: string; exchangeName: string; }
+    context: { strategyName: StrategyName; riskName: RiskName; exchangeName: ExchangeName; }
   ) {
     this.params.logger.debug("ClientRisk removeSignal", {
       symbol,

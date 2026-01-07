@@ -2,6 +2,7 @@ import { WalkerName, WalkerMetric } from "../interfaces/Walker.interface";
 import { StrategyName } from "../interfaces/Strategy.interface";
 import { ExchangeName } from "../interfaces/Exchange.interface";
 import { BacktestStatisticsModel } from "../model/BacktestStatistics.model";
+import { FrameName } from "src/interfaces/Frame.interface";
 
 /**
  * Contract for walker progress events during strategy comparison.
@@ -15,7 +16,7 @@ export interface WalkerContract {
   exchangeName: ExchangeName;
 
   /** Frame name */
-  frameName: string;
+  frameName: FrameName;
 
   /** Symbol being tested */
   symbol: string;

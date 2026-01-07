@@ -122,7 +122,7 @@ export interface IStrategyParams extends IStrategySchema {
   /** Method context service (strategyName, exchangeName, frameName) */
   method: TMethodContextService;
   /** System callback for ping events (emits to pingSubject) */
-  onPing: (symbol: string, strategyName: string, exchangeName: string, data: IScheduledSignalRow, backtest: boolean, timestamp: number) => Promise<void>;
+  onPing: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, data: IScheduledSignalRow, backtest: boolean, timestamp: number) => Promise<void>;
 }
 
 /**

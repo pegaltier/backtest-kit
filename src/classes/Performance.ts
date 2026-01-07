@@ -1,6 +1,9 @@
 import bt from "../lib";
 import { PerformanceStatisticsModel } from "../model/PerformanceStatistics.model";
 import { Columns } from "../lib/services/markdown/PerformanceMarkdownService";
+import { StrategyName } from "src/interfaces/Strategy.interface";
+import { ExchangeName } from "src/interfaces/Exchange.interface";
+import { FrameName } from "src/interfaces/Frame.interface";
 
 const PERFORMANCE_METHOD_NAME_GET_DATA = "Performance.getData";
 const PERFORMANCE_METHOD_NAME_GET_REPORT = "Performance.getReport";
@@ -70,9 +73,9 @@ export class Performance {
   public static async getData(
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     },
     backtest = false,
   ): Promise<PerformanceStatisticsModel> {
@@ -113,9 +116,9 @@ export class Performance {
   public static async getReport(
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     },
     backtest = false,
     columns?: Columns[]
@@ -154,9 +157,9 @@ export class Performance {
   public static async dump(
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     },
     backtest = false,
     path = "./dump/performance",

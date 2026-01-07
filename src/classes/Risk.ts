@@ -1,7 +1,10 @@
 import { not } from "functools-kit";
-import { IRisk, IRiskCheckArgs } from "../interfaces/Risk.interface";
+import { IRisk, IRiskCheckArgs, RiskName } from "../interfaces/Risk.interface";
 import bt from "../lib";
 import { Columns } from "../lib/services/markdown/RiskMarkdownService";
+import { StrategyName } from "src/interfaces/Strategy.interface";
+import { ExchangeName } from "src/interfaces/Exchange.interface";
+import { FrameName } from "src/interfaces/Frame.interface";
 
 const RISK_METHOD_NAME_GET_DATA = "RiskUtils.getData";
 const RISK_METHOD_NAME_GET_REPORT = "RiskUtils.getReport";
@@ -81,7 +84,7 @@ export class MergeRisk implements IRisk {
    */
   public async addSignal(
     symbol: string,
-    context: { strategyName: string; riskName: string; exchangeName: string; frameName: string }
+    context: { strategyName: StrategyName; riskName: RiskName; exchangeName: ExchangeName; frameName: FrameName }
   ) {
     bt.loggerService.info("MergeRisk addSignal", {
       symbol,
@@ -104,7 +107,7 @@ export class MergeRisk implements IRisk {
    */
   public async removeSignal(
     symbol: string,
-    context: { strategyName: string; riskName: string; exchangeName: string; frameName: string }
+    context: { strategyName: StrategyName; riskName: RiskName; exchangeName: ExchangeName; frameName: FrameName }
   ) {
     bt.loggerService.info("MergeRisk removeSignal", {
       symbol,
@@ -181,9 +184,9 @@ export class RiskUtils {
   public getData = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     },
     backtest = false
   ) => {
@@ -254,9 +257,9 @@ export class RiskUtils {
   public getReport = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     },
     backtest = false,
     columns?: Columns[]
@@ -332,9 +335,9 @@ export class RiskUtils {
   public dump = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     },
     backtest = false,
     path?: string,

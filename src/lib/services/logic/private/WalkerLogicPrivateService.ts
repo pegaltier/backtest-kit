@@ -1,7 +1,7 @@
 import { inject } from "../../../core/di";
 import LoggerService from "../../base/LoggerService";
 import TYPES from "../../../core/types";
-import { WalkerMetric } from "../../../../interfaces/Walker.interface";
+import { WalkerMetric, WalkerName } from "../../../../interfaces/Walker.interface";
 import { StrategyName } from "../../../../interfaces/Strategy.interface";
 import BacktestLogicPublicService from "../public/BacktestLogicPublicService";
 import BacktestMarkdownService from "../../markdown/BacktestMarkdownService";
@@ -15,6 +15,8 @@ import {
   errorEmitter,
 } from "../../../../config/emitters";
 import { errorData, getErrorMessage, resolveDocuments } from "functools-kit";
+import { ExchangeName } from "src/interfaces/Exchange.interface";
+import { FrameName } from "src/interfaces/Frame.interface";
 
 /**
  * Private service for walker orchestration (strategy comparison).
@@ -70,9 +72,9 @@ export class WalkerLogicPrivateService {
     strategies: StrategyName[],
     metric: WalkerMetric,
     context: {
-      exchangeName: string;
-      frameName: string;
-      walkerName: string;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
+      walkerName: WalkerName;
     }
   ): AsyncGenerator<WalkerContract> {
     this.loggerService.log("walkerLogicPrivateService run", {

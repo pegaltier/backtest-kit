@@ -14,6 +14,8 @@ import { IHeatmapRow } from "../../../interfaces/Heatmap.interface";
 import { HeatmapStatisticsModel } from "../../../model/HeatmapStatistics.model";
 import { ColumnModel } from "../../../model/Column.model";
 import { COLUMN_CONFIG } from "../../../config/columns";
+import { ExchangeName } from "src/interfaces/Exchange.interface";
+import { FrameName } from "src/interfaces/Frame.interface";
 
 /**
  * Type alias for column configuration used in heatmap markdown reports.
@@ -57,8 +59,8 @@ export type Columns = ColumnModel<IHeatmapRow>;
  * @returns Unique string key for memoization
  */
 const CREATE_KEY_FN = (
-  exchangeName: string,
-  frameName: string,
+  exchangeName: ExchangeName,
+  frameName: FrameName,
   backtest: boolean
 ): string => {
   const parts = [exchangeName];
@@ -458,7 +460,7 @@ export class HeatMarkdownService {
    * Memoized function to get or create HeatmapStorage for exchange, frame and backtest mode.
    * Each exchangeName + frameName + backtest mode combination gets its own isolated heatmap storage instance.
    */
-  private getStorage = memoize<(exchangeName: string, frameName: string, backtest: boolean) => HeatmapStorage>(
+  private getStorage = memoize<(exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => HeatmapStorage>(
     ([exchangeName, frameName, backtest]) => CREATE_KEY_FN(exchangeName, frameName, backtest),
     () => new HeatmapStorage()
   );
@@ -506,8 +508,8 @@ export class HeatMarkdownService {
    * ```
    */
   public getData = async (
-    exchangeName: string,
-    frameName: string,
+    exchangeName: ExchangeName,
+    frameName: FrameName,
     backtest: boolean
   ): Promise<HeatmapStatisticsModel> => {
     this.loggerService.log(HEATMAP_METHOD_NAME_GET_DATA, {
@@ -548,8 +550,8 @@ export class HeatMarkdownService {
    */
   public getReport = async (
     strategyName: StrategyName,
-    exchangeName: string,
-    frameName: string,
+    exchangeName: ExchangeName,
+    frameName: FrameName,
     backtest: boolean,
     columns: Columns[] = COLUMN_CONFIG.heat_columns
   ): Promise<string> => {
@@ -589,8 +591,8 @@ export class HeatMarkdownService {
    */
   public dump = async (
     strategyName: StrategyName,
-    exchangeName: string,
-    frameName: string,
+    exchangeName: ExchangeName,
+    frameName: FrameName,
     backtest: boolean,
     path = "./dump/heatmap",
     columns: Columns[] = COLUMN_CONFIG.heat_columns
@@ -624,7 +626,7 @@ export class HeatMarkdownService {
    * await service.clear();
    * ```
    */
-  public clear = async (payload?: { exchangeName: string; frameName: string; backtest: boolean }) => {
+  public clear = async (payload?: { exchangeName: ExchangeName; frameName: FrameName; backtest: boolean }) => {
     this.loggerService.log(HEATMAP_METHOD_NAME_CLEAR, {
       payload,
     });

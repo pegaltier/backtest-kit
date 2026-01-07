@@ -1,5 +1,7 @@
+import { ExchangeName } from "./Exchange.interface";
+import { FrameName } from "./Frame.interface";
 import { ILogger } from "./Logger.interface";
-import { ISignalRow } from "./Strategy.interface";
+import { ISignalRow, StrategyName } from "./Strategy.interface";
 
 /**
  * Profit or loss level milestone in percentage points.
@@ -94,9 +96,9 @@ export interface IPartialParams {
    */
   onProfit: (
     symbol: string,
-    strategyName: string,
-    exchangeName: string,
-    frameName: string,
+    strategyName: StrategyName,
+    exchangeName: ExchangeName,
+    frameName: FrameName,
     data: ISignalRow,
     currentPrice: number,
     level: PartialLevel,
@@ -120,9 +122,9 @@ export interface IPartialParams {
    */
   onLoss: (
     symbol: string,
-    strategyName: string,
-    exchangeName: string,
-    frameName: string,
+    strategyName: StrategyName,
+    exchangeName: ExchangeName,
+    frameName: FrameName,
     data: ISignalRow,
     currentPrice: number,
     level: PartialLevel,

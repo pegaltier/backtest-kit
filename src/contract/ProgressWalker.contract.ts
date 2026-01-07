@@ -1,3 +1,7 @@
+import { ExchangeName } from "src/interfaces/Exchange.interface";
+import { FrameName } from "src/interfaces/Frame.interface";
+import { WalkerName } from "src/interfaces/Walker.interface";
+
 /**
  * Contract for walker progress events.
  *
@@ -16,11 +20,11 @@
  */
 export interface ProgressWalkerContract {
     /** walkerName - Name of the walker being executed */
-    walkerName: string;
+    walkerName: WalkerName;
     /** exchangeName - Name of the exchange used in execution */
-    exchangeName: string;
+    exchangeName: ExchangeName;
     /** frameName - Name of the frame being used */
-    frameName: string;
+    frameName: FrameName;
     /** symbol - Trading symbol (e.g., "BTCUSDT") */
     symbol: string;
     /** totalStrategies - Total number of strategies to process */

@@ -5,6 +5,9 @@ import RiskConnectionService from "../connection/RiskConnectionService";
 import { IRisk, IRiskCheckArgs, RiskName } from "../../../interfaces/Risk.interface";
 import { memoize } from "functools-kit";
 import RiskValidationService from "../validation/RiskValidationService";
+import { ExchangeName } from "src/interfaces/Exchange.interface";
+import { FrameName } from "src/interfaces/Frame.interface";
+import { StrategyName } from "src/interfaces/Strategy.interface";
 
 /**
  * Type definition for risk methods.
@@ -39,7 +42,7 @@ export class RiskGlobalService implements TRisk {
    */
   private validate = memoize(
     ([payload]) => `${payload.riskName}:${payload.exchangeName}:${payload.frameName}`,
-    async (payload: { riskName: RiskName; exchangeName: string; frameName: string }) => {
+    async (payload: { riskName: RiskName; exchangeName: ExchangeName; frameName: FrameName }) => {
       this.loggerService.log("riskGlobalService validate", {
         payload,
       });
@@ -59,7 +62,7 @@ export class RiskGlobalService implements TRisk {
    */
   public checkSignal = async (
     params: IRiskCheckArgs,
-    payload: { riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
+    payload: { riskName: RiskName; exchangeName: ExchangeName; frameName: FrameName; backtest: boolean }
   ) => {
     this.loggerService.log("riskGlobalService checkSignal", {
       symbol: params.symbol,
@@ -77,7 +80,7 @@ export class RiskGlobalService implements TRisk {
    */
   public addSignal = async (
     symbol: string,
-    payload: { strategyName: string; riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
+    payload: { strategyName: StrategyName; riskName: RiskName; exchangeName: ExchangeName; frameName: FrameName; backtest: boolean }
   ) => {
     this.loggerService.log("riskGlobalService addSignal", {
       symbol,
@@ -95,7 +98,7 @@ export class RiskGlobalService implements TRisk {
    */
   public removeSignal = async (
     symbol: string,
-    payload: { strategyName: string; riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
+    payload: { strategyName: StrategyName; riskName: RiskName; exchangeName: ExchangeName; frameName: FrameName; backtest: boolean }
   ) => {
     this.loggerService.log("riskGlobalService removeSignal", {
       symbol,
@@ -112,7 +115,7 @@ export class RiskGlobalService implements TRisk {
    * @param payload - Optional payload with riskName, exchangeName, frameName, backtest (clears all if not provided)
    */
   public clear = async (
-    payload?: { riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
+    payload?: { riskName: RiskName; exchangeName: ExchangeName; frameName: FrameName; backtest: boolean }
   ): Promise<void> => {
     this.loggerService.log("riskGlobalService clear", {
       payload,

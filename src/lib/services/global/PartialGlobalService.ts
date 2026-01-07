@@ -2,12 +2,14 @@ import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { PartialConnectionService } from "../connection/PartialConnectionService";
-import { ISignalRow } from "../../../interfaces/Strategy.interface";
+import { ISignalRow, StrategyName } from "../../../interfaces/Strategy.interface";
 import StrategyValidationService from "../validation/StrategyValidationService";
 import StrategySchemaService from "../schema/StrategySchemaService";
 import RiskValidationService from "../validation/RiskValidationService";
 import { memoize } from "functools-kit";
 import { IPartial } from "../../../interfaces/Partial.interface";
+import { FrameName } from "src/interfaces/Frame.interface";
+import { ExchangeName } from "src/interfaces/Exchange.interface";
 
 /**
  * Type definition for partial methods.
@@ -92,7 +94,7 @@ export class PartialGlobalService implements TPartial {
    */
   private validate = memoize(
     ([context]) => `${context.strategyName}:${context.exchangeName}:${context.frameName}`,
-    (context: { strategyName: string; exchangeName: string; frameName: string }, methodName: string) => {
+    (context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }, methodName: string) => {
       this.loggerService.log("partialGlobalService validate", {
         context,
         methodName,

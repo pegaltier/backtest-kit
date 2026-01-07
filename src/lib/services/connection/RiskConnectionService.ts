@@ -6,6 +6,9 @@ import { memoize } from "functools-kit";
 import ClientRisk from "../../../client/ClientRisk";
 import RiskSchemaService from "../schema/RiskSchemaService";
 import { riskSubject } from "../../../config/emitters";
+import { ExchangeName } from "src/interfaces/Exchange.interface";
+import { FrameName } from "src/interfaces/Frame.interface";
+import { StrategyName } from "src/interfaces/Strategy.interface";
 
 /**
  * Creates a unique key for memoizing ClientRisk instances.
@@ -18,8 +21,8 @@ import { riskSubject } from "../../../config/emitters";
  */
 const CREATE_KEY_FN = (
   riskName: RiskName,
-  exchangeName: string,
-  frameName: string,
+  exchangeName: ExchangeName,
+  frameName: FrameName,
   backtest: boolean
 ): string => {
   const parts = [riskName, exchangeName];
@@ -50,8 +53,8 @@ const COMMIT_REJECTION_FN = async (
   rejectionResult: IRiskRejectionResult,
   timestamp: number,
   backtest: boolean,
-  exchangeName: string,
-  frameName: string
+  exchangeName: ExchangeName,
+  frameName: FrameName
 ) =>
   await riskSubject.next({
     symbol,
@@ -129,7 +132,7 @@ export class RiskConnectionService implements TRisk {
   public getRisk = memoize(
     ([riskName, exchangeName, frameName, backtest]) =>
       CREATE_KEY_FN(riskName, exchangeName, frameName, backtest),
-    (riskName: RiskName, exchangeName: string, frameName: string, backtest: boolean) => {
+    (riskName: RiskName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => {
       const schema = this.riskSchemaService.get(riskName);
       return new ClientRisk({
         ...schema,
@@ -163,7 +166,7 @@ export class RiskConnectionService implements TRisk {
    */
   public checkSignal = async (
     params: IRiskCheckArgs,
-    payload: { riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
+    payload: { riskName: RiskName; exchangeName: ExchangeName; frameName: FrameName; backtest: boolean }
   ) => {
     this.loggerService.log("riskConnectionService checkSignal", {
       symbol: params.symbol,
@@ -181,7 +184,7 @@ export class RiskConnectionService implements TRisk {
    */
   public addSignal = async (
     symbol: string,
-    payload: { strategyName: string; riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
+    payload: { strategyName: StrategyName; riskName: RiskName; exchangeName: ExchangeName; frameName: FrameName; backtest: boolean }
   ) => {
     this.loggerService.log("riskConnectionService addSignal", {
       symbol,
@@ -199,7 +202,7 @@ export class RiskConnectionService implements TRisk {
    */
   public removeSignal = async (
     symbol: string,
-    payload: { strategyName: string; riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
+    payload: { strategyName: StrategyName; riskName: RiskName; exchangeName: ExchangeName; frameName: FrameName; backtest: boolean }
   ) => {
     this.loggerService.log("riskConnectionService removeSignal", {
       symbol,
@@ -214,7 +217,7 @@ export class RiskConnectionService implements TRisk {
    * @param payload - Optional payload with riskName, exchangeName, frameName, backtest (clears all if not provided)
    */
   public clear = async (
-    payload?: { riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
+    payload?: { riskName: RiskName; exchangeName: ExchangeName; frameName: FrameName; backtest: boolean }
   ): Promise<void> => {
     this.loggerService.log("riskConnectionService clear", {
       payload,

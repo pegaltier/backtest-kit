@@ -1,7 +1,7 @@
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
-import { ISignalRow } from "../../../interfaces/Strategy.interface";
+import { ISignalRow, StrategyName } from "../../../interfaces/Strategy.interface";
 import { IPartial, PartialLevel } from "../../../interfaces/Partial.interface";
 import ClientPartial from "../../../client/ClientPartial";
 import { memoize } from "functools-kit";
@@ -9,6 +9,8 @@ import {
   partialProfitSubject,
   partialLossSubject,
 } from "../../../config/emitters";
+import { ExchangeName } from "src/interfaces/Exchange.interface";
+import { FrameName } from "src/interfaces/Frame.interface";
 
 /**
  * Creates a unique key for memoizing ClientPartial instances.
@@ -38,9 +40,9 @@ const CREATE_KEY_FN = (signalId: string, backtest: boolean) =>
  */
 const COMMIT_PROFIT_FN = async (
   symbol: string,
-  strategyName: string,
-  exchangeName: string,
-  frameName: string,
+  strategyName: StrategyName,
+  exchangeName: ExchangeName,
+  frameName: FrameName,
   data: ISignalRow,
   currentPrice: number,
   level: PartialLevel,
@@ -76,9 +78,9 @@ const COMMIT_PROFIT_FN = async (
  */
 const COMMIT_LOSS_FN = async (
   symbol: string,
-  strategyName: string,
-  exchangeName: string,
-  frameName: string,
+  strategyName: StrategyName,
+  exchangeName: ExchangeName,
+  frameName: FrameName,
   data: ISignalRow,
   currentPrice: number,
   level: PartialLevel,

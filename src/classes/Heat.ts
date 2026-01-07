@@ -1,6 +1,9 @@
 import bt from "../lib";
 import { HeatmapStatisticsModel } from "../model/HeatmapStatistics.model";
 import { Columns } from "../lib/services/markdown/HeatMarkdownService";
+import { StrategyName } from "src/interfaces/Strategy.interface";
+import { ExchangeName } from "src/interfaces/Exchange.interface";
+import { FrameName } from "src/interfaces/Frame.interface";
 
 const HEAT_METHOD_NAME_GET_DATA = "HeatUtils.getData";
 const HEAT_METHOD_NAME_GET_REPORT = "HeatUtils.getReport";
@@ -72,9 +75,9 @@ export class HeatUtils {
    */
   public getData = async (
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     },
     backtest = false
   ): Promise<HeatmapStatisticsModel> => {
@@ -124,9 +127,9 @@ export class HeatUtils {
    */
   public getReport = async (
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     },
     backtest = false,
     columns?: Columns[]
@@ -174,9 +177,9 @@ export class HeatUtils {
    */
   public dump = async (
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     },
     backtest = false,
     path?: string,

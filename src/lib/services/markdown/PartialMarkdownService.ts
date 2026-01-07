@@ -16,6 +16,8 @@ import {
 } from "../../../model/PartialStatistics.model";
 import { ColumnModel } from "../../../model/Column.model";
 import { COLUMN_CONFIG } from "../../../config/columns";
+import { ExchangeName } from "src/interfaces/Exchange.interface";
+import { FrameName } from "src/interfaces/Frame.interface";
 
 /**
  * Type alias for column configuration used in partial profit/loss markdown reports.
@@ -63,8 +65,8 @@ export type Columns = ColumnModel<PartialEvent>;
 const CREATE_KEY_FN = (
   symbol: string,
   strategyName: StrategyName,
-  exchangeName: string,
-  frameName: string,
+  exchangeName: ExchangeName,
+  frameName: FrameName,
   backtest: boolean
 ): string => {
   const parts = [symbol, strategyName, exchangeName];
@@ -186,7 +188,7 @@ class ReportStorage {
    */
   public async getReport(
     symbol: string,
-    strategyName: string,
+    strategyName: StrategyName,
     columns: Columns[] = COLUMN_CONFIG.partial_columns
   ): Promise<string> {
     const stats = await this.getData();
@@ -237,7 +239,7 @@ class ReportStorage {
    */
   public async dump(
     symbol: string,
-    strategyName: string,
+    strategyName: StrategyName,
     path = "./dump/partial",
     columns: Columns[] = COLUMN_CONFIG.partial_columns
   ): Promise<void> {
@@ -287,7 +289,7 @@ export class PartialMarkdownService {
    * Memoized function to get or create ReportStorage for a symbol-strategy-exchange-frame-backtest combination.
    * Each combination gets its own isolated storage instance.
    */
-  private getStorage = memoize<(symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean) => ReportStorage>(
+  private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),
     () => new ReportStorage()
   );
@@ -311,8 +313,8 @@ export class PartialMarkdownService {
     level: PartialLevel;
     backtest: boolean;
     timestamp: number;
-    exchangeName: string;
-    frameName: string;
+    exchangeName: ExchangeName;
+    frameName: FrameName;
   }) => {
     this.loggerService.log("partialMarkdownService tickProfit", {
       data,
@@ -347,8 +349,8 @@ export class PartialMarkdownService {
     level: PartialLevel;
     backtest: boolean;
     timestamp: number;
-    exchangeName: string;
-    frameName: string;
+    exchangeName: ExchangeName;
+    frameName: FrameName;
   }) => {
     this.loggerService.log("partialMarkdownService tickLoss", {
       data,
@@ -382,7 +384,7 @@ export class PartialMarkdownService {
    * console.log(stats.totalProfit, stats.totalLoss);
    * ```
    */
-  public getData = async (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean): Promise<PartialStatisticsModel> => {
+  public getData = async (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean): Promise<PartialStatisticsModel> => {
     this.loggerService.log("partialMarkdownService getData", {
       symbol,
       strategyName,
@@ -415,9 +417,9 @@ export class PartialMarkdownService {
    */
   public getReport = async (
     symbol: string,
-    strategyName: string,
-    exchangeName: string,
-    frameName: string,
+    strategyName: StrategyName,
+    exchangeName: ExchangeName,
+    frameName: FrameName,
     backtest: boolean,
     columns: Columns[] = COLUMN_CONFIG.partial_columns
   ): Promise<string> => {
@@ -458,9 +460,9 @@ export class PartialMarkdownService {
    */
   public dump = async (
     symbol: string,
-    strategyName: string,
-    exchangeName: string,
-    frameName: string,
+    strategyName: StrategyName,
+    exchangeName: ExchangeName,
+    frameName: FrameName,
     backtest: boolean,
     path = "./dump/partial",
     columns: Columns[] = COLUMN_CONFIG.partial_columns
@@ -495,7 +497,7 @@ export class PartialMarkdownService {
    * await service.clear();
    * ```
    */
-  public clear = async (payload?: { symbol: string; strategyName: string; exchangeName: string; frameName: string; backtest: boolean }) => {
+  public clear = async (payload?: { symbol: string; strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName; backtest: boolean }) => {
     this.loggerService.log("partialMarkdownService clear", {
       payload,
     });

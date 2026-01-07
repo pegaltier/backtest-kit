@@ -11,11 +11,12 @@ import {
   IStrategy,
 } from "../../../interfaces/Strategy.interface";
 import StrategyConnectionService from "../connection/StrategyConnectionService";
-import { ICandleData } from "../../../interfaces/Exchange.interface";
+import { ExchangeName, ICandleData } from "../../../interfaces/Exchange.interface";
 import { memoize } from "functools-kit";
 import StrategySchemaService from "../schema/StrategySchemaService";
 import RiskValidationService from "../validation/RiskValidationService";
 import StrategyValidationService from "../validation/StrategyValidationService";
+import { FrameName } from "src/interfaces/Frame.interface";
 
 const METHOD_NAME_VALIDATE = "strategyCoreService validate";
 
@@ -60,7 +61,7 @@ export class StrategyCoreService implements TStrategy {
    */
   private validate = memoize(
     ([symbol, context]) => `${symbol}:${context.strategyName}:${context.exchangeName}:${context.frameName}`,
-    async (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string }) => {
+    async (symbol: string, context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }) => {
       this.loggerService.log(METHOD_NAME_VALIDATE, {
         symbol,
         context,
@@ -88,7 +89,7 @@ export class StrategyCoreService implements TStrategy {
   public getPendingSignal = async (
     backtest: boolean,
     symbol: string,
-    context: { strategyName: StrategyName; exchangeName: string; frameName: string }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<ISignalRow | null> => {
     this.loggerService.log("strategyCoreService getPendingSignal", {
       symbol,
@@ -111,7 +112,7 @@ export class StrategyCoreService implements TStrategy {
   public getScheduledSignal = async (
     backtest: boolean,
     symbol: string,
-    context: { strategyName: StrategyName; exchangeName: string; frameName: string }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<IScheduledSignalRow | null> => {
     this.loggerService.log("strategyCoreService getScheduledSignal", {
       symbol,
@@ -135,7 +136,7 @@ export class StrategyCoreService implements TStrategy {
   public getStopped = async (
     backtest: boolean,
     symbol: string,
-    context: { strategyName: StrategyName; exchangeName: string; frameName: string }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<boolean> => {
     this.loggerService.log("strategyCoreService getStopped", {
       symbol,
@@ -162,7 +163,7 @@ export class StrategyCoreService implements TStrategy {
     symbol: string,
     when: Date,
     backtest: boolean,
-    context: { strategyName: StrategyName; exchangeName: string; frameName: string }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<IStrategyTickResult> => {
     this.loggerService.log("strategyCoreService tick", {
       symbol,
@@ -201,7 +202,7 @@ export class StrategyCoreService implements TStrategy {
     candles: ICandleData[],
     when: Date,
     backtest: boolean,
-    context: { strategyName: StrategyName; exchangeName: string; frameName: string }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<IStrategyBacktestResult> => {
     this.loggerService.log("strategyCoreService backtest", {
       symbol,
@@ -234,7 +235,7 @@ export class StrategyCoreService implements TStrategy {
    * @param ctx - Context with strategyName, exchangeName, frameName
    * @returns Promise that resolves when stop flag is set
    */
-  public stop = async (backtest: boolean, symbol: string, context: { strategyName: StrategyName; exchangeName: string; frameName: string }): Promise<void> => {
+  public stop = async (backtest: boolean, symbol: string, context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }): Promise<void> => {
     this.loggerService.log("strategyCoreService stop", {
       symbol,
       context,
@@ -257,7 +258,7 @@ export class StrategyCoreService implements TStrategy {
    * @param cancelId - Optional cancellation ID for user-initiated cancellations
    * @returns Promise that resolves when scheduled signal is cancelled
    */
-  public cancel = async (backtest: boolean, symbol: string, context: { strategyName: StrategyName; exchangeName: string; frameName: string }, cancelId?: string): Promise<void> => {
+  public cancel = async (backtest: boolean, symbol: string, context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }, cancelId?: string): Promise<void> => {
     this.loggerService.log("strategyCoreService cancel", {
       symbol,
       context,
@@ -276,7 +277,7 @@ export class StrategyCoreService implements TStrategy {
    *
    * @param payload - Optional payload with symbol, context and backtest flag (clears all if not provided)
    */
-  public clear = async (payload?: { symbol: string; strategyName: StrategyName; exchangeName: string; frameName: string; backtest: boolean }): Promise<void> => {
+  public clear = async (payload?: { symbol: string; strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName; backtest: boolean }): Promise<void> => {
     this.loggerService.log("strategyCoreService clear", {
       payload,
     });
@@ -322,7 +323,7 @@ export class StrategyCoreService implements TStrategy {
     symbol: string,
     percentToClose: number,
     currentPrice: number,
-    context: { strategyName: StrategyName; exchangeName: string; frameName: string }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<void> => {
     this.loggerService.log("strategyCoreService partialProfit", {
       symbol,
@@ -367,7 +368,7 @@ export class StrategyCoreService implements TStrategy {
     symbol: string,
     percentToClose: number,
     currentPrice: number,
-    context: { strategyName: StrategyName; exchangeName: string; frameName: string }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<void> => {
     this.loggerService.log("strategyCoreService partialLoss", {
       symbol,

@@ -3,6 +3,8 @@ import LoggerService from "../../base/LoggerService";
 import TYPES from "../../../core/types";
 import LiveLogicPrivateService from "../private/LiveLogicPrivateService";
 import MethodContextService from "../../context/MethodContextService";
+import { StrategyName } from "src/interfaces/Strategy.interface";
+import { ExchangeName } from "src/interfaces/Exchange.interface";
 
 /**
  * Public service for live trading orchestration with context management.
@@ -55,8 +57,8 @@ export class LiveLogicPublicService {
   public run = (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     }
   ) => {
     this.loggerService.log("liveLogicPublicService run", {

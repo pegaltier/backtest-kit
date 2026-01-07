@@ -2,7 +2,7 @@ import { inject } from "../../core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../core/types";
 import { TExecutionContextService } from "../context/ExecutionContextService";
-import { ICandleData } from "../../../interfaces/Exchange.interface";
+import { ExchangeName, ICandleData } from "../../../interfaces/Exchange.interface";
 import { memoize } from "functools-kit";
 import ClientStrategy from "../../../client/ClientStrategy";
 import {
@@ -26,6 +26,7 @@ import RiskConnectionService from "./RiskConnectionService";
 import { PartialConnectionService } from "./PartialConnectionService";
 import { MergeRisk } from "../../../classes/Risk";
 import { TMethodContextService } from "../context/MethodContextService";
+import { FrameName } from "src/interfaces/Frame.interface";
 
 /**
  * No-operation IRisk implementation.
@@ -52,8 +53,8 @@ const GET_RISK_FN = (
     riskList: RiskName[];
   },
   backtest: boolean,
-  exchangeName: string,
-  frameName: string,
+  exchangeName: ExchangeName,
+  frameName: FrameName,
   self: StrategyConnectionService
 ) => {
   const hasRiskName = !!dto.riskName;
@@ -100,8 +101,8 @@ const GET_RISK_FN = (
 const CREATE_KEY_FN = (
   symbol: string,
   strategyName: StrategyName,
-  exchangeName: string,
-  frameName: string,
+  exchangeName: ExchangeName,
+  frameName: FrameName,
   backtest: boolean
 ): string => {
   const parts = [symbol, strategyName, exchangeName];
@@ -125,8 +126,8 @@ const CREATE_KEY_FN = (
  */
 const COMMIT_PING_FN = async (
   symbol: string,
-  strategyName: string,
-  exchangeName: string,
+  strategyName: StrategyName,
+  exchangeName: ExchangeName,
   data: IScheduledSignalRow,
   backtest: boolean,
   timestamp: number
@@ -204,7 +205,7 @@ export class StrategyConnectionService implements TStrategy {
   private getStrategy = memoize(
     ([symbol, strategyName, exchangeName, frameName, backtest]) =>
       CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),
-    (symbol: string, strategyName: StrategyName, exchangeName: string, frameName: string, backtest: boolean) => {
+    (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => {
       const {
         riskName = "",
         riskList = [],
@@ -253,7 +254,7 @@ export class StrategyConnectionService implements TStrategy {
   public getPendingSignal = async (
     backtest: boolean,
     symbol: string,
-    context: { strategyName: StrategyName; exchangeName: string; frameName: string }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<ISignalRow | null> => {
     this.loggerService.log("strategyConnectionService getPendingSignal", {
       symbol,
@@ -278,7 +279,7 @@ export class StrategyConnectionService implements TStrategy {
   public getScheduledSignal = async (
     backtest: boolean,
     symbol: string,
-    context: { strategyName: StrategyName; exchangeName: string; frameName: string }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<IScheduledSignalRow | null> => {
     this.loggerService.log("strategyConnectionService getScheduledSignal", {
       symbol,
@@ -303,7 +304,7 @@ export class StrategyConnectionService implements TStrategy {
   public getStopped = async (
     backtest: boolean,
     symbol: string,
-    context: { strategyName: StrategyName; exchangeName: string; frameName: string }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<boolean> => {
     this.loggerService.log("strategyConnectionService getStopped", {
       symbol,
@@ -326,7 +327,7 @@ export class StrategyConnectionService implements TStrategy {
    */
   public tick = async (
     symbol: string,
-    context: { strategyName: StrategyName; exchangeName: string; frameName: string }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<IStrategyTickResult> => {
     const backtest = this.executionContextService.context.backtest;
     this.loggerService.log("strategyConnectionService tick", {
@@ -362,7 +363,7 @@ export class StrategyConnectionService implements TStrategy {
    */
   public backtest = async (
     symbol: string,
-    context: { strategyName: StrategyName; exchangeName: string; frameName: string },
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
     candles: ICandleData[]
   ): Promise<IStrategyBacktestResult> => {
     const backtest = this.executionContextService.context.backtest;
@@ -401,7 +402,7 @@ export class StrategyConnectionService implements TStrategy {
   public stop = async (
     backtest: boolean,
     symbol: string,
-    context: { strategyName: StrategyName; exchangeName: string; frameName: string },
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
   ): Promise<void> => {
     this.loggerService.log("strategyConnectionService stop", {
       symbol,
@@ -423,8 +424,8 @@ export class StrategyConnectionService implements TStrategy {
     payload?: {
       symbol: string;
       strategyName: StrategyName;
-      exchangeName: string;
-      frameName: string;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
       backtest: boolean;
     }
   ): Promise<void> => {
@@ -457,7 +458,7 @@ export class StrategyConnectionService implements TStrategy {
   public cancel = async (
     backtest: boolean,
     symbol: string,
-    context: { strategyName: StrategyName; exchangeName: string; frameName: string },
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
     cancelId?: string
   ): Promise<void> => {
     this.loggerService.log("strategyConnectionService cancel", {
@@ -501,7 +502,7 @@ export class StrategyConnectionService implements TStrategy {
     symbol: string,
     percentToClose: number,
     currentPrice: number,
-    context: { strategyName: StrategyName; exchangeName: string; frameName: string },
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
   ): Promise<void> => {
     this.loggerService.log("strategyConnectionService partialProfit", {
       symbol,
@@ -546,7 +547,7 @@ export class StrategyConnectionService implements TStrategy {
     symbol: string,
     percentToClose: number,
     currentPrice: number,
-    context: { strategyName: StrategyName; exchangeName: string; frameName: string },
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
   ): Promise<void> => {
     this.loggerService.log("strategyConnectionService partialLoss", {
       symbol,

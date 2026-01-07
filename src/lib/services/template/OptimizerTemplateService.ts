@@ -10,6 +10,9 @@ import {
   ExchangeName,
 } from "../../../interfaces/Exchange.interface";
 import { toPlainString } from "../../../helpers/toPlainString";
+import { FrameName } from "src/interfaces/Frame.interface";
+import { StrategyName } from "src/interfaces/Strategy.interface";
+import { WalkerName } from "src/interfaces/Walker.interface";
 
 /**
  * Default template service for generating optimizer code snippets.
@@ -120,9 +123,9 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
    * @returns Generated addWalker() call
    */
   public getWalkerTemplate = async (
-    walkerName: string,
-    exchangeName: string,
-    frameName: string,
+    walkerName: WalkerName,
+    exchangeName: ExchangeName,
+    frameName: FrameName,
     strategies: string[]
   ) => {
     this.loggerService.log("optimizerTemplateService getWalkerTemplate", {
@@ -166,8 +169,8 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
    * @returns Generated addStrategy() call with getSignal() function
    */
   public getStrategyTemplate = async (
-    strategyName: string,
-    interval: string,
+    strategyName: StrategyName,
+    interval: CandleInterval,
     prompt: string
   ) => {
     this.loggerService.log("optimizerTemplateService getStrategyTemplate", {
@@ -353,7 +356,7 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
    */
   public getFrameTemplate = async (
     symbol: string,
-    frameName: string,
+    frameName: FrameName,
     interval: CandleInterval,
     startDate: Date,
     endDate: Date
@@ -392,7 +395,7 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
    * @param walkerName - Walker name to launch
    * @returns Generated Walker.background() call with listeners
    */
-  public getLauncherTemplate = async (symbol: string, walkerName: string) => {
+  public getLauncherTemplate = async (symbol: string, walkerName: WalkerName) => {
     this.loggerService.log("optimizerTemplateService getLauncherTemplate", {
       symbol,
       walkerName,

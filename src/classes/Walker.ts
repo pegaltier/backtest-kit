@@ -39,7 +39,7 @@ const WALKER_METHOD_NAME_GET_STATUS = "WalkerUtils.getStatus";
 const INSTANCE_TASK_FN = async (
   symbol: string,
   context: {
-    walkerName: string;
+    walkerName: WalkerName;
   },
   self: WalkerInstance
 ) => {
@@ -117,7 +117,7 @@ export class WalkerInstance {
     async (
       symbol: string,
       context: {
-        walkerName: string;
+        walkerName: WalkerName;
       }
     ) => {
       backtest.loggerService.info(WALKER_METHOD_NAME_TASK, {
@@ -160,7 +160,7 @@ export class WalkerInstance {
   public run = (
     symbol: string,
     context: {
-      walkerName: string;
+      walkerName: WalkerName;
     }
   ) => {
     backtest.loggerService.info(WALKER_METHOD_NAME_RUN, {
@@ -263,7 +263,7 @@ export class WalkerInstance {
   public background = (
     symbol: string,
     context: {
-      walkerName: string;
+      walkerName: WalkerName;
     }
   ) => {
     backtest.loggerService.info(WALKER_METHOD_NAME_BACKGROUND, {
@@ -352,7 +352,7 @@ export class WalkerUtils {
   public run = (
     symbol: string,
     context: {
-      walkerName: string;
+      walkerName: WalkerName;
     }
   ) => {
     backtest.walkerValidationService.validate(
@@ -418,7 +418,7 @@ export class WalkerUtils {
   public background = (
     symbol: string,
     context: {
-      walkerName: string;
+      walkerName: WalkerName;
     }
   ) => {
     backtest.walkerValidationService.validate(
@@ -488,7 +488,7 @@ export class WalkerUtils {
   public stop = async (
     symbol: string,
     context: {
-      walkerName: string;
+      walkerName: WalkerName;
     }
   ): Promise<void> => {
     backtest.loggerService.info(WALKER_METHOD_NAME_STOP, {
@@ -549,7 +549,7 @@ export class WalkerUtils {
   public getData = async (
     symbol: string,
     context: {
-      walkerName: string;
+      walkerName: WalkerName;
     }
   ) => {
     backtest.loggerService.info(WALKER_METHOD_NAME_GET_DATA, {
@@ -613,7 +613,7 @@ export class WalkerUtils {
   public getReport = async (
     symbol: string,
     context: {
-      walkerName: string;
+      walkerName: WalkerName;
     },
     strategyColumns?: StrategyColumn[],
     pnlColumns?: PnlColumn[]
@@ -684,7 +684,7 @@ export class WalkerUtils {
   public dump = async (
     symbol: string,
     context: {
-      walkerName: string;
+      walkerName: WalkerName;
     },
     path?: string,
     strategyColumns?: StrategyColumn[],

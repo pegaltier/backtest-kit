@@ -6,6 +6,8 @@ import StrategyValidationService from "../validation/StrategyValidationService";
 import ExchangeValidationService from "../validation/ExchangeValidationService";
 import StrategySchemaService from "../schema/StrategySchemaService";
 import RiskValidationService from "../validation/RiskValidationService";
+import { StrategyName } from "src/interfaces/Strategy.interface";
+import { ExchangeName } from "src/interfaces/Exchange.interface";
 
 const METHOD_NAME_RUN = "liveCommandService run";
 
@@ -43,8 +45,8 @@ export class LiveCommandService {
   public run = (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     }
   ) => {
     this.loggerService.log(METHOD_NAME_RUN, {

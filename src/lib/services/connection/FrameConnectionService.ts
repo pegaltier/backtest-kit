@@ -72,7 +72,7 @@ export class FrameConnectionService implements IFrame {
    * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
    * @returns Promise resolving to { startDate: Date, endDate: Date }
    */
-  public getTimeframe = async (symbol: string, frameName: string) => {
+  public getTimeframe = async (symbol: string, frameName: FrameName) => {
     this.loggerService.log("frameConnectionService getTimeframe", {
       symbol,
       frameName,

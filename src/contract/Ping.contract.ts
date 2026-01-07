@@ -1,4 +1,5 @@
-import { IScheduledSignalRow } from "../interfaces/Strategy.interface";
+import { ExchangeName } from "src/interfaces/Exchange.interface";
+import { IScheduledSignalRow, StrategyName } from "../interfaces/Strategy.interface";
 
 /**
  * Contract for ping events during scheduled signal monitoring.
@@ -42,13 +43,13 @@ export interface PingContract {
    * Strategy name that is monitoring this scheduled signal.
    * Identifies which strategy execution this ping event belongs to.
    */
-  strategyName: string;
+  strategyName: StrategyName;
 
   /**
    * Exchange name where this scheduled signal is being monitored.
    * Identifies which exchange this ping event belongs to.
    */
-  exchangeName: string;
+  exchangeName: ExchangeName;
 
   /**
    * Complete scheduled signal row data.

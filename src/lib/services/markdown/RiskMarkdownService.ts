@@ -9,6 +9,8 @@ import { riskSubject } from "../../../config/emitters";
 import { RiskStatisticsModel, RiskEvent } from "../../../model/RiskStatistics.model";
 import { ColumnModel } from "../../../model/Column.model";
 import { COLUMN_CONFIG } from "../../../config/columns";
+import { ExchangeName } from "src/interfaces/Exchange.interface";
+import { FrameName } from "src/interfaces/Frame.interface";
 
 /**
  * Type alias for column configuration used in risk management markdown reports.
@@ -56,8 +58,8 @@ export type Columns = ColumnModel<RiskEvent>;
 const CREATE_KEY_FN = (
   symbol: string,
   strategyName: StrategyName,
-  exchangeName: string,
-  frameName: string,
+  exchangeName: ExchangeName,
+  frameName: FrameName,
   backtest: boolean
 ): string => {
   const parts = [symbol, strategyName, exchangeName];
@@ -132,7 +134,7 @@ class ReportStorage {
    */
   public async getReport(
     symbol: string,
-    strategyName: string,
+    strategyName: StrategyName,
     columns: Columns[] = COLUMN_CONFIG.risk_columns
   ): Promise<string> {
     const stats = await this.getData();
@@ -187,7 +189,7 @@ class ReportStorage {
    */
   public async dump(
     symbol: string,
-    strategyName: string,
+    strategyName: StrategyName,
     path = "./dump/risk",
     columns: Columns[] = COLUMN_CONFIG.risk_columns
   ): Promise<void> {
@@ -237,7 +239,7 @@ export class RiskMarkdownService {
    * Memoized function to get or create ReportStorage for a symbol-strategy-exchange-frame-backtest combination.
    * Each combination gets its own isolated storage instance.
    */
-  private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: string, frameName: string, backtest: boolean) => ReportStorage>(
+  private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),
     () => new ReportStorage()
   );
@@ -281,7 +283,7 @@ export class RiskMarkdownService {
    * console.log(stats.totalRejections, stats.bySymbol);
    * ```
    */
-  public getData = async (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean): Promise<RiskStatisticsModel> => {
+  public getData = async (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean): Promise<RiskStatisticsModel> => {
     this.loggerService.log("riskMarkdownService getData", {
       symbol,
       strategyName,
@@ -314,9 +316,9 @@ export class RiskMarkdownService {
    */
   public getReport = async (
     symbol: string,
-    strategyName: string,
-    exchangeName: string,
-    frameName: string,
+    strategyName: StrategyName,
+    exchangeName: ExchangeName,
+    frameName: FrameName,
     backtest: boolean,
     columns: Columns[] = COLUMN_CONFIG.risk_columns
   ): Promise<string> => {
@@ -357,9 +359,9 @@ export class RiskMarkdownService {
    */
   public dump = async (
     symbol: string,
-    strategyName: string,
-    exchangeName: string,
-    frameName: string,
+    strategyName: StrategyName,
+    exchangeName: ExchangeName,
+    frameName: FrameName,
     backtest: boolean,
     path = "./dump/risk",
     columns: Columns[] = COLUMN_CONFIG.risk_columns
@@ -394,7 +396,7 @@ export class RiskMarkdownService {
    * await service.clear();
    * ```
    */
-  public clear = async (payload?: { symbol: string; strategyName: string; exchangeName: string; frameName: string; backtest: boolean }) => {
+  public clear = async (payload?: { symbol: string; strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName; backtest: boolean }) => {
     this.loggerService.log("riskMarkdownService clear", {
       payload,
     });

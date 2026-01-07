@@ -37,8 +37,8 @@ const LIVE_METHOD_NAME_PARTIAL_LOSS = "LiveUtils.partialLoss";
 const INSTANCE_TASK_FN = async (
   symbol: string,
   context: {
-    strategyName: string;
-    exchangeName: string;
+    strategyName: StrategyName;
+    exchangeName: ExchangeName;
   },
   self: LiveInstance,
 ) => {
@@ -118,8 +118,8 @@ export class LiveInstance {
   private task = singlerun(async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     }
   ) => {
     backtest.loggerService.info(LIVE_METHOD_NAME_TASK, {
@@ -165,8 +165,8 @@ export class LiveInstance {
   public run = (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     }
   ) => {
     backtest.loggerService.info(LIVE_METHOD_NAME_RUN, {
@@ -237,8 +237,8 @@ export class LiveInstance {
   public background = (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     }
   ) => {
     backtest.loggerService.info(LIVE_METHOD_NAME_BACKGROUND, {
@@ -344,8 +344,8 @@ export class LiveUtils {
   public run = (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     }
   ) => {
     {
@@ -387,8 +387,8 @@ export class LiveUtils {
   public background = (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     }
   ) => {
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_BACKGROUND);
@@ -420,7 +420,7 @@ export class LiveUtils {
    * }
    * ```
    */
-  public getPendingSignal = async (symbol: string, context: { strategyName: string; exchangeName: string; }) => {
+  public getPendingSignal = async (symbol: string, context: { strategyName: StrategyName; exchangeName: ExchangeName; }) => {
     backtest.loggerService.info(LIVE_METHOD_NAME_GET_PENDING_SIGNAL, {
       symbol,
       context,
@@ -456,7 +456,7 @@ export class LiveUtils {
    * }
    * ```
    */
-  public getScheduledSignal = async (symbol: string, context: { strategyName: string; exchangeName: string; }) => {
+  public getScheduledSignal = async (symbol: string, context: { strategyName: StrategyName; exchangeName: ExchangeName; }) => {
     backtest.loggerService.info(LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL, {
       symbol,
       context,
@@ -496,8 +496,8 @@ export class LiveUtils {
   public stop = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     }
   ): Promise<void> => {
     backtest.loggerService.info(LIVE_METHOD_NAME_STOP, {
@@ -545,8 +545,8 @@ export class LiveUtils {
   public cancel = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     },
     cancelId?: string
   ): Promise<void> => {
@@ -600,8 +600,8 @@ export class LiveUtils {
     percentToClose: number,
     currentPrice: number,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     }
   ): Promise<void> => {
     backtest.loggerService.info(LIVE_METHOD_NAME_PARTIAL_PROFIT, {
@@ -655,8 +655,8 @@ export class LiveUtils {
     percentToClose: number,
     currentPrice: number,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     }
   ): Promise<void> => {
     backtest.loggerService.info(LIVE_METHOD_NAME_PARTIAL_LOSS, {
@@ -701,8 +701,8 @@ export class LiveUtils {
   public getData = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     }
   ) => {
     backtest.loggerService.info(LIVE_METHOD_NAME_GET_DATA, {
@@ -742,8 +742,8 @@ export class LiveUtils {
   public getReport = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     },
     columns?: Columns[]
   ): Promise<string> => {
@@ -791,8 +791,8 @@ export class LiveUtils {
   public dump = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     },
     path?: string,
     columns?: Columns[]

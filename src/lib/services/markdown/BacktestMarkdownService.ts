@@ -13,6 +13,8 @@ import { signalBacktestEmitter } from "../../../config/emitters";
 import { BacktestStatisticsModel } from "../../../model/BacktestStatistics.model";
 import { ColumnModel } from "../../../model/Column.model";
 import { COLUMN_CONFIG } from "../../../config/columns";
+import { ExchangeName } from "src/interfaces/Exchange.interface";
+import { FrameName } from "src/interfaces/Frame.interface";
 
 /**
  * Type alias for column configuration used in backtest markdown reports.
@@ -60,8 +62,8 @@ export type Columns = ColumnModel<IStrategyTickResultClosed>;
 const CREATE_KEY_FN = (
   symbol: string,
   strategyName: StrategyName,
-  exchangeName: string,
-  frameName: string,
+  exchangeName: ExchangeName,
+  frameName: FrameName,
   backtest: boolean
 ): string => {
   const parts = [symbol, strategyName, exchangeName];
@@ -310,7 +312,7 @@ export class BacktestMarkdownService {
    * Memoized function to get or create ReportStorage for a symbol-strategy-exchange-frame-backtest combination.
    * Each combination gets its own isolated storage instance.
    */
-  private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: string, frameName: string, backtest: boolean) => ReportStorage>(
+  private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),
     () => new ReportStorage()
   );
@@ -365,7 +367,7 @@ export class BacktestMarkdownService {
    * console.log(stats.sharpeRatio, stats.winRate);
    * ```
    */
-  public getData = async (symbol: string, strategyName: StrategyName, exchangeName: string, frameName: string, backtest: boolean): Promise<BacktestStatisticsModel> => {
+  public getData = async (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean): Promise<BacktestStatisticsModel> => {
     this.loggerService.log("backtestMarkdownService getData", {
       symbol,
       strategyName,
@@ -399,8 +401,8 @@ export class BacktestMarkdownService {
   public getReport = async (
     symbol: string,
     strategyName: StrategyName,
-    exchangeName: string,
-    frameName: string,
+    exchangeName: ExchangeName,
+    frameName: FrameName,
     backtest: boolean,
     columns: Columns[] = COLUMN_CONFIG.backtest_columns
   ): Promise<string> => {
@@ -442,8 +444,8 @@ export class BacktestMarkdownService {
   public dump = async (
     symbol: string,
     strategyName: StrategyName,
-    exchangeName: string,
-    frameName: string,
+    exchangeName: ExchangeName,
+    frameName: FrameName,
     backtest: boolean,
     path = "./dump/backtest",
     columns: Columns[] = COLUMN_CONFIG.backtest_columns
@@ -478,7 +480,7 @@ export class BacktestMarkdownService {
    * await service.clear();
    * ```
    */
-  public clear = async (payload?: { symbol: string; strategyName: StrategyName; exchangeName: string; frameName: string; backtest: boolean }) => {
+  public clear = async (payload?: { symbol: string; strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName; backtest: boolean }) => {
     this.loggerService.log("backtestMarkdownService clear", {
       payload,
     });

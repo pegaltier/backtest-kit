@@ -3,6 +3,9 @@ import LoggerService from "../../base/LoggerService";
 import TYPES from "../../../core/types";
 import BacktestLogicPrivateService from "../private/BacktestLogicPrivateService";
 import MethodContextService from "../../context/MethodContextService";
+import { StrategyName } from "src/interfaces/Strategy.interface";
+import { ExchangeName } from "src/interfaces/Exchange.interface";
+import { FrameName } from "src/interfaces/Frame.interface";
 
 /**
  * Public service for backtest orchestration with context management.
@@ -46,9 +49,9 @@ export class BacktestLogicPublicService {
   public run = (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     }
   ) => {
     this.loggerService.log("backtestLogicPublicService run", {

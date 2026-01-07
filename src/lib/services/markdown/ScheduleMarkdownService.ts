@@ -15,6 +15,8 @@ import { signalEmitter, signalLiveEmitter } from "../../../config/emitters";
 import { ScheduleStatisticsModel, ScheduledEvent } from "../../../model/ScheduleStatistics.model";
 import { ColumnModel } from "../../../model/Column.model";
 import { COLUMN_CONFIG } from "../../../config/columns";
+import { ExchangeName } from "src/interfaces/Exchange.interface";
+import { FrameName } from "src/interfaces/Frame.interface";
 
 /**
  * Type alias for column configuration used in scheduled events markdown reports.
@@ -62,8 +64,8 @@ export type Columns = ColumnModel<ScheduledEvent>;
 const CREATE_KEY_FN = (
   symbol: string,
   strategyName: StrategyName,
-  exchangeName: string,
-  frameName: string,
+  exchangeName: ExchangeName,
+  frameName: FrameName,
   backtest: boolean
 ): string => {
   const parts = [symbol, strategyName, exchangeName];
@@ -354,7 +356,7 @@ export class ScheduleMarkdownService {
    * Memoized function to get or create ReportStorage for a symbol-strategy-exchange-frame-backtest combination.
    * Each combination gets its own isolated storage instance.
    */
-  private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: string, frameName: string, backtest: boolean) => ReportStorage>(
+  private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),
     () => new ReportStorage()
   );
@@ -414,8 +416,8 @@ export class ScheduleMarkdownService {
   public getData = async (
     symbol: string,
     strategyName: StrategyName,
-    exchangeName: string,
-    frameName: string,
+    exchangeName: ExchangeName,
+    frameName: FrameName,
     backtest: boolean
   ): Promise<ScheduleStatisticsModel> => {
     this.loggerService.log("scheduleMarkdownService getData", {
@@ -451,8 +453,8 @@ export class ScheduleMarkdownService {
   public getReport = async (
     symbol: string,
     strategyName: StrategyName,
-    exchangeName: string,
-    frameName: string,
+    exchangeName: ExchangeName,
+    frameName: FrameName,
     backtest: boolean,
     columns: Columns[] = COLUMN_CONFIG.schedule_columns
   ): Promise<string> => {
@@ -494,8 +496,8 @@ export class ScheduleMarkdownService {
   public dump = async (
     symbol: string,
     strategyName: StrategyName,
-    exchangeName: string,
-    frameName: string,
+    exchangeName: ExchangeName,
+    frameName: FrameName,
     backtest: boolean,
     path = "./dump/schedule",
     columns: Columns[] = COLUMN_CONFIG.schedule_columns
@@ -530,7 +532,7 @@ export class ScheduleMarkdownService {
    * await service.clear();
    * ```
    */
-  public clear = async (payload?: { symbol: string; strategyName: StrategyName; exchangeName: string; frameName: string; backtest: boolean }) => {
+  public clear = async (payload?: { symbol: string; strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName; backtest: boolean }) => {
     this.loggerService.log("scheduleMarkdownService clear", {
       payload,
     });

@@ -1,7 +1,10 @@
-import { CandleInterval } from "./Exchange.interface";
+import { CandleInterval, ExchangeName } from "./Exchange.interface";
 import { ILogger } from "./Logger.interface";
 import { MessageModel } from "../model/Message.model";
 import ProgressOptimizerContract from "../contract/ProgressOptimizer.contract";
+import { FrameName } from "./Frame.interface";
+import { WalkerName } from "./Walker.interface";
+import { StrategyName } from "./Strategy.interface";
 
 /**
  * Unique identifier for data rows in optimizer sources.
@@ -286,9 +289,9 @@ export interface IOptimizerTemplate {
    * @returns Generated addWalker() call
    */
   getWalkerTemplate(
-    walkerName: string,
-    exchangeName: string,
-    frameName: string,
+    walkerName: WalkerName,
+    exchangeName: ExchangeName,
+    frameName: FrameName,
     strategies: string[]
   ): string | Promise<string>;
 
@@ -301,7 +304,7 @@ export interface IOptimizerTemplate {
    */
   getExchangeTemplate(
     symbol: string,
-    exchangeName: string
+    exchangeName: ExchangeName
   ): string | Promise<string>;
 
   /**
@@ -316,7 +319,7 @@ export interface IOptimizerTemplate {
    */
   getFrameTemplate(
     symbol: string,
-    frameName: string,
+    frameName: FrameName,
     interval: CandleInterval,
     startDate: Date,
     endDate: Date
@@ -331,8 +334,8 @@ export interface IOptimizerTemplate {
    * @returns Generated addStrategy() call with getSignal() function
    */
   getStrategyTemplate(
-    strategyName: string,
-    interval: string,
+    strategyName: StrategyName,
+    interval: CandleInterval,
     prompt: string
   ): string | Promise<string>;
 
@@ -345,7 +348,7 @@ export interface IOptimizerTemplate {
    */
   getLauncherTemplate(
     symbol: string,
-    walkerName: string
+    walkerName: WalkerName
   ): string | Promise<string>;
 
   /**

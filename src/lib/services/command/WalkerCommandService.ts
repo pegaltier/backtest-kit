@@ -9,6 +9,9 @@ import WalkerSchemaService from "../schema/WalkerSchemaService";
 import WalkerValidationService from "../validation/WalkerValidationService";
 import StrategySchemaService from "../schema/StrategySchemaService";
 import RiskValidationService from "../validation/RiskValidationService";
+import { ExchangeName } from "src/interfaces/Exchange.interface";
+import { FrameName } from "src/interfaces/Frame.interface";
+import { WalkerName } from "src/interfaces/Walker.interface";
 
 const METHOD_NAME_RUN = "walkerCommandService run";
 
@@ -52,9 +55,9 @@ export class WalkerCommandService {
   public run = (
     symbol: string,
     context: {
-      walkerName: string;
-      exchangeName: string;
-      frameName: string;
+      walkerName: WalkerName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     }
   ) => {
     this.loggerService.log(METHOD_NAME_RUN, {
