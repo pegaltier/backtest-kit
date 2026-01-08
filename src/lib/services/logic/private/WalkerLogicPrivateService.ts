@@ -21,6 +21,14 @@ import { IWalkerSchema } from "../../../../interfaces/Walker.interface";
 import { BacktestStatisticsModel } from "../../../../model/BacktestStatistics.model";
 import backtest from "../../../../lib";
 
+/**
+ * Wrapper to call onStrategyStart callback with error handling.
+ * Catches and logs any errors thrown by the user-provided callback.
+ *
+ * @param walkerSchema - Walker schema containing callbacks
+ * @param strategyName - Name of the strategy being tested
+ * @param symbol - Trading pair symbol
+ */
 const CALL_STRATEGY_START_CALLBACKS_FN = trycatch(
   async (
     walkerSchema: IWalkerSchema,
@@ -45,6 +53,15 @@ const CALL_STRATEGY_START_CALLBACKS_FN = trycatch(
   }
 );
 
+/**
+ * Wrapper to call onStrategyError callback with error handling.
+ * Catches and logs any errors thrown by the user-provided callback.
+ *
+ * @param walkerSchema - Walker schema containing callbacks
+ * @param strategyName - Name of the strategy that failed
+ * @param symbol - Trading pair symbol
+ * @param error - Error that occurred during strategy execution
+ */
 const CALL_STRATEGY_ERROR_CALLBACKS_FN = trycatch(
   async (
     walkerSchema: IWalkerSchema,
@@ -70,6 +87,16 @@ const CALL_STRATEGY_ERROR_CALLBACKS_FN = trycatch(
   }
 );
 
+/**
+ * Wrapper to call onStrategyComplete callback with error handling.
+ * Catches and logs any errors thrown by the user-provided callback.
+ *
+ * @param walkerSchema - Walker schema containing callbacks
+ * @param strategyName - Name of the strategy that completed
+ * @param symbol - Trading pair symbol
+ * @param stats - Backtest statistics for the strategy
+ * @param metricValue - Calculated metric value for comparison
+ */
 const CALL_STRATEGY_COMPLETE_CALLBACKS_FN = trycatch(
   async (
     walkerSchema: IWalkerSchema,
@@ -101,6 +128,13 @@ const CALL_STRATEGY_COMPLETE_CALLBACKS_FN = trycatch(
   }
 );
 
+/**
+ * Wrapper to call onComplete callback with error handling.
+ * Catches and logs any errors thrown by the user-provided callback.
+ *
+ * @param walkerSchema - Walker schema containing callbacks
+ * @param finalResults - Final results with all strategies ranked
+ */
 const CALL_COMPLETE_CALLBACKS_FN = trycatch(
   async (
     walkerSchema: IWalkerSchema,

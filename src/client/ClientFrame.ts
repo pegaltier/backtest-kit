@@ -27,6 +27,16 @@ const INTERVAL_MINUTES: Record<FrameInterval, number> = {
   "3d": 4320,
 };
 
+/**
+ * Wrapper to call onTimeframe callback with error handling.
+ * Catches and logs any errors thrown by the user-provided callback.
+ *
+ * @param self - ClientFrame instance reference
+ * @param timeframe - Array of generated timestamp dates
+ * @param startDate - Start date of the backtest period
+ * @param endDate - Effective end date of the backtest period
+ * @param interval - Frame interval used for generation
+ */
 const CALL_TIMEFRAME_CALLBACKS_FN = trycatch(
   async (
     self: ClientFrame,

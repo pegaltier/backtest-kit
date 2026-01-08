@@ -53,6 +53,7 @@ const DO_VALIDATION_FN = async (
   }
 };
 
+/** Wrapper to call onRejected callback with error handling */
 const CALL_REJECTED_CALLBACKS_FN = trycatch(
   async (
     self: ClientRisk,
@@ -77,6 +78,7 @@ const CALL_REJECTED_CALLBACKS_FN = trycatch(
   }
 );
 
+/** Wrapper to call onAllowed callback with error handling */
 const CALL_ALLOWED_CALLBACKS_FN = trycatch(
   async (
     self: ClientRisk,

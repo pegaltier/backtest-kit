@@ -153,6 +153,17 @@ const GET_CANDLES_FN = async (
   throw lastError;
 };
 
+/**
+ * Wrapper to call onCandleData callback with error handling.
+ * Catches and logs any errors thrown by the user-provided callback.
+ *
+ * @param self - ClientExchange instance reference
+ * @param symbol - Trading pair symbol
+ * @param interval - Candle interval
+ * @param since - Start date for candle data
+ * @param limit - Number of candles
+ * @param data - Array of candle data
+ */
 const CALL_CANDLE_DATA_CALLBACKS_FN = trycatch(
   async (
     self: ClientExchange,

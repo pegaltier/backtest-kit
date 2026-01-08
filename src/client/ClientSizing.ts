@@ -101,6 +101,14 @@ const calculateATRBased = (
   return riskAmount / stopDistance;
 };
 
+/**
+ * Wrapper to call onCalculate callback with error handling.
+ * Catches and logs any errors thrown by the user-provided callback.
+ *
+ * @param self - ClientSizing instance reference
+ * @param quantity - Calculated position size
+ * @param params - Parameters used for size calculation
+ */
 const CALL_CALCULATE_CALLBACKS_FN = trycatch(
   async (
     self: ClientSizing,
