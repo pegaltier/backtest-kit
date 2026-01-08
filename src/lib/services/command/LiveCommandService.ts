@@ -12,12 +12,20 @@ import { ExchangeName } from "../../../interfaces/Exchange.interface";
 const METHOD_NAME_RUN = "liveCommandService run";
 
 /**
+ * Type definition for LiveLogicPublicService.
+ * Maps all keys of LiveLogicPublicService to any type.
+ */
+type TLiveLogicPublicService = {
+  [key in keyof LiveLogicPublicService]: any;
+};
+
+/**
  * Global service providing access to live trading functionality.
  *
  * Simple wrapper around LiveLogicPublicService for dependency injection.
  * Used by public API exports.
  */
-export class LiveCommandService {
+export class LiveCommandService implements TLiveLogicPublicService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly liveLogicPublicService = inject<LiveLogicPublicService>(
     TYPES.liveLogicPublicService

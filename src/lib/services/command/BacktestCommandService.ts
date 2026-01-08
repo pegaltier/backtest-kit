@@ -14,12 +14,20 @@ import { FrameName } from "../../../interfaces/Frame.interface";
 const METHOD_NAME_RUN = "backtestCommandService run";
 
 /**
+ * Type definition for BacktestLogicPublicService.
+ * Maps all keys of BacktestLogicPublicService to any type.
+ */
+type TBacktestLogicPublicService = {
+  [key in keyof BacktestLogicPublicService]: any;
+};
+
+/**
  * Global service providing access to backtest functionality.
  *
  * Simple wrapper around BacktestLogicPublicService for dependency injection.
  * Used by public API exports.
  */
-export class BacktestCommandService {
+export class BacktestCommandService implements TBacktestLogicPublicService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly strategySchemaService = inject<StrategySchemaService>(
     TYPES.strategySchemaService

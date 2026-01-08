@@ -16,12 +16,20 @@ import { WalkerName } from "../../../interfaces/Walker.interface";
 const METHOD_NAME_RUN = "walkerCommandService run";
 
 /**
+ * Type definition for WalkerLogicPublicService.
+ * Maps all keys of WalkerLogicPublicService to any type.
+ */
+type TWalkerLogicPublicService = {
+  [key in keyof WalkerLogicPublicService]: any;
+};
+
+/**
  * Global service providing access to walker functionality.
  *
  * Simple wrapper around WalkerLogicPublicService for dependency injection.
  * Used by public API exports.
  */
-export class WalkerCommandService {
+export class WalkerCommandService implements TWalkerLogicPublicService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly walkerLogicPublicService = inject<WalkerLogicPublicService>(
     TYPES.walkerLogicPublicService
