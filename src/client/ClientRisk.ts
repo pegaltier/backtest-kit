@@ -29,8 +29,37 @@ type RiskMap = Map<string, IRiskActivePosition>;
 /** Symbol indicating that positions need to be fetched from persistence */
 const POSITION_NEED_FETCH = Symbol("risk-need-fetch");
 
-/** Converts ISignalRow or IScheduledSignalRow to IRiskSignalRow format */
-const TO_PUBLIC_SIGNAL = <T extends ISignalDto | ISignalRow>(signal: T, currentPrice: number): IRiskSignalRow => {
+/**
+ * Converts signal to risk validation format.
+ *
+ * This function is used BEFORE position opens during risk checks.
+ * It ensures all required fields are present for risk validation:
+ *
+ * - Falls back to currentPrice if priceOpen is not set (for ISignalDto/scheduled signals)
+ * - Replaces priceStopLoss with trailing SL if active (for positions with trailing stops)
+ * - Preserves original stop-loss in originalPriceStopLoss for reference
+ *
+ * Use cases:
+ * - Risk validation before opening a position (checkSignal)
+ * - Pre-flight validation of scheduled signals
+ * - Calculating position size based on stop-loss distance
+ *
+ * @param signal - Signal DTO or row (may not have priceOpen for scheduled signals)
+ * @param currentPrice - Current market price, used as fallback for priceOpen if not set
+ * @returns Signal in IRiskSignalRow format with guaranteed priceOpen and effective stop-loss
+ *
+ * @example
+ * ```typescript
+ * // For scheduled signal without priceOpen
+ * const riskSignal = TO_RISK_SIGNAL(scheduledSignal, 45000);
+ * // riskSignal.priceOpen = 45000 (fallback to currentPrice)
+ *
+ * // For signal with trailing SL
+ * const riskSignal = TO_RISK_SIGNAL(activeSignal, 46000);
+ * // riskSignal.priceStopLoss = activeSignal._trailingPriceStopLoss
+ * ```
+ */
+const TO_RISK_SIGNAL = <T extends ISignalDto | ISignalRow>(signal: T, currentPrice: number): IRiskSignalRow => {
   if ("_trailingPriceStopLoss" in signal) {
     return {
       ...signal,
@@ -272,7 +301,7 @@ export class ClientRisk implements IRisk {
 
     const payload: IRiskValidationPayload = {
       ...params,
-      pendingSignal: TO_PUBLIC_SIGNAL(
+      pendingSignal: TO_RISK_SIGNAL(
         params.pendingSignal,
         params.currentPrice
       ),

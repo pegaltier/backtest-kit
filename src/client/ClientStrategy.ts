@@ -46,6 +46,46 @@ const INTERVAL_MINUTES: Record<SignalInterval, number> = {
 
 const TIMEOUT_SYMBOL = Symbol('timeout');
 
+/**
+ * Converts internal signal to public API format.
+ *
+ * This function is used AFTER position opens for external callbacks and API.
+ * It hides internal implementation details while exposing effective values:
+ *
+ * - Replaces internal _trailingPriceStopLoss with effective priceStopLoss
+ * - Preserves original stop-loss in originalPriceStopLoss for reference
+ * - Ensures external code never sees private _trailingPriceStopLoss field
+ * - Maintains backward compatibility with non-trailing positions
+ *
+ * Key differences from TO_RISK_SIGNAL (in ClientRisk.ts):
+ * - Used AFTER position opens (vs BEFORE for risk validation)
+ * - Works only with ISignalRow/IScheduledSignalRow (vs ISignalDto)
+ * - No currentPrice fallback needed (priceOpen always present in opened signals)
+ * - Returns IPublicSignalRow (vs IRiskSignalRow for risk checks)
+ *
+ * Use cases:
+ * - All strategy callbacks (onOpen, onClose, onActive, etc.)
+ * - External API responses (getPendingSignal, getScheduledSignal)
+ * - Event emissions and logging
+ * - Integration with ClientPartial and ClientRisk
+ *
+ * @param signal - Internal signal row with optional trailing stop-loss
+ * @returns Signal in IPublicSignalRow format with effective stop-loss and hidden internals
+ *
+ * @example
+ * ```typescript
+ * // Signal without trailing SL
+ * const publicSignal = TO_PUBLIC_SIGNAL(signal);
+ * // publicSignal.priceStopLoss = signal.priceStopLoss
+ * // publicSignal.originalPriceStopLoss = signal.priceStopLoss
+ *
+ * // Signal with trailing SL
+ * const publicSignal = TO_PUBLIC_SIGNAL(signalWithTrailing);
+ * // publicSignal.priceStopLoss = signal._trailingPriceStopLoss (effective)
+ * // publicSignal.originalPriceStopLoss = signal.priceStopLoss (original)
+ * // publicSignal._trailingPriceStopLoss = undefined (hidden from external API)
+ * ```
+ */
 const TO_PUBLIC_SIGNAL = <T extends ISignalRow | IScheduledSignalRow>(signal: T): IPublicSignalRow => {
   if (signal._trailingPriceStopLoss !== undefined) {
     return {
