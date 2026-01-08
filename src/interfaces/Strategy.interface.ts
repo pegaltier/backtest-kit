@@ -121,6 +121,22 @@ export interface IPublicSignalRow extends ISignalRow {
 }
 
 /**
+ * Risk signal row for internal risk management.
+ * Extends ISignalDto to include priceOpen and originalPriceStopLoss.
+ * Used in risk validation to access entry price and original SL.
+ */
+export interface IRiskSignalRow extends ISignalDto {
+  /**
+   * Entry price for the position.
+   */
+  priceOpen: number;
+  /**
+   * Original stop-loss price set at signal creation.
+   */
+  originalPriceStopLoss: number;
+}
+
+/**
  * Scheduled signal row with cancellation ID.
  * Extends IScheduledSignalRow to include optional cancelId for user-initiated cancellations.
  */

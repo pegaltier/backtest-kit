@@ -1530,14 +1530,8 @@ const CALL_RISK_CHECK_SIGNAL_FN = trycatch(
     backtest: boolean
   ): Promise<boolean> => {
     return await ExecutionContextService.runInContext(async () => {
-      // If pendingSignal has internal state (_trailingPriceStopLoss), convert to public format
-      // ISignalDto doesn't have id field, so we can check for it to distinguish from ISignalRow
-      const signalForRisk = (pendingSignal as ISignalRow).id
-        ? TO_PUBLIC_SIGNAL(pendingSignal as ISignalRow | IScheduledSignalRow)
-        : pendingSignal;
-
       return await self.params.risk.checkSignal({
-        pendingSignal: signalForRisk,
+        pendingSignal: pendingSignal,
         symbol: symbol,
         strategyName: self.params.method.context.strategyName,
         exchangeName: self.params.method.context.exchangeName,

@@ -21,13 +21,23 @@ import backtest from "../lib";
 import { validationSubject, errorEmitter } from "../config/emitters";
 import { get } from "../utils/get";
 import { ExchangeName } from "../interfaces/Exchange.interface";
-import { StrategyName } from "../interfaces/Strategy.interface";
+import { IRiskSignalRow, ISignalDto, ISignalRow, StrategyName } from "../interfaces/Strategy.interface";
 
 /** Type for active position map */
 type RiskMap = Map<string, IRiskActivePosition>;
 
 /** Symbol indicating that positions need to be fetched from persistence */
 const POSITION_NEED_FETCH = Symbol("risk-need-fetch");
+
+/** Converts ISignalDto or ISignalRow to IRiskSignalRow format */
+const TO_PUBLIC_SIGNAL = <T extends ISignalDto | ISignalRow>(signal: T, currentPrice: number): IRiskSignalRow => {
+  // Always use original priceStopLoss, never expose trailing SL to risk validation
+  return {
+    ...signal,
+    priceOpen: signal.priceOpen ?? currentPrice,
+    originalPriceStopLoss: signal.priceStopLoss,
+  };
+};
 
 /** Key generator for active position map */
 const CREATE_NAME_FN = (strategyName: StrategyName, exchangeName: ExchangeName, symbol: string) =>
@@ -256,6 +266,10 @@ export class ClientRisk implements IRisk {
 
     const payload: IRiskValidationPayload = {
       ...params,
+      pendingSignal: TO_PUBLIC_SIGNAL(
+        params.pendingSignal,
+        params.currentPrice
+      ),
       activePositionCount: riskMap.size,
       activePositions: Array.from(riskMap.values()),
     };
