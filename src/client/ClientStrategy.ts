@@ -739,7 +739,7 @@ const PARTIAL_LOSS_FN = (
   });
 };
 
-const TRAILING_FN = (
+const TRAILING_STOP_FN = (
   self: ClientStrategy,
   signal: ISignalRow,
   percentDistance: number
@@ -776,7 +776,7 @@ const TRAILING_FN = (
   }
 
   if (!shouldUpdate) {
-    self.params.logger.debug("TRAILING_FN: new SL not better, skipping", {
+    self.params.logger.debug("TRAILING_STOP_FN: new SL not better, skipping", {
       signalId: signal.id,
       position: signal.position,
       currentStopLoss,
@@ -789,7 +789,7 @@ const TRAILING_FN = (
   // Update trailing stop-loss
   signal._trailingPriceStopLoss = newStopLoss;
 
-  self.params.logger.info("TRAILING_FN executed", {
+  self.params.logger.info("TRAILING_STOP_FN executed", {
     signalId: signal.id,
     position: signal.position,
     originalStopLoss: signal.priceStopLoss,
@@ -3452,16 +3452,17 @@ export class ClientStrategy implements IStrategy {
   }
 
   /**
-   * Sets trailing stop-loss at specified percentage distance from current price.
+   * Sets trailing stop-loss at specified percentage distance from ORIGINAL stop-loss.
    *
-   * Calculates new stop-loss price based on position type and percentage:
-   * - For LONG: newSL = currentPrice * (1 - percentDistance/100) - moves SL upward as price rises
-   * - For SHORT: newSL = currentPrice * (1 + percentDistance/100) - moves SL downward as price falls
+   * Calculates new stop-loss as a percentage shift from the ORIGINAL priceStopLoss:
+   * - For LONG: newSL = originalSL * (1 + percentDistance/100) - moves SL upward (closer to entry)
+   * - For SHORT: newSL = originalSL * (1 - percentDistance/100) - moves SL downward (closer to entry)
    *
    * Trailing behavior:
-   * - Only updates if new SL is BETTER than existing (closer to profit)
+   * - Only updates if new SL is BETTER than current effective SL
    * - For LONG: only moves SL upward (never down)
    * - For SHORT: only moves SL downward (never up)
+   * - Larger shifts override smaller shifts (not cumulative)
    * - Stores in _trailingPriceStopLoss, original priceStopLoss preserved
    * - Persists updated signal state (backtest and live modes)
    * - Calls onWrite callback for persistence testing
@@ -3470,29 +3471,35 @@ export class ClientStrategy implements IStrategy {
    * - Throws if no pending signal exists
    * - Throws if percentDistance is not a finite number
    * - Throws if percentDistance <= 0 or > 100
-   * - Throws if currentPrice is not a positive finite number
    *
    * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-   * @param percentDistance - Positive percentage distance from current price (0-100)
+   * @param percentDistance - Percentage shift from original stop-loss (0-100)
    * @param backtest - Whether running in backtest mode (controls persistence)
    * @returns Promise that resolves when trailing SL is updated and persisted
    *
    * @example
    * ```typescript
-   * // Set trailing SL at 2% distance from current price
-   * await strategy.trailing("BTCUSDT", 2, 45000, false);
+   * // LONG position: priceOpen=100, originalSL=90
    *
-   * // As price rises (LONG), SL moves up automatically
-   * await strategy.trailing("BTCUSDT", 2, 46000, false); // SL moves to 46000 * 0.98
-   * await strategy.trailing("BTCUSDT", 2, 47000, false); // SL moves to 47000 * 0.98
+   * // Shift SL by +5% from original (90 → 94.5)
+   * await strategy.trailingStop("BTCUSDT", 5, false);
+   * // newSL = 90 * 1.05 = 94.5
+   *
+   * // Shift SL by +10% from original (90 → 99)
+   * await strategy.trailingStop("BTCUSDT", 10, false);
+   * // newSL = 90 * 1.10 = 99 (larger shift overrides previous)
+   *
+   * // Try smaller shift (90 → 92.7)
+   * await strategy.trailingStop("BTCUSDT", 3, false);
+   * // newSL = 90 * 1.03 = 92.7 (SKIPPED: smaller than current 99)
    * ```
    */
-  public async trailing(
+  public async trailingStop(
     symbol: string,
     percentDistance: number,
     backtest: boolean
   ): Promise<void> {
-    this.params.logger.debug("ClientStrategy trailing", {
+    this.params.logger.debug("ClientStrategy trailingStop", {
       symbol,
       percentDistance,
       hasPendingSignal: this._pendingSignal !== null,
@@ -3501,34 +3508,34 @@ export class ClientStrategy implements IStrategy {
     // Validation: must have pending signal
     if (!this._pendingSignal) {
       throw new Error(
-        `ClientStrategy trailing: No pending signal exists for symbol=${symbol}`
+        `ClientStrategy trailingStop: No pending signal exists for symbol=${symbol}`
       );
     }
 
     // Validation: percentDistance must be valid
     if (typeof percentDistance !== "number" || !isFinite(percentDistance)) {
       throw new Error(
-        `ClientStrategy trailing: percentDistance must be a finite number, got ${percentDistance} (${typeof percentDistance})`
+        `ClientStrategy trailingStop: percentDistance must be a finite number, got ${percentDistance} (${typeof percentDistance})`
       );
     }
 
     if (percentDistance <= 0) {
       throw new Error(
-        `ClientStrategy trailing: percentDistance must be > 0, got ${percentDistance}`
+        `ClientStrategy trailingStop: percentDistance must be > 0, got ${percentDistance}`
       );
     }
 
     if (percentDistance > 100) {
       throw new Error(
-        `ClientStrategy trailing: percentDistance must be <= 100, got ${percentDistance}`
+        `ClientStrategy trailingStop: percentDistance must be <= 100, got ${percentDistance}`
       );
     }
 
     // Execute trailing logic
-    TRAILING_FN(this, this._pendingSignal, percentDistance);
+    TRAILING_STOP_FN(this, this._pendingSignal, percentDistance);
 
     // Persist updated signal state (inline setPendingSignal content)
-    // Note: this._pendingSignal already mutated by TRAILING_FN, no reassignment needed
+    // Note: this._pendingSignal already mutated by TRAILING_STOP_FN, no reassignment needed
     this.params.logger.debug("ClientStrategy setPendingSignal (inline)", {
       pendingSignal: this._pendingSignal,
     });
