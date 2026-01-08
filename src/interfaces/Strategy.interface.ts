@@ -602,14 +602,14 @@ export interface IStrategy {
    *
    * Validations:
    * - Throws if no pending signal exists
-   * - Throws if percentDistance < -100 or > 100
-   * - Throws if percentDistance === 0
+   * - Throws if percentShift< -100 or > 100
+   * - Throws if percentShift=== 0
    * - Skips if new SL would cross entry price
    *
    * Use case: User-controlled trailing stop triggered from onPartialProfit callback.
    *
    * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-   * @param percentDistance - Percentage shift of SL distance [-100, 100], excluding 0
+   * @param percentShift- Percentage shift of SL distance [-100, 100], excluding 0
    * @param backtest - Whether running in backtest mode
    * @returns Promise that resolves when trailing SL is updated
    *

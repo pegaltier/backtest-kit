@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(powershell -Command \"(Get-Content ''c:\\Users\\User\\Documents\\GitHub\\backtest-kit\\src\\client\\ClientStrategy.ts'' | Measure-Object -Line).Lines\")"
+      "Bash(powershell -Command \"(Get-Content ''c:\\Users\\User\\Documents\\GitHub\\backtest-kit\\src\\client\\ClientStrategy.ts'' | Measure-Object -Line).Lines\")",
+      "Bash(powershell -Command:*)"
     ],
     "deny": [],
     "ask": []

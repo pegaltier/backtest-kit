@@ -3536,7 +3536,7 @@ export class ClientStrategy implements IStrategy {
    * - Skips if new SL would cross entry price
    *
    * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-   * @param percentDistance - Percentage shift of SL distance [-100, 100], excluding 0
+   * @param percentShift - Percentage shift of SL distance [-100, 100], excluding 0
    * @param backtest - Whether running in backtest mode (controls persistence)
    * @returns Promise that resolves when trailing SL is updated and persisted
    *
@@ -3555,12 +3555,12 @@ export class ClientStrategy implements IStrategy {
    */
   public async trailingStop(
     symbol: string,
-    percentDistance: number,
+    percentShift: number,
     backtest: boolean
   ): Promise<void> {
     this.params.logger.debug("ClientStrategy trailingStop", {
       symbol,
-      percentDistance,
+      percentShift,
       hasPendingSignal: this._pendingSignal !== null,
     });
 
@@ -3571,27 +3571,27 @@ export class ClientStrategy implements IStrategy {
       );
     }
 
-    // Validation: percentDistance must be valid
-    if (typeof percentDistance !== "number" || !isFinite(percentDistance)) {
+    // Validation: percentShift must be valid
+    if (typeof percentShift !== "number" || !isFinite(percentShift)) {
       throw new Error(
-        `ClientStrategy trailingStop: percentDistance must be a finite number, got ${percentDistance} (${typeof percentDistance})`
+        `ClientStrategy trailingStop: percentShift must be a finite number, got ${percentShift} (${typeof percentShift})`
       );
     }
 
-    if (percentDistance < -100 || percentDistance > 100) {
+    if (percentShift < -100 || percentShift > 100) {
       throw new Error(
-        `ClientStrategy trailingStop: percentDistance must be in range [-100, 100], got ${percentDistance}`
+        `ClientStrategy trailingStop: percentShift must be in range [-100, 100], got ${percentShift}`
       );
     }
 
-    if (percentDistance === 0) {
+    if (percentShift === 0) {
       throw new Error(
-        `ClientStrategy trailingStop: percentDistance cannot be 0`
+        `ClientStrategy trailingStop: percentShift cannot be 0`
       );
     }
 
     // Execute trailing logic
-    TRAILING_STOP_FN(this, this._pendingSignal, percentDistance);
+    TRAILING_STOP_FN(this, this._pendingSignal, percentShift);
 
     // Persist updated signal state (inline setPendingSignal content)
     // Note: this._pendingSignal already mutated by TRAILING_STOP_FN, no reassignment needed
