@@ -1571,7 +1571,7 @@ const CALL_RISK_CHECK_SIGNAL_FN = trycatch(
   ): Promise<boolean> => {
     return await ExecutionContextService.runInContext(async () => {
       return await self.params.risk.checkSignal({
-        pendingSignal: pendingSignal,
+        pendingSignal,
         symbol: symbol,
         strategyName: self.params.method.context.strategyName,
         exchangeName: self.params.method.context.exchangeName,
