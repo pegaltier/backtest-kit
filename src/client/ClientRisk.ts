@@ -258,7 +258,7 @@ export class ClientRisk implements IRisk {
 
       // Call schema callbacks.onRejected if defined
       if (this.params.callbacks?.onRejected) {
-        this.params.callbacks.onRejected(params.symbol, params);
+        await this.params.callbacks.onRejected(params.symbol, params);
       }
 
       return false;
@@ -266,7 +266,7 @@ export class ClientRisk implements IRisk {
 
     // All checks passed
     if (this.params.callbacks?.onAllowed) {
-      this.params.callbacks.onAllowed(params.symbol, params);
+      await this.params.callbacks.onAllowed(params.symbol, params);
     }
 
     return true;

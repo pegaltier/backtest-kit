@@ -62,7 +62,7 @@ const GET_TIMEFRAME_FN = async (symbol: string, self: ClientFrame) => {
   }
 
   if (self.params.callbacks?.onTimeframe) {
-    self.params.callbacks.onTimeframe(timeframes, startDate, effectiveEndDate, interval);
+    await self.params.callbacks.onTimeframe(timeframes, startDate, effectiveEndDate, interval);
   }
 
   return timeframes;

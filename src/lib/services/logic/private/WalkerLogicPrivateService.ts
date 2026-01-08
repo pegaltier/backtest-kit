@@ -129,7 +129,7 @@ export class WalkerLogicPrivateService {
 
         // Call onStrategyStart callback if provided
         if (walkerSchema.callbacks?.onStrategyStart) {
-          walkerSchema.callbacks.onStrategyStart(strategyName, symbol);
+          await walkerSchema.callbacks.onStrategyStart(strategyName, symbol);
         }
         this.loggerService.info("walkerLogicPrivateService testing strategy", {
           strategyName,
@@ -157,7 +157,7 @@ export class WalkerLogicPrivateService {
           await errorEmitter.next(error);
           // Call onStrategyError callback if provided
           if (walkerSchema.callbacks?.onStrategyError) {
-            walkerSchema.callbacks.onStrategyError(strategyName, symbol, error);
+            await walkerSchema.callbacks.onStrategyError(strategyName, symbol, error);
           }
           continue;
         }
@@ -254,7 +254,7 @@ export class WalkerLogicPrivateService {
 
     // Call onComplete callback if provided with final best results
     if (walkerSchema.callbacks?.onComplete) {
-      walkerSchema.callbacks.onComplete(finalResults);
+      await walkerSchema.callbacks.onComplete(finalResults);
     }
 
     await walkerCompleteSubject.next(finalResults);

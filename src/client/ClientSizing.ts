@@ -167,7 +167,7 @@ const CALCULATE_FN = async (
 
   // Trigger callback if defined
   if (schema.callbacks?.onCalculate) {
-    schema.callbacks.onCalculate(quantity, params);
+    await schema.callbacks.onCalculate(quantity, params);
   }
 
   return quantity;

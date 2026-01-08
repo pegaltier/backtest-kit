@@ -230,7 +230,7 @@ export class ClientExchange implements IExchange {
     }
 
     if (this.params.callbacks?.onCandleData) {
-      this.params.callbacks.onCandleData(
+      await this.params.callbacks.onCandleData(
         symbol,
         interval,
         since,
@@ -292,7 +292,7 @@ export class ClientExchange implements IExchange {
     }
 
     if (this.params.callbacks?.onCandleData) {
-      this.params.callbacks.onCandleData(
+      await this.params.callbacks.onCandleData(
         symbol,
         interval,
         since,

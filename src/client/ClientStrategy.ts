@@ -1001,7 +1001,7 @@ const CALL_ACTIVE_CALLBACKS_FN = trycatch(
   ): Promise<void> => {
     await ExecutionContextService.runInContext(async () => {
       if (self.params.callbacks?.onActive) {
-        self.params.callbacks.onActive(
+        await self.params.callbacks.onActive(
           self.params.execution.context.symbol,
           signal,
           currentPrice,
@@ -1039,7 +1039,7 @@ const CALL_SCHEDULE_CALLBACKS_FN = trycatch(
   ): Promise<void> => {
     await ExecutionContextService.runInContext(async () => {
       if (self.params.callbacks?.onSchedule) {
-        self.params.callbacks.onSchedule(
+        await self.params.callbacks.onSchedule(
           self.params.execution.context.symbol,
           signal,
           currentPrice,
@@ -1077,7 +1077,7 @@ const CALL_CANCEL_CALLBACKS_FN = trycatch(
   ): Promise<void> => {
     await ExecutionContextService.runInContext(async () => {
       if (self.params.callbacks?.onCancel) {
-        self.params.callbacks.onCancel(
+        await self.params.callbacks.onCancel(
           self.params.execution.context.symbol,
           signal,
           currentPrice,
@@ -1115,7 +1115,7 @@ const CALL_OPEN_CALLBACKS_FN = trycatch(
   ): Promise<void> => {
     await ExecutionContextService.runInContext(async () => {
       if (self.params.callbacks?.onOpen) {
-        self.params.callbacks.onOpen(
+        await self.params.callbacks.onOpen(
           self.params.execution.context.symbol,
           signal,
           priceOpen,
@@ -1153,7 +1153,7 @@ const CALL_CLOSE_CALLBACKS_FN = trycatch(
   ): Promise<void> => {
     await ExecutionContextService.runInContext(async () => {
       if (self.params.callbacks?.onClose) {
-        self.params.callbacks.onClose(
+        await self.params.callbacks.onClose(
           self.params.execution.context.symbol,
           signal,
           currentPrice,
@@ -1190,7 +1190,7 @@ const CALL_TICK_CALLBACKS_FN = trycatch(
   ): Promise<void> => {
     await ExecutionContextService.runInContext(async () => {
       if (self.params.callbacks?.onTick) {
-        self.params.callbacks.onTick(
+        await self.params.callbacks.onTick(
           self.params.execution.context.symbol,
           result,
           self.params.execution.context.backtest
@@ -1226,7 +1226,7 @@ const CALL_IDLE_CALLBACKS_FN = trycatch(
   ): Promise<void> => {
     await ExecutionContextService.runInContext(async () => {
       if (self.params.callbacks?.onIdle) {
-        self.params.callbacks.onIdle(
+        await self.params.callbacks.onIdle(
           self.params.execution.context.symbol,
           currentPrice,
           self.params.execution.context.backtest
@@ -1416,7 +1416,7 @@ const CALL_PARTIAL_PROFIT_CALLBACKS_FN = trycatch(
         new Date(timestamp),
       );
       if (self.params.callbacks?.onPartialProfit) {
-        self.params.callbacks.onPartialProfit(
+        await self.params.callbacks.onPartialProfit(
           symbol,
           signal,
           currentPrice,
@@ -1464,7 +1464,7 @@ const CALL_PARTIAL_LOSS_CALLBACKS_FN = trycatch(
         new Date(timestamp)
       );
       if (self.params.callbacks?.onPartialLoss) {
-        self.params.callbacks.onPartialLoss(
+        await self.params.callbacks.onPartialLoss(
           symbol,
           signal,
           currentPrice,
