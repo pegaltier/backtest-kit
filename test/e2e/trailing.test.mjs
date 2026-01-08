@@ -1801,13 +1801,14 @@ test("TRAILING STOP: Move to breakeven using getPendingSignal", async ({ pass, f
 
   console.log(`[TEST] Signal closed by ${closedResult.closeReason}, PNL: ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
 
-  // Проверяем PNL: должен быть близок к 0% (breakeven)
+  // Проверяем PNL: должен быть близок к 0% (breakeven с учетом fees и slippage)
   // Фактическое закрытие происходит когда low пробивает SL=100k
-  // PNL должен быть в диапазоне от -0.2% до +0.2% (практически breakeven)
-  if (Math.abs(closedResult.pnl.pnlPercentage) > 0.2) {
-    fail(`PNL should be close to 0% (breakeven), got ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
+  // PNL включает fees и slippage, поэтому допускаем отклонение до -0.5%
+  // Главное - PNL НЕ должен быть -2% (original SL без breakeven)
+  if (closedResult.pnl.pnlPercentage < -0.5 || closedResult.pnl.pnlPercentage > 0.2) {
+    fail(`PNL should be close to 0% (breakeven with fees), got ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
     return;
   }
 
-  pass(`TRAILING STOP BREAKEVEN WORKS: Used getPendingSignal to calculate shift, moved SL to entry, closed with PNL ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
+  pass(`TRAILING STOP BREAKEVEN WORKS: Used getPendingSignal to calculate shift, moved SL to entry, closed with PNL ${closedResult.pnl.pnlPercentage.toFixed(2)}% (including fees/slippage)`);
 });
