@@ -3533,9 +3533,9 @@ export class ClientStrategy implements IStrategy {
    * await strategy.trailingStop("BTCUSDT", -50, false);
    * // newSL = 100 - 10*(1-0.5) = 95
    *
-   * // Move SL 30% away from entry (loosen, protect profit)
+   * // Move SL 30% away from entry (loosen, allow more drawdown)
    * await strategy.trailingStop("BTCUSDT", 30, false);
-   * // newSL = 100 - 10*(1+0.3) = 87 (SKIPPED: worse than 95)
+   * // newSL = 100 - 10*(1+0.3) = 87 (SKIPPED: worse than current 95)
    * ```
    */
   public async trailingStop(
