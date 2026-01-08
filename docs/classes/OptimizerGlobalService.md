@@ -5,6 +5,8 @@ group: docs
 
 # OptimizerGlobalService
 
+Implements `TOptimizer`
+
 Global service for optimizer operations with validation.
 Entry point for public API, performs validation before delegating to ConnectionService.
 

@@ -5,6 +5,8 @@ group: docs
 
 # StrategyCoreService
 
+Implements `TStrategy`
+
 Global service for strategy operations with execution context injection.
 
 Wraps StrategyConnectionService with ExecutionContextService to inject

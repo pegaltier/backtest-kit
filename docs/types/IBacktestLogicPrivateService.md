@@ -1,0 +1,19 @@
+---
+title: docs/type/IBacktestLogicPrivateService
+group: docs
+---
+
+# IBacktestLogicPrivateService
+
+```ts
+type IBacktestLogicPrivateService = Omit<BacktestLogicPrivateService, keyof {
+    loggerService: never;
+    strategyCoreService: never;
+    exchangeCoreService: never;
+    frameCoreService: never;
+    methodContextService: never;
+}>;
+```
+
+Type definition for public BacktestLogic service.
+Omits private dependencies from BacktestLogicPrivateService.

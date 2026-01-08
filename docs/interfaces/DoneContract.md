@@ -28,6 +28,14 @@ strategyName: string
 
 strategyName - Name of the strategy that completed
 
+### frameName
+
+```ts
+frameName: string
+```
+
+frameName - Name of the frame (empty string for live mode)
+
 ### backtest
 
 ```ts

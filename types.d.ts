@@ -10960,12 +10960,126 @@ declare class RiskGlobalService implements TRisk {
 }
 
 /**
+ * Private service for walker orchestration (strategy comparison).
+ *
+ * Flow:
+ * 1. Yields progress updates as each strategy completes
+ * 2. Tracks best metric in real-time
+ * 3. Returns final results with all strategies ranked
+ *
+ * Uses BacktestLogicPublicService internally for each strategy.
+ */
+declare class WalkerLogicPrivateService {
+    private readonly loggerService;
+    private readonly backtestLogicPublicService;
+    private readonly backtestMarkdownService;
+    private readonly walkerSchemaService;
+    /**
+     * Runs walker comparison for a symbol.
+     *
+     * Executes backtest for each strategy sequentially.
+     * Yields WalkerContract after each strategy completes.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param strategies - List of strategy names to compare
+     * @param metric - Metric to use for comparison
+     * @param context - Walker context with exchangeName, frameName, walkerName
+     * @yields WalkerContract with progress after each strategy
+     *
+     * @example
+     * ```typescript
+     * for await (const progress of walkerLogic.run(
+     *   "BTCUSDT",
+     *   ["strategy-v1", "strategy-v2"],
+     *   "sharpeRatio",
+     *   {
+     *     exchangeName: "binance",
+     *     frameName: "1d-backtest",
+     *     walkerName: "my-optimizer"
+     *   }
+     * )) {
+     *   console.log("Progress:", progress.strategiesTested, "/", progress.totalStrategies);
+     * }
+     * ```
+     */
+    run(symbol: string, strategies: StrategyName[], metric: WalkerMetric, context: {
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+        walkerName: WalkerName;
+    }): AsyncGenerator<WalkerContract>;
+}
+
+/**
+ * Type definition for public WalkerLogic service.
+ * Omits private dependencies from WalkerLogicPrivateService.
+ */
+type IWalkerLogicPrivateService = Omit<WalkerLogicPrivateService, keyof {
+    loggerService: never;
+    walkerSchemaService: never;
+    backtestMarkdownService: never;
+    backtestLogicPublicService: never;
+}>;
+/**
+ * Type definition for WalkerLogicPublicService.
+ * Maps all keys of IWalkerLogicPrivateService to any type.
+ */
+type TWalkerLogicPrivateService = {
+    [key in keyof IWalkerLogicPrivateService]: any;
+};
+/**
+ * Public service for walker orchestration with context management.
+ *
+ * Wraps WalkerLogicPrivateService with MethodContextService to provide
+ * implicit context propagation for strategyName, exchangeName, frameName, and walkerName.
+ *
+ * @example
+ * ```typescript
+ * const walkerLogicPublicService = inject(TYPES.walkerLogicPublicService);
+ *
+ * const results = await walkerLogicPublicService.run("BTCUSDT", {
+ *   walkerName: "my-optimizer",
+ *   exchangeName: "binance",
+ *   frameName: "1d-backtest",
+ *   strategies: ["strategy-v1", "strategy-v2"],
+ *   metric: "sharpeRatio",
+ * });
+ *
+ * console.log("Best strategy:", results.bestStrategy);
+ * ```
+ */
+declare class WalkerLogicPublicService implements TWalkerLogicPrivateService {
+    private readonly loggerService;
+    private readonly walkerLogicPrivateService;
+    private readonly walkerSchemaService;
+    /**
+     * Runs walker comparison for a symbol with context propagation.
+     *
+     * Executes backtests for all strategies.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param context - Walker context with strategies and metric
+     */
+    run: (symbol: string, context: {
+        walkerName: WalkerName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => AsyncGenerator<WalkerContract, any, any>;
+}
+
+/**
+ * Type definition for WalkerLogicPublicService.
+ * Maps all keys of WalkerLogicPublicService to any type.
+ */
+type TWalkerLogicPublicService = {
+    [key in keyof WalkerLogicPublicService]: any;
+};
+/**
  * Global service providing access to walker functionality.
  *
  * Simple wrapper around WalkerLogicPublicService for dependency injection.
  * Used by public API exports.
  */
-declare class WalkerCommandService {
+declare class WalkerCommandService implements TWalkerLogicPublicService {
     private readonly loggerService;
     private readonly walkerLogicPublicService;
     private readonly walkerSchemaService;
@@ -11310,55 +11424,23 @@ declare class LiveLogicPrivateService {
 }
 
 /**
- * Private service for walker orchestration (strategy comparison).
- *
- * Flow:
- * 1. Yields progress updates as each strategy completes
- * 2. Tracks best metric in real-time
- * 3. Returns final results with all strategies ranked
- *
- * Uses BacktestLogicPublicService internally for each strategy.
+ * Type definition for public BacktestLogic service.
+ * Omits private dependencies from BacktestLogicPrivateService.
  */
-declare class WalkerLogicPrivateService {
-    private readonly loggerService;
-    private readonly backtestLogicPublicService;
-    private readonly backtestMarkdownService;
-    private readonly walkerSchemaService;
-    /**
-     * Runs walker comparison for a symbol.
-     *
-     * Executes backtest for each strategy sequentially.
-     * Yields WalkerContract after each strategy completes.
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param strategies - List of strategy names to compare
-     * @param metric - Metric to use for comparison
-     * @param context - Walker context with exchangeName, frameName, walkerName
-     * @yields WalkerContract with progress after each strategy
-     *
-     * @example
-     * ```typescript
-     * for await (const progress of walkerLogic.run(
-     *   "BTCUSDT",
-     *   ["strategy-v1", "strategy-v2"],
-     *   "sharpeRatio",
-     *   {
-     *     exchangeName: "binance",
-     *     frameName: "1d-backtest",
-     *     walkerName: "my-optimizer"
-     *   }
-     * )) {
-     *   console.log("Progress:", progress.strategiesTested, "/", progress.totalStrategies);
-     * }
-     * ```
-     */
-    run(symbol: string, strategies: StrategyName[], metric: WalkerMetric, context: {
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-        walkerName: WalkerName;
-    }): AsyncGenerator<WalkerContract>;
-}
-
+type IBacktestLogicPrivateService = Omit<BacktestLogicPrivateService, keyof {
+    loggerService: never;
+    strategyCoreService: never;
+    exchangeCoreService: never;
+    frameCoreService: never;
+    methodContextService: never;
+}>;
+/**
+ * Type definition for BacktestLogicPublicService.
+ * Maps all keys of IBacktestLogicPrivateService to any type.
+ */
+type TBacktestLogicPrivateService = {
+    [key in keyof IBacktestLogicPrivateService]: any;
+};
 /**
  * Public service for backtest orchestration with context management.
  *
@@ -11383,7 +11465,7 @@ declare class WalkerLogicPrivateService {
  * }
  * ```
  */
-declare class BacktestLogicPublicService {
+declare class BacktestLogicPublicService implements TBacktestLogicPrivateService {
     private readonly loggerService;
     private readonly backtestLogicPrivateService;
     /**
@@ -11403,6 +11485,22 @@ declare class BacktestLogicPublicService {
     }) => AsyncGenerator<IStrategyBacktestResult, void, unknown>;
 }
 
+/**
+ * Type definition for public LiveLogic service.
+ * Omits private dependencies from LiveLogicPrivateService.
+ */
+type ILiveLogicPrivateService = Omit<LiveLogicPrivateService, keyof {
+    loggerService: never;
+    strategyCoreService: never;
+    methodContextService: never;
+}>;
+/**
+ * Type definition for LiveLogicPublicService.
+ * Maps all keys of ILiveLogicPrivateService to any type.
+ */
+type TLiveLogicPrivateService = {
+    [key in keyof ILiveLogicPrivateService]: any;
+};
 /**
  * Public service for live trading orchestration with context management.
  *
@@ -11434,7 +11532,7 @@ declare class BacktestLogicPublicService {
  * }
  * ```
  */
-declare class LiveLogicPublicService {
+declare class LiveLogicPublicService implements TLiveLogicPrivateService {
     private readonly loggerService;
     private readonly liveLogicPrivateService;
     /**
@@ -11455,52 +11553,19 @@ declare class LiveLogicPublicService {
 }
 
 /**
- * Public service for walker orchestration with context management.
- *
- * Wraps WalkerLogicPrivateService with MethodContextService to provide
- * implicit context propagation for strategyName, exchangeName, frameName, and walkerName.
- *
- * @example
- * ```typescript
- * const walkerLogicPublicService = inject(TYPES.walkerLogicPublicService);
- *
- * const results = await walkerLogicPublicService.run("BTCUSDT", {
- *   walkerName: "my-optimizer",
- *   exchangeName: "binance",
- *   frameName: "1d-backtest",
- *   strategies: ["strategy-v1", "strategy-v2"],
- *   metric: "sharpeRatio",
- * });
- *
- * console.log("Best strategy:", results.bestStrategy);
- * ```
+ * Type definition for LiveLogicPublicService.
+ * Maps all keys of LiveLogicPublicService to any type.
  */
-declare class WalkerLogicPublicService {
-    private readonly loggerService;
-    private readonly walkerLogicPrivateService;
-    private readonly walkerSchemaService;
-    /**
-     * Runs walker comparison for a symbol with context propagation.
-     *
-     * Executes backtests for all strategies.
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param context - Walker context with strategies and metric
-     */
-    run: (symbol: string, context: {
-        walkerName: WalkerName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => AsyncGenerator<WalkerContract, any, any>;
-}
-
+type TLiveLogicPublicService = {
+    [key in keyof LiveLogicPublicService]: any;
+};
 /**
  * Global service providing access to live trading functionality.
  *
  * Simple wrapper around LiveLogicPublicService for dependency injection.
  * Used by public API exports.
  */
-declare class LiveCommandService {
+declare class LiveCommandService implements TLiveLogicPublicService {
     private readonly loggerService;
     private readonly liveLogicPublicService;
     private readonly strategyValidationService;
@@ -11523,12 +11588,19 @@ declare class LiveCommandService {
 }
 
 /**
+ * Type definition for BacktestLogicPublicService.
+ * Maps all keys of BacktestLogicPublicService to any type.
+ */
+type TBacktestLogicPublicService = {
+    [key in keyof BacktestLogicPublicService]: any;
+};
+/**
  * Global service providing access to backtest functionality.
  *
  * Simple wrapper around BacktestLogicPublicService for dependency injection.
  * Used by public API exports.
  */
-declare class BacktestCommandService {
+declare class BacktestCommandService implements TBacktestLogicPublicService {
     private readonly loggerService;
     private readonly strategySchemaService;
     private readonly riskValidationService;

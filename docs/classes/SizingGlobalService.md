@@ -5,6 +5,8 @@ group: docs
 
 # SizingGlobalService
 
+Implements `TSizing`
+
 Global service for sizing operations.
 
 Wraps SizingConnectionService for position size calculation.

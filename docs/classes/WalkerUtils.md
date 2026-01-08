@@ -50,7 +50,7 @@ Useful for running walker comparison for side effects only (callbacks, logging).
 ### stop
 
 ```ts
-stop: (symbol: string, walkerName: string) => Promise<void>
+stop: (symbol: string, context: { walkerName: string; }) => Promise<void>
 ```
 
 Stops all strategies in the walker from generating new signals.
@@ -68,7 +68,7 @@ Stop signal is filtered by walkerName to prevent interference.
 ### getData
 
 ```ts
-getData: (symbol: string, walkerName: string) => Promise<WalkerCompleteContract>
+getData: (symbol: string, context: { walkerName: string; }) => Promise<WalkerCompleteContract>
 ```
 
 Gets walker results data from all strategy comparisons.
@@ -76,7 +76,7 @@ Gets walker results data from all strategy comparisons.
 ### getReport
 
 ```ts
-getReport: (symbol: string, walkerName: string, strategyColumns?: StrategyColumn[], pnlColumns?: PnlColumn[]) => Promise<string>
+getReport: (symbol: string, context: { walkerName: string; }, strategyColumns?: StrategyColumn[], pnlColumns?: PnlColumn[]) => Promise<string>
 ```
 
 Generates markdown report with all strategy comparisons for a walker.
@@ -84,7 +84,7 @@ Generates markdown report with all strategy comparisons for a walker.
 ### dump
 
 ```ts
-dump: (symbol: string, walkerName: string, path?: string, strategyColumns?: StrategyColumn[], pnlColumns?: PnlColumn[]) => Promise<void>
+dump: (symbol: string, context: { walkerName: string; }, path?: string, strategyColumns?: StrategyColumn[], pnlColumns?: PnlColumn[]) => Promise<void>
 ```
 
 Saves walker report to disk.

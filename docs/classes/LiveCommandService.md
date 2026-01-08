@@ -5,6 +5,8 @@ group: docs
 
 # LiveCommandService
 
+Implements `TLiveLogicPublicService`
+
 Global service providing access to live trading functionality.
 
 Simple wrapper around LiveLogicPublicService for dependency injection.

@@ -5,6 +5,8 @@ group: docs
 
 # RiskGlobalService
 
+Implements `TRisk`
+
 Global service for risk operations.
 
 Wraps RiskConnectionService for risk limit validation.

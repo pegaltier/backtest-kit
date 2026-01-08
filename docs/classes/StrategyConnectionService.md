@@ -5,6 +5,8 @@ group: docs
 
 # StrategyConnectionService
 
+Implements `TStrategy$1`
+
 Connection service routing strategy operations to correct ClientStrategy instance.
 
 Routes all IStrategy method calls to the appropriate strategy implementation
@@ -35,6 +37,12 @@ loggerService: LoggerService
 
 ```ts
 executionContextService: { readonly context: IExecutionContext; }
+```
+
+### methodContextService
+
+```ts
+methodContextService: { readonly context: IMethodContext; }
 ```
 
 ### strategySchemaService

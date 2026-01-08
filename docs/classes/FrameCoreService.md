@@ -5,6 +5,8 @@ group: docs
 
 # FrameCoreService
 
+Implements `TFrame`
+
 Global service for frame operations.
 
 Wraps FrameConnectionService for timeframe generation.

@@ -25,9 +25,9 @@ constructor();
 
 ```ts
 static getData(symbol: string, context: {
-    strategyName: string;
-    exchangeName: string;
-    frameName: string;
+    strategyName: StrategyName;
+    exchangeName: ExchangeName;
+    frameName: FrameName;
 }, backtest?: boolean): Promise<PerformanceStatisticsModel>;
 ```
 
@@ -42,9 +42,9 @@ Returns detailed metrics grouped by operation type:
 
 ```ts
 static getReport(symbol: string, context: {
-    strategyName: string;
-    exchangeName: string;
-    frameName: string;
+    strategyName: StrategyName;
+    exchangeName: ExchangeName;
+    frameName: FrameName;
 }, backtest?: boolean, columns?: Columns$3[]): Promise<string>;
 ```
 
@@ -59,9 +59,9 @@ Report includes:
 
 ```ts
 static dump(symbol: string, context: {
-    strategyName: string;
-    exchangeName: string;
-    frameName: string;
+    strategyName: StrategyName;
+    exchangeName: ExchangeName;
+    frameName: FrameName;
 }, backtest?: boolean, path?: string, columns?: Columns$3[]): Promise<void>;
 ```
 

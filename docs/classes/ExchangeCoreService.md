@@ -5,6 +5,8 @@ group: docs
 
 # ExchangeCoreService
 
+Implements `TExchange`
+
 Global service for exchange operations with execution context injection.
 
 Wraps ExchangeConnectionService with ExecutionContextService to inject
