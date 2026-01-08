@@ -803,108 +803,101 @@ const TRAILING_STOP_FN = (
   const slDistancePercent = Math.abs((signal.priceOpen - signal.priceStopLoss) / signal.priceOpen * 100);
 
   // Calculate new stop-loss distance percentage by adding shift
-  // Negative percentShift: reduces distance % (tightens stop, moves SL toward entry)
+  // Negative percentShift: reduces distance % (tightens stop, moves SL toward entry or beyond)
   // Positive percentShift: increases distance % (loosens stop, moves SL away from entry)
   const newSlDistancePercent = slDistancePercent + percentShift;
 
-  // Validate: new distance must be positive (SL cannot cross entry)
-  if (newSlDistancePercent <= 0) {
-    self.params.logger.warn("TRAILING_STOP_FN: new distance would be zero or negative, skipping", {
-      signalId: signal.id,
-      position: signal.position,
-      originalDistancePercent: slDistancePercent,
-      percentShift,
-      newDistancePercent: newSlDistancePercent,
-    });
-    return;
-  }
-
   // Calculate new stop-loss price based on new distance percentage
+  // Negative newSlDistancePercent means SL crosses entry into profit zone
   let newStopLoss: number;
 
   if (signal.position === "long") {
-    // LONG: SL is below entry
+    // LONG: SL is below entry (or above entry if in profit zone)
     // Formula: entry * (1 - newDistance%)
-    // Example: entry=100, originalSL=-1%, shift=-1% → newDistance=0% → invalid (caught above)
-    // Example: entry=100, originalSL=-1%, shift=+1% → newDistance=2% → 100 * 0.98 = 98 (looser)
-    // Example: entry=100, originalSL=-2%, shift=+1% → newDistance=1% → 100 * 0.99 = 99 (tighter)
+    // Example: entry=100, originalSL=90 (10%), shift=-15% → newDistance=-5% → 100 * 1.05 = 105 (profit zone)
+    // Example: entry=100, originalSL=90 (10%), shift=-5% → newDistance=5% → 100 * 0.95 = 95 (tighter)
+    // Example: entry=100, originalSL=90 (10%), shift=+5% → newDistance=15% → 100 * 0.85 = 85 (looser)
     newStopLoss = signal.priceOpen * (1 - newSlDistancePercent / 100);
   } else {
-    // SHORT: SL is above entry
+    // SHORT: SL is above entry (or below entry if in profit zone)
     // Formula: entry * (1 + newDistance%)
-    // Example: entry=100, originalSL=+1%, shift=+1% → newDistance=2% → 100 * 1.02 = 102 (looser)
-    // Example: entry=100, originalSL=+2%, shift=-1% → newDistance=1% → 100 * 1.01 = 101 (tighter)
+    // Example: entry=100, originalSL=110 (10%), shift=-15% → newDistance=-5% → 100 * 0.95 = 95 (profit zone)
+    // Example: entry=100, originalSL=110 (10%), shift=-5% → newDistance=5% → 100 * 1.05 = 105 (tighter)
+    // Example: entry=100, originalSL=110 (10%), shift=+5% → newDistance=15% → 100 * 1.15 = 115 (looser)
     newStopLoss = signal.priceOpen * (1 + newSlDistancePercent / 100);
-  }
-
-  // Validate: new SL must not cross entry price
-  if (signal.position === "long") {
-    if (newStopLoss >= signal.priceOpen) {
-      self.params.logger.warn("TRAILING_STOP_FN: new SL would cross entry price, skipping", {
-        signalId: signal.id,
-        position: signal.position,
-        priceOpen: signal.priceOpen,
-        newStopLoss,
-        percentShift,
-      });
-      return;
-    }
-  } else {
-    if (newStopLoss <= signal.priceOpen) {
-      self.params.logger.warn("TRAILING_STOP_FN: new SL would cross entry price, skipping", {
-        signalId: signal.id,
-        position: signal.position,
-        priceOpen: signal.priceOpen,
-        newStopLoss,
-        percentShift,
-      });
-      return;
-    }
   }
 
   // Get current effective stop-loss (trailing or original)
   const currentStopLoss = signal._trailingPriceStopLoss ?? signal.priceStopLoss;
 
-  // Only update if new SL is BETTER (protects more profit)
-  let shouldUpdate = false;
+  // Determine if this is the first trailing stop call (direction not set yet)
+  const isFirstCall = signal._trailingPriceStopLoss === undefined;
 
-  if (signal.position === "long") {
-    // LONG: new SL must be HIGHER than current SL (moving upward = better)
-    if (newStopLoss > currentStopLoss) {
-      shouldUpdate = true;
-    }
-  } else {
-    // SHORT: new SL must be LOWER than current SL (moving downward = better)
-    if (newStopLoss < currentStopLoss) {
-      shouldUpdate = true;
-    }
-  }
+  if (isFirstCall) {
+    // First call: set the direction and update SL unconditionally
+    signal._trailingPriceStopLoss = newStopLoss;
 
-  if (!shouldUpdate) {
-    self.params.logger.debug("TRAILING_STOP_FN: new SL not better, skipping", {
+    self.params.logger.info("TRAILING_STOP_FN executed (first call - direction set)", {
       signalId: signal.id,
       position: signal.position,
-      currentStopLoss,
+      priceOpen: signal.priceOpen,
+      originalStopLoss: signal.priceStopLoss,
+      originalDistancePercent: slDistancePercent,
+      previousStopLoss: currentStopLoss,
       newStopLoss,
+      newDistancePercent: newSlDistancePercent,
       percentShift,
+      inProfitZone: signal.position === "long" ? newStopLoss > signal.priceOpen : newStopLoss < signal.priceOpen,
+      direction: newStopLoss > currentStopLoss ? "up" : "down",
     });
-    return;
+  } else {
+    // Subsequent calls: only update if new SL continues in the same direction
+    const movingUp = newStopLoss > currentStopLoss;
+    const movingDown = newStopLoss < currentStopLoss;
+
+    // Determine initial direction based on first trailing SL vs original SL
+    const initialDirection = signal._trailingPriceStopLoss > signal.priceStopLoss ? "up" : "down";
+
+    let shouldUpdate = false;
+
+    if (initialDirection === "up" && movingUp) {
+      // Direction is UP, and new SL continues moving up
+      shouldUpdate = true;
+    } else if (initialDirection === "down" && movingDown) {
+      // Direction is DOWN, and new SL continues moving down
+      shouldUpdate = true;
+    }
+
+    if (!shouldUpdate) {
+      self.params.logger.debug("TRAILING_STOP_FN: new SL not in same direction, skipping", {
+        signalId: signal.id,
+        position: signal.position,
+        currentStopLoss,
+        newStopLoss,
+        percentShift,
+        initialDirection,
+        attemptedDirection: movingUp ? "up" : movingDown ? "down" : "same",
+      });
+      return;
+    }
+
+    // Update trailing stop-loss
+    signal._trailingPriceStopLoss = newStopLoss;
+
+    self.params.logger.info("TRAILING_STOP_FN executed", {
+      signalId: signal.id,
+      position: signal.position,
+      priceOpen: signal.priceOpen,
+      originalStopLoss: signal.priceStopLoss,
+      originalDistancePercent: slDistancePercent,
+      previousStopLoss: currentStopLoss,
+      newStopLoss,
+      newDistancePercent: newSlDistancePercent,
+      percentShift,
+      inProfitZone: signal.position === "long" ? newStopLoss > signal.priceOpen : newStopLoss < signal.priceOpen,
+      direction: initialDirection,
+    });
   }
-
-  // Update trailing stop-loss
-  signal._trailingPriceStopLoss = newStopLoss;
-
-  self.params.logger.info("TRAILING_STOP_FN executed", {
-    signalId: signal.id,
-    position: signal.position,
-    priceOpen: signal.priceOpen,
-    originalStopLoss: signal.priceStopLoss,
-    originalDistancePercent: slDistancePercent,
-    previousStopLoss: currentStopLoss,
-    newStopLoss,
-    newDistancePercent: newSlDistancePercent,
-    percentShift,
-  });
 };
 
 const CHECK_SCHEDULED_SIGNAL_TIMEOUT_FN = async (
