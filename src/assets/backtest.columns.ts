@@ -95,6 +95,20 @@ export const backtest_columns: ColumnModel<IStrategyTickResultClosed>[] = [
     isVisible: () => true,
   },
   {
+    key: "partialCloses",
+    label: "Partial Closes",
+    format: (data) => {
+      const partial = data.signal._partial;
+      if (!partial || partial.length === 0) return "N/A";
+      const profitCount = partial.filter(p => p.type === "profit").length;
+      const lossCount = partial.filter(p => p.type === "loss").length;
+      const profitPercent = partial.filter(p => p.type === "profit").reduce((sum, p) => sum + p.percent, 0);
+      const lossPercent = partial.filter(p => p.type === "loss").reduce((sum, p) => sum + p.percent, 0);
+      return `${partial.length} (↑${profitCount}: ${profitPercent.toFixed(1)}%, ↓${lossCount}: ${lossPercent.toFixed(1)}%)`;
+    },
+    isVisible: () => true,
+  },
+  {
     key: "closeReason",
     label: "Close Reason",
     format: (data) => data.closeReason,

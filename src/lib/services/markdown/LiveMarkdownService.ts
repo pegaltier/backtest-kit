@@ -15,6 +15,8 @@ import { signalLiveEmitter } from "../../../config/emitters";
 import { LiveStatisticsModel, TickEvent } from "../../../model/LiveStatistics.model";
 import { ColumnModel } from "../../../model/Column.model";
 import { COLUMN_CONFIG } from "../../../config/columns";
+import { ExchangeName } from "../../../interfaces/Exchange.interface";
+import { FrameName } from "../../../interfaces/Frame.interface";
 
 /**
  * Type alias for column configuration used in live trading markdown reports.
@@ -62,8 +64,8 @@ export type Columns = ColumnModel<TickEvent>;
 const CREATE_KEY_FN = (
   symbol: string,
   strategyName: StrategyName,
-  exchangeName: string,
-  frameName: string,
+  exchangeName: ExchangeName,
+  frameName: FrameName,
   backtest: boolean
 ): string => {
   const parts = [symbol, strategyName, exchangeName];
@@ -451,7 +453,7 @@ export class LiveMarkdownService {
    * Memoized function to get or create ReportStorage for a symbol-strategy-exchange-frame-backtest combination.
    * Each combination gets its own isolated storage instance.
    */
-  private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: string, frameName: string, backtest: boolean) => ReportStorage>(
+  private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),
     () => new ReportStorage()
   );
@@ -513,7 +515,7 @@ export class LiveMarkdownService {
    * console.log(stats.sharpeRatio, stats.winRate);
    * ```
    */
-  public getData = async (symbol: string, strategyName: StrategyName, exchangeName: string, frameName: string, backtest: boolean): Promise<LiveStatisticsModel> => {
+  public getData = async (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean): Promise<LiveStatisticsModel> => {
     this.loggerService.log("liveMarkdownService getData", {
       symbol,
       strategyName,
@@ -547,8 +549,8 @@ export class LiveMarkdownService {
   public getReport = async (
     symbol: string,
     strategyName: StrategyName,
-    exchangeName: string,
-    frameName: string,
+    exchangeName: ExchangeName,
+    frameName: FrameName,
     backtest: boolean,
     columns: Columns[] = COLUMN_CONFIG.live_columns
   ): Promise<string> => {
@@ -590,8 +592,8 @@ export class LiveMarkdownService {
   public dump = async (
     symbol: string,
     strategyName: StrategyName,
-    exchangeName: string,
-    frameName: string,
+    exchangeName: ExchangeName,
+    frameName: FrameName,
     backtest: boolean,
     path = "./dump/live",
     columns: Columns[] = COLUMN_CONFIG.live_columns
@@ -626,7 +628,7 @@ export class LiveMarkdownService {
    * await service.clear();
    * ```
    */
-  public clear = async (payload?: { symbol: string; strategyName: StrategyName; exchangeName: string; frameName: string; backtest: boolean }) => {
+  public clear = async (payload?: { symbol: string; strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName; backtest: boolean }) => {
     this.loggerService.log("liveMarkdownService clear", {
       payload,
     });
@@ -651,8 +653,14 @@ export class LiveMarkdownService {
    */
   protected init = singleshot(async () => {
     this.loggerService.log("liveMarkdownService init");
-    signalLiveEmitter.subscribe(this.tick);
+    this.unsubscribe = signalLiveEmitter.subscribe(this.tick);
   });
+
+  /**
+   * Function to unsubscribe from backtest signal events.
+   * Assigned during init().
+   */
+  public unsubscribe: Function;
 }
 
 export default LiveMarkdownService;

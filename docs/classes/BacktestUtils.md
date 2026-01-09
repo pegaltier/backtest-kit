@@ -88,6 +88,28 @@ Clears the scheduled signal (waiting for priceOpen activation).
 Does NOT affect active pending signals or strategy operation.
 Does NOT set stop flag - strategy can continue generating new signals.
 
+### partialProfit
+
+```ts
+partialProfit: (symbol: string, percentToClose: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<void>
+```
+
+Executes partial close at profit level (moving toward TP).
+
+Closes a percentage of the active pending position at profit.
+Price must be moving toward take profit (in profit direction).
+
+### partialLoss
+
+```ts
+partialLoss: (symbol: string, percentToClose: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<void>
+```
+
+Executes partial close at loss level (moving toward SL).
+
+Closes a percentage of the active pending position at loss.
+Price must be moving toward stop loss (in loss direction).
+
 ### getData
 
 ```ts

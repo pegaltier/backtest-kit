@@ -3,6 +3,26 @@ import LoggerService from "../../base/LoggerService";
 import TYPES from "../../../core/types";
 import LiveLogicPrivateService from "../private/LiveLogicPrivateService";
 import MethodContextService from "../../context/MethodContextService";
+import { StrategyName } from "../../../../interfaces/Strategy.interface";
+import { ExchangeName } from "../../../../interfaces/Exchange.interface";
+
+/**
+ * Type definition for public LiveLogic service.
+ * Omits private dependencies from LiveLogicPrivateService.
+ */
+type ILiveLogicPrivateService = Omit<LiveLogicPrivateService, keyof {
+  loggerService: never;
+  strategyCoreService: never;
+  methodContextService: never;
+}>;
+
+/**
+ * Type definition for LiveLogicPublicService.
+ * Maps all keys of ILiveLogicPrivateService to any type.
+ */
+type TLiveLogicPrivateService = {
+  [key in keyof ILiveLogicPrivateService]: any;
+};
 
 /**
  * Public service for live trading orchestration with context management.
@@ -35,7 +55,7 @@ import MethodContextService from "../../context/MethodContextService";
  * }
  * ```
  */
-export class LiveLogicPublicService {
+export class LiveLogicPublicService implements TLiveLogicPrivateService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly liveLogicPrivateService = inject<LiveLogicPrivateService>(
     TYPES.liveLogicPrivateService
@@ -55,8 +75,8 @@ export class LiveLogicPublicService {
   public run = (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     }
   ) => {
     this.loggerService.log("liveLogicPublicService run", {

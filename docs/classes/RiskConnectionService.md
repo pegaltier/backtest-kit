@@ -5,6 +5,8 @@ group: docs
 
 # RiskConnectionService
 
+Implements `TRisk$1`
+
 Connection service routing risk operations to correct ClientRisk instance.
 
 Routes risk checking calls to the appropriate risk implementation

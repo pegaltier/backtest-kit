@@ -20,6 +20,8 @@ import {
 import { BacktestStatisticsModel } from "../../../model/BacktestStatistics.model";
 import { ColumnModel } from "../../../model/Column.model";
 import { COLUMN_CONFIG } from "../../../config/columns";
+import { ExchangeName } from "../../../interfaces/Exchange.interface";
+import { FrameName } from "../../../interfaces/Frame.interface";
 
 /**
  * Type alias for column configuration used in walker strategy markdown reports.
@@ -170,8 +172,8 @@ class ReportStorage {
     symbol: string,
     metric: WalkerMetric,
     context: {
-      exchangeName: string;
-      frameName: string;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     }
   ): Promise<WalkerStatisticsModel> {
     if (this._totalStrategies === null) {
@@ -312,8 +314,8 @@ class ReportStorage {
     symbol: string,
     metric: WalkerMetric,
     context: {
-      exchangeName: string;
-      frameName: string;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     },
     strategyColumns: StrategyColumn[] = COLUMN_CONFIG.walker_strategy_columns,
     pnlColumns: PnlColumn[] = COLUMN_CONFIG.walker_pnl_columns
@@ -363,8 +365,8 @@ class ReportStorage {
     symbol: string,
     metric: WalkerMetric,
     context: {
-      exchangeName: string;
-      frameName: string;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     },
     path = "./dump/walker",
     strategyColumns: StrategyColumn[] = COLUMN_CONFIG.walker_strategy_columns,
@@ -459,8 +461,8 @@ export class WalkerMarkdownService {
     symbol: string,
     metric: WalkerMetric,
     context: {
-      exchangeName: string;
-      frameName: string;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     }
   ): Promise<WalkerCompleteContract> => {
     this.loggerService.log("walkerMarkdownService getData", {
@@ -497,8 +499,8 @@ export class WalkerMarkdownService {
     symbol: string,
     metric: WalkerMetric,
     context: {
-      exchangeName: string;
-      frameName: string;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     },
     strategyColumns: StrategyColumn[] = COLUMN_CONFIG.walker_strategy_columns,
     pnlColumns: PnlColumn[] = COLUMN_CONFIG.walker_pnl_columns
@@ -542,8 +544,8 @@ export class WalkerMarkdownService {
     symbol: string,
     metric: WalkerMetric,
     context: {
-      exchangeName: string;
-      frameName: string;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     },
     path = "./dump/walker",
     strategyColumns: StrategyColumn[] = COLUMN_CONFIG.walker_strategy_columns,
@@ -598,8 +600,14 @@ export class WalkerMarkdownService {
    */
   protected init = singleshot(async () => {
     this.loggerService.log("walkerMarkdownService init");
-    walkerEmitter.subscribe(this.tick);
+    this.unsubscribe = walkerEmitter.subscribe(this.tick);
   });
+
+  /**
+   * Function to unsubscribe from partial profit/loss events.
+   * Assigned during init().
+   */
+  public unsubscribe: Function;
 }
 
 export default WalkerMarkdownService;

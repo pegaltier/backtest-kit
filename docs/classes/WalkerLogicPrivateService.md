@@ -52,9 +52,9 @@ walkerSchemaService: any
 
 ```ts
 run(symbol: string, strategies: StrategyName[], metric: WalkerMetric, context: {
-    exchangeName: string;
-    frameName: string;
-    walkerName: string;
+    exchangeName: ExchangeName;
+    frameName: FrameName;
+    walkerName: WalkerName;
 }): AsyncGenerator<WalkerContract>;
 ```
 

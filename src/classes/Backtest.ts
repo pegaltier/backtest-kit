@@ -23,6 +23,8 @@ const BACKTEST_METHOD_NAME_GET_PENDING_SIGNAL =
 const BACKTEST_METHOD_NAME_GET_SCHEDULED_SIGNAL =
   "BacktestUtils.getScheduledSignal";
 const BACKTEST_METHOD_NAME_CANCEL = "BacktestUtils.cancel";
+const BACKTEST_METHOD_NAME_PARTIAL_PROFIT = "BacktestUtils.partialProfit";
+const BACKTEST_METHOD_NAME_PARTIAL_LOSS = "BacktestUtils.partialLoss";
 const BACKTEST_METHOD_NAME_GET_DATA = "BacktestUtils.getData";
 
 /**
@@ -39,9 +41,9 @@ const BACKTEST_METHOD_NAME_GET_DATA = "BacktestUtils.getData";
 const INSTANCE_TASK_FN = async (
   symbol: string,
   context: {
-    strategyName: string;
-    exchangeName: string;
-    frameName: string;
+    strategyName: StrategyName;
+    exchangeName: ExchangeName;
+    frameName: FrameName;
   },
   self: BacktestInstance
 ) => {
@@ -58,6 +60,7 @@ const INSTANCE_TASK_FN = async (
     await doneBacktestSubject.next({
       exchangeName: context.exchangeName,
       strategyName: context.strategyName,
+      frameName: context.frameName,
       backtest: true,
       symbol,
     });
@@ -121,9 +124,9 @@ export class BacktestInstance {
     async (
       symbol: string,
       context: {
-        strategyName: string;
-        exchangeName: string;
-        frameName: string;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
       }
     ) => {
       backtest.loggerService.info(BACKTEST_METHOD_NAME_TASK, {
@@ -168,9 +171,9 @@ export class BacktestInstance {
   public run = (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     }
   ) => {
     backtest.loggerService.info(BACKTEST_METHOD_NAME_RUN, {
@@ -280,9 +283,9 @@ export class BacktestInstance {
   public background = (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     }
   ) => {
     backtest.loggerService.info(BACKTEST_METHOD_NAME_BACKGROUND, {
@@ -325,6 +328,7 @@ export class BacktestInstance {
             await doneBacktestSubject.next({
               exchangeName: context.exchangeName,
               strategyName: context.strategyName,
+              frameName: context.frameName,
               backtest: true,
               symbol,
             });
@@ -382,9 +386,9 @@ export class BacktestUtils {
   public run = (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     }
   ) => {
     {
@@ -453,9 +457,9 @@ export class BacktestUtils {
   public background = (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     }
   ) => {
     backtest.strategyValidationService.validate(
@@ -517,11 +521,15 @@ export class BacktestUtils {
   public getPendingSignal = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     }
   ) => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_GET_PENDING_SIGNAL, {
+      symbol,
+      context,
+    });
     backtest.strategyValidationService.validate(
       context.strategyName,
       BACKTEST_METHOD_NAME_GET_PENDING_SIGNAL
@@ -570,11 +578,15 @@ export class BacktestUtils {
   public getScheduledSignal = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     }
   ) => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_GET_SCHEDULED_SIGNAL, {
+      symbol,
+      context,
+    });
     backtest.strategyValidationService.validate(
       context.strategyName,
       BACKTEST_METHOD_NAME_GET_SCHEDULED_SIGNAL
@@ -629,11 +641,15 @@ export class BacktestUtils {
   public stop = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     }
   ): Promise<void> => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_STOP, {
+      symbol,
+      context,
+    });
     backtest.strategyValidationService.validate(
       context.strategyName,
       BACKTEST_METHOD_NAME_STOP
@@ -685,12 +701,17 @@ export class BacktestUtils {
   public cancel = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     },
     cancelId?: string
   ): Promise<void> => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_CANCEL, {
+      symbol,
+      context,
+      cancelId,
+    });
     backtest.strategyValidationService.validate(
       context.strategyName,
       BACKTEST_METHOD_NAME_CANCEL
@@ -722,6 +743,152 @@ export class BacktestUtils {
   };
 
   /**
+   * Executes partial close at profit level (moving toward TP).
+   *
+   * Closes a percentage of the active pending position at profit.
+   * Price must be moving toward take profit (in profit direction).
+   *
+   * @param symbol - Trading pair symbol
+   * @param percentToClose - Percentage of position to close (0-100, absolute value)
+   * @param currentPrice - Current market price for this partial close
+   * @param context - Execution context with strategyName, exchangeName, and frameName
+   * @returns Promise that resolves when state is updated
+   *
+   * @throws Error if currentPrice is not in profit direction:
+   *   - LONG: currentPrice must be > priceOpen
+   *   - SHORT: currentPrice must be < priceOpen
+   *
+   * @example
+   * ```typescript
+   * // Close 30% of LONG position at profit
+   * await Backtest.partialProfit("BTCUSDT", 30, 45000, {
+   *   exchangeName: "binance",
+   *   frameName: "frame1",
+   *   strategyName: "my-strategy"
+   * });
+   * ```
+   */
+  public partialProfit = async (
+    symbol: string,
+    percentToClose: number,
+    currentPrice: number,
+    context: {
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
+    }
+  ): Promise<void> => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_PARTIAL_PROFIT, {
+      symbol,
+      percentToClose,
+      currentPrice,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      BACKTEST_METHOD_NAME_PARTIAL_PROFIT
+    );
+
+    {
+      const { riskName, riskList } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          BACKTEST_METHOD_NAME_PARTIAL_PROFIT
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            BACKTEST_METHOD_NAME_PARTIAL_PROFIT
+          )
+        );
+    }
+
+    await backtest.strategyCoreService.partialProfit(
+      true,
+      symbol,
+      percentToClose,
+      currentPrice,
+      context
+    );
+  };
+
+  /**
+   * Executes partial close at loss level (moving toward SL).
+   *
+   * Closes a percentage of the active pending position at loss.
+   * Price must be moving toward stop loss (in loss direction).
+   *
+   * @param symbol - Trading pair symbol
+   * @param percentToClose - Percentage of position to close (0-100, absolute value)
+   * @param currentPrice - Current market price for this partial close
+   * @param context - Execution context with strategyName, exchangeName, and frameName
+   * @returns Promise that resolves when state is updated
+   *
+   * @throws Error if currentPrice is not in loss direction:
+   *   - LONG: currentPrice must be < priceOpen
+   *   - SHORT: currentPrice must be > priceOpen
+   *
+   * @example
+   * ```typescript
+   * // Close 40% of LONG position at loss
+   * await Backtest.partialLoss("BTCUSDT", 40, 38000, {
+   *   exchangeName: "binance",
+   *   frameName: "frame1",
+   *   strategyName: "my-strategy"
+   * });
+   * ```
+   */
+  public partialLoss = async (
+    symbol: string,
+    percentToClose: number,
+    currentPrice: number,
+    context: {
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
+    }
+  ): Promise<void> => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_PARTIAL_LOSS, {
+      symbol,
+      percentToClose,
+      currentPrice,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      BACKTEST_METHOD_NAME_PARTIAL_LOSS
+    );
+
+    {
+      const { riskName, riskList } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          BACKTEST_METHOD_NAME_PARTIAL_LOSS
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            BACKTEST_METHOD_NAME_PARTIAL_LOSS
+          )
+        );
+    }
+
+    await backtest.strategyCoreService.partialLoss(
+      true,
+      symbol,
+      percentToClose,
+      currentPrice,
+      context
+    );
+  };
+
+  /**
    * Gets statistical data from all closed signals for a symbol-strategy pair.
    *
    * @param symbol - Trading pair symbol
@@ -742,11 +909,15 @@ export class BacktestUtils {
   public getData = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     }
   ) => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_GET_DATA, {
+      symbol,
+      context,
+    });
     backtest.strategyValidationService.validate(
       context.strategyName,
       BACKTEST_METHOD_NAME_GET_DATA
@@ -800,12 +971,16 @@ export class BacktestUtils {
   public getReport = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     },
     columns?: Columns[]
   ): Promise<string> => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_GET_REPORT, {
+      symbol,
+      context,
+    });
     backtest.strategyValidationService.validate(
       context.strategyName,
       BACKTEST_METHOD_NAME_GET_REPORT
@@ -867,13 +1042,18 @@ export class BacktestUtils {
   public dump = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     },
     path?: string,
     columns?: Columns[]
   ): Promise<void> => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_DUMP, {
+      symbol,
+      context,
+      path,
+    });
     backtest.strategyValidationService.validate(
       context.strategyName,
       BACKTEST_METHOD_NAME_DUMP

@@ -13,6 +13,8 @@ import { performanceEmitter } from "../../../config/emitters";
 import { PerformanceStatisticsModel, MetricStats } from "../../../model/PerformanceStatistics.model";
 import { ColumnModel } from "../../../model/Column.model";
 import { COLUMN_CONFIG } from "../../../config/columns";
+import { ExchangeName } from "../../../interfaces/Exchange.interface";
+import { FrameName } from "../../../interfaces/Frame.interface";
 
 /**
  * Type alias for column configuration used in performance metrics markdown reports.
@@ -60,8 +62,8 @@ export type Columns = ColumnModel<MetricStats>;
 const CREATE_KEY_FN = (
   symbol: string,
   strategyName: StrategyName,
-  exchangeName: string,
-  frameName: string,
+  exchangeName: ExchangeName,
+  frameName: FrameName,
   backtest: boolean
 ): string => {
   const parts = [symbol, strategyName, exchangeName];
@@ -125,7 +127,7 @@ class PerformanceStorage {
    *
    * @returns Performance statistics with metrics grouped by type
    */
-  public async getData(strategyName: string): Promise<PerformanceStatisticsModel> {
+  public async getData(strategyName: StrategyName): Promise<PerformanceStatisticsModel> {
     if (this._events.length === 0) {
       return {
         strategyName,
@@ -216,7 +218,7 @@ class PerformanceStorage {
    * @returns Markdown formatted report
    */
   public async getReport(
-    strategyName: string,
+    strategyName: StrategyName,
     columns: Columns[] = COLUMN_CONFIG.performance_columns
   ): Promise<string> {
     const stats = await this.getData(strategyName);
@@ -285,7 +287,7 @@ class PerformanceStorage {
    * @param columns - Column configuration for formatting the table
    */
   public async dump(
-    strategyName: string,
+    strategyName: StrategyName,
     path = "./dump/performance",
     columns: Columns[] = COLUMN_CONFIG.performance_columns
   ): Promise<void> {
@@ -341,7 +343,7 @@ export class PerformanceMarkdownService {
    * Memoized function to get or create PerformanceStorage for a symbol-strategy-exchange-frame-backtest combination.
    * Each combination gets its own isolated storage instance.
    */
-  private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: string, frameName: string, backtest: boolean) => PerformanceStorage>(
+  private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => PerformanceStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),
     () => new PerformanceStorage()
   );
@@ -384,9 +386,9 @@ export class PerformanceMarkdownService {
    */
   public getData = async (
     symbol: string,
-    strategyName: string,
-    exchangeName: string,
-    frameName: string,
+    strategyName: StrategyName,
+    exchangeName: ExchangeName,
+    frameName: FrameName,
     backtest: boolean
   ): Promise<PerformanceStatisticsModel> => {
     this.loggerService.log("performanceMarkdownService getData", {
@@ -419,9 +421,9 @@ export class PerformanceMarkdownService {
    */
   public getReport = async (
     symbol: string,
-    strategyName: string,
-    exchangeName: string,
-    frameName: string,
+    strategyName: StrategyName,
+    exchangeName: ExchangeName,
+    frameName: FrameName,
     backtest: boolean,
     columns: Columns[] = COLUMN_CONFIG.performance_columns
   ): Promise<string> => {
@@ -458,9 +460,9 @@ export class PerformanceMarkdownService {
    */
   public dump = async (
     symbol: string,
-    strategyName: string,
-    exchangeName: string,
-    frameName: string,
+    strategyName: StrategyName,
+    exchangeName: ExchangeName,
+    frameName: FrameName,
     backtest: boolean,
     path = "./dump/performance",
     columns: Columns[] = COLUMN_CONFIG.performance_columns
@@ -482,7 +484,7 @@ export class PerformanceMarkdownService {
    *
    * @param payload - Optional payload with symbol, strategyName, exchangeName, frameName, backtest
    */
-  public clear = async (payload?: { symbol: string; strategyName: string; exchangeName: string; frameName: string; backtest: boolean }) => {
+  public clear = async (payload?: { symbol: string; strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName; backtest: boolean }) => {
     this.loggerService.log("performanceMarkdownService clear", {
       payload,
     });
@@ -500,8 +502,14 @@ export class PerformanceMarkdownService {
    */
   protected init = singleshot(async () => {
     this.loggerService.log("performanceMarkdownService init");
-    performanceEmitter.subscribe(this.track);
+    this.unsubscribe = performanceEmitter.subscribe(this.track);
   });
+
+  /**
+   * Function to unsubscribe from partial profit/loss events.
+   * Assigned during init().
+   */
+  public unsubscribe: Function;
 }
 
 export default PerformanceMarkdownService;

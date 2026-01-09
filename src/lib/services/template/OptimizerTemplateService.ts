@@ -10,6 +10,9 @@ import {
   ExchangeName,
 } from "../../../interfaces/Exchange.interface";
 import { toPlainString } from "../../../helpers/toPlainString";
+import { FrameName } from "../../../interfaces/Frame.interface";
+import { StrategyName } from "../../../interfaces/Strategy.interface";
+import { WalkerName } from "../../../interfaces/Walker.interface";
 
 /**
  * Default template service for generating optimizer code snippets.
@@ -120,9 +123,9 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
    * @returns Generated addWalker() call
    */
   public getWalkerTemplate = async (
-    walkerName: string,
-    exchangeName: string,
-    frameName: string,
+    walkerName: WalkerName,
+    exchangeName: ExchangeName,
+    frameName: FrameName,
     strategies: string[]
   ) => {
     this.loggerService.log("optimizerTemplateService getWalkerTemplate", {
@@ -166,8 +169,8 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
    * @returns Generated addStrategy() call with getSignal() function
    */
   public getStrategyTemplate = async (
-    strategyName: string,
-    interval: string,
+    strategyName: StrategyName,
+    interval: CandleInterval,
     prompt: string
   ) => {
     this.loggerService.log("optimizerTemplateService getStrategyTemplate", {
@@ -353,7 +356,7 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
    */
   public getFrameTemplate = async (
     symbol: string,
-    frameName: string,
+    frameName: FrameName,
     interval: CandleInterval,
     startDate: Date,
     endDate: Date
@@ -392,7 +395,7 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
    * @param walkerName - Walker name to launch
    * @returns Generated Walker.background() call with listeners
    */
-  public getLauncherTemplate = async (symbol: string, walkerName: string) => {
+  public getLauncherTemplate = async (symbol: string, walkerName: WalkerName) => {
     this.loggerService.log("optimizerTemplateService getLauncherTemplate", {
       symbol,
       walkerName,
@@ -428,12 +431,16 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
       ``,
       `listenWalkerComplete((results) => {`,
       `    console.log("Walker completed:", results.bestStrategy);`,
-      `    Walker.dump("${escapedSymbol}", results.walkerName);`,
+      `    Walker.dump(results.symbol, { walkerName: results.walkerName });`,
       `});`,
       ``,
       `listenDoneBacktest((event) => {`,
       `    console.log("Backtest completed:", event.symbol);`,
-      `    Backtest.dump(event.symbol, event.strategyName);`,
+      `    Backtest.dump(event.symbol, {`,
+      `        strategyName: event.strategyName,`,
+      `        exchangeName: event.exchangeName,`,
+      `        frameName: event.frameName`,
+      `    });`,
       `});`,
       ``,
       `listenError((error) => {`,
@@ -468,12 +475,10 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
       `    }`,
       ``,
       `    {`,
-      `        let summary = "# Outline Result Summary\\n";`,
+      `        let summary = "# Outline Result Summary\\n\\n";`,
       ``,
       `        {`,
-      `            summary += "\\n";`,
-      `            summary += \`**ResultId**: \${resultId}\\n\`;`,
-      `            summary += "\\n";`,
+      `            summary += \`**ResultId**: \${resultId}\\n\\n\`;`,
       `        }`,
       ``,
       `        if (result) {`,
@@ -489,7 +494,7 @@ export class OptimizerTemplateService implements IOptimizerTemplate {
       `            systemMessages.forEach((msg, idx) => {`,
       `                summary += \`### System Message \${idx + 1}\\n\\n\`;`,
       `                summary += msg.content;`,
-      `                summary += "\\n";`,
+      `                summary += "\\n\\n";`,
       `            });`,
       `        }`,
       ``,

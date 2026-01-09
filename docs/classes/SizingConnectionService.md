@@ -5,6 +5,8 @@ group: docs
 
 # SizingConnectionService
 
+Implements `TSizing$1`
+
 Connection service routing sizing operations to correct ClientSizing instance.
 
 Routes sizing method calls to the appropriate sizing implementation

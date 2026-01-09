@@ -71,7 +71,7 @@ Generates Frame (timeframe) configuration code.
 ### getStrategyTemplate
 
 ```ts
-getStrategyTemplate: (strategyName: string, interval: string, prompt: string) => string | Promise<string>
+getStrategyTemplate: (strategyName: string, interval: CandleInterval, prompt: string) => string | Promise<string>
 ```
 
 Generates Strategy configuration code with LLM integration.

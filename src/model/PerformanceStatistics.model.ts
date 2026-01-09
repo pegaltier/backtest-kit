@@ -1,3 +1,4 @@
+import { StrategyName } from "../interfaces/Strategy.interface";
 import {
   PerformanceContract,
   PerformanceMetricType,
@@ -52,7 +53,7 @@ export interface MetricStats {
  */
 export interface PerformanceStatisticsModel {
   /** Strategy name */
-  strategyName: string;
+  strategyName: StrategyName;
 
   /** Total number of performance events recorded */
   totalEvents: number;

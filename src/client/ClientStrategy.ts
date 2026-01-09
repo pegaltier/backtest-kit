@@ -10,6 +10,7 @@ import {
 import {
   IStrategy,
   ISignalRow,
+  ISignalDto,
   IScheduledSignalRow,
   IScheduledSignalCancelRow,
   IStrategyParams,
@@ -28,7 +29,7 @@ import {
 import toProfitLossDto from "../helpers/toProfitLossDto";
 import { ICandleData } from "../interfaces/Exchange.interface";
 import { PersistSignalAdapter, PersistScheduleAdapter } from "../classes/Persist";
-import backtest from "../lib";
+import backtest, { ExecutionContextService } from "../lib";
 import { errorEmitter } from "../config/emitters";
 import { GLOBAL_CONFIG } from "../config/params";
 import toPlainString from "../helpers/toPlainString";
@@ -48,320 +49,361 @@ const VALIDATE_SIGNAL_FN = (signal: ISignalRow, currentPrice: number, isSchedule
   const errors: string[] = [];
 
   // ПРОВЕРКА ОБЯЗАТЕЛЬНЫХ ПОЛЕЙ ISignalRow
-  if (signal.id === undefined || signal.id === null || signal.id === '') {
-    errors.push('id is required and must be a non-empty string');
-  }
-  if (signal.exchangeName === undefined || signal.exchangeName === null || signal.exchangeName === '') {
-    errors.push('exchangeName is required');
-  }
-  if (signal.strategyName === undefined || signal.strategyName === null || signal.strategyName === '') {
-    errors.push('strategyName is required');
-  }
-  if (signal.symbol === undefined || signal.symbol === null || signal.symbol === '') {
-    errors.push('symbol is required and must be a non-empty string');
-  }
-  if (signal._isScheduled === undefined || signal._isScheduled === null) {
-    errors.push('_isScheduled is required');
-  }
-  if (signal.position === undefined || signal.position === null) {
-    errors.push('position is required and must be "long" or "short"');
-  }
-  if (signal.position !== "long" && signal.position !== "short") {
-    errors.push(`position must be "long" or "short", got "${signal.position}"`);
+  {
+    if (signal.id === undefined || signal.id === null || signal.id === '') {
+      errors.push('id is required and must be a non-empty string');
+    }
+    if (signal.exchangeName === undefined || signal.exchangeName === null || signal.exchangeName === '') {
+      errors.push('exchangeName is required');
+    }
+    if (signal.strategyName === undefined || signal.strategyName === null || signal.strategyName === '') {
+      errors.push('strategyName is required');
+    }
+    if (signal.symbol === undefined || signal.symbol === null || signal.symbol === '') {
+      errors.push('symbol is required and must be a non-empty string');
+    }
+    if (signal._isScheduled === undefined || signal._isScheduled === null) {
+      errors.push('_isScheduled is required');
+    }
+    if (signal.position === undefined || signal.position === null) {
+      errors.push('position is required and must be "long" or "short"');
+    }
+    if (signal.position !== "long" && signal.position !== "short") {
+      errors.push(`position must be "long" or "short", got "${signal.position}"`);
+    }
   }
 
   // ЗАЩИТА ОТ NaN/Infinity: currentPrice должна быть конечным числом
-  if (typeof currentPrice !== "number") {
-    errors.push(
-      `currentPrice must be a number type, got ${currentPrice} (${typeof currentPrice})`
-    );
-  }
-  if (!isFinite(currentPrice)) {
-    errors.push(
-      `currentPrice must be a finite number, got ${currentPrice} (${typeof currentPrice})`
-    );
-  }
-  if (isFinite(currentPrice) && currentPrice <= 0) {
-    errors.push(`currentPrice must be positive, got ${currentPrice}`);
+  {
+    if (typeof currentPrice !== "number") {
+      errors.push(
+        `currentPrice must be a number type, got ${currentPrice} (${typeof currentPrice})`
+      );
+    }
+    if (!isFinite(currentPrice)) {
+      errors.push(
+        `currentPrice must be a finite number, got ${currentPrice} (${typeof currentPrice})`
+      );
+    }
+    if (isFinite(currentPrice) && currentPrice <= 0) {
+      errors.push(`currentPrice must be positive, got ${currentPrice}`);
+    }
   }
 
   // ЗАЩИТА ОТ NaN/Infinity: все цены должны быть конечными числами
-  if (typeof signal.priceOpen !== "number") {
-    errors.push(
-      `priceOpen must be a number type, got ${signal.priceOpen} (${typeof signal.priceOpen})`
-    );
-  }
-  if (!isFinite(signal.priceOpen)) {
-    errors.push(
-      `priceOpen must be a finite number, got ${signal.priceOpen} (${typeof signal.priceOpen})`
-    );
-  }
-  if (typeof signal.priceTakeProfit !== "number") {
-    errors.push(
-      `priceTakeProfit must be a number type, got ${signal.priceTakeProfit} (${typeof signal.priceTakeProfit})`
-    );
-  }
-  if (!isFinite(signal.priceTakeProfit)) {
-    errors.push(
-      `priceTakeProfit must be a finite number, got ${signal.priceTakeProfit} (${typeof signal.priceTakeProfit})`
-    );
-  }
-  if (typeof signal.priceStopLoss !== "number") {
-    errors.push(
-      `priceStopLoss must be a number type, got ${signal.priceStopLoss} (${typeof signal.priceStopLoss})`
-    );
-  }
-  if (!isFinite(signal.priceStopLoss)) {
-    errors.push(
-      `priceStopLoss must be a finite number, got ${signal.priceStopLoss} (${typeof signal.priceStopLoss})`
-    );
+  {
+    if (typeof signal.priceOpen !== "number") {
+      errors.push(
+        `priceOpen must be a number type, got ${signal.priceOpen} (${typeof signal.priceOpen})`
+      );
+    }
+    if (!isFinite(signal.priceOpen)) {
+      errors.push(
+        `priceOpen must be a finite number, got ${signal.priceOpen} (${typeof signal.priceOpen})`
+      );
+    }
+    if (typeof signal.priceTakeProfit !== "number") {
+      errors.push(
+        `priceTakeProfit must be a number type, got ${signal.priceTakeProfit} (${typeof signal.priceTakeProfit})`
+      );
+    }
+    if (!isFinite(signal.priceTakeProfit)) {
+      errors.push(
+        `priceTakeProfit must be a finite number, got ${signal.priceTakeProfit} (${typeof signal.priceTakeProfit})`
+      );
+    }
+    if (typeof signal.priceStopLoss !== "number") {
+      errors.push(
+        `priceStopLoss must be a number type, got ${signal.priceStopLoss} (${typeof signal.priceStopLoss})`
+      );
+    }
+    if (!isFinite(signal.priceStopLoss)) {
+      errors.push(
+        `priceStopLoss must be a finite number, got ${signal.priceStopLoss} (${typeof signal.priceStopLoss})`
+      );
+    }
   }
 
   // Валидация цен (только если они конечные)
-  if (isFinite(signal.priceOpen) && signal.priceOpen <= 0) {
-    errors.push(`priceOpen must be positive, got ${signal.priceOpen}`);
-  }
-  if (isFinite(signal.priceTakeProfit) && signal.priceTakeProfit <= 0) {
-    errors.push(
-      `priceTakeProfit must be positive, got ${signal.priceTakeProfit}`
-    );
-  }
-  if (isFinite(signal.priceStopLoss) && signal.priceStopLoss <= 0) {
-    errors.push(`priceStopLoss must be positive, got ${signal.priceStopLoss}`);
+  {
+    if (isFinite(signal.priceOpen) && signal.priceOpen <= 0) {
+      errors.push(`priceOpen must be positive, got ${signal.priceOpen}`);
+    }
+    if (isFinite(signal.priceTakeProfit) && signal.priceTakeProfit <= 0) {
+      errors.push(
+        `priceTakeProfit must be positive, got ${signal.priceTakeProfit}`
+      );
+    }
+    if (isFinite(signal.priceStopLoss) && signal.priceStopLoss <= 0) {
+      errors.push(`priceStopLoss must be positive, got ${signal.priceStopLoss}`);
+    }
   }
 
   // Валидация для long позиции
   if (signal.position === "long") {
-    if (signal.priceTakeProfit <= signal.priceOpen) {
-      errors.push(
-        `Long: priceTakeProfit (${signal.priceTakeProfit}) must be > priceOpen (${signal.priceOpen})`
-      );
-    }
-    if (signal.priceStopLoss >= signal.priceOpen) {
-      errors.push(
-        `Long: priceStopLoss (${signal.priceStopLoss}) must be < priceOpen (${signal.priceOpen})`
-      );
+    // Проверка соотношения цен для long
+    {
+      if (signal.priceTakeProfit <= signal.priceOpen) {
+        errors.push(
+          `Long: priceTakeProfit (${signal.priceTakeProfit}) must be > priceOpen (${signal.priceOpen})`
+        );
+      }
+      if (signal.priceStopLoss >= signal.priceOpen) {
+        errors.push(
+          `Long: priceStopLoss (${signal.priceStopLoss}) must be < priceOpen (${signal.priceOpen})`
+        );
+      }
     }
 
     // ЗАЩИТА ОТ МОМЕНТАЛЬНОГО ЗАКРЫТИЯ: проверяем что позиция не закроется сразу после открытия
-    if (!isScheduled && isFinite(currentPrice)) {
-      // LONG: currentPrice должна быть МЕЖДУ SL и TP (не пробита ни одна граница)
-      // SL < currentPrice < TP
-      if (currentPrice <= signal.priceStopLoss) {
-        errors.push(
-          `Long immediate: currentPrice (${currentPrice}) <= priceStopLoss (${signal.priceStopLoss}). ` +
-            `Signal would be immediately closed by stop loss. Cannot open position that is already stopped out.`
-        );
-      }
+    {
+      if (!isScheduled && isFinite(currentPrice)) {
+        // LONG: currentPrice должна быть МЕЖДУ SL и TP (не пробита ни одна граница)
+        // SL < currentPrice < TP
+        if (currentPrice <= signal.priceStopLoss) {
+          errors.push(
+            `Long immediate: currentPrice (${currentPrice}) <= priceStopLoss (${signal.priceStopLoss}). ` +
+              `Signal would be immediately closed by stop loss. Cannot open position that is already stopped out.`
+          );
+        }
 
-      if (currentPrice >= signal.priceTakeProfit) {
-        errors.push(
-          `Long immediate: currentPrice (${currentPrice}) >= priceTakeProfit (${signal.priceTakeProfit}). ` +
-            `Signal would be immediately closed by take profit. The profit opportunity has already passed.`
-        );
+        if (currentPrice >= signal.priceTakeProfit) {
+          errors.push(
+            `Long immediate: currentPrice (${currentPrice}) >= priceTakeProfit (${signal.priceTakeProfit}). ` +
+              `Signal would be immediately closed by take profit. The profit opportunity has already passed.`
+          );
+        }
       }
     }
 
     // ЗАЩИТА ОТ МОМЕНТАЛЬНОГО ЗАКРЫТИЯ scheduled сигналов
-    if (isScheduled && isFinite(signal.priceOpen)) {
-      // LONG scheduled: priceOpen должен быть МЕЖДУ SL и TP
-      // SL < priceOpen < TP
-      if (signal.priceOpen <= signal.priceStopLoss) {
-        errors.push(
-          `Long scheduled: priceOpen (${signal.priceOpen}) <= priceStopLoss (${signal.priceStopLoss}). ` +
-            `Signal would be immediately cancelled on activation. Cannot activate position that is already stopped out.`
-        );
-      }
+    {
+      if (isScheduled && isFinite(signal.priceOpen)) {
+        // LONG scheduled: priceOpen должен быть МЕЖДУ SL и TP
+        // SL < priceOpen < TP
+        if (signal.priceOpen <= signal.priceStopLoss) {
+          errors.push(
+            `Long scheduled: priceOpen (${signal.priceOpen}) <= priceStopLoss (${signal.priceStopLoss}). ` +
+              `Signal would be immediately cancelled on activation. Cannot activate position that is already stopped out.`
+          );
+        }
 
-      if (signal.priceOpen >= signal.priceTakeProfit) {
-        errors.push(
-          `Long scheduled: priceOpen (${signal.priceOpen}) >= priceTakeProfit (${signal.priceTakeProfit}). ` +
-            `Signal would close immediately on activation. This is logically impossible for LONG position.`
-        );
+        if (signal.priceOpen >= signal.priceTakeProfit) {
+          errors.push(
+            `Long scheduled: priceOpen (${signal.priceOpen}) >= priceTakeProfit (${signal.priceTakeProfit}). ` +
+              `Signal would close immediately on activation. This is logically impossible for LONG position.`
+          );
+        }
       }
     }
 
     // ЗАЩИТА ОТ МИКРО-ПРОФИТА: TakeProfit должен быть достаточно далеко, чтобы покрыть комиссии
-    if (GLOBAL_CONFIG.CC_MIN_TAKEPROFIT_DISTANCE_PERCENT) {
-      const tpDistancePercent =
-        ((signal.priceTakeProfit - signal.priceOpen) / signal.priceOpen) * 100;
-      if (tpDistancePercent < GLOBAL_CONFIG.CC_MIN_TAKEPROFIT_DISTANCE_PERCENT) {
-        errors.push(
-          `Long: TakeProfit too close to priceOpen (${tpDistancePercent.toFixed(3)}%). ` +
-            `Minimum distance: ${GLOBAL_CONFIG.CC_MIN_TAKEPROFIT_DISTANCE_PERCENT}% to cover trading fees. ` +
-            `Current: TP=${signal.priceTakeProfit}, Open=${signal.priceOpen}`
-        );
+    {
+      if (GLOBAL_CONFIG.CC_MIN_TAKEPROFIT_DISTANCE_PERCENT) {
+        const tpDistancePercent =
+          ((signal.priceTakeProfit - signal.priceOpen) / signal.priceOpen) * 100;
+        if (tpDistancePercent < GLOBAL_CONFIG.CC_MIN_TAKEPROFIT_DISTANCE_PERCENT) {
+          errors.push(
+            `Long: TakeProfit too close to priceOpen (${tpDistancePercent.toFixed(3)}%). ` +
+              `Minimum distance: ${GLOBAL_CONFIG.CC_MIN_TAKEPROFIT_DISTANCE_PERCENT}% to cover trading fees. ` +
+              `Current: TP=${signal.priceTakeProfit}, Open=${signal.priceOpen}`
+          );
+        }
       }
     }
 
     // ЗАЩИТА ОТ СЛИШКОМ УЗКОГО STOPLOSS: минимальный буфер для избежания моментального закрытия
-    if (GLOBAL_CONFIG.CC_MIN_STOPLOSS_DISTANCE_PERCENT) {
-      const slDistancePercent =
-        ((signal.priceOpen - signal.priceStopLoss) / signal.priceOpen) * 100;
-      if (slDistancePercent < GLOBAL_CONFIG.CC_MIN_STOPLOSS_DISTANCE_PERCENT) {
-        errors.push(
-          `Long: StopLoss too close to priceOpen (${slDistancePercent.toFixed(3)}%). ` +
-            `Minimum distance: ${GLOBAL_CONFIG.CC_MIN_STOPLOSS_DISTANCE_PERCENT}% to avoid instant stop out on market volatility. ` +
-            `Current: SL=${signal.priceStopLoss}, Open=${signal.priceOpen}`
-        );
+    {
+      if (GLOBAL_CONFIG.CC_MIN_STOPLOSS_DISTANCE_PERCENT) {
+        const slDistancePercent =
+          ((signal.priceOpen - signal.priceStopLoss) / signal.priceOpen) * 100;
+        if (slDistancePercent < GLOBAL_CONFIG.CC_MIN_STOPLOSS_DISTANCE_PERCENT) {
+          errors.push(
+            `Long: StopLoss too close to priceOpen (${slDistancePercent.toFixed(3)}%). ` +
+              `Minimum distance: ${GLOBAL_CONFIG.CC_MIN_STOPLOSS_DISTANCE_PERCENT}% to avoid instant stop out on market volatility. ` +
+              `Current: SL=${signal.priceStopLoss}, Open=${signal.priceOpen}`
+          );
+        }
       }
     }
 
     // ЗАЩИТА ОТ ЭКСТРЕМАЛЬНОГО STOPLOSS: ограничиваем максимальный убыток
-    if (GLOBAL_CONFIG.CC_MAX_STOPLOSS_DISTANCE_PERCENT) {
-      const slDistancePercent =
-        ((signal.priceOpen - signal.priceStopLoss) / signal.priceOpen) * 100;
-      if (slDistancePercent > GLOBAL_CONFIG.CC_MAX_STOPLOSS_DISTANCE_PERCENT) {
-        errors.push(
-          `Long: StopLoss too far from priceOpen (${slDistancePercent.toFixed(3)}%). ` +
-            `Maximum distance: ${GLOBAL_CONFIG.CC_MAX_STOPLOSS_DISTANCE_PERCENT}% to protect capital. ` +
-            `Current: SL=${signal.priceStopLoss}, Open=${signal.priceOpen}`
-        );
+    {
+      if (GLOBAL_CONFIG.CC_MAX_STOPLOSS_DISTANCE_PERCENT) {
+        const slDistancePercent =
+          ((signal.priceOpen - signal.priceStopLoss) / signal.priceOpen) * 100;
+        if (slDistancePercent > GLOBAL_CONFIG.CC_MAX_STOPLOSS_DISTANCE_PERCENT) {
+          errors.push(
+            `Long: StopLoss too far from priceOpen (${slDistancePercent.toFixed(3)}%). ` +
+              `Maximum distance: ${GLOBAL_CONFIG.CC_MAX_STOPLOSS_DISTANCE_PERCENT}% to protect capital. ` +
+              `Current: SL=${signal.priceStopLoss}, Open=${signal.priceOpen}`
+          );
+        }
       }
     }
   }
 
   // Валидация для short позиции
   if (signal.position === "short") {
-    if (signal.priceTakeProfit >= signal.priceOpen) {
-      errors.push(
-        `Short: priceTakeProfit (${signal.priceTakeProfit}) must be < priceOpen (${signal.priceOpen})`
-      );
-    }
-    if (signal.priceStopLoss <= signal.priceOpen) {
-      errors.push(
-        `Short: priceStopLoss (${signal.priceStopLoss}) must be > priceOpen (${signal.priceOpen})`
-      );
+    // Проверка соотношения цен для short
+    {
+      if (signal.priceTakeProfit >= signal.priceOpen) {
+        errors.push(
+          `Short: priceTakeProfit (${signal.priceTakeProfit}) must be < priceOpen (${signal.priceOpen})`
+        );
+      }
+      if (signal.priceStopLoss <= signal.priceOpen) {
+        errors.push(
+          `Short: priceStopLoss (${signal.priceStopLoss}) must be > priceOpen (${signal.priceOpen})`
+        );
+      }
     }
 
     // ЗАЩИТА ОТ МОМЕНТАЛЬНОГО ЗАКРЫТИЯ: проверяем что позиция не закроется сразу после открытия
-    if (!isScheduled && isFinite(currentPrice)) {
-      // SHORT: currentPrice должна быть МЕЖДУ TP и SL (не пробита ни одна граница)
-      // TP < currentPrice < SL
-      if (currentPrice >= signal.priceStopLoss) {
-        errors.push(
-          `Short immediate: currentPrice (${currentPrice}) >= priceStopLoss (${signal.priceStopLoss}). ` +
-            `Signal would be immediately closed by stop loss. Cannot open position that is already stopped out.`
-        );
-      }
+    {
+      if (!isScheduled && isFinite(currentPrice)) {
+        // SHORT: currentPrice должна быть МЕЖДУ TP и SL (не пробита ни одна граница)
+        // TP < currentPrice < SL
+        if (currentPrice >= signal.priceStopLoss) {
+          errors.push(
+            `Short immediate: currentPrice (${currentPrice}) >= priceStopLoss (${signal.priceStopLoss}). ` +
+              `Signal would be immediately closed by stop loss. Cannot open position that is already stopped out.`
+          );
+        }
 
-      if (currentPrice <= signal.priceTakeProfit) {
-        errors.push(
-          `Short immediate: currentPrice (${currentPrice}) <= priceTakeProfit (${signal.priceTakeProfit}). ` +
-            `Signal would be immediately closed by take profit. The profit opportunity has already passed.`
-        );
+        if (currentPrice <= signal.priceTakeProfit) {
+          errors.push(
+            `Short immediate: currentPrice (${currentPrice}) <= priceTakeProfit (${signal.priceTakeProfit}). ` +
+              `Signal would be immediately closed by take profit. The profit opportunity has already passed.`
+          );
+        }
       }
     }
 
     // ЗАЩИТА ОТ МОМЕНТАЛЬНОГО ЗАКРЫТИЯ scheduled сигналов
-    if (isScheduled && isFinite(signal.priceOpen)) {
-      // SHORT scheduled: priceOpen должен быть МЕЖДУ TP и SL
-      // TP < priceOpen < SL
-      if (signal.priceOpen >= signal.priceStopLoss) {
-        errors.push(
-          `Short scheduled: priceOpen (${signal.priceOpen}) >= priceStopLoss (${signal.priceStopLoss}). ` +
-            `Signal would be immediately cancelled on activation. Cannot activate position that is already stopped out.`
-        );
-      }
+    {
+      if (isScheduled && isFinite(signal.priceOpen)) {
+        // SHORT scheduled: priceOpen должен быть МЕЖДУ TP и SL
+        // TP < priceOpen < SL
+        if (signal.priceOpen >= signal.priceStopLoss) {
+          errors.push(
+            `Short scheduled: priceOpen (${signal.priceOpen}) >= priceStopLoss (${signal.priceStopLoss}). ` +
+              `Signal would be immediately cancelled on activation. Cannot activate position that is already stopped out.`
+          );
+        }
 
-      if (signal.priceOpen <= signal.priceTakeProfit) {
-        errors.push(
-          `Short scheduled: priceOpen (${signal.priceOpen}) <= priceTakeProfit (${signal.priceTakeProfit}). ` +
-            `Signal would close immediately on activation. This is logically impossible for SHORT position.`
-        );
+        if (signal.priceOpen <= signal.priceTakeProfit) {
+          errors.push(
+            `Short scheduled: priceOpen (${signal.priceOpen}) <= priceTakeProfit (${signal.priceTakeProfit}). ` +
+              `Signal would close immediately on activation. This is logically impossible for SHORT position.`
+          );
+        }
       }
     }
 
     // ЗАЩИТА ОТ МИКРО-ПРОФИТА: TakeProfit должен быть достаточно далеко, чтобы покрыть комиссии
-    if (GLOBAL_CONFIG.CC_MIN_TAKEPROFIT_DISTANCE_PERCENT) {
-      const tpDistancePercent =
-        ((signal.priceOpen - signal.priceTakeProfit) / signal.priceOpen) * 100;
-      if (tpDistancePercent < GLOBAL_CONFIG.CC_MIN_TAKEPROFIT_DISTANCE_PERCENT) {
-        errors.push(
-          `Short: TakeProfit too close to priceOpen (${tpDistancePercent.toFixed(3)}%). ` +
-            `Minimum distance: ${GLOBAL_CONFIG.CC_MIN_TAKEPROFIT_DISTANCE_PERCENT}% to cover trading fees. ` +
-            `Current: TP=${signal.priceTakeProfit}, Open=${signal.priceOpen}`
-        );
+    {
+      if (GLOBAL_CONFIG.CC_MIN_TAKEPROFIT_DISTANCE_PERCENT) {
+        const tpDistancePercent =
+          ((signal.priceOpen - signal.priceTakeProfit) / signal.priceOpen) * 100;
+        if (tpDistancePercent < GLOBAL_CONFIG.CC_MIN_TAKEPROFIT_DISTANCE_PERCENT) {
+          errors.push(
+            `Short: TakeProfit too close to priceOpen (${tpDistancePercent.toFixed(3)}%). ` +
+              `Minimum distance: ${GLOBAL_CONFIG.CC_MIN_TAKEPROFIT_DISTANCE_PERCENT}% to cover trading fees. ` +
+              `Current: TP=${signal.priceTakeProfit}, Open=${signal.priceOpen}`
+          );
+        }
       }
     }
 
     // ЗАЩИТА ОТ СЛИШКОМ УЗКОГО STOPLOSS: минимальный буфер для избежания моментального закрытия
-    if (GLOBAL_CONFIG.CC_MIN_STOPLOSS_DISTANCE_PERCENT) {
-      const slDistancePercent =
-        ((signal.priceStopLoss - signal.priceOpen) / signal.priceOpen) * 100;
-      if (slDistancePercent < GLOBAL_CONFIG.CC_MIN_STOPLOSS_DISTANCE_PERCENT) {
-        errors.push(
-          `Short: StopLoss too close to priceOpen (${slDistancePercent.toFixed(3)}%). ` +
-            `Minimum distance: ${GLOBAL_CONFIG.CC_MIN_STOPLOSS_DISTANCE_PERCENT}% to avoid instant stop out on market volatility. ` +
-            `Current: SL=${signal.priceStopLoss}, Open=${signal.priceOpen}`
-        );
+    {
+      if (GLOBAL_CONFIG.CC_MIN_STOPLOSS_DISTANCE_PERCENT) {
+        const slDistancePercent =
+          ((signal.priceStopLoss - signal.priceOpen) / signal.priceOpen) * 100;
+        if (slDistancePercent < GLOBAL_CONFIG.CC_MIN_STOPLOSS_DISTANCE_PERCENT) {
+          errors.push(
+            `Short: StopLoss too close to priceOpen (${slDistancePercent.toFixed(3)}%). ` +
+              `Minimum distance: ${GLOBAL_CONFIG.CC_MIN_STOPLOSS_DISTANCE_PERCENT}% to avoid instant stop out on market volatility. ` +
+              `Current: SL=${signal.priceStopLoss}, Open=${signal.priceOpen}`
+          );
+        }
       }
     }
 
     // ЗАЩИТА ОТ ЭКСТРЕМАЛЬНОГО STOPLOSS: ограничиваем максимальный убыток
-    if (GLOBAL_CONFIG.CC_MAX_STOPLOSS_DISTANCE_PERCENT) {
-      const slDistancePercent =
-        ((signal.priceStopLoss - signal.priceOpen) / signal.priceOpen) * 100;
-      if (slDistancePercent > GLOBAL_CONFIG.CC_MAX_STOPLOSS_DISTANCE_PERCENT) {
-        errors.push(
-          `Short: StopLoss too far from priceOpen (${slDistancePercent.toFixed(3)}%). ` +
-            `Maximum distance: ${GLOBAL_CONFIG.CC_MAX_STOPLOSS_DISTANCE_PERCENT}% to protect capital. ` +
-            `Current: SL=${signal.priceStopLoss}, Open=${signal.priceOpen}`
-        );
+    {
+      if (GLOBAL_CONFIG.CC_MAX_STOPLOSS_DISTANCE_PERCENT) {
+        const slDistancePercent =
+          ((signal.priceStopLoss - signal.priceOpen) / signal.priceOpen) * 100;
+        if (slDistancePercent > GLOBAL_CONFIG.CC_MAX_STOPLOSS_DISTANCE_PERCENT) {
+          errors.push(
+            `Short: StopLoss too far from priceOpen (${slDistancePercent.toFixed(3)}%). ` +
+              `Maximum distance: ${GLOBAL_CONFIG.CC_MAX_STOPLOSS_DISTANCE_PERCENT}% to protect capital. ` +
+              `Current: SL=${signal.priceStopLoss}, Open=${signal.priceOpen}`
+          );
+        }
       }
     }
   }
 
   // Валидация временных параметров
-  if (typeof signal.minuteEstimatedTime !== "number") {
-    errors.push(
-      `minuteEstimatedTime must be a number type, got ${signal.minuteEstimatedTime} (${typeof signal.minuteEstimatedTime})`
-    );
-  }
-  if (signal.minuteEstimatedTime <= 0) {
-    errors.push(
-      `minuteEstimatedTime must be positive, got ${signal.minuteEstimatedTime}`
-    );
-  }
-  if (!Number.isInteger(signal.minuteEstimatedTime)) {
-    errors.push(
-      `minuteEstimatedTime must be an integer (whole number), got ${signal.minuteEstimatedTime}`
-    );
-  }
-
-  if (!isFinite(signal.minuteEstimatedTime)) {
-    errors.push(
-      `minuteEstimatedTime must be a finite number, got ${signal.minuteEstimatedTime}`
-    );
-  }
-
-  // ЗАЩИТА ОТ ВЕЧНЫХ СИГНАЛОВ: ограничиваем максимальное время жизни сигнала
-  if (GLOBAL_CONFIG.CC_MAX_SIGNAL_LIFETIME_MINUTES && GLOBAL_CONFIG.CC_MAX_SIGNAL_LIFETIME_MINUTES) {
-    if (signal.minuteEstimatedTime > GLOBAL_CONFIG.CC_MAX_SIGNAL_LIFETIME_MINUTES) {
-      const days = (signal.minuteEstimatedTime / 60 / 24).toFixed(1);
-      const maxDays = (GLOBAL_CONFIG.CC_MAX_SIGNAL_LIFETIME_MINUTES / 60 / 24).toFixed(0);
+  {
+    if (typeof signal.minuteEstimatedTime !== "number") {
       errors.push(
-        `minuteEstimatedTime too large (${signal.minuteEstimatedTime} minutes = ${days} days). ` +
-          `Maximum: ${GLOBAL_CONFIG.CC_MAX_SIGNAL_LIFETIME_MINUTES} minutes (${maxDays} days) to prevent strategy deadlock. ` +
-          `Eternal signals block risk limits and prevent new trades.`
+        `minuteEstimatedTime must be a number type, got ${signal.minuteEstimatedTime} (${typeof signal.minuteEstimatedTime})`
+      );
+    }
+    if (signal.minuteEstimatedTime <= 0) {
+      errors.push(
+        `minuteEstimatedTime must be positive, got ${signal.minuteEstimatedTime}`
+      );
+    }
+    if (!Number.isInteger(signal.minuteEstimatedTime)) {
+      errors.push(
+        `minuteEstimatedTime must be an integer (whole number), got ${signal.minuteEstimatedTime}`
+      );
+    }
+    if (!isFinite(signal.minuteEstimatedTime)) {
+      errors.push(
+        `minuteEstimatedTime must be a finite number, got ${signal.minuteEstimatedTime}`
       );
     }
   }
-  if (typeof signal.scheduledAt !== "number") {
-    errors.push(
-      `scheduledAt must be a number type, got ${signal.scheduledAt} (${typeof signal.scheduledAt})`
-    );
+
+  // ЗАЩИТА ОТ ВЕЧНЫХ СИГНАЛОВ: ограничиваем максимальное время жизни сигнала
+  {
+    if (GLOBAL_CONFIG.CC_MAX_SIGNAL_LIFETIME_MINUTES && GLOBAL_CONFIG.CC_MAX_SIGNAL_LIFETIME_MINUTES) {
+      if (signal.minuteEstimatedTime > GLOBAL_CONFIG.CC_MAX_SIGNAL_LIFETIME_MINUTES) {
+        const days = (signal.minuteEstimatedTime / 60 / 24).toFixed(1);
+        const maxDays = (GLOBAL_CONFIG.CC_MAX_SIGNAL_LIFETIME_MINUTES / 60 / 24).toFixed(0);
+        errors.push(
+          `minuteEstimatedTime too large (${signal.minuteEstimatedTime} minutes = ${days} days). ` +
+            `Maximum: ${GLOBAL_CONFIG.CC_MAX_SIGNAL_LIFETIME_MINUTES} minutes (${maxDays} days) to prevent strategy deadlock. ` +
+            `Eternal signals block risk limits and prevent new trades.`
+        );
+      }
+    }
   }
-  if (signal.scheduledAt <= 0) {
-    errors.push(`scheduledAt must be positive, got ${signal.scheduledAt}`);
-  }
-  if (typeof signal.pendingAt !== "number") {
-    errors.push(
-      `pendingAt must be a number type, got ${signal.pendingAt} (${typeof signal.pendingAt})`
-    );
-  }
-  if (signal.pendingAt <= 0) {
-    errors.push(`pendingAt must be positive, got ${signal.pendingAt}`);
+
+  // Валидация временных меток
+  {
+    if (typeof signal.scheduledAt !== "number") {
+      errors.push(
+        `scheduledAt must be a number type, got ${signal.scheduledAt} (${typeof signal.scheduledAt})`
+      );
+    }
+    if (signal.scheduledAt <= 0) {
+      errors.push(`scheduledAt must be positive, got ${signal.scheduledAt}`);
+    }
+    if (typeof signal.pendingAt !== "number") {
+      errors.push(
+        `pendingAt must be a number type, got ${signal.pendingAt} (${typeof signal.pendingAt})`
+      );
+    }
+    if (signal.pendingAt <= 0) {
+      errors.push(`pendingAt must be positive, got ${signal.pendingAt}`);
+    }
   }
 
   // Кидаем ошибку если есть проблемы
@@ -416,15 +458,14 @@ const GET_SIGNAL_FN = trycatch(
     }
     if (
       await not(
-        self.params.risk.checkSignal({
-          pendingSignal: signal,
-          symbol: self.params.execution.context.symbol,
-          strategyName: self.params.method.context.strategyName,
-          exchangeName: self.params.method.context.exchangeName,
-          frameName: self.params.method.context.frameName,
+        CALL_RISK_CHECK_SIGNAL_FN(
+          self,
+          self.params.execution.context.symbol,
+          signal,
           currentPrice,
-          timestamp: currentTime,
-        })
+          currentTime,
+          self.params.execution.context.backtest
+        )
       )
     ) {
       return null;
@@ -556,17 +597,18 @@ const WAIT_FOR_INIT_FN = async (self: ClientStrategy) => {
     self._pendingSignal = pendingSignal;
 
     // Call onActive callback for restored signal
-    if (self.params.callbacks?.onActive) {
-      const currentPrice = await self.params.exchange.getAveragePrice(
-        self.params.execution.context.symbol
-      );
-      self.params.callbacks.onActive(
-        self.params.execution.context.symbol,
-        pendingSignal,
-        currentPrice,
-        self.params.execution.context.backtest
-      );
-    }
+    const currentPrice = await self.params.exchange.getAveragePrice(
+      self.params.execution.context.symbol
+    );
+    const currentTime = self.params.execution.context.when.getTime();
+    await CALL_ACTIVE_CALLBACKS_FN(
+      self,
+      self.params.execution.context.symbol,
+      pendingSignal,
+      currentPrice,
+      currentTime,
+      self.params.execution.context.backtest
+    );
   }
 
   // Restore scheduled signal
@@ -584,18 +626,117 @@ const WAIT_FOR_INIT_FN = async (self: ClientStrategy) => {
     self._scheduledSignal = scheduledSignal;
 
     // Call onSchedule callback for restored scheduled signal
-    if (self.params.callbacks?.onSchedule) {
-      const currentPrice = await self.params.exchange.getAveragePrice(
-        self.params.execution.context.symbol
-      );
-      self.params.callbacks.onSchedule(
-        self.params.execution.context.symbol,
-        scheduledSignal,
-        currentPrice,
-        self.params.execution.context.backtest
-      );
-    }
+    const currentPrice = await self.params.exchange.getAveragePrice(
+      self.params.execution.context.symbol
+    );
+    const currentTime = self.params.execution.context.when.getTime();
+    await CALL_SCHEDULE_CALLBACKS_FN(
+      self,
+      self.params.execution.context.symbol,
+      scheduledSignal,
+      currentPrice,
+      currentTime,
+      self.params.execution.context.backtest
+    );
   }
+};
+
+const PARTIAL_PROFIT_FN = (
+  self: ClientStrategy,
+  signal: ISignalRow,
+  percentToClose: number,
+  currentPrice: number
+): void => {
+  // Initialize partial array if not present
+  if (!signal._partial) signal._partial = [];
+
+  // Calculate current totals (computed values)
+  const tpClosed = signal._partial
+    .filter((p) => p.type === "profit")
+    .reduce((sum, p) => sum + p.percent, 0);
+  const slClosed = signal._partial
+    .filter((p) => p.type === "loss")
+    .reduce((sum, p) => sum + p.percent, 0);
+  const totalClosed = tpClosed + slClosed;
+
+  // Check if would exceed 100% total closed
+  const newTotalClosed = totalClosed + percentToClose;
+  if (newTotalClosed > 100) {
+    self.params.logger.warn(
+      "PARTIAL_PROFIT_FN: would exceed 100% closed, skipping",
+      {
+        signalId: signal.id,
+        currentTotalClosed: totalClosed,
+        percentToClose,
+        newTotalClosed,
+      }
+    );
+    return;
+  }
+
+  // Add new partial close entry
+  signal._partial.push({
+    type: "profit",
+    percent: percentToClose,
+    price: currentPrice,
+  });
+
+  self.params.logger.info("PARTIAL_PROFIT_FN executed", {
+    signalId: signal.id,
+    percentClosed: percentToClose,
+    totalClosed: newTotalClosed,
+    currentPrice,
+    tpClosed: tpClosed + percentToClose,
+  });
+};
+
+const PARTIAL_LOSS_FN = (
+  self: ClientStrategy,
+  signal: ISignalRow,
+  percentToClose: number,
+  currentPrice: number
+): void => {
+  // Initialize partial array if not present
+  if (!signal._partial) signal._partial = [];
+
+  // Calculate current totals (computed values)
+  const tpClosed = signal._partial
+    .filter((p) => p.type === "profit")
+    .reduce((sum, p) => sum + p.percent, 0);
+  const slClosed = signal._partial
+    .filter((p) => p.type === "loss")
+    .reduce((sum, p) => sum + p.percent, 0);
+  const totalClosed = tpClosed + slClosed;
+
+  // Check if would exceed 100% total closed
+  const newTotalClosed = totalClosed + percentToClose;
+  if (newTotalClosed > 100) {
+    self.params.logger.warn(
+      "PARTIAL_LOSS_FN: would exceed 100% closed, skipping",
+      {
+        signalId: signal.id,
+        currentTotalClosed: totalClosed,
+        percentToClose,
+        newTotalClosed,
+      }
+    );
+    return;
+  }
+
+  // Add new partial close entry
+  signal._partial.push({
+    type: "loss",
+    percent: percentToClose,
+    price: currentPrice,
+  });
+
+  self.params.logger.warn("PARTIAL_LOSS_FN executed", {
+    signalId: signal.id,
+    percentClosed: percentToClose,
+    totalClosed: newTotalClosed,
+    currentPrice,
+    slClosed: slClosed + percentToClose,
+  });
 };
 
 const CHECK_SCHEDULED_SIGNAL_TIMEOUT_FN = async (
@@ -624,14 +765,14 @@ const CHECK_SCHEDULED_SIGNAL_TIMEOUT_FN = async (
 
   await self.setScheduledSignal(null);
 
-  if (self.params.callbacks?.onCancel) {
-    self.params.callbacks.onCancel(
-      self.params.execution.context.symbol,
-      scheduled,
-      currentPrice,
-      self.params.execution.context.backtest
-    );
-  }
+  await CALL_CANCEL_CALLBACKS_FN(
+    self,
+    self.params.execution.context.symbol,
+    scheduled,
+    currentPrice,
+    currentTime,
+    self.params.execution.context.backtest
+  );
 
   const result: IStrategyTickResultCancelled = {
     action: "cancelled",
@@ -646,13 +787,13 @@ const CHECK_SCHEDULED_SIGNAL_TIMEOUT_FN = async (
     reason: "timeout",
   };
 
-  if (self.params.callbacks?.onTick) {
-    self.params.callbacks.onTick(
-      self.params.execution.context.symbol,
-      result,
-      self.params.execution.context.backtest
-    );
-  }
+  await CALL_TICK_CALLBACKS_FN(
+    self,
+    self.params.execution.context.symbol,
+    result,
+    currentTime,
+    self.params.execution.context.backtest
+  );
 
   return result;
 };
@@ -708,20 +849,22 @@ const CANCEL_SCHEDULED_SIGNAL_BY_STOPLOSS_FN = async (
 
   await self.setScheduledSignal(null);
 
-  if (self.params.callbacks?.onCancel) {
-    self.params.callbacks.onCancel(
-      self.params.execution.context.symbol,
-      scheduled,
-      currentPrice,
-      self.params.execution.context.backtest
-    );
-  }
+  const currentTime = self.params.execution.context.when.getTime();
+
+  await CALL_CANCEL_CALLBACKS_FN(
+    self,
+    self.params.execution.context.symbol,
+    scheduled,
+    currentPrice,
+    currentTime,
+    self.params.execution.context.backtest
+  );
 
   const result: IStrategyTickResultCancelled = {
     action: "cancelled",
     signal: scheduled,
     currentPrice: currentPrice,
-    closeTimestamp: self.params.execution.context.when.getTime(),
+    closeTimestamp: currentTime,
     strategyName: self.params.method.context.strategyName,
     exchangeName: self.params.method.context.exchangeName,
     frameName: self.params.method.context.frameName,
@@ -730,13 +873,13 @@ const CANCEL_SCHEDULED_SIGNAL_BY_STOPLOSS_FN = async (
     reason: "price_reject",
   };
 
-  if (self.params.callbacks?.onTick) {
-    self.params.callbacks.onTick(
-      self.params.execution.context.symbol,
-      result,
-      self.params.execution.context.backtest
-    );
-  }
+  await CALL_TICK_CALLBACKS_FN(
+    self,
+    self.params.execution.context.symbol,
+    result,
+    currentTime,
+    self.params.execution.context.backtest
+  );
 
   return result;
 };
@@ -773,15 +916,14 @@ const ACTIVATE_SCHEDULED_SIGNAL_FN = async (
   });
   if (
     await not(
-        self.params.risk.checkSignal({
-          symbol: self.params.execution.context.symbol,
-          pendingSignal: scheduled,
-          strategyName: self.params.method.context.strategyName,
-          exchangeName: self.params.method.context.exchangeName,
-          frameName: self.params.method.context.frameName,
-          currentPrice: scheduled.priceOpen,
-          timestamp: activationTime,
-      })
+      CALL_RISK_CHECK_SIGNAL_FN(
+        self,
+        self.params.execution.context.symbol,
+        scheduled,
+        scheduled.priceOpen,
+        activationTime,
+        self.params.execution.context.backtest
+      )
     )
   ) {
     self.params.logger.info("ClientStrategy scheduled signal rejected by risk", {
@@ -803,21 +945,21 @@ const ACTIVATE_SCHEDULED_SIGNAL_FN = async (
 
   await self.setPendingSignal(activatedSignal);
 
-  await self.params.risk.addSignal(self.params.execution.context.symbol, {
-    strategyName: self.params.method.context.strategyName,
-    riskName: self.params.riskName,
-    exchangeName: self.params.method.context.exchangeName,
-    frameName: self.params.method.context.frameName,
-  });
+  await CALL_RISK_ADD_SIGNAL_FN(
+    self,
+    self.params.execution.context.symbol,
+    activationTime,
+    self.params.execution.context.backtest
+  );
 
-  if (self.params.callbacks?.onOpen) {
-    self.params.callbacks.onOpen(
-      self.params.execution.context.symbol,
-      self._pendingSignal,
-      self._pendingSignal.priceOpen,
-      self.params.execution.context.backtest
-    );
-  }
+  await CALL_OPEN_CALLBACKS_FN(
+    self,
+    self.params.execution.context.symbol,
+    self._pendingSignal,
+    self._pendingSignal.priceOpen,
+    activationTime,
+    self.params.execution.context.backtest
+  );
 
   const result: IStrategyTickResultOpened = {
     action: "opened",
@@ -830,13 +972,13 @@ const ACTIVATE_SCHEDULED_SIGNAL_FN = async (
     backtest: self.params.execution.context.backtest,
   };
 
-  if (self.params.callbacks?.onTick) {
-    self.params.callbacks.onTick(
-      self.params.execution.context.symbol,
-      result,
-      self.params.execution.context.backtest
-    );
-  }
+  await CALL_TICK_CALLBACKS_FN(
+    self,
+    self.params.execution.context.symbol,
+    result,
+    activationTime,
+    self.params.execution.context.backtest
+  );
 
   return result;
 };
@@ -844,32 +986,542 @@ const ACTIVATE_SCHEDULED_SIGNAL_FN = async (
 const CALL_PING_CALLBACKS_FN = trycatch(
   async (
     self: ClientStrategy,
+    symbol: string,
     scheduled: IScheduledSignalRow,
-    timestamp: number
+    timestamp: number,
+    backtest: boolean,
   ): Promise<void> => {
-    // Call system onPing callback first (emits to pingSubject)
-    await self.params.onPing(
-      self.params.execution.context.symbol,
-      self.params.method.context.strategyName,
-      self.params.method.context.exchangeName,
-      scheduled,
-      self.params.execution.context.backtest,
-      timestamp
-    );
-
-    // Call user onPing callback only if signal is still active (not cancelled, not activated)
-    if (self.params.callbacks?.onPing) {
-      await self.params.callbacks.onPing(
+    await ExecutionContextService.runInContext(async () => {
+      // Call system onPing callback first (emits to pingSubject)
+      await self.params.onPing(
         self.params.execution.context.symbol,
+        self.params.method.context.strategyName,
+        self.params.method.context.exchangeName,
         scheduled,
-        new Date(timestamp),
-        self.params.execution.context.backtest
+        self.params.execution.context.backtest,
+        timestamp
       );
-    }
+
+      // Call user onPing callback only if signal is still active (not cancelled, not activated)
+      if (self.params.callbacks?.onPing) {
+        await self.params.callbacks.onPing(
+          self.params.execution.context.symbol,
+          scheduled,
+          new Date(timestamp),
+          self.params.execution.context.backtest
+        );
+      }
+    }, {
+      when: new Date(timestamp),
+      symbol: symbol,
+      backtest: backtest,
+    })
   },
   {
     fallback: (error) => {
       const message = "ClientStrategy CALL_PING_CALLBACKS_FN thrown";
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+  }
+);
+
+const CALL_ACTIVE_CALLBACKS_FN = trycatch(
+  async (
+    self: ClientStrategy,
+    symbol: string,
+    signal: ISignalRow,
+    currentPrice: number,
+    timestamp: number,
+    backtest: boolean
+  ): Promise<void> => {
+    await ExecutionContextService.runInContext(async () => {
+      if (self.params.callbacks?.onActive) {
+        await self.params.callbacks.onActive(
+          self.params.execution.context.symbol,
+          signal,
+          currentPrice,
+          self.params.execution.context.backtest
+        );
+      }
+    }, {
+      when: new Date(timestamp),
+      symbol: symbol,
+      backtest: backtest,
+    });
+  },
+  {
+    fallback: (error) => {
+      const message = "ClientStrategy CALL_ACTIVE_CALLBACKS_FN thrown";
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+  }
+);
+
+const CALL_SCHEDULE_CALLBACKS_FN = trycatch(
+  async (
+    self: ClientStrategy,
+    symbol: string,
+    signal: IScheduledSignalRow,
+    currentPrice: number,
+    timestamp: number,
+    backtest: boolean
+  ): Promise<void> => {
+    await ExecutionContextService.runInContext(async () => {
+      if (self.params.callbacks?.onSchedule) {
+        await self.params.callbacks.onSchedule(
+          self.params.execution.context.symbol,
+          signal,
+          currentPrice,
+          self.params.execution.context.backtest
+        );
+      }
+    }, {
+      when: new Date(timestamp),
+      symbol: symbol,
+      backtest: backtest,
+    });
+  },
+  {
+    fallback: (error) => {
+      const message = "ClientStrategy CALL_SCHEDULE_CALLBACKS_FN thrown";
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+  }
+);
+
+const CALL_CANCEL_CALLBACKS_FN = trycatch(
+  async (
+    self: ClientStrategy,
+    symbol: string,
+    signal: IScheduledSignalRow,
+    currentPrice: number,
+    timestamp: number,
+    backtest: boolean
+  ): Promise<void> => {
+    await ExecutionContextService.runInContext(async () => {
+      if (self.params.callbacks?.onCancel) {
+        await self.params.callbacks.onCancel(
+          self.params.execution.context.symbol,
+          signal,
+          currentPrice,
+          self.params.execution.context.backtest
+        );
+      }
+    }, {
+      when: new Date(timestamp),
+      symbol: symbol,
+      backtest: backtest,
+    });
+  },
+  {
+    fallback: (error) => {
+      const message = "ClientStrategy CALL_CANCEL_CALLBACKS_FN thrown";
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+  }
+);
+
+const CALL_OPEN_CALLBACKS_FN = trycatch(
+  async (
+    self: ClientStrategy,
+    symbol: string,
+    signal: ISignalRow,
+    priceOpen: number,
+    timestamp: number,
+    backtest: boolean
+  ): Promise<void> => {
+    await ExecutionContextService.runInContext(async () => {
+      if (self.params.callbacks?.onOpen) {
+        await self.params.callbacks.onOpen(
+          self.params.execution.context.symbol,
+          signal,
+          priceOpen,
+          self.params.execution.context.backtest
+        );
+      }
+    }, {
+      when: new Date(timestamp),
+      symbol: symbol,
+      backtest: backtest,
+    });
+  },
+  {
+    fallback: (error) => {
+      const message = "ClientStrategy CALL_OPEN_CALLBACKS_FN thrown";
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+  }
+);
+
+const CALL_CLOSE_CALLBACKS_FN = trycatch(
+  async (
+    self: ClientStrategy,
+    symbol: string,
+    signal: ISignalRow,
+    currentPrice: number,
+    timestamp: number,
+    backtest: boolean
+  ): Promise<void> => {
+    await ExecutionContextService.runInContext(async () => {
+      if (self.params.callbacks?.onClose) {
+        await self.params.callbacks.onClose(
+          self.params.execution.context.symbol,
+          signal,
+          currentPrice,
+          self.params.execution.context.backtest
+        );
+      }
+    }, {
+      when: new Date(timestamp),
+      symbol: symbol,
+      backtest: backtest,
+    });
+  },
+  {
+    fallback: (error) => {
+      const message = "ClientStrategy CALL_CLOSE_CALLBACKS_FN thrown";
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+  }
+);
+
+const CALL_TICK_CALLBACKS_FN = trycatch(
+  async (
+    self: ClientStrategy,
+    symbol: string,
+    result: IStrategyTickResult,
+    timestamp: number,
+    backtest: boolean
+  ): Promise<void> => {
+    await ExecutionContextService.runInContext(async () => {
+      if (self.params.callbacks?.onTick) {
+        await self.params.callbacks.onTick(
+          self.params.execution.context.symbol,
+          result,
+          self.params.execution.context.backtest
+        );
+      }
+    }, {
+      when: new Date(timestamp),
+      symbol: symbol,
+      backtest: backtest,
+    });
+  },
+  {
+    fallback: (error) => {
+      const message = "ClientStrategy CALL_TICK_CALLBACKS_FN thrown";
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+  }
+);
+
+const CALL_IDLE_CALLBACKS_FN = trycatch(
+  async (
+    self: ClientStrategy,
+    symbol: string,
+    currentPrice: number,
+    timestamp: number,
+    backtest: boolean
+  ): Promise<void> => {
+    await ExecutionContextService.runInContext(async () => {
+      if (self.params.callbacks?.onIdle) {
+        await self.params.callbacks.onIdle(
+          self.params.execution.context.symbol,
+          currentPrice,
+          self.params.execution.context.backtest
+        );
+      }
+    }, {
+      when: new Date(timestamp),
+      symbol: symbol,
+      backtest: backtest,
+    });
+  },
+  {
+    fallback: (error) => {
+      const message = "ClientStrategy CALL_IDLE_CALLBACKS_FN thrown";
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+  }
+);
+
+const CALL_RISK_ADD_SIGNAL_FN = trycatch(
+  async (
+    self: ClientStrategy,
+    symbol: string,
+    timestamp: number,
+    backtest: boolean
+  ): Promise<void> => {
+    await ExecutionContextService.runInContext(async () => {
+      await self.params.risk.addSignal(symbol, {
+        strategyName: self.params.method.context.strategyName,
+        riskName: self.params.riskName,
+        exchangeName: self.params.method.context.exchangeName,
+        frameName: self.params.method.context.frameName,
+      });
+    }, {
+      when: new Date(timestamp),
+      symbol: symbol,
+      backtest: backtest,
+    });
+  },
+  {
+    fallback: (error) => {
+      const message = "ClientStrategy CALL_RISK_ADD_SIGNAL_FN thrown";
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+  }
+);
+
+const CALL_RISK_REMOVE_SIGNAL_FN = trycatch(
+  async (
+    self: ClientStrategy,
+    symbol: string,
+    timestamp: number,
+    backtest: boolean
+  ): Promise<void> => {
+    await ExecutionContextService.runInContext(async () => {
+      await self.params.risk.removeSignal(symbol, {
+        strategyName: self.params.method.context.strategyName,
+        riskName: self.params.riskName,
+        exchangeName: self.params.method.context.exchangeName,
+        frameName: self.params.method.context.frameName,
+      });
+    }, {
+      when: new Date(timestamp),
+      symbol: symbol,
+      backtest: backtest,
+    });
+  },
+  {
+    fallback: (error) => {
+      const message = "ClientStrategy CALL_RISK_REMOVE_SIGNAL_FN thrown";
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+  }
+);
+
+const CALL_PARTIAL_CLEAR_FN = trycatch(
+  async (
+    self: ClientStrategy,
+    symbol: string,
+    signal: ISignalRow,
+    currentPrice: number,
+    timestamp: number,
+    backtest: boolean
+  ): Promise<void> => {
+    await ExecutionContextService.runInContext(async () => {
+      await self.params.partial.clear(
+        symbol,
+        signal,
+        currentPrice,
+        backtest,
+      );
+    }, {
+      when: new Date(timestamp),
+      symbol: symbol,
+      backtest: backtest,
+    });
+  },
+  {
+    fallback: (error) => {
+      const message = "ClientStrategy CALL_PARTIAL_CLEAR_FN thrown";
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+  }
+);
+
+const CALL_RISK_CHECK_SIGNAL_FN = trycatch(
+  async (
+    self: ClientStrategy,
+    symbol: string,
+    pendingSignal: ISignalDto | ISignalRow | IScheduledSignalRow,
+    currentPrice: number,
+    timestamp: number,
+    backtest: boolean
+  ): Promise<boolean> => {
+    return await ExecutionContextService.runInContext(async () => {
+      return await self.params.risk.checkSignal({
+        pendingSignal,
+        symbol: symbol,
+        strategyName: self.params.method.context.strategyName,
+        exchangeName: self.params.method.context.exchangeName,
+        frameName: self.params.method.context.frameName,
+        currentPrice,
+        timestamp,
+      });
+    }, {
+      when: new Date(timestamp),
+      symbol: symbol,
+      backtest: backtest,
+    });
+  },
+  {
+    defaultValue: false,
+    fallback: (error) => {
+      const message = "ClientStrategy CALL_RISK_CHECK_SIGNAL_FN thrown";
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+  }
+);
+
+const CALL_PARTIAL_PROFIT_CALLBACKS_FN = trycatch(
+  async (
+    self: ClientStrategy,
+    symbol: string,
+    signal: ISignalRow,
+    currentPrice: number,
+    percentTp: number,
+    timestamp: number,
+    backtest: boolean
+  ): Promise<void> => {
+    await ExecutionContextService.runInContext(async () => {
+      await self.params.partial.profit(
+        symbol,
+        signal,
+        currentPrice,
+        percentTp,
+        backtest,
+        new Date(timestamp),
+      );
+      if (self.params.callbacks?.onPartialProfit) {
+        await self.params.callbacks.onPartialProfit(
+          symbol,
+          signal,
+          currentPrice,
+          percentTp,
+          backtest
+        );
+      }
+    }, {
+      when: new Date(timestamp),
+      symbol: symbol,
+      backtest: backtest,
+    });
+  },
+  {
+    fallback: (error) => {
+      const message = "ClientStrategy CALL_PARTIAL_PROFIT_CALLBACKS_FN thrown";
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+  }
+);
+
+const CALL_PARTIAL_LOSS_CALLBACKS_FN = trycatch(
+  async (
+    self: ClientStrategy,
+    symbol: string,
+    signal: ISignalRow,
+    currentPrice: number,
+    percentSl: number,
+    timestamp: number,
+    backtest: boolean
+  ): Promise<void> => {
+    await ExecutionContextService.runInContext(async () => {
+      await self.params.partial.loss(
+        symbol,
+        signal,
+        currentPrice,
+        percentSl,
+        backtest,
+        new Date(timestamp)
+      );
+      if (self.params.callbacks?.onPartialLoss) {
+        await self.params.callbacks.onPartialLoss(
+          symbol,
+          signal,
+          currentPrice,
+          percentSl,
+          backtest
+        );
+      }
+    }, {
+      when: new Date(timestamp),
+      symbol: symbol,
+      backtest: backtest,
+    });
+  },
+  {
+    fallback: (error) => {
+      const message = "ClientStrategy CALL_PARTIAL_LOSS_CALLBACKS_FN thrown";
       const payload = {
         error: errorData(error),
         message: getErrorMessage(error),
@@ -886,10 +1538,14 @@ const RETURN_SCHEDULED_SIGNAL_ACTIVE_FN = async (
   scheduled: IScheduledSignalRow,
   currentPrice: number
 ): Promise<IStrategyTickResultActive> => {
+  const currentTime = self.params.execution.context.when.getTime();
+
   await CALL_PING_CALLBACKS_FN(
     self,
+    self.params.execution.context.symbol,
     scheduled,
-    self.params.execution.context.when.getTime()
+    currentTime,
+    self.params.execution.context.backtest
   );
 
   const result: IStrategyTickResultActive = {
@@ -905,13 +1561,13 @@ const RETURN_SCHEDULED_SIGNAL_ACTIVE_FN = async (
     backtest: self.params.execution.context.backtest,
   };
 
-  if (self.params.callbacks?.onTick) {
-    self.params.callbacks.onTick(
-      self.params.execution.context.symbol,
-      result,
-      self.params.execution.context.backtest
-    );
-  }
+  await CALL_TICK_CALLBACKS_FN(
+    self,
+    self.params.execution.context.symbol,
+    result,
+    currentTime,
+    self.params.execution.context.backtest
+  );
 
   return result;
 };
@@ -924,6 +1580,8 @@ const OPEN_NEW_SCHEDULED_SIGNAL_FN = async (
     self.params.execution.context.symbol
   );
 
+  const currentTime = self.params.execution.context.when.getTime();
+
   self.params.logger.info("ClientStrategy scheduled signal created", {
     symbol: self.params.execution.context.symbol,
     signalId: signal.id,
@@ -932,14 +1590,14 @@ const OPEN_NEW_SCHEDULED_SIGNAL_FN = async (
     currentPrice: currentPrice,
   });
 
-  if (self.params.callbacks?.onSchedule) {
-    self.params.callbacks.onSchedule(
-      self.params.execution.context.symbol,
-      signal,
-      currentPrice,
-      self.params.execution.context.backtest
-    );
-  }
+  await CALL_SCHEDULE_CALLBACKS_FN(
+    self,
+    self.params.execution.context.symbol,
+    signal,
+    currentPrice,
+    currentTime,
+    self.params.execution.context.backtest
+  );
 
   const result: IStrategyTickResultScheduled = {
     action: "scheduled",
@@ -952,13 +1610,13 @@ const OPEN_NEW_SCHEDULED_SIGNAL_FN = async (
     backtest: self.params.execution.context.backtest,
   };
 
-  if (self.params.callbacks?.onTick) {
-    self.params.callbacks.onTick(
-      self.params.execution.context.symbol,
-      result,
-      self.params.execution.context.backtest
-    );
-  }
+  await CALL_TICK_CALLBACKS_FN(
+    self,
+    self.params.execution.context.symbol,
+    result,
+    currentTime,
+    self.params.execution.context.backtest
+  );
 
   return result;
 };
@@ -967,37 +1625,38 @@ const OPEN_NEW_PENDING_SIGNAL_FN = async (
   self: ClientStrategy,
   signal: ISignalRow
 ): Promise<IStrategyTickResultOpened | null> => {
+  const currentTime = self.params.execution.context.when.getTime();
+
   if (
     await not(
-      self.params.risk.checkSignal({
-        pendingSignal: signal,
-        symbol: self.params.execution.context.symbol,
-        strategyName: self.params.method.context.strategyName,
-        exchangeName: self.params.method.context.exchangeName,
-        frameName: self.params.method.context.frameName,
-        currentPrice: signal.priceOpen,
-        timestamp: self.params.execution.context.when.getTime(),
-      })
+      CALL_RISK_CHECK_SIGNAL_FN(
+        self,
+        self.params.execution.context.symbol,
+        signal,
+        signal.priceOpen,
+        currentTime,
+        self.params.execution.context.backtest
+      )
     )
   ) {
     return null;
   }
 
-  await self.params.risk.addSignal(self.params.execution.context.symbol, {
-    strategyName: self.params.method.context.strategyName,
-    riskName: self.params.riskName,
-    exchangeName: self.params.method.context.exchangeName,
-    frameName: self.params.method.context.frameName,
-  });
+  await CALL_RISK_ADD_SIGNAL_FN(
+    self,
+    self.params.execution.context.symbol,
+    currentTime,
+    self.params.execution.context.backtest
+  );
 
-  if (self.params.callbacks?.onOpen) {
-    self.params.callbacks.onOpen(
-      self.params.execution.context.symbol,
-      signal,
-      signal.priceOpen,
-      self.params.execution.context.backtest
-    );
-  }
+  await CALL_OPEN_CALLBACKS_FN(
+    self,
+    self.params.execution.context.symbol,
+    signal,
+    signal.priceOpen,
+    currentTime,
+    self.params.execution.context.backtest
+  );
 
   const result: IStrategyTickResultOpened = {
     action: "opened",
@@ -1010,13 +1669,13 @@ const OPEN_NEW_PENDING_SIGNAL_FN = async (
     backtest: self.params.execution.context.backtest,
   };
 
-  if (self.params.callbacks?.onTick) {
-    self.params.callbacks.onTick(
-      self.params.execution.context.symbol,
-      result,
-      self.params.execution.context.backtest
-    );
-  }
+  await CALL_TICK_CALLBACKS_FN(
+    self,
+    self.params.execution.context.symbol,
+    result,
+    currentTime,
+    self.params.execution.context.backtest
+  );
 
   return result;
 };
@@ -1090,6 +1749,8 @@ const CLOSE_PENDING_SIGNAL_FN = async (
 ): Promise<IStrategyTickResultClosed> => {
   const pnl = toProfitLossDto(signal, currentPrice);
 
+  const currentTime = self.params.execution.context.when.getTime();
+
   self.params.logger.info(`ClientStrategy signal ${closeReason}`, {
     symbol: self.params.execution.context.symbol,
     signalId: signal.id,
@@ -1098,29 +1759,31 @@ const CLOSE_PENDING_SIGNAL_FN = async (
     pnlPercentage: pnl.pnlPercentage,
   });
 
-  if (self.params.callbacks?.onClose) {
-    self.params.callbacks.onClose(
-      self.params.execution.context.symbol,
-      signal,
-      currentPrice,
-      self.params.execution.context.backtest
-    );
-  }
-
-  // КРИТИЧНО: Очищаем состояние ClientPartial при закрытии позиции
-  await self.params.partial.clear(
+  await CALL_CLOSE_CALLBACKS_FN(
+    self,
     self.params.execution.context.symbol,
     signal,
     currentPrice,
-    self.params.execution.context.backtest,
+    currentTime,
+    self.params.execution.context.backtest
   );
 
-  await self.params.risk.removeSignal(self.params.execution.context.symbol, {
-    strategyName: self.params.method.context.strategyName,
-    riskName: self.params.riskName,
-    exchangeName: self.params.method.context.exchangeName,
-    frameName: self.params.method.context.frameName,
-  });
+  // КРИТИЧНО: Очищаем состояние ClientPartial при закрытии позиции
+  await CALL_PARTIAL_CLEAR_FN(
+    self,
+    self.params.execution.context.symbol,
+    signal,
+    currentPrice,
+    currentTime,
+    self.params.execution.context.backtest
+  );
+
+  await CALL_RISK_REMOVE_SIGNAL_FN(
+    self,
+    self.params.execution.context.symbol,
+    currentTime,
+    self.params.execution.context.backtest
+  );
 
   await self.setPendingSignal(null);
 
@@ -1129,7 +1792,7 @@ const CLOSE_PENDING_SIGNAL_FN = async (
     signal: signal,
     currentPrice: currentPrice,
     closeReason: closeReason,
-    closeTimestamp: self.params.execution.context.when.getTime(),
+    closeTimestamp: currentTime,
     pnl: pnl,
     strategyName: self.params.method.context.strategyName,
     exchangeName: self.params.method.context.exchangeName,
@@ -1138,13 +1801,13 @@ const CLOSE_PENDING_SIGNAL_FN = async (
     backtest: self.params.execution.context.backtest,
   };
 
-  if (self.params.callbacks?.onTick) {
-    self.params.callbacks.onTick(
-      self.params.execution.context.symbol,
-      result,
-      self.params.execution.context.backtest
-    );
-  }
+  await CALL_TICK_CALLBACKS_FN(
+    self,
+    self.params.execution.context.symbol,
+    result,
+    currentTime,
+    self.params.execution.context.backtest
+  );
 
   return result;
 };
@@ -1156,6 +1819,8 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
 ): Promise<IStrategyTickResultActive> => {
   let percentTp = 0;
   let percentSl = 0;
+
+  const currentTime = self.params.execution.context.when.getTime();
 
   // Calculate percentage of path to TP/SL for partial fill/loss callbacks
   {
@@ -1169,48 +1834,29 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
         const progressPercent = (currentDistance / tpDistance) * 100;
         percentTp = Math.min(progressPercent, 100);
 
-        await self.params.partial.profit(
+        await CALL_PARTIAL_PROFIT_CALLBACKS_FN(
+          self,
           self.params.execution.context.symbol,
           signal,
           currentPrice,
           percentTp,
-          self.params.execution.context.backtest,
-          self.params.execution.context.when
+          currentTime,
+          self.params.execution.context.backtest
         );
-
-        if (self.params.callbacks?.onPartialProfit) {
-          self.params.callbacks.onPartialProfit(
-            self.params.execution.context.symbol,
-            signal,
-            currentPrice,
-            percentTp,
-            self.params.execution.context.backtest
-          );
-        }
       } else if (currentDistance < 0) {
         // Moving towards SL
         const slDistance = signal.priceOpen - signal.priceStopLoss;
         const progressPercent = (Math.abs(currentDistance) / slDistance) * 100;
         percentSl = Math.min(progressPercent, 100);
-
-        await self.params.partial.loss(
+        await CALL_PARTIAL_LOSS_CALLBACKS_FN(
+          self,
           self.params.execution.context.symbol,
           signal,
           currentPrice,
           percentSl,
-          self.params.execution.context.backtest,
-          self.params.execution.context.when
+          currentTime,
+          self.params.execution.context.backtest
         );
-
-        if (self.params.callbacks?.onPartialLoss) {
-          self.params.callbacks.onPartialLoss(
-            self.params.execution.context.symbol,
-            signal,
-            currentPrice,
-            percentSl,
-            self.params.execution.context.backtest
-          );
-        }
       }
     } else if (signal.position === "short") {
       // For short: calculate progress towards TP or SL
@@ -1221,25 +1867,15 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
         const tpDistance = signal.priceOpen - signal.priceTakeProfit;
         const progressPercent = (currentDistance / tpDistance) * 100;
         percentTp = Math.min(progressPercent, 100);
-
-        await self.params.partial.profit(
+        await CALL_PARTIAL_PROFIT_CALLBACKS_FN(
+          self,
           self.params.execution.context.symbol,
           signal,
           currentPrice,
           percentTp,
-          self.params.execution.context.backtest,
-          self.params.execution.context.when
+          currentTime,
+          self.params.execution.context.backtest
         );
-
-        if (self.params.callbacks?.onPartialProfit) {
-          self.params.callbacks.onPartialProfit(
-            self.params.execution.context.symbol,
-            signal,
-            currentPrice,
-            percentTp,
-            self.params.execution.context.backtest
-          );
-        }
       }
 
       if (currentDistance < 0) {
@@ -1247,25 +1883,15 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
         const slDistance = signal.priceStopLoss - signal.priceOpen;
         const progressPercent = (Math.abs(currentDistance) / slDistance) * 100;
         percentSl = Math.min(progressPercent, 100);
-
-        await self.params.partial.loss(
+        await CALL_PARTIAL_LOSS_CALLBACKS_FN(
+          self,
           self.params.execution.context.symbol,
           signal,
           currentPrice,
           percentSl,
-          self.params.execution.context.backtest,
-          self.params.execution.context.when
+          currentTime,
+          self.params.execution.context.backtest
         );
-
-        if (self.params.callbacks?.onPartialLoss) {
-          self.params.callbacks.onPartialLoss(
-            self.params.execution.context.symbol,
-            signal,
-            currentPrice,
-            percentSl,
-            self.params.execution.context.backtest
-          );
-        }
       }
     }
   }
@@ -1283,13 +1909,13 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
     backtest: self.params.execution.context.backtest,
   };
 
-  if (self.params.callbacks?.onTick) {
-    self.params.callbacks.onTick(
-      self.params.execution.context.symbol,
-      result,
-      self.params.execution.context.backtest
-    );
-  }
+  await CALL_TICK_CALLBACKS_FN(
+    self,
+    self.params.execution.context.symbol,
+    result,
+    currentTime,
+    self.params.execution.context.backtest
+  );
 
   return result;
 };
@@ -1298,13 +1924,15 @@ const RETURN_IDLE_FN = async (
   self: ClientStrategy,
   currentPrice: number
 ): Promise<IStrategyTickResultIdle> => {
-  if (self.params.callbacks?.onIdle) {
-    self.params.callbacks.onIdle(
-      self.params.execution.context.symbol,
-      currentPrice,
-      self.params.execution.context.backtest
-    );
-  }
+  const currentTime = self.params.execution.context.when.getTime();
+
+  await CALL_IDLE_CALLBACKS_FN(
+    self,
+    self.params.execution.context.symbol,
+    currentPrice,
+    currentTime,
+    self.params.execution.context.backtest
+  );
 
   const result: IStrategyTickResultIdle = {
     action: "idle",
@@ -1317,13 +1945,13 @@ const RETURN_IDLE_FN = async (
     backtest: self.params.execution.context.backtest,
   };
 
-  if (self.params.callbacks?.onTick) {
-    self.params.callbacks.onTick(
-      self.params.execution.context.symbol,
-      result,
-      self.params.execution.context.backtest
-    );
-  }
+  await CALL_TICK_CALLBACKS_FN(
+    self,
+    self.params.execution.context.symbol,
+    result,
+    currentTime,
+    self.params.execution.context.backtest
+  );
 
   return result;
 };
@@ -1349,14 +1977,14 @@ const CANCEL_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
 
   await self.setScheduledSignal(null);
 
-  if (self.params.callbacks?.onCancel) {
-    self.params.callbacks.onCancel(
-      self.params.execution.context.symbol,
-      scheduled,
-      averagePrice,
-      self.params.execution.context.backtest
-    );
-  }
+  await CALL_CANCEL_CALLBACKS_FN(
+    self,
+    self.params.execution.context.symbol,
+    scheduled,
+    averagePrice,
+    closeTimestamp,
+    self.params.execution.context.backtest
+  );
 
   const result: IStrategyTickResultCancelled = {
     action: "cancelled",
@@ -1371,13 +1999,13 @@ const CANCEL_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
     reason,
   };
 
-  if (self.params.callbacks?.onTick) {
-    self.params.callbacks.onTick(
-      self.params.execution.context.symbol,
-      result,
-      self.params.execution.context.backtest
-    );
-  }
+  await CALL_TICK_CALLBACKS_FN(
+    self,
+    self.params.execution.context.symbol,
+    result,
+    closeTimestamp,
+    self.params.execution.context.backtest
+  );
 
   return result;
 };
@@ -1415,15 +2043,14 @@ const ACTIVATE_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
 
   if (
     await not(
-      self.params.risk.checkSignal({
-        pendingSignal: scheduled,
-        symbol: self.params.execution.context.symbol,
-        strategyName: self.params.method.context.strategyName,
-        exchangeName: self.params.method.context.exchangeName,
-        frameName: self.params.method.context.frameName,
-        currentPrice: scheduled.priceOpen,
-        timestamp: activationTime,
-      })
+      CALL_RISK_CHECK_SIGNAL_FN(
+        self,
+        self.params.execution.context.symbol,
+        scheduled,
+        scheduled.priceOpen,
+        activationTime,
+        self.params.execution.context.backtest
+      )
     )
   ) {
     self.params.logger.info("ClientStrategy backtest scheduled signal rejected by risk", {
@@ -1445,21 +2072,21 @@ const ACTIVATE_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
 
   await self.setPendingSignal(activatedSignal);
 
-  await self.params.risk.addSignal(self.params.execution.context.symbol, {
-    strategyName: self.params.method.context.strategyName,
-    riskName: self.params.riskName,
-    exchangeName: self.params.method.context.exchangeName,
-    frameName: self.params.method.context.frameName,
-  });
+  await CALL_RISK_ADD_SIGNAL_FN(
+    self,
+    self.params.execution.context.symbol,
+    activationTime,
+    self.params.execution.context.backtest
+  );
 
-  if (self.params.callbacks?.onOpen) {
-    self.params.callbacks.onOpen(
-      self.params.execution.context.symbol,
-      activatedSignal,
-      activatedSignal.priceOpen,
-      self.params.execution.context.backtest
-    );
-  }
+  await CALL_OPEN_CALLBACKS_FN(
+    self,
+    self.params.execution.context.symbol,
+    activatedSignal,
+    activatedSignal.priceOpen,
+    activationTime,
+    self.params.execution.context.backtest
+  );
 
   return true;
 };
@@ -1498,29 +2125,31 @@ const CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN = async (
     );
   }
 
-  if (self.params.callbacks?.onClose) {
-    self.params.callbacks.onClose(
-      self.params.execution.context.symbol,
-      signal,
-      averagePrice,
-      self.params.execution.context.backtest
-    );
-  }
-
-  // КРИТИЧНО: Очищаем состояние ClientPartial при закрытии позиции
-  await self.params.partial.clear(
+  await CALL_CLOSE_CALLBACKS_FN(
+    self,
     self.params.execution.context.symbol,
     signal,
     averagePrice,
+    closeTimestamp,
     self.params.execution.context.backtest
   );
 
-  await self.params.risk.removeSignal(self.params.execution.context.symbol, {
-    strategyName: self.params.method.context.strategyName,
-    riskName: self.params.riskName,
-    exchangeName: self.params.method.context.exchangeName,
-    frameName: self.params.method.context.frameName,
-  });
+  // КРИТИЧНО: Очищаем состояние ClientPartial при закрытии позиции
+  await CALL_PARTIAL_CLEAR_FN(
+    self,
+    self.params.execution.context.symbol,
+    signal,
+    averagePrice,
+    closeTimestamp,
+    self.params.execution.context.backtest
+  );
+
+  await CALL_RISK_REMOVE_SIGNAL_FN(
+    self,
+    self.params.execution.context.symbol,
+    closeTimestamp,
+    self.params.execution.context.backtest
+  );
 
   await self.setPendingSignal(null);
 
@@ -1538,13 +2167,13 @@ const CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN = async (
     backtest: self.params.execution.context.backtest,
   };
 
-  if (self.params.callbacks?.onTick) {
-    self.params.callbacks.onTick(
-      self.params.execution.context.symbol,
-      result,
-      self.params.execution.context.backtest
-    );
-  }
+  await CALL_TICK_CALLBACKS_FN(
+    self,
+    self.params.execution.context.symbol,
+    result,
+    closeTimestamp,
+    self.params.execution.context.backtest
+  );
 
   return result;
 };
@@ -1659,7 +2288,7 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
       };
     }
 
-    await CALL_PING_CALLBACKS_FN(self, scheduled, candle.timestamp);
+    await CALL_PING_CALLBACKS_FN(self, self.params.execution.context.symbol, scheduled, candle.timestamp, true);
   }
 
   return {
@@ -1761,48 +2390,28 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
           // Moving towards TP
           const tpDistance = signal.priceTakeProfit - signal.priceOpen;
           const progressPercent = (currentDistance / tpDistance) * 100;
-
-          await self.params.partial.profit(
+          await CALL_PARTIAL_PROFIT_CALLBACKS_FN(
+            self,
             self.params.execution.context.symbol,
             signal,
             averagePrice,
             Math.min(progressPercent, 100),
-            self.params.execution.context.backtest,
-            new Date(currentCandleTimestamp)
+            currentCandleTimestamp,
+            self.params.execution.context.backtest
           );
-
-          if (self.params.callbacks?.onPartialProfit) {
-            self.params.callbacks.onPartialProfit(
-              self.params.execution.context.symbol,
-              signal,
-              averagePrice,
-              Math.min(progressPercent, 100),
-              self.params.execution.context.backtest
-            );
-          }
         } else if (currentDistance < 0) {
           // Moving towards SL
           const slDistance = signal.priceOpen - signal.priceStopLoss;
           const progressPercent = (Math.abs(currentDistance) / slDistance) * 100;
-
-          await self.params.partial.loss(
+          await CALL_PARTIAL_LOSS_CALLBACKS_FN(
+            self,
             self.params.execution.context.symbol,
             signal,
             averagePrice,
             Math.min(progressPercent, 100),
-            self.params.execution.context.backtest,
-            new Date(currentCandleTimestamp)
+            currentCandleTimestamp,
+            self.params.execution.context.backtest
           );
-
-          if (self.params.callbacks?.onPartialLoss) {
-            self.params.callbacks.onPartialLoss(
-              self.params.execution.context.symbol,
-              signal,
-              averagePrice,
-              Math.min(progressPercent, 100),
-              self.params.execution.context.backtest
-            );
-          }
         }
       } else if (signal.position === "short") {
         // For short: calculate progress towards TP or SL
@@ -1813,49 +2422,30 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
           const tpDistance = signal.priceOpen - signal.priceTakeProfit;
           const progressPercent = (currentDistance / tpDistance) * 100;
 
-          await self.params.partial.profit(
+          await CALL_PARTIAL_PROFIT_CALLBACKS_FN(
+            self,
             self.params.execution.context.symbol,
             signal,
             averagePrice,
             Math.min(progressPercent, 100),
-            self.params.execution.context.backtest,
-            new Date(currentCandleTimestamp)
+            currentCandleTimestamp,
+            self.params.execution.context.backtest
           );
-
-          if (self.params.callbacks?.onPartialProfit) {
-            self.params.callbacks.onPartialProfit(
-              self.params.execution.context.symbol,
-              signal,
-              averagePrice,
-              Math.min(progressPercent, 100),
-              self.params.execution.context.backtest
-            );
-          }
         }
-        
+
         if (currentDistance < 0) {
           // Moving towards SL
           const slDistance = signal.priceStopLoss - signal.priceOpen;
           const progressPercent = (Math.abs(currentDistance) / slDistance) * 100;
-
-          await self.params.partial.loss(
+          await CALL_PARTIAL_LOSS_CALLBACKS_FN(
+            self,
             self.params.execution.context.symbol,
             signal,
             averagePrice,
             Math.min(progressPercent, 100),
-            self.params.execution.context.backtest,
-            new Date(currentCandleTimestamp)
+            currentCandleTimestamp,
+            self.params.execution.context.backtest
           );
-
-          if (self.params.callbacks?.onPartialLoss) {
-            self.params.callbacks.onPartialLoss(
-              self.params.execution.context.symbol,
-              signal,
-              averagePrice,
-              Math.min(progressPercent, 100),
-              self.params.execution.context.backtest
-            );
-          }
         }
       }
     }
@@ -2078,14 +2668,14 @@ export class ClientStrategy implements IStrategy {
       });
 
       // Call onCancel callback
-      if (this.params.callbacks?.onCancel) {
-        this.params.callbacks.onCancel(
-          this.params.execution.context.symbol,
-          cancelledSignal,
-          currentPrice,
-          this.params.execution.context.backtest
-        );
-      }
+      await CALL_CANCEL_CALLBACKS_FN(
+        this,
+        this.params.execution.context.symbol,
+        cancelledSignal,
+        currentPrice,
+        currentTime,
+        this.params.execution.context.backtest
+      );
 
       const result: IStrategyTickResultCancelled = {
         action: "cancelled",
@@ -2257,20 +2847,22 @@ export class ClientStrategy implements IStrategy {
       const cancelledSignal = this._cancelledSignal;
       this._cancelledSignal = null; // Clear after using
 
-      if (this.params.callbacks?.onCancel) {
-        this.params.callbacks.onCancel(
-          this.params.execution.context.symbol,
-          cancelledSignal,
-          currentPrice,
-          this.params.execution.context.backtest
-        );
-      }
+      const closeTimestamp = this.params.execution.context.when.getTime();
+
+      await CALL_CANCEL_CALLBACKS_FN(
+        this,
+        this.params.execution.context.symbol,
+        cancelledSignal,
+        currentPrice,
+        closeTimestamp,
+        this.params.execution.context.backtest
+      );
 
       const cancelledResult: IStrategyTickResultCancelled = {
         action: "cancelled",
         signal: cancelledSignal,
         currentPrice,
-        closeTimestamp: this.params.execution.context.when.getTime(),
+        closeTimestamp: closeTimestamp,
         strategyName: this.params.method.context.strategyName,
         exchangeName: this.params.method.context.exchangeName,
         frameName: this.params.method.context.frameName,
@@ -2530,6 +3122,264 @@ export class ClientStrategy implements IStrategy {
       symbol,
       this.params.method.context.strategyName,
     );
+  }
+
+  /**
+   * Executes partial close at profit level (moving toward TP).
+   *
+   * Closes a percentage of the pending position at the current price, recording it as a "profit" type partial.
+   * The partial close is tracked in `_partial` array for weighted PNL calculation when position fully closes.
+   *
+   * Behavior:
+   * - Adds entry to signal's `_partial` array with type "profit"
+   * - Validates percentToClose is in range (0, 100]
+   * - Silently skips if total closed would exceed 100%
+   * - Persists updated signal state (backtest and live modes)
+   * - Calls onWrite callback for persistence testing
+   *
+   * Validation:
+   * - Throws if no pending signal exists
+   * - Throws if percentToClose is not a finite number
+   * - Throws if percentToClose <= 0 or > 100
+   * - Throws if currentPrice is not a positive finite number
+   * - Throws if currentPrice is not moving toward TP:
+   *   - LONG: currentPrice must be > priceOpen
+   *   - SHORT: currentPrice must be < priceOpen
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param percentToClose - Percentage of position to close (0-100, absolute value)
+   * @param currentPrice - Current market price for this partial close (must be in profit direction)
+   * @param backtest - Whether running in backtest mode (controls persistence)
+   * @returns Promise that resolves when state is updated and persisted
+   *
+   * @example
+   * ```typescript
+   * // Close 30% of position at profit (moving toward TP)
+   * await strategy.partialProfit("BTCUSDT", 30, 45000, false);
+   *
+   * // Later close another 20%
+   * await strategy.partialProfit("BTCUSDT", 20, 46000, false);
+   *
+   * // Final close will calculate weighted PNL from all partials
+   * ```
+   */
+  public async partialProfit(
+    symbol: string,
+    percentToClose: number,
+    currentPrice: number,
+    backtest: boolean
+  ): Promise<void> {
+    this.params.logger.debug("ClientStrategy partialProfit", {
+      symbol,
+      percentToClose,
+      currentPrice,
+      hasPendingSignal: this._pendingSignal !== null,
+    });
+
+    // Validation: must have pending signal
+    if (!this._pendingSignal) {
+      throw new Error(
+        `ClientStrategy partialProfit: No pending signal exists for symbol=${symbol}`
+      );
+    }
+
+    // Validation: percentToClose must be valid
+    if (typeof percentToClose !== "number" || !isFinite(percentToClose)) {
+      throw new Error(
+        `ClientStrategy partialProfit: percentToClose must be a finite number, got ${percentToClose} (${typeof percentToClose})`
+      );
+    }
+
+    if (percentToClose <= 0) {
+      throw new Error(
+        `ClientStrategy partialProfit: percentToClose must be > 0, got ${percentToClose}`
+      );
+    }
+
+    if (percentToClose > 100) {
+      throw new Error(
+        `ClientStrategy partialProfit: percentToClose must be <= 100, got ${percentToClose}`
+      );
+    }
+
+    // Validation: currentPrice must be valid
+    if (typeof currentPrice !== "number" || !isFinite(currentPrice) || currentPrice <= 0) {
+      throw new Error(
+        `ClientStrategy partialProfit: currentPrice must be a positive finite number, got ${currentPrice}`
+      );
+    }
+
+    // Validation: currentPrice must be moving toward TP (profit direction)
+    if (this._pendingSignal.position === "long") {
+      // For LONG: currentPrice must be higher than priceOpen (moving toward TP)
+      if (currentPrice <= this._pendingSignal.priceOpen) {
+        throw new Error(
+          `ClientStrategy partialProfit: For LONG position, currentPrice (${currentPrice}) must be > priceOpen (${this._pendingSignal.priceOpen})`
+        );
+      }
+    } else {
+      // For SHORT: currentPrice must be lower than priceOpen (moving toward TP)
+      if (currentPrice >= this._pendingSignal.priceOpen) {
+        throw new Error(
+          `ClientStrategy partialProfit: For SHORT position, currentPrice (${currentPrice}) must be < priceOpen (${this._pendingSignal.priceOpen})`
+        );
+      }
+    }
+
+    // Execute partial close logic
+    PARTIAL_PROFIT_FN(this, this._pendingSignal, percentToClose, currentPrice);
+
+    // Persist updated signal state (inline setPendingSignal content)
+    // Note: this._pendingSignal already mutated by PARTIAL_PROFIT_FN, no reassignment needed
+    this.params.logger.debug("ClientStrategy setPendingSignal (inline)", {
+      pendingSignal: this._pendingSignal,
+    });
+
+    // Call onWrite callback for testing persist storage
+    if (this.params.callbacks?.onWrite) {
+      this.params.callbacks.onWrite(
+        this.params.execution.context.symbol,
+        this._pendingSignal,
+        backtest
+      );
+    }
+
+    if (!backtest) {
+      await PersistSignalAdapter.writeSignalData(
+        this._pendingSignal,
+        this.params.execution.context.symbol,
+        this.params.strategyName,
+      );
+    }
+  }
+
+  /**
+   * Executes partial close at loss level (moving toward SL).
+   *
+   * Closes a percentage of the pending position at the current price, recording it as a "loss" type partial.
+   * The partial close is tracked in `_partial` array for weighted PNL calculation when position fully closes.
+   *
+   * Behavior:
+   * - Adds entry to signal's `_partial` array with type "loss"
+   * - Validates percentToClose is in range (0, 100]
+   * - Silently skips if total closed would exceed 100%
+   * - Persists updated signal state (backtest and live modes)
+   * - Calls onWrite callback for persistence testing
+   *
+   * Validation:
+   * - Throws if no pending signal exists
+   * - Throws if percentToClose is not a finite number
+   * - Throws if percentToClose <= 0 or > 100
+   * - Throws if currentPrice is not a positive finite number
+   * - Throws if currentPrice is not moving toward SL:
+   *   - LONG: currentPrice must be < priceOpen
+   *   - SHORT: currentPrice must be > priceOpen
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param percentToClose - Percentage of position to close (0-100, absolute value)
+   * @param currentPrice - Current market price for this partial close (must be in loss direction)
+   * @param backtest - Whether running in backtest mode (controls persistence)
+   * @returns Promise that resolves when state is updated and persisted
+   *
+   * @example
+   * ```typescript
+   * // Close 40% of position at loss (moving toward SL)
+   * await strategy.partialLoss("BTCUSDT", 40, 38000, false);
+   *
+   * // Later close another 30%
+   * await strategy.partialLoss("BTCUSDT", 30, 37000, false);
+   *
+   * // Final close will calculate weighted PNL from all partials
+   * ```
+   */
+  public async partialLoss(
+    symbol: string,
+    percentToClose: number,
+    currentPrice: number,
+    backtest: boolean
+  ): Promise<void> {
+    this.params.logger.debug("ClientStrategy partialLoss", {
+      symbol,
+      percentToClose,
+      currentPrice,
+      hasPendingSignal: this._pendingSignal !== null,
+    });
+
+    // Validation: must have pending signal
+    if (!this._pendingSignal) {
+      throw new Error(
+        `ClientStrategy partialLoss: No pending signal exists for symbol=${symbol}`
+      );
+    }
+
+    // Validation: percentToClose must be valid
+    if (typeof percentToClose !== "number" || !isFinite(percentToClose)) {
+      throw new Error(
+        `ClientStrategy partialLoss: percentToClose must be a finite number, got ${percentToClose} (${typeof percentToClose})`
+      );
+    }
+
+    if (percentToClose <= 0) {
+      throw new Error(
+        `ClientStrategy partialLoss: percentToClose must be > 0, got ${percentToClose}`
+      );
+    }
+
+    if (percentToClose > 100) {
+      throw new Error(
+        `ClientStrategy partialLoss: percentToClose must be <= 100, got ${percentToClose}`
+      );
+    }
+
+    // Validation: currentPrice must be valid
+    if (typeof currentPrice !== "number" || !isFinite(currentPrice) || currentPrice <= 0) {
+      throw new Error(
+        `ClientStrategy partialLoss: currentPrice must be a positive finite number, got ${currentPrice}`
+      );
+    }
+
+    // Validation: currentPrice must be moving toward SL (loss direction)
+    if (this._pendingSignal.position === "long") {
+      // For LONG: currentPrice must be lower than priceOpen (moving toward SL)
+      if (currentPrice >= this._pendingSignal.priceOpen) {
+        throw new Error(
+          `ClientStrategy partialLoss: For LONG position, currentPrice (${currentPrice}) must be < priceOpen (${this._pendingSignal.priceOpen})`
+        );
+      }
+    } else {
+      // For SHORT: currentPrice must be higher than priceOpen (moving toward SL)
+      if (currentPrice <= this._pendingSignal.priceOpen) {
+        throw new Error(
+          `ClientStrategy partialLoss: For SHORT position, currentPrice (${currentPrice}) must be > priceOpen (${this._pendingSignal.priceOpen})`
+        );
+      }
+    }
+
+    // Execute partial close logic
+    PARTIAL_LOSS_FN(this, this._pendingSignal, percentToClose, currentPrice);
+
+    // Persist updated signal state (inline setPendingSignal content)
+    // Note: this._pendingSignal already mutated by PARTIAL_LOSS_FN, no reassignment needed
+    this.params.logger.debug("ClientStrategy setPendingSignal (inline)", {
+      pendingSignal: this._pendingSignal,
+    });
+
+    // Call onWrite callback for testing persist storage
+    if (this.params.callbacks?.onWrite) {
+      this.params.callbacks.onWrite(
+        this.params.execution.context.symbol,
+        this._pendingSignal,
+        backtest
+      );
+    }
+
+    if (!backtest) {
+      await PersistSignalAdapter.writeSignalData(
+        this._pendingSignal,
+        this.params.execution.context.symbol,
+        this.params.strategyName,
+      );
+    }
   }
 }
 

@@ -2,11 +2,23 @@ import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { PartialConnectionService } from "../connection/PartialConnectionService";
-import { ISignalRow } from "../../../interfaces/Strategy.interface";
+import { ISignalRow, StrategyName } from "../../../interfaces/Strategy.interface";
 import StrategyValidationService from "../validation/StrategyValidationService";
 import StrategySchemaService from "../schema/StrategySchemaService";
 import RiskValidationService from "../validation/RiskValidationService";
 import { memoize } from "functools-kit";
+import { IPartial } from "../../../interfaces/Partial.interface";
+import { FrameName } from "../../../interfaces/Frame.interface";
+import { ExchangeName } from "../../../interfaces/Exchange.interface";
+
+/**
+ * Type definition for partial methods.
+ * Maps all keys of IPartial to any type.
+ * Used for dynamic method routing in PartialGlobalService.
+ */
+type TPartial = {
+  [key in keyof IPartial]: any;
+};
 
 /**
  * Global service for partial profit/loss tracking.
@@ -37,7 +49,7 @@ import { memoize } from "functools-kit";
  * // Logs at global level → delegates to PartialConnectionService
  * ```
  */
-export class PartialGlobalService {
+export class PartialGlobalService implements TPartial {
   /**
    * Logger service injected from DI container.
    * Used for logging operations at global service level.
@@ -82,7 +94,7 @@ export class PartialGlobalService {
    */
   private validate = memoize(
     ([context]) => `${context.strategyName}:${context.exchangeName}:${context.frameName}`,
-    (context: { strategyName: string; exchangeName: string; frameName: string }, methodName: string) => {
+    (context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }, methodName: string) => {
       this.loggerService.log("partialGlobalService validate", {
         context,
         methodName,

@@ -2,9 +2,21 @@ import { inject } from "../../core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../core/types";
 import RiskConnectionService from "../connection/RiskConnectionService";
-import { IRiskCheckArgs, RiskName } from "../../../interfaces/Risk.interface";
+import { IRisk, IRiskCheckArgs, RiskName } from "../../../interfaces/Risk.interface";
 import { memoize } from "functools-kit";
 import RiskValidationService from "../validation/RiskValidationService";
+import { ExchangeName } from "../../../interfaces/Exchange.interface";
+import { FrameName } from "../../../interfaces/Frame.interface";
+import { StrategyName } from "../../../interfaces/Strategy.interface";
+
+/**
+ * Type definition for risk methods.
+ * Maps all keys of IRisk to any type.
+ * Used for dynamic method routing in RiskGlobalService.
+ */
+type TRisk = {
+  [key in keyof IRisk]: any;
+};
 
 /**
  * Global service for risk operations.
@@ -12,7 +24,7 @@ import RiskValidationService from "../validation/RiskValidationService";
  * Wraps RiskConnectionService for risk limit validation.
  * Used internally by strategy execution and public API.
  */
-export class RiskGlobalService {
+export class RiskGlobalService implements TRisk {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly riskConnectionService = inject<RiskConnectionService>(
     TYPES.riskConnectionService
@@ -30,7 +42,7 @@ export class RiskGlobalService {
    */
   private validate = memoize(
     ([payload]) => `${payload.riskName}:${payload.exchangeName}:${payload.frameName}`,
-    async (payload: { riskName: RiskName; exchangeName: string; frameName: string }) => {
+    async (payload: { riskName: RiskName; exchangeName: ExchangeName; frameName: FrameName }) => {
       this.loggerService.log("riskGlobalService validate", {
         payload,
       });
@@ -50,7 +62,7 @@ export class RiskGlobalService {
    */
   public checkSignal = async (
     params: IRiskCheckArgs,
-    payload: { riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
+    payload: { riskName: RiskName; exchangeName: ExchangeName; frameName: FrameName; backtest: boolean }
   ) => {
     this.loggerService.log("riskGlobalService checkSignal", {
       symbol: params.symbol,
@@ -68,7 +80,7 @@ export class RiskGlobalService {
    */
   public addSignal = async (
     symbol: string,
-    payload: { strategyName: string; riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
+    payload: { strategyName: StrategyName; riskName: RiskName; exchangeName: ExchangeName; frameName: FrameName; backtest: boolean }
   ) => {
     this.loggerService.log("riskGlobalService addSignal", {
       symbol,
@@ -86,7 +98,7 @@ export class RiskGlobalService {
    */
   public removeSignal = async (
     symbol: string,
-    payload: { strategyName: string; riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
+    payload: { strategyName: StrategyName; riskName: RiskName; exchangeName: ExchangeName; frameName: FrameName; backtest: boolean }
   ) => {
     this.loggerService.log("riskGlobalService removeSignal", {
       symbol,
@@ -103,7 +115,7 @@ export class RiskGlobalService {
    * @param payload - Optional payload with riskName, exchangeName, frameName, backtest (clears all if not provided)
    */
   public clear = async (
-    payload?: { riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
+    payload?: { riskName: RiskName; exchangeName: ExchangeName; frameName: FrameName; backtest: boolean }
   ): Promise<void> => {
     this.loggerService.log("riskGlobalService clear", {
       payload,

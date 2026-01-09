@@ -71,7 +71,7 @@ Compares multiple strategies on test frame.
 ### getStrategyTemplate
 
 ```ts
-getStrategyTemplate: (strategyName: string, interval: string, prompt: string) => Promise<string>
+getStrategyTemplate: (strategyName: string, interval: CandleInterval, prompt: string) => Promise<string>
 ```
 
 Generates Strategy configuration with LLM integration.

@@ -1,6 +1,7 @@
 import { ILogger } from "./Logger.interface";
 import { ISignalDto, ISignalRow, StrategyName } from "./Strategy.interface";
 import { ExchangeName } from "./Exchange.interface";
+import { FrameName } from "./Frame.interface";
 
 /**
  * Risk rejection result type.
@@ -23,7 +24,7 @@ export interface IRiskCheckArgs {
   /** Exchange name */
   exchangeName: ExchangeName;
   /** Frame name */
-  frameName: string;
+  frameName: FrameName;
   /** Current VWAP price */
   currentPrice: number;
   /** Current timestamp */
@@ -35,9 +36,9 @@ export interface IRiskCheckArgs {
  */
 export interface IRiskActivePosition {
   /** Strategy name owning the position */
-  strategyName: string;
+  strategyName: StrategyName;
   /** Exchange name */
-  exchangeName: string;
+  exchangeName: ExchangeName;
   /** Timestamp when the position was opened */
   openTimestamp: number;
 }
@@ -51,9 +52,9 @@ export interface IRiskCallbacks {
   onRejected: (
     symbol: string,
     params: IRiskCheckArgs
-  ) => void;
+  ) => void | Promise<void>;
   /** Called when a signal passes risk checks */
-  onAllowed: (symbol: string, params: IRiskCheckArgs) => void;
+  onAllowed: (symbol: string, params: IRiskCheckArgs) => void | Promise<void>;
 }
 
 /**
@@ -173,7 +174,7 @@ export interface IRisk {
    * @param symbol - Trading pair symbol
    * @param context - Context information (strategyName, riskName, exchangeName, frameName)
    */
-  addSignal: (symbol: string, context: { strategyName: string; riskName: string; exchangeName: string; frameName: string }) => Promise<void>;
+  addSignal: (symbol: string, context: { strategyName: StrategyName; riskName: RiskName; exchangeName: ExchangeName; frameName: FrameName }) => Promise<void>;
 
   /**
    * Remove a closed signal/position.
@@ -181,7 +182,7 @@ export interface IRisk {
    * @param symbol - Trading pair symbol
    * @param context - Context information (strategyName, riskName, exchangeName, frameName)
    */
-  removeSignal: (symbol: string, context: { strategyName: string; riskName: string; exchangeName: string; frameName: string }) => Promise<void>;
+  removeSignal: (symbol: string, context: { strategyName: StrategyName; riskName: RiskName; exchangeName: ExchangeName; frameName: FrameName }) => Promise<void>;
 }
 
 /**

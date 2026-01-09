@@ -1,4 +1,6 @@
-import { ISignalDto } from "../interfaces/Strategy.interface";
+import { FrameName } from "../interfaces/Frame.interface";
+import { ISignalDto, StrategyName } from "../interfaces/Strategy.interface";
+import { ExchangeName } from "../interfaces/Exchange.interface";
 
 /**
  * Risk rejection event data for report generation.
@@ -12,11 +14,11 @@ export interface RiskEvent {
   /** Pending signal details */
   pendingSignal: ISignalDto;
   /** Strategy name */
-  strategyName: string;
+  strategyName: StrategyName;
   /** Exchange name */
-  exchangeName: string;
+  exchangeName: ExchangeName;
   /** Time frame name */
-  frameName: string;
+  frameName: FrameName;
   /** Current market price */
   currentPrice: number;
   /** Number of active positions at rejection time */

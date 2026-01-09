@@ -62,6 +62,24 @@ export interface ISignalRow extends ISignalDto {
   symbol: string;
   /** Internal runtime marker for scheduled signals */
   _isScheduled: boolean;
+  /**
+   * History of partial closes for PNL calculation.
+   * Each entry contains type (profit/loss), percent closed, and price.
+   * Used to calculate weighted PNL: Σ(percent_i × pnl_i) for each partial + (remaining% × final_pnl)
+   *
+   * Computed values (derived from this array):
+   * - _tpClosed: Sum of all "profit" type partial close percentages
+   * - _slClosed: Sum of all "loss" type partial close percentages
+   * - _totalClosed: Sum of all partial close percentages (profit + loss)
+   */
+  _partial?: Array<{
+    /** Type of partial close: profit (moving toward TP) or loss (moving toward SL) */
+    type: "profit" | "loss";
+    /** Percentage of position closed (0-100) */
+    percent: number;
+    /** Price at which this partial was executed */
+    price: number;
+  }>;
 }
 
 /**
@@ -104,7 +122,7 @@ export interface IStrategyParams extends IStrategySchema {
   /** Method context service (strategyName, exchangeName, frameName) */
   method: TMethodContextService;
   /** System callback for ping events (emits to pingSubject) */
-  onPing: (symbol: string, strategyName: string, exchangeName: string, data: IScheduledSignalRow, backtest: boolean, timestamp: number) => Promise<void>;
+  onPing: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, data: IScheduledSignalRow, backtest: boolean, timestamp: number) => Promise<void>;
 }
 
 /**
@@ -113,30 +131,30 @@ export interface IStrategyParams extends IStrategySchema {
  */
 export interface IStrategyCallbacks {
   /** Called on every tick with the result */
-  onTick: (symbol: string, result: IStrategyTickResult, backtest: boolean) => void;
+  onTick: (symbol: string, result: IStrategyTickResult, backtest: boolean) => void | Promise<void>;
   /** Called when new signal is opened (after validation) */
-  onOpen: (symbol: string, data: ISignalRow, currentPrice: number, backtest: boolean) => void;
+  onOpen: (symbol: string, data: ISignalRow, currentPrice: number, backtest: boolean) => void | Promise<void>;
   /** Called when signal is being monitored (active state) */
-  onActive: (symbol: string, data: ISignalRow, currentPrice: number, backtest: boolean) => void;
+  onActive: (symbol: string, data: ISignalRow, currentPrice: number, backtest: boolean) => void | Promise<void>;
   /** Called when no active signal exists (idle state) */
-  onIdle: (symbol: string, currentPrice: number, backtest: boolean) => void;
+  onIdle: (symbol: string, currentPrice: number, backtest: boolean) => void | Promise<void>;
   /** Called when signal is closed with final price */
   onClose: (
     symbol: string,
     data: ISignalRow,
     priceClose: number,
     backtest: boolean,
-  ) => void;
+  ) => void | Promise<void>;
   /** Called when scheduled signal is created (delayed entry) */
-  onSchedule: (symbol: string, data: IScheduledSignalRow, currentPrice: number, backtest: boolean) => void;
+  onSchedule: (symbol: string, data: IScheduledSignalRow, currentPrice: number, backtest: boolean) => void | Promise<void>;
   /** Called when scheduled signal is cancelled without opening position */
-  onCancel: (symbol: string, data: IScheduledSignalRow, currentPrice: number, backtest: boolean) => void;
+  onCancel: (symbol: string, data: IScheduledSignalRow, currentPrice: number, backtest: boolean) => void | Promise<void>;
   /** Called when signal is written to persist storage (for testing) */
   onWrite: (symbol: string, data: ISignalRow | null, backtest: boolean) => void;
   /** Called when signal is in partial profit state (price moved favorably but not reached TP yet) */
-  onPartialProfit: (symbol: string, data: ISignalRow, currentPrice: number, revenuePercent: number, backtest: boolean) => void;
+  onPartialProfit: (symbol: string, data: ISignalRow, currentPrice: number, revenuePercent: number, backtest: boolean) => void | Promise<void>;
   /** Called when signal is in partial loss state (price moved against position but not hit SL yet) */
-  onPartialLoss: (symbol: string, data: ISignalRow, currentPrice: number, lossPercent: number, backtest: boolean) => void;
+  onPartialLoss: (symbol: string, data: ISignalRow, currentPrice: number, lossPercent: number, backtest: boolean) => void | Promise<void>;
   /** Called every minute regardless of strategy interval (for custom monitoring like checking if signal should be cancelled) */
   onPing: (symbol: string, data: IScheduledSignalRow, when: Date, backtest: boolean) => void | Promise<void>;
 }
@@ -464,6 +482,74 @@ export interface IStrategy {
    * ```
    */
   cancel: (symbol: string, backtest: boolean, cancelId?: string) => Promise<void>;
+
+  /**
+   * Executes partial close at profit level (moving toward TP).
+   *
+   * Closes specified percentage of position at current price.
+   * Updates _tpClosed, _totalClosed, and _partialHistory state.
+   * Persists updated signal state for crash recovery.
+   *
+   * Validations:
+   * - Throws if no pending signal exists
+   * - Throws if called on scheduled signal (not yet activated)
+   * - Throws if percentToClose <= 0 or > 100
+   * - Does nothing if _totalClosed + percentToClose > 100 (prevents over-closing)
+   *
+   * Use case: User-controlled partial close triggered from onPartialProfit callback.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param percentToClose - Absolute percentage of position to close (0-100)
+   * @param currentPrice - Current market price for partial close
+   * @param backtest - Whether running in backtest mode
+   * @returns Promise that resolves when partial close is complete
+   *
+   * @example
+   * ```typescript
+   * callbacks: {
+   *   onPartialProfit: async (symbol, signal, currentPrice, percentTp, backtest) => {
+   *     if (percentTp >= 50) {
+   *       await strategy.partialProfit(symbol, 25, currentPrice, backtest);
+   *     }
+   *   }
+   * }
+   * ```
+   */
+  partialProfit: (symbol: string, percentToClose: number, currentPrice: number, backtest: boolean) => Promise<void>;
+
+  /**
+   * Executes partial close at loss level (moving toward SL).
+   *
+   * Closes specified percentage of position at current price.
+   * Updates _slClosed, _totalClosed, and _partialHistory state.
+   * Persists updated signal state for crash recovery.
+   *
+   * Validations:
+   * - Throws if no pending signal exists
+   * - Throws if called on scheduled signal (not yet activated)
+   * - Throws if percentToClose <= 0 or > 100
+   * - Does nothing if _totalClosed + percentToClose > 100 (prevents over-closing)
+   *
+   * Use case: User-controlled partial close triggered from onPartialLoss callback.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param percentToClose - Absolute percentage of position to close (0-100)
+   * @param currentPrice - Current market price for partial close
+   * @param backtest - Whether running in backtest mode
+   * @returns Promise that resolves when partial close is complete
+   *
+   * @example
+   * ```typescript
+   * callbacks: {
+   *   onPartialLoss: async (symbol, signal, currentPrice, percentSl, backtest) => {
+   *     if (percentSl >= 80) {
+   *       await strategy.partialLoss(symbol, 50, currentPrice, backtest);
+   *     }
+   *   }
+   * }
+   * ```
+   */
+  partialLoss: (symbol: string, percentToClose: number, currentPrice: number, backtest: boolean) => Promise<void>;
 }
 
 /**

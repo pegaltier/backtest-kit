@@ -5,6 +5,8 @@ group: docs
 
 # PartialGlobalService
 
+Implements `TPartial`
+
 Global service for partial profit/loss tracking.
 
 Thin delegation layer that forwards operations to PartialConnectionService.

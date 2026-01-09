@@ -5,6 +5,8 @@ group: docs
 
 # WalkerLogicPublicService
 
+Implements `TWalkerLogicPrivateService`
+
 Public service for walker orchestration with context management.
 
 Wraps WalkerLogicPrivateService with MethodContextService to provide

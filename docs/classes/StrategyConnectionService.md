@@ -5,6 +5,8 @@ group: docs
 
 # StrategyConnectionService
 
+Implements `TStrategy$1`
+
 Connection service routing strategy operations to correct ClientStrategy instance.
 
 Routes all IStrategy method calls to the appropriate strategy implementation
@@ -35,6 +37,12 @@ loggerService: LoggerService
 
 ```ts
 executionContextService: { readonly context: IExecutionContext; }
+```
+
+### methodContextService
+
+```ts
+methodContextService: { readonly context: IMethodContext; }
 ```
 
 ### strategySchemaService
@@ -160,3 +168,29 @@ without stopping the strategy or affecting pending signals.
 
 Note: Cancelled event will be emitted on next tick() call when strategy
 detects the scheduled signal was cancelled.
+
+### partialProfit
+
+```ts
+partialProfit: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<void>
+```
+
+Executes partial close at profit level (moving toward TP).
+
+Closes a percentage of the pending position at the current price, recording it as a "profit" type partial.
+The partial close is tracked in `_partial` array for weighted PNL calculation when position fully closes.
+
+Delegates to ClientStrategy.partialProfit() with current execution context.
+
+### partialLoss
+
+```ts
+partialLoss: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<void>
+```
+
+Executes partial close at loss level (moving toward SL).
+
+Closes a percentage of the pending position at the current price, recording it as a "loss" type partial.
+The partial close is tracked in `_partial` array for weighted PNL calculation when position fully closes.
+
+Delegates to ClientStrategy.partialLoss() with current execution context.

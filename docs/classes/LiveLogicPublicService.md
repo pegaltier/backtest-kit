@@ -5,6 +5,8 @@ group: docs
 
 # LiveLogicPublicService
 
+Implements `TLiveLogicPrivateService`
+
 Public service for live trading orchestration with context management.
 
 Wraps LiveLogicPrivateService with MethodContextService to provide

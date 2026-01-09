@@ -5,7 +5,7 @@ group: docs
 
 # OptimizerConnectionService
 
-Implements `TOptimizer`
+Implements `TOptimizer$1`
 
 Service for creating and caching optimizer client instances.
 Handles dependency injection and template merging.

@@ -6,8 +6,18 @@ import StrategyValidationService from "../validation/StrategyValidationService";
 import ExchangeValidationService from "../validation/ExchangeValidationService";
 import StrategySchemaService from "../schema/StrategySchemaService";
 import RiskValidationService from "../validation/RiskValidationService";
+import { StrategyName } from "../../../interfaces/Strategy.interface";
+import { ExchangeName } from "../../../interfaces/Exchange.interface";
 
 const METHOD_NAME_RUN = "liveCommandService run";
+
+/**
+ * Type definition for LiveLogicPublicService.
+ * Maps all keys of LiveLogicPublicService to any type.
+ */
+type TLiveLogicPublicService = {
+  [key in keyof LiveLogicPublicService]: any;
+};
 
 /**
  * Global service providing access to live trading functionality.
@@ -15,7 +25,7 @@ const METHOD_NAME_RUN = "liveCommandService run";
  * Simple wrapper around LiveLogicPublicService for dependency injection.
  * Used by public API exports.
  */
-export class LiveCommandService {
+export class LiveCommandService implements TLiveLogicPublicService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly liveLogicPublicService = inject<LiveLogicPublicService>(
     TYPES.liveLogicPublicService
@@ -43,8 +53,8 @@ export class LiveCommandService {
   public run = (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     }
   ) => {
     this.loggerService.log(METHOD_NAME_RUN, {

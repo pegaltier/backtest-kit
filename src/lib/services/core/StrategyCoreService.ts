@@ -8,15 +8,26 @@ import {
   IStrategyBacktestResult,
   IStrategyTickResult,
   StrategyName,
+  IStrategy,
 } from "../../../interfaces/Strategy.interface";
 import StrategyConnectionService from "../connection/StrategyConnectionService";
-import { ICandleData } from "../../../interfaces/Exchange.interface";
+import { ExchangeName, ICandleData } from "../../../interfaces/Exchange.interface";
 import { memoize } from "functools-kit";
 import StrategySchemaService from "../schema/StrategySchemaService";
 import RiskValidationService from "../validation/RiskValidationService";
 import StrategyValidationService from "../validation/StrategyValidationService";
+import { FrameName } from "../../../interfaces/Frame.interface";
 
 const METHOD_NAME_VALIDATE = "strategyCoreService validate";
+
+/**
+ * Type definition for strategy methods.
+ * Maps all keys of IStrategy to any type.
+ * Used for dynamic method routing in StrategyCoreService.
+ */
+type TStrategy = {
+  [key in keyof IStrategy]: any;
+};
 
 /**
  * Global service for strategy operations with execution context injection.
@@ -26,7 +37,7 @@ const METHOD_NAME_VALIDATE = "strategyCoreService validate";
  *
  * Used internally by BacktestLogicPrivateService and LiveLogicPrivateService.
  */
-export class StrategyCoreService {
+export class StrategyCoreService implements TStrategy {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly strategyConnectionService =
     inject<StrategyConnectionService>(TYPES.strategyConnectionService);
@@ -50,7 +61,7 @@ export class StrategyCoreService {
    */
   private validate = memoize(
     ([symbol, context]) => `${symbol}:${context.strategyName}:${context.exchangeName}:${context.frameName}`,
-    async (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string }) => {
+    async (symbol: string, context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }) => {
       this.loggerService.log(METHOD_NAME_VALIDATE, {
         symbol,
         context,
@@ -78,7 +89,7 @@ export class StrategyCoreService {
   public getPendingSignal = async (
     backtest: boolean,
     symbol: string,
-    context: { strategyName: StrategyName; exchangeName: string; frameName: string }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<ISignalRow | null> => {
     this.loggerService.log("strategyCoreService getPendingSignal", {
       symbol,
@@ -101,7 +112,7 @@ export class StrategyCoreService {
   public getScheduledSignal = async (
     backtest: boolean,
     symbol: string,
-    context: { strategyName: StrategyName; exchangeName: string; frameName: string }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<IScheduledSignalRow | null> => {
     this.loggerService.log("strategyCoreService getScheduledSignal", {
       symbol,
@@ -125,7 +136,7 @@ export class StrategyCoreService {
   public getStopped = async (
     backtest: boolean,
     symbol: string,
-    context: { strategyName: StrategyName; exchangeName: string; frameName: string }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<boolean> => {
     this.loggerService.log("strategyCoreService getStopped", {
       symbol,
@@ -152,7 +163,7 @@ export class StrategyCoreService {
     symbol: string,
     when: Date,
     backtest: boolean,
-    context: { strategyName: StrategyName; exchangeName: string; frameName: string }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<IStrategyTickResult> => {
     this.loggerService.log("strategyCoreService tick", {
       symbol,
@@ -191,7 +202,7 @@ export class StrategyCoreService {
     candles: ICandleData[],
     when: Date,
     backtest: boolean,
-    context: { strategyName: StrategyName; exchangeName: string; frameName: string }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<IStrategyBacktestResult> => {
     this.loggerService.log("strategyCoreService backtest", {
       symbol,
@@ -224,7 +235,7 @@ export class StrategyCoreService {
    * @param ctx - Context with strategyName, exchangeName, frameName
    * @returns Promise that resolves when stop flag is set
    */
-  public stop = async (backtest: boolean, symbol: string, context: { strategyName: StrategyName; exchangeName: string; frameName: string }): Promise<void> => {
+  public stop = async (backtest: boolean, symbol: string, context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }): Promise<void> => {
     this.loggerService.log("strategyCoreService stop", {
       symbol,
       context,
@@ -247,7 +258,7 @@ export class StrategyCoreService {
    * @param cancelId - Optional cancellation ID for user-initiated cancellations
    * @returns Promise that resolves when scheduled signal is cancelled
    */
-  public cancel = async (backtest: boolean, symbol: string, context: { strategyName: StrategyName; exchangeName: string; frameName: string }, cancelId?: string): Promise<void> => {
+  public cancel = async (backtest: boolean, symbol: string, context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }, cancelId?: string): Promise<void> => {
     this.loggerService.log("strategyCoreService cancel", {
       symbol,
       context,
@@ -266,7 +277,7 @@ export class StrategyCoreService {
    *
    * @param payload - Optional payload with symbol, context and backtest flag (clears all if not provided)
    */
-  public clear = async (payload?: { symbol: string; strategyName: StrategyName; exchangeName: string; frameName: string; backtest: boolean }): Promise<void> => {
+  public clear = async (payload?: { symbol: string; strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName; backtest: boolean }): Promise<void> => {
     this.loggerService.log("strategyCoreService clear", {
       payload,
     });
@@ -278,6 +289,96 @@ export class StrategyCoreService {
       });
     }
     return await this.strategyConnectionService.clear(payload);
+  };
+
+  /**
+   * Executes partial close at profit level (moving toward TP).
+   *
+   * Validates strategy existence and delegates to connection service
+   * to close a percentage of the pending position at profit.
+   *
+   * Does not require execution context as this is a direct state mutation.
+   *
+   * @param backtest - Whether running in backtest mode
+   * @param symbol - Trading pair symbol
+   * @param percentToClose - Percentage of position to close (0-100, absolute value)
+   * @param currentPrice - Current market price for this partial close (must be in profit direction)
+   * @param context - Execution context with strategyName, exchangeName, frameName
+   * @returns Promise that resolves when state is updated and persisted
+   *
+   * @example
+   * ```typescript
+   * // Close 30% of position at profit
+   * await strategyCoreService.partialProfit(
+   *   false,
+   *   "BTCUSDT",
+   *   30,
+   *   45000,
+   *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
+   * );
+   * ```
+   */
+  public partialProfit = async (
+    backtest: boolean,
+    symbol: string,
+    percentToClose: number,
+    currentPrice: number,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<void> => {
+    this.loggerService.log("strategyCoreService partialProfit", {
+      symbol,
+      percentToClose,
+      currentPrice,
+      context,
+      backtest,
+    });
+    await this.validate(symbol, context);
+    return await this.strategyConnectionService.partialProfit(backtest, symbol, percentToClose, currentPrice, context);
+  };
+
+  /**
+   * Executes partial close at loss level (moving toward SL).
+   *
+   * Validates strategy existence and delegates to connection service
+   * to close a percentage of the pending position at loss.
+   *
+   * Does not require execution context as this is a direct state mutation.
+   *
+   * @param backtest - Whether running in backtest mode
+   * @param symbol - Trading pair symbol
+   * @param percentToClose - Percentage of position to close (0-100, absolute value)
+   * @param currentPrice - Current market price for this partial close (must be in loss direction)
+   * @param context - Execution context with strategyName, exchangeName, frameName
+   * @returns Promise that resolves when state is updated and persisted
+   *
+   * @example
+   * ```typescript
+   * // Close 40% of position at loss
+   * await strategyCoreService.partialLoss(
+   *   false,
+   *   "BTCUSDT",
+   *   40,
+   *   38000,
+   *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
+   * );
+   * ```
+   */
+  public partialLoss = async (
+    backtest: boolean,
+    symbol: string,
+    percentToClose: number,
+    currentPrice: number,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<void> => {
+    this.loggerService.log("strategyCoreService partialLoss", {
+      symbol,
+      percentToClose,
+      currentPrice,
+      context,
+      backtest,
+    });
+    await this.validate(symbol, context);
+    return await this.strategyConnectionService.partialLoss(backtest, symbol, percentToClose, currentPrice, context);
   };
 }
 

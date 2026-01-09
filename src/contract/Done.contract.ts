@@ -1,3 +1,7 @@
+import { ExchangeName } from "../interfaces/Exchange.interface";
+import { FrameName } from "../interfaces/Frame.interface";
+import { StrategyName } from "../interfaces/Strategy.interface";
+
 /**
  * Contract for background execution completion events.
  *
@@ -19,9 +23,11 @@
  */
 export interface DoneContract {
     /** exchangeName - Name of the exchange used in execution */
-    exchangeName: string;
+    exchangeName: ExchangeName;
     /** strategyName - Name of the strategy that completed */
-    strategyName: string;
+    strategyName: StrategyName;
+    /** frameName - Name of the frame (empty string for live mode) */
+    frameName: FrameName;
     /** backtest - True if backtest mode, false if live mode */
     backtest: boolean;
     /** symbol - Trading symbol (e.g., "BTCUSDT") */

@@ -3,11 +3,20 @@ import LoggerService from "../base/LoggerService";
 import TYPES from "../../core/types";
 import OptimizerConnectionService from "../connection/OptimizerConnectionService";
 import OptimizerValidationService from "../validation/OptimizerValidationService";
-import { IOptimizerStrategy } from "../../../interfaces/Optimizer.interface";
+import { IOptimizer, IOptimizerStrategy } from "../../../interfaces/Optimizer.interface";
 
 const METHOD_NAME_GET_DATA = "optimizerGlobalService getData";
 const METHOD_NAME_GET_CODE = "optimizerGlobalService getCode";
 const METHOD_NAME_DUMP = "optimizerGlobalService dump";
+
+/**
+ * Type definition for optimizer methods.
+ * Maps all keys of IOptimizer to any type.
+ * Used for dynamic method routing in OptimizerGlobalService.
+ */
+type TOptimizer = {
+  [key in keyof IOptimizer]: any;
+};
 
 /**
  * Global service for optimizer operations with validation.
@@ -18,7 +27,7 @@ const METHOD_NAME_DUMP = "optimizerGlobalService dump";
  * 2. Validate optimizer exists
  * 3. Delegate to OptimizerConnectionService
  */
-export class OptimizerGlobalService {
+export class OptimizerGlobalService implements TOptimizer {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly optimizerConnectionService =
     inject<OptimizerConnectionService>(TYPES.optimizerConnectionService);

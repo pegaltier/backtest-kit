@@ -20,6 +20,8 @@ const LIVE_METHOD_NAME_GET_STATUS = "LiveUtils.getStatus";
 const LIVE_METHOD_NAME_GET_PENDING_SIGNAL = "LiveUtils.getPendingSignal";
 const LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL = "LiveUtils.getScheduledSignal";
 const LIVE_METHOD_NAME_CANCEL = "LiveUtils.cancel";
+const LIVE_METHOD_NAME_PARTIAL_PROFIT = "LiveUtils.partialProfit";
+const LIVE_METHOD_NAME_PARTIAL_LOSS = "LiveUtils.partialLoss";
 
 /**
  * Internal task function that runs live trading and handles completion.
@@ -35,8 +37,8 @@ const LIVE_METHOD_NAME_CANCEL = "LiveUtils.cancel";
 const INSTANCE_TASK_FN = async (
   symbol: string,
   context: {
-    strategyName: string;
-    exchangeName: string;
+    strategyName: StrategyName;
+    exchangeName: ExchangeName;
   },
   self: LiveInstance,
 ) => {
@@ -53,6 +55,7 @@ const INSTANCE_TASK_FN = async (
     await doneLiveSubject.next({
       exchangeName: context.exchangeName,
       strategyName: context.strategyName,
+      frameName: "",
       backtest: false,
       symbol,
     });
@@ -115,8 +118,8 @@ export class LiveInstance {
   private task = singlerun(async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     }
   ) => {
     backtest.loggerService.info(LIVE_METHOD_NAME_TASK, {
@@ -162,8 +165,8 @@ export class LiveInstance {
   public run = (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     }
   ) => {
     backtest.loggerService.info(LIVE_METHOD_NAME_RUN, {
@@ -234,8 +237,8 @@ export class LiveInstance {
   public background = (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     }
   ) => {
     backtest.loggerService.info(LIVE_METHOD_NAME_BACKGROUND, {
@@ -274,6 +277,7 @@ export class LiveInstance {
             await doneLiveSubject.next({
               exchangeName: context.exchangeName,
               strategyName: context.strategyName,
+              frameName: "",
               backtest: false,
               symbol,
             });
@@ -340,8 +344,8 @@ export class LiveUtils {
   public run = (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     }
   ) => {
     {
@@ -383,8 +387,8 @@ export class LiveUtils {
   public background = (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     }
   ) => {
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_BACKGROUND);
@@ -416,7 +420,11 @@ export class LiveUtils {
    * }
    * ```
    */
-  public getPendingSignal = async (symbol: string, context: { strategyName: string; exchangeName: string; }) => {
+  public getPendingSignal = async (symbol: string, context: { strategyName: StrategyName; exchangeName: ExchangeName; }) => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_GET_PENDING_SIGNAL, {
+      symbol,
+      context,
+    });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_PENDING_SIGNAL);
 
     {
@@ -448,7 +456,11 @@ export class LiveUtils {
    * }
    * ```
    */
-  public getScheduledSignal = async (symbol: string, context: { strategyName: string; exchangeName: string; }) => {
+  public getScheduledSignal = async (symbol: string, context: { strategyName: StrategyName; exchangeName: ExchangeName; }) => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL, {
+      symbol,
+      context,
+    });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL);
 
     {
@@ -484,10 +496,14 @@ export class LiveUtils {
   public stop = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     }
   ): Promise<void> => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_STOP, {
+      symbol,
+      context,
+    });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_STOP);
 
     {
@@ -529,11 +545,16 @@ export class LiveUtils {
   public cancel = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     },
     cancelId?: string
   ): Promise<void> => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_CANCEL, {
+      symbol,
+      context,
+      cancelId,
+    });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_CANCEL);
 
     {
@@ -547,6 +568,116 @@ export class LiveUtils {
       exchangeName: context.exchangeName,
       frameName: "",
     }, cancelId);
+  };
+
+  /**
+   * Executes partial close at profit level (moving toward TP).
+   *
+   * Closes a percentage of the active pending position at profit.
+   * Price must be moving toward take profit (in profit direction).
+   *
+   * @param symbol - Trading pair symbol
+   * @param percentToClose - Percentage of position to close (0-100, absolute value)
+   * @param currentPrice - Current market price for this partial close
+   * @param context - Execution context with strategyName and exchangeName
+   * @returns Promise that resolves when state is updated
+   *
+   * @throws Error if currentPrice is not in profit direction:
+   *   - LONG: currentPrice must be > priceOpen
+   *   - SHORT: currentPrice must be < priceOpen
+   *
+   * @example
+   * ```typescript
+   * // Close 30% of LONG position at profit
+   * await Live.partialProfit("BTCUSDT", 30, 45000, {
+   *   exchangeName: "binance",
+   *   strategyName: "my-strategy"
+   * });
+   * ```
+   */
+  public partialProfit = async (
+    symbol: string,
+    percentToClose: number,
+    currentPrice: number,
+    context: {
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+    }
+  ): Promise<void> => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_PARTIAL_PROFIT, {
+      symbol,
+      percentToClose,
+      currentPrice,
+      context,
+    });
+    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_PARTIAL_PROFIT);
+
+    {
+      const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
+      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_PARTIAL_PROFIT);
+      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_PARTIAL_PROFIT));
+    }
+
+    await backtest.strategyCoreService.partialProfit(false, symbol, percentToClose, currentPrice, {
+      strategyName: context.strategyName,
+      exchangeName: context.exchangeName,
+      frameName: "",
+    });
+  };
+
+  /**
+   * Executes partial close at loss level (moving toward SL).
+   *
+   * Closes a percentage of the active pending position at loss.
+   * Price must be moving toward stop loss (in loss direction).
+   *
+   * @param symbol - Trading pair symbol
+   * @param percentToClose - Percentage of position to close (0-100, absolute value)
+   * @param currentPrice - Current market price for this partial close
+   * @param context - Execution context with strategyName and exchangeName
+   * @returns Promise that resolves when state is updated
+   *
+   * @throws Error if currentPrice is not in loss direction:
+   *   - LONG: currentPrice must be < priceOpen
+   *   - SHORT: currentPrice must be > priceOpen
+   *
+   * @example
+   * ```typescript
+   * // Close 40% of LONG position at loss
+   * await Live.partialLoss("BTCUSDT", 40, 38000, {
+   *   exchangeName: "binance",
+   *   strategyName: "my-strategy"
+   * });
+   * ```
+   */
+  public partialLoss = async (
+    symbol: string,
+    percentToClose: number,
+    currentPrice: number,
+    context: {
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+    }
+  ): Promise<void> => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_PARTIAL_LOSS, {
+      symbol,
+      percentToClose,
+      currentPrice,
+      context,
+    });
+    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_PARTIAL_LOSS);
+
+    {
+      const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
+      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_PARTIAL_LOSS);
+      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_PARTIAL_LOSS));
+    }
+
+    await backtest.strategyCoreService.partialLoss(false, symbol, percentToClose, currentPrice, {
+      strategyName: context.strategyName,
+      exchangeName: context.exchangeName,
+      frameName: "",
+    });
   };
 
   /**
@@ -570,11 +701,15 @@ export class LiveUtils {
   public getData = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     }
   ) => {
-    backtest.strategyValidationService.validate(context.strategyName, "LiveUtils.getData");
+    backtest.loggerService.info(LIVE_METHOD_NAME_GET_DATA, {
+      symbol,
+      context,
+    });
+    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_DATA);
 
     {
       const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
@@ -607,11 +742,15 @@ export class LiveUtils {
   public getReport = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     },
     columns?: Columns[]
   ): Promise<string> => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_GET_REPORT, {
+      symbol,
+      context,
+    });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_REPORT);
 
     {
@@ -652,12 +791,17 @@ export class LiveUtils {
   public dump = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
     },
     path?: string,
     columns?: Columns[]
   ): Promise<void> => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_DUMP, {
+      symbol,
+      context,
+      path,
+    });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_DUMP);
 
     {

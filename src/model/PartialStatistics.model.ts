@@ -1,3 +1,4 @@
+import { StrategyName } from "../interfaces/Strategy.interface";
 import { PartialLevel } from "../interfaces/Partial.interface";
 
 /**
@@ -12,7 +13,7 @@ export interface PartialEvent {
   /** Trading pair symbol */
   symbol: string;
   /** Strategy name */
-  strategyName: string;
+  strategyName: StrategyName;
   /** Signal ID */
   signalId: string;
   /** Position type */

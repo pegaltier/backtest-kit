@@ -5,6 +5,8 @@ group: docs
 
 # WalkerCommandService
 
+Implements `TWalkerLogicPublicService`
+
 Global service providing access to walker functionality.
 
 Simple wrapper around WalkerLogicPublicService for dependency injection.

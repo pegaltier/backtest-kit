@@ -5,6 +5,8 @@ group: docs
 
 # BacktestCommandService
 
+Implements `TBacktestLogicPublicService`
+
 Global service providing access to backtest functionality.
 
 Simple wrapper around BacktestLogicPublicService for dependency injection.

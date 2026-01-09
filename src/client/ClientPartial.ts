@@ -5,7 +5,7 @@ import {
   IPartialData,
   IPartial,
 } from "../interfaces/Partial.interface";
-import { ISignalRow } from "../interfaces/Strategy.interface";
+import { ISignalRow, StrategyName } from "../interfaces/Strategy.interface";
 import { PersistPartialAdapter } from "../classes/Persist";
 import { singleshot } from "functools-kit";
 
@@ -198,7 +198,7 @@ const HANDLE_LOSS_FN = async (
  * @param backtest - True if backtest mode, false if live mode
  * @param self - ClientPartial instance reference
  */
-const WAIT_FOR_INIT_FN = async (symbol: string, strategyName: string, self: ClientPartial) => {
+const WAIT_FOR_INIT_FN = async (symbol: string, strategyName: StrategyName, self: ClientPartial) => {
   self.params.logger.debug("ClientPartial waitForInit", {
     symbol,
     strategyName,
@@ -330,7 +330,7 @@ export class ClientPartial implements IPartial {
    * ```
    */
   public waitForInit = singleshot(
-    async (symbol: string, strategyName: string) => await WAIT_FOR_INIT_FN(symbol, strategyName, this)
+    async (symbol: string, strategyName: StrategyName) => await WAIT_FOR_INIT_FN(symbol, strategyName, this)
   );
 
   /**
@@ -348,7 +348,7 @@ export class ClientPartial implements IPartial {
    * @param backtest - True if backtest mode
    * @returns Promise that resolves when persistence is complete
    */
-  public async _persistState(symbol: string, strategyName: string): Promise<void> {
+  public async _persistState(symbol: string, strategyName: StrategyName): Promise<void> {
     if (this.params.backtest) {
       return;
     }

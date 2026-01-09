@@ -1,5 +1,8 @@
+import { StrategyName } from "../interfaces/Strategy.interface";
 import bt from "../lib";
 import { Columns } from "../lib/services/markdown/PartialMarkdownService";
+import { ExchangeName } from "../interfaces/Exchange.interface";
+import { FrameName } from "../interfaces/Frame.interface";
 
 const PARTIAL_METHOD_NAME_GET_DATA = "PartialUtils.getData";
 const PARTIAL_METHOD_NAME_GET_REPORT = "PartialUtils.getReport";
@@ -68,9 +71,9 @@ export class PartialUtils {
   public getData = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     },
     backtest = false
   ) => {
@@ -129,9 +132,9 @@ export class PartialUtils {
   public getReport = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     },
     backtest = false,
     columns?: Columns[]
@@ -184,9 +187,9 @@ export class PartialUtils {
   public dump = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     },
     backtest = false,
     path?: string,

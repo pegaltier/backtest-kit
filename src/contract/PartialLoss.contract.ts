@@ -1,5 +1,7 @@
-import { ISignalRow } from "../interfaces/Strategy.interface";
+import { ISignalRow, StrategyName } from "../interfaces/Strategy.interface";
 import { PartialLevel } from "../interfaces/Partial.interface";
+import { ExchangeName } from "../interfaces/Exchange.interface";
+import { FrameName } from "../interfaces/Frame.interface";
 
 /**
  * Contract for partial loss level events.
@@ -48,19 +50,19 @@ export interface PartialLossContract {
    * Strategy name that generated this signal.
    * Identifies which strategy execution this loss event belongs to.
    */
-  strategyName: string;
+  strategyName: StrategyName;
 
   /**
    * Exchange name where this signal is being executed.
    * Identifies which exchange this loss event belongs to.
    */
-  exchangeName: string;
+  exchangeName: ExchangeName;
 
   /**
    * Frame name where this signal is being executed.
    * Identifies which frame this loss event belongs to (empty string for live mode).
    */
-  frameName: string;
+  frameName: FrameName;
 
   /**
    * Complete signal row data.

@@ -7,8 +7,19 @@ import ExchangeValidationService from "../validation/ExchangeValidationService";
 import FrameValidationService from "../validation/FrameValidationService";
 import StrategySchemaService from "../schema/StrategySchemaService";
 import RiskValidationService from "../validation/RiskValidationService";
+import { StrategyName } from "../../../interfaces/Strategy.interface";
+import { ExchangeName } from "../../../interfaces/Exchange.interface";
+import { FrameName } from "../../../interfaces/Frame.interface";
 
 const METHOD_NAME_RUN = "backtestCommandService run";
+
+/**
+ * Type definition for BacktestLogicPublicService.
+ * Maps all keys of BacktestLogicPublicService to any type.
+ */
+type TBacktestLogicPublicService = {
+  [key in keyof BacktestLogicPublicService]: any;
+};
 
 /**
  * Global service providing access to backtest functionality.
@@ -16,7 +27,7 @@ const METHOD_NAME_RUN = "backtestCommandService run";
  * Simple wrapper around BacktestLogicPublicService for dependency injection.
  * Used by public API exports.
  */
-export class BacktestCommandService {
+export class BacktestCommandService implements TBacktestLogicPublicService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly strategySchemaService = inject<StrategySchemaService>(
     TYPES.strategySchemaService
@@ -44,9 +55,9 @@ export class BacktestCommandService {
   public run = (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     }
   ) => {
     this.loggerService.log(METHOD_NAME_RUN, {

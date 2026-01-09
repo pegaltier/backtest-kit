@@ -5,6 +5,8 @@ group: docs
 
 # BacktestLogicPublicService
 
+Implements `TBacktestLogicPrivateService`
+
 Public service for backtest orchestration with context management.
 
 Wraps BacktestLogicPrivateService with MethodContextService to provide

@@ -1,3 +1,6 @@
+import { ExchangeName } from "../interfaces/Exchange.interface";
+import { StrategyName } from "../interfaces/Strategy.interface";
+
 /**
  * Contract for backtest progress events.
  *
@@ -16,9 +19,9 @@
  */
 export interface ProgressBacktestContract {
     /** exchangeName - Name of the exchange used in execution */
-    exchangeName: string;
+    exchangeName: ExchangeName;
     /** strategyName - Name of the strategy being executed */
-    strategyName: string;
+    strategyName: StrategyName;
     /** symbol - Trading symbol (e.g., "BTCUSDT") */
     symbol: string;
     /** totalFrames - Total number of frames to process */

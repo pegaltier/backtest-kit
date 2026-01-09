@@ -9,8 +9,19 @@ import WalkerSchemaService from "../schema/WalkerSchemaService";
 import WalkerValidationService from "../validation/WalkerValidationService";
 import StrategySchemaService from "../schema/StrategySchemaService";
 import RiskValidationService from "../validation/RiskValidationService";
+import { ExchangeName } from "../../../interfaces/Exchange.interface";
+import { FrameName } from "../../../interfaces/Frame.interface";
+import { WalkerName } from "../../../interfaces/Walker.interface";
 
 const METHOD_NAME_RUN = "walkerCommandService run";
+
+/**
+ * Type definition for WalkerLogicPublicService.
+ * Maps all keys of WalkerLogicPublicService to any type.
+ */
+type TWalkerLogicPublicService = {
+  [key in keyof WalkerLogicPublicService]: any;
+};
 
 /**
  * Global service providing access to walker functionality.
@@ -18,7 +29,7 @@ const METHOD_NAME_RUN = "walkerCommandService run";
  * Simple wrapper around WalkerLogicPublicService for dependency injection.
  * Used by public API exports.
  */
-export class WalkerCommandService {
+export class WalkerCommandService implements TWalkerLogicPublicService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly walkerLogicPublicService = inject<WalkerLogicPublicService>(
     TYPES.walkerLogicPublicService
@@ -52,9 +63,9 @@ export class WalkerCommandService {
   public run = (
     symbol: string,
     context: {
-      walkerName: string;
-      exchangeName: string;
-      frameName: string;
+      walkerName: WalkerName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     }
   ) => {
     this.loggerService.log(METHOD_NAME_RUN, {

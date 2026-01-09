@@ -1,5 +1,8 @@
+import { StrategyName } from "../interfaces/Strategy.interface";
 import bt from "../lib";
 import { Columns } from "../lib/services/markdown/ScheduleMarkdownService";
+import { ExchangeName } from "../interfaces/Exchange.interface";
+import { FrameName } from "../interfaces/Frame.interface";
 
 const SCHEDULE_METHOD_NAME_GET_DATA = "ScheduleUtils.getData";
 const SCHEDULE_METHOD_NAME_GET_REPORT = "ScheduleUtils.getReport";
@@ -47,9 +50,9 @@ export class ScheduleUtils {
   public getData = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     },
     backtest = false
   ) => {
@@ -87,9 +90,9 @@ export class ScheduleUtils {
   public getReport = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     },
     backtest = false,
     columns?: Columns[]
@@ -131,9 +134,9 @@ export class ScheduleUtils {
   public dump = async (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     },
     backtest = false,
     path?: string,

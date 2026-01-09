@@ -5,6 +5,8 @@ group: docs
 
 # StrategyCoreService
 
+Implements `TStrategy`
+
 Global service for strategy operations with execution context injection.
 
 Wraps StrategyConnectionService with ExecutionContextService to inject
@@ -147,3 +149,29 @@ Clears the memoized ClientStrategy instance from cache.
 
 Delegates to StrategyConnectionService.clear() to remove strategy from cache.
 Forces re-initialization of strategy on next operation.
+
+### partialProfit
+
+```ts
+partialProfit: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<void>
+```
+
+Executes partial close at profit level (moving toward TP).
+
+Validates strategy existence and delegates to connection service
+to close a percentage of the pending position at profit.
+
+Does not require execution context as this is a direct state mutation.
+
+### partialLoss
+
+```ts
+partialLoss: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<void>
+```
+
+Executes partial close at loss level (moving toward SL).
+
+Validates strategy existence and delegates to connection service
+to close a percentage of the pending position at loss.
+
+Does not require execution context as this is a direct state mutation.

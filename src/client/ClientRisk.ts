@@ -14,11 +14,14 @@ import {
   IRiskRejectionResult,
   RiskRejection,
   IRiskValidationFn,
+  RiskName,
 } from "../interfaces/Risk.interface";
 import { PersistRiskAdapter } from "../classes/Persist";
 import backtest from "../lib";
-import { validationSubject } from "../config/emitters";
+import { validationSubject, errorEmitter } from "../config/emitters";
 import { get } from "../utils/get";
+import { ExchangeName } from "../interfaces/Exchange.interface";
+import { StrategyName } from "../interfaces/Strategy.interface";
 
 /** Type for active position map */
 type RiskMap = Map<string, IRiskActivePosition>;
@@ -27,7 +30,7 @@ type RiskMap = Map<string, IRiskActivePosition>;
 const POSITION_NEED_FETCH = Symbol("risk-need-fetch");
 
 /** Key generator for active position map */
-const CREATE_NAME_FN = (strategyName: string, exchangeName: string, symbol: string) =>
+const CREATE_NAME_FN = (strategyName: StrategyName, exchangeName: ExchangeName, symbol: string) =>
   `${strategyName}_${exchangeName}_${symbol}` as const;
 
 /** Wrapper to execute risk validation function with error handling */
@@ -49,6 +52,56 @@ const DO_VALIDATION_FN = async (
     return payload.message;
   }
 };
+
+/** Wrapper to call onRejected callback with error handling */
+const CALL_REJECTED_CALLBACKS_FN = trycatch(
+  async (
+    self: ClientRisk,
+    symbol: string,
+    params: IRiskCheckArgs
+  ): Promise<void> => {
+    if (self.params.callbacks?.onRejected) {
+      await self.params.callbacks.onRejected(symbol, params);
+    }
+  },
+  {
+    fallback: (error) => {
+      const message = "ClientRisk CALL_REJECTED_CALLBACKS_FN thrown";
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+  }
+);
+
+/** Wrapper to call onAllowed callback with error handling */
+const CALL_ALLOWED_CALLBACKS_FN = trycatch(
+  async (
+    self: ClientRisk,
+    symbol: string,
+    params: IRiskCheckArgs
+  ): Promise<void> => {
+    if (self.params.callbacks?.onAllowed) {
+      await self.params.callbacks.onAllowed(symbol, params);
+    }
+  },
+  {
+    fallback: (error) => {
+      const message = "ClientRisk CALL_ALLOWED_CALLBACKS_FN thrown";
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+  }
+);
 
 /**
  * Initializes active positions by reading from persistence.
@@ -127,7 +180,7 @@ export class ClientRisk implements IRisk {
    */
   public async addSignal(
     symbol: string,
-    context: { strategyName: string; riskName: string; exchangeName: string; }
+    context: { strategyName: StrategyName; riskName: RiskName; exchangeName: ExchangeName; }
   ) {
     this.params.logger.debug("ClientRisk addSignal", {
       symbol,
@@ -156,7 +209,7 @@ export class ClientRisk implements IRisk {
    */
   public async removeSignal(
     symbol: string,
-    context: { strategyName: string; riskName: string; exchangeName: string; }
+    context: { strategyName: StrategyName; riskName: RiskName; exchangeName: ExchangeName; }
   ) {
     this.params.logger.debug("ClientRisk removeSignal", {
       symbol,
@@ -254,17 +307,13 @@ export class ClientRisk implements IRisk {
       );
 
       // Call schema callbacks.onRejected if defined
-      if (this.params.callbacks?.onRejected) {
-        this.params.callbacks.onRejected(params.symbol, params);
-      }
+      await CALL_REJECTED_CALLBACKS_FN(this, params.symbol, params);
 
       return false;
     }
 
     // All checks passed
-    if (this.params.callbacks?.onAllowed) {
-      this.params.callbacks.onAllowed(params.symbol, params);
-    }
+    await CALL_ALLOWED_CALLBACKS_FN(this, params.symbol, params);
 
     return true;
   };

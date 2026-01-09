@@ -11,5 +11,6 @@ type TOptimizer = {
 };
 ```
 
-Type helper for optimizer method signatures.
-Maps IOptimizer interface methods to any return type.
+Type definition for optimizer methods.
+Maps all keys of IOptimizer to any type.
+Used for dynamic method routing in OptimizerGlobalService.

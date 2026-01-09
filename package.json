@@ -1,6 +1,6 @@
 {
   "name": "backtest-kit",
-  "version": "1.7.2",
+  "version": "1.8.1",
   "description": "A TypeScript library for trading system backtest",
   "author": {
     "name": "Petr Tripolsky",
@@ -64,6 +64,7 @@
     "rollup": "3.29.5",
     "rollup-plugin-dts": "6.1.1",
     "rollup-plugin-peer-deps-external": "2.2.4",
+    "ts-morph": "27.0.2",
     "tslib": "2.7.0",
     "typedoc": "0.27.9",
     "worker-testbed": "1.0.11"

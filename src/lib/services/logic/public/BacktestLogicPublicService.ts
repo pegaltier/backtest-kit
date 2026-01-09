@@ -3,6 +3,29 @@ import LoggerService from "../../base/LoggerService";
 import TYPES from "../../../core/types";
 import BacktestLogicPrivateService from "../private/BacktestLogicPrivateService";
 import MethodContextService from "../../context/MethodContextService";
+import { StrategyName } from "../../../../interfaces/Strategy.interface";
+import { ExchangeName } from "../../../../interfaces/Exchange.interface";
+import { FrameName } from "../../../../interfaces/Frame.interface";
+
+/**
+ * Type definition for public BacktestLogic service.
+ * Omits private dependencies from BacktestLogicPrivateService.
+ */
+type IBacktestLogicPrivateService = Omit<BacktestLogicPrivateService, keyof {
+  loggerService: never;
+  strategyCoreService: never;
+  exchangeCoreService: never;
+  frameCoreService: never;
+  methodContextService: never;
+}>;
+
+/**
+ * Type definition for BacktestLogicPublicService.
+ * Maps all keys of IBacktestLogicPrivateService to any type.
+ */
+type TBacktestLogicPrivateService = {
+  [key in keyof IBacktestLogicPrivateService]: any;
+};
 
 /**
  * Public service for backtest orchestration with context management.
@@ -28,7 +51,7 @@ import MethodContextService from "../../context/MethodContextService";
  * }
  * ```
  */
-export class BacktestLogicPublicService {
+export class BacktestLogicPublicService implements TBacktestLogicPrivateService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly backtestLogicPrivateService =
     inject<BacktestLogicPrivateService>(TYPES.backtestLogicPrivateService);
@@ -46,9 +69,9 @@ export class BacktestLogicPublicService {
   public run = (
     symbol: string,
     context: {
-      strategyName: string;
-      exchangeName: string;
-      frameName: string;
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
     }
   ) => {
     this.loggerService.log("backtestLogicPublicService run", {

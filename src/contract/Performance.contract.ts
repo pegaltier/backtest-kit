@@ -1,3 +1,7 @@
+import { ExchangeName } from "../interfaces/Exchange.interface";
+import { FrameName } from "../interfaces/Frame.interface";
+import { StrategyName } from "../interfaces/Strategy.interface";
+
 /**
  * Performance metric types tracked by the system.
  *
@@ -45,13 +49,13 @@ export interface PerformanceContract {
   duration: number;
 
   /** Strategy name associated with this metric */
-  strategyName: string;
+  strategyName: StrategyName;
 
   /** Exchange name associated with this metric */
-  exchangeName: string;
+  exchangeName: ExchangeName;
 
   /** Frame name associated with this metric (empty string for live mode) */
-  frameName: string;
+  frameName: FrameName;
 
   /** Trading symbol associated with this metric */
   symbol: string;
