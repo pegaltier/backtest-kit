@@ -1801,7 +1801,7 @@ test("SEQUENCE: LONG→TIME_EXPIRED, LONG→TP - mixed closeReasons", async ({ p
  * - 2 LONG сигнала подряд
  * - Проверка: Система корректно обрабатывает быструю последовательность сигналов
  */
-test("SEQUENCE: 2 rapid LONG signals", async ({ pass, fail }) => {
+test("SEQUENCE: 2 rapid LONG signals (VWAP-aware)", async ({ pass, fail }) => {
   const results = [];
 
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();

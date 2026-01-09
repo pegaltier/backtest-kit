@@ -255,7 +255,7 @@ test("PARTIAL LEVELS: listenPartialProfit fires only on 10%, 20%, 30% levels", a
 /**
  * PARTIAL LEVELS ТЕСТ #2: listenPartialLoss срабатывает только на уровнях 10%, 20%, 30%
  */
-test("PARTIAL LEVELS: listenPartialLoss fires only on 10%, 20%, 30% levels", async ({ pass, fail }) => {
+test("PARTIAL LEVELS: listenPartialLoss fires on loss levels (VWAP-aware)", async ({ pass, fail }) => {
   const lossEvents = [];
 
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();

@@ -303,7 +303,7 @@ test("Scheduled signal is cancelled when price never reaches entry point", async
 
 });
 
-test("Multiple scheduled signals queue and activate sequentially", async ({ pass, fail }) => {
+test("Multiple scheduled signals queue and activate sequentially (VWAP-aware)", async ({ pass, fail }) => {
 
   let scheduledCount = 0;
   let openedCount = 0;

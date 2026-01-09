@@ -3113,7 +3113,7 @@ test("PARTIAL LISTENER: partialLoss() with listenPartialLoss for LONG", async ({
  * - Каждое событие регистрируется корректно
  * - Массив _partial содержит оба закрытия
  */
-test("PARTIAL LISTENER: Multiple partialProfit with listenPartialProfit", async ({ pass, fail }) => {
+test("PARTIAL LISTENER: Multiple partialProfit with listenPartialProfit (VWAP-aware)", async ({ pass, fail }) => {
   const { partialProfit, listenPartialProfit } = await import("../../build/index.mjs");
 
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();

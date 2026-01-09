@@ -246,7 +246,7 @@ test("OTHER: Breakeven after fees - profit margin edge case", async ({ pass, fai
  *
  * Тест: Проверяем что сигнал закрылся (неважно по TP или SL)
  */
-test("OTHER: Simultaneous TP & SL trigger - candle order execution", async ({ pass, fail }) => {
+test("OTHER: Simultaneous TP & SL trigger - VWAP-based detection", async ({ pass, fail }) => {
 
   let closedResult = null;
   let signalGenerated = false;

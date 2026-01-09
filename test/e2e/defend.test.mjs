@@ -1517,7 +1517,7 @@ test("DEFEND: Scheduled LONG cancelled by SL BEFORE activation (price skips pric
  *
  * Проверяет приоритет TP vs SL при экстремальной волатильности.
  */
-test("DEFEND: Extreme volatility - price crosses both TP and SL in single candle (TP wins)", async ({ pass, fail }) => {
+test("DEFEND: Extreme volatility - price crosses both TP and SL in single candle (VWAP-based detection)", async ({ pass, fail }) => {
 
   let openedResult = null;
   let closedResult = null;

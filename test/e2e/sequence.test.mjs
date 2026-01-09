@@ -26,7 +26,7 @@ import { Subject, sleep } from "functools-kit";
  *
  * Проверяет: Система корректно обрабатывает длинную последовательность сигналов
  */
-test("SEQUENCE: 5 signals with mixed results (TP, SL, cancelled, TP, SL)", async ({ pass, fail }) => {
+test("SEQUENCE: 5 signals with mixed results (TP, SL, cancelled, TP, SL) - VWAP-aware", async ({ pass, fail }) => {
   const signalsResults = {
     scheduled: [],
     opened: [],
