@@ -993,7 +993,7 @@ interface IBreakeven {
      * // No event emitted (already reached)
      * ```
      */
-    check(symbol: string, data: IPublicSignalRow, currentPrice: number, backtest: boolean, when: Date): Promise<void>;
+    check(symbol: string, data: IPublicSignalRow, currentPrice: number, backtest: boolean, when: Date): Promise<boolean>;
     /**
      * Clears breakeven state when signal closes.
      *
@@ -1170,6 +1170,8 @@ interface IStrategyCallbacks {
     onPartialProfit: (symbol: string, data: IPublicSignalRow, currentPrice: number, revenuePercent: number, backtest: boolean) => void | Promise<void>;
     /** Called when signal is in partial loss state (price moved against position but not hit SL yet) */
     onPartialLoss: (symbol: string, data: IPublicSignalRow, currentPrice: number, lossPercent: number, backtest: boolean) => void | Promise<void>;
+    /** Called when signal reaches breakeven (stop-loss moved to entry price to protect capital) */
+    onBreakeven: (symbol: string, data: IPublicSignalRow, currentPrice: number, backtest: boolean) => void | Promise<void>;
     /** Called every minute regardless of strategy interval (for custom monitoring like checking if signal should be cancelled) */
     onPing: (symbol: string, data: IPublicSignalRow, when: Date, backtest: boolean) => void | Promise<void>;
 }
@@ -11255,7 +11257,7 @@ declare class BreakevenConnectionService implements IBreakeven {
      * @param when - Event timestamp (current time for live, candle time for backtest)
      * @returns Promise that resolves when breakeven check is complete
      */
-    check: (symbol: string, data: IPublicSignalRow, currentPrice: number, backtest: boolean, when: Date) => Promise<void>;
+    check: (symbol: string, data: IPublicSignalRow, currentPrice: number, backtest: boolean, when: Date) => Promise<boolean>;
     /**
      * Clears breakeven state when signal closes.
      *
@@ -13808,7 +13810,7 @@ declare class BreakevenGlobalService implements TBreakeven {
      * @param when - Event timestamp (current time for live, candle time for backtest)
      * @returns Promise that resolves when breakeven check is complete
      */
-    check: (symbol: string, data: IPublicSignalRow, currentPrice: number, backtest: boolean, when: Date) => Promise<void>;
+    check: (symbol: string, data: IPublicSignalRow, currentPrice: number, backtest: boolean, when: Date) => Promise<boolean>;
     /**
      * Clears breakeven state when signal closes.
      *

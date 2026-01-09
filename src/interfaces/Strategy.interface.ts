@@ -201,6 +201,8 @@ export interface IStrategyCallbacks {
   onPartialProfit: (symbol: string, data: IPublicSignalRow, currentPrice: number, revenuePercent: number, backtest: boolean) => void | Promise<void>;
   /** Called when signal is in partial loss state (price moved against position but not hit SL yet) */
   onPartialLoss: (symbol: string, data: IPublicSignalRow, currentPrice: number, lossPercent: number, backtest: boolean) => void | Promise<void>;
+  /** Called when signal reaches breakeven (stop-loss moved to entry price to protect capital) */
+  onBreakeven: (symbol: string, data: IPublicSignalRow, currentPrice: number, backtest: boolean) => void | Promise<void>;
   /** Called every minute regardless of strategy interval (for custom monitoring like checking if signal should be cancelled) */
   onPing: (symbol: string, data: IPublicSignalRow, when: Date, backtest: boolean) => void | Promise<void>;
 }

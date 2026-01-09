@@ -150,7 +150,7 @@ export interface IBreakeven {
     currentPrice: number,
     backtest: boolean,
     when: Date
-  ): Promise<void>;
+  ): Promise<boolean>;
 
   /**
    * Clears breakeven state when signal closes.

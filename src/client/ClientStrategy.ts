@@ -1902,13 +1902,21 @@ const CALL_BREAKEVEN_CHECK_FN = trycatch(
   ): Promise<void> => {
     await ExecutionContextService.runInContext(async () => {
       const publicSignal = TO_PUBLIC_SIGNAL(signal);
-      await self.params.breakeven.check(
+      const isBreakeven = await self.params.breakeven.check(
         symbol,
         publicSignal,
         currentPrice,
         backtest,
         new Date(timestamp)
       );
+      if (self.params.callbacks?.onBreakeven) {
+        isBreakeven && await self.params.callbacks.onBreakeven(
+          symbol,
+          publicSignal,
+          currentPrice,
+          backtest
+        );
+      }
     }, {
       when: new Date(timestamp),
       symbol: symbol,

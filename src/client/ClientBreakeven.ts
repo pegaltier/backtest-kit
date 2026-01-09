@@ -32,6 +32,7 @@ const NEED_FETCH = Symbol("need_fetch");
  * @param backtest - True if backtest mode
  * @param when - Event timestamp
  * @param self - ClientBreakeven instance reference
+ * @returns True if breakeven was reached (event emitted), false otherwise
  */
 const HANDLE_BREAKEVEN_FN = async (
   symbol: string,
@@ -40,7 +41,7 @@ const HANDLE_BREAKEVEN_FN = async (
   backtest: boolean,
   when: Date,
   self: ClientBreakeven
-) => {
+): Promise<boolean> => {
   if (self._states === NEED_FETCH) {
     throw new Error(
       "ClientBreakeven not initialized. Call waitForInit() before using."
@@ -67,7 +68,7 @@ const HANDLE_BREAKEVEN_FN = async (
       symbol,
       signalId: data.id,
     });
-    return;
+    return false;
   }
 
   // Calculate breakeven threshold based on slippage and fees
@@ -98,7 +99,7 @@ const HANDLE_BREAKEVEN_FN = async (
       thresholdPrice,
       breakevenThresholdPercent,
     });
-    return;
+    return false;
   }
 
   // Mark as reached
@@ -129,6 +130,8 @@ const HANDLE_BREAKEVEN_FN = async (
 
   // Persist state
   await self._persistState(symbol, data.strategyName);
+
+  return true;
 };
 
 /**
@@ -319,22 +322,29 @@ export class ClientBreakeven implements IBreakeven {
    * 1. Marks reached flag as true
    * 2. Logs info message
    * 3. Calls params.onBreakeven callback (emits to breakevenSubject)
-   *
-   * After event processed, persists state to disk if breakeven was reached.
+   * 4. Persists state to disk
    *
    * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
    * @param data - Signal row data
    * @param currentPrice - Current market price
    * @param backtest - True if backtest mode, false if live mode
    * @param when - Event timestamp (current time for live, candle time for backtest)
-   * @returns Promise that resolves when breakeven check is complete
+   * @returns Promise<boolean> - True if breakeven was reached (event emitted), false otherwise
    *
    * @example
    * ```typescript
    * // LONG: entry=100, slippage=0.1%, fee=0.1%, threshold=0.4%
+   * // Price at 100.3 - threshold not reached yet
+   * const reached1 = await breakeven.check("BTCUSDT", signal, 100.3, false, new Date());
+   * // reached1 = false, no event emitted
+   *
    * // Price at 100.5 - threshold reached!
-   * await breakeven.check("BTCUSDT", signal, 100.5, false, new Date());
-   * // Emits event, state persisted
+   * const reached2 = await breakeven.check("BTCUSDT", signal, 100.5, false, new Date());
+   * // reached2 = true, event emitted, state persisted
+   *
+   * // Price at 101 - already reached
+   * const reached3 = await breakeven.check("BTCUSDT", signal, 101, false, new Date());
+   * // reached3 = false, no event emitted (already reached)
    * ```
    */
   public async check(
@@ -343,7 +353,7 @@ export class ClientBreakeven implements IBreakeven {
     currentPrice: number,
     backtest: boolean,
     when: Date
-  ) {
+  ): Promise<boolean> {
     this.params.logger.debug("ClientBreakeven check", {
       symbol,
       signalId: data.id,
