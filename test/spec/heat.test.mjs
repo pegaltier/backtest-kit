@@ -67,7 +67,11 @@ test("Heat.getData returns heatmap statistics for strategy", async ({ pass, fail
     // Just consume
   }
 
-  const stats = await Heat.getData("test-strategy-heat-1", true);
+  const stats = await Heat.getData({
+    strategyName: "test-strategy-heat-1",
+    exchangeName: "binance-mock-heat-1",
+    frameName: "1d-backtest-heat-1",
+  }, true);
 
   if (
     stats &&
@@ -138,7 +142,11 @@ test("Heat heatmap includes per-symbol statistics", async ({ pass, fail }) => {
     // Just consume
   }
 
-  const stats = await Heat.getData("test-strategy-heat-2", true);
+  const stats = await Heat.getData({
+    strategyName: "test-strategy-heat-2",
+    exchangeName: "binance-mock-heat-2",
+    frameName: "1d-backtest-heat-2",
+  }, true);
 
   const btcRow = stats.symbols.find(s => s.symbol === "BTCUSDT");
   const ethRow = stats.symbols.find(s => s.symbol === "ETHUSDT");
@@ -206,7 +214,11 @@ test("Heat.getReport generates markdown report", async ({ pass, fail }) => {
     // Just consume
   }
 
-  const markdown = await Heat.getReport("test-strategy-heat-3", true);
+  const markdown = await Heat.getReport({
+    strategyName: "test-strategy-heat-3",
+    exchangeName: "binance-mock-heat-3",
+    frameName: "1d-backtest-heat-3",
+  }, true);
 
   if (
     markdown &&
@@ -296,7 +308,11 @@ test("Heat calculates portfolio-wide metrics", async ({ pass, fail }) => {
     // Just consume
   }
 
-  const stats = await Heat.getData("test-strategy-heat-4", true);
+  const stats = await Heat.getData({
+    strategyName: "test-strategy-heat-4",
+    exchangeName: "binance-mock-heat-4",
+    frameName: "1d-backtest-heat-4",
+  }, true);
 
   // Note: portfolioSharpeRatio will be null because each symbol only has 1 trade,
   // which is insufficient to calculate stdDev (requires > 1 trade per symbol)
@@ -360,7 +376,11 @@ test("Heat calculates extended metrics correctly", async ({ pass, fail }) => {
     // Just consume
   }
 
-  const stats = await Heat.getData("test-strategy-heat-extended", true);
+  const stats = await Heat.getData({
+    strategyName: "test-strategy-heat-extended",
+    exchangeName: "binance-mock-heat-extended",
+    frameName: "1d-backtest-heat-extended",
+  }, true);
   const btcRow = stats.symbols.find(s => s.symbol === "BTCUSDT");
 
   if (
@@ -435,7 +455,11 @@ test("Heat sorts symbols by Sharpe Ratio descending", async ({ pass, fail }) => 
     // Just consume
   }
 
-  const stats = await Heat.getData("test-strategy-heat-6", true);
+  const stats = await Heat.getData({
+    strategyName: "test-strategy-heat-6",
+    exchangeName: "binance-mock-heat-6",
+    frameName: "1d-backtest-heat-6",
+  }, true);
 
   if (stats.symbols.length < 2) {
     fail("Need at least 2 symbols for sorting test");

@@ -342,7 +342,11 @@ test("SHUTDOWN: Backtest.stop() after signal closes - no new signals", async ({ 
     (event) => event.action === "closed",
     async () => {
       // console.log("[TEST #2] First signal closed in listener, calling Backtest.stop()");
-      await Backtest.stop("BTCUSDT", "test-shutdown-2");
+      await Backtest.stop("BTCUSDT", {
+        strategyName: "test-shutdown-2",
+        exchangeName: "binance-shutdown-2",
+        frameName: "60m-shutdown-2",
+      });
       // console.log("[TEST #2] Backtest.stop() completed in listener");
     }
   );
@@ -445,7 +449,10 @@ test("SHUTDOWN: Live.stop() during idle - stops immediately", async ({ pass, fai
   if (!stopExecuted) {
     stopExecuted = true;
     // console.log("[TEST #3] Calling Live.stop()");
-    await Live.stop("BTCUSDT", "test-shutdown-4");
+    await Live.stop("BTCUSDT", {
+      strategyName: "test-shutdown-4",
+      exchangeName: "binance-shutdown-4",
+    });
     // console.log("[TEST #3] Live.stop() completed");
   }
 
@@ -557,7 +564,10 @@ test("SHUTDOWN: Live.stop() after signal closes - no new signals", async ({ pass
         if (!stopExecuted) {
           stopExecuted = true;
           // console.log("[TEST #5] Calling Live.stop()");
-          await Live.stop("BTCUSDT", "test-shutdown-5");
+          await Live.stop("BTCUSDT", {
+            strategyName: "test-shutdown-5",
+            exchangeName: "binance-shutdown-5",
+          });
           // console.log("[TEST #5] Live.stop() completed");
         }
       },
@@ -1067,7 +1077,11 @@ test("SHUTDOWN: Backtest with getSignal always null - no signals", async ({ pass
 
   // Stop after 2 seconds (before all 60 getSignal calls complete)
   await sleep(2_000);
-  await Backtest.stop("BTCUSDT", "test-shutdown-null-signal");
+  await Backtest.stop("BTCUSDT", {
+    strategyName: "test-shutdown-null-signal",
+    exchangeName: "binance-shutdown-8",
+    frameName: "60m-shutdown-8",
+  });
 
   // Race: listenDoneBacktest should fire before 3 seconds timeout
   const raceResult = await Promise.race([
@@ -1571,7 +1585,11 @@ test("SHUTDOWN: Backtest.list() shows pending tasks", async ({ pass, fail }) => 
   }
 
   // Stop one instance
-  await Backtest.stop("BTCUSDT", "test-shutdown-list-bt-1");
+  await Backtest.stop("BTCUSDT", {
+    strategyName: "test-shutdown-list-bt-1",
+    exchangeName: "binance-shutdown-11",
+    frameName: "10m-shutdown-11",
+  });
 
   // Wait for stop to take effect
   await sleep(100);

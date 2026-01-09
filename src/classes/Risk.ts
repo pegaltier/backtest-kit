@@ -76,12 +76,12 @@ export class MergeRisk implements IRisk {
    * Used to track active positions across all risk management systems.
    *
    * @param symbol - Trading pair symbol
-   * @param context - Context with strategyName and riskName
+   * @param context - Context with strategyName, riskName, exchangeName and frameName
    * @returns Promise that resolves when all risks have registered the signal
    */
   public async addSignal(
     symbol: string,
-    context: { strategyName: string; riskName: string }
+    context: { strategyName: string; riskName: string; exchangeName: string; frameName: string }
   ) {
     bt.loggerService.info("MergeRisk addSignal", {
       symbol,
@@ -99,12 +99,12 @@ export class MergeRisk implements IRisk {
    * Used to update risk state when a position closes.
    *
    * @param symbol - Trading pair symbol
-   * @param context - Context with strategyName and riskName
+   * @param context - Context with strategyName, riskName, exchangeName and frameName
    * @returns Promise that resolves when all risks have removed the signal
    */
   public async removeSignal(
     symbol: string,
-    context: { strategyName: string; riskName: string }
+    context: { strategyName: string; riskName: string; exchangeName: string; frameName: string }
   ) {
     bt.loggerService.info("MergeRisk removeSignal", {
       symbol,
@@ -180,21 +180,25 @@ export class RiskUtils {
    */
   public getData = async (
     symbol: string,
-    strategyName: string,
+    context: {
+      strategyName: string;
+      exchangeName: string;
+      frameName: string;
+    },
     backtest = false
   ) => {
     bt.loggerService.info(RISK_METHOD_NAME_GET_DATA, {
       symbol,
-      strategyName,
+      strategyName: context.strategyName,
     });
 
     bt.strategyValidationService.validate(
-      strategyName,
+      context.strategyName,
       RISK_METHOD_NAME_GET_DATA
     );
 
     {
-      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = bt.strategySchemaService.get(context.strategyName);
       riskName &&
         bt.riskValidationService.validate(riskName, RISK_METHOD_NAME_GET_DATA);
       riskList &&
@@ -203,7 +207,7 @@ export class RiskUtils {
         );
     }
 
-    return await bt.riskMarkdownService.getData(symbol, strategyName, backtest);
+    return await bt.riskMarkdownService.getData(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
   };
 
   /**
@@ -249,22 +253,26 @@ export class RiskUtils {
    */
   public getReport = async (
     symbol: string,
-    strategyName: string,
+    context: {
+      strategyName: string;
+      exchangeName: string;
+      frameName: string;
+    },
     backtest = false,
     columns?: Columns[]
   ): Promise<string> => {
     bt.loggerService.info(RISK_METHOD_NAME_GET_REPORT, {
       symbol,
-      strategyName,
+      strategyName: context.strategyName,
     });
 
     bt.strategyValidationService.validate(
-      strategyName,
+      context.strategyName,
       RISK_METHOD_NAME_GET_REPORT
     );
 
     {
-      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = bt.strategySchemaService.get(context.strategyName);
       riskName &&
         bt.riskValidationService.validate(
           riskName,
@@ -281,7 +289,9 @@ export class RiskUtils {
 
     return await bt.riskMarkdownService.getReport(
       symbol,
-      strategyName,
+      context.strategyName,
+      context.exchangeName,
+      context.frameName,
       backtest,
       columns
     );
@@ -321,21 +331,25 @@ export class RiskUtils {
    */
   public dump = async (
     symbol: string,
-    strategyName: string,
+    context: {
+      strategyName: string;
+      exchangeName: string;
+      frameName: string;
+    },
     backtest = false,
     path?: string,
     columns?: Columns[]
   ): Promise<void> => {
     bt.loggerService.info(RISK_METHOD_NAME_DUMP, {
       symbol,
-      strategyName,
+      strategyName: context.strategyName,
       path,
     });
 
-    bt.strategyValidationService.validate(strategyName, RISK_METHOD_NAME_DUMP);
+    bt.strategyValidationService.validate(context.strategyName, RISK_METHOD_NAME_DUMP);
 
     {
-      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = bt.strategySchemaService.get(context.strategyName);
       riskName &&
         bt.riskValidationService.validate(riskName, RISK_METHOD_NAME_DUMP);
       riskList &&
@@ -346,7 +360,9 @@ export class RiskUtils {
 
     await bt.riskMarkdownService.dump(
       symbol,
-      strategyName,
+      context.strategyName,
+      context.exchangeName,
+      context.frameName,
       backtest,
       path,
       columns

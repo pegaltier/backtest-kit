@@ -70,7 +70,11 @@ test("Backtest.getReport returns markdown string", async ({ pass, fail }) => {
 
   await awaiter;
 
-  const report = await Backtest.getReport("BTCUSDT", "test-strategy-bt-report");
+  const report = await Backtest.getReport("BTCUSDT", {
+    strategyName: "test-strategy-bt-report",
+    exchangeName: "binance-mock-bt-report",
+    frameName: "1d-backtest-bt-report",
+  });
 
   if (typeof report === "string" && report.includes("# Backtest Report:")) {
     pass("Backtest.getReport returns markdown string");
@@ -136,7 +140,11 @@ test("Backtest report includes win rate statistics", async ({ pass, fail }) => {
 
   await awaiter;
 
-  const report = await Backtest.getReport("BTCUSDT", "test-strategy-bt-stats");
+  const report = await Backtest.getReport("BTCUSDT", {
+    strategyName: "test-strategy-bt-stats",
+    exchangeName: "binance-mock-bt-stats",
+    frameName: "1d-backtest-bt-stats",
+  });
 
   const hasWinRate = report.includes("Win rate:");
   const hasAvgPnl = report.includes("Average PNL:");
@@ -198,7 +206,10 @@ test("Live.getReport returns markdown string", async ({ pass, fail }) => {
 
   await awaiter;
 
-  const report = await Live.getReport("BTCUSDT", "test-strategy-live-report");
+  const report = await Live.getReport("BTCUSDT", {
+    strategyName: "test-strategy-live-report",
+    exchangeName: "binance-mock-live-report",
+  });
 
   if (typeof report === "string" && report.includes("# Live Trading Report:")) {
     pass("Live.getReport returns markdown string");
@@ -264,7 +275,11 @@ test("Backtest report includes signal details table", async ({ pass, fail }) => 
 
   await awaiter;
 
-  const report = await Backtest.getReport("BTCUSDT", "test-strategy-bt-table");
+  const report = await Backtest.getReport("BTCUSDT", {
+    strategyName: "test-strategy-bt-table",
+    exchangeName: "binance-mock-bt-table",
+    frameName: "1d-backtest-bt-table",
+  });
 
   // Check for markdown table format
   const hasTableSeparator = report.includes(" | ");

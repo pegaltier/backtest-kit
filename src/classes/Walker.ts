@@ -195,25 +195,41 @@ export class WalkerInstance {
     // Clear backtest data for all strategies
     for (const strategyName of walkerSchema.strategies) {
       {
-        backtest.backtestMarkdownService.clear(true, { symbol, strategyName });
-        backtest.liveMarkdownService.clear(true, { symbol, strategyName });
-        backtest.scheduleMarkdownService.clear(true, { symbol, strategyName });
-        backtest.performanceMarkdownService.clear(true, { symbol, strategyName });
-        backtest.partialMarkdownService.clear(true, { symbol, strategyName });
-        backtest.riskMarkdownService.clear(true, { symbol, strategyName });
+        backtest.backtestMarkdownService.clear({ symbol, strategyName, exchangeName: walkerSchema.exchangeName, frameName: walkerSchema.frameName, backtest: true });
+        backtest.liveMarkdownService.clear({ symbol, strategyName, exchangeName: walkerSchema.exchangeName, frameName: walkerSchema.frameName, backtest: true });
+        backtest.scheduleMarkdownService.clear({ symbol, strategyName, exchangeName: walkerSchema.exchangeName, frameName: walkerSchema.frameName, backtest: true });
+        backtest.performanceMarkdownService.clear({ symbol, strategyName, exchangeName: walkerSchema.exchangeName, frameName: walkerSchema.frameName, backtest: true });
+        backtest.partialMarkdownService.clear({ symbol, strategyName, exchangeName: walkerSchema.exchangeName, frameName: walkerSchema.frameName, backtest: true });
+        backtest.riskMarkdownService.clear({ symbol, strategyName, exchangeName: walkerSchema.exchangeName, frameName: walkerSchema.frameName, backtest: true });
       }
 
       {
-        backtest.strategyCoreService.clear(true, { symbol, strategyName });
+        backtest.strategyCoreService.clear({
+          symbol,
+          strategyName,
+          exchangeName: walkerSchema.exchangeName,
+          frameName: walkerSchema.frameName,
+          backtest: true,
+        });
       }
 
       {
         const { riskName, riskList } =
           backtest.strategySchemaService.get(strategyName);
-        riskName && backtest.riskGlobalService.clear(true, { riskName });
+        riskName && backtest.riskGlobalService.clear({
+          riskName,
+          exchangeName: walkerSchema.exchangeName,
+          frameName: walkerSchema.frameName,
+          backtest: true
+        });
         riskList &&
           riskList.forEach((riskName) =>
-            backtest.riskGlobalService.clear(true, { riskName })
+            backtest.riskGlobalService.clear({
+              riskName,
+              exchangeName: walkerSchema.exchangeName,
+              frameName: walkerSchema.frameName,
+              backtest: true
+            })
           );
       }
     }
@@ -268,7 +284,11 @@ export class WalkerInstance {
     );
     return () => {
       for (const strategyName of walkerSchema.strategies) {
-        backtest.strategyCoreService.stop(true, { symbol, strategyName });
+        backtest.strategyCoreService.stop(true, symbol, {
+          strategyName,
+          exchangeName: walkerSchema.exchangeName,
+          frameName: walkerSchema.frameName
+        });
         walkerStopSubject.next({
           symbol,
           strategyName,
@@ -497,7 +517,11 @@ export class WalkerUtils {
 
     for (const strategyName of walkerSchema.strategies) {
       await walkerStopSubject.next({ symbol, strategyName, walkerName });
-      await backtest.strategyCoreService.stop(true, { symbol, strategyName });
+      await backtest.strategyCoreService.stop(true, symbol, {
+        strategyName,
+        exchangeName: walkerSchema.exchangeName,
+        frameName: walkerSchema.frameName
+      });
     }
   };
 

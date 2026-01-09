@@ -41,6 +41,14 @@ exchangeName: string
 
 Exchange name for tracking idle events
 
+### frameName
+
+```ts
+frameName: string
+```
+
+Time frame name for tracking (e.g., "1m", "5m")
+
 ### symbol
 
 ```ts

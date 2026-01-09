@@ -210,7 +210,11 @@ test("Performance.getData returns statistics", async ({ pass, fail }) => {
   });
 
   // Get performance statistics
-  const stats = await Performance.getData("BTCUSDT", "test-strategy-perf-data", true);
+  const stats = await Performance.getData("BTCUSDT", {
+    strategyName: "test-strategy-perf-data",
+    exchangeName: "binance-perf-data",
+    frameName: "1d-perf-data",
+  }, true);
 
   if (
     stats &&
@@ -285,7 +289,11 @@ test("Performance statistics include metric types", async ({ pass, fail }) => {
   await awaiter;
 
   // Get performance statistics
-  const stats = await Performance.getData("BTCUSDT", "test-strategy-perf-metrics", true);
+  const stats = await Performance.getData("BTCUSDT", {
+    strategyName: "test-strategy-perf-metrics",
+    exchangeName: "binance-perf-metrics",
+    frameName: "1d-perf-metrics",
+  }, true);
 
   // Check for expected metric types
   const metricTypes = Object.keys(stats.metricStats);
@@ -345,7 +353,11 @@ test("Performance.getReport returns markdown string", async ({ pass, fail }) => 
   });
 
   // Get performance report
-  const markdown = await Performance.getReport("BTCUSDT", "test-strategy-perf-report", true);
+  const markdown = await Performance.getReport("BTCUSDT", {
+    strategyName: "test-strategy-perf-report",
+    exchangeName: "binance-perf-report",
+    frameName: "1d-perf-report",
+  }, true);
 
   if (
     typeof markdown === "string" &&

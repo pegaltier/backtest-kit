@@ -60,6 +60,14 @@ exchangeName: string
 
 Exchange name associated with this metric
 
+### frameName
+
+```ts
+frameName: string
+```
+
+Frame name associated with this metric (empty string for live mode)
+
 ### symbol
 
 ```ts

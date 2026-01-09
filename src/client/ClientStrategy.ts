@@ -421,6 +421,7 @@ const GET_SIGNAL_FN = trycatch(
           symbol: self.params.execution.context.symbol,
           strategyName: self.params.method.context.strategyName,
           exchangeName: self.params.method.context.exchangeName,
+          frameName: self.params.method.context.frameName,
           currentPrice,
           timestamp: currentTime,
         })
@@ -451,6 +452,7 @@ const GET_SIGNAL_FN = trycatch(
           symbol: self.params.execution.context.symbol,
           exchangeName: self.params.method.context.exchangeName,
           strategyName: self.params.method.context.strategyName,
+          frameName: self.params.method.context.frameName,
           scheduledAt: currentTime,
           pendingAt: currentTime, // Для immediate signal оба времени одинаковые
           _isScheduled: false,
@@ -474,6 +476,7 @@ const GET_SIGNAL_FN = trycatch(
         symbol: self.params.execution.context.symbol,
         exchangeName: self.params.method.context.exchangeName,
         strategyName: self.params.method.context.strategyName,
+        frameName: self.params.method.context.frameName,
         scheduledAt: currentTime,
         pendingAt: currentTime, // Временно, обновится при активации
         _isScheduled: true,
@@ -493,6 +496,7 @@ const GET_SIGNAL_FN = trycatch(
       symbol: self.params.execution.context.symbol,
       exchangeName: self.params.method.context.exchangeName,
       strategyName: self.params.method.context.strategyName,
+      frameName: self.params.method.context.frameName,
       scheduledAt: currentTime,
       pendingAt: currentTime, // Для immediate signal оба времени одинаковые
       _isScheduled: false,
@@ -636,6 +640,7 @@ const CHECK_SCHEDULED_SIGNAL_TIMEOUT_FN = async (
     closeTimestamp: currentTime,
     strategyName: self.params.method.context.strategyName,
     exchangeName: self.params.method.context.exchangeName,
+    frameName: self.params.method.context.frameName,
     symbol: self.params.execution.context.symbol,
     backtest: self.params.execution.context.backtest,
     reason: "timeout",
@@ -719,6 +724,7 @@ const CANCEL_SCHEDULED_SIGNAL_BY_STOPLOSS_FN = async (
     closeTimestamp: self.params.execution.context.when.getTime(),
     strategyName: self.params.method.context.strategyName,
     exchangeName: self.params.method.context.exchangeName,
+    frameName: self.params.method.context.frameName,
     symbol: self.params.execution.context.symbol,
     backtest: self.params.execution.context.backtest,
     reason: "price_reject",
@@ -772,6 +778,7 @@ const ACTIVATE_SCHEDULED_SIGNAL_FN = async (
           pendingSignal: scheduled,
           strategyName: self.params.method.context.strategyName,
           exchangeName: self.params.method.context.exchangeName,
+          frameName: self.params.method.context.frameName,
           currentPrice: scheduled.priceOpen,
           timestamp: activationTime,
       })
@@ -799,6 +806,8 @@ const ACTIVATE_SCHEDULED_SIGNAL_FN = async (
   await self.params.risk.addSignal(self.params.execution.context.symbol, {
     strategyName: self.params.method.context.strategyName,
     riskName: self.params.riskName,
+    exchangeName: self.params.method.context.exchangeName,
+    frameName: self.params.method.context.frameName,
   });
 
   if (self.params.callbacks?.onOpen) {
@@ -815,6 +824,7 @@ const ACTIVATE_SCHEDULED_SIGNAL_FN = async (
     signal: self._pendingSignal,
     strategyName: self.params.method.context.strategyName,
     exchangeName: self.params.method.context.exchangeName,
+    frameName: self.params.method.context.frameName,
     symbol: self.params.execution.context.symbol,
     currentPrice: self._pendingSignal.priceOpen,
     backtest: self.params.execution.context.backtest,
@@ -888,6 +898,7 @@ const RETURN_SCHEDULED_SIGNAL_ACTIVE_FN = async (
     currentPrice: currentPrice,
     strategyName: self.params.method.context.strategyName,
     exchangeName: self.params.method.context.exchangeName,
+    frameName: self.params.method.context.frameName,
     symbol: self.params.execution.context.symbol,
     percentTp: 0,
     percentSl: 0,
@@ -935,6 +946,7 @@ const OPEN_NEW_SCHEDULED_SIGNAL_FN = async (
     signal: signal,
     strategyName: self.params.method.context.strategyName,
     exchangeName: self.params.method.context.exchangeName,
+    frameName: self.params.method.context.frameName,
     symbol: self.params.execution.context.symbol,
     currentPrice: currentPrice,
     backtest: self.params.execution.context.backtest,
@@ -962,6 +974,7 @@ const OPEN_NEW_PENDING_SIGNAL_FN = async (
         symbol: self.params.execution.context.symbol,
         strategyName: self.params.method.context.strategyName,
         exchangeName: self.params.method.context.exchangeName,
+        frameName: self.params.method.context.frameName,
         currentPrice: signal.priceOpen,
         timestamp: self.params.execution.context.when.getTime(),
       })
@@ -973,6 +986,8 @@ const OPEN_NEW_PENDING_SIGNAL_FN = async (
   await self.params.risk.addSignal(self.params.execution.context.symbol, {
     strategyName: self.params.method.context.strategyName,
     riskName: self.params.riskName,
+    exchangeName: self.params.method.context.exchangeName,
+    frameName: self.params.method.context.frameName,
   });
 
   if (self.params.callbacks?.onOpen) {
@@ -989,6 +1004,7 @@ const OPEN_NEW_PENDING_SIGNAL_FN = async (
     signal: signal,
     strategyName: self.params.method.context.strategyName,
     exchangeName: self.params.method.context.exchangeName,
+    frameName: self.params.method.context.frameName,
     symbol: self.params.execution.context.symbol,
     currentPrice: signal.priceOpen,
     backtest: self.params.execution.context.backtest,
@@ -1102,6 +1118,8 @@ const CLOSE_PENDING_SIGNAL_FN = async (
   await self.params.risk.removeSignal(self.params.execution.context.symbol, {
     strategyName: self.params.method.context.strategyName,
     riskName: self.params.riskName,
+    exchangeName: self.params.method.context.exchangeName,
+    frameName: self.params.method.context.frameName,
   });
 
   await self.setPendingSignal(null);
@@ -1115,6 +1133,7 @@ const CLOSE_PENDING_SIGNAL_FN = async (
     pnl: pnl,
     strategyName: self.params.method.context.strategyName,
     exchangeName: self.params.method.context.exchangeName,
+    frameName: self.params.method.context.frameName,
     symbol: self.params.execution.context.symbol,
     backtest: self.params.execution.context.backtest,
   };
@@ -1257,6 +1276,7 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
     currentPrice: currentPrice,
     strategyName: self.params.method.context.strategyName,
     exchangeName: self.params.method.context.exchangeName,
+    frameName: self.params.method.context.frameName,
     symbol: self.params.execution.context.symbol,
     percentTp,
     percentSl,
@@ -1291,6 +1311,7 @@ const RETURN_IDLE_FN = async (
     signal: null,
     strategyName: self.params.method.context.strategyName,
     exchangeName: self.params.method.context.exchangeName,
+    frameName: self.params.method.context.frameName,
     symbol: self.params.execution.context.symbol,
     currentPrice: currentPrice,
     backtest: self.params.execution.context.backtest,
@@ -1344,6 +1365,7 @@ const CANCEL_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
     closeTimestamp: closeTimestamp,
     strategyName: self.params.method.context.strategyName,
     exchangeName: self.params.method.context.exchangeName,
+    frameName: self.params.method.context.frameName,
     symbol: self.params.execution.context.symbol,
     backtest: self.params.execution.context.backtest,
     reason,
@@ -1398,6 +1420,7 @@ const ACTIVATE_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
         symbol: self.params.execution.context.symbol,
         strategyName: self.params.method.context.strategyName,
         exchangeName: self.params.method.context.exchangeName,
+        frameName: self.params.method.context.frameName,
         currentPrice: scheduled.priceOpen,
         timestamp: activationTime,
       })
@@ -1425,6 +1448,8 @@ const ACTIVATE_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
   await self.params.risk.addSignal(self.params.execution.context.symbol, {
     strategyName: self.params.method.context.strategyName,
     riskName: self.params.riskName,
+    exchangeName: self.params.method.context.exchangeName,
+    frameName: self.params.method.context.frameName,
   });
 
   if (self.params.callbacks?.onOpen) {
@@ -1493,6 +1518,8 @@ const CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN = async (
   await self.params.risk.removeSignal(self.params.execution.context.symbol, {
     strategyName: self.params.method.context.strategyName,
     riskName: self.params.riskName,
+    exchangeName: self.params.method.context.exchangeName,
+    frameName: self.params.method.context.frameName,
   });
 
   await self.setPendingSignal(null);
@@ -1506,6 +1533,7 @@ const CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN = async (
     pnl: pnl,
     strategyName: self.params.method.context.strategyName,
     exchangeName: self.params.method.context.exchangeName,
+    frameName: self.params.method.context.frameName,
     symbol: self.params.execution.context.symbol,
     backtest: self.params.execution.context.backtest,
   };
@@ -1952,10 +1980,9 @@ export class ClientStrategy implements IStrategy {
    * If no signal is pending, returns null.
    * @returns Promise resolving to the pending signal or null.
    */
-  public async getPendingSignal(symbol: string, strategyName: StrategyName): Promise<ISignalRow | null> {
+  public async getPendingSignal(symbol: string): Promise<ISignalRow | null> {
     this.params.logger.debug("ClientStrategy getPendingSignal", {
       symbol,
-      strategyName,
     });
     return this._pendingSignal;
   }
@@ -1965,10 +1992,9 @@ export class ClientStrategy implements IStrategy {
    * If no scheduled signal exists, returns null.
    * @returns Promise resolving to the scheduled signal or null.
    */
-  public async getScheduledSignal(symbol: string, strategyName: StrategyName): Promise<IScheduledSignalRow | null> {
+  public async getScheduledSignal(symbol: string): Promise<IScheduledSignalRow | null> {
     this.params.logger.debug("ClientStrategy getScheduledSignal", {
       symbol,
-      strategyName,
     });
     return this._scheduledSignal;
   }
@@ -1980,13 +2006,12 @@ export class ClientStrategy implements IStrategy {
    * not continue processing new ticks or signals.
    *
    * @param symbol - Trading pair symbol
-   * @param strategyName - Name of the strategy
    * @returns Promise resolving to true if strategy is stopped, false otherwise
    */
-  public async getStopped(symbol: string, strategyName: StrategyName): Promise<boolean> {
+  public async getStopped(symbol: string): Promise<boolean> {
     this.params.logger.debug("ClientStrategy getStopped", {
       symbol,
-      strategyName,
+      strategyName: this.params.method.context.strategyName,
     });
     return this._isStopped;
   }
@@ -2069,6 +2094,7 @@ export class ClientStrategy implements IStrategy {
         closeTimestamp: currentTime,
         strategyName: this.params.method.context.strategyName,
         exchangeName: this.params.method.context.exchangeName,
+        frameName: this.params.method.context.frameName,
         symbol: this.params.execution.context.symbol,
         backtest: this.params.execution.context.backtest,
         reason: "user",
@@ -2247,6 +2273,7 @@ export class ClientStrategy implements IStrategy {
         closeTimestamp: this.params.execution.context.when.getTime(),
         strategyName: this.params.method.context.strategyName,
         exchangeName: this.params.method.context.exchangeName,
+        frameName: this.params.method.context.frameName,
         symbol: this.params.execution.context.symbol,
         backtest: true,
         reason: "user",
@@ -2338,6 +2365,7 @@ export class ClientStrategy implements IStrategy {
             percentTp: 0,
             strategyName: this.params.method.context.strategyName,
             exchangeName: this.params.method.context.exchangeName,
+            frameName: this.params.method.context.frameName,
             symbol: this.params.execution.context.symbol,
             backtest: this.params.execution.context.backtest,
           };
@@ -2430,13 +2458,11 @@ export class ClientStrategy implements IStrategy {
    * // Existing signal will continue until natural close
    * ```
    */
-  public async stop(symbol: string, strategyName: StrategyName, backtest: boolean): Promise<void> {
+  public async stop(symbol: string, backtest: boolean): Promise<void> {
     this.params.logger.debug("ClientStrategy stop", {
       symbol,
-      strategyName,
       hasPendingSignal: this._pendingSignal !== null,
       hasScheduledSignal: this._scheduledSignal !== null,
-      backtest,
     });
 
     this._isStopped = true;
@@ -2455,7 +2481,7 @@ export class ClientStrategy implements IStrategy {
     await PersistScheduleAdapter.writeScheduleData(
       this._scheduledSignal,
       symbol,
-      strategyName,
+      this.params.method.context.strategyName,
     );
   }
 
@@ -2480,12 +2506,10 @@ export class ClientStrategy implements IStrategy {
    * // Strategy continues, can generate new signals
    * ```
    */
-  public async cancel(symbol: string, strategyName: StrategyName, backtest: boolean, cancelId?: string): Promise<void> {
+  public async cancel(symbol: string, backtest: boolean, cancelId?: string): Promise<void> {
     this.params.logger.debug("ClientStrategy cancel", {
       symbol,
-      strategyName,
       hasScheduledSignal: this._scheduledSignal !== null,
-      backtest,
       cancelId,
     });
 
@@ -2504,7 +2528,7 @@ export class ClientStrategy implements IStrategy {
     await PersistScheduleAdapter.writeScheduleData(
       this._scheduledSignal,
       symbol,
-      strategyName,
+      this.params.method.context.strategyName,
     );
   }
 }

@@ -117,7 +117,11 @@ test("Scheduled signal is cancelled via Backtest.cancel() in onTimeframe", async
         if (scheduledCount === 1 && !cancelCalled) {
           cancelCalled = true;
           // console.log(`[TEST] Calling Backtest.cancel from onSchedule...`);
-          await Backtest.cancel("BTCUSDT", "test-strategy-cancel");
+          await Backtest.cancel("BTCUSDT", {
+            strategyName: "test-strategy-cancel",
+            exchangeName: "binance-cancel-test",
+            frameName: "10m-cancel-test",
+          });
           // console.log(`[TEST] Backtest.cancel() completed`);
         }
       },
@@ -326,7 +330,11 @@ test("Multiple scheduled signals - cancel only first one via onSchedule", async 
         if (scheduledCount === 1 && !cancelCalled) {
           cancelCalled = true;
           // console.log(`[TEST] Calling Backtest.cancel for first signal...`);
-          await Backtest.cancel("BTCUSDT", "test-strategy-cancel-multiple");
+          await Backtest.cancel("BTCUSDT", {
+            strategyName: "test-strategy-cancel-multiple",
+            exchangeName: "binance-cancel-multiple",
+            frameName: "20m-cancel-multiple",
+          });
           // console.log(`[TEST] First signal cancelled via Backtest.cancel()`);
         }
       },
@@ -495,7 +503,11 @@ test("Cancel scheduled signal after 5 onPing calls in backtest", async ({ pass, 
 
         // Отменяем после 5-го ping
         if (pingCount === 5) {
-          await Backtest.cancel("BTCUSDT", "test-strategy-cancel-ping");
+          await Backtest.cancel("BTCUSDT", {
+            strategyName: "test-strategy-cancel-ping",
+            exchangeName: "binance-cancel-ping-test",
+            frameName: "30m-cancel-ping-test",
+          });
         }
       },
     },
@@ -719,7 +731,11 @@ test("Cancel scheduled signal after 5 listenPing events in backtest", async ({ p
 
       // Отменяем после 5-го ping события
       if (pingEventCount === 5) {
-        await Backtest.cancel("BTCUSDT", "test-strategy-listen-ping");
+        await Backtest.cancel("BTCUSDT", {
+          strategyName: "test-strategy-listen-ping",
+          exchangeName: "binance-listen-ping-test",
+          frameName: "30m-listen-ping-test",
+        });
       }
     }
   });

@@ -6,7 +6,7 @@ group: docs
 # cancel
 
 ```ts
-declare function cancel(symbol: string, strategyName: StrategyName, cancelId?: string): Promise<void>;
+declare function cancel(symbol: string, cancelId?: string): Promise<void>;
 ```
 
 Cancels the scheduled signal without stopping the strategy.
@@ -22,5 +22,4 @@ Automatically detects backtest/live mode from execution context.
 | Parameter | Description |
 |-----------|-------------|
 | `symbol` | Trading pair symbol |
-| `strategyName` | Strategy name |
 | `cancelId` | Optional cancellation ID for tracking user-initiated cancellations |

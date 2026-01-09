@@ -179,36 +179,57 @@ export class BacktestInstance {
     });
 
     {
-      backtest.backtestMarkdownService.clear(true, {
+      backtest.backtestMarkdownService.clear({
         symbol,
         strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: context.frameName,
+        backtest: true,
       });
-      backtest.liveMarkdownService.clear(true, {
+      backtest.liveMarkdownService.clear({
         symbol,
         strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: context.frameName,
+        backtest: true,
       });
-      backtest.scheduleMarkdownService.clear(true, {
+      backtest.scheduleMarkdownService.clear({
         symbol,
         strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: context.frameName,
+        backtest: true,
       });
-      backtest.performanceMarkdownService.clear(true, {
+      backtest.performanceMarkdownService.clear({
         symbol,
         strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: context.frameName,
+        backtest: true,
       });
-      backtest.partialMarkdownService.clear(true, {
+      backtest.partialMarkdownService.clear({
         symbol,
         strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: context.frameName,
+        backtest: true,
       });
-      backtest.riskMarkdownService.clear(true, {
+      backtest.riskMarkdownService.clear({
         symbol,
         strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: context.frameName,
+        backtest: true,
       });
     }
 
     {
-      backtest.strategyCoreService.clear(true, {
+      backtest.strategyCoreService.clear({
         symbol,
         strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: context.frameName,
+        backtest: true,
       });
     }
 
@@ -216,10 +237,20 @@ export class BacktestInstance {
       const { riskName, riskList } = backtest.strategySchemaService.get(
         context.strategyName
       );
-      riskName && backtest.riskGlobalService.clear(true, { riskName });
+      riskName && backtest.riskGlobalService.clear({
+        riskName,
+        exchangeName: context.exchangeName,
+        frameName: context.frameName,
+        backtest: true,
+      });
       riskList &&
         riskList.forEach((riskName) =>
-          backtest.riskGlobalService.clear(true, { riskName })
+          backtest.riskGlobalService.clear({
+            riskName,
+            exchangeName: context.exchangeName,
+            frameName: context.frameName,
+            backtest: true,
+          })
         );
     }
 
@@ -275,12 +306,17 @@ export class BacktestInstance {
       exitEmitter.next(new Error(getErrorMessage(error)))
     );
     return () => {
-      backtest.strategyCoreService.stop(true, {
-        symbol,
+      backtest.strategyCoreService.stop(true, symbol, {
         strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: context.frameName,
       });
       backtest.strategyCoreService
-        .getPendingSignal(true, symbol, context.strategyName)
+        .getPendingSignal(true, symbol, {
+          strategyName: context.strategyName,
+          exchangeName: context.exchangeName,
+          frameName: context.frameName,
+        })
         .then(async (pendingSignal) => {
           if (pendingSignal) {
             return;
@@ -326,8 +362,8 @@ export class BacktestUtils {
    * Each symbol-strategy combination gets its own isolated instance.
    */
   private _getInstance = memoize(
-    ([symbol, strategyName]) =>
-      `${symbol}:${strategyName}`,
+    ([symbol, strategyName, exchangeName, frameName]) =>
+      `${symbol}:${strategyName}:${exchangeName}:${frameName}`,
     (
       symbol: string,
       strategyName: StrategyName,
@@ -480,16 +516,20 @@ export class BacktestUtils {
    */
   public getPendingSignal = async (
     symbol: string,
-    strategyName: StrategyName
+    context: {
+      strategyName: string;
+      exchangeName: string;
+      frameName: string;
+    }
   ) => {
     backtest.strategyValidationService.validate(
-      strategyName,
+      context.strategyName,
       BACKTEST_METHOD_NAME_GET_PENDING_SIGNAL
     );
 
     {
       const { riskName, riskList } =
-        backtest.strategySchemaService.get(strategyName);
+        backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
           riskName,
@@ -507,7 +547,7 @@ export class BacktestUtils {
     return await backtest.strategyCoreService.getPendingSignal(
       true,
       symbol,
-      strategyName
+      context
     );
   };
 
@@ -529,16 +569,20 @@ export class BacktestUtils {
    */
   public getScheduledSignal = async (
     symbol: string,
-    strategyName: StrategyName
+    context: {
+      strategyName: string;
+      exchangeName: string;
+      frameName: string;
+    }
   ) => {
     backtest.strategyValidationService.validate(
-      strategyName,
+      context.strategyName,
       BACKTEST_METHOD_NAME_GET_SCHEDULED_SIGNAL
     );
 
     {
       const { riskName, riskList } =
-        backtest.strategySchemaService.get(strategyName);
+        backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
           riskName,
@@ -556,7 +600,7 @@ export class BacktestUtils {
     return await backtest.strategyCoreService.getScheduledSignal(
       true,
       symbol,
-      strategyName
+      context
     );
   };
 
@@ -569,26 +613,35 @@ export class BacktestUtils {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to stop
+   * @param context - Execution context with exchangeName and frameName
    * @returns Promise that resolves when stop flag is set
    *
    * @example
    * ```typescript
    * // Stop strategy after some condition
-   * await Backtest.stop("BTCUSDT", "my-strategy");
+   * await Backtest.stop("BTCUSDT", "my-strategy", {
+   *   exchangeName: "binance",
+   *   frameName: "frame1",
+   *   strategyName: "my-strategy"
+   * });
    * ```
    */
   public stop = async (
     symbol: string,
-    strategyName: StrategyName
+    context: {
+      strategyName: string;
+      exchangeName: string;
+      frameName: string;
+    }
   ): Promise<void> => {
     backtest.strategyValidationService.validate(
-      strategyName,
+      context.strategyName,
       BACKTEST_METHOD_NAME_STOP
     );
 
     {
       const { riskName, riskList } =
-        backtest.strategySchemaService.get(strategyName);
+        backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
           riskName,
@@ -603,7 +656,7 @@ export class BacktestUtils {
         );
     }
 
-    await backtest.strategyCoreService.stop(true, { symbol, strategyName });
+    await backtest.strategyCoreService.stop(true, symbol, context);
   };
 
   /**
@@ -615,28 +668,37 @@ export class BacktestUtils {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name
+   * @param context - Execution context with exchangeName and frameName
    * @param cancelId - Optional cancellation ID for tracking user-initiated cancellations
    * @returns Promise that resolves when scheduled signal is cancelled
    *
    * @example
    * ```typescript
    * // Cancel scheduled signal with custom ID
-   * await Backtest.cancel("BTCUSDT", "my-strategy", "manual-cancel-001");
+   * await Backtest.cancel("BTCUSDT", "my-strategy", {
+   *   exchangeName: "binance",
+   *   frameName: "frame1",
+   *   strategyName: "my-strategy"
+   * }, "manual-cancel-001");
    * ```
    */
   public cancel = async (
     symbol: string,
-    strategyName: StrategyName,
+    context: {
+      strategyName: string;
+      exchangeName: string;
+      frameName: string;
+    },
     cancelId?: string
   ): Promise<void> => {
     backtest.strategyValidationService.validate(
-      strategyName,
+      context.strategyName,
       BACKTEST_METHOD_NAME_CANCEL
     );
 
     {
       const { riskName, riskList } =
-        backtest.strategySchemaService.get(strategyName);
+        backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
           riskName,
@@ -653,7 +715,8 @@ export class BacktestUtils {
 
     await backtest.strategyCoreService.cancel(
       true,
-      { symbol, strategyName },
+      symbol,
+      context,
       cancelId
     );
   };
@@ -663,23 +726,35 @@ export class BacktestUtils {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to get data for
+   * @param context - Execution context with exchangeName and frameName
    * @returns Promise resolving to statistical data object
    *
    * @example
    * ```typescript
-   * const stats = await Backtest.getData("BTCUSDT", "my-strategy");
+   * const stats = await Backtest.getData("BTCUSDT", "my-strategy", {
+   *   exchangeName: "binance",
+   *   frameName: "frame1",
+   *   strategyName: "my-strategy"
+   * });
    * console.log(stats.sharpeRatio, stats.winRate);
    * ```
    */
-  public getData = async (symbol: string, strategyName: StrategyName) => {
+  public getData = async (
+    symbol: string,
+    context: {
+      strategyName: string;
+      exchangeName: string;
+      frameName: string;
+    }
+  ) => {
     backtest.strategyValidationService.validate(
-      strategyName,
+      context.strategyName,
       BACKTEST_METHOD_NAME_GET_DATA
     );
 
     {
       const { riskName, riskList } =
-        backtest.strategySchemaService.get(strategyName);
+        backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
           riskName,
@@ -696,7 +771,9 @@ export class BacktestUtils {
 
     return await backtest.backtestMarkdownService.getData(
       symbol,
-      strategyName,
+      context.strategyName,
+      context.exchangeName,
+      context.frameName,
       true
     );
   };
@@ -706,28 +783,37 @@ export class BacktestUtils {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to generate report for
+   * @param context - Execution context with exchangeName and frameName
    * @param columns - Optional columns configuration for the report
    * @returns Promise resolving to markdown formatted report string
    *
    * @example
    * ```typescript
-   * const markdown = await Backtest.getReport("BTCUSDT", "my-strategy");
+   * const markdown = await Backtest.getReport("BTCUSDT", "my-strategy", {
+   *   exchangeName: "binance",
+   *   frameName: "frame1",
+   *   strategyName: "my-strategy"
+   * });
    * console.log(markdown);
    * ```
    */
   public getReport = async (
     symbol: string,
-    strategyName: StrategyName,
+    context: {
+      strategyName: string;
+      exchangeName: string;
+      frameName: string;
+    },
     columns?: Columns[]
   ): Promise<string> => {
     backtest.strategyValidationService.validate(
-      strategyName,
+      context.strategyName,
       BACKTEST_METHOD_NAME_GET_REPORT
     );
 
     {
       const { riskName, riskList } =
-        backtest.strategySchemaService.get(strategyName);
+        backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
           riskName,
@@ -744,7 +830,9 @@ export class BacktestUtils {
 
     return await backtest.backtestMarkdownService.getReport(
       symbol,
-      strategyName,
+      context.strategyName,
+      context.exchangeName,
+      context.frameName,
       true,
       columns
     );
@@ -755,32 +843,45 @@ export class BacktestUtils {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to save report for
+   * @param context - Execution context with exchangeName and frameName
    * @param path - Optional directory path to save report (default: "./dump/backtest")
    * @param columns - Optional columns configuration for the report
    *
    * @example
    * ```typescript
    * // Save to default path: ./dump/backtest/my-strategy.md
-   * await Backtest.dump("BTCUSDT", "my-strategy");
+   * await Backtest.dump("BTCUSDT", "my-strategy", {
+   *   exchangeName: "binance",
+   *   frameName: "frame1",
+   *   strategyName: "my-strategy"
+   * });
    *
    * // Save to custom path: ./custom/path/my-strategy.md
-   * await Backtest.dump("BTCUSDT", "my-strategy", "./custom/path");
+   * await Backtest.dump("BTCUSDT", "my-strategy", {
+   *   exchangeName: "binance",
+   *   frameName: "frame1",
+   *   strategyName: "my-strategy"
+   * }, "./custom/path");
    * ```
    */
   public dump = async (
     symbol: string,
-    strategyName: StrategyName,
+    context: {
+      strategyName: string;
+      exchangeName: string;
+      frameName: string;
+    },
     path?: string,
     columns?: Columns[]
   ): Promise<void> => {
     backtest.strategyValidationService.validate(
-      strategyName,
+      context.strategyName,
       BACKTEST_METHOD_NAME_DUMP
     );
 
     {
       const { riskName, riskList } =
-        backtest.strategySchemaService.get(strategyName);
+        backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
           riskName,
@@ -797,7 +898,9 @@ export class BacktestUtils {
 
     await backtest.backtestMarkdownService.dump(
       symbol,
-      strategyName,
+      context.strategyName,
+      context.exchangeName,
+      context.frameName,
       true,
       path,
       columns

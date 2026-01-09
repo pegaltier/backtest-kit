@@ -1071,7 +1071,11 @@ test("Risk.getData returns correct statistics after rejections", async ({ pass, 
   await awaitSubject.toPromise();
 
   // Get statistics for rejected strategy (strategy 2)
-  const stats = await Risk.getData("BTCUSDT", "test-strategy-get-data-2", true);
+  const stats = await Risk.getData("BTCUSDT", {
+    strategyName: "test-strategy-get-data-2",
+    exchangeName: "binance-integration-get-data",
+    frameName: "3d-get-data",
+  }, true);
 
   if (
     stats.totalRejections > 0 &&
@@ -1178,7 +1182,11 @@ test("Risk.getReport generates markdown with correct table structure", async ({ 
   await awaitSubject.toPromise();
   // await sleep(2000);
 
-  const report = await Risk.getReport("ETHUSDT", "test-strategy-get-report-2", true);
+  const report = await Risk.getReport("ETHUSDT", {
+    strategyName: "test-strategy-get-report-2",
+    exchangeName: "binance-integration-get-report",
+    frameName: "2d-get-report",
+  }, true);
 
   // Verify report structure
   const hasTitle = report.includes("# Risk Rejection Report: ETHUSDT:test-strategy-get-report-2");
@@ -1493,10 +1501,26 @@ test("Multiple rejection tracking with bySymbol and byStrategy statistics", asyn
   // await sleep(2000);
 
   // Check stats for all symbol-strategy pairs
-  const statsBTC1 = await Risk.getData("BTCUSDT", "test-strategy-stats-1", true);
-  const statsBTC2 = await Risk.getData("BTCUSDT", "test-strategy-stats-2", true);
-  const statsETH1 = await Risk.getData("ETHUSDT", "test-strategy-stats-1", true);
-  const statsETH2 = await Risk.getData("ETHUSDT", "test-strategy-stats-2", true);
+  const statsBTC1 = await Risk.getData("BTCUSDT", {
+    strategyName: "test-strategy-stats-1",
+    exchangeName: "binance-integration-multi-stats",
+    frameName: "3d-multi-stats",
+  }, true);
+  const statsBTC2 = await Risk.getData("BTCUSDT", {
+    strategyName: "test-strategy-stats-2",
+    exchangeName: "binance-integration-multi-stats",
+    frameName: "3d-multi-stats",
+  }, true);
+  const statsETH1 = await Risk.getData("ETHUSDT", {
+    strategyName: "test-strategy-stats-1",
+    exchangeName: "binance-integration-multi-stats",
+    frameName: "3d-multi-stats",
+  }, true);
+  const statsETH2 = await Risk.getData("ETHUSDT", {
+    strategyName: "test-strategy-stats-2",
+    exchangeName: "binance-integration-multi-stats",
+    frameName: "3d-multi-stats",
+  }, true);
 
   // At least 2 out of 4 should have rejections (due to limit of 2)
   const allStats = [statsBTC1, statsBTC2, statsETH1, statsETH2];

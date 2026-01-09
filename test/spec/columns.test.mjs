@@ -90,7 +90,11 @@ test("Backtest.getReport accepts custom columns", async ({ pass, fail }) => {
 
   const customReport = await Backtest.getReport(
     "BTCUSDT",
-    "test-strategy-custom-cols",
+    {
+      strategyName: "test-strategy-custom-cols",
+      exchangeName: "binance-mock-custom-cols",
+      frameName: "1d-backtest-custom-cols",
+    },
     customColumns
   );
 
@@ -184,7 +188,11 @@ test("Backtest.dump accepts custom columns", async ({ pass, fail }) => {
   try {
     await Backtest.dump(
       "BTCUSDT",
-      "test-strategy-custom-dump",
+      {
+        strategyName: "test-strategy-custom-dump",
+        exchangeName: "binance-mock-custom-dump",
+        frameName: "1d-backtest-custom-dump",
+      },
       "./test/temp",
       customColumns
     );
@@ -288,7 +296,11 @@ test("Custom columns preserve table structure", async ({ pass, fail }) => {
 
   const report = await Backtest.getReport(
     "BTCUSDT",
-    "test-strategy-structure",
+    {
+      strategyName: "test-strategy-structure",
+      exchangeName: "binance-mock-structure",
+      frameName: "1d-backtest-structure",
+    },
     customColumns
   );
 
@@ -366,7 +378,11 @@ test("Default columns are used when no custom columns provided", async ({ pass, 
   await awaiter;
 
   // Call getReport WITHOUT custom columns
-  const defaultReport = await Backtest.getReport("BTCUSDT", "test-strategy-default-cols");
+  const defaultReport = await Backtest.getReport("BTCUSDT", {
+    strategyName: "test-strategy-default-cols",
+    exchangeName: "binance-mock-default-cols",
+    frameName: "1d-backtest-default-cols",
+  });
 
   // Verify default columns are present
   const hasSignalId = defaultReport.includes("| Signal ID |");

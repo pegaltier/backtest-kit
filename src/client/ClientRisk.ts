@@ -27,8 +27,8 @@ type RiskMap = Map<string, IRiskActivePosition>;
 const POSITION_NEED_FETCH = Symbol("risk-need-fetch");
 
 /** Key generator for active position map */
-const GET_KEY_FN = (strategyName: string, symbol: string) =>
-  `${strategyName}:${symbol}`;
+const CREATE_NAME_FN = (strategyName: string, exchangeName: string, symbol: string) =>
+  `${strategyName}_${exchangeName}_${symbol}` as const;
 
 /** Wrapper to execute risk validation function with error handling */
 const DO_VALIDATION_FN = async (
@@ -127,7 +127,7 @@ export class ClientRisk implements IRisk {
    */
   public async addSignal(
     symbol: string,
-    context: { strategyName: string; riskName: string }
+    context: { strategyName: string; riskName: string; exchangeName: string; }
   ) {
     this.params.logger.debug("ClientRisk addSignal", {
       symbol,
@@ -139,12 +139,11 @@ export class ClientRisk implements IRisk {
       await this.waitForInit();
     }
 
-    const key = GET_KEY_FN(context.strategyName, symbol);
+    const key = CREATE_NAME_FN(context.strategyName, context.exchangeName, symbol);
     const riskMap = <RiskMap>this._activePositions;
     riskMap.set(key, {
-      signal: null as any, // Signal details not needed for position tracking
       strategyName: context.strategyName,
-      exchangeName: "",
+      exchangeName: context.exchangeName,
       openTimestamp: Date.now(),
     });
 
@@ -157,7 +156,7 @@ export class ClientRisk implements IRisk {
    */
   public async removeSignal(
     symbol: string,
-    context: { strategyName: string; riskName: string }
+    context: { strategyName: string; riskName: string; exchangeName: string; }
   ) {
     this.params.logger.debug("ClientRisk removeSignal", {
       symbol,
@@ -169,7 +168,7 @@ export class ClientRisk implements IRisk {
       await this.waitForInit();
     }
 
-    const key = GET_KEY_FN(context.strategyName, symbol);
+    const key = CREATE_NAME_FN(context.strategyName, context.exchangeName, symbol);
     const riskMap = <RiskMap>this._activePositions;
     riskMap.delete(key);
 

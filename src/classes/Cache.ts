@@ -5,6 +5,7 @@ import backtest, {
   ExecutionContextService,
   MethodContextService,
 } from "../lib";
+import { FrameName } from "../interfaces/Frame.interface";
 
 const CACHE_METHOD_NAME_FLUSH = "CacheUtils.flush";
 const CACHE_METHOD_NAME_CLEAR = "CacheInstance.clear";
@@ -37,7 +38,9 @@ type Function = (...args: any[]) => any;
  * @example "my-strategy:binance:backtest"
  * @example "scalper:coinbase:live"
  */
-type Key = `${StrategyName}:${ExchangeName}:${"backtest" | "live"}`;
+type Key =
+  | `${StrategyName}:${ExchangeName}:${FrameName}:${"backtest"}`
+  | `${StrategyName}:${ExchangeName}:${"live"}`;
 
 /**
  * Create a cache key string from strategy name, exchange name, and backtest mode.
@@ -50,8 +53,14 @@ type Key = `${StrategyName}:${ExchangeName}:${"backtest" | "live"}`;
 const CREATE_KEY_FN = (
   strategyName: StrategyName,
   exchangeName: ExchangeName,
+  frameName: FrameName,
   backtest: boolean
-): Key => `${strategyName}:${exchangeName}:${backtest ? "backtest" : "live"}` as const;
+): Key => {
+  const parts = [strategyName, exchangeName];
+  if (frameName) parts.push(frameName);
+  parts.push(backtest ? "backtest" : "live");
+  return parts.join(":") as Key;
+};
 
 /**
  * Cached value with timestamp.
@@ -148,6 +157,7 @@ export class CacheInstance<T extends Function = Function> {
     const key = CREATE_KEY_FN(
       backtest.methodContextService.context.strategyName,
       backtest.methodContextService.context.exchangeName,
+      backtest.methodContextService.context.frameName,
       backtest.executionContextService.context.backtest
     );
     const currentWhen = backtest.executionContextService.context.when;
@@ -194,6 +204,7 @@ export class CacheInstance<T extends Function = Function> {
     const key = CREATE_KEY_FN(
       backtest.methodContextService.context.strategyName,
       backtest.methodContextService.context.exchangeName,
+      backtest.methodContextService.context.frameName,
       backtest.executionContextService.context.backtest
     );
     this._cacheMap.delete(key);

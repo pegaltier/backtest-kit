@@ -9,13 +9,24 @@ import { riskSubject } from "../../../config/emitters";
 
 /**
  * Creates a unique key for memoizing ClientRisk instances.
- * Key format: "riskName:backtest" or "riskName:live"
+ * Key format: "riskName:exchangeName:frameName:backtest" or "riskName:exchangeName:live"
  * @param riskName - Name of the risk schema
+ * @param exchangeName - Exchange name
+ * @param frameName - Frame name (empty string for live)
  * @param backtest - Whether running in backtest mode
  * @returns Unique string key for memoization
  */
-const CREATE_KEY_FN = (riskName: RiskName, backtest: boolean) =>
-  `${riskName}:${backtest ? "backtest" : "live"}` as const;
+const CREATE_KEY_FN = (
+  riskName: RiskName,
+  exchangeName: string,
+  frameName: string,
+  backtest: boolean
+): string => {
+  const parts = [riskName, exchangeName];
+  if (frameName) parts.push(frameName);
+  parts.push(backtest ? "backtest" : "live");
+  return parts.join(":");
+};
 
 /**
  * Callback function for emitting risk rejection events to riskSubject.
@@ -29,6 +40,8 @@ const CREATE_KEY_FN = (riskName: RiskName, backtest: boolean) =>
  * @param rejectionResult - Rejection result with id and note
  * @param timestamp - Event timestamp in milliseconds
  * @param backtest - True if backtest mode, false if live mode
+ * @param exchangeName - Exchange name
+ * @param frameName - Frame name
  */
 const COMMIT_REJECTION_FN = async (
   symbol: string,
@@ -36,17 +49,20 @@ const COMMIT_REJECTION_FN = async (
   activePositionCount: number,
   rejectionResult: IRiskRejectionResult,
   timestamp: number,
-  backtest: boolean
+  backtest: boolean,
+  exchangeName: string,
+  frameName: string
 ) =>
   await riskSubject.next({
     symbol,
     pendingSignal: params.pendingSignal,
     strategyName: params.strategyName,
-    exchangeName: params.exchangeName,
+    exchangeName,
     currentPrice: params.currentPrice,
     activePositionCount,
     rejectionId: rejectionResult.id,
     rejectionNote: rejectionResult.note,
+    frameName,
     timestamp,
     backtest,
   });
@@ -90,24 +106,37 @@ export class RiskConnectionService {
   );
 
   /**
-   * Retrieves memoized ClientRisk instance for given risk name and backtest mode.
+   * Retrieves memoized ClientRisk instance for given risk name, exchange, frame and backtest mode.
    *
    * Creates ClientRisk on first call, returns cached instance on subsequent calls.
-   * Cache key is "riskName:backtest" string to separate live and backtest instances.
+   * Cache key includes exchangeName and frameName to isolate risk per exchange+frame.
    *
    * @param riskName - Name of registered risk schema
+   * @param exchangeName - Exchange name
+   * @param frameName - Frame name (empty string for live)
    * @param backtest - True if backtest mode, false if live mode
    * @returns Configured ClientRisk instance
    */
   public getRisk = memoize(
-    ([riskName, backtest]) => CREATE_KEY_FN(riskName, backtest),
-    (riskName: RiskName, backtest: boolean) => {
+    ([riskName, exchangeName, frameName, backtest]) =>
+      CREATE_KEY_FN(riskName, exchangeName, frameName, backtest),
+    (riskName: RiskName, exchangeName: string, frameName: string, backtest: boolean) => {
       const schema = this.riskSchemaService.get(riskName);
       return new ClientRisk({
         ...schema,
         logger: this.loggerService,
         backtest,
-        onRejected: COMMIT_REJECTION_FN,
+        onRejected: (symbol, params, activePositionCount, rejectionResult, timestamp, backtest) =>
+          COMMIT_REJECTION_FN(
+            symbol,
+            params,
+            activePositionCount,
+            rejectionResult,
+            timestamp,
+            backtest,
+            exchangeName,
+            frameName
+          ),
       });
     }
   );
@@ -120,18 +149,18 @@ export class RiskConnectionService {
    * ClientRisk will emit riskSubject event via onRejected callback when signal is rejected.
    *
    * @param params - Risk check arguments (portfolio state, position details)
-   * @param context - Execution context with risk name and backtest mode
+   * @param payload - Execution payload with risk name, exchangeName, frameName and backtest mode
    * @returns Promise resolving to risk check result
    */
   public checkSignal = async (
     params: IRiskCheckArgs,
-    context: { riskName: RiskName; backtest: boolean }
+    payload: { riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
   ) => {
     this.loggerService.log("riskConnectionService checkSignal", {
       symbol: params.symbol,
-      context,
+      payload,
     });
-    return await this.getRisk(context.riskName, context.backtest).checkSignal(params);
+    return await this.getRisk(payload.riskName, payload.exchangeName, payload.frameName, payload.backtest).checkSignal(params);
   };
 
   /**
@@ -139,17 +168,17 @@ export class RiskConnectionService {
    * Routes to appropriate ClientRisk instance.
    *
    * @param symbol - Trading pair symbol
-   * @param context - Context information (strategyName, riskName, backtest)
+   * @param payload - Payload information (strategyName, riskName, exchangeName, frameName, backtest)
    */
   public addSignal = async (
     symbol: string,
-    context: { strategyName: string; riskName: RiskName; backtest: boolean }
+    payload: { strategyName: string; riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
   ) => {
     this.loggerService.log("riskConnectionService addSignal", {
       symbol,
-      context,
+      payload,
     });
-    await this.getRisk(context.riskName, context.backtest).addSignal(symbol, context);
+    await this.getRisk(payload.riskName, payload.exchangeName, payload.frameName, payload.backtest).addSignal(symbol, payload);
   };
 
   /**
@@ -157,35 +186,32 @@ export class RiskConnectionService {
    * Routes to appropriate ClientRisk instance.
    *
    * @param symbol - Trading pair symbol
-   * @param context - Context information (strategyName, riskName, backtest)
+   * @param payload - Payload information (strategyName, riskName, exchangeName, frameName, backtest)
    */
   public removeSignal = async (
     symbol: string,
-    context: { strategyName: string; riskName: RiskName; backtest: boolean }
+    payload: { strategyName: string; riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
   ) => {
     this.loggerService.log("riskConnectionService removeSignal", {
       symbol,
-      context,
+      payload,
     });
-    await this.getRisk(context.riskName, context.backtest).removeSignal(symbol, context);
+    await this.getRisk(payload.riskName, payload.exchangeName, payload.frameName, payload.backtest).removeSignal(symbol, payload);
   };
 
   /**
    * Clears the cached ClientRisk instance for the given risk name.
    *
-   * @param backtest - Whether running in backtest mode
-   * @param ctx - Optional context with riskName (clears all if not provided)
+   * @param payload - Optional payload with riskName, exchangeName, frameName, backtest (clears all if not provided)
    */
   public clear = async (
-    backtest: boolean,
-    ctx?: { riskName: RiskName }
+    payload?: { riskName: RiskName; exchangeName: string; frameName: string; backtest: boolean }
   ): Promise<void> => {
     this.loggerService.log("riskConnectionService clear", {
-      ctx,
-      backtest,
+      payload,
     });
-    if (ctx) {
-      const key = CREATE_KEY_FN(ctx.riskName, backtest);
+    if (payload) {
+      const key = CREATE_KEY_FN(payload.riskName, payload.exchangeName, payload.frameName, payload.backtest);
       this.getRisk.clear(key);
     } else {
       this.getRisk.clear();

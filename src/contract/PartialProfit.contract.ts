@@ -52,6 +52,12 @@ export interface PartialProfitContract {
   exchangeName: string;
 
   /**
+   * Frame name where this signal is being executed.
+   * Identifies which frame this profit event belongs to (empty string for live mode).
+   */
+  frameName: string;
+
+  /**
    * Complete signal row data.
    * Contains all signal information: id, position, priceOpen, priceTakeProfit, priceStopLoss, etc.
    */

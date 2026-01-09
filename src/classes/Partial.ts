@@ -65,18 +65,26 @@ export class PartialUtils {
    * }
    * ```
    */
-  public getData = async (symbol: string, strategyName: string, backtest = false) => {
-    bt.loggerService.info(PARTIAL_METHOD_NAME_GET_DATA, { symbol, strategyName });
+  public getData = async (
+    symbol: string,
+    context: {
+      strategyName: string;
+      exchangeName: string;
+      frameName: string;
+    },
+    backtest = false
+  ) => {
+    bt.loggerService.info(PARTIAL_METHOD_NAME_GET_DATA, { symbol, strategyName: context.strategyName });
 
-    bt.strategyValidationService.validate(strategyName, PARTIAL_METHOD_NAME_GET_DATA);
+    bt.strategyValidationService.validate(context.strategyName, PARTIAL_METHOD_NAME_GET_DATA);
 
     {
-      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = bt.strategySchemaService.get(context.strategyName);
       riskName && bt.riskValidationService.validate(riskName, PARTIAL_METHOD_NAME_GET_DATA);
       riskList && riskList.forEach((riskName) => bt.riskValidationService.validate(riskName, PARTIAL_METHOD_NAME_GET_DATA));
     }
 
-    return await bt.partialMarkdownService.getData(symbol, strategyName, backtest);
+    return await bt.partialMarkdownService.getData(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
   };
 
   /**
@@ -118,18 +126,27 @@ export class PartialUtils {
    * // **Loss events:** 1
    * ```
    */
-  public getReport = async (symbol: string, strategyName: string, backtest = false, columns?: Columns[]): Promise<string> => {
-    bt.loggerService.info(PARTIAL_METHOD_NAME_GET_REPORT, { symbol, strategyName });
+  public getReport = async (
+    symbol: string,
+    context: {
+      strategyName: string;
+      exchangeName: string;
+      frameName: string;
+    },
+    backtest = false,
+    columns?: Columns[]
+  ): Promise<string> => {
+    bt.loggerService.info(PARTIAL_METHOD_NAME_GET_REPORT, { symbol, strategyName: context.strategyName });
 
-    bt.strategyValidationService.validate(strategyName, PARTIAL_METHOD_NAME_GET_REPORT);
+    bt.strategyValidationService.validate(context.strategyName, PARTIAL_METHOD_NAME_GET_REPORT);
 
     {
-      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = bt.strategySchemaService.get(context.strategyName);
       riskName && bt.riskValidationService.validate(riskName, PARTIAL_METHOD_NAME_GET_REPORT);
       riskList && riskList.forEach((riskName) => bt.riskValidationService.validate(riskName, PARTIAL_METHOD_NAME_GET_REPORT));
     }
 
-    return await bt.partialMarkdownService.getReport(symbol, strategyName, backtest, columns);
+    return await bt.partialMarkdownService.getReport(symbol, context.strategyName, context.exchangeName, context.frameName, backtest, columns);
   };
 
   /**
@@ -164,18 +181,28 @@ export class PartialUtils {
    * }
    * ```
    */
-  public dump = async (symbol: string, strategyName: string, backtest = false, path?: string, columns?: Columns[]): Promise<void> => {
-    bt.loggerService.info(PARTIAL_METHOD_NAME_DUMP, { symbol, strategyName, path });
+  public dump = async (
+    symbol: string,
+    context: {
+      strategyName: string;
+      exchangeName: string;
+      frameName: string;
+    },
+    backtest = false,
+    path?: string,
+    columns?: Columns[]
+  ): Promise<void> => {
+    bt.loggerService.info(PARTIAL_METHOD_NAME_DUMP, { symbol, strategyName: context.strategyName, path });
 
-    bt.strategyValidationService.validate(strategyName, PARTIAL_METHOD_NAME_DUMP);
+    bt.strategyValidationService.validate(context.strategyName, PARTIAL_METHOD_NAME_DUMP);
 
     {
-      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = bt.strategySchemaService.get(context.strategyName);
       riskName && bt.riskValidationService.validate(riskName, PARTIAL_METHOD_NAME_DUMP);
       riskList && riskList.forEach((riskName) => bt.riskValidationService.validate(riskName, PARTIAL_METHOD_NAME_DUMP));
     }
 
-    await bt.partialMarkdownService.dump(symbol, strategyName, backtest, path, columns);
+    await bt.partialMarkdownService.dump(symbol, context.strategyName, context.exchangeName, context.frameName, backtest, path, columns);
   };
 }
 

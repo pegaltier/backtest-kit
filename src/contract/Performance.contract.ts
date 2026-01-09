@@ -50,6 +50,9 @@ export interface PerformanceContract {
   /** Exchange name associated with this metric */
   exchangeName: string;
 
+  /** Frame name associated with this metric (empty string for live mode) */
+  frameName: string;
+
   /** Trading symbol associated with this metric */
   symbol: string;
 

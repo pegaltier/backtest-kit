@@ -129,7 +129,11 @@ test("getData returns BacktestStatistics structure", async ({ pass, fail }) => {
 
   await awaiter;
 
-  const stats = await Backtest.getData("BTCUSDT", "test-strategy-stats");
+  const stats = await Backtest.getData("BTCUSDT", {
+    strategyName: "test-strategy-stats",
+    exchangeName: "binance-mock-stats",
+    frameName: "1d-backtest-stats",
+  });
 
   if (!stats) {
     fail("getData returned null");
@@ -210,7 +214,11 @@ test("getData calculates all statistical metrics", async ({ pass, fail }) => {
 
   await awaiter;
 
-  const stats = await Backtest.getData("BTCUSDT", "test-strategy-metrics");
+  const stats = await Backtest.getData("BTCUSDT", {
+    strategyName: "test-strategy-metrics",
+    exchangeName: "binance-mock-metrics",
+    frameName: "1d-backtest-metrics",
+  });
 
   const requiredFields = [
     "signalList",
@@ -277,7 +285,11 @@ test("getData returns null for invalid metrics with safe math", async ({ pass, f
 
   await new Promise((resolve) => setTimeout(resolve, 100));
 
-  const stats = await Backtest.getData("BTCUSDT", "test-strategy-safemath");
+  const stats = await Backtest.getData("BTCUSDT", {
+    strategyName: "test-strategy-safemath",
+    exchangeName: "binance-mock-safemath",
+    frameName: "1d-backtest-safemath",
+  });
 
   if (stats.totalSignals !== 0) {
     fail(`Expected 0 signals, got ${stats.totalSignals}`);
@@ -358,7 +370,11 @@ test("getData includes signalList with all closed trades", async ({ pass, fail }
 
   await awaiter;
 
-  const stats = await Backtest.getData("BTCUSDT", "test-strategy-signallist");
+  const stats = await Backtest.getData("BTCUSDT", {
+    strategyName: "test-strategy-signallist",
+    exchangeName: "binance-mock-signallist",
+    frameName: "1d-backtest-signallist",
+  });
 
   if (!Array.isArray(stats.signalList)) {
     fail("signalList is not an array");
@@ -441,7 +457,11 @@ test("Statistical metrics are calculated correctly", async ({ pass, fail }) => {
 
   await awaiter;
 
-  const stats = await Backtest.getData("BTCUSDT", "test-strategy-calculation");
+  const stats = await Backtest.getData("BTCUSDT", {
+    strategyName: "test-strategy-calculation",
+    exchangeName: "binance-mock-calculation",
+    frameName: "1d-backtest-calculation",
+  });
 
   if (stats.totalSignals < 3) {
     fail(`Expected at least 3 signals, got ${stats.totalSignals}`);

@@ -96,7 +96,11 @@ export class BacktestLogicPrivateService {
         await this.strategyCoreService.getStopped(
           true,
           symbol,
-          this.methodContextService.context.strategyName
+          {
+            strategyName: this.methodContextService.context.strategyName,
+            exchangeName: this.methodContextService.context.exchangeName,
+            frameName: this.methodContextService.context.frameName,
+          }
         )
       ) {
         this.loggerService.info(
@@ -113,7 +117,11 @@ export class BacktestLogicPrivateService {
 
       let result: IStrategyTickResult;
       try {
-        result = await this.strategyCoreService.tick(symbol, when, true);
+        result = await this.strategyCoreService.tick(symbol, when, true, {
+          strategyName: this.methodContextService.context.strategyName,
+          exchangeName: this.methodContextService.context.exchangeName,
+          frameName: this.methodContextService.context.frameName,
+        });
       } catch (error) {
         console.warn(`backtestLogicPrivateService tick failed, skipping timeframe when=${when.toISOString()} symbol=${symbol} strategyName=${this.methodContextService.context.strategyName} exchangeName=${this.methodContextService.context.exchangeName}`);
         this.loggerService.warn(
@@ -136,7 +144,11 @@ export class BacktestLogicPrivateService {
           this.strategyCoreService.getStopped(
             true,
             symbol,
-            this.methodContextService.context.strategyName
+            {
+              strategyName: this.methodContextService.context.strategyName,
+              exchangeName: this.methodContextService.context.exchangeName,
+              frameName: this.methodContextService.context.frameName,
+            }
           )
         )
       ) {
@@ -226,7 +238,12 @@ export class BacktestLogicPrivateService {
             symbol,
             candles,
             when,
-            true
+            true,
+            {
+              strategyName: this.methodContextService.context.strategyName,
+              exchangeName: this.methodContextService.context.exchangeName,
+              frameName: this.methodContextService.context.frameName,
+            }
           );
         } catch (error) {
           console.warn(`backtestLogicPrivateService backtest failed for scheduled signal when=${when.toISOString()} symbol=${symbol} strategyName=${this.methodContextService.context.strategyName} exchangeName=${this.methodContextService.context.exchangeName}`);
@@ -267,6 +284,7 @@ export class BacktestLogicPrivateService {
           duration: signalEndTime - signalStartTime,
           strategyName: this.methodContextService.context.strategyName,
           exchangeName: this.methodContextService.context.exchangeName,
+          frameName: this.methodContextService.context.frameName,
           symbol,
           backtest: true,
         });
@@ -287,7 +305,11 @@ export class BacktestLogicPrivateService {
           await this.strategyCoreService.getStopped(
             true,
             symbol,
-            this.methodContextService.context.strategyName
+            {
+              strategyName: this.methodContextService.context.strategyName,
+              exchangeName: this.methodContextService.context.exchangeName,
+              frameName: this.methodContextService.context.frameName,
+            }
           )
         ) {
           this.loggerService.info(
@@ -365,7 +387,12 @@ export class BacktestLogicPrivateService {
             symbol,
             candles,
             when,
-            true
+            true,
+            {
+              strategyName: this.methodContextService.context.strategyName,
+              exchangeName: this.methodContextService.context.exchangeName,
+              frameName: this.methodContextService.context.frameName,
+            }
           );
         } catch (error) {
           console.warn(`backtestLogicPrivateService backtest failed for opened signal when=${when.toISOString()} symbol=${symbol} strategyName=${this.methodContextService.context.strategyName} exchangeName=${this.methodContextService.context.exchangeName}`);
@@ -398,6 +425,7 @@ export class BacktestLogicPrivateService {
           duration: signalEndTime - signalStartTime,
           strategyName: this.methodContextService.context.strategyName,
           exchangeName: this.methodContextService.context.exchangeName,
+          frameName: this.methodContextService.context.frameName,
           symbol,
           backtest: true,
         });
@@ -418,7 +446,11 @@ export class BacktestLogicPrivateService {
           await this.strategyCoreService.getStopped(
             true,
             symbol,
-            this.methodContextService.context.strategyName
+            {
+              strategyName: this.methodContextService.context.strategyName,
+              exchangeName: this.methodContextService.context.exchangeName,
+              frameName: this.methodContextService.context.frameName,
+            }
           )
         ) {
           this.loggerService.info(
@@ -444,6 +476,7 @@ export class BacktestLogicPrivateService {
         duration: timeframeEndTime - timeframeStartTime,
         strategyName: this.methodContextService.context.strategyName,
         exchangeName: this.methodContextService.context.exchangeName,
+        frameName: this.methodContextService.context.frameName,
         symbol,
         backtest: true,
       });
@@ -474,6 +507,7 @@ export class BacktestLogicPrivateService {
       duration: backtestEndTime - backtestStartTime,
       strategyName: this.methodContextService.context.strategyName,
       exchangeName: this.methodContextService.context.exchangeName,
+      frameName: this.methodContextService.context.frameName,
       symbol,
       backtest: true,
     });

@@ -172,24 +172,40 @@ export class LiveInstance {
     });
 
     {
-      backtest.backtestMarkdownService.clear(false, { symbol, strategyName: context.strategyName });
-      backtest.liveMarkdownService.clear(false, { symbol, strategyName: context.strategyName });
-      backtest.scheduleMarkdownService.clear(false, { symbol, strategyName: context.strategyName });
-      backtest.performanceMarkdownService.clear(false, { symbol, strategyName: context.strategyName });
-      backtest.partialMarkdownService.clear(false, { symbol, strategyName: context.strategyName });
-      backtest.riskMarkdownService.clear(false, { symbol, strategyName: context.strategyName });
+      backtest.backtestMarkdownService.clear({ symbol, strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "", backtest: false });
+      backtest.liveMarkdownService.clear({ symbol, strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "", backtest: false });
+      backtest.scheduleMarkdownService.clear({ symbol, strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "", backtest: false });
+      backtest.performanceMarkdownService.clear({ symbol, strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "", backtest: false });
+      backtest.partialMarkdownService.clear({ symbol, strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "", backtest: false });
+      backtest.riskMarkdownService.clear({ symbol, strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "", backtest: false });
     }
 
     {
-      backtest.strategyCoreService.clear(false, { symbol, strategyName: context.strategyName });
+      backtest.strategyCoreService.clear({
+        symbol,
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+        backtest: false,
+      });
     }
 
     {
       const { riskName, riskList } = backtest.strategySchemaService.get(
         context.strategyName
       );
-      riskName && backtest.riskGlobalService.clear(false, { riskName });
-      riskList && riskList.forEach((riskName) => backtest.riskGlobalService.clear(false, { riskName }));
+      riskName && backtest.riskGlobalService.clear({
+        riskName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+        backtest: false
+      });
+      riskList && riskList.forEach((riskName) => backtest.riskGlobalService.clear({
+        riskName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+        backtest: false
+      }));
     }
 
     return backtest.liveCommandService.run(symbol, context);
@@ -239,9 +255,17 @@ export class LiveInstance {
       exitEmitter.next(new Error(getErrorMessage(error)))
     );
     return () => {
-      backtest.strategyCoreService.stop(false, {symbol, strategyName: context.strategyName});
+      backtest.strategyCoreService.stop(false, symbol, {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: ""
+      });
       backtest.strategyCoreService
-        .getPendingSignal(false, symbol, context.strategyName)
+        .getPendingSignal(false, symbol, {
+          strategyName: context.strategyName,
+          exchangeName: context.exchangeName,
+          frameName: "",
+        })
         .then(async (pendingSignal) => {
           if (pendingSignal) {
             return;
@@ -297,8 +321,8 @@ export class LiveUtils {
    * Each symbol-strategy combination gets its own isolated instance.
    */
   private _getInstance = memoize(
-    ([symbol, strategyName]) =>
-      `${symbol}:${strategyName}`,
+    ([symbol, strategyName, exchangeName]) =>
+      `${symbol}:${strategyName}:${exchangeName}`,
     (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName) =>
       new LiveInstance(symbol, strategyName, exchangeName)
   );
@@ -392,16 +416,20 @@ export class LiveUtils {
    * }
    * ```
    */
-  public getPendingSignal = async (symbol: string, strategyName: StrategyName) => {
-    backtest.strategyValidationService.validate(strategyName, LIVE_METHOD_NAME_GET_PENDING_SIGNAL);
+  public getPendingSignal = async (symbol: string, context: { strategyName: string; exchangeName: string; }) => {
+    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_PENDING_SIGNAL);
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
       riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_PENDING_SIGNAL);
       riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_PENDING_SIGNAL));
     }
 
-    return await backtest.strategyCoreService.getPendingSignal(false, symbol, strategyName);
+    return await backtest.strategyCoreService.getPendingSignal(false, symbol, {
+      strategyName: context.strategyName,
+      exchangeName: context.exchangeName,
+      frameName: "",
+    });
   };
 
   /**
@@ -420,16 +448,20 @@ export class LiveUtils {
    * }
    * ```
    */
-  public getScheduledSignal = async (symbol: string, strategyName: StrategyName) => {
-    backtest.strategyValidationService.validate(strategyName, LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL);
+  public getScheduledSignal = async (symbol: string, context: { strategyName: string; exchangeName: string; }) => {
+    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL);
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
       riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL);
       riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL));
     }
 
-    return await backtest.strategyCoreService.getScheduledSignal(false, symbol, strategyName);
+    return await backtest.strategyCoreService.getScheduledSignal(false, symbol, {
+      strategyName: context.strategyName,
+      exchangeName: context.exchangeName,
+      frameName: "",
+    });
   };
 
   /**
@@ -449,16 +481,26 @@ export class LiveUtils {
    * await Live.stop("BTCUSDT", "my-strategy");
    * ```
    */
-  public stop = async (symbol: string, strategyName: StrategyName): Promise<void> => {
-    backtest.strategyValidationService.validate(strategyName, LIVE_METHOD_NAME_STOP);
+  public stop = async (
+    symbol: string,
+    context: {
+      strategyName: string;
+      exchangeName: string;
+    }
+  ): Promise<void> => {
+    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_STOP);
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
       riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_STOP);
       riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_STOP));
     }
 
-    await backtest.strategyCoreService.stop(false, { symbol, strategyName });
+    await backtest.strategyCoreService.stop(false, symbol, {
+      strategyName: context.strategyName,
+      exchangeName: context.exchangeName,
+      frameName: "",
+    });
   };
 
   /**
@@ -470,25 +512,41 @@ export class LiveUtils {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name
+   * @param context - Execution context with exchangeName and frameName
    * @param cancelId - Optional cancellation ID for tracking user-initiated cancellations
    * @returns Promise that resolves when scheduled signal is cancelled
    *
    * @example
    * ```typescript
    * // Cancel scheduled signal in live trading with custom ID
-   * await Live.cancel("BTCUSDT", "my-strategy", "manual-cancel-001");
+   * await Live.cancel("BTCUSDT", "my-strategy", {
+   *   exchangeName: "binance",
+   *   frameName: "",
+   *   strategyName: "my-strategy"
+   * }, "manual-cancel-001");
    * ```
    */
-  public cancel = async (symbol: string, strategyName: StrategyName, cancelId?: string): Promise<void> => {
-    backtest.strategyValidationService.validate(strategyName, LIVE_METHOD_NAME_CANCEL);
+  public cancel = async (
+    symbol: string,
+    context: {
+      strategyName: string;
+      exchangeName: string;
+    },
+    cancelId?: string
+  ): Promise<void> => {
+    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_CANCEL);
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
       riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_CANCEL);
       riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_CANCEL));
     }
 
-    await backtest.strategyCoreService.cancel(false, { symbol, strategyName }, cancelId);
+    await backtest.strategyCoreService.cancel(false, symbol, {
+      strategyName: context.strategyName,
+      exchangeName: context.exchangeName,
+      frameName: "",
+    }, cancelId);
   };
 
   /**
@@ -496,24 +554,35 @@ export class LiveUtils {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to get data for
+   * @param context - Execution context with exchangeName and frameName
    * @returns Promise resolving to statistical data object
    *
    * @example
    * ```typescript
-   * const stats = await Live.getData("BTCUSDT", "my-strategy");
+   * const stats = await Live.getData("BTCUSDT", "my-strategy", {
+   *   exchangeName: "binance",
+   *   frameName: "",
+   *   strategyName: "my-strategy"
+   * });
    * console.log(stats.sharpeRatio, stats.winRate);
    * ```
    */
-  public getData = async (symbol: string, strategyName: StrategyName) => {
-    backtest.strategyValidationService.validate(strategyName, "LiveUtils.getData");
+  public getData = async (
+    symbol: string,
+    context: {
+      strategyName: string;
+      exchangeName: string;
+    }
+  ) => {
+    backtest.strategyValidationService.validate(context.strategyName, "LiveUtils.getData");
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
       riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_DATA);
       riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_DATA));
     }
 
-    return await backtest.liveMarkdownService.getData(symbol, strategyName, false);
+    return await backtest.liveMarkdownService.getData(symbol, context.strategyName, context.exchangeName, "", false);
   };
 
   /**
@@ -521,25 +590,37 @@ export class LiveUtils {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to generate report for
+   * @param context - Execution context with exchangeName and frameName
    * @param columns - Optional columns configuration for the report
    * @returns Promise resolving to markdown formatted report string
    *
    * @example
    * ```typescript
-   * const markdown = await Live.getReport("BTCUSDT", "my-strategy");
+   * const markdown = await Live.getReport("BTCUSDT", "my-strategy", {
+   *   exchangeName: "binance",
+   *   frameName: "",
+   *   strategyName: "my-strategy"
+   * });
    * console.log(markdown);
    * ```
    */
-  public getReport = async (symbol: string, strategyName: StrategyName, columns?: Columns[]): Promise<string> => {
-    backtest.strategyValidationService.validate(strategyName, LIVE_METHOD_NAME_GET_REPORT);
+  public getReport = async (
+    symbol: string,
+    context: {
+      strategyName: string;
+      exchangeName: string;
+    },
+    columns?: Columns[]
+  ): Promise<string> => {
+    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_REPORT);
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
       riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_REPORT);
       riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_REPORT));
     }
 
-    return await backtest.liveMarkdownService.getReport(symbol, strategyName, false, columns);
+    return await backtest.liveMarkdownService.getReport(symbol, context.strategyName, context.exchangeName, "", false, columns);
   };
 
   /**
@@ -547,33 +628,45 @@ export class LiveUtils {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy name to save report for
+   * @param context - Execution context with exchangeName and frameName
    * @param path - Optional directory path to save report (default: "./dump/live")
    * @param columns - Optional columns configuration for the report
    *
    * @example
    * ```typescript
    * // Save to default path: ./dump/live/my-strategy.md
-   * await Live.dump("BTCUSDT", "my-strategy");
+   * await Live.dump("BTCUSDT", "my-strategy", {
+   *   exchangeName: "binance",
+   *   frameName: "",
+   *   strategyName: "my-strategy"
+   * });
    *
    * // Save to custom path: ./custom/path/my-strategy.md
-   * await Live.dump("BTCUSDT", "my-strategy", "./custom/path");
+   * await Live.dump("BTCUSDT", "my-strategy", {
+   *   exchangeName: "binance",
+   *   frameName: "",
+   *   strategyName: "my-strategy"
+   * }, "./custom/path");
    * ```
    */
   public dump = async (
     symbol: string,
-    strategyName: StrategyName,
+    context: {
+      strategyName: string;
+      exchangeName: string;
+    },
     path?: string,
     columns?: Columns[]
   ): Promise<void> => {
-    backtest.strategyValidationService.validate(strategyName, LIVE_METHOD_NAME_DUMP);
+    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_DUMP);
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
       riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_DUMP);
       riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_DUMP));
     }
 
-    await backtest.liveMarkdownService.dump(symbol, strategyName, false, path, columns);
+    await backtest.liveMarkdownService.dump(symbol, context.strategyName, context.exchangeName, "", false, path, columns);
   };
 
   /**

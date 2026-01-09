@@ -4,6 +4,7 @@ import { IExchange, ICandleData, ExchangeName } from "./Exchange.interface";
 import { ILogger } from "./Logger.interface";
 import { IRisk, RiskName } from "./Risk.interface";
 import { IPartial } from "./Partial.interface";
+import { FrameName } from "./Frame.interface";
 
 /**
  * Signal generation interval for throttling.
@@ -51,6 +52,8 @@ export interface ISignalRow extends ISignalDto {
   exchangeName: ExchangeName;
   /** Unique strategy identifier for execution */
   strategyName: StrategyName;
+  /** Unique frame identifier for execution (empty string for live mode) */
+  frameName: FrameName;
   /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
   scheduledAt: number;
   /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
@@ -200,6 +203,8 @@ export interface IStrategyTickResultIdle {
   strategyName: StrategyName;
   /** Exchange name for tracking idle events */
   exchangeName: ExchangeName;
+  /** Time frame name for tracking (e.g., "1m", "5m") */
+  frameName: FrameName;
   /** Trading pair symbol (e.g., "BTCUSDT") */
   symbol: string;
   /** Current VWAP price during idle state */
@@ -221,6 +226,8 @@ export interface IStrategyTickResultScheduled {
   strategyName: StrategyName;
   /** Exchange name for tracking */
   exchangeName: ExchangeName;
+  /** Time frame name for tracking (e.g., "1m", "5m") */
+  frameName: FrameName;
   /** Trading pair symbol (e.g., "BTCUSDT") */
   symbol: string;
   /** Current VWAP price when scheduled signal created */
@@ -242,6 +249,8 @@ export interface IStrategyTickResultOpened {
   strategyName: StrategyName;
   /** Exchange name for tracking */
   exchangeName: ExchangeName;
+  /** Time frame name for tracking (e.g., "1m", "5m") */
+  frameName: FrameName;
   /** Trading pair symbol (e.g., "BTCUSDT") */
   symbol: string;
   /** Current VWAP price at signal open */
@@ -265,6 +274,8 @@ export interface IStrategyTickResultActive {
   strategyName: StrategyName;
   /** Exchange name for tracking */
   exchangeName: ExchangeName;
+  /** Time frame name for tracking (e.g., "1m", "5m") */
+  frameName: FrameName;
   /** Trading pair symbol (e.g., "BTCUSDT") */
   symbol: string;
   /** Percentage progress towards take profit (0-100%, 0 if moving towards SL) */
@@ -296,6 +307,8 @@ export interface IStrategyTickResultClosed {
   strategyName: StrategyName;
   /** Exchange name for tracking */
   exchangeName: ExchangeName;
+  /** Time frame name for tracking (e.g., "1m", "5m") */
+  frameName: FrameName;
   /** Trading pair symbol (e.g., "BTCUSDT") */
   symbol: string;
   /** Whether this event is from backtest mode (true) or live mode (false) */
@@ -319,6 +332,8 @@ export interface IStrategyTickResultCancelled {
   strategyName: StrategyName;
   /** Exchange name for tracking */
   exchangeName: ExchangeName;
+  /** Time frame name for tracking (e.g., "1m", "5m") */
+  frameName: FrameName;
   /** Trading pair symbol (e.g., "BTCUSDT") */
   symbol: string;
   /** Whether this event is from backtest mode (true) or live mode (false) */
@@ -367,10 +382,9 @@ export interface IStrategy {
    * Used internally for monitoring TP/SL and time expiration.
    *
    * @param symbol - Trading pair symbol
-   * @param strategyName - Name of the strategy
    * @returns Promise resolving to pending signal or null
    */
-  getPendingSignal: (symbol: string, strategyName: StrategyName) => Promise<ISignalRow | null>;
+  getPendingSignal: (symbol: string) => Promise<ISignalRow | null>;
 
   /**
    * Retrieves the currently active scheduled signal for the symbol.
@@ -378,10 +392,9 @@ export interface IStrategy {
    * Used internally for monitoring scheduled signal activation.
    *
    * @param symbol - Trading pair symbol
-   * @param strategyName - Name of the strategy
    * @returns Promise resolving to scheduled signal or null
    */
-  getScheduledSignal: (symbol: string, strategyName: StrategyName) => Promise<IScheduledSignalRow | null>;
+  getScheduledSignal: (symbol: string) => Promise<IScheduledSignalRow | null>;
 
   /**
    * Checks if the strategy has been stopped.
@@ -390,10 +403,9 @@ export interface IStrategy {
    * cease processing new ticks or signals.
    *
    * @param symbol - Trading pair symbol
-   * @param strategyName - Name of the strategy
    * @returns Promise resolving to true if strategy is stopped, false otherwise
    */
-  getStopped: (symbol: string, strategyName: StrategyName) => Promise<boolean>;
+  getStopped: (symbol: string) => Promise<boolean>;
 
   /**
    * Fast backtest using historical candles.
@@ -418,7 +430,6 @@ export interface IStrategy {
    * Use case: Graceful shutdown in live trading mode without abandoning open positions.
    *
    * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-   * @param strategyName - Name of the strategy
    * @returns Promise that resolves immediately when stop flag is set
    *
    * @example
@@ -430,7 +441,7 @@ export interface IStrategy {
    * await cancel();
    * ```
    */
-  stop: (symbol: string, strategyName: StrategyName, backtest: boolean) => Promise<void>;
+  stop: (symbol: string, backtest: boolean) => Promise<void>;
 
   /**
    * Cancels the scheduled signal without stopping the strategy.
@@ -442,18 +453,17 @@ export interface IStrategy {
    * Use case: Cancel a scheduled entry that is no longer desired without stopping the entire strategy.
    *
    * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-   * @param strategyName - Name of the strategy
-   * @param backtest - Whether running in backtest mode
+   * @param cancelId - Optional cancellation ID
    * @returns Promise that resolves when scheduled signal is cleared
    *
    * @example
    * ```typescript
    * // Cancel scheduled signal without stopping strategy
-   * await strategy.cancel("BTCUSDT", "my-strategy", false);
+   * await strategy.cancel("BTCUSDT");
    * // Strategy continues, can generate new signals
    * ```
    */
-  cancel: (symbol: string, strategyName: StrategyName, backtest: boolean) => Promise<void>;
+  cancel: (symbol: string, backtest: boolean, cancelId?: string) => Promise<void>;
 }
 
 /**

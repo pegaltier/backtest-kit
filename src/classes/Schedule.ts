@@ -1,4 +1,3 @@
-import { StrategyName } from "../interfaces/Strategy.interface";
 import bt from "../lib";
 import { Columns } from "../lib/services/markdown/ScheduleMarkdownService";
 
@@ -45,22 +44,30 @@ export class ScheduleUtils {
    * console.log(stats.cancellationRate, stats.avgWaitTime);
    * ```
    */
-  public getData = async (symbol: string, strategyName: StrategyName, backtest = false) => {
+  public getData = async (
+    symbol: string,
+    context: {
+      strategyName: string;
+      exchangeName: string;
+      frameName: string;
+    },
+    backtest = false
+  ) => {
     bt.loggerService.info(SCHEDULE_METHOD_NAME_GET_DATA, {
       symbol,
-      strategyName,
+      strategyName: context.strategyName,
       backtest,
     });
 
-    bt.strategyValidationService.validate(strategyName, SCHEDULE_METHOD_NAME_GET_DATA);
+    bt.strategyValidationService.validate(context.strategyName, SCHEDULE_METHOD_NAME_GET_DATA);
 
     {
-      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = bt.strategySchemaService.get(context.strategyName);
       riskName && bt.riskValidationService.validate(riskName, SCHEDULE_METHOD_NAME_GET_DATA);
       riskList && riskList.forEach((riskName) => bt.riskValidationService.validate(riskName, SCHEDULE_METHOD_NAME_GET_DATA));
     }
 
-    return await bt.scheduleMarkdownService.getData(symbol, strategyName, backtest);
+    return await bt.scheduleMarkdownService.getData(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
   };
 
   /**
@@ -77,22 +84,31 @@ export class ScheduleUtils {
    * console.log(markdown);
    * ```
    */
-  public getReport = async (symbol: string, strategyName: StrategyName, backtest = false, columns?: Columns[]): Promise<string> => {
+  public getReport = async (
+    symbol: string,
+    context: {
+      strategyName: string;
+      exchangeName: string;
+      frameName: string;
+    },
+    backtest = false,
+    columns?: Columns[]
+  ): Promise<string> => {
     bt.loggerService.info(SCHEDULE_METHOD_NAME_GET_REPORT, {
       symbol,
-      strategyName,
+      strategyName: context.strategyName,
       backtest,
     });
 
-    bt.strategyValidationService.validate(strategyName, SCHEDULE_METHOD_NAME_GET_REPORT);
+    bt.strategyValidationService.validate(context.strategyName, SCHEDULE_METHOD_NAME_GET_REPORT);
 
     {
-      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = bt.strategySchemaService.get(context.strategyName);
       riskName && bt.riskValidationService.validate(riskName, SCHEDULE_METHOD_NAME_GET_REPORT);
       riskList && riskList.forEach((riskName) => bt.riskValidationService.validate(riskName, SCHEDULE_METHOD_NAME_GET_REPORT));
     }
 
-    return await bt.scheduleMarkdownService.getReport(symbol, strategyName, backtest, columns);
+    return await bt.scheduleMarkdownService.getReport(symbol, context.strategyName, context.exchangeName, context.frameName, backtest, columns);
   };
 
   /**
@@ -114,27 +130,31 @@ export class ScheduleUtils {
    */
   public dump = async (
     symbol: string,
-    strategyName: StrategyName,
+    context: {
+      strategyName: string;
+      exchangeName: string;
+      frameName: string;
+    },
     backtest = false,
     path?: string,
     columns?: Columns[]
   ): Promise<void> => {
     bt.loggerService.info(SCHEDULE_METHOD_NAME_DUMP, {
       symbol,
-      strategyName,
+      strategyName: context.strategyName,
       backtest,
       path,
     });
 
-    bt.strategyValidationService.validate(strategyName, SCHEDULE_METHOD_NAME_DUMP);
+    bt.strategyValidationService.validate(context.strategyName, SCHEDULE_METHOD_NAME_DUMP);
 
     {
-      const { riskName, riskList } = bt.strategySchemaService.get(strategyName);
+      const { riskName, riskList } = bt.strategySchemaService.get(context.strategyName);
       riskName && bt.riskValidationService.validate(riskName, SCHEDULE_METHOD_NAME_DUMP);
       riskList && riskList.forEach((riskName) => bt.riskValidationService.validate(riskName, SCHEDULE_METHOD_NAME_DUMP));
     }
 
-    await bt.scheduleMarkdownService.dump(symbol, strategyName, backtest, path, columns);
+    await bt.scheduleMarkdownService.dump(symbol, context.strategyName, context.exchangeName, context.frameName, backtest, path, columns);
   };
 }
 

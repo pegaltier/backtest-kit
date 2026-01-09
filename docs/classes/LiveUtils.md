@@ -35,7 +35,7 @@ Each symbol-strategy combination gets its own isolated instance.
 ### run
 
 ```ts
-run: (symbol: string, context: { strategyName: string; exchangeName: string; }) => AsyncGenerator<IStrategyTickResultOpened | IStrategyTickResultClosed, void, unknown>
+run: (symbol: string, context: { strategyName: string; exchangeName: string; }) => AsyncGenerator<IStrategyTickResultClosed | IStrategyTickResultOpened, void, unknown>
 ```
 
 Runs live trading for a symbol with context propagation.
@@ -58,7 +58,7 @@ Useful for running live trading for side effects only (callbacks, persistence).
 ### getPendingSignal
 
 ```ts
-getPendingSignal: (symbol: string, strategyName: string) => Promise<ISignalRow>
+getPendingSignal: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<ISignalRow>
 ```
 
 Retrieves the currently active pending signal for the strategy.
@@ -67,7 +67,7 @@ If no active signal exists, returns null.
 ### getScheduledSignal
 
 ```ts
-getScheduledSignal: (symbol: string, strategyName: string) => Promise<IScheduledSignalRow>
+getScheduledSignal: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<IScheduledSignalRow>
 ```
 
 Retrieves the currently active scheduled signal for the strategy.
@@ -76,7 +76,7 @@ If no scheduled signal exists, returns null.
 ### stop
 
 ```ts
-stop: (symbol: string, strategyName: string) => Promise<void>
+stop: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<void>
 ```
 
 Stops the strategy from generating new signals.
@@ -88,7 +88,7 @@ Live trading will stop at the next safe point (idle/closed state).
 ### cancel
 
 ```ts
-cancel: (symbol: string, strategyName: string, cancelId?: string) => Promise<void>
+cancel: (symbol: string, context: { strategyName: string; exchangeName: string; }, cancelId?: string) => Promise<void>
 ```
 
 Cancels the scheduled signal without stopping the strategy.
@@ -100,7 +100,7 @@ Does NOT set stop flag - strategy can continue generating new signals.
 ### getData
 
 ```ts
-getData: (symbol: string, strategyName: string) => Promise<LiveStatisticsModel>
+getData: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<LiveStatisticsModel>
 ```
 
 Gets statistical data from all live trading events for a symbol-strategy pair.
@@ -108,7 +108,7 @@ Gets statistical data from all live trading events for a symbol-strategy pair.
 ### getReport
 
 ```ts
-getReport: (symbol: string, strategyName: string, columns?: Columns$5[]) => Promise<string>
+getReport: (symbol: string, context: { strategyName: string; exchangeName: string; }, columns?: Columns$5[]) => Promise<string>
 ```
 
 Generates markdown report with all events for a symbol-strategy pair.
@@ -116,7 +116,7 @@ Generates markdown report with all events for a symbol-strategy pair.
 ### dump
 
 ```ts
-dump: (symbol: string, strategyName: string, path?: string, columns?: Columns$5[]) => Promise<void>
+dump: (symbol: string, context: { strategyName: string; exchangeName: string; }, path?: string, columns?: Columns$5[]) => Promise<void>
 ```
 
 Saves strategy report to disk.
@@ -124,7 +124,7 @@ Saves strategy report to disk.
 ### list
 
 ```ts
-list: () => Promise<{ id: string; symbol: string; strategyName: string; status: "pending" | "fulfilled" | "rejected" | "ready"; }[]>
+list: () => Promise<{ id: string; symbol: string; strategyName: string; exchangeName: string; status: "pending" | "fulfilled" | "rejected" | "ready"; }[]>
 ```
 
 Lists all active live trading instances with their current status.

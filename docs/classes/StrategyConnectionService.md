@@ -55,12 +55,6 @@ riskConnectionService: RiskConnectionService
 exchangeConnectionService: ExchangeConnectionService
 ```
 
-### methodContextService
-
-```ts
-methodContextService: { readonly context: IMethodContext; }
-```
-
 ### partialConnectionService
 
 ```ts
@@ -73,15 +67,15 @@ partialConnectionService: PartialConnectionService
 getStrategy: any
 ```
 
-Retrieves memoized ClientStrategy instance for given symbol-strategy pair.
+Retrieves memoized ClientStrategy instance for given symbol-strategy pair with exchange and frame isolation.
 
 Creates ClientStrategy on first call, returns cached instance on subsequent calls.
-Cache key is symbol:strategyName string.
+Cache key includes exchangeName and frameName for proper isolation.
 
 ### getPendingSignal
 
 ```ts
-getPendingSignal: (backtest: boolean, symbol: string, strategyName: string) => Promise<ISignalRow>
+getPendingSignal: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<ISignalRow>
 ```
 
 Retrieves the currently active pending signal for the strategy.
@@ -91,7 +85,7 @@ Used internally for monitoring TP/SL and time expiration.
 ### getScheduledSignal
 
 ```ts
-getScheduledSignal: (backtest: boolean, symbol: string, strategyName: string) => Promise<IScheduledSignalRow>
+getScheduledSignal: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<IScheduledSignalRow>
 ```
 
 Retrieves the currently active scheduled signal for the strategy.
@@ -101,7 +95,7 @@ Used internally for monitoring scheduled signal activation.
 ### getStopped
 
 ```ts
-getStopped: (backtest: boolean, symbol: string, strategyName: string) => Promise<boolean>
+getStopped: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
 ```
 
 Retrieves the stopped state of the strategy.
@@ -112,7 +106,7 @@ marked as stopped and should cease operation.
 ### tick
 
 ```ts
-tick: (symbol: string, strategyName: string) => Promise<IStrategyTickResult>
+tick: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<IStrategyTickResult>
 ```
 
 Executes live trading tick for current strategy.
@@ -123,7 +117,7 @@ Evaluates current market conditions and returns signal state.
 ### backtest
 
 ```ts
-backtest: (symbol: string, strategyName: string, candles: ICandleData[]) => Promise<IStrategyBacktestResult>
+backtest: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }, candles: ICandleData[]) => Promise<IStrategyBacktestResult>
 ```
 
 Executes backtest for current strategy with provided candles.
@@ -134,7 +128,7 @@ Evaluates strategy signals against historical data.
 ### stop
 
 ```ts
-stop: (backtest: boolean, ctx: { symbol: string; strategyName: string; }) => Promise<void>
+stop: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<void>
 ```
 
 Stops the specified strategy from generating new signals.
@@ -145,7 +139,7 @@ getSignal from being called on subsequent ticks.
 ### clear
 
 ```ts
-clear: (backtest: boolean, ctx?: { symbol: string; strategyName: string; }) => Promise<void>
+clear: (payload?: { symbol: string; strategyName: string; exchangeName: string; frameName: string; backtest: boolean; }) => Promise<void>
 ```
 
 Clears the memoized ClientStrategy instance from cache.
@@ -156,7 +150,7 @@ Useful for resetting strategy state or releasing resources.
 ### cancel
 
 ```ts
-cancel: (backtest: boolean, ctx: { symbol: string; strategyName: string; }, cancelId?: string) => Promise<void>
+cancel: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }, cancelId?: string) => Promise<void>
 ```
 
 Cancels the scheduled signal for the specified strategy.
