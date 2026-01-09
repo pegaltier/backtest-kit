@@ -428,6 +428,7 @@ export class LiveUtils {
       context,
     });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_PENDING_SIGNAL);
+    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_GET_PENDING_SIGNAL);
 
     {
       const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
@@ -464,6 +465,7 @@ export class LiveUtils {
       context,
     });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL);
+    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL);
 
     {
       const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
@@ -512,6 +514,7 @@ export class LiveUtils {
       context,
     });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_BREAKEVEN);
+    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_GET_BREAKEVEN);
 
     {
       const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
@@ -555,6 +558,7 @@ export class LiveUtils {
       context,
     });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_STOP);
+    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_STOP);
 
     {
       const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
@@ -606,6 +610,7 @@ export class LiveUtils {
       cancelId,
     });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_CANCEL);
+    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_CANCEL);
 
     {
       const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
@@ -661,6 +666,7 @@ export class LiveUtils {
       context,
     });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_PARTIAL_PROFIT);
+    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_PARTIAL_PROFIT);
 
     {
       const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
@@ -716,6 +722,7 @@ export class LiveUtils {
       context,
     });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_PARTIAL_LOSS);
+    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_PARTIAL_LOSS);
 
     {
       const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
@@ -765,6 +772,7 @@ export class LiveUtils {
       context,
     });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_TRAILING_STOP);
+    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_TRAILING_STOP);
 
     {
       const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
@@ -814,6 +822,7 @@ export class LiveUtils {
       context,
     });
     backtest.strategyValidationService.validate(context.strategyName, "Live.breakeven");
+    backtest.exchangeValidationService.validate(context.exchangeName, "Live.breakeven");
 
     {
       const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
@@ -858,6 +867,7 @@ export class LiveUtils {
       context,
     });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_DATA);
+    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_GET_DATA);
 
     {
       const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
@@ -900,6 +910,7 @@ export class LiveUtils {
       context,
     });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_REPORT);
+    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_GET_REPORT);
 
     {
       const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
@@ -951,6 +962,7 @@ export class LiveUtils {
       path,
     });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_DUMP);
+    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_DUMP);
 
     {
       const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);

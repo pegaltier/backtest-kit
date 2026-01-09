@@ -536,6 +536,10 @@ export class BacktestUtils {
       context.strategyName,
       BACKTEST_METHOD_NAME_GET_PENDING_SIGNAL
     );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      BACKTEST_METHOD_NAME_GET_PENDING_SIGNAL
+    );
 
     {
       const { riskName, riskList } =
@@ -591,6 +595,10 @@ export class BacktestUtils {
     });
     backtest.strategyValidationService.validate(
       context.strategyName,
+      BACKTEST_METHOD_NAME_GET_SCHEDULED_SIGNAL
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
       BACKTEST_METHOD_NAME_GET_SCHEDULED_SIGNAL
     );
 
@@ -660,6 +668,10 @@ export class BacktestUtils {
       context.strategyName,
       BACKTEST_METHOD_NAME_GET_BREAKEVEN
     );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      BACKTEST_METHOD_NAME_GET_BREAKEVEN
+    );
 
     {
       const { riskName, riskList } =
@@ -724,6 +736,10 @@ export class BacktestUtils {
       context.strategyName,
       BACKTEST_METHOD_NAME_STOP
     );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      BACKTEST_METHOD_NAME_STOP
+    );
 
     {
       const { riskName, riskList } =
@@ -784,6 +800,10 @@ export class BacktestUtils {
     });
     backtest.strategyValidationService.validate(
       context.strategyName,
+      BACKTEST_METHOD_NAME_CANCEL
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
       BACKTEST_METHOD_NAME_CANCEL
     );
 
@@ -856,6 +876,10 @@ export class BacktestUtils {
     });
     backtest.strategyValidationService.validate(
       context.strategyName,
+      BACKTEST_METHOD_NAME_PARTIAL_PROFIT
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
       BACKTEST_METHOD_NAME_PARTIAL_PROFIT
     );
 
@@ -931,6 +955,10 @@ export class BacktestUtils {
       context.strategyName,
       BACKTEST_METHOD_NAME_PARTIAL_LOSS
     );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      BACKTEST_METHOD_NAME_PARTIAL_LOSS
+    );
 
     {
       const { riskName, riskList } =
@@ -998,6 +1026,10 @@ export class BacktestUtils {
       context.strategyName,
       BACKTEST_METHOD_NAME_TRAILING_STOP
     );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      BACKTEST_METHOD_NAME_TRAILING_STOP
+    );
 
     {
       const { riskName, riskList } =
@@ -1063,6 +1095,10 @@ export class BacktestUtils {
       context.strategyName,
       "Backtest.breakeven"
     );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      "Backtest.breakeven"
+    );
 
     {
       const { riskName, riskList } =
@@ -1121,6 +1157,10 @@ export class BacktestUtils {
     });
     backtest.strategyValidationService.validate(
       context.strategyName,
+      BACKTEST_METHOD_NAME_GET_DATA
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
       BACKTEST_METHOD_NAME_GET_DATA
     );
 
@@ -1184,6 +1224,10 @@ export class BacktestUtils {
     });
     backtest.strategyValidationService.validate(
       context.strategyName,
+      BACKTEST_METHOD_NAME_GET_REPORT
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
       BACKTEST_METHOD_NAME_GET_REPORT
     );
 
@@ -1257,6 +1301,10 @@ export class BacktestUtils {
     });
     backtest.strategyValidationService.validate(
       context.strategyName,
+      BACKTEST_METHOD_NAME_DUMP
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
       BACKTEST_METHOD_NAME_DUMP
     );
 
