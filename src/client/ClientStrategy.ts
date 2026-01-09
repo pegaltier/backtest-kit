@@ -3166,7 +3166,7 @@ export class ClientStrategy implements IStrategy {
     // Need to cover: entry slippage + entry fee + exit slippage + exit fee
     // Total: (slippage + fee) * 2 transactions
     const breakevenThresholdPercent =
-      (GLOBAL_CONFIG.CC_PERCENT_SLIPPAGE + GLOBAL_CONFIG.CC_PERCENT_FEE) * 2;
+      (GLOBAL_CONFIG.CC_PERCENT_SLIPPAGE + GLOBAL_CONFIG.CC_PERCENT_FEE) * 2 + GLOBAL_CONFIG.CC_BREAKEVEN_THRESHOLD;
 
     // Check if trailing stop is already set
     if (signal._trailingPriceStopLoss !== undefined) {
