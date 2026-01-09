@@ -215,18 +215,19 @@ declare function partialLoss(symbol: string, percentToClose: number): Promise<vo
  *
  * @param symbol - Trading pair symbol
  * @param percentShift - Percentage adjustment to SL distance (-100 to 100)
+ * @param currentPrice - Current market price to check for intrusion
  * @returns Promise that resolves when trailing SL is updated
  *
  * @example
  * ```typescript
  * import { trailingStop } from "backtest-kit";
  *
- * // LONG: entry=100, originalSL=90, distance=10
- * // Tighten stop by 50%: newSL = 100 - 10*(1-0.5) = 95
- * await trailingStop("BTCUSDT", -50);
+ * // LONG: entry=100, originalSL=90, distance=10%, currentPrice=102
+ * // Tighten stop by 50%: newSL = 100 - 5% = 95
+ * await trailingStop("BTCUSDT", -50, 102);
  * ```
  */
-declare function trailingStop(symbol: string, percentShift: number): Promise<void>;
+declare function trailingStop(symbol: string, percentShift: number, currentPrice: number): Promise<void>;
 /**
  * Moves stop-loss to breakeven when price reaches threshold.
  *
@@ -1626,7 +1627,7 @@ interface IStrategy {
      * }
      * ```
      */
-    trailingStop: (symbol: string, percentShift: number, backtest: boolean) => Promise<void>;
+    trailingStop: (symbol: string, percentShift: number, currentPrice: number, backtest: boolean) => Promise<void>;
     /**
      * Moves stop-loss to breakeven (entry price) when price reaches threshold.
      *
@@ -6883,21 +6884,22 @@ declare class BacktestUtils {
      *
      * @param symbol - Trading pair symbol
      * @param percentShift - Percentage adjustment to SL distance (-100 to 100)
+     * @param currentPrice - Current market price to check for intrusion
      * @param context - Execution context with strategyName, exchangeName, and frameName
      * @returns Promise that resolves when trailing SL is updated
      *
      * @example
      * ```typescript
-     * // LONG: entry=100, originalSL=90, distance=10
-     * // Tighten stop by 50%: newSL = 100 - 10*(1-0.5) = 95
-     * await Backtest.trailingStop("BTCUSDT", -50, {
+     * // LONG: entry=100, originalSL=90, distance=10%, currentPrice=102
+     * // Tighten stop by 50%: newSL = 100 - 5% = 95
+     * await Backtest.trailingStop("BTCUSDT", -50, 102, {
      *   exchangeName: "binance",
      *   frameName: "frame1",
      *   strategyName: "my-strategy"
      * });
      * ```
      */
-    trailingStop: (symbol: string, percentShift: number, context: {
+    trailingStop: (symbol: string, percentShift: number, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
@@ -7503,20 +7505,21 @@ declare class LiveUtils {
      *
      * @param symbol - Trading pair symbol
      * @param percentShift - Percentage adjustment to SL distance (-100 to 100)
+     * @param currentPrice - Current market price to check for intrusion
      * @param context - Execution context with strategyName and exchangeName
      * @returns Promise that resolves when trailing SL is updated
      *
      * @example
      * ```typescript
-     * // LONG: entry=100, originalSL=90, distance=10
-     * // Tighten stop by 50%: newSL = 100 - 10*(1-0.5) = 95
-     * await Live.trailingStop("BTCUSDT", -50, {
+     * // LONG: entry=100, originalSL=90, distance=10%, currentPrice=102
+     * // Tighten stop by 50%: newSL = 100 - 5% = 95
+     * await Live.trailingStop("BTCUSDT", -50, 102, {
      *   exchangeName: "binance",
      *   strategyName: "my-strategy"
      * });
      * ```
      */
-    trailingStop: (symbol: string, percentShift: number, context: {
+    trailingStop: (symbol: string, percentShift: number, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
     }) => Promise<void>;
@@ -11689,22 +11692,24 @@ declare class StrategyConnectionService implements TStrategy$1 {
      * @param backtest - Whether running in backtest mode
      * @param symbol - Trading pair symbol
      * @param percentShift - Percentage adjustment to SL distance (-100 to 100)
+     * @param currentPrice - Current market price to check for intrusion
      * @param context - Execution context with strategyName, exchangeName, frameName
      * @returns Promise that resolves when trailing SL is updated
      *
      * @example
      * ```typescript
-     * // LONG: entry=100, originalSL=90, distance=10
-     * // Tighten stop by 50%: newSL = 100 - 10*(1-0.5) = 95
+     * // LONG: entry=100, originalSL=90, distance=10%, currentPrice=102
+     * // Tighten stop by 50%: newSL = 100 - 5% = 95
      * await strategyConnectionService.trailingStop(
      *   false,
      *   "BTCUSDT",
      *   -50,
+     *   102,
      *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
      * );
      * ```
      */
-    trailingStop: (backtest: boolean, symbol: string, percentShift: number, context: {
+    trailingStop: (backtest: boolean, symbol: string, percentShift: number, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
@@ -12254,22 +12259,24 @@ declare class StrategyCoreService implements TStrategy {
      * @param backtest - Whether running in backtest mode
      * @param symbol - Trading pair symbol
      * @param percentShift - Percentage adjustment to SL distance (-100 to 100)
+     * @param currentPrice - Current market price to check for intrusion
      * @param context - Execution context with strategyName, exchangeName, frameName
      * @returns Promise that resolves when trailing SL is updated
      *
      * @example
      * ```typescript
-     * // LONG: entry=100, originalSL=90, distance=10
-     * // Tighten stop by 50%: newSL = 100 - 10*(1-0.5) = 95
+     * // LONG: entry=100, originalSL=90, distance=10%, currentPrice=102
+     * // Tighten stop by 50%: newSL = 100 - 5% = 95
      * await strategyCoreService.trailingStop(
      *   false,
      *   "BTCUSDT",
      *   -50,
+     *   102,
      *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
      * );
      * ```
      */
-    trailingStop: (backtest: boolean, symbol: string, percentShift: number, context: {
+    trailingStop: (backtest: boolean, symbol: string, percentShift: number, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;

@@ -940,6 +940,20 @@ const BREAKEVEN_FN = (
         const isThresholdReached = currentPrice >= thresholdPrice;
 
         if (isThresholdReached && breakevenPrice > trailingStopLoss) {
+          // Check for price intrusion before setting new SL
+          if (currentPrice < breakevenPrice) {
+            // Price already crossed the breakeven level - skip setting SL
+            self.params.logger.debug("BREAKEVEN_FN: price intrusion detected, skipping SL update", {
+              signalId: signal.id,
+              position: signal.position,
+              priceOpen: signal.priceOpen,
+              breakevenPrice,
+              currentPrice,
+              reason: "currentPrice below breakevenPrice (LONG position)"
+            });
+            return false;
+          }
+
           // Breakeven is better than current trailing SL - upgrade to breakeven
           signal._trailingPriceStopLoss = breakevenPrice;
 
@@ -992,6 +1006,20 @@ const BREAKEVEN_FN = (
         const isThresholdReached = currentPrice <= thresholdPrice;
 
         if (isThresholdReached && breakevenPrice < trailingStopLoss) {
+          // Check for price intrusion before setting new SL
+          if (currentPrice > breakevenPrice) {
+            // Price already crossed the breakeven level - skip setting SL
+            self.params.logger.debug("BREAKEVEN_FN: price intrusion detected, skipping SL update", {
+              signalId: signal.id,
+              position: signal.position,
+              priceOpen: signal.priceOpen,
+              breakevenPrice,
+              currentPrice,
+              reason: "currentPrice above breakevenPrice (SHORT position)"
+            });
+            return false;
+          }
+
           // Breakeven is better than current trailing SL - upgrade to breakeven
           signal._trailingPriceStopLoss = breakevenPrice;
 
@@ -1064,6 +1092,33 @@ const BREAKEVEN_FN = (
       reason: !isThresholdReached
         ? "threshold not reached"
         : "already at/past breakeven",
+    });
+    return false;
+  }
+
+  // Check for price intrusion before setting new SL
+  if (signal.position === "long" && currentPrice < breakevenPrice) {
+    // LONG: Price already crossed the breakeven level - skip setting SL
+    self.params.logger.debug("BREAKEVEN_FN: price intrusion detected, skipping SL update", {
+      signalId: signal.id,
+      position: signal.position,
+      priceOpen: signal.priceOpen,
+      breakevenPrice,
+      currentPrice,
+      reason: "currentPrice below breakevenPrice (LONG position)"
+    });
+    return false;
+  }
+
+  if (signal.position === "short" && currentPrice > breakevenPrice) {
+    // SHORT: Price already crossed the breakeven level - skip setting SL
+    self.params.logger.debug("BREAKEVEN_FN: price intrusion detected, skipping SL update", {
+      signalId: signal.id,
+      position: signal.position,
+      priceOpen: signal.priceOpen,
+      breakevenPrice,
+      currentPrice,
+      reason: "currentPrice above breakevenPrice (SHORT position)"
     });
     return false;
   }
@@ -4174,34 +4229,43 @@ export class ClientStrategy implements IStrategy {
    * - Throws if percentShift is not a finite number
    * - Throws if percentShift < -100 or > 100
    * - Throws if percentShift === 0
+   * - Throws if currentPrice is not a positive finite number
    * - Skips if new SL would cross entry price
+   * - Skips if currentPrice already crossed new SL level (price intrusion protection)
    *
    * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
    * @param percentShift - Percentage shift of SL distance [-100, 100], excluding 0
+   * @param currentPrice - Current market price to check for intrusion
    * @param backtest - Whether running in backtest mode (controls persistence)
    * @returns Promise that resolves when trailing SL is updated and persisted
    *
    * @example
    * ```typescript
-   * // LONG position: entry=100, originalSL=90, distance=10
+   * // LONG position: entry=100, originalSL=90, distance=10%, currentPrice=102
    *
-   * // Move SL 50% closer to entry (tighten)
-   * await strategy.trailingStop("BTCUSDT", -50, false);
-   * // newSL = 100 - 10*(1-0.5) = 95
+   * // Move SL 50% closer to entry (tighten): reduces distance by 50%
+   * await strategy.trailingStop("BTCUSDT", -50, 102, false);
+   * // newDistance = 10% - 50% = 5%, newSL = 100 * (1 - 0.05) = 95
    *
-   * // Move SL 30% away from entry (loosen, allow more drawdown)
-   * await strategy.trailingStop("BTCUSDT", 30, false);
-   * // newSL = 100 - 10*(1+0.3) = 87 (SKIPPED: worse than current 95)
+   * // Move SL 30% away from entry (loosen): increases distance by 30%  
+   * await strategy.trailingStop("BTCUSDT", 30, 102, false);
+   * // newDistance = 10% + 30% = 40%, newSL = 100 * (1 - 0.4) = 60
+   * 
+   * // Price intrusion example: currentPrice=92, trying to set SL=95
+   * await strategy.trailingStop("BTCUSDT", -50, 92, false);
+   * // SKIPPED: currentPrice (92) < newSL (95) - would trigger immediate stop
    * ```
    */
   public async trailingStop(
     symbol: string,
     percentShift: number,
+    currentPrice: number,
     backtest: boolean
   ): Promise<void> {
     this.params.logger.debug("ClientStrategy trailingStop", {
       symbol,
       percentShift,
+      currentPrice,
       hasPendingSignal: this._pendingSignal !== null,
     });
 
@@ -4229,6 +4293,52 @@ export class ClientStrategy implements IStrategy {
       throw new Error(
         `ClientStrategy trailingStop: percentShift cannot be 0`
       );
+    }
+
+    // Validation: currentPrice must be valid
+    if (typeof currentPrice !== "number" || !isFinite(currentPrice) || currentPrice <= 0) {
+      throw new Error(
+        `ClientStrategy trailingStop: currentPrice must be a positive finite number, got ${currentPrice}`
+      );
+    }
+
+    // Calculate what the new stop loss would be
+    const signal = this._pendingSignal;
+    const slDistancePercent = Math.abs((signal.priceOpen - signal.priceStopLoss) / signal.priceOpen * 100);
+    const newSlDistancePercent = slDistancePercent + percentShift;
+    
+    let newStopLoss: number;
+    if (signal.position === "long") {
+      newStopLoss = signal.priceOpen * (1 - newSlDistancePercent / 100);
+    } else {
+      newStopLoss = signal.priceOpen * (1 + newSlDistancePercent / 100);
+    }
+
+    // Check for price intrusion before executing trailing logic
+    if (signal.position === "long" && currentPrice < newStopLoss) {
+      // LONG: Price already crossed the new stop loss level - skip setting SL
+      this.params.logger.debug("ClientStrategy trailingStop: price intrusion detected, skipping SL update", {
+        signalId: signal.id,
+        position: signal.position,
+        priceOpen: signal.priceOpen,
+        newStopLoss,
+        currentPrice,
+        reason: "currentPrice below newStopLoss (LONG position)"
+      });
+      return;
+    }
+
+    if (signal.position === "short" && currentPrice > newStopLoss) {
+      // SHORT: Price already crossed the new stop loss level - skip setting SL
+      this.params.logger.debug("ClientStrategy trailingStop: price intrusion detected, skipping SL update", {
+        signalId: signal.id,
+        position: signal.position,
+        priceOpen: signal.priceOpen,
+        newStopLoss,
+        currentPrice,
+        reason: "currentPrice above newStopLoss (SHORT position)"
+      });
+      return;
     }
 
     // Execute trailing logic

@@ -994,14 +994,15 @@ export class BacktestUtils {
    *
    * @param symbol - Trading pair symbol
    * @param percentShift - Percentage adjustment to SL distance (-100 to 100)
+   * @param currentPrice - Current market price to check for intrusion
    * @param context - Execution context with strategyName, exchangeName, and frameName
    * @returns Promise that resolves when trailing SL is updated
    *
    * @example
    * ```typescript
-   * // LONG: entry=100, originalSL=90, distance=10
-   * // Tighten stop by 50%: newSL = 100 - 10*(1-0.5) = 95
-   * await Backtest.trailingStop("BTCUSDT", -50, {
+   * // LONG: entry=100, originalSL=90, distance=10%, currentPrice=102
+   * // Tighten stop by 50%: newSL = 100 - 5% = 95
+   * await Backtest.trailingStop("BTCUSDT", -50, 102, {
    *   exchangeName: "binance",
    *   frameName: "frame1",
    *   strategyName: "my-strategy"
@@ -1011,6 +1012,7 @@ export class BacktestUtils {
   public trailingStop = async (
     symbol: string,
     percentShift: number,
+    currentPrice: number,
     context: {
       strategyName: StrategyName;
       exchangeName: ExchangeName;
@@ -1020,6 +1022,7 @@ export class BacktestUtils {
     backtest.loggerService.info(BACKTEST_METHOD_NAME_TRAILING_STOP, {
       symbol,
       percentShift,
+      currentPrice,
       context,
     });
     backtest.strategyValidationService.validate(
@@ -1052,6 +1055,7 @@ export class BacktestUtils {
       true,
       symbol,
       percentShift,
+      currentPrice,
       context
     );
   };

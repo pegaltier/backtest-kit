@@ -438,17 +438,19 @@ export class StrategyCoreService implements TStrategy {
    * @param backtest - Whether running in backtest mode
    * @param symbol - Trading pair symbol
    * @param percentShift - Percentage adjustment to SL distance (-100 to 100)
+   * @param currentPrice - Current market price to check for intrusion
    * @param context - Execution context with strategyName, exchangeName, frameName
    * @returns Promise that resolves when trailing SL is updated
    *
    * @example
    * ```typescript
-   * // LONG: entry=100, originalSL=90, distance=10
-   * // Tighten stop by 50%: newSL = 100 - 10*(1-0.5) = 95
+   * // LONG: entry=100, originalSL=90, distance=10%, currentPrice=102
+   * // Tighten stop by 50%: newSL = 100 - 5% = 95
    * await strategyCoreService.trailingStop(
    *   false,
    *   "BTCUSDT",
    *   -50,
+   *   102,
    *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
    * );
    * ```
@@ -457,16 +459,18 @@ export class StrategyCoreService implements TStrategy {
     backtest: boolean,
     symbol: string,
     percentShift: number,
+    currentPrice: number,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<void> => {
     this.loggerService.log("strategyCoreService trailingStop", {
       symbol,
       percentShift,
+      currentPrice,
       context,
       backtest,
     });
     await this.validate(symbol, context);
-    return await this.strategyConnectionService.trailingStop(backtest, symbol, percentShift, context);
+    return await this.strategyConnectionService.trailingStop(backtest, symbol, percentShift, currentPrice, context);
   };
 
   /**

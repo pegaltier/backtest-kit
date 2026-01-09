@@ -686,7 +686,7 @@ export interface IStrategy {
    * }
    * ```
    */
-  trailingStop: (symbol: string, percentShift: number, backtest: boolean) => Promise<void>;
+  trailingStop: (symbol: string, percentShift: number, currentPrice: number, backtest: boolean) => Promise<void>;
 
   /**
    * Moves stop-loss to breakeven (entry price) when price reaches threshold.

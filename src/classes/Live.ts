@@ -745,14 +745,15 @@ export class LiveUtils {
    *
    * @param symbol - Trading pair symbol
    * @param percentShift - Percentage adjustment to SL distance (-100 to 100)
+   * @param currentPrice - Current market price to check for intrusion
    * @param context - Execution context with strategyName and exchangeName
    * @returns Promise that resolves when trailing SL is updated
    *
    * @example
    * ```typescript
-   * // LONG: entry=100, originalSL=90, distance=10
-   * // Tighten stop by 50%: newSL = 100 - 10*(1-0.5) = 95
-   * await Live.trailingStop("BTCUSDT", -50, {
+   * // LONG: entry=100, originalSL=90, distance=10%, currentPrice=102
+   * // Tighten stop by 50%: newSL = 100 - 5% = 95
+   * await Live.trailingStop("BTCUSDT", -50, 102, {
    *   exchangeName: "binance",
    *   strategyName: "my-strategy"
    * });
@@ -761,6 +762,7 @@ export class LiveUtils {
   public trailingStop = async (
     symbol: string,
     percentShift: number,
+    currentPrice: number,
     context: {
       strategyName: StrategyName;
       exchangeName: ExchangeName;
@@ -769,6 +771,7 @@ export class LiveUtils {
     backtest.loggerService.info(LIVE_METHOD_NAME_TRAILING_STOP, {
       symbol,
       percentShift,
+      currentPrice,
       context,
     });
     backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_TRAILING_STOP);
@@ -780,7 +783,7 @@ export class LiveUtils {
       riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_TRAILING_STOP));
     }
 
-    await backtest.strategyCoreService.trailingStop(false, symbol, percentShift, {
+    await backtest.strategyCoreService.trailingStop(false, symbol, percentShift, currentPrice, {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
       frameName: "",

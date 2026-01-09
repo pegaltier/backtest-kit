@@ -208,24 +208,27 @@ export async function partialLoss(
  *
  * @param symbol - Trading pair symbol
  * @param percentShift - Percentage adjustment to SL distance (-100 to 100)
+ * @param currentPrice - Current market price to check for intrusion
  * @returns Promise that resolves when trailing SL is updated
  *
  * @example
  * ```typescript
  * import { trailingStop } from "backtest-kit";
  *
- * // LONG: entry=100, originalSL=90, distance=10
- * // Tighten stop by 50%: newSL = 100 - 10*(1-0.5) = 95
- * await trailingStop("BTCUSDT", -50);
+ * // LONG: entry=100, originalSL=90, distance=10%, currentPrice=102
+ * // Tighten stop by 50%: newSL = 100 - 5% = 95
+ * await trailingStop("BTCUSDT", -50, 102);
  * ```
  */
 export async function trailingStop(
   symbol: string,
   percentShift: number,
+  currentPrice: number,
 ): Promise<void> {
   backtest.loggerService.info(TRAILING_STOP_METHOD_NAME, {
     symbol,
     percentShift,
+    currentPrice,
   });
   if (!ExecutionContextService.hasContext()) {
     throw new Error("trailingStop requires an execution context");
@@ -240,6 +243,7 @@ export async function trailingStop(
     isBacktest,
     symbol,
     percentShift,
+    currentPrice,
     { exchangeName, frameName, strategyName }
   );
 }

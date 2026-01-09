@@ -149,13 +149,13 @@ test("TRAILING STOP: Tightens SL for LONG position with negative shift", async (
       onPartialProfit: async (symbol, signal, currentPrice, revenuePercent, backtest) => {
         // Применяем trailing stop когда достигли +15%
         if (!trailingApplied && revenuePercent >= 15) {
-          console.log(`[onPartialProfit] Applying trailing stop: revenuePercent=${revenuePercent.toFixed(2)}%`);
+          // console.log(`[onPartialProfit] Applying trailing stop: revenuePercent=${revenuePercent.toFixed(2)}%`);
 
           // percentShift = -1% → newDistance = 2% + (-1%) = 1% → newSL = 99k
-          await trailingStop(symbol, -1);
+          await trailingStop(symbol, -1, currentPrice);
           trailingApplied = true;
 
-          console.log(`[trailingStop] Applied shift=-1%, original SL distance=2%, new distance=1%`);
+          // console.log(`[trailingStop] Applied shift=-1%, original SL distance=2%, new distance=1%`);
         }
       },
     },
@@ -171,7 +171,7 @@ test("TRAILING STOP: Tightens SL for LONG position with negative shift", async (
   const signalResults = [];
   const unsubscribeSignal = listenSignalBacktest((result) => {
     signalResults.push(result);
-    console.log(`[listenSignalBacktest] action=${result.action}, closeReason=${result.closeReason || 'N/A'}`);
+    // console.log(`[listenSignalBacktest] action=${result.action}, closeReason=${result.closeReason || 'N/A'}`);
   });
 
   const awaitSubject = new Subject();
@@ -216,7 +216,7 @@ test("TRAILING STOP: Tightens SL for LONG position with negative shift", async (
     return;
   }
 
-  console.log(`[TEST] Signal closed by ${closedResult.closeReason}, PNL: ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
+  // console.log(`[TEST] Signal closed by ${closedResult.closeReason}, PNL: ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
 
   // Проверяем PNL: должен быть убыток ~-1% (закрылось на 99k вместо 98k)
   // PNL = (99000 - 100000) / 100000 * 100 = -1%
@@ -360,13 +360,13 @@ test("TRAILING STOP: Tightens SL for SHORT position", async ({ pass, fail }) => 
     callbacks: {
       onPartialProfit: async (symbol, signal, currentPrice, revenuePercent, backtest) => {
         if (!trailingApplied && revenuePercent >= 15) {
-          console.log(`[onPartialProfit SHORT] Applying trailing stop: revenuePercent=${revenuePercent.toFixed(2)}%`);
+          // console.log(`[onPartialProfit SHORT] Applying trailing stop: revenuePercent=${revenuePercent.toFixed(2)}%`);
 
           // percentShift = -1% → newDistance = 2% + (-1%) = 1% → newSL = 101k
-          await trailingStop(symbol, -1);
+          await trailingStop(symbol, -1, currentPrice);
           trailingApplied = true;
 
-          console.log(`[trailingStop SHORT] Applied shift=-1%, original SL distance=2%, new distance=1%`);
+          // console.log(`[trailingStop SHORT] Applied shift=-1%, original SL distance=2%, new distance=1%`);
         }
       },
     },
@@ -382,7 +382,7 @@ test("TRAILING STOP: Tightens SL for SHORT position", async ({ pass, fail }) => 
   const signalResults = [];
   const unsubscribeSignal = listenSignalBacktest((result) => {
     signalResults.push(result);
-    console.log(`[listenSignalBacktest SHORT] action=${result.action}, closeReason=${result.closeReason || 'N/A'}`);
+    // console.log(`[listenSignalBacktest SHORT] action=${result.action}, closeReason=${result.closeReason || 'N/A'}`);
   });
 
   const awaitSubject = new Subject();
@@ -425,7 +425,7 @@ test("TRAILING STOP: Tightens SL for SHORT position", async ({ pass, fail }) => 
     return;
   }
 
-  console.log(`[TEST SHORT] Signal closed by ${closedResult.closeReason}, PNL: ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
+  // console.log(`[TEST SHORT] Signal closed by ${closedResult.closeReason}, PNL: ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
 
   // Проверяем PNL: должен быть убыток ~-1.5% для SHORT
   // SHORT: entry=100k, close=101.5k → loss
@@ -583,12 +583,15 @@ test("TRAILING STOP: Apply on listenPartialProfit events", async ({ pass, fail }
   // Subscribe to partial profit events and apply trailing stop at 20% level
   const unsubscribeProfit = listenPartialProfit(async ({ symbol, level, backtest }) => {
     profitEvents.push(level);
-    console.log(`[listenPartialProfit] Level: ${level}%`);
+    // console.log(`[listenPartialProfit] Level: ${level}%`);
 
     // Apply trailing stop when reaching 20% profit
     if (!trailingApplied && level >= 20) {
-      console.log(`[Applying trailingStop] At level ${level}%, shift=-1%`);
-      await trailingStop(symbol, -1);
+      // console.log(`[Applying trailingStop] At level ${level}%, shift=-1%`);
+      
+      // Нужно получить текущую цену, используем приблизительную для теста
+      const currentPrice = basePrice + 25000; // ~25% profit level price
+      await trailingStop(symbol, -1, currentPrice);
       trailingApplied = true;
     }
   });
@@ -596,7 +599,7 @@ test("TRAILING STOP: Apply on listenPartialProfit events", async ({ pass, fail }
   const signalResults = [];
   const unsubscribeSignal = listenSignalBacktest((result) => {
     signalResults.push(result);
-    console.log(`[listenSignalBacktest] action=${result.action}, closeReason=${result.closeReason || 'N/A'}`);
+    // console.log(`[listenSignalBacktest] action=${result.action}, closeReason=${result.closeReason || 'N/A'}`);
   });
 
   const awaitSubject = new Subject();
@@ -645,7 +648,7 @@ test("TRAILING STOP: Apply on listenPartialProfit events", async ({ pass, fail }
     return;
   }
 
-  console.log(`[TEST] Profit events: ${profitEvents.join(', ')}%, PNL: ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
+  // console.log(`[TEST] Profit events: ${profitEvents.join(', ')}%, PNL: ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
 
   // Проверяем PNL: должен быть ~-1% (закрылось по trailing SL=99k)
   const expectedPnl = -1.0;
@@ -770,7 +773,7 @@ test("TRAILING STOP: Multiple adjustments on progressive profit with onPartialPr
       };
     },
     callbacks: {
-      onPartialProfit: async (symbol, _signal, _currentPrice, revenuePercent, _backtest) => {
+      onPartialProfit: async (symbol, _signal, currentPrice, revenuePercent, _backtest) => {
         profitEvents.push(revenuePercent);
 
         // Apply trailing stop at specific milestone levels (10%, 20%, 30%)
@@ -778,13 +781,13 @@ test("TRAILING STOP: Multiple adjustments on progressive profit with onPartialPr
         const level = Math.round(revenuePercent / 10) * 10;
 
         if (level === 10 && !trailingAdjustments.includes(10)) {
-          await trailingStop(symbol, -0.5);
+          await trailingStop(symbol, -0.5, currentPrice);
           trailingAdjustments.push(10);
         } else if (level === 20 && !trailingAdjustments.includes(20)) {
-          await trailingStop(symbol, -0.5);
+          await trailingStop(symbol, -0.5, currentPrice);
           trailingAdjustments.push(20);
         } else if (level === 30 && !trailingAdjustments.includes(30)) {
-          await trailingStop(symbol, -0.5);
+          await trailingStop(symbol, -0.5, currentPrice);
           trailingAdjustments.push(30);
         }
       },
@@ -989,16 +992,16 @@ test("TRAILING STOP: Apply on listenPartialLoss events for loss protection", asy
   // Subscribe to partial loss events and apply trailing stop at specific loss levels
   const unsubscribeLoss = listenPartialLoss(async ({ symbol, level, data, currentPrice }) => {
     lossEvents.push(level);
-    console.log(`[listenPartialLoss] Level: ${level}%, currentPrice=${currentPrice}, SL=${data.priceStopLoss}`);
+    // console.log(`[listenPartialLoss] Level: ${level}%, currentPrice=${currentPrice}, SL=${data.priceStopLoss}`);
 
     // Apply trailing stop at 10% and 20% loss levels (подтягиваем SL вверх)
     if (level === 10 && !trailingAdjustments.includes(10)) {
-      console.log(`[trailingStop at loss 10%] shift=-0.5%`);
-      await trailingStop(symbol, -0.5);
+      // console.log(`[trailingStop at loss 10%] shift=-0.5%`);
+      await trailingStop(symbol, -0.5, currentPrice);
       trailingAdjustments.push(10);
     } else if (level === 20 && !trailingAdjustments.includes(20)) {
-      console.log(`[trailingStop at loss 20%] shift=-0.5%`);
-      await trailingStop(symbol, -0.5);
+      // console.log(`[trailingStop at loss 20%] shift=-0.5%`);
+      await trailingStop(symbol, -0.5, currentPrice);
       trailingAdjustments.push(20);
     }
   });
@@ -1006,7 +1009,7 @@ test("TRAILING STOP: Apply on listenPartialLoss events for loss protection", asy
   const signalResults = [];
   const unsubscribeSignal = listenSignalBacktest((result) => {
     signalResults.push(result);
-    console.log(`[listenSignalBacktest] action=${result.action}, closeReason=${result.closeReason || 'N/A'}`);
+    // console.log(`[listenSignalBacktest] action=${result.action}, closeReason=${result.closeReason || 'N/A'}`);
   });
 
   const awaitSubject = new Subject();
@@ -1055,7 +1058,7 @@ test("TRAILING STOP: Apply on listenPartialLoss events for loss protection", asy
     return;
   }
 
-  console.log(`[TEST] Loss events: ${lossEvents.join(', ')}%, Adjustments: ${trailingAdjustments.join(', ')}%, PNL: ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
+  // console.log(`[TEST] Loss events: ${lossEvents.join(', ')}%, Adjustments: ${trailingAdjustments.join(', ')}%, PNL: ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
 
   // Проверяем PNL: должен быть около -2% до -3% (entry≈100k, close≈97k, trailing SL подтянулся)
   // PNL = (97000 - 100000) / 100000 * 100 = -3%
@@ -1212,28 +1215,28 @@ test("TRAILING STOP: Rejects wrong direction for LONG position", async ({ pass, 
       };
     },
     callbacks: {
-      onOpen: async (symbol, _signal, _priceOpen, _backtest) => {
-        console.log(`[onOpen] Applying first trailing stop`);
+      onOpen: async (symbol, _signal, priceOpen, _backtest) => {
+        // console.log(`[onOpen] Applying first trailing stop`);
 
         // Первый вызов: устанавливает направление UP
         // percentShift = -0.5% → newDistance = 1% + (-0.5%) = 0.5% → newSL = 99.5k
         // Направление: UP (99.5k > 99k)
-        await trailingStop(symbol, -0.5);
+        await trailingStop(symbol, -0.5, priceOpen);
         firstTrailingApplied = true;
 
-        console.log(`[trailingStop #1] Applied shift=-0.5%, direction set to UP (99.5k > 99k)`);
+        // console.log(`[trailingStop #1] Applied shift=-0.5%, direction set to UP (99.5k > 99k)`);
       },
-      onPartialProfit: async (symbol, _signal, _currentPrice, revenuePercent, _backtest) => {
+      onPartialProfit: async (symbol, _signal, currentPrice, revenuePercent, _backtest) => {
         // Второй вызов при 5% profit: пытается двигать вниз (должно быть отклонено)
         if (firstTrailingApplied && !secondTrailingApplied && revenuePercent >= 5) {
-          console.log(`[onPartialProfit] Second trailing: shift=+1% at ${revenuePercent.toFixed(2)}%`);
+          // console.log(`[onPartialProfit] Second trailing: shift=+1% at ${revenuePercent.toFixed(2)}%`);
 
           // percentShift = +1% → newDistance = 1% + 1% = 2% → newSL = 98k
           // Направление: DOWN (98k < 99.5k) - ОТКЛОНЯЕТСЯ системой, т.к. изначальное направление UP
-          await trailingStop(symbol, +1);
+          await trailingStop(symbol, +1, currentPrice);
           secondTrailingApplied = true;
 
-          console.log(`[trailingStop #2] Attempted shift=+1%, but should be REJECTED (wrong direction)`);
+          // console.log(`[trailingStop #2] Attempted shift=+1%, but should be REJECTED (wrong direction)`);
         }
       },
     },
@@ -1249,7 +1252,7 @@ test("TRAILING STOP: Rejects wrong direction for LONG position", async ({ pass, 
   const signalResults = [];
   const unsubscribeSignal = listenSignalBacktest((result) => {
     signalResults.push(result);
-    console.log(`[listenSignalBacktest] action=${result.action}, closeReason=${result.closeReason || 'N/A'}`);
+    // console.log(`[listenSignalBacktest] action=${result.action}, closeReason=${result.closeReason || 'N/A'}`);
   });
 
   const awaitSubject = new Subject();
@@ -1298,7 +1301,7 @@ test("TRAILING STOP: Rejects wrong direction for LONG position", async ({ pass, 
     return;
   }
 
-  console.log(`[TEST] Signal closed by ${closedResult.closeReason}, PNL: ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
+  // console.log(`[TEST] Signal closed by ${closedResult.closeReason}, PNL: ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
 
   // Проверяем PNL: должен быть убыток близкий к -0.5% (trailing SL=99.5k)
   // Фактическое закрытие происходит когда low пробивает SL, поэтому может быть небольшое отклонение
@@ -1456,41 +1459,41 @@ test("TRAILING STOP: Cannot change direction once set", async ({ pass, fail }) =
       };
     },
     callbacks: {
-      onOpen: async (symbol, _signal, _priceOpen, _backtest) => {
-        console.log(`[onOpen] Applying first trailing stop (direction DOWN)`);
+      onOpen: async (symbol, _signal, priceOpen, _backtest) => {
+        // console.log(`[onOpen] Applying first trailing stop (direction DOWN)`);
 
         // Первый вызов: устанавливает направление DOWN (ослабление защиты)
         // percentShift = +1% → newDistance = 2% + 1% = 3% → newSL = 97k
         // Направление: DOWN (97k < 98k)
-        await trailingStop(symbol, +1);
+        await trailingStop(symbol, +1, priceOpen);
         firstTrailingApplied = true;
 
-        console.log(`[trailingStop #1] Applied shift=+1%, direction set to DOWN (97k < 98k original)`);
+        // console.log(`[trailingStop #1] Applied shift=+1%, direction set to DOWN (97k < 98k original)`);
       },
       onPartialProfit: async (symbol, _signal, _currentPrice, revenuePercent, _backtest) => {
         // Второй вызов при 3% profit: пытается двигать вверх (улучшение, но wrong direction)
         if (firstTrailingApplied && !secondTrailingAttempted && revenuePercent >= 3 && revenuePercent < 5) {
-          console.log(`[onPartialProfit] Second trailing: shift=-3% at ${revenuePercent.toFixed(2)}%`);
+          // console.log(`[onPartialProfit] Second trailing: shift=-3% at ${revenuePercent.toFixed(2)}%`);
 
           // percentShift = -3% → newDistance = 2% + (-3%) = -1% → newSL = 101k (в зоне прибыли!)
           // Направление: UP (101k > 97k) - ОТКЛОНЯЕТСЯ, т.к. изначальное направление DOWN
           // Даже несмотря на то, что это УЛУЧШАЕТ защиту!
-          await trailingStop(symbol, -3);
+          await trailingStop(symbol, -3, _currentPrice);
           secondTrailingAttempted = true;
 
-          console.log(`[trailingStop #2] Attempted shift=-3% (improvement!), but should be REJECTED (wrong direction)`);
+          // console.log(`[trailingStop #2] Attempted shift=-3% (improvement!), but should be REJECTED (wrong direction)`);
         }
 
         // Третий вызов при 5% profit: двигаем вниз (same direction)
         if (secondTrailingAttempted && !thirdTrailingApplied && revenuePercent >= 5) {
-          console.log(`[onPartialProfit] Third trailing: shift=+2% at ${revenuePercent.toFixed(2)}%`);
+          // console.log(`[onPartialProfit] Third trailing: shift=+2% at ${revenuePercent.toFixed(2)}%`);
 
           // percentShift = +2% → newDistance = 2% + 2% = 4% → newSL = 96k
           // Направление: DOWN (96k < 97k) - ПРИНИМАЕТСЯ, т.к. направление DOWN
-          await trailingStop(symbol, +2);
+          await trailingStop(symbol, +2, _currentPrice);
           thirdTrailingApplied = true;
 
-          console.log(`[trailingStop #3] Applied shift=+2%, continuing DOWN direction (96k < 97k)`);
+          // console.log(`[trailingStop #3] Applied shift=+2%, continuing DOWN direction (96k < 97k)`);
         }
       },
     },
@@ -1506,7 +1509,7 @@ test("TRAILING STOP: Cannot change direction once set", async ({ pass, fail }) =
   const signalResults = [];
   const unsubscribeSignal = listenSignalBacktest((result) => {
     signalResults.push(result);
-    console.log(`[listenSignalBacktest] action=${result.action}, closeReason=${result.closeReason || 'N/A'}`);
+    // console.log(`[listenSignalBacktest] action=${result.action}, closeReason=${result.closeReason || 'N/A'}`);
   });
 
   const awaitSubject = new Subject();
@@ -1560,7 +1563,7 @@ test("TRAILING STOP: Cannot change direction once set", async ({ pass, fail }) =
     return;
   }
 
-  console.log(`[TEST] Signal closed by ${closedResult.closeReason}, PNL: ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
+  // console.log(`[TEST] Signal closed by ${closedResult.closeReason}, PNL: ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
 
   // Проверяем PNL: должен быть убыток близкий к -4% (третий trailing SL=96k был применен)
   // Если бы второй вызов сработал (улучшение в wrong direction), PNL был бы положительным (+1% при SL=101k)
@@ -1710,7 +1713,7 @@ test("TRAILING STOP: Move to breakeven using getPendingSignal", async ({ pass, f
       onPartialProfit: async (symbol, _signal, _currentPrice, revenuePercent, _backtest) => {
         // Применяем breakeven при достижении 10% profit
         if (!breakevenApplied && revenuePercent >= 10) {
-          console.log(`[onPartialProfit] Profit reached ${revenuePercent.toFixed(2)}%, moving SL to breakeven`);
+          // console.log(`[onPartialProfit] Profit reached ${revenuePercent.toFixed(2)}%, moving SL to breakeven`);
 
           // Получаем текущую позицию через getPendingSignal
           const pendingSignal = await Backtest.getPendingSignal(symbol, {
@@ -1724,22 +1727,22 @@ test("TRAILING STOP: Move to breakeven using getPendingSignal", async ({ pass, f
             return;
           }
 
-          console.log(`[getPendingSignal] Entry: ${pendingSignal.priceOpen}, Original SL: ${pendingSignal.priceStopLoss}`);
+          // console.log(`[getPendingSignal] Entry: ${pendingSignal.priceOpen}, Original SL: ${pendingSignal.priceStopLoss}`);
 
           // Вычисляем текущее расстояние SL от entry в процентах
           const currentSlDistance = Math.abs((pendingSignal.priceOpen - pendingSignal.priceStopLoss) / pendingSignal.priceOpen * 100);
-          console.log(`[Calculate] Current SL distance: ${currentSlDistance.toFixed(2)}%`);
+          // console.log(`[Calculate] Current SL distance: ${currentSlDistance.toFixed(2)}%`);
 
           // Для breakeven нужно: newDistance = 0%
           // percentShift = newDistance - currentDistance = 0% - 2% = -2%
           const percentShift = -currentSlDistance;
-          console.log(`[Calculate] percentShift for breakeven: ${percentShift.toFixed(2)}%`);
+          // console.log(`[Calculate] percentShift for breakeven: ${percentShift.toFixed(2)}%`);
 
           // Применяем trailing stop для безубытка
-          await trailingStop(symbol, percentShift);
+          await trailingStop(symbol, percentShift, _currentPrice);
           breakevenApplied = true;
 
-          console.log(`[trailingStop] Applied shift=${percentShift.toFixed(2)}%, SL moved to breakeven (${pendingSignal.priceOpen})`);
+          // console.log(`[trailingStop] Applied shift=${percentShift.toFixed(2)}%, SL moved to breakeven (${pendingSignal.priceOpen})`);
         }
       },
     },
@@ -1755,7 +1758,7 @@ test("TRAILING STOP: Move to breakeven using getPendingSignal", async ({ pass, f
   const signalResults = [];
   const unsubscribeSignal = listenSignalBacktest((result) => {
     signalResults.push(result);
-    console.log(`[listenSignalBacktest] action=${result.action}, closeReason=${result.closeReason || 'N/A'}`);
+    // console.log(`[listenSignalBacktest] action=${result.action}, closeReason=${result.closeReason || 'N/A'}`);
   });
 
   const awaitSubject = new Subject();
@@ -1799,7 +1802,7 @@ test("TRAILING STOP: Move to breakeven using getPendingSignal", async ({ pass, f
     return;
   }
 
-  console.log(`[TEST] Signal closed by ${closedResult.closeReason}, PNL: ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
+  // console.log(`[TEST] Signal closed by ${closedResult.closeReason}, PNL: ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
 
   // Проверяем PNL: должен быть близок к 0% (breakeven с учетом fees и slippage)
   // Фактическое закрытие происходит когда low пробивает SL=100k
