@@ -19,6 +19,7 @@ const LIVE_METHOD_NAME_TASK = "LiveUtils.task";
 const LIVE_METHOD_NAME_GET_STATUS = "LiveUtils.getStatus";
 const LIVE_METHOD_NAME_GET_PENDING_SIGNAL = "LiveUtils.getPendingSignal";
 const LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL = "LiveUtils.getScheduledSignal";
+const LIVE_METHOD_NAME_GET_BREAKEVEN = "LiveUtils.getBreakeven";
 const LIVE_METHOD_NAME_CANCEL = "LiveUtils.cancel";
 const LIVE_METHOD_NAME_PARTIAL_PROFIT = "LiveUtils.partialProfit";
 const LIVE_METHOD_NAME_PARTIAL_LOSS = "LiveUtils.partialLoss";
@@ -471,6 +472,54 @@ export class LiveUtils {
     }
 
     return await backtest.strategyCoreService.getScheduledSignal(false, symbol, {
+      strategyName: context.strategyName,
+      exchangeName: context.exchangeName,
+      frameName: "",
+    });
+  };
+
+  /**
+   * Checks if breakeven threshold has been reached for the current pending signal.
+   *
+   * Uses the same formula as BREAKEVEN_FN to determine if price has moved far enough
+   * to cover transaction costs (slippage + fees) and allow breakeven to be set.
+   *
+   * @param symbol - Trading pair symbol
+   * @param currentPrice - Current market price to check against threshold
+   * @param context - Execution context with strategyName and exchangeName
+   * @returns Promise<boolean> - true if breakeven threshold reached, false otherwise
+   *
+   * @example
+   * ```typescript
+   * const canBreakeven = await Live.getBreakeven("BTCUSDT", 100.5, {
+   *   strategyName: "my-strategy",
+   *   exchangeName: "binance"
+   * });
+   * if (canBreakeven) {
+   *   console.log("Breakeven threshold reached");
+   *   await Live.breakeven("BTCUSDT", 100.5, context);
+   * }
+   * ```
+   */
+  public getBreakeven = async (
+    symbol: string,
+    currentPrice: number,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; }
+  ): Promise<boolean> => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_GET_BREAKEVEN, {
+      symbol,
+      currentPrice,
+      context,
+    });
+    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_BREAKEVEN);
+
+    {
+      const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
+      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_BREAKEVEN);
+      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_BREAKEVEN));
+    }
+
+    return await backtest.strategyCoreService.getBreakeven(false, symbol, currentPrice, {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
       frameName: "",

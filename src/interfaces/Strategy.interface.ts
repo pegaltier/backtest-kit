@@ -465,6 +465,43 @@ export interface IStrategy {
   getScheduledSignal: (symbol: string) => Promise<IPublicSignalRow | null>;
 
   /**
+   * Checks if breakeven threshold has been reached for the current pending signal.
+   *
+   * Uses the same formula as BREAKEVEN_FN to determine if price has moved far enough
+   * to cover transaction costs (slippage + fees) and allow breakeven to be set.
+   * Threshold: (CC_PERCENT_SLIPPAGE + CC_PERCENT_FEE) * 2 transactions
+   *
+   * For LONG position:
+   * - Returns true when: currentPrice >= priceOpen * (1 + threshold%)
+   * - Example: entry=100, threshold=0.4% → true when price >= 100.4
+   *
+   * For SHORT position:
+   * - Returns true when: currentPrice <= priceOpen * (1 - threshold%)
+   * - Example: entry=100, threshold=0.4% → true when price <= 99.6
+   *
+   * Special cases:
+   * - Returns false if no pending signal exists
+   * - Returns true if trailing stop is already in profit zone (breakeven already achieved)
+   * - Returns false if threshold not reached yet
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param currentPrice - Current market price to check against threshold
+   * @returns Promise<boolean> - true if breakeven threshold reached, false otherwise
+   *
+   * @example
+   * ```typescript
+   * // Check if breakeven is available for LONG position (entry=100, threshold=0.4%)
+   * const canBreakeven = await strategy.getBreakeven("BTCUSDT", 100.5);
+   * // Returns true (price >= 100.4)
+   *
+   * if (canBreakeven) {
+   *   await strategy.breakeven("BTCUSDT", 100.5, false);
+   * }
+   * ```
+   */
+  getBreakeven: (symbol: string, currentPrice: number) => Promise<boolean>;
+
+  /**
    * Checks if the strategy has been stopped.
    *
    * Returns the stopped state indicating whether the strategy should

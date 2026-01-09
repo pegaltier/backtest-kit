@@ -1412,6 +1412,42 @@ interface IStrategy {
      */
     getScheduledSignal: (symbol: string) => Promise<IPublicSignalRow | null>;
     /**
+     * Checks if breakeven threshold has been reached for the current pending signal.
+     *
+     * Uses the same formula as BREAKEVEN_FN to determine if price has moved far enough
+     * to cover transaction costs (slippage + fees) and allow breakeven to be set.
+     * Threshold: (CC_PERCENT_SLIPPAGE + CC_PERCENT_FEE) * 2 transactions
+     *
+     * For LONG position:
+     * - Returns true when: currentPrice >= priceOpen * (1 + threshold%)
+     * - Example: entry=100, threshold=0.4% → true when price >= 100.4
+     *
+     * For SHORT position:
+     * - Returns true when: currentPrice <= priceOpen * (1 - threshold%)
+     * - Example: entry=100, threshold=0.4% → true when price <= 99.6
+     *
+     * Special cases:
+     * - Returns false if no pending signal exists
+     * - Returns true if trailing stop is already in profit zone (breakeven already achieved)
+     * - Returns false if threshold not reached yet
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param currentPrice - Current market price to check against threshold
+     * @returns Promise<boolean> - true if breakeven threshold reached, false otherwise
+     *
+     * @example
+     * ```typescript
+     * // Check if breakeven is available for LONG position (entry=100, threshold=0.4%)
+     * const canBreakeven = await strategy.getBreakeven("BTCUSDT", 100.5);
+     * // Returns true (price >= 100.4)
+     *
+     * if (canBreakeven) {
+     *   await strategy.breakeven("BTCUSDT", 100.5, false);
+     * }
+     * ```
+     */
+    getBreakeven: (symbol: string, currentPrice: number) => Promise<boolean>;
+    /**
      * Checks if the strategy has been stopped.
      *
      * Returns the stopped state indicating whether the strategy should
@@ -6694,6 +6730,35 @@ declare class BacktestUtils {
         frameName: FrameName;
     }) => Promise<IScheduledSignalRow>;
     /**
+     * Checks if breakeven threshold has been reached for the current pending signal.
+     *
+     * Uses the same formula as BREAKEVEN_FN to determine if price has moved far enough
+     * to cover transaction costs (slippage + fees) and allow breakeven to be set.
+     *
+     * @param symbol - Trading pair symbol
+     * @param currentPrice - Current market price to check against threshold
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise<boolean> - true if breakeven threshold reached, false otherwise
+     *
+     * @example
+     * ```typescript
+     * const canBreakeven = await Backtest.getBreakeven("BTCUSDT", 100.5, {
+     *   strategyName: "my-strategy",
+     *   exchangeName: "binance",
+     *   frameName: "backtest_frame"
+     * });
+     * if (canBreakeven) {
+     *   console.log("Breakeven threshold reached");
+     *   await Backtest.breakeven("BTCUSDT", 100.5, context);
+     * }
+     * ```
+     */
+    getBreakeven: (symbol: string, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<boolean>;
+    /**
      * Stops the strategy from generating new signals.
      *
      * Sets internal flag to prevent strategy from opening new signals.
@@ -7297,6 +7362,33 @@ declare class LiveUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
     }) => Promise<IScheduledSignalRow>;
+    /**
+     * Checks if breakeven threshold has been reached for the current pending signal.
+     *
+     * Uses the same formula as BREAKEVEN_FN to determine if price has moved far enough
+     * to cover transaction costs (slippage + fees) and allow breakeven to be set.
+     *
+     * @param symbol - Trading pair symbol
+     * @param currentPrice - Current market price to check against threshold
+     * @param context - Execution context with strategyName and exchangeName
+     * @returns Promise<boolean> - true if breakeven threshold reached, false otherwise
+     *
+     * @example
+     * ```typescript
+     * const canBreakeven = await Live.getBreakeven("BTCUSDT", 100.5, {
+     *   strategyName: "my-strategy",
+     *   exchangeName: "binance"
+     * });
+     * if (canBreakeven) {
+     *   console.log("Breakeven threshold reached");
+     *   await Live.breakeven("BTCUSDT", 100.5, context);
+     * }
+     * ```
+     */
+    getBreakeven: (symbol: string, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+    }) => Promise<boolean>;
     /**
      * Stops the strategy from generating new signals.
      *
@@ -11390,6 +11482,41 @@ declare class StrategyConnectionService implements TStrategy$1 {
         frameName: FrameName;
     }) => Promise<IScheduledSignalRow | null>;
     /**
+     * Checks if breakeven threshold has been reached for the current pending signal.
+     *
+     * Uses the same formula as BREAKEVEN_FN to determine if price has moved far enough
+     * to cover transaction costs and allow breakeven to be set.
+     *
+     * Delegates to ClientStrategy.getBreakeven() with current execution context.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param currentPrice - Current market price to check against threshold
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise<boolean> - true if breakeven threshold reached, false otherwise
+     *
+     * @example
+     * ```typescript
+     * // Check if breakeven is available for LONG position (entry=100, threshold=0.4%)
+     * const canBreakeven = await strategyConnectionService.getBreakeven(
+     *   false,
+     *   "BTCUSDT",
+     *   100.5,
+     *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
+     * );
+     * // Returns true (price >= 100.4)
+     *
+     * if (canBreakeven) {
+     *   await strategyConnectionService.breakeven(false, "BTCUSDT", 100.5, context);
+     * }
+     * ```
+     */
+    getBreakeven: (backtest: boolean, symbol: string, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<boolean>;
+    /**
      * Retrieves the stopped state of the strategy.
      *
      * Delegates to the underlying strategy instance to check if it has been
@@ -11917,6 +12044,41 @@ declare class StrategyCoreService implements TStrategy {
         exchangeName: ExchangeName;
         frameName: FrameName;
     }) => Promise<IScheduledSignalRow | null>;
+    /**
+     * Checks if breakeven threshold has been reached for the current pending signal.
+     *
+     * Validates strategy existence and delegates to connection service
+     * to check if price has moved far enough to cover transaction costs.
+     *
+     * Does not require execution context as this is a state query operation.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param currentPrice - Current market price to check against threshold
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise<boolean> - true if breakeven threshold reached, false otherwise
+     *
+     * @example
+     * ```typescript
+     * // Check if breakeven is available for LONG position (entry=100, threshold=0.4%)
+     * const canBreakeven = await strategyCoreService.getBreakeven(
+     *   false,
+     *   "BTCUSDT",
+     *   100.5,
+     *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
+     * );
+     * // Returns true (price >= 100.4)
+     *
+     * if (canBreakeven) {
+     *   await strategyCoreService.breakeven(false, "BTCUSDT", 100.5, context);
+     * }
+     * ```
+     */
+    getBreakeven: (backtest: boolean, symbol: string, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<boolean>;
     /**
      * Checks if the strategy has been stopped.
      *

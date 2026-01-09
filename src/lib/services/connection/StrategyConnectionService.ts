@@ -297,6 +297,52 @@ export class StrategyConnectionService implements TStrategy {
   };
 
   /**
+   * Checks if breakeven threshold has been reached for the current pending signal.
+   *
+   * Uses the same formula as BREAKEVEN_FN to determine if price has moved far enough
+   * to cover transaction costs and allow breakeven to be set.
+   *
+   * Delegates to ClientStrategy.getBreakeven() with current execution context.
+   *
+   * @param backtest - Whether running in backtest mode
+   * @param symbol - Trading pair symbol
+   * @param currentPrice - Current market price to check against threshold
+   * @param context - Execution context with strategyName, exchangeName, frameName
+   * @returns Promise<boolean> - true if breakeven threshold reached, false otherwise
+   *
+   * @example
+   * ```typescript
+   * // Check if breakeven is available for LONG position (entry=100, threshold=0.4%)
+   * const canBreakeven = await strategyConnectionService.getBreakeven(
+   *   false,
+   *   "BTCUSDT", 
+   *   100.5,
+   *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
+   * );
+   * // Returns true (price >= 100.4)
+   *
+   * if (canBreakeven) {
+   *   await strategyConnectionService.breakeven(false, "BTCUSDT", 100.5, context);
+   * }
+   * ```
+   */
+  public getBreakeven = async (
+    backtest: boolean,
+    symbol: string,
+    currentPrice: number,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<boolean> => {
+    this.loggerService.log("strategyConnectionService getBreakeven", {
+      symbol,
+      context,
+      currentPrice,
+      backtest,
+    });
+    const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
+    return await strategy.getBreakeven(symbol, currentPrice);
+  };
+
+  /**
    * Retrieves the stopped state of the strategy.
    *
    * Delegates to the underlying strategy instance to check if it has been
