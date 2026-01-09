@@ -900,6 +900,87 @@ const TRAILING_STOP_FN = (
   }
 };
 
+const BREAKEVEN_FN = (
+  self: ClientStrategy,
+  signal: ISignalRow,
+  currentPrice: number
+): boolean => {
+  // Get current effective stop-loss (trailing or original)
+  const currentStopLoss = signal._trailingPriceStopLoss ?? signal.priceStopLoss;
+
+  // Get threshold from global config
+  const breakevenThresholdPercent = GLOBAL_CONFIG.CC_BREAKEVEN_THRESHOLD;
+
+  // Calculate breakeven price with threshold buffer
+  // Threshold is distance from entry where breakeven becomes available
+  let breakevenPrice: number;
+  let thresholdPrice: number;
+  let isThresholdReached: boolean;
+  let canMoveToBreakeven: boolean;
+
+  if (signal.position === "long") {
+    // LONG: breakeven = entry price (move SL up to entry)
+    // Threshold reached when price goes UP by breakevenThresholdPercent from entry
+    breakevenPrice = signal.priceOpen;
+    thresholdPrice = signal.priceOpen * (1 + breakevenThresholdPercent / 100);
+    isThresholdReached = currentPrice >= thresholdPrice;
+
+    // Can move to breakeven only if:
+    // 1. Threshold reached (price is high enough)
+    // 2. Current SL is still below entry (not already at/above breakeven)
+    canMoveToBreakeven = isThresholdReached && currentStopLoss < breakevenPrice;
+  } else {
+    // SHORT: breakeven = entry price (move SL down to entry)
+    // Threshold reached when price goes DOWN by breakevenThresholdPercent from entry
+    breakevenPrice = signal.priceOpen;
+    thresholdPrice = signal.priceOpen * (1 - breakevenThresholdPercent / 100);
+    isThresholdReached = currentPrice <= thresholdPrice;
+
+    // Can move to breakeven only if:
+    // 1. Threshold reached (price is low enough)
+    // 2. Current SL is still above entry (not already at/below breakeven)
+    canMoveToBreakeven = isThresholdReached && currentStopLoss > breakevenPrice;
+  }
+
+  if (!canMoveToBreakeven) {
+    self.params.logger.debug("BREAKEVEN_FN: conditions not met, skipping", {
+      signalId: signal.id,
+      position: signal.position,
+      priceOpen: signal.priceOpen,
+      currentPrice,
+      currentStopLoss,
+      breakevenPrice,
+      thresholdPrice,
+      breakevenThresholdPercent,
+      isThresholdReached,
+      reason: !isThresholdReached
+        ? "threshold not reached"
+        : "already at/past breakeven",
+    });
+    return false;
+  }
+
+  // Move SL to breakeven (entry price)
+  signal._trailingPriceStopLoss = breakevenPrice;
+
+  self.params.logger.info("BREAKEVEN_FN executed", {
+    signalId: signal.id,
+    position: signal.position,
+    priceOpen: signal.priceOpen,
+    originalStopLoss: signal.priceStopLoss,
+    previousStopLoss: currentStopLoss,
+    newStopLoss: breakevenPrice,
+    currentPrice,
+    thresholdPrice,
+    breakevenThresholdPercent,
+    profitDistancePercent: signal.position === "long"
+      ? ((currentPrice - signal.priceOpen) / signal.priceOpen * 100)
+      : ((signal.priceOpen - currentPrice) / signal.priceOpen * 100),
+  });
+
+  return true;
+};
+
 const CHECK_SCHEDULED_SIGNAL_TIMEOUT_FN = async (
   self: ClientStrategy,
   scheduled: IScheduledSignalRow,
@@ -3561,6 +3642,116 @@ export class ClientStrategy implements IStrategy {
         this.params.strategyName,
       );
     }
+  }
+
+  /**
+   * Moves stop-loss to breakeven (entry price) when price reaches threshold.
+   *
+   * Moves SL to entry price (zero-risk position) when current price has moved
+   * far enough in profit direction to justify protecting the entry.
+   * Threshold is configured via CC_BREAKEVEN_THRESHOLD in global config.
+   *
+   * Behavior:
+   * - Returns true if SL was moved to breakeven
+   * - Returns false if conditions not met (threshold not reached or already at breakeven)
+   * - Uses _trailingPriceStopLoss to store breakeven SL (preserves original priceStopLoss)
+   * - Only moves SL once per position (idempotent - safe to call multiple times)
+   *
+   * For LONG position (entry=100, CC_BREAKEVEN_THRESHOLD=10%):
+   * - Breakeven available when price >= 110 (entry + 10%)
+   * - Moves SL from original (e.g. 95) to 100 (breakeven)
+   * - Returns true on first successful move, false on subsequent calls
+   *
+   * For SHORT position (entry=100, CC_BREAKEVEN_THRESHOLD=10%):
+   * - Breakeven available when price <= 90 (entry - 10%)
+   * - Moves SL from original (e.g. 105) to 100 (breakeven)
+   * - Returns true on first successful move, false on subsequent calls
+   *
+   * Validation:
+   * - Throws if no pending signal exists
+   * - Throws if currentPrice is not a positive finite number
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param currentPrice - Current market price to check threshold
+   * @param backtest - Whether running in backtest mode (controls persistence)
+   * @returns Promise<boolean> - true if breakeven was set, false if conditions not met
+   *
+   * @example
+   * ```typescript
+   * // LONG position: entry=100, currentSL=95, CC_BREAKEVEN_THRESHOLD=10%
+   *
+   * // Price at 105 - threshold not reached yet
+   * const result1 = await strategy.breakeven("BTCUSDT", 105, false);
+   * // Returns false (price < 110)
+   *
+   * // Price at 112 - threshold reached!
+   * const result2 = await strategy.breakeven("BTCUSDT", 112, false);
+   * // Returns true, SL moved to 100 (breakeven)
+   *
+   * // Price at 120 - already at breakeven
+   * const result3 = await strategy.breakeven("BTCUSDT", 120, false);
+   * // Returns false (already at breakeven, no change)
+   * ```
+   */
+  public async breakeven(
+    symbol: string,
+    currentPrice: number,
+    backtest: boolean
+  ): Promise<boolean> {
+    this.params.logger.debug("ClientStrategy breakeven", {
+      symbol,
+      currentPrice,
+      breakevenThreshold: GLOBAL_CONFIG.CC_BREAKEVEN_THRESHOLD,
+      hasPendingSignal: this._pendingSignal !== null,
+    });
+
+    // Validation: must have pending signal
+    if (!this._pendingSignal) {
+      throw new Error(
+        `ClientStrategy breakeven: No pending signal exists for symbol=${symbol}`
+      );
+    }
+
+    // Validation: currentPrice must be valid
+    if (typeof currentPrice !== "number" || !isFinite(currentPrice) || currentPrice <= 0) {
+      throw new Error(
+        `ClientStrategy breakeven: currentPrice must be a positive finite number, got ${currentPrice}`
+      );
+    }
+
+    // Execute breakeven logic
+    const result = BREAKEVEN_FN(this, this._pendingSignal, currentPrice);
+
+    // Only persist if breakeven was actually set
+    if (!result) {
+      return false;
+    }
+
+    // Persist updated signal state (inline setPendingSignal content)
+    // Note: this._pendingSignal already mutated by BREAKEVEN_FN, no reassignment needed
+    this.params.logger.debug("ClientStrategy setPendingSignal (inline)", {
+      pendingSignal: this._pendingSignal,
+    });
+
+    // Call onWrite callback for testing persist storage
+    if (this.params.callbacks?.onWrite) {
+      const publicSignal = TO_PUBLIC_SIGNAL(this._pendingSignal);
+      this.params.callbacks.onWrite(
+        this.params.execution.context.symbol,
+        publicSignal,
+        backtest
+      );
+    }
+
+    if (!backtest) {
+      await PersistSignalAdapter.writeSignalData(
+        this._pendingSignal,
+        this.params.execution.context.symbol,
+        this.params.strategyName,
+      );
+    }
+
+    return true;
   }
 
   /**

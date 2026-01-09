@@ -643,6 +643,55 @@ export interface IStrategy {
    * ```
    */
   trailingStop: (symbol: string, percentShift: number, backtest: boolean) => Promise<void>;
+
+  /**
+   * Moves stop-loss to breakeven (entry price) when price reaches threshold.
+   *
+   * Moves SL to entry price (zero-risk position) when current price has moved
+   * far enough in profit direction to justify protecting the entry.
+   * Threshold is configured via CC_BREAKEVEN_THRESHOLD in global config.
+   *
+   * Behavior:
+   * - Returns true if SL was moved to breakeven
+   * - Returns false if conditions not met (threshold not reached or already at breakeven)
+   * - Uses _trailingPriceStopLoss to store breakeven SL (preserves original priceStopLoss)
+   * - Only moves SL once per position (idempotent - safe to call multiple times)
+   *
+   * For LONG position (entry=100, CC_BREAKEVEN_THRESHOLD=10%):
+   * - Breakeven available when price >= 110 (entry + 10%)
+   * - Moves SL from original (e.g. 95) to 100 (breakeven)
+   * - Returns true on first successful move, false on subsequent calls
+   *
+   * For SHORT position (entry=100, CC_BREAKEVEN_THRESHOLD=10%):
+   * - Breakeven available when price <= 90 (entry - 10%)
+   * - Moves SL from original (e.g. 105) to 100 (breakeven)
+   * - Returns true on first successful move, false on subsequent calls
+   *
+   * Validations:
+   * - Throws if no pending signal exists
+   * - Throws if currentPrice is not a positive finite number
+   *
+   * Use case: User-controlled breakeven protection triggered from onPartialProfit callback.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param currentPrice - Current market price to check threshold
+   * @param backtest - Whether running in backtest mode
+   * @returns Promise<boolean> - true if breakeven was set, false if conditions not met
+   *
+   * @example
+   * ```typescript
+   * callbacks: {
+   *   onPartialProfit: async (symbol, signal, currentPrice, percentTp, backtest) => {
+   *     // Try to move SL to breakeven when threshold reached
+   *     const movedToBreakeven = await strategy.breakeven(symbol, currentPrice, backtest);
+   *     if (movedToBreakeven) {
+   *       console.log(`Position moved to breakeven at ${currentPrice}`);
+   *     }
+   *   }
+   * }
+   * ```
+   */
+  breakeven: (symbol: string, currentPrice: number, backtest: boolean) => Promise<boolean>;
 }
 
 /**

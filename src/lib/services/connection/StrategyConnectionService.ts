@@ -601,6 +601,44 @@ export class StrategyConnectionService implements TStrategy {
     const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
     await strategy.trailingStop(symbol, percentShift, backtest);
   };
+
+  /**
+   * Delegates to ClientStrategy.breakeven() with current execution context.
+   *
+   * @param backtest - Whether running in backtest mode
+   * @param symbol - Trading pair symbol
+   * @param currentPrice - Current market price to check threshold
+   * @param context - Execution context with strategyName, exchangeName, frameName
+   * @returns Promise<boolean> - true if breakeven was set, false otherwise
+   *
+   * @example
+   * ```typescript
+   * // LONG: entry=100, CC_BREAKEVEN_THRESHOLD=10%
+   * // Try to move SL to breakeven when price >= 110
+   * const moved = await strategyConnectionService.breakeven(
+   *   false,
+   *   "BTCUSDT",
+   *   112,
+   *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
+   * );
+   * console.log(moved); // true (SL moved to 100)
+   * ```
+   */
+  public breakeven = async (
+    backtest: boolean,
+    symbol: string,
+    currentPrice: number,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
+  ): Promise<boolean> => {
+    this.loggerService.log("strategyConnectionService breakeven", {
+      symbol,
+      context,
+      currentPrice,
+      backtest,
+    });
+    const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
+    return await strategy.breakeven(symbol, currentPrice, backtest);
+  };
 }
 
 export default StrategyConnectionService;

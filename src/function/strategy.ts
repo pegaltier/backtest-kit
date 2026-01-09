@@ -9,6 +9,7 @@ const CANCEL_METHOD_NAME = "strategy.cancel";
 const PARTIAL_PROFIT_METHOD_NAME = "strategy.partialProfit";
 const PARTIAL_LOSS_METHOD_NAME = "strategy.partialLoss";
 const TRAILING_STOP_METHOD_NAME = "strategy.trailingStop";
+const BREAKEVEN_METHOD_NAME = "strategy.breakeven";
 
 /**
  * Stops the strategy from generating new signals.
@@ -243,4 +244,50 @@ export async function trailingStop(
   );
 }
 
-export default { stop, cancel, partialProfit, partialLoss, trailingStop };
+/**
+ * Moves stop-loss to breakeven when price reaches threshold.
+ *
+ * Moves SL to entry price (zero-risk position) when current price has moved
+ * far enough in profit direction. Threshold is configured via CC_BREAKEVEN_THRESHOLD.
+ *
+ * Automatically detects backtest/live mode from execution context.
+ * Automatically fetches current price via getAveragePrice.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise<boolean> - true if breakeven was set, false if conditions not met
+ *
+ * @example
+ * ```typescript
+ * import { breakeven } from "backtest-kit";
+ *
+ * // LONG: entry=100, CC_BREAKEVEN_THRESHOLD=10%
+ * // Try to move SL to breakeven (activates when price >= 110)
+ * const moved = await breakeven("BTCUSDT");
+ * if (moved) {
+ *   console.log("Position moved to breakeven!");
+ * }
+ * ```
+ */
+export async function breakeven(symbol: string): Promise<boolean> {
+  backtest.loggerService.info(BREAKEVEN_METHOD_NAME, {
+    symbol,
+  });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("breakeven requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("breakeven requires a method context");
+  }
+  const currentPrice = await getAveragePrice(symbol);
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } =
+    backtest.methodContextService.context;
+  return await backtest.strategyCoreService.breakeven(
+    isBacktest,
+    symbol,
+    currentPrice,
+    { exchangeName, frameName, strategyName }
+  );
+}
+
+export default { stop, cancel, partialProfit, partialLoss, trailingStop, breakeven };

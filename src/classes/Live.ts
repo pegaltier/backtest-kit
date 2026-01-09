@@ -731,6 +731,55 @@ export class LiveUtils {
   };
 
   /**
+   * Moves stop-loss to breakeven when price reaches threshold.
+   *
+   * Moves SL to entry price (zero-risk position) when current price has moved
+   * far enough in profit direction. Threshold is configured via CC_BREAKEVEN_THRESHOLD.
+   *
+   * @param symbol - Trading pair symbol
+   * @param currentPrice - Current market price to check threshold
+   * @param context - Strategy context with strategyName and exchangeName
+   * @returns Promise<boolean> - true if breakeven was set, false otherwise
+   *
+   * @example
+   * ```typescript
+   * const moved = await Live.breakeven(
+   *   "BTCUSDT",
+   *   112,
+   *   { strategyName: "my-strategy", exchangeName: "binance" }
+   * );
+   * console.log(moved); // true (SL moved to entry price)
+   * ```
+   */
+  public breakeven = async (
+    symbol: string,
+    currentPrice: number,
+    context: {
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+    }
+  ): Promise<boolean> => {
+    backtest.loggerService.info("Live.breakeven", {
+      symbol,
+      currentPrice,
+      context,
+    });
+    backtest.strategyValidationService.validate(context.strategyName, "Live.breakeven");
+
+    {
+      const { riskName, riskList } = backtest.strategySchemaService.get(context.strategyName);
+      riskName && backtest.riskValidationService.validate(riskName, "Live.breakeven");
+      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, "Live.breakeven"));
+    }
+
+    return await backtest.strategyCoreService.breakeven(false, symbol, currentPrice, {
+      strategyName: context.strategyName,
+      exchangeName: context.exchangeName,
+      frameName: "",
+    });
+  };
+
+  /**
    * Gets statistical data from all live trading events for a symbol-strategy pair.
    *
    * @param symbol - Trading pair symbol
