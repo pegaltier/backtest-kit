@@ -965,11 +965,11 @@ export class PersistPartialUtils {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy identifier
-   * @param exchangeName - Exchange identifier
    * @param signalId - Signal identifier
+   * @param exchangeName - Exchange identifier
    * @returns Promise resolving to partial data record
    */
-  public readPartialData = async (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, signalId: string): Promise<PartialData> => {
+  public readPartialData = async (symbol: string, strategyName: StrategyName, signalId: string, exchangeName: ExchangeName): Promise<PartialData> => {
     swarm.loggerService.info(PERSIST_PARTIAL_UTILS_METHOD_NAME_READ_DATA);
 
     const key = `${symbol}:${strategyName}:${exchangeName}`;
@@ -993,16 +993,16 @@ export class PersistPartialUtils {
    * @param partialData - Record of signal IDs to partial data
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy identifier
-   * @param exchangeName - Exchange identifier
    * @param signalId - Signal identifier
+   * @param exchangeName - Exchange identifier
    * @returns Promise that resolves when write is complete
    */
   public writePartialData = async (
     partialData: PartialData,
     symbol: string,
     strategyName: StrategyName,
-    exchangeName: ExchangeName,
-    signalId: string
+    signalId: string,
+    exchangeName: ExchangeName
   ): Promise<void> => {
     swarm.loggerService.info(PERSIST_PARTIAL_UTILS_METHOD_NAME_WRITE_DATA);
 
@@ -1128,11 +1128,11 @@ class PersistBreakevenUtils {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy identifier
-   * @param exchangeName - Exchange identifier
    * @param signalId - Signal identifier
+   * @param exchangeName - Exchange identifier
    * @returns Promise resolving to breakeven data record
    */
-  public readBreakevenData = async (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, signalId: string): Promise<BreakevenData> => {
+  public readBreakevenData = async (symbol: string, strategyName: StrategyName, signalId: string, exchangeName: ExchangeName): Promise<BreakevenData> => {
     swarm.loggerService.info(PERSIST_BREAKEVEN_UTILS_METHOD_NAME_READ_DATA);
 
     const key = `${symbol}:${strategyName}:${exchangeName}`;
@@ -1157,11 +1157,11 @@ class PersistBreakevenUtils {
    * @param breakevenData - Breakeven data record to persist
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy identifier
-   * @param exchangeName - Exchange identifier
    * @param signalId - Signal identifier
+   * @param exchangeName - Exchange identifier
    * @returns Promise that resolves when write is complete
    */
-  public writeBreakevenData = async (breakevenData: BreakevenData, symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, signalId: string): Promise<void> => {
+  public writeBreakevenData = async (breakevenData: BreakevenData, symbol: string, strategyName: StrategyName, signalId: string, exchangeName: ExchangeName): Promise<void> => {
     swarm.loggerService.info(PERSIST_BREAKEVEN_UTILS_METHOD_NAME_WRITE_DATA);
 
     const key = `${symbol}:${strategyName}:${exchangeName}`;

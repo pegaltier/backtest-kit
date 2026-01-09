@@ -169,7 +169,7 @@ const WAIT_FOR_INIT_FN = async (symbol: string, strategyName: StrategyName, exch
     return;
   }
 
-  const breakevenData = await PersistBreakevenAdapter.readBreakevenData(symbol, strategyName, exchangeName, self.params.signalId);
+  const breakevenData = await PersistBreakevenAdapter.readBreakevenData(symbol, strategyName, self.params.signalId, exchangeName);
 
   for (const [signalId, data] of Object.entries(breakevenData)) {
     const state: IBreakevenState = {
@@ -313,7 +313,7 @@ export class ClientBreakeven implements IBreakeven {
         reached: state.reached,
       };
     }
-    await PersistBreakevenAdapter.writeBreakevenData(breakevenData, symbol, strategyName, exchangeName, signalId);
+    await PersistBreakevenAdapter.writeBreakevenData(breakevenData, symbol, strategyName, signalId, exchangeName);
   }
 
   /**

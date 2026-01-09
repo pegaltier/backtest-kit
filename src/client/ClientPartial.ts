@@ -222,7 +222,7 @@ const WAIT_FOR_INIT_FN = async (symbol: string, strategyName: StrategyName, exch
     return;
   }
 
-  const partialData = await PersistPartialAdapter.readPartialData(symbol, strategyName, exchangeName, self.params.signalId);
+  const partialData = await PersistPartialAdapter.readPartialData(symbol, strategyName, self.params.signalId, exchangeName);
 
   for (const [signalId, data] of Object.entries(partialData)) {
     const state: IPartialState = {
@@ -371,7 +371,7 @@ export class ClientPartial implements IPartial {
         lossLevels: Array.from(state.lossLevels),
       };
     }
-    await PersistPartialAdapter.writePartialData(partialData, symbol, strategyName, exchangeName, signalId);
+    await PersistPartialAdapter.writePartialData(partialData, symbol, strategyName, signalId, exchangeName);
   }
 
   /**
