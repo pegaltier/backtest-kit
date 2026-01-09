@@ -114,7 +114,7 @@ test("SEQUENCE: 5 signals with mixed results (TP, SL, cancelled, TP, SL)", async
 
           // Восстановление цены после SL (минуты 40-49: цена возвращается ВЫШЕ basePrice для VWAP)
           else if (i >= 40 && i < 50) {
-            allCandles.push({ timestamp, open: basePrice + 200, high: basePrice + 300, low: basePrice + 100, close: basePrice + 200, volume: 100 });
+            allCandles.push({ timestamp, open: basePrice + 500, high: basePrice + 600, low: basePrice + 400, close: basePrice + 500, volume: 100 });
           }
 
           // Сигнал #3: Cancelled (минуты 50-54: цена уходит вниз, отмена по SL до активации)
@@ -124,7 +124,7 @@ test("SEQUENCE: 5 signals with mixed results (TP, SL, cancelled, TP, SL)", async
 
           // Восстановление цены после cancelled (минуты 55-59: цена возвращается ВЫШЕ basePrice)
           else if (i >= 55 && i < 60) {
-            allCandles.push({ timestamp, open: basePrice + 200, high: basePrice + 300, low: basePrice + 100, close: basePrice + 200, volume: 100 });
+            allCandles.push({ timestamp, open: basePrice + 500, high: basePrice + 600, low: basePrice + 400, close: basePrice + 500, volume: 100 });
           }
 
           // Сигнал #4: TP (минуты 60-69: ожидание, 70-74: активация, 75-79: TP)
@@ -147,7 +147,7 @@ test("SEQUENCE: 5 signals with mixed results (TP, SL, cancelled, TP, SL)", async
 
           // Восстановление цены после SL (минуты 100+: цена возвращается ВЫШЕ basePrice)
           else {
-            allCandles.push({ timestamp, open: basePrice + 200, high: basePrice + 300, low: basePrice + 100, close: basePrice + 200, volume: 100 });
+            allCandles.push({ timestamp, open: basePrice + 500, high: basePrice + 600, low: basePrice + 400, close: basePrice + 500, volume: 100 });
           }
         }
       }

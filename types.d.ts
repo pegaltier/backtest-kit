@@ -6241,11 +6241,11 @@ declare class PersistPartialUtils {
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy identifier
-     * @param exchangeName - Exchange identifier
      * @param signalId - Signal identifier
+     * @param exchangeName - Exchange identifier
      * @returns Promise resolving to partial data record
      */
-    readPartialData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, signalId: string) => Promise<PartialData>;
+    readPartialData: (symbol: string, strategyName: StrategyName, signalId: string, exchangeName: ExchangeName) => Promise<PartialData>;
     /**
      * Writes partial data to disk with atomic file writes.
      *
@@ -6255,11 +6255,11 @@ declare class PersistPartialUtils {
      * @param partialData - Record of signal IDs to partial data
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy identifier
-     * @param exchangeName - Exchange identifier
      * @param signalId - Signal identifier
+     * @param exchangeName - Exchange identifier
      * @returns Promise that resolves when write is complete
      */
-    writePartialData: (partialData: PartialData, symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, signalId: string) => Promise<void>;
+    writePartialData: (partialData: PartialData, symbol: string, strategyName: StrategyName, signalId: string, exchangeName: ExchangeName) => Promise<void>;
 }
 /**
  * Global singleton instance of PersistPartialUtils.
@@ -6354,11 +6354,11 @@ declare class PersistBreakevenUtils {
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy identifier
-     * @param exchangeName - Exchange identifier
      * @param signalId - Signal identifier
+     * @param exchangeName - Exchange identifier
      * @returns Promise resolving to breakeven data record
      */
-    readBreakevenData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, signalId: string) => Promise<BreakevenData>;
+    readBreakevenData: (symbol: string, strategyName: StrategyName, signalId: string, exchangeName: ExchangeName) => Promise<BreakevenData>;
     /**
      * Writes breakeven data to disk.
      *
@@ -6369,11 +6369,11 @@ declare class PersistBreakevenUtils {
      * @param breakevenData - Breakeven data record to persist
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy identifier
-     * @param exchangeName - Exchange identifier
      * @param signalId - Signal identifier
+     * @param exchangeName - Exchange identifier
      * @returns Promise that resolves when write is complete
      */
-    writeBreakevenData: (breakevenData: BreakevenData, symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, signalId: string) => Promise<void>;
+    writeBreakevenData: (breakevenData: BreakevenData, symbol: string, strategyName: StrategyName, signalId: string, exchangeName: ExchangeName) => Promise<void>;
 }
 /**
  * Global singleton instance of PersistBreakevenUtils.

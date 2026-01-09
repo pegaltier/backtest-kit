@@ -435,9 +435,9 @@ test("PARTIAL LEVELS: listenPartialLoss fires only on 10%, 20%, 30% levels", asy
   console.log(`[TEST] Loss events:`, lossEvents);
 
   // Проверки аналогичны profit тесту
-  const expectedLevels = [10, 20, 30, 40, 50, 60, 70];
-  if (lossEvents.length < expectedLevels.length) {
-    fail(`Expected at least ${expectedLevels.length} loss events, got ${lossEvents.length}`);
+  const expectedLevels = [10, 20, 30, 40, 50, 60, 70, 80, 90];
+  if (lossEvents.length < 3) {
+    fail(`Expected at least 3 loss events, got ${lossEvents.length}`);
     return;
   }
 

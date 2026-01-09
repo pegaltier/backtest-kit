@@ -2829,39 +2829,41 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
     }
 
     // Check TP/SL only if not expired
-    // КРИТИЧНО: используем candle.high/low для точной проверки достижения TP/SL
+    // КРИТИЧНО: используем averagePrice (VWAP) для проверки достижения TP/SL (как в live mode)
     // КРИТИЧНО: используем trailing SL если установлен
     const effectiveStopLoss = signal._trailingPriceStopLoss ?? signal.priceStopLoss;
 
     if (!shouldClose && signal.position === "long") {
-      // Для LONG: TP срабатывает если high >= TP, SL если low <= SL
-      if (currentCandle.high >= signal.priceTakeProfit) {
+      // Для LONG: TP срабатывает если VWAP >= TP, SL если VWAP <= SL
+      if (averagePrice >= signal.priceTakeProfit) {
         shouldClose = true;
         closeReason = "take_profit";
-      } else if (currentCandle.low <= effectiveStopLoss) {
+      } else if (averagePrice <= effectiveStopLoss) {
         shouldClose = true;
         closeReason = "stop_loss";
       }
     }
 
     if (!shouldClose && signal.position === "short") {
-      // Для SHORT: TP срабатывает если low <= TP, SL если high >= SL
-      if (currentCandle.low <= signal.priceTakeProfit) {
+      // Для SHORT: TP срабатывает если VWAP <= TP, SL если VWAP >= SL
+      if (averagePrice <= signal.priceTakeProfit) {
         shouldClose = true;
         closeReason = "take_profit";
-      } else if (currentCandle.high >= effectiveStopLoss) {
+      } else if (averagePrice >= effectiveStopLoss) {
         shouldClose = true;
         closeReason = "stop_loss";
       }
     }
 
     if (shouldClose) {
-      // КРИТИЧНО: при закрытии по TP/SL используем точную цену, а не averagePrice
-      let closePrice = averagePrice;
+      // КРИТИЧНО: используем точную цену TP/SL для закрытия (как в live mode)
+      let closePrice: number;
       if (closeReason === "take_profit") {
         closePrice = signal.priceTakeProfit;
       } else if (closeReason === "stop_loss") {
-        closePrice = effectiveStopLoss; // Используем trailing SL если установлен
+        closePrice = effectiveStopLoss;
+      } else {
+        closePrice = averagePrice; // time_expired uses VWAP
       }
 
       return await CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN(
