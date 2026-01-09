@@ -129,7 +129,7 @@ const HANDLE_BREAKEVEN_FN = async (
   );
 
   // Persist state
-  await self._persistState(symbol, self.params.signalId);
+  await self._persistState(symbol, data.strategyName, self.params.signalId);
 
   return true;
 };
@@ -166,7 +166,7 @@ const WAIT_FOR_INIT_FN = async (symbol: string, strategyName: StrategyName, self
     return;
   }
 
-  const breakevenData = await PersistBreakevenAdapter.readBreakevenData(symbol, self.params.signalId);
+  const breakevenData = await PersistBreakevenAdapter.readBreakevenData(symbol, strategyName, self.params.signalId);
 
   for (const [signalId, data] of Object.entries(breakevenData)) {
     const state: IBreakevenState = {
@@ -287,14 +287,15 @@ export class ClientBreakeven implements IBreakeven {
    * Uses atomic file writes via PersistBreakevenAdapter.
    *
    * @param symbol - Trading pair symbol
+   * @param strategyName - Strategy identifier
    * @param signalId - Signal identifier
    * @returns Promise that resolves when persistence is complete
    */
-  public async _persistState(symbol: string, signalId: string): Promise<void> {
+  public async _persistState(symbol: string, strategyName: StrategyName, signalId: string): Promise<void> {
     if (this.params.backtest) {
       return;
     }
-    this.params.logger.debug("ClientBreakeven persistState", { symbol, signalId });
+    this.params.logger.debug("ClientBreakeven persistState", { symbol, strategyName, signalId });
     if (this._states === NEED_FETCH) {
       throw new Error(
         "ClientBreakeven not initialized. Call waitForInit() before using."
@@ -306,7 +307,7 @@ export class ClientBreakeven implements IBreakeven {
         reached: state.reached,
       };
     }
-    await PersistBreakevenAdapter.writeBreakevenData(breakevenData, symbol, signalId);
+    await PersistBreakevenAdapter.writeBreakevenData(breakevenData, symbol, strategyName, signalId);
   }
 
   /**
@@ -421,7 +422,7 @@ export class ClientBreakeven implements IBreakeven {
       );
     }
     this._states.delete(data.id);
-    await this._persistState(symbol, this.params.signalId);
+    await this._persistState(symbol, data.strategyName, this.params.signalId);
   }
 }
 

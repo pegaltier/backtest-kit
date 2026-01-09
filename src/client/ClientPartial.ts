@@ -101,7 +101,7 @@ const HANDLE_PROFIT_FN = async (
   }
 
   if (shouldPersist) {
-    await self._persistState(symbol, self.params.signalId);
+    await self._persistState(symbol, data.strategyName, self.params.signalId);
   }
 };
 
@@ -181,7 +181,7 @@ const HANDLE_LOSS_FN = async (
   }
 
   if (shouldPersist) {
-    await self._persistState(symbol, self.params.signalId);
+    await self._persistState(symbol, data.strategyName, self.params.signalId);
   }
 };
 
@@ -219,7 +219,7 @@ const WAIT_FOR_INIT_FN = async (symbol: string, strategyName: StrategyName, self
     return;
   }
 
-  const partialData = await PersistPartialAdapter.readPartialData(symbol, self.params.signalId);
+  const partialData = await PersistPartialAdapter.readPartialData(symbol, strategyName, self.params.signalId);
 
   for (const [signalId, data] of Object.entries(partialData)) {
     const state: IPartialState = {
@@ -344,14 +344,15 @@ export class ClientPartial implements IPartial {
    * Uses atomic file writes via PersistPartialAdapter.
    *
    * @param symbol - Trading pair symbol
+   * @param strategyName - Strategy identifier
    * @param signalId - Signal identifier
    * @returns Promise that resolves when persistence is complete
    */
-  public async _persistState(symbol: string, signalId: string): Promise<void> {
+  public async _persistState(symbol: string, strategyName: StrategyName, signalId: string): Promise<void> {
     if (this.params.backtest) {
       return;
     }
-    this.params.logger.debug("ClientPartial persistState", { symbol, signalId });
+    this.params.logger.debug("ClientPartial persistState", { symbol, strategyName, signalId });
     if (this._states === NEED_FETCH) {
       throw new Error(
         "ClientPartial not initialized. Call waitForInit() before using."
@@ -364,7 +365,7 @@ export class ClientPartial implements IPartial {
         lossLevels: Array.from(state.lossLevels),
       };
     }
-    await PersistPartialAdapter.writePartialData(partialData, symbol, signalId);
+    await PersistPartialAdapter.writePartialData(partialData, symbol, strategyName, signalId);
   }
 
   /**
@@ -531,7 +532,7 @@ export class ClientPartial implements IPartial {
       );
     }
     this._states.delete(data.id);
-    await this._persistState(symbol, this.params.signalId);
+    await this._persistState(symbol, data.strategyName, this.params.signalId);
   }
 }
 
