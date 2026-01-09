@@ -1801,7 +1801,7 @@ test("SEQUENCE: LONG→TIME_EXPIRED, LONG→TP - mixed closeReasons", async ({ p
  * - 2 LONG сигнала подряд
  * - Проверка: Система корректно обрабатывает быструю последовательность сигналов
  */
-test("SEQUENCE: 2 rapid LONG signals", async ({ pass, fail }) => {
+test("SEQUENCE: 2 rapid LONG signals (VWAP-aware)", async ({ pass, fail }) => {
   const results = [];
 
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
@@ -1871,15 +1871,27 @@ test("SEQUENCE: 2 rapid LONG signals", async ({ pass, fail }) => {
           volume: 100,
         });
       } else {
-        // SL
-        allCandles.push({
-          timestamp: startTime + (offset + i) * intervalMs,
-          open: basePrice - 1500,
-          high: basePrice - 1400,
-          low: basePrice - 1600,
-          close: basePrice - 1500,
-          volume: 100,
-        });
+        // SL (только первые 3 свечи, затем восстановление)
+        if (i < 13) {
+          allCandles.push({
+            timestamp: startTime + (offset + i) * intervalMs,
+            open: basePrice - 1500,
+            high: basePrice - 1400,
+            low: basePrice - 1600,
+            close: basePrice - 1500,
+            volume: 100,
+          });
+        } else {
+          // Восстановление цены после SL для VWAP
+          allCandles.push({
+            timestamp: startTime + (offset + i) * intervalMs,
+            open: basePrice + 500,
+            high: basePrice + 600,
+            low: basePrice + 400,
+            close: basePrice + 500,
+            volume: 100,
+          });
+        }
       }
     }
   }

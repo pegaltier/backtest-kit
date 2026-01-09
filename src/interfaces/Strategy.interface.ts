@@ -4,6 +4,7 @@ import { IExchange, ICandleData, ExchangeName } from "./Exchange.interface";
 import { ILogger } from "./Logger.interface";
 import { IRisk, RiskName } from "./Risk.interface";
 import { IPartial } from "./Partial.interface";
+import { IBreakeven } from "./Breakeven.interface";
 import { FrameName } from "./Frame.interface";
 
 /**
@@ -150,10 +151,14 @@ export interface IScheduledSignalCancelRow extends IScheduledSignalRow {
  * Combines schema with runtime dependencies.
  */
 export interface IStrategyParams extends IStrategySchema {
+  /** Exchange name (e.g., "binance") */
+  exchangeName: ExchangeName;
   /** Trading pair symbol (e.g., "BTCUSDT") */
   symbol: string;
   /** Partial handling service for partial profit/loss */
   partial: IPartial;
+  /** Breakeven handling service for stop-loss protection */
+  breakeven: IBreakeven;
   /** Logger service for debug output */
   logger: ILogger;
   /** Exchange service for candle data and VWAP */
@@ -198,6 +203,8 @@ export interface IStrategyCallbacks {
   onPartialProfit: (symbol: string, data: IPublicSignalRow, currentPrice: number, revenuePercent: number, backtest: boolean) => void | Promise<void>;
   /** Called when signal is in partial loss state (price moved against position but not hit SL yet) */
   onPartialLoss: (symbol: string, data: IPublicSignalRow, currentPrice: number, lossPercent: number, backtest: boolean) => void | Promise<void>;
+  /** Called when signal reaches breakeven (stop-loss moved to entry price to protect capital) */
+  onBreakeven: (symbol: string, data: IPublicSignalRow, currentPrice: number, backtest: boolean) => void | Promise<void>;
   /** Called every minute regardless of strategy interval (for custom monitoring like checking if signal should be cancelled) */
   onPing: (symbol: string, data: IPublicSignalRow, when: Date, backtest: boolean) => void | Promise<void>;
 }
@@ -643,6 +650,57 @@ export interface IStrategy {
    * ```
    */
   trailingStop: (symbol: string, percentShift: number, backtest: boolean) => Promise<void>;
+
+  /**
+   * Moves stop-loss to breakeven (entry price) when price reaches threshold.
+   *
+   * Moves SL to entry price (zero-risk position) when current price has moved
+   * far enough in profit direction to cover transaction costs (slippage + fees).
+   * Threshold is calculated as: (CC_PERCENT_SLIPPAGE + CC_PERCENT_FEE) * 2
+   *
+   * Behavior:
+   * - Returns true if SL was moved to breakeven
+   * - Returns false if conditions not met (threshold not reached or already at breakeven)
+   * - Uses _trailingPriceStopLoss to store breakeven SL (preserves original priceStopLoss)
+   * - Only moves SL once per position (idempotent - safe to call multiple times)
+   *
+   * For LONG position (entry=100, slippage=0.1%, fee=0.1%):
+   * - Threshold: (0.1 + 0.1) * 2 = 0.4%
+   * - Breakeven available when price >= 100.4 (entry + 0.4%)
+   * - Moves SL from original (e.g. 95) to 100 (breakeven)
+   * - Returns true on first successful move, false on subsequent calls
+   *
+   * For SHORT position (entry=100, slippage=0.1%, fee=0.1%):
+   * - Threshold: (0.1 + 0.1) * 2 = 0.4%
+   * - Breakeven available when price <= 99.6 (entry - 0.4%)
+   * - Moves SL from original (e.g. 105) to 100 (breakeven)
+   * - Returns true on first successful move, false on subsequent calls
+   *
+   * Validations:
+   * - Throws if no pending signal exists
+   * - Throws if currentPrice is not a positive finite number
+   *
+   * Use case: User-controlled breakeven protection triggered from onPartialProfit callback.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param currentPrice - Current market price to check threshold
+   * @param backtest - Whether running in backtest mode
+   * @returns Promise<boolean> - true if breakeven was set, false if conditions not met
+   *
+   * @example
+   * ```typescript
+   * callbacks: {
+   *   onPartialProfit: async (symbol, signal, currentPrice, percentTp, backtest) => {
+   *     // Try to move SL to breakeven when threshold reached
+   *     const movedToBreakeven = await strategy.breakeven(symbol, currentPrice, backtest);
+   *     if (movedToBreakeven) {
+   *       console.log(`Position moved to breakeven at ${currentPrice}`);
+   *     }
+   *   }
+   * }
+   * ```
+   */
+  breakeven: (symbol: string, currentPrice: number, backtest: boolean) => Promise<boolean>;
 }
 
 /**

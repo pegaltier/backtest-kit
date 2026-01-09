@@ -167,7 +167,8 @@ export const WAIT_FOR_INIT_FN = async (self: ClientRisk): Promise<void> => {
   }
 
   const persistedPositions = await PersistRiskAdapter.readPositionData(
-    self.params.riskName
+    self.params.riskName,
+    self.params.exchangeName,
   );
   self._activePositions = new Map(persistedPositions);
 };
@@ -216,7 +217,8 @@ export class ClientRisk implements IRisk {
 
     await PersistRiskAdapter.writePositionData(
       Array.from(<RiskMap>this._activePositions),
-      this.params.riskName
+      this.params.riskName,
+      this.params.exchangeName,
     );
   }
 

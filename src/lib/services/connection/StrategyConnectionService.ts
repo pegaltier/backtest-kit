@@ -24,6 +24,7 @@ import {
 import { IRisk, RiskName } from "../../../interfaces/Risk.interface";
 import RiskConnectionService from "./RiskConnectionService";
 import { PartialConnectionService } from "./PartialConnectionService";
+import { BreakevenConnectionService } from "./BreakevenConnectionService";
 import { MergeRisk } from "../../../classes/Risk";
 import { TMethodContextService } from "../context/MethodContextService";
 import { FrameName } from "../../../interfaces/Frame.interface";
@@ -188,6 +189,9 @@ export class StrategyConnectionService implements TStrategy {
   public readonly partialConnectionService = inject<PartialConnectionService>(
     TYPES.partialConnectionService
   );
+  public readonly breakevenConnectionService = inject<BreakevenConnectionService>(
+    TYPES.breakevenConnectionService
+  );
 
   /**
    * Retrieves memoized ClientStrategy instance for given symbol-strategy pair with exchange and frame isolation.
@@ -216,10 +220,12 @@ export class StrategyConnectionService implements TStrategy {
       return new ClientStrategy({
         symbol,
         interval,
+        exchangeName,
         execution: this.executionContextService,
         method: this.methodContextService,
         logger: this.loggerService,
         partial: this.partialConnectionService,
+        breakeven: this.breakevenConnectionService,
         exchange: this.exchangeConnectionService,
         risk: GET_RISK_FN(
           {
@@ -600,6 +606,44 @@ export class StrategyConnectionService implements TStrategy {
     });
     const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
     await strategy.trailingStop(symbol, percentShift, backtest);
+  };
+
+  /**
+   * Delegates to ClientStrategy.breakeven() with current execution context.
+   *
+   * @param backtest - Whether running in backtest mode
+   * @param symbol - Trading pair symbol
+   * @param currentPrice - Current market price to check threshold
+   * @param context - Execution context with strategyName, exchangeName, frameName
+   * @returns Promise<boolean> - true if breakeven was set, false otherwise
+   *
+   * @example
+   * ```typescript
+   * // LONG: entry=100, slippage=0.1%, fee=0.1%, threshold=0.4%
+   * // Try to move SL to breakeven when price >= 100.4
+   * const moved = await strategyConnectionService.breakeven(
+   *   false,
+   *   "BTCUSDT",
+   *   100.5,
+   *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
+   * );
+   * console.log(moved); // true (SL moved to 100)
+   * ```
+   */
+  public breakeven = async (
+    backtest: boolean,
+    symbol: string,
+    currentPrice: number,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
+  ): Promise<boolean> => {
+    this.loggerService.log("strategyConnectionService breakeven", {
+      symbol,
+      context,
+      currentPrice,
+      backtest,
+    });
+    const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
+    return await strategy.breakeven(symbol, currentPrice, backtest);
   };
 }
 

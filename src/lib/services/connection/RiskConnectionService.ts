@@ -138,6 +138,7 @@ export class RiskConnectionService implements TRisk {
         ...schema,
         logger: this.loggerService,
         backtest,
+        exchangeName,
         onRejected: (symbol, params, activePositionCount, rejectionResult, timestamp, backtest) =>
           COMMIT_REJECTION_FN(
             symbol,

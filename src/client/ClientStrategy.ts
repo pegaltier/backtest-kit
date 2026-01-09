@@ -641,6 +641,7 @@ const WAIT_FOR_INIT_FN = async (self: ClientStrategy) => {
   const pendingSignal = await PersistSignalAdapter.readSignalData(
     self.params.execution.context.symbol,
     self.params.strategyName,
+    self.params.exchangeName,
   );
   if (pendingSignal) {
     if (pendingSignal.exchangeName !== self.params.method.context.exchangeName) {
@@ -670,6 +671,7 @@ const WAIT_FOR_INIT_FN = async (self: ClientStrategy) => {
   const scheduledSignal = await PersistScheduleAdapter.readScheduleData(
     self.params.execution.context.symbol,
     self.params.strategyName,
+    self.params.exchangeName,
   );
   if (scheduledSignal) {
     if (scheduledSignal.exchangeName !== self.params.method.context.exchangeName) {
@@ -898,6 +900,193 @@ const TRAILING_STOP_FN = (
       direction: initialDirection,
     });
   }
+};
+
+const BREAKEVEN_FN = (
+  self: ClientStrategy,
+  signal: ISignalRow,
+  currentPrice: number
+): boolean => {
+  // Calculate breakeven threshold based on slippage and fees
+  // Need to cover: entry slippage + entry fee + exit slippage + exit fee
+  // Total: (slippage + fee) * 2 transactions
+  const breakevenThresholdPercent =
+    (GLOBAL_CONFIG.CC_PERCENT_SLIPPAGE + GLOBAL_CONFIG.CC_PERCENT_FEE) * 2;
+
+  // Check if trailing stop is already set
+  if (signal._trailingPriceStopLoss !== undefined) {
+    const trailingStopLoss = signal._trailingPriceStopLoss;
+    const breakevenPrice = signal.priceOpen;
+
+    if (signal.position === "long") {
+      // LONG: trailing SL is positive if it's above entry (in profit zone)
+      const isPositiveTrailing = trailingStopLoss > signal.priceOpen;
+
+      if (isPositiveTrailing) {
+        // Trailing stop is already protecting profit - consider breakeven achieved
+        self.params.logger.debug("BREAKEVEN_FN: positive trailing stop already set, returning true", {
+          signalId: signal.id,
+          position: signal.position,
+          priceOpen: signal.priceOpen,
+          trailingStopLoss,
+          breakevenPrice,
+          reason: "trailing SL already in profit zone (above entry)",
+        });
+        return true;
+      } else {
+        // Trailing stop is negative (below entry)
+        // Check if we can upgrade it to breakeven
+        const thresholdPrice = signal.priceOpen * (1 + breakevenThresholdPercent / 100);
+        const isThresholdReached = currentPrice >= thresholdPrice;
+
+        if (isThresholdReached && breakevenPrice > trailingStopLoss) {
+          // Breakeven is better than current trailing SL - upgrade to breakeven
+          signal._trailingPriceStopLoss = breakevenPrice;
+
+          self.params.logger.info("BREAKEVEN_FN: upgraded negative trailing stop to breakeven", {
+            signalId: signal.id,
+            position: signal.position,
+            priceOpen: signal.priceOpen,
+            previousTrailingSL: trailingStopLoss,
+            newStopLoss: breakevenPrice,
+            currentPrice,
+            thresholdPrice,
+            reason: "breakeven is higher than negative trailing SL",
+          });
+          return true;
+        } else {
+          // Cannot upgrade - threshold not reached or breakeven is worse
+          self.params.logger.debug("BREAKEVEN_FN: negative trailing stop set, cannot upgrade", {
+            signalId: signal.id,
+            position: signal.position,
+            priceOpen: signal.priceOpen,
+            trailingStopLoss,
+            breakevenPrice,
+            isThresholdReached,
+            reason: !isThresholdReached
+              ? "threshold not reached"
+              : "breakeven not better than current trailing SL",
+          });
+          return false;
+        }
+      }
+    } else {
+      // SHORT: trailing SL is positive if it's below entry (in profit zone)
+      const isPositiveTrailing = trailingStopLoss < signal.priceOpen;
+
+      if (isPositiveTrailing) {
+        // Trailing stop is already protecting profit - consider breakeven achieved
+        self.params.logger.debug("BREAKEVEN_FN: positive trailing stop already set, returning true", {
+          signalId: signal.id,
+          position: signal.position,
+          priceOpen: signal.priceOpen,
+          trailingStopLoss,
+          breakevenPrice,
+          reason: "trailing SL already in profit zone (below entry)",
+        });
+        return true;
+      } else {
+        // Trailing stop is negative (above entry)
+        // Check if we can upgrade it to breakeven
+        const thresholdPrice = signal.priceOpen * (1 - breakevenThresholdPercent / 100);
+        const isThresholdReached = currentPrice <= thresholdPrice;
+
+        if (isThresholdReached && breakevenPrice < trailingStopLoss) {
+          // Breakeven is better than current trailing SL - upgrade to breakeven
+          signal._trailingPriceStopLoss = breakevenPrice;
+
+          self.params.logger.info("BREAKEVEN_FN: upgraded negative trailing stop to breakeven", {
+            signalId: signal.id,
+            position: signal.position,
+            priceOpen: signal.priceOpen,
+            previousTrailingSL: trailingStopLoss,
+            newStopLoss: breakevenPrice,
+            currentPrice,
+            thresholdPrice,
+            reason: "breakeven is lower than negative trailing SL",
+          });
+          return true;
+        } else {
+          // Cannot upgrade - threshold not reached or breakeven is worse
+          self.params.logger.debug("BREAKEVEN_FN: negative trailing stop set, cannot upgrade", {
+            signalId: signal.id,
+            position: signal.position,
+            priceOpen: signal.priceOpen,
+            trailingStopLoss,
+            breakevenPrice,
+            isThresholdReached,
+            reason: !isThresholdReached
+              ? "threshold not reached"
+              : "breakeven not better than current trailing SL",
+          });
+          return false;
+        }
+      }
+    }
+  }
+
+  // No trailing stop set - proceed with normal breakeven logic
+  const currentStopLoss = signal.priceStopLoss;
+  const breakevenPrice = signal.priceOpen;
+
+  // Calculate threshold price
+  let thresholdPrice: number;
+  let isThresholdReached: boolean;
+  let canMoveToBreakeven: boolean;
+
+  if (signal.position === "long") {
+    // LONG: threshold reached when price goes UP by breakevenThresholdPercent from entry
+    thresholdPrice = signal.priceOpen * (1 + breakevenThresholdPercent / 100);
+    isThresholdReached = currentPrice >= thresholdPrice;
+
+    // Can move to breakeven only if threshold reached and SL is below entry
+    canMoveToBreakeven = isThresholdReached && currentStopLoss < breakevenPrice;
+  } else {
+    // SHORT: threshold reached when price goes DOWN by breakevenThresholdPercent from entry
+    thresholdPrice = signal.priceOpen * (1 - breakevenThresholdPercent / 100);
+    isThresholdReached = currentPrice <= thresholdPrice;
+
+    // Can move to breakeven only if threshold reached and SL is above entry
+    canMoveToBreakeven = isThresholdReached && currentStopLoss > breakevenPrice;
+  }
+
+  if (!canMoveToBreakeven) {
+    self.params.logger.debug("BREAKEVEN_FN: conditions not met, skipping", {
+      signalId: signal.id,
+      position: signal.position,
+      priceOpen: signal.priceOpen,
+      currentPrice,
+      currentStopLoss,
+      breakevenPrice,
+      thresholdPrice,
+      breakevenThresholdPercent,
+      isThresholdReached,
+      reason: !isThresholdReached
+        ? "threshold not reached"
+        : "already at/past breakeven",
+    });
+    return false;
+  }
+
+  // Move SL to breakeven (entry price)
+  signal._trailingPriceStopLoss = breakevenPrice;
+
+  self.params.logger.info("BREAKEVEN_FN executed", {
+    signalId: signal.id,
+    position: signal.position,
+    priceOpen: signal.priceOpen,
+    originalStopLoss: signal.priceStopLoss,
+    previousStopLoss: currentStopLoss,
+    newStopLoss: breakevenPrice,
+    currentPrice,
+    thresholdPrice,
+    breakevenThresholdPercent,
+    profitDistancePercent: signal.position === "long"
+      ? ((currentPrice - signal.priceOpen) / signal.priceOpen * 100)
+      : ((signal.priceOpen - currentPrice) / signal.priceOpen * 100),
+  });
+
+  return true;
 };
 
 const CHECK_SCHEDULED_SIGNAL_TIMEOUT_FN = async (
@@ -1704,6 +1893,89 @@ const CALL_PARTIAL_LOSS_CALLBACKS_FN = trycatch(
   }
 );
 
+const CALL_BREAKEVEN_CHECK_FN = trycatch(
+  async (
+    self: ClientStrategy,
+    symbol: string,
+    signal: ISignalRow,
+    currentPrice: number,
+    timestamp: number,
+    backtest: boolean
+  ): Promise<void> => {
+    await ExecutionContextService.runInContext(async () => {
+      const publicSignal = TO_PUBLIC_SIGNAL(signal);
+      const isBreakeven = await self.params.breakeven.check(
+        symbol,
+        publicSignal,
+        currentPrice,
+        backtest,
+        new Date(timestamp)
+      );
+      if (self.params.callbacks?.onBreakeven) {
+        isBreakeven && await self.params.callbacks.onBreakeven(
+          symbol,
+          publicSignal,
+          currentPrice,
+          backtest
+        );
+      }
+    }, {
+      when: new Date(timestamp),
+      symbol: symbol,
+      backtest: backtest,
+    });
+  },
+  {
+    fallback: (error) => {
+      const message = "ClientStrategy CALL_BREAKEVEN_CHECK_FN thrown";
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+  }
+);
+
+const CALL_BREAKEVEN_CLEAR_FN = trycatch(
+  async (
+    self: ClientStrategy,
+    symbol: string,
+    signal: ISignalRow,
+    currentPrice: number,
+    timestamp: number,
+    backtest: boolean
+  ): Promise<void> => {
+    await ExecutionContextService.runInContext(async () => {
+      const publicSignal = TO_PUBLIC_SIGNAL(signal);
+      await self.params.breakeven.clear(
+        symbol,
+        publicSignal,
+        currentPrice,
+        backtest
+      );
+    }, {
+      when: new Date(timestamp),
+      symbol: symbol,
+      backtest: backtest,
+    });
+  },
+  {
+    fallback: (error) => {
+      const message = "ClientStrategy CALL_BREAKEVEN_CLEAR_FN thrown";
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+  }
+);
+
 const RETURN_SCHEDULED_SIGNAL_ACTIVE_FN = async (
   self: ClientStrategy,
   scheduled: IScheduledSignalRow,
@@ -1951,6 +2223,16 @@ const CLOSE_PENDING_SIGNAL_FN = async (
     self.params.execution.context.backtest
   );
 
+  // КРИТИЧНО: Очищаем состояние ClientBreakeven при закрытии позиции
+  await CALL_BREAKEVEN_CLEAR_FN(
+    self,
+    self.params.execution.context.symbol,
+    signal,
+    currentPrice,
+    currentTime,
+    self.params.execution.context.backtest
+  );
+
   await CALL_RISK_REMOVE_SIGNAL_FN(
     self,
     self.params.execution.context.symbol,
@@ -2002,6 +2284,18 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
       const currentDistance = currentPrice - signal.priceOpen;
 
       if (currentDistance > 0) {
+        // Check if breakeven should be triggered
+        await CALL_BREAKEVEN_CHECK_FN(
+          self,
+          self.params.execution.context.symbol,
+          signal,
+          currentPrice,
+          currentTime,
+          self.params.execution.context.backtest
+        );
+      }
+
+      if (currentDistance > 0) {
         // Moving towards TP
         const tpDistance = signal.priceTakeProfit - signal.priceOpen;
         const progressPercent = (currentDistance / tpDistance) * 100;
@@ -2035,6 +2329,18 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
     } else if (signal.position === "short") {
       // For short: calculate progress towards TP or SL
       const currentDistance = signal.priceOpen - currentPrice;
+
+      if (currentDistance > 0) {
+        // Check if breakeven should be triggered
+        await CALL_BREAKEVEN_CHECK_FN(
+          self,
+          self.params.execution.context.symbol,
+          signal,
+          currentPrice,
+          currentTime,
+          self.params.execution.context.backtest
+        );
+      }
 
       if (currentDistance > 0) {
         // Moving towards TP
@@ -2319,6 +2625,16 @@ const CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN = async (
     self.params.execution.context.backtest
   );
 
+  // КРИТИЧНО: Очищаем состояние ClientBreakeven при закрытии позиции
+  await CALL_BREAKEVEN_CLEAR_FN(
+    self,
+    self.params.execution.context.symbol,
+    signal,
+    averagePrice,
+    closeTimestamp,
+    self.params.execution.context.backtest
+  );
+
   await CALL_RISK_REMOVE_SIGNAL_FN(
     self,
     self.params.execution.context.symbol,
@@ -2513,39 +2829,41 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
     }
 
     // Check TP/SL only if not expired
-    // КРИТИЧНО: используем candle.high/low для точной проверки достижения TP/SL
+    // КРИТИЧНО: используем averagePrice (VWAP) для проверки достижения TP/SL (как в live mode)
     // КРИТИЧНО: используем trailing SL если установлен
     const effectiveStopLoss = signal._trailingPriceStopLoss ?? signal.priceStopLoss;
 
     if (!shouldClose && signal.position === "long") {
-      // Для LONG: TP срабатывает если high >= TP, SL если low <= SL
-      if (currentCandle.high >= signal.priceTakeProfit) {
+      // Для LONG: TP срабатывает если VWAP >= TP, SL если VWAP <= SL
+      if (averagePrice >= signal.priceTakeProfit) {
         shouldClose = true;
         closeReason = "take_profit";
-      } else if (currentCandle.low <= effectiveStopLoss) {
+      } else if (averagePrice <= effectiveStopLoss) {
         shouldClose = true;
         closeReason = "stop_loss";
       }
     }
 
     if (!shouldClose && signal.position === "short") {
-      // Для SHORT: TP срабатывает если low <= TP, SL если high >= SL
-      if (currentCandle.low <= signal.priceTakeProfit) {
+      // Для SHORT: TP срабатывает если VWAP <= TP, SL если VWAP >= SL
+      if (averagePrice <= signal.priceTakeProfit) {
         shouldClose = true;
         closeReason = "take_profit";
-      } else if (currentCandle.high >= effectiveStopLoss) {
+      } else if (averagePrice >= effectiveStopLoss) {
         shouldClose = true;
         closeReason = "stop_loss";
       }
     }
 
     if (shouldClose) {
-      // КРИТИЧНО: при закрытии по TP/SL используем точную цену, а не averagePrice
-      let closePrice = averagePrice;
+      // КРИТИЧНО: используем точную цену TP/SL для закрытия (как в live mode)
+      let closePrice: number;
       if (closeReason === "take_profit") {
         closePrice = signal.priceTakeProfit;
       } else if (closeReason === "stop_loss") {
-        closePrice = effectiveStopLoss; // Используем trailing SL если установлен
+        closePrice = effectiveStopLoss;
+      } else {
+        closePrice = averagePrice; // time_expired uses VWAP
       }
 
       return await CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN(
@@ -2563,6 +2881,18 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
       if (signal.position === "long") {
         // For long: calculate progress towards TP or SL
         const currentDistance = averagePrice - signal.priceOpen;
+
+        if (currentDistance > 0) {
+          // Check if breakeven should be triggered
+          await CALL_BREAKEVEN_CHECK_FN(
+            self,
+            self.params.execution.context.symbol,
+            signal,
+            averagePrice,
+            currentCandleTimestamp,
+            self.params.execution.context.backtest
+          );
+        }
 
         if (currentDistance > 0) {
           // Moving towards TP
@@ -2595,6 +2925,18 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
       } else if (signal.position === "short") {
         // For short: calculate progress towards TP or SL
         const currentDistance = signal.priceOpen - averagePrice;
+
+        if (currentDistance > 0) {
+          // Check if breakeven should be triggered
+          await CALL_BREAKEVEN_CHECK_FN(
+            self,
+            self.params.execution.context.symbol,
+            signal,
+            averagePrice,
+            currentCandleTimestamp,
+            self.params.execution.context.backtest
+          );
+        }
 
         if (currentDistance > 0) {
           // Moving towards TP
@@ -2717,6 +3059,7 @@ export class ClientStrategy implements IStrategy {
       this._pendingSignal,
       this.params.execution.context.symbol,
       this.params.strategyName,
+      this.params.exchangeName,
     );
   }
 
@@ -2743,6 +3086,7 @@ export class ClientStrategy implements IStrategy {
       this._scheduledSignal,
       this.params.execution.context.symbol,
       this.params.strategyName,
+      this.params.exchangeName,
     );
   }
 
@@ -3255,6 +3599,7 @@ export class ClientStrategy implements IStrategy {
       this._scheduledSignal,
       symbol,
       this.params.method.context.strategyName,
+      this.params.method.context.exchangeName,
     );
   }
 
@@ -3302,6 +3647,7 @@ export class ClientStrategy implements IStrategy {
       this._scheduledSignal,
       symbol,
       this.params.method.context.strategyName,
+      this.params.method.context.exchangeName,
     );
   }
 
@@ -3430,6 +3776,7 @@ export class ClientStrategy implements IStrategy {
         this._pendingSignal,
         this.params.execution.context.symbol,
         this.params.strategyName,
+        this.params.exchangeName,
       );
     }
   }
@@ -3559,8 +3906,122 @@ export class ClientStrategy implements IStrategy {
         this._pendingSignal,
         this.params.execution.context.symbol,
         this.params.strategyName,
+        this.params.exchangeName,
       );
     }
+  }
+
+  /**
+   * Moves stop-loss to breakeven (entry price) when price reaches threshold.
+   *
+   * Moves SL to entry price (zero-risk position) when current price has moved
+   * far enough in profit direction to cover transaction costs (slippage + fees).
+   * Threshold is calculated as: (CC_PERCENT_SLIPPAGE + CC_PERCENT_FEE) * 2
+   *
+   * Behavior:
+   * - Returns true if SL was moved to breakeven
+   * - Returns false if conditions not met (threshold not reached or already at breakeven)
+   * - Uses _trailingPriceStopLoss to store breakeven SL (preserves original priceStopLoss)
+   * - Only moves SL once per position (idempotent - safe to call multiple times)
+   *
+   * For LONG position (entry=100, slippage=0.1%, fee=0.1%):
+   * - Threshold: (0.1 + 0.1) * 2 = 0.4%
+   * - Breakeven available when price >= 100.4 (entry + 0.4%)
+   * - Moves SL from original (e.g. 95) to 100 (breakeven)
+   * - Returns true on first successful move, false on subsequent calls
+   *
+   * For SHORT position (entry=100, slippage=0.1%, fee=0.1%):
+   * - Threshold: (0.1 + 0.1) * 2 = 0.4%
+   * - Breakeven available when price <= 99.6 (entry - 0.4%)
+   * - Moves SL from original (e.g. 105) to 100 (breakeven)
+   * - Returns true on first successful move, false on subsequent calls
+   *
+   * Validation:
+   * - Throws if no pending signal exists
+   * - Throws if currentPrice is not a positive finite number
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param currentPrice - Current market price to check threshold
+   * @param backtest - Whether running in backtest mode (controls persistence)
+   * @returns Promise<boolean> - true if breakeven was set, false if conditions not met
+   *
+   * @example
+   * ```typescript
+   * // LONG position: entry=100, currentSL=95, threshold=0.4%
+   *
+   * // Price at 100.3 - threshold not reached yet
+   * const result1 = await strategy.breakeven("BTCUSDT", 100.3, false);
+   * // Returns false (price < 100.4)
+   *
+   * // Price at 100.5 - threshold reached!
+   * const result2 = await strategy.breakeven("BTCUSDT", 100.5, false);
+   * // Returns true, SL moved to 100 (breakeven)
+   *
+   * // Price at 101 - already at breakeven
+   * const result3 = await strategy.breakeven("BTCUSDT", 101, false);
+   * // Returns false (already at breakeven, no change)
+   * ```
+   */
+  public async breakeven(
+    symbol: string,
+    currentPrice: number,
+    backtest: boolean
+  ): Promise<boolean> {
+    this.params.logger.debug("ClientStrategy breakeven", {
+      symbol,
+      currentPrice,
+      breakevenThresholdPercent: (GLOBAL_CONFIG.CC_PERCENT_SLIPPAGE + GLOBAL_CONFIG.CC_PERCENT_FEE) * 2,
+      hasPendingSignal: this._pendingSignal !== null,
+    });
+
+    // Validation: must have pending signal
+    if (!this._pendingSignal) {
+      throw new Error(
+        `ClientStrategy breakeven: No pending signal exists for symbol=${symbol}`
+      );
+    }
+
+    // Validation: currentPrice must be valid
+    if (typeof currentPrice !== "number" || !isFinite(currentPrice) || currentPrice <= 0) {
+      throw new Error(
+        `ClientStrategy breakeven: currentPrice must be a positive finite number, got ${currentPrice}`
+      );
+    }
+
+    // Execute breakeven logic
+    const result = BREAKEVEN_FN(this, this._pendingSignal, currentPrice);
+
+    // Only persist if breakeven was actually set
+    if (!result) {
+      return false;
+    }
+
+    // Persist updated signal state (inline setPendingSignal content)
+    // Note: this._pendingSignal already mutated by BREAKEVEN_FN, no reassignment needed
+    this.params.logger.debug("ClientStrategy setPendingSignal (inline)", {
+      pendingSignal: this._pendingSignal,
+    });
+
+    // Call onWrite callback for testing persist storage
+    if (this.params.callbacks?.onWrite) {
+      const publicSignal = TO_PUBLIC_SIGNAL(this._pendingSignal);
+      this.params.callbacks.onWrite(
+        this.params.execution.context.symbol,
+        publicSignal,
+        backtest
+      );
+    }
+
+    if (!backtest) {
+      await PersistSignalAdapter.writeSignalData(
+        this._pendingSignal,
+        this.params.execution.context.symbol,
+        this.params.strategyName,
+        this.params.exchangeName,
+      );
+    }
+
+    return true;
   }
 
   /**
@@ -3671,6 +4132,7 @@ export class ClientStrategy implements IStrategy {
         this._pendingSignal,
         this.params.execution.context.symbol,
         this.params.strategyName,
+        this.params.exchangeName,
       );
     }
   }

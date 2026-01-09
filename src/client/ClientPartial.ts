@@ -6,6 +6,7 @@ import {
   IPartial,
 } from "../interfaces/Partial.interface";
 import { IPublicSignalRow, ISignalRow, StrategyName } from "../interfaces/Strategy.interface";
+import { ExchangeName } from "../interfaces/Exchange.interface";
 import { PersistPartialAdapter } from "../classes/Persist";
 import { singleshot } from "functools-kit";
 
@@ -101,7 +102,7 @@ const HANDLE_PROFIT_FN = async (
   }
 
   if (shouldPersist) {
-    await self._persistState(symbol, data.strategyName);
+    await self._persistState(symbol, data.strategyName, data.exchangeName, self.params.signalId);
   }
 };
 
@@ -181,7 +182,7 @@ const HANDLE_LOSS_FN = async (
   }
 
   if (shouldPersist) {
-    await self._persistState(symbol, data.strategyName);
+    await self._persistState(symbol, data.strategyName, data.exchangeName, self.params.signalId);
   }
 };
 
@@ -195,14 +196,16 @@ const HANDLE_LOSS_FN = async (
  *
  * @param symbol - Trading pair symbol
  * @param strategyName - Strategy identifier
+ * @param exchangeName - Exchange identifier
  * @param backtest - True if backtest mode, false if live mode
  * @param self - ClientPartial instance reference
  */
-const WAIT_FOR_INIT_FN = async (symbol: string, strategyName: StrategyName, self: ClientPartial) => {
+const WAIT_FOR_INIT_FN = async (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, backtest: boolean, self: ClientPartial) => {
   self.params.logger.debug("ClientPartial waitForInit", {
     symbol,
+    backtest,
     strategyName,
-    backtest: self.params.backtest
+    exchangeName,
   });
 
   if (self._states !== NEED_FETCH) {
@@ -219,7 +222,7 @@ const WAIT_FOR_INIT_FN = async (symbol: string, strategyName: StrategyName, self
     return;
   }
 
-  const partialData = await PersistPartialAdapter.readPartialData(symbol, strategyName);
+  const partialData = await PersistPartialAdapter.readPartialData(symbol, strategyName, self.params.signalId, exchangeName);
 
   for (const [signalId, data] of Object.entries(partialData)) {
     const state: IPartialState = {
@@ -232,6 +235,7 @@ const WAIT_FOR_INIT_FN = async (symbol: string, strategyName: StrategyName, self
   self.params.logger.info("ClientPartial restored state", {
     symbol,
     strategyName,
+    exchangeName,
     signalCount: Object.keys(partialData).length,
   });
 };
@@ -312,25 +316,26 @@ export class ClientPartial implements IPartial {
   /**
    * Initializes partial state by loading from disk.
    *
-   * Uses singleshot pattern to ensure initialization happens exactly once per symbol:strategyName.
+   * Uses singleshot pattern to ensure initialization happens exactly once per symbol:strategyName:exchangeName.
    * Reads persisted state from PersistPartialAdapter and restores to _states Map.
    *
    * Must be called before profit()/loss()/clear() methods.
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy identifier
+   * @param exchangeName - Exchange identifier
    * @param backtest - True if backtest mode, false if live mode
    * @returns Promise that resolves when initialization is complete
    *
    * @example
    * ```typescript
    * const partial = new ClientPartial(params);
-   * await partial.waitForInit("BTCUSDT", "my-strategy", false); // Load persisted state (live mode)
+   * await partial.waitForInit("BTCUSDT", "my-strategy", "binance", false); // Load persisted state (live mode)
    * // Now profit()/loss() can be called
    * ```
    */
   public waitForInit = singleshot(
-    async (symbol: string, strategyName: StrategyName) => await WAIT_FOR_INIT_FN(symbol, strategyName, this)
+    async (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, backtest: boolean) => await WAIT_FOR_INIT_FN(symbol, strategyName, exchangeName, backtest, this)
   );
 
   /**
@@ -345,27 +350,28 @@ export class ClientPartial implements IPartial {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy identifier
-   * @param backtest - True if backtest mode
+   * @param exchangeName - Exchange identifier
+   * @param signalId - Signal identifier
    * @returns Promise that resolves when persistence is complete
    */
-  public async _persistState(symbol: string, strategyName: StrategyName): Promise<void> {
+  public async _persistState(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, signalId: string): Promise<void> {
     if (this.params.backtest) {
       return;
     }
-    this.params.logger.debug("ClientPartial persistState", { symbol, strategyName });
+    this.params.logger.debug("ClientPartial persistState", { symbol, strategyName, exchangeName, signalId });
     if (this._states === NEED_FETCH) {
       throw new Error(
         "ClientPartial not initialized. Call waitForInit() before using."
       );
     }
     const partialData: Record<string, IPartialData> = {};
-    for (const [signalId, state] of this._states.entries()) {
-      partialData[signalId] = {
+    for (const [sid, state] of this._states.entries()) {
+      partialData[sid] = {
         profitLevels: Array.from(state.profitLevels),
         lossLevels: Array.from(state.lossLevels),
       };
     }
-    await PersistPartialAdapter.writePartialData(partialData, symbol, strategyName);
+    await PersistPartialAdapter.writePartialData(partialData, symbol, strategyName, signalId, exchangeName);
   }
 
   /**
@@ -532,7 +538,7 @@ export class ClientPartial implements IPartial {
       );
     }
     this._states.delete(data.id);
-    await this._persistState(symbol, data.strategyName);
+    await this._persistState(symbol, data.strategyName, data.exchangeName, this.params.signalId);
   }
 }
 

@@ -18,6 +18,8 @@ import {
 } from "../interfaces/Strategy.interface";
 import { IRiskActivePosition, RiskName } from "../interfaces/Risk.interface";
 import { IPartialData } from "../interfaces/Partial.interface";
+import { IBreakevenData } from "../interfaces/Breakeven.interface";
+import { ExchangeName } from "../interfaces/Exchange.interface";
 
 const BASE_WAIT_FOR_INIT_SYMBOL = Symbol("wait-for-init");
 
@@ -41,6 +43,13 @@ const PERSIST_PARTIAL_UTILS_METHOD_NAME_READ_DATA =
   "PersistPartialUtils.readPartialData";
 const PERSIST_PARTIAL_UTILS_METHOD_NAME_WRITE_DATA =
   "PersistPartialUtils.writePartialData";
+
+const PERSIST_BREAKEVEN_UTILS_METHOD_NAME_USE_PERSIST_BREAKEVEN_ADAPTER =
+  "PersistBreakevenUtils.usePersistBreakevenAdapter";
+const PERSIST_BREAKEVEN_UTILS_METHOD_NAME_READ_DATA =
+  "PersistBreakevenUtils.readBreakevenData";
+const PERSIST_BREAKEVEN_UTILS_METHOD_NAME_WRITE_DATA =
+  "PersistBreakevenUtils.writeBreakevenData";
 
 const PERSIST_BASE_METHOD_NAME_CTOR = "PersistBase.CTOR";
 const PERSIST_BASE_METHOD_NAME_WAIT_FOR_INIT = "PersistBase.waitForInit";
@@ -127,6 +136,13 @@ export interface IPersistBase<Entity extends IEntity | null = IEntity> {
    * @throws Error if write fails
    */
   writeValue(entityId: EntityId, entity: Entity): Promise<void>;
+
+  /**
+   * Async generator yielding all entity IDs.
+   *
+   * @returns AsyncGenerator yielding entity IDs
+   */
+  keys(): AsyncGenerator<EntityId>;
 }
 
 const BASE_WAIT_FOR_INIT_FN = async (self: TPersistBase): Promise<void> => {
@@ -516,10 +532,10 @@ export class PersistSignalUtils {
     PersistBase;
 
   private getSignalStorage = memoize(
-    ([symbol, strategyName]: [string, StrategyName]): string => `${symbol}:${strategyName}`,
-    (symbol: string, strategyName: StrategyName): IPersistBase<SignalData> =>
+    ([symbol, strategyName, exchangeName]: [string, StrategyName, ExchangeName]): string => `${symbol}:${strategyName}:${exchangeName}`,
+    (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName): IPersistBase<SignalData> =>
       Reflect.construct(this.PersistSignalFactory, [
-        `${symbol}_${strategyName}`,
+        `${symbol}_${strategyName}_${exchangeName}`,
         `./dump/data/signal/`,
       ])
   );
@@ -555,17 +571,19 @@ export class PersistSignalUtils {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy identifier
+   * @param exchangeName - Exchange identifier
    * @returns Promise resolving to signal or null
    */
   public readSignalData = async (
     symbol: string,
-    strategyName: StrategyName
+    strategyName: StrategyName,
+    exchangeName: ExchangeName
   ): Promise<ISignalRow | null> => {
     swarm.loggerService.info(PERSIST_SIGNAL_UTILS_METHOD_NAME_READ_DATA);
 
-    const key = `${symbol}:${strategyName}`;
+    const key = `${symbol}:${strategyName}:${exchangeName}`;
     const isInitial = !this.getSignalStorage.has(key);
-    const stateStorage = this.getSignalStorage(symbol, strategyName);
+    const stateStorage = this.getSignalStorage(symbol, strategyName, exchangeName);
     await stateStorage.waitForInit(isInitial);
 
     if (await stateStorage.hasValue(symbol)) {
@@ -584,18 +602,20 @@ export class PersistSignalUtils {
    * @param signalRow - Signal data (null to clear)
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy identifier
+   * @param exchangeName - Exchange identifier
    * @returns Promise that resolves when write is complete
    */
   public writeSignalData = async (
     signalRow: ISignalRow | null,
     symbol: string,
-    strategyName: StrategyName
+    strategyName: StrategyName,
+    exchangeName: ExchangeName
   ): Promise<void> => {
     swarm.loggerService.info(PERSIST_SIGNAL_UTILS_METHOD_NAME_WRITE_DATA);
 
-    const key = `${symbol}:${strategyName}`;
+    const key = `${symbol}:${strategyName}:${exchangeName}`;
     const isInitial = !this.getSignalStorage.has(key);
-    const stateStorage = this.getSignalStorage(symbol, strategyName);
+    const stateStorage = this.getSignalStorage(symbol, strategyName, exchangeName);
     await stateStorage.waitForInit(isInitial);
 
     await stateStorage.writeValue(symbol, signalRow);
@@ -649,10 +669,10 @@ export class PersistRiskUtils {
     PersistBase;
 
   private getRiskStorage = memoize(
-    ([riskName]: [RiskName]): string => `${riskName}`,
-    (riskName: RiskName): IPersistBase<RiskData> =>
+    ([riskName, exchangeName]: [RiskName, ExchangeName]): string => `${riskName}:${exchangeName}`,
+    (riskName: RiskName, exchangeName: ExchangeName): IPersistBase<RiskData> =>
       Reflect.construct(this.PersistRiskFactory, [
-        riskName,
+        `${riskName}_${exchangeName}`,
         `./dump/data/risk/`,
       ])
   );
@@ -687,13 +707,15 @@ export class PersistRiskUtils {
    * Returns empty Map if no positions exist.
    *
    * @param riskName - Risk profile identifier
+   * @param exchangeName - Exchange identifier
    * @returns Promise resolving to Map of active positions
    */
-  public readPositionData = async (riskName: RiskName): Promise<RiskData> => {
+  public readPositionData = async (riskName: RiskName, exchangeName: ExchangeName): Promise<RiskData> => {
     swarm.loggerService.info(PERSIST_RISK_UTILS_METHOD_NAME_READ_DATA);
 
-    const isInitial = !this.getRiskStorage.has(riskName);
-    const stateStorage = this.getRiskStorage(riskName);
+    const key = `${riskName}:${exchangeName}`;
+    const isInitial = !this.getRiskStorage.has(key);
+    const stateStorage = this.getRiskStorage(riskName, exchangeName);
     await stateStorage.waitForInit(isInitial);
 
     const RISK_STORAGE_KEY = "positions";
@@ -713,16 +735,19 @@ export class PersistRiskUtils {
    *
    * @param positions - Map of active positions
    * @param riskName - Risk profile identifier
+   * @param exchangeName - Exchange identifier
    * @returns Promise that resolves when write is complete
    */
   public writePositionData = async (
     riskRow: RiskData,
-    riskName: RiskName
+    riskName: RiskName,
+    exchangeName: ExchangeName
   ): Promise<void> => {
     swarm.loggerService.info(PERSIST_RISK_UTILS_METHOD_NAME_WRITE_DATA);
 
-    const isInitial = !this.getRiskStorage.has(riskName);
-    const stateStorage = this.getRiskStorage(riskName);
+    const key = `${riskName}:${exchangeName}`;
+    const isInitial = !this.getRiskStorage.has(key);
+    const stateStorage = this.getRiskStorage(riskName, exchangeName);
     await stateStorage.waitForInit(isInitial);
 
     const RISK_STORAGE_KEY = "positions";
@@ -771,10 +796,10 @@ export class PersistScheduleUtils {
     PersistBase;
 
   private getScheduleStorage = memoize(
-    ([symbol, strategyName]: [string, StrategyName]): string => `${symbol}:${strategyName}`,
-    (symbol: string, strategyName: StrategyName): IPersistBase<ScheduleData> =>
+    ([symbol, strategyName, exchangeName]: [string, StrategyName, ExchangeName]): string => `${symbol}:${strategyName}:${exchangeName}`,
+    (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName): IPersistBase<ScheduleData> =>
       Reflect.construct(this.PersistScheduleFactory, [
-        `${symbol}_${strategyName}`,
+        `${symbol}_${strategyName}_${exchangeName}`,
         `./dump/data/schedule/`,
       ])
   );
@@ -810,17 +835,19 @@ export class PersistScheduleUtils {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy identifier
+   * @param exchangeName - Exchange identifier
    * @returns Promise resolving to scheduled signal or null
    */
   public readScheduleData = async (
     symbol: string,
-    strategyName: StrategyName
+    strategyName: StrategyName,
+    exchangeName: ExchangeName
   ): Promise<IScheduledSignalRow | null> => {
     swarm.loggerService.info(PERSIST_SCHEDULE_UTILS_METHOD_NAME_READ_DATA);
 
-    const key = `${symbol}:${strategyName}`;
+    const key = `${symbol}:${strategyName}:${exchangeName}`;
     const isInitial = !this.getScheduleStorage.has(key);
-    const stateStorage = this.getScheduleStorage(symbol, strategyName);
+    const stateStorage = this.getScheduleStorage(symbol, strategyName, exchangeName);
     await stateStorage.waitForInit(isInitial);
 
     if (await stateStorage.hasValue(symbol)) {
@@ -839,18 +866,20 @@ export class PersistScheduleUtils {
    * @param scheduledSignalRow - Scheduled signal data (null to clear)
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy identifier
+   * @param exchangeName - Exchange identifier
    * @returns Promise that resolves when write is complete
    */
   public writeScheduleData = async (
     scheduledSignalRow: IScheduledSignalRow | null,
     symbol: string,
-    strategyName: StrategyName
+    strategyName: StrategyName,
+    exchangeName: ExchangeName
   ): Promise<void> => {
     swarm.loggerService.info(PERSIST_SCHEDULE_UTILS_METHOD_NAME_WRITE_DATA);
 
-    const key = `${symbol}:${strategyName}`;
+    const key = `${symbol}:${strategyName}:${exchangeName}`;
     const isInitial = !this.getScheduleStorage.has(key);
-    const stateStorage = this.getScheduleStorage(symbol, strategyName);
+    const stateStorage = this.getScheduleStorage(symbol, strategyName, exchangeName);
     await stateStorage.waitForInit(isInitial);
 
     await stateStorage.writeValue(symbol, scheduledSignalRow);
@@ -897,10 +926,10 @@ export class PersistPartialUtils {
     PersistBase;
 
   private getPartialStorage = memoize(
-    ([symbol, strategyName]: [string, StrategyName]): string => `${symbol}:${strategyName}`,
-    (symbol: string, strategyName: StrategyName): IPersistBase<PartialData> =>
+    ([symbol, strategyName, exchangeName]: [string, StrategyName, ExchangeName]): string => `${symbol}:${strategyName}:${exchangeName}`,
+    (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName): IPersistBase<PartialData> =>
       Reflect.construct(this.PersistPartialFactory, [
-        `${symbol}_${strategyName}`,
+        `${symbol}_${strategyName}_${exchangeName}`,
         `./dump/data/partial/`,
       ])
   );
@@ -936,20 +965,20 @@ export class PersistPartialUtils {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy identifier
+   * @param signalId - Signal identifier
+   * @param exchangeName - Exchange identifier
    * @returns Promise resolving to partial data record
    */
-  public readPartialData = async (symbol: string, strategyName: StrategyName): Promise<PartialData> => {
+  public readPartialData = async (symbol: string, strategyName: StrategyName, signalId: string, exchangeName: ExchangeName): Promise<PartialData> => {
     swarm.loggerService.info(PERSIST_PARTIAL_UTILS_METHOD_NAME_READ_DATA);
 
-    const key = `${symbol}:${strategyName}`;
+    const key = `${symbol}:${strategyName}:${exchangeName}`;
     const isInitial = !this.getPartialStorage.has(key);
-    const stateStorage = this.getPartialStorage(symbol, strategyName);
+    const stateStorage = this.getPartialStorage(symbol, strategyName, exchangeName);
     await stateStorage.waitForInit(isInitial);
 
-    const PARTIAL_STORAGE_KEY = "levels";
-
-    if (await stateStorage.hasValue(PARTIAL_STORAGE_KEY)) {
-      return await stateStorage.readValue(PARTIAL_STORAGE_KEY);
+    if (await stateStorage.hasValue(signalId)) {
+      return await stateStorage.readValue(signalId);
     }
 
     return {};
@@ -964,23 +993,25 @@ export class PersistPartialUtils {
    * @param partialData - Record of signal IDs to partial data
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy identifier
+   * @param signalId - Signal identifier
+   * @param exchangeName - Exchange identifier
    * @returns Promise that resolves when write is complete
    */
   public writePartialData = async (
     partialData: PartialData,
     symbol: string,
-    strategyName: StrategyName
+    strategyName: StrategyName,
+    signalId: string,
+    exchangeName: ExchangeName
   ): Promise<void> => {
     swarm.loggerService.info(PERSIST_PARTIAL_UTILS_METHOD_NAME_WRITE_DATA);
 
-    const key = `${symbol}:${strategyName}`;
+    const key = `${symbol}:${strategyName}:${exchangeName}`;
     const isInitial = !this.getPartialStorage.has(key);
-    const stateStorage = this.getPartialStorage(symbol, strategyName);
+    const stateStorage = this.getPartialStorage(symbol, strategyName, exchangeName);
     await stateStorage.waitForInit(isInitial);
 
-    const PARTIAL_STORAGE_KEY = "levels";
-
-    await stateStorage.writeValue(PARTIAL_STORAGE_KEY, partialData);
+    await stateStorage.writeValue(signalId, partialData);
   };
 }
 
@@ -1001,4 +1032,162 @@ export class PersistPartialUtils {
  * ```
  */
 export const PersistPartialAdapter = new PersistPartialUtils();
+
+/**
+ * Type for persisted breakeven data.
+ * Stores breakeven state (reached flag) for each signal ID.
+ */
+export type BreakevenData = Record<string, IBreakevenData>;
+
+/**
+ * Persistence utility class for breakeven state management.
+ *
+ * Handles reading and writing breakeven state to disk.
+ * Uses memoized PersistBase instances per symbol-strategy pair.
+ *
+ * Features:
+ * - Atomic file writes via PersistBase.writeValue()
+ * - Lazy initialization on first access
+ * - Singleton pattern for global access
+ * - Custom adapter support via usePersistBreakevenAdapter()
+ *
+ * File structure:
+ * ```
+ * ./dump/data/breakeven/
+ * ├── BTCUSDT_my-strategy/
+ * │   └── state.json        // { "signal-id-1": { reached: true }, ... }
+ * └── ETHUSDT_other-strategy/
+ *     └── state.json
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Read breakeven data
+ * const breakevenData = await PersistBreakevenAdapter.readBreakevenData("BTCUSDT", "my-strategy");
+ * // Returns: { "signal-id": { reached: true }, ... }
+ *
+ * // Write breakeven data
+ * await PersistBreakevenAdapter.writeBreakevenData(breakevenData, "BTCUSDT", "my-strategy");
+ * ```
+ */
+class PersistBreakevenUtils {
+  /**
+   * Factory for creating PersistBase instances.
+   * Can be replaced via usePersistBreakevenAdapter().
+   */
+  private PersistBreakevenFactory: TPersistBaseCtor<string, BreakevenData> =
+    PersistBase;
+
+  /**
+   * Memoized storage factory for breakeven data.
+   * Creates one PersistBase instance per symbol-strategy-exchange combination.
+   * Key format: "symbol:strategyName:exchangeName"
+   *
+   * @param symbol - Trading pair symbol
+   * @param strategyName - Strategy identifier
+   * @param exchangeName - Exchange identifier
+   * @returns PersistBase instance for this symbol-strategy-exchange combination
+   */
+  private getBreakevenStorage = memoize(
+    ([symbol, strategyName, exchangeName]: [string, StrategyName, ExchangeName]): string => `${symbol}:${strategyName}:${exchangeName}`,
+    (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName): IPersistBase<BreakevenData> =>
+      Reflect.construct(this.PersistBreakevenFactory, [
+        `${symbol}_${strategyName}_${exchangeName}`,
+        `./dump/data/breakeven/`,
+      ])
+  );
+
+  /**
+   * Registers a custom persistence adapter.
+   *
+   * @param Ctor - Custom PersistBase constructor
+   *
+   * @example
+   * ```typescript
+   * class RedisPersist extends PersistBase {
+   *   async readValue(id) { return JSON.parse(await redis.get(id)); }
+   *   async writeValue(id, entity) { await redis.set(id, JSON.stringify(entity)); }
+   * }
+   * PersistBreakevenAdapter.usePersistBreakevenAdapter(RedisPersist);
+   * ```
+   */
+  public usePersistBreakevenAdapter(
+    Ctor: TPersistBaseCtor<string, BreakevenData>
+  ): void {
+    swarm.loggerService.info(
+      PERSIST_BREAKEVEN_UTILS_METHOD_NAME_USE_PERSIST_BREAKEVEN_ADAPTER
+    );
+    this.PersistBreakevenFactory = Ctor;
+  }
+
+  /**
+   * Reads persisted breakeven data for a symbol and strategy.
+   *
+   * Called by ClientBreakeven.waitForInit() to restore state.
+   * Returns empty object if no breakeven data exists.
+   *
+   * @param symbol - Trading pair symbol
+   * @param strategyName - Strategy identifier
+   * @param signalId - Signal identifier
+   * @param exchangeName - Exchange identifier
+   * @returns Promise resolving to breakeven data record
+   */
+  public readBreakevenData = async (symbol: string, strategyName: StrategyName, signalId: string, exchangeName: ExchangeName): Promise<BreakevenData> => {
+    swarm.loggerService.info(PERSIST_BREAKEVEN_UTILS_METHOD_NAME_READ_DATA);
+
+    const key = `${symbol}:${strategyName}:${exchangeName}`;
+    const isInitial = !this.getBreakevenStorage.has(key);
+    const stateStorage = this.getBreakevenStorage(symbol, strategyName, exchangeName);
+    await stateStorage.waitForInit(isInitial);
+
+    if (await stateStorage.hasValue(signalId)) {
+      return await stateStorage.readValue(signalId);
+    }
+
+    return {};
+  };
+
+  /**
+   * Writes breakeven data to disk.
+   *
+   * Called by ClientBreakeven._persistState() after state changes.
+   * Creates directory and file if they don't exist.
+   * Uses atomic writes to prevent data corruption.
+   *
+   * @param breakevenData - Breakeven data record to persist
+   * @param symbol - Trading pair symbol
+   * @param strategyName - Strategy identifier
+   * @param signalId - Signal identifier
+   * @param exchangeName - Exchange identifier
+   * @returns Promise that resolves when write is complete
+   */
+  public writeBreakevenData = async (breakevenData: BreakevenData, symbol: string, strategyName: StrategyName, signalId: string, exchangeName: ExchangeName): Promise<void> => {
+    swarm.loggerService.info(PERSIST_BREAKEVEN_UTILS_METHOD_NAME_WRITE_DATA);
+
+    const key = `${symbol}:${strategyName}:${exchangeName}`;
+    const isInitial = !this.getBreakevenStorage.has(key);
+    const stateStorage = this.getBreakevenStorage(symbol, strategyName, exchangeName);
+    await stateStorage.waitForInit(isInitial);
+
+    await stateStorage.writeValue(signalId, breakevenData);
+  };
+}
+
+/**
+ * Global singleton instance of PersistBreakevenUtils.
+ * Used by ClientBreakeven for breakeven state persistence.
+ *
+ * @example
+ * ```typescript
+ * // Custom adapter
+ * PersistBreakevenAdapter.usePersistBreakevenAdapter(RedisPersist);
+ *
+ * // Read breakeven data
+ * const breakevenData = await PersistBreakevenAdapter.readBreakevenData("BTCUSDT", "my-strategy");
+ *
+ * // Write breakeven data
+ * await PersistBreakevenAdapter.writeBreakevenData(breakevenData, "BTCUSDT", "my-strategy");
+ * ```
+ */
+export const PersistBreakevenAdapter = new PersistBreakevenUtils();
 

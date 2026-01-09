@@ -956,6 +956,71 @@ export class BacktestUtils {
   };
 
   /**
+   * Moves stop-loss to breakeven when price reaches threshold.
+   *
+   * Moves SL to entry price (zero-risk position) when current price has moved
+   * far enough in profit direction. Threshold is calculated as: (CC_PERCENT_SLIPPAGE + CC_PERCENT_FEE) * 2
+   *
+   * @param symbol - Trading pair symbol
+   * @param currentPrice - Current market price to check threshold
+   * @param context - Strategy context with strategyName, exchangeName, frameName
+   * @returns Promise<boolean> - true if breakeven was set, false otherwise
+   *
+   * @example
+   * ```typescript
+   * const moved = await Backtest.breakeven(
+   *   "BTCUSDT",
+   *   112,
+   *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "1h" }
+   * );
+   * console.log(moved); // true (SL moved to entry price)
+   * ```
+   */
+  public breakeven = async (
+    symbol: string,
+    currentPrice: number,
+    context: {
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
+    }
+  ): Promise<boolean> => {
+    backtest.loggerService.info("Backtest.breakeven", {
+      symbol,
+      currentPrice,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      "Backtest.breakeven"
+    );
+
+    {
+      const { riskName, riskList } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          "Backtest.breakeven"
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            "Backtest.breakeven"
+          )
+        );
+    }
+
+    return await backtest.strategyCoreService.breakeven(
+      true,
+      symbol,
+      currentPrice,
+      context
+    );
+  };
+
+  /**
    * Gets statistical data from all closed signals for a symbol-strategy pair.
    *
    * @param symbol - Trading pair symbol
