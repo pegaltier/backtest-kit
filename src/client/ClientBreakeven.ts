@@ -5,6 +5,7 @@ import {
   IBreakeven,
 } from "../interfaces/Breakeven.interface";
 import { IPublicSignalRow, ISignalRow, StrategyName } from "../interfaces/Strategy.interface";
+import { ExchangeName } from "../interfaces/Exchange.interface";
 import { PersistBreakevenAdapter } from "../classes/Persist";
 import { singleshot } from "functools-kit";
 import { GLOBAL_CONFIG } from "../config/params";
@@ -129,7 +130,7 @@ const HANDLE_BREAKEVEN_FN = async (
   );
 
   // Persist state
-  await self._persistState(symbol, data.strategyName, self.params.signalId);
+  await self._persistState(symbol, data.strategyName, data.exchangeName, self.params.signalId);
 
   return true;
 };
@@ -143,12 +144,14 @@ const HANDLE_BREAKEVEN_FN = async (
  *
  * @param symbol - Trading pair symbol
  * @param strategyName - Strategy identifier
+ * @param exchangeName - Exchange identifier
  * @param self - ClientBreakeven instance reference
  */
-const WAIT_FOR_INIT_FN = async (symbol: string, strategyName: StrategyName, self: ClientBreakeven) => {
+const WAIT_FOR_INIT_FN = async (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, self: ClientBreakeven) => {
   self.params.logger.debug("ClientBreakeven waitForInit", {
     symbol,
     strategyName,
+    exchangeName,
     backtest: self.params.backtest
   });
 
@@ -166,7 +169,7 @@ const WAIT_FOR_INIT_FN = async (symbol: string, strategyName: StrategyName, self
     return;
   }
 
-  const breakevenData = await PersistBreakevenAdapter.readBreakevenData(symbol, strategyName, self.params.signalId);
+  const breakevenData = await PersistBreakevenAdapter.readBreakevenData(symbol, strategyName, exchangeName, self.params.signalId);
 
   for (const [signalId, data] of Object.entries(breakevenData)) {
     const state: IBreakevenState = {
@@ -178,6 +181,7 @@ const WAIT_FOR_INIT_FN = async (symbol: string, strategyName: StrategyName, self
   self.params.logger.info("ClientBreakeven restored state", {
     symbol,
     strategyName,
+    exchangeName,
     signalCount: Object.keys(breakevenData).length,
   });
 };
@@ -257,24 +261,25 @@ export class ClientBreakeven implements IBreakeven {
   /**
    * Initializes breakeven state by loading from disk.
    *
-   * Uses singleshot pattern to ensure initialization happens exactly once per symbol:strategyName.
+   * Uses singleshot pattern to ensure initialization happens exactly once per symbol:strategyName:exchangeName.
    * Reads persisted state from PersistBreakevenAdapter and restores to _states Map.
    *
    * Must be called before check()/clear() methods.
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy identifier
+   * @param exchangeName - Exchange identifier
    * @returns Promise that resolves when initialization is complete
    *
    * @example
    * ```typescript
    * const breakeven = new ClientBreakeven(params);
-   * await breakeven.waitForInit("BTCUSDT", "my-strategy"); // Load persisted state (live mode)
+   * await breakeven.waitForInit("BTCUSDT", "my-strategy", "binance"); // Load persisted state (live mode)
    * // Now check() can be called
    * ```
    */
   public waitForInit = singleshot(
-    async (symbol: string, strategyName: StrategyName) => await WAIT_FOR_INIT_FN(symbol, strategyName, this)
+    async (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName) => await WAIT_FOR_INIT_FN(symbol, strategyName, exchangeName, this)
   );
 
   /**
@@ -288,14 +293,15 @@ export class ClientBreakeven implements IBreakeven {
    *
    * @param symbol - Trading pair symbol
    * @param strategyName - Strategy identifier
+   * @param exchangeName - Exchange identifier
    * @param signalId - Signal identifier
    * @returns Promise that resolves when persistence is complete
    */
-  public async _persistState(symbol: string, strategyName: StrategyName, signalId: string): Promise<void> {
+  public async _persistState(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, signalId: string): Promise<void> {
     if (this.params.backtest) {
       return;
     }
-    this.params.logger.debug("ClientBreakeven persistState", { symbol, strategyName, signalId });
+    this.params.logger.debug("ClientBreakeven persistState", { symbol, strategyName, exchangeName, signalId });
     if (this._states === NEED_FETCH) {
       throw new Error(
         "ClientBreakeven not initialized. Call waitForInit() before using."
@@ -307,7 +313,7 @@ export class ClientBreakeven implements IBreakeven {
         reached: state.reached,
       };
     }
-    await PersistBreakevenAdapter.writeBreakevenData(breakevenData, symbol, strategyName, signalId);
+    await PersistBreakevenAdapter.writeBreakevenData(breakevenData, symbol, strategyName, exchangeName, signalId);
   }
 
   /**
@@ -422,7 +428,7 @@ export class ClientBreakeven implements IBreakeven {
       );
     }
     this._states.delete(data.id);
-    await this._persistState(symbol, data.strategyName, this.params.signalId);
+    await this._persistState(symbol, data.strategyName, data.exchangeName, this.params.signalId);
   }
 }
 

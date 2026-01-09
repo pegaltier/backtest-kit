@@ -697,6 +697,8 @@ interface IRiskSchema {
  * Combines schema with runtime dependencies and emission callbacks.
  */
 interface IRiskParams extends IRiskSchema {
+    /** Exchange name (e.g., "binance") */
+    exchangeName: ExchangeName;
     /** Logger service for debug output */
     logger: ILogger;
     /** True if backtest mode, false if live mode */
@@ -5870,6 +5872,12 @@ interface IPersistBase<Entity extends IEntity | null = IEntity> {
      * @throws Error if write fails
      */
     writeValue(entityId: EntityId, entity: Entity): Promise<void>;
+    /**
+     * Async generator yielding all entity IDs.
+     *
+     * @returns AsyncGenerator yielding entity IDs
+     */
+    keys(): AsyncGenerator<EntityId>;
 }
 /**
  * Base class for file-based persistence with atomic writes.
@@ -6004,9 +6012,10 @@ declare class PersistSignalUtils {
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy identifier
+     * @param exchangeName - Exchange identifier
      * @returns Promise resolving to signal or null
      */
-    readSignalData: (symbol: string, strategyName: StrategyName) => Promise<ISignalRow | null>;
+    readSignalData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName) => Promise<ISignalRow | null>;
     /**
      * Writes signal data to disk with atomic file writes.
      *
@@ -6016,9 +6025,10 @@ declare class PersistSignalUtils {
      * @param signalRow - Signal data (null to clear)
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy identifier
+     * @param exchangeName - Exchange identifier
      * @returns Promise that resolves when write is complete
      */
-    writeSignalData: (signalRow: ISignalRow | null, symbol: string, strategyName: StrategyName) => Promise<void>;
+    writeSignalData: (signalRow: ISignalRow | null, symbol: string, strategyName: StrategyName, exchangeName: ExchangeName) => Promise<void>;
 }
 /**
  * Global singleton instance of PersistSignalUtils.
@@ -6078,9 +6088,10 @@ declare class PersistRiskUtils {
      * Returns empty Map if no positions exist.
      *
      * @param riskName - Risk profile identifier
+     * @param exchangeName - Exchange identifier
      * @returns Promise resolving to Map of active positions
      */
-    readPositionData: (riskName: RiskName) => Promise<RiskData>;
+    readPositionData: (riskName: RiskName, exchangeName: ExchangeName) => Promise<RiskData>;
     /**
      * Writes active positions to disk with atomic file writes.
      *
@@ -6089,9 +6100,10 @@ declare class PersistRiskUtils {
      *
      * @param positions - Map of active positions
      * @param riskName - Risk profile identifier
+     * @param exchangeName - Exchange identifier
      * @returns Promise that resolves when write is complete
      */
-    writePositionData: (riskRow: RiskData, riskName: RiskName) => Promise<void>;
+    writePositionData: (riskRow: RiskData, riskName: RiskName, exchangeName: ExchangeName) => Promise<void>;
 }
 /**
  * Global singleton instance of PersistRiskUtils.
@@ -6152,9 +6164,10 @@ declare class PersistScheduleUtils {
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy identifier
+     * @param exchangeName - Exchange identifier
      * @returns Promise resolving to scheduled signal or null
      */
-    readScheduleData: (symbol: string, strategyName: StrategyName) => Promise<IScheduledSignalRow | null>;
+    readScheduleData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName) => Promise<IScheduledSignalRow | null>;
     /**
      * Writes scheduled signal data to disk with atomic file writes.
      *
@@ -6164,9 +6177,10 @@ declare class PersistScheduleUtils {
      * @param scheduledSignalRow - Scheduled signal data (null to clear)
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy identifier
+     * @param exchangeName - Exchange identifier
      * @returns Promise that resolves when write is complete
      */
-    writeScheduleData: (scheduledSignalRow: IScheduledSignalRow | null, symbol: string, strategyName: StrategyName) => Promise<void>;
+    writeScheduleData: (scheduledSignalRow: IScheduledSignalRow | null, symbol: string, strategyName: StrategyName, exchangeName: ExchangeName) => Promise<void>;
 }
 /**
  * Global singleton instance of PersistScheduleUtils.
@@ -6227,9 +6241,11 @@ declare class PersistPartialUtils {
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy identifier
+     * @param exchangeName - Exchange identifier
+     * @param signalId - Signal identifier
      * @returns Promise resolving to partial data record
      */
-    readPartialData: (symbol: string, signalId: string) => Promise<PartialData>;
+    readPartialData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, signalId: string) => Promise<PartialData>;
     /**
      * Writes partial data to disk with atomic file writes.
      *
@@ -6239,9 +6255,11 @@ declare class PersistPartialUtils {
      * @param partialData - Record of signal IDs to partial data
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy identifier
+     * @param exchangeName - Exchange identifier
+     * @param signalId - Signal identifier
      * @returns Promise that resolves when write is complete
      */
-    writePartialData: (partialData: PartialData, symbol: string, signalId: string) => Promise<void>;
+    writePartialData: (partialData: PartialData, symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, signalId: string) => Promise<void>;
 }
 /**
  * Global singleton instance of PersistPartialUtils.
@@ -6304,12 +6322,13 @@ declare class PersistBreakevenUtils {
     private PersistBreakevenFactory;
     /**
      * Memoized storage factory for breakeven data.
-     * Creates one PersistBase instance per symbol-strategy pair.
-     * Key format: "symbol:strategyName"
+     * Creates one PersistBase instance per symbol-strategy-exchange combination.
+     * Key format: "symbol:strategyName:exchangeName"
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy identifier
-     * @returns PersistBase instance for this symbol-strategy pair
+     * @param exchangeName - Exchange identifier
+     * @returns PersistBase instance for this symbol-strategy-exchange combination
      */
     private getBreakevenStorage;
     /**
@@ -6335,9 +6354,11 @@ declare class PersistBreakevenUtils {
      *
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy identifier
+     * @param exchangeName - Exchange identifier
+     * @param signalId - Signal identifier
      * @returns Promise resolving to breakeven data record
      */
-    readBreakevenData: (symbol: string, signalId: string) => Promise<BreakevenData>;
+    readBreakevenData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, signalId: string) => Promise<BreakevenData>;
     /**
      * Writes breakeven data to disk.
      *
@@ -6348,9 +6369,11 @@ declare class PersistBreakevenUtils {
      * @param breakevenData - Breakeven data record to persist
      * @param symbol - Trading pair symbol
      * @param strategyName - Strategy identifier
+     * @param exchangeName - Exchange identifier
+     * @param signalId - Signal identifier
      * @returns Promise that resolves when write is complete
      */
-    writeBreakevenData: (breakevenData: BreakevenData, symbol: string, signalId: string) => Promise<void>;
+    writeBreakevenData: (breakevenData: BreakevenData, symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, signalId: string) => Promise<void>;
 }
 /**
  * Global singleton instance of PersistBreakevenUtils.

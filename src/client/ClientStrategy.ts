@@ -641,6 +641,7 @@ const WAIT_FOR_INIT_FN = async (self: ClientStrategy) => {
   const pendingSignal = await PersistSignalAdapter.readSignalData(
     self.params.execution.context.symbol,
     self.params.strategyName,
+    self.params.exchangeName,
   );
   if (pendingSignal) {
     if (pendingSignal.exchangeName !== self.params.method.context.exchangeName) {
@@ -670,6 +671,7 @@ const WAIT_FOR_INIT_FN = async (self: ClientStrategy) => {
   const scheduledSignal = await PersistScheduleAdapter.readScheduleData(
     self.params.execution.context.symbol,
     self.params.strategyName,
+    self.params.exchangeName,
   );
   if (scheduledSignal) {
     if (scheduledSignal.exchangeName !== self.params.method.context.exchangeName) {
@@ -3055,6 +3057,7 @@ export class ClientStrategy implements IStrategy {
       this._pendingSignal,
       this.params.execution.context.symbol,
       this.params.strategyName,
+      this.params.exchangeName,
     );
   }
 
@@ -3081,6 +3084,7 @@ export class ClientStrategy implements IStrategy {
       this._scheduledSignal,
       this.params.execution.context.symbol,
       this.params.strategyName,
+      this.params.exchangeName,
     );
   }
 
@@ -3593,6 +3597,7 @@ export class ClientStrategy implements IStrategy {
       this._scheduledSignal,
       symbol,
       this.params.method.context.strategyName,
+      this.params.method.context.exchangeName,
     );
   }
 
@@ -3640,6 +3645,7 @@ export class ClientStrategy implements IStrategy {
       this._scheduledSignal,
       symbol,
       this.params.method.context.strategyName,
+      this.params.method.context.exchangeName,
     );
   }
 
@@ -3768,6 +3774,7 @@ export class ClientStrategy implements IStrategy {
         this._pendingSignal,
         this.params.execution.context.symbol,
         this.params.strategyName,
+        this.params.exchangeName,
       );
     }
   }
@@ -3897,6 +3904,7 @@ export class ClientStrategy implements IStrategy {
         this._pendingSignal,
         this.params.execution.context.symbol,
         this.params.strategyName,
+        this.params.exchangeName,
       );
     }
   }
@@ -4007,6 +4015,7 @@ export class ClientStrategy implements IStrategy {
         this._pendingSignal,
         this.params.execution.context.symbol,
         this.params.strategyName,
+        this.params.exchangeName,
       );
     }
 
@@ -4121,6 +4130,7 @@ export class ClientStrategy implements IStrategy {
         this._pendingSignal,
         this.params.execution.context.symbol,
         this.params.strategyName,
+        this.params.exchangeName,
       );
     }
   }

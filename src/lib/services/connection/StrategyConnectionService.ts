@@ -220,6 +220,7 @@ export class StrategyConnectionService implements TStrategy {
       return new ClientStrategy({
         symbol,
         interval,
+        exchangeName,
         execution: this.executionContextService,
         method: this.methodContextService,
         logger: this.loggerService,

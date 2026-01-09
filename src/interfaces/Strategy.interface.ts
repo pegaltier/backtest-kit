@@ -151,6 +151,8 @@ export interface IScheduledSignalCancelRow extends IScheduledSignalRow {
  * Combines schema with runtime dependencies.
  */
 export interface IStrategyParams extends IStrategySchema {
+  /** Exchange name (e.g., "binance") */
+  exchangeName: ExchangeName;
   /** Trading pair symbol (e.g., "BTCUSDT") */
   symbol: string;
   /** Partial handling service for partial profit/loss */

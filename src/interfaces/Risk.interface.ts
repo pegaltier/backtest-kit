@@ -127,6 +127,9 @@ export interface IRiskSchema {
  * Combines schema with runtime dependencies and emission callbacks.
  */
 export interface IRiskParams extends IRiskSchema {
+  /** Exchange name (e.g., "binance") */
+  exchangeName: ExchangeName;
+
   /** Logger service for debug output */
   logger: ILogger;
 
