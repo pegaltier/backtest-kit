@@ -143,7 +143,7 @@ export class BreakevenConnectionService implements IBreakeven {
       when,
     });
     const breakeven = this.getBreakeven(data.id, backtest);
-    await breakeven.waitForInit(symbol, data.strategyName, data.exchangeName);
+    await breakeven.waitForInit(symbol, data.strategyName, data.exchangeName, backtest);
     return await breakeven.check(
       symbol,
       data,
@@ -184,7 +184,7 @@ export class BreakevenConnectionService implements IBreakeven {
       backtest,
     });
     const breakeven = this.getBreakeven(data.id, backtest);
-    await breakeven.waitForInit(symbol, data.strategyName, data.exchangeName);
+    await breakeven.waitForInit(symbol, data.strategyName, data.exchangeName, backtest);
     await breakeven.clear(symbol, data, priceClose, backtest);
     const key = CREATE_KEY_FN(data.id, backtest);
     this.getBreakeven.clear(key);

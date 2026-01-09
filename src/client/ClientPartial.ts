@@ -200,12 +200,12 @@ const HANDLE_LOSS_FN = async (
  * @param backtest - True if backtest mode, false if live mode
  * @param self - ClientPartial instance reference
  */
-const WAIT_FOR_INIT_FN = async (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, self: ClientPartial) => {
+const WAIT_FOR_INIT_FN = async (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, backtest: boolean, self: ClientPartial) => {
   self.params.logger.debug("ClientPartial waitForInit", {
     symbol,
+    backtest,
     strategyName,
     exchangeName,
-    backtest: self.params.backtest
   });
 
   if (self._states !== NEED_FETCH) {
@@ -335,7 +335,7 @@ export class ClientPartial implements IPartial {
    * ```
    */
   public waitForInit = singleshot(
-    async (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName) => await WAIT_FOR_INIT_FN(symbol, strategyName, exchangeName, this)
+    async (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, backtest: boolean) => await WAIT_FOR_INIT_FN(symbol, strategyName, exchangeName, backtest, this)
   );
 
   /**
