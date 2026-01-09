@@ -129,7 +129,7 @@ const HANDLE_BREAKEVEN_FN = async (
   );
 
   // Persist state
-  await self._persistState(symbol, data.strategyName);
+  await self._persistState(symbol, self.params.signalId);
 
   return true;
 };
@@ -166,7 +166,7 @@ const WAIT_FOR_INIT_FN = async (symbol: string, strategyName: StrategyName, self
     return;
   }
 
-  const breakevenData = await PersistBreakevenAdapter.readBreakevenData(symbol, strategyName);
+  const breakevenData = await PersistBreakevenAdapter.readBreakevenData(symbol, self.params.signalId);
 
   for (const [signalId, data] of Object.entries(breakevenData)) {
     const state: IBreakevenState = {
@@ -287,26 +287,26 @@ export class ClientBreakeven implements IBreakeven {
    * Uses atomic file writes via PersistBreakevenAdapter.
    *
    * @param symbol - Trading pair symbol
-   * @param strategyName - Strategy identifier
+   * @param signalId - Signal identifier
    * @returns Promise that resolves when persistence is complete
    */
-  public async _persistState(symbol: string, strategyName: StrategyName): Promise<void> {
+  public async _persistState(symbol: string, signalId: string): Promise<void> {
     if (this.params.backtest) {
       return;
     }
-    this.params.logger.debug("ClientBreakeven persistState", { symbol, strategyName });
+    this.params.logger.debug("ClientBreakeven persistState", { symbol, signalId });
     if (this._states === NEED_FETCH) {
       throw new Error(
         "ClientBreakeven not initialized. Call waitForInit() before using."
       );
     }
     const breakevenData: Record<string, IBreakevenData> = {};
-    for (const [signalId, state] of this._states.entries()) {
-      breakevenData[signalId] = {
+    for (const [sid, state] of this._states.entries()) {
+      breakevenData[sid] = {
         reached: state.reached,
       };
     }
-    await PersistBreakevenAdapter.writeBreakevenData(breakevenData, symbol, strategyName);
+    await PersistBreakevenAdapter.writeBreakevenData(breakevenData, symbol, signalId);
   }
 
   /**
@@ -421,7 +421,7 @@ export class ClientBreakeven implements IBreakeven {
       );
     }
     this._states.delete(data.id);
-    await this._persistState(symbol, data.strategyName);
+    await this._persistState(symbol, this.params.signalId);
   }
 }
 

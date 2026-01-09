@@ -101,7 +101,7 @@ const HANDLE_PROFIT_FN = async (
   }
 
   if (shouldPersist) {
-    await self._persistState(symbol, data.strategyName);
+    await self._persistState(symbol, self.params.signalId);
   }
 };
 
@@ -181,7 +181,7 @@ const HANDLE_LOSS_FN = async (
   }
 
   if (shouldPersist) {
-    await self._persistState(symbol, data.strategyName);
+    await self._persistState(symbol, self.params.signalId);
   }
 };
 
@@ -219,7 +219,7 @@ const WAIT_FOR_INIT_FN = async (symbol: string, strategyName: StrategyName, self
     return;
   }
 
-  const partialData = await PersistPartialAdapter.readPartialData(symbol, strategyName);
+  const partialData = await PersistPartialAdapter.readPartialData(symbol, self.params.signalId);
 
   for (const [signalId, data] of Object.entries(partialData)) {
     const state: IPartialState = {
@@ -344,28 +344,27 @@ export class ClientPartial implements IPartial {
    * Uses atomic file writes via PersistPartialAdapter.
    *
    * @param symbol - Trading pair symbol
-   * @param strategyName - Strategy identifier
-   * @param backtest - True if backtest mode
+   * @param signalId - Signal identifier
    * @returns Promise that resolves when persistence is complete
    */
-  public async _persistState(symbol: string, strategyName: StrategyName): Promise<void> {
+  public async _persistState(symbol: string, signalId: string): Promise<void> {
     if (this.params.backtest) {
       return;
     }
-    this.params.logger.debug("ClientPartial persistState", { symbol, strategyName });
+    this.params.logger.debug("ClientPartial persistState", { symbol, signalId });
     if (this._states === NEED_FETCH) {
       throw new Error(
         "ClientPartial not initialized. Call waitForInit() before using."
       );
     }
     const partialData: Record<string, IPartialData> = {};
-    for (const [signalId, state] of this._states.entries()) {
-      partialData[signalId] = {
+    for (const [sid, state] of this._states.entries()) {
+      partialData[sid] = {
         profitLevels: Array.from(state.profitLevels),
         lossLevels: Array.from(state.lossLevels),
       };
     }
-    await PersistPartialAdapter.writePartialData(partialData, symbol, strategyName);
+    await PersistPartialAdapter.writePartialData(partialData, symbol, signalId);
   }
 
   /**
@@ -532,7 +531,7 @@ export class ClientPartial implements IPartial {
       );
     }
     this._states.delete(data.id);
-    await this._persistState(symbol, data.strategyName);
+    await this._persistState(symbol, this.params.signalId);
   }
 }
 

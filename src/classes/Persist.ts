@@ -946,12 +946,12 @@ export class PersistPartialUtils {
    * @param strategyName - Strategy identifier
    * @returns Promise resolving to partial data record
    */
-  public readPartialData = async (symbol: string, strategyName: StrategyName): Promise<PartialData> => {
+  public readPartialData = async (symbol: string, signalId: string): Promise<PartialData> => {
     swarm.loggerService.info(PERSIST_PARTIAL_UTILS_METHOD_NAME_READ_DATA);
 
-    const key = `${symbol}:${strategyName}`;
+    const key = `${symbol}:${signalId}`;
     const isInitial = !this.getPartialStorage.has(key);
-    const stateStorage = this.getPartialStorage(symbol, strategyName);
+    const stateStorage = this.getPartialStorage(symbol, signalId);
     await stateStorage.waitForInit(isInitial);
 
     const PARTIAL_STORAGE_KEY = "levels";
@@ -977,13 +977,13 @@ export class PersistPartialUtils {
   public writePartialData = async (
     partialData: PartialData,
     symbol: string,
-    strategyName: StrategyName
+    signalId: string
   ): Promise<void> => {
     swarm.loggerService.info(PERSIST_PARTIAL_UTILS_METHOD_NAME_WRITE_DATA);
 
-    const key = `${symbol}:${strategyName}`;
+    const key = `${symbol}:${signalId}`;
     const isInitial = !this.getPartialStorage.has(key);
-    const stateStorage = this.getPartialStorage(symbol, strategyName);
+    const stateStorage = this.getPartialStorage(symbol, signalId);
     await stateStorage.waitForInit(isInitial);
 
     const PARTIAL_STORAGE_KEY = "levels";
@@ -1106,12 +1106,12 @@ class PersistBreakevenUtils {
    * @param strategyName - Strategy identifier
    * @returns Promise resolving to breakeven data record
    */
-  public readBreakevenData = async (symbol: string, strategyName: StrategyName): Promise<BreakevenData> => {
+  public readBreakevenData = async (symbol: string, signalId: string): Promise<BreakevenData> => {
     swarm.loggerService.info(PERSIST_BREAKEVEN_UTILS_METHOD_NAME_READ_DATA);
 
-    const key = `${symbol}:${strategyName}`;
+    const key = `${symbol}:${signalId}`;
     const isInitial = !this.getBreakevenStorage.has(key);
-    const stateStorage = this.getBreakevenStorage(symbol, strategyName);
+    const stateStorage = this.getBreakevenStorage(symbol, signalId);
     await stateStorage.waitForInit(isInitial);
 
     const BREAKEVEN_STORAGE_KEY = "state";
@@ -1137,12 +1137,12 @@ class PersistBreakevenUtils {
    * @param strategyName - Strategy identifier
    * @returns Promise that resolves when write is complete
    */
-  public writeBreakevenData = async (breakevenData: BreakevenData, symbol: string, strategyName: StrategyName): Promise<void> => {
+  public writeBreakevenData = async (breakevenData: BreakevenData, symbol: string, signalId: string): Promise<void> => {
     swarm.loggerService.info(PERSIST_BREAKEVEN_UTILS_METHOD_NAME_WRITE_DATA);
 
-    const key = `${symbol}:${strategyName}`;
+    const key = `${symbol}:${signalId}`;
     const isInitial = !this.getBreakevenStorage.has(key);
-    const stateStorage = this.getBreakevenStorage(symbol, strategyName);
+    const stateStorage = this.getBreakevenStorage(symbol, signalId);
     await stateStorage.waitForInit(isInitial);
 
     const BREAKEVEN_STORAGE_KEY = "state";

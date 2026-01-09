@@ -6229,7 +6229,7 @@ declare class PersistPartialUtils {
      * @param strategyName - Strategy identifier
      * @returns Promise resolving to partial data record
      */
-    readPartialData: (symbol: string, strategyName: StrategyName) => Promise<PartialData>;
+    readPartialData: (symbol: string, signalId: string) => Promise<PartialData>;
     /**
      * Writes partial data to disk with atomic file writes.
      *
@@ -6241,7 +6241,7 @@ declare class PersistPartialUtils {
      * @param strategyName - Strategy identifier
      * @returns Promise that resolves when write is complete
      */
-    writePartialData: (partialData: PartialData, symbol: string, strategyName: StrategyName) => Promise<void>;
+    writePartialData: (partialData: PartialData, symbol: string, signalId: string) => Promise<void>;
 }
 /**
  * Global singleton instance of PersistPartialUtils.
@@ -6337,7 +6337,7 @@ declare class PersistBreakevenUtils {
      * @param strategyName - Strategy identifier
      * @returns Promise resolving to breakeven data record
      */
-    readBreakevenData: (symbol: string, strategyName: StrategyName) => Promise<BreakevenData>;
+    readBreakevenData: (symbol: string, signalId: string) => Promise<BreakevenData>;
     /**
      * Writes breakeven data to disk.
      *
@@ -6350,7 +6350,7 @@ declare class PersistBreakevenUtils {
      * @param strategyName - Strategy identifier
      * @returns Promise that resolves when write is complete
      */
-    writeBreakevenData: (breakevenData: BreakevenData, symbol: string, strategyName: StrategyName) => Promise<void>;
+    writeBreakevenData: (breakevenData: BreakevenData, symbol: string, signalId: string) => Promise<void>;
 }
 /**
  * Global singleton instance of PersistBreakevenUtils.
