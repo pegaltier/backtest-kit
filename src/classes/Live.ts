@@ -759,26 +759,26 @@ export class LiveUtils {
    * @param percentShift - Percentage adjustment to ORIGINAL SL distance (-100 to 100)
    * @param currentPrice - Current market price to check for intrusion
    * @param context - Execution context with strategyName and exchangeName
-   * @returns Promise that resolves when trailing SL is updated
+   * @returns Promise<boolean> - true if trailing SL was set/updated, false if rejected (absorption/intrusion/conflict)
    *
    * @example
    * ```typescript
    * // LONG: entry=100, originalSL=90, distance=10%, currentPrice=102
    *
    * // First call: tighten by 5%
-   * await Live.trailingStop("BTCUSDT", -5, 102, {
+   * const success1 = await Live.trailingStop("BTCUSDT", -5, 102, {
    *   exchangeName: "binance",
    *   strategyName: "my-strategy"
    * });
-   * // newDistance = 10% - 5% = 5%, newSL = 95
+   * // success1 = true, newDistance = 10% - 5% = 5%, newSL = 95
    *
    * // Second call: try weaker protection (smaller percentShift)
-   * await Live.trailingStop("BTCUSDT", -3, 102, context);
-   * // SKIPPED: newSL=97 < 95 (worse protection, larger % absorbs smaller)
+   * const success2 = await Live.trailingStop("BTCUSDT", -3, 102, context);
+   * // success2 = false (SKIPPED: newSL=97 < 95, worse protection, larger % absorbs smaller)
    *
    * // Third call: stronger protection (larger percentShift)
-   * await Live.trailingStop("BTCUSDT", -7, 102, context);
-   * // ACCEPTED: newDistance = 10% - 7% = 3%, newSL = 97 > 95 (better protection)
+   * const success3 = await Live.trailingStop("BTCUSDT", -7, 102, context);
+   * // success3 = true (ACCEPTED: newDistance = 10% - 7% = 3%, newSL = 97 > 95, better protection)
    * ```
    */
   public trailingStop = async (
@@ -833,26 +833,26 @@ export class LiveUtils {
    * @param percentShift - Percentage adjustment to ORIGINAL TP distance (-100 to 100)
    * @param currentPrice - Current market price to check for intrusion
    * @param context - Execution context with strategyName and exchangeName
-   * @returns Promise that resolves when trailing TP is updated
+   * @returns Promise<boolean> - true if trailing TP was set/updated, false if rejected (absorption/intrusion/conflict)
    *
    * @example
    * ```typescript
    * // LONG: entry=100, originalTP=110, distance=10%, currentPrice=102
    *
    * // First call: bring TP closer by 3%
-   * await Live.trailingTake("BTCUSDT", -3, 102, {
+   * const success1 = await Live.trailingTake("BTCUSDT", -3, 102, {
    *   exchangeName: "binance",
    *   strategyName: "my-strategy"
    * });
-   * // newDistance = 10% - 3% = 7%, newTP = 107
+   * // success1 = true, newDistance = 10% - 3% = 7%, newTP = 107
    *
    * // Second call: try to move TP further (less conservative)
-   * await Live.trailingTake("BTCUSDT", 2, 102, context);
-   * // SKIPPED: newTP=112 > 107 (less conservative, larger % absorbs smaller)
+   * const success2 = await Live.trailingTake("BTCUSDT", 2, 102, context);
+   * // success2 = false (SKIPPED: newTP=112 > 107, less conservative, larger % absorbs smaller)
    *
    * // Third call: even more conservative
-   * await Live.trailingTake("BTCUSDT", -5, 102, context);
-   * // ACCEPTED: newDistance = 10% - 5% = 5%, newTP = 105 < 107 (more conservative)
+   * const success3 = await Live.trailingTake("BTCUSDT", -5, 102, context);
+   * // success3 = true (ACCEPTED: newDistance = 10% - 5% = 5%, newTP = 105 < 107, more conservative)
    * ```
    */
   public trailingTake = async (

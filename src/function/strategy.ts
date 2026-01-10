@@ -221,7 +221,7 @@ export async function partialLoss(
  * @param symbol - Trading pair symbol
  * @param percentShift - Percentage adjustment to ORIGINAL SL distance (-100 to 100)
  * @param currentPrice - Current market price to check for intrusion
- * @returns Promise that resolves when trailing SL is updated
+ * @returns Promise<boolean> - true if trailing SL was set/updated, false if rejected (absorption/intrusion/conflict)
  *
  * @example
  * ```typescript
@@ -230,16 +230,16 @@ export async function partialLoss(
  * // LONG: entry=100, originalSL=90, distance=10%, currentPrice=102
  *
  * // First call: tighten by 5%
- * await trailingStop("BTCUSDT", -5, 102);
- * // newDistance = 10% - 5% = 5%, newSL = 95
+ * const success1 = await trailingStop("BTCUSDT", -5, 102);
+ * // success1 = true, newDistance = 10% - 5% = 5%, newSL = 95
  *
  * // Second call: try weaker protection (smaller percentShift)
- * await trailingStop("BTCUSDT", -3, 102);
- * // SKIPPED: newSL=97 < 95 (worse protection, larger % absorbs smaller)
+ * const success2 = await trailingStop("BTCUSDT", -3, 102);
+ * // success2 = false (SKIPPED: newSL=97 < 95, worse protection, larger % absorbs smaller)
  *
  * // Third call: stronger protection (larger percentShift)
- * await trailingStop("BTCUSDT", -7, 102);
- * // ACCEPTED: newDistance = 10% - 7% = 3%, newSL = 97 > 95 (better protection)
+ * const success3 = await trailingStop("BTCUSDT", -7, 102);
+ * // success3 = true (ACCEPTED: newDistance = 10% - 7% = 3%, newSL = 97 > 95, better protection)
  * ```
  */
 export async function trailingStop(
@@ -292,7 +292,7 @@ export async function trailingStop(
  * @param symbol - Trading pair symbol
  * @param percentShift - Percentage adjustment to ORIGINAL TP distance (-100 to 100)
  * @param currentPrice - Current market price to check for intrusion
- * @returns Promise that resolves when trailing TP is updated
+ * @returns Promise<boolean> - true if trailing TP was set/updated, false if rejected (absorption/intrusion/conflict)
  *
  * @example
  * ```typescript
@@ -301,16 +301,16 @@ export async function trailingStop(
  * // LONG: entry=100, originalTP=110, distance=10%, currentPrice=102
  *
  * // First call: bring TP closer by 3%
- * await trailingTake("BTCUSDT", -3, 102);
- * // newDistance = 10% - 3% = 7%, newTP = 107
+ * const success1 = await trailingTake("BTCUSDT", -3, 102);
+ * // success1 = true, newDistance = 10% - 3% = 7%, newTP = 107
  *
  * // Second call: try to move TP further (less conservative)
- * await trailingTake("BTCUSDT", 2, 102);
- * // SKIPPED: newTP=112 > 107 (less conservative, larger % absorbs smaller)
+ * const success2 = await trailingTake("BTCUSDT", 2, 102);
+ * // success2 = false (SKIPPED: newTP=112 > 107, less conservative, larger % absorbs smaller)
  *
  * // Third call: even more conservative
- * await trailingTake("BTCUSDT", -5, 102);
- * // ACCEPTED: newDistance = 10% - 5% = 5%, newTP = 105 < 107 (more conservative)
+ * const success3 = await trailingTake("BTCUSDT", -5, 102);
+ * // success3 = true (ACCEPTED: newDistance = 10% - 5% = 5%, newTP = 105 < 107, more conservative)
  * ```
  */
 export async function trailingTake(
