@@ -208,50 +208,91 @@ declare function partialLoss(symbol: string, percentToClose: number): Promise<vo
 /**
  * Adjusts the trailing stop-loss distance for an active pending signal.
  *
- * Updates the stop-loss distance by a percentage adjustment relative to the original SL distance.
- * Positive percentShift tightens the SL (reduces distance), negative percentShift loosens it.
+ * CRITICAL: Always calculates from ORIGINAL SL, not from current trailing SL.
+ * This prevents error accumulation on repeated calls.
+ * Larger percentShift ABSORBS smaller one (updates only towards better protection).
+ *
+ * Updates the stop-loss distance by a percentage adjustment relative to the ORIGINAL SL distance.
+ * Negative percentShift tightens the SL (reduces distance, moves closer to entry).
+ * Positive percentShift loosens the SL (increases distance, moves away from entry).
+ *
+ * Absorption behavior:
+ * - First call: sets trailing SL unconditionally
+ * - Subsequent calls: updates only if new SL is BETTER (protects more profit)
+ * - For LONG: only accepts HIGHER SL (never moves down, closer to entry wins)
+ * - For SHORT: only accepts LOWER SL (never moves up, closer to entry wins)
  *
  * Automatically detects backtest/live mode from execution context.
  *
  * @param symbol - Trading pair symbol
- * @param percentShift - Percentage adjustment to SL distance (-100 to 100)
+ * @param percentShift - Percentage adjustment to ORIGINAL SL distance (-100 to 100)
  * @param currentPrice - Current market price to check for intrusion
- * @returns Promise that resolves when trailing SL is updated
+ * @returns Promise<boolean> - true if trailing SL was set/updated, false if rejected (absorption/intrusion/conflict)
  *
  * @example
  * ```typescript
  * import { trailingStop } from "backtest-kit";
  *
  * // LONG: entry=100, originalSL=90, distance=10%, currentPrice=102
- * // Tighten stop by 50%: newSL = 100 - 5% = 95
- * await trailingStop("BTCUSDT", -50, 102);
+ *
+ * // First call: tighten by 5%
+ * const success1 = await trailingStop("BTCUSDT", -5, 102);
+ * // success1 = true, newDistance = 10% - 5% = 5%, newSL = 95
+ *
+ * // Second call: try weaker protection (smaller percentShift)
+ * const success2 = await trailingStop("BTCUSDT", -3, 102);
+ * // success2 = false (SKIPPED: newSL=97 < 95, worse protection, larger % absorbs smaller)
+ *
+ * // Third call: stronger protection (larger percentShift)
+ * const success3 = await trailingStop("BTCUSDT", -7, 102);
+ * // success3 = true (ACCEPTED: newDistance = 10% - 7% = 3%, newSL = 97 > 95, better protection)
  * ```
  */
-declare function trailingStop(symbol: string, percentShift: number, currentPrice: number): Promise<void>;
+declare function trailingStop(symbol: string, percentShift: number, currentPrice: number): Promise<boolean>;
 /**
  * Adjusts the trailing take-profit distance for an active pending signal.
  *
- * Updates the take-profit distance by a percentage adjustment relative to the original TP distance.
- * Negative percentShift brings TP closer to entry, positive percentShift moves it further.
- * Once direction is set on first call, subsequent calls must continue in same direction.
+ * CRITICAL: Always calculates from ORIGINAL TP, not from current trailing TP.
+ * This prevents error accumulation on repeated calls.
+ * Larger percentShift ABSORBS smaller one (updates only towards more conservative TP).
+ *
+ * Updates the take-profit distance by a percentage adjustment relative to the ORIGINAL TP distance.
+ * Negative percentShift brings TP closer to entry (more conservative).
+ * Positive percentShift moves TP further from entry (more aggressive).
+ *
+ * Absorption behavior:
+ * - First call: sets trailing TP unconditionally
+ * - Subsequent calls: updates only if new TP is MORE CONSERVATIVE (closer to entry)
+ * - For LONG: only accepts LOWER TP (never moves up, closer to entry wins)
+ * - For SHORT: only accepts HIGHER TP (never moves down, closer to entry wins)
  *
  * Automatically detects backtest/live mode from execution context.
  *
  * @param symbol - Trading pair symbol
- * @param percentShift - Percentage adjustment to TP distance (-100 to 100)
+ * @param percentShift - Percentage adjustment to ORIGINAL TP distance (-100 to 100)
  * @param currentPrice - Current market price to check for intrusion
- * @returns Promise that resolves when trailing TP is updated
+ * @returns Promise<boolean> - true if trailing TP was set/updated, false if rejected (absorption/intrusion/conflict)
  *
  * @example
  * ```typescript
  * import { trailingTake } from "backtest-kit";
  *
  * // LONG: entry=100, originalTP=110, distance=10%, currentPrice=102
- * // Move TP further by 50%: newTP = 100 + 15% = 115
- * await trailingTake("BTCUSDT", 50, 102);
+ *
+ * // First call: bring TP closer by 3%
+ * const success1 = await trailingTake("BTCUSDT", -3, 102);
+ * // success1 = true, newDistance = 10% - 3% = 7%, newTP = 107
+ *
+ * // Second call: try to move TP further (less conservative)
+ * const success2 = await trailingTake("BTCUSDT", 2, 102);
+ * // success2 = false (SKIPPED: newTP=112 > 107, less conservative, larger % absorbs smaller)
+ *
+ * // Third call: even more conservative
+ * const success3 = await trailingTake("BTCUSDT", -5, 102);
+ * // success3 = true (ACCEPTED: newDistance = 10% - 5% = 5%, newTP = 105 < 107, more conservative)
  * ```
  */
-declare function trailingTake(symbol: string, percentShift: number, currentPrice: number): Promise<void>;
+declare function trailingTake(symbol: string, percentShift: number, currentPrice: number): Promise<boolean>;
 /**
  * Moves stop-loss to breakeven when price reaches threshold.
  *
@@ -1627,80 +1668,117 @@ interface IStrategy {
     /**
      * Adjusts trailing stop-loss by shifting distance between entry and original SL.
      *
-     * Calculates new SL based on percentage shift of the distance (entry - originalSL):
+     * CRITICAL: Always calculates from ORIGINAL SL, not from current trailing SL.
+     * This prevents error accumulation on repeated calls.
+     * Larger percentShift ABSORBS smaller one (updates only towards better protection).
+     *
+     * Calculates new SL based on percentage shift of the ORIGINAL distance (entry - originalSL):
      * - Negative %: tightens stop (moves SL closer to entry, reduces risk)
      * - Positive %: loosens stop (moves SL away from entry, allows more drawdown)
      *
-     * For LONG position (entry=100, originalSL=90, distance=10):
-     * - percentShift = -50: newSL = 100 - 10*(1-0.5) = 95 (tighter, closer to entry)
-     * - percentShift = +20: newSL = 100 - 10*(1+0.2) = 88 (looser, away from entry)
+     * For LONG position (entry=100, originalSL=90, distance=10%):
+     * - percentShift = -50: newSL = 100 - 10%*(1-0.5) = 95 (5% distance, tighter)
+     * - percentShift = +20: newSL = 100 - 10%*(1+0.2) = 88 (12% distance, looser)
      *
-     * For SHORT position (entry=100, originalSL=110, distance=10):
-     * - percentShift = -50: newSL = 100 + 10*(1-0.5) = 105 (tighter, closer to entry)
-     * - percentShift = +20: newSL = 100 + 10*(1+0.2) = 112 (looser, away from entry)
+     * For SHORT position (entry=100, originalSL=110, distance=10%):
+     * - percentShift = -50: newSL = 100 + 10%*(1-0.5) = 105 (5% distance, tighter)
+     * - percentShift = +20: newSL = 100 + 10%*(1+0.2) = 112 (12% distance, looser)
      *
-     * Trailing behavior:
-     * - Only updates if new SL is BETTER (protects more profit)
-     * - For LONG: only accepts higher SL (never moves down)
-     * - For SHORT: only accepts lower SL (never moves up)
-     * - Validates that SL never crosses entry price
-     * - Stores in _trailingPriceStopLoss, original priceStopLoss preserved
+     * Absorption behavior:
+     * - First call: sets trailing SL unconditionally
+     * - Subsequent calls: updates only if new SL is BETTER (protects more profit)
+     * - For LONG: only accepts HIGHER SL (never moves down, closer to entry wins)
+     * - For SHORT: only accepts LOWER SL (never moves up, closer to entry wins)
+     * - Stores in _trailingPriceStopLoss, original priceStopLoss always preserved
      *
      * Validations:
      * - Throws if no pending signal exists
-     * - Throws if percentShift< -100 or > 100
-     * - Throws if percentShift=== 0
+     * - Throws if percentShift < -100 or > 100
+     * - Throws if percentShift === 0
      * - Skips if new SL would cross entry price
+     * - Skips if currentPrice already crossed new SL level (price intrusion protection)
      *
      * Use case: User-controlled trailing stop triggered from onPartialProfit callback.
      *
      * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param percentShift- Percentage shift of SL distance [-100, 100], excluding 0
+     * @param percentShift - Percentage shift of ORIGINAL SL distance [-100, 100], excluding 0
+     * @param currentPrice - Current market price to check for intrusion
      * @param backtest - Whether running in backtest mode
-     * @returns Promise that resolves when trailing SL is updated
+     * @returns Promise<boolean> - true if trailing SL was set/updated, false if rejected
      *
      * @example
      * ```typescript
      * callbacks: {
      *   onPartialProfit: async (symbol, signal, currentPrice, percentTp, backtest) => {
      *     if (percentTp >= 50) {
-     *       // LONG: entry=100, originalSL=90, distance=10
-     *       // Tighten stop by 50%: newSL = 100 - 10*(1-0.5) = 95
-     *       await strategy.trailingStop(symbol, -50, backtest);
+     *       // LONG: entry=100, originalSL=90, distance=10%
+     *
+     *       // First call: tighten by 5%
+     *       const success1 = await strategy.trailingStop(symbol, -5, currentPrice, backtest);
+     *       // success1 = true, newDistance = 10% - 5% = 5%, newSL = 95
+     *
+     *       // Second call: try weaker protection
+     *       const success2 = await strategy.trailingStop(symbol, -3, currentPrice, backtest);
+     *       // success2 = false (SKIPPED: newSL=97 < 95, worse protection, larger % absorbs smaller)
+     *
+     *       // Third call: stronger protection
+     *       const success3 = await strategy.trailingStop(symbol, -7, currentPrice, backtest);
+     *       // success3 = true (ACCEPTED: newDistance = 3%, newSL = 97 > 95, better protection)
      *     }
      *   }
      * }
      * ```
      */
-    trailingStop: (symbol: string, percentShift: number, currentPrice: number, backtest: boolean) => Promise<void>;
+    trailingStop: (symbol: string, percentShift: number, currentPrice: number, backtest: boolean) => Promise<boolean>;
     /**
      * Adjusts the trailing take-profit distance for an active pending signal.
      *
-     * Updates the take-profit distance by a percentage adjustment relative to the original TP distance.
-     * Negative percentShift brings TP closer to entry, positive percentShift moves it further.
-     * Once direction is set on first call, subsequent calls must continue in same direction.
+     * CRITICAL: Always calculates from ORIGINAL TP, not from current trailing TP.
+     * This prevents error accumulation on repeated calls.
+     * Larger percentShift ABSORBS smaller one (updates only towards more conservative TP).
+     *
+     * Updates the take-profit distance by a percentage adjustment relative to the ORIGINAL TP distance.
+     * Negative percentShift brings TP closer to entry (more conservative).
+     * Positive percentShift moves TP further from entry (more aggressive).
+     *
+     * Absorption behavior:
+     * - First call: sets trailing TP unconditionally
+     * - Subsequent calls: updates only if new TP is MORE CONSERVATIVE (closer to entry)
+     * - For LONG: only accepts LOWER TP (never moves up, closer to entry wins)
+     * - For SHORT: only accepts HIGHER TP (never moves down, closer to entry wins)
+     * - Stores in _trailingPriceTakeProfit, original priceTakeProfit always preserved
      *
      * Price intrusion protection: If current price has already crossed the new TP level,
      * the update is skipped to prevent immediate TP triggering.
      *
      * @param symbol - Trading pair symbol
-     * @param percentShift - Percentage adjustment to TP distance (-100 to 100)
+     * @param percentShift - Percentage adjustment to ORIGINAL TP distance (-100 to 100)
      * @param currentPrice - Current market price to check for intrusion
      * @param backtest - Whether running in backtest mode
-     * @returns Promise that resolves when trailing TP is updated
+     * @returns Promise<boolean> - true if trailing TP was set/updated, false if rejected
      *
      * @example
      * ```typescript
-     * // LONG: entry=100, originalTP=110, distance=10%, currentPrice=102
-     * // Move TP further by 50%: newTP = 100 + 15% = 115
-     * await strategy.trailingTake(symbol, 50, 102, backtest);
+     * callbacks: {
+     *   onPartialProfit: async (symbol, signal, currentPrice, percentTp, backtest) => {
+     *     // LONG: entry=100, originalTP=110, distance=10%, currentPrice=102
      *
-     * // SHORT: entry=100, originalTP=90, distance=10%, currentPrice=98
-     * // Move TP closer by 30%: newTP = 100 - 7% = 93
-     * await strategy.trailingTake(symbol, -30, 98, backtest);
+     *     // First call: bring TP closer by 3%
+     *     const success1 = await strategy.trailingTake(symbol, -3, currentPrice, backtest);
+     *     // success1 = true, newDistance = 10% - 3% = 7%, newTP = 107
+     *
+     *     // Second call: try to move TP further (less conservative)
+     *     const success2 = await strategy.trailingTake(symbol, 2, currentPrice, backtest);
+     *     // success2 = false (SKIPPED: newTP=112 > 107, less conservative, larger % absorbs smaller)
+     *
+     *     // Third call: even more conservative
+     *     const success3 = await strategy.trailingTake(symbol, -5, currentPrice, backtest);
+     *     // success3 = true (ACCEPTED: newDistance = 5%, newTP = 105 < 107, more conservative)
+     *   }
+     * }
      * ```
      */
-    trailingTake: (symbol: string, percentShift: number, currentPrice: number, backtest: boolean) => Promise<void>;
+    trailingTake: (symbol: string, percentShift: number, currentPrice: number, backtest: boolean) => Promise<boolean>;
     /**
      * Moves stop-loss to breakeven (entry price) when price reaches threshold.
      *
@@ -6952,11 +7030,22 @@ declare class BacktestUtils {
     /**
      * Adjusts the trailing stop-loss distance for an active pending signal.
      *
-     * Updates the stop-loss distance by a percentage adjustment relative to the original SL distance.
-     * Positive percentShift tightens the SL (reduces distance), negative percentShift loosens it.
+     * CRITICAL: Always calculates from ORIGINAL SL, not from current trailing SL.
+     * This prevents error accumulation on repeated calls.
+     * Larger percentShift ABSORBS smaller one (updates only towards better protection).
+     *
+     * Updates the stop-loss distance by a percentage adjustment relative to the ORIGINAL SL distance.
+     * Negative percentShift tightens the SL (reduces distance, moves closer to entry).
+     * Positive percentShift loosens the SL (increases distance, moves away from entry).
+     *
+     * Absorption behavior:
+     * - First call: sets trailing SL unconditionally
+     * - Subsequent calls: updates only if new SL is BETTER (protects more profit)
+     * - For LONG: only accepts HIGHER SL (never moves down, closer to entry wins)
+     * - For SHORT: only accepts LOWER SL (never moves up, closer to entry wins)
      *
      * @param symbol - Trading pair symbol
-     * @param percentShift - Percentage adjustment to SL distance (-100 to 100)
+     * @param percentShift - Percentage adjustment to ORIGINAL SL distance (-100 to 100)
      * @param currentPrice - Current market price to check for intrusion
      * @param context - Execution context with strategyName, exchangeName, and frameName
      * @returns Promise that resolves when trailing SL is updated
@@ -6964,28 +7053,48 @@ declare class BacktestUtils {
      * @example
      * ```typescript
      * // LONG: entry=100, originalSL=90, distance=10%, currentPrice=102
-     * // Tighten stop by 50%: newSL = 100 - 5% = 95
-     * await Backtest.trailingStop("BTCUSDT", -50, 102, {
+     *
+     * // First call: tighten by 5%
+     * await Backtest.trailingStop("BTCUSDT", -5, 102, {
      *   exchangeName: "binance",
      *   frameName: "frame1",
      *   strategyName: "my-strategy"
      * });
+     * // newDistance = 10% - 5% = 5%, newSL = 95
+     *
+     * // Second call: try weaker protection (smaller percentShift)
+     * await Backtest.trailingStop("BTCUSDT", -3, 102, context);
+     * // SKIPPED: newSL=97 < 95 (worse protection, larger % absorbs smaller)
+     *
+     * // Third call: stronger protection (larger percentShift)
+     * await Backtest.trailingStop("BTCUSDT", -7, 102, context);
+     * // ACCEPTED: newDistance = 10% - 7% = 3%, newSL = 97 > 95 (better protection)
      * ```
      */
     trailingStop: (symbol: string, percentShift: number, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => Promise<void>;
+    }) => Promise<boolean>;
     /**
      * Adjusts the trailing take-profit distance for an active pending signal.
      *
-     * Updates the take-profit distance by a percentage adjustment relative to the original TP distance.
-     * Negative percentShift brings TP closer to entry, positive percentShift moves it further.
-     * Once direction is set on first call, subsequent calls must continue in same direction.
+     * CRITICAL: Always calculates from ORIGINAL TP, not from current trailing TP.
+     * This prevents error accumulation on repeated calls.
+     * Larger percentShift ABSORBS smaller one (updates only towards more conservative TP).
+     *
+     * Updates the take-profit distance by a percentage adjustment relative to the ORIGINAL TP distance.
+     * Negative percentShift brings TP closer to entry (more conservative).
+     * Positive percentShift moves TP further from entry (more aggressive).
+     *
+     * Absorption behavior:
+     * - First call: sets trailing TP unconditionally
+     * - Subsequent calls: updates only if new TP is MORE CONSERVATIVE (closer to entry)
+     * - For LONG: only accepts LOWER TP (never moves up, closer to entry wins)
+     * - For SHORT: only accepts HIGHER TP (never moves down, closer to entry wins)
      *
      * @param symbol - Trading pair symbol
-     * @param percentShift - Percentage adjustment to TP distance (-100 to 100)
+     * @param percentShift - Percentage adjustment to ORIGINAL TP distance (-100 to 100)
      * @param currentPrice - Current market price to check for intrusion
      * @param context - Execution context with strategyName, exchangeName, and frameName
      * @returns Promise that resolves when trailing TP is updated
@@ -6993,19 +7102,29 @@ declare class BacktestUtils {
      * @example
      * ```typescript
      * // LONG: entry=100, originalTP=110, distance=10%, currentPrice=102
-     * // Move TP further by 50%: newTP = 100 + 15% = 115
-     * await Backtest.trailingTake("BTCUSDT", 50, 102, {
+     *
+     * // First call: bring TP closer by 3%
+     * await Backtest.trailingTake("BTCUSDT", -3, 102, {
      *   exchangeName: "binance",
      *   frameName: "frame1",
      *   strategyName: "my-strategy"
      * });
+     * // newDistance = 10% - 3% = 7%, newTP = 107
+     *
+     * // Second call: try to move TP further (less conservative)
+     * await Backtest.trailingTake("BTCUSDT", 2, 102, context);
+     * // SKIPPED: newTP=112 > 107 (less conservative, larger % absorbs smaller)
+     *
+     * // Third call: even more conservative
+     * await Backtest.trailingTake("BTCUSDT", -5, 102, context);
+     * // ACCEPTED: newDistance = 10% - 5% = 5%, newTP = 105 < 107 (more conservative)
      * ```
      */
     trailingTake: (symbol: string, percentShift: number, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => Promise<void>;
+    }) => Promise<boolean>;
     /**
      * Moves stop-loss to breakeven when price reaches threshold.
      *
@@ -7602,56 +7721,97 @@ declare class LiveUtils {
     /**
      * Adjusts the trailing stop-loss distance for an active pending signal.
      *
-     * Updates the stop-loss distance by a percentage adjustment relative to the original SL distance.
-     * Positive percentShift tightens the SL (reduces distance), negative percentShift loosens it.
+     * CRITICAL: Always calculates from ORIGINAL SL, not from current trailing SL.
+     * This prevents error accumulation on repeated calls.
+     * Larger percentShift ABSORBS smaller one (updates only towards better protection).
+     *
+     * Updates the stop-loss distance by a percentage adjustment relative to the ORIGINAL SL distance.
+     * Negative percentShift tightens the SL (reduces distance, moves closer to entry).
+     * Positive percentShift loosens the SL (increases distance, moves away from entry).
+     *
+     * Absorption behavior:
+     * - First call: sets trailing SL unconditionally
+     * - Subsequent calls: updates only if new SL is BETTER (protects more profit)
+     * - For LONG: only accepts HIGHER SL (never moves down, closer to entry wins)
+     * - For SHORT: only accepts LOWER SL (never moves up, closer to entry wins)
      *
      * @param symbol - Trading pair symbol
-     * @param percentShift - Percentage adjustment to SL distance (-100 to 100)
+     * @param percentShift - Percentage adjustment to ORIGINAL SL distance (-100 to 100)
      * @param currentPrice - Current market price to check for intrusion
      * @param context - Execution context with strategyName and exchangeName
-     * @returns Promise that resolves when trailing SL is updated
+     * @returns Promise<boolean> - true if trailing SL was set/updated, false if rejected (absorption/intrusion/conflict)
      *
      * @example
      * ```typescript
      * // LONG: entry=100, originalSL=90, distance=10%, currentPrice=102
-     * // Tighten stop by 50%: newSL = 100 - 5% = 95
-     * await Live.trailingStop("BTCUSDT", -50, 102, {
+     *
+     * // First call: tighten by 5%
+     * const success1 = await Live.trailingStop("BTCUSDT", -5, 102, {
      *   exchangeName: "binance",
      *   strategyName: "my-strategy"
      * });
+     * // success1 = true, newDistance = 10% - 5% = 5%, newSL = 95
+     *
+     * // Second call: try weaker protection (smaller percentShift)
+     * const success2 = await Live.trailingStop("BTCUSDT", -3, 102, context);
+     * // success2 = false (SKIPPED: newSL=97 < 95, worse protection, larger % absorbs smaller)
+     *
+     * // Third call: stronger protection (larger percentShift)
+     * const success3 = await Live.trailingStop("BTCUSDT", -7, 102, context);
+     * // success3 = true (ACCEPTED: newDistance = 10% - 7% = 3%, newSL = 97 > 95, better protection)
      * ```
      */
     trailingStop: (symbol: string, percentShift: number, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-    }) => Promise<void>;
+    }) => Promise<boolean>;
     /**
      * Adjusts the trailing take-profit distance for an active pending signal.
      *
-     * Updates the take-profit distance by a percentage adjustment relative to the original TP distance.
-     * Negative percentShift brings TP closer to entry, positive percentShift moves it further.
-     * Once direction is set on first call, subsequent calls must continue in same direction.
+     * CRITICAL: Always calculates from ORIGINAL TP, not from current trailing TP.
+     * This prevents error accumulation on repeated calls.
+     * Larger percentShift ABSORBS smaller one (updates only towards more conservative TP).
+     *
+     * Updates the take-profit distance by a percentage adjustment relative to the ORIGINAL TP distance.
+     * Negative percentShift brings TP closer to entry (more conservative).
+     * Positive percentShift moves TP further from entry (more aggressive).
+     *
+     * Absorption behavior:
+     * - First call: sets trailing TP unconditionally
+     * - Subsequent calls: updates only if new TP is MORE CONSERVATIVE (closer to entry)
+     * - For LONG: only accepts LOWER TP (never moves up, closer to entry wins)
+     * - For SHORT: only accepts HIGHER TP (never moves down, closer to entry wins)
      *
      * @param symbol - Trading pair symbol
-     * @param percentShift - Percentage adjustment to TP distance (-100 to 100)
+     * @param percentShift - Percentage adjustment to ORIGINAL TP distance (-100 to 100)
      * @param currentPrice - Current market price to check for intrusion
      * @param context - Execution context with strategyName and exchangeName
-     * @returns Promise that resolves when trailing TP is updated
+     * @returns Promise<boolean> - true if trailing TP was set/updated, false if rejected (absorption/intrusion/conflict)
      *
      * @example
      * ```typescript
      * // LONG: entry=100, originalTP=110, distance=10%, currentPrice=102
-     * // Move TP further by 50%: newTP = 100 + 15% = 115
-     * await Live.trailingTake("BTCUSDT", 50, 102, {
+     *
+     * // First call: bring TP closer by 3%
+     * const success1 = await Live.trailingTake("BTCUSDT", -3, 102, {
      *   exchangeName: "binance",
      *   strategyName: "my-strategy"
      * });
+     * // success1 = true, newDistance = 10% - 3% = 7%, newTP = 107
+     *
+     * // Second call: try to move TP further (less conservative)
+     * const success2 = await Live.trailingTake("BTCUSDT", 2, 102, context);
+     * // success2 = false (SKIPPED: newTP=112 > 107, less conservative, larger % absorbs smaller)
+     *
+     * // Third call: even more conservative
+     * const success3 = await Live.trailingTake("BTCUSDT", -5, 102, context);
+     * // success3 = true (ACCEPTED: newDistance = 10% - 5% = 5%, newTP = 105 < 107, more conservative)
      * ```
      */
     trailingTake: (symbol: string, percentShift: number, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-    }) => Promise<void>;
+    }) => Promise<boolean>;
     /**
      * Moves stop-loss to breakeven when price reaches threshold.
      *
@@ -11842,7 +12002,7 @@ declare class StrategyConnectionService implements TStrategy$1 {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => Promise<void>;
+    }) => Promise<boolean>;
     /**
      * Adjusts the trailing take-profit distance for an active pending signal.
      *
@@ -11875,7 +12035,7 @@ declare class StrategyConnectionService implements TStrategy$1 {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => Promise<void>;
+    }) => Promise<boolean>;
     /**
      * Delegates to ClientStrategy.breakeven() with current execution context.
      *
@@ -12442,7 +12602,7 @@ declare class StrategyCoreService implements TStrategy {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => Promise<void>;
+    }) => Promise<boolean>;
     /**
      * Adjusts the trailing take-profit distance for an active pending signal.
      * Validates context and delegates to StrategyConnectionService.
@@ -12471,7 +12631,7 @@ declare class StrategyCoreService implements TStrategy {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => Promise<void>;
+    }) => Promise<boolean>;
     /**
      * Moves stop-loss to breakeven when price reaches threshold.
      * Validates context and delegates to StrategyConnectionService.

@@ -807,8 +807,8 @@ const TRAILING_STOP_LOSS_FN = (
   signal: ISignalRow,
   percentShift: number
 ): boolean => {
-  // КРИТИЧНО: Всегда считаем от ОРИГИНАЛЬНОГО SL, а не от текущего trailing
-  // Это предотвращает накопление ошибок при повторных вызовах
+  // CRITICAL: Always calculate from ORIGINAL SL, not from current trailing SL
+  // This prevents error accumulation on repeated calls
   const originalSlDistancePercent = Math.abs((signal.priceOpen - signal.priceStopLoss) / signal.priceOpen * 100);
 
   // Calculate new stop-loss distance percentage by adding shift to ORIGINAL distance
@@ -852,16 +852,16 @@ const TRAILING_STOP_LOSS_FN = (
     });
     return true;
   } else {
-    // КРИТИЧНО: Больший процент поглощает меньший
-    // Для LONG: более высокий SL (ближе к entry) поглощает более низкий
-    // Для SHORT: более низкий SL (ближе к entry) поглощает более высокий
+    // CRITICAL: Larger percentShift absorbs smaller one
+    // For LONG: higher SL (closer to entry) absorbs lower one
+    // For SHORT: lower SL (closer to entry) absorbs higher one
     let shouldUpdate = false;
 
     if (signal.position === "long") {
-      // LONG: обновляем только если новый SL выше (лучше защищает)
+      // LONG: update only if new SL is higher (better protection)
       shouldUpdate = newStopLoss > currentTrailingSL;
     } else {
-      // SHORT: обновляем только если новый SL ниже (лучше защищает)
+      // SHORT: update only if new SL is lower (better protection)
       shouldUpdate = newStopLoss < currentTrailingSL;
     }
 
@@ -902,8 +902,8 @@ const TRAILING_TAKE_PROFIT_FN = (
   signal: ISignalRow,
   percentShift: number
 ): boolean => {
-  // КРИТИЧНО: Всегда считаем от ОРИГИНАЛЬНОГО TP, а не от текущего trailing
-  // Это предотвращает накопление ошибок при повторных вызовах
+  // CRITICAL: Always calculate from ORIGINAL TP, not from current trailing TP
+  // This prevents error accumulation on repeated calls
   const originalTpDistancePercent = Math.abs((signal.priceTakeProfit - signal.priceOpen) / signal.priceOpen * 100);
 
   // Calculate new take-profit distance percentage by adding shift to ORIGINAL distance
@@ -945,16 +945,16 @@ const TRAILING_TAKE_PROFIT_FN = (
     });
     return true;
   } else {
-    // КРИТИЧНО: Больший процент поглощает меньший
-    // Для LONG: более низкий TP (ближе к entry) поглощает более высокий
-    // Для SHORT: более высокий TP (ближе к entry) поглощает более низкий
+    // CRITICAL: Larger percentShift absorbs smaller one
+    // For LONG: lower TP (closer to entry) absorbs higher one
+    // For SHORT: higher TP (closer to entry) absorbs lower one
     let shouldUpdate = false;
 
     if (signal.position === "long") {
-      // LONG: обновляем только если новый TP ниже (ближе к entry, более консервативный)
+      // LONG: update only if new TP is lower (closer to entry, more conservative)
       shouldUpdate = newTakeProfit < currentTrailingTP;
     } else {
-      // SHORT: обновляем только если новый TP выше (ближе к entry, более консервативный)
+      // SHORT: update only if new TP is higher (closer to entry, more conservative)
       shouldUpdate = newTakeProfit > currentTrailingTP;
     }
 
@@ -4299,9 +4299,9 @@ export class ClientStrategy implements IStrategy {
   /**
    * Adjusts trailing stop-loss by shifting distance between entry and original SL.
    *
-   * КРИТИЧНО: Всегда считает от ОРИГИНАЛЬНОГО SL, а не от текущего trailing.
-   * Это предотвращает накопление ошибок при повторных вызовах.
-   * Больший percentShift ПОГЛОЩАЕТ меньший (обновление только в сторону улучшения).
+   * CRITICAL: Always calculates from ORIGINAL SL, not from current trailing SL.
+   * This prevents error accumulation on repeated calls.
+   * Larger percentShift ABSORBS smaller one (updates only towards better protection).
    *
    * Calculates new SL based on percentage shift of the ORIGINAL distance (entry - originalSL):
    * - Negative %: tightens stop (moves SL closer to entry, reduces risk)
@@ -4315,7 +4315,7 @@ export class ClientStrategy implements IStrategy {
    * - percentShift = -50: newSL = 100 + 10%*(1-0.5) = 105 (5% distance, tighter)
    * - percentShift = +20: newSL = 100 + 10%*(1+0.2) = 112 (12% distance, looser)
    *
-   * Trailing behavior (поглощение):
+   * Trailing behavior (absorption):
    * - First call: sets trailing SL unconditionally
    * - Subsequent calls: updates only if new SL is BETTER (protects more profit)
    * - For LONG: only accepts HIGHER SL (never moves down, closer to entry wins)
@@ -4520,15 +4520,15 @@ export class ClientStrategy implements IStrategy {
   /**
    * Adjusts the trailing take-profit distance for an active pending signal.
    *
-   * КРИТИЧНО: Всегда считает от ОРИГИНАЛЬНОГО TP, а не от текущего trailing.
-   * Это предотвращает накопление ошибок при повторных вызовах.
-   * Больший percentShift ПОГЛОЩАЕТ меньший (обновление только в сторону консервативности).
+   * CRITICAL: Always calculates from ORIGINAL TP, not from current trailing TP.
+   * This prevents error accumulation on repeated calls.
+   * Larger percentShift ABSORBS smaller one (updates only towards more conservative TP).
    *
    * Updates the take-profit distance by a percentage adjustment relative to the ORIGINAL TP distance.
    * Negative percentShift brings TP closer to entry (more conservative).
    * Positive percentShift moves TP further from entry (more aggressive).
    *
-   * Trailing behavior (поглощение):
+   * Trailing behavior (absorption):
    * - First call: sets trailing TP unconditionally
    * - Subsequent calls: updates only if new TP is MORE CONSERVATIVE (closer to entry)
    * - For LONG: only accepts LOWER TP (never moves up, closer to entry wins)
