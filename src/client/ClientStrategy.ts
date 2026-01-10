@@ -807,16 +807,14 @@ const TRAILING_STOP_LOSS_FN = (
   signal: ISignalRow,
   percentShift: number
 ): void => {
-  // Get current effective stop-loss (trailing or original)
-  const currentStopLoss = signal._trailingPriceStopLoss ?? signal.priceStopLoss;
+  // КРИТИЧНО: Всегда считаем от ОРИГИНАЛЬНОГО SL, а не от текущего trailing
+  // Это предотвращает накопление ошибок при повторных вызовах
+  const originalSlDistancePercent = Math.abs((signal.priceOpen - signal.priceStopLoss) / signal.priceOpen * 100);
 
-  // Calculate distance between entry and CURRENT stop-loss AS PERCENTAGE of entry price
-  const currentSlDistancePercent = Math.abs((signal.priceOpen - currentStopLoss) / signal.priceOpen * 100);
-
-  // Calculate new stop-loss distance percentage by adding shift to CURRENT distance
+  // Calculate new stop-loss distance percentage by adding shift to ORIGINAL distance
   // Negative percentShift: reduces distance % (tightens stop, moves SL toward entry or beyond)
   // Positive percentShift: increases distance % (loosens stop, moves SL away from entry)
-  const newSlDistancePercent = currentSlDistancePercent + percentShift;
+  const newSlDistancePercent = originalSlDistancePercent + percentShift;
 
   // Calculate new stop-loss price based on new distance percentage
   // Negative newSlDistancePercent means SL crosses entry into profit zone
@@ -825,77 +823,61 @@ const TRAILING_STOP_LOSS_FN = (
   if (signal.position === "long") {
     // LONG: SL is below entry (or above entry if in profit zone)
     // Formula: entry * (1 - newDistance%)
-    // Example: entry=100, currentSL=95 (5%), shift=-3% → newDistance=2% → 100 * 0.98 = 98 (tighter)
+    // Example: entry=100, originalSL=90 (10%), shift=-5% → newDistance=5% → 100 * 0.95 = 95 (tighter)
     newStopLoss = signal.priceOpen * (1 - newSlDistancePercent / 100);
   } else {
     // SHORT: SL is above entry (or below entry if in profit zone)
     // Formula: entry * (1 + newDistance%)
-    // Example: entry=100, currentSL=105 (5%), shift=-3% → newDistance=2% → 100 * 1.02 = 102 (tighter)
+    // Example: entry=100, originalSL=110 (10%), shift=-5% → newDistance=5% → 100 * 1.05 = 105 (tighter)
     newStopLoss = signal.priceOpen * (1 + newSlDistancePercent / 100);
   }
 
-  // Determine if this is the first trailing stop call (direction not set yet)
-  const isFirstCall = signal._trailingPriceStopLoss === undefined;
+  const currentTrailingSL = signal._trailingPriceStopLoss;
+  const isFirstCall = currentTrailingSL === undefined;
 
   if (isFirstCall) {
-    // First call: set the direction and update SL unconditionally
+    // First call: set trailing SL unconditionally
     signal._trailingPriceStopLoss = newStopLoss;
 
-    self.params.logger.info("TRAILING_STOP_FN executed (first call - direction set)", {
+    self.params.logger.info("TRAILING_STOP_FN executed (first call)", {
       signalId: signal.id,
       position: signal.position,
       priceOpen: signal.priceOpen,
       originalStopLoss: signal.priceStopLoss,
-      currentDistancePercent: currentSlDistancePercent,
-      previousStopLoss: currentStopLoss,
+      originalDistancePercent: originalSlDistancePercent,
       newStopLoss,
       newDistancePercent: newSlDistancePercent,
       percentShift,
       inProfitZone: signal.position === "long" ? newStopLoss > signal.priceOpen : newStopLoss < signal.priceOpen,
-      direction: newStopLoss > currentStopLoss ? "up" : "down",
     });
   } else {
-    // Subsequent calls: only update if new SL continues in the same direction
-    
-    // Determine initial direction: "closer" or "farther" relative to entry
-    let initialDirection: "closer" | "farther";
-    
+    // КРИТИЧНО: Больший процент поглощает меньший
+    // Для LONG: более высокий SL (ближе к entry) поглощает более низкий
+    // Для SHORT: более низкий SL (ближе к entry) поглощает более высокий
+    let shouldUpdate = false;
+
     if (signal.position === "long") {
-      // LONG: closer = SL closer to entry = higher SL value (moving up)
-      initialDirection = signal._trailingPriceStopLoss > signal.priceStopLoss ? "closer" : "farther";
+      // LONG: обновляем только если новый SL выше (лучше защищает)
+      shouldUpdate = newStopLoss > currentTrailingSL;
     } else {
-      // SHORT: closer = SL closer to entry = lower SL value (moving down)
-      initialDirection = signal._trailingPriceStopLoss < signal.priceStopLoss ? "closer" : "farther";
+      // SHORT: обновляем только если новый SL ниже (лучше защищает)
+      shouldUpdate = newStopLoss < currentTrailingSL;
     }
-    
-    // Determine new direction
-    let newDirection: "closer" | "farther";
-    
-    if (signal.position === "long") {
-      // LONG: closer = higher SL value
-      newDirection = newStopLoss > currentStopLoss ? "closer" : "farther";
-    } else {
-      // SHORT: closer = lower SL value
-      newDirection = newStopLoss < currentStopLoss ? "closer" : "farther";
-    }
-    
-    // Only allow continuation in same direction
-    const shouldUpdate = initialDirection === newDirection;
 
     if (!shouldUpdate) {
-      self.params.logger.debug("TRAILING_STOP_FN: new SL not in same direction, skipping", {
+      self.params.logger.debug("TRAILING_STOP_FN: new SL not better than current, skipping", {
         signalId: signal.id,
         position: signal.position,
-        currentStopLoss,
+        currentTrailingSL,
         newStopLoss,
         percentShift,
-        initialDirection,
-        attemptedDirection: newDirection,
+        reason: "larger percentShift absorbs smaller one",
       });
       return;
     }
 
     // Update trailing stop-loss
+    const previousTrailingSL = signal._trailingPriceStopLoss;
     signal._trailingPriceStopLoss = newStopLoss;
 
     self.params.logger.info("TRAILING_STOP_FN executed", {
@@ -903,13 +885,12 @@ const TRAILING_STOP_LOSS_FN = (
       position: signal.position,
       priceOpen: signal.priceOpen,
       originalStopLoss: signal.priceStopLoss,
-      currentDistancePercent: currentSlDistancePercent,
-      previousStopLoss: currentStopLoss,
+      originalDistancePercent: originalSlDistancePercent,
+      previousTrailingSL,
       newStopLoss,
       newDistancePercent: newSlDistancePercent,
       percentShift,
       inProfitZone: signal.position === "long" ? newStopLoss > signal.priceOpen : newStopLoss < signal.priceOpen,
-      direction: initialDirection,
     });
   }
 };
@@ -919,16 +900,14 @@ const TRAILING_TAKE_PROFIT_FN = (
   signal: ISignalRow,
   percentShift: number
 ): void => {
-  // Get current effective take-profit (trailing or original)
-  const currentTakeProfit = signal._trailingPriceTakeProfit ?? signal.priceTakeProfit;
+  // КРИТИЧНО: Всегда считаем от ОРИГИНАЛЬНОГО TP, а не от текущего trailing
+  // Это предотвращает накопление ошибок при повторных вызовах
+  const originalTpDistancePercent = Math.abs((signal.priceTakeProfit - signal.priceOpen) / signal.priceOpen * 100);
 
-  // Calculate distance between entry and CURRENT take-profit AS PERCENTAGE of entry price
-  const currentTpDistancePercent = Math.abs((currentTakeProfit - signal.priceOpen) / signal.priceOpen * 100);
-
-  // Calculate new take-profit distance percentage by adding shift to CURRENT distance
+  // Calculate new take-profit distance percentage by adding shift to ORIGINAL distance
   // Negative percentShift: reduces distance % (brings TP closer to entry)
   // Positive percentShift: increases distance % (moves TP further from entry)
-  const newTpDistancePercent = currentTpDistancePercent + percentShift;
+  const newTpDistancePercent = originalTpDistancePercent + percentShift;
 
   // Calculate new take-profit price based on new distance percentage
   let newTakeProfit: number;
@@ -936,76 +915,60 @@ const TRAILING_TAKE_PROFIT_FN = (
   if (signal.position === "long") {
     // LONG: TP is above entry
     // Formula: entry * (1 + newDistance%)
-    // Example: entry=100, currentTP=115 (15%), shift=-3% → newDistance=12% → 100 * 1.12 = 112 (closer)
+    // Example: entry=100, originalTP=110 (10%), shift=-3% → newDistance=7% → 100 * 1.07 = 107 (closer)
     newTakeProfit = signal.priceOpen * (1 + newTpDistancePercent / 100);
   } else {
     // SHORT: TP is below entry
     // Formula: entry * (1 - newDistance%)
-    // Example: entry=100, currentTP=85 (15%), shift=-3% → newDistance=12% → 100 * 0.88 = 88 (closer)
+    // Example: entry=100, originalTP=90 (10%), shift=-3% → newDistance=7% → 100 * 0.93 = 93 (closer)
     newTakeProfit = signal.priceOpen * (1 - newTpDistancePercent / 100);
   }
 
-  // Determine if this is the first trailing profit call (direction not set yet)
-  const isFirstCall = signal._trailingPriceTakeProfit === undefined;
+  const currentTrailingTP = signal._trailingPriceTakeProfit;
+  const isFirstCall = currentTrailingTP === undefined;
 
   if (isFirstCall) {
-    // First call: set the direction and update TP unconditionally
+    // First call: set trailing TP unconditionally
     signal._trailingPriceTakeProfit = newTakeProfit;
 
-    self.params.logger.info("TRAILING_PROFIT_FN executed (first call - direction set)", {
+    self.params.logger.info("TRAILING_PROFIT_FN executed (first call)", {
       signalId: signal.id,
       position: signal.position,
       priceOpen: signal.priceOpen,
       originalTakeProfit: signal.priceTakeProfit,
-      currentDistancePercent: currentTpDistancePercent,
-      previousTakeProfit: currentTakeProfit,
+      originalDistancePercent: originalTpDistancePercent,
       newTakeProfit,
       newDistancePercent: newTpDistancePercent,
       percentShift,
-      direction: newTakeProfit > currentTakeProfit ? "up" : "down",
     });
   } else {
-    // Subsequent calls: only update if new TP continues in the same direction
-    
-    // Determine initial direction: "closer" or "farther" relative to entry
-    let initialDirection: "closer" | "farther";
-    
+    // КРИТИЧНО: Больший процент поглощает меньший
+    // Для LONG: более низкий TP (ближе к entry) поглощает более высокий
+    // Для SHORT: более высокий TP (ближе к entry) поглощает более низкий
+    let shouldUpdate = false;
+
     if (signal.position === "long") {
-      // LONG: closer = TP closer to entry = lower TP value
-      initialDirection = signal._trailingPriceTakeProfit < signal.priceTakeProfit ? "closer" : "farther";
+      // LONG: обновляем только если новый TP ниже (ближе к entry, более консервативный)
+      shouldUpdate = newTakeProfit < currentTrailingTP;
     } else {
-      // SHORT: closer = TP closer to entry = higher TP value  
-      initialDirection = signal._trailingPriceTakeProfit > signal.priceTakeProfit ? "closer" : "farther";
+      // SHORT: обновляем только если новый TP выше (ближе к entry, более консервативный)
+      shouldUpdate = newTakeProfit > currentTrailingTP;
     }
-    
-    // Determine new direction
-    let newDirection: "closer" | "farther";
-    
-    if (signal.position === "long") {
-      // LONG: closer = lower TP value
-      newDirection = newTakeProfit < currentTakeProfit ? "closer" : "farther";
-    } else {
-      // SHORT: closer = higher TP value
-      newDirection = newTakeProfit > currentTakeProfit ? "closer" : "farther";
-    }
-    
-    // Only allow continuation in same direction
-    const shouldUpdate = initialDirection === newDirection;
 
     if (!shouldUpdate) {
-      self.params.logger.debug("TRAILING_PROFIT_FN: new TP not in same direction, skipping", {
+      self.params.logger.debug("TRAILING_PROFIT_FN: new TP not better than current, skipping", {
         signalId: signal.id,
         position: signal.position,
-        currentTakeProfit,
+        currentTrailingTP,
         newTakeProfit,
         percentShift,
-        initialDirection,
-        attemptedDirection: newDirection,
+        reason: "larger percentShift absorbs smaller one",
       });
       return;
     }
 
     // Update trailing take-profit
+    const previousTrailingTP = signal._trailingPriceTakeProfit;
     signal._trailingPriceTakeProfit = newTakeProfit;
 
     self.params.logger.info("TRAILING_PROFIT_FN executed", {
@@ -1013,12 +976,11 @@ const TRAILING_TAKE_PROFIT_FN = (
       position: signal.position,
       priceOpen: signal.priceOpen,
       originalTakeProfit: signal.priceTakeProfit,
-      currentDistancePercent: currentTpDistancePercent,
-      previousTakeProfit: currentTakeProfit,
+      originalDistancePercent: originalTpDistancePercent,
+      previousTrailingTP,
       newTakeProfit,
       newDistancePercent: newTpDistancePercent,
       percentShift,
-      direction: initialDirection,
     });
   }
 };
@@ -4333,24 +4295,35 @@ export class ClientStrategy implements IStrategy {
   /**
    * Adjusts trailing stop-loss by shifting distance between entry and original SL.
    *
-   * Calculates new SL based on percentage shift of the distance (entry - originalSL):
+   * КРИТИЧНО: Всегда считает от ОРИГИНАЛЬНОГО SL, а не от текущего trailing.
+   * Это предотвращает накопление ошибок при повторных вызовах.
+   * Больший percentShift ПОГЛОЩАЕТ меньший (обновление только в сторону улучшения).
+   *
+   * Calculates new SL based on percentage shift of the ORIGINAL distance (entry - originalSL):
    * - Negative %: tightens stop (moves SL closer to entry, reduces risk)
    * - Positive %: loosens stop (moves SL away from entry, allows more drawdown)
    *
-   * For LONG position (entry=100, originalSL=90, distance=10):
-   * - percentShift = -50: newSL = 100 - 10*(1-0.5) = 95 (tighter, closer to entry)
-   * - percentShift = +20: newSL = 100 - 10*(1+0.2) = 88 (looser, away from entry)
+   * For LONG position (entry=100, originalSL=90, distance=10%):
+   * - percentShift = -50: newSL = 100 - 10%*(1-0.5) = 95 (5% distance, tighter)
+   * - percentShift = +20: newSL = 100 - 10%*(1+0.2) = 88 (12% distance, looser)
    *
-   * For SHORT position (entry=100, originalSL=110, distance=10):
-   * - percentShift = -50: newSL = 100 + 10*(1-0.5) = 105 (tighter, closer to entry)
-   * - percentShift = +20: newSL = 100 + 10*(1+0.2) = 112 (looser, away from entry)
+   * For SHORT position (entry=100, originalSL=110, distance=10%):
+   * - percentShift = -50: newSL = 100 + 10%*(1-0.5) = 105 (5% distance, tighter)
+   * - percentShift = +20: newSL = 100 + 10%*(1+0.2) = 112 (12% distance, looser)
    *
-   * Trailing behavior:
-   * - Only updates if new SL is BETTER (protects more profit)
-   * - For LONG: only accepts higher SL (never moves down)
-   * - For SHORT: only accepts lower SL (never moves up)
-   * - Validates that SL never crosses entry price
-   * - Stores in _trailingPriceStopLoss, original priceStopLoss preserved
+   * Trailing behavior (поглощение):
+   * - First call: sets trailing SL unconditionally
+   * - Subsequent calls: updates only if new SL is BETTER (protects more profit)
+   * - For LONG: only accepts HIGHER SL (never moves down, closer to entry wins)
+   * - For SHORT: only accepts LOWER SL (never moves up, closer to entry wins)
+   * - Stores in _trailingPriceStopLoss, original priceStopLoss always preserved
+   *
+   * Example of absorption (LONG, entry=100, originalSL=90):
+   * ```typescript
+   * await trailingStop(-50, price); // Sets SL=95 (first call)
+   * await trailingStop(-30, price); // SKIPPED: SL=97 < 95 (worse, not absorbed)
+   * await trailingStop(-70, price); // Sets SL=97 (better, absorbs previous)
+   * ```
    *
    * Validation:
    * - Throws if no pending signal exists
@@ -4360,9 +4333,10 @@ export class ClientStrategy implements IStrategy {
    * - Throws if currentPrice is not a positive finite number
    * - Skips if new SL would cross entry price
    * - Skips if currentPrice already crossed new SL level (price intrusion protection)
+   * - Skips if new SL conflicts with existing trailing take-profit
    *
    * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-   * @param percentShift - Percentage shift of SL distance [-100, 100], excluding 0
+   * @param percentShift - Percentage shift of ORIGINAL SL distance [-100, 100], excluding 0
    * @param currentPrice - Current market price to check for intrusion
    * @param backtest - Whether running in backtest mode (controls persistence)
    * @returns Promise that resolves when trailing SL is updated and persisted
@@ -4375,10 +4349,15 @@ export class ClientStrategy implements IStrategy {
    * await strategy.trailingStop("BTCUSDT", -50, 102, false);
    * // newDistance = 10% - 50% = 5%, newSL = 100 * (1 - 0.05) = 95
    *
-   * // Move SL 30% away from entry (loosen): increases distance by 30%  
-   * await strategy.trailingStop("BTCUSDT", 30, 102, false);
-   * // newDistance = 10% + 30% = 40%, newSL = 100 * (1 - 0.4) = 60
-   * 
+   * // Try to move SL only 30% closer (less aggressive)
+   * await strategy.trailingStop("BTCUSDT", -30, 102, false);
+   * // SKIPPED: newSL=97 < 95 (worse protection, larger % absorbs smaller)
+   *
+   * // Move SL 70% closer to entry (more aggressive)
+   * await strategy.trailingStop("BTCUSDT", -70, 102, false);
+   * // newDistance = 10% - 70% = 3%, newSL = 100 * (1 - 0.03) = 97
+   * // Updated! SL=97 > 95 (better protection)
+   *
    * // Price intrusion example: currentPrice=92, trying to set SL=95
    * await strategy.trailingStop("BTCUSDT", -50, 92, false);
    * // SKIPPED: currentPrice (92) < newSL (95) - would trigger immediate stop
@@ -4530,26 +4509,55 @@ export class ClientStrategy implements IStrategy {
   /**
    * Adjusts the trailing take-profit distance for an active pending signal.
    *
-   * Updates the take-profit distance by a percentage adjustment relative to the original TP distance.
-   * Negative percentShift brings TP closer to entry, positive percentShift moves it further.
-   * Once direction is set on first call, subsequent calls must continue in same direction.
+   * КРИТИЧНО: Всегда считает от ОРИГИНАЛЬНОГО TP, а не от текущего trailing.
+   * Это предотвращает накопление ошибок при повторных вызовах.
+   * Больший percentShift ПОГЛОЩАЕТ меньший (обновление только в сторону консервативности).
+   *
+   * Updates the take-profit distance by a percentage adjustment relative to the ORIGINAL TP distance.
+   * Negative percentShift brings TP closer to entry (more conservative).
+   * Positive percentShift moves TP further from entry (more aggressive).
+   *
+   * Trailing behavior (поглощение):
+   * - First call: sets trailing TP unconditionally
+   * - Subsequent calls: updates only if new TP is MORE CONSERVATIVE (closer to entry)
+   * - For LONG: only accepts LOWER TP (never moves up, closer to entry wins)
+   * - For SHORT: only accepts HIGHER TP (never moves down, closer to entry wins)
+   * - Stores in _trailingPriceTakeProfit, original priceTakeProfit always preserved
+   *
+   * Example of absorption (LONG, entry=100, originalTP=110):
+   * ```typescript
+   * await trailingTake(-30, price); // Sets TP=107 (first call, 7% distance)
+   * await trailingTake(+20, price); // SKIPPED: TP=112 > 107 (less conservative)
+   * await trailingTake(-50, price); // Sets TP=105 (more conservative, absorbs previous)
+   * ```
    *
    * Price intrusion protection: If current price has already crossed the new TP level,
    * the update is skipped to prevent immediate TP triggering.
    *
    * @param symbol - Trading pair symbol
-   * @param percentShift - Percentage adjustment to TP distance (-100 to 100)
+   * @param percentShift - Percentage adjustment to ORIGINAL TP distance (-100 to 100)
    * @param currentPrice - Current market price to check for intrusion
    * @param backtest - Whether running in backtest mode
    * @returns Promise that resolves when trailing TP is updated
-   * 
+   *
    * @example
    * ```typescript
    * // LONG: entry=100, originalTP=110, distance=10%, currentPrice=102
-   * // Move TP further by 50%: newTP = 100 + 15% = 115
-   * await strategy.trailingTake("BTCUSDT", 50, 102, false);
-   * 
-   * // SHORT: entry=100, originalTP=90, distance=10%, currentPrice=98  
+   *
+   * // Move TP closer by 30% (more conservative)
+   * await strategy.trailingTake("BTCUSDT", -30, 102, false);
+   * // newDistance = 10% - 30% = 7%, newTP = 100 * (1 + 0.07) = 107
+   *
+   * // Try to move TP further by 20% (less conservative)
+   * await strategy.trailingTake("BTCUSDT", 20, 102, false);
+   * // SKIPPED: newTP=112 > 107 (less conservative, larger % absorbs smaller)
+   *
+   * // Move TP even closer by 50% (most conservative)
+   * await strategy.trailingTake("BTCUSDT", -50, 102, false);
+   * // newDistance = 10% - 50% = 5%, newTP = 100 * (1 + 0.05) = 105
+   * // Updated! TP=105 < 107 (more conservative)
+   *
+   * // SHORT: entry=100, originalTP=90, distance=10%, currentPrice=98
    * // Move TP closer by 30%: newTP = 100 - 7% = 93
    * await strategy.trailingTake("BTCUSDT", -30, 98, false);
    * ```

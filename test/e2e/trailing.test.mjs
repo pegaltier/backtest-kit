@@ -782,13 +782,13 @@ test("TRAILING STOP: Multiple adjustments on progressive profit with onPartialPr
         const level = Math.round(revenuePercent / 10) * 10;
 
         if (level === 10 && !trailingAdjustments.includes(10)) {
-          await trailingStop(symbol, -0.5, currentPrice);
+          await trailingStop(symbol, -0.5, currentPrice);  // -0.5%: distance = 2% - 0.5% = 1.5%
           trailingAdjustments.push(10);
         } else if (level === 20 && !trailingAdjustments.includes(20)) {
-          await trailingStop(symbol, -0.5, currentPrice);
+          await trailingStop(symbol, -1.0, currentPrice);  // -1.0%: distance = 2% - 1.0% = 1.0% (поглощает -0.5%)
           trailingAdjustments.push(20);
         } else if (level === 30 && !trailingAdjustments.includes(30)) {
-          await trailingStop(symbol, -0.5, currentPrice);
+          await trailingStop(symbol, -1.5, currentPrice);  // -1.5%: distance = 2% - 1.5% = 0.5% (поглощает -1.0%)
           trailingAdjustments.push(30);
         }
       },
@@ -855,8 +855,12 @@ test("TRAILING STOP: Multiple adjustments on progressive profit with onPartialPr
   }
 
 
-  // Проверяем PNL: ожидается убыток около -1.1% (с новой логикой current-based trailing)
-  // После улучшения trailing stop логики PNL стал лучше
+  // Проверяем PNL: ожидается убыток около -1.1% (с новой логикой original-based trailing + absorption)
+  // Original SL: 97800 (distance = 2.2%)
+  // После трех adjustments (-0.5%, -1.0%, -1.5%): final distance = 2.2% - 1.5% = 0.7%
+  // Final trailing SL: 100000 * (1 - 0.007) = 99300
+  // Базовый PNL: (99300 - 100000) / 100000 = -0.7%
+  // С учетом slippage + fees (~0.4%): -0.7% - 0.4% = -1.1%
   const expectedPnl = -1.1;
   const pnlDiff = Math.abs(closedResult.pnl.pnlPercentage - expectedPnl);
 
@@ -1461,40 +1465,27 @@ test("TRAILING STOP: Cannot change direction once set", async ({ pass, fail }) =
     },
     callbacks: {
       onOpen: async (symbol, _signal, priceOpen, _backtest) => {
-        // console.log(`[onOpen] Applying first trailing stop (direction DOWN)`);
-
-        // Первый вызов: устанавливает направление DOWN (ослабление защиты)
-        // percentShift = +1% → newDistance = 2% + 1% = 3% → newSL = 97k
-        // Направление: DOWN (97k < 98k)
-        await trailingStop(symbol, +1, priceOpen);
+        // Первый вызов: устанавливает базовый trailing SL (подтягиваем на 1%)
+        // Original SL: 98000, distance = 2%
+        // percentShift = -1% → newDistance = 2% - 1% = 1% → newSL = 99000
+        await trailingStop(symbol, -1, priceOpen);
         firstTrailingApplied = true;
-
-        // console.log(`[trailingStop #1] Applied shift=+1%, direction set to DOWN (97k < 98k original)`);
       },
       onPartialProfit: async (symbol, _signal, _currentPrice, revenuePercent, _backtest) => {
-        // Второй вызов при 3% profit: пытается двигать вверх (улучшение, но wrong direction)
+        // Второй вызов при 3% profit: пытается слабее защитить (меньший percentShift)
         if (firstTrailingApplied && !secondTrailingAttempted && revenuePercent >= 3 && revenuePercent < 5) {
-          // console.log(`[onPartialProfit] Second trailing: shift=-3% at ${revenuePercent.toFixed(2)}%`);
-
-          // percentShift = -3% → newDistance = 2% + (-3%) = -1% → newSL = 101k (в зоне прибыли!)
-          // Направление: UP (101k > 97k) - ОТКЛОНЯЕТСЯ, т.к. изначальное направление DOWN
-          // Даже несмотря на то, что это УЛУЧШАЕТ защиту!
-          await trailingStop(symbol, -3, _currentPrice);
+          // percentShift = -0.5% → newDistance = 2% - 0.5% = 1.5% → newSL = 98500
+          // ОТКЛОНЯЕТСЯ: 98500 < 99000 (worse protection for LONG, smaller percentShift absorbed by larger)
+          await trailingStop(symbol, -0.5, _currentPrice);
           secondTrailingAttempted = true;
-
-          // console.log(`[trailingStop #2] Attempted shift=-3% (improvement!), but should be REJECTED (wrong direction)`);
         }
 
-        // Третий вызов при 5% profit: двигаем вниз (same direction)
+        // Третий вызов при 5% profit: еще более агрессивная защита
         if (secondTrailingAttempted && !thirdTrailingApplied && revenuePercent >= 5) {
-          // console.log(`[onPartialProfit] Third trailing: shift=+2% at ${revenuePercent.toFixed(2)}%`);
-
-          // percentShift = +2% → newDistance = 2% + 2% = 4% → newSL = 96k
-          // Направление: DOWN (96k < 97k) - ПРИНИМАЕТСЯ, т.к. направление DOWN
-          await trailingStop(symbol, +2, _currentPrice);
+          // percentShift = -1.5% → newDistance = 2% - 1.5% = 0.5% → newSL = 99500
+          // ПРИНИМАЕТСЯ: 99500 > 99000 (better protection for LONG, larger percentShift absorbs smaller)
+          await trailingStop(symbol, -1.5, _currentPrice);
           thirdTrailingApplied = true;
-
-          // console.log(`[trailingStop #3] Applied shift=+2%, continuing DOWN direction (96k < 97k)`);
         }
       },
     },
@@ -1564,20 +1555,24 @@ test("TRAILING STOP: Cannot change direction once set", async ({ pass, fail }) =
     return;
   }
 
-  // console.log(`[TEST] Signal closed by ${closedResult.closeReason}, PNL: ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
+  // Проверяем PNL с новой логикой original-based + absorption:
+  // Original SL: 98000, distance = 2%
+  // First adjustment: -1% → SL = 99000 (distance = 1%)
+  // Second adjustment: -0.5% → SL = 98500, REJECTED (98500 < 99000, worse for LONG)
+  // Third adjustment: -1.5% → SL = 99500 (distance = 0.5%), ACCEPTED (99500 > 99000, better for LONG)
+  // Final trailing SL: 99500
+  // Падение до 95000, закрытие по SL на 99500
+  // Базовый PNL: (99500 - 100000) / 100000 * 100 = -0.5%
+  // С учетом slippage + fees (~0.4%): -0.5% - 0.4% = -0.9%
+  const expectedPnl = -0.9;
+  const pnlDiff = Math.abs(closedResult.pnl.pnlPercentage - expectedPnl);
 
-  // Проверяем PNL: должен быть убыток близкий к -4% (третий trailing SL=96k был применен)
-  // Если бы второй вызов сработал (улучшение в wrong direction), PNL был бы положительным (+1% при SL=101k)
-  // Если бы третий вызов не сработал, PNL был бы -3% (первый trailing SL=97k)
-  // PNL = (96000 - 100000) / 100000 * 100 = -4%
-  // Проверяем что PNL в диапазоне от -6% до -5% (с новой логикой current-based trailing)
-  // После улучшения логики trailing stop стал более агрессивным
-  if (closedResult.pnl.pnlPercentage < -6.0 || closedResult.pnl.pnlPercentage > -5.0) {
-    fail(`PNL should be between -6.0% and -5.0% (third trailing SL applied), got ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
+  if (pnlDiff > 0.3) {
+    fail(`PNL should be ~${expectedPnl}% (third trailing SL=99500 applied), got ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
     return;
   }
 
-  pass(`TRAILING STOP DIRECTION LOCK WORKS: System rejected improvement in wrong direction, accepted continuation in same direction. Final PNL ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
+  pass(`TRAILING STOP ABSORPTION WORKS: System rejected weaker protection (-0.5%), accepted stronger protection (-1.5%). Final PNL ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
 });
 
 
@@ -2640,46 +2635,38 @@ test("TRAILING PROFIT: Direction-based validation for LONG position", async ({ p
     },
     callbacks: {
       onOpen: async (symbol, _signal, priceOpen, _backtest) => {
-        // console.log(`[onOpen] Applying first trailing profit (direction CLOSER)`);
-
         try {
-          // Первый вызов: устанавливает направление CLOSER (к entry)
-          // percentShift = -5% → newDistance = 20% + (-5%) = 15% → newTP = 115k
+          // Первый вызов: устанавливает базовый trailing TP (подтягиваем на 5% ближе к entry)
+          // Original TP: 120000, distance = 20%
+          // percentShift = -5% → newDistance = 20% - 5% = 15% → newTP = 115000
           await trailingTake(symbol, -5, priceOpen);
           firstTrailingApplied = true;
-          // console.log(`[trailingTake #1] Applied shift=-5%, direction set to CLOSER (115k < 120k original)`);
         } catch (error) {
-          // console.log(`[trailingTake #1] ERROR:`, error.message);
+          // Unexpected error
         }
       },
       onPartialProfit: async (symbol, _signal, _currentPrice, revenuePercent, _backtest) => {
-        // Второй вызов при 8% profit: пытается двигать дальше от entry (wrong direction)
+        // Второй вызов при 8% profit: пытается сделать менее консервативным (меньший percentShift)
         if (firstTrailingApplied && !secondTrailingAttempted && revenuePercent >= 8 && revenuePercent < 12) {
-          // console.log(`[onPartialProfit] Second trailing: shift=+3% at ${revenuePercent.toFixed(2)}%`);
-
           try {
-            // percentShift = +3% → newDistance = 20% + 3% = 23% → newTP = 123k
-            // Направление: FARTHER (123k > 115k) - ОТКЛОНЯЕТСЯ, т.к. направление CLOSER
-            await trailingTake(symbol, +3, _currentPrice);
-            // console.log(`[trailingTake #2] UNEXPECTED: Applied shift=+3% (wrong direction accepted?)`);
+            // percentShift = -3% → newDistance = 20% - 3% = 17% → newTP = 117000
+            // ОТКЛОНЯЕТСЯ: 117000 > 115000 (less conservative for LONG, smaller percentShift absorbed)
+            await trailingTake(symbol, -3, _currentPrice);
           } catch (error) {
-            // console.log(`[trailingTake #2] EXPECTED: Rejected shift=+3% (wrong direction)`);
+            // Expected to be rejected silently by absorption logic
           }
           secondTrailingAttempted = true;
         }
 
-        // Третий вызов при 12% profit: продолжаем движение к entry (same direction)
+        // Третий вызов при 12% profit: еще более консервативный TP
         if (secondTrailingAttempted && !thirdTrailingApplied && revenuePercent >= 12) {
-          // console.log(`[onPartialProfit] Third trailing: shift=-3% at ${revenuePercent.toFixed(2)}%`);
-
           try {
-            // percentShift = -3% → newDistance = 20% + (-3%) = 17% → newTP = 117k → но уже есть 115k
-            // Система должна принять но установить 112k (15% - 3% = 12%)
-            await trailingTake(symbol, -3, _currentPrice);
+            // percentShift = -8% → newDistance = 20% - 8% = 12% → newTP = 112000
+            // ПРИНИМАЕТСЯ: 112000 < 115000 (more conservative for LONG, larger percentShift absorbs smaller)
+            await trailingTake(symbol, -8, _currentPrice);
             thirdTrailingApplied = true;
-            // console.log(`[trailingTake #3] Applied shift=-3%, continuing CLOSER direction`);
           } catch (error) {
-            // console.log(`[trailingTake #3] ERROR:`, error.message);
+            // Unexpected error
           }
         }
       },
@@ -2749,21 +2736,23 @@ test("TRAILING PROFIT: Direction-based validation for LONG position", async ({ p
     return;
   }
 
-  // console.log(`[TEST] Signal closed by ${closedResult.closeReason}, PNL: ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
-
-  // Проверяем PNL: должен быть около +12% (финальный trailing TP применен)
-  // Если бы второй вызов сработал (wrong direction), PNL был бы +23%
-  // Если бы третий вызов не сработал, PNL был бы +15% (первый trailing TP)
-  // PNL = (112000 - 100000) / 100000 * 100 = +12%
+  // Проверяем PNL с новой логикой original-based + absorption:
+  // Original TP: 120000, distance = 20%
+  // First adjustment: -5% → TP = 115000 (distance = 15%)
+  // Second adjustment: -3% → TP = 117000, REJECTED (117000 > 115000, less conservative for LONG)
+  // Third adjustment: -8% → TP = 112000 (distance = 12%), ACCEPTED (112000 < 115000, more conservative for LONG)
+  // Final trailing TP: 112000
+  // Рост до 112500, high=113000, закрытие по TP на 112000
+  // PNL = (112000 - 100000) / 100000 * 100 = +12.0%
   const expectedPnl = 12.0;
   const pnlDiff = Math.abs(closedResult.pnl.pnlPercentage - expectedPnl);
 
   if (pnlDiff > 2.0) {
-    fail(`PNL should be ~${expectedPnl}%, got ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
+    fail(`PNL should be ~${expectedPnl}% (third trailing TP=112000 applied), got ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
     return;
   }
 
-  pass(`TRAILING PROFIT DIRECTION WORKS: System rejected wrong direction, accepted continuation. Final PNL ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
+  pass(`TRAILING PROFIT ABSORPTION WORKS: System rejected less conservative TP (-3%), accepted more conservative TP (-8%). Final PNL ${closedResult.pnl.pnlPercentage.toFixed(2)}%`);
 });
 
 
