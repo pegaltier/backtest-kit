@@ -44,6 +44,12 @@ riskValidationService: any
 exchangeValidationService: any
 ```
 
+### frameValidationService
+
+```ts
+frameValidationService: any
+```
+
 ### validate
 
 ```ts

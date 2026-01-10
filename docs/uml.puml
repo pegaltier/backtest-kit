@@ -30,6 +30,7 @@ liveCommandService:
 						methodContextService: ""
 						executionContextService: ""
 					executionContextService: ""
+					methodContextService: ""
 					strategySchemaService:
 						• strategySchemaService: ""
 						loggerService:
@@ -62,9 +63,14 @@ liveCommandService:
 								methodContextService: ""
 								executionContextService: ""
 						methodContextService: ""
-					methodContextService: ""
 					partialConnectionService:
 						• partialConnectionService: ""
+						loggerService:
+							• loggerService: ""
+							methodContextService: ""
+							executionContextService: ""
+					breakevenConnectionService:
+						• breakevenConnectionService: ""
 						loggerService:
 							• loggerService: ""
 							methodContextService: ""
@@ -93,7 +99,18 @@ liveCommandService:
 							• loggerService: ""
 							methodContextService: ""
 							executionContextService: ""
-				methodContextService: ""
+				exchangeValidationService:
+					• exchangeValidationService: ""
+					loggerService:
+						• loggerService: ""
+						methodContextService: ""
+						executionContextService: ""
+				frameValidationService:
+					• frameValidationService: ""
+					loggerService:
+						• loggerService: ""
+						methodContextService: ""
+						executionContextService: ""
 			methodContextService: ""
 	strategyValidationService:
 		• strategyValidationService: ""
@@ -168,6 +185,7 @@ backtestCommandService:
 						methodContextService: ""
 						executionContextService: ""
 					executionContextService: ""
+					methodContextService: ""
 					strategySchemaService:
 						• strategySchemaService: ""
 						loggerService:
@@ -200,9 +218,14 @@ backtestCommandService:
 								methodContextService: ""
 								executionContextService: ""
 						methodContextService: ""
-					methodContextService: ""
 					partialConnectionService:
 						• partialConnectionService: ""
+						loggerService:
+							• loggerService: ""
+							methodContextService: ""
+							executionContextService: ""
+					breakevenConnectionService:
+						• breakevenConnectionService: ""
 						loggerService:
 							• loggerService: ""
 							methodContextService: ""
@@ -231,7 +254,18 @@ backtestCommandService:
 							• loggerService: ""
 							methodContextService: ""
 							executionContextService: ""
-				methodContextService: ""
+				exchangeValidationService:
+					• exchangeValidationService: ""
+					loggerService:
+						• loggerService: ""
+						methodContextService: ""
+						executionContextService: ""
+				frameValidationService:
+					• frameValidationService: ""
+					loggerService:
+						• loggerService: ""
+						methodContextService: ""
+						executionContextService: ""
 			exchangeCoreService:
 				• exchangeCoreService: ""
 				loggerService:
@@ -352,6 +386,7 @@ walkerCommandService:
 								methodContextService: ""
 								executionContextService: ""
 							executionContextService: ""
+							methodContextService: ""
 							strategySchemaService:
 								• strategySchemaService: ""
 								loggerService: ""
@@ -365,9 +400,11 @@ walkerCommandService:
 								executionContextService: ""
 								exchangeSchemaService: ""
 								methodContextService: ""
-							methodContextService: ""
 							partialConnectionService:
 								• partialConnectionService: ""
+								loggerService: ""
+							breakevenConnectionService:
+								• breakevenConnectionService: ""
 								loggerService: ""
 						strategySchemaService:
 							• strategySchemaService: ""
@@ -390,7 +427,18 @@ walkerCommandService:
 							riskValidationService:
 								• riskValidationService: ""
 								loggerService: ""
-						methodContextService: ""
+						exchangeValidationService:
+							• exchangeValidationService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+						frameValidationService:
+							• frameValidationService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
 					exchangeCoreService:
 						• exchangeCoreService: ""
 						loggerService:

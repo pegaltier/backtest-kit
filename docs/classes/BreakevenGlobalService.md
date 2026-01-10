@@ -80,6 +80,14 @@ exchangeValidationService: any
 
 Exchange validation service for validating exchange existence.
 
+### frameValidationService
+
+```ts
+frameValidationService: any
+```
+
+Frame validation service for validating frame existence.
+
 ### validate
 
 ```ts

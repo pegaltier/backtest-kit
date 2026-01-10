@@ -52,6 +52,18 @@ riskValidationService: any
 strategyValidationService: any
 ```
 
+### exchangeValidationService
+
+```ts
+exchangeValidationService: any
+```
+
+### frameValidationService
+
+```ts
+frameValidationService: any
+```
+
 ### validate
 
 ```ts
