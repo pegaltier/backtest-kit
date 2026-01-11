@@ -30,6 +30,7 @@ export class HeatReportService {
       backtest: data.backtest,
       signalId: data.signal?.id,
       position: data.signal?.position,
+      note: data.signal?.note,
       pnl: data.pnl.pnlPercentage,
       closeReason: data.closeReason,
       openTime: data.signal?.pendingAt,
