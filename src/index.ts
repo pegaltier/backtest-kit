@@ -230,6 +230,7 @@ export {
   Markdown,
   MarkdownFileBase,
   MarkdownFolderBase,
+  MarkdownName,
   TMarkdownBase
 } from "./classes/Markdown";
 

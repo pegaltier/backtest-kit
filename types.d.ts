@@ -6608,118 +6608,413 @@ declare const PersistBreakevenAdapter: PersistBreakevenUtils;
 
 declare const WAIT_FOR_INIT_SYMBOL$1: unique symbol;
 declare const WRITE_SAFE_SYMBOL$1: unique symbol;
+/**
+ * Configuration interface for selective report service enablement.
+ * Controls which report services should be activated for JSONL event logging.
+ */
 interface IReportTarget {
+    /** Enable risk rejection event logging */
     risk: boolean;
+    /** Enable breakeven event logging */
     breakeven: boolean;
+    /** Enable partial close event logging */
     partial: boolean;
+    /** Enable heatmap data event logging */
     heat: boolean;
+    /** Enable walker iteration event logging */
     walker: boolean;
+    /** Enable performance metrics event logging */
     performance: boolean;
+    /** Enable scheduled signal event logging */
     schedule: boolean;
+    /** Enable live trading event logging (all tick states) */
     live: boolean;
+    /** Enable backtest closed signal event logging */
     backtest: boolean;
 }
+/**
+ * Union type of all valid report names.
+ * Used for type-safe identification of report services.
+ */
 type ReportName = keyof IReportTarget;
+/**
+ * Options for report data writes.
+ * Contains metadata for event filtering and search.
+ */
 interface IReportDumpOptions {
+    /** Trading pair symbol (e.g., "BTCUSDT") */
     symbol: string;
+    /** Strategy name */
     strategyName: string;
+    /** Exchange name */
     exchangeName: string;
+    /** Frame name (timeframe identifier) */
     frameName: string;
+    /** Signal unique identifier */
     signalId: string;
+    /** Walker optimization name */
     walkerName: string;
 }
+/**
+ * Base interface for report storage adapters.
+ * All report adapters must implement this interface.
+ */
 type TReportBase = {
+    /**
+     * Initialize report storage and prepare for writes.
+     * Uses singleshot to ensure one-time execution.
+     *
+     * @param initial - Whether this is the first initialization
+     * @returns Promise that resolves when initialization is complete
+     */
     waitForInit(initial: boolean): Promise<void>;
+    /**
+     * Write report data to storage.
+     *
+     * @param data - Report data object to write
+     * @param options - Metadata options for filtering and search
+     * @returns Promise that resolves when write is complete
+     * @throws Error if write fails or stream is not initialized
+     */
     write<T = any>(data: T, options: Partial<IReportDumpOptions>): Promise<void>;
 };
+/**
+ * Constructor type for report storage adapters.
+ * Used for custom report storage implementations.
+ */
 type TReportBaseCtor = new (reportName: ReportName, baseDir: string) => TReportBase;
+/**
+ * JSONL-based report adapter with append-only writes.
+ *
+ * Features:
+ * - Writes events as JSONL entries to a single file per report type
+ * - Stream-based writes with backpressure handling
+ * - 15-second timeout protection for write operations
+ * - Automatic directory creation
+ * - Error handling via exitEmitter
+ * - Search metadata for filtering (symbol, strategy, exchange, frame, signalId, walkerName)
+ *
+ * File format: ./dump/report/{reportName}.jsonl
+ * Each line contains: reportName, data, metadata, timestamp
+ *
+ * Use this adapter for event logging and post-processing analytics.
+ */
 declare const ReportBase: {
     new (reportName: ReportName, baseDir?: string): {
+        /** Absolute path to the JSONL file for this report type */
         _filePath: string;
+        /** WriteStream instance for append-only writes, null until initialized */
         _stream: WriteStream | null;
         readonly reportName: ReportName;
         readonly baseDir: string;
+        /**
+         * Initializes the JSONL file and write stream.
+         * Safe to call multiple times - singleshot ensures one-time execution.
+         *
+         * @param initial - Whether this is the first initialization (informational only)
+         * @returns Promise that resolves when initialization is complete
+         */
         waitForInit(initial: boolean): Promise<void>;
+        /**
+         * Writes event data to JSONL file with metadata.
+         * Appends a single line with JSON object containing:
+         * - reportName: Type of report
+         * - data: Event data object
+         * - Search flags: symbol, strategyName, exchangeName, frameName, signalId, walkerName
+         * - timestamp: Current timestamp in milliseconds
+         *
+         * @param data - Event data object to write
+         * @param options - Metadata options for filtering and search
+         * @throws Error if stream not initialized or write timeout exceeded
+         */
         write<T = any>(data: T, options: Partial<IReportDumpOptions>): Promise<void>;
+        /**
+         * Singleshot initialization function that creates directory and stream.
+         * Protected by singleshot to ensure one-time execution.
+         * Sets up error handler that emits to exitEmitter.
+         */
         [WAIT_FOR_INIT_SYMBOL$1]: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+        /**
+         * Timeout-protected write function with backpressure handling.
+         * Waits for drain event if write buffer is full.
+         * Times out after 15 seconds and returns TIMEOUT_SYMBOL.
+         */
         [WRITE_SAFE_SYMBOL$1]: (line: string) => Promise<symbol | void>;
     };
 };
+/**
+ * Utility class for managing report services.
+ *
+ * Provides methods to enable/disable JSONL event logging across
+ * different service types (backtest, live, walker, performance, etc.).
+ *
+ * Typically extended by ReportAdapter for additional functionality.
+ */
 declare class ReportUtils {
+    /**
+     * Enables report services selectively.
+     *
+     * Subscribes to specified report services and returns a cleanup function
+     * that unsubscribes from all enabled services at once.
+     *
+     * Each enabled service will:
+     * - Start listening to relevant events
+     * - Write events to JSONL files in real-time
+     * - Include metadata for filtering and analytics
+     *
+     * IMPORTANT: Always call the returned unsubscribe function to prevent memory leaks.
+     *
+     * @param config - Service configuration object. Defaults to enabling all services.
+     * @param config.backtest - Enable backtest closed signal logging
+     * @param config.breakeven - Enable breakeven event logging
+     * @param config.partial - Enable partial close event logging
+     * @param config.heat - Enable heatmap data logging
+     * @param config.walker - Enable walker iteration logging
+     * @param config.performance - Enable performance metrics logging
+     * @param config.risk - Enable risk rejection logging
+     * @param config.schedule - Enable scheduled signal logging
+     * @param config.live - Enable live trading event logging
+     *
+     * @returns Cleanup function that unsubscribes from all enabled services
+     */
     enable: ({ backtest: bt, breakeven, heat, live, partial, performance, risk, schedule, walker, }?: Partial<IReportTarget>) => (...args: any[]) => any;
 }
+/**
+ * Report adapter with pluggable storage backend and instance memoization.
+ *
+ * Features:
+ * - Adapter pattern for swappable storage implementations
+ * - Memoized storage instances (one per report type)
+ * - Default adapter: ReportBase (JSONL append)
+ * - Lazy initialization on first write
+ * - Real-time event logging to JSONL files
+ *
+ * Used for structured event logging and analytics pipelines.
+ */
 declare class ReportAdapter extends ReportUtils {
+    /**
+     * Current report storage adapter constructor.
+     * Defaults to ReportBase for JSONL storage.
+     * Can be changed via useReportAdapter().
+     */
     private ReportFactory;
+    /**
+     * Memoized storage instances cache.
+     * Key: reportName (backtest, live, walker, etc.)
+     * Value: TReportBase instance created with current ReportFactory.
+     * Ensures single instance per report type for the lifetime of the application.
+     */
     private getReportStorage;
+    /**
+     * Sets the report storage adapter constructor.
+     * All future report instances will use this adapter.
+     *
+     * @param Ctor - Constructor for report storage adapter
+     */
     useReportAdapter(Ctor: TReportBaseCtor): void;
+    /**
+     * Writes report data to storage using the configured adapter.
+     * Automatically initializes storage on first write for each report type.
+     *
+     * @param reportName - Type of report (backtest, live, walker, etc.)
+     * @param data - Event data object to write
+     * @param options - Metadata options for filtering and search
+     * @returns Promise that resolves when write is complete
+     * @throws Error if write fails or storage initialization fails
+     *
+     * @internal - Automatically called by report services, not for direct use
+     */
     writeData: <T = any>(reportName: ReportName, data: T, options: Partial<IReportDumpOptions>) => Promise<void>;
 }
+/**
+ * Global singleton instance of ReportAdapter.
+ * Provides JSONL event logging with pluggable storage backends.
+ */
 declare const Report: ReportAdapter;
 
 /**
  * Configuration interface for selective markdown service enablement.
- *
  * Controls which markdown report services should be activated.
- * Each property corresponds to a specific markdown service type.
- *
- * @property backtest - Enable backtest markdown reports (main strategy results)
- * @property breakeven - Enable breakeven event tracking reports
- * @property partial - Enable partial profit/loss event reports
- * @property heat - Enable heatmap portfolio analysis reports
- * @property walker - Enable walker optimization comparison reports
- * @property performance - Enable performance metrics and bottleneck analysis
- * @property risk - Enable risk rejection tracking reports
- * @property schedule - Enable scheduled signal tracking reports
- * @property live - Enable live trading event reports
  */
 interface IMarkdownTarget {
+    /** Enable risk rejection tracking reports (signals blocked by risk limits) */
     risk: boolean;
+    /** Enable breakeven event tracking reports (when stop loss moves to entry) */
     breakeven: boolean;
+    /** Enable partial profit/loss event tracking reports */
     partial: boolean;
+    /** Enable portfolio heatmap analysis reports across all symbols */
     heat: boolean;
+    /** Enable walker strategy comparison and optimization reports */
     walker: boolean;
+    /** Enable performance metrics and bottleneck analysis reports */
     performance: boolean;
+    /** Enable scheduled signal tracking reports (signals waiting for trigger) */
     schedule: boolean;
+    /** Enable live trading event reports (all tick events) */
     live: boolean;
+    /** Enable backtest markdown reports (main strategy results with full trade history) */
     backtest: boolean;
-    outline: boolean;
 }
 declare const WAIT_FOR_INIT_SYMBOL: unique symbol;
 declare const WRITE_SAFE_SYMBOL: unique symbol;
+/**
+ * Union type of all valid markdown report names.
+ * Used for type-safe identification of markdown services.
+ */
 type MarkdownName = keyof IMarkdownTarget;
+/**
+ * Options for markdown dump operations.
+ * Contains path information and metadata for filtering.
+ */
 interface IMarkdownDumpOptions {
+    /** Directory path relative to process.cwd() */
     path: string;
+    /** File name including extension */
     file: string;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
     symbol: string;
+    /** Strategy name */
     strategyName: string;
+    /** Exchange name */
     exchangeName: string;
+    /** Frame name (timeframe identifier) */
     frameName: string;
+    /** Signal unique identifier */
     signalId: string;
 }
+/**
+ * Base interface for markdown storage adapters.
+ * All markdown adapters must implement this interface.
+ */
 type TMarkdownBase = {
+    /**
+     * Initialize markdown storage and prepare for writes.
+     * Uses singleshot to ensure one-time execution.
+     *
+     * @param initial - Whether this is the first initialization
+     * @returns Promise that resolves when initialization is complete
+     */
     waitForInit(initial: boolean): Promise<void>;
+    /**
+     * Dump markdown content to storage.
+     *
+     * @param content - Markdown content to write
+     * @param options - Metadata and path options for the dump
+     * @returns Promise that resolves when write is complete
+     * @throws Error if write fails or stream is not initialized
+     */
     dump(content: string, options: IMarkdownDumpOptions): Promise<void>;
 };
+/**
+ * Constructor type for markdown storage adapters.
+ * Used for custom markdown storage implementations.
+ */
 type TMarkdownBaseCtor = new (markdownName: MarkdownName) => TMarkdownBase;
+/**
+ * JSONL-based markdown adapter with append-only writes.
+ *
+ * Features:
+ * - Writes markdown reports as JSONL entries to a single file per markdown type
+ * - Stream-based writes with backpressure handling
+ * - 15-second timeout protection for write operations
+ * - Automatic directory creation
+ * - Error handling via exitEmitter
+ * - Search metadata for filtering (symbol, strategy, exchange, frame, signalId)
+ *
+ * File format: ./dump/markdown/{markdownName}.jsonl
+ * Each line contains: markdownName, data, symbol, strategyName, exchangeName, frameName, signalId, timestamp
+ *
+ * Use this adapter for centralized logging and post-processing with JSONL tools.
+ */
 declare const MarkdownFileBase: {
     new (markdownName: MarkdownName): {
+        /** Absolute path to the JSONL file for this markdown type */
         _filePath: string;
+        /** WriteStream instance for append-only writes, null until initialized */
         _stream: WriteStream | null;
+        /** Base directory for all JSONL markdown files */
         _baseDir: string;
         readonly markdownName: MarkdownName;
+        /**
+         * Initializes the JSONL file and write stream.
+         * Safe to call multiple times - singleshot ensures one-time execution.
+         *
+         * @returns Promise that resolves when initialization is complete
+         */
         waitForInit(): Promise<void>;
+        /**
+         * Writes markdown content to JSONL file with metadata.
+         * Appends a single line with JSON object containing:
+         * - markdownName: Type of report
+         * - data: Markdown content
+         * - Search flags: symbol, strategyName, exchangeName, frameName, signalId
+         * - timestamp: Current timestamp in milliseconds
+         *
+         * @param data - Markdown content to write
+         * @param options - Path and metadata options
+         * @throws Error if stream not initialized or write timeout exceeded
+         */
         dump(data: string, options: IMarkdownDumpOptions): Promise<void>;
+        /**
+         * Singleshot initialization function that creates directory and stream.
+         * Protected by singleshot to ensure one-time execution.
+         * Sets up error handler that emits to exitEmitter.
+         */
         [WAIT_FOR_INIT_SYMBOL]: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+        /**
+         * Timeout-protected write function with backpressure handling.
+         * Waits for drain event if write buffer is full.
+         * Times out after 15 seconds and returns TIMEOUT_SYMBOL.
+         */
         [WRITE_SAFE_SYMBOL]: (line: string) => Promise<symbol | void>;
     };
 };
+/**
+ * Folder-based markdown adapter with separate files per report.
+ *
+ * Features:
+ * - Writes each markdown report as a separate .md file
+ * - File path based on options.path and options.file
+ * - Automatic directory creation
+ * - No stream management (direct writeFile)
+ * - Suitable for human-readable report directories
+ *
+ * File format: {options.path}/{options.file}
+ * Example: ./dump/backtest/BTCUSDT_my-strategy_binance_2024-Q1_backtest-1736601234567.md
+ *
+ * Use this adapter (default) for organized report directories and manual review.
+ */
 declare const MarkdownFolderBase: {
     new (markdownName: MarkdownName): {
         readonly markdownName: MarkdownName;
+        /**
+         * No-op initialization for folder adapter.
+         * This adapter doesn't need initialization since it uses direct writeFile.
+         *
+         * @returns Promise that resolves immediately
+         */
         waitForInit(): Promise<void>;
+        /**
+         * Writes markdown content to a separate file.
+         * Creates directory structure automatically.
+         * File path is determined by options.path and options.file.
+         *
+         * @param content - Markdown content to write
+         * @param options - Path and file options for the dump
+         * @throws Error if directory creation or file write fails
+         */
         dump(content: string, options: IMarkdownDumpOptions): Promise<void>;
     };
 };
+/**
+ * Utility class for managing markdown report services.
+ *
+ * Provides methods to enable/disable markdown report generation across
+ * different service types (backtest, live, walker, performance, etc.).
+ *
+ * Typically extended by MarkdownAdapter for additional functionality.
+ */
 declare class MarkdownUtils {
     /**
      * Enables markdown report services selectively.
@@ -6746,61 +7041,71 @@ declare class MarkdownUtils {
      * @param config.live - Enable live trading event reports (all tick events)
      *
      * @returns Cleanup function that unsubscribes from all enabled services
-     *
-     * @example
-     * ```typescript
-     * // Enable all services (default behavior)
-     * const unsubscribe = Markdown.enable();
-     *
-     * // Run backtest
-     * await bt.backtest(...);
-     *
-     * // Generate reports
-     * await bt.Backtest.dump("BTCUSDT", "my-strategy");
-     * await bt.Performance.dump("BTCUSDT", "my-strategy");
-     *
-     * // Cleanup
-     * unsubscribe();
-     * ```
-     *
-     * @example
-     * ```typescript
-     * // Enable only essential services
-     * const unsubscribe = Markdown.enable({
-     *   backtest: true,    // Main results
-     *   performance: true, // Bottlenecks
-     *   risk: true        // Rejections
-     * });
-     *
-     * // Other services (breakeven, partial, heat, etc.) won't collect data
-     * ```
-     *
-     * @example
-     * ```typescript
-     * // Safe cleanup pattern
-     * let unsubscribe: Function;
-     *
-     * try {
-     *   unsubscribe = Markdown.enable({
-     *     backtest: true,
-     *     heat: true
-     *   });
-     *
-     *   await bt.backtest(...);
-     *   await bt.Backtest.dump("BTCUSDT", "my-strategy");
-     * } finally {
-     *   unsubscribe?.();
-     * }
-     * ```
      */
-    enable: ({ backtest: bt, breakeven, heat, live, partial, performance, risk, schedule, walker, }?: Partial<Omit<IMarkdownTarget, "outline">>) => (...args: any[]) => any;
+    enable: ({ backtest: bt, breakeven, heat, live, partial, performance, risk, schedule, walker, }?: Partial<IMarkdownTarget>) => (...args: any[]) => any;
 }
+/**
+ * Markdown adapter with pluggable storage backend and instance memoization.
+ *
+ * Features:
+ * - Adapter pattern for swappable storage implementations
+ * - Memoized storage instances (one per markdown type)
+ * - Default adapter: MarkdownFolderBase (separate files)
+ * - Alternative adapter: MarkdownFileBase (JSONL append)
+ * - Lazy initialization on first write
+ * - Convenience methods: useMd(), useJsonl()
+ */
 declare class MarkdownAdapter extends MarkdownUtils {
+    /**
+     * Current markdown storage adapter constructor.
+     * Defaults to MarkdownFolderBase for separate file storage.
+     * Can be changed via useMarkdownAdapter().
+     */
     private MarkdownFactory;
+    /**
+     * Memoized storage instances cache.
+     * Key: markdownName (backtest, live, walker, etc.)
+     * Value: TMarkdownBase instance created with current MarkdownFactory.
+     * Ensures single instance per markdown type for the lifetime of the application.
+     */
     private getMarkdownStorage;
+    /**
+     * Sets the markdown storage adapter constructor.
+     * All future markdown instances will use this adapter.
+     *
+     * @param Ctor - Constructor for markdown storage adapter
+     */
     useMarkdownAdapter(Ctor: TMarkdownBaseCtor): void;
+    /**
+     * Writes markdown data to storage using the configured adapter.
+     * Automatically initializes storage on first write for each markdown type.
+     *
+     * @param markdownName - Type of markdown report (backtest, live, walker, etc.)
+     * @param content - Markdown content to write
+     * @param options - Path, file, and metadata options
+     * @returns Promise that resolves when write is complete
+     * @throws Error if write fails or storage initialization fails
+     *
+     * @internal - Use service-specific dump methods instead (e.g., Backtest.dump)
+     */
     writeData(markdownName: MarkdownName, content: string, options: IMarkdownDumpOptions): Promise<void>;
+    /**
+     * Switches to folder-based markdown storage (default).
+     * Shorthand for useMarkdownAdapter(MarkdownFolderBase).
+     * Each dump creates a separate .md file.
+     */
+    useMd(): void;
+    /**
+     * Switches to JSONL-based markdown storage.
+     * Shorthand for useMarkdownAdapter(MarkdownFileBase).
+     * All dumps append to a single .jsonl file per markdown type.
+     */
+    useJsonl(): void;
 }
+/**
+ * Global singleton instance of MarkdownAdapter.
+ * Provides markdown report generation with pluggable storage backends.
+ */
 declare const Markdown: MarkdownAdapter;
 
 /**
@@ -15021,4 +15326,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, type BootstrapNotification, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, type PingContract, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, breakeven, cancel, dumpSignal, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenBreakeven, listenBreakevenOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenPing, listenPingOnce, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, partialLoss, partialProfit, setColumns, setConfig, setLogger, stop, trailingStop, trailingTake, validate };
+export { Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, type BootstrapNotification, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, type PingContract, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, breakeven, cancel, dumpSignal, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenBreakeven, listenBreakevenOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenPing, listenPingOnce, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, partialLoss, partialProfit, setColumns, setConfig, setLogger, stop, trailingStop, trailingTake, validate };
