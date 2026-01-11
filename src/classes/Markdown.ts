@@ -340,6 +340,16 @@ export class MarkdownAdapter extends MarkdownUtils {
 
     await markdown.dump(content, options);
   }
+
+  public useMd() {
+    backtest.loggerService.debug("MarkdownAdapter.useMd");
+    this.useMarkdownAdapter(MarkdownFolderBase);
+  }
+
+  public useJsonl() {
+    backtest.loggerService.debug("MarkdownAdapter.useJsonl");
+    this.useMarkdownAdapter(MarkdownFileBase);
+  }
 }
 
 export const Markdown = new MarkdownAdapter();
