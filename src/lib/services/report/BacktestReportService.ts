@@ -72,6 +72,9 @@ export class BacktestReportService {
         minuteEstimatedTime: data.signal?.minuteEstimatedTime,
         percentTp: data.percentTp,
         percentSl: data.percentSl,
+        pnl: data.pnl.pnlPercentage,
+        pnlPriceOpen: data.pnl.priceOpen,
+        pnlPriceClose: data.pnl.priceClose,
       }, { ...searchOptions, signalId: data.signal?.id });
     } else if (data.action === "closed") {
       const durationMs = data.closeTimestamp - data.signal?.pendingAt;

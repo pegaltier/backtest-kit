@@ -33,7 +33,7 @@ export interface TickEvent {
   percentTp?: number;
   /** Percentage progress towards stop loss (only for active) */
   percentSl?: number;
-  /** PNL percentage (only for closed) */
+  /** PNL percentage (for active: unrealized, for closed: realized) */
   pnl?: number;
   /** Close reason (only for closed) */
   closeReason?: string;

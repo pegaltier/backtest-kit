@@ -219,6 +219,7 @@ class ReportStorage {
       totalExecuted: data.signal.totalExecuted,
       percentTp: data.percentTp,
       percentSl: data.percentSl,
+      pnl: data.pnl.pnlPercentage,
     };
 
     // Find the last active event with the same signalId

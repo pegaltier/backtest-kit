@@ -378,6 +378,8 @@ export interface IStrategyTickResultActive {
   percentTp: number;
   /** Percentage progress towards stop loss (0-100%, 0 if moving towards TP) */
   percentSl: number;
+  /** Unrealized PNL for active position with fees, slippage, and partial closes */
+  pnl: IStrategyPnL;
   /** Whether this event is from backtest mode (true) or live mode (false) */
   backtest: boolean;
 }

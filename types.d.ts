@@ -1436,6 +1436,8 @@ interface IStrategyTickResultActive {
     percentTp: number;
     /** Percentage progress towards stop loss (0-100%, 0 if moving towards TP) */
     percentSl: number;
+    /** Unrealized PNL for active position with fees, slippage, and partial closes */
+    pnl: IStrategyPnL;
     /** Whether this event is from backtest mode (true) or live mode (false) */
     backtest: boolean;
 }
@@ -5710,7 +5712,7 @@ interface TickEvent {
     percentTp?: number;
     /** Percentage progress towards stop loss (only for active) */
     percentSl?: number;
-    /** PNL percentage (only for closed) */
+    /** PNL percentage (for active: unrealized, for closed: realized) */
     pnl?: number;
     /** Close reason (only for closed) */
     closeReason?: string;

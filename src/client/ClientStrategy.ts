@@ -2155,6 +2155,8 @@ const RETURN_SCHEDULED_SIGNAL_ACTIVE_FN = async (
     self.params.execution.context.backtest
   );
 
+  const pnl = toProfitLossDto(scheduled, currentPrice);
+
   const result: IStrategyTickResultActive = {
     action: "active",
     signal: TO_PUBLIC_SIGNAL(scheduled),
@@ -2165,6 +2167,7 @@ const RETURN_SCHEDULED_SIGNAL_ACTIVE_FN = async (
     symbol: self.params.execution.context.symbol,
     percentTp: 0,
     percentSl: 0,
+    pnl,
     backtest: self.params.execution.context.backtest,
   };
 
@@ -2546,6 +2549,8 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
     }
   }
 
+  const pnl = toProfitLossDto(signal, currentPrice);
+
   const result: IStrategyTickResultActive = {
     action: "active",
     signal: TO_PUBLIC_SIGNAL(signal),
@@ -2556,6 +2561,7 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
     symbol: self.params.execution.context.symbol,
     percentTp,
     percentSl,
+    pnl,
     backtest: self.params.execution.context.backtest,
   };
 
@@ -3770,12 +3776,15 @@ export class ClientStrategy implements IStrategy {
           // Don't cancel - just return last active state
           // In real backtest flow this won't happen as we process all candles at once,
           // but this is correct behavior if someone calls backtest() with partial data
+          const pnl = toProfitLossDto(scheduled, lastPrice);
+
           const result: IStrategyTickResultActive = {
             action: "active",
             signal: TO_PUBLIC_SIGNAL(scheduled),
             currentPrice: lastPrice,
             percentSl: 0,
             percentTp: 0,
+            pnl,
             strategyName: this.params.method.context.strategyName,
             exchangeName: this.params.method.context.exchangeName,
             frameName: this.params.method.context.frameName,
