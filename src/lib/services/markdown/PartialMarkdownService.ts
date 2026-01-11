@@ -86,7 +86,8 @@ const CREATE_FILE_NAME_FN = (
   timestamp: number
 ): string => {
   const parts = [symbol, strategyName, exchangeName];
-  if (frameName) parts.push(frameName);
+  if (frameName) { parts.push(frameName); parts.push("backtest"); }
+  else parts.push("live");
   return `${parts.join("_")}-${timestamp}.md`;
 };
 
