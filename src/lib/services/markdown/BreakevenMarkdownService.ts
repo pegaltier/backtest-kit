@@ -4,7 +4,7 @@ import { ISignalRow, StrategyName } from "../../../interfaces/Strategy.interface
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
-import { compose, memoize, singleshot } from "functools-kit";
+import { memoize, singleshot } from "functools-kit";
 import { breakevenSubject } from "../../../config/emitters";
 import {
   BreakevenStatisticsModel,
@@ -247,6 +247,49 @@ export class BreakevenMarkdownService {
   );
 
   /**
+   * Subscribes to breakeven signal emitter to receive events.
+   * Protected against multiple subscriptions.
+   * Returns an unsubscribe function to stop receiving events.
+   *
+   * @example
+   * ```typescript
+   * const service = new BreakevenMarkdownService();
+   * const unsubscribe = service.subscribe();
+   * // ... later
+   * unsubscribe();
+   * ```
+   */
+  public subscribe = singleshot(() => {
+    this.loggerService.log("breakevenMarkdownService init");
+    const unBreakeven = breakevenSubject.subscribe(this.tickBreakeven);
+    return () => {
+      this.subscribe.clear();
+      unBreakeven();
+    }
+  });
+
+  /**
+   * Unsubscribes from breakeven signal emitter to stop receiving events.
+   * Calls the unsubscribe function returned by subscribe().
+   * If not subscribed, does nothing.
+   *
+   * @example
+   * ```typescript
+   * const service = new BreakevenMarkdownService();
+   * service.subscribe();
+   * // ... later
+   * service.unsubscribe();
+   * ```
+   */
+  public unsubscribe = async () => {
+    this.loggerService.log("breakevenMarkdownService unsubscribe");
+    if (this.subscribe.hasValue()) {
+      const lastSubscription = this.subscribe();
+      lastSubscription();
+    }
+  };
+
+  /**
    * Processes breakeven events and accumulates them.
    * Should be called from breakevenSubject subscription.
    *
@@ -306,6 +349,9 @@ export class BreakevenMarkdownService {
       frameName,
       backtest,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("BreakevenMarkdownService not initialized. Call subscribe() before getting data.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     return storage.getData();
   };
@@ -344,6 +390,9 @@ export class BreakevenMarkdownService {
       frameName,
       backtest,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("BreakevenMarkdownService not initialized. Call subscribe() before generating reports.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     return storage.getReport(symbol, strategyName, columns);
   };
@@ -389,6 +438,9 @@ export class BreakevenMarkdownService {
       backtest,
       path,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("BreakevenMarkdownService not initialized. Call subscribe() before dumping reports.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     await storage.dump(symbol, strategyName, path, columns);
   };
@@ -422,31 +474,6 @@ export class BreakevenMarkdownService {
       this.getStorage.clear();
     }
   };
-
-  /**
-   * Initializes the service by subscribing to breakeven events.
-   * Uses singleshot to ensure initialization happens only once.
-   * Automatically called on first use.
-   *
-   * @example
-   * ```typescript
-   * const service = new BreakevenMarkdownService();
-   * await service.init(); // Subscribe to breakeven events
-   * ```
-   */
-  protected init = singleshot(async () => {
-    this.loggerService.log("breakevenMarkdownService init");
-    const unBreakeven = breakevenSubject.subscribe(this.tickBreakeven);
-    this.unsubscribe = compose(
-      () => unBreakeven()
-    );
-  });
-
-  /**
-   * Function to unsubscribe from breakeven events.
-   * Assigned during init().
-   */
-  public unsubscribe: Function;
 }
 
 export default BreakevenMarkdownService;

@@ -375,6 +375,9 @@ export class BacktestMarkdownService {
       frameName,
       backtest,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("BacktestMarkdownService not initialized. Call subscribe() before getting data.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     return storage.getData();
   };
@@ -413,6 +416,9 @@ export class BacktestMarkdownService {
       frameName,
       backtest,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("BacktestMarkdownService not initialized. Call subscribe() before generating reports.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     return storage.getReport(strategyName, columns);
   };
@@ -458,6 +464,9 @@ export class BacktestMarkdownService {
       backtest,
       path,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("BacktestMarkdownService not initialized. Call subscribe() before dumping reports.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     await storage.dump(strategyName, path, columns);
   };
@@ -493,26 +502,47 @@ export class BacktestMarkdownService {
   };
 
   /**
-   * Initializes the service by subscribing to backtest signal events.
-   * Uses singleshot to ensure initialization happens only once.
-   * Automatically called on first use.
+   * Subscribes to backtest signal emitter to receive tick events.
+   * Protected against multiple subscriptions.
+   * Returns an unsubscribe function to stop receiving events.
    *
    * @example
    * ```typescript
    * const service = new BacktestMarkdownService();
-   * await service.init(); // Subscribe to backtest events
+   * const unsubscribe = service.subscribe();
+   * // ... later
+   * unsubscribe();
    * ```
    */
-  protected init = singleshot(async () => {
+  public subscribe = singleshot(() => {
     this.loggerService.log("backtestMarkdownService init");
-    this.unsubscribe = signalBacktestEmitter.subscribe(this.tick);
+    const unsubscribe = signalBacktestEmitter.subscribe(this.tick);
+    return () => {
+      this.subscribe.clear();
+      unsubscribe();
+    }
   });
 
   /**
-   * Function to unsubscribe from backtest signal events.
-   * Assigned during init().
+   * Unsubscribes from backtest signal emitter to stop receiving tick events.
+   * Calls the unsubscribe function returned by subscribe().
+   * If not subscribed, does nothing.
+   * 
+   * @example
+   * ```typescript
+   * const service = new BacktestMarkdownService(); 
+   * service.subscribe();
+   * // ... later
+   * service.unsubscribe();
+   * ```
    */
-  public unsubscribe: Function;
+  public unsubscribe = async () => {
+    this.loggerService.log("backtestMarkdownService unsubscribe");
+    if (this.subscribe.hasValue()) {
+      const lastSubscription = this.subscribe();
+      lastSubscription();
+    }
+  };
 }
 
 export default BacktestMarkdownService;

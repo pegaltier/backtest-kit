@@ -362,6 +362,49 @@ export class ScheduleMarkdownService {
   );
 
   /**
+   * Subscribes to signal emitter to receive scheduled signal events.
+   * Protected against multiple subscriptions.
+   * Returns an unsubscribe function to stop receiving events.
+   *
+   * @example
+   * ```typescript
+   * const service = new ScheduleMarkdownService();
+   * const unsubscribe = service.subscribe();
+   * // ... later
+   * unsubscribe();
+   * ```
+   */
+  public subscribe = singleshot(() => {
+    this.loggerService.log("scheduleMarkdownService init");
+    const unsubscribe = signalEmitter.subscribe(this.tick);
+    return () => {
+      this.subscribe.clear();
+      unsubscribe();
+    }
+  });
+
+  /**
+   * Unsubscribes from signal emitter to stop receiving scheduled signal events.
+   * Calls the unsubscribe function returned by subscribe().
+   * If not subscribed, does nothing.
+   *
+   * @example
+   * ```typescript
+   * const service = new ScheduleMarkdownService();
+   * service.subscribe();
+   * // ... later
+   * service.unsubscribe();
+   * ```
+   */
+  public unsubscribe = async () => {
+    this.loggerService.log("scheduleMarkdownService unsubscribe");
+    if (this.subscribe.hasValue()) {
+      const lastSubscription = this.subscribe();
+      lastSubscription();
+    }
+  };
+
+  /**
    * Processes tick events and accumulates scheduled/opened/cancelled events.
    * Should be called from signalEmitter subscription.
    *
@@ -427,6 +470,9 @@ export class ScheduleMarkdownService {
       frameName,
       backtest,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("ScheduleMarkdownService not initialized. Call subscribe() before getting data.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     return storage.getData();
   };
@@ -465,6 +511,9 @@ export class ScheduleMarkdownService {
       frameName,
       backtest,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("ScheduleMarkdownService not initialized. Call subscribe() before generating reports.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     return storage.getReport(strategyName, columns);
   };
@@ -510,6 +559,9 @@ export class ScheduleMarkdownService {
       backtest,
       path,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("ScheduleMarkdownService not initialized. Call subscribe() before dumping reports.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     await storage.dump(strategyName, path, columns);
   };
@@ -544,27 +596,6 @@ export class ScheduleMarkdownService {
     }
   };
 
-  /**
-   * Initializes the service by subscribing to live signal events.
-   * Uses singleshot to ensure initialization happens only once.
-   * Automatically called on first use.
-   *
-   * @example
-   * ```typescript
-   * const service = new ScheduleMarkdownService();
-   * await service.init(); // Subscribe to live events
-   * ```
-   */
-  protected init = singleshot(async () => {
-    this.loggerService.log("scheduleMarkdownService init");
-    this.unsubscribe = signalEmitter.subscribe(this.tick);
-  });
-
-  /**
-   * Function to unsubscribe from partial profit/loss events.
-   * Assigned during init().
-   */
-  public unsubscribe: Function;
 }
 
 export default ScheduleMarkdownService;

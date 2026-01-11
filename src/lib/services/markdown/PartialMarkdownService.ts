@@ -5,7 +5,7 @@ import { PartialLevel } from "../../../interfaces/Partial.interface";
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
-import { compose, memoize, singleshot } from "functools-kit";
+import { memoize, singleshot } from "functools-kit";
 import {
   partialProfitSubject,
   partialLossSubject,
@@ -295,6 +295,51 @@ export class PartialMarkdownService {
   );
 
   /**
+   * Subscribes to partial profit/loss signal emitters to receive events.
+   * Protected against multiple subscriptions.
+   * Returns an unsubscribe function to stop receiving events.
+   *
+   * @example
+   * ```typescript
+   * const service = new PartialMarkdownService();
+   * const unsubscribe = service.subscribe();
+   * // ... later
+   * unsubscribe();
+   * ```
+   */
+  public subscribe = singleshot(() => {
+    this.loggerService.log("partialMarkdownService init");
+    const unProfit = partialProfitSubject.subscribe(this.tickProfit);
+    const unLoss = partialLossSubject.subscribe(this.tickLoss);
+    return () => {
+      this.subscribe.clear();
+      unProfit();
+      unLoss();
+    }
+  });
+
+  /**
+   * Unsubscribes from partial profit/loss signal emitters to stop receiving events.
+   * Calls the unsubscribe function returned by subscribe().
+   * If not subscribed, does nothing.
+   *
+   * @example
+   * ```typescript
+   * const service = new PartialMarkdownService();
+   * service.subscribe();
+   * // ... later
+   * service.unsubscribe();
+   * ```
+   */
+  public unsubscribe = async () => {
+    this.loggerService.log("partialMarkdownService unsubscribe");
+    if (this.subscribe.hasValue()) {
+      const lastSubscription = this.subscribe();
+      lastSubscription();
+    }
+  };
+
+  /**
    * Processes profit events and accumulates them.
    * Should be called from partialProfitSubject subscription.
    *
@@ -392,6 +437,9 @@ export class PartialMarkdownService {
       frameName,
       backtest,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("PartialMarkdownService not initialized. Call subscribe() before getting data.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     return storage.getData();
   };
@@ -430,6 +478,9 @@ export class PartialMarkdownService {
       frameName,
       backtest,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("PartialMarkdownService not initialized. Call subscribe() before generating reports.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     return storage.getReport(symbol, strategyName, columns);
   };
@@ -475,6 +526,9 @@ export class PartialMarkdownService {
       backtest,
       path,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("PartialMarkdownService not initialized. Call subscribe() before dumping reports.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     await storage.dump(symbol, strategyName, path, columns);
   };
@@ -509,32 +563,6 @@ export class PartialMarkdownService {
     }
   };
 
-  /**
-   * Initializes the service by subscribing to partial profit/loss events.
-   * Uses singleshot to ensure initialization happens only once.
-   * Automatically called on first use.
-   *
-   * @example
-   * ```typescript
-   * const service = new PartialMarkdownService();
-   * await service.init(); // Subscribe to profit/loss events
-   * ```
-   */
-  protected init = singleshot(async () => {
-    this.loggerService.log("partialMarkdownService init");
-    const unProfit = partialProfitSubject.subscribe(this.tickProfit);
-    const unLoss = partialLossSubject.subscribe(this.tickLoss);
-    this.unsubscribe = compose(
-      () => unProfit(),
-      () => unLoss()
-    );
-  });
-
-  /**
-   * Function to unsubscribe from partial profit/loss events.
-   * Assigned during init().
-   */
-  public unsubscribe: Function;
 }
 
 export default PartialMarkdownService;

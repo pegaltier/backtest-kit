@@ -252,6 +252,10 @@ export class WalkerLogicPrivateService {
         );
       });
 
+    // Ensure BacktestMarkdownService is subscribed
+    // to enable statistics collection
+    this.backtestMarkdownService.subscribe();
+
     try {
       // Run backtest for each strategy
       for (const strategyName of strategies) {

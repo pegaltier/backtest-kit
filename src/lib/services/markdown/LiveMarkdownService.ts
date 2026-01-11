@@ -459,6 +459,49 @@ export class LiveMarkdownService {
   );
 
   /**
+   * Subscribes to live signal emitter to receive tick events.
+   * Protected against multiple subscriptions.
+   * Returns an unsubscribe function to stop receiving events.
+   *
+   * @example
+   * ```typescript
+   * const service = new LiveMarkdownService();
+   * const unsubscribe = service.subscribe();
+   * // ... later
+   * unsubscribe();
+   * ```
+   */
+  public subscribe = singleshot(() => {
+    this.loggerService.log("liveMarkdownService init");
+    const unsubscribe = signalLiveEmitter.subscribe(this.tick);
+    return () => {
+      this.subscribe.clear();
+      unsubscribe();
+    }
+  });
+
+  /**
+   * Unsubscribes from live signal emitter to stop receiving tick events.
+   * Calls the unsubscribe function returned by subscribe().
+   * If not subscribed, does nothing.
+   *
+   * @example
+   * ```typescript
+   * const service = new LiveMarkdownService();
+   * service.subscribe();
+   * // ... later
+   * service.unsubscribe();
+   * ```
+   */
+  public unsubscribe = async () => {
+    this.loggerService.log("liveMarkdownService unsubscribe");
+    if (this.subscribe.hasValue()) {
+      const lastSubscription = this.subscribe();
+      lastSubscription();
+    }
+  };
+
+  /**
    * Processes tick events and accumulates all event types.
    * Should be called from IStrategyCallbacks.onTick.
    *
@@ -523,6 +566,9 @@ export class LiveMarkdownService {
       frameName,
       backtest,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("LiveMarkdownService not initialized. Call subscribe() before getting data.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     return storage.getData();
   };
@@ -561,6 +607,9 @@ export class LiveMarkdownService {
       frameName,
       backtest,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("LiveMarkdownService not initialized. Call subscribe() before generating reports.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     return storage.getReport(strategyName, columns);
   };
@@ -606,6 +655,9 @@ export class LiveMarkdownService {
       backtest,
       path,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("LiveMarkdownService not initialized. Call subscribe() before dumping reports.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     await storage.dump(strategyName, path, columns);
   };
@@ -640,27 +692,6 @@ export class LiveMarkdownService {
     }
   };
 
-  /**
-   * Initializes the service by subscribing to live signal events.
-   * Uses singleshot to ensure initialization happens only once.
-   * Automatically called on first use.
-   *
-   * @example
-   * ```typescript
-   * const service = new LiveMarkdownService();
-   * await service.init(); // Subscribe to live events
-   * ```
-   */
-  protected init = singleshot(async () => {
-    this.loggerService.log("liveMarkdownService init");
-    this.unsubscribe = signalLiveEmitter.subscribe(this.tick);
-  });
-
-  /**
-   * Function to unsubscribe from backtest signal events.
-   * Assigned during init().
-   */
-  public unsubscribe: Function;
 }
 
 export default LiveMarkdownService;

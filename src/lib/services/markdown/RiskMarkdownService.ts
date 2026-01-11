@@ -245,6 +245,49 @@ export class RiskMarkdownService {
   );
 
   /**
+   * Subscribes to risk rejection emitter to receive rejection events.
+   * Protected against multiple subscriptions.
+   * Returns an unsubscribe function to stop receiving events.
+   *
+   * @example
+   * ```typescript
+   * const service = new RiskMarkdownService();
+   * const unsubscribe = service.subscribe();
+   * // ... later
+   * unsubscribe();
+   * ```
+   */
+  public subscribe = singleshot(() => {
+    this.loggerService.log("riskMarkdownService init");
+    const unsubscribe = riskSubject.subscribe(this.tickRejection);
+    return () => {
+      this.subscribe.clear();
+      unsubscribe();
+    }
+  });
+
+  /**
+   * Unsubscribes from risk rejection emitter to stop receiving events.
+   * Calls the unsubscribe function returned by subscribe().
+   * If not subscribed, does nothing.
+   *
+   * @example
+   * ```typescript
+   * const service = new RiskMarkdownService();
+   * service.subscribe();
+   * // ... later
+   * service.unsubscribe();
+   * ```
+   */
+  public unsubscribe = async () => {
+    this.loggerService.log("riskMarkdownService unsubscribe");
+    if (this.subscribe.hasValue()) {
+      const lastSubscription = this.subscribe();
+      lastSubscription();
+    }
+  };
+
+  /**
    * Processes risk rejection events and accumulates them.
    * Should be called from riskSubject subscription.
    *
@@ -291,6 +334,9 @@ export class RiskMarkdownService {
       frameName,
       backtest,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("RiskMarkdownService not initialized. Call subscribe() before getting data.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     return storage.getData();
   };
@@ -329,6 +375,9 @@ export class RiskMarkdownService {
       frameName,
       backtest,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("RiskMarkdownService not initialized. Call subscribe() before generating reports.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     return storage.getReport(symbol, strategyName, columns);
   };
@@ -374,6 +423,9 @@ export class RiskMarkdownService {
       backtest,
       path,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("RiskMarkdownService not initialized. Call subscribe() before dumping reports.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     await storage.dump(symbol, strategyName, path, columns);
   };
@@ -408,27 +460,6 @@ export class RiskMarkdownService {
     }
   };
 
-  /**
-   * Initializes the service by subscribing to risk rejection events.
-   * Uses singleshot to ensure initialization happens only once.
-   * Automatically called on first use.
-   *
-   * @example
-   * ```typescript
-   * const service = new RiskMarkdownService();
-   * await service.init(); // Subscribe to rejection events
-   * ```
-   */
-  protected init = singleshot(async () => {
-    this.loggerService.log("riskMarkdownService init");
-    this.unsubscribe = riskSubject.subscribe(this.tickRejection);
-  });
-
-  /**
-   * Function to unsubscribe from partial profit/loss events.
-   * Assigned during init().
-   */
-  public unsubscribe: Function;
 }
 
 export default RiskMarkdownService;

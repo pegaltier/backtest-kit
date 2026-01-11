@@ -419,6 +419,49 @@ export class WalkerMarkdownService {
   );
 
   /**
+   * Subscribes to walker emitter to receive walker progress events.
+   * Protected against multiple subscriptions.
+   * Returns an unsubscribe function to stop receiving events.
+   *
+   * @example
+   * ```typescript
+   * const service = new WalkerMarkdownService();
+   * const unsubscribe = service.subscribe();
+   * // ... later
+   * unsubscribe();
+   * ```
+   */
+  public subscribe = singleshot(() => {
+    this.loggerService.log("walkerMarkdownService init");
+    const unsubscribe = walkerEmitter.subscribe(this.tick);
+    return () => {
+      this.subscribe.clear();
+      unsubscribe();
+    }
+  });
+
+  /**
+   * Unsubscribes from walker emitter to stop receiving events.
+   * Calls the unsubscribe function returned by subscribe().
+   * If not subscribed, does nothing.
+   *
+   * @example
+   * ```typescript
+   * const service = new WalkerMarkdownService();
+   * service.subscribe();
+   * // ... later
+   * service.unsubscribe();
+   * ```
+   */
+  public unsubscribe = async () => {
+    this.loggerService.log("walkerMarkdownService unsubscribe");
+    if (this.subscribe.hasValue()) {
+      const lastSubscription = this.subscribe();
+      lastSubscription();
+    }
+  };
+
+  /**
    * Processes walker progress events and accumulates strategy results.
    * Should be called from walkerEmitter.
    *
@@ -471,6 +514,9 @@ export class WalkerMarkdownService {
       metric,
       context,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("WalkerMarkdownService not initialized. Call subscribe() before getting data.");
+    }
     const storage = this.getStorage(walkerName);
     return storage.getData(symbol, metric, context);
   };
@@ -511,6 +557,9 @@ export class WalkerMarkdownService {
       metric,
       context,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("WalkerMarkdownService not initialized. Call subscribe() before generating reports.");
+    }
     const storage = this.getStorage(walkerName);
     return storage.getReport(symbol, metric, context, strategyColumns, pnlColumns);
   };
@@ -558,6 +607,9 @@ export class WalkerMarkdownService {
       context,
       path,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("WalkerMarkdownService not initialized. Call subscribe() before dumping reports.");
+    }
     const storage = this.getStorage(walkerName);
     await storage.dump(symbol, metric, context, path, strategyColumns, pnlColumns);
   };
@@ -587,27 +639,6 @@ export class WalkerMarkdownService {
     this.getStorage.clear(walkerName);
   };
 
-  /**
-   * Initializes the service by subscribing to walker events.
-   * Uses singleshot to ensure initialization happens only once.
-   * Automatically called on first use.
-   *
-   * @example
-   * ```typescript
-   * const service = new WalkerMarkdownService();
-   * await service.init(); // Subscribe to walker events
-   * ```
-   */
-  protected init = singleshot(async () => {
-    this.loggerService.log("walkerMarkdownService init");
-    this.unsubscribe = walkerEmitter.subscribe(this.tick);
-  });
-
-  /**
-   * Function to unsubscribe from partial profit/loss events.
-   * Assigned during init().
-   */
-  public unsubscribe: Function;
 }
 
 export default WalkerMarkdownService;
