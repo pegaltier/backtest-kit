@@ -66,3 +66,21 @@ usePersistPartialAdapter(Ctor: TPersistBaseCtor<string, PartialData>): void;
 ```
 
 Registers a custom persistence adapter.
+
+### useJson
+
+```ts
+useJson(): void;
+```
+
+Switches to the default JSON persist adapter.
+All future persistence writes will use JSON storage.
+
+### useDummy
+
+```ts
+useDummy(): void;
+```
+
+Switches to a dummy persist adapter that discards all writes.
+All future persistence writes will be no-ops.

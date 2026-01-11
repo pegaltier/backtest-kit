@@ -178,7 +178,7 @@ Forces re-initialization of strategy on next operation.
 ### partialProfit
 
 ```ts
-partialProfit: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<void>
+partialProfit: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
 ```
 
 Executes partial close at profit level (moving toward TP).
@@ -191,7 +191,7 @@ Does not require execution context as this is a direct state mutation.
 ### partialLoss
 
 ```ts
-partialLoss: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<void>
+partialLoss: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
 ```
 
 Executes partial close at loss level (moving toward SL).

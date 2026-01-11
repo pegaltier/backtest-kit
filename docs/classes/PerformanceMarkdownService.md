@@ -39,6 +39,26 @@ getStorage: any
 Memoized function to get or create PerformanceStorage for a symbol-strategy-exchange-frame-backtest combination.
 Each combination gets its own isolated storage instance.
 
+### subscribe
+
+```ts
+subscribe: (() => () => void) & ISingleshotClearable
+```
+
+Subscribes to performance emitter to receive performance events.
+Protected against multiple subscriptions.
+Returns an unsubscribe function to stop receiving events.
+
+### unsubscribe
+
+```ts
+unsubscribe: () => Promise<void>
+```
+
+Unsubscribes from performance emitter to stop receiving events.
+Calls the unsubscribe function returned by subscribe().
+If not subscribed, does nothing.
+
 ### track
 
 ```ts
@@ -79,21 +99,3 @@ clear: (payload?: { symbol: string; strategyName: string; exchangeName: string; 
 ```
 
 Clears accumulated performance data from storage.
-
-### init
-
-```ts
-init: (() => Promise<void>) & ISingleshotClearable
-```
-
-Initializes the service by subscribing to performance events.
-Uses singleshot to ensure initialization happens only once.
-
-### unsubscribe
-
-```ts
-unsubscribe: Function
-```
-
-Function to unsubscribe from partial profit/loss events.
-Assigned during init().

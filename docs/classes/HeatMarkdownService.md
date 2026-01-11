@@ -43,6 +43,26 @@ getStorage: any
 Memoized function to get or create HeatmapStorage for exchange, frame and backtest mode.
 Each exchangeName + frameName + backtest mode combination gets its own isolated heatmap storage instance.
 
+### subscribe
+
+```ts
+subscribe: (() => () => void) & ISingleshotClearable
+```
+
+Subscribes to signal emitter to receive tick events.
+Protected against multiple subscriptions.
+Returns an unsubscribe function to stop receiving events.
+
+### unsubscribe
+
+```ts
+unsubscribe: () => Promise<void>
+```
+
+Unsubscribes from signal emitter to stop receiving tick events.
+Calls the unsubscribe function returned by subscribe().
+If not subscribed, does nothing.
+
 ### tick
 
 ```ts
@@ -90,22 +110,3 @@ clear: (payload?: { exchangeName: string; frameName: string; backtest: boolean; 
 Clears accumulated heatmap data from storage.
 If payload is provided, clears only that exchangeName+frameName+backtest combination's data.
 If payload is omitted, clears all data.
-
-### init
-
-```ts
-init: (() => Promise<void>) & ISingleshotClearable
-```
-
-Initializes the service by subscribing to signal events.
-Uses singleshot to ensure initialization happens only once.
-Automatically called on first use.
-
-### unsubscribe
-
-```ts
-unsubscribe: Function
-```
-
-Function to unsubscribe from backtest signal events.
-Assigned during init().

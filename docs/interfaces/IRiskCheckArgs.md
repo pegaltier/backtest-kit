@@ -22,7 +22,7 @@ Trading pair symbol (e.g., "BTCUSDT")
 ### pendingSignal
 
 ```ts
-pendingSignal: ISignalDto | ISignalRow
+pendingSignal: IPublicSignalRow
 ```
 
 Pending signal to apply
@@ -42,6 +42,14 @@ exchangeName: string
 ```
 
 Exchange name
+
+### riskName
+
+```ts
+riskName: string
+```
+
+Risk name
 
 ### frameName
 

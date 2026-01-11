@@ -82,6 +82,14 @@ percentSl: number
 
 Percentage progress towards stop loss (0-100%, 0 if moving towards TP)
 
+### pnl
+
+```ts
+pnl: IStrategyPnL
+```
+
+Unrealized PNL for active position with fees, slippage, and partial closes
+
 ### backtest
 
 ```ts

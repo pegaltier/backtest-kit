@@ -90,6 +90,30 @@ stopLoss: number
 
 Stop loss price
 
+### originalPriceTakeProfit
+
+```ts
+originalPriceTakeProfit: number
+```
+
+Original take profit price before modifications
+
+### originalPriceStopLoss
+
+```ts
+originalPriceStopLoss: number
+```
+
+Original stop loss price before modifications
+
+### totalExecuted
+
+```ts
+totalExecuted: number
+```
+
+Total executed percentage from partial closes
+
 ### closeTimestamp
 
 ```ts

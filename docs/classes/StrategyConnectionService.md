@@ -191,7 +191,7 @@ detects the scheduled signal was cancelled.
 ### partialProfit
 
 ```ts
-partialProfit: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<void>
+partialProfit: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
 ```
 
 Executes partial close at profit level (moving toward TP).
@@ -204,7 +204,7 @@ Delegates to ClientStrategy.partialProfit() with current execution context.
 ### partialLoss
 
 ```ts
-partialLoss: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<void>
+partialLoss: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
 ```
 
 Executes partial close at loss level (moving toward SL).

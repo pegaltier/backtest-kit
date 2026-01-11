@@ -6,7 +6,7 @@ group: docs
 # partialLoss
 
 ```ts
-declare function partialLoss(symbol: string, percentToClose: number): Promise<void>;
+declare function partialLoss(symbol: string, percentToClose: number): Promise<boolean>;
 ```
 
 Executes partial close at loss level (moving toward SL).

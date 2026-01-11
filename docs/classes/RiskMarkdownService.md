@@ -39,6 +39,26 @@ getStorage: any
 Memoized function to get or create ReportStorage for a symbol-strategy-exchange-frame-backtest combination.
 Each combination gets its own isolated storage instance.
 
+### subscribe
+
+```ts
+subscribe: (() => () => void) & ISingleshotClearable
+```
+
+Subscribes to risk rejection emitter to receive rejection events.
+Protected against multiple subscriptions.
+Returns an unsubscribe function to stop receiving events.
+
+### unsubscribe
+
+```ts
+unsubscribe: () => Promise<void>
+```
+
+Unsubscribes from risk rejection emitter to stop receiving events.
+Calls the unsubscribe function returned by subscribe().
+If not subscribed, does nothing.
+
 ### tickRejection
 
 ```ts
@@ -85,22 +105,3 @@ clear: (payload?: { symbol: string; strategyName: string; exchangeName: string; 
 Clears accumulated event data from storage.
 If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
 If nothing is provided, clears all data.
-
-### init
-
-```ts
-init: (() => Promise<void>) & ISingleshotClearable
-```
-
-Initializes the service by subscribing to risk rejection events.
-Uses singleshot to ensure initialization happens only once.
-Automatically called on first use.
-
-### unsubscribe
-
-```ts
-unsubscribe: Function
-```
-
-Function to unsubscribe from partial profit/loss events.
-Assigned during init().

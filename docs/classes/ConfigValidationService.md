@@ -14,7 +14,7 @@ Performs comprehensive validation on:
   (slippage + fees) to guarantee profitable trades when TakeProfit is hit
 - **Range constraints**: Validates MIN &lt; MAX relationships (e.g., StopLoss distances)
 - **Time-based parameters**: Ensures positive integer values for timeouts and lifetimes
-- **Candle parameters**: Validates retry counts, delays, and anomaly detection thresholds
+- **Candle parameters**: Validates retry counts, delays, anomaly detection thresholds, and max candles per request
 
 ## Constructor
 

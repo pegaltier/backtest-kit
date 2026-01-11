@@ -29,7 +29,7 @@ Trading pair symbol
 ### pendingSignal
 
 ```ts
-pendingSignal: ISignalDto
+pendingSignal: IRiskSignalRow
 ```
 
 Pending signal details

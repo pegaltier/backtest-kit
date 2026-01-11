@@ -117,7 +117,7 @@ Use case: Cancel a scheduled entry that is no longer desired without stopping th
 ### partialProfit
 
 ```ts
-partialProfit: (symbol: string, percentToClose: number, currentPrice: number, backtest: boolean) => Promise<void>
+partialProfit: (symbol: string, percentToClose: number, currentPrice: number, backtest: boolean) => Promise<boolean>
 ```
 
 Executes partial close at profit level (moving toward TP).
@@ -130,14 +130,14 @@ Validations:
 - Throws if no pending signal exists
 - Throws if called on scheduled signal (not yet activated)
 - Throws if percentToClose &lt;= 0 or &gt; 100
-- Does nothing if _totalClosed + percentToClose &gt; 100 (prevents over-closing)
+- Returns false if _totalClosed + percentToClose &gt; 100 (prevents over-closing)
 
 Use case: User-controlled partial close triggered from onPartialProfit callback.
 
 ### partialLoss
 
 ```ts
-partialLoss: (symbol: string, percentToClose: number, currentPrice: number, backtest: boolean) => Promise<void>
+partialLoss: (symbol: string, percentToClose: number, currentPrice: number, backtest: boolean) => Promise<boolean>
 ```
 
 Executes partial close at loss level (moving toward SL).
@@ -150,7 +150,7 @@ Validations:
 - Throws if no pending signal exists
 - Throws if called on scheduled signal (not yet activated)
 - Throws if percentToClose &lt;= 0 or &gt; 100
-- Does nothing if _totalClosed + percentToClose &gt; 100 (prevents over-closing)
+- Returns false if _totalClosed + percentToClose &gt; 100 (prevents over-closing)
 
 Use case: User-controlled partial close triggered from onPartialLoss callback.
 

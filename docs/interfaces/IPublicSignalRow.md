@@ -34,3 +34,14 @@ originalPriceTakeProfit: number
 Original take-profit price set at signal creation.
 Remains unchanged even if trailing take-profit modifies effective TP.
 Used for user visibility of initial TP parameters.
+
+### totalExecuted
+
+```ts
+totalExecuted: number
+```
+
+Total executed percentage from partial closes.
+Sum of all percent values from _partial array (both profit and loss types).
+Represents the total portion of the position that has been closed through partial executions.
+Range: 0-100. Value of 0 means no partial closes, 100 means position fully closed through partials.

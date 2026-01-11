@@ -87,21 +87,22 @@ Clears accumulated signal data from storage.
 If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
 If nothing is provided, clears all data.
 
-### init
+### subscribe
 
 ```ts
-init: (() => Promise<void>) & ISingleshotClearable
+subscribe: (() => () => void) & ISingleshotClearable
 ```
 
-Initializes the service by subscribing to backtest signal events.
-Uses singleshot to ensure initialization happens only once.
-Automatically called on first use.
+Subscribes to backtest signal emitter to receive tick events.
+Protected against multiple subscriptions.
+Returns an unsubscribe function to stop receiving events.
 
 ### unsubscribe
 
 ```ts
-unsubscribe: Function
+unsubscribe: () => Promise<void>
 ```
 
-Function to unsubscribe from backtest signal events.
-Assigned during init().
+Unsubscribes from backtest signal emitter to stop receiving tick events.
+Calls the unsubscribe function returned by subscribe().
+If not subscribed, does nothing.

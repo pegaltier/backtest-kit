@@ -1,12 +1,12 @@
 ---
-title: docs/type/Function$1
+title: docs/type/Function
 group: docs
 ---
 
-# Function$1
+# Function
 
 ```ts
-type Function$1 = (...args: any[]) => any;
+type Function = (...args: any[]) => any;
 ```
 
 Generic function type that accepts any arguments and returns any value.

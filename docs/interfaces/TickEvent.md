@@ -90,6 +90,30 @@ stopLoss: number
 
 Stop loss price (only for opened/active/closed)
 
+### originalPriceTakeProfit
+
+```ts
+originalPriceTakeProfit: number
+```
+
+Original take profit price before modifications (only for opened/active/closed)
+
+### originalPriceStopLoss
+
+```ts
+originalPriceStopLoss: number
+```
+
+Original stop loss price before modifications (only for opened/active/closed)
+
+### totalExecuted
+
+```ts
+totalExecuted: number
+```
+
+Total executed percentage from partial closes (only for opened/active/closed)
+
 ### percentTp
 
 ```ts
@@ -112,7 +136,7 @@ Percentage progress towards stop loss (only for active)
 pnl: number
 ```
 
-PNL percentage (only for closed)
+PNL percentage (for active: unrealized, for closed: realized)
 
 ### closeReason
 

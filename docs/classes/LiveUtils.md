@@ -111,7 +111,7 @@ Does NOT set stop flag - strategy can continue generating new signals.
 ### partialProfit
 
 ```ts
-partialProfit: (symbol: string, percentToClose: number, currentPrice: number, context: { strategyName: string; exchangeName: string; }) => Promise<void>
+partialProfit: (symbol: string, percentToClose: number, currentPrice: number, context: { strategyName: string; exchangeName: string; }) => Promise<boolean>
 ```
 
 Executes partial close at profit level (moving toward TP).
@@ -122,7 +122,7 @@ Price must be moving toward take profit (in profit direction).
 ### partialLoss
 
 ```ts
-partialLoss: (symbol: string, percentToClose: number, currentPrice: number, context: { strategyName: string; exchangeName: string; }) => Promise<void>
+partialLoss: (symbol: string, percentToClose: number, currentPrice: number, context: { strategyName: string; exchangeName: string; }) => Promise<boolean>
 ```
 
 Executes partial close at loss level (moving toward SL).

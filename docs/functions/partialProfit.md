@@ -6,7 +6,7 @@ group: docs
 # partialProfit
 
 ```ts
-declare function partialProfit(symbol: string, percentToClose: number): Promise<void>;
+declare function partialProfit(symbol: string, percentToClose: number): Promise<boolean>;
 ```
 
 Executes partial close at profit level (moving toward TP).
