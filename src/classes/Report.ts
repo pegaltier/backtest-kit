@@ -28,7 +28,10 @@ interface IReportTarget {
 
 export type ReportName = keyof IReportTarget;
 
-export type TReportBase = InstanceType<typeof ReportBase>;
+export type TReportBase = {
+    waitForInit(initial: boolean): Promise<void>;
+    write<T = any>(data: T): Promise<void>;
+}
 
 export type TReportBaseCtor = new (reportName: ReportName, baseDir: string) => TReportBase;
 

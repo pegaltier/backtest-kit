@@ -1,6 +1,7 @@
 import * as di_scoped from 'di-scoped';
 import * as functools_kit from 'functools-kit';
 import { Subject } from 'functools-kit';
+import { WriteStream } from 'fs';
 
 /**
  * Type alias for enum objects with string key-value pairs
@@ -6023,7 +6024,7 @@ interface RiskStatisticsModel {
     byStrategy: Record<string, number>;
 }
 
-declare const BASE_WAIT_FOR_INIT_SYMBOL: unique symbol;
+declare const BASE_WAIT_FOR_INIT_SYMBOL$1: unique symbol;
 /**
  * Signal data stored in persistence layer.
  * Contains nullable signal for atomic updates.
@@ -6177,7 +6178,7 @@ declare const PersistBase: {
          * @returns AsyncGenerator yielding up to total entities
          */
         take<T extends IEntity = IEntity>(total: number, predicate?: (value: T) => boolean): AsyncGenerator<T>;
-        [BASE_WAIT_FOR_INIT_SYMBOL]: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+        [BASE_WAIT_FOR_INIT_SYMBOL$1]: (() => Promise<void>) & functools_kit.ISingleshotClearable;
         /**
          * Async iterator implementation.
          * Delegates to values() generator.
@@ -6605,6 +6606,46 @@ declare class PersistBreakevenUtils {
  */
 declare const PersistBreakevenAdapter: PersistBreakevenUtils;
 
+declare const BASE_WAIT_FOR_INIT_SYMBOL: unique symbol;
+interface IReportTarget {
+    risk: boolean;
+    breakeven: boolean;
+    partial: boolean;
+    heat: boolean;
+    walker: boolean;
+    performance: boolean;
+    schedule: boolean;
+    live: boolean;
+    backtest: boolean;
+}
+type ReportName = keyof IReportTarget;
+type TReportBase = {
+    waitForInit(initial: boolean): Promise<void>;
+    write<T = any>(data: T): Promise<void>;
+};
+type TReportBaseCtor = new (reportName: ReportName, baseDir: string) => TReportBase;
+declare const ReportBase: {
+    new (reportName: ReportName, baseDir?: string): {
+        _filePath: string;
+        _stream: WriteStream | null;
+        readonly reportName: ReportName;
+        readonly baseDir: string;
+        waitForInit(initial: boolean): Promise<void>;
+        write<T = any>(data: T): Promise<void>;
+        [BASE_WAIT_FOR_INIT_SYMBOL]: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+    };
+};
+declare class ReportUtils {
+    enable: ({ backtest: bt, breakeven, heat, live, partial, performance, risk, schedule, walker, }?: Partial<IReportTarget>) => (...args: any[]) => any;
+}
+declare class ReportAdapter extends ReportUtils {
+    private ReportFactory;
+    private getReportStorage;
+    useReportAdapter(Ctor: TReportBaseCtor): void;
+    writeData: <T = any>(reportName: ReportName, data: T) => Promise<void>;
+}
+declare const Report: ReportAdapter;
+
 /**
  * Type alias for column configuration used in backtest markdown reports.
  *
@@ -6782,22 +6823,33 @@ declare class BacktestMarkdownService {
         backtest: boolean;
     }) => Promise<void>;
     /**
-     * Initializes the service by subscribing to backtest signal events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
+     * Subscribes to backtest signal emitter to receive tick events.
+     * Protected against multiple subscriptions.
+     * Returns an unsubscribe function to stop receiving events.
      *
      * @example
      * ```typescript
      * const service = new BacktestMarkdownService();
-     * await service.init(); // Subscribe to backtest events
+     * const unsubscribe = service.subscribe();
+     * // ... later
+     * unsubscribe();
      * ```
      */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
     /**
-     * Function to unsubscribe from backtest signal events.
-     * Assigned during init().
+     * Unsubscribes from backtest signal emitter to stop receiving tick events.
+     * Calls the unsubscribe function returned by subscribe().
+     * If not subscribed, does nothing.
+     *
+     * @example
+     * ```typescript
+     * const service = new BacktestMarkdownService();
+     * service.subscribe();
+     * // ... later
+     * service.unsubscribe();
+     * ```
      */
-    unsubscribe: Function;
+    unsubscribe: () => Promise<void>;
 }
 
 /**
@@ -7366,6 +7418,34 @@ declare class LiveMarkdownService {
      */
     private getStorage;
     /**
+     * Subscribes to live signal emitter to receive tick events.
+     * Protected against multiple subscriptions.
+     * Returns an unsubscribe function to stop receiving events.
+     *
+     * @example
+     * ```typescript
+     * const service = new LiveMarkdownService();
+     * const unsubscribe = service.subscribe();
+     * // ... later
+     * unsubscribe();
+     * ```
+     */
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    /**
+     * Unsubscribes from live signal emitter to stop receiving tick events.
+     * Calls the unsubscribe function returned by subscribe().
+     * If not subscribed, does nothing.
+     *
+     * @example
+     * ```typescript
+     * const service = new LiveMarkdownService();
+     * service.subscribe();
+     * // ... later
+     * service.unsubscribe();
+     * ```
+     */
+    unsubscribe: () => Promise<void>;
+    /**
      * Processes tick events and accumulates all event types.
      * Should be called from IStrategyCallbacks.onTick.
      *
@@ -7476,23 +7556,6 @@ declare class LiveMarkdownService {
         frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to live signal events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new LiveMarkdownService();
-     * await service.init(); // Subscribe to live events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-    /**
-     * Function to unsubscribe from backtest signal events.
-     * Assigned during init().
-     */
-    unsubscribe: Function;
 }
 
 /**
@@ -8036,6 +8099,34 @@ declare class ScheduleMarkdownService {
      */
     private getStorage;
     /**
+     * Subscribes to signal emitter to receive scheduled signal events.
+     * Protected against multiple subscriptions.
+     * Returns an unsubscribe function to stop receiving events.
+     *
+     * @example
+     * ```typescript
+     * const service = new ScheduleMarkdownService();
+     * const unsubscribe = service.subscribe();
+     * // ... later
+     * unsubscribe();
+     * ```
+     */
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    /**
+     * Unsubscribes from signal emitter to stop receiving scheduled signal events.
+     * Calls the unsubscribe function returned by subscribe().
+     * If not subscribed, does nothing.
+     *
+     * @example
+     * ```typescript
+     * const service = new ScheduleMarkdownService();
+     * service.subscribe();
+     * // ... later
+     * service.unsubscribe();
+     * ```
+     */
+    unsubscribe: () => Promise<void>;
+    /**
      * Processes tick events and accumulates scheduled/opened/cancelled events.
      * Should be called from signalEmitter subscription.
      *
@@ -8139,23 +8230,6 @@ declare class ScheduleMarkdownService {
         frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to live signal events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new ScheduleMarkdownService();
-     * await service.init(); // Subscribe to live events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-    /**
-     * Function to unsubscribe from partial profit/loss events.
-     * Assigned during init().
-     */
-    unsubscribe: Function;
 }
 
 /**
@@ -8325,6 +8399,34 @@ declare class PerformanceMarkdownService {
      */
     private getStorage;
     /**
+     * Subscribes to performance emitter to receive performance events.
+     * Protected against multiple subscriptions.
+     * Returns an unsubscribe function to stop receiving events.
+     *
+     * @example
+     * ```typescript
+     * const service = new PerformanceMarkdownService();
+     * const unsubscribe = service.subscribe();
+     * // ... later
+     * unsubscribe();
+     * ```
+     */
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    /**
+     * Unsubscribes from performance emitter to stop receiving events.
+     * Calls the unsubscribe function returned by subscribe().
+     * If not subscribed, does nothing.
+     *
+     * @example
+     * ```typescript
+     * const service = new PerformanceMarkdownService();
+     * service.subscribe();
+     * // ... later
+     * service.unsubscribe();
+     * ```
+     */
+    unsubscribe: () => Promise<void>;
+    /**
      * Processes performance events and accumulates metrics.
      * Should be called from performance tracking code.
      *
@@ -8401,16 +8503,6 @@ declare class PerformanceMarkdownService {
         frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to performance events.
-     * Uses singleshot to ensure initialization happens only once.
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-    /**
-     * Function to unsubscribe from partial profit/loss events.
-     * Assigned during init().
-     */
-    unsubscribe: Function;
 }
 
 /**
@@ -8623,6 +8715,34 @@ declare class WalkerMarkdownService {
      */
     private getStorage;
     /**
+     * Subscribes to walker emitter to receive walker progress events.
+     * Protected against multiple subscriptions.
+     * Returns an unsubscribe function to stop receiving events.
+     *
+     * @example
+     * ```typescript
+     * const service = new WalkerMarkdownService();
+     * const unsubscribe = service.subscribe();
+     * // ... later
+     * unsubscribe();
+     * ```
+     */
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    /**
+     * Unsubscribes from walker emitter to stop receiving events.
+     * Calls the unsubscribe function returned by subscribe().
+     * If not subscribed, does nothing.
+     *
+     * @example
+     * ```typescript
+     * const service = new WalkerMarkdownService();
+     * service.subscribe();
+     * // ... later
+     * service.unsubscribe();
+     * ```
+     */
+    unsubscribe: () => Promise<void>;
+    /**
      * Processes walker progress events and accumulates strategy results.
      * Should be called from walkerEmitter.
      *
@@ -8726,23 +8846,6 @@ declare class WalkerMarkdownService {
      * ```
      */
     clear: (walkerName?: WalkerName) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to walker events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new WalkerMarkdownService();
-     * await service.init(); // Subscribe to walker events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-    /**
-     * Function to unsubscribe from partial profit/loss events.
-     * Assigned during init().
-     */
-    unsubscribe: Function;
 }
 
 /**
@@ -8987,6 +9090,34 @@ declare class HeatMarkdownService {
      */
     private getStorage;
     /**
+     * Subscribes to signal emitter to receive tick events.
+     * Protected against multiple subscriptions.
+     * Returns an unsubscribe function to stop receiving events.
+     *
+     * @example
+     * ```typescript
+     * const service = new HeatMarkdownService();
+     * const unsubscribe = service.subscribe();
+     * // ... later
+     * unsubscribe();
+     * ```
+     */
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    /**
+     * Unsubscribes from signal emitter to stop receiving tick events.
+     * Calls the unsubscribe function returned by subscribe().
+     * If not subscribed, does nothing.
+     *
+     * @example
+     * ```typescript
+     * const service = new HeatMarkdownService();
+     * service.subscribe();
+     * // ... later
+     * service.unsubscribe();
+     * ```
+     */
+    unsubscribe: () => Promise<void>;
+    /**
      * Processes tick events and accumulates closed signals.
      * Should be called from signal emitter subscription.
      *
@@ -9093,23 +9224,6 @@ declare class HeatMarkdownService {
         frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to signal events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new HeatMarkdownService();
-     * await service.init(); // Subscribe to signal events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-    /**
-     * Function to unsubscribe from backtest signal events.
-     * Assigned during init().
-     */
-    unsubscribe: Function;
 }
 
 /**
@@ -9511,6 +9625,34 @@ declare class PartialMarkdownService {
      */
     private getStorage;
     /**
+     * Subscribes to partial profit/loss signal emitters to receive events.
+     * Protected against multiple subscriptions.
+     * Returns an unsubscribe function to stop receiving events.
+     *
+     * @example
+     * ```typescript
+     * const service = new PartialMarkdownService();
+     * const unsubscribe = service.subscribe();
+     * // ... later
+     * unsubscribe();
+     * ```
+     */
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    /**
+     * Unsubscribes from partial profit/loss signal emitters to stop receiving events.
+     * Calls the unsubscribe function returned by subscribe().
+     * If not subscribed, does nothing.
+     *
+     * @example
+     * ```typescript
+     * const service = new PartialMarkdownService();
+     * service.subscribe();
+     * // ... later
+     * service.unsubscribe();
+     * ```
+     */
+    unsubscribe: () => Promise<void>;
+    /**
      * Processes profit events and accumulates them.
      * Should be called from partialProfitSubject subscription.
      *
@@ -9625,23 +9767,6 @@ declare class PartialMarkdownService {
         frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to partial profit/loss events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new PartialMarkdownService();
-     * await service.init(); // Subscribe to profit/loss events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-    /**
-     * Function to unsubscribe from partial profit/loss events.
-     * Assigned during init().
-     */
-    unsubscribe: Function;
 }
 
 /**
@@ -9948,6 +10073,34 @@ declare class RiskMarkdownService {
      */
     private getStorage;
     /**
+     * Subscribes to risk rejection emitter to receive rejection events.
+     * Protected against multiple subscriptions.
+     * Returns an unsubscribe function to stop receiving events.
+     *
+     * @example
+     * ```typescript
+     * const service = new RiskMarkdownService();
+     * const unsubscribe = service.subscribe();
+     * // ... later
+     * unsubscribe();
+     * ```
+     */
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    /**
+     * Unsubscribes from risk rejection emitter to stop receiving events.
+     * Calls the unsubscribe function returned by subscribe().
+     * If not subscribed, does nothing.
+     *
+     * @example
+     * ```typescript
+     * const service = new RiskMarkdownService();
+     * service.subscribe();
+     * // ... later
+     * service.unsubscribe();
+     * ```
+     */
+    unsubscribe: () => Promise<void>;
+    /**
      * Processes risk rejection events and accumulates them.
      * Should be called from riskSubject subscription.
      *
@@ -10049,23 +10202,6 @@ declare class RiskMarkdownService {
         frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to risk rejection events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new RiskMarkdownService();
-     * await service.init(); // Subscribe to rejection events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-    /**
-     * Function to unsubscribe from partial profit/loss events.
-     * Assigned during init().
-     */
-    unsubscribe: Function;
 }
 
 /**
@@ -10341,7 +10477,7 @@ declare const Exchange: ExchangeUtils;
  * Generic function type that accepts any arguments and returns any value.
  * Used as a constraint for cached functions.
  */
-type Function$1 = (...args: any[]) => any;
+type Function = (...args: any[]) => any;
 /**
  * Utility class for function caching with timeframe-based invalidation.
  *
@@ -10386,7 +10522,7 @@ declare class CacheUtils {
      * const result2 = cachedCalculate("BTCUSDT", 14); // Cached (same 15m interval)
      * ```
      */
-    fn: <T extends Function$1>(run: T, context: {
+    fn: <T extends Function>(run: T, context: {
         interval: CandleInterval;
     }) => T;
     /**
@@ -10418,7 +10554,7 @@ declare class CacheUtils {
      * Cache.flush();
      * ```
      */
-    flush: <T extends Function$1>(run?: T) => void;
+    flush: <T extends Function>(run?: T) => void;
     /**
      * Clear cached value for current execution context of a specific function.
      *
@@ -10448,7 +10584,7 @@ declare class CacheUtils {
      * // Other contexts (different strategies/exchanges) remain cached
      * ```
      */
-    clear: <T extends Function$1>(run: T) => void;
+    clear: <T extends Function>(run: T) => void;
 }
 /**
  * Singleton instance of CacheUtils for convenient function caching.
@@ -10621,6 +10757,34 @@ declare class BreakevenMarkdownService {
      */
     private getStorage;
     /**
+     * Subscribes to breakeven signal emitter to receive events.
+     * Protected against multiple subscriptions.
+     * Returns an unsubscribe function to stop receiving events.
+     *
+     * @example
+     * ```typescript
+     * const service = new BreakevenMarkdownService();
+     * const unsubscribe = service.subscribe();
+     * // ... later
+     * unsubscribe();
+     * ```
+     */
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    /**
+     * Unsubscribes from breakeven signal emitter to stop receiving events.
+     * Calls the unsubscribe function returned by subscribe().
+     * If not subscribed, does nothing.
+     *
+     * @example
+     * ```typescript
+     * const service = new BreakevenMarkdownService();
+     * service.subscribe();
+     * // ... later
+     * service.unsubscribe();
+     * ```
+     */
+    unsubscribe: () => Promise<void>;
+    /**
      * Processes breakeven events and accumulates them.
      * Should be called from breakevenSubject subscription.
      *
@@ -10722,23 +10886,6 @@ declare class BreakevenMarkdownService {
         frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to breakeven events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new BreakevenMarkdownService();
-     * await service.init(); // Subscribe to breakeven events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-    /**
-     * Function to unsubscribe from breakeven events.
-     * Assigned during init().
-     */
-    unsubscribe: Function;
 }
 
 /**
@@ -10895,6 +11042,197 @@ declare class BreakevenUtils {
  * ```
  */
 declare const Breakeven: BreakevenUtils;
+
+/**
+ * Configuration interface for selective markdown service enablement.
+ *
+ * Controls which markdown report services should be activated.
+ * Each property corresponds to a specific markdown service type.
+ *
+ * @property backtest - Enable backtest markdown reports (main strategy results)
+ * @property breakeven - Enable breakeven event tracking reports
+ * @property partial - Enable partial profit/loss event reports
+ * @property heat - Enable heatmap portfolio analysis reports
+ * @property walker - Enable walker optimization comparison reports
+ * @property performance - Enable performance metrics and bottleneck analysis
+ * @property risk - Enable risk rejection tracking reports
+ * @property schedule - Enable scheduled signal tracking reports
+ * @property live - Enable live trading event reports
+ */
+interface IMarkdownTarget {
+    risk: boolean;
+    breakeven: boolean;
+    partial: boolean;
+    heat: boolean;
+    walker: boolean;
+    performance: boolean;
+    schedule: boolean;
+    live: boolean;
+    backtest: boolean;
+}
+/**
+ * MarkdownUtils class provides centralized control for markdown report services.
+ *
+ * Manages subscription lifecycle for all markdown services, allowing selective
+ * activation of report generation and automatic cleanup of resources.
+ *
+ * Features:
+ * - Selective service activation (choose which reports to generate)
+ * - Automatic subscription management
+ * - Single unsubscribe function for all services
+ * - Prevention of multiple subscriptions
+ * - Memory leak prevention through proper cleanup
+ *
+ * @example
+ * ```typescript
+ * import { Markdown } from "backtest-kit";
+ *
+ * // Enable all markdown services
+ * const unsubscribe = Markdown.enable();
+ *
+ * // Run backtest...
+ *
+ * // Cleanup when done
+ * unsubscribe();
+ * ```
+ *
+ * @example
+ * ```typescript
+ * import { Markdown } from "backtest-kit";
+ *
+ * // Enable only specific services
+ * const unsubscribe = Markdown.enable({
+ *   backtest: true,
+ *   performance: true,
+ *   heat: true
+ * });
+ *
+ * // Run backtest...
+ * // Only backtest, performance, and heat reports will be generated
+ *
+ * // Cleanup
+ * unsubscribe();
+ * ```
+ *
+ * @example
+ * ```typescript
+ * import { Markdown } from "backtest-kit";
+ *
+ * // Use in lifecycle hooks
+ * async function runBacktest() {
+ *   const unsubscribe = Markdown.enable();
+ *
+ *   try {
+ *     // Run backtest
+ *     await bt.backtest(...);
+ *   } finally {
+ *     // Always cleanup
+ *     unsubscribe();
+ *   }
+ * }
+ * ```
+ */
+declare class MarkdownUtils {
+    /**
+     * Enables markdown report services selectively.
+     *
+     * Subscribes to specified markdown services and returns a cleanup function
+     * that unsubscribes from all enabled services at once.
+     *
+     * Each enabled service will:
+     * - Start listening to relevant events
+     * - Accumulate data for reports
+     * - Generate markdown files when requested
+     *
+     * IMPORTANT: Always call the returned unsubscribe function to prevent memory leaks.
+     *
+     * @param config - Service configuration object. Defaults to enabling all services.
+     * @param config.backtest - Enable backtest result reports with full trade history
+     * @param config.breakeven - Enable breakeven event tracking (when stop loss moves to entry)
+     * @param config.partial - Enable partial profit/loss event tracking
+     * @param config.heat - Enable portfolio heatmap analysis across all symbols
+     * @param config.walker - Enable walker strategy comparison and optimization reports
+     * @param config.performance - Enable performance bottleneck analysis
+     * @param config.risk - Enable risk rejection tracking (signals blocked by risk limits)
+     * @param config.schedule - Enable scheduled signal tracking (signals waiting for trigger)
+     * @param config.live - Enable live trading event reports (all tick events)
+     *
+     * @returns Cleanup function that unsubscribes from all enabled services
+     *
+     * @example
+     * ```typescript
+     * // Enable all services (default behavior)
+     * const unsubscribe = Markdown.enable();
+     *
+     * // Run backtest
+     * await bt.backtest(...);
+     *
+     * // Generate reports
+     * await bt.Backtest.dump("BTCUSDT", "my-strategy");
+     * await bt.Performance.dump("BTCUSDT", "my-strategy");
+     *
+     * // Cleanup
+     * unsubscribe();
+     * ```
+     *
+     * @example
+     * ```typescript
+     * // Enable only essential services
+     * const unsubscribe = Markdown.enable({
+     *   backtest: true,    // Main results
+     *   performance: true, // Bottlenecks
+     *   risk: true        // Rejections
+     * });
+     *
+     * // Other services (breakeven, partial, heat, etc.) won't collect data
+     * ```
+     *
+     * @example
+     * ```typescript
+     * // Safe cleanup pattern
+     * let unsubscribe: Function;
+     *
+     * try {
+     *   unsubscribe = Markdown.enable({
+     *     backtest: true,
+     *     heat: true
+     *   });
+     *
+     *   await bt.backtest(...);
+     *   await bt.Backtest.dump("BTCUSDT", "my-strategy");
+     * } finally {
+     *   unsubscribe?.();
+     * }
+     * ```
+     */
+    enable: ({ backtest: bt, breakeven, heat, live, partial, performance, risk, schedule, walker, }?: Partial<IMarkdownTarget>) => (...args: any[]) => any;
+}
+/**
+ * Singleton instance of MarkdownUtils for markdown service management.
+ *
+ * Provides centralized control over all markdown report generation services.
+ * Use this instance to enable/disable markdown services throughout your application.
+ *
+ * @example
+ * ```typescript
+ * import { Markdown } from "backtest-kit";
+ *
+ * // Enable markdown services before backtesting
+ * const unsubscribe = Markdown.enable();
+ *
+ * // Run your backtest
+ * await bt.backtest(...);
+ *
+ * // Generate reports
+ * await bt.Backtest.dump("BTCUSDT", "my-strategy");
+ *
+ * // Cleanup
+ * unsubscribe();
+ * ```
+ *
+ * @see MarkdownUtils for detailed API documentation
+ */
+declare const Markdown: MarkdownUtils;
 
 /**
  * Contract for walker stop signal events.
@@ -14582,6 +14920,70 @@ declare class ColumnValidationService {
     validate: () => void;
 }
 
+declare class BacktestReportService {
+    private readonly loggerService;
+    private tick;
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    unsubscribe: () => Promise<void>;
+}
+
+declare class LiveReportService {
+    private readonly loggerService;
+    private tick;
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    unsubscribe: () => Promise<void>;
+}
+
+declare class ScheduleReportService {
+    private readonly loggerService;
+    private tick;
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    unsubscribe: () => Promise<void>;
+}
+
+declare class PerformanceReportService {
+    private readonly loggerService;
+    private track;
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    unsubscribe: () => Promise<void>;
+}
+
+declare class WalkerReportService {
+    private readonly loggerService;
+    private tick;
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    unsubscribe: () => Promise<void>;
+}
+
+declare class HeatReportService {
+    private readonly loggerService;
+    private tick;
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    unsubscribe: () => Promise<void>;
+}
+
+declare class PartialReportService {
+    private readonly loggerService;
+    private tickProfit;
+    private tickLoss;
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    unsubscribe: () => Promise<void>;
+}
+
+declare class BreakevenReportService {
+    private readonly loggerService;
+    private tickBreakeven;
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    unsubscribe: () => Promise<void>;
+}
+
+declare class RiskReportService {
+    private readonly loggerService;
+    private tickRejection;
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    unsubscribe: () => Promise<void>;
+}
+
 declare const backtest: {
     optimizerTemplateService: OptimizerTemplateService;
     exchangeValidationService: ExchangeValidationService;
@@ -14593,6 +14995,15 @@ declare const backtest: {
     optimizerValidationService: OptimizerValidationService;
     configValidationService: ConfigValidationService;
     columnValidationService: ColumnValidationService;
+    backtestReportService: BacktestReportService;
+    liveReportService: LiveReportService;
+    scheduleReportService: ScheduleReportService;
+    performanceReportService: PerformanceReportService;
+    walkerReportService: WalkerReportService;
+    heatReportService: HeatReportService;
+    partialReportService: PartialReportService;
+    breakevenReportService: BreakevenReportService;
+    riskReportService: RiskReportService;
     backtestMarkdownService: BacktestMarkdownService;
     liveMarkdownService: LiveMarkdownService;
     scheduleMarkdownService: ScheduleMarkdownService;
@@ -14644,4 +15055,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, type BootstrapNotification, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, type PingContract, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TPersistBase, type TPersistBaseCtor, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, breakeven, cancel, dumpSignal, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenBreakeven, listenBreakevenOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenPing, listenPingOnce, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, partialLoss, partialProfit, setColumns, setConfig, setLogger, stop, trailingStop, trailingTake, validate };
+export { Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, type BootstrapNotification, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, type PingContract, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, breakeven, cancel, dumpSignal, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenBreakeven, listenBreakevenOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenPing, listenPingOnce, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, partialLoss, partialProfit, setColumns, setConfig, setLogger, stop, trailingStop, trailingTake, validate };

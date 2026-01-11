@@ -23,10 +23,11 @@ export class RiskReportService {
       exchangeName: data.exchangeName,
       frameName: data.frameName,
       backtest: data.backtest,
-      riskName: data.riskName,
-      reason: data.reason,
-      currentExposure: data.currentExposure,
-      maxExposure: data.maxExposure,
+      currentPrice: data.currentPrice,
+      activePositionCount: data.activePositionCount,
+      rejectionId: data.rejectionId,
+      rejectionNote: data.rejectionNote,
+      pendingSignal: data.pendingSignal,
     });
   };
 
