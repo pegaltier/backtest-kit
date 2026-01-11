@@ -1989,6 +1989,12 @@ declare const GLOBAL_CONFIG: {
      */
     CC_GET_CANDLES_RETRY_DELAY_MS: number;
     /**
+     * Maximum number of candles to request per single API call.
+     * If a request exceeds this limit, data will be fetched using pagination.
+     * Default: 1000 candles per request
+     */
+    CC_MAX_CANDLES_PER_REQUEST: number;
+    /**
      * Maximum allowed deviation factor for price anomaly detection.
      * Price should not be more than this factor lower than reference price.
      *
@@ -2135,6 +2141,7 @@ declare function getConfig(): {
     CC_MAX_SIGNAL_GENERATION_SECONDS: number;
     CC_GET_CANDLES_RETRY_COUNT: number;
     CC_GET_CANDLES_RETRY_DELAY_MS: number;
+    CC_MAX_CANDLES_PER_REQUEST: number;
     CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR: number;
     CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN: number;
     CC_REPORT_SHOW_SIGNAL_NOTE: boolean;
@@ -2166,6 +2173,7 @@ declare function getDefaultConfig(): Readonly<{
     CC_MAX_SIGNAL_GENERATION_SECONDS: number;
     CC_GET_CANDLES_RETRY_COUNT: number;
     CC_GET_CANDLES_RETRY_DELAY_MS: number;
+    CC_MAX_CANDLES_PER_REQUEST: number;
     CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR: number;
     CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN: number;
     CC_REPORT_SHOW_SIGNAL_NOTE: boolean;
@@ -15204,7 +15212,7 @@ declare class OutlineMarkdownService {
  *   (slippage + fees) to guarantee profitable trades when TakeProfit is hit
  * - **Range constraints**: Validates MIN < MAX relationships (e.g., StopLoss distances)
  * - **Time-based parameters**: Ensures positive integer values for timeouts and lifetimes
- * - **Candle parameters**: Validates retry counts, delays, and anomaly detection thresholds
+ * - **Candle parameters**: Validates retry counts, delays, anomaly detection thresholds, and max candles per request
  *
  * @throws {Error} If any validation fails, throws with detailed breakdown of all errors
  *

@@ -72,6 +72,12 @@ export const GLOBAL_CONFIG = {
    * Default: 5000 ms (5 seconds)
    */
   CC_GET_CANDLES_RETRY_DELAY_MS: 5_000,
+  /**
+   * Maximum number of candles to request per single API call.
+   * If a request exceeds this limit, data will be fetched using pagination.
+   * Default: 1000 candles per request
+   */
+  CC_MAX_CANDLES_PER_REQUEST: 1_000,
 
   /**
    * Maximum allowed deviation factor for price anomaly detection.

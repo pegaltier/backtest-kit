@@ -13,7 +13,7 @@ import { GLOBAL_CONFIG } from "../../../config/params";
  *   (slippage + fees) to guarantee profitable trades when TakeProfit is hit
  * - **Range constraints**: Validates MIN < MAX relationships (e.g., StopLoss distances)
  * - **Time-based parameters**: Ensures positive integer values for timeouts and lifetimes
- * - **Candle parameters**: Validates retry counts, delays, and anomaly detection thresholds
+ * - **Candle parameters**: Validates retry counts, delays, anomaly detection thresholds, and max candles per request
  *
  * @throws {Error} If any validation fails, throws with detailed breakdown of all errors
  *
@@ -164,6 +164,12 @@ export class ConfigValidationService {
     if (!Number.isInteger(GLOBAL_CONFIG.CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN) || GLOBAL_CONFIG.CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN <= 0) {
       errors.push(
         `CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN must be a positive integer, got ${GLOBAL_CONFIG.CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN}`
+      );
+    }
+
+    if (!Number.isInteger(GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST) || GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST <= 0) {
+      errors.push(
+        `CC_MAX_CANDLES_PER_REQUEST must be a positive integer, got ${GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST}`
       );
     }
 
