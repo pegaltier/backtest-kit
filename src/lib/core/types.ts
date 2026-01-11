@@ -73,6 +73,18 @@ const markdownServices = {
     riskMarkdownService: Symbol('riskMarkdownService'),
 }
 
+const reportServices = {
+    backtestReportService: Symbol('backtestReportService'),
+    liveReportService: Symbol('liveReportService'),
+    scheduleReportService: Symbol('scheduleReportService'),
+    performanceReportService: Symbol('performanceReportService'),
+    walkerReportService: Symbol('walkerReportService'),
+    heatReportService: Symbol('heatReportService'),
+    partialReportService: Symbol('partialReportService'),
+    breakevenReportService: Symbol('breakevenReportService'),
+    riskReportService: Symbol('riskReportService'),
+}
+
 const validationServices = {
     exchangeValidationService: Symbol('exchangeValidationService'),
     strategyValidationService: Symbol('strategyValidationService'),
@@ -100,6 +112,7 @@ export const TYPES = {
     ...logicPrivateServices,
     ...logicPublicServices,
     ...markdownServices,
+    ...reportServices,
     ...validationServices,
     ...templateServices,
 }

@@ -55,6 +55,15 @@ import OutlineMarkdownService from "../services/markdown/OutlineMarkdownService"
 import ConfigValidationService from "../services/validation/ConfigValidationService";
 import RiskMarkdownService from "../services/markdown/RiskMarkdownService";
 import ColumnValidationService from "../services/validation/ColumnValidationService";
+import BacktestReportService from "../services/report/BacktestReportService";
+import LiveReportService from "../services/report/LiveReportService";
+import ScheduleReportService from "../services/report/ScheduleReportService";
+import PerformanceReportService from "../services/report/PerformanceReportService";
+import WalkerReportService from "../services/report/WalkerReportService";
+import HeatReportService from "../services/report/HeatReportService";
+import PartialReportService from "../services/report/PartialReportService";
+import BreakevenReportService from "../services/report/BreakevenReportService";
+import RiskReportService from "../services/report/RiskReportService";
 
 {
     provide(TYPES.loggerService, () => new LoggerService());
@@ -129,6 +138,18 @@ import ColumnValidationService from "../services/validation/ColumnValidationServ
     provide(TYPES.breakevenMarkdownService, () => new BreakevenMarkdownService());
     provide(TYPES.outlineMarkdownService, () => new OutlineMarkdownService());
     provide(TYPES.riskMarkdownService, () => new RiskMarkdownService());
+}
+
+{
+    provide(TYPES.backtestReportService, () => new BacktestReportService());
+    provide(TYPES.liveReportService, () => new LiveReportService());
+    provide(TYPES.scheduleReportService, () => new ScheduleReportService());
+    provide(TYPES.performanceReportService, () => new PerformanceReportService());
+    provide(TYPES.walkerReportService, () => new WalkerReportService());
+    provide(TYPES.heatReportService, () => new HeatReportService());
+    provide(TYPES.partialReportService, () => new PartialReportService());
+    provide(TYPES.breakevenReportService, () => new BreakevenReportService());
+    provide(TYPES.riskReportService, () => new RiskReportService());
 }
 
 {

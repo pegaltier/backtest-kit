@@ -60,6 +60,15 @@ import OutlineMarkdownService from "./services/markdown/OutlineMarkdownService";
 import ConfigValidationService from "./services/validation/ConfigValidationService";
 import RiskMarkdownService from "./services/markdown/RiskMarkdownService";
 import ColumnValidationService from "./services/validation/ColumnValidationService";
+import BacktestReportService from "./services/report/BacktestReportService";
+import LiveReportService from "./services/report/LiveReportService";
+import ScheduleReportService from "./services/report/ScheduleReportService";
+import PerformanceReportService from "./services/report/PerformanceReportService";
+import WalkerReportService from "./services/report/WalkerReportService";
+import HeatReportService from "./services/report/HeatReportService";
+import PartialReportService from "./services/report/PartialReportService";
+import BreakevenReportService from "./services/report/BreakevenReportService";
+import RiskReportService from "./services/report/RiskReportService";
 
 const baseServices = {
   loggerService: inject<LoggerService>(TYPES.loggerService),
@@ -198,6 +207,30 @@ const markdownServices = {
   riskMarkdownService: inject<RiskMarkdownService>(TYPES.riskMarkdownService),
 };
 
+const reportServices = {
+  backtestReportService: inject<BacktestReportService>(
+    TYPES.backtestReportService
+  ),
+  liveReportService: inject<LiveReportService>(TYPES.liveReportService),
+  scheduleReportService: inject<ScheduleReportService>(
+    TYPES.scheduleReportService
+  ),
+  performanceReportService: inject<PerformanceReportService>(
+    TYPES.performanceReportService
+  ),
+  walkerReportService: inject<WalkerReportService>(
+    TYPES.walkerReportService
+  ),
+  heatReportService: inject<HeatReportService>(TYPES.heatReportService),
+  partialReportService: inject<PartialReportService>(
+    TYPES.partialReportService
+  ),
+  breakevenReportService: inject<BreakevenReportService>(
+    TYPES.breakevenReportService
+  ),
+  riskReportService: inject<RiskReportService>(TYPES.riskReportService),
+};
+
 const validationServices = {
   exchangeValidationService: inject<ExchangeValidationService>(
     TYPES.exchangeValidationService
@@ -245,6 +278,7 @@ export const backtest = {
   ...logicPrivateServices,
   ...logicPublicServices,
   ...markdownServices,
+  ...reportServices,
   ...validationServices,
   ...templateServices,
 };
