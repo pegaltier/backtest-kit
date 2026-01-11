@@ -76,6 +76,10 @@ export const ReportBase = makeExtendable(
 );
 
 export class ReportUtils {
+
+}
+
+export class ReportAdapter extends ReportUtils {
   private ReportFactory: TReportBaseCtor = ReportBase;
 
   private getReportStorage = memoize(
@@ -89,7 +93,7 @@ export class ReportUtils {
     this.ReportFactory = Ctor;
   }
 
-  public writeReportData = async <T = any>(
+  public writeData = async <T = any>(
     reportName: ReportName,
     data: T
   ): Promise<void> => {
@@ -103,4 +107,4 @@ export class ReportUtils {
   };
 }
 
-export const ReportAdapter = new ReportUtils();
+export const Report = new ReportAdapter();
