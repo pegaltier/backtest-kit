@@ -1,4 +1,4 @@
-import { ISignalRow, StrategyName } from "../interfaces/Strategy.interface";
+import { IPublicSignalRow, StrategyName } from "../interfaces/Strategy.interface";
 import { FrameName } from "../interfaces/Frame.interface";
 import { ExchangeName } from "../interfaces/Exchange.interface";
 
@@ -60,10 +60,10 @@ export interface BreakevenContract {
   frameName: FrameName;
 
   /**
-   * Complete signal row data.
-   * Contains all signal information: id, position, priceOpen, priceTakeProfit, priceStopLoss, etc.
+   * Complete signal row data with original prices.
+   * Contains all signal information including originalPriceStopLoss, originalPriceTakeProfit, and totalExecuted.
    */
-  data: ISignalRow;
+  data: IPublicSignalRow;
 
   /**
    * Current market price at which breakeven was triggered.

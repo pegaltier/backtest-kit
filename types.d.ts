@@ -1900,6 +1900,18 @@ interface BreakevenEvent {
     currentPrice: number;
     /** Entry price (breakeven level) */
     priceOpen: number;
+    /** Take profit target price */
+    priceTakeProfit?: number;
+    /** Stop loss exit price */
+    priceStopLoss?: number;
+    /** Original take profit price set at signal creation */
+    originalPriceTakeProfit?: number;
+    /** Original stop loss price set at signal creation */
+    originalPriceStopLoss?: number;
+    /** Total executed percentage from partial closes */
+    totalExecuted?: number;
+    /** Human-readable description of signal reason */
+    note?: string;
     /** True if backtest mode, false if live mode */
     backtest: boolean;
 }
@@ -3854,10 +3866,10 @@ interface PartialProfitContract {
      */
     frameName: FrameName;
     /**
-     * Complete signal row data.
-     * Contains all signal information: id, position, priceOpen, priceTakeProfit, priceStopLoss, etc.
+     * Complete signal row data with original prices.
+     * Contains all signal information including originalPriceStopLoss, originalPriceTakeProfit, and totalExecuted.
      */
-    data: ISignalRow;
+    data: IPublicSignalRow;
     /**
      * Current market price at which this profit level was reached.
      * Used to calculate actual profit percentage.
@@ -3954,10 +3966,10 @@ interface PartialLossContract {
      */
     frameName: FrameName;
     /**
-     * Complete signal row data.
-     * Contains all signal information: id, position, priceOpen, priceTakeProfit, priceStopLoss, etc.
+     * Complete signal row data with original prices.
+     * Contains all signal information including originalPriceStopLoss, originalPriceTakeProfit, and totalExecuted.
      */
-    data: ISignalRow;
+    data: IPublicSignalRow;
     /**
      * Current market price at which this loss level was reached.
      * Used to calculate actual loss percentage.
@@ -4059,10 +4071,10 @@ interface BreakevenContract {
      */
     frameName: FrameName;
     /**
-     * Complete signal row data.
-     * Contains all signal information: id, position, priceOpen, priceTakeProfit, priceStopLoss, etc.
+     * Complete signal row data with original prices.
+     * Contains all signal information including originalPriceStopLoss, originalPriceTakeProfit, and totalExecuted.
      */
-    data: ISignalRow;
+    data: IPublicSignalRow;
     /**
      * Current market price at which breakeven was triggered.
      * Used to verify threshold calculation.
@@ -5985,6 +5997,20 @@ interface PartialEvent {
     currentPrice: number;
     /** Profit/loss level reached (10, 20, 30, etc) */
     level: PartialLevel;
+    /** Entry price for the position */
+    priceOpen?: number;
+    /** Take profit target price */
+    priceTakeProfit?: number;
+    /** Stop loss exit price */
+    priceStopLoss?: number;
+    /** Original take profit price set at signal creation */
+    originalPriceTakeProfit?: number;
+    /** Original stop loss price set at signal creation */
+    originalPriceStopLoss?: number;
+    /** Total executed percentage from partial closes */
+    totalExecuted?: number;
+    /** Human-readable description of signal reason */
+    note?: string;
     /** True if backtest mode, false if live mode */
     backtest: boolean;
 }
@@ -12443,7 +12469,7 @@ declare class PartialConnectionService implements IPartial {
      * @param priceClose - Final closing price
      * @returns Promise that resolves when clear is complete
      */
-    clear: (symbol: string, data: ISignalRow, priceClose: number, backtest: boolean) => Promise<void>;
+    clear: (symbol: string, data: IPublicSignalRow, priceClose: number, backtest: boolean) => Promise<void>;
 }
 
 /**
@@ -12525,7 +12551,7 @@ declare class BreakevenConnectionService implements IBreakeven {
      * @param backtest - True if backtest mode, false if live mode
      * @returns Promise that resolves when clear is complete
      */
-    clear: (symbol: string, data: ISignalRow, priceClose: number, backtest: boolean) => Promise<void>;
+    clear: (symbol: string, data: IPublicSignalRow, priceClose: number, backtest: boolean) => Promise<void>;
 }
 
 /**
@@ -15144,7 +15170,7 @@ declare class PartialGlobalService implements TPartial {
      * @param priceClose - Final closing price
      * @returns Promise that resolves when clear is complete
      */
-    clear: (symbol: string, data: ISignalRow, priceClose: number, backtest: boolean) => Promise<void>;
+    clear: (symbol: string, data: IPublicSignalRow, priceClose: number, backtest: boolean) => Promise<void>;
 }
 
 /**
@@ -15247,7 +15273,7 @@ declare class BreakevenGlobalService implements TBreakeven {
      * @param backtest - True if backtest mode, false if live mode
      * @returns Promise that resolves when clear is complete
      */
-    clear: (symbol: string, data: ISignalRow, priceClose: number, backtest: boolean) => Promise<void>;
+    clear: (symbol: string, data: IPublicSignalRow, priceClose: number, backtest: boolean) => Promise<void>;
 }
 
 /**

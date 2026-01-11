@@ -1,7 +1,7 @@
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
-import { IPublicSignalRow, ISignalRow, StrategyName } from "../../../interfaces/Strategy.interface";
+import { IPublicSignalRow, StrategyName } from "../../../interfaces/Strategy.interface";
 import { IBreakeven } from "../../../interfaces/Breakeven.interface";
 import ClientBreakeven from "../../../client/ClientBreakeven";
 import { memoize } from "functools-kit";
@@ -40,7 +40,7 @@ const COMMIT_BREAKEVEN_FN = async (
   strategyName: StrategyName,
   exchangeName: ExchangeName,
   frameName: FrameName,
-  data: ISignalRow,
+  data: IPublicSignalRow,
   currentPrice: number,
   backtest: boolean,
   timestamp: number
@@ -173,7 +173,7 @@ export class BreakevenConnectionService implements IBreakeven {
    */
   public clear = async (
     symbol: string,
-    data: ISignalRow,
+    data: IPublicSignalRow,
     priceClose: number,
     backtest: boolean,
   ) => {

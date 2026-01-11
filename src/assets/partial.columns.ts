@@ -85,6 +85,48 @@ export const partial_columns: ColumnModel<PartialEvent>[] = [
     isVisible: () => true,
   },
   {
+    key: "priceOpen",
+    label: "Entry Price",
+    format: (data) => (data.priceOpen ? `${data.priceOpen.toFixed(8)} USD` : "N/A"),
+    isVisible: () => true,
+  },
+  {
+    key: "priceTakeProfit",
+    label: "Take Profit",
+    format: (data) => (data.priceTakeProfit ? `${data.priceTakeProfit.toFixed(8)} USD` : "N/A"),
+    isVisible: () => true,
+  },
+  {
+    key: "priceStopLoss",
+    label: "Stop Loss",
+    format: (data) => (data.priceStopLoss ? `${data.priceStopLoss.toFixed(8)} USD` : "N/A"),
+    isVisible: () => true,
+  },
+  {
+    key: "originalPriceTakeProfit",
+    label: "Original TP",
+    format: (data) => (data.originalPriceTakeProfit ? `${data.originalPriceTakeProfit.toFixed(8)} USD` : "N/A"),
+    isVisible: () => true,
+  },
+  {
+    key: "originalPriceStopLoss",
+    label: "Original SL",
+    format: (data) => (data.originalPriceStopLoss ? `${data.originalPriceStopLoss.toFixed(8)} USD` : "N/A"),
+    isVisible: () => true,
+  },
+  {
+    key: "totalExecuted",
+    label: "Total Executed %",
+    format: (data) => (data.totalExecuted !== undefined ? `${data.totalExecuted.toFixed(2)}%` : "N/A"),
+    isVisible: () => true,
+  },
+  {
+    key: "note",
+    label: "Note",
+    format: (data) => data.note || "",
+    isVisible: () => GLOBAL_CONFIG.CC_REPORT_SHOW_SIGNAL_NOTE,
+  },
+  {
     key: "timestamp",
     label: "Timestamp",
     format: (data) => new Date(data.timestamp).toISOString(),

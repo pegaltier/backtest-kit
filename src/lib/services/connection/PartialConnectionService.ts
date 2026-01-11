@@ -1,7 +1,7 @@
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
-import { IPublicSignalRow, ISignalRow, StrategyName } from "../../../interfaces/Strategy.interface";
+import { IPublicSignalRow, StrategyName } from "../../../interfaces/Strategy.interface";
 import { IPartial, PartialLevel } from "../../../interfaces/Partial.interface";
 import ClientPartial from "../../../client/ClientPartial";
 import { memoize } from "functools-kit";
@@ -43,7 +43,7 @@ const COMMIT_PROFIT_FN = async (
   strategyName: StrategyName,
   exchangeName: ExchangeName,
   frameName: FrameName,
-  data: ISignalRow,
+  data: IPublicSignalRow,
   currentPrice: number,
   level: PartialLevel,
   backtest: boolean,
@@ -81,7 +81,7 @@ const COMMIT_LOSS_FN = async (
   strategyName: StrategyName,
   exchangeName: ExchangeName,
   frameName: FrameName,
-  data: ISignalRow,
+  data: IPublicSignalRow,
   currentPrice: number,
   level: PartialLevel,
   backtest: boolean,
@@ -262,7 +262,7 @@ export class PartialConnectionService implements IPartial {
    */
   public clear = async (
     symbol: string,
-    data: ISignalRow,
+    data: IPublicSignalRow,
     priceClose: number,
     backtest: boolean,
   ) => {

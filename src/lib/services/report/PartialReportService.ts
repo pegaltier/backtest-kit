@@ -1,4 +1,4 @@
-import { ISignalRow } from "../../../interfaces/Strategy.interface";
+import { IPublicSignalRow } from "../../../interfaces/Strategy.interface";
 import { PartialLevel } from "../../../interfaces/Partial.interface";
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
@@ -56,7 +56,7 @@ export class PartialReportService {
    */
   private tickProfit = async (data: {
     symbol: string;
-    data: ISignalRow;
+    data: IPublicSignalRow;
     currentPrice: number;
     level: PartialLevel;
     backtest: boolean;
@@ -81,6 +81,9 @@ export class PartialReportService {
       priceOpen: data.data.priceOpen,
       priceTakeProfit: data.data.priceTakeProfit,
       priceStopLoss: data.data.priceStopLoss,
+      originalPriceTakeProfit: data.data.originalPriceTakeProfit,
+      originalPriceStopLoss: data.data.originalPriceStopLoss,
+      totalExecuted: data.data.totalExecuted,
       _partial: data.data._partial,
       note: data.data.note,
       pendingAt: data.data.pendingAt,
@@ -105,7 +108,7 @@ export class PartialReportService {
    */
   private tickLoss = async (data: {
     symbol: string;
-    data: ISignalRow;
+    data: IPublicSignalRow;
     currentPrice: number;
     level: PartialLevel;
     backtest: boolean;
@@ -130,6 +133,9 @@ export class PartialReportService {
       priceOpen: data.data.priceOpen,
       priceTakeProfit: data.data.priceTakeProfit,
       priceStopLoss: data.data.priceStopLoss,
+      originalPriceTakeProfit: data.data.originalPriceTakeProfit,
+      originalPriceStopLoss: data.data.originalPriceStopLoss,
+      totalExecuted: data.data.totalExecuted,
       _partial: data.data._partial,
       note: data.data.note,
       pendingAt: data.data.pendingAt,

@@ -2,7 +2,7 @@ import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { PartialConnectionService } from "../connection/PartialConnectionService";
-import { IPublicSignalRow, ISignalRow, StrategyName } from "../../../interfaces/Strategy.interface";
+import { IPublicSignalRow, StrategyName } from "../../../interfaces/Strategy.interface";
 import StrategyValidationService from "../validation/StrategyValidationService";
 import StrategySchemaService from "../schema/StrategySchemaService";
 import RiskValidationService from "../validation/RiskValidationService";
@@ -224,7 +224,7 @@ export class PartialGlobalService implements TPartial {
    */
   public clear = async (
     symbol: string,
-    data: ISignalRow,
+    data: IPublicSignalRow,
     priceClose: number,
     backtest: boolean,
   ) => {

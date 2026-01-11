@@ -22,6 +22,20 @@ export interface PartialEvent {
   currentPrice: number;
   /** Profit/loss level reached (10, 20, 30, etc) */
   level: PartialLevel;
+  /** Entry price for the position */
+  priceOpen?: number;
+  /** Take profit target price */
+  priceTakeProfit?: number;
+  /** Stop loss exit price */
+  priceStopLoss?: number;
+  /** Original take profit price set at signal creation */
+  originalPriceTakeProfit?: number;
+  /** Original stop loss price set at signal creation */
+  originalPriceStopLoss?: number;
+  /** Total executed percentage from partial closes */
+  totalExecuted?: number;
+  /** Human-readable description of signal reason */
+  note?: string;
   /** True if backtest mode, false if live mode */
   backtest: boolean;
 }

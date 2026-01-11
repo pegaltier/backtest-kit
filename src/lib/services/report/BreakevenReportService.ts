@@ -1,4 +1,4 @@
-import { ISignalRow } from "../../../interfaces/Strategy.interface";
+import { IPublicSignalRow } from "../../../interfaces/Strategy.interface";
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
@@ -53,7 +53,7 @@ export class BreakevenReportService {
    */
   private tickBreakeven = async (data: {
     symbol: string;
-    data: ISignalRow;
+    data: IPublicSignalRow;
     currentPrice: number;
     backtest: boolean;
     timestamp: number;
@@ -75,6 +75,9 @@ export class BreakevenReportService {
       priceOpen: data.data.priceOpen,
       priceTakeProfit: data.data.priceTakeProfit,
       priceStopLoss: data.data.priceStopLoss,
+      originalPriceTakeProfit: data.data.originalPriceTakeProfit,
+      originalPriceStopLoss: data.data.originalPriceStopLoss,
+      totalExecuted: data.data.totalExecuted,
       _partial: data.data._partial,
       note: data.data.note,
       pendingAt: data.data.pendingAt,
