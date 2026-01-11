@@ -1,3 +1,188 @@
+# 🤗 JSONL Event Logging (v1.11.2, 11/01/2026)
+
+> Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/1.11.2)
+
+**JSONL Event Logging for Analytics** 📊✨
+
+> P.S. JSONL is the native format for Claude Code, HuggingFace, OpenAI and Llama. That means finally `backtest-kit` can be used as [Claude Code skill](https://code.claude.com/docs/en/skills)
+
+New `Report` utility class provides structured event logging to JSONL (JSON Lines) files for post-processing analytics and data pipelines! All trading events (signals, partial closes, breakeven, risk rejections, etc.) can now be logged to append-only JSONL files with full metadata for filtering and search. Features pluggable storage adapters, automatic backpressure handling, and real-time event streaming. Perfect for building custom analytics dashboards, machine learning datasets, and audit trails. 🚀
+
+```ts
+import { Report } from "backtest-kit";
+
+// Enable JSONL logging for all services
+const unsubscribe = Report.enable({
+  backtest: true,      // Log closed signals
+  live: true,          // Log all tick events
+  risk: true,          // Log risk rejections
+  schedule: true,      // Log scheduled signals
+  breakeven: true,     // Log breakeven events
+  partial: true,       // Log partial closes
+  heat: true,          // Log heatmap data
+  walker: true,        // Log walker iterations
+  performance: true,   // Log performance metrics
+});
+
+// Events are written to ./dump/report/{reportName}.jsonl
+// Each line contains: { reportName, data, symbol, strategyName, exchangeName, frameName, signalId, timestamp }
+
+// Disable logging when done
+unsubscribe();
+
+// Or switch to dummy adapter (no-op)
+Report.useDummy();
+
+// Switch back to JSONL
+Report.useJsonl();
+```
+
+**Custom Report Storage Adapters** 🔌
+
+Implement custom storage backends with the adapter pattern! Create your own `TReportBase` implementation to send events to databases, message queues, cloud storage, or any other destination. The system automatically handles initialization, memoization, and cleanup. 🏗️
+
+```ts
+import { Report, TReportBase, ReportName, IReportDumpOptions } from "backtest-kit";
+
+class PostgresReportAdapter implements TReportBase {
+  constructor(readonly reportName: ReportName, readonly baseDir: string) {
+    // Connect to PostgreSQL
+  }
+
+  async waitForInit(initial: boolean): Promise<void> {
+    // Initialize tables
+  }
+
+  async write<T = any>(data: T, options: IReportDumpOptions): Promise<void> {
+    // INSERT INTO events (report_name, data, symbol, ...) VALUES (...)
+  }
+}
+
+// Use custom adapter
+Report.useReportAdapter(PostgresReportAdapter);
+```
+
+**Enhanced Markdown Reports with Column Definitions** 📝
+
+New column definition system provides fine-grained control over markdown table structure! Configure which columns to display, how to format values, and conditional visibility rules. Pre-built column sets for backtest, live, risk, and schedule reports included. 🎨
+
+```ts
+import {
+  backtest_columns,
+  live_columns,
+  risk_columns,
+  schedule_columns
+} from "backtest-kit";
+
+// backtest_columns includes:
+// - Signal ID, Symbol, Position, Note
+// - Open/Close Price, TP/SL, Original TP/SL
+// - PNL (net), Total Executed, Partial Closes
+// - Close Reason, Duration, Timestamps
+
+// live_columns includes:
+// - Signal ID, Symbol, Position, Note
+// - Current Price, TP/SL, Original TP/SL
+// - PNL (net), Total Executed, Partial Closes
+// - Progress to TP/SL, Active Duration, Timestamps
+
+// risk_columns includes:
+// - Symbol, Position, Rejection Reason
+// - Price levels and validation errors
+
+// schedule_columns includes:
+// - Signal ID, Symbol, Position
+// - Price Open, Current Price, TP/SL
+// - Wait Time, Event Type, Timestamps
+```
+
+**Improved Markdown Service with Dual Adapters** 📂
+
+The `Markdown` utility class now supports two storage strategies: file-based (single markdown file per symbol) and folder-based (one file per signal). Both adapters use the same event listening system and column definitions. Folder-based mode is perfect for large datasets with thousands of signals. 🗂️
+
+```ts
+import { Markdown, MarkdownFileBase, MarkdownFolderBase } from "backtest-kit";
+
+// Enable markdown reports (default: file-based)
+const unsubscribe = Markdown.enable({
+  backtest: true,
+  live: true,
+  risk: true,
+  // ... other services
+});
+
+// Switch to folder-based storage
+Markdown.useMarkdownAdapter(MarkdownFolderBase);
+
+// Switch back to file-based storage
+Markdown.useMarkdownAdapter(MarkdownFileBase);
+
+// Disable markdown generation (dummy adapter)
+Markdown.useDummy();
+```
+
+**Active Position PNL Tracking** 💰
+
+The `IStrategyTickResultActive` event now includes real-time PNL calculation for open positions! Track unrealized profit/loss with fees, slippage, and partial closes already applied. No need to calculate PNL manually - it's available on every tick. ⚡
+
+```ts
+import { listenSignal} from "backtest-kit";
+
+listenSignal((event) => {
+  console.log(`Active position PNL: ${event.pnl.pnlPercentage.toFixed(2)}%`);
+  console.log(`Gross PNL: ${event.pnl.pnlGross.toFixed(2)}%`);
+  console.log(`Fees: ${event.pnl.totalFee.toFixed(2)}%`);
+  console.log(`Slippage: ${event.pnl.totalSlippage.toFixed(2)}%`);
+});
+```
+
+**Total Executed Tracking** 📈
+
+New `totalExecuted` field on signal data tracks the cumulative percentage closed through partial executions! Sums all partial close percentages (both profit and loss types) to show exactly how much of the position remains open. Range: 0-100%, where 0 means no partials and 100 means fully closed via partials. 🎯
+
+```ts
+import { listenSignalBacktest } from "backtest-kit";
+
+listenSignalBacktest((event) => {
+  if (event.action === "active") {
+    console.log(`Total executed: ${event.signal.totalExecuted.toFixed(1)}%`);
+    console.log(`Remaining: ${(100 - event.signal.totalExecuted).toFixed(1)}%`);
+
+    // Access partial close history
+    const partials = event.signal._partial;
+    console.log(`Partial closes: ${partials.length}`);
+    partials.forEach(p => {
+      console.log(`  ${p.type}: ${p.percent}% at ${p.price}`);
+    });
+  }
+});
+```
+
+**Improved Partial Close API** ✅
+
+The `partialProfit()` and `partialLoss()` methods now return `boolean` instead of `void`! Returns `true` if partial close was executed, `false` if skipped (would exceed 100%). Provides clear feedback for validation and logging. No more silent failures! 🛡️
+
+```ts
+addStrategy({
+  strategyName: "my-strategy",
+  interval: "5m",
+  getSignal: async () => { /* ... */ },
+  callbacks: {
+    onPartialProfit: async (symbol, signal, currentPrice, percentTp, backtest) => {
+      if (percentTp >= 50) {
+        const success = await strategy.partialProfit(symbol, 25, currentPrice, backtest);
+        if (success) {
+          console.log(`✅ Closed 25% at ${percentTp}% profit`);
+        } else {
+          console.log(`⚠️ Partial close skipped (would exceed 100%)`);
+        }
+      }
+    },
+  },
+});
+```
+
+
 # Breakeven Protection (v1.10.1, 09/01/2026)
 
 > Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/1.10.1)
