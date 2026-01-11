@@ -1,4 +1,4 @@
-import { ISignalRow, StrategyName } from "../../../interfaces/Strategy.interface";
+import { IPublicSignalRow, StrategyName } from "../../../interfaces/Strategy.interface";
 import { Markdown } from "../../../classes/Markdown";
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
@@ -108,13 +108,13 @@ class ReportStorage {
   /**
    * Adds a breakeven event to the storage.
    *
-   * @param data - Signal row data
+   * @param data - Signal row data with original prices
    * @param currentPrice - Current market price when breakeven was reached
    * @param backtest - True if backtest mode
    * @param timestamp - Event timestamp in milliseconds
    */
   public addBreakevenEvent(
-    data: ISignalRow,
+    data: IPublicSignalRow,
     currentPrice: number,
     backtest: boolean,
     timestamp: number
@@ -127,6 +127,12 @@ class ReportStorage {
       position: data.position,
       currentPrice,
       priceOpen: data.priceOpen,
+      priceTakeProfit: data.priceTakeProfit,
+      priceStopLoss: data.priceStopLoss,
+      originalPriceTakeProfit: data.originalPriceTakeProfit,
+      originalPriceStopLoss: data.originalPriceStopLoss,
+      totalExecuted: data.totalExecuted,
+      note: data.note,
       backtest,
     });
 
@@ -325,7 +331,7 @@ export class BreakevenMarkdownService {
    */
   private tickBreakeven = async (data: {
     symbol: string;
-    data: ISignalRow;
+    data: IPublicSignalRow;
     currentPrice: number;
     backtest: boolean;
     timestamp: number;

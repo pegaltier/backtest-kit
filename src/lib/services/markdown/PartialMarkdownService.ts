@@ -1,4 +1,4 @@
-import { ISignalRow, StrategyName } from "../../../interfaces/Strategy.interface";
+import { IPublicSignalRow, StrategyName } from "../../../interfaces/Strategy.interface";
 import { Markdown } from "../../../classes/Markdown";
 import { PartialLevel } from "../../../interfaces/Partial.interface";
 import { inject } from "../../../lib/core/di";
@@ -118,7 +118,7 @@ class ReportStorage {
    * @param backtest - True if backtest mode
    */
   public addProfitEvent(
-    data: ISignalRow,
+    data: IPublicSignalRow,
     currentPrice: number,
     level: PartialLevel,
     backtest: boolean,
@@ -133,6 +133,13 @@ class ReportStorage {
       position: data.position,
       currentPrice,
       level,
+      priceOpen: data.priceOpen,
+      priceTakeProfit: data.priceTakeProfit,
+      priceStopLoss: data.priceStopLoss,
+      originalPriceTakeProfit: data.originalPriceTakeProfit,
+      originalPriceStopLoss: data.originalPriceStopLoss,
+      totalExecuted: data.totalExecuted,
+      note: data.note,
       backtest,
     });
 
@@ -151,7 +158,7 @@ class ReportStorage {
    * @param backtest - True if backtest mode
    */
   public addLossEvent(
-    data: ISignalRow,
+    data: IPublicSignalRow,
     currentPrice: number,
     level: PartialLevel,
     backtest: boolean,
@@ -166,6 +173,13 @@ class ReportStorage {
       position: data.position,
       currentPrice,
       level,
+      priceOpen: data.priceOpen,
+      priceTakeProfit: data.priceTakeProfit,
+      priceStopLoss: data.priceStopLoss,
+      originalPriceTakeProfit: data.originalPriceTakeProfit,
+      originalPriceStopLoss: data.originalPriceStopLoss,
+      totalExecuted: data.totalExecuted,
+      note: data.note,
       backtest,
     });
 
@@ -375,7 +389,7 @@ export class PartialMarkdownService {
    */
   private tickProfit = async (data: {
     symbol: string;
-    data: ISignalRow;
+    data: IPublicSignalRow;
     currentPrice: number;
     level: PartialLevel;
     backtest: boolean;
@@ -411,7 +425,7 @@ export class PartialMarkdownService {
    */
   private tickLoss = async (data: {
     symbol: string;
-    data: ISignalRow;
+    data: IPublicSignalRow;
     currentPrice: number;
     level: PartialLevel;
     backtest: boolean;
