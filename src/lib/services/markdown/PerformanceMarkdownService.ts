@@ -1,5 +1,4 @@
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import { Markdown } from "../../../classes/Markdown";
 import {
   PerformanceContract,
   PerformanceMetricType,
@@ -73,6 +72,29 @@ const CREATE_KEY_FN = (
 };
 
 /**
+ * Creates a filename for markdown report based on memoization key components.
+ * Filename format: "symbol_strategyName_exchangeName_frameName-timestamp.md"
+ * @param symbol - Trading pair symbol
+ * @param strategyName - Name of the strategy
+ * @param exchangeName - Exchange name
+ * @param frameName - Frame name
+ * @param timestamp - Unix timestamp in milliseconds
+ * @returns Filename string
+ */
+const CREATE_FILE_NAME_FN = (
+  symbol: string,
+  strategyName: StrategyName,
+  exchangeName: ExchangeName,
+  frameName: FrameName,
+  timestamp: number
+): string => {
+  const parts = [symbol, strategyName, exchangeName];
+  if (frameName) { parts.push(frameName); parts.push("backtest"); }
+  else parts.push("live");
+  return `${parts.join("_")}-${timestamp}.md`;
+};
+
+/**
  * Checks if a value is unsafe for display (not a number, NaN, or Infinity).
  */
 function isUnsafe(value: number): boolean {
@@ -107,6 +129,13 @@ const MAX_EVENTS = 10000;
 class PerformanceStorage {
   /** Internal list of all performance events for this strategy */
   private _events: PerformanceContract[] = [];
+
+  constructor(
+    readonly symbol: string,
+    readonly strategyName: StrategyName,
+    readonly exchangeName: ExchangeName,
+    readonly frameName: FrameName
+  ) {}
 
   /**
    * Adds a performance event to the storage.
@@ -292,19 +321,17 @@ class PerformanceStorage {
     columns: Columns[] = COLUMN_CONFIG.performance_columns
   ): Promise<void> {
     const markdown = await this.getReport(strategyName, columns);
-
-    try {
-      const dir = join(process.cwd(), path);
-      await mkdir(dir, { recursive: true });
-
-      const filename = `${strategyName}.md`;
-      const filepath = join(dir, filename);
-
-      await writeFile(filepath, markdown, "utf-8");
-      console.log(`Performance report saved: ${filepath}`);
-    } catch (error) {
-      console.error(`Failed to save performance report:`, error);
-    }
+    const timestamp = Date.now();
+    const filename = CREATE_FILE_NAME_FN(this.symbol, strategyName, this.exchangeName, this.frameName, timestamp);
+    await Markdown.writeData("performance", markdown, {
+      path,
+      file: filename,
+      symbol: this.symbol,
+      signalId: "",
+      strategyName: this.strategyName,
+      exchangeName: this.exchangeName,
+      frameName: this.frameName
+    });
   }
 }
 
@@ -345,8 +372,52 @@ export class PerformanceMarkdownService {
    */
   private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => PerformanceStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),
-    () => new PerformanceStorage()
+    (symbol, strategyName, exchangeName, frameName) => new PerformanceStorage(symbol, strategyName, exchangeName, frameName)
   );
+
+  /**
+   * Subscribes to performance emitter to receive performance events.
+   * Protected against multiple subscriptions.
+   * Returns an unsubscribe function to stop receiving events.
+   *
+   * @example
+   * ```typescript
+   * const service = new PerformanceMarkdownService();
+   * const unsubscribe = service.subscribe();
+   * // ... later
+   * unsubscribe();
+   * ```
+   */
+  public subscribe = singleshot(() => {
+    this.loggerService.log("performanceMarkdownService init");
+    const unsubscribe = performanceEmitter.subscribe(this.track);
+    return () => {
+      this.subscribe.clear();
+      this.clear();
+      unsubscribe();
+    }
+  });
+
+  /**
+   * Unsubscribes from performance emitter to stop receiving events.
+   * Calls the unsubscribe function returned by subscribe().
+   * If not subscribed, does nothing.
+   *
+   * @example
+   * ```typescript
+   * const service = new PerformanceMarkdownService();
+   * service.subscribe();
+   * // ... later
+   * service.unsubscribe();
+   * ```
+   */
+  public unsubscribe = async () => {
+    this.loggerService.log("performanceMarkdownService unsubscribe");
+    if (this.subscribe.hasValue()) {
+      const lastSubscription = this.subscribe();
+      lastSubscription();
+    }
+  };
 
   /**
    * Processes performance events and accumulates metrics.
@@ -398,6 +469,9 @@ export class PerformanceMarkdownService {
       frameName,
       backtest,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("PerformanceMarkdownService not initialized. Call subscribe() before getting data.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     return storage.getData(strategyName);
   };
@@ -434,6 +508,9 @@ export class PerformanceMarkdownService {
       frameName,
       backtest,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("PerformanceMarkdownService not initialized. Call subscribe() before generating reports.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     return storage.getReport(strategyName, columns);
   };
@@ -475,6 +552,9 @@ export class PerformanceMarkdownService {
       backtest,
       path,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("PerformanceMarkdownService not initialized. Call subscribe() before dumping reports.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     await storage.dump(strategyName, path, columns);
   };
@@ -496,20 +576,6 @@ export class PerformanceMarkdownService {
     }
   };
 
-  /**
-   * Initializes the service by subscribing to performance events.
-   * Uses singleshot to ensure initialization happens only once.
-   */
-  protected init = singleshot(async () => {
-    this.loggerService.log("performanceMarkdownService init");
-    this.unsubscribe = performanceEmitter.subscribe(this.track);
-  });
-
-  /**
-   * Function to unsubscribe from partial profit/loss events.
-   * Assigned during init().
-   */
-  public unsubscribe: Function;
 }
 
 export default PerformanceMarkdownService;

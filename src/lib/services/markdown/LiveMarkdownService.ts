@@ -1,5 +1,4 @@
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import { Markdown } from "../../../classes/Markdown";
 import {
   IStrategyTickResult,
   IStrategyTickResultOpened,
@@ -75,6 +74,29 @@ const CREATE_KEY_FN = (
 };
 
 /**
+ * Creates a filename for markdown report based on memoization key components.
+ * Filename format: "symbol_strategyName_exchangeName_frameName-timestamp.md"
+ * @param symbol - Trading pair symbol
+ * @param strategyName - Name of the strategy
+ * @param exchangeName - Exchange name
+ * @param frameName - Frame name
+ * @param timestamp - Unix timestamp in milliseconds
+ * @returns Filename string
+ */
+const CREATE_FILE_NAME_FN = (
+  symbol: string,
+  strategyName: StrategyName,
+  exchangeName: ExchangeName,
+  frameName: FrameName,
+  timestamp: number
+): string => {
+  const parts = [symbol, strategyName, exchangeName];
+  if (frameName) { parts.push(frameName); parts.push("backtest"); }
+  else parts.push("live");
+  return `${parts.join("_")}-${timestamp}.md`;
+};
+
+/**
  * Checks if a value is unsafe for display (not a number, NaN, or Infinity).
  *
  * @param value - Value to check
@@ -103,6 +125,13 @@ const MAX_EVENTS = 250;
 class ReportStorage {
   /** Internal list of all tick events for this strategy */
   private _eventList: TickEvent[] = [];
+
+  constructor(
+    readonly symbol: string,
+    readonly strategyName: StrategyName,
+    readonly exchangeName: ExchangeName,
+    readonly frameName: FrameName
+  ) {}
 
   /**
    * Adds an idle event to the storage.
@@ -156,6 +185,9 @@ class ReportStorage {
       openPrice: data.signal.priceOpen,
       takeProfit: data.signal.priceTakeProfit,
       stopLoss: data.signal.priceStopLoss,
+      originalPriceTakeProfit: data.signal.originalPriceTakeProfit,
+      originalPriceStopLoss: data.signal.originalPriceStopLoss,
+      totalExecuted: data.signal.totalExecuted,
     });
 
     // Trim queue if exceeded MAX_EVENTS
@@ -182,8 +214,12 @@ class ReportStorage {
       openPrice: data.signal.priceOpen,
       takeProfit: data.signal.priceTakeProfit,
       stopLoss: data.signal.priceStopLoss,
+      originalPriceTakeProfit: data.signal.originalPriceTakeProfit,
+      originalPriceStopLoss: data.signal.originalPriceStopLoss,
+      totalExecuted: data.signal.totalExecuted,
       percentTp: data.percentTp,
       percentSl: data.percentSl,
+      pnl: data.pnl.pnlPercentage,
     };
 
     // Find the last active event with the same signalId
@@ -226,6 +262,9 @@ class ReportStorage {
       openPrice: data.signal.priceOpen,
       takeProfit: data.signal.priceTakeProfit,
       stopLoss: data.signal.priceStopLoss,
+      originalPriceTakeProfit: data.signal.originalPriceTakeProfit,
+      originalPriceStopLoss: data.signal.originalPriceStopLoss,
+      totalExecuted: data.signal.totalExecuted,
       pnl: data.pnl.pnlPercentage,
       closeReason: data.closeReason,
       duration: durationMin,
@@ -399,19 +438,17 @@ class ReportStorage {
     columns: Columns[] = COLUMN_CONFIG.live_columns
   ): Promise<void> {
     const markdown = await this.getReport(strategyName, columns);
-
-    try {
-      const dir = join(process.cwd(), path);
-      await mkdir(dir, { recursive: true });
-
-      const filename = `${strategyName}.md`;
-      const filepath = join(dir, filename);
-
-      await writeFile(filepath, markdown, "utf-8");
-      console.log(`Live trading report saved: ${filepath}`);
-    } catch (error) {
-      console.error(`Failed to save markdown report:`, error);
-    }
+    const timestamp = Date.now();
+    const filename = CREATE_FILE_NAME_FN(this.symbol, strategyName, this.exchangeName, this.frameName, timestamp);
+    await Markdown.writeData("live", markdown, {
+      path,
+      signalId: "",
+      file: filename,
+      symbol: this.symbol,
+      strategyName: this.strategyName,
+      exchangeName: this.exchangeName,
+      frameName: this.frameName
+    });
   }
 }
 
@@ -455,8 +492,52 @@ export class LiveMarkdownService {
    */
   private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),
-    () => new ReportStorage()
+    (symbol, strategyName, exchangeName, frameName) => new ReportStorage(symbol, strategyName, exchangeName, frameName)
   );
+
+  /**
+   * Subscribes to live signal emitter to receive tick events.
+   * Protected against multiple subscriptions.
+   * Returns an unsubscribe function to stop receiving events.
+   *
+   * @example
+   * ```typescript
+   * const service = new LiveMarkdownService();
+   * const unsubscribe = service.subscribe();
+   * // ... later
+   * unsubscribe();
+   * ```
+   */
+  public subscribe = singleshot(() => {
+    this.loggerService.log("liveMarkdownService init");
+    const unsubscribe = signalLiveEmitter.subscribe(this.tick);
+    return () => {
+      this.subscribe.clear();
+      this.clear();
+      unsubscribe();
+    }
+  });
+
+  /**
+   * Unsubscribes from live signal emitter to stop receiving tick events.
+   * Calls the unsubscribe function returned by subscribe().
+   * If not subscribed, does nothing.
+   *
+   * @example
+   * ```typescript
+   * const service = new LiveMarkdownService();
+   * service.subscribe();
+   * // ... later
+   * service.unsubscribe();
+   * ```
+   */
+  public unsubscribe = async () => {
+    this.loggerService.log("liveMarkdownService unsubscribe");
+    if (this.subscribe.hasValue()) {
+      const lastSubscription = this.subscribe();
+      lastSubscription();
+    }
+  };
 
   /**
    * Processes tick events and accumulates all event types.
@@ -523,6 +604,9 @@ export class LiveMarkdownService {
       frameName,
       backtest,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("LiveMarkdownService not initialized. Call subscribe() before getting data.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     return storage.getData();
   };
@@ -561,6 +645,9 @@ export class LiveMarkdownService {
       frameName,
       backtest,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("LiveMarkdownService not initialized. Call subscribe() before generating reports.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     return storage.getReport(strategyName, columns);
   };
@@ -606,6 +693,9 @@ export class LiveMarkdownService {
       backtest,
       path,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("LiveMarkdownService not initialized. Call subscribe() before dumping reports.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     await storage.dump(strategyName, path, columns);
   };
@@ -640,27 +730,6 @@ export class LiveMarkdownService {
     }
   };
 
-  /**
-   * Initializes the service by subscribing to live signal events.
-   * Uses singleshot to ensure initialization happens only once.
-   * Automatically called on first use.
-   *
-   * @example
-   * ```typescript
-   * const service = new LiveMarkdownService();
-   * await service.init(); // Subscribe to live events
-   * ```
-   */
-  protected init = singleshot(async () => {
-    this.loggerService.log("liveMarkdownService init");
-    this.unsubscribe = signalLiveEmitter.subscribe(this.tick);
-  });
-
-  /**
-   * Function to unsubscribe from backtest signal events.
-   * Assigned during init().
-   */
-  public unsubscribe: Function;
 }
 
 export default LiveMarkdownService;

@@ -1,6 +1,7 @@
 import * as di_scoped from 'di-scoped';
 import * as functools_kit from 'functools-kit';
 import { Subject } from 'functools-kit';
+import { WriteStream } from 'fs';
 
 /**
  * Type alias for enum objects with string key-value pairs
@@ -165,7 +166,7 @@ declare function cancel(symbol: string, cancelId?: string): Promise<void>;
  *
  * @param symbol - Trading pair symbol
  * @param percentToClose - Percentage of position to close (0-100, absolute value)
- * @returns Promise that resolves when state is updated
+ * @returns Promise<boolean> - true if partial close executed, false if skipped
  *
  * @throws Error if currentPrice is not in profit direction:
  *   - LONG: currentPrice must be > priceOpen
@@ -176,10 +177,13 @@ declare function cancel(symbol: string, cancelId?: string): Promise<void>;
  * import { partialProfit } from "backtest-kit";
  *
  * // Close 30% of LONG position at profit
- * await partialProfit("BTCUSDT", 30, 45000);
+ * const success = await partialProfit("BTCUSDT", 30);
+ * if (success) {
+ *   console.log('Partial profit executed');
+ * }
  * ```
  */
-declare function partialProfit(symbol: string, percentToClose: number): Promise<void>;
+declare function partialProfit(symbol: string, percentToClose: number): Promise<boolean>;
 /**
  * Executes partial close at loss level (moving toward SL).
  *
@@ -190,7 +194,7 @@ declare function partialProfit(symbol: string, percentToClose: number): Promise<
  *
  * @param symbol - Trading pair symbol
  * @param percentToClose - Percentage of position to close (0-100, absolute value)
- * @returns Promise that resolves when state is updated
+ * @returns Promise<boolean> - true if partial close executed, false if skipped
  *
  * @throws Error if currentPrice is not in loss direction:
  *   - LONG: currentPrice must be < priceOpen
@@ -201,10 +205,13 @@ declare function partialProfit(symbol: string, percentToClose: number): Promise<
  * import { partialLoss } from "backtest-kit";
  *
  * // Close 40% of LONG position at loss
- * await partialLoss("BTCUSDT", 40, 38000);
+ * const success = await partialLoss("BTCUSDT", 40);
+ * if (success) {
+ *   console.log('Partial loss executed');
+ * }
  * ```
  */
-declare function partialLoss(symbol: string, percentToClose: number): Promise<void>;
+declare function partialLoss(symbol: string, percentToClose: number): Promise<boolean>;
 /**
  * Adjusts the trailing stop-loss distance for an active pending signal.
  *
@@ -667,7 +674,7 @@ interface IRiskCheckArgs {
     /** Trading pair symbol (e.g., "BTCUSDT") */
     symbol: string;
     /** Pending signal to apply */
-    pendingSignal: ISignalDto | ISignalRow;
+    pendingSignal: IPublicSignalRow;
     /** Strategy name requesting to open a position */
     strategyName: StrategyName;
     /** Exchange name */
@@ -1230,13 +1237,20 @@ interface IPublicSignalRow extends ISignalRow {
      * Used for user visibility of initial TP parameters.
      */
     originalPriceTakeProfit: number;
+    /**
+     * Total executed percentage from partial closes.
+     * Sum of all percent values from _partial array (both profit and loss types).
+     * Represents the total portion of the position that has been closed through partial executions.
+     * Range: 0-100. Value of 0 means no partial closes, 100 means position fully closed through partials.
+     */
+    totalExecuted: number;
 }
 /**
  * Risk signal row for internal risk management.
  * Extends ISignalDto to include priceOpen, originalPriceStopLoss and originalPriceTakeProfit.
  * Used in risk validation to access entry price and original SL/TP.
  */
-interface IRiskSignalRow extends ISignalDto {
+interface IRiskSignalRow extends IPublicSignalRow {
     /**
      * Entry price for the position.
      */
@@ -1422,6 +1436,8 @@ interface IStrategyTickResultActive {
     percentTp: number;
     /** Percentage progress towards stop loss (0-100%, 0 if moving towards TP) */
     percentSl: number;
+    /** Unrealized PNL for active position with fees, slippage, and partial closes */
+    pnl: IStrategyPnL;
     /** Whether this event is from backtest mode (true) or live mode (false) */
     backtest: boolean;
 }
@@ -1634,7 +1650,7 @@ interface IStrategy {
      * - Throws if no pending signal exists
      * - Throws if called on scheduled signal (not yet activated)
      * - Throws if percentToClose <= 0 or > 100
-     * - Does nothing if _totalClosed + percentToClose > 100 (prevents over-closing)
+     * - Returns false if _totalClosed + percentToClose > 100 (prevents over-closing)
      *
      * Use case: User-controlled partial close triggered from onPartialProfit callback.
      *
@@ -1642,20 +1658,23 @@ interface IStrategy {
      * @param percentToClose - Absolute percentage of position to close (0-100)
      * @param currentPrice - Current market price for partial close
      * @param backtest - Whether running in backtest mode
-     * @returns Promise that resolves when partial close is complete
+     * @returns Promise<boolean> - true if partial close executed, false if skipped
      *
      * @example
      * ```typescript
      * callbacks: {
      *   onPartialProfit: async (symbol, signal, currentPrice, percentTp, backtest) => {
      *     if (percentTp >= 50) {
-     *       await strategy.partialProfit(symbol, 25, currentPrice, backtest);
+     *       const success = await strategy.partialProfit(symbol, 25, currentPrice, backtest);
+     *       if (success) {
+     *         console.log('Partial profit executed');
+     *       }
      *     }
      *   }
      * }
      * ```
      */
-    partialProfit: (symbol: string, percentToClose: number, currentPrice: number, backtest: boolean) => Promise<void>;
+    partialProfit: (symbol: string, percentToClose: number, currentPrice: number, backtest: boolean) => Promise<boolean>;
     /**
      * Executes partial close at loss level (moving toward SL).
      *
@@ -1667,7 +1686,7 @@ interface IStrategy {
      * - Throws if no pending signal exists
      * - Throws if called on scheduled signal (not yet activated)
      * - Throws if percentToClose <= 0 or > 100
-     * - Does nothing if _totalClosed + percentToClose > 100 (prevents over-closing)
+     * - Returns false if _totalClosed + percentToClose > 100 (prevents over-closing)
      *
      * Use case: User-controlled partial close triggered from onPartialLoss callback.
      *
@@ -1675,20 +1694,23 @@ interface IStrategy {
      * @param percentToClose - Absolute percentage of position to close (0-100)
      * @param currentPrice - Current market price for partial close
      * @param backtest - Whether running in backtest mode
-     * @returns Promise that resolves when partial close is complete
+     * @returns Promise<boolean> - true if partial close executed, false if skipped
      *
      * @example
      * ```typescript
      * callbacks: {
      *   onPartialLoss: async (symbol, signal, currentPrice, percentSl, backtest) => {
      *     if (percentSl >= 80) {
-     *       await strategy.partialLoss(symbol, 50, currentPrice, backtest);
+     *       const success = await strategy.partialLoss(symbol, 50, currentPrice, backtest);
+     *       if (success) {
+     *         console.log('Partial loss executed');
+     *       }
      *     }
      *   }
      * }
      * ```
      */
-    partialLoss: (symbol: string, percentToClose: number, currentPrice: number, backtest: boolean) => Promise<void>;
+    partialLoss: (symbol: string, percentToClose: number, currentPrice: number, backtest: boolean) => Promise<boolean>;
     /**
      * Adjusts trailing stop-loss by shifting distance between entry and original SL.
      *
@@ -1976,6 +1998,12 @@ declare const GLOBAL_CONFIG: {
      */
     CC_GET_CANDLES_RETRY_DELAY_MS: number;
     /**
+     * Maximum number of candles to request per single API call.
+     * If a request exceeds this limit, data will be fetched using pagination.
+     * Default: 1000 candles per request
+     */
+    CC_MAX_CANDLES_PER_REQUEST: number;
+    /**
      * Maximum allowed deviation factor for price anomaly detection.
      * Price should not be more than this factor lower than reference price.
      *
@@ -2122,6 +2150,7 @@ declare function getConfig(): {
     CC_MAX_SIGNAL_GENERATION_SECONDS: number;
     CC_GET_CANDLES_RETRY_COUNT: number;
     CC_GET_CANDLES_RETRY_DELAY_MS: number;
+    CC_MAX_CANDLES_PER_REQUEST: number;
     CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR: number;
     CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN: number;
     CC_REPORT_SHOW_SIGNAL_NOTE: boolean;
@@ -2153,6 +2182,7 @@ declare function getDefaultConfig(): Readonly<{
     CC_MAX_SIGNAL_GENERATION_SECONDS: number;
     CC_GET_CANDLES_RETRY_COUNT: number;
     CC_GET_CANDLES_RETRY_DELAY_MS: number;
+    CC_MAX_CANDLES_PER_REQUEST: number;
     CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR: number;
     CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN: number;
     CC_REPORT_SHOW_SIGNAL_NOTE: boolean;
@@ -5672,11 +5702,17 @@ interface TickEvent {
     takeProfit?: number;
     /** Stop loss price (only for opened/active/closed) */
     stopLoss?: number;
+    /** Original take profit price before modifications (only for opened/active/closed) */
+    originalPriceTakeProfit?: number;
+    /** Original stop loss price before modifications (only for opened/active/closed) */
+    originalPriceStopLoss?: number;
+    /** Total executed percentage from partial closes (only for opened/active/closed) */
+    totalExecuted?: number;
     /** Percentage progress towards take profit (only for active) */
     percentTp?: number;
     /** Percentage progress towards stop loss (only for active) */
     percentSl?: number;
-    /** PNL percentage (only for closed) */
+    /** PNL percentage (for active: unrealized, for closed: realized) */
     pnl?: number;
     /** Close reason (only for closed) */
     closeReason?: string;
@@ -5777,6 +5813,12 @@ interface ScheduledEvent {
     takeProfit: number;
     /** Stop loss price */
     stopLoss: number;
+    /** Original take profit price before modifications */
+    originalPriceTakeProfit?: number;
+    /** Original stop loss price before modifications */
+    originalPriceStopLoss?: number;
+    /** Total executed percentage from partial closes */
+    totalExecuted?: number;
     /** Close timestamp (only for cancelled) */
     closeTimestamp?: number;
     /** Duration in minutes (only for cancelled/opened) */
@@ -5981,7 +6023,7 @@ interface RiskEvent {
     /** Trading pair symbol */
     symbol: string;
     /** Pending signal details */
-    pendingSignal: ISignalDto;
+    pendingSignal: IRiskSignalRow;
     /** Strategy name */
     strategyName: StrategyName;
     /** Exchange name */
@@ -6241,6 +6283,16 @@ declare class PersistSignalUtils {
      * @returns Promise that resolves when write is complete
      */
     writeSignalData: (signalRow: ISignalRow | null, symbol: string, strategyName: StrategyName, exchangeName: ExchangeName) => Promise<void>;
+    /**
+     * Switches to the default JSON persist adapter.
+     * All future persistence writes will use JSON storage.
+     */
+    useJson(): void;
+    /**
+     * Switches to a dummy persist adapter that discards all writes.
+     * All future persistence writes will be no-ops.
+     */
+    useDummy(): void;
 }
 /**
  * Global singleton instance of PersistSignalUtils.
@@ -6316,6 +6368,16 @@ declare class PersistRiskUtils {
      * @returns Promise that resolves when write is complete
      */
     writePositionData: (riskRow: RiskData, riskName: RiskName, exchangeName: ExchangeName) => Promise<void>;
+    /**
+     * Switches to the default JSON persist adapter.
+     * All future persistence writes will use JSON storage.
+     */
+    useJson(): void;
+    /**
+     * Switches to a dummy persist adapter that discards all writes.
+     * All future persistence writes will be no-ops.
+     */
+    useDummy(): void;
 }
 /**
  * Global singleton instance of PersistRiskUtils.
@@ -6393,6 +6455,16 @@ declare class PersistScheduleUtils {
      * @returns Promise that resolves when write is complete
      */
     writeScheduleData: (scheduledSignalRow: IScheduledSignalRow | null, symbol: string, strategyName: StrategyName, exchangeName: ExchangeName) => Promise<void>;
+    /**
+     * Switches to the default JSON persist adapter.
+     * All future persistence writes will use JSON storage.
+     */
+    useJson(): void;
+    /**
+     * Switches to a dummy persist adapter that discards all writes.
+     * All future persistence writes will be no-ops.
+     */
+    useDummy(): void;
 }
 /**
  * Global singleton instance of PersistScheduleUtils.
@@ -6472,6 +6544,16 @@ declare class PersistPartialUtils {
      * @returns Promise that resolves when write is complete
      */
     writePartialData: (partialData: PartialData, symbol: string, strategyName: StrategyName, signalId: string, exchangeName: ExchangeName) => Promise<void>;
+    /**
+     * Switches to the default JSON persist adapter.
+     * All future persistence writes will use JSON storage.
+     */
+    useJson(): void;
+    /**
+     * Switches to a dummy persist adapter that discards all writes.
+     * All future persistence writes will be no-ops.
+     */
+    useDummy(): void;
 }
 /**
  * Global singleton instance of PersistPartialUtils.
@@ -6586,6 +6668,16 @@ declare class PersistBreakevenUtils {
      * @returns Promise that resolves when write is complete
      */
     writeBreakevenData: (breakevenData: BreakevenData, symbol: string, strategyName: StrategyName, signalId: string, exchangeName: ExchangeName) => Promise<void>;
+    /**
+     * Switches to the default JSON persist adapter.
+     * All future persistence writes will use JSON storage.
+     */
+    useJson(): void;
+    /**
+     * Switches to a dummy persist adapter that discards all writes.
+     * All future persistence writes will be no-ops.
+     */
+    useDummy(): void;
 }
 /**
  * Global singleton instance of PersistBreakevenUtils.
@@ -6604,6 +6696,523 @@ declare class PersistBreakevenUtils {
  * ```
  */
 declare const PersistBreakevenAdapter: PersistBreakevenUtils;
+
+declare const WAIT_FOR_INIT_SYMBOL$1: unique symbol;
+declare const WRITE_SAFE_SYMBOL$1: unique symbol;
+/**
+ * Configuration interface for selective report service enablement.
+ * Controls which report services should be activated for JSONL event logging.
+ */
+interface IReportTarget {
+    /** Enable risk rejection event logging */
+    risk: boolean;
+    /** Enable breakeven event logging */
+    breakeven: boolean;
+    /** Enable partial close event logging */
+    partial: boolean;
+    /** Enable heatmap data event logging */
+    heat: boolean;
+    /** Enable walker iteration event logging */
+    walker: boolean;
+    /** Enable performance metrics event logging */
+    performance: boolean;
+    /** Enable scheduled signal event logging */
+    schedule: boolean;
+    /** Enable live trading event logging (all tick states) */
+    live: boolean;
+    /** Enable backtest closed signal event logging */
+    backtest: boolean;
+}
+/**
+ * Union type of all valid report names.
+ * Used for type-safe identification of report services.
+ */
+type ReportName = keyof IReportTarget;
+/**
+ * Options for report data writes.
+ * Contains metadata for event filtering and search.
+ */
+interface IReportDumpOptions {
+    /** Trading pair symbol (e.g., "BTCUSDT") */
+    symbol: string;
+    /** Strategy name */
+    strategyName: string;
+    /** Exchange name */
+    exchangeName: string;
+    /** Frame name (timeframe identifier) */
+    frameName: string;
+    /** Signal unique identifier */
+    signalId: string;
+    /** Walker optimization name */
+    walkerName: string;
+}
+/**
+ * Base interface for report storage adapters.
+ * All report adapters must implement this interface.
+ */
+type TReportBase = {
+    /**
+     * Initialize report storage and prepare for writes.
+     * Uses singleshot to ensure one-time execution.
+     *
+     * @param initial - Whether this is the first initialization
+     * @returns Promise that resolves when initialization is complete
+     */
+    waitForInit(initial: boolean): Promise<void>;
+    /**
+     * Write report data to storage.
+     *
+     * @param data - Report data object to write
+     * @param options - Metadata options for filtering and search
+     * @returns Promise that resolves when write is complete
+     * @throws Error if write fails or stream is not initialized
+     */
+    write<T = any>(data: T, options: IReportDumpOptions): Promise<void>;
+};
+/**
+ * Constructor type for report storage adapters.
+ * Used for custom report storage implementations.
+ */
+type TReportBaseCtor = new (reportName: ReportName, baseDir: string) => TReportBase;
+/**
+ * JSONL-based report adapter with append-only writes.
+ *
+ * Features:
+ * - Writes events as JSONL entries to a single file per report type
+ * - Stream-based writes with backpressure handling
+ * - 15-second timeout protection for write operations
+ * - Automatic directory creation
+ * - Error handling via exitEmitter
+ * - Search metadata for filtering (symbol, strategy, exchange, frame, signalId, walkerName)
+ *
+ * File format: ./dump/report/{reportName}.jsonl
+ * Each line contains: reportName, data, metadata, timestamp
+ *
+ * Use this adapter for event logging and post-processing analytics.
+ */
+declare const ReportBase: {
+    new (reportName: ReportName, baseDir?: string): {
+        /** Absolute path to the JSONL file for this report type */
+        _filePath: string;
+        /** WriteStream instance for append-only writes, null until initialized */
+        _stream: WriteStream | null;
+        readonly reportName: ReportName;
+        readonly baseDir: string;
+        /**
+         * Initializes the JSONL file and write stream.
+         * Safe to call multiple times - singleshot ensures one-time execution.
+         *
+         * @param initial - Whether this is the first initialization (informational only)
+         * @returns Promise that resolves when initialization is complete
+         */
+        waitForInit(initial: boolean): Promise<void>;
+        /**
+         * Writes event data to JSONL file with metadata.
+         * Appends a single line with JSON object containing:
+         * - reportName: Type of report
+         * - data: Event data object
+         * - Search flags: symbol, strategyName, exchangeName, frameName, signalId, walkerName
+         * - timestamp: Current timestamp in milliseconds
+         *
+         * @param data - Event data object to write
+         * @param options - Metadata options for filtering and search
+         * @throws Error if stream not initialized or write timeout exceeded
+         */
+        write<T = any>(data: T, options: IReportDumpOptions): Promise<void>;
+        /**
+         * Singleshot initialization function that creates directory and stream.
+         * Protected by singleshot to ensure one-time execution.
+         * Sets up error handler that emits to exitEmitter.
+         */
+        [WAIT_FOR_INIT_SYMBOL$1]: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+        /**
+         * Timeout-protected write function with backpressure handling.
+         * Waits for drain event if write buffer is full.
+         * Times out after 15 seconds and returns TIMEOUT_SYMBOL.
+         */
+        [WRITE_SAFE_SYMBOL$1]: (line: string) => Promise<symbol | void>;
+    };
+};
+/**
+ * Utility class for managing report services.
+ *
+ * Provides methods to enable/disable JSONL event logging across
+ * different service types (backtest, live, walker, performance, etc.).
+ *
+ * Typically extended by ReportAdapter for additional functionality.
+ */
+declare class ReportUtils {
+    /**
+     * Enables report services selectively.
+     *
+     * Subscribes to specified report services and returns a cleanup function
+     * that unsubscribes from all enabled services at once.
+     *
+     * Each enabled service will:
+     * - Start listening to relevant events
+     * - Write events to JSONL files in real-time
+     * - Include metadata for filtering and analytics
+     *
+     * IMPORTANT: Always call the returned unsubscribe function to prevent memory leaks.
+     *
+     * @param config - Service configuration object. Defaults to enabling all services.
+     * @param config.backtest - Enable backtest closed signal logging
+     * @param config.breakeven - Enable breakeven event logging
+     * @param config.partial - Enable partial close event logging
+     * @param config.heat - Enable heatmap data logging
+     * @param config.walker - Enable walker iteration logging
+     * @param config.performance - Enable performance metrics logging
+     * @param config.risk - Enable risk rejection logging
+     * @param config.schedule - Enable scheduled signal logging
+     * @param config.live - Enable live trading event logging
+     *
+     * @returns Cleanup function that unsubscribes from all enabled services
+     */
+    enable: ({ backtest: bt, breakeven, heat, live, partial, performance, risk, schedule, walker, }?: Partial<IReportTarget>) => (...args: any[]) => any;
+}
+/**
+ * Report adapter with pluggable storage backend and instance memoization.
+ *
+ * Features:
+ * - Adapter pattern for swappable storage implementations
+ * - Memoized storage instances (one per report type)
+ * - Default adapter: ReportBase (JSONL append)
+ * - Lazy initialization on first write
+ * - Real-time event logging to JSONL files
+ *
+ * Used for structured event logging and analytics pipelines.
+ */
+declare class ReportAdapter extends ReportUtils {
+    /**
+     * Current report storage adapter constructor.
+     * Defaults to ReportBase for JSONL storage.
+     * Can be changed via useReportAdapter().
+     */
+    private ReportFactory;
+    /**
+     * Memoized storage instances cache.
+     * Key: reportName (backtest, live, walker, etc.)
+     * Value: TReportBase instance created with current ReportFactory.
+     * Ensures single instance per report type for the lifetime of the application.
+     */
+    private getReportStorage;
+    /**
+     * Sets the report storage adapter constructor.
+     * All future report instances will use this adapter.
+     *
+     * @param Ctor - Constructor for report storage adapter
+     */
+    useReportAdapter(Ctor: TReportBaseCtor): void;
+    /**
+     * Writes report data to storage using the configured adapter.
+     * Automatically initializes storage on first write for each report type.
+     *
+     * @param reportName - Type of report (backtest, live, walker, etc.)
+     * @param data - Event data object to write
+     * @param options - Metadata options for filtering and search
+     * @returns Promise that resolves when write is complete
+     * @throws Error if write fails or storage initialization fails
+     *
+     * @internal - Automatically called by report services, not for direct use
+     */
+    writeData: <T = any>(reportName: ReportName, data: T, options: IReportDumpOptions) => Promise<void>;
+    /**
+     * Switches to a dummy report adapter that discards all writes.
+     * All future report writes will be no-ops.
+     */
+    useDummy(): void;
+    /**
+     * Switches to the default JSONL report adapter.
+     * All future report writes will use JSONL storage.
+     */
+    useJsonl(): void;
+}
+/**
+ * Global singleton instance of ReportAdapter.
+ * Provides JSONL event logging with pluggable storage backends.
+ */
+declare const Report: ReportAdapter;
+
+/**
+ * Configuration interface for selective markdown service enablement.
+ * Controls which markdown report services should be activated.
+ */
+interface IMarkdownTarget {
+    /** Enable risk rejection tracking reports (signals blocked by risk limits) */
+    risk: boolean;
+    /** Enable breakeven event tracking reports (when stop loss moves to entry) */
+    breakeven: boolean;
+    /** Enable partial profit/loss event tracking reports */
+    partial: boolean;
+    /** Enable portfolio heatmap analysis reports across all symbols */
+    heat: boolean;
+    /** Enable walker strategy comparison and optimization reports */
+    walker: boolean;
+    /** Enable performance metrics and bottleneck analysis reports */
+    performance: boolean;
+    /** Enable scheduled signal tracking reports (signals waiting for trigger) */
+    schedule: boolean;
+    /** Enable live trading event reports (all tick events) */
+    live: boolean;
+    /** Enable backtest markdown reports (main strategy results with full trade history) */
+    backtest: boolean;
+}
+declare const WAIT_FOR_INIT_SYMBOL: unique symbol;
+declare const WRITE_SAFE_SYMBOL: unique symbol;
+/**
+ * Union type of all valid markdown report names.
+ * Used for type-safe identification of markdown services.
+ */
+type MarkdownName = keyof IMarkdownTarget;
+/**
+ * Options for markdown dump operations.
+ * Contains path information and metadata for filtering.
+ */
+interface IMarkdownDumpOptions {
+    /** Directory path relative to process.cwd() */
+    path: string;
+    /** File name including extension */
+    file: string;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
+    symbol: string;
+    /** Strategy name */
+    strategyName: string;
+    /** Exchange name */
+    exchangeName: string;
+    /** Frame name (timeframe identifier) */
+    frameName: string;
+    /** Signal unique identifier */
+    signalId: string;
+}
+/**
+ * Base interface for markdown storage adapters.
+ * All markdown adapters must implement this interface.
+ */
+type TMarkdownBase = {
+    /**
+     * Initialize markdown storage and prepare for writes.
+     * Uses singleshot to ensure one-time execution.
+     *
+     * @param initial - Whether this is the first initialization
+     * @returns Promise that resolves when initialization is complete
+     */
+    waitForInit(initial: boolean): Promise<void>;
+    /**
+     * Dump markdown content to storage.
+     *
+     * @param content - Markdown content to write
+     * @param options - Metadata and path options for the dump
+     * @returns Promise that resolves when write is complete
+     * @throws Error if write fails or stream is not initialized
+     */
+    dump(content: string, options: IMarkdownDumpOptions): Promise<void>;
+};
+/**
+ * Constructor type for markdown storage adapters.
+ * Used for custom markdown storage implementations.
+ */
+type TMarkdownBaseCtor = new (markdownName: MarkdownName) => TMarkdownBase;
+/**
+ * JSONL-based markdown adapter with append-only writes.
+ *
+ * Features:
+ * - Writes markdown reports as JSONL entries to a single file per markdown type
+ * - Stream-based writes with backpressure handling
+ * - 15-second timeout protection for write operations
+ * - Automatic directory creation
+ * - Error handling via exitEmitter
+ * - Search metadata for filtering (symbol, strategy, exchange, frame, signalId)
+ *
+ * File format: ./dump/markdown/{markdownName}.jsonl
+ * Each line contains: markdownName, data, symbol, strategyName, exchangeName, frameName, signalId, timestamp
+ *
+ * Use this adapter for centralized logging and post-processing with JSONL tools.
+ */
+declare const MarkdownFileBase: {
+    new (markdownName: MarkdownName): {
+        /** Absolute path to the JSONL file for this markdown type */
+        _filePath: string;
+        /** WriteStream instance for append-only writes, null until initialized */
+        _stream: WriteStream | null;
+        /** Base directory for all JSONL markdown files */
+        _baseDir: string;
+        readonly markdownName: MarkdownName;
+        /**
+         * Initializes the JSONL file and write stream.
+         * Safe to call multiple times - singleshot ensures one-time execution.
+         *
+         * @returns Promise that resolves when initialization is complete
+         */
+        waitForInit(): Promise<void>;
+        /**
+         * Writes markdown content to JSONL file with metadata.
+         * Appends a single line with JSON object containing:
+         * - markdownName: Type of report
+         * - data: Markdown content
+         * - Search flags: symbol, strategyName, exchangeName, frameName, signalId
+         * - timestamp: Current timestamp in milliseconds
+         *
+         * @param data - Markdown content to write
+         * @param options - Path and metadata options
+         * @throws Error if stream not initialized or write timeout exceeded
+         */
+        dump(data: string, options: IMarkdownDumpOptions): Promise<void>;
+        /**
+         * Singleshot initialization function that creates directory and stream.
+         * Protected by singleshot to ensure one-time execution.
+         * Sets up error handler that emits to exitEmitter.
+         */
+        [WAIT_FOR_INIT_SYMBOL]: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+        /**
+         * Timeout-protected write function with backpressure handling.
+         * Waits for drain event if write buffer is full.
+         * Times out after 15 seconds and returns TIMEOUT_SYMBOL.
+         */
+        [WRITE_SAFE_SYMBOL]: (line: string) => Promise<symbol | void>;
+    };
+};
+/**
+ * Folder-based markdown adapter with separate files per report.
+ *
+ * Features:
+ * - Writes each markdown report as a separate .md file
+ * - File path based on options.path and options.file
+ * - Automatic directory creation
+ * - No stream management (direct writeFile)
+ * - Suitable for human-readable report directories
+ *
+ * File format: {options.path}/{options.file}
+ * Example: ./dump/backtest/BTCUSDT_my-strategy_binance_2024-Q1_backtest-1736601234567.md
+ *
+ * Use this adapter (default) for organized report directories and manual review.
+ */
+declare const MarkdownFolderBase: {
+    new (markdownName: MarkdownName): {
+        readonly markdownName: MarkdownName;
+        /**
+         * No-op initialization for folder adapter.
+         * This adapter doesn't need initialization since it uses direct writeFile.
+         *
+         * @returns Promise that resolves immediately
+         */
+        waitForInit(): Promise<void>;
+        /**
+         * Writes markdown content to a separate file.
+         * Creates directory structure automatically.
+         * File path is determined by options.path and options.file.
+         *
+         * @param content - Markdown content to write
+         * @param options - Path and file options for the dump
+         * @throws Error if directory creation or file write fails
+         */
+        dump(content: string, options: IMarkdownDumpOptions): Promise<void>;
+    };
+};
+/**
+ * Utility class for managing markdown report services.
+ *
+ * Provides methods to enable/disable markdown report generation across
+ * different service types (backtest, live, walker, performance, etc.).
+ *
+ * Typically extended by MarkdownAdapter for additional functionality.
+ */
+declare class MarkdownUtils {
+    /**
+     * Enables markdown report services selectively.
+     *
+     * Subscribes to specified markdown services and returns a cleanup function
+     * that unsubscribes from all enabled services at once.
+     *
+     * Each enabled service will:
+     * - Start listening to relevant events
+     * - Accumulate data for reports
+     * - Generate markdown files when requested
+     *
+     * IMPORTANT: Always call the returned unsubscribe function to prevent memory leaks.
+     *
+     * @param config - Service configuration object. Defaults to enabling all services.
+     * @param config.backtest - Enable backtest result reports with full trade history
+     * @param config.breakeven - Enable breakeven event tracking (when stop loss moves to entry)
+     * @param config.partial - Enable partial profit/loss event tracking
+     * @param config.heat - Enable portfolio heatmap analysis across all symbols
+     * @param config.walker - Enable walker strategy comparison and optimization reports
+     * @param config.performance - Enable performance bottleneck analysis
+     * @param config.risk - Enable risk rejection tracking (signals blocked by risk limits)
+     * @param config.schedule - Enable scheduled signal tracking (signals waiting for trigger)
+     * @param config.live - Enable live trading event reports (all tick events)
+     *
+     * @returns Cleanup function that unsubscribes from all enabled services
+     */
+    enable: ({ backtest: bt, breakeven, heat, live, partial, performance, risk, schedule, walker, }?: Partial<IMarkdownTarget>) => (...args: any[]) => any;
+}
+/**
+ * Markdown adapter with pluggable storage backend and instance memoization.
+ *
+ * Features:
+ * - Adapter pattern for swappable storage implementations
+ * - Memoized storage instances (one per markdown type)
+ * - Default adapter: MarkdownFolderBase (separate files)
+ * - Alternative adapter: MarkdownFileBase (JSONL append)
+ * - Lazy initialization on first write
+ * - Convenience methods: useMd(), useJsonl()
+ */
+declare class MarkdownAdapter extends MarkdownUtils {
+    /**
+     * Current markdown storage adapter constructor.
+     * Defaults to MarkdownFolderBase for separate file storage.
+     * Can be changed via useMarkdownAdapter().
+     */
+    private MarkdownFactory;
+    /**
+     * Memoized storage instances cache.
+     * Key: markdownName (backtest, live, walker, etc.)
+     * Value: TMarkdownBase instance created with current MarkdownFactory.
+     * Ensures single instance per markdown type for the lifetime of the application.
+     */
+    private getMarkdownStorage;
+    /**
+     * Sets the markdown storage adapter constructor.
+     * All future markdown instances will use this adapter.
+     *
+     * @param Ctor - Constructor for markdown storage adapter
+     */
+    useMarkdownAdapter(Ctor: TMarkdownBaseCtor): void;
+    /**
+     * Writes markdown data to storage using the configured adapter.
+     * Automatically initializes storage on first write for each markdown type.
+     *
+     * @param markdownName - Type of markdown report (backtest, live, walker, etc.)
+     * @param content - Markdown content to write
+     * @param options - Path, file, and metadata options
+     * @returns Promise that resolves when write is complete
+     * @throws Error if write fails or storage initialization fails
+     *
+     * @internal - Use service-specific dump methods instead (e.g., Backtest.dump)
+     */
+    writeData(markdownName: MarkdownName, content: string, options: IMarkdownDumpOptions): Promise<void>;
+    /**
+     * Switches to folder-based markdown storage (default).
+     * Shorthand for useMarkdownAdapter(MarkdownFolderBase).
+     * Each dump creates a separate .md file.
+     */
+    useMd(): void;
+    /**
+     * Switches to JSONL-based markdown storage.
+     * Shorthand for useMarkdownAdapter(MarkdownFileBase).
+     * All dumps append to a single .jsonl file per markdown type.
+     */
+    useJsonl(): void;
+    /**
+     * Switches to a dummy markdown adapter that discards all writes.
+     * All future markdown writes will be no-ops.
+     */
+    useDummy(): void;
+}
+/**
+ * Global singleton instance of MarkdownAdapter.
+ * Provides markdown report generation with pluggable storage backends.
+ */
+declare const Markdown: MarkdownAdapter;
 
 /**
  * Type alias for column configuration used in backtest markdown reports.
@@ -6782,22 +7391,33 @@ declare class BacktestMarkdownService {
         backtest: boolean;
     }) => Promise<void>;
     /**
-     * Initializes the service by subscribing to backtest signal events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
+     * Subscribes to backtest signal emitter to receive tick events.
+     * Protected against multiple subscriptions.
+     * Returns an unsubscribe function to stop receiving events.
      *
      * @example
      * ```typescript
      * const service = new BacktestMarkdownService();
-     * await service.init(); // Subscribe to backtest events
+     * const unsubscribe = service.subscribe();
+     * // ... later
+     * unsubscribe();
      * ```
      */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
     /**
-     * Function to unsubscribe from backtest signal events.
-     * Assigned during init().
+     * Unsubscribes from backtest signal emitter to stop receiving tick events.
+     * Calls the unsubscribe function returned by subscribe().
+     * If not subscribed, does nothing.
+     *
+     * @example
+     * ```typescript
+     * const service = new BacktestMarkdownService();
+     * service.subscribe();
+     * // ... later
+     * service.unsubscribe();
+     * ```
      */
-    unsubscribe: Function;
+    unsubscribe: () => Promise<void>;
 }
 
 /**
@@ -6999,7 +7619,7 @@ declare class BacktestUtils {
      * @param percentToClose - Percentage of position to close (0-100, absolute value)
      * @param currentPrice - Current market price for this partial close
      * @param context - Execution context with strategyName, exchangeName, and frameName
-     * @returns Promise that resolves when state is updated
+     * @returns Promise<boolean> - true if partial close executed, false if skipped
      *
      * @throws Error if currentPrice is not in profit direction:
      *   - LONG: currentPrice must be > priceOpen
@@ -7008,18 +7628,21 @@ declare class BacktestUtils {
      * @example
      * ```typescript
      * // Close 30% of LONG position at profit
-     * await Backtest.partialProfit("BTCUSDT", 30, 45000, {
+     * const success = await Backtest.partialProfit("BTCUSDT", 30, 45000, {
      *   exchangeName: "binance",
      *   frameName: "frame1",
      *   strategyName: "my-strategy"
      * });
+     * if (success) {
+     *   console.log('Partial profit executed');
+     * }
      * ```
      */
     partialProfit: (symbol: string, percentToClose: number, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => Promise<void>;
+    }) => Promise<boolean>;
     /**
      * Executes partial close at loss level (moving toward SL).
      *
@@ -7030,7 +7653,7 @@ declare class BacktestUtils {
      * @param percentToClose - Percentage of position to close (0-100, absolute value)
      * @param currentPrice - Current market price for this partial close
      * @param context - Execution context with strategyName, exchangeName, and frameName
-     * @returns Promise that resolves when state is updated
+     * @returns Promise<boolean> - true if partial close executed, false if skipped
      *
      * @throws Error if currentPrice is not in loss direction:
      *   - LONG: currentPrice must be < priceOpen
@@ -7039,18 +7662,21 @@ declare class BacktestUtils {
      * @example
      * ```typescript
      * // Close 40% of LONG position at loss
-     * await Backtest.partialLoss("BTCUSDT", 40, 38000, {
+     * const success = await Backtest.partialLoss("BTCUSDT", 40, 38000, {
      *   exchangeName: "binance",
      *   frameName: "frame1",
      *   strategyName: "my-strategy"
      * });
+     * if (success) {
+     *   console.log('Partial loss executed');
+     * }
      * ```
      */
     partialLoss: (symbol: string, percentToClose: number, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => Promise<void>;
+    }) => Promise<boolean>;
     /**
      * Adjusts the trailing stop-loss distance for an active pending signal.
      *
@@ -7366,6 +7992,34 @@ declare class LiveMarkdownService {
      */
     private getStorage;
     /**
+     * Subscribes to live signal emitter to receive tick events.
+     * Protected against multiple subscriptions.
+     * Returns an unsubscribe function to stop receiving events.
+     *
+     * @example
+     * ```typescript
+     * const service = new LiveMarkdownService();
+     * const unsubscribe = service.subscribe();
+     * // ... later
+     * unsubscribe();
+     * ```
+     */
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    /**
+     * Unsubscribes from live signal emitter to stop receiving tick events.
+     * Calls the unsubscribe function returned by subscribe().
+     * If not subscribed, does nothing.
+     *
+     * @example
+     * ```typescript
+     * const service = new LiveMarkdownService();
+     * service.subscribe();
+     * // ... later
+     * service.unsubscribe();
+     * ```
+     */
+    unsubscribe: () => Promise<void>;
+    /**
      * Processes tick events and accumulates all event types.
      * Should be called from IStrategyCallbacks.onTick.
      *
@@ -7476,23 +8130,6 @@ declare class LiveMarkdownService {
         frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to live signal events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new LiveMarkdownService();
-     * await service.init(); // Subscribe to live events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-    /**
-     * Function to unsubscribe from backtest signal events.
-     * Assigned during init().
-     */
-    unsubscribe: Function;
 }
 
 /**
@@ -7694,7 +8331,7 @@ declare class LiveUtils {
      * @param percentToClose - Percentage of position to close (0-100, absolute value)
      * @param currentPrice - Current market price for this partial close
      * @param context - Execution context with strategyName and exchangeName
-     * @returns Promise that resolves when state is updated
+     * @returns Promise<boolean> - true if partial close executed, false if skipped
      *
      * @throws Error if currentPrice is not in profit direction:
      *   - LONG: currentPrice must be > priceOpen
@@ -7703,16 +8340,19 @@ declare class LiveUtils {
      * @example
      * ```typescript
      * // Close 30% of LONG position at profit
-     * await Live.partialProfit("BTCUSDT", 30, 45000, {
+     * const success = await Live.partialProfit("BTCUSDT", 30, 45000, {
      *   exchangeName: "binance",
      *   strategyName: "my-strategy"
      * });
+     * if (success) {
+     *   console.log('Partial profit executed');
+     * }
      * ```
      */
     partialProfit: (symbol: string, percentToClose: number, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-    }) => Promise<void>;
+    }) => Promise<boolean>;
     /**
      * Executes partial close at loss level (moving toward SL).
      *
@@ -7723,7 +8363,7 @@ declare class LiveUtils {
      * @param percentToClose - Percentage of position to close (0-100, absolute value)
      * @param currentPrice - Current market price for this partial close
      * @param context - Execution context with strategyName and exchangeName
-     * @returns Promise that resolves when state is updated
+     * @returns Promise<boolean> - true if partial close executed, false if skipped
      *
      * @throws Error if currentPrice is not in loss direction:
      *   - LONG: currentPrice must be < priceOpen
@@ -7732,16 +8372,19 @@ declare class LiveUtils {
      * @example
      * ```typescript
      * // Close 40% of LONG position at loss
-     * await Live.partialLoss("BTCUSDT", 40, 38000, {
+     * const success = await Live.partialLoss("BTCUSDT", 40, 38000, {
      *   exchangeName: "binance",
      *   strategyName: "my-strategy"
      * });
+     * if (success) {
+     *   console.log('Partial loss executed');
+     * }
      * ```
      */
     partialLoss: (symbol: string, percentToClose: number, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-    }) => Promise<void>;
+    }) => Promise<boolean>;
     /**
      * Adjusts the trailing stop-loss distance for an active pending signal.
      *
@@ -8036,6 +8679,34 @@ declare class ScheduleMarkdownService {
      */
     private getStorage;
     /**
+     * Subscribes to signal emitter to receive scheduled signal events.
+     * Protected against multiple subscriptions.
+     * Returns an unsubscribe function to stop receiving events.
+     *
+     * @example
+     * ```typescript
+     * const service = new ScheduleMarkdownService();
+     * const unsubscribe = service.subscribe();
+     * // ... later
+     * unsubscribe();
+     * ```
+     */
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    /**
+     * Unsubscribes from signal emitter to stop receiving scheduled signal events.
+     * Calls the unsubscribe function returned by subscribe().
+     * If not subscribed, does nothing.
+     *
+     * @example
+     * ```typescript
+     * const service = new ScheduleMarkdownService();
+     * service.subscribe();
+     * // ... later
+     * service.unsubscribe();
+     * ```
+     */
+    unsubscribe: () => Promise<void>;
+    /**
      * Processes tick events and accumulates scheduled/opened/cancelled events.
      * Should be called from signalEmitter subscription.
      *
@@ -8139,23 +8810,6 @@ declare class ScheduleMarkdownService {
         frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to live signal events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new ScheduleMarkdownService();
-     * await service.init(); // Subscribe to live events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-    /**
-     * Function to unsubscribe from partial profit/loss events.
-     * Assigned during init().
-     */
-    unsubscribe: Function;
 }
 
 /**
@@ -8325,6 +8979,34 @@ declare class PerformanceMarkdownService {
      */
     private getStorage;
     /**
+     * Subscribes to performance emitter to receive performance events.
+     * Protected against multiple subscriptions.
+     * Returns an unsubscribe function to stop receiving events.
+     *
+     * @example
+     * ```typescript
+     * const service = new PerformanceMarkdownService();
+     * const unsubscribe = service.subscribe();
+     * // ... later
+     * unsubscribe();
+     * ```
+     */
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    /**
+     * Unsubscribes from performance emitter to stop receiving events.
+     * Calls the unsubscribe function returned by subscribe().
+     * If not subscribed, does nothing.
+     *
+     * @example
+     * ```typescript
+     * const service = new PerformanceMarkdownService();
+     * service.subscribe();
+     * // ... later
+     * service.unsubscribe();
+     * ```
+     */
+    unsubscribe: () => Promise<void>;
+    /**
      * Processes performance events and accumulates metrics.
      * Should be called from performance tracking code.
      *
@@ -8401,16 +9083,6 @@ declare class PerformanceMarkdownService {
         frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to performance events.
-     * Uses singleshot to ensure initialization happens only once.
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-    /**
-     * Function to unsubscribe from partial profit/loss events.
-     * Assigned during init().
-     */
-    unsubscribe: Function;
 }
 
 /**
@@ -8623,6 +9295,34 @@ declare class WalkerMarkdownService {
      */
     private getStorage;
     /**
+     * Subscribes to walker emitter to receive walker progress events.
+     * Protected against multiple subscriptions.
+     * Returns an unsubscribe function to stop receiving events.
+     *
+     * @example
+     * ```typescript
+     * const service = new WalkerMarkdownService();
+     * const unsubscribe = service.subscribe();
+     * // ... later
+     * unsubscribe();
+     * ```
+     */
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    /**
+     * Unsubscribes from walker emitter to stop receiving events.
+     * Calls the unsubscribe function returned by subscribe().
+     * If not subscribed, does nothing.
+     *
+     * @example
+     * ```typescript
+     * const service = new WalkerMarkdownService();
+     * service.subscribe();
+     * // ... later
+     * service.unsubscribe();
+     * ```
+     */
+    unsubscribe: () => Promise<void>;
+    /**
      * Processes walker progress events and accumulates strategy results.
      * Should be called from walkerEmitter.
      *
@@ -8726,23 +9426,6 @@ declare class WalkerMarkdownService {
      * ```
      */
     clear: (walkerName?: WalkerName) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to walker events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new WalkerMarkdownService();
-     * await service.init(); // Subscribe to walker events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-    /**
-     * Function to unsubscribe from partial profit/loss events.
-     * Assigned during init().
-     */
-    unsubscribe: Function;
 }
 
 /**
@@ -8987,6 +9670,34 @@ declare class HeatMarkdownService {
      */
     private getStorage;
     /**
+     * Subscribes to signal emitter to receive tick events.
+     * Protected against multiple subscriptions.
+     * Returns an unsubscribe function to stop receiving events.
+     *
+     * @example
+     * ```typescript
+     * const service = new HeatMarkdownService();
+     * const unsubscribe = service.subscribe();
+     * // ... later
+     * unsubscribe();
+     * ```
+     */
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    /**
+     * Unsubscribes from signal emitter to stop receiving tick events.
+     * Calls the unsubscribe function returned by subscribe().
+     * If not subscribed, does nothing.
+     *
+     * @example
+     * ```typescript
+     * const service = new HeatMarkdownService();
+     * service.subscribe();
+     * // ... later
+     * service.unsubscribe();
+     * ```
+     */
+    unsubscribe: () => Promise<void>;
+    /**
      * Processes tick events and accumulates closed signals.
      * Should be called from signal emitter subscription.
      *
@@ -9093,23 +9804,6 @@ declare class HeatMarkdownService {
         frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to signal events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new HeatMarkdownService();
-     * await service.init(); // Subscribe to signal events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-    /**
-     * Function to unsubscribe from backtest signal events.
-     * Assigned during init().
-     */
-    unsubscribe: Function;
 }
 
 /**
@@ -9511,6 +10205,34 @@ declare class PartialMarkdownService {
      */
     private getStorage;
     /**
+     * Subscribes to partial profit/loss signal emitters to receive events.
+     * Protected against multiple subscriptions.
+     * Returns an unsubscribe function to stop receiving events.
+     *
+     * @example
+     * ```typescript
+     * const service = new PartialMarkdownService();
+     * const unsubscribe = service.subscribe();
+     * // ... later
+     * unsubscribe();
+     * ```
+     */
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    /**
+     * Unsubscribes from partial profit/loss signal emitters to stop receiving events.
+     * Calls the unsubscribe function returned by subscribe().
+     * If not subscribed, does nothing.
+     *
+     * @example
+     * ```typescript
+     * const service = new PartialMarkdownService();
+     * service.subscribe();
+     * // ... later
+     * service.unsubscribe();
+     * ```
+     */
+    unsubscribe: () => Promise<void>;
+    /**
      * Processes profit events and accumulates them.
      * Should be called from partialProfitSubject subscription.
      *
@@ -9625,23 +10347,6 @@ declare class PartialMarkdownService {
         frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to partial profit/loss events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new PartialMarkdownService();
-     * await service.init(); // Subscribe to profit/loss events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-    /**
-     * Function to unsubscribe from partial profit/loss events.
-     * Assigned during init().
-     */
-    unsubscribe: Function;
 }
 
 /**
@@ -9948,6 +10653,34 @@ declare class RiskMarkdownService {
      */
     private getStorage;
     /**
+     * Subscribes to risk rejection emitter to receive rejection events.
+     * Protected against multiple subscriptions.
+     * Returns an unsubscribe function to stop receiving events.
+     *
+     * @example
+     * ```typescript
+     * const service = new RiskMarkdownService();
+     * const unsubscribe = service.subscribe();
+     * // ... later
+     * unsubscribe();
+     * ```
+     */
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    /**
+     * Unsubscribes from risk rejection emitter to stop receiving events.
+     * Calls the unsubscribe function returned by subscribe().
+     * If not subscribed, does nothing.
+     *
+     * @example
+     * ```typescript
+     * const service = new RiskMarkdownService();
+     * service.subscribe();
+     * // ... later
+     * service.unsubscribe();
+     * ```
+     */
+    unsubscribe: () => Promise<void>;
+    /**
      * Processes risk rejection events and accumulates them.
      * Should be called from riskSubject subscription.
      *
@@ -10049,23 +10782,6 @@ declare class RiskMarkdownService {
         frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to risk rejection events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new RiskMarkdownService();
-     * await service.init(); // Subscribe to rejection events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-    /**
-     * Function to unsubscribe from partial profit/loss events.
-     * Assigned during init().
-     */
-    unsubscribe: Function;
 }
 
 /**
@@ -10341,7 +11057,7 @@ declare const Exchange: ExchangeUtils;
  * Generic function type that accepts any arguments and returns any value.
  * Used as a constraint for cached functions.
  */
-type Function$1 = (...args: any[]) => any;
+type Function = (...args: any[]) => any;
 /**
  * Utility class for function caching with timeframe-based invalidation.
  *
@@ -10386,7 +11102,7 @@ declare class CacheUtils {
      * const result2 = cachedCalculate("BTCUSDT", 14); // Cached (same 15m interval)
      * ```
      */
-    fn: <T extends Function$1>(run: T, context: {
+    fn: <T extends Function>(run: T, context: {
         interval: CandleInterval;
     }) => T;
     /**
@@ -10418,7 +11134,7 @@ declare class CacheUtils {
      * Cache.flush();
      * ```
      */
-    flush: <T extends Function$1>(run?: T) => void;
+    flush: <T extends Function>(run?: T) => void;
     /**
      * Clear cached value for current execution context of a specific function.
      *
@@ -10448,7 +11164,7 @@ declare class CacheUtils {
      * // Other contexts (different strategies/exchanges) remain cached
      * ```
      */
-    clear: <T extends Function$1>(run: T) => void;
+    clear: <T extends Function>(run: T) => void;
 }
 /**
  * Singleton instance of CacheUtils for convenient function caching.
@@ -10621,6 +11337,34 @@ declare class BreakevenMarkdownService {
      */
     private getStorage;
     /**
+     * Subscribes to breakeven signal emitter to receive events.
+     * Protected against multiple subscriptions.
+     * Returns an unsubscribe function to stop receiving events.
+     *
+     * @example
+     * ```typescript
+     * const service = new BreakevenMarkdownService();
+     * const unsubscribe = service.subscribe();
+     * // ... later
+     * unsubscribe();
+     * ```
+     */
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    /**
+     * Unsubscribes from breakeven signal emitter to stop receiving events.
+     * Calls the unsubscribe function returned by subscribe().
+     * If not subscribed, does nothing.
+     *
+     * @example
+     * ```typescript
+     * const service = new BreakevenMarkdownService();
+     * service.subscribe();
+     * // ... later
+     * service.unsubscribe();
+     * ```
+     */
+    unsubscribe: () => Promise<void>;
+    /**
      * Processes breakeven events and accumulates them.
      * Should be called from breakevenSubject subscription.
      *
@@ -10722,23 +11466,6 @@ declare class BreakevenMarkdownService {
         frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
-    /**
-     * Initializes the service by subscribing to breakeven events.
-     * Uses singleshot to ensure initialization happens only once.
-     * Automatically called on first use.
-     *
-     * @example
-     * ```typescript
-     * const service = new BreakevenMarkdownService();
-     * await service.init(); // Subscribe to breakeven events
-     * ```
-     */
-    protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-    /**
-     * Function to unsubscribe from breakeven events.
-     * Assigned during init().
-     */
-    unsubscribe: Function;
 }
 
 /**
@@ -11959,25 +12686,28 @@ declare class StrategyConnectionService implements TStrategy$1 {
      * @param context - Execution context with strategyName, exchangeName, frameName
      * @param percentToClose - Percentage of position to close (0-100, absolute value)
      * @param currentPrice - Current market price for this partial close
-     * @returns Promise that resolves when state is updated and persisted
+     * @returns Promise<boolean> - true if partial close executed, false if skipped
      *
      * @example
      * ```typescript
      * // Close 30% of position at profit
-     * await strategyConnectionService.partialProfit(
+     * const success = await strategyConnectionService.partialProfit(
      *   false,
      *   "BTCUSDT",
      *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" },
      *   30,
      *   45000
      * );
+     * if (success) {
+     *   console.log('Partial profit executed');
+     * }
      * ```
      */
     partialProfit: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => Promise<void>;
+    }) => Promise<boolean>;
     /**
      * Executes partial close at loss level (moving toward SL).
      *
@@ -11991,25 +12721,28 @@ declare class StrategyConnectionService implements TStrategy$1 {
      * @param context - Execution context with strategyName, exchangeName, frameName
      * @param percentToClose - Percentage of position to close (0-100, absolute value)
      * @param currentPrice - Current market price for this partial close
-     * @returns Promise that resolves when state is updated and persisted
+     * @returns Promise<boolean> - true if partial close executed, false if skipped
      *
      * @example
      * ```typescript
      * // Close 40% of position at loss
-     * await strategyConnectionService.partialLoss(
+     * const success = await strategyConnectionService.partialLoss(
      *   false,
      *   "BTCUSDT",
      *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" },
      *   40,
      *   38000
      * );
+     * if (success) {
+     *   console.log('Partial loss executed');
+     * }
      * ```
      */
     partialLoss: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => Promise<void>;
+    }) => Promise<boolean>;
     /**
      * Adjusts the trailing stop-loss distance for an active pending signal.
      *
@@ -12561,25 +13294,28 @@ declare class StrategyCoreService implements TStrategy {
      * @param percentToClose - Percentage of position to close (0-100, absolute value)
      * @param currentPrice - Current market price for this partial close (must be in profit direction)
      * @param context - Execution context with strategyName, exchangeName, frameName
-     * @returns Promise that resolves when state is updated and persisted
+     * @returns Promise<boolean> - true if partial close executed, false if skipped
      *
      * @example
      * ```typescript
      * // Close 30% of position at profit
-     * await strategyCoreService.partialProfit(
+     * const success = await strategyCoreService.partialProfit(
      *   false,
      *   "BTCUSDT",
      *   30,
      *   45000,
      *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
      * );
+     * if (success) {
+     *   console.log('Partial profit executed');
+     * }
      * ```
      */
     partialProfit: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => Promise<void>;
+    }) => Promise<boolean>;
     /**
      * Executes partial close at loss level (moving toward SL).
      *
@@ -12593,25 +13329,28 @@ declare class StrategyCoreService implements TStrategy {
      * @param percentToClose - Percentage of position to close (0-100, absolute value)
      * @param currentPrice - Current market price for this partial close (must be in loss direction)
      * @param context - Execution context with strategyName, exchangeName, frameName
-     * @returns Promise that resolves when state is updated and persisted
+     * @returns Promise<boolean> - true if partial close executed, false if skipped
      *
      * @example
      * ```typescript
      * // Close 40% of position at loss
-     * await strategyCoreService.partialLoss(
+     * const success = await strategyCoreService.partialLoss(
      *   false,
      *   "BTCUSDT",
      *   40,
      *   38000,
      *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
      * );
+     * if (success) {
+     *   console.log('Partial loss executed');
+     * }
      * ```
      */
     partialLoss: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => Promise<void>;
+    }) => Promise<boolean>;
     /**
      * Adjusts the trailing stop-loss distance for an active pending signal.
      *
@@ -14494,7 +15233,7 @@ declare class OutlineMarkdownService {
  *   (slippage + fees) to guarantee profitable trades when TakeProfit is hit
  * - **Range constraints**: Validates MIN < MAX relationships (e.g., StopLoss distances)
  * - **Time-based parameters**: Ensures positive integer values for timeouts and lifetimes
- * - **Candle parameters**: Validates retry counts, delays, and anomaly detection thresholds
+ * - **Candle parameters**: Validates retry counts, delays, anomaly detection thresholds, and max candles per request
  *
  * @throws {Error} If any validation fails, throws with detailed breakdown of all errors
  *
@@ -14582,6 +15321,70 @@ declare class ColumnValidationService {
     validate: () => void;
 }
 
+declare class BacktestReportService {
+    private readonly loggerService;
+    private tick;
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    unsubscribe: () => Promise<void>;
+}
+
+declare class LiveReportService {
+    private readonly loggerService;
+    private tick;
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    unsubscribe: () => Promise<void>;
+}
+
+declare class ScheduleReportService {
+    private readonly loggerService;
+    private tick;
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    unsubscribe: () => Promise<void>;
+}
+
+declare class PerformanceReportService {
+    private readonly loggerService;
+    private track;
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    unsubscribe: () => Promise<void>;
+}
+
+declare class WalkerReportService {
+    private readonly loggerService;
+    private tick;
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    unsubscribe: () => Promise<void>;
+}
+
+declare class HeatReportService {
+    private readonly loggerService;
+    private tick;
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    unsubscribe: () => Promise<void>;
+}
+
+declare class PartialReportService {
+    private readonly loggerService;
+    private tickProfit;
+    private tickLoss;
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    unsubscribe: () => Promise<void>;
+}
+
+declare class BreakevenReportService {
+    private readonly loggerService;
+    private tickBreakeven;
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    unsubscribe: () => Promise<void>;
+}
+
+declare class RiskReportService {
+    private readonly loggerService;
+    private tickRejection;
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    unsubscribe: () => Promise<void>;
+}
+
 declare const backtest: {
     optimizerTemplateService: OptimizerTemplateService;
     exchangeValidationService: ExchangeValidationService;
@@ -14593,6 +15396,15 @@ declare const backtest: {
     optimizerValidationService: OptimizerValidationService;
     configValidationService: ConfigValidationService;
     columnValidationService: ColumnValidationService;
+    backtestReportService: BacktestReportService;
+    liveReportService: LiveReportService;
+    scheduleReportService: ScheduleReportService;
+    performanceReportService: PerformanceReportService;
+    walkerReportService: WalkerReportService;
+    heatReportService: HeatReportService;
+    partialReportService: PartialReportService;
+    breakevenReportService: BreakevenReportService;
+    riskReportService: RiskReportService;
     backtestMarkdownService: BacktestMarkdownService;
     liveMarkdownService: LiveMarkdownService;
     scheduleMarkdownService: ScheduleMarkdownService;
@@ -14644,4 +15456,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, type BootstrapNotification, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, type PingContract, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TPersistBase, type TPersistBaseCtor, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, breakeven, cancel, dumpSignal, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenBreakeven, listenBreakevenOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenPing, listenPingOnce, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, partialLoss, partialProfit, setColumns, setConfig, setLogger, stop, trailingStop, trailingTake, validate };
+export { Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, type BootstrapNotification, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, type PingContract, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, breakeven, cancel, dumpSignal, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenBreakeven, listenBreakevenOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenPing, listenPingOnce, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, partialLoss, partialProfit, setColumns, setConfig, setLogger, stop, trailingStop, trailingTake, validate };

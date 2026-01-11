@@ -93,16 +93,20 @@ const TIMEOUT_SYMBOL = Symbol('timeout');
  * // publicSignal._trailingPriceTakeProfit = undefined (hidden from external API)
  * ```
  */
-const TO_PUBLIC_SIGNAL = <T extends ISignalRow | IScheduledSignalRow>(signal: T): IPublicSignalRow => {
-  const hasTrailingSL = signal._trailingPriceStopLoss !== undefined;
-  const hasTrailingTP = signal._trailingPriceTakeProfit !== undefined;
-  
+const TO_PUBLIC_SIGNAL = <T extends ISignalDto | ISignalRow | IScheduledSignalRow>(signal: T): IPublicSignalRow => {
+  const hasTrailingSL = "_trailingPriceStopLoss" in signal && signal._trailingPriceStopLoss !== undefined;
+  const hasTrailingTP = "_trailingPriceTakeProfit" in signal && signal._trailingPriceTakeProfit !== undefined;
+  const totalExecuted = ("_partial" in signal && Array.isArray(signal._partial))
+    ? signal._partial.reduce((sum, partial) => sum + partial.percent, 0)
+    : 0;
+
   return {
     ...structuredClone(signal) as ISignalRow | IScheduledSignalRow,
     priceStopLoss: hasTrailingSL ? signal._trailingPriceStopLoss : signal.priceStopLoss,
     priceTakeProfit: hasTrailingTP ? signal._trailingPriceTakeProfit : signal.priceTakeProfit,
     originalPriceStopLoss: signal.priceStopLoss,
     originalPriceTakeProfit: signal.priceTakeProfit,
+    totalExecuted,
   };
 };
 
@@ -709,7 +713,7 @@ const PARTIAL_PROFIT_FN = (
   signal: ISignalRow,
   percentToClose: number,
   currentPrice: number
-): void => {
+): boolean => {
   // Initialize partial array if not present
   if (!signal._partial) signal._partial = [];
 
@@ -734,7 +738,7 @@ const PARTIAL_PROFIT_FN = (
         newTotalClosed,
       }
     );
-    return;
+    return false;
   }
 
   // Add new partial close entry
@@ -751,6 +755,8 @@ const PARTIAL_PROFIT_FN = (
     currentPrice,
     tpClosed: tpClosed + percentToClose,
   });
+
+  return true;
 };
 
 const PARTIAL_LOSS_FN = (
@@ -758,7 +764,7 @@ const PARTIAL_LOSS_FN = (
   signal: ISignalRow,
   percentToClose: number,
   currentPrice: number
-): void => {
+): boolean => {
   // Initialize partial array if not present
   if (!signal._partial) signal._partial = [];
 
@@ -783,7 +789,7 @@ const PARTIAL_LOSS_FN = (
         newTotalClosed,
       }
     );
-    return;
+    return false;
   }
 
   // Add new partial close entry
@@ -800,6 +806,8 @@ const PARTIAL_LOSS_FN = (
     currentPrice,
     slClosed: slClosed + percentToClose,
   });
+
+  return true;
 };
 
 const TRAILING_STOP_LOSS_FN = (
@@ -1921,7 +1929,7 @@ const CALL_RISK_CHECK_SIGNAL_FN = trycatch(
   ): Promise<boolean> => {
     return await ExecutionContextService.runInContext(async () => {
       return await self.params.risk.checkSignal({
-        pendingSignal,
+        pendingSignal: TO_PUBLIC_SIGNAL(pendingSignal),
         symbol: symbol,
         strategyName: self.params.method.context.strategyName,
         exchangeName: self.params.method.context.exchangeName,
@@ -2147,6 +2155,8 @@ const RETURN_SCHEDULED_SIGNAL_ACTIVE_FN = async (
     self.params.execution.context.backtest
   );
 
+  const pnl = toProfitLossDto(scheduled, currentPrice);
+
   const result: IStrategyTickResultActive = {
     action: "active",
     signal: TO_PUBLIC_SIGNAL(scheduled),
@@ -2157,6 +2167,7 @@ const RETURN_SCHEDULED_SIGNAL_ACTIVE_FN = async (
     symbol: self.params.execution.context.symbol,
     percentTp: 0,
     percentSl: 0,
+    pnl,
     backtest: self.params.execution.context.backtest,
   };
 
@@ -2538,6 +2549,8 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
     }
   }
 
+  const pnl = toProfitLossDto(signal, currentPrice);
+
   const result: IStrategyTickResultActive = {
     action: "active",
     signal: TO_PUBLIC_SIGNAL(signal),
@@ -2548,6 +2561,7 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
     symbol: self.params.execution.context.symbol,
     percentTp,
     percentSl,
+    pnl,
     backtest: self.params.execution.context.backtest,
   };
 
@@ -3762,12 +3776,15 @@ export class ClientStrategy implements IStrategy {
           // Don't cancel - just return last active state
           // In real backtest flow this won't happen as we process all candles at once,
           // but this is correct behavior if someone calls backtest() with partial data
+          const pnl = toProfitLossDto(scheduled, lastPrice);
+
           const result: IStrategyTickResultActive = {
             action: "active",
             signal: TO_PUBLIC_SIGNAL(scheduled),
             currentPrice: lastPrice,
             percentSl: 0,
             percentTp: 0,
+            pnl,
             strategyName: this.params.method.context.strategyName,
             exchangeName: this.params.method.context.exchangeName,
             frameName: this.params.method.context.frameName,
@@ -3948,7 +3965,8 @@ export class ClientStrategy implements IStrategy {
    * Behavior:
    * - Adds entry to signal's `_partial` array with type "profit"
    * - Validates percentToClose is in range (0, 100]
-   * - Silently skips if total closed would exceed 100%
+   * - Returns false if total closed would exceed 100%
+   * - Returns false if currentPrice already crossed TP level
    * - Persists updated signal state (backtest and live modes)
    * - Calls onWrite callback for persistence testing
    *
@@ -3965,17 +3983,21 @@ export class ClientStrategy implements IStrategy {
    * @param percentToClose - Percentage of position to close (0-100, absolute value)
    * @param currentPrice - Current market price for this partial close (must be in profit direction)
    * @param backtest - Whether running in backtest mode (controls persistence)
-   * @returns Promise that resolves when state is updated and persisted
+   * @returns Promise<boolean> - true if partial close was executed, false if skipped
    *
    * @example
    * ```typescript
    * // Close 30% of position at profit (moving toward TP)
-   * await strategy.partialProfit("BTCUSDT", 30, 45000, false);
+   * const success1 = await strategy.partialProfit("BTCUSDT", 30, 45000, false);
+   * // success1 = true (executed)
    *
    * // Later close another 20%
-   * await strategy.partialProfit("BTCUSDT", 20, 46000, false);
+   * const success2 = await strategy.partialProfit("BTCUSDT", 20, 46000, false);
+   * // success2 = true (executed, total 50% closed)
    *
-   * // Final close will calculate weighted PNL from all partials
+   * // Try to close 60% more (would exceed 100%)
+   * const success3 = await strategy.partialProfit("BTCUSDT", 60, 47000, false);
+   * // success3 = false (skipped, would exceed 100%)
    * ```
    */
   public async partialProfit(
@@ -3983,7 +4005,7 @@ export class ClientStrategy implements IStrategy {
     percentToClose: number,
     currentPrice: number,
     backtest: boolean
-  ): Promise<void> {
+  ): Promise<boolean> {
     this.params.logger.debug("ClientStrategy partialProfit", {
       symbol,
       percentToClose,
@@ -4052,7 +4074,7 @@ export class ClientStrategy implements IStrategy {
         effectiveTakeProfit,
         reason: "currentPrice >= effectiveTakeProfit (LONG position)"
       });
-      return;
+      return false;
     }
 
     if (this._pendingSignal.position === "short" && currentPrice <= effectiveTakeProfit) {
@@ -4063,11 +4085,16 @@ export class ClientStrategy implements IStrategy {
         effectiveTakeProfit,
         reason: "currentPrice <= effectiveTakeProfit (SHORT position)"
       });
-      return;
+      return false;
     }
 
     // Execute partial close logic
-    PARTIAL_PROFIT_FN(this, this._pendingSignal, percentToClose, currentPrice);
+    const wasExecuted = PARTIAL_PROFIT_FN(this, this._pendingSignal, percentToClose, currentPrice);
+
+    // If partial was not executed (exceeded 100%), return false without persistence
+    if (!wasExecuted) {
+      return false;
+    }
 
     // Persist updated signal state (inline setPendingSignal content)
     // Note: this._pendingSignal already mutated by PARTIAL_PROFIT_FN, no reassignment needed
@@ -4092,6 +4119,8 @@ export class ClientStrategy implements IStrategy {
         this.params.exchangeName,
       );
     }
+
+    return true;
   }
 
   /**
@@ -4103,7 +4132,8 @@ export class ClientStrategy implements IStrategy {
    * Behavior:
    * - Adds entry to signal's `_partial` array with type "loss"
    * - Validates percentToClose is in range (0, 100]
-   * - Silently skips if total closed would exceed 100%
+   * - Returns false if total closed would exceed 100%
+   * - Returns false if currentPrice already crossed SL level
    * - Persists updated signal state (backtest and live modes)
    * - Calls onWrite callback for persistence testing
    *
@@ -4120,17 +4150,21 @@ export class ClientStrategy implements IStrategy {
    * @param percentToClose - Percentage of position to close (0-100, absolute value)
    * @param currentPrice - Current market price for this partial close (must be in loss direction)
    * @param backtest - Whether running in backtest mode (controls persistence)
-   * @returns Promise that resolves when state is updated and persisted
+   * @returns Promise<boolean> - true if partial close was executed, false if skipped
    *
    * @example
    * ```typescript
    * // Close 40% of position at loss (moving toward SL)
-   * await strategy.partialLoss("BTCUSDT", 40, 38000, false);
+   * const success1 = await strategy.partialLoss("BTCUSDT", 40, 38000, false);
+   * // success1 = true (executed)
    *
    * // Later close another 30%
-   * await strategy.partialLoss("BTCUSDT", 30, 37000, false);
+   * const success2 = await strategy.partialLoss("BTCUSDT", 30, 37000, false);
+   * // success2 = true (executed, total 70% closed)
    *
-   * // Final close will calculate weighted PNL from all partials
+   * // Try to close 40% more (would exceed 100%)
+   * const success3 = await strategy.partialLoss("BTCUSDT", 40, 36000, false);
+   * // success3 = false (skipped, would exceed 100%)
    * ```
    */
   public async partialLoss(
@@ -4138,7 +4172,7 @@ export class ClientStrategy implements IStrategy {
     percentToClose: number,
     currentPrice: number,
     backtest: boolean
-  ): Promise<void> {
+  ): Promise<boolean> {
     this.params.logger.debug("ClientStrategy partialLoss", {
       symbol,
       percentToClose,
@@ -4207,7 +4241,7 @@ export class ClientStrategy implements IStrategy {
         effectiveStopLoss,
         reason: "currentPrice <= effectiveStopLoss (LONG position)"
       });
-      return;
+      return false;
     }
 
     if (this._pendingSignal.position === "short" && currentPrice >= effectiveStopLoss) {
@@ -4218,11 +4252,16 @@ export class ClientStrategy implements IStrategy {
         effectiveStopLoss,
         reason: "currentPrice >= effectiveStopLoss (SHORT position)"
       });
-      return;
+      return false;
     }
 
     // Execute partial close logic
-    PARTIAL_LOSS_FN(this, this._pendingSignal, percentToClose, currentPrice);
+    const wasExecuted = PARTIAL_LOSS_FN(this, this._pendingSignal, percentToClose, currentPrice);
+
+    // If partial was not executed (exceeded 100%), return false without persistence
+    if (!wasExecuted) {
+      return false;
+    }
 
     // Persist updated signal state (inline setPendingSignal content)
     // Note: this._pendingSignal already mutated by PARTIAL_LOSS_FN, no reassignment needed
@@ -4247,6 +4286,8 @@ export class ClientStrategy implements IStrategy {
         this.params.exchangeName,
       );
     }
+
+    return true;
   }
 
   /**

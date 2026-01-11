@@ -1,5 +1,4 @@
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import { Markdown } from "../../../classes/Markdown";
 import {
   IStrategyTickResult,
   IStrategyTickResultClosed,
@@ -69,6 +68,22 @@ const CREATE_KEY_FN = (
   return parts.join(":");
 };
 
+/**
+ * Creates a filename for markdown report based on memoization key components.
+ * Filename format: "strategyName_exchangeName_frameName-timestamp.md"
+ */
+const CREATE_FILE_NAME_FN = (
+  strategyName: StrategyName,
+  exchangeName: ExchangeName,
+  frameName: FrameName,
+  timestamp: number
+): string => {
+  const parts = [strategyName, exchangeName];
+  if (frameName) { parts.push(frameName); parts.push("backtest"); }
+  else parts.push("live");
+  return `${parts.join("_")}-${timestamp}.md`;
+};
+
 const HEATMAP_METHOD_NAME_GET_DATA = "HeatMarkdownService.getData";
 const HEATMAP_METHOD_NAME_GET_REPORT = "HeatMarkdownService.getReport";
 const HEATMAP_METHOD_NAME_DUMP = "HeatMarkdownService.dump";
@@ -103,6 +118,12 @@ const MAX_EVENTS = 250;
 class HeatmapStorage {
   /** Internal storage of closed signals per symbol */
   private symbolData: Map<string, IStrategyTickResultClosed[]> = new Map();
+
+  constructor(
+    readonly exchangeName: ExchangeName,
+    readonly frameName: FrameName,
+    readonly backtest: boolean
+  ) {}
 
   /**
    * Adds a closed signal to the storage.
@@ -410,19 +431,17 @@ class HeatmapStorage {
     columns: Columns[] = COLUMN_CONFIG.heat_columns
   ): Promise<void> {
     const markdown = await this.getReport(strategyName, columns);
-
-    try {
-      const dir = join(process.cwd(), path);
-      await mkdir(dir, { recursive: true });
-
-      const filename = `${strategyName}.md`;
-      const filepath = join(dir, filename);
-
-      await writeFile(filepath, markdown, "utf-8");
-      console.log(`Heatmap report saved: ${filepath}`);
-    } catch (error) {
-      console.error(`Failed to save heatmap report:`, error);
-    }
+    const timestamp = Date.now();
+    const filename = CREATE_FILE_NAME_FN(strategyName, this.exchangeName, this.frameName, timestamp);
+    await Markdown.writeData("heat", markdown, {
+      path,
+      file: filename,
+      symbol: "",
+      strategyName: "",
+      signalId: "",
+      exchangeName: this.exchangeName,
+      frameName: this.frameName
+    });
   }
 }
 
@@ -462,8 +481,52 @@ export class HeatMarkdownService {
    */
   private getStorage = memoize<(exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => HeatmapStorage>(
     ([exchangeName, frameName, backtest]) => CREATE_KEY_FN(exchangeName, frameName, backtest),
-    () => new HeatmapStorage()
+    (exchangeName, frameName, backtest) => new HeatmapStorage(exchangeName, frameName, backtest)
   );
+
+  /**
+   * Subscribes to signal emitter to receive tick events.
+   * Protected against multiple subscriptions.
+   * Returns an unsubscribe function to stop receiving events.
+   *
+   * @example
+   * ```typescript
+   * const service = new HeatMarkdownService();
+   * const unsubscribe = service.subscribe();
+   * // ... later
+   * unsubscribe();
+   * ```
+   */
+  public subscribe = singleshot(() => {
+    this.loggerService.log("heatMarkdownService init");
+    const unsubscribe = signalEmitter.subscribe(this.tick);
+    return () => {
+      this.subscribe.clear();
+      this.clear();
+      unsubscribe();
+    }
+  });
+
+  /**
+   * Unsubscribes from signal emitter to stop receiving tick events.
+   * Calls the unsubscribe function returned by subscribe().
+   * If not subscribed, does nothing.
+   *
+   * @example
+   * ```typescript
+   * const service = new HeatMarkdownService();
+   * service.subscribe();
+   * // ... later
+   * service.unsubscribe();
+   * ```
+   */
+  public unsubscribe = async () => {
+    this.loggerService.log("heatMarkdownService unsubscribe");
+    if (this.subscribe.hasValue()) {
+      const lastSubscription = this.subscribe();
+      lastSubscription();
+    }
+  };
 
   /**
    * Processes tick events and accumulates closed signals.
@@ -517,6 +580,9 @@ export class HeatMarkdownService {
       frameName,
       backtest,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("HeatMarkdownService not initialized. Call subscribe() before getting data.");
+    }
     const storage = this.getStorage(exchangeName, frameName, backtest);
     return storage.getData();
   };
@@ -561,6 +627,9 @@ export class HeatMarkdownService {
       frameName,
       backtest,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("HeatMarkdownService not initialized. Call subscribe() before generating reports.");
+    }
     const storage = this.getStorage(exchangeName, frameName, backtest);
     return storage.getReport(strategyName, columns);
   };
@@ -604,6 +673,9 @@ export class HeatMarkdownService {
       backtest,
       path,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("HeatMarkdownService not initialized. Call subscribe() before dumping reports.");
+    }
     const storage = this.getStorage(exchangeName, frameName, backtest);
     await storage.dump(strategyName, path, columns);
   };
@@ -638,27 +710,6 @@ export class HeatMarkdownService {
     }
   };
 
-  /**
-   * Initializes the service by subscribing to signal events.
-   * Uses singleshot to ensure initialization happens only once.
-   * Automatically called on first use.
-   *
-   * @example
-   * ```typescript
-   * const service = new HeatMarkdownService();
-   * await service.init(); // Subscribe to signal events
-   * ```
-   */
-  protected init = singleshot(async () => {
-    this.loggerService.log("heatMarkdownService init");
-    this.unsubscribe = signalEmitter.subscribe(this.tick);
-  });
-
-  /**
-   * Function to unsubscribe from backtest signal events.
-   * Assigned during init().
-   */
-  public unsubscribe: Function;
 }
 
 export default HeatMarkdownService;

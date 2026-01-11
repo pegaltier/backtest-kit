@@ -219,6 +219,21 @@ export {
   PersistBreakevenAdapter,
 } from "./classes/Persist";
 
+export {
+  Report,
+  ReportBase,
+  ReportName,
+  TReportBase,
+} from "./classes/Report";
+
+export { 
+  Markdown,
+  MarkdownFileBase,
+  MarkdownFolderBase,
+  MarkdownName,
+  TMarkdownBase
+} from "./classes/Markdown";
+
 export { Backtest } from "./classes/Backtest";
 export { Live } from "./classes/Live";
 export { Schedule } from "./classes/Schedule";

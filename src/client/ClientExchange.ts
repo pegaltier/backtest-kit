@@ -258,13 +258,40 @@ export class ClientExchange implements IExchange {
       this.params.execution.context.when.getTime() - adjust * 60 * 1_000
     );
 
-    const data = await GET_CANDLES_FN({ symbol, interval, limit }, since, this);
+    let allData: ICandleData[] = [];
+
+    // If limit exceeds CC_MAX_CANDLES_PER_REQUEST, fetch data in chunks
+    if (limit > GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST) {
+      let remaining = limit;
+      let currentSince = new Date(since.getTime());
+
+      while (remaining > 0) {
+        const chunkLimit = Math.min(remaining, GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST);
+        const chunkData = await GET_CANDLES_FN(
+          { symbol, interval, limit: chunkLimit },
+          currentSince,
+          this
+        );
+
+        allData.push(...chunkData);
+
+        remaining -= chunkLimit;
+        if (remaining > 0) {
+          // Move currentSince forward by the number of candles fetched
+          currentSince = new Date(
+            currentSince.getTime() + chunkLimit * step * 60 * 1_000
+          );
+        }
+      }
+    } else {
+      allData = await GET_CANDLES_FN({ symbol, interval, limit }, since, this);
+    }
 
     // Filter candles to strictly match the requested range
     const whenTimestamp = this.params.execution.context.when.getTime();
     const sinceTimestamp = since.getTime();
 
-    const filteredData = data.filter(
+    const filteredData = allData.filter(
       (candle) =>
         candle.timestamp >= sinceTimestamp && candle.timestamp <= whenTimestamp
     );
@@ -320,12 +347,39 @@ export class ClientExchange implements IExchange {
       return [];
     }
 
-    const data = await GET_CANDLES_FN({ symbol, interval, limit }, since, this);
+    let allData: ICandleData[] = [];
+
+    // If limit exceeds CC_MAX_CANDLES_PER_REQUEST, fetch data in chunks
+    if (limit > GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST) {
+      let remaining = limit;
+      let currentSince = new Date(since.getTime());
+
+      while (remaining > 0) {
+        const chunkLimit = Math.min(remaining, GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST);
+        const chunkData = await GET_CANDLES_FN(
+          { symbol, interval, limit: chunkLimit },
+          currentSince,
+          this
+        );
+
+        allData.push(...chunkData);
+
+        remaining -= chunkLimit;
+        if (remaining > 0) {
+          // Move currentSince forward by the number of candles fetched
+          currentSince = new Date(
+            currentSince.getTime() + chunkLimit * step * 60 * 1_000
+          );
+        }
+      }
+    } else {
+      allData = await GET_CANDLES_FN({ symbol, interval, limit }, since, this);
+    }
 
     // Filter candles to strictly match the requested range
     const sinceTimestamp = since.getTime();
 
-    const filteredData = data.filter(
+    const filteredData = allData.filter(
       (candle) =>
         candle.timestamp >= sinceTimestamp && candle.timestamp <= endTime
     );

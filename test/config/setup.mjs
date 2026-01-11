@@ -6,9 +6,23 @@ import {
   PersistRiskAdapter,
   PersistScheduleAdapter,
   PersistPartialAdapter,
+  Report,
+  Markdown,
 } from "../../build/index.mjs";
 
 // setLogger(console)
+
+Markdown.enable();
+Report.enable();
+
+Report.useReportAdapter(class {
+  async waitForInit() {
+    void 0;
+  }
+  async write() {
+    void 0;
+  }
+})
 
 PersistSignalAdapter.usePersistSignalAdapter(
   class {

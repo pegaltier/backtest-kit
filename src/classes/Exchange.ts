@@ -1,5 +1,5 @@
 import backtest from "../lib";
-import { CandleInterval, ExchangeName, IExchangeSchema } from "../interfaces/Exchange.interface";
+import { CandleInterval, ExchangeName, ICandleData, IExchangeSchema } from "../interfaces/Exchange.interface";
 import { memoize } from "functools-kit";
 import { GLOBAL_CONFIG } from "../config/params";
 
@@ -92,13 +92,41 @@ export class ExchangeInstance {
     const when = new Date(Date.now());
     const since = new Date(when.getTime() - adjust * 60 * 1_000);
 
-    const data = await this._schema.getCandles(symbol, interval, since, limit);
+    let allData: ICandleData[] = [];
+
+    // If limit exceeds CC_MAX_CANDLES_PER_REQUEST, fetch data in chunks
+    if (limit > GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST) {
+      let remaining = limit;
+      let currentSince = new Date(since.getTime());
+
+      while (remaining > 0) {
+        const chunkLimit = Math.min(remaining, GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST);
+        const chunkData = await this._schema.getCandles(
+          symbol,
+          interval,
+          currentSince,
+          chunkLimit
+        );
+
+        allData.push(...chunkData);
+
+        remaining -= chunkLimit;
+        if (remaining > 0) {
+          // Move currentSince forward by the number of candles fetched
+          currentSince = new Date(
+            currentSince.getTime() + chunkLimit * step * 60 * 1_000
+          );
+        }
+      }
+    } else {
+      allData = await this._schema.getCandles(symbol, interval, since, limit);
+    }
 
     // Filter candles to strictly match the requested range
     const whenTimestamp = when.getTime();
     const sinceTimestamp = since.getTime();
 
-    const filteredData = data.filter(
+    const filteredData = allData.filter(
       (candle) =>
         candle.timestamp >= sinceTimestamp && candle.timestamp <= whenTimestamp
     );

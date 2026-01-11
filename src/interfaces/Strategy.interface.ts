@@ -136,6 +136,13 @@ export interface IPublicSignalRow extends ISignalRow {
    * Used for user visibility of initial TP parameters.
    */
   originalPriceTakeProfit: number;
+  /**
+   * Total executed percentage from partial closes.
+   * Sum of all percent values from _partial array (both profit and loss types).
+   * Represents the total portion of the position that has been closed through partial executions.
+   * Range: 0-100. Value of 0 means no partial closes, 100 means position fully closed through partials.
+   */
+  totalExecuted: number;
 }
 
 /**
@@ -143,7 +150,7 @@ export interface IPublicSignalRow extends ISignalRow {
  * Extends ISignalDto to include priceOpen, originalPriceStopLoss and originalPriceTakeProfit.
  * Used in risk validation to access entry price and original SL/TP.
  */
-export interface IRiskSignalRow extends ISignalDto {
+export interface IRiskSignalRow extends IPublicSignalRow {
   /**
    * Entry price for the position.
    */
@@ -371,6 +378,8 @@ export interface IStrategyTickResultActive {
   percentTp: number;
   /** Percentage progress towards stop loss (0-100%, 0 if moving towards TP) */
   percentSl: number;
+  /** Unrealized PNL for active position with fees, slippage, and partial closes */
+  pnl: IStrategyPnL;
   /** Whether this event is from backtest mode (true) or live mode (false) */
   backtest: boolean;
 }
@@ -602,7 +611,7 @@ export interface IStrategy {
    * - Throws if no pending signal exists
    * - Throws if called on scheduled signal (not yet activated)
    * - Throws if percentToClose <= 0 or > 100
-   * - Does nothing if _totalClosed + percentToClose > 100 (prevents over-closing)
+   * - Returns false if _totalClosed + percentToClose > 100 (prevents over-closing)
    *
    * Use case: User-controlled partial close triggered from onPartialProfit callback.
    *
@@ -610,20 +619,23 @@ export interface IStrategy {
    * @param percentToClose - Absolute percentage of position to close (0-100)
    * @param currentPrice - Current market price for partial close
    * @param backtest - Whether running in backtest mode
-   * @returns Promise that resolves when partial close is complete
+   * @returns Promise<boolean> - true if partial close executed, false if skipped
    *
    * @example
    * ```typescript
    * callbacks: {
    *   onPartialProfit: async (symbol, signal, currentPrice, percentTp, backtest) => {
    *     if (percentTp >= 50) {
-   *       await strategy.partialProfit(symbol, 25, currentPrice, backtest);
+   *       const success = await strategy.partialProfit(symbol, 25, currentPrice, backtest);
+   *       if (success) {
+   *         console.log('Partial profit executed');
+   *       }
    *     }
    *   }
    * }
    * ```
    */
-  partialProfit: (symbol: string, percentToClose: number, currentPrice: number, backtest: boolean) => Promise<void>;
+  partialProfit: (symbol: string, percentToClose: number, currentPrice: number, backtest: boolean) => Promise<boolean>;
 
   /**
    * Executes partial close at loss level (moving toward SL).
@@ -636,7 +648,7 @@ export interface IStrategy {
    * - Throws if no pending signal exists
    * - Throws if called on scheduled signal (not yet activated)
    * - Throws if percentToClose <= 0 or > 100
-   * - Does nothing if _totalClosed + percentToClose > 100 (prevents over-closing)
+   * - Returns false if _totalClosed + percentToClose > 100 (prevents over-closing)
    *
    * Use case: User-controlled partial close triggered from onPartialLoss callback.
    *
@@ -644,20 +656,23 @@ export interface IStrategy {
    * @param percentToClose - Absolute percentage of position to close (0-100)
    * @param currentPrice - Current market price for partial close
    * @param backtest - Whether running in backtest mode
-   * @returns Promise that resolves when partial close is complete
+   * @returns Promise<boolean> - true if partial close executed, false if skipped
    *
    * @example
    * ```typescript
    * callbacks: {
    *   onPartialLoss: async (symbol, signal, currentPrice, percentSl, backtest) => {
    *     if (percentSl >= 80) {
-   *       await strategy.partialLoss(symbol, 50, currentPrice, backtest);
+   *       const success = await strategy.partialLoss(symbol, 50, currentPrice, backtest);
+   *       if (success) {
+   *         console.log('Partial loss executed');
+   *       }
    *     }
    *   }
    * }
    * ```
    */
-  partialLoss: (symbol: string, percentToClose: number, currentPrice: number, backtest: boolean) => Promise<void>;
+  partialLoss: (symbol: string, percentToClose: number, currentPrice: number, backtest: boolean) => Promise<boolean>;
 
   /**
    * Adjusts trailing stop-loss by shifting distance between entry and original SL.

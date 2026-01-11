@@ -1,6 +1,5 @@
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
 import { StrategyName } from "../../../interfaces/Strategy.interface";
+import { Markdown } from "../../../classes/Markdown";
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
@@ -68,6 +67,23 @@ const CREATE_KEY_FN = (
   return parts.join(":");
 };
 
+/**
+ * Creates a filename for markdown report based on memoization key components.
+ * Filename format: "symbol_strategyName_exchangeName_frameName-timestamp.md"
+ */
+const CREATE_FILE_NAME_FN = (
+  symbol: string,
+  strategyName: StrategyName,
+  exchangeName: ExchangeName,
+  frameName: FrameName,
+  timestamp: number
+): string => {
+  const parts = [symbol, strategyName, exchangeName];
+  if (frameName) { parts.push(frameName); parts.push("backtest"); }
+  else parts.push("live");
+  return `${parts.join("_")}-${timestamp}.md`;
+};
+
 /** Maximum number of events to store in risk reports */
 const MAX_EVENTS = 250;
 
@@ -78,6 +94,13 @@ const MAX_EVENTS = 250;
 class ReportStorage {
   /** Internal list of all risk rejection events for this symbol */
   private _eventList: RiskEvent[] = [];
+
+  constructor(
+    readonly symbol: string,
+    readonly strategyName: StrategyName,
+    readonly exchangeName: ExchangeName,
+    readonly frameName: FrameName
+  ) {}
 
   /**
    * Adds a risk rejection event to the storage.
@@ -194,19 +217,17 @@ class ReportStorage {
     columns: Columns[] = COLUMN_CONFIG.risk_columns
   ): Promise<void> {
     const markdown = await this.getReport(symbol, strategyName, columns);
-
-    try {
-      const dir = join(process.cwd(), path);
-      await mkdir(dir, { recursive: true });
-
-      const filename = `${symbol}_${strategyName}.md`;
-      const filepath = join(dir, filename);
-
-      await writeFile(filepath, markdown, "utf-8");
-      console.log(`Risk rejection report saved: ${filepath}`);
-    } catch (error) {
-      console.error(`Failed to save markdown report:`, error);
-    }
+    const timestamp = Date.now();
+    const filename = CREATE_FILE_NAME_FN(this.symbol, strategyName, this.exchangeName, this.frameName, timestamp);
+    await Markdown.writeData("risk", markdown, {
+      path,
+      file: filename,
+      symbol: this.symbol,
+      signalId: "",
+      strategyName: this.strategyName,
+      exchangeName: this.exchangeName,
+      frameName: this.frameName
+    });
   }
 }
 
@@ -241,8 +262,52 @@ export class RiskMarkdownService {
    */
   private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),
-    () => new ReportStorage()
+    (symbol, strategyName, exchangeName, frameName, backtest) => new ReportStorage(symbol, strategyName, exchangeName, frameName)
   );
+
+  /**
+   * Subscribes to risk rejection emitter to receive rejection events.
+   * Protected against multiple subscriptions.
+   * Returns an unsubscribe function to stop receiving events.
+   *
+   * @example
+   * ```typescript
+   * const service = new RiskMarkdownService();
+   * const unsubscribe = service.subscribe();
+   * // ... later
+   * unsubscribe();
+   * ```
+   */
+  public subscribe = singleshot(() => {
+    this.loggerService.log("riskMarkdownService init");
+    const unsubscribe = riskSubject.subscribe(this.tickRejection);
+    return () => {
+      this.subscribe.clear();
+      this.clear();
+      unsubscribe();
+    }
+  });
+
+  /**
+   * Unsubscribes from risk rejection emitter to stop receiving events.
+   * Calls the unsubscribe function returned by subscribe().
+   * If not subscribed, does nothing.
+   *
+   * @example
+   * ```typescript
+   * const service = new RiskMarkdownService();
+   * service.subscribe();
+   * // ... later
+   * service.unsubscribe();
+   * ```
+   */
+  public unsubscribe = async () => {
+    this.loggerService.log("riskMarkdownService unsubscribe");
+    if (this.subscribe.hasValue()) {
+      const lastSubscription = this.subscribe();
+      lastSubscription();
+    }
+  };
 
   /**
    * Processes risk rejection events and accumulates them.
@@ -291,6 +356,9 @@ export class RiskMarkdownService {
       frameName,
       backtest,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("RiskMarkdownService not initialized. Call subscribe() before getting data.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     return storage.getData();
   };
@@ -329,6 +397,9 @@ export class RiskMarkdownService {
       frameName,
       backtest,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("RiskMarkdownService not initialized. Call subscribe() before generating reports.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     return storage.getReport(symbol, strategyName, columns);
   };
@@ -374,6 +445,9 @@ export class RiskMarkdownService {
       backtest,
       path,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("RiskMarkdownService not initialized. Call subscribe() before dumping reports.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     await storage.dump(symbol, strategyName, path, columns);
   };
@@ -408,27 +482,6 @@ export class RiskMarkdownService {
     }
   };
 
-  /**
-   * Initializes the service by subscribing to risk rejection events.
-   * Uses singleshot to ensure initialization happens only once.
-   * Automatically called on first use.
-   *
-   * @example
-   * ```typescript
-   * const service = new RiskMarkdownService();
-   * await service.init(); // Subscribe to rejection events
-   * ```
-   */
-  protected init = singleshot(async () => {
-    this.loggerService.log("riskMarkdownService init");
-    this.unsubscribe = riskSubject.subscribe(this.tickRejection);
-  });
-
-  /**
-   * Function to unsubscribe from partial profit/loss events.
-   * Assigned during init().
-   */
-  public unsubscribe: Function;
 }
 
 export default RiskMarkdownService;

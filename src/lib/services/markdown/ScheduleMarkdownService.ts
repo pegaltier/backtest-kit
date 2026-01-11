@@ -1,5 +1,4 @@
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import { Markdown } from "../../../classes/Markdown";
 import {
   IStrategyTickResult,
   IStrategyTickResultScheduled,
@@ -74,6 +73,29 @@ const CREATE_KEY_FN = (
   return parts.join(":");
 };
 
+/**
+ * Creates a filename for markdown report based on memoization key components.
+ * Filename format: "symbol_strategyName_exchangeName_frameName-timestamp.md"
+ * @param symbol - Trading pair symbol
+ * @param strategyName - Name of the strategy
+ * @param exchangeName - Exchange name
+ * @param frameName - Frame name
+ * @param timestamp - Unix timestamp in milliseconds
+ * @returns Filename string
+ */
+const CREATE_FILE_NAME_FN = (
+  symbol: string,
+  strategyName: StrategyName,
+  exchangeName: ExchangeName,
+  frameName: FrameName,
+  timestamp: number
+): string => {
+  const parts = [symbol, strategyName, exchangeName];
+  if (frameName) { parts.push(frameName); parts.push("backtest"); }
+  else parts.push("live");
+  return `${parts.join("_")}-${timestamp}.md`;
+};
+
 /** Maximum number of events to store in schedule reports */
 const MAX_EVENTS = 250;
 
@@ -84,6 +106,13 @@ const MAX_EVENTS = 250;
 class ReportStorage {
   /** Internal list of all scheduled events for this strategy */
   private _eventList: ScheduledEvent[] = [];
+
+  constructor(
+    readonly symbol: string,
+    readonly strategyName: StrategyName,
+    readonly exchangeName: ExchangeName,
+    readonly frameName: FrameName
+  ) {}
 
   /**
    * Adds a scheduled event to the storage.
@@ -102,6 +131,9 @@ class ReportStorage {
       priceOpen: data.signal.priceOpen,
       takeProfit: data.signal.priceTakeProfit,
       stopLoss: data.signal.priceStopLoss,
+      originalPriceTakeProfit: data.signal.originalPriceTakeProfit,
+      originalPriceStopLoss: data.signal.originalPriceStopLoss,
+      totalExecuted: data.signal.totalExecuted,
     });
 
     // Trim queue if exceeded MAX_EVENTS
@@ -130,6 +162,9 @@ class ReportStorage {
       priceOpen: data.signal.priceOpen,
       takeProfit: data.signal.priceTakeProfit,
       stopLoss: data.signal.priceStopLoss,
+      originalPriceTakeProfit: data.signal.originalPriceTakeProfit,
+      originalPriceStopLoss: data.signal.originalPriceStopLoss,
+      totalExecuted: data.signal.totalExecuted,
       duration: durationMin,
     };
 
@@ -161,6 +196,9 @@ class ReportStorage {
       priceOpen: data.signal.priceOpen,
       takeProfit: data.signal.priceTakeProfit,
       stopLoss: data.signal.priceStopLoss,
+      originalPriceTakeProfit: data.signal.originalPriceTakeProfit,
+      originalPriceStopLoss: data.signal.originalPriceStopLoss,
+      totalExecuted: data.signal.totalExecuted,
       closeTimestamp: data.closeTimestamp,
       duration: durationMin,
       cancelReason: data.reason,
@@ -311,19 +349,17 @@ class ReportStorage {
     columns: Columns[] = COLUMN_CONFIG.schedule_columns
   ): Promise<void> {
     const markdown = await this.getReport(strategyName, columns);
-
-    try {
-      const dir = join(process.cwd(), path);
-      await mkdir(dir, { recursive: true });
-
-      const filename = `${strategyName}.md`;
-      const filepath = join(dir, filename);
-
-      await writeFile(filepath, markdown, "utf-8");
-      console.log(`Scheduled signals report saved: ${filepath}`);
-    } catch (error) {
-      console.error(`Failed to save markdown report:`, error);
-    }
+    const timestamp = Date.now();
+    const filename = CREATE_FILE_NAME_FN(this.symbol, strategyName, this.exchangeName, this.frameName, timestamp);
+    await Markdown.writeData("schedule", markdown, {
+      path,
+      file: filename,
+      symbol: this.symbol,
+      signalId: "",
+      strategyName: this.strategyName,
+      exchangeName: this.exchangeName,
+      frameName: this.frameName
+    });
   }
 }
 
@@ -358,8 +394,52 @@ export class ScheduleMarkdownService {
    */
   private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),
-    () => new ReportStorage()
+    (symbol, strategyName, exchangeName, frameName) => new ReportStorage(symbol, strategyName, exchangeName, frameName)
   );
+
+  /**
+   * Subscribes to signal emitter to receive scheduled signal events.
+   * Protected against multiple subscriptions.
+   * Returns an unsubscribe function to stop receiving events.
+   *
+   * @example
+   * ```typescript
+   * const service = new ScheduleMarkdownService();
+   * const unsubscribe = service.subscribe();
+   * // ... later
+   * unsubscribe();
+   * ```
+   */
+  public subscribe = singleshot(() => {
+    this.loggerService.log("scheduleMarkdownService init");
+    const unsubscribe = signalEmitter.subscribe(this.tick);
+    return () => {
+      this.subscribe.clear();
+      this.clear();
+      unsubscribe();
+    }
+  });
+
+  /**
+   * Unsubscribes from signal emitter to stop receiving scheduled signal events.
+   * Calls the unsubscribe function returned by subscribe().
+   * If not subscribed, does nothing.
+   *
+   * @example
+   * ```typescript
+   * const service = new ScheduleMarkdownService();
+   * service.subscribe();
+   * // ... later
+   * service.unsubscribe();
+   * ```
+   */
+  public unsubscribe = async () => {
+    this.loggerService.log("scheduleMarkdownService unsubscribe");
+    if (this.subscribe.hasValue()) {
+      const lastSubscription = this.subscribe();
+      lastSubscription();
+    }
+  };
 
   /**
    * Processes tick events and accumulates scheduled/opened/cancelled events.
@@ -427,6 +507,9 @@ export class ScheduleMarkdownService {
       frameName,
       backtest,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("ScheduleMarkdownService not initialized. Call subscribe() before getting data.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     return storage.getData();
   };
@@ -465,6 +548,9 @@ export class ScheduleMarkdownService {
       frameName,
       backtest,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("ScheduleMarkdownService not initialized. Call subscribe() before generating reports.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     return storage.getReport(strategyName, columns);
   };
@@ -510,6 +596,9 @@ export class ScheduleMarkdownService {
       backtest,
       path,
     });
+    if (!this.subscribe.hasValue()) {
+      throw new Error("ScheduleMarkdownService not initialized. Call subscribe() before dumping reports.");
+    }
     const storage = this.getStorage(symbol, strategyName, exchangeName, frameName, backtest);
     await storage.dump(strategyName, path, columns);
   };
@@ -544,27 +633,6 @@ export class ScheduleMarkdownService {
     }
   };
 
-  /**
-   * Initializes the service by subscribing to live signal events.
-   * Uses singleshot to ensure initialization happens only once.
-   * Automatically called on first use.
-   *
-   * @example
-   * ```typescript
-   * const service = new ScheduleMarkdownService();
-   * await service.init(); // Subscribe to live events
-   * ```
-   */
-  protected init = singleshot(async () => {
-    this.loggerService.log("scheduleMarkdownService init");
-    this.unsubscribe = signalEmitter.subscribe(this.tick);
-  });
-
-  /**
-   * Function to unsubscribe from partial profit/loss events.
-   * Assigned during init().
-   */
-  public unsubscribe: Function;
 }
 
 export default ScheduleMarkdownService;
