@@ -74,18 +74,18 @@ priceOpen: number
 
 Scheduled entry price
 
-### takeProfit
+### priceTakeProfit
 
 ```ts
-takeProfit: number
+priceTakeProfit: number
 ```
 
 Take profit price
 
-### stopLoss
+### priceStopLoss
 
 ```ts
-stopLoss: number
+priceStopLoss: number
 ```
 
 Stop loss price

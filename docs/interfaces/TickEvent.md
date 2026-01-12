@@ -66,26 +66,26 @@ currentPrice: number
 
 Current price
 
-### openPrice
+### priceOpen
 
 ```ts
-openPrice: number
+priceOpen: number
 ```
 
 Open price (only for opened/active/closed)
 
-### takeProfit
+### priceTakeProfit
 
 ```ts
-takeProfit: number
+priceTakeProfit: number
 ```
 
 Take profit price (only for opened/active/closed)
 
-### stopLoss
+### priceStopLoss
 
 ```ts
-stopLoss: number
+priceStopLoss: number
 ```
 
 Stop loss price (only for opened/active/closed)
