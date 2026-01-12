@@ -1,4 +1,4 @@
-# JSONL Report Files Documentation
+# LIFECYCLE Report Files Documentation
 
 This document describes the structure and purpose of JSONL files used for real-time trading strategy debugging and analysis.
 
