@@ -437,24 +437,108 @@ interface ISignalRow extends ISignalDto {
 }
 ```
 
+## Search Keys and Metadata
+
+Each JSONL line contains metadata fields for filtering and analytics. The `Report.writeData()` method accepts search options via `IReportDumpOptions`:
+
+```typescript
+interface IReportDumpOptions {
+  symbol: string;         // Trading pair (e.g., "BTCUSDT")
+  strategyName: string;   // Strategy identifier
+  exchangeName: string;   // Exchange identifier
+  frameName: string;      // Timeframe identifier
+  signalId: string;       // Signal UUID
+  walkerName: string;     // Walker optimization name
+}
+```
+
+**JSONL Line Structure**:
+
+Each line in the JSONL files contains:
+- `reportName`: Type of report (backtest, live, heat, etc.)
+- `data`: Event data object (structure documented above for each report type)
+- Search metadata: `symbol`, `strategyName`, `exchangeName`, `frameName`, `signalId`, `walkerName` (included only if non-empty)
+- `timestamp`: Write timestamp in milliseconds
+
+**Example JSONL Line**:
+```json
+{
+  "reportName": "partial",
+  "data": {
+    "timestamp": 1704067200000,
+    "action": "profit",
+    "symbol": "BTCUSDT",
+    "strategyName": "momentum-v1",
+    "signalId": "550e8400-e29b-41d4-a716-446655440000",
+    "position": "LONG",
+    "currentPrice": 45000,
+    "level": 1,
+    "priceOpen": 44000,
+    "priceTakeProfit": 46000,
+    "priceStopLoss": 43000,
+    "originalPriceTakeProfit": 46000,
+    "originalPriceStopLoss": 43000,
+    "totalExecuted": 25,
+    "note": "First partial exit",
+    "backtest": false
+  },
+  "symbol": "BTCUSDT",
+  "strategyName": "momentum-v1",
+  "exchangeName": "binance",
+  "frameName": "",
+  "signalId": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": 1704067200123
+}
+```
+
+**Search Key Usage**:
+
+| Key | Purpose | Present In |
+|-----|---------|-----------|
+| `symbol` | Filter by trading pair | All report types |
+| `strategyName` | Filter by strategy | All report types |
+| `exchangeName` | Filter by exchange | All report types |
+| `frameName` | Filter by timeframe (empty string for live trading) | All report types |
+| `signalId` | Filter by specific signal UUID | backtest, live, heat, partial, breakeven, schedule |
+| `walkerName` | Filter by walker optimization run | walker |
+
+**Empty String Handling**:
+
+Search keys with empty string values are **excluded** from the metadata object. For example, live trading has `frameName: ""`, so the `frameName` key is omitted from the JSONL line metadata.
+
 ## Common Query Patterns
 
 ### Find all closed trades for a symbol
 ```bash
-grep '"action":"closed"' dump/report/heat.jsonl | grep '"symbol":"BTCUSDT"'
+grep '"symbol":"BTCUSDT"' dump/report/heat.jsonl | grep '"action":"closed"'
 ```
 
-### Calculate total PNL from partial exits
+### Find all events for a specific signal
 ```bash
-grep '"action":"profit"' dump/report/partial.jsonl | jq -s 'map(.currentPrice) | add'
+grep '"signalId":"550e8400-e29b-41d4-a716-446655440000"' dump/report/backtest.jsonl
 ```
 
-### Identify performance bottlenecks
+### Calculate total PNL from partial exits for a strategy
 ```bash
-cat dump/report/performance.jsonl | jq -s 'group_by(.metricType) | map({metric: .[0].metricType, avg_duration: (map(.duration) | add / length)})'
+grep '"strategyName":"momentum-v1"' dump/report/partial.jsonl | grep '"action":"profit"' | jq -s 'map(.data.currentPrice) | add'
 ```
 
-### Track optimization progress
+### Filter events by exchange and timeframe
 ```bash
-tail -f dump/report/walker.jsonl | jq '{tested: .strategiesTested, total: .totalStrategies, best: .bestStrategy, metric: .bestMetric}'
+grep '"exchangeName":"binance"' dump/report/live.jsonl | grep '"frameName":"1h"'
+```
+
+### Identify performance bottlenecks for a strategy
+```bash
+grep '"strategyName":"momentum-v1"' dump/report/performance.jsonl | jq -s 'group_by(.data.metricType) | map({metric: .[0].data.metricType, avg_duration: (map(.data.duration) | add / length)})'
+```
+
+### Track walker optimization progress
+```bash
+tail -f dump/report/walker.jsonl | jq '{tested: .data.strategiesTested, total: .data.totalStrategies, best: .data.bestStrategy, metric: .data.bestMetric}'
+```
+
+### Extract all breakeven events for a symbol
+```bash
+grep '"symbol":"BTCUSDT"' dump/report/breakeven.jsonl | jq .data
 ```
