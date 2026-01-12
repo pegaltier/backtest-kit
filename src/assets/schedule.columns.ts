@@ -97,13 +97,13 @@ export const schedule_columns: ColumnModel<ScheduledEvent>[] = [
   {
     key: "takeProfit",
     label: "Take Profit",
-    format: (data) => `${data.takeProfit.toFixed(8)} USD`,
+    format: (data) => `${data.priceTakeProfit.toFixed(8)} USD`,
     isVisible: () => true,
   },
   {
     key: "stopLoss",
     label: "Stop Loss",
-    format: (data) => `${data.stopLoss.toFixed(8)} USD`,
+    format: (data) => `${data.priceStopLoss.toFixed(8)} USD`,
     isVisible: () => true,
   },
   {

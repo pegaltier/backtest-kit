@@ -86,15 +86,15 @@ export const live_columns: ColumnModel<TickEvent>[] = [
     key: "openPrice",
     label: "Open Price",
     format: (data) =>
-      data.openPrice !== undefined ? `${data.openPrice.toFixed(8)} USD` : "N/A",
+      data.priceOpen !== undefined ? `${data.priceOpen.toFixed(8)} USD` : "N/A",
     isVisible: () => true,
   },
   {
     key: "takeProfit",
     label: "Take Profit",
     format: (data) =>
-      data.takeProfit !== undefined
-        ? `${data.takeProfit.toFixed(8)} USD`
+      data.priceTakeProfit !== undefined
+        ? `${data.priceTakeProfit.toFixed(8)} USD`
         : "N/A",
     isVisible: () => true,
   },
@@ -102,7 +102,7 @@ export const live_columns: ColumnModel<TickEvent>[] = [
     key: "stopLoss",
     label: "Stop Loss",
     format: (data) =>
-      data.stopLoss !== undefined ? `${data.stopLoss.toFixed(8)} USD` : "N/A",
+      data.priceStopLoss !== undefined ? `${data.priceStopLoss.toFixed(8)} USD` : "N/A",
     isVisible: () => true,
   },
   {
