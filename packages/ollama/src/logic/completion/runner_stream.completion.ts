@@ -9,7 +9,6 @@ import { engine } from "../../lib";
 addCompletion({
   completionName: CompletionName.RunnerStreamCompletion,
   getCompletion: async (params: ISwarmCompletionArgs): Promise<ISwarmMessage> => {
-    const result = await engine.runnerPrivateService.getStreamCompletion(params);
-    return result;
+    return await engine.runnerPrivateService.getStreamCompletion(params);
   },
 });
