@@ -1,4 +1,4 @@
-import { getCandles, ICandleData, formatPrice, formatQuantity } from "backtest-kit";
+import { getCandles, ICandleData, formatPrice, formatQuantity, getDate } from "backtest-kit";
 import { inject } from "../../core/di";
 import { TYPES } from "../../core/types";
 import LoggerService from "../common/LoggerService";
@@ -26,7 +26,9 @@ export class FifteenMinuteCandleHistoryService {
       ) / candles.length;
     let report = "";
 
+    const currentData = await getDate();
     report += `## 15-Minute Candles History (Last ${RECENT_CANDLES})\n`;
+    report += `> Current time: ${currentData.toISOString()}\n\n`;
 
     for (let index = 0; index < candles.length; index++) {
       const candle = candles[index];

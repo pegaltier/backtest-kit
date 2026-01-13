@@ -1,4 +1,4 @@
-import { getCandles, ICandleData, formatPrice, formatQuantity } from "backtest-kit";
+import { getCandles, ICandleData, formatPrice, formatQuantity, getDate } from "backtest-kit";
 import { inject } from "../../core/di";
 import { TYPES } from "../../core/types";
 import LoggerService from "../common/LoggerService";
@@ -13,10 +13,12 @@ export class ThirtyMinuteCandleHistoryService {
     return getCandles(symbol, "30m", RECENT_CANDLES);
   };
 
-  public generateReport = (symbol: string, candles: ICandleData[]): string => {
+  public generateReport = async (symbol: string, candles: ICandleData[]): Promise<string> => {
     this.loggerService.log("thirtyMinuteCandleHistoryService generateReport", { symbol });
     let report = "";
+    const currentData = await getDate();
     report += `## 30-Min Candles History (Last ${RECENT_CANDLES})\n`;
+    report += `> Current time: ${currentData.toISOString()}\n\n`;
 
     for (let index = 0; index < candles.length; index++) {
       const candle = candles[index];
@@ -51,7 +53,7 @@ export class ThirtyMinuteCandleHistoryService {
   public getReport = async (symbol: string): Promise<string> => {
     this.loggerService.log("thirtyMinuteCandleHistoryService getReport", { symbol });
     const candles = await this.getData(symbol);
-    return this.generateReport(symbol, candles);
+    return await this.generateReport(symbol, candles);
   };
 }
 

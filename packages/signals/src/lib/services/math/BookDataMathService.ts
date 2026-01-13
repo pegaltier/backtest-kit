@@ -1,5 +1,5 @@
 import { ttl } from "functools-kit";
-import { formatPrice, formatQuantity, getOrderBook, IBidData } from "backtest-kit";
+import { formatPrice, formatQuantity, getOrderBook, IBidData, getDate } from "backtest-kit";
 import { inject } from "../../core/di";
 import { TYPES } from "../../core/types";
 import LoggerService from "../common/LoggerService";
@@ -60,8 +60,9 @@ const generateBookDataReport = async (
   self: BookDataMathService,
   result: IBookDataAnalysis
 ): Promise<string> => {
-  let markdown = `# Order Book Analysis for ${result.symbol}\n\n`;
-  markdown += `*Report generated: ${result.timestamp}*\n\n`;
+  const currentData = await getDate();
+  let markdown = `# Order Book Analysis for ${result.symbol}\n`;
+  markdown += `> Current time: ${currentData.toISOString()}\n\n`;
 
   // Basic order book info
   markdown += `## Order Book Summary\n`;

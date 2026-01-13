@@ -14,7 +14,7 @@ import {
   FasterWMA as WMA,
   FasterMOM as MOM,
 } from "trading-signals";
-import { getCandles, ICandleData, formatPrice } from "backtest-kit";
+import { getCandles, ICandleData, formatPrice, getDate } from "backtest-kit";
 import { inject } from "../../core/di";
 import { TYPES } from "../../core/types";
 import LoggerService from "../common/LoggerService";
@@ -651,7 +651,9 @@ async function generateHistoryTable(
   symbol: string
 ): Promise<string> {
   let markdown = "";
-  markdown += `# 30-Min Candles Analysis for ${symbol} (Historical Data)\n\n`;
+  const currentData = await getDate();
+  markdown += `# 30-Min Candles Analysis for ${symbol} (Historical Data)\n`;
+  markdown += `> Current time: ${currentData.toISOString()}\n\n`;
 
   const header = `| ${columns.map((col) => col.label).join(" | ")} |\n`;
   const separator = `| ${columns.map(() => "---").join(" | ")} |\n`;
