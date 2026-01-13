@@ -56,7 +56,7 @@ where Typical Price = (High + Low + Close) / 3
 ### getOrderBook
 
 ```ts
-getOrderBook: (symbol: string) => Promise<IOrderBookData>
+getOrderBook: (symbol: string, depth?: number) => Promise<IOrderBookData>
 ```
 
 Fetch order book for a trading pair.

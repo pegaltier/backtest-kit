@@ -99,7 +99,7 @@ Formats quantity with execution context.
 ### getOrderBook
 
 ```ts
-getOrderBook: (symbol: string, when: Date, backtest: boolean) => Promise<IOrderBookData>
+getOrderBook: (symbol: string, when: Date, backtest: boolean, depth?: number) => Promise<IOrderBookData>
 ```
 
 Fetches order book with execution context.

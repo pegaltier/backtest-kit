@@ -172,6 +172,7 @@ group: docs
 - [formatQuantity](functions/formatQuantity.md)
 - [getDate](functions/getDate.md)
 - [getMode](functions/getMode.md)
+- [getOrderBook](functions/getOrderBook.md)
 - [dumpSignal](functions/dumpSignal.md)
 
 ## Interfaces

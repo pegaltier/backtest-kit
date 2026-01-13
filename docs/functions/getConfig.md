@@ -24,6 +24,7 @@ declare function getConfig(): {
     CC_REPORT_SHOW_SIGNAL_NOTE: boolean;
     CC_BREAKEVEN_THRESHOLD: number;
     CC_ORDER_BOOK_TIME_OFFSET_MINUTES: number;
+    CC_ORDER_BOOK_MAX_DEPTH_LEVELS: number;
 };
 ```
 
