@@ -228,21 +228,21 @@ declare class FifteenMinuteCandleHistoryService {
 declare class HourCandleHistoryService {
     private loggerService;
     getData: (symbol: string) => Promise<ICandleData[]>;
-    generateReport: (symbol: string, candles: ICandleData[]) => string;
+    generateReport: (symbol: string, candles: ICandleData[]) => Promise<string>;
     getReport: (symbol: string) => Promise<string>;
 }
 
 declare class OneMinuteCandleHistoryService {
     private loggerService;
     getData: (symbol: string) => Promise<ICandleData[]>;
-    generateReport: (symbol: string, candles: ICandleData[]) => string;
+    generateReport: (symbol: string, candles: ICandleData[]) => Promise<string>;
     getReport: (symbol: string) => Promise<string>;
 }
 
 declare class ThirtyMinuteCandleHistoryService {
     private loggerService;
     getData: (symbol: string) => Promise<ICandleData[]>;
-    generateReport: (symbol: string, candles: ICandleData[]) => string;
+    generateReport: (symbol: string, candles: ICandleData[]) => Promise<string>;
     getReport: (symbol: string) => Promise<string>;
 }
 
