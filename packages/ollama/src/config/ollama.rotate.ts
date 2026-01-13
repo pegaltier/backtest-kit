@@ -10,7 +10,7 @@ class OllamaWrapper {
     }
   }
 
-  private chatFn = RoundRobin.create(<string[]>engine.contextService.context.apiKey, (token) => {
+  _chatFn = RoundRobin.create(<string[]>engine.contextService.context.apiKey, (token) => {
     const ollama = new Ollama({
       ...this._config,
       headers: {
@@ -35,7 +35,7 @@ class OllamaWrapper {
   async chat(
     request: ChatRequest
   ): Promise<ChatResponse | AsyncIterable<ChatResponse>> {
-    return await this.chatFn(request);
+    return await this._chatFn(request);
   }
 }
 
