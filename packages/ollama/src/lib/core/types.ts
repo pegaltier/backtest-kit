@@ -8,10 +8,12 @@ const baseServices = {
 
 const privateServices = {
     runnerPrivateService: Symbol('runnerPrivateService'),
+    outlinePrivateService: Symbol('outlinePrivateService'),
 };
 
 const publicServices = {
     runnerPublicService: Symbol('runnerPublicService'),
+    outlinePublicService: Symbol('outlinePublicService'),
 };
 
 export const TYPES = {

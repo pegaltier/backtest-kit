@@ -17,6 +17,8 @@ import PerplexityProvider from "../client/PerplexityProvider.client";
 import CohereProvider from "../client/CohereProvider.client";
 import AlibabaProvider from "../client/AlibabaProvider.client";
 import LoggerService from "./services/common/LoggerService";
+import OutlinePrivateService from "./services/private/OutlinePrivateService";
+import OutlinePublicService from "./services/public/OutlinePublicService";
 
 const commonServices = {
   loggerService: inject<LoggerService>(TYPES.loggerService),
@@ -30,10 +32,12 @@ const privateServices = {
   runnerPrivateService: inject<RunnerPrivateService>(
     TYPES.runnerPrivateService
   ),
+  outlinePrivateService: inject<OutlinePrivateService>(TYPES.outlinePrivateService),
 };
 
 const publicServices = {
   runnerPublicService: inject<RunnerPublicService>(TYPES.runnerPublicService),
+  outlinePublicService: inject<OutlinePublicService>(TYPES.outlinePublicService),
 };
 
 const engine = {
