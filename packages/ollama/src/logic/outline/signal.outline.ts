@@ -1,4 +1,4 @@
-import { addOutline, dumpOutlineResult, IOutlineMessage } from "agent-swarm-kit";
+import { addOutline, IOutlineMessage } from "agent-swarm-kit";
 import { OutlineName } from "../../enum/OutlineName";
 import { CompletionName } from "../../enum/CompletionName";
 import { zodResponseFormat } from "openai/helpers/zod";
@@ -124,9 +124,4 @@ addOutline<TSignalSchema, IOutlineMessage[]>({
         "Validates that estimated time to reach TP does not exceed 6 hours.",
     },
   ],
-  callbacks: {
-    async onValidDocument(result) {
-      await dumpOutlineResult(result);
-    },
-  },
 });
