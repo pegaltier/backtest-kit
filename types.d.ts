@@ -424,14 +424,43 @@ interface ICandleData {
     volume: number;
 }
 /**
+ * Single bid or ask in order book.
+ */
+interface IBidData {
+    /** Price level as string */
+    price: string;
+    /** Quantity at this price level as string */
+    quantity: string;
+}
+/**
+ * Order book data containing bids and asks.
+ */
+interface IOrderBookData {
+    /** Trading pair symbol */
+    symbol: string;
+    /** Array of bid orders (buy orders) */
+    bids: IBidData[];
+    /** Array of ask orders (sell orders) */
+    asks: IBidData[];
+}
+/**
  * Exchange parameters passed to ClientExchange constructor.
  * Combines schema with runtime dependencies.
+ * Note: All exchange methods are required in params (defaults are applied during initialization).
  */
 interface IExchangeParams extends IExchangeSchema {
     /** Logger service for debug output */
     logger: ILogger;
     /** Execution context service (symbol, when, backtest flag) */
     execution: TExecutionContextService;
+    /** Fetch candles from data source (required, defaults applied) */
+    getCandles: (symbol: string, interval: CandleInterval, since: Date, limit: number) => Promise<ICandleData[]>;
+    /** Format quantity according to exchange precision rules (required, defaults applied) */
+    formatQuantity: (symbol: string, quantity: number) => Promise<string>;
+    /** Format price according to exchange precision rules (required, defaults applied) */
+    formatPrice: (symbol: string, price: number) => Promise<string>;
+    /** Fetch order book for a trading pair (required, defaults applied) */
+    getOrderBook: (symbol: string, from: Date, to: Date) => Promise<IOrderBookData>;
 }
 /**
  * Optional callbacks for exchange data events.
@@ -462,19 +491,34 @@ interface IExchangeSchema {
     /**
      * Format quantity according to exchange precision rules.
      *
+     * Optional. If not provided, defaults to Bitcoin precision on Binance (8 decimal places).
+     *
      * @param symbol - Trading pair symbol
      * @param quantity - Raw quantity value
      * @returns Promise resolving to formatted quantity string
      */
-    formatQuantity: (symbol: string, quantity: number) => Promise<string>;
+    formatQuantity?: (symbol: string, quantity: number) => Promise<string>;
     /**
      * Format price according to exchange precision rules.
+     *
+     * Optional. If not provided, defaults to Bitcoin precision on Binance (2 decimal places).
      *
      * @param symbol - Trading pair symbol
      * @param price - Raw price value
      * @returns Promise resolving to formatted price string
      */
-    formatPrice: (symbol: string, price: number) => Promise<string>;
+    formatPrice?: (symbol: string, price: number) => Promise<string>;
+    /**
+     * Fetch order book for a trading pair.
+     *
+     * Optional. If not provided, throws an error when called.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param from - Start of time range for order book snapshot
+     * @param to - End of time range for order book snapshot
+     * @returns Promise resolving to order book data
+     */
+    getOrderBook?: (symbol: string, from: Date, to: Date) => Promise<IOrderBookData>;
     /** Optional lifecycle event callbacks (onCandleData) */
     callbacks?: Partial<IExchangeCallbacks>;
 }
@@ -527,6 +571,13 @@ interface IExchange {
      * @returns Promise resolving to volume-weighted average price
      */
     getAveragePrice: (symbol: string) => Promise<number>;
+    /**
+     * Fetch order book for a trading pair.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @returns Promise resolving to order book data
+     */
+    getOrderBook: (symbol: string) => Promise<IOrderBookData>;
 }
 /**
  * Unique exchange identifier.
@@ -2065,6 +2116,14 @@ declare const GLOBAL_CONFIG: {
      * Default: 0.2% (additional buffer above costs to ensure no loss when moving to breakeven)
      */
     CC_BREAKEVEN_THRESHOLD: number;
+    /**
+     * Time offset in minutes for order book fetching.
+     * Subtracts this amount from the current time when fetching order book data.
+     * This helps get a more stable snapshot of the order book by avoiding real-time volatility.
+     *
+     * Default: 10 minutes
+     */
+    CC_ORDER_BOOK_TIME_OFFSET_MINUTES: number;
 };
 /**
  * Type for global configuration object.
@@ -2167,6 +2226,7 @@ declare function getConfig(): {
     CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN: number;
     CC_REPORT_SHOW_SIGNAL_NOTE: boolean;
     CC_BREAKEVEN_THRESHOLD: number;
+    CC_ORDER_BOOK_TIME_OFFSET_MINUTES: number;
 };
 /**
  * Retrieves the default configuration object for the framework.
@@ -2199,6 +2259,7 @@ declare function getDefaultConfig(): Readonly<{
     CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN: number;
     CC_REPORT_SHOW_SIGNAL_NOTE: boolean;
     CC_BREAKEVEN_THRESHOLD: number;
+    CC_ORDER_BOOK_TIME_OFFSET_MINUTES: number;
 }>;
 /**
  * Sets custom column configurations for markdown report generation.
@@ -6116,8 +6177,14 @@ type EntityId = string | number;
 interface IEntity {
 }
 /**
- * Persistence interface for CRUD operations.
- * Implemented by PersistBase.
+ * Persistence interface for custom adapters.
+ * Defines only the essential CRUD operations required for persistence.
+ * Custom adapters should implement this interface.
+ *
+ * Architecture:
+ * - IPersistBase: Public API for custom adapters (4 methods: waitForInit, readValue, hasValue, writeValue)
+ * - PersistBase: Default implementation with internal keys() method for validation
+ * - TPersistBaseCtor: Constructor type requiring IPersistBase
  */
 interface IPersistBase<Entity extends IEntity | null = IEntity> {
     /**
@@ -6152,12 +6219,6 @@ interface IPersistBase<Entity extends IEntity | null = IEntity> {
      * @throws Error if write fails
      */
     writeValue(entityId: EntityId, entity: Entity): Promise<void>;
-    /**
-     * Async generator yielding all entity IDs.
-     *
-     * @returns AsyncGenerator yielding entity IDs
-     */
-    keys(): AsyncGenerator<EntityId>;
 }
 /**
  * Base class for file-based persistence with atomic writes.
@@ -6190,69 +6251,19 @@ declare const PersistBase: {
          */
         _getFilePath(entityId: EntityId): string;
         waitForInit(initial: boolean): Promise<void>;
-        /**
-         * Returns count of persisted entities.
-         *
-         * @returns Promise resolving to number of .json files in directory
-         */
-        getCount(): Promise<number>;
         readValue<T extends IEntity = IEntity>(entityId: EntityId): Promise<T>;
         hasValue(entityId: EntityId): Promise<boolean>;
         writeValue<T extends IEntity = IEntity>(entityId: EntityId, entity: T): Promise<void>;
         /**
-         * Removes entity from storage.
-         *
-         * @param entityId - Entity identifier to remove
-         * @returns Promise that resolves when entity is deleted
-         * @throws Error if entity not found or deletion fails
-         */
-        removeValue(entityId: EntityId): Promise<void>;
-        /**
-         * Removes all entities from storage.
-         *
-         * @returns Promise that resolves when all entities are deleted
-         * @throws Error if deletion fails
-         */
-        removeAll(): Promise<void>;
-        /**
-         * Async generator yielding all entity values.
-         * Sorted alphanumerically by entity ID.
-         *
-         * @returns AsyncGenerator yielding entities
-         * @throws Error if reading fails
-         */
-        values<T extends IEntity = IEntity>(): AsyncGenerator<T>;
-        /**
          * Async generator yielding all entity IDs.
          * Sorted alphanumerically.
+         * Used internally by waitForInit for validation.
          *
          * @returns AsyncGenerator yielding entity IDs
          * @throws Error if reading fails
          */
         keys(): AsyncGenerator<EntityId>;
-        /**
-         * Filters entities by predicate function.
-         *
-         * @param predicate - Filter function
-         * @returns AsyncGenerator yielding filtered entities
-         */
-        filter<T extends IEntity = IEntity>(predicate: (value: T) => boolean): AsyncGenerator<T>;
-        /**
-         * Takes first N entities, optionally filtered.
-         *
-         * @param total - Maximum number of entities to yield
-         * @param predicate - Optional filter function
-         * @returns AsyncGenerator yielding up to total entities
-         */
-        take<T extends IEntity = IEntity>(total: number, predicate?: (value: T) => boolean): AsyncGenerator<T>;
         [BASE_WAIT_FOR_INIT_SYMBOL]: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-        /**
-         * Async iterator implementation.
-         * Delegates to values() generator.
-         *
-         * @returns AsyncIterableIterator yielding entities
-         */
-        [Symbol.asyncIterator](): AsyncIterableIterator<any>;
     };
 };
 /**
@@ -11124,6 +11135,16 @@ declare class ExchangeUtils {
     formatPrice: (symbol: string, price: number, context: {
         exchangeName: ExchangeName;
     }) => Promise<string>;
+    /**
+     * Fetch order book for a trading pair.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with exchange name
+     * @returns Promise resolving to order book data
+     */
+    getOrderBook: (symbol: string, context: {
+        exchangeName: ExchangeName;
+    }) => Promise<IOrderBookData>;
 }
 /**
  * Singleton instance of ExchangeUtils for convenient exchange operations.
@@ -12033,6 +12054,14 @@ declare class ClientExchange implements IExchange {
      * @returns Promise resolving to formatted price as string
      */
     formatPrice(symbol: string, price: number): Promise<string>;
+    /**
+     * Fetches order book for a trading pair.
+     *
+     * @param symbol - Trading pair symbol
+     * @returns Promise resolving to order book data
+     * @throws Error if getOrderBook is not implemented
+     */
+    getOrderBook(symbol: string): Promise<IOrderBookData>;
 }
 
 /**
@@ -12125,6 +12154,15 @@ declare class ExchangeConnectionService implements IExchange {
      * @returns Promise resolving to formatted quantity string
      */
     formatQuantity: (symbol: string, quantity: number) => Promise<string>;
+    /**
+     * Fetches order book for a trading pair using configured exchange.
+     *
+     * Routes to exchange determined by methodContextService.context.exchangeName.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @returns Promise resolving to order book data
+     */
+    getOrderBook: (symbol: string) => Promise<IOrderBookData>;
 }
 
 /**
@@ -13181,6 +13219,15 @@ declare class ExchangeCoreService implements TExchange {
      * @returns Promise resolving to formatted quantity string
      */
     formatQuantity: (symbol: string, quantity: number, when: Date, backtest: boolean) => Promise<string>;
+    /**
+     * Fetches order book with execution context.
+     *
+     * @param symbol - Trading pair symbol
+     * @param when - Timestamp for context
+     * @param backtest - Whether running in backtest mode
+     * @returns Promise resolving to order book data
+     */
+    getOrderBook: (symbol: string, when: Date, backtest: boolean) => Promise<IOrderBookData>;
 }
 
 /**
@@ -16147,4 +16194,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, type BootstrapNotification, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, type PingContract, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, breakeven, cancel, dumpSignal, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenBreakeven, listenBreakevenOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenPing, listenPingOnce, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, partialLoss, partialProfit, setColumns, setConfig, setLogger, stop, trailingStop, trailingTake, validate };
+export { Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, type BootstrapNotification, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IOrderBookData, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, type PingContract, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, breakeven, cancel, dumpSignal, emitters, formatPrice, formatQuantity, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenBreakeven, listenBreakevenOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenPing, listenPingOnce, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, partialLoss, partialProfit, setColumns, setConfig, setLogger, stop, trailingStop, trailingTake, validate };
