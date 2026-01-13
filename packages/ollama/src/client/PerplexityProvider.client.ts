@@ -1,8 +1,6 @@
 import {
   ISwarmMessage,
   IOutlineMessage,
-  event,
-  validateToolArguments,
   ISwarmCompletionArgs,
   IOutlineCompletionArgs,
 } from "agent-swarm-kit";
@@ -14,11 +12,8 @@ import { jsonrepair } from "jsonrepair";
 import fs from "fs/promises";
 import { TContextService } from "../lib/services/base/ContextService";
 import OpenAI from "openai";
-import { get, set } from "lodash-es";
-import { singleshot, str } from "functools-kit";
+import { str } from "functools-kit";
 import { ILogger } from "../interface/Logger.interface";
-
-const MAX_ATTEMPTS = 3;
 
 export class PerplexityProvider implements IProvider {
   constructor(readonly contextService: TContextService, readonly logger: ILogger) {}

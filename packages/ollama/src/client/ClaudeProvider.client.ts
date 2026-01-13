@@ -35,25 +35,6 @@ import { ILogger } from "../interface/Logger.interface";
 
 const MAX_ATTEMPTS = 5;
 
-class CustomChat extends ChatOpenAI {
-  async getNumTokens(content: string) {
-    if (typeof content !== "string") {
-      return 0;
-    }
-    return Math.ceil(content.length / 4);
-  }
-}
-
-const getChat = (model: string) =>
-  new CustomChat({
-    configuration: {
-      baseURL: "https://api.anthropic.com/v1/",
-      apiKey: CC_CLAUDE_API_KEY,
-    },
-    model,
-    streaming: true,
-  });
-
 export class GrokProvider implements IProvider {
   constructor(readonly contextService: TContextService, readonly logger: ILogger) {}
 
