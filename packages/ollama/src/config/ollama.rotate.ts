@@ -1,7 +1,7 @@
 import { singleshot } from "functools-kit";
 import { ChatRequest, ChatResponse, Config, Ollama } from "ollama";
 import { RoundRobin } from "agent-swarm-kit";
-import engine from "src/lib";
+import engine from "../lib";
 
 class OllamaWrapper {
   constructor(readonly _config: Partial<Config>) {

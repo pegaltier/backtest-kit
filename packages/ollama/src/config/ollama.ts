@@ -1,6 +1,6 @@
 import { singleshot } from "functools-kit";
 import { Ollama } from "ollama";
-import engine from "src/lib";
+import engine from "../lib";
 import { getOllamaRotate } from "./ollama.rotate";
 
 export const getOllama = singleshot(() => {

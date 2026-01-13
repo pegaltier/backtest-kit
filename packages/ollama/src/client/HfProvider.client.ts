@@ -25,7 +25,6 @@ import { get, set } from "lodash-es";
 import fs from "fs/promises";
 import { TContextService } from "../lib/services/base/ContextService";
 import { ILogger } from "../interface/Logger.interface";
-import engine from "src/lib";
 
 const MAX_ATTEMPTS = 5;
 

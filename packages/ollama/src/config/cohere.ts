@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { singleshot } from "functools-kit";
-import engine from "src/lib";
+import engine from "../lib";
 
 export const getCohere = singleshot(() => {
     const apiKey = engine.contextService.context.apiKey;
