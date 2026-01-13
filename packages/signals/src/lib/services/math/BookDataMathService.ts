@@ -1,6 +1,5 @@
 import { ttl } from "functools-kit";
-import { getExchange } from "../../../config/ccxt";
-import { Exchange, formatPrice, formatQuantity } from "backtest-kit";
+import { formatPrice, formatQuantity } from "backtest-kit";
 import { inject } from "../../core/di";
 import { TYPES } from "../../core/types";
 import LoggerService from "../common/LoggerService";
@@ -184,7 +183,6 @@ export class BookDataMathService {
       symbol,
     });
 
-    const exchange = await getExchange();
     const depthRaw = await exchange.fetchOrderBook(symbol, MAX_DEPTH_LEVELS);
     const depth: OrderBook = {
       symbol: depthRaw.symbol,
