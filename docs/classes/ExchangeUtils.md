@@ -65,7 +65,7 @@ Format price according to exchange precision rules.
 ### getOrderBook
 
 ```ts
-getOrderBook: (symbol: string, context: { exchangeName: string; }) => Promise<IOrderBookData>
+getOrderBook: (symbol: string, context: { exchangeName: string; }, depth?: number) => Promise<IOrderBookData>
 ```
 
 Fetch order book for a trading pair.

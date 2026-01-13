@@ -57,7 +57,7 @@ Optional. If not provided, defaults to Bitcoin precision on Binance (2 decimal p
 ### getOrderBook
 
 ```ts
-getOrderBook: (symbol: string, from: Date, to: Date) => Promise<IOrderBookData>
+getOrderBook: (symbol: string, depth: number, from: Date, to: Date) => Promise<IOrderBookData>
 ```
 
 Fetch order book for a trading pair.

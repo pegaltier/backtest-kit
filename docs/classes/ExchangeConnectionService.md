@@ -117,7 +117,7 @@ Ensures quantity meets exchange requirements for decimal places and lot size.
 ### getOrderBook
 
 ```ts
-getOrderBook: (symbol: string) => Promise<IOrderBookData>
+getOrderBook: (symbol: string, depth?: number) => Promise<IOrderBookData>
 ```
 
 Fetches order book for a trading pair using configured exchange.
