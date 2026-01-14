@@ -51,6 +51,7 @@ export class OllamaProvider implements IProvider {
         })),
       })),
       tools,
+      think: GLOBAL_CONFIG.CC_ENABLE_THINKING,
     });
 
     const message: OllamaMessage = response.message;
@@ -107,6 +108,7 @@ export class OllamaProvider implements IProvider {
       messages,
       tools,
       stream: true,
+      think: GLOBAL_CONFIG.CC_ENABLE_THINKING,
     });
 
     for await (const chunk of stream) {
@@ -205,6 +207,7 @@ export class OllamaProvider implements IProvider {
         model: this.contextService.context.model,
         messages,
         tools: [toolDefinition],
+        think: GLOBAL_CONFIG.CC_ENABLE_THINKING,
       });
 
       const { tool_calls } = response.message;

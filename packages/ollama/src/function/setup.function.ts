@@ -4,6 +4,27 @@ import { ILogger } from "../interface/Logger.interface";
 import lib from "../lib";
 
 /**
+ * Type representing the global configuration object with flexible value types.
+ * 
+ * Maps all keys from GlobalConfig interface to allow any value type during configuration updates.
+ * Used to provide type-safe partial configuration overrides while maintaining flexibility.
+ * 
+ * @typedef {Object} Cfg
+ * @template {keyof GlobalConfig} K - Configuration key names from GlobalConfig
+ * 
+ * @example
+ * ```typescript
+ * const customConfig: Partial<Cfg> = {
+ *   CC_ENABLE_DEBUG: true,
+ *   CC_ENABLE_THINKING: false,
+ * };
+ * ```
+ */
+type Cfg = {
+  [key in keyof GlobalConfig]: any;
+}
+
+/**
  * Sets custom logger implementation for the framework.
  *
  * All log messages from internal services will be forwarded to the provided logger
@@ -36,7 +57,7 @@ export const setLogger = (logger: ILogger) => {
  * });
  * ```
  */
-export function setConfig(config: Partial<GlobalConfig>) {
+export function setConfig(config: Partial<Cfg>) {
   const prevConfig = Object.assign({}, GLOBAL_CONFIG);
   try {
     Object.assign(GLOBAL_CONFIG, config);
