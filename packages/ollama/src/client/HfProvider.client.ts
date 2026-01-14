@@ -18,7 +18,7 @@ import {
 } from "@langchain/core/messages";
 import { ChatOpenAI } from "@langchain/openai";
 import { randomString } from "functools-kit";
-import { CC_ENABLE_DEBUG } from "../config/params";
+import { GLOBAL_CONFIG } from "../config/params";
 import { fetchApi, singleshot } from "functools-kit";
 import { jsonrepair } from "jsonrepair";
 import { get, set } from "lodash-es";
@@ -140,7 +140,7 @@ export class HfProvider implements IProvider {
     };
 
     // Debug logging
-    if (CC_ENABLE_DEBUG) {
+    if (GLOBAL_CONFIG.CC_ENABLE_DEBUG) {
       await fs.appendFile(
         "./debug_hf_provider.txt",
         JSON.stringify(
@@ -265,7 +265,7 @@ export class HfProvider implements IProvider {
     };
 
     // Debug logging
-    if (CC_ENABLE_DEBUG) {
+    if (GLOBAL_CONFIG.CC_ENABLE_DEBUG) {
       await fs.appendFile(
         "./debug_hf_provider_stream.txt",
         JSON.stringify(
@@ -415,7 +415,7 @@ export class HfProvider implements IProvider {
           };
 
           // Debug logging
-          if (CC_ENABLE_DEBUG) {
+          if (GLOBAL_CONFIG.CC_ENABLE_DEBUG) {
             await fs.appendFile(
               "./debug_hf_provider_outline.txt",
               JSON.stringify({ params, answer: result }, null, 2) + "\n\n"

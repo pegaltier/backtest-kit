@@ -99,6 +99,23 @@ interface ILogger {
     warn(topic: string, ...args: any[]): void;
 }
 
+/**
+ * Sets custom logger implementation for the framework.
+ *
+ * All log messages from internal services will be forwarded to the provided logger
+ * with automatic context injection.
+ *
+ * @param logger - Custom logger implementing ILogger interface
+ *
+ * @example
+ * ```typescript
+ * setLogger({
+ *   log: (topic, ...args) => console.log(topic, args),
+ *   debug: (topic, ...args) => console.debug(topic, args),
+ *   info: (topic, ...args) => console.info(topic, args),
+ * });
+ * ```
+ */
 declare const setLogger: (logger: ILogger) => void;
 
 declare enum InferenceName {

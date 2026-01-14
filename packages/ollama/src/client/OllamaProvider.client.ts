@@ -8,7 +8,7 @@ import {
 } from "agent-swarm-kit";
 import IProvider from "../interface/Provider.interface";
 import { getOllama } from "../config/ollama";
-import { CC_ENABLE_DEBUG } from "../config/params";
+import { GLOBAL_CONFIG } from "../config/params";
 import { jsonrepair } from "jsonrepair";
 import { get, set } from "lodash-es";
 import { randomString, singleshot } from "functools-kit";
@@ -68,7 +68,7 @@ export class OllamaProvider implements IProvider {
     };
 
     // Debug logging
-    if (CC_ENABLE_DEBUG) {
+    if (GLOBAL_CONFIG.CC_ENABLE_DEBUG) {
       await fs.appendFile(
         "./debug_ollama_provider.txt",
         JSON.stringify({ params, answer: result }, null, 2) + "\n\n"
@@ -141,7 +141,7 @@ export class OllamaProvider implements IProvider {
     };
 
     // Debug logging
-    if (CC_ENABLE_DEBUG) {
+    if (GLOBAL_CONFIG.CC_ENABLE_DEBUG) {
       await fs.appendFile(
         "./debug_ollama_provider_stream.txt",
         JSON.stringify({ params, answer: result }, null, 2) + "\n\n"
@@ -256,7 +256,7 @@ export class OllamaProvider implements IProvider {
           };
 
           // Debug logging
-          if (CC_ENABLE_DEBUG) {
+          if (GLOBAL_CONFIG.CC_ENABLE_DEBUG) {
             await fs.appendFile(
               "./debug_ollama_provider_outline.txt",
               JSON.stringify({ params, answer: result }, null, 2) + "\n\n"
