@@ -43,8 +43,8 @@ export interface IActionParams extends IActionSchema {
 }
 
 export interface IActionCallbacks {
-  onInit(): void | Promise<void>;
-  onDispose(): void | Promise<void>;
+  onInit(strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+  onDispose(strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
 }
 
 export interface IActionSchema {
