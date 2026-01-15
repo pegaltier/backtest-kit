@@ -1,0 +1,29 @@
+{
+  "name": "{{PROJECT_NAME}}",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Backtest Kit trading bot project",
+  "scripts": {
+    "start": "node ./src/index.mjs",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "backtest-kit": "^1.11.10",
+    "@backtest-kit/signals": "^0.0.1",
+    "@backtest-kit/ollama": "^0.0.1",
+    "agent-swarm-kit": "^1.1.180",
+    "ccxt": "^4.4.41",
+    "uuid": "^11.0.3",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "dotenv-cli": "^8.1.0"
+  },
+  "keywords": [
+    "backtest",
+    "trading",
+    "crypto",
+    "bot"
+  ]
+}

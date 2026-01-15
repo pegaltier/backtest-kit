@@ -36,6 +36,7 @@
   "files": [
     "src",
     "scripts",
+    "template",
     "README.md"
   ],
   "repository": {
@@ -56,6 +57,11 @@
   "publishConfig": {
     "access": "public"
   },
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "glob": "^11.0.1",
+    "mustache": "^4.2.0",
+    "picocolors": "^1.1.1"
+  }
 }
  
