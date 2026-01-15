@@ -137,7 +137,7 @@ export class FifteenMinuteCandleHistoryService {
       report += `- **Close**: ${await formatPrice(symbol, candle.close)} USD\n`;
       report += `- **Volume**: ${await formatQuantity(symbol, candle.volume)}\n`;
       report += `- **15m Volatility**: ${volatilityPercent.toFixed(2)}%\n`;
-      report += `- **Body Size**: ${bodyPercent.toFixed(1)}\n\n`;
+      report += `- **Body Size**: ${bodyPercent.toFixed(1)}%\n\n`;
     }
 
     return report;
