@@ -542,7 +542,7 @@ interface ISwingTermRow {
  * const candles = await getCandles('ETHUSDT', '30m', 96);
  * const rows = await service.getData('ETHUSDT', candles);
  * console.log(rows[0].rsi14); // 52.45
- * console.log(rows[0].fibonacciCurrentLevel); // "50.0% Retracement"
+ * console.log(rows[0].fibonacciPositionPercent); // 50.25
  * ```
  */
 declare class SwingTermHistoryService {
