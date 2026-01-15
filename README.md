@@ -38,14 +38,26 @@ Build reliable trading systems: backtest on historical data, deploy live bots wi
 
 ## 🚀 Quick Start
 
-> **Talk is cheap.** Let me show you **the code**
->
-> Link to  👉 [the demo app](https://github.com/tripolskypetr/backtest-kit/tree/master/demo) 👈
+### 🎯 The Fastest Way: Sidekick CLI
 
-### 📦 Installation
+> Create a production-ready trading bot in seconds:
+
+```bash
+# Create project with npx (recommended)
+npx -y @backtest-kit/sidekick my-trading-bot
+cd my-trading-bot
+npm start
+```
+
+### 📦 Manual Installation
+
+> **Want to see the code?** 👉 [Demo app](https://github.com/tripolskypetr/backtest-kit/tree/master/demo) 👈
+
 ```bash
 npm install backtest-kit ccxt ollama uuid
 ```
+
+## 📚 Code Samples
 
 ### ⚙️ Basic Configuration
 ```typescript
