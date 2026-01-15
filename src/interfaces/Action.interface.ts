@@ -6,6 +6,7 @@ import { PingContract } from "../contract/Ping.contract";
 import { RiskContract } from "../contract/Risk.contract";
 import { FrameName } from "./Frame.interface";
 import { ILogger } from "./Logger.interface";
+import { ExchangeName } from "./Exchange.interface";
 
 /**
  * Constructor type for action handlers with strategy context.
@@ -34,7 +35,7 @@ import { ILogger } from "./Logger.interface";
  * const actionCtors: TActionCtor[] = [TelegramNotifier, ReduxLogger];
  * ```
  */
-export type TActionCtor = new (strategyName: StrategyName, frameName: FrameName, backtest: boolean) => Partial<IAction>;
+export type TActionCtor = new (strategyName: StrategyName, frameName: FrameName, actionName: ActionName) => Partial<IAction>;
 
 /**
  * Action parameters passed to ClientAction constructor.
@@ -64,8 +65,12 @@ export interface IActionParams extends IActionSchema {
   logger: ILogger;
   /** Strategy identifier this action is attached to */
   strategyName: StrategyName;
+  /** Exchange name (e.g., "binance") */
+  exchangeName: ExchangeName;
   /** Timeframe identifier this action is attached to */
   frameName: FrameName;
+  /** Whether running in backtest mode */
+  backtest: boolean;
 }
 
 /**
@@ -109,11 +114,11 @@ export interface IActionCallbacks {
    * - Loading persisted state
    * - Setting up subscriptions
    *
+   * @param actionName - Action identifier
    * @param strategyName - Strategy identifier
    * @param frameName - Timeframe identifier
-   * @param backtest - True for backtest mode, false for live trading
    */
-  onInit(strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+  onInit(actionName: ActionName, strategyName: StrategyName, frameName: FrameName): void | Promise<void>;
 
   /**
    * Called when action handler is disposed.
@@ -124,11 +129,11 @@ export interface IActionCallbacks {
    * - Saving state to disk
    * - Unsubscribing from observables
    *
+   * @param actionName - Action identifier
    * @param strategyName - Strategy identifier
    * @param frameName - Timeframe identifier
-   * @param backtest - True for backtest mode, false for live trading
    */
-  onDispose(strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+  onDispose(actionName: ActionName, strategyName: StrategyName, frameName: FrameName): void | Promise<void>;
 
   /**
    * Called on signal events from all modes (live + backtest).
@@ -137,11 +142,12 @@ export interface IActionCallbacks {
    * Frequency: Every tick/candle when strategy is evaluated
    *
    * @param event - Signal state result (idle, scheduled, opened, active, closed, cancelled)
+   * @param actionName - Action identifier
    * @param strategyName - Strategy identifier
    * @param frameName - Timeframe identifier
    * @param backtest - True for backtest mode, false for live trading
    */
-  onSignal(event: IStrategyTickResult, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+  onSignal(event: IStrategyTickResult, actionName: ActionName, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
 
   /**
    * Called on signal events from live trading only.
@@ -150,11 +156,12 @@ export interface IActionCallbacks {
    * Frequency: Every tick in live mode
    *
    * @param event - Signal state result from live trading
+   * @param actionName - Action identifier
    * @param strategyName - Strategy identifier
    * @param frameName - Timeframe identifier
    * @param backtest - Always false (live mode only)
    */
-  onSignalLive(event: IStrategyTickResult, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+  onSignalLive(event: IStrategyTickResult, actionName: ActionName, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
 
   /**
    * Called on signal events from backtest only.
@@ -163,11 +170,12 @@ export interface IActionCallbacks {
    * Frequency: Every candle in backtest mode
    *
    * @param event - Signal state result from backtest
+   * @param actionName - Action identifier
    * @param strategyName - Strategy identifier
    * @param frameName - Timeframe identifier
    * @param backtest - Always true (backtest mode only)
    */
-  onSignalBacktest(event: IStrategyTickResult, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+  onSignalBacktest(event: IStrategyTickResult, actionName: ActionName, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
 
   /**
    * Called when breakeven is triggered (stop-loss moved to entry price).
@@ -176,11 +184,12 @@ export interface IActionCallbacks {
    * Frequency: Once per signal when breakeven threshold is reached
    *
    * @param event - Breakeven milestone data
+   * @param actionName - Action identifier
    * @param strategyName - Strategy identifier
    * @param frameName - Timeframe identifier
    * @param backtest - True for backtest mode, false for live trading
    */
-  onBreakeven(event: BreakevenContract, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+  onBreakeven(event: BreakevenContract, actionName: ActionName, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
 
   /**
    * Called when partial profit level is reached (10%, 20%, 30%, etc).
@@ -189,11 +198,12 @@ export interface IActionCallbacks {
    * Frequency: Once per profit level per signal (deduplicated)
    *
    * @param event - Profit milestone data with level and price
+   * @param actionName - Action identifier
    * @param strategyName - Strategy identifier
    * @param frameName - Timeframe identifier
    * @param backtest - True for backtest mode, false for live trading
    */
-  onPartialProfit(event: PartialProfitContract, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+  onPartialProfit(event: PartialProfitContract, actionName: ActionName, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
 
   /**
    * Called when partial loss level is reached (-10%, -20%, -30%, etc).
@@ -202,11 +212,12 @@ export interface IActionCallbacks {
    * Frequency: Once per loss level per signal (deduplicated)
    *
    * @param event - Loss milestone data with level and price
+   * @param actionName - Action identifier
    * @param strategyName - Strategy identifier
    * @param frameName - Timeframe identifier
    * @param backtest - True for backtest mode, false for live trading
    */
-  onPartialLoss(event: PartialLossContract, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+  onPartialLoss(event: PartialLossContract, actionName: ActionName, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
 
   /**
    * Called during scheduled signal monitoring (every minute while waiting for activation).
@@ -215,11 +226,12 @@ export interface IActionCallbacks {
    * Frequency: Every minute while scheduled signal is waiting
    *
    * @param event - Scheduled signal monitoring data
+   * @param actionName - Action identifier
    * @param strategyName - Strategy identifier
    * @param frameName - Timeframe identifier
    * @param backtest - True for backtest mode, false for live trading
    */
-  onPing(event: PingContract, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+  onPing(event: PingContract, actionName: ActionName, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
 
   /**
    * Called when signal is rejected by risk management.
@@ -228,11 +240,12 @@ export interface IActionCallbacks {
    * Frequency: Only when signal fails risk validation (not emitted for allowed signals)
    *
    * @param event - Risk rejection data with reason and context
+   * @param actionName - Action identifier
    * @param strategyName - Strategy identifier
    * @param frameName - Timeframe identifier
    * @param backtest - True for backtest mode, false for live trading
    */
-  onRiskRejection(event: RiskContract, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+  onRiskRejection(event: RiskContract, actionName: ActionName, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
 }
 
 /**

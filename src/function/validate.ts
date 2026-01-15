@@ -46,6 +46,12 @@ interface ValidateArgs<T = Enum> {
   RiskName?: T;
 
   /**
+   * Action handler name enum to validate
+   * @example { TELEGRAM_NOTIFIER: "telegram-notifier" }
+   */
+  ActionName?: T;
+
+  /**
    * Sizing strategy name enum to validate
    * @example { FIXED_1000: "fixed-1000" }
    */
@@ -117,6 +123,19 @@ const getRiskMap = async () => {
 };
 
 /**
+ * Retrieves all registered action handlers as a map
+ * @private
+ * @returns Map of action names
+ */
+const getActionMap = async () => {
+  const actionMap: Record<string, string> = {};
+  for (const { actionName } of await lib.actionValidationService.list()) {
+    Object.assign(actionMap, { [actionName]: actionName });
+  }
+  return actionMap;
+};
+
+/**
  * Retrieves all registered sizing strategies as a map
  * @private
  * @returns Map of sizing names
@@ -174,6 +193,7 @@ const validateInternal = async (args: ValidateArgs<Enum>) => {
     FrameName = await getFrameMap(),
     StrategyName = await getStrategyMap(),
     RiskName = await getRiskMap(),
+    ActionName = await getActionMap(),
     SizingName = await getSizingMap(),
     OptimizerName = await getOptimizerMap(),
     WalkerName = await getWalkerMap(),
@@ -190,6 +210,9 @@ const validateInternal = async (args: ValidateArgs<Enum>) => {
   }
   for (const riskName of Object.values(RiskName)) {
     lib.riskValidationService.validate(riskName, METHOD_NAME);
+  }
+  for (const actionName of Object.values(ActionName)) {
+    lib.actionValidationService.validate(actionName, METHOD_NAME);
   }
   for (const sizingName of Object.values(SizingName)) {
     lib.sizingValidationService.validate(sizingName, METHOD_NAME);
