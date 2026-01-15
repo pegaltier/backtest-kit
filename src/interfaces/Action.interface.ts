@@ -36,20 +36,263 @@ import { ILogger } from "./Logger.interface";
  */
 export type TActionCtor = new (strategyName: StrategyName, frameName: FrameName, backtest: boolean) => Partial<IAction>;
 
+/**
+ * Action parameters passed to ClientAction constructor.
+ * Combines schema with runtime dependencies and execution context.
+ *
+ * Extended from IActionSchema with:
+ * - Logger instance for debugging and monitoring
+ * - Strategy context (strategyName, frameName)
+ * - Runtime environment flags
+ *
+ * @example
+ * ```typescript
+ * const params: IActionParams = {
+ *   actionName: "telegram-notifier",
+ *   handler: TelegramNotifier,
+ *   callbacks: { onInit, onDispose, onSignal },
+ *   logger: loggerService,
+ *   strategyName: "rsi_divergence",
+ *   frameName: "1h"
+ * };
+ *
+ * const actionClient = new ClientAction(params);
+ * ```
+ */
 export interface IActionParams extends IActionSchema {
+  /** Logger service for debugging and monitoring action execution */
   logger: ILogger;
+  /** Strategy identifier this action is attached to */
   strategyName: StrategyName;
+  /** Timeframe identifier this action is attached to */
   frameName: FrameName;
 }
 
+/**
+ * Lifecycle and event callbacks for action handlers.
+ *
+ * Provides hooks for initialization, disposal, and event handling.
+ * All callbacks are optional and support both sync and async execution.
+ *
+ * Use cases:
+ * - Resource initialization (database connections, file handles)
+ * - Resource cleanup (close connections, flush buffers)
+ * - Event logging and monitoring
+ * - State persistence
+ *
+ * @example
+ * ```typescript
+ * const callbacks: IActionCallbacks = {
+ *   onInit: async (strategyName, frameName, backtest) => {
+ *     console.log(`[${strategyName}/${frameName}] Action initialized (backtest=${backtest})`);
+ *     await db.connect();
+ *   },
+ *   onSignal: (event, strategyName, frameName, backtest) => {
+ *     if (event.action === 'opened') {
+ *       console.log(`New signal opened: ${event.signal.id}`);
+ *     }
+ *   },
+ *   onDispose: async (strategyName, frameName, backtest) => {
+ *     await db.disconnect();
+ *     console.log(`[${strategyName}/${frameName}] Action disposed`);
+ *   }
+ * };
+ * ```
+ */
 export interface IActionCallbacks {
+  /**
+   * Called when action handler is initialized.
+   *
+   * Use for:
+   * - Opening database connections
+   * - Initializing external services
+   * - Loading persisted state
+   * - Setting up subscriptions
+   *
+   * @param strategyName - Strategy identifier
+   * @param frameName - Timeframe identifier
+   * @param backtest - True for backtest mode, false for live trading
+   */
   onInit(strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+
+  /**
+   * Called when action handler is disposed.
+   *
+   * Use for:
+   * - Closing database connections
+   * - Flushing buffers
+   * - Saving state to disk
+   * - Unsubscribing from observables
+   *
+   * @param strategyName - Strategy identifier
+   * @param frameName - Timeframe identifier
+   * @param backtest - True for backtest mode, false for live trading
+   */
   onDispose(strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+
+  /**
+   * Called on signal events from all modes (live + backtest).
+   *
+   * Triggered by: StrategyConnectionService via signalEmitter
+   * Frequency: Every tick/candle when strategy is evaluated
+   *
+   * @param event - Signal state result (idle, scheduled, opened, active, closed, cancelled)
+   * @param strategyName - Strategy identifier
+   * @param frameName - Timeframe identifier
+   * @param backtest - True for backtest mode, false for live trading
+   */
+  onSignal(event: IStrategyTickResult, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+
+  /**
+   * Called on signal events from live trading only.
+   *
+   * Triggered by: StrategyConnectionService via signalLiveEmitter
+   * Frequency: Every tick in live mode
+   *
+   * @param event - Signal state result from live trading
+   * @param strategyName - Strategy identifier
+   * @param frameName - Timeframe identifier
+   * @param backtest - Always false (live mode only)
+   */
+  onSignalLive(event: IStrategyTickResult, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+
+  /**
+   * Called on signal events from backtest only.
+   *
+   * Triggered by: StrategyConnectionService via signalBacktestEmitter
+   * Frequency: Every candle in backtest mode
+   *
+   * @param event - Signal state result from backtest
+   * @param strategyName - Strategy identifier
+   * @param frameName - Timeframe identifier
+   * @param backtest - Always true (backtest mode only)
+   */
+  onSignalBacktest(event: IStrategyTickResult, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+
+  /**
+   * Called when breakeven is triggered (stop-loss moved to entry price).
+   *
+   * Triggered by: BreakevenConnectionService via breakevenSubject
+   * Frequency: Once per signal when breakeven threshold is reached
+   *
+   * @param event - Breakeven milestone data
+   * @param strategyName - Strategy identifier
+   * @param frameName - Timeframe identifier
+   * @param backtest - True for backtest mode, false for live trading
+   */
+  onBreakeven(event: BreakevenContract, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+
+  /**
+   * Called when partial profit level is reached (10%, 20%, 30%, etc).
+   *
+   * Triggered by: PartialConnectionService via partialProfitSubject
+   * Frequency: Once per profit level per signal (deduplicated)
+   *
+   * @param event - Profit milestone data with level and price
+   * @param strategyName - Strategy identifier
+   * @param frameName - Timeframe identifier
+   * @param backtest - True for backtest mode, false for live trading
+   */
+  onPartialProfit(event: PartialProfitContract, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+
+  /**
+   * Called when partial loss level is reached (-10%, -20%, -30%, etc).
+   *
+   * Triggered by: PartialConnectionService via partialLossSubject
+   * Frequency: Once per loss level per signal (deduplicated)
+   *
+   * @param event - Loss milestone data with level and price
+   * @param strategyName - Strategy identifier
+   * @param frameName - Timeframe identifier
+   * @param backtest - True for backtest mode, false for live trading
+   */
+  onPartialLoss(event: PartialLossContract, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+
+  /**
+   * Called during scheduled signal monitoring (every minute while waiting for activation).
+   *
+   * Triggered by: StrategyConnectionService via pingSubject
+   * Frequency: Every minute while scheduled signal is waiting
+   *
+   * @param event - Scheduled signal monitoring data
+   * @param strategyName - Strategy identifier
+   * @param frameName - Timeframe identifier
+   * @param backtest - True for backtest mode, false for live trading
+   */
+  onPing(event: PingContract, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+
+  /**
+   * Called when signal is rejected by risk management.
+   *
+   * Triggered by: RiskConnectionService via riskSubject
+   * Frequency: Only when signal fails risk validation (not emitted for allowed signals)
+   *
+   * @param event - Risk rejection data with reason and context
+   * @param strategyName - Strategy identifier
+   * @param frameName - Timeframe identifier
+   * @param backtest - True for backtest mode, false for live trading
+   */
+  onRiskRejection(event: RiskContract, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
 }
 
+/**
+ * Action schema registered via addAction().
+ * Defines event handler implementation and lifecycle callbacks for state management integration.
+ *
+ * Actions provide a way to attach custom event handlers to strategies for:
+ * - State management (Redux, Zustand, MobX)
+ * - Event logging and monitoring
+ * - Real-time notifications (Telegram, Discord, email)
+ * - Analytics and metrics collection
+ * - Custom business logic triggers
+ *
+ * Each action instance is created per strategy-frame pair and receives all events
+ * emitted during strategy execution. Multiple actions can be attached to a single strategy.
+ *
+ * @example
+ * ```typescript
+ * import { addAction } from "backtest-kit";
+ *
+ * // Define action handler class
+ * class TelegramNotifier implements Partial<IAction> {
+ *   constructor(
+ *     private strategyName: StrategyName,
+ *     private frameName: FrameName,
+ *     private backtest: boolean
+ *   ) {}
+ *
+ *   signal(event: IStrategyTickResult): void {
+ *     if (!this.backtest && event.action === 'opened') {
+ *       telegram.send(`[${this.strategyName}/${this.frameName}] New signal`);
+ *     }
+ *   }
+ *
+ *   dispose(): void {
+ *     telegram.close();
+ *   }
+ * }
+ *
+ * // Register action schema
+ * addAction({
+ *   actionName: "telegram-notifier",
+ *   handler: TelegramNotifier,
+ *   callbacks: {
+ *     onInit: async (strategyName, frameName, backtest) => {
+ *       console.log(`Telegram notifier initialized for ${strategyName}/${frameName}`);
+ *     },
+ *     onSignal: (event, strategyName, frameName, backtest) => {
+ *       console.log(`Signal event: ${event.action}`);
+ *     }
+ *   }
+ * });
+ * ```
+ */
 export interface IActionSchema {
+  /** Unique action identifier for registration */
   actionName: ActionName;
+  /** Action handler constructor (instantiated per strategy-frame pair) */
   handler: TActionCtor;
+  /** Optional lifecycle and event callbacks */
   callbacks: Partial<IActionCallbacks>;
 }
 
