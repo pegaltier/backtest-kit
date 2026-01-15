@@ -28,17 +28,17 @@ Transform technical analysis into trading decisions with multi-provider LLM supp
 
 | Provider | Function | Base URL |
 |----------|----------|----------|
-| **OpenAI** | `gpt5()` | api.openai.com |
-| **Claude** | `claude()` | api.anthropic.com |
-| **DeepSeek** | `deepseek()` | api.deepseek.com |
-| **Grok** | `grok()` | api.x.ai |
-| **Mistral** | `mistral()` | api.mistral.ai |
-| **Perplexity** | `perplexity()` | api.perplexity.ai |
-| **Cohere** | `cohere()` | api.cohere.ai |
-| **Alibaba** | `alibaba()` | dashscope-intl.aliyuncs.com/compatible-mode/v1 |
-| **Hugging Face** | `hf()` | router.huggingface.co/v1 |
-| **Ollama** | `ollama()` | cloud.ollama.com |
-| **Zhipu AI** | `glm4()` | api.z.ai/api/paas/v4 |
+| **OpenAI** | `gpt5()` | `https://api.openai.com/v1/` |
+| **Claude** | `claude()` | `https://api.anthropic.com/v1/` |
+| **DeepSeek** | `deepseek()` | `https://api.deepseek.com/` |
+| **Grok** | `grok()` | `https://api.x.ai/v1/` |
+| **Mistral** | `mistral()` | `https://api.mistral.ai/v1/` |
+| **Perplexity** | `perplexity()` | `https://api.perplexity.ai/` |
+| **Cohere** | `cohere()` | `https://api.cohere.ai/compatibility/v1/` |
+| **Alibaba** | `alibaba()` | `https://dashscope-intl.aliyuncs.com/compatible-mode/v1/` |
+| **Hugging Face** | `hf()` | `https://router.huggingface.co/v1/` |
+| **Ollama** | `ollama()` | `https://ollama.com/` |
+| **Zhipu AI** | `glm4()` | `https://api.z.ai/api/paas/v4/` |
 
 **Output Schema:**
 
