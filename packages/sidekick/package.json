@@ -1,7 +1,7 @@
 {
   "name": "@backtest-kit/sidekick",
   "version": "1.0.0",
-  "description": "",
+  "description": "The easiest way to create a new Backtest Kit trading bot project. Like create-react-app, but for algorithmic trading with LLM integration and technical analysis.",
   "author": {
     "name": "Petr Tripolsky",
     "email": "tripolskypetr@gmail.com",
@@ -14,19 +14,28 @@
   "license": "MIT",
   "homepage": "https://backtest-kit.github.io/documents/example_02_first_backtest.html",
   "keywords": [
+    "create-backtest-app",
+    "backtest-kit",
+    "scaffolding",
+    "generator",
+    "cli",
+    "trading-bot",
+    "algorithmic-trading",
     "backtesting",
-    "backtest",
-    "finance",
-    "trading",
-    "candles",
-    "indicators",
-    "multi value",
-    "multi symbol",
-    "framework"
+    "llm",
+    "ai-trading",
+    "technical-analysis",
+    "crypto",
+    "forex",
+    "quantitative-trading",
+    "template",
+    "boilerplate",
+    "starter-kit",
+    "npx"
   ],
   "files": [
-    "build",
-    "types.d.ts",
+    "src",
+    "scripts",
     "README.md"
   ],
   "repository": {
@@ -39,7 +48,7 @@
   },
   "main": "./src/index.mjs",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node ./src/index.mjs"
   },
   "bin": {
     "@backtest-kit/sidekick": "./scripts/init.mjs"
@@ -49,3 +58,4 @@
   },
   "type": "module"
 }
+ 
