@@ -149,7 +149,7 @@ async function main() {
     {
       log.info('Creating package.json...');
       const packageJsonContent = await renderTemplate(
-        path.join(templateDir, 'package.template.json'),
+        path.join(templateDir, 'package.mustache'),
         templateData
       );
       await fs.writeFile(
@@ -164,7 +164,7 @@ async function main() {
     {
       log.info('Creating .env template...');
       const envContent = await renderTemplate(
-        path.join(templateDir, 'env.template'),
+        path.join(templateDir, 'env.mustache'),
         templateData
       );
       await fs.writeFile(
@@ -184,7 +184,7 @@ async function main() {
     {
       log.info('Creating .gitignore...');
       const gitignoreContent = await renderTemplate(
-        path.join(templateDir, 'gitignore.template'),
+        path.join(templateDir, 'gitignore.mustache'),
         templateData
       );
       await fs.writeFile(
@@ -199,7 +199,7 @@ async function main() {
     {
       log.info('Creating README.md...');
       const readmeContent = await renderTemplate(
-        path.join(templateDir, 'README.template.md'),
+        path.join(templateDir, 'README.mustache'),
         templateData
       );
       await fs.writeFile(
