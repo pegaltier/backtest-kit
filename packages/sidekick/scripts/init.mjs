@@ -211,6 +211,21 @@ async function main() {
       console.log();
     }
 
+    // Create jsconfig.json from template
+    {
+      log.info('Creating jsconfig.json...');
+      const jsconfigContent = await renderTemplate(
+        path.join(templateDir, 'jsconfig.json.mustache'),
+        templateData
+      );
+      await fs.writeFile(
+        path.join(projectPath, 'jsconfig.json'),
+        jsconfigContent,
+        'utf-8'
+      );
+      log.success('Created jsconfig.json');
+    }
+
     // Install dependencies
     {
       await runNpmInstall(projectPath);
