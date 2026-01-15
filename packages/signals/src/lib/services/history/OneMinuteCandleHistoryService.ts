@@ -105,7 +105,7 @@ export class OneMinuteCandleHistoryService {
 
     const currentData = await getDate();
     markdown += `## One-Minute Candles History (Last ${RECENT_CANDLES})\n`;
-    markdown += `> Current time: ${currentData.toISOString()}\n\n`;
+    markdown += `> Current trading pair: ${String(symbol).toUpperCase()} Current datetime: ${currentData.toISOString()}\n\n`;
 
     for (let index = 0; index < candles.length; index++) {
       const candle = candles[index];

@@ -168,7 +168,7 @@ const generateBookDataReport = async (
 ): Promise<string> => {
   const currentData = await getDate();
   let markdown = `# Order Book Analysis for ${result.symbol}\n`;
-  markdown += `> Current time: ${currentData.toISOString()}\n\n`;
+  markdown += `> Current trading pair: ${String(result.symbol).toUpperCase()} Current datetime: ${currentData.toISOString()}\n\n`;
 
   // Basic order book info
   markdown += `## Order Book Summary\n`;

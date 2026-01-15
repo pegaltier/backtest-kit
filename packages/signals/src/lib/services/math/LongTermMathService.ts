@@ -665,7 +665,7 @@ async function generateHistoryTable(
   let markdown = "";
   const currentData = await getDate();
   markdown += `# 1-Hour Candles Trading Analysis for ${symbol} (Historical Data)\n`;
-  markdown += `> Current time: ${currentData.toISOString()}\n\n`;
+  markdown += `> Current trading pair: ${String(symbol).toUpperCase()} Current datetime: ${currentData.toISOString()}\n\n`;
 
   const header = `| ${columns.map((col) => col.label).join(" | ")} |\n`;
   const separator = `| ${columns.map(() => "---").join(" | ")} |\n`;
