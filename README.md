@@ -40,7 +40,7 @@ Build reliable trading systems: backtest on historical data, deploy live bots wi
 
 ### 🎯 The Fastest Way: Sidekick CLI
 
-> Create a production-ready trading bot in seconds:
+> **Create a production-ready trading bot in seconds:**
 
 ```bash
 # Create project with npx (recommended)
