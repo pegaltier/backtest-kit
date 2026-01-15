@@ -120,16 +120,12 @@ export class FifteenMinuteCandleHistoryService {
       const bodySize = Math.abs(candle.close - candle.open);
       const candleRange = candle.high - candle.low;
       const bodyPercent = candleRange > 0 ? (bodySize / candleRange) * 100 : 0;
-      const candleType =
-        candle.close > candle.open
-          ? "Green"
-          : candle.close < candle.open
-          ? "Red"
-          : "Doji";
+      const priceChangePercent = candle.open > 0 ? ((candle.close - candle.open) / candle.open) * 100 : 0;
 
       const formattedTime = new Date(candle.timestamp).toISOString();
 
-      report += `### 15m Candle ${index + 1} (${candleType})\n`;
+      report += `### 15m Candle ${index + 1}\n`;
+      report += `- **Price Change**: ${priceChangePercent.toFixed(3)}%\n`;
       report += `- **Time**: ${formattedTime}\n`;
       report += `- **Open**: ${await formatPrice(symbol, candle.open)} USD\n`;
       report += `- **High**: ${await formatPrice(symbol, candle.high)} USD\n`;

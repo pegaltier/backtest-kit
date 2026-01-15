@@ -436,20 +436,20 @@ function isUnsafe(value: number | null) {
 /**
  * Calculates volume metrics including SMA, ratio, and trend.
  *
- * Computes volume SMA(5), current volume to average ratio, and volume trend
- * by comparing recent 3 candles to previous 3 candles. Returns "increasing"
- * if recent average > 120% of previous, "decreasing" if < 80%, else "stable".
+ * Computes volume SMA(5), current volume to average ratio, and volume trend ratio
+ * by comparing recent 3 candles to previous 3 candles. Returns numeric ratio
+ * of recent volume average to previous volume average (e.g., 1.2 = 20% increase).
  *
  * @param candles - Array of candle data
  * @param endIndex - Index of current candle in array
- * @returns Object with volumeSma5, volumeRatio, and volumeTrend
+ * @returns Object with volumeSma5, volumeRatio, and volumeTrendRatio
  *
  * @example
  * ```typescript
  * const candles = await getCandles('BTCUSDT', '1m', 60);
  * const metrics = calculateVolumeMetrics(candles, 59);
  * console.log(metrics);
- * // { volumeSma5: 1500000, volumeRatio: 1.25, volumeTrend: "increasing" }
+ * // { volumeSma5: 1500000, volumeRatio: 1.25, volumeTrendRatio: 1.15 }
  * ```
  */
 function calculateVolumeMetrics(

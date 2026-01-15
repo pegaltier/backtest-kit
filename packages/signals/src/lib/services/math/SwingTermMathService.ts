@@ -498,7 +498,7 @@ function calculateSupportResistance(
  * const candles = await getCandles('BTCUSDT', '30m', 96);
  * const analysis = generateAnalysis('BTCUSDT', candles);
  * console.log(analysis[0].rsi14); // 52.45
- * console.log(analysis[0].fibonacciCurrentLevel); // "50.0% Retracement"
+ * console.log(analysis[0].fibonacciPositionPercent); // 50.25
  * ```
  */
 function generateAnalysis(
@@ -875,7 +875,7 @@ async function generateHistoryTable(
  * const candles = await getCandles('ETHUSDT', '30m', 96);
  * const rows = await service.getData('ETHUSDT', candles);
  * console.log(rows[0].rsi14); // 52.45
- * console.log(rows[0].fibonacciCurrentLevel); // "50.0% Retracement"
+ * console.log(rows[0].fibonacciPositionPercent); // 50.25
  * ```
  */
 export class SwingTermHistoryService {

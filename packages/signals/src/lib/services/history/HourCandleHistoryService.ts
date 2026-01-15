@@ -114,16 +114,12 @@ export class HourCandleHistoryService {
       const bodySize = Math.abs(candle.close - candle.open);
       const candleRange = candle.high - candle.low;
       const bodyPercent = candleRange > 0 ? (bodySize / candleRange) * 100 : 0;
-      const candleType =
-        candle.close > candle.open
-          ? "Green"
-          : candle.close < candle.open
-          ? "Red"
-          : "Doji";
+      const priceChangePercent = candle.open > 0 ? ((candle.close - candle.open) / candle.open) * 100 : 0;
 
       const formattedTime = new Date(candle.timestamp).toISOString();
 
-      markdown += `### 1h Candle ${index + 1} (${candleType})\n`;
+      markdown += `### 1h Candle ${index + 1}\n`;
+      markdown += `- **Price Change**: ${priceChangePercent.toFixed(3)}%\n`;
       markdown += `- **Time**: ${formattedTime}\n`;
       markdown += `- **Open**: ${formatPrice(symbol, candle.open)} USD\n`;
       markdown += `- **High**: ${formatPrice(symbol, candle.high)} USD\n`;
