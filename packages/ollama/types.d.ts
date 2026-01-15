@@ -271,6 +271,36 @@ declare const alibaba: (messages: IOutlineMessage[], model: string, apiKey?: str
     note: string;
     priceOpen: number;
 }>;
+/**
+ * Generate structured trading signal from Zhipu AI GLM-4 models.
+ *
+ * Uses Zhipu AI's GLM-4 through OpenAI-compatible Z.ai API. Does NOT support token rotation.
+ * GLM-4 is a powerful Chinese language model with strong reasoning capabilities.
+ *
+ * @param messages - Array of outline messages (user/assistant/system)
+ * @param model - GLM-4 model name (e.g., "glm-4-plus", "glm-4-air")
+ * @param apiKey - Single API key (token rotation not supported)
+ * @returns Promise resolving to structured trading signal
+ * @throws Error if apiKey is an array (token rotation not supported)
+ *
+ * @example
+ * ```typescript
+ * import { glm4 } from '@backtest-kit/ollama';
+ *
+ * const signal = await glm4(messages, 'glm-4-plus', process.env.ZAI_API_KEY);
+ * console.log(`Position: ${signal.position}`);
+ * console.log(`Entry: ${signal.priceOpen}`);
+ * ```
+ */
+declare const glm4: (messages: IOutlineMessage[], model: string, apiKey?: string | string[]) => Promise<{
+    id: string;
+    position: "long" | "short";
+    minuteEstimatedTime: number;
+    priceStopLoss: number;
+    priceTakeProfit: number;
+    note: string;
+    priceOpen: number;
+}>;
 
 /**
  * Logger interface for application logging.
@@ -364,6 +394,8 @@ declare enum InferenceName {
     ClaudeInference = "claude_inference",
     /** OpenAI GPT provider (api.openai.com) */
     GPT5Inference = "gpt5_inference",
+    /** Z.ai GPT Provider (api.z.ai/api/paas/v4) */
+    GLM4Inference = "glm4_inference",
     /** DeepSeek provider (api.deepseek.com) */
     DeepseekInference = "deepseek_inference",
     /** Mistral AI provider (api.mistral.ai) */
@@ -955,4 +987,4 @@ declare const engine: {
     loggerService: LoggerService;
 };
 
-export { alibaba, claude, cohere, deepseek, gpt5, grok, hf, engine as lib, mistral, ollama, perplexity, setLogger };
+export { alibaba, claude, cohere, deepseek, glm4, gpt5, grok, hf, engine as lib, mistral, ollama, perplexity, setLogger };

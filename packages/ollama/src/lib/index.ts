@@ -55,6 +55,7 @@ import MistralProvider from "../client/MistralProvider.client";
 import PerplexityProvider from "../client/PerplexityProvider.client";
 import CohereProvider from "../client/CohereProvider.client";
 import AlibabaProvider from "../client/AlibabaProvider.client";
+import GLM4Provider from "../client/GLM4Provider.client";
 import LoggerService from "./services/common/LoggerService";
 import OutlinePrivateService from "./services/private/OutlinePrivateService";
 import OutlinePublicService from "./services/public/OutlinePublicService";
@@ -148,6 +149,10 @@ init();
   engine.runnerPrivateService.registerRunner(
     InferenceName.AlibabaInference,
     AlibabaProvider
+  );
+  engine.runnerPrivateService.registerRunner(
+    InferenceName.GLM4Inference,
+    GLM4Provider,
   );
 }
 

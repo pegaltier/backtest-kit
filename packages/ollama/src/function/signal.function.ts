@@ -311,3 +311,37 @@ export const alibaba = async (
     apiKey
   );
 };
+
+/**
+ * Generate structured trading signal from Zhipu AI GLM-4 models.
+ *
+ * Uses Zhipu AI's GLM-4 through OpenAI-compatible Z.ai API. Does NOT support token rotation.
+ * GLM-4 is a powerful Chinese language model with strong reasoning capabilities.
+ *
+ * @param messages - Array of outline messages (user/assistant/system)
+ * @param model - GLM-4 model name (e.g., "glm-4-plus", "glm-4-air")
+ * @param apiKey - Single API key (token rotation not supported)
+ * @returns Promise resolving to structured trading signal
+ * @throws Error if apiKey is an array (token rotation not supported)
+ *
+ * @example
+ * ```typescript
+ * import { glm4 } from '@backtest-kit/ollama';
+ *
+ * const signal = await glm4(messages, 'glm-4-plus', process.env.ZAI_API_KEY);
+ * console.log(`Position: ${signal.position}`);
+ * console.log(`Entry: ${signal.priceOpen}`);
+ * ```
+ */
+export const glm4 = async (
+  messages: IOutlineMessage[],
+  model: string,
+  apiKey?: string | string[]
+) => {
+  return await engine.outlinePublicService.getCompletion(
+    messages,
+    InferenceName.GLM4Inference,
+    model,
+    apiKey
+  );
+};

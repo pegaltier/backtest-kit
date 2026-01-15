@@ -72,6 +72,7 @@ export {
   mistral,
   ollama,
   perplexity,
+  glm4,
 } from "./function/signal.function";
 
 /**

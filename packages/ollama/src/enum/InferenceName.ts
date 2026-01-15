@@ -22,6 +22,8 @@ export enum InferenceName {
     ClaudeInference = "claude_inference",
     /** OpenAI GPT provider (api.openai.com) */
     GPT5Inference = "gpt5_inference",
+    /** Z.ai GPT Provider (api.z.ai/api/paas/v4) */
+    GLM4Inference = "glm4_inference",
     /** DeepSeek provider (api.deepseek.com) */
     DeepseekInference = "deepseek_inference",
     /** Mistral AI provider (api.mistral.ai) */

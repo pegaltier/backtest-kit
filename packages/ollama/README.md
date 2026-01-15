@@ -38,6 +38,7 @@ Transform technical analysis into trading decisions with multi-provider LLM supp
 | **Alibaba** | `alibaba()` | dashscope-intl.aliyuncs.com/compatible-mode/v1 |
 | **Hugging Face** | `hf()` | router.huggingface.co/v1 |
 | **Ollama** | `ollama()` | cloud.ollama.com |
+| **Zhipu AI** | `glm4()` | api.z.ai/api/paas/v4 |
 
 **Output Schema:**
 
