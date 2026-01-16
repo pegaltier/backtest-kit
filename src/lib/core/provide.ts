@@ -4,6 +4,7 @@ import StrategyConnectionService from "../services/connection/StrategyConnection
 import FrameConnectionService from "../services/connection/FrameConnectionService";
 import SizingConnectionService from "../services/connection/SizingConnectionService";
 import RiskConnectionService from "../services/connection/RiskConnectionService";
+import ActionConnectionService from "../services/connection/ActionConnectionService";
 import ExecutionContextService from "../services/context/ExecutionContextService";
 import MethodContextService from "../services/context/MethodContextService";
 import ExchangeCoreService from "../services/core/ExchangeCoreService";
@@ -11,11 +12,13 @@ import StrategyCoreService from "../services/core/StrategyCoreService";
 import FrameCoreService from "../services/core/FrameCoreService";
 import SizingGlobalService from "../services/global/SizingGlobalService";
 import RiskGlobalService from "../services/global/RiskGlobalService";
+import ActionCoreService from "../services/core/ActionCoreService";
 import ExchangeSchemaService from "../services/schema/ExchangeSchemaService";
 import StrategySchemaService from "../services/schema/StrategySchemaService";
 import FrameSchemaService from "../services/schema/FrameSchemaService";
 import SizingSchemaService from "../services/schema/SizingSchemaService";
 import RiskSchemaService from "../services/schema/RiskSchemaService";
+import ActionSchemaService from "../services/schema/ActionSchemaService";
 import WalkerSchemaService from "../services/schema/WalkerSchemaService";
 import BacktestLogicPrivateService from "../services/logic/private/BacktestLogicPrivateService";
 import LiveLogicPrivateService from "../services/logic/private/LiveLogicPrivateService";
@@ -40,6 +43,7 @@ import FrameValidationService from "../services/validation/FrameValidationServic
 import WalkerValidationService from "../services/validation/WalkerValidationService";
 import SizingValidationService from "../services/validation/SizingValidationService";
 import RiskValidationService from "../services/validation/RiskValidationService";
+import ActionValidationService from "../services/validation/ActionValidationService";
 import OptimizerTemplateService from "../services/template/OptimizerTemplateService";
 import OptimizerSchemaService from "../services/schema/OptimizerSchemaService";
 import OptimizerValidationService from "../services/validation/OptimizerValidationService";
@@ -80,6 +84,7 @@ import RiskReportService from "../services/report/RiskReportService";
     provide(TYPES.frameConnectionService, () => new FrameConnectionService());
     provide(TYPES.sizingConnectionService, () => new SizingConnectionService());
     provide(TYPES.riskConnectionService, () => new RiskConnectionService());
+    provide(TYPES.actionConnectionService, () => new ActionConnectionService());
     provide(TYPES.optimizerConnectionService, () => new OptimizerConnectionService());
     provide(TYPES.partialConnectionService, () => new PartialConnectionService());
     provide(TYPES.breakevenConnectionService, () => new BreakevenConnectionService());
@@ -92,12 +97,14 @@ import RiskReportService from "../services/report/RiskReportService";
     provide(TYPES.walkerSchemaService, () => new WalkerSchemaService());
     provide(TYPES.sizingSchemaService, () => new SizingSchemaService());
     provide(TYPES.riskSchemaService, () => new RiskSchemaService());
+    provide(TYPES.actionSchemaService, () => new ActionSchemaService());
     provide(TYPES.optimizerSchemaService, () => new OptimizerSchemaService());
 }
 
 {
     provide(TYPES.exchangeCoreService, () => new ExchangeCoreService());
     provide(TYPES.strategyCoreService, () => new StrategyCoreService());
+    provide(TYPES.actionCoreService, () => new ActionCoreService());
     provide(TYPES.frameCoreService, () => new FrameCoreService());
 }
 
@@ -159,6 +166,7 @@ import RiskReportService from "../services/report/RiskReportService";
     provide(TYPES.walkerValidationService, () => new WalkerValidationService());
     provide(TYPES.sizingValidationService, () => new SizingValidationService());
     provide(TYPES.riskValidationService, () => new RiskValidationService());
+    provide(TYPES.actionValidationService, () => new ActionValidationService());
     provide(TYPES.optimizerValidationService, () => new OptimizerValidationService());
     provide(TYPES.configValidationService, () => new ConfigValidationService());
     provide(TYPES.columnValidationService, () => new ColumnValidationService());

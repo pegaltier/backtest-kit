@@ -28,6 +28,7 @@ import { BreakevenConnectionService } from "./BreakevenConnectionService";
 import { MergeRisk } from "../../../classes/Risk";
 import { TMethodContextService } from "../context/MethodContextService";
 import { FrameName } from "../../../interfaces/Frame.interface";
+import ActionCoreService from "../core/ActionCoreService";
 
 /**
  * Mapping of RiskName to IRisk instances.
@@ -124,34 +125,75 @@ const CREATE_KEY_FN = (
 };
 
 /**
- * Callback function for emitting ping events to pingSubject.
+ * Creates a callback function for emitting ping events to pingSubject.
  *
  * Called by ClientStrategy when a scheduled signal is being monitored every minute.
- * Emits PingContract event to all subscribers.
+ * Emits PingContract event to all subscribers and calls ActionCoreService.
  *
- * @param symbol - Trading pair symbol
- * @param strategyName - Strategy name that is monitoring this scheduled signal
- * @param exchangeName - Exchange name where this scheduled signal is being executed
- * @param data - Scheduled signal row data
- * @param backtest - True if backtest mode
- * @param timestamp - Event timestamp in milliseconds
+ * @param self - Reference to StrategyConnectionService instance
+ * @returns Callback function for ping events
  */
-const COMMIT_PING_FN = async (
+const CREATE_COMMIT_PING_FN = (self: StrategyConnectionService) => async (
   symbol: string,
   strategyName: StrategyName,
   exchangeName: ExchangeName,
   data: IScheduledSignalRow,
   backtest: boolean,
   timestamp: number
-) =>
-  await pingSubject.next({
+) => {
+  const event = {
     symbol,
     strategyName,
     exchangeName,
     data,
     backtest,
     timestamp,
-  });
+  };
+  await pingSubject.next(event);
+  await self.actionCoreService.ping(backtest, event, { strategyName, exchangeName, frameName: data.frameName });
+};
+
+/**
+ * Creates a callback function for emitting init events.
+ *
+ * Called by ClientStrategy when it has finished initialization.
+ * Calls ActionCoreService to notify all registered actions.
+ *
+ * @param self - Reference to StrategyConnectionService instance
+ * @returns Callback function for init events
+ */
+const CREATE_COMMIT_INIT_FN = (self: StrategyConnectionService) => async (
+  symbol: string,
+  strategyName: StrategyName,
+  exchangeName: ExchangeName,
+  frameName: FrameName,
+  backtest: boolean
+) => {
+  // Placeholder for future init subject implementation
+  // await initSubject.next({ symbol, strategyName, exchangeName, frameName, backtest });
+  await self.actionCoreService.initFn(backtest, symbol, { strategyName, exchangeName, frameName });
+};
+
+/**
+ * Creates a callback function for emitting dispose events.
+ *
+ * Called by ClientStrategy when it is being disposed.
+ * Calls ActionCoreService to notify all registered actions.
+ *
+ * @param self - Reference to StrategyConnectionService instance
+ * @returns Callback function for dispose events
+ */
+const CREATE_COMMIT_DISPOSE_FN = (self: StrategyConnectionService) => async (
+  symbol: string,
+  strategyName: StrategyName,
+  exchangeName: ExchangeName,
+  frameName: FrameName,
+  backtest: boolean
+) => {
+  // Placeholder for future dispose subject implementation
+  // await disposeSubject.next({ symbol, strategyName, exchangeName, frameName, backtest });
+  await self.actionCoreService.dispose(backtest, symbol, { strategyName, exchangeName, frameName });
+};
 
 /**
  * Type definition for strategy methods.
@@ -203,6 +245,9 @@ export class StrategyConnectionService implements TStrategy {
   public readonly breakevenConnectionService = inject<BreakevenConnectionService>(
     TYPES.breakevenConnectionService
   );
+  public readonly actionCoreService = inject<ActionCoreService>(
+    TYPES.actionCoreService
+  );
 
   /**
    * Retrieves memoized ClientStrategy instance for given symbol-strategy pair with exchange and frame isolation.
@@ -232,6 +277,8 @@ export class StrategyConnectionService implements TStrategy {
         symbol,
         interval,
         exchangeName,
+        frameName,
+        backtest,
         execution: this.executionContextService,
         method: this.methodContextService,
         logger: this.loggerService,
@@ -252,7 +299,9 @@ export class StrategyConnectionService implements TStrategy {
         strategyName,
         getSignal,
         callbacks,
-        onPing: COMMIT_PING_FN,
+        onInit: CREATE_COMMIT_INIT_FN(this),
+        onPing: CREATE_COMMIT_PING_FN(this),
+        onDispose: CREATE_COMMIT_DISPOSE_FN(this),
       });
     }
   );
@@ -404,11 +453,14 @@ export class StrategyConnectionService implements TStrategy {
     {
       if (this.executionContextService.context.backtest) {
         await signalBacktestEmitter.next(tick);
+        await this.actionCoreService.signalBacktest(backtest, tick, context);
       }
       if (!this.executionContextService.context.backtest) {
         await signalLiveEmitter.next(tick);
+        await this.actionCoreService.signalLive(backtest, tick, context);
       }
       await signalEmitter.next(tick);
+      await this.actionCoreService.signal(backtest, tick, context);
     }
     return tick;
   };
@@ -442,11 +494,14 @@ export class StrategyConnectionService implements TStrategy {
     {
       if (this.executionContextService.context.backtest) {
         await signalBacktestEmitter.next(tick);
+        await this.actionCoreService.signalBacktest(backtest, tick, context);
       }
       if (!this.executionContextService.context.backtest) {
         await signalLiveEmitter.next(tick);
+        await this.actionCoreService.signalLive(backtest, tick, context);
       }
       await signalEmitter.next(tick);
+      await this.actionCoreService.signal(backtest, tick, context);
     }
     return tick;
   };
@@ -476,10 +531,32 @@ export class StrategyConnectionService implements TStrategy {
   };
 
   /**
+   * Disposes the ClientStrategy instance for the given context.
+   *
+   * Calls dispose callback, then removes strategy from cache.
+   *
+   * @param backtest - Whether running in backtest mode
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName, exchangeName, frameName
+   */
+  public dispose = async (
+    backtest: boolean,
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<void> => {
+    this.loggerService.log("strategyConnectionService dispose", {
+      symbol,
+      context,
+      backtest,
+    });
+    await this.clear({ symbol, ...context, backtest });
+  };
+
+  /**
    * Clears the memoized ClientStrategy instance from cache.
    *
-   * Forces re-initialization of strategy on next getStrategy call.
-   * Useful for resetting strategy state or releasing resources.
+   * If payload is provided, disposes the specific strategy instance.
+   * If no payload is provided, clears all strategy instances.
    *
    * @param payload - Optional payload with symbol, context and backtest flag (clears all if not provided)
    */
@@ -495,12 +572,23 @@ export class StrategyConnectionService implements TStrategy {
     this.loggerService.log("strategyConnectionService clear", {
       payload,
     });
-    if (payload) {
-      const key = CREATE_KEY_FN(payload.symbol, payload.strategyName, payload.exchangeName, payload.frameName, payload.backtest);
-      this.getStrategy.clear(key);
-    } else {
+    if (!payload) {
+      const strategies = this.getStrategy.values();
       this.getStrategy.clear();
+      // Dispose all strategies
+      for (const strategy of strategies) {
+        await strategy.dispose();
+      }
+      return;
     }
+    const key = CREATE_KEY_FN(payload.symbol, payload.strategyName, payload.exchangeName, payload.frameName, payload.backtest);
+    if (!this.getStrategy.has(key)) {
+      return;
+    }
+    const strategy = this.getStrategy(payload.symbol, payload.strategyName, payload.exchangeName, payload.frameName, payload.backtest);
+    this.getStrategy.clear(key);
+    // Call dispose on strategy instance
+    await strategy.dispose();
   };
 
   /**

@@ -11,6 +11,7 @@ import {
 } from "../../../config/emitters";
 import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
+import ActionCoreService from "../core/ActionCoreService";
 
 /**
  * Creates a unique key for memoizing ClientPartial instances.
@@ -24,21 +25,15 @@ const CREATE_KEY_FN = (signalId: string, backtest: boolean) =>
   `${signalId}:${backtest ? "backtest" : "live"}` as const;
 
 /**
- * Callback function for emitting profit events to partialProfitSubject.
+ * Creates a callback function for emitting profit events to partialProfitSubject.
  *
  * Called by ClientPartial when a new profit level is reached.
- * Emits PartialProfitContract event to all subscribers.
+ * Emits PartialProfitContract event to all subscribers and calls ActionCoreService.
  *
- * @param symbol - Trading pair symbol
- * @param strategyName - Strategy name that generated this signal
- * @param exchangeName - Exchange name where this signal is being executed
- * @param data - Signal row data
- * @param currentPrice - Current market price
- * @param level - Profit level reached
- * @param backtest - True if backtest mode
- * @param timestamp - Event timestamp in milliseconds
+ * @param self - Reference to PartialConnectionService instance
+ * @returns Callback function for profit events
  */
-const COMMIT_PROFIT_FN = async (
+const CREATE_COMMIT_PROFIT_FN = (self: PartialConnectionService) => async (
   symbol: string,
   strategyName: StrategyName,
   exchangeName: ExchangeName,
@@ -48,8 +43,8 @@ const COMMIT_PROFIT_FN = async (
   level: PartialLevel,
   backtest: boolean,
   timestamp: number
-) =>
-  await partialProfitSubject.next({
+) => {
+  const event = {
     symbol,
     strategyName,
     exchangeName,
@@ -59,24 +54,21 @@ const COMMIT_PROFIT_FN = async (
     level,
     backtest,
     timestamp,
-  });
+  };
+  await partialProfitSubject.next(event);
+  await self.actionCoreService.partialProfit(backtest, event, { strategyName, exchangeName, frameName });
+};
 
 /**
- * Callback function for emitting loss events to partialLossSubject.
+ * Creates a callback function for emitting loss events to partialLossSubject.
  *
  * Called by ClientPartial when a new loss level is reached.
- * Emits PartialLossContract event to all subscribers.
+ * Emits PartialLossContract event to all subscribers and calls ActionCoreService.
  *
- * @param symbol - Trading pair symbol
- * @param strategyName - Strategy name that generated this signal
- * @param exchangeName - Exchange name where this signal is being executed
- * @param data - Signal row data
- * @param currentPrice - Current market price
- * @param level - Loss level reached
- * @param backtest - True if backtest mode
- * @param timestamp - Event timestamp in milliseconds
+ * @param self - Reference to PartialConnectionService instance
+ * @returns Callback function for loss events
  */
-const COMMIT_LOSS_FN = async (
+const CREATE_COMMIT_LOSS_FN = (self: PartialConnectionService) => async (
   symbol: string,
   strategyName: StrategyName,
   exchangeName: ExchangeName,
@@ -86,8 +78,8 @@ const COMMIT_LOSS_FN = async (
   level: PartialLevel,
   backtest: boolean,
   timestamp: number
-) =>
-  await partialLossSubject.next({
+) => {
+  const event = {
     symbol,
     strategyName,
     exchangeName,
@@ -97,7 +89,10 @@ const COMMIT_LOSS_FN = async (
     level,
     backtest,
     timestamp,
-  });
+  };
+  await partialLossSubject.next(event);
+  await self.actionCoreService.partialLoss(backtest, event, { strategyName, exchangeName, frameName });
+};
 
 /**
  * Connection service for partial profit/loss tracking.
@@ -138,6 +133,11 @@ export class PartialConnectionService implements IPartial {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
   /**
+   * Action core service injected from DI container.
+   */
+  public readonly actionCoreService = inject<ActionCoreService>(TYPES.actionCoreService);
+
+  /**
    * Memoized factory function for ClientPartial instances.
    *
    * Creates one ClientPartial per signal ID and backtest mode with configured callbacks.
@@ -153,8 +153,8 @@ export class PartialConnectionService implements IPartial {
         signalId,
         logger: this.loggerService,
         backtest,
-        onProfit: COMMIT_PROFIT_FN,
-        onLoss: COMMIT_LOSS_FN,
+        onProfit: CREATE_COMMIT_PROFIT_FN(this),
+        onLoss: CREATE_COMMIT_LOSS_FN(this),
       });
     }
   );

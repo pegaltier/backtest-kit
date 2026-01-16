@@ -707,6 +707,26 @@ const WAIT_FOR_INIT_FN = async (self: ClientStrategy) => {
       self.params.execution.context.backtest
     );
   }
+
+  // Call onInit callback
+  await self.params.onInit(
+    self.params.execution.context.symbol,
+    self.params.strategyName,
+    self.params.exchangeName,
+    self.params.method.context.frameName,
+    self.params.execution.context.backtest
+  );
+};
+
+const WAIT_FOR_DISPOSE_FN = async (self: ClientStrategy) => {
+  self.params.logger.debug("ClientStrategy dispose");
+  await self.params.onDispose(
+    self.params.execution.context.symbol,
+    self.params.strategyName,
+    self.params.exchangeName,
+    self.params.method.context.frameName,
+    self.params.execution.context.backtest
+  );
 };
 
 const PARTIAL_PROFIT_FN = (
@@ -4862,6 +4882,18 @@ export class ClientStrategy implements IStrategy {
 
     return true;
   }
+
+  /**
+   * Disposes the strategy instance and cleans up resources.
+   *
+   * Calls the onDispose callback to notify external systems that this strategy
+   * instance is being removed from cache.
+   *
+   * Uses singleshot pattern to ensure disposal happens exactly once.
+   *
+   * @returns Promise that resolves when disposal is complete
+   */
+  public dispose = singleshot(async () => await WAIT_FOR_DISPOSE_FN(this));
 }
 
 export default ClientStrategy;

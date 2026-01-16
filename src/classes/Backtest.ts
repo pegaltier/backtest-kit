@@ -240,7 +240,7 @@ export class BacktestInstance {
     }
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(
+      const { riskName, riskList, actions } = backtest.strategySchemaService.get(
         context.strategyName
       );
       riskName && backtest.riskGlobalService.clear({
@@ -253,6 +253,16 @@ export class BacktestInstance {
         riskList.forEach((riskName) =>
           backtest.riskGlobalService.clear({
             riskName,
+            exchangeName: context.exchangeName,
+            frameName: context.frameName,
+            backtest: true,
+          })
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionCoreService.clear({
+            actionName,
+            strategyName: context.strategyName,
             exchangeName: context.exchangeName,
             frameName: context.frameName,
             backtest: true,
@@ -410,7 +420,7 @@ export class BacktestUtils {
     }
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(
+      const { riskName, riskList, actions } = backtest.strategySchemaService.get(
         context.strategyName
       );
       riskName &&
@@ -422,6 +432,13 @@ export class BacktestUtils {
         riskList.forEach((riskName) =>
           backtest.riskValidationService.validate(
             riskName,
+            BACKTEST_METHOD_NAME_RUN
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
             BACKTEST_METHOD_NAME_RUN
           )
         );
@@ -479,7 +496,7 @@ export class BacktestUtils {
     );
 
     {
-      const { riskName, riskList } = backtest.strategySchemaService.get(
+      const { riskName, riskList, actions } = backtest.strategySchemaService.get(
         context.strategyName
       );
       riskName &&
@@ -491,6 +508,13 @@ export class BacktestUtils {
         riskList.forEach((riskName) =>
           backtest.riskValidationService.validate(
             riskName,
+            BACKTEST_METHOD_NAME_BACKGROUND
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
             BACKTEST_METHOD_NAME_BACKGROUND
           )
         );
@@ -543,7 +567,7 @@ export class BacktestUtils {
     );
 
     {
-      const { riskName, riskList } =
+      const { riskName, riskList, actions } =
         backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
@@ -554,6 +578,13 @@ export class BacktestUtils {
         riskList.forEach((riskName) =>
           backtest.riskValidationService.validate(
             riskName,
+            BACKTEST_METHOD_NAME_GET_PENDING_SIGNAL
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
             BACKTEST_METHOD_NAME_GET_PENDING_SIGNAL
           )
         );
@@ -604,7 +635,7 @@ export class BacktestUtils {
     );
 
     {
-      const { riskName, riskList } =
+      const { riskName, riskList, actions } =
         backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
@@ -615,6 +646,13 @@ export class BacktestUtils {
         riskList.forEach((riskName) =>
           backtest.riskValidationService.validate(
             riskName,
+            BACKTEST_METHOD_NAME_GET_SCHEDULED_SIGNAL
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
             BACKTEST_METHOD_NAME_GET_SCHEDULED_SIGNAL
           )
         );
@@ -675,7 +713,7 @@ export class BacktestUtils {
     );
 
     {
-      const { riskName, riskList } =
+      const { riskName, riskList, actions } =
         backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
@@ -686,6 +724,13 @@ export class BacktestUtils {
         riskList.forEach((riskName) =>
           backtest.riskValidationService.validate(
             riskName,
+            BACKTEST_METHOD_NAME_GET_BREAKEVEN
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
             BACKTEST_METHOD_NAME_GET_BREAKEVEN
           )
         );
@@ -743,7 +788,7 @@ export class BacktestUtils {
     );
 
     {
-      const { riskName, riskList } =
+      const { riskName, riskList, actions } =
         backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
@@ -754,6 +799,13 @@ export class BacktestUtils {
         riskList.forEach((riskName) =>
           backtest.riskValidationService.validate(
             riskName,
+            BACKTEST_METHOD_NAME_STOP
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
             BACKTEST_METHOD_NAME_STOP
           )
         );
@@ -809,7 +861,7 @@ export class BacktestUtils {
     );
 
     {
-      const { riskName, riskList } =
+      const { riskName, riskList, actions } =
         backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
@@ -820,6 +872,13 @@ export class BacktestUtils {
         riskList.forEach((riskName) =>
           backtest.riskValidationService.validate(
             riskName,
+            BACKTEST_METHOD_NAME_CANCEL
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
             BACKTEST_METHOD_NAME_CANCEL
           )
         );
@@ -888,7 +947,7 @@ export class BacktestUtils {
     );
 
     {
-      const { riskName, riskList } =
+      const { riskName, riskList, actions } =
         backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
@@ -899,6 +958,13 @@ export class BacktestUtils {
         riskList.forEach((riskName) =>
           backtest.riskValidationService.validate(
             riskName,
+            BACKTEST_METHOD_NAME_PARTIAL_PROFIT
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
             BACKTEST_METHOD_NAME_PARTIAL_PROFIT
           )
         );
@@ -968,7 +1034,7 @@ export class BacktestUtils {
     );
 
     {
-      const { riskName, riskList } =
+      const { riskName, riskList, actions } =
         backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
@@ -979,6 +1045,13 @@ export class BacktestUtils {
         riskList.forEach((riskName) =>
           backtest.riskValidationService.validate(
             riskName,
+            BACKTEST_METHOD_NAME_PARTIAL_LOSS
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
             BACKTEST_METHOD_NAME_PARTIAL_LOSS
           )
         );
@@ -1063,7 +1136,7 @@ export class BacktestUtils {
     );
 
     {
-      const { riskName, riskList } =
+      const { riskName, riskList, actions } =
         backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
@@ -1074,6 +1147,13 @@ export class BacktestUtils {
         riskList.forEach((riskName) =>
           backtest.riskValidationService.validate(
             riskName,
+            BACKTEST_METHOD_NAME_TRAILING_STOP
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
             BACKTEST_METHOD_NAME_TRAILING_STOP
           )
         );
@@ -1158,7 +1238,7 @@ export class BacktestUtils {
     );
 
     {
-      const { riskName, riskList } =
+      const { riskName, riskList, actions } =
         backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
@@ -1169,6 +1249,13 @@ export class BacktestUtils {
         riskList.forEach((riskName) =>
           backtest.riskValidationService.validate(
             riskName,
+            BACKTEST_METHOD_NAME_TRAILING_PROFIT
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
             BACKTEST_METHOD_NAME_TRAILING_PROFIT
           )
         );
@@ -1228,7 +1315,7 @@ export class BacktestUtils {
     );
 
     {
-      const { riskName, riskList } =
+      const { riskName, riskList, actions } =
         backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
@@ -1239,6 +1326,13 @@ export class BacktestUtils {
         riskList.forEach((riskName) =>
           backtest.riskValidationService.validate(
             riskName,
+            "Backtest.breakeven"
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
             "Backtest.breakeven"
           )
         );
@@ -1292,7 +1386,7 @@ export class BacktestUtils {
     );
 
     {
-      const { riskName, riskList } =
+      const { riskName, riskList, actions } =
         backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
@@ -1303,6 +1397,13 @@ export class BacktestUtils {
         riskList.forEach((riskName) =>
           backtest.riskValidationService.validate(
             riskName,
+            BACKTEST_METHOD_NAME_GET_DATA
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
             BACKTEST_METHOD_NAME_GET_DATA
           )
         );
@@ -1359,7 +1460,7 @@ export class BacktestUtils {
     );
 
     {
-      const { riskName, riskList } =
+      const { riskName, riskList, actions } =
         backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
@@ -1370,6 +1471,13 @@ export class BacktestUtils {
         riskList.forEach((riskName) =>
           backtest.riskValidationService.validate(
             riskName,
+            BACKTEST_METHOD_NAME_GET_REPORT
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
             BACKTEST_METHOD_NAME_GET_REPORT
           )
         );
@@ -1436,7 +1544,7 @@ export class BacktestUtils {
     );
 
     {
-      const { riskName, riskList } =
+      const { riskName, riskList, actions } =
         backtest.strategySchemaService.get(context.strategyName);
       riskName &&
         backtest.riskValidationService.validate(
@@ -1447,6 +1555,13 @@ export class BacktestUtils {
         riskList.forEach((riskName) =>
           backtest.riskValidationService.validate(
             riskName,
+            BACKTEST_METHOD_NAME_DUMP
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
             BACKTEST_METHOD_NAME_DUMP
           )
         );

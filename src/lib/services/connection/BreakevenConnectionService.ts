@@ -8,6 +8,7 @@ import { memoize } from "functools-kit";
 import { breakevenSubject } from "../../../config/emitters";
 import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
+import ActionCoreService from "../core/ActionCoreService";
 
 /**
  * Creates a unique key for memoizing ClientBreakeven instances.
@@ -21,21 +22,15 @@ const CREATE_KEY_FN = (signalId: string, backtest: boolean) =>
   `${signalId}:${backtest ? "backtest" : "live"}` as const;
 
 /**
- * Callback function for emitting breakeven events to breakevenSubject.
+ * Creates a callback function for emitting breakeven events to breakevenSubject.
  *
  * Called by ClientBreakeven when breakeven threshold is reached.
- * Emits BreakevenContract event to all subscribers.
+ * Emits BreakevenContract event to all subscribers and calls ActionCoreService.
  *
- * @param symbol - Trading pair symbol
- * @param strategyName - Strategy name that generated this signal
- * @param exchangeName - Exchange name where this signal is being executed
- * @param frameName - Frame name where this signal is being executed
- * @param data - Signal row data
- * @param currentPrice - Current market price when breakeven was reached
- * @param backtest - True if backtest mode
- * @param timestamp - Event timestamp in milliseconds
+ * @param self - Reference to BreakevenConnectionService instance
+ * @returns Callback function for breakeven events
  */
-const COMMIT_BREAKEVEN_FN = async (
+const CREATE_COMMIT_BREAKEVEN_FN = (self: BreakevenConnectionService) => async (
   symbol: string,
   strategyName: StrategyName,
   exchangeName: ExchangeName,
@@ -44,8 +39,8 @@ const COMMIT_BREAKEVEN_FN = async (
   currentPrice: number,
   backtest: boolean,
   timestamp: number
-) =>
-  await breakevenSubject.next({
+) => {
+  const event = {
     symbol,
     strategyName,
     exchangeName,
@@ -54,7 +49,10 @@ const COMMIT_BREAKEVEN_FN = async (
     currentPrice,
     backtest,
     timestamp,
-  });
+  };
+  await breakevenSubject.next(event);
+  await self.actionCoreService.breakeven(backtest, event, { strategyName, exchangeName, frameName });
+};
 
 /**
  * Connection service for breakeven tracking.
@@ -95,6 +93,11 @@ export class BreakevenConnectionService implements IBreakeven {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
   /**
+   * Action core service injected from DI container.
+   */
+  public readonly actionCoreService = inject<ActionCoreService>(TYPES.actionCoreService);
+
+  /**
    * Memoized factory function for ClientBreakeven instances.
    *
    * Creates one ClientBreakeven per signal ID and backtest mode with configured callbacks.
@@ -110,7 +113,7 @@ export class BreakevenConnectionService implements IBreakeven {
         signalId,
         logger: this.loggerService,
         backtest,
-        onBreakeven: COMMIT_BREAKEVEN_FN,
+        onBreakeven: CREATE_COMMIT_BREAKEVEN_FN(this),
       });
     }
   );

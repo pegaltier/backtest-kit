@@ -41,6 +41,11 @@ interface ValidateArgs<T = Enum> {
      */
     RiskName?: T;
     /**
+     * Action handler name enum to validate
+     * @example { TELEGRAM_NOTIFIER: "telegram-notifier" }
+     */
+    ActionName?: T;
+    /**
      * Sizing strategy name enum to validate
      * @example { FIXED_1000: "fixed-1000" }
      */
@@ -1192,6 +1197,980 @@ interface IBreakeven {
 }
 
 /**
+ * Contract for breakeven events.
+ *
+ * Emitted by breakevenSubject when a signal's stop-loss is moved to breakeven (entry price).
+ * Used for tracking risk reduction milestones and monitoring strategy safety.
+ *
+ * Events are emitted only once per signal (idempotent - protected by ClientBreakeven state).
+ * Breakeven is triggered when price moves far enough in profit direction to cover transaction costs.
+ *
+ * Consumers:
+ * - BreakevenMarkdownService: Accumulates events for report generation
+ * - User callbacks via listenBreakeven() / listenBreakevenOnce()
+ *
+ * @example
+ * ```typescript
+ * import { listenBreakeven } from "backtest-kit";
+ *
+ * // Listen to all breakeven events
+ * listenBreakeven((event) => {
+ *   console.log(`[${event.backtest ? "Backtest" : "Live"}] Signal ${event.data.id} moved to breakeven`);
+ *   console.log(`Symbol: ${event.symbol}, Price: ${event.currentPrice}`);
+ *   console.log(`Position: ${event.data.position}, Entry: ${event.data.priceOpen}`);
+ *   console.log(`Original SL: ${event.data.priceStopLoss}, New SL: ${event.data.priceOpen}`);
+ * });
+ *
+ * // Wait for specific signal to reach breakeven
+ * listenBreakevenOnce(
+ *   (event) => event.data.id === "target-signal-id",
+ *   (event) => console.log("Signal reached breakeven:", event.data.id)
+ * );
+ * ```
+ */
+interface BreakevenContract {
+    /**
+     * Trading pair symbol (e.g., "BTCUSDT").
+     * Identifies which market this breakeven event belongs to.
+     */
+    symbol: string;
+    /**
+     * Strategy name that generated this signal.
+     * Identifies which strategy execution this breakeven event belongs to.
+     */
+    strategyName: StrategyName;
+    /**
+     * Exchange name where this signal is being executed.
+     * Identifies which exchange this breakeven event belongs to.
+     */
+    exchangeName: ExchangeName;
+    /**
+     * Frame name where this signal is being executed.
+     * Identifies which frame this breakeven event belongs to (empty string for live mode).
+     */
+    frameName: FrameName;
+    /**
+     * Complete signal row data with original prices.
+     * Contains all signal information including originalPriceStopLoss, originalPriceTakeProfit, and totalExecuted.
+     */
+    data: IPublicSignalRow;
+    /**
+     * Current market price at which breakeven was triggered.
+     * Used to verify threshold calculation.
+     */
+    currentPrice: number;
+    /**
+     * Execution mode flag.
+     * - true: Event from backtest execution (historical candle data)
+     * - false: Event from live trading (real-time tick)
+     */
+    backtest: boolean;
+    /**
+     * Event timestamp in milliseconds since Unix epoch.
+     *
+     * Timing semantics:
+     * - Live mode: when.getTime() at the moment breakeven was set
+     * - Backtest mode: candle.timestamp of the candle that triggered breakeven
+     *
+     * @example
+     * ```typescript
+     * const eventDate = new Date(event.timestamp);
+     * console.log(`Breakeven set at: ${eventDate.toISOString()}`);
+     * ```
+     */
+    timestamp: number;
+}
+
+/**
+ * Contract for partial profit level events.
+ *
+ * Emitted by partialProfitSubject when a signal reaches a profit level milestone (10%, 20%, 30%, etc).
+ * Used for tracking partial take-profit execution and monitoring strategy performance.
+ *
+ * Events are emitted only once per level per signal (Set-based deduplication in ClientPartial).
+ * Multiple levels can be emitted in a single tick if price jumps significantly.
+ *
+ * Consumers:
+ * - PartialMarkdownService: Accumulates events for report generation
+ * - User callbacks via listenPartialProfit() / listenPartialProfitOnce()
+ *
+ * @example
+ * ```typescript
+ * import { listenPartialProfit } from "backtest-kit";
+ *
+ * // Listen to all partial profit events
+ * listenPartialProfit((event) => {
+ *   console.log(`[${event.backtest ? "Backtest" : "Live"}] Signal ${event.data.id} reached ${event.level}% profit`);
+ *   console.log(`Symbol: ${event.symbol}, Price: ${event.currentPrice}`);
+ *   console.log(`Position: ${event.data.position}, Entry: ${event.data.priceOpen}`);
+ * });
+ *
+ * // Wait for first 50% profit level
+ * listenPartialProfitOnce(
+ *   (event) => event.level === 50,
+ *   (event) => console.log("50% profit reached:", event.data.id)
+ * );
+ * ```
+ */
+interface PartialProfitContract {
+    /**
+     * Trading pair symbol (e.g., "BTCUSDT").
+     * Identifies which market this profit event belongs to.
+     */
+    symbol: string;
+    /**
+     * Strategy name that generated this signal.
+     * Identifies which strategy execution this profit event belongs to.
+     */
+    strategyName: StrategyName;
+    /**
+     * Exchange name where this signal is being executed.
+     * Identifies which exchange this profit event belongs to.
+     */
+    exchangeName: ExchangeName;
+    /**
+     * Frame name where this signal is being executed.
+     * Identifies which frame this profit event belongs to (empty string for live mode).
+     */
+    frameName: FrameName;
+    /**
+     * Complete signal row data with original prices.
+     * Contains all signal information including originalPriceStopLoss, originalPriceTakeProfit, and totalExecuted.
+     */
+    data: IPublicSignalRow;
+    /**
+     * Current market price at which this profit level was reached.
+     * Used to calculate actual profit percentage.
+     */
+    currentPrice: number;
+    /**
+     * Profit level milestone reached (10, 20, 30, 40, 50, 60, 70, 80, 90, or 100).
+     * Represents percentage profit relative to entry price.
+     *
+     * @example
+     * ```typescript
+     * // If entry was $50000 and level is 20:
+     * // currentPrice >= $60000 (20% profit)
+     * ```
+     */
+    level: PartialLevel;
+    /**
+     * Execution mode flag.
+     * - true: Event from backtest execution (historical candle data)
+     * - false: Event from live trading (real-time tick)
+     */
+    backtest: boolean;
+    /**
+     * Event timestamp in milliseconds since Unix epoch.
+     *
+     * Timing semantics:
+     * - Live mode: when.getTime() at the moment profit level was detected
+     * - Backtest mode: candle.timestamp of the candle that triggered the level
+     *
+     * @example
+     * ```typescript
+     * const eventDate = new Date(event.timestamp);
+     * console.log(`Profit reached at: ${eventDate.toISOString()}`);
+     * ```
+     */
+    timestamp: number;
+}
+
+/**
+ * Contract for partial loss level events.
+ *
+ * Emitted by partialLossSubject when a signal reaches a loss level milestone (-10%, -20%, -30%, etc).
+ * Used for tracking partial stop-loss execution and monitoring strategy drawdown.
+ *
+ * Events are emitted only once per level per signal (Set-based deduplication in ClientPartial).
+ * Multiple levels can be emitted in a single tick if price drops significantly.
+ *
+ * Consumers:
+ * - PartialMarkdownService: Accumulates events for report generation
+ * - User callbacks via listenPartialLoss() / listenPartialLossOnce()
+ *
+ * @example
+ * ```typescript
+ * import { listenPartialLoss } from "backtest-kit";
+ *
+ * // Listen to all partial loss events
+ * listenPartialLoss((event) => {
+ *   console.log(`[${event.backtest ? "Backtest" : "Live"}] Signal ${event.data.id} reached -${event.level}% loss`);
+ *   console.log(`Symbol: ${event.symbol}, Price: ${event.currentPrice}`);
+ *   console.log(`Position: ${event.data.position}, Entry: ${event.data.priceOpen}`);
+ *
+ *   // Alert on significant loss
+ *   if (event.level >= 30 && !event.backtest) {
+ *     console.warn("HIGH LOSS ALERT:", event.data.id);
+ *   }
+ * });
+ *
+ * // Wait for first 20% loss level
+ * listenPartialLossOnce(
+ *   (event) => event.level === 20,
+ *   (event) => console.log("20% loss reached:", event.data.id)
+ * );
+ * ```
+ */
+interface PartialLossContract {
+    /**
+     * Trading pair symbol (e.g., "BTCUSDT").
+     * Identifies which market this loss event belongs to.
+     */
+    symbol: string;
+    /**
+     * Strategy name that generated this signal.
+     * Identifies which strategy execution this loss event belongs to.
+     */
+    strategyName: StrategyName;
+    /**
+     * Exchange name where this signal is being executed.
+     * Identifies which exchange this loss event belongs to.
+     */
+    exchangeName: ExchangeName;
+    /**
+     * Frame name where this signal is being executed.
+     * Identifies which frame this loss event belongs to (empty string for live mode).
+     */
+    frameName: FrameName;
+    /**
+     * Complete signal row data with original prices.
+     * Contains all signal information including originalPriceStopLoss, originalPriceTakeProfit, and totalExecuted.
+     */
+    data: IPublicSignalRow;
+    /**
+     * Current market price at which this loss level was reached.
+     * Used to calculate actual loss percentage.
+     */
+    currentPrice: number;
+    /**
+     * Loss level milestone reached (10, 20, 30, 40, 50, 60, 70, 80, 90, or 100).
+     * Represents percentage loss relative to entry price (absolute value).
+     *
+     * Note: Stored as positive number, but represents negative loss.
+     * level=20 means -20% loss from entry price.
+     *
+     * @example
+     * ```typescript
+     * // If entry was $50000 and level is 20:
+     * // currentPrice <= $40000 (-20% loss)
+     * // Level is stored as 20, not -20
+     * ```
+     */
+    level: PartialLevel;
+    /**
+     * Execution mode flag.
+     * - true: Event from backtest execution (historical candle data)
+     * - false: Event from live trading (real-time tick)
+     */
+    backtest: boolean;
+    /**
+     * Event timestamp in milliseconds since Unix epoch.
+     *
+     * Timing semantics:
+     * - Live mode: when.getTime() at the moment loss level was detected
+     * - Backtest mode: candle.timestamp of the candle that triggered the level
+     *
+     * @example
+     * ```typescript
+     * const eventDate = new Date(event.timestamp);
+     * console.log(`Loss reached at: ${eventDate.toISOString()}`);
+     *
+     * // Calculate time in loss
+     * const entryTime = event.data.pendingAt;
+     * const timeInLoss = event.timestamp - entryTime;
+     * console.log(`In loss for ${timeInLoss / 1000 / 60} minutes`);
+     * ```
+     */
+    timestamp: number;
+}
+
+/**
+ * Contract for ping events during scheduled signal monitoring.
+ *
+ * Emitted by pingSubject every minute when a scheduled signal is being monitored.
+ * Used for tracking scheduled signal lifecycle and custom monitoring logic.
+ *
+ * Events are emitted only when scheduled signal is active (not cancelled, not activated).
+ * Allows users to implement custom cancellation logic via onPing callback.
+ *
+ * Consumers:
+ * - User callbacks via listenPing() / listenPingOnce()
+ *
+ * @example
+ * ```typescript
+ * import { listenPing } from "backtest-kit";
+ *
+ * // Listen to all ping events
+ * listenPing((event) => {
+ *   console.log(`[${event.backtest ? "Backtest" : "Live"}] Ping for ${event.symbol}`);
+ *   console.log(`Strategy: ${event.strategyName}, Exchange: ${event.exchangeName}`);
+ *   console.log(`Signal ID: ${event.data.id}, priceOpen: ${event.data.priceOpen}`);
+ *   console.log(`Timestamp: ${new Date(event.timestamp).toISOString()}`);
+ * });
+ *
+ * // Wait for specific ping
+ * listenPingOnce(
+ *   (event) => event.symbol === "BTCUSDT",
+ *   (event) => console.log("BTCUSDT ping received:", event.timestamp)
+ * );
+ * ```
+ */
+interface PingContract {
+    /**
+     * Trading pair symbol (e.g., "BTCUSDT").
+     * Identifies which market this ping event belongs to.
+     */
+    symbol: string;
+    /**
+     * Strategy name that is monitoring this scheduled signal.
+     * Identifies which strategy execution this ping event belongs to.
+     */
+    strategyName: StrategyName;
+    /**
+     * Exchange name where this scheduled signal is being monitored.
+     * Identifies which exchange this ping event belongs to.
+     */
+    exchangeName: ExchangeName;
+    /**
+     * Complete scheduled signal row data.
+     * Contains all signal information: id, position, priceOpen, priceTakeProfit, priceStopLoss, etc.
+     */
+    data: IScheduledSignalRow;
+    /**
+     * Execution mode flag.
+     * - true: Event from backtest execution (historical candle data)
+     * - false: Event from live trading (real-time tick)
+     */
+    backtest: boolean;
+    /**
+     * Event timestamp in milliseconds since Unix epoch.
+     *
+     * Timing semantics:
+     * - Live mode: when.getTime() at the moment of ping
+     * - Backtest mode: candle.timestamp of the candle being processed
+     *
+     * @example
+     * ```typescript
+     * const eventDate = new Date(event.timestamp);
+     * console.log(`Ping at: ${eventDate.toISOString()}`);
+     * ```
+     */
+    timestamp: number;
+}
+
+/**
+ * Contract for risk rejection events.
+ *
+ * Emitted by riskSubject ONLY when a signal is REJECTED due to risk validation failure.
+ * Used for tracking actual risk violations and monitoring rejected signals.
+ *
+ * Events are emitted only when risk limits are violated (not for allowed signals).
+ * This prevents spam and allows focusing on actual risk management interventions.
+ *
+ * Consumers:
+ * - RiskMarkdownService: Accumulates rejection events for report generation
+ * - User callbacks via listenRisk() / listenRiskOnce()
+ *
+ * @example
+ * ```typescript
+ * import { listenRisk } from "backtest-kit";
+ *
+ * // Listen to all risk rejection events
+ * listenRisk((event) => {
+ *   console.log(`[RISK REJECTED] Signal for ${event.symbol}`);
+ *   console.log(`Strategy: ${event.strategyName}`);
+ *   console.log(`Active positions: ${event.activePositionCount}`);
+ *   console.log(`Price: ${event.currentPrice}`);
+ *   console.log(`Timestamp: ${new Date(event.timestamp).toISOString()}`);
+ * });
+ *
+ * // Alert on risk rejections for specific symbol
+ * listenRisk((event) => {
+ *   if (event.symbol === "BTCUSDT") {
+ *     console.warn("BTC signal rejected due to risk limits!");
+ *   }
+ * });
+ * ```
+ */
+interface RiskContract {
+    /**
+     * Trading pair symbol (e.g., "BTCUSDT").
+     * Identifies which market this rejected signal belongs to.
+     */
+    symbol: string;
+    /**
+     * Pending signal to apply.
+     * Contains signal details (position, priceOpen, priceTakeProfit, priceStopLoss, etc).
+     */
+    pendingSignal: ISignalDto;
+    /**
+     * Strategy name requesting to open a position.
+     * Identifies which strategy attempted to create the signal.
+     */
+    strategyName: StrategyName;
+    /**
+     * Frame name used in backtest execution.
+     * Identifies which frame this signal was for in backtest execution.
+     */
+    frameName: FrameName;
+    /**
+     * Exchange name.
+     * Identifies which exchange this signal was for.
+     */
+    exchangeName: ExchangeName;
+    /**
+     * Current VWAP price at the time of rejection.
+     * Market price when risk check was performed.
+     */
+    currentPrice: number;
+    /**
+     * Number of currently active positions across all strategies at rejection time.
+     * Used to track portfolio-level exposure when signal was rejected.
+     */
+    activePositionCount: number;
+    /**
+     * Unique identifier for this rejection instance.
+     * Generated by ClientRisk for tracking and debugging purposes.
+     * Null if validation threw exception without custom ID.
+     */
+    rejectionId: string | null;
+    /**
+     * Human-readable reason why the signal was rejected.
+     * Captured from IRiskValidation.note or error message.
+     *
+     * @example
+     * ```typescript
+     * console.log(`Rejection reason: ${event.rejectionNote}`);
+     * // Output: "Rejection reason: Max 3 positions allowed"
+     * ```
+     */
+    rejectionNote: string;
+    /**
+     * Event timestamp in milliseconds since Unix epoch.
+     * Represents when the signal was rejected.
+     *
+     * @example
+     * ```typescript
+     * const eventDate = new Date(event.timestamp);
+     * console.log(`Signal rejected at: ${eventDate.toISOString()}`);
+     * ```
+     */
+    timestamp: number;
+    /**
+     * Whether this event is from backtest mode (true) or live mode (false).
+     * Used to separate backtest and live risk rejection tracking.
+     */
+    backtest: boolean;
+}
+
+/**
+ * Constructor type for action handlers with strategy context.
+ *
+ * @param strategyName - Strategy identifier (e.g., "rsi_divergence", "macd_cross")
+ * @param frameName - Timeframe identifier (e.g., "1m", "5m", "1h")
+ * @param backtest - True for backtest mode, false for live trading
+ * @returns Partial implementation of IAction (only required handlers)
+ *
+ * @example
+ * ```typescript
+ * class TelegramNotifier implements Partial<IAction> {
+ *   constructor(
+ *     private strategyName: StrategyName,
+ *     private frameName: FrameName,
+ *     private backtest: boolean
+ *   ) {}
+ *
+ *   signal(event: IStrategyTickResult): void {
+ *     if (!this.backtest && event.state === 'opened') {
+ *       telegram.send(`[${this.strategyName}/${this.frameName}] New signal`);
+ *     }
+ *   }
+ * }
+ *
+ * const actionCtors: TActionCtor[] = [TelegramNotifier, ReduxLogger];
+ * ```
+ */
+type TActionCtor = new (strategyName: StrategyName, frameName: FrameName, actionName: ActionName) => Partial<IPublicAction>;
+/**
+ * Action parameters passed to ClientAction constructor.
+ * Combines schema with runtime dependencies and execution context.
+ *
+ * Extended from IActionSchema with:
+ * - Logger instance for debugging and monitoring
+ * - Strategy context (strategyName, frameName)
+ * - Runtime environment flags
+ *
+ * @example
+ * ```typescript
+ * const params: IActionParams = {
+ *   actionName: "telegram-notifier",
+ *   handler: TelegramNotifier,
+ *   callbacks: { onInit, onDispose, onSignal },
+ *   logger: loggerService,
+ *   strategyName: "rsi_divergence",
+ *   frameName: "1h"
+ * };
+ *
+ * const actionClient = new ClientAction(params);
+ * ```
+ */
+interface IActionParams extends IActionSchema {
+    /** Logger service for debugging and monitoring action execution */
+    logger: ILogger;
+    /** Strategy identifier this action is attached to */
+    strategyName: StrategyName;
+    /** Exchange name (e.g., "binance") */
+    exchangeName: ExchangeName;
+    /** Timeframe identifier this action is attached to */
+    frameName: FrameName;
+    /** Whether running in backtest mode */
+    backtest: boolean;
+}
+/**
+ * Lifecycle and event callbacks for action handlers.
+ *
+ * Provides hooks for initialization, disposal, and event handling.
+ * All callbacks are optional and support both sync and async execution.
+ *
+ * Use cases:
+ * - Resource initialization (database connections, file handles)
+ * - Resource cleanup (close connections, flush buffers)
+ * - Event logging and monitoring
+ * - State persistence
+ *
+ * @example
+ * ```typescript
+ * const callbacks: IActionCallbacks = {
+ *   onInit: async (strategyName, frameName, backtest) => {
+ *     console.log(`[${strategyName}/${frameName}] Action initialized (backtest=${backtest})`);
+ *     await db.connect();
+ *   },
+ *   onSignal: (event, strategyName, frameName, backtest) => {
+ *     if (event.action === 'opened') {
+ *       console.log(`New signal opened: ${event.signal.id}`);
+ *     }
+ *   },
+ *   onDispose: async (strategyName, frameName, backtest) => {
+ *     await db.disconnect();
+ *     console.log(`[${strategyName}/${frameName}] Action disposed`);
+ *   }
+ * };
+ * ```
+ */
+interface IActionCallbacks {
+    /**
+     * Called when action handler is initialized.
+     *
+     * Use for:
+     * - Opening database connections
+     * - Initializing external services
+     * - Loading persisted state
+     * - Setting up subscriptions
+     *
+     * @param actionName - Action identifier
+     * @param strategyName - Strategy identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - True for backtest mode, false for live trading
+     */
+    onInit(actionName: ActionName, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+    /**
+     * Called when action handler is disposed.
+     *
+     * Use for:
+     * - Closing database connections
+     * - Flushing buffers
+     * - Saving state to disk
+     * - Unsubscribing from observables
+     *
+     * @param actionName - Action identifier
+     * @param strategyName - Strategy identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - True for backtest mode, false for live trading
+     */
+    onDispose(actionName: ActionName, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+    /**
+     * Called on signal events from all modes (live + backtest).
+     *
+     * Triggered by: StrategyConnectionService via signalEmitter
+     * Frequency: Every tick/candle when strategy is evaluated
+     *
+     * @param event - Signal state result (idle, scheduled, opened, active, closed, cancelled)
+     * @param actionName - Action identifier
+     * @param strategyName - Strategy identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - True for backtest mode, false for live trading
+     */
+    onSignal(event: IStrategyTickResult, actionName: ActionName, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+    /**
+     * Called on signal events from live trading only.
+     *
+     * Triggered by: StrategyConnectionService via signalLiveEmitter
+     * Frequency: Every tick in live mode
+     *
+     * @param event - Signal state result from live trading
+     * @param actionName - Action identifier
+     * @param strategyName - Strategy identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - Always false (live mode only)
+     */
+    onSignalLive(event: IStrategyTickResult, actionName: ActionName, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+    /**
+     * Called on signal events from backtest only.
+     *
+     * Triggered by: StrategyConnectionService via signalBacktestEmitter
+     * Frequency: Every candle in backtest mode
+     *
+     * @param event - Signal state result from backtest
+     * @param actionName - Action identifier
+     * @param strategyName - Strategy identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - Always true (backtest mode only)
+     */
+    onSignalBacktest(event: IStrategyTickResult, actionName: ActionName, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+    /**
+     * Called when breakeven is triggered (stop-loss moved to entry price).
+     *
+     * Triggered by: BreakevenConnectionService via breakevenSubject
+     * Frequency: Once per signal when breakeven threshold is reached
+     *
+     * @param event - Breakeven milestone data
+     * @param actionName - Action identifier
+     * @param strategyName - Strategy identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - True for backtest mode, false for live trading
+     */
+    onBreakeven(event: BreakevenContract, actionName: ActionName, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+    /**
+     * Called when partial profit level is reached (10%, 20%, 30%, etc).
+     *
+     * Triggered by: PartialConnectionService via partialProfitSubject
+     * Frequency: Once per profit level per signal (deduplicated)
+     *
+     * @param event - Profit milestone data with level and price
+     * @param actionName - Action identifier
+     * @param strategyName - Strategy identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - True for backtest mode, false for live trading
+     */
+    onPartialProfit(event: PartialProfitContract, actionName: ActionName, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+    /**
+     * Called when partial loss level is reached (-10%, -20%, -30%, etc).
+     *
+     * Triggered by: PartialConnectionService via partialLossSubject
+     * Frequency: Once per loss level per signal (deduplicated)
+     *
+     * @param event - Loss milestone data with level and price
+     * @param actionName - Action identifier
+     * @param strategyName - Strategy identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - True for backtest mode, false for live trading
+     */
+    onPartialLoss(event: PartialLossContract, actionName: ActionName, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+    /**
+     * Called during scheduled signal monitoring (every minute while waiting for activation).
+     *
+     * Triggered by: StrategyConnectionService via pingSubject
+     * Frequency: Every minute while scheduled signal is waiting
+     *
+     * @param event - Scheduled signal monitoring data
+     * @param actionName - Action identifier
+     * @param strategyName - Strategy identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - True for backtest mode, false for live trading
+     */
+    onPing(event: PingContract, actionName: ActionName, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+    /**
+     * Called when signal is rejected by risk management.
+     *
+     * Triggered by: RiskConnectionService via riskSubject
+     * Frequency: Only when signal fails risk validation (not emitted for allowed signals)
+     *
+     * @param event - Risk rejection data with reason and context
+     * @param actionName - Action identifier
+     * @param strategyName - Strategy identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - True for backtest mode, false for live trading
+     */
+    onRiskRejection(event: RiskContract, actionName: ActionName, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+}
+/**
+ * Action schema registered via addAction().
+ * Defines event handler implementation and lifecycle callbacks for state management integration.
+ *
+ * Actions provide a way to attach custom event handlers to strategies for:
+ * - State management (Redux, Zustand, MobX)
+ * - Event logging and monitoring
+ * - Real-time notifications (Telegram, Discord, email)
+ * - Analytics and metrics collection
+ * - Custom business logic triggers
+ *
+ * Each action instance is created per strategy-frame pair and receives all events
+ * emitted during strategy execution. Multiple actions can be attached to a single strategy.
+ *
+ * @example
+ * ```typescript
+ * import { addAction } from "backtest-kit";
+ *
+ * // Define action handler class
+ * class TelegramNotifier implements Partial<IAction> {
+ *   constructor(
+ *     private strategyName: StrategyName,
+ *     private frameName: FrameName,
+ *     private backtest: boolean
+ *   ) {}
+ *
+ *   signal(event: IStrategyTickResult): void {
+ *     if (!this.backtest && event.action === 'opened') {
+ *       telegram.send(`[${this.strategyName}/${this.frameName}] New signal`);
+ *     }
+ *   }
+ *
+ *   dispose(): void {
+ *     telegram.close();
+ *   }
+ * }
+ *
+ * // Register action schema
+ * addAction({
+ *   actionName: "telegram-notifier",
+ *   handler: TelegramNotifier,
+ *   callbacks: {
+ *     onInit: async (strategyName, frameName, backtest) => {
+ *       console.log(`Telegram notifier initialized for ${strategyName}/${frameName}`);
+ *     },
+ *     onSignal: (event, strategyName, frameName, backtest) => {
+ *       console.log(`Signal event: ${event.action}`);
+ *     }
+ *   }
+ * });
+ * ```
+ */
+interface IActionSchema {
+    /** Unique action identifier for registration */
+    actionName: ActionName;
+    /** Action handler constructor (instantiated per strategy-frame pair) */
+    handler: TActionCtor | Partial<IPublicAction>;
+    /** Optional lifecycle and event callbacks */
+    callbacks: Partial<IActionCallbacks>;
+}
+/**
+ * Public action interface for custom action handler implementations.
+ *
+ * Extends IAction with an initialization lifecycle method.
+ * Action handlers implement this interface to receive strategy events and perform custom logic.
+ *
+ * Lifecycle:
+ * 1. Constructor called with (strategyName, frameName, actionName)
+ * 2. init() called once for async initialization (setup connections, load resources)
+ * 3. Event methods called as strategy executes (signal, breakeven, partialProfit, etc.)
+ * 4. dispose() called once for cleanup (close connections, flush buffers)
+ *
+ * Key features:
+ * - init() for async initialization (database connections, API clients, file handles)
+ * - All IAction methods available for event handling
+ * - dispose() guaranteed to run exactly once via singleshot pattern
+ *
+ * Common use cases:
+ * - State management: Redux/Zustand store integration
+ * - Notifications: Telegram/Discord/Email alerts
+ * - Logging: Custom event tracking and monitoring
+ * - Analytics: Metrics collection and reporting
+ * - External systems: Database writes, API calls, file operations
+ *
+ * @example
+ * ```typescript
+ * class TelegramNotifier implements Partial<IPublicAction> {
+ *   private bot: TelegramBot | null = null;
+ *
+ *   constructor(
+ *     private strategyName: string,
+ *     private frameName: string,
+ *     private actionName: string
+ *   ) {}
+ *
+ *   // Called once during initialization
+ *   async init() {
+ *     this.bot = new TelegramBot(process.env.TELEGRAM_TOKEN);
+ *     await this.bot.connect();
+ *   }
+ *
+ *   // Called on every signal event
+ *   async signal(event: IStrategyTickResult) {
+ *     if (event.action === 'opened') {
+ *       await this.bot.send(
+ *         `[${this.strategyName}/${this.frameName}] Signal opened: ${event.signal.side}`
+ *       );
+ *     }
+ *   }
+ *
+ *   // Called once during cleanup
+ *   async dispose() {
+ *     await this.bot?.disconnect();
+ *     this.bot = null;
+ *   }
+ * }
+ * ```
+ *
+ * @see IAction for all available event methods
+ * @see TActionCtor for constructor signature requirements
+ * @see ClientAction for internal wrapper that manages lifecycle
+ */
+interface IPublicAction extends IAction {
+    /**
+     * Async initialization method called once after construction.
+     *
+     * Use this method to:
+     * - Establish database connections
+     * - Initialize API clients
+     * - Load configuration files
+     * - Open file handles or network sockets
+     * - Perform any async setup required before handling events
+     *
+     * Guaranteed to:
+     * - Run exactly once per action handler instance
+     * - Complete before any event methods are called
+     * - Run after constructor but before first event
+     *
+     * @returns Promise that resolves when initialization is complete
+     * @throws Error if initialization fails (will prevent strategy execution)
+     *
+     * @example
+     * ```typescript
+     * async init() {
+     *   this.db = await connectToDatabase();
+     *   this.cache = new Redis(process.env.REDIS_URL);
+     *   await this.cache.connect();
+     *   console.log('Action initialized');
+     * }
+     * ```
+     */
+    init(): void | Promise<void>;
+}
+/**
+ * Action interface for state manager integration.
+ *
+ * Provides methods to handle all events emitted by connection services.
+ * Each method corresponds to a specific event type emitted via .next() calls.
+ *
+ * Use this interface to implement custom state management logic:
+ * - Redux/Zustand action dispatchers
+ * - Event logging systems
+ * - Real-time monitoring dashboards
+ * - Analytics and metrics collection
+ *
+ * @example
+ * ```typescript
+ * class ReduxStateManager implements IAction {
+ *   constructor(private store: Store) {}
+ *
+ *   signal(event: IStrategyTickResult): void {
+ *     this.store.dispatch({ type: 'SIGNAL', payload: event });
+ *   }
+ *
+ *   breakeven(event: BreakevenContract): void {
+ *     this.store.dispatch({ type: 'BREAKEVEN', payload: event });
+ *   }
+ *
+ *   // ... implement other methods
+ * }
+ * ```
+ */
+interface IAction {
+    /**
+     * Handles signal events from all modes (live + backtest).
+     *
+     * Emitted by: StrategyConnectionService via signalEmitter
+     * Source: StrategyConnectionService.tick() and StrategyConnectionService.backtest()
+     * Frequency: Every tick/candle when strategy is evaluated
+     *
+     * @param event - Signal state result (idle, scheduled, opened, active, closed, cancelled)
+     */
+    signal(event: IStrategyTickResult): void | Promise<void>;
+    /**
+     * Handles signal events from live trading only.
+     *
+     * Emitted by: StrategyConnectionService via signalLiveEmitter
+     * Source: StrategyConnectionService.tick() when backtest=false
+     * Frequency: Every tick in live mode
+     *
+     * @param event - Signal state result from live trading
+     */
+    signalLive(event: IStrategyTickResult): void | Promise<void>;
+    /**
+     * Handles signal events from backtest only.
+     *
+     * Emitted by: StrategyConnectionService via signalBacktestEmitter
+     * Source: StrategyConnectionService.backtest() when backtest=true
+     * Frequency: Every candle in backtest mode
+     *
+     * @param event - Signal state result from backtest
+     */
+    signalBacktest(event: IStrategyTickResult): void | Promise<void>;
+    /**
+     * Handles breakeven events when stop-loss is moved to entry price.
+     *
+     * Emitted by: BreakevenConnectionService via breakevenSubject
+     * Source: COMMIT_BREAKEVEN_FN callback in BreakevenConnectionService
+     * Frequency: Once per signal when breakeven threshold is reached
+     *
+     * @param event - Breakeven milestone data
+     */
+    breakeven(event: BreakevenContract): void | Promise<void>;
+    /**
+     * Handles partial profit level events (10%, 20%, 30%, etc).
+     *
+     * Emitted by: PartialConnectionService via partialProfitSubject
+     * Source: COMMIT_PROFIT_FN callback in PartialConnectionService
+     * Frequency: Once per profit level per signal (deduplicated)
+     *
+     * @param event - Profit milestone data with level and price
+     */
+    partialProfit(event: PartialProfitContract): void | Promise<void>;
+    /**
+     * Handles partial loss level events (-10%, -20%, -30%, etc).
+     *
+     * Emitted by: PartialConnectionService via partialLossSubject
+     * Source: COMMIT_LOSS_FN callback in PartialConnectionService
+     * Frequency: Once per loss level per signal (deduplicated)
+     *
+     * @param event - Loss milestone data with level and price
+     */
+    partialLoss(event: PartialLossContract): void | Promise<void>;
+    /**
+     * Handles ping events during scheduled signal monitoring.
+     *
+     * Emitted by: StrategyConnectionService via pingSubject
+     * Source: COMMIT_PING_FN callback in StrategyConnectionService
+     * Frequency: Every minute while scheduled signal is waiting for activation
+     *
+     * @param event - Scheduled signal monitoring data
+     */
+    ping(event: PingContract): void | Promise<void>;
+    /**
+     * Handles risk rejection events when signals fail risk validation.
+     *
+     * Emitted by: RiskConnectionService via riskSubject
+     * Source: COMMIT_REJECTION_FN callback in RiskConnectionService
+     * Frequency: Only when signal is rejected (not emitted for allowed signals)
+     *
+     * @param event - Risk rejection data with reason and context
+     */
+    riskRejection(event: RiskContract): void | Promise<void>;
+    /**
+     * Cleans up resources and subscriptions when action handler is no longer needed.
+     *
+     * Called by: Connection services during shutdown
+     * Use for: Unsubscribing from observables, closing connections, flushing buffers
+     */
+    dispose(): void | Promise<void>;
+}
+/**
+ * Unique action identifier.
+ */
+type ActionName = string;
+
+/**
  * Signal generation interval for throttling.
  * Enforces minimum time between getSignal calls.
  */
@@ -1398,6 +2377,8 @@ interface IStrategySchema {
     riskName?: RiskName;
     /** Optional several risk profile list for risk management (if multiple required) */
     riskList?: RiskName[];
+    /** Optional list of action identifiers to attach to this strategy */
+    actions?: ActionName[];
 }
 /**
  * Reason why signal was closed.
@@ -1948,6 +2929,15 @@ interface IStrategy {
      * ```
      */
     breakeven: (symbol: string, currentPrice: number, backtest: boolean) => Promise<boolean>;
+    /**
+     * Disposes the strategy instance and cleans up resources.
+     *
+     * Called when the strategy is being removed from cache or shut down.
+     * Invokes the onDispose callback to notify external systems.
+     *
+     * @returns Promise that resolves when disposal is complete
+     */
+    dispose: () => Promise<void>;
 }
 /**
  * Unique strategy identifier.
@@ -3482,6 +4472,495 @@ declare function addRisk(riskSchema: IRiskSchema): void;
  * ```
  */
 declare function addOptimizer(optimizerSchema: IOptimizerSchema): void;
+/**
+ * Registers an action handler in the framework.
+ *
+ * Actions provide event-driven integration for:
+ * - State management (Redux, Zustand, MobX)
+ * - Real-time notifications (Telegram, Discord, email)
+ * - Event logging and monitoring
+ * - Analytics and metrics collection
+ * - Custom business logic triggers
+ *
+ * Each action instance is created per strategy-frame pair and receives all events
+ * emitted during strategy execution (signals, breakeven, partial profit/loss, etc.).
+ *
+ * @param actionSchema - Action configuration object
+ * @param actionSchema.actionName - Unique action identifier
+ * @param actionSchema.handler - Action handler class constructor or plain object with event methods
+ * @param actionSchema.callbacks - Optional lifecycle callbacks (onInit, onDispose, onSignal, etc.)
+ *
+ * @example
+ * ```typescript
+ * // Using class-based handler
+ * class TelegramNotifier implements Partial<IPublicAction> {
+ *   constructor(
+ *     private strategyName: StrategyName,
+ *     private frameName: FrameName,
+ *     private actionName: ActionName
+ *   ) {}
+ *
+ *   async init() {
+ *     this.bot = new TelegramBot(process.env.TELEGRAM_TOKEN);
+ *     await this.bot.connect();
+ *   }
+ *
+ *   async signal(event: IStrategyTickResult) {
+ *     if (event.action === 'opened') {
+ *       await this.bot.send(`New signal: ${event.signal.side}`);
+ *     }
+ *   }
+ *
+ *   async dispose() {
+ *     await this.bot?.disconnect();
+ *   }
+ * }
+ *
+ * addAction({
+ *   actionName: "telegram-notifier",
+ *   handler: TelegramNotifier,
+ *   callbacks: {
+ *     onInit: (actionName, strategyName, frameName, backtest) => {
+ *       console.log(`[${actionName}] Initialized for ${strategyName}/${frameName}`);
+ *     },
+ *     onSignal: (event, actionName, strategyName, frameName, backtest) => {
+ *       console.log(`[${actionName}] Signal event: ${event.action}`);
+ *     },
+ *   },
+ * });
+ *
+ * // Using plain object handler
+ * addAction({
+ *   actionName: "simple-logger",
+ *   handler: {
+ *     signal: (event) => console.log('Signal:', event.action),
+ *     breakeven: (event) => console.log('Breakeven triggered'),
+ *   },
+ *   callbacks: {},
+ * });
+ * ```
+ */
+declare function addAction(actionSchema: IActionSchema): void;
+
+/**
+ * Partial strategy schema for override operations.
+ *
+ * Requires only the strategy name identifier, all other fields are optional.
+ * Used by overrideStrategy() to perform partial updates without replacing entire configuration.
+ *
+ * @property strategyName - Required: Unique strategy identifier (must exist in registry)
+ * @property interval - Optional: Signal generation interval to update
+ * @property getSignal - Optional: New signal generation function
+ * @property callbacks - Optional: Updated lifecycle callbacks
+ *
+ * @example
+ * ```typescript
+ * const partialUpdate: TStrategySchema = {
+ *   strategyName: "my-strategy",
+ *   interval: "15m" // Only update interval, keep other fields
+ * };
+ * ```
+ */
+type TStrategySchema = {
+    strategyName: IStrategySchema["strategyName"];
+} & Partial<IStrategySchema>;
+/**
+ * Partial exchange schema for override operations.
+ *
+ * Requires only the exchange name identifier, all other fields are optional.
+ * Used by overrideExchange() to perform partial updates without replacing entire configuration.
+ *
+ * @property exchangeName - Required: Unique exchange identifier (must exist in registry)
+ * @property getCandles - Optional: New candle data fetching function
+ * @property formatPrice - Optional: Updated price formatting function
+ * @property formatQuantity - Optional: Updated quantity formatting function
+ * @property callbacks - Optional: Updated candle data callbacks
+ *
+ * @example
+ * ```typescript
+ * const partialUpdate: TExchangeSchema = {
+ *   exchangeName: "binance",
+ *   formatPrice: async (symbol, price) => price.toFixed(4) // Only update price formatter
+ * };
+ * ```
+ */
+type TExchangeSchema = {
+    exchangeName: IExchangeSchema["exchangeName"];
+} & Partial<IExchangeSchema>;
+/**
+ * Partial frame schema for override operations.
+ *
+ * Requires only the frame name identifier, all other fields are optional.
+ * Used by overrideFrame() to perform partial updates without replacing entire configuration.
+ *
+ * @property frameName - Required: Unique frame identifier (must exist in registry)
+ * @property interval - Optional: New timeframe interval
+ * @property startDate - Optional: Updated start date for backtesting
+ * @property endDate - Optional: Updated end date for backtesting
+ * @property callbacks - Optional: Updated timeframe callbacks
+ *
+ * @example
+ * ```typescript
+ * const partialUpdate: TFrameSchema = {
+ *   frameName: "1d-backtest",
+ *   endDate: new Date("2024-12-31") // Only extend end date
+ * };
+ * ```
+ */
+type TFrameSchema = {
+    frameName: IFrameSchema["frameName"];
+} & Partial<IFrameSchema>;
+/**
+ * Partial walker schema for override operations.
+ *
+ * Requires only the walker name identifier, all other fields are optional.
+ * Used by overrideWalker() to perform partial updates without replacing entire configuration.
+ *
+ * @property walkerName - Required: Unique walker identifier (must exist in registry)
+ * @property exchangeName - Optional: New exchange to use
+ * @property frameName - Optional: New timeframe to use
+ * @property strategies - Optional: Updated list of strategies to compare
+ * @property metric - Optional: New optimization metric
+ * @property callbacks - Optional: Updated walker callbacks
+ *
+ * @example
+ * ```typescript
+ * const partialUpdate: TWalkerSchema = {
+ *   walkerName: "optimizer",
+ *   metric: "profitFactor" // Only change metric
+ * };
+ * ```
+ */
+type TWalkerSchema = {
+    walkerName: IWalkerSchema["walkerName"];
+} & Partial<IWalkerSchema>;
+/**
+ * Partial sizing schema for override operations.
+ *
+ * Requires only the sizing name identifier, all other fields are optional.
+ * Used by overrideSizing() to perform partial updates without replacing entire configuration.
+ *
+ * @property sizingName - Required: Unique sizing identifier (must exist in registry)
+ * @property method - Optional: New sizing method ("fixed-percentage" | "kelly-criterion" | "atr-based")
+ * @property riskPercentage - Optional: Updated risk percentage per trade
+ * @property kellyMultiplier - Optional: Updated Kelly multiplier (for kelly-criterion)
+ * @property atrMultiplier - Optional: Updated ATR multiplier (for atr-based)
+ * @property maxPositionPercentage - Optional: New max position size limit
+ * @property minPositionSize - Optional: New minimum position size
+ * @property maxPositionSize - Optional: New maximum position size
+ * @property callbacks - Optional: Updated sizing callbacks
+ *
+ * @example
+ * ```typescript
+ * const partialUpdate: TSizingSchema = {
+ *   sizingName: "conservative",
+ *   riskPercentage: 2 // Only increase risk from 1% to 2%
+ * };
+ * ```
+ */
+type TSizingSchema = {
+    sizingName: ISizingSchema["sizingName"];
+} & Partial<ISizingSchema>;
+/**
+ * Partial risk schema for override operations.
+ *
+ * Requires only the risk name identifier, all other fields are optional.
+ * Used by overrideRisk() to perform partial updates without replacing entire configuration.
+ *
+ * @property riskName - Required: Unique risk profile identifier (must exist in registry)
+ * @property maxConcurrentPositions - Optional: New max concurrent positions limit
+ * @property validations - Optional: Updated custom validation functions
+ * @property callbacks - Optional: Updated risk management callbacks
+ *
+ * @example
+ * ```typescript
+ * const partialUpdate: TRiskSchema = {
+ *   riskName: "conservative",
+ *   maxConcurrentPositions: 3 // Only reduce max positions from 5 to 3
+ * };
+ * ```
+ */
+type TRiskSchema = {
+    riskName: IRiskSchema["riskName"];
+} & Partial<IRiskSchema>;
+/**
+ * Partial optimizer schema for override operations.
+ *
+ * Requires only the optimizer name identifier, all other fields are optional.
+ * Used by overrideOptimizer() to perform partial updates without replacing entire configuration.
+ *
+ * @property optimizerName - Required: Unique optimizer identifier (must exist in registry)
+ * @property rangeTrain - Optional: Updated training time ranges
+ * @property rangeTest - Optional: Updated testing time range
+ * @property source - Optional: Updated data sources array
+ * @property getPrompt - Optional: New prompt generation function
+ * @property template - Optional: Updated template overrides
+ * @property callbacks - Optional: Updated optimizer callbacks
+ *
+ * @example
+ * ```typescript
+ * const partialUpdate: TOptimizerSchema = {
+ *   optimizerName: "llm-strategy-gen",
+ *   rangeTest: {
+ *     note: "Extended test period",
+ *     startDate: new Date("2024-04-01"),
+ *     endDate: new Date("2024-06-30")
+ *   }
+ * };
+ * ```
+ */
+type TOptimizerSchema = {
+    optimizerName: IOptimizerSchema["optimizerName"];
+} & Partial<IOptimizerSchema>;
+/**
+ * Partial action schema for override operations.
+ *
+ * Requires only the action name identifier, all other fields are optional.
+ * Used by overrideAction() to perform partial updates without replacing entire configuration.
+ *
+ * @property actionName - Required: Unique action identifier (must exist in registry)
+ * @property handler - Optional: New action handler class or plain object
+ * @property callbacks - Optional: Updated lifecycle callbacks
+ *
+ * @example
+ * ```typescript
+ * const partialUpdate: TActionSchema = {
+ *   actionName: "telegram-notifier",
+ *   callbacks: {
+ *     onSignal: (event, actionName, strategyName, frameName, backtest) => {
+ *       console.log(`[UPDATED] ${event.action}`); // Only update signal callback
+ *     }
+ *   }
+ * };
+ * ```
+ */
+type TActionSchema = {
+    actionName: IActionSchema["actionName"];
+} & Partial<IActionSchema>;
+/**
+ * Overrides an existing trading strategy in the framework.
+ *
+ * This function partially updates a previously registered strategy with new configuration.
+ * Only the provided fields will be updated, other fields remain unchanged.
+ *
+ * @param strategySchema - Partial strategy configuration object
+ * @param strategySchema.strategyName - Unique strategy identifier (must exist)
+ * @param strategySchema.interval - Optional: Signal generation interval
+ * @param strategySchema.getSignal - Optional: Async function that generates trading signals
+ * @param strategySchema.callbacks - Optional: Lifecycle callbacks (onOpen, onClose)
+ *
+ * @example
+ * ```typescript
+ * overrideStrategy({
+ *   strategyName: "my-strategy",
+ *   interval: "15m", // Only update interval
+ * });
+ * ```
+ */
+declare function overrideStrategy(strategySchema: TStrategySchema): Promise<IStrategySchema>;
+/**
+ * Overrides an existing exchange data source in the framework.
+ *
+ * This function partially updates a previously registered exchange with new configuration.
+ * Only the provided fields will be updated, other fields remain unchanged.
+ *
+ * @param exchangeSchema - Partial exchange configuration object
+ * @param exchangeSchema.exchangeName - Unique exchange identifier (must exist)
+ * @param exchangeSchema.getCandles - Optional: Async function to fetch candle data
+ * @param exchangeSchema.formatPrice - Optional: Async function to format prices
+ * @param exchangeSchema.formatQuantity - Optional: Async function to format quantities
+ * @param exchangeSchema.callbacks - Optional: Callback for candle data events
+ *
+ * @example
+ * ```typescript
+ * overrideExchange({
+ *   exchangeName: "binance",
+ *   formatPrice: async (symbol, price) => price.toFixed(4), // Only update price formatting
+ * });
+ * ```
+ */
+declare function overrideExchange(exchangeSchema: TExchangeSchema): Promise<IExchangeSchema>;
+/**
+ * Overrides an existing timeframe configuration for backtesting.
+ *
+ * This function partially updates a previously registered frame with new configuration.
+ * Only the provided fields will be updated, other fields remain unchanged.
+ *
+ * @param frameSchema - Partial frame configuration object
+ * @param frameSchema.frameName - Unique frame identifier (must exist)
+ * @param frameSchema.interval - Optional: Timeframe interval
+ * @param frameSchema.startDate - Optional: Start date for timeframe generation
+ * @param frameSchema.endDate - Optional: End date for timeframe generation
+ * @param frameSchema.callbacks - Optional: Callback for timeframe events
+ *
+ * @example
+ * ```typescript
+ * overrideFrame({
+ *   frameName: "1d-backtest",
+ *   endDate: new Date("2024-03-01T00:00:00Z"), // Only extend end date
+ * });
+ * ```
+ */
+declare function overrideFrame(frameSchema: TFrameSchema): Promise<IFrameSchema>;
+/**
+ * Overrides an existing walker configuration for strategy comparison.
+ *
+ * This function partially updates a previously registered walker with new configuration.
+ * Only the provided fields will be updated, other fields remain unchanged.
+ *
+ * @param walkerSchema - Partial walker configuration object
+ * @param walkerSchema.walkerName - Unique walker identifier (must exist)
+ * @param walkerSchema.exchangeName - Optional: Exchange to use for all strategies
+ * @param walkerSchema.frameName - Optional: Timeframe to use for all strategies
+ * @param walkerSchema.strategies - Optional: Array of strategy names to compare
+ * @param walkerSchema.metric - Optional: Metric to optimize
+ * @param walkerSchema.callbacks - Optional: Lifecycle callbacks
+ *
+ * @example
+ * ```typescript
+ * overrideWalker({
+ *   walkerName: "llm-prompt-optimizer",
+ *   metric: "profitFactor", // Only change metric
+ * });
+ * ```
+ */
+declare function overrideWalker(walkerSchema: TWalkerSchema): Promise<IWalkerSchema>;
+/**
+ * Overrides an existing position sizing configuration in the framework.
+ *
+ * This function partially updates a previously registered sizing configuration with new settings.
+ * Only the provided fields will be updated, other fields remain unchanged.
+ *
+ * @param sizingSchema - Partial sizing configuration object
+ * @param sizingSchema.sizingName - Unique sizing identifier (must exist)
+ * @param sizingSchema.method - Optional: Sizing method
+ * @param sizingSchema.riskPercentage - Optional: Risk percentage per trade
+ * @param sizingSchema.kellyMultiplier - Optional: Kelly multiplier
+ * @param sizingSchema.atrMultiplier - Optional: ATR multiplier
+ * @param sizingSchema.maxPositionPercentage - Optional: Max position size as % of account
+ * @param sizingSchema.minPositionSize - Optional: Minimum position size
+ * @param sizingSchema.maxPositionSize - Optional: Maximum position size
+ * @param sizingSchema.callbacks - Optional: Lifecycle callbacks
+ *
+ * @example
+ * ```typescript
+ * overrideSizing({
+ *   sizingName: "conservative",
+ *   riskPercentage: 2, // Only increase risk percentage
+ * });
+ * ```
+ */
+declare function overrideSizing(sizingSchema: TSizingSchema): Promise<ISizingSchema>;
+/**
+ * Overrides an existing risk management configuration in the framework.
+ *
+ * This function partially updates a previously registered risk configuration with new settings.
+ * Only the provided fields will be updated, other fields remain unchanged.
+ *
+ * @param riskSchema - Partial risk configuration object
+ * @param riskSchema.riskName - Unique risk profile identifier (must exist)
+ * @param riskSchema.maxConcurrentPositions - Optional: Max number of open positions
+ * @param riskSchema.validations - Optional: Custom validation functions
+ * @param riskSchema.callbacks - Optional: Lifecycle callbacks
+ *
+ * @example
+ * ```typescript
+ * overrideRisk({
+ *   riskName: "conservative",
+ *   maxConcurrentPositions: 3, // Only reduce max positions
+ * });
+ * ```
+ */
+declare function overrideRisk(riskSchema: TRiskSchema): Promise<IRiskSchema>;
+/**
+ * Overrides an existing optimizer configuration in the framework.
+ *
+ * This function partially updates a previously registered optimizer with new configuration.
+ * Only the provided fields will be updated, other fields remain unchanged.
+ *
+ * @param optimizerSchema - Partial optimizer configuration object
+ * @param optimizerSchema.optimizerName - Unique optimizer identifier (must exist)
+ * @param optimizerSchema.rangeTrain - Optional: Array of training time ranges
+ * @param optimizerSchema.rangeTest - Optional: Testing time range
+ * @param optimizerSchema.source - Optional: Array of data sources
+ * @param optimizerSchema.getPrompt - Optional: Function to generate strategy prompt
+ * @param optimizerSchema.template - Optional: Custom template overrides
+ * @param optimizerSchema.callbacks - Optional: Lifecycle callbacks
+ *
+ * @example
+ * ```typescript
+ * overrideOptimizer({
+ *   optimizerName: "llm-strategy-generator",
+ *   rangeTest: {
+ *     note: "Updated validation period",
+ *     startDate: new Date("2024-04-01"),
+ *     endDate: new Date("2024-04-30"),
+ *   },
+ * });
+ * ```
+ */
+declare function overrideOptimizer(optimizerSchema: TOptimizerSchema): Promise<IOptimizerSchema>;
+/**
+ * Overrides an existing action handler configuration in the framework.
+ *
+ * This function partially updates a previously registered action handler with new configuration.
+ * Only the provided fields will be updated, other fields remain unchanged.
+ *
+ * Useful for:
+ * - Updating event handler logic without re-registering
+ * - Modifying callbacks for different environments (dev/prod)
+ * - Switching handler implementations dynamically
+ * - Adjusting action behavior without strategy changes
+ *
+ * @param actionSchema - Partial action configuration object
+ * @param actionSchema.actionName - Unique action identifier (must exist)
+ * @param actionSchema.handler - Optional: Action handler class constructor or plain object
+ * @param actionSchema.callbacks - Optional: Lifecycle callbacks to update
+ *
+ * @example
+ * ```typescript
+ * // Override handler implementation
+ * class ImprovedTelegramNotifier implements Partial<IPublicAction> {
+ *   constructor(
+ *     private strategyName: StrategyName,
+ *     private frameName: FrameName,
+ *     private actionName: ActionName
+ *   ) {}
+ *
+ *   async signal(event: IStrategyTickResult) {
+ *     if (event.action === 'opened') {
+ *       await this.bot.send(`📈 ${event.signal.side} signal opened`); // Enhanced formatting
+ *     }
+ *   }
+ * }
+ *
+ * overrideAction({
+ *   actionName: "telegram-notifier",
+ *   handler: ImprovedTelegramNotifier, // Only update handler
+ * });
+ *
+ * // Override only callbacks
+ * overrideAction({
+ *   actionName: "telegram-notifier",
+ *   callbacks: {
+ *     onSignal: (event, actionName, strategyName, frameName, backtest) => {
+ *       console.log(`[VERBOSE] ${actionName}: ${event.action}`); // More verbose logging
+ *     },
+ *   },
+ * });
+ *
+ * // Update plain object handler
+ * overrideAction({
+ *   actionName: "simple-logger",
+ *   handler: {
+ *     signal: (event) => console.log('📊 Signal:', event.action),
+ *     breakeven: (event) => console.log('⚖️ Breakeven triggered'),
+ *     partialProfit: (event) => console.log('💰 Partial profit:', event.level),
+ *   },
+ * });
+ * ```
+ */
+declare function overrideAction(actionSchema: TActionSchema): Promise<IActionSchema>;
 
 /**
  * Returns a list of all registered exchange schemas.
@@ -3903,474 +5382,6 @@ interface WalkerContract {
     strategiesTested: number;
     /** Total number of strategies to test */
     totalStrategies: number;
-}
-
-/**
- * Contract for partial profit level events.
- *
- * Emitted by partialProfitSubject when a signal reaches a profit level milestone (10%, 20%, 30%, etc).
- * Used for tracking partial take-profit execution and monitoring strategy performance.
- *
- * Events are emitted only once per level per signal (Set-based deduplication in ClientPartial).
- * Multiple levels can be emitted in a single tick if price jumps significantly.
- *
- * Consumers:
- * - PartialMarkdownService: Accumulates events for report generation
- * - User callbacks via listenPartialProfit() / listenPartialProfitOnce()
- *
- * @example
- * ```typescript
- * import { listenPartialProfit } from "backtest-kit";
- *
- * // Listen to all partial profit events
- * listenPartialProfit((event) => {
- *   console.log(`[${event.backtest ? "Backtest" : "Live"}] Signal ${event.data.id} reached ${event.level}% profit`);
- *   console.log(`Symbol: ${event.symbol}, Price: ${event.currentPrice}`);
- *   console.log(`Position: ${event.data.position}, Entry: ${event.data.priceOpen}`);
- * });
- *
- * // Wait for first 50% profit level
- * listenPartialProfitOnce(
- *   (event) => event.level === 50,
- *   (event) => console.log("50% profit reached:", event.data.id)
- * );
- * ```
- */
-interface PartialProfitContract {
-    /**
-     * Trading pair symbol (e.g., "BTCUSDT").
-     * Identifies which market this profit event belongs to.
-     */
-    symbol: string;
-    /**
-     * Strategy name that generated this signal.
-     * Identifies which strategy execution this profit event belongs to.
-     */
-    strategyName: StrategyName;
-    /**
-     * Exchange name where this signal is being executed.
-     * Identifies which exchange this profit event belongs to.
-     */
-    exchangeName: ExchangeName;
-    /**
-     * Frame name where this signal is being executed.
-     * Identifies which frame this profit event belongs to (empty string for live mode).
-     */
-    frameName: FrameName;
-    /**
-     * Complete signal row data with original prices.
-     * Contains all signal information including originalPriceStopLoss, originalPriceTakeProfit, and totalExecuted.
-     */
-    data: IPublicSignalRow;
-    /**
-     * Current market price at which this profit level was reached.
-     * Used to calculate actual profit percentage.
-     */
-    currentPrice: number;
-    /**
-     * Profit level milestone reached (10, 20, 30, 40, 50, 60, 70, 80, 90, or 100).
-     * Represents percentage profit relative to entry price.
-     *
-     * @example
-     * ```typescript
-     * // If entry was $50000 and level is 20:
-     * // currentPrice >= $60000 (20% profit)
-     * ```
-     */
-    level: PartialLevel;
-    /**
-     * Execution mode flag.
-     * - true: Event from backtest execution (historical candle data)
-     * - false: Event from live trading (real-time tick)
-     */
-    backtest: boolean;
-    /**
-     * Event timestamp in milliseconds since Unix epoch.
-     *
-     * Timing semantics:
-     * - Live mode: when.getTime() at the moment profit level was detected
-     * - Backtest mode: candle.timestamp of the candle that triggered the level
-     *
-     * @example
-     * ```typescript
-     * const eventDate = new Date(event.timestamp);
-     * console.log(`Profit reached at: ${eventDate.toISOString()}`);
-     * ```
-     */
-    timestamp: number;
-}
-
-/**
- * Contract for partial loss level events.
- *
- * Emitted by partialLossSubject when a signal reaches a loss level milestone (-10%, -20%, -30%, etc).
- * Used for tracking partial stop-loss execution and monitoring strategy drawdown.
- *
- * Events are emitted only once per level per signal (Set-based deduplication in ClientPartial).
- * Multiple levels can be emitted in a single tick if price drops significantly.
- *
- * Consumers:
- * - PartialMarkdownService: Accumulates events for report generation
- * - User callbacks via listenPartialLoss() / listenPartialLossOnce()
- *
- * @example
- * ```typescript
- * import { listenPartialLoss } from "backtest-kit";
- *
- * // Listen to all partial loss events
- * listenPartialLoss((event) => {
- *   console.log(`[${event.backtest ? "Backtest" : "Live"}] Signal ${event.data.id} reached -${event.level}% loss`);
- *   console.log(`Symbol: ${event.symbol}, Price: ${event.currentPrice}`);
- *   console.log(`Position: ${event.data.position}, Entry: ${event.data.priceOpen}`);
- *
- *   // Alert on significant loss
- *   if (event.level >= 30 && !event.backtest) {
- *     console.warn("HIGH LOSS ALERT:", event.data.id);
- *   }
- * });
- *
- * // Wait for first 20% loss level
- * listenPartialLossOnce(
- *   (event) => event.level === 20,
- *   (event) => console.log("20% loss reached:", event.data.id)
- * );
- * ```
- */
-interface PartialLossContract {
-    /**
-     * Trading pair symbol (e.g., "BTCUSDT").
-     * Identifies which market this loss event belongs to.
-     */
-    symbol: string;
-    /**
-     * Strategy name that generated this signal.
-     * Identifies which strategy execution this loss event belongs to.
-     */
-    strategyName: StrategyName;
-    /**
-     * Exchange name where this signal is being executed.
-     * Identifies which exchange this loss event belongs to.
-     */
-    exchangeName: ExchangeName;
-    /**
-     * Frame name where this signal is being executed.
-     * Identifies which frame this loss event belongs to (empty string for live mode).
-     */
-    frameName: FrameName;
-    /**
-     * Complete signal row data with original prices.
-     * Contains all signal information including originalPriceStopLoss, originalPriceTakeProfit, and totalExecuted.
-     */
-    data: IPublicSignalRow;
-    /**
-     * Current market price at which this loss level was reached.
-     * Used to calculate actual loss percentage.
-     */
-    currentPrice: number;
-    /**
-     * Loss level milestone reached (10, 20, 30, 40, 50, 60, 70, 80, 90, or 100).
-     * Represents percentage loss relative to entry price (absolute value).
-     *
-     * Note: Stored as positive number, but represents negative loss.
-     * level=20 means -20% loss from entry price.
-     *
-     * @example
-     * ```typescript
-     * // If entry was $50000 and level is 20:
-     * // currentPrice <= $40000 (-20% loss)
-     * // Level is stored as 20, not -20
-     * ```
-     */
-    level: PartialLevel;
-    /**
-     * Execution mode flag.
-     * - true: Event from backtest execution (historical candle data)
-     * - false: Event from live trading (real-time tick)
-     */
-    backtest: boolean;
-    /**
-     * Event timestamp in milliseconds since Unix epoch.
-     *
-     * Timing semantics:
-     * - Live mode: when.getTime() at the moment loss level was detected
-     * - Backtest mode: candle.timestamp of the candle that triggered the level
-     *
-     * @example
-     * ```typescript
-     * const eventDate = new Date(event.timestamp);
-     * console.log(`Loss reached at: ${eventDate.toISOString()}`);
-     *
-     * // Calculate time in loss
-     * const entryTime = event.data.pendingAt;
-     * const timeInLoss = event.timestamp - entryTime;
-     * console.log(`In loss for ${timeInLoss / 1000 / 60} minutes`);
-     * ```
-     */
-    timestamp: number;
-}
-
-/**
- * Contract for breakeven events.
- *
- * Emitted by breakevenSubject when a signal's stop-loss is moved to breakeven (entry price).
- * Used for tracking risk reduction milestones and monitoring strategy safety.
- *
- * Events are emitted only once per signal (idempotent - protected by ClientBreakeven state).
- * Breakeven is triggered when price moves far enough in profit direction to cover transaction costs.
- *
- * Consumers:
- * - BreakevenMarkdownService: Accumulates events for report generation
- * - User callbacks via listenBreakeven() / listenBreakevenOnce()
- *
- * @example
- * ```typescript
- * import { listenBreakeven } from "backtest-kit";
- *
- * // Listen to all breakeven events
- * listenBreakeven((event) => {
- *   console.log(`[${event.backtest ? "Backtest" : "Live"}] Signal ${event.data.id} moved to breakeven`);
- *   console.log(`Symbol: ${event.symbol}, Price: ${event.currentPrice}`);
- *   console.log(`Position: ${event.data.position}, Entry: ${event.data.priceOpen}`);
- *   console.log(`Original SL: ${event.data.priceStopLoss}, New SL: ${event.data.priceOpen}`);
- * });
- *
- * // Wait for specific signal to reach breakeven
- * listenBreakevenOnce(
- *   (event) => event.data.id === "target-signal-id",
- *   (event) => console.log("Signal reached breakeven:", event.data.id)
- * );
- * ```
- */
-interface BreakevenContract {
-    /**
-     * Trading pair symbol (e.g., "BTCUSDT").
-     * Identifies which market this breakeven event belongs to.
-     */
-    symbol: string;
-    /**
-     * Strategy name that generated this signal.
-     * Identifies which strategy execution this breakeven event belongs to.
-     */
-    strategyName: StrategyName;
-    /**
-     * Exchange name where this signal is being executed.
-     * Identifies which exchange this breakeven event belongs to.
-     */
-    exchangeName: ExchangeName;
-    /**
-     * Frame name where this signal is being executed.
-     * Identifies which frame this breakeven event belongs to (empty string for live mode).
-     */
-    frameName: FrameName;
-    /**
-     * Complete signal row data with original prices.
-     * Contains all signal information including originalPriceStopLoss, originalPriceTakeProfit, and totalExecuted.
-     */
-    data: IPublicSignalRow;
-    /**
-     * Current market price at which breakeven was triggered.
-     * Used to verify threshold calculation.
-     */
-    currentPrice: number;
-    /**
-     * Execution mode flag.
-     * - true: Event from backtest execution (historical candle data)
-     * - false: Event from live trading (real-time tick)
-     */
-    backtest: boolean;
-    /**
-     * Event timestamp in milliseconds since Unix epoch.
-     *
-     * Timing semantics:
-     * - Live mode: when.getTime() at the moment breakeven was set
-     * - Backtest mode: candle.timestamp of the candle that triggered breakeven
-     *
-     * @example
-     * ```typescript
-     * const eventDate = new Date(event.timestamp);
-     * console.log(`Breakeven set at: ${eventDate.toISOString()}`);
-     * ```
-     */
-    timestamp: number;
-}
-
-/**
- * Contract for risk rejection events.
- *
- * Emitted by riskSubject ONLY when a signal is REJECTED due to risk validation failure.
- * Used for tracking actual risk violations and monitoring rejected signals.
- *
- * Events are emitted only when risk limits are violated (not for allowed signals).
- * This prevents spam and allows focusing on actual risk management interventions.
- *
- * Consumers:
- * - RiskMarkdownService: Accumulates rejection events for report generation
- * - User callbacks via listenRisk() / listenRiskOnce()
- *
- * @example
- * ```typescript
- * import { listenRisk } from "backtest-kit";
- *
- * // Listen to all risk rejection events
- * listenRisk((event) => {
- *   console.log(`[RISK REJECTED] Signal for ${event.symbol}`);
- *   console.log(`Strategy: ${event.strategyName}`);
- *   console.log(`Active positions: ${event.activePositionCount}`);
- *   console.log(`Price: ${event.currentPrice}`);
- *   console.log(`Timestamp: ${new Date(event.timestamp).toISOString()}`);
- * });
- *
- * // Alert on risk rejections for specific symbol
- * listenRisk((event) => {
- *   if (event.symbol === "BTCUSDT") {
- *     console.warn("BTC signal rejected due to risk limits!");
- *   }
- * });
- * ```
- */
-interface RiskContract {
-    /**
-     * Trading pair symbol (e.g., "BTCUSDT").
-     * Identifies which market this rejected signal belongs to.
-     */
-    symbol: string;
-    /**
-     * Pending signal to apply.
-     * Contains signal details (position, priceOpen, priceTakeProfit, priceStopLoss, etc).
-     */
-    pendingSignal: ISignalDto;
-    /**
-     * Strategy name requesting to open a position.
-     * Identifies which strategy attempted to create the signal.
-     */
-    strategyName: StrategyName;
-    /**
-     * Frame name used in backtest execution.
-     * Identifies which frame this signal was for in backtest execution.
-     */
-    frameName: FrameName;
-    /**
-     * Exchange name.
-     * Identifies which exchange this signal was for.
-     */
-    exchangeName: ExchangeName;
-    /**
-     * Current VWAP price at the time of rejection.
-     * Market price when risk check was performed.
-     */
-    currentPrice: number;
-    /**
-     * Number of currently active positions across all strategies at rejection time.
-     * Used to track portfolio-level exposure when signal was rejected.
-     */
-    activePositionCount: number;
-    /**
-     * Unique identifier for this rejection instance.
-     * Generated by ClientRisk for tracking and debugging purposes.
-     * Null if validation threw exception without custom ID.
-     */
-    rejectionId: string | null;
-    /**
-     * Human-readable reason why the signal was rejected.
-     * Captured from IRiskValidation.note or error message.
-     *
-     * @example
-     * ```typescript
-     * console.log(`Rejection reason: ${event.rejectionNote}`);
-     * // Output: "Rejection reason: Max 3 positions allowed"
-     * ```
-     */
-    rejectionNote: string;
-    /**
-     * Event timestamp in milliseconds since Unix epoch.
-     * Represents when the signal was rejected.
-     *
-     * @example
-     * ```typescript
-     * const eventDate = new Date(event.timestamp);
-     * console.log(`Signal rejected at: ${eventDate.toISOString()}`);
-     * ```
-     */
-    timestamp: number;
-    /**
-     * Whether this event is from backtest mode (true) or live mode (false).
-     * Used to separate backtest and live risk rejection tracking.
-     */
-    backtest: boolean;
-}
-
-/**
- * Contract for ping events during scheduled signal monitoring.
- *
- * Emitted by pingSubject every minute when a scheduled signal is being monitored.
- * Used for tracking scheduled signal lifecycle and custom monitoring logic.
- *
- * Events are emitted only when scheduled signal is active (not cancelled, not activated).
- * Allows users to implement custom cancellation logic via onPing callback.
- *
- * Consumers:
- * - User callbacks via listenPing() / listenPingOnce()
- *
- * @example
- * ```typescript
- * import { listenPing } from "backtest-kit";
- *
- * // Listen to all ping events
- * listenPing((event) => {
- *   console.log(`[${event.backtest ? "Backtest" : "Live"}] Ping for ${event.symbol}`);
- *   console.log(`Strategy: ${event.strategyName}, Exchange: ${event.exchangeName}`);
- *   console.log(`Signal ID: ${event.data.id}, priceOpen: ${event.data.priceOpen}`);
- *   console.log(`Timestamp: ${new Date(event.timestamp).toISOString()}`);
- * });
- *
- * // Wait for specific ping
- * listenPingOnce(
- *   (event) => event.symbol === "BTCUSDT",
- *   (event) => console.log("BTCUSDT ping received:", event.timestamp)
- * );
- * ```
- */
-interface PingContract {
-    /**
-     * Trading pair symbol (e.g., "BTCUSDT").
-     * Identifies which market this ping event belongs to.
-     */
-    symbol: string;
-    /**
-     * Strategy name that is monitoring this scheduled signal.
-     * Identifies which strategy execution this ping event belongs to.
-     */
-    strategyName: StrategyName;
-    /**
-     * Exchange name where this scheduled signal is being monitored.
-     * Identifies which exchange this ping event belongs to.
-     */
-    exchangeName: ExchangeName;
-    /**
-     * Complete scheduled signal row data.
-     * Contains all signal information: id, position, priceOpen, priceTakeProfit, priceStopLoss, etc.
-     */
-    data: IScheduledSignalRow;
-    /**
-     * Execution mode flag.
-     * - true: Event from backtest execution (historical candle data)
-     * - false: Event from live trading (real-time tick)
-     */
-    backtest: boolean;
-    /**
-     * Event timestamp in milliseconds since Unix epoch.
-     *
-     * Timing semantics:
-     * - Live mode: when.getTime() at the moment of ping
-     * - Backtest mode: candle.timestamp of the candle being processed
-     *
-     * @example
-     * ```typescript
-     * const eventDate = new Date(event.timestamp);
-     * console.log(`Ping at: ${eventDate.toISOString()}`);
-     * ```
-     */
-    timestamp: number;
 }
 
 /**
@@ -6291,35 +7302,40 @@ interface IPersistBase<Entity extends IEntity | null = IEntity> {
  * const value = await persist.readValue("key1");
  * ```
  */
-declare const PersistBase: {
-    new <EntityName extends string = string>(entityName: EntityName, baseDir?: string): {
-        /** Computed directory path for entity storage */
-        _directory: string;
-        readonly entityName: EntityName;
-        readonly baseDir: string;
-        /**
-         * Computes file path for entity ID.
-         *
-         * @param entityId - Entity identifier
-         * @returns Full file path to entity JSON file
-         */
-        _getFilePath(entityId: EntityId): string;
-        waitForInit(initial: boolean): Promise<void>;
-        readValue<T extends IEntity = IEntity>(entityId: EntityId): Promise<T>;
-        hasValue(entityId: EntityId): Promise<boolean>;
-        writeValue<T extends IEntity = IEntity>(entityId: EntityId, entity: T): Promise<void>;
-        /**
-         * Async generator yielding all entity IDs.
-         * Sorted alphanumerically.
-         * Used internally by waitForInit for validation.
-         *
-         * @returns AsyncGenerator yielding entity IDs
-         * @throws Error if reading fails
-         */
-        keys(): AsyncGenerator<EntityId>;
-        [BASE_WAIT_FOR_INIT_SYMBOL]: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-    };
-};
+declare class PersistBase<EntityName extends string = string> implements IPersistBase {
+    readonly entityName: EntityName;
+    readonly baseDir: string;
+    /** Computed directory path for entity storage */
+    _directory: string;
+    /**
+     * Creates new persistence instance.
+     *
+     * @param entityName - Unique entity type identifier
+     * @param baseDir - Base directory for all entities (default: ./dump/data)
+     */
+    constructor(entityName: EntityName, baseDir?: string);
+    /**
+     * Computes file path for entity ID.
+     *
+     * @param entityId - Entity identifier
+     * @returns Full file path to entity JSON file
+     */
+    _getFilePath(entityId: EntityId): string;
+    [BASE_WAIT_FOR_INIT_SYMBOL]: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+    waitForInit(initial: boolean): Promise<void>;
+    readValue<T extends IEntity = IEntity>(entityId: EntityId): Promise<T>;
+    hasValue(entityId: EntityId): Promise<boolean>;
+    writeValue<T extends IEntity = IEntity>(entityId: EntityId, entity: T): Promise<void>;
+    /**
+     * Async generator yielding all entity IDs.
+     * Sorted alphanumerically.
+     * Used internally by waitForInit for validation.
+     *
+     * @returns AsyncGenerator yielding entity IDs
+     * @throws Error if reading fails
+     */
+    keys(): AsyncGenerator<EntityId>;
+}
 /**
  * Utility class for managing signal persistence.
  *
@@ -6881,49 +7897,54 @@ type TReportBaseCtor = new (reportName: ReportName, baseDir: string) => TReportB
  *
  * Use this adapter for event logging and post-processing analytics.
  */
-declare const ReportBase: {
-    new (reportName: ReportName, baseDir?: string): {
-        /** Absolute path to the JSONL file for this report type */
-        _filePath: string;
-        /** WriteStream instance for append-only writes, null until initialized */
-        _stream: WriteStream | null;
-        readonly reportName: ReportName;
-        readonly baseDir: string;
-        /**
-         * Initializes the JSONL file and write stream.
-         * Safe to call multiple times - singleshot ensures one-time execution.
-         *
-         * @param initial - Whether this is the first initialization (informational only)
-         * @returns Promise that resolves when initialization is complete
-         */
-        waitForInit(initial: boolean): Promise<void>;
-        /**
-         * Writes event data to JSONL file with metadata.
-         * Appends a single line with JSON object containing:
-         * - reportName: Type of report
-         * - data: Event data object
-         * - Search flags: symbol, strategyName, exchangeName, frameName, signalId, walkerName
-         * - timestamp: Current timestamp in milliseconds
-         *
-         * @param data - Event data object to write
-         * @param options - Metadata options for filtering and search
-         * @throws Error if stream not initialized or write timeout exceeded
-         */
-        write<T = any>(data: T, options: IReportDumpOptions): Promise<void>;
-        /**
-         * Singleshot initialization function that creates directory and stream.
-         * Protected by singleshot to ensure one-time execution.
-         * Sets up error handler that emits to exitEmitter.
-         */
-        [WAIT_FOR_INIT_SYMBOL$1]: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-        /**
-         * Timeout-protected write function with backpressure handling.
-         * Waits for drain event if write buffer is full.
-         * Times out after 15 seconds and returns TIMEOUT_SYMBOL.
-         */
-        [WRITE_SAFE_SYMBOL$1]: (line: string) => Promise<symbol | void>;
-    };
-};
+declare class ReportBase implements TReportBase {
+    readonly reportName: ReportName;
+    readonly baseDir: string;
+    /** Absolute path to the JSONL file for this report type */
+    _filePath: string;
+    /** WriteStream instance for append-only writes, null until initialized */
+    _stream: WriteStream | null;
+    /**
+     * Creates a new JSONL report adapter instance.
+     *
+     * @param reportName - Type of report (backtest, live, walker, etc.)
+     * @param baseDir - Base directory for report files, defaults to ./dump/report
+     */
+    constructor(reportName: ReportName, baseDir?: string);
+    /**
+     * Singleshot initialization function that creates directory and stream.
+     * Protected by singleshot to ensure one-time execution.
+     * Sets up error handler that emits to exitEmitter.
+     */
+    [WAIT_FOR_INIT_SYMBOL$1]: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+    /**
+     * Timeout-protected write function with backpressure handling.
+     * Waits for drain event if write buffer is full.
+     * Times out after 15 seconds and returns TIMEOUT_SYMBOL.
+     */
+    [WRITE_SAFE_SYMBOL$1]: (line: string) => Promise<symbol | void>;
+    /**
+     * Initializes the JSONL file and write stream.
+     * Safe to call multiple times - singleshot ensures one-time execution.
+     *
+     * @param initial - Whether this is the first initialization (informational only)
+     * @returns Promise that resolves when initialization is complete
+     */
+    waitForInit(initial: boolean): Promise<void>;
+    /**
+     * Writes event data to JSONL file with metadata.
+     * Appends a single line with JSON object containing:
+     * - reportName: Type of report
+     * - data: Event data object
+     * - Search flags: symbol, strategyName, exchangeName, frameName, signalId, walkerName
+     * - timestamp: Current timestamp in milliseconds
+     *
+     * @param data - Event data object to write
+     * @param options - Metadata options for filtering and search
+     * @throws Error if stream not initialized or write timeout exceeded
+     */
+    write<T = any>(data: T, options: IReportDumpOptions): Promise<void>;
+}
 /**
  * Utility class for managing report services.
  *
@@ -7156,49 +8177,53 @@ type TMarkdownBaseCtor = new (markdownName: MarkdownName) => TMarkdownBase;
  *
  * Use this adapter for centralized logging and post-processing with JSONL tools.
  */
-declare const MarkdownFileBase: {
-    new (markdownName: MarkdownName): {
-        /** Absolute path to the JSONL file for this markdown type */
-        _filePath: string;
-        /** WriteStream instance for append-only writes, null until initialized */
-        _stream: WriteStream | null;
-        /** Base directory for all JSONL markdown files */
-        _baseDir: string;
-        readonly markdownName: MarkdownName;
-        /**
-         * Initializes the JSONL file and write stream.
-         * Safe to call multiple times - singleshot ensures one-time execution.
-         *
-         * @returns Promise that resolves when initialization is complete
-         */
-        waitForInit(): Promise<void>;
-        /**
-         * Writes markdown content to JSONL file with metadata.
-         * Appends a single line with JSON object containing:
-         * - markdownName: Type of report
-         * - data: Markdown content
-         * - Search flags: symbol, strategyName, exchangeName, frameName, signalId
-         * - timestamp: Current timestamp in milliseconds
-         *
-         * @param data - Markdown content to write
-         * @param options - Path and metadata options
-         * @throws Error if stream not initialized or write timeout exceeded
-         */
-        dump(data: string, options: IMarkdownDumpOptions): Promise<void>;
-        /**
-         * Singleshot initialization function that creates directory and stream.
-         * Protected by singleshot to ensure one-time execution.
-         * Sets up error handler that emits to exitEmitter.
-         */
-        [WAIT_FOR_INIT_SYMBOL]: (() => Promise<void>) & functools_kit.ISingleshotClearable;
-        /**
-         * Timeout-protected write function with backpressure handling.
-         * Waits for drain event if write buffer is full.
-         * Times out after 15 seconds and returns TIMEOUT_SYMBOL.
-         */
-        [WRITE_SAFE_SYMBOL]: (line: string) => Promise<symbol | void>;
-    };
-};
+declare class MarkdownFileBase implements TMarkdownBase {
+    readonly markdownName: MarkdownName;
+    /** Absolute path to the JSONL file for this markdown type */
+    _filePath: string;
+    /** WriteStream instance for append-only writes, null until initialized */
+    _stream: WriteStream | null;
+    /** Base directory for all JSONL markdown files */
+    _baseDir: string;
+    /**
+     * Creates a new JSONL markdown adapter instance.
+     *
+     * @param markdownName - Type of markdown report (backtest, live, walker, etc.)
+     */
+    constructor(markdownName: MarkdownName);
+    /**
+     * Singleshot initialization function that creates directory and stream.
+     * Protected by singleshot to ensure one-time execution.
+     * Sets up error handler that emits to exitEmitter.
+     */
+    [WAIT_FOR_INIT_SYMBOL]: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+    /**
+     * Timeout-protected write function with backpressure handling.
+     * Waits for drain event if write buffer is full.
+     * Times out after 15 seconds and returns TIMEOUT_SYMBOL.
+     */
+    [WRITE_SAFE_SYMBOL]: (line: string) => Promise<symbol | void>;
+    /**
+     * Initializes the JSONL file and write stream.
+     * Safe to call multiple times - singleshot ensures one-time execution.
+     *
+     * @returns Promise that resolves when initialization is complete
+     */
+    waitForInit(): Promise<void>;
+    /**
+     * Writes markdown content to JSONL file with metadata.
+     * Appends a single line with JSON object containing:
+     * - markdownName: Type of report
+     * - data: Markdown content
+     * - Search flags: symbol, strategyName, exchangeName, frameName, signalId
+     * - timestamp: Current timestamp in milliseconds
+     *
+     * @param data - Markdown content to write
+     * @param options - Path and metadata options
+     * @throws Error if stream not initialized or write timeout exceeded
+     */
+    dump(data: string, options: IMarkdownDumpOptions): Promise<void>;
+}
 /**
  * Folder-based markdown adapter with separate files per report.
  *
@@ -7214,28 +8239,32 @@ declare const MarkdownFileBase: {
  *
  * Use this adapter (default) for organized report directories and manual review.
  */
-declare const MarkdownFolderBase: {
-    new (markdownName: MarkdownName): {
-        readonly markdownName: MarkdownName;
-        /**
-         * No-op initialization for folder adapter.
-         * This adapter doesn't need initialization since it uses direct writeFile.
-         *
-         * @returns Promise that resolves immediately
-         */
-        waitForInit(): Promise<void>;
-        /**
-         * Writes markdown content to a separate file.
-         * Creates directory structure automatically.
-         * File path is determined by options.path and options.file.
-         *
-         * @param content - Markdown content to write
-         * @param options - Path and file options for the dump
-         * @throws Error if directory creation or file write fails
-         */
-        dump(content: string, options: IMarkdownDumpOptions): Promise<void>;
-    };
-};
+declare class MarkdownFolderBase implements TMarkdownBase {
+    readonly markdownName: MarkdownName;
+    /**
+     * Creates a new folder-based markdown adapter instance.
+     *
+     * @param markdownName - Type of markdown report (backtest, live, walker, etc.)
+     */
+    constructor(markdownName: MarkdownName);
+    /**
+     * No-op initialization for folder adapter.
+     * This adapter doesn't need initialization since it uses direct writeFile.
+     *
+     * @returns Promise that resolves immediately
+     */
+    waitForInit(): Promise<void>;
+    /**
+     * Writes markdown content to a separate file.
+     * Creates directory structure automatically.
+     * File path is determined by options.path and options.file.
+     *
+     * @param content - Markdown content to write
+     * @param options - Path and file options for the dump
+     * @throws Error if directory creation or file write fails
+     */
+    dump(content: string, options: IMarkdownDumpOptions): Promise<void>;
+}
 /**
  * Utility class for managing markdown report services.
  *
@@ -11805,6 +12834,378 @@ declare class BreakevenUtils {
 declare const Breakeven: BreakevenUtils;
 
 /**
+ * Base class for custom action handlers.
+ *
+ * Provides default implementations for all IPublicAction methods that log events.
+ * Extend this class to implement custom action handlers for:
+ * - State management (Redux, Zustand, MobX)
+ * - Real-time notifications (Telegram, Discord, Email)
+ * - Event logging and monitoring
+ * - Analytics and metrics collection
+ * - Custom business logic triggers
+ *
+ * Key features:
+ * - All methods have default implementations (no need to implement unused methods)
+ * - Automatic logging of all events via backtest.loggerService
+ * - Access to strategy context (strategyName, frameName, actionName)
+ * - Implements full IPublicAction interface
+ *
+ * Lifecycle:
+ * 1. Constructor called with (strategyName, frameName, actionName)
+ * 2. init() called once for async initialization
+ * 3. Event methods called as strategy executes (signal, breakeven, partialProfit, etc.)
+ * 4. dispose() called once for cleanup
+ *
+ * Event flow:
+ * - signal() - Called on every tick/candle (all modes)
+ * - signalLive() - Called only in live mode
+ * - signalBacktest() - Called only in backtest mode
+ * - breakeven() - Called when SL moved to entry
+ * - partialProfit() - Called on profit milestones (10%, 20%, etc.)
+ * - partialLoss() - Called on loss milestones (-10%, -20%, etc.)
+ * - ping() - Called every minute during scheduled signal monitoring
+ * - riskRejection() - Called when signal rejected by risk management
+ *
+ * @example
+ * ```typescript
+ * import { ActionBase } from "backtest-kit";
+ *
+ * // Extend ActionBase and override only needed methods
+ * class TelegramNotifier extends ActionBase {
+ *   private bot: TelegramBot | null = null;
+ *
+ *   async init() {
+ *     super.init(); // Call parent for logging
+ *     this.bot = new TelegramBot(process.env.TELEGRAM_TOKEN);
+ *     await this.bot.connect();
+ *   }
+ *
+ *   async signal(event: IStrategyTickResult) {
+ *     super.signal(event); // Call parent for logging
+ *     if (event.action === 'opened') {
+ *       await this.bot.send(
+ *         `[${this.strategyName}/${this.frameName}] Signal opened: ${event.signal.side}`
+ *       );
+ *     }
+ *   }
+ *
+ *   async breakeven(event: BreakevenContract) {
+ *     super.breakeven(event); // Call parent for logging
+ *     await this.bot.send(
+ *       `[${this.strategyName}] Breakeven reached at ${event.currentPrice}`
+ *     );
+ *   }
+ *
+ *   async dispose() {
+ *     super.dispose(); // Call parent for logging
+ *     await this.bot?.disconnect();
+ *     this.bot = null;
+ *   }
+ * }
+ *
+ * // Register the action
+ * addAction({
+ *   actionName: "telegram-notifier",
+ *   handler: TelegramNotifier
+ * });
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Redux state management example
+ * class ReduxAction extends ActionBase {
+ *   constructor(
+ *     strategyName: StrategyName,
+ *     frameName: FrameName,
+ *     actionName: ActionName,
+ *     private store: Store
+ *   ) {
+ *     super(strategyName, frameName, actionName);
+ *   }
+ *
+ *   signal(event: IStrategyTickResult) {
+ *     this.store.dispatch({
+ *       type: 'STRATEGY_SIGNAL',
+ *       payload: { event, strategyName: this.strategyName, frameName: this.frameName }
+ *     });
+ *   }
+ *
+ *   partialProfit(event: PartialProfitContract) {
+ *     this.store.dispatch({
+ *       type: 'PARTIAL_PROFIT',
+ *       payload: { event, strategyName: this.strategyName }
+ *     });
+ *   }
+ * }
+ * ```
+ */
+declare class ActionBase implements IPublicAction {
+    readonly strategyName: StrategyName;
+    readonly frameName: FrameName;
+    readonly actionName: ActionName;
+    /**
+     * Creates a new ActionBase instance.
+     *
+     * @param strategyName - Strategy identifier this action is attached to
+     * @param frameName - Timeframe identifier this action is attached to
+     * @param actionName - Action identifier
+     */
+    constructor(strategyName: StrategyName, frameName: FrameName, actionName: ActionName);
+    /**
+     * Initializes the action handler.
+     *
+     * Called once after construction. Override to perform async initialization:
+     * - Establish database connections
+     * - Initialize API clients
+     * - Load configuration files
+     * - Open file handles or network sockets
+     *
+     * Default implementation: Logs initialization event.
+     *
+     * @example
+     * ```typescript
+     * async init() {
+     *   super.init(); // Keep parent logging
+     *   this.db = await connectToDatabase();
+     *   this.telegram = new TelegramBot(process.env.TOKEN);
+     * }
+     * ```
+     */
+    init(): void | Promise<void>;
+    /**
+     * Handles signal events from all modes (live + backtest).
+     *
+     * Called every tick/candle when strategy is evaluated.
+     * Receives all signal states: idle, scheduled, opened, active, closed, cancelled.
+     *
+     * Triggered by: ActionCoreService.signal() via StrategyConnectionService
+     * Source: signalEmitter.next() in tick() and backtest() methods
+     * Frequency: Every tick/candle
+     *
+     * Default implementation: Logs signal event.
+     *
+     * @param event - Signal state result with action, state, signal data, and context
+     *
+     * @example
+     * ```typescript
+     * signal(event: IStrategyTickResult) {
+     *   if (event.action === 'opened') {
+     *     console.log(`Signal opened: ${event.signal.side} at ${event.signal.priceOpen}`);
+     *   }
+     *   if (event.action === 'closed') {
+     *     console.log(`Signal closed: PNL ${event.signal.revenue}%`);
+     *   }
+     * }
+     * ```
+     */
+    signal(event: IStrategyTickResult): void | Promise<void>;
+    /**
+     * Handles signal events from live trading only.
+     *
+     * Called every tick in live mode.
+     * Use for actions that should only run in production (e.g., sending real notifications).
+     *
+     * Triggered by: ActionCoreService.signalLive() via StrategyConnectionService
+     * Source: signalLiveEmitter.next() in tick() and backtest() methods when backtest=false
+     * Frequency: Every tick in live mode
+     *
+     * Default implementation: Logs live signal event.
+     *
+     * @param event - Signal state result from live trading
+     *
+     * @example
+     * ```typescript
+     * async signalLive(event: IStrategyTickResult) {
+     *   if (event.action === 'opened') {
+     *     await this.telegram.send('Real trade opened!');
+     *     await this.placeRealOrder(event.signal);
+     *   }
+     * }
+     * ```
+     */
+    signalLive(event: IStrategyTickResult): void | Promise<void>;
+    /**
+     * Handles signal events from backtest only.
+     *
+     * Called every candle in backtest mode.
+     * Use for actions specific to backtesting (e.g., collecting test metrics).
+     *
+     * Triggered by: ActionCoreService.signalBacktest() via StrategyConnectionService
+     * Source: signalBacktestEmitter.next() in tick() and backtest() methods when backtest=true
+     * Frequency: Every candle in backtest mode
+     *
+     * Default implementation: Logs backtest signal event.
+     *
+     * @param event - Signal state result from backtest
+     *
+     * @example
+     * ```typescript
+     * signalBacktest(event: IStrategyTickResult) {
+     *   if (event.action === 'closed') {
+     *     this.backtestMetrics.recordTrade(event.signal);
+     *   }
+     * }
+     * ```
+     */
+    signalBacktest(event: IStrategyTickResult): void | Promise<void>;
+    /**
+     * Handles breakeven events when stop-loss is moved to entry price.
+     *
+     * Called once per signal when price moves far enough to cover fees and slippage.
+     * Breakeven threshold: (CC_PERCENT_SLIPPAGE + CC_PERCENT_FEE) * 2 + CC_BREAKEVEN_THRESHOLD
+     *
+     * Triggered by: ActionCoreService.breakeven() via BreakevenConnectionService
+     * Source: breakevenSubject.next() in CREATE_COMMIT_BREAKEVEN_FN callback
+     * Frequency: Once per signal when threshold reached
+     *
+     * Default implementation: Logs breakeven event.
+     *
+     * @param event - Breakeven milestone data with signal info, current price, timestamp
+     *
+     * @example
+     * ```typescript
+     * async breakeven(event: BreakevenContract) {
+     *   await this.telegram.send(
+     *     `[${event.strategyName}] Breakeven reached! ` +
+     *     `Signal: ${event.data.side} @ ${event.currentPrice}`
+     *   );
+     * }
+     * ```
+     */
+    breakeven(event: BreakevenContract): void | Promise<void>;
+    /**
+     * Handles partial profit level events (10%, 20%, 30%, etc).
+     *
+     * Called once per profit level per signal (deduplicated).
+     * Use to track profit milestones and adjust position management.
+     *
+     * Triggered by: ActionCoreService.partialProfit() via PartialConnectionService
+     * Source: partialProfitSubject.next() in CREATE_COMMIT_PROFIT_FN callback
+     * Frequency: Once per profit level per signal
+     *
+     * Default implementation: Logs partial profit event.
+     *
+     * @param event - Profit milestone data with signal info, level (10, 20, 30...), price, timestamp
+     *
+     * @example
+     * ```typescript
+     * async partialProfit(event: PartialProfitContract) {
+     *   await this.telegram.send(
+     *     `[${event.strategyName}] Profit ${event.level}% reached! ` +
+     *     `Current price: ${event.currentPrice}`
+     *   );
+     *   // Optionally tighten stop-loss or take partial profit
+     * }
+     * ```
+     */
+    partialProfit(event: PartialProfitContract): void | Promise<void>;
+    /**
+     * Handles partial loss level events (-10%, -20%, -30%, etc).
+     *
+     * Called once per loss level per signal (deduplicated).
+     * Use to track loss milestones and implement risk management actions.
+     *
+     * Triggered by: ActionCoreService.partialLoss() via PartialConnectionService
+     * Source: partialLossSubject.next() in CREATE_COMMIT_LOSS_FN callback
+     * Frequency: Once per loss level per signal
+     *
+     * Default implementation: Logs partial loss event.
+     *
+     * @param event - Loss milestone data with signal info, level (-10, -20, -30...), price, timestamp
+     *
+     * @example
+     * ```typescript
+     * async partialLoss(event: PartialLossContract) {
+     *   await this.telegram.send(
+     *     `[${event.strategyName}] Loss ${event.level}% reached! ` +
+     *     `Current price: ${event.currentPrice}`
+     *   );
+     *   // Optionally adjust risk management
+     * }
+     * ```
+     */
+    partialLoss(event: PartialLossContract): void | Promise<void>;
+    /**
+     * Handles ping events during scheduled signal monitoring.
+     *
+     * Called every minute while a scheduled signal is waiting for activation.
+     * Use to monitor pending signals and track wait time.
+     *
+     * Triggered by: ActionCoreService.ping() via StrategyConnectionService
+     * Source: pingSubject.next() in CREATE_COMMIT_PING_FN callback
+     * Frequency: Every minute while scheduled signal is waiting
+     *
+     * Default implementation: Logs ping event.
+     *
+     * @param event - Scheduled signal monitoring data with symbol, strategy info, signal data, timestamp
+     *
+     * @example
+     * ```typescript
+     * ping(event: PingContract) {
+     *   const waitTime = Date.now() - event.data.timestampScheduled;
+     *   const waitMinutes = Math.floor(waitTime / 60000);
+     *   console.log(`Scheduled signal waiting ${waitMinutes} minutes`);
+     * }
+     * ```
+     */
+    ping(event: PingContract): void | Promise<void>;
+    /**
+     * Handles risk rejection events when signals fail risk validation.
+     *
+     * Called only when signal is rejected (not emitted for allowed signals).
+     * Use to track rejected signals and analyze risk management effectiveness.
+     *
+     * Triggered by: ActionCoreService.riskRejection() via RiskConnectionService
+     * Source: riskSubject.next() in CREATE_COMMIT_REJECTION_FN callback
+     * Frequency: Only when signal fails risk validation
+     *
+     * Default implementation: Logs risk rejection event.
+     *
+     * @param event - Risk rejection data with symbol, pending signal, rejection reason, timestamp
+     *
+     * @example
+     * ```typescript
+     * async riskRejection(event: RiskContract) {
+     *   await this.telegram.send(
+     *     `[${event.strategyName}] Signal rejected!\n` +
+     *     `Reason: ${event.rejectionNote}\n` +
+     *     `Active positions: ${event.activePositionCount}`
+     *   );
+     *   this.metrics.recordRejection(event.rejectionId);
+     * }
+     * ```
+     */
+    riskRejection(event: RiskContract): void | Promise<void>;
+    /**
+     * Cleans up resources and subscriptions when action handler is disposed.
+     *
+     * Called once when strategy execution ends.
+     * Guaranteed to run exactly once via singleshot pattern.
+     *
+     * Override to:
+     * - Close database connections
+     * - Disconnect from external services
+     * - Flush buffers
+     * - Save state to disk
+     * - Unsubscribe from observables
+     *
+     * Default implementation: Logs dispose event.
+     *
+     * @example
+     * ```typescript
+     * async dispose() {
+     *   super.dispose(); // Keep parent logging
+     *   await this.db?.disconnect();
+     *   await this.telegram?.close();
+     *   await this.cache?.quit();
+     *   console.log('Action disposed successfully');
+     * }
+     * ```
+     */
+    dispose(): void | Promise<void>;
+}
+
+/**
  * Contract for walker stop signal events.
  *
  * Emitted when Walker.stop() is called to interrupt a running walker.
@@ -12289,6 +13690,13 @@ declare class StrategySchemaService {
      *
      * @param strategySchema - Strategy schema to validate
      * @throws Error if strategyName is missing or not a string
+     * @throws Error if riskName is provided but not a string
+     * @throws Error if riskList is provided but not an array
+     * @throws Error if riskList contains duplicate values
+     * @throws Error if riskList contains non-string values
+     * @throws Error if actions is provided but not an array
+     * @throws Error if actions contains duplicate values
+     * @throws Error if actions contains non-string values
      * @throws Error if interval is missing or not a valid SignalInterval
      * @throws Error if getSignal is missing or not a function
      */
@@ -12391,6 +13799,221 @@ declare class ClientRisk implements IRisk {
 }
 
 /**
+ * Type definition for action methods.
+ * Maps all keys of IAction to any type.
+ * Used for dynamic method routing in ActionCoreService.
+ */
+type TAction$1 = {
+    [key in keyof IAction]: any;
+};
+/**
+ * Global service for action operations.
+ *
+ * Manages action dispatching for strategies by automatically resolving
+ * action lists from strategy schemas and invoking handlers for each registered action.
+ *
+ * Key responsibilities:
+ * - Retrieves action list from strategy schema (IStrategySchema.actions)
+ * - Validates strategy context (strategyName, exchangeName, frameName)
+ * - Validates all associated actions, risks from strategy schema
+ * - Dispatches events to all registered actions in sequence
+ *
+ * Used internally by strategy execution and public API.
+ */
+declare class ActionCoreService implements TAction$1 {
+    private readonly loggerService;
+    private readonly actionConnectionService;
+    private readonly actionValidationService;
+    private readonly exchangeValidationService;
+    private readonly frameValidationService;
+    private readonly strategyValidationService;
+    private readonly strategySchemaService;
+    private readonly riskValidationService;
+    /**
+     * Validates strategy context and all associated configurations.
+     *
+     * Memoized to avoid redundant validations for the same strategy-exchange-frame combination.
+     * Retrieves strategy schema and validates:
+     * - Strategy name existence
+     * - Exchange name validity
+     * - Frame name validity (if provided)
+     * - Risk profile(s) validity (if configured in strategy schema)
+     * - Action name(s) validity (if configured in strategy schema)
+     *
+     * @param context - Strategy execution context with strategyName, exchangeName and frameName
+     * @returns Promise that resolves when all validations complete
+     */
+    private validate;
+    /**
+     * Initializes all ClientAction instances for the strategy.
+     *
+     * Retrieves action list from strategy schema (IStrategySchema.actions)
+     * and invokes the init handler on each ClientAction instance sequentially.
+     * Calls waitForInit() on each action to load persisted state.
+     *
+     * @param backtest - Whether running in backtest mode (true) or live mode (false)
+     * @param context - Strategy execution context with strategyName, exchangeName, frameName
+     */
+    initFn: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Routes signal event to all registered actions for the strategy.
+     *
+     * Retrieves action list from strategy schema (IStrategySchema.actions)
+     * and invokes the signal handler on each ClientAction instance sequentially.
+     *
+     * @param backtest - Whether running in backtest mode (true) or live mode (false)
+     * @param event - Signal state result (idle, scheduled, opened, active, closed, cancelled)
+     * @param context - Strategy execution context with strategyName, exchangeName, frameName
+     */
+    signal: (backtest: boolean, event: IStrategyTickResult, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Routes signal event from live trading to all registered actions.
+     *
+     * Retrieves action list from strategy schema (IStrategySchema.actions)
+     * and invokes the signalLive handler on each ClientAction instance sequentially.
+     *
+     * @param backtest - Whether running in backtest mode (always false for signalLive)
+     * @param event - Signal state result from live trading
+     * @param context - Strategy execution context with strategyName, exchangeName, frameName
+     */
+    signalLive: (backtest: boolean, event: IStrategyTickResult, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Routes signal event from backtest to all registered actions.
+     *
+     * Retrieves action list from strategy schema (IStrategySchema.actions)
+     * and invokes the signalBacktest handler on each ClientAction instance sequentially.
+     *
+     * @param backtest - Whether running in backtest mode (always true for signalBacktest)
+     * @param event - Signal state result from backtest
+     * @param context - Strategy execution context with strategyName, exchangeName, frameName
+     */
+    signalBacktest: (backtest: boolean, event: IStrategyTickResult, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Routes breakeven event to all registered actions for the strategy.
+     *
+     * Retrieves action list from strategy schema (IStrategySchema.actions)
+     * and invokes the breakeven handler on each ClientAction instance sequentially.
+     *
+     * @param backtest - Whether running in backtest mode (true) or live mode (false)
+     * @param event - Breakeven milestone data (stop-loss moved to entry price)
+     * @param context - Strategy execution context with strategyName, exchangeName, frameName
+     */
+    breakeven: (backtest: boolean, event: BreakevenContract, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Routes partial profit event to all registered actions for the strategy.
+     *
+     * Retrieves action list from strategy schema (IStrategySchema.actions)
+     * and invokes the partialProfit handler on each ClientAction instance sequentially.
+     *
+     * @param backtest - Whether running in backtest mode (true) or live mode (false)
+     * @param event - Profit milestone data with level (10%, 20%, etc.) and price
+     * @param context - Strategy execution context with strategyName, exchangeName, frameName
+     */
+    partialProfit: (backtest: boolean, event: PartialProfitContract, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Routes partial loss event to all registered actions for the strategy.
+     *
+     * Retrieves action list from strategy schema (IStrategySchema.actions)
+     * and invokes the partialLoss handler on each ClientAction instance sequentially.
+     *
+     * @param backtest - Whether running in backtest mode (true) or live mode (false)
+     * @param event - Loss milestone data with level (-10%, -20%, etc.) and price
+     * @param context - Strategy execution context with strategyName, exchangeName, frameName
+     */
+    partialLoss: (backtest: boolean, event: PartialLossContract, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Routes ping event to all registered actions for the strategy.
+     *
+     * Retrieves action list from strategy schema (IStrategySchema.actions)
+     * and invokes the ping handler on each ClientAction instance sequentially.
+     * Called every minute during scheduled signal monitoring.
+     *
+     * @param backtest - Whether running in backtest mode (true) or live mode (false)
+     * @param event - Scheduled signal monitoring data
+     * @param context - Strategy execution context with strategyName, exchangeName, frameName
+     */
+    ping: (backtest: boolean, event: PingContract, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Routes risk rejection event to all registered actions for the strategy.
+     *
+     * Retrieves action list from strategy schema (IStrategySchema.actions)
+     * and invokes the riskRejection handler on each ClientAction instance sequentially.
+     * Called only when a signal fails risk validation.
+     *
+     * @param backtest - Whether running in backtest mode (true) or live mode (false)
+     * @param event - Risk rejection data with reason and context
+     * @param context - Strategy execution context with strategyName, exchangeName, frameName
+     */
+    riskRejection: (backtest: boolean, event: RiskContract, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Disposes all ClientAction instances for the strategy.
+     *
+     * Retrieves action list from strategy schema (IStrategySchema.actions)
+     * and invokes the dispose handler on each ClientAction instance sequentially.
+     * Called when strategy execution ends to clean up resources.
+     *
+     * @param backtest - Whether running in backtest mode (true) or live mode (false)
+     * @param context - Strategy execution context with strategyName, exchangeName, frameName
+     */
+    dispose: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Clears action data.
+     *
+     * If payload is provided, validates and clears data for the specific action instance.
+     * If no payload is provided, clears all action data across all strategies.
+     *
+     * @param payload - Optional payload with actionName, strategyName, exchangeName, frameName, backtest (clears all if not provided)
+     */
+    clear: (payload?: {
+        actionName: ActionName;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+        backtest: boolean;
+    }) => Promise<void>;
+}
+
+/**
  * Type definition for risk methods.
  * Maps all keys of IRisk to any type.
  * Used for dynamic method routing in RiskConnectionService.
@@ -12433,6 +14056,10 @@ type TRisk$1 = {
 declare class RiskConnectionService implements TRisk$1 {
     private readonly loggerService;
     private readonly riskSchemaService;
+    /**
+     * Action core service injected from DI container.
+     */
+    readonly actionCoreService: ActionCoreService;
     /**
      * Retrieves memoized ClientRisk instance for given risk name, exchange, frame and backtest mode.
      *
@@ -12550,6 +14177,10 @@ declare class PartialConnectionService implements IPartial {
      */
     private readonly loggerService;
     /**
+     * Action core service injected from DI container.
+     */
+    readonly actionCoreService: ActionCoreService;
+    /**
      * Memoized factory function for ClientPartial instances.
      *
      * Creates one ClientPartial per signal ID and backtest mode with configured callbacks.
@@ -12647,6 +14278,10 @@ declare class BreakevenConnectionService implements IBreakeven {
      */
     private readonly loggerService;
     /**
+     * Action core service injected from DI container.
+     */
+    readonly actionCoreService: ActionCoreService;
+    /**
      * Memoized factory function for ClientBreakeven instances.
      *
      * Creates one ClientBreakeven per signal ID and backtest mode with configured callbacks.
@@ -12732,6 +14367,7 @@ declare class StrategyConnectionService implements TStrategy$1 {
     readonly exchangeConnectionService: ExchangeConnectionService;
     readonly partialConnectionService: PartialConnectionService;
     readonly breakevenConnectionService: BreakevenConnectionService;
+    readonly actionCoreService: ActionCoreService;
     /**
      * Retrieves memoized ClientStrategy instance for given symbol-strategy pair with exchange and frame isolation.
      *
@@ -12877,10 +14513,24 @@ declare class StrategyConnectionService implements TStrategy$1 {
         frameName: FrameName;
     }) => Promise<void>;
     /**
+     * Disposes the ClientStrategy instance for the given context.
+     *
+     * Calls dispose callback, then removes strategy from cache.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     */
+    dispose: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
      * Clears the memoized ClientStrategy instance from cache.
      *
-     * Forces re-initialization of strategy on next getStrategy call.
-     * Useful for resetting strategy state or releasing resources.
+     * If payload is provided, disposes the specific strategy instance.
+     * If no payload is provided, clears all strategy instances.
      *
      * @param payload - Optional payload with symbol, context and backtest flag (clears all if not provided)
      */
@@ -13239,6 +14889,312 @@ declare class SizingConnectionService implements TSizing$1 {
 }
 
 /**
+ * ClientAction implementation for action handler execution.
+ *
+ * Provides lifecycle management and event routing for action handlers:
+ * - Initializes handler instance with strategy context
+ * - Routes events to handler methods and callbacks
+ * - Manages disposal and cleanup
+ *
+ * Action handlers implement custom logic for:
+ * - State management (Redux, Zustand, MobX)
+ * - Event logging and monitoring
+ * - Real-time notifications (Telegram, Discord, email)
+ * - Analytics and metrics collection
+ *
+ * Used internally by strategy execution to integrate action handlers.
+ */
+declare class ClientAction implements IAction {
+    readonly params: IActionParams;
+    /**
+     * Handler instance created from params.handler constructor.
+     * Starts as null, gets initialized on first use.
+     */
+    _handlerInstance: Partial<IPublicAction> | null;
+    /**
+     * Creates a new ClientAction instance.
+     *
+     * @param params - Action parameters including handler, callbacks, and context
+     * @param params.actionName - Unique action identifier
+     * @param params.handler - Action handler constructor
+     * @param params.callbacks - Optional lifecycle and event callbacks
+     * @param params.logger - Logger service for debugging
+     * @param params.strategyName - Strategy identifier
+     * @param params.exchangeName - Exchange identifier
+     * @param params.frameName - Timeframe identifier
+     * @param params.backtest - Whether running in backtest mode
+     *
+     * @example
+     * ```typescript
+     * const actionClient = new ClientAction({
+     *   actionName: "telegram-notifier",
+     *   handler: TelegramNotifier,
+     *   callbacks: {
+     *     onInit: async (actionName, strategyName, frameName, backtest) => {
+     *       console.log(`Initialized ${actionName} for ${strategyName}/${frameName}`);
+     *     },
+     *     onSignal: (event, actionName, strategyName, frameName, backtest) => {
+     *       console.log(`Signal: ${event.action}`);
+     *     }
+     *   },
+     *   logger: loggerService,
+     *   strategyName: "rsi_divergence",
+     *   exchangeName: "binance",
+     *   frameName: "1h",
+     *   backtest: false
+     * });
+     *
+     * await actionClient.signal({
+     *   action: 'opened',
+     *   signal: { id: '123', side: 'long' },
+     *   backtest: false
+     * });
+     *
+     * await actionClient.dispose();
+     * ```
+     */
+    constructor(params: IActionParams);
+    /**
+     * Initializes handler instance using singleshot pattern.
+     * Ensures initialization happens exactly once.
+     */
+    waitForInit: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+    /**
+     * Handles signal events from all modes (live + backtest).
+     */
+    signal(event: IStrategyTickResult): Promise<void>;
+    /**
+     * Handles signal events from live trading only.
+     */
+    signalLive(event: IStrategyTickResult): Promise<void>;
+    /**
+     * Handles signal events from backtest only.
+     */
+    signalBacktest(event: IStrategyTickResult): Promise<void>;
+    /**
+     * Handles breakeven events when stop-loss is moved to entry price.
+     */
+    breakeven(event: BreakevenContract): Promise<void>;
+    /**
+     * Handles partial profit level events (10%, 20%, 30%, etc).
+     */
+    partialProfit(event: PartialProfitContract): Promise<void>;
+    /**
+     * Handles partial loss level events (-10%, -20%, -30%, etc).
+     */
+    partialLoss(event: PartialLossContract): Promise<void>;
+    /**
+     * Handles ping events during scheduled signal monitoring.
+     */
+    ping(event: PingContract): Promise<void>;
+    /**
+     * Handles risk rejection events when signals fail risk validation.
+     */
+    riskRejection(event: RiskContract): Promise<void>;
+    /**
+     * Cleans up resources and subscriptions when action handler is no longer needed.
+     * Uses singleshot pattern to ensure cleanup happens exactly once.
+     */
+    dispose: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+}
+
+/**
+ * Type definition for action methods.
+ * Maps all keys of IAction to any type.
+ * Used for dynamic method routing in ActionConnectionService.
+ */
+type TAction = {
+    [key in keyof IAction]: any;
+};
+/**
+ * Connection service routing action operations to correct ClientAction instance.
+ *
+ * Routes action calls to the appropriate action implementation
+ * based on the provided actionName parameter. Uses memoization to cache
+ * ClientAction instances for performance.
+ *
+ * Key features:
+ * - Explicit action routing via actionName parameter
+ * - Memoized ClientAction instances by actionName, strategyName, frameName
+ * - Event routing to action handlers
+ *
+ * @example
+ * ```typescript
+ * // Used internally by framework
+ * await actionConnectionService.signal(
+ *   event,
+ *   {
+ *     actionName: "telegram-notifier",
+ *     strategyName: "rsi_divergence",
+ *     exchangeName: "binance",
+ *     frameName: "1h",
+ *     backtest: false
+ *   }
+ * );
+ * ```
+ */
+declare class ActionConnectionService implements TAction {
+    private readonly loggerService;
+    private readonly actionSchemaService;
+    /**
+     * Retrieves memoized ClientAction instance for given action name, strategy, exchange, frame and backtest mode.
+     *
+     * Creates ClientAction on first call, returns cached instance on subsequent calls.
+     * Cache key includes strategyName, exchangeName and frameName to isolate action per strategy-frame pair.
+     *
+     * @param actionName - Name of registered action schema
+     * @param strategyName - Strategy name
+     * @param exchangeName - Exchange name
+     * @param frameName - Frame name (empty string for live)
+     * @param backtest - True if backtest mode, false if live mode
+     * @returns Configured ClientAction instance
+     */
+    getAction: ((actionName: ActionName, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ClientAction) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, ClientAction>;
+    /**
+     * Initializes the ClientAction instance for the given action name.
+     *
+     * Calls waitForInit() on the action instance to load persisted state.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param context - Execution context with action name, strategy name, exchange name, frame name
+     */
+    initFn: (backtest: boolean, context: {
+        actionName: ActionName;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Routes signal event to appropriate ClientAction instance.
+     *
+     * @param event - Signal event data
+     * @param backtest - Whether running in backtest mode
+     * @param context - Execution context with action name, strategy name, exchange name, frame name
+     */
+    signal: (event: IStrategyTickResult, backtest: boolean, context: {
+        actionName: ActionName;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Routes signalLive event to appropriate ClientAction instance.
+     *
+     * @param event - Signal event data from live trading
+     * @param backtest - Whether running in backtest mode
+     * @param context - Execution context with action name, strategy name, exchange name, frame name
+     */
+    signalLive: (event: IStrategyTickResult, backtest: boolean, context: {
+        actionName: ActionName;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Routes signalBacktest event to appropriate ClientAction instance.
+     *
+     * @param event - Signal event data from backtest
+     * @param backtest - Whether running in backtest mode
+     * @param context - Execution context with action name, strategy name, exchange name, frame name
+     */
+    signalBacktest: (event: IStrategyTickResult, backtest: boolean, context: {
+        actionName: ActionName;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Routes breakeven event to appropriate ClientAction instance.
+     *
+     * @param event - Breakeven event data
+     * @param backtest - Whether running in backtest mode
+     * @param context - Execution context with action name, strategy name, exchange name, frame name
+     */
+    breakeven: (event: BreakevenContract, backtest: boolean, context: {
+        actionName: ActionName;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Routes partialProfit event to appropriate ClientAction instance.
+     *
+     * @param event - Partial profit event data
+     * @param backtest - Whether running in backtest mode
+     * @param context - Execution context with action name, strategy name, exchange name, frame name
+     */
+    partialProfit: (event: PartialProfitContract, backtest: boolean, context: {
+        actionName: ActionName;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Routes partialLoss event to appropriate ClientAction instance.
+     *
+     * @param event - Partial loss event data
+     * @param backtest - Whether running in backtest mode
+     * @param context - Execution context with action name, strategy name, exchange name, frame name
+     */
+    partialLoss: (event: PartialLossContract, backtest: boolean, context: {
+        actionName: ActionName;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Routes ping event to appropriate ClientAction instance.
+     *
+     * @param event - Ping event data
+     * @param backtest - Whether running in backtest mode
+     * @param context - Execution context with action name, strategy name, exchange name, frame name
+     */
+    ping: (event: PingContract, backtest: boolean, context: {
+        actionName: ActionName;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Routes riskRejection event to appropriate ClientAction instance.
+     *
+     * @param event - Risk rejection event data
+     * @param backtest - Whether running in backtest mode
+     * @param context - Execution context with action name, strategy name, exchange name, frame name
+     */
+    riskRejection: (event: RiskContract, backtest: boolean, context: {
+        actionName: ActionName;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Disposes the ClientAction instance for the given action name.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param context - Execution context with action name, strategy name, exchange name, frame name
+     */
+    dispose: (backtest: boolean, context: {
+        actionName: ActionName;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Clears the cached ClientAction instance for the given action name.
+     *
+     * @param payload - Optional payload with actionName, strategyName, exchangeName, frameName, backtest (clears all if not provided)
+     */
+    clear: (payload?: {
+        actionName: ActionName;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+        backtest: boolean;
+    }) => Promise<void>;
+}
+
+/**
  * Type definition for exchange methods.
  * Maps all keys of IExchange to any type.
  * Used for dynamic method routing in ExchangeCoreService.
@@ -13519,10 +15475,25 @@ declare class StrategyCoreService implements TStrategy {
         frameName: FrameName;
     }, cancelId?: string) => Promise<void>;
     /**
+     * Disposes the ClientStrategy instance for the given context.
+     *
+     * Calls dispose on the strategy instance to clean up resources,
+     * then removes it from cache.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     */
+    dispose: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
      * Clears the memoized ClientStrategy instance from cache.
      *
-     * Delegates to StrategyConnectionService.clear() to remove strategy from cache.
-     * Forces re-initialization of strategy on next operation.
+     * Delegates to StrategyConnectionService.dispose() if payload provided,
+     * otherwise clears all strategy instances.
      *
      * @param payload - Optional payload with symbol, context and backtest flag (clears all if not provided)
      */
@@ -13968,6 +15939,7 @@ declare class WalkerCommandService implements TWalkerLogicPublicService {
     private readonly walkerValidationService;
     private readonly strategySchemaService;
     private readonly riskValidationService;
+    private readonly actionValidationService;
     /**
      * Runs walker comparison for a symbol with context propagation.
      *
@@ -14169,6 +16141,54 @@ declare class RiskSchemaService {
      * @throws Error if risk name doesn't exist
      */
     get: (key: RiskName) => IRiskSchema;
+}
+
+/**
+ * Service for managing action schema registry.
+ *
+ * Uses ToolRegistry from functools-kit for type-safe schema storage.
+ * Action handlers are registered via addAction() and retrieved by name.
+ */
+declare class ActionSchemaService {
+    readonly loggerService: LoggerService;
+    private _registry;
+    /**
+     * Registers a new action schema.
+     *
+     * @param key - Unique action name
+     * @param value - Action schema configuration
+     * @throws Error if action name already exists
+     */
+    register: (key: ActionName, value: IActionSchema) => void;
+    /**
+     * Validates action schema structure for required properties.
+     *
+     * Performs shallow validation to ensure all required properties exist
+     * and have correct types before registration in the registry.
+     *
+     * @param actionSchema - Action schema to validate
+     * @throws Error if actionName is missing or not a string
+     * @throws Error if handler is missing or not a function
+     * @throws Error if callbacks is not an object
+     */
+    private validateShallow;
+    /**
+     * Overrides an existing action schema with partial updates.
+     *
+     * @param key - Action name to override
+     * @param value - Partial schema updates
+     * @returns Updated action schema
+     * @throws Error if action name doesn't exist
+     */
+    override: (key: ActionName, value: Partial<IActionSchema>) => IActionSchema;
+    /**
+     * Retrieves an action schema by name.
+     *
+     * @param key - Action name
+     * @returns Action schema configuration
+     * @throws Error if action name doesn't exist
+     */
+    get: (key: ActionName) => IActionSchema;
 }
 
 /**
@@ -14451,6 +16471,7 @@ declare class LiveCommandService implements TLiveLogicPublicService {
     private readonly exchangeValidationService;
     private readonly strategySchemaService;
     private readonly riskValidationService;
+    private readonly actionValidationService;
     /**
      * Runs live trading for a symbol with context propagation.
      *
@@ -14483,6 +16504,7 @@ declare class BacktestCommandService implements TBacktestLogicPublicService {
     private readonly loggerService;
     private readonly strategySchemaService;
     private readonly riskValidationService;
+    private readonly actionValidationService;
     private readonly backtestLogicPublicService;
     private readonly strategyValidationService;
     private readonly exchangeValidationService;
@@ -14561,24 +16583,29 @@ declare class ExchangeValidationService {
  * Service for managing and validating trading strategy configurations.
  *
  * Maintains a registry of all configured strategies, validates their existence
- * before operations, and ensures associated risk profiles are valid.
+ * before operations, and ensures associated risk profiles and actions are valid.
  * Uses memoization for performance.
  *
  * Key features:
  * - Registry management: addStrategy() to register new strategies
- * - Dual validation: validates both strategy existence and risk profile (if configured)
+ * - Multi-level validation: validates strategy existence, risk profiles, and actions (if configured)
  * - Memoization: validation results are cached for performance
  * - Listing: list() returns all registered strategies
  *
  * @throws {Error} If duplicate strategy name is added
  * @throws {Error} If unknown strategy is referenced
  * @throws {Error} If strategy's risk profile doesn't exist
+ * @throws {Error} If strategy's action doesn't exist
  *
  * @example
  * ```typescript
  * const strategyValidation = new StrategyValidationService();
- * strategyValidation.addStrategy("momentum-btc", { ...schema, riskName: "conservative" });
- * strategyValidation.validate("momentum-btc", "backtest"); // Validates strategy + risk
+ * strategyValidation.addStrategy("momentum-btc", {
+ *   ...schema,
+ *   riskName: "conservative",
+ *   actions: ["telegram-notifier", "redux-logger"]
+ * });
+ * strategyValidation.validate("momentum-btc", "backtest"); // Validates strategy + risk + actions
  * strategyValidation.validate("unknown", "live"); // Throws error
  * ```
  */
@@ -14597,6 +16624,12 @@ declare class StrategyValidationService {
     private readonly riskValidationService;
     /**
      * @private
+     * @readonly
+     * Injected action validation service instance
+     */
+    private readonly actionValidationService;
+    /**
+     * @private
      * Map storing strategy schemas by strategy name
      */
     private _strategyMap;
@@ -14607,10 +16640,12 @@ declare class StrategyValidationService {
      */
     addStrategy: (strategyName: StrategyName, strategySchema: IStrategySchema) => void;
     /**
-     * Validates the existence of a strategy and its risk profile (if configured)
+     * Validates the existence of a strategy and its associated configurations (risk profiles and actions)
      * @public
      * @throws {Error} If strategyName is not found
      * @throws {Error} If riskName is configured but not found
+     * @throws {Error} If riskList contains invalid risk names
+     * @throws {Error} If actions list contains invalid action names
      * Memoized function to cache validation results
      */
     validate: (strategyName: StrategyName, source: string) => void;
@@ -14847,6 +16882,62 @@ declare class RiskValidationService {
      * @returns Array of risk schemas with their configurations
      */
     list: () => Promise<IRiskSchema[]>;
+}
+
+/**
+ * Service for managing and validating action handler configurations.
+ *
+ * Maintains a registry of all configured action handlers and validates
+ * their existence before operations. Uses memoization for performance.
+ *
+ * Key features:
+ * - Registry management: addAction() to register new action handlers
+ * - Validation: validate() ensures action handler exists before use
+ * - Memoization: validation results are cached by actionName:source for performance
+ * - Listing: list() returns all registered action handlers
+ *
+ * @throws {Error} If duplicate action name is added
+ * @throws {Error} If unknown action handler is referenced
+ *
+ * @example
+ * ```typescript
+ * const actionValidation = new ActionValidationService();
+ * actionValidation.addAction("telegram-notifier", telegramSchema);
+ * actionValidation.validate("telegram-notifier", "strategy-1"); // OK
+ * actionValidation.validate("unknown", "strategy-2"); // Throws error
+ * ```
+ */
+declare class ActionValidationService {
+    /**
+     * @private
+     * @readonly
+     * Injected logger service instance
+     */
+    private readonly loggerService;
+    /**
+     * @private
+     * Map storing action schemas by action name
+     */
+    private _actionMap;
+    /**
+     * Adds an action schema to the validation service
+     * @public
+     * @throws {Error} If actionName already exists
+     */
+    addAction: (actionName: ActionName, actionSchema: IActionSchema) => void;
+    /**
+     * Validates the existence of an action handler
+     * @public
+     * @throws {Error} If actionName is not found
+     * Memoized function to cache validation results
+     */
+    validate: (actionName: ActionName, source: string) => void;
+    /**
+     * Returns a list of all registered action schemas
+     * @public
+     * @returns Array of action schemas with their configurations
+     */
+    list: () => Promise<IActionSchema[]>;
 }
 
 /**
@@ -16235,6 +18326,7 @@ declare const backtest: {
     walkerValidationService: WalkerValidationService;
     sizingValidationService: SizingValidationService;
     riskValidationService: RiskValidationService;
+    actionValidationService: ActionValidationService;
     optimizerValidationService: OptimizerValidationService;
     configValidationService: ConfigValidationService;
     columnValidationService: ColumnValidationService;
@@ -16273,6 +18365,7 @@ declare const backtest: {
     breakevenGlobalService: BreakevenGlobalService;
     exchangeCoreService: ExchangeCoreService;
     strategyCoreService: StrategyCoreService;
+    actionCoreService: ActionCoreService;
     frameCoreService: FrameCoreService;
     exchangeSchemaService: ExchangeSchemaService;
     strategySchemaService: StrategySchemaService;
@@ -16280,12 +18373,14 @@ declare const backtest: {
     walkerSchemaService: WalkerSchemaService;
     sizingSchemaService: SizingSchemaService;
     riskSchemaService: RiskSchemaService;
+    actionSchemaService: ActionSchemaService;
     optimizerSchemaService: OptimizerSchemaService;
     exchangeConnectionService: ExchangeConnectionService;
     strategyConnectionService: StrategyConnectionService;
     frameConnectionService: FrameConnectionService;
     sizingConnectionService: SizingConnectionService;
     riskConnectionService: RiskConnectionService;
+    actionConnectionService: ActionConnectionService;
     optimizerConnectionService: OptimizerConnectionService;
     partialConnectionService: PartialConnectionService;
     breakevenConnectionService: BreakevenConnectionService;
@@ -16298,4 +18393,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, type BootstrapNotification, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IOrderBookData, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, type PingContract, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, breakeven, cancel, dumpSignal, emitters, formatPrice, formatQuantity, get, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, getOrderBook, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenBreakeven, listenBreakevenOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenPing, listenPingOnce, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, partialLoss, partialProfit, roundTicks, set, setColumns, setConfig, setLogger, stop, trailingStop, trailingTake, validate };
+export { ActionBase, Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, type BootstrapNotification, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IOrderBookData, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, type PingContract, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addAction, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, breakeven, cancel, dumpSignal, emitters, formatPrice, formatQuantity, get, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, getOrderBook, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenBreakeven, listenBreakevenOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenPing, listenPingOnce, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideAction, overrideExchange, overrideFrame, overrideOptimizer, overrideRisk, overrideSizing, overrideStrategy, overrideWalker, partialLoss, partialProfit, roundTicks, set, setColumns, setConfig, setLogger, stop, trailingStop, trailingTake, validate };

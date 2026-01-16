@@ -9,6 +9,7 @@ import { riskSubject } from "../../../config/emitters";
 import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
 import { StrategyName } from "../../../interfaces/Strategy.interface";
+import ActionCoreService from "../core/ActionCoreService";
 
 /**
  * Creates a unique key for memoizing ClientRisk instances.
@@ -32,31 +33,29 @@ const CREATE_KEY_FN = (
 };
 
 /**
- * Callback function for emitting risk rejection events to riskSubject.
+ * Creates a callback function for emitting risk rejection events to riskSubject.
  *
  * Called by ClientRisk when a signal is rejected due to risk validation failure.
- * Emits RiskContract event to all subscribers.
+ * Emits RiskContract event to all subscribers and calls ActionCoreService.
  *
- * @param symbol - Trading pair symbol
- * @param params - Risk check arguments
- * @param activePositionCount - Number of active positions at rejection time
- * @param rejectionResult - Rejection result with id and note
- * @param timestamp - Event timestamp in milliseconds
- * @param backtest - True if backtest mode, false if live mode
+ * @param self - Reference to RiskConnectionService instance
  * @param exchangeName - Exchange name
  * @param frameName - Frame name
+ * @returns Callback function for risk rejection events
  */
-const COMMIT_REJECTION_FN = async (
+const CREATE_COMMIT_REJECTION_FN = (
+  self: RiskConnectionService,
+  exchangeName: ExchangeName,
+  frameName: FrameName
+) => async (
   symbol: string,
   params: IRiskCheckArgs,
   activePositionCount: number,
   rejectionResult: IRiskRejectionResult,
   timestamp: number,
-  backtest: boolean,
-  exchangeName: ExchangeName,
-  frameName: FrameName
-) =>
-  await riskSubject.next({
+  backtest: boolean
+) => {
+  const event = {
     symbol,
     pendingSignal: params.pendingSignal,
     strategyName: params.strategyName,
@@ -68,7 +67,10 @@ const COMMIT_REJECTION_FN = async (
     frameName,
     timestamp,
     backtest,
-  });
+  };
+  await riskSubject.next(event);
+  await self.actionCoreService.riskRejection(backtest, event, { strategyName: params.strategyName, exchangeName, frameName });
+};
 
 /**
  * Type definition for risk methods.
@@ -118,6 +120,11 @@ export class RiskConnectionService implements TRisk {
   );
 
   /**
+   * Action core service injected from DI container.
+   */
+  public readonly actionCoreService = inject<ActionCoreService>(TYPES.actionCoreService);
+
+  /**
    * Retrieves memoized ClientRisk instance for given risk name, exchange, frame and backtest mode.
    *
    * Creates ClientRisk on first call, returns cached instance on subsequent calls.
@@ -139,17 +146,7 @@ export class RiskConnectionService implements TRisk {
         logger: this.loggerService,
         backtest,
         exchangeName,
-        onRejected: (symbol, params, activePositionCount, rejectionResult, timestamp, backtest) =>
-          COMMIT_REJECTION_FN(
-            symbol,
-            params,
-            activePositionCount,
-            rejectionResult,
-            timestamp,
-            backtest,
-            exchangeName,
-            frameName
-          ),
+        onRejected: CREATE_COMMIT_REJECTION_FN(this, exchangeName, frameName),
       });
     }
   );

@@ -215,7 +215,7 @@ export class WalkerInstance {
       }
 
       {
-        const { riskName, riskList } =
+        const { riskName, riskList, actions } =
           backtest.strategySchemaService.get(strategyName);
         riskName && backtest.riskGlobalService.clear({
           riskName,
@@ -227,6 +227,16 @@ export class WalkerInstance {
           riskList.forEach((riskName) =>
             backtest.riskGlobalService.clear({
               riskName,
+              exchangeName: walkerSchema.exchangeName,
+              frameName: walkerSchema.frameName,
+              backtest: true
+            })
+          );
+        actions &&
+          actions.forEach((actionName) =>
+            backtest.actionCoreService.clear({
+              actionName,
+              strategyName,
               exchangeName: walkerSchema.exchangeName,
               frameName: walkerSchema.frameName,
               backtest: true
@@ -376,7 +386,7 @@ export class WalkerUtils {
         strategyName,
         WALKER_METHOD_NAME_RUN
       );
-      const { riskName, riskList } =
+      const { riskName, riskList, actions } =
         backtest.strategySchemaService.get(strategyName);
       riskName &&
         backtest.riskValidationService.validate(
@@ -387,6 +397,13 @@ export class WalkerUtils {
         riskList.forEach((riskName) =>
           backtest.riskValidationService.validate(
             riskName,
+            WALKER_METHOD_NAME_RUN
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
             WALKER_METHOD_NAME_RUN
           )
         );
@@ -442,7 +459,7 @@ export class WalkerUtils {
         strategyName,
         WALKER_METHOD_NAME_BACKGROUND
       );
-      const { riskName, riskList } =
+      const { riskName, riskList, actions } =
         backtest.strategySchemaService.get(strategyName);
       riskName &&
         backtest.riskValidationService.validate(
@@ -453,6 +470,13 @@ export class WalkerUtils {
         riskList.forEach((riskName) =>
           backtest.riskValidationService.validate(
             riskName,
+            WALKER_METHOD_NAME_BACKGROUND
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
             WALKER_METHOD_NAME_BACKGROUND
           )
         );
@@ -507,7 +531,7 @@ export class WalkerUtils {
         strategyName,
         WALKER_METHOD_NAME_STOP
       );
-      const { riskName, riskList } =
+      const { riskName, riskList, actions } =
         backtest.strategySchemaService.get(strategyName);
       riskName &&
         backtest.riskValidationService.validate(
@@ -518,6 +542,13 @@ export class WalkerUtils {
         riskList.forEach((riskName) =>
           backtest.riskValidationService.validate(
             riskName,
+            WALKER_METHOD_NAME_STOP
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
             WALKER_METHOD_NAME_STOP
           )
         );
@@ -568,7 +599,7 @@ export class WalkerUtils {
         strategyName,
         WALKER_METHOD_NAME_GET_DATA
       );
-      const { riskName, riskList } =
+      const { riskName, riskList, actions } =
         backtest.strategySchemaService.get(strategyName);
       riskName &&
         backtest.riskValidationService.validate(
@@ -579,6 +610,13 @@ export class WalkerUtils {
         riskList.forEach((riskName) =>
           backtest.riskValidationService.validate(
             riskName,
+            WALKER_METHOD_NAME_GET_DATA
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
             WALKER_METHOD_NAME_GET_DATA
           )
         );
@@ -634,7 +672,7 @@ export class WalkerUtils {
         strategyName,
         WALKER_METHOD_NAME_GET_REPORT
       );
-      const { riskName, riskList } =
+      const { riskName, riskList, actions } =
         backtest.strategySchemaService.get(strategyName);
       riskName &&
         backtest.riskValidationService.validate(
@@ -645,6 +683,13 @@ export class WalkerUtils {
         riskList.forEach((riskName) =>
           backtest.riskValidationService.validate(
             riskName,
+            WALKER_METHOD_NAME_GET_REPORT
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
             WALKER_METHOD_NAME_GET_REPORT
           )
         );
@@ -707,7 +752,7 @@ export class WalkerUtils {
         strategyName,
         WALKER_METHOD_NAME_DUMP
       );
-      const { riskName, riskList } =
+      const { riskName, riskList, actions } =
         backtest.strategySchemaService.get(strategyName);
       riskName &&
         backtest.riskValidationService.validate(
@@ -718,6 +763,13 @@ export class WalkerUtils {
         riskList.forEach((riskName) =>
           backtest.riskValidationService.validate(
             riskName,
+            WALKER_METHOD_NAME_DUMP
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
             WALKER_METHOD_NAME_DUMP
           )
         );

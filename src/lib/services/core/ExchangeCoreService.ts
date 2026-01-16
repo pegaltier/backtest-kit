@@ -17,6 +17,16 @@ import { memoize, singleshot } from "functools-kit";
 const METHOD_NAME_VALIDATE = "exchangeCoreService validate";
 
 /**
+ * Creates a unique key for memoizing validate calls.
+ * Key format: "exchangeName"
+ * @param exchangeName - Exchange name
+ * @returns Unique string key for memoization
+ */
+const CREATE_KEY_FN = (exchangeName: ExchangeName): string => {
+  return exchangeName;
+};
+
+/**
  * Type definition for exchange methods.
  * Maps all keys of IExchange to any type.
  * Used for dynamic method routing in ExchangeCoreService.
@@ -51,7 +61,7 @@ export class ExchangeCoreService implements TExchange {
    * @returns Promise that resolves when validation is complete
    */
   private validate = memoize(
-    ([exchangeName]) => `${exchangeName}`,
+    ([exchangeName]) => CREATE_KEY_FN(exchangeName),
     async (exchangeName: ExchangeName) => {
       this.loggerService.log(METHOD_NAME_VALIDATE, {
         exchangeName,

@@ -6,6 +6,7 @@ import { IRisk, RiskName } from "./Risk.interface";
 import { IPartial } from "./Partial.interface";
 import { IBreakeven } from "./Breakeven.interface";
 import { FrameName } from "./Frame.interface";
+import { ActionName } from "./Action.interface";
 
 /**
  * Signal generation interval for throttling.
@@ -181,8 +182,12 @@ export interface IScheduledSignalCancelRow extends IScheduledSignalRow {
 export interface IStrategyParams extends IStrategySchema {
   /** Exchange name (e.g., "binance") */
   exchangeName: ExchangeName;
+  /** Time frame name for tracking (e.g., "1m", "5m") */
+  frameName: FrameName;
   /** Trading pair symbol (e.g., "BTCUSDT") */
   symbol: string;
+  /** Whether this event is from backtest mode (true) or live mode (false) */
+  backtest: boolean;
   /** Partial handling service for partial profit/loss */
   partial: IPartial;
   /** Breakeven handling service for stop-loss protection */
@@ -197,8 +202,12 @@ export interface IStrategyParams extends IStrategySchema {
   execution: TExecutionContextService;
   /** Method context service (strategyName, exchangeName, frameName) */
   method: TMethodContextService;
+  /** System callback for init events (emits to initSubject) */
+  onInit: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<void>;
   /** System callback for ping events (emits to pingSubject) */
   onPing: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, data: IPublicSignalRow, backtest: boolean, timestamp: number) => Promise<void>;
+  /** System callback for dispose events (emits to disposeSubject) */
+  onDispose: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<void>;
 }
 
 /**
@@ -260,6 +269,8 @@ export interface IStrategySchema {
   riskName?: RiskName;
   /** Optional several risk profile list for risk management (if multiple required) */
   riskList?: RiskName[];
+  /** Optional list of action identifiers to attach to this strategy */
+  actions?: ActionName[];
 }
 
 /**
@@ -840,6 +851,16 @@ export interface IStrategy {
    * ```
    */
   breakeven: (symbol: string, currentPrice: number, backtest: boolean) => Promise<boolean>;
+
+  /**
+   * Disposes the strategy instance and cleans up resources.
+   *
+   * Called when the strategy is being removed from cache or shut down.
+   * Invokes the onDispose callback to notify external systems.
+   *
+   * @returns Promise that resolves when disposal is complete
+   */
+  dispose: () => Promise<void>;
 }
 
 /**

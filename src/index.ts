@@ -20,6 +20,7 @@ export {
   getDefaultColumns,
 } from "./function/setup";
 export {
+  addAction,
   addExchange,
   addStrategy,
   addFrame,
@@ -28,6 +29,16 @@ export {
   addRisk,
   addOptimizer,
 } from "./function/add";
+export {
+  overrideAction,
+  overrideExchange,
+  overrideFrame,
+  overrideOptimizer,
+  overrideRisk,
+  overrideSizing,
+  overrideStrategy,
+  overrideWalker,
+} from "./function/override";
 export {
   listExchanges,
   listStrategies,
@@ -254,6 +265,7 @@ export { Exchange } from "./classes/Exchange";
 export { Cache } from "./classes/Cache";
 export { Notification } from "./classes/Notification";
 export { Breakeven } from "./classes/Breakeven";
+export { ActionBase } from "./classes/Action";
 
 export { type TickEvent } from "./model/LiveStatistics.model";
 export { type PartialEvent } from "./model/PartialStatistics.model";
