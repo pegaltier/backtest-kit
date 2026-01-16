@@ -265,6 +265,7 @@ export { Exchange } from "./classes/Exchange";
 export { Cache } from "./classes/Cache";
 export { Notification } from "./classes/Notification";
 export { Breakeven } from "./classes/Breakeven";
+export { ActionBase } from "./classes/Action";
 
 export { type TickEvent } from "./model/LiveStatistics.model";
 export { type PartialEvent } from "./model/PartialStatistics.model";
