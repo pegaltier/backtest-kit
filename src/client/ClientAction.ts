@@ -7,6 +7,7 @@ import {
 import {
   IAction,
   IActionParams,
+  IPublicAction,
 } from "../interfaces/Action.interface";
 import { IStrategyTickResult, StrategyName } from "../interfaces/Strategy.interface";
 import { BreakevenContract } from "../contract/Breakeven.contract";
@@ -302,7 +303,13 @@ export const WAIT_FOR_INIT_FN = async (self: ClientAction): Promise<void> => {
   self._handlerInstance = Reflect.construct(self.params.handler, [
     self.params.strategyName,
     self.params.frameName,
-  ]);
+    self.params.actionName,
+  ]) as Partial<IPublicAction>;
+
+  // Call handler init() method if defined
+  if (self._handlerInstance?.init) {
+    await self._handlerInstance.init();
+  }
 
   // Call onInit callback
   await CALL_INIT_CALLBACK_FN(
@@ -311,6 +318,38 @@ export const WAIT_FOR_INIT_FN = async (self: ClientAction): Promise<void> => {
     self.params.frameName,
     self.params.backtest
   );
+};
+
+/**
+ * Disposes action handler instance.
+ * Uses singleshot pattern to ensure it only runs once.
+ * This function is exported for use in tests or other modules.
+ */
+export const WAIT_FOR_DISPOSE_FN = async (self: ClientAction): Promise<void> => {
+  self.params.logger.debug("ClientAction waitForDispose", {
+    actionName: self.params.actionName,
+    strategyName: self.params.strategyName,
+    frameName: self.params.frameName,
+  });
+
+  if (!self._handlerInstance) {
+    return;
+  }
+
+  // Call handler dispose method if defined
+  if (self._handlerInstance?.dispose) {
+    await self._handlerInstance.dispose();
+  }
+
+  // Call onDispose callback
+  await CALL_DISPOSE_CALLBACK_FN(
+    self,
+    self.params.strategyName,
+    self.params.frameName,
+    self.params.backtest
+  );
+
+  self._handlerInstance = null;
 };
 
 /**
@@ -334,7 +373,7 @@ export class ClientAction implements IAction {
    * Handler instance created from params.handler constructor.
    * Starts as null, gets initialized on first use.
    */
-  _handlerInstance: Partial<IAction> | null = null;
+  _handlerInstance: Partial<IPublicAction> | null = null;
 
   /**
    * Creates a new ClientAction instance.
@@ -623,33 +662,11 @@ export class ClientAction implements IAction {
 
   /**
    * Cleans up resources and subscriptions when action handler is no longer needed.
+   * Uses singleshot pattern to ensure cleanup happens exactly once.
    */
-  public async dispose(): Promise<void> {
-    this.params.logger.debug("ClientAction dispose", {
-      actionName: this.params.actionName,
-      strategyName: this.params.strategyName,
-      frameName: this.params.frameName,
-    });
-
-    if (!this._handlerInstance) {
-      return;
-    }
-
-    // Call handler dispose method if defined
-    if (this._handlerInstance?.dispose) {
-      await this._handlerInstance.dispose();
-    }
-
-    // Call onDispose callback
-    await CALL_DISPOSE_CALLBACK_FN(
-      this,
-      this.params.strategyName,
-      this.params.frameName,
-      this.params.backtest
-    );
-
-    this._handlerInstance = null;
-  };
+  public dispose = singleshot(async (): Promise<void> => {
+    await WAIT_FOR_DISPOSE_FN(this);
+  });
 }
 
 export default ClientAction;
