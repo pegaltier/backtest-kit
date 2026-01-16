@@ -48,9 +48,9 @@ export class ActionSchemaService {
     if (typeof actionSchema.actionName !== "string") {
       throw new Error(`action schema validation failed: missing actionName`);
     }
-    if (typeof actionSchema.handler !== "function") {
+    if (typeof actionSchema.handler !== "function" && !isObject(actionSchema.handler)) {
       throw new Error(
-        `action schema validation failed: handler is not a function for actionName=${actionSchema.actionName}`
+        `action schema validation failed: handler is not a function or plain object for actionName=${actionSchema.actionName}`
       );
     }
     if (
