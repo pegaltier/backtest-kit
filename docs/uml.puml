@@ -49,6 +49,72 @@ liveCommandService:
 								• loggerService: ""
 								methodContextService: ""
 								executionContextService: ""
+						actionCoreService:
+							• actionCoreService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+							actionConnectionService:
+								• actionConnectionService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+								actionSchemaService:
+									• actionSchemaService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+							actionValidationService:
+								• actionValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							exchangeValidationService:
+								• exchangeValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							frameValidationService:
+								• frameValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							strategyValidationService:
+								• strategyValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+								riskValidationService:
+									• riskValidationService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+								actionValidationService:
+									• actionValidationService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+							strategySchemaService:
+								• strategySchemaService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							riskValidationService:
+								• riskValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
 					exchangeConnectionService:
 						• exchangeConnectionService: ""
 						loggerService:
@@ -69,12 +135,210 @@ liveCommandService:
 							• loggerService: ""
 							methodContextService: ""
 							executionContextService: ""
+						actionCoreService:
+							• actionCoreService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+							actionConnectionService:
+								• actionConnectionService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+								actionSchemaService:
+									• actionSchemaService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+							actionValidationService:
+								• actionValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							exchangeValidationService:
+								• exchangeValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							frameValidationService:
+								• frameValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							strategyValidationService:
+								• strategyValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+								riskValidationService:
+									• riskValidationService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+								actionValidationService:
+									• actionValidationService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+							strategySchemaService:
+								• strategySchemaService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							riskValidationService:
+								• riskValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
 					breakevenConnectionService:
 						• breakevenConnectionService: ""
 						loggerService:
 							• loggerService: ""
 							methodContextService: ""
 							executionContextService: ""
+						actionCoreService:
+							• actionCoreService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+							actionConnectionService:
+								• actionConnectionService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+								actionSchemaService:
+									• actionSchemaService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+							actionValidationService:
+								• actionValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							exchangeValidationService:
+								• exchangeValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							frameValidationService:
+								• frameValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							strategyValidationService:
+								• strategyValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+								riskValidationService:
+									• riskValidationService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+								actionValidationService:
+									• actionValidationService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+							strategySchemaService:
+								• strategySchemaService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							riskValidationService:
+								• riskValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+					actionCoreService:
+						• actionCoreService: ""
+						loggerService:
+							• loggerService: ""
+							methodContextService: ""
+							executionContextService: ""
+						actionConnectionService:
+							• actionConnectionService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+							actionSchemaService:
+								• actionSchemaService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+						actionValidationService:
+							• actionValidationService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+						exchangeValidationService:
+							• exchangeValidationService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+						frameValidationService:
+							• frameValidationService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+						strategyValidationService:
+							• strategyValidationService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+							riskValidationService:
+								• riskValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							actionValidationService:
+								• actionValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+						strategySchemaService:
+							• strategySchemaService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+						riskValidationService:
+							• riskValidationService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
 				strategySchemaService:
 					• strategySchemaService: ""
 					loggerService:
@@ -95,6 +359,12 @@ liveCommandService:
 						executionContextService: ""
 					riskValidationService:
 						• riskValidationService: ""
+						loggerService:
+							• loggerService: ""
+							methodContextService: ""
+							executionContextService: ""
+					actionValidationService:
+						• actionValidationService: ""
 						loggerService:
 							• loggerService: ""
 							methodContextService: ""
@@ -124,6 +394,12 @@ liveCommandService:
 				• loggerService: ""
 				methodContextService: ""
 				executionContextService: ""
+		actionValidationService:
+			• actionValidationService: ""
+			loggerService:
+				• loggerService: ""
+				methodContextService: ""
+				executionContextService: ""
 	exchangeValidationService:
 		• exchangeValidationService: ""
 		loggerService:
@@ -142,6 +418,12 @@ liveCommandService:
 			• loggerService: ""
 			methodContextService: ""
 			executionContextService: ""
+	actionValidationService:
+		• actionValidationService: ""
+		loggerService:
+			• loggerService: ""
+			methodContextService: ""
+			executionContextService: ""
 backtestCommandService:
 	• backtestCommandService: ""
 	loggerService:
@@ -156,6 +438,12 @@ backtestCommandService:
 			executionContextService: ""
 	riskValidationService:
 		• riskValidationService: ""
+		loggerService:
+			• loggerService: ""
+			methodContextService: ""
+			executionContextService: ""
+	actionValidationService:
+		• actionValidationService: ""
 		loggerService:
 			• loggerService: ""
 			methodContextService: ""
@@ -204,6 +492,72 @@ backtestCommandService:
 								• loggerService: ""
 								methodContextService: ""
 								executionContextService: ""
+						actionCoreService:
+							• actionCoreService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+							actionConnectionService:
+								• actionConnectionService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+								actionSchemaService:
+									• actionSchemaService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+							actionValidationService:
+								• actionValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							exchangeValidationService:
+								• exchangeValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							frameValidationService:
+								• frameValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							strategyValidationService:
+								• strategyValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+								riskValidationService:
+									• riskValidationService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+								actionValidationService:
+									• actionValidationService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+							strategySchemaService:
+								• strategySchemaService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							riskValidationService:
+								• riskValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
 					exchangeConnectionService:
 						• exchangeConnectionService: ""
 						loggerService:
@@ -224,12 +578,210 @@ backtestCommandService:
 							• loggerService: ""
 							methodContextService: ""
 							executionContextService: ""
+						actionCoreService:
+							• actionCoreService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+							actionConnectionService:
+								• actionConnectionService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+								actionSchemaService:
+									• actionSchemaService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+							actionValidationService:
+								• actionValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							exchangeValidationService:
+								• exchangeValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							frameValidationService:
+								• frameValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							strategyValidationService:
+								• strategyValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+								riskValidationService:
+									• riskValidationService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+								actionValidationService:
+									• actionValidationService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+							strategySchemaService:
+								• strategySchemaService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							riskValidationService:
+								• riskValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
 					breakevenConnectionService:
 						• breakevenConnectionService: ""
 						loggerService:
 							• loggerService: ""
 							methodContextService: ""
 							executionContextService: ""
+						actionCoreService:
+							• actionCoreService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+							actionConnectionService:
+								• actionConnectionService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+								actionSchemaService:
+									• actionSchemaService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+							actionValidationService:
+								• actionValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							exchangeValidationService:
+								• exchangeValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							frameValidationService:
+								• frameValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							strategyValidationService:
+								• strategyValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+								riskValidationService:
+									• riskValidationService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+								actionValidationService:
+									• actionValidationService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+							strategySchemaService:
+								• strategySchemaService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							riskValidationService:
+								• riskValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+					actionCoreService:
+						• actionCoreService: ""
+						loggerService:
+							• loggerService: ""
+							methodContextService: ""
+							executionContextService: ""
+						actionConnectionService:
+							• actionConnectionService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+							actionSchemaService:
+								• actionSchemaService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+						actionValidationService:
+							• actionValidationService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+						exchangeValidationService:
+							• exchangeValidationService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+						frameValidationService:
+							• frameValidationService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+						strategyValidationService:
+							• strategyValidationService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+							riskValidationService:
+								• riskValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							actionValidationService:
+								• actionValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+						strategySchemaService:
+							• strategySchemaService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+						riskValidationService:
+							• riskValidationService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
 				strategySchemaService:
 					• strategySchemaService: ""
 					loggerService:
@@ -250,6 +802,12 @@ backtestCommandService:
 						executionContextService: ""
 					riskValidationService:
 						• riskValidationService: ""
+						loggerService:
+							• loggerService: ""
+							methodContextService: ""
+							executionContextService: ""
+					actionValidationService:
+						• actionValidationService: ""
 						loggerService:
 							• loggerService: ""
 							methodContextService: ""
@@ -331,6 +889,12 @@ backtestCommandService:
 				• loggerService: ""
 				methodContextService: ""
 				executionContextService: ""
+		actionValidationService:
+			• actionValidationService: ""
+			loggerService:
+				• loggerService: ""
+				methodContextService: ""
+				executionContextService: ""
 	exchangeValidationService:
 		• exchangeValidationService: ""
 		loggerService:
@@ -389,23 +953,312 @@ walkerCommandService:
 							methodContextService: ""
 							strategySchemaService:
 								• strategySchemaService: ""
-								loggerService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
 							riskConnectionService:
 								• riskConnectionService: ""
-								loggerService: ""
-								riskSchemaService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+								riskSchemaService:
+									• riskSchemaService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+								actionCoreService:
+									• actionCoreService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+									actionConnectionService:
+										• actionConnectionService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
+										actionSchemaService:
+											• actionSchemaService: ""
+											loggerService:
+												• loggerService: ""
+												methodContextService: ""
+												executionContextService: ""
+									actionValidationService:
+										• actionValidationService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
+									exchangeValidationService:
+										• exchangeValidationService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
+									frameValidationService:
+										• frameValidationService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
+									strategyValidationService:
+										• strategyValidationService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
+										riskValidationService:
+											• riskValidationService: ""
+											loggerService:
+												• loggerService: ""
+												methodContextService: ""
+												executionContextService: ""
+										actionValidationService:
+											• actionValidationService: ""
+											loggerService:
+												• loggerService: ""
+												methodContextService: ""
+												executionContextService: ""
+									strategySchemaService:
+										• strategySchemaService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
+									riskValidationService:
+										• riskValidationService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
 							exchangeConnectionService:
 								• exchangeConnectionService: ""
-								loggerService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
 								executionContextService: ""
-								exchangeSchemaService: ""
+								exchangeSchemaService:
+									• exchangeSchemaService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
 								methodContextService: ""
 							partialConnectionService:
 								• partialConnectionService: ""
-								loggerService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+								actionCoreService:
+									• actionCoreService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+									actionConnectionService:
+										• actionConnectionService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
+										actionSchemaService:
+											• actionSchemaService: ""
+											loggerService:
+												• loggerService: ""
+												methodContextService: ""
+												executionContextService: ""
+									actionValidationService:
+										• actionValidationService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
+									exchangeValidationService:
+										• exchangeValidationService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
+									frameValidationService:
+										• frameValidationService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
+									strategyValidationService:
+										• strategyValidationService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
+										riskValidationService:
+											• riskValidationService: ""
+											loggerService:
+												• loggerService: ""
+												methodContextService: ""
+												executionContextService: ""
+										actionValidationService:
+											• actionValidationService: ""
+											loggerService:
+												• loggerService: ""
+												methodContextService: ""
+												executionContextService: ""
+									strategySchemaService:
+										• strategySchemaService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
+									riskValidationService:
+										• riskValidationService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
 							breakevenConnectionService:
 								• breakevenConnectionService: ""
-								loggerService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+								actionCoreService:
+									• actionCoreService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+									actionConnectionService:
+										• actionConnectionService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
+										actionSchemaService:
+											• actionSchemaService: ""
+											loggerService:
+												• loggerService: ""
+												methodContextService: ""
+												executionContextService: ""
+									actionValidationService:
+										• actionValidationService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
+									exchangeValidationService:
+										• exchangeValidationService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
+									frameValidationService:
+										• frameValidationService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
+									strategyValidationService:
+										• strategyValidationService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
+										riskValidationService:
+											• riskValidationService: ""
+											loggerService:
+												• loggerService: ""
+												methodContextService: ""
+												executionContextService: ""
+										actionValidationService:
+											• actionValidationService: ""
+											loggerService:
+												• loggerService: ""
+												methodContextService: ""
+												executionContextService: ""
+									strategySchemaService:
+										• strategySchemaService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
+									riskValidationService:
+										• riskValidationService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
+							actionCoreService:
+								• actionCoreService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+								actionConnectionService:
+									• actionConnectionService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+									actionSchemaService:
+										• actionSchemaService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
+								actionValidationService:
+									• actionValidationService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+								exchangeValidationService:
+									• exchangeValidationService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+								frameValidationService:
+									• frameValidationService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+								strategyValidationService:
+									• strategyValidationService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+									riskValidationService:
+										• riskValidationService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
+									actionValidationService:
+										• actionValidationService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
+								strategySchemaService:
+									• strategySchemaService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+								riskValidationService:
+									• riskValidationService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
 						strategySchemaService:
 							• strategySchemaService: ""
 							loggerService:
@@ -426,7 +1279,16 @@ walkerCommandService:
 								executionContextService: ""
 							riskValidationService:
 								• riskValidationService: ""
-								loggerService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							actionValidationService:
+								• actionValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
 						exchangeValidationService:
 							• exchangeValidationService: ""
 							loggerService:
@@ -454,7 +1316,10 @@ walkerCommandService:
 							executionContextService: ""
 							exchangeSchemaService:
 								• exchangeSchemaService: ""
-								loggerService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
 							methodContextService: ""
 						methodContextService: ""
 						exchangeValidationService:
@@ -477,7 +1342,10 @@ walkerCommandService:
 								executionContextService: ""
 							frameSchemaService:
 								• frameSchemaService: ""
-								loggerService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
 							methodContextService: ""
 						frameValidationService:
 							• frameValidationService: ""
@@ -522,6 +1390,12 @@ walkerCommandService:
 				• loggerService: ""
 				methodContextService: ""
 				executionContextService: ""
+		actionValidationService:
+			• actionValidationService: ""
+			loggerService:
+				• loggerService: ""
+				methodContextService: ""
+				executionContextService: ""
 	exchangeValidationService:
 		• exchangeValidationService: ""
 		loggerService:
@@ -548,6 +1422,12 @@ walkerCommandService:
 			executionContextService: ""
 	riskValidationService:
 		• riskValidationService: ""
+		loggerService:
+			• loggerService: ""
+			methodContextService: ""
+			executionContextService: ""
+	actionValidationService:
+		• actionValidationService: ""
 		loggerService:
 			• loggerService: ""
 			methodContextService: ""
