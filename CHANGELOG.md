@@ -1,3 +1,328 @@
+# 🎯 Event-Driven Trading Automation (v1.13.1, 16/01/2026)
+
+> Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/1.13.1)
+
+
+**Event-Driven Action Handlers** 🔔⚡
+
+Revolutionary action system transforms backtest-kit into a true event bus for trading automation! The new `ActionBase` class provides extensible event handlers that react to all trading lifecycle events: signal state changes, breakeven milestones, partial profit/loss levels, scheduled signal monitoring, and risk rejections. Actions integrate seamlessly with state management (Redux, Zustand, MobX), real-time notifications (Telegram, Discord), logging systems, and analytics platforms. Each strategy can attach multiple actions with isolated context and guaranteed lifecycle management. 🚀✨
+
+```typescript
+import { ActionBase, addAction, addStrategy } from "backtest-kit";
+
+// Create custom action handler by extending ActionBase
+class TelegramNotifier extends ActionBase {
+  private bot: TelegramBot | null = null;
+
+  // Initialize resources (called once)
+  async init() {
+    super.init(); // Call parent for logging
+    this.bot = new TelegramBot(process.env.TELEGRAM_TOKEN);
+    await this.bot.connect();
+    console.log(`Telegram notifier initialized for ${this.strategyName}`);
+  }
+
+  // Handle all signal events (backtest + live)
+  async signal(event: IStrategyTickResult) {
+    super.signal(event);
+    if (event.action === 'opened') {
+      await this.bot.send(
+        `🚀 [${this.strategyName}/${this.frameName}] Signal opened!\n` +
+        `Position: ${event.signal.position}\n` +
+        `Entry: ${event.signal.priceOpen}\n` +
+        `TP: ${event.signal.priceTakeProfit}\n` +
+        `SL: ${event.signal.priceStopLoss}`
+      );
+    }
+    if (event.action === 'closed') {
+      const emoji = event.signal.revenue > 0 ? '✅' : '❌';
+      await this.bot.send(
+        `${emoji} Signal closed!\n` +
+        `PNL: ${event.signal.revenue.toFixed(2)}%`
+      );
+    }
+  }
+
+  // Handle live-only events (production notifications)
+  async signalLive(event: IStrategyTickResult) {
+    super.signalLive(event);
+    if (event.action === 'opened') {
+      await this.bot.send('⚠️ REAL TRADE OPENED IN PRODUCTION!');
+    }
+  }
+
+  // Handle breakeven milestone
+  async breakeven(event: BreakevenContract) {
+    super.breakeven(event);
+    await this.bot.send(
+      `🛡️ Breakeven protection activated!\n` +
+      `Stop-loss moved to entry: ${event.data.priceOpen}`
+    );
+  }
+
+  // Handle profit milestones (10%, 20%, 30%...)
+  async partialProfit(event: PartialProfitContract) {
+    super.partialProfit(event);
+    await this.bot.send(
+      `💰 Profit milestone reached: ${event.level}%\n` +
+      `Current price: ${event.currentPrice}`
+    );
+  }
+
+  // Handle loss milestones (-10%, -20%, -30%...)
+  async partialLoss(event: PartialLossContract) {
+    super.partialLoss(event);
+    await this.bot.send(
+      `⚠️ Loss milestone: -${event.level}%\n` +
+      `Current price: ${event.currentPrice}`
+    );
+  }
+
+  // Monitor scheduled signals (called every minute while waiting)
+  async ping(event: PingContract) {
+    const waitTime = Date.now() - event.data.timestampScheduled;
+    const waitMinutes = Math.floor(waitTime / 60000);
+    if (waitMinutes > 30) {
+      await this.bot.send(
+        `⏰ Scheduled signal waiting ${waitMinutes} minutes\n` +
+        `Entry target: ${event.data.priceOpen}`
+      );
+    }
+  }
+
+  // Track risk rejections
+  async riskRejection(event: RiskContract) {
+    super.riskRejection(event);
+    await this.bot.send(
+      `🚫 Signal rejected by risk management!\n` +
+      `Reason: ${event.rejectionNote}\n` +
+      `Active positions: ${event.activePositionCount}`
+    );
+  }
+
+  // Cleanup resources (called once on disposal)
+  async dispose() {
+    super.dispose();
+    await this.bot?.disconnect();
+    this.bot = null;
+    console.log('Telegram notifier disposed');
+  }
+}
+
+// Register the action
+addAction({
+  actionName: "telegram-notifier",
+  handler: TelegramNotifier
+});
+
+// Attach to strategy
+addStrategy({
+  strategyName: "my-strategy",
+  interval: "1m",
+  actions: ["telegram-notifier"], // ← Attach action
+  getSignal: async () => { /* ... */ }
+});
+```
+
+**ActionBase Event Handler Methods** 📋
+
+All methods have default implementations (only override what you need):
+
+- **`init()`** - Called once after construction. Use for async setup: database connections, API clients, file handles.
+- **`signal(event)`** - Called every tick/candle (all modes). Receives all signal states: idle, scheduled, opened, active, closed, cancelled.
+- **`signalLive(event)`** - Called only in live mode. Use for production notifications and real order placement.
+- **`signalBacktest(event)`** - Called only in backtest mode. Use for backtest metrics and test-specific logic.
+- **`breakeven(event)`** - Called once when stop-loss moves to entry price (threshold: fees + slippage × 2).
+- **`partialProfit(event)`** - Called at profit levels: 10%, 20%, 30%... Each level triggered exactly once per signal.
+- **`partialLoss(event)`** - Called at loss levels: -10%, -20%, -30%... Each level triggered exactly once per signal.
+- **`ping(event)`** - Called every minute while scheduled signal is waiting for activation.
+- **`riskRejection(event)`** - Called when signal fails risk validation.
+- **`dispose()`** - Called once on cleanup. Use to close connections, flush buffers, save state.
+
+**Redux State Management Example** 🏗️
+
+```typescript
+import { ActionBase, addAction } from "backtest-kit";
+
+class ReduxAction extends ActionBase {
+  constructor(
+    strategyName: StrategyName,
+    frameName: FrameName,
+    actionName: ActionName,
+    private store: Store
+  ) {
+    super(strategyName, frameName, actionName);
+  }
+
+  signal(event: IStrategyTickResult) {
+    this.store.dispatch({
+      type: 'STRATEGY_SIGNAL',
+      payload: {
+        event,
+        strategyName: this.strategyName,
+        frameName: this.frameName,
+        timestamp: Date.now()
+      }
+    });
+  }
+
+  breakeven(event: BreakevenContract) {
+    this.store.dispatch({
+      type: 'BREAKEVEN_REACHED',
+      payload: { event, strategyName: this.strategyName }
+    });
+  }
+
+  partialProfit(event: PartialProfitContract) {
+    this.store.dispatch({
+      type: 'PARTIAL_PROFIT',
+      payload: { event, level: event.level }
+    });
+  }
+
+  riskRejection(event: RiskContract) {
+    this.store.dispatch({
+      type: 'RISK_REJECTION',
+      payload: { event, reason: event.rejectionNote }
+    });
+  }
+}
+
+// Register with dependency injection
+addAction({
+  actionName: "redux-store",
+  handler: (strategyName, frameName, actionName) =>
+    new ReduxAction(strategyName, frameName, actionName, store)
+});
+```
+
+**Callback-Based Actions (No Class Required)** 🎯
+
+```typescript
+import { addAction } from "backtest-kit";
+
+// Simple object-based action
+addAction({
+  actionName: "event-logger",
+  handler: {
+    init: () => {
+      console.log('Logger initialized');
+    },
+    signal: (event) => {
+      if (event.action === 'opened') {
+        console.log('Signal opened:', event.signal.id);
+      }
+    },
+    breakeven: (event) => {
+      console.log('Breakeven at:', event.currentPrice);
+    },
+    dispose: () => {
+      console.log('Logger disposed');
+    }
+  },
+  callbacks: {
+    onInit: (actionName, strategyName, frameName, backtest) => {
+      console.log(`[${strategyName}/${frameName}] Logger started`);
+    },
+    onSignal: (event, actionName, strategyName, frameName, backtest) => {
+      console.log(`[${strategyName}] Event: ${event.action}`);
+    }
+  }
+});
+```
+
+**Multiple Actions Per Strategy** 🔗
+
+```typescript
+addStrategy({
+  strategyName: "production-bot",
+  interval: "5m",
+  actions: [
+    "telegram-notifier",  // Real-time notifications
+    "redux-store",        // State management
+    "event-logger",       // Logging
+    "analytics-tracker"   // Metrics collection
+  ],
+  getSignal: async () => { /* ... */ }
+});
+```
+
+**Action Context Awareness** 🎯
+
+Every action receives full context via constructor:
+
+```typescript
+class MyAction extends ActionBase {
+  constructor(
+    public readonly strategyName: StrategyName,  // "my-strategy"
+    public readonly frameName: FrameName,        // "1d-backtest"
+    public readonly actionName: ActionName       // "my-action"
+  ) {
+    super(strategyName, frameName, actionName);
+    console.log(`Action ${actionName} created for ${strategyName}/${frameName}`);
+  }
+}
+```
+
+**Architecture & Lifecycle** 🏗️
+
+```
+Registration Flow:
+  addAction({ actionName, handler })
+    → ActionValidationService (validates & registers)
+    → ActionSchemaService (stores schema)
+
+Execution Flow:
+  Strategy.tick() or Backtest.run()
+    → ActionCoreService.initFn()
+      → For each action: ClientAction.waitForInit()
+        → handler.init() [once]
+    → On each tick/candle:
+      → ActionCoreService.signal()
+        → For each action: ClientAction.signal()
+          → handler.signal() + callbacks
+    → On breakeven threshold:
+      → ActionCoreService.breakeven()
+        → For each action: handler.breakeven()
+    → On partial profit/loss levels:
+      → ActionCoreService.partialProfit/Loss()
+        → For each action: handler.partialProfit/Loss()
+    → On scheduled signal ping:
+      → ActionCoreService.ping()
+        → For each action: handler.ping()
+    → On risk rejection:
+      → ActionCoreService.riskRejection()
+        → For each action: handler.riskRejection()
+    → On disposal:
+      → ActionCoreService.dispose()
+        → For each action: handler.dispose() [once]
+
+Lifecycle Guarantees:
+  - init() called exactly once (singleshot pattern)
+  - dispose() called exactly once (singleshot pattern)
+  - Events auto-initialize handler if needed (lazy loading)
+  - Error isolation: one failing action doesn't break others
+  - Memoization: one ClientAction instance per strategy-frame-action
+```
+
+**Service Architecture** 📦
+
+- **ActionCoreService** - Global dispatcher routing actions to all handlers
+- **ActionConnectionService** - Memoized ClientAction instance management
+- **ActionValidationService** - Schema registry and validation
+- **ActionSchemaService** - Action schema storage
+- **ClientAction** - Lifecycle wrapper with lazy initialization and error handling
+
+**Event Sources** 🔔
+
+- **StrategyConnectionService** → signal, signalLive, signalBacktest, ping
+- **BreakevenConnectionService** → breakeven
+- **PartialConnectionService** → partialProfit, partialLoss
+- **RiskConnectionService** → riskRejection
+
+
+
+
 # 🤗 JSONL Event Logging (v1.11.2, 11/01/2026)
 
 > Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/1.11.2)
@@ -183,6 +508,7 @@ addStrategy({
 ```
 
 
+
 # Breakeven Protection (v1.10.1, 09/01/2026)
 
 > Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/1.10.1)
@@ -263,6 +589,8 @@ Features:
 - File-based persistence in `./dump/data/breakeven/{symbol}_{strategy}/state.json`
 - Real-time event emission via breakevenSubject
 - Markdown reports with complete breakeven history
+
+
 
 
 # Enhanced Risk Management (v1.6.1, 28/12/2025)
