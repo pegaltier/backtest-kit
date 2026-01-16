@@ -1,6 +1,19 @@
 export {
+  getCurrentTimeframe,
+} from "./function/timeframe";
+export {
   validate,
 } from "./function/validate";
+export {
+  getStrategy,
+  getExchange,
+  getFrame,
+  getWalker,
+  getSizing,
+  getRisk,
+  getOptimizer,
+  getAction,
+} from "./function/get";
 export {
   stop,
   cancel,

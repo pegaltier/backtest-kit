@@ -4,6 +4,14 @@ import { Subject } from 'functools-kit';
 import { WriteStream } from 'fs';
 
 /**
+ * Retrieves current backtest timeframe for given symbol.
+ * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+ * @returns Promise resolving to array of Date objects representing tick timestamps
+ * @throws Error if called outside of backtest execution context
+ */
+declare function getCurrentTimeframe(symbol: string): Promise<Date[]>;
+
+/**
  * Type alias for enum objects with string key-value pairs
  */
 type Enum = Record<string, string>;
@@ -115,222 +123,6 @@ interface ValidateArgs<T = Enum> {
  * ```
  */
 declare function validate(args?: Partial<Args>): Promise<void>;
-
-/**
- * Stops the strategy from generating new signals.
- *
- * Sets internal flag to prevent strategy from opening new signals.
- * Current active signal (if any) will complete normally.
- * Backtest/Live mode will stop at the next safe point (idle state or after signal closes).
- *
- * Automatically detects backtest/live mode from execution context.
- *
- * @param symbol - Trading pair symbol
- * @param strategyName - Strategy name to stop
- * @returns Promise that resolves when stop flag is set
- *
- * @example
- * ```typescript
- * import { stop } from "backtest-kit";
- *
- * // Stop strategy after some condition
- * await stop("BTCUSDT", "my-strategy");
- * ```
- */
-declare function stop(symbol: string): Promise<void>;
-/**
- * Cancels the scheduled signal without stopping the strategy.
- *
- * Clears the scheduled signal (waiting for priceOpen activation).
- * Does NOT affect active pending signals or strategy operation.
- * Does NOT set stop flag - strategy can continue generating new signals.
- *
- * Automatically detects backtest/live mode from execution context.
- *
- * @param symbol - Trading pair symbol
- * @param strategyName - Strategy name
- * @param cancelId - Optional cancellation ID for tracking user-initiated cancellations
- * @returns Promise that resolves when scheduled signal is cancelled
- *
- * @example
- * ```typescript
- * import { cancel } from "backtest-kit";
- *
- * // Cancel scheduled signal with custom ID
- * await cancel("BTCUSDT", "my-strategy", "manual-cancel-001");
- * ```
- */
-declare function cancel(symbol: string, cancelId?: string): Promise<void>;
-/**
- * Executes partial close at profit level (moving toward TP).
- *
- * Closes a percentage of the active pending position at profit.
- * Price must be moving toward take profit (in profit direction).
- *
- * Automatically detects backtest/live mode from execution context.
- *
- * @param symbol - Trading pair symbol
- * @param percentToClose - Percentage of position to close (0-100, absolute value)
- * @returns Promise<boolean> - true if partial close executed, false if skipped
- *
- * @throws Error if currentPrice is not in profit direction:
- *   - LONG: currentPrice must be > priceOpen
- *   - SHORT: currentPrice must be < priceOpen
- *
- * @example
- * ```typescript
- * import { partialProfit } from "backtest-kit";
- *
- * // Close 30% of LONG position at profit
- * const success = await partialProfit("BTCUSDT", 30);
- * if (success) {
- *   console.log('Partial profit executed');
- * }
- * ```
- */
-declare function partialProfit(symbol: string, percentToClose: number): Promise<boolean>;
-/**
- * Executes partial close at loss level (moving toward SL).
- *
- * Closes a percentage of the active pending position at loss.
- * Price must be moving toward stop loss (in loss direction).
- *
- * Automatically detects backtest/live mode from execution context.
- *
- * @param symbol - Trading pair symbol
- * @param percentToClose - Percentage of position to close (0-100, absolute value)
- * @returns Promise<boolean> - true if partial close executed, false if skipped
- *
- * @throws Error if currentPrice is not in loss direction:
- *   - LONG: currentPrice must be < priceOpen
- *   - SHORT: currentPrice must be > priceOpen
- *
- * @example
- * ```typescript
- * import { partialLoss } from "backtest-kit";
- *
- * // Close 40% of LONG position at loss
- * const success = await partialLoss("BTCUSDT", 40);
- * if (success) {
- *   console.log('Partial loss executed');
- * }
- * ```
- */
-declare function partialLoss(symbol: string, percentToClose: number): Promise<boolean>;
-/**
- * Adjusts the trailing stop-loss distance for an active pending signal.
- *
- * CRITICAL: Always calculates from ORIGINAL SL, not from current trailing SL.
- * This prevents error accumulation on repeated calls.
- * Larger percentShift ABSORBS smaller one (updates only towards better protection).
- *
- * Updates the stop-loss distance by a percentage adjustment relative to the ORIGINAL SL distance.
- * Negative percentShift tightens the SL (reduces distance, moves closer to entry).
- * Positive percentShift loosens the SL (increases distance, moves away from entry).
- *
- * Absorption behavior:
- * - First call: sets trailing SL unconditionally
- * - Subsequent calls: updates only if new SL is BETTER (protects more profit)
- * - For LONG: only accepts HIGHER SL (never moves down, closer to entry wins)
- * - For SHORT: only accepts LOWER SL (never moves up, closer to entry wins)
- *
- * Automatically detects backtest/live mode from execution context.
- *
- * @param symbol - Trading pair symbol
- * @param percentShift - Percentage adjustment to ORIGINAL SL distance (-100 to 100)
- * @param currentPrice - Current market price to check for intrusion
- * @returns Promise<boolean> - true if trailing SL was set/updated, false if rejected (absorption/intrusion/conflict)
- *
- * @example
- * ```typescript
- * import { trailingStop } from "backtest-kit";
- *
- * // LONG: entry=100, originalSL=90, distance=10%, currentPrice=102
- *
- * // First call: tighten by 5%
- * const success1 = await trailingStop("BTCUSDT", -5, 102);
- * // success1 = true, newDistance = 10% - 5% = 5%, newSL = 95
- *
- * // Second call: try weaker protection (smaller percentShift)
- * const success2 = await trailingStop("BTCUSDT", -3, 102);
- * // success2 = false (SKIPPED: newSL=97 < 95, worse protection, larger % absorbs smaller)
- *
- * // Third call: stronger protection (larger percentShift)
- * const success3 = await trailingStop("BTCUSDT", -7, 102);
- * // success3 = true (ACCEPTED: newDistance = 10% - 7% = 3%, newSL = 97 > 95, better protection)
- * ```
- */
-declare function trailingStop(symbol: string, percentShift: number, currentPrice: number): Promise<boolean>;
-/**
- * Adjusts the trailing take-profit distance for an active pending signal.
- *
- * CRITICAL: Always calculates from ORIGINAL TP, not from current trailing TP.
- * This prevents error accumulation on repeated calls.
- * Larger percentShift ABSORBS smaller one (updates only towards more conservative TP).
- *
- * Updates the take-profit distance by a percentage adjustment relative to the ORIGINAL TP distance.
- * Negative percentShift brings TP closer to entry (more conservative).
- * Positive percentShift moves TP further from entry (more aggressive).
- *
- * Absorption behavior:
- * - First call: sets trailing TP unconditionally
- * - Subsequent calls: updates only if new TP is MORE CONSERVATIVE (closer to entry)
- * - For LONG: only accepts LOWER TP (never moves up, closer to entry wins)
- * - For SHORT: only accepts HIGHER TP (never moves down, closer to entry wins)
- *
- * Automatically detects backtest/live mode from execution context.
- *
- * @param symbol - Trading pair symbol
- * @param percentShift - Percentage adjustment to ORIGINAL TP distance (-100 to 100)
- * @param currentPrice - Current market price to check for intrusion
- * @returns Promise<boolean> - true if trailing TP was set/updated, false if rejected (absorption/intrusion/conflict)
- *
- * @example
- * ```typescript
- * import { trailingTake } from "backtest-kit";
- *
- * // LONG: entry=100, originalTP=110, distance=10%, currentPrice=102
- *
- * // First call: bring TP closer by 3%
- * const success1 = await trailingTake("BTCUSDT", -3, 102);
- * // success1 = true, newDistance = 10% - 3% = 7%, newTP = 107
- *
- * // Second call: try to move TP further (less conservative)
- * const success2 = await trailingTake("BTCUSDT", 2, 102);
- * // success2 = false (SKIPPED: newTP=112 > 107, less conservative, larger % absorbs smaller)
- *
- * // Third call: even more conservative
- * const success3 = await trailingTake("BTCUSDT", -5, 102);
- * // success3 = true (ACCEPTED: newDistance = 10% - 5% = 5%, newTP = 105 < 107, more conservative)
- * ```
- */
-declare function trailingTake(symbol: string, percentShift: number, currentPrice: number): Promise<boolean>;
-/**
- * Moves stop-loss to breakeven when price reaches threshold.
- *
- * Moves SL to entry price (zero-risk position) when current price has moved
- * far enough in profit direction to cover transaction costs.
- * Threshold is calculated as: (CC_PERCENT_SLIPPAGE + CC_PERCENT_FEE) * 2
- *
- * Automatically detects backtest/live mode from execution context.
- * Automatically fetches current price via getAveragePrice.
- *
- * @param symbol - Trading pair symbol
- * @returns Promise<boolean> - true if breakeven was set, false if conditions not met
- *
- * @example
- * ```typescript
- * import { breakeven } from "backtest-kit";
- *
- * // LONG: entry=100, slippage=0.1%, fee=0.1%, threshold=0.4%
- * // Try to move SL to breakeven (activates when price >= 100.4)
- * const moved = await breakeven("BTCUSDT");
- * if (moved) {
- *   console.log("Position moved to breakeven!");
- * }
- * ```
- */
-declare function breakeven(symbol: string): Promise<boolean>;
 
 /**
  * Execution context containing runtime parameters for strategy/exchange operations.
@@ -1195,6 +987,780 @@ interface IBreakeven {
      */
     clear(symbol: string, data: IPublicSignalRow, priceClose: number, backtest: boolean): Promise<void>;
 }
+
+/**
+ * Signal generation interval for throttling.
+ * Enforces minimum time between getSignal calls.
+ */
+type SignalInterval = "1m" | "3m" | "5m" | "15m" | "30m" | "1h";
+/**
+ * Signal data transfer object returned by getSignal.
+ * Will be validated and augmented with auto-generated id.
+ */
+interface ISignalDto {
+    /** Optional signal ID (auto-generated if not provided) */
+    id?: string;
+    /** Trade direction: "long" (buy) or "short" (sell) */
+    position: "long" | "short";
+    /** Human-readable description of signal reason */
+    note?: string;
+    /** Entry price for the position */
+    priceOpen?: number;
+    /** Take profit target price (must be > priceOpen for long, < priceOpen for short) */
+    priceTakeProfit: number;
+    /** Stop loss exit price (must be < priceOpen for long, > priceOpen for short) */
+    priceStopLoss: number;
+    /** Expected duration in minutes before time_expired */
+    minuteEstimatedTime: number;
+}
+/**
+ * Complete signal with auto-generated id.
+ * Used throughout the system after validation.
+ */
+interface ISignalRow extends ISignalDto {
+    /** Unique signal identifier (UUID v4 auto-generated) */
+    id: string;
+    /** Entry price for the position */
+    priceOpen: number;
+    /** Unique exchange identifier for execution */
+    exchangeName: ExchangeName;
+    /** Unique strategy identifier for execution */
+    strategyName: StrategyName;
+    /** Unique frame identifier for execution (empty string for live mode) */
+    frameName: FrameName;
+    /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
+    scheduledAt: number;
+    /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
+    pendingAt: number;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
+    symbol: string;
+    /** Internal runtime marker for scheduled signals */
+    _isScheduled: boolean;
+    /**
+     * History of partial closes for PNL calculation.
+     * Each entry contains type (profit/loss), percent closed, and price.
+     * Used to calculate weighted PNL: Σ(percent_i × pnl_i) for each partial + (remaining% × final_pnl)
+     *
+     * Computed values (derived from this array):
+     * - _tpClosed: Sum of all "profit" type partial close percentages
+     * - _slClosed: Sum of all "loss" type partial close percentages
+     * - _totalClosed: Sum of all partial close percentages (profit + loss)
+     */
+    _partial?: Array<{
+        /** Type of partial close: profit (moving toward TP) or loss (moving toward SL) */
+        type: "profit" | "loss";
+        /** Percentage of position closed (0-100) */
+        percent: number;
+        /** Price at which this partial was executed */
+        price: number;
+    }>;
+    /**
+     * Trailing stop-loss price that overrides priceStopLoss when set.
+     * Updated by trailing() method based on position type and percentage distance.
+     * - For LONG: moves upward as price moves toward TP (never moves down)
+     * - For SHORT: moves downward as price moves toward TP (never moves up)
+     * When _trailingPriceStopLoss is set, it replaces priceStopLoss for TP/SL checks.
+     * Original priceStopLoss is preserved in persistence but ignored during execution.
+     */
+    _trailingPriceStopLoss?: number;
+    /**
+     * Trailing take-profit price that overrides priceTakeProfit when set.
+     * Created and managed by trailingTake() method for dynamic TP adjustment.
+     * Allows moving TP further from or closer to current price based on strategy.
+     * Updated by trailingTake() method based on position type and percentage distance.
+     * - For LONG: can move upward (further) or downward (closer) from entry
+     * - For SHORT: can move downward (further) or upward (closer) from entry
+     * When _trailingPriceTakeProfit is set, it replaces priceTakeProfit for TP/SL checks.
+     * Original priceTakeProfit is preserved in persistence but ignored during execution.
+     */
+    _trailingPriceTakeProfit?: number;
+}
+/**
+ * Scheduled signal row for delayed entry at specific price.
+ * Inherits from ISignalRow - represents a signal waiting for price to reach priceOpen.
+ * Once price reaches priceOpen, will be converted to regular _pendingSignal.
+ * Note: pendingAt will be set to scheduledAt until activation, then updated to actual pending time.
+ */
+interface IScheduledSignalRow extends ISignalRow {
+    /** Entry price for the position */
+    priceOpen: number;
+}
+/**
+ * Public signal row with original stop-loss and take-profit prices.
+ * Extends ISignalRow to include originalPriceStopLoss and originalPriceTakeProfit for external visibility.
+ * Used in public APIs to show user the original SL/TP even if trailing SL/TP are active.
+ * This allows users to see both the current effective SL/TP and the original values set at signal creation.
+ * The original prices remain unchanged even if _trailingPriceStopLoss or _trailingPriceTakeProfit modify the effective values.
+ * Useful for transparency in reporting and user interfaces.
+ * Note: originalPriceStopLoss/originalPriceTakeProfit are identical to priceStopLoss/priceTakeProfit at signal creation time.
+ */
+interface IPublicSignalRow extends ISignalRow {
+    /**
+     * Original stop-loss price set at signal creation.
+     * Remains unchanged even if trailing stop-loss modifies effective SL.
+     * Used for user visibility of initial SL parameters.
+     */
+    originalPriceStopLoss: number;
+    /**
+     * Original take-profit price set at signal creation.
+     * Remains unchanged even if trailing take-profit modifies effective TP.
+     * Used for user visibility of initial TP parameters.
+     */
+    originalPriceTakeProfit: number;
+    /**
+     * Total executed percentage from partial closes.
+     * Sum of all percent values from _partial array (both profit and loss types).
+     * Represents the total portion of the position that has been closed through partial executions.
+     * Range: 0-100. Value of 0 means no partial closes, 100 means position fully closed through partials.
+     */
+    totalExecuted: number;
+}
+/**
+ * Risk signal row for internal risk management.
+ * Extends ISignalDto to include priceOpen, originalPriceStopLoss and originalPriceTakeProfit.
+ * Used in risk validation to access entry price and original SL/TP.
+ */
+interface IRiskSignalRow extends IPublicSignalRow {
+    /**
+     * Entry price for the position.
+     */
+    priceOpen: number;
+    /**
+     * Original stop-loss price set at signal creation.
+     */
+    originalPriceStopLoss: number;
+    /**
+     * Original take-profit price set at signal creation.
+     */
+    originalPriceTakeProfit: number;
+}
+/**
+ * Scheduled signal row with cancellation ID.
+ * Extends IScheduledSignalRow to include optional cancelId for user-initiated cancellations.
+ */
+interface IScheduledSignalCancelRow extends IScheduledSignalRow {
+    /** Cancellation ID (only for user-initiated cancellations) */
+    cancelId?: string;
+}
+/**
+ * Optional lifecycle callbacks for signal events.
+ * Called when signals are opened, active, idle, closed, scheduled, or cancelled.
+ */
+interface IStrategyCallbacks {
+    /** Called on every tick with the result */
+    onTick: (symbol: string, result: IStrategyTickResult, backtest: boolean) => void | Promise<void>;
+    /** Called when new signal is opened (after validation) */
+    onOpen: (symbol: string, data: IPublicSignalRow, currentPrice: number, backtest: boolean) => void | Promise<void>;
+    /** Called when signal is being monitored (active state) */
+    onActive: (symbol: string, data: IPublicSignalRow, currentPrice: number, backtest: boolean) => void | Promise<void>;
+    /** Called when no active signal exists (idle state) */
+    onIdle: (symbol: string, currentPrice: number, backtest: boolean) => void | Promise<void>;
+    /** Called when signal is closed with final price */
+    onClose: (symbol: string, data: IPublicSignalRow, priceClose: number, backtest: boolean) => void | Promise<void>;
+    /** Called when scheduled signal is created (delayed entry) */
+    onSchedule: (symbol: string, data: IPublicSignalRow, currentPrice: number, backtest: boolean) => void | Promise<void>;
+    /** Called when scheduled signal is cancelled without opening position */
+    onCancel: (symbol: string, data: IPublicSignalRow, currentPrice: number, backtest: boolean) => void | Promise<void>;
+    /** Called when signal is written to persist storage (for testing) */
+    onWrite: (symbol: string, data: IPublicSignalRow | null, backtest: boolean) => void;
+    /** Called when signal is in partial profit state (price moved favorably but not reached TP yet) */
+    onPartialProfit: (symbol: string, data: IPublicSignalRow, currentPrice: number, revenuePercent: number, backtest: boolean) => void | Promise<void>;
+    /** Called when signal is in partial loss state (price moved against position but not hit SL yet) */
+    onPartialLoss: (symbol: string, data: IPublicSignalRow, currentPrice: number, lossPercent: number, backtest: boolean) => void | Promise<void>;
+    /** Called when signal reaches breakeven (stop-loss moved to entry price to protect capital) */
+    onBreakeven: (symbol: string, data: IPublicSignalRow, currentPrice: number, backtest: boolean) => void | Promise<void>;
+    /** Called every minute regardless of strategy interval (for custom monitoring like checking if signal should be cancelled) */
+    onPing: (symbol: string, data: IPublicSignalRow, when: Date, backtest: boolean) => void | Promise<void>;
+}
+/**
+ * Strategy schema registered via addStrategy().
+ * Defines signal generation logic and configuration.
+ */
+interface IStrategySchema {
+    /** Unique strategy identifier for registration */
+    strategyName: StrategyName;
+    /** Optional developer note for documentation */
+    note?: string;
+    /** Minimum interval between getSignal calls (throttling) */
+    interval: SignalInterval;
+    /**
+     * Signal generation function (returns null if no signal, validated DTO if signal).
+     * If priceOpen is provided - becomes scheduled signal waiting for price to reach entry point.
+     * If priceOpen is omitted - opens immediately at current price.
+     */
+    getSignal: (symbol: string, when: Date) => Promise<ISignalDto | null>;
+    /** Optional lifecycle event callbacks (onOpen, onClose) */
+    callbacks?: Partial<IStrategyCallbacks>;
+    /** Optional risk profile identifier for risk management */
+    riskName?: RiskName;
+    /** Optional several risk profile list for risk management (if multiple required) */
+    riskList?: RiskName[];
+    /** Optional list of action identifiers to attach to this strategy */
+    actions?: ActionName[];
+}
+/**
+ * Reason why signal was closed.
+ * Used in discriminated union for type-safe handling.
+ */
+type StrategyCloseReason = "time_expired" | "take_profit" | "stop_loss";
+/**
+ * Reason why scheduled signal was cancelled.
+ * Used in discriminated union for type-safe handling.
+ */
+type StrategyCancelReason = "timeout" | "price_reject" | "user";
+/**
+ * Profit and loss calculation result.
+ * Includes adjusted prices with fees (0.1%) and slippage (0.1%).
+ */
+interface IStrategyPnL {
+    /** Profit/loss as percentage (e.g., 1.5 for +1.5%, -2.3 for -2.3%) */
+    pnlPercentage: number;
+    /** Entry price adjusted with slippage and fees */
+    priceOpen: number;
+    /** Exit price adjusted with slippage and fees */
+    priceClose: number;
+}
+/**
+ * Tick result: no active signal, idle state.
+ */
+interface IStrategyTickResultIdle {
+    /** Discriminator for type-safe union */
+    action: "idle";
+    /** No signal in idle state */
+    signal: null;
+    /** Strategy name for tracking idle events */
+    strategyName: StrategyName;
+    /** Exchange name for tracking idle events */
+    exchangeName: ExchangeName;
+    /** Time frame name for tracking (e.g., "1m", "5m") */
+    frameName: FrameName;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
+    symbol: string;
+    /** Current VWAP price during idle state */
+    currentPrice: number;
+    /** Whether this event is from backtest mode (true) or live mode (false) */
+    backtest: boolean;
+}
+/**
+ * Tick result: scheduled signal created, waiting for price to reach entry point.
+ * Triggered when getSignal returns signal with priceOpen specified.
+ */
+interface IStrategyTickResultScheduled {
+    /** Discriminator for type-safe union */
+    action: "scheduled";
+    /** Scheduled signal waiting for activation */
+    signal: IPublicSignalRow;
+    /** Strategy name for tracking */
+    strategyName: StrategyName;
+    /** Exchange name for tracking */
+    exchangeName: ExchangeName;
+    /** Time frame name for tracking (e.g., "1m", "5m") */
+    frameName: FrameName;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
+    symbol: string;
+    /** Current VWAP price when scheduled signal created */
+    currentPrice: number;
+    /** Whether this event is from backtest mode (true) or live mode (false) */
+    backtest: boolean;
+}
+/**
+ * Tick result: new signal just created.
+ * Triggered after getSignal validation and persistence.
+ */
+interface IStrategyTickResultOpened {
+    /** Discriminator for type-safe union */
+    action: "opened";
+    /** Newly created and validated signal with generated ID */
+    signal: IPublicSignalRow;
+    /** Strategy name for tracking */
+    strategyName: StrategyName;
+    /** Exchange name for tracking */
+    exchangeName: ExchangeName;
+    /** Time frame name for tracking (e.g., "1m", "5m") */
+    frameName: FrameName;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
+    symbol: string;
+    /** Current VWAP price at signal open */
+    currentPrice: number;
+    /** Whether this event is from backtest mode (true) or live mode (false) */
+    backtest: boolean;
+}
+/**
+ * Tick result: signal is being monitored.
+ * Waiting for TP/SL or time expiration.
+ */
+interface IStrategyTickResultActive {
+    /** Discriminator for type-safe union */
+    action: "active";
+    /** Currently monitored signal */
+    signal: IPublicSignalRow;
+    /** Current VWAP price for monitoring */
+    currentPrice: number;
+    /** Strategy name for tracking */
+    strategyName: StrategyName;
+    /** Exchange name for tracking */
+    exchangeName: ExchangeName;
+    /** Time frame name for tracking (e.g., "1m", "5m") */
+    frameName: FrameName;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
+    symbol: string;
+    /** Percentage progress towards take profit (0-100%, 0 if moving towards SL) */
+    percentTp: number;
+    /** Percentage progress towards stop loss (0-100%, 0 if moving towards TP) */
+    percentSl: number;
+    /** Unrealized PNL for active position with fees, slippage, and partial closes */
+    pnl: IStrategyPnL;
+    /** Whether this event is from backtest mode (true) or live mode (false) */
+    backtest: boolean;
+}
+/**
+ * Tick result: signal closed with PNL.
+ * Final state with close reason and profit/loss calculation.
+ */
+interface IStrategyTickResultClosed {
+    /** Discriminator for type-safe union */
+    action: "closed";
+    /** Completed signal with original parameters */
+    signal: IPublicSignalRow;
+    /** Final VWAP price at close */
+    currentPrice: number;
+    /** Why signal closed (time_expired | take_profit | stop_loss) */
+    closeReason: StrategyCloseReason;
+    /** Unix timestamp in milliseconds when signal closed */
+    closeTimestamp: number;
+    /** Profit/loss calculation with fees and slippage */
+    pnl: IStrategyPnL;
+    /** Strategy name for tracking */
+    strategyName: StrategyName;
+    /** Exchange name for tracking */
+    exchangeName: ExchangeName;
+    /** Time frame name for tracking (e.g., "1m", "5m") */
+    frameName: FrameName;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
+    symbol: string;
+    /** Whether this event is from backtest mode (true) or live mode (false) */
+    backtest: boolean;
+}
+/**
+ * Tick result: scheduled signal cancelled without opening position.
+ * Occurs when scheduled signal doesn't activate or hits stop loss before entry.
+ */
+interface IStrategyTickResultCancelled {
+    /** Discriminator for type-safe union */
+    action: "cancelled";
+    /** Cancelled scheduled signal */
+    signal: IPublicSignalRow;
+    /** Final VWAP price at cancellation */
+    currentPrice: number;
+    /** Unix timestamp in milliseconds when signal cancelled */
+    closeTimestamp: number;
+    /** Strategy name for tracking */
+    strategyName: StrategyName;
+    /** Exchange name for tracking */
+    exchangeName: ExchangeName;
+    /** Time frame name for tracking (e.g., "1m", "5m") */
+    frameName: FrameName;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
+    symbol: string;
+    /** Whether this event is from backtest mode (true) or live mode (false) */
+    backtest: boolean;
+    /** Reason for cancellation */
+    reason: StrategyCancelReason;
+    /** Optional cancellation ID (provided when user calls Backtest.cancel() or Live.cancel()) */
+    cancelId?: string;
+}
+/**
+ * Discriminated union of all tick results.
+ * Use type guards: `result.action === "closed"` for type safety.
+ */
+type IStrategyTickResult = IStrategyTickResultIdle | IStrategyTickResultScheduled | IStrategyTickResultOpened | IStrategyTickResultActive | IStrategyTickResultClosed | IStrategyTickResultCancelled;
+/**
+ * Backtest returns closed result (TP/SL or time_expired) or cancelled result (scheduled signal never activated).
+ */
+type IStrategyBacktestResult = IStrategyTickResultClosed | IStrategyTickResultCancelled;
+/**
+ * Strategy interface implemented by ClientStrategy.
+ * Defines core strategy execution methods.
+ */
+interface IStrategy {
+    /**
+     * Single tick of strategy execution with VWAP monitoring.
+     * Checks for signal generation (throttled) and TP/SL conditions.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param strategyName - Name of the strategy
+     * @returns Promise resolving to tick result (idle | opened | active | closed)
+     */
+    tick: (symbol: string, strategyName: StrategyName) => Promise<IStrategyTickResult>;
+    /**
+     * Retrieves the currently active pending signal for the symbol.
+     * If no active signal exists, returns null.
+     * Used internally for monitoring TP/SL and time expiration.
+     *
+     * @param symbol - Trading pair symbol
+     * @returns Promise resolving to pending signal or null
+     */
+    getPendingSignal: (symbol: string) => Promise<IPublicSignalRow | null>;
+    /**
+     * Retrieves the currently active scheduled signal for the symbol.
+     * If no scheduled signal exists, returns null.
+     * Used internally for monitoring scheduled signal activation.
+     *
+     * @param symbol - Trading pair symbol
+     * @returns Promise resolving to scheduled signal or null
+     */
+    getScheduledSignal: (symbol: string) => Promise<IPublicSignalRow | null>;
+    /**
+     * Checks if breakeven threshold has been reached for the current pending signal.
+     *
+     * Uses the same formula as BREAKEVEN_FN to determine if price has moved far enough
+     * to cover transaction costs (slippage + fees) and allow breakeven to be set.
+     * Threshold: (CC_PERCENT_SLIPPAGE + CC_PERCENT_FEE) * 2 transactions
+     *
+     * For LONG position:
+     * - Returns true when: currentPrice >= priceOpen * (1 + threshold%)
+     * - Example: entry=100, threshold=0.4% → true when price >= 100.4
+     *
+     * For SHORT position:
+     * - Returns true when: currentPrice <= priceOpen * (1 - threshold%)
+     * - Example: entry=100, threshold=0.4% → true when price <= 99.6
+     *
+     * Special cases:
+     * - Returns false if no pending signal exists
+     * - Returns true if trailing stop is already in profit zone (breakeven already achieved)
+     * - Returns false if threshold not reached yet
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param currentPrice - Current market price to check against threshold
+     * @returns Promise<boolean> - true if breakeven threshold reached, false otherwise
+     *
+     * @example
+     * ```typescript
+     * // Check if breakeven is available for LONG position (entry=100, threshold=0.4%)
+     * const canBreakeven = await strategy.getBreakeven("BTCUSDT", 100.5);
+     * // Returns true (price >= 100.4)
+     *
+     * if (canBreakeven) {
+     *   await strategy.breakeven("BTCUSDT", 100.5, false);
+     * }
+     * ```
+     */
+    getBreakeven: (symbol: string, currentPrice: number) => Promise<boolean>;
+    /**
+     * Checks if the strategy has been stopped.
+     *
+     * Returns the stopped state indicating whether the strategy should
+     * cease processing new ticks or signals.
+     *
+     * @param symbol - Trading pair symbol
+     * @returns Promise resolving to true if strategy is stopped, false otherwise
+     */
+    getStopped: (symbol: string) => Promise<boolean>;
+    /**
+     * Fast backtest using historical candles.
+     * Iterates through candles, calculates VWAP, checks TP/SL on each candle.
+     *
+     * For scheduled signals: first monitors activation/cancellation,
+     * then if activated continues with TP/SL monitoring.
+     *
+     * @param symbol - Trading pair symbol
+     * @param strategyName - Name of the strategy
+     * @param candles - Array of historical candle data
+     * @returns Promise resolving to closed result (always completes signal)
+     */
+    backtest: (symbol: string, strategyName: StrategyName, candles: ICandleData[]) => Promise<IStrategyBacktestResult>;
+    /**
+     * Stops the strategy from generating new signals.
+     *
+     * Sets internal flag to prevent getSignal from being called on subsequent ticks.
+     * Does NOT force-close active pending signals - they continue monitoring until natural closure (TP/SL/time_expired).
+     *
+     * Use case: Graceful shutdown in live trading mode without abandoning open positions.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @returns Promise that resolves immediately when stop flag is set
+     *
+     * @example
+     * ```typescript
+     * // Graceful shutdown in Live.background() cancellation
+     * const cancel = await Live.background("BTCUSDT", { ... });
+     *
+     * // Later: stop new signals, let existing ones close naturally
+     * await cancel();
+     * ```
+     */
+    stop: (symbol: string, backtest: boolean) => Promise<void>;
+    /**
+     * Cancels the scheduled signal without stopping the strategy.
+     *
+     * Clears the scheduled signal (waiting for priceOpen activation).
+     * Does NOT affect active pending signals or strategy operation.
+     * Does NOT set stop flag - strategy can continue generating new signals.
+     *
+     * Use case: Cancel a scheduled entry that is no longer desired without stopping the entire strategy.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param cancelId - Optional cancellation ID
+     * @returns Promise that resolves when scheduled signal is cleared
+     *
+     * @example
+     * ```typescript
+     * // Cancel scheduled signal without stopping strategy
+     * await strategy.cancel("BTCUSDT");
+     * // Strategy continues, can generate new signals
+     * ```
+     */
+    cancel: (symbol: string, backtest: boolean, cancelId?: string) => Promise<void>;
+    /**
+     * Executes partial close at profit level (moving toward TP).
+     *
+     * Closes specified percentage of position at current price.
+     * Updates _tpClosed, _totalClosed, and _partialHistory state.
+     * Persists updated signal state for crash recovery.
+     *
+     * Validations:
+     * - Throws if no pending signal exists
+     * - Throws if called on scheduled signal (not yet activated)
+     * - Throws if percentToClose <= 0 or > 100
+     * - Returns false if _totalClosed + percentToClose > 100 (prevents over-closing)
+     *
+     * Use case: User-controlled partial close triggered from onPartialProfit callback.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param percentToClose - Absolute percentage of position to close (0-100)
+     * @param currentPrice - Current market price for partial close
+     * @param backtest - Whether running in backtest mode
+     * @returns Promise<boolean> - true if partial close executed, false if skipped
+     *
+     * @example
+     * ```typescript
+     * callbacks: {
+     *   onPartialProfit: async (symbol, signal, currentPrice, percentTp, backtest) => {
+     *     if (percentTp >= 50) {
+     *       const success = await strategy.partialProfit(symbol, 25, currentPrice, backtest);
+     *       if (success) {
+     *         console.log('Partial profit executed');
+     *       }
+     *     }
+     *   }
+     * }
+     * ```
+     */
+    partialProfit: (symbol: string, percentToClose: number, currentPrice: number, backtest: boolean) => Promise<boolean>;
+    /**
+     * Executes partial close at loss level (moving toward SL).
+     *
+     * Closes specified percentage of position at current price.
+     * Updates _slClosed, _totalClosed, and _partialHistory state.
+     * Persists updated signal state for crash recovery.
+     *
+     * Validations:
+     * - Throws if no pending signal exists
+     * - Throws if called on scheduled signal (not yet activated)
+     * - Throws if percentToClose <= 0 or > 100
+     * - Returns false if _totalClosed + percentToClose > 100 (prevents over-closing)
+     *
+     * Use case: User-controlled partial close triggered from onPartialLoss callback.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param percentToClose - Absolute percentage of position to close (0-100)
+     * @param currentPrice - Current market price for partial close
+     * @param backtest - Whether running in backtest mode
+     * @returns Promise<boolean> - true if partial close executed, false if skipped
+     *
+     * @example
+     * ```typescript
+     * callbacks: {
+     *   onPartialLoss: async (symbol, signal, currentPrice, percentSl, backtest) => {
+     *     if (percentSl >= 80) {
+     *       const success = await strategy.partialLoss(symbol, 50, currentPrice, backtest);
+     *       if (success) {
+     *         console.log('Partial loss executed');
+     *       }
+     *     }
+     *   }
+     * }
+     * ```
+     */
+    partialLoss: (symbol: string, percentToClose: number, currentPrice: number, backtest: boolean) => Promise<boolean>;
+    /**
+     * Adjusts trailing stop-loss by shifting distance between entry and original SL.
+     *
+     * CRITICAL: Always calculates from ORIGINAL SL, not from current trailing SL.
+     * This prevents error accumulation on repeated calls.
+     * Larger percentShift ABSORBS smaller one (updates only towards better protection).
+     *
+     * Calculates new SL based on percentage shift of the ORIGINAL distance (entry - originalSL):
+     * - Negative %: tightens stop (moves SL closer to entry, reduces risk)
+     * - Positive %: loosens stop (moves SL away from entry, allows more drawdown)
+     *
+     * For LONG position (entry=100, originalSL=90, distance=10%):
+     * - percentShift = -50: newSL = 100 - 10%*(1-0.5) = 95 (5% distance, tighter)
+     * - percentShift = +20: newSL = 100 - 10%*(1+0.2) = 88 (12% distance, looser)
+     *
+     * For SHORT position (entry=100, originalSL=110, distance=10%):
+     * - percentShift = -50: newSL = 100 + 10%*(1-0.5) = 105 (5% distance, tighter)
+     * - percentShift = +20: newSL = 100 + 10%*(1+0.2) = 112 (12% distance, looser)
+     *
+     * Absorption behavior:
+     * - First call: sets trailing SL unconditionally
+     * - Subsequent calls: updates only if new SL is BETTER (protects more profit)
+     * - For LONG: only accepts HIGHER SL (never moves down, closer to entry wins)
+     * - For SHORT: only accepts LOWER SL (never moves up, closer to entry wins)
+     * - Stores in _trailingPriceStopLoss, original priceStopLoss always preserved
+     *
+     * Validations:
+     * - Throws if no pending signal exists
+     * - Throws if percentShift < -100 or > 100
+     * - Throws if percentShift === 0
+     * - Skips if new SL would cross entry price
+     * - Skips if currentPrice already crossed new SL level (price intrusion protection)
+     *
+     * Use case: User-controlled trailing stop triggered from onPartialProfit callback.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param percentShift - Percentage shift of ORIGINAL SL distance [-100, 100], excluding 0
+     * @param currentPrice - Current market price to check for intrusion
+     * @param backtest - Whether running in backtest mode
+     * @returns Promise<boolean> - true if trailing SL was set/updated, false if rejected
+     *
+     * @example
+     * ```typescript
+     * callbacks: {
+     *   onPartialProfit: async (symbol, signal, currentPrice, percentTp, backtest) => {
+     *     if (percentTp >= 50) {
+     *       // LONG: entry=100, originalSL=90, distance=10%
+     *
+     *       // First call: tighten by 5%
+     *       const success1 = await strategy.trailingStop(symbol, -5, currentPrice, backtest);
+     *       // success1 = true, newDistance = 10% - 5% = 5%, newSL = 95
+     *
+     *       // Second call: try weaker protection
+     *       const success2 = await strategy.trailingStop(symbol, -3, currentPrice, backtest);
+     *       // success2 = false (SKIPPED: newSL=97 < 95, worse protection, larger % absorbs smaller)
+     *
+     *       // Third call: stronger protection
+     *       const success3 = await strategy.trailingStop(symbol, -7, currentPrice, backtest);
+     *       // success3 = true (ACCEPTED: newDistance = 3%, newSL = 97 > 95, better protection)
+     *     }
+     *   }
+     * }
+     * ```
+     */
+    trailingStop: (symbol: string, percentShift: number, currentPrice: number, backtest: boolean) => Promise<boolean>;
+    /**
+     * Adjusts the trailing take-profit distance for an active pending signal.
+     *
+     * CRITICAL: Always calculates from ORIGINAL TP, not from current trailing TP.
+     * This prevents error accumulation on repeated calls.
+     * Larger percentShift ABSORBS smaller one (updates only towards more conservative TP).
+     *
+     * Updates the take-profit distance by a percentage adjustment relative to the ORIGINAL TP distance.
+     * Negative percentShift brings TP closer to entry (more conservative).
+     * Positive percentShift moves TP further from entry (more aggressive).
+     *
+     * Absorption behavior:
+     * - First call: sets trailing TP unconditionally
+     * - Subsequent calls: updates only if new TP is MORE CONSERVATIVE (closer to entry)
+     * - For LONG: only accepts LOWER TP (never moves up, closer to entry wins)
+     * - For SHORT: only accepts HIGHER TP (never moves down, closer to entry wins)
+     * - Stores in _trailingPriceTakeProfit, original priceTakeProfit always preserved
+     *
+     * Price intrusion protection: If current price has already crossed the new TP level,
+     * the update is skipped to prevent immediate TP triggering.
+     *
+     * @param symbol - Trading pair symbol
+     * @param percentShift - Percentage adjustment to ORIGINAL TP distance (-100 to 100)
+     * @param currentPrice - Current market price to check for intrusion
+     * @param backtest - Whether running in backtest mode
+     * @returns Promise<boolean> - true if trailing TP was set/updated, false if rejected
+     *
+     * @example
+     * ```typescript
+     * callbacks: {
+     *   onPartialProfit: async (symbol, signal, currentPrice, percentTp, backtest) => {
+     *     // LONG: entry=100, originalTP=110, distance=10%, currentPrice=102
+     *
+     *     // First call: bring TP closer by 3%
+     *     const success1 = await strategy.trailingTake(symbol, -3, currentPrice, backtest);
+     *     // success1 = true, newDistance = 10% - 3% = 7%, newTP = 107
+     *
+     *     // Second call: try to move TP further (less conservative)
+     *     const success2 = await strategy.trailingTake(symbol, 2, currentPrice, backtest);
+     *     // success2 = false (SKIPPED: newTP=112 > 107, less conservative, larger % absorbs smaller)
+     *
+     *     // Third call: even more conservative
+     *     const success3 = await strategy.trailingTake(symbol, -5, currentPrice, backtest);
+     *     // success3 = true (ACCEPTED: newDistance = 5%, newTP = 105 < 107, more conservative)
+     *   }
+     * }
+     * ```
+     */
+    trailingTake: (symbol: string, percentShift: number, currentPrice: number, backtest: boolean) => Promise<boolean>;
+    /**
+     * Moves stop-loss to breakeven (entry price) when price reaches threshold.
+     *
+     * Moves SL to entry price (zero-risk position) when current price has moved
+     * far enough in profit direction to cover transaction costs (slippage + fees).
+     * Threshold is calculated as: (CC_PERCENT_SLIPPAGE + CC_PERCENT_FEE) * 2
+     *
+     * Behavior:
+     * - Returns true if SL was moved to breakeven
+     * - Returns false if conditions not met (threshold not reached or already at breakeven)
+     * - Uses _trailingPriceStopLoss to store breakeven SL (preserves original priceStopLoss)
+     * - Only moves SL once per position (idempotent - safe to call multiple times)
+     *
+     * For LONG position (entry=100, slippage=0.1%, fee=0.1%):
+     * - Threshold: (0.1 + 0.1) * 2 = 0.4%
+     * - Breakeven available when price >= 100.4 (entry + 0.4%)
+     * - Moves SL from original (e.g. 95) to 100 (breakeven)
+     * - Returns true on first successful move, false on subsequent calls
+     *
+     * For SHORT position (entry=100, slippage=0.1%, fee=0.1%):
+     * - Threshold: (0.1 + 0.1) * 2 = 0.4%
+     * - Breakeven available when price <= 99.6 (entry - 0.4%)
+     * - Moves SL from original (e.g. 105) to 100 (breakeven)
+     * - Returns true on first successful move, false on subsequent calls
+     *
+     * Validations:
+     * - Throws if no pending signal exists
+     * - Throws if currentPrice is not a positive finite number
+     *
+     * Use case: User-controlled breakeven protection triggered from onPartialProfit callback.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param currentPrice - Current market price to check threshold
+     * @param backtest - Whether running in backtest mode
+     * @returns Promise<boolean> - true if breakeven was set, false if conditions not met
+     *
+     * @example
+     * ```typescript
+     * callbacks: {
+     *   onPartialProfit: async (symbol, signal, currentPrice, percentTp, backtest) => {
+     *     // Try to move SL to breakeven when threshold reached
+     *     const movedToBreakeven = await strategy.breakeven(symbol, currentPrice, backtest);
+     *     if (movedToBreakeven) {
+     *       console.log(`Position moved to breakeven at ${currentPrice}`);
+     *     }
+     *   }
+     * }
+     * ```
+     */
+    breakeven: (symbol: string, currentPrice: number, backtest: boolean) => Promise<boolean>;
+    /**
+     * Disposes the strategy instance and cleans up resources.
+     *
+     * Called when the strategy is being removed from cache or shut down.
+     * Invokes the onDispose callback to notify external systems.
+     *
+     * @returns Promise that resolves when disposal is complete
+     */
+    dispose: () => Promise<void>;
+}
+/**
+ * Unique strategy identifier.
+ */
+type StrategyName = string;
 
 /**
  * Contract for breakeven events.
@@ -2171,1197 +2737,6 @@ interface IAction {
 type ActionName = string;
 
 /**
- * Signal generation interval for throttling.
- * Enforces minimum time between getSignal calls.
- */
-type SignalInterval = "1m" | "3m" | "5m" | "15m" | "30m" | "1h";
-/**
- * Signal data transfer object returned by getSignal.
- * Will be validated and augmented with auto-generated id.
- */
-interface ISignalDto {
-    /** Optional signal ID (auto-generated if not provided) */
-    id?: string;
-    /** Trade direction: "long" (buy) or "short" (sell) */
-    position: "long" | "short";
-    /** Human-readable description of signal reason */
-    note?: string;
-    /** Entry price for the position */
-    priceOpen?: number;
-    /** Take profit target price (must be > priceOpen for long, < priceOpen for short) */
-    priceTakeProfit: number;
-    /** Stop loss exit price (must be < priceOpen for long, > priceOpen for short) */
-    priceStopLoss: number;
-    /** Expected duration in minutes before time_expired */
-    minuteEstimatedTime: number;
-}
-/**
- * Complete signal with auto-generated id.
- * Used throughout the system after validation.
- */
-interface ISignalRow extends ISignalDto {
-    /** Unique signal identifier (UUID v4 auto-generated) */
-    id: string;
-    /** Entry price for the position */
-    priceOpen: number;
-    /** Unique exchange identifier for execution */
-    exchangeName: ExchangeName;
-    /** Unique strategy identifier for execution */
-    strategyName: StrategyName;
-    /** Unique frame identifier for execution (empty string for live mode) */
-    frameName: FrameName;
-    /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
-    scheduledAt: number;
-    /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
-    pendingAt: number;
-    /** Trading pair symbol (e.g., "BTCUSDT") */
-    symbol: string;
-    /** Internal runtime marker for scheduled signals */
-    _isScheduled: boolean;
-    /**
-     * History of partial closes for PNL calculation.
-     * Each entry contains type (profit/loss), percent closed, and price.
-     * Used to calculate weighted PNL: Σ(percent_i × pnl_i) for each partial + (remaining% × final_pnl)
-     *
-     * Computed values (derived from this array):
-     * - _tpClosed: Sum of all "profit" type partial close percentages
-     * - _slClosed: Sum of all "loss" type partial close percentages
-     * - _totalClosed: Sum of all partial close percentages (profit + loss)
-     */
-    _partial?: Array<{
-        /** Type of partial close: profit (moving toward TP) or loss (moving toward SL) */
-        type: "profit" | "loss";
-        /** Percentage of position closed (0-100) */
-        percent: number;
-        /** Price at which this partial was executed */
-        price: number;
-    }>;
-    /**
-     * Trailing stop-loss price that overrides priceStopLoss when set.
-     * Updated by trailing() method based on position type and percentage distance.
-     * - For LONG: moves upward as price moves toward TP (never moves down)
-     * - For SHORT: moves downward as price moves toward TP (never moves up)
-     * When _trailingPriceStopLoss is set, it replaces priceStopLoss for TP/SL checks.
-     * Original priceStopLoss is preserved in persistence but ignored during execution.
-     */
-    _trailingPriceStopLoss?: number;
-    /**
-     * Trailing take-profit price that overrides priceTakeProfit when set.
-     * Created and managed by trailingTake() method for dynamic TP adjustment.
-     * Allows moving TP further from or closer to current price based on strategy.
-     * Updated by trailingTake() method based on position type and percentage distance.
-     * - For LONG: can move upward (further) or downward (closer) from entry
-     * - For SHORT: can move downward (further) or upward (closer) from entry
-     * When _trailingPriceTakeProfit is set, it replaces priceTakeProfit for TP/SL checks.
-     * Original priceTakeProfit is preserved in persistence but ignored during execution.
-     */
-    _trailingPriceTakeProfit?: number;
-}
-/**
- * Scheduled signal row for delayed entry at specific price.
- * Inherits from ISignalRow - represents a signal waiting for price to reach priceOpen.
- * Once price reaches priceOpen, will be converted to regular _pendingSignal.
- * Note: pendingAt will be set to scheduledAt until activation, then updated to actual pending time.
- */
-interface IScheduledSignalRow extends ISignalRow {
-    /** Entry price for the position */
-    priceOpen: number;
-}
-/**
- * Public signal row with original stop-loss and take-profit prices.
- * Extends ISignalRow to include originalPriceStopLoss and originalPriceTakeProfit for external visibility.
- * Used in public APIs to show user the original SL/TP even if trailing SL/TP are active.
- * This allows users to see both the current effective SL/TP and the original values set at signal creation.
- * The original prices remain unchanged even if _trailingPriceStopLoss or _trailingPriceTakeProfit modify the effective values.
- * Useful for transparency in reporting and user interfaces.
- * Note: originalPriceStopLoss/originalPriceTakeProfit are identical to priceStopLoss/priceTakeProfit at signal creation time.
- */
-interface IPublicSignalRow extends ISignalRow {
-    /**
-     * Original stop-loss price set at signal creation.
-     * Remains unchanged even if trailing stop-loss modifies effective SL.
-     * Used for user visibility of initial SL parameters.
-     */
-    originalPriceStopLoss: number;
-    /**
-     * Original take-profit price set at signal creation.
-     * Remains unchanged even if trailing take-profit modifies effective TP.
-     * Used for user visibility of initial TP parameters.
-     */
-    originalPriceTakeProfit: number;
-    /**
-     * Total executed percentage from partial closes.
-     * Sum of all percent values from _partial array (both profit and loss types).
-     * Represents the total portion of the position that has been closed through partial executions.
-     * Range: 0-100. Value of 0 means no partial closes, 100 means position fully closed through partials.
-     */
-    totalExecuted: number;
-}
-/**
- * Risk signal row for internal risk management.
- * Extends ISignalDto to include priceOpen, originalPriceStopLoss and originalPriceTakeProfit.
- * Used in risk validation to access entry price and original SL/TP.
- */
-interface IRiskSignalRow extends IPublicSignalRow {
-    /**
-     * Entry price for the position.
-     */
-    priceOpen: number;
-    /**
-     * Original stop-loss price set at signal creation.
-     */
-    originalPriceStopLoss: number;
-    /**
-     * Original take-profit price set at signal creation.
-     */
-    originalPriceTakeProfit: number;
-}
-/**
- * Scheduled signal row with cancellation ID.
- * Extends IScheduledSignalRow to include optional cancelId for user-initiated cancellations.
- */
-interface IScheduledSignalCancelRow extends IScheduledSignalRow {
-    /** Cancellation ID (only for user-initiated cancellations) */
-    cancelId?: string;
-}
-/**
- * Optional lifecycle callbacks for signal events.
- * Called when signals are opened, active, idle, closed, scheduled, or cancelled.
- */
-interface IStrategyCallbacks {
-    /** Called on every tick with the result */
-    onTick: (symbol: string, result: IStrategyTickResult, backtest: boolean) => void | Promise<void>;
-    /** Called when new signal is opened (after validation) */
-    onOpen: (symbol: string, data: IPublicSignalRow, currentPrice: number, backtest: boolean) => void | Promise<void>;
-    /** Called when signal is being monitored (active state) */
-    onActive: (symbol: string, data: IPublicSignalRow, currentPrice: number, backtest: boolean) => void | Promise<void>;
-    /** Called when no active signal exists (idle state) */
-    onIdle: (symbol: string, currentPrice: number, backtest: boolean) => void | Promise<void>;
-    /** Called when signal is closed with final price */
-    onClose: (symbol: string, data: IPublicSignalRow, priceClose: number, backtest: boolean) => void | Promise<void>;
-    /** Called when scheduled signal is created (delayed entry) */
-    onSchedule: (symbol: string, data: IPublicSignalRow, currentPrice: number, backtest: boolean) => void | Promise<void>;
-    /** Called when scheduled signal is cancelled without opening position */
-    onCancel: (symbol: string, data: IPublicSignalRow, currentPrice: number, backtest: boolean) => void | Promise<void>;
-    /** Called when signal is written to persist storage (for testing) */
-    onWrite: (symbol: string, data: IPublicSignalRow | null, backtest: boolean) => void;
-    /** Called when signal is in partial profit state (price moved favorably but not reached TP yet) */
-    onPartialProfit: (symbol: string, data: IPublicSignalRow, currentPrice: number, revenuePercent: number, backtest: boolean) => void | Promise<void>;
-    /** Called when signal is in partial loss state (price moved against position but not hit SL yet) */
-    onPartialLoss: (symbol: string, data: IPublicSignalRow, currentPrice: number, lossPercent: number, backtest: boolean) => void | Promise<void>;
-    /** Called when signal reaches breakeven (stop-loss moved to entry price to protect capital) */
-    onBreakeven: (symbol: string, data: IPublicSignalRow, currentPrice: number, backtest: boolean) => void | Promise<void>;
-    /** Called every minute regardless of strategy interval (for custom monitoring like checking if signal should be cancelled) */
-    onPing: (symbol: string, data: IPublicSignalRow, when: Date, backtest: boolean) => void | Promise<void>;
-}
-/**
- * Strategy schema registered via addStrategy().
- * Defines signal generation logic and configuration.
- */
-interface IStrategySchema {
-    /** Unique strategy identifier for registration */
-    strategyName: StrategyName;
-    /** Optional developer note for documentation */
-    note?: string;
-    /** Minimum interval between getSignal calls (throttling) */
-    interval: SignalInterval;
-    /**
-     * Signal generation function (returns null if no signal, validated DTO if signal).
-     * If priceOpen is provided - becomes scheduled signal waiting for price to reach entry point.
-     * If priceOpen is omitted - opens immediately at current price.
-     */
-    getSignal: (symbol: string, when: Date) => Promise<ISignalDto | null>;
-    /** Optional lifecycle event callbacks (onOpen, onClose) */
-    callbacks?: Partial<IStrategyCallbacks>;
-    /** Optional risk profile identifier for risk management */
-    riskName?: RiskName;
-    /** Optional several risk profile list for risk management (if multiple required) */
-    riskList?: RiskName[];
-    /** Optional list of action identifiers to attach to this strategy */
-    actions?: ActionName[];
-}
-/**
- * Reason why signal was closed.
- * Used in discriminated union for type-safe handling.
- */
-type StrategyCloseReason = "time_expired" | "take_profit" | "stop_loss";
-/**
- * Reason why scheduled signal was cancelled.
- * Used in discriminated union for type-safe handling.
- */
-type StrategyCancelReason = "timeout" | "price_reject" | "user";
-/**
- * Profit and loss calculation result.
- * Includes adjusted prices with fees (0.1%) and slippage (0.1%).
- */
-interface IStrategyPnL {
-    /** Profit/loss as percentage (e.g., 1.5 for +1.5%, -2.3 for -2.3%) */
-    pnlPercentage: number;
-    /** Entry price adjusted with slippage and fees */
-    priceOpen: number;
-    /** Exit price adjusted with slippage and fees */
-    priceClose: number;
-}
-/**
- * Tick result: no active signal, idle state.
- */
-interface IStrategyTickResultIdle {
-    /** Discriminator for type-safe union */
-    action: "idle";
-    /** No signal in idle state */
-    signal: null;
-    /** Strategy name for tracking idle events */
-    strategyName: StrategyName;
-    /** Exchange name for tracking idle events */
-    exchangeName: ExchangeName;
-    /** Time frame name for tracking (e.g., "1m", "5m") */
-    frameName: FrameName;
-    /** Trading pair symbol (e.g., "BTCUSDT") */
-    symbol: string;
-    /** Current VWAP price during idle state */
-    currentPrice: number;
-    /** Whether this event is from backtest mode (true) or live mode (false) */
-    backtest: boolean;
-}
-/**
- * Tick result: scheduled signal created, waiting for price to reach entry point.
- * Triggered when getSignal returns signal with priceOpen specified.
- */
-interface IStrategyTickResultScheduled {
-    /** Discriminator for type-safe union */
-    action: "scheduled";
-    /** Scheduled signal waiting for activation */
-    signal: IPublicSignalRow;
-    /** Strategy name for tracking */
-    strategyName: StrategyName;
-    /** Exchange name for tracking */
-    exchangeName: ExchangeName;
-    /** Time frame name for tracking (e.g., "1m", "5m") */
-    frameName: FrameName;
-    /** Trading pair symbol (e.g., "BTCUSDT") */
-    symbol: string;
-    /** Current VWAP price when scheduled signal created */
-    currentPrice: number;
-    /** Whether this event is from backtest mode (true) or live mode (false) */
-    backtest: boolean;
-}
-/**
- * Tick result: new signal just created.
- * Triggered after getSignal validation and persistence.
- */
-interface IStrategyTickResultOpened {
-    /** Discriminator for type-safe union */
-    action: "opened";
-    /** Newly created and validated signal with generated ID */
-    signal: IPublicSignalRow;
-    /** Strategy name for tracking */
-    strategyName: StrategyName;
-    /** Exchange name for tracking */
-    exchangeName: ExchangeName;
-    /** Time frame name for tracking (e.g., "1m", "5m") */
-    frameName: FrameName;
-    /** Trading pair symbol (e.g., "BTCUSDT") */
-    symbol: string;
-    /** Current VWAP price at signal open */
-    currentPrice: number;
-    /** Whether this event is from backtest mode (true) or live mode (false) */
-    backtest: boolean;
-}
-/**
- * Tick result: signal is being monitored.
- * Waiting for TP/SL or time expiration.
- */
-interface IStrategyTickResultActive {
-    /** Discriminator for type-safe union */
-    action: "active";
-    /** Currently monitored signal */
-    signal: IPublicSignalRow;
-    /** Current VWAP price for monitoring */
-    currentPrice: number;
-    /** Strategy name for tracking */
-    strategyName: StrategyName;
-    /** Exchange name for tracking */
-    exchangeName: ExchangeName;
-    /** Time frame name for tracking (e.g., "1m", "5m") */
-    frameName: FrameName;
-    /** Trading pair symbol (e.g., "BTCUSDT") */
-    symbol: string;
-    /** Percentage progress towards take profit (0-100%, 0 if moving towards SL) */
-    percentTp: number;
-    /** Percentage progress towards stop loss (0-100%, 0 if moving towards TP) */
-    percentSl: number;
-    /** Unrealized PNL for active position with fees, slippage, and partial closes */
-    pnl: IStrategyPnL;
-    /** Whether this event is from backtest mode (true) or live mode (false) */
-    backtest: boolean;
-}
-/**
- * Tick result: signal closed with PNL.
- * Final state with close reason and profit/loss calculation.
- */
-interface IStrategyTickResultClosed {
-    /** Discriminator for type-safe union */
-    action: "closed";
-    /** Completed signal with original parameters */
-    signal: IPublicSignalRow;
-    /** Final VWAP price at close */
-    currentPrice: number;
-    /** Why signal closed (time_expired | take_profit | stop_loss) */
-    closeReason: StrategyCloseReason;
-    /** Unix timestamp in milliseconds when signal closed */
-    closeTimestamp: number;
-    /** Profit/loss calculation with fees and slippage */
-    pnl: IStrategyPnL;
-    /** Strategy name for tracking */
-    strategyName: StrategyName;
-    /** Exchange name for tracking */
-    exchangeName: ExchangeName;
-    /** Time frame name for tracking (e.g., "1m", "5m") */
-    frameName: FrameName;
-    /** Trading pair symbol (e.g., "BTCUSDT") */
-    symbol: string;
-    /** Whether this event is from backtest mode (true) or live mode (false) */
-    backtest: boolean;
-}
-/**
- * Tick result: scheduled signal cancelled without opening position.
- * Occurs when scheduled signal doesn't activate or hits stop loss before entry.
- */
-interface IStrategyTickResultCancelled {
-    /** Discriminator for type-safe union */
-    action: "cancelled";
-    /** Cancelled scheduled signal */
-    signal: IPublicSignalRow;
-    /** Final VWAP price at cancellation */
-    currentPrice: number;
-    /** Unix timestamp in milliseconds when signal cancelled */
-    closeTimestamp: number;
-    /** Strategy name for tracking */
-    strategyName: StrategyName;
-    /** Exchange name for tracking */
-    exchangeName: ExchangeName;
-    /** Time frame name for tracking (e.g., "1m", "5m") */
-    frameName: FrameName;
-    /** Trading pair symbol (e.g., "BTCUSDT") */
-    symbol: string;
-    /** Whether this event is from backtest mode (true) or live mode (false) */
-    backtest: boolean;
-    /** Reason for cancellation */
-    reason: StrategyCancelReason;
-    /** Optional cancellation ID (provided when user calls Backtest.cancel() or Live.cancel()) */
-    cancelId?: string;
-}
-/**
- * Discriminated union of all tick results.
- * Use type guards: `result.action === "closed"` for type safety.
- */
-type IStrategyTickResult = IStrategyTickResultIdle | IStrategyTickResultScheduled | IStrategyTickResultOpened | IStrategyTickResultActive | IStrategyTickResultClosed | IStrategyTickResultCancelled;
-/**
- * Backtest returns closed result (TP/SL or time_expired) or cancelled result (scheduled signal never activated).
- */
-type IStrategyBacktestResult = IStrategyTickResultClosed | IStrategyTickResultCancelled;
-/**
- * Strategy interface implemented by ClientStrategy.
- * Defines core strategy execution methods.
- */
-interface IStrategy {
-    /**
-     * Single tick of strategy execution with VWAP monitoring.
-     * Checks for signal generation (throttled) and TP/SL conditions.
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param strategyName - Name of the strategy
-     * @returns Promise resolving to tick result (idle | opened | active | closed)
-     */
-    tick: (symbol: string, strategyName: StrategyName) => Promise<IStrategyTickResult>;
-    /**
-     * Retrieves the currently active pending signal for the symbol.
-     * If no active signal exists, returns null.
-     * Used internally for monitoring TP/SL and time expiration.
-     *
-     * @param symbol - Trading pair symbol
-     * @returns Promise resolving to pending signal or null
-     */
-    getPendingSignal: (symbol: string) => Promise<IPublicSignalRow | null>;
-    /**
-     * Retrieves the currently active scheduled signal for the symbol.
-     * If no scheduled signal exists, returns null.
-     * Used internally for monitoring scheduled signal activation.
-     *
-     * @param symbol - Trading pair symbol
-     * @returns Promise resolving to scheduled signal or null
-     */
-    getScheduledSignal: (symbol: string) => Promise<IPublicSignalRow | null>;
-    /**
-     * Checks if breakeven threshold has been reached for the current pending signal.
-     *
-     * Uses the same formula as BREAKEVEN_FN to determine if price has moved far enough
-     * to cover transaction costs (slippage + fees) and allow breakeven to be set.
-     * Threshold: (CC_PERCENT_SLIPPAGE + CC_PERCENT_FEE) * 2 transactions
-     *
-     * For LONG position:
-     * - Returns true when: currentPrice >= priceOpen * (1 + threshold%)
-     * - Example: entry=100, threshold=0.4% → true when price >= 100.4
-     *
-     * For SHORT position:
-     * - Returns true when: currentPrice <= priceOpen * (1 - threshold%)
-     * - Example: entry=100, threshold=0.4% → true when price <= 99.6
-     *
-     * Special cases:
-     * - Returns false if no pending signal exists
-     * - Returns true if trailing stop is already in profit zone (breakeven already achieved)
-     * - Returns false if threshold not reached yet
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param currentPrice - Current market price to check against threshold
-     * @returns Promise<boolean> - true if breakeven threshold reached, false otherwise
-     *
-     * @example
-     * ```typescript
-     * // Check if breakeven is available for LONG position (entry=100, threshold=0.4%)
-     * const canBreakeven = await strategy.getBreakeven("BTCUSDT", 100.5);
-     * // Returns true (price >= 100.4)
-     *
-     * if (canBreakeven) {
-     *   await strategy.breakeven("BTCUSDT", 100.5, false);
-     * }
-     * ```
-     */
-    getBreakeven: (symbol: string, currentPrice: number) => Promise<boolean>;
-    /**
-     * Checks if the strategy has been stopped.
-     *
-     * Returns the stopped state indicating whether the strategy should
-     * cease processing new ticks or signals.
-     *
-     * @param symbol - Trading pair symbol
-     * @returns Promise resolving to true if strategy is stopped, false otherwise
-     */
-    getStopped: (symbol: string) => Promise<boolean>;
-    /**
-     * Fast backtest using historical candles.
-     * Iterates through candles, calculates VWAP, checks TP/SL on each candle.
-     *
-     * For scheduled signals: first monitors activation/cancellation,
-     * then if activated continues with TP/SL monitoring.
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Name of the strategy
-     * @param candles - Array of historical candle data
-     * @returns Promise resolving to closed result (always completes signal)
-     */
-    backtest: (symbol: string, strategyName: StrategyName, candles: ICandleData[]) => Promise<IStrategyBacktestResult>;
-    /**
-     * Stops the strategy from generating new signals.
-     *
-     * Sets internal flag to prevent getSignal from being called on subsequent ticks.
-     * Does NOT force-close active pending signals - they continue monitoring until natural closure (TP/SL/time_expired).
-     *
-     * Use case: Graceful shutdown in live trading mode without abandoning open positions.
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @returns Promise that resolves immediately when stop flag is set
-     *
-     * @example
-     * ```typescript
-     * // Graceful shutdown in Live.background() cancellation
-     * const cancel = await Live.background("BTCUSDT", { ... });
-     *
-     * // Later: stop new signals, let existing ones close naturally
-     * await cancel();
-     * ```
-     */
-    stop: (symbol: string, backtest: boolean) => Promise<void>;
-    /**
-     * Cancels the scheduled signal without stopping the strategy.
-     *
-     * Clears the scheduled signal (waiting for priceOpen activation).
-     * Does NOT affect active pending signals or strategy operation.
-     * Does NOT set stop flag - strategy can continue generating new signals.
-     *
-     * Use case: Cancel a scheduled entry that is no longer desired without stopping the entire strategy.
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param cancelId - Optional cancellation ID
-     * @returns Promise that resolves when scheduled signal is cleared
-     *
-     * @example
-     * ```typescript
-     * // Cancel scheduled signal without stopping strategy
-     * await strategy.cancel("BTCUSDT");
-     * // Strategy continues, can generate new signals
-     * ```
-     */
-    cancel: (symbol: string, backtest: boolean, cancelId?: string) => Promise<void>;
-    /**
-     * Executes partial close at profit level (moving toward TP).
-     *
-     * Closes specified percentage of position at current price.
-     * Updates _tpClosed, _totalClosed, and _partialHistory state.
-     * Persists updated signal state for crash recovery.
-     *
-     * Validations:
-     * - Throws if no pending signal exists
-     * - Throws if called on scheduled signal (not yet activated)
-     * - Throws if percentToClose <= 0 or > 100
-     * - Returns false if _totalClosed + percentToClose > 100 (prevents over-closing)
-     *
-     * Use case: User-controlled partial close triggered from onPartialProfit callback.
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param percentToClose - Absolute percentage of position to close (0-100)
-     * @param currentPrice - Current market price for partial close
-     * @param backtest - Whether running in backtest mode
-     * @returns Promise<boolean> - true if partial close executed, false if skipped
-     *
-     * @example
-     * ```typescript
-     * callbacks: {
-     *   onPartialProfit: async (symbol, signal, currentPrice, percentTp, backtest) => {
-     *     if (percentTp >= 50) {
-     *       const success = await strategy.partialProfit(symbol, 25, currentPrice, backtest);
-     *       if (success) {
-     *         console.log('Partial profit executed');
-     *       }
-     *     }
-     *   }
-     * }
-     * ```
-     */
-    partialProfit: (symbol: string, percentToClose: number, currentPrice: number, backtest: boolean) => Promise<boolean>;
-    /**
-     * Executes partial close at loss level (moving toward SL).
-     *
-     * Closes specified percentage of position at current price.
-     * Updates _slClosed, _totalClosed, and _partialHistory state.
-     * Persists updated signal state for crash recovery.
-     *
-     * Validations:
-     * - Throws if no pending signal exists
-     * - Throws if called on scheduled signal (not yet activated)
-     * - Throws if percentToClose <= 0 or > 100
-     * - Returns false if _totalClosed + percentToClose > 100 (prevents over-closing)
-     *
-     * Use case: User-controlled partial close triggered from onPartialLoss callback.
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param percentToClose - Absolute percentage of position to close (0-100)
-     * @param currentPrice - Current market price for partial close
-     * @param backtest - Whether running in backtest mode
-     * @returns Promise<boolean> - true if partial close executed, false if skipped
-     *
-     * @example
-     * ```typescript
-     * callbacks: {
-     *   onPartialLoss: async (symbol, signal, currentPrice, percentSl, backtest) => {
-     *     if (percentSl >= 80) {
-     *       const success = await strategy.partialLoss(symbol, 50, currentPrice, backtest);
-     *       if (success) {
-     *         console.log('Partial loss executed');
-     *       }
-     *     }
-     *   }
-     * }
-     * ```
-     */
-    partialLoss: (symbol: string, percentToClose: number, currentPrice: number, backtest: boolean) => Promise<boolean>;
-    /**
-     * Adjusts trailing stop-loss by shifting distance between entry and original SL.
-     *
-     * CRITICAL: Always calculates from ORIGINAL SL, not from current trailing SL.
-     * This prevents error accumulation on repeated calls.
-     * Larger percentShift ABSORBS smaller one (updates only towards better protection).
-     *
-     * Calculates new SL based on percentage shift of the ORIGINAL distance (entry - originalSL):
-     * - Negative %: tightens stop (moves SL closer to entry, reduces risk)
-     * - Positive %: loosens stop (moves SL away from entry, allows more drawdown)
-     *
-     * For LONG position (entry=100, originalSL=90, distance=10%):
-     * - percentShift = -50: newSL = 100 - 10%*(1-0.5) = 95 (5% distance, tighter)
-     * - percentShift = +20: newSL = 100 - 10%*(1+0.2) = 88 (12% distance, looser)
-     *
-     * For SHORT position (entry=100, originalSL=110, distance=10%):
-     * - percentShift = -50: newSL = 100 + 10%*(1-0.5) = 105 (5% distance, tighter)
-     * - percentShift = +20: newSL = 100 + 10%*(1+0.2) = 112 (12% distance, looser)
-     *
-     * Absorption behavior:
-     * - First call: sets trailing SL unconditionally
-     * - Subsequent calls: updates only if new SL is BETTER (protects more profit)
-     * - For LONG: only accepts HIGHER SL (never moves down, closer to entry wins)
-     * - For SHORT: only accepts LOWER SL (never moves up, closer to entry wins)
-     * - Stores in _trailingPriceStopLoss, original priceStopLoss always preserved
-     *
-     * Validations:
-     * - Throws if no pending signal exists
-     * - Throws if percentShift < -100 or > 100
-     * - Throws if percentShift === 0
-     * - Skips if new SL would cross entry price
-     * - Skips if currentPrice already crossed new SL level (price intrusion protection)
-     *
-     * Use case: User-controlled trailing stop triggered from onPartialProfit callback.
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param percentShift - Percentage shift of ORIGINAL SL distance [-100, 100], excluding 0
-     * @param currentPrice - Current market price to check for intrusion
-     * @param backtest - Whether running in backtest mode
-     * @returns Promise<boolean> - true if trailing SL was set/updated, false if rejected
-     *
-     * @example
-     * ```typescript
-     * callbacks: {
-     *   onPartialProfit: async (symbol, signal, currentPrice, percentTp, backtest) => {
-     *     if (percentTp >= 50) {
-     *       // LONG: entry=100, originalSL=90, distance=10%
-     *
-     *       // First call: tighten by 5%
-     *       const success1 = await strategy.trailingStop(symbol, -5, currentPrice, backtest);
-     *       // success1 = true, newDistance = 10% - 5% = 5%, newSL = 95
-     *
-     *       // Second call: try weaker protection
-     *       const success2 = await strategy.trailingStop(symbol, -3, currentPrice, backtest);
-     *       // success2 = false (SKIPPED: newSL=97 < 95, worse protection, larger % absorbs smaller)
-     *
-     *       // Third call: stronger protection
-     *       const success3 = await strategy.trailingStop(symbol, -7, currentPrice, backtest);
-     *       // success3 = true (ACCEPTED: newDistance = 3%, newSL = 97 > 95, better protection)
-     *     }
-     *   }
-     * }
-     * ```
-     */
-    trailingStop: (symbol: string, percentShift: number, currentPrice: number, backtest: boolean) => Promise<boolean>;
-    /**
-     * Adjusts the trailing take-profit distance for an active pending signal.
-     *
-     * CRITICAL: Always calculates from ORIGINAL TP, not from current trailing TP.
-     * This prevents error accumulation on repeated calls.
-     * Larger percentShift ABSORBS smaller one (updates only towards more conservative TP).
-     *
-     * Updates the take-profit distance by a percentage adjustment relative to the ORIGINAL TP distance.
-     * Negative percentShift brings TP closer to entry (more conservative).
-     * Positive percentShift moves TP further from entry (more aggressive).
-     *
-     * Absorption behavior:
-     * - First call: sets trailing TP unconditionally
-     * - Subsequent calls: updates only if new TP is MORE CONSERVATIVE (closer to entry)
-     * - For LONG: only accepts LOWER TP (never moves up, closer to entry wins)
-     * - For SHORT: only accepts HIGHER TP (never moves down, closer to entry wins)
-     * - Stores in _trailingPriceTakeProfit, original priceTakeProfit always preserved
-     *
-     * Price intrusion protection: If current price has already crossed the new TP level,
-     * the update is skipped to prevent immediate TP triggering.
-     *
-     * @param symbol - Trading pair symbol
-     * @param percentShift - Percentage adjustment to ORIGINAL TP distance (-100 to 100)
-     * @param currentPrice - Current market price to check for intrusion
-     * @param backtest - Whether running in backtest mode
-     * @returns Promise<boolean> - true if trailing TP was set/updated, false if rejected
-     *
-     * @example
-     * ```typescript
-     * callbacks: {
-     *   onPartialProfit: async (symbol, signal, currentPrice, percentTp, backtest) => {
-     *     // LONG: entry=100, originalTP=110, distance=10%, currentPrice=102
-     *
-     *     // First call: bring TP closer by 3%
-     *     const success1 = await strategy.trailingTake(symbol, -3, currentPrice, backtest);
-     *     // success1 = true, newDistance = 10% - 3% = 7%, newTP = 107
-     *
-     *     // Second call: try to move TP further (less conservative)
-     *     const success2 = await strategy.trailingTake(symbol, 2, currentPrice, backtest);
-     *     // success2 = false (SKIPPED: newTP=112 > 107, less conservative, larger % absorbs smaller)
-     *
-     *     // Third call: even more conservative
-     *     const success3 = await strategy.trailingTake(symbol, -5, currentPrice, backtest);
-     *     // success3 = true (ACCEPTED: newDistance = 5%, newTP = 105 < 107, more conservative)
-     *   }
-     * }
-     * ```
-     */
-    trailingTake: (symbol: string, percentShift: number, currentPrice: number, backtest: boolean) => Promise<boolean>;
-    /**
-     * Moves stop-loss to breakeven (entry price) when price reaches threshold.
-     *
-     * Moves SL to entry price (zero-risk position) when current price has moved
-     * far enough in profit direction to cover transaction costs (slippage + fees).
-     * Threshold is calculated as: (CC_PERCENT_SLIPPAGE + CC_PERCENT_FEE) * 2
-     *
-     * Behavior:
-     * - Returns true if SL was moved to breakeven
-     * - Returns false if conditions not met (threshold not reached or already at breakeven)
-     * - Uses _trailingPriceStopLoss to store breakeven SL (preserves original priceStopLoss)
-     * - Only moves SL once per position (idempotent - safe to call multiple times)
-     *
-     * For LONG position (entry=100, slippage=0.1%, fee=0.1%):
-     * - Threshold: (0.1 + 0.1) * 2 = 0.4%
-     * - Breakeven available when price >= 100.4 (entry + 0.4%)
-     * - Moves SL from original (e.g. 95) to 100 (breakeven)
-     * - Returns true on first successful move, false on subsequent calls
-     *
-     * For SHORT position (entry=100, slippage=0.1%, fee=0.1%):
-     * - Threshold: (0.1 + 0.1) * 2 = 0.4%
-     * - Breakeven available when price <= 99.6 (entry - 0.4%)
-     * - Moves SL from original (e.g. 105) to 100 (breakeven)
-     * - Returns true on first successful move, false on subsequent calls
-     *
-     * Validations:
-     * - Throws if no pending signal exists
-     * - Throws if currentPrice is not a positive finite number
-     *
-     * Use case: User-controlled breakeven protection triggered from onPartialProfit callback.
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param currentPrice - Current market price to check threshold
-     * @param backtest - Whether running in backtest mode
-     * @returns Promise<boolean> - true if breakeven was set, false if conditions not met
-     *
-     * @example
-     * ```typescript
-     * callbacks: {
-     *   onPartialProfit: async (symbol, signal, currentPrice, percentTp, backtest) => {
-     *     // Try to move SL to breakeven when threshold reached
-     *     const movedToBreakeven = await strategy.breakeven(symbol, currentPrice, backtest);
-     *     if (movedToBreakeven) {
-     *       console.log(`Position moved to breakeven at ${currentPrice}`);
-     *     }
-     *   }
-     * }
-     * ```
-     */
-    breakeven: (symbol: string, currentPrice: number, backtest: boolean) => Promise<boolean>;
-    /**
-     * Disposes the strategy instance and cleans up resources.
-     *
-     * Called when the strategy is being removed from cache or shut down.
-     * Invokes the onDispose callback to notify external systems.
-     *
-     * @returns Promise that resolves when disposal is complete
-     */
-    dispose: () => Promise<void>;
-}
-/**
- * Unique strategy identifier.
- */
-type StrategyName = string;
-
-/**
- * Unified breakeven event data for report generation.
- * Contains all information about when signals reached breakeven.
- */
-interface BreakevenEvent {
-    /** Event timestamp in milliseconds */
-    timestamp: number;
-    /** Trading pair symbol */
-    symbol: string;
-    /** Strategy name */
-    strategyName: StrategyName;
-    /** Signal ID */
-    signalId: string;
-    /** Position type */
-    position: string;
-    /** Current market price when breakeven was reached */
-    currentPrice: number;
-    /** Entry price (breakeven level) */
-    priceOpen: number;
-    /** Take profit target price */
-    priceTakeProfit?: number;
-    /** Stop loss exit price */
-    priceStopLoss?: number;
-    /** Original take profit price set at signal creation */
-    originalPriceTakeProfit?: number;
-    /** Original stop loss price set at signal creation */
-    originalPriceStopLoss?: number;
-    /** Total executed percentage from partial closes */
-    totalExecuted?: number;
-    /** Human-readable description of signal reason */
-    note?: string;
-    /** True if backtest mode, false if live mode */
-    backtest: boolean;
-}
-/**
- * Statistical data calculated from breakeven events.
- *
- * Provides metrics for breakeven milestone tracking.
- *
- * @example
- * ```typescript
- * const stats = await Breakeven.getData("BTCUSDT", "my-strategy");
- *
- * console.log(`Total breakeven events: ${stats.totalEvents}`);
- * console.log(`Average threshold: ${stats.averageThreshold}%`);
- * ```
- */
-interface BreakevenStatisticsModel {
-    /** Array of all breakeven events with full details */
-    eventList: BreakevenEvent[];
-    /** Total number of breakeven events */
-    totalEvents: number;
-}
-
-declare const GLOBAL_CONFIG: {
-    /**
-     * Time to wait for scheduled signal to activate (in minutes)
-     * If signal does not activate within this time, it will be cancelled.
-     */
-    CC_SCHEDULE_AWAIT_MINUTES: number;
-    /**
-     * Number of candles to use for average price calculation (VWAP)
-     * Default: 5 candles (last 5 minutes when using 1m interval)
-     */
-    CC_AVG_PRICE_CANDLES_COUNT: number;
-    /**
-     * Slippage percentage applied to entry and exit prices.
-     * Simulates market impact and order book depth.
-     * Applied twice (entry and exit) for realistic execution simulation.
-     * Default: 0.1% per transaction
-     */
-    CC_PERCENT_SLIPPAGE: number;
-    /**
-     * Fee percentage charged per transaction.
-     * Applied twice (entry and exit) for total fee calculation.
-     * Default: 0.1% per transaction (total 0.2%)
-     */
-    CC_PERCENT_FEE: number;
-    /**
-     * Minimum TakeProfit distance from priceOpen (percentage)
-     * Must be greater than (slippage + fees) to ensure profitable trades
-     *
-     * Calculation:
-     * - Slippage effect: ~0.2% (0.1% × 2 transactions)
-     * - Fees: 0.2% (0.1% × 2 transactions)
-     * - Minimum profit buffer: 0.1%
-     * - Total: 0.5%
-     *
-     * Default: 0.5% (covers all costs + minimum profit margin)
-     */
-    CC_MIN_TAKEPROFIT_DISTANCE_PERCENT: number;
-    /**
-     * Minimum StopLoss distance from priceOpen (percentage)
-     * Prevents signals from being immediately stopped out due to price volatility
-     * Default: 0.5% (buffer to avoid instant stop loss on normal market fluctuations)
-     */
-    CC_MIN_STOPLOSS_DISTANCE_PERCENT: number;
-    /**
-     * Maximum StopLoss distance from priceOpen (percentage)
-     * Prevents catastrophic losses from extreme StopLoss values
-     * Default: 20% (one signal cannot lose more than 20% of position)
-     */
-    CC_MAX_STOPLOSS_DISTANCE_PERCENT: number;
-    /**
-     * Maximum signal lifetime in minutes
-     * Prevents eternal signals that block risk limits for weeks/months
-     * Default: 1440 minutes (1 day)
-     */
-    CC_MAX_SIGNAL_LIFETIME_MINUTES: number;
-    /**
-     * Maximum time allowed for signal generation (in seconds).
-     * Prevents long-running or stuck signal generation routines from blocking
-     * execution or consuming resources indefinitely. If generation exceeds this
-     * threshold the attempt should be aborted, logged and optionally retried.
-     *
-     * Default: 180 seconds (3 minutes)
-     */
-    CC_MAX_SIGNAL_GENERATION_SECONDS: number;
-    /**
-     * Number of retries for getCandles function
-     * Default: 3 retries
-     */
-    CC_GET_CANDLES_RETRY_COUNT: number;
-    /**
-     * Delay between retries for getCandles function (in milliseconds)
-     * Default: 5000 ms (5 seconds)
-     */
-    CC_GET_CANDLES_RETRY_DELAY_MS: number;
-    /**
-     * Maximum number of candles to request per single API call.
-     * If a request exceeds this limit, data will be fetched using pagination.
-     * Default: 1000 candles per request
-     */
-    CC_MAX_CANDLES_PER_REQUEST: number;
-    /**
-     * Maximum allowed deviation factor for price anomaly detection.
-     * Price should not be more than this factor lower than reference price.
-     *
-     * Reasoning:
-     * - Incomplete candles from Binance API typically have prices near 0 (e.g., $0.01-1)
-     * - Normal BTC price ranges: $20,000-100,000
-     * - Factor 1000 catches prices below $20-100 when median is $20,000-100,000
-     * - Factor 100 would be too permissive (allows $200 when median is $20,000)
-     * - Factor 10000 might be too strict for low-cap altcoins
-     *
-     * Example: BTC at $50,000 median → threshold $50 (catches $0.01-1 anomalies)
-     */
-    CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR: number;
-    /**
-     * Minimum number of candles required for reliable median calculation.
-     * Below this threshold, use simple average instead of median.
-     *
-     * Reasoning:
-     * - Each candle provides 4 price points (OHLC)
-     * - 5 candles = 20 price points, sufficient for robust median calculation
-     * - Below 5 candles, single anomaly can heavily skew median
-     * - Statistical rule of thumb: minimum 7-10 data points for median stability
-     * - Average is more stable than median for small datasets (n < 20)
-     *
-     * Example: 3 candles = 12 points (use average), 5 candles = 20 points (use median)
-     */
-    CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN: number;
-    /**
-     * Controls visibility of signal notes in markdown report tables.
-     * When enabled, the "Note" column will be displayed in all markdown reports
-     * (backtest, live, schedule, risk, etc.)
-     *
-     * Default: false (notes are hidden to reduce table width and improve readability)
-     */
-    CC_REPORT_SHOW_SIGNAL_NOTE: boolean;
-    /**
-     * Breakeven threshold percentage - minimum profit distance from entry to enable breakeven.
-     * When price moves this percentage in profit direction, stop-loss can be moved to entry (breakeven).
-     *
-     * Calculation:
-     * - Slippage effect: ~0.2% (0.1% × 2 transactions)
-     * - Fees: 0.2% (0.1% × 2 transactions)
-     * - Total: 0.4%
-     * - Added buffer: 0.2%
-     * - Overall: 0.6%
-     *
-     * Default: 0.2% (additional buffer above costs to ensure no loss when moving to breakeven)
-     */
-    CC_BREAKEVEN_THRESHOLD: number;
-    /**
-     * Time offset in minutes for order book fetching.
-     * Subtracts this amount from the current time when fetching order book data.
-     * This helps get a more stable snapshot of the order book by avoiding real-time volatility.
-     *
-     * Default: 10 minutes
-     */
-    CC_ORDER_BOOK_TIME_OFFSET_MINUTES: number;
-    /**
-     * Maximum depth levels for order book fetching.
-     * Specifies how many price levels to fetch from both bids and asks.
-     *
-     * Default: 20 levels
-     */
-    CC_ORDER_BOOK_MAX_DEPTH_LEVELS: number;
-};
-/**
- * Type for global configuration object.
- */
-type GlobalConfig = typeof GLOBAL_CONFIG;
-
-/**
- * Mapping of available table/markdown reports to their column definitions.
- *
- * Each property references a column definition object imported from
- * `src/assets/*.columns`. These are used by markdown/report generators
- * (backtest, live, schedule, risk, heat, performance, partial, walker).
- */
-declare const COLUMN_CONFIG: {
-    /** Columns used in backtest markdown tables and reports */
-    backtest_columns: ColumnModel<IStrategyTickResultClosed>[];
-    /** Columns used by heatmap / heat reports */
-    heat_columns: ColumnModel<IHeatmapRow>[];
-    /** Columns for live trading reports and logs */
-    live_columns: ColumnModel<TickEvent>[];
-    /** Columns for partial-results / incremental reports */
-    partial_columns: ColumnModel<PartialEvent>[];
-    /** Columns for breakeven protection events */
-    breakeven_columns: ColumnModel<BreakevenEvent>[];
-    /** Columns for performance summary reports */
-    performance_columns: ColumnModel<MetricStats>[];
-    /** Columns for risk-related reports */
-    risk_columns: ColumnModel<RiskEvent>[];
-    /** Columns for scheduled report output */
-    schedule_columns: ColumnModel<ScheduledEvent>[];
-    /** Walker: PnL summary columns */
-    walker_pnl_columns: ColumnModel<SignalData$1>[];
-    /** Walker: strategy-level summary columns */
-    walker_strategy_columns: ColumnModel<IStrategyResult>[];
-};
-/**
- * Type for the column configuration object.
- */
-type ColumnConfig = typeof COLUMN_CONFIG;
-
-/**
- * Sets custom logger implementation for the framework.
- *
- * All log messages from internal services will be forwarded to the provided logger
- * with automatic context injection (strategyName, exchangeName, symbol, etc.).
- *
- * @param logger - Custom logger implementing ILogger interface
- *
- * @example
- * ```typescript
- * setLogger({
- *   log: (topic, ...args) => console.log(topic, args),
- *   debug: (topic, ...args) => console.debug(topic, args),
- *   info: (topic, ...args) => console.info(topic, args),
- * });
- * ```
- */
-declare function setLogger(logger: ILogger): void;
-/**
- * Sets global configuration parameters for the framework.
- * @param config - Partial configuration object to override default settings
- * @param _unsafe - Skip config validations - required for testbed
- *
- * @example
- * ```typescript
- * setConfig({
- *   CC_SCHEDULE_AWAIT_MINUTES: 90,
- * });
- * ```
- */
-declare function setConfig(config: Partial<GlobalConfig>, _unsafe?: boolean): void;
-/**
- * Retrieves a copy of the current global configuration.
- *
- * Returns a shallow copy of the current GLOBAL_CONFIG to prevent accidental mutations.
- * Use this to inspect the current configuration state without modifying it.
- *
- * @returns {GlobalConfig} A copy of the current global configuration object
- *
- * @example
- * ```typescript
- * const currentConfig = getConfig();
- * console.log(currentConfig.CC_SCHEDULE_AWAIT_MINUTES);
- * ```
- */
-declare function getConfig(): {
-    CC_SCHEDULE_AWAIT_MINUTES: number;
-    CC_AVG_PRICE_CANDLES_COUNT: number;
-    CC_PERCENT_SLIPPAGE: number;
-    CC_PERCENT_FEE: number;
-    CC_MIN_TAKEPROFIT_DISTANCE_PERCENT: number;
-    CC_MIN_STOPLOSS_DISTANCE_PERCENT: number;
-    CC_MAX_STOPLOSS_DISTANCE_PERCENT: number;
-    CC_MAX_SIGNAL_LIFETIME_MINUTES: number;
-    CC_MAX_SIGNAL_GENERATION_SECONDS: number;
-    CC_GET_CANDLES_RETRY_COUNT: number;
-    CC_GET_CANDLES_RETRY_DELAY_MS: number;
-    CC_MAX_CANDLES_PER_REQUEST: number;
-    CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR: number;
-    CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN: number;
-    CC_REPORT_SHOW_SIGNAL_NOTE: boolean;
-    CC_BREAKEVEN_THRESHOLD: number;
-    CC_ORDER_BOOK_TIME_OFFSET_MINUTES: number;
-    CC_ORDER_BOOK_MAX_DEPTH_LEVELS: number;
-};
-/**
- * Retrieves the default configuration object for the framework.
- *
- * Returns a reference to the default configuration with all preset values.
- * Use this to see what configuration options are available and their default values.
- *
- * @returns {GlobalConfig} The default configuration object
- *
- * @example
- * ```typescript
- * const defaultConfig = getDefaultConfig();
- * console.log(defaultConfig.CC_SCHEDULE_AWAIT_MINUTES);
- * ```
- */
-declare function getDefaultConfig(): Readonly<{
-    CC_SCHEDULE_AWAIT_MINUTES: number;
-    CC_AVG_PRICE_CANDLES_COUNT: number;
-    CC_PERCENT_SLIPPAGE: number;
-    CC_PERCENT_FEE: number;
-    CC_MIN_TAKEPROFIT_DISTANCE_PERCENT: number;
-    CC_MIN_STOPLOSS_DISTANCE_PERCENT: number;
-    CC_MAX_STOPLOSS_DISTANCE_PERCENT: number;
-    CC_MAX_SIGNAL_LIFETIME_MINUTES: number;
-    CC_MAX_SIGNAL_GENERATION_SECONDS: number;
-    CC_GET_CANDLES_RETRY_COUNT: number;
-    CC_GET_CANDLES_RETRY_DELAY_MS: number;
-    CC_MAX_CANDLES_PER_REQUEST: number;
-    CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR: number;
-    CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN: number;
-    CC_REPORT_SHOW_SIGNAL_NOTE: boolean;
-    CC_BREAKEVEN_THRESHOLD: number;
-    CC_ORDER_BOOK_TIME_OFFSET_MINUTES: number;
-    CC_ORDER_BOOK_MAX_DEPTH_LEVELS: number;
-}>;
-/**
- * Sets custom column configurations for markdown report generation.
- *
- * Allows overriding default column definitions for any report type.
- * All columns are validated before assignment to ensure structural correctness.
- *
- * @param columns - Partial column configuration object to override default column settings
- * @param _unsafe - Skip column validations - required for testbed
- *
- * @example
- * ```typescript
- * setColumns({
- *   backtest_columns: [
- *     {
- *       key: "customId",
- *       label: "Custom ID",
- *       format: (data) => data.signal.id,
- *       isVisible: () => true
- *     }
- *   ],
- * });
- * ```
- *
- * @throws {Error} If column configuration is invalid
- */
-declare function setColumns(columns: Partial<ColumnConfig>, _unsafe?: boolean): void;
-/**
- * Retrieves a copy of the current column configuration for markdown report generation.
- *
- * Returns a shallow copy of the current COLUMN_CONFIG to prevent accidental mutations.
- * Use this to inspect the current column definitions without modifying them.
- *
- * @returns {ColumnConfig} A copy of the current column configuration object
- *
- * @example
- * ```typescript
- * const currentColumns = getColumns();
- * console.log(currentColumns.backtest_columns.length);
- * ```
- */
-declare function getColumns(): {
-    backtest_columns: ColumnModel<IStrategyTickResultClosed>[];
-    heat_columns: ColumnModel<IHeatmapRow>[];
-    live_columns: ColumnModel<TickEvent>[];
-    partial_columns: ColumnModel<PartialEvent>[];
-    breakeven_columns: ColumnModel<BreakevenEvent>[];
-    performance_columns: ColumnModel<MetricStats>[];
-    risk_columns: ColumnModel<RiskEvent>[];
-    schedule_columns: ColumnModel<ScheduledEvent>[];
-    walker_pnl_columns: ColumnModel<SignalData$1>[];
-    walker_strategy_columns: ColumnModel<IStrategyResult>[];
-};
-/**
- * Retrieves the default column configuration object for markdown report generation.
- *
- * Returns a reference to the default column definitions with all preset values.
- * Use this to see what column options are available and their default definitions.
- *
- * @returns {ColumnConfig} The default column configuration object
- *
- * @example
- * ```typescript
- * const defaultColumns = getDefaultColumns();
- * console.log(defaultColumns.backtest_columns);
- * ```
- */
-declare function getDefaultColumns(): Readonly<{
-    backtest_columns: ColumnModel<IStrategyTickResultClosed>[];
-    heat_columns: ColumnModel<IHeatmapRow>[];
-    live_columns: ColumnModel<TickEvent>[];
-    partial_columns: ColumnModel<PartialEvent>[];
-    breakeven_columns: ColumnModel<BreakevenEvent>[];
-    performance_columns: ColumnModel<MetricStats>[];
-    risk_columns: ColumnModel<RiskEvent>[];
-    schedule_columns: ColumnModel<ScheduledEvent>[];
-    walker_pnl_columns: ColumnModel<SignalData$1>[];
-    walker_strategy_columns: ColumnModel<IStrategyResult>[];
-}>;
-
-/**
  * Statistical data calculated from backtest results.
  *
  * All numeric values are null if calculation is unsafe (NaN, Infinity, etc).
@@ -4128,6 +3503,766 @@ interface IOptimizer {
  * Unique string identifier for registered optimizers.
  */
 type OptimizerName = string;
+
+/**
+ * Retrieves a registered strategy schema by name.
+ *
+ * @param strategyName - Unique strategy identifier
+ * @returns The strategy schema configuration object
+ * @throws Error if strategy is not registered
+ *
+ * @example
+ * ```typescript
+ * const strategy = getStrategy("my-strategy");
+ * console.log(strategy.interval); // "5m"
+ * console.log(strategy.getSignal); // async function
+ * ```
+ */
+declare function getStrategy(strategyName: StrategyName): IStrategySchema;
+/**
+ * Retrieves a registered exchange schema by name.
+ *
+ * @param exchangeName - Unique exchange identifier
+ * @returns The exchange schema configuration object
+ * @throws Error if exchange is not registered
+ *
+ * @example
+ * ```typescript
+ * const exchange = getExchange("binance");
+ * console.log(exchange.getCandles); // async function
+ * console.log(exchange.formatPrice); // async function
+ * ```
+ */
+declare function getExchange(exchangeName: ExchangeName): IExchangeSchema;
+/**
+ * Retrieves a registered frame schema by name.
+ *
+ * @param frameName - Unique frame identifier
+ * @returns The frame schema configuration object
+ * @throws Error if frame is not registered
+ *
+ * @example
+ * ```typescript
+ * const frame = getFrame("1d-backtest");
+ * console.log(frame.interval); // "1m"
+ * console.log(frame.startDate); // Date object
+ * console.log(frame.endDate); // Date object
+ * ```
+ */
+declare function getFrame(frameName: FrameName): IFrameSchema;
+/**
+ * Retrieves a registered walker schema by name.
+ *
+ * @param walkerName - Unique walker identifier
+ * @returns The walker schema configuration object
+ * @throws Error if walker is not registered
+ *
+ * @example
+ * ```typescript
+ * const walker = getWalker("llm-prompt-optimizer");
+ * console.log(walker.exchangeName); // "binance"
+ * console.log(walker.frameName); // "1d-backtest"
+ * console.log(walker.strategies); // ["my-strategy-v1", "my-strategy-v2"]
+ * console.log(walker.metric); // "sharpeRatio"
+ * ```
+ */
+declare function getWalker(walkerName: WalkerName): IWalkerSchema;
+/**
+ * Retrieves a registered sizing schema by name.
+ *
+ * @param sizingName - Unique sizing identifier
+ * @returns The sizing schema configuration object
+ * @throws Error if sizing is not registered
+ *
+ * @example
+ * ```typescript
+ * const sizing = getSizing("conservative");
+ * console.log(sizing.method); // "fixed-percentage"
+ * console.log(sizing.riskPercentage); // 1
+ * console.log(sizing.maxPositionPercentage); // 10
+ * ```
+ */
+declare function getSizing(sizingName: SizingName): ISizingSchema;
+/**
+ * Retrieves a registered risk schema by name.
+ *
+ * @param riskName - Unique risk identifier
+ * @returns The risk schema configuration object
+ * @throws Error if risk is not registered
+ *
+ * @example
+ * ```typescript
+ * const risk = getRisk("conservative");
+ * console.log(risk.maxConcurrentPositions); // 5
+ * console.log(risk.validations); // Array of validation functions
+ * ```
+ */
+declare function getRisk(riskName: RiskName): IRiskSchema;
+/**
+ * Retrieves a registered optimizer schema by name.
+ *
+ * @param optimizerName - Unique optimizer identifier
+ * @returns The optimizer schema configuration object
+ * @throws Error if optimizer is not registered
+ *
+ * @example
+ * ```typescript
+ * const optimizer = getOptimizer("llm-strategy-generator");
+ * console.log(optimizer.rangeTrain); // Array of training ranges
+ * console.log(optimizer.rangeTest); // Testing range
+ * console.log(optimizer.source); // Array of data sources
+ * console.log(optimizer.getPrompt); // async function
+ * ```
+ */
+declare function getOptimizer(optimizerName: OptimizerName): IOptimizerSchema;
+/**
+ * Retrieves a registered action schema by name.
+ *
+ * @param actionName - Unique action identifier
+ * @returns The action schema configuration object
+ * @throws Error if action is not registered
+ *
+ * @example
+ * ```typescript
+ * const action = getAction("telegram-notifier");
+ * console.log(action.handler); // Class constructor or object
+ * console.log(action.callbacks); // Optional lifecycle callbacks
+ * ```
+ */
+declare function getAction(actionName: ActionName): IActionSchema;
+
+/**
+ * Stops the strategy from generating new signals.
+ *
+ * Sets internal flag to prevent strategy from opening new signals.
+ * Current active signal (if any) will complete normally.
+ * Backtest/Live mode will stop at the next safe point (idle state or after signal closes).
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @param strategyName - Strategy name to stop
+ * @returns Promise that resolves when stop flag is set
+ *
+ * @example
+ * ```typescript
+ * import { stop } from "backtest-kit";
+ *
+ * // Stop strategy after some condition
+ * await stop("BTCUSDT", "my-strategy");
+ * ```
+ */
+declare function stop(symbol: string): Promise<void>;
+/**
+ * Cancels the scheduled signal without stopping the strategy.
+ *
+ * Clears the scheduled signal (waiting for priceOpen activation).
+ * Does NOT affect active pending signals or strategy operation.
+ * Does NOT set stop flag - strategy can continue generating new signals.
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @param strategyName - Strategy name
+ * @param cancelId - Optional cancellation ID for tracking user-initiated cancellations
+ * @returns Promise that resolves when scheduled signal is cancelled
+ *
+ * @example
+ * ```typescript
+ * import { cancel } from "backtest-kit";
+ *
+ * // Cancel scheduled signal with custom ID
+ * await cancel("BTCUSDT", "my-strategy", "manual-cancel-001");
+ * ```
+ */
+declare function cancel(symbol: string, cancelId?: string): Promise<void>;
+/**
+ * Executes partial close at profit level (moving toward TP).
+ *
+ * Closes a percentage of the active pending position at profit.
+ * Price must be moving toward take profit (in profit direction).
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @param percentToClose - Percentage of position to close (0-100, absolute value)
+ * @returns Promise<boolean> - true if partial close executed, false if skipped
+ *
+ * @throws Error if currentPrice is not in profit direction:
+ *   - LONG: currentPrice must be > priceOpen
+ *   - SHORT: currentPrice must be < priceOpen
+ *
+ * @example
+ * ```typescript
+ * import { partialProfit } from "backtest-kit";
+ *
+ * // Close 30% of LONG position at profit
+ * const success = await partialProfit("BTCUSDT", 30);
+ * if (success) {
+ *   console.log('Partial profit executed');
+ * }
+ * ```
+ */
+declare function partialProfit(symbol: string, percentToClose: number): Promise<boolean>;
+/**
+ * Executes partial close at loss level (moving toward SL).
+ *
+ * Closes a percentage of the active pending position at loss.
+ * Price must be moving toward stop loss (in loss direction).
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @param percentToClose - Percentage of position to close (0-100, absolute value)
+ * @returns Promise<boolean> - true if partial close executed, false if skipped
+ *
+ * @throws Error if currentPrice is not in loss direction:
+ *   - LONG: currentPrice must be < priceOpen
+ *   - SHORT: currentPrice must be > priceOpen
+ *
+ * @example
+ * ```typescript
+ * import { partialLoss } from "backtest-kit";
+ *
+ * // Close 40% of LONG position at loss
+ * const success = await partialLoss("BTCUSDT", 40);
+ * if (success) {
+ *   console.log('Partial loss executed');
+ * }
+ * ```
+ */
+declare function partialLoss(symbol: string, percentToClose: number): Promise<boolean>;
+/**
+ * Adjusts the trailing stop-loss distance for an active pending signal.
+ *
+ * CRITICAL: Always calculates from ORIGINAL SL, not from current trailing SL.
+ * This prevents error accumulation on repeated calls.
+ * Larger percentShift ABSORBS smaller one (updates only towards better protection).
+ *
+ * Updates the stop-loss distance by a percentage adjustment relative to the ORIGINAL SL distance.
+ * Negative percentShift tightens the SL (reduces distance, moves closer to entry).
+ * Positive percentShift loosens the SL (increases distance, moves away from entry).
+ *
+ * Absorption behavior:
+ * - First call: sets trailing SL unconditionally
+ * - Subsequent calls: updates only if new SL is BETTER (protects more profit)
+ * - For LONG: only accepts HIGHER SL (never moves down, closer to entry wins)
+ * - For SHORT: only accepts LOWER SL (never moves up, closer to entry wins)
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @param percentShift - Percentage adjustment to ORIGINAL SL distance (-100 to 100)
+ * @param currentPrice - Current market price to check for intrusion
+ * @returns Promise<boolean> - true if trailing SL was set/updated, false if rejected (absorption/intrusion/conflict)
+ *
+ * @example
+ * ```typescript
+ * import { trailingStop } from "backtest-kit";
+ *
+ * // LONG: entry=100, originalSL=90, distance=10%, currentPrice=102
+ *
+ * // First call: tighten by 5%
+ * const success1 = await trailingStop("BTCUSDT", -5, 102);
+ * // success1 = true, newDistance = 10% - 5% = 5%, newSL = 95
+ *
+ * // Second call: try weaker protection (smaller percentShift)
+ * const success2 = await trailingStop("BTCUSDT", -3, 102);
+ * // success2 = false (SKIPPED: newSL=97 < 95, worse protection, larger % absorbs smaller)
+ *
+ * // Third call: stronger protection (larger percentShift)
+ * const success3 = await trailingStop("BTCUSDT", -7, 102);
+ * // success3 = true (ACCEPTED: newDistance = 10% - 7% = 3%, newSL = 97 > 95, better protection)
+ * ```
+ */
+declare function trailingStop(symbol: string, percentShift: number, currentPrice: number): Promise<boolean>;
+/**
+ * Adjusts the trailing take-profit distance for an active pending signal.
+ *
+ * CRITICAL: Always calculates from ORIGINAL TP, not from current trailing TP.
+ * This prevents error accumulation on repeated calls.
+ * Larger percentShift ABSORBS smaller one (updates only towards more conservative TP).
+ *
+ * Updates the take-profit distance by a percentage adjustment relative to the ORIGINAL TP distance.
+ * Negative percentShift brings TP closer to entry (more conservative).
+ * Positive percentShift moves TP further from entry (more aggressive).
+ *
+ * Absorption behavior:
+ * - First call: sets trailing TP unconditionally
+ * - Subsequent calls: updates only if new TP is MORE CONSERVATIVE (closer to entry)
+ * - For LONG: only accepts LOWER TP (never moves up, closer to entry wins)
+ * - For SHORT: only accepts HIGHER TP (never moves down, closer to entry wins)
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @param percentShift - Percentage adjustment to ORIGINAL TP distance (-100 to 100)
+ * @param currentPrice - Current market price to check for intrusion
+ * @returns Promise<boolean> - true if trailing TP was set/updated, false if rejected (absorption/intrusion/conflict)
+ *
+ * @example
+ * ```typescript
+ * import { trailingTake } from "backtest-kit";
+ *
+ * // LONG: entry=100, originalTP=110, distance=10%, currentPrice=102
+ *
+ * // First call: bring TP closer by 3%
+ * const success1 = await trailingTake("BTCUSDT", -3, 102);
+ * // success1 = true, newDistance = 10% - 3% = 7%, newTP = 107
+ *
+ * // Second call: try to move TP further (less conservative)
+ * const success2 = await trailingTake("BTCUSDT", 2, 102);
+ * // success2 = false (SKIPPED: newTP=112 > 107, less conservative, larger % absorbs smaller)
+ *
+ * // Third call: even more conservative
+ * const success3 = await trailingTake("BTCUSDT", -5, 102);
+ * // success3 = true (ACCEPTED: newDistance = 10% - 5% = 5%, newTP = 105 < 107, more conservative)
+ * ```
+ */
+declare function trailingTake(symbol: string, percentShift: number, currentPrice: number): Promise<boolean>;
+/**
+ * Moves stop-loss to breakeven when price reaches threshold.
+ *
+ * Moves SL to entry price (zero-risk position) when current price has moved
+ * far enough in profit direction to cover transaction costs.
+ * Threshold is calculated as: (CC_PERCENT_SLIPPAGE + CC_PERCENT_FEE) * 2
+ *
+ * Automatically detects backtest/live mode from execution context.
+ * Automatically fetches current price via getAveragePrice.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise<boolean> - true if breakeven was set, false if conditions not met
+ *
+ * @example
+ * ```typescript
+ * import { breakeven } from "backtest-kit";
+ *
+ * // LONG: entry=100, slippage=0.1%, fee=0.1%, threshold=0.4%
+ * // Try to move SL to breakeven (activates when price >= 100.4)
+ * const moved = await breakeven("BTCUSDT");
+ * if (moved) {
+ *   console.log("Position moved to breakeven!");
+ * }
+ * ```
+ */
+declare function breakeven(symbol: string): Promise<boolean>;
+
+/**
+ * Unified breakeven event data for report generation.
+ * Contains all information about when signals reached breakeven.
+ */
+interface BreakevenEvent {
+    /** Event timestamp in milliseconds */
+    timestamp: number;
+    /** Trading pair symbol */
+    symbol: string;
+    /** Strategy name */
+    strategyName: StrategyName;
+    /** Signal ID */
+    signalId: string;
+    /** Position type */
+    position: string;
+    /** Current market price when breakeven was reached */
+    currentPrice: number;
+    /** Entry price (breakeven level) */
+    priceOpen: number;
+    /** Take profit target price */
+    priceTakeProfit?: number;
+    /** Stop loss exit price */
+    priceStopLoss?: number;
+    /** Original take profit price set at signal creation */
+    originalPriceTakeProfit?: number;
+    /** Original stop loss price set at signal creation */
+    originalPriceStopLoss?: number;
+    /** Total executed percentage from partial closes */
+    totalExecuted?: number;
+    /** Human-readable description of signal reason */
+    note?: string;
+    /** True if backtest mode, false if live mode */
+    backtest: boolean;
+}
+/**
+ * Statistical data calculated from breakeven events.
+ *
+ * Provides metrics for breakeven milestone tracking.
+ *
+ * @example
+ * ```typescript
+ * const stats = await Breakeven.getData("BTCUSDT", "my-strategy");
+ *
+ * console.log(`Total breakeven events: ${stats.totalEvents}`);
+ * console.log(`Average threshold: ${stats.averageThreshold}%`);
+ * ```
+ */
+interface BreakevenStatisticsModel {
+    /** Array of all breakeven events with full details */
+    eventList: BreakevenEvent[];
+    /** Total number of breakeven events */
+    totalEvents: number;
+}
+
+declare const GLOBAL_CONFIG: {
+    /**
+     * Time to wait for scheduled signal to activate (in minutes)
+     * If signal does not activate within this time, it will be cancelled.
+     */
+    CC_SCHEDULE_AWAIT_MINUTES: number;
+    /**
+     * Number of candles to use for average price calculation (VWAP)
+     * Default: 5 candles (last 5 minutes when using 1m interval)
+     */
+    CC_AVG_PRICE_CANDLES_COUNT: number;
+    /**
+     * Slippage percentage applied to entry and exit prices.
+     * Simulates market impact and order book depth.
+     * Applied twice (entry and exit) for realistic execution simulation.
+     * Default: 0.1% per transaction
+     */
+    CC_PERCENT_SLIPPAGE: number;
+    /**
+     * Fee percentage charged per transaction.
+     * Applied twice (entry and exit) for total fee calculation.
+     * Default: 0.1% per transaction (total 0.2%)
+     */
+    CC_PERCENT_FEE: number;
+    /**
+     * Minimum TakeProfit distance from priceOpen (percentage)
+     * Must be greater than (slippage + fees) to ensure profitable trades
+     *
+     * Calculation:
+     * - Slippage effect: ~0.2% (0.1% × 2 transactions)
+     * - Fees: 0.2% (0.1% × 2 transactions)
+     * - Minimum profit buffer: 0.1%
+     * - Total: 0.5%
+     *
+     * Default: 0.5% (covers all costs + minimum profit margin)
+     */
+    CC_MIN_TAKEPROFIT_DISTANCE_PERCENT: number;
+    /**
+     * Minimum StopLoss distance from priceOpen (percentage)
+     * Prevents signals from being immediately stopped out due to price volatility
+     * Default: 0.5% (buffer to avoid instant stop loss on normal market fluctuations)
+     */
+    CC_MIN_STOPLOSS_DISTANCE_PERCENT: number;
+    /**
+     * Maximum StopLoss distance from priceOpen (percentage)
+     * Prevents catastrophic losses from extreme StopLoss values
+     * Default: 20% (one signal cannot lose more than 20% of position)
+     */
+    CC_MAX_STOPLOSS_DISTANCE_PERCENT: number;
+    /**
+     * Maximum signal lifetime in minutes
+     * Prevents eternal signals that block risk limits for weeks/months
+     * Default: 1440 minutes (1 day)
+     */
+    CC_MAX_SIGNAL_LIFETIME_MINUTES: number;
+    /**
+     * Maximum time allowed for signal generation (in seconds).
+     * Prevents long-running or stuck signal generation routines from blocking
+     * execution or consuming resources indefinitely. If generation exceeds this
+     * threshold the attempt should be aborted, logged and optionally retried.
+     *
+     * Default: 180 seconds (3 minutes)
+     */
+    CC_MAX_SIGNAL_GENERATION_SECONDS: number;
+    /**
+     * Number of retries for getCandles function
+     * Default: 3 retries
+     */
+    CC_GET_CANDLES_RETRY_COUNT: number;
+    /**
+     * Delay between retries for getCandles function (in milliseconds)
+     * Default: 5000 ms (5 seconds)
+     */
+    CC_GET_CANDLES_RETRY_DELAY_MS: number;
+    /**
+     * Maximum number of candles to request per single API call.
+     * If a request exceeds this limit, data will be fetched using pagination.
+     * Default: 1000 candles per request
+     */
+    CC_MAX_CANDLES_PER_REQUEST: number;
+    /**
+     * Maximum allowed deviation factor for price anomaly detection.
+     * Price should not be more than this factor lower than reference price.
+     *
+     * Reasoning:
+     * - Incomplete candles from Binance API typically have prices near 0 (e.g., $0.01-1)
+     * - Normal BTC price ranges: $20,000-100,000
+     * - Factor 1000 catches prices below $20-100 when median is $20,000-100,000
+     * - Factor 100 would be too permissive (allows $200 when median is $20,000)
+     * - Factor 10000 might be too strict for low-cap altcoins
+     *
+     * Example: BTC at $50,000 median → threshold $50 (catches $0.01-1 anomalies)
+     */
+    CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR: number;
+    /**
+     * Minimum number of candles required for reliable median calculation.
+     * Below this threshold, use simple average instead of median.
+     *
+     * Reasoning:
+     * - Each candle provides 4 price points (OHLC)
+     * - 5 candles = 20 price points, sufficient for robust median calculation
+     * - Below 5 candles, single anomaly can heavily skew median
+     * - Statistical rule of thumb: minimum 7-10 data points for median stability
+     * - Average is more stable than median for small datasets (n < 20)
+     *
+     * Example: 3 candles = 12 points (use average), 5 candles = 20 points (use median)
+     */
+    CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN: number;
+    /**
+     * Controls visibility of signal notes in markdown report tables.
+     * When enabled, the "Note" column will be displayed in all markdown reports
+     * (backtest, live, schedule, risk, etc.)
+     *
+     * Default: false (notes are hidden to reduce table width and improve readability)
+     */
+    CC_REPORT_SHOW_SIGNAL_NOTE: boolean;
+    /**
+     * Breakeven threshold percentage - minimum profit distance from entry to enable breakeven.
+     * When price moves this percentage in profit direction, stop-loss can be moved to entry (breakeven).
+     *
+     * Calculation:
+     * - Slippage effect: ~0.2% (0.1% × 2 transactions)
+     * - Fees: 0.2% (0.1% × 2 transactions)
+     * - Total: 0.4%
+     * - Added buffer: 0.2%
+     * - Overall: 0.6%
+     *
+     * Default: 0.2% (additional buffer above costs to ensure no loss when moving to breakeven)
+     */
+    CC_BREAKEVEN_THRESHOLD: number;
+    /**
+     * Time offset in minutes for order book fetching.
+     * Subtracts this amount from the current time when fetching order book data.
+     * This helps get a more stable snapshot of the order book by avoiding real-time volatility.
+     *
+     * Default: 10 minutes
+     */
+    CC_ORDER_BOOK_TIME_OFFSET_MINUTES: number;
+    /**
+     * Maximum depth levels for order book fetching.
+     * Specifies how many price levels to fetch from both bids and asks.
+     *
+     * Default: 20 levels
+     */
+    CC_ORDER_BOOK_MAX_DEPTH_LEVELS: number;
+};
+/**
+ * Type for global configuration object.
+ */
+type GlobalConfig = typeof GLOBAL_CONFIG;
+
+/**
+ * Mapping of available table/markdown reports to their column definitions.
+ *
+ * Each property references a column definition object imported from
+ * `src/assets/*.columns`. These are used by markdown/report generators
+ * (backtest, live, schedule, risk, heat, performance, partial, walker).
+ */
+declare const COLUMN_CONFIG: {
+    /** Columns used in backtest markdown tables and reports */
+    backtest_columns: ColumnModel<IStrategyTickResultClosed>[];
+    /** Columns used by heatmap / heat reports */
+    heat_columns: ColumnModel<IHeatmapRow>[];
+    /** Columns for live trading reports and logs */
+    live_columns: ColumnModel<TickEvent>[];
+    /** Columns for partial-results / incremental reports */
+    partial_columns: ColumnModel<PartialEvent>[];
+    /** Columns for breakeven protection events */
+    breakeven_columns: ColumnModel<BreakevenEvent>[];
+    /** Columns for performance summary reports */
+    performance_columns: ColumnModel<MetricStats>[];
+    /** Columns for risk-related reports */
+    risk_columns: ColumnModel<RiskEvent>[];
+    /** Columns for scheduled report output */
+    schedule_columns: ColumnModel<ScheduledEvent>[];
+    /** Walker: PnL summary columns */
+    walker_pnl_columns: ColumnModel<SignalData$1>[];
+    /** Walker: strategy-level summary columns */
+    walker_strategy_columns: ColumnModel<IStrategyResult>[];
+};
+/**
+ * Type for the column configuration object.
+ */
+type ColumnConfig = typeof COLUMN_CONFIG;
+
+/**
+ * Sets custom logger implementation for the framework.
+ *
+ * All log messages from internal services will be forwarded to the provided logger
+ * with automatic context injection (strategyName, exchangeName, symbol, etc.).
+ *
+ * @param logger - Custom logger implementing ILogger interface
+ *
+ * @example
+ * ```typescript
+ * setLogger({
+ *   log: (topic, ...args) => console.log(topic, args),
+ *   debug: (topic, ...args) => console.debug(topic, args),
+ *   info: (topic, ...args) => console.info(topic, args),
+ * });
+ * ```
+ */
+declare function setLogger(logger: ILogger): void;
+/**
+ * Sets global configuration parameters for the framework.
+ * @param config - Partial configuration object to override default settings
+ * @param _unsafe - Skip config validations - required for testbed
+ *
+ * @example
+ * ```typescript
+ * setConfig({
+ *   CC_SCHEDULE_AWAIT_MINUTES: 90,
+ * });
+ * ```
+ */
+declare function setConfig(config: Partial<GlobalConfig>, _unsafe?: boolean): void;
+/**
+ * Retrieves a copy of the current global configuration.
+ *
+ * Returns a shallow copy of the current GLOBAL_CONFIG to prevent accidental mutations.
+ * Use this to inspect the current configuration state without modifying it.
+ *
+ * @returns {GlobalConfig} A copy of the current global configuration object
+ *
+ * @example
+ * ```typescript
+ * const currentConfig = getConfig();
+ * console.log(currentConfig.CC_SCHEDULE_AWAIT_MINUTES);
+ * ```
+ */
+declare function getConfig(): {
+    CC_SCHEDULE_AWAIT_MINUTES: number;
+    CC_AVG_PRICE_CANDLES_COUNT: number;
+    CC_PERCENT_SLIPPAGE: number;
+    CC_PERCENT_FEE: number;
+    CC_MIN_TAKEPROFIT_DISTANCE_PERCENT: number;
+    CC_MIN_STOPLOSS_DISTANCE_PERCENT: number;
+    CC_MAX_STOPLOSS_DISTANCE_PERCENT: number;
+    CC_MAX_SIGNAL_LIFETIME_MINUTES: number;
+    CC_MAX_SIGNAL_GENERATION_SECONDS: number;
+    CC_GET_CANDLES_RETRY_COUNT: number;
+    CC_GET_CANDLES_RETRY_DELAY_MS: number;
+    CC_MAX_CANDLES_PER_REQUEST: number;
+    CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR: number;
+    CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN: number;
+    CC_REPORT_SHOW_SIGNAL_NOTE: boolean;
+    CC_BREAKEVEN_THRESHOLD: number;
+    CC_ORDER_BOOK_TIME_OFFSET_MINUTES: number;
+    CC_ORDER_BOOK_MAX_DEPTH_LEVELS: number;
+};
+/**
+ * Retrieves the default configuration object for the framework.
+ *
+ * Returns a reference to the default configuration with all preset values.
+ * Use this to see what configuration options are available and their default values.
+ *
+ * @returns {GlobalConfig} The default configuration object
+ *
+ * @example
+ * ```typescript
+ * const defaultConfig = getDefaultConfig();
+ * console.log(defaultConfig.CC_SCHEDULE_AWAIT_MINUTES);
+ * ```
+ */
+declare function getDefaultConfig(): Readonly<{
+    CC_SCHEDULE_AWAIT_MINUTES: number;
+    CC_AVG_PRICE_CANDLES_COUNT: number;
+    CC_PERCENT_SLIPPAGE: number;
+    CC_PERCENT_FEE: number;
+    CC_MIN_TAKEPROFIT_DISTANCE_PERCENT: number;
+    CC_MIN_STOPLOSS_DISTANCE_PERCENT: number;
+    CC_MAX_STOPLOSS_DISTANCE_PERCENT: number;
+    CC_MAX_SIGNAL_LIFETIME_MINUTES: number;
+    CC_MAX_SIGNAL_GENERATION_SECONDS: number;
+    CC_GET_CANDLES_RETRY_COUNT: number;
+    CC_GET_CANDLES_RETRY_DELAY_MS: number;
+    CC_MAX_CANDLES_PER_REQUEST: number;
+    CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR: number;
+    CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN: number;
+    CC_REPORT_SHOW_SIGNAL_NOTE: boolean;
+    CC_BREAKEVEN_THRESHOLD: number;
+    CC_ORDER_BOOK_TIME_OFFSET_MINUTES: number;
+    CC_ORDER_BOOK_MAX_DEPTH_LEVELS: number;
+}>;
+/**
+ * Sets custom column configurations for markdown report generation.
+ *
+ * Allows overriding default column definitions for any report type.
+ * All columns are validated before assignment to ensure structural correctness.
+ *
+ * @param columns - Partial column configuration object to override default column settings
+ * @param _unsafe - Skip column validations - required for testbed
+ *
+ * @example
+ * ```typescript
+ * setColumns({
+ *   backtest_columns: [
+ *     {
+ *       key: "customId",
+ *       label: "Custom ID",
+ *       format: (data) => data.signal.id,
+ *       isVisible: () => true
+ *     }
+ *   ],
+ * });
+ * ```
+ *
+ * @throws {Error} If column configuration is invalid
+ */
+declare function setColumns(columns: Partial<ColumnConfig>, _unsafe?: boolean): void;
+/**
+ * Retrieves a copy of the current column configuration for markdown report generation.
+ *
+ * Returns a shallow copy of the current COLUMN_CONFIG to prevent accidental mutations.
+ * Use this to inspect the current column definitions without modifying them.
+ *
+ * @returns {ColumnConfig} A copy of the current column configuration object
+ *
+ * @example
+ * ```typescript
+ * const currentColumns = getColumns();
+ * console.log(currentColumns.backtest_columns.length);
+ * ```
+ */
+declare function getColumns(): {
+    backtest_columns: ColumnModel<IStrategyTickResultClosed>[];
+    heat_columns: ColumnModel<IHeatmapRow>[];
+    live_columns: ColumnModel<TickEvent>[];
+    partial_columns: ColumnModel<PartialEvent>[];
+    breakeven_columns: ColumnModel<BreakevenEvent>[];
+    performance_columns: ColumnModel<MetricStats>[];
+    risk_columns: ColumnModel<RiskEvent>[];
+    schedule_columns: ColumnModel<ScheduledEvent>[];
+    walker_pnl_columns: ColumnModel<SignalData$1>[];
+    walker_strategy_columns: ColumnModel<IStrategyResult>[];
+};
+/**
+ * Retrieves the default column configuration object for markdown report generation.
+ *
+ * Returns a reference to the default column definitions with all preset values.
+ * Use this to see what column options are available and their default definitions.
+ *
+ * @returns {ColumnConfig} The default column configuration object
+ *
+ * @example
+ * ```typescript
+ * const defaultColumns = getDefaultColumns();
+ * console.log(defaultColumns.backtest_columns);
+ * ```
+ */
+declare function getDefaultColumns(): Readonly<{
+    backtest_columns: ColumnModel<IStrategyTickResultClosed>[];
+    heat_columns: ColumnModel<IHeatmapRow>[];
+    live_columns: ColumnModel<TickEvent>[];
+    partial_columns: ColumnModel<PartialEvent>[];
+    breakeven_columns: ColumnModel<BreakevenEvent>[];
+    performance_columns: ColumnModel<MetricStats>[];
+    risk_columns: ColumnModel<RiskEvent>[];
+    schedule_columns: ColumnModel<ScheduledEvent>[];
+    walker_pnl_columns: ColumnModel<SignalData$1>[];
+    walker_strategy_columns: ColumnModel<IStrategyResult>[];
+}>;
 
 /**
  * Registers a trading strategy in the framework.
@@ -18393,4 +18528,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { ActionBase, Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, type BootstrapNotification, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IOrderBookData, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, type PingContract, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addAction, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, breakeven, cancel, dumpSignal, emitters, formatPrice, formatQuantity, get, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, getOrderBook, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenBreakeven, listenBreakevenOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenPing, listenPingOnce, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideAction, overrideExchange, overrideFrame, overrideOptimizer, overrideRisk, overrideSizing, overrideStrategy, overrideWalker, partialLoss, partialProfit, roundTicks, set, setColumns, setConfig, setLogger, stop, trailingStop, trailingTake, validate };
+export { ActionBase, Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, type BootstrapNotification, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IOrderBookData, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, type PingContract, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addAction, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, breakeven, cancel, dumpSignal, emitters, formatPrice, formatQuantity, get, getAction, getAveragePrice, getCandles, getColumns, getConfig, getCurrentTimeframe, getDate, getDefaultColumns, getDefaultConfig, getExchange, getFrame, getMode, getOptimizer, getOrderBook, getRisk, getSizing, getStrategy, getWalker, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenBreakeven, listenBreakevenOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenPing, listenPingOnce, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideAction, overrideExchange, overrideFrame, overrideOptimizer, overrideRisk, overrideSizing, overrideStrategy, overrideWalker, partialLoss, partialProfit, roundTicks, set, setColumns, setConfig, setLogger, stop, trailingStop, trailingTake, validate };
