@@ -20,6 +20,7 @@ export {
   getDefaultColumns,
 } from "./function/setup";
 export {
+  addAction,
   addExchange,
   addStrategy,
   addFrame,
@@ -28,6 +29,16 @@ export {
   addRisk,
   addOptimizer,
 } from "./function/add";
+export {
+  overrideAction,
+  overrideExchange,
+  overrideFrame,
+  overrideOptimizer,
+  overrideRisk,
+  overrideSizing,
+  overrideStrategy,
+  overrideWalker,
+} from "./function/override";
 export {
   listExchanges,
   listStrategies,

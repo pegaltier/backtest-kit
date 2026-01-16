@@ -4472,6 +4472,495 @@ declare function addRisk(riskSchema: IRiskSchema): void;
  * ```
  */
 declare function addOptimizer(optimizerSchema: IOptimizerSchema): void;
+/**
+ * Registers an action handler in the framework.
+ *
+ * Actions provide event-driven integration for:
+ * - State management (Redux, Zustand, MobX)
+ * - Real-time notifications (Telegram, Discord, email)
+ * - Event logging and monitoring
+ * - Analytics and metrics collection
+ * - Custom business logic triggers
+ *
+ * Each action instance is created per strategy-frame pair and receives all events
+ * emitted during strategy execution (signals, breakeven, partial profit/loss, etc.).
+ *
+ * @param actionSchema - Action configuration object
+ * @param actionSchema.actionName - Unique action identifier
+ * @param actionSchema.handler - Action handler class constructor or plain object with event methods
+ * @param actionSchema.callbacks - Optional lifecycle callbacks (onInit, onDispose, onSignal, etc.)
+ *
+ * @example
+ * ```typescript
+ * // Using class-based handler
+ * class TelegramNotifier implements Partial<IPublicAction> {
+ *   constructor(
+ *     private strategyName: StrategyName,
+ *     private frameName: FrameName,
+ *     private actionName: ActionName
+ *   ) {}
+ *
+ *   async init() {
+ *     this.bot = new TelegramBot(process.env.TELEGRAM_TOKEN);
+ *     await this.bot.connect();
+ *   }
+ *
+ *   async signal(event: IStrategyTickResult) {
+ *     if (event.action === 'opened') {
+ *       await this.bot.send(`New signal: ${event.signal.side}`);
+ *     }
+ *   }
+ *
+ *   async dispose() {
+ *     await this.bot?.disconnect();
+ *   }
+ * }
+ *
+ * addAction({
+ *   actionName: "telegram-notifier",
+ *   handler: TelegramNotifier,
+ *   callbacks: {
+ *     onInit: (actionName, strategyName, frameName, backtest) => {
+ *       console.log(`[${actionName}] Initialized for ${strategyName}/${frameName}`);
+ *     },
+ *     onSignal: (event, actionName, strategyName, frameName, backtest) => {
+ *       console.log(`[${actionName}] Signal event: ${event.action}`);
+ *     },
+ *   },
+ * });
+ *
+ * // Using plain object handler
+ * addAction({
+ *   actionName: "simple-logger",
+ *   handler: {
+ *     signal: (event) => console.log('Signal:', event.action),
+ *     breakeven: (event) => console.log('Breakeven triggered'),
+ *   },
+ *   callbacks: {},
+ * });
+ * ```
+ */
+declare function addAction(actionSchema: IActionSchema): void;
+
+/**
+ * Partial strategy schema for override operations.
+ *
+ * Requires only the strategy name identifier, all other fields are optional.
+ * Used by overrideStrategy() to perform partial updates without replacing entire configuration.
+ *
+ * @property strategyName - Required: Unique strategy identifier (must exist in registry)
+ * @property interval - Optional: Signal generation interval to update
+ * @property getSignal - Optional: New signal generation function
+ * @property callbacks - Optional: Updated lifecycle callbacks
+ *
+ * @example
+ * ```typescript
+ * const partialUpdate: TStrategySchema = {
+ *   strategyName: "my-strategy",
+ *   interval: "15m" // Only update interval, keep other fields
+ * };
+ * ```
+ */
+type TStrategySchema = {
+    strategyName: IStrategySchema["strategyName"];
+} & Partial<IStrategySchema>;
+/**
+ * Partial exchange schema for override operations.
+ *
+ * Requires only the exchange name identifier, all other fields are optional.
+ * Used by overrideExchange() to perform partial updates without replacing entire configuration.
+ *
+ * @property exchangeName - Required: Unique exchange identifier (must exist in registry)
+ * @property getCandles - Optional: New candle data fetching function
+ * @property formatPrice - Optional: Updated price formatting function
+ * @property formatQuantity - Optional: Updated quantity formatting function
+ * @property callbacks - Optional: Updated candle data callbacks
+ *
+ * @example
+ * ```typescript
+ * const partialUpdate: TExchangeSchema = {
+ *   exchangeName: "binance",
+ *   formatPrice: async (symbol, price) => price.toFixed(4) // Only update price formatter
+ * };
+ * ```
+ */
+type TExchangeSchema = {
+    exchangeName: IExchangeSchema["exchangeName"];
+} & Partial<IExchangeSchema>;
+/**
+ * Partial frame schema for override operations.
+ *
+ * Requires only the frame name identifier, all other fields are optional.
+ * Used by overrideFrame() to perform partial updates without replacing entire configuration.
+ *
+ * @property frameName - Required: Unique frame identifier (must exist in registry)
+ * @property interval - Optional: New timeframe interval
+ * @property startDate - Optional: Updated start date for backtesting
+ * @property endDate - Optional: Updated end date for backtesting
+ * @property callbacks - Optional: Updated timeframe callbacks
+ *
+ * @example
+ * ```typescript
+ * const partialUpdate: TFrameSchema = {
+ *   frameName: "1d-backtest",
+ *   endDate: new Date("2024-12-31") // Only extend end date
+ * };
+ * ```
+ */
+type TFrameSchema = {
+    frameName: IFrameSchema["frameName"];
+} & Partial<IFrameSchema>;
+/**
+ * Partial walker schema for override operations.
+ *
+ * Requires only the walker name identifier, all other fields are optional.
+ * Used by overrideWalker() to perform partial updates without replacing entire configuration.
+ *
+ * @property walkerName - Required: Unique walker identifier (must exist in registry)
+ * @property exchangeName - Optional: New exchange to use
+ * @property frameName - Optional: New timeframe to use
+ * @property strategies - Optional: Updated list of strategies to compare
+ * @property metric - Optional: New optimization metric
+ * @property callbacks - Optional: Updated walker callbacks
+ *
+ * @example
+ * ```typescript
+ * const partialUpdate: TWalkerSchema = {
+ *   walkerName: "optimizer",
+ *   metric: "profitFactor" // Only change metric
+ * };
+ * ```
+ */
+type TWalkerSchema = {
+    walkerName: IWalkerSchema["walkerName"];
+} & Partial<IWalkerSchema>;
+/**
+ * Partial sizing schema for override operations.
+ *
+ * Requires only the sizing name identifier, all other fields are optional.
+ * Used by overrideSizing() to perform partial updates without replacing entire configuration.
+ *
+ * @property sizingName - Required: Unique sizing identifier (must exist in registry)
+ * @property method - Optional: New sizing method ("fixed-percentage" | "kelly-criterion" | "atr-based")
+ * @property riskPercentage - Optional: Updated risk percentage per trade
+ * @property kellyMultiplier - Optional: Updated Kelly multiplier (for kelly-criterion)
+ * @property atrMultiplier - Optional: Updated ATR multiplier (for atr-based)
+ * @property maxPositionPercentage - Optional: New max position size limit
+ * @property minPositionSize - Optional: New minimum position size
+ * @property maxPositionSize - Optional: New maximum position size
+ * @property callbacks - Optional: Updated sizing callbacks
+ *
+ * @example
+ * ```typescript
+ * const partialUpdate: TSizingSchema = {
+ *   sizingName: "conservative",
+ *   riskPercentage: 2 // Only increase risk from 1% to 2%
+ * };
+ * ```
+ */
+type TSizingSchema = {
+    sizingName: ISizingSchema["sizingName"];
+} & Partial<ISizingSchema>;
+/**
+ * Partial risk schema for override operations.
+ *
+ * Requires only the risk name identifier, all other fields are optional.
+ * Used by overrideRisk() to perform partial updates without replacing entire configuration.
+ *
+ * @property riskName - Required: Unique risk profile identifier (must exist in registry)
+ * @property maxConcurrentPositions - Optional: New max concurrent positions limit
+ * @property validations - Optional: Updated custom validation functions
+ * @property callbacks - Optional: Updated risk management callbacks
+ *
+ * @example
+ * ```typescript
+ * const partialUpdate: TRiskSchema = {
+ *   riskName: "conservative",
+ *   maxConcurrentPositions: 3 // Only reduce max positions from 5 to 3
+ * };
+ * ```
+ */
+type TRiskSchema = {
+    riskName: IRiskSchema["riskName"];
+} & Partial<IRiskSchema>;
+/**
+ * Partial optimizer schema for override operations.
+ *
+ * Requires only the optimizer name identifier, all other fields are optional.
+ * Used by overrideOptimizer() to perform partial updates without replacing entire configuration.
+ *
+ * @property optimizerName - Required: Unique optimizer identifier (must exist in registry)
+ * @property rangeTrain - Optional: Updated training time ranges
+ * @property rangeTest - Optional: Updated testing time range
+ * @property source - Optional: Updated data sources array
+ * @property getPrompt - Optional: New prompt generation function
+ * @property template - Optional: Updated template overrides
+ * @property callbacks - Optional: Updated optimizer callbacks
+ *
+ * @example
+ * ```typescript
+ * const partialUpdate: TOptimizerSchema = {
+ *   optimizerName: "llm-strategy-gen",
+ *   rangeTest: {
+ *     note: "Extended test period",
+ *     startDate: new Date("2024-04-01"),
+ *     endDate: new Date("2024-06-30")
+ *   }
+ * };
+ * ```
+ */
+type TOptimizerSchema = {
+    optimizerName: IOptimizerSchema["optimizerName"];
+} & Partial<IOptimizerSchema>;
+/**
+ * Partial action schema for override operations.
+ *
+ * Requires only the action name identifier, all other fields are optional.
+ * Used by overrideAction() to perform partial updates without replacing entire configuration.
+ *
+ * @property actionName - Required: Unique action identifier (must exist in registry)
+ * @property handler - Optional: New action handler class or plain object
+ * @property callbacks - Optional: Updated lifecycle callbacks
+ *
+ * @example
+ * ```typescript
+ * const partialUpdate: TActionSchema = {
+ *   actionName: "telegram-notifier",
+ *   callbacks: {
+ *     onSignal: (event, actionName, strategyName, frameName, backtest) => {
+ *       console.log(`[UPDATED] ${event.action}`); // Only update signal callback
+ *     }
+ *   }
+ * };
+ * ```
+ */
+type TActionSchema = {
+    actionName: IActionSchema["actionName"];
+} & Partial<IActionSchema>;
+/**
+ * Overrides an existing trading strategy in the framework.
+ *
+ * This function partially updates a previously registered strategy with new configuration.
+ * Only the provided fields will be updated, other fields remain unchanged.
+ *
+ * @param strategySchema - Partial strategy configuration object
+ * @param strategySchema.strategyName - Unique strategy identifier (must exist)
+ * @param strategySchema.interval - Optional: Signal generation interval
+ * @param strategySchema.getSignal - Optional: Async function that generates trading signals
+ * @param strategySchema.callbacks - Optional: Lifecycle callbacks (onOpen, onClose)
+ *
+ * @example
+ * ```typescript
+ * overrideStrategy({
+ *   strategyName: "my-strategy",
+ *   interval: "15m", // Only update interval
+ * });
+ * ```
+ */
+declare const overrideStrategy: (strategySchema: TStrategySchema) => Promise<IStrategySchema>;
+/**
+ * Overrides an existing exchange data source in the framework.
+ *
+ * This function partially updates a previously registered exchange with new configuration.
+ * Only the provided fields will be updated, other fields remain unchanged.
+ *
+ * @param exchangeSchema - Partial exchange configuration object
+ * @param exchangeSchema.exchangeName - Unique exchange identifier (must exist)
+ * @param exchangeSchema.getCandles - Optional: Async function to fetch candle data
+ * @param exchangeSchema.formatPrice - Optional: Async function to format prices
+ * @param exchangeSchema.formatQuantity - Optional: Async function to format quantities
+ * @param exchangeSchema.callbacks - Optional: Callback for candle data events
+ *
+ * @example
+ * ```typescript
+ * overrideExchange({
+ *   exchangeName: "binance",
+ *   formatPrice: async (symbol, price) => price.toFixed(4), // Only update price formatting
+ * });
+ * ```
+ */
+declare const overrideExchange: (exchangeSchema: TExchangeSchema) => Promise<IExchangeSchema>;
+/**
+ * Overrides an existing timeframe configuration for backtesting.
+ *
+ * This function partially updates a previously registered frame with new configuration.
+ * Only the provided fields will be updated, other fields remain unchanged.
+ *
+ * @param frameSchema - Partial frame configuration object
+ * @param frameSchema.frameName - Unique frame identifier (must exist)
+ * @param frameSchema.interval - Optional: Timeframe interval
+ * @param frameSchema.startDate - Optional: Start date for timeframe generation
+ * @param frameSchema.endDate - Optional: End date for timeframe generation
+ * @param frameSchema.callbacks - Optional: Callback for timeframe events
+ *
+ * @example
+ * ```typescript
+ * overrideFrame({
+ *   frameName: "1d-backtest",
+ *   endDate: new Date("2024-03-01T00:00:00Z"), // Only extend end date
+ * });
+ * ```
+ */
+declare const overrideFrame: (frameSchema: TFrameSchema) => Promise<IFrameSchema>;
+/**
+ * Overrides an existing walker configuration for strategy comparison.
+ *
+ * This function partially updates a previously registered walker with new configuration.
+ * Only the provided fields will be updated, other fields remain unchanged.
+ *
+ * @param walkerSchema - Partial walker configuration object
+ * @param walkerSchema.walkerName - Unique walker identifier (must exist)
+ * @param walkerSchema.exchangeName - Optional: Exchange to use for all strategies
+ * @param walkerSchema.frameName - Optional: Timeframe to use for all strategies
+ * @param walkerSchema.strategies - Optional: Array of strategy names to compare
+ * @param walkerSchema.metric - Optional: Metric to optimize
+ * @param walkerSchema.callbacks - Optional: Lifecycle callbacks
+ *
+ * @example
+ * ```typescript
+ * overrideWalker({
+ *   walkerName: "llm-prompt-optimizer",
+ *   metric: "profitFactor", // Only change metric
+ * });
+ * ```
+ */
+declare const overrideWalker: (walkerSchema: TWalkerSchema) => Promise<IWalkerSchema>;
+/**
+ * Overrides an existing position sizing configuration in the framework.
+ *
+ * This function partially updates a previously registered sizing configuration with new settings.
+ * Only the provided fields will be updated, other fields remain unchanged.
+ *
+ * @param sizingSchema - Partial sizing configuration object
+ * @param sizingSchema.sizingName - Unique sizing identifier (must exist)
+ * @param sizingSchema.method - Optional: Sizing method
+ * @param sizingSchema.riskPercentage - Optional: Risk percentage per trade
+ * @param sizingSchema.kellyMultiplier - Optional: Kelly multiplier
+ * @param sizingSchema.atrMultiplier - Optional: ATR multiplier
+ * @param sizingSchema.maxPositionPercentage - Optional: Max position size as % of account
+ * @param sizingSchema.minPositionSize - Optional: Minimum position size
+ * @param sizingSchema.maxPositionSize - Optional: Maximum position size
+ * @param sizingSchema.callbacks - Optional: Lifecycle callbacks
+ *
+ * @example
+ * ```typescript
+ * overrideSizing({
+ *   sizingName: "conservative",
+ *   riskPercentage: 2, // Only increase risk percentage
+ * });
+ * ```
+ */
+declare const overrideSizing: (sizingSchema: TSizingSchema) => Promise<ISizingSchema>;
+/**
+ * Overrides an existing risk management configuration in the framework.
+ *
+ * This function partially updates a previously registered risk configuration with new settings.
+ * Only the provided fields will be updated, other fields remain unchanged.
+ *
+ * @param riskSchema - Partial risk configuration object
+ * @param riskSchema.riskName - Unique risk profile identifier (must exist)
+ * @param riskSchema.maxConcurrentPositions - Optional: Max number of open positions
+ * @param riskSchema.validations - Optional: Custom validation functions
+ * @param riskSchema.callbacks - Optional: Lifecycle callbacks
+ *
+ * @example
+ * ```typescript
+ * overrideRisk({
+ *   riskName: "conservative",
+ *   maxConcurrentPositions: 3, // Only reduce max positions
+ * });
+ * ```
+ */
+declare const overrideRisk: (riskSchema: TRiskSchema) => Promise<IRiskSchema>;
+/**
+ * Overrides an existing optimizer configuration in the framework.
+ *
+ * This function partially updates a previously registered optimizer with new configuration.
+ * Only the provided fields will be updated, other fields remain unchanged.
+ *
+ * @param optimizerSchema - Partial optimizer configuration object
+ * @param optimizerSchema.optimizerName - Unique optimizer identifier (must exist)
+ * @param optimizerSchema.rangeTrain - Optional: Array of training time ranges
+ * @param optimizerSchema.rangeTest - Optional: Testing time range
+ * @param optimizerSchema.source - Optional: Array of data sources
+ * @param optimizerSchema.getPrompt - Optional: Function to generate strategy prompt
+ * @param optimizerSchema.template - Optional: Custom template overrides
+ * @param optimizerSchema.callbacks - Optional: Lifecycle callbacks
+ *
+ * @example
+ * ```typescript
+ * overrideOptimizer({
+ *   optimizerName: "llm-strategy-generator",
+ *   rangeTest: {
+ *     note: "Updated validation period",
+ *     startDate: new Date("2024-04-01"),
+ *     endDate: new Date("2024-04-30"),
+ *   },
+ * });
+ * ```
+ */
+declare const overrideOptimizer: (optimizerSchema: TOptimizerSchema) => Promise<IOptimizerSchema>;
+/**
+ * Overrides an existing action handler configuration in the framework.
+ *
+ * This function partially updates a previously registered action handler with new configuration.
+ * Only the provided fields will be updated, other fields remain unchanged.
+ *
+ * Useful for:
+ * - Updating event handler logic without re-registering
+ * - Modifying callbacks for different environments (dev/prod)
+ * - Switching handler implementations dynamically
+ * - Adjusting action behavior without strategy changes
+ *
+ * @param actionSchema - Partial action configuration object
+ * @param actionSchema.actionName - Unique action identifier (must exist)
+ * @param actionSchema.handler - Optional: Action handler class constructor or plain object
+ * @param actionSchema.callbacks - Optional: Lifecycle callbacks to update
+ *
+ * @example
+ * ```typescript
+ * // Override handler implementation
+ * class ImprovedTelegramNotifier implements Partial<IPublicAction> {
+ *   constructor(
+ *     private strategyName: StrategyName,
+ *     private frameName: FrameName,
+ *     private actionName: ActionName
+ *   ) {}
+ *
+ *   async signal(event: IStrategyTickResult) {
+ *     if (event.action === 'opened') {
+ *       await this.bot.send(`📈 ${event.signal.side} signal opened`); // Enhanced formatting
+ *     }
+ *   }
+ * }
+ *
+ * overrideAction({
+ *   actionName: "telegram-notifier",
+ *   handler: ImprovedTelegramNotifier, // Only update handler
+ * });
+ *
+ * // Override only callbacks
+ * overrideAction({
+ *   actionName: "telegram-notifier",
+ *   callbacks: {
+ *     onSignal: (event, actionName, strategyName, frameName, backtest) => {
+ *       console.log(`[VERBOSE] ${actionName}: ${event.action}`); // More verbose logging
+ *     },
+ *   },
+ * });
+ *
+ * // Update plain object handler
+ * overrideAction({
+ *   actionName: "simple-logger",
+ *   handler: {
+ *     signal: (event) => console.log('📊 Signal:', event.action),
+ *     breakeven: (event) => console.log('⚖️ Breakeven triggered'),
+ *     partialProfit: (event) => console.log('💰 Partial profit:', event.level),
+ *   },
+ * });
+ * ```
+ */
+declare const overrideAction: (actionSchema: TActionSchema) => Promise<IActionSchema>;
 
 /**
  * Returns a list of all registered exchange schemas.
@@ -17501,4 +17990,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, type BootstrapNotification, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IOrderBookData, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, type PingContract, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, breakeven, cancel, dumpSignal, emitters, formatPrice, formatQuantity, get, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, getOrderBook, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenBreakeven, listenBreakevenOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenPing, listenPingOnce, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, partialLoss, partialProfit, roundTicks, set, setColumns, setConfig, setLogger, stop, trailingStop, trailingTake, validate };
+export { Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, type BootstrapNotification, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IOrderBookData, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, type PingContract, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addAction, addExchange, addFrame, addOptimizer, addRisk, addSizing, addStrategy, addWalker, breakeven, cancel, dumpSignal, emitters, formatPrice, formatQuantity, get, getAveragePrice, getCandles, getColumns, getConfig, getDate, getDefaultColumns, getDefaultConfig, getMode, getOrderBook, hasTradeContext, backtest as lib, listExchanges, listFrames, listOptimizers, listRisks, listSizings, listStrategies, listWalkers, listenBacktestProgress, listenBreakeven, listenBreakevenOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLoss, listenPartialLossOnce, listenPartialProfit, listenPartialProfitOnce, listenPerformance, listenPing, listenPingOnce, listenRisk, listenRiskOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideAction, overrideExchange, overrideFrame, overrideOptimizer, overrideRisk, overrideSizing, overrideStrategy, overrideWalker, partialLoss, partialProfit, roundTicks, set, setColumns, setConfig, setLogger, stop, trailingStop, trailingTake, validate };

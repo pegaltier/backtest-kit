@@ -6,6 +6,7 @@ import { IWalkerSchema } from "../interfaces/Walker.interface";
 import { ISizingSchema } from "../interfaces/Sizing.interface";
 import { IRiskSchema } from "../interfaces/Risk.interface";
 import { IOptimizerSchema } from "../interfaces/Optimizer.interface";
+import { IActionSchema } from "../interfaces/Action.interface";
 
 const ADD_STRATEGY_METHOD_NAME = "add.addStrategy";
 const ADD_EXCHANGE_METHOD_NAME = "add.addExchange";
@@ -14,6 +15,7 @@ const ADD_WALKER_METHOD_NAME = "add.addWalker";
 const ADD_SIZING_METHOD_NAME = "add.addSizing";
 const ADD_RISK_METHOD_NAME = "add.addRisk";
 const ADD_OPTIMIZER_METHOD_NAME = "add.addOptimizer";
+const ADD_ACTION_METHOD_NAME = "add.addAction";
 
 /**
  * Registers a trading strategy in the framework.
@@ -440,5 +442,87 @@ export function addOptimizer(optimizerSchema: IOptimizerSchema) {
   backtest.optimizerSchemaService.register(
     optimizerSchema.optimizerName,
     optimizerSchema
+  );
+}
+
+/**
+ * Registers an action handler in the framework.
+ *
+ * Actions provide event-driven integration for:
+ * - State management (Redux, Zustand, MobX)
+ * - Real-time notifications (Telegram, Discord, email)
+ * - Event logging and monitoring
+ * - Analytics and metrics collection
+ * - Custom business logic triggers
+ *
+ * Each action instance is created per strategy-frame pair and receives all events
+ * emitted during strategy execution (signals, breakeven, partial profit/loss, etc.).
+ *
+ * @param actionSchema - Action configuration object
+ * @param actionSchema.actionName - Unique action identifier
+ * @param actionSchema.handler - Action handler class constructor or plain object with event methods
+ * @param actionSchema.callbacks - Optional lifecycle callbacks (onInit, onDispose, onSignal, etc.)
+ *
+ * @example
+ * ```typescript
+ * // Using class-based handler
+ * class TelegramNotifier implements Partial<IPublicAction> {
+ *   constructor(
+ *     private strategyName: StrategyName,
+ *     private frameName: FrameName,
+ *     private actionName: ActionName
+ *   ) {}
+ *
+ *   async init() {
+ *     this.bot = new TelegramBot(process.env.TELEGRAM_TOKEN);
+ *     await this.bot.connect();
+ *   }
+ *
+ *   async signal(event: IStrategyTickResult) {
+ *     if (event.action === 'opened') {
+ *       await this.bot.send(`New signal: ${event.signal.side}`);
+ *     }
+ *   }
+ *
+ *   async dispose() {
+ *     await this.bot?.disconnect();
+ *   }
+ * }
+ *
+ * addAction({
+ *   actionName: "telegram-notifier",
+ *   handler: TelegramNotifier,
+ *   callbacks: {
+ *     onInit: (actionName, strategyName, frameName, backtest) => {
+ *       console.log(`[${actionName}] Initialized for ${strategyName}/${frameName}`);
+ *     },
+ *     onSignal: (event, actionName, strategyName, frameName, backtest) => {
+ *       console.log(`[${actionName}] Signal event: ${event.action}`);
+ *     },
+ *   },
+ * });
+ *
+ * // Using plain object handler
+ * addAction({
+ *   actionName: "simple-logger",
+ *   handler: {
+ *     signal: (event) => console.log('Signal:', event.action),
+ *     breakeven: (event) => console.log('Breakeven triggered'),
+ *   },
+ *   callbacks: {},
+ * });
+ * ```
+ */
+export function addAction(actionSchema: IActionSchema) {
+  backtest.loggerService.info(ADD_ACTION_METHOD_NAME, {
+    actionSchema,
+  });
+  backtest.actionValidationService.addAction(
+    actionSchema.actionName,
+    actionSchema
+  );
+  backtest.actionSchemaService.register(
+    actionSchema.actionName,
+    actionSchema
   );
 }
