@@ -4757,7 +4757,7 @@ type TActionSchema = {
  * });
  * ```
  */
-declare const overrideStrategy: (strategySchema: TStrategySchema) => Promise<IStrategySchema>;
+declare function overrideStrategy(strategySchema: TStrategySchema): Promise<IStrategySchema>;
 /**
  * Overrides an existing exchange data source in the framework.
  *
@@ -4779,7 +4779,7 @@ declare const overrideStrategy: (strategySchema: TStrategySchema) => Promise<ISt
  * });
  * ```
  */
-declare const overrideExchange: (exchangeSchema: TExchangeSchema) => Promise<IExchangeSchema>;
+declare function overrideExchange(exchangeSchema: TExchangeSchema): Promise<IExchangeSchema>;
 /**
  * Overrides an existing timeframe configuration for backtesting.
  *
@@ -4801,7 +4801,7 @@ declare const overrideExchange: (exchangeSchema: TExchangeSchema) => Promise<IEx
  * });
  * ```
  */
-declare const overrideFrame: (frameSchema: TFrameSchema) => Promise<IFrameSchema>;
+declare function overrideFrame(frameSchema: TFrameSchema): Promise<IFrameSchema>;
 /**
  * Overrides an existing walker configuration for strategy comparison.
  *
@@ -4824,7 +4824,7 @@ declare const overrideFrame: (frameSchema: TFrameSchema) => Promise<IFrameSchema
  * });
  * ```
  */
-declare const overrideWalker: (walkerSchema: TWalkerSchema) => Promise<IWalkerSchema>;
+declare function overrideWalker(walkerSchema: TWalkerSchema): Promise<IWalkerSchema>;
 /**
  * Overrides an existing position sizing configuration in the framework.
  *
@@ -4850,7 +4850,7 @@ declare const overrideWalker: (walkerSchema: TWalkerSchema) => Promise<IWalkerSc
  * });
  * ```
  */
-declare const overrideSizing: (sizingSchema: TSizingSchema) => Promise<ISizingSchema>;
+declare function overrideSizing(sizingSchema: TSizingSchema): Promise<ISizingSchema>;
 /**
  * Overrides an existing risk management configuration in the framework.
  *
@@ -4871,7 +4871,7 @@ declare const overrideSizing: (sizingSchema: TSizingSchema) => Promise<ISizingSc
  * });
  * ```
  */
-declare const overrideRisk: (riskSchema: TRiskSchema) => Promise<IRiskSchema>;
+declare function overrideRisk(riskSchema: TRiskSchema): Promise<IRiskSchema>;
 /**
  * Overrides an existing optimizer configuration in the framework.
  *
@@ -4899,7 +4899,7 @@ declare const overrideRisk: (riskSchema: TRiskSchema) => Promise<IRiskSchema>;
  * });
  * ```
  */
-declare const overrideOptimizer: (optimizerSchema: TOptimizerSchema) => Promise<IOptimizerSchema>;
+declare function overrideOptimizer(optimizerSchema: TOptimizerSchema): Promise<IOptimizerSchema>;
 /**
  * Overrides an existing action handler configuration in the framework.
  *
@@ -4960,7 +4960,7 @@ declare const overrideOptimizer: (optimizerSchema: TOptimizerSchema) => Promise<
  * });
  * ```
  */
-declare const overrideAction: (actionSchema: TActionSchema) => Promise<IActionSchema>;
+declare function overrideAction(actionSchema: TActionSchema): Promise<IActionSchema>;
 
 /**
  * Returns a list of all registered exchange schemas.
@@ -13409,6 +13409,221 @@ declare class ClientRisk implements IRisk {
 }
 
 /**
+ * Type definition for action methods.
+ * Maps all keys of IAction to any type.
+ * Used for dynamic method routing in ActionCoreService.
+ */
+type TAction$1 = {
+    [key in keyof IAction]: any;
+};
+/**
+ * Global service for action operations.
+ *
+ * Manages action dispatching for strategies by automatically resolving
+ * action lists from strategy schemas and invoking handlers for each registered action.
+ *
+ * Key responsibilities:
+ * - Retrieves action list from strategy schema (IStrategySchema.actions)
+ * - Validates strategy context (strategyName, exchangeName, frameName)
+ * - Validates all associated actions, risks from strategy schema
+ * - Dispatches events to all registered actions in sequence
+ *
+ * Used internally by strategy execution and public API.
+ */
+declare class ActionCoreService implements TAction$1 {
+    private readonly loggerService;
+    private readonly actionConnectionService;
+    private readonly actionValidationService;
+    private readonly exchangeValidationService;
+    private readonly frameValidationService;
+    private readonly strategyValidationService;
+    private readonly strategySchemaService;
+    private readonly riskValidationService;
+    /**
+     * Validates strategy context and all associated configurations.
+     *
+     * Memoized to avoid redundant validations for the same strategy-exchange-frame combination.
+     * Retrieves strategy schema and validates:
+     * - Strategy name existence
+     * - Exchange name validity
+     * - Frame name validity (if provided)
+     * - Risk profile(s) validity (if configured in strategy schema)
+     * - Action name(s) validity (if configured in strategy schema)
+     *
+     * @param context - Strategy execution context with strategyName, exchangeName and frameName
+     * @returns Promise that resolves when all validations complete
+     */
+    private validate;
+    /**
+     * Initializes all ClientAction instances for the strategy.
+     *
+     * Retrieves action list from strategy schema (IStrategySchema.actions)
+     * and invokes the init handler on each ClientAction instance sequentially.
+     * Calls waitForInit() on each action to load persisted state.
+     *
+     * @param backtest - Whether running in backtest mode (true) or live mode (false)
+     * @param context - Strategy execution context with strategyName, exchangeName, frameName
+     */
+    initFn: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Routes signal event to all registered actions for the strategy.
+     *
+     * Retrieves action list from strategy schema (IStrategySchema.actions)
+     * and invokes the signal handler on each ClientAction instance sequentially.
+     *
+     * @param backtest - Whether running in backtest mode (true) or live mode (false)
+     * @param event - Signal state result (idle, scheduled, opened, active, closed, cancelled)
+     * @param context - Strategy execution context with strategyName, exchangeName, frameName
+     */
+    signal: (backtest: boolean, event: IStrategyTickResult, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Routes signal event from live trading to all registered actions.
+     *
+     * Retrieves action list from strategy schema (IStrategySchema.actions)
+     * and invokes the signalLive handler on each ClientAction instance sequentially.
+     *
+     * @param backtest - Whether running in backtest mode (always false for signalLive)
+     * @param event - Signal state result from live trading
+     * @param context - Strategy execution context with strategyName, exchangeName, frameName
+     */
+    signalLive: (backtest: boolean, event: IStrategyTickResult, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Routes signal event from backtest to all registered actions.
+     *
+     * Retrieves action list from strategy schema (IStrategySchema.actions)
+     * and invokes the signalBacktest handler on each ClientAction instance sequentially.
+     *
+     * @param backtest - Whether running in backtest mode (always true for signalBacktest)
+     * @param event - Signal state result from backtest
+     * @param context - Strategy execution context with strategyName, exchangeName, frameName
+     */
+    signalBacktest: (backtest: boolean, event: IStrategyTickResult, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Routes breakeven event to all registered actions for the strategy.
+     *
+     * Retrieves action list from strategy schema (IStrategySchema.actions)
+     * and invokes the breakeven handler on each ClientAction instance sequentially.
+     *
+     * @param backtest - Whether running in backtest mode (true) or live mode (false)
+     * @param event - Breakeven milestone data (stop-loss moved to entry price)
+     * @param context - Strategy execution context with strategyName, exchangeName, frameName
+     */
+    breakeven: (backtest: boolean, event: BreakevenContract, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Routes partial profit event to all registered actions for the strategy.
+     *
+     * Retrieves action list from strategy schema (IStrategySchema.actions)
+     * and invokes the partialProfit handler on each ClientAction instance sequentially.
+     *
+     * @param backtest - Whether running in backtest mode (true) or live mode (false)
+     * @param event - Profit milestone data with level (10%, 20%, etc.) and price
+     * @param context - Strategy execution context with strategyName, exchangeName, frameName
+     */
+    partialProfit: (backtest: boolean, event: PartialProfitContract, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Routes partial loss event to all registered actions for the strategy.
+     *
+     * Retrieves action list from strategy schema (IStrategySchema.actions)
+     * and invokes the partialLoss handler on each ClientAction instance sequentially.
+     *
+     * @param backtest - Whether running in backtest mode (true) or live mode (false)
+     * @param event - Loss milestone data with level (-10%, -20%, etc.) and price
+     * @param context - Strategy execution context with strategyName, exchangeName, frameName
+     */
+    partialLoss: (backtest: boolean, event: PartialLossContract, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Routes ping event to all registered actions for the strategy.
+     *
+     * Retrieves action list from strategy schema (IStrategySchema.actions)
+     * and invokes the ping handler on each ClientAction instance sequentially.
+     * Called every minute during scheduled signal monitoring.
+     *
+     * @param backtest - Whether running in backtest mode (true) or live mode (false)
+     * @param event - Scheduled signal monitoring data
+     * @param context - Strategy execution context with strategyName, exchangeName, frameName
+     */
+    ping: (backtest: boolean, event: PingContract, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Routes risk rejection event to all registered actions for the strategy.
+     *
+     * Retrieves action list from strategy schema (IStrategySchema.actions)
+     * and invokes the riskRejection handler on each ClientAction instance sequentially.
+     * Called only when a signal fails risk validation.
+     *
+     * @param backtest - Whether running in backtest mode (true) or live mode (false)
+     * @param event - Risk rejection data with reason and context
+     * @param context - Strategy execution context with strategyName, exchangeName, frameName
+     */
+    riskRejection: (backtest: boolean, event: RiskContract, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Disposes all ClientAction instances for the strategy.
+     *
+     * Retrieves action list from strategy schema (IStrategySchema.actions)
+     * and invokes the dispose handler on each ClientAction instance sequentially.
+     * Called when strategy execution ends to clean up resources.
+     *
+     * @param backtest - Whether running in backtest mode (true) or live mode (false)
+     * @param context - Strategy execution context with strategyName, exchangeName, frameName
+     */
+    dispose: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Clears action data.
+     *
+     * If payload is provided, validates and clears data for the specific action instance.
+     * If no payload is provided, clears all action data across all strategies.
+     *
+     * @param payload - Optional payload with actionName, strategyName, exchangeName, frameName, backtest (clears all if not provided)
+     */
+    clear: (payload?: {
+        actionName: ActionName;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+        backtest: boolean;
+    }) => Promise<void>;
+}
+
+/**
  * Type definition for risk methods.
  * Maps all keys of IRisk to any type.
  * Used for dynamic method routing in RiskConnectionService.
@@ -13451,6 +13666,10 @@ type TRisk$1 = {
 declare class RiskConnectionService implements TRisk$1 {
     private readonly loggerService;
     private readonly riskSchemaService;
+    /**
+     * Action core service injected from DI container.
+     */
+    readonly actionCoreService: ActionCoreService;
     /**
      * Retrieves memoized ClientRisk instance for given risk name, exchange, frame and backtest mode.
      *
@@ -13568,6 +13787,10 @@ declare class PartialConnectionService implements IPartial {
      */
     private readonly loggerService;
     /**
+     * Action core service injected from DI container.
+     */
+    readonly actionCoreService: ActionCoreService;
+    /**
      * Memoized factory function for ClientPartial instances.
      *
      * Creates one ClientPartial per signal ID and backtest mode with configured callbacks.
@@ -13665,6 +13888,10 @@ declare class BreakevenConnectionService implements IBreakeven {
      */
     private readonly loggerService;
     /**
+     * Action core service injected from DI container.
+     */
+    readonly actionCoreService: ActionCoreService;
+    /**
      * Memoized factory function for ClientBreakeven instances.
      *
      * Creates one ClientBreakeven per signal ID and backtest mode with configured callbacks.
@@ -13750,6 +13977,7 @@ declare class StrategyConnectionService implements TStrategy$1 {
     readonly exchangeConnectionService: ExchangeConnectionService;
     readonly partialConnectionService: PartialConnectionService;
     readonly breakevenConnectionService: BreakevenConnectionService;
+    readonly actionCoreService: ActionCoreService;
     /**
      * Retrieves memoized ClientStrategy instance for given symbol-strategy pair with exchange and frame isolation.
      *
@@ -14385,7 +14613,7 @@ declare class ClientAction implements IAction {
  * Maps all keys of IAction to any type.
  * Used for dynamic method routing in ActionConnectionService.
  */
-type TAction$1 = {
+type TAction = {
     [key in keyof IAction]: any;
 };
 /**
@@ -14415,7 +14643,7 @@ type TAction$1 = {
  * );
  * ```
  */
-declare class ActionConnectionService implements TAction$1 {
+declare class ActionConnectionService implements TAction {
     private readonly loggerService;
     private readonly actionSchemaService;
     /**
@@ -15185,221 +15413,6 @@ declare class RiskGlobalService implements TRisk {
      */
     clear: (payload?: {
         riskName: RiskName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-        backtest: boolean;
-    }) => Promise<void>;
-}
-
-/**
- * Type definition for action methods.
- * Maps all keys of IAction to any type.
- * Used for dynamic method routing in ActionCoreService.
- */
-type TAction = {
-    [key in keyof IAction]: any;
-};
-/**
- * Global service for action operations.
- *
- * Manages action dispatching for strategies by automatically resolving
- * action lists from strategy schemas and invoking handlers for each registered action.
- *
- * Key responsibilities:
- * - Retrieves action list from strategy schema (IStrategySchema.actions)
- * - Validates strategy context (strategyName, exchangeName, frameName)
- * - Validates all associated actions, risks from strategy schema
- * - Dispatches events to all registered actions in sequence
- *
- * Used internally by strategy execution and public API.
- */
-declare class ActionCoreService implements TAction {
-    private readonly loggerService;
-    private readonly actionConnectionService;
-    private readonly actionValidationService;
-    private readonly exchangeValidationService;
-    private readonly frameValidationService;
-    private readonly strategyValidationService;
-    private readonly strategySchemaService;
-    private readonly riskValidationService;
-    /**
-     * Validates strategy context and all associated configurations.
-     *
-     * Memoized to avoid redundant validations for the same strategy-exchange-frame combination.
-     * Retrieves strategy schema and validates:
-     * - Strategy name existence
-     * - Exchange name validity
-     * - Frame name validity (if provided)
-     * - Risk profile(s) validity (if configured in strategy schema)
-     * - Action name(s) validity (if configured in strategy schema)
-     *
-     * @param context - Strategy execution context with strategyName, exchangeName and frameName
-     * @returns Promise that resolves when all validations complete
-     */
-    private validate;
-    /**
-     * Initializes all ClientAction instances for the strategy.
-     *
-     * Retrieves action list from strategy schema (IStrategySchema.actions)
-     * and invokes the init handler on each ClientAction instance sequentially.
-     * Calls waitForInit() on each action to load persisted state.
-     *
-     * @param backtest - Whether running in backtest mode (true) or live mode (false)
-     * @param context - Strategy execution context with strategyName, exchangeName, frameName
-     */
-    initFn: (backtest: boolean, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<void>;
-    /**
-     * Routes signal event to all registered actions for the strategy.
-     *
-     * Retrieves action list from strategy schema (IStrategySchema.actions)
-     * and invokes the signal handler on each ClientAction instance sequentially.
-     *
-     * @param backtest - Whether running in backtest mode (true) or live mode (false)
-     * @param event - Signal state result (idle, scheduled, opened, active, closed, cancelled)
-     * @param context - Strategy execution context with strategyName, exchangeName, frameName
-     */
-    signal: (backtest: boolean, event: IStrategyTickResult, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<void>;
-    /**
-     * Routes signal event from live trading to all registered actions.
-     *
-     * Retrieves action list from strategy schema (IStrategySchema.actions)
-     * and invokes the signalLive handler on each ClientAction instance sequentially.
-     *
-     * @param backtest - Whether running in backtest mode (always false for signalLive)
-     * @param event - Signal state result from live trading
-     * @param context - Strategy execution context with strategyName, exchangeName, frameName
-     */
-    signalLive: (backtest: boolean, event: IStrategyTickResult, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<void>;
-    /**
-     * Routes signal event from backtest to all registered actions.
-     *
-     * Retrieves action list from strategy schema (IStrategySchema.actions)
-     * and invokes the signalBacktest handler on each ClientAction instance sequentially.
-     *
-     * @param backtest - Whether running in backtest mode (always true for signalBacktest)
-     * @param event - Signal state result from backtest
-     * @param context - Strategy execution context with strategyName, exchangeName, frameName
-     */
-    signalBacktest: (backtest: boolean, event: IStrategyTickResult, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<void>;
-    /**
-     * Routes breakeven event to all registered actions for the strategy.
-     *
-     * Retrieves action list from strategy schema (IStrategySchema.actions)
-     * and invokes the breakeven handler on each ClientAction instance sequentially.
-     *
-     * @param backtest - Whether running in backtest mode (true) or live mode (false)
-     * @param event - Breakeven milestone data (stop-loss moved to entry price)
-     * @param context - Strategy execution context with strategyName, exchangeName, frameName
-     */
-    breakeven: (backtest: boolean, event: BreakevenContract, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<void>;
-    /**
-     * Routes partial profit event to all registered actions for the strategy.
-     *
-     * Retrieves action list from strategy schema (IStrategySchema.actions)
-     * and invokes the partialProfit handler on each ClientAction instance sequentially.
-     *
-     * @param backtest - Whether running in backtest mode (true) or live mode (false)
-     * @param event - Profit milestone data with level (10%, 20%, etc.) and price
-     * @param context - Strategy execution context with strategyName, exchangeName, frameName
-     */
-    partialProfit: (backtest: boolean, event: PartialProfitContract, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<void>;
-    /**
-     * Routes partial loss event to all registered actions for the strategy.
-     *
-     * Retrieves action list from strategy schema (IStrategySchema.actions)
-     * and invokes the partialLoss handler on each ClientAction instance sequentially.
-     *
-     * @param backtest - Whether running in backtest mode (true) or live mode (false)
-     * @param event - Loss milestone data with level (-10%, -20%, etc.) and price
-     * @param context - Strategy execution context with strategyName, exchangeName, frameName
-     */
-    partialLoss: (backtest: boolean, event: PartialLossContract, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<void>;
-    /**
-     * Routes ping event to all registered actions for the strategy.
-     *
-     * Retrieves action list from strategy schema (IStrategySchema.actions)
-     * and invokes the ping handler on each ClientAction instance sequentially.
-     * Called every minute during scheduled signal monitoring.
-     *
-     * @param backtest - Whether running in backtest mode (true) or live mode (false)
-     * @param event - Scheduled signal monitoring data
-     * @param context - Strategy execution context with strategyName, exchangeName, frameName
-     */
-    ping: (backtest: boolean, event: PingContract, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<void>;
-    /**
-     * Routes risk rejection event to all registered actions for the strategy.
-     *
-     * Retrieves action list from strategy schema (IStrategySchema.actions)
-     * and invokes the riskRejection handler on each ClientAction instance sequentially.
-     * Called only when a signal fails risk validation.
-     *
-     * @param backtest - Whether running in backtest mode (true) or live mode (false)
-     * @param event - Risk rejection data with reason and context
-     * @param context - Strategy execution context with strategyName, exchangeName, frameName
-     */
-    riskRejection: (backtest: boolean, event: RiskContract, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<void>;
-    /**
-     * Disposes all ClientAction instances for the strategy.
-     *
-     * Retrieves action list from strategy schema (IStrategySchema.actions)
-     * and invokes the dispose handler on each ClientAction instance sequentially.
-     * Called when strategy execution ends to clean up resources.
-     *
-     * @param backtest - Whether running in backtest mode (true) or live mode (false)
-     * @param context - Strategy execution context with strategyName, exchangeName, frameName
-     */
-    dispose: (backtest: boolean, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<void>;
-    /**
-     * Clears action data.
-     *
-     * If payload is provided, validates and clears data for the specific action instance.
-     * If no payload is provided, clears all action data across all strategies.
-     *
-     * @param payload - Optional payload with actionName, strategyName, exchangeName, frameName, backtest (clears all if not provided)
-     */
-    clear: (payload?: {
-        actionName: ActionName;
-        strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
         backtest: boolean;

@@ -128,11 +128,13 @@ export class ActionCoreService implements TAction {
    */
   public initFn = async (
     backtest: boolean,
+    symbol: string,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<void> => {
     this.loggerService.log("actionCoreService initFn", {
       backtest,
       context,
+      symbol,
     });
 
     await this.validate(context);
@@ -385,10 +387,12 @@ export class ActionCoreService implements TAction {
    */
   public dispose = async (
     backtest: boolean,
+    symbol: string,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<void> => {
     this.loggerService.log("actionCoreService dispose", {
       context,
+      symbol,
     });
 
     await this.validate(context);

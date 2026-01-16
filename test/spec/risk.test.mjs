@@ -5,7 +5,9 @@ import {
   addExchange,
   lib,
   PersistRiskAdapter,
+  addStrategy,
 } from "../../build/index.mjs";
+import internal from "stream";
 
 test("addRisk registers risk profile successfully", async ({ pass, fail }) => {
   addRisk({
@@ -61,6 +63,12 @@ test("Risk validation rejects signal when activePositionCount exceeds limit", as
       },
     },
   });
+  
+  addStrategy({
+    strategyName: "test-strategy-4",
+    getSignal: async () => null,
+    interval: "5m",
+  })
 
   // Add mock exchange for all tests
   addExchange({
@@ -528,6 +536,18 @@ test("Risk validation can reject based on symbol", async ({ pass, fail }) => {
     formatPrice: async (_symbol, p) => p.toFixed(8),
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   });
+
+  addStrategy({
+    strategyName: "test-strategy-4",
+    getSignal: async () => null,
+    interval: "5m",
+  })
+
+  addStrategy({
+    strategyName: "test-strategy",
+    getSignal: async () => null,
+    interval: "5m",
+  })
 
   const { riskGlobalService } = lib;
 
