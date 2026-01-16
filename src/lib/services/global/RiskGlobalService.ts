@@ -12,6 +12,18 @@ import { FrameName } from "../../../interfaces/Frame.interface";
 import { StrategyName } from "../../../interfaces/Strategy.interface";
 
 /**
+ * Creates a unique key for memoizing validate calls.
+ * Key format: "riskName:exchangeName:frameName"
+ * @param context - Context with riskName, exchangeName, frameName
+ * @returns Unique string key for memoization
+ */
+const CREATE_KEY_FN = (context: { riskName: RiskName; exchangeName: ExchangeName; frameName: FrameName }): string => {
+  const parts = [context.riskName, context.exchangeName];
+  if (context.frameName) parts.push(context.frameName);
+  return parts.join(":");
+};
+
+/**
  * Type definition for risk methods.
  * Maps all keys of IRisk to any type.
  * Used for dynamic method routing in RiskGlobalService.
@@ -49,20 +61,20 @@ export class RiskGlobalService implements TRisk {
    * @returns Promise that resolves when validation is complete
    */
   private validate = memoize(
-    ([payload]) => `${payload.riskName}:${payload.exchangeName}:${payload.frameName}`,
-    async (payload: { riskName: RiskName; exchangeName: ExchangeName; frameName: FrameName }) => {
+    ([context]) => CREATE_KEY_FN(context),
+    async (context: { riskName: RiskName; exchangeName: ExchangeName; frameName: FrameName }) => {
       this.loggerService.log("riskGlobalService validate", {
-        payload,
+        context,
       });
       this.riskValidationService.validate(
-        payload.riskName,
+        context.riskName,
         "riskGlobalService validate"
       );
       this.exchangeValidationService.validate(
-        payload.exchangeName,
+        context.exchangeName,
         "riskGlobalService validate"
       );
-      payload.frameName && this.frameValidationService.validate(payload.frameName, "riskGlobalService validate");
+      context.frameName && this.frameValidationService.validate(context.frameName, "riskGlobalService validate");
     }
   );
 

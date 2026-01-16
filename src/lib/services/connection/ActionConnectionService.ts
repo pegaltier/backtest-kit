@@ -117,11 +117,11 @@ export class ActionConnectionService implements TAction {
    * @param backtest - Whether running in backtest mode
    * @param context - Execution context with action name, strategy name, exchange name, frame name
    */
-  public init = async (
+  public initFn = async (
     backtest: boolean,
     context: { actionName: ActionName; strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<void> => {
-    this.loggerService.log("actionConnectionService init", {
+    this.loggerService.log("actionConnectionService initFn", {
       backtest,
       context,
     });

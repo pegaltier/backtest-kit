@@ -14,6 +14,18 @@ import { FrameName } from "../../../interfaces/Frame.interface";
 import { ExchangeName } from "../../../interfaces/Exchange.interface";
 
 /**
+ * Creates a unique key for memoizing validate calls.
+ * Key format: "strategyName:exchangeName:frameName"
+ * @param context - Context with strategyName, exchangeName, frameName
+ * @returns Unique string key for memoization
+ */
+const CREATE_KEY_FN = (context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }): string => {
+  const parts = [context.strategyName, context.exchangeName];
+  if (context.frameName) parts.push(context.frameName);
+  return parts.join(":");
+};
+
+/**
  * Type definition for breakeven methods.
  * Maps all keys of IBreakeven to any type.
  * Used for dynamic method routing in BreakevenGlobalService.
@@ -109,7 +121,7 @@ export class BreakevenGlobalService implements TBreakeven {
    * @param methodName - Name of the calling method for error tracking
    */
   private validate = memoize(
-    ([context]) => `${context.strategyName}:${context.exchangeName}:${context.frameName}`,
+    ([context]) => CREATE_KEY_FN(context),
     (context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }, methodName: string) => {
       this.loggerService.log("breakevenGlobalService validate", {
         context,

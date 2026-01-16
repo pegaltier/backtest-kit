@@ -23,6 +23,18 @@ import { FrameName } from "../../../interfaces/Frame.interface";
 const METHOD_NAME_VALIDATE = "strategyCoreService validate";
 
 /**
+ * Creates a unique key for memoizing validate calls.
+ * Key format: "strategyName:exchangeName:frameName"
+ * @param context - Execution context with strategyName, exchangeName, frameName
+ * @returns Unique string key for memoization
+ */
+const CREATE_KEY_FN = (context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }): string => {
+  const parts = [context.strategyName, context.exchangeName];
+  if (context.frameName) parts.push(context.frameName);
+  return parts.join(":");
+};
+
+/**
  * Type definition for strategy methods.
  * Maps all keys of IStrategy to any type.
  * Used for dynamic method routing in StrategyCoreService.
@@ -68,7 +80,7 @@ export class StrategyCoreService implements TStrategy {
    * @returns Promise that resolves when validation is complete
    */
   private validate = memoize(
-    ([context]) => `${context.strategyName}:${context.exchangeName}:${context.frameName}`,
+    ([context]) => CREATE_KEY_FN(context),
     async (context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }) => {
       this.loggerService.log(METHOD_NAME_VALIDATE, {
         context,

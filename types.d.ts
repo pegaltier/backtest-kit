@@ -13951,7 +13951,7 @@ declare class ActionConnectionService implements TAction$1 {
      * @param backtest - Whether running in backtest mode
      * @param context - Execution context with action name, strategy name, exchange name, frame name
      */
-    init: (backtest: boolean, context: {
+    initFn: (backtest: boolean, context: {
         actionName: ActionName;
         strategyName: StrategyName;
         exchangeName: ExchangeName;
@@ -14758,7 +14758,7 @@ declare class ActionCoreService implements TAction {
      * @param backtest - Whether running in backtest mode (true) or live mode (false)
      * @param context - Strategy execution context with strategyName, exchangeName, frameName
      */
-    init: (backtest: boolean, context: {
+    initFn: (backtest: boolean, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;

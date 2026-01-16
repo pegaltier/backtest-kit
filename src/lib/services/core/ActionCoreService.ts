@@ -23,6 +23,18 @@ import RiskValidationService from "../validation/RiskValidationService";
 const METHOD_NAME_VALIDATE = "actionCoreService validate";
 
 /**
+ * Creates a unique key for memoizing validate calls.
+ * Key format: "strategyName:exchangeName:frameName"
+ * @param context - Execution context with strategyName, exchangeName, frameName
+ * @returns Unique string key for memoization
+ */
+const CREATE_KEY_FN = (context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }): string => {
+  const parts = [context.strategyName, context.exchangeName];
+  if (context.frameName) parts.push(context.frameName);
+  return parts.join(":");
+};
+
+/**
  * Type definition for action methods.
  * Maps all keys of IAction to any type.
  * Used for dynamic method routing in ActionCoreService.
@@ -83,7 +95,7 @@ export class ActionCoreService implements TAction {
    * @returns Promise that resolves when all validations complete
    */
   private validate = memoize(
-    ([context]) => `${context.strategyName}:${context.exchangeName}:${context.frameName}`,
+    ([context]) => CREATE_KEY_FN(context),
     async (context: {  strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }) => {
       this.loggerService.log(METHOD_NAME_VALIDATE, {
         context,
@@ -114,11 +126,11 @@ export class ActionCoreService implements TAction {
    * @param backtest - Whether running in backtest mode (true) or live mode (false)
    * @param context - Strategy execution context with strategyName, exchangeName, frameName
    */
-  public init = async (
+  public initFn = async (
     backtest: boolean,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<void> => {
-    this.loggerService.log("actionCoreService init", {
+    this.loggerService.log("actionCoreService initFn", {
       backtest,
       context,
     });
@@ -128,7 +140,7 @@ export class ActionCoreService implements TAction {
     const { actions = [] } = this.strategySchemaService.get(context.strategyName);
 
     for (const actionName of actions) {
-      await this.actionConnectionService.init(backtest, { actionName, ...context });
+      await this.actionConnectionService.initFn(backtest, { actionName, ...context });
     }
   };
 
