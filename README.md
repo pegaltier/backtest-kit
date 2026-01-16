@@ -14,6 +14,27 @@ Build reliable trading systems: backtest on historical data, deploy live bots wi
 
 📚 **[API Reference](https://backtest-kit.github.io/documents/example_02_first_backtest.html)** | 🌟 **[Quick Start](https://github.com/tripolskypetr/backtest-kit/tree/master/demo)** | **📰 [Article](https://backtest-kit.github.io/documents/article_02_second_order_chaos.html)**
 
+## 🚀 Quick Start
+
+### 🎯 The Fastest Way: Sidekick CLI
+
+> **Create a production-ready trading bot in seconds:**
+
+```bash
+# Create project with npx (recommended)
+npx -y @backtest-kit/sidekick my-trading-bot
+cd my-trading-bot
+npm start
+```
+
+### 📦 Manual Installation
+
+> **Want to see the code?** 👉 [Demo app](https://github.com/tripolskypetr/backtest-kit/tree/master/demo) 👈
+
+```bash
+npm install backtest-kit ccxt ollama uuid
+```
+
 ## ✨ Why Choose Backtest Kit?
 
 - 🚀 **Production-Ready**: Seamless switch between backtest/live modes; identical code across environments.
@@ -35,27 +56,6 @@ Build reliable trading systems: backtest on historical data, deploy live bots wi
 - Partial profit/loss levels
 - Trailing stop-loss
 - Breakeven protection
-
-## 🚀 Quick Start
-
-### 🎯 The Fastest Way: Sidekick CLI
-
-> **Create a production-ready trading bot in seconds:**
-
-```bash
-# Create project with npx (recommended)
-npx -y @backtest-kit/sidekick my-trading-bot
-cd my-trading-bot
-npm start
-```
-
-### 📦 Manual Installation
-
-> **Want to see the code?** 👉 [Demo app](https://github.com/tripolskypetr/backtest-kit/tree/master/demo) 👈
-
-```bash
-npm install backtest-kit ccxt ollama uuid
-```
 
 ## 📚 Code Samples
 
