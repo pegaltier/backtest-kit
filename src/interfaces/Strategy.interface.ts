@@ -202,6 +202,8 @@ export interface IStrategyParams extends IStrategySchema {
   execution: TExecutionContextService;
   /** Method context service (strategyName, exchangeName, frameName) */
   method: TMethodContextService;
+  /** System callback for init events (emits to initSubject) */
+  onInit: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<void>;
   /** System callback for ping events (emits to pingSubject) */
   onPing: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, data: IPublicSignalRow, backtest: boolean, timestamp: number) => Promise<void>;
   /** System callback for dispose events (emits to disposeSubject) */

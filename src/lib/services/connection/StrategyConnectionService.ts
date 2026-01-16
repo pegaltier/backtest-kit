@@ -154,6 +154,28 @@ const COMMIT_PING_FN = async (
   });
 
 /**
+ * Callback function for emitting init events to initSubject.
+ *
+ * Called by ClientStrategy when it has finished initialization.
+ *
+ * @param symbol - Trading pair symbol
+ * @param strategyName - Strategy name being initialized
+ * @param exchangeName - Exchange name
+ * @param frameName - Frame name
+ * @param backtest - True if backtest mode
+ */
+const COMMIT_INIT_FN = async (
+  symbol: string,
+  strategyName: StrategyName,
+  exchangeName: ExchangeName,
+  frameName: FrameName,
+  backtest: boolean
+) => {
+  // Placeholder for future init subject implementation
+  // await initSubject.next({ symbol, strategyName, exchangeName, frameName, backtest });
+};
+
+/**
  * Callback function for emitting dispose events to disposeSubject.
  *
  * Called by ClientStrategy when it is being disposed.
@@ -276,6 +298,7 @@ export class StrategyConnectionService implements TStrategy {
         strategyName,
         getSignal,
         callbacks,
+        onInit: COMMIT_INIT_FN,
         onPing: COMMIT_PING_FN,
         onDispose: COMMIT_DISPOSE_FN,
       });
