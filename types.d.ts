@@ -15047,6 +15047,7 @@ declare class WalkerCommandService implements TWalkerLogicPublicService {
     private readonly walkerValidationService;
     private readonly strategySchemaService;
     private readonly riskValidationService;
+    private readonly actionValidationService;
     /**
      * Runs walker comparison for a symbol with context propagation.
      *
@@ -15578,6 +15579,7 @@ declare class LiveCommandService implements TLiveLogicPublicService {
     private readonly exchangeValidationService;
     private readonly strategySchemaService;
     private readonly riskValidationService;
+    private readonly actionValidationService;
     /**
      * Runs live trading for a symbol with context propagation.
      *
@@ -15610,6 +15612,7 @@ declare class BacktestCommandService implements TBacktestLogicPublicService {
     private readonly loggerService;
     private readonly strategySchemaService;
     private readonly riskValidationService;
+    private readonly actionValidationService;
     private readonly backtestLogicPublicService;
     private readonly strategyValidationService;
     private readonly exchangeValidationService;
