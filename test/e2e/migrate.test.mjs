@@ -3357,13 +3357,13 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
   Backtest.background("BTCUSDT", {
     strategyName: "test-facades-parallel",
     exchangeName: "binance-facades-parallel",
-    frameName: "1h-facades-parallel",
+    frameName: "70m-facades-parallel",
   });
 
   Backtest.background("ETHUSDT", {
     strategyName: "test-facades-parallel",
     exchangeName: "binance-facades-parallel",
-    frameName: "1h-facades-parallel",
+    frameName: "70m-facades-parallel",
   });
 
   await awaitSubject.toPromise();
@@ -3385,12 +3385,12 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     const btcSchedule = await Schedule.getData("BTCUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "1h-facades-parallel",
+      frameName: "70m-facades-parallel",
     }, true);
     const ethSchedule = await Schedule.getData("ETHUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "1h-facades-parallel",
+      frameName: "70m-facades-parallel",
     }, true);
 
     if (btcSchedule.totalScheduled === 0) {
@@ -3426,12 +3426,12 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     const btcPerf = await Performance.getData("BTCUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "1h-facades-parallel",
+      frameName: "70m-facades-parallel",
     }, true);
     const ethPerf = await Performance.getData("ETHUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "1h-facades-parallel",
+      frameName: "70m-facades-parallel",
     }, true);
 
     if (btcPerf.totalEvents === 0) {
@@ -3467,12 +3467,12 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     const btcHeat = await Heat.getData({
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "1h-facades-parallel",
+      frameName: "70m-facades-parallel",
     }, true);
     const ethHeat = await Heat.getData({
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "1h-facades-parallel",
+      frameName: "70m-facades-parallel",
     }, true);
 
     // Heat может быть пустым, но проверяем что вызов не падает
@@ -3495,12 +3495,12 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     const btcPartial = await Partial.getData("BTCUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "1h-facades-parallel",
+      frameName: "70m-facades-parallel",
     }, true);
     const ethPartial = await Partial.getData("ETHUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "1h-facades-parallel",
+      frameName: "70m-facades-parallel",
     }, true);
 
     // Partial может быть пустым, но проверяем изоляцию если есть данные
@@ -3533,12 +3533,12 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     const btcReport = await Schedule.getReport("BTCUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "1h-facades-parallel",
+      frameName: "70m-facades-parallel",
     }, true);
     const ethReport = await Schedule.getReport("ETHUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "1h-facades-parallel",
+      frameName: "70m-facades-parallel",
     }, true);
 
     if (typeof btcReport !== "string" || btcReport.length === 0) {
@@ -3571,12 +3571,12 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     const btcPerfReport = await Performance.getReport("BTCUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "1h-facades-parallel",
+      frameName: "70m-facades-parallel",
     }, true);
     const ethPerfReport = await Performance.getReport("ETHUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "1h-facades-parallel",
+      frameName: "70m-facades-parallel",
     }, true);
 
     if (typeof btcPerfReport !== "string" || btcPerfReport.length === 0) {
@@ -3598,12 +3598,12 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     const btcHeatReport = await Heat.getReport({
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "1h-facades-parallel",
+      frameName: "70m-facades-parallel",
     }, true);
     const ethHeatReport = await Heat.getReport({
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "1h-facades-parallel",
+      frameName: "70m-facades-parallel",
     }, true);
 
     if (typeof btcHeatReport !== "string" || btcHeatReport.length === 0) {
@@ -3625,12 +3625,12 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     const btcPartialReport = await Partial.getReport("BTCUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "1h-facades-parallel",
+      frameName: "70m-facades-parallel",
     }, true);
     const ethPartialReport = await Partial.getReport("ETHUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "1h-facades-parallel",
+      frameName: "70m-facades-parallel",
     }, true);
 
     if (typeof btcPartialReport !== "string" || btcPartialReport.length === 0) {
@@ -3922,13 +3922,13 @@ test("PARALLEL: Single strategy trading two symbols (BTCUSDT + ETHUSDT)", async 
   Backtest.background("BTCUSDT", {
     strategyName: "test-parallel-strategy",
     exchangeName: "binance-parallel-multi",
-    frameName: "1h-parallel-test",
+    frameName: "70m-parallel-test",
   });
 
   Backtest.background("ETHUSDT", {
     strategyName: "test-parallel-strategy",
     exchangeName: "binance-parallel-multi",
-    frameName: "1h-parallel-test",
+    frameName: "70m-parallel-test",
   });
 
   await awaitSubject.toPromise();
@@ -4193,7 +4193,7 @@ test("PARALLEL: Three symbols with different close reasons (TP, SL, time_expired
     Backtest.background(symbol, {
       strategyName: "test-parallel-three-symbols",
       exchangeName: "binance-parallel-three",
-      frameName: "90m-parallel-three",
+      frameName: "130m-parallel-three",
     });
   }
 
@@ -4436,7 +4436,7 @@ test("PARTIAL PROGRESS: Percentage calculation during TP achievement", async ({ 
   Backtest.background("BTCUSDT", {
     strategyName: "test-partial-progress",
     exchangeName: "binance-partial-progress",
-    frameName: "60m-partial-progress",
+    frameName: "70m-partial-progress",
   });
 
   await awaitSubject.toPromise();
@@ -4674,7 +4674,7 @@ test("PARTIAL LISTENERS: listenPartialProfit and listenPartialLoss capture event
   Backtest.background("BTCUSDT", {
     strategyName: "test-partial-listeners",
     exchangeName: "binance-partial-listeners",
-    frameName: "60m-partial-listeners",
+    frameName: "70m-partial-listeners",
   });
 
   await awaitSubject.toPromise();
