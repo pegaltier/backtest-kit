@@ -3195,7 +3195,7 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
 
         // Генерируем свечи для BTC
         btcCandles = [];
-        for (let i = 0; i < 60; i++) {
+        for (let i = 0; i < 70; i++) {
           const timestamp = startTime + i * intervalMs;
 
           // Фаза 1: Ожидание (0-9)
@@ -3261,7 +3261,7 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
 
         // Генерируем свечи для ETH
         ethCandles = [];
-        for (let i = 0; i < 60; i++) {
+        for (let i = 0; i < 70; i++) {
           const timestamp = startTime + i * intervalMs;
 
           // Фаза 1: Ожидание (0-9)
@@ -3325,10 +3325,10 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
   });
 
   addFrameSchema({
-    frameName: "1h-facades-parallel",
+    frameName: "70m-facades-parallel",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-01T01:00:00Z"),
+    endDate: new Date("2024-01-01T01:10:00Z"),
   });
 
   let btcDone = false;
@@ -3735,7 +3735,7 @@ test("PARALLEL: Single strategy trading two symbols (BTCUSDT + ETHUSDT)", async 
 
         // Генерируем свечи для BTC
         btcCandles = [];
-        for (let i = 0; i < 60; i++) {
+        for (let i = 0; i < 70; i++) {
           const timestamp = startTime + i * intervalMs;
 
           // Фаза 1: Ожидание (0-9)
@@ -3801,7 +3801,7 @@ test("PARALLEL: Single strategy trading two symbols (BTCUSDT + ETHUSDT)", async 
 
         // Генерируем свечи для ETH
         ethCandles = [];
-        for (let i = 0; i < 60; i++) {
+        for (let i = 0; i < 70; i++) {
           const timestamp = startTime + i * intervalMs;
 
           // Фаза 1: Ожидание (0-9)
@@ -3879,10 +3879,10 @@ test("PARALLEL: Single strategy trading two symbols (BTCUSDT + ETHUSDT)", async 
   });
 
   addFrameSchema({
-    frameName: "1h-parallel-test",
+    frameName: "70m-parallel-test",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-01T01:00:00Z"),
+    endDate: new Date("2024-01-01T01:10:00Z"),
   });
 
   let btcDone = false;
@@ -4069,7 +4069,7 @@ test("PARALLEL: Three symbols with different close reasons (TP, SL, time_expired
       const config = symbolConfigs[symbol];
       const candles = [];
 
-      for (let i = 0; i < 90; i++) {
+      for (let i = 0; i < 130; i++) {
         const timestamp = startTime + i * intervalMs;
 
         // Общая фаза 1: Ожидание (0-9)
@@ -4137,7 +4137,7 @@ test("PARALLEL: Three symbols with different close reasons (TP, SL, time_expired
         priceOpen: config.priceOpen,
         priceTakeProfit: config.priceOpen + config.tpDistance,
         priceStopLoss: config.priceOpen - config.slDistance,
-        minuteEstimatedTime: 60,
+        minuteEstimatedTime: 120,
       };
     },
     callbacks: {
@@ -4154,10 +4154,10 @@ test("PARALLEL: Three symbols with different close reasons (TP, SL, time_expired
   });
 
   addFrameSchema({
-    frameName: "90m-parallel-three",
+    frameName: "130m-parallel-three",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-01T01:30:00Z"),
+    endDate: new Date("2024-01-01T02:10:00Z"),
   });
 
   const doneSymbols = new Set();
@@ -4338,7 +4338,7 @@ test("PARTIAL PROGRESS: Percentage calculation during TP achievement", async ({ 
 
       // Phase 2: Gradual rise to TP (candles 5-24)
       // Move from priceOpen (99500) to priceTakeProfit (100500) in 20 steps
-      const steps = 20;
+      const steps = 62;
       for (let i = 0; i < steps; i++) {
         const timestamp = startTime + candleIndex * intervalMs;
         const progress = (i + 1) / steps; // 0.05, 0.10, 0.15, ..., 1.0
@@ -4406,10 +4406,10 @@ test("PARTIAL PROGRESS: Percentage calculation during TP achievement", async ({ 
   });
 
   addFrameSchema({
-    frameName: "60m-partial-progress",
+    frameName: "70m-partial-progress",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-01T01:00:00Z"),
+    endDate: new Date("2024-01-01T01:10:00Z"),
   });
 
   const awaitSubject = new Subject();
@@ -4576,7 +4576,7 @@ test("PARTIAL LISTENERS: listenPartialProfit and listenPartialLoss capture event
 
       // Phase 2: Gradual rise to TP (candles 5-24)
       // Move from priceOpen (99500) to priceTakeProfit (100500) in 20 steps
-      const steps = 20;
+      const steps = 62;
       for (let i = 0; i < steps; i++) {
         const timestamp = startTime + candleIndex * intervalMs;
         const progress = (i + 1) / steps; // 0.05, 0.10, 0.15, ..., 1.0
@@ -4618,10 +4618,10 @@ test("PARTIAL LISTENERS: listenPartialProfit and listenPartialLoss capture event
   });
 
   addFrameSchema({
-    frameName: "60m-partial-listeners",
+    frameName: "70m-partial-listeners",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-01T01:00:00Z"),
+    endDate: new Date("2024-01-01T01:10:00Z"),
   });
 
   const awaitSubject = new Subject();
@@ -4876,8 +4876,8 @@ test("PARTIAL DEDUPE: Events NOT emitted twice for same level", async ({ pass, f
         candleIndex++;
       }
 
-      // Phase 5: Continue to TP (candles 18-25)
-      const remainingSteps = 8;
+      // Phase 5: Continue to TP (candles 18-67)
+      const remainingSteps = 50;
       for (let i = 0; i < remainingSteps; i++) {
         const timestamp = startTime + candleIndex * intervalMs;
         const progress = 0.37 + (0.63 / remainingSteps) * (i + 1); // 0.37 -> 1.0
@@ -4894,7 +4894,7 @@ test("PARTIAL DEDUPE: Events NOT emitted twice for same level", async ({ pass, f
         candleIndex++;
       }
 
-      // Phase 6: Hold at TP for closure (candles 26-28)
+      // Phase 6: Hold at TP for closure (candles 68-70)
       for (let i = 0; i < 3; i++) {
         const timestamp = startTime + candleIndex * intervalMs;
         allCandles.push({
@@ -4927,10 +4927,10 @@ test("PARTIAL DEDUPE: Events NOT emitted twice for same level", async ({ pass, f
   });
 
   addFrameSchema({
-    frameName: "60m-partial-dedupe",
+    frameName: "70m-partial-dedupe",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-01T01:00:00Z"),
+    endDate: new Date("2024-01-01T01:10:00Z"),
   });
 
   const awaitSubject = new Subject();
@@ -4981,7 +4981,7 @@ test("PARTIAL DEDUPE: Events NOT emitted twice for same level", async ({ pass, f
   Backtest.background("BTCUSDT", {
     strategyName: "test-partial-dedupe",
     exchangeName: "binance-partial-dedupe",
-    frameName: "60m-partial-dedupe",
+    frameName: "70m-partial-dedupe",
   });
 
   await awaitSubject.toPromise();
@@ -5103,7 +5103,7 @@ test("PARTIAL FUNCTION: partialProfit() closes 30% of LONG position", async ({ p
         });
       }
 
-      for (let i = 0; i < 40; i++) {
+      for (let i = 0; i < 130; i++) {
         const timestamp = startTime + i * intervalMs;
 
         if (i < 5) {
@@ -5162,10 +5162,10 @@ test("PARTIAL FUNCTION: partialProfit() closes 30% of LONG position", async ({ p
   });
 
   addFrameSchema({
-    frameName: "40m-function-partial-profit",
+    frameName: "130m-function-partial-profit",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-01T00:40:00Z"),
+    endDate: new Date("2024-01-01T02:10:00Z"),
   });
 
   const awaitSubject = new Subject();
@@ -5180,7 +5180,7 @@ test("PARTIAL FUNCTION: partialProfit() closes 30% of LONG position", async ({ p
   Backtest.background("BTCUSDT", {
     strategyName: "test-function-partial-profit",
     exchangeName: "binance-function-partial-profit",
-    frameName: "40m-function-partial-profit",
+    frameName: "130m-function-partial-profit",
   });
 
   await awaitSubject.toPromise();
@@ -5200,7 +5200,7 @@ test("PARTIAL FUNCTION: partialProfit() closes 30% of LONG position", async ({ p
   const data = await Backtest.getData("BTCUSDT", {
     strategyName: "test-function-partial-profit",
     exchangeName: "binance-function-partial-profit",
-    frameName: "40m-function-partial-profit",
+    frameName: "130m-function-partial-profit",
   });
 
 // console.log("[TEST #11] getData result:", JSON.stringify(data, null, 2));
@@ -5307,7 +5307,7 @@ test("PARTIAL FUNCTION: partialLoss() closes 40% of LONG position", async ({ pas
         });
       }
 
-      for (let i = 0; i < 40; i++) {
+      for (let i = 0; i < 130; i++) {
         const timestamp = startTime + i * intervalMs;
 
         if (i < 5) {
@@ -5366,10 +5366,10 @@ test("PARTIAL FUNCTION: partialLoss() closes 40% of LONG position", async ({ pas
   });
 
   addFrameSchema({
-    frameName: "40m-function-partial-loss",
+    frameName: "130m-function-partial-loss",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-01T00:40:00Z"),
+    endDate: new Date("2024-01-01T02:10:00Z"),
   });
 
   const awaitSubject = new Subject();
@@ -5384,7 +5384,7 @@ test("PARTIAL FUNCTION: partialLoss() closes 40% of LONG position", async ({ pas
   Backtest.background("BTCUSDT", {
     strategyName: "test-function-partial-loss",
     exchangeName: "binance-function-partial-loss",
-    frameName: "40m-function-partial-loss",
+    frameName: "130m-function-partial-loss",
   });
 
   await awaitSubject.toPromise();
@@ -5404,7 +5404,7 @@ test("PARTIAL FUNCTION: partialLoss() closes 40% of LONG position", async ({ pas
   const data = await Backtest.getData("BTCUSDT", {
     strategyName: "test-function-partial-loss",
     exchangeName: "binance-function-partial-loss",
-    frameName: "40m-function-partial-loss",
+    frameName: "130m-function-partial-loss",
   });
 
   // console.log("[TEST #12] getData result:", JSON.stringify(data, null, 2));
@@ -5512,7 +5512,7 @@ test("PARTIAL FUNCTION: Multiple partialProfit calls (30% + 40%)", async ({ pass
         });
       }
 
-      for (let i = 0; i < 50; i++) {
+      for (let i = 0; i < 130; i++) {
         const timestamp = startTime + i * intervalMs;
 
         if (i < 5) {
@@ -5572,10 +5572,10 @@ test("PARTIAL FUNCTION: Multiple partialProfit calls (30% + 40%)", async ({ pass
   });
 
   addFrameSchema({
-    frameName: "50m-function-partial-multiple",
+    frameName: "130m-function-partial-multiple",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-01T00:50:00Z"),
+    endDate: new Date("2024-01-01T02:10:00Z"),
   });
 
   const awaitSubject = new Subject();
@@ -5590,7 +5590,7 @@ test("PARTIAL FUNCTION: Multiple partialProfit calls (30% + 40%)", async ({ pass
   Backtest.background("BTCUSDT", {
     strategyName: "test-function-partial-multiple",
     exchangeName: "binance-function-partial-multiple",
-    frameName: "50m-function-partial-multiple",
+    frameName: "130m-function-partial-multiple",
   });
 
   await awaitSubject.toPromise();
@@ -5615,7 +5615,7 @@ test("PARTIAL FUNCTION: Multiple partialProfit calls (30% + 40%)", async ({ pass
   const data = await Backtest.getData("BTCUSDT", {
     strategyName: "test-function-partial-multiple",
     exchangeName: "binance-function-partial-multiple",
-    frameName: "50m-function-partial-multiple",
+    frameName: "130m-function-partial-multiple",
   });
 
   // console.log("[TEST #13] getData result:", JSON.stringify(data, null, 2));
@@ -5740,7 +5740,7 @@ test("PARTIAL FUNCTION: partialProfit() works for SHORT position", async ({ pass
         });
       }
 
-      for (let i = 0; i < 40; i++) {
+      for (let i = 0; i < 130; i++) {
         const timestamp = startTime + i * intervalMs;
 
         if (i < 5) {
@@ -5799,10 +5799,10 @@ test("PARTIAL FUNCTION: partialProfit() works for SHORT position", async ({ pass
   });
 
   addFrameSchema({
-    frameName: "40m-function-short-profit",
+    frameName: "130m-function-short-profit",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-01T00:40:00Z"),
+    endDate: new Date("2024-01-01T02:10:00Z"),
   });
 
   const awaitSubject = new Subject();
@@ -5817,7 +5817,7 @@ test("PARTIAL FUNCTION: partialProfit() works for SHORT position", async ({ pass
   Backtest.background("BTCUSDT", {
     strategyName: "test-function-short-profit",
     exchangeName: "binance-function-short-profit",
-    frameName: "40m-function-short-profit",
+    frameName: "130m-function-short-profit",
   });
 
   await awaitSubject.toPromise();
@@ -5837,7 +5837,7 @@ test("PARTIAL FUNCTION: partialProfit() works for SHORT position", async ({ pass
   const data = await Backtest.getData("BTCUSDT", {
     strategyName: "test-function-short-profit",
     exchangeName: "binance-function-short-profit",
-    frameName: "40m-function-short-profit",
+    frameName: "130m-function-short-profit",
   });
 
   // console.log("[TEST #14] getData result:", JSON.stringify(data, null, 2));
@@ -6146,7 +6146,7 @@ test("PERSIST: onWrite called EXACTLY ONCE per signal open", async ({ pass, fail
     });
   }
 
-  for (let i = 5; i < 20; i++) {
+  for (let i = 5; i < 70; i++) {
     const timestamp = startTime + i * intervalMs;
     if (i < 10) {
       // Ожидание активации (цена выше priceOpen)
@@ -6213,10 +6213,10 @@ test("PERSIST: onWrite called EXACTLY ONCE per signal open", async ({ pass, fail
   });
 
   addFrameSchema({
-    frameName: "20m-persist-write-once",
+    frameName: "70m-persist-write-once",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-01T00:20:00Z"),
+    endDate: new Date("2024-01-01T01:10:00Z"),
   });
 
   const awaitSubject = new Subject();
@@ -6233,7 +6233,7 @@ test("PERSIST: onWrite called EXACTLY ONCE per signal open", async ({ pass, fail
   Backtest.background("BTCUSDT", {
     strategyName: "persist-write-once-strategy",
     exchangeName: "binance-persist-write-once",
-    frameName: "20m-persist-write-once",
+    frameName: "70m-persist-write-once",
   });
 
   await awaitSubject.toPromise();
@@ -6282,7 +6282,7 @@ test("PERSIST: onWrite(null) called EXACTLY ONCE per signal close", async ({ pas
     });
   }
 
-  for (let i = 5; i < 20; i++) {
+  for (let i = 5; i < 70; i++) {
     const timestamp = startTime + i * intervalMs;
     if (i < 10) {
       // Ожидание активации
@@ -6359,10 +6359,10 @@ test("PERSIST: onWrite(null) called EXACTLY ONCE per signal close", async ({ pas
   });
 
   addFrameSchema({
-    frameName: "20m-persist-delete-once",
+    frameName: "70m-persist-delete-once",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-01T00:20:00Z"),
+    endDate: new Date("2024-01-01T01:10:00Z"),
   });
 
   const awaitSubject = new Subject();
@@ -6379,7 +6379,7 @@ test("PERSIST: onWrite(null) called EXACTLY ONCE per signal close", async ({ pas
   Backtest.background("BTCUSDT", {
     strategyName: "persist-delete-once-strategy",
     exchangeName: "binance-persist-delete-once",
-    frameName: "20m-persist-delete-once",
+    frameName: "70m-persist-delete-once",
   });
 
   await awaitSubject.toPromise();
@@ -6532,7 +6532,7 @@ test("PARTIAL LEVELS: listenPartialProfit fires only on 10%, 20%, 30% levels", a
         });
       }
 
-      for (let i = 0; i < 50; i++) {
+      for (let i = 0; i < 130; i++) {
         const timestamp = startTime + i * intervalMs;
 
         // Активация (0-4): цена = basePrice
@@ -6606,7 +6606,7 @@ test("PARTIAL LEVELS: listenPartialProfit fires only on 10%, 20%, 30% levels", a
             volume: 100
           });
         }
-        // Достигаем TP (30-49)
+        // Достигаем TP (30-129)
         else {
           const price = basePrice + 55000; // Выше 50%
           allCandles.push({
@@ -6631,10 +6631,10 @@ test("PARTIAL LEVELS: listenPartialProfit fires only on 10%, 20%, 30% levels", a
   });
 
   addFrameSchema({
-    frameName: "50m-partial-levels-profit",
+    frameName: "130m-partial-levels-profit",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-01T00:50:00Z"),
+    endDate: new Date("2024-01-01T02:10:00Z"),
   });
 
   // Подписываемся на события
@@ -6655,7 +6655,7 @@ test("PARTIAL LEVELS: listenPartialProfit fires only on 10%, 20%, 30% levels", a
   Backtest.background("BTCUSDT", {
     strategyName: "test-partial-levels-profit",
     exchangeName: "binance-partial-levels-profit",
-    frameName: "50m-partial-levels-profit",
+    frameName: "130m-partial-levels-profit",
   });
 
   await awaitSubject.toPromise();
