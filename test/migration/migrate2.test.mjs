@@ -696,9 +696,9 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
         if (btcSignalGenerated) return null;
         btcSignalGenerated = true;
 
-        // Генерируем свечи для BTC
+        // Генерируем свечи для BTC (190 для scheduled signal)
         btcCandles = [];
-        for (let i = 0; i < 70; i++) {
+        for (let i = 0; i < 190; i++) {
           const timestamp = startTime + i * intervalMs;
 
           // Фаза 1: Активация сразу (0-4) - цена = priceOpen
@@ -751,9 +751,9 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
         if (ethSignalGenerated) return null;
         ethSignalGenerated = true;
 
-        // Генерируем свечи для ETH
+        // Генерируем свечи для ETH (190 для scheduled signal)
         ethCandles = [];
-        for (let i = 0; i < 70; i++) {
+        for (let i = 0; i < 190; i++) {
           const timestamp = startTime + i * intervalMs;
 
           // Фаза 1: Активация сразу (0-4) - цена = priceOpen
@@ -806,10 +806,10 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
   });
 
   addFrameSchema({
-    frameName: "70m-facades-parallel",
+    frameName: "190m-facades-parallel",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-01T01:10:00Z"),
+    endDate: new Date("2024-01-01T03:10:00Z"),  // 190 минут
   });
 
   let btcDone = false;
@@ -838,13 +838,13 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
   Backtest.background("BTCUSDT", {
     strategyName: "test-facades-parallel",
     exchangeName: "binance-facades-parallel",
-    frameName: "70m-facades-parallel",
+    frameName: "190m-facades-parallel",
   });
 
   Backtest.background("ETHUSDT", {
     strategyName: "test-facades-parallel",
     exchangeName: "binance-facades-parallel",
-    frameName: "70m-facades-parallel",
+    frameName: "190m-facades-parallel",
   });
 
   await awaitSubject.toPromise();
@@ -866,12 +866,12 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     const btcSchedule = await Schedule.getData("BTCUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "190m-facades-parallel",
     }, true);
     const ethSchedule = await Schedule.getData("ETHUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "190m-facades-parallel",
     }, true);
 
     if (btcSchedule.totalScheduled === 0) {
@@ -907,12 +907,12 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     const btcPerf = await Performance.getData("BTCUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "190m-facades-parallel",
     }, true);
     const ethPerf = await Performance.getData("ETHUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "190m-facades-parallel",
     }, true);
 
     if (btcPerf.totalEvents === 0) {
@@ -948,12 +948,12 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     const btcHeat = await Heat.getData({
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "190m-facades-parallel",
     }, true);
     const ethHeat = await Heat.getData({
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "190m-facades-parallel",
     }, true);
 
     // Heat может быть пустым, но проверяем что вызов не падает
@@ -976,12 +976,12 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     const btcPartial = await Partial.getData("BTCUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "190m-facades-parallel",
     }, true);
     const ethPartial = await Partial.getData("ETHUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "190m-facades-parallel",
     }, true);
 
     // Partial может быть пустым, но проверяем изоляцию если есть данные
@@ -1014,12 +1014,12 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     const btcReport = await Schedule.getReport("BTCUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "190m-facades-parallel",
     }, true);
     const ethReport = await Schedule.getReport("ETHUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "190m-facades-parallel",
     }, true);
 
     if (typeof btcReport !== "string" || btcReport.length === 0) {
@@ -1052,12 +1052,12 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     const btcPerfReport = await Performance.getReport("BTCUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "190m-facades-parallel",
     }, true);
     const ethPerfReport = await Performance.getReport("ETHUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "190m-facades-parallel",
     }, true);
 
     if (typeof btcPerfReport !== "string" || btcPerfReport.length === 0) {
@@ -1079,12 +1079,12 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     const btcHeatReport = await Heat.getReport({
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "190m-facades-parallel",
     }, true);
     const ethHeatReport = await Heat.getReport({
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "190m-facades-parallel",
     }, true);
 
     if (typeof btcHeatReport !== "string" || btcHeatReport.length === 0) {
@@ -1106,12 +1106,12 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     const btcPartialReport = await Partial.getReport("BTCUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "190m-facades-parallel",
     }, true);
     const ethPartialReport = await Partial.getReport("ETHUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "190m-facades-parallel",
     }, true);
 
     if (typeof btcPartialReport !== "string" || btcPartialReport.length === 0) {
@@ -1153,12 +1153,12 @@ test("PARALLEL: Single strategy trading two symbols (BTCUSDT + ETHUSDT)", async 
 
   // BTC: base price 95000
   const btcBasePrice = 95000;
-  const btcPriceOpen = btcBasePrice + 100;  // Выше начальной цены → откроется на первой свече (pending)
+  const btcPriceOpen = btcBasePrice - 500;  // НИЖЕ начальной → scheduled сигнал
   let btcCandles = [];
 
   // ETH: base price 4000
   const ethBasePrice = 4000;
-  const ethPriceOpen = ethBasePrice + 10;  // Выше начальной цены → откроется на первой свече (pending)
+  const ethPriceOpen = ethBasePrice - 50;  // НИЖЕ начальной → scheduled сигнал
   let ethCandles = [];
 
   // Предзаполняем начальные свечи для обоих символов
@@ -1215,9 +1215,9 @@ test("PARALLEL: Single strategy trading two symbols (BTCUSDT + ETHUSDT)", async 
         if (btcSignalGenerated) return null;
         btcSignalGenerated = true;
 
-        // Генерируем свечи для BTC
+        // Генерируем свечи для BTC (190 для scheduled signal)
         btcCandles = [];
-        for (let i = 0; i < 70; i++) {
+        for (let i = 0; i < 190; i++) {
           const timestamp = startTime + i * intervalMs;
 
           // Фаза 1: Активация сразу (0-4) - цена = priceOpen
@@ -1270,9 +1270,9 @@ test("PARALLEL: Single strategy trading two symbols (BTCUSDT + ETHUSDT)", async 
         if (ethSignalGenerated) return null;
         ethSignalGenerated = true;
 
-        // Генерируем свечи для ETH
+        // Генерируем свечи для ETH (190 для scheduled signal)
         ethCandles = [];
-        for (let i = 0; i < 70; i++) {
+        for (let i = 0; i < 190; i++) {
           const timestamp = startTime + i * intervalMs;
 
           // Фаза 1: Активация сразу (0-4) - цена = priceOpen
@@ -1339,10 +1339,10 @@ test("PARALLEL: Single strategy trading two symbols (BTCUSDT + ETHUSDT)", async 
   });
 
   addFrameSchema({
-    frameName: "70m-parallel-test",
+    frameName: "190m-parallel-test",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-01T01:10:00Z"),
+    endDate: new Date("2024-01-01T03:10:00Z"),  // 190 минут
   });
 
   let btcDone = false;
@@ -1382,13 +1382,13 @@ test("PARALLEL: Single strategy trading two symbols (BTCUSDT + ETHUSDT)", async 
   Backtest.background("BTCUSDT", {
     strategyName: "test-parallel-strategy",
     exchangeName: "binance-parallel-multi",
-    frameName: "70m-parallel-test",
+    frameName: "190m-parallel-test",
   });
 
   Backtest.background("ETHUSDT", {
     strategyName: "test-parallel-strategy",
     exchangeName: "binance-parallel-multi",
-    frameName: "70m-parallel-test",
+    frameName: "190m-parallel-test",
   });
 
   await awaitSubject.toPromise();
@@ -1860,7 +1860,7 @@ test("PARTIAL PROGRESS: Percentage calculation during TP achievement", async ({ 
     frameName: "70m-partial-progress",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-01T01:10:00Z"),
+    endDate: new Date("2024-01-01T03:10:00Z"),  // 190 минут
   });
 
   const awaitSubject = new Subject();
