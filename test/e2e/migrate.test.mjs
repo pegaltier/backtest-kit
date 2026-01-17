@@ -1249,7 +1249,7 @@ test("Scheduled signal is cancelled via Backtest.commitCancel() in onTimeframe",
         }
 
         // Генерируем свечи на весь тест: требуется минимум 125 для minuteEstimatedTime=120
-        for (let minuteIndex = 0; minuteIndex < 150; minuteIndex++) {
+        for (let minuteIndex = 0; minuteIndex < 250; minuteIndex++) {
           const timestamp = startTime + minuteIndex * intervalMs;
 
           // Все свечи ВЫШЕ priceOpen - чтобы сигнал точно был scheduled
@@ -1268,11 +1268,11 @@ test("Scheduled signal is cancelled via Backtest.commitCancel() in onTimeframe",
 
       signalCreated = true;
 
-      // Создаем scheduled сигнал (priceOpen НИЖЕ текущей цены для SHORT)
+      // Создаем scheduled сигнал (priceOpen ВЫШЕ текущей цены для SHORT)
       return {
         position: "short",
         note: "cancel test",
-        priceOpen: price - 1000,  // НИЖЕ текущей цены → будет scheduled для SHORT
+        priceOpen: price + 1000,  // ВЫШЕ текущей цены → будет scheduled для SHORT
         priceTakeProfit: price - 5000,
         priceStopLoss: price + 10000,
         minuteEstimatedTime: 120,
@@ -1290,7 +1290,7 @@ test("Scheduled signal is cancelled via Backtest.commitCancel() in onTimeframe",
           await Backtest.commitCancel("BTCUSDT", {
             strategyName: "test-strategy-cancel",
             exchangeName: "binance-cancel-test",
-            frameName: "150m-cancel-test",
+            frameName: "250m-cancel-test",
           });
           // console.log(`[TEST] Backtest.commitCancel() completed`);
         }
@@ -1311,10 +1311,10 @@ test("Scheduled signal is cancelled via Backtest.commitCancel() in onTimeframe",
   });
 
   addFrameSchema({
-    frameName: "150m-cancel-test",
+    frameName: "250m-cancel-test",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-01T02:30:00Z"),  // 150 минут
+    endDate: new Date("2024-01-01T04:10:00Z"),  // 250 минут
   });
 
   const awaitSubject = new Subject();
@@ -1357,7 +1357,7 @@ test("Scheduled signal is cancelled via Backtest.commitCancel() in onTimeframe",
   Backtest.background("BTCUSDT", {
     strategyName: "test-strategy-cancel",
     exchangeName: "binance-cancel-test",
-    frameName: "150m-cancel-test",
+    frameName: "250m-cancel-test",
   });
 
   await awaitSubject.toPromise();
@@ -1630,7 +1630,7 @@ test("Cancel scheduled signal after 5 onPing calls in backtest", async ({ pass, 
         }
 
         // Генерируем свечи: требуется минимум 125 для minuteEstimatedTime=120
-        for (let minuteIndex = 0; minuteIndex < 150; minuteIndex++) {
+        for (let minuteIndex = 0; minuteIndex < 250; minuteIndex++) {
           const timestamp = startTime + minuteIndex * intervalMs;
 
           // Все свечи ВЫШЕ priceOpen - чтобы сигнал точно был scheduled
@@ -1649,11 +1649,11 @@ test("Cancel scheduled signal after 5 onPing calls in backtest", async ({ pass, 
 
       signalCreated = true;
 
-      // Создаем scheduled сигнал (priceOpen НИЖЕ текущей цены для SHORT)
+      // Создаем scheduled сигнал (priceOpen ВЫШЕ текущей цены для SHORT)
       return {
         position: "short",
         note: "cancel ping test",
-        priceOpen: price - 1000,  // НИЖЕ текущей цены → будет scheduled для SHORT
+        priceOpen: price + 1000,  // ВЫШЕ текущей цены → будет scheduled для SHORT
         priceTakeProfit: price - 5000,
         priceStopLoss: price + 10000,
         minuteEstimatedTime: 120,
@@ -1678,7 +1678,7 @@ test("Cancel scheduled signal after 5 onPing calls in backtest", async ({ pass, 
           await Backtest.commitCancel("BTCUSDT", {
             strategyName: "test-strategy-cancel-ping",
             exchangeName: "binance-cancel-ping-test",
-            frameName: "150m-cancel-ping-test",
+            frameName: "250m-cancel-ping-test",
           });
         }
       },
@@ -1686,10 +1686,10 @@ test("Cancel scheduled signal after 5 onPing calls in backtest", async ({ pass, 
   });
 
   addFrameSchema({
-    frameName: "150m-cancel-ping-test",
+    frameName: "250m-cancel-ping-test",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-01T02:30:00Z"),  // 150 минут
+    endDate: new Date("2024-01-01T04:10:00Z"),  // 250 минут
   });
 
   const awaitSubject = new Subject();
@@ -1719,7 +1719,7 @@ test("Cancel scheduled signal after 5 onPing calls in backtest", async ({ pass, 
   Backtest.background("BTCUSDT", {
     strategyName: "test-strategy-cancel-ping",
     exchangeName: "binance-cancel-ping-test",
-    frameName: "150m-cancel-ping-test",
+    frameName: "250m-cancel-ping-test",
   });
 
   await awaitSubject.toPromise();
@@ -5749,7 +5749,7 @@ test("PARTIAL FUNCTION: partialProfit() works for SHORT position", async ({ pass
         });
       }
 
-      for (let i = 0; i < 135; i++) {
+      for (let i = 0; i < 250; i++) {
         const timestamp = startTime + i * intervalMs;
 
         if (i < 5) {
@@ -5785,7 +5785,7 @@ test("PARTIAL FUNCTION: partialProfit() works for SHORT position", async ({ pass
 
       return {
         position: "short",
-        priceOpen: basePrice,
+        priceOpen: basePrice + 5000,  // ВЫШЕ текущей цены → будет scheduled для SHORT
         priceTakeProfit: basePrice - 60000,
         priceStopLoss: basePrice + 50000,
         minuteEstimatedTime: 120,
