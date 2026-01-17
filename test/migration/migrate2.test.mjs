@@ -2006,17 +2006,21 @@ test("PARTIAL FUNCTION: partialProfit() works for SHORT position", async ({ pass
       for (let i = 0; i < 250; i++) {
         const timestamp = startTime + i * intervalMs;
 
+        // Фаза 1: Активация SHORT сигнала - цена идет ВВЕРХ к priceOpen (105000)
         if (i < 5) {
+          const priceActivation = basePrice + 5000; // 105000 - активируем SHORT
           allCandles.push({
             timestamp,
-            open: basePrice,
-            high: basePrice + 100,
-            low: basePrice - 100,
-            close: basePrice,
+            open: priceActivation,
+            high: priceActivation + 100,
+            low: priceActivation - 100,
+            close: priceActivation,
             volume: 100,
           });
-        } else if (i >= 5 && i < 20) {
-          const price = basePrice - 15000;
+        }
+        // Фаза 2: Движение к TP - цена падает (для SHORT это профит)
+        else if (i >= 5 && i < 20) {
+          const price = basePrice - 15000; // 85000 - движение к TP
           allCandles.push({
             timestamp,
             open: price,
@@ -2025,7 +2029,9 @@ test("PARTIAL FUNCTION: partialProfit() works for SHORT position", async ({ pass
             close: price,
             volume: 100,
           });
-        } else {
+        }
+        // Фаза 3: Удержание профита
+        else {
           allCandles.push({
             timestamp,
             open: basePrice - 10000,
@@ -2214,10 +2220,10 @@ test("OTHER: Simultaneous TP & SL trigger - VWAP-based detection", async ({ pass
   });
 
   addFrameSchema({
-    frameName: "20m-other-simultaneous",
+    frameName: "40m-other-simultaneous",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-01T00:20:00Z"),
+    endDate: new Date("2024-01-01T00:40:00Z"),  // Увеличено: 4 (buffer) + 30 (minuteEstimatedTime) + 1 = 35 minimum
   });
 
   const awaitSubject = new Subject();
@@ -2232,7 +2238,7 @@ test("OTHER: Simultaneous TP & SL trigger - VWAP-based detection", async ({ pass
   Backtest.background("BTCUSDT", {
     strategyName: "test-other-simultaneous",
     exchangeName: "binance-other-simultaneous",
-    frameName: "20m-other-simultaneous",
+    frameName: "40m-other-simultaneous",
   });
 
   await awaitSubject.toPromise();
