@@ -3913,11 +3913,36 @@ export class ClientStrategy implements IStrategy {
       return closedResult;
     }
 
+    // Signal didn't close during candle processing - check if we have enough data
     const lastCandles = candles.slice(-GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT);
     const lastPrice = GET_AVG_PRICE_FN(lastCandles);
-    const closeTimestamp =
-      lastCandles[lastCandles.length - 1].timestamp;
+    const closeTimestamp = lastCandles[lastCandles.length - 1].timestamp;
 
+    const signalTime = signal.pendingAt;
+    const maxTimeToWait = signal.minuteEstimatedTime * 60 * 1000;
+    const elapsedTime = closeTimestamp - signalTime;
+
+    // Check if we actually reached time expiration or just ran out of candles
+    if (elapsedTime < maxTimeToWait) {
+      // EDGE CASE: backtest() called with insufficient candle data
+      const bufferCandlesCount = GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT - 1;
+      const requiredCandlesCount = signal.minuteEstimatedTime + bufferCandlesCount;
+      throw new Error(
+        str.newline(
+          `ClientStrategy backtest: Insufficient candle data for pending signal. ` +
+          `Signal opened at ${new Date(signal.pendingAt).toISOString()}, ` +
+          `last candle at ${new Date(closeTimestamp).toISOString()}. ` +
+          `Elapsed: ${Math.floor(elapsedTime / 60000)}min of ${signal.minuteEstimatedTime}min required. ` +
+          `Provided ${candles.length} candles, but need at least ${requiredCandlesCount} candles. ` +
+          `\nBreakdown: ${signal.minuteEstimatedTime} candles for signal lifetime + ${bufferCandlesCount} buffer candles. ` +
+          `\nBuffer explanation: VWAP calculation requires ${GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT} candles, ` +
+          `so first ${bufferCandlesCount} candles are skipped to ensure accurate price averaging. ` +
+          `Provide complete candle range: [pendingAt - ${bufferCandlesCount}min, pendingAt + ${signal.minuteEstimatedTime}min].`
+        )
+      );
+    }
+
+    // Time actually expired - close with time_expired
     return await CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN(
       this,
       signal,
