@@ -3865,7 +3865,7 @@ export class ClientStrategy implements IStrategy {
               `${bufferCandlesCount} buffer (VWAP) + ` +
               `${GLOBAL_CONFIG.CC_SCHEDULE_AWAIT_MINUTES} wait (for activation) = ${requiredCandlesCount} total. ` +
               `\nBuffer explanation: VWAP calculation requires ${GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT} candles, ` +
-              `so first ${bufferCandlesCount} candles are skipped. After activation, buffer is reused from scheduled phase. ` +
+              `so first ${bufferCandlesCount} candles are skipped during scheduled phase processing. ` +
               `Provide complete candle range: [scheduledAt - ${bufferCandlesCount}min, scheduledAt + ${GLOBAL_CONFIG.CC_SCHEDULE_AWAIT_MINUTES}min].`
             )
           );
