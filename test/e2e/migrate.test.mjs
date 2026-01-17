@@ -1184,6 +1184,7 @@ test("Scheduled signal is cancelled via Backtest.commitCancel() in onTimeframe",
   let closedCount = 0;
   let index = 0;
   let cancelCalled = false;
+  let signalCreated = false;
 
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60 * 1000; // 1 minute
@@ -1222,6 +1223,11 @@ test("Scheduled signal is cancelled via Backtest.commitCancel() in onTimeframe",
     getSignal: async () => {
       index++;
 
+      // Возвращаем сигнал только один раз
+      if (signalCreated) {
+        return null;
+      }
+
       // Генерируем ВСЕ свечи только в первый раз
       if (index === 1) {
         allCandles = [];
@@ -1239,7 +1245,7 @@ test("Scheduled signal is cancelled via Backtest.commitCancel() in onTimeframe",
         }
 
         // Генерируем свечи на весь тест: требуется минимум 125 для minuteEstimatedTime=120
-        for (let minuteIndex = 0; minuteIndex < 130; minuteIndex++) {
+        for (let minuteIndex = 0; minuteIndex < 140; minuteIndex++) {
           const timestamp = startTime + minuteIndex * intervalMs;
 
           // Все свечи ВЫШЕ priceOpen - чтобы сигнал точно был scheduled
@@ -1256,16 +1262,15 @@ test("Scheduled signal is cancelled via Backtest.commitCancel() in onTimeframe",
 
       const price = await getAveragePrice("BTCUSDT");
 
-      // console.log(`[TEST] getSignal called, index=${index}, price=${price}`);
+      signalCreated = true;
 
-
-      // Создаем scheduled сигнал (priceOpen ниже текущей цены для LONG)
+      // Создаем scheduled сигнал (priceOpen НИЖЕ текущей цены для SHORT)
       return {
-        position: "long",
+        position: "short",
         note: "cancel test",
-        priceOpen: price - 500,  // Ниже текущей цены → будет scheduled
-        priceTakeProfit: price + 1000,
-        priceStopLoss: price - 10000,
+        priceOpen: price - 1000,  // НИЖЕ текущей цены → будет scheduled для SHORT
+        priceTakeProfit: price - 5000,
+        priceStopLoss: price + 10000,
         minuteEstimatedTime: 120,
       };
     },
@@ -1281,7 +1286,7 @@ test("Scheduled signal is cancelled via Backtest.commitCancel() in onTimeframe",
           await Backtest.commitCancel("BTCUSDT", {
             strategyName: "test-strategy-cancel",
             exchangeName: "binance-cancel-test",
-            frameName: "130m-cancel-test",
+            frameName: "140m-cancel-test",
           });
           // console.log(`[TEST] Backtest.commitCancel() completed`);
         }
@@ -1302,10 +1307,10 @@ test("Scheduled signal is cancelled via Backtest.commitCancel() in onTimeframe",
   });
 
   addFrameSchema({
-    frameName: "130m-cancel-test",
+    frameName: "140m-cancel-test",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-01T02:10:00Z"),  // 130 минут
+    endDate: new Date("2024-01-01T02:20:00Z"),  // 140 минут
   });
 
   const awaitSubject = new Subject();
@@ -1348,7 +1353,7 @@ test("Scheduled signal is cancelled via Backtest.commitCancel() in onTimeframe",
   Backtest.background("BTCUSDT", {
     strategyName: "test-strategy-cancel",
     exchangeName: "binance-cancel-test",
-    frameName: "130m-cancel-test",
+    frameName: "140m-cancel-test",
   });
 
   await awaitSubject.toPromise();
@@ -1621,7 +1626,7 @@ test("Cancel scheduled signal after 5 onPing calls in backtest", async ({ pass, 
         }
 
         // Генерируем свечи: требуется минимум 125 для minuteEstimatedTime=120
-        for (let minuteIndex = 0; minuteIndex < 130; minuteIndex++) {
+        for (let minuteIndex = 0; minuteIndex < 140; minuteIndex++) {
           const timestamp = startTime + minuteIndex * intervalMs;
 
           // Все свечи ВЫШЕ priceOpen - чтобы сигнал точно был scheduled
@@ -1640,13 +1645,13 @@ test("Cancel scheduled signal after 5 onPing calls in backtest", async ({ pass, 
 
       signalCreated = true;
 
-      // Создаем scheduled сигнал (priceOpen ниже текущей цены для LONG)
+      // Создаем scheduled сигнал (priceOpen НИЖЕ текущей цены для SHORT)
       return {
-        position: "long",
+        position: "short",
         note: "cancel ping test",
-        priceOpen: price - 500,  // Ниже текущей цены → будет scheduled
-        priceTakeProfit: price + 1000,
-        priceStopLoss: price - 10000,
+        priceOpen: price - 1000,  // НИЖЕ текущей цены → будет scheduled для SHORT
+        priceTakeProfit: price - 5000,
+        priceStopLoss: price + 10000,
         minuteEstimatedTime: 120,
       };
     },
@@ -1669,7 +1674,7 @@ test("Cancel scheduled signal after 5 onPing calls in backtest", async ({ pass, 
           await Backtest.commitCancel("BTCUSDT", {
             strategyName: "test-strategy-cancel-ping",
             exchangeName: "binance-cancel-ping-test",
-            frameName: "130m-cancel-ping-test",
+            frameName: "140m-cancel-ping-test",
           });
         }
       },
@@ -1677,10 +1682,10 @@ test("Cancel scheduled signal after 5 onPing calls in backtest", async ({ pass, 
   });
 
   addFrameSchema({
-    frameName: "130m-cancel-ping-test",
+    frameName: "140m-cancel-ping-test",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-01T02:10:00Z"),  // 130 минут
+    endDate: new Date("2024-01-01T02:20:00Z"),  // 140 минут
   });
 
   const awaitSubject = new Subject();
@@ -1710,7 +1715,7 @@ test("Cancel scheduled signal after 5 onPing calls in backtest", async ({ pass, 
   Backtest.background("BTCUSDT", {
     strategyName: "test-strategy-cancel-ping",
     exchangeName: "binance-cancel-ping-test",
-    frameName: "130m-cancel-ping-test",
+    frameName: "140m-cancel-ping-test",
   });
 
   await awaitSubject.toPromise();
@@ -3357,13 +3362,13 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
   Backtest.background("BTCUSDT", {
     strategyName: "test-facades-parallel",
     exchangeName: "binance-facades-parallel",
-    frameName: "70m-facades-parallel",
+    frameName: "1h-facades-parallel",
   });
 
   Backtest.background("ETHUSDT", {
     strategyName: "test-facades-parallel",
     exchangeName: "binance-facades-parallel",
-    frameName: "70m-facades-parallel",
+    frameName: "1h-facades-parallel",
   });
 
   await awaitSubject.toPromise();
@@ -3385,12 +3390,12 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     const btcSchedule = await Schedule.getData("BTCUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "1h-facades-parallel",
     }, true);
     const ethSchedule = await Schedule.getData("ETHUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "1h-facades-parallel",
     }, true);
 
     if (btcSchedule.totalScheduled === 0) {
@@ -3426,12 +3431,12 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     const btcPerf = await Performance.getData("BTCUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "1h-facades-parallel",
     }, true);
     const ethPerf = await Performance.getData("ETHUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "1h-facades-parallel",
     }, true);
 
     if (btcPerf.totalEvents === 0) {
@@ -3467,12 +3472,12 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     const btcHeat = await Heat.getData({
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "1h-facades-parallel",
     }, true);
     const ethHeat = await Heat.getData({
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "1h-facades-parallel",
     }, true);
 
     // Heat может быть пустым, но проверяем что вызов не падает
@@ -3495,12 +3500,12 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     const btcPartial = await Partial.getData("BTCUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "1h-facades-parallel",
     }, true);
     const ethPartial = await Partial.getData("ETHUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "1h-facades-parallel",
     }, true);
 
     // Partial может быть пустым, но проверяем изоляцию если есть данные
@@ -3533,12 +3538,12 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     const btcReport = await Schedule.getReport("BTCUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "1h-facades-parallel",
     }, true);
     const ethReport = await Schedule.getReport("ETHUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "1h-facades-parallel",
     }, true);
 
     if (typeof btcReport !== "string" || btcReport.length === 0) {
@@ -3571,12 +3576,12 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     const btcPerfReport = await Performance.getReport("BTCUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "1h-facades-parallel",
     }, true);
     const ethPerfReport = await Performance.getReport("ETHUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "1h-facades-parallel",
     }, true);
 
     if (typeof btcPerfReport !== "string" || btcPerfReport.length === 0) {
@@ -3598,12 +3603,12 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     const btcHeatReport = await Heat.getReport({
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "1h-facades-parallel",
     }, true);
     const ethHeatReport = await Heat.getReport({
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "1h-facades-parallel",
     }, true);
 
     if (typeof btcHeatReport !== "string" || btcHeatReport.length === 0) {
@@ -3625,12 +3630,12 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     const btcPartialReport = await Partial.getReport("BTCUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "1h-facades-parallel",
     }, true);
     const ethPartialReport = await Partial.getReport("ETHUSDT", {
       strategyName: "test-facades-parallel",
       exchangeName: "binance-facades-parallel",
-      frameName: "70m-facades-parallel",
+      frameName: "1h-facades-parallel",
     }, true);
 
     if (typeof btcPartialReport !== "string" || btcPartialReport.length === 0) {
@@ -3922,13 +3927,13 @@ test("PARALLEL: Single strategy trading two symbols (BTCUSDT + ETHUSDT)", async 
   Backtest.background("BTCUSDT", {
     strategyName: "test-parallel-strategy",
     exchangeName: "binance-parallel-multi",
-    frameName: "70m-parallel-test",
+    frameName: "1h-parallel-test",
   });
 
   Backtest.background("ETHUSDT", {
     strategyName: "test-parallel-strategy",
     exchangeName: "binance-parallel-multi",
-    frameName: "70m-parallel-test",
+    frameName: "1h-parallel-test",
   });
 
   await awaitSubject.toPromise();
@@ -4193,7 +4198,7 @@ test("PARALLEL: Three symbols with different close reasons (TP, SL, time_expired
     Backtest.background(symbol, {
       strategyName: "test-parallel-three-symbols",
       exchangeName: "binance-parallel-three",
-      frameName: "130m-parallel-three",
+      frameName: "90m-parallel-three",
     });
   }
 
@@ -4436,7 +4441,7 @@ test("PARTIAL PROGRESS: Percentage calculation during TP achievement", async ({ 
   Backtest.background("BTCUSDT", {
     strategyName: "test-partial-progress",
     exchangeName: "binance-partial-progress",
-    frameName: "70m-partial-progress",
+    frameName: "60m-partial-progress",
   });
 
   await awaitSubject.toPromise();
@@ -4674,7 +4679,7 @@ test("PARTIAL LISTENERS: listenPartialProfit and listenPartialLoss capture event
   Backtest.background("BTCUSDT", {
     strategyName: "test-partial-listeners",
     exchangeName: "binance-partial-listeners",
-    frameName: "70m-partial-listeners",
+    frameName: "60m-partial-listeners",
   });
 
   await awaitSubject.toPromise();
