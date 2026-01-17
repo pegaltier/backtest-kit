@@ -10,6 +10,8 @@ const FORMAT_PRICE_METHOD_NAME = "exchange.formatPrice";
 const FORMAT_QUANTITY_METHOD_NAME = "exchange.formatQuantity";
 const GET_DATE_METHOD_NAME = "exchange.getDate";
 const GET_MODE_METHOD_NAME = "exchange.getMode";
+const GET_SYMBOL_METHOD_NAME = "exchange.getSymbol";
+const GET_CONTEXT_METHOD_NAME = "exchange.getContext";
 const HAS_TRADE_CONTEXT_METHOD_NAME = "exchange.hasTradeContext";
 const GET_ORDER_BOOK_METHOD_NAME = "exchange.getOrderBook";
 
@@ -216,6 +218,50 @@ export async function getMode(): Promise<"backtest" | "live"> {
   const { backtest: bt } = backtest.executionContextService.context;
   return bt ? "backtest" : "live";
 }
+
+/**
+ * Gets the current trading symbol from execution context.
+ *
+ * @returns Promise resolving to the current trading symbol (e.g., "BTCUSDT")
+ * @throws Error if execution context is not active
+ *
+ * @example
+ * ```typescript
+ * const symbol = await getSymbol();
+ * console.log(symbol); // "BTCUSDT"
+ * ```
+ */
+export async function getSymbol() {
+  backtest.loggerService.info(GET_SYMBOL_METHOD_NAME);
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("getMode requires an execution context");
+  }
+  const { symbol } = backtest.executionContextService.context;
+  return symbol;
+}
+
+/**
+ * Gets the current method context.
+ *
+ * Returns the context object from the method context service, which contains
+ * information about the current method execution environment.
+ *
+ * @returns Promise resolving to the current method context object
+ * @throws Error if method context is not active
+ *
+ * @example
+ * ```typescript
+ * const context = await getContext();
+ * console.log(context); // { ...method context data... }
+ * ```
+ */
+export async function getContext() {
+  backtest.loggerService.info(GET_CONTEXT_METHOD_NAME);
+  if (!MethodContextService.hasContext()) {
+    throw new Error("getContext requires a method context");
+  }
+  return backtest.methodContextService.context;
+} 
 
 /**
  * Fetches order book for a trading pair from the registered exchange.
