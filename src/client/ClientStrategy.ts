@@ -3853,7 +3853,7 @@ export class ClientStrategy implements IStrategy {
           // This indicates incorrect usage of backtest() - throw error instead of returning partial result
           const bufferCandlesCount = GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT - 1;
           // For scheduled signal that has NOT activated: buffer + wait time only (no lifetime yet)
-          const requiredCandlesCount = bufferCandlesCount + GLOBAL_CONFIG.CC_SCHEDULE_AWAIT_MINUTES;
+          const requiredCandlesCount = bufferCandlesCount + GLOBAL_CONFIG.CC_SCHEDULE_AWAIT_MINUTES + 1;
           throw new Error(
             str.newline(
               `ClientStrategy backtest: Insufficient candle data for scheduled signal (not yet activated). ` +
@@ -3937,7 +3937,7 @@ export class ClientStrategy implements IStrategy {
     if (elapsedTime < maxTimeToWait) {
       // EDGE CASE: backtest() called with insufficient candle data
       const bufferCandlesCount = GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT - 1;
-      const requiredCandlesCount = signal.minuteEstimatedTime + bufferCandlesCount;
+      const requiredCandlesCount = signal.minuteEstimatedTime + bufferCandlesCount + 1;
       throw new Error(
         str.newline(
           `ClientStrategy backtest: Insufficient candle data for pending signal. ` +

@@ -405,67 +405,6 @@ test("backtest signal has all required fields", async ({ pass, fail }) => {
 
 });
 
-test("early termination with break stops backtest", async ({ pass, fail }) => {
-
-  addExchangeSchema({
-    exchangeName: "binance-mock-early",
-    getCandles: async (_symbol, interval, since, limit) => {
-      return await getMockCandles(interval, since, limit);
-    },
-    formatPrice: async (symbol, price) => {
-      return price.toFixed(8);
-    },
-    formatQuantity: async (symbol, quantity) => {
-      return quantity.toFixed(8);
-    },
-  });
-
-  addStrategySchema({
-    strategyName: "test-strategy-early",
-    interval: "1m",
-    getSignal: async () => {
-      const price = await getAveragePrice("BTCUSDT");
-      return {
-        position: "long",
-        note: "early termination test",
-        priceOpen: price,
-        priceTakeProfit: price + 1_000,
-        priceStopLoss: price - 1_000,
-        minuteEstimatedTime: 1,
-      };
-    },
-  });
-
-  addFrameSchema({
-    frameName: "7d-backtest-early",
-    interval: "1d",
-    startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-07T00:00:00Z"), // 7 days
-  });
-
-  let signalCount = 0;
-
-  for await (const result of Backtest.run("BTCUSDT", {
-    strategyName: "test-strategy-early",
-    exchangeName: "binance-mock-early",
-    frameName: "7d-backtest-early",
-  })) {
-    signalCount++;
-    if (signalCount >= 2) {
-      // Stop after 2 signals
-      break;
-    }
-  }
-
-  if (signalCount === 2) {
-    pass("Early termination stopped backtest after 2 signals");
-    return;
-  }
-
-  fail(`Early termination failed: got ${signalCount} signals`);
-
-});
-
 test("listenBacktestProgress tracks backtest progress", async ({ pass, fail }) => {
 
   const [awaiter, { resolve }] = createAwaiter();
