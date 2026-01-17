@@ -10,6 +10,7 @@ import {
   Backtest,
   Walker,
   listenDoneBacktest,
+  listenSchedulePing,
   listenError,
   listenWalkerComplete,
   listenSignalBacktest,
@@ -194,7 +195,7 @@ test("ACTION: ActionBase.breakeven() called when breakeven reached", async ({ pa
 
   class TestActionBreakeven extends ActionBase {
     breakevenAvailable(event) {
-      console.log("[TestActionBreakeven] breakevenAvailable() called!", { symbol: event.symbol, currentPrice: event.currentPrice });
+      // console.log("[TestActionBreakeven] breakevenAvailable() called!", { symbol: event.symbol, currentPrice: event.currentPrice });
       super.breakevenAvailable(event);
       breakevenEvents.push({
         symbol: event.symbol,
@@ -204,7 +205,7 @@ test("ACTION: ActionBase.breakeven() called when breakeven reached", async ({ pa
     }
 
     signal(event) {
-      console.log("[TestActionBreakeven] signal() called!", { action: event.action, state: event.state });
+      // console.log("[TestActionBreakeven] signal() called!", { action: event.action, state: event.state });
       super.signal(event);
     }
   }
@@ -1174,8 +1175,8 @@ test("BREAKEVEN CALLBACK: onBreakeven NOT called if threshold not reached", asyn
   pass("onBreakeven callback NOT called: threshold not reached (as expected)");
 });
 
-// Scheduled signal is cancelled via Backtest.cancel() in onTimeframe
-test("Scheduled signal is cancelled via Backtest.cancel() in onTimeframe", async ({ pass, fail }) => {
+// Scheduled signal is cancelled via Backtest.commitCancel() in onTimeframe
+test("Scheduled signal is cancelled via Backtest.commitCancel() in onTimeframe", async ({ pass, fail }) => {
 
   let scheduledCount = 0;
   let cancelledCount = 0;
@@ -1276,13 +1277,13 @@ test("Scheduled signal is cancelled via Backtest.cancel() in onTimeframe", async
         // Отменяем первый scheduled сигнал
         if (scheduledCount === 1 && !cancelCalled) {
           cancelCalled = true;
-          // console.log(`[TEST] Calling Backtest.cancel from onSchedule...`);
-          await Backtest.cancel("BTCUSDT", {
+          // console.log(`[TEST] Calling Backtest.commitCancel from onSchedule...`);
+          await Backtest.commitCancel("BTCUSDT", {
             strategyName: "test-strategy-cancel",
             exchangeName: "binance-cancel-test",
             frameName: "10m-cancel-test",
           });
-          // console.log(`[TEST] Backtest.cancel() completed`);
+          // console.log(`[TEST] Backtest.commitCancel() completed`);
         }
       },
       onCancel: () => {
@@ -1363,7 +1364,7 @@ test("Scheduled signal is cancelled via Backtest.cancel() in onTimeframe", async
 
   // Проверяем что был создан scheduled сигнал и получено cancelled событие
   if (scheduledCount >= 1 && cancelledEvents >= 1 && openedCount === 0) {
-    pass(`Scheduled signal cancelled via Backtest.cancel(): ${scheduledCount} scheduled, ${cancelledEvents} cancelled events, ${openedCount} opened`);
+    pass(`Scheduled signal cancelled via Backtest.commitCancel(): ${scheduledCount} scheduled, ${cancelledEvents} cancelled events, ${openedCount} opened`);
     return;
   }
 
@@ -1490,13 +1491,13 @@ test("Multiple scheduled signals - cancel only first one via onSchedule", async 
         // Отменяем только первый scheduled сигнал
         if (scheduledCount === 1 && !cancelCalled) {
           cancelCalled = true;
-          // console.log(`[TEST] Calling Backtest.cancel for first signal...`);
-          await Backtest.cancel("BTCUSDT", {
+          // console.log(`[TEST] Calling Backtest.commitCancel for first signal...`);
+          await Backtest.commitCancel("BTCUSDT", {
             strategyName: "test-strategy-cancel-multiple",
             exchangeName: "binance-cancel-multiple",
             frameName: "20m-cancel-multiple",
           });
-          // console.log(`[TEST] First signal cancelled via Backtest.cancel()`);
+          // console.log(`[TEST] First signal cancelled via Backtest.commitCancel()`);
         }
       },
       onOpen: () => {
@@ -1665,7 +1666,7 @@ test("Cancel scheduled signal after 5 onPing calls in backtest", async ({ pass, 
 
         // Отменяем после 5-го ping
         if (pingCount === 5) {
-          await Backtest.cancel("BTCUSDT", {
+          await Backtest.commitCancel("BTCUSDT", {
             strategyName: "test-strategy-cancel-ping",
             exchangeName: "binance-cancel-ping-test",
             frameName: "30m-cancel-ping-test",
@@ -1894,7 +1895,7 @@ test("Cancel scheduled signal after 5 listenPing events in backtest", async ({ p
 
       // Отменяем после 5-го ping события
       if (pingEventCount === 5) {
-        await Backtest.cancel("BTCUSDT", {
+        await Backtest.commitCancel("BTCUSDT", {
           strategyName: "test-strategy-listen-ping",
           exchangeName: "binance-listen-ping-test",
           frameName: "30m-listen-ping-test",
