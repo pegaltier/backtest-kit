@@ -348,6 +348,36 @@ export interface IStrategyTickResultScheduled {
 }
 
 /**
+ * Tick result: scheduled signal is waiting for price to reach entry point.
+ * This is returned on subsequent ticks while monitoring a scheduled signal.
+ * Different from "scheduled" which is only returned once when signal is first created.
+ */
+export interface IStrategyTickResultWaiting {
+  /** Discriminator for type-safe union */
+  action: "waiting";
+  /** Scheduled signal waiting for activation */
+  signal: IPublicSignalRow;
+  /** Current VWAP price for monitoring */
+  currentPrice: number;
+  /** Strategy name for tracking */
+  strategyName: StrategyName;
+  /** Exchange name for tracking */
+  exchangeName: ExchangeName;
+  /** Time frame name for tracking (e.g., "1m", "5m") */
+  frameName: FrameName;
+  /** Trading pair symbol (e.g., "BTCUSDT") */
+  symbol: string;
+  /** Percentage progress towards take profit (always 0 for waiting scheduled signals) */
+  percentTp: number;
+  /** Percentage progress towards stop loss (always 0 for waiting scheduled signals) */
+  percentSl: number;
+  /** Unrealized PNL for scheduled position (theoretical, not yet activated) */
+  pnl: IStrategyPnL;
+  /** Whether this event is from backtest mode (true) or live mode (false) */
+  backtest: boolean;
+}
+
+/**
  * Tick result: new signal just created.
  * Triggered after getSignal validation and persistence.
  */
@@ -464,6 +494,7 @@ export interface IStrategyTickResultCancelled {
 export type IStrategyTickResult =
   | IStrategyTickResultIdle
   | IStrategyTickResultScheduled
+  | IStrategyTickResultWaiting
   | IStrategyTickResultOpened
   | IStrategyTickResultActive
   | IStrategyTickResultClosed

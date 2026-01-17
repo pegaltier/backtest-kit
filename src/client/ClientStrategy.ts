@@ -5,6 +5,7 @@ import {
   randomString,
   singleshot,
   sleep,
+  str,
   trycatch,
 } from "functools-kit";
 import {
@@ -18,6 +19,7 @@ import {
   IStrategyTickResult,
   IStrategyTickResultIdle,
   IStrategyTickResultScheduled,
+  IStrategyTickResultWaiting,
   IStrategyTickResultOpened,
   IStrategyTickResultActive,
   IStrategyTickResultClosed,
@@ -2215,7 +2217,7 @@ const RETURN_SCHEDULED_SIGNAL_ACTIVE_FN = async (
   self: ClientStrategy,
   scheduled: IScheduledSignalRow,
   currentPrice: number
-): Promise<IStrategyTickResultActive> => {
+): Promise<IStrategyTickResultWaiting> => {
   const currentTime = self.params.execution.context.when.getTime();
 
   await CALL_SCHEDULE_PING_CALLBACKS_FN(
@@ -2228,8 +2230,8 @@ const RETURN_SCHEDULED_SIGNAL_ACTIVE_FN = async (
 
   const pnl = toProfitLossDto(scheduled, currentPrice);
 
-  const result: IStrategyTickResultActive = {
-    action: "active",
+  const result: IStrategyTickResultWaiting = {
+    action: "waiting",
     signal: TO_PUBLIC_SIGNAL(scheduled),
     currentPrice: currentPrice,
     strategyName: self.params.method.context.strategyName,
@@ -3838,42 +3840,24 @@ export class ClientStrategy implements IStrategy {
         const elapsedTime = lastCandleTimestamp - scheduled.scheduledAt;
 
         if (elapsedTime < maxTimeToWait) {
-          // Timeout NOT reached yet - signal is still active (waiting for price)
-          // Return active result to continue monitoring in next backtest() call
-          const candlesCount = GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT;
-          const lastCandles = candles.slice(-candlesCount);
-          const lastPrice = GET_AVG_PRICE_FN(lastCandles);
-
-          this.params.logger.debug(
-            "ClientStrategy backtest scheduled signal still waiting (not expired)",
-            {
-              symbol: this.params.execution.context.symbol,
-              signalId: scheduled.id,
-              elapsedMinutes: Math.floor(elapsedTime / 60000),
-              maxMinutes: GLOBAL_CONFIG.CC_SCHEDULE_AWAIT_MINUTES,
-            }
+          // EDGE CASE: backtest() called with partial candle data (should never happen in production)
+          // In real backtest flow this won't happen as we process all candles at once
+          // This indicates incorrect usage of backtest() - throw error instead of returning partial result
+          const bufferCandlesCount = GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT - 1;
+          const requiredCandlesCount = Math.ceil(maxTimeToWait / 60000) + bufferCandlesCount;
+          throw new Error(
+            str.newline(
+              `ClientStrategy backtest: Insufficient candle data for scheduled signal. ` +
+              `Signal scheduled at ${new Date(scheduled.scheduledAt).toISOString()}, ` +
+              `last candle at ${new Date(lastCandleTimestamp).toISOString()}. ` +
+              `Elapsed: ${Math.floor(elapsedTime / 60000)}min of ${GLOBAL_CONFIG.CC_SCHEDULE_AWAIT_MINUTES}min required. ` +
+              `Provided ${candles.length} candles, but need at least ${requiredCandlesCount} candles. ` +
+              `\nBreakdown: ${Math.ceil(maxTimeToWait / 60000)} candles for signal lifetime + ${bufferCandlesCount} buffer candles. ` +
+              `\nBuffer explanation: VWAP calculation requires ${GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT} candles, ` +
+              `so first ${bufferCandlesCount} candles are skipped to ensure accurate price averaging. ` +
+              `Provide complete candle range: [scheduledAt - ${bufferCandlesCount}min, scheduledAt + ${GLOBAL_CONFIG.CC_SCHEDULE_AWAIT_MINUTES}min].`
+            )
           );
-
-          // Don't cancel - just return last active state
-          // In real backtest flow this won't happen as we process all candles at once,
-          // but this is correct behavior if someone calls backtest() with partial data
-          const pnl = toProfitLossDto(scheduled, lastPrice);
-
-          const result: IStrategyTickResultActive = {
-            action: "active",
-            signal: TO_PUBLIC_SIGNAL(scheduled),
-            currentPrice: lastPrice,
-            percentSl: 0,
-            percentTp: 0,
-            pnl,
-            strategyName: this.params.method.context.strategyName,
-            exchangeName: this.params.method.context.exchangeName,
-            frameName: this.params.method.context.frameName,
-            symbol: this.params.execution.context.symbol,
-            backtest: this.params.execution.context.backtest,
-          };
-
-          return result as any; // Cast to IStrategyBacktestResult (which includes Active)
         }
 
         // Timeout reached - cancel the scheduled signal
