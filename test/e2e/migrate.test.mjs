@@ -1238,8 +1238,8 @@ test("Scheduled signal is cancelled via Backtest.commitCancel() in onTimeframe",
           });
         }
 
-        // Генерируем свечи на весь тест: 10 минут (frame) + запас
-        for (let minuteIndex = 0; minuteIndex < 20; minuteIndex++) {
+        // Генерируем свечи на весь тест: требуется минимум 125 для minuteEstimatedTime=120
+        for (let minuteIndex = 0; minuteIndex < 130; minuteIndex++) {
           const timestamp = startTime + minuteIndex * intervalMs;
 
           // Все свечи ВЫШЕ priceOpen - чтобы сигнал точно был scheduled
@@ -1281,7 +1281,7 @@ test("Scheduled signal is cancelled via Backtest.commitCancel() in onTimeframe",
           await Backtest.commitCancel("BTCUSDT", {
             strategyName: "test-strategy-cancel",
             exchangeName: "binance-cancel-test",
-            frameName: "10m-cancel-test",
+            frameName: "130m-cancel-test",
           });
           // console.log(`[TEST] Backtest.commitCancel() completed`);
         }
@@ -1302,10 +1302,10 @@ test("Scheduled signal is cancelled via Backtest.commitCancel() in onTimeframe",
   });
 
   addFrameSchema({
-    frameName: "10m-cancel-test",
+    frameName: "130m-cancel-test",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-01T00:10:00Z"),
+    endDate: new Date("2024-01-01T02:10:00Z"),  // 130 минут
   });
 
   const awaitSubject = new Subject();
@@ -1348,7 +1348,7 @@ test("Scheduled signal is cancelled via Backtest.commitCancel() in onTimeframe",
   Backtest.background("BTCUSDT", {
     strategyName: "test-strategy-cancel",
     exchangeName: "binance-cancel-test",
-    frameName: "10m-cancel-test",
+    frameName: "130m-cancel-test",
   });
 
   await awaitSubject.toPromise();
