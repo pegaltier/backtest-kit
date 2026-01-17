@@ -13,7 +13,7 @@ import { FrameName } from "../interfaces/Frame.interface";
 
 const BACKTEST_METHOD_NAME_RUN = "BacktestUtils.run";
 const BACKTEST_METHOD_NAME_BACKGROUND = "BacktestUtils.background";
-const BACKTEST_METHOD_NAME_STOP = "BacktestUtils.commitStop";
+const BACKTEST_METHOD_NAME_STOP = "BacktestUtils.stop";
 const BACKTEST_METHOD_NAME_GET_REPORT = "BacktestUtils.getReport";
 const BACKTEST_METHOD_NAME_DUMP = "BacktestUtils.dump";
 const BACKTEST_METHOD_NAME_TASK = "BacktestUtils.task";
@@ -760,14 +760,14 @@ export class BacktestUtils {
    * @example
    * ```typescript
    * // Stop strategy after some condition
-   * await Backtest.commitStop("BTCUSDT", "my-strategy", {
+   * await Backtest.stop("BTCUSDT", "my-strategy", {
    *   exchangeName: "binance",
    *   frameName: "frame1",
    *   strategyName: "my-strategy"
    * });
    * ```
    */
-  public commitStop = async (
+  public stop = async (
     symbol: string,
     context: {
       strategyName: StrategyName;

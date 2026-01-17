@@ -11,7 +11,7 @@ import { ExchangeName } from "../interfaces/Exchange.interface";
 
 const LIVE_METHOD_NAME_RUN = "LiveUtils.run";
 const LIVE_METHOD_NAME_BACKGROUND = "LiveUtils.background";
-const LIVE_METHOD_NAME_STOP = "LiveUtils.commitStop";
+const LIVE_METHOD_NAME_STOP = "LiveUtils.stop";
 const LIVE_METHOD_NAME_GET_REPORT = "LiveUtils.getReport";
 const LIVE_METHOD_NAME_GET_DATA = "LiveUtils.getData";
 const LIVE_METHOD_NAME_DUMP = "LiveUtils.dump";
@@ -557,10 +557,10 @@ export class LiveUtils {
    * @example
    * ```typescript
    * // Stop live trading gracefully
-   * await Live.commitStop("BTCUSDT", "my-strategy");
+   * await Live.stop("BTCUSDT", "my-strategy");
    * ```
    */
-  public commitStop = async (
+  public stop = async (
     symbol: string,
     context: {
       strategyName: StrategyName;
