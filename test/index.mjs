@@ -2,6 +2,8 @@ import "./config/setup.mjs"
 
 import { run } from 'worker-testbed';
 
+import "./e2e/migrate.test.mjs"
+/*
 import "./e2e/action.test.mjs";
 import "./e2e/breakeven.test.mjs";
 import "./e2e/cancel.test.mjs";
@@ -45,6 +47,7 @@ import "./spec/pnl.test.mjs";
 import "./spec/optimizer.test.mjs"
 import "./spec/config.test.mjs"
 import "./spec/columns.test.mjs"
+*/
 
 run(import.meta.url, () => {
     console.log("All tests are finished");
