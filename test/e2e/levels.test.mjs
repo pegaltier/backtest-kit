@@ -1,16 +1,16 @@
 import { test } from "worker-testbed";
 
 import {
-  addExchange,
-  addFrame,
-  addStrategy,
+  addExchangeSchema,
+  addFrameSchema,
+  addStrategySchema,
   Backtest,
   listenDoneBacktest,
   listenError,
-  listenPartialProfit,
-  listenPartialProfitOnce,
-  listenPartialLoss,
-  listenPartialLossOnce,
+  listenPartialProfitAvailable,
+  listenPartialProfitAvailableOnce,
+  listenPartialLossAvailable,
+  listenPartialLossAvailableOnce,
 } from "../../build/index.mjs";
 
 import { Subject } from "functools-kit";
@@ -47,7 +47,7 @@ test("PARTIAL LEVELS: listenPartialProfit fires only on 10%, 20%, 30% levels", a
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-partial-levels-profit",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -58,7 +58,7 @@ test("PARTIAL LEVELS: listenPartialProfit fires only on 10%, 20%, 30% levels", a
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-partial-levels-profit",
     interval: "1m",
     getSignal: async () => {
@@ -178,7 +178,7 @@ test("PARTIAL LEVELS: listenPartialProfit fires only on 10%, 20%, 30% levels", a
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "50m-partial-levels-profit",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -186,7 +186,7 @@ test("PARTIAL LEVELS: listenPartialProfit fires only on 10%, 20%, 30% levels", a
   });
 
   // Подписываемся на события
-  const unsubscribeProfit = listenPartialProfit(({ symbol, signal, price, level, backtest }) => {
+  const unsubscribeProfit = listenPartialProfitAvailable(({ symbol, signal, price, level, backtest }) => {
     console.log(`[listenPartialProfit] symbol=${symbol}, signal.id=${signal?.id}, price=${price}, level=${level}, backtest=${backtest}`);
     profitEvents.push(level);
   });
@@ -278,7 +278,7 @@ test("PARTIAL LEVELS: listenPartialLoss fires on loss levels (VWAP-aware)", asyn
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-partial-levels-loss",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -289,7 +289,7 @@ test("PARTIAL LEVELS: listenPartialLoss fires on loss levels (VWAP-aware)", asyn
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-partial-levels-loss",
     interval: "1m",
     getSignal: async () => {
@@ -396,14 +396,14 @@ test("PARTIAL LEVELS: listenPartialLoss fires on loss levels (VWAP-aware)", asyn
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "50m-partial-levels-loss",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
     endDate: new Date("2024-01-01T00:50:00Z"),
   });
 
-  const unsubscribeLoss = listenPartialLoss(({ symbol, signal, price, level, backtest }) => {
+  const unsubscribeLoss = listenPartialLossAvailable(({ symbol, signal, price, level, backtest }) => {
     console.log(`[listenPartialLoss] symbol=${symbol}, signal.id=${signal?.id}, price=${price}, level=${level}, backtest=${backtest}`);
     lossEvents.push(level);
   });
@@ -494,7 +494,7 @@ test("PARTIAL LEVELS: listenPartialProfitOnce fires only once", async ({ pass, f
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-partial-once-profit",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -505,7 +505,7 @@ test("PARTIAL LEVELS: listenPartialProfitOnce fires only once", async ({ pass, f
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-partial-once-profit",
     interval: "1m",
     getSignal: async () => {
@@ -553,14 +553,14 @@ test("PARTIAL LEVELS: listenPartialProfitOnce fires only once", async ({ pass, f
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "40m-partial-once-profit",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
     endDate: new Date("2024-01-01T00:40:00Z"),
   });
 
-  const unsubscribeOnce = listenPartialProfitOnce(
+  const unsubscribeOnce = listenPartialProfitAvailableOnce(
     () => true, // Accept any partial profit event
     ({ symbol, signal, price, level, backtest }) => {
       callCount++;
@@ -638,7 +638,7 @@ test("PARTIAL LEVELS: listenPartialLossOnce fires only once", async ({ pass, fai
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-partial-once-loss",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -649,7 +649,7 @@ test("PARTIAL LEVELS: listenPartialLossOnce fires only once", async ({ pass, fai
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-partial-once-loss",
     interval: "1m",
     getSignal: async () => {
@@ -697,14 +697,14 @@ test("PARTIAL LEVELS: listenPartialLossOnce fires only once", async ({ pass, fai
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "40m-partial-once-loss",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
     endDate: new Date("2024-01-01T00:40:00Z"),
   });
 
-  const unsubscribeOnce = listenPartialLossOnce(
+  const unsubscribeOnce = listenPartialLossAvailableOnce(
     () => true, // Accept any partial loss event
     ({ symbol, signal, price, level, backtest }) => {
       callCount++;

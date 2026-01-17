@@ -1,9 +1,9 @@
 import { test } from "worker-testbed";
 
 import {
-  addExchange,
-  addFrame,
-  addStrategy,
+  addExchangeSchema,
+  addFrameSchema,
+  addStrategySchema,
   Backtest,
   listenSignalBacktest,
   listenDoneBacktest,
@@ -40,7 +40,7 @@ test("CACHE: getDate cached for 1m interval - returns same timestamp within inte
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-cache-test",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -51,7 +51,7 @@ test("CACHE: getDate cached for 1m interval - returns same timestamp within inte
     formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-strategy-cache",
     interval: "1m",
     getSignal: async () => {
@@ -113,7 +113,7 @@ test("CACHE: getDate cached for 1m interval - returns same timestamp within inte
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "10m-cache-test",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -189,7 +189,7 @@ test("CACHE: Cached function with 1m interval - same value within minute, differ
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-cache-fn-test",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -200,7 +200,7 @@ test("CACHE: Cached function with 1m interval - same value within minute, differ
     formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-strategy-cache-fn",
     interval: "1m",
     getSignal: async () => {
@@ -252,7 +252,7 @@ test("CACHE: Cached function with 1m interval - same value within minute, differ
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "5m-cache-fn-test",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -345,7 +345,7 @@ test("CACHE: Cache.fn wrapper with 5m interval - caches value within 5 minutes",
   // КЭШИРУЕМ функцию с интервалом 5m
   const cachedFunction = Cache.fn(expensiveFunction, { interval: "5m" });
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-cache-wrapper-test",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -356,7 +356,7 @@ test("CACHE: Cache.fn wrapper with 5m interval - caches value within 5 minutes",
     formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-strategy-cache-wrapper",
     interval: "1m",
     getSignal: async () => {
@@ -409,7 +409,7 @@ test("CACHE: Cache.fn wrapper with 5m interval - caches value within 5 minutes",
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "12m-cache-wrapper-test",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -504,7 +504,7 @@ test("CACHE: Cache.fn with 15m interval - fewer computations for longer interval
   // КЭШИРУЕМ функцию с интервалом 15m
   const cachedFunction = Cache.fn(expensiveFunction, { interval: "15m" });
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-cache-15m-test",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -515,7 +515,7 @@ test("CACHE: Cache.fn with 15m interval - fewer computations for longer interval
     formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-strategy-cache-15m",
     interval: "1m",
     getSignal: async () => {
@@ -568,7 +568,7 @@ test("CACHE: Cache.fn with 15m interval - fewer computations for longer interval
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "35m-cache-15m-test",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -657,7 +657,7 @@ test("CACHE: getDate captures different timestamps across 3 minute intervals", a
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-timestamps-test",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -668,7 +668,7 @@ test("CACHE: getDate captures different timestamps across 3 minute intervals", a
     formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-strategy-timestamps",
     interval: "1m",
     getSignal: async () => {
@@ -724,7 +724,7 @@ test("CACHE: getDate captures different timestamps across 3 minute intervals", a
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "3m-timestamps-test",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),

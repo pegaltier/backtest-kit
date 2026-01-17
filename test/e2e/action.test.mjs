@@ -1,10 +1,11 @@
 import { test } from "worker-testbed";
 
 import {
-  addExchange,
-  addFrame,
-  addStrategy,
-  addAction,
+  addExchangeSchema,
+  addFrameSchema,
+  addStrategySchema,
+  addActionSchema,
+  addRiskSchema,
   Backtest,
   listenDoneBacktest,
   listenError,
@@ -51,7 +52,7 @@ test("ACTION: ActionBase.signal() receives all signal events in backtest", async
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-action-signal",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - startTime) / intervalMs);
@@ -62,12 +63,12 @@ test("ACTION: ActionBase.signal() receives all signal events in backtest", async
     formatQuantity: async (_symbol, q) => q.toFixed(8),
   });
 
-  addAction({
+  addActionSchema({
     actionName: "test-action-signal",
     handler: TestActionSignal,
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-strategy-action-signal",
     interval: "1m",
     actions: ["test-action-signal"],
@@ -105,7 +106,7 @@ test("ACTION: ActionBase.signal() receives all signal events in backtest", async
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "30m-action-signal",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -213,7 +214,7 @@ test("ACTION: ActionBase.signalBacktest() called only in backtest", async ({ pas
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-action-backtest",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -224,12 +225,12 @@ test("ACTION: ActionBase.signalBacktest() called only in backtest", async ({ pas
     formatQuantity: async (_symbol, q) => q.toFixed(8),
   });
 
-  addAction({
+  addActionSchema({
     actionName: "test-action-backtest",
     handler: TestActionBacktest,
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-strategy-action-backtest",
     interval: "1m",
     actions: ["test-action-backtest"],
@@ -271,7 +272,7 @@ test("ACTION: ActionBase.signalBacktest() called only in backtest", async ({ pas
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "15m-action-backtest",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -351,7 +352,7 @@ test("ACTION: ActionBase.breakeven() called when breakeven reached", async ({ pa
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-action-breakeven",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -362,12 +363,12 @@ test("ACTION: ActionBase.breakeven() called when breakeven reached", async ({ pa
     formatQuantity: async (_symbol, q) => q.toFixed(8),
   });
 
-  addAction({
+  addActionSchema({
     actionName: "test-action-breakeven",
     handler: TestActionBreakeven,
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-strategy-action-breakeven",
     interval: "1m",
     actions: ["test-action-breakeven"],
@@ -417,7 +418,7 @@ test("ACTION: ActionBase.breakeven() called when breakeven reached", async ({ pa
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "30m-action-breakeven",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -460,7 +461,7 @@ test("ACTION: ActionBase.breakeven() called when breakeven reached", async ({ pa
   }
 
   if (event.strategyName !== "test-strategy-action-breakeven") {
-    fail(`Expected strategyName=test-strategy-action-breakeven, got ${event.strategyName}`);
+    fail(`Expected strategyName=test-strategy-action-commitBreakeven, got ${event.strategyName}`);
     return;
   }
 
@@ -510,7 +511,7 @@ test("ACTION: ActionBase.partialProfit() called on profit levels", async ({ pass
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-action-partial-profit",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -521,12 +522,12 @@ test("ACTION: ActionBase.partialProfit() called on profit levels", async ({ pass
     formatQuantity: async (_symbol, q) => q.toFixed(8),
   });
 
-  addAction({
+  addActionSchema({
     actionName: "test-action-partial-profit",
     handler: TestActionPartialProfit,
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-strategy-action-partial-profit",
     interval: "1m",
     actions: ["test-action-partial-profit"],
@@ -577,7 +578,7 @@ test("ACTION: ActionBase.partialProfit() called on profit levels", async ({ pass
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "30m-action-partial-profit",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -671,7 +672,7 @@ test("ACTION: ActionBase.partialLoss() called on loss levels", async ({ pass, fa
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-action-partial-loss",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -682,12 +683,12 @@ test("ACTION: ActionBase.partialLoss() called on loss levels", async ({ pass, fa
     formatQuantity: async (_symbol, q) => q.toFixed(8),
   });
 
-  addAction({
+  addActionSchema({
     actionName: "test-action-partial-loss",
     handler: TestActionPartialLoss,
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-strategy-action-partial-loss",
     interval: "1m",
     actions: ["test-action-partial-loss"],
@@ -738,7 +739,7 @@ test("ACTION: ActionBase.partialLoss() called on loss levels", async ({ pass, fa
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "30m-action-partial-loss",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -831,7 +832,7 @@ test("ACTION: ActionBase.riskRejection() called when signal rejected by risk", a
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-action-risk-rejection",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -842,15 +843,15 @@ test("ACTION: ActionBase.riskRejection() called when signal rejected by risk", a
     formatQuantity: async (_symbol, q) => q.toFixed(8),
   });
 
-  addAction({
+  addActionSchema({
     actionName: "test-action-risk-rejection",
     handler: TestActionRiskRejection,
   });
 
   // Add risk with max 0 positions to force rejection
-  const { addRisk } = await import("../../build/index.mjs");
+  const { addRiskSchema } = await import("../../build/index.mjs");
 
-  addRisk({
+  addRiskSchema({
     riskName: "no-trading-action",
     validations: [
       () => {
@@ -860,7 +861,7 @@ test("ACTION: ActionBase.riskRejection() called when signal rejected by risk", a
   });
 
   let signalCount = 0;
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-strategy-action-risk-rejection",
     interval: "1m",
     actions: ["test-action-risk-rejection"],
@@ -897,7 +898,7 @@ test("ACTION: ActionBase.riskRejection() called when signal rejected by risk", a
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "10m-action-risk-rejection",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),

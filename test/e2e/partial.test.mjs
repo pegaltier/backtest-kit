@@ -1,14 +1,14 @@
 import { test } from "worker-testbed";
 
 import {
-  addExchange,
-  addFrame,
-  addStrategy,
+  addExchangeSchema,
+  addFrameSchema,
+  addStrategySchema,
   Backtest,
   listenDoneBacktest,
   listenError,
-  listenPartialProfit,
-  listenPartialLoss,
+  listenPartialProfitAvailable,
+  listenPartialLossAvailable,
 } from "../../build/index.mjs";
 
 import { Subject, sleep } from "functools-kit";
@@ -41,7 +41,7 @@ test("PARTIAL BACKTEST: onPartialProfit for LONG with gradual profit", async ({ 
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-partial-fill",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -52,7 +52,7 @@ test("PARTIAL BACKTEST: onPartialProfit for LONG with gradual profit", async ({ 
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-partial-fill",
     interval: "1m",
     getSignal: async () => {
@@ -112,7 +112,7 @@ test("PARTIAL BACKTEST: onPartialProfit for LONG with gradual profit", async ({ 
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "25m-partial-fill",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -205,7 +205,7 @@ test("PARTIAL BACKTEST: onPartialLoss for LONG with gradual loss", async ({ pass
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-partial-loss",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -216,7 +216,7 @@ test("PARTIAL BACKTEST: onPartialLoss for LONG with gradual loss", async ({ pass
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-partial-loss",
     interval: "1m",
     getSignal: async () => {
@@ -276,7 +276,7 @@ test("PARTIAL BACKTEST: onPartialLoss for LONG with gradual loss", async ({ pass
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "25m-partial-loss",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -369,7 +369,7 @@ test("PARTIAL BACKTEST: onPartialProfit for SHORT with price falling", async ({ 
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-partial-short-fill",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -380,7 +380,7 @@ test("PARTIAL BACKTEST: onPartialProfit for SHORT with price falling", async ({ 
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-partial-short-fill",
     interval: "1m",
     getSignal: async () => {
@@ -440,7 +440,7 @@ test("PARTIAL BACKTEST: onPartialProfit for SHORT with price falling", async ({ 
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "25m-partial-short-fill",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -528,7 +528,7 @@ test("PARTIAL BACKTEST: onPartialLoss for SHORT with price rising", async ({ pas
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-partial-short-loss",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -539,7 +539,7 @@ test("PARTIAL BACKTEST: onPartialLoss for SHORT with price rising", async ({ pas
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-partial-short-loss",
     interval: "1m",
     getSignal: async () => {
@@ -599,7 +599,7 @@ test("PARTIAL BACKTEST: onPartialLoss for SHORT with price rising", async ({ pas
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "25m-partial-short-loss",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -686,7 +686,7 @@ test("Partial.getData returns partial profit/loss statistics for symbol", async 
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-partial-facade-1",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -697,7 +697,7 @@ test("Partial.getData returns partial profit/loss statistics for symbol", async 
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-partial-facade-1",
     interval: "1m",
     getSignal: async () => {
@@ -744,7 +744,7 @@ test("Partial.getData returns partial profit/loss statistics for symbol", async 
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "25m-partial-facade-1",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -824,7 +824,7 @@ test("Partial.getReport generates markdown report with table", async ({ pass, fa
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-partial-facade-2",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -835,7 +835,7 @@ test("Partial.getReport generates markdown report with table", async ({ pass, fa
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-partial-facade-2",
     interval: "1m",
     getSignal: async () => {
@@ -882,7 +882,7 @@ test("Partial.getReport generates markdown report with table", async ({ pass, fa
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "25m-partial-facade-2",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -941,23 +941,23 @@ test("Partial.getReport generates markdown report with table", async ({ pass, fa
  * PARTIAL FACADE TEST #3: Empty statistics for nonexistent symbol
  */
 test("Partial.getData returns empty statistics for nonexistent symbol", async ({ pass, fail }) => {
-  const { Partial, addStrategy } = await import("../../build/index.mjs");
+  const { Partial, addStrategySchema } = await import("../../build/index.mjs");
 
   // Register strategy first to pass validation
-  addStrategy({
+  addStrategySchema({
     strategyName: "nonexistent-strategy",
     interval: "1m",
     getSignal: async () => null,
   });
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "nonexistent-exchange",
     getCandles: async () => [],
     formatPrice: async (_symbol, p) => p.toFixed(8),
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   })
 
-  addFrame({
+  addFrameSchema({
     frameName: "nonexistent-frame",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -1026,7 +1026,7 @@ test("PARTIAL PROGRESS: Percentage calculation during TP achievement", async ({ 
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-partial-progress",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -1037,7 +1037,7 @@ test("PARTIAL PROGRESS: Percentage calculation during TP achievement", async ({ 
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-partial-progress",
     interval: "1m",
     getSignal: async () => {
@@ -1144,7 +1144,7 @@ test("PARTIAL PROGRESS: Percentage calculation during TP achievement", async ({ 
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "60m-partial-progress",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -1273,7 +1273,7 @@ test("PARTIAL LISTENERS: listenPartialProfit and listenPartialLoss capture event
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-partial-listeners",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -1284,7 +1284,7 @@ test("PARTIAL LISTENERS: listenPartialProfit and listenPartialLoss capture event
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-partial-listeners",
     interval: "1m",
     getSignal: async () => {
@@ -1365,7 +1365,7 @@ test("PARTIAL LISTENERS: listenPartialProfit and listenPartialLoss capture event
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "60m-partial-listeners",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -1375,7 +1375,7 @@ test("PARTIAL LISTENERS: listenPartialProfit and listenPartialLoss capture event
   const awaitSubject = new Subject();
 
   // Subscribe to partial profit/loss events BEFORE starting backtest
-  const unsubscribeProfit = listenPartialProfit((event) => {
+  const unsubscribeProfit = listenPartialProfitAvailable((event) => {
     partialProfitEvents.push({
       symbol: event.symbol,
       signalId: event.data.id,
@@ -1387,7 +1387,7 @@ test("PARTIAL LISTENERS: listenPartialProfit and listenPartialLoss capture event
     // console.log(`[listenPartialProfit] Symbol: ${event.symbol}, Level: ${event.level}%, Price: ${event.currentPrice.toFixed(2)}`);
   });
 
-  const unsubscribeLoss = listenPartialLoss((event) => {
+  const unsubscribeLoss = listenPartialLossAvailable((event) => {
     partialLossEvents.push({
       symbol: event.symbol,
       signalId: event.data.id,
@@ -1534,7 +1534,7 @@ test("PARTIAL DEDUPE: Events NOT emitted twice for same level", async ({ pass, f
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-partial-dedupe",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -1545,7 +1545,7 @@ test("PARTIAL DEDUPE: Events NOT emitted twice for same level", async ({ pass, f
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-partial-dedupe",
     interval: "1m",
     getSignal: async () => {
@@ -1687,7 +1687,7 @@ test("PARTIAL DEDUPE: Events NOT emitted twice for same level", async ({ pass, f
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "60m-partial-dedupe",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -1697,7 +1697,7 @@ test("PARTIAL DEDUPE: Events NOT emitted twice for same level", async ({ pass, f
   const awaitSubject = new Subject();
 
   // Subscribe to partial profit/loss events BEFORE starting backtest
-  const unsubscribeProfit = listenPartialProfit((event) => {
+  const unsubscribeProfit = listenPartialProfitAvailable((event) => {
     partialProfitEvents.push({
       symbol: event.symbol,
       signalId: event.data.id,
@@ -1709,7 +1709,7 @@ test("PARTIAL DEDUPE: Events NOT emitted twice for same level", async ({ pass, f
     // console.log(`[listenPartialProfit] Level: ${event.level}%, Price: ${event.currentPrice.toFixed(2)}`);
   });
 
-  const unsubscribeLoss = listenPartialLoss((event) => {
+  const unsubscribeLoss = listenPartialLossAvailable((event) => {
     partialLossEvents.push({
       symbol: event.symbol,
       signalId: event.data.id,
@@ -1819,7 +1819,7 @@ test("PARTIAL DEDUPE: Events NOT emitted twice for same level", async ({ pass, f
  * - Состояние _partial обновляется корректно
  */
 test("PARTIAL FUNCTION: partialProfit() closes 30% of LONG position", async ({ pass, fail }) => {
-  const { partialProfit } = await import("../../build/index.mjs");
+  const { commitPartialProfit } = await import("../../build/index.mjs");
 
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
@@ -1842,7 +1842,7 @@ test("PARTIAL FUNCTION: partialProfit() closes 30% of LONG position", async ({ p
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-function-partial-profit",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -1853,7 +1853,7 @@ test("PARTIAL FUNCTION: partialProfit() closes 30% of LONG position", async ({ p
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-function-partial-profit",
     interval: "1m",
     getSignal: async () => {
@@ -1921,7 +1921,7 @@ test("PARTIAL FUNCTION: partialProfit() closes 30% of LONG position", async ({ p
         if (!partialCalled && revenuePercent >= 20) {
           partialCalled = true;
           try {
-            await partialProfit("BTCUSDT", 30); // Закрываем 30%
+            await commitPartialProfit("BTCUSDT", 30); // Закрываем 30%
             // console.log("[TEST] partialProfit called: 30% at level " + revenuePercent.toFixed(2) + "%");
           } catch (err) {
             // console.error("[TEST] partialProfit error:", err);
@@ -1931,7 +1931,7 @@ test("PARTIAL FUNCTION: partialProfit() closes 30% of LONG position", async ({ p
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "40m-function-partial-profit",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -2031,7 +2031,7 @@ test("PARTIAL FUNCTION: partialProfit() closes 30% of LONG position", async ({ p
  * - Состояние _partial обновляется типом "loss"
  */
 test("PARTIAL FUNCTION: partialLoss() closes 40% of LONG position", async ({ pass, fail }) => {
-  const { partialLoss } = await import("../../build/index.mjs");
+  const { commitPartialLoss } = await import("../../build/index.mjs");
 
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
@@ -2054,7 +2054,7 @@ test("PARTIAL FUNCTION: partialLoss() closes 40% of LONG position", async ({ pas
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-function-partial-loss",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -2065,7 +2065,7 @@ test("PARTIAL FUNCTION: partialLoss() closes 40% of LONG position", async ({ pas
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-function-partial-loss",
     interval: "1m",
     getSignal: async () => {
@@ -2133,7 +2133,7 @@ test("PARTIAL FUNCTION: partialLoss() closes 40% of LONG position", async ({ pas
         if (!partialCalled && revenuePercent >= 20) {
           partialCalled = true;
           try {
-            await partialLoss("BTCUSDT", 40); // Закрываем 40%
+            await commitPartialLoss("BTCUSDT", 40); // Закрываем 40%
             // console.log("[TEST] partialLoss called: 40% at level " + revenuePercent.toFixed(2) + "%");
           } catch (err) {
             // console.error("[TEST] partialLoss error:", err);
@@ -2143,7 +2143,7 @@ test("PARTIAL FUNCTION: partialLoss() closes 40% of LONG position", async ({ pas
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "40m-function-partial-loss",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -2238,7 +2238,7 @@ test("PARTIAL FUNCTION: partialLoss() closes 40% of LONG position", async ({ pas
  * PARTIAL FUNCTION TEST #3: Множественные partialProfit - 30%, потом еще 40%
  */
 test("PARTIAL FUNCTION: Multiple partialProfit calls (30% + 40%)", async ({ pass, fail }) => {
-  const { partialProfit } = await import("../../build/index.mjs");
+  const { commitPartialProfit } = await import("../../build/index.mjs");
 
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
@@ -2262,7 +2262,7 @@ test("PARTIAL FUNCTION: Multiple partialProfit calls (30% + 40%)", async ({ pass
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-function-partial-multiple",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -2273,7 +2273,7 @@ test("PARTIAL FUNCTION: Multiple partialProfit calls (30% + 40%)", async ({ pass
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-function-partial-multiple",
     interval: "1m",
     getSignal: async () => {
@@ -2332,7 +2332,7 @@ test("PARTIAL FUNCTION: Multiple partialProfit calls (30% + 40%)", async ({ pass
         if (!firstPartialCalled && revenuePercent >= 10) {
           firstPartialCalled = true;
           try {
-            await partialProfit("BTCUSDT", 30);
+            await commitPartialProfit("BTCUSDT", 30);
             // console.log("[TEST] First partial: 30% at level " + revenuePercent.toFixed(2) + "%");
           } catch (err) {
             // console.error("[TEST] First partial error:", err);
@@ -2342,7 +2342,7 @@ test("PARTIAL FUNCTION: Multiple partialProfit calls (30% + 40%)", async ({ pass
         else if (!secondPartialCalled && revenuePercent >= 20) {
           secondPartialCalled = true;
           try {
-            await partialProfit("BTCUSDT", 40);
+            await commitPartialProfit("BTCUSDT", 40);
             // console.log("[TEST] Second partial: 40% at level " + revenuePercent.toFixed(2) + "%");
           } catch (err) {
             // console.error("[TEST] Second partial error:", err);
@@ -2352,7 +2352,7 @@ test("PARTIAL FUNCTION: Multiple partialProfit calls (30% + 40%)", async ({ pass
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "50m-function-partial-multiple",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -2462,7 +2462,7 @@ test("PARTIAL FUNCTION: Multiple partialProfit calls (30% + 40%)", async ({ pass
     return;
   }
 
-  pass("Multiple partialProfit() WORKS: 30% + 40% = 70% closed, _partial field validated");
+  pass("MultiplecommitPartialProfit() WORKS: 30% + 40% = 70% closed, _partial field validated");
 });
 
 
@@ -2470,7 +2470,7 @@ test("PARTIAL FUNCTION: Multiple partialProfit calls (30% + 40%)", async ({ pass
  * PARTIAL FUNCTION TEST #4: SHORT позиция - partialProfit
  */
 test("PARTIAL FUNCTION: partialProfit() works for SHORT position", async ({ pass, fail }) => {
-  const { partialProfit } = await import("../../build/index.mjs");
+  const { commitPartialProfit } = await import("../../build/index.mjs");
 
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
@@ -2493,7 +2493,7 @@ test("PARTIAL FUNCTION: partialProfit() works for SHORT position", async ({ pass
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-function-short-profit",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -2504,7 +2504,7 @@ test("PARTIAL FUNCTION: partialProfit() works for SHORT position", async ({ pass
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-function-short-profit",
     interval: "1m",
     getSignal: async () => {
@@ -2572,7 +2572,7 @@ test("PARTIAL FUNCTION: partialProfit() works for SHORT position", async ({ pass
         if (!partialCalled && revenuePercent >= 20) {
           partialCalled = true;
           try {
-            await partialProfit("BTCUSDT", 30);
+            await commitPartialProfit("BTCUSDT", 30);
             // console.log("[TEST] partialProfit SHORT called: 30% at level " + revenuePercent.toFixed(2) + "%");
           } catch (err) {
             // console.error("[TEST] partialProfit error:", err);
@@ -2582,7 +2582,7 @@ test("PARTIAL FUNCTION: partialProfit() works for SHORT position", async ({ pass
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "40m-function-short-profit",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -2677,12 +2677,12 @@ test("PARTIAL FUNCTION: partialProfit() works for SHORT position", async ({ pass
  * PARTIAL LISTENER TEST #15: partialProfit() with listenPartialProfit for LONG
  *
  * Проверяем что:
- * - listenPartialProfit срабатывает при вызове partialProfit()
+ * - listenPartialProfit срабатывает при вызовеcommitPartialProfit()
  * - Получаем корректные данные в событии
  * - Поле _partial обновляется в сигнале
  */
 test("PARTIAL LISTENER: partialProfit() with listenPartialProfit for LONG", async ({ pass, fail }) => {
-  const { partialProfit, listenPartialProfit } = await import("../../build/index.mjs");
+  const { commitPartialProfit, listenPartialProfitAvailable } = await import("../../build/index.mjs");
 
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
@@ -2707,7 +2707,7 @@ test("PARTIAL LISTENER: partialProfit() with listenPartialProfit for LONG", asyn
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-listener-partial-profit",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -2718,7 +2718,7 @@ test("PARTIAL LISTENER: partialProfit() with listenPartialProfit for LONG", asyn
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-listener-partial-profit",
     interval: "1m",
     getSignal: async () => {
@@ -2788,7 +2788,7 @@ test("PARTIAL LISTENER: partialProfit() with listenPartialProfit for LONG", asyn
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "40m-listener-partial-profit",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -2796,7 +2796,7 @@ test("PARTIAL LISTENER: partialProfit() with listenPartialProfit for LONG", asyn
   });
 
   // Подписываемся на события listenPartialProfit и вызываем partialProfit внутри
-  const unsubscribeListener = listenPartialProfit(async ({ symbol, signal, price, level, backtest }) => {
+  const unsubscribeListener = listenPartialProfitAvailable(async ({ symbol, signal, price, level, backtest }) => {
     listenerFired = true;
     listenerData = { symbol, signalId: signal?.id, price, level, backtest };
     // console.log(`[TEST #15 listenPartialProfit] symbol=${symbol}, signal.id=${signal?.id}, price=${price}, level=${level}, backtest=${backtest}`);
@@ -2804,7 +2804,7 @@ test("PARTIAL LISTENER: partialProfit() with listenPartialProfit for LONG", asyn
     // Вызываем partialProfit при достижении уровня 30%
     if (!partialCalled && level >= 30) {
       partialCalled = true;
-      await partialProfit("BTCUSDT", 30);
+      await commitPartialProfit("BTCUSDT", 30);
       // console.log(`[TEST #15] partialProfit called at level ${level}%`);
     }
   });
@@ -2900,12 +2900,12 @@ test("PARTIAL LISTENER: partialProfit() with listenPartialProfit for LONG", asyn
  * PARTIAL LISTENER TEST #16: partialLoss() with listenPartialLoss for LONG
  *
  * Проверяем что:
- * - listenPartialLoss срабатывает при вызове partialLoss()
+ * - listenPartialLoss срабатывает при вызовеcommitPartialLoss()
  * - Получаем корректные данные в событии
  * - Поле _partial обновляется типом "loss"
  */
 test("PARTIAL LISTENER: partialLoss() with listenPartialLoss for LONG", async ({ pass, fail }) => {
-  const { partialLoss, listenPartialLoss } = await import("../../build/index.mjs");
+  const { commitPartialLoss, listenPartialLossAvailable } = await import("../../build/index.mjs");
 
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
@@ -2930,7 +2930,7 @@ test("PARTIAL LISTENER: partialLoss() with listenPartialLoss for LONG", async ({
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-listener-partial-loss",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -2941,7 +2941,7 @@ test("PARTIAL LISTENER: partialLoss() with listenPartialLoss for LONG", async ({
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-listener-partial-loss",
     interval: "1m",
     getSignal: async () => {
@@ -3011,7 +3011,7 @@ test("PARTIAL LISTENER: partialLoss() with listenPartialLoss for LONG", async ({
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "40m-listener-partial-loss",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -3019,7 +3019,7 @@ test("PARTIAL LISTENER: partialLoss() with listenPartialLoss for LONG", async ({
   });
 
   // Подписываемся на события listenPartialLoss и вызываем partialLoss внутри
-  const unsubscribeListener = listenPartialLoss(async ({ symbol, signal, price, level, backtest }) => {
+  const unsubscribeListener = listenPartialLossAvailable(async ({ symbol, signal, price, level, backtest }) => {
     listenerFired = true;
     listenerData = { symbol, signalId: signal?.id, price, level, backtest };
     // console.log(`[TEST #16 listenPartialLoss] symbol=${symbol}, signal.id=${signal?.id}, price=${price}, level=${level}, backtest=${backtest}`);
@@ -3027,7 +3027,7 @@ test("PARTIAL LISTENER: partialLoss() with listenPartialLoss for LONG", async ({
     // Вызываем partialLoss при достижении уровня 30%
     if (!partialCalled && level >= 30) {
       partialCalled = true;
-      await partialLoss("BTCUSDT", 40);
+      await commitPartialLoss("BTCUSDT", 40);
       // console.log(`[TEST #16] partialLoss called at level ${level}%`);
     }
   });
@@ -3128,7 +3128,7 @@ test("PARTIAL LISTENER: partialLoss() with listenPartialLoss for LONG", async ({
  * - Массив _partial содержит оба закрытия
  */
 test("PARTIAL LISTENER: Multiple partialProfit with listenPartialProfit (VWAP-aware)", async ({ pass, fail }) => {
-  const { partialProfit, listenPartialProfit } = await import("../../build/index.mjs");
+  const { commitPartialProfit, listenPartialProfitAvailable } = await import("../../build/index.mjs");
 
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
@@ -3153,7 +3153,7 @@ test("PARTIAL LISTENER: Multiple partialProfit with listenPartialProfit (VWAP-aw
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-listener-partial-multiple",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -3164,7 +3164,7 @@ test("PARTIAL LISTENER: Multiple partialProfit with listenPartialProfit (VWAP-aw
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-listener-partial-multiple",
     interval: "1m",
     getSignal: async () => {
@@ -3234,7 +3234,7 @@ test("PARTIAL LISTENER: Multiple partialProfit with listenPartialProfit (VWAP-aw
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "50m-listener-partial-multiple",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -3242,18 +3242,18 @@ test("PARTIAL LISTENER: Multiple partialProfit with listenPartialProfit (VWAP-aw
   });
 
   // Подписываемся на события listenPartialProfit и вызываем partialProfit внутри
-  const unsubscribeListener = listenPartialProfit(async ({ symbol, signal, price, level, backtest }) => {
+  const unsubscribeListener = listenPartialProfitAvailable(async ({ symbol, signal, price, level, backtest }) => {
     listenerEvents.push({ symbol, signalId: signal?.id, price, level, backtest });
     // console.log(`[TEST #17 listenPartialProfit] symbol=${symbol}, signal.id=${signal?.id}, price=${price}, level=${level}, backtest=${backtest}, count=${listenerEvents.length}`);
 
     // Вызываем partialProfit на разных уровнях
     if (!firstPartialCalled && level >= 20) {
       firstPartialCalled = true;
-      await partialProfit("BTCUSDT", 30);
+      await commitPartialProfit("BTCUSDT", 30);
       // console.log(`[TEST #17] First partialProfit called at level ${level}%`);
     } else if (!secondPartialCalled && level >= 30) {
       secondPartialCalled = true;
-      await partialProfit("BTCUSDT", 40);
+      await commitPartialProfit("BTCUSDT", 40);
       // console.log(`[TEST #17] Second partialProfit called at level ${level}%`);
     }
   });
@@ -3345,7 +3345,7 @@ test("PARTIAL LISTENER: Multiple partialProfit with listenPartialProfit (VWAP-aw
  * - Поле _partial обновляется правильно
  */
 test("PARTIAL LISTENER: partialProfit() with listenPartialProfit for SHORT", async ({ pass, fail }) => {
-  const { partialProfit, listenPartialProfit } = await import("../../build/index.mjs");
+  const { commitPartialProfit, listenPartialProfitAvailable } = await import("../../build/index.mjs");
 
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
@@ -3370,7 +3370,7 @@ test("PARTIAL LISTENER: partialProfit() with listenPartialProfit for SHORT", asy
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-listener-short-profit",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -3381,7 +3381,7 @@ test("PARTIAL LISTENER: partialProfit() with listenPartialProfit for SHORT", asy
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-listener-short-profit",
     interval: "1m",
     getSignal: async () => {
@@ -3451,7 +3451,7 @@ test("PARTIAL LISTENER: partialProfit() with listenPartialProfit for SHORT", asy
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "40m-listener-short-profit",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -3459,7 +3459,7 @@ test("PARTIAL LISTENER: partialProfit() with listenPartialProfit for SHORT", asy
   });
 
   // Подписываемся на события listenPartialProfit и вызываем partialProfit внутри
-  const unsubscribeListener = listenPartialProfit(async ({ symbol, signal, price, level, backtest }) => {
+  const unsubscribeListener = listenPartialProfitAvailable(async ({ symbol, signal, price, level, backtest }) => {
     listenerFired = true;
     listenerData = { symbol, signalId: signal?.id, price, level, backtest };
     // console.log(`[TEST #18 listenPartialProfit] symbol=${symbol}, signal.id=${signal?.id}, price=${price}, level=${level}, backtest=${backtest}`);
@@ -3467,7 +3467,7 @@ test("PARTIAL LISTENER: partialProfit() with listenPartialProfit for SHORT", asy
     // Вызываем partialProfit при достижении уровня 30%
     if (!partialCalled && level >= 30) {
       partialCalled = true;
-      await partialProfit("BTCUSDT", 30);
+      await commitPartialProfit("BTCUSDT", 30);
       // console.log(`[TEST #18] partialProfit called at level ${level}%`);
     }
   });

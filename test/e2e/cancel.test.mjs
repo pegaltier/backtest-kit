@@ -1,14 +1,14 @@
 import { test } from "worker-testbed";
 
 import {
-  addExchange,
-  addFrame,
-  addStrategy,
+  addExchangeSchema,
+  addFrameSchema,
+  addStrategySchema,
   Backtest,
   listenSignalBacktest,
   listenDoneBacktest,
   listenError,
-  listenPing,
+  listenSchedulePing,
   getAveragePrice,
 } from "../../build/index.mjs";
 
@@ -44,7 +44,7 @@ test("Scheduled signal is cancelled via Backtest.cancel() in onTimeframe", async
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-cancel-test",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -55,7 +55,7 @@ test("Scheduled signal is cancelled via Backtest.cancel() in onTimeframe", async
     formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-strategy-cancel",
     interval: "1m",
     getSignal: async () => {
@@ -140,7 +140,7 @@ test("Scheduled signal is cancelled via Backtest.cancel() in onTimeframe", async
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "10m-cancel-test",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -239,7 +239,7 @@ test("Multiple scheduled signals - cancel only first one via onSchedule", async 
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-cancel-multiple",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -250,7 +250,7 @@ test("Multiple scheduled signals - cancel only first one via onSchedule", async 
     formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-strategy-cancel-multiple",
     interval: "1m",
     getSignal: async () => {
@@ -349,7 +349,7 @@ test("Multiple scheduled signals - cancel only first one via onSchedule", async 
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "20m-cancel-multiple",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -421,7 +421,7 @@ test("Cancel scheduled signal after 5 onPing calls in backtest", async ({ pass, 
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-cancel-ping-test",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -432,7 +432,7 @@ test("Cancel scheduled signal after 5 onPing calls in backtest", async ({ pass, 
     formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-strategy-cancel-ping",
     interval: "1m",
     getSignal: async () => {
@@ -513,7 +513,7 @@ test("Cancel scheduled signal after 5 onPing calls in backtest", async ({ pass, 
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "30m-cancel-ping-test",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -612,7 +612,7 @@ test("Cancel scheduled signal after 5 listenPing events in backtest", async ({ p
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-listen-ping-test",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
@@ -623,7 +623,7 @@ test("Cancel scheduled signal after 5 listenPing events in backtest", async ({ p
     formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-strategy-listen-ping",
     interval: "1m",
     getSignal: async () => {
@@ -691,7 +691,7 @@ test("Cancel scheduled signal after 5 listenPing events in backtest", async ({ p
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "30m-listen-ping-test",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -723,7 +723,7 @@ test("Cancel scheduled signal after 5 listenPing events in backtest", async ({ p
   });
 
   // Подписываемся на события ping через listenPing
-  const unsubscribePing = listenPing(async (event) => {
+  const unsubscribePing = listenSchedulePing(async (event) => {
     // Фильтруем только события для нашей стратегии
     if (event.symbol === "BTCUSDT" && event.strategyName === "test-strategy-listen-ping") {
       pingEventCount++;

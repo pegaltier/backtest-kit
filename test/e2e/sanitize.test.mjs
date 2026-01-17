@@ -1,9 +1,9 @@
 import { test } from "worker-testbed";
 
 import {
-  addExchange,
-  addFrame,
-  addStrategy,
+  addExchangeSchema,
+  addFrameSchema,
+  addStrategySchema,
   Backtest,
   listenSignalBacktest,
   listenDoneBacktest,
@@ -34,7 +34,7 @@ test("SANITIZE: Micro-profit eaten by fees - TP too close to priceOpen rejected"
   let scheduledCount = 0;
   let openedCount = 0;
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-sanitize-micro-profit",
     getCandles: async (_symbol, interval, since, limit) => {
       const candles = [];
@@ -60,7 +60,7 @@ test("SANITIZE: Micro-profit eaten by fees - TP too close to priceOpen rejected"
 
   let signalGenerated = false;
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-sanitize-micro-profit",
     interval: "1m",
     getSignal: async () => {
@@ -88,7 +88,7 @@ test("SANITIZE: Micro-profit eaten by fees - TP too close to priceOpen rejected"
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "10m-sanitize-micro-profit",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -141,7 +141,7 @@ test("SANITIZE: Extreme StopLoss rejected (>20% loss) - protects capital", async
   let scheduledCount = 0;
   let openedCount = 0;
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-sanitize-extreme-sl",
     getCandles: async (_symbol, interval, since, limit) => {
       const candles = [];
@@ -167,7 +167,7 @@ test("SANITIZE: Extreme StopLoss rejected (>20% loss) - protects capital", async
 
   let signalGenerated = false;
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-sanitize-extreme-sl",
     interval: "1m",
     getSignal: async () => {
@@ -195,7 +195,7 @@ test("SANITIZE: Extreme StopLoss rejected (>20% loss) - protects capital", async
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "10m-sanitize-extreme-sl",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -248,7 +248,7 @@ test("SANITIZE: Excessive minuteEstimatedTime rejected (>30 days) - prevents ete
   let scheduledCount = 0;
   let openedCount = 0;
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-sanitize-excessive-time",
     getCandles: async (_symbol, interval, since, limit) => {
       const candles = [];
@@ -274,7 +274,7 @@ test("SANITIZE: Excessive minuteEstimatedTime rejected (>30 days) - prevents ete
 
   let signalGenerated = false;
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-sanitize-excessive-time",
     interval: "1m",
     getSignal: async () => {
@@ -302,7 +302,7 @@ test("SANITIZE: Excessive minuteEstimatedTime rejected (>30 days) - prevents ete
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "10m-sanitize-excessive-time",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -353,7 +353,7 @@ test("SANITIZE: Negative prices rejected - prevents impossible trades", async ({
   let scheduledCount = 0;
   let openedCount = 0;
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-sanitize-negative-prices",
     getCandles: async (_symbol, interval, since, limit) => {
       const candles = [];
@@ -379,7 +379,7 @@ test("SANITIZE: Negative prices rejected - prevents impossible trades", async ({
 
   let signalGenerated = false;
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-sanitize-negative-prices",
     interval: "1m",
     getSignal: async () => {
@@ -406,7 +406,7 @@ test("SANITIZE: Negative prices rejected - prevents impossible trades", async ({
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "10m-sanitize-negative-prices",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -457,7 +457,7 @@ test("SANITIZE: NaN/Infinity prices rejected - prevents calculation explosions",
   let scheduledCount = 0;
   let openedCount = 0;
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-sanitize-nan-prices",
     getCandles: async (_symbol, interval, since, limit) => {
       const candles = [];
@@ -483,7 +483,7 @@ test("SANITIZE: NaN/Infinity prices rejected - prevents calculation explosions",
 
   let signalGenerated = false;
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-sanitize-nan-prices",
     interval: "1m",
     getSignal: async () => {
@@ -510,7 +510,7 @@ test("SANITIZE: NaN/Infinity prices rejected - prevents calculation explosions",
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "10m-sanitize-nan-prices",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -561,7 +561,7 @@ test("SANITIZE: Infinity prices rejected - prevents overflow", async ({ pass, fa
   let scheduledCount = 0;
   let openedCount = 0;
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-sanitize-infinity-prices",
     getCandles: async (_symbol, interval, since, limit) => {
       const candles = [];
@@ -587,7 +587,7 @@ test("SANITIZE: Infinity prices rejected - prevents overflow", async ({ pass, fa
 
   let signalGenerated = false;
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-sanitize-infinity-prices",
     interval: "1m",
     getSignal: async () => {
@@ -614,7 +614,7 @@ test("SANITIZE: Infinity prices rejected - prevents overflow", async ({ pass, fa
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "10m-sanitize-infinity-prices",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -667,7 +667,7 @@ test("SANITIZE: Incomplete Binance candles rejected (anomalous prices) - prevent
 
   let errorCaught = null;
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-sanitize-incomplete-candles",
     getCandles: async (_symbol, _interval, since, limit) => {
       const candles = [];
@@ -710,7 +710,7 @@ test("SANITIZE: Incomplete Binance candles rejected (anomalous prices) - prevent
 
   let signalGenerated = false;
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-sanitize-incomplete-candles",
     interval: "1m",
     getSignal: async () => {
@@ -730,7 +730,7 @@ test("SANITIZE: Incomplete Binance candles rejected (anomalous prices) - prevent
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "10m-sanitize-incomplete-candles",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -803,7 +803,7 @@ test("SANITIZE: Basic trading works - system can open and close positions", asyn
   let openedResult = null;
   let closedResult = null;
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-sanitize-basic-trading",
     getCandles: async (_symbol, _interval, since, limit) => {
       const candles = [];
@@ -855,7 +855,7 @@ test("SANITIZE: Basic trading works - system can open and close positions", asyn
 
   let signalGenerated = false;
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-sanitize-basic-trading",
     interval: "1m",
     getSignal: async () => {
@@ -884,7 +884,7 @@ test("SANITIZE: Basic trading works - system can open and close positions", asyn
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "30m-sanitize-basic-trading",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -970,7 +970,7 @@ test("SANITIZE: Basic SHORT trading works - system can open and close SHORT posi
   let openedResult = null;
   let closedResult = null;
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-sanitize-basic-short",
     getCandles: async (_symbol, _interval, since, limit) => {
       const candles = [];
@@ -1023,7 +1023,7 @@ test("SANITIZE: Basic SHORT trading works - system can open and close SHORT posi
 
   let signalGenerated = false;
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-sanitize-basic-short",
     interval: "1m",
     getSignal: async () => {
@@ -1052,7 +1052,7 @@ test("SANITIZE: Basic SHORT trading works - system can open and close SHORT posi
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "30m-sanitize-basic-short",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -1176,7 +1176,7 @@ test("PERSIST: onWrite called EXACTLY ONCE per signal open", async ({ pass, fail
     }
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-persist-write-once",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - startTime) / intervalMs);
@@ -1189,7 +1189,7 @@ test("PERSIST: onWrite called EXACTLY ONCE per signal open", async ({ pass, fail
 
   let signalGenerated = false;
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "persist-write-once-strategy",
     interval: "1m",
     getSignal: async () => {
@@ -1217,7 +1217,7 @@ test("PERSIST: onWrite called EXACTLY ONCE per signal open", async ({ pass, fail
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "20m-persist-write-once",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -1332,7 +1332,7 @@ test("PERSIST: onWrite(null) called EXACTLY ONCE per signal close", async ({ pas
     }
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-persist-delete-once",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - startTime) / intervalMs);
@@ -1345,7 +1345,7 @@ test("PERSIST: onWrite(null) called EXACTLY ONCE per signal close", async ({ pas
 
   let signalGenerated = false;
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "persist-delete-once-strategy",
     interval: "1m",
     getSignal: async () => {
@@ -1373,7 +1373,7 @@ test("PERSIST: onWrite(null) called EXACTLY ONCE per signal close", async ({ pas
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "20m-persist-delete-once",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -1515,7 +1515,7 @@ test("EDGE CASE: SL hit on activation candle - signal cancelled BEFORE open", as
     }
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-edge-sl-before-open",
     getCandles: async (_symbol, _interval, since, limit) => {
       // КРИТИЧНО: используем bufferStartTime для расчета индекса, так как allCandles начинается с буфера
@@ -1529,7 +1529,7 @@ test("EDGE CASE: SL hit on activation candle - signal cancelled BEFORE open", as
 
   let signalGenerated = false;
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "edge-sl-before-open-strategy",
     interval: "1m",
     getSignal: async () => {
@@ -1558,7 +1558,7 @@ test("EDGE CASE: SL hit on activation candle - signal cancelled BEFORE open", as
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "20m-edge-sl-before-open",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -1691,7 +1691,7 @@ test("SEQUENCE: LONG→TIME_EXPIRED, LONG→TP - mixed closeReasons", async ({ p
     allCandles.push({ timestamp: startTime + i * intervalMs, open: basePrice, high: basePrice + 100, low: basePrice - 100, close: basePrice, volume: 100 });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-sequence-mixed-close",
     getCandles: async (_symbol, _interval, since, limit) => {
       const timeIndex = Math.floor((since.getTime() - startTime) / intervalMs);
@@ -1707,7 +1707,7 @@ test("SEQUENCE: LONG→TIME_EXPIRED, LONG→TP - mixed closeReasons", async ({ p
 
   let signalCount = 0;
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "sequence-mixed-close-strategy",
     interval: "1m",
     getSignal: async () => {
@@ -1726,7 +1726,7 @@ test("SEQUENCE: LONG→TIME_EXPIRED, LONG→TP - mixed closeReasons", async ({ p
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "270m-sequence-mixed-close",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -1896,7 +1896,7 @@ test("SEQUENCE: 2 rapid LONG signals (VWAP-aware)", async ({ pass, fail }) => {
     }
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-sequence-rapid",
     getCandles: async (_symbol, _interval, since, limit) => {
       const timeIndex = Math.floor((since.getTime() - startTime) / intervalMs);
@@ -1911,7 +1911,7 @@ test("SEQUENCE: 2 rapid LONG signals (VWAP-aware)", async ({ pass, fail }) => {
 
   let signalCount = 0;
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "sequence-rapid-strategy",
     interval: "1m",
     getSignal: async () => {
@@ -1930,7 +1930,7 @@ test("SEQUENCE: 2 rapid LONG signals (VWAP-aware)", async ({ pass, fail }) => {
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "100m-sequence-rapid",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -2052,7 +2052,7 @@ test("SEQUENCE: Mixed LONG/SHORT positions - 3 signals", async ({ pass, fail }) 
     allCandles.push({ timestamp: startTime + i * intervalMs, open: basePrice + 1500, high: basePrice + 1600, low: basePrice + 1400, close: basePrice + 1500, volume: 100 });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-sequence-mixed-positions",
     getCandles: async (_symbol, _interval, since, limit) => {
       const timeIndex = Math.floor((since.getTime() - startTime) / intervalMs);
@@ -2067,7 +2067,7 @@ test("SEQUENCE: Mixed LONG/SHORT positions - 3 signals", async ({ pass, fail }) 
 
   let signalCount = 0;
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "sequence-mixed-positions-strategy",
     interval: "1m",
     getSignal: async () => {
@@ -2099,7 +2099,7 @@ test("SEQUENCE: Mixed LONG/SHORT positions - 3 signals", async ({ pass, fail }) 
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "80m-sequence-mixed-positions",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),

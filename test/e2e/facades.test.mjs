@@ -1,9 +1,9 @@
 import { test } from "worker-testbed";
 
 import {
-  addExchange,
-  addFrame,
-  addStrategy,
+  addExchangeSchema,
+  addFrameSchema,
+  addStrategySchema,
   Backtest,
   Schedule,
   Performance,
@@ -69,7 +69,7 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-facades-parallel",
     getCandles: async (symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - startTime) / intervalMs);
@@ -93,7 +93,7 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
   let btcSignalGenerated = false;
   let ethSignalGenerated = false;
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-facades-parallel",
     interval: "1m",
     getSignal: async (symbol) => {
@@ -233,7 +233,7 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "1h-facades-parallel",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -434,7 +434,7 @@ test("FACADES PARALLEL: All public facades isolate data by (symbol, strategyName
   }
 
   // 5. PositionSize.getQuantity(symbol, price, sizingName)
-  // Пропускаем - требует регистрации sizing schema через addSizing()
+  // Пропускаем - требует регистрации sizing schema через addSizingSchema()
   // API принимает symbol как первый параметр - это уже проверено в других местах
 
   // 6. Schedule.getReport(symbol, strategyName, backtest)

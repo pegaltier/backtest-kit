@@ -1,9 +1,9 @@
 import { test } from "worker-testbed";
 
 import {
-  addExchange,
-  addFrame,
-  addStrategy,
+  addExchangeSchema,
+  addFrameSchema,
+  addStrategySchema,
   Backtest,
   listenSignalBacktest,
   listenDoneBacktest,
@@ -75,7 +75,7 @@ test("PARALLEL: Single strategy trading two symbols (BTCUSDT + ETHUSDT)", async 
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-parallel-multi",
     getCandles: async (symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - startTime) / intervalMs);
@@ -99,7 +99,7 @@ test("PARALLEL: Single strategy trading two symbols (BTCUSDT + ETHUSDT)", async 
   let btcSignalGenerated = false;
   let ethSignalGenerated = false;
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-parallel-strategy",
     interval: "1m",
     getSignal: async (symbol) => {
@@ -253,7 +253,7 @@ test("PARALLEL: Single strategy trading two symbols (BTCUSDT + ETHUSDT)", async 
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "1h-parallel-test",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -435,7 +435,7 @@ test("PARALLEL: Three symbols with different close reasons (TP, SL, time_expired
     }
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-parallel-three",
     getCandles: async (symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - startTime) / intervalMs);
@@ -447,7 +447,7 @@ test("PARALLEL: Three symbols with different close reasons (TP, SL, time_expired
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-parallel-three-symbols",
     interval: "1m",
     getSignal: async (symbol) => {
@@ -541,7 +541,7 @@ test("PARALLEL: Three symbols with different close reasons (TP, SL, time_expired
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "90m-parallel-three",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),

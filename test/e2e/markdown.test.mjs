@@ -1,9 +1,9 @@
 import { test } from "worker-testbed";
 
 import {
-  addExchange,
-  addFrame,
-  addStrategy,
+  addExchangeSchema,
+  addFrameSchema,
+  addStrategySchema,
   Backtest,
   Live,
   listenDoneBacktest,
@@ -70,7 +70,7 @@ test("MARKDOWN PARALLEL: All markdown services work with multi-symbol isolation"
     });
   }
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-markdown-parallel",
     getCandles: async (symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - startTime) / intervalMs);
@@ -94,7 +94,7 @@ test("MARKDOWN PARALLEL: All markdown services work with multi-symbol isolation"
   let btcSignalGenerated = false;
   let ethSignalGenerated = false;
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-markdown-parallel",
     interval: "1m",
     getSignal: async (symbol) => {
@@ -258,7 +258,7 @@ test("MARKDOWN PARALLEL: All markdown services work with multi-symbol isolation"
     },
   });
 
-  addFrame({
+  addFrameSchema({
     frameName: "1h-markdown-parallel",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
@@ -662,7 +662,7 @@ test("LIVE MARKDOWN: LiveMarkdownService works with persist storage", async ({ p
     async deleteValue() {}
   });
 
-  addExchange({
+  addExchangeSchema({
     exchangeName: "binance-live-markdown",
     getCandles: async (symbol, _interval, since, limit) => {
       const candles = [];
@@ -701,7 +701,7 @@ test("LIVE MARKDOWN: LiveMarkdownService works with persist storage", async ({ p
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
   });
 
-  addStrategy({
+  addStrategySchema({
     strategyName: "test-live-markdown",
     interval: "1m",
     getSignal: async () => null,
