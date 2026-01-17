@@ -1,3 +1,87 @@
+# API Refactoring (v2.0.3, 17/01/2026)
+
+> Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/2.0.3)
+
+
+**Breaking Changes - API Standardization** 🔧
+
+Major API refactoring improves consistency, clarity, and reliability across the framework. Method names now better reflect their purpose and side effects, making code more maintainable and self-documenting.
+
+**Core API Changes:**
+
+1. **Backtest & Live Method Renaming** - All mutation methods now use `commit*` prefix to indicate state changes:
+   - `cancel()` → `commitCancel()` - Cancel scheduled signals
+   - `partialProfit()` → `commitPartialProfit()` - Close partial position at profit
+   - `partialLoss()` → `commitPartialLoss()` - Close partial position at loss
+   - `trailingStop()` → `commitTrailingStop()` - Adjust stop-loss trailing
+   - `trailingTake()` → `commitTrailingTake()` - Adjust take-profit trailing
+   - `breakeven()` → `commitBreakeven()` - Move stop-loss to entry price
+
+2. **Action Handler Method Renaming** - Lifecycle methods use `*Available` suffix for milestone events:
+   - `breakeven()` → `breakevenAvailable()` - Triggered when breakeven threshold reached
+   - `partialProfit()` → `partialProfitAvailable()` - Triggered on profit milestones
+   - `partialLoss()` → `partialLossAvailable()` - Triggered on loss milestones
+   - `ping()` → split into `pingScheduled()` + `pingActive()` - Separate scheduled/active signal monitoring
+
+3. **Enhanced Ping Events** - Better signal lifecycle tracking:
+   - `pingScheduled()` - Called every minute while scheduled signal waits for activation
+   - `pingActive()` - Called every minute while pending signal is active (position open)
+
+**Improvements:**
+
+4. **Ollama Timeout Protection** ⏱️ - All completion handlers now have 30-second inference timeout:
+   - `runner.completion.ts` - Standard completion with timeout
+   - `runner_outline.completion.ts` - Structured output completion with timeout
+   - `runner_stream.completion.ts` - Streaming completion with timeout
+   - Throws descriptive error on timeout instead of hanging indefinitely
+
+5. **Exchange Data Deduplication** 🔍 - Candle data now filtered by timestamp:
+   - Removes duplicate candles with identical timestamps
+   - Logs warning when duplicates detected
+   - Ensures data integrity for technical indicators
+
+6. **Improved Method Name Consistency** - Internal method names aligned with public API:
+   - `BACKTEST_METHOD_NAME_BREAKEVEN` constant added
+   - All `METHOD_NAME_*` constants updated to reflect new naming
+
+**Migration Guide:**
+
+```typescript
+// Before (v1.13.x)
+await Backtest.cancel(symbol, context);
+await Backtest.partialProfit(symbol, 30, price, context);
+await Backtest.breakeven(symbol, price, context);
+
+class MyAction extends ActionBase {
+  async breakeven(event) { /* ... */ }
+  async partialProfit(event) { /* ... */ }
+  async ping(event) { /* ... */ }
+}
+
+// After (v1.14.0)
+await Backtest.commitCancel(symbol, context);
+await Backtest.commitPartiaAlProfit(symbol, 30, price, context);
+await Backtest.commitBreakeven(symbol, price, context);
+
+class MyAction extends ActionBase {
+  async breakevenAvailable(event) { /* ... */ }
+  async partialProfitAvailable(event) { /* ... */ }
+  async pingScheduled(event) { /* scheduled signals */ }
+  async pingActive(event) { /* active pending signals */ }
+}
+```
+
+**Why These Changes:**
+
+- **Clarity**: `commit*` prefix clearly indicates methods that modify state
+- **Intent**: `*Available` suffix shows these are reactive event handlers, not commands
+- **Consistency**: Unified naming convention across Backtest/Live classes
+- **Separation**: Distinct ping handlers for different signal states improve event handling
+- **Reliability**: Timeout protection prevents hanging on slow LLM inference
+
+
+
+
 # 🎯 Event-Driven Trading Automation (v1.13.1, 16/01/2026)
 
 > Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/1.13.1)
