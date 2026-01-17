@@ -10,6 +10,7 @@ const FORMAT_PRICE_METHOD_NAME = "exchange.formatPrice";
 const FORMAT_QUANTITY_METHOD_NAME = "exchange.formatQuantity";
 const GET_DATE_METHOD_NAME = "exchange.getDate";
 const GET_MODE_METHOD_NAME = "exchange.getMode";
+const GET_SYMBOL_METHOD_NAME = "exchange.getSymbol";
 const GET_CONTEXT_METHOD_NAME = "exchange.getContext";
 const HAS_TRADE_CONTEXT_METHOD_NAME = "exchange.hasTradeContext";
 const GET_ORDER_BOOK_METHOD_NAME = "exchange.getOrderBook";
@@ -231,7 +232,7 @@ export async function getMode(): Promise<"backtest" | "live"> {
  * ```
  */
 export async function getSymbol() {
-  backtest.loggerService.info(GET_MODE_METHOD_NAME);
+  backtest.loggerService.info(GET_SYMBOL_METHOD_NAME);
   if (!ExecutionContextService.hasContext()) {
     throw new Error("getMode requires an execution context");
   }
