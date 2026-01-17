@@ -2050,8 +2050,8 @@ const CALL_PARTIAL_PROFIT_CALLBACKS_FN = trycatch(
         backtest,
         new Date(timestamp),
       );
-      if (self.params.callbacks?.onPartialProfitAvailable) {
-        await self.params.callbacks.onPartialProfitAvailable(
+      if (self.params.callbacks?.onPartialProfit) {
+        await self.params.callbacks.onPartialProfit(
           symbol,
           publicSignal,
           currentPrice,
@@ -2099,8 +2099,8 @@ const CALL_PARTIAL_LOSS_CALLBACKS_FN = trycatch(
         backtest,
         new Date(timestamp)
       );
-      if (self.params.callbacks?.onPartialLossAvailable) {
-        await self.params.callbacks.onPartialLossAvailable(
+      if (self.params.callbacks?.onPartialLoss) {
+        await self.params.callbacks.onPartialLoss(
           symbol,
           publicSignal,
           currentPrice,
@@ -2146,8 +2146,8 @@ const CALL_BREAKEVEN_CHECK_FN = trycatch(
         backtest,
         new Date(timestamp)
       );
-      if (self.params.callbacks?.onBreakevenAvailable) {
-        isBreakeven && await self.params.callbacks.onBreakevenAvailable(
+      if (self.params.callbacks?.onBreakeven) {
+        isBreakeven && await self.params.callbacks.onBreakeven(
           symbol,
           publicSignal,
           currentPrice,

@@ -239,11 +239,11 @@ export interface IStrategyCallbacks {
   /** Called when signal is written to persist storage (for testing) */
   onWrite: (symbol: string, data: IPublicSignalRow | null, backtest: boolean) => void;
   /** Called when signal is in partial profit state (price moved favorably but not reached TP yet) */
-  onPartialProfitAvailable: (symbol: string, data: IPublicSignalRow, currentPrice: number, revenuePercent: number, backtest: boolean) => void | Promise<void>;
+  onPartialProfit: (symbol: string, data: IPublicSignalRow, currentPrice: number, revenuePercent: number, backtest: boolean) => void | Promise<void>;
   /** Called when signal is in partial loss state (price moved against position but not hit SL yet) */
-  onPartialLossAvailable: (symbol: string, data: IPublicSignalRow, currentPrice: number, lossPercent: number, backtest: boolean) => void | Promise<void>;
+  onPartialLoss: (symbol: string, data: IPublicSignalRow, currentPrice: number, lossPercent: number, backtest: boolean) => void | Promise<void>;
   /** Called when signal reaches breakeven (stop-loss moved to entry price to protect capital) */
-  onBreakevenAvailable: (symbol: string, data: IPublicSignalRow, currentPrice: number, backtest: boolean) => void | Promise<void>;
+  onBreakeven: (symbol: string, data: IPublicSignalRow, currentPrice: number, backtest: boolean) => void | Promise<void>;
   /** Called every minute for scheduled signals regardless of strategy interval (for custom monitoring like checking if signal should be cancelled) */
   onSchedulePing: (symbol: string, data: IPublicSignalRow, when: Date, backtest: boolean) => void | Promise<void>;
   /** Called every minute for active pending signals regardless of strategy interval (for custom monitoring and dynamic management) */
