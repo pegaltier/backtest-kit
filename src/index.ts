@@ -101,6 +101,8 @@ export {
   getOrderBook,
   getDate,
   getMode,
+  getContext,
+  getSymbol,
   formatPrice,
   formatQuantity,
   hasTradeContext,
