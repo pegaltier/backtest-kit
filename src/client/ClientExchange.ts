@@ -304,15 +304,15 @@ export class ClientExchange implements IExchange {
     );
 
     if (filteredData.length !== uniqueData.length) {
-      this.params.logger.warn(
-        `ClientExchange Removed ${filteredData.length - uniqueData.length} duplicate candles by timestamp`
-      );
+      const msg = `ClientExchange Removed ${filteredData.length - uniqueData.length} duplicate candles by timestamp`;
+      this.params.logger.warn(msg);
+      console.warn(msg);
     }
 
     if (uniqueData.length < limit) {
-      this.params.logger.warn(
-        `ClientExchange Expected ${limit} candles, got ${uniqueData.length}`
-      );
+      const msg = `ClientExchange Expected ${limit} candles, got ${uniqueData.length}`;
+      this.params.logger.warn(msg);
+      console.warn(msg);
     }
 
     await CALL_CANDLE_DATA_CALLBACKS_FN(
