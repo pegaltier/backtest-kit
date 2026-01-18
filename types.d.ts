@@ -6786,10 +6786,16 @@ declare function getOrderBook(symbol: string, depth?: number): Promise<IOrderBoo
 /**
  * Commits signal prompt history to the message array.
  *
- * Extracts symbol from ExecutionContext and strategyName from MethodContext,
- * validates strategy existence and adds system prompts at the beginning
- * and user prompt at the end of the history array if they are not empty.
+ * Extracts trading context from ExecutionContext and MethodContext,
+ * then adds signal-specific system prompts at the beginning and user prompt
+ * at the end of the history array if they are not empty.
  *
+ * Context extraction:
+ * - symbol: Provided as parameter for debugging convenience
+ * - backtest mode: From ExecutionContext
+ * - strategyName, exchangeName, frameName: From MethodContext
+ *
+ * @param symbol - Trading symbol (e.g., "BTCUSDT") for debugging convenience
  * @param history - Message array to append prompts to
  * @returns Promise that resolves when prompts are added
  * @throws Error if ExecutionContext or MethodContext is not active
@@ -6797,18 +6803,26 @@ declare function getOrderBook(symbol: string, depth?: number): Promise<IOrderBoo
  * @example
  * ```typescript
  * const messages: MessageModel[] = [];
- * await commitSignalPromptHistory(messages);
+ * await commitSignalPromptHistory("BTCUSDT", messages);
  * // messages now contains system prompts at start and user prompt at end
  * ```
  */
-declare function commitSignalPromptHistory(history: MessageModel[]): Promise<void>;
+declare function commitSignalPromptHistory(symbol: string, history: MessageModel[]): Promise<void>;
 /**
  * Commits risk rejection prompt history to the message array.
  *
- * Extracts symbol from ExecutionContext and strategyName from MethodContext,
- * validates strategy existence and adds system prompts at the beginning
- * and user prompt at the end of the history array if they are not empty.
+ * Extracts trading context from ExecutionContext and MethodContext,
+ * then adds risk-specific system prompts at the beginning and user prompt
+ * at the end of the history array if they are not empty.
  *
+ * Context extraction:
+ * - symbol: Provided as parameter for debugging convenience
+ * - backtest mode: From ExecutionContext
+ * - strategyName, exchangeName, frameName: From MethodContext
+ *
+ * Used for AI-powered analysis when signals fail risk validation.
+ *
+ * @param symbol - Trading symbol (e.g., "BTCUSDT") for debugging convenience
  * @param history - Message array to append prompts to
  * @returns Promise that resolves when prompts are added
  * @throws Error if ExecutionContext or MethodContext is not active
@@ -6816,17 +6830,25 @@ declare function commitSignalPromptHistory(history: MessageModel[]): Promise<voi
  * @example
  * ```typescript
  * const messages: MessageModel[] = [];
- * await commitRiskPromptHistory(messages);
+ * await commitRiskPromptHistory("BTCUSDT", messages);
  * ```
  */
-declare function commitRiskPromptHistory(history: MessageModel[]): Promise<void>;
+declare function commitRiskPromptHistory(symbol: string, history: MessageModel[]): Promise<void>;
 /**
  * Commits trailing take-profit prompt history to the message array.
  *
- * Extracts symbol from ExecutionContext and strategyName from MethodContext,
- * validates strategy existence and adds system prompts at the beginning
+ * Extracts trading context from ExecutionContext and MethodContext,
+ * then adds trailing take-profit specific system prompts at the beginning
  * and user prompt at the end of the history array if they are not empty.
  *
+ * Context extraction:
+ * - symbol: Provided as parameter for debugging convenience
+ * - backtest mode: From ExecutionContext
+ * - strategyName, exchangeName, frameName: From MethodContext
+ *
+ * Used for AI-powered analysis of trailing take-profit adjustments.
+ *
+ * @param symbol - Trading symbol (e.g., "BTCUSDT") for debugging convenience
  * @param history - Message array to append prompts to
  * @returns Promise that resolves when prompts are added
  * @throws Error if ExecutionContext or MethodContext is not active
@@ -6834,17 +6856,25 @@ declare function commitRiskPromptHistory(history: MessageModel[]): Promise<void>
  * @example
  * ```typescript
  * const messages: MessageModel[] = [];
- * await commitTrailingTakePromptHistory(messages);
+ * await commitTrailingTakePromptHistory("BTCUSDT", messages);
  * ```
  */
-declare function commitTrailingTakePromptHistory(history: MessageModel[]): Promise<void>;
+declare function commitTrailingTakePromptHistory(symbol: string, history: MessageModel[]): Promise<void>;
 /**
  * Commits trailing stop-loss prompt history to the message array.
  *
- * Extracts symbol from ExecutionContext and strategyName from MethodContext,
- * validates strategy existence and adds system prompts at the beginning
+ * Extracts trading context from ExecutionContext and MethodContext,
+ * then adds trailing stop-loss specific system prompts at the beginning
  * and user prompt at the end of the history array if they are not empty.
  *
+ * Context extraction:
+ * - symbol: Provided as parameter for debugging convenience
+ * - backtest mode: From ExecutionContext
+ * - strategyName, exchangeName, frameName: From MethodContext
+ *
+ * Used for AI-powered analysis of trailing stop-loss adjustments.
+ *
+ * @param symbol - Trading symbol (e.g., "BTCUSDT") for debugging convenience
  * @param history - Message array to append prompts to
  * @returns Promise that resolves when prompts are added
  * @throws Error if ExecutionContext or MethodContext is not active
@@ -6852,17 +6882,25 @@ declare function commitTrailingTakePromptHistory(history: MessageModel[]): Promi
  * @example
  * ```typescript
  * const messages: MessageModel[] = [];
- * await commitTrailingStopPromptHistory(messages);
+ * await commitTrailingStopPromptHistory("BTCUSDT", messages);
  * ```
  */
-declare function commitTrailingStopPromptHistory(history: MessageModel[]): Promise<void>;
+declare function commitTrailingStopPromptHistory(symbol: string, history: MessageModel[]): Promise<void>;
 /**
  * Commits partial profit prompt history to the message array.
  *
- * Extracts symbol from ExecutionContext and strategyName from MethodContext,
- * validates strategy existence and adds system prompts at the beginning
+ * Extracts trading context from ExecutionContext and MethodContext,
+ * then adds partial profit specific system prompts at the beginning
  * and user prompt at the end of the history array if they are not empty.
  *
+ * Context extraction:
+ * - symbol: Provided as parameter for debugging convenience
+ * - backtest mode: From ExecutionContext
+ * - strategyName, exchangeName, frameName: From MethodContext
+ *
+ * Used for AI-powered analysis of partial profit milestones.
+ *
+ * @param symbol - Trading symbol (e.g., "BTCUSDT") for debugging convenience
  * @param history - Message array to append prompts to
  * @returns Promise that resolves when prompts are added
  * @throws Error if ExecutionContext or MethodContext is not active
@@ -6870,17 +6908,25 @@ declare function commitTrailingStopPromptHistory(history: MessageModel[]): Promi
  * @example
  * ```typescript
  * const messages: MessageModel[] = [];
- * await commitPartialProfitPromptHistory(messages);
+ * await commitPartialProfitPromptHistory("BTCUSDT", messages);
  * ```
  */
-declare function commitPartialProfitPromptHistory(history: MessageModel[]): Promise<void>;
+declare function commitPartialProfitPromptHistory(symbol: string, history: MessageModel[]): Promise<void>;
 /**
  * Commits partial loss prompt history to the message array.
  *
- * Extracts symbol from ExecutionContext and strategyName from MethodContext,
- * validates strategy existence and adds system prompts at the beginning
+ * Extracts trading context from ExecutionContext and MethodContext,
+ * then adds partial loss specific system prompts at the beginning
  * and user prompt at the end of the history array if they are not empty.
  *
+ * Context extraction:
+ * - symbol: Provided as parameter for debugging convenience
+ * - backtest mode: From ExecutionContext
+ * - strategyName, exchangeName, frameName: From MethodContext
+ *
+ * Used for AI-powered analysis of partial loss milestones.
+ *
+ * @param symbol - Trading symbol (e.g., "BTCUSDT") for debugging convenience
  * @param history - Message array to append prompts to
  * @returns Promise that resolves when prompts are added
  * @throws Error if ExecutionContext or MethodContext is not active
@@ -6888,17 +6934,25 @@ declare function commitPartialProfitPromptHistory(history: MessageModel[]): Prom
  * @example
  * ```typescript
  * const messages: MessageModel[] = [];
- * await commitPartialLossPromptHistory(messages);
+ * await commitPartialLossPromptHistory("BTCUSDT", messages);
  * ```
  */
-declare function commitPartialLossPromptHistory(history: MessageModel[]): Promise<void>;
+declare function commitPartialLossPromptHistory(symbol: string, history: MessageModel[]): Promise<void>;
 /**
  * Commits breakeven prompt history to the message array.
  *
- * Extracts symbol from ExecutionContext and strategyName from MethodContext,
- * validates strategy existence and adds system prompts at the beginning
+ * Extracts trading context from ExecutionContext and MethodContext,
+ * then adds breakeven specific system prompts at the beginning
  * and user prompt at the end of the history array if they are not empty.
  *
+ * Context extraction:
+ * - symbol: Provided as parameter for debugging convenience
+ * - backtest mode: From ExecutionContext
+ * - strategyName, exchangeName, frameName: From MethodContext
+ *
+ * Used for AI-powered analysis of breakeven events.
+ *
+ * @param symbol - Trading symbol (e.g., "BTCUSDT") for debugging convenience
  * @param history - Message array to append prompts to
  * @returns Promise that resolves when prompts are added
  * @throws Error if ExecutionContext or MethodContext is not active
@@ -6906,17 +6960,25 @@ declare function commitPartialLossPromptHistory(history: MessageModel[]): Promis
  * @example
  * ```typescript
  * const messages: MessageModel[] = [];
- * await commitBreakevenPromptHistory(messages);
+ * await commitBreakevenPromptHistory("BTCUSDT", messages);
  * ```
  */
-declare function commitBreakevenPromptHistory(history: MessageModel[]): Promise<void>;
+declare function commitBreakevenPromptHistory(symbol: string, history: MessageModel[]): Promise<void>;
 /**
  * Commits schedule cancellation prompt history to the message array.
  *
- * Extracts symbol from ExecutionContext and strategyName from MethodContext,
- * validates strategy existence and adds system prompts at the beginning
+ * Extracts trading context from ExecutionContext and MethodContext,
+ * then adds schedule cancellation specific system prompts at the beginning
  * and user prompt at the end of the history array if they are not empty.
  *
+ * Context extraction:
+ * - symbol: Provided as parameter for debugging convenience
+ * - backtest mode: From ExecutionContext
+ * - strategyName, exchangeName, frameName: From MethodContext
+ *
+ * Used for AI-powered analysis of schedule cancellation events.
+ *
+ * @param symbol - Trading symbol (e.g., "BTCUSDT") for debugging convenience
  * @param history - Message array to append prompts to
  * @returns Promise that resolves when prompts are added
  * @throws Error if ExecutionContext or MethodContext is not active
@@ -6924,10 +6986,10 @@ declare function commitBreakevenPromptHistory(history: MessageModel[]): Promise<
  * @example
  * ```typescript
  * const messages: MessageModel[] = [];
- * await commitScheduleCancelPromptHistory(messages);
+ * await commitScheduleCancelPromptHistory("BTCUSDT", messages);
  * ```
  */
-declare function commitScheduleCancelPromptHistory(history: MessageModel[]): Promise<void>;
+declare function commitScheduleCancelPromptHistory(symbol: string, history: MessageModel[]): Promise<void>;
 
 /**
  * Dumps signal data and LLM conversation history to markdown files.
