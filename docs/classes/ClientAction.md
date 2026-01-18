@@ -39,7 +39,7 @@ params: IActionParams
 ### _handlerInstance
 
 ```ts
-_handlerInstance: Partial<IPublicAction>
+_handlerInstance: ActionProxy
 ```
 
 Handler instance created from params.handler constructor.

@@ -13401,7 +13401,7 @@ declare class BreakevenUtils {
 declare const Breakeven: BreakevenUtils;
 
 /**
- * Proxy wrapper for user-defined action handlers with automatic error handling.
+ * Proxy wrapper for user-defined action handlers with automatic error capture.
  *
  * Wraps all IPublicAction methods with trycatch to prevent user code errors from crashing the system.
  * All errors are logged, sent to errorEmitter, and returned as null (non-breaking).
@@ -13409,7 +13409,7 @@ declare const Breakeven: BreakevenUtils;
  * Key features:
  * - Automatic error catching and logging for all action methods
  * - Safe execution of partial user implementations (missing methods return null)
- * - Consistent error handling across all action lifecycle events
+ * - Consistent error capture across all action lifecycle events
  * - Non-breaking failure mode (errors logged but execution continues)
  *
  * Architecture:
@@ -13457,12 +13457,12 @@ declare class ActionProxy implements IPublicAction {
     /**
      * Creates a new ActionProxy instance.
      *
-     * @param _target - Partial action implementation to wrap with error handling
+     * @param _target - Partial action implementation to wrap with error capture
      * @private Use ActionProxy.fromInstance() instead
      */
     private constructor();
     /**
-     * Initializes the action handler with error handling.
+     * Initializes the action handler with error capture.
      *
      * Wraps the user's init() method in trycatch to prevent initialization errors from crashing the system.
      * If the target doesn't implement init(), this method safely returns undefined.
@@ -13471,7 +13471,7 @@ declare class ActionProxy implements IPublicAction {
      */
     init(): Promise<any>;
     /**
-     * Handles signal events from all modes with error handling.
+     * Handles signal events from all modes with error capture.
      *
      * Wraps the user's signal() method to catch and log any errors.
      * Called on every tick/candle when strategy is evaluated.
@@ -13481,7 +13481,7 @@ declare class ActionProxy implements IPublicAction {
      */
     signal(event: IStrategyTickResult): Promise<any>;
     /**
-     * Handles signal events from live trading only with error handling.
+     * Handles signal events from live trading only with error capture.
      *
      * Wraps the user's signalLive() method to catch and log any errors.
      * Called every tick in live mode.
@@ -13491,7 +13491,7 @@ declare class ActionProxy implements IPublicAction {
      */
     signalLive(event: IStrategyTickResult): Promise<any>;
     /**
-     * Handles signal events from backtest only with error handling.
+     * Handles signal events from backtest only with error capture.
      *
      * Wraps the user's signalBacktest() method to catch and log any errors.
      * Called every candle in backtest mode.
@@ -13501,7 +13501,7 @@ declare class ActionProxy implements IPublicAction {
      */
     signalBacktest(event: IStrategyTickResult): Promise<any>;
     /**
-     * Handles breakeven events with error handling.
+     * Handles breakeven events with error capture.
      *
      * Wraps the user's breakevenAvailable() method to catch and log any errors.
      * Called once per signal when stop-loss is moved to entry price.
@@ -13511,7 +13511,7 @@ declare class ActionProxy implements IPublicAction {
      */
     breakevenAvailable(event: BreakevenContract): Promise<any>;
     /**
-     * Handles partial profit level events with error handling.
+     * Handles partial profit level events with error capture.
      *
      * Wraps the user's partialProfitAvailable() method to catch and log any errors.
      * Called once per profit level per signal (10%, 20%, 30%, etc).
@@ -13521,7 +13521,7 @@ declare class ActionProxy implements IPublicAction {
      */
     partialProfitAvailable(event: PartialProfitContract): Promise<any>;
     /**
-     * Handles partial loss level events with error handling.
+     * Handles partial loss level events with error capture.
      *
      * Wraps the user's partialLossAvailable() method to catch and log any errors.
      * Called once per loss level per signal (-10%, -20%, -30%, etc).
@@ -13531,7 +13531,7 @@ declare class ActionProxy implements IPublicAction {
      */
     partialLossAvailable(event: PartialLossContract): Promise<any>;
     /**
-     * Handles scheduled ping events with error handling.
+     * Handles scheduled ping events with error capture.
      *
      * Wraps the user's pingScheduled() method to catch and log any errors.
      * Called every minute while a scheduled signal is waiting for activation.
@@ -13541,7 +13541,7 @@ declare class ActionProxy implements IPublicAction {
      */
     pingScheduled(event: SchedulePingContract): Promise<any>;
     /**
-     * Handles active ping events with error handling.
+     * Handles active ping events with error capture.
      *
      * Wraps the user's pingActive() method to catch and log any errors.
      * Called every minute while a pending signal is active (position open).
@@ -13551,7 +13551,7 @@ declare class ActionProxy implements IPublicAction {
      */
     pingActive(event: ActivePingContract): Promise<any>;
     /**
-     * Handles risk rejection events with error handling.
+     * Handles risk rejection events with error capture.
      *
      * Wraps the user's riskRejection() method to catch and log any errors.
      * Called only when signal is rejected by risk management validation.
@@ -13561,7 +13561,7 @@ declare class ActionProxy implements IPublicAction {
      */
     riskRejection(event: RiskContract): Promise<any>;
     /**
-     * Cleans up resources with error handling.
+     * Cleans up resources with error capture.
      *
      * Wraps the user's dispose() method to catch and log any errors.
      * Called once when strategy execution ends.
@@ -13573,7 +13573,7 @@ declare class ActionProxy implements IPublicAction {
      * Creates a new ActionProxy instance wrapping a user-provided action handler.
      *
      * Factory method enforcing the private constructor pattern.
-     * Wraps all methods of the provided instance with error handling.
+     * Wraps all methods of the provided instance with error capture.
      *
      * @param instance - Partial action implementation to wrap
      * @returns New ActionProxy instance with error-safe method wrappers

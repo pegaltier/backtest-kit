@@ -44,6 +44,7 @@ group: docs
 - [NotificationUtils](classes/NotificationUtils.md)
 - [BreakevenMarkdownService](classes/BreakevenMarkdownService.md)
 - [BreakevenUtils](classes/BreakevenUtils.md)
+- [ActionProxy](classes/ActionProxy.md)
 - [ActionBase](classes/ActionBase.md)
 - [LoggerService](classes/LoggerService.md)
 - [ClientExchange](classes/ClientExchange.md)
