@@ -16,10 +16,16 @@ const METHOD_NAME_SCHEDULE_CANCEL = "history.commitScheduleCancelPromptHistory";
 /**
  * Commits signal prompt history to the message array.
  *
- * Extracts symbol from ExecutionContext and strategyName from MethodContext,
- * validates strategy existence and adds system prompts at the beginning
- * and user prompt at the end of the history array if they are not empty.
+ * Extracts trading context from ExecutionContext and MethodContext,
+ * then adds signal-specific system prompts at the beginning and user prompt
+ * at the end of the history array if they are not empty.
  *
+ * Context extraction:
+ * - symbol: Provided as parameter for debugging convenience
+ * - backtest mode: From ExecutionContext
+ * - strategyName, exchangeName, frameName: From MethodContext
+ *
+ * @param symbol - Trading symbol (e.g., "BTCUSDT") for debugging convenience
  * @param history - Message array to append prompts to
  * @returns Promise that resolves when prompts are added
  * @throws Error if ExecutionContext or MethodContext is not active
@@ -27,14 +33,17 @@ const METHOD_NAME_SCHEDULE_CANCEL = "history.commitScheduleCancelPromptHistory";
  * @example
  * ```typescript
  * const messages: MessageModel[] = [];
- * await commitSignalPromptHistory(messages);
+ * await commitSignalPromptHistory("BTCUSDT", messages);
  * // messages now contains system prompts at start and user prompt at end
  * ```
  */
 export async function commitSignalPromptHistory(
-  history: MessageModel[]
+  symbol: string,
+  history: MessageModel[],
 ): Promise<void> {
-  backtest.loggerService.log(METHOD_NAME_SIGNAL);
+  backtest.loggerService.log(METHOD_NAME_SIGNAL, {
+    symbol,
+  });
 
   if (!ExecutionContextService.hasContext()) {
     throw new Error("commitSignalPromptHistory requires an execution context");
@@ -43,22 +52,23 @@ export async function commitSignalPromptHistory(
     throw new Error("commitSignalPromptHistory requires a method context");
   }
 
-  const { symbol, backtest: isBacktest } = backtest.executionContextService.context;
-  const { strategyName, exchangeName, frameName } = backtest.methodContextService.context;
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { strategyName, exchangeName, frameName } =
+    backtest.methodContextService.context;
 
   const systemPrompts = await backtest.signalPromptService.getSystemPrompt(
     symbol,
     strategyName,
     exchangeName,
     frameName,
-    isBacktest
+    isBacktest,
   );
   const userPrompt = await backtest.signalPromptService.getUserPrompt(
     symbol,
     strategyName,
     exchangeName,
     frameName,
-    isBacktest
+    isBacktest,
   );
 
   if (systemPrompts.length > 0) {
@@ -81,10 +91,18 @@ export async function commitSignalPromptHistory(
 /**
  * Commits risk rejection prompt history to the message array.
  *
- * Extracts symbol from ExecutionContext and strategyName from MethodContext,
- * validates strategy existence and adds system prompts at the beginning
- * and user prompt at the end of the history array if they are not empty.
+ * Extracts trading context from ExecutionContext and MethodContext,
+ * then adds risk-specific system prompts at the beginning and user prompt
+ * at the end of the history array if they are not empty.
  *
+ * Context extraction:
+ * - symbol: Provided as parameter for debugging convenience
+ * - backtest mode: From ExecutionContext
+ * - strategyName, exchangeName, frameName: From MethodContext
+ *
+ * Used for AI-powered analysis when signals fail risk validation.
+ *
+ * @param symbol - Trading symbol (e.g., "BTCUSDT") for debugging convenience
  * @param history - Message array to append prompts to
  * @returns Promise that resolves when prompts are added
  * @throws Error if ExecutionContext or MethodContext is not active
@@ -92,13 +110,16 @@ export async function commitSignalPromptHistory(
  * @example
  * ```typescript
  * const messages: MessageModel[] = [];
- * await commitRiskPromptHistory(messages);
+ * await commitRiskPromptHistory("BTCUSDT", messages);
  * ```
  */
 export async function commitRiskPromptHistory(
-  history: MessageModel[]
+  symbol: string,
+  history: MessageModel[],
 ): Promise<void> {
-  backtest.loggerService.log(METHOD_NAME_RISK);
+  backtest.loggerService.log(METHOD_NAME_RISK, {
+    symbol,
+  });
 
   if (!ExecutionContextService.hasContext()) {
     throw new Error("commitRiskPromptHistory requires an execution context");
@@ -107,22 +128,23 @@ export async function commitRiskPromptHistory(
     throw new Error("commitRiskPromptHistory requires a method context");
   }
 
-  const { symbol, backtest: isBacktest } = backtest.executionContextService.context;
-  const { strategyName, exchangeName, frameName } = backtest.methodContextService.context;
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { strategyName, exchangeName, frameName } =
+    backtest.methodContextService.context;
 
   const systemPrompts = await backtest.riskPromptService.getSystemPrompt(
     symbol,
     strategyName,
     exchangeName,
     frameName,
-    isBacktest
+    isBacktest,
   );
   const userPrompt = await backtest.riskPromptService.getUserPrompt(
     symbol,
     strategyName,
     exchangeName,
     frameName,
-    isBacktest
+    isBacktest,
   );
 
   if (systemPrompts.length > 0) {
@@ -145,10 +167,18 @@ export async function commitRiskPromptHistory(
 /**
  * Commits trailing take-profit prompt history to the message array.
  *
- * Extracts symbol from ExecutionContext and strategyName from MethodContext,
- * validates strategy existence and adds system prompts at the beginning
+ * Extracts trading context from ExecutionContext and MethodContext,
+ * then adds trailing take-profit specific system prompts at the beginning
  * and user prompt at the end of the history array if they are not empty.
  *
+ * Context extraction:
+ * - symbol: Provided as parameter for debugging convenience
+ * - backtest mode: From ExecutionContext
+ * - strategyName, exchangeName, frameName: From MethodContext
+ *
+ * Used for AI-powered analysis of trailing take-profit adjustments.
+ *
+ * @param symbol - Trading symbol (e.g., "BTCUSDT") for debugging convenience
  * @param history - Message array to append prompts to
  * @returns Promise that resolves when prompts are added
  * @throws Error if ExecutionContext or MethodContext is not active
@@ -156,37 +186,46 @@ export async function commitRiskPromptHistory(
  * @example
  * ```typescript
  * const messages: MessageModel[] = [];
- * await commitTrailingTakePromptHistory(messages);
+ * await commitTrailingTakePromptHistory("BTCUSDT", messages);
  * ```
  */
 export async function commitTrailingTakePromptHistory(
-  history: MessageModel[]
+  symbol: string,
+  history: MessageModel[],
 ): Promise<void> {
-  backtest.loggerService.log(METHOD_NAME_TRAILING_TAKE);
+  backtest.loggerService.log(METHOD_NAME_TRAILING_TAKE, {
+    symbol,
+  });
 
   if (!ExecutionContextService.hasContext()) {
-    throw new Error("commitTrailingTakePromptHistory requires an execution context");
+    throw new Error(
+      "commitTrailingTakePromptHistory requires an execution context",
+    );
   }
   if (!MethodContextService.hasContext()) {
-    throw new Error("commitTrailingTakePromptHistory requires a method context");
+    throw new Error(
+      "commitTrailingTakePromptHistory requires a method context",
+    );
   }
 
-  const { symbol, backtest: isBacktest } = backtest.executionContextService.context;
-  const { strategyName, exchangeName, frameName } = backtest.methodContextService.context;
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { strategyName, exchangeName, frameName } =
+    backtest.methodContextService.context;
 
-  const systemPrompts = await backtest.trailingTakePromptService.getSystemPrompt(
-    symbol,
-    strategyName,
-    exchangeName,
-    frameName,
-    isBacktest
-  );
+  const systemPrompts =
+    await backtest.trailingTakePromptService.getSystemPrompt(
+      symbol,
+      strategyName,
+      exchangeName,
+      frameName,
+      isBacktest,
+    );
   const userPrompt = await backtest.trailingTakePromptService.getUserPrompt(
     symbol,
     strategyName,
     exchangeName,
     frameName,
-    isBacktest
+    isBacktest,
   );
 
   if (systemPrompts.length > 0) {
@@ -209,10 +248,18 @@ export async function commitTrailingTakePromptHistory(
 /**
  * Commits trailing stop-loss prompt history to the message array.
  *
- * Extracts symbol from ExecutionContext and strategyName from MethodContext,
- * validates strategy existence and adds system prompts at the beginning
+ * Extracts trading context from ExecutionContext and MethodContext,
+ * then adds trailing stop-loss specific system prompts at the beginning
  * and user prompt at the end of the history array if they are not empty.
  *
+ * Context extraction:
+ * - symbol: Provided as parameter for debugging convenience
+ * - backtest mode: From ExecutionContext
+ * - strategyName, exchangeName, frameName: From MethodContext
+ *
+ * Used for AI-powered analysis of trailing stop-loss adjustments.
+ *
+ * @param symbol - Trading symbol (e.g., "BTCUSDT") for debugging convenience
  * @param history - Message array to append prompts to
  * @returns Promise that resolves when prompts are added
  * @throws Error if ExecutionContext or MethodContext is not active
@@ -220,37 +267,46 @@ export async function commitTrailingTakePromptHistory(
  * @example
  * ```typescript
  * const messages: MessageModel[] = [];
- * await commitTrailingStopPromptHistory(messages);
+ * await commitTrailingStopPromptHistory("BTCUSDT", messages);
  * ```
  */
 export async function commitTrailingStopPromptHistory(
-  history: MessageModel[]
+  symbol: string,
+  history: MessageModel[],
 ): Promise<void> {
-  backtest.loggerService.log(METHOD_NAME_TRAILING_STOP);
+  backtest.loggerService.log(METHOD_NAME_TRAILING_STOP, {
+    symbol,
+  });
 
   if (!ExecutionContextService.hasContext()) {
-    throw new Error("commitTrailingStopPromptHistory requires an execution context");
+    throw new Error(
+      "commitTrailingStopPromptHistory requires an execution context",
+    );
   }
   if (!MethodContextService.hasContext()) {
-    throw new Error("commitTrailingStopPromptHistory requires a method context");
+    throw new Error(
+      "commitTrailingStopPromptHistory requires a method context",
+    );
   }
 
-  const { symbol, backtest: isBacktest } = backtest.executionContextService.context;
-  const { strategyName, exchangeName, frameName } = backtest.methodContextService.context;
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { strategyName, exchangeName, frameName } =
+    backtest.methodContextService.context;
 
-  const systemPrompts = await backtest.trailingStopPromptService.getSystemPrompt(
-    symbol,
-    strategyName,
-    exchangeName,
-    frameName,
-    isBacktest
-  );
+  const systemPrompts =
+    await backtest.trailingStopPromptService.getSystemPrompt(
+      symbol,
+      strategyName,
+      exchangeName,
+      frameName,
+      isBacktest,
+    );
   const userPrompt = await backtest.trailingStopPromptService.getUserPrompt(
     symbol,
     strategyName,
     exchangeName,
     frameName,
-    isBacktest
+    isBacktest,
   );
 
   if (systemPrompts.length > 0) {
@@ -273,10 +329,18 @@ export async function commitTrailingStopPromptHistory(
 /**
  * Commits partial profit prompt history to the message array.
  *
- * Extracts symbol from ExecutionContext and strategyName from MethodContext,
- * validates strategy existence and adds system prompts at the beginning
+ * Extracts trading context from ExecutionContext and MethodContext,
+ * then adds partial profit specific system prompts at the beginning
  * and user prompt at the end of the history array if they are not empty.
  *
+ * Context extraction:
+ * - symbol: Provided as parameter for debugging convenience
+ * - backtest mode: From ExecutionContext
+ * - strategyName, exchangeName, frameName: From MethodContext
+ *
+ * Used for AI-powered analysis of partial profit milestones.
+ *
+ * @param symbol - Trading symbol (e.g., "BTCUSDT") for debugging convenience
  * @param history - Message array to append prompts to
  * @returns Promise that resolves when prompts are added
  * @throws Error if ExecutionContext or MethodContext is not active
@@ -284,37 +348,46 @@ export async function commitTrailingStopPromptHistory(
  * @example
  * ```typescript
  * const messages: MessageModel[] = [];
- * await commitPartialProfitPromptHistory(messages);
+ * await commitPartialProfitPromptHistory("BTCUSDT", messages);
  * ```
  */
 export async function commitPartialProfitPromptHistory(
-  history: MessageModel[]
+  symbol: string,
+  history: MessageModel[],
 ): Promise<void> {
-  backtest.loggerService.log(METHOD_NAME_PARTIAL_PROFIT);
+  backtest.loggerService.log(METHOD_NAME_PARTIAL_PROFIT, {
+    symbol,
+  });
 
   if (!ExecutionContextService.hasContext()) {
-    throw new Error("commitPartialProfitPromptHistory requires an execution context");
+    throw new Error(
+      "commitPartialProfitPromptHistory requires an execution context",
+    );
   }
   if (!MethodContextService.hasContext()) {
-    throw new Error("commitPartialProfitPromptHistory requires a method context");
+    throw new Error(
+      "commitPartialProfitPromptHistory requires a method context",
+    );
   }
 
-  const { symbol, backtest: isBacktest } = backtest.executionContextService.context;
-  const { strategyName, exchangeName, frameName } = backtest.methodContextService.context;
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { strategyName, exchangeName, frameName } =
+    backtest.methodContextService.context;
 
-  const systemPrompts = await backtest.partialProfitPromptService.getSystemPrompt(
-    symbol,
-    strategyName,
-    exchangeName,
-    frameName,
-    isBacktest
-  );
+  const systemPrompts =
+    await backtest.partialProfitPromptService.getSystemPrompt(
+      symbol,
+      strategyName,
+      exchangeName,
+      frameName,
+      isBacktest,
+    );
   const userPrompt = await backtest.partialProfitPromptService.getUserPrompt(
     symbol,
     strategyName,
     exchangeName,
     frameName,
-    isBacktest
+    isBacktest,
   );
 
   if (systemPrompts.length > 0) {
@@ -337,10 +410,18 @@ export async function commitPartialProfitPromptHistory(
 /**
  * Commits partial loss prompt history to the message array.
  *
- * Extracts symbol from ExecutionContext and strategyName from MethodContext,
- * validates strategy existence and adds system prompts at the beginning
+ * Extracts trading context from ExecutionContext and MethodContext,
+ * then adds partial loss specific system prompts at the beginning
  * and user prompt at the end of the history array if they are not empty.
  *
+ * Context extraction:
+ * - symbol: Provided as parameter for debugging convenience
+ * - backtest mode: From ExecutionContext
+ * - strategyName, exchangeName, frameName: From MethodContext
+ *
+ * Used for AI-powered analysis of partial loss milestones.
+ *
+ * @param symbol - Trading symbol (e.g., "BTCUSDT") for debugging convenience
  * @param history - Message array to append prompts to
  * @returns Promise that resolves when prompts are added
  * @throws Error if ExecutionContext or MethodContext is not active
@@ -348,37 +429,43 @@ export async function commitPartialProfitPromptHistory(
  * @example
  * ```typescript
  * const messages: MessageModel[] = [];
- * await commitPartialLossPromptHistory(messages);
+ * await commitPartialLossPromptHistory("BTCUSDT", messages);
  * ```
  */
 export async function commitPartialLossPromptHistory(
-  history: MessageModel[]
+  symbol: string,
+  history: MessageModel[],
 ): Promise<void> {
-  backtest.loggerService.log(METHOD_NAME_PARTIAL_LOSS);
+  backtest.loggerService.log(METHOD_NAME_PARTIAL_LOSS, {
+    symbol,
+  });
 
   if (!ExecutionContextService.hasContext()) {
-    throw new Error("commitPartialLossPromptHistory requires an execution context");
+    throw new Error(
+      "commitPartialLossPromptHistory requires an execution context",
+    );
   }
   if (!MethodContextService.hasContext()) {
     throw new Error("commitPartialLossPromptHistory requires a method context");
   }
 
-  const { symbol, backtest: isBacktest } = backtest.executionContextService.context;
-  const { strategyName, exchangeName, frameName } = backtest.methodContextService.context;
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { strategyName, exchangeName, frameName } =
+    backtest.methodContextService.context;
 
   const systemPrompts = await backtest.partialLossPromptService.getSystemPrompt(
     symbol,
     strategyName,
     exchangeName,
     frameName,
-    isBacktest
+    isBacktest,
   );
   const userPrompt = await backtest.partialLossPromptService.getUserPrompt(
     symbol,
     strategyName,
     exchangeName,
     frameName,
-    isBacktest
+    isBacktest,
   );
 
   if (systemPrompts.length > 0) {
@@ -401,10 +488,18 @@ export async function commitPartialLossPromptHistory(
 /**
  * Commits breakeven prompt history to the message array.
  *
- * Extracts symbol from ExecutionContext and strategyName from MethodContext,
- * validates strategy existence and adds system prompts at the beginning
+ * Extracts trading context from ExecutionContext and MethodContext,
+ * then adds breakeven specific system prompts at the beginning
  * and user prompt at the end of the history array if they are not empty.
  *
+ * Context extraction:
+ * - symbol: Provided as parameter for debugging convenience
+ * - backtest mode: From ExecutionContext
+ * - strategyName, exchangeName, frameName: From MethodContext
+ *
+ * Used for AI-powered analysis of breakeven events.
+ *
+ * @param symbol - Trading symbol (e.g., "BTCUSDT") for debugging convenience
  * @param history - Message array to append prompts to
  * @returns Promise that resolves when prompts are added
  * @throws Error if ExecutionContext or MethodContext is not active
@@ -412,37 +507,43 @@ export async function commitPartialLossPromptHistory(
  * @example
  * ```typescript
  * const messages: MessageModel[] = [];
- * await commitBreakevenPromptHistory(messages);
+ * await commitBreakevenPromptHistory("BTCUSDT", messages);
  * ```
  */
 export async function commitBreakevenPromptHistory(
-  history: MessageModel[]
+  symbol: string,
+  history: MessageModel[],
 ): Promise<void> {
-  backtest.loggerService.log(METHOD_NAME_BREAKEVEN);
+  backtest.loggerService.log(METHOD_NAME_BREAKEVEN, {
+    symbol,
+  });
 
   if (!ExecutionContextService.hasContext()) {
-    throw new Error("commitBreakevenPromptHistory requires an execution context");
+    throw new Error(
+      "commitBreakevenPromptHistory requires an execution context",
+    );
   }
   if (!MethodContextService.hasContext()) {
     throw new Error("commitBreakevenPromptHistory requires a method context");
   }
 
-  const { symbol, backtest: isBacktest } = backtest.executionContextService.context;
-  const { strategyName, exchangeName, frameName } = backtest.methodContextService.context;
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { strategyName, exchangeName, frameName } =
+    backtest.methodContextService.context;
 
   const systemPrompts = await backtest.breakevenPromptService.getSystemPrompt(
     symbol,
     strategyName,
     exchangeName,
     frameName,
-    isBacktest
+    isBacktest,
   );
   const userPrompt = await backtest.breakevenPromptService.getUserPrompt(
     symbol,
     strategyName,
     exchangeName,
     frameName,
-    isBacktest
+    isBacktest,
   );
 
   if (systemPrompts.length > 0) {
@@ -465,10 +566,18 @@ export async function commitBreakevenPromptHistory(
 /**
  * Commits schedule cancellation prompt history to the message array.
  *
- * Extracts symbol from ExecutionContext and strategyName from MethodContext,
- * validates strategy existence and adds system prompts at the beginning
+ * Extracts trading context from ExecutionContext and MethodContext,
+ * then adds schedule cancellation specific system prompts at the beginning
  * and user prompt at the end of the history array if they are not empty.
  *
+ * Context extraction:
+ * - symbol: Provided as parameter for debugging convenience
+ * - backtest mode: From ExecutionContext
+ * - strategyName, exchangeName, frameName: From MethodContext
+ *
+ * Used for AI-powered analysis of schedule cancellation events.
+ *
+ * @param symbol - Trading symbol (e.g., "BTCUSDT") for debugging convenience
  * @param history - Message array to append prompts to
  * @returns Promise that resolves when prompts are added
  * @throws Error if ExecutionContext or MethodContext is not active
@@ -476,37 +585,46 @@ export async function commitBreakevenPromptHistory(
  * @example
  * ```typescript
  * const messages: MessageModel[] = [];
- * await commitScheduleCancelPromptHistory(messages);
+ * await commitScheduleCancelPromptHistory("BTCUSDT", messages);
  * ```
  */
 export async function commitScheduleCancelPromptHistory(
-  history: MessageModel[]
+  symbol: string,
+  history: MessageModel[],
 ): Promise<void> {
-  backtest.loggerService.log(METHOD_NAME_SCHEDULE_CANCEL);
+  backtest.loggerService.log(METHOD_NAME_SCHEDULE_CANCEL, {
+    symbol,
+  });
 
   if (!ExecutionContextService.hasContext()) {
-    throw new Error("commitScheduleCancelPromptHistory requires an execution context");
+    throw new Error(
+      "commitScheduleCancelPromptHistory requires an execution context",
+    );
   }
   if (!MethodContextService.hasContext()) {
-    throw new Error("commitScheduleCancelPromptHistory requires a method context");
+    throw new Error(
+      "commitScheduleCancelPromptHistory requires a method context",
+    );
   }
 
-  const { symbol, backtest: isBacktest } = backtest.executionContextService.context;
-  const { strategyName, exchangeName, frameName } = backtest.methodContextService.context;
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { strategyName, exchangeName, frameName } =
+    backtest.methodContextService.context;
 
-  const systemPrompts = await backtest.scheduleCancelPromptService.getSystemPrompt(
-    symbol,
-    strategyName,
-    exchangeName,
-    frameName,
-    isBacktest
-  );
+  const systemPrompts =
+    await backtest.scheduleCancelPromptService.getSystemPrompt(
+      symbol,
+      strategyName,
+      exchangeName,
+      frameName,
+      isBacktest,
+    );
   const userPrompt = await backtest.scheduleCancelPromptService.getUserPrompt(
     symbol,
     strategyName,
     exchangeName,
     frameName,
-    isBacktest
+    isBacktest,
   );
 
   if (systemPrompts.length > 0) {
