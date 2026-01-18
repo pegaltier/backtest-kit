@@ -9,8 +9,17 @@ import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { isObject, str, ToolRegistry } from "functools-kit";
 
+/**
+ * Type alias for valid public action method names.
+ * Used to enforce type safety in validation functions.
+ */
 type Key = keyof IPublicAction;
 
+/**
+ * List of valid method names allowed in action handlers.
+ * Any public methods not in this list will trigger validation errors.
+ * Private methods (starting with _ or #) are ignored during validation.
+ */
 const VALID_METHOD_NAMES: Key[] = [
   "init",
   "signal",
@@ -25,6 +34,19 @@ const VALID_METHOD_NAMES: Key[] = [
   "dispose",
 ];
 
+/**
+ * Validates that all public methods in a class-based action handler are in the allowed list.
+ *
+ * Inspects the class prototype to find all method names and ensures they match
+ * the VALID_METHOD_NAMES list. Private methods (starting with _ or #) are skipped.
+ * Private fields with # are not visible via Object.getOwnPropertyNames() and don't
+ * need validation as they're truly private and inaccessible.
+ *
+ * @param actionName - Name of the action being validated
+ * @param handler - Class constructor for the action handler
+ * @param self - ActionSchemaService instance for logging
+ * @throws Error if any public method is not in VALID_METHOD_NAMES
+ */
 const VALIDATE_CLASS_METHODS = (
   actionName: ActionName,
   handler: TActionCtor,
@@ -61,6 +83,17 @@ const VALIDATE_CLASS_METHODS = (
   }
 };
 
+/**
+ * Validates that all public methods in an object-based action handler are in the allowed list.
+ *
+ * Inspects the object's own properties to find all method names and ensures they match
+ * the VALID_METHOD_NAMES list. Private properties (starting with _) are skipped.
+ *
+ * @param actionName - Name of the action being validated
+ * @param handler - Plain object implementing partial IPublicAction interface
+ * @param self - ActionSchemaService instance for logging
+ * @throws Error if any public method is not in VALID_METHOD_NAMES
+ */
 const VALIDATE_OBJECT_METHODS = (
   actionName: ActionName,
   handler: Partial<IPublicAction>,
@@ -95,8 +128,35 @@ const VALIDATE_OBJECT_METHODS = (
 /**
  * Service for managing action schema registry.
  *
+ * Manages registration, validation and retrieval of action schemas.
  * Uses ToolRegistry from functools-kit for type-safe schema storage.
- * Action handlers are registered via addAction() and retrieved by name.
+ * Validates that action handlers only contain allowed public methods
+ * from the IPublicAction interface.
+ *
+ * Key features:
+ * - Type-safe action schema registration
+ * - Method name validation for class and object handlers
+ * - Private method support (methods starting with _ or #)
+ * - Schema override capabilities
+ *
+ * @example
+ * ```typescript
+ * // Register a class-based action
+ * actionSchemaService.register("telegram-notifier", {
+ *   actionName: "telegram-notifier",
+ *   handler: TelegramNotifierAction,
+ *   callbacks: { ... }
+ * });
+ *
+ * // Register an object-based action
+ * actionSchemaService.register("logger", {
+ *   actionName: "logger",
+ *   handler: {
+ *     signal: async (event) => { ... },
+ *     dispose: async () => { ... }
+ *   }
+ * });
+ * ```
  */
 export class ActionSchemaService {
   readonly loggerService = inject<LoggerService>(TYPES.loggerService);
@@ -108,9 +168,13 @@ export class ActionSchemaService {
   /**
    * Registers a new action schema.
    *
-   * @param key - Unique action name
-   * @param value - Action schema configuration
-   * @throws Error if action name already exists
+   * Validates the schema structure and method names before registration.
+   * Throws an error if the action name already exists in the registry.
+   *
+   * @param key - Unique action name identifier
+   * @param value - Action schema configuration with handler and optional callbacks
+   * @throws Error if action name already exists in registry
+   * @throws Error if validation fails (missing required fields, invalid handler, invalid method names)
    */
   public register = (key: ActionName, value: IActionSchema) => {
     this.loggerService.log(`actionSchemaService register`, { key });
@@ -123,11 +187,13 @@ export class ActionSchemaService {
    *
    * Performs shallow validation to ensure all required properties exist
    * and have correct types before registration in the registry.
+   * Also validates that all public methods in the handler are allowed.
    *
    * @param actionSchema - Action schema to validate
    * @throws Error if actionName is missing or not a string
-   * @throws Error if handler is missing or not a function
-   * @throws Error if callbacks is not an object
+   * @throws Error if handler is not a function or plain object
+   * @throws Error if handler contains invalid public method names
+   * @throws Error if callbacks is provided but not an object
    */
   private validateShallow = (actionSchema: IActionSchema) => {
     this.loggerService.log(`actionSchemaService validateShallow`, {
@@ -160,10 +226,13 @@ export class ActionSchemaService {
   /**
    * Overrides an existing action schema with partial updates.
    *
+   * Merges provided partial schema updates with the existing schema.
+   * Useful for modifying handler or callbacks without re-registering the entire schema.
+   *
    * @param key - Action name to override
-   * @param value - Partial schema updates
-   * @returns Updated action schema
-   * @throws Error if action name doesn't exist
+   * @param value - Partial schema updates to merge
+   * @returns Updated action schema after override
+   * @throws Error if action name doesn't exist in registry
    */
   public override = (key: ActionName, value: Partial<IActionSchema>) => {
     this.loggerService.log(`actionSchemaService override`, { key });
@@ -174,9 +243,12 @@ export class ActionSchemaService {
   /**
    * Retrieves an action schema by name.
    *
-   * @param key - Action name
+   * Returns the complete action schema configuration including handler and callbacks.
+   * Used internally by ActionConnectionService to instantiate ClientAction instances.
+   *
+   * @param key - Action name identifier
    * @returns Action schema configuration
-   * @throws Error if action name doesn't exist
+   * @throws Error if action name doesn't exist in registry
    */
   public get = (key: ActionName): IActionSchema => {
     this.loggerService.log(`actionSchemaService get`, { key });
