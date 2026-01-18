@@ -105,6 +105,17 @@ const templateServices = {
     optimizerTemplateService: Symbol('optimizerTemplateService'),
 }
 
+const promptServices = {
+    signalPromptService: Symbol('signalPromptService'),
+    riskPromptService: Symbol('riskPromptService'),
+    trailingTakePromptService: Symbol('trailingTakePromptService'),
+    trailingStopPromptService: Symbol('trailingStopPromptService'),
+    partialProfitPromptService: Symbol('partialProfitPromptService'),
+    partialLossPromptService: Symbol('partialLossPromptService'),
+    breakevenPromptService: Symbol('breakevenPromptService'),
+    scheduleCancelPromptService: Symbol('scheduleCancelPromptService'),
+}
+
 export const TYPES = {
     ...baseServices,
     ...contextServices,
@@ -119,6 +130,7 @@ export const TYPES = {
     ...reportServices,
     ...validationServices,
     ...templateServices,
+    ...promptServices,
 }
 
 export default TYPES;

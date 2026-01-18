@@ -111,6 +111,16 @@ export {
   formatQuantity,
   hasTradeContext,
 } from "./function/exchange";
+export {
+  commitBreakevenPromptHistory,
+  commitPartialLossPromptHistory,
+  commitPartialProfitPromptHistory,
+  commitRiskPromptHistory,
+  commitScheduleCancelPromptHistory,
+  commitSignalPromptHistory,
+  commitTrailingStopPromptHistory,
+  commitTrailingTakePromptHistory,
+} from "./function/history";
 export { 
   dumpSignalData
 } from "./function/dump";

@@ -73,6 +73,14 @@ import HeatReportService from "./services/report/HeatReportService";
 import PartialReportService from "./services/report/PartialReportService";
 import BreakevenReportService from "./services/report/BreakevenReportService";
 import RiskReportService from "./services/report/RiskReportService";
+import SignalPromptService from "./services/prompt/SignalPromptService";
+import RiskPromptService from "./services/prompt/RiskPromptService";
+import TrailingTakePromptService from "./services/prompt/TrailingTakePromptService";
+import TrailingStopPromptService from "./services/prompt/TrailingStopPromptService";
+import PartialProfitPromptService from "./services/prompt/PartialProfitPromptService";
+import PartialLossPromptService from "./services/prompt/PartialLossPromptService";
+import BreakevenPromptService from "./services/prompt/BreakevenPromptService";
+import ScheduleCancelPromptService from "./services/prompt/ScheduleCancelPromptService";
 
 const baseServices = {
   loggerService: inject<LoggerService>(TYPES.loggerService),
@@ -279,6 +287,17 @@ const templateServices = {
   ),
 };
 
+const promptServices = {
+  signalPromptService: inject<SignalPromptService>(TYPES.signalPromptService),
+  riskPromptService: inject<RiskPromptService>(TYPES.riskPromptService),
+  trailingTakePromptService: inject<TrailingTakePromptService>(TYPES.trailingTakePromptService),
+  trailingStopPromptService: inject<TrailingStopPromptService>(TYPES.trailingStopPromptService),
+  partialProfitPromptService: inject<PartialProfitPromptService>(TYPES.partialProfitPromptService),
+  partialLossPromptService: inject<PartialLossPromptService>(TYPES.partialLossPromptService),
+  breakevenPromptService: inject<BreakevenPromptService>(TYPES.breakevenPromptService),
+  scheduleCancelPromptService: inject<ScheduleCancelPromptService>(TYPES.scheduleCancelPromptService),
+}
+
 export const backtest = {
   ...baseServices,
   ...contextServices,
@@ -293,6 +312,7 @@ export const backtest = {
   ...reportServices,
   ...validationServices,
   ...templateServices,
+  ...promptServices,
 };
 
 init();

@@ -6784,6 +6784,152 @@ declare function getContext(): Promise<IMethodContext>;
 declare function getOrderBook(symbol: string, depth?: number): Promise<IOrderBookData>;
 
 /**
+ * Commits signal prompt history to the message array.
+ *
+ * Extracts symbol from ExecutionContext and strategyName from MethodContext,
+ * validates strategy existence and adds system prompts at the beginning
+ * and user prompt at the end of the history array if they are not empty.
+ *
+ * @param history - Message array to append prompts to
+ * @returns Promise that resolves when prompts are added
+ * @throws Error if ExecutionContext or MethodContext is not active
+ *
+ * @example
+ * ```typescript
+ * const messages: MessageModel[] = [];
+ * await commitSignalPromptHistory(messages);
+ * // messages now contains system prompts at start and user prompt at end
+ * ```
+ */
+declare function commitSignalPromptHistory(history: MessageModel[]): Promise<void>;
+/**
+ * Commits risk rejection prompt history to the message array.
+ *
+ * Extracts symbol from ExecutionContext and strategyName from MethodContext,
+ * validates strategy existence and adds system prompts at the beginning
+ * and user prompt at the end of the history array if they are not empty.
+ *
+ * @param history - Message array to append prompts to
+ * @returns Promise that resolves when prompts are added
+ * @throws Error if ExecutionContext or MethodContext is not active
+ *
+ * @example
+ * ```typescript
+ * const messages: MessageModel[] = [];
+ * await commitRiskPromptHistory(messages);
+ * ```
+ */
+declare function commitRiskPromptHistory(history: MessageModel[]): Promise<void>;
+/**
+ * Commits trailing take-profit prompt history to the message array.
+ *
+ * Extracts symbol from ExecutionContext and strategyName from MethodContext,
+ * validates strategy existence and adds system prompts at the beginning
+ * and user prompt at the end of the history array if they are not empty.
+ *
+ * @param history - Message array to append prompts to
+ * @returns Promise that resolves when prompts are added
+ * @throws Error if ExecutionContext or MethodContext is not active
+ *
+ * @example
+ * ```typescript
+ * const messages: MessageModel[] = [];
+ * await commitTrailingTakePromptHistory(messages);
+ * ```
+ */
+declare function commitTrailingTakePromptHistory(history: MessageModel[]): Promise<void>;
+/**
+ * Commits trailing stop-loss prompt history to the message array.
+ *
+ * Extracts symbol from ExecutionContext and strategyName from MethodContext,
+ * validates strategy existence and adds system prompts at the beginning
+ * and user prompt at the end of the history array if they are not empty.
+ *
+ * @param history - Message array to append prompts to
+ * @returns Promise that resolves when prompts are added
+ * @throws Error if ExecutionContext or MethodContext is not active
+ *
+ * @example
+ * ```typescript
+ * const messages: MessageModel[] = [];
+ * await commitTrailingStopPromptHistory(messages);
+ * ```
+ */
+declare function commitTrailingStopPromptHistory(history: MessageModel[]): Promise<void>;
+/**
+ * Commits partial profit prompt history to the message array.
+ *
+ * Extracts symbol from ExecutionContext and strategyName from MethodContext,
+ * validates strategy existence and adds system prompts at the beginning
+ * and user prompt at the end of the history array if they are not empty.
+ *
+ * @param history - Message array to append prompts to
+ * @returns Promise that resolves when prompts are added
+ * @throws Error if ExecutionContext or MethodContext is not active
+ *
+ * @example
+ * ```typescript
+ * const messages: MessageModel[] = [];
+ * await commitPartialProfitPromptHistory(messages);
+ * ```
+ */
+declare function commitPartialProfitPromptHistory(history: MessageModel[]): Promise<void>;
+/**
+ * Commits partial loss prompt history to the message array.
+ *
+ * Extracts symbol from ExecutionContext and strategyName from MethodContext,
+ * validates strategy existence and adds system prompts at the beginning
+ * and user prompt at the end of the history array if they are not empty.
+ *
+ * @param history - Message array to append prompts to
+ * @returns Promise that resolves when prompts are added
+ * @throws Error if ExecutionContext or MethodContext is not active
+ *
+ * @example
+ * ```typescript
+ * const messages: MessageModel[] = [];
+ * await commitPartialLossPromptHistory(messages);
+ * ```
+ */
+declare function commitPartialLossPromptHistory(history: MessageModel[]): Promise<void>;
+/**
+ * Commits breakeven prompt history to the message array.
+ *
+ * Extracts symbol from ExecutionContext and strategyName from MethodContext,
+ * validates strategy existence and adds system prompts at the beginning
+ * and user prompt at the end of the history array if they are not empty.
+ *
+ * @param history - Message array to append prompts to
+ * @returns Promise that resolves when prompts are added
+ * @throws Error if ExecutionContext or MethodContext is not active
+ *
+ * @example
+ * ```typescript
+ * const messages: MessageModel[] = [];
+ * await commitBreakevenPromptHistory(messages);
+ * ```
+ */
+declare function commitBreakevenPromptHistory(history: MessageModel[]): Promise<void>;
+/**
+ * Commits schedule cancellation prompt history to the message array.
+ *
+ * Extracts symbol from ExecutionContext and strategyName from MethodContext,
+ * validates strategy existence and adds system prompts at the beginning
+ * and user prompt at the end of the history array if they are not empty.
+ *
+ * @param history - Message array to append prompts to
+ * @returns Promise that resolves when prompts are added
+ * @throws Error if ExecutionContext or MethodContext is not active
+ *
+ * @example
+ * ```typescript
+ * const messages: MessageModel[] = [];
+ * await commitScheduleCancelPromptHistory(messages);
+ * ```
+ */
+declare function commitScheduleCancelPromptHistory(history: MessageModel[]): Promise<void>;
+
+/**
  * Dumps signal data and LLM conversation history to markdown files.
  * Used by AI-powered strategies to save debug logs for analysis.
  *
@@ -18849,7 +18995,387 @@ declare class RiskReportService {
     unsubscribe: () => Promise<void>;
 }
 
+/**
+ * Service for managing signal prompts for AI/LLM integrations.
+ *
+ * Provides access to system and user prompts configured in signal.prompt.cjs.
+ * Supports both static prompt arrays and dynamic prompt functions.
+ *
+ * Key responsibilities:
+ * - Lazy-loads prompt configuration from config/prompt/signal.prompt.cjs
+ * - Resolves system prompts (static arrays or async functions)
+ * - Provides user prompt strings
+ * - Falls back to empty prompts if configuration is missing
+ *
+ * Used for AI-powered signal analysis and strategy recommendations.
+ */
+declare class SignalPromptService {
+    private readonly loggerService;
+    /**
+     * Retrieves system prompts for AI context.
+     *
+     * System prompts can be:
+     * - Static array of strings (returned directly)
+     * - Async/sync function returning string array (executed and awaited)
+     * - Undefined (returns empty array)
+     *
+     * @param symbol - Trading symbol (e.g., "BTCUSDT")
+     * @param strategyName - Strategy identifier
+     * @param exchangeName - Exchange identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - Whether running in backtest mode
+     * @returns Promise resolving to array of system prompt strings
+     */
+    getSystemPrompt: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<string[]>;
+    /**
+     * Retrieves user prompt string for AI input.
+     *
+     * @param symbol - Trading symbol (e.g., "BTCUSDT")
+     * @param strategyName - Strategy identifier
+     * @param exchangeName - Exchange identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - Whether running in backtest mode
+     * @returns Promise resolving to user prompt string
+     */
+    getUserPrompt: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<string>;
+}
+
+/**
+ * Service for managing risk rejection prompts for AI/LLM integrations.
+ *
+ * Provides access to system and user prompts configured in risk.prompt.cjs.
+ * Supports both static prompt arrays and dynamic prompt functions.
+ *
+ * Key responsibilities:
+ * - Lazy-loads prompt configuration from config/prompt/risk.prompt.cjs
+ * - Resolves system prompts (static arrays or async functions)
+ * - Provides user prompt strings
+ * - Falls back to empty prompts if configuration is missing
+ *
+ * Used for AI-powered analysis when signals fail risk validation.
+ * Triggered by: riskRejection() events in ActionBase
+ * Use cases: Analyze rejection reasons, suggest risk adjustments, track rejection patterns
+ */
+declare class RiskPromptService {
+    private readonly loggerService;
+    /**
+     * Retrieves system prompts for AI context.
+     *
+     * System prompts can be:
+     * - Static array of strings (returned directly)
+     * - Async/sync function returning string array (executed and awaited)
+     * - Undefined (returns empty array)
+     *
+     * @param symbol - Trading symbol (e.g., "BTCUSDT")
+     * @param strategyName - Strategy identifier
+     * @param exchangeName - Exchange identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - Whether running in backtest mode
+     * @returns Promise resolving to array of system prompt strings
+     */
+    getSystemPrompt: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<string[]>;
+    /**
+     * Retrieves user prompt string for AI input.
+     *
+     * @param symbol - Trading symbol (e.g., "BTCUSDT")
+     * @param strategyName - Strategy identifier
+     * @param exchangeName - Exchange identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - Whether running in backtest mode
+     * @returns Promise resolving to user prompt string
+     */
+    getUserPrompt: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<string>;
+}
+
+/**
+ * Service for managing trailing take-profit prompts for AI/LLM integrations.
+ *
+ * Provides access to system and user prompts configured in trailing-take.prompt.cjs.
+ * Supports both static prompt arrays and dynamic prompt functions.
+ *
+ * Key responsibilities:
+ * - Lazy-loads prompt configuration from config/prompt/trailing-take.prompt.cjs
+ * - Resolves system prompts (static arrays or async functions)
+ * - Provides user prompt strings
+ * - Falls back to empty prompts if configuration is missing
+ *
+ * Used for AI-powered analysis of trailing take-profit adjustments.
+ * Use cases: Suggest optimal trailing levels, analyze profit-taking strategies, optimize exit timing
+ */
+declare class TrailingTakePromptService {
+    private readonly loggerService;
+    /**
+     * Retrieves system prompts for AI context.
+     *
+     * System prompts can be:
+     * - Static array of strings (returned directly)
+     * - Async/sync function returning string array (executed and awaited)
+     * - Undefined (returns empty array)
+     *
+     * @param symbol - Trading symbol (e.g., "BTCUSDT")
+     * @param strategyName - Strategy identifier
+     * @param exchangeName - Exchange identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - Whether running in backtest mode
+     * @returns Promise resolving to array of system prompt strings
+     */
+    getSystemPrompt: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<string[]>;
+    /**
+     * Retrieves user prompt string for AI input.
+     *
+     * @param symbol - Trading symbol (e.g., "BTCUSDT")
+     * @param strategyName - Strategy identifier
+     * @param exchangeName - Exchange identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - Whether running in backtest mode
+     * @returns Promise resolving to user prompt string
+     */
+    getUserPrompt: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<string>;
+}
+
+/**
+ * Service for managing trailing stop-loss prompts for AI/LLM integrations.
+ *
+ * Provides access to system and user prompts configured in trailing-stop.prompt.cjs.
+ * Supports both static prompt arrays and dynamic prompt functions.
+ *
+ * Key responsibilities:
+ * - Lazy-loads prompt configuration from config/prompt/trailing-stop.prompt.cjs
+ * - Resolves system prompts (static arrays or async functions)
+ * - Provides user prompt strings
+ * - Falls back to empty prompts if configuration is missing
+ *
+ * Used for AI-powered analysis of trailing stop-loss adjustments.
+ * Use cases: Suggest optimal trailing distances, analyze risk protection strategies, optimize stop placement
+ */
+declare class TrailingStopPromptService {
+    private readonly loggerService;
+    /**
+     * Retrieves system prompts for AI context.
+     *
+     * System prompts can be:
+     * - Static array of strings (returned directly)
+     * - Async/sync function returning string array (executed and awaited)
+     * - Undefined (returns empty array)
+     *
+     * @param symbol - Trading symbol (e.g., "BTCUSDT")
+     * @param strategyName - Strategy identifier
+     * @param exchangeName - Exchange identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - Whether running in backtest mode
+     * @returns Promise resolving to array of system prompt strings
+     */
+    getSystemPrompt: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<string[]>;
+    /**
+     * Retrieves user prompt string for AI input.
+     *
+     * @param symbol - Trading symbol (e.g., "BTCUSDT")
+     * @param strategyName - Strategy identifier
+     * @param exchangeName - Exchange identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - Whether running in backtest mode
+     * @returns Promise resolving to user prompt string
+     */
+    getUserPrompt: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<string>;
+}
+
+/**
+ * Service for managing partial profit prompts for AI/LLM integrations.
+ *
+ * Provides access to system and user prompts configured in partial-profit.prompt.cjs.
+ * Supports both static prompt arrays and dynamic prompt functions.
+ *
+ * Key responsibilities:
+ * - Lazy-loads prompt configuration from config/prompt/partial-profit.prompt.cjs
+ * - Resolves system prompts (static arrays or async functions)
+ * - Provides user prompt strings
+ * - Falls back to empty prompts if configuration is missing
+ *
+ * Used for AI-powered analysis when profit milestones are reached (10%, 20%, 30%, etc).
+ * Triggered by: partialProfitAvailable() events in ActionBase
+ * Use cases: Suggest position adjustments, analyze profit-taking opportunities, optimize milestone actions
+ */
+declare class PartialProfitPromptService {
+    private readonly loggerService;
+    /**
+     * Retrieves system prompts for AI context.
+     *
+     * System prompts can be:
+     * - Static array of strings (returned directly)
+     * - Async/sync function returning string array (executed and awaited)
+     * - Undefined (returns empty array)
+     *
+     * @param symbol - Trading symbol (e.g., "BTCUSDT")
+     * @param strategyName - Strategy identifier
+     * @param exchangeName - Exchange identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - Whether running in backtest mode
+     * @returns Promise resolving to array of system prompt strings
+     */
+    getSystemPrompt: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<string[]>;
+    /**
+     * Retrieves user prompt string for AI input.
+     *
+     * @param symbol - Trading symbol (e.g., "BTCUSDT")
+     * @param strategyName - Strategy identifier
+     * @param exchangeName - Exchange identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - Whether running in backtest mode
+     * @returns Promise resolving to user prompt string
+     */
+    getUserPrompt: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<string>;
+}
+
+/**
+ * Service for managing partial loss prompts for AI/LLM integrations.
+ *
+ * Provides access to system and user prompts configured in partial-loss.prompt.cjs.
+ * Supports both static prompt arrays and dynamic prompt functions.
+ *
+ * Key responsibilities:
+ * - Lazy-loads prompt configuration from config/prompt/partial-loss.prompt.cjs
+ * - Resolves system prompts (static arrays or async functions)
+ * - Provides user prompt strings
+ * - Falls back to empty prompts if configuration is missing
+ *
+ * Used for AI-powered analysis when loss milestones are reached (-10%, -20%, -30%, etc).
+ * Triggered by: partialLossAvailable() events in ActionBase
+ * Use cases: Suggest risk management actions, analyze loss mitigation strategies, optimize exit decisions
+ */
+declare class PartialLossPromptService {
+    private readonly loggerService;
+    /**
+     * Retrieves system prompts for AI context.
+     *
+     * System prompts can be:
+     * - Static array of strings (returned directly)
+     * - Async/sync function returning string array (executed and awaited)
+     * - Undefined (returns empty array)
+     *
+     * @param symbol - Trading symbol (e.g., "BTCUSDT")
+     * @param strategyName - Strategy identifier
+     * @param exchangeName - Exchange identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - Whether running in backtest mode
+     * @returns Promise resolving to array of system prompt strings
+     */
+    getSystemPrompt: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<string[]>;
+    /**
+     * Retrieves user prompt string for AI input.
+     *
+     * @param symbol - Trading symbol (e.g., "BTCUSDT")
+     * @param strategyName - Strategy identifier
+     * @param exchangeName - Exchange identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - Whether running in backtest mode
+     * @returns Promise resolving to user prompt string
+     */
+    getUserPrompt: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<string>;
+}
+
+/**
+ * Service for managing breakeven prompts for AI/LLM integrations.
+ *
+ * Provides access to system and user prompts configured in breakeven.prompt.cjs.
+ * Supports both static prompt arrays and dynamic prompt functions.
+ *
+ * Key responsibilities:
+ * - Lazy-loads prompt configuration from config/prompt/breakeven.prompt.cjs
+ * - Resolves system prompts (static arrays or async functions)
+ * - Provides user prompt strings
+ * - Falls back to empty prompts if configuration is missing
+ *
+ * Used for AI-powered analysis when stop-loss is moved to entry price (risk-free position).
+ * Triggered by: breakevenAvailable() events in ActionBase
+ * Use cases: Suggest position management after breakeven, analyze profit potential, optimize trailing strategies
+ */
+declare class BreakevenPromptService {
+    private readonly loggerService;
+    /**
+     * Retrieves system prompts for AI context.
+     *
+     * System prompts can be:
+     * - Static array of strings (returned directly)
+     * - Async/sync function returning string array (executed and awaited)
+     * - Undefined (returns empty array)
+     *
+     * @param symbol - Trading symbol (e.g., "BTCUSDT")
+     * @param strategyName - Strategy identifier
+     * @param exchangeName - Exchange identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - Whether running in backtest mode
+     * @returns Promise resolving to array of system prompt strings
+     */
+    getSystemPrompt: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<string[]>;
+    /**
+     * Retrieves user prompt string for AI input.
+     *
+     * @param symbol - Trading symbol (e.g., "BTCUSDT")
+     * @param strategyName - Strategy identifier
+     * @param exchangeName - Exchange identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - Whether running in backtest mode
+     * @returns Promise resolving to user prompt string
+     */
+    getUserPrompt: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<string>;
+}
+
+/**
+ * Service for managing schedule cancellation prompts for AI/LLM integrations.
+ *
+ * Provides access to system and user prompts configured in schedule-cancel.prompt.cjs.
+ * Supports both static prompt arrays and dynamic prompt functions.
+ *
+ * Key responsibilities:
+ * - Lazy-loads prompt configuration from config/prompt/schedule-cancel.prompt.cjs
+ * - Resolves system prompts (static arrays or async functions)
+ * - Provides user prompt strings
+ * - Falls back to empty prompts if configuration is missing
+ *
+ * Used for AI-powered analysis when scheduled signals are cancelled before activation.
+ * Triggered by: signal() events with action='cancelled' in ActionBase
+ * Use cases: Analyze cancellation reasons, track signal invalidation patterns, optimize scheduling logic
+ */
+declare class ScheduleCancelPromptService {
+    private readonly loggerService;
+    /**
+     * Retrieves system prompts for AI context.
+     *
+     * System prompts can be:
+     * - Static array of strings (returned directly)
+     * - Async/sync function returning string array (executed and awaited)
+     * - Undefined (returns empty array)
+     *
+     * @param symbol - Trading symbol (e.g., "BTCUSDT")
+     * @param strategyName - Strategy identifier
+     * @param exchangeName - Exchange identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - Whether running in backtest mode
+     * @returns Promise resolving to array of system prompt strings
+     */
+    getSystemPrompt: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<string[]>;
+    /**
+     * Retrieves user prompt string for AI input.
+     *
+     * @param symbol - Trading symbol (e.g., "BTCUSDT")
+     * @param strategyName - Strategy identifier
+     * @param exchangeName - Exchange identifier
+     * @param frameName - Timeframe identifier
+     * @param backtest - Whether running in backtest mode
+     * @returns Promise resolving to user prompt string
+     */
+    getUserPrompt: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<string>;
+}
+
 declare const backtest: {
+    signalPromptService: SignalPromptService;
+    riskPromptService: RiskPromptService;
+    trailingTakePromptService: TrailingTakePromptService;
+    trailingStopPromptService: TrailingStopPromptService;
+    partialProfitPromptService: PartialProfitPromptService;
+    partialLossPromptService: PartialLossPromptService;
+    breakevenPromptService: BreakevenPromptService;
+    scheduleCancelPromptService: ScheduleCancelPromptService;
     optimizerTemplateService: OptimizerTemplateService;
     exchangeValidationService: ExchangeValidationService;
     strategyValidationService: StrategyValidationService;
@@ -18924,4 +19450,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { ActionBase, type ActivePingContract, Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, type BootstrapNotification, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IOrderBookData, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addOptimizerSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, commitBreakeven, commitCancel, commitPartialLoss, commitPartialProfit, commitTrailingStop, commitTrailingTake, dumpSignalData, emitters, formatPrice, formatQuantity, get, getActionSchema, getAveragePrice, getBacktestTimeframe, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getExchangeSchema, getFrameSchema, getMode, getOptimizerSchema, getOrderBook, getRiskSchema, getSizingSchema, getStrategySchema, getSymbol, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listOptimizerSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideOptimizerSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, roundTicks, set, setColumns, setConfig, setLogger, stop, validate };
+export { ActionBase, type ActivePingContract, Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, type BootstrapNotification, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IOrderBookData, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addOptimizerSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, commitBreakeven, commitBreakevenPromptHistory, commitCancel, commitPartialLoss, commitPartialLossPromptHistory, commitPartialProfit, commitPartialProfitPromptHistory, commitRiskPromptHistory, commitScheduleCancelPromptHistory, commitSignalPromptHistory, commitTrailingStop, commitTrailingStopPromptHistory, commitTrailingTake, commitTrailingTakePromptHistory, dumpSignalData, emitters, formatPrice, formatQuantity, get, getActionSchema, getAveragePrice, getBacktestTimeframe, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getExchangeSchema, getFrameSchema, getMode, getOptimizerSchema, getOrderBook, getRiskSchema, getSizingSchema, getStrategySchema, getSymbol, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listOptimizerSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideOptimizerSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, roundTicks, set, setColumns, setConfig, setLogger, stop, validate };
