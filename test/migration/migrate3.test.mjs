@@ -72,7 +72,7 @@ test("SEQUENCE: 5 signals with mixed results (TP, SL, cancelled, TP, SL) - VWAP-
     interval: "1m",
     getSignal: async () => {
       signalCount++;
-      console.log(`[TEST1] getSignal called, signalCount=${signalCount}`);
+      // console.log(`[TEST1] getSignal called, signalCount=${signalCount}`);
       if (signalCount > 5) return null;
 
       // Генерируем свечи только в первый раз
@@ -182,14 +182,14 @@ test("SEQUENCE: 5 signals with mixed results (TP, SL, cancelled, TP, SL) - VWAP-
 
   let errorCaught = null;
   const unsubscribeError = listenError((error) => {
-    console.log(`[TEST1] Error caught:`, error);
+    // console.log(`[TEST1] Error caught:`, error);
     errorCaught = error;
     awaitSubject.next();
   });
 
   const allSignalEvents = [];
   listenSignalBacktest((result) => {
-    console.log(`[TEST1] Signal event:`, result.action, result);
+    // console.log(`[TEST1] Signal event:`, result.action, result);
     allSignalEvents.push(result);
   });
 
@@ -293,7 +293,7 @@ test("EDGE: Multiple signals with different results (TP, SL, time_expired) - que
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
       const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      console.log(`[TEST2] getCandles: since=${new Date(since.getTime()).toISOString()}, limit=${limit}, sinceIndex=${sinceIndex}, result.length=${result.length}`);
+      // console.log(`[TEST2] getCandles: since=${new Date(since.getTime()).toISOString()}, limit=${limit}, sinceIndex=${sinceIndex}, result.length=${result.length}`);
       return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
     },
     formatPrice: async (_symbol, p) => p.toFixed(8),
@@ -401,14 +401,14 @@ test("EDGE: Multiple signals with different results (TP, SL, time_expired) - que
 
   let errorCaught = null;
   const unsubscribeError = listenError((error) => {
-    console.log(`[TEST2] Error caught:`, error);
+    // console.log(`[TEST2] Error caught:`, error);
     errorCaught = error;
     awaitSubject.next();
   });
 
   const allSignalEvents = [];
   listenSignalBacktest((result) => {
-    console.log(`[TEST2] Signal event:`, result.action, result);
+    // console.log(`[TEST2] Signal event:`, result.action, result);
     allSignalEvents.push(result);
   });
 
@@ -422,12 +422,12 @@ test("EDGE: Multiple signals with different results (TP, SL, time_expired) - que
   await sleep(1000);
   unsubscribeError();
 
-  console.log(`[TEST2] Results:`, {
-    scheduled: signalsResults.scheduled.length,
-    opened: signalsResults.opened.length,
-    closed: signalsResults.closed.length,
-    cancelled: signalsResults.cancelled.length,
-  });
+  // console.log(`[TEST2] Results:`, {
+  //   scheduled: signalsResults.scheduled.length,
+  //   opened: signalsResults.opened.length,
+  //   closed: signalsResults.closed.length,
+  //   cancelled: signalsResults.cancelled.length,
+  // });
 
   if (errorCaught) {
     fail(`Error during backtest: ${errorCaught.message || errorCaught}`);
