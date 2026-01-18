@@ -1,6 +1,8 @@
 import "./exchange/binance.exchange.mjs";
 
-import "./action/partial_profit_taking.action.mjs";
+import "./action/backtest_partial_profit_taking.action.mjs";
+import "./action/backtest_tighten_stop_on_breakeven.action.mjs";
+import "./action/backtest_position_monitor.action.mjs";
 
 import "./frame/dec_2025.frame.mjs";
 import "./frame/nov_2025.frame.mjs";

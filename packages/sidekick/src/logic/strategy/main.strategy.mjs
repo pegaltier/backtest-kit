@@ -6,6 +6,8 @@ import { commitHistorySetup } from "../../func/market.func.mjs";
 import StrategyName from "../../enum/StrategyName.mjs";
 import RiskName from "../../enum/RiskName.mjs";
 
+import { CC_OLLAMA_API_KEY } from "../../config/params.mjs";
+
 addStrategySchema({
   strategyName: StrategyName.MainStrategy,
   interval: "5m",
@@ -19,7 +21,7 @@ addStrategySchema({
     return await ollama(
       messages,
       "glm-4.6:cloud",
-      process.env.CC_OLLAMA_API_KEY
+      CC_OLLAMA_API_KEY
     );
   },
   riskList: [

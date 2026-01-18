@@ -1,25 +1,17 @@
 import { singleshot } from "functools-kit";
-import { parseArgs } from "util";
+import { parseArgs } from "backtest-kit";
 
-export const getArgs = singleshot(() => {
-  const { values } = parseArgs({
-    args: process.argv,
-    options: {
-      strategy: {
-        type: "string",
-      },
-      backtest: {
-        type: "boolean",
-      },
-      paper: {
-        type: "boolean",
-      },
-      live: {
-        type: "boolean",
-      },
-    },
-    strict: false,
-    allowPositionals: true,
-  });
-  return values;
-});
+import ExchangeName from "../enum/ExchangeName.mjs";
+import StrategyName from "../enum/StrategyName.mjs";
+import FrameName from "../enum/FrameName.mjs";
+
+const DEFAULT_SYMBOL = "BTCUSDT";
+
+export const getArgs = singleshot(() => 
+  parseArgs({
+    exchangeName: ExchangeName.BinanceExchange,
+    strategyName: StrategyName.MainStrategy,
+    frameName: FrameName.October2025,
+    symbol: DEFAULT_SYMBOL,
+  })
+);
