@@ -46,11 +46,6 @@ export async function commitSignalPromptHistory(
   const { symbol, backtest: isBacktest } = backtest.executionContextService.context;
   const { strategyName, exchangeName, frameName } = backtest.methodContextService.context;
 
-  await backtest.strategyValidationService.validate(
-    strategyName,
-    METHOD_NAME_SIGNAL
-  );
-
   const systemPrompts = await backtest.signalPromptService.getSystemPrompt(
     symbol,
     strategyName,
@@ -114,11 +109,6 @@ export async function commitRiskPromptHistory(
 
   const { symbol, backtest: isBacktest } = backtest.executionContextService.context;
   const { strategyName, exchangeName, frameName } = backtest.methodContextService.context;
-
-  await backtest.strategyValidationService.validate(
-    strategyName,
-    METHOD_NAME_RISK
-  );
 
   const systemPrompts = await backtest.riskPromptService.getSystemPrompt(
     symbol,
@@ -184,11 +174,6 @@ export async function commitTrailingTakePromptHistory(
   const { symbol, backtest: isBacktest } = backtest.executionContextService.context;
   const { strategyName, exchangeName, frameName } = backtest.methodContextService.context;
 
-  await backtest.strategyValidationService.validate(
-    strategyName,
-    METHOD_NAME_TRAILING_TAKE
-  );
-
   const systemPrompts = await backtest.trailingTakePromptService.getSystemPrompt(
     symbol,
     strategyName,
@@ -252,11 +237,6 @@ export async function commitTrailingStopPromptHistory(
 
   const { symbol, backtest: isBacktest } = backtest.executionContextService.context;
   const { strategyName, exchangeName, frameName } = backtest.methodContextService.context;
-
-  await backtest.strategyValidationService.validate(
-    strategyName,
-    METHOD_NAME_TRAILING_STOP
-  );
 
   const systemPrompts = await backtest.trailingStopPromptService.getSystemPrompt(
     symbol,
@@ -322,11 +302,6 @@ export async function commitPartialProfitPromptHistory(
   const { symbol, backtest: isBacktest } = backtest.executionContextService.context;
   const { strategyName, exchangeName, frameName } = backtest.methodContextService.context;
 
-  await backtest.strategyValidationService.validate(
-    strategyName,
-    METHOD_NAME_PARTIAL_PROFIT
-  );
-
   const systemPrompts = await backtest.partialProfitPromptService.getSystemPrompt(
     symbol,
     strategyName,
@@ -390,11 +365,6 @@ export async function commitPartialLossPromptHistory(
 
   const { symbol, backtest: isBacktest } = backtest.executionContextService.context;
   const { strategyName, exchangeName, frameName } = backtest.methodContextService.context;
-
-  await backtest.strategyValidationService.validate(
-    strategyName,
-    METHOD_NAME_PARTIAL_LOSS
-  );
 
   const systemPrompts = await backtest.partialLossPromptService.getSystemPrompt(
     symbol,
@@ -460,11 +430,6 @@ export async function commitBreakevenPromptHistory(
   const { symbol, backtest: isBacktest } = backtest.executionContextService.context;
   const { strategyName, exchangeName, frameName } = backtest.methodContextService.context;
 
-  await backtest.strategyValidationService.validate(
-    strategyName,
-    METHOD_NAME_BREAKEVEN
-  );
-
   const systemPrompts = await backtest.breakevenPromptService.getSystemPrompt(
     symbol,
     strategyName,
@@ -528,11 +493,6 @@ export async function commitScheduleCancelPromptHistory(
 
   const { symbol, backtest: isBacktest } = backtest.executionContextService.context;
   const { strategyName, exchangeName, frameName } = backtest.methodContextService.context;
-
-  await backtest.strategyValidationService.validate(
-    strategyName,
-    METHOD_NAME_SCHEDULE_CANCEL
-  );
 
   const systemPrompts = await backtest.scheduleCancelPromptService.getSystemPrompt(
     symbol,
