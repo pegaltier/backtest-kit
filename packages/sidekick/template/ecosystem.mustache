@@ -18,7 +18,7 @@ const readConfig = singleshot(() => {
 
 const apps = [
   {
-    name: "backtest-kit",
+    name: "{{PROJECT_NAME}}",
     exec_mode: "fork",
     instances: "1",
     autorestart: true,
@@ -28,8 +28,8 @@ const apps = [
     args: ["--backtest"],
     interpreter: getPath("~/.bun/bin/bun"),
     env: readConfig(),
-    out_file: "./logs/pm2/backtest-kit-out.log",
-    error_file: "./logs/pm2/backtest-kit-error.log",
+    out_file: "./logs/pm2/{{PROJECT_NAME}}-out.log",
+    error_file: "./logs/pm2/{{PROJECT_NAME}}-error.log",
     log_date_format: "YYYY-MM-DD HH:mm:ss",
     merge_logs: true,
   },

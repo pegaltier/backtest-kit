@@ -37,8 +37,6 @@
     "src",
     "scripts",
     "template",
-    "config",
-    "types",
     "README.md"
   ],
   "repository": {

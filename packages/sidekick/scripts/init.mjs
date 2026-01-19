@@ -110,8 +110,6 @@ async function main() {
 
   const projectPath = path.resolve(process.cwd(), projectName);
   const srcTemplatePath = path.resolve(__dirname, '..', 'src');
-  const typesTemplatePath = path.resolve(__dirname, '..', 'types');
-  const configTemplatePath = path.resolve(__dirname, '..', 'config');
   const templateDir = path.resolve(__dirname, '..', 'template');
 
   // Template data for Mustache
@@ -147,18 +145,20 @@ async function main() {
       log.success('Copied template files');
     }
 
-    // Copy types template files
+    // Create types/types.d.ts from template
     {
-      log.info('Copying types files...');
-      await copyFiles(typesTemplatePath, path.join(projectPath, 'types'));
-      log.success('Copied types files');
-    }
-
-    // Copy config template files
-    {
-      log.info('Copying config files...');
-      await copyFiles(configTemplatePath, path.join(projectPath, 'config'));
-      log.success('Copied config files');
+      log.info('Creating types/types.d.ts...');
+      await fs.mkdir(path.join(projectPath, 'types'), { recursive: true });
+      const typesContent = await renderTemplate(
+        path.join(templateDir, 'types.mustache'),
+        templateData
+      );
+      await fs.writeFile(
+        path.join(projectPath, 'types', 'types.d.ts'),
+        typesContent,
+        'utf-8'
+      );
+      log.success('Created types/types.d.ts');
     }
 
     // Create package.json from template
@@ -240,6 +240,106 @@ async function main() {
         'utf-8'
       );
       log.success('Created jsconfig.json');
+    }
+
+    // Create config directory and ecosystem.config.cjs from template
+    {
+      log.info('Creating ecosystem.config.cjs...');
+      await fs.mkdir(path.join(projectPath, 'config'), { recursive: true });
+      const ecosystemContent = await renderTemplate(
+        path.join(templateDir, 'ecosystem.mustache'),
+        templateData
+      );
+      await fs.writeFile(
+        path.join(projectPath, 'config', 'ecosystem.config.cjs'),
+        ecosystemContent,
+        'utf-8'
+      );
+      log.success('Created ecosystem.config.cjs');
+    }
+
+    // Create config/prompt/signal.prompt.cjs from template
+    {
+      log.info('Creating config/prompt/signal.prompt.cjs...');
+      await fs.mkdir(path.join(projectPath, 'config', 'prompt'), { recursive: true });
+      const signalPromptContent = await renderTemplate(
+        path.join(templateDir, 'signal_prompt.mustache'),
+        templateData
+      );
+      await fs.writeFile(
+        path.join(projectPath, 'config', 'prompt', 'signal.prompt.cjs'),
+        signalPromptContent,
+        'utf-8'
+      );
+      log.success('Created config/prompt/signal.prompt.cjs');
+    }
+
+    // Create index.cjs from template
+    {
+      log.info('Creating index.cjs...');
+      const indexContent = await renderTemplate(
+        path.join(templateDir, 'index.mustache'),
+        templateData
+      );
+      await fs.writeFile(
+        path.join(projectPath, 'index.cjs'),
+        indexContent,
+        'utf-8'
+      );
+      log.success('Created index.cjs');
+    }
+
+    // Create Dockerfile from template
+    {
+      log.info('Creating Dockerfile...');
+      const dockerfileContent = await renderTemplate(
+        path.join(templateDir, 'Dockerfile.mustache'),
+        templateData
+      );
+      await fs.writeFile(
+        path.join(projectPath, 'Dockerfile'),
+        dockerfileContent,
+        'utf-8'
+      );
+      log.success('Created Dockerfile');
+    }
+
+    // Create scripts/linux/publish.sh from template
+    {
+      log.info('Creating scripts/linux/publish.sh...');
+      await fs.mkdir(path.join(projectPath, 'scripts', 'linux'), { recursive: true });
+      const publishShContent = await renderTemplate(
+        path.join(templateDir, 'publish_sh.mustache'),
+        templateData
+      );
+      await fs.writeFile(
+        path.join(projectPath, 'scripts', 'linux', 'publish.sh'),
+        publishShContent,
+        'utf-8'
+      );
+      // Make the script executable on Unix-like systems
+      try {
+        await fs.chmod(path.join(projectPath, 'scripts', 'linux', 'publish.sh'), 0o755);
+      } catch (err) {
+        // Ignore chmod errors on Windows
+      }
+      log.success('Created scripts/linux/publish.sh');
+    }
+
+    // Create scripts/win/publish.bat from template
+    {
+      log.info('Creating scripts/win/publish.bat...');
+      await fs.mkdir(path.join(projectPath, 'scripts', 'win'), { recursive: true });
+      const publishBatContent = await renderTemplate(
+        path.join(templateDir, 'publish_bat.mustache'),
+        templateData
+      );
+      await fs.writeFile(
+        path.join(projectPath, 'scripts', 'win', 'publish.bat'),
+        publishBatContent,
+        'utf-8'
+      );
+      log.success('Created scripts/win/publish.bat');
     }
 
     // Install dependencies

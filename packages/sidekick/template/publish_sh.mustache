@@ -1,0 +1,3 @@
+#!/bin/bash
+docker build --platform linux/amd64 -t {{PROJECT_NAME}}/{{PROJECT_NAME}} . -f Dockerfile
+docker push {{PROJECT_NAME}}/{{PROJECT_NAME}}:latest
