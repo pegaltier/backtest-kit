@@ -1,4 +1,4 @@
-import { addStrategySchema } from "backtest-kit";
+import { addStrategySchema, commitSignalPromptHistory, dumpSignalData } from "backtest-kit";
 import { ollama } from "@backtest-kit/ollama";
 
 import { commitHistorySetup } from "../../func/market.func.mjs";
@@ -18,11 +18,21 @@ addStrategySchema({
       await commitHistorySetup(symbol, messages);
     }
 
-    return await ollama(
+    await commitSignalPromptHistory(symbol, messages);
+
+    const signalData = await ollama(
       messages,
       "glm-4.6:cloud",
       CC_OLLAMA_API_KEY
     );
+
+    if (!signalData) {
+      return null;
+    }
+
+    dumpSignalData(signalData.id, messages, signalData);
+
+    return signalData;
   },
   riskList: [
     RiskName.TakeProfitDistanceRisk, 

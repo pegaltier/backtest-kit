@@ -5,7 +5,9 @@
   "type": "module",
   "description": "Backtest Kit trading bot project",
   "scripts": {
-    "start": "node ./src/index.mjs --backtest"
+    "start": "dotenv -e .env -- node ./src/index.mjs --backtest",
+    "pm2:start": "pm2 start ./config/ecosystem.config.cjs",
+    "pm2:stop": "pm2 stop ./config/ecosystem.config.cjs"
   },
   "dependencies": {
     "@backtest-kit/ollama": "^0.1.1",
@@ -14,7 +16,7 @@
     "@langchain/core": "^0.3.57",
     "@langchain/xai": "^0.0.2",
     "agent-swarm-kit": "^1.1.182",
-    "backtest-kit": "^2.0.7",
+    "backtest-kit": "^2.0.9",
     "ccxt": "^4.4.41",
     "dotenv": "^16.4.7",
     "functools-kit": "^1.0.95",

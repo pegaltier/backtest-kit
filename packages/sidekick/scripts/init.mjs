@@ -111,6 +111,7 @@ async function main() {
   const projectPath = path.resolve(process.cwd(), projectName);
   const srcTemplatePath = path.resolve(__dirname, '..', 'src');
   const typesTemplatePath = path.resolve(__dirname, '..', 'types');
+  const configTemplatePath = path.resolve(__dirname, '..', 'config');
   const templateDir = path.resolve(__dirname, '..', 'template');
 
   // Template data for Mustache
@@ -151,6 +152,13 @@ async function main() {
       log.info('Copying types files...');
       await copyFiles(typesTemplatePath, path.join(projectPath, 'types'));
       log.success('Copied types files');
+    }
+
+    // Copy config template files
+    {
+      log.info('Copying config files...');
+      await copyFiles(configTemplatePath, path.join(projectPath, 'config'));
+      log.success('Copied config files');
     }
 
     // Create package.json from template
