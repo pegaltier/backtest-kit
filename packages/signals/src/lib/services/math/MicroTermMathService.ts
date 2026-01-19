@@ -120,12 +120,12 @@ const columns: Column[] = [
   },
   {
     key: "stochasticRSI9",
-    label: "Stochastic RSI(9)",
+    label: "StochRSI(9) - RSI Oscillator",
     format: (v) => (v !== null ? Number(v).toFixed(2) : "N/A"),
   },
   {
     key: "stochasticRSI14",
-    label: "Stochastic RSI(14)",
+    label: "StochRSI(14) - RSI Oscillator",
     format: (v) => (v !== null ? Number(v).toFixed(2) : "N/A"),
   },
   {
@@ -135,7 +135,7 @@ const columns: Column[] = [
   },
   {
     key: "signal5",
-    label: "Signal(5)",
+    label: "MACD Signal Line(5)",
     format: (v) => (v !== null ? Number(v).toFixed(4) : "N/A"),
   },
   {
@@ -150,12 +150,12 @@ const columns: Column[] = [
   },
   {
     key: "plusDI9",
-    label: "+DI(9)",
+    label: "+DI(9) Bullish Indicator",
     format: (v) => (v !== null ? Number(v).toFixed(2) : "N/A"),
   },
   {
     key: "minusDI9",
-    label: "-DI(9)",
+    label: "-DI(9) Bearish Indicator",
     format: (v) => (v !== null ? Number(v).toFixed(2) : "N/A"),
   },
   {
@@ -176,32 +176,32 @@ const columns: Column[] = [
   },
   {
     key: "cci9",
-    label: "CCI(9)",
+    label: "CCI(9) - Commodity Channel Index",
     format: (v) => (v !== null ? Number(v).toFixed(2) : "N/A"),
   },
   {
     key: "stochasticK3_3_3",
-    label: "Stochastic K(3,3,3)",
+    label: "Stochastic %K Fast Line(3,3,3)",
     format: (v) => (v !== null ? Number(v).toFixed(2) : "N/A"),
   },
   {
     key: "stochasticD3_3_3",
-    label: "Stochastic D(3,3,3)",
+    label: "Stochastic %D Slow Line(3,3,3)",
     format: (v) => (v !== null ? Number(v).toFixed(2) : "N/A"),
   },
   {
     key: "stochasticK5_3_3",
-    label: "Stochastic K(5,3,3)",
+    label: "Stochastic %K Fast Line(5,3,3)",
     format: (v) => (v !== null ? Number(v).toFixed(2) : "N/A"),
   },
   {
     key: "stochasticD5_3_3",
-    label: "Stochastic D(5,3,3)",
+    label: "Stochastic %D Slow Line(5,3,3)",
     format: (v) => (v !== null ? Number(v).toFixed(2) : "N/A"),
   },
   {
     key: "momentum5",
-    label: "Momentum(5)",
+    label: "Momentum(5) - Price Change Rate",
     format: async (v, symbol) =>
       v !== null
         ? `${await formatPrice(symbol, Number(v))} USD`
@@ -209,7 +209,7 @@ const columns: Column[] = [
   },
   {
     key: "momentum10",
-    label: "Momentum(10)",
+    label: "Momentum(10) - Price Change Rate",
     format: async (v, symbol) =>
       v !== null
         ? `${await formatPrice(symbol, Number(v))} USD`
@@ -217,17 +217,17 @@ const columns: Column[] = [
   },
   {
     key: "roc1",
-    label: "ROC(1)",
+    label: "ROC(1) - Rate of Change %",
     format: (v) => (v !== null ? `${Number(v).toFixed(3)}%` : "N/A"),
   },
   {
     key: "roc3",
-    label: "ROC(3)",
+    label: "ROC(3) - Rate of Change %",
     format: (v) => (v !== null ? `${Number(v).toFixed(3)}%` : "N/A"),
   },
   {
     key: "roc5",
-    label: "ROC(5)",
+    label: "ROC(5) - Rate of Change %",
     format: (v) => (v !== null ? `${Number(v).toFixed(3)}%` : "N/A"),
   },
   {
@@ -1093,6 +1093,29 @@ async function generateHistoryTable(
     "- **Pressure Index**: buying/selling pressure percentage at row timestamp (Min: -100%, Max: +100%)\n";
   markdown +=
     "- **Close Price**: close price at row timestamp (Min: 0 USD, Max: +∞ USD)\n";
+
+  markdown += "\n## Column Descriptions\n\n";
+  markdown += "**RSI(9/14) - Relative Strength Index**: Momentum oscillator measuring the speed and magnitude of price changes. Values above 70 indicate overbought conditions, below 30 indicate oversold.\n\n";
+  markdown += "**StochRSI - RSI Oscillator**: Applies Stochastic calculation to RSI values, providing more sensitive overbought/oversold signals for scalping. Range 0-100, with 80+ being overbought and 20- being oversold.\n\n";
+  markdown += "**MACD(8,21,5)**: Moving Average Convergence Divergence optimized for 1-minute timeframe. Shows short-term momentum shifts. Positive values suggest bullish momentum, negative values suggest bearish momentum.\n\n";
+  markdown += "**MACD Signal Line(5)**: 5-period EMA of MACD values for fast scalping signals. MACD crossing above signal suggests buy opportunity, crossing below suggests sell.\n\n";
+  markdown += "**MACD Histogram**: Visual representation of distance between MACD and signal line. Growing positive histogram indicates strengthening bullish momentum, growing negative indicates strengthening bearish momentum.\n\n";
+  markdown += "**ADX(9) - Average Directional Index**: Measures trend strength for scalping. Values above 25 indicate strong trend suitable for trend-following, below 20 indicate ranging market better for mean reversion.\n\n";
+  markdown += "**+DI(9) Bullish & -DI(9) Bearish Indicators**: Directional indicators showing which side has momentum. When +DI > -DI, bullish pressure dominates; when -DI > +DI, bearish pressure dominates.\n\n";
+  markdown += "**ATR(5/9) - Average True Range**: Volatility measure critical for scalping stop-loss placement. Higher ATR means wider stops needed.\n\n";
+  markdown += "**CCI(9) - Commodity Channel Index**: Momentum oscillator for identifying quick overbought/oversold conditions. Values above +100 suggest overbought, below -100 suggest oversold, within ±100 is normal range.\n\n";
+  markdown += "**Stochastic %K Fast Line & %D Slow Line**: Ultra-responsive momentum oscillators for scalping entries/exits. %K is fast line, %D is smoothed. Above 80 overbought, below 20 oversold. Look for crossovers.\n\n";
+  markdown += "**Momentum - Price Change Rate**: Measures absolute price change velocity. Positive momentum indicates upward pressure, negative indicates downward pressure.\n\n";
+  markdown += "**ROC - Rate of Change %**: Percentage-based momentum showing speed of price movement. Useful for spotting acceleration or deceleration in trends.\n\n";
+  markdown += "**Bollinger Bands**: Volatility bands for identifying squeeze/expansion patterns. Price at upper band suggests profit-taking opportunity, at lower band suggests buying opportunity. Width shows volatility level.\n\n";
+  markdown += "**Bollinger Position**: Shows where price sits within the bands as percentage. 0% = at lower band, 50% = at middle, 100% = at upper band.\n\n";
+  markdown += "**EMA/SMA/DEMA/WMA**: Fast-reacting moving averages for scalping. Price above indicates uptrend, below indicates downtrend. Crossovers generate trading signals.\n\n";
+  markdown += "**Volume Ratio**: Current volume compared to average. Values above 1.5x indicate unusual activity worth attention.\n\n";
+  markdown += "**Support/Resistance Levels**: Key price levels where quick reversals often occur in scalping.\n\n";
+  markdown += "**Squeeze Momentum**: Indicates volatility compression. High values suggest imminent breakout.\n\n";
+  markdown += "**Pressure Index**: Measures buying vs selling pressure within the candle. Positive values indicate buying pressure, negative indicates selling pressure.\n\n";
+  markdown += "**Volatility(5)**: Statistical volatility measure showing how much price is fluctuating. Higher values mean riskier but potentially more profitable trades.\n\n";
+  markdown += "**True Range**: Maximum price movement in the candle, important for position sizing in scalping.\n\n";
 
   return markdown;
 }

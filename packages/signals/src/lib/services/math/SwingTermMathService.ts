@@ -86,7 +86,7 @@ const columns: Column[] = [
   },
   {
     key: "stochasticRSI14",
-    label: "Stochastic RSI(14)",
+    label: "StochRSI(14) - RSI Oscillator",
     format: (v) => (v !== null ? Number(v).toFixed(2) : "N/A"),
   },
   {
@@ -96,7 +96,7 @@ const columns: Column[] = [
   },
   {
     key: "signal9",
-    label: "Signal(9)",
+    label: "MACD Signal Line(9)",
     format: (v) => (v !== null ? Number(v).toFixed(4) : "N/A"),
   },
   {
@@ -106,12 +106,12 @@ const columns: Column[] = [
   },
   {
     key: "plusDI14",
-    label: "+DI(14)",
+    label: "+DI(14) Bullish Indicator",
     format: (v) => (v !== null ? Number(v).toFixed(2) : "N/A"),
   },
   {
     key: "minusDI14",
-    label: "-DI(14)",
+    label: "-DI(14) Bearish Indicator",
     format: (v) => (v !== null ? Number(v).toFixed(2) : "N/A"),
   },
   {
@@ -124,22 +124,22 @@ const columns: Column[] = [
   },
   {
     key: "cci20",
-    label: "CCI(20)",
+    label: "CCI(20) - Commodity Channel Index",
     format: (v) => (v !== null ? Number(v).toFixed(2) : "N/A"),
   },
   {
     key: "stochasticK14_3_3",
-    label: "Stochastic K(14,3,3)",
+    label: "Stochastic %K Fast Line(14,3,3)",
     format: (v) => (v !== null ? Number(v).toFixed(2) : "N/A"),
   },
   {
     key: "stochasticD14_3_3",
-    label: "Stochastic D(14,3,3)",
+    label: "Stochastic %D Slow Line(14,3,3)",
     format: (v) => (v !== null ? Number(v).toFixed(2) : "N/A"),
   },
   {
     key: "momentum8",
-    label: "Momentum(8)",
+    label: "Momentum(8) - Price Change Rate",
     format: async (v, symbol) =>
       v !== null
         ? `${await formatPrice(symbol, Number(v))} USD`
@@ -243,12 +243,12 @@ const columns: Column[] = [
   },
   {
     key: "volatility",
-    label: "Basic Volatility",
+    label: "Volatility % - Price Fluctuation",
     format: (v) => (v !== null ? `${Number(v).toFixed(2)}%` : "N/A"),
   },
   {
     key: "priceMomentum6",
-    label: "Price Momentum(6)",
+    label: "Price Momentum(6) - Swing Direction",
     format: async (v, symbol) =>
       v !== null
         ? `${await formatPrice(symbol, Number(v))} USD`
@@ -277,7 +277,7 @@ const columns: Column[] = [
   },
   {
     key: "bodySize",
-    label: "Body Size",
+    label: "Candle Body Size",
     format: async (v, symbol) =>
       `${await formatPrice(symbol, Number(v))} USD`,
   },
@@ -839,6 +839,28 @@ async function generateHistoryTable(
     "- **Volume**: trading volume at row timestamp (Min: 0, Max: +∞)\n";
   markdown +=
     "- **Volatility**: volatility percentage at row timestamp (Min: 0%, Max: +∞)\n";
+
+  markdown += "\n## Column Descriptions\n\n";
+  markdown += "**RSI(14) - Relative Strength Index**: Momentum oscillator measuring the speed and magnitude of price changes on 30-minute timeframe. Values above 70 indicate overbought conditions suitable for profit-taking, below 30 indicate oversold conditions suitable for entries.\n\n";
+  markdown += "**StochRSI(14) - RSI Oscillator**: Applies Stochastic calculation to RSI values, providing more sensitive overbought/oversold signals for swing trading. Range 0-100, with 80+ being overbought and 20- being oversold.\n\n";
+  markdown += "**MACD(12,26,9)**: Moving Average Convergence Divergence - classic trend-following momentum indicator for swing trading. Positive values suggest bullish momentum, negative values suggest bearish momentum. Watch for crossovers with signal line.\n\n";
+  markdown += "**MACD Signal Line(9)**: 9-period EMA of MACD values, used to generate swing trading signals. When MACD crosses above the signal line it suggests a bullish swing entry, crossing below suggests bearish swing entry.\n\n";
+  markdown += "**ADX(14) - Average Directional Index**: Measures trend strength regardless of direction. Values above 25 indicate a strong trend suitable for trend-following swing trades, below 20 indicate weak/ranging market better for range-bound strategies.\n\n";
+  markdown += "**+DI(14) Bullish Indicator**: Positive Directional Indicator - measures upward price movement strength. When +DI is above -DI and rising, it indicates strong bullish swing momentum.\n\n";
+  markdown += "**-DI(14) Bearish Indicator**: Negative Directional Indicator - measures downward price movement strength. When -DI is above +DI and rising, it indicates strong bearish swing momentum.\n\n";
+  markdown += "**ATR(14) - Average True Range**: Measures market volatility crucial for swing trading position sizing and stop-loss placement. Higher ATR means wider stops needed to avoid premature exit.\n\n";
+  markdown += "**CCI(20) - Commodity Channel Index**: Momentum-based oscillator measuring the variation of price from statistical mean. Values above +100 suggest strong upward momentum, below -100 suggest strong downward momentum, useful for swing entry/exit timing.\n\n";
+  markdown += "**Stochastic %K Fast Line & %D Slow Line**: Momentum oscillators comparing closing price to price range over time. %K is the fast line showing current momentum, %D is smoothed version. Values above 80 indicate overbought swing reversal opportunities, below 20 indicate oversold swing entry opportunities.\n\n";
+  markdown += "**Momentum(8) - Price Change Rate**: Measures the absolute rate of price change over 8 periods. Positive and increasing momentum confirms swing uptrend, negative and decreasing confirms swing downtrend.\n\n";
+  markdown += "**Bollinger Bands**: Volatility bands placed above and below a 20-period moving average. In swing trading, price touching upper band suggests taking profits on longs, lower band suggests entry for longs or exit for shorts. Width indicates volatility - squeeze suggests imminent swing move.\n\n";
+  markdown += "**EMA/SMA/DEMA/WMA**: Various Moving Averages - smooth price data to identify swing trend direction. Price above MA suggests swing uptrend, below suggests swing downtrend. Moving average crossovers generate swing trading signals.\n\n";
+  markdown += "**Support/Resistance Levels**: Key price levels where asset historically has difficulty moving below (support) or above (resistance). Critical for swing trading entry/exit and stop-loss placement.\n\n";
+  markdown += "**Fibonacci Nearest Support/Resistance**: Identifies nearest Fibonacci retracement levels acting as support/resistance. Swing traders use these to identify entry points (at support) and profit targets (at resistance).\n\n";
+  markdown += "**Fibonacci Position %**: Shows where current price sits in the recent high-low range. 0% = at low (potential swing buy), 50% = mid-range, 100% = at high (potential swing sell). Helps identify if price is at an extreme suitable for swing entries.\n\n";
+  markdown += "**Price Momentum(6) - Swing Direction**: 6-period momentum indicator specifically for swing direction confirmation. Positive values confirm upward swing, negative confirm downward swing.\n\n";
+  markdown += "**Volatility % - Price Fluctuation**: Statistical measure of price fluctuation. Higher volatility means larger price swings and potentially more profit opportunity, but also higher risk requiring wider stops.\n\n";
+  markdown += "**Volume**: Trading volume indicating market participation. Rising volume during price moves confirms the swing trend strength, declining volume suggests weakening swing.\n\n";
+  markdown += "**Candle Body Size**: Difference between open and close prices, indicating the strength of directional movement. Large bodies confirm strong swing momentum, small bodies suggest consolidation or indecision.\n\n";
 
   return markdown;
 }

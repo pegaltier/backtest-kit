@@ -97,7 +97,7 @@ const columns: Column[] = [
   },
   {
     key: "stochasticRSI14",
-    label: "Stochastic RSI(14)",
+    label: "StochRSI(14) - RSI Oscillator",
     format: (v) => (v !== null ? Number(v).toFixed(2) : "N/A"),
   },
   {
@@ -107,7 +107,7 @@ const columns: Column[] = [
   },
   {
     key: "signal9",
-    label: "Signal(9)",
+    label: "MACD Signal Line(9)",
     format: (v) => (v !== null ? Number(v).toFixed(4) : "N/A"),
   },
   {
@@ -117,12 +117,12 @@ const columns: Column[] = [
   },
   {
     key: "pdi14",
-    label: "+DI(14)",
+    label: "+DI(14) Bullish Indicator",
     format: (v) => (v !== null ? Number(v).toFixed(2) : "N/A"),
   },
   {
     key: "ndi14",
-    label: "-DI(14)",
+    label: "-DI(14) Bearish Indicator",
     format: (v) => (v !== null ? Number(v).toFixed(2) : "N/A"),
   },
   {
@@ -151,22 +151,22 @@ const columns: Column[] = [
   },
   {
     key: "cci20",
-    label: "CCI(20)",
+    label: "CCI(20) - Commodity Channel Index",
     format: (v) => (v !== null ? Number(v).toFixed(2) : "N/A"),
   },
   {
     key: "stochastic14_3_3_K",
-    label: "Stochastic K(14,3,3)",
+    label: "Stochastic %K Fast Line(14,3,3)",
     format: (v) => (v !== null ? Number(v).toFixed(2) : "N/A"),
   },
   {
     key: "stochastic14_3_3_D",
-    label: "Stochastic D(14,3,3)",
+    label: "Stochastic %D Slow Line(14,3,3)",
     format: (v) => (v !== null ? Number(v).toFixed(2) : "N/A"),
   },
   {
     key: "momentum10",
-    label: "Momentum(10)",
+    label: "Momentum(10) - Price Change Rate",
     format: (v) => (v !== null ? Number(v).toFixed(2) : "N/A"),
   },
   {
@@ -268,13 +268,13 @@ const columns: Column[] = [
   },
   {
     key: "fibonacciDistance",
-    label: "Fibonacci Distance",
+    label: "Fibonacci Distance to Nearest Level",
     format: async (v, symbol) =>
       `${await formatPrice(symbol, Number(v))} USD`,
   },
   {
     key: "bodySize",
-    label: "Body Size",
+    label: "Candle Body Size",
     format: async (v, symbol) =>
       `${await formatPrice(symbol, Number(v))} USD`,
   },
@@ -743,6 +743,24 @@ async function generateHistoryTable(
     "- **Body Size**: candle body size at row timestamp (Min: 0 USD, Max: +∞ USD)\n";
   markdown +=
     "- **Close Price**: close price at row timestamp (Min: 0 USD, Max: +∞ USD)\n";
+
+  markdown += "\n## Column Descriptions\n\n";
+  markdown += "**RSI(14) - Relative Strength Index**: Momentum oscillator measuring the speed and magnitude of price changes. Values above 70 indicate overbought conditions, below 30 indicate oversold.\n\n";
+  markdown += "**StochRSI(14) - RSI Oscillator**: Applies Stochastic calculation to RSI values, providing more sensitive overbought/oversold signals. Range 0-100, with 80+ being overbought and 20- being oversold.\n\n";
+  markdown += "**MACD(12,26,9)**: Moving Average Convergence Divergence - trend-following momentum indicator showing the relationship between two exponential moving averages. Positive values suggest bullish momentum, negative values suggest bearish momentum.\n\n";
+  markdown += "**MACD Signal Line(9)**: 9-period EMA of MACD values, used to generate buy/sell signals. When MACD crosses above the signal line it suggests a bullish signal, crossing below suggests bearish.\n\n";
+  markdown += "**ADX(14) - Average Directional Index**: Measures trend strength regardless of direction. Values above 25 indicate a strong trend, below 20 indicate weak or no trend.\n\n";
+  markdown += "**+DI(14) Bullish Indicator**: Positive Directional Indicator - measures upward price movement strength. Higher values indicate stronger bullish pressure.\n\n";
+  markdown += "**-DI(14) Bearish Indicator**: Negative Directional Indicator - measures downward price movement strength. Higher values indicate stronger bearish pressure.\n\n";
+  markdown += "**ATR(14) - Average True Range**: Measures market volatility by calculating the average range between high and low prices. Higher values indicate higher volatility.\n\n";
+  markdown += "**CCI(20) - Commodity Channel Index**: Momentum-based oscillator measuring the variation of price from statistical mean. Values above +100 suggest overbought, below -100 suggest oversold.\n\n";
+  markdown += "**Stochastic %K Fast Line & %D Slow Line**: Momentum oscillators comparing closing price to price range over time. %K is the fast line showing current momentum, %D is smoothed version. Values above 80 are overbought, below 20 are oversold.\n\n";
+  markdown += "**Momentum(10) - Price Change Rate**: Measures the rate of price change over 10 periods. Positive values indicate upward momentum, negative values indicate downward momentum.\n\n";
+  markdown += "**Bollinger Bands**: Volatility bands placed above and below a moving average. Price touching upper band suggests overbought, lower band suggests oversold. Width indicates volatility.\n\n";
+  markdown += "**EMA/SMA/DEMA/WMA**: Various Moving Averages - smooth price data to identify trend direction. Price above MA suggests uptrend, below suggests downtrend.\n\n";
+  markdown += "**Support/Resistance Levels**: Price levels where asset historically has difficulty moving below (support) or above (resistance).\n\n";
+  markdown += "**Fibonacci Levels**: Technical analysis tool based on Fibonacci sequence, identifying potential support/resistance levels at key percentages (23.6%, 38.2%, 50%, 61.8%, 78.6%).\n\n";
+  markdown += "**Candle Body Size**: Difference between open and close prices, indicating the strength of price movement during the period.\n\n";
 
   return markdown;
 }
