@@ -274,6 +274,22 @@ async function main() {
       log.success('Created config/prompt/signal.prompt.cjs');
     }
 
+    // Create config/docker/docker-compose.yaml from template
+    {
+      log.info('Creating config/docker/docker-compose.yaml...');
+      await fs.mkdir(path.join(projectPath, 'config', 'docker'), { recursive: true });
+      const dockerComposeContent = await renderTemplate(
+        path.join(templateDir, 'docker-compose.mustache'),
+        templateData
+      );
+      await fs.writeFile(
+        path.join(projectPath, 'config', 'docker', 'docker-compose.yaml'),
+        dockerComposeContent,
+        'utf-8'
+      );
+      log.success('Created config/docker/docker-compose.yaml');
+    }
+
     // Create index.cjs from template
     {
       log.info('Creating index.cjs...');
