@@ -7,7 +7,9 @@
   "scripts": {
     "start": "dotenv -e .env -- node ./src/index.mjs --backtest",
     "pm2:start": "pm2 start ./config/ecosystem.config.cjs",
-    "pm2:stop": "pm2 stop ./config/ecosystem.config.cjs"
+    "pm2:stop": "pm2 stop ./config/ecosystem.config.cjs",
+    "docker:start": "docker-compose -f ./config/docker/docker-compose.yaml up -d",
+    "docker:stop": "docker-compose -f ./config/docker/docker-compose.yaml down"
   },
   "dependencies": {
     "@backtest-kit/ollama": "^0.1.1",
