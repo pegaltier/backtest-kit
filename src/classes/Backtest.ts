@@ -25,6 +25,7 @@ const BACKTEST_METHOD_NAME_GET_SCHEDULED_SIGNAL =
 const BACKTEST_METHOD_NAME_GET_BREAKEVEN = "BacktestUtils.getBreakeven";
 const BACKTEST_METHOD_NAME_BREAKEVEN = "Backtest.commitBreakeven";
 const BACKTEST_METHOD_NAME_CANCEL = "BacktestUtils.commitCancel";
+const BACKTEST_METHOD_NAME_CLOSE = "BacktestUtils.commitClose";
 const BACKTEST_METHOD_NAME_PARTIAL_PROFIT = "BacktestUtils.commitPartialProfit";
 const BACKTEST_METHOD_NAME_PARTIAL_LOSS = "BacktestUtils.commitPartialLoss";
 const BACKTEST_METHOD_NAME_TRAILING_STOP = "BacktestUtils.commitTrailingStop";
@@ -890,6 +891,83 @@ export class BacktestUtils {
       symbol,
       context,
       cancelId
+    );
+  };
+
+  /**
+   * Closes the pending signal without stopping the strategy.
+   *
+   * Clears the pending signal (active position).
+   * Does NOT affect scheduled signals or strategy operation.
+   * Does NOT set stop flag - strategy can continue generating new signals.
+   *
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName, exchangeName, and frameName
+   * @param closeId - Optional close ID for user-initiated closes
+   * @returns Promise that resolves when pending signal is closed
+   *
+   * @example
+   * ```typescript
+   * // Close pending signal with custom ID
+   * await Backtest.commitClose("BTCUSDT", {
+   *   exchangeName: "binance",
+   *   strategyName: "my-strategy",
+   *   frameName: "1m"
+   * }, "manual-close-001");
+   * ```
+   */
+  static commitClose = async (
+    symbol: string,
+    context: {
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
+    },
+    closeId?: string
+  ): Promise<void> => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_CLOSE, {
+      symbol,
+      context,
+      closeId,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      BACKTEST_METHOD_NAME_CLOSE
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      BACKTEST_METHOD_NAME_CLOSE
+    );
+
+    {
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          BACKTEST_METHOD_NAME_CLOSE
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            BACKTEST_METHOD_NAME_CLOSE
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            BACKTEST_METHOD_NAME_CLOSE
+          )
+        );
+    }
+
+    await backtest.strategyCoreService.close(
+      true,
+      symbol,
+      context,
+      closeId
     );
   };
 

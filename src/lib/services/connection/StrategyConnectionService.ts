@@ -711,6 +711,37 @@ export class StrategyConnectionService implements TStrategy {
   };
 
   /**
+   * Closes the pending signal without stopping the strategy.
+   *
+   * Clears the pending signal (active position).
+   * Does NOT affect scheduled signals or strategy operation.
+   * Does NOT set stop flag - strategy can continue generating new signals.
+   *
+   * Note: Closed event will be emitted on next tick() call when strategy
+   * detects the pending signal was closed.
+   *
+   * @param backtest - Whether running in backtest mode
+   * @param symbol - Trading pair symbol
+   * @param context - Context with strategyName, exchangeName, frameName
+   * @param closeId - Optional close ID for user-initiated closes
+   * @returns Promise that resolves when pending signal is closed
+   */
+  public close = async (
+    backtest: boolean,
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
+    closeId?: string
+  ): Promise<void> => {
+    this.loggerService.log("strategyConnectionService close", {
+      symbol,
+      context,
+      closeId,
+    });
+    const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
+    await strategy.close(symbol, backtest, closeId);
+  };
+
+  /**
    * Executes partial close at profit level (moving toward TP).
    *
    * Closes a percentage of the pending position at the current price, recording it as a "profit" type partial.

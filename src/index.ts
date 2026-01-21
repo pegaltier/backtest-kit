@@ -16,6 +16,7 @@ export {
 } from "./function/get";
 export {
   commitCancel,
+  commitClose,
   commitPartialLoss,
   commitPartialProfit,
   commitTrailingStop,

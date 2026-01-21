@@ -340,6 +340,34 @@ export class StrategyCoreService implements TStrategy {
   };
 
   /**
+   * Closes the pending signal without stopping the strategy.
+   *
+   * Clears the pending signal (active position).
+   * Does NOT affect scheduled signals or strategy operation.
+   * Does NOT set stop flag - strategy can continue generating new signals.
+   *
+   * Delegates to StrategyConnectionService.close() to clear pending signal
+   * and emit closed event through emitters.
+   * Does not require execution context.
+   *
+   * @param backtest - Whether running in backtest mode
+   * @param symbol - Trading pair symbol
+   * @param context - Context with strategyName, exchangeName, frameName
+   * @param closeId - Optional close ID for user-initiated closes
+   * @returns Promise that resolves when pending signal is closed
+   */
+  public close = async (backtest: boolean, symbol: string, context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }, closeId?: string): Promise<void> => {
+    this.loggerService.log("strategyCoreService close", {
+      symbol,
+      context,
+      backtest,
+      closeId,
+    });
+    await this.validate(context);
+    return await this.strategyConnectionService.close(backtest, symbol, context, closeId);
+  };
+
+  /**
    * Disposes the ClientStrategy instance for the given context.
    *
    * Calls dispose on the strategy instance to clean up resources,

@@ -56,6 +56,49 @@ export async function commitCancel(symbol: string, cancelId?: string): Promise<v
 }
 
 /**
+ * Closes the pending signal without stopping the strategy.
+ *
+ * Clears the pending signal (active position).
+ * Does NOT affect scheduled signals or strategy operation.
+ * Does NOT set stop flag - strategy can continue generating new signals.
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @param closeId - Optional close ID for tracking user-initiated closes
+ * @returns Promise that resolves when pending signal is closed
+ *
+ * @example
+ * ```typescript
+ * import { commitClose } from "backtest-kit";
+ *
+ * // Close pending signal with custom ID
+ * await commitClose("BTCUSDT", "manual-close-001");
+ * ```
+ */
+export async function commitClose(symbol: string, closeId?: string): Promise<void> {
+  backtest.loggerService.info("commitClose", {
+    symbol,
+    closeId,
+  });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("commitClose requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("commitClose requires a method context");
+  }
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } =
+    backtest.methodContextService.context;
+  await backtest.strategyCoreService.close(
+    isBacktest,
+    symbol,
+    { exchangeName, frameName, strategyName },
+    closeId
+  );
+}
+
+/**
  * Executes partial close at profit level (moving toward TP).
  *
  * Closes a percentage of the active pending position at profit.

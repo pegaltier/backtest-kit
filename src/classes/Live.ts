@@ -22,6 +22,7 @@ const LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL = "LiveUtils.getScheduledSignal";
 const LIVE_METHOD_NAME_GET_BREAKEVEN = "LiveUtils.getBreakeven";
 const LIVE_METHOD_NAME_BREAKEVEN = "Live.commitBreakeven";
 const LIVE_METHOD_NAME_CANCEL = "LiveUtils.commitCancel";
+const LIVE_METHOD_NAME_CLOSE = "LiveUtils.commitClose";
 const LIVE_METHOD_NAME_PARTIAL_PROFIT = "LiveUtils.commitPartialProfit";
 const LIVE_METHOD_NAME_PARTIAL_LOSS = "LiveUtils.commitPartialLoss";
 const LIVE_METHOD_NAME_TRAILING_STOP = "LiveUtils.commitTrailingStop";
@@ -639,6 +640,57 @@ export class LiveUtils {
       exchangeName: context.exchangeName,
       frameName: "",
     }, cancelId);
+  };
+
+  /**
+   * Closes the pending signal without stopping the strategy.
+   *
+   * Clears the pending signal (active position).
+   * Does NOT affect scheduled signals or strategy operation.
+   * Does NOT set stop flag - strategy can continue generating new signals.
+   *
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName and exchangeName
+   * @param closeId - Optional close ID for user-initiated closes
+   * @returns Promise that resolves when pending signal is closed
+   *
+   * @example
+   * ```typescript
+   * // Close pending signal with custom ID
+   * await Live.commitClose("BTCUSDT", {
+   *   exchangeName: "binance",
+   *   strategyName: "my-strategy"
+   * }, "manual-close-001");
+   * ```
+   */
+  static commitClose = async (
+    symbol: string,
+    context: {
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+    },
+    closeId?: string
+  ): Promise<void> => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_CLOSE, {
+      symbol,
+      context,
+      closeId,
+    });
+    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_CLOSE);
+    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_CLOSE);
+
+    {
+      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
+      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_CLOSE);
+      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_CLOSE));
+      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_CLOSE));
+    }
+
+    await backtest.strategyCoreService.close(false, symbol, {
+      strategyName: context.strategyName,
+      exchangeName: context.exchangeName,
+      frameName: "",
+    }, closeId);
   };
 
   /**

@@ -14,6 +14,7 @@ import {
   ISignalDto,
   IScheduledSignalRow,
   IScheduledSignalCancelRow,
+  ISignalCloseRow,
   IPublicSignalRow,
   IStrategyParams,
   IStrategyTickResult,
@@ -3273,6 +3274,7 @@ export class ClientStrategy implements IStrategy {
 
   _scheduledSignal: IScheduledSignalRow | null = null;
   _cancelledSignal: IScheduledSignalCancelRow | null = null;
+  _closedSignal: ISignalCloseRow | null = null;
 
   constructor(readonly params: IStrategyParams) {}
 
@@ -3604,6 +3606,85 @@ export class ClientStrategy implements IStrategy {
       return result;
     }
 
+    // Check if pending signal was closed - emit closed event once
+    if (this._closedSignal) {
+      const currentPrice = await this.params.exchange.getAveragePrice(
+        this.params.execution.context.symbol
+      );
+
+      const closedSignal = this._closedSignal;
+      this._closedSignal = null; // Clear after emitting
+
+      this.params.logger.info("ClientStrategy tick: pending signal was closed", {
+        symbol: this.params.execution.context.symbol,
+        signalId: closedSignal.id,
+      });
+
+      // Call onClose callback
+      await CALL_CLOSE_CALLBACKS_FN(
+        this,
+        this.params.execution.context.symbol,
+        closedSignal,
+        currentPrice,
+        currentTime,
+        this.params.execution.context.backtest
+      );
+
+      // КРИТИЧНО: Очищаем состояние ClientPartial при закрытии позиции
+      await CALL_PARTIAL_CLEAR_FN(
+        this,
+        this.params.execution.context.symbol,
+        closedSignal,
+        currentPrice,
+        currentTime,
+        this.params.execution.context.backtest
+      );
+
+      // КРИТИЧНО: Очищаем состояние ClientBreakeven при закрытии позиции
+      await CALL_BREAKEVEN_CLEAR_FN(
+        this,
+        this.params.execution.context.symbol,
+        closedSignal,
+        currentPrice,
+        currentTime,
+        this.params.execution.context.backtest
+      );
+
+      await CALL_RISK_REMOVE_SIGNAL_FN(
+        this,
+        this.params.execution.context.symbol,
+        currentTime,
+        this.params.execution.context.backtest
+      );
+
+      const pnl = toProfitLossDto(closedSignal, currentPrice);
+
+      const result: IStrategyTickResultClosed = {
+        action: "closed",
+        signal: TO_PUBLIC_SIGNAL(closedSignal),
+        currentPrice,
+        closeReason: "closed",
+        closeTimestamp: currentTime,
+        pnl,
+        strategyName: this.params.method.context.strategyName,
+        exchangeName: this.params.method.context.exchangeName,
+        frameName: this.params.method.context.frameName,
+        symbol: this.params.execution.context.symbol,
+        backtest: this.params.execution.context.backtest,
+        closeId: closedSignal.closeId,
+      };
+
+      await CALL_TICK_CALLBACKS_FN(
+        this,
+        this.params.execution.context.symbol,
+        result,
+        currentTime,
+        this.params.execution.context.backtest
+      );
+
+      return result;
+    }
+
     // Monitor scheduled signal
     if (this._scheduledSignal && !this._pendingSignal) {
       const currentPrice = await this.params.exchange.getAveragePrice(
@@ -3783,6 +3864,73 @@ export class ClientStrategy implements IStrategy {
       };
 
       return cancelledResult;
+    }
+
+    // If signal was closed - return closed
+    if (this._closedSignal) {
+      this.params.logger.debug("ClientStrategy backtest: pending signal was closed");
+
+      const currentPrice = await this.params.exchange.getAveragePrice(symbol);
+
+      const closedSignal = this._closedSignal;
+      this._closedSignal = null; // Clear after using
+
+      const closeTimestamp = this.params.execution.context.when.getTime();
+
+      await CALL_CLOSE_CALLBACKS_FN(
+        this,
+        this.params.execution.context.symbol,
+        closedSignal,
+        currentPrice,
+        closeTimestamp,
+        this.params.execution.context.backtest
+      );
+
+      // КРИТИЧНО: Очищаем состояние ClientPartial при закрытии позиции
+      await CALL_PARTIAL_CLEAR_FN(
+        this,
+        this.params.execution.context.symbol,
+        closedSignal,
+        currentPrice,
+        closeTimestamp,
+        this.params.execution.context.backtest
+      );
+
+      // КРИТИЧНО: Очищаем состояние ClientBreakeven при закрытии позиции
+      await CALL_BREAKEVEN_CLEAR_FN(
+        this,
+        this.params.execution.context.symbol,
+        closedSignal,
+        currentPrice,
+        closeTimestamp,
+        this.params.execution.context.backtest
+      );
+
+      await CALL_RISK_REMOVE_SIGNAL_FN(
+        this,
+        this.params.execution.context.symbol,
+        closeTimestamp,
+        this.params.execution.context.backtest
+      );
+
+      const pnl = toProfitLossDto(closedSignal, currentPrice);
+
+      const closedResult: IStrategyTickResultClosed = {
+        action: "closed",
+        signal: TO_PUBLIC_SIGNAL(closedSignal),
+        currentPrice,
+        closeReason: "closed",
+        closeTimestamp: closeTimestamp,
+        pnl,
+        strategyName: this.params.method.context.strategyName,
+        exchangeName: this.params.method.context.exchangeName,
+        frameName: this.params.method.context.frameName,
+        symbol: this.params.execution.context.symbol,
+        backtest: true,
+        closeId: closedSignal.closeId,
+      };
+
+      return closedResult;
     }
 
     if (!this._pendingSignal && !this._scheduledSignal) {
@@ -4054,6 +4202,54 @@ export class ClientStrategy implements IStrategy {
       symbol,
       this.params.method.context.strategyName,
       this.params.method.context.exchangeName,
+    );
+  }
+
+  /**
+   * Closes the pending signal without stopping the strategy.
+   *
+   * Clears the pending signal (active position).
+   * Does NOT affect scheduled signals or strategy operation.
+   * Does NOT set stop flag - strategy can continue generating new signals.
+   *
+   * Use case: Close an active position that is no longer desired without stopping the entire strategy.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param backtest - Whether running in backtest mode
+   * @param closeId - Optional identifier for this close operation
+   * @returns Promise that resolves when pending signal is cleared
+   *
+   * @example
+   * ```typescript
+   * // Close pending signal without stopping strategy
+   * await strategy.close("BTCUSDT", false, "user-close-123");
+   * // Strategy continues, can generate new signals
+   * ```
+   */
+  public async close(symbol: string, backtest: boolean, closeId?: string): Promise<void> {
+    this.params.logger.debug("ClientStrategy close", {
+      symbol,
+      hasPendingSignal: this._pendingSignal !== null,
+      closeId,
+    });
+
+    // Save closed signal for next tick to emit closed event
+    if (this._pendingSignal) {
+      this._closedSignal = Object.assign({}, this._pendingSignal, {
+        closeId,
+      });
+      this._pendingSignal = null;
+    }
+
+    if (backtest) {
+      return;
+    }
+
+    await PersistSignalAdapter.writeSignalData(
+      this._pendingSignal,
+      symbol,
+      this.params.strategyName,
+      this.params.exchangeName,
     );
   }
 

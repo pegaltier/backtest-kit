@@ -176,6 +176,15 @@ export interface IScheduledSignalCancelRow extends IScheduledSignalRow {
 }
 
 /**
+ * Signal row with close ID.
+ * Extends ISignalRow to include optional closeId for user-initiated closes.
+ */
+export interface ISignalCloseRow extends ISignalRow {
+  /** Close ID (only for user-initiated closes) */
+  closeId?: string;
+}
+
+/**
  * Strategy parameters passed to ClientStrategy constructor.
  * Combines schema with runtime dependencies.
  */
@@ -281,7 +290,7 @@ export interface IStrategySchema {
  * Reason why signal was closed.
  * Used in discriminated union for type-safe handling.
  */
-export type StrategyCloseReason = "time_expired" | "take_profit" | "stop_loss";
+export type StrategyCloseReason = "time_expired" | "take_profit" | "stop_loss" | "closed";
 
 /**
  * Reason why scheduled signal was cancelled.
@@ -440,7 +449,7 @@ export interface IStrategyTickResultClosed {
   signal: IPublicSignalRow;
   /** Final VWAP price at close */
   currentPrice: number;
-  /** Why signal closed (time_expired | take_profit | stop_loss) */
+  /** Why signal closed (time_expired | take_profit | stop_loss | closed) */
   closeReason: StrategyCloseReason;
   /** Unix timestamp in milliseconds when signal closed */
   closeTimestamp: number;
@@ -456,6 +465,8 @@ export interface IStrategyTickResultClosed {
   symbol: string;
   /** Whether this event is from backtest mode (true) or live mode (false) */
   backtest: boolean;
+  /** Close ID (only for user-initiated closes with reason "closed") */
+  closeId?: string;
 }
 
 /**
@@ -645,6 +656,29 @@ export interface IStrategy {
    * ```
    */
   cancel: (symbol: string, backtest: boolean, cancelId?: string) => Promise<void>;
+
+  /**
+   * Closes the pending signal without stopping the strategy.
+   *
+   * Clears the pending signal (active position).
+   * Does NOT affect scheduled signals or strategy operation.
+   * Does NOT set stop flag - strategy can continue generating new signals.
+   *
+   * Use case: Close an active position that is no longer desired without stopping the entire strategy.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param backtest - Whether running in backtest mode
+   * @param closeId - Optional identifier for this close operation
+   * @returns Promise that resolves when pending signal is cleared
+   *
+   * @example
+   * ```typescript
+   * // Close pending signal without stopping strategy
+   * await strategy.close("BTCUSDT", false, "user-close-123");
+   * // Strategy continues, can generate new signals
+   * ```
+   */
+  close: (symbol: string, backtest: boolean, closeId?: string) => Promise<void>;
 
   /**
    * Executes partial close at profit level (moving toward TP).

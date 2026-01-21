@@ -1204,7 +1204,7 @@ interface IStrategySchema {
  * Reason why signal was closed.
  * Used in discriminated union for type-safe handling.
  */
-type StrategyCloseReason = "time_expired" | "take_profit" | "stop_loss";
+type StrategyCloseReason = "time_expired" | "take_profit" | "stop_loss" | "closed";
 /**
  * Reason why scheduled signal was cancelled.
  * Used in discriminated union for type-safe handling.
@@ -1355,7 +1355,7 @@ interface IStrategyTickResultClosed {
     signal: IPublicSignalRow;
     /** Final VWAP price at close */
     currentPrice: number;
-    /** Why signal closed (time_expired | take_profit | stop_loss) */
+    /** Why signal closed (time_expired | take_profit | stop_loss | closed) */
     closeReason: StrategyCloseReason;
     /** Unix timestamp in milliseconds when signal closed */
     closeTimestamp: number;
@@ -1371,6 +1371,8 @@ interface IStrategyTickResultClosed {
     symbol: string;
     /** Whether this event is from backtest mode (true) or live mode (false) */
     backtest: boolean;
+    /** Close ID (only for user-initiated closes with reason "closed") */
+    closeId?: string;
 }
 /**
  * Tick result: scheduled signal cancelled without opening position.
@@ -1542,6 +1544,28 @@ interface IStrategy {
      * ```
      */
     cancel: (symbol: string, backtest: boolean, cancelId?: string) => Promise<void>;
+    /**
+     * Closes the pending signal without stopping the strategy.
+     *
+     * Clears the pending signal (active position).
+     * Does NOT affect scheduled signals or strategy operation.
+     * Does NOT set stop flag - strategy can continue generating new signals.
+     *
+     * Use case: Close an active position that is no longer desired without stopping the entire strategy.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param backtest - Whether running in backtest mode
+     * @param closeId - Optional identifier for this close operation
+     * @returns Promise that resolves when pending signal is cleared
+     *
+     * @example
+     * ```typescript
+     * // Close pending signal without stopping strategy
+     * await strategy.close("BTCUSDT", false, "user-close-123");
+     * // Strategy continues, can generate new signals
+     * ```
+     */
+    close: (symbol: string, backtest: boolean, closeId?: string) => Promise<void>;
     /**
      * Executes partial close at profit level (moving toward TP).
      *
@@ -3784,6 +3808,28 @@ declare function getActionSchema(actionName: ActionName): IActionSchema;
  * ```
  */
 declare function commitCancel(symbol: string, cancelId?: string): Promise<void>;
+/**
+ * Closes the pending signal without stopping the strategy.
+ *
+ * Clears the pending signal (active position).
+ * Does NOT affect scheduled signals or strategy operation.
+ * Does NOT set stop flag - strategy can continue generating new signals.
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @param closeId - Optional close ID for tracking user-initiated closes
+ * @returns Promise that resolves when pending signal is closed
+ *
+ * @example
+ * ```typescript
+ * import { commitClose } from "backtest-kit";
+ *
+ * // Close pending signal with custom ID
+ * await commitClose("BTCUSDT", "manual-close-001");
+ * ```
+ */
+declare function commitClose(symbol: string, closeId?: string): Promise<void>;
 /**
  * Executes partial close at profit level (moving toward TP).
  *
@@ -9177,6 +9223,33 @@ declare class BacktestUtils {
         frameName: FrameName;
     }, cancelId?: string) => Promise<void>;
     /**
+     * Closes the pending signal without stopping the strategy.
+     *
+     * Clears the pending signal (active position).
+     * Does NOT affect scheduled signals or strategy operation.
+     * Does NOT set stop flag - strategy can continue generating new signals.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, and frameName
+     * @param closeId - Optional close ID for user-initiated closes
+     * @returns Promise that resolves when pending signal is closed
+     *
+     * @example
+     * ```typescript
+     * // Close pending signal with custom ID
+     * await Backtest.commitClose("BTCUSDT", {
+     *   exchangeName: "binance",
+     *   strategyName: "my-strategy",
+     *   frameName: "1m"
+     * }, "manual-close-001");
+     * ```
+     */
+    static commitClose: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }, closeId?: string) => Promise<void>;
+    /**
      * Executes partial close at profit level (moving toward TP).
      *
      * Closes a percentage of the active pending position at profit.
@@ -9888,6 +9961,31 @@ declare class LiveUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
     }, cancelId?: string) => Promise<void>;
+    /**
+     * Closes the pending signal without stopping the strategy.
+     *
+     * Clears the pending signal (active position).
+     * Does NOT affect scheduled signals or strategy operation.
+     * Does NOT set stop flag - strategy can continue generating new signals.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName and exchangeName
+     * @param closeId - Optional close ID for user-initiated closes
+     * @returns Promise that resolves when pending signal is closed
+     *
+     * @example
+     * ```typescript
+     * // Close pending signal with custom ID
+     * await Live.commitClose("BTCUSDT", {
+     *   exchangeName: "binance",
+     *   strategyName: "my-strategy"
+     * }, "manual-close-001");
+     * ```
+     */
+    static commitClose: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+    }, closeId?: string) => Promise<void>;
     /**
      * Executes partial close at profit level (moving toward TP).
      *
@@ -15267,6 +15365,27 @@ declare class StrategyConnectionService implements TStrategy$1 {
         frameName: FrameName;
     }, cancelId?: string) => Promise<void>;
     /**
+     * Closes the pending signal without stopping the strategy.
+     *
+     * Clears the pending signal (active position).
+     * Does NOT affect scheduled signals or strategy operation.
+     * Does NOT set stop flag - strategy can continue generating new signals.
+     *
+     * Note: Closed event will be emitted on next tick() call when strategy
+     * detects the pending signal was closed.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Context with strategyName, exchangeName, frameName
+     * @param closeId - Optional close ID for user-initiated closes
+     * @returns Promise that resolves when pending signal is closed
+     */
+    close: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }, closeId?: string) => Promise<void>;
+    /**
      * Executes partial close at profit level (moving toward TP).
      *
      * Closes a percentage of the pending position at the current price, recording it as a "profit" type partial.
@@ -16196,6 +16315,28 @@ declare class StrategyCoreService implements TStrategy {
         exchangeName: ExchangeName;
         frameName: FrameName;
     }, cancelId?: string) => Promise<void>;
+    /**
+     * Closes the pending signal without stopping the strategy.
+     *
+     * Clears the pending signal (active position).
+     * Does NOT affect scheduled signals or strategy operation.
+     * Does NOT set stop flag - strategy can continue generating new signals.
+     *
+     * Delegates to StrategyConnectionService.close() to clear pending signal
+     * and emit closed event through emitters.
+     * Does not require execution context.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Context with strategyName, exchangeName, frameName
+     * @param closeId - Optional close ID for user-initiated closes
+     * @returns Promise that resolves when pending signal is closed
+     */
+    close: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }, closeId?: string) => Promise<void>;
     /**
      * Disposes the ClientStrategy instance for the given context.
      *
@@ -19200,4 +19341,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { ActionBase, type ActivePingContract, Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IOrderBookData, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addOptimizerSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, commitBreakeven, commitCancel, commitPartialLoss, commitPartialProfit, commitSignalPromptHistory, commitTrailingStop, commitTrailingTake, dumpSignalData, emitters, formatPrice, formatQuantity, get, getActionSchema, getAveragePrice, getBacktestTimeframe, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getExchangeSchema, getFrameSchema, getMode, getOptimizerSchema, getOrderBook, getRiskSchema, getSizingSchema, getStrategySchema, getSymbol, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listOptimizerSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideOptimizerSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, roundTicks, set, setColumns, setConfig, setLogger, stop, validate };
+export { ActionBase, type ActivePingContract, Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IOrderBookData, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addOptimizerSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, commitBreakeven, commitCancel, commitClose, commitPartialLoss, commitPartialProfit, commitSignalPromptHistory, commitTrailingStop, commitTrailingTake, dumpSignalData, emitters, formatPrice, formatQuantity, get, getActionSchema, getAveragePrice, getBacktestTimeframe, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getExchangeSchema, getFrameSchema, getMode, getOptimizerSchema, getOrderBook, getRiskSchema, getSizingSchema, getStrategySchema, getSymbol, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listOptimizerSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideOptimizerSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, roundTicks, set, setColumns, setConfig, setLogger, stop, validate };
