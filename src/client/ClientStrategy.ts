@@ -3603,6 +3603,14 @@ export class ClientStrategy implements IStrategy {
         cancelId: cancelledSignal.cancelId,
       };
 
+      await CALL_TICK_CALLBACKS_FN(
+        this,
+        this.params.execution.context.symbol,
+        result,
+        currentTime,
+        this.params.execution.context.backtest
+      );
+
       return result;
     }
 
@@ -3863,6 +3871,14 @@ export class ClientStrategy implements IStrategy {
         cancelId: cancelledSignal.cancelId,
       };
 
+      await CALL_TICK_CALLBACKS_FN(
+        this,
+        this.params.execution.context.symbol,
+        cancelledResult,
+        closeTimestamp,
+        this.params.execution.context.backtest
+      );
+
       return cancelledResult;
     }
 
@@ -3929,6 +3945,14 @@ export class ClientStrategy implements IStrategy {
         backtest: true,
         closeId: closedSignal.closeId,
       };
+
+      await CALL_TICK_CALLBACKS_FN(
+        this,
+        this.params.execution.context.symbol,
+        closedResult,
+        closeTimestamp,
+        this.params.execution.context.backtest
+      );
 
       return closedResult;
     }
