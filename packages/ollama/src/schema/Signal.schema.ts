@@ -45,8 +45,10 @@ export const SignalSchema = z.object({
     .number()
     .describe(
       str.newline(
-        "Position opening price in USD",
-        "Use the current market price at the time of analysis"
+        "Position entry price in USD",
+        "Can be either:",
+        "- Current market price for immediate entry (market order)",
+        "- Price above/below market to open a limit order and wait for its resolve before entering"
       )
     ),
   price_stop_loss: z

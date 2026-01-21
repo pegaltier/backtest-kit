@@ -83,6 +83,13 @@ export {
 } from "./function/setup.function";
 
 /**
+ * Function to override the default signal format schema.
+ */
+export {
+  overrideSignalFormat,
+} from "./function/override.function";
+
+/**
  * Advanced engine library for direct service access.
  * Use this for custom integrations and low-level operations.
  */
