@@ -535,10 +535,11 @@ export class ClientExchange implements IExchange {
 
     // Filter candles to strictly match the requested range
     const sinceTimestamp = since.getTime();
+    const stepMs = step * 60 * 1_000;
 
     const filteredData = allData.filter(
       (candle) =>
-        candle.timestamp >= sinceTimestamp && candle.timestamp < endTime,
+        candle.timestamp >= sinceTimestamp && candle.timestamp < endTime + stepMs,
     );
 
     // Apply distinct by timestamp to remove duplicates
@@ -661,6 +662,207 @@ export class ClientExchange implements IExchange {
       price,
       this.params.execution.context.backtest,
     );
+  }
+
+  /**
+   * Fetches raw candles with flexible date/limit parameters.
+   *
+   * Compatibility layer that:
+   * - RAW MODE (sDate + eDate + limit): fetches exactly as specified, NO look-ahead bias protection
+   * - Other modes: respects execution context and prevents look-ahead bias
+   *
+   * Parameter combinations:
+   * 1. sDate + eDate + limit: RAW MODE - fetches exactly as specified, no validation against when
+   * 2. sDate + eDate: calculates limit from date range, validates endTimestamp <= when
+   * 3. eDate + limit: calculates sDate backward, validates endTimestamp <= when
+   * 4. sDate + limit: fetches forward, validates endTimestamp <= when
+   * 5. Only limit: uses execution.context.when as reference (backward)
+   *
+   * Edge cases:
+   * - If calculated limit is 0 or negative: throws error
+   * - If sDate >= eDate: throws error
+   * - If startTimestamp >= endTimestamp: throws error
+   * - If endTimestamp > when (non-RAW modes only): throws error to prevent look-ahead bias
+   *
+   * @param symbol - Trading pair symbol
+   * @param interval - Candle interval
+   * @param limit - Optional number of candles to fetch
+   * @param sDate - Optional start date in milliseconds
+   * @param eDate - Optional end date in milliseconds
+   * @returns Promise resolving to array of candles
+   * @throws Error if parameters are invalid or conflicting
+   */
+  public async getRawCandles(
+    symbol: string,
+    interval: CandleInterval,
+    limit?: number,
+    sDate?: number,
+    eDate?: number,
+  ): Promise<ICandleData[]> {
+    this.params.logger.debug(`ClientExchange getRawCandles`, {
+      symbol,
+      interval,
+      limit,
+      sDate,
+      eDate,
+    });
+
+    const step = INTERVAL_MINUTES[interval];
+    const stepMs = step * 60 * 1_000;
+    const when = this.params.execution.context.when.getTime();
+
+    let startTimestamp: number;
+    let endTimestamp: number;
+    let candleLimit: number;
+    let isRawMode = false;
+
+    // Case 1: sDate + eDate + limit - RAW MODE (no look-ahead bias protection)
+    if (
+      sDate !== undefined &&
+      eDate !== undefined &&
+      limit !== undefined
+    ) {
+      isRawMode = true;
+      if (sDate >= eDate) {
+        throw new Error(
+          `ClientExchange getRawCandles: sDate (${sDate}) must be less than eDate (${eDate})`,
+        );
+      }
+      startTimestamp = sDate;
+      endTimestamp = eDate;
+      candleLimit = limit;
+    }
+    // Case 2: sDate + eDate - calculate limit, respect backtest context
+    else if (sDate !== undefined && eDate !== undefined && limit === undefined) {
+      if (sDate >= eDate) {
+        throw new Error(
+          `ClientExchange getRawCandles: sDate (${sDate}) must be less than eDate (${eDate})`,
+        );
+      }
+      startTimestamp = sDate;
+      endTimestamp = eDate;
+
+      const rangeDuration = endTimestamp - startTimestamp;
+      candleLimit = Math.floor(rangeDuration / stepMs);
+
+      if (candleLimit <= 0) {
+        throw new Error(
+          `ClientExchange getRawCandles: calculated limit is ${candleLimit} for range [${sDate}, ${eDate}]`,
+        );
+      }
+    }
+    // Case 3: eDate + limit - calculate sDate backward, respect backtest context
+    else if (eDate !== undefined && limit !== undefined && sDate === undefined) {
+      endTimestamp = eDate;
+      startTimestamp = eDate - limit * stepMs;
+      candleLimit = limit;
+    }
+    // Case 4: sDate + limit - fetch forward, respect backtest context
+    else if (sDate !== undefined && limit !== undefined && eDate === undefined) {
+      startTimestamp = sDate;
+      endTimestamp = sDate + limit * stepMs;
+      candleLimit = limit;
+    }
+    // Case 5: Only limit - use execution context (backward from when)
+    else if (limit !== undefined && sDate === undefined && eDate === undefined) {
+      endTimestamp = when;
+      startTimestamp = when - limit * stepMs;
+      candleLimit = limit;
+    }
+    // Invalid combination
+    else {
+      throw new Error(
+        `ClientExchange getRawCandles: invalid parameter combination. Must provide either (limit), (eDate+limit), (sDate+limit), (sDate+eDate), or (sDate+eDate+limit)`,
+      );
+    }
+
+    // Validate timestamps
+    if (startTimestamp >= endTimestamp) {
+      throw new Error(
+        `ClientExchange getRawCandles: startTimestamp (${startTimestamp}) >= endTimestamp (${endTimestamp})`,
+      );
+    }
+
+    // Check if trying to fetch future data (prevent look-ahead bias)
+    // ONLY for non-RAW modes - RAW MODE bypasses this check
+    if (!isRawMode && endTimestamp > when) {
+      throw new Error(
+        `ClientExchange getRawCandles: endTimestamp (${endTimestamp}) is beyond execution context when (${when}) - look-ahead bias prevented`,
+      );
+    }
+
+    const since = new Date(startTimestamp);
+    let allData: ICandleData[] = [];
+
+    // Fetch data in chunks if limit exceeds max per request
+    if (candleLimit > GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST) {
+      let remaining = candleLimit;
+      let currentSince = new Date(since.getTime());
+
+      while (remaining > 0) {
+        const chunkLimit = Math.min(
+          remaining,
+          GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST,
+        );
+        const chunkData = await GET_CANDLES_FN(
+          { symbol, interval, limit: chunkLimit },
+          currentSince,
+          this,
+        );
+
+        allData.push(...chunkData);
+
+        remaining -= chunkLimit;
+        if (remaining > 0) {
+          currentSince = new Date(
+            currentSince.getTime() + chunkLimit * stepMs,
+          );
+        }
+      }
+    } else {
+      allData = await GET_CANDLES_FN(
+        { symbol, interval, limit: candleLimit },
+        since,
+        this,
+      );
+    }
+
+    // Filter candles to strictly match the requested range
+    const filteredData = allData.filter(
+      (candle) =>
+        candle.timestamp >= startTimestamp &&
+        candle.timestamp < endTimestamp + stepMs,
+    );
+
+    // Apply distinct by timestamp to remove duplicates
+    const uniqueData = Array.from(
+      new Map(
+        filteredData.map((candle) => [candle.timestamp, candle]),
+      ).values(),
+    );
+
+    if (filteredData.length !== uniqueData.length) {
+      const msg = `ClientExchange getRawCandles: Removed ${filteredData.length - uniqueData.length} duplicate candles by timestamp`;
+      this.params.logger.warn(msg);
+      console.warn(msg);
+    }
+
+    if (uniqueData.length < candleLimit) {
+      const msg = `ClientExchange getRawCandles: Expected ${candleLimit} candles, got ${uniqueData.length}`;
+      this.params.logger.warn(msg);
+      console.warn(msg);
+    }
+
+    await CALL_CANDLE_DATA_CALLBACKS_FN(
+      this,
+      symbol,
+      interval,
+      since,
+      candleLimit,
+      uniqueData,
+    );
+
+    return uniqueData;
   }
 
   /**
