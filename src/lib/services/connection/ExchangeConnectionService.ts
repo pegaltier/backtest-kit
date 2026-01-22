@@ -245,6 +245,37 @@ export class ExchangeConnectionService implements IExchange {
       this.methodContextService.context.exchangeName
     ).getOrderBook(symbol, depth);
   };
+
+  /**
+   * Fetches raw candles with flexible date/limit parameters.
+   *
+   * Routes to exchange determined by methodContextService.context.exchangeName.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param interval - Candle interval (e.g., "1h", "1d")
+   * @param limit - Optional number of candles to fetch
+   * @param sDate - Optional start date in milliseconds
+   * @param eDate - Optional end date in milliseconds
+   * @returns Promise resolving to array of candle data
+   */
+  public getRawCandles = async (
+    symbol: string,
+    interval: CandleInterval,
+    limit?: number,
+    sDate?: number,
+    eDate?: number
+  ): Promise<ICandleData[]> => {
+    this.loggerService.log("exchangeConnectionService getRawCandles", {
+      symbol,
+      interval,
+      limit,
+      sDate,
+      eDate,
+    });
+    return await this.getExchange(
+      this.methodContextService.context.exchangeName
+    ).getRawCandles(symbol, interval, limit, sDate, eDate);
+  };
 }
 
 export default ExchangeConnectionService;

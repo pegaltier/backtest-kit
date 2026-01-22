@@ -667,22 +667,19 @@ export class ClientExchange implements IExchange {
   /**
    * Fetches raw candles with flexible date/limit parameters.
    *
-   * Compatibility layer that:
-   * - RAW MODE (sDate + eDate + limit): fetches exactly as specified, NO look-ahead bias protection
-   * - Other modes: respects execution context and prevents look-ahead bias
+   * All modes respect execution context and prevent look-ahead bias.
    *
    * Parameter combinations:
-   * 1. sDate + eDate + limit: RAW MODE - fetches exactly as specified, no validation against when
-   * 2. sDate + eDate: calculates limit from date range, validates endTimestamp <= when
-   * 3. eDate + limit: calculates sDate backward, validates endTimestamp <= when
-   * 4. sDate + limit: fetches forward, validates endTimestamp <= when
+   * 1. sDate + eDate + limit: fetches with explicit parameters, validates eDate <= when
+   * 2. sDate + eDate: calculates limit from date range, validates eDate <= when
+   * 3. eDate + limit: calculates sDate backward, validates eDate <= when
+   * 4. sDate + limit: fetches forward, validates calculated endTimestamp <= when
    * 5. Only limit: uses execution.context.when as reference (backward)
    *
    * Edge cases:
    * - If calculated limit is 0 or negative: throws error
    * - If sDate >= eDate: throws error
-   * - If startTimestamp >= endTimestamp: throws error
-   * - If endTimestamp > when (non-RAW modes only): throws error to prevent look-ahead bias
+   * - If eDate > when: throws error to prevent look-ahead bias
    *
    * @param symbol - Trading pair symbol
    * @param interval - Candle interval
@@ -720,12 +717,16 @@ export class ClientExchange implements IExchange {
     let untilTimestamp: number;
     let calculatedLimit: number;
 
-    // Case 1: RAW MODE - all three parameters provided
-    // No look-ahead bias protection, fetches exactly as specified
+    // Case 1: all three parameters provided
     if (sDate !== undefined && eDate !== undefined && limit !== undefined) {
       if (sDate >= eDate) {
         throw new Error(
           `ClientExchange getRawCandles: sDate (${sDate}) must be < eDate (${eDate})`,
+        );
+      }
+      if (eDate > whenTimestamp) {
+        throw new Error(
+          `ClientExchange getRawCandles: eDate (${eDate}) exceeds execution context when (${whenTimestamp}). Look-ahead bias protection.`,
         );
       }
       sinceTimestamp = sDate;

@@ -5,6 +5,7 @@ import ExecutionContextService from "../context/ExecutionContextService";
 import {
   CandleInterval,
   ExchangeName,
+  ICandleData,
   IExchange,
   IOrderBookData,
 } from "../../../interfaces/Exchange.interface";
@@ -304,6 +305,58 @@ export class ExchangeCoreService implements TExchange {
     return await ExecutionContextService.runInContext(
       async () => {
         return await this.exchangeConnectionService.getOrderBook(symbol, depth);
+      },
+      {
+        symbol,
+        when,
+        backtest,
+      }
+    );
+  };
+
+  /**
+   * Fetches raw candles with flexible date/limit parameters and execution context.
+   *
+   * @param symbol - Trading pair symbol
+   * @param interval - Candle interval (e.g., "1m", "1h")
+   * @param when - Timestamp for context (used in backtest mode)
+   * @param backtest - Whether running in backtest mode
+   * @param limit - Optional number of candles to fetch
+   * @param sDate - Optional start date in milliseconds
+   * @param eDate - Optional end date in milliseconds
+   * @returns Promise resolving to array of candles
+   */
+  public getRawCandles = async (
+    symbol: string,
+    interval: CandleInterval,
+    when: Date,
+    backtest: boolean,
+    limit?: number,
+    sDate?: number,
+    eDate?: number
+  ): Promise<ICandleData[]> => {
+    this.loggerService.log("exchangeCoreService getRawCandles", {
+      symbol,
+      interval,
+      when,
+      backtest,
+      limit,
+      sDate,
+      eDate,
+    });
+    if (!MethodContextService.hasContext()) {
+      throw new Error("exchangeCoreService getRawCandles requires a method context");
+    }
+    await this.validate(this.methodContextService.context.exchangeName);
+    return await ExecutionContextService.runInContext(
+      async () => {
+        return await this.exchangeConnectionService.getRawCandles(
+          symbol,
+          interval,
+          limit,
+          sDate,
+          eDate
+        );
       },
       {
         symbol,

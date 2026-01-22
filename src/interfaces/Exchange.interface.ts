@@ -242,6 +242,33 @@ export interface IExchange {
    * @returns Promise resolving to order book data
    */
   getOrderBook: (symbol: string, depth?: number) => Promise<IOrderBookData>;
+
+  /**
+   * Fetch raw candles with flexible date/limit parameters.
+   *
+   * All modes respect execution context and prevent look-ahead bias.
+   *
+   * Parameter combinations:
+   * 1. sDate + eDate + limit: fetches with explicit parameters, validates eDate <= when
+   * 2. sDate + eDate: calculates limit from date range, validates eDate <= when
+   * 3. eDate + limit: calculates sDate backward, validates eDate <= when
+   * 4. sDate + limit: fetches forward, validates calculated endTimestamp <= when
+   * 5. Only limit: uses execution.context.when as reference (backward)
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param interval - Candle interval (e.g., "1m", "1h")
+   * @param limit - Optional number of candles to fetch
+   * @param sDate - Optional start date in milliseconds
+   * @param eDate - Optional end date in milliseconds
+   * @returns Promise resolving to array of candles
+   */
+  getRawCandles: (
+    symbol: string,
+    interval: CandleInterval,
+    limit?: number,
+    sDate?: number,
+    eDate?: number
+  ) => Promise<ICandleData[]>;
 }
 
 /**
