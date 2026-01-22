@@ -12,7 +12,7 @@ declare function validate(args?: Partial<Args>): Promise<void>;
 Validates the existence of all provided entity names across validation services.
 
 This function accepts enum objects for various entity types (exchanges, frames,
-strategies, risks, sizings, optimizers, walkers) and validates that each entity
+strategies, risks, sizings, walkers) and validates that each entity
 name exists in its respective registry. Validation results are memoized for performance.
 
 If no arguments are provided (or specific entity types are omitted), the function
