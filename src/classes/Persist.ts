@@ -19,7 +19,7 @@ import {
 import { IRiskActivePosition, RiskName } from "../interfaces/Risk.interface";
 import { IPartialData } from "../interfaces/Partial.interface";
 import { IBreakevenData } from "../interfaces/Breakeven.interface";
-import { ExchangeName } from "../interfaces/Exchange.interface";
+import { ExchangeName, CandleInterval, ICandleData } from "../interfaces/Exchange.interface";
 
 const BASE_WAIT_FOR_INIT_SYMBOL = Symbol("wait-for-init");
 
@@ -123,8 +123,8 @@ export interface IEntity {}
  * Custom adapters should implement this interface.
  *
  * Architecture:
- * - IPersistBase: Public API for custom adapters (4 methods: waitForInit, readValue, hasValue, writeValue)
- * - PersistBase: Default implementation with internal keys() method for validation
+ * - IPersistBase: Public API for custom adapters (5 methods: waitForInit, readValue, hasValue, writeValue, keys)
+ * - PersistBase: Default implementation with keys() method for validation and iteration
  * - TPersistBaseCtor: Constructor type requiring IPersistBase
  */
 export interface IPersistBase<Entity extends IEntity | null = IEntity> {
@@ -163,6 +163,16 @@ export interface IPersistBase<Entity extends IEntity | null = IEntity> {
    * @throws Error if write fails
    */
   writeValue(entityId: EntityId, entity: Entity): Promise<void>;
+
+  /**
+   * Async generator yielding all entity IDs.
+   * Sorted alphanumerically.
+   * Used for iteration and validation.
+   *
+   * @returns AsyncGenerator yielding entity IDs
+   * @throws Error if reading fails
+   */
+  keys(): AsyncGenerator<EntityId>;
 }
 
 const BASE_WAIT_FOR_INIT_FN = async (self: TPersistBase): Promise<void> => {
@@ -404,6 +414,13 @@ export class PersistDummy implements IPersistBase {
    */
   async writeValue() {
     void 0;
+  }
+  /**
+   * No-op keys generator.
+   * @returns Empty async generator
+   */
+  async *keys(): AsyncGenerator<EntityId> {
+    // Empty generator - no keys
   }
 }
 
@@ -1248,5 +1265,180 @@ class PersistBreakevenUtils {
  * ```
  */
 export const PersistBreakevenAdapter = new PersistBreakevenUtils();
+
+/**
+ * Type for persisted candle cache data.
+ * Each candle is stored as a separate JSON file.
+ */
+export type CandleData = ICandleData;
+
+/**
+ * Utility class for managing candles cache persistence.
+ *
+ * Features:
+ * - Each candle stored as separate JSON file: ${exchangeName}/${symbol}/${interval}/${timestamp}.json
+ * - Cache validation: returns cached data if file count matches requested limit
+ * - Automatic cache invalidation and refresh when data is incomplete
+ * - Atomic read/write operations
+ *
+ * Used by ClientExchange for candle data caching.
+ */
+export class PersistCandleUtils {
+  private PersistCandlesFactory: TPersistBaseCtor<string, CandleData> =
+    PersistBase;
+
+  private getCandlesStorage = memoize(
+    ([symbol, interval, exchangeName]: [string, CandleInterval, ExchangeName]): string =>
+      `${symbol}:${interval}:${exchangeName}`,
+    (
+      symbol: string,
+      interval: CandleInterval,
+      exchangeName: ExchangeName
+    ): IPersistBase<CandleData> =>
+      Reflect.construct(this.PersistCandlesFactory, [
+        `${exchangeName}/${symbol}/${interval}`,
+        `./dump/data/candles/`,
+      ])
+  );
+
+  /**
+   * Registers a custom persistence adapter.
+   *
+   * @param Ctor - Custom PersistBase constructor
+   */
+  public usePersistCandleAdapter(
+    Ctor: TPersistBaseCtor<string, CandleData>
+  ): void {
+    swarm.loggerService.info("PersistCandleUtils.usePersistCandleAdapter");
+    this.PersistCandlesFactory = Ctor;
+  }
+
+  /**
+   * Reads cached candles for a specific exchange, symbol, and interval.
+   * Returns candles only if cache contains exactly the requested limit.
+   *
+   * @param symbol - Trading pair symbol
+   * @param interval - Candle interval
+   * @param exchangeName - Exchange identifier
+   * @param limit - Number of candles requested
+   * @param sinceTimestamp - Start timestamp (inclusive)
+   * @param untilTimestamp - End timestamp (exclusive)
+   * @returns Promise resolving to array of candles or null if cache is incomplete
+   */
+  public readCandlesData = async (
+    symbol: string,
+    interval: CandleInterval,
+    exchangeName: ExchangeName,
+    limit: number,
+    sinceTimestamp: number,
+    untilTimestamp: number
+  ): Promise<CandleData[] | null> => {
+    swarm.loggerService.info("PersistCandleUtils.readCandlesData", {
+      symbol,
+      interval,
+      exchangeName,
+      limit,
+      sinceTimestamp,
+      untilTimestamp,
+    });
+
+    const key = `${symbol}:${interval}:${exchangeName}`;
+    const isInitial = !this.getCandlesStorage.has(key);
+    const stateStorage = this.getCandlesStorage(symbol, interval, exchangeName);
+    await stateStorage.waitForInit(isInitial);
+
+    // Collect all cached candles within the time range
+    const cachedCandles: CandleData[] = [];
+
+    for await (const timestamp of stateStorage.keys()) {
+      const ts = Number(timestamp);
+      if (ts >= sinceTimestamp && ts < untilTimestamp) {
+        try {
+          const candle = await stateStorage.readValue(timestamp);
+          cachedCandles.push(candle);
+        } catch {
+          // Skip invalid candles
+          continue;
+        }
+      }
+    }
+
+    // Sort by timestamp ascending
+    cachedCandles.sort((a, b) => a.timestamp - b.timestamp);
+
+    return cachedCandles;
+  };
+
+  /**
+   * Writes candles to cache with atomic file writes.
+   * Each candle is stored as a separate JSON file named by its timestamp.
+   *
+   * @param candles - Array of candle data to cache
+   * @param symbol - Trading pair symbol
+   * @param interval - Candle interval
+   * @param exchangeName - Exchange identifier
+   * @returns Promise that resolves when all writes are complete
+   */
+  public writeCandlesData = async (
+    candles: CandleData[],
+    symbol: string,
+    interval: CandleInterval,
+    exchangeName: ExchangeName
+  ): Promise<void> => {
+    swarm.loggerService.info("PersistCandleUtils.writeCandlesData", {
+      symbol,
+      interval,
+      exchangeName,
+      candleCount: candles.length,
+    });
+
+    const key = `${symbol}:${interval}:${exchangeName}`;
+    const isInitial = !this.getCandlesStorage.has(key);
+    const stateStorage = this.getCandlesStorage(symbol, interval, exchangeName);
+    await stateStorage.waitForInit(isInitial);
+
+    // Write each candle as a separate file
+    for (const candle of candles) {
+      if (await not(stateStorage.hasValue(String(candle.timestamp)))) {
+        await stateStorage.writeValue(String(candle.timestamp), candle);
+      }
+    }
+  };
+
+  /**
+   * Switches to the default JSON persist adapter.
+   * All future persistence writes will use JSON storage.
+   */
+  public useJson() {
+    swarm.loggerService.log("PersistCandleUtils.useJson");
+    this.usePersistCandleAdapter(PersistBase);
+  }
+
+  /**
+   * Switches to a dummy persist adapter that discards all writes.
+   * All future persistence writes will be no-ops.
+   */
+  public useDummy() {
+    swarm.loggerService.log("PersistCandleUtils.useDummy");
+    this.usePersistCandleAdapter(PersistDummy);
+  }
+}
+
+/**
+ * Global singleton instance of PersistCandleUtils.
+ * Used by ClientExchange for candle data caching.
+ *
+ * @example
+ * ```typescript
+ * // Read cached candles
+ * const candles = await PersistCandleAdapter.readCandlesData(
+ *   "BTCUSDT", "1m", "binance", 100, since.getTime(), until.getTime()
+ * );
+ *
+ * // Write candles to cache
+ * await PersistCandleAdapter.writeCandlesData(candles, "BTCUSDT", "1m", "binance");
+ * ```
+ */
+export const PersistCandleAdapter = new PersistCandleUtils();
 
 export { PersistBase }

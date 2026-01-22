@@ -7665,8 +7665,8 @@ interface IEntity {
  * Custom adapters should implement this interface.
  *
  * Architecture:
- * - IPersistBase: Public API for custom adapters (4 methods: waitForInit, readValue, hasValue, writeValue)
- * - PersistBase: Default implementation with internal keys() method for validation
+ * - IPersistBase: Public API for custom adapters (5 methods: waitForInit, readValue, hasValue, writeValue, keys)
+ * - PersistBase: Default implementation with keys() method for validation and iteration
  * - TPersistBaseCtor: Constructor type requiring IPersistBase
  */
 interface IPersistBase<Entity extends IEntity | null = IEntity> {
@@ -7702,6 +7702,15 @@ interface IPersistBase<Entity extends IEntity | null = IEntity> {
      * @throws Error if write fails
      */
     writeValue(entityId: EntityId, entity: Entity): Promise<void>;
+    /**
+     * Async generator yielding all entity IDs.
+     * Sorted alphanumerically.
+     * Used for iteration and validation.
+     *
+     * @returns AsyncGenerator yielding entity IDs
+     * @throws Error if reading fails
+     */
+    keys(): AsyncGenerator<EntityId>;
 }
 /**
  * Base class for file-based persistence with atomic writes.
@@ -8221,6 +8230,82 @@ declare class PersistBreakevenUtils {
  * ```
  */
 declare const PersistBreakevenAdapter: PersistBreakevenUtils;
+/**
+ * Type for persisted candle cache data.
+ * Each candle is stored as a separate JSON file.
+ */
+type CandleData = ICandleData;
+/**
+ * Utility class for managing candles cache persistence.
+ *
+ * Features:
+ * - Each candle stored as separate JSON file: ${exchangeName}/${symbol}/${interval}/${timestamp}.json
+ * - Cache validation: returns cached data if file count matches requested limit
+ * - Automatic cache invalidation and refresh when data is incomplete
+ * - Atomic read/write operations
+ *
+ * Used by ClientExchange for candle data caching.
+ */
+declare class PersistCandleUtils {
+    private PersistCandlesFactory;
+    private getCandlesStorage;
+    /**
+     * Registers a custom persistence adapter.
+     *
+     * @param Ctor - Custom PersistBase constructor
+     */
+    usePersistCandleAdapter(Ctor: TPersistBaseCtor<string, CandleData>): void;
+    /**
+     * Reads cached candles for a specific exchange, symbol, and interval.
+     * Returns candles only if cache contains exactly the requested limit.
+     *
+     * @param symbol - Trading pair symbol
+     * @param interval - Candle interval
+     * @param exchangeName - Exchange identifier
+     * @param limit - Number of candles requested
+     * @param sinceTimestamp - Start timestamp (inclusive)
+     * @param untilTimestamp - End timestamp (exclusive)
+     * @returns Promise resolving to array of candles or null if cache is incomplete
+     */
+    readCandlesData: (symbol: string, interval: CandleInterval, exchangeName: ExchangeName, limit: number, sinceTimestamp: number, untilTimestamp: number) => Promise<CandleData[] | null>;
+    /**
+     * Writes candles to cache with atomic file writes.
+     * Each candle is stored as a separate JSON file named by its timestamp.
+     *
+     * @param candles - Array of candle data to cache
+     * @param symbol - Trading pair symbol
+     * @param interval - Candle interval
+     * @param exchangeName - Exchange identifier
+     * @returns Promise that resolves when all writes are complete
+     */
+    writeCandlesData: (candles: CandleData[], symbol: string, interval: CandleInterval, exchangeName: ExchangeName) => Promise<void>;
+    /**
+     * Switches to the default JSON persist adapter.
+     * All future persistence writes will use JSON storage.
+     */
+    useJson(): void;
+    /**
+     * Switches to a dummy persist adapter that discards all writes.
+     * All future persistence writes will be no-ops.
+     */
+    useDummy(): void;
+}
+/**
+ * Global singleton instance of PersistCandleUtils.
+ * Used by ClientExchange for candle data caching.
+ *
+ * @example
+ * ```typescript
+ * // Read cached candles
+ * const candles = await PersistCandleAdapter.readCandlesData(
+ *   "BTCUSDT", "1m", "binance", 100, since.getTime(), until.getTime()
+ * );
+ *
+ * // Write candles to cache
+ * await PersistCandleAdapter.writeCandlesData(candles, "BTCUSDT", "1m", "binance");
+ * ```
+ */
+declare const PersistCandleAdapter: PersistCandleUtils;
 
 declare const WAIT_FOR_INIT_SYMBOL$1: unique symbol;
 declare const WRITE_SAFE_SYMBOL$1: unique symbol;
@@ -12655,7 +12740,7 @@ declare class ExchangeUtils {
      */
     getCandles: (symbol: string, interval: CandleInterval, limit: number, context: {
         exchangeName: ExchangeName;
-    }) => Promise<ICandleData[]>;
+    }) => Promise<any>;
     /**
      * Calculates VWAP (Volume Weighted Average Price) from last N 1m candles.
      *
@@ -19341,4 +19426,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { ActionBase, type ActivePingContract, Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IOrderBookData, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addOptimizerSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialProfit, commitSignalPromptHistory, commitTrailingStop, commitTrailingTake, dumpSignalData, emitters, formatPrice, formatQuantity, get, getActionSchema, getAveragePrice, getBacktestTimeframe, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getExchangeSchema, getFrameSchema, getMode, getOptimizerSchema, getOrderBook, getRiskSchema, getSizingSchema, getStrategySchema, getSymbol, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listOptimizerSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideOptimizerSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, roundTicks, set, setColumns, setConfig, setLogger, stopStrategy, validate };
+export { ActionBase, type ActivePingContract, Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleData, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IOrderBookData, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addOptimizerSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialProfit, commitSignalPromptHistory, commitTrailingStop, commitTrailingTake, dumpSignalData, emitters, formatPrice, formatQuantity, get, getActionSchema, getAveragePrice, getBacktestTimeframe, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getExchangeSchema, getFrameSchema, getMode, getOptimizerSchema, getOrderBook, getRiskSchema, getSizingSchema, getStrategySchema, getSymbol, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listOptimizerSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideOptimizerSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, roundTicks, set, setColumns, setConfig, setLogger, stopStrategy, validate };

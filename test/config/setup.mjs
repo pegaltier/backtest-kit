@@ -6,6 +6,7 @@ import {
   PersistRiskAdapter,
   PersistScheduleAdapter,
   PersistPartialAdapter,
+  PersistCandleAdapter,
   Report,
   Markdown,
 } from "../../build/index.mjs";
@@ -24,81 +25,15 @@ Report.useReportAdapter(class {
   }
 })
 
-PersistSignalAdapter.usePersistSignalAdapter(
-  class {
-    async waitForInit() {
-      void 0;
-    }
-    async readValue() {
-      throw new Error(
-        "usePersistSignalAdapter readValue should not be called in testbed"
-      );
-    }
-    async hasValue() {
-      return false;
-    }
-    async writeValue() {
-      void 0;
-    }
-  }
-);
+PersistSignalAdapter.useDummy();
 
-PersistRiskAdapter.usePersistRiskAdapter(
-  class {
-    async waitForInit() {
-      void 0;
-    }
-    async readValue() {
-      throw new Error(
-        "usePersistRiskAdapter readValue should not be called in testbed"
-      );
-    }
-    async hasValue() {
-      return false;
-    }
-    async writeValue() {
-      void 0;
-    }
-  }
-);
+PersistRiskAdapter.useDummy();
 
-PersistScheduleAdapter.usePersistScheduleAdapter(
-  class {
-    async waitForInit() {
-      void 0;
-    }
-    async readValue() {
-      throw new Error(
-        "usePersistScheduleAdapter readValue should not be called in testbed"
-      );
-    }
-    async hasValue() {
-      return false;
-    }
-    async writeValue() {
-      void 0;
-    }
-  }
-);
+PersistScheduleAdapter.useDummy();
 
-PersistPartialAdapter.usePersistPartialAdapter(
-  class {
-    async waitForInit() {
-      void 0;
-    }
-    async readValue() {
-      throw new Error(
-        "usePersistPartialAdapter readValue should not be called in testbed"
-      );
-    }
-    async hasValue() {
-      return false;
-    }
-    async writeValue() {
-      void 0;
-    }
-  }
-);
+PersistPartialAdapter.useDummy();
+
+PersistCandleAdapter.useDummy();
 
 setConfig(
   {

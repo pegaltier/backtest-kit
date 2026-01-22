@@ -6,9 +6,16 @@ import {
   type IOrderBookData,
 } from "../interfaces/Exchange.interface";
 import { GLOBAL_CONFIG } from "../config/params";
-import { errorData, getErrorMessage, sleep, trycatch } from "functools-kit";
+import {
+  errorData,
+  getErrorMessage,
+  queued,
+  sleep,
+  trycatch,
+} from "functools-kit";
 import backtest from "../lib";
 import { errorEmitter } from "../config/emitters";
+import { PersistCandleAdapter } from "../classes/Persist";
 
 const INTERVAL_MINUTES: Record<CandleInterval, number> = {
   "1m": 1,
@@ -31,16 +38,14 @@ const INTERVAL_MINUTES: Record<CandleInterval, number> = {
  * @param candles - Array of candle data to validate
  * @throws Error if any candles have anomalous OHLCV values
  */
-const VALIDATE_NO_INCOMPLETE_CANDLES_FN = (
-  candles: ICandleData[]
-): void => {
+const VALIDATE_NO_INCOMPLETE_CANDLES_FN = (candles: ICandleData[]): void => {
   if (candles.length === 0) {
     return;
   }
 
   // Calculate reference price (median or average depending on candle count)
   const allPrices = candles.flatMap((c) => [c.open, c.high, c.low, c.close]);
-  const validPrices = allPrices.filter(p => p > 0);
+  const validPrices = allPrices.filter((p) => p > 0);
 
   let referencePrice: number;
   if (candles.length >= GLOBAL_CONFIG.CC_GET_CANDLES_MIN_CANDLES_FOR_MEDIAN) {
@@ -55,11 +60,13 @@ const VALIDATE_NO_INCOMPLETE_CANDLES_FN = (
 
   if (referencePrice === 0) {
     throw new Error(
-      `VALIDATE_NO_INCOMPLETE_CANDLES_FN: cannot calculate reference price (all prices are zero)`
+      `VALIDATE_NO_INCOMPLETE_CANDLES_FN: cannot calculate reference price (all prices are zero)`,
     );
   }
 
-  const minValidPrice = referencePrice / GLOBAL_CONFIG.CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR;
+  const minValidPrice =
+    referencePrice /
+    GLOBAL_CONFIG.CC_GET_CANDLES_PRICE_ANOMALY_THRESHOLD_FACTOR;
 
   for (let i = 0; i < candles.length; i++) {
     const candle = candles[i];
@@ -74,7 +81,7 @@ const VALIDATE_NO_INCOMPLETE_CANDLES_FN = (
       !Number.isFinite(candle.timestamp)
     ) {
       throw new Error(
-        `VALIDATE_NO_INCOMPLETE_CANDLES_FN: candle[${i}] has invalid numeric values (NaN or Infinity)`
+        `VALIDATE_NO_INCOMPLETE_CANDLES_FN: candle[${i}] has invalid numeric values (NaN or Infinity)`,
       );
     }
 
@@ -87,7 +94,7 @@ const VALIDATE_NO_INCOMPLETE_CANDLES_FN = (
       candle.volume < 0
     ) {
       throw new Error(
-        `VALIDATE_NO_INCOMPLETE_CANDLES_FN: candle[${i}] has zero or negative values`
+        `VALIDATE_NO_INCOMPLETE_CANDLES_FN: candle[${i}] has zero or negative values`,
       );
     }
 
@@ -100,15 +107,125 @@ const VALIDATE_NO_INCOMPLETE_CANDLES_FN = (
     ) {
       throw new Error(
         `VALIDATE_NO_INCOMPLETE_CANDLES_FN: candle[${i}] has anomalously low price. ` +
-        `OHLC: [${candle.open}, ${candle.high}, ${candle.low}, ${candle.close}], ` +
-        `reference: ${referencePrice}, threshold: ${minValidPrice}`
+          `OHLC: [${candle.open}, ${candle.high}, ${candle.low}, ${candle.close}], ` +
+          `reference: ${referencePrice}, threshold: ${minValidPrice}`,
       );
     }
   }
 };
 
 /**
+ * Attempts to read candles from cache.
+ * Validates cache consistency (no gaps in timestamps) before returning.
+ *
+ * @param dto - Data transfer object containing symbol, interval, and limit
+ * @param sinceTimestamp - Start timestamp in milliseconds
+ * @param untilTimestamp - End timestamp in milliseconds
+ * @param self - Instance of ClientExchange
+ * @returns Cached candles array or null if cache miss or inconsistent
+ */
+const READ_CANDLES_CACHE_FN = trycatch(
+  async (
+    dto: {
+      symbol: string;
+      interval: CandleInterval;
+      limit: number;
+    },
+    sinceTimestamp: number,
+    untilTimestamp: number,
+    self: ClientExchange,
+  ): Promise<ICandleData[] | null> => {
+    const cachedCandles = await PersistCandleAdapter.readCandlesData(
+      dto.symbol,
+      dto.interval,
+      self.params.exchangeName,
+      dto.limit,
+      sinceTimestamp,
+      untilTimestamp,
+    );
+
+    // Return cached data only if we have exactly the requested limit
+    if (cachedCandles.length === dto.limit) {
+      self.params.logger.debug(
+        `ClientExchange READ_CANDLES_CACHE_FN: cache hit for symbol=${dto.symbol}, interval=${dto.interval}, limit=${dto.limit}`,
+      );
+      return cachedCandles;
+    }
+
+    self.params.logger.warn(
+      `ClientExchange READ_CANDLES_CACHE_FN: cache inconsistent (count or range mismatch) for symbol=${dto.symbol}, interval=${dto.interval}, limit=${dto.limit}`,
+    );
+
+    return null;
+  },
+  {
+    fallback: async (error) => {
+      const message = `ClientExchange READ_CANDLES_CACHE_FN: cache read failed`;
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+    defaultValue: null,
+  },
+);
+
+/**
+ * Writes candles to cache with error handling.
+ *
+ * @param candles - Array of candle data to cache
+ * @param dto - Data transfer object containing symbol, interval, and limit
+ * @param self - Instance of ClientExchange
+ */
+const WRITE_CANDLES_CACHE_FN = trycatch(
+  queued(
+    async (
+      candles: ICandleData[],
+      dto: {
+        symbol: string;
+        interval: CandleInterval;
+        limit: number;
+      },
+      self: ClientExchange,
+    ): Promise<void> => {
+      await PersistCandleAdapter.writeCandlesData(
+        candles,
+        dto.symbol,
+        dto.interval,
+        self.params.exchangeName,
+      );
+      self.params.logger.debug(
+        `ClientExchange WRITE_CANDLES_CACHE_FN: cache updated for symbol=${dto.symbol}, interval=${dto.interval}, count=${candles.length}`,
+      );
+    },
+  ),
+  {
+    fallback: async (error) => {
+      const message = `ClientExchange WRITE_CANDLES_CACHE_FN: cache write failed`;
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+    defaultValue: null,
+  },
+);
+
+/**
  * Retries the getCandles function with specified retry count and delay.
+ * Uses cache to avoid redundant API calls.
+ *
+ * Cache logic:
+ * - Checks if cached candles exist for the time range
+ * - If cache has exactly dto.limit candles, returns cached data
+ * - Otherwise, fetches from API and updates cache
+ *
  * @param dto - Data transfer object containing symbol, interval, and limit
  * @param since - Date object representing the start time for fetching candles
  * @param self - Instance of ClientExchange
@@ -121,8 +238,25 @@ const GET_CANDLES_FN = async (
     limit: number;
   },
   since: Date,
-  self: ClientExchange
+  self: ClientExchange,
 ) => {
+  const step = INTERVAL_MINUTES[dto.interval];
+  const sinceTimestamp = since.getTime();
+  const untilTimestamp = sinceTimestamp + dto.limit * step * 60 * 1_000;
+
+  // Try to read from cache first
+  const cachedCandles = await READ_CANDLES_CACHE_FN(
+    dto,
+    sinceTimestamp,
+    untilTimestamp,
+    self,
+  );
+
+  if (cachedCandles !== null) {
+    return cachedCandles;
+  }
+
+  // Cache miss or error - fetch from API
   let lastError: Error;
   for (let i = 0; i !== GLOBAL_CONFIG.CC_GET_CANDLES_RETRY_COUNT; i++) {
     try {
@@ -131,10 +265,13 @@ const GET_CANDLES_FN = async (
         dto.interval,
         since,
         dto.limit,
-        self.params.execution.context.backtest
+        self.params.execution.context.backtest,
       );
 
       VALIDATE_NO_INCOMPLETE_CANDLES_FN(result);
+
+      // Write to cache after successful fetch
+      await WRITE_CANDLES_CACHE_FN(result, dto, self);
 
       return result;
     } catch (err) {
@@ -143,10 +280,7 @@ const GET_CANDLES_FN = async (
         error: errorData(err),
         message: getErrorMessage(err),
       };
-      self.params.logger.warn(
-        message,
-        payload,
-      );
+      self.params.logger.warn(message, payload);
       console.warn(message, payload);
       lastError = err;
       await sleep(GLOBAL_CONFIG.CC_GET_CANDLES_RETRY_DELAY_MS);
@@ -173,7 +307,7 @@ const CALL_CANDLE_DATA_CALLBACKS_FN = trycatch(
     interval: CandleInterval,
     since: Date,
     limit: number,
-    data: ICandleData[]
+    data: ICandleData[],
   ): Promise<void> => {
     if (self.params.callbacks?.onCandleData) {
       await self.params.callbacks.onCandleData(
@@ -181,7 +315,7 @@ const CALL_CANDLE_DATA_CALLBACKS_FN = trycatch(
         interval,
         since,
         limit,
-        data
+        data,
       );
     }
   },
@@ -196,7 +330,7 @@ const CALL_CANDLE_DATA_CALLBACKS_FN = trycatch(
       console.warn(message, payload);
       errorEmitter.next(error);
     },
-  }
+  },
 );
 
 /**
@@ -239,7 +373,7 @@ export class ClientExchange implements IExchange {
   public async getCandles(
     symbol: string,
     interval: CandleInterval,
-    limit: number
+    limit: number,
   ) {
     this.params.logger.debug(`ClientExchange getCandles`, {
       symbol,
@@ -252,12 +386,12 @@ export class ClientExchange implements IExchange {
 
     if (!adjust) {
       throw new Error(
-        `ClientExchange unknown time adjust for interval=${interval}`
+        `ClientExchange unknown time adjust for interval=${interval}`,
       );
     }
 
     const since = new Date(
-      this.params.execution.context.when.getTime() - adjust * 60 * 1_000
+      this.params.execution.context.when.getTime() - adjust * 60 * 1_000,
     );
 
     let allData: ICandleData[] = [];
@@ -268,11 +402,14 @@ export class ClientExchange implements IExchange {
       let currentSince = new Date(since.getTime());
 
       while (remaining > 0) {
-        const chunkLimit = Math.min(remaining, GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST);
+        const chunkLimit = Math.min(
+          remaining,
+          GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST,
+        );
         const chunkData = await GET_CANDLES_FN(
           { symbol, interval, limit: chunkLimit },
           currentSince,
-          this
+          this,
         );
 
         allData.push(...chunkData);
@@ -281,7 +418,7 @@ export class ClientExchange implements IExchange {
         if (remaining > 0) {
           // Move currentSince forward by the number of candles fetched
           currentSince = new Date(
-            currentSince.getTime() + chunkLimit * step * 60 * 1_000
+            currentSince.getTime() + chunkLimit * step * 60 * 1_000,
           );
         }
       }
@@ -296,12 +433,15 @@ export class ClientExchange implements IExchange {
 
     const filteredData = allData.filter(
       (candle) =>
-        candle.timestamp >= sinceTimestamp && candle.timestamp < whenTimestamp + stepMs
+        candle.timestamp >= sinceTimestamp &&
+        candle.timestamp < whenTimestamp + stepMs,
     );
 
     // Apply distinct by timestamp to remove duplicates
     const uniqueData = Array.from(
-      new Map(filteredData.map((candle) => [candle.timestamp, candle])).values()
+      new Map(
+        filteredData.map((candle) => [candle.timestamp, candle]),
+      ).values(),
     );
 
     if (filteredData.length !== uniqueData.length) {
@@ -322,7 +462,7 @@ export class ClientExchange implements IExchange {
       interval,
       since,
       limit,
-      uniqueData
+      uniqueData,
     );
 
     return uniqueData;
@@ -341,7 +481,7 @@ export class ClientExchange implements IExchange {
   public async getNextCandles(
     symbol: string,
     interval: CandleInterval,
-    limit: number
+    limit: number,
   ) {
     this.params.logger.debug(`ClientExchange getNextCandles`, {
       symbol,
@@ -369,11 +509,14 @@ export class ClientExchange implements IExchange {
       let currentSince = new Date(since.getTime());
 
       while (remaining > 0) {
-        const chunkLimit = Math.min(remaining, GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST);
+        const chunkLimit = Math.min(
+          remaining,
+          GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST,
+        );
         const chunkData = await GET_CANDLES_FN(
           { symbol, interval, limit: chunkLimit },
           currentSince,
-          this
+          this,
         );
 
         allData.push(...chunkData);
@@ -382,7 +525,7 @@ export class ClientExchange implements IExchange {
         if (remaining > 0) {
           // Move currentSince forward by the number of candles fetched
           currentSince = new Date(
-            currentSince.getTime() + chunkLimit * step * 60 * 1_000
+            currentSince.getTime() + chunkLimit * step * 60 * 1_000,
           );
         }
       }
@@ -395,17 +538,18 @@ export class ClientExchange implements IExchange {
 
     const filteredData = allData.filter(
       (candle) =>
-        candle.timestamp >= sinceTimestamp && candle.timestamp < endTime
+        candle.timestamp >= sinceTimestamp && candle.timestamp < endTime,
     );
 
     // Apply distinct by timestamp to remove duplicates
     const uniqueData = Array.from(
-      new Map(filteredData.map((candle) => [candle.timestamp, candle])).values()
+      new Map(
+        filteredData.map((candle) => [candle.timestamp, candle]),
+      ).values(),
     );
 
     if (filteredData.length !== uniqueData.length) {
-      const msg =
-        `ClientExchange getNextCandles: Removed ${filteredData.length - uniqueData.length} duplicate candles by timestamp`;
+      const msg = `ClientExchange getNextCandles: Removed ${filteredData.length - uniqueData.length} duplicate candles by timestamp`;
       this.params.logger.warn(msg);
       console.warn(msg);
     }
@@ -413,7 +557,7 @@ export class ClientExchange implements IExchange {
     if (uniqueData.length < limit) {
       const msg = `ClientExchange getNextCandles: Expected ${limit} candles, got ${uniqueData.length}`;
       this.params.logger.warn(msg);
-      console.warn(msg)
+      console.warn(msg);
     }
 
     await CALL_CANDLE_DATA_CALLBACKS_FN(
@@ -422,7 +566,7 @@ export class ClientExchange implements IExchange {
       interval,
       since,
       limit,
-      uniqueData
+      uniqueData,
     );
 
     return uniqueData;
@@ -450,12 +594,12 @@ export class ClientExchange implements IExchange {
     const candles = await this.getCandles(
       symbol,
       "1m",
-      GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT
+      GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT,
     );
 
     if (candles.length === 0) {
       throw new Error(
-        `ClientExchange getAveragePrice: no candles data for symbol=${symbol}`
+        `ClientExchange getAveragePrice: no candles data for symbol=${symbol}`,
       );
     }
 
@@ -492,7 +636,11 @@ export class ClientExchange implements IExchange {
       symbol,
       quantity,
     });
-    return await this.params.formatQuantity(symbol, quantity, this.params.execution.context.backtest);
+    return await this.params.formatQuantity(
+      symbol,
+      quantity,
+      this.params.execution.context.backtest,
+    );
   }
 
   /**
@@ -508,7 +656,11 @@ export class ClientExchange implements IExchange {
       symbol,
       price,
     });
-    return await this.params.formatPrice(symbol, price, this.params.execution.context.backtest);
+    return await this.params.formatPrice(
+      symbol,
+      price,
+      this.params.execution.context.backtest,
+    );
   }
 
   /**
@@ -523,7 +675,10 @@ export class ClientExchange implements IExchange {
    * @returns Promise resolving to order book data
    * @throws Error if getOrderBook is not implemented
    */
-  public async getOrderBook(symbol: string, depth: number = GLOBAL_CONFIG.CC_ORDER_BOOK_MAX_DEPTH_LEVELS): Promise<IOrderBookData> {
+  public async getOrderBook(
+    symbol: string,
+    depth: number = GLOBAL_CONFIG.CC_ORDER_BOOK_MAX_DEPTH_LEVELS,
+  ): Promise<IOrderBookData> {
     this.params.logger.debug("ClientExchange getOrderBook", {
       symbol,
       depth,
@@ -531,9 +686,16 @@ export class ClientExchange implements IExchange {
 
     const to = new Date(this.params.execution.context.when.getTime());
     const from = new Date(
-      to.getTime() - GLOBAL_CONFIG.CC_ORDER_BOOK_TIME_OFFSET_MINUTES * 60 * 1_000
+      to.getTime() -
+        GLOBAL_CONFIG.CC_ORDER_BOOK_TIME_OFFSET_MINUTES * 60 * 1_000,
     );
-    return await this.params.getOrderBook(symbol, depth, from, to, this.params.execution.context.backtest);
+    return await this.params.getOrderBook(
+      symbol,
+      depth,
+      from,
+      to,
+      this.params.execution.context.backtest,
+    );
   }
 }
 

@@ -256,6 +256,8 @@ export {
   PersistPartialAdapter,
   BreakevenData,
   PersistBreakevenAdapter,
+  CandleData,
+  PersistCandleAdapter,
 } from "./classes/Persist";
 
 export {

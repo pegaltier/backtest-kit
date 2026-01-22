@@ -1,7 +1,9 @@
 import backtest, { ExecutionContextService } from "../lib";
 import { CandleInterval, ExchangeName, ICandleData, IExchange, IExchangeSchema, IOrderBookData } from "../interfaces/Exchange.interface";
-import { memoize } from "functools-kit";
+import { errorData, getErrorMessage, memoize, queued, trycatch } from "functools-kit";
 import { GLOBAL_CONFIG } from "../config/params";
+import { PersistCandleAdapter } from "./Persist";
+import { errorEmitter } from "../config/emitters";
 
 const EXCHANGE_METHOD_NAME_GET_CANDLES = "ExchangeUtils.getCandles";
 const EXCHANGE_METHOD_NAME_GET_AVERAGE_PRICE = "ExchangeUtils.getAveragePrice";
@@ -109,6 +111,109 @@ const CREATE_EXCHANGE_INSTANCE_FN = (schema: IExchangeSchema): TExchange => {
 };
 
 /**
+ * Attempts to read candles from cache.
+ * Validates cache consistency (no gaps in timestamps) before returning.
+ *
+ * @param dto - Data transfer object containing symbol, interval, and limit
+ * @param sinceTimestamp - Start timestamp in milliseconds
+ * @param untilTimestamp - End timestamp in milliseconds
+ * @param exchangeName - Exchange name
+ * @returns Cached candles array or null if cache miss or inconsistent
+ */
+const READ_CANDLES_CACHE_FN = trycatch(
+  async (
+    dto: {
+      symbol: string;
+      interval: CandleInterval;
+      limit: number;
+    },
+    sinceTimestamp: number,
+    untilTimestamp: number,
+    exchangeName: ExchangeName,
+  ): Promise<ICandleData[] | null> => {
+    const cachedCandles = await PersistCandleAdapter.readCandlesData(
+      dto.symbol,
+      dto.interval,
+      exchangeName,
+      dto.limit,
+      sinceTimestamp,
+      untilTimestamp,
+    );
+
+    // Return cached data only if we have exactly the requested limit
+    if (cachedCandles.length === dto.limit) {
+      backtest.loggerService.debug(
+        `ExchangeInstance READ_CANDLES_CACHE_FN: cache hit for exchangeName=${exchangeName}, symbol=${dto.symbol}, interval=${dto.interval}, limit=${dto.limit}`,
+      );
+      return cachedCandles;
+    }
+
+    backtest.loggerService.warn(
+      `ExchangeInstance READ_CANDLES_CACHE_FN: cache inconsistent (count or range mismatch) for exchangeName=${exchangeName}, symbol=${dto.symbol}, interval=${dto.interval}, limit=${dto.limit}`,
+    );
+
+    return null;
+  },
+  {
+    fallback: async (error) => {
+      const message = `ExchangeInstance READ_CANDLES_CACHE_FN: cache read failed`;
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+    defaultValue: null,
+  },
+);
+
+/**
+ * Writes candles to cache with error handling.
+ *
+ * @param candles - Array of candle data to cache
+ * @param dto - Data transfer object containing symbol, interval, and limit
+ * @param exchangeName - Exchange name
+ */
+const WRITE_CANDLES_CACHE_FN = trycatch(
+  queued(
+    async (
+      candles: ICandleData[],
+      dto: {
+        symbol: string;
+        interval: CandleInterval;
+        limit: number;
+      },
+      exchangeName: ExchangeName,
+    ): Promise<void> => {
+      await PersistCandleAdapter.writeCandlesData(
+        candles,
+        dto.symbol,
+        dto.interval,
+        exchangeName,
+      );
+      backtest.loggerService.debug(
+        `ExchangeInstance WRITE_CANDLES_CACHE_FN: cache updated for exchangeName=${exchangeName}, symbol=${dto.symbol}, interval=${dto.interval}, count=${candles.length}`,
+      );
+    },
+  ),
+  {
+    fallback: async (error) => {
+      const message = `ExchangeInstance WRITE_CANDLES_CACHE_FN: cache write failed`;
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+    defaultValue: null,
+  },
+);
+
+/**
  * Instance class for exchange operations on a specific exchange.
  *
  * Provides isolated exchange operations for a single exchange.
@@ -181,6 +286,20 @@ export class ExchangeInstance {
 
     const when = new Date(Date.now());
     const since = new Date(when.getTime() - adjust * 60 * 1_000);
+    const sinceTimestamp = since.getTime();
+    const untilTimestamp = sinceTimestamp + limit * step * 60 * 1_000;
+
+    // Try to read from cache first
+    const cachedCandles = await READ_CANDLES_CACHE_FN(
+      { symbol, interval, limit },
+      sinceTimestamp,
+      untilTimestamp,
+      this.exchangeName,
+    );
+
+    if (cachedCandles !== null) {
+      return cachedCandles;
+    }
 
     let allData: ICandleData[] = [];
 
@@ -216,7 +335,6 @@ export class ExchangeInstance {
     }
 
     // Filter candles to strictly match the requested range
-    const sinceTimestamp = since.getTime();
     const whenTimestamp = when.getTime();
     const stepMs = step * 60 * 1_000;
 
@@ -241,6 +359,13 @@ export class ExchangeInstance {
         `ExchangeInstance Expected ${limit} candles, got ${uniqueData.length}`
       );
     }
+
+    // Write to cache after successful fetch
+    WRITE_CANDLES_CACHE_FN(
+      uniqueData,
+      { symbol, interval, limit },
+      this.exchangeName,
+    );
 
     return uniqueData;
   };
