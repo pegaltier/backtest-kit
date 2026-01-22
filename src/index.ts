@@ -102,6 +102,7 @@ export {
 } from "./function/event";
 export {
   getCandles,
+  getRawCandles,
   getAveragePrice,
   getOrderBook,
   getDate,

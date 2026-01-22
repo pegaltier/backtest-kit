@@ -397,6 +397,26 @@ interface IExchange {
      * @returns Promise resolving to order book data
      */
     getOrderBook: (symbol: string, depth?: number) => Promise<IOrderBookData>;
+    /**
+     * Fetch raw candles with flexible date/limit parameters.
+     *
+     * All modes respect execution context and prevent look-ahead bias.
+     *
+     * Parameter combinations:
+     * 1. sDate + eDate + limit: fetches with explicit parameters, validates eDate <= when
+     * 2. sDate + eDate: calculates limit from date range, validates eDate <= when
+     * 3. eDate + limit: calculates sDate backward, validates eDate <= when
+     * 4. sDate + limit: fetches forward, validates calculated endTimestamp <= when
+     * 5. Only limit: uses execution.context.when as reference (backward)
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param interval - Candle interval (e.g., "1m", "1h")
+     * @param limit - Optional number of candles to fetch
+     * @param sDate - Optional start date in milliseconds
+     * @param eDate - Optional end date in milliseconds
+     * @returns Promise resolving to array of candles
+     */
+    getRawCandles: (symbol: string, interval: CandleInterval, limit?: number, sDate?: number, eDate?: number) => Promise<ICandleData[]>;
 }
 /**
  * Unique exchange identifier.
@@ -6825,6 +6845,38 @@ declare function getContext(): Promise<IMethodContext>;
  * ```
  */
 declare function getOrderBook(symbol: string, depth?: number): Promise<IOrderBookData>;
+/**
+ * Fetches raw candles with flexible date/limit parameters.
+ *
+ * All modes respect execution context and prevent look-ahead bias.
+ *
+ * Parameter combinations:
+ * 1. sDate + eDate + limit: fetches with explicit parameters, validates eDate <= when
+ * 2. sDate + eDate: calculates limit from date range, validates eDate <= when
+ * 3. eDate + limit: calculates sDate backward, validates eDate <= when
+ * 4. sDate + limit: fetches forward, validates calculated endTimestamp <= when
+ * 5. Only limit: uses execution.context.when as reference (backward)
+ *
+ * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+ * @param interval - Candle interval ("1m" | "3m" | "5m" | "15m" | "30m" | "1h" | "2h" | "4h" | "6h" | "8h")
+ * @param limit - Optional number of candles to fetch
+ * @param sDate - Optional start date in milliseconds
+ * @param eDate - Optional end date in milliseconds
+ * @returns Promise resolving to array of candle data
+ *
+ * @example
+ * ```typescript
+ * // Fetch 100 candles backward from current context time
+ * const candles = await getRawCandles("BTCUSDT", "1m", 100);
+ *
+ * // Fetch candles for specific date range
+ * const rangeCandles = await getRawCandles("BTCUSDT", "1h", undefined, startMs, endMs);
+ *
+ * // Fetch with all parameters specified
+ * const exactCandles = await getRawCandles("BTCUSDT", "1m", 100, startMs, endMs);
+ * ```
+ */
+declare function getRawCandles(symbol: string, interval: CandleInterval, limit?: number, sDate?: number, eDate?: number): Promise<ICandleData[]>;
 
 /**
  * Commits signal prompt history to the message array.
@@ -12788,6 +12840,22 @@ declare class ExchangeUtils {
     getOrderBook: (symbol: string, context: {
         exchangeName: ExchangeName;
     }, depth?: number) => Promise<IOrderBookData>;
+    /**
+     * Fetches raw candles with flexible date/limit parameters.
+     *
+     * Uses Date.now() instead of execution context when for look-ahead bias protection.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param interval - Candle interval (e.g., "1m", "1h")
+     * @param context - Execution context with exchange name
+     * @param limit - Optional number of candles to fetch
+     * @param sDate - Optional start date in milliseconds
+     * @param eDate - Optional end date in milliseconds
+     * @returns Promise resolving to array of candle data
+     */
+    getRawCandles: (symbol: string, interval: CandleInterval, context: {
+        exchangeName: ExchangeName;
+    }, limit?: number, sDate?: number, eDate?: number) => Promise<ICandleData[]>;
 }
 /**
  * Singleton instance of ExchangeUtils for convenient exchange operations.
@@ -14421,22 +14489,19 @@ declare class ClientExchange implements IExchange {
     /**
      * Fetches raw candles with flexible date/limit parameters.
      *
-     * Compatibility layer that:
-     * - RAW MODE (sDate + eDate + limit): fetches exactly as specified, NO look-ahead bias protection
-     * - Other modes: respects execution context and prevents look-ahead bias
+     * All modes respect execution context and prevent look-ahead bias.
      *
      * Parameter combinations:
-     * 1. sDate + eDate + limit: RAW MODE - fetches exactly as specified, no validation against when
-     * 2. sDate + eDate: calculates limit from date range, validates endTimestamp <= when
-     * 3. eDate + limit: calculates sDate backward, validates endTimestamp <= when
-     * 4. sDate + limit: fetches forward, validates endTimestamp <= when
+     * 1. sDate + eDate + limit: fetches with explicit parameters, validates eDate <= when
+     * 2. sDate + eDate: calculates limit from date range, validates eDate <= when
+     * 3. eDate + limit: calculates sDate backward, validates eDate <= when
+     * 4. sDate + limit: fetches forward, validates calculated endTimestamp <= when
      * 5. Only limit: uses execution.context.when as reference (backward)
      *
      * Edge cases:
      * - If calculated limit is 0 or negative: throws error
      * - If sDate >= eDate: throws error
-     * - If startTimestamp >= endTimestamp: throws error
-     * - If endTimestamp > when (non-RAW modes only): throws error to prevent look-ahead bias
+     * - If eDate > when: throws error to prevent look-ahead bias
      *
      * @param symbol - Trading pair symbol
      * @param interval - Candle interval
@@ -14564,6 +14629,19 @@ declare class ExchangeConnectionService implements IExchange {
      * @returns Promise resolving to order book data
      */
     getOrderBook: (symbol: string, depth?: number) => Promise<IOrderBookData>;
+    /**
+     * Fetches raw candles with flexible date/limit parameters.
+     *
+     * Routes to exchange determined by methodContextService.context.exchangeName.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param interval - Candle interval (e.g., "1h", "1d")
+     * @param limit - Optional number of candles to fetch
+     * @param sDate - Optional start date in milliseconds
+     * @param eDate - Optional end date in milliseconds
+     * @returns Promise resolving to array of candle data
+     */
+    getRawCandles: (symbol: string, interval: CandleInterval, limit?: number, sDate?: number, eDate?: number) => Promise<ICandleData[]>;
 }
 
 /**
@@ -16243,6 +16321,19 @@ declare class ExchangeCoreService implements TExchange {
      * @returns Promise resolving to order book data
      */
     getOrderBook: (symbol: string, when: Date, backtest: boolean, depth?: number) => Promise<IOrderBookData>;
+    /**
+     * Fetches raw candles with flexible date/limit parameters and execution context.
+     *
+     * @param symbol - Trading pair symbol
+     * @param interval - Candle interval (e.g., "1m", "1h")
+     * @param when - Timestamp for context (used in backtest mode)
+     * @param backtest - Whether running in backtest mode
+     * @param limit - Optional number of candles to fetch
+     * @param sDate - Optional start date in milliseconds
+     * @param eDate - Optional end date in milliseconds
+     * @returns Promise resolving to array of candles
+     */
+    getRawCandles: (symbol: string, interval: CandleInterval, when: Date, backtest: boolean, limit?: number, sDate?: number, eDate?: number) => Promise<ICandleData[]>;
 }
 
 /**
@@ -19455,4 +19546,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { ActionBase, type ActivePingContract, Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleData, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IOrderBookData, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addOptimizerSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialProfit, commitSignalPromptHistory, commitTrailingStop, commitTrailingTake, dumpSignalData, emitters, formatPrice, formatQuantity, get, getActionSchema, getAveragePrice, getBacktestTimeframe, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getExchangeSchema, getFrameSchema, getMode, getOptimizerSchema, getOrderBook, getRiskSchema, getSizingSchema, getStrategySchema, getSymbol, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listOptimizerSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideOptimizerSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, roundTicks, set, setColumns, setConfig, setLogger, stopStrategy, validate };
+export { ActionBase, type ActivePingContract, Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleData, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type IOrderBookData, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MessageModel, type MessageRole, MethodContextService, type MetricStats, Notification, type NotificationModel, Optimizer, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressOptimizerContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addOptimizerSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialProfit, commitSignalPromptHistory, commitTrailingStop, commitTrailingTake, dumpSignalData, emitters, formatPrice, formatQuantity, get, getActionSchema, getAveragePrice, getBacktestTimeframe, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getExchangeSchema, getFrameSchema, getMode, getOptimizerSchema, getOrderBook, getRawCandles, getRiskSchema, getSizingSchema, getStrategySchema, getSymbol, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listOptimizerSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenOptimizerProgress, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideOptimizerSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, roundTicks, set, setColumns, setConfig, setLogger, stopStrategy, validate };
