@@ -3,7 +3,7 @@ import { PlotModel } from "src/model/Plot.model";
 import LoggerService from "../base/LoggerService";
 import { TYPES } from "src/lib/core/types";
 
-type PlotExtractConfig = {
+export type PlotExtractConfig = {
   plot: string;
   barsBack?: number;
   transform?: (value: number) => any;

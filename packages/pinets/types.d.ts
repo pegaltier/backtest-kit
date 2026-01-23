@@ -86,4 +86,4 @@ interface SymbolInfoModel {
     timezone: string;
 }
 
-export { type CandleModel, type PlotModel, type SymbolInfoModel, pine as lib };
+export { type CandleModel, type PlotExtractConfig, type PlotMapping, type PlotModel, type SymbolInfoModel, pine as lib };
