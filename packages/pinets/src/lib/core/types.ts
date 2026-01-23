@@ -11,8 +11,13 @@ const jobServices = {
     pineJobService: Symbol("pineJobService"),
 }
 
+const dataServices = {
+    pineDataService: Symbol("pineDataService"),
+}
+
 export const TYPES = {
     ...baseServices,
     ...providerServices,
     ...jobServices,
+    ...dataServices,
 }

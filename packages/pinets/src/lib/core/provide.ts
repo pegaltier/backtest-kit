@@ -2,6 +2,7 @@ import LoggerService from "../services/base/LoggerService";
 import AxisProviderService from "../services/provider/AxisProviderService";
 import CandleProviderService from "../services/provider/CandleProviderService";
 import PineJobService from "../services/job/PineJobService";
+import PineDataService from "../services/data/PineDataService";
 import { provide } from "./di";
 import { TYPES } from "./types";
 
@@ -16,4 +17,8 @@ import { TYPES } from "./types";
 
 {
     provide(TYPES.pineJobService, () => new PineJobService());
+}
+
+{
+    provide(TYPES.pineDataService, () => new PineDataService());
 }
