@@ -60,14 +60,6 @@ SizingName: T
 
 Sizing strategy name enum to validate
 
-### OptimizerName
-
-```ts
-OptimizerName: T
-```
-
-Optimizer name enum to validate
-
 ### WalkerName
 
 ```ts

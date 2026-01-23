@@ -17,6 +17,8 @@ import backtest from "../lib";
 import { errorEmitter } from "../config/emitters";
 import { PersistCandleAdapter } from "../classes/Persist";
 
+const MS_PER_MINUTE = 60_000;
+
 const INTERVAL_MINUTES: Record<CandleInterval, number> = {
   "1m": 1,
   "3m": 3,
@@ -242,7 +244,7 @@ const GET_CANDLES_FN = async (
 ) => {
   const step = INTERVAL_MINUTES[dto.interval];
   const sinceTimestamp = since.getTime();
-  const untilTimestamp = sinceTimestamp + dto.limit * step * 60 * 1_000;
+  const untilTimestamp = sinceTimestamp + dto.limit * step * MS_PER_MINUTE;
 
   // Try to read from cache first
   const cachedCandles = await READ_CANDLES_CACHE_FN(
@@ -391,7 +393,7 @@ export class ClientExchange implements IExchange {
     }
 
     const since = new Date(
-      this.params.execution.context.when.getTime() - adjust * 60 * 1_000,
+      this.params.execution.context.when.getTime() - adjust * MS_PER_MINUTE,
     );
 
     let allData: ICandleData[] = [];
@@ -418,7 +420,7 @@ export class ClientExchange implements IExchange {
         if (remaining > 0) {
           // Move currentSince forward by the number of candles fetched
           currentSince = new Date(
-            currentSince.getTime() + chunkLimit * step * 60 * 1_000,
+            currentSince.getTime() + chunkLimit * step * MS_PER_MINUTE,
           );
         }
       }
@@ -429,12 +431,11 @@ export class ClientExchange implements IExchange {
     // Filter candles to strictly match the requested range
     const whenTimestamp = this.params.execution.context.when.getTime();
     const sinceTimestamp = since.getTime();
-    const stepMs = step * 60 * 1_000;
 
     const filteredData = allData.filter(
       (candle) =>
         candle.timestamp >= sinceTimestamp &&
-        candle.timestamp < whenTimestamp + stepMs,
+        candle.timestamp < whenTimestamp,
     );
 
     // Apply distinct by timestamp to remove duplicates
@@ -494,7 +495,7 @@ export class ClientExchange implements IExchange {
 
     // Вычисляем конечное время запроса
     const step = INTERVAL_MINUTES[interval];
-    const endTime = since.getTime() + limit * step * 60 * 1000;
+    const endTime = since.getTime() + limit * step * MS_PER_MINUTE;
 
     // Проверяем что запрошенный период не заходит за Date.now()
     if (endTime > now) {
@@ -525,7 +526,7 @@ export class ClientExchange implements IExchange {
         if (remaining > 0) {
           // Move currentSince forward by the number of candles fetched
           currentSince = new Date(
-            currentSince.getTime() + chunkLimit * step * 60 * 1_000,
+            currentSince.getTime() + chunkLimit * step * MS_PER_MINUTE,
           );
         }
       }
@@ -664,6 +665,207 @@ export class ClientExchange implements IExchange {
   }
 
   /**
+   * Fetches raw candles with flexible date/limit parameters.
+   *
+   * All modes respect execution context and prevent look-ahead bias.
+   *
+   * Parameter combinations:
+   * 1. sDate + eDate + limit: fetches with explicit parameters, validates eDate <= when
+   * 2. sDate + eDate: calculates limit from date range, validates eDate <= when
+   * 3. eDate + limit: calculates sDate backward, validates eDate <= when
+   * 4. sDate + limit: fetches forward, validates calculated endTimestamp <= when
+   * 5. Only limit: uses execution.context.when as reference (backward)
+   *
+   * Edge cases:
+   * - If calculated limit is 0 or negative: throws error
+   * - If sDate >= eDate: throws error
+   * - If eDate > when: throws error to prevent look-ahead bias
+   *
+   * @param symbol - Trading pair symbol
+   * @param interval - Candle interval
+   * @param limit - Optional number of candles to fetch
+   * @param sDate - Optional start date in milliseconds
+   * @param eDate - Optional end date in milliseconds
+   * @returns Promise resolving to array of candles
+   * @throws Error if parameters are invalid or conflicting
+   */
+  public async getRawCandles(
+    symbol: string,
+    interval: CandleInterval,
+    limit?: number,
+    sDate?: number,
+    eDate?: number,
+  ): Promise<ICandleData[]> {
+    this.params.logger.debug(`ClientExchange getRawCandles`, {
+      symbol,
+      interval,
+      limit,
+      sDate,
+      eDate,
+    });
+
+    const step = INTERVAL_MINUTES[interval];
+    if (!step) {
+      throw new Error(
+        `ClientExchange getRawCandles: unknown interval=${interval}`,
+      );
+    }
+
+    const whenTimestamp = this.params.execution.context.when.getTime();
+
+    let sinceTimestamp: number;
+    let untilTimestamp: number;
+    let calculatedLimit: number;
+
+    // Case 1: all three parameters provided
+    if (sDate !== undefined && eDate !== undefined && limit !== undefined) {
+      if (sDate >= eDate) {
+        throw new Error(
+          `ClientExchange getRawCandles: sDate (${sDate}) must be < eDate (${eDate})`,
+        );
+      }
+      if (eDate > whenTimestamp) {
+        throw new Error(
+          `ClientExchange getRawCandles: eDate (${eDate}) exceeds execution context when (${whenTimestamp}). Look-ahead bias protection.`,
+        );
+      }
+      sinceTimestamp = sDate;
+      untilTimestamp = eDate;
+      calculatedLimit = limit;
+    }
+    // Case 2: sDate + eDate (no limit) - calculate limit from date range
+    else if (sDate !== undefined && eDate !== undefined && limit === undefined) {
+      if (sDate >= eDate) {
+        throw new Error(
+          `ClientExchange getRawCandles: sDate (${sDate}) must be < eDate (${eDate})`,
+        );
+      }
+      if (eDate > whenTimestamp) {
+        throw new Error(
+          `ClientExchange getRawCandles: eDate (${eDate}) exceeds execution context when (${whenTimestamp}). Look-ahead bias protection.`,
+        );
+      }
+      sinceTimestamp = sDate;
+      untilTimestamp = eDate;
+      calculatedLimit = Math.ceil((eDate - sDate) / (step * MS_PER_MINUTE));
+      if (calculatedLimit <= 0) {
+        throw new Error(
+          `ClientExchange getRawCandles: calculated limit is ${calculatedLimit}, must be > 0`,
+        );
+      }
+    }
+    // Case 3: eDate + limit (no sDate) - calculate sDate backward from eDate
+    else if (sDate === undefined && eDate !== undefined && limit !== undefined) {
+      if (eDate > whenTimestamp) {
+        throw new Error(
+          `ClientExchange getRawCandles: eDate (${eDate}) exceeds execution context when (${whenTimestamp}). Look-ahead bias protection.`,
+        );
+      }
+      untilTimestamp = eDate;
+      sinceTimestamp = eDate - limit * step * MS_PER_MINUTE;
+      calculatedLimit = limit;
+    }
+    // Case 4: sDate + limit (no eDate) - calculate eDate forward from sDate
+    else if (sDate !== undefined && eDate === undefined && limit !== undefined) {
+      sinceTimestamp = sDate;
+      untilTimestamp = sDate + limit * step * MS_PER_MINUTE;
+      if (untilTimestamp > whenTimestamp) {
+        throw new Error(
+          `ClientExchange getRawCandles: calculated endTimestamp (${untilTimestamp}) exceeds execution context when (${whenTimestamp}). Look-ahead bias protection.`,
+        );
+      }
+      calculatedLimit = limit;
+    }
+    // Case 5: Only limit - use execution.context.when as reference (backward like getCandles)
+    else if (sDate === undefined && eDate === undefined && limit !== undefined) {
+      untilTimestamp = whenTimestamp;
+      sinceTimestamp = whenTimestamp - limit * step * MS_PER_MINUTE;
+      calculatedLimit = limit;
+    }
+    // Invalid: no parameters or only sDate or only eDate
+    else {
+      throw new Error(
+        `ClientExchange getRawCandles: invalid parameter combination. ` +
+        `Provide one of: (sDate+eDate+limit), (sDate+eDate), (eDate+limit), (sDate+limit), or (limit only). ` +
+        `Got: sDate=${sDate}, eDate=${eDate}, limit=${limit}`,
+      );
+    }
+
+    // Fetch candles using existing logic
+    const since = new Date(sinceTimestamp);
+    let allData: ICandleData[] = [];
+
+    if (calculatedLimit > GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST) {
+      let remaining = calculatedLimit;
+      let currentSince = new Date(since.getTime());
+
+      while (remaining > 0) {
+        const chunkLimit = Math.min(
+          remaining,
+          GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST,
+        );
+        const chunkData = await GET_CANDLES_FN(
+          { symbol, interval, limit: chunkLimit },
+          currentSince,
+          this,
+        );
+
+        allData.push(...chunkData);
+
+        remaining -= chunkLimit;
+        if (remaining > 0) {
+          currentSince = new Date(
+            currentSince.getTime() + chunkLimit * step * MS_PER_MINUTE,
+          );
+        }
+      }
+    } else {
+      allData = await GET_CANDLES_FN(
+        { symbol, interval, limit: calculatedLimit },
+        since,
+        this,
+      );
+    }
+
+    // Filter candles to strictly match the requested range
+    const filteredData = allData.filter(
+      (candle) =>
+        candle.timestamp >= sinceTimestamp &&
+        candle.timestamp < untilTimestamp,
+    );
+
+    // Apply distinct by timestamp to remove duplicates
+    const uniqueData = Array.from(
+      new Map(
+        filteredData.map((candle) => [candle.timestamp, candle]),
+      ).values(),
+    );
+
+    if (filteredData.length !== uniqueData.length) {
+      const msg = `ClientExchange getRawCandles: Removed ${filteredData.length - uniqueData.length} duplicate candles by timestamp`;
+      this.params.logger.warn(msg);
+      console.warn(msg);
+    }
+
+    if (uniqueData.length < calculatedLimit) {
+      const msg = `ClientExchange getRawCandles: Expected ${calculatedLimit} candles, got ${uniqueData.length}`;
+      this.params.logger.warn(msg);
+      console.warn(msg);
+    }
+
+    await CALL_CANDLE_DATA_CALLBACKS_FN(
+      this,
+      symbol,
+      interval,
+      since,
+      calculatedLimit,
+      uniqueData,
+    );
+
+    return uniqueData;
+  }
+
+  /**
    * Fetches order book for a trading pair.
    *
    * Calculates time range based on execution context time (when) and
@@ -687,7 +889,7 @@ export class ClientExchange implements IExchange {
     const to = new Date(this.params.execution.context.when.getTime());
     const from = new Date(
       to.getTime() -
-        GLOBAL_CONFIG.CC_ORDER_BOOK_TIME_OFFSET_MINUTES * 60 * 1_000,
+        GLOBAL_CONFIG.CC_ORDER_BOOK_TIME_OFFSET_MINUTES * MS_PER_MINUTE,
     );
     return await this.params.getOrderBook(
       symbol,

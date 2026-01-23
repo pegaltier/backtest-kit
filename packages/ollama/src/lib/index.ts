@@ -56,22 +56,23 @@ import PerplexityProvider from "../client/PerplexityProvider.client";
 import CohereProvider from "../client/CohereProvider.client";
 import AlibabaProvider from "../client/AlibabaProvider.client";
 import GLM4Provider from "../client/GLM4Provider.client";
-import LoggerService from "./services/common/LoggerService";
+import LoggerService from "./services/base/LoggerService";
 import OutlinePrivateService from "./services/private/OutlinePrivateService";
 import OutlinePublicService from "./services/public/OutlinePublicService";
-
-/**
- * Common service instances.
- */
-const commonServices = {
-  loggerService: inject<LoggerService>(TYPES.loggerService),
-}
+import SignalPromptService from "./services/prompt/SignalPromptService";
+import OutlineMarkdownService from "./services/markdown/OutlineMarkdownService";
+import OptimizerTemplateService from "./services/template/OptimizerTemplateService";
+import OptimizerSchemaService from "./services/schema/OptimizerSchemaService";
+import OptimizerValidationService from "./services/validation/OptimizerValidationService";
+import OptimizerConnectionService from "./services/connection/OptimizerConnectionService";
+import OptimizerGlobalService from "./services/global/OptimizerGlobalService";
 
 /**
  * Base service instances.
  */
 const baseServices = {
   contextService: inject<TContextService>(TYPES.contextService),
+  loggerService: inject<LoggerService>(TYPES.loggerService),
 };
 
 /**
@@ -92,15 +93,49 @@ const publicServices = {
   outlinePublicService: inject<OutlinePublicService>(TYPES.outlinePublicService),
 };
 
+const promptServices = {
+  signalPromptService: inject<SignalPromptService>(TYPES.signalPromptService),
+}
+
+const markdownServices = {
+  outlineMarkdownService: inject<OutlineMarkdownService>(TYPES.outlineMarkdownService),
+}
+
+const templateServices = {
+  optimizerTemplateService: inject<OptimizerTemplateService>(TYPES.optimizerTemplateService),
+}
+
+const schemaServices = {
+  optimizerSchemaService: inject<OptimizerSchemaService>(TYPES.optimizerSchemaService),
+}
+
+const validationServices = {
+  optimizerValidationService: inject<OptimizerValidationService>(TYPES.optimizerValidationService),
+}
+
+const connectionServices = {
+  optimizerConnectionService: inject<OptimizerConnectionService>(TYPES.optimizerConnectionService),
+}
+
+const globalServices = {
+  optimizerGlobalService: inject<OptimizerGlobalService>(TYPES.optimizerGlobalService),
+}
+
 /**
  * Main engine object containing all services.
  * Provides unified access to the entire service layer.
  */
 const engine = {
-  ...commonServices,
   ...baseServices,
   ...privateServices,
   ...publicServices,
+  ...promptServices,
+  ...markdownServices,
+  ...templateServices,
+  ...schemaServices,
+  ...validationServices,
+  ...connectionServices,
+  ...globalServices,
 };
 
 // Initialize DI container

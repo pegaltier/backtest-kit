@@ -7,6 +7,7 @@ import {
   retry,
   singleshot,
   trycatch,
+  errorData,
 } from "functools-kit";
 import { join } from "path";
 import { writeFileAtomic } from "../utils/writeFileAtomic";
@@ -16,10 +17,24 @@ import {
   IScheduledSignalRow,
   StrategyName,
 } from "../interfaces/Strategy.interface";
+import { errorEmitter } from "../config/emitters";
 import { IRiskActivePosition, RiskName } from "../interfaces/Risk.interface";
 import { IPartialData } from "../interfaces/Partial.interface";
 import { IBreakevenData } from "../interfaces/Breakeven.interface";
 import { ExchangeName, CandleInterval, ICandleData } from "../interfaces/Exchange.interface";
+
+const INTERVAL_MINUTES: Record<CandleInterval, number> = {
+  "1m": 1,
+  "3m": 3,
+  "5m": 5,
+  "15m": 15,
+  "30m": 30,
+  "1h": 60,
+  "2h": 120,
+  "4h": 240,
+  "6h": 360,
+  "8h": 480,
+};
 
 const BASE_WAIT_FOR_INIT_SYMBOL = Symbol("wait-for-init");
 
@@ -1356,8 +1371,15 @@ export class PersistCandleUtils {
         try {
           const candle = await stateStorage.readValue(timestamp);
           cachedCandles.push(candle);
-        } catch {
-          // Skip invalid candles
+        } catch (error) {
+          const message = `PersistCandleUtils.readCandlesData found invalid candle symbol=${symbol} interval=${interval} timestamp=${timestamp}`;
+          const payload = {
+            error: errorData(error),
+            message: getErrorMessage(error),
+          };
+          swarm.loggerService.warn(message, payload);
+          console.warn(message, payload);
+          errorEmitter.next(error);
           continue;
         }
       }

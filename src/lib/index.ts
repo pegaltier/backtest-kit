@@ -49,18 +49,12 @@ import WalkerValidationService from "./services/validation/WalkerValidationServi
 import SizingValidationService from "./services/validation/SizingValidationService";
 import RiskValidationService from "./services/validation/RiskValidationService";
 import ActionValidationService from "./services/validation/ActionValidationService";
-import OptimizerTemplateService from "./services/template/OptimizerTemplateService";
-import OptimizerSchemaService from "./services/schema/OptimizerSchemaService";
-import OptimizerValidationService from "./services/validation/OptimizerValidationService";
-import OptimizerConnectionService from "./services/connection/OptimizerConnectionService";
-import OptimizerGlobalService from "./services/global/OptimizerGlobalService";
 import PartialConnectionService from "./services/connection/PartialConnectionService";
 import PartialMarkdownService from "./services/markdown/PartialMarkdownService";
 import PartialGlobalService from "./services/global/PartialGlobalService";
 import BreakevenConnectionService from "./services/connection/BreakevenConnectionService";
 import BreakevenMarkdownService from "./services/markdown/BreakevenMarkdownService";
 import BreakevenGlobalService from "./services/global/BreakevenGlobalService";
-import OutlineMarkdownService from "./services/markdown/OutlineMarkdownService";
 import ConfigValidationService from "./services/validation/ConfigValidationService";
 import RiskMarkdownService from "./services/markdown/RiskMarkdownService";
 import ColumnValidationService from "./services/validation/ColumnValidationService";
@@ -73,7 +67,6 @@ import HeatReportService from "./services/report/HeatReportService";
 import PartialReportService from "./services/report/PartialReportService";
 import BreakevenReportService from "./services/report/BreakevenReportService";
 import RiskReportService from "./services/report/RiskReportService";
-import SignalPromptService from "./services/prompt/SignalPromptService";
 
 const baseServices = {
   loggerService: inject<LoggerService>(TYPES.loggerService),
@@ -107,9 +100,6 @@ const connectionServices = {
   actionConnectionService: inject<ActionConnectionService>(
     TYPES.actionConnectionService
   ),
-  optimizerConnectionService: inject<OptimizerConnectionService>(
-    TYPES.optimizerConnectionService
-  ),
   partialConnectionService: inject<PartialConnectionService>(
     TYPES.partialConnectionService
   ),
@@ -130,9 +120,6 @@ const schemaServices = {
   sizingSchemaService: inject<SizingSchemaService>(TYPES.sizingSchemaService),
   riskSchemaService: inject<RiskSchemaService>(TYPES.riskSchemaService),
   actionSchemaService: inject<ActionSchemaService>(TYPES.actionSchemaService),
-  optimizerSchemaService: inject<OptimizerSchemaService>(
-    TYPES.optimizerSchemaService
-  ),
 };
 
 const coreServices = {
@@ -145,9 +132,6 @@ const coreServices = {
 const globalServices = {
   sizingGlobalService: inject<SizingGlobalService>(TYPES.sizingGlobalService),
   riskGlobalService: inject<RiskGlobalService>(TYPES.riskGlobalService),
-  optimizerGlobalService: inject<OptimizerGlobalService>(
-    TYPES.optimizerGlobalService
-  ),
   partialGlobalService: inject<PartialGlobalService>(
     TYPES.partialGlobalService
   ),
@@ -211,9 +195,6 @@ const markdownServices = {
   breakevenMarkdownService: inject<BreakevenMarkdownService>(
     TYPES.breakevenMarkdownService
   ),
-  outlineMarkdownService: inject<OutlineMarkdownService>(
-    TYPES.outlineMarkdownService
-  ),
   riskMarkdownService: inject<RiskMarkdownService>(TYPES.riskMarkdownService),
 };
 
@@ -263,9 +244,6 @@ const validationServices = {
   actionValidationService: inject<ActionValidationService>(
     TYPES.actionValidationService
   ),
-  optimizerValidationService: inject<OptimizerValidationService>(
-    TYPES.optimizerValidationService
-  ),
   configValidationService: inject<ConfigValidationService>(
     TYPES.configValidationService
   ),
@@ -273,16 +251,6 @@ const validationServices = {
     TYPES.columnValidationService
   ),
 };
-
-const templateServices = {
-  optimizerTemplateService: inject<OptimizerTemplateService>(
-    TYPES.optimizerTemplateService
-  ),
-};
-
-const promptServices = {
-  signalPromptService: inject<SignalPromptService>(TYPES.signalPromptService),
-}
 
 export const backtest = {
   ...baseServices,
@@ -297,8 +265,6 @@ export const backtest = {
   ...markdownServices,
   ...reportServices,
   ...validationServices,
-  ...templateServices,
-  ...promptServices,
 };
 
 init();

@@ -44,18 +44,12 @@ import WalkerValidationService from "../services/validation/WalkerValidationServ
 import SizingValidationService from "../services/validation/SizingValidationService";
 import RiskValidationService from "../services/validation/RiskValidationService";
 import ActionValidationService from "../services/validation/ActionValidationService";
-import OptimizerTemplateService from "../services/template/OptimizerTemplateService";
-import OptimizerSchemaService from "../services/schema/OptimizerSchemaService";
-import OptimizerValidationService from "../services/validation/OptimizerValidationService";
-import OptimizerGlobalService from "../services/global/OptimizerGlobalService";
-import OptimizerConnectionService from "../services/connection/OptimizerConnectionService";
 import { PartialConnectionService } from "../services/connection/PartialConnectionService";
 import PartialMarkdownService from "../services/markdown/PartialMarkdownService";
 import PartialGlobalService from "../services/global/PartialGlobalService";
 import { BreakevenConnectionService } from "../services/connection/BreakevenConnectionService";
 import BreakevenMarkdownService from "../services/markdown/BreakevenMarkdownService";
 import BreakevenGlobalService from "../services/global/BreakevenGlobalService";
-import OutlineMarkdownService from "../services/markdown/OutlineMarkdownService";
 import ConfigValidationService from "../services/validation/ConfigValidationService";
 import RiskMarkdownService from "../services/markdown/RiskMarkdownService";
 import ColumnValidationService from "../services/validation/ColumnValidationService";
@@ -68,7 +62,6 @@ import HeatReportService from "../services/report/HeatReportService";
 import PartialReportService from "../services/report/PartialReportService";
 import BreakevenReportService from "../services/report/BreakevenReportService";
 import RiskReportService from "../services/report/RiskReportService";
-import SignalPromptService from "../services/prompt/SignalPromptService";
 
 {
     provide(TYPES.loggerService, () => new LoggerService());
@@ -86,7 +79,6 @@ import SignalPromptService from "../services/prompt/SignalPromptService";
     provide(TYPES.sizingConnectionService, () => new SizingConnectionService());
     provide(TYPES.riskConnectionService, () => new RiskConnectionService());
     provide(TYPES.actionConnectionService, () => new ActionConnectionService());
-    provide(TYPES.optimizerConnectionService, () => new OptimizerConnectionService());
     provide(TYPES.partialConnectionService, () => new PartialConnectionService());
     provide(TYPES.breakevenConnectionService, () => new BreakevenConnectionService());
 }
@@ -99,7 +91,6 @@ import SignalPromptService from "../services/prompt/SignalPromptService";
     provide(TYPES.sizingSchemaService, () => new SizingSchemaService());
     provide(TYPES.riskSchemaService, () => new RiskSchemaService());
     provide(TYPES.actionSchemaService, () => new ActionSchemaService());
-    provide(TYPES.optimizerSchemaService, () => new OptimizerSchemaService());
 }
 
 {
@@ -112,7 +103,6 @@ import SignalPromptService from "../services/prompt/SignalPromptService";
 {
     provide(TYPES.sizingGlobalService, () => new SizingGlobalService());
     provide(TYPES.riskGlobalService, () => new RiskGlobalService());
-    provide(TYPES.optimizerGlobalService, () => new OptimizerGlobalService());
     provide(TYPES.partialGlobalService, () => new PartialGlobalService());
     provide(TYPES.breakevenGlobalService, () => new BreakevenGlobalService());
 }
@@ -144,7 +134,6 @@ import SignalPromptService from "../services/prompt/SignalPromptService";
     provide(TYPES.heatMarkdownService, () => new HeatMarkdownService());
     provide(TYPES.partialMarkdownService, () => new PartialMarkdownService());
     provide(TYPES.breakevenMarkdownService, () => new BreakevenMarkdownService());
-    provide(TYPES.outlineMarkdownService, () => new OutlineMarkdownService());
     provide(TYPES.riskMarkdownService, () => new RiskMarkdownService());
 }
 
@@ -168,15 +157,6 @@ import SignalPromptService from "../services/prompt/SignalPromptService";
     provide(TYPES.sizingValidationService, () => new SizingValidationService());
     provide(TYPES.riskValidationService, () => new RiskValidationService());
     provide(TYPES.actionValidationService, () => new ActionValidationService());
-    provide(TYPES.optimizerValidationService, () => new OptimizerValidationService());
     provide(TYPES.configValidationService, () => new ConfigValidationService());
     provide(TYPES.columnValidationService, () => new ColumnValidationService());
-}
-
-{
-    provide(TYPES.optimizerTemplateService, () => new OptimizerTemplateService());
-}
-
-{
-    provide(TYPES.signalPromptService, () => new SignalPromptService());
 }

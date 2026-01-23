@@ -14,6 +14,7 @@ const GET_SYMBOL_METHOD_NAME = "exchange.getSymbol";
 const GET_CONTEXT_METHOD_NAME = "exchange.getContext";
 const HAS_TRADE_CONTEXT_METHOD_NAME = "exchange.hasTradeContext";
 const GET_ORDER_BOOK_METHOD_NAME = "exchange.getOrderBook";
+const GET_RAW_CANDLES_METHOD_NAME = "exchange.getRawCandles";
 
 /**
  * Checks if trade context is active (execution and method contexts).
@@ -297,4 +298,64 @@ export async function getOrderBook(symbol: string, depth?: number): Promise<IOrd
     throw new Error("getOrderBook requires a method context");
   }
   return await backtest.exchangeConnectionService.getOrderBook(symbol, depth);
+}
+
+/**
+ * Fetches raw candles with flexible date/limit parameters.
+ *
+ * All modes respect execution context and prevent look-ahead bias.
+ *
+ * Parameter combinations:
+ * 1. sDate + eDate + limit: fetches with explicit parameters, validates eDate <= when
+ * 2. sDate + eDate: calculates limit from date range, validates eDate <= when
+ * 3. eDate + limit: calculates sDate backward, validates eDate <= when
+ * 4. sDate + limit: fetches forward, validates calculated endTimestamp <= when
+ * 5. Only limit: uses execution.context.when as reference (backward)
+ *
+ * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+ * @param interval - Candle interval ("1m" | "3m" | "5m" | "15m" | "30m" | "1h" | "2h" | "4h" | "6h" | "8h")
+ * @param limit - Optional number of candles to fetch
+ * @param sDate - Optional start date in milliseconds
+ * @param eDate - Optional end date in milliseconds
+ * @returns Promise resolving to array of candle data
+ *
+ * @example
+ * ```typescript
+ * // Fetch 100 candles backward from current context time
+ * const candles = await getRawCandles("BTCUSDT", "1m", 100);
+ *
+ * // Fetch candles for specific date range
+ * const rangeCandles = await getRawCandles("BTCUSDT", "1h", undefined, startMs, endMs);
+ *
+ * // Fetch with all parameters specified
+ * const exactCandles = await getRawCandles("BTCUSDT", "1m", 100, startMs, endMs);
+ * ```
+ */
+export async function getRawCandles(
+  symbol: string,
+  interval: CandleInterval,
+  limit?: number,
+  sDate?: number,
+  eDate?: number
+): Promise<ICandleData[]> {
+  backtest.loggerService.info(GET_RAW_CANDLES_METHOD_NAME, {
+    symbol,
+    interval,
+    limit,
+    sDate,
+    eDate,
+  });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("getRawCandles requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("getRawCandles requires a method context");
+  }
+  return await backtest.exchangeConnectionService.getRawCandles(
+    symbol,
+    interval,
+    limit,
+    sDate,
+    eDate
+  );
 }

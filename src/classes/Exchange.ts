@@ -10,6 +10,9 @@ const EXCHANGE_METHOD_NAME_GET_AVERAGE_PRICE = "ExchangeUtils.getAveragePrice";
 const EXCHANGE_METHOD_NAME_FORMAT_QUANTITY = "ExchangeUtils.formatQuantity";
 const EXCHANGE_METHOD_NAME_FORMAT_PRICE = "ExchangeUtils.formatPrice";
 const EXCHANGE_METHOD_NAME_GET_ORDER_BOOK = "ExchangeUtils.getOrderBook";
+const EXCHANGE_METHOD_NAME_GET_RAW_CANDLES = "ExchangeUtils.getRawCandles";
+
+const MS_PER_MINUTE = 60_000;
 
 /**
  * Gets backtest mode flag from execution context if available.
@@ -509,6 +512,218 @@ export class ExchangeInstance {
     const isBacktest = await GET_BACKTEST_FN();
     return await this._methods.getOrderBook(symbol, depth, from, to, isBacktest);
   };
+
+  /**
+   * Fetches raw candles with flexible date/limit parameters.
+   *
+   * Uses Date.now() instead of execution context when for look-ahead bias protection.
+   *
+   * Parameter combinations:
+   * 1. sDate + eDate + limit: fetches with explicit parameters, validates eDate <= now
+   * 2. sDate + eDate: calculates limit from date range, validates eDate <= now
+   * 3. eDate + limit: calculates sDate backward, validates eDate <= now
+   * 4. sDate + limit: fetches forward, validates calculated endTimestamp <= now
+   * 5. Only limit: uses Date.now() as reference (backward)
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param interval - Candle interval (e.g., "1m", "1h")
+   * @param limit - Optional number of candles to fetch
+   * @param sDate - Optional start date in milliseconds
+   * @param eDate - Optional end date in milliseconds
+   * @returns Promise resolving to array of candle data
+   *
+   * @example
+   * ```typescript
+   * const instance = new ExchangeInstance("binance");
+   *
+   * // Fetch 100 candles backward from now
+   * const candles = await instance.getRawCandles("BTCUSDT", "1m", 100);
+   *
+   * // Fetch candles for specific date range
+   * const rangeCandles = await instance.getRawCandles("BTCUSDT", "1h", undefined, startMs, endMs);
+   * ```
+   */
+  public getRawCandles = async (
+    symbol: string,
+    interval: CandleInterval,
+    limit?: number,
+    sDate?: number,
+    eDate?: number
+  ): Promise<ICandleData[]> => {
+    backtest.loggerService.info(EXCHANGE_METHOD_NAME_GET_RAW_CANDLES, {
+      exchangeName: this.exchangeName,
+      symbol,
+      interval,
+      limit,
+      sDate,
+      eDate,
+    });
+
+    const step = INTERVAL_MINUTES[interval];
+    if (!step) {
+      throw new Error(
+        `ExchangeInstance getRawCandles: unknown interval=${interval}`
+      );
+    }
+
+    const nowTimestamp = Date.now();
+
+    let sinceTimestamp: number;
+    let untilTimestamp: number;
+    let calculatedLimit: number;
+
+    // Case 1: all three parameters provided
+    if (sDate !== undefined && eDate !== undefined && limit !== undefined) {
+      if (sDate >= eDate) {
+        throw new Error(
+          `ExchangeInstance getRawCandles: sDate (${sDate}) must be < eDate (${eDate})`
+        );
+      }
+      if (eDate > nowTimestamp) {
+        throw new Error(
+          `ExchangeInstance getRawCandles: eDate (${eDate}) exceeds current time (${nowTimestamp}). Look-ahead bias protection.`
+        );
+      }
+      sinceTimestamp = sDate;
+      untilTimestamp = eDate;
+      calculatedLimit = limit;
+    }
+    // Case 2: sDate + eDate (no limit) - calculate limit from date range
+    else if (sDate !== undefined && eDate !== undefined && limit === undefined) {
+      if (sDate >= eDate) {
+        throw new Error(
+          `ExchangeInstance getRawCandles: sDate (${sDate}) must be < eDate (${eDate})`
+        );
+      }
+      if (eDate > nowTimestamp) {
+        throw new Error(
+          `ExchangeInstance getRawCandles: eDate (${eDate}) exceeds current time (${nowTimestamp}). Look-ahead bias protection.`
+        );
+      }
+      sinceTimestamp = sDate;
+      untilTimestamp = eDate;
+      calculatedLimit = Math.ceil((eDate - sDate) / (step * MS_PER_MINUTE));
+      if (calculatedLimit <= 0) {
+        throw new Error(
+          `ExchangeInstance getRawCandles: calculated limit is ${calculatedLimit}, must be > 0`
+        );
+      }
+    }
+    // Case 3: eDate + limit (no sDate) - calculate sDate backward from eDate
+    else if (sDate === undefined && eDate !== undefined && limit !== undefined) {
+      if (eDate > nowTimestamp) {
+        throw new Error(
+          `ExchangeInstance getRawCandles: eDate (${eDate}) exceeds current time (${nowTimestamp}). Look-ahead bias protection.`
+        );
+      }
+      untilTimestamp = eDate;
+      sinceTimestamp = eDate - limit * step * MS_PER_MINUTE;
+      calculatedLimit = limit;
+    }
+    // Case 4: sDate + limit (no eDate) - calculate eDate forward from sDate
+    else if (sDate !== undefined && eDate === undefined && limit !== undefined) {
+      sinceTimestamp = sDate;
+      untilTimestamp = sDate + limit * step * MS_PER_MINUTE;
+      if (untilTimestamp > nowTimestamp) {
+        throw new Error(
+          `ExchangeInstance getRawCandles: calculated endTimestamp (${untilTimestamp}) exceeds current time (${nowTimestamp}). Look-ahead bias protection.`
+        );
+      }
+      calculatedLimit = limit;
+    }
+    // Case 5: Only limit - use Date.now() as reference (backward)
+    else if (sDate === undefined && eDate === undefined && limit !== undefined) {
+      untilTimestamp = nowTimestamp;
+      sinceTimestamp = nowTimestamp - limit * step * MS_PER_MINUTE;
+      calculatedLimit = limit;
+    }
+    // Invalid: no parameters or only sDate or only eDate
+    else {
+      throw new Error(
+        `ExchangeInstance getRawCandles: invalid parameter combination. ` +
+        `Provide one of: (sDate+eDate+limit), (sDate+eDate), (eDate+limit), (sDate+limit), or (limit only). ` +
+        `Got: sDate=${sDate}, eDate=${eDate}, limit=${limit}`
+      );
+    }
+
+    // Try to read from cache first
+    const cachedCandles = await READ_CANDLES_CACHE_FN(
+      { symbol, interval, limit: calculatedLimit },
+      sinceTimestamp,
+      untilTimestamp,
+      this.exchangeName
+    );
+
+    if (cachedCandles !== null) {
+      return cachedCandles;
+    }
+
+    // Fetch candles
+    const since = new Date(sinceTimestamp);
+    let allData: ICandleData[] = [];
+    const isBacktest = await GET_BACKTEST_FN();
+    const getCandles = this._methods.getCandles;
+
+    if (calculatedLimit > GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST) {
+      let remaining = calculatedLimit;
+      let currentSince = new Date(since.getTime());
+
+      while (remaining > 0) {
+        const chunkLimit = Math.min(remaining, GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST);
+        const chunkData = await getCandles(
+          symbol,
+          interval,
+          currentSince,
+          chunkLimit,
+          isBacktest
+        );
+
+        allData.push(...chunkData);
+
+        remaining -= chunkLimit;
+        if (remaining > 0) {
+          currentSince = new Date(
+            currentSince.getTime() + chunkLimit * step * MS_PER_MINUTE
+          );
+        }
+      }
+    } else {
+      allData = await getCandles(symbol, interval, since, calculatedLimit, isBacktest);
+    }
+
+    // Filter candles to strictly match the requested range
+    const filteredData = allData.filter(
+      (candle) =>
+        candle.timestamp >= sinceTimestamp &&
+        candle.timestamp < untilTimestamp
+    );
+
+    // Apply distinct by timestamp to remove duplicates
+    const uniqueData = Array.from(
+      new Map(filteredData.map((candle) => [candle.timestamp, candle])).values()
+    );
+
+    if (filteredData.length !== uniqueData.length) {
+      backtest.loggerService.warn(
+        `ExchangeInstance getRawCandles: Removed ${filteredData.length - uniqueData.length} duplicate candles by timestamp`
+      );
+    }
+
+    if (uniqueData.length < calculatedLimit) {
+      backtest.loggerService.warn(
+        `ExchangeInstance getRawCandles: Expected ${calculatedLimit} candles, got ${uniqueData.length}`
+      );
+    }
+
+    // Write to cache after successful fetch
+    await WRITE_CANDLES_CACHE_FN(
+      uniqueData,
+      { symbol, interval, limit: calculatedLimit },
+      this.exchangeName
+    );
+
+    return uniqueData;
+  };
 }
 
 /**
@@ -652,6 +867,35 @@ export class ExchangeUtils {
 
     const instance = this._getInstance(context.exchangeName);
     return await instance.getOrderBook(symbol, depth);
+  };
+
+  /**
+   * Fetches raw candles with flexible date/limit parameters.
+   *
+   * Uses Date.now() instead of execution context when for look-ahead bias protection.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param interval - Candle interval (e.g., "1m", "1h")
+   * @param context - Execution context with exchange name
+   * @param limit - Optional number of candles to fetch
+   * @param sDate - Optional start date in milliseconds
+   * @param eDate - Optional end date in milliseconds
+   * @returns Promise resolving to array of candle data
+   */
+  public getRawCandles = async (
+    symbol: string,
+    interval: CandleInterval,
+    context: {
+      exchangeName: ExchangeName;
+    },
+    limit?: number,
+    sDate?: number,
+    eDate?: number
+  ): Promise<ICandleData[]> => {
+    backtest.exchangeValidationService.validate(context.exchangeName, EXCHANGE_METHOD_NAME_GET_RAW_CANDLES);
+
+    const instance = this._getInstance(context.exchangeName);
+    return await instance.getRawCandles(symbol, interval, limit, sDate, eDate);
   };
 }
 

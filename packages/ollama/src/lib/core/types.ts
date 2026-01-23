@@ -1,19 +1,11 @@
 /**
- * Common service type identifiers.
- * Services used across the entire application.
- */
-const commonServices = {
-    /** Logger service for application-wide logging */
-    loggerService: Symbol("loggerService"),
-}
-
-/**
  * Base service type identifiers.
  * Core foundational services.
  */
 const baseServices = {
     /** Context service for scoped execution contexts */
     contextService: Symbol('contextService'),
+    loggerService: Symbol("loggerService"),
 };
 
 /**
@@ -38,6 +30,34 @@ const publicServices = {
     outlinePublicService: Symbol('outlinePublicService'),
 };
 
+const promptServices = {
+    signalPromptService: Symbol('signalPromptService'),
+}
+
+const markdownServices = {
+    outlineMarkdownService: Symbol('outlineMarkdownService'),
+}
+
+const templateServices = {
+    optimizerTemplateService: Symbol('optimizerTemplateService'),
+}
+
+const schemaServices = {
+    optimizerSchemaService: Symbol('optimizerSchemaService'),
+}
+
+const validationServices = {
+    optimizerValidationService: Symbol('optimizerValidationService'),
+}
+
+const connectionServices = {
+    optimizerConnectionService: Symbol('optimizerConnectionService'),
+}
+
+const globalServices = {
+    optimizerGlobalService: Symbol('optimizerGlobalService'),
+}
+
 /**
  * Service type identifier registry for dependency injection.
  *
@@ -54,8 +74,14 @@ const publicServices = {
  * ```
  */
 export const TYPES = {
-    ...commonServices,
     ...baseServices,
+    ...promptServices,
+    ...markdownServices,
+    ...templateServices,
+    ...schemaServices,
+    ...validationServices,
+    ...connectionServices,
+    ...globalServices,
     ...privateServices,
     ...publicServices,
 }
