@@ -14,7 +14,7 @@ const CREATE_PROVIDER_FN = singleshot(
   (self: PineJobService): IProvider => ({
     async getMarketData(tickerId, timeframe, limit, sDate, eDate) {
       if (tickerId === AXIS_SYMBOL) {
-        return self.axisProviderService.getMarketData(
+        return await self.axisProviderService.getMarketData(
           tickerId,
           timeframe,
           limit,
@@ -22,7 +22,7 @@ const CREATE_PROVIDER_FN = singleshot(
           eDate,
         );
       }
-      return self.candleProviderService.getMarketData(
+      return await self.candleProviderService.getMarketData(
         tickerId,
         timeframe,
         limit,
@@ -33,9 +33,9 @@ const CREATE_PROVIDER_FN = singleshot(
 
     async getSymbolInfo(tickerId) {
       if (tickerId === AXIS_SYMBOL) {
-        return self.axisProviderService.getSymbolInfo();
+        return await self.axisProviderService.getSymbolInfo();
       }
-      return self.candleProviderService.getSymbolInfo(tickerId);
+      return await self.candleProviderService.getSymbolInfo(tickerId);
     },
   }),
 );

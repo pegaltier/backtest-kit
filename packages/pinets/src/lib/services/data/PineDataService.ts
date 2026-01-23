@@ -3,14 +3,23 @@ import { PlotModel } from "src/model/Plot.model";
 import LoggerService from "../base/LoggerService";
 import { TYPES } from "src/lib/core/types";
 
-export type PlotExtractConfig = {
+export type PlotExtractConfig<T = number> = {
   plot: string;
   barsBack?: number;
-  transform?: (value: number) => any;
+  transform?: (value: number) => T;
 };
 
-export type PlotMapping<T> = {
-  [K in keyof T]: string | PlotExtractConfig;
+export type PlotMapping = {
+  [key: string]: string | PlotExtractConfig<any>;
+};
+
+// Выводит тип результата из маппинга
+export type ExtractedData<M extends PlotMapping> = {
+  [K in keyof M]: M[K] extends PlotExtractConfig<infer R>
+    ? R
+    : M[K] extends string
+      ? number
+      : never;
 };
 
 const GET_VALUE_FN = (
@@ -27,13 +36,13 @@ const GET_VALUE_FN = (
 export class PineDataService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
-  public extract<T>(plots: PlotModel, mapping: PlotMapping<T>): T {
+  public extract<M extends PlotMapping>(plots: PlotModel, mapping: M): ExtractedData<M> {
     this.loggerService.log("pineDataService extract", {
       plotCount: Object.keys(plots).length,
       mapping,
     });
 
-    const result = {} as T;
+    const result = {} as ExtractedData<M>;
 
     for (const key in mapping) {
       const config = mapping[key];
