@@ -1,7 +1,7 @@
 {
   "name": "@backtest-kit/pinets",
-  "version": "0.1.2",
-  "description": "Technical analysis and trading signal generation library for AI-powered trading systems. Computes 50+ indicators across 4 timeframes and generates markdown reports for LLM consumption.",
+  "version": "0.0.1",
+  "description": "Run TradingView Pine Script strategies in Node.js self hosted environment. Execute existing Pine Script indicators and generate trading signals with 1:1 syntax compatibility via PineTS runtime.",
   "author": {
     "name": "Petr Tripolsky",
     "email": "tripolskypetr@gmail.com",
@@ -14,20 +14,23 @@
   "license": "MIT",
   "homepage": "https://backtest-kit.github.io/documents/example_02_first_backtest.html",
   "keywords": [
-    "framework",
+    "pinescript",
+    "pine-script",
+    "tradingview",
+    "pinets",
     "technical-analysis",
     "trading-bot",
     "algorithmic-trading",
-    "quantitative-trading",
-    "stock-market",
+    "backtest",
+    "backtesting",
     "cryptocurrency",
     "forex",
-    "strategy-testing",
-    "portfolio-management",
-    "market-data",
-    "ohlcv",
-    "candlestick",
-    "time-series"
+    "strategy",
+    "indicators",
+    "rsi",
+    "macd",
+    "ema",
+    "bollinger-bands"
   ],
   "files": [
     "build",
