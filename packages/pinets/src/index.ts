@@ -5,6 +5,7 @@ export { usePine } from "./function/pine.function";
 export { run } from "./function/run.function";
 export { setLogger } from "./function/setup.function";
 export { getSignal } from "./function/strategy.function";
+export { dumpPineData } from "./function/dump.function";
 
 export { type PlotExtractConfig } from "./lib/services/data/PineDataService";
 export { type PlotMapping } from "./lib/services/data/PineDataService";

@@ -10,6 +10,7 @@ import PineJobService from "./services/job/PineJobService";
 import PineDataService from "./services/data/PineDataService";
 import PineCacheService from "./services/cache/PineCacheService";
 import PineConnectionService from "./services/connection/PineConnectionService";
+import PineMarkdownService from "./services/markdown/PineMarkdownService";
 
 const commonServices = {
   loggerService: inject<LoggerService>(TYPES.loggerService),
@@ -36,6 +37,10 @@ const connectionServices = {
   pineConnectionService: inject<PineConnectionService>(TYPES.pineConnectionService),
 };
 
+const markdownServices = {
+  pineMarkdownService: inject<PineMarkdownService>(TYPES.pineMarkdownService),
+};
+
 const pine = {
   ...commonServices,
   ...providerServices,
@@ -43,6 +48,7 @@ const pine = {
   ...dataServices,
   ...cacheServices,
   ...connectionServices,
+  ...markdownServices,
 };
 
 init();

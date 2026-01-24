@@ -72,6 +72,9 @@ interface IParams {
 }
 declare function getSignal(source: File | Code, { symbol, timeframe, limit }: IParams): Promise<ISignalDto | null>;
 
+type ResultId$1 = string | number;
+declare function dumpPineData(signalId: ResultId$1, plots: PlotModel, taName: string, outputDir?: string): Promise<void>;
+
 interface CandleModel {
     openTime: number;
     open: number;
@@ -146,7 +149,34 @@ declare class PineCacheService {
     clear: (path?: string, baseDir?: string) => Promise<void>;
 }
 
+/**
+ * Unique identifier for signal result.
+ */
+type ResultId = string | number;
+/**
+ * Row data extracted from PlotModel for markdown table generation.
+ */
+interface IPlotRow {
+    time: number;
+    [key: string]: number | null;
+}
+/**
+ * Service for generating markdown reports from Pine Script indicator data.
+ *
+ * Features:
+ * - Dynamic columns from PlotModel keys
+ * - Warmup detection (skips rows until all indicators have values)
+ * - Configurable output directory
+ */
+declare class PineMarkdownService {
+    private readonly loggerService;
+    getData: (plots: PlotModel) => IPlotRow[];
+    getReport: (signalId: ResultId, plots: PlotModel) => string;
+    dump: (signalId: ResultId, plots: PlotModel, taName: string, outputDir?: string) => Promise<void>;
+}
+
 declare const pine: {
+    pineMarkdownService: PineMarkdownService;
     pineConnectionService: PineConnectionService;
     pineCacheService: PineCacheService;
     pineDataService: PineDataService;
@@ -156,4 +186,4 @@ declare const pine: {
     loggerService: LoggerService;
 };
 
-export { AXIS_SYMBOL, type CandleModel, Code, File, type ILogger, type IPine, type IProvider, type PlotExtractConfig, type PlotMapping, type PlotModel, type PlotRecord, type SymbolInfoModel, type TPineCtor, getSignal, pine as lib, run, setLogger, usePine };
+export { AXIS_SYMBOL, type CandleModel, Code, File, type ILogger, type IPine, type IProvider, type PlotExtractConfig, type PlotMapping, type PlotModel, type PlotRecord, type SymbolInfoModel, type TPineCtor, dumpPineData, getSignal, pine as lib, run, setLogger, usePine };

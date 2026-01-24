@@ -5,6 +5,7 @@ import PineJobService from "../services/job/PineJobService";
 import PineDataService from "../services/data/PineDataService";
 import PineCacheService from "../services/cache/PineCacheService";
 import PineConnectionService from "../services/connection/PineConnectionService";
+import PineMarkdownService from "../services/markdown/PineMarkdownService";
 import { provide } from "./di";
 import { TYPES } from "./types";
 
@@ -31,4 +32,8 @@ import { TYPES } from "./types";
 
 {
     provide(TYPES.pineConnectionService, () => new PineConnectionService());
+}
+
+{
+    provide(TYPES.pineMarkdownService, () => new PineMarkdownService());
 }

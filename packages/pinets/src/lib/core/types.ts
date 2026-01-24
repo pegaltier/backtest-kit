@@ -23,6 +23,10 @@ const connectionServices = {
     pineConnectionService: Symbol("pineConnectionService"),
 }
 
+const markdownServices = {
+    pineMarkdownService: Symbol("pineMarkdownService"),
+}
+
 export const TYPES = {
     ...baseServices,
     ...providerServices,
@@ -30,4 +34,5 @@ export const TYPES = {
     ...dataServices,
     ...cacheServices,
     ...connectionServices,
+    ...markdownServices,
 }
