@@ -1,7 +1,7 @@
 import { inject } from "../../core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../core/types";
-import { memoize, singleshot } from "functools-kit";
+import { compose, memoize, singleshot } from "functools-kit";
 import ExecutionContextService, {
   TExecutionContextService,
 } from "../context/ExecutionContextService";
@@ -17,7 +17,15 @@ import {
 import { ColumnModel } from "../../../model/Column.model";
 import { COLUMN_CONFIG } from "../../../config/columns";
 import { strategyCommitSubject } from "../../../config/emitters";
-import { StrategyCommitContract } from "../../../contract/StrategyCommit.contract";
+import {
+  BreakevenCommit,
+  CancelScheduledCommit,
+  ClosePendingCommit,
+  PartialLossCommit,
+  PartialProfitCommit,
+  TrailingStopCommit,
+  TrailingTakeCommit,
+} from "../../../contract/StrategyCommit.contract";
 
 /**
  * Type alias for column configuration used in strategy markdown reports.
@@ -871,48 +879,6 @@ export class StrategyMarkdownService {
   };
 
   /**
-   * Handles incoming signal management events from strategyCommitSubject.
-   * Routes events to appropriate handler methods based on action type.
-   *
-   * @param event - The signal management event
-   */
-  private handleSignalEvent = async (event: StrategyCommitContract) => {
-    this.loggerService.log("strategyMarkdownService handleSignalEvent", {
-      action: event.action,
-      symbol: event.symbol,
-      backtest: event.backtest,
-    });
-    const context = {
-      strategyName: event.strategyName,
-      exchangeName: event.exchangeName,
-      frameName: event.frameName,
-    };
-    switch (event.action) {
-      case "cancel-scheduled":
-        await this.cancelScheduled(event.symbol, event.backtest, context, event.cancelId);
-        break;
-      case "close-pending":
-        await this.closePending(event.symbol, event.backtest, context, event.closeId);
-        break;
-      case "partial-profit":
-        await this.partialProfit(event.symbol, event.percentToClose, event.currentPrice, event.backtest, context);
-        break;
-      case "partial-loss":
-        await this.partialLoss(event.symbol, event.percentToClose, event.currentPrice, event.backtest, context);
-        break;
-      case "trailing-stop":
-        await this.trailingStop(event.symbol, event.percentShift, event.currentPrice, event.backtest, context);
-        break;
-      case "trailing-take":
-        await this.trailingTake(event.symbol, event.percentShift, event.currentPrice, event.backtest, context);
-        break;
-      case "breakeven":
-        await this.breakeven(event.symbol, event.currentPrice, event.backtest, context);
-        break;
-    }
-  };
-
-  /**
    * Initializes the service for event collection.
    *
    * Must be called before any events can be collected or reports generated.
@@ -922,11 +888,130 @@ export class StrategyMarkdownService {
    */
   public subscribe = singleshot(() => {
     this.loggerService.log("strategyMarkdownService subscribe");
-    const unsubscribe = strategyCommitSubject.subscribe(this.handleSignalEvent);
+
+    const unCancelSchedule = strategyCommitSubject
+      .filter(({ action }) => action === "cancel-scheduled")
+      .connect(async (event: CancelScheduledCommit) =>
+        await this.cancelScheduled(
+          event.symbol,
+          event.backtest,
+          {
+            exchangeName: event.exchangeName,
+            frameName: event.frameName,
+            strategyName: event.strategyName,
+          },
+          event.cancelId,
+        )
+      );
+
+    const unClosePending = strategyCommitSubject
+      .filter(({ action }) => action === "close-pending")
+      .connect(async (event: ClosePendingCommit) =>
+        await this.closePending(
+          event.symbol,
+          event.backtest,
+          {
+            exchangeName: event.exchangeName,
+            frameName: event.frameName,
+            strategyName: event.strategyName,
+          },
+          event.closeId,
+        )
+      );
+
+    const unPartialProfit = strategyCommitSubject
+      .filter(({ action }) => action === "partial-profit")
+      .connect(async (event: PartialProfitCommit) =>
+        await this.partialProfit(
+          event.symbol,
+          event.percentToClose,
+          event.currentPrice,
+          event.backtest,
+          {
+            exchangeName: event.exchangeName,
+            frameName: event.frameName,
+            strategyName: event.strategyName,
+          },
+        )
+      );
+
+    const unPartialLoss = strategyCommitSubject
+      .filter(({ action }) => action === "partial-loss")
+      .connect(async (event: PartialLossCommit) =>
+        await this.partialLoss(
+          event.symbol,
+          event.percentToClose,
+          event.currentPrice,
+          event.backtest,
+          {
+            exchangeName: event.exchangeName,
+            frameName: event.frameName,
+            strategyName: event.strategyName,
+          },
+        )
+      );
+
+    const unTrailingStop = strategyCommitSubject
+      .filter(({ action }) => action === "trailing-stop")
+      .connect(async (event: TrailingStopCommit) =>
+        await this.trailingStop(
+          event.symbol,
+          event.percentShift,
+          event.currentPrice,
+          event.backtest,
+          {
+            exchangeName: event.exchangeName,
+            frameName: event.frameName,
+            strategyName: event.strategyName,
+          },
+        )
+      );
+
+    const unTrailingTake = strategyCommitSubject
+      .filter(({ action }) => action === "trailing-take")
+      .connect(async (event: TrailingTakeCommit) =>
+        await this.trailingTake(
+          event.symbol,
+          event.percentShift,
+          event.currentPrice,
+          event.backtest,
+          {
+            exchangeName: event.exchangeName,
+            frameName: event.frameName,
+            strategyName: event.strategyName,
+          },
+        )
+      );
+
+    const unBreakeven = strategyCommitSubject
+      .filter(({ action }) => action === "breakeven")
+      .connect(async (event: BreakevenCommit) =>
+        await this.breakeven(
+          event.symbol,
+          event.currentPrice,
+          event.backtest,
+          {
+            exchangeName: event.exchangeName,
+            frameName: event.frameName,
+            strategyName: event.strategyName,
+          },
+        )
+      );
+
+    const disposeFn = compose(
+      () => unCancelSchedule(),
+      () => unClosePending(),
+      () => unPartialProfit(),
+      () => unPartialLoss(),
+      () => unTrailingStop(),
+      () => unTrailingTake(),
+      () => unBreakeven(),
+    );
+
     return () => {
+      disposeFn();
       this.subscribe.clear();
       this.clear();
-      unsubscribe();
     };
   });
 
