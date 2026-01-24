@@ -12,7 +12,7 @@ import {
 } from "../../../interfaces/Strategy.interface";
 import StrategyConnectionService from "../connection/StrategyConnectionService";
 import { ExchangeName, ICandleData } from "../../../interfaces/Exchange.interface";
-import { memoize } from "functools-kit";
+import { errorData, getErrorMessage, memoize, trycatch } from "functools-kit";
 import StrategySchemaService from "../schema/StrategySchemaService";
 import RiskValidationService from "../validation/RiskValidationService";
 import StrategyValidationService from "../validation/StrategyValidationService";
@@ -21,6 +21,9 @@ import FrameValidationService from "../validation/FrameValidationService";
 import { FrameName } from "../../../interfaces/Frame.interface";
 import StrategyMarkdownService from "../markdown/StrategyMarkdownService";
 import StrategyReportService from "../report/StrategyReportService";
+import StrategyCommitContract from "src/contract/StrategyCommit.contract";
+import { errorEmitter, strategyCommitSubject } from "src/config/emitters";
+import backtest from "src/lib";
 
 const METHOD_NAME_VALIDATE = "strategyCoreService validate";
 
@@ -44,6 +47,31 @@ const CREATE_KEY_FN = (context: { strategyName: StrategyName; exchangeName: Exch
 type TStrategy = {
   [key in keyof IStrategy]: any;
 };
+
+
+/**
+ * Broadcasts StrategyCommitContract event to strategyCommitSubject.
+ *
+ * @param event - The signal commit event to broadcast
+ */
+const CALL_STRATEGY_COMMIT_FN = trycatch(
+  async (event: StrategyCommitContract): Promise<void> => {
+    await strategyCommitSubject.next(event);
+  },
+  {
+    fallback: (error) => {
+      const message = "StrategyCoreService CALL_STRATEGY_COMMIT_FN thrown";
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+    defaultValue: null,
+  }
+);
 
 /**
  * Global service for strategy operations with execution context injection.
@@ -70,12 +98,6 @@ export class StrategyCoreService implements TStrategy {
   );
   private readonly frameValidationService = inject<FrameValidationService>(
     TYPES.frameValidationService
-  );
-  private readonly strategyMarkdownService = inject<StrategyMarkdownService>(
-    TYPES.strategyMarkdownService
-  );
-  private readonly strategyReportService = inject<StrategyReportService>(
-    TYPES.strategyReportService
   );
 
   /**
@@ -346,8 +368,15 @@ export class StrategyCoreService implements TStrategy {
     await this.validate(context);
     const result = await this.strategyConnectionService.cancelScheduled(backtest, symbol, context, cancelId);
     {
-      this.strategyMarkdownService.cancelScheduled(symbol, backtest, context, cancelId);
-      this.strategyReportService.cancelScheduled(symbol, backtest, context, cancelId);
+      await CALL_STRATEGY_COMMIT_FN({
+        action: "cancel-scheduled",
+        symbol,
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: context.frameName,
+        backtest,
+        cancelId,
+      });
     }
     return result;
   };
@@ -379,8 +408,15 @@ export class StrategyCoreService implements TStrategy {
     await this.validate(context);
     const result = await this.strategyConnectionService.closePending(backtest, symbol, context, closeId);
     {
-      this.strategyMarkdownService.closePending(symbol, backtest, context, closeId);
-      this.strategyReportService.closePending(symbol, backtest, context, closeId);
+      await CALL_STRATEGY_COMMIT_FN({
+        action: "close-pending",
+        symbol,
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: context.frameName,
+        backtest,
+        closeId,
+      });
     }
     return result;
   };
@@ -478,8 +514,16 @@ export class StrategyCoreService implements TStrategy {
     await this.validate(context);
     const result = await this.strategyConnectionService.partialProfit(backtest, symbol, percentToClose, currentPrice, context);
     if (result) {
-      this.strategyMarkdownService.partialProfit(symbol, percentToClose, currentPrice, backtest, context);
-      this.strategyReportService.partialProfit(symbol, percentToClose, currentPrice, backtest, context);
+      await CALL_STRATEGY_COMMIT_FN({
+        action: "partial-profit",
+        symbol,
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: context.frameName,
+        backtest,
+        percentToClose,
+        currentPrice,
+      });  
     }
     return result;
   };
@@ -531,8 +575,16 @@ export class StrategyCoreService implements TStrategy {
     await this.validate(context);
     const result = await this.strategyConnectionService.partialLoss(backtest, symbol, percentToClose, currentPrice, context);
     if (result) {
-      this.strategyMarkdownService.partialLoss(symbol, percentToClose, currentPrice, backtest, context);
-      this.strategyReportService.partialLoss(symbol, percentToClose, currentPrice, backtest, context);
+      await CALL_STRATEGY_COMMIT_FN({
+        action: "partial-loss",
+        symbol,
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: context.frameName,
+        backtest,
+        percentToClose,
+        currentPrice,
+      });
     }
     return result;
   };
@@ -582,8 +634,16 @@ export class StrategyCoreService implements TStrategy {
     await this.validate(context);
     const result = await this.strategyConnectionService.trailingStop(backtest, symbol, percentShift, currentPrice, context);
     if (result) {
-      this.strategyMarkdownService.trailingStop(symbol, percentShift, currentPrice, backtest, context);
-      this.strategyReportService.trailingStop(symbol, percentShift, currentPrice, backtest, context);
+      await CALL_STRATEGY_COMMIT_FN({
+        action: "trailing-stop",
+        symbol,
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: context.frameName,
+        backtest,
+        percentShift,
+        currentPrice,
+      });
     }
     return result;
   };
@@ -629,8 +689,16 @@ export class StrategyCoreService implements TStrategy {
     await this.validate(context);
     const result = await this.strategyConnectionService.trailingTake(backtest, symbol, percentShift, currentPrice, context);
     if (result) {
-      this.strategyMarkdownService.trailingTake(symbol, percentShift, currentPrice, backtest, context);
-      this.strategyReportService.trailingTake(symbol, percentShift, currentPrice, backtest, context);
+      await CALL_STRATEGY_COMMIT_FN({
+        action: "trailing-take",
+        symbol,
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: context.frameName,
+        backtest,
+        percentShift,
+        currentPrice,
+      });
     }
     return result;
   };
@@ -670,8 +738,15 @@ export class StrategyCoreService implements TStrategy {
     await this.validate(context);
     const result = await this.strategyConnectionService.breakeven(backtest, symbol, currentPrice, context);
     if (result) {
-      this.strategyMarkdownService.breakeven(symbol, currentPrice, backtest, context);
-      this.strategyReportService.breakeven(symbol, currentPrice, backtest, context);
+      await CALL_STRATEGY_COMMIT_FN({
+        action: "breakeven",
+        symbol,
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: context.frameName,
+        backtest,
+        currentPrice,
+      });
     }
     return result;
   };

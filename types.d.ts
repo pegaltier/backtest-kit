@@ -5076,6 +5076,84 @@ interface WalkerContract {
 }
 
 /**
+ * Base fields for all signal commit events.
+ */
+interface SignalCommitBase {
+    symbol: string;
+    strategyName: StrategyName;
+    exchangeName: ExchangeName;
+    frameName: FrameName;
+    backtest: boolean;
+}
+/**
+ * Cancel scheduled signal event.
+ */
+interface CancelScheduledCommit extends SignalCommitBase {
+    action: "cancel-scheduled";
+    cancelId?: string;
+}
+/**
+ * Close pending signal event.
+ */
+interface ClosePendingCommit extends SignalCommitBase {
+    action: "close-pending";
+    closeId?: string;
+}
+/**
+ * Partial profit event.
+ */
+interface PartialProfitCommit extends SignalCommitBase {
+    action: "partial-profit";
+    percentToClose: number;
+    currentPrice: number;
+}
+/**
+ * Partial loss event.
+ */
+interface PartialLossCommit extends SignalCommitBase {
+    action: "partial-loss";
+    percentToClose: number;
+    currentPrice: number;
+}
+/**
+ * Trailing stop event.
+ */
+interface TrailingStopCommit extends SignalCommitBase {
+    action: "trailing-stop";
+    percentShift: number;
+    currentPrice: number;
+}
+/**
+ * Trailing take event.
+ */
+interface TrailingTakeCommit extends SignalCommitBase {
+    action: "trailing-take";
+    percentShift: number;
+    currentPrice: number;
+}
+/**
+ * Breakeven event.
+ */
+interface BreakevenCommit extends SignalCommitBase {
+    action: "breakeven";
+    currentPrice: number;
+}
+/**
+ * Discriminated union for strategy management signal events.
+ *
+ * Emitted by strategyCommitSubject when strategy management actions are executed.
+ *
+ * Consumers:
+ * - StrategyReportService: Persists events to JSON files
+ * - StrategyMarkdownService: Accumulates events for markdown reports
+ *
+ * Note: Signal data (IPublicSignalRow) is NOT included in this contract.
+ * Consumers must retrieve signal data from StrategyCoreService using
+ * getPendingSignal() or getScheduledSignal() methods.
+ */
+type StrategyCommitContract = CancelScheduledCommit | ClosePendingCommit | PartialProfitCommit | PartialLossCommit | TrailingStopCommit | TrailingTakeCommit | BreakevenCommit;
+
+/**
  * Subscribes to all signal events with queued async processing.
  *
  * Events are processed sequentially in order received, even if callback is async.
@@ -6005,6 +6083,72 @@ declare function listenActivePing(fn: (event: ActivePingContract) => void): () =
  * ```
  */
 declare function listenActivePingOnce(filterFn: (event: ActivePingContract) => boolean, fn: (event: ActivePingContract) => void): () => void;
+/**
+ * Subscribes to strategy management events with queued async processing.
+ *
+ * Emits when strategy management actions are executed:
+ * - cancel-scheduled: Scheduled signal cancelled
+ * - close-pending: Pending signal closed
+ * - partial-profit: Partial close at profit level
+ * - partial-loss: Partial close at loss level
+ * - trailing-stop: Stop-loss adjusted
+ * - trailing-take: Take-profit adjusted
+ * - breakeven: Stop-loss moved to entry price
+ *
+ * Events are processed sequentially in order received, even if callback is async.
+ * Uses queued wrapper to prevent concurrent execution of the callback.
+ *
+ * @param fn - Callback function to handle strategy commit events
+ * @returns Unsubscribe function to stop listening
+ *
+ * @example
+ * ```typescript
+ * import { listenStrategyCommit } from "./function/event";
+ *
+ * const unsubscribe = listenStrategyCommit((event) => {
+ *   console.log(`[${event.action}] ${event.symbol}`);
+ *   console.log(`Strategy: ${event.strategyName}, Exchange: ${event.exchangeName}`);
+ *   if (event.action === "partial-profit") {
+ *     console.log(`Closed ${event.percentToClose}% at ${event.currentPrice}`);
+ *   }
+ * });
+ *
+ * // Later: stop listening
+ * unsubscribe();
+ * ```
+ */
+declare function listenStrategyCommit(fn: (event: StrategyCommitContract) => void): () => void;
+/**
+ * Subscribes to filtered strategy management events with one-time execution.
+ *
+ * Listens for events matching the filter predicate, then executes callback once
+ * and automatically unsubscribes. Useful for waiting for specific strategy actions.
+ *
+ * @param filterFn - Predicate to filter which events trigger the callback
+ * @param fn - Callback function to handle the filtered event (called only once)
+ * @returns Unsubscribe function to cancel the listener before it fires
+ *
+ * @example
+ * ```typescript
+ * import { listenStrategyCommitOnce } from "./function/event";
+ *
+ * // Wait for first trailing stop adjustment
+ * listenStrategyCommitOnce(
+ *   (event) => event.action === "trailing-stop",
+ *   (event) => console.log("Trailing stop adjusted:", event.symbol)
+ * );
+ *
+ * // Wait for breakeven on BTCUSDT
+ * const cancel = listenStrategyCommitOnce(
+ *   (event) => event.action === "breakeven" && event.symbol === "BTCUSDT",
+ *   (event) => console.log("BTCUSDT moved to breakeven at", event.currentPrice)
+ * );
+ *
+ * // Cancel if needed before event fires
+ * cancel();
+ * ```
+ */
+declare function listenStrategyCommitOnce(filterFn: (event: StrategyCommitContract) => boolean, fn: (event: StrategyCommitContract) => void): () => void;
 
 /**
  * Checks if trade context is active (execution and method contexts).
@@ -12804,8 +12948,6 @@ declare class StrategyCoreService implements TStrategy$1 {
     private readonly strategyValidationService;
     private readonly exchangeValidationService;
     private readonly frameValidationService;
-    private readonly strategyMarkdownService;
-    private readonly strategyReportService;
     /**
      * Validates strategy and associated risk configuration.
      *
@@ -13427,6 +13569,13 @@ declare class StrategyMarkdownService {
         frameName: FrameName;
         backtest: boolean;
     }) => Promise<void>;
+    /**
+     * Handles incoming signal management events from strategyCommitSubject.
+     * Routes events to appropriate handler methods based on action type.
+     *
+     * @param event - The signal management event
+     */
+    private handleSignalEvent;
     /**
      * Initializes the service for event collection.
      *
@@ -14346,6 +14495,20 @@ declare const schedulePingSubject: Subject<SchedulePingContract>;
  * Allows users to track active signal lifecycle and implement custom dynamic management logic.
  */
 declare const activePingSubject: Subject<ActivePingContract>;
+/**
+ * Strategy management signal emitter.
+ * Emits when strategy management actions are executed:
+ * - cancel-scheduled: Scheduled signal cancelled
+ * - close-pending: Pending signal closed
+ * - partial-profit: Partial close at profit level
+ * - partial-loss: Partial close at loss level
+ * - trailing-stop: Stop-loss adjusted
+ * - trailing-take: Take-profit adjusted
+ * - breakeven: Stop-loss moved to entry price
+ *
+ * Used by StrategyReportService and StrategyMarkdownService for event logging and reporting.
+ */
+declare const strategyCommitSubject: Subject<StrategyCommitContract>;
 
 declare const emitters_activePingSubject: typeof activePingSubject;
 declare const emitters_breakevenSubject: typeof breakevenSubject;
@@ -14364,12 +14527,13 @@ declare const emitters_schedulePingSubject: typeof schedulePingSubject;
 declare const emitters_signalBacktestEmitter: typeof signalBacktestEmitter;
 declare const emitters_signalEmitter: typeof signalEmitter;
 declare const emitters_signalLiveEmitter: typeof signalLiveEmitter;
+declare const emitters_strategyCommitSubject: typeof strategyCommitSubject;
 declare const emitters_validationSubject: typeof validationSubject;
 declare const emitters_walkerCompleteSubject: typeof walkerCompleteSubject;
 declare const emitters_walkerEmitter: typeof walkerEmitter;
 declare const emitters_walkerStopSubject: typeof walkerStopSubject;
 declare namespace emitters {
-  export { emitters_activePingSubject as activePingSubject, emitters_breakevenSubject as breakevenSubject, emitters_doneBacktestSubject as doneBacktestSubject, emitters_doneLiveSubject as doneLiveSubject, emitters_doneWalkerSubject as doneWalkerSubject, emitters_errorEmitter as errorEmitter, emitters_exitEmitter as exitEmitter, emitters_partialLossSubject as partialLossSubject, emitters_partialProfitSubject as partialProfitSubject, emitters_performanceEmitter as performanceEmitter, emitters_progressBacktestEmitter as progressBacktestEmitter, emitters_progressWalkerEmitter as progressWalkerEmitter, emitters_riskSubject as riskSubject, emitters_schedulePingSubject as schedulePingSubject, emitters_signalBacktestEmitter as signalBacktestEmitter, emitters_signalEmitter as signalEmitter, emitters_signalLiveEmitter as signalLiveEmitter, emitters_validationSubject as validationSubject, emitters_walkerCompleteSubject as walkerCompleteSubject, emitters_walkerEmitter as walkerEmitter, emitters_walkerStopSubject as walkerStopSubject };
+  export { emitters_activePingSubject as activePingSubject, emitters_breakevenSubject as breakevenSubject, emitters_doneBacktestSubject as doneBacktestSubject, emitters_doneLiveSubject as doneLiveSubject, emitters_doneWalkerSubject as doneWalkerSubject, emitters_errorEmitter as errorEmitter, emitters_exitEmitter as exitEmitter, emitters_partialLossSubject as partialLossSubject, emitters_partialProfitSubject as partialProfitSubject, emitters_performanceEmitter as performanceEmitter, emitters_progressBacktestEmitter as progressBacktestEmitter, emitters_progressWalkerEmitter as progressWalkerEmitter, emitters_riskSubject as riskSubject, emitters_schedulePingSubject as schedulePingSubject, emitters_signalBacktestEmitter as signalBacktestEmitter, emitters_signalEmitter as signalEmitter, emitters_signalLiveEmitter as signalLiveEmitter, emitters_strategyCommitSubject as strategyCommitSubject, emitters_validationSubject as validationSubject, emitters_walkerCompleteSubject as walkerCompleteSubject, emitters_walkerEmitter as walkerEmitter, emitters_walkerStopSubject as walkerStopSubject };
 }
 
 /**
@@ -18841,6 +19005,13 @@ declare class StrategyReportService {
         frameName: FrameName;
     }) => Promise<void>;
     /**
+     * Handles incoming signal management events from strategyCommitSubject.
+     * Routes events to appropriate handler methods based on action type.
+     *
+     * @param event - The signal management event
+     */
+    private handleSignalEvent;
+    /**
      * Initializes the service for event logging.
      *
      * Must be called before any events can be logged. Uses singleshot pattern
@@ -18928,4 +19099,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { ActionBase, type ActivePingContract, Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleData, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOrderBookData, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, MethodContextService, type MetricStats, Notification, type NotificationModel, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, Strategy, type StrategyActionType, type StrategyEvent, type StrategyStatisticsModel, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialProfit, commitTrailingStop, commitTrailingTake, emitters, formatPrice, formatQuantity, get, getActionSchema, getAveragePrice, getBacktestTimeframe, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getExchangeSchema, getFrameSchema, getMode, getOrderBook, getRawCandles, getRiskSchema, getSizingSchema, getStrategySchema, getSymbol, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, roundTicks, set, setColumns, setConfig, setLogger, stopStrategy, validate };
+export { ActionBase, type ActivePingContract, Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleData, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOrderBookData, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, MethodContextService, type MetricStats, Notification, type NotificationModel, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, Strategy, type StrategyActionType, type StrategyCommitContract, type StrategyEvent, type StrategyStatisticsModel, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialProfit, commitTrailingStop, commitTrailingTake, emitters, formatPrice, formatQuantity, get, getActionSchema, getAveragePrice, getBacktestTimeframe, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getExchangeSchema, getFrameSchema, getMode, getOrderBook, getRawCandles, getRiskSchema, getSizingSchema, getStrategySchema, getSymbol, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenStrategyCommit, listenStrategyCommitOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, roundTicks, set, setColumns, setConfig, setLogger, stopStrategy, validate };
