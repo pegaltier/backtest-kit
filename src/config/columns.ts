@@ -6,6 +6,7 @@ import { breakeven_columns } from "../assets/breakeven.columns";
 import { performance_columns } from "../assets/performance.columns";
 import { risk_columns } from "../assets/risk.columns";
 import { schedule_columns } from "../assets/schedule.columns";
+import { strategy_columns } from "../assets/strategy.columns";
 import {
   walker_pnl_columns,
   walker_strategy_columns,
@@ -35,6 +36,8 @@ export const COLUMN_CONFIG = {
   risk_columns,
   /** Columns for scheduled report output */
   schedule_columns,
+  /** Columns for strategy management events */
+  strategy_columns,
   /** Walker: PnL summary columns */
   walker_pnl_columns,
   /** Walker: strategy-level summary columns */
