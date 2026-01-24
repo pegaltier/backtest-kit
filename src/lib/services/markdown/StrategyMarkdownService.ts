@@ -1025,8 +1025,8 @@ export class StrategyMarkdownService {
   public unsubscribe = async () => {
     this.loggerService.log("strategyMarkdownService unsubscribe");
     if (this.subscribe.hasValue()) {
-      this.subscribe.clear();
-      this.clear();
+      const lastSubscription = this.subscribe();
+      lastSubscription();
     }
   };
 }

@@ -663,7 +663,8 @@ export class StrategyReportService {
   public unsubscribe = async () => {
     this.loggerService.log("strategyReportService unsubscribe");
     if (this.subscribe.hasValue()) {
-      this.subscribe.clear();
+      const lastSubscription = this.subscribe();
+      lastSubscription();
     }
   };
 }
