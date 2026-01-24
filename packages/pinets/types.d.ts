@@ -1,4 +1,3 @@
-import { TPineCtor as TPineCtor$1 } from 'src/interface/Pine.interface';
 import { CandleInterval, ISignalDto } from 'backtest-kit';
 
 declare class Code {
@@ -18,8 +17,6 @@ declare class File {
     static isFile: (value: unknown) => value is File;
 }
 
-declare function usePine<T = TPineCtor$1>(ctor: T): void;
-
 type PlotData = {
     time: number;
     value: number;
@@ -31,6 +28,19 @@ type PlotModel = Record<string, PlotEntry>;
 type PlotRecord = {
     plots: PlotModel;
 };
+
+interface IProvider {
+    getMarketData(tickerId: string, timeframe: string, limit?: number, sDate?: number, eDate?: number): Promise<any>;
+    getSymbolInfo(tickerId: string): Promise<any>;
+}
+
+type TPineCtor = (source: IProvider, tickerId: string, timeframe: string, limit: number) => IPine;
+interface IPine {
+    ready(): Promise<void>;
+    run(code: string): Promise<PlotRecord>;
+}
+
+declare function usePine<T = TPineCtor>(ctor: T): void;
 
 type PlotExtractConfig<T = number> = {
     plot: string;
@@ -94,17 +104,6 @@ interface SymbolInfoModel {
     timezone: string;
 }
 
-interface IProvider {
-    getMarketData(tickerId: string, timeframe: string, limit?: number, sDate?: number, eDate?: number): Promise<any>;
-    getSymbolInfo(tickerId: string): Promise<any>;
-}
-
-type TPineCtor = (source: IProvider, tickerId: string, timeframe: string, limit: number) => IPine;
-interface IPine {
-    ready(): Promise<void>;
-    run(code: string): Promise<PlotRecord>;
-}
-
 declare const AXIS_SYMBOL = "_AXIS";
 declare class AxisProviderService implements IProvider {
     private readonly loggerService;
@@ -149,25 +148,11 @@ declare class PineCacheService {
     clear: (path?: string, baseDir?: string) => Promise<void>;
 }
 
-/**
- * Unique identifier for signal result.
- */
 type ResultId = string | number;
-/**
- * Row data extracted from PlotModel for markdown table generation.
- */
 interface IPlotRow {
     time: number;
     [key: string]: number | null;
 }
-/**
- * Service for generating markdown reports from Pine Script indicator data.
- *
- * Features:
- * - Dynamic columns from PlotModel keys
- * - Warmup detection (skips rows until all indicators have values)
- * - Configurable output directory
- */
 declare class PineMarkdownService {
     private readonly loggerService;
     getData: (plots: PlotModel) => IPlotRow[];

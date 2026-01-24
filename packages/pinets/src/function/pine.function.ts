@@ -1,5 +1,5 @@
 import lib from "../lib";
-import { TPineCtor } from "src/interface/Pine.interface";
+import { TPineCtor } from "../interface/Pine.interface";
 
 const METHOD_NAME_USE_PINE = "pine.usePine";
 
