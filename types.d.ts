@@ -3839,6 +3839,8 @@ declare const COLUMN_CONFIG: {
     risk_columns: ColumnModel<RiskEvent>[];
     /** Columns for scheduled report output */
     schedule_columns: ColumnModel<ScheduledEvent>[];
+    /** Columns for strategy management events */
+    strategy_columns: ColumnModel<StrategyEvent>[];
     /** Walker: PnL summary columns */
     walker_pnl_columns: ColumnModel<SignalData$1>[];
     /** Walker: strategy-level summary columns */
@@ -3997,6 +3999,7 @@ declare function getColumns(): {
     performance_columns: ColumnModel<MetricStats>[];
     risk_columns: ColumnModel<RiskEvent>[];
     schedule_columns: ColumnModel<ScheduledEvent>[];
+    strategy_columns: ColumnModel<StrategyEvent>[];
     walker_pnl_columns: ColumnModel<SignalData$1>[];
     walker_strategy_columns: ColumnModel<IStrategyResult>[];
 };
@@ -4023,6 +4026,7 @@ declare function getDefaultColumns(): Readonly<{
     performance_columns: ColumnModel<MetricStats>[];
     risk_columns: ColumnModel<RiskEvent>[];
     schedule_columns: ColumnModel<ScheduledEvent>[];
+    strategy_columns: ColumnModel<StrategyEvent>[];
     walker_pnl_columns: ColumnModel<SignalData$1>[];
     walker_strategy_columns: ColumnModel<IStrategyResult>[];
 }>;
@@ -5072,6 +5076,84 @@ interface WalkerContract {
 }
 
 /**
+ * Base fields for all signal commit events.
+ */
+interface SignalCommitBase {
+    symbol: string;
+    strategyName: StrategyName;
+    exchangeName: ExchangeName;
+    frameName: FrameName;
+    backtest: boolean;
+}
+/**
+ * Cancel scheduled signal event.
+ */
+interface CancelScheduledCommit extends SignalCommitBase {
+    action: "cancel-scheduled";
+    cancelId?: string;
+}
+/**
+ * Close pending signal event.
+ */
+interface ClosePendingCommit extends SignalCommitBase {
+    action: "close-pending";
+    closeId?: string;
+}
+/**
+ * Partial profit event.
+ */
+interface PartialProfitCommit extends SignalCommitBase {
+    action: "partial-profit";
+    percentToClose: number;
+    currentPrice: number;
+}
+/**
+ * Partial loss event.
+ */
+interface PartialLossCommit extends SignalCommitBase {
+    action: "partial-loss";
+    percentToClose: number;
+    currentPrice: number;
+}
+/**
+ * Trailing stop event.
+ */
+interface TrailingStopCommit extends SignalCommitBase {
+    action: "trailing-stop";
+    percentShift: number;
+    currentPrice: number;
+}
+/**
+ * Trailing take event.
+ */
+interface TrailingTakeCommit extends SignalCommitBase {
+    action: "trailing-take";
+    percentShift: number;
+    currentPrice: number;
+}
+/**
+ * Breakeven event.
+ */
+interface BreakevenCommit extends SignalCommitBase {
+    action: "breakeven";
+    currentPrice: number;
+}
+/**
+ * Discriminated union for strategy management signal events.
+ *
+ * Emitted by strategyCommitSubject when strategy management actions are executed.
+ *
+ * Consumers:
+ * - StrategyReportService: Persists events to JSON files
+ * - StrategyMarkdownService: Accumulates events for markdown reports
+ *
+ * Note: Signal data (IPublicSignalRow) is NOT included in this contract.
+ * Consumers must retrieve signal data from StrategyCoreService using
+ * getPendingSignal() or getScheduledSignal() methods.
+ */
+type StrategyCommitContract = CancelScheduledCommit | ClosePendingCommit | PartialProfitCommit | PartialLossCommit | TrailingStopCommit | TrailingTakeCommit | BreakevenCommit;
+
+/**
  * Subscribes to all signal events with queued async processing.
  *
  * Events are processed sequentially in order received, even if callback is async.
@@ -6001,6 +6083,72 @@ declare function listenActivePing(fn: (event: ActivePingContract) => void): () =
  * ```
  */
 declare function listenActivePingOnce(filterFn: (event: ActivePingContract) => boolean, fn: (event: ActivePingContract) => void): () => void;
+/**
+ * Subscribes to strategy management events with queued async processing.
+ *
+ * Emits when strategy management actions are executed:
+ * - cancel-scheduled: Scheduled signal cancelled
+ * - close-pending: Pending signal closed
+ * - partial-profit: Partial close at profit level
+ * - partial-loss: Partial close at loss level
+ * - trailing-stop: Stop-loss adjusted
+ * - trailing-take: Take-profit adjusted
+ * - breakeven: Stop-loss moved to entry price
+ *
+ * Events are processed sequentially in order received, even if callback is async.
+ * Uses queued wrapper to prevent concurrent execution of the callback.
+ *
+ * @param fn - Callback function to handle strategy commit events
+ * @returns Unsubscribe function to stop listening
+ *
+ * @example
+ * ```typescript
+ * import { listenStrategyCommit } from "./function/event";
+ *
+ * const unsubscribe = listenStrategyCommit((event) => {
+ *   console.log(`[${event.action}] ${event.symbol}`);
+ *   console.log(`Strategy: ${event.strategyName}, Exchange: ${event.exchangeName}`);
+ *   if (event.action === "partial-profit") {
+ *     console.log(`Closed ${event.percentToClose}% at ${event.currentPrice}`);
+ *   }
+ * });
+ *
+ * // Later: stop listening
+ * unsubscribe();
+ * ```
+ */
+declare function listenStrategyCommit(fn: (event: StrategyCommitContract) => void): () => void;
+/**
+ * Subscribes to filtered strategy management events with one-time execution.
+ *
+ * Listens for events matching the filter predicate, then executes callback once
+ * and automatically unsubscribes. Useful for waiting for specific strategy actions.
+ *
+ * @param filterFn - Predicate to filter which events trigger the callback
+ * @param fn - Callback function to handle the filtered event (called only once)
+ * @returns Unsubscribe function to cancel the listener before it fires
+ *
+ * @example
+ * ```typescript
+ * import { listenStrategyCommitOnce } from "./function/event";
+ *
+ * // Wait for first trailing stop adjustment
+ * listenStrategyCommitOnce(
+ *   (event) => event.action === "trailing-stop",
+ *   (event) => console.log("Trailing stop adjusted:", event.symbol)
+ * );
+ *
+ * // Wait for breakeven on BTCUSDT
+ * const cancel = listenStrategyCommitOnce(
+ *   (event) => event.action === "breakeven" && event.symbol === "BTCUSDT",
+ *   (event) => console.log("BTCUSDT moved to breakeven at", event.currentPrice)
+ * );
+ *
+ * // Cancel if needed before event fires
+ * cancel();
+ * ```
+ */
+declare function listenStrategyCommitOnce(filterFn: (event: StrategyCommitContract) => boolean, fn: (event: StrategyCommitContract) => void): () => void;
 
 /**
  * Checks if trade context is active (execution and method contexts).
@@ -6923,6 +7071,79 @@ interface RiskStatisticsModel {
     byStrategy: Record<string, number>;
 }
 
+/**
+ * Action types for strategy events.
+ * Represents all possible strategy management actions.
+ */
+type StrategyActionType = "cancel-scheduled" | "close-pending" | "partial-profit" | "partial-loss" | "trailing-stop" | "trailing-take" | "breakeven";
+/**
+ * Unified strategy event data for markdown report generation.
+ * Contains all information about strategy management actions.
+ */
+interface StrategyEvent {
+    /** Event timestamp in milliseconds */
+    timestamp: number;
+    /** Trading pair symbol */
+    symbol: string;
+    /** Strategy name */
+    strategyName: StrategyName;
+    /** Exchange name */
+    exchangeName: ExchangeName;
+    /** Frame name (empty for live) */
+    frameName: FrameName;
+    /** Signal ID */
+    signalId: string;
+    /** Action type */
+    action: StrategyActionType;
+    /** Current market price when action was executed */
+    currentPrice?: number;
+    /** Percent to close for partial profit/loss */
+    percentToClose?: number;
+    /** Percent shift for trailing stop/take */
+    percentShift?: number;
+    /** Cancel ID for cancel-scheduled action */
+    cancelId?: string;
+    /** Close ID for close-pending action */
+    closeId?: string;
+    /** ISO timestamp string when action was created */
+    createdAt: string;
+    /** True if backtest mode, false if live mode */
+    backtest: boolean;
+}
+/**
+ * Statistical data calculated from strategy events.
+ *
+ * Provides metrics for strategy action tracking.
+ *
+ * @example
+ * ```typescript
+ * const stats = await Strategy.getData("BTCUSDT", "my-strategy");
+ *
+ * console.log(`Total events: ${stats.totalEvents}`);
+ * console.log(`Cancel scheduled: ${stats.cancelScheduledCount}`);
+ * ```
+ */
+interface StrategyStatisticsModel {
+    /** Array of all strategy events with full details */
+    eventList: StrategyEvent[];
+    /** Total number of strategy events */
+    totalEvents: number;
+    /** Count of cancel-scheduled events */
+    cancelScheduledCount: number;
+    /** Count of close-pending events */
+    closePendingCount: number;
+    /** Count of partial-profit events */
+    partialProfitCount: number;
+    /** Count of partial-loss events */
+    partialLossCount: number;
+    /** Count of trailing-stop events */
+    trailingStopCount: number;
+    /** Count of trailing-take events */
+    trailingTakeCount: number;
+    /** Count of breakeven events */
+    breakevenCount: number;
+}
+
 declare const BASE_WAIT_FOR_INIT_SYMBOL: unique symbol;
 /**
  * Signal data stored in persistence layer.
@@ -7602,6 +7823,8 @@ declare const WRITE_SAFE_SYMBOL$1: unique symbol;
  * Controls which report services should be activated for JSONL event logging.
  */
 interface IReportTarget {
+    /** Enable strategy commit actions */
+    strategy: boolean;
     /** Enable risk rejection event logging */
     risk: boolean;
     /** Enable breakeven event logging */
@@ -7771,7 +7994,7 @@ declare class ReportUtils {
      *
      * @returns Cleanup function that unsubscribes from all enabled services
      */
-    enable: ({ backtest: bt, breakeven, heat, live, partial, performance, risk, schedule, walker, }?: Partial<IReportTarget>) => (...args: any[]) => any;
+    enable: ({ backtest: bt, breakeven, heat, live, partial, performance, risk, schedule, walker, strategy, }?: Partial<IReportTarget>) => (...args: any[]) => any;
     /**
      * Disables report services selectively.
      *
@@ -7808,7 +8031,7 @@ declare class ReportUtils {
      * Report.disable();
      * ```
      */
-    disable: ({ backtest: bt, breakeven, heat, live, partial, performance, risk, schedule, walker, }?: Partial<IReportTarget>) => void;
+    disable: ({ backtest: bt, breakeven, heat, live, partial, performance, risk, schedule, walker, strategy, }?: Partial<IReportTarget>) => void;
 }
 /**
  * Report adapter with pluggable storage backend and instance memoization.
@@ -7878,6 +8101,8 @@ declare const Report: ReportAdapter;
  * Controls which markdown report services should be activated.
  */
 interface IMarkdownTarget {
+    /** Enable strategy event tracking reports (entry/exit signals) */
+    strategy: boolean;
     /** Enable risk rejection tracking reports (signals blocked by risk limits) */
     risk: boolean;
     /** Enable breakeven event tracking reports (when stop loss moves to entry) */
@@ -8091,7 +8316,7 @@ declare class MarkdownUtils {
      *
      * @returns Cleanup function that unsubscribes from all enabled services
      */
-    enable: ({ backtest: bt, breakeven, heat, live, partial, performance, risk, schedule, walker, }?: Partial<IMarkdownTarget>) => (...args: any[]) => any;
+    enable: ({ backtest: bt, breakeven, heat, live, partial, performance, strategy, risk, schedule, walker, }?: Partial<IMarkdownTarget>) => (...args: any[]) => any;
     /**
      * Disables markdown report services selectively.
      *
@@ -8129,7 +8354,7 @@ declare class MarkdownUtils {
      * Markdown.disable();
      * ```
      */
-    disable: ({ backtest: bt, breakeven, heat, live, partial, performance, risk, schedule, walker, }?: Partial<IMarkdownTarget>) => void;
+    disable: ({ backtest: bt, breakeven, heat, live, partial, performance, risk, strategy, schedule, walker, }?: Partial<IMarkdownTarget>) => void;
 }
 /**
  * Markdown adapter with pluggable storage backend and instance memoization.
@@ -8231,7 +8456,7 @@ declare const Markdown: MarkdownAdapter;
  * @see ColumnModel for the base interface
  * @see IStrategyTickResultClosed for the signal data structure
  */
-type Columns$7 = ColumnModel<IStrategyTickResultClosed>;
+type Columns$8 = ColumnModel<IStrategyTickResultClosed>;
 /**
  * Service for generating and saving backtest markdown reports.
  *
@@ -8325,7 +8550,7 @@ declare class BacktestMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$7[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$8[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -8350,7 +8575,7 @@ declare class BacktestMarkdownService {
      * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", true, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$7[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$8[]) => Promise<void>;
     /**
      * Clears accumulated signal data from storage.
      * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
@@ -8860,7 +9085,7 @@ declare class BacktestUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, columns?: Columns$7[]) => Promise<string>;
+    }, columns?: Columns$8[]) => Promise<string>;
     /**
      * Saves strategy report to disk.
      *
@@ -8891,7 +9116,7 @@ declare class BacktestUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, path?: string, columns?: Columns$7[]) => Promise<void>;
+    }, path?: string, columns?: Columns$8[]) => Promise<void>;
     /**
      * Lists all active backtest instances with their current status.
      *
@@ -8965,7 +9190,7 @@ declare const Backtest: BacktestUtils;
  * @see ColumnModel for the base interface
  * @see TickEvent for the event data structure
  */
-type Columns$6 = ColumnModel<TickEvent>;
+type Columns$7 = ColumnModel<TickEvent>;
 /**
  * Service for generating and saving live trading markdown reports.
  *
@@ -9092,7 +9317,7 @@ declare class LiveMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$6[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$7[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -9117,7 +9342,7 @@ declare class LiveMarkdownService {
      * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", false, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$6[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$7[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
      * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
@@ -9586,7 +9811,7 @@ declare class LiveUtils {
     getReport: (symbol: string, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-    }, columns?: Columns$6[]) => Promise<string>;
+    }, columns?: Columns$7[]) => Promise<string>;
     /**
      * Saves strategy report to disk.
      *
@@ -9616,7 +9841,7 @@ declare class LiveUtils {
     dump: (symbol: string, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-    }, path?: string, columns?: Columns$6[]) => Promise<void>;
+    }, path?: string, columns?: Columns$7[]) => Promise<void>;
     /**
      * Lists all active live trading instances with their current status.
      *
@@ -9686,7 +9911,7 @@ declare const Live: LiveUtils;
  * @see ColumnModel for the base interface
  * @see ScheduledEvent for the event data structure
  */
-type Columns$5 = ColumnModel<ScheduledEvent>;
+type Columns$6 = ColumnModel<ScheduledEvent>;
 /**
  * Service for generating and saving scheduled signals markdown reports.
  *
@@ -9797,7 +10022,7 @@ declare class ScheduleMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$5[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$6[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -9822,7 +10047,7 @@ declare class ScheduleMarkdownService {
      * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", false, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$5[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$6[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
      * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
@@ -9912,7 +10137,7 @@ declare class ScheduleUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, columns?: Columns$5[]) => Promise<string>;
+    }, backtest?: boolean, columns?: Columns$6[]) => Promise<string>;
     /**
      * Saves strategy report to disk.
      *
@@ -9934,7 +10159,7 @@ declare class ScheduleUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, path?: string, columns?: Columns$5[]) => Promise<void>;
+    }, backtest?: boolean, path?: string, columns?: Columns$6[]) => Promise<void>;
 }
 /**
  * Singleton instance of ScheduleUtils for convenient scheduled signals reporting.
@@ -9980,7 +10205,7 @@ declare const Schedule: ScheduleUtils;
  * @see ColumnModel for the base interface
  * @see MetricStats for the metric data structure
  */
-type Columns$4 = ColumnModel<MetricStats>;
+type Columns$5 = ColumnModel<MetricStats>;
 /**
  * Service for collecting and analyzing performance metrics.
  *
@@ -10087,7 +10312,7 @@ declare class PerformanceMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$4[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$5[]) => Promise<string>;
     /**
      * Saves performance report to disk.
      *
@@ -10108,7 +10333,7 @@ declare class PerformanceMarkdownService {
      * await performanceService.dump("BTCUSDT", "my-strategy", "binance", "1h", false, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$4[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$5[]) => Promise<void>;
     /**
      * Clears accumulated performance data from storage.
      *
@@ -10216,7 +10441,7 @@ declare class Performance {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, columns?: Columns$4[]): Promise<string>;
+    }, backtest?: boolean, columns?: Columns$5[]): Promise<string>;
     /**
      * Saves performance report to disk.
      *
@@ -10241,7 +10466,7 @@ declare class Performance {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, path?: string, columns?: Columns$4[]): Promise<void>;
+    }, backtest?: boolean, path?: string, columns?: Columns$5[]): Promise<void>;
 }
 
 /**
@@ -10672,7 +10897,7 @@ declare const Walker: WalkerUtils;
  * @see ColumnModel for the base interface
  * @see IHeatmapRow for the row data structure
  */
-type Columns$3 = ColumnModel<IHeatmapRow>;
+type Columns$4 = ColumnModel<IHeatmapRow>;
 /**
  * Portfolio Heatmap Markdown Service.
  *
@@ -10793,7 +11018,7 @@ declare class HeatMarkdownService {
      * // ...
      * ```
      */
-    getReport: (strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$3[]) => Promise<string>;
+    getReport: (strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$4[]) => Promise<string>;
     /**
      * Saves heatmap report to disk.
      *
@@ -10818,7 +11043,7 @@ declare class HeatMarkdownService {
      * await service.dump("my-strategy", "binance", "frame1", true, "./reports");
      * ```
      */
-    dump: (strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$3[]) => Promise<void>;
+    dump: (strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$4[]) => Promise<void>;
     /**
      * Clears accumulated heatmap data from storage.
      * If payload is provided, clears only that exchangeName+frameName+backtest combination's data.
@@ -10948,7 +11173,7 @@ declare class HeatUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, columns?: Columns$3[]) => Promise<string>;
+    }, backtest?: boolean, columns?: Columns$4[]) => Promise<string>;
     /**
      * Saves heatmap report to disk for a strategy.
      *
@@ -10981,7 +11206,7 @@ declare class HeatUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, path?: string, columns?: Columns$3[]) => Promise<void>;
+    }, backtest?: boolean, path?: string, columns?: Columns$4[]) => Promise<void>;
 }
 /**
  * Singleton instance of HeatUtils for convenient heatmap operations.
@@ -11135,7 +11360,7 @@ declare const PositionSize: typeof PositionSizeUtils;
  * @see ColumnModel for the base interface
  * @see PartialEvent for the event data structure
  */
-type Columns$2 = ColumnModel<PartialEvent>;
+type Columns$3 = ColumnModel<PartialEvent>;
 /**
  * Service for generating and saving partial profit/loss markdown reports.
  *
@@ -11257,7 +11482,7 @@ declare class PartialMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$2[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$3[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -11282,7 +11507,7 @@ declare class PartialMarkdownService {
      * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", false, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$2[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$3[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
      * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
@@ -11418,7 +11643,7 @@ declare class PartialUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, columns?: Columns$2[]) => Promise<string>;
+    }, backtest?: boolean, columns?: Columns$3[]) => Promise<string>;
     /**
      * Generates and saves markdown report to file.
      *
@@ -11455,7 +11680,7 @@ declare class PartialUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, path?: string, columns?: Columns$2[]) => Promise<void>;
+    }, backtest?: boolean, path?: string, columns?: Columns$3[]) => Promise<void>;
 }
 /**
  * Global singleton instance of PartialUtils.
@@ -11583,7 +11808,7 @@ declare const Constant: ConstantUtils;
  * @see ColumnModel for the base interface
  * @see RiskEvent for the event data structure
  */
-type Columns$1 = ColumnModel<RiskEvent>;
+type Columns$2 = ColumnModel<RiskEvent>;
 /**
  * Service for generating and saving risk rejection markdown reports.
  *
@@ -11692,7 +11917,7 @@ declare class RiskMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$1[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$2[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -11717,7 +11942,7 @@ declare class RiskMarkdownService {
      * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", false, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$1[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$2[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
      * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
@@ -11855,7 +12080,7 @@ declare class RiskUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, columns?: Columns$1[]) => Promise<string>;
+    }, backtest?: boolean, columns?: Columns$2[]) => Promise<string>;
     /**
      * Generates and saves markdown report to file.
      *
@@ -11892,7 +12117,7 @@ declare class RiskUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, path?: string, columns?: Columns$1[]) => Promise<void>;
+    }, backtest?: boolean, path?: string, columns?: Columns$2[]) => Promise<void>;
 }
 /**
  * Global singleton instance of RiskUtils.
@@ -12321,7 +12546,7 @@ declare const Notification: NotificationUtils;
  * @see ColumnModel for the base interface
  * @see BreakevenEvent for the event data structure
  */
-type Columns = ColumnModel<BreakevenEvent>;
+type Columns$1 = ColumnModel<BreakevenEvent>;
 /**
  * Service for generating and saving breakeven markdown reports.
  *
@@ -12430,7 +12655,7 @@ declare class BreakevenMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$1[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -12455,7 +12680,7 @@ declare class BreakevenMarkdownService {
      * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", false, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$1[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
      * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
@@ -12583,7 +12808,7 @@ declare class BreakevenUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, columns?: Columns[]) => Promise<string>;
+    }, backtest?: boolean, columns?: Columns$1[]) => Promise<string>;
     /**
      * Generates and saves markdown report to file.
      *
@@ -12620,7 +12845,7 @@ declare class BreakevenUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, path?: string, columns?: Columns[]) => Promise<void>;
+    }, backtest?: boolean, path?: string, columns?: Columns$1[]) => Promise<void>;
 }
 /**
  * Global singleton instance of BreakevenUtils.
@@ -12637,6 +12862,897 @@ declare class BreakevenUtils {
  * ```
  */
 declare const Breakeven: BreakevenUtils;
+
+/**
+ * Logger service with automatic context injection.
+ *
+ * Features:
+ * - Delegates to user-provided logger via setLogger()
+ * - Automatically appends method context (strategyName, exchangeName, frameName)
+ * - Automatically appends execution context (symbol, when, backtest)
+ * - Defaults to NOOP_LOGGER if no logger configured
+ *
+ * Used throughout the framework for consistent logging with context.
+ */
+declare class LoggerService implements ILogger {
+    private readonly methodContextService;
+    private readonly executionContextService;
+    private _commonLogger;
+    /**
+     * Gets current method context if available.
+     * Contains strategyName, exchangeName, frameName from MethodContextService.
+     */
+    private get methodContext();
+    /**
+     * Gets current execution context if available.
+     * Contains symbol, when, backtest from ExecutionContextService.
+     */
+    private get executionContext();
+    /**
+     * Logs general-purpose message with automatic context injection.
+     *
+     * @param topic - Log topic/category
+     * @param args - Additional log arguments
+     */
+    log: (topic: string, ...args: any[]) => Promise<void>;
+    /**
+     * Logs debug-level message with automatic context injection.
+     *
+     * @param topic - Log topic/category
+     * @param args - Additional log arguments
+     */
+    debug: (topic: string, ...args: any[]) => Promise<void>;
+    /**
+     * Logs info-level message with automatic context injection.
+     *
+     * @param topic - Log topic/category
+     * @param args - Additional log arguments
+     */
+    info: (topic: string, ...args: any[]) => Promise<void>;
+    /**
+     * Logs warning-level message with automatic context injection.
+     *
+     * @param topic - Log topic/category
+     * @param args - Additional log arguments
+     */
+    warn: (topic: string, ...args: any[]) => Promise<void>;
+    /**
+     * Sets custom logger implementation.
+     *
+     * @param logger - Custom logger implementing ILogger interface
+     */
+    setLogger: (logger: ILogger) => void;
+}
+
+/**
+ * Type definition for strategy methods.
+ * Maps all keys of IStrategy to any type.
+ * Used for dynamic method routing in StrategyCoreService.
+ */
+type TStrategy$1 = {
+    [key in keyof IStrategy]: any;
+};
+/**
+ * Global service for strategy operations with execution context injection.
+ *
+ * Wraps StrategyConnectionService with ExecutionContextService to inject
+ * symbol, when, and backtest parameters into the execution context.
+ *
+ * Used internally by BacktestLogicPrivateService and LiveLogicPrivateService.
+ */
+declare class StrategyCoreService implements TStrategy$1 {
+    private readonly loggerService;
+    private readonly strategyConnectionService;
+    private readonly strategySchemaService;
+    private readonly riskValidationService;
+    private readonly strategyValidationService;
+    private readonly exchangeValidationService;
+    private readonly frameValidationService;
+    /**
+     * Validates strategy and associated risk configuration.
+     *
+     * Memoized to avoid redundant validations for the same symbol-strategy-exchange-frame combination.
+     * Logs validation activity.
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise that resolves when validation is complete
+     */
+    private validate;
+    /**
+     * Retrieves the currently active pending signal for the symbol.
+     * If no active signal exists, returns null.
+     * Used internally for monitoring TP/SL and time expiration.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise resolving to pending signal or null
+     */
+    getPendingSignal: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<ISignalRow | null>;
+    /**
+     * Retrieves the currently active scheduled signal for the symbol.
+     * If no scheduled signal exists, returns null.
+     * Used internally for monitoring scheduled signal activation.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise resolving to scheduled signal or null
+     */
+    getScheduledSignal: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<IScheduledSignalRow | null>;
+    /**
+     * Checks if breakeven threshold has been reached for the current pending signal.
+     *
+     * Validates strategy existence and delegates to connection service
+     * to check if price has moved far enough to cover transaction costs.
+     *
+     * Does not require execution context as this is a state query operation.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param currentPrice - Current market price to check against threshold
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise<boolean> - true if breakeven threshold reached, false otherwise
+     *
+     * @example
+     * ```typescript
+     * // Check if breakeven is available for LONG position (entry=100, threshold=0.4%)
+     * const canBreakeven = await strategyCoreService.getBreakeven(
+     *   false,
+     *   "BTCUSDT",
+     *   100.5,
+     *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
+     * );
+     * // Returns true (price >= 100.4)
+     *
+     * if (canBreakeven) {
+     *   await strategyCoreService.breakeven(false, "BTCUSDT", 100.5, context);
+     * }
+     * ```
+     */
+    getBreakeven: (backtest: boolean, symbol: string, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<boolean>;
+    /**
+     * Checks if the strategy has been stopped.
+     *
+     * Validates strategy existence and delegates to connection service
+     * to retrieve the stopped state from the strategy instance.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise resolving to true if strategy is stopped, false otherwise
+     */
+    getStopped: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<boolean>;
+    /**
+     * Checks signal status at a specific timestamp.
+     *
+     * Wraps strategy tick() with execution context containing symbol, timestamp,
+     * and backtest mode flag.
+     *
+     * @param symbol - Trading pair symbol
+     * @param when - Timestamp for tick evaluation
+     * @param backtest - Whether running in backtest mode
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Discriminated union of tick result (idle, opened, active, closed)
+     */
+    tick: (symbol: string, when: Date, backtest: boolean, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<IStrategyTickResult>;
+    /**
+     * Runs fast backtest against candle array.
+     *
+     * Wraps strategy backtest() with execution context containing symbol,
+     * timestamp, and backtest mode flag.
+     *
+     * @param symbol - Trading pair symbol
+     * @param candles - Array of historical candles to test against
+     * @param when - Starting timestamp for backtest
+     * @param backtest - Whether running in backtest mode (typically true)
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Closed signal result with PNL
+     */
+    backtest: (symbol: string, candles: ICandleData[], when: Date, backtest: boolean, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<IStrategyBacktestResult>;
+    /**
+     * Stops the strategy from generating new signals.
+     *
+     * Delegates to StrategyConnectionService.stop() to set internal flag.
+     * Does not require execution context.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param ctx - Context with strategyName, exchangeName, frameName
+     * @returns Promise that resolves when stop flag is set
+     */
+    stopStrategy: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Cancels the scheduled signal without stopping the strategy.
+     *
+     * Delegates to StrategyConnectionService.cancelScheduled() to clear scheduled signal
+     * and emit cancelled event through emitters.
+     * Does not require execution context.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param ctx - Context with strategyName, exchangeName, frameName
+     * @param cancelId - Optional cancellation ID for user-initiated cancellations
+     * @returns Promise that resolves when scheduled signal is cancelled
+     */
+    cancelScheduled: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }, cancelId?: string) => Promise<void>;
+    /**
+     * Closes the pending signal without stopping the strategy.
+     *
+     * Clears the pending signal (active position).
+     * Does NOT affect scheduled signals or strategy operation.
+     * Does NOT set stop flag - strategy can continue generating new signals.
+     *
+     * Delegates to StrategyConnectionService.closePending() to clear pending signal
+     * and emit closed event through emitters.
+     * Does not require execution context.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Context with strategyName, exchangeName, frameName
+     * @param closeId - Optional close ID for user-initiated closes
+     * @returns Promise that resolves when pending signal is closed
+     */
+    closePending: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }, closeId?: string) => Promise<void>;
+    /**
+     * Disposes the ClientStrategy instance for the given context.
+     *
+     * Calls dispose on the strategy instance to clean up resources,
+     * then removes it from cache.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     */
+    dispose: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Clears the memoized ClientStrategy instance from cache.
+     *
+     * Delegates to StrategyConnectionService.dispose() if payload provided,
+     * otherwise clears all strategy instances.
+     *
+     * @param payload - Optional payload with symbol, context and backtest flag (clears all if not provided)
+     */
+    clear: (payload?: {
+        symbol: string;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+        backtest: boolean;
+    }) => Promise<void>;
+    /**
+     * Executes partial close at profit level (moving toward TP).
+     *
+     * Validates strategy existence and delegates to connection service
+     * to close a percentage of the pending position at profit.
+     *
+     * Does not require execution context as this is a direct state mutation.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param percentToClose - Percentage of position to close (0-100, absolute value)
+     * @param currentPrice - Current market price for this partial close (must be in profit direction)
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise<boolean> - true if partial close executed, false if skipped
+     *
+     * @example
+     * ```typescript
+     * // Close 30% of position at profit
+     * const success = await strategyCoreService.partialProfit(
+     *   false,
+     *   "BTCUSDT",
+     *   30,
+     *   45000,
+     *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
+     * );
+     * if (success) {
+     *   console.log('Partial profit executed');
+     * }
+     * ```
+     */
+    partialProfit: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<boolean>;
+    /**
+     * Executes partial close at loss level (moving toward SL).
+     *
+     * Validates strategy existence and delegates to connection service
+     * to close a percentage of the pending position at loss.
+     *
+     * Does not require execution context as this is a direct state mutation.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param percentToClose - Percentage of position to close (0-100, absolute value)
+     * @param currentPrice - Current market price for this partial close (must be in loss direction)
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise<boolean> - true if partial close executed, false if skipped
+     *
+     * @example
+     * ```typescript
+     * // Close 40% of position at loss
+     * const success = await strategyCoreService.partialLoss(
+     *   false,
+     *   "BTCUSDT",
+     *   40,
+     *   38000,
+     *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
+     * );
+     * if (success) {
+     *   console.log('Partial loss executed');
+     * }
+     * ```
+     */
+    partialLoss: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<boolean>;
+    /**
+     * Adjusts the trailing stop-loss distance for an active pending signal.
+     *
+     * Validates strategy existence and delegates to connection service
+     * to update the stop-loss distance by a percentage adjustment.
+     *
+     * Does not require execution context as this is a direct state mutation.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param percentShift - Percentage adjustment to SL distance (-100 to 100)
+     * @param currentPrice - Current market price to check for intrusion
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise that resolves when trailing SL is updated
+     *
+     * @example
+     * ```typescript
+     * // LONG: entry=100, originalSL=90, distance=10%, currentPrice=102
+     * // Tighten stop by 50%: newSL = 100 - 5% = 95
+     * await strategyCoreService.trailingStop(
+     *   false,
+     *   "BTCUSDT",
+     *   -50,
+     *   102,
+     *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
+     * );
+     * ```
+     */
+    trailingStop: (backtest: boolean, symbol: string, percentShift: number, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<boolean>;
+    /**
+     * Adjusts the trailing take-profit distance for an active pending signal.
+     * Validates context and delegates to StrategyConnectionService.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param percentShift - Percentage adjustment to TP distance (-100 to 100)
+     * @param currentPrice - Current market price to check for intrusion
+     * @param context - Strategy context with strategyName, exchangeName, frameName
+     * @returns Promise that resolves when trailing TP is updated
+     *
+     * @example
+     * ```typescript
+     * // LONG: entry=100, originalTP=110, distance=10%, currentPrice=102
+     * // Move TP further by 50%: newTP = 100 + 15% = 115
+     * await strategyCoreService.trailingTake(
+     *   false,
+     *   "BTCUSDT",
+     *   50,
+     *   102,
+     *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
+     * );
+     * ```
+     */
+    trailingTake: (backtest: boolean, symbol: string, percentShift: number, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<boolean>;
+    /**
+     * Moves stop-loss to breakeven when price reaches threshold.
+     * Validates context and delegates to StrategyConnectionService.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param currentPrice - Current market price to check threshold
+     * @param context - Strategy context with strategyName, exchangeName, frameName
+     * @returns Promise<boolean> - true if breakeven was set, false otherwise
+     *
+     * @example
+     * ```typescript
+     * const moved = await strategyCoreService.breakeven(
+     *   false,
+     *   "BTCUSDT",
+     *   112,
+     *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
+     * );
+     * ```
+     */
+    breakeven: (backtest: boolean, symbol: string, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<boolean>;
+}
+
+/**
+ * Type alias for column configuration used in strategy markdown reports.
+ *
+ * @see ColumnModel for the base interface
+ * @see StrategyEvent for the event data structure
+ */
+type Columns = ColumnModel<StrategyEvent>;
+/**
+ * Service for accumulating strategy management events and generating markdown reports.
+ *
+ * Collects strategy actions (cancel-scheduled, close-pending, partial-profit,
+ * partial-loss, trailing-stop, trailing-take, breakeven) in memory and provides
+ * methods to retrieve statistics, generate reports, and export to files.
+ *
+ * Unlike StrategyReportService which writes each event to disk immediately,
+ * this service accumulates events in ReportStorage instances (max 250 per
+ * symbol-strategy pair) for batch reporting.
+ *
+ * Features:
+ * - In-memory event accumulation with memoized storage per symbol-strategy pair
+ * - Statistical data extraction (event counts by action type)
+ * - Markdown report generation with configurable columns
+ * - File export with timestamped filenames
+ * - Selective or full cache clearing
+ *
+ * Lifecycle:
+ * - Call subscribe() to enable event collection
+ * - Events are collected automatically via cancelScheduled, closePending, etc.
+ * - Use getData(), getReport(), or dump() to retrieve accumulated data
+ * - Call unsubscribe() to disable collection and clear all data
+ *
+ * @example
+ * ```typescript
+ * strategyMarkdownService.subscribe();
+ *
+ * // Events are collected automatically during strategy execution
+ * // ...
+ *
+ * // Get statistics
+ * const stats = await strategyMarkdownService.getData("BTCUSDT", "my-strategy", "binance", "1h", true);
+ *
+ * // Generate markdown report
+ * const report = await strategyMarkdownService.getReport("BTCUSDT", "my-strategy", "binance", "1h", true);
+ *
+ * // Export to file
+ * await strategyMarkdownService.dump("BTCUSDT", "my-strategy", "binance", "1h", true);
+ *
+ * strategyMarkdownService.unsubscribe();
+ * ```
+ *
+ * @see StrategyReportService for immediate event persistence to JSON files
+ * @see Strategy for the high-level utility class that wraps this service
+ */
+declare class StrategyMarkdownService {
+    readonly loggerService: LoggerService;
+    readonly executionContextService: {
+        readonly context: IExecutionContext;
+    };
+    readonly strategyCoreService: StrategyCoreService;
+    /**
+     * Memoized factory for ReportStorage instances.
+     *
+     * Creates and caches ReportStorage per unique symbol-strategy-exchange-frame-backtest combination.
+     * Uses CREATE_KEY_FN for cache key generation.
+     *
+     * @internal
+     */
+    private getStorage;
+    /**
+     * Records a cancel-scheduled event when a scheduled signal is cancelled.
+     *
+     * Retrieves the scheduled signal from StrategyCoreService and stores
+     * the cancellation event in the appropriate ReportStorage.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param isBacktest - Whether this is a backtest or live trading event
+     * @param context - Strategy context with strategyName, exchangeName, frameName
+     * @param cancelId - Optional identifier for the cancellation reason
+     */
+    cancelScheduled: (symbol: string, isBacktest: boolean, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }, cancelId?: string) => Promise<void>;
+    /**
+     * Records a close-pending event when a pending signal is closed.
+     *
+     * Retrieves the pending signal from StrategyCoreService and stores
+     * the close event in the appropriate ReportStorage.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param isBacktest - Whether this is a backtest or live trading event
+     * @param context - Strategy context with strategyName, exchangeName, frameName
+     * @param closeId - Optional identifier for the close reason
+     */
+    closePending: (symbol: string, isBacktest: boolean, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }, closeId?: string) => Promise<void>;
+    /**
+     * Records a partial-profit event when a portion of the position is closed at profit.
+     *
+     * Stores the percentage closed and current price when partial profit-taking occurs.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param percentToClose - Percentage of position to close (0-100)
+     * @param currentPrice - Current market price at time of partial close
+     * @param isBacktest - Whether this is a backtest or live trading event
+     * @param context - Strategy context with strategyName, exchangeName, frameName
+     */
+    partialProfit: (symbol: string, percentToClose: number, currentPrice: number, isBacktest: boolean, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Records a partial-loss event when a portion of the position is closed at loss.
+     *
+     * Stores the percentage closed and current price when partial loss-cutting occurs.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param percentToClose - Percentage of position to close (0-100)
+     * @param currentPrice - Current market price at time of partial close
+     * @param isBacktest - Whether this is a backtest or live trading event
+     * @param context - Strategy context with strategyName, exchangeName, frameName
+     */
+    partialLoss: (symbol: string, percentToClose: number, currentPrice: number, isBacktest: boolean, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Records a trailing-stop event when the stop-loss is adjusted.
+     *
+     * Stores the percentage shift and current price when trailing stop moves.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param percentShift - Percentage the stop-loss was shifted
+     * @param currentPrice - Current market price at time of adjustment
+     * @param isBacktest - Whether this is a backtest or live trading event
+     * @param context - Strategy context with strategyName, exchangeName, frameName
+     */
+    trailingStop: (symbol: string, percentShift: number, currentPrice: number, isBacktest: boolean, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Records a trailing-take event when the take-profit is adjusted.
+     *
+     * Stores the percentage shift and current price when trailing take-profit moves.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param percentShift - Percentage the take-profit was shifted
+     * @param currentPrice - Current market price at time of adjustment
+     * @param isBacktest - Whether this is a backtest or live trading event
+     * @param context - Strategy context with strategyName, exchangeName, frameName
+     */
+    trailingTake: (symbol: string, percentShift: number, currentPrice: number, isBacktest: boolean, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Records a breakeven event when the stop-loss is moved to entry price.
+     *
+     * Stores the current price when breakeven protection is activated.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param currentPrice - Current market price at time of breakeven activation
+     * @param isBacktest - Whether this is a backtest or live trading event
+     * @param context - Strategy context with strategyName, exchangeName, frameName
+     */
+    breakeven: (symbol: string, currentPrice: number, isBacktest: boolean, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Retrieves aggregated statistics from accumulated strategy events.
+     *
+     * Returns counts for each action type and the full event list from the
+     * ReportStorage for the specified symbol-strategy pair.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param strategyName - Name of the trading strategy
+     * @param exchangeName - Name of the exchange
+     * @param frameName - Timeframe name for backtest identification
+     * @param backtest - Whether to get backtest or live data
+     * @returns Promise resolving to StrategyStatisticsModel with event list and counts
+     * @throws Error if service not initialized (subscribe() not called)
+     */
+    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<StrategyStatisticsModel>;
+    /**
+     * Generates a markdown report from accumulated strategy events.
+     *
+     * Creates a formatted markdown document containing:
+     * - Header with symbol and strategy name
+     * - Table of all events with configurable columns
+     * - Summary statistics with counts by action type
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param strategyName - Name of the trading strategy
+     * @param exchangeName - Name of the exchange
+     * @param frameName - Timeframe name for backtest identification
+     * @param backtest - Whether to get backtest or live data
+     * @param columns - Column configuration for the event table
+     * @returns Promise resolving to formatted markdown string
+     * @throws Error if service not initialized (subscribe() not called)
+     */
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns[]) => Promise<string>;
+    /**
+     * Generates and saves a markdown report to disk.
+     *
+     * Creates the output directory if it doesn't exist and writes
+     * the report with a timestamped filename via Markdown.writeData().
+     *
+     * Filename format: `{symbol}_{strategyName}_{exchangeName}[_{frameName}_backtest|_live]-{timestamp}.md`
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param strategyName - Name of the trading strategy
+     * @param exchangeName - Name of the exchange
+     * @param frameName - Timeframe name for backtest identification
+     * @param backtest - Whether to dump backtest or live data
+     * @param path - Output directory path (default: "./dump/strategy")
+     * @param columns - Column configuration for the event table
+     * @returns Promise that resolves when file is written
+     * @throws Error if service not initialized (subscribe() not called)
+     */
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns[]) => Promise<void>;
+    /**
+     * Clears accumulated events from storage.
+     *
+     * Can clear either a specific symbol-strategy pair or all stored data.
+     *
+     * @param payload - Optional filter to clear specific storage. If omitted, clears all.
+     * @param payload.symbol - Trading pair symbol
+     * @param payload.strategyName - Strategy name
+     * @param payload.exchangeName - Exchange name
+     * @param payload.frameName - Frame name
+     * @param payload.backtest - Backtest mode flag
+     */
+    clear: (payload?: {
+        symbol: string;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+        backtest: boolean;
+    }) => Promise<void>;
+    /**
+     * Initializes the service for event collection.
+     *
+     * Must be called before any events can be collected or reports generated.
+     * Uses singleshot pattern to ensure only one subscription exists at a time.
+     *
+     * @returns Cleanup function that clears the subscription and all accumulated data
+     */
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    /**
+     * Stops event collection and clears all accumulated data.
+     *
+     * Invokes the cleanup function returned by subscribe(), which clears
+     * both the subscription and all ReportStorage instances.
+     * Safe to call multiple times - only acts if subscription exists.
+     */
+    unsubscribe: () => Promise<void>;
+}
+
+/**
+ * Utility class for accessing strategy management reports and statistics.
+ *
+ * Provides static-like methods (via singleton instance) to retrieve data
+ * accumulated by StrategyMarkdownService from strategy management events.
+ *
+ * Features:
+ * - Statistical data extraction (event counts by action type)
+ * - Markdown report generation with event tables
+ * - File export to disk
+ *
+ * Data source:
+ * - StrategyMarkdownService receives events via direct method calls
+ * - Accumulates events in ReportStorage (max 250 events per symbol-strategy pair)
+ * - Events include: cancel-scheduled, close-pending, partial-profit, partial-loss,
+ *   trailing-stop, trailing-take, breakeven
+ *
+ * @example
+ * ```typescript
+ * import { Strategy } from "./classes/Strategy";
+ *
+ * // Get statistical data for BTCUSDT:my-strategy
+ * const stats = await Strategy.getData("BTCUSDT", { strategyName: "my-strategy", exchangeName: "binance", frameName: "1h" });
+ * console.log(`Total events: ${stats.totalEvents}`);
+ * console.log(`Partial profit events: ${stats.partialProfitCount}`);
+ *
+ * // Generate markdown report
+ * const markdown = await Strategy.getReport("BTCUSDT", { strategyName: "my-strategy", exchangeName: "binance", frameName: "1h" });
+ * console.log(markdown); // Formatted table with all events
+ *
+ * // Export report to file
+ * await Strategy.dump("BTCUSDT", { strategyName: "my-strategy", exchangeName: "binance", frameName: "1h" }); // Saves to ./dump/strategy/
+ * ```
+ */
+declare class StrategyUtils {
+    /**
+     * Retrieves statistical data from accumulated strategy events.
+     *
+     * Delegates to StrategyMarkdownService.getData() which reads from ReportStorage.
+     * Returns aggregated metrics calculated from all strategy events.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param context - Strategy context with strategyName, exchangeName, frameName
+     * @param backtest - Whether to get backtest data (default: false)
+     * @returns Promise resolving to StrategyStatisticsModel object with counts and event list
+     *
+     * @example
+     * ```typescript
+     * const stats = await Strategy.getData("BTCUSDT", { strategyName: "my-strategy", exchangeName: "binance", frameName: "1h" });
+     *
+     * console.log(`Total events: ${stats.totalEvents}`);
+     * console.log(`Partial profit: ${stats.partialProfitCount}`);
+     * console.log(`Trailing stop: ${stats.trailingStopCount}`);
+     *
+     * // Iterate through all events
+     * for (const event of stats.eventList) {
+     *   console.log(`Signal ${event.signalId}: ${event.action} at ${event.currentPrice}`);
+     * }
+     * ```
+     */
+    getData: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }, backtest?: boolean) => Promise<StrategyStatisticsModel>;
+    /**
+     * Generates markdown report with all strategy events for a symbol-strategy pair.
+     *
+     * Creates formatted table containing:
+     * - Symbol
+     * - Strategy
+     * - Signal ID
+     * - Action (cancel-scheduled, close-pending, partial-profit, etc.)
+     * - Price
+     * - Percent values (% To Close, % Shift)
+     * - Cancel/Close IDs
+     * - Timestamp (ISO 8601)
+     * - Mode (Backtest/Live)
+     *
+     * Also includes summary statistics at the end with counts by action type.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param context - Strategy context with strategyName, exchangeName, frameName
+     * @param backtest - Whether to get backtest data (default: false)
+     * @param columns - Optional columns configuration for the report
+     * @returns Promise resolving to markdown formatted report string
+     *
+     * @example
+     * ```typescript
+     * const markdown = await Strategy.getReport("BTCUSDT", { strategyName: "my-strategy", exchangeName: "binance", frameName: "1h" });
+     * console.log(markdown);
+     *
+     * // Output:
+     * // # Strategy Report: BTCUSDT:my-strategy
+     * //
+     * // | Symbol | Strategy | Signal ID | Action | Price | ... |
+     * // | --- | --- | --- | --- | --- | ... |
+     * // | BTCUSDT | my-strategy | abc123 | partial-profit | 50100.00000000 USD | ... |
+     * //
+     * // **Total events:** 5
+     * // - Cancel scheduled: 0
+     * // - Close pending: 1
+     * // - Partial profit: 2
+     * // ...
+     * ```
+     */
+    getReport: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }, backtest?: boolean, columns?: Columns[]) => Promise<string>;
+    /**
+     * Generates and saves markdown report to file.
+     *
+     * Creates directory if it doesn't exist.
+     * Filename format: {symbol}_{strategyName}_{exchangeName}_{frameName|live}-{timestamp}.md
+     *
+     * Delegates to StrategyMarkdownService.dump() which:
+     * 1. Generates markdown report via getReport()
+     * 2. Creates output directory (recursive mkdir)
+     * 3. Writes file with UTF-8 encoding
+     * 4. Logs success/failure to console
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param context - Strategy context with strategyName, exchangeName, frameName
+     * @param backtest - Whether to dump backtest data (default: false)
+     * @param path - Output directory path (default: "./dump/strategy")
+     * @param columns - Optional columns configuration for the report
+     * @returns Promise that resolves when file is written
+     *
+     * @example
+     * ```typescript
+     * // Save to default path: ./dump/strategy/BTCUSDT_my-strategy_binance_1h_backtest-{timestamp}.md
+     * await Strategy.dump("BTCUSDT", { strategyName: "my-strategy", exchangeName: "binance", frameName: "1h" }, true);
+     *
+     * // Save to custom path
+     * await Strategy.dump("BTCUSDT", { strategyName: "my-strategy", exchangeName: "binance", frameName: "1h" }, true, "./reports/strategy");
+     *
+     * // After multiple symbols backtested, export all reports
+     * for (const symbol of ["BTCUSDT", "ETHUSDT", "BNBUSDT"]) {
+     *   await Strategy.dump(symbol, { strategyName: "my-strategy", exchangeName: "binance", frameName: "1h" }, true, "./backtest-results");
+     * }
+     * ```
+     */
+    dump: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }, backtest?: boolean, path?: string, columns?: Columns[]) => Promise<void>;
+}
+/**
+ * Global singleton instance of StrategyUtils.
+ * Provides static-like access to strategy management reporting methods.
+ *
+ * @example
+ * ```typescript
+ * import { Strategy } from "backtest-kit";
+ *
+ * // Usage same as StrategyUtils methods
+ * const stats = await Strategy.getData("BTCUSDT", { strategyName: "my-strategy", exchangeName: "binance", frameName: "1h" });
+ * const report = await Strategy.getReport("BTCUSDT", { strategyName: "my-strategy", exchangeName: "binance", frameName: "1h" });
+ * await Strategy.dump("BTCUSDT", { strategyName: "my-strategy", exchangeName: "binance", frameName: "1h" });
+ * ```
+ */
+declare const Strategy: StrategyUtils;
 
 /**
  * Proxy wrapper for user-defined action handlers with automatic error capture.
@@ -13372,6 +14488,20 @@ declare const schedulePingSubject: Subject<SchedulePingContract>;
  * Allows users to track active signal lifecycle and implement custom dynamic management logic.
  */
 declare const activePingSubject: Subject<ActivePingContract>;
+/**
+ * Strategy management signal emitter.
+ * Emits when strategy management actions are executed:
+ * - cancel-scheduled: Scheduled signal cancelled
+ * - close-pending: Pending signal closed
+ * - partial-profit: Partial close at profit level
+ * - partial-loss: Partial close at loss level
+ * - trailing-stop: Stop-loss adjusted
+ * - trailing-take: Take-profit adjusted
+ * - breakeven: Stop-loss moved to entry price
+ *
+ * Used by StrategyReportService and StrategyMarkdownService for event logging and reporting.
+ */
+declare const strategyCommitSubject: Subject<StrategyCommitContract>;
 
 declare const emitters_activePingSubject: typeof activePingSubject;
 declare const emitters_breakevenSubject: typeof breakevenSubject;
@@ -13390,12 +14520,13 @@ declare const emitters_schedulePingSubject: typeof schedulePingSubject;
 declare const emitters_signalBacktestEmitter: typeof signalBacktestEmitter;
 declare const emitters_signalEmitter: typeof signalEmitter;
 declare const emitters_signalLiveEmitter: typeof signalLiveEmitter;
+declare const emitters_strategyCommitSubject: typeof strategyCommitSubject;
 declare const emitters_validationSubject: typeof validationSubject;
 declare const emitters_walkerCompleteSubject: typeof walkerCompleteSubject;
 declare const emitters_walkerEmitter: typeof walkerEmitter;
 declare const emitters_walkerStopSubject: typeof walkerStopSubject;
 declare namespace emitters {
-  export { emitters_activePingSubject as activePingSubject, emitters_breakevenSubject as breakevenSubject, emitters_doneBacktestSubject as doneBacktestSubject, emitters_doneLiveSubject as doneLiveSubject, emitters_doneWalkerSubject as doneWalkerSubject, emitters_errorEmitter as errorEmitter, emitters_exitEmitter as exitEmitter, emitters_partialLossSubject as partialLossSubject, emitters_partialProfitSubject as partialProfitSubject, emitters_performanceEmitter as performanceEmitter, emitters_progressBacktestEmitter as progressBacktestEmitter, emitters_progressWalkerEmitter as progressWalkerEmitter, emitters_riskSubject as riskSubject, emitters_schedulePingSubject as schedulePingSubject, emitters_signalBacktestEmitter as signalBacktestEmitter, emitters_signalEmitter as signalEmitter, emitters_signalLiveEmitter as signalLiveEmitter, emitters_validationSubject as validationSubject, emitters_walkerCompleteSubject as walkerCompleteSubject, emitters_walkerEmitter as walkerEmitter, emitters_walkerStopSubject as walkerStopSubject };
+  export { emitters_activePingSubject as activePingSubject, emitters_breakevenSubject as breakevenSubject, emitters_doneBacktestSubject as doneBacktestSubject, emitters_doneLiveSubject as doneLiveSubject, emitters_doneWalkerSubject as doneWalkerSubject, emitters_errorEmitter as errorEmitter, emitters_exitEmitter as exitEmitter, emitters_partialLossSubject as partialLossSubject, emitters_partialProfitSubject as partialProfitSubject, emitters_performanceEmitter as performanceEmitter, emitters_progressBacktestEmitter as progressBacktestEmitter, emitters_progressWalkerEmitter as progressWalkerEmitter, emitters_riskSubject as riskSubject, emitters_schedulePingSubject as schedulePingSubject, emitters_signalBacktestEmitter as signalBacktestEmitter, emitters_signalEmitter as signalEmitter, emitters_signalLiveEmitter as signalLiveEmitter, emitters_strategyCommitSubject as strategyCommitSubject, emitters_validationSubject as validationSubject, emitters_walkerCompleteSubject as walkerCompleteSubject, emitters_walkerEmitter as walkerEmitter, emitters_walkerStopSubject as walkerStopSubject };
 }
 
 /**
@@ -13495,67 +14626,6 @@ declare const get: (object: any, path: any) => any;
  * @returns - Returns true if the property was successfully updated, false otherwise.
  */
 declare const set: (object: any, path: any, value: any) => boolean;
-
-/**
- * Logger service with automatic context injection.
- *
- * Features:
- * - Delegates to user-provided logger via setLogger()
- * - Automatically appends method context (strategyName, exchangeName, frameName)
- * - Automatically appends execution context (symbol, when, backtest)
- * - Defaults to NOOP_LOGGER if no logger configured
- *
- * Used throughout the framework for consistent logging with context.
- */
-declare class LoggerService implements ILogger {
-    private readonly methodContextService;
-    private readonly executionContextService;
-    private _commonLogger;
-    /**
-     * Gets current method context if available.
-     * Contains strategyName, exchangeName, frameName from MethodContextService.
-     */
-    private get methodContext();
-    /**
-     * Gets current execution context if available.
-     * Contains symbol, when, backtest from ExecutionContextService.
-     */
-    private get executionContext();
-    /**
-     * Logs general-purpose message with automatic context injection.
-     *
-     * @param topic - Log topic/category
-     * @param args - Additional log arguments
-     */
-    log: (topic: string, ...args: any[]) => Promise<void>;
-    /**
-     * Logs debug-level message with automatic context injection.
-     *
-     * @param topic - Log topic/category
-     * @param args - Additional log arguments
-     */
-    debug: (topic: string, ...args: any[]) => Promise<void>;
-    /**
-     * Logs info-level message with automatic context injection.
-     *
-     * @param topic - Log topic/category
-     * @param args - Additional log arguments
-     */
-    info: (topic: string, ...args: any[]) => Promise<void>;
-    /**
-     * Logs warning-level message with automatic context injection.
-     *
-     * @param topic - Log topic/category
-     * @param args - Additional log arguments
-     */
-    warn: (topic: string, ...args: any[]) => Promise<void>;
-    /**
-     * Sets custom logger implementation.
-     *
-     * @param logger - Custom logger implementing ILogger interface
-     */
-    setLogger: (logger: ILogger) => void;
-}
 
 /**
  * Client implementation for exchange data access.
@@ -14479,7 +15549,7 @@ declare class BreakevenConnectionService implements IBreakeven {
  * Maps all keys of IStrategy to any type.
  * Used for dynamic method routing in StrategyConnectionService.
  */
-type TStrategy$1 = {
+type TStrategy = {
     [key in keyof IStrategy]: any;
 };
 /**
@@ -14502,7 +15572,7 @@ type TStrategy$1 = {
  * // Routes to correct strategy instance for symbol-strategy pair
  * ```
  */
-declare class StrategyConnectionService implements TStrategy$1 {
+declare class StrategyConnectionService implements TStrategy {
     readonly loggerService: LoggerService;
     readonly executionContextService: {
         readonly context: IExecutionContext;
@@ -15487,401 +16557,6 @@ declare class ExchangeCoreService implements TExchange {
      * @returns Promise resolving to array of candles
      */
     getRawCandles: (symbol: string, interval: CandleInterval, when: Date, backtest: boolean, limit?: number, sDate?: number, eDate?: number) => Promise<ICandleData[]>;
-}
-
-/**
- * Type definition for strategy methods.
- * Maps all keys of IStrategy to any type.
- * Used for dynamic method routing in StrategyCoreService.
- */
-type TStrategy = {
-    [key in keyof IStrategy]: any;
-};
-/**
- * Global service for strategy operations with execution context injection.
- *
- * Wraps StrategyConnectionService with ExecutionContextService to inject
- * symbol, when, and backtest parameters into the execution context.
- *
- * Used internally by BacktestLogicPrivateService and LiveLogicPrivateService.
- */
-declare class StrategyCoreService implements TStrategy {
-    private readonly loggerService;
-    private readonly strategyConnectionService;
-    private readonly strategySchemaService;
-    private readonly riskValidationService;
-    private readonly strategyValidationService;
-    private readonly exchangeValidationService;
-    private readonly frameValidationService;
-    /**
-     * Validates strategy and associated risk configuration.
-     *
-     * Memoized to avoid redundant validations for the same symbol-strategy-exchange-frame combination.
-     * Logs validation activity.
-     * @param symbol - Trading pair symbol
-     * @param context - Execution context with strategyName, exchangeName, frameName
-     * @returns Promise that resolves when validation is complete
-     */
-    private validate;
-    /**
-     * Retrieves the currently active pending signal for the symbol.
-     * If no active signal exists, returns null.
-     * Used internally for monitoring TP/SL and time expiration.
-     *
-     * @param backtest - Whether running in backtest mode
-     * @param symbol - Trading pair symbol
-     * @param context - Execution context with strategyName, exchangeName, frameName
-     * @returns Promise resolving to pending signal or null
-     */
-    getPendingSignal: (backtest: boolean, symbol: string, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<ISignalRow | null>;
-    /**
-     * Retrieves the currently active scheduled signal for the symbol.
-     * If no scheduled signal exists, returns null.
-     * Used internally for monitoring scheduled signal activation.
-     *
-     * @param backtest - Whether running in backtest mode
-     * @param symbol - Trading pair symbol
-     * @param context - Execution context with strategyName, exchangeName, frameName
-     * @returns Promise resolving to scheduled signal or null
-     */
-    getScheduledSignal: (backtest: boolean, symbol: string, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<IScheduledSignalRow | null>;
-    /**
-     * Checks if breakeven threshold has been reached for the current pending signal.
-     *
-     * Validates strategy existence and delegates to connection service
-     * to check if price has moved far enough to cover transaction costs.
-     *
-     * Does not require execution context as this is a state query operation.
-     *
-     * @param backtest - Whether running in backtest mode
-     * @param symbol - Trading pair symbol
-     * @param currentPrice - Current market price to check against threshold
-     * @param context - Execution context with strategyName, exchangeName, frameName
-     * @returns Promise<boolean> - true if breakeven threshold reached, false otherwise
-     *
-     * @example
-     * ```typescript
-     * // Check if breakeven is available for LONG position (entry=100, threshold=0.4%)
-     * const canBreakeven = await strategyCoreService.getBreakeven(
-     *   false,
-     *   "BTCUSDT",
-     *   100.5,
-     *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
-     * );
-     * // Returns true (price >= 100.4)
-     *
-     * if (canBreakeven) {
-     *   await strategyCoreService.breakeven(false, "BTCUSDT", 100.5, context);
-     * }
-     * ```
-     */
-    getBreakeven: (backtest: boolean, symbol: string, currentPrice: number, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<boolean>;
-    /**
-     * Checks if the strategy has been stopped.
-     *
-     * Validates strategy existence and delegates to connection service
-     * to retrieve the stopped state from the strategy instance.
-     *
-     * @param backtest - Whether running in backtest mode
-     * @param symbol - Trading pair symbol
-     * @param context - Execution context with strategyName, exchangeName, frameName
-     * @returns Promise resolving to true if strategy is stopped, false otherwise
-     */
-    getStopped: (backtest: boolean, symbol: string, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<boolean>;
-    /**
-     * Checks signal status at a specific timestamp.
-     *
-     * Wraps strategy tick() with execution context containing symbol, timestamp,
-     * and backtest mode flag.
-     *
-     * @param symbol - Trading pair symbol
-     * @param when - Timestamp for tick evaluation
-     * @param backtest - Whether running in backtest mode
-     * @param context - Execution context with strategyName, exchangeName, frameName
-     * @returns Discriminated union of tick result (idle, opened, active, closed)
-     */
-    tick: (symbol: string, when: Date, backtest: boolean, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<IStrategyTickResult>;
-    /**
-     * Runs fast backtest against candle array.
-     *
-     * Wraps strategy backtest() with execution context containing symbol,
-     * timestamp, and backtest mode flag.
-     *
-     * @param symbol - Trading pair symbol
-     * @param candles - Array of historical candles to test against
-     * @param when - Starting timestamp for backtest
-     * @param backtest - Whether running in backtest mode (typically true)
-     * @param context - Execution context with strategyName, exchangeName, frameName
-     * @returns Closed signal result with PNL
-     */
-    backtest: (symbol: string, candles: ICandleData[], when: Date, backtest: boolean, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<IStrategyBacktestResult>;
-    /**
-     * Stops the strategy from generating new signals.
-     *
-     * Delegates to StrategyConnectionService.stop() to set internal flag.
-     * Does not require execution context.
-     *
-     * @param backtest - Whether running in backtest mode
-     * @param symbol - Trading pair symbol
-     * @param ctx - Context with strategyName, exchangeName, frameName
-     * @returns Promise that resolves when stop flag is set
-     */
-    stopStrategy: (backtest: boolean, symbol: string, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<void>;
-    /**
-     * Cancels the scheduled signal without stopping the strategy.
-     *
-     * Delegates to StrategyConnectionService.cancelScheduled() to clear scheduled signal
-     * and emit cancelled event through emitters.
-     * Does not require execution context.
-     *
-     * @param backtest - Whether running in backtest mode
-     * @param symbol - Trading pair symbol
-     * @param ctx - Context with strategyName, exchangeName, frameName
-     * @param cancelId - Optional cancellation ID for user-initiated cancellations
-     * @returns Promise that resolves when scheduled signal is cancelled
-     */
-    cancelScheduled: (backtest: boolean, symbol: string, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }, cancelId?: string) => Promise<void>;
-    /**
-     * Closes the pending signal without stopping the strategy.
-     *
-     * Clears the pending signal (active position).
-     * Does NOT affect scheduled signals or strategy operation.
-     * Does NOT set stop flag - strategy can continue generating new signals.
-     *
-     * Delegates to StrategyConnectionService.closePending() to clear pending signal
-     * and emit closed event through emitters.
-     * Does not require execution context.
-     *
-     * @param backtest - Whether running in backtest mode
-     * @param symbol - Trading pair symbol
-     * @param context - Context with strategyName, exchangeName, frameName
-     * @param closeId - Optional close ID for user-initiated closes
-     * @returns Promise that resolves when pending signal is closed
-     */
-    closePending: (backtest: boolean, symbol: string, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }, closeId?: string) => Promise<void>;
-    /**
-     * Disposes the ClientStrategy instance for the given context.
-     *
-     * Calls dispose on the strategy instance to clean up resources,
-     * then removes it from cache.
-     *
-     * @param backtest - Whether running in backtest mode
-     * @param symbol - Trading pair symbol
-     * @param context - Execution context with strategyName, exchangeName, frameName
-     */
-    dispose: (backtest: boolean, symbol: string, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<void>;
-    /**
-     * Clears the memoized ClientStrategy instance from cache.
-     *
-     * Delegates to StrategyConnectionService.dispose() if payload provided,
-     * otherwise clears all strategy instances.
-     *
-     * @param payload - Optional payload with symbol, context and backtest flag (clears all if not provided)
-     */
-    clear: (payload?: {
-        symbol: string;
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-        backtest: boolean;
-    }) => Promise<void>;
-    /**
-     * Executes partial close at profit level (moving toward TP).
-     *
-     * Validates strategy existence and delegates to connection service
-     * to close a percentage of the pending position at profit.
-     *
-     * Does not require execution context as this is a direct state mutation.
-     *
-     * @param backtest - Whether running in backtest mode
-     * @param symbol - Trading pair symbol
-     * @param percentToClose - Percentage of position to close (0-100, absolute value)
-     * @param currentPrice - Current market price for this partial close (must be in profit direction)
-     * @param context - Execution context with strategyName, exchangeName, frameName
-     * @returns Promise<boolean> - true if partial close executed, false if skipped
-     *
-     * @example
-     * ```typescript
-     * // Close 30% of position at profit
-     * const success = await strategyCoreService.partialProfit(
-     *   false,
-     *   "BTCUSDT",
-     *   30,
-     *   45000,
-     *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
-     * );
-     * if (success) {
-     *   console.log('Partial profit executed');
-     * }
-     * ```
-     */
-    partialProfit: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<boolean>;
-    /**
-     * Executes partial close at loss level (moving toward SL).
-     *
-     * Validates strategy existence and delegates to connection service
-     * to close a percentage of the pending position at loss.
-     *
-     * Does not require execution context as this is a direct state mutation.
-     *
-     * @param backtest - Whether running in backtest mode
-     * @param symbol - Trading pair symbol
-     * @param percentToClose - Percentage of position to close (0-100, absolute value)
-     * @param currentPrice - Current market price for this partial close (must be in loss direction)
-     * @param context - Execution context with strategyName, exchangeName, frameName
-     * @returns Promise<boolean> - true if partial close executed, false if skipped
-     *
-     * @example
-     * ```typescript
-     * // Close 40% of position at loss
-     * const success = await strategyCoreService.partialLoss(
-     *   false,
-     *   "BTCUSDT",
-     *   40,
-     *   38000,
-     *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
-     * );
-     * if (success) {
-     *   console.log('Partial loss executed');
-     * }
-     * ```
-     */
-    partialLoss: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<boolean>;
-    /**
-     * Adjusts the trailing stop-loss distance for an active pending signal.
-     *
-     * Validates strategy existence and delegates to connection service
-     * to update the stop-loss distance by a percentage adjustment.
-     *
-     * Does not require execution context as this is a direct state mutation.
-     *
-     * @param backtest - Whether running in backtest mode
-     * @param symbol - Trading pair symbol
-     * @param percentShift - Percentage adjustment to SL distance (-100 to 100)
-     * @param currentPrice - Current market price to check for intrusion
-     * @param context - Execution context with strategyName, exchangeName, frameName
-     * @returns Promise that resolves when trailing SL is updated
-     *
-     * @example
-     * ```typescript
-     * // LONG: entry=100, originalSL=90, distance=10%, currentPrice=102
-     * // Tighten stop by 50%: newSL = 100 - 5% = 95
-     * await strategyCoreService.trailingStop(
-     *   false,
-     *   "BTCUSDT",
-     *   -50,
-     *   102,
-     *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
-     * );
-     * ```
-     */
-    trailingStop: (backtest: boolean, symbol: string, percentShift: number, currentPrice: number, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<boolean>;
-    /**
-     * Adjusts the trailing take-profit distance for an active pending signal.
-     * Validates context and delegates to StrategyConnectionService.
-     *
-     * @param backtest - Whether running in backtest mode
-     * @param symbol - Trading pair symbol
-     * @param percentShift - Percentage adjustment to TP distance (-100 to 100)
-     * @param currentPrice - Current market price to check for intrusion
-     * @param context - Strategy context with strategyName, exchangeName, frameName
-     * @returns Promise that resolves when trailing TP is updated
-     *
-     * @example
-     * ```typescript
-     * // LONG: entry=100, originalTP=110, distance=10%, currentPrice=102
-     * // Move TP further by 50%: newTP = 100 + 15% = 115
-     * await strategyCoreService.trailingTake(
-     *   false,
-     *   "BTCUSDT",
-     *   50,
-     *   102,
-     *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
-     * );
-     * ```
-     */
-    trailingTake: (backtest: boolean, symbol: string, percentShift: number, currentPrice: number, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<boolean>;
-    /**
-     * Moves stop-loss to breakeven when price reaches threshold.
-     * Validates context and delegates to StrategyConnectionService.
-     *
-     * @param backtest - Whether running in backtest mode
-     * @param symbol - Trading pair symbol
-     * @param currentPrice - Current market price to check threshold
-     * @param context - Strategy context with strategyName, exchangeName, frameName
-     * @returns Promise<boolean> - true if breakeven was set, false otherwise
-     *
-     * @example
-     * ```typescript
-     * const moved = await strategyCoreService.breakeven(
-     *   false,
-     *   "BTCUSDT",
-     *   112,
-     *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
-     * );
-     * ```
-     */
-    breakeven: (backtest: boolean, symbol: string, currentPrice: number, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<boolean>;
 }
 
 /**
@@ -18172,6 +18847,173 @@ declare class RiskReportService {
     unsubscribe: () => Promise<void>;
 }
 
+/**
+ * Service for persisting strategy management events to JSON report files.
+ *
+ * Handles logging of strategy actions (cancel-scheduled, close-pending, partial-profit,
+ * partial-loss, trailing-stop, trailing-take, breakeven) to persistent storage via
+ * the Report class. Each event is written as a separate JSON record.
+ *
+ * Unlike StrategyMarkdownService which accumulates events in memory for markdown reports,
+ * this service writes each event immediately to disk for audit trail purposes.
+ *
+ * Lifecycle:
+ * - Call subscribe() to enable event logging
+ * - Events are written via Report.writeData() with "strategy" category
+ * - Call unsubscribe() to disable event logging
+ *
+ * @example
+ * ```typescript
+ * // Service is typically used internally by strategy management classes
+ * strategyReportService.subscribe();
+ *
+ * // Events are logged automatically when strategy actions occur
+ * await strategyReportService.partialProfit("BTCUSDT", 50, 50100, false, {
+ *   strategyName: "my-strategy",
+ *   exchangeName: "binance",
+ *   frameName: "1h"
+ * });
+ *
+ * strategyReportService.unsubscribe();
+ * ```
+ *
+ * @see StrategyMarkdownService for in-memory event accumulation and markdown report generation
+ * @see Report for the underlying persistence mechanism
+ */
+declare class StrategyReportService {
+    readonly loggerService: LoggerService;
+    readonly executionContextService: {
+        readonly context: IExecutionContext;
+    };
+    readonly strategyCoreService: StrategyCoreService;
+    /**
+     * Logs a cancel-scheduled event when a scheduled signal is cancelled.
+     *
+     * Retrieves the scheduled signal from StrategyCoreService and writes
+     * the cancellation event to the report file.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param isBacktest - Whether this is a backtest or live trading event
+     * @param context - Strategy context with strategyName, exchangeName, frameName
+     * @param cancelId - Optional identifier for the cancellation reason
+     */
+    cancelScheduled: (symbol: string, isBacktest: boolean, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }, cancelId?: string) => Promise<void>;
+    /**
+     * Logs a close-pending event when a pending signal is closed.
+     *
+     * Retrieves the pending signal from StrategyCoreService and writes
+     * the close event to the report file.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param isBacktest - Whether this is a backtest or live trading event
+     * @param context - Strategy context with strategyName, exchangeName, frameName
+     * @param closeId - Optional identifier for the close reason
+     */
+    closePending: (symbol: string, isBacktest: boolean, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }, closeId?: string) => Promise<void>;
+    /**
+     * Logs a partial-profit event when a portion of the position is closed at profit.
+     *
+     * Records the percentage closed and current price when partial profit-taking occurs.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param percentToClose - Percentage of position to close (0-100)
+     * @param currentPrice - Current market price at time of partial close
+     * @param isBacktest - Whether this is a backtest or live trading event
+     * @param context - Strategy context with strategyName, exchangeName, frameName
+     */
+    partialProfit: (symbol: string, percentToClose: number, currentPrice: number, isBacktest: boolean, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Logs a partial-loss event when a portion of the position is closed at loss.
+     *
+     * Records the percentage closed and current price when partial loss-cutting occurs.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param percentToClose - Percentage of position to close (0-100)
+     * @param currentPrice - Current market price at time of partial close
+     * @param isBacktest - Whether this is a backtest or live trading event
+     * @param context - Strategy context with strategyName, exchangeName, frameName
+     */
+    partialLoss: (symbol: string, percentToClose: number, currentPrice: number, isBacktest: boolean, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Logs a trailing-stop event when the stop-loss is adjusted.
+     *
+     * Records the percentage shift and current price when trailing stop moves.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param percentShift - Percentage the stop-loss was shifted
+     * @param currentPrice - Current market price at time of adjustment
+     * @param isBacktest - Whether this is a backtest or live trading event
+     * @param context - Strategy context with strategyName, exchangeName, frameName
+     */
+    trailingStop: (symbol: string, percentShift: number, currentPrice: number, isBacktest: boolean, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Logs a trailing-take event when the take-profit is adjusted.
+     *
+     * Records the percentage shift and current price when trailing take-profit moves.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param percentShift - Percentage the take-profit was shifted
+     * @param currentPrice - Current market price at time of adjustment
+     * @param isBacktest - Whether this is a backtest or live trading event
+     * @param context - Strategy context with strategyName, exchangeName, frameName
+     */
+    trailingTake: (symbol: string, percentShift: number, currentPrice: number, isBacktest: boolean, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Logs a breakeven event when the stop-loss is moved to entry price.
+     *
+     * Records the current price when breakeven protection is activated.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param currentPrice - Current market price at time of breakeven activation
+     * @param isBacktest - Whether this is a backtest or live trading event
+     * @param context - Strategy context with strategyName, exchangeName, frameName
+     */
+    breakeven: (symbol: string, currentPrice: number, isBacktest: boolean, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<void>;
+    /**
+     * Initializes the service for event logging.
+     *
+     * Must be called before any events can be logged. Uses singleshot pattern
+     * to ensure only one subscription exists at a time.
+     *
+     * @returns Cleanup function that clears the subscription when called
+     */
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    /**
+     * Stops event logging and cleans up the subscription.
+     *
+     * Safe to call multiple times - only clears if subscription exists.
+     */
+    unsubscribe: () => Promise<void>;
+}
+
 declare const backtest: {
     exchangeValidationService: ExchangeValidationService;
     strategyValidationService: StrategyValidationService;
@@ -18191,6 +19033,7 @@ declare const backtest: {
     partialReportService: PartialReportService;
     breakevenReportService: BreakevenReportService;
     riskReportService: RiskReportService;
+    strategyReportService: StrategyReportService;
     backtestMarkdownService: BacktestMarkdownService;
     liveMarkdownService: LiveMarkdownService;
     scheduleMarkdownService: ScheduleMarkdownService;
@@ -18200,6 +19043,7 @@ declare const backtest: {
     partialMarkdownService: PartialMarkdownService;
     breakevenMarkdownService: BreakevenMarkdownService;
     riskMarkdownService: RiskMarkdownService;
+    strategyMarkdownService: StrategyMarkdownService;
     backtestLogicPublicService: BacktestLogicPublicService;
     liveLogicPublicService: LiveLogicPublicService;
     walkerLogicPublicService: WalkerLogicPublicService;
@@ -18241,4 +19085,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { ActionBase, type ActivePingContract, Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleData, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOrderBookData, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, MethodContextService, type MetricStats, Notification, type NotificationModel, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialProfit, commitTrailingStop, commitTrailingTake, emitters, formatPrice, formatQuantity, get, getActionSchema, getAveragePrice, getBacktestTimeframe, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getExchangeSchema, getFrameSchema, getMode, getOrderBook, getRawCandles, getRiskSchema, getSizingSchema, getStrategySchema, getSymbol, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, roundTicks, set, setColumns, setConfig, setLogger, stopStrategy, validate };
+export { ActionBase, type ActivePingContract, Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleData, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOrderBookData, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, MethodContextService, type MetricStats, Notification, type NotificationModel, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, Strategy, type StrategyActionType, type StrategyCommitContract, type StrategyEvent, type StrategyStatisticsModel, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialProfit, commitTrailingStop, commitTrailingTake, emitters, formatPrice, formatQuantity, get, getActionSchema, getAveragePrice, getBacktestTimeframe, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getExchangeSchema, getFrameSchema, getMode, getOrderBook, getRawCandles, getRiskSchema, getSizingSchema, getStrategySchema, getSymbol, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenStrategyCommit, listenStrategyCommitOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, roundTicks, set, setColumns, setConfig, setLogger, stopStrategy, validate };

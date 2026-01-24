@@ -71,6 +71,7 @@ const markdownServices = {
     breakevenMarkdownService: Symbol('breakevenMarkdownService'),
     outlineMarkdownService: Symbol('outlineMarkdownService'),
     riskMarkdownService: Symbol('riskMarkdownService'),
+    strategyMarkdownService: Symbol('strategyMarkdownService'),
 }
 
 const reportServices = {
@@ -83,6 +84,7 @@ const reportServices = {
     partialReportService: Symbol('partialReportService'),
     breakevenReportService: Symbol('breakevenReportService'),
     riskReportService: Symbol('riskReportService'),
+    strategyReportService: Symbol('strategyReportService'),
 }
 
 const validationServices = {

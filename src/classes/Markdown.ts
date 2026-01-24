@@ -28,6 +28,8 @@ const MARKDOWN_METHOD_NAME_USE_DUMMY = "MarkdownAdapter.useDummy";
  * Controls which markdown report services should be activated.
  */
 interface IMarkdownTarget {
+  /** Enable strategy event tracking reports (entry/exit signals) */
+  strategy: boolean;
   /** Enable risk rejection tracking reports (signals blocked by risk limits) */
   risk: boolean;
   /** Enable breakeven event tracking reports (when stop loss moves to entry) */
@@ -63,6 +65,7 @@ const WILDCARD_TARGET: IMarkdownTarget = {
   partial: true,
   performance: true,
   risk: true,
+  strategy: true,
   schedule: true,
   walker: true,
 };
@@ -394,6 +397,7 @@ export class MarkdownUtils {
     live = false,
     partial = false,
     performance = false,
+    strategy = false,
     risk = false,
     schedule = false,
     walker = false,
@@ -406,6 +410,7 @@ export class MarkdownUtils {
       partial,
       performance,
       risk,
+      strategy,
       schedule,
       walker,
     });
@@ -430,6 +435,9 @@ export class MarkdownUtils {
     }
     if (risk) {
       unList.push(backtest.riskMarkdownService.subscribe());
+    }
+    if (strategy) {
+      unList.push(backtest.strategyMarkdownService.subscribe());
     }
     if (schedule) {
       unList.push(backtest.scheduleMarkdownService.subscribe());
@@ -485,6 +493,7 @@ export class MarkdownUtils {
     partial = false,
     performance = false,
     risk = false,
+    strategy = false,
     schedule = false,
     walker = false,
   }: Partial<IMarkdownTarget> = WILDCARD_TARGET) => {
@@ -496,6 +505,7 @@ export class MarkdownUtils {
       partial,
       performance,
       risk,
+      strategy,
       schedule,
       walker,
     });
@@ -519,6 +529,9 @@ export class MarkdownUtils {
     }
     if (risk) {
       backtest.riskMarkdownService.unsubscribe();
+    }
+    if (strategy) {
+      backtest.strategyMarkdownService.unsubscribe();
     }
     if (schedule) {
       backtest.scheduleMarkdownService.unsubscribe();

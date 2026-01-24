@@ -2,6 +2,8 @@ import { CandleInterval, ISignalDto } from "backtest-kit";
 import { Code } from "../classes/Code";
 import { File } from "../classes/File";
 import lib from "../lib";
+import toSignalDto from "../helpers/toSignalDto";
+import { randomString } from "functools-kit";
 
 const METHOD_NAME_RUN = "strategy.getSignal";
 
@@ -24,14 +26,6 @@ interface IParams {
   limit: number;
 }
 
-interface SignalData {
-  position: number;
-  priceOpen: number;
-  priceTakeProfit: number;
-  priceStopLoss: number;
-  minuteEstimatedTime: number;
-}
-
 const SIGNAL_SCHEMA = {
   position: "Signal",
   priceOpen: "Close",
@@ -42,30 +36,6 @@ const SIGNAL_SCHEMA = {
     transform: (v: number) => v || DEFAULT_ESTIMATED_TIME,
   },
 } as const;
-
-function toSignalDto(data: SignalData): ISignalDto | null {
-  if (data.position === 1) {
-    return {
-      position: "long",
-      priceOpen: data.priceOpen,
-      priceTakeProfit: data.priceTakeProfit,
-      priceStopLoss: data.priceStopLoss,
-      minuteEstimatedTime: data.minuteEstimatedTime,
-    };
-  }
-
-  if (data.position === -1) {
-    return {
-      position: "short",
-      priceOpen: data.priceOpen,
-      priceTakeProfit: data.priceTakeProfit,
-      priceStopLoss: data.priceStopLoss,
-      minuteEstimatedTime: data.minuteEstimatedTime,
-    };
-  }
-
-  return null;
-}
 
 export async function getSignal(
   source: File | Code,
@@ -85,7 +55,8 @@ export async function getSignal(
     limit,
   );
 
+  const resultId = randomString();
   const data = lib.pineDataService.extract(plots, SIGNAL_SCHEMA);
 
-  return toSignalDto(data);
+  return toSignalDto(resultId, data);
 }

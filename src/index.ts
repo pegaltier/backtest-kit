@@ -94,6 +94,8 @@ export {
   listenSchedulePingOnce,
   listenActivePing,
   listenActivePingOnce,
+  listenStrategyCommit,
+  listenStrategyCommitOnce,
 } from "./function/event";
 export {
   getCandles,
@@ -196,6 +198,7 @@ export { PerformanceStatisticsModel } from "./model/PerformanceStatistics.model"
 export { WalkerStatisticsModel } from "./model/WalkerStatistics.model";
 export { PartialStatisticsModel } from "./model/PartialStatistics.model";
 export { RiskStatisticsModel } from "./model/RiskStatistics.model";
+export { StrategyStatisticsModel, StrategyEvent, StrategyActionType } from "./model/StrategyStatistics.model";
 
 export { PartialLossContract } from "./contract/PartialLoss.contract";
 export { PartialProfitContract } from "./contract/PartialProfit.contract";
@@ -212,6 +215,7 @@ export {
   PerformanceContract,
   PerformanceMetricType,
 } from "./contract/Performance.contract";
+export { StrategyCommitContract } from "./contract/StrategyCommit.contract";
 
 export { ExecutionContextService } from "./lib/services/context/ExecutionContextService";
 export { MethodContextService } from "./lib/services/context/MethodContextService";
@@ -267,6 +271,7 @@ export { Exchange } from "./classes/Exchange";
 export { Cache } from "./classes/Cache";
 export { Notification } from "./classes/Notification";
 export { Breakeven } from "./classes/Breakeven";
+export { Strategy } from "./classes/Strategy";
 export { ActionBase } from "./classes/Action";
 
 export { type TickEvent } from "./model/LiveStatistics.model";

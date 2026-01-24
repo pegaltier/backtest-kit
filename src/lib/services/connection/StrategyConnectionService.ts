@@ -22,7 +22,9 @@ import {
   schedulePingSubject,
   activePingSubject,
   errorEmitter,
+  strategyCommitSubject,
 } from "../../../config/emitters";
+import { StrategyCommitContract } from "../../../contract/StrategyCommit.contract";
 import { IRisk, RiskName } from "../../../interfaces/Risk.interface";
 import RiskConnectionService from "./RiskConnectionService";
 import { PartialConnectionService } from "./PartialConnectionService";

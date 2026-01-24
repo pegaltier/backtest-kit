@@ -1,6 +1,6 @@
 {
   "name": "backtest-kit",
-  "version": "2.2.1",
+  "version": "2.2.3",
   "description": "A TypeScript library for trading system backtest",
   "author": {
     "name": "Petr Tripolsky",
@@ -67,6 +67,7 @@
     "ts-morph": "27.0.2",
     "tslib": "2.7.0",
     "typedoc": "0.27.9",
+    "plantuml": "0.0.2",
     "worker-testbed": "1.0.12"
   },
   "peerDependencies": {

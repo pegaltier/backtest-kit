@@ -33,6 +33,8 @@ const WRITE_SAFE_SYMBOL = Symbol("write-safe");
  * Controls which report services should be activated for JSONL event logging.
  */
 interface IReportTarget {
+  /** Enable strategy commit actions */
+  strategy: boolean;
   /** Enable risk rejection event logging */
   risk: boolean;
   /** Enable breakeven event logging */
@@ -293,6 +295,7 @@ export class ReportDummy implements TReportBase {
  */
 const WILDCARD_TARGET: IReportTarget = {
   backtest: true,
+  strategy: true,
   breakeven: true,
   heat: true,
   live: true,
@@ -348,6 +351,7 @@ export class ReportUtils {
     risk = false,
     schedule = false,
     walker = false,
+    strategy = false,
   }: Partial<IReportTarget> = WILDCARD_TARGET) => {
     lib.loggerService.debug(REPORT_UTILS_METHOD_NAME_ENABLE, {
       backtest: bt,
@@ -359,6 +363,7 @@ export class ReportUtils {
       risk,
       schedule,
       walker,
+      strategy,
     });
     const unList: Function[] = [];
     if (bt) {
@@ -387,6 +392,9 @@ export class ReportUtils {
     }
     if (walker) {
       unList.push(lib.walkerReportService.subscribe());
+    }
+    if (strategy) {
+      unList.push(lib.scheduleReportService.subscribe());
     }
     return compose(...unList.map((un) => () => void un()));
   };
@@ -437,6 +445,7 @@ export class ReportUtils {
     risk = false,
     schedule = false,
     walker = false,
+    strategy = false,
   }: Partial<IReportTarget> = WILDCARD_TARGET) => {
     lib.loggerService.debug(REPORT_UTILS_METHOD_NAME_DISABLE, {
       backtest: bt,
@@ -448,6 +457,7 @@ export class ReportUtils {
       risk,
       schedule,
       walker,
+      strategy,
     });
     if (bt) {
       lib.backtestReportService.unsubscribe();
@@ -475,6 +485,9 @@ export class ReportUtils {
     }
     if (walker) {
       lib.walkerReportService.unsubscribe();
+    }
+    if (strategy) {
+      lib.strategyReportService.unsubscribe();
     }
   };
 }

@@ -1,4 +1,3 @@
-import { TPineCtor as TPineCtor$1 } from 'src/interface/Pine.interface';
 import { CandleInterval, ISignalDto } from 'backtest-kit';
 
 declare class Code {
@@ -18,8 +17,6 @@ declare class File {
     static isFile: (value: unknown) => value is File;
 }
 
-declare function usePine<T = TPineCtor$1>(ctor: T): void;
-
 type PlotData = {
     time: number;
     value: number;
@@ -31,6 +28,26 @@ type PlotModel = Record<string, PlotEntry>;
 type PlotRecord = {
     plots: PlotModel;
 };
+
+interface IProvider {
+    getMarketData(tickerId: string, timeframe: string, limit?: number, sDate?: number, eDate?: number): Promise<any>;
+    getSymbolInfo(tickerId: string): Promise<any>;
+}
+
+type TPineCtor = (source: IProvider, tickerId: string, timeframe: string, limit: number) => IPine;
+interface IPine {
+    ready(): Promise<void>;
+    run(code: string): Promise<PlotRecord>;
+}
+
+declare function usePine<T = TPineCtor>(ctor: T): void;
+
+interface IRunParams {
+    symbol: string;
+    timeframe: CandleInterval;
+    limit: number;
+}
+declare function run(source: File | Code, { symbol, timeframe, limit }: IRunParams): Promise<PlotModel>;
 
 type PlotExtractConfig<T = number> = {
     plot: string;
@@ -48,13 +65,7 @@ declare class PineDataService {
     extract<M extends PlotMapping>(plots: PlotModel, mapping: M): ExtractedData<M>;
 }
 
-interface IRunParams<M extends PlotMapping> {
-    symbol: string;
-    timeframe: CandleInterval;
-    limit: number;
-    mapping: M;
-}
-declare function run<M extends PlotMapping>(source: File | Code, { symbol, timeframe, mapping, limit }: IRunParams<M>): Promise<ExtractedData<M>>;
+declare function extract<M extends PlotMapping>(plots: PlotModel, mapping: M): Promise<ExtractedData<M>>;
 
 interface ILogger {
     log(topic: string, ...args: any[]): void;
@@ -71,6 +82,22 @@ interface IParams {
     limit: number;
 }
 declare function getSignal(source: File | Code, { symbol, timeframe, limit }: IParams): Promise<ISignalDto | null>;
+
+type ResultId$2 = string | number;
+declare function dumpPlotData(signalId: ResultId$2, plots: PlotModel, taName: string, outputDir?: string): Promise<void>;
+
+type ResultId$1 = string | number;
+interface SignalData {
+    position: number;
+    priceOpen: number;
+    priceTakeProfit: number;
+    priceStopLoss: number;
+    minuteEstimatedTime: number;
+}
+interface Signal extends ISignalDto {
+    id: string;
+}
+declare function toSignalDto(id: ResultId$1, data: SignalData): Signal | null;
 
 interface CandleModel {
     openTime: number;
@@ -89,17 +116,6 @@ interface SymbolInfoModel {
     basecurrency: string;
     currency: string;
     timezone: string;
-}
-
-interface IProvider {
-    getMarketData(tickerId: string, timeframe: string, limit?: number, sDate?: number, eDate?: number): Promise<any>;
-    getSymbolInfo(tickerId: string): Promise<any>;
-}
-
-type TPineCtor = (source: IProvider, tickerId: string, timeframe: string, limit: number) => IPine;
-interface IPine {
-    ready(): Promise<void>;
-    run(code: string): Promise<PlotRecord>;
 }
 
 declare const AXIS_SYMBOL = "_AXIS";
@@ -146,7 +162,20 @@ declare class PineCacheService {
     clear: (path?: string, baseDir?: string) => Promise<void>;
 }
 
+type ResultId = string | number;
+interface IPlotRow {
+    time: number;
+    [key: string]: number | null;
+}
+declare class PineMarkdownService {
+    private readonly loggerService;
+    getData: (plots: PlotModel) => IPlotRow[];
+    getReport: (signalId: ResultId, plots: PlotModel) => string;
+    dump: (signalId: ResultId, plots: PlotModel, taName: string, outputDir?: string) => Promise<void>;
+}
+
 declare const pine: {
+    pineMarkdownService: PineMarkdownService;
     pineConnectionService: PineConnectionService;
     pineCacheService: PineCacheService;
     pineDataService: PineDataService;
@@ -156,4 +185,4 @@ declare const pine: {
     loggerService: LoggerService;
 };
 
-export { AXIS_SYMBOL, type CandleModel, Code, File, type ILogger, type IPine, type IProvider, type PlotExtractConfig, type PlotMapping, type PlotModel, type PlotRecord, type SymbolInfoModel, type TPineCtor, getSignal, pine as lib, run, setLogger, usePine };
+export { AXIS_SYMBOL, type CandleModel, Code, File, type ILogger, type IPine, type IProvider, type PlotExtractConfig, type PlotMapping, type PlotModel, type PlotRecord, type SymbolInfoModel, type TPineCtor, dumpPlotData, extract, getSignal, pine as lib, run, setLogger, toSignalDto, usePine };
