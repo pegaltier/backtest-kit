@@ -47,22 +47,22 @@ Create a Pine Script file (`strategy.pine`):
 
 ```pine
 //@version=5
-indicator("Signal Strategy")
+indicator("Signal Strategy 100 candles of 1H timeframe")
 
-// Indicators
-rsi = ta.rsi(close, 14)
-atr = ta.atr(14)
-ema_fast = ta.ema(close, 9)
-ema_slow = ta.ema(close, 21)
+// Indicators - faster settings for 1H
+rsi = ta.rsi(close, 10)
+atr = ta.atr(10)
+ema_fast = ta.ema(close, 7)
+ema_slow = ta.ema(close, 16)
 
 // Conditions
-long_cond = ta.crossover(ema_fast, ema_slow) and rsi < 70
-short_cond = ta.crossunder(ema_fast, ema_slow) and rsi > 30
+long_cond = ta.crossover(ema_fast, ema_slow) and rsi < 65
+short_cond = ta.crossunder(ema_fast, ema_slow) and rsi > 35
 
-// Levels
-sl_long = close - atr * 2
+// Levels - tighter SL, wider TP for better RR
+sl_long = close - atr * 1.5
 tp_long = close + atr * 3
-sl_short = close + atr * 2
+sl_short = close + atr * 1.5
 tp_short = close - atr * 3
 
 // Plots for extraction
@@ -70,7 +70,7 @@ plot(close, "Close")
 plot(long_cond ? 1 : short_cond ? -1 : 0, "Signal")
 plot(long_cond ? sl_long : sl_short, "StopLoss")
 plot(long_cond ? tp_long : tp_short, "TakeProfit")
-plot(240, "EstimatedTime")  // 4 hours in minutes
+plot(60, "EstimatedTime")  // 1 hour in minutes
 ```
 
 Use it in your strategy:
@@ -88,7 +88,7 @@ addStrategy({
 
     return await getSignal(source, {
       symbol,
-      timeframe: '5m',
+      timeframe: '1h',
       limit: 100,
     });
   }
