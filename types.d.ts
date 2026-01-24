@@ -13570,13 +13570,6 @@ declare class StrategyMarkdownService {
         backtest: boolean;
     }) => Promise<void>;
     /**
-     * Handles incoming signal management events from strategyCommitSubject.
-     * Routes events to appropriate handler methods based on action type.
-     *
-     * @param event - The signal management event
-     */
-    private handleSignalEvent;
-    /**
      * Initializes the service for event collection.
      *
      * Must be called before any events can be collected or reports generated.
@@ -19004,13 +18997,6 @@ declare class StrategyReportService {
         exchangeName: ExchangeName;
         frameName: FrameName;
     }) => Promise<void>;
-    /**
-     * Handles incoming signal management events from strategyCommitSubject.
-     * Routes events to appropriate handler methods based on action type.
-     *
-     * @param event - The signal management event
-     */
-    private handleSignalEvent;
     /**
      * Initializes the service for event logging.
      *
