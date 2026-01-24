@@ -1,6 +1,8 @@
 import { ISignalDto } from "backtest-kit";
 import { randomString } from "functools-kit";
 
+type ResultId = string | number;
+
 interface SignalData {
   position: number;
   priceOpen: number;
@@ -13,10 +15,10 @@ interface Signal extends ISignalDto {
   id: string;
 }
 
-export function toSignalDto(data: SignalData): Signal | null {
+export function toSignalDto(id: ResultId, data: SignalData): Signal | null {
   if (data.position === 1) {
     return {
-      id: randomString(),
+      id: String(id),
       position: "long",
       priceOpen: data.priceOpen,
       priceTakeProfit: data.priceTakeProfit,
@@ -27,7 +29,7 @@ export function toSignalDto(data: SignalData): Signal | null {
 
   if (data.position === -1) {
     return {
-      id: randomString(),
+      id: String(id),
       position: "short",
       priceOpen: data.priceOpen,
       priceTakeProfit: data.priceTakeProfit,

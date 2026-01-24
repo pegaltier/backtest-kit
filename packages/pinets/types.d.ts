@@ -83,9 +83,10 @@ interface IParams {
 }
 declare function getSignal(source: File | Code, { symbol, timeframe, limit }: IParams): Promise<ISignalDto | null>;
 
-type ResultId$1 = string | number;
-declare function dumpPlotData(signalId: ResultId$1, plots: PlotModel, taName: string, outputDir?: string): Promise<void>;
+type ResultId$2 = string | number;
+declare function dumpPlotData(signalId: ResultId$2, plots: PlotModel, taName: string, outputDir?: string): Promise<void>;
 
+type ResultId$1 = string | number;
 interface SignalData {
     position: number;
     priceOpen: number;
@@ -96,7 +97,7 @@ interface SignalData {
 interface Signal extends ISignalDto {
     id: string;
 }
-declare function toSignalDto(data: SignalData): Signal | null;
+declare function toSignalDto(id: ResultId$1, data: SignalData): Signal | null;
 
 interface CandleModel {
     openTime: number;

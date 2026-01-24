@@ -1,9 +1,9 @@
 import pine from "../lib";
 import { PlotModel } from "../model/Plot.model";
 
-type ResultId = string | number;
-
 const DUMP_SIGNAL_METHOD_NAME = "dump.dumpSignal";
+
+type ResultId = string | number;
 
 export async function dumpPlotData(
   signalId: ResultId,

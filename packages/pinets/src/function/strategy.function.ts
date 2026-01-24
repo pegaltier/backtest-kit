@@ -3,6 +3,7 @@ import { Code } from "../classes/Code";
 import { File } from "../classes/File";
 import lib from "../lib";
 import toSignalDto from "../helpers/toSignalDto";
+import { randomString } from "functools-kit";
 
 const METHOD_NAME_RUN = "strategy.getSignal";
 
@@ -54,7 +55,8 @@ export async function getSignal(
     limit,
   );
 
+  const resultId = randomString();
   const data = lib.pineDataService.extract(plots, SIGNAL_SCHEMA);
 
-  return toSignalDto(data);
+  return toSignalDto(resultId, data);
 }
