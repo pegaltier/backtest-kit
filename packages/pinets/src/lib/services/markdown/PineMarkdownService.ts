@@ -4,6 +4,8 @@ import LoggerService from "../base/LoggerService";
 import { TYPES } from "../../core/types";
 import { Markdown, MarkdownName } from "backtest-kit";
 
+const TABLE_ROWS_LIMIT = 48;
+
 type ResultId = string | number;
 
 interface IPlotRow {
@@ -125,7 +127,7 @@ export class PineMarkdownService {
       rows.push(row);
     }
 
-    return rows;
+    return rows.slice(-TABLE_ROWS_LIMIT);
   };
 
   public getReport = (signalId: ResultId, plots: PlotModel) => {
