@@ -64,18 +64,6 @@ exchangeValidationService: any
 frameValidationService: any
 ```
 
-### strategyMarkdownService
-
-```ts
-strategyMarkdownService: any
-```
-
-### strategyReportService
-
-```ts
-strategyReportService: any
-```
-
 ### validate
 
 ```ts

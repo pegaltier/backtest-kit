@@ -16,7 +16,7 @@ interface SignalCommitBase {
 /**
  * Cancel scheduled signal event.
  */
-interface CancelScheduledCommit extends SignalCommitBase {
+export interface CancelScheduledCommit extends SignalCommitBase {
   action: "cancel-scheduled";
   cancelId?: string;
 }
@@ -24,7 +24,7 @@ interface CancelScheduledCommit extends SignalCommitBase {
 /**
  * Close pending signal event.
  */
-interface ClosePendingCommit extends SignalCommitBase {
+export interface ClosePendingCommit extends SignalCommitBase {
   action: "close-pending";
   closeId?: string;
 }
@@ -32,7 +32,7 @@ interface ClosePendingCommit extends SignalCommitBase {
 /**
  * Partial profit event.
  */
-interface PartialProfitCommit extends SignalCommitBase {
+export interface PartialProfitCommit extends SignalCommitBase {
   action: "partial-profit";
   percentToClose: number;
   currentPrice: number;
@@ -41,7 +41,7 @@ interface PartialProfitCommit extends SignalCommitBase {
 /**
  * Partial loss event.
  */
-interface PartialLossCommit extends SignalCommitBase {
+export interface PartialLossCommit extends SignalCommitBase {
   action: "partial-loss";
   percentToClose: number;
   currentPrice: number;
@@ -50,7 +50,7 @@ interface PartialLossCommit extends SignalCommitBase {
 /**
  * Trailing stop event.
  */
-interface TrailingStopCommit extends SignalCommitBase {
+export interface TrailingStopCommit extends SignalCommitBase {
   action: "trailing-stop";
   percentShift: number;
   currentPrice: number;
@@ -59,7 +59,7 @@ interface TrailingStopCommit extends SignalCommitBase {
 /**
  * Trailing take event.
  */
-interface TrailingTakeCommit extends SignalCommitBase {
+export interface TrailingTakeCommit extends SignalCommitBase {
   action: "trailing-take";
   percentShift: number;
   currentPrice: number;
@@ -68,7 +68,7 @@ interface TrailingTakeCommit extends SignalCommitBase {
 /**
  * Breakeven event.
  */
-interface BreakevenCommit extends SignalCommitBase {
+export interface BreakevenCommit extends SignalCommitBase {
   action: "breakeven";
   currentPrice: number;
 }
