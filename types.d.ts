@@ -7602,6 +7602,8 @@ declare const WRITE_SAFE_SYMBOL$1: unique symbol;
  * Controls which report services should be activated for JSONL event logging.
  */
 interface IReportTarget {
+    /** Enable strategy commit actions */
+    strategy: boolean;
     /** Enable risk rejection event logging */
     risk: boolean;
     /** Enable breakeven event logging */
@@ -7771,7 +7773,7 @@ declare class ReportUtils {
      *
      * @returns Cleanup function that unsubscribes from all enabled services
      */
-    enable: ({ backtest: bt, breakeven, heat, live, partial, performance, risk, schedule, walker, }?: Partial<IReportTarget>) => (...args: any[]) => any;
+    enable: ({ backtest: bt, breakeven, heat, live, partial, performance, risk, schedule, walker, strategy, }?: Partial<IReportTarget>) => (...args: any[]) => any;
     /**
      * Disables report services selectively.
      *
@@ -7808,7 +7810,7 @@ declare class ReportUtils {
      * Report.disable();
      * ```
      */
-    disable: ({ backtest: bt, breakeven, heat, live, partial, performance, risk, schedule, walker, }?: Partial<IReportTarget>) => void;
+    disable: ({ backtest: bt, breakeven, heat, live, partial, performance, risk, schedule, walker, strategy, }?: Partial<IReportTarget>) => void;
 }
 /**
  * Report adapter with pluggable storage backend and instance memoization.
@@ -18172,6 +18174,26 @@ declare class RiskReportService {
     unsubscribe: () => Promise<void>;
 }
 
+declare class StrategyReportService {
+    readonly loggerService: LoggerService;
+    readonly methodContextService: {
+        readonly context: IMethodContext;
+    };
+    readonly executionContextService: {
+        readonly context: IExecutionContext;
+    };
+    readonly strategyCoreService: StrategyCoreService;
+    cancelScheduled: (symbol: string, isBacktest: boolean, cancelId?: string) => Promise<void>;
+    closePending: (symbol: string, isBacktest: boolean, closeId?: string) => Promise<void>;
+    partialProfit: (symbol: string, percentToClose: number, currentPrice: number, isBacktest: boolean) => Promise<void>;
+    partialLoss: (symbol: string, percentToClose: number, currentPrice: number, isBacktest: boolean) => Promise<void>;
+    trailingStop: (symbol: string, percentShift: number, currentPrice: number, isBacktest: boolean) => Promise<void>;
+    trailingTake: (symbol: string, percentShift: number, currentPrice: number, isBacktest: boolean) => Promise<void>;
+    breakeven: (symbol: string, currentPrice: number, isBacktest: boolean) => Promise<void>;
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    unsubscribe: () => Promise<void>;
+}
+
 declare const backtest: {
     exchangeValidationService: ExchangeValidationService;
     strategyValidationService: StrategyValidationService;
@@ -18191,6 +18213,7 @@ declare const backtest: {
     partialReportService: PartialReportService;
     breakevenReportService: BreakevenReportService;
     riskReportService: RiskReportService;
+    strategyReportService: StrategyReportService;
     backtestMarkdownService: BacktestMarkdownService;
     liveMarkdownService: LiveMarkdownService;
     scheduleMarkdownService: ScheduleMarkdownService;

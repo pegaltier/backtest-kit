@@ -62,6 +62,7 @@ import HeatReportService from "../services/report/HeatReportService";
 import PartialReportService from "../services/report/PartialReportService";
 import BreakevenReportService from "../services/report/BreakevenReportService";
 import RiskReportService from "../services/report/RiskReportService";
+import StrategyReportService from "../services/report/StrategyReportService";
 
 {
     provide(TYPES.loggerService, () => new LoggerService());
@@ -147,6 +148,7 @@ import RiskReportService from "../services/report/RiskReportService";
     provide(TYPES.partialReportService, () => new PartialReportService());
     provide(TYPES.breakevenReportService, () => new BreakevenReportService());
     provide(TYPES.riskReportService, () => new RiskReportService());
+    provide(TYPES.strategyReportService, () => new StrategyReportService());
 }
 
 {

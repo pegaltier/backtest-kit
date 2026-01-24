@@ -83,6 +83,7 @@ const reportServices = {
     partialReportService: Symbol('partialReportService'),
     breakevenReportService: Symbol('breakevenReportService'),
     riskReportService: Symbol('riskReportService'),
+    strategyReportService: Symbol('strategyReportService'),
 }
 
 const validationServices = {

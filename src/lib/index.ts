@@ -67,6 +67,7 @@ import HeatReportService from "./services/report/HeatReportService";
 import PartialReportService from "./services/report/PartialReportService";
 import BreakevenReportService from "./services/report/BreakevenReportService";
 import RiskReportService from "./services/report/RiskReportService";
+import StrategyReportService from "./services/report/StrategyReportService";
 
 const baseServices = {
   loggerService: inject<LoggerService>(TYPES.loggerService),
@@ -220,6 +221,7 @@ const reportServices = {
     TYPES.breakevenReportService
   ),
   riskReportService: inject<RiskReportService>(TYPES.riskReportService),
+  strategyReportService: inject<StrategyReportService>(TYPES.strategyReportService),
 };
 
 const validationServices = {
