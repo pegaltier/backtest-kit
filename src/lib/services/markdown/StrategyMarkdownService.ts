@@ -25,6 +25,13 @@ import { COLUMN_CONFIG } from "../../../config/columns";
  */
 export type Columns = ColumnModel<StrategyEvent>;
 
+/**
+ * Extracts execution context timestamp for strategy event logging.
+ *
+ * @param self - The StrategyMarkdownService instance to extract context from
+ * @returns Object containing ISO 8601 formatted timestamp, or empty string if no context
+ * @internal
+ */
 const GET_EXECUTION_CONTEXT_FN = (self: StrategyMarkdownService) => {
   if (ExecutionContextService.hasContext()) {
     const { when } = self.executionContextService.context;
@@ -37,6 +44,16 @@ const GET_EXECUTION_CONTEXT_FN = (self: StrategyMarkdownService) => {
 
 /**
  * Creates a unique key for memoizing ReportStorage instances.
+ *
+ * Key format: `{symbol}:{strategyName}:{exchangeName}[:{frameName}]:{backtest|live}`
+ *
+ * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+ * @param strategyName - Name of the trading strategy
+ * @param exchangeName - Name of the exchange
+ * @param frameName - Timeframe name (optional, included if present)
+ * @param backtest - Whether this is backtest or live mode
+ * @returns Colon-separated key string for memoization
+ * @internal
  */
 const CREATE_KEY_FN = (
   symbol: string,
@@ -52,7 +69,17 @@ const CREATE_KEY_FN = (
 };
 
 /**
- * Creates a filename for markdown report.
+ * Creates a filename for markdown report output.
+ *
+ * Filename format: `{symbol}_{strategyName}_{exchangeName}[_{frameName}_backtest|_live]-{timestamp}.md`
+ *
+ * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+ * @param strategyName - Name of the trading strategy
+ * @param exchangeName - Name of the exchange
+ * @param frameName - Timeframe name (indicates backtest mode if present)
+ * @param timestamp - Unix timestamp in milliseconds for uniqueness
+ * @returns Underscore-separated filename with .md extension
+ * @internal
  */
 const CREATE_FILE_NAME_FN = (
   symbol: string,
@@ -67,15 +94,36 @@ const CREATE_FILE_NAME_FN = (
   return `${parts.join("_")}-${timestamp}.md`;
 };
 
-/** Maximum number of events to store */
+/**
+ * Maximum number of events to store per symbol-strategy pair.
+ * Older events are discarded when this limit is exceeded.
+ * @internal
+ */
 const MAX_EVENTS = 250;
 
 /**
- * Storage class for accumulating strategy events per symbol-strategy pair.
+ * In-memory storage for accumulating strategy events per symbol-strategy pair.
+ *
+ * Maintains a rolling window of the most recent events (up to MAX_EVENTS),
+ * with newer events added to the front of the list. Provides methods to:
+ * - Add new events (FIFO queue with max size)
+ * - Retrieve aggregated statistics
+ * - Generate markdown reports
+ * - Dump reports to disk
+ *
+ * @internal
  */
 class ReportStorage {
   private _eventList: StrategyEvent[] = [];
 
+  /**
+   * Creates a new ReportStorage instance.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param strategyName - Name of the trading strategy
+   * @param exchangeName - Name of the exchange
+   * @param frameName - Timeframe name for backtest identification
+   */
   constructor(
     readonly symbol: string,
     readonly strategyName: StrategyName,
@@ -83,6 +131,14 @@ class ReportStorage {
     readonly frameName: FrameName
   ) {}
 
+  /**
+   * Adds a new event to the storage.
+   *
+   * Events are added to the front of the list (most recent first).
+   * If the list exceeds MAX_EVENTS, the oldest event is removed.
+   *
+   * @param event - The strategy event to store
+   */
   public addEvent(event: StrategyEvent) {
     this._eventList.unshift(event);
     if (this._eventList.length > MAX_EVENTS) {
@@ -90,6 +146,13 @@ class ReportStorage {
     }
   }
 
+  /**
+   * Retrieves aggregated statistics from stored events.
+   *
+   * Calculates counts for each action type from the event list.
+   *
+   * @returns Promise resolving to StrategyStatisticsModel with event list and counts
+   */
   public async getData(): Promise<StrategyStatisticsModel> {
     if (this._eventList.length === 0) {
       return {
@@ -118,6 +181,19 @@ class ReportStorage {
     };
   }
 
+  /**
+   * Generates a markdown report from stored events.
+   *
+   * Creates a formatted markdown document containing:
+   * - Header with symbol and strategy name
+   * - Table of all events with configurable columns
+   * - Summary statistics with counts by action type
+   *
+   * @param symbol - Trading pair symbol for report header
+   * @param strategyName - Strategy name for report header
+   * @param columns - Column configuration for the event table
+   * @returns Promise resolving to formatted markdown string
+   */
   public async getReport(
     symbol: string,
     strategyName: StrategyName,
@@ -166,6 +242,17 @@ class ReportStorage {
     ].join("\n");
   }
 
+  /**
+   * Generates and saves a markdown report to disk.
+   *
+   * Creates the output directory if it doesn't exist and writes
+   * the report with a timestamped filename.
+   *
+   * @param symbol - Trading pair symbol for report
+   * @param strategyName - Strategy name for report
+   * @param path - Output directory path (default: "./dump/strategy")
+   * @param columns - Column configuration for the event table
+   */
   public async dump(
     symbol: string,
     strategyName: StrategyName,
@@ -187,6 +274,52 @@ class ReportStorage {
   }
 }
 
+/**
+ * Service for accumulating strategy management events and generating markdown reports.
+ *
+ * Collects strategy actions (cancel-scheduled, close-pending, partial-profit,
+ * partial-loss, trailing-stop, trailing-take, breakeven) in memory and provides
+ * methods to retrieve statistics, generate reports, and export to files.
+ *
+ * Unlike StrategyReportService which writes each event to disk immediately,
+ * this service accumulates events in ReportStorage instances (max 250 per
+ * symbol-strategy pair) for batch reporting.
+ *
+ * Features:
+ * - In-memory event accumulation with memoized storage per symbol-strategy pair
+ * - Statistical data extraction (event counts by action type)
+ * - Markdown report generation with configurable columns
+ * - File export with timestamped filenames
+ * - Selective or full cache clearing
+ *
+ * Lifecycle:
+ * - Call subscribe() to enable event collection
+ * - Events are collected automatically via cancelScheduled, closePending, etc.
+ * - Use getData(), getReport(), or dump() to retrieve accumulated data
+ * - Call unsubscribe() to disable collection and clear all data
+ *
+ * @example
+ * ```typescript
+ * strategyMarkdownService.subscribe();
+ *
+ * // Events are collected automatically during strategy execution
+ * // ...
+ *
+ * // Get statistics
+ * const stats = await strategyMarkdownService.getData("BTCUSDT", "my-strategy", "binance", "1h", true);
+ *
+ * // Generate markdown report
+ * const report = await strategyMarkdownService.getReport("BTCUSDT", "my-strategy", "binance", "1h", true);
+ *
+ * // Export to file
+ * await strategyMarkdownService.dump("BTCUSDT", "my-strategy", "binance", "1h", true);
+ *
+ * strategyMarkdownService.unsubscribe();
+ * ```
+ *
+ * @see StrategyReportService for immediate event persistence to JSON files
+ * @see Strategy for the high-level utility class that wraps this service
+ */
 export class StrategyMarkdownService {
   readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   readonly executionContextService = inject<TExecutionContextService>(
@@ -196,11 +329,30 @@ export class StrategyMarkdownService {
     TYPES.strategyCoreService,
   );
 
+  /**
+   * Memoized factory for ReportStorage instances.
+   *
+   * Creates and caches ReportStorage per unique symbol-strategy-exchange-frame-backtest combination.
+   * Uses CREATE_KEY_FN for cache key generation.
+   *
+   * @internal
+   */
   private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),
     (symbol, strategyName, exchangeName, frameName) => new ReportStorage(symbol, strategyName, exchangeName, frameName)
   );
 
+  /**
+   * Records a cancel-scheduled event when a scheduled signal is cancelled.
+   *
+   * Retrieves the scheduled signal from StrategyCoreService and stores
+   * the cancellation event in the appropriate ReportStorage.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param isBacktest - Whether this is a backtest or live trading event
+   * @param context - Strategy context with strategyName, exchangeName, frameName
+   * @param cancelId - Optional identifier for the cancellation reason
+   */
   public cancelScheduled = async (
     symbol: string,
     isBacktest: boolean,
@@ -243,6 +395,17 @@ export class StrategyMarkdownService {
     });
   };
 
+  /**
+   * Records a close-pending event when a pending signal is closed.
+   *
+   * Retrieves the pending signal from StrategyCoreService and stores
+   * the close event in the appropriate ReportStorage.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param isBacktest - Whether this is a backtest or live trading event
+   * @param context - Strategy context with strategyName, exchangeName, frameName
+   * @param closeId - Optional identifier for the close reason
+   */
   public closePending = async (
     symbol: string,
     isBacktest: boolean,
@@ -285,6 +448,17 @@ export class StrategyMarkdownService {
     });
   };
 
+  /**
+   * Records a partial-profit event when a portion of the position is closed at profit.
+   *
+   * Stores the percentage closed and current price when partial profit-taking occurs.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param percentToClose - Percentage of position to close (0-100)
+   * @param currentPrice - Current market price at time of partial close
+   * @param isBacktest - Whether this is a backtest or live trading event
+   * @param context - Strategy context with strategyName, exchangeName, frameName
+   */
   public partialProfit = async (
     symbol: string,
     percentToClose: number,
@@ -330,6 +504,17 @@ export class StrategyMarkdownService {
     });
   };
 
+  /**
+   * Records a partial-loss event when a portion of the position is closed at loss.
+   *
+   * Stores the percentage closed and current price when partial loss-cutting occurs.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param percentToClose - Percentage of position to close (0-100)
+   * @param currentPrice - Current market price at time of partial close
+   * @param isBacktest - Whether this is a backtest or live trading event
+   * @param context - Strategy context with strategyName, exchangeName, frameName
+   */
   public partialLoss = async (
     symbol: string,
     percentToClose: number,
@@ -375,6 +560,17 @@ export class StrategyMarkdownService {
     });
   };
 
+  /**
+   * Records a trailing-stop event when the stop-loss is adjusted.
+   *
+   * Stores the percentage shift and current price when trailing stop moves.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param percentShift - Percentage the stop-loss was shifted
+   * @param currentPrice - Current market price at time of adjustment
+   * @param isBacktest - Whether this is a backtest or live trading event
+   * @param context - Strategy context with strategyName, exchangeName, frameName
+   */
   public trailingStop = async (
     symbol: string,
     percentShift: number,
@@ -420,6 +616,17 @@ export class StrategyMarkdownService {
     });
   };
 
+  /**
+   * Records a trailing-take event when the take-profit is adjusted.
+   *
+   * Stores the percentage shift and current price when trailing take-profit moves.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param percentShift - Percentage the take-profit was shifted
+   * @param currentPrice - Current market price at time of adjustment
+   * @param isBacktest - Whether this is a backtest or live trading event
+   * @param context - Strategy context with strategyName, exchangeName, frameName
+   */
   public trailingTake = async (
     symbol: string,
     percentShift: number,
@@ -465,6 +672,16 @@ export class StrategyMarkdownService {
     });
   };
 
+  /**
+   * Records a breakeven event when the stop-loss is moved to entry price.
+   *
+   * Stores the current price when breakeven protection is activated.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param currentPrice - Current market price at time of breakeven activation
+   * @param isBacktest - Whether this is a backtest or live trading event
+   * @param context - Strategy context with strategyName, exchangeName, frameName
+   */
   public breakeven = async (
     symbol: string,
     currentPrice: number,
@@ -507,6 +724,20 @@ export class StrategyMarkdownService {
     });
   };
 
+  /**
+   * Retrieves aggregated statistics from accumulated strategy events.
+   *
+   * Returns counts for each action type and the full event list from the
+   * ReportStorage for the specified symbol-strategy pair.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param strategyName - Name of the trading strategy
+   * @param exchangeName - Name of the exchange
+   * @param frameName - Timeframe name for backtest identification
+   * @param backtest - Whether to get backtest or live data
+   * @returns Promise resolving to StrategyStatisticsModel with event list and counts
+   * @throws Error if service not initialized (subscribe() not called)
+   */
   public getData = async (
     symbol: string,
     strategyName: StrategyName,
@@ -528,6 +759,23 @@ export class StrategyMarkdownService {
     return storage.getData();
   };
 
+  /**
+   * Generates a markdown report from accumulated strategy events.
+   *
+   * Creates a formatted markdown document containing:
+   * - Header with symbol and strategy name
+   * - Table of all events with configurable columns
+   * - Summary statistics with counts by action type
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param strategyName - Name of the trading strategy
+   * @param exchangeName - Name of the exchange
+   * @param frameName - Timeframe name for backtest identification
+   * @param backtest - Whether to get backtest or live data
+   * @param columns - Column configuration for the event table
+   * @returns Promise resolving to formatted markdown string
+   * @throws Error if service not initialized (subscribe() not called)
+   */
   public getReport = async (
     symbol: string,
     strategyName: StrategyName,
@@ -550,6 +798,24 @@ export class StrategyMarkdownService {
     return storage.getReport(symbol, strategyName, columns);
   };
 
+  /**
+   * Generates and saves a markdown report to disk.
+   *
+   * Creates the output directory if it doesn't exist and writes
+   * the report with a timestamped filename via Markdown.writeData().
+   *
+   * Filename format: `{symbol}_{strategyName}_{exchangeName}[_{frameName}_backtest|_live]-{timestamp}.md`
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param strategyName - Name of the trading strategy
+   * @param exchangeName - Name of the exchange
+   * @param frameName - Timeframe name for backtest identification
+   * @param backtest - Whether to dump backtest or live data
+   * @param path - Output directory path (default: "./dump/strategy")
+   * @param columns - Column configuration for the event table
+   * @returns Promise that resolves when file is written
+   * @throws Error if service not initialized (subscribe() not called)
+   */
   public dump = async (
     symbol: string,
     strategyName: StrategyName,
@@ -574,6 +840,18 @@ export class StrategyMarkdownService {
     await storage.dump(symbol, strategyName, path, columns);
   };
 
+  /**
+   * Clears accumulated events from storage.
+   *
+   * Can clear either a specific symbol-strategy pair or all stored data.
+   *
+   * @param payload - Optional filter to clear specific storage. If omitted, clears all.
+   * @param payload.symbol - Trading pair symbol
+   * @param payload.strategyName - Strategy name
+   * @param payload.exchangeName - Exchange name
+   * @param payload.frameName - Frame name
+   * @param payload.backtest - Backtest mode flag
+   */
   public clear = async (payload?: {
     symbol: string;
     strategyName: StrategyName;
@@ -590,19 +868,32 @@ export class StrategyMarkdownService {
     }
   };
 
+  /**
+   * Initializes the service for event collection.
+   *
+   * Must be called before any events can be collected or reports generated.
+   * Uses singleshot pattern to ensure only one subscription exists at a time.
+   *
+   * @returns Cleanup function that clears the subscription and all accumulated data
+   */
   public subscribe = singleshot(() => {
     this.loggerService.log("strategyMarkdownService subscribe");
     return () => {
       this.subscribe.clear();
-      this.clear();
     };
   });
 
+  /**
+   * Stops event collection and clears all accumulated data.
+   *
+   * Invokes the cleanup function returned by subscribe(), which clears
+   * both the subscription and all ReportStorage instances.
+   * Safe to call multiple times - only acts if subscription exists.
+   */
   public unsubscribe = async () => {
     this.loggerService.log("strategyMarkdownService unsubscribe");
     if (this.subscribe.hasValue()) {
-      const lastSubscription = this.subscribe();
-      lastSubscription();
+      this.subscribe.clear();
     }
   };
 }

@@ -11,6 +11,13 @@ import { FrameName } from "../../../interfaces/Frame.interface";
 import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { StrategyName } from "../../../interfaces/Strategy.interface";
 
+/**
+ * Extracts execution context timestamp for strategy event logging.
+ *
+ * @param self - The StrategyReportService instance to extract context from
+ * @returns Object containing ISO 8601 formatted timestamp, or empty string if no context
+ * @internal
+ */
 const GET_EXECUTION_CONTEXT_FN = (self: StrategyReportService) => {
   if (ExecutionContextService.hasContext()) {
     const { when } = self.executionContextService.context;
@@ -21,6 +28,39 @@ const GET_EXECUTION_CONTEXT_FN = (self: StrategyReportService) => {
   };
 };
 
+/**
+ * Service for persisting strategy management events to JSON report files.
+ *
+ * Handles logging of strategy actions (cancel-scheduled, close-pending, partial-profit,
+ * partial-loss, trailing-stop, trailing-take, breakeven) to persistent storage via
+ * the Report class. Each event is written as a separate JSON record.
+ *
+ * Unlike StrategyMarkdownService which accumulates events in memory for markdown reports,
+ * this service writes each event immediately to disk for audit trail purposes.
+ *
+ * Lifecycle:
+ * - Call subscribe() to enable event logging
+ * - Events are written via Report.writeData() with "strategy" category
+ * - Call unsubscribe() to disable event logging
+ *
+ * @example
+ * ```typescript
+ * // Service is typically used internally by strategy management classes
+ * strategyReportService.subscribe();
+ *
+ * // Events are logged automatically when strategy actions occur
+ * await strategyReportService.partialProfit("BTCUSDT", 50, 50100, false, {
+ *   strategyName: "my-strategy",
+ *   exchangeName: "binance",
+ *   frameName: "1h"
+ * });
+ *
+ * strategyReportService.unsubscribe();
+ * ```
+ *
+ * @see StrategyMarkdownService for in-memory event accumulation and markdown report generation
+ * @see Report for the underlying persistence mechanism
+ */
 export class StrategyReportService {
   readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   readonly executionContextService = inject<TExecutionContextService>(
@@ -30,6 +70,17 @@ export class StrategyReportService {
     TYPES.strategyCoreService,
   );
 
+  /**
+   * Logs a cancel-scheduled event when a scheduled signal is cancelled.
+   *
+   * Retrieves the scheduled signal from StrategyCoreService and writes
+   * the cancellation event to the report file.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param isBacktest - Whether this is a backtest or live trading event
+   * @param context - Strategy context with strategyName, exchangeName, frameName
+   * @param cancelId - Optional identifier for the cancellation reason
+   */
   public cancelScheduled = async (
     symbol: string,
     isBacktest: boolean,
@@ -76,6 +127,17 @@ export class StrategyReportService {
     );
   };
 
+  /**
+   * Logs a close-pending event when a pending signal is closed.
+   *
+   * Retrieves the pending signal from StrategyCoreService and writes
+   * the close event to the report file.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param isBacktest - Whether this is a backtest or live trading event
+   * @param context - Strategy context with strategyName, exchangeName, frameName
+   * @param closeId - Optional identifier for the close reason
+   */
   public closePending = async (
     symbol: string,
     isBacktest: boolean,
@@ -122,6 +184,17 @@ export class StrategyReportService {
     );
   };
 
+  /**
+   * Logs a partial-profit event when a portion of the position is closed at profit.
+   *
+   * Records the percentage closed and current price when partial profit-taking occurs.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param percentToClose - Percentage of position to close (0-100)
+   * @param currentPrice - Current market price at time of partial close
+   * @param isBacktest - Whether this is a backtest or live trading event
+   * @param context - Strategy context with strategyName, exchangeName, frameName
+   */
   public partialProfit = async (
     symbol: string,
     percentToClose: number,
@@ -171,6 +244,17 @@ export class StrategyReportService {
     );
   };
 
+  /**
+   * Logs a partial-loss event when a portion of the position is closed at loss.
+   *
+   * Records the percentage closed and current price when partial loss-cutting occurs.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param percentToClose - Percentage of position to close (0-100)
+   * @param currentPrice - Current market price at time of partial close
+   * @param isBacktest - Whether this is a backtest or live trading event
+   * @param context - Strategy context with strategyName, exchangeName, frameName
+   */
   public partialLoss = async (
     symbol: string,
     percentToClose: number,
@@ -220,6 +304,17 @@ export class StrategyReportService {
     );
   };
 
+  /**
+   * Logs a trailing-stop event when the stop-loss is adjusted.
+   *
+   * Records the percentage shift and current price when trailing stop moves.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param percentShift - Percentage the stop-loss was shifted
+   * @param currentPrice - Current market price at time of adjustment
+   * @param isBacktest - Whether this is a backtest or live trading event
+   * @param context - Strategy context with strategyName, exchangeName, frameName
+   */
   public trailingStop = async (
     symbol: string,
     percentShift: number,
@@ -269,6 +364,17 @@ export class StrategyReportService {
     );
   };
 
+  /**
+   * Logs a trailing-take event when the take-profit is adjusted.
+   *
+   * Records the percentage shift and current price when trailing take-profit moves.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param percentShift - Percentage the take-profit was shifted
+   * @param currentPrice - Current market price at time of adjustment
+   * @param isBacktest - Whether this is a backtest or live trading event
+   * @param context - Strategy context with strategyName, exchangeName, frameName
+   */
   public trailingTake = async (
     symbol: string,
     percentShift: number,
@@ -318,6 +424,16 @@ export class StrategyReportService {
     );
   };
 
+  /**
+   * Logs a breakeven event when the stop-loss is moved to entry price.
+   *
+   * Records the current price when breakeven protection is activated.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param currentPrice - Current market price at time of breakeven activation
+   * @param isBacktest - Whether this is a backtest or live trading event
+   * @param context - Strategy context with strategyName, exchangeName, frameName
+   */
   public breakeven = async (
     symbol: string,
     currentPrice: number,
@@ -364,6 +480,14 @@ export class StrategyReportService {
     );
   };
 
+  /**
+   * Initializes the service for event logging.
+   *
+   * Must be called before any events can be logged. Uses singleshot pattern
+   * to ensure only one subscription exists at a time.
+   *
+   * @returns Cleanup function that clears the subscription when called
+   */
   public subscribe = singleshot(() => {
     this.loggerService.log("strategyReportService subscribe");
     return () => {
@@ -371,6 +495,11 @@ export class StrategyReportService {
     };
   });
 
+  /**
+   * Stops event logging and cleans up the subscription.
+   *
+   * Safe to call multiple times - only clears if subscription exists.
+   */
   public unsubscribe = async () => {
     this.loggerService.log("strategyReportService unsubscribe");
     if (this.subscribe.hasValue()) {
