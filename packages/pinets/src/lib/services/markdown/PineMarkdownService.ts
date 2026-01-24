@@ -79,7 +79,7 @@ function extractRowAtIndex(
 
 function isRowWarmedUp(row: IPlotRow, keys: string[]): boolean {
   for (const key of keys) {
-    if (!row[key]) {
+    if (isUnsafe(row[key])) {
       return false;
     }
   }
