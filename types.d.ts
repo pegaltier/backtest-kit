@@ -18194,6 +18194,26 @@ declare class StrategyReportService {
     unsubscribe: () => Promise<void>;
 }
 
+declare class StrategyMarkdownService {
+    readonly loggerService: LoggerService;
+    readonly methodContextService: {
+        readonly context: IMethodContext;
+    };
+    readonly executionContextService: {
+        readonly context: IExecutionContext;
+    };
+    readonly strategyCoreService: StrategyCoreService;
+    cancelScheduled: (symbol: string, isBacktest: boolean, cancelId?: string) => Promise<void>;
+    closePending: (symbol: string, isBacktest: boolean, closeId?: string) => Promise<void>;
+    partialProfit: (symbol: string, percentToClose: number, currentPrice: number, isBacktest: boolean) => Promise<void>;
+    partialLoss: (symbol: string, percentToClose: number, currentPrice: number, isBacktest: boolean) => Promise<void>;
+    trailingStop: (symbol: string, percentShift: number, currentPrice: number, isBacktest: boolean) => Promise<void>;
+    trailingTake: (symbol: string, percentShift: number, currentPrice: number, isBacktest: boolean) => Promise<void>;
+    breakeven: (symbol: string, currentPrice: number, isBacktest: boolean) => Promise<void>;
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    unsubscribe: () => Promise<void>;
+}
+
 declare const backtest: {
     exchangeValidationService: ExchangeValidationService;
     strategyValidationService: StrategyValidationService;
@@ -18223,6 +18243,7 @@ declare const backtest: {
     partialMarkdownService: PartialMarkdownService;
     breakevenMarkdownService: BreakevenMarkdownService;
     riskMarkdownService: RiskMarkdownService;
+    strategyMarkdownService: StrategyMarkdownService;
     backtestLogicPublicService: BacktestLogicPublicService;
     liveLogicPublicService: LiveLogicPublicService;
     walkerLogicPublicService: WalkerLogicPublicService;

@@ -68,6 +68,7 @@ import PartialReportService from "./services/report/PartialReportService";
 import BreakevenReportService from "./services/report/BreakevenReportService";
 import RiskReportService from "./services/report/RiskReportService";
 import StrategyReportService from "./services/report/StrategyReportService";
+import StrategyMarkdownService from "./services/markdown/StrategyMarkdownService";
 
 const baseServices = {
   loggerService: inject<LoggerService>(TYPES.loggerService),
@@ -197,6 +198,7 @@ const markdownServices = {
     TYPES.breakevenMarkdownService
   ),
   riskMarkdownService: inject<RiskMarkdownService>(TYPES.riskMarkdownService),
+  strategyMarkdownService: inject<StrategyMarkdownService>(TYPES.strategyMarkdownService),
 };
 
 const reportServices = {
