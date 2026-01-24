@@ -379,7 +379,7 @@ export class StrategyCoreService implements TStrategy {
     await this.validate(context);
     const result = await this.strategyConnectionService.closePending(backtest, symbol, context, closeId);
     {
-      this.strategyMarkdownService.closePending(symbol, backtest, context,closeId);
+      this.strategyMarkdownService.closePending(symbol, backtest, context, closeId);
       this.strategyReportService.closePending(symbol, backtest, context, closeId);
     }
     return result;
