@@ -2,9 +2,31 @@ import { inject } from "../../core/di";
 import { PlotModel } from "../../../model/Plot.model";
 import LoggerService from "../base/LoggerService";
 import { TYPES } from "../../core/types";
-import { Markdown, MarkdownName } from "backtest-kit";
+import { ExecutionContextService, Markdown, MarkdownName, MethodContextService, lib } from "backtest-kit";
 
 const TABLE_ROWS_LIMIT = 48;
+
+const GET_METHOD_CONTEXT_FN = () => {
+  if (MethodContextService.hasContext()) {
+    const { exchangeName, frameName, strategyName } = lib.methodContextService.context;
+    return { exchangeName, frameName, strategyName };
+  }
+  return {
+    strategyName: "",
+    exchangeName: "", 
+    frameName: "", 
+  };
+};
+
+const GET_EXECUTION_CONTEXT_FN = () => {
+  if (ExecutionContextService.hasContext()) {
+    const { when } = lib.executionContextService.context;
+    return { when: when.toISOString() };
+  }
+  return {
+    when: "",
+  };
+};
 
 type ResultId = string | number;
 
@@ -71,8 +93,16 @@ function generateMarkdownTable(
 ): string {
   let markdown = "";
 
+  const { when: createdAt } = GET_EXECUTION_CONTEXT_FN();
+
   markdown += `# PineScript Technical Analysis Dump\n\n`;
-  markdown += `**Signal ID**: ${String(signalId)}\n\n`;
+  markdown += `**Signal ID**: ${String(signalId)}\n`;
+
+  if (createdAt) {
+    markdown += `**Current datetime**: ${String(createdAt)}\n`;
+  }
+
+  markdown += "\n";
 
   const header = `| Timestamp | ${keys.join(" | ")} |\n`;
   const separator = `| --- | ${keys.map(() => "---").join(" | ")} |\n`;
@@ -154,14 +184,16 @@ export class PineMarkdownService {
 
     const content = this.getReport(signalId, plots);
 
+    const { exchangeName, frameName, strategyName } = GET_METHOD_CONTEXT_FN();
+
     await Markdown.writeData(<MarkdownName>taName, content, {
       path: outputDir,
       file: `${String(signalId)}.md`,
       symbol: "",
       signalId: String(signalId),
-      strategyName: "",
-      exchangeName: "",
-      frameName: "",
+      strategyName,
+      exchangeName,
+      frameName,
     });
   };
 }
