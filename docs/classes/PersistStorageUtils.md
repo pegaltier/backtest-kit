@@ -39,24 +39,24 @@ getStorageStorage: any
 ### readStorageData
 
 ```ts
-readStorageData: () => Promise<StorageData>
+readStorageData: (backtest: boolean) => Promise<StorageData>
 ```
 
 Reads persisted signals data.
 
-Called by SignalLiveUtils.waitForInit() to restore state.
+Called by StorageLiveUtils/StorageBacktestUtils.waitForInit() to restore state.
 Uses keys() from PersistBase to iterate over all stored signals.
 Returns empty array if no signals exist.
 
 ### writeStorageData
 
 ```ts
-writeStorageData: (signalData: StorageData) => Promise<void>
+writeStorageData: (signalData: StorageData, backtest: boolean) => Promise<void>
 ```
 
 Writes signal data to disk with atomic file writes.
 
-Called by SignalLiveUtils after signal changes to persist state.
+Called by StorageLiveUtils/StorageBacktestUtils after signal changes to persist state.
 Uses signal.id as the storage key for individual file storage.
 Uses atomic writes to prevent corruption on crashes.
 

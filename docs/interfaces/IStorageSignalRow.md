@@ -18,6 +18,14 @@ updatedAt: number
 
 Creation timestamp taken from IStrategyTickResult
 
+### priority
+
+```ts
+priority: number
+```
+
+Storage adapter rewrite priority. Equal to Date.now for live and backtest both
+
 ### status
 
 ```ts
