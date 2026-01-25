@@ -63,6 +63,10 @@ export class StorageBacktestUtils {
   public findById = async (id: StorageId): Promise<IStorageSignalRow | null> => {
     return this._signals.get(id) ?? null;
   }
+
+  public list = async (): Promise<IStorageSignalRow[]> => {
+    return Array.from(this._signals.values());
+  }
 }
 
 export class StorageLiveUtils {
@@ -144,6 +148,11 @@ export class StorageLiveUtils {
   public findById = async (id: StorageId): Promise<IStorageSignalRow | null> => {
     await this.waitForInit();
     return this._signals.get(id) ?? null;
+  }
+
+  public list = async (): Promise<IStorageSignalRow[]> => {
+    await this.waitForInit();
+    return Array.from(this._signals.values());
   }
 }
 
@@ -230,6 +239,14 @@ export class StorageAdapter {
       return result;
     }
     throw new Error(`Storage signal with id ${id} not found`);
+  };
+
+  public listSignalBacktest = async (): Promise<IStorageSignalRow[]> => {
+    return await this._signalBacktestUtils.list();
+  };
+
+  public listSignalLive = async (): Promise<IStorageSignalRow[]> => {
+    return await this._signalLiveUtils.list();
   };
 }
 
