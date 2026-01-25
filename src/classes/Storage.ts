@@ -534,6 +534,9 @@ export class StorageAdapter {
     id: StorageId,
   ): Promise<IStorageSignalRow | null> => {
     backtest.loggerService.info(STORAGE_ADAPTER_METHOD_NAME_FIND_SIGNAL_BY_ID, { id });
+    if (!this.enable.hasValue()) {
+      throw new Error("StorageAdapter is not enabled. Call enable() first.");
+    }
     let result: IStorageSignalRow | null = null;
     if ((result = await this._signalBacktestUtils.findById(id))) {
       return result;
@@ -551,6 +554,9 @@ export class StorageAdapter {
    */
   public listSignalBacktest = async (): Promise<IStorageSignalRow[]> => {
     backtest.loggerService.info(STORAGE_ADAPTER_METHOD_NAME_LIST_SIGNAL_BACKTEST);
+    if (!this.enable.hasValue()) {
+      throw new Error("StorageAdapter is not enabled. Call enable() first.");
+    }
     return await this._signalBacktestUtils.list();
   };
 
@@ -561,6 +567,9 @@ export class StorageAdapter {
    */
   public listSignalLive = async (): Promise<IStorageSignalRow[]> => {
     backtest.loggerService.info(STORAGE_ADAPTER_METHOD_NAME_LIST_SIGNAL_LIVE);
+    if (!this.enable.hasValue()) {
+      throw new Error("StorageAdapter is not enabled. Call enable() first.");
+    }
     return await this._signalLiveUtils.list();
   };
 }
