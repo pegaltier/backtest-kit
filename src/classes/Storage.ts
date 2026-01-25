@@ -14,9 +14,34 @@ const MAX_SIGNALS = 25;
 type StorageId = IStorageSignalRow["id"];
 
 export class StorageBacktestUtils {
-  private readonly _signals = new Map<StorageId, IStorageSignalRow>();
+  private _signals: Map<StorageId, IStorageSignalRow>;
+
+  private waitForInit = singleshot(async () => {
+    const signalList = await PersistStorageAdapter.readStorageData(true);
+    signalList.sort((a, b) => a.updatedAt - b.updatedAt);
+    this._signals = new Map(
+      signalList
+        .slice(-MAX_SIGNALS)
+        .map((signal) => [signal.id, signal]),
+    );
+  });
+
+  private async _updateStorage(): Promise<void> {
+    if (!this._signals) {
+      throw new Error(
+        "StorageBacktestUtils not initialized. Call waitForInit first.",
+      );
+    }
+    const signalList = Array.from(this._signals.values());
+    signalList.sort((a, b) => a.updatedAt - b.updatedAt);
+    await PersistStorageAdapter.writeStorageData(
+      signalList.slice(-MAX_SIGNALS),
+      true,
+    );
+  }
 
   public handleOpened = async (tick: IStrategyTickResultOpened) => {
+    await this.waitForInit();
     const lastStorage = this._signals.get(tick.signal.id);
     if (lastStorage && lastStorage.updatedAt > tick.createdAt) {
       return;
@@ -26,9 +51,11 @@ export class StorageBacktestUtils {
       status: "opened",
       updatedAt: tick.createdAt,
     });
+    await this._updateStorage();
   };
 
   public handleClosed = async (tick: IStrategyTickResultClosed) => {
+    await this.waitForInit();
     const lastStorage = this._signals.get(tick.signal.id);
     if (lastStorage && lastStorage.updatedAt > tick.createdAt) {
       return;
@@ -38,9 +65,11 @@ export class StorageBacktestUtils {
       status: "closed",
       updatedAt: tick.createdAt,
     });
+    await this._updateStorage();
   };
 
   public handleScheduled = async (tick: IStrategyTickResultScheduled) => {
+    await this.waitForInit();
     const lastStorage = this._signals.get(tick.signal.id);
     if (lastStorage && lastStorage.updatedAt > tick.createdAt) {
       return;
@@ -50,9 +79,11 @@ export class StorageBacktestUtils {
       status: "scheduled",
       updatedAt: tick.createdAt,
     });
+    await this._updateStorage();
   };
 
   public handleCancelled = async (tick: IStrategyTickResultCancelled) => {
+    await this.waitForInit();
     const lastStorage = this._signals.get(tick.signal.id);
     if (lastStorage && lastStorage.updatedAt > tick.createdAt) {
       return;
@@ -62,15 +93,18 @@ export class StorageBacktestUtils {
       status: "cancelled",
       updatedAt: tick.createdAt,
     });
+    await this._updateStorage();
   };
 
   public findById = async (
     id: StorageId,
   ): Promise<IStorageSignalRow | null> => {
+    await this.waitForInit();
     return this._signals.get(id) ?? null;
   };
 
   public list = async (): Promise<IStorageSignalRow[]> => {
+    await this.waitForInit();
     return Array.from(this._signals.values());
   };
 }
@@ -79,7 +113,7 @@ export class StorageLiveUtils {
   private _signals: Map<StorageId, IStorageSignalRow>;
 
   private waitForInit = singleshot(async () => {
-    const signalList = await PersistStorageAdapter.readStorageData();
+    const signalList = await PersistStorageAdapter.readStorageData(false);
     signalList.sort((a, b) => a.updatedAt - b.updatedAt);
     this._signals = new Map(
       signalList
@@ -98,6 +132,7 @@ export class StorageLiveUtils {
     signalList.sort((a, b) => a.updatedAt - b.updatedAt);
     await PersistStorageAdapter.writeStorageData(
       signalList.slice(-MAX_SIGNALS),
+      false,
     );
   }
 

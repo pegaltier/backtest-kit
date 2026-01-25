@@ -1488,10 +1488,10 @@ export class PersistStorageUtils {
     PersistBase;
 
   private getStorageStorage = memoize(
-    (): string => `signals`,
-    (): IPersistBase<IStorageSignalRow> =>
+    ([backtest]): string => backtest ? `backtest` : `live`,
+    (backtest: boolean): IPersistBase<IStorageSignalRow> =>
       Reflect.construct(this.PersistStorageFactory, [
-        `signals`,
+        backtest ? `backtest` : `live`,
         `./dump/data/signal-storage/`,
       ])
   );
@@ -1513,18 +1513,19 @@ export class PersistStorageUtils {
   /**
    * Reads persisted signals data.
    *
-   * Called by SignalLiveUtils.waitForInit() to restore state.
+   * Called by StorageLiveUtils/StorageBacktestUtils.waitForInit() to restore state.
    * Uses keys() from PersistBase to iterate over all stored signals.
    * Returns empty array if no signals exist.
    *
+   * @param backtest - If true, reads from backtest storage; otherwise from live storage
    * @returns Promise resolving to array of signal entries
    */
-  public readStorageData = async (): Promise<StorageData> => {
+  public readStorageData = async (backtest: boolean): Promise<StorageData> => {
     swarm.loggerService.info(PERSIST_STORAGE_UTILS_METHOD_NAME_READ_DATA);
 
-    const key = `signals`;
+    const key = backtest ? `backtest` : `live`;
     const isInitial = !this.getStorageStorage.has(key);
-    const stateStorage = this.getStorageStorage();
+    const stateStorage = this.getStorageStorage(backtest);
     await stateStorage.waitForInit(isInitial);
 
     const signals: IStorageSignalRow[] = [];
@@ -1540,21 +1541,23 @@ export class PersistStorageUtils {
   /**
    * Writes signal data to disk with atomic file writes.
    *
-   * Called by SignalLiveUtils after signal changes to persist state.
+   * Called by StorageLiveUtils/StorageBacktestUtils after signal changes to persist state.
    * Uses signal.id as the storage key for individual file storage.
    * Uses atomic writes to prevent corruption on crashes.
    *
-   * @param signalData - Signal entry to persist
+   * @param signalData - Signal entries to persist
+   * @param backtest - If true, writes to backtest storage; otherwise to live storage
    * @returns Promise that resolves when write is complete
    */
   public writeStorageData = async (
-    signalData: StorageData
+    signalData: StorageData,
+    backtest: boolean
   ): Promise<void> => {
     swarm.loggerService.info(PERSIST_STORAGE_UTILS_METHOD_NAME_WRITE_DATA);
 
-    const key = `signals`;
+    const key = backtest ? `backtest` : `live`;
     const isInitial = !this.getStorageStorage.has(key);
-    const stateStorage = this.getStorageStorage();
+    const stateStorage = this.getStorageStorage(backtest);
     await stateStorage.waitForInit(isInitial);
 
     for (const signal of signalData) {
