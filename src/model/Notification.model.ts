@@ -102,6 +102,85 @@ export interface BreakevenAvailableNotification {
 }
 
 /**
+ * Partial profit commit notification.
+ * Emitted when partial profit action is executed.
+ */
+export interface PartialProfitCommitNotification {
+  type: "partial_profit.commit";
+  id: string;
+  timestamp: number;
+  backtest: boolean;
+  symbol: string;
+  strategyName: StrategyName;
+  exchangeName: ExchangeName;
+  percentToClose: number;
+  currentPrice: number;
+}
+
+/**
+ * Partial loss commit notification.
+ * Emitted when partial loss action is executed.
+ */
+export interface PartialLossCommitNotification {
+  type: "partial_loss.commit";
+  id: string;
+  timestamp: number;
+  backtest: boolean;
+  symbol: string;
+  strategyName: StrategyName;
+  exchangeName: ExchangeName;
+  percentToClose: number;
+  currentPrice: number;
+}
+
+/**
+ * Breakeven commit notification.
+ * Emitted when breakeven action is executed.
+ */
+export interface BreakevenCommitNotification {
+  type: "breakeven.commit";
+  id: string;
+  timestamp: number;
+  backtest: boolean;
+  symbol: string;
+  strategyName: StrategyName;
+  exchangeName: ExchangeName;
+  currentPrice: number;
+}
+
+/**
+ * Trailing stop commit notification.
+ * Emitted when trailing stop action is executed.
+ */
+export interface TrailingStopCommitNotification {
+  type: "trailing_stop.commit";
+  id: string;
+  timestamp: number;
+  backtest: boolean;
+  symbol: string;
+  strategyName: StrategyName;
+  exchangeName: ExchangeName;
+  percentShift: number;
+  currentPrice: number;
+}
+
+/**
+ * Trailing take commit notification.
+ * Emitted when trailing take action is executed.
+ */
+export interface TrailingTakeCommitNotification {
+  type: "trailing_take.commit";
+  id: string;
+  timestamp: number;
+  backtest: boolean;
+  symbol: string;
+  strategyName: StrategyName;
+  exchangeName: ExchangeName;
+  percentShift: number;
+  currentPrice: number;
+}
+
+/**
  * Risk rejection notification.
  * Emitted when a signal is rejected due to risk management rules.
  */
@@ -229,6 +308,11 @@ export type NotificationModel =
   | PartialProfitAvailableNotification
   | PartialLossAvailableNotification
   | BreakevenAvailableNotification
+  | PartialProfitCommitNotification
+  | PartialLossCommitNotification
+  | BreakevenCommitNotification
+  | TrailingStopCommitNotification
+  | TrailingTakeCommitNotification
   | RiskRejectionNotification
   | SignalScheduledNotification
   | SignalCancelledNotification

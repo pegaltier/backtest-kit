@@ -8,6 +8,7 @@ import {
   errorEmitter,
   exitEmitter,
   validationSubject,
+  strategyCommitSubject,
 } from "../config/emitters";
 import { NotificationModel } from "../model/Notification.model";
 import { IStrategyTickResult } from "../interfaces/Strategy.interface";
@@ -15,6 +16,7 @@ import { PartialProfitContract } from "../contract/PartialProfit.contract";
 import { PartialLossContract } from "../contract/PartialLoss.contract";
 import { BreakevenContract } from "../contract/Breakeven.contract";
 import { RiskContract } from "../contract/Risk.contract";
+import { StrategyCommitContract } from "../contract/StrategyCommit.contract";
 
 /** Maximum number of notifications to store in history */
 const MAX_NOTIFICATIONS = 250;
@@ -210,6 +212,72 @@ export class NotificationInstance {
   };
 
   /**
+   * Processes strategy commit events.
+   */
+  private _handleStrategyCommit = async (data: StrategyCommitContract) => {
+    if (data.action === "partial-profit") {
+      this._addNotification({
+        type: "partial_profit.commit",
+        id: CREATE_KEY_FN(),
+        timestamp: Date.now(),
+        backtest: data.backtest,
+        symbol: data.symbol,
+        strategyName: data.strategyName,
+        exchangeName: data.exchangeName,
+        percentToClose: data.percentToClose,
+        currentPrice: data.currentPrice,
+      });
+    } else if (data.action === "partial-loss") {
+      this._addNotification({
+        type: "partial_loss.commit",
+        id: CREATE_KEY_FN(),
+        timestamp: Date.now(),
+        backtest: data.backtest,
+        symbol: data.symbol,
+        strategyName: data.strategyName,
+        exchangeName: data.exchangeName,
+        percentToClose: data.percentToClose,
+        currentPrice: data.currentPrice,
+      });
+    } else if (data.action === "breakeven") {
+      this._addNotification({
+        type: "breakeven.commit",
+        id: CREATE_KEY_FN(),
+        timestamp: Date.now(),
+        backtest: data.backtest,
+        symbol: data.symbol,
+        strategyName: data.strategyName,
+        exchangeName: data.exchangeName,
+        currentPrice: data.currentPrice,
+      });
+    } else if (data.action === "trailing-stop") {
+      this._addNotification({
+        type: "trailing_stop.commit",
+        id: CREATE_KEY_FN(),
+        timestamp: Date.now(),
+        backtest: data.backtest,
+        symbol: data.symbol,
+        strategyName: data.strategyName,
+        exchangeName: data.exchangeName,
+        percentShift: data.percentShift,
+        currentPrice: data.currentPrice,
+      });
+    } else if (data.action === "trailing-take") {
+      this._addNotification({
+        type: "trailing_take.commit",
+        id: CREATE_KEY_FN(),
+        timestamp: Date.now(),
+        backtest: data.backtest,
+        symbol: data.symbol,
+        strategyName: data.strategyName,
+        exchangeName: data.exchangeName,
+        percentShift: data.percentShift,
+        currentPrice: data.currentPrice,
+      });
+    }
+  };
+
+  /**
    * Processes risk rejection events.
    */
   private _handleRisk = async (data: RiskContract) => {
@@ -330,6 +398,7 @@ export class NotificationInstance {
     const unProfit = partialProfitSubject.subscribe(this._handlePartialProfit);
     const unLoss = partialLossSubject.subscribe(this._handlePartialLoss);
     const unBreakeven = breakevenSubject.subscribe(this._handleBreakeven);
+    const unStrategyCommit = strategyCommitSubject.subscribe(this._handleStrategyCommit);
     const unRisk = riskSubject.subscribe(this._handleRisk);
     const unError = errorEmitter.subscribe(this._handleError);
     const unExit = exitEmitter.subscribe(this._handleCriticalError);
@@ -340,6 +409,7 @@ export class NotificationInstance {
       () => unProfit(),
       () => unLoss(),
       () => unBreakeven(),
+      () => unStrategyCommit(),
       () => unRisk(),
       () => unError(),
       () => unExit(),
