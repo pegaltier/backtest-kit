@@ -1,7 +1,7 @@
 import { inject } from "../../../core/di";
 import LoggerService from "../../base/LoggerService";
 import TYPES from "../../../core/types";
-import { IStrategyBacktestResult, IStrategyTickResult } from "../../../../interfaces/Strategy.interface";
+import { IStrategyBacktestResult, IStrategyTickResult, IStrategyTickResultOpened } from "../../../../interfaces/Strategy.interface";
 import { ICandleData } from "../../../../interfaces/Exchange.interface";
 import StrategyCoreService from "../../core/StrategyCoreService";
 import ExchangeCoreService from "../../core/ExchangeCoreService";
@@ -239,6 +239,7 @@ export class BacktestLogicPrivateService {
         let backtestResult: IStrategyBacktestResult;
 
         let unScheduleOpen: Function;
+        let scheduleOpen: IStrategyTickResultOpened;
 
         {
           const { strategyName, exchangeName, frameName } = this.methodContextService.context;
@@ -254,6 +255,7 @@ export class BacktestLogicPrivateService {
             }
             return isOk;
           }).connect(async (tick) => {
+            scheduleOpen = tick;
             await signalBacktestEmitter.next(tick);
             await this.actionCoreService.signalBacktest(true, tick, {
               strategyName, 
@@ -328,6 +330,10 @@ export class BacktestLogicPrivateService {
           timeframes[i].getTime() < backtestResult.closeTimestamp
         ) {
           i++;
+        }
+
+        if (scheduleOpen) {
+          yield scheduleOpen;
         }
 
         yield backtestResult;
