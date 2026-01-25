@@ -12,6 +12,8 @@ import {
   IStrategyTickResult,
   StrategyName,
   IStrategy,
+  IStrategyTickResultClosed,
+  IStrategyTickResultCancelled,
 } from "../../../interfaces/Strategy.interface";
 import StrategySchemaService from "../schema/StrategySchemaService";
 import ExchangeConnectionService from "./ExchangeConnectionService";
@@ -607,7 +609,7 @@ export class StrategyConnectionService implements TStrategy {
     symbol: string,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
     candles: ICandleData[]
-  ): Promise<IStrategyBacktestResult> => {
+  ): Promise<IStrategyTickResultClosed | IStrategyTickResultCancelled> => {
     const backtest = this.executionContextService.context.backtest;
     this.loggerService.log("strategyConnectionService backtest", {
       symbol,

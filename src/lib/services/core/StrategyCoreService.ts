@@ -9,6 +9,8 @@ import {
   IStrategyTickResult,
   StrategyName,
   IStrategy,
+  IStrategyTickResultClosed,
+  IStrategyTickResultCancelled,
 } from "../../../interfaces/Strategy.interface";
 import StrategyConnectionService from "../connection/StrategyConnectionService";
 import { ExchangeName, ICandleData } from "../../../interfaces/Exchange.interface";
@@ -301,7 +303,7 @@ export class StrategyCoreService implements TStrategy {
     when: Date,
     backtest: boolean,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
-  ): Promise<IStrategyBacktestResult> => {
+  ): Promise<IStrategyTickResultClosed | IStrategyTickResultCancelled> => {
     this.loggerService.log("strategyCoreService backtest", {
       symbol,
       candleCount: candles.length,

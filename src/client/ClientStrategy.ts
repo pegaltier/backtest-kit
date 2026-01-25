@@ -3884,7 +3884,7 @@ export class ClientStrategy implements IStrategy {
     symbol: string,
     strategyName: StrategyName,
     candles: ICandleData[]
-  ): Promise<IStrategyBacktestResult> {
+  ): Promise<IStrategyTickResultClosed | IStrategyTickResultCancelled> {
     this.params.logger.debug("ClientStrategy backtest", {
       symbol,
       strategyName,

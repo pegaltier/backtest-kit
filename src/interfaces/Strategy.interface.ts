@@ -528,7 +528,7 @@ export type IStrategyTickResult =
 /**
  * Backtest returns closed result (TP/SL or time_expired) or cancelled result (scheduled signal never activated).
  */
-export type IStrategyBacktestResult = IStrategyTickResultClosed | IStrategyTickResultCancelled;
+export type IStrategyBacktestResult = IStrategyTickResultOpened | IStrategyTickResultScheduled | IStrategyTickResultClosed | IStrategyTickResultCancelled;
 
 /**
  * Strategy interface implemented by ClientStrategy.

@@ -174,6 +174,8 @@ export class BacktestLogicPrivateService {
         const signalStartTime = performance.now();
         const signal = result.signal;
 
+        yield result;
+
         this.loggerService.info(
           "backtestLogicPrivateService scheduled signal detected",
           {
@@ -369,6 +371,8 @@ export class BacktestLogicPrivateService {
       if (result.action === "opened") {
         const signalStartTime = performance.now();
         const signal = result.signal;
+
+        yield result;
 
         this.loggerService.info("backtestLogicPrivateService signal opened", {
           symbol,

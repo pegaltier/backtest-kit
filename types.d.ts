@@ -1439,7 +1439,7 @@ type IStrategyTickResult = IStrategyTickResultIdle | IStrategyTickResultSchedule
 /**
  * Backtest returns closed result (TP/SL or time_expired) or cancelled result (scheduled signal never activated).
  */
-type IStrategyBacktestResult = IStrategyTickResultClosed | IStrategyTickResultCancelled;
+type IStrategyBacktestResult = IStrategyTickResultOpened | IStrategyTickResultScheduled | IStrategyTickResultClosed | IStrategyTickResultCancelled;
 /**
  * Strategy interface implemented by ClientStrategy.
  * Defines core strategy execution methods.
@@ -8899,7 +8899,7 @@ declare class BacktestUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => AsyncGenerator<IStrategyTickResultOpened | IStrategyBacktestResult, void, unknown>;
+    }) => AsyncGenerator<IStrategyTickResultScheduled | IStrategyTickResultOpened | IStrategyTickResultClosed | IStrategyTickResultCancelled, void, unknown>;
     /**
      * Runs backtest in background without yielding results.
      *
@@ -13305,7 +13305,7 @@ declare class StrategyCoreService implements TStrategy$1 {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => Promise<IStrategyBacktestResult>;
+    }) => Promise<IStrategyTickResultClosed | IStrategyTickResultCancelled>;
     /**
      * Stops the strategy from generating new signals.
      *
@@ -15954,7 +15954,7 @@ declare class StrategyConnectionService implements TStrategy {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, candles: ICandleData[]) => Promise<IStrategyBacktestResult>;
+    }, candles: ICandleData[]) => Promise<IStrategyTickResultClosed | IStrategyTickResultCancelled>;
     /**
      * Stops the specified strategy from generating new signals.
      *
@@ -17451,7 +17451,7 @@ declare class BacktestLogicPrivateService {
      * }
      * ```
      */
-    run(symbol: string): AsyncGenerator<IStrategyTickResultOpened | IStrategyBacktestResult, void, unknown>;
+    run(symbol: string): AsyncGenerator<IStrategyTickResultScheduled | IStrategyTickResultOpened | IStrategyTickResultClosed | IStrategyTickResultCancelled, void, unknown>;
 }
 
 /**
@@ -17558,7 +17558,7 @@ declare class BacktestLogicPublicService implements TBacktestLogicPrivateService
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => AsyncGenerator<IStrategyTickResultOpened | IStrategyBacktestResult, void, unknown>;
+    }) => AsyncGenerator<IStrategyTickResultScheduled | IStrategyTickResultOpened | IStrategyTickResultClosed | IStrategyTickResultCancelled, void, unknown>;
 }
 
 /**
@@ -17697,7 +17697,7 @@ declare class BacktestCommandService implements TBacktestLogicPublicService {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => AsyncGenerator<IStrategyTickResultOpened | IStrategyBacktestResult, void, unknown>;
+    }) => AsyncGenerator<IStrategyTickResultScheduled | IStrategyTickResultOpened | IStrategyTickResultClosed | IStrategyTickResultCancelled, void, unknown>;
 }
 
 /**
