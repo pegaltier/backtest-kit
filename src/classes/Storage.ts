@@ -18,7 +18,7 @@ export class StorageBacktestUtils {
 
   private waitForInit = singleshot(async () => {
     const signalList = await PersistStorageAdapter.readStorageData(true);
-    signalList.sort((a, b) => a.updatedAt - b.updatedAt);
+    signalList.sort((a, b) => a.priority - b.priority);
     this._signals = new Map(
       signalList
         .slice(-MAX_SIGNALS)
@@ -33,7 +33,7 @@ export class StorageBacktestUtils {
       );
     }
     const signalList = Array.from(this._signals.values());
-    signalList.sort((a, b) => a.updatedAt - b.updatedAt);
+    signalList.sort((a, b) => a.priority - b.priority);
     await PersistStorageAdapter.writeStorageData(
       signalList.slice(-MAX_SIGNALS),
       true,
@@ -49,6 +49,7 @@ export class StorageBacktestUtils {
     this._signals.set(tick.signal.id, {
       ...tick.signal,
       status: "opened",
+      priority: Date.now(),
       updatedAt: tick.createdAt,
     });
     await this._updateStorage();
@@ -63,6 +64,7 @@ export class StorageBacktestUtils {
     this._signals.set(tick.signal.id, {
       ...tick.signal,
       status: "closed",
+      priority: Date.now(),
       updatedAt: tick.createdAt,
     });
     await this._updateStorage();
@@ -77,6 +79,7 @@ export class StorageBacktestUtils {
     this._signals.set(tick.signal.id, {
       ...tick.signal,
       status: "scheduled",
+      priority: Date.now(),
       updatedAt: tick.createdAt,
     });
     await this._updateStorage();
@@ -91,6 +94,7 @@ export class StorageBacktestUtils {
     this._signals.set(tick.signal.id, {
       ...tick.signal,
       status: "cancelled",
+      priority: Date.now(),
       updatedAt: tick.createdAt,
     });
     await this._updateStorage();
@@ -114,7 +118,7 @@ export class StorageLiveUtils {
 
   private waitForInit = singleshot(async () => {
     const signalList = await PersistStorageAdapter.readStorageData(false);
-    signalList.sort((a, b) => a.updatedAt - b.updatedAt);
+    signalList.sort((a, b) => a.priority - b.priority);
     this._signals = new Map(
       signalList
         .slice(-MAX_SIGNALS)
@@ -129,7 +133,7 @@ export class StorageLiveUtils {
       );
     }
     const signalList = Array.from(this._signals.values());
-    signalList.sort((a, b) => a.updatedAt - b.updatedAt);
+    signalList.sort((a, b) => a.priority - b.priority);
     await PersistStorageAdapter.writeStorageData(
       signalList.slice(-MAX_SIGNALS),
       false,
@@ -145,6 +149,7 @@ export class StorageLiveUtils {
     this._signals.set(tick.signal.id, {
       ...tick.signal,
       status: "opened",
+      priority: Date.now(),
       updatedAt: tick.createdAt,
     });
     await this._updateStorage();
@@ -159,6 +164,7 @@ export class StorageLiveUtils {
     this._signals.set(tick.signal.id, {
       ...tick.signal,
       status: "closed",
+      priority: Date.now(),
       updatedAt: tick.createdAt,
     });
     await this._updateStorage();
@@ -173,6 +179,7 @@ export class StorageLiveUtils {
     this._signals.set(tick.signal.id, {
       ...tick.signal,
       status: "scheduled",
+      priority: Date.now(),
       updatedAt: tick.createdAt,
     });
     await this._updateStorage();
@@ -187,6 +194,7 @@ export class StorageLiveUtils {
     this._signals.set(tick.signal.id, {
       ...tick.signal,
       status: "cancelled",
+      priority: Date.now(),
       updatedAt: tick.createdAt,
     });
     await this._updateStorage();
