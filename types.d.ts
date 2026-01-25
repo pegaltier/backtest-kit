@@ -1257,6 +1257,8 @@ interface IStrategyTickResultIdle {
     currentPrice: number;
     /** Whether this event is from backtest mode (true) or live mode (false) */
     backtest: boolean;
+    /** Unix timestamp in milliseconds when this tick result was created (from candle timestamp in backtest or execution context when in live) */
+    createdAt: number;
 }
 /**
  * Tick result: scheduled signal created, waiting for price to reach entry point.
@@ -1279,6 +1281,8 @@ interface IStrategyTickResultScheduled {
     currentPrice: number;
     /** Whether this event is from backtest mode (true) or live mode (false) */
     backtest: boolean;
+    /** Unix timestamp in milliseconds when this tick result was created (from candle timestamp in backtest or execution context when in live) */
+    createdAt: number;
 }
 /**
  * Tick result: scheduled signal is waiting for price to reach entry point.
@@ -1308,6 +1312,8 @@ interface IStrategyTickResultWaiting {
     pnl: IStrategyPnL;
     /** Whether this event is from backtest mode (true) or live mode (false) */
     backtest: boolean;
+    /** Unix timestamp in milliseconds when this tick result was created (from candle timestamp in backtest or execution context when in live) */
+    createdAt: number;
 }
 /**
  * Tick result: new signal just created.
@@ -1330,6 +1336,8 @@ interface IStrategyTickResultOpened {
     currentPrice: number;
     /** Whether this event is from backtest mode (true) or live mode (false) */
     backtest: boolean;
+    /** Unix timestamp in milliseconds when this tick result was created (from candle timestamp in backtest or execution context when in live) */
+    createdAt: number;
 }
 /**
  * Tick result: signal is being monitored.
@@ -1358,6 +1366,8 @@ interface IStrategyTickResultActive {
     pnl: IStrategyPnL;
     /** Whether this event is from backtest mode (true) or live mode (false) */
     backtest: boolean;
+    /** Unix timestamp in milliseconds when this tick result was created (from candle timestamp in backtest or execution context when in live) */
+    createdAt: number;
 }
 /**
  * Tick result: signal closed with PNL.
@@ -1388,6 +1398,8 @@ interface IStrategyTickResultClosed {
     backtest: boolean;
     /** Close ID (only for user-initiated closes with reason "closed") */
     closeId?: string;
+    /** Unix timestamp in milliseconds when this tick result was created (from candle timestamp in backtest or execution context when in live) */
+    createdAt: number;
 }
 /**
  * Tick result: scheduled signal cancelled without opening position.
@@ -1416,6 +1428,8 @@ interface IStrategyTickResultCancelled {
     reason: StrategyCancelReason;
     /** Optional cancellation ID (provided when user calls Backtest.cancel() or Live.cancel()) */
     cancelId?: string;
+    /** Unix timestamp in milliseconds when this tick result was created (from candle timestamp in backtest or execution context when in live) */
+    createdAt: number;
 }
 /**
  * Discriminated union of all tick results.

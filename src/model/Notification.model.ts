@@ -49,8 +49,8 @@ export interface SignalClosedNotification {
  * Partial profit notification.
  * Emitted when signal reaches profit level milestone (10%, 20%, etc).
  */
-export interface PartialProfitNotification {
-  type: "partial.profit";
+export interface PartialProfitAvailableNotification {
+  type: "partial_profit.available";
   id: string;
   timestamp: number;
   backtest: boolean;
@@ -68,8 +68,8 @@ export interface PartialProfitNotification {
  * Partial loss notification.
  * Emitted when signal reaches loss level milestone (-10%, -20%, etc).
  */
-export interface PartialLossNotification {
-  type: "partial.loss";
+export interface PartialLossAvailableNotification {
+  type: "partial_loss.available";
   id: string;
   timestamp: number;
   backtest: boolean;
@@ -78,6 +78,24 @@ export interface PartialLossNotification {
   exchangeName: ExchangeName;
   signalId: string;
   level: PartialLevel;
+  currentPrice: number;
+  priceOpen: number;
+  position: "long" | "short";
+}
+
+/**
+ * Breakeven available notification.
+ * Emitted when signal's stop-loss is moved to breakeven (entry price).
+ */
+export interface BreakevenAvailableNotification {
+  type: "breakeven.available";
+  id: string;
+  timestamp: number;
+  backtest: boolean;
+  symbol: string;
+  strategyName: StrategyName;
+  exchangeName: ExchangeName;
+  signalId: string;
   currentPrice: number;
   priceOpen: number;
   position: "long" | "short";
@@ -141,34 +159,6 @@ export interface SignalCancelledNotification {
 }
 
 /**
- * Backtest completed notification.
- * Emitted when backtest execution completes.
- */
-export interface BacktestDoneNotification {
-  type: "backtest.done";
-  id: string;
-  timestamp: number;
-  backtest: true;
-  symbol: string;
-  strategyName: StrategyName;
-  exchangeName: ExchangeName;
-}
-
-/**
- * Live trading completed notification.
- * Emitted when live trading execution completes.
- */
-export interface LiveDoneNotification {
-  type: "live.done";
-  id: string;
-  timestamp: number;
-  backtest: false;
-  symbol: string;
-  strategyName: StrategyName;
-  exchangeName: ExchangeName;
-}
-
-/**
  * Error notification.
  * Emitted for recoverable errors in background tasks.
  */
@@ -208,23 +198,6 @@ export interface ValidationErrorNotification {
 }
 
 /**
- * Progress update notification.
- * Emitted during backtest execution.
- */
-export interface ProgressBacktestNotification {
-  type: "progress.backtest";
-  id: string;
-  timestamp: number;
-  backtest: true;
-  exchangeName: ExchangeName;
-  strategyName: StrategyName;
-  symbol: string;
-  totalFrames: number;
-  processedFrames: number;
-  progress: number; // 0.0 to 1.0
-}
-
-/**
  * Root discriminated union of all notification types.
  * Type discrimination is done via the `type` field.
  *
@@ -253,16 +226,14 @@ export interface ProgressBacktestNotification {
 export type NotificationModel =
   | SignalOpenedNotification
   | SignalClosedNotification
-  | PartialProfitNotification
-  | PartialLossNotification
+  | PartialProfitAvailableNotification
+  | PartialLossAvailableNotification
+  | BreakevenAvailableNotification
   | RiskRejectionNotification
   | SignalScheduledNotification
   | SignalCancelledNotification
-  | BacktestDoneNotification
-  | LiveDoneNotification
   | InfoErrorNotification
   | CriticalErrorNotification
-  | ValidationErrorNotification
-  | ProgressBacktestNotification;
+  | ValidationErrorNotification;
 
 export default NotificationModel;
