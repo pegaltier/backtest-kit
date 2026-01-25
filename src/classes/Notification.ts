@@ -94,6 +94,7 @@ export class NotificationInstance {
         priceTakeProfit: data.signal.priceTakeProfit,
         priceStopLoss: data.signal.priceStopLoss,
         note: data.signal.note,
+        createdAt: data.createdAt,
       });
     } else if (data.action === "closed") {
       const durationMs = data.closeTimestamp - data.signal.pendingAt;
@@ -115,6 +116,7 @@ export class NotificationInstance {
         closeReason: data.closeReason,
         duration: durationMin,
         note: data.signal.note,
+        createdAt: data.createdAt,
       });
     } else if (data.action === "scheduled") {
       this._addNotification({
@@ -130,6 +132,7 @@ export class NotificationInstance {
         priceOpen: data.signal.priceOpen,
         scheduledAt: data.signal.scheduledAt,
         currentPrice: data.currentPrice,
+        createdAt: data.createdAt,
       });
     } else if (data.action === "cancelled") {
       const durationMs = data.closeTimestamp - data.signal.scheduledAt;
@@ -148,6 +151,7 @@ export class NotificationInstance {
         cancelReason: data.reason,
         cancelId: data.cancelId,
         duration: durationMin,
+        createdAt: data.createdAt,
       });
     }
   };

@@ -21,6 +21,8 @@ export interface SignalOpenedNotification {
   priceTakeProfit: number;
   priceStopLoss: number;
   note?: string;
+  /** Unix timestamp in milliseconds when the tick result was created (from candle timestamp in backtest or execution context when in live) */
+  createdAt: number;
 }
 
 /**
@@ -43,6 +45,8 @@ export interface SignalClosedNotification {
   closeReason: string;
   duration: number; // minutes
   note?: string;
+  /** Unix timestamp in milliseconds when the tick result was created (from candle timestamp in backtest or execution context when in live) */
+  createdAt: number;
 }
 
 /**
@@ -216,6 +220,8 @@ export interface SignalScheduledNotification {
   priceOpen: number;
   scheduledAt: number;
   currentPrice: number;
+  /** Unix timestamp in milliseconds when the tick result was created (from candle timestamp in backtest or execution context when in live) */
+  createdAt: number;
 }
 
 /**
@@ -235,6 +241,8 @@ export interface SignalCancelledNotification {
   cancelReason: string;
   cancelId: string;
   duration: number; // minutes
+  /** Unix timestamp in milliseconds when the tick result was created (from candle timestamp in backtest or execution context when in live) */
+  createdAt: number;
 }
 
 /**

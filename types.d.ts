@@ -6489,8 +6489,8 @@ interface SignalClosedNotification {
  * Partial profit notification.
  * Emitted when signal reaches profit level milestone (10%, 20%, etc).
  */
-interface PartialProfitNotification {
-    type: "partial.profit";
+interface PartialProfitAvailableNotification {
+    type: "partial_profit.available";
     id: string;
     timestamp: number;
     backtest: boolean;
@@ -6507,8 +6507,8 @@ interface PartialProfitNotification {
  * Partial loss notification.
  * Emitted when signal reaches loss level milestone (-10%, -20%, etc).
  */
-interface PartialLossNotification {
-    type: "partial.loss";
+interface PartialLossAvailableNotification {
+    type: "partial_loss.available";
     id: string;
     timestamp: number;
     backtest: boolean;
@@ -6520,6 +6520,97 @@ interface PartialLossNotification {
     currentPrice: number;
     priceOpen: number;
     position: "long" | "short";
+}
+/**
+ * Breakeven available notification.
+ * Emitted when signal's stop-loss is moved to breakeven (entry price).
+ */
+interface BreakevenAvailableNotification {
+    type: "breakeven.available";
+    id: string;
+    timestamp: number;
+    backtest: boolean;
+    symbol: string;
+    strategyName: StrategyName;
+    exchangeName: ExchangeName;
+    signalId: string;
+    currentPrice: number;
+    priceOpen: number;
+    position: "long" | "short";
+}
+/**
+ * Partial profit commit notification.
+ * Emitted when partial profit action is executed.
+ */
+interface PartialProfitCommitNotification {
+    type: "partial_profit.commit";
+    id: string;
+    timestamp: number;
+    backtest: boolean;
+    symbol: string;
+    strategyName: StrategyName;
+    exchangeName: ExchangeName;
+    percentToClose: number;
+    currentPrice: number;
+}
+/**
+ * Partial loss commit notification.
+ * Emitted when partial loss action is executed.
+ */
+interface PartialLossCommitNotification {
+    type: "partial_loss.commit";
+    id: string;
+    timestamp: number;
+    backtest: boolean;
+    symbol: string;
+    strategyName: StrategyName;
+    exchangeName: ExchangeName;
+    percentToClose: number;
+    currentPrice: number;
+}
+/**
+ * Breakeven commit notification.
+ * Emitted when breakeven action is executed.
+ */
+interface BreakevenCommitNotification {
+    type: "breakeven.commit";
+    id: string;
+    timestamp: number;
+    backtest: boolean;
+    symbol: string;
+    strategyName: StrategyName;
+    exchangeName: ExchangeName;
+    currentPrice: number;
+}
+/**
+ * Trailing stop commit notification.
+ * Emitted when trailing stop action is executed.
+ */
+interface TrailingStopCommitNotification {
+    type: "trailing_stop.commit";
+    id: string;
+    timestamp: number;
+    backtest: boolean;
+    symbol: string;
+    strategyName: StrategyName;
+    exchangeName: ExchangeName;
+    percentShift: number;
+    currentPrice: number;
+}
+/**
+ * Trailing take commit notification.
+ * Emitted when trailing take action is executed.
+ */
+interface TrailingTakeCommitNotification {
+    type: "trailing_take.commit";
+    id: string;
+    timestamp: number;
+    backtest: boolean;
+    symbol: string;
+    strategyName: StrategyName;
+    exchangeName: ExchangeName;
+    percentShift: number;
+    currentPrice: number;
 }
 /**
  * Risk rejection notification.
@@ -6576,32 +6667,6 @@ interface SignalCancelledNotification {
     duration: number;
 }
 /**
- * Backtest completed notification.
- * Emitted when backtest execution completes.
- */
-interface BacktestDoneNotification {
-    type: "backtest.done";
-    id: string;
-    timestamp: number;
-    backtest: true;
-    symbol: string;
-    strategyName: StrategyName;
-    exchangeName: ExchangeName;
-}
-/**
- * Live trading completed notification.
- * Emitted when live trading execution completes.
- */
-interface LiveDoneNotification {
-    type: "live.done";
-    id: string;
-    timestamp: number;
-    backtest: false;
-    symbol: string;
-    strategyName: StrategyName;
-    exchangeName: ExchangeName;
-}
-/**
  * Error notification.
  * Emitted for recoverable errors in background tasks.
  */
@@ -6638,22 +6703,6 @@ interface ValidationErrorNotification {
     backtest: boolean;
 }
 /**
- * Progress update notification.
- * Emitted during backtest execution.
- */
-interface ProgressBacktestNotification {
-    type: "progress.backtest";
-    id: string;
-    timestamp: number;
-    backtest: true;
-    exchangeName: ExchangeName;
-    strategyName: StrategyName;
-    symbol: string;
-    totalFrames: number;
-    processedFrames: number;
-    progress: number;
-}
-/**
  * Root discriminated union of all notification types.
  * Type discrimination is done via the `type` field.
  *
@@ -6679,7 +6728,7 @@ interface ProgressBacktestNotification {
  * }
  * ```
  */
-type NotificationModel = SignalOpenedNotification | SignalClosedNotification | PartialProfitNotification | PartialLossNotification | RiskRejectionNotification | SignalScheduledNotification | SignalCancelledNotification | BacktestDoneNotification | LiveDoneNotification | InfoErrorNotification | CriticalErrorNotification | ValidationErrorNotification | ProgressBacktestNotification;
+type NotificationModel = SignalOpenedNotification | SignalClosedNotification | PartialProfitAvailableNotification | PartialLossAvailableNotification | BreakevenAvailableNotification | PartialProfitCommitNotification | PartialLossCommitNotification | BreakevenCommitNotification | TrailingStopCommitNotification | TrailingTakeCommitNotification | RiskRejectionNotification | SignalScheduledNotification | SignalCancelledNotification | InfoErrorNotification | CriticalErrorNotification | ValidationErrorNotification;
 
 /**
  * Unified tick event data for report generation.
@@ -19099,4 +19148,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { ActionBase, type ActivePingContract, Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleData, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOrderBookData, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, MethodContextService, type MetricStats, Notification, type NotificationModel, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, Strategy, type StrategyActionType, type StrategyCommitContract, type StrategyEvent, type StrategyStatisticsModel, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialProfit, commitTrailingStop, commitTrailingTake, emitters, formatPrice, formatQuantity, get, getActionSchema, getAveragePrice, getBacktestTimeframe, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getExchangeSchema, getFrameSchema, getMode, getOrderBook, getRawCandles, getRiskSchema, getSizingSchema, getStrategySchema, getSymbol, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenStrategyCommit, listenStrategyCommitOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, roundTicks, set, setColumns, setConfig, setLogger, stopStrategy, validate };
+export { ActionBase, type ActivePingContract, Backtest, type BacktestStatisticsModel, Breakeven, type BreakevenAvailableNotification, type BreakevenCommitNotification, type BreakevenContract, type BreakevenData, Cache, type CandleData, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOrderBookData, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, MethodContextService, type MetricStats, Notification, type NotificationModel, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossAvailableNotification, type PartialLossCommitNotification, type PartialLossContract, type PartialProfitAvailableNotification, type PartialProfitCommitNotification, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, Strategy, type StrategyActionType, type StrategyCommitContract, type StrategyEvent, type StrategyStatisticsModel, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type TrailingStopCommitNotification, type TrailingTakeCommitNotification, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialProfit, commitTrailingStop, commitTrailingTake, emitters, formatPrice, formatQuantity, get, getActionSchema, getAveragePrice, getBacktestTimeframe, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getExchangeSchema, getFrameSchema, getMode, getOrderBook, getRawCandles, getRiskSchema, getSizingSchema, getStrategySchema, getSymbol, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenStrategyCommit, listenStrategyCommitOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, roundTicks, set, setColumns, setConfig, setLogger, stopStrategy, validate };
