@@ -1137,6 +1137,8 @@ interface IPublicSignalRow extends ISignalRow {
 interface IStorageSignalRow extends IPublicSignalRow {
     /** Creation timestamp taken from IStrategyTickResult */
     updatedAt: number;
+    /** Storage adapter rewrite priority. Equal to Date.now for live and backtest both */
+    priority: number;
     /** Current status of the signal */
     status: "opened" | "scheduled" | "closed" | "cancelled";
 }
@@ -8086,24 +8088,26 @@ declare class PersistStorageUtils {
     /**
      * Reads persisted signals data.
      *
-     * Called by SignalLiveUtils.waitForInit() to restore state.
+     * Called by StorageLiveUtils/StorageBacktestUtils.waitForInit() to restore state.
      * Uses keys() from PersistBase to iterate over all stored signals.
      * Returns empty array if no signals exist.
      *
+     * @param backtest - If true, reads from backtest storage; otherwise from live storage
      * @returns Promise resolving to array of signal entries
      */
-    readStorageData: () => Promise<StorageData>;
+    readStorageData: (backtest: boolean) => Promise<StorageData>;
     /**
      * Writes signal data to disk with atomic file writes.
      *
-     * Called by SignalLiveUtils after signal changes to persist state.
+     * Called by StorageLiveUtils/StorageBacktestUtils after signal changes to persist state.
      * Uses signal.id as the storage key for individual file storage.
      * Uses atomic writes to prevent corruption on crashes.
      *
-     * @param signalData - Signal entry to persist
+     * @param signalData - Signal entries to persist
+     * @param backtest - If true, writes to backtest storage; otherwise to live storage
      * @returns Promise that resolves when write is complete
      */
-    writeStorageData: (signalData: StorageData) => Promise<void>;
+    writeStorageData: (signalData: StorageData, backtest: boolean) => Promise<void>;
     /**
      * Switches to the default JSON persist adapter.
      * All future persistence writes will use JSON storage.
@@ -12442,7 +12446,9 @@ declare const Risk: RiskUtils;
 
 type StorageId = IStorageSignalRow["id"];
 declare class StorageBacktestUtils {
-    private readonly _signals;
+    private _signals;
+    private waitForInit;
+    private _updateStorage;
     handleOpened: (tick: IStrategyTickResultOpened) => Promise<void>;
     handleClosed: (tick: IStrategyTickResultClosed) => Promise<void>;
     handleScheduled: (tick: IStrategyTickResultScheduled) => Promise<void>;

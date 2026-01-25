@@ -55,12 +55,18 @@ frameCoreService: any
 methodContextService: any
 ```
 
+### actionCoreService
+
+```ts
+actionCoreService: any
+```
+
 ## Methods
 
 ### run
 
 ```ts
-run(symbol: string): AsyncGenerator<IStrategyBacktestResult, void, unknown>;
+run(symbol: string): AsyncGenerator<IStrategyTickResultScheduled | IStrategyTickResultOpened | IStrategyTickResultClosed | IStrategyTickResultCancelled, void, unknown>;
 ```
 
 Runs backtest for a symbol, streaming closed signals as async generator.

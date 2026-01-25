@@ -150,7 +150,7 @@ Evaluates current market conditions and returns signal state.
 ### backtest
 
 ```ts
-backtest: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }, candles: ICandleData[]) => Promise<IStrategyBacktestResult>
+backtest: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }, candles: ICandleData[]) => Promise<IStrategyTickResultClosed | IStrategyTickResultCancelled>
 ```
 
 Executes backtest for current strategy with provided candles.
