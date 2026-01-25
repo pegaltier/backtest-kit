@@ -12445,35 +12445,215 @@ declare class RiskUtils {
 declare const Risk: RiskUtils;
 
 type StorageId = IStorageSignalRow["id"];
+/**
+ * Utility class for managing backtest signal history.
+ *
+ * Stores trading signal history for admin dashboard display during backtesting
+ * with automatic initialization, deduplication, and storage limits.
+ *
+ * @example
+ * ```typescript
+ * import { StorageBacktestUtils } from "./classes/Storage";
+ *
+ * const storage = new StorageBacktestUtils();
+ *
+ * // Handle signal events
+ * await storage.handleOpened(tickResult);
+ * await storage.handleClosed(tickResult);
+ *
+ * // Query signals
+ * const signal = await storage.findById("signal-123");
+ * const allSignals = await storage.list();
+ * ```
+ */
 declare class StorageBacktestUtils {
     private _signals;
+    /**
+     * Initializes storage by loading existing signal history from persist layer.
+     * Uses singleshot to ensure initialization happens only once.
+     */
     private waitForInit;
+    /**
+     * Persists current signal history to storage.
+     * Sorts by priority and limits to MAX_SIGNALS entries.
+     *
+     * @throws Error if storage not initialized
+     */
     private _updateStorage;
+    /**
+     * Handles signal opened event.
+     *
+     * @param tick - Tick result containing opened signal data
+     * @returns Promise resolving when storage is updated
+     */
     handleOpened: (tick: IStrategyTickResultOpened) => Promise<void>;
+    /**
+     * Handles signal closed event.
+     *
+     * @param tick - Tick result containing closed signal data
+     * @returns Promise resolving when storage is updated
+     */
     handleClosed: (tick: IStrategyTickResultClosed) => Promise<void>;
+    /**
+     * Handles signal scheduled event.
+     *
+     * @param tick - Tick result containing scheduled signal data
+     * @returns Promise resolving when storage is updated
+     */
     handleScheduled: (tick: IStrategyTickResultScheduled) => Promise<void>;
+    /**
+     * Handles signal cancelled event.
+     *
+     * @param tick - Tick result containing cancelled signal data
+     * @returns Promise resolving when storage is updated
+     */
     handleCancelled: (tick: IStrategyTickResultCancelled) => Promise<void>;
+    /**
+     * Finds a signal by its unique identifier.
+     *
+     * @param id - Signal identifier
+     * @returns Promise resolving to signal row or null if not found
+     */
     findById: (id: StorageId) => Promise<IStorageSignalRow | null>;
+    /**
+     * Lists all stored backtest signals.
+     *
+     * @returns Promise resolving to array of signal rows
+     */
     list: () => Promise<IStorageSignalRow[]>;
 }
+/**
+ * Utility class for managing live trading signal history.
+ *
+ * Stores trading signal history for admin dashboard display during live trading
+ * with automatic initialization, deduplication, and storage limits.
+ *
+ * @example
+ * ```typescript
+ * import { StorageLiveUtils } from "./classes/Storage";
+ *
+ * const storage = new StorageLiveUtils();
+ *
+ * // Handle signal events
+ * await storage.handleOpened(tickResult);
+ * await storage.handleClosed(tickResult);
+ *
+ * // Query signals
+ * const signal = await storage.findById("signal-123");
+ * const allSignals = await storage.list();
+ * ```
+ */
 declare class StorageLiveUtils {
     private _signals;
+    /**
+     * Initializes storage by loading existing signal history from persist layer.
+     * Uses singleshot to ensure initialization happens only once.
+     */
     private waitForInit;
+    /**
+     * Persists current signal history to storage.
+     * Sorts by priority and limits to MAX_SIGNALS entries.
+     *
+     * @throws Error if storage not initialized
+     */
     private _updateStorage;
+    /**
+     * Handles signal opened event.
+     *
+     * @param tick - Tick result containing opened signal data
+     * @returns Promise resolving when history is updated
+     */
     handleOpened: (tick: IStrategyTickResultOpened) => Promise<void>;
+    /**
+     * Handles signal closed event.
+     *
+     * @param tick - Tick result containing closed signal data
+     * @returns Promise resolving when history is updated
+     */
     handleClosed: (tick: IStrategyTickResultClosed) => Promise<void>;
+    /**
+     * Handles signal scheduled event.
+     *
+     * @param tick - Tick result containing scheduled signal data
+     * @returns Promise resolving when history is updated
+     */
     handleScheduled: (tick: IStrategyTickResultScheduled) => Promise<void>;
+    /**
+     * Handles signal cancelled event.
+     *
+     * @param tick - Tick result containing cancelled signal data
+     * @returns Promise resolving when history is updated
+     */
     handleCancelled: (tick: IStrategyTickResultCancelled) => Promise<void>;
+    /**
+     * Finds a signal by its unique identifier.
+     *
+     * @param id - Signal identifier
+     * @returns Promise resolving to signal row or null if not found
+     */
     findById: (id: StorageId) => Promise<IStorageSignalRow | null>;
+    /**
+     * Lists all stored live signals.
+     *
+     * @returns Promise resolving to array of signal rows
+     */
     list: () => Promise<IStorageSignalRow[]>;
 }
+/**
+ * Main storage adapter for signal history management.
+ *
+ * Provides unified interface for accessing backtest and live signal history
+ * for admin dashboard. Subscribes to signal emitters and automatically
+ * updates history on signal events.
+ *
+ * @example
+ * ```typescript
+ * import { Storage } from "./classes/Storage";
+ *
+ * // Enable signal history tracking
+ * const unsubscribe = Storage.enable();
+ *
+ * // Query signals
+ * const backtestSignals = await Storage.listSignalBacktest();
+ * const liveSignals = await Storage.listSignalLive();
+ * const signal = await Storage.findSignalById("signal-123");
+ *
+ * // Disable tracking
+ * Storage.disable();
+ * ```
+ */
 declare class StorageAdapter {
     _signalLiveUtils: StorageLiveUtils;
     _signalBacktestUtils: StorageBacktestUtils;
+    /**
+     * Enables signal history tracking by subscribing to emitters.
+     *
+     * @returns Cleanup function to unsubscribe from all emitters
+     */
     enable: (() => () => void) & functools_kit.ISingleshotClearable;
+    /**
+     * Disables signal history tracking by unsubscribing from emitters.
+     */
     disable: () => void;
+    /**
+     * Finds a signal by ID across both backtest and live history.
+     *
+     * @param id - Signal identifier
+     * @returns Promise resolving to signal row
+     * @throws Error if signal not found in either storage
+     */
     findSignalById: (id: StorageId) => Promise<IStorageSignalRow | null>;
+    /**
+     * Lists all backtest signal history.
+     *
+     * @returns Promise resolving to array of backtest signal rows
+     */
     listSignalBacktest: () => Promise<IStorageSignalRow[]>;
+    /**
+     * Lists all live signal history.
+     *
+     * @returns Promise resolving to array of live signal rows
+     */
     listSignalLive: () => Promise<IStorageSignalRow[]>;
 }
 declare const Storage: StorageAdapter;
