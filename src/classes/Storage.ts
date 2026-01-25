@@ -21,7 +21,6 @@ export class StorageBacktestUtils {
       status: "opened",
       createdAt: tick.createdAt,
     });
-    
   }
 
   public handleClosed = async (tick: IStrategyTickResultClosed) => {
