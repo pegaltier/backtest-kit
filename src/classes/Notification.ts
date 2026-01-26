@@ -3,21 +3,20 @@ import {
   signalEmitter,
   partialProfitSubject,
   partialLossSubject,
+  breakevenSubject,
   riskSubject,
-  doneLiveSubject,
-  doneBacktestSubject,
   errorEmitter,
   exitEmitter,
   validationSubject,
-  progressBacktestEmitter,
+  strategyCommitSubject,
 } from "../config/emitters";
 import { NotificationModel } from "../model/Notification.model";
 import { IStrategyTickResult } from "../interfaces/Strategy.interface";
 import { PartialProfitContract } from "../contract/PartialProfit.contract";
 import { PartialLossContract } from "../contract/PartialLoss.contract";
+import { BreakevenContract } from "../contract/Breakeven.contract";
 import { RiskContract } from "../contract/Risk.contract";
-import { DoneContract } from "../contract/Done.contract";
-import { ProgressBacktestContract } from "../contract/ProgressBacktest.contract";
+import { StrategyCommitContract } from "../contract/StrategyCommit.contract";
 
 /** Maximum number of notifications to store in history */
 const MAX_NOTIFICATIONS = 250;
@@ -78,6 +77,7 @@ export class NotificationInstance {
 
   /**
    * Processes signal events and creates appropriate notifications.
+   * Sorts signal notifications by createdAt to maintain chronological order.
    */
   private _handleSignal = async (data: IStrategyTickResult) => {
     if (data.action === "opened") {
@@ -95,6 +95,7 @@ export class NotificationInstance {
         priceTakeProfit: data.signal.priceTakeProfit,
         priceStopLoss: data.signal.priceStopLoss,
         note: data.signal.note,
+        createdAt: data.createdAt,
       });
     } else if (data.action === "closed") {
       const durationMs = data.closeTimestamp - data.signal.pendingAt;
@@ -116,6 +117,7 @@ export class NotificationInstance {
         closeReason: data.closeReason,
         duration: durationMin,
         note: data.signal.note,
+        createdAt: data.createdAt,
       });
     } else if (data.action === "scheduled") {
       this._addNotification({
@@ -131,6 +133,7 @@ export class NotificationInstance {
         priceOpen: data.signal.priceOpen,
         scheduledAt: data.signal.scheduledAt,
         currentPrice: data.currentPrice,
+        createdAt: data.createdAt,
       });
     } else if (data.action === "cancelled") {
       const durationMs = data.closeTimestamp - data.signal.scheduledAt;
@@ -149,8 +152,16 @@ export class NotificationInstance {
         cancelReason: data.reason,
         cancelId: data.cancelId,
         duration: durationMin,
+        createdAt: data.createdAt,
       });
     }
+
+    // Sort signal notifications by createdAt (newest first)
+    this._notifications.sort((a, b) => {
+      const aCreatedAt = "createdAt" in a ? a.createdAt : 0;
+      const bCreatedAt = "createdAt" in b ? b.createdAt : 0;
+      return bCreatedAt - aCreatedAt;
+    });
   };
 
   /**
@@ -158,7 +169,7 @@ export class NotificationInstance {
    */
   private _handlePartialProfit = async (data: PartialProfitContract) => {
     this._addNotification({
-      type: "partial.profit",
+      type: "partial_profit.available",
       id: CREATE_KEY_FN(),
       timestamp: data.timestamp,
       backtest: data.backtest,
@@ -178,7 +189,7 @@ export class NotificationInstance {
    */
   private _handlePartialLoss = async (data: PartialLossContract) => {
     this._addNotification({
-      type: "partial.loss",
+      type: "partial_loss.available",
       id: CREATE_KEY_FN(),
       timestamp: data.timestamp,
       backtest: data.backtest,
@@ -191,6 +202,91 @@ export class NotificationInstance {
       priceOpen: data.data.priceOpen,
       position: data.data.position,
     });
+  };
+
+  /**
+   * Processes breakeven events.
+   */
+  private _handleBreakeven = async (data: BreakevenContract) => {
+    this._addNotification({
+      type: "breakeven.available",
+      id: CREATE_KEY_FN(),
+      timestamp: data.timestamp,
+      backtest: data.backtest,
+      symbol: data.symbol,
+      strategyName: data.strategyName,
+      exchangeName: data.exchangeName,
+      signalId: data.data.id,
+      currentPrice: data.currentPrice,
+      priceOpen: data.data.priceOpen,
+      position: data.data.position,
+    });
+  };
+
+  /**
+   * Processes strategy commit events.
+   */
+  private _handleStrategyCommit = async (data: StrategyCommitContract) => {
+    if (data.action === "partial-profit") {
+      this._addNotification({
+        type: "partial_profit.commit",
+        id: CREATE_KEY_FN(),
+        timestamp: Date.now(),
+        backtest: data.backtest,
+        symbol: data.symbol,
+        strategyName: data.strategyName,
+        exchangeName: data.exchangeName,
+        percentToClose: data.percentToClose,
+        currentPrice: data.currentPrice,
+      });
+    } else if (data.action === "partial-loss") {
+      this._addNotification({
+        type: "partial_loss.commit",
+        id: CREATE_KEY_FN(),
+        timestamp: Date.now(),
+        backtest: data.backtest,
+        symbol: data.symbol,
+        strategyName: data.strategyName,
+        exchangeName: data.exchangeName,
+        percentToClose: data.percentToClose,
+        currentPrice: data.currentPrice,
+      });
+    } else if (data.action === "breakeven") {
+      this._addNotification({
+        type: "breakeven.commit",
+        id: CREATE_KEY_FN(),
+        timestamp: Date.now(),
+        backtest: data.backtest,
+        symbol: data.symbol,
+        strategyName: data.strategyName,
+        exchangeName: data.exchangeName,
+        currentPrice: data.currentPrice,
+      });
+    } else if (data.action === "trailing-stop") {
+      this._addNotification({
+        type: "trailing_stop.commit",
+        id: CREATE_KEY_FN(),
+        timestamp: Date.now(),
+        backtest: data.backtest,
+        symbol: data.symbol,
+        strategyName: data.strategyName,
+        exchangeName: data.exchangeName,
+        percentShift: data.percentShift,
+        currentPrice: data.currentPrice,
+      });
+    } else if (data.action === "trailing-take") {
+      this._addNotification({
+        type: "trailing_take.commit",
+        id: CREATE_KEY_FN(),
+        timestamp: Date.now(),
+        backtest: data.backtest,
+        symbol: data.symbol,
+        strategyName: data.strategyName,
+        exchangeName: data.exchangeName,
+        percentShift: data.percentShift,
+        currentPrice: data.currentPrice,
+      });
+    }
   };
 
   /**
@@ -210,36 +306,6 @@ export class NotificationInstance {
       activePositionCount: data.activePositionCount,
       currentPrice: data.currentPrice,
       pendingSignal: data.pendingSignal,
-    });
-  };
-
-  /**
-   * Processes done events (live/backtest).
-   */
-  private _handleDoneLive = async (data: DoneContract) => {
-    this._addNotification({
-      type: "live.done",
-      id: CREATE_KEY_FN(),
-      timestamp: Date.now(),
-      backtest: false,
-      symbol: data.symbol,
-      strategyName: data.strategyName,
-      exchangeName: data.exchangeName,
-    });
-  };
-
-  /**
-   * Processes done events (backtest).
-   */
-  private _handleDoneBacktest = async (data: DoneContract) => {
-    this._addNotification({
-      type: "backtest.done",
-      id: CREATE_KEY_FN(),
-      timestamp: Date.now(),
-      backtest: true,
-      symbol: data.symbol,
-      strategyName: data.strategyName,
-      exchangeName: data.exchangeName,
     });
   };
 
@@ -282,24 +348,6 @@ export class NotificationInstance {
       error: errorData(error),
       message: getErrorMessage(error),
       backtest: false,
-    });
-  };
-
-  /**
-   * Processes progress events.
-   */
-  private _handleProgressBacktest = async (data: ProgressBacktestContract) => {
-    this._addNotification({
-      type: "progress.backtest",
-      id: CREATE_KEY_FN(),
-      timestamp: Date.now(),
-      backtest: true,
-      exchangeName: data.exchangeName,
-      strategyName: data.strategyName,
-      symbol: data.symbol,
-      totalFrames: data.totalFrames,
-      processedFrames: data.processedFrames,
-      progress: data.progress,
     });
   };
 
@@ -361,25 +409,23 @@ export class NotificationInstance {
     const unSignal = signalEmitter.subscribe(this._handleSignal);
     const unProfit = partialProfitSubject.subscribe(this._handlePartialProfit);
     const unLoss = partialLossSubject.subscribe(this._handlePartialLoss);
+    const unBreakeven = breakevenSubject.subscribe(this._handleBreakeven);
+    const unStrategyCommit = strategyCommitSubject.subscribe(this._handleStrategyCommit);
     const unRisk = riskSubject.subscribe(this._handleRisk);
-    const unDoneLine = doneLiveSubject.subscribe(this._handleDoneLive);
-    const unDoneBacktest = doneBacktestSubject.subscribe(this._handleDoneBacktest);
     const unError = errorEmitter.subscribe(this._handleError);
     const unExit = exitEmitter.subscribe(this._handleCriticalError);
     const unValidation = validationSubject.subscribe(this._handleValidationError);
-    const unProgressBacktest = progressBacktestEmitter.subscribe(this._handleProgressBacktest);
 
     const disposeFn = compose(
       () => unSignal(),
       () => unProfit(),
       () => unLoss(),
+      () => unBreakeven(),
+      () => unStrategyCommit(),
       () => unRisk(),
-      () => unDoneLine(),
-      () => unDoneBacktest(),
       () => unError(),
       () => unExit(),
-      () => unValidation(),      
-      () => unProgressBacktest(),
+      () => unValidation(),
     );
     
     return () => {

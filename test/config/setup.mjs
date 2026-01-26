@@ -7,33 +7,33 @@ import {
   PersistScheduleAdapter,
   PersistPartialAdapter,
   PersistCandleAdapter,
+  PersistBreakevenAdapter,
+  PersistStorageAdapter,
   Report,
   Markdown,
 } from "../../build/index.mjs";
 
 // setLogger(console)
 
-Markdown.enable();
-Report.enable();
+{
+  Markdown.enable();
+  Report.enable();
+}
 
-Report.useReportAdapter(class {
-  async waitForInit() {
-    void 0;
-  }
-  async write() {
-    void 0;
-  }
-})
+{
+  Report.useDummy();
+  Markdown.useDummy();
+}
 
-PersistSignalAdapter.useDummy();
-
-PersistRiskAdapter.useDummy();
-
-PersistScheduleAdapter.useDummy();
-
-PersistPartialAdapter.useDummy();
-
-PersistCandleAdapter.useDummy();
+{
+  PersistSignalAdapter.useDummy();
+  PersistRiskAdapter.useDummy();
+  PersistScheduleAdapter.useDummy();
+  PersistPartialAdapter.useDummy();
+  PersistCandleAdapter.useDummy();
+  PersistBreakevenAdapter.useDummy();
+  PersistStorageAdapter.useDummy();
+}
 
 setConfig(
   {

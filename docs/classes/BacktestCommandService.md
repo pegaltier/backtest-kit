@@ -71,7 +71,7 @@ frameValidationService: any
 ### run
 
 ```ts
-run: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => AsyncGenerator<IStrategyBacktestResult, void, unknown>
+run: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => AsyncGenerator<IStrategyTickResultScheduled | IStrategyTickResultOpened | IStrategyTickResultClosed | IStrategyTickResultCancelled, void, unknown>
 ```
 
 Runs backtest for a symbol with context propagation.

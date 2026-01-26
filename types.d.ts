@@ -1131,6 +1131,18 @@ interface IPublicSignalRow extends ISignalRow {
     totalExecuted: number;
 }
 /**
+ * Storage signal row with creation timestamp taken from IStrategyTickResult.
+ * Used for persisting signals with accurate creation time.
+ */
+interface IStorageSignalRow extends IPublicSignalRow {
+    /** Creation timestamp taken from IStrategyTickResult */
+    updatedAt: number;
+    /** Storage adapter rewrite priority. Equal to Date.now for live and backtest both */
+    priority: number;
+    /** Current status of the signal */
+    status: "opened" | "scheduled" | "closed" | "cancelled";
+}
+/**
  * Risk signal row for internal risk management.
  * Extends ISignalDto to include priceOpen, originalPriceStopLoss and originalPriceTakeProfit.
  * Used in risk validation to access entry price and original SL/TP.
@@ -1257,6 +1269,8 @@ interface IStrategyTickResultIdle {
     currentPrice: number;
     /** Whether this event is from backtest mode (true) or live mode (false) */
     backtest: boolean;
+    /** Unix timestamp in milliseconds when this tick result was created (from candle timestamp in backtest or execution context when in live) */
+    createdAt: number;
 }
 /**
  * Tick result: scheduled signal created, waiting for price to reach entry point.
@@ -1279,6 +1293,8 @@ interface IStrategyTickResultScheduled {
     currentPrice: number;
     /** Whether this event is from backtest mode (true) or live mode (false) */
     backtest: boolean;
+    /** Unix timestamp in milliseconds when this tick result was created (from candle timestamp in backtest or execution context when in live) */
+    createdAt: number;
 }
 /**
  * Tick result: scheduled signal is waiting for price to reach entry point.
@@ -1308,6 +1324,8 @@ interface IStrategyTickResultWaiting {
     pnl: IStrategyPnL;
     /** Whether this event is from backtest mode (true) or live mode (false) */
     backtest: boolean;
+    /** Unix timestamp in milliseconds when this tick result was created (from candle timestamp in backtest or execution context when in live) */
+    createdAt: number;
 }
 /**
  * Tick result: new signal just created.
@@ -1330,6 +1348,8 @@ interface IStrategyTickResultOpened {
     currentPrice: number;
     /** Whether this event is from backtest mode (true) or live mode (false) */
     backtest: boolean;
+    /** Unix timestamp in milliseconds when this tick result was created (from candle timestamp in backtest or execution context when in live) */
+    createdAt: number;
 }
 /**
  * Tick result: signal is being monitored.
@@ -1358,6 +1378,8 @@ interface IStrategyTickResultActive {
     pnl: IStrategyPnL;
     /** Whether this event is from backtest mode (true) or live mode (false) */
     backtest: boolean;
+    /** Unix timestamp in milliseconds when this tick result was created (from candle timestamp in backtest or execution context when in live) */
+    createdAt: number;
 }
 /**
  * Tick result: signal closed with PNL.
@@ -1388,6 +1410,8 @@ interface IStrategyTickResultClosed {
     backtest: boolean;
     /** Close ID (only for user-initiated closes with reason "closed") */
     closeId?: string;
+    /** Unix timestamp in milliseconds when this tick result was created (from candle timestamp in backtest or execution context when in live) */
+    createdAt: number;
 }
 /**
  * Tick result: scheduled signal cancelled without opening position.
@@ -1416,6 +1440,8 @@ interface IStrategyTickResultCancelled {
     reason: StrategyCancelReason;
     /** Optional cancellation ID (provided when user calls Backtest.cancel() or Live.cancel()) */
     cancelId?: string;
+    /** Unix timestamp in milliseconds when this tick result was created (from candle timestamp in backtest or execution context when in live) */
+    createdAt: number;
 }
 /**
  * Discriminated union of all tick results.
@@ -1425,7 +1451,7 @@ type IStrategyTickResult = IStrategyTickResultIdle | IStrategyTickResultSchedule
 /**
  * Backtest returns closed result (TP/SL or time_expired) or cancelled result (scheduled signal never activated).
  */
-type IStrategyBacktestResult = IStrategyTickResultClosed | IStrategyTickResultCancelled;
+type IStrategyBacktestResult = IStrategyTickResultOpened | IStrategyTickResultScheduled | IStrategyTickResultClosed | IStrategyTickResultCancelled;
 /**
  * Strategy interface implemented by ClientStrategy.
  * Defines core strategy execution methods.
@@ -6436,93 +6462,307 @@ interface ColumnModel<T extends object = any> {
  * Emitted when a new trading position is opened.
  */
 interface SignalOpenedNotification {
+    /** Discriminator for type-safe union */
     type: "signal.opened";
+    /** Unique notification identifier */
     id: string;
+    /** Unix timestamp in milliseconds when signal was opened (pendingAt) */
     timestamp: number;
+    /** Whether this notification is from backtest mode (true) or live mode (false) */
     backtest: boolean;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
     symbol: string;
+    /** Strategy name that generated this signal */
     strategyName: StrategyName;
+    /** Exchange name where signal was executed */
     exchangeName: ExchangeName;
+    /** Unique signal identifier (UUID v4) */
     signalId: string;
+    /** Trade direction: "long" (buy) or "short" (sell) */
     position: "long" | "short";
+    /** Entry price for the position */
     priceOpen: number;
+    /** Take profit target price */
     priceTakeProfit: number;
+    /** Stop loss exit price */
     priceStopLoss: number;
+    /** Optional human-readable description of signal reason */
     note?: string;
+    /** Unix timestamp in milliseconds when the tick result was created (from candle timestamp in backtest or execution context when in live) */
+    createdAt: number;
 }
 /**
  * Signal closed notification.
  * Emitted when a trading position is closed (TP/SL hit).
  */
 interface SignalClosedNotification {
+    /** Discriminator for type-safe union */
     type: "signal.closed";
+    /** Unique notification identifier */
     id: string;
+    /** Unix timestamp in milliseconds when signal was closed (closeTimestamp) */
     timestamp: number;
+    /** Whether this notification is from backtest mode (true) or live mode (false) */
     backtest: boolean;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
     symbol: string;
+    /** Strategy name that generated this signal */
     strategyName: StrategyName;
+    /** Exchange name where signal was executed */
     exchangeName: ExchangeName;
+    /** Unique signal identifier (UUID v4) */
     signalId: string;
+    /** Trade direction: "long" (buy) or "short" (sell) */
     position: "long" | "short";
+    /** Entry price for the position */
     priceOpen: number;
+    /** Exit price when position was closed */
     priceClose: number;
+    /** Profit/loss as percentage (e.g., 1.5 for +1.5%, -2.3 for -2.3%) */
     pnlPercentage: number;
+    /** Why signal closed (time_expired | take_profit | stop_loss | closed) */
     closeReason: string;
+    /** Duration of position in minutes (from pendingAt to closeTimestamp) */
     duration: number;
+    /** Optional human-readable description of signal reason */
     note?: string;
+    /** Unix timestamp in milliseconds when the tick result was created (from candle timestamp in backtest or execution context when in live) */
+    createdAt: number;
 }
 /**
  * Partial profit notification.
  * Emitted when signal reaches profit level milestone (10%, 20%, etc).
  */
-interface PartialProfitNotification {
-    type: "partial.profit";
+interface PartialProfitAvailableNotification {
+    /** Discriminator for type-safe union */
+    type: "partial_profit.available";
+    /** Unique notification identifier */
     id: string;
+    /** Unix timestamp in milliseconds when partial profit level was reached */
     timestamp: number;
+    /** Whether this notification is from backtest mode (true) or live mode (false) */
     backtest: boolean;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
     symbol: string;
+    /** Strategy name that generated this signal */
     strategyName: StrategyName;
+    /** Exchange name where signal was executed */
     exchangeName: ExchangeName;
+    /** Unique signal identifier (UUID v4) */
     signalId: string;
+    /** Profit level milestone reached (10, 20, 30, etc) */
     level: PartialLevel;
+    /** Current market price when milestone was reached */
     currentPrice: number;
+    /** Entry price for the position */
     priceOpen: number;
+    /** Trade direction: "long" (buy) or "short" (sell) */
     position: "long" | "short";
 }
 /**
  * Partial loss notification.
  * Emitted when signal reaches loss level milestone (-10%, -20%, etc).
  */
-interface PartialLossNotification {
-    type: "partial.loss";
+interface PartialLossAvailableNotification {
+    /** Discriminator for type-safe union */
+    type: "partial_loss.available";
+    /** Unique notification identifier */
     id: string;
+    /** Unix timestamp in milliseconds when partial loss level was reached */
     timestamp: number;
+    /** Whether this notification is from backtest mode (true) or live mode (false) */
     backtest: boolean;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
     symbol: string;
+    /** Strategy name that generated this signal */
     strategyName: StrategyName;
+    /** Exchange name where signal was executed */
     exchangeName: ExchangeName;
+    /** Unique signal identifier (UUID v4) */
     signalId: string;
+    /** Loss level milestone reached (10, 20, 30, etc) */
     level: PartialLevel;
+    /** Current market price when milestone was reached */
     currentPrice: number;
+    /** Entry price for the position */
     priceOpen: number;
+    /** Trade direction: "long" (buy) or "short" (sell) */
     position: "long" | "short";
+}
+/**
+ * Breakeven available notification.
+ * Emitted when signal's stop-loss can be moved to breakeven (entry price).
+ */
+interface BreakevenAvailableNotification {
+    /** Discriminator for type-safe union */
+    type: "breakeven.available";
+    /** Unique notification identifier */
+    id: string;
+    /** Unix timestamp in milliseconds when breakeven became available */
+    timestamp: number;
+    /** Whether this notification is from backtest mode (true) or live mode (false) */
+    backtest: boolean;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
+    symbol: string;
+    /** Strategy name that generated this signal */
+    strategyName: StrategyName;
+    /** Exchange name where signal was executed */
+    exchangeName: ExchangeName;
+    /** Unique signal identifier (UUID v4) */
+    signalId: string;
+    /** Current market price when breakeven became available */
+    currentPrice: number;
+    /** Entry price for the position (breakeven level) */
+    priceOpen: number;
+    /** Trade direction: "long" (buy) or "short" (sell) */
+    position: "long" | "short";
+}
+/**
+ * Partial profit commit notification.
+ * Emitted when partial profit action is executed.
+ */
+interface PartialProfitCommitNotification {
+    /** Discriminator for type-safe union */
+    type: "partial_profit.commit";
+    /** Unique notification identifier */
+    id: string;
+    /** Unix timestamp in milliseconds when partial profit was committed */
+    timestamp: number;
+    /** Whether this notification is from backtest mode (true) or live mode (false) */
+    backtest: boolean;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
+    symbol: string;
+    /** Strategy name that generated this signal */
+    strategyName: StrategyName;
+    /** Exchange name where signal was executed */
+    exchangeName: ExchangeName;
+    /** Percentage of position closed (0-100) */
+    percentToClose: number;
+    /** Current market price when partial was executed */
+    currentPrice: number;
+}
+/**
+ * Partial loss commit notification.
+ * Emitted when partial loss action is executed.
+ */
+interface PartialLossCommitNotification {
+    /** Discriminator for type-safe union */
+    type: "partial_loss.commit";
+    /** Unique notification identifier */
+    id: string;
+    /** Unix timestamp in milliseconds when partial loss was committed */
+    timestamp: number;
+    /** Whether this notification is from backtest mode (true) or live mode (false) */
+    backtest: boolean;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
+    symbol: string;
+    /** Strategy name that generated this signal */
+    strategyName: StrategyName;
+    /** Exchange name where signal was executed */
+    exchangeName: ExchangeName;
+    /** Percentage of position closed (0-100) */
+    percentToClose: number;
+    /** Current market price when partial was executed */
+    currentPrice: number;
+}
+/**
+ * Breakeven commit notification.
+ * Emitted when breakeven action is executed.
+ */
+interface BreakevenCommitNotification {
+    /** Discriminator for type-safe union */
+    type: "breakeven.commit";
+    /** Unique notification identifier */
+    id: string;
+    /** Unix timestamp in milliseconds when breakeven was committed */
+    timestamp: number;
+    /** Whether this notification is from backtest mode (true) or live mode (false) */
+    backtest: boolean;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
+    symbol: string;
+    /** Strategy name that generated this signal */
+    strategyName: StrategyName;
+    /** Exchange name where signal was executed */
+    exchangeName: ExchangeName;
+    /** Current market price when breakeven was executed */
+    currentPrice: number;
+}
+/**
+ * Trailing stop commit notification.
+ * Emitted when trailing stop action is executed.
+ */
+interface TrailingStopCommitNotification {
+    /** Discriminator for type-safe union */
+    type: "trailing_stop.commit";
+    /** Unique notification identifier */
+    id: string;
+    /** Unix timestamp in milliseconds when trailing stop was committed */
+    timestamp: number;
+    /** Whether this notification is from backtest mode (true) or live mode (false) */
+    backtest: boolean;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
+    symbol: string;
+    /** Strategy name that generated this signal */
+    strategyName: StrategyName;
+    /** Exchange name where signal was executed */
+    exchangeName: ExchangeName;
+    /** Percentage shift of original SL distance (-100 to 100) */
+    percentShift: number;
+    /** Current market price when trailing stop was executed */
+    currentPrice: number;
+}
+/**
+ * Trailing take commit notification.
+ * Emitted when trailing take action is executed.
+ */
+interface TrailingTakeCommitNotification {
+    /** Discriminator for type-safe union */
+    type: "trailing_take.commit";
+    /** Unique notification identifier */
+    id: string;
+    /** Unix timestamp in milliseconds when trailing take was committed */
+    timestamp: number;
+    /** Whether this notification is from backtest mode (true) or live mode (false) */
+    backtest: boolean;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
+    symbol: string;
+    /** Strategy name that generated this signal */
+    strategyName: StrategyName;
+    /** Exchange name where signal was executed */
+    exchangeName: ExchangeName;
+    /** Percentage shift of original TP distance (-100 to 100) */
+    percentShift: number;
+    /** Current market price when trailing take was executed */
+    currentPrice: number;
 }
 /**
  * Risk rejection notification.
  * Emitted when a signal is rejected due to risk management rules.
  */
 interface RiskRejectionNotification {
+    /** Discriminator for type-safe union */
     type: "risk.rejection";
+    /** Unique notification identifier */
     id: string;
+    /** Unix timestamp in milliseconds when signal was rejected */
     timestamp: number;
+    /** Whether this notification is from backtest mode (true) or live mode (false) */
     backtest: boolean;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
     symbol: string;
+    /** Strategy name that attempted to create signal */
     strategyName: StrategyName;
+    /** Exchange name where signal was rejected */
     exchangeName: ExchangeName;
+    /** Human-readable reason for rejection */
     rejectionNote: string;
+    /** Optional unique rejection identifier for tracking */
     rejectionId: string | null;
+    /** Number of currently active positions at rejection time */
     activePositionCount: number;
+    /** Current market price when rejection occurred */
     currentPrice: number;
+    /** The signal that was rejected */
     pendingSignal: ISignalDto;
 }
 /**
@@ -6530,73 +6770,81 @@ interface RiskRejectionNotification {
  * Emitted when a signal is scheduled for future execution.
  */
 interface SignalScheduledNotification {
+    /** Discriminator for type-safe union */
     type: "signal.scheduled";
+    /** Unique notification identifier */
     id: string;
+    /** Unix timestamp in milliseconds when signal was scheduled (scheduledAt) */
     timestamp: number;
+    /** Whether this notification is from backtest mode (true) or live mode (false) */
     backtest: boolean;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
     symbol: string;
+    /** Strategy name that generated this signal */
     strategyName: StrategyName;
+    /** Exchange name where signal will be executed */
     exchangeName: ExchangeName;
+    /** Unique signal identifier (UUID v4) */
     signalId: string;
+    /** Trade direction: "long" (buy) or "short" (sell) */
     position: "long" | "short";
+    /** Target entry price for activation */
     priceOpen: number;
+    /** Unix timestamp in milliseconds when signal was scheduled */
     scheduledAt: number;
+    /** Current market price when signal was scheduled */
     currentPrice: number;
+    /** Unix timestamp in milliseconds when the tick result was created (from candle timestamp in backtest or execution context when in live) */
+    createdAt: number;
 }
 /**
  * Signal cancelled notification.
  * Emitted when a scheduled signal is cancelled before activation.
  */
 interface SignalCancelledNotification {
+    /** Discriminator for type-safe union */
     type: "signal.cancelled";
+    /** Unique notification identifier */
     id: string;
+    /** Unix timestamp in milliseconds when signal was cancelled (closeTimestamp) */
     timestamp: number;
+    /** Whether this notification is from backtest mode (true) or live mode (false) */
     backtest: boolean;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
     symbol: string;
+    /** Strategy name that generated this signal */
     strategyName: StrategyName;
+    /** Exchange name where signal was scheduled */
     exchangeName: ExchangeName;
+    /** Unique signal identifier (UUID v4) */
     signalId: string;
+    /** Trade direction: "long" (buy) or "short" (sell) */
     position: "long" | "short";
+    /** Why signal was cancelled (timeout | price_reject | user) */
     cancelReason: string;
+    /** Optional cancellation identifier (provided when user calls cancel()) */
     cancelId: string;
+    /** Duration in minutes from scheduledAt to cancellation */
     duration: number;
-}
-/**
- * Backtest completed notification.
- * Emitted when backtest execution completes.
- */
-interface BacktestDoneNotification {
-    type: "backtest.done";
-    id: string;
-    timestamp: number;
-    backtest: true;
-    symbol: string;
-    strategyName: StrategyName;
-    exchangeName: ExchangeName;
-}
-/**
- * Live trading completed notification.
- * Emitted when live trading execution completes.
- */
-interface LiveDoneNotification {
-    type: "live.done";
-    id: string;
-    timestamp: number;
-    backtest: false;
-    symbol: string;
-    strategyName: StrategyName;
-    exchangeName: ExchangeName;
+    /** Unix timestamp in milliseconds when the tick result was created (from candle timestamp in backtest or execution context when in live) */
+    createdAt: number;
 }
 /**
  * Error notification.
  * Emitted for recoverable errors in background tasks.
  */
 interface InfoErrorNotification {
+    /** Discriminator for type-safe union */
     type: "error.info";
+    /** Unique notification identifier */
     id: string;
+    /** Serialized error object with stack trace and metadata */
     error: object;
+    /** Human-readable error message */
     message: string;
+    /** Unix timestamp in milliseconds when error occurred */
     timestamp: number;
+    /** Always false for error notifications (errors are from live context) */
     backtest: boolean;
 }
 /**
@@ -6604,11 +6852,17 @@ interface InfoErrorNotification {
  * Emitted for fatal errors requiring process termination.
  */
 interface CriticalErrorNotification {
+    /** Discriminator for type-safe union */
     type: "error.critical";
+    /** Unique notification identifier */
     id: string;
+    /** Serialized error object with stack trace and metadata */
     error: object;
+    /** Human-readable error message */
     message: string;
+    /** Unix timestamp in milliseconds when critical error occurred */
     timestamp: number;
+    /** Always false for error notifications (errors are from live context) */
     backtest: boolean;
 }
 /**
@@ -6616,28 +6870,18 @@ interface CriticalErrorNotification {
  * Emitted when risk validation functions throw errors.
  */
 interface ValidationErrorNotification {
+    /** Discriminator for type-safe union */
     type: "error.validation";
+    /** Unique notification identifier */
     id: string;
+    /** Serialized error object with stack trace and metadata */
     error: object;
+    /** Human-readable validation error message */
     message: string;
+    /** Unix timestamp in milliseconds when validation error occurred */
     timestamp: number;
+    /** Always false for error notifications (errors are from live context) */
     backtest: boolean;
-}
-/**
- * Progress update notification.
- * Emitted during backtest execution.
- */
-interface ProgressBacktestNotification {
-    type: "progress.backtest";
-    id: string;
-    timestamp: number;
-    backtest: true;
-    exchangeName: ExchangeName;
-    strategyName: StrategyName;
-    symbol: string;
-    totalFrames: number;
-    processedFrames: number;
-    progress: number;
 }
 /**
  * Root discriminated union of all notification types.
@@ -6665,7 +6909,7 @@ interface ProgressBacktestNotification {
  * }
  * ```
  */
-type NotificationModel = SignalOpenedNotification | SignalClosedNotification | PartialProfitNotification | PartialLossNotification | RiskRejectionNotification | SignalScheduledNotification | SignalCancelledNotification | BacktestDoneNotification | LiveDoneNotification | InfoErrorNotification | CriticalErrorNotification | ValidationErrorNotification | ProgressBacktestNotification;
+type NotificationModel = SignalOpenedNotification | SignalClosedNotification | PartialProfitAvailableNotification | PartialLossAvailableNotification | BreakevenAvailableNotification | PartialProfitCommitNotification | PartialLossCommitNotification | BreakevenCommitNotification | TrailingStopCommitNotification | TrailingTakeCommitNotification | RiskRejectionNotification | SignalScheduledNotification | SignalCancelledNotification | InfoErrorNotification | CriticalErrorNotification | ValidationErrorNotification;
 
 /**
  * Unified tick event data for report generation.
@@ -7285,7 +7529,7 @@ declare class PersistBase<EntityName extends string = string> implements IPersis
  */
 declare class PersistSignalUtils {
     private PersistSignalFactory;
-    private getSignalStorage;
+    private getStorage;
     /**
      * Registers a custom persistence adapter.
      *
@@ -7815,6 +8059,71 @@ declare class PersistCandleUtils {
  * ```
  */
 declare const PersistCandleAdapter: PersistCandleUtils;
+/**
+ * Type for persisted signal storage data.
+ * Each signal is stored as a separate file keyed by its id.
+ */
+type StorageData = IStorageSignalRow[];
+/**
+ * Utility class for managing signal storage persistence.
+ *
+ * Features:
+ * - Memoized storage instances
+ * - Custom adapter support
+ * - Atomic read/write operations for StorageData
+ * - Each signal stored as separate file keyed by id
+ * - Crash-safe signal state management
+ *
+ * Used by SignalLiveUtils for live mode persistence of signals.
+ */
+declare class PersistStorageUtils {
+    private PersistStorageFactory;
+    private getStorageStorage;
+    /**
+     * Registers a custom persistence adapter.
+     *
+     * @param Ctor - Custom PersistBase constructor
+     */
+    usePersistStorageAdapter(Ctor: TPersistBaseCtor<string, IStorageSignalRow>): void;
+    /**
+     * Reads persisted signals data.
+     *
+     * Called by StorageLiveUtils/StorageBacktestUtils.waitForInit() to restore state.
+     * Uses keys() from PersistBase to iterate over all stored signals.
+     * Returns empty array if no signals exist.
+     *
+     * @param backtest - If true, reads from backtest storage; otherwise from live storage
+     * @returns Promise resolving to array of signal entries
+     */
+    readStorageData: (backtest: boolean) => Promise<StorageData>;
+    /**
+     * Writes signal data to disk with atomic file writes.
+     *
+     * Called by StorageLiveUtils/StorageBacktestUtils after signal changes to persist state.
+     * Uses signal.id as the storage key for individual file storage.
+     * Uses atomic writes to prevent corruption on crashes.
+     *
+     * @param signalData - Signal entries to persist
+     * @param backtest - If true, writes to backtest storage; otherwise to live storage
+     * @returns Promise that resolves when write is complete
+     */
+    writeStorageData: (signalData: StorageData, backtest: boolean) => Promise<void>;
+    /**
+     * Switches to the default JSON persist adapter.
+     * All future persistence writes will use JSON storage.
+     */
+    useJson(): void;
+    /**
+     * Switches to a dummy persist adapter that discards all writes.
+     * All future persistence writes will be no-ops.
+     */
+    useDummy(): void;
+}
+/**
+ * Global singleton instance of PersistStorageUtils.
+ * Used by SignalLiveUtils for signal storage persistence.
+ */
+declare const PersistStorageAdapter: PersistStorageUtils;
 
 declare const WAIT_FOR_INIT_SYMBOL$1: unique symbol;
 declare const WRITE_SAFE_SYMBOL$1: unique symbol;
@@ -8667,7 +8976,7 @@ declare class BacktestUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => AsyncGenerator<IStrategyBacktestResult, void, unknown>;
+    }) => AsyncGenerator<IStrategyTickResultScheduled | IStrategyTickResultOpened | IStrategyTickResultClosed | IStrategyTickResultCancelled, void, unknown>;
     /**
      * Runs backtest in background without yielding results.
      *
@@ -12135,6 +12444,220 @@ declare class RiskUtils {
  */
 declare const Risk: RiskUtils;
 
+type StorageId = IStorageSignalRow["id"];
+/**
+ * Utility class for managing backtest signal history.
+ *
+ * Stores trading signal history for admin dashboard display during backtesting
+ * with automatic initialization, deduplication, and storage limits.
+ *
+ * @example
+ * ```typescript
+ * import { StorageBacktestUtils } from "./classes/Storage";
+ *
+ * const storage = new StorageBacktestUtils();
+ *
+ * // Handle signal events
+ * await storage.handleOpened(tickResult);
+ * await storage.handleClosed(tickResult);
+ *
+ * // Query signals
+ * const signal = await storage.findById("signal-123");
+ * const allSignals = await storage.list();
+ * ```
+ */
+declare class StorageBacktestUtils {
+    private _signals;
+    /**
+     * Initializes storage by loading existing signal history from persist layer.
+     * Uses singleshot to ensure initialization happens only once.
+     */
+    private waitForInit;
+    /**
+     * Persists current signal history to storage.
+     * Sorts by priority and limits to MAX_SIGNALS entries.
+     *
+     * @throws Error if storage not initialized
+     */
+    private _updateStorage;
+    /**
+     * Handles signal opened event.
+     *
+     * @param tick - Tick result containing opened signal data
+     * @returns Promise resolving when storage is updated
+     */
+    handleOpened: (tick: IStrategyTickResultOpened) => Promise<void>;
+    /**
+     * Handles signal closed event.
+     *
+     * @param tick - Tick result containing closed signal data
+     * @returns Promise resolving when storage is updated
+     */
+    handleClosed: (tick: IStrategyTickResultClosed) => Promise<void>;
+    /**
+     * Handles signal scheduled event.
+     *
+     * @param tick - Tick result containing scheduled signal data
+     * @returns Promise resolving when storage is updated
+     */
+    handleScheduled: (tick: IStrategyTickResultScheduled) => Promise<void>;
+    /**
+     * Handles signal cancelled event.
+     *
+     * @param tick - Tick result containing cancelled signal data
+     * @returns Promise resolving when storage is updated
+     */
+    handleCancelled: (tick: IStrategyTickResultCancelled) => Promise<void>;
+    /**
+     * Finds a signal by its unique identifier.
+     *
+     * @param id - Signal identifier
+     * @returns Promise resolving to signal row or null if not found
+     */
+    findById: (id: StorageId) => Promise<IStorageSignalRow | null>;
+    /**
+     * Lists all stored backtest signals.
+     *
+     * @returns Promise resolving to array of signal rows
+     */
+    list: () => Promise<IStorageSignalRow[]>;
+}
+/**
+ * Utility class for managing live trading signal history.
+ *
+ * Stores trading signal history for admin dashboard display during live trading
+ * with automatic initialization, deduplication, and storage limits.
+ *
+ * @example
+ * ```typescript
+ * import { StorageLiveUtils } from "./classes/Storage";
+ *
+ * const storage = new StorageLiveUtils();
+ *
+ * // Handle signal events
+ * await storage.handleOpened(tickResult);
+ * await storage.handleClosed(tickResult);
+ *
+ * // Query signals
+ * const signal = await storage.findById("signal-123");
+ * const allSignals = await storage.list();
+ * ```
+ */
+declare class StorageLiveUtils {
+    private _signals;
+    /**
+     * Initializes storage by loading existing signal history from persist layer.
+     * Uses singleshot to ensure initialization happens only once.
+     */
+    private waitForInit;
+    /**
+     * Persists current signal history to storage.
+     * Sorts by priority and limits to MAX_SIGNALS entries.
+     *
+     * @throws Error if storage not initialized
+     */
+    private _updateStorage;
+    /**
+     * Handles signal opened event.
+     *
+     * @param tick - Tick result containing opened signal data
+     * @returns Promise resolving when history is updated
+     */
+    handleOpened: (tick: IStrategyTickResultOpened) => Promise<void>;
+    /**
+     * Handles signal closed event.
+     *
+     * @param tick - Tick result containing closed signal data
+     * @returns Promise resolving when history is updated
+     */
+    handleClosed: (tick: IStrategyTickResultClosed) => Promise<void>;
+    /**
+     * Handles signal scheduled event.
+     *
+     * @param tick - Tick result containing scheduled signal data
+     * @returns Promise resolving when history is updated
+     */
+    handleScheduled: (tick: IStrategyTickResultScheduled) => Promise<void>;
+    /**
+     * Handles signal cancelled event.
+     *
+     * @param tick - Tick result containing cancelled signal data
+     * @returns Promise resolving when history is updated
+     */
+    handleCancelled: (tick: IStrategyTickResultCancelled) => Promise<void>;
+    /**
+     * Finds a signal by its unique identifier.
+     *
+     * @param id - Signal identifier
+     * @returns Promise resolving to signal row or null if not found
+     */
+    findById: (id: StorageId) => Promise<IStorageSignalRow | null>;
+    /**
+     * Lists all stored live signals.
+     *
+     * @returns Promise resolving to array of signal rows
+     */
+    list: () => Promise<IStorageSignalRow[]>;
+}
+/**
+ * Main storage adapter for signal history management.
+ *
+ * Provides unified interface for accessing backtest and live signal history
+ * for admin dashboard. Subscribes to signal emitters and automatically
+ * updates history on signal events.
+ *
+ * @example
+ * ```typescript
+ * import { Storage } from "./classes/Storage";
+ *
+ * // Enable signal history tracking
+ * const unsubscribe = Storage.enable();
+ *
+ * // Query signals
+ * const backtestSignals = await Storage.listSignalBacktest();
+ * const liveSignals = await Storage.listSignalLive();
+ * const signal = await Storage.findSignalById("signal-123");
+ *
+ * // Disable tracking
+ * Storage.disable();
+ * ```
+ */
+declare class StorageAdapter {
+    _signalLiveUtils: StorageLiveUtils;
+    _signalBacktestUtils: StorageBacktestUtils;
+    /**
+     * Enables signal history tracking by subscribing to emitters.
+     *
+     * @returns Cleanup function to unsubscribe from all emitters
+     */
+    enable: (() => () => void) & functools_kit.ISingleshotClearable;
+    /**
+     * Disables signal history tracking by unsubscribing from emitters.
+     */
+    disable: () => void;
+    /**
+     * Finds a signal by ID across both backtest and live history.
+     *
+     * @param id - Signal identifier
+     * @returns Promise resolving to signal row
+     * @throws Error if signal not found in either storage
+     */
+    findSignalById: (id: StorageId) => Promise<IStorageSignalRow | null>;
+    /**
+     * Lists all backtest signal history.
+     *
+     * @returns Promise resolving to array of backtest signal rows
+     */
+    listSignalBacktest: () => Promise<IStorageSignalRow[]>;
+    /**
+     * Lists all live signal history.
+     *
+     * @returns Promise resolving to array of live signal rows
+     */
+    listSignalLive: () => Promise<IStorageSignalRow[]>;
+}
+declare const Storage: StorageAdapter;
+
 /**
  * Utility class for exchange operations.
  *
@@ -13073,7 +13596,7 @@ declare class StrategyCoreService implements TStrategy$1 {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => Promise<IStrategyBacktestResult>;
+    }) => Promise<IStrategyTickResultClosed | IStrategyTickResultCancelled>;
     /**
      * Stops the strategy from generating new signals.
      *
@@ -14502,8 +15025,17 @@ declare const activePingSubject: Subject<ActivePingContract>;
  * Used by StrategyReportService and StrategyMarkdownService for event logging and reporting.
  */
 declare const strategyCommitSubject: Subject<StrategyCommitContract>;
+/**
+ * ClientStrategy::backtest using return instead of async iterator emitter.
+ * If signal was scheduled to open, emits when the signal is actually opened.
+ *
+ * Allows to yield IStrategyTickResultOpened in addition to IStrategyTickResultClosed | IStrategyTickResultCancelled for
+ * BacktestLogicPrivateService::*run
+ */
+declare const backtestScheduleOpenSubject: Subject<IStrategyTickResultOpened>;
 
 declare const emitters_activePingSubject: typeof activePingSubject;
+declare const emitters_backtestScheduleOpenSubject: typeof backtestScheduleOpenSubject;
 declare const emitters_breakevenSubject: typeof breakevenSubject;
 declare const emitters_doneBacktestSubject: typeof doneBacktestSubject;
 declare const emitters_doneLiveSubject: typeof doneLiveSubject;
@@ -14526,7 +15058,7 @@ declare const emitters_walkerCompleteSubject: typeof walkerCompleteSubject;
 declare const emitters_walkerEmitter: typeof walkerEmitter;
 declare const emitters_walkerStopSubject: typeof walkerStopSubject;
 declare namespace emitters {
-  export { emitters_activePingSubject as activePingSubject, emitters_breakevenSubject as breakevenSubject, emitters_doneBacktestSubject as doneBacktestSubject, emitters_doneLiveSubject as doneLiveSubject, emitters_doneWalkerSubject as doneWalkerSubject, emitters_errorEmitter as errorEmitter, emitters_exitEmitter as exitEmitter, emitters_partialLossSubject as partialLossSubject, emitters_partialProfitSubject as partialProfitSubject, emitters_performanceEmitter as performanceEmitter, emitters_progressBacktestEmitter as progressBacktestEmitter, emitters_progressWalkerEmitter as progressWalkerEmitter, emitters_riskSubject as riskSubject, emitters_schedulePingSubject as schedulePingSubject, emitters_signalBacktestEmitter as signalBacktestEmitter, emitters_signalEmitter as signalEmitter, emitters_signalLiveEmitter as signalLiveEmitter, emitters_strategyCommitSubject as strategyCommitSubject, emitters_validationSubject as validationSubject, emitters_walkerCompleteSubject as walkerCompleteSubject, emitters_walkerEmitter as walkerEmitter, emitters_walkerStopSubject as walkerStopSubject };
+  export { emitters_activePingSubject as activePingSubject, emitters_backtestScheduleOpenSubject as backtestScheduleOpenSubject, emitters_breakevenSubject as breakevenSubject, emitters_doneBacktestSubject as doneBacktestSubject, emitters_doneLiveSubject as doneLiveSubject, emitters_doneWalkerSubject as doneWalkerSubject, emitters_errorEmitter as errorEmitter, emitters_exitEmitter as exitEmitter, emitters_partialLossSubject as partialLossSubject, emitters_partialProfitSubject as partialProfitSubject, emitters_performanceEmitter as performanceEmitter, emitters_progressBacktestEmitter as progressBacktestEmitter, emitters_progressWalkerEmitter as progressWalkerEmitter, emitters_riskSubject as riskSubject, emitters_schedulePingSubject as schedulePingSubject, emitters_signalBacktestEmitter as signalBacktestEmitter, emitters_signalEmitter as signalEmitter, emitters_signalLiveEmitter as signalLiveEmitter, emitters_strategyCommitSubject as strategyCommitSubject, emitters_validationSubject as validationSubject, emitters_walkerCompleteSubject as walkerCompleteSubject, emitters_walkerEmitter as walkerEmitter, emitters_walkerStopSubject as walkerStopSubject };
 }
 
 /**
@@ -15713,7 +16245,7 @@ declare class StrategyConnectionService implements TStrategy {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, candles: ICandleData[]) => Promise<IStrategyBacktestResult>;
+    }, candles: ICandleData[]) => Promise<IStrategyTickResultClosed | IStrategyTickResultCancelled>;
     /**
      * Stops the specified strategy from generating new signals.
      *
@@ -17195,6 +17727,7 @@ declare class BacktestLogicPrivateService {
     private readonly exchangeCoreService;
     private readonly frameCoreService;
     private readonly methodContextService;
+    private readonly actionCoreService;
     /**
      * Runs backtest for a symbol, streaming closed signals as async generator.
      *
@@ -17209,7 +17742,7 @@ declare class BacktestLogicPrivateService {
      * }
      * ```
      */
-    run(symbol: string): AsyncGenerator<IStrategyBacktestResult, void, unknown>;
+    run(symbol: string): AsyncGenerator<IStrategyTickResultScheduled | IStrategyTickResultOpened | IStrategyTickResultClosed | IStrategyTickResultCancelled, void, unknown>;
 }
 
 /**
@@ -17316,7 +17849,7 @@ declare class BacktestLogicPublicService implements TBacktestLogicPrivateService
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => AsyncGenerator<IStrategyBacktestResult, void, unknown>;
+    }) => AsyncGenerator<IStrategyTickResultScheduled | IStrategyTickResultOpened | IStrategyTickResultClosed | IStrategyTickResultCancelled, void, unknown>;
 }
 
 /**
@@ -17455,7 +17988,7 @@ declare class BacktestCommandService implements TBacktestLogicPublicService {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => AsyncGenerator<IStrategyBacktestResult, void, unknown>;
+    }) => AsyncGenerator<IStrategyTickResultScheduled | IStrategyTickResultOpened | IStrategyTickResultClosed | IStrategyTickResultCancelled, void, unknown>;
 }
 
 /**
@@ -19085,4 +19618,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { ActionBase, type ActivePingContract, Backtest, type BacktestDoneNotification, type BacktestStatisticsModel, Breakeven, type BreakevenContract, type BreakevenData, Cache, type CandleData, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOrderBookData, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveDoneNotification, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, MethodContextService, type MetricStats, Notification, type NotificationModel, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossContract, type PartialLossNotification, type PartialProfitContract, type PartialProfitNotification, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PositionSize, type ProgressBacktestContract, type ProgressBacktestNotification, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, Strategy, type StrategyActionType, type StrategyCommitContract, type StrategyEvent, type StrategyStatisticsModel, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialProfit, commitTrailingStop, commitTrailingTake, emitters, formatPrice, formatQuantity, get, getActionSchema, getAveragePrice, getBacktestTimeframe, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getExchangeSchema, getFrameSchema, getMode, getOrderBook, getRawCandles, getRiskSchema, getSizingSchema, getStrategySchema, getSymbol, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenStrategyCommit, listenStrategyCommitOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, roundTicks, set, setColumns, setConfig, setLogger, stopStrategy, validate };
+export { ActionBase, type ActivePingContract, Backtest, type BacktestStatisticsModel, Breakeven, type BreakevenAvailableNotification, type BreakevenCommitNotification, type BreakevenContract, type BreakevenData, Cache, type CandleData, type CandleInterval, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type ICandleData, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOrderBookData, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskSignalRow, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStorageSignalRow, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IStrategyTickResultWaiting, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, MethodContextService, type MetricStats, Notification, type NotificationModel, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossAvailableNotification, type PartialLossCommitNotification, type PartialLossContract, type PartialProfitAvailableNotification, type PartialProfitCommitNotification, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PersistStorageAdapter, PositionSize, type ProgressBacktestContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, Storage, type StorageData, Strategy, type StrategyActionType, type StrategyCancelReason, type StrategyCloseReason, type StrategyCommitContract, type StrategyEvent, type StrategyStatisticsModel, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type TrailingStopCommitNotification, type TrailingTakeCommitNotification, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialProfit, commitTrailingStop, commitTrailingTake, emitters, formatPrice, formatQuantity, get, getActionSchema, getAveragePrice, getBacktestTimeframe, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getExchangeSchema, getFrameSchema, getMode, getOrderBook, getRawCandles, getRiskSchema, getSizingSchema, getStrategySchema, getSymbol, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenStrategyCommit, listenStrategyCommitOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, roundTicks, set, setColumns, setConfig, setLogger, stopStrategy, validate };

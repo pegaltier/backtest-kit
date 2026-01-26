@@ -34,7 +34,7 @@ import toProfitLossDto from "../helpers/toProfitLossDto";
 import { ICandleData } from "../interfaces/Exchange.interface";
 import { PersistSignalAdapter, PersistScheduleAdapter } from "../classes/Persist";
 import backtest, { ExecutionContextService } from "../lib";
-import { errorEmitter } from "../config/emitters";
+import { errorEmitter, backtestScheduleOpenSubject } from "../config/emitters";
 import { GLOBAL_CONFIG } from "../config/params";
 import toPlainString from "../helpers/toPlainString";
 import beginTime from "../utils/beginTime";
@@ -1309,6 +1309,7 @@ const CHECK_SCHEDULED_SIGNAL_TIMEOUT_FN = async (
     symbol: self.params.execution.context.symbol,
     backtest: self.params.execution.context.backtest,
     reason: "timeout",
+    createdAt: currentTime,
   };
 
   await CALL_TICK_CALLBACKS_FN(
@@ -1395,6 +1396,7 @@ const CANCEL_SCHEDULED_SIGNAL_BY_STOPLOSS_FN = async (
     symbol: self.params.execution.context.symbol,
     backtest: self.params.execution.context.backtest,
     reason: "price_reject",
+    createdAt: currentTime,
   };
 
   await CALL_TICK_CALLBACKS_FN(
@@ -1495,6 +1497,7 @@ const ACTIVATE_SCHEDULED_SIGNAL_FN = async (
     symbol: self.params.execution.context.symbol,
     currentPrice: self._pendingSignal.priceOpen,
     backtest: self.params.execution.context.backtest,
+    createdAt: activationTime,
   };
 
   await CALL_TICK_CALLBACKS_FN(
@@ -2214,6 +2217,46 @@ const CALL_BREAKEVEN_CLEAR_FN = trycatch(
   }
 );
 
+const CALL_BACKTEST_SCHEDULE_OPEN_FN = trycatch(
+  beginTime(async (
+    self: ClientStrategy,
+    symbol: string,
+    signal: ISignalRow,
+    timestamp: number,
+    backtest: boolean
+  ): Promise<void> => {
+    await ExecutionContextService.runInContext(async () => {
+      backtestScheduleOpenSubject.next({
+        action: "opened",
+        signal: TO_PUBLIC_SIGNAL(signal),
+        strategyName: self.params.method.context.strategyName,
+        exchangeName: self.params.method.context.exchangeName,
+        frameName: self.params.method.context.frameName,
+        symbol: symbol,
+        currentPrice: signal.priceOpen,
+        backtest: true,
+        createdAt: timestamp,
+      });
+    }, {
+      when: new Date(timestamp),
+      symbol: symbol,
+      backtest: backtest,
+    });
+  }),
+  {
+    fallback: (error) => {
+      const message = "ClientStrategy CALL_BACKTEST_SCHEDULE_OPEN_FN thrown";
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+  }
+);
+
 const RETURN_SCHEDULED_SIGNAL_ACTIVE_FN = async (
   self: ClientStrategy,
   scheduled: IScheduledSignalRow,
@@ -2243,6 +2286,7 @@ const RETURN_SCHEDULED_SIGNAL_ACTIVE_FN = async (
     percentSl: 0,
     pnl,
     backtest: self.params.execution.context.backtest,
+    createdAt: currentTime,
   };
 
   await CALL_TICK_CALLBACKS_FN(
@@ -2292,6 +2336,7 @@ const OPEN_NEW_SCHEDULED_SIGNAL_FN = async (
     symbol: self.params.execution.context.symbol,
     currentPrice: currentPrice,
     backtest: self.params.execution.context.backtest,
+    createdAt: currentTime,
   };
 
   await CALL_TICK_CALLBACKS_FN(
@@ -2352,6 +2397,7 @@ const OPEN_NEW_PENDING_SIGNAL_FN = async (
     symbol: self.params.execution.context.symbol,
     currentPrice: signal.priceOpen,
     backtest: self.params.execution.context.backtest,
+    createdAt: currentTime,
   };
 
   await CALL_TICK_CALLBACKS_FN(
@@ -2498,6 +2544,7 @@ const CLOSE_PENDING_SIGNAL_FN = async (
     frameName: self.params.method.context.frameName,
     symbol: self.params.execution.context.symbol,
     backtest: self.params.execution.context.backtest,
+    createdAt: currentTime,
   };
 
   await CALL_TICK_CALLBACKS_FN(
@@ -2645,6 +2692,7 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
     percentSl,
     pnl,
     backtest: self.params.execution.context.backtest,
+    createdAt: currentTime,
   };
 
   await CALL_TICK_CALLBACKS_FN(
@@ -2681,6 +2729,7 @@ const RETURN_IDLE_FN = async (
     symbol: self.params.execution.context.symbol,
     currentPrice: currentPrice,
     backtest: self.params.execution.context.backtest,
+    createdAt: currentTime,
   };
 
   await CALL_TICK_CALLBACKS_FN(
@@ -2735,6 +2784,7 @@ const CANCEL_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
     symbol: self.params.execution.context.symbol,
     backtest: self.params.execution.context.backtest,
     reason,
+    createdAt: closeTimestamp,
   };
 
   await CALL_TICK_CALLBACKS_FN(
@@ -2827,6 +2877,14 @@ const ACTIVATE_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
     self.params.execution.context.backtest
   );
 
+  await CALL_BACKTEST_SCHEDULE_OPEN_FN(
+    self,
+    self.params.execution.context.symbol,
+    activatedSignal,
+    activationTime,
+    self.params.execution.context.backtest
+  );
+
   return true;
 };
 
@@ -2914,6 +2972,7 @@ const CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN = async (
     frameName: self.params.method.context.frameName,
     symbol: self.params.execution.context.symbol,
     backtest: self.params.execution.context.backtest,
+    createdAt: closeTimestamp,
   };
 
   await CALL_TICK_CALLBACKS_FN(
@@ -3601,6 +3660,7 @@ export class ClientStrategy implements IStrategy {
         backtest: this.params.execution.context.backtest,
         reason: "user",
         cancelId: cancelledSignal.cancelId,
+        createdAt: currentTime,
       };
 
       await CALL_TICK_CALLBACKS_FN(
@@ -3680,6 +3740,7 @@ export class ClientStrategy implements IStrategy {
         symbol: this.params.execution.context.symbol,
         backtest: this.params.execution.context.backtest,
         closeId: closedSignal.closeId,
+        createdAt: currentTime,
       };
 
       await CALL_TICK_CALLBACKS_FN(
@@ -3823,7 +3884,7 @@ export class ClientStrategy implements IStrategy {
     symbol: string,
     strategyName: StrategyName,
     candles: ICandleData[]
-  ): Promise<IStrategyBacktestResult> {
+  ): Promise<IStrategyTickResultClosed | IStrategyTickResultCancelled> {
     this.params.logger.debug("ClientStrategy backtest", {
       symbol,
       strategyName,
@@ -3869,6 +3930,7 @@ export class ClientStrategy implements IStrategy {
         backtest: true,
         reason: "user",
         cancelId: cancelledSignal.cancelId,
+        createdAt: closeTimestamp,
       };
 
       await CALL_TICK_CALLBACKS_FN(
@@ -3944,6 +4006,7 @@ export class ClientStrategy implements IStrategy {
         symbol: this.params.execution.context.symbol,
         backtest: true,
         closeId: closedSignal.closeId,
+        createdAt: closeTimestamp,
       };
 
       await CALL_TICK_CALLBACKS_FN(

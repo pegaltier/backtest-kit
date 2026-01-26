@@ -1,21 +1,23 @@
 import { inject } from "../../../core/di";
 import LoggerService from "../../base/LoggerService";
 import TYPES from "../../../core/types";
-import { IStrategyBacktestResult, IStrategyTickResult } from "../../../../interfaces/Strategy.interface";
+import { IStrategyBacktestResult, IStrategyTickResult, IStrategyTickResultOpened } from "../../../../interfaces/Strategy.interface";
 import { ICandleData } from "../../../../interfaces/Exchange.interface";
 import StrategyCoreService from "../../core/StrategyCoreService";
 import ExchangeCoreService from "../../core/ExchangeCoreService";
 import FrameCoreService from "../../core/FrameCoreService";
-import MethodContextService, {
-  TMethodContextService,
-} from "../../context/MethodContextService";
+import { TMethodContextService } from "../../context/MethodContextService";
 import {
   progressBacktestEmitter,
   performanceEmitter,
   errorEmitter,
+  backtestScheduleOpenSubject,
+  signalBacktestEmitter,
+  signalEmitter,
 } from "../../../../config/emitters";
 import { GLOBAL_CONFIG } from "../../../../config/params";
 import { and, errorData, getErrorMessage } from "functools-kit";
+import ActionCoreService from "../../core/ActionCoreService";
 
 /**
  * Private service for backtest orchestration using async generators.
@@ -43,6 +45,9 @@ export class BacktestLogicPrivateService {
   );
   private readonly methodContextService = inject<TMethodContextService>(
     TYPES.methodContextService
+  );
+  private readonly actionCoreService = inject<ActionCoreService>(
+    TYPES.actionCoreService
   );
 
   /**
@@ -169,6 +174,8 @@ export class BacktestLogicPrivateService {
         const signalStartTime = performance.now();
         const signal = result.signal;
 
+        yield result;
+
         this.loggerService.info(
           "backtestLogicPrivateService scheduled signal detected",
           {
@@ -233,6 +240,35 @@ export class BacktestLogicPrivateService {
         // backtest() сам обработает scheduled signal: найдет активацию/отмену
         // и если активируется - продолжит с TP/SL мониторингом
         let backtestResult: IStrategyBacktestResult;
+
+        let unScheduleOpen: Function;
+        let scheduleOpenResult: IStrategyTickResultOpened;
+
+        {
+          const { strategyName, exchangeName, frameName } = this.methodContextService.context;
+
+          unScheduleOpen = backtestScheduleOpenSubject.filter((event) => {
+            let isOk = true;
+            {
+              isOk = isOk && event.action === "opened";
+              isOk = isOk && event.strategyName === strategyName;
+              isOk = isOk && event.exchangeName === exchangeName;
+              isOk = isOk && event.frameName === frameName;
+              isOk = isOk && event.symbol === symbol;
+            }
+            return isOk;
+          }).connect(async (tick) => {
+            scheduleOpenResult = tick;
+            await signalEmitter.next(tick);
+            await signalBacktestEmitter.next(tick);
+            await this.actionCoreService.signalBacktest(true, tick, {
+              strategyName, 
+              exchangeName,
+              frameName, 
+            });
+          });
+        }
+
         try {
           backtestResult = await this.strategyCoreService.backtest(
             symbol,
@@ -258,6 +294,8 @@ export class BacktestLogicPrivateService {
           await errorEmitter.next(error);
           i++;
           continue;
+        } finally {
+          unScheduleOpen && unScheduleOpen();
         }
 
         this.loggerService.info(
@@ -298,6 +336,10 @@ export class BacktestLogicPrivateService {
           i++;
         }
 
+        if (scheduleOpenResult) {
+          yield scheduleOpenResult;
+        }
+
         yield backtestResult;
 
         // Check if strategy should stop after signal is closed
@@ -329,6 +371,8 @@ export class BacktestLogicPrivateService {
       if (result.action === "opened") {
         const signalStartTime = performance.now();
         const signal = result.signal;
+
+        yield result;
 
         this.loggerService.info("backtestLogicPrivateService signal opened", {
           symbol,

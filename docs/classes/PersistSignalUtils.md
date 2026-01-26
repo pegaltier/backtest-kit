@@ -29,10 +29,10 @@ constructor();
 PersistSignalFactory: any
 ```
 
-### getSignalStorage
+### getStorage
 
 ```ts
-getSignalStorage: any
+getStorage: any
 ```
 
 ### readSignalData

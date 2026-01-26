@@ -8,19 +8,34 @@ import { ISignalDto } from "../interfaces/Strategy.interface";
  * Emitted when a new trading position is opened.
  */
 export interface SignalOpenedNotification {
+  /** Discriminator for type-safe union */
   type: "signal.opened";
+  /** Unique notification identifier */
   id: string;
+  /** Unix timestamp in milliseconds when signal was opened (pendingAt) */
   timestamp: number;
+  /** Whether this notification is from backtest mode (true) or live mode (false) */
   backtest: boolean;
+  /** Trading pair symbol (e.g., "BTCUSDT") */
   symbol: string;
+  /** Strategy name that generated this signal */
   strategyName: StrategyName;
+  /** Exchange name where signal was executed */
   exchangeName: ExchangeName;
+  /** Unique signal identifier (UUID v4) */
   signalId: string;
+  /** Trade direction: "long" (buy) or "short" (sell) */
   position: "long" | "short";
+  /** Entry price for the position */
   priceOpen: number;
+  /** Take profit target price */
   priceTakeProfit: number;
+  /** Stop loss exit price */
   priceStopLoss: number;
+  /** Optional human-readable description of signal reason */
   note?: string;
+  /** Unix timestamp in milliseconds when the tick result was created (from candle timestamp in backtest or execution context when in live) */
+  createdAt: number;
 }
 
 /**
@@ -28,39 +43,68 @@ export interface SignalOpenedNotification {
  * Emitted when a trading position is closed (TP/SL hit).
  */
 export interface SignalClosedNotification {
+  /** Discriminator for type-safe union */
   type: "signal.closed";
+  /** Unique notification identifier */
   id: string;
+  /** Unix timestamp in milliseconds when signal was closed (closeTimestamp) */
   timestamp: number;
+  /** Whether this notification is from backtest mode (true) or live mode (false) */
   backtest: boolean;
+  /** Trading pair symbol (e.g., "BTCUSDT") */
   symbol: string;
+  /** Strategy name that generated this signal */
   strategyName: StrategyName;
+  /** Exchange name where signal was executed */
   exchangeName: ExchangeName;
+  /** Unique signal identifier (UUID v4) */
   signalId: string;
+  /** Trade direction: "long" (buy) or "short" (sell) */
   position: "long" | "short";
+  /** Entry price for the position */
   priceOpen: number;
+  /** Exit price when position was closed */
   priceClose: number;
+  /** Profit/loss as percentage (e.g., 1.5 for +1.5%, -2.3 for -2.3%) */
   pnlPercentage: number;
+  /** Why signal closed (time_expired | take_profit | stop_loss | closed) */
   closeReason: string;
-  duration: number; // minutes
+  /** Duration of position in minutes (from pendingAt to closeTimestamp) */
+  duration: number;
+  /** Optional human-readable description of signal reason */
   note?: string;
+  /** Unix timestamp in milliseconds when the tick result was created (from candle timestamp in backtest or execution context when in live) */
+  createdAt: number;
 }
 
 /**
  * Partial profit notification.
  * Emitted when signal reaches profit level milestone (10%, 20%, etc).
  */
-export interface PartialProfitNotification {
-  type: "partial.profit";
+export interface PartialProfitAvailableNotification {
+  /** Discriminator for type-safe union */
+  type: "partial_profit.available";
+  /** Unique notification identifier */
   id: string;
+  /** Unix timestamp in milliseconds when partial profit level was reached */
   timestamp: number;
+  /** Whether this notification is from backtest mode (true) or live mode (false) */
   backtest: boolean;
+  /** Trading pair symbol (e.g., "BTCUSDT") */
   symbol: string;
+  /** Strategy name that generated this signal */
   strategyName: StrategyName;
+  /** Exchange name where signal was executed */
   exchangeName: ExchangeName;
+  /** Unique signal identifier (UUID v4) */
   signalId: string;
+  /** Profit level milestone reached (10, 20, 30, etc) */
   level: PartialLevel;
+  /** Current market price when milestone was reached */
   currentPrice: number;
+  /** Entry price for the position */
   priceOpen: number;
+  /** Trade direction: "long" (buy) or "short" (sell) */
   position: "long" | "short";
 }
 
@@ -68,19 +112,183 @@ export interface PartialProfitNotification {
  * Partial loss notification.
  * Emitted when signal reaches loss level milestone (-10%, -20%, etc).
  */
-export interface PartialLossNotification {
-  type: "partial.loss";
+export interface PartialLossAvailableNotification {
+  /** Discriminator for type-safe union */
+  type: "partial_loss.available";
+  /** Unique notification identifier */
   id: string;
+  /** Unix timestamp in milliseconds when partial loss level was reached */
   timestamp: number;
+  /** Whether this notification is from backtest mode (true) or live mode (false) */
   backtest: boolean;
+  /** Trading pair symbol (e.g., "BTCUSDT") */
   symbol: string;
+  /** Strategy name that generated this signal */
   strategyName: StrategyName;
+  /** Exchange name where signal was executed */
   exchangeName: ExchangeName;
+  /** Unique signal identifier (UUID v4) */
   signalId: string;
+  /** Loss level milestone reached (10, 20, 30, etc) */
   level: PartialLevel;
+  /** Current market price when milestone was reached */
   currentPrice: number;
+  /** Entry price for the position */
   priceOpen: number;
+  /** Trade direction: "long" (buy) or "short" (sell) */
   position: "long" | "short";
+}
+
+/**
+ * Breakeven available notification.
+ * Emitted when signal's stop-loss can be moved to breakeven (entry price).
+ */
+export interface BreakevenAvailableNotification {
+  /** Discriminator for type-safe union */
+  type: "breakeven.available";
+  /** Unique notification identifier */
+  id: string;
+  /** Unix timestamp in milliseconds when breakeven became available */
+  timestamp: number;
+  /** Whether this notification is from backtest mode (true) or live mode (false) */
+  backtest: boolean;
+  /** Trading pair symbol (e.g., "BTCUSDT") */
+  symbol: string;
+  /** Strategy name that generated this signal */
+  strategyName: StrategyName;
+  /** Exchange name where signal was executed */
+  exchangeName: ExchangeName;
+  /** Unique signal identifier (UUID v4) */
+  signalId: string;
+  /** Current market price when breakeven became available */
+  currentPrice: number;
+  /** Entry price for the position (breakeven level) */
+  priceOpen: number;
+  /** Trade direction: "long" (buy) or "short" (sell) */
+  position: "long" | "short";
+}
+
+/**
+ * Partial profit commit notification.
+ * Emitted when partial profit action is executed.
+ */
+export interface PartialProfitCommitNotification {
+  /** Discriminator for type-safe union */
+  type: "partial_profit.commit";
+  /** Unique notification identifier */
+  id: string;
+  /** Unix timestamp in milliseconds when partial profit was committed */
+  timestamp: number;
+  /** Whether this notification is from backtest mode (true) or live mode (false) */
+  backtest: boolean;
+  /** Trading pair symbol (e.g., "BTCUSDT") */
+  symbol: string;
+  /** Strategy name that generated this signal */
+  strategyName: StrategyName;
+  /** Exchange name where signal was executed */
+  exchangeName: ExchangeName;
+  /** Percentage of position closed (0-100) */
+  percentToClose: number;
+  /** Current market price when partial was executed */
+  currentPrice: number;
+}
+
+/**
+ * Partial loss commit notification.
+ * Emitted when partial loss action is executed.
+ */
+export interface PartialLossCommitNotification {
+  /** Discriminator for type-safe union */
+  type: "partial_loss.commit";
+  /** Unique notification identifier */
+  id: string;
+  /** Unix timestamp in milliseconds when partial loss was committed */
+  timestamp: number;
+  /** Whether this notification is from backtest mode (true) or live mode (false) */
+  backtest: boolean;
+  /** Trading pair symbol (e.g., "BTCUSDT") */
+  symbol: string;
+  /** Strategy name that generated this signal */
+  strategyName: StrategyName;
+  /** Exchange name where signal was executed */
+  exchangeName: ExchangeName;
+  /** Percentage of position closed (0-100) */
+  percentToClose: number;
+  /** Current market price when partial was executed */
+  currentPrice: number;
+}
+
+/**
+ * Breakeven commit notification.
+ * Emitted when breakeven action is executed.
+ */
+export interface BreakevenCommitNotification {
+  /** Discriminator for type-safe union */
+  type: "breakeven.commit";
+  /** Unique notification identifier */
+  id: string;
+  /** Unix timestamp in milliseconds when breakeven was committed */
+  timestamp: number;
+  /** Whether this notification is from backtest mode (true) or live mode (false) */
+  backtest: boolean;
+  /** Trading pair symbol (e.g., "BTCUSDT") */
+  symbol: string;
+  /** Strategy name that generated this signal */
+  strategyName: StrategyName;
+  /** Exchange name where signal was executed */
+  exchangeName: ExchangeName;
+  /** Current market price when breakeven was executed */
+  currentPrice: number;
+}
+
+/**
+ * Trailing stop commit notification.
+ * Emitted when trailing stop action is executed.
+ */
+export interface TrailingStopCommitNotification {
+  /** Discriminator for type-safe union */
+  type: "trailing_stop.commit";
+  /** Unique notification identifier */
+  id: string;
+  /** Unix timestamp in milliseconds when trailing stop was committed */
+  timestamp: number;
+  /** Whether this notification is from backtest mode (true) or live mode (false) */
+  backtest: boolean;
+  /** Trading pair symbol (e.g., "BTCUSDT") */
+  symbol: string;
+  /** Strategy name that generated this signal */
+  strategyName: StrategyName;
+  /** Exchange name where signal was executed */
+  exchangeName: ExchangeName;
+  /** Percentage shift of original SL distance (-100 to 100) */
+  percentShift: number;
+  /** Current market price when trailing stop was executed */
+  currentPrice: number;
+}
+
+/**
+ * Trailing take commit notification.
+ * Emitted when trailing take action is executed.
+ */
+export interface TrailingTakeCommitNotification {
+  /** Discriminator for type-safe union */
+  type: "trailing_take.commit";
+  /** Unique notification identifier */
+  id: string;
+  /** Unix timestamp in milliseconds when trailing take was committed */
+  timestamp: number;
+  /** Whether this notification is from backtest mode (true) or live mode (false) */
+  backtest: boolean;
+  /** Trading pair symbol (e.g., "BTCUSDT") */
+  symbol: string;
+  /** Strategy name that generated this signal */
+  strategyName: StrategyName;
+  /** Exchange name where signal was executed */
+  exchangeName: ExchangeName;
+  /** Percentage shift of original TP distance (-100 to 100) */
+  percentShift: number;
+  /** Current market price when trailing take was executed */
+  currentPrice: number;
 }
 
 /**
@@ -88,17 +296,29 @@ export interface PartialLossNotification {
  * Emitted when a signal is rejected due to risk management rules.
  */
 export interface RiskRejectionNotification {
+  /** Discriminator for type-safe union */
   type: "risk.rejection";
+  /** Unique notification identifier */
   id: string;
+  /** Unix timestamp in milliseconds when signal was rejected */
   timestamp: number;
+  /** Whether this notification is from backtest mode (true) or live mode (false) */
   backtest: boolean;
+  /** Trading pair symbol (e.g., "BTCUSDT") */
   symbol: string;
+  /** Strategy name that attempted to create signal */
   strategyName: StrategyName;
+  /** Exchange name where signal was rejected */
   exchangeName: ExchangeName;
+  /** Human-readable reason for rejection */
   rejectionNote: string;
+  /** Optional unique rejection identifier for tracking */
   rejectionId: string | null;
+  /** Number of currently active positions at rejection time */
   activePositionCount: number;
+  /** Current market price when rejection occurred */
   currentPrice: number;
+  /** The signal that was rejected */
   pendingSignal: ISignalDto;
 }
 
@@ -107,18 +327,32 @@ export interface RiskRejectionNotification {
  * Emitted when a signal is scheduled for future execution.
  */
 export interface SignalScheduledNotification {
+  /** Discriminator for type-safe union */
   type: "signal.scheduled";
+  /** Unique notification identifier */
   id: string;
+  /** Unix timestamp in milliseconds when signal was scheduled (scheduledAt) */
   timestamp: number;
+  /** Whether this notification is from backtest mode (true) or live mode (false) */
   backtest: boolean;
+  /** Trading pair symbol (e.g., "BTCUSDT") */
   symbol: string;
+  /** Strategy name that generated this signal */
   strategyName: StrategyName;
+  /** Exchange name where signal will be executed */
   exchangeName: ExchangeName;
+  /** Unique signal identifier (UUID v4) */
   signalId: string;
+  /** Trade direction: "long" (buy) or "short" (sell) */
   position: "long" | "short";
+  /** Target entry price for activation */
   priceOpen: number;
+  /** Unix timestamp in milliseconds when signal was scheduled */
   scheduledAt: number;
+  /** Current market price when signal was scheduled */
   currentPrice: number;
+  /** Unix timestamp in milliseconds when the tick result was created (from candle timestamp in backtest or execution context when in live) */
+  createdAt: number;
 }
 
 /**
@@ -126,46 +360,32 @@ export interface SignalScheduledNotification {
  * Emitted when a scheduled signal is cancelled before activation.
  */
 export interface SignalCancelledNotification {
+  /** Discriminator for type-safe union */
   type: "signal.cancelled";
+  /** Unique notification identifier */
   id: string;
+  /** Unix timestamp in milliseconds when signal was cancelled (closeTimestamp) */
   timestamp: number;
+  /** Whether this notification is from backtest mode (true) or live mode (false) */
   backtest: boolean;
+  /** Trading pair symbol (e.g., "BTCUSDT") */
   symbol: string;
+  /** Strategy name that generated this signal */
   strategyName: StrategyName;
+  /** Exchange name where signal was scheduled */
   exchangeName: ExchangeName;
+  /** Unique signal identifier (UUID v4) */
   signalId: string;
+  /** Trade direction: "long" (buy) or "short" (sell) */
   position: "long" | "short";
+  /** Why signal was cancelled (timeout | price_reject | user) */
   cancelReason: string;
+  /** Optional cancellation identifier (provided when user calls cancel()) */
   cancelId: string;
-  duration: number; // minutes
-}
-
-/**
- * Backtest completed notification.
- * Emitted when backtest execution completes.
- */
-export interface BacktestDoneNotification {
-  type: "backtest.done";
-  id: string;
-  timestamp: number;
-  backtest: true;
-  symbol: string;
-  strategyName: StrategyName;
-  exchangeName: ExchangeName;
-}
-
-/**
- * Live trading completed notification.
- * Emitted when live trading execution completes.
- */
-export interface LiveDoneNotification {
-  type: "live.done";
-  id: string;
-  timestamp: number;
-  backtest: false;
-  symbol: string;
-  strategyName: StrategyName;
-  exchangeName: ExchangeName;
+  /** Duration in minutes from scheduledAt to cancellation */
+  duration: number;
+  /** Unix timestamp in milliseconds when the tick result was created (from candle timestamp in backtest or execution context when in live) */
+  createdAt: number;
 }
 
 /**
@@ -173,11 +393,17 @@ export interface LiveDoneNotification {
  * Emitted for recoverable errors in background tasks.
  */
 export interface InfoErrorNotification {
+  /** Discriminator for type-safe union */
   type: "error.info";
+  /** Unique notification identifier */
   id: string;
+  /** Serialized error object with stack trace and metadata */
   error: object;
+  /** Human-readable error message */
   message: string;
+  /** Unix timestamp in milliseconds when error occurred */
   timestamp: number;
+  /** Always false for error notifications (errors are from live context) */
   backtest: boolean;
 }
 
@@ -186,11 +412,17 @@ export interface InfoErrorNotification {
  * Emitted for fatal errors requiring process termination.
  */
 export interface CriticalErrorNotification {
+  /** Discriminator for type-safe union */
   type: "error.critical";
+  /** Unique notification identifier */
   id: string;
+  /** Serialized error object with stack trace and metadata */
   error: object;
+  /** Human-readable error message */
   message: string;
+  /** Unix timestamp in milliseconds when critical error occurred */
   timestamp: number;
+  /** Always false for error notifications (errors are from live context) */
   backtest: boolean;
 }
 
@@ -199,29 +431,18 @@ export interface CriticalErrorNotification {
  * Emitted when risk validation functions throw errors.
  */
 export interface ValidationErrorNotification {
+  /** Discriminator for type-safe union */
   type: "error.validation";
+  /** Unique notification identifier */
   id: string;
+  /** Serialized error object with stack trace and metadata */
   error: object;
+  /** Human-readable validation error message */
   message: string;
+  /** Unix timestamp in milliseconds when validation error occurred */
   timestamp: number;
+  /** Always false for error notifications (errors are from live context) */
   backtest: boolean;
-}
-
-/**
- * Progress update notification.
- * Emitted during backtest execution.
- */
-export interface ProgressBacktestNotification {
-  type: "progress.backtest";
-  id: string;
-  timestamp: number;
-  backtest: true;
-  exchangeName: ExchangeName;
-  strategyName: StrategyName;
-  symbol: string;
-  totalFrames: number;
-  processedFrames: number;
-  progress: number; // 0.0 to 1.0
 }
 
 /**
@@ -253,16 +474,19 @@ export interface ProgressBacktestNotification {
 export type NotificationModel =
   | SignalOpenedNotification
   | SignalClosedNotification
-  | PartialProfitNotification
-  | PartialLossNotification
+  | PartialProfitAvailableNotification
+  | PartialLossAvailableNotification
+  | BreakevenAvailableNotification
+  | PartialProfitCommitNotification
+  | PartialLossCommitNotification
+  | BreakevenCommitNotification
+  | TrailingStopCommitNotification
+  | TrailingTakeCommitNotification
   | RiskRejectionNotification
   | SignalScheduledNotification
   | SignalCancelledNotification
-  | BacktestDoneNotification
-  | LiveDoneNotification
   | InfoErrorNotification
   | CriticalErrorNotification
-  | ValidationErrorNotification
-  | ProgressBacktestNotification;
+  | ValidationErrorNotification;
 
 export default NotificationModel;

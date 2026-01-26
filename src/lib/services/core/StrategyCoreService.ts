@@ -9,6 +9,8 @@ import {
   IStrategyTickResult,
   StrategyName,
   IStrategy,
+  IStrategyTickResultClosed,
+  IStrategyTickResultCancelled,
 } from "../../../interfaces/Strategy.interface";
 import StrategyConnectionService from "../connection/StrategyConnectionService";
 import { ExchangeName, ICandleData } from "../../../interfaces/Exchange.interface";
@@ -19,11 +21,9 @@ import StrategyValidationService from "../validation/StrategyValidationService";
 import ExchangeValidationService from "../validation/ExchangeValidationService";
 import FrameValidationService from "../validation/FrameValidationService";
 import { FrameName } from "../../../interfaces/Frame.interface";
-import StrategyMarkdownService from "../markdown/StrategyMarkdownService";
-import StrategyReportService from "../report/StrategyReportService";
-import StrategyCommitContract from "src/contract/StrategyCommit.contract";
-import { errorEmitter, strategyCommitSubject } from "src/config/emitters";
-import backtest from "src/lib";
+import StrategyCommitContract from "../../../contract/StrategyCommit.contract";
+import { errorEmitter, strategyCommitSubject } from "../../../config/emitters";
+import backtest from "../../../lib";
 
 const METHOD_NAME_VALIDATE = "strategyCoreService validate";
 
@@ -303,7 +303,7 @@ export class StrategyCoreService implements TStrategy {
     when: Date,
     backtest: boolean,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
-  ): Promise<IStrategyBacktestResult> => {
+  ): Promise<IStrategyTickResultClosed | IStrategyTickResultCancelled> => {
     this.loggerService.log("strategyCoreService backtest", {
       symbol,
       candleCount: candles.length,

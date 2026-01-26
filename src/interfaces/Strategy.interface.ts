@@ -147,6 +147,19 @@ export interface IPublicSignalRow extends ISignalRow {
 }
 
 /**
+ * Storage signal row with creation timestamp taken from IStrategyTickResult.
+ * Used for persisting signals with accurate creation time.
+ */
+export interface IStorageSignalRow extends IPublicSignalRow {
+  /** Creation timestamp taken from IStrategyTickResult */
+  updatedAt: number;
+  /** Storage adapter rewrite priority. Equal to Date.now for live and backtest both */
+  priority: number;
+  /** Current status of the signal */
+  status: "opened" | "scheduled" | "closed" | "cancelled";
+}
+
+/**
  * Risk signal row for internal risk management.
  * Extends ISignalDto to include priceOpen, originalPriceStopLoss and originalPriceTakeProfit.
  * Used in risk validation to access entry price and original SL/TP.
@@ -331,6 +344,8 @@ export interface IStrategyTickResultIdle {
   currentPrice: number;
   /** Whether this event is from backtest mode (true) or live mode (false) */
   backtest: boolean;
+  /** Unix timestamp in milliseconds when this tick result was created (from candle timestamp in backtest or execution context when in live) */
+  createdAt: number;
 }
 
 /**
@@ -354,6 +369,8 @@ export interface IStrategyTickResultScheduled {
   currentPrice: number;
   /** Whether this event is from backtest mode (true) or live mode (false) */
   backtest: boolean;
+  /** Unix timestamp in milliseconds when this tick result was created (from candle timestamp in backtest or execution context when in live) */
+  createdAt: number;
 }
 
 /**
@@ -384,6 +401,8 @@ export interface IStrategyTickResultWaiting {
   pnl: IStrategyPnL;
   /** Whether this event is from backtest mode (true) or live mode (false) */
   backtest: boolean;
+  /** Unix timestamp in milliseconds when this tick result was created (from candle timestamp in backtest or execution context when in live) */
+  createdAt: number;
 }
 
 /**
@@ -407,6 +426,8 @@ export interface IStrategyTickResultOpened {
   currentPrice: number;
   /** Whether this event is from backtest mode (true) or live mode (false) */
   backtest: boolean;
+  /** Unix timestamp in milliseconds when this tick result was created (from candle timestamp in backtest or execution context when in live) */
+  createdAt: number;
 }
 
 /**
@@ -436,6 +457,8 @@ export interface IStrategyTickResultActive {
   pnl: IStrategyPnL;
   /** Whether this event is from backtest mode (true) or live mode (false) */
   backtest: boolean;
+  /** Unix timestamp in milliseconds when this tick result was created (from candle timestamp in backtest or execution context when in live) */
+  createdAt: number;
 }
 
 /**
@@ -467,6 +490,8 @@ export interface IStrategyTickResultClosed {
   backtest: boolean;
   /** Close ID (only for user-initiated closes with reason "closed") */
   closeId?: string;
+  /** Unix timestamp in milliseconds when this tick result was created (from candle timestamp in backtest or execution context when in live) */
+  createdAt: number;
 }
 
 /**
@@ -496,6 +521,8 @@ export interface IStrategyTickResultCancelled {
   reason: StrategyCancelReason;
   /** Optional cancellation ID (provided when user calls Backtest.cancel() or Live.cancel()) */
   cancelId?: string;
+  /** Unix timestamp in milliseconds when this tick result was created (from candle timestamp in backtest or execution context when in live) */
+  createdAt: number;
 }
 
 /**
@@ -514,7 +541,7 @@ export type IStrategyTickResult =
 /**
  * Backtest returns closed result (TP/SL or time_expired) or cancelled result (scheduled signal never activated).
  */
-export type IStrategyBacktestResult = IStrategyTickResultClosed | IStrategyTickResultCancelled;
+export type IStrategyBacktestResult = IStrategyTickResultOpened | IStrategyTickResultScheduled | IStrategyTickResultClosed | IStrategyTickResultCancelled;
 
 /**
  * Strategy interface implemented by ClientStrategy.

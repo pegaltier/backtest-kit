@@ -877,6 +877,72 @@ backtestCommandService:
 						methodContextService: ""
 						executionContextService: ""
 			methodContextService: ""
+			actionCoreService:
+				• actionCoreService: ""
+				loggerService:
+					• loggerService: ""
+					methodContextService: ""
+					executionContextService: ""
+				actionConnectionService:
+					• actionConnectionService: ""
+					loggerService:
+						• loggerService: ""
+						methodContextService: ""
+						executionContextService: ""
+					actionSchemaService:
+						• actionSchemaService: ""
+						loggerService:
+							• loggerService: ""
+							methodContextService: ""
+							executionContextService: ""
+				actionValidationService:
+					• actionValidationService: ""
+					loggerService:
+						• loggerService: ""
+						methodContextService: ""
+						executionContextService: ""
+				exchangeValidationService:
+					• exchangeValidationService: ""
+					loggerService:
+						• loggerService: ""
+						methodContextService: ""
+						executionContextService: ""
+				frameValidationService:
+					• frameValidationService: ""
+					loggerService:
+						• loggerService: ""
+						methodContextService: ""
+						executionContextService: ""
+				strategyValidationService:
+					• strategyValidationService: ""
+					loggerService:
+						• loggerService: ""
+						methodContextService: ""
+						executionContextService: ""
+					riskValidationService:
+						• riskValidationService: ""
+						loggerService:
+							• loggerService: ""
+							methodContextService: ""
+							executionContextService: ""
+					actionValidationService:
+						• actionValidationService: ""
+						loggerService:
+							• loggerService: ""
+							methodContextService: ""
+							executionContextService: ""
+				strategySchemaService:
+					• strategySchemaService: ""
+					loggerService:
+						• loggerService: ""
+						methodContextService: ""
+						executionContextService: ""
+				riskValidationService:
+					• riskValidationService: ""
+					loggerService:
+						• loggerService: ""
+						methodContextService: ""
+						executionContextService: ""
 	strategyValidationService:
 		• strategyValidationService: ""
 		loggerService:
@@ -1354,6 +1420,72 @@ walkerCommandService:
 								methodContextService: ""
 								executionContextService: ""
 					methodContextService: ""
+					actionCoreService:
+						• actionCoreService: ""
+						loggerService:
+							• loggerService: ""
+							methodContextService: ""
+							executionContextService: ""
+						actionConnectionService:
+							• actionConnectionService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+							actionSchemaService:
+								• actionSchemaService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+						actionValidationService:
+							• actionValidationService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+						exchangeValidationService:
+							• exchangeValidationService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+						frameValidationService:
+							• frameValidationService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+						strategyValidationService:
+							• strategyValidationService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+							riskValidationService:
+								• riskValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							actionValidationService:
+								• actionValidationService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+						strategySchemaService:
+							• strategySchemaService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+						riskValidationService:
+							• riskValidationService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
 			backtestMarkdownService:
 				• backtestMarkdownService: ""
 				loggerService:

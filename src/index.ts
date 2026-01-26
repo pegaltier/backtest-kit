@@ -124,6 +124,8 @@ export {
   ISignalDto,
   ISignalRow,
   IPublicSignalRow,
+  IStorageSignalRow,
+  IRiskSignalRow,
   IScheduledSignalCancelRow,
   IScheduledSignalRow,
   IStrategySchema,
@@ -134,6 +136,9 @@ export {
   IStrategyTickResultOpened,
   IStrategyTickResultScheduled,
   IStrategyTickResultCancelled,
+  IStrategyTickResultWaiting,
+  StrategyCancelReason,
+  StrategyCloseReason,
   IStrategyPnL,
 } from "./interfaces/Strategy.interface";
 
@@ -175,13 +180,16 @@ export { ColumnModel } from "./model/Column.model";
 
 export {
   NotificationModel,
-  BacktestDoneNotification,
   CriticalErrorNotification,
   InfoErrorNotification,
-  LiveDoneNotification,
-  PartialLossNotification,
-  PartialProfitNotification,
-  ProgressBacktestNotification,
+  PartialLossAvailableNotification,
+  PartialProfitAvailableNotification,
+  BreakevenAvailableNotification,
+  PartialProfitCommitNotification,
+  PartialLossCommitNotification,
+  BreakevenCommitNotification,
+  TrailingStopCommitNotification,
+  TrailingTakeCommitNotification,
   RiskRejectionNotification,
   SignalCancelledNotification,
   SignalClosedNotification,
@@ -238,6 +246,8 @@ export {
   PersistBreakevenAdapter,
   CandleData,
   PersistCandleAdapter,
+  StorageData,
+  PersistStorageAdapter,
 } from "./classes/Persist";
 
 export {
@@ -267,6 +277,7 @@ export { PositionSize } from "./classes/PositionSize";
 export { Partial } from "./classes/Partial";
 export { Constant } from "./classes/Constant";
 export { Risk } from "./classes/Risk";
+export { Storage } from "./classes/Storage";
 export { Exchange } from "./classes/Exchange";
 export { Cache } from "./classes/Cache";
 export { Notification } from "./classes/Notification";

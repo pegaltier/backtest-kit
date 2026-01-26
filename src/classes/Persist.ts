@@ -22,19 +22,8 @@ import { IRiskActivePosition, RiskName } from "../interfaces/Risk.interface";
 import { IPartialData } from "../interfaces/Partial.interface";
 import { IBreakevenData } from "../interfaces/Breakeven.interface";
 import { ExchangeName, CandleInterval, ICandleData } from "../interfaces/Exchange.interface";
+import { IStorageSignalRow } from "../interfaces/Strategy.interface";
 
-const INTERVAL_MINUTES: Record<CandleInterval, number> = {
-  "1m": 1,
-  "3m": 3,
-  "5m": 5,
-  "15m": 15,
-  "30m": 30,
-  "1h": 60,
-  "2h": 120,
-  "4h": 240,
-  "6h": 360,
-  "8h": 480,
-};
 
 const BASE_WAIT_FOR_INIT_SYMBOL = Symbol("wait-for-init");
 
@@ -96,6 +85,17 @@ const PERSIST_BASE_METHOD_NAME_READ_VALUE = "PersistBase.readValue";
 const PERSIST_BASE_METHOD_NAME_WRITE_VALUE = "PersistBase.writeValue";
 const PERSIST_BASE_METHOD_NAME_HAS_VALUE = "PersistBase.hasValue";
 const PERSIST_BASE_METHOD_NAME_KEYS = "PersistBase.keys";
+
+const PERSIST_STORAGE_UTILS_METHOD_NAME_READ_DATA =
+  "PersistStorageUtils.readStorageData";
+const PERSIST_STORAGE_UTILS_METHOD_NAME_WRITE_DATA =
+  "PersistStorageUtils.writeStorageData";
+const PERSIST_STORAGE_UTILS_METHOD_NAME_USE_JSON =
+  "PersistStorageUtils.useJson";
+const PERSIST_STORAGE_UTILS_METHOD_NAME_USE_DUMMY =
+  "PersistStorageUtils.useDummy";
+const PERSIST_STORAGE_UTILS_METHOD_NAME_USE_PERSIST_STORAGE_ADAPTER =
+  "PersistStorageUtils.usePersistStorageAdapter";
 
 const BASE_WAIT_FOR_INIT_FN_METHOD_NAME = "PersistBase.waitForInitFn";
 
@@ -454,7 +454,7 @@ export class PersistSignalUtils {
   private PersistSignalFactory: TPersistBaseCtor<StrategyName, SignalData> =
     PersistBase;
 
-  private getSignalStorage = memoize(
+  private getStorage = memoize(
     ([symbol, strategyName, exchangeName]: [
       string,
       StrategyName,
@@ -513,8 +513,8 @@ export class PersistSignalUtils {
     swarm.loggerService.info(PERSIST_SIGNAL_UTILS_METHOD_NAME_READ_DATA);
 
     const key = `${symbol}:${strategyName}:${exchangeName}`;
-    const isInitial = !this.getSignalStorage.has(key);
-    const stateStorage = this.getSignalStorage(
+    const isInitial = !this.getStorage.has(key);
+    const stateStorage = this.getStorage(
       symbol,
       strategyName,
       exchangeName
@@ -549,8 +549,8 @@ export class PersistSignalUtils {
     swarm.loggerService.info(PERSIST_SIGNAL_UTILS_METHOD_NAME_WRITE_DATA);
 
     const key = `${symbol}:${strategyName}:${exchangeName}`;
-    const isInitial = !this.getSignalStorage.has(key);
-    const stateStorage = this.getSignalStorage(
+    const isInitial = !this.getStorage.has(key);
+    const stateStorage = this.getStorage(
       symbol,
       strategyName,
       exchangeName
@@ -1462,5 +1462,132 @@ export class PersistCandleUtils {
  * ```
  */
 export const PersistCandleAdapter = new PersistCandleUtils();
+
+
+/**
+ * Type for persisted signal storage data.
+ * Each signal is stored as a separate file keyed by its id.
+ */
+export type StorageData = IStorageSignalRow[];
+
+
+/**
+ * Utility class for managing signal storage persistence.
+ *
+ * Features:
+ * - Memoized storage instances
+ * - Custom adapter support
+ * - Atomic read/write operations for StorageData
+ * - Each signal stored as separate file keyed by id
+ * - Crash-safe signal state management
+ *
+ * Used by SignalLiveUtils for live mode persistence of signals.
+ */
+export class PersistStorageUtils {
+  private PersistStorageFactory: TPersistBaseCtor<string, IStorageSignalRow> =
+    PersistBase;
+
+  private getStorageStorage = memoize(
+    ([backtest]): string => backtest ? `backtest` : `live`,
+    (backtest: boolean): IPersistBase<IStorageSignalRow> =>
+      Reflect.construct(this.PersistStorageFactory, [
+        backtest ? `backtest` : `live`,
+        `./dump/data/signal-storage/`,
+      ])
+  );
+
+  /**
+   * Registers a custom persistence adapter.
+   *
+   * @param Ctor - Custom PersistBase constructor
+   */
+  public usePersistStorageAdapter(
+    Ctor: TPersistBaseCtor<string, IStorageSignalRow>
+  ): void {
+    swarm.loggerService.info(
+      PERSIST_STORAGE_UTILS_METHOD_NAME_USE_PERSIST_STORAGE_ADAPTER
+    );
+    this.PersistStorageFactory = Ctor;
+  }
+
+  /**
+   * Reads persisted signals data.
+   *
+   * Called by StorageLiveUtils/StorageBacktestUtils.waitForInit() to restore state.
+   * Uses keys() from PersistBase to iterate over all stored signals.
+   * Returns empty array if no signals exist.
+   *
+   * @param backtest - If true, reads from backtest storage; otherwise from live storage
+   * @returns Promise resolving to array of signal entries
+   */
+  public readStorageData = async (backtest: boolean): Promise<StorageData> => {
+    swarm.loggerService.info(PERSIST_STORAGE_UTILS_METHOD_NAME_READ_DATA);
+
+    const key = backtest ? `backtest` : `live`;
+    const isInitial = !this.getStorageStorage.has(key);
+    const stateStorage = this.getStorageStorage(backtest);
+    await stateStorage.waitForInit(isInitial);
+
+    const signals: IStorageSignalRow[] = [];
+
+    for await (const signalId of stateStorage.keys()) {
+      const signal = await stateStorage.readValue(signalId);
+      signals.push(signal);
+    }
+
+    return signals;
+  };
+
+  /**
+   * Writes signal data to disk with atomic file writes.
+   *
+   * Called by StorageLiveUtils/StorageBacktestUtils after signal changes to persist state.
+   * Uses signal.id as the storage key for individual file storage.
+   * Uses atomic writes to prevent corruption on crashes.
+   *
+   * @param signalData - Signal entries to persist
+   * @param backtest - If true, writes to backtest storage; otherwise to live storage
+   * @returns Promise that resolves when write is complete
+   */
+  public writeStorageData = async (
+    signalData: StorageData,
+    backtest: boolean
+  ): Promise<void> => {
+    swarm.loggerService.info(PERSIST_STORAGE_UTILS_METHOD_NAME_WRITE_DATA);
+
+    const key = backtest ? `backtest` : `live`;
+    const isInitial = !this.getStorageStorage.has(key);
+    const stateStorage = this.getStorageStorage(backtest);
+    await stateStorage.waitForInit(isInitial);
+
+    for (const signal of signalData) {
+      await stateStorage.writeValue(signal.id, signal);
+    }
+  };
+
+  /**
+   * Switches to the default JSON persist adapter.
+   * All future persistence writes will use JSON storage.
+   */
+  public useJson() {
+    swarm.loggerService.log(PERSIST_STORAGE_UTILS_METHOD_NAME_USE_JSON);
+    this.usePersistStorageAdapter(PersistBase);
+  }
+
+  /**
+   * Switches to a dummy persist adapter that discards all writes.
+   * All future persistence writes will be no-ops.
+   */
+  public useDummy() {
+    swarm.loggerService.log(PERSIST_STORAGE_UTILS_METHOD_NAME_USE_DUMMY);
+    this.usePersistStorageAdapter(PersistDummy);
+  }
+}
+
+/**
+ * Global singleton instance of PersistStorageUtils.
+ * Used by SignalLiveUtils for signal storage persistence.
+ */
+export const PersistStorageAdapter = new PersistStorageUtils();
 
 export { PersistBase }
