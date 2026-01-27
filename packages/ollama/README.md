@@ -1,206 +1,298 @@
-# 🤖 @backtest-kit/ollama
+# @backtest-kit/ollama
 
-> Multi-provider LLM inference library for AI-powered trading strategies. Supports 10+ providers including OpenAI, Claude, DeepSeek, Grok, and more with unified API and automatic token rotation.
+> Multi-provider LLM context wrapper for trading strategies. Supports 10+ providers with unified HOF API.
 
-![bots](https://raw.githubusercontent.com/tripolskypetr/backtest-kit/HEAD/assets/bots.png)
-
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/tripolskypetr/backtest-kit)
-[![npm](https://img.shields.io/npm/v/@backtest-kit/ollama.svg?style=flat-square)](https://npmjs.org/package/@backtest-kit/ollama)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue)]()
-
-Transform technical analysis into trading decisions with multi-provider LLM support, structured output, and built-in risk management.
-
-📚 **[Backtest Kit Docs](https://backtest-kit.github.io/documents/example_02_first_backtest.html)** | 🌟 **[GitHub](https://github.com/tripolskypetr/backtest-kit)**
-
-## ✨ Features
-
-- 🔌 **10+ LLM Providers**: OpenAI, Claude, DeepSeek, Grok, Mistral, Perplexity, Cohere, Alibaba, Hugging Face, Ollama
-- 🔄 **Token Rotation**: Automatic API key rotation for Ollama (others throw clear errors)
-- 🎯 **Structured Output**: Enforced JSON schema for trading signals (position, price levels, risk notes)
-- 🔑 **Flexible Auth**: Context-based API keys or environment variables
-- ⚡ **Unified API**: Single interface across all providers
-- 📊 **Trading-First**: Built for backtest-kit with position sizing and risk management
-- 🛡️ **Type Safe**: Full TypeScript support with exported types
-
-## 📋 What It Does
-
-`@backtest-kit/ollama` provides a unified interface to call multiple LLM providers and receive structured trading signals:
-
-| Provider | Function | Base URL |
-|----------|----------|----------|
-| **OpenAI** | `gpt5()` | `https://api.openai.com/v1/` |
-| **Claude** | `claude()` | `https://api.anthropic.com/v1/` |
-| **DeepSeek** | `deepseek()` | `https://api.deepseek.com/` |
-| **Grok** | `grok()` | `https://api.x.ai/v1/` |
-| **Mistral** | `mistral()` | `https://api.mistral.ai/v1/` |
-| **Perplexity** | `perplexity()` | `https://api.perplexity.ai/` |
-| **Cohere** | `cohere()` | `https://api.cohere.ai/compatibility/v1/` |
-| **Alibaba** | `alibaba()` | `https://dashscope-intl.aliyuncs.com/compatible-mode/v1/` |
-| **Hugging Face** | `hf()` | `https://router.huggingface.co/v1/` |
-| **Ollama** | `ollama()` | `https://ollama.com/` |
-| **Zhipu AI** | `glm4()` | `https://api.z.ai/api/paas/v4/` |
-
-**Output Schema:**
-
-```typescript
-{
-  id: string;              // Unique signal ID
-  position: "long" | "short";  // Trading direction
-  minuteEstimatedTime: number; // Hold duration estimate
-  priceStopLoss: number;       // Stop loss price
-  priceTakeProfit: number;     // Take profit price
-  note: string;                // Risk assessment note
-  priceOpen: number;           // Entry price
-}
-```
-
-## 🚀 Installation
+## Installation
 
 ```bash
-npm install @backtest-kit/ollama agent-swarm-kit backtest-kit
+npm install @backtest-kit/ollama backtest-kit agent-swarm-kit
 ```
 
-## 📖 Usage
+## Usage
 
-### Quick Start - OpenAI
+### Signal Schema (userspace)
 
 ```typescript
-import { gpt5 } from '@backtest-kit/ollama';
-import { commitHistorySetup } from '@backtest-kit/signals';
+// schema/Signal.schema.ts
+import { z } from 'zod';
+import { str } from 'functools-kit';
 
-// Build context with technical analysis
-const messages = [
-  {
-    role: 'system',
-    content: 'You are a trading bot. Analyze indicators and return JSON: { position: "long"|"short", priceStopLoss, priceTakeProfit, minuteEstimatedTime, priceOpen, note }'
-  }
-];
+export const SignalSchema = z.object({
+  position: z.enum(['long', 'short', 'wait']).describe(
+    str.newline(
+      'Position direction:',
+      'long: bullish signals, uptrend potential',
+      'short: bearish signals, downtrend potential',
+      'wait: conflicting signals or unfavorable conditions',
+    )
+  ),
+  price_open: z.number().describe(
+    str.newline(
+      'Entry price in USD',
+      'Current market price or limit order price',
+    )
+  ),
+  price_stop_loss: z.number().describe(
+    str.newline(
+      'Stop-loss price in USD',
+      'LONG: below price_open',
+      'SHORT: above price_open',
+    )
+  ),
+  price_take_profit: z.number().describe(
+    str.newline(
+      'Take-profit price in USD',
+      'LONG: above price_open',
+      'SHORT: below price_open',
+    )
+  ),
+  minute_estimated_time: z.number().describe(
+    'Estimated time to reach TP in minutes'
+  ),
+  risk_note: z.string().describe(
+    str.newline(
+      'Risk assessment:',
+      '- Whale manipulations',
+      '- Order book imbalance',
+      '- Technical divergences',
+      'Provide specific numbers and percentages',
+    )
+  ),
+});
 
-await commitHistorySetup('BTCUSDT', messages);
-
-// Get trading signal from GPT-5
-const signal = await gpt5(messages, 'gpt-4o', process.env.CC_OPENAI_API_KEY);
-
-console.log(signal);
-// {
-//   id: "abc-123",
-//   position: "long",
-//   priceStopLoss: 49000,
-//   priceTakeProfit: 51000,
-//   minuteEstimatedTime: 60,
-//   priceOpen: 50000,
-//   note: "Strong bullish momentum with RSI oversold recovery"
-// }
+export type TSignalSchema = z.infer<typeof SignalSchema>;
 ```
 
-### Multi-Provider Strategy
+### Signal Outline with Zod (userspace)
 
 ```typescript
-import { gpt5, claude, deepseek } from '@backtest-kit/ollama';
-import { addStrategy } from 'backtest-kit';
-import { commitHistorySetup } from '@backtest-kit/signals';
+// outline/signal.outline.ts
+import { addOutline } from 'agent-swarm-kit';
+import { zodResponseFormat } from 'openai/helpers/zod';
+import { SignalSchema, TSignalSchema } from '../schema/Signal.schema';
+import { CompletionName } from '@backtest-kit/ollama';
 
-addStrategy({
-  strategyName: 'multi-llm',
-  interval: '5m',
-  riskName: 'aggressive',
-  getSignal: async (symbol) => {
-    const messages = [
-      {
-        role: 'system',
-        content: 'Analyze technical data and return trading signal as JSON'
-      }
-    ];
-
-    await commitHistorySetup(symbol, messages);
-
-    // Try multiple providers with fallback
-    try {
-      return await deepseek(messages, 'deepseek-chat');
-    } catch (err) {
-      console.warn('DeepSeek failed, trying Claude:', err);
-      try {
-        return await claude(messages, 'claude-3-5-sonnet-20241022');
-      } catch (err2) {
-        console.warn('Claude failed, using GPT-5:', err2);
-        return await gpt5(messages, 'gpt-4o');
-      }
-    }
-  }
+addOutline<TSignalSchema>({
+  outlineName: 'SignalOutline',
+  completion: CompletionName.RunnerOutlineCompletion,
+  format: zodResponseFormat(SignalSchema, 'position_decision'),
+  getOutlineHistory: async ({ history, param: messages = [] }) => {
+    await history.push(messages);
+  },
+  validations: [
+    {
+      validate: ({ data }) => {
+        if (data.position === 'long' && data.price_stop_loss >= data.price_open) {
+          throw new Error('For LONG, stop_loss must be below price_open');
+        }
+        if (data.position === 'short' && data.price_stop_loss <= data.price_open) {
+          throw new Error('For SHORT, stop_loss must be above price_open');
+        }
+      },
+    },
+  ],
 });
 ```
 
-### Token Rotation (Ollama Only)
+### Signal Outline without Zod (userspace)
 
-Ollama supports automatic API key rotation by passing an array:
+```typescript
+// outline/signal.outline.ts
+import { addOutlineSchema, IOutlineFormat } from 'agent-swarm-kit';
+import { CompletionName } from '@backtest-kit/ollama';
+
+const format: IOutlineFormat = {
+  type: 'object',
+  properties: {
+    take_profit_price: { type: 'number', description: 'Take profit price in USD' },
+    stop_loss_price: { type: 'number', description: 'Stop-loss price in USD' },
+    description: { type: 'string', description: 'User-friendly explanation of risks, min 10 sentences' },
+    reasoning: { type: 'string', description: 'Technical analysis, min 15 sentences' },
+  },
+  required: ['take_profit_price', 'stop_loss_price', 'description', 'reasoning'],
+};
+
+addOutlineSchema({
+  outlineName: 'SignalOutline',
+  format,
+  prompt: 'Generate crypto trading signals based on price and volume indicators in JSON format.',
+  completion: CompletionName.RunnerOutlineCompletion,
+  getOutlineHistory: async ({ history, param }) => {
+    const signalReport = await ioc.signalReportService.getSignalReport(param);
+    await commitReports(history, signalReport);
+    await history.push({ role: 'user', content: 'Generate JSON based on reports.' });
+  },
+  validations: [
+    {
+      validate: ({ data }) => {
+        if (data.action !== 'buy') return;
+        const stopLossChange = percentDiff(data.current_price, data.stop_loss_price);
+        if (stopLossChange > CC_LADDER_STOP_LOSS) {
+          throw new Error(`Stop loss must not exceed -${CC_LADDER_STOP_LOSS}%`);
+        }
+      },
+      docDescription: 'Checks stop-loss price against max loss percentage.',
+    },
+    {
+      validate: ({ data }) => {
+        if (data.action !== 'buy') return;
+        const sellChange = percentDiff(data.current_price, data.take_profit_price);
+        if (sellChange > CC_LADDER_TAKE_PROFIT) {
+          throw new Error(`Take profit must not exceed +${CC_LADDER_TAKE_PROFIT}%`);
+        }
+      },
+      docDescription: 'Checks take-profit price against max profit percentage.',
+    },
+  ],
+});
+```
+
+### Prompt Module (userspace)
+
+```typescript
+// config/prompt/signal.prompt.cjs
+module.exports = {
+  system: (symbol, strategyName, exchangeName, frameName, backtest) => [
+    `You are analyzing ${symbol} on ${exchangeName}`,
+    `Strategy: ${strategyName}, Timeframe: ${frameName}`,
+    backtest ? 'Backtest mode' : 'Live mode',
+  ],
+  user: (symbol) => `Analyze ${symbol} and return trading decision`,
+};
+```
+
+### Strategy
+
+```typescript
+// strategy.ts
+import './outline/signal.outline'; // register outline
+
+import { deepseek, Module, commitPrompt, MessageModel } from '@backtest-kit/ollama';
+import { addStrategy } from 'backtest-kit';
+import { json } from 'agent-swarm-kit';
+
+const signalModule = Module.fromPath('./signal.prompt.cjs');
+
+const getSignal = async () => {
+  const messages: MessageModel[] = [];
+  await commitPrompt(signalModule, messages);
+
+  const { data } = await json('SignalOutline', messages);
+  return data;
+};
+
+addStrategy({
+  strategyName: 'llm-signal',
+  interval: '5m',
+  getSignal: deepseek(getSignal, 'deepseek-chat', process.env.DEEPSEEK_API_KEY),
+});
+```
+
+### Dynamic Prompt
+
+```typescript
+// config/prompt/risk.prompt.cjs
+module.exports = {
+  system: ['You are a risk analyst', 'Be conservative'],
+  user: (symbol, strategyName, exchangeName, frameName, backtest) =>
+    `Evaluate risk for ${symbol} position on ${frameName} timeframe`,
+};
+```
+
+### Inline Prompt
+
+```typescript
+import { Prompt, commitPrompt, MessageModel } from '@backtest-kit/ollama';
+
+const prompt = Prompt.fromPrompt({
+  system: ['You are a trading bot'],
+  user: (symbol) => `What is the trend for ${symbol}?`,
+});
+
+const messages: MessageModel[] = [];
+await commitPrompt(prompt, messages);
+```
+
+### Token Rotation
 
 ```typescript
 import { ollama } from '@backtest-kit/ollama';
 
-const signal = await ollama(
-  messages,
-  'llama3.3:70b',
-  ['key1', 'key2', 'key3']  // Rotates through keys
-);
-
-// Other providers throw error:
-// "Claude provider does not support token rotation"
+const wrappedFn = ollama(myFn, 'llama3.3:70b', ['key1', 'key2', 'key3']);
 ```
 
-### Custom Logger
+## Providers
 
-Enable logging for debugging:
+| Provider | Function | Base URL |
+|----------|----------|----------|
+| OpenAI | `gpt5()` | `https://api.openai.com/v1/` |
+| Claude | `claude()` | `https://api.anthropic.com/v1/` |
+| DeepSeek | `deepseek()` | `https://api.deepseek.com/` |
+| Grok | `grok()` | `https://api.x.ai/v1/` |
+| Mistral | `mistral()` | `https://api.mistral.ai/v1/` |
+| Perplexity | `perplexity()` | `https://api.perplexity.ai/` |
+| Cohere | `cohere()` | `https://api.cohere.ai/compatibility/v1/` |
+| Alibaba | `alibaba()` | `https://dashscope-intl.aliyuncs.com/compatible-mode/v1/` |
+| Hugging Face | `hf()` | `https://router.huggingface.co/v1/` |
+| Ollama | `ollama()` | `http://localhost:11434/` |
+| Zhipu AI | `glm4()` | `https://open.bigmodel.cn/api/paas/v4/` |
+
+## API
+
+### Provider HOF
 
 ```typescript
-import { setLogger } from '@backtest-kit/ollama';
-
-setLogger({
-  log: console.log,
-  debug: console.debug,
-  info: console.info,
-  warn: console.warn,
-});
+ollama | gpt5 | claude | deepseek | grok | mistral | perplexity | cohere | alibaba | hf | glm4
+(fn, model, apiKey?) => fn
 ```
 
-## 💡 Why Use @backtest-kit/ollama?
-
-Instead of manually integrating LLM SDKs:
+### Module
 
 ```typescript
-// ❌ Without ollama (manual work)
-import OpenAI from 'openai';
-import Anthropic from '@anthropic-ai/sdk';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_KEY });
-const response = await openai.chat.completions.create({
-  model: 'gpt-4o',
-  messages,
-  response_format: { type: 'json_object' }
-});
-const signal = JSON.parse(response.choices[0].message.content);
-// ... manual schema validation
-// ... manual error handling
-// ... no fallback
+Module.fromPath(path: string, baseDir?: string): Module
 ```
+
+Default baseDir: `{cwd}/config/prompt/`
+
+### Prompt
 
 ```typescript
-// ✅ With ollama (one line)
-const signal = await gpt5(messages, 'gpt-4o');
+Prompt.fromPrompt(source: PromptModel): Prompt
 ```
 
-**Benefits:**
+### commitPrompt
 
-- ⚡ Unified API across 10+ providers
-- 🎯 Enforced JSON schema (no parsing errors)
-- 🔄 Built-in token rotation (Ollama)
-- 🔑 Context-based API keys
-- 🛡️ Type-safe TypeScript interfaces
-- 📊 Trading-specific output format
+```typescript
+async function commitPrompt(source: Module | Prompt, history: MessageModel[]): Promise<void>
+```
 
-## 🤝 Contribute
+Context from `backtest-kit`: `getSymbol()`, `getContext()`, `getMode()`
 
-Fork/PR on [GitHub](https://github.com/tripolskypetr/backtest-kit).
+### PromptModel
 
-## 📜 License
+```typescript
+interface PromptModel {
+  system?: string[] | SystemPromptFn;
+  user: string | UserPromptFn;
+}
 
-MIT © [tripolskypetr](https://github.com/tripolskypetr)
+type SystemPromptFn = (
+  symbol: string,
+  strategyName: string,
+  exchangeName: string,
+  frameName: string,
+  backtest: boolean
+) => Promise<string[]> | string[];
+
+type UserPromptFn = (
+  symbol: string,
+  strategyName: string,
+  exchangeName: string,
+  frameName: string,
+  backtest: boolean
+) => Promise<string> | string;
+```
+
+## License
+
+MIT
