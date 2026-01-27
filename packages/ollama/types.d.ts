@@ -1,309 +1,261 @@
-import { IOutlineMessage, ISwarmCompletionArgs, ISwarmMessage, IOutlineCompletionArgs } from 'agent-swarm-kit';
-import { ZodType } from 'zod';
 import { ISignalDto } from 'backtest-kit';
 import * as di_scoped from 'di-scoped';
+import { ISwarmCompletionArgs, ISwarmMessage, IOutlineCompletionArgs, IOutlineMessage } from 'agent-swarm-kit';
 import * as functools_kit from 'functools-kit';
 
 /**
- * Generate structured trading signal from Ollama models.
+ * Wrap async function with Ollama inference context.
  *
- * Supports token rotation by passing multiple API keys. Automatically enforces
- * the signal JSON schema defined in Signal.schema.ts.
+ * Creates a higher-order function that executes the provided async function
+ * within an Ollama inference context. Supports token rotation by passing multiple API keys.
  *
- * @param messages - Array of outline messages (user/assistant/system)
+ * @template T - Async function type
+ * @param fn - Async function to wrap
  * @param model - Ollama model name (e.g., "llama3.3:70b")
  * @param apiKey - Single API key or array of keys for rotation
- * @returns Promise resolving to structured trading signal
+ * @returns Wrapped function with same signature as input
  *
  * @example
  * ```typescript
  * import { ollama } from '@backtest-kit/ollama';
  *
- * const signal = await ollama(messages, 'llama3.3:70b', ['key1', 'key2']);
- * console.log(signal.position); // "long" | "short" | "wait"
+ * const wrappedFn = ollama(myAsyncFn, 'llama3.3:70b', ['key1', 'key2']);
+ * const result = await wrappedFn(args);
  * ```
  */
-declare const ollama: (messages: IOutlineMessage[], model: string, apiKey?: string | string[]) => Promise<{
-    id: string;
-    position: "long" | "short";
-    minuteEstimatedTime: number;
-    priceStopLoss: number;
-    priceTakeProfit: number;
-    note: string;
-    priceOpen: number;
-}>;
+declare const ollama: <T extends (...args: any[]) => Promise<any>>(fn: T, model: string, apiKey?: string | string[]) => T;
 /**
- * Generate structured trading signal from Grok models.
+ * Wrap async function with Grok inference context.
  *
- * Uses xAI Grok models through direct API access. Does NOT support token rotation.
+ * Creates a higher-order function that executes the provided async function
+ * within a Grok (xAI) inference context.
  *
- * @param messages - Array of outline messages (user/assistant/system)
+ * @template T - Async function type
+ * @param fn - Async function to wrap
  * @param model - Grok model name (e.g., "grok-beta")
- * @param apiKey - Single API key (token rotation not supported)
- * @returns Promise resolving to structured trading signal
- * @throws Error if apiKey is an array (token rotation not supported)
+ * @param apiKey - Single API key or array of keys
+ * @returns Wrapped function with same signature as input
  *
  * @example
  * ```typescript
  * import { grok } from '@backtest-kit/ollama';
  *
- * const signal = await grok(messages, 'grok-beta', process.env.GROK_API_KEY);
+ * const wrappedFn = grok(myAsyncFn, 'grok-beta', process.env.GROK_API_KEY);
+ * const result = await wrappedFn(args);
  * ```
  */
-declare const grok: (messages: IOutlineMessage[], model: string, apiKey?: string | string[]) => Promise<{
-    id: string;
-    position: "long" | "short";
-    minuteEstimatedTime: number;
-    priceStopLoss: number;
-    priceTakeProfit: number;
-    note: string;
-    priceOpen: number;
-}>;
+declare const grok: <T extends (...args: any[]) => Promise<any>>(fn: T, model: string, apiKey?: string | string[]) => T;
 /**
- * Generate structured trading signal from Hugging Face models.
+ * Wrap async function with HuggingFace inference context.
  *
- * Uses HuggingFace Router API for model access. Does NOT support token rotation.
+ * Creates a higher-order function that executes the provided async function
+ * within a HuggingFace Router API inference context.
  *
- * @param messages - Array of outline messages (user/assistant/system)
- * @param model - HuggingFace model name
- * @param apiKey - Single API key (token rotation not supported)
- * @returns Promise resolving to structured trading signal
+ * @template T - Async function type
+ * @param fn - Async function to wrap
+ * @param model - HuggingFace model name (e.g., "meta-llama/Llama-3-70b")
+ * @param apiKey - Single API key or array of keys
+ * @returns Wrapped function with same signature as input
  *
  * @example
  * ```typescript
  * import { hf } from '@backtest-kit/ollama';
  *
- * const signal = await hf(messages, 'meta-llama/Llama-3-70b', process.env.HF_API_KEY);
+ * const wrappedFn = hf(myAsyncFn, 'meta-llama/Llama-3-70b', process.env.HF_API_KEY);
+ * const result = await wrappedFn(args);
  * ```
  */
-declare const hf: (messages: IOutlineMessage[], model: string, apiKey?: string | string[]) => Promise<{
-    id: string;
-    position: "long" | "short";
-    minuteEstimatedTime: number;
-    priceStopLoss: number;
-    priceTakeProfit: number;
-    note: string;
-    priceOpen: number;
-}>;
+declare const hf: <T extends (...args: any[]) => Promise<any>>(fn: T, model: string, apiKey?: string | string[]) => T;
 /**
- * Generate structured trading signal from Claude models.
+ * Wrap async function with Claude inference context.
  *
- * Uses Anthropic Claude through OpenAI-compatible API. Does NOT support token rotation.
+ * Creates a higher-order function that executes the provided async function
+ * within an Anthropic Claude inference context.
  *
- * @param messages - Array of outline messages (user/assistant/system)
+ * @template T - Async function type
+ * @param fn - Async function to wrap
  * @param model - Claude model name (e.g., "claude-3-5-sonnet-20241022")
- * @param apiKey - Single API key (token rotation not supported)
- * @returns Promise resolving to structured trading signal
- * @throws Error if apiKey is an array (token rotation not supported)
+ * @param apiKey - Single API key or array of keys
+ * @returns Wrapped function with same signature as input
  *
  * @example
  * ```typescript
  * import { claude } from '@backtest-kit/ollama';
  *
- * const signal = await claude(messages, 'claude-3-5-sonnet-20241022', process.env.ANTHROPIC_API_KEY);
+ * const wrappedFn = claude(myAsyncFn, 'claude-3-5-sonnet-20241022', process.env.ANTHROPIC_API_KEY);
+ * const result = await wrappedFn(args);
  * ```
  */
-declare const claude: (messages: IOutlineMessage[], model: string, apiKey?: string | string[]) => Promise<{
-    id: string;
-    position: "long" | "short";
-    minuteEstimatedTime: number;
-    priceStopLoss: number;
-    priceTakeProfit: number;
-    note: string;
-    priceOpen: number;
-}>;
+declare const claude: <T extends (...args: any[]) => Promise<any>>(fn: T, model: string, apiKey?: string | string[]) => T;
 /**
- * Generate structured trading signal from OpenAI GPT models.
+ * Wrap async function with OpenAI GPT inference context.
  *
- * Uses official OpenAI SDK with JSON schema enforcement. Does NOT support token rotation.
+ * Creates a higher-order function that executes the provided async function
+ * within an OpenAI GPT inference context.
  *
- * @param messages - Array of outline messages (user/assistant/system)
+ * @template T - Async function type
+ * @param fn - Async function to wrap
  * @param model - OpenAI model name (e.g., "gpt-4o", "gpt-4-turbo")
- * @param apiKey - Single API key (token rotation not supported)
- * @returns Promise resolving to structured trading signal
- * @throws Error if apiKey is an array (token rotation not supported)
+ * @param apiKey - Single API key or array of keys
+ * @returns Wrapped function with same signature as input
  *
  * @example
  * ```typescript
  * import { gpt5 } from '@backtest-kit/ollama';
  *
- * const signal = await gpt5(messages, 'gpt-4o', process.env.OPENAI_API_KEY);
+ * const wrappedFn = gpt5(myAsyncFn, 'gpt-4o', process.env.OPENAI_API_KEY);
+ * const result = await wrappedFn(args);
  * ```
  */
-declare const gpt5: (messages: IOutlineMessage[], model: string, apiKey?: string | string[]) => Promise<{
-    id: string;
-    position: "long" | "short";
-    minuteEstimatedTime: number;
-    priceStopLoss: number;
-    priceTakeProfit: number;
-    note: string;
-    priceOpen: number;
-}>;
+declare const gpt5: <T extends (...args: any[]) => Promise<any>>(fn: T, model: string, apiKey?: string | string[]) => T;
 /**
- * Generate structured trading signal from DeepSeek models.
+ * Wrap async function with DeepSeek inference context.
  *
- * Uses DeepSeek AI through OpenAI-compatible API. Does NOT support token rotation.
+ * Creates a higher-order function that executes the provided async function
+ * within a DeepSeek AI inference context.
  *
- * @param messages - Array of outline messages (user/assistant/system)
+ * @template T - Async function type
+ * @param fn - Async function to wrap
  * @param model - DeepSeek model name (e.g., "deepseek-chat")
- * @param apiKey - Single API key (token rotation not supported)
- * @returns Promise resolving to structured trading signal
- * @throws Error if apiKey is an array (token rotation not supported)
+ * @param apiKey - Single API key or array of keys
+ * @returns Wrapped function with same signature as input
  *
  * @example
  * ```typescript
  * import { deepseek } from '@backtest-kit/ollama';
  *
- * const signal = await deepseek(messages, 'deepseek-chat', process.env.DEEPSEEK_API_KEY);
+ * const wrappedFn = deepseek(myAsyncFn, 'deepseek-chat', process.env.DEEPSEEK_API_KEY);
+ * const result = await wrappedFn(args);
  * ```
  */
-declare const deepseek: (messages: IOutlineMessage[], model: string, apiKey?: string | string[]) => Promise<{
-    id: string;
-    position: "long" | "short";
-    minuteEstimatedTime: number;
-    priceStopLoss: number;
-    priceTakeProfit: number;
-    note: string;
-    priceOpen: number;
-}>;
+declare const deepseek: <T extends (...args: any[]) => Promise<any>>(fn: T, model: string, apiKey?: string | string[]) => T;
 /**
- * Generate structured trading signal from Mistral AI models.
+ * Wrap async function with Mistral AI inference context.
  *
- * Uses Mistral AI through OpenAI-compatible API. Does NOT support token rotation.
+ * Creates a higher-order function that executes the provided async function
+ * within a Mistral AI inference context.
  *
- * @param messages - Array of outline messages (user/assistant/system)
+ * @template T - Async function type
+ * @param fn - Async function to wrap
  * @param model - Mistral model name (e.g., "mistral-large-latest")
- * @param apiKey - Single API key (token rotation not supported)
- * @returns Promise resolving to structured trading signal
- * @throws Error if apiKey is an array (token rotation not supported)
+ * @param apiKey - Single API key or array of keys
+ * @returns Wrapped function with same signature as input
  *
  * @example
  * ```typescript
  * import { mistral } from '@backtest-kit/ollama';
  *
- * const signal = await mistral(messages, 'mistral-large-latest', process.env.MISTRAL_API_KEY);
+ * const wrappedFn = mistral(myAsyncFn, 'mistral-large-latest', process.env.MISTRAL_API_KEY);
+ * const result = await wrappedFn(args);
  * ```
  */
-declare const mistral: (messages: IOutlineMessage[], model: string, apiKey?: string | string[]) => Promise<{
-    id: string;
-    position: "long" | "short";
-    minuteEstimatedTime: number;
-    priceStopLoss: number;
-    priceTakeProfit: number;
-    note: string;
-    priceOpen: number;
-}>;
+declare const mistral: <T extends (...args: any[]) => Promise<any>>(fn: T, model: string, apiKey?: string | string[]) => T;
 /**
- * Generate structured trading signal from Perplexity AI models.
+ * Wrap async function with Perplexity AI inference context.
  *
- * Uses Perplexity AI through OpenAI-compatible API. Does NOT support token rotation.
+ * Creates a higher-order function that executes the provided async function
+ * within a Perplexity AI inference context.
  *
- * @param messages - Array of outline messages (user/assistant/system)
+ * @template T - Async function type
+ * @param fn - Async function to wrap
  * @param model - Perplexity model name (e.g., "llama-3.1-sonar-huge-128k-online")
- * @param apiKey - Single API key (token rotation not supported)
- * @returns Promise resolving to structured trading signal
- * @throws Error if apiKey is an array (token rotation not supported)
+ * @param apiKey - Single API key or array of keys
+ * @returns Wrapped function with same signature as input
  *
  * @example
  * ```typescript
  * import { perplexity } from '@backtest-kit/ollama';
  *
- * const signal = await perplexity(messages, 'llama-3.1-sonar-huge-128k-online', process.env.PERPLEXITY_API_KEY);
+ * const wrappedFn = perplexity(myAsyncFn, 'llama-3.1-sonar-huge-128k-online', process.env.PERPLEXITY_API_KEY);
+ * const result = await wrappedFn(args);
  * ```
  */
-declare const perplexity: (messages: IOutlineMessage[], model: string, apiKey?: string | string[]) => Promise<{
-    id: string;
-    position: "long" | "short";
-    minuteEstimatedTime: number;
-    priceStopLoss: number;
-    priceTakeProfit: number;
-    note: string;
-    priceOpen: number;
-}>;
+declare const perplexity: <T extends (...args: any[]) => Promise<any>>(fn: T, model: string, apiKey?: string | string[]) => T;
 /**
- * Generate structured trading signal from Cohere models.
+ * Wrap async function with Cohere inference context.
  *
- * Uses Cohere AI through OpenAI-compatible API. Does NOT support token rotation.
+ * Creates a higher-order function that executes the provided async function
+ * within a Cohere AI inference context.
  *
- * @param messages - Array of outline messages (user/assistant/system)
+ * @template T - Async function type
+ * @param fn - Async function to wrap
  * @param model - Cohere model name (e.g., "command-r-plus")
- * @param apiKey - Single API key (token rotation not supported)
- * @returns Promise resolving to structured trading signal
- * @throws Error if apiKey is an array (token rotation not supported)
+ * @param apiKey - Single API key or array of keys
+ * @returns Wrapped function with same signature as input
  *
  * @example
  * ```typescript
  * import { cohere } from '@backtest-kit/ollama';
  *
- * const signal = await cohere(messages, 'command-r-plus', process.env.COHERE_API_KEY);
+ * const wrappedFn = cohere(myAsyncFn, 'command-r-plus', process.env.COHERE_API_KEY);
+ * const result = await wrappedFn(args);
  * ```
  */
-declare const cohere: (messages: IOutlineMessage[], model: string, apiKey?: string | string[]) => Promise<{
-    id: string;
-    position: "long" | "short";
-    minuteEstimatedTime: number;
-    priceStopLoss: number;
-    priceTakeProfit: number;
-    note: string;
-    priceOpen: number;
-}>;
+declare const cohere: <T extends (...args: any[]) => Promise<any>>(fn: T, model: string, apiKey?: string | string[]) => T;
 /**
- * Generate structured trading signal from Alibaba Cloud Qwen models.
+ * Wrap async function with Alibaba Qwen inference context.
  *
- * Uses Alibaba DashScope API through direct HTTP requests. Does NOT support token rotation.
+ * Creates a higher-order function that executes the provided async function
+ * within an Alibaba DashScope API inference context.
  *
- * @param messages - Array of outline messages (user/assistant/system)
+ * @template T - Async function type
+ * @param fn - Async function to wrap
  * @param model - Qwen model name (e.g., "qwen-max")
- * @param apiKey - Single API key (token rotation not supported)
- * @returns Promise resolving to structured trading signal
- * @throws Error if apiKey is an array (token rotation not supported)
+ * @param apiKey - Single API key or array of keys
+ * @returns Wrapped function with same signature as input
  *
  * @example
  * ```typescript
  * import { alibaba } from '@backtest-kit/ollama';
  *
- * const signal = await alibaba(messages, 'qwen-max', process.env.ALIBABA_API_KEY);
+ * const wrappedFn = alibaba(myAsyncFn, 'qwen-max', process.env.ALIBABA_API_KEY);
+ * const result = await wrappedFn(args);
  * ```
  */
-declare const alibaba: (messages: IOutlineMessage[], model: string, apiKey?: string | string[]) => Promise<{
-    id: string;
-    position: "long" | "short";
-    minuteEstimatedTime: number;
-    priceStopLoss: number;
-    priceTakeProfit: number;
-    note: string;
-    priceOpen: number;
-}>;
+declare const alibaba: <T extends (...args: any[]) => Promise<any>>(fn: T, model: string, apiKey?: string | string[]) => T;
 /**
- * Generate structured trading signal from Zhipu AI GLM-4 models.
+ * Wrap async function with Zhipu AI GLM-4 inference context.
  *
- * Uses Zhipu AI's GLM-4 through OpenAI-compatible Z.ai API. Does NOT support token rotation.
- * GLM-4 is a powerful Chinese language model with strong reasoning capabilities.
+ * Creates a higher-order function that executes the provided async function
+ * within a Zhipu AI GLM-4 inference context via OpenAI-compatible Z.ai API.
  *
- * @param messages - Array of outline messages (user/assistant/system)
+ * @template T - Async function type
+ * @param fn - Async function to wrap
  * @param model - GLM-4 model name (e.g., "glm-4-plus", "glm-4-air")
- * @param apiKey - Single API key (token rotation not supported)
- * @returns Promise resolving to structured trading signal
- * @throws Error if apiKey is an array (token rotation not supported)
+ * @param apiKey - Single API key or array of keys
+ * @returns Wrapped function with same signature as input
  *
  * @example
  * ```typescript
  * import { glm4 } from '@backtest-kit/ollama';
  *
- * const signal = await glm4(messages, 'glm-4-plus', process.env.ZAI_API_KEY);
- * console.log(`Position: ${signal.position}`);
- * console.log(`Entry: ${signal.priceOpen}`);
+ * const wrappedFn = glm4(myAsyncFn, 'glm-4-plus', process.env.ZAI_API_KEY);
+ * const result = await wrappedFn(args);
  * ```
  */
-declare const glm4: (messages: IOutlineMessage[], model: string, apiKey?: string | string[]) => Promise<{
-    id: string;
-    position: "long" | "short";
-    minuteEstimatedTime: number;
-    priceStopLoss: number;
-    priceTakeProfit: number;
-    note: string;
-    priceOpen: number;
-}>;
+declare const glm4: <T extends (...args: any[]) => Promise<any>>(fn: T, model: string, apiKey?: string | string[]) => T;
+
+/**
+ * Enumeration of completion strategy types.
+ *
+ * Defines unique identifiers for different completion execution modes.
+ * Used internally for routing completion requests to appropriate handlers.
+ *
+ * @example
+ * ```typescript
+ * import { CompletionName } from '@backtest-kit/ollama';
+ *
+ * const completionType = CompletionName.RunnerCompletion;
+ * ```
+ */
+declare enum CompletionName {
+    /** Standard completion mode (full response at once) */
+    RunnerCompletion = "runner_completion",
+    /** Streaming completion mode (progressive response chunks) */
+    RunnerStreamCompletion = "runner_stream_completion",
+    /** Outline completion mode (structured JSON with schema validation) */
+    RunnerOutlineCompletion = "runner_outline_completion"
+}
 
 /**
  * Logger interface for application logging.
@@ -372,59 +324,6 @@ interface ILogger {
  * ```
  */
 declare const setLogger: (logger: ILogger) => void;
-
-/**
- * Overrides the default signal format schema for LLM-generated trading signals.
- *
- * This function allows customization of the structured output format used by the
- * SignalOutline. It replaces the default signal schema with a custom Zod schema,
- * enabling flexible signal structure definitions while maintaining type safety.
- *
- * The override affects all subsequent signal generation calls using SignalOutline
- * until the application restarts or the schema is overridden again.
- *
- * @template ZodInput - The Zod schema type used for validation and type inference
- *
- * @param {ZodInput} format - Custom Zod schema defining the signal structure.
- *                            Must be a valid Zod type (z.object, z.string, etc.)
- *
- * @example
- * ```typescript
- * import { z } from 'zod';
- * import { overrideSignalFormat } from '@backtest-kit/ollama';
- *
- * // Override with custom signal schema
- * const CustomSignalSchema = z.object({
- *   position: z.enum(['long', 'short', 'wait']),
- *   price_open: z.number(),
- *   confidence: z.number().min(0).max(100),
- *   custom_field: z.string()
- * });
- *
- * overrideSignalFormat(CustomSignalSchema);
- * ```
- *
- * @example
- * ```typescript
- * // Override with simplified schema
- * const SimpleSignalSchema = z.object({
- *   action: z.enum(['buy', 'sell', 'hold']),
- *   price: z.number()
- * });
- *
- * overrideSignalFormat(SimpleSignalSchema);
- * ```
- *
- * @remarks
- * - The custom schema replaces the default SignalSchema completely
- * - Schema name in OpenAI format is always "position_open_decision"
- * - Changes persist until application restart or next override
- * - Ensure the custom schema matches your signal processing logic
- *
- * @see {@link SignalSchema} - Default signal schema structure
- * @see {@link OutlineName.SignalOutline} - Outline being overridden
- */
-declare function overrideSignalFormat<ZodInput extends ZodType>(format: ZodInput): void;
 
 /**
  * Message role type for LLM conversation context.
@@ -1777,146 +1676,6 @@ declare class LoggerService implements ILogger {
     setLogger: (logger: ILogger) => void;
 }
 
-/**
- * Private service for processing structured outline completions.
- *
- * Handles the core logic for executing outline-based AI completions with schema validation.
- * Processes AI responses through the agent-swarm-kit json function to extract and validate
- * structured trading signal data.
- *
- * Key features:
- * - JSON schema validation using agent-swarm-kit
- * - Trading signal extraction and transformation
- * - Type conversion for numeric fields
- * - Markdown formatting cleanup for notes
- * - Error handling for validation failures
- *
- * @example
- * ```typescript
- * const outlinePrivate = inject<OutlinePrivateService>(TYPES.outlinePrivateService);
- * const signal = await outlinePrivate.getCompletion([
- *   { role: "user", content: "Analyze market" }
- * ]);
- * ```
- */
-declare class OutlinePrivateService {
-    /** Logger service for operation tracking */
-    private readonly loggerService;
-    /**
-     * Processes outline completion messages and extracts structured signal data.
-     *
-     * Sends messages to the AI provider, validates the response against the signal schema,
-     * and transforms the data into a structured format. Returns null if the AI decides
-     * to wait (no position).
-     *
-     * @param messages - Array of conversation messages for the AI
-     * @returns Promise resolving to structured signal data or null if position is "wait"
-     * @throws Error if validation fails or AI returns an error
-     *
-     * @example
-     * ```typescript
-     * const signal = await outlinePrivateService.getCompletion([
-     *   { role: "system", content: "Trading analyst role" },
-     *   { role: "user", content: "Market analysis data..." }
-     * ]);
-     *
-     * if (signal) {
-     *   console.log(`Position: ${signal.position}`);
-     *   console.log(`Entry: ${signal.priceOpen}`);
-     *   console.log(`SL: ${signal.priceStopLoss}`);
-     *   console.log(`TP: ${signal.priceTakeProfit}`);
-     * }
-     * ```
-     */
-    getCompletion: (messages: IOutlineMessage[]) => Promise<{
-        id: string;
-        position: "long" | "short";
-        minuteEstimatedTime: number;
-        priceStopLoss: number;
-        priceTakeProfit: number;
-        note: string;
-        priceOpen: number;
-    }>;
-}
-
-/**
- * Public-facing service for structured AI outline completions.
- *
- * Provides a simplified interface for executing structured AI completions with schema validation.
- * Handles context creation and isolation for outline-based operations.
- * Used for extracting structured data from AI responses (e.g., trading signals).
- *
- * Key features:
- * - Simplified API with automatic context management
- * - JSON schema validation for structured outputs
- * - Support for multiple AI providers
- * - Optional API key parameter with fallback
- * - Logging integration
- *
- * @example
- * ```typescript
- * import { engine } from "./lib";
- * import { InferenceName } from "./enum/InferenceName";
- *
- * const signal = await engine.outlinePublicService.getCompletion(
- *   [{ role: "user", content: "Analyze BTC/USDT and decide position" }],
- *   InferenceName.ClaudeInference,
- *   "claude-3-5-sonnet-20240620",
- *   "sk-ant-..."
- * );
- *
- * // Returns structured signal:
- * // {
- * //   position: "long",
- * //   priceOpen: 50000,
- * //   priceStopLoss: 48000,
- * //   priceTakeProfit: 52000,
- * //   minuteEstimatedTime: 120,
- * //   note: "Strong bullish momentum..."
- * // }
- * ```
- */
-declare class OutlinePublicService {
-    /** Logger service for operation tracking */
-    private readonly loggerService;
-    /** Private service handling outline completion logic */
-    private readonly outlinePrivateService;
-    /**
-     * Executes a structured outline completion with schema validation.
-     *
-     * Creates an isolated execution context and processes messages through the AI provider
-     * to generate a structured response conforming to a predefined schema.
-     *
-     * @param messages - Array of conversation messages for the AI
-     * @param inference - AI provider identifier
-     * @param model - Model name/identifier
-     * @param apiKey - Optional API key(s), required for most providers
-     * @returns Promise resolving to structured signal data or null if position is "wait"
-     *
-     * @example
-     * ```typescript
-     * const result = await outlinePublicService.getCompletion(
-     *   [
-     *     { role: "system", content: "You are a trading analyst" },
-     *     { role: "user", content: "Analyze current BTC market" }
-     *   ],
-     *   InferenceName.DeepseekInference,
-     *   "deepseek-chat",
-     *   "sk-..."
-     * );
-     * ```
-     */
-    getCompletion: (messages: IOutlineMessage[], inference: InferenceName, model: string, apiKey?: string | string[]) => Promise<{
-        id: string;
-        position: "long" | "short";
-        minuteEstimatedTime: number;
-        priceStopLoss: number;
-        priceTakeProfit: number;
-        note: string;
-        priceOpen: number;
-    }>;
-}
-
 type StrategyName = string;
 type ExchangeName = string;
 type FrameName = string;
@@ -2384,13 +2143,11 @@ declare const engine: {
     outlineMarkdownService: OutlineMarkdownService;
     signalPromptService: SignalPromptService;
     runnerPublicService: RunnerPublicService;
-    outlinePublicService: OutlinePublicService;
     runnerPrivateService: RunnerPrivateService;
-    outlinePrivateService: OutlinePrivateService;
     contextService: {
         readonly context: IContext;
     };
     loggerService: LoggerService;
 };
 
-export { type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type MessageModel, type MessageRole, Optimizer, type ProgressOptimizerContract, addOptimizerSchema, alibaba, claude, cohere, commitSignalPromptHistory, deepseek, dumpSignalData, getOptimizerSchema, glm4, gpt5, grok, hf, engine as lib, listOptimizerSchema, listenError, listenOptimizerProgress, mistral, ollama, overrideSignalFormat, perplexity, setLogger, validate };
+export { CompletionName, type IOptimizerCallbacks, type IOptimizerData, type IOptimizerFetchArgs, type IOptimizerFilterArgs, type IOptimizerRange, type IOptimizerSchema, type IOptimizerSource, type IOptimizerStrategy, type IOptimizerTemplate, type MessageModel, type MessageRole, Optimizer, type ProgressOptimizerContract, addOptimizerSchema, alibaba, claude, cohere, commitSignalPromptHistory, deepseek, dumpSignalData, getOptimizerSchema, glm4, gpt5, grok, hf, engine as lib, listOptimizerSchema, listenError, listenOptimizerProgress, mistral, ollama, perplexity, setLogger, validate };

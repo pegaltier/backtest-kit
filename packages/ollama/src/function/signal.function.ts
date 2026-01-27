@@ -1,347 +1,453 @@
-import { IOutlineMessage } from "agent-swarm-kit";
 import InferenceName from "../enum/InferenceName";
-import engine from "../lib";
+import ContextService from "src/lib/services/base/ContextService";
 
 /**
- * Generate structured trading signal from Ollama models.
+ * Wrap async function with Ollama inference context.
  *
- * Supports token rotation by passing multiple API keys. Automatically enforces
- * the signal JSON schema defined in Signal.schema.ts.
+ * Creates a higher-order function that executes the provided async function
+ * within an Ollama inference context. Supports token rotation by passing multiple API keys.
  *
- * @param messages - Array of outline messages (user/assistant/system)
+ * @template T - Async function type
+ * @param fn - Async function to wrap
  * @param model - Ollama model name (e.g., "llama3.3:70b")
  * @param apiKey - Single API key or array of keys for rotation
- * @returns Promise resolving to structured trading signal
+ * @returns Wrapped function with same signature as input
  *
  * @example
  * ```typescript
  * import { ollama } from '@backtest-kit/ollama';
  *
- * const signal = await ollama(messages, 'llama3.3:70b', ['key1', 'key2']);
- * console.log(signal.position); // "long" | "short" | "wait"
+ * const wrappedFn = ollama(myAsyncFn, 'llama3.3:70b', ['key1', 'key2']);
+ * const result = await wrappedFn(args);
  * ```
  */
-export const ollama = async (
-  messages: IOutlineMessage[],
+export const ollama = <T extends (...args: any[]) => Promise<any>>(
+  fn: T,
   model: string,
-  apiKey?: string | string[]
-) => {
-  return await engine.outlinePublicService.getCompletion(
-    messages,
-    InferenceName.OllamaInference,
-    model,
-    apiKey
-  );
+  apiKey?: string | string[],
+): T => {
+  const wrappedFn = async (args: Parameters<T>) => {
+    return await ContextService.runInContext(
+      async () => {
+        return await fn(...args);
+      },
+      {
+        apiKey,
+        inference: InferenceName.OllamaInference,
+        model,
+      },
+    );
+  };
+
+  return <T>wrappedFn;
 };
 
 /**
- * Generate structured trading signal from Grok models.
+ * Wrap async function with Grok inference context.
  *
- * Uses xAI Grok models through direct API access. Does NOT support token rotation.
+ * Creates a higher-order function that executes the provided async function
+ * within a Grok (xAI) inference context.
  *
- * @param messages - Array of outline messages (user/assistant/system)
+ * @template T - Async function type
+ * @param fn - Async function to wrap
  * @param model - Grok model name (e.g., "grok-beta")
- * @param apiKey - Single API key (token rotation not supported)
- * @returns Promise resolving to structured trading signal
- * @throws Error if apiKey is an array (token rotation not supported)
+ * @param apiKey - Single API key or array of keys
+ * @returns Wrapped function with same signature as input
  *
  * @example
  * ```typescript
  * import { grok } from '@backtest-kit/ollama';
  *
- * const signal = await grok(messages, 'grok-beta', process.env.GROK_API_KEY);
+ * const wrappedFn = grok(myAsyncFn, 'grok-beta', process.env.GROK_API_KEY);
+ * const result = await wrappedFn(args);
  * ```
  */
-export const grok = async (
-  messages: IOutlineMessage[],
+export const grok = <T extends (...args: any[]) => Promise<any>>(
+  fn: T,
   model: string,
-  apiKey?: string | string[]
-) => {
-  return await engine.outlinePublicService.getCompletion(
-    messages,
-    InferenceName.GrokInference,
-    model,
-    apiKey
-  );
+  apiKey?: string | string[],
+): T => {
+  const wrappedFn = async (args: Parameters<T>) => {
+    return await ContextService.runInContext(
+      async () => {
+        return await fn(...args);
+      },
+      {
+        apiKey,
+        inference: InferenceName.GrokInference,
+        model,
+      },
+    );
+  };
+
+  return <T>wrappedFn;
 };
 
 /**
- * Generate structured trading signal from Hugging Face models.
+ * Wrap async function with HuggingFace inference context.
  *
- * Uses HuggingFace Router API for model access. Does NOT support token rotation.
+ * Creates a higher-order function that executes the provided async function
+ * within a HuggingFace Router API inference context.
  *
- * @param messages - Array of outline messages (user/assistant/system)
- * @param model - HuggingFace model name
- * @param apiKey - Single API key (token rotation not supported)
- * @returns Promise resolving to structured trading signal
+ * @template T - Async function type
+ * @param fn - Async function to wrap
+ * @param model - HuggingFace model name (e.g., "meta-llama/Llama-3-70b")
+ * @param apiKey - Single API key or array of keys
+ * @returns Wrapped function with same signature as input
  *
  * @example
  * ```typescript
  * import { hf } from '@backtest-kit/ollama';
  *
- * const signal = await hf(messages, 'meta-llama/Llama-3-70b', process.env.HF_API_KEY);
+ * const wrappedFn = hf(myAsyncFn, 'meta-llama/Llama-3-70b', process.env.HF_API_KEY);
+ * const result = await wrappedFn(args);
  * ```
  */
-export const hf = async (
-  messages: IOutlineMessage[],
+export const hf = <T extends (...args: any[]) => Promise<any>>(
+  fn: T,
   model: string,
-  apiKey?: string | string[]
-) => {
-  return await engine.outlinePublicService.getCompletion(
-    messages,
-    InferenceName.HfInference,
-    model,
-    apiKey
-  );
+  apiKey?: string | string[],
+): T => {
+  const wrappedFn = async (args: Parameters<T>) => {
+    return await ContextService.runInContext(
+      async () => {
+        return await fn(...args);
+      },
+      {
+        apiKey,
+        inference: InferenceName.HfInference,
+        model,
+      },
+    );
+  };
+
+  return <T>wrappedFn;
 };
 
 /**
- * Generate structured trading signal from Claude models.
+ * Wrap async function with Claude inference context.
  *
- * Uses Anthropic Claude through OpenAI-compatible API. Does NOT support token rotation.
+ * Creates a higher-order function that executes the provided async function
+ * within an Anthropic Claude inference context.
  *
- * @param messages - Array of outline messages (user/assistant/system)
+ * @template T - Async function type
+ * @param fn - Async function to wrap
  * @param model - Claude model name (e.g., "claude-3-5-sonnet-20241022")
- * @param apiKey - Single API key (token rotation not supported)
- * @returns Promise resolving to structured trading signal
- * @throws Error if apiKey is an array (token rotation not supported)
+ * @param apiKey - Single API key or array of keys
+ * @returns Wrapped function with same signature as input
  *
  * @example
  * ```typescript
  * import { claude } from '@backtest-kit/ollama';
  *
- * const signal = await claude(messages, 'claude-3-5-sonnet-20241022', process.env.ANTHROPIC_API_KEY);
+ * const wrappedFn = claude(myAsyncFn, 'claude-3-5-sonnet-20241022', process.env.ANTHROPIC_API_KEY);
+ * const result = await wrappedFn(args);
  * ```
  */
-export const claude = async (
-  messages: IOutlineMessage[],
+export const claude = <T extends (...args: any[]) => Promise<any>>(
+  fn: T,
   model: string,
-  apiKey?: string | string[]
-) => {
-  return await engine.outlinePublicService.getCompletion(
-    messages,
-    InferenceName.ClaudeInference,
-    model,
-    apiKey
-  );
+  apiKey?: string | string[],
+): T => {
+  const wrappedFn = async (args: Parameters<T>) => {
+    return await ContextService.runInContext(
+      async () => {
+        return await fn(...args);
+      },
+      {
+        apiKey,
+        inference: InferenceName.ClaudeInference,
+        model,
+      },
+    );
+  };
+
+  return <T>wrappedFn;
 };
 
 /**
- * Generate structured trading signal from OpenAI GPT models.
+ * Wrap async function with OpenAI GPT inference context.
  *
- * Uses official OpenAI SDK with JSON schema enforcement. Does NOT support token rotation.
+ * Creates a higher-order function that executes the provided async function
+ * within an OpenAI GPT inference context.
  *
- * @param messages - Array of outline messages (user/assistant/system)
+ * @template T - Async function type
+ * @param fn - Async function to wrap
  * @param model - OpenAI model name (e.g., "gpt-4o", "gpt-4-turbo")
- * @param apiKey - Single API key (token rotation not supported)
- * @returns Promise resolving to structured trading signal
- * @throws Error if apiKey is an array (token rotation not supported)
+ * @param apiKey - Single API key or array of keys
+ * @returns Wrapped function with same signature as input
  *
  * @example
  * ```typescript
  * import { gpt5 } from '@backtest-kit/ollama';
  *
- * const signal = await gpt5(messages, 'gpt-4o', process.env.OPENAI_API_KEY);
+ * const wrappedFn = gpt5(myAsyncFn, 'gpt-4o', process.env.OPENAI_API_KEY);
+ * const result = await wrappedFn(args);
  * ```
  */
-export const gpt5 = async (
-  messages: IOutlineMessage[],
+export const gpt5 = <T extends (...args: any[]) => Promise<any>>(
+  fn: T,
   model: string,
-  apiKey?: string | string[]
-) => {
-  return await engine.outlinePublicService.getCompletion(
-    messages,
-    InferenceName.GPT5Inference,
-    model,
-    apiKey
-  );
+  apiKey?: string | string[],
+): T => {
+  const wrappedFn = async (args: Parameters<T>) => {
+    return await ContextService.runInContext(
+      async () => {
+        return await fn(...args);
+      },
+      {
+        apiKey,
+        inference: InferenceName.GPT5Inference,
+        model,
+      },
+    );
+  };
+
+  return <T>wrappedFn;
 };
 
 /**
- * Generate structured trading signal from DeepSeek models.
+ * Wrap async function with DeepSeek inference context.
  *
- * Uses DeepSeek AI through OpenAI-compatible API. Does NOT support token rotation.
+ * Creates a higher-order function that executes the provided async function
+ * within a DeepSeek AI inference context.
  *
- * @param messages - Array of outline messages (user/assistant/system)
+ * @template T - Async function type
+ * @param fn - Async function to wrap
  * @param model - DeepSeek model name (e.g., "deepseek-chat")
- * @param apiKey - Single API key (token rotation not supported)
- * @returns Promise resolving to structured trading signal
- * @throws Error if apiKey is an array (token rotation not supported)
+ * @param apiKey - Single API key or array of keys
+ * @returns Wrapped function with same signature as input
  *
  * @example
  * ```typescript
  * import { deepseek } from '@backtest-kit/ollama';
  *
- * const signal = await deepseek(messages, 'deepseek-chat', process.env.DEEPSEEK_API_KEY);
+ * const wrappedFn = deepseek(myAsyncFn, 'deepseek-chat', process.env.DEEPSEEK_API_KEY);
+ * const result = await wrappedFn(args);
  * ```
  */
-export const deepseek = async (
-  messages: IOutlineMessage[],
+export const deepseek = <T extends (...args: any[]) => Promise<any>>(
+  fn: T,
   model: string,
-  apiKey?: string | string[]
-) => {
-  return await engine.outlinePublicService.getCompletion(
-    messages,
-    InferenceName.DeepseekInference,
-    model,
-    apiKey
-  );
+  apiKey?: string | string[],
+): T => {
+  const wrappedFn = async (args: Parameters<T>) => {
+    return await ContextService.runInContext(
+      async () => {
+        return await fn(...args);
+      },
+      {
+        apiKey,
+        inference: InferenceName.DeepseekInference,
+        model,
+      },
+    );
+  };
+
+  return <T>wrappedFn;
 };
 
 /**
- * Generate structured trading signal from Mistral AI models.
+ * Wrap async function with Mistral AI inference context.
  *
- * Uses Mistral AI through OpenAI-compatible API. Does NOT support token rotation.
+ * Creates a higher-order function that executes the provided async function
+ * within a Mistral AI inference context.
  *
- * @param messages - Array of outline messages (user/assistant/system)
+ * @template T - Async function type
+ * @param fn - Async function to wrap
  * @param model - Mistral model name (e.g., "mistral-large-latest")
- * @param apiKey - Single API key (token rotation not supported)
- * @returns Promise resolving to structured trading signal
- * @throws Error if apiKey is an array (token rotation not supported)
+ * @param apiKey - Single API key or array of keys
+ * @returns Wrapped function with same signature as input
  *
  * @example
  * ```typescript
  * import { mistral } from '@backtest-kit/ollama';
  *
- * const signal = await mistral(messages, 'mistral-large-latest', process.env.MISTRAL_API_KEY);
+ * const wrappedFn = mistral(myAsyncFn, 'mistral-large-latest', process.env.MISTRAL_API_KEY);
+ * const result = await wrappedFn(args);
  * ```
  */
-export const mistral = async (
-  messages: IOutlineMessage[],
+export const mistral = <T extends (...args: any[]) => Promise<any>>(
+  fn: T,
   model: string,
-  apiKey?: string | string[]
-) => {
-  return await engine.outlinePublicService.getCompletion(
-    messages,
-    InferenceName.MistralInference,
-    model,
-    apiKey
-  );
+  apiKey?: string | string[],
+): T => {
+  const wrappedFn = async (args: Parameters<T>) => {
+    return await ContextService.runInContext(
+      async () => {
+        return await fn(...args);
+      },
+      {
+        apiKey,
+        inference: InferenceName.MistralInference,
+        model,
+      },
+    );
+  };
+
+  return <T>wrappedFn;
 };
 
 /**
- * Generate structured trading signal from Perplexity AI models.
+ * Wrap async function with Perplexity AI inference context.
  *
- * Uses Perplexity AI through OpenAI-compatible API. Does NOT support token rotation.
+ * Creates a higher-order function that executes the provided async function
+ * within a Perplexity AI inference context.
  *
- * @param messages - Array of outline messages (user/assistant/system)
+ * @template T - Async function type
+ * @param fn - Async function to wrap
  * @param model - Perplexity model name (e.g., "llama-3.1-sonar-huge-128k-online")
- * @param apiKey - Single API key (token rotation not supported)
- * @returns Promise resolving to structured trading signal
- * @throws Error if apiKey is an array (token rotation not supported)
+ * @param apiKey - Single API key or array of keys
+ * @returns Wrapped function with same signature as input
  *
  * @example
  * ```typescript
  * import { perplexity } from '@backtest-kit/ollama';
  *
- * const signal = await perplexity(messages, 'llama-3.1-sonar-huge-128k-online', process.env.PERPLEXITY_API_KEY);
+ * const wrappedFn = perplexity(myAsyncFn, 'llama-3.1-sonar-huge-128k-online', process.env.PERPLEXITY_API_KEY);
+ * const result = await wrappedFn(args);
  * ```
  */
-export const perplexity = async (
-  messages: IOutlineMessage[],
+export const perplexity = <T extends (...args: any[]) => Promise<any>>(
+  fn: T,
   model: string,
-  apiKey?: string | string[]
-) => {
-  return await engine.outlinePublicService.getCompletion(
-    messages,
-    InferenceName.PerplexityInference,
-    model,
-    apiKey
-  );
+  apiKey?: string | string[],
+): T => {
+  const wrappedFn = async (args: Parameters<T>) => {
+    return await ContextService.runInContext(
+      async () => {
+        return await fn(...args);
+      },
+      {
+        apiKey,
+        inference: InferenceName.PerplexityInference,
+        model,
+      },
+    );
+  };
+
+  return <T>wrappedFn;
 };
 
 /**
- * Generate structured trading signal from Cohere models.
+ * Wrap async function with Cohere inference context.
  *
- * Uses Cohere AI through OpenAI-compatible API. Does NOT support token rotation.
+ * Creates a higher-order function that executes the provided async function
+ * within a Cohere AI inference context.
  *
- * @param messages - Array of outline messages (user/assistant/system)
+ * @template T - Async function type
+ * @param fn - Async function to wrap
  * @param model - Cohere model name (e.g., "command-r-plus")
- * @param apiKey - Single API key (token rotation not supported)
- * @returns Promise resolving to structured trading signal
- * @throws Error if apiKey is an array (token rotation not supported)
+ * @param apiKey - Single API key or array of keys
+ * @returns Wrapped function with same signature as input
  *
  * @example
  * ```typescript
  * import { cohere } from '@backtest-kit/ollama';
  *
- * const signal = await cohere(messages, 'command-r-plus', process.env.COHERE_API_KEY);
+ * const wrappedFn = cohere(myAsyncFn, 'command-r-plus', process.env.COHERE_API_KEY);
+ * const result = await wrappedFn(args);
  * ```
  */
-export const cohere = async (
-  messages: IOutlineMessage[],
+export const cohere = <T extends (...args: any[]) => Promise<any>>(
+  fn: T,
   model: string,
-  apiKey?: string | string[]
-) => {
-  return await engine.outlinePublicService.getCompletion(
-    messages,
-    InferenceName.CohereInference,
-    model,
-    apiKey
-  );
+  apiKey?: string | string[],
+): T => {
+  const wrappedFn = async (args: Parameters<T>) => {
+    return await ContextService.runInContext(
+      async () => {
+        return await fn(...args);
+      },
+      {
+        apiKey,
+        inference: InferenceName.CohereInference,
+        model,
+      },
+    );
+  };
+
+  return <T>wrappedFn;
 };
 
 /**
- * Generate structured trading signal from Alibaba Cloud Qwen models.
+ * Wrap async function with Alibaba Qwen inference context.
  *
- * Uses Alibaba DashScope API through direct HTTP requests. Does NOT support token rotation.
+ * Creates a higher-order function that executes the provided async function
+ * within an Alibaba DashScope API inference context.
  *
- * @param messages - Array of outline messages (user/assistant/system)
+ * @template T - Async function type
+ * @param fn - Async function to wrap
  * @param model - Qwen model name (e.g., "qwen-max")
- * @param apiKey - Single API key (token rotation not supported)
- * @returns Promise resolving to structured trading signal
- * @throws Error if apiKey is an array (token rotation not supported)
+ * @param apiKey - Single API key or array of keys
+ * @returns Wrapped function with same signature as input
  *
  * @example
  * ```typescript
  * import { alibaba } from '@backtest-kit/ollama';
  *
- * const signal = await alibaba(messages, 'qwen-max', process.env.ALIBABA_API_KEY);
+ * const wrappedFn = alibaba(myAsyncFn, 'qwen-max', process.env.ALIBABA_API_KEY);
+ * const result = await wrappedFn(args);
  * ```
  */
-export const alibaba = async (
-  messages: IOutlineMessage[],
+export const alibaba = <T extends (...args: any[]) => Promise<any>>(
+  fn: T,
   model: string,
-  apiKey?: string | string[]
-) => {
-  return await engine.outlinePublicService.getCompletion(
-    messages,
-    InferenceName.AlibabaInference,
-    model,
-    apiKey
-  );
+  apiKey?: string | string[],
+): T => {
+  const wrappedFn = async (args: Parameters<T>) => {
+    return await ContextService.runInContext(
+      async () => {
+        return await fn(...args);
+      },
+      {
+        apiKey,
+        inference: InferenceName.AlibabaInference,
+        model,
+      },
+    );
+  };
+
+  return <T>wrappedFn;
 };
 
 /**
- * Generate structured trading signal from Zhipu AI GLM-4 models.
+ * Wrap async function with Zhipu AI GLM-4 inference context.
  *
- * Uses Zhipu AI's GLM-4 through OpenAI-compatible Z.ai API. Does NOT support token rotation.
- * GLM-4 is a powerful Chinese language model with strong reasoning capabilities.
+ * Creates a higher-order function that executes the provided async function
+ * within a Zhipu AI GLM-4 inference context via OpenAI-compatible Z.ai API.
  *
- * @param messages - Array of outline messages (user/assistant/system)
+ * @template T - Async function type
+ * @param fn - Async function to wrap
  * @param model - GLM-4 model name (e.g., "glm-4-plus", "glm-4-air")
- * @param apiKey - Single API key (token rotation not supported)
- * @returns Promise resolving to structured trading signal
- * @throws Error if apiKey is an array (token rotation not supported)
+ * @param apiKey - Single API key or array of keys
+ * @returns Wrapped function with same signature as input
  *
  * @example
  * ```typescript
  * import { glm4 } from '@backtest-kit/ollama';
  *
- * const signal = await glm4(messages, 'glm-4-plus', process.env.ZAI_API_KEY);
- * console.log(`Position: ${signal.position}`);
- * console.log(`Entry: ${signal.priceOpen}`);
+ * const wrappedFn = glm4(myAsyncFn, 'glm-4-plus', process.env.ZAI_API_KEY);
+ * const result = await wrappedFn(args);
  * ```
  */
-export const glm4 = async (
-  messages: IOutlineMessage[],
+export const glm4 = <T extends (...args: any[]) => Promise<any>>(
+  fn: T,
   model: string,
-  apiKey?: string | string[]
-) => {
-  return await engine.outlinePublicService.getCompletion(
-    messages,
-    InferenceName.GLM4Inference,
-    model,
-    apiKey
-  );
+  apiKey?: string | string[],
+): T => {
+  const wrappedFn = async (args: Parameters<T>) => {
+    return await ContextService.runInContext(
+      async () => {
+        return await fn(...args);
+      },
+      {
+        apiKey,
+        inference: InferenceName.GLM4Inference,
+        model,
+      },
+    );
+  };
+
+  return <T>wrappedFn;
 };

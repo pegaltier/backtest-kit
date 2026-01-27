@@ -15,8 +15,6 @@ const baseServices = {
 const privateServices = {
     /** Runner private service for AI provider operations */
     runnerPrivateService: Symbol('runnerPrivateService'),
-    /** Outline private service for structured completions */
-    outlinePrivateService: Symbol('outlinePrivateService'),
 };
 
 /**
@@ -26,8 +24,6 @@ const privateServices = {
 const publicServices = {
     /** Runner public service for context-managed AI operations */
     runnerPublicService: Symbol('runnerPublicService'),
-    /** Outline public service for simplified structured completions */
-    outlinePublicService: Symbol('outlinePublicService'),
 };
 
 const promptServices = {
