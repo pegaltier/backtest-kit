@@ -1,6 +1,6 @@
-import { inject } from "src/lib/core/di";
+import { inject } from "../../../lib/core/di";
 import LoggerService from "./LoggerService";
-import { TYPES } from "src/lib/core/types";
+import { TYPES } from "../../../lib/core/types";
 import { CandleInterval, Exchange } from "backtest-kit";
 
 type ExchangeName = string;
