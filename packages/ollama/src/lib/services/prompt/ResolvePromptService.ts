@@ -1,7 +1,7 @@
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import { TYPES } from "../../../lib/core/types";
-import { Code } from "../../../classes/Code";
+import { Prompt } from "../../../classes/Prompt";
 
 type StrategyName = string;
 type ExchangeName = string;
@@ -10,7 +10,7 @@ type FrameName = string;
 /**
  * Service for managing signal prompts for AI/LLM integrations.
  *
- * Provides access to system and user prompts from Code.
+ * Provides access to system and user prompts from Prompt.
  * Supports both static prompt arrays and dynamic prompt functions.
  *
  * Key responsibilities:
@@ -31,7 +31,7 @@ export class ResolvePromptService {
    * - Async/sync function returning string array (executed and awaited)
    * - Undefined (returns empty array)
    *
-   * @param code - Code containing the loaded module
+   * @param prompt - Prompt containing the loaded module
    * @param symbol - Trading symbol (e.g., "BTCUSDT")
    * @param strategyName - Strategy identifier
    * @param exchangeName - Exchange identifier
@@ -40,7 +40,7 @@ export class ResolvePromptService {
    * @returns Promise resolving to array of system prompt strings
    */
   public getSystemPrompt = async (
-    code: Code,
+    prompt: Prompt,
     symbol: string,
     strategyName: StrategyName,
     exchangeName: ExchangeName,
@@ -54,7 +54,7 @@ export class ResolvePromptService {
       frameName,
       backtest,
     });
-    const { system } = code.source;
+    const { system } = prompt.source;
     if (Array.isArray(system)) {
       return system;
     }
@@ -67,7 +67,7 @@ export class ResolvePromptService {
   /**
    * Retrieves user prompt string for AI input.
    *
-   * @param code - Code containing the loaded module
+   * @param prompt - Prompt containing the loaded module
    * @param symbol - Trading symbol (e.g., "BTCUSDT")
    * @param strategyName - Strategy identifier
    * @param exchangeName - Exchange identifier
@@ -76,7 +76,7 @@ export class ResolvePromptService {
    * @returns Promise resolving to user prompt string
    */
   public getUserPrompt = async (
-    code: Code,
+    prompt: Prompt,
     symbol: string,
     strategyName: StrategyName,
     exchangeName: ExchangeName,
@@ -90,7 +90,7 @@ export class ResolvePromptService {
       frameName,
       backtest,
     });
-    const { user } = code.source;
+    const { user } = prompt.source;
     if (typeof user === "string") {
       return user;
     }

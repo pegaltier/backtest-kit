@@ -5,14 +5,15 @@ import LoggerService from "../base/LoggerService";
 import { TYPES } from "../../core/types";
 import { memoize } from "functools-kit";
 import { PromptModel } from "../../../model/Prompt.model";
+import { Module } from "../../../classes/Module";
 import { Prompt } from "../../../classes/Prompt";
-import { Code } from "../../../classes/Code";
 
 const require = createRequire(import.meta.url);
 
 const REQUIRE_MODULE_FN = memoize(
-  ([modulePath]) => modulePath,
-  (modulePath: string): PromptModel => {
+  ([module]) => module,
+  (module: Module): PromptModel => {
+    const modulePath = require.resolve(join(module.baseDir, module.path));
     return require(modulePath);
   },
 );
@@ -20,29 +21,21 @@ const REQUIRE_MODULE_FN = memoize(
 export class PromptCacheService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
-  public readModule = (prompt: Prompt): Code => {
+  public readModule = (module: Module): Prompt => {
     this.loggerService.log("promptCacheService readModule", {
-      path: prompt.path,
-      baseDir: prompt.baseDir,
+      path: module.path,
+      baseDir: module.baseDir,
     });
-    const modulePath = require.resolve(join(prompt.baseDir, prompt.path));
-    const source = REQUIRE_MODULE_FN(modulePath);
-    return Code.fromCode(source);
+    const source = REQUIRE_MODULE_FN(module);
+    return Prompt.fromPrompt(source);
   };
 
-  public clear = (prompt?: Prompt) => {
+  public clear = (module?: Module) => {
     this.loggerService.log("promptCacheService clear", {
-      prompt,
+      module,
     });
-    if (prompt) {
-      try {
-        const modulePath = require.resolve(join(prompt.baseDir, prompt.path));
-        REQUIRE_MODULE_FN.clear(modulePath);
-        delete require.cache[modulePath];
-      } catch {
-        // Module not found, nothing to clear
-      }
-      return;
+    if (module) {
+      REQUIRE_MODULE_FN.clear(module);
     }
     REQUIRE_MODULE_FN.clear();
   };

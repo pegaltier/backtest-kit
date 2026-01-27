@@ -31,7 +31,7 @@ export {
 } from "./function/validate.function";
 
 export {
-  commitSignalPromptHistory,
+  commitPrompt,
 } from "./function/history";
 
 export {
@@ -53,11 +53,11 @@ export {
 
 export { Optimizer } from "./classes/Optimizer";
 
+export { Module } from "./classes/Module";
 export { Prompt } from "./classes/Prompt";
 
-export { Code } from "./classes/Code";
-
 export { MessageModel, MessageRole } from "./model/Message.model";
+export { PromptModel } from "./model/Prompt.model";
 
 export {
   IOptimizerCallbacks,

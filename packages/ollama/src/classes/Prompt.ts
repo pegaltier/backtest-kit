@@ -1,23 +1,17 @@
-import { join } from "path";
+import { PromptModel } from "../model/Prompt.model";
 
 const PROMPT_TYPE_SYMBOL = Symbol("prompt-type");
 
 export class Prompt {
   private readonly __type__ = PROMPT_TYPE_SYMBOL;
 
-  private constructor(
-    readonly path: string,
-    readonly baseDir: string,
-  ) {}
+  private constructor(readonly source: PromptModel) {}
 
-  public static fromPath = (
-    path: string,
-    baseDir = join(process.cwd(), "config/prompt"),
-  ) => {
-    if (!path || typeof path !== "string" || !path.trim()) {
-      throw new Error("Path must be a non-empty string");
+  public static fromPrompt = (source: PromptModel) => {
+    if (!source || typeof source !== "object") {
+      throw new Error("Source must be a valid PromptModel object");
     }
-    return new Prompt(path, baseDir);
+    return new Prompt(source);
   };
 
   public static isPrompt = (value: unknown): value is Prompt => {

@@ -1,9 +1,21 @@
 import { MessageModel } from "../model/Message.model";
 import engine from "../lib";
 import { getContext, getMode, getSymbol } from "backtest-kit";
+import { Module } from "../classes/Module";
 import { Prompt } from "../classes/Prompt";
 
 const METHOD_NAME_SIGNAL = "history.commitSignalPromptHistory";
+
+const GET_PROMPT_FN = async (source: Prompt | Module) => {
+  if (Prompt.isPrompt(source)) {
+    return source;
+  }
+  if (Module.isModule(source)) {
+    return await engine.promptCacheService.readModule(source);
+  }
+  throw new Error("Source must be a Prompt or Module instance");
+};
+
 
 /**
  * Commits signal prompt history to the message array.
@@ -17,21 +29,15 @@ const METHOD_NAME_SIGNAL = "history.commitSignalPromptHistory";
  * - backtest mode: From getMode()
  * - strategyName, exchangeName, frameName: From getContext()
  *
- * @param source - Prompt object containing path to .cjs module
+ * @param source - Module object containing path to .cjs module
  * @param history - Message array to append prompts to
  * @returns Promise that resolves when prompts are added
  * @throws Error if ExecutionContext or MethodContext is not active
  *
- * @example
- * ```typescript
- * const messages: MessageModel[] = [];
- * const prompt = Prompt.fromPath("signal.prompt.cjs");
- * await commitSignalPromptHistory(prompt, messages);
- * // messages now contains system prompts at start and user prompt at end
  * ```
  */
-export async function commitSignalPromptHistory(
-  source: Prompt,
+export async function commitPrompt(
+  source: Module | Prompt,
   history: MessageModel[],
 ): Promise<void> {
   engine.loggerService.log(METHOD_NAME_SIGNAL, {
@@ -43,18 +49,19 @@ export async function commitSignalPromptHistory(
   const mode = await getMode();
   const isBacktest = mode === "backtest";
 
-  const code = engine.promptCacheService.readModule(source);
+  const prompt = await GET_PROMPT_FN(source);
 
   const systemPrompts = await engine.resolvePromptService.getSystemPrompt(
-    code,
+    prompt,
     symbol,
     strategyName,
     exchangeName,
     frameName,
     isBacktest,
   );
+
   const userPrompt = await engine.resolvePromptService.getUserPrompt(
-    code,
+    prompt,
     symbol,
     strategyName,
     exchangeName,
@@ -64,6 +71,9 @@ export async function commitSignalPromptHistory(
 
   if (systemPrompts.length > 0) {
     for (const content of systemPrompts) {
+      if (!content.trim()) {
+        continue;
+      }
       history.unshift({
         role: "system",
         content,
@@ -71,7 +81,7 @@ export async function commitSignalPromptHistory(
     }
   }
 
-  if (userPrompt && userPrompt.trim() !== "") {
+  if (userPrompt && userPrompt.trim()) {
     history.push({
       role: "user",
       content: userPrompt,
