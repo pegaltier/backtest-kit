@@ -143,7 +143,7 @@ export interface IPublicSignalRow extends ISignalRow {
    * Represents the total portion of the position that has been closed through partial executions.
    * Range: 0-100. Value of 0 means no partial closes, 100 means position fully closed through partials.
    */
-  totalExecuted: number;
+  partialExecuted: number;
 }
 
 /**

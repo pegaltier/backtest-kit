@@ -124,11 +124,11 @@ export const risk_columns: ColumnModel<RiskEvent>[] = [
     isVisible: () => true,
   },
   {
-    key: "totalExecuted",
-    label: "Total Executed",
+    key: "partialExecuted",
+    label: "Partial Executed %",
     format: (data) =>
-      data.pendingSignal.totalExecuted !== undefined
-        ? `${data.pendingSignal.totalExecuted.toFixed(1)}%`
+      data.pendingSignal.partialExecuted !== undefined
+        ? `${data.pendingSignal.partialExecuted.toFixed(1)}%`
         : "N/A",
     isVisible: () => true,
   },

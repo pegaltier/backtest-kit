@@ -28,7 +28,7 @@ export interface BreakevenEvent {
   /** Original stop loss price set at signal creation */
   originalPriceStopLoss?: number;
   /** Total executed percentage from partial closes */
-  totalExecuted?: number;
+  partialExecuted?: number;
   /** Human-readable description of signal reason */
   note?: string;
   /** True if backtest mode, false if live mode */

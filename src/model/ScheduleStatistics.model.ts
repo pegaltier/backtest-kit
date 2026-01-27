@@ -28,7 +28,7 @@ export interface ScheduledEvent {
   /** Original stop loss price before modifications */
   originalPriceStopLoss?: number;
   /** Total executed percentage from partial closes */
-  totalExecuted?: number;
+  partialExecuted?: number;
   /** Close timestamp (only for cancelled) */
   closeTimestamp?: number;
   /** Duration in minutes (only for cancelled/opened) */

@@ -1312,7 +1312,7 @@ export class PersistCandleUtils {
     ): IPersistBase<CandleData> =>
       Reflect.construct(this.PersistCandlesFactory, [
         `${exchangeName}/${symbol}/${interval}`,
-        `./dump/data/candles/`,
+        `./dump/data/candle/`,
       ])
   );
 
@@ -1492,7 +1492,7 @@ export class PersistStorageUtils {
     (backtest: boolean): IPersistBase<IStorageSignalRow> =>
       Reflect.construct(this.PersistStorageFactory, [
         backtest ? `backtest` : `live`,
-        `./dump/data/signal-storage/`,
+        `./dump/data/storage/`,
       ])
   );
 

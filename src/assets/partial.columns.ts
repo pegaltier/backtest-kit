@@ -115,9 +115,9 @@ export const partial_columns: ColumnModel<PartialEvent>[] = [
     isVisible: () => true,
   },
   {
-    key: "totalExecuted",
-    label: "Total Executed %",
-    format: (data) => (data.totalExecuted !== undefined ? `${data.totalExecuted.toFixed(2)}%` : "N/A"),
+    key: "partialExecuted",
+    label: "Partial Executed %",
+    format: (data) => (data.partialExecuted !== undefined ? `${data.partialExecuted.toFixed(2)}%` : "N/A"),
     isVisible: () => true,
   },
   {

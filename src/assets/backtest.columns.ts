@@ -107,9 +107,9 @@ export const backtest_columns: ColumnModel<IStrategyTickResultClosed>[] = [
     isVisible: () => true,
   },
   {
-    key: "totalExecuted",
-    label: "Total Executed",
-    format: (data) => `${data.signal.totalExecuted.toFixed(1)}%`,
+    key: "partialExecuted",
+    label: "Partial Executed %",
+    format: (data) => `${data.signal.partialExecuted.toFixed(1)}%`,
     isVisible: () => true,
   },
   {

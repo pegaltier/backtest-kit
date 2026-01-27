@@ -125,10 +125,10 @@ export const schedule_columns: ColumnModel<ScheduledEvent>[] = [
     isVisible: () => true,
   },
   {
-    key: "totalExecuted",
-    label: "Total Executed",
+    key: "partialExecuted",
+    label: "Partial Executed %",
     format: (data) =>
-      data.totalExecuted !== undefined ? `${data.totalExecuted.toFixed(1)}%` : "N/A",
+      data.partialExecuted !== undefined ? `${data.partialExecuted.toFixed(1)}%` : "N/A",
     isVisible: () => true,
   },
   {
