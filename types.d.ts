@@ -1136,6 +1136,8 @@ interface IPublicSignalRow extends ISignalRow {
  */
 interface IStorageSignalRow extends IPublicSignalRow {
     /** Creation timestamp taken from IStrategyTickResult */
+    createdAt: number;
+    /** Creation timestamp taken from IStrategyTickResult */
     updatedAt: number;
     /** Storage adapter rewrite priority. Equal to Date.now for live and backtest both */
     priority: number;
