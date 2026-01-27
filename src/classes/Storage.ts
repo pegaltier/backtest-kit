@@ -117,6 +117,7 @@ export class StorageBacktestUtils {
       ...tick.signal,
       status: "opened",
       priority: Date.now(),
+      createdAt: lastStorage ? lastStorage.createdAt : tick.createdAt,
       updatedAt: tick.createdAt,
     });
     await this._updateStorage();
@@ -141,6 +142,7 @@ export class StorageBacktestUtils {
       ...tick.signal,
       status: "closed",
       priority: Date.now(),
+      createdAt: lastStorage ? lastStorage.createdAt : tick.createdAt,
       updatedAt: tick.createdAt,
     });
     await this._updateStorage();
@@ -165,6 +167,7 @@ export class StorageBacktestUtils {
       ...tick.signal,
       status: "scheduled",
       priority: Date.now(),
+      createdAt: lastStorage ? lastStorage.createdAt : tick.createdAt,
       updatedAt: tick.createdAt,
     });
     await this._updateStorage();
@@ -189,6 +192,7 @@ export class StorageBacktestUtils {
       ...tick.signal,
       status: "cancelled",
       priority: Date.now(),
+      createdAt: lastStorage ? lastStorage.createdAt : tick.createdAt,
       updatedAt: tick.createdAt,
     });
     await this._updateStorage();
@@ -299,6 +303,7 @@ export class StorageLiveUtils {
       ...tick.signal,
       status: "opened",
       priority: Date.now(),
+      createdAt: lastStorage ? lastStorage.createdAt : tick.createdAt,
       updatedAt: tick.createdAt,
     });
     await this._updateStorage();
@@ -323,6 +328,7 @@ export class StorageLiveUtils {
       ...tick.signal,
       status: "closed",
       priority: Date.now(),
+      createdAt: lastStorage ? lastStorage.createdAt : tick.createdAt,
       updatedAt: tick.createdAt,
     });
     await this._updateStorage();
@@ -347,6 +353,7 @@ export class StorageLiveUtils {
       ...tick.signal,
       status: "scheduled",
       priority: Date.now(),
+      createdAt: lastStorage ? lastStorage.createdAt : tick.createdAt,
       updatedAt: tick.createdAt,
     });
     await this._updateStorage();
@@ -371,6 +378,7 @@ export class StorageLiveUtils {
       ...tick.signal,
       status: "cancelled",
       priority: Date.now(),
+      createdAt: lastStorage ? lastStorage.createdAt : tick.createdAt,
       updatedAt: tick.createdAt,
     });
     await this._updateStorage();
