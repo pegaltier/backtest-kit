@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Style } from "react-style-tag";
 import { Source } from "react-declarative";
-import ioc from "../../lib/ioc";
 
 const IMAGE_SIDE = "5vmin";
 const IMAGE_LIST = [
@@ -23,7 +22,7 @@ export const BottomImage = () => {
 
   useEffect(
     () =>
-      Source.create((next) => ioc.routerService.listen(next)).connect(() =>
+      Source.fromInterval(60_000).connect(() =>
         setImageSource(randomImage()),
       ),
     [],

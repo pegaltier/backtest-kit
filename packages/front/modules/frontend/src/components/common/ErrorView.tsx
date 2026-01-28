@@ -1,10 +1,9 @@
-import { PortalView, RevealView, reloadPage } from "react-declarative";
-
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import { makeStyles } from "../../styles/makeStyles";
+import { PortalView } from "react-declarative";
 
 const useStyles = makeStyles()((theme) => ({
   root: {
@@ -49,16 +48,16 @@ export const ErrorView = ({ onLine = navigator.onLine }: IErrorViewProps) => {
   return (
     <PortalView>
       <Box className={classes.root}>
-        <RevealView className={classes.reveal}>
+        <Box className={classes.reveal}>
           <Paper className={classes.container}>
             <Stack direction="column" gap="15px">
               <span>{onLine ? ERROR_LABEL : OFFLINE_LABEL}</span>
-              <Button variant="contained" onClick={reloadPage}>
+              <Button variant="contained" onClick={() => window.location.reload()}>
                 {onLine ? "Перезагрузить страницу" : "Переподключиться"}
               </Button>
             </Stack>
           </Paper>
-        </RevealView>
+        </Box>
       </Box>
     </PortalView>
   );

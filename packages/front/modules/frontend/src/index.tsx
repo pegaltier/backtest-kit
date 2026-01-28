@@ -40,7 +40,7 @@ import { createRoot } from "react-dom/client";
 import createCache from "@emotion/cache";
 
 import AlertProvider from "./components/AlertProvider";
-import App from "./components/App";
+// import App from "./components/App";
 
 import { muiTheme } from "./config/muiTheme";
 import { mantineTheme } from "./config/mantineTheme";
@@ -117,7 +117,7 @@ const AppBootstrap = () => {
                                         <ErrorProvider>
                                             <LayoutModalProvider>
                                                 <AlertProvider>
-                                                    <App />
+                                                    <p>123</p>
                                                 </AlertProvider>
                                             </LayoutModalProvider>
                                         </ErrorProvider>
