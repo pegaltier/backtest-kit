@@ -118,7 +118,7 @@ const actions: IOption[] = [
     {
         action: "reload-action",
         icon: () => <IconWrapper icon={Refresh} color="#4caf50" />,
-        label: "Обновить",
+        label: "Refresh",
     },
 ];
 
