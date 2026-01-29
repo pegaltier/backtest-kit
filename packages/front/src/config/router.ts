@@ -9,7 +9,9 @@ import view from "../routes/view";
 import icon from "../routes/icon";
 import dict from "../routes/dict";
 
-import { CC_WWWROOT_PATH } from "./params";
+import { CC_ENABLE_MOCK, CC_WWWROOT_PATH } from "./params";
+
+import getPublicPath from "src/helpers/getPublicPath";
 
 const router = Router({
   params: true,
@@ -37,7 +39,9 @@ router.all("/api/v1/dict/*", (req, res) => {
 
 router.get("/*", (req, res) =>
   serveHandler(req, res, {
-    public: CC_WWWROOT_PATH,
+    public: CC_ENABLE_MOCK
+      ? CC_WWWROOT_PATH || "./public"
+      : CC_WWWROOT_PATH || getPublicPath(),
   }),
 );
 

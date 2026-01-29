@@ -5,14 +5,25 @@ import { join } from "path";
 import { existsSync } from "fs";
 import { readFile } from "fs/promises";
 
+import { CC_ENABLE_MOCK } from "src/config/params";
+import getModulesPath from "src/helpers/getModulesPath";
+
 const router = Router({
   params: true,
 });
 
 // getModulesPath
-const ASSET_SVG = join(process.cwd(), "node_modules/cryptocurrency-icons/svg/color");
-const ASSET_128 = join(process.cwd(), "node_modules/cryptocurrency-icons/128/color");
-const ASSET_32 = join(process.cwd(), "node_modules/cryptocurrency-icons/32/color");
+const ASSET_SVG = CC_ENABLE_MOCK
+  ? join(process.cwd(), "node_modules/cryptocurrency-icons/svg/color")
+  : join(getModulesPath(), "cryptocurrency-icons/svg/color");
+
+const ASSET_128 = CC_ENABLE_MOCK
+  ? join(process.cwd(), "node_modules/cryptocurrency-icons/128/color")
+  : join(getModulesPath(), "cryptocurrency-icons/128/color");
+
+const ASSET_32 = CC_ENABLE_MOCK
+  ? join(process.cwd(), "node_modules/cryptocurrency-icons/32/color")
+  : join(getModulesPath(), "cryptocurrency-icons/32/color");
 
 // File caches to avoid repeated disk reads
 const cache128 = new Map<string, Buffer>();

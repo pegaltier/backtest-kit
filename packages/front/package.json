@@ -30,7 +30,7 @@
   },
   "scripts": {
     "start": "npm run build && npm run serve",
-    "serve": "node -e \"import('./build/index.mjs').then(m => m.serve())\"",
+    "serve": "cross-env NODE_ENV=development CC_ENABLE_MOCK=1 node -e \"import('./build/index.mjs').then(m => m.serve())\"",
     "build": "rollup -c"
   },
   "main": "build/index.cjs",
@@ -47,6 +47,7 @@
     "@rollup/plugin-typescript": "11.1.6",
     "@types/finalhandler": "1.2.3",
     "@types/serve-handler": "6.1.4",
+    "cross-env": "7.0.3",
     "@types/node": "22.9.0",
     "glob": "11.0.1",
     "rimraf": "6.0.1",
