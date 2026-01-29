@@ -227,65 +227,65 @@ export class NotificationInstance {
       this._addNotification({
         type: "partial_profit.commit",
         id: CREATE_KEY_FN(),
-        timestamp: Date.now(),
+        timestamp: data.timestamp,
         backtest: data.backtest,
         symbol: data.symbol,
         strategyName: data.strategyName,
         exchangeName: data.exchangeName,
         percentToClose: data.percentToClose,
         currentPrice: data.currentPrice,
-        createdAt: Date.now(),
+        createdAt: data.timestamp,
       });
     } else if (data.action === "partial-loss") {
       this._addNotification({
         type: "partial_loss.commit",
         id: CREATE_KEY_FN(),
-        timestamp: Date.now(),
+        timestamp: data.timestamp,
         backtest: data.backtest,
         symbol: data.symbol,
         strategyName: data.strategyName,
         exchangeName: data.exchangeName,
         percentToClose: data.percentToClose,
         currentPrice: data.currentPrice,
-        createdAt: Date.now(),
+        createdAt: data.timestamp,
       });
     } else if (data.action === "breakeven") {
       this._addNotification({
         type: "breakeven.commit",
         id: CREATE_KEY_FN(),
-        timestamp: Date.now(),
+        timestamp: data.timestamp,
         backtest: data.backtest,
         symbol: data.symbol,
         strategyName: data.strategyName,
         exchangeName: data.exchangeName,
         currentPrice: data.currentPrice,
-        createdAt: Date.now(),
+        createdAt: data.timestamp,
       });
     } else if (data.action === "trailing-stop") {
       this._addNotification({
         type: "trailing_stop.commit",
         id: CREATE_KEY_FN(),
-        timestamp: Date.now(),
+        timestamp: data.timestamp,
         backtest: data.backtest,
         symbol: data.symbol,
         strategyName: data.strategyName,
         exchangeName: data.exchangeName,
         percentShift: data.percentShift,
         currentPrice: data.currentPrice,
-        createdAt: Date.now(),
+        createdAt: data.timestamp,
       });
     } else if (data.action === "trailing-take") {
       this._addNotification({
         type: "trailing_take.commit",
         id: CREATE_KEY_FN(),
-        timestamp: Date.now(),
+        timestamp: data.timestamp,
         backtest: data.backtest,
         symbol: data.symbol,
         strategyName: data.strategyName,
         exchangeName: data.exchangeName,
         percentShift: data.percentShift,
         currentPrice: data.currentPrice,
-        createdAt: Date.now(),
+        createdAt: data.timestamp,
       });
     }
   };
