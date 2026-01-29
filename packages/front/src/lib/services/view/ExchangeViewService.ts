@@ -4,6 +4,8 @@ import { inject } from "../../../lib/core/di";
 import { CandleInterval } from "backtest-kit";
 import StorageViewService from "./StorageViewService";
 import ExchangeService from "../base/ExchangeService";
+import ExchangeMockService from "../mock/ExchangeMockService";
+import { CC_ENABLE_MOCK } from "../../../config/params";
 
 export class ExchangeViewService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
@@ -13,12 +15,16 @@ export class ExchangeViewService {
   private readonly exchangeService = inject<ExchangeService>(
     TYPES.exchangeService,
   );
+  private readonly exchangeMockService = inject<ExchangeMockService>(TYPES.exchangeMockService);
 
   public getCandles = async (signalId: string, interval: CandleInterval) => {
     this.loggerService.log("exchangeViewService getCandles", {
       signalId,
       interval,
     });
+    if (CC_ENABLE_MOCK) {
+      return await this.exchangeMockService.getCandles(signalId, interval);
+    }
     const signal = await this.storageViewService.findSignalById(signalId);
     if (!signal) {
       throw new Error(`Signal with ID ${signalId} not found`);

@@ -5,8 +5,8 @@ import { join } from "path";
 import { existsSync } from "fs";
 import { readFile } from "fs/promises";
 
-import { CC_ENABLE_MOCK } from "src/config/params";
-import getModulesPath from "src/helpers/getModulesPath";
+import { CC_ENABLE_MOCK } from "../config/params";
+import getModulesPath from "../helpers/getModulesPath";
 
 const router = Router({
   params: true,

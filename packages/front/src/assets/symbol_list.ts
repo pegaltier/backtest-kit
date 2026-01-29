@@ -1,5 +1,5 @@
 import { str } from "functools-kit";
-import { SymbolModel } from "src/model/Symbol.model";
+import { SymbolModel } from "../model/Symbol.model";
 
 export const symbol_list: SymbolModel[] = [
   {

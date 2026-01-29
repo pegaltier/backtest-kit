@@ -66,7 +66,7 @@ ChartJS.register(
 );
 
 const muiCache = createCache({
-    key: "estatebroker",
+    key: "backtest-kit",
 });
 
 createCustomTag(

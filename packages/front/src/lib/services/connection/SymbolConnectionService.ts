@@ -1,11 +1,11 @@
 import { memoize, singleshot, str } from "functools-kit";
 import { createRequire } from "module";
 import path from "path";
-import { SymbolModel } from "src/model/Symbol.model";
-import symbol_list_default from "src/assets/symbol_list";
-import { inject } from "src/lib/core/di";
+import { SymbolModel } from "../../../model/Symbol.model";
+import symbol_list_default from "../../../assets/symbol_list";
+import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
-import { TYPES } from "src/lib/core/types";
+import { TYPES } from "../../../lib/core/types";
 
 const require = createRequire(import.meta.url);
 

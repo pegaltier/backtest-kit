@@ -11,7 +11,7 @@ import dict from "../routes/dict";
 
 import { CC_ENABLE_MOCK, CC_WWWROOT_PATH } from "./params";
 
-import getPublicPath from "src/helpers/getPublicPath";
+import getPublicPath from "../helpers/getPublicPath";
 
 const router = Router({
   params: true,

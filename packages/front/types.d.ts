@@ -68,6 +68,7 @@ declare class ExchangeMockService {
 
 declare class NotificationViewService {
     private readonly loggerService;
+    private readonly notificationMockService;
     getList: () => Promise<backtest_kit.NotificationModel[]>;
     getOne: (id: string) => Promise<backtest_kit.NotificationModel>;
     protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
@@ -75,6 +76,7 @@ declare class NotificationViewService {
 
 declare class StorageViewService {
     private readonly loggerService;
+    private readonly storageMockService;
     findSignalById: (signalId: string) => Promise<backtest_kit.IStorageSignalRow>;
     listSignalLive: () => Promise<backtest_kit.IStorageSignalRow[]>;
     listSignalBacktest: () => Promise<backtest_kit.IStorageSignalRow[]>;
@@ -85,6 +87,7 @@ declare class ExchangeViewService {
     private readonly loggerService;
     private readonly storageViewService;
     private readonly exchangeService;
+    private readonly exchangeMockService;
     getCandles: (signalId: string, interval: CandleInterval) => Promise<backtest_kit.ICandleData[]>;
 }
 
