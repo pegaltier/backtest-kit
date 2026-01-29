@@ -118,7 +118,7 @@ interface IAppHeaderProps {
 const actions: IOption[] = [
     {
         action: "github-action",
-        icon: () => <IconWrapper icon={GitHub} color="#101411" />,
+        icon: () => <IconWrapper icon={GitHub} color="#6A1B9A " />,
         label: "Open GitHub",
     },
 ];
