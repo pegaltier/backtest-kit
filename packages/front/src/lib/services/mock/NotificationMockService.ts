@@ -6,7 +6,7 @@ import { inject } from "../../../lib/core/di";
 import { NotificationModel } from "backtest-kit";
 import { singleshot } from "functools-kit";
 
-const MOCK_PATH = "./mock/db/notifications.json";
+const MOCK_PATH = "./mock/notifications.json";
 
 const READ_NOTIFICATION_LIST_FN = singleshot(
   async (): Promise<NotificationModel[]> => {

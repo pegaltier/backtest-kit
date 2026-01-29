@@ -36,16 +36,10 @@ export default defineConfig({
         hmr: false,
         proxy: {
             '/api/v1': {
-                target: 'http://localhost:1337',
+                target: 'http://localhost:60050',
                 changeOrigin: true,
                 secure: false,
             },
-            '/api/v2': {
-                target: 'http://localhost:1337',
-                changeOrigin: true,
-                secure: false,
-                ws: true,
-            }
         }
     },
     resolve: {

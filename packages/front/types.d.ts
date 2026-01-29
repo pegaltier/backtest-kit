@@ -31,7 +31,8 @@ declare class ExchangeService {
         symbol: string;
         interval: CandleInterval;
         exchangeName: ExchangeName;
-        currentTime: number;
+        signalStartTime: number;
+        signalStopTime: number;
     }) => Promise<backtest_kit.ICandleData[]>;
 }
 
