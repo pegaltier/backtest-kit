@@ -32,6 +32,8 @@ import {
     ArcElement,
 } from "chart.js";
 
+import MobileBodyRow from "./slots/MobileBodyRow";
+
 import { CacheProvider } from "@emotion/react";
 import { ThemeProvider } from "@mui/material/styles";
 import { MantineProvider } from "@mantine/core";
@@ -40,7 +42,7 @@ import { createRoot } from "react-dom/client";
 import createCache from "@emotion/cache";
 
 import AlertProvider from "./components/AlertProvider";
-// import App from "./components/App";
+import App from "./components/App";
 
 import { muiTheme } from "./config/muiTheme";
 import { mantineTheme } from "./config/mantineTheme";
@@ -49,9 +51,7 @@ import OneSlotFactory from "./components/OneSlotFactory";
 import ErrorProvider from "./components/ErrorProvider";
 import LayoutModalProvider from "./components/LayoutModalProvider";
 
-import { ioc } from "./lib";
-import MobileBodyRow from "./slots/MobileBodyRow";
-import App from "./components/App";
+import ioc from "./lib";
 
 const container = document.getElementById("root")!;
 

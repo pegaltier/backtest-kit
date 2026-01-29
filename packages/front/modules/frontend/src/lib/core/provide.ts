@@ -14,7 +14,7 @@ import StorageMockService from "../services/mock/StorageMockService";
 import ExchangeViewService from "../services/view/ExchangeViewService";
 import NotificationViewService from "../services/view/NotificationViewService";
 import StorageViewService from "../services/view/StorageViewService";
-import SymbolViewService from "../services/view/SymbolViewService";
+import SymbolGlobalService from "../services/global/SymbolGlobalService";
 
 {
     provide(TYPES.errorService, () => new ErrorService());
@@ -22,6 +22,10 @@ import SymbolViewService from "../services/view/SymbolViewService";
     provide(TYPES.layoutService, () => new LayoutService());
     provide(TYPES.loggerService, () => new LoggerService());
     provide(TYPES.routerService, () => new RouterService());
+}
+
+{
+    provide(TYPES.symbolGlobalService, () => new SymbolGlobalService());
 }
 
 {
@@ -34,5 +38,4 @@ import SymbolViewService from "../services/view/SymbolViewService";
     provide(TYPES.exchangeViewService, () => new ExchangeViewService());
     provide(TYPES.notificationViewService, () => new NotificationViewService());
     provide(TYPES.storageViewService, () => new StorageViewService());
-    provide(TYPES.symbolViewService, () => new SymbolViewService());
 }

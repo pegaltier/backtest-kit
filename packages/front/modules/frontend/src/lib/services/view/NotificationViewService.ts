@@ -17,12 +17,32 @@ export class NotificationViewService {
         TYPES.notificationMockService,
     );
 
-    public getData = async (): Promise<NotificationModel> => {
-        this.loggerService.log("notificationViewService getData");
+    public getList = async (): Promise<NotificationModel> => {
+        this.loggerService.log("notificationViewService getList");
         if (CC_ENABLE_MOCK) {
-            return await this.notificationMockService.getData();
+            return await this.notificationMockService.getList();
         }
-        const { data, error } = await fetchApi("/api/v1/view/notification", {
+        const { data, error } = await fetchApi("/api/v1/view/notification_list", {
+            method: "POST",
+            body: JSON.stringify({
+                clientId: CC_CLIENT_ID,
+                serviceName: CC_SERVICE_NAME,
+                userId: CC_USER_ID,
+                requestId: randomString(),
+            }),
+        });
+        if (error) {
+            throw new Error(error);
+        }
+        return data;
+    };
+
+    public getOne = async (id: string): Promise<NotificationModel | null> => {
+        this.loggerService.log("notificationViewService getOne", { id });
+        if (CC_ENABLE_MOCK) {
+            return await this.notificationMockService.getOne(id);
+        }
+        const { data, error } = await fetchApi(`/api/v1/view/notification_one/${id}`, {
             method: "POST",
             body: JSON.stringify({
                 clientId: CC_CLIENT_ID,

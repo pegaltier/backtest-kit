@@ -16,8 +16,9 @@ import ExchangeViewService from "./services/view/ExchangeViewService";
 import NotificationViewService from "./services/view/NotificationViewService";
 import StorageViewService from "./services/view/StorageViewService";
 
+import SymbolGlobalService from "./services/global/SymbolGlobalService";
+
 import TYPES from "./core/TYPES";
-import SymbolViewService from "./services/view/SymbolViewService";
 
 const baseServices = {
   errorService: inject<ErrorService>(TYPES.errorService),
@@ -26,6 +27,10 @@ const baseServices = {
   routerService: inject<RouterService>(TYPES.routerService),
   alertService: inject<AlertService>(TYPES.alertService),
 };
+
+const globalServices = {
+  symbolGlobalService: inject<SymbolGlobalService>(TYPES.symbolGlobalService),
+}
 
 const mockServices = {
   exchangeMockService: inject<ExchangeMockService>(TYPES.exchangeMockService),
@@ -37,11 +42,11 @@ const viewServices = {
   exchangeViewService: inject<ExchangeViewService>(TYPES.exchangeViewService),
   notificationViewService: inject<NotificationViewService>(TYPES.notificationViewService),
   storageViewService: inject<StorageViewService>(TYPES.storageViewService),
-  symbolViewService: inject<SymbolViewService>(TYPES.symbolViewService),
 };
 
 export const ioc = {
   ...baseServices,
+  ...globalServices,
   ...mockServices,
   ...viewServices,
 };

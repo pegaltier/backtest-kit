@@ -19,11 +19,11 @@ interface ISymbolData {
 
 type Pair = string;
 
-export class SymbolViewService {
+export class SymbolGlobalService {
     private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
     public getSymbolList = async (): Promise<Pair[]> => {
-        this.loggerService.log("symbolViewService getSymbolList");
+        this.loggerService.log("symbolGlobalService getSymbolList");
         const { data, error } = await fetchApi("/api/v1/dict/symbol/list", {
             method: "POST",
             body: JSON.stringify({
@@ -40,7 +40,7 @@ export class SymbolViewService {
     };
 
     public getSymbolMap = async (): Promise<Record<Pair, ISymbolData>> => {
-        this.loggerService.log("symbolViewService getSymbolMap");
+        this.loggerService.log("symbolGlobalService getSymbolMap");
         const { data, error } = await fetchApi("/api/v1/dict/symbol/map", {
             method: "POST",
             body: JSON.stringify({
@@ -57,7 +57,7 @@ export class SymbolViewService {
     };
 
     public getSymbol = async (symbol: Pair): Promise<ISymbolData> => {
-        this.loggerService.log("symbolViewService getSymbol", { symbol });
+        this.loggerService.log("symbolGlobalService getSymbol", { symbol });
         const { data, error } = await fetchApi("/api/v1/dict/symbol/one", {
             method: "POST",
             body: JSON.stringify({
@@ -75,4 +75,4 @@ export class SymbolViewService {
     };
 }
 
-export default SymbolViewService;
+export default SymbolGlobalService;

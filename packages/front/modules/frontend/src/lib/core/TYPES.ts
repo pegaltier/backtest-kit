@@ -6,6 +6,10 @@ const baseServices = {
   routerService: Symbol("routerService"),
 };
 
+const globalServices = {
+  symbolGlobalService: Symbol("symbolGlobalService"),
+}
+
 const mockServices = {
   exchangeMockService: Symbol("exchangeMockService"),
   notificationMockService: Symbol("notificationMockService"),
@@ -16,11 +20,11 @@ const viewServices = {
   exchangeViewService: Symbol("exchangeViewService"),
   notificationViewService: Symbol("notificationViewService"),
   storageViewService: Symbol("storageViewService"),
-  symbolViewService: Symbol("symbolViewService"),
 };
 
 export const TYPES = {
   ...baseServices,
+  ...globalServices,
   ...mockServices,
   ...viewServices,
 };

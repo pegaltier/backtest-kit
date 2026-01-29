@@ -48,7 +48,8 @@ declare class ExchangeService {
 
 declare class NotificationMockService {
     private readonly loggerService;
-    getData: () => Promise<NotificationModel[]>;
+    getList: () => Promise<NotificationModel[]>;
+    getOne: (id: string) => Promise<NotificationModel>;
 }
 
 declare class StorageMockService {
@@ -67,7 +68,8 @@ declare class ExchangeMockService {
 
 declare class NotificationViewService {
     private readonly loggerService;
-    getData: () => Promise<backtest_kit.NotificationModel[]>;
+    getList: () => Promise<backtest_kit.NotificationModel[]>;
+    getOne: (id: string) => Promise<backtest_kit.NotificationModel>;
     protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
 }
 

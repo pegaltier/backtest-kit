@@ -18,9 +18,15 @@ const READ_NOTIFICATION_LIST_FN = singleshot(
 export class NotificationMockService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
-  public getData = async () => {
-    this.loggerService.log("notificationMockService getData");
+  public getList = async () => {
+    this.loggerService.log("notificationMockService getList");
     return await READ_NOTIFICATION_LIST_FN();
+  };
+
+  public getOne = async (id: string) => {
+    this.loggerService.log("notificationMockService getOne");
+    const notificationList = await this.getList();
+    return notificationList.find((item) => item.id === id) ?? null;
   };
 }
 
