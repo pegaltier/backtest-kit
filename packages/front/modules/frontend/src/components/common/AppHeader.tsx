@@ -127,7 +127,7 @@ export const AppHeader = ({ loading }: IAppHeaderProps) => {
     const { classes, cx } = useStyles();
 
     const handleAction = async (action: string) => {
-        if (action === "reload-action") {
+        if (action === "github-action") {
             openBlank("https://github.com/tripolskypetr/backtest-kit");
         }
     };
