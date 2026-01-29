@@ -221,6 +221,29 @@ export const ListView = ({
                                         </Box>
                                         {formatAmount(item.priceStopLoss)}$
                                     </Typography>
+                                    {item.pnl && (
+                                        <Typography
+                                            variant="body2"
+                                            component="span"
+                                            sx={{
+                                                fontWeight: "bold",
+                                                px: 1,
+                                                py: 0.5,
+                                                borderRadius: 1,
+                                                background:
+                                                    item.pnl.pnlPercentage >= 0
+                                                        ? alpha("#4caf50", 0.15)
+                                                        : alpha("#f44336", 0.15),
+                                                color:
+                                                    item.pnl.pnlPercentage >= 0
+                                                        ? "#2e7d32"
+                                                        : "#c62828",
+                                            }}
+                                        >
+                                            PNL: {item.pnl.pnlPercentage >= 0 ? "+" : ""}
+                                            {item.pnl.pnlPercentage.toFixed(2)}%
+                                        </Typography>
+                                    )}
                                     <Typography
                                         variant="caption"
                                         component="span"
