@@ -42,16 +42,16 @@ function isLightColor(hex: string) {
 }
 
 const formatTimeElapsed = (timestamp: number): string => {
-    const now = Date.now();
-    const diff = now - timestamp;
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (days > 0) return `${days}д назад`;
-    if (hours > 0) return `${hours}ч назад`;
-    if (minutes > 0) return `${minutes}м назад`;
-    return "только что";
+    const date = new Date(timestamp);
+    return date.toLocaleString([], {
+        year: "numeric",
+        month: "numeric",
+        day: "numeric",
+        hourCycle: "h24",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+    });
 };
 
 export const ListView = ({
@@ -252,7 +252,17 @@ export const ListView = ({
                                     </Typography>
                                 </Box>
                             }
-                            secondary={formatTimeElapsed(item.createdAt)}
+                            secondary={
+                                <Typography
+                                    pt={0.5}
+                                    variant="subtitle2"
+                                    sx={{ opacity: 0.5 }}
+                                >
+                                    {formatTimeElapsed(
+                                        item.createdAt || item.pendingAt,
+                                    )}
+                                </Typography>
+                            }
                         />
                         <IconButton disableRipple>
                             <ArrowForwardIcon />
