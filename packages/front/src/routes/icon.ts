@@ -9,6 +9,7 @@ const router = Router({
   params: true,
 });
 
+// getModulesPath
 const ASSET_SVG = join(process.cwd(), "node_modules/cryptocurrency-icons/svg/color");
 const ASSET_128 = join(process.cwd(), "node_modules/cryptocurrency-icons/128/color");
 const ASSET_32 = join(process.cwd(), "node_modules/cryptocurrency-icons/32/color");
