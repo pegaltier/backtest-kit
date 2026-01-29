@@ -8,12 +8,13 @@ import {
 } from "../../../config/params";
 
 interface ISymbolData {
-    symbol: Pair;
-    description: string;
     icon: string;
     logo: string;
-    priority: number;
+    symbol: string;
     displayName: string;
+    color: string;
+    priority: number;
+    description: string;
     index: number;
 }
 
