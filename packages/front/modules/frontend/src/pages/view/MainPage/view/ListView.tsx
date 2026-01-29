@@ -1,4 +1,4 @@
-import { Delete } from "@mui/icons-material";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import {
   Box,
   List,
@@ -12,6 +12,7 @@ import {
   ListItem,
   alpha,
   getContrastRatio,
+  IconButton,
 } from "@mui/material";
 import {
   Async,
@@ -19,11 +20,13 @@ import {
   ITabsOutletProps,
   useAsyncValue,
   useElementSize,
+  useOnce,
 } from "react-declarative";
 import React from "react";
 import ioc from "../../../../lib";
 import IconPhoto from "../../../../components/common/IconPhoto";
 import { IStorageSignalRow } from "backtest-kit";
+import actionSubject from "../config/actionSubject";
 
 interface IListViewData {
   type: "backtest" | "live";
@@ -37,19 +40,6 @@ function isLightColor(hex: string) {
   // If contrast with black is higher, the color is likely light
   return contrastWithBlack > contrastWithWhite;
 }
-
-const IconWrapper = ({ icon: Icon, color }: { icon: React.ElementType; color: string }) => (
-  <Box
-    sx={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      p: 1,
-    }}
-  >
-    <Icon sx={{ color }} />
-  </Box>
-);
 
 const formatTimeElapsed = (timestamp: number): string => {
   const now = Date.now();
@@ -89,6 +79,12 @@ export const ListView = ({
       deps: [type],
     }
   );
+
+  useOnce(() => actionSubject.subscribe((action) => {
+    if (action === "update-now") {
+      execute();
+    }
+  }))
 
   const signalsBySymbol = React.useMemo(() => {
     if (!signals) return {};
@@ -250,12 +246,18 @@ export const ListView = ({
               }
               secondary={formatTimeElapsed(item.createdAt)}
             />
-            <IconWrapper icon={Delete} color="#ff3d00" />
+                                        <IconButton disableRipple>
+                              <ArrowForwardIcon />
+                            </IconButton>
           </ListItemButton>
         ))}
       </>
     );
   };
+
+  if (loading) {
+    return null;
+  }
 
   return (
     <List
@@ -300,7 +302,7 @@ export const ListView = ({
                 <ListSubheader
                   sx={{
                     background: isLightColor(color) ? darken(color, 0.1) : lighten(color, 0.1),
-                    color: isLightColor(color) ? "white !important" : "black !important",
+                    color: "white !important",
                     zIndex: 9,
                     display: "flex",
                     alignItems: "center",

@@ -26,7 +26,7 @@ const options: IBreadcrumbs2Option[] = [
 const actions: IBreadcrumbs2Action[] = [
     {
         action: "update-now",
-        label: "refresh",
+        label: "Refresh",
         icon: () => <IconWrapper icon={Refresh} color="#4caf50" />,
     },
 ];
