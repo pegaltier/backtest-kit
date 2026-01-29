@@ -17,7 +17,7 @@ export class NotificationViewService {
         TYPES.notificationMockService,
     );
 
-    public getList = async (): Promise<NotificationModel> => {
+    public getList = async (): Promise<NotificationModel[]> => {
         this.loggerService.log("notificationViewService getList");
         if (CC_ENABLE_MOCK) {
             return await this.notificationMockService.getList();

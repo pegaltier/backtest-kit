@@ -7,7 +7,7 @@ import { CC_CLIENT_ID, CC_SERVICE_NAME, CC_USER_ID } from "../../../config/param
 export class NotificationMockService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
-  public getList = async (): Promise<NotificationModel> => {
+  public getList = async (): Promise<NotificationModel[]> => {
     this.loggerService.log("notificationMockService getList");
     const { data, error } = await fetchApi("/api/v1/mock/notification_list", {
       method: "POST",
