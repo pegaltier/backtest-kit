@@ -1211,19 +1211,53 @@ interface IPublicSignalRow extends ISignalRow {
     partialExecuted: number;
 }
 /**
- * Storage signal row with creation timestamp taken from IStrategyTickResult.
+ * Base storage signal row fields shared by all status variants.
  * Used for persisting signals with accurate creation time.
  */
-interface IStorageSignalRow extends IPublicSignalRow {
+interface IStorageSignalRowBase extends IPublicSignalRow {
     /** Creation timestamp taken from IStrategyTickResult */
     createdAt: number;
     /** Creation timestamp taken from IStrategyTickResult */
     updatedAt: number;
     /** Storage adapter rewrite priority. Equal to Date.now for live and backtest both */
     priority: number;
-    /** Current status of the signal */
-    status: "opened" | "scheduled" | "closed" | "cancelled";
 }
+/**
+ * Storage signal row for opened status.
+ */
+interface IStorageSignalRowOpened extends IStorageSignalRowBase {
+    /** Current status of the signal */
+    status: "opened";
+}
+/**
+ * Storage signal row for scheduled status.
+ */
+interface IStorageSignalRowScheduled extends IStorageSignalRowBase {
+    /** Current status of the signal */
+    status: "scheduled";
+}
+/**
+ * Storage signal row for closed status.
+ * Only closed signals have PNL data.
+ */
+interface IStorageSignalRowClosed extends IStorageSignalRowBase {
+    /** Current status of the signal */
+    status: "closed";
+    /** Profit and loss value for the signal when closed */
+    pnl: IStrategyPnL;
+}
+/**
+ * Storage signal row for cancelled status.
+ */
+interface IStorageSignalRowCancelled extends IStorageSignalRowBase {
+    /** Current status of the signal */
+    status: "cancelled";
+}
+/**
+ * Discriminated union of storage signal rows.
+ * Use type guards: `row.status === "closed"` for type-safe access to pnl.
+ */
+type IStorageSignalRow = IStorageSignalRowOpened | IStorageSignalRowScheduled | IStorageSignalRowClosed | IStorageSignalRowCancelled;
 /**
  * Risk signal row for internal risk management.
  * Extends ISignalDto to include priceOpen, originalPriceStopLoss and originalPriceTakeProfit.

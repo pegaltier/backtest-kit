@@ -329,6 +329,7 @@ export class StorageLiveUtils {
       ...tick.signal,
       status: "closed",
       priority: Date.now(),
+      pnl: tick.pnl,
       createdAt: lastStorage ? lastStorage.createdAt : tick.createdAt,
       updatedAt: tick.createdAt,
     });
