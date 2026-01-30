@@ -142,6 +142,15 @@ export {
   IStrategyPnL,
 } from "./interfaces/Strategy.interface";
 
+export {
+  ICommitRow,
+  IPartialProfitCommitRow,
+  IPartialLossCommitRow,
+  IBreakevenCommitRow,
+  ITrailingStopCommitRow,
+  ITrailingTakeCommitRow,
+} from "./interfaces/Strategy.interface";
+
 export { FrameInterval, IFrameSchema } from "./interfaces/Frame.interface";
 
 export {
@@ -156,6 +165,13 @@ export {
   IPositionSizeFixedPercentageParams,
   IPositionSizeKellyParams,
   IPositionSizeATRParams,
+} from "./interfaces/Sizing.interface";
+
+export {
+  ISizingParams,
+  ISizingParamsFixedPercentage,
+  ISizingParamsKelly,
+  ISizingParamsATR,
 } from "./interfaces/Sizing.interface";
 
 export {
@@ -219,11 +235,22 @@ export { ProgressBacktestContract } from "./contract/ProgressBacktest.contract";
 export { SchedulePingContract } from "./contract/SchedulePing.contract";
 export { ActivePingContract } from "./contract/ActivePing.contract";
 export { BreakevenContract } from "./contract/Breakeven.contract";
+
 export {
   PerformanceContract,
   PerformanceMetricType,
 } from "./contract/Performance.contract";
-export { StrategyCommitContract } from "./contract/StrategyCommit.contract";
+
+export {
+  StrategyCommitContract,
+  CancelScheduledCommit,
+  ClosePendingCommit,
+  PartialProfitCommit,
+  PartialLossCommit,
+  TrailingStopCommit,
+  TrailingTakeCommit,
+  BreakevenCommit,
+} from "./contract/StrategyCommit.contract";
 
 export { ExecutionContextService } from "./lib/services/context/ExecutionContextService";
 export { MethodContextService } from "./lib/services/context/MethodContextService";
