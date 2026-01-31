@@ -28,29 +28,36 @@ const fetchData = async (id: string) => {
 };
 
 const handleDownload = async (pathname: string, id: string) => {
-  const currentPath = pathname;
 
-  let dataType: "signal" | "candle_1m" | "candle_15m" | "candle_1h" | null = null;
-  let label = "";
+  const { candle_15m, candle_1h, candle_1m, signal } = await fetchData(id);
 
-  if (currentPath.includes("/signal")) {
-    dataType = "signal";
-    label = "Signal_Details";
-  } else if (currentPath.includes("/candle_1m")) {
-    dataType = "candle_1m";
-    label = "Candles_1m";
-  } else if (currentPath.includes("/candle_15m")) {
-    dataType = "candle_15m";
-    label = "Candles_15m";
-  } else if (currentPath.includes("/candle_1h")) {
-    dataType = "candle_1h";
-    label = "Candles_1h";
-  }
-
-  if (!dataType) {
+  if (pathname.includes("/signal")) {
+    const blob = new Blob([JSON.stringify(signal, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    ioc.layoutService.downloadFile(url, `signal_${signal.id}.json`);
+    return;
+  } 
+  
+  if (pathname.includes("/candle_1m")) {
+    const blob = new Blob([JSON.stringify(candle_1m, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    ioc.layoutService.downloadFile(url, `candles_1m_${signal.id}.json`);
+    return;
+  } 
+  
+  if (pathname.includes("/candle_15m")) {
+    const blob = new Blob([JSON.stringify(candle_15m, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    ioc.layoutService.downloadFile(url, `candles_15m_${signal.id}.json`);
+    return;
+  } 
+  
+  if (pathname.includes("/candle_1h")) {
+    const blob = new Blob([JSON.stringify(candle_1h, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    ioc.layoutService.downloadFile(url, `candles_1h_${signal.id}.json`);
     return;
   }
-
 };
 
 export const useSignalView = () => {
