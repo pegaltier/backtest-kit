@@ -21,11 +21,13 @@ interface IChartProps {
   height: number;
   width: number;
   items: ICandleData[];
-  lines: {
-    buyPrice: number;
-    date: string;
-    position: "long" | "short";
-  }[];
+  position: "long" | "short";
+  createdAt: string;
+  updatedAt: string;
+  priceOpen: number;
+  priceStopLoss: number;
+  priceTakeProfit: number;
+  status: "opened" | "closed" | "scheduled" | "cancelled";
 }
 
 
@@ -129,7 +131,19 @@ const MOMENT_STAMP_OFFSET = getMomentStamp(
 
 type Ref = React.MutableRefObject<HTMLDivElement>;
 
-export const StockChart = ({ source, height, width, items, lines }: IChartProps) => {
+export const StockChart = ({
+  source,
+  height,
+  width,
+  items,
+  position,
+  createdAt,
+  updatedAt,
+  priceOpen,
+  priceStopLoss,
+  priceTakeProfit,
+  status,
+}: IChartProps) => {
   const { classes } = useStyles();
   const elementRef: Ref = useRef<HTMLDivElement>(undefined as never);
   const [tooltipDate, setTooltipDate] = useState<string | null>(null);
@@ -251,49 +265,94 @@ export const StockChart = ({ source, height, width, items, lines }: IChartProps)
 
     lineSeries.setData(candles);
 
-    lines.forEach((order, idx) => {
-      const positionLabel = order.position === "long" ? "LONG" : "SHORT";
+    // Price lines for position
+    const positionLabel = position === "long" ? "LONG" : "SHORT";
+    const positionColor = getPositionColor(position, 0);
 
-      lineSeries.createPriceLine({
-        price: parseFloat(order.buyPrice),
-        color: getPositionColor(order.position, idx),
-        lineWidth: 3,
-        lineStyle: LineStyle.Dashed,
-        axisLabelVisible: true,
-        title: `№${idx + 1} ${positionLabel}`,
-      });
+    // Entry price line
+    lineSeries.createPriceLine({
+      price: priceOpen,
+      color: positionColor,
+      lineWidth: 2,
+      lineStyle: LineStyle.Solid,
+      axisLabelVisible: true,
+      title: `${positionLabel} Entry`,
     });
 
-    const markers = lines
-      .map((order, idx): SeriesMarker<Time> => {
-        const date = dayjs(order.date);
+    // Stop Loss line
+    lineSeries.createPriceLine({
+      price: priceStopLoss,
+      color: colors.red[500],
+      lineWidth: 2,
+      lineStyle: LineStyle.Dashed,
+      axisLabelVisible: true,
+      title: "SL",
+    });
 
-        let time: Time;
+    // Take Profit line
+    lineSeries.createPriceLine({
+      price: priceTakeProfit,
+      color: colors.green[500],
+      lineWidth: 2,
+      lineStyle: LineStyle.Dashed,
+      axisLabelVisible: true,
+      title: "TP",
+    });
 
+    // Markers for entry and exit points
+    const markers: SeriesMarker<Time>[] = [];
+
+    // Entry marker (createdAt)
+    const entryDate = dayjs(createdAt);
+    if (entryDate.isValid()) {
+      let entryTime: Time;
+      if (source === "1m") {
+        entryTime = getMomentStamp(entryDate, "minute") as Time;
+      } else if (source === "15m") {
+        const minute = Math.floor(entryDate.minute() / 15) * 15;
+        const alignedDate = entryDate.startOf("hour").add(minute, "minute");
+        entryTime = getMomentStamp(alignedDate, "minute") as Time;
+      } else {
+        const alignedDate = entryDate.startOf("hour");
+        entryTime = getMomentStamp(alignedDate, "hour") as Time;
+      }
+
+      markers.push({
+        time: entryTime,
+        position: position === "short" ? "aboveBar" : "belowBar",
+        color: positionColor,
+        shape: position === "short" ? "arrowDown" : "arrowUp",
+        size: 1,
+        text: "Entry",
+      });
+    }
+
+    // Exit marker (updatedAt) - only for closed positions
+    if (status === "closed") {
+      const exitDate = dayjs(updatedAt);
+      if (exitDate.isValid()) {
+        let exitTime: Time;
         if (source === "1m") {
-          time = getMomentStamp(date, "minute") as Time;
+          exitTime = getMomentStamp(exitDate, "minute") as Time;
         } else if (source === "15m") {
-          const minute = Math.floor(date.minute() / 15) * 15;
-          const alignedDate = date.startOf("hour").add(minute, "minute");
-          time = getMomentStamp(alignedDate, "minute") as Time;
-        } else if (source === "1h") {
-          const alignedDate = date.startOf("hour");
-          time = getMomentStamp(alignedDate, "hour") as Time;
+          const minute = Math.floor(exitDate.minute() / 15) * 15;
+          const alignedDate = exitDate.startOf("hour").add(minute, "minute");
+          exitTime = getMomentStamp(alignedDate, "minute") as Time;
+        } else {
+          const alignedDate = exitDate.startOf("hour");
+          exitTime = getMomentStamp(alignedDate, "hour") as Time;
         }
 
-        if (!time) {
-          return null;
-        }
-
-        return {
-          time,
-          position: order.position === "short" ? "aboveBar" : "belowBar",
-          color: getPositionColor(order.position, idx),
-          shape: order.position === "short" ? "arrowDown" : "arrowUp",
+        markers.push({
+          time: exitTime,
+          position: position === "short" ? "belowBar" : "aboveBar",
+          color: colors.grey[500],
+          shape: "circle",
           size: 1,
-        };
-      })
-      .filter((marker) => marker !== null);
+          text: "Exit",
+        });
+      }
+    }
 
     lineSeries.setMarkers(markers);
 
@@ -319,7 +378,7 @@ export const StockChart = ({ source, height, width, items, lines }: IChartProps)
     return () => {
       chart.remove();
     };
-  }, [source, height, width, items, lines]);
+  }, [source, height, width, items, position, createdAt, updatedAt, priceOpen, priceStopLoss, priceTakeProfit, status]);
 
   return (
     <div ref={elementRef} className={classes.root}>

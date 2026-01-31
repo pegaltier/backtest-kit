@@ -3,35 +3,65 @@ import { AutoSizer, IOutletModalProps, useAsyncValue } from "react-declarative";
 import StockChart from "../../../widgets/StockChart/StockChart";
 import { useMemo } from "react";
 import { fetchPriceCandles } from "../api/fetchPriceCandles";
+import { IStorageSignalRow } from "backtest-kit";
 
 const arr = [];
 
 export const Candle1mView = ({ data, formState }: IOutletModalProps) => {
-  /*const lines = useMemo(() => {
-    const { position, createDate, buyPrice } = formState.data.main;
-    const priceLine = {
-      buyPrice,
-      date: createDate,
-      position,
-    };
-    return [priceLine];
-  }, [formState.data.main]);*/
+    const {
+        position,
+        createdAt,
+        updatedAt,
+        status,
+        priceOpen,
+        priceTakeProfit,
+        priceStopLoss,
+    } = useMemo(() => {
+        const {
+            position,
+            status,
+            priceOpen,
+            priceTakeProfit,
+            priceStopLoss,
+            pendingAt,
+            scheduledAt,
+            createdAt = pendingAt || scheduledAt,
+            updatedAt,
+        } = formState.data.main as IStorageSignalRow;
+        return {
+            position,
+            createdAt: new Date(createdAt).toISOString(),
+            updatedAt: new Date(updatedAt).toISOString(),
+            priceOpen,
+            priceTakeProfit,
+            priceStopLoss,
+            status,
+        };
+    }, [formState.data.main]);
 
-  return (
-    <Box sx={{ height: "100%", width: "100%", pt: 1 }}>
-      <AutoSizer payload={data}>
-        {({ height, width }) => (
-          <StockChart
-            items={data}
-            lines={arr}
-            height={height}
-            width={width}
-            source="1m"
-          />
-        )}
-      </AutoSizer>
-    </Box>
-  );
+    console.log(formState);
+
+    return (
+        <Box sx={{ height: "100%", width: "100%", pt: 1 }}>
+            <AutoSizer payload={data}>
+                {({ height, width }) => (
+                    <StockChart
+                        items={data}
+                        createdAt={createdAt}
+                        updatedAt={updatedAt}
+                        position={position}
+                        priceOpen={priceOpen}
+                        priceTakeProfit={priceTakeProfit}
+                        priceStopLoss={priceStopLoss}
+                        status=""
+                        height={height}
+                        width={width}
+                        source="1m"
+                    />
+                )}
+            </AutoSizer>
+        </Box>
+    );
 };
 
 export default Candle1mView;
