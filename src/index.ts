@@ -1,9 +1,5 @@
-export {
-  getBacktestTimeframe,
-} from "./function/timeframe";
-export {
-  validate,
-} from "./function/validate";
+export { getBacktestTimeframe } from "./function/timeframe";
+export { validate } from "./function/validate";
 export {
   getStrategySchema,
   getExchangeSchema,
@@ -22,9 +18,7 @@ export {
   commitTrailingTake,
   commitBreakeven,
 } from "./function/strategy";
-export {
-  stopStrategy,
-} from "./function/control";
+export { stopStrategy } from "./function/control";
 export {
   setLogger,
   setConfig,
@@ -222,7 +216,11 @@ export { PerformanceStatisticsModel } from "./model/PerformanceStatistics.model"
 export { WalkerStatisticsModel } from "./model/WalkerStatistics.model";
 export { PartialStatisticsModel } from "./model/PartialStatistics.model";
 export { RiskStatisticsModel } from "./model/RiskStatistics.model";
-export { StrategyStatisticsModel, StrategyEvent, StrategyActionType } from "./model/StrategyStatistics.model";
+export {
+  StrategyStatisticsModel,
+  StrategyEvent,
+  StrategyActionType,
+} from "./model/StrategyStatistics.model";
 
 export { PartialLossContract } from "./contract/PartialLoss.contract";
 export { PartialProfitContract } from "./contract/PartialProfit.contract";
@@ -285,7 +283,7 @@ export {
   IReportDumpOptions,
 } from "./classes/Report";
 
-export { 
+export {
   Markdown,
   MarkdownFileBase,
   MarkdownFolderBase,
@@ -304,7 +302,13 @@ export { PositionSize } from "./classes/PositionSize";
 export { Partial } from "./classes/Partial";
 export { Constant } from "./classes/Constant";
 export { Risk } from "./classes/Risk";
-export { Storage } from "./classes/Storage";
+export {
+  Storage,
+  StorageLive,
+  StorageBacktest,
+  IStorageUtils,
+  TStorageUtilsCtor,
+} from "./classes/Storage";
 export { Exchange } from "./classes/Exchange";
 export { Cache } from "./classes/Cache";
 export { Notification } from "./classes/Notification";
