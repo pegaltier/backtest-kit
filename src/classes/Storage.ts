@@ -62,20 +62,70 @@ const STORAGE_LIVE_ADAPTER_METHOD_NAME_USE_MEMORY = "StorageLiveAdapter.useMemor
 
 type StorageId = IStorageSignalRow["id"];
 
+/**
+ * Base interface for storage adapters.
+ * All storage adapters must implement this interface.
+ */
 export interface IStorageUtils {
+  /**
+   * Handles signal opened event.
+   * @param tick - The opened signal tick data
+   */
   handleOpened(tick: IStrategyTickResultOpened): Promise<void>;
+  /**
+   * Handles signal closed event.
+   * @param tick - The closed signal tick data
+   */
   handleClosed(tick: IStrategyTickResultClosed): Promise<void>;
+  /**
+   * Handles signal scheduled event.
+   * @param tick - The scheduled signal tick data
+   */
   handleScheduled(tick: IStrategyTickResultScheduled): Promise<void>;
+  /**
+   * Handles signal cancelled event.
+   * @param tick - The cancelled signal tick data
+   */
   handleCancelled(tick: IStrategyTickResultCancelled): Promise<void>;
+  /**
+   * Finds a signal by its ID.
+   * @param id - The signal ID to search for
+   * @returns The signal row or null if not found
+   */
   findById(id: StorageId): Promise<IStorageSignalRow | null>;
+  /**
+   * Lists all stored signals.
+   * @returns Array of all signal rows
+   */
   list(): Promise<IStorageSignalRow[]>;
 }
 
+/**
+ * Constructor type for storage adapters.
+ * Used for custom storage implementations.
+ */
 export type TStorageUtilsCtor = new () => IStorageUtils;
 
+/**
+ * Persistent storage adapter for backtest signals.
+ *
+ * Features:
+ * - Persists signals to disk using PersistStorageAdapter
+ * - Lazy initialization with singleshot pattern
+ * - Maintains up to MAX_SIGNALS (25) most recent signals
+ * - Handles signal lifecycle events (opened, closed, scheduled, cancelled)
+ * - Prevents duplicate updates based on timestamp comparison
+ *
+ * Use this adapter (default) for backtest signal persistence across sessions.
+ */
 export class StoragePersistBacktestUtils implements IStorageUtils {
+  /** Map of signal IDs to signal rows */
   private _signals: Map<StorageId, IStorageSignalRow>;
 
+  /**
+   * Singleshot initialization function that loads signals from disk.
+   * Protected by singleshot to ensure one-time execution.
+   */
   private waitForInit = singleshot(async () => {
     backtest.loggerService.info(STORAGE_BACKTEST_METHOD_NAME_WAIT_FOR_INIT);
     const signalList = await PersistStorageAdapter.readStorageData(true);
@@ -194,7 +244,20 @@ export class StoragePersistBacktestUtils implements IStorageUtils {
   };
 }
 
+/**
+ * In-memory storage adapter for backtest signals.
+ *
+ * Features:
+ * - Stores signals in memory only (no persistence)
+ * - Fast read/write operations
+ * - Data is lost when application restarts
+ * - Handles signal lifecycle events (opened, closed, scheduled, cancelled)
+ * - Prevents duplicate updates based on timestamp comparison
+ *
+ * Use this adapter for testing or when persistence is not required.
+ */
 export class StorageMemoryBacktestUtils implements IStorageUtils {
+  /** Map of signal IDs to signal rows */
   private _signals: Map<StorageId, IStorageSignalRow> = new Map();
 
   public handleOpened = async (tick: IStrategyTickResultOpened): Promise<void> => {
@@ -277,6 +340,16 @@ export class StorageMemoryBacktestUtils implements IStorageUtils {
   };
 }
 
+/**
+ * Dummy storage adapter for backtest signals that discards all writes.
+ *
+ * Features:
+ * - No-op implementation for all methods
+ * - findById always returns null
+ * - list always returns empty array
+ *
+ * Use this adapter to disable backtest signal storage completely.
+ */
 export class StorageDummyBacktestUtils implements IStorageUtils {
   public handleOpened = async (): Promise<void> => {
     void 0;
@@ -303,9 +376,26 @@ export class StorageDummyBacktestUtils implements IStorageUtils {
   };
 }
 
+/**
+ * Persistent storage adapter for live trading signals.
+ *
+ * Features:
+ * - Persists signals to disk using PersistStorageAdapter
+ * - Lazy initialization with singleshot pattern
+ * - Maintains up to MAX_SIGNALS (25) most recent signals
+ * - Handles signal lifecycle events (opened, closed, scheduled, cancelled)
+ * - Prevents duplicate updates based on timestamp comparison
+ *
+ * Use this adapter (default) for live signal persistence across sessions.
+ */
 export class StoragePersistLiveUtils implements IStorageUtils {
+  /** Map of signal IDs to signal rows */
   private _signals: Map<StorageId, IStorageSignalRow>;
 
+  /**
+   * Singleshot initialization function that loads signals from disk.
+   * Protected by singleshot to ensure one-time execution.
+   */
   private waitForInit = singleshot(async () => {
     backtest.loggerService.info(STORAGE_LIVE_METHOD_NAME_WAIT_FOR_INIT);
     const signalList = await PersistStorageAdapter.readStorageData(false);
@@ -424,7 +514,20 @@ export class StoragePersistLiveUtils implements IStorageUtils {
   };
 }
 
+/**
+ * In-memory storage adapter for live trading signals.
+ *
+ * Features:
+ * - Stores signals in memory only (no persistence)
+ * - Fast read/write operations
+ * - Data is lost when application restarts
+ * - Handles signal lifecycle events (opened, closed, scheduled, cancelled)
+ * - Prevents duplicate updates based on timestamp comparison
+ *
+ * Use this adapter for testing or when persistence is not required.
+ */
 export class StorageMemoryLiveUtils implements IStorageUtils {
+  /** Map of signal IDs to signal rows */
   private _signals: Map<StorageId, IStorageSignalRow> = new Map();
 
   public handleOpened = async (tick: IStrategyTickResultOpened): Promise<void> => {
@@ -507,6 +610,16 @@ export class StorageMemoryLiveUtils implements IStorageUtils {
   };
 }
 
+/**
+ * Dummy storage adapter for live trading signals that discards all writes.
+ *
+ * Features:
+ * - No-op implementation for all methods
+ * - findById always returns null
+ * - list always returns empty array
+ *
+ * Use this adapter to disable live signal storage completely.
+ */
 export class StorageDummyLiveUtils implements IStorageUtils {
   public handleOpened = async (): Promise<void> => {
     void 0;
@@ -533,6 +646,15 @@ export class StorageDummyLiveUtils implements IStorageUtils {
   };
 }
 
+/**
+ * Backtest storage adapter with pluggable storage backend.
+ *
+ * Features:
+ * - Adapter pattern for swappable storage implementations
+ * - Default adapter: StoragePersistBacktestUtils (persistent storage)
+ * - Alternative adapters: StorageMemoryBacktestUtils, StorageDummyBacktestUtils
+ * - Convenience methods: usePersist(), useMemory(), useDummy()
+ */
 export class StorageBacktestAdapter implements IStorageUtils {
   private _signalBacktestUtils: IStorageUtils = new StoragePersistBacktestUtils();
 
@@ -560,27 +682,54 @@ export class StorageBacktestAdapter implements IStorageUtils {
     return await this._signalBacktestUtils.list();
   };
 
+  /**
+   * Sets the storage adapter constructor.
+   * All future storage operations will use this adapter.
+   *
+   * @param Ctor - Constructor for storage adapter
+   */
   useStorageAdapter = (Ctor: TStorageUtilsCtor): void => {
     backtest.loggerService.info(STORAGE_BACKTEST_ADAPTER_METHOD_NAME_USE_ADAPTER);
     this._signalBacktestUtils = Reflect.construct(Ctor, []);
   };
 
+  /**
+   * Switches to dummy storage adapter.
+   * All future storage writes will be no-ops.
+   */
   useDummy = (): void => {
     backtest.loggerService.info(STORAGE_BACKTEST_ADAPTER_METHOD_NAME_USE_DUMMY);
     this._signalBacktestUtils = new StorageDummyBacktestUtils();
   };
 
+  /**
+   * Switches to persistent storage adapter (default).
+   * Signals will be persisted to disk.
+   */
   usePersist = (): void => {
     backtest.loggerService.info(STORAGE_BACKTEST_ADAPTER_METHOD_NAME_USE_PERSIST);
     this._signalBacktestUtils = new StoragePersistBacktestUtils();
   };
 
+  /**
+   * Switches to in-memory storage adapter.
+   * Signals will be stored in memory only.
+   */
   useMemory = (): void => {
     backtest.loggerService.info(STORAGE_BACKTEST_ADAPTER_METHOD_NAME_USE_MEMORY);
     this._signalBacktestUtils = new StorageMemoryBacktestUtils();
   };
 }
 
+/**
+ * Live trading storage adapter with pluggable storage backend.
+ *
+ * Features:
+ * - Adapter pattern for swappable storage implementations
+ * - Default adapter: StoragePersistLiveUtils (persistent storage)
+ * - Alternative adapters: StorageMemoryLiveUtils, StorageDummyLiveUtils
+ * - Convenience methods: usePersist(), useMemory(), useDummy()
+ */
 export class StorageLiveAdapter implements IStorageUtils {
   private _signalLiveUtils: IStorageUtils = new StoragePersistLiveUtils();
 
@@ -608,29 +757,61 @@ export class StorageLiveAdapter implements IStorageUtils {
     return await this._signalLiveUtils.list();
   };
 
+  /**
+   * Sets the storage adapter constructor.
+   * All future storage operations will use this adapter.
+   *
+   * @param Ctor - Constructor for storage adapter
+   */
   useStorageAdapter = (Ctor: TStorageUtilsCtor): void => {
     backtest.loggerService.info(STORAGE_LIVE_ADAPTER_METHOD_NAME_USE_ADAPTER);
     this._signalLiveUtils = Reflect.construct(Ctor, []);
   };
 
+  /**
+   * Switches to dummy storage adapter.
+   * All future storage writes will be no-ops.
+   */
   useDummy = (): void => {
     backtest.loggerService.info(STORAGE_LIVE_ADAPTER_METHOD_NAME_USE_DUMMY);
     this._signalLiveUtils = new StorageDummyLiveUtils();
   };
 
+  /**
+   * Switches to persistent storage adapter (default).
+   * Signals will be persisted to disk.
+   */
   usePersist = (): void => {
     backtest.loggerService.info(STORAGE_LIVE_ADAPTER_METHOD_NAME_USE_PERSIST);
     this._signalLiveUtils = new StoragePersistLiveUtils();
   };
 
+  /**
+   * Switches to in-memory storage adapter.
+   * Signals will be stored in memory only.
+   */
   useMemory = (): void => {
     backtest.loggerService.info(STORAGE_LIVE_ADAPTER_METHOD_NAME_USE_MEMORY);
     this._signalLiveUtils = new StorageMemoryLiveUtils();
   };
 }
 
+/**
+ * Main storage adapter that manages both backtest and live signal storage.
+ *
+ * Features:
+ * - Subscribes to signal emitters for automatic storage updates
+ * - Provides unified access to both backtest and live signals
+ * - Singleshot enable pattern prevents duplicate subscriptions
+ * - Cleanup function for proper unsubscription
+ */
 export class StorageAdapter {
-
+  /**
+   * Enables signal storage by subscribing to signal emitters.
+   * Uses singleshot to ensure one-time subscription.
+   *
+   * @returns Cleanup function that unsubscribes from all emitters
+   */
   public enable = singleshot(() => {
     backtest.loggerService.info(STORAGE_ADAPTER_METHOD_NAME_ENABLE);
     let unLive: Function;
@@ -709,6 +890,10 @@ export class StorageAdapter {
     };
   });
 
+  /**
+   * Disables signal storage by unsubscribing from all emitters.
+   * Safe to call multiple times.
+   */
   public disable = () => {
     backtest.loggerService.info(STORAGE_ADAPTER_METHOD_NAME_DISABLE);
     if (this.enable.hasValue()) {
@@ -717,6 +902,14 @@ export class StorageAdapter {
     }
   };
 
+  /**
+   * Finds a signal by ID across both backtest and live storage.
+   *
+   * @param id - The signal ID to search for
+   * @returns The signal row or throws if not found
+   * @throws Error if StorageAdapter is not enabled
+   * @throws Error if signal is not found in either storage
+   */
   public findSignalById = async (
     id: StorageId,
   ): Promise<IStorageSignalRow | null> => {
@@ -734,6 +927,12 @@ export class StorageAdapter {
     throw new Error(`Storage signal with id ${id} not found`);
   };
 
+  /**
+   * Lists all backtest signals from storage.
+   *
+   * @returns Array of all backtest signal rows
+   * @throws Error if StorageAdapter is not enabled
+   */
   public listSignalBacktest = async (): Promise<IStorageSignalRow[]> => {
     backtest.loggerService.info(STORAGE_ADAPTER_METHOD_NAME_LIST_SIGNAL_BACKTEST);
     if (!this.enable.hasValue()) {
@@ -742,6 +941,12 @@ export class StorageAdapter {
     return await StorageBacktest.list();
   };
 
+  /**
+   * Lists all live signals from storage.
+   *
+   * @returns Array of all live signal rows
+   * @throws Error if StorageAdapter is not enabled
+   */
   public listSignalLive = async (): Promise<IStorageSignalRow[]> => {
     backtest.loggerService.info(STORAGE_ADAPTER_METHOD_NAME_LIST_SIGNAL_LIVE);
     if (!this.enable.hasValue()) {
@@ -751,6 +956,20 @@ export class StorageAdapter {
   };
 }
 
+/**
+ * Global singleton instance of StorageAdapter.
+ * Provides unified signal storage management for backtest and live trading.
+ */
 export const Storage = new StorageAdapter();
+
+/**
+ * Global singleton instance of StorageLiveAdapter.
+ * Provides live trading signal storage with pluggable backends.
+ */
 export const StorageLive = new StorageLiveAdapter();
+
+/**
+ * Global singleton instance of StorageBacktestAdapter.
+ * Provides backtest signal storage with pluggable backends.
+ */
 export const StorageBacktest = new StorageBacktestAdapter();
