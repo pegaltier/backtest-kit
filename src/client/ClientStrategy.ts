@@ -101,74 +101,80 @@ const PROCESS_COMMIT_QUEUE_FN = async (
   }
 
   const queue = self._commitQueue;
-  self._commitQueue = [];
+
+  {
+    self._commitQueue = [];
+  }
 
   for (const commit of queue) {
-    switch (commit.action) {
-      case "partial-profit":
-        await CALL_COMMIT_FN(self, {
-          action: "partial-profit",
-          symbol: commit.symbol,
-          strategyName: self.params.strategyName,
-          exchangeName: self.params.exchangeName,
-          frameName: self.params.frameName,
-          backtest: commit.backtest,
-          percentToClose: commit.percentToClose,
-          currentPrice: commit.currentPrice,
-          timestamp,
-        });
-        break;
-      case "partial-loss":
-        await CALL_COMMIT_FN(self, {
-          action: "partial-loss",
-          symbol: commit.symbol,
-          strategyName: self.params.strategyName,
-          exchangeName: self.params.exchangeName,
-          frameName: self.params.frameName,
-          backtest: commit.backtest,
-          percentToClose: commit.percentToClose,
-          currentPrice: commit.currentPrice,
-          timestamp,
-        });
-        break;
-      case "breakeven":
-        await CALL_COMMIT_FN(self, {
-          action: "breakeven",
-          symbol: commit.symbol,
-          strategyName: self.params.strategyName,
-          exchangeName: self.params.exchangeName,
-          frameName: self.params.frameName,
-          backtest: commit.backtest,
-          currentPrice: commit.currentPrice,
-          timestamp,
-        });
-        break;
-      case "trailing-stop":
-        await CALL_COMMIT_FN(self, {
-          action: "trailing-stop",
-          symbol: commit.symbol,
-          strategyName: self.params.strategyName,
-          exchangeName: self.params.exchangeName,
-          frameName: self.params.frameName,
-          backtest: commit.backtest,
-          percentShift: commit.percentShift,
-          currentPrice: commit.currentPrice,
-          timestamp,
-        });
-        break;
-      case "trailing-take":
-        await CALL_COMMIT_FN(self, {
-          action: "trailing-take",
-          symbol: commit.symbol,
-          strategyName: self.params.strategyName,
-          exchangeName: self.params.exchangeName,
-          frameName: self.params.frameName,
-          backtest: commit.backtest,
-          percentShift: commit.percentShift,
-          currentPrice: commit.currentPrice,
-          timestamp,
-        });
-        break;
+    if (commit.action === "partial-profit") {
+      await CALL_COMMIT_FN(self, {
+        action: "partial-profit",
+        symbol: commit.symbol,
+        strategyName: self.params.strategyName,
+        exchangeName: self.params.exchangeName,
+        frameName: self.params.frameName,
+        backtest: commit.backtest,
+        percentToClose: commit.percentToClose,
+        currentPrice: commit.currentPrice,
+        timestamp,
+      });
+      continue
+    }
+    if (commit.action === "partial-loss") {
+      await CALL_COMMIT_FN(self, {
+        action: "partial-loss",
+        symbol: commit.symbol,
+        strategyName: self.params.strategyName,
+        exchangeName: self.params.exchangeName,
+        frameName: self.params.frameName,
+        backtest: commit.backtest,
+        percentToClose: commit.percentToClose,
+        currentPrice: commit.currentPrice,
+        timestamp,
+      });
+      continue
+    }
+    if (commit.action === "breakeven") {
+      await CALL_COMMIT_FN(self, {
+        action: "breakeven",
+        symbol: commit.symbol,
+        strategyName: self.params.strategyName,
+        exchangeName: self.params.exchangeName,
+        frameName: self.params.frameName,
+        backtest: commit.backtest,
+        currentPrice: commit.currentPrice,
+        timestamp,
+      });
+      continue
+    }
+    if (commit.action === "trailing-stop") {
+      await CALL_COMMIT_FN(self, {
+        action: "trailing-stop",
+        symbol: commit.symbol,
+        strategyName: self.params.strategyName,
+        exchangeName: self.params.exchangeName,
+        frameName: self.params.frameName,
+        backtest: commit.backtest,
+        percentShift: commit.percentShift,
+        currentPrice: commit.currentPrice,
+        timestamp,
+      });
+      continue;
+    }
+    if (commit.action === "trailing-take") {
+      await CALL_COMMIT_FN(self, {
+        action: "trailing-take",
+        symbol: commit.symbol,
+        strategyName: self.params.strategyName,
+        exchangeName: self.params.exchangeName,
+        frameName: self.params.frameName,
+        backtest: commit.backtest,
+        percentShift: commit.percentShift,
+        currentPrice: commit.currentPrice,
+        timestamp,
+      });
+      continue;
     }
   }
 };
