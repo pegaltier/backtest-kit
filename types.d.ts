@@ -12562,219 +12562,258 @@ declare class RiskUtils {
  */
 declare const Risk: RiskUtils;
 
+/**
+ * Type alias for signal storage row identifier.
+ * Extracted from IStorageSignalRow for type safety and reusability.
+ */
 type StorageId = IStorageSignalRow["id"];
 /**
- * Utility class for managing backtest signal history.
- *
- * Stores trading signal history for admin dashboard display during backtesting
- * with automatic initialization, deduplication, and storage limits.
- *
- * @example
- * ```typescript
- * import { StorageBacktestUtils } from "./classes/Storage";
- *
- * const storage = new StorageBacktestUtils();
- *
- * // Handle signal events
- * await storage.handleOpened(tickResult);
- * await storage.handleClosed(tickResult);
- *
- * // Query signals
- * const signal = await storage.findById("signal-123");
- * const allSignals = await storage.list();
- * ```
+ * Base interface for storage adapters.
+ * All storage adapters must implement this interface.
  */
-declare class StorageBacktestUtils {
-    private _signals;
-    /**
-     * Initializes storage by loading existing signal history from persist layer.
-     * Uses singleshot to ensure initialization happens only once.
-     */
-    private waitForInit;
-    /**
-     * Persists current signal history to storage.
-     * Sorts by priority and limits to MAX_SIGNALS entries.
-     *
-     * @throws Error if storage not initialized
-     */
-    private _updateStorage;
+interface IStorageUtils {
     /**
      * Handles signal opened event.
-     *
-     * @param tick - Tick result containing opened signal data
-     * @returns Promise resolving when storage is updated
+     * @param tick - The opened signal tick data
+     */
+    handleOpened(tick: IStrategyTickResultOpened): Promise<void>;
+    /**
+     * Handles signal closed event.
+     * @param tick - The closed signal tick data
+     */
+    handleClosed(tick: IStrategyTickResultClosed): Promise<void>;
+    /**
+     * Handles signal scheduled event.
+     * @param tick - The scheduled signal tick data
+     */
+    handleScheduled(tick: IStrategyTickResultScheduled): Promise<void>;
+    /**
+     * Handles signal cancelled event.
+     * @param tick - The cancelled signal tick data
+     */
+    handleCancelled(tick: IStrategyTickResultCancelled): Promise<void>;
+    /**
+     * Finds a signal by its ID.
+     * @param id - The signal ID to search for
+     * @returns The signal row or null if not found
+     */
+    findById(id: StorageId): Promise<IStorageSignalRow | null>;
+    /**
+     * Lists all stored signals.
+     * @returns Array of all signal rows
+     */
+    list(): Promise<IStorageSignalRow[]>;
+}
+/**
+ * Constructor type for storage adapters.
+ * Used for custom storage implementations.
+ */
+type TStorageUtilsCtor = new () => IStorageUtils;
+/**
+ * Backtest storage adapter with pluggable storage backend.
+ *
+ * Features:
+ * - Adapter pattern for swappable storage implementations
+ * - Default adapter: StoragePersistBacktestUtils (persistent storage)
+ * - Alternative adapters: StorageMemoryBacktestUtils, StorageDummyBacktestUtils
+ * - Convenience methods: usePersist(), useMemory(), useDummy()
+ */
+declare class StorageBacktestAdapter implements IStorageUtils {
+    /** Internal storage utils instance */
+    private _signalBacktestUtils;
+    /**
+     * Handles signal opened event.
+     * Proxies call to the underlying storage adapter.
+     * @param tick - The opened signal tick data
      */
     handleOpened: (tick: IStrategyTickResultOpened) => Promise<void>;
     /**
      * Handles signal closed event.
-     *
-     * @param tick - Tick result containing closed signal data
-     * @returns Promise resolving when storage is updated
+     * Proxies call to the underlying storage adapter.
+     * @param tick - The closed signal tick data
      */
     handleClosed: (tick: IStrategyTickResultClosed) => Promise<void>;
     /**
      * Handles signal scheduled event.
-     *
-     * @param tick - Tick result containing scheduled signal data
-     * @returns Promise resolving when storage is updated
+     * Proxies call to the underlying storage adapter.
+     * @param tick - The scheduled signal tick data
      */
     handleScheduled: (tick: IStrategyTickResultScheduled) => Promise<void>;
     /**
      * Handles signal cancelled event.
-     *
-     * @param tick - Tick result containing cancelled signal data
-     * @returns Promise resolving when storage is updated
+     * Proxies call to the underlying storage adapter.
+     * @param tick - The cancelled signal tick data
      */
     handleCancelled: (tick: IStrategyTickResultCancelled) => Promise<void>;
     /**
-     * Finds a signal by its unique identifier.
-     *
-     * @param id - Signal identifier
-     * @returns Promise resolving to signal row or null if not found
+     * Finds a signal by its ID.
+     * Proxies call to the underlying storage adapter.
+     * @param id - The signal ID to search for
+     * @returns The signal row or null if not found
      */
     findById: (id: StorageId) => Promise<IStorageSignalRow | null>;
     /**
-     * Lists all stored backtest signals.
-     *
-     * @returns Promise resolving to array of signal rows
+     * Lists all stored signals.
+     * Proxies call to the underlying storage adapter.
+     * @returns Array of all signal rows
      */
     list: () => Promise<IStorageSignalRow[]>;
+    /**
+     * Sets the storage adapter constructor.
+     * All future storage operations will use this adapter.
+     *
+     * @param Ctor - Constructor for storage adapter
+     */
+    useStorageAdapter: (Ctor: TStorageUtilsCtor) => void;
+    /**
+     * Switches to dummy storage adapter.
+     * All future storage writes will be no-ops.
+     */
+    useDummy: () => void;
+    /**
+     * Switches to persistent storage adapter (default).
+     * Signals will be persisted to disk.
+     */
+    usePersist: () => void;
+    /**
+     * Switches to in-memory storage adapter.
+     * Signals will be stored in memory only.
+     */
+    useMemory: () => void;
 }
 /**
- * Utility class for managing live trading signal history.
+ * Live trading storage adapter with pluggable storage backend.
  *
- * Stores trading signal history for admin dashboard display during live trading
- * with automatic initialization, deduplication, and storage limits.
- *
- * @example
- * ```typescript
- * import { StorageLiveUtils } from "./classes/Storage";
- *
- * const storage = new StorageLiveUtils();
- *
- * // Handle signal events
- * await storage.handleOpened(tickResult);
- * await storage.handleClosed(tickResult);
- *
- * // Query signals
- * const signal = await storage.findById("signal-123");
- * const allSignals = await storage.list();
- * ```
+ * Features:
+ * - Adapter pattern for swappable storage implementations
+ * - Default adapter: StoragePersistLiveUtils (persistent storage)
+ * - Alternative adapters: StorageMemoryLiveUtils, StorageDummyLiveUtils
+ * - Convenience methods: usePersist(), useMemory(), useDummy()
  */
-declare class StorageLiveUtils {
-    private _signals;
-    /**
-     * Initializes storage by loading existing signal history from persist layer.
-     * Uses singleshot to ensure initialization happens only once.
-     */
-    private waitForInit;
-    /**
-     * Persists current signal history to storage.
-     * Sorts by priority and limits to MAX_SIGNALS entries.
-     *
-     * @throws Error if storage not initialized
-     */
-    private _updateStorage;
+declare class StorageLiveAdapter implements IStorageUtils {
+    /** Internal storage utils instance */
+    private _signalLiveUtils;
     /**
      * Handles signal opened event.
-     *
-     * @param tick - Tick result containing opened signal data
-     * @returns Promise resolving when history is updated
+     * Proxies call to the underlying storage adapter.
+     * @param tick - The opened signal tick data
      */
     handleOpened: (tick: IStrategyTickResultOpened) => Promise<void>;
     /**
      * Handles signal closed event.
-     *
-     * @param tick - Tick result containing closed signal data
-     * @returns Promise resolving when history is updated
+     * Proxies call to the underlying storage adapter.
+     * @param tick - The closed signal tick data
      */
     handleClosed: (tick: IStrategyTickResultClosed) => Promise<void>;
     /**
      * Handles signal scheduled event.
-     *
-     * @param tick - Tick result containing scheduled signal data
-     * @returns Promise resolving when history is updated
+     * Proxies call to the underlying storage adapter.
+     * @param tick - The scheduled signal tick data
      */
     handleScheduled: (tick: IStrategyTickResultScheduled) => Promise<void>;
     /**
      * Handles signal cancelled event.
-     *
-     * @param tick - Tick result containing cancelled signal data
-     * @returns Promise resolving when history is updated
+     * Proxies call to the underlying storage adapter.
+     * @param tick - The cancelled signal tick data
      */
     handleCancelled: (tick: IStrategyTickResultCancelled) => Promise<void>;
     /**
-     * Finds a signal by its unique identifier.
-     *
-     * @param id - Signal identifier
-     * @returns Promise resolving to signal row or null if not found
+     * Finds a signal by its ID.
+     * Proxies call to the underlying storage adapter.
+     * @param id - The signal ID to search for
+     * @returns The signal row or null if not found
      */
     findById: (id: StorageId) => Promise<IStorageSignalRow | null>;
     /**
-     * Lists all stored live signals.
-     *
-     * @returns Promise resolving to array of signal rows
+     * Lists all stored signals.
+     * Proxies call to the underlying storage adapter.
+     * @returns Array of all signal rows
      */
     list: () => Promise<IStorageSignalRow[]>;
+    /**
+     * Sets the storage adapter constructor.
+     * All future storage operations will use this adapter.
+     *
+     * @param Ctor - Constructor for storage adapter
+     */
+    useStorageAdapter: (Ctor: TStorageUtilsCtor) => void;
+    /**
+     * Switches to dummy storage adapter.
+     * All future storage writes will be no-ops.
+     */
+    useDummy: () => void;
+    /**
+     * Switches to persistent storage adapter (default).
+     * Signals will be persisted to disk.
+     */
+    usePersist: () => void;
+    /**
+     * Switches to in-memory storage adapter.
+     * Signals will be stored in memory only.
+     */
+    useMemory: () => void;
 }
 /**
- * Main storage adapter for signal history management.
+ * Main storage adapter that manages both backtest and live signal storage.
  *
- * Provides unified interface for accessing backtest and live signal history
- * for admin dashboard. Subscribes to signal emitters and automatically
- * updates history on signal events.
- *
- * @example
- * ```typescript
- * import { Storage } from "./classes/Storage";
- *
- * // Enable signal history tracking
- * const unsubscribe = Storage.enable();
- *
- * // Query signals
- * const backtestSignals = await Storage.listSignalBacktest();
- * const liveSignals = await Storage.listSignalLive();
- * const signal = await Storage.findSignalById("signal-123");
- *
- * // Disable tracking
- * Storage.disable();
- * ```
+ * Features:
+ * - Subscribes to signal emitters for automatic storage updates
+ * - Provides unified access to both backtest and live signals
+ * - Singleshot enable pattern prevents duplicate subscriptions
+ * - Cleanup function for proper unsubscription
  */
 declare class StorageAdapter {
-    _signalLiveUtils: StorageLiveUtils;
-    _signalBacktestUtils: StorageBacktestUtils;
     /**
-     * Enables signal history tracking by subscribing to emitters.
+     * Enables signal storage by subscribing to signal emitters.
+     * Uses singleshot to ensure one-time subscription.
      *
-     * @returns Cleanup function to unsubscribe from all emitters
+     * @returns Cleanup function that unsubscribes from all emitters
      */
     enable: (() => () => void) & functools_kit.ISingleshotClearable;
     /**
-     * Disables signal history tracking by unsubscribing from emitters.
+     * Disables signal storage by unsubscribing from all emitters.
+     * Safe to call multiple times.
      */
     disable: () => void;
     /**
-     * Finds a signal by ID across both backtest and live history.
+     * Finds a signal by ID across both backtest and live storage.
      *
-     * @param id - Signal identifier
-     * @returns Promise resolving to signal row
-     * @throws Error if signal not found in either storage
+     * @param id - The signal ID to search for
+     * @returns The signal row or throws if not found
+     * @throws Error if StorageAdapter is not enabled
+     * @throws Error if signal is not found in either storage
      */
     findSignalById: (id: StorageId) => Promise<IStorageSignalRow | null>;
     /**
-     * Lists all backtest signal history.
+     * Lists all backtest signals from storage.
      *
-     * @returns Promise resolving to array of backtest signal rows
+     * @returns Array of all backtest signal rows
+     * @throws Error if StorageAdapter is not enabled
      */
     listSignalBacktest: () => Promise<IStorageSignalRow[]>;
     /**
-     * Lists all live signal history.
+     * Lists all live signals from storage.
      *
-     * @returns Promise resolving to array of live signal rows
+     * @returns Array of all live signal rows
+     * @throws Error if StorageAdapter is not enabled
      */
     listSignalLive: () => Promise<IStorageSignalRow[]>;
 }
+/**
+ * Global singleton instance of StorageAdapter.
+ * Provides unified signal storage management for backtest and live trading.
+ */
 declare const Storage: StorageAdapter;
+/**
+ * Global singleton instance of StorageLiveAdapter.
+ * Provides live trading signal storage with pluggable backends.
+ */
+declare const StorageLive: StorageLiveAdapter;
+/**
+ * Global singleton instance of StorageBacktestAdapter.
+ * Provides backtest signal storage with pluggable backends.
+ */
+declare const StorageBacktest: StorageBacktestAdapter;
 
 /**
  * Utility class for exchange operations.
@@ -19697,4 +19736,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { ActionBase, type ActivePingContract, Backtest, type BacktestStatisticsModel, Breakeven, type BreakevenAvailableNotification, type BreakevenCommit, type BreakevenCommitNotification, type BreakevenContract, type BreakevenData, Cache, type CancelScheduledCommit, type CandleData, type CandleInterval, type ClosePendingCommit, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type IBreakevenCommitRow, type ICandleData, type ICommitRow, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOrderBookData, type IPartialLossCommitRow, type IPartialProfitCommitRow, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskSignalRow, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingParams, type ISizingParamsATR, type ISizingParamsFixedPercentage, type ISizingParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStorageSignalRow, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IStrategyTickResultWaiting, type ITrailingStopCommitRow, type ITrailingTakeCommitRow, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, MethodContextService, type MetricStats, Notification, type NotificationModel, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossAvailableNotification, type PartialLossCommit, type PartialLossCommitNotification, type PartialLossContract, type PartialProfitAvailableNotification, type PartialProfitCommit, type PartialProfitCommitNotification, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PersistStorageAdapter, PositionSize, type ProgressBacktestContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, Storage, type StorageData, Strategy, type StrategyActionType, type StrategyCancelReason, type StrategyCloseReason, type StrategyCommitContract, type StrategyEvent, type StrategyStatisticsModel, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TickEvent, type TrailingStopCommit, type TrailingStopCommitNotification, type TrailingTakeCommit, type TrailingTakeCommitNotification, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialProfit, commitTrailingStop, commitTrailingTake, emitters, formatPrice, formatQuantity, get, getActionSchema, getAveragePrice, getBacktestTimeframe, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getExchangeSchema, getFrameSchema, getMode, getOrderBook, getRawCandles, getRiskSchema, getSizingSchema, getStrategySchema, getSymbol, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenStrategyCommit, listenStrategyCommitOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, roundTicks, set, setColumns, setConfig, setLogger, stopStrategy, validate };
+export { ActionBase, type ActivePingContract, Backtest, type BacktestStatisticsModel, Breakeven, type BreakevenAvailableNotification, type BreakevenCommit, type BreakevenCommitNotification, type BreakevenContract, type BreakevenData, Cache, type CancelScheduledCommit, type CandleData, type CandleInterval, type ClosePendingCommit, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IBidData, type IBreakevenCommitRow, type ICandleData, type ICommitRow, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOrderBookData, type IPartialLossCommitRow, type IPartialProfitCommitRow, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskSignalRow, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingParams, type ISizingParamsATR, type ISizingParamsFixedPercentage, type ISizingParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStorageSignalRow, type IStorageUtils, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IStrategyTickResultWaiting, type ITrailingStopCommitRow, type ITrailingTakeCommitRow, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, MethodContextService, type MetricStats, Notification, type NotificationModel, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossAvailableNotification, type PartialLossCommit, type PartialLossCommitNotification, type PartialLossContract, type PartialProfitAvailableNotification, type PartialProfitCommit, type PartialProfitCommitNotification, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PersistStorageAdapter, PositionSize, type ProgressBacktestContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, Storage, StorageBacktest, type StorageData, StorageLive, Strategy, type StrategyActionType, type StrategyCancelReason, type StrategyCloseReason, type StrategyCommitContract, type StrategyEvent, type StrategyStatisticsModel, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TStorageUtilsCtor, type TickEvent, type TrailingStopCommit, type TrailingStopCommitNotification, type TrailingTakeCommit, type TrailingTakeCommitNotification, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialProfit, commitTrailingStop, commitTrailingTake, emitters, formatPrice, formatQuantity, get, getActionSchema, getAveragePrice, getBacktestTimeframe, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getExchangeSchema, getFrameSchema, getMode, getOrderBook, getRawCandles, getRiskSchema, getSizingSchema, getStrategySchema, getSymbol, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenStrategyCommit, listenStrategyCommitOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, roundTicks, set, setColumns, setConfig, setLogger, stopStrategy, validate };

@@ -60,6 +60,10 @@ const STORAGE_LIVE_ADAPTER_METHOD_NAME_USE_DUMMY = "StorageLiveAdapter.useDummy"
 const STORAGE_LIVE_ADAPTER_METHOD_NAME_USE_PERSIST = "StorageLiveAdapter.usePersist";
 const STORAGE_LIVE_ADAPTER_METHOD_NAME_USE_MEMORY = "StorageLiveAdapter.useMemory";
 
+/**
+ * Type alias for signal storage row identifier.
+ * Extracted from IStorageSignalRow for type safety and reusability.
+ */
 type StorageId = IStorageSignalRow["id"];
 
 /**
@@ -137,6 +141,11 @@ export class StoragePersistBacktestUtils implements IStorageUtils {
     );
   });
 
+  /**
+   * Persists the current signal map to disk storage.
+   * Sorts signals by priority and keeps only the most recent MAX_SIGNALS.
+   * @throws Error if not initialized
+   */
   private async _updateStorage(): Promise<void> {
     backtest.loggerService.info(STORAGE_BACKTEST_METHOD_NAME_UPDATE_STORAGE);
     if (!this._signals) {
@@ -152,6 +161,11 @@ export class StoragePersistBacktestUtils implements IStorageUtils {
     );
   }
 
+  /**
+   * Handles signal opened event.
+   * Updates storage with opened status if not stale.
+   * @param tick - The opened signal tick data
+   */
   public handleOpened = async (tick: IStrategyTickResultOpened) => {
     backtest.loggerService.info(STORAGE_BACKTEST_METHOD_NAME_HANDLE_OPENED, {
       signalId: tick.signal.id,
@@ -171,6 +185,11 @@ export class StoragePersistBacktestUtils implements IStorageUtils {
     await this._updateStorage();
   };
 
+  /**
+   * Handles signal closed event.
+   * Updates storage with closed status and PnL if not stale.
+   * @param tick - The closed signal tick data
+   */
   public handleClosed = async (tick: IStrategyTickResultClosed) => {
     backtest.loggerService.info(STORAGE_BACKTEST_METHOD_NAME_HANDLE_CLOSED, {
       signalId: tick.signal.id,
@@ -191,6 +210,11 @@ export class StoragePersistBacktestUtils implements IStorageUtils {
     await this._updateStorage();
   };
 
+  /**
+   * Handles signal scheduled event.
+   * Updates storage with scheduled status if not stale.
+   * @param tick - The scheduled signal tick data
+   */
   public handleScheduled = async (tick: IStrategyTickResultScheduled) => {
     backtest.loggerService.info(STORAGE_BACKTEST_METHOD_NAME_HANDLE_SCHEDULED, {
       signalId: tick.signal.id,
@@ -210,6 +234,11 @@ export class StoragePersistBacktestUtils implements IStorageUtils {
     await this._updateStorage();
   };
 
+  /**
+   * Handles signal cancelled event.
+   * Updates storage with cancelled status if not stale.
+   * @param tick - The cancelled signal tick data
+   */
   public handleCancelled = async (tick: IStrategyTickResultCancelled) => {
     backtest.loggerService.info(STORAGE_BACKTEST_METHOD_NAME_HANDLE_CANCELLED, {
       signalId: tick.signal.id,
@@ -229,6 +258,11 @@ export class StoragePersistBacktestUtils implements IStorageUtils {
     await this._updateStorage();
   };
 
+  /**
+   * Finds a signal by its ID.
+   * @param id - The signal ID to search for
+   * @returns The signal row or null if not found
+   */
   public findById = async (
     id: StorageId,
   ): Promise<IStorageSignalRow | null> => {
@@ -237,6 +271,10 @@ export class StoragePersistBacktestUtils implements IStorageUtils {
     return this._signals.get(id) ?? null;
   };
 
+  /**
+   * Lists all stored signals.
+   * @returns Array of all signal rows
+   */
   public list = async (): Promise<IStorageSignalRow[]> => {
     backtest.loggerService.info(STORAGE_BACKTEST_METHOD_NAME_LIST);
     await this.waitForInit();
@@ -260,6 +298,11 @@ export class StorageMemoryBacktestUtils implements IStorageUtils {
   /** Map of signal IDs to signal rows */
   private _signals: Map<StorageId, IStorageSignalRow> = new Map();
 
+  /**
+   * Handles signal opened event.
+   * Updates in-memory storage with opened status if not stale.
+   * @param tick - The opened signal tick data
+   */
   public handleOpened = async (tick: IStrategyTickResultOpened): Promise<void> => {
     backtest.loggerService.info(STORAGE_MEMORY_BACKTEST_METHOD_NAME_HANDLE_OPENED, {
       signalId: tick.signal.id,
@@ -277,6 +320,11 @@ export class StorageMemoryBacktestUtils implements IStorageUtils {
     });
   };
 
+  /**
+   * Handles signal closed event.
+   * Updates in-memory storage with closed status and PnL if not stale.
+   * @param tick - The closed signal tick data
+   */
   public handleClosed = async (tick: IStrategyTickResultClosed): Promise<void> => {
     backtest.loggerService.info(STORAGE_MEMORY_BACKTEST_METHOD_NAME_HANDLE_CLOSED, {
       signalId: tick.signal.id,
@@ -295,6 +343,11 @@ export class StorageMemoryBacktestUtils implements IStorageUtils {
     });
   };
 
+  /**
+   * Handles signal scheduled event.
+   * Updates in-memory storage with scheduled status if not stale.
+   * @param tick - The scheduled signal tick data
+   */
   public handleScheduled = async (tick: IStrategyTickResultScheduled): Promise<void> => {
     backtest.loggerService.info(STORAGE_MEMORY_BACKTEST_METHOD_NAME_HANDLE_SCHEDULED, {
       signalId: tick.signal.id,
@@ -312,6 +365,11 @@ export class StorageMemoryBacktestUtils implements IStorageUtils {
     });
   };
 
+  /**
+   * Handles signal cancelled event.
+   * Updates in-memory storage with cancelled status if not stale.
+   * @param tick - The cancelled signal tick data
+   */
   public handleCancelled = async (tick: IStrategyTickResultCancelled): Promise<void> => {
     backtest.loggerService.info(STORAGE_MEMORY_BACKTEST_METHOD_NAME_HANDLE_CANCELLED, {
       signalId: tick.signal.id,
@@ -329,11 +387,20 @@ export class StorageMemoryBacktestUtils implements IStorageUtils {
     });
   };
 
+  /**
+   * Finds a signal by its ID.
+   * @param id - The signal ID to search for
+   * @returns The signal row or null if not found
+   */
   public findById = async (id: StorageId): Promise<IStorageSignalRow | null> => {
     backtest.loggerService.info(STORAGE_MEMORY_BACKTEST_METHOD_NAME_FIND_BY_ID, { id });
     return this._signals.get(id) ?? null;
   };
 
+  /**
+   * Lists all stored signals.
+   * @returns Array of all signal rows
+   */
   public list = async (): Promise<IStorageSignalRow[]> => {
     backtest.loggerService.info(STORAGE_MEMORY_BACKTEST_METHOD_NAME_LIST);
     return Array.from(this._signals.values());
@@ -351,26 +418,46 @@ export class StorageMemoryBacktestUtils implements IStorageUtils {
  * Use this adapter to disable backtest signal storage completely.
  */
 export class StorageDummyBacktestUtils implements IStorageUtils {
+  /**
+   * No-op handler for signal opened event.
+   */
   public handleOpened = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * No-op handler for signal closed event.
+   */
   public handleClosed = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * No-op handler for signal scheduled event.
+   */
   public handleScheduled = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * No-op handler for signal cancelled event.
+   */
   public handleCancelled = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * Always returns null (no storage).
+   * @returns null
+   */
   public findById = async (): Promise<IStorageSignalRow | null> => {
     return null;
   };
 
+  /**
+   * Always returns empty array (no storage).
+   * @returns Empty array
+   */
   public list = async (): Promise<IStorageSignalRow[]> => {
     return [];
   };
@@ -407,6 +494,11 @@ export class StoragePersistLiveUtils implements IStorageUtils {
     );
   });
 
+  /**
+   * Persists the current signal map to disk storage.
+   * Sorts signals by priority and keeps only the most recent MAX_SIGNALS.
+   * @throws Error if not initialized
+   */
   private async _updateStorage(): Promise<void> {
     backtest.loggerService.info(STORAGE_LIVE_METHOD_NAME_UPDATE_STORAGE);
     if (!this._signals) {
@@ -422,6 +514,11 @@ export class StoragePersistLiveUtils implements IStorageUtils {
     );
   }
 
+  /**
+   * Handles signal opened event.
+   * Updates storage with opened status if not stale.
+   * @param tick - The opened signal tick data
+   */
   public handleOpened = async (tick: IStrategyTickResultOpened) => {
     backtest.loggerService.info(STORAGE_LIVE_METHOD_NAME_HANDLE_OPENED, {
       signalId: tick.signal.id,
@@ -441,6 +538,11 @@ export class StoragePersistLiveUtils implements IStorageUtils {
     await this._updateStorage();
   };
 
+  /**
+   * Handles signal closed event.
+   * Updates storage with closed status and PnL if not stale.
+   * @param tick - The closed signal tick data
+   */
   public handleClosed = async (tick: IStrategyTickResultClosed) => {
     backtest.loggerService.info(STORAGE_LIVE_METHOD_NAME_HANDLE_CLOSED, {
       signalId: tick.signal.id,
@@ -461,6 +563,11 @@ export class StoragePersistLiveUtils implements IStorageUtils {
     await this._updateStorage();
   };
 
+  /**
+   * Handles signal scheduled event.
+   * Updates storage with scheduled status if not stale.
+   * @param tick - The scheduled signal tick data
+   */
   public handleScheduled = async (tick: IStrategyTickResultScheduled) => {
     backtest.loggerService.info(STORAGE_LIVE_METHOD_NAME_HANDLE_SCHEDULED, {
       signalId: tick.signal.id,
@@ -480,6 +587,11 @@ export class StoragePersistLiveUtils implements IStorageUtils {
     await this._updateStorage();
   };
 
+  /**
+   * Handles signal cancelled event.
+   * Updates storage with cancelled status if not stale.
+   * @param tick - The cancelled signal tick data
+   */
   public handleCancelled = async (tick: IStrategyTickResultCancelled) => {
     backtest.loggerService.info(STORAGE_LIVE_METHOD_NAME_HANDLE_CANCELLED, {
       signalId: tick.signal.id,
@@ -499,6 +611,11 @@ export class StoragePersistLiveUtils implements IStorageUtils {
     await this._updateStorage();
   };
 
+  /**
+   * Finds a signal by its ID.
+   * @param id - The signal ID to search for
+   * @returns The signal row or null if not found
+   */
   public findById = async (
     id: StorageId,
   ): Promise<IStorageSignalRow | null> => {
@@ -507,6 +624,10 @@ export class StoragePersistLiveUtils implements IStorageUtils {
     return this._signals.get(id) ?? null;
   };
 
+  /**
+   * Lists all stored signals.
+   * @returns Array of all signal rows
+   */
   public list = async (): Promise<IStorageSignalRow[]> => {
     backtest.loggerService.info(STORAGE_LIVE_METHOD_NAME_LIST);
     await this.waitForInit();
@@ -530,6 +651,11 @@ export class StorageMemoryLiveUtils implements IStorageUtils {
   /** Map of signal IDs to signal rows */
   private _signals: Map<StorageId, IStorageSignalRow> = new Map();
 
+  /**
+   * Handles signal opened event.
+   * Updates in-memory storage with opened status if not stale.
+   * @param tick - The opened signal tick data
+   */
   public handleOpened = async (tick: IStrategyTickResultOpened): Promise<void> => {
     backtest.loggerService.info(STORAGE_MEMORY_LIVE_METHOD_NAME_HANDLE_OPENED, {
       signalId: tick.signal.id,
@@ -547,6 +673,11 @@ export class StorageMemoryLiveUtils implements IStorageUtils {
     });
   };
 
+  /**
+   * Handles signal closed event.
+   * Updates in-memory storage with closed status and PnL if not stale.
+   * @param tick - The closed signal tick data
+   */
   public handleClosed = async (tick: IStrategyTickResultClosed): Promise<void> => {
     backtest.loggerService.info(STORAGE_MEMORY_LIVE_METHOD_NAME_HANDLE_CLOSED, {
       signalId: tick.signal.id,
@@ -565,6 +696,11 @@ export class StorageMemoryLiveUtils implements IStorageUtils {
     });
   };
 
+  /**
+   * Handles signal scheduled event.
+   * Updates in-memory storage with scheduled status if not stale.
+   * @param tick - The scheduled signal tick data
+   */
   public handleScheduled = async (tick: IStrategyTickResultScheduled): Promise<void> => {
     backtest.loggerService.info(STORAGE_MEMORY_LIVE_METHOD_NAME_HANDLE_SCHEDULED, {
       signalId: tick.signal.id,
@@ -582,6 +718,11 @@ export class StorageMemoryLiveUtils implements IStorageUtils {
     });
   };
 
+  /**
+   * Handles signal cancelled event.
+   * Updates in-memory storage with cancelled status if not stale.
+   * @param tick - The cancelled signal tick data
+   */
   public handleCancelled = async (tick: IStrategyTickResultCancelled): Promise<void> => {
     backtest.loggerService.info(STORAGE_MEMORY_LIVE_METHOD_NAME_HANDLE_CANCELLED, {
       signalId: tick.signal.id,
@@ -599,11 +740,20 @@ export class StorageMemoryLiveUtils implements IStorageUtils {
     });
   };
 
+  /**
+   * Finds a signal by its ID.
+   * @param id - The signal ID to search for
+   * @returns The signal row or null if not found
+   */
   public findById = async (id: StorageId): Promise<IStorageSignalRow | null> => {
     backtest.loggerService.info(STORAGE_MEMORY_LIVE_METHOD_NAME_FIND_BY_ID, { id });
     return this._signals.get(id) ?? null;
   };
 
+  /**
+   * Lists all stored signals.
+   * @returns Array of all signal rows
+   */
   public list = async (): Promise<IStorageSignalRow[]> => {
     backtest.loggerService.info(STORAGE_MEMORY_LIVE_METHOD_NAME_LIST);
     return Array.from(this._signals.values());
@@ -621,26 +771,46 @@ export class StorageMemoryLiveUtils implements IStorageUtils {
  * Use this adapter to disable live signal storage completely.
  */
 export class StorageDummyLiveUtils implements IStorageUtils {
+  /**
+   * No-op handler for signal opened event.
+   */
   public handleOpened = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * No-op handler for signal closed event.
+   */
   public handleClosed = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * No-op handler for signal scheduled event.
+   */
   public handleScheduled = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * No-op handler for signal cancelled event.
+   */
   public handleCancelled = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * Always returns null (no storage).
+   * @returns null
+   */
   public findById = async (): Promise<IStorageSignalRow | null> => {
     return null;
   };
 
+  /**
+   * Always returns empty array (no storage).
+   * @returns Empty array
+   */
   public list = async (): Promise<IStorageSignalRow[]> => {
     return [];
   };
@@ -656,28 +826,60 @@ export class StorageDummyLiveUtils implements IStorageUtils {
  * - Convenience methods: usePersist(), useMemory(), useDummy()
  */
 export class StorageBacktestAdapter implements IStorageUtils {
+  /** Internal storage utils instance */
   private _signalBacktestUtils: IStorageUtils = new StoragePersistBacktestUtils();
 
+  /**
+   * Handles signal opened event.
+   * Proxies call to the underlying storage adapter.
+   * @param tick - The opened signal tick data
+   */
   handleOpened = async (tick: IStrategyTickResultOpened): Promise<void> => {
     return await this._signalBacktestUtils.handleOpened(tick);
   };
 
+  /**
+   * Handles signal closed event.
+   * Proxies call to the underlying storage adapter.
+   * @param tick - The closed signal tick data
+   */
   handleClosed = async (tick: IStrategyTickResultClosed): Promise<void> => {
     return await this._signalBacktestUtils.handleClosed(tick);
   };
 
+  /**
+   * Handles signal scheduled event.
+   * Proxies call to the underlying storage adapter.
+   * @param tick - The scheduled signal tick data
+   */
   handleScheduled = async (tick: IStrategyTickResultScheduled): Promise<void> => {
     return await this._signalBacktestUtils.handleScheduled(tick);
   };
 
+  /**
+   * Handles signal cancelled event.
+   * Proxies call to the underlying storage adapter.
+   * @param tick - The cancelled signal tick data
+   */
   handleCancelled = async (tick: IStrategyTickResultCancelled): Promise<void> => {
     return await this._signalBacktestUtils.handleCancelled(tick);
   };
 
+  /**
+   * Finds a signal by its ID.
+   * Proxies call to the underlying storage adapter.
+   * @param id - The signal ID to search for
+   * @returns The signal row or null if not found
+   */
   findById = async (id: StorageId): Promise<IStorageSignalRow | null> => {
     return await this._signalBacktestUtils.findById(id);
   };
 
+  /**
+   * Lists all stored signals.
+   * Proxies call to the underlying storage adapter.
+   * @returns Array of all signal rows
+   */
   list = async (): Promise<IStorageSignalRow[]> => {
     return await this._signalBacktestUtils.list();
   };
@@ -731,28 +933,60 @@ export class StorageBacktestAdapter implements IStorageUtils {
  * - Convenience methods: usePersist(), useMemory(), useDummy()
  */
 export class StorageLiveAdapter implements IStorageUtils {
+  /** Internal storage utils instance */
   private _signalLiveUtils: IStorageUtils = new StoragePersistLiveUtils();
 
+  /**
+   * Handles signal opened event.
+   * Proxies call to the underlying storage adapter.
+   * @param tick - The opened signal tick data
+   */
   handleOpened = async (tick: IStrategyTickResultOpened): Promise<void> => {
     return await this._signalLiveUtils.handleOpened(tick);
   };
 
+  /**
+   * Handles signal closed event.
+   * Proxies call to the underlying storage adapter.
+   * @param tick - The closed signal tick data
+   */
   handleClosed = async (tick: IStrategyTickResultClosed): Promise<void> => {
     return await this._signalLiveUtils.handleClosed(tick);
   };
 
+  /**
+   * Handles signal scheduled event.
+   * Proxies call to the underlying storage adapter.
+   * @param tick - The scheduled signal tick data
+   */
   handleScheduled = async (tick: IStrategyTickResultScheduled): Promise<void> => {
     return await this._signalLiveUtils.handleScheduled(tick);
   };
 
+  /**
+   * Handles signal cancelled event.
+   * Proxies call to the underlying storage adapter.
+   * @param tick - The cancelled signal tick data
+   */
   handleCancelled = async (tick: IStrategyTickResultCancelled): Promise<void> => {
     return await this._signalLiveUtils.handleCancelled(tick);
   };
 
+  /**
+   * Finds a signal by its ID.
+   * Proxies call to the underlying storage adapter.
+   * @param id - The signal ID to search for
+   * @returns The signal row or null if not found
+   */
   findById = async (id: StorageId): Promise<IStorageSignalRow | null> => {
     return await this._signalLiveUtils.findById(id);
   };
 
+  /**
+   * Lists all stored signals.
+   * Proxies call to the underlying storage adapter.
+   * @returns Array of all signal rows
+   */
   list = async (): Promise<IStorageSignalRow[]> => {
     return await this._signalLiveUtils.list();
   };
