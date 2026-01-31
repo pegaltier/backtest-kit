@@ -136,6 +136,7 @@ export const ListView = ({
                                       )
                                     : undefined,
                         }}
+                        onClick={() => ioc.layoutService.pickSignal(item.id)}
                         key={`item-${symbol}-${item.id}`}
                     >
                         <ListItemText

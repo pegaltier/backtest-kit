@@ -6,6 +6,7 @@ import {
     usePrompt,
 } from "react-declarative";
 import { ioc } from "../lib";
+import useSignalView from "../hooks/useSignalView";
 
 interface ILayoutModalProviderProps {
     children: React.ReactNode;
@@ -46,6 +47,8 @@ export const LayoutModalProvider = ({
             },
         });
 
+    const pickSignal = useSignalView();
+
     useOnce(() =>
         ioc.layoutService.promptOutgoing.subscribe(async ({ title, value }) => {
             const result = await pickPrompt({ title, value }).toPromise();
@@ -66,6 +69,8 @@ export const LayoutModalProvider = ({
     );
 
     useOnce(() => ioc.layoutService.alertOutgoung.subscribe(pickAlert));
+
+    useOnce(() => ioc.layoutService.pickSignalSubject.subscribe(pickSignal));
 
     return (
         <>

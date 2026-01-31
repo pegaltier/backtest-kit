@@ -4,6 +4,8 @@ export class LayoutService {
     public readonly appbarSubject = new Subject<boolean>();
     public readonly modalSubject = new Subject<boolean>();
 
+    public readonly pickSignalSubject = new Subject<string>();
+
     public readonly reloadOutletSubject = new Subject<void>();
 
     public readonly openDocumentSubject = new Subject<{
@@ -84,6 +86,10 @@ export class LayoutService {
             title,
             description,
         });
+    };
+
+    pickSignal = async (signalId: string) => {
+        await this.pickSignalSubject.next(signalId);
     };
 }
 

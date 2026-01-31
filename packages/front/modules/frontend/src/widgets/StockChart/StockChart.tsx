@@ -9,8 +9,9 @@ import {
   SeriesMarker,
 } from "lightweight-charts";
 import { createChart } from "lightweight-charts";
-import { makeStyles } from "../../../styles";
+import { makeStyles } from "../../styles";
 import { dayjs, fromMomentStamp, getMomentStamp } from "react-declarative";
+import { colors } from "@mui/material";
 
 declare function parseFloat(value: unknown): number;
 
@@ -32,7 +33,6 @@ interface IChartProps {
   }[];
 }
 
-import { colors } from "@mui/material";
 
 const COLOR_LIST = [
   colors.purple[900],
@@ -127,7 +127,10 @@ const chartOptions: DeepPartial<ChartOptions> = {
 };
 
 // Базовая дата в UTC для MOMENT_STAMP_OFFSET
-const MOMENT_STAMP_OFFSET = getMomentStamp(dayjs("2025-07-26T00:00:00Z"), "minute");
+const MOMENT_STAMP_OFFSET = getMomentStamp(
+  dayjs("2025-07-26T00:00:00Z"),
+  "minute"
+);
 
 type Ref = React.MutableRefObject<HTMLDivElement>;
 
@@ -167,7 +170,9 @@ export const StockChart = ({ source, height, width, items, lines }: IChartProps)
             date = date.startOf("hour");
           }
           formattedOriginalTime = date.format("YYYY-MM-DD HH:mm:ss");
-          console.warn(`Invalid closeTime at index ${idx}: ${originalTime}, using fromMomentStamp: ${formattedOriginalTime}`);
+          console.warn(
+            `Invalid closeTime at index ${idx}: ${originalTime}, using fromMomentStamp: ${formattedOriginalTime}`
+          );
         }
 
         // Формируем momentStamp для валидной даты
@@ -186,7 +191,9 @@ export const StockChart = ({ source, height, width, items, lines }: IChartProps)
         }
 
         if (!date.isValid()) {
-          console.warn(`Invalid date at index ${idx}: momentStamp: ${momentStamp}`);
+          console.warn(
+            `Invalid date at index ${idx}: momentStamp: ${momentStamp}`
+          );
           return null;
         }
 
@@ -223,7 +230,8 @@ export const StockChart = ({ source, height, width, items, lines }: IChartProps)
         secondsVisible: source === "1m",
         tickMarkFormatter: (time: Time) => {
           // Поиск свечи по momentStamp
-          const candle = candles.find((c) => c.momentStamp === Number(time)) || candles[0];
+          const candle =
+            candles.find((c) => c.momentStamp === Number(time)) || candles[0];
           if (!candle || !candle.originalTime) {
             return "Invalid date";
           }
@@ -247,6 +255,19 @@ export const StockChart = ({ source, height, width, items, lines }: IChartProps)
     });
 
     lineSeries.setData(candles);
+
+    lines.forEach((order, idx) => {
+      const positionLabel = order.position === "long" ? "LONG" : "SHORT";
+
+      lineSeries.createPriceLine({
+        price: parseFloat(order.buyPrice),
+        color: getPositionColor(order.position, idx),
+        lineWidth: 3,
+        lineStyle: LineStyle.Dashed,
+        axisLabelVisible: true,
+        title: `№${idx + 1} ${positionLabel}`,
+      });
+    });
 
     const markers = lines
       .map((order, idx): SeriesMarker<Time> => {
@@ -296,19 +317,6 @@ export const StockChart = ({ source, height, width, items, lines }: IChartProps)
       } else {
         setTooltipDate(null);
       }
-    });
-
-    lines?.forEach((order, idx) => {
-      const positionLabel = order.position === "long" ? "LONG" : "SHORT";
-
-      lineSeries.createPriceLine({
-        price: parseFloat(order.buyPrice),
-        color: getPositionColor(order.position, idx),
-        lineWidth: 3,
-        lineStyle: LineStyle.Dashed,
-        axisLabelVisible: true,
-        title: `№${idx + 1} ${positionLabel}`,
-      });
     });
 
     chart.timeScale().fitContent();
