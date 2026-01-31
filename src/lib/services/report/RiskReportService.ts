@@ -79,7 +79,7 @@ export class RiskReportService {
       strategyName: data.strategyName,
       exchangeName: data.exchangeName,
       frameName: data.frameName,
-      signalId: "",
+      signalId: data.pendingSignal?.id || "",
       walkerName: "",
     });
   };
