@@ -156,6 +156,8 @@ export class NotificationInstance {
         cancelReason: data.reason,
         cancelId: data.cancelId,
         duration: durationMin,
+        scheduledAt: data.signal.scheduledAt,
+        pendingAt: data.signal.pendingAt,
         createdAt: data.createdAt,
       });
     }

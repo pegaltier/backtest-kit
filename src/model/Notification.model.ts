@@ -537,6 +537,10 @@ export interface SignalCancelledNotification {
   cancelId: string;
   /** Duration in minutes from scheduledAt to cancellation */
   duration: number;
+  /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
+  scheduledAt: number;
+  /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
+  pendingAt: number;
   /** Unix timestamp in milliseconds when the tick result was created (from candle timestamp in backtest or execution context when in live) */
   createdAt: number;
 }

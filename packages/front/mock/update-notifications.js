@@ -32,6 +32,7 @@ const typesNeedingUpdate = [
 const signalStatusTypes = [
   "signal.opened",
   "signal.closed",
+  "signal.cancelled",
 ];
 
 // Default values based on position
@@ -118,9 +119,12 @@ const updatedNotifications = notifications.map((notification) => {
     }
     if (!updated.pendingAt) {
       // For signal.opened, pendingAt equals timestamp
-      // For signal.closed, pendingAt is when position was opened (before close)
+      // For signal.closed/cancelled, pendingAt is when position was opened (before close)
       if (notification.type === "signal.opened") {
         updated.pendingAt = timestamp;
+      } else if (notification.type === "signal.cancelled") {
+        // signal.cancelled - pendingAt equals scheduledAt (never became pending)
+        updated.pendingAt = updated.scheduledAt;
       } else {
         // signal.closed - pendingAt should be before close timestamp
         updated.pendingAt = timestamp - (notification.duration || 60) * 60000;

@@ -14,7 +14,7 @@ export const Candle1hView = ({ data, formState }: IOutletModalProps) => {
         priceTakeProfit,
     } = useMemo(() => {
         const notification = formState.data.main as SignalCancelledNotification;
-        const pendingAtDate = new Date(notification.pendingAt).toISOString();
+        const pendingAtDate = new Date(notification.scheduledAt).toISOString();
         return {
             position: notification.position,
             pendingAt: pendingAtDate,
