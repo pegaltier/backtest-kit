@@ -48,6 +48,18 @@ export interface StrategyEvent {
   createdAt: string;
   /** True if backtest mode, false if live mode */
   backtest: boolean;
+  /** Trade direction: "long" (buy) or "short" (sell) */
+  position?: "long" | "short";
+  /** Entry price for the position */
+  priceOpen?: number;
+  /** Effective take profit price (with trailing if set) */
+  priceTakeProfit?: number;
+  /** Effective stop loss price (with trailing if set) */
+  priceStopLoss?: number;
+  /** Original take profit price before any trailing adjustments */
+  originalPriceTakeProfit?: number;
+  /** Original stop loss price before any trailing adjustments */
+  originalPriceStopLoss?: number;
 }
 
 /**

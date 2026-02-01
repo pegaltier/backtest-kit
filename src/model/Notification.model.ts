@@ -106,6 +106,14 @@ export interface PartialProfitAvailableNotification {
   priceOpen: number;
   /** Trade direction: "long" (buy) or "short" (sell) */
   position: "long" | "short";
+  /** Effective take profit price (with trailing if set) */
+  priceTakeProfit: number;
+  /** Effective stop loss price (with trailing if set) */
+  priceStopLoss: number;
+  /** Original take profit price before any trailing adjustments */
+  originalPriceTakeProfit: number;
+  /** Original stop loss price before any trailing adjustments */
+  originalPriceStopLoss: number;
   /** Unix timestamp in milliseconds when the notification was created */
   createdAt: number;
 }
@@ -139,6 +147,14 @@ export interface PartialLossAvailableNotification {
   priceOpen: number;
   /** Trade direction: "long" (buy) or "short" (sell) */
   position: "long" | "short";
+  /** Effective take profit price (with trailing if set) */
+  priceTakeProfit: number;
+  /** Effective stop loss price (with trailing if set) */
+  priceStopLoss: number;
+  /** Original take profit price before any trailing adjustments */
+  originalPriceTakeProfit: number;
+  /** Original stop loss price before any trailing adjustments */
+  originalPriceStopLoss: number;
   /** Unix timestamp in milliseconds when the notification was created */
   createdAt: number;
 }
@@ -170,6 +186,14 @@ export interface BreakevenAvailableNotification {
   priceOpen: number;
   /** Trade direction: "long" (buy) or "short" (sell) */
   position: "long" | "short";
+  /** Effective take profit price (with trailing if set) */
+  priceTakeProfit: number;
+  /** Effective stop loss price (with trailing if set) */
+  priceStopLoss: number;
+  /** Original take profit price before any trailing adjustments */
+  originalPriceTakeProfit: number;
+  /** Original stop loss price before any trailing adjustments */
+  originalPriceStopLoss: number;
   /** Unix timestamp in milliseconds when the notification was created */
   createdAt: number;
 }
@@ -197,6 +221,18 @@ export interface PartialProfitCommitNotification {
   percentToClose: number;
   /** Current market price when partial was executed */
   currentPrice: number;
+  /** Trade direction: "long" (buy) or "short" (sell) */
+  position: "long" | "short";
+  /** Entry price for the position */
+  priceOpen: number;
+  /** Effective take profit price (with trailing if set) */
+  priceTakeProfit: number;
+  /** Effective stop loss price (with trailing if set) */
+  priceStopLoss: number;
+  /** Original take profit price before any trailing adjustments */
+  originalPriceTakeProfit: number;
+  /** Original stop loss price before any trailing adjustments */
+  originalPriceStopLoss: number;
   /** Unix timestamp in milliseconds when the notification was created */
   createdAt: number;
 }
@@ -224,6 +260,18 @@ export interface PartialLossCommitNotification {
   percentToClose: number;
   /** Current market price when partial was executed */
   currentPrice: number;
+  /** Trade direction: "long" (buy) or "short" (sell) */
+  position: "long" | "short";
+  /** Entry price for the position */
+  priceOpen: number;
+  /** Effective take profit price (with trailing if set) */
+  priceTakeProfit: number;
+  /** Effective stop loss price (with trailing if set) */
+  priceStopLoss: number;
+  /** Original take profit price before any trailing adjustments */
+  originalPriceTakeProfit: number;
+  /** Original stop loss price before any trailing adjustments */
+  originalPriceStopLoss: number;
   /** Unix timestamp in milliseconds when the notification was created */
   createdAt: number;
 }
@@ -249,6 +297,18 @@ export interface BreakevenCommitNotification {
   exchangeName: ExchangeName;
   /** Current market price when breakeven was executed */
   currentPrice: number;
+  /** Trade direction: "long" (buy) or "short" (sell) */
+  position: "long" | "short";
+  /** Entry price for the position */
+  priceOpen: number;
+  /** Effective take profit price (with trailing if set) */
+  priceTakeProfit: number;
+  /** Effective stop loss price (with trailing if set, after breakeven this equals priceOpen) */
+  priceStopLoss: number;
+  /** Original take profit price before any trailing adjustments */
+  originalPriceTakeProfit: number;
+  /** Original stop loss price before any trailing adjustments */
+  originalPriceStopLoss: number;
   /** Unix timestamp in milliseconds when the notification was created */
   createdAt: number;
 }
@@ -276,6 +336,18 @@ export interface TrailingStopCommitNotification {
   percentShift: number;
   /** Current market price when trailing stop was executed */
   currentPrice: number;
+  /** Trade direction: "long" (buy) or "short" (sell) */
+  position: "long" | "short";
+  /** Entry price for the position */
+  priceOpen: number;
+  /** Effective take profit price (with trailing if set) */
+  priceTakeProfit: number;
+  /** Effective stop loss price after trailing adjustment */
+  priceStopLoss: number;
+  /** Original take profit price before any trailing adjustments */
+  originalPriceTakeProfit: number;
+  /** Original stop loss price before any trailing adjustments */
+  originalPriceStopLoss: number;
   /** Unix timestamp in milliseconds when the notification was created */
   createdAt: number;
 }
@@ -303,6 +375,18 @@ export interface TrailingTakeCommitNotification {
   percentShift: number;
   /** Current market price when trailing take was executed */
   currentPrice: number;
+  /** Trade direction: "long" (buy) or "short" (sell) */
+  position: "long" | "short";
+  /** Entry price for the position */
+  priceOpen: number;
+  /** Effective take profit price after trailing adjustment */
+  priceTakeProfit: number;
+  /** Effective stop loss price (with trailing if set) */
+  priceStopLoss: number;
+  /** Original take profit price before any trailing adjustments */
+  originalPriceTakeProfit: number;
+  /** Original stop loss price before any trailing adjustments */
+  originalPriceStopLoss: number;
   /** Unix timestamp in milliseconds when the notification was created */
   createdAt: number;
 }

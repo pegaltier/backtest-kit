@@ -174,6 +174,10 @@ export class NotificationInstance {
       currentPrice: data.currentPrice,
       priceOpen: data.data.priceOpen,
       position: data.data.position,
+      priceTakeProfit: data.data.priceTakeProfit,
+      priceStopLoss: data.data.priceStopLoss,
+      originalPriceTakeProfit: data.data.originalPriceTakeProfit,
+      originalPriceStopLoss: data.data.originalPriceStopLoss,
       createdAt: data.timestamp,
     });
   };
@@ -195,6 +199,10 @@ export class NotificationInstance {
       currentPrice: data.currentPrice,
       priceOpen: data.data.priceOpen,
       position: data.data.position,
+      priceTakeProfit: data.data.priceTakeProfit,
+      priceStopLoss: data.data.priceStopLoss,
+      originalPriceTakeProfit: data.data.originalPriceTakeProfit,
+      originalPriceStopLoss: data.data.originalPriceStopLoss,
       createdAt: data.timestamp,
     });
   };
@@ -215,6 +223,10 @@ export class NotificationInstance {
       currentPrice: data.currentPrice,
       priceOpen: data.data.priceOpen,
       position: data.data.position,
+      priceTakeProfit: data.data.priceTakeProfit,
+      priceStopLoss: data.data.priceStopLoss,
+      originalPriceTakeProfit: data.data.originalPriceTakeProfit,
+      originalPriceStopLoss: data.data.originalPriceStopLoss,
       createdAt: data.timestamp,
     });
   };
@@ -234,6 +246,12 @@ export class NotificationInstance {
         exchangeName: data.exchangeName,
         percentToClose: data.percentToClose,
         currentPrice: data.currentPrice,
+        position: data.position,
+        priceOpen: data.priceOpen,
+        priceTakeProfit: data.priceTakeProfit,
+        priceStopLoss: data.priceStopLoss,
+        originalPriceTakeProfit: data.originalPriceTakeProfit,
+        originalPriceStopLoss: data.originalPriceStopLoss,
         createdAt: data.timestamp,
       });
     } else if (data.action === "partial-loss") {
@@ -247,6 +265,12 @@ export class NotificationInstance {
         exchangeName: data.exchangeName,
         percentToClose: data.percentToClose,
         currentPrice: data.currentPrice,
+        position: data.position,
+        priceOpen: data.priceOpen,
+        priceTakeProfit: data.priceTakeProfit,
+        priceStopLoss: data.priceStopLoss,
+        originalPriceTakeProfit: data.originalPriceTakeProfit,
+        originalPriceStopLoss: data.originalPriceStopLoss,
         createdAt: data.timestamp,
       });
     } else if (data.action === "breakeven") {
@@ -259,6 +283,12 @@ export class NotificationInstance {
         strategyName: data.strategyName,
         exchangeName: data.exchangeName,
         currentPrice: data.currentPrice,
+        position: data.position,
+        priceOpen: data.priceOpen,
+        priceTakeProfit: data.priceTakeProfit,
+        priceStopLoss: data.priceStopLoss,
+        originalPriceTakeProfit: data.originalPriceTakeProfit,
+        originalPriceStopLoss: data.originalPriceStopLoss,
         createdAt: data.timestamp,
       });
     } else if (data.action === "trailing-stop") {
@@ -272,6 +302,12 @@ export class NotificationInstance {
         exchangeName: data.exchangeName,
         percentShift: data.percentShift,
         currentPrice: data.currentPrice,
+        position: data.position,
+        priceOpen: data.priceOpen,
+        priceTakeProfit: data.priceTakeProfit,
+        priceStopLoss: data.priceStopLoss,
+        originalPriceTakeProfit: data.originalPriceTakeProfit,
+        originalPriceStopLoss: data.originalPriceStopLoss,
         createdAt: data.timestamp,
       });
     } else if (data.action === "trailing-take") {
@@ -285,6 +321,12 @@ export class NotificationInstance {
         exchangeName: data.exchangeName,
         percentShift: data.percentShift,
         currentPrice: data.currentPrice,
+        position: data.position,
+        priceOpen: data.priceOpen,
+        priceTakeProfit: data.priceTakeProfit,
+        priceStopLoss: data.priceStopLoss,
+        originalPriceTakeProfit: data.originalPriceTakeProfit,
+        originalPriceStopLoss: data.originalPriceStopLoss,
         createdAt: data.timestamp,
       });
     }

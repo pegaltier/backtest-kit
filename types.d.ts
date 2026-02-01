@@ -1036,6 +1036,12 @@ interface PartialProfitCommit extends SignalCommitBase {
     action: "partial-profit";
     percentToClose: number;
     currentPrice: number;
+    position: "long" | "short";
+    priceOpen: number;
+    priceTakeProfit: number;
+    priceStopLoss: number;
+    originalPriceTakeProfit: number;
+    originalPriceStopLoss: number;
 }
 /**
  * Partial loss event.
@@ -1044,6 +1050,12 @@ interface PartialLossCommit extends SignalCommitBase {
     action: "partial-loss";
     percentToClose: number;
     currentPrice: number;
+    position: "long" | "short";
+    priceOpen: number;
+    priceTakeProfit: number;
+    priceStopLoss: number;
+    originalPriceTakeProfit: number;
+    originalPriceStopLoss: number;
 }
 /**
  * Trailing stop event.
@@ -1052,6 +1064,12 @@ interface TrailingStopCommit extends SignalCommitBase {
     action: "trailing-stop";
     percentShift: number;
     currentPrice: number;
+    position: "long" | "short";
+    priceOpen: number;
+    priceTakeProfit: number;
+    priceStopLoss: number;
+    originalPriceTakeProfit: number;
+    originalPriceStopLoss: number;
 }
 /**
  * Trailing take event.
@@ -1060,6 +1078,12 @@ interface TrailingTakeCommit extends SignalCommitBase {
     action: "trailing-take";
     percentShift: number;
     currentPrice: number;
+    position: "long" | "short";
+    priceOpen: number;
+    priceTakeProfit: number;
+    priceStopLoss: number;
+    originalPriceTakeProfit: number;
+    originalPriceStopLoss: number;
 }
 /**
  * Breakeven event.
@@ -1067,6 +1091,12 @@ interface TrailingTakeCommit extends SignalCommitBase {
 interface BreakevenCommit extends SignalCommitBase {
     action: "breakeven";
     currentPrice: number;
+    position: "long" | "short";
+    priceOpen: number;
+    priceTakeProfit: number;
+    priceStopLoss: number;
+    originalPriceTakeProfit: number;
+    originalPriceStopLoss: number;
 }
 /**
  * Discriminated union for strategy management signal events.
@@ -6664,6 +6694,14 @@ interface PartialProfitAvailableNotification {
     priceOpen: number;
     /** Trade direction: "long" (buy) or "short" (sell) */
     position: "long" | "short";
+    /** Effective take profit price (with trailing if set) */
+    priceTakeProfit: number;
+    /** Effective stop loss price (with trailing if set) */
+    priceStopLoss: number;
+    /** Original take profit price before any trailing adjustments */
+    originalPriceTakeProfit: number;
+    /** Original stop loss price before any trailing adjustments */
+    originalPriceStopLoss: number;
     /** Unix timestamp in milliseconds when the notification was created */
     createdAt: number;
 }
@@ -6696,6 +6734,14 @@ interface PartialLossAvailableNotification {
     priceOpen: number;
     /** Trade direction: "long" (buy) or "short" (sell) */
     position: "long" | "short";
+    /** Effective take profit price (with trailing if set) */
+    priceTakeProfit: number;
+    /** Effective stop loss price (with trailing if set) */
+    priceStopLoss: number;
+    /** Original take profit price before any trailing adjustments */
+    originalPriceTakeProfit: number;
+    /** Original stop loss price before any trailing adjustments */
+    originalPriceStopLoss: number;
     /** Unix timestamp in milliseconds when the notification was created */
     createdAt: number;
 }
@@ -6726,6 +6772,14 @@ interface BreakevenAvailableNotification {
     priceOpen: number;
     /** Trade direction: "long" (buy) or "short" (sell) */
     position: "long" | "short";
+    /** Effective take profit price (with trailing if set) */
+    priceTakeProfit: number;
+    /** Effective stop loss price (with trailing if set) */
+    priceStopLoss: number;
+    /** Original take profit price before any trailing adjustments */
+    originalPriceTakeProfit: number;
+    /** Original stop loss price before any trailing adjustments */
+    originalPriceStopLoss: number;
     /** Unix timestamp in milliseconds when the notification was created */
     createdAt: number;
 }
@@ -6752,6 +6806,18 @@ interface PartialProfitCommitNotification {
     percentToClose: number;
     /** Current market price when partial was executed */
     currentPrice: number;
+    /** Trade direction: "long" (buy) or "short" (sell) */
+    position: "long" | "short";
+    /** Entry price for the position */
+    priceOpen: number;
+    /** Effective take profit price (with trailing if set) */
+    priceTakeProfit: number;
+    /** Effective stop loss price (with trailing if set) */
+    priceStopLoss: number;
+    /** Original take profit price before any trailing adjustments */
+    originalPriceTakeProfit: number;
+    /** Original stop loss price before any trailing adjustments */
+    originalPriceStopLoss: number;
     /** Unix timestamp in milliseconds when the notification was created */
     createdAt: number;
 }
@@ -6778,6 +6844,18 @@ interface PartialLossCommitNotification {
     percentToClose: number;
     /** Current market price when partial was executed */
     currentPrice: number;
+    /** Trade direction: "long" (buy) or "short" (sell) */
+    position: "long" | "short";
+    /** Entry price for the position */
+    priceOpen: number;
+    /** Effective take profit price (with trailing if set) */
+    priceTakeProfit: number;
+    /** Effective stop loss price (with trailing if set) */
+    priceStopLoss: number;
+    /** Original take profit price before any trailing adjustments */
+    originalPriceTakeProfit: number;
+    /** Original stop loss price before any trailing adjustments */
+    originalPriceStopLoss: number;
     /** Unix timestamp in milliseconds when the notification was created */
     createdAt: number;
 }
@@ -6802,6 +6880,18 @@ interface BreakevenCommitNotification {
     exchangeName: ExchangeName;
     /** Current market price when breakeven was executed */
     currentPrice: number;
+    /** Trade direction: "long" (buy) or "short" (sell) */
+    position: "long" | "short";
+    /** Entry price for the position */
+    priceOpen: number;
+    /** Effective take profit price (with trailing if set) */
+    priceTakeProfit: number;
+    /** Effective stop loss price (with trailing if set, after breakeven this equals priceOpen) */
+    priceStopLoss: number;
+    /** Original take profit price before any trailing adjustments */
+    originalPriceTakeProfit: number;
+    /** Original stop loss price before any trailing adjustments */
+    originalPriceStopLoss: number;
     /** Unix timestamp in milliseconds when the notification was created */
     createdAt: number;
 }
@@ -6828,6 +6918,18 @@ interface TrailingStopCommitNotification {
     percentShift: number;
     /** Current market price when trailing stop was executed */
     currentPrice: number;
+    /** Trade direction: "long" (buy) or "short" (sell) */
+    position: "long" | "short";
+    /** Entry price for the position */
+    priceOpen: number;
+    /** Effective take profit price (with trailing if set) */
+    priceTakeProfit: number;
+    /** Effective stop loss price after trailing adjustment */
+    priceStopLoss: number;
+    /** Original take profit price before any trailing adjustments */
+    originalPriceTakeProfit: number;
+    /** Original stop loss price before any trailing adjustments */
+    originalPriceStopLoss: number;
     /** Unix timestamp in milliseconds when the notification was created */
     createdAt: number;
 }
@@ -6854,6 +6956,18 @@ interface TrailingTakeCommitNotification {
     percentShift: number;
     /** Current market price when trailing take was executed */
     currentPrice: number;
+    /** Trade direction: "long" (buy) or "short" (sell) */
+    position: "long" | "short";
+    /** Entry price for the position */
+    priceOpen: number;
+    /** Effective take profit price after trailing adjustment */
+    priceTakeProfit: number;
+    /** Effective stop loss price (with trailing if set) */
+    priceStopLoss: number;
+    /** Original take profit price before any trailing adjustments */
+    originalPriceTakeProfit: number;
+    /** Original stop loss price before any trailing adjustments */
+    originalPriceStopLoss: number;
     /** Unix timestamp in milliseconds when the notification was created */
     createdAt: number;
 }
@@ -7471,6 +7585,18 @@ interface StrategyEvent {
     createdAt: string;
     /** True if backtest mode, false if live mode */
     backtest: boolean;
+    /** Trade direction: "long" (buy) or "short" (sell) */
+    position?: "long" | "short";
+    /** Entry price for the position */
+    priceOpen?: number;
+    /** Effective take profit price (with trailing if set) */
+    priceTakeProfit?: number;
+    /** Effective stop loss price (with trailing if set) */
+    priceStopLoss?: number;
+    /** Original take profit price before any trailing adjustments */
+    originalPriceTakeProfit?: number;
+    /** Original stop loss price before any trailing adjustments */
+    originalPriceStopLoss?: number;
 }
 /**
  * Statistical data calculated from strategy events.
@@ -14101,12 +14227,18 @@ declare class StrategyMarkdownService {
      * @param isBacktest - Whether this is a backtest or live trading event
      * @param context - Strategy context with strategyName, exchangeName, frameName
      * @param timestamp - Timestamp from StrategyCommitContract (execution context time)
+     * @param position - Trade direction: "long" or "short"
+     * @param priceOpen - Entry price for the position
+     * @param priceTakeProfit - Effective take profit price
+     * @param priceStopLoss - Effective stop loss price
+     * @param originalPriceTakeProfit - Original take profit before trailing
+     * @param originalPriceStopLoss - Original stop loss before trailing
      */
     partialProfit: (symbol: string, percentToClose: number, currentPrice: number, isBacktest: boolean, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, timestamp: number) => Promise<void>;
+    }, timestamp: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number) => Promise<void>;
     /**
      * Records a partial-loss event when a portion of the position is closed at loss.
      *
@@ -14116,12 +14248,18 @@ declare class StrategyMarkdownService {
      * @param isBacktest - Whether this is a backtest or live trading event
      * @param context - Strategy context with strategyName, exchangeName, frameName
      * @param timestamp - Timestamp from StrategyCommitContract (execution context time)
+     * @param position - Trade direction: "long" or "short"
+     * @param priceOpen - Entry price for the position
+     * @param priceTakeProfit - Effective take profit price
+     * @param priceStopLoss - Effective stop loss price
+     * @param originalPriceTakeProfit - Original take profit before trailing
+     * @param originalPriceStopLoss - Original stop loss before trailing
      */
     partialLoss: (symbol: string, percentToClose: number, currentPrice: number, isBacktest: boolean, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, timestamp: number) => Promise<void>;
+    }, timestamp: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number) => Promise<void>;
     /**
      * Records a trailing-stop event when the stop-loss is adjusted.
      *
@@ -14131,12 +14269,18 @@ declare class StrategyMarkdownService {
      * @param isBacktest - Whether this is a backtest or live trading event
      * @param context - Strategy context with strategyName, exchangeName, frameName
      * @param timestamp - Timestamp from StrategyCommitContract (execution context time)
+     * @param position - Trade direction: "long" or "short"
+     * @param priceOpen - Entry price for the position
+     * @param priceTakeProfit - Effective take profit price
+     * @param priceStopLoss - Effective stop loss price
+     * @param originalPriceTakeProfit - Original take profit before trailing
+     * @param originalPriceStopLoss - Original stop loss before trailing
      */
     trailingStop: (symbol: string, percentShift: number, currentPrice: number, isBacktest: boolean, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, timestamp: number) => Promise<void>;
+    }, timestamp: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number) => Promise<void>;
     /**
      * Records a trailing-take event when the take-profit is adjusted.
      *
@@ -14146,12 +14290,18 @@ declare class StrategyMarkdownService {
      * @param isBacktest - Whether this is a backtest or live trading event
      * @param context - Strategy context with strategyName, exchangeName, frameName
      * @param timestamp - Timestamp from StrategyCommitContract (execution context time)
+     * @param position - Trade direction: "long" or "short"
+     * @param priceOpen - Entry price for the position
+     * @param priceTakeProfit - Effective take profit price
+     * @param priceStopLoss - Effective stop loss price
+     * @param originalPriceTakeProfit - Original take profit before trailing
+     * @param originalPriceStopLoss - Original stop loss before trailing
      */
     trailingTake: (symbol: string, percentShift: number, currentPrice: number, isBacktest: boolean, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, timestamp: number) => Promise<void>;
+    }, timestamp: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number) => Promise<void>;
     /**
      * Records a breakeven event when the stop-loss is moved to entry price.
      *
@@ -14160,12 +14310,18 @@ declare class StrategyMarkdownService {
      * @param isBacktest - Whether this is a backtest or live trading event
      * @param context - Strategy context with strategyName, exchangeName, frameName
      * @param timestamp - Timestamp from StrategyCommitContract (execution context time)
+     * @param position - Trade direction: "long" or "short"
+     * @param priceOpen - Entry price for the position
+     * @param priceTakeProfit - Effective take profit price
+     * @param priceStopLoss - Effective stop loss price
+     * @param originalPriceTakeProfit - Original take profit before trailing
+     * @param originalPriceStopLoss - Original stop loss before trailing
      */
     breakeven: (symbol: string, currentPrice: number, isBacktest: boolean, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, timestamp: number) => Promise<void>;
+    }, timestamp: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number) => Promise<void>;
     /**
      * Retrieves aggregated statistics from accumulated strategy events.
      *
@@ -19583,12 +19739,18 @@ declare class StrategyReportService {
      * @param isBacktest - Whether this is a backtest or live trading event
      * @param context - Strategy context with strategyName, exchangeName, frameName
      * @param timestamp - Timestamp from StrategyCommitContract (execution context time)
+     * @param position - Trade direction: "long" or "short"
+     * @param priceOpen - Entry price for the position
+     * @param priceTakeProfit - Effective take profit price
+     * @param priceStopLoss - Effective stop loss price
+     * @param originalPriceTakeProfit - Original take profit before trailing
+     * @param originalPriceStopLoss - Original stop loss before trailing
      */
     partialProfit: (symbol: string, percentToClose: number, currentPrice: number, isBacktest: boolean, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, timestamp: number) => Promise<void>;
+    }, timestamp: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number) => Promise<void>;
     /**
      * Logs a partial-loss event when a portion of the position is closed at loss.
      *
@@ -19598,12 +19760,18 @@ declare class StrategyReportService {
      * @param isBacktest - Whether this is a backtest or live trading event
      * @param context - Strategy context with strategyName, exchangeName, frameName
      * @param timestamp - Timestamp from StrategyCommitContract (execution context time)
+     * @param position - Trade direction: "long" or "short"
+     * @param priceOpen - Entry price for the position
+     * @param priceTakeProfit - Effective take profit price
+     * @param priceStopLoss - Effective stop loss price
+     * @param originalPriceTakeProfit - Original take profit before trailing
+     * @param originalPriceStopLoss - Original stop loss before trailing
      */
     partialLoss: (symbol: string, percentToClose: number, currentPrice: number, isBacktest: boolean, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, timestamp: number) => Promise<void>;
+    }, timestamp: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number) => Promise<void>;
     /**
      * Logs a trailing-stop event when the stop-loss is adjusted.
      *
@@ -19613,12 +19781,18 @@ declare class StrategyReportService {
      * @param isBacktest - Whether this is a backtest or live trading event
      * @param context - Strategy context with strategyName, exchangeName, frameName
      * @param timestamp - Timestamp from StrategyCommitContract (execution context time)
+     * @param position - Trade direction: "long" or "short"
+     * @param priceOpen - Entry price for the position
+     * @param priceTakeProfit - Effective take profit price
+     * @param priceStopLoss - Effective stop loss price
+     * @param originalPriceTakeProfit - Original take profit before trailing
+     * @param originalPriceStopLoss - Original stop loss before trailing
      */
     trailingStop: (symbol: string, percentShift: number, currentPrice: number, isBacktest: boolean, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, timestamp: number) => Promise<void>;
+    }, timestamp: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number) => Promise<void>;
     /**
      * Logs a trailing-take event when the take-profit is adjusted.
      *
@@ -19628,12 +19802,18 @@ declare class StrategyReportService {
      * @param isBacktest - Whether this is a backtest or live trading event
      * @param context - Strategy context with strategyName, exchangeName, frameName
      * @param timestamp - Timestamp from StrategyCommitContract (execution context time)
+     * @param position - Trade direction: "long" or "short"
+     * @param priceOpen - Entry price for the position
+     * @param priceTakeProfit - Effective take profit price
+     * @param priceStopLoss - Effective stop loss price
+     * @param originalPriceTakeProfit - Original take profit before trailing
+     * @param originalPriceStopLoss - Original stop loss before trailing
      */
     trailingTake: (symbol: string, percentShift: number, currentPrice: number, isBacktest: boolean, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, timestamp: number) => Promise<void>;
+    }, timestamp: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number) => Promise<void>;
     /**
      * Logs a breakeven event when the stop-loss is moved to entry price.
      *
@@ -19642,12 +19822,18 @@ declare class StrategyReportService {
      * @param isBacktest - Whether this is a backtest or live trading event
      * @param context - Strategy context with strategyName, exchangeName, frameName
      * @param timestamp - Timestamp from StrategyCommitContract (execution context time)
+     * @param position - Trade direction: "long" or "short"
+     * @param priceOpen - Entry price for the position
+     * @param priceTakeProfit - Effective take profit price
+     * @param priceStopLoss - Effective stop loss price
+     * @param originalPriceTakeProfit - Original take profit before trailing
+     * @param originalPriceStopLoss - Original stop loss before trailing
      */
     breakeven: (symbol: string, currentPrice: number, isBacktest: boolean, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, timestamp: number) => Promise<void>;
+    }, timestamp: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number) => Promise<void>;
     /**
      * Initializes the service for event logging.
      *
