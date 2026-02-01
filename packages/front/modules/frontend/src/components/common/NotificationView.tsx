@@ -192,6 +192,36 @@ const getNotificationTitle = (item: NotificationModel): string => {
   }
 };
 
+const handleNotificationClick = (item: NotificationModel) => {
+  switch (item.type) {
+    case "risk.rejection":
+      ioc.layoutService.pickRisk(item.id);
+      break;
+    case "signal.opened":
+    case "signal.closed":
+    case "signal.scheduled":
+    case "signal.cancelled":
+      ioc.layoutService.pickSignalNotification(item.id);
+      break;
+    case "partial_profit.available":
+    case "partial_profit.commit":
+      ioc.layoutService.pickPartialProfit(item.id);
+      break;
+    case "partial_loss.available":
+    case "partial_loss.commit":
+      ioc.layoutService.pickPartialLoss(item.id);
+      break;
+    case "breakeven.available":
+    case "breakeven.commit":
+      ioc.layoutService.pickBreakeven(item.id);
+      break;
+    case "trailing_stop.commit":
+    case "trailing_take.commit":
+      ioc.layoutService.pickTrailing(item.id);
+      break;
+  }
+};
+
 export const NotificationView = () => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>();
   const { classes } = useStyles();
@@ -293,9 +323,7 @@ export const NotificationView = () => {
                         >
                           <ListItemButton
                             onClick={() => {
-                              if (item.type === "risk.rejection") {
-                                ioc.layoutService.pickRisk(item.id);
-                              }
+                              handleNotificationClick(item);
                               setAnchorEl(null);
                             }}
                           >
@@ -355,9 +383,7 @@ export const NotificationView = () => {
                         >
                           <ListItemButton
                             onClick={() => {
-                              if (item.type === "risk.rejection") {
-                                ioc.layoutService.pickRisk(item.id);
-                              }
+                              handleNotificationClick(item);
                               setAnchorEl(null);
                             }}
                           >

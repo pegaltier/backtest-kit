@@ -6,6 +6,11 @@ export class LayoutService {
 
     public readonly pickSignalSubject = new Subject<string>();
     public readonly pickRiskSubject = new Subject<string>();
+    public readonly pickSignalNotificationSubject = new Subject<string>();
+    public readonly pickPartialProfitSubject = new Subject<string>();
+    public readonly pickPartialLossSubject = new Subject<string>();
+    public readonly pickBreakevenSubject = new Subject<string>();
+    public readonly pickTrailingSubject = new Subject<string>();
 
     public readonly reloadOutletSubject = new Subject<void>();
 
@@ -95,7 +100,27 @@ export class LayoutService {
 
     pickRisk = async (notificationId: string) => {
         await this.pickRiskSubject.next(notificationId);
-    }
+    };
+
+    pickSignalNotification = async (notificationId: string) => {
+        await this.pickSignalNotificationSubject.next(notificationId);
+    };
+
+    pickPartialProfit = async (notificationId: string) => {
+        await this.pickPartialProfitSubject.next(notificationId);
+    };
+
+    pickPartialLoss = async (notificationId: string) => {
+        await this.pickPartialLossSubject.next(notificationId);
+    };
+
+    pickBreakeven = async (notificationId: string) => {
+        await this.pickBreakevenSubject.next(notificationId);
+    };
+
+    pickTrailing = async (notificationId: string) => {
+        await this.pickTrailingSubject.next(notificationId);
+    };
 }
 
 export default LayoutService;
