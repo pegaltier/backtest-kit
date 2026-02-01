@@ -1,5 +1,13 @@
 import { TypedField, FieldType, dayjs, CopyButton } from "react-declarative";
-import { Box } from "@mui/material";
+import { Box, Chip } from "@mui/material";
+
+const GREEN_COLOR = "#8BC34A";
+
+const getTypeLabel = (type: string): string => {
+    if (type === "partial_profit.available") return "Available";
+    if (type === "partial_profit.commit") return "Committed";
+    return type || "Unknown";
+};
 
 export const partial_profit_fields: TypedField[] = [
     {
@@ -8,8 +16,33 @@ export const partial_profit_fields: TypedField[] = [
         fieldBottomMargin: "1",
         fields: [
             {
+                type: FieldType.Box,
+                sx: { display: "grid", gridTemplateColumns: "auto 1fr auto" },
+                fields: [
+                    {
+                        type: FieldType.Typography,
+                        style: { color: GREEN_COLOR },
+                        typoVariant: "h6",
+                        placeholder: "Partial Profit",
+                    },
+                    {
+                        type: FieldType.Div,
+                    },
+                    {
+                        type: FieldType.Component,
+                        element: ({ type }) => (
+                            <Chip
+                                label={getTypeLabel(type)}
+                                sx={{ backgroundColor: GREEN_COLOR, color: "white" }}
+                                size="medium"
+                            />
+                        ),
+                    },
+                ],
+            },
+            {
                 type: FieldType.Typography,
-                style: { color: "#2196f3" },
+                style: { color: GREEN_COLOR },
                 typoVariant: "h6",
                 placeholder: "General Information",
             },
@@ -17,21 +50,6 @@ export const partial_profit_fields: TypedField[] = [
                 type: FieldType.Outline,
                 sx: { mb: 3 },
                 fields: [
-                    {
-                        type: FieldType.Text,
-                        outlined: false,
-                        desktopColumns: "4",
-                        tabletColumns: "4",
-                        phoneColumns: "12",
-                        name: "type",
-                        title: "Type",
-                        readonly: true,
-                        compute: (obj) => {
-                            if (obj.type === "partial_profit.available") return "Available";
-                            if (obj.type === "partial_profit.commit") return "Commit";
-                            return obj.type || "Not specified";
-                        },
-                    },
                     {
                         type: FieldType.Text,
                         outlined: false,
@@ -219,29 +237,6 @@ export const partial_profit_fields: TypedField[] = [
                                       "DD/MM/YYYY HH:mm:ss",
                                   )
                                 : "",
-                    },
-                ],
-            },
-            {
-                type: FieldType.Box,
-                sx: {
-                    display: "grid",
-                    gridTemplateColumns: "auto 1fr",
-                    gap: 1,
-                },
-                fields: [
-                    {
-                        type: FieldType.Component,
-                        isVisible: (obj) => !!obj.id,
-                        element: ({ id }) => (
-                            <CopyButton
-                                label={`ID: ${id}`}
-                                content={id}
-                            />
-                        ),
-                    },
-                    {
-                        type: FieldType.Div,
                     },
                 ],
             },

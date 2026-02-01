@@ -1,7 +1,13 @@
 import { TypedField, FieldType, dayjs, CopyButton } from "react-declarative";
-import { Box } from "@mui/material";
+import { Box, Chip } from "@mui/material";
 
 const CYAN_COLOR = "#00BCD4";
+
+const getTypeLabel = (type: string): string => {
+    if (type === "breakeven.available") return "Available";
+    if (type === "breakeven.commit") return "Committed";
+    return type || "Unknown";
+};
 
 export const breakeven_fields: TypedField[] = [
     {
@@ -9,6 +15,31 @@ export const breakeven_fields: TypedField[] = [
         transparentPaper: true,
         fieldBottomMargin: "1",
         fields: [
+            {
+                type: FieldType.Box,
+                sx: { display: "grid", gridTemplateColumns: "auto 1fr auto" },
+                fields: [
+                    {
+                        type: FieldType.Typography,
+                        style: { color: CYAN_COLOR },
+                        typoVariant: "h6",
+                        placeholder: "Breakeven",
+                    },
+                    {
+                        type: FieldType.Div,
+                    },
+                    {
+                        type: FieldType.Component,
+                        element: ({ type }) => (
+                            <Chip
+                                label={getTypeLabel(type)}
+                                sx={{ backgroundColor: CYAN_COLOR, color: "white" }}
+                                size="medium"
+                            />
+                        ),
+                    },
+                ],
+            },
             {
                 type: FieldType.Typography,
                 style: { color: CYAN_COLOR },
@@ -62,21 +93,6 @@ export const breakeven_fields: TypedField[] = [
                         title: "Mode",
                         readonly: true,
                         compute: (obj) => (obj.backtest ? "Backtest" : "Live"),
-                    },
-                    {
-                        type: FieldType.Text,
-                        outlined: false,
-                        desktopColumns: "4",
-                        tabletColumns: "4",
-                        phoneColumns: "12",
-                        name: "type",
-                        title: "Type",
-                        readonly: true,
-                        compute: (obj) => {
-                            if (obj.type === "breakeven.available") return "Available";
-                            if (obj.type === "breakeven.commit") return "Commit";
-                            return obj.type || "Not specified";
-                        },
                     },
                     {
                         type: FieldType.Text,
@@ -179,29 +195,6 @@ export const breakeven_fields: TypedField[] = [
                             obj.priceOpen != null
                                 ? `${obj.priceOpen.toFixed(6)}$`
                                 : "Not specified",
-                    },
-                ],
-            },
-            {
-                type: FieldType.Box,
-                sx: {
-                    display: "grid",
-                    gridTemplateColumns: "auto 1fr",
-                    gap: 1,
-                },
-                fields: [
-                    {
-                        type: FieldType.Component,
-                        isVisible: (obj) => !!obj.id,
-                        element: ({ id }) => (
-                            <CopyButton
-                                label={`ID: ${id}`}
-                                content={id}
-                            />
-                        ),
-                    },
-                    {
-                        type: FieldType.Div,
                     },
                 ],
             },

@@ -3,12 +3,43 @@ import { Box, Chip } from "@mui/material";
 
 const TRAILING_PURPLE = "#673AB7";
 
+const getTypeLabel = (type: string): string => {
+    if (type === "trailing_stop.commit") return "Trailing Stop";
+    if (type === "trailing_take.commit") return "Trailing Take";
+    return type || "Unknown";
+};
+
 export const trailing_fields: TypedField[] = [
     {
         type: FieldType.Paper,
         transparentPaper: true,
         fieldBottomMargin: "1",
         fields: [
+            {
+                type: FieldType.Box,
+                sx: { display: "grid", gridTemplateColumns: "auto 1fr auto" },
+                fields: [
+                    {
+                        type: FieldType.Typography,
+                        style: { color: TRAILING_PURPLE },
+                        typoVariant: "h6",
+                        placeholder: "Trailing",
+                    },
+                    {
+                        type: FieldType.Div,
+                    },
+                    {
+                        type: FieldType.Component,
+                        element: ({ type }) => (
+                            <Chip
+                                label={getTypeLabel(type)}
+                                sx={{ backgroundColor: TRAILING_PURPLE, color: "white" }}
+                                size="medium"
+                            />
+                        ),
+                    },
+                ],
+            },
             {
                 type: FieldType.Typography,
                 style: { color: TRAILING_PURPLE },
@@ -77,24 +108,6 @@ export const trailing_fields: TypedField[] = [
                                 ? `${obj.currentPrice.toFixed(6)}$`
                                 : "Not specified",
                     },
-                    {
-                        type: FieldType.Component,
-                        desktopColumns: "4",
-                        tabletColumns: "4",
-                        phoneColumns: "12",
-                        element: ({ type }) => (
-                            <Box sx={{ display: "flex", alignItems: "center", height: "100%", pt: 1 }}>
-                                <Chip
-                                    label={type === "trailing_stop.commit" ? "Trailing Stop" : "Trailing Take"}
-                                    sx={{
-                                        backgroundColor: TRAILING_PURPLE,
-                                        color: "white",
-                                        fontWeight: "bold",
-                                    }}
-                                />
-                            </Box>
-                        ),
-                    },
                 ],
             },
             {
@@ -108,30 +121,17 @@ export const trailing_fields: TypedField[] = [
                 sx: { mb: 3 },
                 fields: [
                     {
-                        type: FieldType.Component,
+                        type: FieldType.Text,
+                        name: "percentShift",
+                        title: "Percent shift",
                         desktopColumns: "6",
                         tabletColumns: "6",
                         phoneColumns: "12",
-                        element: ({ percentShift, type }) => {
+                        compute: ({ percentShift, type }) => {
                             const isPositive = percentShift >= 0;
-                            const shiftColor = isPositive ? "#4caf50" : "#f44336";
                             const arrow = isPositive ? "+" : "";
                             const label = type === "trailing_stop.commit" ? "SL Shift" : "TP Shift";
-                            return (
-                                <Box sx={{ p: 2 }}>
-                                    <Box sx={{ color: "text.secondary", fontSize: "0.875rem", mb: 0.5 }}>
-                                        {label}
-                                    </Box>
-                                    <Box sx={{ color: shiftColor, fontSize: "1.5rem", fontWeight: "bold" }}>
-                                        {arrow}{percentShift?.toFixed(2)}%
-                                    </Box>
-                                    <Box sx={{ color: "text.secondary", fontSize: "0.75rem", mt: 0.5 }}>
-                                        {type === "trailing_stop.commit"
-                                            ? "Stop Loss level shifted"
-                                            : "Take Profit level shifted"}
-                                    </Box>
-                                </Box>
-                            );
+                            return `${label} ${arrow}${percentShift?.toFixed(2)}%`;
                         },
                     },
                     {
@@ -191,29 +191,6 @@ export const trailing_fields: TypedField[] = [
                                       "DD/MM/YYYY HH:mm:ss",
                                   )
                                 : "",
-                    },
-                ],
-            },
-            {
-                type: FieldType.Box,
-                sx: {
-                    display: "grid",
-                    gridTemplateColumns: "auto 1fr",
-                    gap: 1,
-                },
-                fields: [
-                    {
-                        type: FieldType.Component,
-                        isVisible: (obj) => !!obj.id,
-                        element: ({ id }) => (
-                            <CopyButton
-                                label={`Trailing ID: ${id}`}
-                                content={id}
-                            />
-                        ),
-                    },
-                    {
-                        type: FieldType.Div,
                     },
                 ],
             },

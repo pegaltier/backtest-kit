@@ -1,6 +1,8 @@
 import { TypedField, FieldType, dayjs, CopyButton } from "react-declarative";
 import { Box, Chip } from "@mui/material";
 
+const RED_COLOR = "#f44336";
+
 export const partial_loss_available_fields: TypedField[] = [
     {
         type: FieldType.Paper,
@@ -8,8 +10,33 @@ export const partial_loss_available_fields: TypedField[] = [
         fieldBottomMargin: "1",
         fields: [
             {
+                type: FieldType.Box,
+                sx: { display: "grid", gridTemplateColumns: "auto 1fr auto" },
+                fields: [
+                    {
+                        type: FieldType.Typography,
+                        style: { color: RED_COLOR },
+                        typoVariant: "h6",
+                        placeholder: "Partial Loss",
+                    },
+                    {
+                        type: FieldType.Div,
+                    },
+                    {
+                        type: FieldType.Component,
+                        element: () => (
+                            <Chip
+                                label="Available"
+                                sx={{ backgroundColor: RED_COLOR, color: "white" }}
+                                size="medium"
+                            />
+                        ),
+                    },
+                ],
+            },
+            {
                 type: FieldType.Typography,
-                style: { color: "#f44336" },
+                style: { color: RED_COLOR },
                 typoVariant: "h6",
                 placeholder: "General Information",
             },
@@ -62,38 +89,22 @@ export const partial_loss_available_fields: TypedField[] = [
                         compute: (obj) => (obj.backtest ? "Backtest" : "Live"),
                     },
                     {
-                        type: FieldType.Component,
+                        type: FieldType.Text,
+                        name: "level",
                         desktopColumns: "4",
                         tabletColumns: "4",
                         phoneColumns: "12",
-                        name: "level",
-                        element: ({ level }) => (
-                            <Box sx={{ pt: 1 }}>
-                                <Chip
-                                    label={`Loss Level: -${level}%`}
-                                    color="error"
-                                    size="small"
-                                    sx={{ fontWeight: "bold" }}
-                                />
-                            </Box>
-                        ),
+                        title: "Level",
+                        compute: ({ level }) => `Loss Level: -${level}%`,
                     },
                     {
-                        type: FieldType.Component,
+                        type: FieldType.Text,
                         desktopColumns: "4",
                         tabletColumns: "4",
                         phoneColumns: "12",
                         name: "position",
-                        element: ({ position }) => (
-                            <Box sx={{ pt: 1 }}>
-                                <Chip
-                                    label={position === "long" ? "LONG" : "SHORT"}
-                                    color={position === "long" ? "primary" : "warning"}
-                                    size="small"
-                                    sx={{ fontWeight: "bold" }}
-                                />
-                            </Box>
-                        ),
+                        title: "Position",
+                        compute: ({ position }) => position === "long" ? "LONG" : "SHORT",
                     },
                 ],
             },
@@ -215,8 +226,33 @@ export const partial_loss_commit_fields: TypedField[] = [
         fieldBottomMargin: "1",
         fields: [
             {
+                type: FieldType.Box,
+                sx: { display: "grid", gridTemplateColumns: "auto 1fr auto" },
+                fields: [
+                    {
+                        type: FieldType.Typography,
+                        style: { color: RED_COLOR },
+                        typoVariant: "h6",
+                        placeholder: "Partial Loss",
+                    },
+                    {
+                        type: FieldType.Div,
+                    },
+                    {
+                        type: FieldType.Component,
+                        element: () => (
+                            <Chip
+                                label="Committed"
+                                sx={{ backgroundColor: RED_COLOR, color: "white" }}
+                                size="medium"
+                            />
+                        ),
+                    },
+                ],
+            },
+            {
                 type: FieldType.Typography,
-                style: { color: "#f44336" },
+                style: { color: RED_COLOR },
                 typoVariant: "h6",
                 placeholder: "General Information",
             },
@@ -269,21 +305,12 @@ export const partial_loss_commit_fields: TypedField[] = [
                         compute: (obj) => (obj.backtest ? "Backtest" : "Live"),
                     },
                     {
-                        type: FieldType.Component,
+                        type: FieldType.Text,
                         desktopColumns: "4",
                         tabletColumns: "4",
                         phoneColumns: "12",
                         name: "percentToClose",
-                        element: ({ percentToClose }) => (
-                            <Box sx={{ pt: 1 }}>
-                                <Chip
-                                    label={`Closed: ${percentToClose}%`}
-                                    color="error"
-                                    size="small"
-                                    sx={{ fontWeight: "bold" }}
-                                />
-                            </Box>
-                        ),
+                        compute: ({ percentToClose }) => `Closed: ${percentToClose}%`,
                     },
                 ],
             },

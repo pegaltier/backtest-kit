@@ -55,7 +55,7 @@ export const signal_notification_fields: TypedField[] = [
             // Notification Type Header
             {
                 type: FieldType.Box,
-                sx: { mb: 2, display: "flex", alignItems: "center", gap: 2 },
+                sx: { display: "grid", gridTemplateColumns: "auto 1fr auto" },
                 fields: [
                     {
                         type: FieldType.Typography,
@@ -64,12 +64,15 @@ export const signal_notification_fields: TypedField[] = [
                         placeholder: "Signal Notification",
                     },
                     {
+                        type: FieldType.Div,
+                    },
+                    {
                         type: FieldType.Component,
                         element: ({ type }) => (
                             <Chip
                                 label={getNotificationTypeLabel(type)}
                                 color={getNotificationTypeColor(type)}
-                                size="small"
+                                size="medium"
                             />
                         ),
                     },
@@ -431,29 +434,6 @@ export const signal_notification_fields: TypedField[] = [
                             <CopyButton
                                 label={`Signal ID: ${signalId}`}
                                 content={signalId}
-                            />
-                        ),
-                    },
-                    {
-                        type: FieldType.Div,
-                    },
-                ],
-            },
-            {
-                type: FieldType.Box,
-                sx: {
-                    display: "grid",
-                    gridTemplateColumns: "auto 1fr",
-                    gap: 1,
-                },
-                fields: [
-                    {
-                        type: FieldType.Component,
-                        isVisible: (obj) => !!obj.id,
-                        element: ({ id }) => (
-                            <CopyButton
-                                label={`Notification ID: ${id}`}
-                                content={id}
                             />
                         ),
                     },
