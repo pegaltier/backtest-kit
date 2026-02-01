@@ -14,13 +14,11 @@ export const Candle15mView = ({ data, formState }: IOutletModalProps) => {
         createdAt,
     } = useMemo(() => {
         const {
-            pendingSignal: {
-                position,
-                priceOpen,
-                priceTakeProfit,
-                priceStopLoss,
-                minuteEstimatedTime,
-            },
+            position,
+            priceOpen,
+            priceTakeProfit,
+            priceStopLoss,
+            minuteEstimatedTime,
             createdAt,
         } = formState.data.main as RiskRejectionNotification;
         return {

@@ -1,7 +1,6 @@
 import { StrategyName } from "../interfaces/Strategy.interface";
 import { PartialLevel } from "../interfaces/Partial.interface";
 import { ExchangeName } from "../interfaces/Exchange.interface";
-import { ISignalDto } from "../interfaces/Strategy.interface";
 
 /**
  * Signal opened notification.
@@ -450,8 +449,20 @@ export interface RiskRejectionNotification {
   activePositionCount: number;
   /** Current market price when rejection occurred */
   currentPrice: number;
-  /** The signal that was rejected */
-  pendingSignal: ISignalDto;
+  /** Unique signal identifier from pending signal (may be undefined if not provided) */
+  signalId: string | undefined;
+  /** Trade direction: "long" (buy) or "short" (sell) */
+  position: "long" | "short";
+  /** Entry price for the position (may be undefined if not provided) */
+  priceOpen: number | undefined;
+  /** Take profit target price */
+  priceTakeProfit: number;
+  /** Stop loss exit price */
+  priceStopLoss: number;
+  /** Expected duration in minutes before time_expired */
+  minuteEstimatedTime: number;
+  /** Optional human-readable description of signal reason */
+  signalNote?: string;
   /** Unix timestamp in milliseconds when the notification was created */
   createdAt: number;
 }

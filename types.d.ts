@@ -559,7 +559,7 @@ interface IRiskCheckArgs {
     /** Trading pair symbol (e.g., "BTCUSDT") */
     symbol: string;
     /** Pending signal to apply */
-    pendingSignal: IPublicSignalRow;
+    currentSignal: IPublicSignalRow;
     /** Strategy name requesting to open a position */
     strategyName: StrategyName;
     /** Exchange name */
@@ -612,8 +612,8 @@ interface IRiskCallbacks {
  * Extends IRiskCheckArgs with portfolio state data.
  */
 interface IRiskValidationPayload extends IRiskCheckArgs {
-    /** Pending signal to apply (IRiskSignalRow is calculated internally so priceOpen always exist) */
-    pendingSignal: IRiskSignalRow;
+    /** Current signal being validated (IRiskSignalRow is calculated internally so priceOpen always exist) */
+    currentSignal: IRiskSignalRow;
     /** Number of currently active positions across all strategies */
     activePositionCount: number;
     /** List of currently active positions across all strategies */
@@ -2563,7 +2563,7 @@ interface RiskContract {
      * Pending signal to apply.
      * Contains signal details (position, priceOpen, priceTakeProfit, priceStopLoss, etc).
      */
-    pendingSignal: ISignalDto;
+    currentSignal: ISignalDto;
     /**
      * Strategy name requesting to open a position.
      * Identifies which strategy attempted to create the signal.
@@ -7040,8 +7040,20 @@ interface RiskRejectionNotification {
     activePositionCount: number;
     /** Current market price when rejection occurred */
     currentPrice: number;
-    /** The signal that was rejected */
-    pendingSignal: ISignalDto;
+    /** Unique signal identifier from pending signal (may be undefined if not provided) */
+    signalId: string | undefined;
+    /** Trade direction: "long" (buy) or "short" (sell) */
+    position: "long" | "short";
+    /** Entry price for the position (may be undefined if not provided) */
+    priceOpen: number | undefined;
+    /** Take profit target price */
+    priceTakeProfit: number;
+    /** Stop loss exit price */
+    priceStopLoss: number;
+    /** Expected duration in minutes before time_expired */
+    minuteEstimatedTime: number;
+    /** Optional human-readable description of signal reason */
+    signalNote?: string;
     /** Unix timestamp in milliseconds when the notification was created */
     createdAt: number;
 }
@@ -7547,7 +7559,7 @@ interface RiskEvent {
     /** Trading pair symbol */
     symbol: string;
     /** Pending signal details */
-    pendingSignal: IRiskSignalRow;
+    currentSignal: IRiskSignalRow;
     /** Strategy name */
     strategyName: StrategyName;
     /** Exchange name */

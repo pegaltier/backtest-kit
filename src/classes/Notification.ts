@@ -364,7 +364,13 @@ export class NotificationInstance {
       rejectionId: data.rejectionId,
       activePositionCount: data.activePositionCount,
       currentPrice: data.currentPrice,
-      pendingSignal: data.pendingSignal,
+      signalId: data.currentSignal.id,
+      position: data.currentSignal.position,
+      priceOpen: data.currentSignal.priceOpen,
+      priceTakeProfit: data.currentSignal.priceTakeProfit,
+      priceStopLoss: data.currentSignal.priceStopLoss,
+      minuteEstimatedTime: data.currentSignal.minuteEstimatedTime,
+      signalNote: data.currentSignal.note,
       createdAt: data.timestamp,
     });
   };

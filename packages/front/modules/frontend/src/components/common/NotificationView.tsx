@@ -180,7 +180,7 @@ const getNotificationTitle = (item: NotificationModel): string => {
     case "trailing_take.commit":
       return `${t("Trailing take")} ${item.symbol}`;
     case "risk.rejection":
-      return `${t("Rejected")} ${item.symbol}`;
+      return `${t("Rejected")} ${item.position.toUpperCase()} ${item.symbol}`;
     case "error.info":
       return `${t("Error")}: ${item.message}`;
     case "error.validation":
