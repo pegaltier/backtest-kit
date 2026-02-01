@@ -38,6 +38,12 @@ export interface PartialProfitCommit extends SignalCommitBase {
   action: "partial-profit";
   percentToClose: number;
   currentPrice: number;
+  position: "long" | "short";
+  priceOpen: number;
+  priceTakeProfit: number;
+  priceStopLoss: number;
+  originalPriceTakeProfit: number;
+  originalPriceStopLoss: number;
 }
 
 /**
@@ -47,6 +53,12 @@ export interface PartialLossCommit extends SignalCommitBase {
   action: "partial-loss";
   percentToClose: number;
   currentPrice: number;
+  position: "long" | "short";
+  priceOpen: number;
+  priceTakeProfit: number;
+  priceStopLoss: number;
+  originalPriceTakeProfit: number;
+  originalPriceStopLoss: number;
 }
 
 /**
@@ -56,6 +68,12 @@ export interface TrailingStopCommit extends SignalCommitBase {
   action: "trailing-stop";
   percentShift: number;
   currentPrice: number;
+  position: "long" | "short";
+  priceOpen: number;
+  priceTakeProfit: number;
+  priceStopLoss: number;
+  originalPriceTakeProfit: number;
+  originalPriceStopLoss: number;
 }
 
 /**
@@ -65,6 +83,12 @@ export interface TrailingTakeCommit extends SignalCommitBase {
   action: "trailing-take";
   percentShift: number;
   currentPrice: number;
+  position: "long" | "short";
+  priceOpen: number;
+  priceTakeProfit: number;
+  priceStopLoss: number;
+  originalPriceTakeProfit: number;
+  originalPriceStopLoss: number;
 }
 
 /**
@@ -73,6 +97,12 @@ export interface TrailingTakeCommit extends SignalCommitBase {
 export interface BreakevenCommit extends SignalCommitBase {
   action: "breakeven";
   currentPrice: number;
+  position: "long" | "short";
+  priceOpen: number;
+  priceTakeProfit: number;
+  priceStopLoss: number;
+  originalPriceTakeProfit: number;
+  originalPriceStopLoss: number;
 }
 
 /**

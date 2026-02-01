@@ -106,6 +106,13 @@ const PROCESS_COMMIT_QUEUE_FN = async (
     self._commitQueue = [];
   }
 
+  if (!self._pendingSignal) {
+    return;
+  }
+
+  // Get public signal data for commit events (contains effective and original SL/TP)
+  const publicSignal = TO_PUBLIC_SIGNAL(self._pendingSignal);
+
   for (const commit of queue) {
     if (commit.action === "partial-profit") {
       await CALL_COMMIT_FN(self, {
@@ -118,6 +125,12 @@ const PROCESS_COMMIT_QUEUE_FN = async (
         percentToClose: commit.percentToClose,
         currentPrice: commit.currentPrice,
         timestamp,
+        position: publicSignal.position,
+        priceOpen: publicSignal.priceOpen,
+        priceTakeProfit: publicSignal.priceTakeProfit,
+        priceStopLoss: publicSignal.priceStopLoss,
+        originalPriceTakeProfit: publicSignal.originalPriceTakeProfit,
+        originalPriceStopLoss: publicSignal.originalPriceStopLoss,
       });
       continue
     }
@@ -132,6 +145,12 @@ const PROCESS_COMMIT_QUEUE_FN = async (
         percentToClose: commit.percentToClose,
         currentPrice: commit.currentPrice,
         timestamp,
+        position: publicSignal.position,
+        priceOpen: publicSignal.priceOpen,
+        priceTakeProfit: publicSignal.priceTakeProfit,
+        priceStopLoss: publicSignal.priceStopLoss,
+        originalPriceTakeProfit: publicSignal.originalPriceTakeProfit,
+        originalPriceStopLoss: publicSignal.originalPriceStopLoss,
       });
       continue
     }
@@ -145,6 +164,12 @@ const PROCESS_COMMIT_QUEUE_FN = async (
         backtest: commit.backtest,
         currentPrice: commit.currentPrice,
         timestamp,
+        position: publicSignal.position,
+        priceOpen: publicSignal.priceOpen,
+        priceTakeProfit: publicSignal.priceTakeProfit,
+        priceStopLoss: publicSignal.priceStopLoss,
+        originalPriceTakeProfit: publicSignal.originalPriceTakeProfit,
+        originalPriceStopLoss: publicSignal.originalPriceStopLoss,
       });
       continue
     }
@@ -159,6 +184,12 @@ const PROCESS_COMMIT_QUEUE_FN = async (
         percentShift: commit.percentShift,
         currentPrice: commit.currentPrice,
         timestamp,
+        position: publicSignal.position,
+        priceOpen: publicSignal.priceOpen,
+        priceTakeProfit: publicSignal.priceTakeProfit,
+        priceStopLoss: publicSignal.priceStopLoss,
+        originalPriceTakeProfit: publicSignal.originalPriceTakeProfit,
+        originalPriceStopLoss: publicSignal.originalPriceStopLoss,
       });
       continue;
     }
@@ -173,6 +204,12 @@ const PROCESS_COMMIT_QUEUE_FN = async (
         percentShift: commit.percentShift,
         currentPrice: commit.currentPrice,
         timestamp,
+        position: publicSignal.position,
+        priceOpen: publicSignal.priceOpen,
+        priceTakeProfit: publicSignal.priceTakeProfit,
+        priceStopLoss: publicSignal.priceStopLoss,
+        originalPriceTakeProfit: publicSignal.originalPriceTakeProfit,
+        originalPriceStopLoss: publicSignal.originalPriceStopLoss,
       });
       continue;
     }
