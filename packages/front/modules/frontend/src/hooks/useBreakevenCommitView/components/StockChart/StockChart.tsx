@@ -22,8 +22,8 @@ interface IChartProps {
   width: number;
   items: ICandleData[];
   position: "long" | "short";
-  createdAt: string;
-  updatedAt: string;
+  pendingAt: string;
+  closedAt: string;
   priceOpen: number;
   priceStopLoss: number;
   priceTakeProfit: number;
@@ -133,8 +133,8 @@ export const StockChart = ({
   width,
   items,
   position,
-  createdAt,
-  updatedAt,
+  pendingAt,
+  closedAt,
   priceOpen,
   priceStopLoss,
   priceTakeProfit,
@@ -311,7 +311,8 @@ export const StockChart = ({
 
     const markers: SeriesMarker<Time>[] = [];
 
-    const entryDate = dayjs(createdAt);
+    // Entry marker (pendingAt)
+    const entryDate = dayjs(pendingAt);
     if (entryDate.isValid()) {
       let entryTime: Time;
       if (source === "1m") {
@@ -335,8 +336,9 @@ export const StockChart = ({
       });
     }
 
+    // Exit marker (closedAt) - only for closed positions
     if (status === "closed") {
-      const exitDate = dayjs(updatedAt);
+      const exitDate = dayjs(closedAt);
       if (exitDate.isValid()) {
         let exitTime: Time;
         if (source === "1m") {
@@ -386,7 +388,7 @@ export const StockChart = ({
     return () => {
       chart.remove();
     };
-  }, [source, height, width, items, position, createdAt, updatedAt, priceOpen, priceStopLoss, priceTakeProfit, originalPriceStopLoss, originalPriceTakeProfit, status]);
+  }, [source, height, width, items, position, pendingAt, closedAt, priceOpen, priceStopLoss, priceTakeProfit, originalPriceStopLoss, originalPriceTakeProfit, status]);
 
   return (
     <div ref={elementRef} className={classes.root}>

@@ -7,18 +7,18 @@ import { RiskRejectionNotification } from "backtest-kit";
 export const Candle1mView = ({ data, formState }: IOutletModalProps) => {
     const {
         position,
-        createdAt,
-        updatedAt,
+        pendingAt,
+        closedAt,
         priceOpen,
         priceStopLoss,
         priceTakeProfit,
     } = useMemo(() => {
         const notification = formState.data.main as RiskRejectionNotification;
-        const createdAtDate = new Date(notification.createdAt).toISOString();
+        const pendingAtDate = new Date(notification.createdAt).toISOString();
         return {
             position: notification.position,
-            createdAt: createdAtDate,
-            updatedAt: createdAtDate,
+            pendingAt: pendingAtDate,
+            closedAt: pendingAtDate,
             priceOpen: notification.priceOpen ?? notification.currentPrice,
             priceStopLoss: notification.priceStopLoss,
             priceTakeProfit: notification.priceTakeProfit,
@@ -31,8 +31,8 @@ export const Candle1mView = ({ data, formState }: IOutletModalProps) => {
                 {({ height, width }) => (
                     <StockChart
                         items={data}
-                        createdAt={createdAt}
-                        updatedAt={updatedAt}
+                        pendingAt={pendingAt}
+                        closedAt={closedAt}
                         position={position}
                         priceOpen={priceOpen}
                         priceStopLoss={priceStopLoss}

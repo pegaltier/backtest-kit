@@ -9,8 +9,8 @@ const arr = [];
 export const Candle1mView = ({ data, formState }: IOutletModalProps) => {
     const {
         position,
-        createdAt,
-        updatedAt,
+        pendingAt,
+        closedAt,
         status,
         priceOpen,
         priceTakeProfit,
@@ -25,16 +25,14 @@ export const Candle1mView = ({ data, formState }: IOutletModalProps) => {
             priceTakeProfit,
             priceStopLoss,
             pendingAt,
-            scheduledAt,
+            createdAt,
             originalPriceStopLoss,
             originalPriceTakeProfit,
-            createdAt = pendingAt || scheduledAt,
-            updatedAt,
         } = formState.data.main as IStorageSignalRow;
         return {
             position,
-            createdAt: new Date(createdAt).toISOString(),
-            updatedAt: new Date(updatedAt).toISOString(),
+            pendingAt: new Date(pendingAt).toISOString(),
+            closedAt: new Date(createdAt).toISOString(),
             priceOpen,
             priceTakeProfit,
             priceStopLoss,
@@ -50,8 +48,8 @@ export const Candle1mView = ({ data, formState }: IOutletModalProps) => {
                 {({ height, width }) => (
                     <StockChart
                         items={data}
-                        createdAt={createdAt}
-                        updatedAt={updatedAt}
+                        pendingAt={pendingAt}
+                        closedAt={closedAt}
                         position={position}
                         priceOpen={priceOpen}
                         priceTakeProfit={priceTakeProfit}

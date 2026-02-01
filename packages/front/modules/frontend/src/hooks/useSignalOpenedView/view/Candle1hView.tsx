@@ -7,18 +7,18 @@ import { SignalOpenedNotification } from "backtest-kit";
 export const Candle1hView = ({ data, formState }: IOutletModalProps) => {
     const {
         position,
-        createdAt,
-        updatedAt,
+        pendingAt,
+        closedAt,
         priceOpen,
         priceStopLoss,
         priceTakeProfit,
     } = useMemo(() => {
         const notification = formState.data.main as SignalOpenedNotification;
-        const createdAtDate = new Date(notification.createdAt).toISOString();
+        const pendingAtDate = new Date(notification.pendingAt).toISOString();
         return {
             position: notification.position,
-            createdAt: createdAtDate,
-            updatedAt: createdAtDate,
+            pendingAt: pendingAtDate,
+            closedAt: pendingAtDate,
             priceOpen: notification.priceOpen,
             priceStopLoss: notification.priceStopLoss,
             priceTakeProfit: notification.priceTakeProfit,
@@ -31,8 +31,8 @@ export const Candle1hView = ({ data, formState }: IOutletModalProps) => {
                 {({ height, width }) => (
                     <StockChart
                         items={data}
-                        createdAt={createdAt}
-                        updatedAt={updatedAt}
+                        pendingAt={pendingAt}
+                        closedAt={closedAt}
                         position={position}
                         priceOpen={priceOpen}
                         priceStopLoss={priceStopLoss}

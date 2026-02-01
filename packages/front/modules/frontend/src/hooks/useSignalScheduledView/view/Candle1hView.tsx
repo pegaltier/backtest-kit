@@ -7,8 +7,8 @@ import { SignalScheduledNotification } from "backtest-kit";
 export const Candle1hView = ({ data, formState }: IOutletModalProps) => {
     const {
         position,
-        createdAt,
-        updatedAt,
+        pendingAt,
+        closedAt,
         priceOpen,
         priceStopLoss,
         priceTakeProfit,
@@ -17,8 +17,8 @@ export const Candle1hView = ({ data, formState }: IOutletModalProps) => {
         const scheduledAtDate = new Date(notification.scheduledAt).toISOString();
         return {
             position: notification.position,
-            createdAt: scheduledAtDate,
-            updatedAt: new Date(notification.createdAt).toISOString(),
+            pendingAt: scheduledAtDate,
+            closedAt: new Date(notification.pendingAt).toISOString(),
             priceOpen: notification.priceOpen,
             priceStopLoss: notification.priceOpen,
             priceTakeProfit: notification.priceOpen,
@@ -31,8 +31,8 @@ export const Candle1hView = ({ data, formState }: IOutletModalProps) => {
                 {({ height, width }) => (
                     <StockChart
                         items={data}
-                        createdAt={createdAt}
-                        updatedAt={updatedAt}
+                        pendingAt={pendingAt}
+                        closedAt={closedAt}
                         position={position}
                         priceOpen={priceOpen}
                         priceStopLoss={priceStopLoss}

@@ -7,8 +7,8 @@ import { PartialProfitAvailableNotification } from "backtest-kit";
 export const Candle1mView = ({ data, formState }: IOutletModalProps) => {
     const {
         position,
-        createdAt,
-        updatedAt,
+        pendingAt,
+        closedAt,
         priceOpen,
         priceStopLoss,
         priceTakeProfit,
@@ -18,8 +18,8 @@ export const Candle1mView = ({ data, formState }: IOutletModalProps) => {
         const notification = formState.data.main as PartialProfitAvailableNotification;
         return {
             position: notification.position,
-            createdAt: new Date(notification.pendingAt).toISOString(),
-            updatedAt: new Date(notification.createdAt).toISOString(),
+            pendingAt: new Date(notification.pendingAt).toISOString(),
+            closedAt: new Date(notification.pendingAt).toISOString(),
             priceOpen: notification.priceOpen,
             priceStopLoss: notification.priceStopLoss,
             priceTakeProfit: notification.priceTakeProfit,
@@ -34,8 +34,8 @@ export const Candle1mView = ({ data, formState }: IOutletModalProps) => {
                 {({ height, width }) => (
                     <StockChart
                         items={data}
-                        createdAt={createdAt}
-                        updatedAt={updatedAt}
+                        pendingAt={pendingAt}
+                        closedAt={closedAt}
                         position={position}
                         priceOpen={priceOpen}
                         priceStopLoss={priceStopLoss}
