@@ -16,7 +16,7 @@ export const Candle1hView = ({ data, formState }: IOutletModalProps) => {
         const notification = formState.data.main as SignalClosedNotification;
         return {
             position: notification.position,
-            pendingAt: new Date(notification.pendingAt).toISOString(),
+            pendingAt: new Date(notification.pendingAt || notification.scheduledAt).toISOString(),
             closedAt: new Date(notification.createdAt).toISOString(),
             priceOpen: notification.priceOpen,
             priceStopLoss: notification.priceClose,

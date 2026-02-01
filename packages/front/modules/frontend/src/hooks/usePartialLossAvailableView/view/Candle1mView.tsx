@@ -18,8 +18,8 @@ export const Candle1mView = ({ data, formState }: IOutletModalProps) => {
         const notification = formState.data.main as PartialLossAvailableNotification;
         return {
             position: notification.position,
-            pendingAt: new Date(notification.pendingAt).toISOString(),
-            closedAt: new Date(notification.pendingAt).toISOString(),
+            pendingAt: new Date(notification.pendingAt || notification.scheduledAt).toISOString(),
+            closedAt: new Date(notification.pendingAt || notification.scheduledAt).toISOString(),
             priceOpen: notification.priceOpen,
             priceStopLoss: notification.priceStopLoss,
             priceTakeProfit: notification.priceTakeProfit,
