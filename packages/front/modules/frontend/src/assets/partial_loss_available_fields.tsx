@@ -1,7 +1,4 @@
 import { TypedField, FieldType, dayjs, CopyButton } from "react-declarative";
-import { Chip } from "@mui/material";
-
-const RED_COLOR = "#f44336";
 
 export const partial_loss_available_fields: TypedField[] = [
     {
@@ -11,7 +8,6 @@ export const partial_loss_available_fields: TypedField[] = [
         fields: [
             {
                 type: FieldType.Typography,
-                style: { color: RED_COLOR },
                 typoVariant: "h6",
                 placeholder: "General Information",
             },
@@ -85,7 +81,6 @@ export const partial_loss_available_fields: TypedField[] = [
             },
             {
                 type: FieldType.Typography,
-                style: { color: RED_COLOR },
                 typoVariant: "h6",
                 placeholder: "Price Information",
             },
@@ -125,7 +120,6 @@ export const partial_loss_available_fields: TypedField[] = [
             },
             {
                 type: FieldType.Typography,
-                style: { color: RED_COLOR },
                 typoVariant: "h6",
                 placeholder: "Timestamps",
             },

@@ -1,7 +1,4 @@
 import { TypedField, FieldType, dayjs, CopyButton } from "react-declarative";
-import { Chip } from "@mui/material";
-
-const GREEN_COLOR = "#8BC34A";
 
 export const partial_profit_commit_fields: TypedField[] = [
     {
@@ -11,7 +8,6 @@ export const partial_profit_commit_fields: TypedField[] = [
         fields: [
             {
                 type: FieldType.Typography,
-                style: { color: GREEN_COLOR },
                 typoVariant: "h6",
                 placeholder: "General Information",
             },
@@ -81,7 +77,6 @@ export const partial_profit_commit_fields: TypedField[] = [
             },
             {
                 type: FieldType.Typography,
-                style: { color: GREEN_COLOR },
                 typoVariant: "h6",
                 placeholder: "Commit Details",
             },
@@ -107,7 +102,6 @@ export const partial_profit_commit_fields: TypedField[] = [
             },
             {
                 type: FieldType.Typography,
-                style: { color: GREEN_COLOR },
                 typoVariant: "h6",
                 placeholder: "Timestamps",
             },

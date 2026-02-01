@@ -1,7 +1,4 @@
 import { TypedField, FieldType, dayjs, CopyButton } from "react-declarative";
-import { Chip } from "@mui/material";
-
-const SIGNAL_BLUE = "#2196f3";
 
 export const signal_scheduled_fields: TypedField[] = [
     {
@@ -11,7 +8,6 @@ export const signal_scheduled_fields: TypedField[] = [
         fields: [
             {
                 type: FieldType.Typography,
-                style: { color: SIGNAL_BLUE },
                 typoVariant: "h6",
                 placeholder: "General Information",
             },
@@ -82,8 +78,7 @@ export const signal_scheduled_fields: TypedField[] = [
             },
             {
                 type: FieldType.Typography,
-                style: { color: SIGNAL_BLUE },
-                typoVariant: "h6",
+                                typoVariant: "h6",
                 placeholder: "Timestamps",
             },
             {
@@ -137,8 +132,7 @@ export const signal_scheduled_fields: TypedField[] = [
             },
             {
                 type: FieldType.Typography,
-                style: { color: SIGNAL_BLUE },
-                typoVariant: "h6",
+                                typoVariant: "h6",
                 placeholder: "Price Levels",
             },
             {

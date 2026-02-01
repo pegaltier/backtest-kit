@@ -1,7 +1,4 @@
 import { TypedField, FieldType, dayjs, CopyButton } from "react-declarative";
-import { Chip } from "@mui/material";
-
-const SIGNAL_BLUE = "#2196f3";
 
 const formatDuration = (durationMs: number): string => {
     if (durationMs == null) return "N/A";
@@ -26,8 +23,7 @@ export const signal_closed_fields: TypedField[] = [
         fields: [
             {
                 type: FieldType.Typography,
-                style: { color: SIGNAL_BLUE },
-                typoVariant: "h6",
+                                typoVariant: "h6",
                 placeholder: "General Information",
             },
             {
@@ -97,8 +93,7 @@ export const signal_closed_fields: TypedField[] = [
             },
             {
                 type: FieldType.Typography,
-                style: { color: SIGNAL_BLUE },
-                typoVariant: "h6",
+                                typoVariant: "h6",
                 placeholder: "Timestamps",
             },
             {
@@ -149,8 +144,7 @@ export const signal_closed_fields: TypedField[] = [
             },
             {
                 type: FieldType.Typography,
-                style: { color: SIGNAL_BLUE },
-                typoVariant: "h6",
+                                typoVariant: "h6",
                 placeholder: "Price Levels",
             },
             {
@@ -190,8 +184,7 @@ export const signal_closed_fields: TypedField[] = [
             },
             {
                 type: FieldType.Typography,
-                style: { color: SIGNAL_BLUE },
-                typoVariant: "h6",
+                                typoVariant: "h6",
                 placeholder: "Result (PNL)",
                 isVisible: (obj) => obj.pnlPercentage != null,
             },

@@ -1,8 +1,6 @@
 import { TypedField, FieldType, dayjs, CopyButton } from "react-declarative";
-import { Box, Chip } from "@mui/material";
+import { Box } from "@mui/material";
 import Markdown from "../components/common/Markdown";
-
-const SIGNAL_BLUE = "#2196f3";
 
 export const signal_opened_fields: TypedField[] = [
     {
@@ -12,7 +10,6 @@ export const signal_opened_fields: TypedField[] = [
         fields: [
             {
                 type: FieldType.Typography,
-                style: { color: SIGNAL_BLUE },
                 typoVariant: "h6",
                 placeholder: "General Information",
             },
@@ -83,7 +80,6 @@ export const signal_opened_fields: TypedField[] = [
             },
             {
                 type: FieldType.Typography,
-                style: { color: SIGNAL_BLUE },
                 typoVariant: "h6",
                 placeholder: "Timestamps",
             },
@@ -123,7 +119,6 @@ export const signal_opened_fields: TypedField[] = [
             },
             {
                 type: FieldType.Typography,
-                style: { color: SIGNAL_BLUE },
                 typoVariant: "h6",
                 placeholder: "Price Levels",
             },
@@ -179,7 +174,6 @@ export const signal_opened_fields: TypedField[] = [
             },
             {
                 type: FieldType.Typography,
-                style: { color: SIGNAL_BLUE },
                 typoVariant: "h6",
                 placeholder: "Note",
                 isVisible: (obj) => !!obj.note,

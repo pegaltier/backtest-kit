@@ -1,7 +1,4 @@
 import { TypedField, FieldType, dayjs, CopyButton } from "react-declarative";
-import { Chip } from "@mui/material";
-
-const CYAN_COLOR = "#00BCD4";
 
 export const breakeven_available_fields: TypedField[] = [
     {
@@ -11,7 +8,6 @@ export const breakeven_available_fields: TypedField[] = [
         fields: [
             {
                 type: FieldType.Typography,
-                style: { color: CYAN_COLOR },
                 typoVariant: "h6",
                 placeholder: "General Information",
             },
@@ -81,7 +77,6 @@ export const breakeven_available_fields: TypedField[] = [
             },
             {
                 type: FieldType.Typography,
-                style: { color: CYAN_COLOR },
                 typoVariant: "h6",
                 placeholder: "Timestamps",
             },
@@ -125,7 +120,6 @@ export const breakeven_available_fields: TypedField[] = [
             },
             {
                 type: FieldType.Typography,
-                style: { color: CYAN_COLOR },
                 typoVariant: "h6",
                 placeholder: "Breakeven Details",
             },

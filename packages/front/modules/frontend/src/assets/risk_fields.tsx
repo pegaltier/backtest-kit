@@ -10,8 +10,7 @@ export const risk_fields: TypedField[] = [
         fields: [
             {
                 type: FieldType.Typography,
-                style: { color: "#2196f3" },
-                typoVariant: "h6",
+                                typoVariant: "h6",
                 placeholder: "General Information",
             },
             {
@@ -92,8 +91,7 @@ export const risk_fields: TypedField[] = [
             },
             {
                 type: FieldType.Typography,
-                style: { color: "#2196f3" },
-                typoVariant: "h6",
+                                typoVariant: "h6",
                 placeholder: "Timestamps",
             },
             {
@@ -162,8 +160,7 @@ export const risk_fields: TypedField[] = [
             },
             {
                 type: FieldType.Typography,
-                style: { color: "#2196f3" },
-                typoVariant: "h6",
+                                typoVariant: "h6",
                 placeholder: "Pending Signal",
                 isVisible: (data) => !!data.pendingSignal,
             },

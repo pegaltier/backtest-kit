@@ -1,7 +1,4 @@
 import { TypedField, FieldType, dayjs } from "react-declarative";
-import { Chip } from "@mui/material";
-
-const TRAILING_PURPLE = "#673AB7";
 
 export const trailing_take_fields: TypedField[] = [
     {
@@ -11,7 +8,6 @@ export const trailing_take_fields: TypedField[] = [
         fields: [
             {
                 type: FieldType.Typography,
-                style: { color: TRAILING_PURPLE },
                 typoVariant: "h6",
                 placeholder: "General Information",
             },
@@ -81,7 +77,6 @@ export const trailing_take_fields: TypedField[] = [
             },
             {
                 type: FieldType.Typography,
-                style: { color: TRAILING_PURPLE },
                 typoVariant: "h6",
                 placeholder: "Trailing Details",
             },
@@ -120,7 +115,6 @@ export const trailing_take_fields: TypedField[] = [
             },
             {
                 type: FieldType.Typography,
-                style: { color: TRAILING_PURPLE },
                 typoVariant: "h6",
                 placeholder: "Timestamps",
             },
