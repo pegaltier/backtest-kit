@@ -174,7 +174,7 @@ export const signal_fields: TypedField[] = [
                                 ? dayjs(obj.pendingAt).format(
                                       "DD/MM/YYYY HH:mm:ss",
                                   )
-                                : "",
+                                : "N/A",
                     },
                 ],
             },

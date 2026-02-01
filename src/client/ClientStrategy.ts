@@ -50,6 +50,12 @@ const INTERVAL_MINUTES: Record<SignalInterval, number> = {
   "1h": 60,
 };
 
+/**
+ * Mock value for scheduled signal pendingAt timestamp.
+ * Used to indicate that the actual pendingAt will be set upon activation.
+ */
+const SCHEDULED_SIGNAL_PENDING_MOCK = 0;
+
 const TIMEOUT_SYMBOL = Symbol('timeout');
 
 /**
@@ -646,7 +652,7 @@ const VALIDATE_SIGNAL_FN = (signal: ISignalRow, currentPrice: number, isSchedule
         `pendingAt must be a number type, got ${signal.pendingAt} (${typeof signal.pendingAt})`
       );
     }
-    if (signal.pendingAt <= 0) {
+    if (signal.pendingAt <= 0 && !isScheduled) {
       errors.push(`pendingAt must be positive, got ${signal.pendingAt}`);
     }
   }
@@ -764,7 +770,7 @@ const GET_SIGNAL_FN = trycatch(
         strategyName: self.params.method.context.strategyName,
         frameName: self.params.method.context.frameName,
         scheduledAt: currentTime,
-        pendingAt: currentTime, // Временно, обновится при активации
+        pendingAt: SCHEDULED_SIGNAL_PENDING_MOCK, // Временно, обновится при активации
         _isScheduled: true,
       };
 
