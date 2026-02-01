@@ -131,6 +131,8 @@ const PROCESS_COMMIT_QUEUE_FN = async (
         priceStopLoss: publicSignal.priceStopLoss,
         originalPriceTakeProfit: publicSignal.originalPriceTakeProfit,
         originalPriceStopLoss: publicSignal.originalPriceStopLoss,
+        scheduledAt: publicSignal.scheduledAt,
+        pendingAt: publicSignal.pendingAt,
       });
       continue
     }
@@ -151,6 +153,8 @@ const PROCESS_COMMIT_QUEUE_FN = async (
         priceStopLoss: publicSignal.priceStopLoss,
         originalPriceTakeProfit: publicSignal.originalPriceTakeProfit,
         originalPriceStopLoss: publicSignal.originalPriceStopLoss,
+        scheduledAt: publicSignal.scheduledAt,
+        pendingAt: publicSignal.pendingAt,
       });
       continue
     }
@@ -170,6 +174,8 @@ const PROCESS_COMMIT_QUEUE_FN = async (
         priceStopLoss: publicSignal.priceStopLoss,
         originalPriceTakeProfit: publicSignal.originalPriceTakeProfit,
         originalPriceStopLoss: publicSignal.originalPriceStopLoss,
+        scheduledAt: publicSignal.scheduledAt,
+        pendingAt: publicSignal.pendingAt,
       });
       continue
     }
@@ -190,6 +196,8 @@ const PROCESS_COMMIT_QUEUE_FN = async (
         priceStopLoss: publicSignal.priceStopLoss,
         originalPriceTakeProfit: publicSignal.originalPriceTakeProfit,
         originalPriceStopLoss: publicSignal.originalPriceStopLoss,
+        scheduledAt: publicSignal.scheduledAt,
+        pendingAt: publicSignal.pendingAt,
       });
       continue;
     }
@@ -210,6 +218,8 @@ const PROCESS_COMMIT_QUEUE_FN = async (
         priceStopLoss: publicSignal.priceStopLoss,
         originalPriceTakeProfit: publicSignal.originalPriceTakeProfit,
         originalPriceStopLoss: publicSignal.originalPriceStopLoss,
+        scheduledAt: publicSignal.scheduledAt,
+        pendingAt: publicSignal.pendingAt,
       });
       continue;
     }

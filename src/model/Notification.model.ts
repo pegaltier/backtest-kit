@@ -114,6 +114,10 @@ export interface PartialProfitAvailableNotification {
   originalPriceTakeProfit: number;
   /** Original stop loss price before any trailing adjustments */
   originalPriceStopLoss: number;
+  /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
+  scheduledAt: number;
+  /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
+  pendingAt: number;
   /** Unix timestamp in milliseconds when the notification was created */
   createdAt: number;
 }
@@ -155,6 +159,10 @@ export interface PartialLossAvailableNotification {
   originalPriceTakeProfit: number;
   /** Original stop loss price before any trailing adjustments */
   originalPriceStopLoss: number;
+  /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
+  scheduledAt: number;
+  /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
+  pendingAt: number;
   /** Unix timestamp in milliseconds when the notification was created */
   createdAt: number;
 }
@@ -194,6 +202,10 @@ export interface BreakevenAvailableNotification {
   originalPriceTakeProfit: number;
   /** Original stop loss price before any trailing adjustments */
   originalPriceStopLoss: number;
+  /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
+  scheduledAt: number;
+  /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
+  pendingAt: number;
   /** Unix timestamp in milliseconds when the notification was created */
   createdAt: number;
 }
@@ -233,6 +245,10 @@ export interface PartialProfitCommitNotification {
   originalPriceTakeProfit: number;
   /** Original stop loss price before any trailing adjustments */
   originalPriceStopLoss: number;
+  /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
+  scheduledAt: number;
+  /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
+  pendingAt: number;
   /** Unix timestamp in milliseconds when the notification was created */
   createdAt: number;
 }
@@ -272,6 +288,10 @@ export interface PartialLossCommitNotification {
   originalPriceTakeProfit: number;
   /** Original stop loss price before any trailing adjustments */
   originalPriceStopLoss: number;
+  /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
+  scheduledAt: number;
+  /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
+  pendingAt: number;
   /** Unix timestamp in milliseconds when the notification was created */
   createdAt: number;
 }
@@ -309,6 +329,10 @@ export interface BreakevenCommitNotification {
   originalPriceTakeProfit: number;
   /** Original stop loss price before any trailing adjustments */
   originalPriceStopLoss: number;
+  /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
+  scheduledAt: number;
+  /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
+  pendingAt: number;
   /** Unix timestamp in milliseconds when the notification was created */
   createdAt: number;
 }
@@ -348,6 +372,10 @@ export interface TrailingStopCommitNotification {
   originalPriceTakeProfit: number;
   /** Original stop loss price before any trailing adjustments */
   originalPriceStopLoss: number;
+  /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
+  scheduledAt: number;
+  /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
+  pendingAt: number;
   /** Unix timestamp in milliseconds when the notification was created */
   createdAt: number;
 }
@@ -387,6 +415,10 @@ export interface TrailingTakeCommitNotification {
   originalPriceTakeProfit: number;
   /** Original stop loss price before any trailing adjustments */
   originalPriceStopLoss: number;
+  /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
+  scheduledAt: number;
+  /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
+  pendingAt: number;
   /** Unix timestamp in milliseconds when the notification was created */
   createdAt: number;
 }

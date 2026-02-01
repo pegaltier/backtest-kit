@@ -448,6 +448,8 @@ export class StrategyMarkdownService {
    * @param priceStopLoss - Effective stop loss price
    * @param originalPriceTakeProfit - Original take profit before trailing
    * @param originalPriceStopLoss - Original stop loss before trailing
+   * @param scheduledAt - Signal creation timestamp in milliseconds
+   * @param pendingAt - Pending timestamp in milliseconds
    */
   public partialProfit = async (
     symbol: string,
@@ -462,6 +464,8 @@ export class StrategyMarkdownService {
     priceStopLoss: number,
     originalPriceTakeProfit: number,
     originalPriceStopLoss: number,
+    scheduledAt: number,
+    pendingAt: number,
   ) => {
     this.loggerService.log("strategyMarkdownService partialProfit", {
       symbol,
@@ -504,6 +508,8 @@ export class StrategyMarkdownService {
       priceStopLoss,
       originalPriceTakeProfit,
       originalPriceStopLoss,
+      scheduledAt,
+      pendingAt,
     });
   };
 
@@ -522,6 +528,8 @@ export class StrategyMarkdownService {
    * @param priceStopLoss - Effective stop loss price
    * @param originalPriceTakeProfit - Original take profit before trailing
    * @param originalPriceStopLoss - Original stop loss before trailing
+   * @param scheduledAt - Signal creation timestamp in milliseconds
+   * @param pendingAt - Pending timestamp in milliseconds
    */
   public partialLoss = async (
     symbol: string,
@@ -536,6 +544,8 @@ export class StrategyMarkdownService {
     priceStopLoss: number,
     originalPriceTakeProfit: number,
     originalPriceStopLoss: number,
+    scheduledAt: number,
+    pendingAt: number,
   ) => {
     this.loggerService.log("strategyMarkdownService partialLoss", {
       symbol,
@@ -578,6 +588,8 @@ export class StrategyMarkdownService {
       priceStopLoss,
       originalPriceTakeProfit,
       originalPriceStopLoss,
+      scheduledAt,
+      pendingAt,
     });
   };
 
@@ -596,6 +608,8 @@ export class StrategyMarkdownService {
    * @param priceStopLoss - Effective stop loss price
    * @param originalPriceTakeProfit - Original take profit before trailing
    * @param originalPriceStopLoss - Original stop loss before trailing
+   * @param scheduledAt - Signal creation timestamp in milliseconds
+   * @param pendingAt - Pending timestamp in milliseconds
    */
   public trailingStop = async (
     symbol: string,
@@ -610,6 +624,8 @@ export class StrategyMarkdownService {
     priceStopLoss: number,
     originalPriceTakeProfit: number,
     originalPriceStopLoss: number,
+    scheduledAt: number,
+    pendingAt: number,
   ) => {
     this.loggerService.log("strategyMarkdownService trailingStop", {
       symbol,
@@ -652,6 +668,8 @@ export class StrategyMarkdownService {
       priceStopLoss,
       originalPriceTakeProfit,
       originalPriceStopLoss,
+      scheduledAt,
+      pendingAt,
     });
   };
 
@@ -670,6 +688,8 @@ export class StrategyMarkdownService {
    * @param priceStopLoss - Effective stop loss price
    * @param originalPriceTakeProfit - Original take profit before trailing
    * @param originalPriceStopLoss - Original stop loss before trailing
+   * @param scheduledAt - Signal creation timestamp in milliseconds
+   * @param pendingAt - Pending timestamp in milliseconds
    */
   public trailingTake = async (
     symbol: string,
@@ -684,6 +704,8 @@ export class StrategyMarkdownService {
     priceStopLoss: number,
     originalPriceTakeProfit: number,
     originalPriceStopLoss: number,
+    scheduledAt: number,
+    pendingAt: number,
   ) => {
     this.loggerService.log("strategyMarkdownService trailingTake", {
       symbol,
@@ -726,6 +748,8 @@ export class StrategyMarkdownService {
       priceStopLoss,
       originalPriceTakeProfit,
       originalPriceStopLoss,
+      scheduledAt,
+      pendingAt,
     });
   };
 
@@ -743,6 +767,8 @@ export class StrategyMarkdownService {
    * @param priceStopLoss - Effective stop loss price
    * @param originalPriceTakeProfit - Original take profit before trailing
    * @param originalPriceStopLoss - Original stop loss before trailing
+   * @param scheduledAt - Signal creation timestamp in milliseconds
+   * @param pendingAt - Pending timestamp in milliseconds
    */
   public breakeven = async (
     symbol: string,
@@ -756,6 +782,8 @@ export class StrategyMarkdownService {
     priceStopLoss: number,
     originalPriceTakeProfit: number,
     originalPriceStopLoss: number,
+    scheduledAt: number,
+    pendingAt: number,
   ) => {
     this.loggerService.log("strategyMarkdownService breakeven", {
       symbol,
@@ -796,6 +824,8 @@ export class StrategyMarkdownService {
       priceStopLoss,
       originalPriceTakeProfit,
       originalPriceStopLoss,
+      scheduledAt,
+      pendingAt,
     });
   };
 
@@ -1006,6 +1036,8 @@ export class StrategyMarkdownService {
           event.priceStopLoss,
           event.originalPriceTakeProfit,
           event.originalPriceStopLoss,
+          event.scheduledAt,
+          event.pendingAt,
         )
       );
 
@@ -1029,6 +1061,8 @@ export class StrategyMarkdownService {
           event.priceStopLoss,
           event.originalPriceTakeProfit,
           event.originalPriceStopLoss,
+          event.scheduledAt,
+          event.pendingAt,
         )
       );
 
@@ -1052,6 +1086,8 @@ export class StrategyMarkdownService {
           event.priceStopLoss,
           event.originalPriceTakeProfit,
           event.originalPriceStopLoss,
+          event.scheduledAt,
+          event.pendingAt,
         )
       );
 
@@ -1075,6 +1111,8 @@ export class StrategyMarkdownService {
           event.priceStopLoss,
           event.originalPriceTakeProfit,
           event.originalPriceStopLoss,
+          event.scheduledAt,
+          event.pendingAt,
         )
       );
 
@@ -1097,6 +1135,8 @@ export class StrategyMarkdownService {
           event.priceStopLoss,
           event.originalPriceTakeProfit,
           event.originalPriceStopLoss,
+          event.scheduledAt,
+          event.pendingAt,
         )
       );
 

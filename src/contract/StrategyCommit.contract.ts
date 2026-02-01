@@ -44,6 +44,8 @@ export interface PartialProfitCommit extends SignalCommitBase {
   priceStopLoss: number;
   originalPriceTakeProfit: number;
   originalPriceStopLoss: number;
+  scheduledAt: number;
+  pendingAt: number;
 }
 
 /**
@@ -59,6 +61,8 @@ export interface PartialLossCommit extends SignalCommitBase {
   priceStopLoss: number;
   originalPriceTakeProfit: number;
   originalPriceStopLoss: number;
+  scheduledAt: number;
+  pendingAt: number;
 }
 
 /**
@@ -74,6 +78,8 @@ export interface TrailingStopCommit extends SignalCommitBase {
   priceStopLoss: number;
   originalPriceTakeProfit: number;
   originalPriceStopLoss: number;
+  scheduledAt: number;
+  pendingAt: number;
 }
 
 /**
@@ -89,6 +95,8 @@ export interface TrailingTakeCommit extends SignalCommitBase {
   priceStopLoss: number;
   originalPriceTakeProfit: number;
   originalPriceStopLoss: number;
+  scheduledAt: number;
+  pendingAt: number;
 }
 
 /**
@@ -103,6 +111,8 @@ export interface BreakevenCommit extends SignalCommitBase {
   priceStopLoss: number;
   originalPriceTakeProfit: number;
   originalPriceStopLoss: number;
+  scheduledAt: number;
+  pendingAt: number;
 }
 
 /**

@@ -60,6 +60,10 @@ export interface StrategyEvent {
   originalPriceTakeProfit?: number;
   /** Original stop loss price before any trailing adjustments */
   originalPriceStopLoss?: number;
+  /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
+  scheduledAt?: number;
+  /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
+  pendingAt?: number;
 }
 
 /**

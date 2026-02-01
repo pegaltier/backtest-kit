@@ -179,6 +179,8 @@ export class StrategyReportService {
    * @param priceStopLoss - Effective stop loss price
    * @param originalPriceTakeProfit - Original take profit before trailing
    * @param originalPriceStopLoss - Original stop loss before trailing
+   * @param scheduledAt - Signal creation timestamp in milliseconds
+   * @param pendingAt - Pending timestamp in milliseconds
    */
   public partialProfit = async (
     symbol: string,
@@ -197,6 +199,8 @@ export class StrategyReportService {
     priceStopLoss: number,
     originalPriceTakeProfit: number,
     originalPriceStopLoss: number,
+    scheduledAt: number,
+    pendingAt: number,
   ) => {
     this.loggerService.log("strategyReportService partialProfit", {
       symbol,
@@ -235,6 +239,8 @@ export class StrategyReportService {
         priceStopLoss,
         originalPriceTakeProfit,
         originalPriceStopLoss,
+        scheduledAt,
+        pendingAt,
       },
       {
         signalId: pendingRow.id,
@@ -262,6 +268,8 @@ export class StrategyReportService {
    * @param priceStopLoss - Effective stop loss price
    * @param originalPriceTakeProfit - Original take profit before trailing
    * @param originalPriceStopLoss - Original stop loss before trailing
+   * @param scheduledAt - Signal creation timestamp in milliseconds
+   * @param pendingAt - Pending timestamp in milliseconds
    */
   public partialLoss = async (
     symbol: string,
@@ -280,6 +288,8 @@ export class StrategyReportService {
     priceStopLoss: number,
     originalPriceTakeProfit: number,
     originalPriceStopLoss: number,
+    scheduledAt: number,
+    pendingAt: number,
   ) => {
     this.loggerService.log("strategyReportService partialLoss", {
       symbol,
@@ -318,6 +328,8 @@ export class StrategyReportService {
         priceStopLoss,
         originalPriceTakeProfit,
         originalPriceStopLoss,
+        scheduledAt,
+        pendingAt,
       },
       {
         signalId: pendingRow.id,
@@ -345,6 +357,8 @@ export class StrategyReportService {
    * @param priceStopLoss - Effective stop loss price
    * @param originalPriceTakeProfit - Original take profit before trailing
    * @param originalPriceStopLoss - Original stop loss before trailing
+   * @param scheduledAt - Signal creation timestamp in milliseconds
+   * @param pendingAt - Pending timestamp in milliseconds
    */
   public trailingStop = async (
     symbol: string,
@@ -363,6 +377,8 @@ export class StrategyReportService {
     priceStopLoss: number,
     originalPriceTakeProfit: number,
     originalPriceStopLoss: number,
+    scheduledAt: number,
+    pendingAt: number,
   ) => {
     this.loggerService.log("strategyReportService trailingStop", {
       symbol,
@@ -401,6 +417,8 @@ export class StrategyReportService {
         priceStopLoss,
         originalPriceTakeProfit,
         originalPriceStopLoss,
+        scheduledAt,
+        pendingAt,
       },
       {
         signalId: pendingRow.id,
@@ -428,6 +446,8 @@ export class StrategyReportService {
    * @param priceStopLoss - Effective stop loss price
    * @param originalPriceTakeProfit - Original take profit before trailing
    * @param originalPriceStopLoss - Original stop loss before trailing
+   * @param scheduledAt - Signal creation timestamp in milliseconds
+   * @param pendingAt - Pending timestamp in milliseconds
    */
   public trailingTake = async (
     symbol: string,
@@ -446,6 +466,8 @@ export class StrategyReportService {
     priceStopLoss: number,
     originalPriceTakeProfit: number,
     originalPriceStopLoss: number,
+    scheduledAt: number,
+    pendingAt: number,
   ) => {
     this.loggerService.log("strategyReportService trailingTake", {
       symbol,
@@ -484,6 +506,8 @@ export class StrategyReportService {
         priceStopLoss,
         originalPriceTakeProfit,
         originalPriceStopLoss,
+        scheduledAt,
+        pendingAt,
       },
       {
         signalId: pendingRow.id,
@@ -510,6 +534,8 @@ export class StrategyReportService {
    * @param priceStopLoss - Effective stop loss price
    * @param originalPriceTakeProfit - Original take profit before trailing
    * @param originalPriceStopLoss - Original stop loss before trailing
+   * @param scheduledAt - Signal creation timestamp in milliseconds
+   * @param pendingAt - Pending timestamp in milliseconds
    */
   public breakeven = async (
     symbol: string,
@@ -527,6 +553,8 @@ export class StrategyReportService {
     priceStopLoss: number,
     originalPriceTakeProfit: number,
     originalPriceStopLoss: number,
+    scheduledAt: number,
+    pendingAt: number,
   ) => {
     this.loggerService.log("strategyReportService breakeven", {
       symbol,
@@ -563,6 +591,8 @@ export class StrategyReportService {
         priceStopLoss,
         originalPriceTakeProfit,
         originalPriceStopLoss,
+        scheduledAt,
+        pendingAt,
       },
       {
         signalId: pendingRow.id,
@@ -638,6 +668,8 @@ export class StrategyReportService {
           event.priceStopLoss,
           event.originalPriceTakeProfit,
           event.originalPriceStopLoss,
+          event.scheduledAt,
+          event.pendingAt,
         )
       );
 
@@ -661,6 +693,8 @@ export class StrategyReportService {
           event.priceStopLoss,
           event.originalPriceTakeProfit,
           event.originalPriceStopLoss,
+          event.scheduledAt,
+          event.pendingAt,
         )
       );
 
@@ -684,6 +718,8 @@ export class StrategyReportService {
           event.priceStopLoss,
           event.originalPriceTakeProfit,
           event.originalPriceStopLoss,
+          event.scheduledAt,
+          event.pendingAt,
         )
       );
 
@@ -707,6 +743,8 @@ export class StrategyReportService {
           event.priceStopLoss,
           event.originalPriceTakeProfit,
           event.originalPriceStopLoss,
+          event.scheduledAt,
+          event.pendingAt,
         )
       );
 
@@ -729,6 +767,8 @@ export class StrategyReportService {
           event.priceStopLoss,
           event.originalPriceTakeProfit,
           event.originalPriceStopLoss,
+          event.scheduledAt,
+          event.pendingAt,
         )
       );
 

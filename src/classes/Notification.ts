@@ -178,6 +178,8 @@ export class NotificationInstance {
       priceStopLoss: data.data.priceStopLoss,
       originalPriceTakeProfit: data.data.originalPriceTakeProfit,
       originalPriceStopLoss: data.data.originalPriceStopLoss,
+      scheduledAt: data.data.scheduledAt,
+      pendingAt: data.data.pendingAt,
       createdAt: data.timestamp,
     });
   };
@@ -203,6 +205,8 @@ export class NotificationInstance {
       priceStopLoss: data.data.priceStopLoss,
       originalPriceTakeProfit: data.data.originalPriceTakeProfit,
       originalPriceStopLoss: data.data.originalPriceStopLoss,
+      scheduledAt: data.data.scheduledAt,
+      pendingAt: data.data.pendingAt,
       createdAt: data.timestamp,
     });
   };
@@ -227,6 +231,8 @@ export class NotificationInstance {
       priceStopLoss: data.data.priceStopLoss,
       originalPriceTakeProfit: data.data.originalPriceTakeProfit,
       originalPriceStopLoss: data.data.originalPriceStopLoss,
+      scheduledAt: data.data.scheduledAt,
+      pendingAt: data.data.pendingAt,
       createdAt: data.timestamp,
     });
   };
@@ -252,6 +258,8 @@ export class NotificationInstance {
         priceStopLoss: data.priceStopLoss,
         originalPriceTakeProfit: data.originalPriceTakeProfit,
         originalPriceStopLoss: data.originalPriceStopLoss,
+        scheduledAt: data.scheduledAt,
+        pendingAt: data.pendingAt,
         createdAt: data.timestamp,
       });
     } else if (data.action === "partial-loss") {
@@ -271,6 +279,8 @@ export class NotificationInstance {
         priceStopLoss: data.priceStopLoss,
         originalPriceTakeProfit: data.originalPriceTakeProfit,
         originalPriceStopLoss: data.originalPriceStopLoss,
+        scheduledAt: data.scheduledAt,
+        pendingAt: data.pendingAt,
         createdAt: data.timestamp,
       });
     } else if (data.action === "breakeven") {
@@ -289,6 +299,8 @@ export class NotificationInstance {
         priceStopLoss: data.priceStopLoss,
         originalPriceTakeProfit: data.originalPriceTakeProfit,
         originalPriceStopLoss: data.originalPriceStopLoss,
+        scheduledAt: data.scheduledAt,
+        pendingAt: data.pendingAt,
         createdAt: data.timestamp,
       });
     } else if (data.action === "trailing-stop") {
@@ -308,6 +320,8 @@ export class NotificationInstance {
         priceStopLoss: data.priceStopLoss,
         originalPriceTakeProfit: data.originalPriceTakeProfit,
         originalPriceStopLoss: data.originalPriceStopLoss,
+        scheduledAt: data.scheduledAt,
+        pendingAt: data.pendingAt,
         createdAt: data.timestamp,
       });
     } else if (data.action === "trailing-take") {
@@ -327,6 +341,8 @@ export class NotificationInstance {
         priceStopLoss: data.priceStopLoss,
         originalPriceTakeProfit: data.originalPriceTakeProfit,
         originalPriceStopLoss: data.originalPriceStopLoss,
+        scheduledAt: data.scheduledAt,
+        pendingAt: data.pendingAt,
         createdAt: data.timestamp,
       });
     }
