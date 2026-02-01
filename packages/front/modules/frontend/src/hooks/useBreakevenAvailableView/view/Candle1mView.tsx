@@ -1,6 +1,6 @@
 import { Box } from "@mui/material";
 import { AutoSizer, IOutletModalProps } from "react-declarative";
-import BreakevenAvailableChart from "../components/BreakevenAvailableChart/BreakevenAvailableChart";
+import StockChart from "../components/StockChart";
 import { useMemo } from "react";
 import { BreakevenAvailableNotification } from "backtest-kit";
 
@@ -24,7 +24,7 @@ export const Candle1mView = ({ data, formState }: IOutletModalProps) => {
         <Box sx={{ height: "100%", width: "100%", pt: 1 }}>
             <AutoSizer payload={data}>
                 {({ height, width }) => (
-                    <BreakevenAvailableChart
+                    <StockChart
                         items={data}
                         createdAt={createdAt}
                         position={position}

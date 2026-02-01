@@ -1,6 +1,6 @@
 import { Box } from "@mui/material";
 import { AutoSizer, IOutletModalProps } from "react-declarative";
-import TrailingStopChart from "../components/TrailingStopChart/TrailingStopChart";
+import StockChart from "../components/StockChart";
 import { useMemo } from "react";
 import { TrailingStopCommitNotification } from "backtest-kit";
 
@@ -22,7 +22,7 @@ export const Candle15mView = ({ data, formState }: IOutletModalProps) => {
         <Box sx={{ height: "100%", width: "100%", pt: 1 }}>
             <AutoSizer payload={data}>
                 {({ height, width }) => (
-                    <TrailingStopChart
+                    <StockChart
                         items={data}
                         createdAt={createdAt}
                         currentPrice={currentPrice}

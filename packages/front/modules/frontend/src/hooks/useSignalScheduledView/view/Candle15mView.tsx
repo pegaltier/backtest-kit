@@ -1,6 +1,6 @@
 import { Box } from "@mui/material";
 import { AutoSizer, IOutletModalProps } from "react-declarative";
-import SignalScheduledChart from "../components/SignalScheduledChart/SignalScheduledChart";
+import StockChart from "../components/StockChart";
 import { useMemo } from "react";
 import { SignalScheduledNotification } from "backtest-kit";
 
@@ -26,7 +26,7 @@ export const Candle15mView = ({ data, formState }: IOutletModalProps) => {
         <Box sx={{ height: "100%", width: "100%", pt: 1 }}>
             <AutoSizer payload={data}>
                 {({ height, width }) => (
-                    <SignalScheduledChart
+                    <StockChart
                         items={data}
                         createdAt={createdAt}
                         priceOpen={priceOpen}
