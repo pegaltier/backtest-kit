@@ -1,4 +1,4 @@
-import { TypedField, FieldType, dayjs } from "react-declarative";
+import { TypedField, FieldType, dayjs, CopyButton } from "react-declarative";
 
 export const partial_loss_commit_fields: TypedField[] = [
     {
@@ -82,8 +82,37 @@ export const partial_loss_commit_fields: TypedField[] = [
                     {
                         type: FieldType.Text,
                         outlined: false,
-                        desktopColumns: "12",
-                        tabletColumns: "12",
+                        desktopColumns: "4",
+                        tabletColumns: "4",
+                        phoneColumns: "12",
+                        name: "position",
+                        title: "Position",
+                        readonly: true,
+                        compute: (obj) => {
+                            if (obj.position === "long") return "LONG";
+                            if (obj.position === "short") return "SHORT";
+                            return "Not specified";
+                        },
+                    },
+                    {
+                        type: FieldType.Text,
+                        outlined: false,
+                        desktopColumns: "4",
+                        tabletColumns: "4",
+                        phoneColumns: "12",
+                        name: "priceOpen",
+                        title: "Entry Price",
+                        readonly: true,
+                        compute: (obj) =>
+                            obj.priceOpen != null
+                                ? `${obj.priceOpen.toFixed(6)}$`
+                                : "Not specified",
+                    },
+                    {
+                        type: FieldType.Text,
+                        outlined: false,
+                        desktopColumns: "4",
+                        tabletColumns: "4",
                         phoneColumns: "12",
                         name: "currentPrice",
                         title: "Execution Price",
@@ -91,6 +120,66 @@ export const partial_loss_commit_fields: TypedField[] = [
                         compute: (obj) =>
                             obj.currentPrice != null
                                 ? `${obj.currentPrice.toFixed(6)}$`
+                                : "Not specified",
+                    },
+                    {
+                        type: FieldType.Text,
+                        outlined: false,
+                        desktopColumns: "4",
+                        tabletColumns: "4",
+                        phoneColumns: "12",
+                        name: "priceStopLoss",
+                        title: "Stop Loss",
+                        readonly: true,
+                        isVisible: (obj) => obj.priceStopLoss != null,
+                        compute: (obj) =>
+                            obj.priceStopLoss != null
+                                ? `${obj.priceStopLoss.toFixed(6)}$`
+                                : "Not specified",
+                    },
+                    {
+                        type: FieldType.Text,
+                        outlined: false,
+                        desktopColumns: "4",
+                        tabletColumns: "4",
+                        phoneColumns: "12",
+                        name: "priceTakeProfit",
+                        title: "Take Profit",
+                        readonly: true,
+                        isVisible: (obj) => obj.priceTakeProfit != null,
+                        compute: (obj) =>
+                            obj.priceTakeProfit != null
+                                ? `${obj.priceTakeProfit.toFixed(6)}$`
+                                : "Not specified",
+                    },
+                    {
+                        type: FieldType.Text,
+                        outlined: false,
+                        desktopColumns: "4",
+                        tabletColumns: "4",
+                        phoneColumns: "12",
+                        name: "originalPriceStopLoss",
+                        title: "Original Stop Loss",
+                        readonly: true,
+                        isVisible: (obj) => obj.originalPriceStopLoss != null,
+                        compute: (obj) =>
+                            obj.originalPriceStopLoss != null
+                                ? `${obj.originalPriceStopLoss.toFixed(6)}$`
+                                : "Not specified",
+                    },
+                    {
+                        type: FieldType.Text,
+                        outlined: false,
+                        desktopColumns: "4",
+                        tabletColumns: "4",
+                        phoneColumns: "12",
+                        name: "originalPriceTakeProfit",
+                        title: "Original Take Profit",
+                        readonly: true,
+                        isVisible: (obj) => obj.originalPriceTakeProfit != null,
+                        compute: (obj) =>
+                            obj.originalPriceTakeProfit != null
+                                ? `${obj.originalPriceTakeProfit.toFixed(6)}$`
                                 : "Not specified",
                     },
                 ],
@@ -135,6 +224,63 @@ export const partial_loss_commit_fields: TypedField[] = [
                                       "DD/MM/YYYY HH:mm:ss",
                                   )
                                 : "",
+                    },
+                    {
+                        type: FieldType.Text,
+                        outlined: false,
+                        desktopColumns: "6",
+                        tabletColumns: "6",
+                        phoneColumns: "12",
+                        name: "scheduledAt",
+                        title: "Scheduled At",
+                        readonly: true,
+                        isVisible: (obj) => obj.scheduledAt != null,
+                        compute: (obj) =>
+                            obj.scheduledAt
+                                ? dayjs(obj.scheduledAt).format(
+                                      "DD/MM/YYYY HH:mm:ss",
+                                  )
+                                : "",
+                    },
+                    {
+                        type: FieldType.Text,
+                        outlined: false,
+                        desktopColumns: "6",
+                        tabletColumns: "6",
+                        phoneColumns: "12",
+                        name: "pendingAt",
+                        title: "Pending At",
+                        readonly: true,
+                        isVisible: (obj) => obj.pendingAt != null,
+                        compute: (obj) =>
+                            obj.pendingAt
+                                ? dayjs(obj.pendingAt).format(
+                                      "DD/MM/YYYY HH:mm:ss",
+                                  )
+                                : "",
+                    },
+                ],
+            },
+            {
+                type: FieldType.Box,
+                sx: {
+                    display: "grid",
+                    gridTemplateColumns: "auto 1fr",
+                    gap: 1,
+                },
+                fields: [
+                    {
+                        type: FieldType.Component,
+                        isVisible: (obj) => !!obj.signalId,
+                        element: ({ signalId }) => (
+                            <CopyButton
+                                label={`Signal ID: ${signalId}`}
+                                content={signalId}
+                            />
+                        ),
+                    },
+                    {
+                        type: FieldType.Div,
                     },
                 ],
             },

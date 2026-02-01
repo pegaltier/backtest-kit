@@ -116,6 +116,66 @@ export const partial_loss_available_fields: TypedField[] = [
                                 ? `${obj.currentPrice.toFixed(6)}$`
                                 : "Not specified",
                     },
+                    {
+                        type: FieldType.Text,
+                        outlined: false,
+                        desktopColumns: "4",
+                        tabletColumns: "4",
+                        phoneColumns: "12",
+                        name: "priceTakeProfit",
+                        title: "Take Profit",
+                        readonly: true,
+                        isVisible: (obj) => obj.priceTakeProfit != null,
+                        compute: (obj) =>
+                            obj.priceTakeProfit != null
+                                ? `${obj.priceTakeProfit.toFixed(6)}$`
+                                : "Not specified",
+                    },
+                    {
+                        type: FieldType.Text,
+                        outlined: false,
+                        desktopColumns: "4",
+                        tabletColumns: "4",
+                        phoneColumns: "12",
+                        name: "priceStopLoss",
+                        title: "Stop Loss",
+                        readonly: true,
+                        isVisible: (obj) => obj.priceStopLoss != null,
+                        compute: (obj) =>
+                            obj.priceStopLoss != null
+                                ? `${obj.priceStopLoss.toFixed(6)}$`
+                                : "Not specified",
+                    },
+                    {
+                        type: FieldType.Text,
+                        outlined: false,
+                        desktopColumns: "4",
+                        tabletColumns: "4",
+                        phoneColumns: "12",
+                        name: "originalPriceStopLoss",
+                        title: "Original Stop Loss",
+                        readonly: true,
+                        isVisible: (obj) => obj.originalPriceStopLoss != null,
+                        compute: (obj) =>
+                            obj.originalPriceStopLoss != null
+                                ? `${obj.originalPriceStopLoss.toFixed(6)}$`
+                                : "Not specified",
+                    },
+                    {
+                        type: FieldType.Text,
+                        outlined: false,
+                        desktopColumns: "4",
+                        tabletColumns: "4",
+                        phoneColumns: "12",
+                        name: "originalPriceTakeProfit",
+                        title: "Original Take Profit",
+                        readonly: true,
+                        isVisible: (obj) => obj.originalPriceTakeProfit != null,
+                        compute: (obj) =>
+                            obj.originalPriceTakeProfit != null
+                                ? `${obj.originalPriceTakeProfit.toFixed(6)}$`
+                                : "Not specified",
+                    },
                 ],
             },
             {
@@ -155,6 +215,40 @@ export const partial_loss_available_fields: TypedField[] = [
                         compute: (obj) =>
                             obj.createdAt
                                 ? dayjs(obj.createdAt).format(
+                                      "DD/MM/YYYY HH:mm:ss",
+                                  )
+                                : "",
+                    },
+                    {
+                        type: FieldType.Text,
+                        outlined: false,
+                        desktopColumns: "6",
+                        tabletColumns: "6",
+                        phoneColumns: "12",
+                        name: "scheduledAt",
+                        title: "Scheduled At",
+                        readonly: true,
+                        isVisible: (obj) => obj.scheduledAt != null,
+                        compute: (obj) =>
+                            obj.scheduledAt
+                                ? dayjs(obj.scheduledAt).format(
+                                      "DD/MM/YYYY HH:mm:ss",
+                                  )
+                                : "",
+                    },
+                    {
+                        type: FieldType.Text,
+                        outlined: false,
+                        desktopColumns: "6",
+                        tabletColumns: "6",
+                        phoneColumns: "12",
+                        name: "pendingAt",
+                        title: "Pending At",
+                        readonly: true,
+                        isVisible: (obj) => obj.pendingAt != null,
+                        compute: (obj) =>
+                            obj.pendingAt
+                                ? dayjs(obj.pendingAt).format(
                                       "DD/MM/YYYY HH:mm:ss",
                                   )
                                 : "",
