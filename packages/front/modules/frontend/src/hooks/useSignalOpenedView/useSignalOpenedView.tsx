@@ -146,9 +146,9 @@ export const useSignalOpenedView = () => {
       </Stack>
     ),
     fetchState: async () => await fetchData(id$.current),
-    mapInitialData: ([{ signalOpened, ...other }]) => ({
-      main: signalOpened,
-      signalOpened,
+    mapInitialData: ([{ signal_opened, ...other }]) => ({
+      main: signal_opened,
+      signal_opened,
       ...other,
     }),
     mapPayload: ([{ candle_1m = [], candle_15m = [], candle_1h = [] }]) => {
