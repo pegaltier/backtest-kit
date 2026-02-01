@@ -1,6 +1,6 @@
 import { Box, Typography } from "@mui/material";
 import { AutoSizer, IOutletModalProps, useAsyncValue } from "react-declarative";
-import StockChart from "../../../widgets/StockChart/StockChart";
+import StockChart from "../components/StockChart/StockChart";
 import { useMemo } from "react";
 import { IStorageSignalRow } from "backtest-kit";
 

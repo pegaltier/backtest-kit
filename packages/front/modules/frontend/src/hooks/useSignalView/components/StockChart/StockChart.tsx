@@ -10,7 +10,7 @@ import {
   SeriesMarker,
 } from "lightweight-charts";
 import { createChart } from "lightweight-charts";
-import { makeStyles } from "../../styles";
+import { makeStyles } from "../../../../styles";
 import { dayjs, fromMomentStamp, getMomentStamp } from "react-declarative";
 import { colors } from "@mui/material";
 
