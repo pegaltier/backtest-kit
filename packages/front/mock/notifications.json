@@ -33,7 +33,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1708875300000
+    "createdAt": 1708875300000,
+    "scheduledAt": 1708875240000,
+    "pendingAt": 1708871700000
   },
   {
     "type": "partial_loss.commit",
@@ -210,7 +212,9 @@
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "note": "",
-    "createdAt": 1708871700000
+    "createdAt": 1708871700000,
+    "scheduledAt": 1708871640000,
+    "pendingAt": 1708871700000
   },
   {
     "type": "signal.closed",
@@ -228,7 +232,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1708871640000
+    "createdAt": 1708871640000,
+    "scheduledAt": 1708871580000,
+    "pendingAt": 1708868040000
   },
   {
     "type": "signal.opened",
@@ -244,7 +250,9 @@
     "priceTakeProfit": 53227.3306,
     "priceStopLoss": 50643.4796,
     "note": "",
-    "createdAt": 1708868040000
+    "createdAt": 1708868040000,
+    "scheduledAt": 1708867980000,
+    "pendingAt": 1708868040000
   },
   {
     "type": "signal.closed",
@@ -262,7 +270,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1708840080000
+    "createdAt": 1708840080000,
+    "scheduledAt": 1708840020000,
+    "pendingAt": 1708836480000
   },
   {
     "type": "signal.opened",
@@ -278,7 +288,9 @@
     "priceTakeProfit": 53166.0868,
     "priceStopLoss": 50585.2088,
     "note": "",
-    "createdAt": 1708836480000
+    "createdAt": 1708836480000,
+    "scheduledAt": 1708836420000,
+    "pendingAt": 1708836480000
   },
   {
     "type": "signal.closed",
@@ -296,7 +308,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1708836420000
+    "createdAt": 1708836420000,
+    "scheduledAt": 1708836360000,
+    "pendingAt": 1708832820000
   },
   {
     "type": "signal.opened",
@@ -312,7 +326,9 @@
     "priceTakeProfit": 53173.7397,
     "priceStopLoss": 50592.4902,
     "note": "",
-    "createdAt": 1708832820000
+    "createdAt": 1708832820000,
+    "scheduledAt": 1708832760000,
+    "pendingAt": 1708832820000
   },
   {
     "type": "signal.closed",
@@ -330,7 +346,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1708832460000
+    "createdAt": 1708832460000,
+    "scheduledAt": 1708832400000,
+    "pendingAt": 1708828860000
   },
   {
     "type": "signal.opened",
@@ -346,7 +364,9 @@
     "priceTakeProfit": 53246.0766,
     "priceStopLoss": 50661.3156,
     "note": "",
-    "createdAt": 1708828860000
+    "createdAt": 1708828860000,
+    "scheduledAt": 1708828800000,
+    "pendingAt": 1708828860000
   },
   {
     "type": "partial_loss.available",
@@ -400,7 +420,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1708828500000
+    "createdAt": 1708828500000,
+    "scheduledAt": 1708828440000,
+    "pendingAt": 1708824900000
   },
   {
     "type": "partial_profit.available",
@@ -458,7 +480,9 @@
     "priceTakeProfit": 53168.0644,
     "priceStopLoss": 50587.0904,
     "note": "",
-    "createdAt": 1708824900000
+    "createdAt": 1708824900000,
+    "scheduledAt": 1708824840000,
+    "pendingAt": 1708824900000
   },
   {
     "type": "signal.closed",
@@ -476,7 +500,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1708787640000
+    "createdAt": 1708787640000,
+    "scheduledAt": 1708787580000,
+    "pendingAt": 1708784040000
   },
   {
     "type": "signal.opened",
@@ -492,7 +518,9 @@
     "priceTakeProfit": 52620.64,
     "priceStopLoss": 50066.24,
     "note": "",
-    "createdAt": 1708784040000
+    "createdAt": 1708784040000,
+    "scheduledAt": 1708783980000,
+    "pendingAt": 1708784040000
   },
   {
     "type": "signal.scheduled",
@@ -525,7 +553,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1708783500000
+    "createdAt": 1708783500000,
+    "scheduledAt": 1708783440000,
+    "pendingAt": 1708779900000
   },
   {
     "type": "signal.opened",
@@ -541,7 +571,9 @@
     "priceTakeProfit": 52627.355599999995,
     "priceStopLoss": 50072.62959999999,
     "note": "",
-    "createdAt": 1708779900000
+    "createdAt": 1708779900000,
+    "scheduledAt": 1708779840000,
+    "pendingAt": 1708779900000
   },
   {
     "type": "signal.closed",
@@ -559,7 +591,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1708706040000
+    "createdAt": 1708706040000,
+    "scheduledAt": 1708705980000,
+    "pendingAt": 1708702440000
   },
   {
     "type": "partial_profit.available",
@@ -596,7 +630,9 @@
     "priceTakeProfit": 49448.650299999994,
     "priceStopLoss": 51997.5498,
     "note": "",
-    "createdAt": 1708702440000
+    "createdAt": 1708702440000,
+    "scheduledAt": 1708702380000,
+    "pendingAt": 1708702440000
   },
   {
     "type": "signal.scheduled",
@@ -629,7 +665,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1708702380000
+    "createdAt": 1708702380000,
+    "scheduledAt": 1708702320000,
+    "pendingAt": 1708698780000
   },
   {
     "type": "partial_loss.available",
@@ -708,7 +746,9 @@
     "priceTakeProfit": 49388.5297,
     "priceStopLoss": 51934.330200000004,
     "note": "",
-    "createdAt": 1708698780000
+    "createdAt": 1708698780000,
+    "scheduledAt": 1708698720000,
+    "pendingAt": 1708698780000
   },
   {
     "type": "signal.closed",
@@ -726,7 +766,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1708586220000
+    "createdAt": 1708586220000,
+    "scheduledAt": 1708586160000,
+    "pendingAt": 1708582620000
   },
   {
     "type": "partial_profit.available",
@@ -763,7 +805,9 @@
     "priceTakeProfit": 53165.2113,
     "priceStopLoss": 50584.3758,
     "note": "",
-    "createdAt": 1708582620000
+    "createdAt": 1708582620000,
+    "scheduledAt": 1708582560000,
+    "pendingAt": 1708582620000
   },
   {
     "type": "signal.closed",
@@ -781,7 +825,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1708582560000
+    "createdAt": 1708582560000,
+    "scheduledAt": 1708582500000,
+    "pendingAt": 1708578960000
   },
   {
     "type": "partial_loss.available",
@@ -818,7 +864,9 @@
     "priceTakeProfit": 53169.496100000004,
     "priceStopLoss": 50588.452600000004,
     "note": "",
-    "createdAt": 1708578960000
+    "createdAt": 1708578960000,
+    "scheduledAt": 1708578900000,
+    "pendingAt": 1708578960000
   },
   {
     "type": "signal.closed",
@@ -836,7 +884,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1708556400000
+    "createdAt": 1708556400000,
+    "scheduledAt": 1708556340000,
+    "pendingAt": 1708552800000
   },
   {
     "type": "partial_loss.available",
@@ -873,7 +923,9 @@
     "priceTakeProfit": 49843.7798,
     "priceStopLoss": 52413.0468,
     "note": "",
-    "createdAt": 1708552800000
+    "createdAt": 1708552800000,
+    "scheduledAt": 1708552740000,
+    "pendingAt": 1708552800000
   },
   {
     "type": "signal.scheduled",
@@ -906,7 +958,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1708552740000
+    "createdAt": 1708552740000,
+    "scheduledAt": 1708552680000,
+    "pendingAt": 1708549140000
   },
   {
     "type": "signal.opened",
@@ -922,7 +976,9 @@
     "priceTakeProfit": 49429.2018,
     "priceStopLoss": 51977.0988,
     "note": "",
-    "createdAt": 1708549140000
+    "createdAt": 1708549140000,
+    "scheduledAt": 1708549080000,
+    "pendingAt": 1708549140000
   },
   {
     "type": "partial_loss.available",
@@ -1018,7 +1074,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1708391940000
+    "createdAt": 1708391940000,
+    "scheduledAt": 1708391880000,
+    "pendingAt": 1708388340000
   },
   {
     "type": "partial_profit.available",
@@ -1055,7 +1113,9 @@
     "priceTakeProfit": 50246,
     "priceStopLoss": 52836,
     "note": "",
-    "createdAt": 1708388340000
+    "createdAt": 1708388340000,
+    "scheduledAt": 1708388280000,
+    "pendingAt": 1708388340000
   },
   {
     "type": "signal.scheduled",
@@ -1088,7 +1148,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1708388280000
+    "createdAt": 1708388280000,
+    "scheduledAt": 1708388220000,
+    "pendingAt": 1708384680000
   },
   {
     "type": "partial_loss.available",
@@ -1125,7 +1187,9 @@
     "priceTakeProfit": 50267.4661,
     "priceStopLoss": 52858.5726,
     "note": "",
-    "createdAt": 1708384680000
+    "createdAt": 1708384680000,
+    "scheduledAt": 1708384620000,
+    "pendingAt": 1708384680000
   },
   {
     "type": "signal.closed",
@@ -1143,7 +1207,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1708342320000
+    "createdAt": 1708342320000,
+    "scheduledAt": 1708342260000,
+    "pendingAt": 1708338720000
   },
   {
     "type": "partial_loss.available",
@@ -1180,7 +1246,9 @@
     "priceTakeProfit": 54000.1396,
     "priceStopLoss": 51378.7736,
     "note": "",
-    "createdAt": 1708338720000
+    "createdAt": 1708338720000,
+    "scheduledAt": 1708338660000,
+    "pendingAt": 1708338720000
   },
   {
     "type": "signal.closed",
@@ -1198,7 +1266,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1708338660000
+    "createdAt": 1708338660000,
+    "scheduledAt": 1708338600000,
+    "pendingAt": 1708335060000
   },
   {
     "type": "partial_loss.available",
@@ -1235,7 +1305,9 @@
     "priceTakeProfit": 53927.7203,
     "priceStopLoss": 51309.8698,
     "note": "",
-    "createdAt": 1708335060000
+    "createdAt": 1708335060000,
+    "scheduledAt": 1708335000000,
+    "pendingAt": 1708335060000
   },
   {
     "type": "signal.closed",
@@ -1253,7 +1325,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1707996600000
+    "createdAt": 1707996600000,
+    "scheduledAt": 1707996540000,
+    "pendingAt": 1707993000000
   },
   {
     "type": "signal.opened",
@@ -1269,7 +1343,9 @@
     "priceTakeProfit": 53766.0103,
     "priceStopLoss": 51156.0098,
     "note": "",
-    "createdAt": 1707993000000
+    "createdAt": 1707993000000,
+    "scheduledAt": 1707992940000,
+    "pendingAt": 1707993000000
   },
   {
     "type": "signal.scheduled",
@@ -1302,7 +1378,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1707992940000
+    "createdAt": 1707992940000,
+    "scheduledAt": 1707992880000,
+    "pendingAt": 1707989340000
   },
   {
     "type": "signal.opened",
@@ -1318,7 +1396,9 @@
     "priceTakeProfit": 53640.340000000004,
     "priceStopLoss": 51036.44,
     "note": "",
-    "createdAt": 1707989340000
+    "createdAt": 1707989340000,
+    "scheduledAt": 1707989280000,
+    "pendingAt": 1707989340000
   },
   {
     "type": "partial_profit.available",
@@ -1372,7 +1452,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1707896640000
+    "createdAt": 1707896640000,
+    "scheduledAt": 1707896580000,
+    "pendingAt": 1707893040000
   },
   {
     "type": "partial_profit.available",
@@ -1409,7 +1491,9 @@
     "priceTakeProfit": 51055.0503,
     "priceStopLoss": 48576.6498,
     "note": "",
-    "createdAt": 1707893040000
+    "createdAt": 1707893040000,
+    "scheduledAt": 1707892980000,
+    "pendingAt": 1707893040000
   },
   {
     "type": "signal.scheduled",
@@ -1442,7 +1526,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1707892920000
+    "createdAt": 1707892920000,
+    "scheduledAt": 1707892860000,
+    "pendingAt": 1707889320000
   },
   {
     "type": "signal.opened",
@@ -1458,7 +1544,9 @@
     "priceTakeProfit": 51010.3792,
     "priceStopLoss": 48534.1472,
     "note": "",
-    "createdAt": 1707889320000
+    "createdAt": 1707889320000,
+    "scheduledAt": 1707889260000,
+    "pendingAt": 1707889320000
   },
   {
     "type": "signal.scheduled",
@@ -1491,7 +1579,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1707734820000
+    "createdAt": 1707734820000,
+    "scheduledAt": 1707734760000,
+    "pendingAt": 1707731220000
   },
   {
     "type": "partial_loss.available",
@@ -1528,7 +1618,9 @@
     "priceTakeProfit": 46444.492399999996,
     "priceStopLoss": 48838.5384,
     "note": "",
-    "createdAt": 1707731220000
+    "createdAt": 1707731220000,
+    "scheduledAt": 1707731160000,
+    "pendingAt": 1707731220000
   },
   {
     "type": "signal.closed",
@@ -1546,7 +1638,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1707731160000
+    "createdAt": 1707731160000,
+    "scheduledAt": 1707731100000,
+    "pendingAt": 1707727560000
   },
   {
     "type": "signal.opened",
@@ -1562,7 +1656,9 @@
     "priceTakeProfit": 46670.589700000004,
     "priceStopLoss": 49076.2902,
     "note": "",
-    "createdAt": 1707727560000
+    "createdAt": 1707727560000,
+    "scheduledAt": 1707727500000,
+    "pendingAt": 1707727560000
   },
   {
     "type": "signal.closed",
@@ -1580,7 +1676,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1707702600000
+    "createdAt": 1707702600000,
+    "scheduledAt": 1707702540000,
+    "pendingAt": 1707699000000
   },
   {
     "type": "partial_loss.available",
@@ -1638,7 +1736,9 @@
     "priceTakeProfit": 50062.12,
     "priceStopLoss": 47631.92,
     "note": "",
-    "createdAt": 1707699000000
+    "createdAt": 1707699000000,
+    "scheduledAt": 1707698940000,
+    "pendingAt": 1707699000000
   },
   {
     "type": "signal.scheduled",
@@ -1671,7 +1771,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1707698940000
+    "createdAt": 1707698940000,
+    "scheduledAt": 1707698880000,
+    "pendingAt": 1707695340000
   },
   {
     "type": "partial_profit.available",
@@ -1770,7 +1872,9 @@
     "priceTakeProfit": 49748.9897,
     "priceStopLoss": 47333.9902,
     "note": "",
-    "createdAt": 1707695340000
+    "createdAt": 1707695340000,
+    "scheduledAt": 1707695280000,
+    "pendingAt": 1707695340000
   },
   {
     "type": "signal.closed",
@@ -1788,7 +1892,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1707684480000
+    "createdAt": 1707684480000,
+    "scheduledAt": 1707684420000,
+    "pendingAt": 1707680880000
   },
   {
     "type": "partial_loss.available",
@@ -1825,7 +1931,9 @@
     "priceTakeProfit": 49732.520000000004,
     "priceStopLoss": 47318.32,
     "note": "",
-    "createdAt": 1707680880000
+    "createdAt": 1707680880000,
+    "scheduledAt": 1707680820000,
+    "pendingAt": 1707680880000
   },
   {
     "type": "signal.scheduled",
@@ -1858,7 +1966,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1707680760000
+    "createdAt": 1707680760000,
+    "scheduledAt": 1707680700000,
+    "pendingAt": 1707677160000
   },
   {
     "type": "partial_loss.available",
@@ -1895,7 +2005,9 @@
     "priceTakeProfit": 49730.6866,
     "priceStopLoss": 47316.575600000004,
     "note": "",
-    "createdAt": 1707677160000
+    "createdAt": 1707677160000,
+    "scheduledAt": 1707677100000,
+    "pendingAt": 1707677160000
   },
   {
     "type": "signal.closed",
@@ -1913,7 +2025,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1707501900000
+    "createdAt": 1707501900000,
+    "scheduledAt": 1707501840000,
+    "pendingAt": 1707498300000
   },
   {
     "type": "partial_profit.available",
@@ -2012,7 +2126,9 @@
     "priceTakeProfit": 48799.31940000001,
     "priceStopLoss": 46430.4204,
     "note": "",
-    "createdAt": 1707498300000
+    "createdAt": 1707498300000,
+    "scheduledAt": 1707498240000,
+    "pendingAt": 1707498300000
   },
   {
     "type": "signal.closed",
@@ -2030,7 +2146,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1707498240000
+    "createdAt": 1707498240000,
+    "scheduledAt": 1707498180000,
+    "pendingAt": 1707494640000
   },
   {
     "type": "partial_loss.available",
@@ -2067,7 +2185,9 @@
     "priceTakeProfit": 48799.350300000006,
     "priceStopLoss": 46430.4498,
     "note": "",
-    "createdAt": 1707494640000
+    "createdAt": 1707494640000,
+    "scheduledAt": 1707494580000,
+    "pendingAt": 1707494640000
   },
   {
     "type": "signal.closed",
@@ -2085,7 +2205,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1707404580000
+    "createdAt": 1707404580000,
+    "scheduledAt": 1707404520000,
+    "pendingAt": 1707400980000
   },
   {
     "type": "partial_loss.available",
@@ -2143,7 +2265,9 @@
     "priceTakeProfit": 46537.4497,
     "priceStopLoss": 44278.3502,
     "note": "",
-    "createdAt": 1707400980000
+    "createdAt": 1707400980000,
+    "scheduledAt": 1707400920000,
+    "pendingAt": 1707400980000
   },
   {
     "type": "signal.closed",
@@ -2161,7 +2285,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1707400920000
+    "createdAt": 1707400920000,
+    "scheduledAt": 1707400860000,
+    "pendingAt": 1707397320000
   },
   {
     "type": "partial_profit.available",
@@ -2219,7 +2345,9 @@
     "priceTakeProfit": 46143.4335,
     "priceStopLoss": 43903.460999999996,
     "note": "",
-    "createdAt": 1707397320000
+    "createdAt": 1707397320000,
+    "scheduledAt": 1707397260000,
+    "pendingAt": 1707397320000
   },
   {
     "type": "signal.closed",
@@ -2237,7 +2365,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1707387060000
+    "createdAt": 1707387060000,
+    "scheduledAt": 1707387000000,
+    "pendingAt": 1707383460000
   },
   {
     "type": "signal.opened",
@@ -2253,7 +2383,9 @@
     "priceTakeProfit": 45962.874500000005,
     "priceStopLoss": 43731.667,
     "note": "",
-    "createdAt": 1707383460000
+    "createdAt": 1707383460000,
+    "scheduledAt": 1707383400000,
+    "pendingAt": 1707383460000
   },
   {
     "type": "signal.scheduled",
@@ -2286,7 +2418,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1707382860000
+    "createdAt": 1707382860000,
+    "scheduledAt": 1707382800000,
+    "pendingAt": 1707379260000
   },
   {
     "type": "signal.opened",
@@ -2302,7 +2436,9 @@
     "priceTakeProfit": 45952.9144,
     "priceStopLoss": 43722.1904,
     "note": "",
-    "createdAt": 1707379260000
+    "createdAt": 1707379260000,
+    "scheduledAt": 1707379200000,
+    "pendingAt": 1707379260000
   },
   {
     "type": "signal.closed",
@@ -2320,7 +2456,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1707311700000
+    "createdAt": 1707311700000,
+    "scheduledAt": 1707311640000,
+    "pendingAt": 1707308100000
   },
   {
     "type": "partial_loss.available",
@@ -2357,7 +2495,9 @@
     "priceTakeProfit": 41651.5187,
     "priceStopLoss": 43798.5042,
     "note": "",
-    "createdAt": 1707308100000
+    "createdAt": 1707308100000,
+    "scheduledAt": 1707308040000,
+    "pendingAt": 1707308100000
   },
   {
     "type": "signal.scheduled",
@@ -2390,7 +2530,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1707308040000
+    "createdAt": 1707308040000,
+    "scheduledAt": 1707307980000,
+    "pendingAt": 1707304440000
   },
   {
     "type": "signal.opened",
@@ -2406,7 +2548,9 @@
     "priceTakeProfit": 41680.7642,
     "priceStopLoss": 43829.2572,
     "note": "",
-    "createdAt": 1707304440000
+    "createdAt": 1707304440000,
+    "scheduledAt": 1707304380000,
+    "pendingAt": 1707304440000
   },
   {
     "type": "signal.scheduled",
@@ -2439,7 +2583,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1706878260000
+    "createdAt": 1706878260000,
+    "scheduledAt": 1706878200000,
+    "pendingAt": 1706874660000
   },
   {
     "type": "signal.opened",
@@ -2455,7 +2601,9 @@
     "priceTakeProfit": 44442.86230000001,
     "priceStopLoss": 42285.4418,
     "note": "",
-    "createdAt": 1706874660000
+    "createdAt": 1706874660000,
+    "scheduledAt": 1706874600000,
+    "pendingAt": 1706874660000
   },
   {
     "type": "signal.scheduled",
@@ -2488,7 +2636,9 @@
     "closeReason": "time_expired",
     "duration": 60,
     "note": "",
-    "createdAt": 1706874600000
+    "createdAt": 1706874600000,
+    "scheduledAt": 1706874540000,
+    "pendingAt": 1706871000000
   },
   {
     "type": "signal.opened",
@@ -2504,6 +2654,8 @@
     "priceTakeProfit": 44416.15440000001,
     "priceStopLoss": 42260.0304,
     "note": "",
-    "createdAt": 1706871000000
+    "createdAt": 1706871000000,
+    "scheduledAt": 1706870940000,
+    "pendingAt": 1706871000000
   }
 ]
