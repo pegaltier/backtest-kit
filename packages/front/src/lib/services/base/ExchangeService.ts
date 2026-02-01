@@ -20,15 +20,15 @@ const INTERVAL_MINUTES: Record<CandleInterval, number> = {
 
 const STEP_TICKS: Record<CandleInterval, number> = {
   "1m": 960,
-  "3m": 320,
-  "5m": 192,
-  "15m": 64,
-  "30m": 32,
-  "1h": 16,
-  "2h": 8,
-  "4h": 4,
-  "6h": 2,
-  "8h": 2,
+  "3m": 960,
+  "5m": 960,
+  "15m": 960,
+  "30m": 960,
+  "1h": 960,
+  "2h": 960,
+  "4h": 960,
+  "6h": 960,
+  "8h": 960,
 };
 
 export class ExchangeService {
