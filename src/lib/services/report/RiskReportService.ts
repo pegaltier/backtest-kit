@@ -73,6 +73,8 @@ export class RiskReportService {
       originalPriceStopLoss: data.currentSignal?.originalPriceStopLoss,
       partialExecuted: data.currentSignal?.partialExecuted,
       note: data.currentSignal?.note,
+      pendingAt: data.currentSignal?.pendingAt,
+      scheduledAt: data.currentSignal?.scheduledAt,
       minuteEstimatedTime: data.currentSignal?.minuteEstimatedTime,
     }, {
       symbol: data.symbol,
