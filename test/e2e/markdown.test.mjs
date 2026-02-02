@@ -1,5 +1,10 @@
 import { test } from "worker-testbed";
 
+const alignTimestamp = (timestampMs, intervalMinutes) => {
+  const intervalMs = intervalMinutes * 60 * 1000;
+  return Math.floor(timestampMs / intervalMs) * intervalMs;
+};
+
 import {
   addExchangeSchema,
   addFrameSchema,
@@ -174,10 +179,10 @@ test("LIVE MARKDOWN: LiveMarkdownService works with persist storage", async ({ p
     getCandles: async (symbol, _interval, since, limit) => {
       const candles = [];
       const intervalMs = 60000;
-      const sinceTime = since.getTime();
+      const alignedSince = alignTimestamp(since.getTime(), 1);
 
       for (let i = 0; i < limit; i++) {
-        const timestamp = sinceTime + i * intervalMs;
+        const timestamp = alignedSince + i * intervalMs;
 
         if (symbol === "BTCUSDT") {
           // BTCUSDT LONG: свечи на уровне TP для закрытия
