@@ -90,6 +90,38 @@ priceOpen: number
 
 Target entry price for activation
 
+### priceTakeProfit
+
+```ts
+priceTakeProfit: number
+```
+
+Take profit target price
+
+### priceStopLoss
+
+```ts
+priceStopLoss: number
+```
+
+Stop loss exit price
+
+### originalPriceTakeProfit
+
+```ts
+originalPriceTakeProfit: number
+```
+
+Original take profit price before any trailing adjustments
+
+### originalPriceStopLoss
+
+```ts
+originalPriceStopLoss: number
+```
+
+Original stop loss price before any trailing adjustments
+
 ### scheduledAt
 
 ```ts

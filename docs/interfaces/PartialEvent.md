@@ -130,6 +130,22 @@ note: string
 
 Human-readable description of signal reason
 
+### pendingAt
+
+```ts
+pendingAt: number
+```
+
+Timestamp when position became active (ms)
+
+### scheduledAt
+
+```ts
+scheduledAt: number
+```
+
+Timestamp when signal was created/scheduled (ms)
+
 ### backtest
 
 ```ts

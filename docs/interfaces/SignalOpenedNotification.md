@@ -106,6 +106,22 @@ priceStopLoss: number
 
 Stop loss exit price
 
+### originalPriceTakeProfit
+
+```ts
+originalPriceTakeProfit: number
+```
+
+Original take profit price before any trailing adjustments
+
+### originalPriceStopLoss
+
+```ts
+originalPriceStopLoss: number
+```
+
+Original stop loss price before any trailing adjustments
+
 ### note
 
 ```ts
@@ -113,6 +129,22 @@ note: string
 ```
 
 Optional human-readable description of signal reason
+
+### scheduledAt
+
+```ts
+scheduledAt: number
+```
+
+Signal creation timestamp in milliseconds (when signal was first created/scheduled)
+
+### pendingAt
+
+```ts
+pendingAt: number
+```
+
+Pending timestamp in milliseconds (when position became pending/active at priceOpen)
 
 ### createdAt
 

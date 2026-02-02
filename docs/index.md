@@ -205,6 +205,7 @@ group: docs
 - [getContext](functions/getContext.md)
 - [getOrderBook](functions/getOrderBook.md)
 - [getRawCandles](functions/getRawCandles.md)
+- [getNextCandles](functions/getNextCandles.md)
 
 ## Interfaces
 

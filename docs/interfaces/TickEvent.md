@@ -161,3 +161,19 @@ duration: number
 ```
 
 Duration in minutes (only for closed)
+
+### pendingAt
+
+```ts
+pendingAt: number
+```
+
+Timestamp when position became active (only for opened/active/closed)
+
+### scheduledAt
+
+```ts
+scheduledAt: number
+```
+
+Timestamp when signal was created/scheduled (only for scheduled/waiting/opened/active/closed/cancelled)

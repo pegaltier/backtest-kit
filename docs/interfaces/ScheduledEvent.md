@@ -145,3 +145,19 @@ cancelId: string
 ```
 
 Cancellation ID (only for user-initiated cancellations)
+
+### pendingAt
+
+```ts
+pendingAt: number
+```
+
+Timestamp when position became active (only for opened events)
+
+### scheduledAt
+
+```ts
+scheduledAt: number
+```
+
+Timestamp when signal was created/scheduled (for all events)

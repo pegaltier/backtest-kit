@@ -10,13 +10,13 @@ Extends IRiskCheckArgs with portfolio state data.
 
 ## Properties
 
-### pendingSignal
+### currentSignal
 
 ```ts
-pendingSignal: IRiskSignalRow
+currentSignal: IRiskSignalRow
 ```
 
-Pending signal to apply (IRiskSignalRow is calculated internally so priceOpen always exist)
+Current signal being validated (IRiskSignalRow is calculated internally so priceOpen always exist)
 
 ### activePositionCount
 

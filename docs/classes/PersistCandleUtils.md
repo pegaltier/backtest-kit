@@ -38,11 +38,17 @@ getCandlesStorage: any
 ### readCandlesData
 
 ```ts
-readCandlesData: (symbol: string, interval: CandleInterval, exchangeName: string, limit: number, sinceTimestamp: number, untilTimestamp: number) => Promise<ICandleData[]>
+readCandlesData: (symbol: string, interval: CandleInterval, exchangeName: string, limit: number, sinceTimestamp: number, _untilTimestamp: number) => Promise<ICandleData[]>
 ```
 
 Reads cached candles for a specific exchange, symbol, and interval.
-Returns candles only if cache contains exactly the requested limit.
+Returns candles only if cache contains ALL requested candles.
+
+Algorithm (matches ClientExchange.ts logic):
+1. Calculate expected timestamps: sinceTimestamp, sinceTimestamp + stepMs, ..., sinceTimestamp + (limit-1) * stepMs
+2. Try to read each expected candle by timestamp key
+3. If ANY candle is missing, return null (cache miss)
+4. If all candles found, return them in order
 
 ### writeCandlesData
 
@@ -52,6 +58,11 @@ writeCandlesData: (candles: ICandleData[], symbol: string, interval: CandleInter
 
 Writes candles to cache with atomic file writes.
 Each candle is stored as a separate JSON file named by its timestamp.
+
+The candles passed to this function should be validated candles from the adapter:
+- First candle.timestamp equals aligned sinceTimestamp (openTime)
+- Exact number of candles as requested
+- All candles are fully closed (timestamp + stepMs &lt; untilTimestamp)
 
 ## Methods
 

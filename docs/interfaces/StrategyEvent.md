@@ -121,3 +121,67 @@ backtest: boolean
 ```
 
 True if backtest mode, false if live mode
+
+### position
+
+```ts
+position: "long" | "short"
+```
+
+Trade direction: "long" (buy) or "short" (sell)
+
+### priceOpen
+
+```ts
+priceOpen: number
+```
+
+Entry price for the position
+
+### priceTakeProfit
+
+```ts
+priceTakeProfit: number
+```
+
+Effective take profit price (with trailing if set)
+
+### priceStopLoss
+
+```ts
+priceStopLoss: number
+```
+
+Effective stop loss price (with trailing if set)
+
+### originalPriceTakeProfit
+
+```ts
+originalPriceTakeProfit: number
+```
+
+Original take profit price before any trailing adjustments
+
+### originalPriceStopLoss
+
+```ts
+originalPriceStopLoss: number
+```
+
+Original stop loss price before any trailing adjustments
+
+### scheduledAt
+
+```ts
+scheduledAt: number
+```
+
+Signal creation timestamp in milliseconds (when signal was first created/scheduled)
+
+### pendingAt
+
+```ts
+pendingAt: number
+```
+
+Pending timestamp in milliseconds (when position became pending/active at priceOpen)

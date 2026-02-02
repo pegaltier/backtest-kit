@@ -39,6 +39,14 @@ frameName: string
 backtest: boolean
 ```
 
+### signalId
+
+```ts
+signalId: string
+```
+
+Unique signal identifier (UUID v4)
+
 ### timestamp
 
 ```ts

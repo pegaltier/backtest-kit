@@ -82,6 +82,46 @@ position: "long" | "short"
 
 Trade direction: "long" (buy) or "short" (sell)
 
+### priceTakeProfit
+
+```ts
+priceTakeProfit: number
+```
+
+Take profit target price
+
+### priceStopLoss
+
+```ts
+priceStopLoss: number
+```
+
+Stop loss exit price
+
+### priceOpen
+
+```ts
+priceOpen: number
+```
+
+Entry price for the position
+
+### originalPriceTakeProfit
+
+```ts
+originalPriceTakeProfit: number
+```
+
+Original take profit price before any trailing adjustments
+
+### originalPriceStopLoss
+
+```ts
+originalPriceStopLoss: number
+```
+
+Original stop loss price before any trailing adjustments
+
 ### cancelReason
 
 ```ts
@@ -105,6 +145,22 @@ duration: number
 ```
 
 Duration in minutes from scheduledAt to cancellation
+
+### scheduledAt
+
+```ts
+scheduledAt: number
+```
+
+Signal creation timestamp in milliseconds (when signal was first created/scheduled)
+
+### pendingAt
+
+```ts
+pendingAt: number
+```
+
+Pending timestamp in milliseconds (when position became pending/active at priceOpen)
 
 ### createdAt
 

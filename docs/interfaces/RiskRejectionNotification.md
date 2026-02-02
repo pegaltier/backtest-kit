@@ -98,13 +98,61 @@ currentPrice: number
 
 Current market price when rejection occurred
 
-### pendingSignal
+### signalId
 
 ```ts
-pendingSignal: ISignalDto
+signalId: string
 ```
 
-The signal that was rejected
+Unique signal identifier from pending signal (may be undefined if not provided)
+
+### position
+
+```ts
+position: "long" | "short"
+```
+
+Trade direction: "long" (buy) or "short" (sell)
+
+### priceOpen
+
+```ts
+priceOpen: number
+```
+
+Entry price for the position (may be undefined if not provided)
+
+### priceTakeProfit
+
+```ts
+priceTakeProfit: number
+```
+
+Take profit target price
+
+### priceStopLoss
+
+```ts
+priceStopLoss: number
+```
+
+Stop loss exit price
+
+### minuteEstimatedTime
+
+```ts
+minuteEstimatedTime: number
+```
+
+Expected duration in minutes before time_expired
+
+### signalNote
+
+```ts
+signalNote: string
+```
+
+Optional human-readable description of signal reason
 
 ### createdAt
 

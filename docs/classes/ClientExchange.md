@@ -41,6 +41,13 @@ getCandles(symbol: string, interval: CandleInterval, limit: number): Promise<ICa
 
 Fetches historical candles backwards from execution context time.
 
+Algorithm:
+1. Align when down to interval boundary (e.g., 00:17 -&gt; 00:15 for 15m)
+2. Calculate since = alignedWhen - limit * step
+3. Fetch candles starting from since
+4. Validate first candle timestamp matches since (adapter must return inclusive data)
+5. Slice to limit
+
 ### getNextCandles
 
 ```ts
@@ -49,6 +56,13 @@ getNextCandles(symbol: string, interval: CandleInterval, limit: number): Promise
 
 Fetches future candles forwards from execution context time.
 Used in backtest mode to get candles for signal duration.
+
+Algorithm:
+1. Align when down to interval boundary (e.g., 00:17 -&gt; 00:15 for 15m)
+2. since = alignedWhen (start from aligned when)
+3. Fetch candles starting from since
+4. Validate first candle timestamp matches since (adapter must return inclusive data)
+5. Slice to limit
 
 ### getAveragePrice
 
@@ -90,6 +104,12 @@ getRawCandles(symbol: string, interval: CandleInterval, limit?: number, sDate?: 
 ```
 
 Fetches raw candles with flexible date/limit parameters.
+
+Algorithm:
+1. Align all timestamps down to interval boundary
+2. Fetch candles starting from aligned since
+3. Validate first candle timestamp matches aligned since (adapter must return inclusive data)
+4. Slice to limit
 
 All modes respect execution context and prevent look-ahead bias.
 

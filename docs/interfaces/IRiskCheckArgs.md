@@ -19,10 +19,10 @@ symbol: string
 
 Trading pair symbol (e.g., "BTCUSDT")
 
-### pendingSignal
+### currentSignal
 
 ```ts
-pendingSignal: IPublicSignalRow
+currentSignal: IPublicSignalRow
 ```
 
 Pending signal to apply

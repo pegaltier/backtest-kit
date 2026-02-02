@@ -26,10 +26,10 @@ symbol: string
 
 Trading pair symbol
 
-### pendingSignal
+### currentSignal
 
 ```ts
-pendingSignal: IRiskSignalRow
+currentSignal: IRiskSignalRow
 ```
 
 Pending signal details

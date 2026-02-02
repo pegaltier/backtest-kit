@@ -78,7 +78,7 @@ Records a close-pending event when a pending signal is closed.
 ### partialProfit
 
 ```ts
-partialProfit: (symbol: string, percentToClose: number, currentPrice: number, isBacktest: boolean, context: { strategyName: string; exchangeName: string; frameName: string; }, timestamp: number) => Promise<...>
+partialProfit: (symbol: string, percentToClose: number, currentPrice: number, isBacktest: boolean, context: { strategyName: string; exchangeName: string; frameName: string; }, timestamp: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalP...
 ```
 
 Records a partial-profit event when a portion of the position is closed at profit.
@@ -86,7 +86,7 @@ Records a partial-profit event when a portion of the position is closed at profi
 ### partialLoss
 
 ```ts
-partialLoss: (symbol: string, percentToClose: number, currentPrice: number, isBacktest: boolean, context: { strategyName: string; exchangeName: string; frameName: string; }, timestamp: number) => Promise<...>
+partialLoss: (symbol: string, percentToClose: number, currentPrice: number, isBacktest: boolean, context: { strategyName: string; exchangeName: string; frameName: string; }, timestamp: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalP...
 ```
 
 Records a partial-loss event when a portion of the position is closed at loss.
@@ -94,7 +94,7 @@ Records a partial-loss event when a portion of the position is closed at loss.
 ### trailingStop
 
 ```ts
-trailingStop: (symbol: string, percentShift: number, currentPrice: number, isBacktest: boolean, context: { strategyName: string; exchangeName: string; frameName: string; }, timestamp: number) => Promise<...>
+trailingStop: (symbol: string, percentShift: number, currentPrice: number, isBacktest: boolean, context: { strategyName: string; exchangeName: string; frameName: string; }, timestamp: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPri...
 ```
 
 Records a trailing-stop event when the stop-loss is adjusted.
@@ -102,7 +102,7 @@ Records a trailing-stop event when the stop-loss is adjusted.
 ### trailingTake
 
 ```ts
-trailingTake: (symbol: string, percentShift: number, currentPrice: number, isBacktest: boolean, context: { strategyName: string; exchangeName: string; frameName: string; }, timestamp: number) => Promise<...>
+trailingTake: (symbol: string, percentShift: number, currentPrice: number, isBacktest: boolean, context: { strategyName: string; exchangeName: string; frameName: string; }, timestamp: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPri...
 ```
 
 Records a trailing-take event when the take-profit is adjusted.
@@ -110,7 +110,7 @@ Records a trailing-take event when the take-profit is adjusted.
 ### breakeven
 
 ```ts
-breakeven: (symbol: string, currentPrice: number, isBacktest: boolean, context: { strategyName: string; exchangeName: string; frameName: string; }, timestamp: number) => Promise<void>
+breakeven: (symbol: string, currentPrice: number, isBacktest: boolean, context: { strategyName: string; exchangeName: string; frameName: string; }, timestamp: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, sc...
 ```
 
 Records a breakeven event when the stop-loss is moved to entry price.

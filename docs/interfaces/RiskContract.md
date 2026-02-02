@@ -28,10 +28,10 @@ symbol: string
 Trading pair symbol (e.g., "BTCUSDT").
 Identifies which market this rejected signal belongs to.
 
-### pendingSignal
+### currentSignal
 
 ```ts
-pendingSignal: ISignalDto
+currentSignal: ISignalDto
 ```
 
 Pending signal to apply.
