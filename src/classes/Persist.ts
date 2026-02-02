@@ -1346,19 +1346,20 @@ export class PersistCandleUtils {
 
   /**
    * Reads cached candles for a specific exchange, symbol, and interval.
-   * Returns candles only if cache contains exactly the requested limit.
+   * Returns candles only if cache contains ALL requested candles.
    *
-   * Boundary semantics (EXCLUSIVE):
-   * - sinceTimestamp: candle.timestamp must be > sinceTimestamp
-   * - untilTimestamp: candle.timestamp + stepMs must be < untilTimestamp
-   * - Only fully closed candles within the exclusive range are returned
+   * Algorithm (matches ClientExchange.ts logic):
+   * 1. Calculate expected timestamps: sinceTimestamp, sinceTimestamp + stepMs, ..., sinceTimestamp + (limit-1) * stepMs
+   * 2. Try to read each expected candle by timestamp key
+   * 3. If ANY candle is missing, return null (cache miss)
+   * 4. If all candles found, return them in order
    *
    * @param symbol - Trading pair symbol
    * @param interval - Candle interval
    * @param exchangeName - Exchange identifier
    * @param limit - Number of candles requested
-   * @param sinceTimestamp - Exclusive start timestamp in milliseconds
-   * @param untilTimestamp - Exclusive end timestamp in milliseconds
+   * @param sinceTimestamp - Aligned start timestamp (openTime of first candle)
+   * @param _untilTimestamp - Unused, kept for API compatibility
    * @returns Promise resolving to array of candles or null if cache is incomplete
    */
   public readCandlesData = async (
@@ -1367,7 +1368,7 @@ export class PersistCandleUtils {
     exchangeName: ExchangeName,
     limit: number,
     sinceTimestamp: number,
-    untilTimestamp: number
+    _untilTimestamp: number
   ): Promise<CandleData[] | null> => {
     swarm.loggerService.info("PersistCandleUtils.readCandlesData", {
       symbol,
@@ -1375,7 +1376,6 @@ export class PersistCandleUtils {
       exchangeName,
       limit,
       sinceTimestamp,
-      untilTimestamp,
     });
 
     const key = `${symbol}:${interval}:${exchangeName}`;
@@ -1383,38 +1383,36 @@ export class PersistCandleUtils {
     const stateStorage = this.getCandlesStorage(symbol, interval, exchangeName);
     await stateStorage.waitForInit(isInitial);
 
-
     const stepMs = INTERVAL_MINUTES[interval] * MS_PER_MINUTE;
 
-    // Collect all cached candles within the time range using EXCLUSIVE boundaries
+    // Calculate expected timestamps and fetch each candle directly
     const cachedCandles: CandleData[] = [];
 
-    for await (const timestamp of stateStorage.keys()) {
-      const ts = Number(timestamp);
+    for (let i = 0; i < limit; i++) {
+      const expectedTimestamp = sinceTimestamp + i * stepMs;
+      const timestampKey = String(expectedTimestamp);
 
-      // EXCLUSIVE boundaries:
-      // - candle.timestamp > sinceTimestamp
-      // - candle.timestamp + stepMs < untilTimestamp (fully closed before untilTimestamp)
-      if (ts > sinceTimestamp && ts + stepMs < untilTimestamp) {
-        try {
-          const candle = await stateStorage.readValue(timestamp);
-          cachedCandles.push(candle);
-        } catch (error) {
-          const message = `PersistCandleUtils.readCandlesData found invalid candle symbol=${symbol} interval=${interval} timestamp=${timestamp}`;
-          const payload = {
-            error: errorData(error),
-            message: getErrorMessage(error),
-          };
-          swarm.loggerService.warn(message, payload);
-          console.warn(message, payload);
-          errorEmitter.next(error);
-          continue;
-        }
+      if (await not(stateStorage.hasValue(timestampKey))) {
+        // Cache miss - candle not found
+        return null;
+      }
+
+      try {
+        const candle = await stateStorage.readValue(timestampKey);
+        cachedCandles.push(candle);
+      } catch (error) {
+        // Invalid candle in cache - treat as cache miss
+        const message = `PersistCandleUtils.readCandlesData found invalid candle symbol=${symbol} interval=${interval} timestamp=${expectedTimestamp}`;
+        const payload = {
+          error: errorData(error),
+          message: getErrorMessage(error),
+        };
+        swarm.loggerService.warn(message, payload);
+        console.warn(message, payload);
+        errorEmitter.next(error);
+        return null;
       }
     }
-
-    // Sort by timestamp ascending
-    cachedCandles.sort((a, b) => a.timestamp - b.timestamp);
 
     return cachedCandles;
   };
@@ -1423,11 +1421,12 @@ export class PersistCandleUtils {
    * Writes candles to cache with atomic file writes.
    * Each candle is stored as a separate JSON file named by its timestamp.
    *
-   * The candles passed to this function must already be filtered using EXCLUSIVE boundaries:
-   * - candle.timestamp > sinceTimestamp
-   * - candle.timestamp + stepMs < untilTimestamp
+   * The candles passed to this function should be validated candles from the adapter:
+   * - First candle.timestamp equals aligned sinceTimestamp (openTime)
+   * - Exact number of candles as requested
+   * - All candles are fully closed (timestamp + stepMs < untilTimestamp)
    *
-   * @param candles - Array of candle data to cache (already filtered with exclusive boundaries)
+   * @param candles - Array of candle data to cache (validated by the caller)
    * @param symbol - Trading pair symbol
    * @param interval - Candle interval
    * @param exchangeName - Exchange identifier
@@ -1451,8 +1450,30 @@ export class PersistCandleUtils {
     const stateStorage = this.getCandlesStorage(symbol, interval, exchangeName);
     await stateStorage.waitForInit(isInitial);
 
-    // Write each candle as a separate file
+    // Calculate step in milliseconds to determine candle close time
+    const stepMs = INTERVAL_MINUTES[interval] * MS_PER_MINUTE;
+    const now = Date.now();
+
+    // Write each candle as a separate file, skipping incomplete candles
     for (const candle of candles) {
+      // Skip incomplete candles: candle is complete when closeTime <= now
+      // closeTime = timestamp + stepMs
+      const candleCloseTime = candle.timestamp + stepMs;
+      if (candleCloseTime > now) {
+        swarm.loggerService.debug(
+          "PersistCandleUtils.writeCandlesData: skipping incomplete candle",
+          {
+            symbol,
+            interval,
+            exchangeName,
+            timestamp: candle.timestamp,
+            closeTime: candleCloseTime,
+            now,
+          }
+        );
+        continue;
+      }
+
       if (await not(stateStorage.hasValue(String(candle.timestamp)))) {
         await stateStorage.writeValue(String(candle.timestamp), candle);
       }

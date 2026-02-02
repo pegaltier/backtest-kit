@@ -1,5 +1,10 @@
 import { test } from "worker-testbed";
 
+const alignTimestamp = (timestampMs, intervalMinutes) => {
+  const intervalMs = intervalMinutes * 60 * 1000;
+  return Math.floor(timestampMs / intervalMs) * intervalMs;
+};
+
 import {
   addExchangeSchema,
   addStrategySchema,
@@ -7,22 +12,37 @@ import {
   PersistSignalAdapter,
 } from "../../build/index.mjs";
 
-import getMockCandles from "../mock/getMockCandles.mjs";
 import { createAwaiter } from "functools-kit";
 
 test("Live.getData returns LiveStatistics structure", async ({ pass, fail }) => {
 
   const [awaiter, { resolve }] = createAwaiter();
 
-  const price = 42150.5;
+  const intervalMs = 60000;
+  const basePrice = 42150.5;
+  const bufferMinutes = 5;
   const now = Date.now();
+  const bufferStartTime = alignTimestamp(now, 1) - bufferMinutes * intervalMs;
+
+  let allCandles = [];
+  for (let i = 0; i < 6; i++) {
+    allCandles.push({
+      timestamp: bufferStartTime + i * intervalMs,
+      open: basePrice,
+      high: basePrice + 100,
+      low: basePrice - 50,
+      close: basePrice,
+      volume: 100,
+    });
+  }
+
   const mockSignal = {
     id: "mock-getdata-signal-id",
     position: "long",
     note: "Live getData test",
-    priceOpen: price,
-    priceTakeProfit: price + 8_000,
-    priceStopLoss: price - 1_000,
+    priceOpen: basePrice,
+    priceTakeProfit: basePrice + 8_000,
+    priceStopLoss: basePrice - 1_000,
     minuteEstimatedTime: 120,
     exchangeName: "binance-mock-live-getdata",
     strategyName: "test-strategy-live-getdata",
@@ -45,8 +65,26 @@ test("Live.getData returns LiveStatistics structure", async ({ pass, fail }) => 
 
   addExchangeSchema({
     exchangeName: "binance-mock-live-getdata",
-    getCandles: async (_symbol, interval, since, limit) => {
-      return await getMockCandles(interval, since, limit);
+    getCandles: async (_symbol, _interval, since, limit) => {
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existingCandle = allCandles.find((c) => c.timestamp === timestamp);
+        if (existingCandle) {
+          result.push(existingCandle);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 50,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+      return result;
     },
     formatPrice: async (symbol, price) => {
       return price.toFixed(8);
@@ -99,15 +137,31 @@ test("Live.getData calculates all statistical metrics", async ({ pass, fail }) =
 
   const [awaiter, { resolve }] = createAwaiter();
 
-  const price = 42150.5;
+  const intervalMs = 60000;
+  const basePrice = 42150.5;
+  const bufferMinutes = 5;
   const now = Date.now() - 2 * 60 * 1000;
+  const bufferStartTime = alignTimestamp(now, 1) - bufferMinutes * intervalMs;
+
+  let allCandles = [];
+  for (let i = 0; i < 6; i++) {
+    allCandles.push({
+      timestamp: bufferStartTime + i * intervalMs,
+      open: basePrice,
+      high: basePrice + 100,
+      low: basePrice - 50,
+      close: basePrice,
+      volume: 100,
+    });
+  }
+
   const mockSignal = {
     id: "mock-metrics-signal-id",
     position: "long",
     note: "Live metrics test",
-    priceOpen: price,
-    priceTakeProfit: price + 1_000,
-    priceStopLoss: price - 1_000,
+    priceOpen: basePrice,
+    priceTakeProfit: basePrice + 1_000,
+    priceStopLoss: basePrice - 1_000,
     minuteEstimatedTime: 1,
     exchangeName: "binance-mock-live-metrics",
     strategyName: "test-strategy-live-metrics",
@@ -130,8 +184,26 @@ test("Live.getData calculates all statistical metrics", async ({ pass, fail }) =
 
   addExchangeSchema({
     exchangeName: "binance-mock-live-metrics",
-    getCandles: async (_symbol, interval, since, limit) => {
-      return await getMockCandles(interval, since, limit);
+    getCandles: async (_symbol, _interval, since, limit) => {
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existingCandle = allCandles.find((c) => c.timestamp === timestamp);
+        if (existingCandle) {
+          result.push(existingCandle);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 50,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+      return result;
     },
     formatPrice: async (symbol, price) => {
       return price.toFixed(8);
@@ -197,10 +269,46 @@ test("Live.getData returns null for invalid metrics with safe math", async ({ pa
 
   const [awaiter, { resolve }] = createAwaiter();
 
+  const intervalMs = 60000;
+  const basePrice = 42150.5;
+  const bufferMinutes = 5;
+  const now = Date.now();
+  const bufferStartTime = alignTimestamp(now, 1) - bufferMinutes * intervalMs;
+
+  let allCandles = [];
+  for (let i = 0; i < 6; i++) {
+    allCandles.push({
+      timestamp: bufferStartTime + i * intervalMs,
+      open: basePrice,
+      high: basePrice + 100,
+      low: basePrice - 50,
+      close: basePrice,
+      volume: 100,
+    });
+  }
+
   addExchangeSchema({
     exchangeName: "binance-mock-live-safe",
-    getCandles: async (_symbol, interval, since, limit) => {
-      return await getMockCandles(interval, since, limit);
+    getCandles: async (_symbol, _interval, since, limit) => {
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existingCandle = allCandles.find((c) => c.timestamp === timestamp);
+        if (existingCandle) {
+          result.push(existingCandle);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 50,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+      return result;
     },
     formatPrice: async (symbol, price) => {
       return price.toFixed(8);

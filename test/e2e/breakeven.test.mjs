@@ -1,5 +1,10 @@
 import { test } from "worker-testbed";
 
+const alignTimestamp = (timestampMs, intervalMinutes) => {
+  const intervalMs = intervalMinutes * 60 * 1000;
+  return Math.floor(timestampMs / intervalMs) * intervalMs;
+};
+
 import {
   addExchangeSchema,
   addFrameSchema,
@@ -29,14 +34,14 @@ test("BREAKEVEN BACKTEST: listenBreakeven fires for LONG position", async ({ pas
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
   const basePrice = 100000;
-  const bufferMinutes = 4;
+  const bufferMinutes = 5;
   const bufferStartTime = startTime - bufferMinutes * intervalMs;
 
   let allCandles = [];
   let signalGenerated = false;
 
-  // Предзаполняем минимум 5 свечей с учетом буфера
-  for (let i = 0; i < 5; i++) {
+  // Предзаполняем минимум 6 свечей с учетом буфера
+  for (let i = 0; i < 6; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
       open: basePrice,
@@ -50,9 +55,25 @@ test("BREAKEVEN BACKTEST: listenBreakeven fires for LONG position", async ({ pas
   addExchangeSchema({
     exchangeName: "binance-breakeven-1",
     getCandles: async (_symbol, _interval, since, limit) => {
-      const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existingCandle = allCandles.find((c) => c.timestamp === timestamp);
+        if (existingCandle) {
+          result.push(existingCandle);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 50,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+      return result;
     },
     formatPrice: async (_symbol, p) => p.toFixed(8),
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
@@ -222,13 +243,13 @@ test("BREAKEVEN BACKTEST: listenBreakeven fires for SHORT position", async ({ pa
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
   const basePrice = 100000;
-  const bufferMinutes = 4;
+  const bufferMinutes = 5;
   const bufferStartTime = startTime - bufferMinutes * intervalMs;
 
   let allCandles = [];
   let signalGenerated = false;
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
       open: basePrice,
@@ -242,9 +263,25 @@ test("BREAKEVEN BACKTEST: listenBreakeven fires for SHORT position", async ({ pa
   addExchangeSchema({
     exchangeName: "binance-breakeven-2",
     getCandles: async (_symbol, _interval, since, limit) => {
-      const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existingCandle = allCandles.find((c) => c.timestamp === timestamp);
+        if (existingCandle) {
+          result.push(existingCandle);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 50,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+      return result;
     },
     formatPrice: async (_symbol, p) => p.toFixed(8),
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
@@ -404,13 +441,13 @@ test("Breakeven.getData returns breakeven statistics for symbol", async ({ pass,
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
   const basePrice = 100000;
-  const bufferMinutes = 4;
+  const bufferMinutes = 5;
   const bufferStartTime = startTime - bufferMinutes * intervalMs;
 
   let allCandles = [];
   let signalGenerated = false;
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
       open: basePrice,
@@ -424,9 +461,25 @@ test("Breakeven.getData returns breakeven statistics for symbol", async ({ pass,
   addExchangeSchema({
     exchangeName: "binance-breakeven-3",
     getCandles: async (_symbol, _interval, since, limit) => {
-      const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existingCandle = allCandles.find((c) => c.timestamp === timestamp);
+        if (existingCandle) {
+          result.push(existingCandle);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 50,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+      return result;
     },
     formatPrice: async (_symbol, p) => p.toFixed(8),
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
@@ -564,13 +617,13 @@ test("Breakeven.getReport generates markdown report with table", async ({ pass, 
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
   const basePrice = 100000;
-  const bufferMinutes = 4;
+  const bufferMinutes = 5;
   const bufferStartTime = startTime - bufferMinutes * intervalMs;
 
   let allCandles = [];
   let signalGenerated = false;
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
       open: basePrice,
@@ -584,9 +637,25 @@ test("Breakeven.getReport generates markdown report with table", async ({ pass, 
   addExchangeSchema({
     exchangeName: "binance-breakeven-4",
     getCandles: async (_symbol, _interval, since, limit) => {
-      const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existingCandle = allCandles.find((c) => c.timestamp === timestamp);
+        if (existingCandle) {
+          result.push(existingCandle);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 50,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+      return result;
     },
     formatPrice: async (_symbol, p) => p.toFixed(8),
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
@@ -730,13 +799,13 @@ test("BREAKEVEN CALLBACK: onBreakeven fires for LONG position", async ({ pass, f
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
   const basePrice = 100000;
-  const bufferMinutes = 4;
+  const bufferMinutes = 5;
   const bufferStartTime = startTime - bufferMinutes * intervalMs;
 
   let allCandles = [];
   let signalGenerated = false;
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
       open: basePrice,
@@ -750,9 +819,25 @@ test("BREAKEVEN CALLBACK: onBreakeven fires for LONG position", async ({ pass, f
   addExchangeSchema({
     exchangeName: "binance-breakeven-6",
     getCandles: async (_symbol, _interval, since, limit) => {
-      const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existingCandle = allCandles.find((c) => c.timestamp === timestamp);
+        if (existingCandle) {
+          result.push(existingCandle);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 50,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+      return result;
     },
     formatPrice: async (_symbol, p) => p.toFixed(8),
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
@@ -918,13 +1003,13 @@ test("BREAKEVEN CALLBACK: onBreakeven fires for SHORT position", async ({ pass, 
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
   const basePrice = 100000;
-  const bufferMinutes = 4;
+  const bufferMinutes = 5;
   const bufferStartTime = startTime - bufferMinutes * intervalMs;
 
   let allCandles = [];
   let signalGenerated = false;
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
       open: basePrice,
@@ -938,9 +1023,25 @@ test("BREAKEVEN CALLBACK: onBreakeven fires for SHORT position", async ({ pass, 
   addExchangeSchema({
     exchangeName: "binance-breakeven-7",
     getCandles: async (_symbol, _interval, since, limit) => {
-      const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existingCandle = allCandles.find((c) => c.timestamp === timestamp);
+        if (existingCandle) {
+          result.push(existingCandle);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 50,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+      return result;
     },
     formatPrice: async (_symbol, p) => p.toFixed(8),
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
@@ -1107,11 +1208,11 @@ test("BREAKEVEN CALLBACK: onBreakeven fires for SHORT position", async ({ pass, 
  */
 test("BREAKEVEN: Price intrusion protection blocks breakeven", async ({ pass, fail }) => {
   const { commitBreakeven } = await import("../../build/index.mjs");
-  
+
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
   const basePrice = 100000;
-  const bufferMinutes = 4;
+  const bufferMinutes = 5;
   const bufferStartTime = startTime - bufferMinutes * intervalMs;
 
   let allCandles = [];
@@ -1119,7 +1220,7 @@ test("BREAKEVEN: Price intrusion protection blocks breakeven", async ({ pass, fa
   let breakevenAttempted = false;
   let intrusionBlocked = false;
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
       open: basePrice,
@@ -1133,9 +1234,25 @@ test("BREAKEVEN: Price intrusion protection blocks breakeven", async ({ pass, fa
   addExchangeSchema({
     exchangeName: "binance-breakeven-intrusion",
     getCandles: async (_symbol, _interval, since, limit) => {
-      const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existingCandle = allCandles.find((c) => c.timestamp === timestamp);
+        if (existingCandle) {
+          result.push(existingCandle);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 50,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+      return result;
     },
     formatPrice: async (_symbol, p) => p.toFixed(8),
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),

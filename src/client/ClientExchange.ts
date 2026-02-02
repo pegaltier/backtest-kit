@@ -33,6 +33,31 @@ const INTERVAL_MINUTES: Record<CandleInterval, number> = {
 };
 
 /**
+ * Aligns timestamp down to the nearest interval boundary.
+ * For example, for 15m interval: 00:17 -> 00:15, 00:44 -> 00:30
+ *
+ * Candle timestamp convention:
+ * - Candle timestamp = openTime (when candle opens)
+ * - Candle with timestamp 00:00 covers period [00:00, 00:15) for 15m interval
+ *
+ * Adapter contract:
+ * - Adapter must return candles with timestamp = openTime
+ * - First returned candle.timestamp must equal aligned since
+ * - Adapter must return exactly `limit` candles
+ *
+ * @param timestamp - Timestamp in milliseconds
+ * @param intervalMinutes - Interval in minutes
+ * @returns Aligned timestamp rounded down to interval boundary
+ */
+const ALIGN_TO_INTERVAL_FN = (
+  timestamp: number,
+  intervalMinutes: number,
+): number => {
+  const intervalMs = intervalMinutes * MS_PER_MINUTE;
+  return Math.floor(timestamp / intervalMs) * intervalMs;
+};
+
+/**
  * Validates that all candles have valid OHLCV data without anomalies.
  * Detects incomplete candles from Binance API by checking for abnormally low prices or volumes.
  * Incomplete candles often have prices like 0.1 instead of normal 100,000 or zero volume.
@@ -118,18 +143,16 @@ const VALIDATE_NO_INCOMPLETE_CANDLES_FN = (candles: ICandleData[]): void => {
 
 /**
  * Attempts to read candles from cache.
- * Validates cache consistency (no gaps in timestamps) before returning.
  *
- * Boundary semantics:
- * - sinceTimestamp: EXCLUSIVE lower bound (candle.timestamp > sinceTimestamp)
- * - untilTimestamp: EXCLUSIVE upper bound (candle.timestamp + stepMs < untilTimestamp)
- * - Only fully closed candles within the exclusive range are returned
+ * Cache lookup calculates expected timestamps:
+ * sinceTimestamp + i * stepMs for i = 0..limit-1
+ * Returns all candles if found, null if any missing.
  *
  * @param dto - Data transfer object containing symbol, interval, and limit
- * @param sinceTimestamp - Exclusive start timestamp in milliseconds
- * @param untilTimestamp - Exclusive end timestamp in milliseconds
+ * @param sinceTimestamp - Aligned start timestamp (openTime of first candle)
+ * @param untilTimestamp - Unused, kept for API compatibility
  * @param self - Instance of ClientExchange
- * @returns Cached candles array or null if cache miss or inconsistent
+ * @returns Cached candles array (exactly limit) or null if cache miss
  */
 const READ_CANDLES_CACHE_FN = trycatch(
   async (
@@ -142,8 +165,9 @@ const READ_CANDLES_CACHE_FN = trycatch(
     untilTimestamp: number,
     self: ClientExchange,
   ): Promise<ICandleData[] | null> => {
-    // PersistCandleAdapter.readCandlesData uses EXCLUSIVE boundaries:
-    // Returns candles where: timestamp > sinceTimestamp AND timestamp + stepMs < untilTimestamp
+    // PersistCandleAdapter.readCandlesData calculates expected timestamps:
+    // sinceTimestamp + i * stepMs for i = 0..limit-1
+    // Returns all candles if found, null if any missing
     const cachedCandles = await PersistCandleAdapter.readCandlesData(
       dto.symbol,
       dto.interval,
@@ -154,7 +178,7 @@ const READ_CANDLES_CACHE_FN = trycatch(
     );
 
     // Return cached data only if we have exactly the requested limit
-    if (cachedCandles.length === dto.limit) {
+    if (cachedCandles?.length === dto.limit) {
       self.params.logger.debug(
         `ClientExchange READ_CANDLES_CACHE_FN: cache hit for symbol=${dto.symbol}, interval=${dto.interval}, limit=${dto.limit}`,
       );
@@ -185,11 +209,12 @@ const READ_CANDLES_CACHE_FN = trycatch(
 /**
  * Writes candles to cache with error handling.
  *
- * The candles passed to this function must already be filtered using EXCLUSIVE boundaries:
- * - candle.timestamp > sinceTimestamp
- * - candle.timestamp + stepMs < untilTimestamp
+ * The candles passed to this function should be validated:
+ * - First candle.timestamp equals aligned sinceTimestamp (openTime)
+ * - Exact number of candles as requested (limit)
+ * - Sequential timestamps: sinceTimestamp + i * stepMs
  *
- * @param candles - Array of candle data to cache (already filtered with exclusive boundaries)
+ * @param candles - Array of validated candle data to cache
  * @param dto - Data transfer object containing symbol, interval, and limit
  * @param self - Instance of ClientExchange
  */
@@ -378,6 +403,13 @@ export class ClientExchange implements IExchange {
   /**
    * Fetches historical candles backwards from execution context time.
    *
+   * Algorithm:
+   * 1. Align when down to interval boundary (e.g., 00:17 -> 00:15 for 15m)
+   * 2. Calculate since = alignedWhen - limit * step
+   * 3. Fetch candles starting from since
+   * 4. Validate first candle timestamp matches since (adapter must return inclusive data)
+   * 5. Slice to limit
+   *
    * @param symbol - Trading pair symbol
    * @param interval - Candle interval
    * @param limit - Number of candles to fetch
@@ -395,17 +427,22 @@ export class ClientExchange implements IExchange {
     });
 
     const step = INTERVAL_MINUTES[interval];
-    const adjust = step * limit;
 
-    if (!adjust) {
+    if (!step) {
       throw new Error(
-        `ClientExchange unknown time adjust for interval=${interval}`,
+        `ClientExchange unknown interval=${interval}`,
       );
     }
 
-    const since = new Date(
-      this.params.execution.context.when.getTime() - adjust * MS_PER_MINUTE,
-    );
+    const stepMs = step * MS_PER_MINUTE;
+
+    // Align when down to interval boundary
+    const whenTimestamp = this.params.execution.context.when.getTime();
+    const alignedWhen = ALIGN_TO_INTERVAL_FN(whenTimestamp, step);
+
+    // Calculate since: go back limit candles from aligned when
+    const sinceTimestamp = alignedWhen - limit * stepMs;
+    const since = new Date(sinceTimestamp);
 
     let allData: ICandleData[] = [];
 
@@ -431,7 +468,7 @@ export class ClientExchange implements IExchange {
         if (remaining > 0) {
           // Move currentSince forward by the number of candles fetched
           currentSince = new Date(
-            currentSince.getTime() + chunkLimit * step * MS_PER_MINUTE,
+            currentSince.getTime() + chunkLimit * stepMs,
           );
         }
       }
@@ -439,42 +476,41 @@ export class ClientExchange implements IExchange {
       allData = await GET_CANDLES_FN({ symbol, interval, limit }, since, this);
     }
 
-    // Filter candles to strictly match the requested range
-    const whenTimestamp = this.params.execution.context.when.getTime();
-    const sinceTimestamp = since.getTime();
-
-    const stepMs = step * MS_PER_MINUTE;
-
-    const filteredData = allData.filter((candle) => {
-      // EXCLUSIVE boundaries:
-      // - candle.timestamp > sinceTimestamp (exclude exact boundary)
-      // - candle.timestamp + stepMs < whenTimestamp (fully closed before "when")
-      if (candle.timestamp <= sinceTimestamp) {
-        return false;
-      }
-
-      // Check against current time (when)
-      // Only allow candles that have fully CLOSED before "when"
-      return candle.timestamp + stepMs < whenTimestamp;
-    });
-
     // Apply distinct by timestamp to remove duplicates
     const uniqueData = Array.from(
       new Map(
-        filteredData.map((candle) => [candle.timestamp, candle]),
+        allData.map((candle) => [candle.timestamp, candle]),
       ).values(),
     );
 
-    if (filteredData.length !== uniqueData.length) {
-      const msg = `ClientExchange Removed ${filteredData.length - uniqueData.length} duplicate candles by timestamp`;
+    if (allData.length !== uniqueData.length) {
+      const msg = `ClientExchange getCandles: Removed ${allData.length - uniqueData.length} duplicate candles by timestamp`;
       this.params.logger.warn(msg);
       console.warn(msg);
     }
 
-    if (uniqueData.length < limit) {
-      const msg = `ClientExchange Expected ${limit} candles, got ${uniqueData.length}`;
-      this.params.logger.warn(msg);
-      console.warn(msg);
+    // Validate adapter returned data
+    if (uniqueData.length === 0) {
+      throw new Error(
+        `ClientExchange getCandles: adapter returned empty array. ` +
+        `Expected ${limit} candles starting from openTime=${sinceTimestamp}.`,
+      );
+    }
+
+    if (uniqueData[0].timestamp !== sinceTimestamp) {
+      throw new Error(
+        `ClientExchange getCandles: first candle timestamp mismatch. ` +
+        `Expected openTime=${sinceTimestamp}, got=${uniqueData[0].timestamp}. ` +
+        `Adapter must return candles with timestamp=openTime, starting from aligned since.`,
+      );
+    }
+
+    if (uniqueData.length !== limit) {
+      throw new Error(
+        `ClientExchange getCandles: candle count mismatch. ` +
+        `Expected ${limit} candles, got ${uniqueData.length}. ` +
+        `Adapter must return exact number of candles requested.`,
+      );
     }
 
     await CALL_CANDLE_DATA_CALLBACKS_FN(
@@ -492,6 +528,13 @@ export class ClientExchange implements IExchange {
   /**
    * Fetches future candles forwards from execution context time.
    * Used in backtest mode to get candles for signal duration.
+   *
+   * Algorithm:
+   * 1. Align when down to interval boundary (e.g., 00:17 -> 00:15 for 15m)
+   * 2. since = alignedWhen (start from aligned when)
+   * 3. Fetch candles starting from since
+   * 4. Validate first candle timestamp matches since (adapter must return inclusive data)
+   * 5. Slice to limit
    *
    * @param symbol - Trading pair symbol
    * @param interval - Candle interval
@@ -516,14 +559,29 @@ export class ClientExchange implements IExchange {
       );
     }
 
-    const since = new Date(this.params.execution.context.when.getTime());
+    const step = INTERVAL_MINUTES[interval];
+
+    if (!step) {
+      throw new Error(
+        `ClientExchange getNextCandles: unknown interval=${interval}`,
+      );
+    }
+
+    const stepMs = step * MS_PER_MINUTE;
     const now = Date.now();
 
-    // Вычисляем конечное время запроса
-    const step = INTERVAL_MINUTES[interval];
-    const endTime = since.getTime() + limit * step * MS_PER_MINUTE;
+    // Align when down to interval boundary
+    const whenTimestamp = this.params.execution.context.when.getTime();
+    const alignedWhen = ALIGN_TO_INTERVAL_FN(whenTimestamp, step);
 
-    // Проверяем что запрошенный период не заходит за Date.now()
+    // since = alignedWhen (start from aligned when, going forward)
+    const sinceTimestamp = alignedWhen;
+    const since = new Date(sinceTimestamp);
+
+    // Calculate end time for Date.now() check
+    const endTime = sinceTimestamp + limit * stepMs;
+
+    // Check that requested period does not exceed Date.now()
     if (endTime > now) {
       return [];
     }
@@ -552,7 +610,7 @@ export class ClientExchange implements IExchange {
         if (remaining > 0) {
           // Move currentSince forward by the number of candles fetched
           currentSince = new Date(
-            currentSince.getTime() + chunkLimit * step * MS_PER_MINUTE,
+            currentSince.getTime() + chunkLimit * stepMs,
           );
         }
       }
@@ -560,33 +618,41 @@ export class ClientExchange implements IExchange {
       allData = await GET_CANDLES_FN({ symbol, interval, limit }, since, this);
     }
 
-    // Filter candles to strictly match the requested range
-    const sinceTimestamp = since.getTime();
-    const stepMs = step * MS_PER_MINUTE;
-
-    const filteredData = allData.filter(
-      (candle) =>
-        candle.timestamp > sinceTimestamp &&
-        candle.timestamp + stepMs < endTime,
-    );
-
     // Apply distinct by timestamp to remove duplicates
     const uniqueData = Array.from(
       new Map(
-        filteredData.map((candle) => [candle.timestamp, candle]),
+        allData.map((candle) => [candle.timestamp, candle]),
       ).values(),
     );
 
-    if (filteredData.length !== uniqueData.length) {
-      const msg = `ClientExchange getNextCandles: Removed ${filteredData.length - uniqueData.length} duplicate candles by timestamp`;
+    if (allData.length !== uniqueData.length) {
+      const msg = `ClientExchange getNextCandles: Removed ${allData.length - uniqueData.length} duplicate candles by timestamp`;
       this.params.logger.warn(msg);
       console.warn(msg);
     }
 
-    if (uniqueData.length < limit) {
-      const msg = `ClientExchange getNextCandles: Expected ${limit} candles, got ${uniqueData.length}`;
-      this.params.logger.warn(msg);
-      console.warn(msg);
+    // Validate adapter returned data
+    if (uniqueData.length === 0) {
+      throw new Error(
+        `ClientExchange getNextCandles: adapter returned empty array. ` +
+        `Expected ${limit} candles starting from openTime=${sinceTimestamp}.`,
+      );
+    }
+
+    if (uniqueData[0].timestamp !== sinceTimestamp) {
+      throw new Error(
+        `ClientExchange getNextCandles: first candle timestamp mismatch. ` +
+        `Expected openTime=${sinceTimestamp}, got=${uniqueData[0].timestamp}. ` +
+        `Adapter must return candles with timestamp=openTime, starting from aligned since.`,
+      );
+    }
+
+    if (uniqueData.length !== limit) {
+      throw new Error(
+        `ClientExchange getNextCandles: candle count mismatch. ` +
+        `Expected ${limit} candles, got ${uniqueData.length}. ` +
+        `Adapter must return exact number of candles requested.`,
+      );
     }
 
     await CALL_CANDLE_DATA_CALLBACKS_FN(
@@ -695,6 +761,12 @@ export class ClientExchange implements IExchange {
   /**
    * Fetches raw candles with flexible date/limit parameters.
    *
+   * Algorithm:
+   * 1. Align all timestamps down to interval boundary
+   * 2. Fetch candles starting from aligned since
+   * 3. Validate first candle timestamp matches aligned since (adapter must return inclusive data)
+   * 4. Slice to limit
+   *
    * All modes respect execution context and prevent look-ahead bias.
    *
    * Parameter combinations:
@@ -739,10 +811,11 @@ export class ClientExchange implements IExchange {
       );
     }
 
+    const stepMs = step * MS_PER_MINUTE;
     const whenTimestamp = this.params.execution.context.when.getTime();
+    const alignedWhen = ALIGN_TO_INTERVAL_FN(whenTimestamp, step);
 
     let sinceTimestamp: number;
-    let untilTimestamp: number;
     let calculatedLimit: number;
 
     // Case 1: all three parameters provided
@@ -757,8 +830,8 @@ export class ClientExchange implements IExchange {
           `ClientExchange getRawCandles: eDate (${eDate}) exceeds execution context when (${whenTimestamp}). Look-ahead bias protection.`,
         );
       }
-      sinceTimestamp = sDate;
-      untilTimestamp = eDate;
+      // Align sDate down to interval boundary
+      sinceTimestamp = ALIGN_TO_INTERVAL_FN(sDate, step);
       calculatedLimit = limit;
     }
     // Case 2: sDate + eDate (no limit) - calculate limit from date range
@@ -773,9 +846,10 @@ export class ClientExchange implements IExchange {
           `ClientExchange getRawCandles: eDate (${eDate}) exceeds execution context when (${whenTimestamp}). Look-ahead bias protection.`,
         );
       }
-      sinceTimestamp = sDate;
-      untilTimestamp = eDate;
-      calculatedLimit = Math.ceil((eDate - sDate) / (step * MS_PER_MINUTE));
+      // Align sDate down to interval boundary
+      sinceTimestamp = ALIGN_TO_INTERVAL_FN(sDate, step);
+      const alignedEDate = ALIGN_TO_INTERVAL_FN(eDate, step);
+      calculatedLimit = Math.ceil((alignedEDate - sinceTimestamp) / stepMs);
       if (calculatedLimit <= 0) {
         throw new Error(
           `ClientExchange getRawCandles: calculated limit is ${calculatedLimit}, must be > 0`,
@@ -789,25 +863,26 @@ export class ClientExchange implements IExchange {
           `ClientExchange getRawCandles: eDate (${eDate}) exceeds execution context when (${whenTimestamp}). Look-ahead bias protection.`,
         );
       }
-      untilTimestamp = eDate;
-      sinceTimestamp = eDate - limit * step * MS_PER_MINUTE;
+      // Align eDate down and calculate sinceTimestamp
+      const alignedEDate = ALIGN_TO_INTERVAL_FN(eDate, step);
+      sinceTimestamp = alignedEDate - limit * stepMs;
       calculatedLimit = limit;
     }
     // Case 4: sDate + limit (no eDate) - calculate eDate forward from sDate
     else if (sDate !== undefined && eDate === undefined && limit !== undefined) {
-      sinceTimestamp = sDate;
-      untilTimestamp = sDate + limit * step * MS_PER_MINUTE;
-      if (untilTimestamp > whenTimestamp) {
+      // Align sDate down to interval boundary
+      sinceTimestamp = ALIGN_TO_INTERVAL_FN(sDate, step);
+      const endTimestamp = sinceTimestamp + limit * stepMs;
+      if (endTimestamp > whenTimestamp) {
         throw new Error(
-          `ClientExchange getRawCandles: calculated endTimestamp (${untilTimestamp}) exceeds execution context when (${whenTimestamp}). Look-ahead bias protection.`,
+          `ClientExchange getRawCandles: calculated endTimestamp (${endTimestamp}) exceeds execution context when (${whenTimestamp}). Look-ahead bias protection.`,
         );
       }
       calculatedLimit = limit;
     }
     // Case 5: Only limit - use execution.context.when as reference (backward like getCandles)
     else if (sDate === undefined && eDate === undefined && limit !== undefined) {
-      untilTimestamp = whenTimestamp;
-      sinceTimestamp = whenTimestamp - limit * step * MS_PER_MINUTE;
+      sinceTimestamp = alignedWhen - limit * stepMs;
       calculatedLimit = limit;
     }
     // Invalid: no parameters or only sDate or only eDate
@@ -843,7 +918,7 @@ export class ClientExchange implements IExchange {
         remaining -= chunkLimit;
         if (remaining > 0) {
           currentSince = new Date(
-            currentSince.getTime() + chunkLimit * step * MS_PER_MINUTE,
+            currentSince.getTime() + chunkLimit * stepMs,
           );
         }
       }
@@ -855,32 +930,41 @@ export class ClientExchange implements IExchange {
       );
     }
 
-    // Filter candles to strictly match the requested range
-    // Only include candles that have fully CLOSED before untilTimestamp
-    const stepMs = step * MS_PER_MINUTE;
-    const filteredData = allData.filter(
-      (candle) =>
-        candle.timestamp > sinceTimestamp &&
-        candle.timestamp + stepMs < untilTimestamp,
-    );
-
     // Apply distinct by timestamp to remove duplicates
     const uniqueData = Array.from(
       new Map(
-        filteredData.map((candle) => [candle.timestamp, candle]),
+        allData.map((candle) => [candle.timestamp, candle]),
       ).values(),
     );
 
-    if (filteredData.length !== uniqueData.length) {
-      const msg = `ClientExchange getRawCandles: Removed ${filteredData.length - uniqueData.length} duplicate candles by timestamp`;
+    if (allData.length !== uniqueData.length) {
+      const msg = `ClientExchange getRawCandles: Removed ${allData.length - uniqueData.length} duplicate candles by timestamp`;
       this.params.logger.warn(msg);
       console.warn(msg);
     }
 
-    if (uniqueData.length < calculatedLimit) {
-      const msg = `ClientExchange getRawCandles: Expected ${calculatedLimit} candles, got ${uniqueData.length}`;
-      this.params.logger.warn(msg);
-      console.warn(msg);
+    // Validate adapter returned data
+    if (uniqueData.length === 0) {
+      throw new Error(
+        `ClientExchange getRawCandles: adapter returned empty array. ` +
+        `Expected ${calculatedLimit} candles starting from openTime=${sinceTimestamp}.`,
+      );
+    }
+
+    if (uniqueData[0].timestamp !== sinceTimestamp) {
+      throw new Error(
+        `ClientExchange getRawCandles: first candle timestamp mismatch. ` +
+        `Expected openTime=${sinceTimestamp}, got=${uniqueData[0].timestamp}. ` +
+        `Adapter must return candles with timestamp=openTime, starting from aligned since.`,
+      );
+    }
+
+    if (uniqueData.length !== calculatedLimit) {
+      throw new Error(
+        `ClientExchange getRawCandles: candle count mismatch. ` +
+        `Expected ${calculatedLimit} candles, got ${uniqueData.length}. ` +
+        `Adapter must return exact number of candles requested.`,
+      );
     }
 
     await CALL_CANDLE_DATA_CALLBACKS_FN(

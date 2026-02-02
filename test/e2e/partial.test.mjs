@@ -13,6 +13,11 @@ import {
 
 import { Subject, sleep } from "functools-kit";
 
+const alignTimestamp = (timestampMs, intervalMinutes) => {
+  const intervalMs = intervalMinutes * 60 * 1000;
+  return Math.floor(timestampMs / intervalMs) * intervalMs;
+};
+
 /**
  * PARTIAL ТЕСТ #1: onPartialProfit вызывается в BACKTEST для LONG позиции
  */
@@ -23,14 +28,14 @@ test("PARTIAL BACKTEST: onPartialProfit for LONG with gradual profit", async ({ 
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
   const basePrice = 95000;
-  const bufferMinutes = 4;
+  const bufferMinutes = 5;
   const bufferStartTime = startTime - bufferMinutes * intervalMs;
 
   let allCandles = [];
   let signalGenerated = false;
 
-  // Предзаполняем минимум 5 свечей с учетом буфера
-  for (let i = 0; i < 5; i++) {
+  // Предзаполняем минимум 6 свечей с учетом буфера
+  for (let i = 0; i < 6; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
       open: basePrice,
@@ -44,9 +49,25 @@ test("PARTIAL BACKTEST: onPartialProfit for LONG with gradual profit", async ({ 
   addExchangeSchema({
     exchangeName: "binance-partial-fill",
     getCandles: async (_symbol, _interval, since, limit) => {
-      const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existingCandle = allCandles.find((c) => c.timestamp === timestamp);
+        if (existingCandle) {
+          result.push(existingCandle);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 50,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+      return result;
     },
     formatPrice: async (_symbol, p) => p.toFixed(8),
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
@@ -188,13 +209,13 @@ test("PARTIAL BACKTEST: onPartialLoss for LONG with gradual loss", async ({ pass
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
   const basePrice = 95000;
-  const bufferMinutes = 4;
+  const bufferMinutes = 5;
   const bufferStartTime = startTime - bufferMinutes * intervalMs;
 
   let allCandles = [];
   let signalGenerated = false;
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
       open: basePrice,
@@ -208,9 +229,25 @@ test("PARTIAL BACKTEST: onPartialLoss for LONG with gradual loss", async ({ pass
   addExchangeSchema({
     exchangeName: "binance-partial-loss",
     getCandles: async (_symbol, _interval, since, limit) => {
-      const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existingCandle = allCandles.find((c) => c.timestamp === timestamp);
+        if (existingCandle) {
+          result.push(existingCandle);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 50,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+      return result;
     },
     formatPrice: async (_symbol, p) => p.toFixed(8),
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
@@ -352,13 +389,13 @@ test("PARTIAL BACKTEST: onPartialProfit for SHORT with price falling", async ({ 
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
   const basePrice = 95000;
-  const bufferMinutes = 4;
+  const bufferMinutes = 5;
   const bufferStartTime = startTime - bufferMinutes * intervalMs;
 
   let allCandles = [];
   let signalGenerated = false;
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
       open: basePrice,
@@ -372,9 +409,25 @@ test("PARTIAL BACKTEST: onPartialProfit for SHORT with price falling", async ({ 
   addExchangeSchema({
     exchangeName: "binance-partial-short-fill",
     getCandles: async (_symbol, _interval, since, limit) => {
-      const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existingCandle = allCandles.find((c) => c.timestamp === timestamp);
+        if (existingCandle) {
+          result.push(existingCandle);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 50,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+      return result;
     },
     formatPrice: async (_symbol, p) => p.toFixed(8),
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
@@ -511,13 +564,13 @@ test("PARTIAL BACKTEST: onPartialLoss for SHORT with price rising", async ({ pas
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
   const basePrice = 95000;
-  const bufferMinutes = 4;
+  const bufferMinutes = 5;
   const bufferStartTime = startTime - bufferMinutes * intervalMs;
 
   let allCandles = [];
   let signalGenerated = false;
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
       open: basePrice,
@@ -531,9 +584,25 @@ test("PARTIAL BACKTEST: onPartialLoss for SHORT with price rising", async ({ pas
   addExchangeSchema({
     exchangeName: "binance-partial-short-loss",
     getCandles: async (_symbol, _interval, since, limit) => {
-      const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existingCandle = allCandles.find((c) => c.timestamp === timestamp);
+        if (existingCandle) {
+          result.push(existingCandle);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 50,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+      return result;
     },
     formatPrice: async (_symbol, p) => p.toFixed(8),
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
@@ -669,13 +738,13 @@ test("Partial.getData returns partial profit/loss statistics for symbol", async 
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
   const basePrice = 95000;
-  const bufferMinutes = 4;
+  const bufferMinutes = 5;
   const bufferStartTime = startTime - bufferMinutes * intervalMs;
 
   let allCandles = [];
   let signalGenerated = false;
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
       open: basePrice,
@@ -689,9 +758,25 @@ test("Partial.getData returns partial profit/loss statistics for symbol", async 
   addExchangeSchema({
     exchangeName: "binance-partial-facade-1",
     getCandles: async (_symbol, _interval, since, limit) => {
-      const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existingCandle = allCandles.find((c) => c.timestamp === timestamp);
+        if (existingCandle) {
+          result.push(existingCandle);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 50,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+      return result;
     },
     formatPrice: async (_symbol, p) => p.toFixed(8),
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
@@ -807,13 +892,13 @@ test("Partial.getReport generates markdown report with table", async ({ pass, fa
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
   const basePrice = 95000;
-  const bufferMinutes = 4;
+  const bufferMinutes = 5;
   const bufferStartTime = startTime - bufferMinutes * intervalMs;
 
   let allCandles = [];
   let signalGenerated = false;
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
       open: basePrice,
@@ -827,9 +912,25 @@ test("Partial.getReport generates markdown report with table", async ({ pass, fa
   addExchangeSchema({
     exchangeName: "binance-partial-facade-2",
     getCandles: async (_symbol, _interval, since, limit) => {
-      const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existingCandle = allCandles.find((c) => c.timestamp === timestamp);
+        if (existingCandle) {
+          result.push(existingCandle);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 50,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+      return result;
     },
     formatPrice: async (_symbol, p) => p.toFixed(8),
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
@@ -1055,7 +1156,7 @@ test("PARTIAL LISTENER: partialProfit() with listenPartialProfit for LONG", asyn
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
   const basePrice = 100000;
-  const bufferMinutes = 4;
+  const bufferMinutes = 5;
   const bufferStartTime = startTime - bufferMinutes * intervalMs;
 
   let allCandles = [];
@@ -1064,7 +1165,7 @@ test("PARTIAL LISTENER: partialProfit() with listenPartialProfit for LONG", asyn
   let listenerFired = false;
   let listenerData = null;
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
       open: basePrice,
@@ -1078,9 +1179,25 @@ test("PARTIAL LISTENER: partialProfit() with listenPartialProfit for LONG", asyn
   addExchangeSchema({
     exchangeName: "binance-listener-partial-profit",
     getCandles: async (_symbol, _interval, since, limit) => {
-      const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existingCandle = allCandles.find((c) => c.timestamp === timestamp);
+        if (existingCandle) {
+          result.push(existingCandle);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 50,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+      return result;
     },
     formatPrice: async (_symbol, p) => p.toFixed(8),
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
@@ -1278,7 +1395,7 @@ test("PARTIAL LISTENER: partialLoss() with listenPartialLoss for LONG", async ({
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
   const basePrice = 100000;
-  const bufferMinutes = 4;
+  const bufferMinutes = 5;
   const bufferStartTime = startTime - bufferMinutes * intervalMs;
 
   let allCandles = [];
@@ -1287,7 +1404,7 @@ test("PARTIAL LISTENER: partialLoss() with listenPartialLoss for LONG", async ({
   let listenerFired = false;
   let listenerData = null;
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
       open: basePrice,
@@ -1301,9 +1418,25 @@ test("PARTIAL LISTENER: partialLoss() with listenPartialLoss for LONG", async ({
   addExchangeSchema({
     exchangeName: "binance-listener-partial-loss",
     getCandles: async (_symbol, _interval, since, limit) => {
-      const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existingCandle = allCandles.find((c) => c.timestamp === timestamp);
+        if (existingCandle) {
+          result.push(existingCandle);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 50,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+      return result;
     },
     formatPrice: async (_symbol, p) => p.toFixed(8),
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
@@ -1501,7 +1634,7 @@ test("PARTIAL LISTENER: Multiple partialProfit with listenPartialProfit (VWAP-aw
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
   const basePrice = 100000;
-  const bufferMinutes = 4;
+  const bufferMinutes = 5;
   const bufferStartTime = startTime - bufferMinutes * intervalMs;
 
   let allCandles = [];
@@ -1510,7 +1643,7 @@ test("PARTIAL LISTENER: Multiple partialProfit with listenPartialProfit (VWAP-aw
   let secondPartialCalled = false;
   const listenerEvents = [];
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
       open: basePrice,
@@ -1524,9 +1657,25 @@ test("PARTIAL LISTENER: Multiple partialProfit with listenPartialProfit (VWAP-aw
   addExchangeSchema({
     exchangeName: "binance-listener-partial-multiple",
     getCandles: async (_symbol, _interval, since, limit) => {
-      const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existingCandle = allCandles.find((c) => c.timestamp === timestamp);
+        if (existingCandle) {
+          result.push(existingCandle);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 50,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+      return result;
     },
     formatPrice: async (_symbol, p) => p.toFixed(8),
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
@@ -1718,7 +1867,7 @@ test("PARTIAL LISTENER: partialProfit() with listenPartialProfit for SHORT", asy
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
   const basePrice = 100000;
-  const bufferMinutes = 4;
+  const bufferMinutes = 5;
   const bufferStartTime = startTime - bufferMinutes * intervalMs;
 
   let allCandles = [];
@@ -1727,7 +1876,7 @@ test("PARTIAL LISTENER: partialProfit() with listenPartialProfit for SHORT", asy
   let listenerFired = false;
   let listenerData = null;
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
       open: basePrice,
@@ -1741,9 +1890,25 @@ test("PARTIAL LISTENER: partialProfit() with listenPartialProfit for SHORT", asy
   addExchangeSchema({
     exchangeName: "binance-listener-short-profit",
     getCandles: async (_symbol, _interval, since, limit) => {
-      const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existingCandle = allCandles.find((c) => c.timestamp === timestamp);
+        if (existingCandle) {
+          result.push(existingCandle);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 50,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+      return result;
     },
     formatPrice: async (_symbol, p) => p.toFixed(8),
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
