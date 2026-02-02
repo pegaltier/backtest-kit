@@ -157,6 +157,24 @@ export const risk_columns: ColumnModel<RiskEvent>[] = [
     isVisible: () => true,
   },
   {
+    key: "pendingAt",
+    label: "Pending At",
+    format: (data) =>
+      data.currentSignal.pendingAt !== undefined
+        ? new Date(data.currentSignal.pendingAt).toISOString()
+        : "N/A",
+    isVisible: () => true,
+  },
+  {
+    key: "scheduledAt",
+    label: "Scheduled At",
+    format: (data) =>
+      data.currentSignal.scheduledAt !== undefined
+        ? new Date(data.currentSignal.scheduledAt).toISOString()
+        : "N/A",
+    isVisible: () => true,
+  },
+  {
     key: "timestamp",
     label: "Timestamp",
     format: (data) => new Date(data.timestamp).toISOString(),

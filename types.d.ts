@@ -3893,6 +3893,10 @@ interface BreakevenEvent {
     partialExecuted?: number;
     /** Human-readable description of signal reason */
     note?: string;
+    /** Timestamp when position became active (ms) */
+    pendingAt?: number;
+    /** Timestamp when signal was created/scheduled (ms) */
+    scheduledAt?: number;
     /** True if backtest mode, false if live mode */
     backtest: boolean;
 }
@@ -7294,6 +7298,10 @@ interface TickEvent {
     cancelReason?: string;
     /** Duration in minutes (only for closed) */
     duration?: number;
+    /** Timestamp when position became active (only for opened/active/closed) */
+    pendingAt?: number;
+    /** Timestamp when signal was created/scheduled (only for scheduled/waiting/opened/active/closed/cancelled) */
+    scheduledAt?: number;
 }
 /**
  * Statistical data calculated from live trading results.
@@ -7403,6 +7411,10 @@ interface ScheduledEvent {
     cancelReason?: "timeout" | "price_reject" | "user";
     /** Cancellation ID (only for user-initiated cancellations) */
     cancelId?: string;
+    /** Timestamp when position became active (only for opened events) */
+    pendingAt?: number;
+    /** Timestamp when signal was created/scheduled (for all events) */
+    scheduledAt?: number;
 }
 /**
  * Statistical data calculated from scheduled signals.
@@ -7575,6 +7587,10 @@ interface PartialEvent {
     partialExecuted?: number;
     /** Human-readable description of signal reason */
     note?: string;
+    /** Timestamp when position became active (ms) */
+    pendingAt?: number;
+    /** Timestamp when signal was created/scheduled (ms) */
+    scheduledAt?: number;
     /** True if backtest mode, false if live mode */
     backtest: boolean;
 }
