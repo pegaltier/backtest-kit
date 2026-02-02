@@ -221,8 +221,6 @@ For a candle with:
 
 The candle is included if: `timestamp + stepMs < upperBoundary`
 
----
-
 - `getCandles(symbol, interval, limit)` - Returns data in range `(when - limit*interval, when)`
   - Fetches historical candles backwards from execution context time
   - Only fully closed candles are included (candle must close before `when`)

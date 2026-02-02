@@ -15,6 +15,17 @@ const EXCHANGE_METHOD_NAME_GET_RAW_CANDLES = "ExchangeUtils.getRawCandles";
 const MS_PER_MINUTE = 60_000;
 
 /**
+ * Gets current timestamp from execution context if available.
+ * Returns current Date() if no execution context exists (non-trading GUI).
+ */
+const GET_TIMESTAMP_FN = async () => {
+  if (ExecutionContextService.hasContext()) {
+    return new Date(backtest.executionContextService.context.when);
+  }
+  return new Date();
+}
+
+/**
  * Gets backtest mode flag from execution context if available.
  * Returns false if no execution context exists (live mode).
  */
@@ -298,7 +309,7 @@ export class ExchangeInstance {
       );
     }
 
-    const when = new Date(Date.now());
+    const when = await GET_TIMESTAMP_FN();
     const since = new Date(when.getTime() - adjust * MS_PER_MINUTE);
     const sinceTimestamp = since.getTime();
     const untilTimestamp = sinceTimestamp + limit * step * MS_PER_MINUTE;
@@ -526,7 +537,7 @@ export class ExchangeInstance {
       depth,
     });
 
-    const to = new Date(Date.now());
+    const to = await GET_TIMESTAMP_FN();
     const from = new Date(to.getTime() - GLOBAL_CONFIG.CC_ORDER_BOOK_TIME_OFFSET_MINUTES * MS_PER_MINUTE);
     const isBacktest = await GET_BACKTEST_FN();
     return await this._methods.getOrderBook(symbol, depth, from, to, isBacktest);
@@ -585,7 +596,8 @@ export class ExchangeInstance {
       );
     }
 
-    const nowTimestamp = Date.now();
+    const when = await GET_TIMESTAMP_FN();
+    const nowTimestamp = when.getTime();
 
     let sinceTimestamp: number;
     let untilTimestamp: number;
