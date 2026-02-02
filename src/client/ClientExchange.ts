@@ -497,6 +497,12 @@ export class ClientExchange implements IExchange {
       limit,
     });
 
+    if (!this.params.execution.context.backtest) {
+      throw new Error(
+        `ClientExchange getNextCandles: cannot fetch future candles in live mode`,
+      );
+    }
+
     const since = new Date(this.params.execution.context.when.getTime());
     const now = Date.now();
 
@@ -835,10 +841,12 @@ export class ClientExchange implements IExchange {
     }
 
     // Filter candles to strictly match the requested range
+    // Only include candles that have fully CLOSED before untilTimestamp
+    const stepMs = step * MS_PER_MINUTE;
     const filteredData = allData.filter(
       (candle) =>
         candle.timestamp >= sinceTimestamp &&
-        candle.timestamp < untilTimestamp,
+        candle.timestamp + stepMs <= untilTimestamp,
     );
 
     // Apply distinct by timestamp to remove duplicates

@@ -15,6 +15,7 @@ const GET_CONTEXT_METHOD_NAME = "exchange.getContext";
 const HAS_TRADE_CONTEXT_METHOD_NAME = "exchange.hasTradeContext";
 const GET_ORDER_BOOK_METHOD_NAME = "exchange.getOrderBook";
 const GET_RAW_CANDLES_METHOD_NAME = "exchange.getRawCandles";
+const GET_NEXT_CANDLES_METHOD_NAME = "exchange.getNextCandles";
 
 /**
  * Checks if trade context is active (execution and method contexts).
@@ -357,5 +358,38 @@ export async function getRawCandles(
     limit,
     sDate,
     eDate
+  );
+}
+
+/**
+ * Fetches the set of candles after current time based on execution context.
+ *
+ * Uses the exchange's getNextCandles implementation to retrieve candles
+ * that occur after the current context time.
+ * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+ * @param interval - Candle interval ("1m" | "3m" | "5m" | "15m" | "30m" | "1h" | "2h" | "4h" | "6h" | "8h")
+ * @param limit - Number of candles to fetch
+ * @returns Promise resolving to array of candle data
+ */
+export async function getNextCandles(
+  symbol: string,
+  interval: CandleInterval,
+  limit: number,
+): Promise<ICandleData[]> {
+  backtest.loggerService.info(GET_NEXT_CANDLES_METHOD_NAME, {
+    symbol,
+    interval,
+    limit,
+  });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("getNextCandles requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("getNextCandles requires a method context");
+  }
+  return await backtest.exchangeConnectionService.getNextCandles(
+    symbol,
+    interval,
+    limit,
   );
 }

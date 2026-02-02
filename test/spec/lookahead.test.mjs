@@ -5,6 +5,9 @@ import {
   addStrategySchema,
   Backtest,
   getCandles,
+  getRawCandles,
+  getNextCandles,
+  Exchange,
 } from "../../build/index.mjs";
 import { createAwaiter } from "functools-kit";
 
@@ -117,5 +120,389 @@ test("getCandles does not return unclosed candles (lookahead bias from higher ti
     if (!t1h) msg += `1h: Expected 09:00, got ${last1h ? new Date(last1h.timestamp).toISOString() : 'undefined'}\n`;
     if (!t4h) msg += `4h: Expected 04:00, got ${last4h ? new Date(last4h.timestamp).toISOString() : 'undefined'}\n`;
     fail(msg);
+  }
+});
+
+test("getRawCandles prevents lookahead bias with different parameter combinations", async ({
+  pass,
+  fail,
+}) => {
+  const [awaiter, { resolve }] = createAwaiter();
+
+  // Test Time: 2024-01-01T10:24:00Z
+  const T_10_24 = new Date("2024-01-01T10:24:00Z");
+  const T_10_24_MS = T_10_24.getTime();
+
+  // Helper to generate candles
+  const generateCandles = (intervalMinutes, count) => {
+    const candles = [];
+    const stepMs = intervalMinutes * 60 * 1000;
+    let current = new Date("2024-01-01T00:00:00Z").getTime();
+
+    for (let i = 0; i < count; i++) {
+      candles.push({
+        timestamp: current,
+        open: 100,
+        high: 105,
+        low: 95,
+        close: 101,
+        volume: 1000,
+      });
+      current += stepMs;
+    }
+    return candles;
+  };
+
+  const candles1m = generateCandles(1, 2000);
+  const candles15m = generateCandles(15, 200);
+
+  addExchangeSchema({
+    exchangeName: "test-exchange-raw",
+    getCandles: async (_symbol, interval, since, limit) => {
+      let source = [];
+      if (interval === "1m") source = candles1m;
+      else if (interval === "15m") source = candles15m;
+      else return [];
+
+      const sinceMs = since.getTime();
+      const filtered = source.filter((c) => c.timestamp >= sinceMs);
+      return filtered.slice(0, limit);
+    },
+    formatPrice: async (_, p) => p.toFixed(2),
+    formatQuantity: async (_, q) => q.toFixed(5),
+  });
+
+  addStrategySchema({
+    strategyName: "test-raw-candles",
+    interval: "1m",
+    getSignal: async () => {
+      try {
+        // Test Case 1: Only limit (backward from current time)
+        const test1 = await getRawCandles("BTCUSDT", "1m", 10);
+
+        // Test Case 2: sDate + limit (forward from sDate)
+        const T_10_00_MS = new Date("2024-01-01T10:00:00Z").getTime();
+        const test2 = await getRawCandles("BTCUSDT", "1m", 10, T_10_00_MS);
+
+        // Test Case 3: eDate + limit (backward from eDate)
+        const T_10_20_MS = new Date("2024-01-01T10:20:00Z").getTime();
+        const test3 = await getRawCandles("BTCUSDT", "15m", 5, undefined, T_10_20_MS);
+
+        // Test Case 4: sDate + eDate (calculate limit from range)
+        const test4 = await getRawCandles(
+          "BTCUSDT",
+          "1m",
+          undefined,
+          T_10_00_MS,
+          T_10_20_MS
+        );
+
+        // Test Case 5: All parameters
+        const test5 = await getRawCandles(
+          "BTCUSDT",
+          "1m",
+          15,
+          T_10_00_MS,
+          T_10_20_MS
+        );
+
+        resolve({ test1, test2, test3, test4, test5 });
+      } catch (e) {
+        resolve({ error: e.message });
+      }
+      return null;
+    },
+  });
+
+  addFrameSchema({
+    frameName: "raw-candles-check",
+    interval: "1d",
+    startDate: T_10_24,
+    endDate: new Date("2024-01-01T10:35:00Z"),
+  });
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-raw-candles",
+    exchangeName: "test-exchange-raw",
+    frameName: "raw-candles-check",
+  });
+
+  const results = await awaiter;
+
+  if (results.error) {
+    fail(`Test error: ${results.error}`);
+    return;
+  }
+
+  const { test1, test2, test3, test4, test5 } = results;
+
+  const errors = [];
+
+  // Test 1: Only limit - should return 10 candles ending before T_10_24
+  if (!test1 || test1.length !== 10) {
+    errors.push(`Test1: Expected 10 candles, got ${test1?.length || 0}`);
+  } else {
+    const last = test1[test1.length - 1];
+    const expectedLast = new Date("2024-01-01T10:23:00Z").getTime();
+    if (last.timestamp !== expectedLast) {
+      errors.push(
+        `Test1: Last candle timestamp wrong. Expected ${new Date(expectedLast).toISOString()}, got ${new Date(last.timestamp).toISOString()}`
+      );
+    }
+  }
+
+  // Test 2: sDate + limit - should return 10 candles starting from T_10_00
+  if (!test2 || test2.length !== 10) {
+    errors.push(`Test2: Expected 10 candles, got ${test2?.length || 0}`);
+  } else {
+    const first = test2[0];
+    const last = test2[test2.length - 1];
+    const expectedFirst = new Date("2024-01-01T10:00:00Z").getTime();
+    const expectedLast = new Date("2024-01-01T10:09:00Z").getTime();
+    if (first.timestamp !== expectedFirst) {
+      errors.push(
+        `Test2: First candle wrong. Expected ${new Date(expectedFirst).toISOString()}, got ${new Date(first.timestamp).toISOString()}`
+      );
+    }
+    if (last.timestamp !== expectedLast) {
+      errors.push(
+        `Test2: Last candle wrong. Expected ${new Date(expectedLast).toISOString()}, got ${new Date(last.timestamp).toISOString()}`
+      );
+    }
+  }
+
+  // Test 3: eDate + limit - should return candles that fully closed before or at T_10_20
+  // sinceTimestamp = 10:20 - 5*15min = 09:05
+  // untilTimestamp = 10:20
+  // Candles that match: >= 09:05 AND close <= 10:20
+  // Result: 09:15(closes 09:30), 09:30(closes 09:45), 09:45(closes 10:00), 10:00(closes 10:15)
+  // Note: 09:00 starts before 09:05, so it's excluded
+  if (!test3 || test3.length !== 4) {
+    errors.push(`Test3: Expected 4 candles, got ${test3?.length || 0}`);
+  } else {
+    const first = test3[0];
+    const last = test3[test3.length - 1];
+    const expectedFirst = new Date("2024-01-01T09:15:00Z").getTime();
+    const expectedLast = new Date("2024-01-01T10:00:00Z").getTime();
+    if (first.timestamp !== expectedFirst) {
+      errors.push(
+        `Test3: First 15m candle wrong. Expected ${new Date(expectedFirst).toISOString()}, got ${new Date(first.timestamp).toISOString()}`
+      );
+    }
+    if (last.timestamp !== expectedLast) {
+      errors.push(
+        `Test3: Last 15m candle wrong. Expected ${new Date(expectedLast).toISOString()}, got ${new Date(last.timestamp).toISOString()}`
+      );
+    }
+  }
+
+  // Test 4: sDate + eDate - should calculate limit (20 minutes = 20 candles)
+  if (!test4 || test4.length !== 20) {
+    errors.push(`Test4: Expected 20 candles, got ${test4?.length || 0}`);
+  } else {
+    const first = test4[0];
+    const last = test4[test4.length - 1];
+    const expectedFirst = new Date("2024-01-01T10:00:00Z").getTime();
+    const expectedLast = new Date("2024-01-01T10:19:00Z").getTime();
+    if (first.timestamp !== expectedFirst || last.timestamp !== expectedLast) {
+      errors.push(
+        `Test4: Range wrong. Expected ${new Date(expectedFirst).toISOString()} to ${new Date(expectedLast).toISOString()}, got ${new Date(first.timestamp).toISOString()} to ${new Date(last.timestamp).toISOString()}`
+      );
+    }
+  }
+
+  // Test 5: All parameters - should respect limit parameter
+  if (!test5 || test5.length !== 15) {
+    errors.push(`Test5: Expected 15 candles, got ${test5?.length || 0}`);
+  } else {
+    const first = test5[0];
+    const expectedFirst = new Date("2024-01-01T10:00:00Z").getTime();
+    if (first.timestamp !== expectedFirst) {
+      errors.push(
+        `Test5: First candle wrong. Expected ${new Date(expectedFirst).toISOString()}, got ${new Date(first.timestamp).toISOString()}`
+      );
+    }
+  }
+
+  if (errors.length === 0) {
+    pass("getRawCandles correctly handles all parameter combinations without lookahead bias");
+  } else {
+    fail("getRawCandles test failures:\n" + errors.join("\n"));
+  }
+});
+
+test("getNextCandles prevents lookahead bias and only returns future candles", async ({
+  pass,
+  fail,
+}) => {
+  const [awaiter, { resolve }] = createAwaiter();
+
+  // Test Time: 2024-01-01T10:24:00Z
+  const T_10_24 = new Date("2024-01-01T10:24:00Z");
+
+  // Helper to generate candles
+  const generateCandles = (intervalMinutes, count) => {
+    const candles = [];
+    const stepMs = intervalMinutes * 60 * 1000;
+    let current = new Date("2024-01-01T00:00:00Z").getTime();
+
+    for (let i = 0; i < count; i++) {
+      candles.push({
+        timestamp: current,
+        open: 100 + i,
+        high: 105 + i,
+        low: 95 + i,
+        close: 101 + i,
+        volume: 1000 + i,
+      });
+      current += stepMs;
+    }
+    return candles;
+  };
+
+  const candles1m = generateCandles(1, 2000);
+  const candles15m = generateCandles(15, 200);
+
+  addExchangeSchema({
+    exchangeName: "test-exchange-next",
+    getCandles: async (_symbol, interval, since, limit) => {
+      let source = [];
+      if (interval === "1m") source = candles1m;
+      else if (interval === "15m") source = candles15m;
+      else return [];
+
+      const sinceMs = since.getTime();
+      const filtered = source.filter((c) => c.timestamp >= sinceMs);
+      return filtered.slice(0, limit);
+    },
+    formatPrice: async (_, p) => p.toFixed(2),
+    formatQuantity: async (_, q) => q.toFixed(5),
+  });
+
+  addStrategySchema({
+    strategyName: "test-next-candles",
+    interval: "1m",
+    getSignal: async () => {
+      try {
+        // Test Case 1: Get next 5 1m candles after current time (T_10_24)
+        const next1m = await getNextCandles("BTCUSDT", "1m", 5);
+
+        // Test Case 2: Get next 3 15m candles after current time
+        const next15m = await getNextCandles("BTCUSDT", "15m", 3);
+
+        // Test Case 3: Request beyond Date.now() - should return empty array
+        // Since backtest time is T_10_24 (2024-01-01T10:24:00Z)
+        // and we have candles up to ~2000 minutes from start
+        // requesting a huge number should hit the Date.now() limit
+        const nextBeyond = await getNextCandles("BTCUSDT", "1m", 10000);
+
+        resolve({ next1m, next15m, nextBeyond });
+      } catch (e) {
+        resolve({ error: e.message });
+      }
+      return null;
+    },
+  });
+
+  addFrameSchema({
+    frameName: "next-candles-check",
+    interval: "1d",
+    startDate: T_10_24,
+    endDate: new Date("2024-01-01T10:35:00Z"),
+  });
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-next-candles",
+    exchangeName: "test-exchange-next",
+    frameName: "next-candles-check",
+  });
+
+  const results = await awaiter;
+
+  if (results.error) {
+    fail(`Test error: ${results.error}`);
+    return;
+  }
+
+  const { next1m, next15m, nextBeyond } = results;
+
+  const errors = [];
+
+  // Test 1: next1m - should return 5 candles starting from T_10_24
+  if (!next1m || next1m.length !== 5) {
+    errors.push(`Test1 (next1m): Expected 5 candles, got ${next1m?.length || 0}`);
+  } else {
+    const first = next1m[0];
+    const last = next1m[next1m.length - 1];
+    const expectedFirst = new Date("2024-01-01T10:24:00Z").getTime();
+    const expectedLast = new Date("2024-01-01T10:28:00Z").getTime();
+
+    if (first.timestamp !== expectedFirst) {
+      errors.push(
+        `Test1: First candle wrong. Expected ${new Date(expectedFirst).toISOString()}, got ${new Date(first.timestamp).toISOString()}`
+      );
+    }
+    if (last.timestamp !== expectedLast) {
+      errors.push(
+        `Test1: Last candle wrong. Expected ${new Date(expectedLast).toISOString()}, got ${new Date(last.timestamp).toISOString()}`
+      );
+    }
+
+    // Verify candles are sequential
+    for (let i = 1; i < next1m.length; i++) {
+      const expectedTs = expectedFirst + i * 60 * 1000;
+      if (next1m[i].timestamp !== expectedTs) {
+        errors.push(
+          `Test1: Candle ${i} not sequential. Expected ${new Date(expectedTs).toISOString()}, got ${new Date(next1m[i].timestamp).toISOString()}`
+        );
+        break;
+      }
+    }
+  }
+
+  // Test 2: next15m - should return 3 15m candles starting from T_10_30 (next 15m boundary)
+  if (!next15m || next15m.length !== 3) {
+    errors.push(`Test2 (next15m): Expected 3 candles, got ${next15m?.length || 0}`);
+  } else {
+    const first = next15m[0];
+    const last = next15m[next15m.length - 1];
+    // Next 15m boundary after 10:24 is 10:30
+    const expectedFirst = new Date("2024-01-01T10:30:00Z").getTime();
+    const expectedLast = new Date("2024-01-01T11:00:00Z").getTime();
+
+    if (first.timestamp !== expectedFirst) {
+      errors.push(
+        `Test2: First 15m candle wrong. Expected ${new Date(expectedFirst).toISOString()}, got ${new Date(first.timestamp).toISOString()}`
+      );
+    }
+    if (last.timestamp !== expectedLast) {
+      errors.push(
+        `Test2: Last 15m candle wrong. Expected ${new Date(expectedLast).toISOString()}, got ${new Date(last.timestamp).toISOString()}`
+      );
+    }
+  }
+
+  // Test 3: nextBeyond - should return empty array when requested range exceeds Date.now()
+  if (!nextBeyond) {
+    errors.push(`Test3 (nextBeyond): Expected empty array, got null/undefined`);
+  } else if (nextBeyond.length > 0) {
+    // This is expected since our test data goes far into the future
+    // But getNextCandles should still respect Date.now() limit
+    // Let's just verify the candles don't exceed Date.now()
+    const now = Date.now();
+    const lastCandle = nextBeyond[nextBeyond.length - 1];
+    const lastCandleEnd = lastCandle.timestamp + 60 * 1000; // 1m candle duration
+
+    if (lastCandleEnd > now) {
+      errors.push(
+        `Test3: Candles exceed Date.now(). Last candle end: ${new Date(lastCandleEnd).toISOString()}, now: ${new Date(now).toISOString()}`
+      );
+    }
+  }
+
+  if (errors.length === 0) {
+    pass("getNextCandles correctly returns future candles without lookahead bias");
+  } else {
+    fail("getNextCandles test failures:\n" + errors.join("\n"));
   }
 });

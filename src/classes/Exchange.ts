@@ -698,10 +698,12 @@ export class ExchangeInstance {
     }
 
     // Filter candles to strictly match the requested range
+    // Only include candles that have fully CLOSED before untilTimestamp
+    const stepMs = step * MS_PER_MINUTE;
     const filteredData = allData.filter(
       (candle) =>
         candle.timestamp >= sinceTimestamp &&
-        candle.timestamp < untilTimestamp
+        candle.timestamp + stepMs <= untilTimestamp
     );
 
     // Apply distinct by timestamp to remove duplicates
