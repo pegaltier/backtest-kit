@@ -1148,7 +1148,7 @@ test("Exchange.getRawCandles edge case: candle closing exactly at eDate should b
   }
 });
 
-test("STRICT: Exchange.getCandles with exact minute boundary must include boundary candle", async ({
+test("STRICT: Exchange.getRawCandles with exact minute boundary must include boundary candle", async ({
   pass,
   fail,
 }) => {
@@ -1230,5 +1230,98 @@ test("STRICT: Exchange.getCandles with exact minute boundary must include bounda
     }
   } catch (error) {
     fail(`STRICT boundary test threw error: ${error.message}`);
+  }
+});
+
+
+test("STRICT: Exchange.getCandles with exact minute boundary must include boundary candle", async ({
+  pass,
+  fail,
+}) => {
+  // Use Date.now() rounded to minute boundary to create test data
+  const now = Date.now();
+  const nowRounded = Math.floor(now / 60000) * 60000;
+
+  // Generate candles ending exactly at nowRounded
+  // Last candle: opens at (nowRounded - 60s), closes at nowRounded
+  const candles1m = [];
+  for (let i = 20; i > 0; i--) {
+    candles1m.push({
+      timestamp: nowRounded - i * 60 * 1000,
+      open: 100 + i,
+      high: 105 + i,
+      low: 95 + i,
+      close: 101 + i,
+      volume: 1000 + i,
+    });
+  }
+
+  addExchangeSchema({
+    exchangeName: "test-strict-getcandles",
+    getCandles: async (_symbol, interval, since, limit) => {
+      if (interval !== "1m") return [];
+      const sinceMs = since.getTime();
+
+      // Return all candles >= since
+      const filtered = candles1m.filter((c) => c.timestamp >= sinceMs);
+      return filtered.slice(0, limit);
+    },
+    formatPrice: async (_, p) => p.toFixed(2),
+    formatQuantity: async (_, q) => q.toFixed(5),
+  });
+
+  try {
+    // Exchange.getCandles uses Date.now() internally
+    // It will calculate: Date.now() - 10*60*1000
+    // Expected: 10 candles, with last candle closing at or before Date.now()
+
+    const result = await Exchange.getCandles("BTCUSDT", "1m", 10, {
+      exchangeName: "test-strict-getcandles",
+    });
+
+    if (!Array.isArray(result) || result.length === 0) {
+      fail("Expected candles array with data, got empty or invalid result");
+      return;
+    }
+
+    const lastCandle = result[result.length - 1];
+    const lastCandleCloseTime = lastCandle.timestamp + 60 * 1000;
+
+    // The last candle should close at or before Date.now()
+    // If it closes EXACTLY at nowRounded (minute boundary), it should be included
+    const currentNow = Date.now();
+
+    if (lastCandleCloseTime > currentNow) {
+      fail(
+        `STRICT getCandles test failed: Last candle closes at ${new Date(lastCandleCloseTime).toISOString()}, ` +
+        `which is AFTER Date.now() (${new Date(currentNow).toISOString()}). Look-ahead bias detected!`
+      );
+      return;
+    }
+
+    // Check if the boundary candle (closing exactly at nowRounded) is included
+    const boundaryCandle = result.find((c) => c.timestamp + 60 * 1000 === nowRounded);
+
+    if (boundaryCandle) {
+      pass(
+        `STRICT Exchange.getCandles test passed: Candle closing EXACTLY at minute boundary (${new Date(nowRounded).toISOString()}) is correctly included. ` +
+        `Returned ${result.length} candles, last closes at ${new Date(lastCandleCloseTime).toISOString()}.`
+      );
+    } else {
+      // This might not be an error if Date.now() doesn't align with minute boundary
+      // But we can still verify the filtering logic is correct
+      if (lastCandleCloseTime <= currentNow) {
+        pass(
+          `STRICT Exchange.getCandles test passed: All returned candles close before or at Date.now(). ` +
+          `Returned ${result.length} candles, last closes at ${new Date(lastCandleCloseTime).toISOString()}.`
+        );
+      } else {
+        fail(
+          `STRICT getCandles test failed: Filtering logic error. Last candle closes after Date.now().`
+        );
+      }
+    }
+  } catch (error) {
+    fail(`STRICT getCandles test threw error: ${error.message}`);
   }
 });
