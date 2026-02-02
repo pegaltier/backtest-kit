@@ -205,14 +205,30 @@ Backtest Kit is **not a data-processing library** - it is a **time execution eng
 
 ### 🔍 How getCandles Works
 
-backtest-kit uses Node.js `AsyncLocalStorage` to automatically provide 
-temporal time context to your strategies. Exclusive (aka `[startTime, endTime)`) candle limit being used
+backtest-kit uses Node.js `AsyncLocalStorage` to automatically provide
+temporal time context to your strategies.
+
+**Boundary Semantics:**
+- `getCandles(symbol, interval, limit)` - Returns data in range `(when - limit*interval, when)`
+  - **Both boundaries are exclusive** - candles at exact boundary times are excluded
+  - Upper boundary (current time) excludes candles closing exactly at `when`
+  - Lower boundary excludes the earliest candle at range start
+
+- `getRawCandles(symbol, interval, limit?, sDate?, eDate?)` - Flexible parameter combinations:
+  - **Both boundaries are always exclusive** - candles at exact boundary times are excluded
+  - `(limit)` - Returns data in range `(now - limit*interval, now)`
+  - `(limit, sDate)` - Returns data in range `(sDate, sDate + limit*interval)`
+  - `(limit, undefined, eDate)` - Returns data in range `(eDate - limit*interval, eDate)`
+  - `(undefined, sDate, eDate)` - Returns data in range `(sDate, eDate)`, limit calculated from range
+  - `(limit, sDate, eDate)` - Returns data in range `(sDate, eDate)`, limit used only for array slice
+  - This prevents accidental inclusion of boundary conditions in backtest logic
 
 ### 💭 What this means:
 - `getCandles()` always returns data UP TO the current backtest timestamp using `async_hooks`
 - Multi-timeframe data is automatically synchronized
-- **Impossible to introduce look-ahead bias**
+- **Impossible to introduce look-ahead bias** - all time boundaries are enforced
 - Same code works in both backtest and live modes
+- Boundary semantics prevent edge cases in signal generation
 
 
 ## 🧠 Two Ways to Run the Engine
