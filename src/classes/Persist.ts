@@ -27,6 +27,22 @@ import { IStorageSignalRow } from "../interfaces/Strategy.interface";
 
 const BASE_WAIT_FOR_INIT_SYMBOL = Symbol("wait-for-init");
 
+// Calculate step in milliseconds for candle close time validation
+const INTERVAL_MINUTES: Record<CandleInterval, number> = {
+  "1m": 1,
+  "3m": 3,
+  "5m": 5,
+  "15m": 15,
+  "30m": 30,
+  "1h": 60,
+  "2h": 120,
+  "4h": 240,
+  "6h": 360,
+  "8h": 480,
+};
+
+const MS_PER_MINUTE = 60_000;
+
 const PERSIST_SIGNAL_UTILS_METHOD_NAME_USE_PERSIST_SIGNAL_ADAPTER =
   "PersistSignalUtils.usePersistSignalAdapter";
 const PERSIST_SIGNAL_UTILS_METHOD_NAME_READ_DATA =
@@ -1332,12 +1348,17 @@ export class PersistCandleUtils {
    * Reads cached candles for a specific exchange, symbol, and interval.
    * Returns candles only if cache contains exactly the requested limit.
    *
+   * Boundary semantics (EXCLUSIVE):
+   * - sinceTimestamp: candle.timestamp must be > sinceTimestamp
+   * - untilTimestamp: candle.timestamp + stepMs must be < untilTimestamp
+   * - Only fully closed candles within the exclusive range are returned
+   *
    * @param symbol - Trading pair symbol
    * @param interval - Candle interval
    * @param exchangeName - Exchange identifier
    * @param limit - Number of candles requested
-   * @param sinceTimestamp - Start timestamp (inclusive)
-   * @param untilTimestamp - End timestamp (exclusive)
+   * @param sinceTimestamp - Exclusive start timestamp in milliseconds
+   * @param untilTimestamp - Exclusive end timestamp in milliseconds
    * @returns Promise resolving to array of candles or null if cache is incomplete
    */
   public readCandlesData = async (
@@ -1362,12 +1383,19 @@ export class PersistCandleUtils {
     const stateStorage = this.getCandlesStorage(symbol, interval, exchangeName);
     await stateStorage.waitForInit(isInitial);
 
-    // Collect all cached candles within the time range
+
+    const stepMs = INTERVAL_MINUTES[interval] * MS_PER_MINUTE;
+
+    // Collect all cached candles within the time range using EXCLUSIVE boundaries
     const cachedCandles: CandleData[] = [];
 
     for await (const timestamp of stateStorage.keys()) {
       const ts = Number(timestamp);
-      if (ts > sinceTimestamp && ts < untilTimestamp) {
+
+      // EXCLUSIVE boundaries:
+      // - candle.timestamp > sinceTimestamp
+      // - candle.timestamp + stepMs < untilTimestamp (fully closed before untilTimestamp)
+      if (ts > sinceTimestamp && ts + stepMs < untilTimestamp) {
         try {
           const candle = await stateStorage.readValue(timestamp);
           cachedCandles.push(candle);
@@ -1395,7 +1423,11 @@ export class PersistCandleUtils {
    * Writes candles to cache with atomic file writes.
    * Each candle is stored as a separate JSON file named by its timestamp.
    *
-   * @param candles - Array of candle data to cache
+   * The candles passed to this function must already be filtered using EXCLUSIVE boundaries:
+   * - candle.timestamp > sinceTimestamp
+   * - candle.timestamp + stepMs < untilTimestamp
+   *
+   * @param candles - Array of candle data to cache (already filtered with exclusive boundaries)
    * @param symbol - Trading pair symbol
    * @param interval - Candle interval
    * @param exchangeName - Exchange identifier

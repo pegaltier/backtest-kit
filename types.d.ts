@@ -8395,12 +8395,17 @@ declare class PersistCandleUtils {
      * Reads cached candles for a specific exchange, symbol, and interval.
      * Returns candles only if cache contains exactly the requested limit.
      *
+     * Boundary semantics (EXCLUSIVE):
+     * - sinceTimestamp: candle.timestamp must be > sinceTimestamp
+     * - untilTimestamp: candle.timestamp + stepMs must be < untilTimestamp
+     * - Only fully closed candles within the exclusive range are returned
+     *
      * @param symbol - Trading pair symbol
      * @param interval - Candle interval
      * @param exchangeName - Exchange identifier
      * @param limit - Number of candles requested
-     * @param sinceTimestamp - Start timestamp (inclusive)
-     * @param untilTimestamp - End timestamp (exclusive)
+     * @param sinceTimestamp - Exclusive start timestamp in milliseconds
+     * @param untilTimestamp - Exclusive end timestamp in milliseconds
      * @returns Promise resolving to array of candles or null if cache is incomplete
      */
     readCandlesData: (symbol: string, interval: CandleInterval, exchangeName: ExchangeName, limit: number, sinceTimestamp: number, untilTimestamp: number) => Promise<CandleData[] | null>;
@@ -8408,7 +8413,11 @@ declare class PersistCandleUtils {
      * Writes candles to cache with atomic file writes.
      * Each candle is stored as a separate JSON file named by its timestamp.
      *
-     * @param candles - Array of candle data to cache
+     * The candles passed to this function must already be filtered using EXCLUSIVE boundaries:
+     * - candle.timestamp > sinceTimestamp
+     * - candle.timestamp + stepMs < untilTimestamp
+     *
+     * @param candles - Array of candle data to cache (already filtered with exclusive boundaries)
      * @param symbol - Trading pair symbol
      * @param interval - Candle interval
      * @param exchangeName - Exchange identifier

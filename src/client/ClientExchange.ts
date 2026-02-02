@@ -120,9 +120,14 @@ const VALIDATE_NO_INCOMPLETE_CANDLES_FN = (candles: ICandleData[]): void => {
  * Attempts to read candles from cache.
  * Validates cache consistency (no gaps in timestamps) before returning.
  *
+ * Boundary semantics:
+ * - sinceTimestamp: EXCLUSIVE lower bound (candle.timestamp > sinceTimestamp)
+ * - untilTimestamp: EXCLUSIVE upper bound (candle.timestamp + stepMs < untilTimestamp)
+ * - Only fully closed candles within the exclusive range are returned
+ *
  * @param dto - Data transfer object containing symbol, interval, and limit
- * @param sinceTimestamp - Start timestamp in milliseconds
- * @param untilTimestamp - End timestamp in milliseconds
+ * @param sinceTimestamp - Exclusive start timestamp in milliseconds
+ * @param untilTimestamp - Exclusive end timestamp in milliseconds
  * @param self - Instance of ClientExchange
  * @returns Cached candles array or null if cache miss or inconsistent
  */
@@ -137,6 +142,8 @@ const READ_CANDLES_CACHE_FN = trycatch(
     untilTimestamp: number,
     self: ClientExchange,
   ): Promise<ICandleData[] | null> => {
+    // PersistCandleAdapter.readCandlesData uses EXCLUSIVE boundaries:
+    // Returns candles where: timestamp > sinceTimestamp AND timestamp + stepMs < untilTimestamp
     const cachedCandles = await PersistCandleAdapter.readCandlesData(
       dto.symbol,
       dto.interval,
@@ -178,7 +185,11 @@ const READ_CANDLES_CACHE_FN = trycatch(
 /**
  * Writes candles to cache with error handling.
  *
- * @param candles - Array of candle data to cache
+ * The candles passed to this function must already be filtered using EXCLUSIVE boundaries:
+ * - candle.timestamp > sinceTimestamp
+ * - candle.timestamp + stepMs < untilTimestamp
+ *
+ * @param candles - Array of candle data to cache (already filtered with exclusive boundaries)
  * @param dto - Data transfer object containing symbol, interval, and limit
  * @param self - Instance of ClientExchange
  */
@@ -435,8 +446,10 @@ export class ClientExchange implements IExchange {
     const stepMs = step * MS_PER_MINUTE;
 
     const filteredData = allData.filter((candle) => {
-      // Basic timestamp check (must be within requested range start)
-      if (candle.timestamp < sinceTimestamp) {
+      // EXCLUSIVE boundaries:
+      // - candle.timestamp > sinceTimestamp (exclude exact boundary)
+      // - candle.timestamp + stepMs < whenTimestamp (fully closed before "when")
+      if (candle.timestamp <= sinceTimestamp) {
         return false;
       }
 

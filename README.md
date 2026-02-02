@@ -248,7 +248,7 @@ The candle is included if: `timestamp + stepMs < upperBoundary`
   - All combinations respect exclusive boundaries and look-ahead bias protection
 
 **Persistent Cache:**
-- Candle cache uses identical boundary semantics: `timestamp > sinceTimestamp && timestamp < untilTimestamp`
+- Candle cache uses identical boundary semantics: `timestamp > sinceTimestamp && timestamp + stepMs < untilTimestamp`
 - Cache and runtime filters are synchronized to prevent inconsistencies
 - Cache returns only candles that match the requested time range exactly
 
