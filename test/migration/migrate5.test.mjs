@@ -453,13 +453,14 @@ test("early termination with break stops backtest", async ({ pass, fail }) => {
       const basePrice = 95000;
       const intervalMs = 60000; // 1 minute
 
-      // Important: start from since + intervalMs to account for exclusive lower boundary
-      // If we start at since.getTime(), the first candle will be filtered out
-      const startTime = since.getTime() + intervalMs;
+      // Start from 8 minutes BEFORE since to provide buffer candles with margin for exclusive filtering
+      const bufferMinutes = 8;
+      const startTime = since.getTime() - bufferMinutes * intervalMs;
 
       // For minuteEstimatedTime=1, need at least 6 candles (4 buffer + 1 signal lifetime + 1)
-      // Return more candles than requested to ensure sufficient data
-      const candleCount = Math.max(limit, 10);
+      // Return more candles than requested to ensure sufficient data after exclusive filtering
+      // Add extra candles to account for exclusive boundary filtering
+      const candleCount = limit + bufferMinutes + 10;
 
       for (let i = 0; i < candleCount; i++) {
         candles.push({
@@ -558,12 +559,12 @@ test("PERSIST: onWrite called EXACTLY ONCE per signal open", async ({ pass, fail
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
   const basePrice = 42000;
-  const bufferMinutes = 4;
+  const bufferMinutes = 10;
   const bufferStartTime = startTime - bufferMinutes * intervalMs;
 
   let allCandles = [];
 
-  // Буферные свечи (4 минуты ДО startTime)
+  // Буферные свечи (6 минут ДО startTime)
   for (let i = 0; i < bufferMinutes; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
@@ -575,8 +576,8 @@ test("PERSIST: onWrite called EXACTLY ONCE per signal open", async ({ pass, fail
     });
   }
 
-  // Свечи от startTime (i=0-71) - добавляем +2 для exclusive boundaries
-  for (let i = 0; i < 72; i++) {
+  // Свечи от startTime (i=0-66) - 67 minutes
+  for (let i = 0; i < 67; i++) {
     const timestamp = startTime + i * intervalMs;
     if (i < 10) {
       // Ожидание активации (цена выше priceOpen)
@@ -604,12 +605,8 @@ test("PERSIST: onWrite called EXACTLY ONCE per signal open", async ({ pass, fail
   addExchangeSchema({
     exchangeName: "binance-persist-write-once",
     getCandles: async (_symbol, _interval, since, limit) => {
-      const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      // Handle negative index - return from beginning
-      const startIndex = Math.max(0, sinceIndex);
-      // Return +4 extra candles to account for exclusive boundaries filtering
-      const result = allCandles.slice(startIndex, startIndex + limit + 4);
-      return result;
+      // Just return all candles - let the system filter
+      return allCandles;
     },
     formatPrice: async (_symbol, price) => price.toFixed(8),
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
@@ -649,7 +646,7 @@ test("PERSIST: onWrite called EXACTLY ONCE per signal open", async ({ pass, fail
     frameName: "70m-persist-write-once",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-01T01:10:00Z"),
+    endDate: new Date("2024-01-01T01:07:00Z"), // 67 minutes (+2 for exclusive boundaries)
   });
 
   const awaitSubject = new Subject();
@@ -1126,8 +1123,8 @@ test("ACTION: ActionBase.signal() receives all signal events in backtest", async
   let allCandles = [];
   let signalGenerated = false;
 
-  // Предзаполняем минимум 5 свечей для immediate activation
-  for (let i = 0; i < 5; i++) {
+  // Буферные свечи (4 минуты ДО startTime)
+  for (let i = 0; i < bufferMinutes; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
       open: basePrice,
@@ -1142,8 +1139,9 @@ test("ACTION: ActionBase.signal() receives all signal events in backtest", async
     exchangeName: "binance-action-signal",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+      const startIndex = Math.max(0, sinceIndex);
+      const result = allCandles.slice(startIndex, startIndex + limit + 4);
+      return result;
     },
     formatPrice: async (_symbol, p) => p.toFixed(8),
     formatQuantity: async (_symbol, q) => q.toFixed(8),
@@ -1164,9 +1162,21 @@ test("ACTION: ActionBase.signal() receives all signal events in backtest", async
 
       allCandles = [];
 
+      // Буферные свечи (4 минуты ДО startTime)
+      for (let i = 0; i < bufferMinutes; i++) {
+        allCandles.push({
+          timestamp: bufferStartTime + i * intervalMs,
+          open: basePrice,
+          high: basePrice + 100,
+          low: basePrice - 100,
+          close: basePrice,
+          volume: 100,
+        });
+      }
+
       // Генерируем свечи для immediate activation (как в sequence.test.mjs Тест #3)
       // Требуется минимум 65 свечей для minuteEstimatedTime=60 (60 + 4 buffer + 1)
-      for (let i = 0; i < 70; i++) {
+      for (let i = 0; i < 72; i++) {
         const timestamp = startTime + i * intervalMs;
 
         // Фаза 1: Ожидание (0-9) - цена ВЫШЕ basePrice
@@ -1177,7 +1187,7 @@ test("ACTION: ActionBase.signal() receives all signal events in backtest", async
         else if (i >= 10 && i < 15) {
           allCandles.push({ timestamp, open: basePrice, high: basePrice + 100, low: basePrice - 100, close: basePrice, volume: 100 });
         }
-        // Фаза 3: TP (15-69) - цена достигает TP
+        // Фаза 3: TP (15-71) - цена достигает TP
         else {
           allCandles.push({ timestamp, open: basePrice + 1000, high: basePrice + 1100, low: basePrice + 900, close: basePrice + 1000, volume: 100 });
         }
@@ -1278,7 +1288,8 @@ test("SHUTDOWN: Walker.stop() - all strategies stop", async ({ pass, fail }) => 
 
   let allCandles = [];
 
-  for (let i = 0; i < 5; i++) {
+  // Буферные свечи (4 минуты ДО startTime)
+  for (let i = 0; i < bufferMinutes; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
       open: basePrice,
@@ -1293,8 +1304,9 @@ test("SHUTDOWN: Walker.stop() - all strategies stop", async ({ pass, fail }) => 
     exchangeName: "binance-shutdown-6",
     getCandles: async (_symbol, _interval, since, limit) => {
       const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+      const startIndex = Math.max(0, sinceIndex);
+      const result = allCandles.slice(startIndex, startIndex + limit + 4);
+      return result;
     },
     formatPrice: async (_symbol, p) => p.toFixed(8),
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
@@ -1319,10 +1331,22 @@ test("SHUTDOWN: Walker.stop() - all strategies stop", async ({ pass, fail }) => 
           return null;
         }
 
-        if (allCandles.length === 5) {
+        if (allCandles.length === bufferMinutes) {
           allCandles = [];
 
-          for (let i = 0; i < 70; i++) {
+          // Буферные свечи (4 минуты ДО startTime)
+          for (let i = 0; i < bufferMinutes; i++) {
+            allCandles.push({
+              timestamp: bufferStartTime + i * intervalMs,
+              open: basePrice,
+              high: basePrice + 100,
+              low: basePrice - 100,
+              close: basePrice,
+              volume: 100,
+            });
+          }
+
+          for (let i = 0; i < 72; i++) {
             const timestamp = startTime + i * intervalMs;
 
             if (i < 5) {
@@ -1435,12 +1459,12 @@ test("SHUTDOWN: Two walkers on same symbol - stop one doesn't affect other", asy
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
   const basePrice = 95000;
-  const bufferMinutes = 4;
+  const bufferMinutes = 10;
   const bufferStartTime = startTime - bufferMinutes * intervalMs;
 
   let allCandles = [];
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < bufferMinutes; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
       open: basePrice,
@@ -1453,10 +1477,9 @@ test("SHUTDOWN: Two walkers on same symbol - stop one doesn't affect other", asy
 
   addExchangeSchema({
     exchangeName: "binance-shutdown-7",
-    getCandles: async (_symbol, _interval, since, limit) => {
-      const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+    getCandles: async (_symbol, _interval) => {
+      // Just return all candles - let the system filter
+      return allCandles;
     },
     formatPrice: async (_symbol, p) => p.toFixed(8),
     formatQuantity: async (_symbol, quantity) => quantity.toFixed(8),
@@ -1481,7 +1504,7 @@ test("SHUTDOWN: Two walkers on same symbol - stop one doesn't affect other", asy
           return null;
         }
 
-        if (allCandles.length === 5) {
+        if (allCandles.length === bufferMinutes) {
           allCandles = [];
 
           // Буферные свечи (4 минуты ДО startTime)
@@ -1496,7 +1519,7 @@ test("SHUTDOWN: Two walkers on same symbol - stop one doesn't affect other", asy
             });
           }
 
-          for (let i = 0; i < 70; i++) {
+          for (let i = 0; i < 67; i++) {
             const timestamp = startTime + i * intervalMs;
             allCandles.push({ timestamp, open: basePrice, high: basePrice + 100, low: basePrice - 100, close: basePrice, volume: 100 });
           }
@@ -1533,6 +1556,27 @@ test("SHUTDOWN: Two walkers on same symbol - stop one doesn't affect other", asy
           return null;
         }
 
+        if (allCandles.length === bufferMinutes) {
+          allCandles = [];
+
+          // Буферные свечи (4 минуты ДО startTime)
+          for (let i = 0; i < bufferMinutes; i++) {
+            allCandles.push({
+              timestamp: bufferStartTime + i * intervalMs,
+              open: basePrice,
+              high: basePrice + 100,
+              low: basePrice - 100,
+              close: basePrice,
+              volume: 100,
+            });
+          }
+
+          for (let i = 0; i < 67; i++) {
+            const timestamp = startTime + i * intervalMs;
+            allCandles.push({ timestamp, open: basePrice, high: basePrice + 100, low: basePrice - 100, close: basePrice, volume: 100 });
+          }
+        }
+
         return {
           position: "long",
           note: `Walker B strategy ${s}`,
@@ -1549,7 +1593,7 @@ test("SHUTDOWN: Two walkers on same symbol - stop one doesn't affect other", asy
     frameName: "70m-shutdown-7",
     interval: "1m",
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-01T01:10:00Z"),
+    endDate: new Date("2024-01-01T01:07:00Z"), // 67 minutes (+2 for exclusive boundaries)
   });
 
   let walkerAStopCalled = false;
