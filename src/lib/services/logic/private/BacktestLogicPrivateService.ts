@@ -19,6 +19,8 @@ import { GLOBAL_CONFIG } from "../../../../config/params";
 import { and, errorData, getErrorMessage } from "functools-kit";
 import ActionCoreService from "../../core/ActionCoreService";
 
+const ACTIVE_CANDLE_INCLUDED = 1;
+const SCHEDULE_ACTIVATION_CANDLE_SKIP = 1;
 
 /**
  * Private service for backtest orchestration using async generators.
@@ -193,9 +195,9 @@ export class BacktestLogicPrivateService {
         // - CC_SCHEDULE_AWAIT_MINUTES для ожидания активации
         // - minuteEstimatedTime для работы сигнала ПОСЛЕ активации
         // - +1 потому что when включается как первая свеча
-        const bufferMinutes = GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT - 1;
+        const bufferMinutes = GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT - ACTIVE_CANDLE_INCLUDED;
         const bufferStartTime = new Date(when.getTime() - bufferMinutes * 60 * 1000);
-        const candlesNeeded = bufferMinutes + GLOBAL_CONFIG.CC_SCHEDULE_AWAIT_MINUTES + signal.minuteEstimatedTime + 1;
+        const candlesNeeded = bufferMinutes + GLOBAL_CONFIG.CC_SCHEDULE_AWAIT_MINUTES + signal.minuteEstimatedTime + SCHEDULE_ACTIVATION_CANDLE_SKIP;
 
         let candles: ICandleData[];
         try {
@@ -384,7 +386,7 @@ export class BacktestLogicPrivateService {
         // КРИТИЧНО: Получаем свечи включая буфер для VWAP
         // Сдвигаем начало назад на CC_AVG_PRICE_CANDLES_COUNT-1 минут для буфера VWAP
         // Запрашиваем minuteEstimatedTime + буфер свечей одним запросом
-        const bufferMinutes = GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT - 1;
+        const bufferMinutes = GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT - ACTIVE_CANDLE_INCLUDED;
         const bufferStartTime = new Date(when.getTime() - bufferMinutes * 60 * 1000);
         const totalCandles = signal.minuteEstimatedTime + GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT;
 

@@ -74,7 +74,6 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "ccxt": "^4.5.35",
     "di-kit": "^1.0.18",
     "di-scoped": "^1.0.20",
     "functools-kit": "^1.0.95",
