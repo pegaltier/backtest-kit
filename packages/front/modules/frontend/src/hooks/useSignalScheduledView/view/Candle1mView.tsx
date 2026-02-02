@@ -20,8 +20,8 @@ export const Candle1mView = ({ data, formState }: IOutletModalProps) => {
             pendingAt: scheduledAtDate,
             closedAt: new Date(notification.createdAt).toISOString(),
             priceOpen: notification.priceOpen,
-            priceStopLoss: notification.priceOpen,
-            priceTakeProfit: notification.priceOpen,
+            priceStopLoss: notification.priceStopLoss,
+            priceTakeProfit: notification.priceTakeProfit,
         };
     }, [formState.data.main]);
 
