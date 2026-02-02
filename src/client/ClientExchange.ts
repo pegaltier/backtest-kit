@@ -442,7 +442,7 @@ export class ClientExchange implements IExchange {
 
       // Check against current time (when)
       // Only allow candles that have fully CLOSED before "when"
-      return candle.timestamp + stepMs <= whenTimestamp;
+      return candle.timestamp + stepMs < whenTimestamp;
     });
 
     // Apply distinct by timestamp to remove duplicates
