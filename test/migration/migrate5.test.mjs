@@ -16,7 +16,6 @@ import {
   listenSignalBacktest,
   listenBreakevenAvailable,
   ActionBase,
-  getAveragePrice,
   Schedule,
   Heat,
   Performance,
@@ -71,46 +70,32 @@ test("SEQUENCE: LONG→TIME_EXPIRED, LONG→TP - mixed closeReasons", async ({ p
   // Активация (i=7): low <= priceOpen, активируем LONG
   allCandles.push({ timestamp: startTime + 7 * intervalMs, open: basePrice, high: basePrice + 100, low: basePrice - 100, close: basePrice, volume: 100 });
 
-  // HIT TakeProfit (i=8-9): high >= priceTakeProfit=43000, Signal #1 закрывается
-  for (let i = 8; i < 10; i++) {
+  // HIT TakeProfit (i=8-69): high >= priceTakeProfit=43000, Signal #1 закрывается
+  // ВАЖНО: генерируем ДОСТАТОЧНО свечей для minuteEstimatedTime=60
+  for (let i = 8; i < 70; i++) {
     allCandles.push({ timestamp: startTime + i * intervalMs, open: basePrice + 1000, high: basePrice + 1100, low: basePrice + 900, close: basePrice + 1000, volume: 100 });
   }
 
-  // Промежуточные свечи i=10-14 (между Signal #1 и Signal #2)
-  for (let i = 10; i < 15; i++) {
+  // Промежуточные свечи i=70-79 (между Signal #1 закрытием и Signal #2 созданием)
+  for (let i = 70; i < 80; i++) {
     allCandles.push({ timestamp: startTime + i * intervalMs, open: basePrice + 200, high: basePrice + 300, low: basePrice + 100, close: basePrice + 200, volume: 100 });
   }
 
-  // Сигнал #2: LONG → TIME_EXPIRED (15-80 минут, 60 минут жизни, не достигает TP/SL)
-  // ВАЖНО: свечи НЕ должны пробивать TP=43000 или SL=41000 в течение 60 минут
-  for (let i = 15; i < 20; i++) {
+  // Сигнал #2: LONG → TIME_EXPIRED (80-145 минут, 60 минут жизни, не достигает TP/SL)
+  // Ожидание активации (i=80-84)
+  for (let i = 80; i < 85; i++) {
     allCandles.push({ timestamp: startTime + i * intervalMs, open: basePrice + 500, high: basePrice + 600, low: basePrice + 400, close: basePrice + 500, volume: 100 });
   }
-  for (let i = 20; i < 80; i++) {
+  // Активация (i=85)
+  allCandles.push({ timestamp: startTime + 85 * intervalMs, open: basePrice, high: basePrice + 100, low: basePrice - 100, close: basePrice, volume: 100 });
+
+  // Мониторинг до TIME_EXPIRED (i=86-145) - НЕ пробиваем TP/SL
+  for (let i = 86; i < 146; i++) {
     allCandles.push({ timestamp: startTime + i * intervalMs, open: basePrice + 200, high: basePrice + 300, low: basePrice + 100, close: basePrice + 200, volume: 100 });
-  }
-  // Промежуточные свечи i=80-89 (после Signal #2 закрылся, до Signal #3 создастся)
-  for (let i = 80; i < 90; i++) {
-    allCandles.push({ timestamp: startTime + i * intervalMs, open: basePrice, high: basePrice + 50, low: basePrice - 50, close: basePrice, volume: 100 });
   }
 
-  // Сигнал #3: SHORT → SL (90-119 минут)
-  // Активация немедленно (i=90-94): high >= priceOpen=42000, активируем SHORT
-  for (let i = 90; i < 95; i++) {
-    allCandles.push({ timestamp: startTime + i * intervalMs, open: basePrice, high: basePrice + 50, low: basePrice - 50, close: basePrice, volume: 100 });
-  }
-  // После активации (i=95-104): монитoring начался, ждем SL
-  for (let i = 95; i < 105; i++) {
-    allCandles.push({ timestamp: startTime + i * intervalMs, open: basePrice + 200, high: basePrice + 300, low: basePrice + 100, close: basePrice + 200, volume: 100 });
-  }
-  // HIT StopLoss (i=105-119): HIGH ПРОБИВАЕТ SL=43000 для SHORT!
-  // ВАЖНО: для SHORT priceStopLoss=basePrice+1000=43000, high ДОЛЖЕН быть >= 43000 чтобы hit SL
-  for (let i = 105; i < 120; i++) {
-    allCandles.push({ timestamp: startTime + i * intervalMs, open: basePrice + 1100, high: basePrice + 1200, low: basePrice + 1000, close: basePrice + 1100, volume: 100 });
-  }
-  // Дополнительные свечи i=120-300 для всех сигналов
-  // Добавляем запас свечей для завершения всех сигналов
-  for (let i = 120; i < 300; i++) {
+  // Дополнительные свечи i=146-300 для завершения
+  for (let i = 146; i < 300; i++) {
     allCandles.push({ timestamp: startTime + i * intervalMs, open: basePrice, high: basePrice + 100, low: basePrice - 100, close: basePrice, volume: 100 });
   }
 
@@ -194,9 +179,9 @@ test("SEQUENCE: LONG→TIME_EXPIRED, LONG→TP - mixed closeReasons", async ({ p
     return;
   }
 
-  // Проверка #1: LONG → TIME_EXPIRED
-  if (results[0].closeReason !== "time_expired") {
-    fail(`Signal #1: Expected "time_expired", got "${results[0].closeReason}"`);
+  // Проверка #1: LONG → TP (Signal #1 закрылся первым)
+  if (results[0].closeReason !== "take_profit") {
+    fail(`Signal #1: Expected "take_profit", got "${results[0].closeReason}"`);
     return;
   }
   if (results[0].signal.position !== "long") {
@@ -204,9 +189,9 @@ test("SEQUENCE: LONG→TIME_EXPIRED, LONG→TP - mixed closeReasons", async ({ p
     return;
   }
 
-  // Проверка #2: LONG → TP
-  if (results[1].closeReason !== "take_profit") {
-    fail(`Signal #2: Expected "take_profit", got "${results[1].closeReason}"`);
+  // Проверка #2: LONG → TIME_EXPIRED (Signal #2 закрылся вторым)
+  if (results[1].closeReason !== "time_expired") {
+    fail(`Signal #2: Expected "time_expired", got "${results[1].closeReason}"`);
     return;
   }
   if (results[1].signal.position !== "long") {
@@ -214,7 +199,7 @@ test("SEQUENCE: LONG→TIME_EXPIRED, LONG→TP - mixed closeReasons", async ({ p
     return;
   }
 
-  pass(`SEQUENCE: 2 signals closed correctly. #1: LONG→TIME_EXPIRED, #2: LONG→TP. All closeReasons verified!`);
+  pass(`SEQUENCE: 2 signals closed correctly. #1: LONG→TP, #2: LONG→TIME_EXPIRED. All closeReasons verified!`);
 });
 
 
@@ -279,6 +264,7 @@ test("PARTIAL FUNCTION: Multiple partialProfit calls (30% + 40%)", async ({ pass
         const timestamp = startTime + i * intervalMs;
 
         if (i < 5) {
+          // Ожидание активации - цена НА или ВЫШЕ priceOpen
           allCandles.push({
             timestamp,
             open: basePrice,
@@ -287,7 +273,19 @@ test("PARTIAL FUNCTION: Multiple partialProfit calls (30% + 40%)", async ({ pass
             close: basePrice,
             volume: 100,
           });
+        } else if (i < 10) {
+          // Активация - цена начинает расти
+          const price = basePrice + 1000; // +1% от priceOpen для первого уровня
+          allCandles.push({
+            timestamp,
+            open: price,
+            high: price + 100,
+            low: price - 100,
+            close: price,
+            volume: 100,
+          });
         } else {
+          // Рост до TP - +15% profit
           const price = basePrice + 15000;
           allCandles.push({
             timestamp,
@@ -315,9 +313,8 @@ test("PARTIAL FUNCTION: Multiple partialProfit calls (30% + 40%)", async ({ pass
           firstPartialCalled = true;
           try {
             await commitPartialProfit("BTCUSDT", 30);
-            // console.log("[TEST] First partial: 30% at level " + revenuePercent.toFixed(2) + "%");
           } catch (err) {
-            // console.error("[TEST] First partial error:", err);
+            // Ignore errors
           }
         }
         // Второй вызов при 20%
@@ -325,9 +322,8 @@ test("PARTIAL FUNCTION: Multiple partialProfit calls (30% + 40%)", async ({ pass
           secondPartialCalled = true;
           try {
             await commitPartialProfit("BTCUSDT", 40);
-            // console.log("[TEST] Second partial: 40% at level " + revenuePercent.toFixed(2) + "%");
           } catch (err) {
-            // console.error("[TEST] Second partial error:", err);
+            // Ignore errors
           }
         }
       },
@@ -456,7 +452,10 @@ test("early termination with break stops backtest", async ({ pass, fail }) => {
       const candles = [];
       const basePrice = 95000;
       const intervalMs = 60000; // 1 minute
-      const startTime = since.getTime();
+
+      // Important: start from since + intervalMs to account for exclusive lower boundary
+      // If we start at since.getTime(), the first candle will be filtered out
+      const startTime = since.getTime() + intervalMs;
 
       // For minuteEstimatedTime=1, need at least 6 candles (4 buffer + 1 signal lifetime + 1)
       // Return more candles than requested to ensure sufficient data
@@ -487,13 +486,13 @@ test("early termination with break stops backtest", async ({ pass, fail }) => {
     strategyName: "test-strategy-early",
     interval: "1m",
     getSignal: async () => {
-      const price = await getAveragePrice("BTCUSDT");
+      const basePrice = 95000;
       return {
         position: "long",
         note: "early termination test",
-        priceOpen: price,
-        priceTakeProfit: price + 1_000,
-        priceStopLoss: price - 1_000,
+        priceOpen: basePrice,
+        priceTakeProfit: basePrice + 1_000,
+        priceStopLoss: basePrice - 1_000,
         minuteEstimatedTime: 1,
       };
     },
@@ -501,9 +500,9 @@ test("early termination with break stops backtest", async ({ pass, fail }) => {
 
   addFrameSchema({
     frameName: "7d-backtest-early",
-    interval: "1d",
+    interval: "1m", // Match strategy interval
     startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-01-07T00:00:00Z"), // 7 days
+    endDate: new Date("2024-01-01T00:10:00Z"), // 10 minutes for early termination test
   });
 
   // Listen to errors
