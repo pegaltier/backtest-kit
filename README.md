@@ -201,7 +201,7 @@ Customize via `setConfig()`:
 
 ## 💻 Developer Note
 
-Backtest Kit is **not a data-processing library** - it is a **time execution engine**. Think of the engine as an **async stream of time**, where your strategy is evaluated step by step. According to this `timestamp` of a candle in backtest-kit is exactly the `openTime`, not `closeTime`
+Backtest Kit is **not a data-processing library** - it is a **time execution engine**. Think of the engine as an **async stream of time**, where your strategy is evaluated step by step.
 
 ### 🔍 How getCandles Works
 
@@ -254,6 +254,8 @@ temporal time context to your strategies.
 #### Boundary Semantics:
 
 All methods use **strict exclusive boundaries** - candles at exact boundary times are excluded. This prevents accidental inclusion of boundary conditions in backtest logic and ensures consistent behavior across cache and runtime.
+
+According to this `timestamp` of a candle in backtest-kit is exactly the `openTime`, not `closeTime`
 
 **Key principle:** A candle is included only if it **fully closed** before the upper boundary.
 
