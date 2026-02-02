@@ -626,8 +626,8 @@ test("Exchange.getRawCandles prevents lookahead bias with different parameter co
     const candles = [];
     const stepMs = intervalMinutes * 60 * 1000;
     const now = Date.now();
-    // Start from far in the past to cover all test cases
-    let current = now - count * 2 * stepMs;
+    // Align to interval boundary and start from far in the past
+    let current = Math.floor((now - count * 2 * stepMs) / stepMs) * stepMs;
 
     for (let i = 0; i < count * 2; i++) {
       candles.push({
@@ -664,7 +664,10 @@ test("Exchange.getRawCandles prevents lookahead bias with different parameter co
 
   try {
     const now = Date.now();
-    console.log("Date.now():", new Date(now).toISOString());
+
+    // Calculate the candle grid base aligned to minute boundaries
+    const candle1mBase = Math.floor((now - 2000 * 2 * 60 * 1000) / (60 * 1000)) * (60 * 1000);
+    const candle15mBase = Math.floor((now - 200 * 2 * 15 * 60 * 1000) / (15 * 60 * 1000)) * (15 * 60 * 1000);
 
     // Test Case 1: Only limit (backward from current time)
     const test1 = await Exchange.getRawCandles(
@@ -673,14 +676,10 @@ test("Exchange.getRawCandles prevents lookahead bias with different parameter co
       { exchangeName: "test-exchange-raw-class" },
       10
     );
-    console.log("Test1: Only limit - got", test1.length, "candles");
-    if (test1.length > 0) {
-      console.log("  First:", new Date(test1[0].timestamp).toISOString());
-      console.log("  Last:", new Date(test1[test1.length - 1].timestamp).toISOString());
-    }
 
-    // Test Case 2: sDate + limit (forward from sDate) - use relative time
-    const T_10_00_MS = now - 30 * 60 * 1000; // 30 minutes ago
+    // Test Case 2: sDate + limit - pick a timestamp on the 1m candle grid (50 candles back)
+    const T_10_00_MS = candle1mBase + 50 * 60 * 1000;
+
     const test2 = await Exchange.getRawCandles(
       "BTCUSDT",
       "1m",
@@ -688,14 +687,10 @@ test("Exchange.getRawCandles prevents lookahead bias with different parameter co
       10,
       T_10_00_MS
     );
-    console.log("Test2: sDate + limit - got", test2.length, "candles");
-    if (test2.length > 0) {
-      console.log("  First:", new Date(test2[0].timestamp).toISOString());
-      console.log("  Last:", new Date(test2[test2.length - 1].timestamp).toISOString());
-    }
 
-    // Test Case 3: eDate + limit (backward from eDate) - use relative time
-    const T_10_20_MS = now - 10 * 60 * 1000; // 10 minutes ago
+    // Test Case 3: eDate + limit - pick a timestamp on the 15m candle grid (10 candles back)
+    const T_10_20_MS = candle15mBase + 10 * 15 * 60 * 1000;
+
     const test3 = await Exchange.getRawCandles(
       "BTCUSDT",
       "15m",
@@ -704,15 +699,11 @@ test("Exchange.getRawCandles prevents lookahead bias with different parameter co
       undefined,
       T_10_20_MS
     );
-    console.log("Test3: eDate + limit - got", test3.length, "candles");
-    if (test3.length > 0) {
-      console.log("  First:", new Date(test3[0].timestamp).toISOString());
-      console.log("  Last:", new Date(test3[test3.length - 1].timestamp).toISOString());
-    }
 
-    // Test Case 4: sDate + eDate (calculate limit from range) - use relative time
-    const T_sDate = now - 30 * 60 * 1000; // 30 minutes ago
-    const T_eDate = now - 10 * 60 * 1000; // 10 minutes ago
+    // Test Case 4: sDate + eDate - use aligned timestamps with 20 minute gap
+    const T_sDate = T_10_00_MS;
+    const T_eDate = T_10_00_MS + 20 * 60 * 1000;
+
     const test4 = await Exchange.getRawCandles(
       "BTCUSDT",
       "1m",
@@ -721,13 +712,8 @@ test("Exchange.getRawCandles prevents lookahead bias with different parameter co
       T_sDate,
       T_eDate
     );
-    console.log("Test4: sDate + eDate - got", test4.length, "candles");
-    if (test4.length > 0) {
-      console.log("  First:", new Date(test4[0].timestamp).toISOString());
-      console.log("  Last:", new Date(test4[test4.length - 1].timestamp).toISOString());
-    }
 
-    // Test Case 5: All parameters - use relative time
+    // Test Case 5: All parameters - same as test 4 but with explicit limit
     const test5 = await Exchange.getRawCandles(
       "BTCUSDT",
       "1m",
@@ -736,11 +722,6 @@ test("Exchange.getRawCandles prevents lookahead bias with different parameter co
       T_sDate,
       T_eDate
     );
-    console.log("Test5: All parameters - got", test5.length, "candles");
-    if (test5.length > 0) {
-      console.log("  First:", new Date(test5[0].timestamp).toISOString());
-      console.log("  Last:", new Date(test5[test5.length - 1].timestamp).toISOString());
-    }
 
     const errors = [];
 
@@ -778,33 +759,34 @@ test("Exchange.getRawCandles prevents lookahead bias with different parameter co
       }
     }
 
-    // Test 3: eDate + limit - should return 4 candles ending before T_10_20_MS
-    if (!test3 || test3.length !== 4) {
-      errors.push(`Test3: Expected 4 candles, got ${test3?.length || 0}`);
+    // Test 3: eDate + limit - T_10_20_MS is already on 15m boundary, should return full 5 candles
+    if (!test3 || test3.length !== 5) {
+      errors.push(`Test3: Expected 5 candles, got ${test3?.length || 0}`);
     } else {
       const first = test3[0];
       const last = test3[test3.length - 1];
-      // sinceTimestamp = eDate - 5*15min = eDate - 75min
-      const expectedFirst = T_10_20_MS - 5 * 15 * 60 * 1000;
-      // Find first candle on 15m boundary >= expectedFirst
-      const firstBoundary = Math.ceil(expectedFirst / (15 * 60 * 1000)) * (15 * 60 * 1000);
 
-      console.log("  Test3 debug: expectedFirst:", new Date(expectedFirst).toISOString());
-      console.log("  Test3 debug: firstBoundary:", new Date(firstBoundary).toISOString());
-      console.log("  Test3 debug: T_10_20_MS:", new Date(T_10_20_MS).toISOString());
-
-      // Just verify last candle closes before or at eDate
+      // Verify last candle closes before or at eDate
       const lastCandleEnd = last.timestamp + 15 * 60 * 1000;
       if (lastCandleEnd > T_10_20_MS) {
         errors.push(
           `Test3: Last 15m candle end exceeds eDate. Last: ${new Date(last.timestamp).toISOString()}, end: ${new Date(lastCandleEnd).toISOString()}, eDate: ${new Date(T_10_20_MS).toISOString()}`
         );
       }
+
+      // Verify first candle is 5 intervals back from last
+      const expectedFirst = last.timestamp - 4 * 15 * 60 * 1000;
+      if (first.timestamp !== expectedFirst) {
+        errors.push(
+          `Test3: First candle wrong. Expected ${new Date(expectedFirst).toISOString()}, got ${new Date(first.timestamp).toISOString()}`
+        );
+      }
     }
 
     // Test 4: sDate + eDate - should calculate limit (20 minutes = 20 candles)
-    if (!test4 || test4.length !== 20) {
-      errors.push(`Test4: Expected 20 candles, got ${test4?.length || 0}`);
+    const expectedCount4 = Math.floor((T_eDate - T_sDate) / (60 * 1000));
+    if (!test4 || test4.length !== expectedCount4) {
+      errors.push(`Test4: Expected ${expectedCount4} candles, got ${test4?.length || 0}`);
     } else {
       const first = test4[0];
       const last = test4[test4.length - 1];
@@ -813,7 +795,7 @@ test("Exchange.getRawCandles prevents lookahead bias with different parameter co
           `Test4: First candle wrong. Expected ${new Date(T_sDate).toISOString()}, got ${new Date(first.timestamp).toISOString()}`
         );
       }
-      const expectedLast = T_sDate + 19 * 60 * 1000; // 20 candles means 0-19 minutes
+      const expectedLast = T_sDate + (expectedCount4 - 1) * 60 * 1000;
       if (last.timestamp !== expectedLast) {
         errors.push(
           `Test4: Last candle wrong. Expected ${new Date(expectedLast).toISOString()}, got ${new Date(last.timestamp).toISOString()}`
