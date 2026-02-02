@@ -9,7 +9,7 @@ import {
   getNextCandles,
   Exchange,
 } from "../../build/index.mjs";
-import { createAwaiter } from "functools-kit";
+import { createAwaiter, sleep } from "functools-kit";
 
 test("getCandles does not return unclosed candles (lookahead bias from higher timeframes)", async ({
   pass,
@@ -72,6 +72,8 @@ test("getCandles does not return unclosed candles (lookahead bias from higher ti
 
         resolve({ c1m, c15m, c1h, c4h });
       } catch (e) {
+        console.log(e)
+        await sleep(200);
         resolve(null);
       }
       return null;

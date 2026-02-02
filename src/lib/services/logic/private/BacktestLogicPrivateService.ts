@@ -19,13 +19,6 @@ import { GLOBAL_CONFIG } from "../../../../config/params";
 import { and, errorData, getErrorMessage } from "functools-kit";
 import ActionCoreService from "../../core/ActionCoreService";
 
-/**
- * Компенсация для exclusive boundaries при фильтрации свечей.
- * ClientExchange.getNextCandles использует фильтр:
- *   timestamp > since && timestamp + stepMs < endTime
- * который исключает первую и последнюю свечи из запрошенного диапазона.
- */
-const CANDLE_EXCLUSIVE_BOUNDARY_OFFSET = 2;
 
 /**
  * Private service for backtest orchestration using async generators.
@@ -393,7 +386,7 @@ export class BacktestLogicPrivateService {
         // Запрашиваем minuteEstimatedTime + буфер свечей одним запросом
         const bufferMinutes = GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT - 1;
         const bufferStartTime = new Date(when.getTime() - bufferMinutes * 60 * 1000);
-        const totalCandles = signal.minuteEstimatedTime + GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT + CANDLE_EXCLUSIVE_BOUNDARY_OFFSET;
+        const totalCandles = signal.minuteEstimatedTime + GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT;
 
         let candles: ICandleData[];
         try {

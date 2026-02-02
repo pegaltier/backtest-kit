@@ -8393,31 +8393,33 @@ declare class PersistCandleUtils {
     usePersistCandleAdapter(Ctor: TPersistBaseCtor<string, CandleData>): void;
     /**
      * Reads cached candles for a specific exchange, symbol, and interval.
-     * Returns candles only if cache contains exactly the requested limit.
+     * Returns candles only if cache contains ALL requested candles.
      *
-     * Boundary semantics (EXCLUSIVE):
-     * - sinceTimestamp: candle.timestamp must be > sinceTimestamp
-     * - untilTimestamp: candle.timestamp + stepMs must be < untilTimestamp
-     * - Only fully closed candles within the exclusive range are returned
+     * Algorithm (matches ClientExchange.ts logic):
+     * 1. Calculate expected timestamps: sinceTimestamp, sinceTimestamp + stepMs, ..., sinceTimestamp + (limit-1) * stepMs
+     * 2. Try to read each expected candle by timestamp key
+     * 3. If ANY candle is missing, return null (cache miss)
+     * 4. If all candles found, return them in order
      *
      * @param symbol - Trading pair symbol
      * @param interval - Candle interval
      * @param exchangeName - Exchange identifier
      * @param limit - Number of candles requested
-     * @param sinceTimestamp - Exclusive start timestamp in milliseconds
-     * @param untilTimestamp - Exclusive end timestamp in milliseconds
+     * @param sinceTimestamp - Aligned start timestamp (openTime of first candle)
+     * @param _untilTimestamp - Unused, kept for API compatibility
      * @returns Promise resolving to array of candles or null if cache is incomplete
      */
-    readCandlesData: (symbol: string, interval: CandleInterval, exchangeName: ExchangeName, limit: number, sinceTimestamp: number, untilTimestamp: number) => Promise<CandleData[] | null>;
+    readCandlesData: (symbol: string, interval: CandleInterval, exchangeName: ExchangeName, limit: number, sinceTimestamp: number, _untilTimestamp: number) => Promise<CandleData[] | null>;
     /**
      * Writes candles to cache with atomic file writes.
      * Each candle is stored as a separate JSON file named by its timestamp.
      *
-     * The candles passed to this function must already be filtered using EXCLUSIVE boundaries:
-     * - candle.timestamp > sinceTimestamp
-     * - candle.timestamp + stepMs < untilTimestamp
+     * The candles passed to this function should be validated candles from the adapter:
+     * - First candle.timestamp equals aligned sinceTimestamp (openTime)
+     * - Exact number of candles as requested
+     * - All candles are fully closed (timestamp + stepMs < untilTimestamp)
      *
-     * @param candles - Array of candle data to cache (already filtered with exclusive boundaries)
+     * @param candles - Array of candle data to cache (validated by the caller)
      * @param symbol - Trading pair symbol
      * @param interval - Candle interval
      * @param exchangeName - Exchange identifier
@@ -15650,6 +15652,13 @@ declare class ClientExchange implements IExchange {
     /**
      * Fetches historical candles backwards from execution context time.
      *
+     * Algorithm:
+     * 1. Align when down to interval boundary (e.g., 00:17 -> 00:15 for 15m)
+     * 2. Calculate since = alignedWhen - limit * step
+     * 3. Fetch candles starting from since
+     * 4. Validate first candle timestamp matches since (adapter must return inclusive data)
+     * 5. Slice to limit
+     *
      * @param symbol - Trading pair symbol
      * @param interval - Candle interval
      * @param limit - Number of candles to fetch
@@ -15659,6 +15668,13 @@ declare class ClientExchange implements IExchange {
     /**
      * Fetches future candles forwards from execution context time.
      * Used in backtest mode to get candles for signal duration.
+     *
+     * Algorithm:
+     * 1. Align when down to interval boundary (e.g., 00:17 -> 00:15 for 15m)
+     * 2. since = alignedWhen (start from aligned when)
+     * 3. Fetch candles starting from since
+     * 4. Validate first candle timestamp matches since (adapter must return inclusive data)
+     * 5. Slice to limit
      *
      * @param symbol - Trading pair symbol
      * @param interval - Candle interval
@@ -15702,6 +15718,12 @@ declare class ClientExchange implements IExchange {
     formatPrice(symbol: string, price: number): Promise<string>;
     /**
      * Fetches raw candles with flexible date/limit parameters.
+     *
+     * Algorithm:
+     * 1. Align all timestamps down to interval boundary
+     * 2. Fetch candles starting from aligned since
+     * 3. Validate first candle timestamp matches aligned since (adapter must return inclusive data)
+     * 4. Slice to limit
      *
      * All modes respect execution context and prevent look-ahead bias.
      *
