@@ -779,3 +779,456 @@ test("Exchange.getRawCandles prevents lookahead bias with different parameter co
     fail(`Exchange.getRawCandles threw error: ${error.message}`);
   }
 });
+
+test("getCandles edge case: candle closing exactly at execution time should be included", async ({
+  pass,
+  fail,
+}) => {
+  const [awaiter, { resolve }] = createAwaiter();
+
+  // Test Time: 2024-01-01T10:05:00Z (exactly when 10:04 candle closes)
+  const T_10_05 = new Date("2024-01-01T10:05:00Z");
+
+  // Generate candles where one closes EXACTLY at execution time
+  const generateCandles = (intervalMinutes) => {
+    const candles = [];
+    const stepMs = intervalMinutes * 60 * 1000;
+    let current = new Date("2024-01-01T10:00:00Z").getTime();
+
+    // Generate 10 candles: 10:00, 10:01, 10:02, 10:03, 10:04, 10:05, 10:06, ...
+    for (let i = 0; i < 10; i++) {
+      candles.push({
+        timestamp: current,
+        open: 100 + i,
+        high: 105 + i,
+        low: 95 + i,
+        close: 101 + i,
+        volume: 1000 + i,
+      });
+      current += stepMs;
+    }
+    return candles;
+  };
+
+  const candles1m = generateCandles(1);
+
+  addExchangeSchema({
+    exchangeName: "test-edge-case",
+    getCandles: async (_symbol, interval, since, limit) => {
+      if (interval !== "1m") return [];
+      const sinceMs = since.getTime();
+      const filtered = candles1m.filter((c) => c.timestamp >= sinceMs);
+      return filtered.slice(0, limit);
+    },
+    formatPrice: async (_, p) => p.toFixed(2),
+    formatQuantity: async (_, q) => q.toFixed(5),
+  });
+
+  addStrategySchema({
+    strategyName: "test-edge-case-strategy",
+    interval: "1m",
+    getSignal: async () => {
+      try {
+        // Request 10 candles at T_10_05
+        // Expected: 10:00, 10:01, 10:02, 10:03, 10:04 (closes at 10:05)
+        // The 10:04 candle should be INCLUDED because it closes exactly at 10:05
+        const result = await getCandles("BTCUSDT", "1m", 10);
+        resolve(result);
+      } catch (e) {
+        resolve({ error: e.message });
+      }
+      return null;
+    },
+  });
+
+  addFrameSchema({
+    frameName: "edge-case-frame",
+    interval: "1d",
+    startDate: T_10_05,
+    endDate: new Date("2024-01-01T10:06:00Z"),
+  });
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-edge-case-strategy",
+    exchangeName: "test-edge-case",
+    frameName: "edge-case-frame",
+  });
+
+  const result = await awaiter;
+
+  if (result.error) {
+    fail(`Test error: ${result.error}`);
+    return;
+  }
+
+  if (!Array.isArray(result) || result.length === 0) {
+    fail("Expected candles array, got empty or invalid result");
+    return;
+  }
+
+  const lastCandle = result[result.length - 1];
+  const lastCandleTimestamp = lastCandle.timestamp;
+  const lastCandleCloseTime = lastCandleTimestamp + 60 * 1000;
+
+  // The last candle should be 10:04 (opens at 10:04, closes at 10:05)
+  const expectedLastTimestamp = new Date("2024-01-01T10:04:00Z").getTime();
+  const executionTime = T_10_05.getTime();
+
+  if (lastCandleTimestamp === expectedLastTimestamp) {
+    // Verify that close time equals execution time (edge case)
+    if (lastCandleCloseTime === executionTime) {
+      pass(
+        `Edge case passed: Candle closing EXACTLY at execution time (${new Date(executionTime).toISOString()}) is correctly included`
+      );
+    } else {
+      fail(
+        `Logic error: lastCandleCloseTime (${new Date(lastCandleCloseTime).toISOString()}) != executionTime (${new Date(executionTime).toISOString()})`
+      );
+    }
+  } else {
+    fail(
+      `Edge case failed: Expected last candle at ${new Date(expectedLastTimestamp).toISOString()}, got ${new Date(lastCandleTimestamp).toISOString()}. ` +
+        `This means the candle closing exactly at execution time was incorrectly excluded (likely using < instead of <=)`
+    );
+  }
+});
+
+test("getRawCandles edge case: candle closing exactly at untilTimestamp should be included", async ({
+  pass,
+  fail,
+}) => {
+  const [awaiter, { resolve }] = createAwaiter();
+
+  const T_10_05 = new Date("2024-01-01T10:05:00Z");
+
+  const generateCandles = () => {
+    const candles = [];
+    let current = new Date("2024-01-01T10:00:00Z").getTime();
+
+    for (let i = 0; i < 10; i++) {
+      candles.push({
+        timestamp: current,
+        open: 100 + i,
+        high: 105 + i,
+        low: 95 + i,
+        close: 101 + i,
+        volume: 1000 + i,
+      });
+      current += 60 * 1000;
+    }
+    return candles;
+  };
+
+  const candles1m = generateCandles();
+
+  addExchangeSchema({
+    exchangeName: "test-edge-raw",
+    getCandles: async (_symbol, interval, since, limit) => {
+      if (interval !== "1m") return [];
+      const sinceMs = since.getTime();
+      const filtered = candles1m.filter((c) => c.timestamp >= sinceMs);
+      return filtered.slice(0, limit);
+    },
+    formatPrice: async (_, p) => p.toFixed(2),
+    formatQuantity: async (_, q) => q.toFixed(5),
+  });
+
+  addStrategySchema({
+    strategyName: "test-edge-raw-strategy",
+    interval: "1m",
+    getSignal: async () => {
+      try {
+        // Request candles with eDate = 10:05
+        // sDate = 10:00, eDate = 10:05
+        // Expected: 10:00, 10:01, 10:02, 10:03, 10:04 (closes at 10:05)
+        const sDate = new Date("2024-01-01T10:00:00Z").getTime();
+        const eDate = new Date("2024-01-01T10:05:00Z").getTime();
+        const result = await getRawCandles("BTCUSDT", "1m", undefined, sDate, eDate);
+        resolve(result);
+      } catch (e) {
+        resolve({ error: e.message });
+      }
+      return null;
+    },
+  });
+
+  addFrameSchema({
+    frameName: "edge-raw-frame",
+    interval: "1d",
+    startDate: T_10_05,
+    endDate: new Date("2024-01-01T10:06:00Z"),
+  });
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-edge-raw-strategy",
+    exchangeName: "test-edge-raw",
+    frameName: "edge-raw-frame",
+  });
+
+  const result = await awaiter;
+
+  if (result.error) {
+    fail(`Test error: ${result.error}`);
+    return;
+  }
+
+  if (!Array.isArray(result) || result.length === 0) {
+    fail("Expected candles array, got empty or invalid result");
+    return;
+  }
+
+  // Should return exactly 5 candles: 10:00, 10:01, 10:02, 10:03, 10:04
+  if (result.length !== 5) {
+    fail(`Expected 5 candles, got ${result.length}`);
+    return;
+  }
+
+  const lastCandle = result[result.length - 1];
+  const lastCandleTimestamp = lastCandle.timestamp;
+  const lastCandleCloseTime = lastCandleTimestamp + 60 * 1000;
+
+  const expectedLastTimestamp = new Date("2024-01-01T10:04:00Z").getTime();
+  const expectedCloseTime = new Date("2024-01-01T10:05:00Z").getTime();
+
+  if (lastCandleTimestamp === expectedLastTimestamp && lastCandleCloseTime === expectedCloseTime) {
+    pass(
+      `getRawCandles edge case passed: Candle closing EXACTLY at untilTimestamp (${new Date(expectedCloseTime).toISOString()}) is correctly included`
+    );
+  } else {
+    fail(
+      `getRawCandles edge case failed: Expected last candle at ${new Date(expectedLastTimestamp).toISOString()} closing at ${new Date(expectedCloseTime).toISOString()}, ` +
+        `got ${new Date(lastCandleTimestamp).toISOString()} closing at ${new Date(lastCandleCloseTime).toISOString()}. ` +
+        `This suggests incorrect filtering (likely using < instead of <=)`
+    );
+  }
+});
+
+test("Exchange.getCandles edge case: candle closing exactly at Date.now() should be included", async ({
+  pass,
+  fail,
+}) => {
+  // Create a precise timestamp for testing
+  const now = Date.now();
+  const nowRounded = Math.floor(now / 60000) * 60000; // Round down to minute boundary
+
+  // Generate candles where the last one closes EXACTLY at nowRounded
+  const candles1m = [];
+  for (let i = 0; i < 10; i++) {
+    const timestamp = nowRounded - (10 - i) * 60 * 1000;
+    candles1m.push({
+      timestamp: timestamp,
+      open: 100 + i,
+      high: 105 + i,
+      low: 95 + i,
+      close: 101 + i,
+      volume: 1000 + i,
+    });
+  }
+
+  addExchangeSchema({
+    exchangeName: "test-edge-exchange",
+    getCandles: async (_symbol, interval, since, limit) => {
+      if (interval !== "1m") return [];
+      const sinceMs = since.getTime();
+      const filtered = candles1m.filter((c) => c.timestamp >= sinceMs);
+      return filtered.slice(0, limit);
+    },
+    formatPrice: async (_, p) => p.toFixed(2),
+    formatQuantity: async (_, q) => q.toFixed(5),
+  });
+
+  try {
+    // Request 10 candles - the last candle should close exactly at nowRounded
+    const result = await Exchange.getCandles("BTCUSDT", "1m", 10, {
+      exchangeName: "test-edge-exchange",
+    });
+
+    if (!Array.isArray(result) || result.length === 0) {
+      fail("Expected candles array, got empty or invalid result");
+      return;
+    }
+
+    const lastCandle = result[result.length - 1];
+    const lastCandleCloseTime = lastCandle.timestamp + 60 * 1000;
+
+    // The last candle should close at nowRounded (within tolerance)
+    const tolerance = 1000; // 1 second tolerance
+    if (Math.abs(lastCandleCloseTime - nowRounded) <= tolerance) {
+      pass(
+        `Exchange.getCandles edge case passed: Candle closing at Date.now() (${new Date(nowRounded).toISOString()}) is correctly included`
+      );
+    } else {
+      fail(
+        `Exchange.getCandles edge case failed: Expected last candle to close at ~${new Date(nowRounded).toISOString()}, ` +
+          `but got ${new Date(lastCandleCloseTime).toISOString()}. ` +
+          `Difference: ${Math.abs(lastCandleCloseTime - nowRounded)}ms. ` +
+          `This suggests the candle closing at Date.now() was incorrectly excluded.`
+      );
+    }
+  } catch (error) {
+    fail(`Exchange.getCandles edge case threw error: ${error.message}`);
+  }
+});
+
+test("Exchange.getRawCandles edge case: candle closing exactly at eDate should be included", async ({
+  pass,
+  fail,
+}) => {
+  const BASE_TIME = new Date("2025-01-01T10:00:00Z").getTime();
+  const candles1m = [];
+  for (let i = 0; i < 20; i++) {
+    candles1m.push({
+      timestamp: BASE_TIME + i * 60 * 1000,
+      open: 100 + i,
+      high: 105 + i,
+      low: 95 + i,
+      close: 101 + i,
+      volume: 1000 + i,
+    });
+  }
+
+  addExchangeSchema({
+    exchangeName: "test-edge-raw-exchange",
+    getCandles: async (_symbol, interval, since, limit) => {
+      if (interval !== "1m") return [];
+      const sinceMs = since.getTime();
+      const filtered = candles1m.filter((c) => c.timestamp >= sinceMs);
+      return filtered.slice(0, limit);
+    },
+    formatPrice: async (_, p) => p.toFixed(2),
+    formatQuantity: async (_, q) => q.toFixed(5),
+  });
+
+  try {
+    // Request candles from 10:00 to 10:05 (exactly)
+    // Expected: 10:00, 10:01, 10:02, 10:03, 10:04 (closes at 10:05)
+    const sDate = new Date("2025-01-01T10:00:00Z").getTime();
+    const eDate = new Date("2025-01-01T10:05:00Z").getTime();
+
+    const result = await Exchange.getRawCandles(
+      "BTCUSDT",
+      "1m",
+      { exchangeName: "test-edge-raw-exchange" },
+      undefined,
+      sDate,
+      eDate
+    );
+
+    if (!Array.isArray(result) || result.length === 0) {
+      fail("Expected candles array, got empty or invalid result");
+      return;
+    }
+
+    // Should return exactly 5 candles
+    if (result.length !== 5) {
+      fail(`Expected 5 candles, got ${result.length}`);
+      return;
+    }
+
+    const lastCandle = result[result.length - 1];
+    const lastCandleTimestamp = lastCandle.timestamp;
+    const lastCandleCloseTime = lastCandleTimestamp + 60 * 1000;
+
+    const expectedLastTimestamp = new Date("2025-01-01T10:04:00Z").getTime();
+    const expectedCloseTime = eDate;
+
+    if (lastCandleTimestamp === expectedLastTimestamp && lastCandleCloseTime === expectedCloseTime) {
+      pass(
+        `Exchange.getRawCandles edge case passed: Candle closing EXACTLY at eDate (${new Date(expectedCloseTime).toISOString()}) is correctly included`
+      );
+    } else {
+      fail(
+        `Exchange.getRawCandles edge case failed: Expected last candle at ${new Date(expectedLastTimestamp).toISOString()} closing at ${new Date(expectedCloseTime).toISOString()}, ` +
+          `got ${new Date(lastCandleTimestamp).toISOString()} closing at ${new Date(lastCandleCloseTime).toISOString()}. ` +
+          `Candle count: ${result.length}. This indicates the boundary candle was incorrectly excluded (< instead of <=).`
+      );
+    }
+  } catch (error) {
+    fail(`Exchange.getRawCandles edge case threw error: ${error.message}`);
+  }
+});
+
+test("STRICT: Exchange.getCandles with exact minute boundary must include boundary candle", async ({
+  pass,
+  fail,
+}) => {
+  // Use a fixed time that aligns exactly with minute boundary
+  const targetTime = new Date("2025-06-15T14:30:00.000Z");
+  const targetTimeMs = targetTime.getTime();
+
+  // Generate candles: ..., 14:27, 14:28, 14:29 (closes at 14:30)
+  const candles1m = [];
+  for (let i = -20; i < 5; i++) {
+    candles1m.push({
+      timestamp: targetTimeMs + i * 60 * 1000,
+      open: 100 + i,
+      high: 105 + i,
+      low: 95 + i,
+      close: 101 + i,
+      volume: 1000 + Math.abs(i),
+    });
+  }
+
+  addExchangeSchema({
+    exchangeName: "test-strict-boundary",
+    getCandles: async (_symbol, interval, since, limit) => {
+      if (interval !== "1m") return [];
+      const sinceMs = since.getTime();
+      const filtered = candles1m.filter((c) => c.timestamp >= sinceMs);
+      return filtered.slice(0, limit);
+    },
+    formatPrice: async (_, p) => p.toFixed(2),
+    formatQuantity: async (_, q) => q.toFixed(5),
+  });
+
+  try {
+    // Mock Date.now() temporarily by creating candles that end exactly at a known time
+    // Request 10 candles backward from targetTime
+    // The calculation will be: targetTime - 10*60*1000 = 14:20 to 14:30
+    // Expected candles: 14:20, 14:21, ..., 14:29 (this last candle closes at 14:30)
+
+    // Since Exchange.getCandles uses Date.now(), we can't control when it runs
+    // But we can check getRawCandles with specific boundaries instead
+    // Let's use getRawCandles with calculated sDate that mimics getCandles logic
+
+    const limit = 10;
+    const calculatedSince = targetTimeMs - limit * 60 * 1000; // 14:20
+
+    const result = await Exchange.getRawCandles(
+      "BTCUSDT",
+      "1m",
+      { exchangeName: "test-strict-boundary" },
+      limit,
+      calculatedSince,
+      targetTimeMs
+    );
+
+    if (!Array.isArray(result)) {
+      fail("Expected candles array, got invalid result");
+      return;
+    }
+
+    // Should return exactly 10 candles
+    if (result.length !== 10) {
+      fail(`Expected 10 candles, got ${result.length}. If got 9, the boundary candle was incorrectly excluded (< instead of <=).`);
+      return;
+    }
+
+    const lastCandle = result[result.length - 1];
+    const lastCandleCloseTime = lastCandle.timestamp + 60 * 1000;
+
+    // The last candle should close EXACTLY at targetTime
+    if (lastCandleCloseTime === targetTimeMs) {
+      pass(
+        `STRICT boundary test passed: Candle closing EXACTLY at boundary time (${targetTime.toISOString()}) is correctly included with <= operator`
+      );
+    } else {
+      fail(
+        `STRICT boundary test failed: Last candle closes at ${new Date(lastCandleCloseTime).toISOString()}, expected ${targetTime.toISOString()}. ` +
+          `Candle count: ${result.length}. This indicates incorrect boundary handling.`
+      );
+    }
+  } catch (error) {
+    fail(`STRICT boundary test threw error: ${error.message}`);
+  }
+});
