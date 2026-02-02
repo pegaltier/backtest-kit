@@ -15,6 +15,11 @@ import {
 
 import { Subject, sleep } from "functools-kit";
 
+const alignTimestamp = (timestampMs, intervalMinutes) => {
+  const intervalMs = intervalMinutes * 60 * 1000;
+  return Math.floor(timestampMs / intervalMs) * intervalMs;
+};
+
 test("CACHE: Cached function with 1m interval - same value within minute, different after", async ({ pass, fail }) => {
 
   const capturedValues = [];
@@ -24,12 +29,12 @@ test("CACHE: Cached function with 1m interval - same value within minute, differ
   const intervalMs = 60 * 1000; // 1 minute
   const basePrice = 42000;
 
-  const bufferMinutes = 4;
+  const bufferMinutes = 5;
   const bufferStartTime = startTime - bufferMinutes * intervalMs;
   let allCandles = [];
 
-  // Предзаполняем минимум 5 свечей
-  for (let i = 0; i < 5; i++) {
+  // Предзаполняем минимум 6 свечей
+  for (let i = 0; i < 6; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
       open: basePrice,
@@ -43,9 +48,25 @@ test("CACHE: Cached function with 1m interval - same value within minute, differ
   addExchangeSchema({
     exchangeName: "binance-cache-fn-test",
     getCandles: async (_symbol, _interval, since, limit) => {
-      const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existingCandle = allCandles.find((c) => c.timestamp === timestamp);
+        if (existingCandle) {
+          result.push(existingCandle);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 50,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+      return result;
     },
     formatPrice: async (symbol, price) => price.toFixed(8),
     formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
@@ -166,12 +187,12 @@ test("CACHE: Cache.fn wrapper with 5m interval - caches value within 5 minutes",
   const intervalMs = 60 * 1000; // 1 minute
   const basePrice = 42000;
 
-  const bufferMinutes = 4;
+  const bufferMinutes = 5;
   const bufferStartTime = startTime - bufferMinutes * intervalMs;
   let allCandles = [];
 
-  // Предзаполняем минимум 5 свечей
-  for (let i = 0; i < 5; i++) {
+  // Предзаполняем минимум 6 свечей
+  for (let i = 0; i < 6; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
       open: basePrice,
@@ -199,9 +220,25 @@ test("CACHE: Cache.fn wrapper with 5m interval - caches value within 5 minutes",
   addExchangeSchema({
     exchangeName: "binance-cache-wrapper-test",
     getCandles: async (_symbol, _interval, since, limit) => {
-      const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existingCandle = allCandles.find((c) => c.timestamp === timestamp);
+        if (existingCandle) {
+          result.push(existingCandle);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 50,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+      return result;
     },
     formatPrice: async (symbol, price) => price.toFixed(8),
     formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
@@ -213,7 +250,7 @@ test("CACHE: Cache.fn wrapper with 5m interval - caches value within 5 minutes",
     getSignal: async () => {
 
       // Генерируем ВСЕ свечи только в первый раз
-      if (allCandles.length === 5) {
+      if (allCandles.length === 6) {
         allCandles = [];
 
         // Буферные свечи
@@ -325,12 +362,12 @@ test("CACHE: Cache.fn with 15m interval - fewer computations for longer interval
   const intervalMs = 60 * 1000; // 1 minute
   const basePrice = 42000;
 
-  const bufferMinutes = 4;
+  const bufferMinutes = 5;
   const bufferStartTime = startTime - bufferMinutes * intervalMs;
   let allCandles = [];
 
-  // Предзаполняем минимум 5 свечей
-  for (let i = 0; i < 5; i++) {
+  // Предзаполняем минимум 6 свечей
+  for (let i = 0; i < 6; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
       open: basePrice,
@@ -358,9 +395,25 @@ test("CACHE: Cache.fn with 15m interval - fewer computations for longer interval
   addExchangeSchema({
     exchangeName: "binance-cache-15m-test",
     getCandles: async (_symbol, _interval, since, limit) => {
-      const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existingCandle = allCandles.find((c) => c.timestamp === timestamp);
+        if (existingCandle) {
+          result.push(existingCandle);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 50,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+      return result;
     },
     formatPrice: async (symbol, price) => price.toFixed(8),
     formatQuantity: async (symbol, quantity) => quantity.toFixed(8),
@@ -372,7 +425,7 @@ test("CACHE: Cache.fn with 15m interval - fewer computations for longer interval
     getSignal: async () => {
 
       // Генерируем ВСЕ свечи только в первый раз
-      if (allCandles.length === 5) {
+      if (allCandles.length === 6) {
         allCandles = [];
 
         // Буферные свечи
