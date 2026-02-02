@@ -201,7 +201,7 @@ Customize via `setConfig()`:
 
 ## 💻 Developer Note
 
-Backtest Kit is **not a data-processing library** - it is a **time execution engine**. Think of the engine as an **async stream of time**, where your strategy is evaluated step by step.
+Backtest Kit is **not a data-processing library** - it is a **time execution engine**. Think of the engine as an **async stream of time**, where your strategy is evaluated step by step. According to this `timestamp` of a candle in backtest-kit is exactly the `openTime`, not `closeTime`
 
 ### 🔍 How getCandles Works
 
