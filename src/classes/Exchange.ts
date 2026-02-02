@@ -702,8 +702,8 @@ export class ExchangeInstance {
     const stepMs = step * MS_PER_MINUTE;
     const filteredData = allData.filter(
       (candle) =>
-        candle.timestamp >= sinceTimestamp &&
-        candle.timestamp + stepMs <= untilTimestamp
+        candle.timestamp > sinceTimestamp &&
+        candle.timestamp + stepMs < untilTimestamp
     );
 
     // Apply distinct by timestamp to remove duplicates
