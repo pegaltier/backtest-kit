@@ -14,6 +14,11 @@ import {
 
 import getMockCandles from "../mock/getMockCandles.mjs";
 
+const alignTimestamp = (timestampMs, intervalMinutes) => {
+  const intervalMs = intervalMinutes * 60 * 1000;
+  return Math.floor(timestampMs / intervalMs) * intervalMs;
+};
+
 test("listExchanges returns all registered exchanges", async ({ pass, fail }) => {
 
   addExchangeSchema({

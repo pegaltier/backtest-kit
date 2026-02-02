@@ -12,6 +12,11 @@ import {
 import getMockCandles from "../mock/getMockCandles.mjs";
 import { createAwaiter, sleep } from "functools-kit";
 
+const alignTimestamp = (timestampMs, intervalMinutes) => {
+  const intervalMs = intervalMinutes * 60 * 1000;
+  return Math.floor(timestampMs / intervalMs) * intervalMs;
+};
+
 test("Schedule.getData returns ScheduleStatistics structure", async ({ pass, fail }) => {
 
   addExchangeSchema({
@@ -227,13 +232,13 @@ test("Schedule.getData tracks scheduled signal lifecycle", async ({ pass, fail }
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000; // 1 минута
   const basePrice = 42000;
-  const bufferMinutes = 4;
+  const bufferMinutes = 5;
   const bufferStartTime = startTime - bufferMinutes * intervalMs;
 
   let allCandles = [];
 
-  // Предзаполняем минимум 5 свечей
-  for (let i = 0; i < 5; i++) {
+  // Предзаполняем минимум 6 свечей
+  for (let i = 0; i < 6; i++) {
     allCandles.push({
       timestamp: bufferStartTime + i * intervalMs,
       open: basePrice,
@@ -247,9 +252,25 @@ test("Schedule.getData tracks scheduled signal lifecycle", async ({ pass, fail }
   addExchangeSchema({
     exchangeName: "binance-mock-schedule-lifecycle",
     getCandles: async (_symbol, _interval, since, limit) => {
-      const sinceIndex = Math.floor((since.getTime() - bufferStartTime) / intervalMs);
-      const result = allCandles.slice(sinceIndex, sinceIndex + limit);
-      return result.length > 0 ? result : allCandles.slice(0, Math.min(limit, allCandles.length));
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existingCandle = allCandles.find((c) => c.timestamp === timestamp);
+        if (existingCandle) {
+          result.push(existingCandle);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice,
+            high: basePrice + 100,
+            low: basePrice - 50,
+            close: basePrice,
+            volume: 100,
+          });
+        }
+      }
+      return result;
     },
     formatPrice: async (symbol, price) => {
       return price.toFixed(8);
