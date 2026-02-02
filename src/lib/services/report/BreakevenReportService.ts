@@ -77,7 +77,7 @@ export class BreakevenReportService {
       priceStopLoss: data.data.priceStopLoss,
       originalPriceTakeProfit: data.data.originalPriceTakeProfit,
       originalPriceStopLoss: data.data.originalPriceStopLoss,
-      totalExecuted: data.data.totalExecuted,
+      partialExecuted: data.data.partialExecuted,
       _partial: data.data._partial,
       note: data.data.note,
       pendingAt: data.data.pendingAt,

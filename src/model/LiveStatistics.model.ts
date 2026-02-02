@@ -28,7 +28,7 @@ export interface TickEvent {
   /** Original stop loss price before modifications (only for scheduled/waiting/opened/active/closed/cancelled) */
   originalPriceStopLoss?: number;
   /** Total executed percentage from partial closes (only for scheduled/waiting/opened/active/closed/cancelled) */
-  totalExecuted?: number;
+  partialExecuted?: number;
   /** Percentage progress towards take profit (only for active/waiting) */
   percentTp?: number;
   /** Percentage progress towards stop loss (only for active/waiting) */

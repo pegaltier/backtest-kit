@@ -143,7 +143,7 @@ export interface IPublicSignalRow extends ISignalRow {
    * Represents the total portion of the position that has been closed through partial executions.
    * Range: 0-100. Value of 0 means no partial closes, 100 means position fully closed through partials.
    */
-  totalExecuted: number;
+  partialExecuted: number;
 }
 
 /**
@@ -151,6 +151,8 @@ export interface IPublicSignalRow extends ISignalRow {
  * Used for persisting signals with accurate creation time.
  */
 export interface IStorageSignalRow extends IPublicSignalRow {
+  /** Creation timestamp taken from IStrategyTickResult */
+  createdAt: number;
   /** Creation timestamp taken from IStrategyTickResult */
   updatedAt: number;
   /** Storage adapter rewrite priority. Equal to Date.now for live and backtest both */

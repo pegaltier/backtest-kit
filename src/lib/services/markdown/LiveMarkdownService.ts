@@ -190,7 +190,7 @@ class ReportStorage {
       priceStopLoss: data.signal.priceStopLoss,
       originalPriceTakeProfit: data.signal.originalPriceTakeProfit,
       originalPriceStopLoss: data.signal.originalPriceStopLoss,
-      totalExecuted: data.signal.totalExecuted,
+      partialExecuted: data.signal.partialExecuted,
     });
 
     // Trim queue if exceeded MAX_EVENTS
@@ -219,7 +219,7 @@ class ReportStorage {
       priceStopLoss: data.signal.priceStopLoss,
       originalPriceTakeProfit: data.signal.originalPriceTakeProfit,
       originalPriceStopLoss: data.signal.originalPriceStopLoss,
-      totalExecuted: data.signal.totalExecuted,
+      partialExecuted: data.signal.partialExecuted,
       percentTp: data.percentTp,
       percentSl: data.percentSl,
       pnl: data.pnl.pnlPercentage,
@@ -267,7 +267,7 @@ class ReportStorage {
       priceStopLoss: data.signal.priceStopLoss,
       originalPriceTakeProfit: data.signal.originalPriceTakeProfit,
       originalPriceStopLoss: data.signal.originalPriceStopLoss,
-      totalExecuted: data.signal.totalExecuted,
+      partialExecuted: data.signal.partialExecuted,
       pnl: data.pnl.pnlPercentage,
       closeReason: data.closeReason,
       duration: durationMin,
@@ -300,7 +300,7 @@ class ReportStorage {
       priceStopLoss: data.signal.priceStopLoss,
       originalPriceTakeProfit: data.signal.originalPriceTakeProfit,
       originalPriceStopLoss: data.signal.originalPriceStopLoss,
-      totalExecuted: data.signal.totalExecuted,
+      partialExecuted: data.signal.partialExecuted,
     });
 
     // Trim queue if exceeded MAX_EVENTS
@@ -329,7 +329,7 @@ class ReportStorage {
       priceStopLoss: data.signal.priceStopLoss,
       originalPriceTakeProfit: data.signal.originalPriceTakeProfit,
       originalPriceStopLoss: data.signal.originalPriceStopLoss,
-      totalExecuted: data.signal.totalExecuted,
+      partialExecuted: data.signal.partialExecuted,
       percentTp: data.percentTp,
       percentSl: data.percentSl,
       pnl: data.pnl.pnlPercentage,
@@ -374,7 +374,7 @@ class ReportStorage {
       priceStopLoss: data.signal.priceStopLoss,
       originalPriceTakeProfit: data.signal.originalPriceTakeProfit,
       originalPriceStopLoss: data.signal.originalPriceStopLoss,
-      totalExecuted: data.signal.totalExecuted,
+      partialExecuted: data.signal.partialExecuted,
       cancelReason: data.reason,
     });
 

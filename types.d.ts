@@ -1128,13 +1128,15 @@ interface IPublicSignalRow extends ISignalRow {
      * Represents the total portion of the position that has been closed through partial executions.
      * Range: 0-100. Value of 0 means no partial closes, 100 means position fully closed through partials.
      */
-    totalExecuted: number;
+    partialExecuted: number;
 }
 /**
  * Storage signal row with creation timestamp taken from IStrategyTickResult.
  * Used for persisting signals with accurate creation time.
  */
 interface IStorageSignalRow extends IPublicSignalRow {
+    /** Creation timestamp taken from IStrategyTickResult */
+    createdAt: number;
     /** Creation timestamp taken from IStrategyTickResult */
     updatedAt: number;
     /** Storage adapter rewrite priority. Equal to Date.now for live and backtest both */
@@ -1913,7 +1915,7 @@ interface BreakevenContract {
     frameName: FrameName;
     /**
      * Complete signal row data with original prices.
-     * Contains all signal information including originalPriceStopLoss, originalPriceTakeProfit, and totalExecuted.
+     * Contains all signal information including originalPriceStopLoss, originalPriceTakeProfit, and partialExecuted.
      */
     data: IPublicSignalRow;
     /**
@@ -1997,7 +1999,7 @@ interface PartialProfitContract {
     frameName: FrameName;
     /**
      * Complete signal row data with original prices.
-     * Contains all signal information including originalPriceStopLoss, originalPriceTakeProfit, and totalExecuted.
+     * Contains all signal information including originalPriceStopLoss, originalPriceTakeProfit, and partialExecuted.
      */
     data: IPublicSignalRow;
     /**
@@ -2097,7 +2099,7 @@ interface PartialLossContract {
     frameName: FrameName;
     /**
      * Complete signal row data with original prices.
-     * Contains all signal information including originalPriceStopLoss, originalPriceTakeProfit, and totalExecuted.
+     * Contains all signal information including originalPriceStopLoss, originalPriceTakeProfit, and partialExecuted.
      */
     data: IPublicSignalRow;
     /**
@@ -3664,7 +3666,7 @@ interface BreakevenEvent {
     /** Original stop loss price set at signal creation */
     originalPriceStopLoss?: number;
     /** Total executed percentage from partial closes */
-    totalExecuted?: number;
+    partialExecuted?: number;
     /** Human-readable description of signal reason */
     note?: string;
     /** True if backtest mode, false if live mode */
@@ -6941,7 +6943,7 @@ interface TickEvent {
     /** Original stop loss price before modifications (only for scheduled/waiting/opened/active/closed/cancelled) */
     originalPriceStopLoss?: number;
     /** Total executed percentage from partial closes (only for scheduled/waiting/opened/active/closed/cancelled) */
-    totalExecuted?: number;
+    partialExecuted?: number;
     /** Percentage progress towards take profit (only for active/waiting) */
     percentTp?: number;
     /** Percentage progress towards stop loss (only for active/waiting) */
@@ -7054,7 +7056,7 @@ interface ScheduledEvent {
     /** Original stop loss price before modifications */
     originalPriceStopLoss?: number;
     /** Total executed percentage from partial closes */
-    totalExecuted?: number;
+    partialExecuted?: number;
     /** Close timestamp (only for cancelled) */
     closeTimestamp?: number;
     /** Duration in minutes (only for cancelled/opened) */
@@ -7232,7 +7234,7 @@ interface PartialEvent {
     /** Original stop loss price set at signal creation */
     originalPriceStopLoss?: number;
     /** Total executed percentage from partial closes */
-    totalExecuted?: number;
+    partialExecuted?: number;
     /** Human-readable description of signal reason */
     note?: string;
     /** True if backtest mode, false if live mode */

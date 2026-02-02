@@ -71,7 +71,7 @@ export class RiskReportService {
       priceStopLoss: data.pendingSignal?.priceStopLoss,
       originalPriceTakeProfit: data.pendingSignal?.originalPriceTakeProfit,
       originalPriceStopLoss: data.pendingSignal?.originalPriceStopLoss,
-      totalExecuted: data.pendingSignal?.totalExecuted,
+      partialExecuted: data.pendingSignal?.partialExecuted,
       note: data.pendingSignal?.note,
       minuteEstimatedTime: data.pendingSignal?.minuteEstimatedTime,
     }, {

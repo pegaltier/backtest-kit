@@ -57,9 +57,8 @@ import CohereProvider from "../client/CohereProvider.client";
 import AlibabaProvider from "../client/AlibabaProvider.client";
 import GLM4Provider from "../client/GLM4Provider.client";
 import LoggerService from "./services/base/LoggerService";
-import OutlinePrivateService from "./services/private/OutlinePrivateService";
-import OutlinePublicService from "./services/public/OutlinePublicService";
-import SignalPromptService from "./services/prompt/SignalPromptService";
+import PromptCacheService from "./services/cache/PromptCacheService";
+import ResolvePromptService from "./services/prompt/ResolvePromptService";
 import OutlineMarkdownService from "./services/markdown/OutlineMarkdownService";
 import OptimizerTemplateService from "./services/template/OptimizerTemplateService";
 import OptimizerSchemaService from "./services/schema/OptimizerSchemaService";
@@ -82,7 +81,6 @@ const privateServices = {
   runnerPrivateService: inject<RunnerPrivateService>(
     TYPES.runnerPrivateService
   ),
-  outlinePrivateService: inject<OutlinePrivateService>(TYPES.outlinePrivateService),
 };
 
 /**
@@ -90,11 +88,14 @@ const privateServices = {
  */
 const publicServices = {
   runnerPublicService: inject<RunnerPublicService>(TYPES.runnerPublicService),
-  outlinePublicService: inject<OutlinePublicService>(TYPES.outlinePublicService),
 };
 
 const promptServices = {
-  signalPromptService: inject<SignalPromptService>(TYPES.signalPromptService),
+  resolvePromptService: inject<ResolvePromptService>(TYPES.resolvePromptService),
+}
+
+const cacheServices = {
+  promptCacheService: inject<PromptCacheService>(TYPES.promptCacheService),
 }
 
 const markdownServices = {
@@ -130,6 +131,7 @@ const engine = {
   ...privateServices,
   ...publicServices,
   ...promptServices,
+  ...cacheServices,
   ...markdownServices,
   ...templateServices,
   ...schemaServices,

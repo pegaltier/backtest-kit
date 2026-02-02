@@ -17,11 +17,10 @@
 
 import ContextService from "../services/base/ContextService";
 import LoggerService from "../services/base/LoggerService";
+import PromptCacheService from "../services/cache/PromptCacheService";
 import OutlineMarkdownService from "../services/markdown/OutlineMarkdownService";
-import OutlinePrivateService from "../services/private/OutlinePrivateService";
 import RunnerPrivateService from "../services/private/RunnerPrivateService";
-import SignalPromptService from "../services/prompt/SignalPromptService";
-import OutlinePublicService from "../services/public/OutlinePublicService";
+import ResolvePromptService from "../services/prompt/ResolvePromptService";
 import RunnerPublicService from "../services/public/RunnerPublicService";
 import OptimizerTemplateService from "../services/template/OptimizerTemplateService";
 import OptimizerSchemaService from "../services/schema/OptimizerSchemaService";
@@ -44,7 +43,6 @@ import { TYPES } from "./types";
  */
 {
   provide(TYPES.runnerPrivateService, () => new RunnerPrivateService());
-  provide(TYPES.outlinePrivateService, () => new OutlinePrivateService());
 }
 
 /**
@@ -52,11 +50,14 @@ import { TYPES } from "./types";
  */
 {
   provide(TYPES.runnerPublicService, () => new RunnerPublicService());
-  provide(TYPES.outlinePublicService, () => new OutlinePublicService());
 }
 
 {
-  provide(TYPES.signalPromptService, () => new SignalPromptService());
+  provide(TYPES.resolvePromptService, () => new ResolvePromptService());
+}
+
+{
+  provide(TYPES.promptCacheService, () => new PromptCacheService());
 }
 
 {

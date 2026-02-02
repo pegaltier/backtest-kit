@@ -138,7 +138,7 @@ class ReportStorage {
       priceStopLoss: data.priceStopLoss,
       originalPriceTakeProfit: data.originalPriceTakeProfit,
       originalPriceStopLoss: data.originalPriceStopLoss,
-      totalExecuted: data.totalExecuted,
+      partialExecuted: data.partialExecuted,
       note: data.note,
       backtest,
     });
@@ -178,7 +178,7 @@ class ReportStorage {
       priceStopLoss: data.priceStopLoss,
       originalPriceTakeProfit: data.originalPriceTakeProfit,
       originalPriceStopLoss: data.originalPriceStopLoss,
-      totalExecuted: data.totalExecuted,
+      partialExecuted: data.partialExecuted,
       note: data.note,
       backtest,
     });

@@ -61,7 +61,7 @@ export interface BreakevenContract {
 
   /**
    * Complete signal row data with original prices.
-   * Contains all signal information including originalPriceStopLoss, originalPriceTakeProfit, and totalExecuted.
+   * Contains all signal information including originalPriceStopLoss, originalPriceTakeProfit, and partialExecuted.
    */
   data: IPublicSignalRow;
 
