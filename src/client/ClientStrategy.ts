@@ -113,31 +113,6 @@ const PROCESS_COMMIT_QUEUE_FN = async (
     self._commitQueue = [];
   }
 
-  // Process activate-scheduled commits first (before pendingSignal check)
-  // because these don't require pendingSignal to exist yet
-  for (const commit of queue) {
-    if (commit.action === "activate-scheduled") {
-      await CALL_COMMIT_FN(self, {
-        action: "activate-scheduled",
-        symbol: commit.symbol,
-        strategyName: self.params.strategyName,
-        exchangeName: self.params.exchangeName,
-        frameName: self.params.frameName,
-        backtest: commit.backtest,
-        signalId: commit.signalId,
-        activateId: commit.activateId,
-        timestamp,
-      });
-    }
-  }
-
-  // Filter out already processed activate-scheduled commits
-  const remainingQueue = queue.filter(commit => commit.action !== "activate-scheduled");
-
-  if (remainingQueue.length === 0) {
-    return;
-  }
-
   if (!self._pendingSignal) {
     return;
   }
@@ -145,7 +120,7 @@ const PROCESS_COMMIT_QUEUE_FN = async (
   // Get public signal data for commit events (contains effective and original SL/TP)
   const publicSignal = TO_PUBLIC_SIGNAL(self._pendingSignal);
 
-  for (const commit of remainingQueue) {
+  for (const commit of queue) {
     if (commit.action === "partial-profit") {
       await CALL_COMMIT_FN(self, {
         action: "partial-profit",
@@ -3293,6 +3268,19 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
         self.params.execution.context.backtest
       );
 
+      // Emit commit AFTER successful risk check
+      await CALL_COMMIT_FN(self, {
+        action: "activate-scheduled",
+        symbol: self.params.execution.context.symbol,
+        strategyName: self.params.strategyName,
+        exchangeName: self.params.exchangeName,
+        frameName: self.params.frameName,
+        signalId: activatedSignal.id,
+        backtest: self.params.execution.context.backtest,
+        activateId: activatedSignal.activateId,
+        timestamp: candle.timestamp,
+      });
+
       await CALL_OPEN_CALLBACKS_FN(
         self,
         self.params.execution.context.symbol,
@@ -3964,6 +3952,19 @@ export class ClientStrategy implements IStrategy {
         signalId: cancelledSignal.id,
       });
 
+      // Emit commit with correct timestamp from tick context
+      await CALL_COMMIT_FN(this, {
+        action: "cancel-scheduled",
+        symbol: this.params.execution.context.symbol,
+        strategyName: this.params.strategyName,
+        exchangeName: this.params.exchangeName,
+        frameName: this.params.frameName,
+        signalId: cancelledSignal.id,
+        backtest: this.params.execution.context.backtest,
+        cancelId: cancelledSignal.cancelId,
+        timestamp: currentTime,
+      });
+
       // Call onCancel callback
       await CALL_CANCEL_CALLBACKS_FN(
         this,
@@ -4012,6 +4013,19 @@ export class ClientStrategy implements IStrategy {
       this.params.logger.info("ClientStrategy tick: pending signal was closed", {
         symbol: this.params.execution.context.symbol,
         signalId: closedSignal.id,
+      });
+
+      // Emit commit with correct timestamp from tick context
+      await CALL_COMMIT_FN(this, {
+        action: "close-pending",
+        symbol: this.params.execution.context.symbol,
+        strategyName: this.params.strategyName,
+        exchangeName: this.params.exchangeName,
+        frameName: this.params.frameName,
+        signalId: closedSignal.id,
+        backtest: this.params.execution.context.backtest,
+        closeId: closedSignal.closeId,
+        timestamp: currentTime,
       });
 
       // Call onClose callback
@@ -4130,6 +4144,19 @@ export class ClientStrategy implements IStrategy {
         currentTime,
         this.params.execution.context.backtest
       );
+
+      // Emit commit AFTER successful risk check
+      await CALL_COMMIT_FN(this, {
+        action: "activate-scheduled",
+        symbol: this.params.execution.context.symbol,
+        strategyName: this.params.strategyName,
+        exchangeName: this.params.exchangeName,
+        frameName: this.params.frameName,
+        signalId: activatedSignal.id,
+        backtest: this.params.execution.context.backtest,
+        activateId: activatedSignal.activateId,
+        timestamp: currentTime,
+      });
 
       // Call onOpen callback
       await CALL_OPEN_CALLBACKS_FN(
@@ -4319,6 +4346,19 @@ export class ClientStrategy implements IStrategy {
 
       const closeTimestamp = this.params.execution.context.when.getTime();
 
+      // Emit commit with correct timestamp from backtest context
+      await CALL_COMMIT_FN(this, {
+        action: "cancel-scheduled",
+        symbol: this.params.execution.context.symbol,
+        strategyName: this.params.strategyName,
+        exchangeName: this.params.exchangeName,
+        frameName: this.params.frameName,
+        signalId: cancelledSignal.id,
+        backtest: true,
+        cancelId: cancelledSignal.cancelId,
+        timestamp: closeTimestamp,
+      });
+
       await CALL_CANCEL_CALLBACKS_FN(
         this,
         this.params.execution.context.symbol,
@@ -4364,6 +4404,19 @@ export class ClientStrategy implements IStrategy {
       this._closedSignal = null; // Clear after using
 
       const closeTimestamp = this.params.execution.context.when.getTime();
+
+      // Emit commit with correct timestamp from backtest context
+      await CALL_COMMIT_FN(this, {
+        action: "close-pending",
+        symbol: this.params.execution.context.symbol,
+        strategyName: this.params.strategyName,
+        exchangeName: this.params.exchangeName,
+        frameName: this.params.frameName,
+        signalId: closedSignal.id,
+        backtest: true,
+        closeId: closedSignal.closeId,
+        timestamp: closeTimestamp,
+      });
 
       await CALL_CLOSE_CALLBACKS_FN(
         this,
@@ -4682,8 +4735,7 @@ export class ClientStrategy implements IStrategy {
       cancelId,
     });
 
-    // Save cancelled signal for next tick to emit cancelled event
-    const hadScheduledSignal = this._scheduledSignal !== null;
+    // Save cancelled signal for next tick/backtest to emit cancelled event with correct timestamp
     if (this._scheduledSignal) {
       this._cancelledSignal = Object.assign({}, this._scheduledSignal, {
         cancelId,
@@ -4692,20 +4744,7 @@ export class ClientStrategy implements IStrategy {
     }
 
     if (backtest) {
-      // Emit commit event only if signal was actually cancelled
-      if (hadScheduledSignal) {
-        await CALL_COMMIT_FN(this, {
-          action: "cancel-scheduled",
-          symbol,
-          strategyName: this.params.strategyName,
-          exchangeName: this.params.exchangeName,
-          frameName: this.params.frameName,
-          signalId: this._cancelledSignal!.id,
-          backtest,
-          cancelId,
-          timestamp: this.params.execution.context.when.getTime(),
-        });
-      }
+      // Commit will be emitted in backtest() with correct candle timestamp
       return;
     }
 
@@ -4716,20 +4755,7 @@ export class ClientStrategy implements IStrategy {
       this.params.method.context.exchangeName,
     );
 
-    // Emit commit event only if signal was actually cancelled
-    if (hadScheduledSignal) {
-      await CALL_COMMIT_FN(this, {
-        action: "cancel-scheduled",
-        symbol,
-        strategyName: this.params.strategyName,
-        exchangeName: this.params.exchangeName,
-        frameName: this.params.frameName,
-        signalId: this._cancelledSignal!.id,
-        backtest,
-        cancelId,
-        timestamp: this.params.execution.context.when.getTime(),
-      });
-    }
+    // Commit will be emitted in tick() with correct currentTime
   }
 
   /**
@@ -4761,7 +4787,6 @@ export class ClientStrategy implements IStrategy {
     });
 
     // Save activated signal for next tick to emit opened event
-    const hadScheduledSignal = this._scheduledSignal !== null;
     if (this._scheduledSignal) {
       this._activatedSignal = Object.assign({}, this._scheduledSignal, {
         activateId,
@@ -4770,16 +4795,7 @@ export class ClientStrategy implements IStrategy {
     }
 
     if (backtest) {
-      // Emit commit event only if signal was actually activated
-      if (hadScheduledSignal) {
-        this._commitQueue.push({
-          action: "activate-scheduled",
-          symbol,
-          backtest,
-          signalId: this._activatedSignal!.id,
-          activateId,
-        });
-      }
+      // Commit will be emitted AFTER successful risk check in PROCESS_SCHEDULED_SIGNAL_CANDLES_FN
       return;
     }
 
@@ -4790,16 +4806,7 @@ export class ClientStrategy implements IStrategy {
       this.params.method.context.exchangeName,
     );
 
-    // Emit commit event only if signal was actually activated
-    if (hadScheduledSignal) {
-      this._commitQueue.push({
-        action: "activate-scheduled",
-        symbol,
-        backtest,
-        signalId: this._activatedSignal!.id,
-        activateId,
-      });
-    }
+    // Commit will be emitted AFTER successful risk check in tick()
   }
 
   /**
@@ -4830,8 +4837,7 @@ export class ClientStrategy implements IStrategy {
       closeId,
     });
 
-    // Save closed signal for next tick to emit closed event
-    const hadPendingSignal = this._pendingSignal !== null;
+    // Save closed signal for next tick/backtest to emit closed event with correct timestamp
     if (this._pendingSignal) {
       this._closedSignal = Object.assign({}, this._pendingSignal, {
         closeId,
@@ -4840,20 +4846,7 @@ export class ClientStrategy implements IStrategy {
     }
 
     if (backtest) {
-      // Emit commit event only if signal was actually closed
-      if (hadPendingSignal) {
-        await CALL_COMMIT_FN(this, {
-          action: "close-pending",
-          symbol,
-          strategyName: this.params.strategyName,
-          exchangeName: this.params.exchangeName,
-          frameName: this.params.frameName,
-          signalId: this._closedSignal!.id,
-          backtest,
-          closeId,
-          timestamp: this.params.execution.context.when.getTime(),
-        });
-      }
+      // Commit will be emitted in backtest() with correct candle timestamp
       return;
     }
 
@@ -4864,20 +4857,7 @@ export class ClientStrategy implements IStrategy {
       this.params.exchangeName,
     );
 
-    // Emit commit event only if signal was actually closed
-    if (hadPendingSignal) {
-      await CALL_COMMIT_FN(this, {
-        action: "close-pending",
-        symbol,
-        strategyName: this.params.strategyName,
-        exchangeName: this.params.exchangeName,
-        frameName: this.params.frameName,
-        signalId: this._closedSignal!.id,
-        backtest,
-        closeId,
-        timestamp: this.params.execution.context.when.getTime(),
-      });
-    }
+    // Commit will be emitted in tick() with correct currentTime
   }
 
   /**

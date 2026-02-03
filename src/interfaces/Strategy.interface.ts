@@ -835,6 +835,29 @@ export interface IStrategy {
   cancelScheduled: (symbol: string, backtest: boolean, cancelId?: string) => Promise<void>;
 
   /**
+   * Activates the scheduled signal without waiting for price to reach priceOpen.
+   *
+   * Forces immediate activation of the scheduled signal at the current price.
+   * Does NOT affect active pending signals or strategy operation.
+   * Does NOT set stop flag - strategy can continue generating new signals.
+   *
+   * Use case: User-initiated early activation of a scheduled entry.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param backtest - Whether running in backtest mode
+   * @param activateId - Optional identifier for this activation operation
+   * @returns Promise that resolves when scheduled signal is activated
+   *
+   * @example
+   * ```typescript
+   * // Activate scheduled signal without waiting for priceOpen
+   * await strategy.activateScheduled("BTCUSDT", false, "user-activate-123");
+   * // Scheduled signal becomes pending signal immediately
+   * ```
+   */
+  activateScheduled: (symbol: string, backtest: boolean, activateId?: string) => Promise<void>;
+
+  /**
    * Closes the pending signal without stopping the strategy.
    *
    * Clears the pending signal (active position).
