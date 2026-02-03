@@ -1,29 +1,29 @@
 ---
-title: docs/interface/TrailingTakeCommit
+title: docs/interface/ActivateScheduledCommit
 group: docs
 ---
 
-# TrailingTakeCommit
+# ActivateScheduledCommit
 
-Trailing take event.
+Activate scheduled signal event.
 
 ## Properties
 
 ### action
 
 ```ts
-action: "trailing-take"
+action: "activate-scheduled"
 ```
 
-Discriminator for trailing-take action
+Discriminator for activate-scheduled action
 
-### percentShift
+### activateId
 
 ```ts
-percentShift: number
+activateId: string
 ```
 
-Percentage shift for take profit adjustment
+Optional identifier for the activation reason (user-provided)
 
 ### currentPrice
 
@@ -31,7 +31,7 @@ Percentage shift for take profit adjustment
 currentPrice: number
 ```
 
-Current market price at time of trailing adjustment
+Current market price at time of activation
 
 ### position
 
@@ -55,7 +55,7 @@ Entry price for the position
 priceTakeProfit: number
 ```
 
-Effective take profit price (updated by this trailing action)
+Effective take profit price
 
 ### priceStopLoss
 
@@ -63,7 +63,7 @@ Effective take profit price (updated by this trailing action)
 priceStopLoss: number
 ```
 
-Effective stop loss price (may differ from original after trailing)
+Effective stop loss price
 
 ### originalPriceTakeProfit
 
@@ -95,4 +95,4 @@ Signal creation timestamp in milliseconds
 pendingAt: number
 ```
 
-Position activation timestamp in milliseconds (when price reached priceOpen)
+Position activation timestamp in milliseconds (set during this activation)

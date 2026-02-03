@@ -82,3 +82,11 @@ breakevenCount: number
 ```
 
 Count of breakeven events
+
+### activateScheduledCount
+
+```ts
+activateScheduledCount: number
+```
+
+Count of activate-scheduled events

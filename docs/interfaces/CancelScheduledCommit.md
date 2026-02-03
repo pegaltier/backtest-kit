@@ -15,8 +15,12 @@ Cancel scheduled signal event.
 action: "cancel-scheduled"
 ```
 
+Discriminator for cancel-scheduled action
+
 ### cancelId
 
 ```ts
 cancelId: string
 ```
+
+Optional identifier for the cancellation reason (user-provided)

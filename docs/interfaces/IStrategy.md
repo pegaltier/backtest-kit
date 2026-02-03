@@ -114,6 +114,20 @@ Does NOT set stop flag - strategy can continue generating new signals.
 
 Use case: Cancel a scheduled entry that is no longer desired without stopping the entire strategy.
 
+### activateScheduled
+
+```ts
+activateScheduled: (symbol: string, backtest: boolean, activateId?: string) => Promise<void>
+```
+
+Activates the scheduled signal without waiting for price to reach priceOpen.
+
+Forces immediate activation of the scheduled signal at the current price.
+Does NOT affect active pending signals or strategy operation.
+Does NOT set stop flag - strategy can continue generating new signals.
+
+Use case: User-initiated early activation of a scheduled entry.
+
 ### closePending
 
 ```ts

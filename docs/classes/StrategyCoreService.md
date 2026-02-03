@@ -258,3 +258,14 @@ breakeven: (backtest: boolean, symbol: string, currentPrice: number, context: { 
 
 Moves stop-loss to breakeven when price reaches threshold.
 Validates context and delegates to StrategyConnectionService.
+
+### activateScheduled
+
+```ts
+activateScheduled: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }, activateId?: string) => Promise<void>
+```
+
+Activates a scheduled signal early without waiting for price to reach priceOpen.
+
+Validates strategy existence and delegates to connection service
+to set the activation flag. The actual activation happens on next tick().

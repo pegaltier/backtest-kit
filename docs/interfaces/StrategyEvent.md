@@ -106,6 +106,14 @@ closeId: string
 
 Close ID for close-pending action
 
+### activateId
+
+```ts
+activateId: string
+```
+
+Activate ID for activate-scheduled action
+
 ### createdAt
 
 ```ts

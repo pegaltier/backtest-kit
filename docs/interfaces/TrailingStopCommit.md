@@ -15,11 +15,15 @@ Trailing stop event.
 action: "trailing-stop"
 ```
 
+Discriminator for trailing-stop action
+
 ### percentShift
 
 ```ts
 percentShift: number
 ```
+
+Percentage shift for stop loss adjustment
 
 ### currentPrice
 
@@ -27,11 +31,15 @@ percentShift: number
 currentPrice: number
 ```
 
+Current market price at time of trailing adjustment
+
 ### position
 
 ```ts
 position: "long" | "short"
 ```
+
+Trade direction: "long" (buy) or "short" (sell)
 
 ### priceOpen
 
@@ -39,11 +47,15 @@ position: "long" | "short"
 priceOpen: number
 ```
 
+Entry price for the position
+
 ### priceTakeProfit
 
 ```ts
 priceTakeProfit: number
 ```
+
+Effective take profit price (may differ from original after trailing)
 
 ### priceStopLoss
 
@@ -51,11 +63,15 @@ priceTakeProfit: number
 priceStopLoss: number
 ```
 
+Effective stop loss price (updated by this trailing action)
+
 ### originalPriceTakeProfit
 
 ```ts
 originalPriceTakeProfit: number
 ```
+
+Original take profit price before any trailing adjustments
 
 ### originalPriceStopLoss
 
@@ -63,14 +79,20 @@ originalPriceTakeProfit: number
 originalPriceStopLoss: number
 ```
 
+Original stop loss price before any trailing adjustments
+
 ### scheduledAt
 
 ```ts
 scheduledAt: number
 ```
 
+Signal creation timestamp in milliseconds
+
 ### pendingAt
 
 ```ts
 pendingAt: number
 ```
+
+Position activation timestamp in milliseconds (when price reached priceOpen)

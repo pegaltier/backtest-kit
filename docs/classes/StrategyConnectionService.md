@@ -278,3 +278,14 @@ breakeven: (backtest: boolean, symbol: string, currentPrice: number, context: { 
 ```
 
 Delegates to ClientStrategy.breakeven() with current execution context.
+
+### activateScheduled
+
+```ts
+activateScheduled: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }, activateId?: string) => Promise<void>
+```
+
+Activates a scheduled signal early without waiting for price to reach priceOpen.
+
+Delegates to ClientStrategy.activateScheduled() which sets _activatedSignal flag.
+The actual activation happens on next tick() when strategy detects the flag.

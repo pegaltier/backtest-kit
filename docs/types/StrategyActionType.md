@@ -6,7 +6,7 @@ group: docs
 # StrategyActionType
 
 ```ts
-type StrategyActionType = "cancel-scheduled" | "close-pending" | "partial-profit" | "partial-loss" | "trailing-stop" | "trailing-take" | "breakeven";
+type StrategyActionType = "cancel-scheduled" | "close-pending" | "partial-profit" | "partial-loss" | "trailing-stop" | "trailing-take" | "breakeven" | "activate-scheduled";
 ```
 
 Action types for strategy events.

@@ -15,8 +15,12 @@ Close pending signal event.
 action: "close-pending"
 ```
 
+Discriminator for close-pending action
+
 ### closeId
 
 ```ts
 closeId: string
 ```
+
+Optional identifier for the close reason (user-provided)

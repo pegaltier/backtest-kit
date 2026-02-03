@@ -6,7 +6,7 @@ group: docs
 # StrategyCommitContract
 
 ```ts
-type StrategyCommitContract = CancelScheduledCommit | ClosePendingCommit | PartialProfitCommit | PartialLossCommit | TrailingStopCommit | TrailingTakeCommit | BreakevenCommit;
+type StrategyCommitContract = CancelScheduledCommit | ClosePendingCommit | PartialProfitCommit | PartialLossCommit | TrailingStopCommit | TrailingTakeCommit | BreakevenCommit | ActivateScheduledCommit;
 ```
 
 Discriminated union for strategy management signal events.

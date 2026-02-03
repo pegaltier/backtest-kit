@@ -188,6 +188,17 @@ Moves stop-loss to breakeven when price reaches threshold.
 Moves SL to entry price (zero-risk position) when current price has moved
 far enough in profit direction. Threshold is calculated as: (CC_PERCENT_SLIPPAGE + CC_PERCENT_FEE) * 2
 
+### commitActivateScheduled
+
+```ts
+commitActivateScheduled: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }, activateId?: string) => Promise<void>
+```
+
+Activates a scheduled signal early without waiting for price to reach priceOpen.
+
+Sets the activation flag on the scheduled signal. The actual activation
+happens on the next tick() when strategy detects the flag.
+
 ### getData
 
 ```ts

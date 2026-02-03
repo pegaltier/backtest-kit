@@ -95,6 +95,14 @@ breakeven: (symbol: string, currentPrice: number, isBacktest: boolean, context: 
 
 Logs a breakeven event when the stop-loss is moved to entry price.
 
+### activateScheduled
+
+```ts
+activateScheduled: (symbol: string, currentPrice: number, isBacktest: boolean, context: { strategyName: string; exchangeName: string; frameName: string; }, timestamp: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, sc...
+```
+
+Logs an activate-scheduled event when a scheduled signal is activated early.
+
 ### subscribe
 
 ```ts
