@@ -123,6 +123,15 @@ export interface BreakevenCommit extends SignalCommitBase {
 export interface ActivateScheduledCommit extends SignalCommitBase {
   action: "activate-scheduled";
   activateId?: string;
+  currentPrice: number;
+  position: "long" | "short";
+  priceOpen: number;
+  priceTakeProfit: number;
+  priceStopLoss: number;
+  originalPriceTakeProfit: number;
+  originalPriceStopLoss: number;
+  scheduledAt: number;
+  pendingAt: number;
 }
 
 /**

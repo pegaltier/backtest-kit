@@ -3269,6 +3269,7 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
       );
 
       // Emit commit AFTER successful risk check
+      const publicSignalForCommit = TO_PUBLIC_SIGNAL(pendingSignal);
       await CALL_COMMIT_FN(self, {
         action: "activate-scheduled",
         symbol: self.params.execution.context.symbol,
@@ -3279,6 +3280,15 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
         backtest: self.params.execution.context.backtest,
         activateId: activatedSignal.activateId,
         timestamp: candle.timestamp,
+        currentPrice: averagePrice,
+        position: publicSignalForCommit.position,
+        priceOpen: publicSignalForCommit.priceOpen,
+        priceTakeProfit: publicSignalForCommit.priceTakeProfit,
+        priceStopLoss: publicSignalForCommit.priceStopLoss,
+        originalPriceTakeProfit: publicSignalForCommit.originalPriceTakeProfit,
+        originalPriceStopLoss: publicSignalForCommit.originalPriceStopLoss,
+        scheduledAt: publicSignalForCommit.scheduledAt,
+        pendingAt: publicSignalForCommit.pendingAt,
       });
 
       await CALL_OPEN_CALLBACKS_FN(
@@ -4146,6 +4156,7 @@ export class ClientStrategy implements IStrategy {
       );
 
       // Emit commit AFTER successful risk check
+      const publicSignalForCommit = TO_PUBLIC_SIGNAL(pendingSignal);
       await CALL_COMMIT_FN(this, {
         action: "activate-scheduled",
         symbol: this.params.execution.context.symbol,
@@ -4156,6 +4167,15 @@ export class ClientStrategy implements IStrategy {
         backtest: this.params.execution.context.backtest,
         activateId: activatedSignal.activateId,
         timestamp: currentTime,
+        currentPrice,
+        position: publicSignalForCommit.position,
+        priceOpen: publicSignalForCommit.priceOpen,
+        priceTakeProfit: publicSignalForCommit.priceTakeProfit,
+        priceStopLoss: publicSignalForCommit.priceStopLoss,
+        originalPriceTakeProfit: publicSignalForCommit.originalPriceTakeProfit,
+        originalPriceStopLoss: publicSignalForCommit.originalPriceStopLoss,
+        scheduledAt: publicSignalForCommit.scheduledAt,
+        pendingAt: publicSignalForCommit.pendingAt,
       });
 
       // Call onOpen callback

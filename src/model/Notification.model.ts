@@ -363,6 +363,51 @@ export interface BreakevenCommitNotification {
 }
 
 /**
+ * Activate scheduled commit notification.
+ * Emitted when a scheduled signal is activated by user (without waiting for priceOpen).
+ */
+export interface ActivateScheduledCommitNotification {
+  /** Discriminator for type-safe union */
+  type: "activate_scheduled.commit";
+  /** Unique notification identifier */
+  id: string;
+  /** Unix timestamp in milliseconds when activation was committed */
+  timestamp: number;
+  /** Whether this notification is from backtest mode (true) or live mode (false) */
+  backtest: boolean;
+  /** Trading pair symbol (e.g., "BTCUSDT") */
+  symbol: string;
+  /** Strategy name that generated this signal */
+  strategyName: StrategyName;
+  /** Exchange name where signal was executed */
+  exchangeName: ExchangeName;
+  /** Unique signal identifier (UUID v4) */
+  signalId: string;
+  /** Optional activation identifier (provided when user calls activateScheduled()) */
+  activateId?: string;
+  /** Trade direction: "long" (buy) or "short" (sell) */
+  position: "long" | "short";
+  /** Entry price for the position */
+  priceOpen: number;
+  /** Effective take profit price */
+  priceTakeProfit: number;
+  /** Effective stop loss price */
+  priceStopLoss: number;
+  /** Original take profit price before any trailing adjustments */
+  originalPriceTakeProfit: number;
+  /** Original stop loss price before any trailing adjustments */
+  originalPriceStopLoss: number;
+  /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
+  scheduledAt: number;
+  /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
+  pendingAt: number;
+  /** Current market price when activation was executed */
+  currentPrice: number;
+  /** Unix timestamp in milliseconds when the notification was created */
+  createdAt: number;
+}
+
+/**
  * Trailing stop commit notification.
  * Emitted when trailing stop action is executed.
  */
@@ -671,6 +716,7 @@ export type NotificationModel =
   | PartialProfitCommitNotification
   | PartialLossCommitNotification
   | BreakevenCommitNotification
+  | ActivateScheduledCommitNotification
   | TrailingStopCommitNotification
   | TrailingTakeCommitNotification
   | RiskRejectionNotification

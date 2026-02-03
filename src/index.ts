@@ -142,6 +142,7 @@ export {
   IPartialProfitCommitRow,
   IPartialLossCommitRow,
   IBreakevenCommitRow,
+  IActivateScheduledCommitRow,
   ITrailingStopCommitRow,
   ITrailingTakeCommitRow,
 } from "./interfaces/Strategy.interface";
@@ -249,6 +250,7 @@ export {
   TrailingStopCommit,
   TrailingTakeCommit,
   BreakevenCommit,
+  ActivateScheduledCommit,
 } from "./contract/StrategyCommit.contract";
 
 export { ExecutionContextService } from "./lib/services/context/ExecutionContextService";

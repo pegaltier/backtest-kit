@@ -371,6 +371,28 @@ export class NotificationInstance {
         pendingAt: data.pendingAt,
         createdAt: data.timestamp,
       });
+    } else if (data.action === "activate-scheduled") {
+      this._addNotification({
+        type: "activate_scheduled.commit",
+        id: CREATE_KEY_FN(),
+        timestamp: data.timestamp,
+        backtest: data.backtest,
+        symbol: data.symbol,
+        strategyName: data.strategyName,
+        exchangeName: data.exchangeName,
+        signalId: data.signalId,
+        activateId: data.activateId,
+        currentPrice: data.currentPrice,
+        position: data.position,
+        priceOpen: data.priceOpen,
+        priceTakeProfit: data.priceTakeProfit,
+        priceStopLoss: data.priceStopLoss,
+        originalPriceTakeProfit: data.originalPriceTakeProfit,
+        originalPriceStopLoss: data.originalPriceStopLoss,
+        scheduledAt: data.scheduledAt,
+        pendingAt: data.pendingAt,
+        createdAt: data.timestamp,
+      });
     }
   };
 
