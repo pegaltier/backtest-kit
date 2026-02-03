@@ -3940,15 +3940,8 @@ export class ClientStrategy implements IStrategy {
     // Process queued commit events with proper timestamp
     await PROCESS_COMMIT_QUEUE_FN(this, currentTime);
 
-    // Early return if strategy was stopped
-    if (this._isStopped) {
-      const currentPrice = await this.params.exchange.getAveragePrice(
-        this.params.execution.context.symbol
-      );
-      return await RETURN_IDLE_FN(this, currentPrice);
-    }
-
     // Check if scheduled signal was cancelled - emit cancelled event once
+    // NOTE: No _isStopped check here - cancellation must work for graceful shutdown
     if (this._cancelledSignal) {
       const currentPrice = await this.params.exchange.getAveragePrice(
         this.params.execution.context.symbol
@@ -4267,7 +4260,15 @@ export class ClientStrategy implements IStrategy {
     }
 
     // Generate new signal if none exists
+    // NOTE: _isStopped blocks NEW signal generation but allows existing positions to continue
     if (!this._pendingSignal && !this._scheduledSignal) {
+      if (this._isStopped) {
+        const currentPrice = await this.params.exchange.getAveragePrice(
+          this.params.execution.context.symbol
+        );
+        return await RETURN_IDLE_FN(this, currentPrice);
+      }
+
       const signal = await GET_SIGNAL_FN(this);
 
       if (signal) {
@@ -4721,8 +4722,10 @@ export class ClientStrategy implements IStrategy {
 
     this._isStopped = true;
 
-    // КРИТИЧНО: Очищаем все pending флаги чтобы исключить утечку состояния
-    // Эти флаги не будут обработаны в tick() из-за _isStopped check
+    // Clear pending flags to start from clean state
+    // NOTE: _isStopped blocks NEW position opening, but allows:
+    // - cancelScheduled() / closePending() for graceful shutdown
+    // - Monitoring existing _pendingSignal until TP/SL/timeout
     this._activatedSignal = null;
     this._cancelledSignal = null;
     this._closedSignal = null;
@@ -4773,6 +4776,9 @@ export class ClientStrategy implements IStrategy {
       hasScheduledSignal: this._scheduledSignal !== null,
       cancelId,
     });
+
+    // NOTE: No _isStopped check - cancellation must work for graceful shutdown
+    // (cancelling scheduled signal is not opening new position)
 
     // Save cancelled signal for next tick/backtest to emit cancelled event with correct timestamp
     if (this._scheduledSignal) {
@@ -4825,6 +4831,15 @@ export class ClientStrategy implements IStrategy {
       activateId,
     });
 
+    // Block activation if strategy stopped - activation = opening NEW position
+    // (unlike cancelScheduled/closePending which handle existing signals for graceful shutdown)
+    if (this._isStopped) {
+      this.params.logger.debug("ClientStrategy activateScheduled: strategy stopped, skipping", {
+        symbol,
+      });
+      return;
+    }
+
     // Save activated signal for next tick to emit opened event
     if (this._scheduledSignal) {
       this._activatedSignal = Object.assign({}, this._scheduledSignal, {
@@ -4875,6 +4890,8 @@ export class ClientStrategy implements IStrategy {
       hasPendingSignal: this._pendingSignal !== null,
       closeId,
     });
+
+    // NOTE: No _isStopped check - closing position must work for graceful shutdown
 
     // Save closed signal for next tick/backtest to emit closed event with correct timestamp
     if (this._pendingSignal) {
