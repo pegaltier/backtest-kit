@@ -3597,6 +3597,19 @@ export class ClientStrategy implements IStrategy {
     this.params.logger.debug("ClientStrategy setPendingSignal", {
       pendingSignal,
     });
+
+    // КРИТИЧНО: Очищаем флаг закрытия при любом изменении pending signal
+    // - при null: сигнал закрыт по TP/SL/timeout, флаг больше не нужен
+    // - при новом сигнале: флаг от предыдущего сигнала не должен влиять на новый
+    this._closedSignal = null;
+
+    // ЗАЩИТА ИНВАРИАНТА: При установке нового pending сигнала очищаем scheduled
+    // Не может быть одновременно pending И scheduled (взаимоисключающие состояния)
+    // При null: scheduled может существовать (новый сигнал после закрытия позиции)
+    if (pendingSignal !== null) {
+      this._scheduledSignal = null;
+    }
+
     this._pendingSignal = pendingSignal;
 
     // КРИТИЧНО: Всегда вызываем коллбек onWrite для тестирования persist storage
@@ -3635,6 +3648,13 @@ export class ClientStrategy implements IStrategy {
     this.params.logger.debug("ClientStrategy setScheduledSignal", {
       scheduledSignal,
     });
+
+    // КРИТИЧНО: Очищаем флаги отмены и активации при любом изменении scheduled signal
+    // - при null: сигнал отменен/активирован по timeout/SL/user, флаги больше не нужны
+    // - при новом сигнале: флаги от предыдущего сигнала не должны влиять на новый
+    this._cancelledSignal = null;
+    this._activatedSignal = null;
+
     this._scheduledSignal = scheduledSignal;
 
     if (this.params.execution.context.backtest) {
