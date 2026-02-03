@@ -17,6 +17,7 @@ export {
   commitTrailingStop,
   commitTrailingTake,
   commitBreakeven,
+  commitActivateScheduled,
 } from "./function/strategy";
 export { stopStrategy } from "./function/control";
 export {
@@ -142,6 +143,7 @@ export {
   IPartialProfitCommitRow,
   IPartialLossCommitRow,
   IBreakevenCommitRow,
+  IActivateScheduledCommitRow,
   ITrailingStopCommitRow,
   ITrailingTakeCommitRow,
 } from "./interfaces/Strategy.interface";
@@ -199,6 +201,7 @@ export {
   PartialProfitCommitNotification,
   PartialLossCommitNotification,
   BreakevenCommitNotification,
+  ActivateScheduledCommitNotification,
   TrailingStopCommitNotification,
   TrailingTakeCommitNotification,
   RiskRejectionNotification,
@@ -249,6 +252,7 @@ export {
   TrailingStopCommit,
   TrailingTakeCommit,
   BreakevenCommit,
+  ActivateScheduledCommit,
 } from "./contract/StrategyCommit.contract";
 
 export { ExecutionContextService } from "./lib/services/context/ExecutionContextService";

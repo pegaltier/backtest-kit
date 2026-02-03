@@ -118,6 +118,23 @@ export interface BreakevenCommit extends SignalCommitBase {
 }
 
 /**
+ * Activate scheduled signal event.
+ */
+export interface ActivateScheduledCommit extends SignalCommitBase {
+  action: "activate-scheduled";
+  activateId?: string;
+  currentPrice: number;
+  position: "long" | "short";
+  priceOpen: number;
+  priceTakeProfit: number;
+  priceStopLoss: number;
+  originalPriceTakeProfit: number;
+  originalPriceStopLoss: number;
+  scheduledAt: number;
+  pendingAt: number;
+}
+
+/**
  * Discriminated union for strategy management signal events.
  *
  * Emitted by strategyCommitSubject when strategy management actions are executed.
@@ -137,6 +154,7 @@ export type StrategyCommitContract =
   | PartialLossCommit
   | TrailingStopCommit
   | TrailingTakeCommit
-  | BreakevenCommit;
+  | BreakevenCommit
+  | ActivateScheduledCommit;
 
 export default StrategyCommitContract;
