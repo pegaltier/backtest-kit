@@ -1,4 +1,4 @@
-name: Build with WebPack
+name: Build
 
 on:
   push:
