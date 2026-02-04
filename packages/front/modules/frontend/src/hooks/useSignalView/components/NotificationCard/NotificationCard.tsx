@@ -332,6 +332,7 @@ export const NotificationCard = forwardRef(
     return (
       <div className={className} style={style} ref={ref}>
         <Paper
+          variant="outlined"
           onClick={() => handleNotificationClick(item)}
           sx={{
             position: "relative",
