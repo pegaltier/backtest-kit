@@ -179,6 +179,19 @@ export class ConfigValidationService {
       );
     }
 
+    // Validate notification and storage limits
+    if (!Number.isInteger(GLOBAL_CONFIG.CC_MAX_NOTIFICATIONS) || GLOBAL_CONFIG.CC_MAX_NOTIFICATIONS <= 0) {
+      errors.push(
+        `CC_MAX_NOTIFICATIONS must be a positive integer, got ${GLOBAL_CONFIG.CC_MAX_NOTIFICATIONS}`
+      );
+    }
+
+    if (!Number.isInteger(GLOBAL_CONFIG.CC_MAX_SIGNALS) || GLOBAL_CONFIG.CC_MAX_SIGNALS <= 0) {
+      errors.push(
+        `CC_MAX_SIGNALS must be a positive integer, got ${GLOBAL_CONFIG.CC_MAX_SIGNALS}`
+      );
+    }
+
     // Throw aggregated errors if any
     if (errors.length > 0) {
       const errorMessage = `GLOBAL_CONFIG validation failed:\n${errors.map((e, i) => `  ${i + 1}. ${e}`).join('\n')}`;

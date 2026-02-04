@@ -9,8 +9,7 @@ import {
 } from "../interfaces/Strategy.interface";
 import { PersistStorageAdapter } from "./Persist";
 import backtest from "../lib";
-
-const MAX_SIGNALS = 25;
+import { GLOBAL_CONFIG } from "../config/params";
 
 const STORAGE_BACKTEST_METHOD_NAME_WAIT_FOR_INIT = "StoragePersistBacktestUtils.waitForInit";
 const STORAGE_BACKTEST_METHOD_NAME_UPDATE_STORAGE = "StoragePersistBacktestUtils._updateStorage";
@@ -136,7 +135,7 @@ export class StoragePersistBacktestUtils implements IStorageUtils {
     signalList.sort((a, b) => a.priority - b.priority);
     this._signals = new Map(
       signalList
-        .slice(-MAX_SIGNALS)
+        .slice(-GLOBAL_CONFIG.CC_MAX_SIGNALS)
         .map((signal) => [signal.id, signal]),
     );
   });
@@ -156,7 +155,7 @@ export class StoragePersistBacktestUtils implements IStorageUtils {
     const signalList = Array.from(this._signals.values());
     signalList.sort((a, b) => a.priority - b.priority);
     await PersistStorageAdapter.writeStorageData(
-      signalList.slice(-MAX_SIGNALS),
+      signalList.slice(-GLOBAL_CONFIG.CC_MAX_SIGNALS),
       true,
     );
   }
@@ -489,7 +488,7 @@ export class StoragePersistLiveUtils implements IStorageUtils {
     signalList.sort((a, b) => a.priority - b.priority);
     this._signals = new Map(
       signalList
-        .slice(-MAX_SIGNALS)
+        .slice(-GLOBAL_CONFIG.CC_MAX_SIGNALS)
         .map((signal) => [signal.id, signal]),
     );
   });
@@ -509,7 +508,7 @@ export class StoragePersistLiveUtils implements IStorageUtils {
     const signalList = Array.from(this._signals.values());
     signalList.sort((a, b) => a.priority - b.priority);
     await PersistStorageAdapter.writeStorageData(
-      signalList.slice(-MAX_SIGNALS),
+      signalList.slice(-GLOBAL_CONFIG.CC_MAX_SIGNALS),
       false,
     );
   }

@@ -20,12 +20,7 @@ import { RiskContract } from "../contract/Risk.contract";
 import { StrategyCommitContract } from "../contract/StrategyCommit.contract";
 import backtest from "../lib";
 import { PersistNotificationAdapter } from "./Persist";
-
-/**
- * Maximum number of notifications to keep in storage.
- * Older notifications are removed when this limit is exceeded.
- */
-const MAX_NOTIFICATIONS = 250;
+import { GLOBAL_CONFIG } from "../config/params";
 
 /**
  * Generates a unique key for notification identification.
@@ -595,7 +590,7 @@ export class NotificationMemoryBacktestUtils implements INotificationUtils {
    */
   private _addNotification(notification: NotificationModel): void {
     this._notifications.unshift(notification);
-    if (this._notifications.length > MAX_NOTIFICATIONS) {
+    if (this._notifications.length > GLOBAL_CONFIG.CC_MAX_NOTIFICATIONS) {
       this._notifications.pop();
     }
   }
@@ -847,7 +842,7 @@ export class NotificationPersistBacktestUtils implements INotificationUtils {
     });
     this._notifications = new Map(
       notificationList
-        .slice(-MAX_NOTIFICATIONS)
+        .slice(-GLOBAL_CONFIG.CC_MAX_NOTIFICATIONS)
         .map((notification) => [notification.id, notification]),
     );
   });
@@ -871,7 +866,7 @@ export class NotificationPersistBacktestUtils implements INotificationUtils {
       return aTime - bTime;
     });
     await PersistNotificationAdapter.writeNotificationData(
-      notificationList.slice(-MAX_NOTIFICATIONS),
+      notificationList.slice(-GLOBAL_CONFIG.CC_MAX_NOTIFICATIONS),
       true,
     );
   }
@@ -883,7 +878,7 @@ export class NotificationPersistBacktestUtils implements INotificationUtils {
    */
   private _addNotification(notification: NotificationModel): void {
     this._notifications.set(notification.id, notification);
-    if (this._notifications.size > MAX_NOTIFICATIONS) {
+    if (this._notifications.size > GLOBAL_CONFIG.CC_MAX_NOTIFICATIONS) {
       const firstKey = this._notifications.keys().next().value;
       if (firstKey) {
         this._notifications.delete(firstKey);
@@ -1064,7 +1059,7 @@ export class NotificationMemoryLiveUtils implements INotificationUtils {
    */
   private _addNotification(notification: NotificationModel): void {
     this._notifications.unshift(notification);
-    if (this._notifications.length > MAX_NOTIFICATIONS) {
+    if (this._notifications.length > GLOBAL_CONFIG.CC_MAX_NOTIFICATIONS) {
       this._notifications.pop();
     }
   }
@@ -1317,7 +1312,7 @@ export class NotificationPersistLiveUtils implements INotificationUtils {
     });
     this._notifications = new Map(
       notificationList
-        .slice(-MAX_NOTIFICATIONS)
+        .slice(-GLOBAL_CONFIG.CC_MAX_NOTIFICATIONS)
         .map((notification) => [notification.id, notification]),
     );
   });
@@ -1343,7 +1338,7 @@ export class NotificationPersistLiveUtils implements INotificationUtils {
       return aTime - bTime;
     });
     await PersistNotificationAdapter.writeNotificationData(
-      notificationList.slice(-MAX_NOTIFICATIONS),
+      notificationList.slice(-GLOBAL_CONFIG.CC_MAX_NOTIFICATIONS),
       false,
     );
   }
@@ -1355,7 +1350,7 @@ export class NotificationPersistLiveUtils implements INotificationUtils {
    */
   private _addNotification(notification: NotificationModel): void {
     this._notifications.set(notification.id, notification);
-    if (this._notifications.size > MAX_NOTIFICATIONS) {
+    if (this._notifications.size > GLOBAL_CONFIG.CC_MAX_NOTIFICATIONS) {
       const firstKey = this._notifications.keys().next().value;
       if (firstKey) {
         this._notifications.delete(firstKey);

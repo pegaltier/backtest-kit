@@ -146,6 +146,20 @@ export const GLOBAL_CONFIG = {
    * Default: 20 levels
    */
   CC_ORDER_BOOK_MAX_DEPTH_LEVELS: 1_000,
+  /**
+   * Maximum number of notifications to keep in storage.
+   * Older notifications are removed when this limit is exceeded.
+   *
+   * Default: 250 notifications
+   */
+  CC_MAX_NOTIFICATIONS: 250,
+  /**
+   * Maximum number of signals to keep in storage.
+   * Older signals are removed when this limit is exceeded.
+   *
+   * Default: 25 signals
+   */
+  CC_MAX_SIGNALS: 25,
 };
 
 export const DEFAULT_CONFIG = Object.freeze({...GLOBAL_CONFIG});
