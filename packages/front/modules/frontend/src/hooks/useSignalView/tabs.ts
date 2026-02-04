@@ -6,6 +6,10 @@ export const tabs: ITabsStep[] = [
     label: "Signal State",
   },
   {
+    id: "notification",
+    label: "Notifications",
+  },
+  {
     id: "candle_1m",
     label: "Timeframe 1m",
     isVisible: ({ candle_1m }) => !!candle_1m,

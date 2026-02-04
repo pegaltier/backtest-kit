@@ -58,6 +58,7 @@ declare class ExchangeService {
 
 declare class NotificationMockService {
     private readonly loggerService;
+    findByFilter: <T extends object = Record<string, string>>(filterData: T, limit?: number, offset?: number) => Promise<NotificationModel[]>;
     getList: () => Promise<NotificationModel[]>;
     getOne: (id: string) => Promise<NotificationModel>;
 }
@@ -79,8 +80,9 @@ declare class ExchangeMockService {
 declare class NotificationViewService {
     private readonly loggerService;
     private readonly notificationMockService;
-    getList: () => Promise<backtest_kit.NotificationModel[]>;
-    getOne: (id: string) => Promise<backtest_kit.NotificationModel>;
+    findByFilter: <T extends object = Record<string, string>>(filterData: T, limit?: number, offset?: number) => Promise<NotificationModel[]>;
+    getList: () => Promise<NotificationModel[]>;
+    getOne: (id: string) => Promise<NotificationModel>;
     protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
 }
 

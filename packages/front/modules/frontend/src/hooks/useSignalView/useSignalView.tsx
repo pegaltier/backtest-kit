@@ -21,6 +21,7 @@ const history = createMemoryHistory();
 const fetchData = async (id: string) => {
   return {
     signal: await ioc.storageViewService.findSignalById(id),
+    notification: await ioc.notificationViewService.findByFilter({ signalId: id }),
     candle_1m: await ioc.exchangeViewService.getSignalCandles(id, "1m"),
     candle_15m: await ioc.exchangeViewService.getSignalCandles(id, "15m"),
     candle_1h: await ioc.exchangeViewService.getSignalCandles(id, "1h"),
@@ -29,12 +30,19 @@ const fetchData = async (id: string) => {
 
 const handleDownload = async (pathname: string, id: string) => {
 
-  const { candle_15m, candle_1h, candle_1m, signal } = await fetchData(id);
+  const { candle_15m, candle_1h, candle_1m, signal, notification } = await fetchData(id);
 
   if (pathname.includes("/signal")) {
     const blob = new Blob([JSON.stringify(signal, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     ioc.layoutService.downloadFile(url, `signal_${signal.id}.json`);
+    return;
+  } 
+
+  if (pathname.includes("/notification")) {
+    const blob = new Blob([JSON.stringify(notification, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    ioc.layoutService.downloadFile(url, `notification_${signal.id}.json`);
     return;
   } 
   
@@ -72,6 +80,10 @@ export const useSignalView = () => {
     if (id === "signal") {
       history.replace(`/signal`);
       setPathname(`/signal`);
+    }
+    if (id === "notification") {
+      history.replace(`/notification`);
+      setPathname(`/notification`);
     }
     if (id === "candle_1m") {
       history.replace(`/candle_1m`);
