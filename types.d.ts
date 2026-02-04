@@ -13333,6 +13333,68 @@ declare const StorageLive: StorageLiveAdapter;
  */
 declare const StorageBacktest: StorageBacktestAdapter;
 
+interface INotificationUtils {
+    handleSignal(data: IStrategyTickResult): Promise<void>;
+    handlePartialProfit(data: PartialProfitContract): Promise<void>;
+    handlePartialLoss(data: PartialLossContract): Promise<void>;
+    handleBreakeven(data: BreakevenContract): Promise<void>;
+    handleStrategyCommit(data: StrategyCommitContract): Promise<void>;
+    handleRisk(data: RiskContract): Promise<void>;
+    handleError(error: Error): Promise<void>;
+    handleCriticalError(error: Error): Promise<void>;
+    handleValidationError(error: Error): Promise<void>;
+    getData(): Promise<NotificationModel[]>;
+    clear(): Promise<void>;
+}
+type TNotificationUtilsCtor = new () => INotificationUtils;
+declare class NotificationBacktestAdapter implements INotificationUtils {
+    private _notificationBacktestUtils;
+    handleSignal: (data: IStrategyTickResult) => Promise<void>;
+    handlePartialProfit: (data: PartialProfitContract) => Promise<void>;
+    handlePartialLoss: (data: PartialLossContract) => Promise<void>;
+    handleBreakeven: (data: BreakevenContract) => Promise<void>;
+    handleStrategyCommit: (data: StrategyCommitContract) => Promise<void>;
+    handleRisk: (data: RiskContract) => Promise<void>;
+    handleError: (error: Error) => Promise<void>;
+    handleCriticalError: (error: Error) => Promise<void>;
+    handleValidationError: (error: Error) => Promise<void>;
+    getData: () => Promise<NotificationModel[]>;
+    clear: () => Promise<void>;
+    useNotificationAdapter: (Ctor: TNotificationUtilsCtor) => void;
+    useDummy: () => void;
+    useMemory: () => void;
+    usePersist: () => void;
+}
+declare class NotificationLiveAdapter implements INotificationUtils {
+    private _notificationLiveUtils;
+    handleSignal: (data: IStrategyTickResult) => Promise<void>;
+    handlePartialProfit: (data: PartialProfitContract) => Promise<void>;
+    handlePartialLoss: (data: PartialLossContract) => Promise<void>;
+    handleBreakeven: (data: BreakevenContract) => Promise<void>;
+    handleStrategyCommit: (data: StrategyCommitContract) => Promise<void>;
+    handleRisk: (data: RiskContract) => Promise<void>;
+    handleError: (error: Error) => Promise<void>;
+    handleCriticalError: (error: Error) => Promise<void>;
+    handleValidationError: (error: Error) => Promise<void>;
+    getData: () => Promise<NotificationModel[]>;
+    clear: () => Promise<void>;
+    useNotificationAdapter: (Ctor: TNotificationUtilsCtor) => void;
+    useDummy: () => void;
+    useMemory: () => void;
+    usePersist: () => void;
+}
+declare class NotificationAdapter {
+    enable: (() => () => void) & functools_kit.ISingleshotClearable;
+    disable: () => void;
+    getDataBacktest: () => Promise<NotificationModel[]>;
+    getDataLive: () => Promise<NotificationModel[]>;
+    clearBacktest: () => Promise<void>;
+    clearLive: () => Promise<void>;
+}
+declare const Notification: NotificationAdapter;
+declare const NotificationLive: NotificationLiveAdapter;
+declare const NotificationBacktest: NotificationBacktestAdapter;
+
 /**
  * Utility class for exchange operations.
  *
@@ -13596,122 +13658,6 @@ declare class CacheUtils {
  * ```
  */
 declare const Cache: CacheUtils;
-
-/**
- * Public facade for notification operations.
- *
- * Automatically subscribes on first use and provides simplified access to notification instance methods.
- *
- * @example
- * ```typescript
- * import { Notification } from "./classes/Notification";
- *
- * // Get all notifications (auto-subscribes if not subscribed)
- * const all = await Notification.getData();
- *
- * // Process notifications with type discrimination
- * all.forEach(notification => {
- *   switch (notification.type) {
- *     case "signal.closed":
- *       console.log(`Closed: ${notification.pnlPercentage}%`);
- *       break;
- *     case "partial.loss":
- *       if (notification.level >= 30) {
- *         alert("High loss!");
- *       }
- *       break;
- *     case "risk.rejection":
- *       console.warn(notification.rejectionNote);
- *       break;
- *   }
- * });
- *
- * // Clear history
- * await Notification.clear();
- *
- * // Unsubscribe when done
- * await Notification.unsubscribe();
- * ```
- */
-declare class NotificationUtils {
-    /** Internal instance containing business logic */
-    private _instance;
-    /**
-     * Returns all notifications in chronological order (newest first).
-     * Automatically subscribes to emitters if not already subscribed.
-     *
-     * @returns Array of strongly-typed notification objects
-     *
-     * @example
-     * ```typescript
-     * const notifications = await Notification.getData();
-     *
-     * notifications.forEach(notification => {
-     *   switch (notification.type) {
-     *     case "signal.closed":
-     *       console.log(`${notification.symbol}: ${notification.pnlPercentage}%`);
-     *       break;
-     *     case "partial.loss":
-     *       if (notification.level >= 30) {
-     *         console.warn(`High loss: ${notification.symbol}`);
-     *       }
-     *       break;
-     *   }
-     * });
-     * ```
-     */
-    getData(): Promise<NotificationModel[]>;
-    /**
-     * Clears all notification history.
-     * Automatically subscribes to emitters if not already subscribed.
-     *
-     * @example
-     * ```typescript
-     * await Notification.clear();
-     * ```
-     */
-    clear(): Promise<void>;
-    /**
-     * Unsubscribes from all notification emitters.
-     * Call this when you no longer need to collect notifications.
-     *
-     * @example
-     * ```typescript
-     * await Notification.unsubscribe();
-     * ```
-     */
-    enable(): Promise<void>;
-    /**
-     * Unsubscribes from all notification emitters.
-     * Call this when you no longer need to collect notifications.
-     * @example
-     * ```typescript
-     * await Notification.unsubscribe();
-     * ```
-     */
-    disable(): Promise<void>;
-}
-/**
- * Singleton instance of NotificationUtils for convenient notification access.
- *
- * @example
- * ```typescript
- * import { Notification } from "./classes/Notification";
- *
- * // Get all notifications
- * const all = await Notification.getData();
- *
- * // Filter by type using type discrimination
- * const closedSignals = all.filter(n => n.type === "signal.closed");
- * const highLosses = all.filter(n =>
- *   n.type === "partial.loss" && n.level >= 30
- * );
- *
- * // Clear history
- * await Notification.clear();
- * ```
- */
-declare const Notification: NotificationUtils;
 
 /**
  * Type alias for column configuration used in breakeven markdown reports.
@@ -20456,4 +20402,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { ActionBase, type ActivateScheduledCommit, type ActivateScheduledCommitNotification, type ActivePingContract, Backtest, type BacktestStatisticsModel, Breakeven, type BreakevenAvailableNotification, type BreakevenCommit, type BreakevenCommitNotification, type BreakevenContract, type BreakevenData, Cache, type CancelScheduledCommit, type CandleData, type CandleInterval, type ClosePendingCommit, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IActivateScheduledCommitRow, type IBidData, type IBreakevenCommitRow, type ICandleData, type ICommitRow, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type IOrderBookData, type IPartialLossCommitRow, type IPartialProfitCommitRow, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskSignalRow, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingParams, type ISizingParamsATR, type ISizingParamsFixedPercentage, type ISizingParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStorageSignalRow, type IStorageUtils, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IStrategyTickResultWaiting, type ITrailingStopCommitRow, type ITrailingTakeCommitRow, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, MethodContextService, type MetricStats, Notification, type NotificationModel, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossAvailableNotification, type PartialLossCommit, type PartialLossCommitNotification, type PartialLossContract, type PartialProfitAvailableNotification, type PartialProfitCommit, type PartialProfitCommitNotification, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PersistStorageAdapter, PositionSize, type ProgressBacktestContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, Storage, StorageBacktest, type StorageData, StorageLive, Strategy, type StrategyActionType, type StrategyCancelReason, type StrategyCloseReason, type StrategyCommitContract, type StrategyEvent, type StrategyStatisticsModel, type TMarkdownBase, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TStorageUtilsCtor, type TickEvent, type TrailingStopCommit, type TrailingStopCommitNotification, type TrailingTakeCommit, type TrailingTakeCommitNotification, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, commitActivateScheduled, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialProfit, commitTrailingStop, commitTrailingTake, emitters, formatPrice, formatQuantity, get, getActionSchema, getAveragePrice, getBacktestTimeframe, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getExchangeSchema, getFrameSchema, getMode, getNextCandles, getOrderBook, getRawCandles, getRiskSchema, getSizingSchema, getStrategySchema, getSymbol, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenStrategyCommit, listenStrategyCommitOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, roundTicks, set, setColumns, setConfig, setLogger, stopStrategy, validate };
+export { ActionBase, type ActivateScheduledCommit, type ActivateScheduledCommitNotification, type ActivePingContract, Backtest, type BacktestStatisticsModel, Breakeven, type BreakevenAvailableNotification, type BreakevenCommit, type BreakevenCommitNotification, type BreakevenContract, type BreakevenData, Cache, type CancelScheduledCommit, type CandleData, type CandleInterval, type ClosePendingCommit, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IActivateScheduledCommitRow, type IBidData, type IBreakevenCommitRow, type ICandleData, type ICommitRow, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type INotificationUtils, type IOrderBookData, type IPartialLossCommitRow, type IPartialProfitCommitRow, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskSignalRow, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingParams, type ISizingParamsATR, type ISizingParamsFixedPercentage, type ISizingParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStorageSignalRow, type IStorageUtils, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IStrategyTickResultWaiting, type ITrailingStopCommitRow, type ITrailingTakeCommitRow, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, MethodContextService, type MetricStats, Notification, NotificationBacktest, NotificationLive, type NotificationModel, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossAvailableNotification, type PartialLossCommit, type PartialLossCommitNotification, type PartialLossContract, type PartialProfitAvailableNotification, type PartialProfitCommit, type PartialProfitCommitNotification, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PersistStorageAdapter, PositionSize, type ProgressBacktestContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, Storage, StorageBacktest, type StorageData, StorageLive, Strategy, type StrategyActionType, type StrategyCancelReason, type StrategyCloseReason, type StrategyCommitContract, type StrategyEvent, type StrategyStatisticsModel, type TMarkdownBase, type TNotificationUtilsCtor, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TStorageUtilsCtor, type TickEvent, type TrailingStopCommit, type TrailingStopCommitNotification, type TrailingTakeCommit, type TrailingTakeCommitNotification, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, commitActivateScheduled, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialProfit, commitTrailingStop, commitTrailingTake, emitters, formatPrice, formatQuantity, get, getActionSchema, getAveragePrice, getBacktestTimeframe, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getExchangeSchema, getFrameSchema, getMode, getNextCandles, getOrderBook, getRawCandles, getRiskSchema, getSizingSchema, getStrategySchema, getSymbol, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenStrategyCommit, listenStrategyCommitOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, roundTicks, set, setColumns, setConfig, setLogger, stopStrategy, validate };

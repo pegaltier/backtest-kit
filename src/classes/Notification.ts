@@ -378,6 +378,9 @@ const NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_HANDLE_PARTIAL_LOSS = "Notificati
 const NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_HANDLE_BREAKEVEN = "NotificationMemoryBacktestUtils.handleBreakeven";
 const NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_HANDLE_STRATEGY_COMMIT = "NotificationMemoryBacktestUtils.handleStrategyCommit";
 const NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_HANDLE_RISK = "NotificationMemoryBacktestUtils.handleRisk";
+const NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_HANDLE_ERROR = "NotificationMemoryBacktestUtils.handleError";
+const NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_HANDLE_CRITICAL_ERROR = "NotificationMemoryBacktestUtils.handleCriticalError";
+const NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_HANDLE_VALIDATION_ERROR = "NotificationMemoryBacktestUtils.handleValidationError";
 const NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_GET_DATA = "NotificationMemoryBacktestUtils.getData";
 const NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_CLEAR = "NotificationMemoryBacktestUtils.clear";
 
@@ -418,6 +421,9 @@ const NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_HANDLE_PARTIAL_LOSS = "Notificat
 const NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_HANDLE_BREAKEVEN = "NotificationPersistBacktestUtils.handleBreakeven";
 const NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_HANDLE_STRATEGY_COMMIT = "NotificationPersistBacktestUtils.handleStrategyCommit";
 const NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_HANDLE_RISK = "NotificationPersistBacktestUtils.handleRisk";
+const NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_HANDLE_ERROR = "NotificationPersistBacktestUtils.handleError";
+const NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_HANDLE_CRITICAL_ERROR = "NotificationPersistBacktestUtils.handleCriticalError";
+const NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_HANDLE_VALIDATION_ERROR = "NotificationPersistBacktestUtils.handleValidationError";
 const NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_GET_DATA = "NotificationPersistBacktestUtils.getData";
 const NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_CLEAR = "NotificationPersistBacktestUtils.clear";
 
@@ -442,18 +448,14 @@ export interface INotificationUtils {
   handleBreakeven(data: BreakevenContract): Promise<void>;
   handleStrategyCommit(data: StrategyCommitContract): Promise<void>;
   handleRisk(data: RiskContract): Promise<void>;
+  handleError(error: Error): Promise<void>;
+  handleCriticalError(error: Error): Promise<void>;
+  handleValidationError(error: Error): Promise<void>;
   getData(): Promise<NotificationModel[]>;
   clear(): Promise<void>;
 }
 
-export interface INotificationLiveUtils extends INotificationUtils {
-  handleError(error: Error): Promise<void>;
-  handleCriticalError(error: Error): Promise<void>;
-  handleValidationError(error: Error): Promise<void>;
-}
-
 export type TNotificationUtilsCtor = new () => INotificationUtils;
-export type TNotificationLiveUtilsCtor = new () => INotificationLiveUtils;
 
 export class NotificationMemoryBacktestUtils implements INotificationUtils {
   private _notifications: NotificationModel[] = [];
@@ -518,6 +520,27 @@ export class NotificationMemoryBacktestUtils implements INotificationUtils {
     this._addNotification(CREATE_RISK_NOTIFICATION_FN(data));
   };
 
+  public handleError = async (error: Error): Promise<void> => {
+    backtest.loggerService.info(NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_HANDLE_ERROR, {
+      message: getErrorMessage(error),
+    });
+    this._addNotification(CREATE_ERROR_NOTIFICATION_FN(error));
+  };
+
+  public handleCriticalError = async (error: Error): Promise<void> => {
+    backtest.loggerService.info(NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_HANDLE_CRITICAL_ERROR, {
+      message: getErrorMessage(error),
+    });
+    this._addNotification(CREATE_CRITICAL_ERROR_NOTIFICATION_FN(error));
+  };
+
+  public handleValidationError = async (error: Error): Promise<void> => {
+    backtest.loggerService.info(NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_HANDLE_VALIDATION_ERROR, {
+      message: getErrorMessage(error),
+    });
+    this._addNotification(CREATE_VALIDATION_ERROR_NOTIFICATION_FN(error));
+  };
+
   public getData = async (): Promise<NotificationModel[]> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_GET_DATA);
     return [...this._notifications];
@@ -551,6 +574,18 @@ export class NotificationDummyBacktestUtils implements INotificationUtils {
   };
 
   public handleRisk = async (): Promise<void> => {
+    void 0;
+  };
+
+  public handleError = async (): Promise<void> => {
+    void 0;
+  };
+
+  public handleCriticalError = async (): Promise<void> => {
+    void 0;
+  };
+
+  public handleValidationError = async (): Promise<void> => {
     void 0;
   };
 
@@ -675,6 +710,30 @@ export class NotificationPersistBacktestUtils implements INotificationUtils {
     await this._updateNotifications();
   };
 
+  public handleError = async (error: Error): Promise<void> => {
+    backtest.loggerService.info(NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_HANDLE_ERROR, {
+      message: getErrorMessage(error),
+    });
+    await this.waitForInit();
+    this._addNotification(CREATE_ERROR_NOTIFICATION_FN(error));
+  };
+
+  public handleCriticalError = async (error: Error): Promise<void> => {
+    backtest.loggerService.info(NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_HANDLE_CRITICAL_ERROR, {
+      message: getErrorMessage(error),
+    });
+    await this.waitForInit();
+    this._addNotification(CREATE_CRITICAL_ERROR_NOTIFICATION_FN(error));
+  };
+
+  public handleValidationError = async (error: Error): Promise<void> => {
+    backtest.loggerService.info(NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_HANDLE_VALIDATION_ERROR, {
+      message: getErrorMessage(error),
+    });
+    await this.waitForInit();
+    this._addNotification(CREATE_VALIDATION_ERROR_NOTIFICATION_FN(error));
+  };
+
   public getData = async (): Promise<NotificationModel[]> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_GET_DATA);
     await this.waitForInit();
@@ -689,7 +748,7 @@ export class NotificationPersistBacktestUtils implements INotificationUtils {
   };
 }
 
-export class NotificationMemoryLiveUtils implements INotificationLiveUtils {
+export class NotificationMemoryLiveUtils implements INotificationUtils {
   private _notifications: NotificationModel[] = [];
 
   private _addNotification(notification: NotificationModel): void {
@@ -784,7 +843,7 @@ export class NotificationMemoryLiveUtils implements INotificationLiveUtils {
   };
 }
 
-export class NotificationDummyLiveUtils implements INotificationLiveUtils {
+export class NotificationDummyLiveUtils implements INotificationUtils {
   public handleSignal = async (): Promise<void> => {
     void 0;
   };
@@ -830,7 +889,7 @@ export class NotificationDummyLiveUtils implements INotificationLiveUtils {
   };
 }
 
-export class NotificationPersistLiveUtils implements INotificationLiveUtils {
+export class NotificationPersistLiveUtils implements INotificationUtils {
   private _notifications: Map<string, NotificationModel>;
 
   private waitForInit = singleshot(async () => {
@@ -1008,6 +1067,18 @@ export class NotificationBacktestAdapter implements INotificationUtils {
     return await this._notificationBacktestUtils.handleRisk(data);
   };
 
+  handleError = async (error: Error): Promise<void> => {
+    return await this._notificationBacktestUtils.handleError(error);
+  };
+
+  handleCriticalError = async (error: Error): Promise<void> => {
+    return await this._notificationBacktestUtils.handleCriticalError(error);
+  };
+
+  handleValidationError = async (error: Error): Promise<void> => {
+    return await this._notificationBacktestUtils.handleValidationError(error);
+  };
+
   getData = async (): Promise<NotificationModel[]> => {
     return await this._notificationBacktestUtils.getData();
   };
@@ -1037,8 +1108,8 @@ export class NotificationBacktestAdapter implements INotificationUtils {
   };
 }
 
-export class NotificationLiveAdapter implements INotificationLiveUtils {
-  private _notificationLiveUtils: INotificationLiveUtils = new NotificationMemoryLiveUtils();
+export class NotificationLiveAdapter implements INotificationUtils {
+  private _notificationLiveUtils: INotificationUtils = new NotificationMemoryLiveUtils();
 
   handleSignal = async (data: IStrategyTickResult): Promise<void> => {
     return await this._notificationLiveUtils.handleSignal(data);
@@ -1084,7 +1155,7 @@ export class NotificationLiveAdapter implements INotificationLiveUtils {
     return await this._notificationLiveUtils.clear();
   };
 
-  useNotificationAdapter = (Ctor: TNotificationLiveUtilsCtor): void => {
+  useNotificationAdapter = (Ctor: TNotificationUtilsCtor): void => {
     backtest.loggerService.info(NOTIFICATION_LIVE_ADAPTER_METHOD_NAME_USE_ADAPTER);
     this._notificationLiveUtils = Reflect.construct(Ctor, []);
   };
@@ -1146,6 +1217,18 @@ export class NotificationAdapter {
           NotificationBacktest.handleRisk(data),
         );
 
+      const unBacktestError = errorEmitter.subscribe((error: Error) =>
+        NotificationBacktest.handleError(error),
+      );
+
+      const unBacktestExit = exitEmitter.subscribe((error: Error) =>
+        NotificationBacktest.handleCriticalError(error),
+      );
+
+      const unBacktestValidation = validationSubject.subscribe((error: Error) =>
+        NotificationBacktest.handleValidationError(error),
+      );
+
       unBacktest = compose(
         () => unBacktestSignal(),
         () => unBacktestPartialProfit(),
@@ -1153,6 +1236,9 @@ export class NotificationAdapter {
         () => unBacktestBreakeven(),
         () => unBacktestStrategyCommit(),
         () => unBacktestRisk(),
+        () => unBacktestError(),
+        () => unBacktestExit(),
+        () => unBacktestValidation(),
       );
     }
 

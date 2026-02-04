@@ -314,9 +314,15 @@ export {
   IStorageUtils,
   TStorageUtilsCtor,
 } from "./classes/Storage";
+export { 
+  Notification,
+  NotificationBacktest,
+  NotificationLive,
+  INotificationUtils,
+  TNotificationUtilsCtor,
+} from "./classes/Notification";
 export { Exchange } from "./classes/Exchange";
 export { Cache } from "./classes/Cache";
-export { Notification } from "./classes/Notification";
 export { Breakeven } from "./classes/Breakeven";
 export { Strategy } from "./classes/Strategy";
 export { ActionBase } from "./classes/Action";
