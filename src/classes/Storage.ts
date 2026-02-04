@@ -298,6 +298,18 @@ export class StorageMemoryBacktestUtils implements IStorageUtils {
   private _signals: Map<StorageId, IStorageSignalRow> = new Map();
 
   /**
+   * Removes oldest signal if limit is exceeded.
+   */
+  private _enforceLimit(): void {
+    if (this._signals.size > GLOBAL_CONFIG.CC_MAX_SIGNALS) {
+      const firstKey = this._signals.keys().next().value;
+      if (firstKey) {
+        this._signals.delete(firstKey);
+      }
+    }
+  }
+
+  /**
    * Handles signal opened event.
    * Updates in-memory storage with opened status if not stale.
    * @param tick - The opened signal tick data
@@ -317,6 +329,7 @@ export class StorageMemoryBacktestUtils implements IStorageUtils {
       createdAt: lastStorage ? lastStorage.createdAt : tick.createdAt,
       updatedAt: tick.createdAt,
     });
+    this._enforceLimit();
   };
 
   /**
@@ -340,6 +353,7 @@ export class StorageMemoryBacktestUtils implements IStorageUtils {
       createdAt: lastStorage ? lastStorage.createdAt : tick.createdAt,
       updatedAt: tick.createdAt,
     });
+    this._enforceLimit();
   };
 
   /**
@@ -362,6 +376,7 @@ export class StorageMemoryBacktestUtils implements IStorageUtils {
       createdAt: lastStorage ? lastStorage.createdAt : tick.createdAt,
       updatedAt: tick.createdAt,
     });
+    this._enforceLimit();
   };
 
   /**
@@ -384,6 +399,7 @@ export class StorageMemoryBacktestUtils implements IStorageUtils {
       createdAt: lastStorage ? lastStorage.createdAt : tick.createdAt,
       updatedAt: tick.createdAt,
     });
+    this._enforceLimit();
   };
 
   /**
@@ -651,6 +667,18 @@ export class StorageMemoryLiveUtils implements IStorageUtils {
   private _signals: Map<StorageId, IStorageSignalRow> = new Map();
 
   /**
+   * Removes oldest signal if limit is exceeded.
+   */
+  private _enforceLimit(): void {
+    if (this._signals.size > GLOBAL_CONFIG.CC_MAX_SIGNALS) {
+      const firstKey = this._signals.keys().next().value;
+      if (firstKey) {
+        this._signals.delete(firstKey);
+      }
+    }
+  }
+
+  /**
    * Handles signal opened event.
    * Updates in-memory storage with opened status if not stale.
    * @param tick - The opened signal tick data
@@ -670,6 +698,7 @@ export class StorageMemoryLiveUtils implements IStorageUtils {
       createdAt: lastStorage ? lastStorage.createdAt : tick.createdAt,
       updatedAt: tick.createdAt,
     });
+    this._enforceLimit();
   };
 
   /**
@@ -693,6 +722,7 @@ export class StorageMemoryLiveUtils implements IStorageUtils {
       createdAt: lastStorage ? lastStorage.createdAt : tick.createdAt,
       updatedAt: tick.createdAt,
     });
+    this._enforceLimit();
   };
 
   /**
@@ -715,6 +745,7 @@ export class StorageMemoryLiveUtils implements IStorageUtils {
       createdAt: lastStorage ? lastStorage.createdAt : tick.createdAt,
       updatedAt: tick.createdAt,
     });
+    this._enforceLimit();
   };
 
   /**
@@ -737,6 +768,7 @@ export class StorageMemoryLiveUtils implements IStorageUtils {
       createdAt: lastStorage ? lastStorage.createdAt : tick.createdAt,
       updatedAt: tick.createdAt,
     });
+    this._enforceLimit();
   };
 
   /**
