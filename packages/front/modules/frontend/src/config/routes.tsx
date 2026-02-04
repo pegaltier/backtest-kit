@@ -4,7 +4,6 @@ import { createRedirect } from "../utils/createRedirect";
 import getMainRoute from "../utils/getMainRoute";
 import { ioc } from "../lib";
 import ErrorPage from "../pages/base/ErrorPage";
-import MainPage from "../pages/view/MainPage";
 
 export interface IRouteItem extends ISwitchItem {
     noHeader?: boolean;
@@ -21,7 +20,7 @@ export const baseRoutes: IRouteItem[] = [
 const dashboardRoutes: IRouteItem[] = [
     {
         path: "/main",
-        element: MainPage,
+        element: heavy(() => import("../pages/view/MainPage")),
     },
 ];
 
