@@ -1,3 +1,120 @@
+# Frontend GUI & Pine Script Support (v3.0.0, 04/02/2026)
+
+> Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/3.0.0)
+
+# Frontend GUI Module 🖥️✨
+
+New `@backtest-kit/ui` package delivers a full-stack UI framework for visualizing cryptocurrency trading signals, backtests, and real-time market data. Combines a Node.js backend server with a React dashboard - all in one package! 🚀
+
+**Dashboard Views:**
+- **Signal Opened** - Entry details with chart visualization
+- **Signal Closed** - Exit details with PnL analysis
+- **Signal Scheduled** - Pending orders awaiting activation
+- **Signal Cancelled** - Cancelled orders with reasons
+- **Risk Rejection** - Signals rejected by risk management
+- **Partial Profit/Loss** - Partial position closures
+- **Trailing Stop/Take** - Trailing adjustments visualization
+- **Breakeven** - Breakeven level adjustments
+
+Each view includes detailed information form, 1m/15m/1h candlestick charts, and JSON export.
+
+```typescript
+import { serve } from '@backtest-kit/ui';
+
+// Start the UI server
+serve('0.0.0.0', 60050);
+
+// Dashboard available at http://localhost:60050
+```
+
+# Pine Script Language Support 📊🌲
+
+New `@backtest-kit/pinets` package runs TradingView Pine Script strategies in Node.js! Execute your existing Pine Script indicators and generate trading signals - pure technical analysis with 1:1 syntax compatibility. Powered by [PineTS](https://github.com/QuantForgeOrg/PineTS). 🎯
+
+**Features:**
+- Pine Script v5/v6 with 1:1 TradingView compatibility
+- 60+ indicators: SMA, EMA, RSI, MACD, Bollinger Bands, ATR, Stochastic, and more
+- Load `.pine` files or pass code strings directly
+- Full TypeScript support with generics for extracted data
+
+**API Functions:**
+| Function | Description |
+|----------|-------------|
+| `getSignal()` | Run Pine Script and get structured `ISignalDto` |
+| `run()` | Run Pine Script and return raw plot data |
+| `extract()` | Extract values from plots with custom mapping |
+| `dumpPlotData()` | Dump plot data to markdown for debugging |
+| `usePine()` | Register custom Pine constructor |
+| `setLogger()` | Configure custom logger |
+| `File.fromPath()` | Load Pine Script from `.pine` file |
+| `Code.fromString()` | Use inline Pine Script code |
+
+```typescript
+import { File, getSignal } from '@backtest-kit/pinets';
+import { addStrategy } from 'backtest-kit';
+
+addStrategy({
+  strategyName: 'pine-ema-cross',
+  interval: '5m',
+  riskName: 'demo',
+  getSignal: async (symbol) => {
+    const source = File.fromPath('strategy.pine');
+
+    return await getSignal(source, {
+      symbol,
+      timeframe: '1h',
+      limit: 100,
+    });
+  }
+});
+```
+
+**Custom Plot Extraction:**
+
+```typescript
+import { File, run, extract } from '@backtest-kit/pinets';
+
+const plots = await run(File.fromPath('indicators.pine'), {
+  symbol: 'ETHUSDT',
+  timeframe: '1h',
+  limit: 200,
+});
+
+const data = await extract(plots, {
+  rsi: 'RSI',
+  macd: 'MACD',
+  prevRsi: { plot: 'RSI', barsBack: 1 },
+  trendStrength: { plot: 'ADX', transform: (v) => v > 25 ? 'strong' : 'weak' },
+});
+```
+
+# Storage & Persistence Layer 💾
+
+New unified storage API with pluggable adapters for signal data persistence:
+
+```typescript
+import { Storage, StorageLive, StorageBacktest } from "backtest-kit";
+
+// Enable storage (subscribes to signal emitters)
+const cleanup = Storage.enable();
+
+// Find signal by ID (searches both backtest and live)
+const signal = await Storage.findSignalById(signalId);
+
+// List all signals by mode
+const backtestSignals = await Storage.listSignalBacktest();
+const liveSignals = await Storage.listSignalLive();
+
+// Switch storage adapters
+StorageBacktest.usePersist();  // File-based persistence
+StorageBacktest.useMemory();   // In-memory (default for backtest)
+StorageLive.useDummy();        // No-op storage
+```
+
+
+
+
+
 # API Refactoring (v2.0.3, 17/01/2026)
 
 > Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/2.0.3)

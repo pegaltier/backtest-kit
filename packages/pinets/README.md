@@ -29,7 +29,11 @@ Port your TradingView strategies to backtest-kit with zero rewrite. Powered by [
 | Function | Description |
 |----------|-------------|
 | **`getSignal()`** | Run Pine Script and get structured `ISignalDto` (position, TP/SL, estimated time) |
-| **`run()`** | Run Pine Script with custom plot mapping for advanced extraction |
+| **`run()`** | Run Pine Script and return raw plot data |
+| **`extract()`** | Extract values from plots with custom mapping |
+| **`dumpPlotData()`** | Dump plot data to markdown files for debugging |
+| **`usePine()`** | Register custom Pine constructor |
+| **`setLogger()`** | Configure custom logger |
 | **`File.fromPath()`** | Load Pine Script from `.pine` file |
 | **`Code.fromString()`** | Use inline Pine Script code |
 
@@ -141,7 +145,7 @@ const plots = await run(source, {
   limit: 200,
 });
 
-const data = extract(plots, {
+const data = await extract(plots, {
   // Simple: plot name -> number
   rsi: 'RSI',
   macd: 'MACD',
@@ -158,6 +162,51 @@ const data = extract(plots, {
 });
 
 // data = { rsi: 55.2, macd: 12.5, prevRsi: 52.1, trendStrength: 'strong' }
+```
+
+### Debug with Plot Dump
+
+Dump plot data to markdown files for analysis and debugging:
+
+```typescript
+import { File, run, dumpPlotData } from '@backtest-kit/pinets';
+
+const source = File.fromPath('strategy.pine');
+
+const plots = await run(source, {
+  symbol: 'BTCUSDT',
+  timeframe: '1h',
+  limit: 100,
+});
+
+// Dump plots to ./dump/ta directory
+await dumpPlotData('signal-001', plots, 'ema-cross', './dump/ta');
+```
+
+### Custom Pine Constructor
+
+Register a custom Pine constructor for advanced configurations:
+
+```typescript
+import { usePine } from '@backtest-kit/pinets';
+import { Pine } from 'pinets';
+
+// Use custom Pine instance
+usePine(Pine);
+```
+
+### Custom Logger
+
+Configure logging for debugging:
+
+```typescript
+import { setLogger } from '@backtest-kit/pinets';
+
+setLogger({
+  log: (method, data) => console.log(`[${method}]`, data),
+  info: (method, data) => console.info(`[${method}]`, data),
+  error: (method, data) => console.error(`[${method}]`, data),
+});
 ```
 
 ## 📜 Pine Script Conventions
