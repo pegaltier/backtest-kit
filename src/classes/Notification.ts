@@ -61,7 +61,8 @@ const CREATE_SIGNAL_NOTIFICATION_FN = (data: IStrategyTickResult): NotificationM
       pendingAt: data.signal.pendingAt,
       createdAt: data.createdAt,
     };
-  } else if (data.action === "closed") {
+  } 
+  if (data.action === "closed") {
     const durationMs = data.closeTimestamp - data.signal.pendingAt;
     const durationMin = Math.round(durationMs / 60000);
 
@@ -89,7 +90,8 @@ const CREATE_SIGNAL_NOTIFICATION_FN = (data: IStrategyTickResult): NotificationM
       pendingAt: data.signal.pendingAt,
       createdAt: data.createdAt,
     };
-  } else if (data.action === "scheduled") {
+  } 
+  if (data.action === "scheduled") {
     return {
       type: "signal.scheduled",
       id: CREATE_KEY_FN(),
@@ -109,7 +111,8 @@ const CREATE_SIGNAL_NOTIFICATION_FN = (data: IStrategyTickResult): NotificationM
       currentPrice: data.currentPrice,
       createdAt: data.createdAt,
     };
-  } else if (data.action === "cancelled") {
+  } 
+  if (data.action === "cancelled") {
     const durationMs = data.closeTimestamp - data.signal.scheduledAt;
     const durationMin = Math.round(durationMs / 60000);
 
@@ -249,7 +252,8 @@ const CREATE_STRATEGY_COMMIT_NOTIFICATION_FN = (data: StrategyCommitContract): N
       pendingAt: data.pendingAt,
       createdAt: data.timestamp,
     };
-  } else if (data.action === "partial-loss") {
+  } 
+  if (data.action === "partial-loss") {
     return {
       type: "partial_loss.commit",
       id: CREATE_KEY_FN(),
@@ -271,7 +275,8 @@ const CREATE_STRATEGY_COMMIT_NOTIFICATION_FN = (data: StrategyCommitContract): N
       pendingAt: data.pendingAt,
       createdAt: data.timestamp,
     };
-  } else if (data.action === "breakeven") {
+  } 
+  if (data.action === "breakeven") {
     return {
       type: "breakeven.commit",
       id: CREATE_KEY_FN(),
@@ -292,7 +297,8 @@ const CREATE_STRATEGY_COMMIT_NOTIFICATION_FN = (data: StrategyCommitContract): N
       pendingAt: data.pendingAt,
       createdAt: data.timestamp,
     };
-  } else if (data.action === "trailing-stop") {
+  } 
+  if (data.action === "trailing-stop") {
     return {
       type: "trailing_stop.commit",
       id: CREATE_KEY_FN(),
@@ -314,7 +320,8 @@ const CREATE_STRATEGY_COMMIT_NOTIFICATION_FN = (data: StrategyCommitContract): N
       pendingAt: data.pendingAt,
       createdAt: data.timestamp,
     };
-  } else if (data.action === "trailing-take") {
+  } 
+  if (data.action === "trailing-take") {
     return {
       type: "trailing_take.commit",
       id: CREATE_KEY_FN(),
@@ -336,7 +343,8 @@ const CREATE_STRATEGY_COMMIT_NOTIFICATION_FN = (data: StrategyCommitContract): N
       pendingAt: data.pendingAt,
       createdAt: data.timestamp,
     };
-  } else if (data.action === "activate-scheduled") {
+  } 
+  if (data.action === "activate-scheduled") {
     return {
       type: "activate_scheduled.commit",
       id: CREATE_KEY_FN(),
