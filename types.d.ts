@@ -13686,31 +13686,18 @@ declare class NotificationAdapter {
      */
     disable: () => void;
     /**
-     * Gets all backtest notifications from storage.
+     * Gets all backtest/live notifications from storage.
      *
      * @returns Array of all backtest notification models
      * @throws Error if NotificationAdapter is not enabled
      */
-    getDataBacktest: () => Promise<NotificationModel[]>;
+    getData: (isBacktest: boolean) => Promise<NotificationModel[]>;
     /**
-     * Gets all live notifications from storage.
-     *
-     * @returns Array of all live notification models
-     * @throws Error if NotificationAdapter is not enabled
-     */
-    getDataLive: () => Promise<NotificationModel[]>;
-    /**
-     * Clears all backtest notifications from storage.
+     * Clears all backtest/live notifications from storage.
      *
      * @throws Error if NotificationAdapter is not enabled
      */
-    clearBacktest: () => Promise<void>;
-    /**
-     * Clears all live notifications from storage.
-     *
-     * @throws Error if NotificationAdapter is not enabled
-     */
-    clearLive: () => Promise<void>;
+    clear: (isBacktest: boolean) => Promise<void>;
 }
 /**
  * Global singleton instance of NotificationAdapter.

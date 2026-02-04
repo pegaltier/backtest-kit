@@ -318,8 +318,8 @@ export {
 } from "./classes/Storage";
 export { 
   Notification,
-  NotificationBacktest,
   NotificationLive,
+  NotificationBacktest,
   INotificationUtils,
   TNotificationUtilsCtor,
 } from "./classes/Notification";

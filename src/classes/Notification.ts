@@ -1974,55 +1974,38 @@ export class NotificationAdapter {
   };
 
   /**
-   * Gets all backtest notifications from storage.
+   * Gets all backtest/live notifications from storage.
    *
    * @returns Array of all backtest notification models
    * @throws Error if NotificationAdapter is not enabled
    */
-  public getDataBacktest = async (): Promise<NotificationModel[]> => {
-    backtest.loggerService.info(NOTIFICATION_ADAPTER_METHOD_NAME_GET_DATA_BACKTEST);
+  public getData = async (isBacktest: boolean): Promise<NotificationModel[]> => {
+    backtest.loggerService.info(NOTIFICATION_ADAPTER_METHOD_NAME_GET_DATA_BACKTEST, {
+      backtest: isBacktest,
+    });
     if (!this.enable.hasValue()) {
       throw new Error("NotificationAdapter is not enabled. Call enable() first.");
     }
-    return await NotificationBacktest.getData();
-  };
-
-  /**
-   * Gets all live notifications from storage.
-   *
-   * @returns Array of all live notification models
-   * @throws Error if NotificationAdapter is not enabled
-   */
-  public getDataLive = async (): Promise<NotificationModel[]> => {
-    backtest.loggerService.info(NOTIFICATION_ADAPTER_METHOD_NAME_GET_DATA_LIVE);
-    if (!this.enable.hasValue()) {
-      throw new Error("NotificationAdapter is not enabled. Call enable() first.");
+    if (isBacktest) {
+      return await NotificationBacktest.getData();
     }
     return await NotificationLive.getData();
   };
 
   /**
-   * Clears all backtest notifications from storage.
+   * Clears all backtest/live notifications from storage.
    *
    * @throws Error if NotificationAdapter is not enabled
    */
-  public clearBacktest = async (): Promise<void> => {
-    backtest.loggerService.info(NOTIFICATION_ADAPTER_METHOD_NAME_CLEAR_BACKTEST);
+  public clear = async (isBacktest: boolean): Promise<void> => {
+    backtest.loggerService.info(NOTIFICATION_ADAPTER_METHOD_NAME_CLEAR_LIVE, {
+      backtest: isBacktest,
+    });
     if (!this.enable.hasValue()) {
       throw new Error("NotificationAdapter is not enabled. Call enable() first.");
     }
-    return await NotificationBacktest.clear();
-  };
-
-  /**
-   * Clears all live notifications from storage.
-   *
-   * @throws Error if NotificationAdapter is not enabled
-   */
-  public clearLive = async (): Promise<void> => {
-    backtest.loggerService.info(NOTIFICATION_ADAPTER_METHOD_NAME_CLEAR_LIVE);
-    if (!this.enable.hasValue()) {
-      throw new Error("NotificationAdapter is not enabled. Call enable() first.");
+    if (isBacktest) {
+      return await NotificationBacktest.clear();
     }
     return await NotificationLive.clear();
   };

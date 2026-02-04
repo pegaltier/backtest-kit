@@ -39,34 +39,18 @@ disable: () => void
 Disables notification storage by unsubscribing from all emitters.
 Safe to call multiple times.
 
-### getDataBacktest
+### getData
 
 ```ts
-getDataBacktest: () => Promise<NotificationModel[]>
+getData: (isBacktest: boolean) => Promise<NotificationModel[]>
 ```
 
-Gets all backtest notifications from storage.
+Gets all backtest/live notifications from storage.
 
-### getDataLive
+### clear
 
 ```ts
-getDataLive: () => Promise<NotificationModel[]>
+clear: (isBacktest: boolean) => Promise<void>
 ```
 
-Gets all live notifications from storage.
-
-### clearBacktest
-
-```ts
-clearBacktest: () => Promise<void>
-```
-
-Clears all backtest notifications from storage.
-
-### clearLive
-
-```ts
-clearLive: () => Promise<void>
-```
-
-Clears all live notifications from storage.
+Clears all backtest/live notifications from storage.
