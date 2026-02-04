@@ -364,7 +364,7 @@ Unlike cloud-based platforms, backtest-kit runs entirely in your environment. Yo
 - Self-hosted - your code, your data, your infrastructure
 - No platform fees or hidden costs
 - Full control over execution and data sources
-- [GUI](https://backtest-kit.github.io/documents/design_30_markdown-report-system.html#method-signatures) for visualization and monitoring
+- [GUI](https://npmjs.com/package/@backtest-kit/ui) for visualization and monitoring
 
 ## 🌍 Ecosystem
 
