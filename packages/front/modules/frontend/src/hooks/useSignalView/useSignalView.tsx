@@ -76,7 +76,7 @@ export const useSignalView = () => {
 
   const [pathname$, setPathname] = useActualRef(history.location.pathname);
 
-  const handleTabChange = (id: string, history: History) => {
+  const handleTabChange = (id: string) => {
     if (id === "signal") {
       history.replace(`/signal`);
       setPathname(`/signal`);
