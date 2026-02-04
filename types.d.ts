@@ -13333,66 +13333,334 @@ declare const StorageLive: StorageLiveAdapter;
  */
 declare const StorageBacktest: StorageBacktestAdapter;
 
+/**
+ * Base interface for notification adapters.
+ * All notification adapters must implement this interface.
+ */
 interface INotificationUtils {
+    /**
+     * Handles signal events (opened, closed, scheduled, cancelled).
+     * @param data - The strategy tick result data
+     */
     handleSignal(data: IStrategyTickResult): Promise<void>;
+    /**
+     * Handles partial profit availability event.
+     * @param data - The partial profit contract data
+     */
     handlePartialProfit(data: PartialProfitContract): Promise<void>;
+    /**
+     * Handles partial loss availability event.
+     * @param data - The partial loss contract data
+     */
     handlePartialLoss(data: PartialLossContract): Promise<void>;
+    /**
+     * Handles breakeven availability event.
+     * @param data - The breakeven contract data
+     */
     handleBreakeven(data: BreakevenContract): Promise<void>;
+    /**
+     * Handles strategy commit events (partial-profit, breakeven, trailing, etc.).
+     * @param data - The strategy commit contract data
+     */
     handleStrategyCommit(data: StrategyCommitContract): Promise<void>;
+    /**
+     * Handles risk rejection event.
+     * @param data - The risk contract data
+     */
     handleRisk(data: RiskContract): Promise<void>;
+    /**
+     * Handles error event.
+     * @param error - The error object
+     */
     handleError(error: Error): Promise<void>;
+    /**
+     * Handles critical error event.
+     * @param error - The error object
+     */
     handleCriticalError(error: Error): Promise<void>;
+    /**
+     * Handles validation error event.
+     * @param error - The error object
+     */
     handleValidationError(error: Error): Promise<void>;
+    /**
+     * Gets all stored notifications.
+     * @returns Array of all notification models
+     */
     getData(): Promise<NotificationModel[]>;
+    /**
+     * Clears all stored notifications.
+     */
     clear(): Promise<void>;
 }
+/**
+ * Constructor type for notification adapters.
+ * Used for custom notification implementations.
+ */
 type TNotificationUtilsCtor = new () => INotificationUtils;
+/**
+ * Backtest notification adapter with pluggable notification backend.
+ *
+ * Features:
+ * - Adapter pattern for swappable notification implementations
+ * - Default adapter: NotificationMemoryBacktestUtils (in-memory storage)
+ * - Alternative adapters: NotificationPersistBacktestUtils, NotificationDummyBacktestUtils
+ * - Convenience methods: usePersist(), useMemory(), useDummy()
+ */
 declare class NotificationBacktestAdapter implements INotificationUtils {
+    /** Internal notification utils instance */
     private _notificationBacktestUtils;
+    /**
+     * Handles signal events.
+     * Proxies call to the underlying notification adapter.
+     * @param data - The strategy tick result data
+     */
     handleSignal: (data: IStrategyTickResult) => Promise<void>;
+    /**
+     * Handles partial profit availability event.
+     * Proxies call to the underlying notification adapter.
+     * @param data - The partial profit contract data
+     */
     handlePartialProfit: (data: PartialProfitContract) => Promise<void>;
+    /**
+     * Handles partial loss availability event.
+     * Proxies call to the underlying notification adapter.
+     * @param data - The partial loss contract data
+     */
     handlePartialLoss: (data: PartialLossContract) => Promise<void>;
+    /**
+     * Handles breakeven availability event.
+     * Proxies call to the underlying notification adapter.
+     * @param data - The breakeven contract data
+     */
     handleBreakeven: (data: BreakevenContract) => Promise<void>;
+    /**
+     * Handles strategy commit events.
+     * Proxies call to the underlying notification adapter.
+     * @param data - The strategy commit contract data
+     */
     handleStrategyCommit: (data: StrategyCommitContract) => Promise<void>;
+    /**
+     * Handles risk rejection event.
+     * Proxies call to the underlying notification adapter.
+     * @param data - The risk contract data
+     */
     handleRisk: (data: RiskContract) => Promise<void>;
+    /**
+     * Handles error event.
+     * Proxies call to the underlying notification adapter.
+     * @param error - The error object
+     */
     handleError: (error: Error) => Promise<void>;
+    /**
+     * Handles critical error event.
+     * Proxies call to the underlying notification adapter.
+     * @param error - The error object
+     */
     handleCriticalError: (error: Error) => Promise<void>;
+    /**
+     * Handles validation error event.
+     * Proxies call to the underlying notification adapter.
+     * @param error - The error object
+     */
     handleValidationError: (error: Error) => Promise<void>;
+    /**
+     * Gets all stored notifications.
+     * Proxies call to the underlying notification adapter.
+     * @returns Array of all notification models
+     */
     getData: () => Promise<NotificationModel[]>;
+    /**
+     * Clears all stored notifications.
+     * Proxies call to the underlying notification adapter.
+     */
     clear: () => Promise<void>;
+    /**
+     * Sets the notification adapter constructor.
+     * All future notification operations will use this adapter.
+     *
+     * @param Ctor - Constructor for notification adapter
+     */
     useNotificationAdapter: (Ctor: TNotificationUtilsCtor) => void;
+    /**
+     * Switches to dummy notification adapter.
+     * All future notification writes will be no-ops.
+     */
     useDummy: () => void;
+    /**
+     * Switches to in-memory notification adapter (default).
+     * Notifications will be stored in memory only.
+     */
     useMemory: () => void;
+    /**
+     * Switches to persistent notification adapter.
+     * Notifications will be persisted to disk.
+     */
     usePersist: () => void;
 }
+/**
+ * Live trading notification adapter with pluggable notification backend.
+ *
+ * Features:
+ * - Adapter pattern for swappable notification implementations
+ * - Default adapter: NotificationMemoryLiveUtils (in-memory storage)
+ * - Alternative adapters: NotificationPersistLiveUtils, NotificationDummyLiveUtils
+ * - Convenience methods: usePersist(), useMemory(), useDummy()
+ */
 declare class NotificationLiveAdapter implements INotificationUtils {
+    /** Internal notification utils instance */
     private _notificationLiveUtils;
+    /**
+     * Handles signal events.
+     * Proxies call to the underlying notification adapter.
+     * @param data - The strategy tick result data
+     */
     handleSignal: (data: IStrategyTickResult) => Promise<void>;
+    /**
+     * Handles partial profit availability event.
+     * Proxies call to the underlying notification adapter.
+     * @param data - The partial profit contract data
+     */
     handlePartialProfit: (data: PartialProfitContract) => Promise<void>;
+    /**
+     * Handles partial loss availability event.
+     * Proxies call to the underlying notification adapter.
+     * @param data - The partial loss contract data
+     */
     handlePartialLoss: (data: PartialLossContract) => Promise<void>;
+    /**
+     * Handles breakeven availability event.
+     * Proxies call to the underlying notification adapter.
+     * @param data - The breakeven contract data
+     */
     handleBreakeven: (data: BreakevenContract) => Promise<void>;
+    /**
+     * Handles strategy commit events.
+     * Proxies call to the underlying notification adapter.
+     * @param data - The strategy commit contract data
+     */
     handleStrategyCommit: (data: StrategyCommitContract) => Promise<void>;
+    /**
+     * Handles risk rejection event.
+     * Proxies call to the underlying notification adapter.
+     * @param data - The risk contract data
+     */
     handleRisk: (data: RiskContract) => Promise<void>;
+    /**
+     * Handles error event.
+     * Proxies call to the underlying notification adapter.
+     * @param error - The error object
+     */
     handleError: (error: Error) => Promise<void>;
+    /**
+     * Handles critical error event.
+     * Proxies call to the underlying notification adapter.
+     * @param error - The error object
+     */
     handleCriticalError: (error: Error) => Promise<void>;
+    /**
+     * Handles validation error event.
+     * Proxies call to the underlying notification adapter.
+     * @param error - The error object
+     */
     handleValidationError: (error: Error) => Promise<void>;
+    /**
+     * Gets all stored notifications.
+     * Proxies call to the underlying notification adapter.
+     * @returns Array of all notification models
+     */
     getData: () => Promise<NotificationModel[]>;
+    /**
+     * Clears all stored notifications.
+     * Proxies call to the underlying notification adapter.
+     */
     clear: () => Promise<void>;
+    /**
+     * Sets the notification adapter constructor.
+     * All future notification operations will use this adapter.
+     *
+     * @param Ctor - Constructor for notification adapter
+     */
     useNotificationAdapter: (Ctor: TNotificationUtilsCtor) => void;
+    /**
+     * Switches to dummy notification adapter.
+     * All future notification writes will be no-ops.
+     */
     useDummy: () => void;
+    /**
+     * Switches to in-memory notification adapter (default).
+     * Notifications will be stored in memory only.
+     */
     useMemory: () => void;
+    /**
+     * Switches to persistent notification adapter.
+     * Notifications will be persisted to disk.
+     */
     usePersist: () => void;
 }
+/**
+ * Main notification adapter that manages both backtest and live notification storage.
+ *
+ * Features:
+ * - Subscribes to signal emitters for automatic notification updates
+ * - Provides unified access to both backtest and live notifications
+ * - Singleshot enable pattern prevents duplicate subscriptions
+ * - Cleanup function for proper unsubscription
+ */
 declare class NotificationAdapter {
+    /**
+     * Enables notification storage by subscribing to signal emitters.
+     * Uses singleshot to ensure one-time subscription.
+     *
+     * @returns Cleanup function that unsubscribes from all emitters
+     */
     enable: (() => () => void) & functools_kit.ISingleshotClearable;
+    /**
+     * Disables notification storage by unsubscribing from all emitters.
+     * Safe to call multiple times.
+     */
     disable: () => void;
+    /**
+     * Gets all backtest notifications from storage.
+     *
+     * @returns Array of all backtest notification models
+     * @throws Error if NotificationAdapter is not enabled
+     */
     getDataBacktest: () => Promise<NotificationModel[]>;
+    /**
+     * Gets all live notifications from storage.
+     *
+     * @returns Array of all live notification models
+     * @throws Error if NotificationAdapter is not enabled
+     */
     getDataLive: () => Promise<NotificationModel[]>;
+    /**
+     * Clears all backtest notifications from storage.
+     *
+     * @throws Error if NotificationAdapter is not enabled
+     */
     clearBacktest: () => Promise<void>;
+    /**
+     * Clears all live notifications from storage.
+     *
+     * @throws Error if NotificationAdapter is not enabled
+     */
     clearLive: () => Promise<void>;
 }
+/**
+ * Global singleton instance of NotificationAdapter.
+ * Provides unified notification management for backtest and live trading.
+ */
 declare const Notification: NotificationAdapter;
+/**
+ * Global singleton instance of NotificationLiveAdapter.
+ * Provides live trading notification storage with pluggable backends.
+ */
 declare const NotificationLive: NotificationLiveAdapter;
+/**
+ * Global singleton instance of NotificationBacktestAdapter.
+ * Provides backtest notification storage with pluggable backends.
+ */
 declare const NotificationBacktest: NotificationBacktestAdapter;
 
 /**

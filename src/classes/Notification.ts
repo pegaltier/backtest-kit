@@ -21,10 +21,24 @@ import { StrategyCommitContract } from "../contract/StrategyCommit.contract";
 import backtest from "../lib";
 import { PersistNotificationAdapter } from "./Persist";
 
+/**
+ * Maximum number of notifications to keep in storage.
+ * Older notifications are removed when this limit is exceeded.
+ */
 const MAX_NOTIFICATIONS = 250;
 
+/**
+ * Generates a unique key for notification identification.
+ * @returns Random string identifier
+ */
 const CREATE_KEY_FN = () => randomString();
 
+/**
+ * Creates a notification model from signal tick result.
+ * Handles opened, closed, scheduled, and cancelled signal actions.
+ * @param data - The strategy tick result data
+ * @returns NotificationModel or null if action is not recognized
+ */
 const CREATE_SIGNAL_NOTIFICATION_FN = (data: IStrategyTickResult): NotificationModel | null => {
   if (data.action === "opened") {
     return {
@@ -125,6 +139,11 @@ const CREATE_SIGNAL_NOTIFICATION_FN = (data: IStrategyTickResult): NotificationM
   return null;
 };
 
+/**
+ * Creates a notification model for partial profit availability.
+ * @param data - The partial profit contract data
+ * @returns NotificationModel for partial profit event
+ */
 const CREATE_PARTIAL_PROFIT_NOTIFICATION_FN = (data: PartialProfitContract): NotificationModel => ({
   type: "partial_profit.available",
   id: CREATE_KEY_FN(),
@@ -147,6 +166,11 @@ const CREATE_PARTIAL_PROFIT_NOTIFICATION_FN = (data: PartialProfitContract): Not
   createdAt: data.timestamp,
 });
 
+/**
+ * Creates a notification model for partial loss availability.
+ * @param data - The partial loss contract data
+ * @returns NotificationModel for partial loss event
+ */
 const CREATE_PARTIAL_LOSS_NOTIFICATION_FN = (data: PartialLossContract): NotificationModel => ({
   type: "partial_loss.available",
   id: CREATE_KEY_FN(),
@@ -169,6 +193,11 @@ const CREATE_PARTIAL_LOSS_NOTIFICATION_FN = (data: PartialLossContract): Notific
   createdAt: data.timestamp,
 });
 
+/**
+ * Creates a notification model for breakeven availability.
+ * @param data - The breakeven contract data
+ * @returns NotificationModel for breakeven event
+ */
 const CREATE_BREAKEVEN_NOTIFICATION_FN = (data: BreakevenContract): NotificationModel => ({
   type: "breakeven.available",
   id: CREATE_KEY_FN(),
@@ -190,6 +219,13 @@ const CREATE_BREAKEVEN_NOTIFICATION_FN = (data: BreakevenContract): Notification
   createdAt: data.timestamp,
 });
 
+/**
+ * Creates a notification model for strategy commit events.
+ * Handles partial-profit, partial-loss, breakeven, trailing-stop,
+ * trailing-take, and activate-scheduled actions.
+ * @param data - The strategy commit contract data
+ * @returns NotificationModel or null if action is not recognized
+ */
 const CREATE_STRATEGY_COMMIT_NOTIFICATION_FN = (data: StrategyCommitContract): NotificationModel | null => {
   if (data.action === "partial-profit") {
     return {
@@ -326,6 +362,11 @@ const CREATE_STRATEGY_COMMIT_NOTIFICATION_FN = (data: StrategyCommitContract): N
   return null;
 };
 
+/**
+ * Creates a notification model for risk rejection events.
+ * @param data - The risk contract data
+ * @returns NotificationModel for risk rejection event
+ */
 const CREATE_RISK_NOTIFICATION_FN = (data: RiskContract): NotificationModel => ({
   type: "risk.rejection",
   id: CREATE_KEY_FN(),
@@ -348,6 +389,11 @@ const CREATE_RISK_NOTIFICATION_FN = (data: RiskContract): NotificationModel => (
   createdAt: data.timestamp,
 });
 
+/**
+ * Creates a notification model for error events.
+ * @param error - The error object
+ * @returns NotificationModel for error event
+ */
 const CREATE_ERROR_NOTIFICATION_FN = (error: Error): NotificationModel => ({
   type: "error.info",
   id: CREATE_KEY_FN(),
@@ -356,6 +402,11 @@ const CREATE_ERROR_NOTIFICATION_FN = (error: Error): NotificationModel => ({
   backtest: false,
 });
 
+/**
+ * Creates a notification model for critical error events.
+ * @param error - The error object
+ * @returns NotificationModel for critical error event
+ */
 const CREATE_CRITICAL_ERROR_NOTIFICATION_FN = (error: Error): NotificationModel => ({
   type: "error.critical",
   id: CREATE_KEY_FN(),
@@ -364,6 +415,11 @@ const CREATE_CRITICAL_ERROR_NOTIFICATION_FN = (error: Error): NotificationModel 
   backtest: false,
 });
 
+/**
+ * Creates a notification model for validation error events.
+ * @param error - The error object
+ * @returns NotificationModel for validation error event
+ */
 const CREATE_VALIDATION_ERROR_NOTIFICATION_FN = (error: Error): NotificationModel => ({
   type: "error.validation",
   id: CREATE_KEY_FN(),
@@ -441,25 +497,94 @@ const NOTIFICATION_PERSIST_LIVE_METHOD_NAME_HANDLE_VALIDATION_ERROR = "Notificat
 const NOTIFICATION_PERSIST_LIVE_METHOD_NAME_GET_DATA = "NotificationPersistLiveUtils.getData";
 const NOTIFICATION_PERSIST_LIVE_METHOD_NAME_CLEAR = "NotificationPersistLiveUtils.clear";
 
+/**
+ * Base interface for notification adapters.
+ * All notification adapters must implement this interface.
+ */
 export interface INotificationUtils {
+  /**
+   * Handles signal events (opened, closed, scheduled, cancelled).
+   * @param data - The strategy tick result data
+   */
   handleSignal(data: IStrategyTickResult): Promise<void>;
+  /**
+   * Handles partial profit availability event.
+   * @param data - The partial profit contract data
+   */
   handlePartialProfit(data: PartialProfitContract): Promise<void>;
+  /**
+   * Handles partial loss availability event.
+   * @param data - The partial loss contract data
+   */
   handlePartialLoss(data: PartialLossContract): Promise<void>;
+  /**
+   * Handles breakeven availability event.
+   * @param data - The breakeven contract data
+   */
   handleBreakeven(data: BreakevenContract): Promise<void>;
+  /**
+   * Handles strategy commit events (partial-profit, breakeven, trailing, etc.).
+   * @param data - The strategy commit contract data
+   */
   handleStrategyCommit(data: StrategyCommitContract): Promise<void>;
+  /**
+   * Handles risk rejection event.
+   * @param data - The risk contract data
+   */
   handleRisk(data: RiskContract): Promise<void>;
+  /**
+   * Handles error event.
+   * @param error - The error object
+   */
   handleError(error: Error): Promise<void>;
+  /**
+   * Handles critical error event.
+   * @param error - The error object
+   */
   handleCriticalError(error: Error): Promise<void>;
+  /**
+   * Handles validation error event.
+   * @param error - The error object
+   */
   handleValidationError(error: Error): Promise<void>;
+  /**
+   * Gets all stored notifications.
+   * @returns Array of all notification models
+   */
   getData(): Promise<NotificationModel[]>;
+  /**
+   * Clears all stored notifications.
+   */
   clear(): Promise<void>;
 }
 
+/**
+ * Constructor type for notification adapters.
+ * Used for custom notification implementations.
+ */
 export type TNotificationUtilsCtor = new () => INotificationUtils;
 
+/**
+ * In-memory notification adapter for backtest signals.
+ *
+ * Features:
+ * - Stores notifications in memory only (no persistence)
+ * - Fast read/write operations
+ * - Data is lost when application restarts
+ * - Maintains up to MAX_NOTIFICATIONS (250) most recent notifications
+ * - Handles all notification types: signals, partial profit/loss, breakeven, risk, errors
+ *
+ * Use this adapter for testing or when persistence is not required.
+ */
 export class NotificationMemoryBacktestUtils implements INotificationUtils {
+  /** Array of notification models */
   private _notifications: NotificationModel[] = [];
 
+  /**
+   * Adds a notification to the beginning of the list.
+   * Removes oldest notification if limit is exceeded.
+   * @param notification - The notification model to add
+   */
   private _addNotification(notification: NotificationModel): void {
     this._notifications.unshift(notification);
     if (this._notifications.length > MAX_NOTIFICATIONS) {
@@ -467,6 +592,11 @@ export class NotificationMemoryBacktestUtils implements INotificationUtils {
     }
   }
 
+  /**
+   * Handles signal events.
+   * Creates and stores notification for opened, closed, scheduled, cancelled signals.
+   * @param data - The strategy tick result data
+   */
   public handleSignal = async (data: IStrategyTickResult): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_HANDLE_SIGNAL, {
       signalId: data.signal.id,
@@ -478,6 +608,10 @@ export class NotificationMemoryBacktestUtils implements INotificationUtils {
     }
   };
 
+  /**
+   * Handles partial profit availability event.
+   * @param data - The partial profit contract data
+   */
   public handlePartialProfit = async (data: PartialProfitContract): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_HANDLE_PARTIAL_PROFIT, {
       signalId: data.data.id,
@@ -486,6 +620,10 @@ export class NotificationMemoryBacktestUtils implements INotificationUtils {
     this._addNotification(CREATE_PARTIAL_PROFIT_NOTIFICATION_FN(data));
   };
 
+  /**
+   * Handles partial loss availability event.
+   * @param data - The partial loss contract data
+   */
   public handlePartialLoss = async (data: PartialLossContract): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_HANDLE_PARTIAL_LOSS, {
       signalId: data.data.id,
@@ -494,6 +632,10 @@ export class NotificationMemoryBacktestUtils implements INotificationUtils {
     this._addNotification(CREATE_PARTIAL_LOSS_NOTIFICATION_FN(data));
   };
 
+  /**
+   * Handles breakeven availability event.
+   * @param data - The breakeven contract data
+   */
   public handleBreakeven = async (data: BreakevenContract): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_HANDLE_BREAKEVEN, {
       signalId: data.data.id,
@@ -501,6 +643,10 @@ export class NotificationMemoryBacktestUtils implements INotificationUtils {
     this._addNotification(CREATE_BREAKEVEN_NOTIFICATION_FN(data));
   };
 
+  /**
+   * Handles strategy commit events.
+   * @param data - The strategy commit contract data
+   */
   public handleStrategyCommit = async (data: StrategyCommitContract): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_HANDLE_STRATEGY_COMMIT, {
       signalId: data.signalId,
@@ -512,6 +658,10 @@ export class NotificationMemoryBacktestUtils implements INotificationUtils {
     }
   };
 
+  /**
+   * Handles risk rejection event.
+   * @param data - The risk contract data
+   */
   public handleRisk = async (data: RiskContract): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_HANDLE_RISK, {
       signalId: data.currentSignal.id,
@@ -520,6 +670,10 @@ export class NotificationMemoryBacktestUtils implements INotificationUtils {
     this._addNotification(CREATE_RISK_NOTIFICATION_FN(data));
   };
 
+  /**
+   * Handles error event.
+   * @param error - The error object
+   */
   public handleError = async (error: Error): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_HANDLE_ERROR, {
       message: getErrorMessage(error),
@@ -527,6 +681,10 @@ export class NotificationMemoryBacktestUtils implements INotificationUtils {
     this._addNotification(CREATE_ERROR_NOTIFICATION_FN(error));
   };
 
+  /**
+   * Handles critical error event.
+   * @param error - The error object
+   */
   public handleCriticalError = async (error: Error): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_HANDLE_CRITICAL_ERROR, {
       message: getErrorMessage(error),
@@ -534,6 +692,10 @@ export class NotificationMemoryBacktestUtils implements INotificationUtils {
     this._addNotification(CREATE_CRITICAL_ERROR_NOTIFICATION_FN(error));
   };
 
+  /**
+   * Handles validation error event.
+   * @param error - The error object
+   */
   public handleValidationError = async (error: Error): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_HANDLE_VALIDATION_ERROR, {
       message: getErrorMessage(error),
@@ -541,66 +703,132 @@ export class NotificationMemoryBacktestUtils implements INotificationUtils {
     this._addNotification(CREATE_VALIDATION_ERROR_NOTIFICATION_FN(error));
   };
 
+  /**
+   * Gets all stored notifications.
+   * @returns Copy of notifications array
+   */
   public getData = async (): Promise<NotificationModel[]> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_GET_DATA);
     return [...this._notifications];
   };
 
+  /**
+   * Clears all stored notifications.
+   */
   public clear = async (): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_CLEAR);
     this._notifications = [];
   };
 }
 
+/**
+ * Dummy notification adapter for backtest signals that discards all writes.
+ *
+ * Features:
+ * - No-op implementation for all methods
+ * - getData always returns empty array
+ *
+ * Use this adapter to disable backtest notification storage completely.
+ */
 export class NotificationDummyBacktestUtils implements INotificationUtils {
+  /**
+   * No-op handler for signal events.
+   */
   public handleSignal = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * No-op handler for partial profit event.
+   */
   public handlePartialProfit = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * No-op handler for partial loss event.
+   */
   public handlePartialLoss = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * No-op handler for breakeven event.
+   */
   public handleBreakeven = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * No-op handler for strategy commit event.
+   */
   public handleStrategyCommit = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * No-op handler for risk rejection event.
+   */
   public handleRisk = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * No-op handler for error event.
+   */
   public handleError = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * No-op handler for critical error event.
+   */
   public handleCriticalError = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * No-op handler for validation error event.
+   */
   public handleValidationError = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * Always returns empty array (no storage).
+   * @returns Empty array
+   */
   public getData = async (): Promise<NotificationModel[]> => {
     return [];
   };
 
+  /**
+   * No-op clear operation.
+   */
   public clear = async (): Promise<void> => {
     void 0;
   };
 }
 
+/**
+ * Persistent notification adapter for backtest signals.
+ *
+ * Features:
+ * - Persists notifications to disk using PersistNotificationAdapter
+ * - Lazy initialization with singleshot pattern
+ * - Maintains up to MAX_NOTIFICATIONS (250) most recent notifications
+ * - Handles all notification types: signals, partial profit/loss, breakeven, risk, errors
+ *
+ * Use this adapter (default) for backtest notification persistence across sessions.
+ */
 export class NotificationPersistBacktestUtils implements INotificationUtils {
+  /** Map of notification IDs to notification models */
   private _notifications: Map<string, NotificationModel>;
 
+  /**
+   * Singleshot initialization function that loads notifications from disk.
+   * Protected by singleshot to ensure one-time execution.
+   */
   private waitForInit = singleshot(async () => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_WAIT_FOR_INIT);
     const notificationList = await PersistNotificationAdapter.readNotificationData(true);
@@ -616,6 +844,11 @@ export class NotificationPersistBacktestUtils implements INotificationUtils {
     );
   });
 
+  /**
+   * Persists the current notification map to disk storage.
+   * Sorts notifications by createdAt and keeps only the most recent MAX_NOTIFICATIONS.
+   * @throws Error if not initialized
+   */
   private async _updateNotifications(): Promise<void> {
     backtest.loggerService.info(NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_UPDATE_NOTIFICATIONS);
     if (!this._notifications) {
@@ -635,6 +868,11 @@ export class NotificationPersistBacktestUtils implements INotificationUtils {
     );
   }
 
+  /**
+   * Adds a notification to the map.
+   * Removes oldest notification if limit is exceeded.
+   * @param notification - The notification model to add
+   */
   private _addNotification(notification: NotificationModel): void {
     this._notifications.set(notification.id, notification);
     if (this._notifications.size > MAX_NOTIFICATIONS) {
@@ -645,6 +883,11 @@ export class NotificationPersistBacktestUtils implements INotificationUtils {
     }
   }
 
+  /**
+   * Handles signal events.
+   * Creates and stores notification for opened, closed, scheduled, cancelled signals.
+   * @param data - The strategy tick result data
+   */
   public handleSignal = async (data: IStrategyTickResult): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_HANDLE_SIGNAL, {
       signalId: data.signal.id,
@@ -658,6 +901,10 @@ export class NotificationPersistBacktestUtils implements INotificationUtils {
     }
   };
 
+  /**
+   * Handles partial profit availability event.
+   * @param data - The partial profit contract data
+   */
   public handlePartialProfit = async (data: PartialProfitContract): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_HANDLE_PARTIAL_PROFIT, {
       signalId: data.data.id,
@@ -668,6 +915,10 @@ export class NotificationPersistBacktestUtils implements INotificationUtils {
     await this._updateNotifications();
   };
 
+  /**
+   * Handles partial loss availability event.
+   * @param data - The partial loss contract data
+   */
   public handlePartialLoss = async (data: PartialLossContract): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_HANDLE_PARTIAL_LOSS, {
       signalId: data.data.id,
@@ -678,6 +929,10 @@ export class NotificationPersistBacktestUtils implements INotificationUtils {
     await this._updateNotifications();
   };
 
+  /**
+   * Handles breakeven availability event.
+   * @param data - The breakeven contract data
+   */
   public handleBreakeven = async (data: BreakevenContract): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_HANDLE_BREAKEVEN, {
       signalId: data.data.id,
@@ -687,6 +942,10 @@ export class NotificationPersistBacktestUtils implements INotificationUtils {
     await this._updateNotifications();
   };
 
+  /**
+   * Handles strategy commit events.
+   * @param data - The strategy commit contract data
+   */
   public handleStrategyCommit = async (data: StrategyCommitContract): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_HANDLE_STRATEGY_COMMIT, {
       signalId: data.signalId,
@@ -700,6 +959,10 @@ export class NotificationPersistBacktestUtils implements INotificationUtils {
     }
   };
 
+  /**
+   * Handles risk rejection event.
+   * @param data - The risk contract data
+   */
   public handleRisk = async (data: RiskContract): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_HANDLE_RISK, {
       signalId: data.currentSignal.id,
@@ -710,6 +973,11 @@ export class NotificationPersistBacktestUtils implements INotificationUtils {
     await this._updateNotifications();
   };
 
+  /**
+   * Handles error event.
+   * Note: Error notifications are not persisted to disk.
+   * @param error - The error object
+   */
   public handleError = async (error: Error): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_HANDLE_ERROR, {
       message: getErrorMessage(error),
@@ -718,6 +986,11 @@ export class NotificationPersistBacktestUtils implements INotificationUtils {
     this._addNotification(CREATE_ERROR_NOTIFICATION_FN(error));
   };
 
+  /**
+   * Handles critical error event.
+   * Note: Error notifications are not persisted to disk.
+   * @param error - The error object
+   */
   public handleCriticalError = async (error: Error): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_HANDLE_CRITICAL_ERROR, {
       message: getErrorMessage(error),
@@ -726,6 +999,11 @@ export class NotificationPersistBacktestUtils implements INotificationUtils {
     this._addNotification(CREATE_CRITICAL_ERROR_NOTIFICATION_FN(error));
   };
 
+  /**
+   * Handles validation error event.
+   * Note: Error notifications are not persisted to disk.
+   * @param error - The error object
+   */
   public handleValidationError = async (error: Error): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_HANDLE_VALIDATION_ERROR, {
       message: getErrorMessage(error),
@@ -734,12 +1012,19 @@ export class NotificationPersistBacktestUtils implements INotificationUtils {
     this._addNotification(CREATE_VALIDATION_ERROR_NOTIFICATION_FN(error));
   };
 
+  /**
+   * Gets all stored notifications.
+   * @returns Array of all notification models
+   */
   public getData = async (): Promise<NotificationModel[]> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_GET_DATA);
     await this.waitForInit();
     return Array.from(this._notifications.values());
   };
 
+  /**
+   * Clears all stored notifications.
+   */
   public clear = async (): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_CLEAR);
     await this.waitForInit();
@@ -748,9 +1033,27 @@ export class NotificationPersistBacktestUtils implements INotificationUtils {
   };
 }
 
+/**
+ * In-memory notification adapter for live trading signals.
+ *
+ * Features:
+ * - Stores notifications in memory only (no persistence)
+ * - Fast read/write operations
+ * - Data is lost when application restarts
+ * - Maintains up to MAX_NOTIFICATIONS (250) most recent notifications
+ * - Handles all notification types: signals, partial profit/loss, breakeven, risk, errors
+ *
+ * Use this adapter for testing or when persistence is not required.
+ */
 export class NotificationMemoryLiveUtils implements INotificationUtils {
+  /** Array of notification models */
   private _notifications: NotificationModel[] = [];
 
+  /**
+   * Adds a notification to the beginning of the list.
+   * Removes oldest notification if limit is exceeded.
+   * @param notification - The notification model to add
+   */
   private _addNotification(notification: NotificationModel): void {
     this._notifications.unshift(notification);
     if (this._notifications.length > MAX_NOTIFICATIONS) {
@@ -758,6 +1061,11 @@ export class NotificationMemoryLiveUtils implements INotificationUtils {
     }
   }
 
+  /**
+   * Handles signal events.
+   * Creates and stores notification for opened, closed, scheduled, cancelled signals.
+   * @param data - The strategy tick result data
+   */
   public handleSignal = async (data: IStrategyTickResult): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_LIVE_METHOD_NAME_HANDLE_SIGNAL, {
       signalId: data.signal.id,
@@ -769,6 +1077,10 @@ export class NotificationMemoryLiveUtils implements INotificationUtils {
     }
   };
 
+  /**
+   * Handles partial profit availability event.
+   * @param data - The partial profit contract data
+   */
   public handlePartialProfit = async (data: PartialProfitContract): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_LIVE_METHOD_NAME_HANDLE_PARTIAL_PROFIT, {
       signalId: data.data.id,
@@ -777,6 +1089,10 @@ export class NotificationMemoryLiveUtils implements INotificationUtils {
     this._addNotification(CREATE_PARTIAL_PROFIT_NOTIFICATION_FN(data));
   };
 
+  /**
+   * Handles partial loss availability event.
+   * @param data - The partial loss contract data
+   */
   public handlePartialLoss = async (data: PartialLossContract): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_LIVE_METHOD_NAME_HANDLE_PARTIAL_LOSS, {
       signalId: data.data.id,
@@ -785,6 +1101,10 @@ export class NotificationMemoryLiveUtils implements INotificationUtils {
     this._addNotification(CREATE_PARTIAL_LOSS_NOTIFICATION_FN(data));
   };
 
+  /**
+   * Handles breakeven availability event.
+   * @param data - The breakeven contract data
+   */
   public handleBreakeven = async (data: BreakevenContract): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_LIVE_METHOD_NAME_HANDLE_BREAKEVEN, {
       signalId: data.data.id,
@@ -792,6 +1112,10 @@ export class NotificationMemoryLiveUtils implements INotificationUtils {
     this._addNotification(CREATE_BREAKEVEN_NOTIFICATION_FN(data));
   };
 
+  /**
+   * Handles strategy commit events.
+   * @param data - The strategy commit contract data
+   */
   public handleStrategyCommit = async (data: StrategyCommitContract): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_LIVE_METHOD_NAME_HANDLE_STRATEGY_COMMIT, {
       signalId: data.signalId,
@@ -803,6 +1127,10 @@ export class NotificationMemoryLiveUtils implements INotificationUtils {
     }
   };
 
+  /**
+   * Handles risk rejection event.
+   * @param data - The risk contract data
+   */
   public handleRisk = async (data: RiskContract): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_LIVE_METHOD_NAME_HANDLE_RISK, {
       signalId: data.currentSignal.id,
@@ -811,6 +1139,10 @@ export class NotificationMemoryLiveUtils implements INotificationUtils {
     this._addNotification(CREATE_RISK_NOTIFICATION_FN(data));
   };
 
+  /**
+   * Handles error event.
+   * @param error - The error object
+   */
   public handleError = async (error: Error): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_LIVE_METHOD_NAME_HANDLE_ERROR, {
       message: getErrorMessage(error),
@@ -818,6 +1150,10 @@ export class NotificationMemoryLiveUtils implements INotificationUtils {
     this._addNotification(CREATE_ERROR_NOTIFICATION_FN(error));
   };
 
+  /**
+   * Handles critical error event.
+   * @param error - The error object
+   */
   public handleCriticalError = async (error: Error): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_LIVE_METHOD_NAME_HANDLE_CRITICAL_ERROR, {
       message: getErrorMessage(error),
@@ -825,6 +1161,10 @@ export class NotificationMemoryLiveUtils implements INotificationUtils {
     this._addNotification(CREATE_CRITICAL_ERROR_NOTIFICATION_FN(error));
   };
 
+  /**
+   * Handles validation error event.
+   * @param error - The error object
+   */
   public handleValidationError = async (error: Error): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_LIVE_METHOD_NAME_HANDLE_VALIDATION_ERROR, {
       message: getErrorMessage(error),
@@ -832,66 +1172,133 @@ export class NotificationMemoryLiveUtils implements INotificationUtils {
     this._addNotification(CREATE_VALIDATION_ERROR_NOTIFICATION_FN(error));
   };
 
+  /**
+   * Gets all stored notifications.
+   * @returns Copy of notifications array
+   */
   public getData = async (): Promise<NotificationModel[]> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_LIVE_METHOD_NAME_GET_DATA);
     return [...this._notifications];
   };
 
+  /**
+   * Clears all stored notifications.
+   */
   public clear = async (): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_LIVE_METHOD_NAME_CLEAR);
     this._notifications = [];
   };
 }
 
+/**
+ * Dummy notification adapter for live trading signals that discards all writes.
+ *
+ * Features:
+ * - No-op implementation for all methods
+ * - getData always returns empty array
+ *
+ * Use this adapter to disable live notification storage completely.
+ */
 export class NotificationDummyLiveUtils implements INotificationUtils {
+  /**
+   * No-op handler for signal events.
+   */
   public handleSignal = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * No-op handler for partial profit event.
+   */
   public handlePartialProfit = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * No-op handler for partial loss event.
+   */
   public handlePartialLoss = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * No-op handler for breakeven event.
+   */
   public handleBreakeven = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * No-op handler for strategy commit event.
+   */
   public handleStrategyCommit = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * No-op handler for risk rejection event.
+   */
   public handleRisk = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * No-op handler for error event.
+   */
   public handleError = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * No-op handler for critical error event.
+   */
   public handleCriticalError = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * No-op handler for validation error event.
+   */
   public handleValidationError = async (): Promise<void> => {
     void 0;
   };
 
+  /**
+   * Always returns empty array (no storage).
+   * @returns Empty array
+   */
   public getData = async (): Promise<NotificationModel[]> => {
     return [];
   };
 
+  /**
+   * No-op clear operation.
+   */
   public clear = async (): Promise<void> => {
     void 0;
   };
 }
 
+/**
+ * Persistent notification adapter for live trading signals.
+ *
+ * Features:
+ * - Persists notifications to disk using PersistNotificationAdapter
+ * - Lazy initialization with singleshot pattern
+ * - Maintains up to MAX_NOTIFICATIONS (250) most recent notifications
+ * - Filters out error notifications when persisting to disk
+ * - Handles all notification types: signals, partial profit/loss, breakeven, risk, errors
+ *
+ * Use this adapter (default) for live notification persistence across sessions.
+ */
 export class NotificationPersistLiveUtils implements INotificationUtils {
+  /** Map of notification IDs to notification models */
   private _notifications: Map<string, NotificationModel>;
 
+  /**
+   * Singleshot initialization function that loads notifications from disk.
+   * Protected by singleshot to ensure one-time execution.
+   */
   private waitForInit = singleshot(async () => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_LIVE_METHOD_NAME_WAIT_FOR_INIT);
     const notificationList = await PersistNotificationAdapter.readNotificationData(false);
@@ -907,6 +1314,12 @@ export class NotificationPersistLiveUtils implements INotificationUtils {
     );
   });
 
+  /**
+   * Persists the current notification map to disk storage.
+   * Filters out error notifications and sorts by createdAt.
+   * Keeps only the most recent MAX_NOTIFICATIONS.
+   * @throws Error if not initialized
+   */
   private async _updateNotifications(): Promise<void> {
     backtest.loggerService.info(NOTIFICATION_PERSIST_LIVE_METHOD_NAME_UPDATE_NOTIFICATIONS);
     if (!this._notifications) {
@@ -927,6 +1340,11 @@ export class NotificationPersistLiveUtils implements INotificationUtils {
     );
   }
 
+  /**
+   * Adds a notification to the map.
+   * Removes oldest notification if limit is exceeded.
+   * @param notification - The notification model to add
+   */
   private _addNotification(notification: NotificationModel): void {
     this._notifications.set(notification.id, notification);
     if (this._notifications.size > MAX_NOTIFICATIONS) {
@@ -937,6 +1355,11 @@ export class NotificationPersistLiveUtils implements INotificationUtils {
     }
   }
 
+  /**
+   * Handles signal events.
+   * Creates and stores notification for opened, closed, scheduled, cancelled signals.
+   * @param data - The strategy tick result data
+   */
   public handleSignal = async (data: IStrategyTickResult): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_LIVE_METHOD_NAME_HANDLE_SIGNAL, {
       signalId: data.signal.id,
@@ -950,6 +1373,10 @@ export class NotificationPersistLiveUtils implements INotificationUtils {
     }
   };
 
+  /**
+   * Handles partial profit availability event.
+   * @param data - The partial profit contract data
+   */
   public handlePartialProfit = async (data: PartialProfitContract): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_LIVE_METHOD_NAME_HANDLE_PARTIAL_PROFIT, {
       signalId: data.data.id,
@@ -960,6 +1387,10 @@ export class NotificationPersistLiveUtils implements INotificationUtils {
     await this._updateNotifications();
   };
 
+  /**
+   * Handles partial loss availability event.
+   * @param data - The partial loss contract data
+   */
   public handlePartialLoss = async (data: PartialLossContract): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_LIVE_METHOD_NAME_HANDLE_PARTIAL_LOSS, {
       signalId: data.data.id,
@@ -970,6 +1401,10 @@ export class NotificationPersistLiveUtils implements INotificationUtils {
     await this._updateNotifications();
   };
 
+  /**
+   * Handles breakeven availability event.
+   * @param data - The breakeven contract data
+   */
   public handleBreakeven = async (data: BreakevenContract): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_LIVE_METHOD_NAME_HANDLE_BREAKEVEN, {
       signalId: data.data.id,
@@ -979,6 +1414,10 @@ export class NotificationPersistLiveUtils implements INotificationUtils {
     await this._updateNotifications();
   };
 
+  /**
+   * Handles strategy commit events.
+   * @param data - The strategy commit contract data
+   */
   public handleStrategyCommit = async (data: StrategyCommitContract): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_LIVE_METHOD_NAME_HANDLE_STRATEGY_COMMIT, {
       signalId: data.signalId,
@@ -992,6 +1431,10 @@ export class NotificationPersistLiveUtils implements INotificationUtils {
     }
   };
 
+  /**
+   * Handles risk rejection event.
+   * @param data - The risk contract data
+   */
   public handleRisk = async (data: RiskContract): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_LIVE_METHOD_NAME_HANDLE_RISK, {
       signalId: data.currentSignal.id,
@@ -1002,6 +1445,11 @@ export class NotificationPersistLiveUtils implements INotificationUtils {
     await this._updateNotifications();
   };
 
+  /**
+   * Handles error event.
+   * Note: Error notifications are not persisted to disk.
+   * @param error - The error object
+   */
   public handleError = async (error: Error): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_LIVE_METHOD_NAME_HANDLE_ERROR, {
       message: getErrorMessage(error),
@@ -1010,6 +1458,11 @@ export class NotificationPersistLiveUtils implements INotificationUtils {
     this._addNotification(CREATE_ERROR_NOTIFICATION_FN(error));
   };
 
+  /**
+   * Handles critical error event.
+   * Note: Error notifications are not persisted to disk.
+   * @param error - The error object
+   */
   public handleCriticalError = async (error: Error): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_LIVE_METHOD_NAME_HANDLE_CRITICAL_ERROR, {
       message: getErrorMessage(error),
@@ -1018,6 +1471,11 @@ export class NotificationPersistLiveUtils implements INotificationUtils {
     this._addNotification(CREATE_CRITICAL_ERROR_NOTIFICATION_FN(error));
   };
 
+  /**
+   * Handles validation error event.
+   * Note: Error notifications are not persisted to disk.
+   * @param error - The error object
+   */
   public handleValidationError = async (error: Error): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_LIVE_METHOD_NAME_HANDLE_VALIDATION_ERROR, {
       message: getErrorMessage(error),
@@ -1026,12 +1484,19 @@ export class NotificationPersistLiveUtils implements INotificationUtils {
     this._addNotification(CREATE_VALIDATION_ERROR_NOTIFICATION_FN(error));
   };
 
+  /**
+   * Gets all stored notifications.
+   * @returns Array of all notification models
+   */
   public getData = async (): Promise<NotificationModel[]> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_LIVE_METHOD_NAME_GET_DATA);
     await this.waitForInit();
     return Array.from(this._notifications.values());
   };
 
+  /**
+   * Clears all stored notifications.
+   */
   public clear = async (): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_LIVE_METHOD_NAME_CLEAR);
     await this.waitForInit();
@@ -1040,143 +1505,322 @@ export class NotificationPersistLiveUtils implements INotificationUtils {
   };
 }
 
+/**
+ * Backtest notification adapter with pluggable notification backend.
+ *
+ * Features:
+ * - Adapter pattern for swappable notification implementations
+ * - Default adapter: NotificationMemoryBacktestUtils (in-memory storage)
+ * - Alternative adapters: NotificationPersistBacktestUtils, NotificationDummyBacktestUtils
+ * - Convenience methods: usePersist(), useMemory(), useDummy()
+ */
 export class NotificationBacktestAdapter implements INotificationUtils {
+  /** Internal notification utils instance */
   private _notificationBacktestUtils: INotificationUtils = new NotificationMemoryBacktestUtils();
 
+  /**
+   * Handles signal events.
+   * Proxies call to the underlying notification adapter.
+   * @param data - The strategy tick result data
+   */
   handleSignal = async (data: IStrategyTickResult): Promise<void> => {
     return await this._notificationBacktestUtils.handleSignal(data);
   };
 
+  /**
+   * Handles partial profit availability event.
+   * Proxies call to the underlying notification adapter.
+   * @param data - The partial profit contract data
+   */
   handlePartialProfit = async (data: PartialProfitContract): Promise<void> => {
     return await this._notificationBacktestUtils.handlePartialProfit(data);
   };
 
+  /**
+   * Handles partial loss availability event.
+   * Proxies call to the underlying notification adapter.
+   * @param data - The partial loss contract data
+   */
   handlePartialLoss = async (data: PartialLossContract): Promise<void> => {
     return await this._notificationBacktestUtils.handlePartialLoss(data);
   };
 
+  /**
+   * Handles breakeven availability event.
+   * Proxies call to the underlying notification adapter.
+   * @param data - The breakeven contract data
+   */
   handleBreakeven = async (data: BreakevenContract): Promise<void> => {
     return await this._notificationBacktestUtils.handleBreakeven(data);
   };
 
+  /**
+   * Handles strategy commit events.
+   * Proxies call to the underlying notification adapter.
+   * @param data - The strategy commit contract data
+   */
   handleStrategyCommit = async (data: StrategyCommitContract): Promise<void> => {
     return await this._notificationBacktestUtils.handleStrategyCommit(data);
   };
 
+  /**
+   * Handles risk rejection event.
+   * Proxies call to the underlying notification adapter.
+   * @param data - The risk contract data
+   */
   handleRisk = async (data: RiskContract): Promise<void> => {
     return await this._notificationBacktestUtils.handleRisk(data);
   };
 
+  /**
+   * Handles error event.
+   * Proxies call to the underlying notification adapter.
+   * @param error - The error object
+   */
   handleError = async (error: Error): Promise<void> => {
     return await this._notificationBacktestUtils.handleError(error);
   };
 
+  /**
+   * Handles critical error event.
+   * Proxies call to the underlying notification adapter.
+   * @param error - The error object
+   */
   handleCriticalError = async (error: Error): Promise<void> => {
     return await this._notificationBacktestUtils.handleCriticalError(error);
   };
 
+  /**
+   * Handles validation error event.
+   * Proxies call to the underlying notification adapter.
+   * @param error - The error object
+   */
   handleValidationError = async (error: Error): Promise<void> => {
     return await this._notificationBacktestUtils.handleValidationError(error);
   };
 
+  /**
+   * Gets all stored notifications.
+   * Proxies call to the underlying notification adapter.
+   * @returns Array of all notification models
+   */
   getData = async (): Promise<NotificationModel[]> => {
     return await this._notificationBacktestUtils.getData();
   };
 
+  /**
+   * Clears all stored notifications.
+   * Proxies call to the underlying notification adapter.
+   */
   clear = async (): Promise<void> => {
     return await this._notificationBacktestUtils.clear();
   };
 
+  /**
+   * Sets the notification adapter constructor.
+   * All future notification operations will use this adapter.
+   *
+   * @param Ctor - Constructor for notification adapter
+   */
   useNotificationAdapter = (Ctor: TNotificationUtilsCtor): void => {
     backtest.loggerService.info(NOTIFICATION_BACKTEST_ADAPTER_METHOD_NAME_USE_ADAPTER);
     this._notificationBacktestUtils = Reflect.construct(Ctor, []);
   };
 
+  /**
+   * Switches to dummy notification adapter.
+   * All future notification writes will be no-ops.
+   */
   useDummy = (): void => {
     backtest.loggerService.info(NOTIFICATION_BACKTEST_ADAPTER_METHOD_NAME_USE_DUMMY);
     this._notificationBacktestUtils = new NotificationDummyBacktestUtils();
   };
 
+  /**
+   * Switches to in-memory notification adapter (default).
+   * Notifications will be stored in memory only.
+   */
   useMemory = (): void => {
     backtest.loggerService.info(NOTIFICATION_BACKTEST_ADAPTER_METHOD_NAME_USE_MEMORY);
     this._notificationBacktestUtils = new NotificationMemoryBacktestUtils();
   };
 
+  /**
+   * Switches to persistent notification adapter.
+   * Notifications will be persisted to disk.
+   */
   usePersist = (): void => {
     backtest.loggerService.info(NOTIFICATION_BACKTEST_ADAPTER_METHOD_NAME_USE_PERSIST);
     this._notificationBacktestUtils = new NotificationPersistBacktestUtils();
   };
 }
 
+/**
+ * Live trading notification adapter with pluggable notification backend.
+ *
+ * Features:
+ * - Adapter pattern for swappable notification implementations
+ * - Default adapter: NotificationMemoryLiveUtils (in-memory storage)
+ * - Alternative adapters: NotificationPersistLiveUtils, NotificationDummyLiveUtils
+ * - Convenience methods: usePersist(), useMemory(), useDummy()
+ */
 export class NotificationLiveAdapter implements INotificationUtils {
+  /** Internal notification utils instance */
   private _notificationLiveUtils: INotificationUtils = new NotificationMemoryLiveUtils();
 
+  /**
+   * Handles signal events.
+   * Proxies call to the underlying notification adapter.
+   * @param data - The strategy tick result data
+   */
   handleSignal = async (data: IStrategyTickResult): Promise<void> => {
     return await this._notificationLiveUtils.handleSignal(data);
   };
 
+  /**
+   * Handles partial profit availability event.
+   * Proxies call to the underlying notification adapter.
+   * @param data - The partial profit contract data
+   */
   handlePartialProfit = async (data: PartialProfitContract): Promise<void> => {
     return await this._notificationLiveUtils.handlePartialProfit(data);
   };
 
+  /**
+   * Handles partial loss availability event.
+   * Proxies call to the underlying notification adapter.
+   * @param data - The partial loss contract data
+   */
   handlePartialLoss = async (data: PartialLossContract): Promise<void> => {
     return await this._notificationLiveUtils.handlePartialLoss(data);
   };
 
+  /**
+   * Handles breakeven availability event.
+   * Proxies call to the underlying notification adapter.
+   * @param data - The breakeven contract data
+   */
   handleBreakeven = async (data: BreakevenContract): Promise<void> => {
     return await this._notificationLiveUtils.handleBreakeven(data);
   };
 
+  /**
+   * Handles strategy commit events.
+   * Proxies call to the underlying notification adapter.
+   * @param data - The strategy commit contract data
+   */
   handleStrategyCommit = async (data: StrategyCommitContract): Promise<void> => {
     return await this._notificationLiveUtils.handleStrategyCommit(data);
   };
 
+  /**
+   * Handles risk rejection event.
+   * Proxies call to the underlying notification adapter.
+   * @param data - The risk contract data
+   */
   handleRisk = async (data: RiskContract): Promise<void> => {
     return await this._notificationLiveUtils.handleRisk(data);
   };
 
+  /**
+   * Handles error event.
+   * Proxies call to the underlying notification adapter.
+   * @param error - The error object
+   */
   handleError = async (error: Error): Promise<void> => {
     return await this._notificationLiveUtils.handleError(error);
   };
 
+  /**
+   * Handles critical error event.
+   * Proxies call to the underlying notification adapter.
+   * @param error - The error object
+   */
   handleCriticalError = async (error: Error): Promise<void> => {
     return await this._notificationLiveUtils.handleCriticalError(error);
   };
 
+  /**
+   * Handles validation error event.
+   * Proxies call to the underlying notification adapter.
+   * @param error - The error object
+   */
   handleValidationError = async (error: Error): Promise<void> => {
     return await this._notificationLiveUtils.handleValidationError(error);
   };
 
+  /**
+   * Gets all stored notifications.
+   * Proxies call to the underlying notification adapter.
+   * @returns Array of all notification models
+   */
   getData = async (): Promise<NotificationModel[]> => {
     return await this._notificationLiveUtils.getData();
   };
 
+  /**
+   * Clears all stored notifications.
+   * Proxies call to the underlying notification adapter.
+   */
   clear = async (): Promise<void> => {
     return await this._notificationLiveUtils.clear();
   };
 
+  /**
+   * Sets the notification adapter constructor.
+   * All future notification operations will use this adapter.
+   *
+   * @param Ctor - Constructor for notification adapter
+   */
   useNotificationAdapter = (Ctor: TNotificationUtilsCtor): void => {
     backtest.loggerService.info(NOTIFICATION_LIVE_ADAPTER_METHOD_NAME_USE_ADAPTER);
     this._notificationLiveUtils = Reflect.construct(Ctor, []);
   };
 
+  /**
+   * Switches to dummy notification adapter.
+   * All future notification writes will be no-ops.
+   */
   useDummy = (): void => {
     backtest.loggerService.info(NOTIFICATION_LIVE_ADAPTER_METHOD_NAME_USE_DUMMY);
     this._notificationLiveUtils = new NotificationDummyLiveUtils();
   };
 
+  /**
+   * Switches to in-memory notification adapter (default).
+   * Notifications will be stored in memory only.
+   */
   useMemory = (): void => {
     backtest.loggerService.info(NOTIFICATION_LIVE_ADAPTER_METHOD_NAME_USE_MEMORY);
     this._notificationLiveUtils = new NotificationMemoryLiveUtils();
   };
 
+  /**
+   * Switches to persistent notification adapter.
+   * Notifications will be persisted to disk.
+   */
   usePersist = (): void => {
     backtest.loggerService.info(NOTIFICATION_LIVE_ADAPTER_METHOD_NAME_USE_PERSIST);
     this._notificationLiveUtils = new NotificationPersistLiveUtils();
   };
 }
 
+/**
+ * Main notification adapter that manages both backtest and live notification storage.
+ *
+ * Features:
+ * - Subscribes to signal emitters for automatic notification updates
+ * - Provides unified access to both backtest and live notifications
+ * - Singleshot enable pattern prevents duplicate subscriptions
+ * - Cleanup function for proper unsubscription
+ */
 export class NotificationAdapter {
+  /**
+   * Enables notification storage by subscribing to signal emitters.
+   * Uses singleshot to ensure one-time subscription.
+   *
+   * @returns Cleanup function that unsubscribes from all emitters
+   */
   public enable = singleshot(() => {
     backtest.loggerService.info(NOTIFICATION_ADAPTER_METHOD_NAME_ENABLE);
     let unLive: Function;
@@ -1309,6 +1953,10 @@ export class NotificationAdapter {
     };
   });
 
+  /**
+   * Disables notification storage by unsubscribing from all emitters.
+   * Safe to call multiple times.
+   */
   public disable = () => {
     backtest.loggerService.info(NOTIFICATION_ADAPTER_METHOD_NAME_DISABLE);
     if (this.enable.hasValue()) {
@@ -1317,6 +1965,12 @@ export class NotificationAdapter {
     }
   };
 
+  /**
+   * Gets all backtest notifications from storage.
+   *
+   * @returns Array of all backtest notification models
+   * @throws Error if NotificationAdapter is not enabled
+   */
   public getDataBacktest = async (): Promise<NotificationModel[]> => {
     backtest.loggerService.info(NOTIFICATION_ADAPTER_METHOD_NAME_GET_DATA_BACKTEST);
     if (!this.enable.hasValue()) {
@@ -1325,6 +1979,12 @@ export class NotificationAdapter {
     return await NotificationBacktest.getData();
   };
 
+  /**
+   * Gets all live notifications from storage.
+   *
+   * @returns Array of all live notification models
+   * @throws Error if NotificationAdapter is not enabled
+   */
   public getDataLive = async (): Promise<NotificationModel[]> => {
     backtest.loggerService.info(NOTIFICATION_ADAPTER_METHOD_NAME_GET_DATA_LIVE);
     if (!this.enable.hasValue()) {
@@ -1333,6 +1993,11 @@ export class NotificationAdapter {
     return await NotificationLive.getData();
   };
 
+  /**
+   * Clears all backtest notifications from storage.
+   *
+   * @throws Error if NotificationAdapter is not enabled
+   */
   public clearBacktest = async (): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_ADAPTER_METHOD_NAME_CLEAR_BACKTEST);
     if (!this.enable.hasValue()) {
@@ -1341,6 +2006,11 @@ export class NotificationAdapter {
     return await NotificationBacktest.clear();
   };
 
+  /**
+   * Clears all live notifications from storage.
+   *
+   * @throws Error if NotificationAdapter is not enabled
+   */
   public clearLive = async (): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_ADAPTER_METHOD_NAME_CLEAR_LIVE);
     if (!this.enable.hasValue()) {
@@ -1350,6 +2020,20 @@ export class NotificationAdapter {
   };
 }
 
+/**
+ * Global singleton instance of NotificationAdapter.
+ * Provides unified notification management for backtest and live trading.
+ */
 export const Notification = new NotificationAdapter();
+
+/**
+ * Global singleton instance of NotificationLiveAdapter.
+ * Provides live trading notification storage with pluggable backends.
+ */
 export const NotificationLive = new NotificationLiveAdapter();
+
+/**
+ * Global singleton instance of NotificationBacktestAdapter.
+ * Provides backtest notification storage with pluggable backends.
+ */
 export const NotificationBacktest = new NotificationBacktestAdapter();
