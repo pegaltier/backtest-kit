@@ -1,4 +1,4 @@
-<img src="./assets/triangle.svg" height="105px" align="right">
+<img src="./assets/triangle.svg" height="45px" align="right">
 
 # 🧿 Backtest Kit
 
