@@ -3,6 +3,7 @@ import { PlotModel } from "../../../model/Plot.model";
 import LoggerService from "../base/LoggerService";
 import { TYPES } from "../../core/types";
 import { ExecutionContextService, Markdown, MarkdownName, MethodContextService, lib } from "backtest-kit";
+import { PlotExtractConfig, PlotMapping } from "../data/PineDataService";
 
 const TABLE_ROWS_LIMIT = 48;
 
@@ -13,8 +14,8 @@ const GET_METHOD_CONTEXT_FN = () => {
   }
   return {
     strategyName: "",
-    exchangeName: "", 
-    frameName: "", 
+    exchangeName: "",
+    frameName: "",
   };
 };
 
@@ -35,67 +36,25 @@ interface IPlotRow {
   [key: string]: number | null;
 }
 
+function getPlotName(config: string | PlotExtractConfig<any>): string {
+  return typeof config === "string" ? config : config.plot;
+}
+
+function isSafe(value: unknown): value is number {
+  return typeof value === "number" && !isNaN(value) && isFinite(value);
+}
+
 const DEFAULT_FORMAT = (v: number | null): string =>
   v !== null ? Number(v).toFixed(4) : "N/A";
-
-function isUnsafe(value: number | null): boolean {
-  if (value === null) return true;
-  if (typeof value !== "number") return true;
-  if (isNaN(value)) return true;
-  if (!isFinite(value)) return true;
-  return false;
-}
-
-function extractRowAtIndex(
-  plots: PlotModel,
-  keys: string[],
-  index: number,
-): IPlotRow | null {
-  let time: number | null = null;
-  for (const key of keys) {
-    const plotData = plots[key]?.data;
-    if (plotData && plotData[index]) {
-      time = plotData[index].time;
-      break;
-    }
-  }
-
-  if (time === null) return null;
-
-  const row: IPlotRow = { time };
-
-  for (const key of keys) {
-    const plotData = plots[key]?.data;
-    if (plotData && plotData[index]) {
-      const value = plotData[index].value;
-      row[key] = isUnsafe(value) ? null : value;
-    } else {
-      row[key] = null;
-    }
-  }
-
-  return row;
-}
-
-function isRowWarmedUp(row: IPlotRow, keys: string[]): boolean {
-  for (const key of keys) {
-    if (isUnsafe(row[key])) {
-      return false;
-    }
-  }
-  return true;
-}
 
 function generateMarkdownTable(
   rows: IPlotRow[],
   keys: string[],
   signalId: ResultId,
 ): string {
-  let markdown = "";
-
   const { when: createdAt } = GET_EXECUTION_CONTEXT_FN();
 
-  markdown += `# PineScript Technical Analysis Dump\n\n`;
+  let markdown = `# PineScript Technical Analysis Dump\n\n`;
   markdown += `**Signal ID**: ${String(signalId)}\n`;
 
   if (createdAt) {
@@ -103,17 +62,13 @@ function generateMarkdownTable(
   }
 
   markdown += "\n";
-
-  const header = `| Timestamp | ${keys.join(" | ")} |\n`;
-  const separator = `| --- | ${keys.map(() => "---").join(" | ")} |\n`;
-
-  markdown += header;
-  markdown += separator;
+  markdown += `| ${keys.join(" | ")} | timestamp |\n`;
+  markdown += `| --- | ${keys.map(() => "---").join(" | ")} |\n`;
 
   for (const row of rows) {
     const timestamp = new Date(row.time).toISOString();
     const cells = keys.map((key) => DEFAULT_FORMAT(row[key] as number | null));
-    markdown += `| ${timestamp} | ${cells.join(" | ")} |\n`;
+    markdown += `| ${cells.join(" | ")} | ${timestamp} |\n`;
   }
 
   return markdown;
@@ -122,57 +77,59 @@ function generateMarkdownTable(
 export class PineMarkdownService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
-  public getData = (plots: PlotModel) => {
-    this.loggerService.log("pineMarkdownService getReport", {
+  public getData = <M extends PlotMapping>(plots: PlotModel, mapping: M): IPlotRow[] => {
+    this.loggerService.log("pineMarkdownService getData", {
       plotCount: Object.keys(plots).length,
     });
-    const keys = Object.keys(plots);
 
-    if (keys.length === 0) {
+    const entries = Object.entries(mapping);
+    if (entries.length === 0) {
       return [];
     }
 
-    const firstPlot = plots[keys[0]];
-    const dataLength = firstPlot?.data?.length ?? 0;
+    const plotNames = entries.map(([key, config]) => ({ key, plotName: getPlotName(config) }));
+    const dataLength = Math.max(...plotNames.map(({ plotName }) => plots[plotName]?.data?.length ?? 0));
 
     if (dataLength === 0) {
       return [];
     }
 
     const rows: IPlotRow[] = [];
-    let warmupComplete = false;
-
     for (let i = 0; i < dataLength; i++) {
-      const row = extractRowAtIndex(plots, keys, i);
-      if (!row) continue;
+      let time: number | null = null;
+      const row: IPlotRow = { time: 0 };
 
-      if (!warmupComplete) {
-        if (isRowWarmedUp(row, keys)) {
-          warmupComplete = true;
-        } else {
-          continue;
+      for (const { key, plotName } of plotNames) {
+        const point = plots[plotName]?.data?.[i];
+        if (time === null && point) {
+          time = point.time;
         }
+        row[key] = isSafe(point?.value) ? point.value : null;
       }
 
-      rows.push(row);
+      if (time !== null) {
+        row.time = time;
+        rows.push(row);
+      }
     }
 
     return rows.slice(-TABLE_ROWS_LIMIT);
   };
 
-  public getReport = (signalId: ResultId, plots: PlotModel) => {
+  public getReport = <M extends PlotMapping>(signalId: ResultId, plots: PlotModel, mapping: M) => {
     this.loggerService.log("pineMarkdownService getReport", {
       signalId,
       plotCount: Object.keys(plots).length,
     });
-    const rows = this.getData(plots);
-    const keys = Object.keys(plots);
+    const keys = Object.keys(mapping);
+    const rows = this.getData(plots, mapping);
     return generateMarkdownTable(rows, keys, signalId);
   };
 
-  public dump = async (
+  public dump = async <M extends PlotMapping>(
     signalId: ResultId,
     plots: PlotModel,
+    mapping: M,
     taName: string,
     outputDir = `./dump/ta/${taName}`,
   ): Promise<void> => {
@@ -182,7 +139,7 @@ export class PineMarkdownService {
       outputDir,
     });
 
-    const content = this.getReport(signalId, plots);
+    const content = this.getReport(signalId, plots, mapping);
 
     const { exchangeName, frameName, strategyName } = GET_METHOD_CONTEXT_FN();
 

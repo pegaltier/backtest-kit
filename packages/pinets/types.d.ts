@@ -84,7 +84,7 @@ interface IParams {
 declare function getSignal(source: File | Code, { symbol, timeframe, limit }: IParams): Promise<ISignalDto | null>;
 
 type ResultId$2 = string | number;
-declare function dumpPlotData(signalId: ResultId$2, plots: PlotModel, taName: string, outputDir?: string): Promise<void>;
+declare function dumpPlotData<M extends PlotMapping>(signalId: ResultId$2, plots: PlotModel, mapping: M, taName: string, outputDir?: string): Promise<void>;
 
 type ResultId$1 = string | number;
 interface SignalData {
@@ -169,9 +169,9 @@ interface IPlotRow {
 }
 declare class PineMarkdownService {
     private readonly loggerService;
-    getData: (plots: PlotModel) => IPlotRow[];
-    getReport: (signalId: ResultId, plots: PlotModel) => string;
-    dump: (signalId: ResultId, plots: PlotModel, taName: string, outputDir?: string) => Promise<void>;
+    getData: <M extends PlotMapping>(plots: PlotModel, mapping: M) => IPlotRow[];
+    getReport: <M extends PlotMapping>(signalId: ResultId, plots: PlotModel, mapping: M) => string;
+    dump: <M extends PlotMapping>(signalId: ResultId, plots: PlotModel, mapping: M, taName: string, outputDir?: string) => Promise<void>;
 }
 
 declare const pine: {
