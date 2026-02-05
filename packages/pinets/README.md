@@ -1,3 +1,5 @@
+<img src="https://github.com/tripolskypetr/backtest-kit/raw/refs/heads/master/assets/heraldry.svg" height="45px" align="right">
+
 # 📜 @backtest-kit/pinets
 
 > Run TradingView Pine Script strategies in Node.js self hosted enviroment. Execute your existing Pine Script indicators and generate trading signals - pure technical analysis with 1:1 syntax compatibility.

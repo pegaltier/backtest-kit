@@ -1,3 +1,5 @@
+<img src="https://github.com/tripolskypetr/backtest-kit/raw/refs/heads/master/assets/monade.svg" height="45px" align="right">
+
 # 🤖 @backtest-kit/ollama
 
 > Multi-provider LLM context wrapper for trading strategies. Supports 10+ providers with unified HOF API.

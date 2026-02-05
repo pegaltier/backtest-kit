@@ -1,3 +1,5 @@
+<img src="https://github.com/tripolskypetr/backtest-kit/raw/refs/heads/master/assets/chronos.svg" height="45px" align="right">
+
 # 📊 @backtest-kit/signals
 
 > Technical analysis and trading signal generation library for AI-powered trading systems. Computes 50+ indicators across 4 timeframes and generates markdown reports for LLM consumption.

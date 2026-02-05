@@ -1,4 +1,4 @@
-<img src="./assets/triangle.svg" height="45px" align="right">
+<img src="https://github.com/tripolskypetr/backtest-kit/raw/refs/heads/master/assets/consciousness.svg" height="45px" align="right">
 
 # 🧿 Backtest Kit
 
