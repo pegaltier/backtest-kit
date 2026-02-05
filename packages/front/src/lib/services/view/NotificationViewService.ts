@@ -69,6 +69,19 @@ export class NotificationViewService {
     for (const notification of await Notification.getData(true)) {
       notificationList.push(notification);
     }
+    notificationList.sort((a, b) => {
+      const aHasTime = 'createdAt' in a;
+      const bHasTime = 'createdAt' in b;
+      if (!aHasTime && bHasTime) {
+        return -1;
+      }
+      if (aHasTime && !bHasTime) {
+        return 1;
+      }
+      const aTime = aHasTime ? a.createdAt : 0;
+      const bTime = bHasTime ? b.createdAt : 0;
+      return bTime - aTime;
+    });
     return notificationList;
   };
 

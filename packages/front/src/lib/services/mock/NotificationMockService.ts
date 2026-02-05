@@ -57,7 +57,21 @@ export class NotificationMockService {
 
   public getList = async () => {
     this.loggerService.log("notificationMockService getList");
-    return await READ_NOTIFICATION_LIST_FN();
+    const notificationList =  await READ_NOTIFICATION_LIST_FN();
+    notificationList.sort((a, b) => {
+      const aHasTime = 'createdAt' in a;
+      const bHasTime = 'createdAt' in b;
+      if (!aHasTime && bHasTime) {
+        return -1;
+      }
+      if (aHasTime && !bHasTime) {
+        return 1;
+      }
+      const aTime = aHasTime ? a.createdAt : 0;
+      const bTime = bHasTime ? b.createdAt : 0;
+      return bTime - aTime;
+    });
+    return notificationList;
   };
 
   public getOne = async (id: string) => {
