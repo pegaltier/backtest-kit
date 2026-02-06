@@ -3,6 +3,7 @@ build/*
 node_modules
 .DS_Store
 wwwroot
+docs/packages
 logs
 tmp
 generated
