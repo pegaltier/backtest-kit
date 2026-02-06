@@ -28,6 +28,7 @@ import { ReportFn } from "../contract/ReportFn.contract";
  */
 const fetchBookData = Cache.fn(lib.bookDataMathService.getReport, {
   interval: "5m",
+  key: ([symbol]) => `${symbol}`,
 });
 
 /**

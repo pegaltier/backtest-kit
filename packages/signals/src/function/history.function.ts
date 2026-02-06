@@ -26,6 +26,7 @@ import { ReportFn } from "../contract/ReportFn.contract";
  */
 const fetchHourHistory = Cache.fn(lib.hourCandleHistoryService.getReport, {
   interval: "30m",
+  key: ([symbol]) => `${symbol}`,
 });
 
 /**
@@ -36,6 +37,7 @@ const fetchThirtyMinuteHistory = Cache.fn(
   lib.thirtyMinuteCandleHistoryService.getReport,
   {
     interval: "15m",
+    key: ([symbol]) => `${symbol}`,
   }
 );
 
@@ -47,6 +49,7 @@ const fetchFifteenMinuteHistory = Cache.fn(
   lib.fifteenMinuteCandleHistoryService.getReport,
   {
     interval: "5m",
+    key: ([symbol]) => `${symbol}`,
   }
 );
 
@@ -58,6 +61,7 @@ const fetchOneMinuteHistory = Cache.fn(
   lib.oneMinuteCandleHistoryService.getReport,
   {
     interval: "1m",
+    key: ([symbol]) => `${symbol}`,
   }
 );
 

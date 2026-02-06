@@ -28,6 +28,7 @@ import { ReportFn } from "../contract/ReportFn.contract";
  */
 const fetchMicroTermMath = Cache.fn(lib.microTermMathService.getReport, {
   interval: "1m",
+  key: ([symbol]) => `${symbol}`,
 });
 
 /**
@@ -36,6 +37,7 @@ const fetchMicroTermMath = Cache.fn(lib.microTermMathService.getReport, {
  */
 const fetchShortTermMath = Cache.fn(lib.shortTermMathService.getReport, {
   interval: "5m",
+  key: ([symbol]) => `${symbol}`,
 });
 
 /**
@@ -44,6 +46,7 @@ const fetchShortTermMath = Cache.fn(lib.shortTermMathService.getReport, {
  */
 const fetchSwingTermMath = Cache.fn(lib.swingTermMathService.getReport, {
   interval: "15m",
+  key: ([symbol]) => `${symbol}`,
 });
 
 /**
@@ -52,6 +55,7 @@ const fetchSwingTermMath = Cache.fn(lib.swingTermMathService.getReport, {
  */
 const fetchLongTermMath = Cache.fn(lib.longTermMathService.getReport, {
   interval: "30m",
+  key: ([symbol]) => `${symbol}`,
 });
 
 /**
