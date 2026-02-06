@@ -106,6 +106,12 @@ interface ICache<T extends Function = Function> {
 }
 
 /**
+ * A unique symbol representing a value that should never occur.
+ * Used as default key when no key function is provided.
+ */
+const NEVER_VALUE = Symbol("never");
+
+/**
  * Instance class for caching function results with timeframe-based invalidation.
  *
  * Provides automatic cache invalidation based on candle intervals.
@@ -113,6 +119,7 @@ interface ICache<T extends Function = Function> {
  * Cache is invalidated when the current time moves to a different interval.
  *
  * @template T - Function type to cache
+ * @template K - Key type for argument-based caching
  *
  * @example
  * ```typescript
@@ -123,17 +130,22 @@ interface ICache<T extends Function = Function> {
  * const result3 = instance.run(arg1, arg2); // Recomputed
  * ```
  */
-export class CacheInstance<T extends Function = Function> {
-  /** Cache map storing results per strategy/exchange/mode combination */
-  private _cacheMap = new Map<Key, ICache<T>>();
+export class CacheInstance<T extends Function = Function, K = string> {
+  /** Cache map storing results per strategy/exchange/mode/argKey combination */
+  private _cacheMap = new Map<string, ICache<T>>();
 
   /**
    * Creates a new CacheInstance for a specific function and interval.
    *
    * @param fn - Function to cache
    * @param interval - Candle interval for cache invalidation (e.g., "1m", "1h")
+   * @param key - Optional key generator function for argument-based caching
    */
-  constructor(readonly fn: T, readonly interval: CandleInterval) {}
+  constructor(
+    readonly fn: T,
+    readonly interval: CandleInterval,
+    readonly key: (args: Parameters<T>) => K = () => NEVER_VALUE as K
+  ) {}
 
   /**
    * Execute function with caching based on timeframe intervals.
@@ -185,12 +197,14 @@ export class CacheInstance<T extends Function = Function> {
       }
     }
 
-    const key = CREATE_KEY_FN(
+    const contextKey = CREATE_KEY_FN(
       backtest.methodContextService.context.strategyName,
       backtest.methodContextService.context.exchangeName,
       backtest.methodContextService.context.frameName,
       backtest.executionContextService.context.backtest
     );
+    const argKey = String(this.key(args));
+    const key = `${contextKey}:${argKey}`;
     const currentWhen = backtest.executionContextService.context.when;
     const cached = this._cacheMap.get(key);
 
@@ -212,13 +226,13 @@ export class CacheInstance<T extends Function = Function> {
   };
 
   /**
-   * Clear cached value for current execution context.
+   * Clear cached values for current execution context.
    *
-   * Removes the cached entry for the current strategy/exchange/mode combination
+   * Removes all cached entries for the current strategy/exchange/mode combination
    * from this instance's cache map. The next `run()` call will recompute the value.
    *
    * Requires active execution context (strategy, exchange, backtest mode) and method context
-   * to determine which cache entry to clear.
+   * to determine which cache entries to clear.
    *
    * @example
    * ```typescript
@@ -226,19 +240,24 @@ export class CacheInstance<T extends Function = Function> {
    * const result1 = instance.run("BTCUSDT", 14); // Computed
    * const result2 = instance.run("BTCUSDT", 14); // Cached
    *
-   * instance.clear(); // Clear cache for current context
+   * instance.clear(); // Clear all cache entries for current context
    *
    * const result3 = instance.run("BTCUSDT", 14); // Recomputed
    * ```
    */
   public clear = () => {
-    const key = CREATE_KEY_FN(
+    const contextKey = CREATE_KEY_FN(
       backtest.methodContextService.context.strategyName,
       backtest.methodContextService.context.exchangeName,
       backtest.methodContextService.context.frameName,
       backtest.executionContextService.context.backtest
     );
-    this._cacheMap.delete(key);
+    const prefix = `${contextKey}:`;
+    for (const key of this._cacheMap.keys()) {
+      if (key.startsWith(prefix)) {
+        this._cacheMap.delete(key);
+      }
+    }
   };
 }
 
@@ -264,8 +283,11 @@ export class CacheUtils {
    */
   private _getInstance = memoize(
     ([run]) => run,
-    (run: Function, interval: CandleInterval) =>
-      new CacheInstance(run, interval)
+    <T extends Function, K>(
+      run: T,
+      interval: CandleInterval,
+      key?: (args: Parameters<T>) => K
+    ) => new CacheInstance(run, interval, key)
   );
 
   /**
@@ -275,8 +297,10 @@ export class CacheUtils {
    * and invalidates based on the specified candle interval.
    *
    * @template T - Function type to cache
+   * @template K - Key type for argument-based caching
    * @param run - Function to wrap with caching
-   * @param interval - Candle interval for cache invalidation (e.g., "1m", "1h")
+   * @param context.interval - Candle interval for cache invalidation (e.g., "1m", "1h")
+   * @param context.key - Optional key generator function for argument-based caching
    * @returns Wrapped function with automatic caching
    *
    * @example
@@ -286,15 +310,24 @@ export class CacheUtils {
    *   return result;
    * };
    *
-   * const cachedCalculate = Cache.fn(calculateIndicator, "15m");
-   * const result = cachedCalculate("BTCUSDT", 14); // Computed
-   * const result2 = cachedCalculate("BTCUSDT", 14); // Cached (same 15m interval)
+   * // Without key - single cache entry per context
+   * const cachedCalculate = Cache.fn(calculateIndicator, { interval: "15m" });
+   *
+   * // With key - separate cache entries per symbol
+   * const cachedCalculate = Cache.fn(calculateIndicator, {
+   *   interval: "15m",
+   *   key: ([symbol]) => symbol,
+   * });
+   * const result1 = cachedCalculate("BTCUSDT", 14); // Computed
+   * const result2 = cachedCalculate("ETHUSDT", 14); // Computed (different key)
+   * const result3 = cachedCalculate("BTCUSDT", 14); // Cached (same key, same interval)
    * ```
    */
-  public fn = <T extends Function>(
+  public fn = <T extends Function, K = symbol>(
     run: T,
     context: {
       interval: CandleInterval;
+      key?: (args: Parameters<T>) => K;
     }
   ): T => {
     backtest.loggerService.info(CACHE_METHOD_NAME_FN, {
@@ -302,7 +335,7 @@ export class CacheUtils {
     });
 
     const wrappedFn = (...args: Parameters<T>): ReturnType<T> => {
-      const instance = this._getInstance(run, context.interval);
+      const instance = this._getInstance(run, context.interval, context.key);
       return instance.run(...args).value;
     };
 

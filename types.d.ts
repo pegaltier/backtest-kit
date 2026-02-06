@@ -13901,8 +13901,10 @@ declare class CacheUtils {
      * and invalidates based on the specified candle interval.
      *
      * @template T - Function type to cache
+     * @template K - Key type for argument-based caching
      * @param run - Function to wrap with caching
-     * @param interval - Candle interval for cache invalidation (e.g., "1m", "1h")
+     * @param context.interval - Candle interval for cache invalidation (e.g., "1m", "1h")
+     * @param context.key - Optional key generator function for argument-based caching
      * @returns Wrapped function with automatic caching
      *
      * @example
@@ -13912,13 +13914,22 @@ declare class CacheUtils {
      *   return result;
      * };
      *
-     * const cachedCalculate = Cache.fn(calculateIndicator, "15m");
-     * const result = cachedCalculate("BTCUSDT", 14); // Computed
-     * const result2 = cachedCalculate("BTCUSDT", 14); // Cached (same 15m interval)
+     * // Without key - single cache entry per context
+     * const cachedCalculate = Cache.fn(calculateIndicator, { interval: "15m" });
+     *
+     * // With key - separate cache entries per symbol
+     * const cachedCalculate = Cache.fn(calculateIndicator, {
+     *   interval: "15m",
+     *   key: ([symbol]) => symbol,
+     * });
+     * const result1 = cachedCalculate("BTCUSDT", 14); // Computed
+     * const result2 = cachedCalculate("ETHUSDT", 14); // Computed (different key)
+     * const result3 = cachedCalculate("BTCUSDT", 14); // Cached (same key, same interval)
      * ```
      */
-    fn: <T extends Function>(run: T, context: {
+    fn: <T extends Function, K = symbol>(run: T, context: {
         interval: CandleInterval;
+        key?: (args: Parameters<T>) => K;
     }) => T;
     /**
      * Flush (remove) cached CacheInstance for a specific function or all functions.
