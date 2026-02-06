@@ -12,6 +12,8 @@ const CACHE_METHOD_NAME_CLEAR = "CacheInstance.clear";
 const CACHE_METHOD_NAME_RUN = "CacheInstance.run";
 const CACHE_METHOD_NAME_FN = "CacheUtils.fn";
 
+const MS_PER_MINUTE = 60_000;
+
 const INTERVAL_MINUTES: Record<CandleInterval, number> = {
   "1m": 1,
   "3m": 3,
@@ -23,6 +25,35 @@ const INTERVAL_MINUTES: Record<CandleInterval, number> = {
   "4h": 240,
   "6h": 360,
   "8h": 480,
+};
+
+/**
+ * Aligns timestamp down to the nearest interval boundary.
+ * For example, for 15m interval: 00:17 -> 00:15, 00:44 -> 00:30
+ *
+ * @param timestamp - Timestamp in milliseconds
+ * @param interval - Candle interval
+ * @returns Aligned timestamp rounded down to interval boundary
+ * @throws Error if interval is unknown
+ *
+ * @example
+ * ```typescript
+ * // Align to 15-minute boundary
+ * const aligned = align(new Date("2025-10-01T00:35:00Z").getTime(), "15m");
+ * // Returns timestamp for 2025-10-01T00:30:00Z
+ *
+ * // Align to 1-hour boundary
+ * const aligned = align(new Date("2025-10-01T01:47:00Z").getTime(), "1h");
+ * // Returns timestamp for 2025-10-01T01:00:00Z
+ * ```
+ */
+const align = (timestamp: number, interval: CandleInterval): number => {
+  const intervalMinutes = INTERVAL_MINUTES[interval];
+  if (!intervalMinutes) {
+    throw new Error(`align: unknown interval=${interval}`);
+  }
+  const intervalMs = intervalMinutes * MS_PER_MINUTE;
+  return Math.floor(timestamp / intervalMs) * intervalMs;
 };
 
 /**
@@ -164,9 +195,9 @@ export class CacheInstance<T extends Function = Function> {
     const cached = this._cacheMap.get(key);
 
     if (cached) {
-      const stepMs = step * 60 * 1000;
-      const elapsed = currentWhen.getTime() - cached.when.getTime();
-      if (elapsed >= 0 && elapsed < stepMs) {
+      const currentAligned = align(currentWhen.getTime(), this.interval);
+      const cachedAligned = align(cached.when.getTime(), this.interval);
+      if (currentAligned === cachedAligned) {
         return cached;
       }
     }
