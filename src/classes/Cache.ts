@@ -10,6 +10,7 @@ import { FrameName } from "../interfaces/Frame.interface";
 const CACHE_METHOD_NAME_FLUSH = "CacheUtils.flush";
 const CACHE_METHOD_NAME_CLEAR = "CacheInstance.clear";
 const CACHE_METHOD_NAME_RUN = "CacheInstance.run";
+const CACHE_METHOD_NAME_GC = "CacheInstance.gc";
 const CACHE_METHOD_NAME_FN = "CacheUtils.fn";
 
 const MS_PER_MINUTE = 60_000;
@@ -259,6 +260,41 @@ export class CacheInstance<T extends Function = Function, K = string> {
       }
     }
   };
+
+  /**
+   * Garbage collect expired cache entries.
+   *
+   * Removes all cached entries whose interval has expired (not aligned with current time).
+   * Call this periodically to free memory from stale cache entries.
+   *
+   * Requires active execution context to get current time.
+   *
+   * @returns Number of entries removed
+   *
+   * @example
+   * ```typescript
+   * const instance = new CacheInstance(calculateIndicator, "1h");
+   * instance.run("BTCUSDT", 14); // Cached at 10:00
+   * instance.run("ETHUSDT", 14); // Cached at 10:00
+   * // Time passes to 11:00
+   * const removed = instance.gc(); // Returns 2, removes both expired entries
+   * ```
+   */
+  public gc = (): number => {
+    const currentWhen = backtest.executionContextService.context.when;
+    const currentAligned = align(currentWhen.getTime(), this.interval);
+    let removed = 0;
+
+    for (const [key, cached] of this._cacheMap.entries()) {
+      const cachedAligned = align(cached.when.getTime(), this.interval);
+      if (currentAligned !== cachedAligned) {
+        this._cacheMap.delete(key);
+        removed++;
+      }
+    }
+
+    return removed;
+  };
 }
 
 /**
@@ -412,6 +448,39 @@ export class CacheUtils {
       run,
     });
     this._getInstance.get(run).clear();
+  };
+
+  /**
+   * Garbage collect expired cache entries for a specific function.
+   *
+   * Removes all cached entries whose interval has expired (not aligned with current time).
+   * Call this periodically to free memory from stale cache entries.
+   *
+   * Requires active execution context to get current time.
+   *
+   * @template T - Function type
+   * @param run - Function whose expired cache entries should be removed
+   * @returns Number of entries removed
+   *
+   * @example
+   * ```typescript
+   * const cachedFn = Cache.fn(calculateIndicator, { interval: "1h" });
+   *
+   * cachedFn("BTCUSDT", 14); // Cached at 10:00
+   * cachedFn("ETHUSDT", 14); // Cached at 10:00
+   * // Time passes to 11:00
+   * const removed = Cache.gc(calculateIndicator); // Returns 2
+   * ```
+   */
+  public gc = <T extends Function>(run: T) => {
+    backtest.loggerService.info(CACHE_METHOD_NAME_GC, {
+      run,
+    });
+    if (ExecutionContextService.hasContext()) {
+      console.warn(`${CACHE_METHOD_NAME_GC} called without execution context, skipping garbage collection`);
+      return;
+    }
+    return this._getInstance.get(run).gc();
   };
 }
 
