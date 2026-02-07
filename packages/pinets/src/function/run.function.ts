@@ -6,6 +6,7 @@ import { PlotModel } from "../model/Plot.model";
 import ExchangeContextService, {
   ExchangeName,
 } from "../lib/services/context/ExchangeContextService";
+import { str } from "functools-kit";
 
 const METHOD_NAME_RUN = "run.run";
 
@@ -29,6 +30,17 @@ const BASE_RUNNER_FN = async (
   timeframe: CandleInterval,
   limit: number,
 ) => await lib.pineJobService.run(script, symbol, timeframe, limit);
+
+const VALIDATE_NO_TRADING_FN = async () => {
+  if (ExecutionContextService.hasContext()) {
+    throw new Error(
+      str.newline(
+        "Time overrides are not allowed when running scripts in a trading context.",
+        "Please remove the 'when' parameter from the run function call.",
+      ),
+    );
+  }
+}
 
 const CREATE_INFERENCE_FN = (
   script: Code,
@@ -63,6 +75,9 @@ const RUN_INFERENCE_FN = async (
   exchangeName?: ExchangeName,
   when?: Date,
 ) => {
+  if (when) {
+    VALIDATE_NO_TRADING_FN();
+  }
   const inference = CREATE_INFERENCE_FN(
     script,
     symbol,
