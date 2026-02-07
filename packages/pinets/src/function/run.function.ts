@@ -31,11 +31,16 @@ const BASE_RUNNER_FN = async (
 ) => await lib.pineJobService.run(script, symbol, timeframe, limit);
 
 const CREATE_INFERENCE_FN = (
+  script: Code,
   symbol: string,
+  timeframe: CandleInterval,
+  limit: number,
   exchangeName?: ExchangeName,
   when?: Date,
 ) => {
-  let fn = () => BASE_RUNNER_FN;
+  let fn = () => BASE_RUNNER_FN(
+    script, symbol, timeframe, limit
+  );
 
   if (exchangeName) {
     fn = ExchangeContextService.runWithContext(fn, { exchangeName });
@@ -49,7 +54,7 @@ const CREATE_INFERENCE_FN = (
     });
   }
 
-  return fn();
+  return fn;
 };
 
 const RUN_INFERENCE_FN = async (
@@ -60,8 +65,8 @@ const RUN_INFERENCE_FN = async (
   exchangeName?: ExchangeName,
   when?: Date,
 ) => {
-  const inference = CREATE_INFERENCE_FN(symbol, exchangeName, when);
-  return await inference(script, symbol, timeframe, limit);
+  const inference = CREATE_INFERENCE_FN(script, symbol, timeframe, limit, exchangeName, when);
+  return await inference();
 };
 
 interface IRunParams {
