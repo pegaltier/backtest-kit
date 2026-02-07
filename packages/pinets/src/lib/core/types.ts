@@ -1,5 +1,6 @@
 const baseServices = {
     loggerService: Symbol("loggerService"),
+    contextService: Symbol("contextService"),
 }
 
 const providerServices = {

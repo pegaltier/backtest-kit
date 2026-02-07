@@ -1,14 +1,52 @@
-import { CandleInterval, getRawCandles } from "backtest-kit";
+import {
+  CandleInterval,
+  Exchange,
+  ExecutionContextService,
+  getRawCandles,
+  MethodContextService,
+} from "backtest-kit";
 import { IProvider } from "../../../interface/Provider.interface";
 import { inject } from "../../core/di";
 import { CandleModel } from "../../../model/Candle.model";
 import { SymbolInfoModel } from "../../../model/SymbolInfo.model";
 import LoggerService from "../base/LoggerService";
 import { TYPES } from "../../core/types";
+import ContextService, { TContextService } from "../base/ContextService";
+
+const GET_RAW_CANDLES_FN = async (
+  self: CandleProviderService,
+  symbol: string,
+  interval: CandleInterval,
+  limit?: number,
+  sDate?: number,
+  eDate?: number,
+) => {
+  if (ContextService.hasContext()) {
+    return await Exchange.getRawCandles(
+      symbol,
+      interval,
+      self.contextService.context,
+      limit,
+      sDate,
+      eDate,
+    );
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error(
+      "MethodContextService context is required to get market data for pinets if exchangeName?: string is not specified",
+    );
+  }
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error(
+      "ExecutionContextService context is required to get market data for pinets if exchangeName?: string is not specified",
+    );
+  }
+  return await getRawCandles(symbol, interval, limit, sDate, eDate);
+};
 
 export class CandleProviderService implements IProvider {
-
-  private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
+  readonly loggerService = inject<LoggerService>(TYPES.loggerService);
+  readonly contextService = inject<TContextService>(TYPES.contextService);
 
   async getMarketData(
     tickerId: string,
@@ -17,7 +55,6 @@ export class CandleProviderService implements IProvider {
     sDate?: number,
     eDate?: number,
   ): Promise<any[]> {
-
     this.loggerService.log("candleProviderService getMarketData", {
       tickerId,
       timeframe,
@@ -30,13 +67,15 @@ export class CandleProviderService implements IProvider {
       .toUpperCase()
       .replace(/^BINANCE:|^BYBIT:|^OKX:/, "");
 
-    const rawCandles = await getRawCandles(
+    const rawCandles = await GET_RAW_CANDLES_FN(
+      this,
       symbol,
       <CandleInterval>timeframe,
       limit,
       sDate,
       eDate,
     );
+
     const candles: CandleModel[] = rawCandles.map((c) => ({
       openTime: c.timestamp,
       open: c.open,
@@ -50,7 +89,6 @@ export class CandleProviderService implements IProvider {
   }
 
   async getSymbolInfo(tickerId: string): Promise<any> {
-
     this.loggerService.log("candleProviderService getSymbolInfo", {
       tickerId,
     });

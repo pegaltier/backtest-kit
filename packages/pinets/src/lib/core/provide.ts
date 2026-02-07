@@ -8,9 +8,11 @@ import PineConnectionService from "../services/connection/PineConnectionService"
 import PineMarkdownService from "../services/markdown/PineMarkdownService";
 import { provide } from "./di";
 import { TYPES } from "./types";
+import ContextService from "../services/base/ContextService";
 
 {
     provide(TYPES.loggerService, () => new LoggerService());
+    provide(TYPES.contextService, () => new ContextService());
 }
 
 {

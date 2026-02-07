@@ -11,9 +11,11 @@ import PineDataService from "./services/data/PineDataService";
 import PineCacheService from "./services/cache/PineCacheService";
 import PineConnectionService from "./services/connection/PineConnectionService";
 import PineMarkdownService from "./services/markdown/PineMarkdownService";
+import { TContextService } from "./services/base/ContextService";
 
 const commonServices = {
   loggerService: inject<LoggerService>(TYPES.loggerService),
+  contextService: inject<TContextService>(TYPES.contextService),
 };
 
 const providerServices = {
