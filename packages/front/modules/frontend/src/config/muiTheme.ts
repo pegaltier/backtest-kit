@@ -151,12 +151,16 @@ export const muiTheme = createTheme({
     MuiSnackbar: {
       styleOverrides: {
         root: {
-          border: "1px solid black",
-          borderRadius: "4px",
-          boxShadow: "0 0 5px 2px grey",
+          boxShadow: "none",
+          border: "unset",
           "& > *": {
             color: "black !important",
           },
+          "& > .MuiPaper-root": {
+            border: "1px solid black",
+            borderRadius: "12px",
+            boxShadow: "0 0 5px 2px grey",
+          }
         },
       },
     },

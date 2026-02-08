@@ -14,6 +14,7 @@ import { CC_FULLSCREEN_SIZE_REQUEST } from "../../config/params";
 import tabs from "./tabs";
 import { Box, Stack } from "@mui/material";
 import ioc from "../../lib";
+import CopyIcon from "./components/CopyIcon";
 
 const DEFAULT_PATH = "/signal";
 const CACHE_TTL = 45_000;
@@ -73,6 +74,35 @@ const handleDownload = async (pathname: string, id: string) => {
   }
 };
 
+const handleCopy = async (pathname: string, id: string, onCopy: (content: string) => void) => {
+ const { candle_15m, candle_1h, candle_1m, signal, notification } = await fetchData(id);
+
+  if (pathname.includes("/signal")) {
+    onCopy(JSON.stringify(signal, null, 2));
+    return;
+  } 
+
+  if (pathname.includes("/notification")) {
+    onCopy(JSON.stringify(notification, null, 2));
+    return;
+  } 
+  
+  if (pathname.includes("/candle_1m")) {
+    onCopy(JSON.stringify(candle_1m, null, 2));
+    return;
+  } 
+  
+  if (pathname.includes("/candle_15m")) {
+    onCopy(JSON.stringify(candle_15m, null, 2));
+    return;
+  } 
+  
+  if (pathname.includes("/candle_1h")) {
+    onCopy(JSON.stringify(candle_1h, null, 2));
+    return;
+  }
+}
+
 export const useSignalView = () => {
 
   const [id$, setId] = useActualState("");
@@ -130,6 +160,12 @@ export const useSignalView = () => {
     },
     AfterTitle: ({ onClose }) => (
       <Stack direction="row" gap={1}>
+        <CopyIcon
+          onClick={async (_, onCopy) => {
+            await handleCopy(pathname$.current, id$.current, onCopy)
+          }}
+          sx={{ mr: "10px", mt: "2.5px" }}
+        />
         <ActionIcon onClick={() => handleDownload(pathname$.current, id$.current)}>
           <Download />
         </ActionIcon>

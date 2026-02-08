@@ -14,6 +14,7 @@ import { CC_FULLSCREEN_SIZE_REQUEST } from "../../config/params";
 import tabs from "./tabs";
 import { Box, Stack } from "@mui/material";
 import ioc from "../../lib";
+import CopyIcon from "./components/CopyIcon";
 import { PartialLossAvailableNotification } from "backtest-kit";
 
 const DEFAULT_PATH = "/partial_loss_available";
@@ -92,6 +93,30 @@ const handleDownload = async (pathname: string, id: string) => {
   }
 };
 
+const handleCopy = async (pathname: string, id: string, onCopy: (content: string) => void) => {
+  const { candle_15m, candle_1h, candle_1m, partial_loss_available } = await fetchData(id);
+
+  if (pathname.includes("/partial_loss_available")) {
+    onCopy(JSON.stringify(partial_loss_available, null, 2));
+    return;
+  }
+
+  if (pathname.includes("/candle_1m")) {
+    onCopy(JSON.stringify(candle_1m, null, 2));
+    return;
+  }
+
+  if (pathname.includes("/candle_15m")) {
+    onCopy(JSON.stringify(candle_15m, null, 2));
+    return;
+  }
+
+  if (pathname.includes("/candle_1h")) {
+    onCopy(JSON.stringify(candle_1h, null, 2));
+    return;
+  }
+};
+
 export const usePartialLossAvailableView = () => {
 
   const [id$, setId] = useActualState("");
@@ -145,6 +170,12 @@ export const usePartialLossAvailableView = () => {
     },
     AfterTitle: ({ onClose }) => (
       <Stack direction="row" gap={1}>
+        <CopyIcon
+          onClick={async (_, onCopy) => {
+            await handleCopy(pathname$.current, id$.current, onCopy)
+          }}
+          sx={{ mr: "10px", mt: "2.5px" }}
+        />
         <ActionIcon onClick={() => handleDownload(pathname$.current, id$.current)}>
           <Download />
         </ActionIcon>
