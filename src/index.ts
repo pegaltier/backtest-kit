@@ -1,4 +1,5 @@
 export { getBacktestTimeframe } from "./function/timeframe";
+export { warmCandles } from "./function/cache";
 export { validate } from "./function/validate";
 export {
   getStrategySchema,

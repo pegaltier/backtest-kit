@@ -12,114 +12,6 @@ import { WriteStream } from 'fs';
 declare function getBacktestTimeframe(symbol: string): Promise<Date[]>;
 
 /**
- * Type alias for enum objects with string key-value pairs
- */
-type Enum = Record<string, string>;
-/**
- * Type alias for ValidateArgs with any enum type
- */
-type Args = ValidateArgs<any>;
-/**
- * Interface defining validation arguments for all entity types.
- *
- * Each property accepts an enum object where values will be validated
- * against registered entities in their respective validation services.
- *
- * @template T - Enum type extending Record<string, string>
- */
-interface ValidateArgs<T = Enum> {
-    /**
-     * Exchange name enum to validate
-     * @example { BINANCE: "binance", BYBIT: "bybit" }
-     */
-    ExchangeName?: T;
-    /**
-     * Frame (timeframe) name enum to validate
-     * @example { Q1_2024: "2024-Q1", Q2_2024: "2024-Q2" }
-     */
-    FrameName?: T;
-    /**
-     * Strategy name enum to validate
-     * @example { MOMENTUM_BTC: "momentum-btc" }
-     */
-    StrategyName?: T;
-    /**
-     * Risk profile name enum to validate
-     * @example { CONSERVATIVE: "conservative", AGGRESSIVE: "aggressive" }
-     */
-    RiskName?: T;
-    /**
-     * Action handler name enum to validate
-     * @example { TELEGRAM_NOTIFIER: "telegram-notifier" }
-     */
-    ActionName?: T;
-    /**
-     * Sizing strategy name enum to validate
-     * @example { FIXED_1000: "fixed-1000" }
-     */
-    SizingName?: T;
-    /**
-     * Walker (parameter sweep) name enum to validate
-     * @example { RSI_SWEEP: "rsi-sweep" }
-     */
-    WalkerName?: T;
-}
-/**
- * Validates the existence of all provided entity names across validation services.
- *
- * This function accepts enum objects for various entity types (exchanges, frames,
- * strategies, risks, sizings, walkers) and validates that each entity
- * name exists in its respective registry. Validation results are memoized for performance.
- *
- * If no arguments are provided (or specific entity types are omitted), the function
- * automatically fetches and validates ALL registered entities from their respective
- * validation services. This is useful for comprehensive validation of the entire setup.
- *
- * Use this before running backtests or optimizations to ensure all referenced
- * entities are properly registered and configured.
- *
- * @public
- * @param args - Partial validation arguments containing entity name enums to validate.
- *                If empty or omitted, validates all registered entities.
- * @throws {Error} If any entity name is not found in its validation service
- *
- * @example
- * ```typescript
- * // Validate ALL registered entities (exchanges, frames, strategies, etc.)
- * await validate({});
- * ```
- *
- * @example
- * ```typescript
- * // Define your entity name enums
- * enum ExchangeName {
- *   BINANCE = "binance",
- *   BYBIT = "bybit"
- * }
- *
- * enum StrategyName {
- *   MOMENTUM_BTC = "momentum-btc"
- * }
- *
- * // Validate specific entities before running backtest
- * await validate({
- *   ExchangeName,
- *   StrategyName,
- * });
- * ```
- *
- * @example
- * ```typescript
- * // Validate specific entity types
- * await validate({
- *   RiskName: { CONSERVATIVE: "conservative" },
- *   SizingName: { FIXED_1000: "fixed-1000" },
- * });
- * ```
- */
-declare function validate(args?: Partial<Args>): Promise<void>;
-
-/**
  * Execution context containing runtime parameters for strategy/exchange operations.
  *
  * Propagated through ExecutionContextService to provide implicit context
@@ -417,6 +309,138 @@ interface IExchange {
  * Unique exchange identifier.
  */
 type ExchangeName = string;
+
+/**
+ * Parameters for pre-caching candles into persist storage.
+ * Used to download historical candle data before running a backtest.
+ */
+interface ICacheCandlesParams {
+    /** Trading pair symbol (e.g., "BTCUSDT") */
+    symbol: string;
+    /** Name of the registered exchange schema */
+    exchangeName: ExchangeName;
+    /** Candle time interval (e.g., "1m", "4h") */
+    interval: CandleInterval;
+    /** Start date of the caching range (inclusive) */
+    from: Date;
+    /** End date of the caching range (inclusive) */
+    to: Date;
+}
+/**
+ * Pre-caches candles for a date range into persist storage.
+ * Downloads all candles matching the interval from `from` to `to`.
+ *
+ * @param params - Cache parameters
+ */
+declare function warmCandles(params: ICacheCandlesParams): Promise<void>;
+
+/**
+ * Type alias for enum objects with string key-value pairs
+ */
+type Enum = Record<string, string>;
+/**
+ * Type alias for ValidateArgs with any enum type
+ */
+type Args = ValidateArgs<any>;
+/**
+ * Interface defining validation arguments for all entity types.
+ *
+ * Each property accepts an enum object where values will be validated
+ * against registered entities in their respective validation services.
+ *
+ * @template T - Enum type extending Record<string, string>
+ */
+interface ValidateArgs<T = Enum> {
+    /**
+     * Exchange name enum to validate
+     * @example { BINANCE: "binance", BYBIT: "bybit" }
+     */
+    ExchangeName?: T;
+    /**
+     * Frame (timeframe) name enum to validate
+     * @example { Q1_2024: "2024-Q1", Q2_2024: "2024-Q2" }
+     */
+    FrameName?: T;
+    /**
+     * Strategy name enum to validate
+     * @example { MOMENTUM_BTC: "momentum-btc" }
+     */
+    StrategyName?: T;
+    /**
+     * Risk profile name enum to validate
+     * @example { CONSERVATIVE: "conservative", AGGRESSIVE: "aggressive" }
+     */
+    RiskName?: T;
+    /**
+     * Action handler name enum to validate
+     * @example { TELEGRAM_NOTIFIER: "telegram-notifier" }
+     */
+    ActionName?: T;
+    /**
+     * Sizing strategy name enum to validate
+     * @example { FIXED_1000: "fixed-1000" }
+     */
+    SizingName?: T;
+    /**
+     * Walker (parameter sweep) name enum to validate
+     * @example { RSI_SWEEP: "rsi-sweep" }
+     */
+    WalkerName?: T;
+}
+/**
+ * Validates the existence of all provided entity names across validation services.
+ *
+ * This function accepts enum objects for various entity types (exchanges, frames,
+ * strategies, risks, sizings, walkers) and validates that each entity
+ * name exists in its respective registry. Validation results are memoized for performance.
+ *
+ * If no arguments are provided (or specific entity types are omitted), the function
+ * automatically fetches and validates ALL registered entities from their respective
+ * validation services. This is useful for comprehensive validation of the entire setup.
+ *
+ * Use this before running backtests or optimizations to ensure all referenced
+ * entities are properly registered and configured.
+ *
+ * @public
+ * @param args - Partial validation arguments containing entity name enums to validate.
+ *                If empty or omitted, validates all registered entities.
+ * @throws {Error} If any entity name is not found in its validation service
+ *
+ * @example
+ * ```typescript
+ * // Validate ALL registered entities (exchanges, frames, strategies, etc.)
+ * await validate({});
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Define your entity name enums
+ * enum ExchangeName {
+ *   BINANCE = "binance",
+ *   BYBIT = "bybit"
+ * }
+ *
+ * enum StrategyName {
+ *   MOMENTUM_BTC = "momentum-btc"
+ * }
+ *
+ * // Validate specific entities before running backtest
+ * await validate({
+ *   ExchangeName,
+ *   StrategyName,
+ * });
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Validate specific entity types
+ * await validate({
+ *   RiskName: { CONSERVATIVE: "conservative" },
+ *   SizingName: { FIXED_1000: "fixed-1000" },
+ * });
+ * ```
+ */
+declare function validate(args?: Partial<Args>): Promise<void>;
 
 /**
  * Timeframe interval for backtest period generation.
@@ -20774,4 +20798,4 @@ declare const backtest: {
     loggerService: LoggerService;
 };
 
-export { ActionBase, type ActivateScheduledCommit, type ActivateScheduledCommitNotification, type ActivePingContract, Backtest, type BacktestStatisticsModel, Breakeven, type BreakevenAvailableNotification, type BreakevenCommit, type BreakevenCommitNotification, type BreakevenContract, type BreakevenData, Cache, type CancelScheduledCommit, type CandleData, type CandleInterval, type ClosePendingCommit, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IActivateScheduledCommitRow, type IBidData, type IBreakevenCommitRow, type ICandleData, type ICommitRow, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type INotificationUtils, type IOrderBookData, type IPartialLossCommitRow, type IPartialProfitCommitRow, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskSignalRow, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingParams, type ISizingParamsATR, type ISizingParamsFixedPercentage, type ISizingParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStorageSignalRow, type IStorageUtils, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IStrategyTickResultWaiting, type ITrailingStopCommitRow, type ITrailingTakeCommitRow, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, MethodContextService, type MetricStats, Notification, NotificationBacktest, type NotificationData, NotificationLive, type NotificationModel, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossAvailableNotification, type PartialLossCommit, type PartialLossCommitNotification, type PartialLossContract, type PartialProfitAvailableNotification, type PartialProfitCommit, type PartialProfitCommitNotification, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistNotificationAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PersistStorageAdapter, PositionSize, type ProgressBacktestContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, Storage, StorageBacktest, type StorageData, StorageLive, Strategy, type StrategyActionType, type StrategyCancelReason, type StrategyCloseReason, type StrategyCommitContract, type StrategyEvent, type StrategyStatisticsModel, type TMarkdownBase, type TNotificationUtilsCtor, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TStorageUtilsCtor, type TickEvent, type TrailingStopCommit, type TrailingStopCommitNotification, type TrailingTakeCommit, type TrailingTakeCommitNotification, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, commitActivateScheduled, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialProfit, commitTrailingStop, commitTrailingTake, emitters, formatPrice, formatQuantity, get, getActionSchema, getAveragePrice, getBacktestTimeframe, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getExchangeSchema, getFrameSchema, getMode, getNextCandles, getOrderBook, getRawCandles, getRiskSchema, getSizingSchema, getStrategySchema, getSymbol, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenStrategyCommit, listenStrategyCommitOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, roundTicks, set, setColumns, setConfig, setLogger, stopStrategy, validate };
+export { ActionBase, type ActivateScheduledCommit, type ActivateScheduledCommitNotification, type ActivePingContract, Backtest, type BacktestStatisticsModel, Breakeven, type BreakevenAvailableNotification, type BreakevenCommit, type BreakevenCommitNotification, type BreakevenContract, type BreakevenData, Cache, type CancelScheduledCommit, type CandleData, type CandleInterval, type ClosePendingCommit, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IActivateScheduledCommitRow, type IBidData, type IBreakevenCommitRow, type ICandleData, type ICommitRow, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type IMarkdownDumpOptions, type INotificationUtils, type IOrderBookData, type IPartialLossCommitRow, type IPartialProfitCommitRow, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskSignalRow, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingParams, type ISizingParamsATR, type ISizingParamsFixedPercentage, type ISizingParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStorageSignalRow, type IStorageUtils, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IStrategyTickResultWaiting, type ITrailingStopCommitRow, type ITrailingTakeCommitRow, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveStatisticsModel, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, MethodContextService, type MetricStats, Notification, NotificationBacktest, type NotificationData, NotificationLive, type NotificationModel, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossAvailableNotification, type PartialLossCommit, type PartialLossCommitNotification, type PartialLossContract, type PartialProfitAvailableNotification, type PartialProfitCommit, type PartialProfitCommitNotification, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistNotificationAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PersistStorageAdapter, PositionSize, type ProgressBacktestContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, Storage, StorageBacktest, type StorageData, StorageLive, Strategy, type StrategyActionType, type StrategyCancelReason, type StrategyCloseReason, type StrategyCommitContract, type StrategyEvent, type StrategyStatisticsModel, type TMarkdownBase, type TNotificationUtilsCtor, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TStorageUtilsCtor, type TickEvent, type TrailingStopCommit, type TrailingStopCommitNotification, type TrailingTakeCommit, type TrailingTakeCommitNotification, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, commitActivateScheduled, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialProfit, commitTrailingStop, commitTrailingTake, emitters, formatPrice, formatQuantity, get, getActionSchema, getAveragePrice, getBacktestTimeframe, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getExchangeSchema, getFrameSchema, getMode, getNextCandles, getOrderBook, getRawCandles, getRiskSchema, getSizingSchema, getStrategySchema, getSymbol, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenStrategyCommit, listenStrategyCommitOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, roundTicks, set, setColumns, setConfig, setLogger, stopStrategy, validate, warmCandles };
