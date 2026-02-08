@@ -401,16 +401,18 @@ class PersistBase<EntityName extends string = string> implements IPersistBase {
       entityName: this.entityName,
     });
     try {
-      const files = await fs.readdir(this._directory);
-      const entityIds = files
-        .filter((file) => file.endsWith(".json"))
-        .map((file) => file.slice(0, -5))
-        .sort((a, b) =>
-          a.localeCompare(b, undefined, {
-            numeric: true,
-            sensitivity: "base",
-          })
-        );
+      const entityIds: string[] = [];
+      for await (const entry of await fs.opendir(this._directory)) {
+        if (entry.isFile() && entry.name.endsWith(".json")) {
+          entityIds.push(entry.name.slice(0, -5));
+        }
+      }
+      entityIds.sort((a, b) =>
+        a.localeCompare(b, undefined, {
+          numeric: true,
+          sensitivity: "base",
+        })
+      );
       for (const entityId of entityIds) {
         yield entityId;
       }

@@ -150,7 +150,14 @@ export async function checkCandles(params: ICheckCandlesParams): Promise<void> {
   for (let i = 0; i < files.length; i++) {
     const filePath = join(dir, files[i]);
     const raw = await readFile(filePath, "utf-8");
-    const candle = JSON.parse(raw);
+    let candle: any;
+    try {
+      candle = JSON.parse(raw);
+    } catch {
+      throw new Error(
+        `checkCandles: ${files[i]} contains invalid JSON`,
+      );
+    }
     const { timestamp } = candle;
     const aligned = ALIGN_TO_INTERVAL_FN(timestamp, step);
 
