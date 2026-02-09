@@ -117,6 +117,11 @@ export {
 } from "./interfaces/Exchange.interface";
 
 export {
+  IPublicAction,
+  IActionSchema,
+} from "./interfaces/Action.interface";
+
+export {
   SignalInterval,
   ISignalDto,
   ISignalRow,
