@@ -340,6 +340,7 @@ export { type SignalData as WalkerSignalData } from "./model/WalkerStatistics.mo
 
 export * as emitters from "./config/emitters";
 
+export { alignToInterval } from "./utils/alignToInterval";
 export { roundTicks } from "./utils/roundTicks";
 export { parseArgs } from "./utils/parseArgs";
 export { get } from "./utils/get";
