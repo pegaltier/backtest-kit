@@ -17,7 +17,7 @@ const getExchange = singleshot(async () => {
 });
 
 addExchangeSchema({
-  exchangeName: "ccxt-exchange",
+  exchangeName: "binance_exchange",
   getCandles: async (symbol, interval, since, limit) => {
     const exchange = await getExchange();
     const candles = await exchange.fetchOHLCV(
@@ -40,7 +40,7 @@ addExchangeSchema({
 const from = new Date("2024-02-01T00:00:00Z");
 const to = new Date("2024-02-29T23:59:59Z");
 const symbol = "BTCUSDT";
-const exchangeName = "ccxt-exchange";
+const exchangeName = "binance_exchange";
 
 await warmCandles({ exchangeName, from, to, interval: "1m", symbol });
 await warmCandles({ exchangeName, from, to, interval: "15m", symbol });
