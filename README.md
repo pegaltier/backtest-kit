@@ -281,6 +281,53 @@ According to this `timestamp` of a candle in backtest-kit is exactly the `openTi
 - Adapter must return exactly `limit` candles
 - Sequential timestamps: `since + i * stepMs`
 
+
+### 🔍 How getOrderBook Works
+
+Order book fetching uses the same temporal alignment as candles, but with a configurable time offset window instead of candle intervals.
+
+  <details>
+    <summary>
+      The Math
+    </summary>
+
+    **Time range calculation:**
+    - `when` = current execution context time (from AsyncLocalStorage)
+    - `offsetMinutes` = `CC_ORDER_BOOK_TIME_OFFSET_MINUTES` (configurable)
+    - `alignedTo` = `Math.floor(when / (offsetMinutes * 60000)) * (offsetMinutes * 60000)`
+    - `to` = `alignedTo` (aligned down to offset boundary)
+    - `from` = `alignedTo - offsetMinutes * 60000`
+
+    **Adapter contract:**
+    - `getOrderBook(symbol, depth, from, to, backtest)` is called on the exchange schema
+    - `depth` defaults to `CC_ORDER_BOOK_MAX_DEPTH_LEVELS`
+    - The `from`/`to` range represents a time window of exactly `offsetMinutes` duration
+    - Schema implementation may use the time range (backtest) or ignore it (live trading)
+
+    **Example with CC_ORDER_BOOK_TIME_OFFSET_MINUTES = 10:**
+    ```
+    when = 1704067920000       // 2024-01-01 00:12:00 UTC
+    offsetMinutes = 10
+    offsetMs = 10 * 60000      // 600000ms
+
+    alignedTo = Math.floor(1704067920000 / 600000) * 600000
+              = 1704067800000  // 2024-01-01 00:10:00 UTC
+
+    to   = 1704067800000       // 00:10:00 UTC
+    from = 1704067200000       // 00:00:00 UTC
+    ```
+  </details>
+
+#### Order Book Timestamp Convention:
+
+The `from`/`to` range is a **lookback window**. The adapter selects the closest snapshot to `to` in backtest mode, or returns real-time data in live mode.
+
+**Key principles:**
+- Time range is aligned down to `CC_ORDER_BOOK_TIME_OFFSET_MINUTES` boundary
+- `to` = aligned timestamp, `from` = `to - offsetMinutes * 60000`
+- `depth` defaults to `CC_ORDER_BOOK_MAX_DEPTH_LEVELS`
+- Adapter receives `(symbol, depth, from, to, backtest)` — may ignore `from`/`to` in live mode
+
 ### 🔬 Technical Details: Timestamp Alignment
 
 **Why align timestamps to interval boundaries?**
