@@ -31,7 +31,7 @@ const BASE_RUNNER_FN = async (
   limit: number,
 ) => await lib.pineJobService.run(script, symbol, timeframe, limit);
 
-const VALIDATE_NO_TRADING_FN = async () => {
+const VALIDATE_NO_TRADING_FN = () => {
   if (ExecutionContextService.hasContext()) {
     throw new Error(
       str.newline(

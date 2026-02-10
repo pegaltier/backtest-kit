@@ -47,12 +47,12 @@ interface IExchangeContext {
     exchangeName: ExchangeName;
 }
 
-interface IRunParams {
+interface IRunParams$1 {
     symbol: string;
     timeframe: CandleInterval;
     limit: number;
 }
-declare function run(source: File | Code, { symbol, timeframe, limit }: IRunParams, exchangeName?: ExchangeName, when?: Date): Promise<PlotModel>;
+declare function run(source: File | Code, { symbol, timeframe, limit }: IRunParams$1, exchangeName?: ExchangeName, when?: Date): Promise<PlotModel>;
 
 type PlotExtractConfig<T = number> = {
     plot: string;
@@ -92,7 +92,13 @@ type ResultId$3 = string | number;
 declare function dumpPlotData<M extends PlotMapping>(signalId: ResultId$3, plots: PlotModel, mapping: M, taName: string, outputDir?: string): Promise<void>;
 
 type ResultId$2 = string | number;
+interface IRunParams {
+    symbol: string;
+    timeframe: CandleInterval;
+    limit: number;
+}
 declare function toMarkdown<M extends PlotMapping>(signalId: ResultId$2, plots: PlotModel, mapping: M, limit?: number): Promise<string>;
+declare function markdown<M extends PlotMapping>(signalId: ResultId$2, source: File | Code, { symbol, timeframe, limit }: IRunParams, mapping: M, exchangeName?: ExchangeName, when?: Date): Promise<string>;
 
 type ResultId$1 = string | number;
 interface SignalData {
@@ -199,4 +205,4 @@ declare const pine: {
     };
 };
 
-export { AXIS_SYMBOL, type CandleModel, Code, File, type ILogger, type IPine, type IProvider, type PlotExtractConfig, type PlotMapping, type PlotModel, type PlotRecord, type SymbolInfoModel, type TPineCtor, dumpPlotData, extract, getSignal, pine as lib, run, setLogger, toMarkdown, toSignalDto, usePine };
+export { AXIS_SYMBOL, type CandleModel, Code, File, type ILogger, type IPine, type IProvider, type PlotExtractConfig, type PlotMapping, type PlotModel, type PlotRecord, type SymbolInfoModel, type TPineCtor, dumpPlotData, extract, getSignal, pine as lib, markdown, run, setLogger, toMarkdown, toSignalDto, usePine };
