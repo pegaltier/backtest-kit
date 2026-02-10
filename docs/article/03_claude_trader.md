@@ -262,3 +262,5 @@ npm start -- \
 ```
 
 ## Thank you for Your Attention!
+
+![knight](../../assets/knight.png)
