@@ -34,7 +34,7 @@ const getExchange = singleshot(async () => {
 });
 
 addExchangeSchema({
-  exchangeName: "ccxt-exchange",
+  exchangeName: "binance_exchange",
   getCandles: async (symbol, interval, since, limit) => {
     const exchange = await getExchange();
     const candles = await exchange.fetchOHLCV(
@@ -61,7 +61,7 @@ const plots = await run(
     timeframe: "4h",
     limit: 60,
   },
-  "ccxt-exchange",
+  "binance_exchange",
   new Date("2025-09-23T23:00:00.000Z"),
 );
 
