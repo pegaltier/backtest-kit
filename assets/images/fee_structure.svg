@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500">
+
+  <!-- Background -->
+  <rect width="900" height="500" fill="#0f0f1a"/>
+
+  <!-- Title -->
+  <text x="450" y="35" fill="#ffffff" font-size="18" font-family="Arial, sans-serif" text-anchor="middle" font-weight="bold">
+    2/20 STRUCTURE: CONFLICT OF INTEREST
+  </text>
+
+  <!-- ==================== LEFT: FUND INCENTIVES ==================== -->
+
+  <rect x="50" y="70" width="380" height="350" fill="#111122" stroke="#333" rx="8"/>
+
+  <text x="240" y="100" fill="#3b82f6" font-size="16" font-family="Arial, sans-serif" text-anchor="middle" font-weight="bold">
+    FUND INCENTIVES
+  </text>
+
+  <!-- 2% Management Fee -->
+  <rect x="80" y="130" width="320" height="80" fill="#0a1a2a" stroke="#3b82f6" rx="6"/>
+  <text x="240" y="155" fill="#3b82f6" font-size="14" font-family="Arial, sans-serif" text-anchor="middle" font-weight="bold">2% MANAGEMENT FEE</text>
+  <text x="240" y="180" fill="#888" font-size="12" font-family="Arial, sans-serif" text-anchor="middle">Paid ALWAYS, regardless of results</text>
+  <text x="240" y="200" fill="#22c55e" font-size="12" font-family="Arial, sans-serif" text-anchor="middle">&#8593; More AUM &#215; More time = More money</text>
+
+  <!-- 20% Performance Fee -->
+  <rect x="80" y="230" width="320" height="80" fill="#0a1a2a" stroke="#22c55e" rx="6"/>
+  <text x="240" y="255" fill="#22c55e" font-size="14" font-family="Arial, sans-serif" text-anchor="middle" font-weight="bold">20% PERFORMANCE FEE</text>
+  <text x="240" y="280" fill="#888" font-size="12" font-family="Arial, sans-serif" text-anchor="middle">Paid ONLY on profits</text>
+  <text x="240" y="300" fill="#888" font-size="12" font-family="Arial, sans-serif" text-anchor="middle">High-water mark protects the client</text>
+
+  <!-- Losses -->
+  <rect x="80" y="330" width="320" height="60" fill="#2a0a0a" stroke="#ef4444" rx="6"/>
+  <text x="240" y="355" fill="#ef4444" font-size="14" font-family="Arial, sans-serif" text-anchor="middle" font-weight="bold">LOSSES</text>
+  <text x="240" y="375" fill="#888" font-size="12" font-family="Arial, sans-serif" text-anchor="middle">Borne ENTIRELY by the client</text>
+
+  <!-- ==================== RIGHT: CONFLICT ==================== -->
+
+  <rect x="470" y="70" width="380" height="350" fill="#111122" stroke="#333" rx="8"/>
+
+  <text x="660" y="100" fill="#f59e0b" font-size="16" font-family="Arial, sans-serif" text-anchor="middle" font-weight="bold">
+    CONFLICTING GOALS
+  </text>
+
+  <!-- Goal 1 -->
+  <rect x="500" y="130" width="320" height="50" fill="#1a1a0a" stroke="#f59e0b" rx="4"/>
+  <text x="660" y="160" fill="#f59e0b" font-size="13" font-family="Arial, sans-serif" text-anchor="middle">&#9312; Attract more money (AUM &#8593;)</text>
+
+  <!-- Goal 2 -->
+  <rect x="500" y="195" width="320" height="50" fill="#1a1a0a" stroke="#f59e0b" rx="4"/>
+  <text x="660" y="225" fill="#f59e0b" font-size="13" font-family="Arial, sans-serif" text-anchor="middle">&#9313; Keep money LONGER (time &#8593;)</text>
+
+  <!-- Goal 3 -->
+  <rect x="500" y="260" width="320" height="50" fill="#1a1a0a" stroke="#f59e0b" rx="4"/>
+  <text x="660" y="290" fill="#f59e0b" font-size="13" font-family="Arial, sans-serif" text-anchor="middle">&#9314; Show profit (20% of it)</text>
+
+  <!-- Conflict indicator -->
+  <text x="660" y="340" fill="#ef4444" font-size="20" font-family="Arial, sans-serif" text-anchor="middle">&#9889;</text>
+
+  <rect x="500" y="355" width="320" height="50" fill="#2a0a0a" stroke="#ef4444" rx="4"/>
+  <text x="660" y="378" fill="#ef4444" font-size="12" font-family="Arial, sans-serif" text-anchor="middle" font-weight="bold">&#9313; and &#9314; CONFLICT</text>
+  <text x="660" y="395" fill="#888" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">Can sit in low-risk for years, collecting 2%</text>
+
+  <!-- ==================== BOTTOM: CONCLUSION ==================== -->
+
+  <rect x="150" y="440" width="600" height="45" fill="#111122" stroke="#f59e0b" stroke-width="2" rx="6"/>
+  <text x="450" y="468" fill="#ffffff" font-size="13" font-family="Arial, sans-serif" text-anchor="middle">
+    The fund maximizes TIME in position. The client remains exposed to TAIL RISK.
+  </text>
+
+</svg>

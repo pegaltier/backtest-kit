@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 550">
+
+  <!-- Background -->
+  <rect width="900" height="550" fill="#0f0f1a"/>
+
+  <!-- Title -->
+  <text x="450" y="35" fill="#ffffff" font-size="18" font-family="Arial, sans-serif" text-anchor="middle" font-weight="bold">
+    GAMMA: WHERE MARKET-MAKER PROFIT COMES FROM
+  </text>
+
+  <!-- ==================== MAIN CHART ==================== -->
+
+  <!-- Axes -->
+  <line x1="100" y1="420" x2="100" y2="80" stroke="#666" stroke-width="2"/>
+  <line x1="100" y1="420" x2="750" y2="420" stroke="#666" stroke-width="2"/>
+
+  <!-- Axis labels -->
+  <text x="40" y="250" fill="#666" font-size="13" font-family="Arial, sans-serif" transform="rotate(-90, 40, 250)">VALUE</text>
+  <text x="420" y="480" fill="#666" font-size="13" font-family="Arial, sans-serif" text-anchor="middle">ASSET PRICE (S)</text>
+
+  <!-- Option curve (green) -->
+  <path d="M 100 415
+           Q 180 410, 260 390
+           Q 360 350, 460 280
+           Q 560 190, 660 120
+           Q 700 100, 720 95"
+        stroke="#22c55e" stroke-width="4" fill="none"/>
+
+  <!-- Stock line (white) -->
+  <line x1="380" y1="420" x2="720" y2="95" stroke="#ffffff" stroke-width="2"/>
+
+  <!-- Fill area between curves = GAMMA PROFIT -->
+  <path d="M 380 420
+           Q 380 350, 380 320
+           Q 420 280, 460 280
+           Q 510 270, 560 230
+           Q 610 175, 660 120
+           L 720 95
+           L 720 95
+           Q 700 100, 660 120
+           Q 560 190, 460 280
+           Q 360 350, 380 420
+           Z"
+        fill="#22c55e" opacity="0.2"/>
+
+  <!-- GAMMA area highlight -->
+  <rect x="370" y="280" width="25" height="140" fill="#22c55e" opacity="0.6"/>
+
+  <!-- K vertical line -->
+  <line x1="380" y1="90" x2="380" y2="430" stroke="#a855f7" stroke-width="2" stroke-dasharray="6,4" opacity="0.6"/>
+
+  <!-- Convergence point -->
+  <circle cx="720" cy="95" r="6" fill="#a855f7" stroke="#fff" stroke-width="2"/>
+
+  <!-- Labels -->
+  <text x="100" y="440" fill="#888" font-size="12" font-family="Arial, sans-serif">0</text>
+  <text x="380" y="455" fill="#a855f7" font-size="14" font-family="Arial, sans-serif" text-anchor="middle" font-weight="bold">K (strike)</text>
+
+  <text x="180" y="370" fill="#22c55e" font-size="14" font-family="Arial, sans-serif" font-weight="bold">OPTION</text>
+  <text x="185" y="390" fill="#22c55e" font-size="11" font-family="Arial, sans-serif">(convex curve)</text>
+
+  <text x="550" y="200" fill="#ffffff" font-size="14" font-family="Arial, sans-serif" font-weight="bold">STOCK</text>
+  <text x="555" y="220" fill="#888" font-size="11" font-family="Arial, sans-serif">(straight line)</text>
+
+  <!-- GAMMA label -->
+  <text x="410" y="360" fill="#22c55e" font-size="16" font-family="Arial, sans-serif" font-weight="bold">&#915;</text>
+  <text x="430" y="360" fill="#22c55e" font-size="12" font-family="Arial, sans-serif">(gamma)</text>
+
+  <text x="720" y="80" fill="#a855f7" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">converge</text>
+
+  <!-- ==================== LEGEND ==================== -->
+
+  <rect x="760" y="150" width="130" height="180" fill="#151520" stroke="#333" rx="5"/>
+
+  <text x="825" y="175" fill="#fff" font-size="12" font-family="Arial, sans-serif" text-anchor="middle" font-weight="bold">LEGEND</text>
+
+  <line x1="775" y1="200" x2="815" y2="200" stroke="#22c55e" stroke-width="4"/>
+  <text x="825" y="205" fill="#aaa" font-size="10" font-family="Arial, sans-serif">Option</text>
+
+  <line x1="775" y1="225" x2="815" y2="225" stroke="#ffffff" stroke-width="2"/>
+  <text x="825" y="230" fill="#aaa" font-size="10" font-family="Arial, sans-serif">Stock</text>
+
+  <rect x="775" y="245" width="40" height="12" fill="#22c55e" opacity="0.6"/>
+  <text x="825" y="255" fill="#aaa" font-size="10" font-family="Arial, sans-serif">Gamma</text>
+
+  <rect x="775" y="270" width="40" height="12" fill="#22c55e" opacity="0.2"/>
+  <text x="825" y="280" fill="#aaa" font-size="10" font-family="Arial, sans-serif">Profit zone</text>
+
+  <line x1="775" y1="300" x2="815" y2="300" stroke="#a855f7" stroke-width="2" stroke-dasharray="4,3"/>
+  <text x="825" y="305" fill="#aaa" font-size="10" font-family="Arial, sans-serif">Strike K</text>
+
+  <!-- ==================== EXPLANATION BOX ==================== -->
+
+  <rect x="100" y="495" width="650" height="45" fill="#111122" stroke="#333" rx="4"/>
+  <text x="425" y="522" fill="#f59e0b" font-size="13" font-family="Arial, sans-serif" text-anchor="middle">
+    Gamma scalping works in diffusion regime. On large jumps, long gamma is often unprofitable.
+  </text>
+
+</svg>

@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500">
+
+  <!-- Background -->
+  <rect width="900" height="500" fill="#0f0f1a"/>
+
+  <!-- Title -->
+  <text x="450" y="35" fill="#ffffff" font-size="18" font-family="Arial, sans-serif" text-anchor="middle" font-weight="bold">
+    EMH: PRICE MOVES BEFORE THE NEWS
+  </text>
+
+  <!-- ==================== MAIN CHART ==================== -->
+
+  <!-- Axes -->
+  <line x1="100" y1="380" x2="100" y2="100" stroke="#666" stroke-width="2"/>
+  <line x1="100" y1="380" x2="800" y2="380" stroke="#666" stroke-width="2"/>
+
+  <!-- Axis labels -->
+  <text x="50" y="240" fill="#666" font-size="12" font-family="Arial, sans-serif" transform="rotate(-90, 50, 240)">PRICE</text>
+  <text x="450" y="420" fill="#666" font-size="12" font-family="Arial, sans-serif" text-anchor="middle">TIME</text>
+
+  <!-- Price line - drops BEFORE news -->
+  <path d="M 100 180
+           Q 150 185, 200 190
+           Q 280 200, 350 210
+           Q 400 230, 450 280
+           Q 500 340, 550 360
+           Q 600 365, 650 362
+           Q 700 358, 750 355"
+        stroke="#22c55e" stroke-width="3" fill="none"/>
+
+  <!-- News event vertical line -->
+  <line x1="550" y1="95" x2="550" y2="390" stroke="#f59e0b" stroke-width="3" stroke-dasharray="8,4"/>
+
+  <!-- News icon -->
+  <rect x="520" y="70" width="60" height="30" fill="#f59e0b" rx="4"/>
+  <text x="550" y="90" fill="#0f0f1a" font-size="11" font-family="Arial, sans-serif" text-anchor="middle" font-weight="bold">NEWS</text>
+
+  <!-- Lightning icon at news -->
+  <text x="550" y="120" fill="#f59e0b" font-size="24" font-family="Arial, sans-serif" text-anchor="middle">&#9889;</text>
+
+  <!-- Time markers -->
+  <text x="100" y="400" fill="#888" font-size="11" font-family="Arial, sans-serif">t&#8320;</text>
+  <text x="350" y="400" fill="#888" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">rumors</text>
+  <text x="550" y="400" fill="#f59e0b" font-size="11" font-family="Arial, sans-serif" text-anchor="middle" font-weight="bold">publication</text>
+  <text x="750" y="400" fill="#888" font-size="11" font-family="Arial, sans-serif" text-anchor="end">t&#8321;</text>
+
+  <!-- Annotation: Price already moved -->
+  <path d="M 250 200 L 250 280" stroke="#ef4444" stroke-width="2" marker-end="url(#arrowRed)"/>
+  <text x="190" y="185" fill="#ef4444" font-size="11" font-family="Arial, sans-serif">price ALREADY</text>
+  <text x="190" y="200" fill="#ef4444" font-size="11" font-family="Arial, sans-serif">dropping</text>
+
+  <!-- Annotation: News is late -->
+  <rect x="560" y="240" width="120" height="50" fill="#1a1a0a" stroke="#f59e0b" rx="4"/>
+  <text x="620" y="260" fill="#f59e0b" font-size="10" font-family="Arial, sans-serif" text-anchor="middle">News explains what</text>
+  <text x="620" y="275" fill="#f59e0b" font-size="10" font-family="Arial, sans-serif" text-anchor="middle">already happened</text>
+
+  <!-- Arrow marker -->
+  <defs>
+    <marker id="arrowRed" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444"/>
+    </marker>
+  </defs>
+
+  <!-- ==================== BOTTOM: EXPLANATION ==================== -->
+
+  <rect x="100" y="440" width="700" height="50" fill="#111122" stroke="#333" rx="6"/>
+  <text x="450" y="462" fill="#888" font-size="12" font-family="Arial, sans-serif" text-anchor="middle">
+    Pre-news movement: leakage, positioning, gamma squeeze, low liquidity + stops
+  </text>
+  <text x="450" y="480" fill="#f59e0b" font-size="12" font-family="Arial, sans-serif" text-anchor="middle">
+    Not "the market knows everything" &#8212; but a combination of insider info, mechanics, and thin order book.
+  </text>
+
+</svg>

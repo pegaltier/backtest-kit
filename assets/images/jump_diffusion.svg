@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600">
+
+  <!-- Background -->
+  <rect width="1000" height="600" fill="#0f0f1a"/>
+
+  <!-- Title -->
+  <text x="500" y="35" fill="#ffffff" font-size="18" font-family="Arial, sans-serif" text-anchor="middle" font-weight="bold">
+    DIFFUSION vs JUMPS: WHY THE HEDGE CAN'T KEEP UP
+  </text>
+
+  <!-- ==================== LEFT: BLACK-SCHOLES WORLD ==================== -->
+
+  <text x="250" y="70" fill="#22c55e" font-size="14" font-family="Arial, sans-serif" text-anchor="middle" font-weight="bold">BLACK-SCHOLES: DIFFUSION</text>
+  <text x="250" y="90" fill="#666" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">dS = &#956;S dt + &#963;S dW</text>
+
+  <!-- Axes -->
+  <line x1="80" y1="380" x2="80" y2="110" stroke="#666" stroke-width="2"/>
+  <line x1="80" y1="380" x2="420" y2="380" stroke="#666" stroke-width="2"/>
+
+  <!-- Smooth continuous path -->
+  <path d="M 80 320
+           Q 100 315, 120 310
+           Q 140 320, 160 305
+           Q 180 295, 200 280
+           Q 220 290, 240 275
+           Q 260 260, 280 250
+           Q 300 265, 320 255
+           Q 340 240, 360 220
+           Q 380 210, 400 190"
+        stroke="#22c55e" stroke-width="3" fill="none"/>
+
+  <!-- Hedge rebalancing points -->
+  <circle cx="120" cy="310" r="4" fill="#3b82f6"/>
+  <circle cx="160" cy="305" r="4" fill="#3b82f6"/>
+  <circle cx="200" cy="280" r="4" fill="#3b82f6"/>
+  <circle cx="240" cy="275" r="4" fill="#3b82f6"/>
+  <circle cx="280" cy="250" r="4" fill="#3b82f6"/>
+  <circle cx="320" cy="255" r="4" fill="#3b82f6"/>
+  <circle cx="360" cy="220" r="4" fill="#3b82f6"/>
+  <circle cx="400" cy="190" r="4" fill="#3b82f6"/>
+
+  <!-- Labels -->
+  <text x="80" y="400" fill="#888" font-size="11" font-family="Arial, sans-serif">t&#8320;</text>
+  <text x="400" y="400" fill="#888" font-size="11" font-family="Arial, sans-serif">t&#8321;</text>
+  <text x="50" y="250" fill="#888" font-size="11" font-family="Arial, sans-serif">S</text>
+
+  <!-- Explanation -->
+  <rect x="80" y="420" width="340" height="80" fill="#0a2a0a" stroke="#22c55e" stroke-width="1" rx="4"/>
+  <text x="100" y="445" fill="#22c55e" font-size="12" font-family="Arial, sans-serif">&#10003; Path is continuous</text>
+  <text x="100" y="465" fill="#22c55e" font-size="12" font-family="Arial, sans-serif">&#10003; Can rebalance at every point</text>
+  <text x="100" y="485" fill="#22c55e" font-size="12" font-family="Arial, sans-serif">&#10003; P&amp;L is predictable</text>
+
+  <!-- ==================== RIGHT: REAL MARKET ==================== -->
+
+  <text x="750" y="70" fill="#ef4444" font-size="14" font-family="Arial, sans-serif" text-anchor="middle" font-weight="bold">REALITY: JUMPS</text>
+  <text x="750" y="90" fill="#666" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">dS = &#956;S dt + &#963;S dW + S dJ</text>
+
+  <!-- Axes -->
+  <line x1="550" y1="380" x2="550" y2="110" stroke="#666" stroke-width="2"/>
+  <line x1="550" y1="380" x2="920" y2="380" stroke="#666" stroke-width="2"/>
+
+  <!-- Path with jump -->
+  <path d="M 550 300
+           Q 570 295, 590 290
+           Q 610 300, 630 285
+           Q 650 275, 670 265
+           Q 690 275, 710 260"
+        stroke="#22c55e" stroke-width="3" fill="none"/>
+
+  <!-- THE JUMP - gap in price -->
+  <line x1="710" y1="260" x2="710" y2="260" stroke="none"/>
+
+  <!-- After jump - continues lower -->
+  <path d="M 750 370
+           Q 770 365, 790 355
+           Q 810 345, 830 330
+           Q 860 310, 900 290"
+        stroke="#22c55e" stroke-width="3" fill="none"/>
+
+  <!-- Jump indicator -->
+  <line x1="710" y1="260" x2="750" y2="370" stroke="#ef4444" stroke-width="4" stroke-dasharray="8,4"/>
+
+  <!-- GAP label -->
+  <rect x="715" y="300" width="50" height="30" fill="#ef4444" rx="3"/>
+  <text x="740" y="320" fill="#ffffff" font-size="12" font-family="Arial, sans-serif" text-anchor="middle" font-weight="bold">GAP</text>
+
+  <!-- Hedge points - some missing during jump -->
+  <circle cx="590" cy="290" r="4" fill="#3b82f6"/>
+  <circle cx="630" cy="285" r="4" fill="#3b82f6"/>
+  <circle cx="670" cy="265" r="4" fill="#3b82f6"/>
+  <circle cx="710" cy="260" r="4" fill="#3b82f6"/>
+  <!-- No point during gap! -->
+  <circle cx="790" cy="355" r="4" fill="#3b82f6"/>
+  <circle cx="830" cy="330" r="4" fill="#3b82f6"/>
+
+  <!-- X mark where hedge should have been -->
+  <text x="730" y="320" fill="#ef4444" font-size="20" font-family="Arial, sans-serif">&#10007;</text>
+
+  <!-- Labels -->
+  <text x="550" y="400" fill="#888" font-size="11" font-family="Arial, sans-serif">t&#8320;</text>
+  <text x="900" y="400" fill="#888" font-size="11" font-family="Arial, sans-serif">t&#8321;</text>
+  <text x="520" y="250" fill="#888" font-size="11" font-family="Arial, sans-serif">S</text>
+
+  <!-- Explanation -->
+  <rect x="550" y="420" width="360" height="80" fill="#2a0a0a" stroke="#ef4444" stroke-width="1" rx="4"/>
+  <text x="570" y="445" fill="#ef4444" font-size="12" font-family="Arial, sans-serif">&#10007; Price teleports through levels</text>
+  <text x="570" y="465" fill="#ef4444" font-size="12" font-family="Arial, sans-serif">&#10007; Rebalancing during jump is impossible</text>
+  <text x="570" y="485" fill="#ef4444" font-size="12" font-family="Arial, sans-serif">&#10007; P&amp;L becomes a function of luck</text>
+
+  <!-- ==================== BOTTOM: KEY INSIGHT ==================== -->
+
+  <rect x="200" y="520" width="600" height="60" fill="#111122" stroke="#f59e0b" stroke-width="2" rx="6"/>
+  <text x="500" y="545" fill="#f59e0b" font-size="14" font-family="Arial, sans-serif" text-anchor="middle" font-weight="bold">
+    Delta hedge doesn't "break" &#8212; but P&amp;L on gaps becomes highly volatile.
+  </text>
+  <text x="500" y="565" fill="#ffffff" font-size="13" font-family="Arial, sans-serif" text-anchor="middle">
+    Professionals keep working, but the variance of outcomes spikes dramatically.
+  </text>
+
+</svg>
