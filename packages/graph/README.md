@@ -134,6 +134,43 @@ const vwap = outputNode(
 const result = await resolve(vwap); // Promise<number>
 ```
 
+### Inline anonymous composition
+
+The entire graph can be defined as a single object literal.
+
+```typescript
+import { NodeType } from '@backtest-kit/graph';
+import { TypedNode, resolve } from '@backtest-kit/graph';
+
+const signal: TypedNode = {
+    type: NodeType.OutputNode,
+    nodes: [
+        {
+            type: NodeType.SourceNode,
+            fetch: async (symbol, when, exchangeName) => {
+                const plots = await run(File.fromPath('timeframe_4h.pine'), { symbol, timeframe: '4h', limit: 100 });
+                return extract(plots, { allowLong: 'AllowLong', allowShort: 'AllowShort', noTrades: 'NoTrades' });
+            },
+        },
+        {
+            type: NodeType.SourceNode,
+            fetch: async (symbol, when, exchangeName) => {
+                const plots = await run(File.fromPath('timeframe_15m.pine'), { symbol, timeframe: '15m', limit: 100 });
+                return extract(plots, { position: 'Signal', priceOpen: 'Close', priceTakeProfit: 'TakeProfit', priceStopLoss: 'StopLoss' });
+            },
+        },
+    ],
+    compute: ([higher, lower]) => {
+        if (higher.noTrades || lower.position === 0) return null;
+        if (higher.allowShort && lower.position === 1) return null;
+        if (higher.allowLong && lower.position === -1) return null;
+        return lower.position;
+    },
+};
+
+const result = await resolve(signal);
+```
+
 ### Mixed types
 
 TypeScript correctly infers heterogeneous types by position in `nodes`:
@@ -204,25 +241,6 @@ const outputNode: INode = {
 ```
 
 > `INode` has no generic parameters — `values` in `compute` is typed as `Value[]`. Use `TypedNode` and builders for full IntelliSense.
-
-### TypedNode — discriminated union
-
-`TypedNode` is a discriminated union for use in type annotations, function signatures and `satisfies`:
-
-```typescript
-import { TypedNode } from '@backtest-kit/graph';
-
-// A function that accepts any node
-function describe(node: TypedNode): string {
-    if (node.type === NodeType.SourceNode) {
-        return `Source: ${node.description ?? 'unnamed'}`;
-    }
-    return `Output with ${node.nodes.length} dependencies`;
-}
-
-// Array of heterogeneous nodes
-const graph: TypedNode[] = [closePrice, volume, vwap];
-```
 
 ### DB serialization
 
