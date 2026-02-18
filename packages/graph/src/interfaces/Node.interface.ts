@@ -1,4 +1,5 @@
 import NodeType from '../enum/NodeType';
+import { ExchangeName } from '../model/ExchangeName.model';
 
 /**
  * Любое возможное вычисленное значение узла графа.
@@ -26,7 +27,7 @@ export interface INode {
      * Источник данных для SourceNode.
      * Вызывается при вычислении узла без входящих зависимостей.
      */
-    fetch?: () => Promise<Value> | Value;
+    fetch?: (symbol: string, when: Date, exchangeName: ExchangeName) => Promise<Value> | Value;
 
     /**
      * Функция вычисления для OutputNode.

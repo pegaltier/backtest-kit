@@ -1,5 +1,6 @@
 import { Value } from './Node.interface';
 import NodeType from '../enum/NodeType';
+import { ExchangeName } from '../model/ExchangeName.model';
 
 /**
  * Маппинг tuple нод в tuple их resolved-значений.
@@ -25,7 +26,7 @@ export type InferNodeValue<T extends TypedNode> =
 export type SourceNode<T extends Value = Value> = {
     type: NodeType.SourceNode;
     description?: string;
-    fetch: () => Promise<T> | T;
+    fetch: (symbol: string, when: Date, exchangeName: ExchangeName) => Promise<T> | T;
 };
 
 /**

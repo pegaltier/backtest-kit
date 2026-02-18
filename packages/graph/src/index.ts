@@ -1,6 +1,6 @@
 export { outputNode, sourceNode } from "./helpers/node";
 export { deepFlat } from "./helpers/deepFlat";
-export { run } from "./helpers/run";
+export { resolve } from "./helpers/resolve";
 
 export { TypedNode } from "./interfaces/TypedNode.interface";
 export { IFlatNode } from "./interfaces/FlatNode.interface";

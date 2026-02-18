@@ -1,5 +1,6 @@
 import { Value } from './Node.interface';
 import NodeType from '../enum/NodeType';
+import { ExchangeName } from '../model/ExchangeName.model';
 
 /**
  * Сериализованная (плоская) форма узла графа для хранения в БД.
@@ -32,7 +33,7 @@ export interface IFlatNode {
      * Источник данных для SourceNode — не сериализуется в БД,
      * восстанавливается на стороне приложения.
      */
-    fetch?: () => Promise<Value> | Value;
+    fetch?: (symbol: string, when: Date, exchangeName: ExchangeName) => Promise<Value> | Value;
 
     /**
      * Функция вычисления для OutputNode — не сериализуется в БД,

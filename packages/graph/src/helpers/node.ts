@@ -1,9 +1,10 @@
 import NodeType from '../enum/NodeType';
 import { Value } from '../interfaces/Node.interface';
 import { TypedNode, SourceNode, OutputNode, InferValues } from '../interfaces/TypedNode.interface';
+import { ExchangeName } from '../model/ExchangeName.model';
 
 export const sourceNode = <T extends Value>(
-    fetch: () => Promise<T> | T,
+    fetch: (symbol: string, when: Date, exchangeName: ExchangeName) => Promise<T> | T,
 ): SourceNode<T> => ({
     type: NodeType.SourceNode,
     fetch,
