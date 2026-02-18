@@ -4,7 +4,7 @@ import { ExchangeName } from '../model/ExchangeName.model';
 /**
  * Любое возможное вычисленное значение узла графа.
  */
-export type Value = string | number | boolean | null;
+export type Value = string | number | boolean | object | null;
 
 /**
  * Плоский базовый интерфейс узла графа.

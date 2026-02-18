@@ -8,7 +8,7 @@ type ExchangeName = string;
 /**
  * Любое возможное вычисленное значение узла графа.
  */
-type Value = string | number | boolean | null;
+type Value = string | number | boolean | object | null;
 /**
  * Плоский базовый интерфейс узла графа.
  * Следует тому же паттерну, что IField в react-declarative:
