@@ -2,39 +2,60 @@ import { Value } from './Node.interface';
 import NodeType from '../enum/NodeType';
 
 /**
- * Узел-источник данных. Не имеет входящих зависимостей.
- * fetch вызывается для получения значения.
+ * Маппинг tuple нод в tuple их resolved-значений.
+ * Сохраняет позиционную структуру: [SourceNode<number>, SourceNode<string>] → [number, string].
  */
-type SourceNode = {
-    type: NodeType.SourceNode;
-    fetch: () => Promise<Value> | Value;
+export type InferValues<TNodes extends TypedNode[]> = {
+    [K in keyof TNodes]: TNodes[K] extends TypedNode ? InferNodeValue<TNodes[K]> : never;
 };
 
 /**
- * Узел вычисления. Имеет входящие зависимости (nodes),
- * compute получает их resolved-значения в том же порядке.
+ * Извлекает тип возвращаемого значения из TypedNode.
+ * Используется InferValues и run() для типобезопасного резолвинга.
  */
-type OutputNode = {
+export type InferNodeValue<T extends TypedNode> =
+    T extends SourceNode<infer V> ? V :
+    T extends OutputNode<any, infer V> ? V :
+    never;
+
+/**
+ * Узел-источник данных. Не имеет входящих зависимостей.
+ * T — тип значения, возвращаемого fetch().
+ */
+export type SourceNode<T extends Value = Value> = {
+    type: NodeType.SourceNode;
+    description?: string;
+    fetch: () => Promise<T> | T;
+};
+
+/**
+ * Узел вычисления. TNodes — tuple входящих зависимостей,
+ * TResult — тип возвращаемого значения compute().
+ * values в compute автоматически выводится из типов TNodes.
+ */
+export type OutputNode<
+    TNodes extends TypedNode[] = TypedNode[],
+    TResult extends Value = Value,
+> = {
     type: NodeType.OutputNode;
-    compute: (values: Value[]) => Promise<Value> | Value;
-    nodes: TypedNode[];
+    description?: string;
+    nodes: TNodes;
+    compute: (values: InferValues<TNodes>) => Promise<TResult> | TResult;
 };
 
 /**
  * Discriminated union — type-guard для TypeScript.
- * Аналог TypedFieldRegistry из react-declarative:
- * позволяет IDE автоматически сужать тип после указания type.
+ * Аналог TypedFieldRegistry из react-declarative.
  */
 export type TypedNodeRegistry<Target = unknown> =
-    Target extends SourceNode ? SourceNode :
-    Target extends OutputNode ? OutputNode :
+    Target extends SourceNode<infer V> ? SourceNode<V> :
+    Target extends OutputNode<infer N, infer V> ? OutputNode<N, V> :
     never;
 
 /**
- * Типизированный узел графа.
- * Подставляется вместо INode для строгой проверки типов
- * на стороне прикладного программиста.
+ * Типизированный узел графа для прикладного программиста.
+ * Подставляется вместо INode для строгой проверки типов и IntelliSense.
  */
-export type TypedNode = SourceNode | OutputNode;
+export type TypedNode = SourceNode<Value> | OutputNode<TypedNode[], Value>;
 
 export default TypedNode;
