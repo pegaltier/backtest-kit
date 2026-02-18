@@ -2,7 +2,8 @@ import { inject } from "../../../core/di";
 import LoggerService from "../../base/LoggerService";
 import TYPES from "../../../core/types";
 import StrategyCoreService from "../../core/StrategyCoreService";
-import { and, errorData, getErrorMessage, sleep } from "functools-kit";
+import { and, errorData, getErrorMessage } from "functools-kit";
+import { waitForCandle } from "../../../../utils/waitForCandle";
 import { performanceEmitter, errorEmitter } from "../../../../config/emitters";
 import { TMethodContextService } from "../../context/MethodContextService";
 import {
@@ -12,7 +13,6 @@ import {
   IStrategyTickResultCancelled,
 } from "../../../../interfaces/Strategy.interface";
 
-const TICK_TTL = 1 * 60 * 1_000 + 1;
 
 /**
  * Private service for live trading orchestration using async generators.
@@ -95,7 +95,7 @@ export class LiveLogicPrivateService {
           }
         );
         await errorEmitter.next(error);
-        await sleep(TICK_TTL);
+        await waitForCandle("1m");
         continue;
       }
 
@@ -145,22 +145,22 @@ export class LiveLogicPrivateService {
           );
           break;
         }
-        await sleep(TICK_TTL);
+        await waitForCandle("1m");
         continue;
       }
 
       if (result.action === "active") {
-        await sleep(TICK_TTL);
+        await waitForCandle("1m");
         continue;
       }
 
       if (result.action === "scheduled") {
-        await sleep(TICK_TTL);
+        await waitForCandle("1m");
         continue;
       }
 
       if (result.action === "waiting") {
-        await sleep(TICK_TTL);
+        await waitForCandle("1m");
         continue;
       }
 
@@ -191,7 +191,7 @@ export class LiveLogicPrivateService {
         }
       }
 
-      await sleep(TICK_TTL);
+      await waitForCandle("1m");
     }
   }
 }

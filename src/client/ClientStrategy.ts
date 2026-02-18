@@ -682,16 +682,17 @@ const GET_SIGNAL_FN = trycatch(
     {
       const intervalMinutes = INTERVAL_MINUTES[self.params.interval];
       const intervalMs = intervalMinutes * 60 * 1000;
+      const alignedTime = Math.floor(currentTime / intervalMs) * intervalMs;
 
-      // Проверяем что прошел нужный интервал с последнего getSignal
+      // Проверяем что наступил новый интервал (по aligned timestamp)
       if (
         self._lastSignalTimestamp !== null &&
-        currentTime - self._lastSignalTimestamp < intervalMs
+        alignedTime === self._lastSignalTimestamp
       ) {
         return null;
       }
 
-      self._lastSignalTimestamp = currentTime;
+      self._lastSignalTimestamp = alignedTime;
     }
     const currentPrice = await self.params.exchange.getAveragePrice(
       self.params.execution.context.symbol
