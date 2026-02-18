@@ -558,7 +558,7 @@ npm start
 
 ### @backtest-kit/graph
 
-> **[Explore on NPM](https://www.npmjs.com/package/@backtest-kit/graph)** 📊
+> **[Explore on NPM](https://www.npmjs.com/package/@backtest-kit/graph)** 🔗
 
 The **@backtest-kit/graph** package lets you compose backtest-kit computations as a typed directed acyclic graph (DAG). Define source nodes that fetch market data and output nodes that compute derived values — then resolve the whole graph in topological order with automatic parallelism.
 
