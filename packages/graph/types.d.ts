@@ -1,208 +1,147 @@
-import { CandleInterval, ISignalDto } from 'backtest-kit';
-
-declare class Code {
-    readonly source: string;
-    private readonly __type__;
-    private constructor();
-    static fromString: (source: string) => Code;
-    static isCode: (value: unknown) => value is Code;
+declare enum NodeType {
+    SourceNode = "source_node",
+    OutputNode = "output_node"
 }
-
-declare class File {
-    readonly path: string;
-    readonly baseDir: string;
-    private readonly __type__;
-    private constructor();
-    static fromPath: (path: string, baseDir?: string) => File;
-    static isFile: (value: unknown) => value is File;
-}
-
-type PlotData = {
-    time: number;
-    value: number;
-};
-type PlotEntry = {
-    data: PlotData[];
-};
-type PlotModel = Record<string, PlotEntry>;
-type PlotRecord = {
-    plots: PlotModel;
-};
-
-interface IProvider {
-    getMarketData(tickerId: string, timeframe: string, limit?: number, sDate?: number, eDate?: number): Promise<any>;
-    getSymbolInfo(tickerId: string): Promise<any>;
-}
-
-type TPineCtor = (source: IProvider, tickerId: string, timeframe: string, limit: number) => IPine;
-interface IPine {
-    ready(): Promise<void>;
-    run(code: string): Promise<PlotRecord>;
-}
-
-declare function usePine<T = TPineCtor>(ctor: T): void;
 
 type ExchangeName = string;
-interface IExchangeContext {
-    exchangeName: ExchangeName;
+
+/**
+ * Любое возможное вычисленное значение узла графа.
+ */
+type Value = string | number | boolean | null;
+/**
+ * Плоский базовый интерфейс узла графа.
+ * Следует тому же паттерну, что IField в react-declarative:
+ * все свойства опциональны, type — обязателен.
+ */
+interface INode {
+    /**
+     * Тип узла для логического ветвления при исполнении графа
+     */
+    type: NodeType;
+    /**
+     * Человеко-читаемое описание узла, не влияет на исполнение графа.
+     */
+    description?: string;
+    /**
+     * Источник данных для SourceNode.
+     * Вызывается при вычислении узла без входящих зависимостей.
+     */
+    fetch?: (symbol: string, when: Date, exchangeName: ExchangeName) => Promise<Value> | Value;
+    /**
+     * Функция вычисления для OutputNode.
+     * Получает на вход массив значений, возвращённых fetch/compute
+     * из узлов массива nodes, в том же порядке.
+     */
+    compute?: (values: Value[]) => Promise<Value> | Value;
+    /**
+     * Входящие зависимости для OutputNode.
+     * Значения этих узлов передаются в compute.
+     */
+    nodes?: INode[];
 }
 
-interface IRunParams$1 {
-    symbol: string;
-    timeframe: CandleInterval;
-    limit: number;
-}
-declare function run(source: File | Code, { symbol, timeframe, limit }: IRunParams$1, exchangeName?: ExchangeName, when?: Date): Promise<PlotModel>;
-
-type PlotExtractConfig<T = number> = {
-    plot: string;
-    barsBack?: number;
-    transform?: (value: number) => T;
+/**
+ * Маппинг tuple нод в tuple их resolved-значений.
+ * Сохраняет позиционную структуру: [SourceNode<number>, SourceNode<string>] → [number, string].
+ */
+type InferValues<TNodes extends TypedNode[]> = {
+    [K in keyof TNodes]: TNodes[K] extends TypedNode ? InferNodeValue<TNodes[K]> : never;
 };
-type PlotMapping = {
-    [key: string]: string | PlotExtractConfig<any>;
+/**
+ * Извлекает тип возвращаемого значения из TypedNode.
+ * Используется InferValues и run() для типобезопасного резолвинга.
+ */
+type InferNodeValue<T extends TypedNode> = T extends SourceNode<infer V> ? V : T extends OutputNode<any, infer V> ? V : never;
+/**
+ * Узел-источник данных. Не имеет входящих зависимостей.
+ * T — тип значения, возвращаемого fetch().
+ */
+type SourceNode<T extends Value = Value> = {
+    type: NodeType.SourceNode;
+    description?: string;
+    fetch: (symbol: string, when: Date, exchangeName: ExchangeName) => Promise<T> | T;
 };
-type ExtractedData<M extends PlotMapping> = {
-    [K in keyof M]: M[K] extends PlotExtractConfig<infer R> ? R : M[K] extends string ? number : never;
+/**
+ * Узел вычисления. TNodes — tuple входящих зависимостей,
+ * TResult — тип возвращаемого значения compute().
+ * values в compute автоматически выводится из типов TNodes.
+ */
+type OutputNode<TNodes extends TypedNode[] = TypedNode[], TResult extends Value = Value> = {
+    type: NodeType.OutputNode;
+    description?: string;
+    nodes: TNodes;
+    compute: (values: InferValues<TNodes>) => Promise<TResult> | TResult;
 };
-declare class PineDataService {
-    private readonly loggerService;
-    extract<M extends PlotMapping>(plots: PlotModel, mapping: M): ExtractedData<M>;
-}
+/**
+ * Типизированный узел графа для прикладного программиста.
+ * Подставляется вместо INode для строгой проверки типов и IntelliSense.
+ */
+type TypedNode = SourceNode<Value> | OutputNode<TypedNode[], Value>;
 
-declare function extract<M extends PlotMapping>(plots: PlotModel, mapping: M): Promise<ExtractedData<M>>;
+declare const sourceNode: <T extends Value>(fetch: (symbol: string, when: Date, exchangeName: ExchangeName) => Promise<T> | T) => SourceNode<T>;
+declare const outputNode: <TNodes extends TypedNode[], TResult extends Value = Value>(compute: (values: InferValues<TNodes>) => Promise<TResult> | TResult, ...nodes: TNodes) => OutputNode<TNodes, TResult>;
 
-interface ILogger {
-    log(topic: string, ...args: any[]): void;
-    debug(topic: string, ...args: any[]): void;
-    info(topic: string, ...args: any[]): void;
-    warn(topic: string, ...args: any[]): void;
-}
+/**
+ * Рекурсивно разворачивает граф узлов в плоский массив.
+ * Порядок: сначала зависимости (children), затем родитель — топологический порядок.
+ * Дубликаты (один узел может быть зависимостью нескольких) исключаются по ссылке.
+ */
+declare const deepFlat: (arr?: INode[]) => INode[];
 
-declare function setLogger(logger: ILogger): void;
+/**
+ * Рекурсивно вычисляет значение узла графа.
+ * Для SourceNode вызывает fetch().
+ * Для OutputNode сначала резолвит все дочерние nodes параллельно,
+ * затем передаёт их типизированные значения в compute().
+ */
+declare const resolve: <T extends TypedNode>(node: T) => Promise<InferNodeValue<T>>;
 
-interface IParams {
-    symbol: string;
-    timeframe: CandleInterval;
-    limit: number;
-}
-declare function getSignal(source: File | Code, { symbol, timeframe, limit }: IParams): Promise<ISignalDto | null>;
-
-type ResultId$3 = string | number;
-declare function dumpPlotData<M extends PlotMapping>(signalId: ResultId$3, plots: PlotModel, mapping: M, taName: string, outputDir?: string): Promise<void>;
-
-type ResultId$2 = string | number;
-interface IRunParams {
-    symbol: string;
-    timeframe: CandleInterval;
-    limit: number;
-}
-declare function toMarkdown<M extends PlotMapping>(signalId: ResultId$2, plots: PlotModel, mapping: M, limit?: number): Promise<string>;
-declare function markdown<M extends PlotMapping>(signalId: ResultId$2, source: File | Code, { symbol, timeframe, limit }: IRunParams, mapping: M, exchangeName?: ExchangeName, when?: Date): Promise<string>;
-
-type ResultId$1 = string | number;
-interface SignalData {
-    position: number;
-    priceOpen?: number;
-    priceTakeProfit: number;
-    priceStopLoss: number;
-    minuteEstimatedTime: number;
-}
-interface Signal extends ISignalDto {
+/**
+ * Сериализованная (плоская) форма узла графа для хранения в БД.
+ * Объектные ссылки nodes заменены на массив идентификаторов nodeIds.
+ */
+interface IFlatNode {
+    /**
+     * Уникальный идентификатор узла.
+     */
     id: string;
-}
-declare function toSignalDto(id: ResultId$1, data: SignalData, priceOpen?: number | null | undefined): Signal | null;
-
-interface CandleModel {
-    openTime: number;
-    open: number;
-    high: number;
-    low: number;
-    close: number;
-    volume: number;
-}
-
-interface SymbolInfoModel {
-    ticker: string;
-    tickerid: string;
-    description: string;
-    type: string;
-    basecurrency: string;
-    currency: string;
-    timezone: string;
-}
-
-declare const AXIS_SYMBOL = "_AXIS";
-declare class AxisProviderService implements IProvider {
-    private readonly loggerService;
-    getMarketData(_: string, timeframe: string, limit?: number, sDate?: number, eDate?: number): Promise<any[]>;
-    getSymbolInfo(): Promise<any>;
+    /**
+     * Тип узла.
+     */
+    type: NodeType;
+    /**
+     * Человеко-читаемое описание узла.
+     */
+    description?: string;
+    /**
+     * Идентификаторы входящих зависимостей.
+     * Порядок соответствует порядку значений в compute(values).
+     */
+    nodeIds?: string[];
+    /**
+     * Источник данных для SourceNode — не сериализуется в БД,
+     * восстанавливается на стороне приложения.
+     */
+    fetch?: (symbol: string, when: Date, exchangeName: ExchangeName) => Promise<Value> | Value;
+    /**
+     * Функция вычисления для OutputNode — не сериализуется в БД,
+     * восстанавливается на стороне приложения.
+     */
+    compute?: (values: Value[]) => Promise<Value> | Value;
 }
 
-declare class LoggerService implements ILogger {
-    private _commonLogger;
-    log: (topic: string, ...args: any[]) => Promise<void>;
-    debug: (topic: string, ...args: any[]) => Promise<void>;
-    info: (topic: string, ...args: any[]) => Promise<void>;
-    warn: (topic: string, ...args: any[]) => Promise<void>;
-    setLogger: (logger: ILogger) => void;
-}
+/**
+ * Преобразует древовидный граф в плоский массив IFlatNode для хранения в БД.
+ * Каждому узлу присваивается уникальный id (если не задан),
+ * объектные ссылки nodes заменяются на массив nodeIds.
+ */
+declare const serialize: (roots: INode[]) => IFlatNode[];
+/**
+ * Восстанавливает древовидный граф из плоского массива IFlatNode.
+ * nodes каждого узла заполняется по nodeIds.
+ * Возвращает корневые узлы (те, на которые никто не ссылается).
+ */
+declare const deserialize: (flat: IFlatNode[]) => INode[];
 
-declare class CandleProviderService implements IProvider {
-    readonly loggerService: LoggerService;
-    readonly exchangeContextService: {
-        readonly context: IExchangeContext;
-    };
-    getMarketData(tickerId: string, timeframe: string, limit?: number, sDate?: number, eDate?: number): Promise<any[]>;
-    getSymbolInfo(tickerId: string): Promise<any>;
-}
-
-declare class PineConnectionService {
-    private readonly loggerService;
-    private PineFactory;
-    getInstance: (...args: Parameters<TPineCtor>) => Promise<IPine>;
-    usePine: (ctor: TPineCtor) => void;
-    clear: () => void;
-}
-
-declare class PineJobService {
-    readonly loggerService: LoggerService;
-    readonly axisProviderService: AxisProviderService;
-    readonly candleProviderService: CandleProviderService;
-    readonly pineConnectionService: PineConnectionService;
-    run: (code: Code, tickerId: string, timeframe?: CandleInterval, limit?: number) => Promise<PlotRecord>;
-}
-
-declare class PineCacheService {
-    private readonly loggerService;
-    readFile: (path: string, baseDir?: string) => Promise<string>;
-    clear: (path?: string, baseDir?: string) => Promise<void>;
-}
-
-type ResultId = string | number;
-interface IPlotRow {
-    time: number;
-    [key: string]: number | null;
-}
-declare class PineMarkdownService {
-    private readonly loggerService;
-    getData: <M extends PlotMapping>(plots: PlotModel, mapping: M, limit?: number) => IPlotRow[];
-    getReport: <M extends PlotMapping>(signalId: ResultId, plots: PlotModel, mapping: M, limit?: number) => string;
-    dump: <M extends PlotMapping>(signalId: ResultId, plots: PlotModel, mapping: M, taName: string, outputDir?: string) => Promise<void>;
-}
-
-declare const pine: {
-    pineMarkdownService: PineMarkdownService;
-    pineConnectionService: PineConnectionService;
-    pineCacheService: PineCacheService;
-    pineDataService: PineDataService;
-    pineJobService: PineJobService;
-    axisProviderService: AxisProviderService;
-    candleProviderService: CandleProviderService;
-    loggerService: LoggerService;
-    exchangeContextService: {
-        readonly context: IExchangeContext;
-    };
-};
-
-export { AXIS_SYMBOL, type CandleModel, Code, File, type ILogger, type IPine, type IProvider, type PlotExtractConfig, type PlotMapping, type PlotModel, type PlotRecord, type SymbolInfoModel, type TPineCtor, dumpPlotData, extract, getSignal, pine as lib, markdown, run, setLogger, toMarkdown, toSignalDto, usePine };
+export { type IFlatNode, type INode, type TypedNode, type Value, deepFlat, deserialize, outputNode, resolve, serialize, sourceNode };
