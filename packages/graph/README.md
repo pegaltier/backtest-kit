@@ -1,8 +1,10 @@
-<img src="https://github.com/tripolskypetr/backtest-kit/raw/refs/heads/master/assets/heraldry.svg" height="45px" align="right">
+<img src="https://github.com/tripolskypetr/backtest-kit/raw/refs/heads/master/assets/assignation.svg" height="45px" align="right">
 
 # 📊 @backtest-kit/graph
 
 > Compose backtest-kit computations as a typed directed acyclic graph. Define source nodes that fetch market data and output nodes that compute derived values — then resolve the whole graph in topological order.
+
+![screenshot](https://raw.githubusercontent.com/tripolskypetr/backtest-kit/HEAD/assets/screenshots/screenshot8.png)
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/tripolskypetr/backtest-kit)
 [![npm](https://img.shields.io/npm/v/@backtest-kit/graph.svg?style=flat-square)](https://npmjs.org/package/@backtest-kit/graph)
@@ -10,7 +12,7 @@
 
 📚 **[Backtest Kit Docs](https://backtest-kit.github.io/documents/example_02_first_backtest.html)** | 🌟 **[GitHub](https://github.com/tripolskypetr/backtest-kit)**
 
-## 🔥 Real-world example — multi-timeframe Pine Script strategy
+## 🔥 Multi-timeframe Pine Script strategy
 
 The graph below replicates a two-timeframe strategy: a 4h Pine Script acts as a trend filter, a 15m Pine Script generates the entry signal. `outputNode` combines them and returns `null` when the trend disagrees.
 
@@ -84,6 +86,13 @@ addStrategySchema({
 
 The graph resolves both Pine Script nodes **in parallel** via `Promise.all`, then passes their typed results to `compute`. Replacing either timeframe script or adding a third filter node requires no changes to the strategy wiring.
 
+
+## 🚀 Installation
+
+```bash
+npm install @backtest-kit/graph backtest-kit
+```
+
 ## ✨ Features
 
 - 📊 **DAG execution**: Nodes are resolved bottom-up in topological order with `Promise.all` parallelism
@@ -91,27 +100,6 @@ The graph resolves both Pine Script nodes **in parallel** via `Promise.all`, the
 - 🧱 **Two APIs**: Low-level `INode` for runtime/storage, high-level `TypedNode` + builders for authoring
 - 💾 **DB-ready serialization**: `serialize` / `deserialize` convert the graph to a flat `IFlatNode[]` list with `id` / `nodeIds`
 - 🔌 **Context-aware fetch**: `SourceNode.fetch` receives `(symbol, when, exchangeName)` from the execution context automatically
-
-## 📋 API Reference
-
-| Export | Description |
-|--------|-------------|
-| **`sourceNode(fetch)`** | Builder — creates a typed source node |
-| **`outputNode(compute, ...nodes)`** | Builder — creates a typed output node, infers `values` types from `nodes` |
-| **`resolve(node)`** | Recursively resolves a node graph within backtest-kit execution context |
-| **`serialize(roots)`** | Flattens a node tree into `IFlatNode[]` for DB storage |
-| **`deserialize(flat)`** | Reconstructs a node tree from `IFlatNode[]`, returns root nodes |
-| **`deepFlat(nodes)`** | Utility — returns all nodes in topological order (dependencies first) |
-| **`INode`** | Base runtime interface (untyped, used internally and for serialization) |
-| **`TypedNode`** | Discriminated union for authoring with full IntelliSense |
-| **`IFlatNode`** | Serialized node shape for DB storage |
-| **`Value`** | `string \| number \| boolean \| null` |
-
-## 🚀 Installation
-
-```bash
-npm install @backtest-kit/graph backtest-kit
-```
 
 ## 📖 Usage
 
@@ -274,31 +262,20 @@ const all = deepFlat([vwap]);
 all.forEach(node => console.log(node.description));
 ```
 
-## 🏗️ Architecture
+## 📋 API Reference
 
-```
-sourceNode(fetch)          sourceNode(fetch)
-       │                          │
-       └──────────┬───────────────┘
-                  ▼
-           outputNode(compute)
-                  │
-                  ▼
-             resolve() → Value
-```
-
-- **SourceNode** — leaf node, fetches data via `fetch(symbol, when, exchangeName)`
-- **OutputNode** — internal node, receives resolved values from child `nodes` via `compute(values)`
-- **resolve()** — recursively traverses the graph bottom-up, resolving siblings in parallel via `Promise.all`
-
-## 💡 Why two APIs?
-
-| | `INode` | `TypedNode` + builders |
-|---|---|---|
-| **IntelliSense for values** | `Value[]` (no) | `[number, string, ...]` (yes) |
-| **Use case** | Runtime, serialization, DI | Authoring the graph in code |
-| **Generic parameters** | No | Yes |
-| **Plain object literal** | Yes | Requires builders |
+| Export | Description |
+|--------|-------------|
+| **`sourceNode(fetch)`** | Builder — creates a typed source node |
+| **`outputNode(compute, ...nodes)`** | Builder — creates a typed output node, infers `values` types from `nodes` |
+| **`resolve(node)`** | Recursively resolves a node graph within backtest-kit execution context |
+| **`serialize(roots)`** | Flattens a node tree into `IFlatNode[]` for DB storage |
+| **`deserialize(flat)`** | Reconstructs a node tree from `IFlatNode[]`, returns root nodes |
+| **`deepFlat(nodes)`** | Utility — returns all nodes in topological order (dependencies first) |
+| **`INode`** | Base runtime interface (untyped, used internally and for serialization) |
+| **`TypedNode`** | Discriminated union for authoring with full IntelliSense |
+| **`IFlatNode`** | Serialized node shape for DB storage |
+| **`Value`** | `string \| number \| boolean \| null` |
 
 ## 🤝 Contribute
 
