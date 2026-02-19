@@ -16,6 +16,7 @@ import {
 import backtest from "../lib";
 import { errorEmitter } from "../config/emitters";
 import { PersistCandleAdapter } from "../classes/Persist";
+import { Candle } from "../classes/Candle";
 
 const MS_PER_MINUTE = 60_000;
 
@@ -282,49 +283,55 @@ const GET_CANDLES_FN = async (
   const sinceTimestamp = since.getTime();
   const untilTimestamp = sinceTimestamp + dto.limit * step * MS_PER_MINUTE;
 
-  // Try to read from cache first
-  const cachedCandles = await READ_CANDLES_CACHE_FN(
-    dto,
-    sinceTimestamp,
-    untilTimestamp,
-    self,
-  );
+  await Candle.acquireLock(`ClientExchange GET_CANDLES_FN symbol=${dto.symbol} interval=${dto.interval} limit=${dto.limit}`);
 
-  if (cachedCandles !== null) {
-    return cachedCandles;
-  }
+  try {
+    // Try to read from cache first
+    const cachedCandles = await READ_CANDLES_CACHE_FN(
+      dto,
+      sinceTimestamp,
+      untilTimestamp,
+      self,
+    );
 
-  // Cache miss or error - fetch from API
-  let lastError: Error;
-  for (let i = 0; i !== GLOBAL_CONFIG.CC_GET_CANDLES_RETRY_COUNT; i++) {
-    try {
-      const result = await self.params.getCandles(
-        dto.symbol,
-        dto.interval,
-        since,
-        dto.limit,
-        self.params.execution.context.backtest,
-      );
-
-      VALIDATE_NO_INCOMPLETE_CANDLES_FN(result);
-
-      // Write to cache after successful fetch
-      await WRITE_CANDLES_CACHE_FN(result, dto, self);
-
-      return result;
-    } catch (err) {
-      const message = `ClientExchange GET_CANDLES_FN: attempt ${i + 1} failed for symbol=${dto.symbol}, interval=${dto.interval}, since=${since.toISOString()}, limit=${dto.limit}}`;
-      const payload = {
-        error: errorData(err),
-        message: getErrorMessage(err),
-      };
-      self.params.logger.warn(message, payload);
-      console.warn(message, payload);
-      lastError = err;
-      await sleep(GLOBAL_CONFIG.CC_GET_CANDLES_RETRY_DELAY_MS);
+    if (cachedCandles !== null) {
+      return cachedCandles;
     }
+
+    // Cache miss or error - fetch from API
+    let lastError: Error;
+    for (let i = 0; i !== GLOBAL_CONFIG.CC_GET_CANDLES_RETRY_COUNT; i++) {
+      try {
+        const result = await self.params.getCandles(
+          dto.symbol,
+          dto.interval,
+          since,
+          dto.limit,
+          self.params.execution.context.backtest,
+        );
+
+        VALIDATE_NO_INCOMPLETE_CANDLES_FN(result);
+
+        // Write to cache after successful fetch
+        await WRITE_CANDLES_CACHE_FN(result, dto, self);
+
+        return result;
+      } catch (err) {
+        const message = `ClientExchange GET_CANDLES_FN: attempt ${i + 1} failed for symbol=${dto.symbol}, interval=${dto.interval}, since=${since.toISOString()}, limit=${dto.limit}}`;
+        const payload = {
+          error: errorData(err),
+          message: getErrorMessage(err),
+        };
+        self.params.logger.warn(message, payload);
+        console.warn(message, payload);
+        lastError = err;
+        await sleep(GLOBAL_CONFIG.CC_GET_CANDLES_RETRY_DELAY_MS);
+      }
+    }
+    throw lastError;
+  } finally {
+    Candle.releaseLock(`ClientExchange GET_CANDLES_FN symbol=${dto.symbol} interval=${dto.interval} limit=${dto.limit}`);
   }
-  throw lastError;
 };
 
 /**
