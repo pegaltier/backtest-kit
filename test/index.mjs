@@ -1,6 +1,6 @@
 import "./config/setup.mjs"
 
-import { run } from 'worker-testbed';
+import { run } from 'worker-testbed'
 
 import "./e2e/action.test.mjs";
 import "./e2e/breakeven.test.mjs";

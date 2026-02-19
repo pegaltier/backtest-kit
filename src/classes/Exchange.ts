@@ -3,6 +3,7 @@ import { CandleInterval, ExchangeName, ICandleData, IExchange, IExchangeSchema, 
 import { errorData, getErrorMessage, memoize, queued, trycatch } from "functools-kit";
 import { GLOBAL_CONFIG } from "../config/params";
 import { PersistCandleAdapter } from "./Persist";
+import { Candle } from "./Candle";
 import { errorEmitter } from "../config/emitters";
 
 const EXCHANGE_METHOD_NAME_GET_CANDLES = "ExchangeUtils.getCandles";
@@ -345,94 +346,100 @@ export class ExchangeInstance {
     const since = new Date(sinceTimestamp);
     const untilTimestamp = alignedWhen;
 
-    // Try to read from cache first
-    const cachedCandles = await READ_CANDLES_CACHE_FN(
-      { symbol, interval, limit },
-      sinceTimestamp,
-      untilTimestamp,
-      this.exchangeName,
-    );
+    await Candle.acquireLock(`ExchangeInstance.getCandles symbol=${symbol} interval=${interval} limit=${limit}`);
 
-    if (cachedCandles !== null) {
-      return cachedCandles;
-    }
+    try {
+      // Try to read from cache first
+      const cachedCandles = await READ_CANDLES_CACHE_FN(
+        { symbol, interval, limit },
+        sinceTimestamp,
+        untilTimestamp,
+        this.exchangeName,
+      );
 
-    let allData: ICandleData[] = [];
-
-    // If limit exceeds CC_MAX_CANDLES_PER_REQUEST, fetch data in chunks
-    if (limit > GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST) {
-      let remaining = limit;
-      let currentSince = new Date(since.getTime());
-      const isBacktest = await GET_BACKTEST_FN();
-
-      while (remaining > 0) {
-        const chunkLimit = Math.min(remaining, GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST);
-        const chunkData = await getCandles(
-          symbol,
-          interval,
-          currentSince,
-          chunkLimit,
-          isBacktest
-        );
-
-        allData.push(...chunkData);
-
-        remaining -= chunkLimit;
-        if (remaining > 0) {
-          // Move currentSince forward by the number of candles fetched
-          currentSince = new Date(
-            currentSince.getTime() + chunkLimit * stepMs
-          );
-        }
+      if (cachedCandles !== null) {
+        return cachedCandles;
       }
-    } else {
-      const isBacktest = await GET_BACKTEST_FN();
-      allData = await getCandles(symbol, interval, since, limit, isBacktest);
-    }
 
-    // Apply distinct by timestamp to remove duplicates
-    const uniqueData = Array.from(
-      new Map(allData.map((candle) => [candle.timestamp, candle])).values()
-    );
+      let allData: ICandleData[] = [];
 
-    if (allData.length !== uniqueData.length) {
-      backtest.loggerService.warn(
-        `ExchangeInstance getCandles: Removed ${allData.length - uniqueData.length} duplicate candles by timestamp`
+      // If limit exceeds CC_MAX_CANDLES_PER_REQUEST, fetch data in chunks
+      if (limit > GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST) {
+        let remaining = limit;
+        let currentSince = new Date(since.getTime());
+        const isBacktest = await GET_BACKTEST_FN();
+
+        while (remaining > 0) {
+          const chunkLimit = Math.min(remaining, GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST);
+          const chunkData = await getCandles(
+            symbol,
+            interval,
+            currentSince,
+            chunkLimit,
+            isBacktest
+          );
+
+          allData.push(...chunkData);
+
+          remaining -= chunkLimit;
+          if (remaining > 0) {
+            // Move currentSince forward by the number of candles fetched
+            currentSince = new Date(
+              currentSince.getTime() + chunkLimit * stepMs
+            );
+          }
+        }
+      } else {
+        const isBacktest = await GET_BACKTEST_FN();
+        allData = await getCandles(symbol, interval, since, limit, isBacktest);
+      }
+
+      // Apply distinct by timestamp to remove duplicates
+      const uniqueData = Array.from(
+        new Map(allData.map((candle) => [candle.timestamp, candle])).values()
       );
-    }
 
-    // Validate adapter returned data
-    if (uniqueData.length === 0) {
-      throw new Error(
-        `ExchangeInstance getCandles: adapter returned empty array. ` +
-        `Expected ${limit} candles starting from openTime=${sinceTimestamp}.`
+      if (allData.length !== uniqueData.length) {
+        backtest.loggerService.warn(
+          `ExchangeInstance getCandles: Removed ${allData.length - uniqueData.length} duplicate candles by timestamp`
+        );
+      }
+
+      // Validate adapter returned data
+      if (uniqueData.length === 0) {
+        throw new Error(
+          `ExchangeInstance getCandles: adapter returned empty array. ` +
+          `Expected ${limit} candles starting from openTime=${sinceTimestamp}.`
+        );
+      }
+
+      if (uniqueData[0].timestamp !== sinceTimestamp) {
+        throw new Error(
+          `ExchangeInstance getCandles: first candle timestamp mismatch. ` +
+          `Expected openTime=${sinceTimestamp}, got=${uniqueData[0].timestamp}. ` +
+          `Adapter must return candles with timestamp=openTime, starting from aligned since.`
+        );
+      }
+
+      if (uniqueData.length !== limit) {
+        throw new Error(
+          `ExchangeInstance getCandles: candle count mismatch. ` +
+          `Expected ${limit} candles, got ${uniqueData.length}. ` +
+          `Adapter must return exact number of candles requested.`
+        );
+      }
+
+      // Write to cache after successful fetch
+      await WRITE_CANDLES_CACHE_FN(
+        uniqueData,
+        { symbol, interval, limit },
+        this.exchangeName,
       );
+
+      return uniqueData;
+    } finally {
+      Candle.releaseLock(`ExchangeInstance.getCandles symbol=${symbol} interval=${interval} limit=${limit}`);
     }
-
-    if (uniqueData[0].timestamp !== sinceTimestamp) {
-      throw new Error(
-        `ExchangeInstance getCandles: first candle timestamp mismatch. ` +
-        `Expected openTime=${sinceTimestamp}, got=${uniqueData[0].timestamp}. ` +
-        `Adapter must return candles with timestamp=openTime, starting from aligned since.`
-      );
-    }
-
-    if (uniqueData.length !== limit) {
-      throw new Error(
-        `ExchangeInstance getCandles: candle count mismatch. ` +
-        `Expected ${limit} candles, got ${uniqueData.length}. ` +
-        `Adapter must return exact number of candles requested.`
-      );
-    }
-
-    // Write to cache after successful fetch
-    await WRITE_CANDLES_CACHE_FN(
-      uniqueData,
-      { symbol, interval, limit },
-      this.exchangeName,
-    );
-
-    return uniqueData;
   };
 
   /**
@@ -717,95 +724,101 @@ export class ExchangeInstance {
       );
     }
 
-    // Try to read from cache first
-    const untilTimestamp = sinceTimestamp + calculatedLimit * stepMs;
-    const cachedCandles = await READ_CANDLES_CACHE_FN(
-      { symbol, interval, limit: calculatedLimit },
-      sinceTimestamp,
-      untilTimestamp,
-      this.exchangeName
-    );
+    await Candle.acquireLock(`ExchangeInstance.getRawCandles symbol=${symbol} interval=${interval} limit=${calculatedLimit}`);
 
-    if (cachedCandles !== null) {
-      return cachedCandles;
-    }
+    try {
+      // Try to read from cache first
+      const untilTimestamp = sinceTimestamp + calculatedLimit * stepMs;
+      const cachedCandles = await READ_CANDLES_CACHE_FN(
+        { symbol, interval, limit: calculatedLimit },
+        sinceTimestamp,
+        untilTimestamp,
+        this.exchangeName
+      );
 
-    // Fetch candles
-    const since = new Date(sinceTimestamp);
-    let allData: ICandleData[] = [];
-    const isBacktest = await GET_BACKTEST_FN();
-    const getCandles = this._methods.getCandles;
-
-    if (calculatedLimit > GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST) {
-      let remaining = calculatedLimit;
-      let currentSince = new Date(since.getTime());
-
-      while (remaining > 0) {
-        const chunkLimit = Math.min(remaining, GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST);
-        const chunkData = await getCandles(
-          symbol,
-          interval,
-          currentSince,
-          chunkLimit,
-          isBacktest
-        );
-
-        allData.push(...chunkData);
-
-        remaining -= chunkLimit;
-        if (remaining > 0) {
-          currentSince = new Date(
-            currentSince.getTime() + chunkLimit * stepMs
-          );
-        }
+      if (cachedCandles !== null) {
+        return cachedCandles;
       }
-    } else {
-      allData = await getCandles(symbol, interval, since, calculatedLimit, isBacktest);
-    }
 
-    // Apply distinct by timestamp to remove duplicates
-    const uniqueData = Array.from(
-      new Map(allData.map((candle) => [candle.timestamp, candle])).values()
-    );
+      // Fetch candles
+      const since = new Date(sinceTimestamp);
+      let allData: ICandleData[] = [];
+      const isBacktest = await GET_BACKTEST_FN();
+      const getCandles = this._methods.getCandles;
 
-    if (allData.length !== uniqueData.length) {
-      backtest.loggerService.warn(
-        `ExchangeInstance getRawCandles: Removed ${allData.length - uniqueData.length} duplicate candles by timestamp`
+      if (calculatedLimit > GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST) {
+        let remaining = calculatedLimit;
+        let currentSince = new Date(since.getTime());
+
+        while (remaining > 0) {
+          const chunkLimit = Math.min(remaining, GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST);
+          const chunkData = await getCandles(
+            symbol,
+            interval,
+            currentSince,
+            chunkLimit,
+            isBacktest
+          );
+
+          allData.push(...chunkData);
+
+          remaining -= chunkLimit;
+          if (remaining > 0) {
+            currentSince = new Date(
+              currentSince.getTime() + chunkLimit * stepMs
+            );
+          }
+        }
+      } else {
+        allData = await getCandles(symbol, interval, since, calculatedLimit, isBacktest);
+      }
+
+      // Apply distinct by timestamp to remove duplicates
+      const uniqueData = Array.from(
+        new Map(allData.map((candle) => [candle.timestamp, candle])).values()
       );
-    }
 
-    // Validate adapter returned data
-    if (uniqueData.length === 0) {
-      throw new Error(
-        `ExchangeInstance getRawCandles: adapter returned empty array. ` +
-        `Expected ${calculatedLimit} candles starting from openTime=${sinceTimestamp}.`
+      if (allData.length !== uniqueData.length) {
+        backtest.loggerService.warn(
+          `ExchangeInstance getRawCandles: Removed ${allData.length - uniqueData.length} duplicate candles by timestamp`
+        );
+      }
+
+      // Validate adapter returned data
+      if (uniqueData.length === 0) {
+        throw new Error(
+          `ExchangeInstance getRawCandles: adapter returned empty array. ` +
+          `Expected ${calculatedLimit} candles starting from openTime=${sinceTimestamp}.`
+        );
+      }
+
+      if (uniqueData[0].timestamp !== sinceTimestamp) {
+        throw new Error(
+          `ExchangeInstance getRawCandles: first candle timestamp mismatch. ` +
+          `Expected openTime=${sinceTimestamp}, got=${uniqueData[0].timestamp}. ` +
+          `Adapter must return candles with timestamp=openTime, starting from aligned since.`
+        );
+      }
+
+      if (uniqueData.length !== calculatedLimit) {
+        throw new Error(
+          `ExchangeInstance getRawCandles: candle count mismatch. ` +
+          `Expected ${calculatedLimit} candles, got ${uniqueData.length}. ` +
+          `Adapter must return exact number of candles requested.`
+        );
+      }
+
+      // Write to cache after successful fetch
+      await WRITE_CANDLES_CACHE_FN(
+        uniqueData,
+        { symbol, interval, limit: calculatedLimit },
+        this.exchangeName
       );
+
+      return uniqueData;
+    } finally {
+      Candle.releaseLock(`ExchangeInstance.getRawCandles symbol=${symbol} interval=${interval} limit=${calculatedLimit}`);
     }
-
-    if (uniqueData[0].timestamp !== sinceTimestamp) {
-      throw new Error(
-        `ExchangeInstance getRawCandles: first candle timestamp mismatch. ` +
-        `Expected openTime=${sinceTimestamp}, got=${uniqueData[0].timestamp}. ` +
-        `Adapter must return candles with timestamp=openTime, starting from aligned since.`
-      );
-    }
-
-    if (uniqueData.length !== calculatedLimit) {
-      throw new Error(
-        `ExchangeInstance getRawCandles: candle count mismatch. ` +
-        `Expected ${calculatedLimit} candles, got ${uniqueData.length}. ` +
-        `Adapter must return exact number of candles requested.`
-      );
-    }
-
-    // Write to cache after successful fetch
-    await WRITE_CANDLES_CACHE_FN(
-      uniqueData,
-      { symbol, interval, limit: calculatedLimit },
-      this.exchangeName
-    );
-
-    return uniqueData;
   };
 }
 
