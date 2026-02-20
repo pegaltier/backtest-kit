@@ -26,6 +26,10 @@ import { sleep, Subject } from "functools-kit";
 
 test("listenRisk captures rejection events with correct data", async ({ pass, fail }) => {
 
+  setConfig({
+    CC_ENABLE_CANDLE_FETCH_MUTEX: false,
+  }, true);
+
   const rejectionEvents = [];
 
     setConfig({
@@ -272,8 +276,12 @@ test("listenRisk captures rejection events with correct data", async ({ pass, fa
 
 });
 
-/*
+
 test("Risk.getData returns correct statistics after rejections", async ({ pass, fail }) => {
+
+  setConfig({
+    CC_ENABLE_CANDLE_FETCH_MUTEX: false,
+  }, true);
 
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
@@ -422,6 +430,10 @@ test("Risk.getData returns correct statistics after rejections", async ({ pass, 
 
 
 test("Risk.getReport generates markdown with correct table structure", async ({ pass, fail }) => {
+
+  setConfig({
+    CC_ENABLE_CANDLE_FETCH_MUTEX: false,
+  }, true);
 
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
@@ -575,6 +587,10 @@ test("Risk.getReport generates markdown with correct table structure", async ({ 
 
 test("RejectionNote field captures validation note in rejection events", async ({ pass, fail }) => {
 
+  setConfig({
+    CC_ENABLE_CANDLE_FETCH_MUTEX: false,
+  }, true);
+
   const rejectionNotes = [];
 
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
@@ -716,6 +732,10 @@ test("RejectionNote field captures validation note in rejection events", async (
 
 
 test("Multiple rejection tracking with bySymbol and byStrategy statistics", async ({ pass, fail }) => {
+
+  setConfig({
+    CC_ENABLE_CANDLE_FETCH_MUTEX: false,
+  }, true);
 
   const startTime = new Date("2024-01-01T00:00:00Z").getTime();
   const intervalMs = 60000;
@@ -903,4 +923,3 @@ test("Multiple rejection tracking with bySymbol and byStrategy statistics", asyn
   fail(`Statistics aggregation incomplete: only ${pairsWithRejections.length} pairs had rejections, bySymbol=${hasValidBySymbol}, byStrategy=${hasValidByStrategy}`);
 
 });
-*/

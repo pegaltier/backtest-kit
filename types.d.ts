@@ -4246,6 +4246,13 @@ declare const GLOBAL_CONFIG: {
      * Default: 50 signals
      */
     CC_MAX_SIGNALS: number;
+    /**
+     * Enables mutex locking for candle fetching to prevent concurrent fetches of the same candles.
+     * This can help avoid redundant API calls and ensure data consistency when multiple processes/threads attempt to fetch candles simultaneously.
+     *
+     * Default: true (mutex locking enabled for candle fetching)
+     */
+    CC_ENABLE_CANDLE_FETCH_MUTEX: boolean;
 };
 /**
  * Type for global configuration object.
@@ -4354,6 +4361,7 @@ declare function getConfig(): {
     CC_ORDER_BOOK_MAX_DEPTH_LEVELS: number;
     CC_MAX_NOTIFICATIONS: number;
     CC_MAX_SIGNALS: number;
+    CC_ENABLE_CANDLE_FETCH_MUTEX: boolean;
 };
 /**
  * Retrieves the default configuration object for the framework.
@@ -4390,6 +4398,7 @@ declare function getDefaultConfig(): Readonly<{
     CC_ORDER_BOOK_MAX_DEPTH_LEVELS: number;
     CC_MAX_NOTIFICATIONS: number;
     CC_MAX_SIGNALS: number;
+    CC_ENABLE_CANDLE_FETCH_MUTEX: boolean;
 }>;
 /**
  * Sets custom column configurations for markdown report generation.

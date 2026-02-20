@@ -160,6 +160,14 @@ export const GLOBAL_CONFIG = {
    * Default: 50 signals
    */
   CC_MAX_SIGNALS: 50,
+
+  /**
+   * Enables mutex locking for candle fetching to prevent concurrent fetches of the same candles.
+   * This can help avoid redundant API calls and ensure data consistency when multiple processes/threads attempt to fetch candles simultaneously.
+   *
+   * Default: true (mutex locking enabled for candle fetching)
+   */
+  CC_ENABLE_CANDLE_FETCH_MUTEX: true,
 };
 
 export const DEFAULT_CONFIG = Object.freeze({...GLOBAL_CONFIG});

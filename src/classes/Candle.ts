@@ -1,3 +1,4 @@
+import { GLOBAL_CONFIG } from "../config/params";
 import backtest from "../lib";
 import { Lock } from "./Lock";
 
@@ -11,6 +12,9 @@ export class CandleUtils {
     backtest.loggerService.info(METHOD_NAME_ACQUIRE_LOCK, {
       source,
     });
+    if (!GLOBAL_CONFIG.CC_ENABLE_CANDLE_FETCH_MUTEX) {
+      return;
+    }
     return await this._lock.acquireLock();
   };
 
@@ -18,6 +22,9 @@ export class CandleUtils {
     backtest.loggerService.info(METHOD_NAME_RELEASE_LOCK, {
       source,
     });
+    if (!GLOBAL_CONFIG.CC_ENABLE_CANDLE_FETCH_MUTEX) {
+      return;
+    }
     return await this._lock.releaseLock();
   };
 }
