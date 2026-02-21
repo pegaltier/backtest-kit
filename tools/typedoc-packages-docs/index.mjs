@@ -10,13 +10,20 @@ import { str } from "functools-kit";
 import { join } from "path";
 
 const OUTPUT_DIR = "./docs/packages";
+const CLI_OUTPUT_DIR = "./docs/cli";
 
 const files = await glob("./packages/**/readme.md", { nodir: true, ignore: "**/node_modules/**" });
+const cliFiles = await glob("./cli/README.md", { nodir: true });
 
 if (existsSync(OUTPUT_DIR)) {
     await rm(OUTPUT_DIR, { recursive: true });
 }
 await mkdir(OUTPUT_DIR, { recursive: true });
+
+if (existsSync(CLI_OUTPUT_DIR)) {
+    await rm(CLI_OUTPUT_DIR, { recursive: true });
+}
+await mkdir(CLI_OUTPUT_DIR, { recursive: true });
 
 await Promise.all(files.map(async (filePath) => {
     const content = await readFile(filePath, "utf-8");
@@ -43,6 +50,26 @@ await Promise.all(files.map(async (filePath) => {
             `---`,
             `title: packages/${packageName}/readme`,
             `group: packages/${packageName}`,
+            `---`,
+            ``,
+            content
+        );
+
+    await writeFile(outputPath, newContent, "utf-8");
+}));
+
+await Promise.all(cliFiles.map(async (filePath) => {
+    const content = await readFile(filePath, "utf-8");
+
+    const outputPath = join(CLI_OUTPUT_DIR, "cli.md");
+
+    const hasFrontmatter = content.trimStart().startsWith("---");
+    const newContent = hasFrontmatter
+        ? content
+        : str.newline(
+            `---`,
+            `title: cli/readme`,
+            `group: cli`,
             `---`,
             ``,
             content
