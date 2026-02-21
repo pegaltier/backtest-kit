@@ -7,7 +7,7 @@ import {
   warmCandles,
   CandleInterval,
 } from "backtest-kit";
-import { retry } from "functools-kit";
+import { getErrorMessage, retry } from "functools-kit";
 import { getArgs } from "../../../helpers/getArgs";
 
 const DEFAULT_TIMEFRAME_LIST: CandleInterval[] = ["1m", "15m", "30m", "4h"];
@@ -48,6 +48,9 @@ const CACHE_CANDLES_FN = retry(
     },
   ) => {
     try {
+      console.log(
+        `Checking candles cache for ${dto.symbol} ${interval} from ${dto.from} to ${dto.to}`,
+      );
       await checkCandles({
         exchangeName: dto.exchangeName,
         from: dto.from,
@@ -56,6 +59,9 @@ const CACHE_CANDLES_FN = retry(
         interval: <CandleInterval>interval,
       });
     } catch (error) {
+      console.log(
+        `Caching candles for ${dto.symbol} ${interval} from ${dto.from} to ${dto.to}`,
+      );
       await warmCandles({
         symbol: dto.symbol,
         exchangeName: dto.exchangeName,
@@ -82,13 +88,18 @@ export class CacheLogicService {
     });
     const { startDate, endDate } = await GET_TIMEFRAME_RANGE_FN(dto.frameName);
     const intervalList = await GET_TIMEFRAME_LIST_FN();
-    for (const interval of intervalList) {
-      await CACHE_CANDLES_FN(interval, {
-        symbol: dto.symbol,
-        exchangeName: dto.exchangeName,
-        from: startDate,
-        to: endDate,
-      });
+    try {
+      for (const interval of intervalList) {
+        await CACHE_CANDLES_FN(interval, {
+          symbol: dto.symbol,
+          exchangeName: dto.exchangeName,
+          from: startDate,
+          to: endDate,
+        });
+      }
+    } catch (error) {
+      console.log(getErrorMessage(error));
+      throw error;
     }
   };
 }
