@@ -8,8 +8,10 @@ import BacktestMainService from "./services/main/BacktestMainService";
 import ExchangeLogicService from "./services/logic/ExchangeLogicService";
 import FrameLogicService from "./services/logic/FrameLogicService";
 import ResolveService from "./services/base/ResolveService";
+import ErrorService from "./services/base/ErrorService";
 
 const baseServices = {
+  errorService: inject<ErrorService>(TYPES.errorService),
   loggerService: inject<LoggerService>(TYPES.loggerService),
   resolveService: inject<ResolveService>(TYPES.resolveService),
 };

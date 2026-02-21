@@ -2,6 +2,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import path from "path";
 import { access } from "fs/promises";
 import { constants } from "fs";
+import dotenv from "dotenv";
 import { inject } from '../../../lib/core/di';
 import LoggerService from './LoggerService';
 import TYPES from '../../../lib/core/types';
@@ -27,6 +28,7 @@ export class ResolveService {
         await access(absolutePath, constants.F_OK | constants.R_OK);
         const moduleRoot = path.dirname(absolutePath);
         process.chdir(moduleRoot);
+        dotenv.config({ path: path.join(moduleRoot, '.env') });
         await import(pathToFileURL(absolutePath).href);
         _is_launched = true;
     }

@@ -1,3 +1,4 @@
+import ErrorService from "../services/base/ErrorService";
 import LoggerService from "../services/base/LoggerService";
 import ResolveService from "../services/base/ResolveService";
 import ExchangeLogicService from "../services/logic/ExchangeLogicService";
@@ -9,6 +10,7 @@ import { provide } from "./di";
 import TYPES from "./types";
 
 {
+    provide(TYPES.errorService, () => new ErrorService());
     provide(TYPES.loggerService, () => new LoggerService());
     provide(TYPES.resolveService, () => new ResolveService());
 }

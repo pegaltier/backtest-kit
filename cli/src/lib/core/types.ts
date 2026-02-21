@@ -1,4 +1,5 @@
 const baseServices = {
+    errorService: Symbol('errorService'),
     loggerService: Symbol('loggerService'),
     resolveService: Symbol('resolveService'),
 };
