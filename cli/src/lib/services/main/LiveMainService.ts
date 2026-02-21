@@ -6,6 +6,8 @@ import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import ExchangeLogicService from "../logic/ExchangeLogicService";
 import ResolveService from "../base/ResolveService";
+import FrontendProviderService from "../provider/FrontendProviderService";
+import TelegramProviderService from "../provider/TelegramProviderService";
 
 export class LiveMainService {
 
@@ -14,9 +16,16 @@ export class LiveMainService {
   private exchangeLogicService = inject<ExchangeLogicService>(TYPES.exchangeLogicService);
 
   private resolveService = inject<ResolveService>(TYPES.resolveService);
+  private frontendProviderService = inject<FrontendProviderService>(TYPES.frontendProviderService);
+  private telegramProviderService = inject<TelegramProviderService>(TYPES.telegramProviderService);
 
   protected init = singleshot(async () => {
     this.loggerService.log("liveMainService init");
+
+    {
+        this.frontendProviderService.init();
+        this.telegramProviderService.init();
+    }
 
     const { values, positionals } = getArgs();
 

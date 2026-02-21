@@ -12,6 +12,8 @@ import TYPES from "../../../lib/core/types";
 import ExchangeLogicService from "../logic/ExchangeLogicService";
 import FrameLogicService from "../logic/FrameLogicService";
 import ResolveService from "../base/ResolveService";
+import FrontendProviderService from "../provider/FrontendProviderService";
+import TelegramProviderService from "../provider/TelegramProviderService";
 
 export class BacktestMainService {
   private loggerService = inject<LoggerService>(TYPES.loggerService);
@@ -24,9 +26,16 @@ export class BacktestMainService {
   );
 
   private resolveService = inject<ResolveService>(TYPES.resolveService);
+  private frontendProviderService = inject<FrontendProviderService>(TYPES.frontendProviderService);
+  private telegramProviderService = inject<TelegramProviderService>(TYPES.telegramProviderService);
 
   protected init = singleshot(async () => {
     this.loggerService.log("backtestMainService init");
+
+    {
+        this.frontendProviderService.init();
+        this.telegramProviderService.init();
+    }
 
     const { values, positionals } = getArgs();
 
