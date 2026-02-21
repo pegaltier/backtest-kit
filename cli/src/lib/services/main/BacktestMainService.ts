@@ -86,7 +86,7 @@ export class BacktestMainService {
       throw new Error("Frame name is required");
     }
 
-    await this.cacheLogicService.cacheCandles({
+    await this.cacheLogicService.execute({
         exchangeName,
         frameName,
         symbol,

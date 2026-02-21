@@ -78,12 +78,12 @@ const CACHE_CANDLES_FN = retry(
 export class CacheLogicService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
-  public cacheCandles = async (dto: {
+  public execute = async (dto: {
     symbol: string;
     frameName: string;
     exchangeName: string;
   }) => {
-    this.loggerService.log("cacheLogicService cacheCandles", {
+    this.loggerService.log("cacheLogicService execute", {
       dto,
     });
     const { startDate, endDate } = await GET_TIMEFRAME_RANGE_FN(dto.frameName);
