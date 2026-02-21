@@ -36,6 +36,8 @@ export class PaperMainService {
         this.exchangeLogicService.init();
     }
 
+    const symbol = <string>values.symbol || "BTCUSDT";
+
     const [defaultStrategyName = null] = await listStrategySchema();
     const [defaultExchangeName = null] = await listExchangeSchema();
 
@@ -53,7 +55,7 @@ export class PaperMainService {
       throw new Error("Exchange name is required");
     }
 
-    Live.background("BTCUSDT", {
+    Live.background(symbol, {
       strategyName,
       exchangeName,
     });

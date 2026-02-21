@@ -1,15 +1,13 @@
 import { singleshot } from "functools-kit";
 import { parseArgs } from "util";
 
-const DEFAULT_SYMBOL = "BTCUSDT";
-
 export const getArgs = singleshot(() => {
   const { values, positionals } = parseArgs({
     args: process.argv,
     options: {
       symbol: {
         type: "string",
-        default: DEFAULT_SYMBOL,
+        default: "",
       },
       strategy: {
         type: "string",

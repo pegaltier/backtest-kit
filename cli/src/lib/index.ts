@@ -9,6 +9,7 @@ import ExchangeLogicService from "./services/logic/ExchangeLogicService";
 import FrameLogicService from "./services/logic/FrameLogicService";
 import ResolveService from "./services/base/ResolveService";
 import ErrorService from "./services/base/ErrorService";
+import SymbolLogicService from "./services/logic/SymbolLogicService";
 
 const baseServices = {
   errorService: inject<ErrorService>(TYPES.errorService),
@@ -24,6 +25,7 @@ const mainServices = {
 
 const logicServices = {
   exchangeLogicService: inject<ExchangeLogicService>(TYPES.exchangeLogicService),
+  symbolLogicService: inject<SymbolLogicService>(TYPES.symbolLogicService),
   frameLogicService: inject<FrameLogicService>(TYPES.frameLogicService),
 }
 

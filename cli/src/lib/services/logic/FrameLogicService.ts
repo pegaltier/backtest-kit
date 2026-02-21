@@ -7,6 +7,7 @@ import FrameName from "../../../enum/FrameName";
 
 const ADD_FRAME_FN = (self: FrameLogicService) => {
   self.loggerService.log("Adding February 2024 as a default frame schema");
+  console.warn("Warning: The default frame schema is set to February 2024. Please make sure to update it according to your needs using --frame cli param.");
   addFrameSchema({
     frameName: FrameName.DefaultFrame,
     interval: "1m",

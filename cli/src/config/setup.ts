@@ -21,10 +21,10 @@ import {
 
 {
   StorageLive.usePersist();
-  StorageBacktest.usePersist();
+  StorageBacktest.useDummy();
 }
 
 {
-  NotificationLive.usePersist();
-  NotificationBacktest.usePersist();
+  NotificationLive.useDummy();
+  NotificationBacktest.useDummy();
 }

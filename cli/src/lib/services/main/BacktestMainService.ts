@@ -1,4 +1,9 @@
-import { Backtest, listExchangeSchema, listFrameSchema, listStrategySchema } from "backtest-kit";
+import {
+  Backtest,
+  listExchangeSchema,
+  listFrameSchema,
+  listStrategySchema,
+} from "backtest-kit";
 import { singleshot } from "functools-kit";
 import { getArgs } from "../../../helpers/getArgs";
 import { inject } from "../../../lib/core/di";
@@ -9,11 +14,14 @@ import FrameLogicService from "../logic/FrameLogicService";
 import ResolveService from "../base/ResolveService";
 
 export class BacktestMainService {
-
   private loggerService = inject<LoggerService>(TYPES.loggerService);
 
-  private exchangeLogicService = inject<ExchangeLogicService>(TYPES.exchangeLogicService);
-  private frameLogicService = inject<FrameLogicService>(TYPES.frameLogicService);
+  private exchangeLogicService = inject<ExchangeLogicService>(
+    TYPES.exchangeLogicService,
+  );
+  private frameLogicService = inject<FrameLogicService>(
+    TYPES.frameLogicService,
+  );
 
   private resolveService = inject<ResolveService>(TYPES.resolveService);
 
@@ -35,9 +43,11 @@ export class BacktestMainService {
     await this.resolveService.attachEntryPoint(entryPoint);
 
     {
-        this.exchangeLogicService.init();
-        this.frameLogicService.init();
+      this.exchangeLogicService.init();
+      this.frameLogicService.init();
     }
+
+    const symbol = <string>values.symbol || "BTCUSDT";
 
     const [defaultStrategyName = null] = await listStrategySchema();
     const [defaultExchangeName = null] = await listExchangeSchema();
@@ -63,7 +73,7 @@ export class BacktestMainService {
       throw new Error("Frame name is required");
     }
 
-    Backtest.background("BTCUSDT", {
+    Backtest.background(symbol, {
       strategyName,
       frameName,
       exchangeName,

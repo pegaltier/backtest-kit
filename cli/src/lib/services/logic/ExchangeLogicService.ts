@@ -14,6 +14,7 @@ const MAX_DEPTH_LEVELS = 1_000;
 
 const ADD_EXCHANGE_FN = (self: ExchangeLogicService) => {
   self.loggerService.log("Adding CCXT Binance as a default exchange schema");
+  console.warn("Warning: The default exchange schema is set to CCXT Binance. Please make sure to update it according to your needs using --exchange cli param.");
   addExchangeSchema({
     exchangeName: ExchangeName.DefaultExchange,
     getCandles: async (symbol, interval, since, limit) => {
