@@ -41,8 +41,10 @@
     "default": "./build/index.cjs"
   },
   "devDependencies": {
+    "@backtest-kit/ui": "3.1.0",
     "@rollup/plugin-typescript": "11.1.6",
     "@types/node": "22.9.0",
+    "backtest-kit": "3.1.0",
     "glob": "11.0.1",
     "rimraf": "6.0.1",
     "rollup": "3.29.5",
@@ -51,14 +53,13 @@
     "ts-morph": "27.0.2",
     "tslib": "2.7.0",
     "typedoc": "0.27.9",
-    "backtest-kit": "3.1.0",
-    "@backtest-kit/ui": "3.1.0",
     "worker-testbed": "1.0.12"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "ccxt": "^4.5.39",
     "di-kit": "^1.0.18",
     "di-scoped": "^1.0.21",
     "functools-kit": "^1.0.95",

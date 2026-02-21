@@ -4,13 +4,21 @@ import { getArgs } from "../../../helpers/getArgs";
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
+import ExchangeLogicService from "../logic/ExchangeLogicService";
 
 export class PaperMainService {
 
   private loggerService = inject<LoggerService>(TYPES.loggerService);
 
+  private exchangeLogicService = inject<ExchangeLogicService>(TYPES.exchangeLogicService);
+
   protected init = singleshot(async () => {
     this.loggerService.log("paperMainService init");
+
+    {
+        this.exchangeLogicService.init();
+    }
+
     const { values, positionals } = getArgs();
 
     if (!values.paper) {

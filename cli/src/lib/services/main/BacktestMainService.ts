@@ -4,13 +4,24 @@ import { getArgs } from "../../../helpers/getArgs";
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
+import ExchangeLogicService from "../logic/ExchangeLogicService";
+import FrameLogicService from "../logic/FrameLogicService";
 
 export class BacktestMainService {
 
   private loggerService = inject<LoggerService>(TYPES.loggerService);
 
+  private exchangeLogicService = inject<ExchangeLogicService>(TYPES.exchangeLogicService);
+  private frameLogicService = inject<FrameLogicService>(TYPES.frameLogicService);
+
   protected init = singleshot(async () => {
     this.loggerService.log("backtestMainService init");
+
+    {
+        this.exchangeLogicService.init();
+        this.frameLogicService.init();
+    }
+
     const { values, positionals } = getArgs();
 
     if (!values.backtest) {

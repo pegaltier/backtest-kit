@@ -1,0 +1,85 @@
+import { singleshot } from "functools-kit";
+import { inject } from "../../../lib/core/di";
+import LoggerService from "../base/LoggerService";
+import TYPES from "../../../lib/core/types";
+import {
+  addExchangeSchema,
+  listExchangeSchema,
+  roundTicks,
+} from "backtest-kit";
+import { getExchange } from "../../../config/ccxt";
+import ExchangeName from "../../../enum/ExchangeName";
+
+const MAX_DEPTH_LEVELS = 1_000;
+
+const ADD_EXCHANGE_FN = (self: ExchangeLogicService) => {
+  self.loggerService.log("Adding CCXT Binance as a default exchange schema");
+  addExchangeSchema({
+    exchangeName: ExchangeName.DefaultExchange,
+    getCandles: async (symbol, interval, since, limit) => {
+      const exchange = await getExchange();
+      const candles = await exchange.fetchOHLCV(
+        symbol,
+        interval,
+        since.getTime(),
+        limit,
+      );
+
+      return candles.map(
+        ([timestamp, open, high, low, close, volume], idx) => ({
+          timestamp,
+          open,
+          high,
+          low,
+          close,
+          volume,
+        }),
+      );
+    },
+    formatPrice: async (symbol, price) => {
+      const exchange = await getExchange();
+      const market = exchange.market(symbol);
+      const tickSize = market.limits?.price?.min || market.precision?.price;
+      if (tickSize !== undefined) {
+        return roundTicks(price, tickSize);
+      }
+      return exchange.priceToPrecision(symbol, price);
+    },
+    formatQuantity: async (symbol, quantity) => {
+      const exchange = await getExchange();
+      const market = exchange.market(symbol);
+      const stepSize = market.limits?.amount?.min || market.precision?.amount;
+      if (stepSize !== undefined) {
+        return roundTicks(quantity, stepSize);
+      }
+      return exchange.amountToPrecision(symbol, quantity);
+    },
+    getOrderBook: async (symbol) => {
+      const exchange = await getExchange();
+      const bookData = await exchange.fetchOrderBook(symbol, MAX_DEPTH_LEVELS);
+      return {
+        symbol,
+        asks: bookData.asks.map(([price, quantity]) => ({
+          price: String(price),
+          quantity: String(quantity),
+        })),
+        bids: bookData.bids.map(([price, quantity]) => ({
+          price: String(price),
+          quantity: String(quantity),
+        })),
+      };
+    },
+  });
+};
+
+export class ExchangeLogicService {
+  public readonly loggerService = inject<LoggerService>(TYPES.loggerService);
+
+  public init = singleshot(async () => {
+    this.loggerService.log("exchangeLogicService init");
+    const { length } = await listExchangeSchema();
+    !length && ADD_EXCHANGE_FN(this);
+  });
+}
+
+export default ExchangeLogicService;

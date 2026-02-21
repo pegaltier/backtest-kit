@@ -8,9 +8,15 @@ const mainServices = {
     liveMainService: Symbol('liveMainService'),
 }
 
+const logicServices = {
+    exchangeLogicService: Symbol('exchangeLogicService'),
+    frameLogicService: Symbol('frameLogicService'),
+}
+
 export const TYPES = {
     ...baseServices,
     ...mainServices,
+    ...logicServices,
 }
 
 export default TYPES;
