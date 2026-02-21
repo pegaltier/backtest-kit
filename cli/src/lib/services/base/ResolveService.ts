@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 import { inject } from '../../../lib/core/di';
 import LoggerService from './LoggerService';
 import TYPES from '../../../lib/core/types';
+import { entrySubject } from '../../../config/emitters';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,6 +31,7 @@ export class ResolveService {
         process.chdir(moduleRoot);
         dotenv.config({ path: path.join(moduleRoot, '.env') });
         await import(pathToFileURL(absolutePath).href);
+        await entrySubject.next(absolutePath);
         _is_launched = true;
     }
 

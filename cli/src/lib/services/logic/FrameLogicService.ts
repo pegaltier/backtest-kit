@@ -4,6 +4,7 @@ import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { addFrameSchema, listFrameSchema } from "backtest-kit";
 import FrameName from "../../../enum/FrameName";
+import { getArgs } from "../../../helpers/getArgs";
 
 const ADD_FRAME_FN = (self: FrameLogicService) => {
   self.loggerService.log("Adding February 2024 as a default frame schema");
@@ -21,6 +22,9 @@ export class FrameLogicService {
 
   public init = singleshot(async () => {
     this.loggerService.log("frameLogicService init");
+    if (!getArgs().values.backtest) {
+      return;
+    }
     const { length } = await listFrameSchema();
     !length && ADD_FRAME_FN(this);
   });
