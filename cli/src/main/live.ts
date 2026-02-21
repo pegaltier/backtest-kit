@@ -1,7 +1,5 @@
 import {
   Live,
-  listExchangeSchema,
-  listStrategySchema,
 } from "backtest-kit";
 import { getArgs } from "../helpers/getArgs";
 import { singleshot } from "functools-kit";
@@ -9,19 +7,18 @@ import notifyShutdown from "../utils/notifyShutdown";
 
 const BEFORE_EXIT_FN = singleshot(async () => {
   process.off("SIGINT", BEFORE_EXIT_FN);
+
+  const [running = null] = await Live.list();
+
+  if (!running) {
+    return;
+  }
+
   notifyShutdown();
-  const { values } = getArgs();
-  const symbol = <string>values.symbol || "BTCUSDT";
-  const [defaultStrategyName = null] = await listStrategySchema();
-  const [defaultExchangeName = null] = await listExchangeSchema();
 
-  const strategyName =
-    <string>values.strategy || defaultStrategyName?.strategyName;
+  const { exchangeName, strategyName, symbol, status } = running;
 
-  const exchangeName =
-    <string>values.exchange || defaultExchangeName?.exchangeName;
-
-  if (!strategyName || !exchangeName) {
+  if (status === "fulfilled") {
     return;
   }
 
