@@ -1,7 +1,7 @@
 import { singleshot } from "functools-kit";
-import { inject } from "../../../lib/core/di";
+import { inject } from "../../core/di";
 import LoggerService from "../base/LoggerService";
-import TYPES from "../../../lib/core/types";
+import TYPES from "../../core/types";
 import {
   addExchangeSchema,
   listExchangeSchema,
@@ -10,7 +10,7 @@ import {
 import { getExchange } from "../../../config/ccxt";
 import ExchangeName from "../../../enum/ExchangeName";
 
-const ADD_EXCHANGE_FN = (self: ExchangeLogicService) => {
+const ADD_EXCHANGE_FN = (self: ExchangeSchemaService) => {
   self.loggerService.log("Adding CCXT Binance as a default exchange schema");
   console.warn("Warning: The default exchange schema is set to CCXT Binance. Please make sure to update it according to your needs using --exchange cli param.");
   addExchangeSchema({
@@ -74,14 +74,14 @@ const ADD_EXCHANGE_FN = (self: ExchangeLogicService) => {
   });
 };
 
-export class ExchangeLogicService {
+export class ExchangeSchemaService {
   public readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
   public init = singleshot(async () => {
-    this.loggerService.log("exchangeLogicService init");
+    this.loggerService.log("exchangeSchemaService init");
     const { length } = await listExchangeSchema();
     !length && ADD_EXCHANGE_FN(this);
   });
 }
 
-export default ExchangeLogicService;
+export default ExchangeSchemaService;

@@ -4,7 +4,7 @@ import { getArgs } from "../../../helpers/getArgs";
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
-import ExchangeLogicService from "../logic/ExchangeLogicService";
+import ExchangeSchemaService from "../schema/ExchangeSchemaService";
 import ResolveService from "../base/ResolveService";
 import FrontendProviderService from "../provider/FrontendProviderService";
 import TelegramProviderService from "../provider/TelegramProviderService";
@@ -13,7 +13,7 @@ export class LiveMainService {
 
   private loggerService = inject<LoggerService>(TYPES.loggerService);
 
-  private exchangeLogicService = inject<ExchangeLogicService>(TYPES.exchangeLogicService);
+  private exchangeSchemaService = inject<ExchangeSchemaService>(TYPES.exchangeSchemaService);
 
   private resolveService = inject<ResolveService>(TYPES.resolveService);
   private frontendProviderService = inject<FrontendProviderService>(TYPES.frontendProviderService);
@@ -42,7 +42,7 @@ export class LiveMainService {
     await this.resolveService.attachEntryPoint(entryPoint);
 
     {
-        this.exchangeLogicService.init();
+        this.exchangeSchemaService.init();
     }
 
     const symbol = <string>values.symbol || "BTCUSDT";

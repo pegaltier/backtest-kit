@@ -11,9 +11,9 @@ const mainServices = {
 }
 
 const logicServices = {
-    exchangeLogicService: Symbol('exchangeLogicService'),
-    symbolLogicService: Symbol('symbolLogicService'),
-    frameLogicService: Symbol('frameLogicService'),
+    exchangeSchemaService: Symbol('exchangeSchemaService'),
+    symbolSchemaService: Symbol('symbolSchemaService'),
+    frameSchemaService: Symbol('frameSchemaService'),
     cacheLogicService: Symbol('cacheLogicService'),
 }
 

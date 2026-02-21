@@ -1,14 +1,14 @@
 import { singleshot } from "functools-kit";
-import { inject } from "../../../lib/core/di";
+import { inject } from "../../core/di";
 import LoggerService from "../base/LoggerService";
-import TYPES from "../../../lib/core/types";
+import TYPES from "../../core/types";
 import { getArgs } from "src/helpers/getArgs";
 
-export class SymbolLogicService {
+export class SymbolSchemaService {
   public readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
   public init = singleshot(async () => {
-    this.loggerService.log("symbolLogicService init");
+    this.loggerService.log("symbolSchemaService init");
     if (!getArgs().values.symbol) {
       console.warn(
         "Warning: The default symbol is set to BTCUSDT. Please make sure to update it according to your needs using --symbol cli param.",
@@ -17,4 +17,4 @@ export class SymbolLogicService {
   });
 }
 
-export default SymbolLogicService;
+export default SymbolSchemaService;

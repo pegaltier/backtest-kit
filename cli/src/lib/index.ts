@@ -5,11 +5,11 @@ import LoggerService from "./services/base/LoggerService";
 import PaperMainService from "./services/main/PaperMainService";
 import LiveMainService from "./services/main/LiveMainService";
 import BacktestMainService from "./services/main/BacktestMainService";
-import ExchangeLogicService from "./services/logic/ExchangeLogicService";
-import FrameLogicService from "./services/logic/FrameLogicService";
+import ExchangeSchemaService from "./services/schema/ExchangeSchemaService";
+import FrameSchemaService from "./services/schema/FrameSchemaService";
 import ResolveService from "./services/base/ResolveService";
 import ErrorService from "./services/base/ErrorService";
-import SymbolLogicService from "./services/logic/SymbolLogicService";
+import SymbolSchemaService from "./services/schema/SymbolSchemaService";
 import FrontendProviderService from "./services/provider/FrontendProviderService";
 import TelegramProviderService from "./services/provider/TelegramProviderService";
 import CacheLogicService from "./services/logic/CacheLogicService";
@@ -27,9 +27,9 @@ const mainServices = {
 }
 
 const logicServices = {
-  exchangeLogicService: inject<ExchangeLogicService>(TYPES.exchangeLogicService),
-  symbolLogicService: inject<SymbolLogicService>(TYPES.symbolLogicService),
-  frameLogicService: inject<FrameLogicService>(TYPES.frameLogicService),
+  exchangeSchemaService: inject<ExchangeSchemaService>(TYPES.exchangeSchemaService),
+  symbolSchemaService: inject<SymbolSchemaService>(TYPES.symbolSchemaService),
+  frameSchemaService: inject<FrameSchemaService>(TYPES.frameSchemaService),
   cacheLogicService: inject<CacheLogicService>(TYPES.cacheLogicService),
 }
 

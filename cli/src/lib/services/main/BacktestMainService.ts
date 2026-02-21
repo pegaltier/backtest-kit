@@ -9,8 +9,8 @@ import { getArgs } from "../../../helpers/getArgs";
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
-import ExchangeLogicService from "../logic/ExchangeLogicService";
-import FrameLogicService from "../logic/FrameLogicService";
+import ExchangeSchemaService from "../schema/ExchangeSchemaService";
+import FrameSchemaService from "../schema/FrameSchemaService";
 import ResolveService from "../base/ResolveService";
 import FrontendProviderService from "../provider/FrontendProviderService";
 import TelegramProviderService from "../provider/TelegramProviderService";
@@ -19,11 +19,11 @@ import CacheLogicService from "../logic/CacheLogicService";
 export class BacktestMainService {
   private loggerService = inject<LoggerService>(TYPES.loggerService);
 
-  private exchangeLogicService = inject<ExchangeLogicService>(
-    TYPES.exchangeLogicService,
+  private exchangeSchemaService = inject<ExchangeSchemaService>(
+    TYPES.exchangeSchemaService,
   );
-  private frameLogicService = inject<FrameLogicService>(
-    TYPES.frameLogicService,
+  private frameSchemaService = inject<FrameSchemaService>(
+    TYPES.frameSchemaService,
   );
   private cacheLogicService = inject<CacheLogicService>(
     TYPES.cacheLogicService,
@@ -56,8 +56,8 @@ export class BacktestMainService {
     await this.resolveService.attachEntryPoint(entryPoint);
 
     {
-      this.exchangeLogicService.init();
-      this.frameLogicService.init();
+      this.exchangeSchemaService.init();
+      this.frameSchemaService.init();
     }
 
     const symbol = <string>values.symbol || "BTCUSDT";

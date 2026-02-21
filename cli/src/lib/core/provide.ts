@@ -1,9 +1,9 @@
 import ErrorService from "../services/base/ErrorService";
 import LoggerService from "../services/base/LoggerService";
 import ResolveService from "../services/base/ResolveService";
-import ExchangeLogicService from "../services/logic/ExchangeLogicService";
-import FrameLogicService from "../services/logic/FrameLogicService";
-import SymbolLogicService from "../services/logic/SymbolLogicService";
+import ExchangeSchemaService from "../services/schema/ExchangeSchemaService";
+import FrameSchemaService from "../services/schema/FrameSchemaService";
+import SymbolSchemaService from "../services/schema/SymbolSchemaService";
 import BacktestMainService from "../services/main/BacktestMainService";
 import LiveMainService from "../services/main/LiveMainService";
 import PaperMainService from "../services/main/PaperMainService";
@@ -25,9 +25,9 @@ import TYPES from "./types";
 }
 
 {
-    provide(TYPES.exchangeLogicService, () => new ExchangeLogicService());
-    provide(TYPES.symbolLogicService, () => new SymbolLogicService());
-    provide(TYPES.frameLogicService, () => new FrameLogicService());
+    provide(TYPES.exchangeSchemaService, () => new ExchangeSchemaService());
+    provide(TYPES.symbolSchemaService, () => new SymbolSchemaService());
+    provide(TYPES.frameSchemaService, () => new FrameSchemaService());
 }
 
 {
