@@ -30,8 +30,10 @@ export class ResolveService {
         await access(absolutePath, constants.F_OK | constants.R_OK);
         const moduleRoot = path.dirname(absolutePath);
         {
+            const cwd = process.cwd();
             process.chdir(moduleRoot);
-            dotenv.config({ path: path.join(moduleRoot, '.env') });
+            dotenv.config({ path: path.join(cwd, '.env') });
+            dotenv.config({ path: path.join(moduleRoot, '.env'), override: true });
             await import(pathToFileURL(absolutePath).href);
             await entrySubject.next(absolutePath);
         }
