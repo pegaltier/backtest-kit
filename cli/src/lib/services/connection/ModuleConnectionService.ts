@@ -69,6 +69,9 @@ export class ModuleConnectionService {
   public getInstance = memoize(
     ([fileName]) => `${fileName}`,
     async (fileName: string): Promise<IPublicAction> => {
+      this.loggerService.log("moduleConnectionService getInstance", {
+        fileName,
+      });
       return await LOAD_MODULE_MODULE_FN(fileName, this);
     },
   );
