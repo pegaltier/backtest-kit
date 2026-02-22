@@ -63,7 +63,7 @@ export class QuickchartApiService {
   public readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
   public getChart = async (symbol: string, interval: string) => {
-    this.loggerService.log("quickchartApiService getMinuteChart", {
+    this.loggerService.log("quickchartApiService getChart", {
       symbol,
     });
 
