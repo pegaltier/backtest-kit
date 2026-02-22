@@ -6,8 +6,9 @@ import { GLOBAL_CONFIG } from "../config/params";
  *
  * For signals with partial closes:
  * - Calculates weighted PNL: Σ(percent_i × pnl_i) for each partial + (remaining% × final_pnl)
- * - Each partial close has its own fees and slippage
- * - Total fees = 2 × (number of partial closes + 1 final close) × CC_PERCENT_FEE
+ * - Each partial close has its own slippage
+ * - Open fee is charged once; close fees are proportional to each partial's size
+ * - Total fees = CC_PERCENT_FEE (open) + CC_PERCENT_FEE × 1 (closes sum to 100%) = 2 × CC_PERCENT_FEE
  *
  * Formula breakdown:
  * 1. Apply slippage to open/close prices (worse execution)
@@ -58,7 +59,9 @@ export const toProfitLossDto = (
   // Calculate weighted PNL with partial closes
   if (signal._partial && signal._partial.length > 0) {
     let totalWeightedPnl = 0;
-    let totalFees = 0;
+
+    // Open fee is paid once for the whole position
+    let totalFees = GLOBAL_CONFIG.CC_PERCENT_FEE;
 
     // Calculate PNL for each partial close
     for (const partial of signal._partial) {
@@ -89,8 +92,8 @@ export const toProfitLossDto = (
       const weightedPnl = (partialPercent / 100) * partialPnl;
       totalWeightedPnl += weightedPnl;
 
-      // Each partial has fees for open + close (2 transactions)
-      totalFees += GLOBAL_CONFIG.CC_PERCENT_FEE * 2;
+      // Close fee is proportional to the size of this partial
+      totalFees += GLOBAL_CONFIG.CC_PERCENT_FEE * (partialPercent / 100);
     }
 
     // Calculate PNL for remaining position (if any)
@@ -122,11 +125,12 @@ export const toProfitLossDto = (
       const weightedRemainingPnl = (remainingPercent / 100) * remainingPnl;
       totalWeightedPnl += weightedRemainingPnl;
 
-      // Final close also has fees
-      totalFees += GLOBAL_CONFIG.CC_PERCENT_FEE * 2;
+      // Close fee is proportional to the remaining size
+      totalFees += GLOBAL_CONFIG.CC_PERCENT_FEE * (remainingPercent / 100);
     }
 
     // Subtract total fees from weighted PNL
+    // totalFees = CC_PERCENT_FEE (open) + CC_PERCENT_FEE × 1 (all closes sum to 100%) = 2 × CC_PERCENT_FEE
     const pnlPercentage = totalWeightedPnl - totalFees;
 
     return {
