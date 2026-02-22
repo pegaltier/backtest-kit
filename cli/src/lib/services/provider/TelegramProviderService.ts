@@ -29,17 +29,7 @@ export class TelegramProviderService {
       return;
     }
 
-    let disposeFn: Function;
-
-    const main = async () => {
-      disposeFn = await this.telegramLogicService.connect();
-    };
-
-    main();
-
-    return () => {
-      disposeFn && disposeFn();
-    }
+    return this.telegramLogicService.connect();
   });
 
   public disable = () => {

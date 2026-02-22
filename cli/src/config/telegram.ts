@@ -78,10 +78,10 @@ export const getTelegram = singleshot(async () => {
     return message_id;
   };
 
-  const stopBot = () => {
+  const stopBot = singleshot(() => {
     bot.stop();
     _is_stopped = true;
-  }
+  })
 
   return { bot, sendMessage, removeMessage, sendDocument, stopBot };
 });
