@@ -23,10 +23,14 @@ const handleHealthCheck = singleshot(async (bot: Telegraf) => {
 });
 
 export const getTelegram = singleshot(async () => {
+
+  if (_is_stopped) {
+    throw new Error("Telegram provider is stopped. Restart the process to enable it again.");
+  }
+
   const { CC_TELEGRAM_TOKEN } = await getEnv();
 
   if (!CC_TELEGRAM_TOKEN) {
-    getTelegram.clear();
     throw new Error(
       "Telegram token is not set. Please set CC_TELEGRAM_TOKEN environment variable.",
     );
