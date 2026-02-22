@@ -13,24 +13,36 @@ const require = createRequire(import.meta.url);
 
 type TPublicActionCtor = new () => IPublicAction;
 
+const getExtVariants = (fileName: string): string[] => {
+  const ext = path.extname(fileName);
+  const base = ext ? fileName.slice(0, -ext.length) : fileName;
+  return [fileName, `${base}.cjs`, `${base}.mjs`];
+};
+
 const REQUIRE_MODULE_FACTORY = (
   fileName: string,
 ): TPublicActionCtor | IPublicAction | null => {
-  try {
-    return require(fileName);
-  } catch {
-    return null;
+  for (const variant of getExtVariants(fileName)) {
+    try {
+      return require(variant);
+    } catch {
+      continue;
+    }
   }
+  return null;
 };
 
 const IMPORT_MODULE_FACTORY = async (
   fileName: string,
 ): Promise<TPublicActionCtor | IPublicAction | null> => {
-  try {
-    return await import(fileName);
-  } catch {
-    return null;
+  for (const variant of getExtVariants(fileName)) {
+    try {
+      return await import(variant);
+    } catch {
+      continue;
+    }
   }
+  return null;
 };
 
 const LOAD_MODULE_MODULE_FN = async (
