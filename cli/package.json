@@ -1,7 +1,7 @@
 {
   "name": "@backtest-kit/cli",
   "version": "0.0.1",
-  "description": "The CLI for launching backtests without a boilerplate",
+  "description": "Zero-boilerplate CLI runner for backtest-kit strategies. Run backtests, paper trading, and live bots with candle cache warming, web dashboard, and Telegram notifications — no setup code required.",
   "author": {
     "name": "Petr Tripolsky",
     "email": "tripolskypetr@gmail.com",
@@ -13,7 +13,23 @@
   },
   "license": "MIT",
   "homepage": "https://backtest-kit.github.io/documents/example_02_first_backtest.html",
-  "keywords": [],
+  "keywords": [
+    "backtest",
+    "backtesting",
+    "trading",
+    "cli",
+    "cryptocurrency",
+    "crypto",
+    "live-trading",
+    "paper-trading",
+    "telegram",
+    "binance",
+    "ccxt",
+    "candle-cache",
+    "strategy",
+    "typescript",
+    "monorepo"
+  ],
   "files": [
     "build",
     "types.d.ts",
