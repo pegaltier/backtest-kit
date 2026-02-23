@@ -30,13 +30,13 @@ Point the CLI at your strategy file, choose a mode, and it handles exchange conn
 
 `@backtest-kit/cli` wraps the `backtest-kit` engine and resolves all scaffolding automatically:
 
-| Mode | Flag | Description |
-|------|------|-------------|
-| **Backtest** | `--backtest` | Run strategy against historical candle data |
-| **Paper** | `--paper` | Simulate live trading using real-time prices (no real orders) |
-| **Live** | `--live` | Execute real trades via exchange API |
-| **UI Dashboard** | `--ui` | Launch interactive web dashboard at `http://localhost:60050` |
-| **Telegram** | `--telegram` | Send signal notifications with price charts to a Telegram channel |
+| Mode             | Flag          | Description                                  |
+|------------------|---------------|----------------------------------------------|
+| **Backtest**     | `--backtest`  | Run strategy on historical candle data       |
+| **Paper**        | `--paper`     | Live prices, no real orders                  |
+| **Live**         | `--live`      | Real trades via exchange API                 |
+| **UI Dashboard** | `--ui`        | Web dashboard at `http://localhost:60050`    |
+| **Telegram**     | `--telegram`  | Trade notifications with price charts        |
 
 ## 🚀 Installation
 
@@ -129,19 +129,19 @@ npm start -- --symbol BTCUSDT --ui
 
 ## 🎛️ CLI Flags
 
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `--backtest` | boolean | `false` | Run historical backtest |
-| `--paper` | boolean | `false` | Run paper trading (live prices, no real orders) |
-| `--live` | boolean | `false` | Run live trading |
-| `--ui` | boolean | `false` | Start web UI dashboard |
-| `--telegram` | boolean | `false` | Enable Telegram notifications |
-| `--verbose` | boolean | `false` | Log each candle fetch (symbol, interval, since) |
-| `--symbol` | string | `"BTCUSDT"` | Trading pair to run |
-| `--strategy` | string | first registered | Strategy name to use |
-| `--exchange` | string | first registered | Exchange name to use |
-| `--frame` | string | first registered | Backtest frame name |
-| `--cache` | string | `"1m, 15m, 30m, 4h"` | Comma-separated intervals to pre-cache before backtest |
+| Flag          | Type    | Default              | Description                               |
+|---------------|---------|----------------------|-------------------------------------------|
+| `--backtest`  | boolean | `false`              | Run historical backtest                   |
+| `--paper`     | boolean | `false`              | Paper trading (live prices, no orders)    |
+| `--live`      | boolean | `false`              | Run live trading                          |
+| `--ui`        | boolean | `false`              | Start web UI dashboard                    |
+| `--telegram`  | boolean | `false`              | Enable Telegram notifications             |
+| `--verbose`   | boolean | `false`              | Log each candle fetch                     |
+| `--symbol`    | string  | `"BTCUSDT"`          | Trading pair                              |
+| `--strategy`  | string  | first registered     | Strategy name                             |
+| `--exchange`  | string  | first registered     | Exchange name                             |
+| `--frame`     | string  | first registered     | Backtest frame name                       |
+| `--cache`     | string  | `"1m, 15m, 30m, 4h"` | Intervals to pre-cache before backtest   |
 
 **Positional argument (required):** path to your strategy entry point file (set once in `package.json` scripts).
 
@@ -263,13 +263,13 @@ npm run backtest:dec
 
 ### Isolated Resources Per Strategy
 
-| Resource | Path (relative to strategy dir) | Isolated |
-|----------|----------------------------------|---------|
-| Candle cache | `./dump/data/candle/` | ✅ per-strategy |
-| Backtest reports | `./dump/` | ✅ per-strategy |
-| Live module | `./modules/live.module.mjs` | ✅ per-strategy |
-| Telegram templates | `./template/*.mustache` | ✅ per-strategy |
-| Environment variables | `./.env` (overrides root) | ✅ per-strategy |
+| Resource            | Path (relative to strategy dir)   | Isolated         |
+|---------------------|-----------------------------------|------------------|
+| Candle cache        | `./dump/data/candle/`             | ✅ per-strategy  |
+| Backtest reports    | `./dump/`                         | ✅ per-strategy  |
+| Live module         | `./modules/live.module.mjs`       | ✅ per-strategy  |
+| Telegram templates  | `./template/*.mustache`           | ✅ per-strategy  |
+| Environment variables | `./.env` (overrides root)       | ✅ per-strategy  |
 
 Each strategy run produces its own `dump/` directory, making it straightforward to compare results across time periods — both by inspection and by pointing an AI agent at a specific strategy folder.
 
@@ -372,24 +372,24 @@ CC_WWWROOT_PORT=60050
 CC_QUICKCHART_HOST=
 ```
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `CC_TELEGRAM_TOKEN` | — | Telegram bot token (from @BotFather) |
-| `CC_TELEGRAM_CHANNEL` | — | Telegram channel or chat ID |
-| `CC_WWWROOT_HOST` | `0.0.0.0` | UI server bind address |
-| `CC_WWWROOT_PORT` | `60050` | UI server port |
-| `CC_QUICKCHART_HOST` | — | Self-hosted QuickChart instance URL |
+| Variable               | Default     | Description                           |
+|------------------------|-------------|---------------------------------------|
+| `CC_TELEGRAM_TOKEN`    | —           | Telegram bot token (from @BotFather)  |
+| `CC_TELEGRAM_CHANNEL`  | —           | Telegram channel or chat ID           |
+| `CC_WWWROOT_HOST`      | `0.0.0.0`   | UI server bind address                |
+| `CC_WWWROOT_PORT`      | `60050`     | UI server port                        |
+| `CC_QUICKCHART_HOST`   | —           | Self-hosted QuickChart instance URL   |
 
 ## ⚙️ Default Behaviors
 
 When your strategy module does not register an exchange, frame, or strategy name, the CLI falls back to built-in defaults and prints a console warning:
 
-| Component | Default | Warning |
-|-----------|---------|---------|
-| **Exchange** | CCXT Binance (`default_exchange`) | `Warning: The default exchange schema is set to CCXT Binance...` |
-| **Frame** | February 2024 (`default_frame`) | `Warning: The default frame schema is set to February 2024...` |
-| **Symbol** | `BTCUSDT` | — |
-| **Cache intervals** | `1m, 15m, 30m, 4h` | Shown if `--cache` not provided |
+| Component    | Default                        | Warning                                                                   |
+|--------------|--------------------------------|---------------------------------------------------------------------------|
+| **Exchange** | CCXT Binance (`default_exchange`) | `Warning: The default exchange schema is set to CCXT Binance...`       |
+| **Frame**    | February 2024 (`default_frame`)   | `Warning: The default frame schema is set to February 2024...`         |
+| **Symbol**   | `BTCUSDT`                         | —                                                                      |
+| **Cache intervals** | `1m, 15m, 30m, 4h`         | Shown if `--cache` not provided                                        |
 
 > **Note:** The default exchange schema **does not support order book fetching in backtest mode**. If your strategy calls `getOrderBook()` during backtest, you must register a custom exchange schema with your own snapshot storage.
 
