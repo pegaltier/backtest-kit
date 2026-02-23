@@ -139,6 +139,12 @@ export class LiveProviderService {
   public enable = singleshot(() => {
     this.loggerService.log("liveProviderService enable");
 
+    LOAD_INSTANCE_FN(this)
+      .catch(() => {
+        console.log("No ./modules/live.module.mjs found, live trading failed to initialize");
+        process.exit(-1);
+      })
+
     const unRisk = listenRisk(async (event) => {
       await this.handleRisk(event);
     });
