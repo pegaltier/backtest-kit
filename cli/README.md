@@ -1,6 +1,6 @@
 <img src="https://github.com/tripolskypetr/backtest-kit/raw/refs/heads/master/assets/square_compasses.svg" height="45px" align="right">
 
-# 🧿 @backtest-kit/cli
+# 📟 @backtest-kit/cli
 
 > Zero-boilerplate CLI for launching backtests, paper trading, and live trading. Run any backtest-kit strategy from the command line — no setup code required.
 
