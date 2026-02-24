@@ -1,3 +1,79 @@
+# CLI Runner (v3.1.1, 24/02/2026)
+
+> Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/3.1.1)
+
+# @backtest-kit/cli 📟
+
+New `@backtest-kit/cli` package — a zero-boilerplate command-line runner for backtest-kit strategies. Point it at your strategy entry point and run backtests, paper trading, or live bots without writing any infrastructure code.
+
+**Execution Modes:**
+- `--backtest` — runs strategy against historical candle data from a registered `FrameSchema`; auto-warms OHLCV cache for all required intervals before execution
+- `--paper` — connects to live exchange prices but places no real orders; safe validation before going live
+- `--live` — deploys a real trading bot with live order execution; requires exchange API keys in `.env`
+
+**Optional Features:**
+- `--ui` — launches `@backtest-kit/ui` web dashboard (configurable via `CC_WWWROOT_HOST` / `CC_WWWROOT_PORT`)
+- `--telegram` — sends formatted HTML trade notifications with price charts via Telegram Bot API (requires `CC_TELEGRAM_TOKEN` / `CC_TELEGRAM_CHANNEL`)
+- `--verbose` — logs each candle fetch with symbol, interval, and timestamp for cache debugging
+- `--noCache` — skips automatic OHLCV cache warming for the backtest mode
+
+**CLI Arguments:**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--symbol` | `BTCUSDT` | Trading pair |
+| `--strategy` | first registered | Strategy name |
+| `--exchange` | first registered | Exchange name |
+| `--frame` | first registered | Backtest frame name |
+| `--cacheInterval` | `1m, 15m, 30m, 4h` | Comma-separated list of intervals to pre-cache |
+
+**Mustache Notification Templates:**
+
+All trade events have overridable templates: `opened`, `closed`, `scheduled`, `cancelled`, `risk`, `trailing-take`, `trailing-stop`, `breakeven`, `partial-profit`, `partial-loss`. Place custom `.mustache` files in `{strategy_dir}/template/` to override defaults.
+
+**Live Module System:**
+
+Optional `modules/live.module.mjs` lifecycle hooks called on every position event:
+
+```javascript
+export default class {
+  onOpened(event) { ... }
+  onClosed(event) { ... }
+  onScheduled(event) { ... }
+  onCancelled(event) { ... }
+  onRisk(event) { ... }
+  onPartialProfit(event) { ... }
+  onPartialLoss(event) { ... }
+  onTrailingTake(event) { ... }
+  onTrailingStop(event) { ... }
+  onBreakeven(event) { ... }
+}
+```
+
+Supports both ES modules (`.mjs`) and CommonJS (`.cjs`) with automatic fallback.
+
+**Monorepo Support:**
+
+`ResolveService` changes the working directory to the strategy folder before execution and loads `.env` files in a cascade (root `.env` first, then strategy-specific overrides). All relative paths (`dump/`, `modules/`, `template/`) resolve within the strategy folder, providing complete per-strategy isolation.
+
+**Get Started:**
+```bash
+npx -y @backtest-kit/cli --init
+```
+
+```json
+{
+  "scripts": {
+    "backtest": "@backtest-kit/cli --backtest --symbol ETHUSDT --ui --telegram ./src/index.mjs",
+    "paper":    "@backtest-kit/cli --paper ./src/index.mjs",
+    "start":    "@backtest-kit/cli --live --ui ./src/index.mjs"
+  }
+}
+```
+
+
+
+
 # Frontend GUI & Pine Script Support (v3.0.0, 04/02/2026)
 
 > Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/3.0.0)
