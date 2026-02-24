@@ -204,10 +204,13 @@ export class TelegramLogicService {
       }
     });
 
+    const unConnect = () => this.connect.clear();
+
     const unListen = compose(
       () => unRisk(),
       () => unSignal(),
       () => unCommit(),
+      () => unConnect(),
     );
 
     return () => {

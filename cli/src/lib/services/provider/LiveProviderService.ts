@@ -203,10 +203,13 @@ export class LiveProviderService {
       }
     });
 
+    const unConnect = () => this.enable.clear();
+
     return compose(
       () => unRisk(),
       () => unSignal(),
       () => unCommit(),
+      () => unConnect(),
     );
   });
 
