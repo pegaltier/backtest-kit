@@ -16,5 +16,6 @@ export { type ExchangeName } from "./enum/ExchangeName";
 export { type FrameName } from "./enum/FrameName";
 
 export { setLogger } from "./functions/setup";
+export { run } from "./functions/run";
 
 export { cli } from "./lib"

@@ -3,6 +3,7 @@ import { getArgs } from "../helpers/getArgs";
 import { singleshot } from "functools-kit";
 import notifyShutdown from "../utils/notifyShutdown";
 import cli from "../lib";
+import getEntry from "../helpers/getEntry";
 
 const BEFORE_EXIT_FN = singleshot(async () => {
   process.off("SIGINT", BEFORE_EXIT_FN);
@@ -30,6 +31,9 @@ const BEFORE_EXIT_FN = singleshot(async () => {
 });
 
 export const main = async () => {
+  if (!getEntry(import.meta.url)) {
+    return;
+  }
   const { values } = getArgs();
   if (!values.live) {
     return;

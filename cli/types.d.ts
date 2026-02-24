@@ -252,4 +252,11 @@ declare enum FrameName {
 
 declare function setLogger(logger: ILogger): void;
 
-export { type BaseModule, ExchangeName, FrameName, type ILiveModule, type ILogger, type LiveModule, type TBaseModuleCtor, cli, setLogger };
+type PayloadBacktest = Parameters<typeof cli.backtestMainService.run>[0];
+type PayloadPaper = Parameters<typeof cli.paperMainService.run>[0];
+type PayloadLive = Parameters<typeof cli.liveMainService.run>[0];
+type Mode = "backtest" | "live" | "paper";
+type Args = Partial<PayloadBacktest> | Partial<PayloadPaper> | Partial<PayloadLive>;
+declare function run(mode: Mode, args: Args): Promise<void>;
+
+export { type BaseModule, ExchangeName, FrameName, type ILiveModule, type ILogger, type LiveModule, type TBaseModuleCtor, cli, run, setLogger };
