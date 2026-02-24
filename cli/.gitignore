@@ -3,10 +3,7 @@ build/*
 node_modules
 .DS_Store
 wwwroot
-docs/packages
-docs/cli
 logs
 tmp
 generated
 dump
-install-state.gz
