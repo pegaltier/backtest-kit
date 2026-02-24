@@ -129,19 +129,19 @@ npm start -- --symbol BTCUSDT --ui
 
 ## 🎛️ CLI Flags
 
-| Flag          | Type    | Default              | Description                               |
-|---------------|---------|----------------------|-------------------------------------------|
-| `--backtest`  | boolean | `false`              | Run historical backtest                   |
-| `--paper`     | boolean | `false`              | Paper trading (live prices, no orders)    |
-| `--live`      | boolean | `false`              | Run live trading                          |
-| `--ui`        | boolean | `false`              | Start web UI dashboard                    |
-| `--telegram`  | boolean | `false`              | Enable Telegram notifications             |
-| `--verbose`   | boolean | `false`              | Log each candle fetch                     |
-| `--symbol`    | string  | `"BTCUSDT"`          | Trading pair                              |
-| `--strategy`  | string  | first registered     | Strategy name                             |
-| `--exchange`  | string  | first registered     | Exchange name                             |
-| `--frame`     | string  | first registered     | Backtest frame name                       |
-| `--cache`     | string  | `"1m, 15m, 30m, 4h"` | Intervals to pre-cache before backtest   |
+| Flag          | Type    | Description                                                        |
+|---------------|---------|--------------------------------------------------------------------|
+| `--backtest`  | boolean | Run historical backtest (default: `false`)                         |
+| `--paper`     | boolean | Paper trading (live prices, no orders) (default: `false`)          |
+| `--live`      | boolean | Run live trading (default: `false`)                                |
+| `--ui`        | boolean | Start web UI dashboard (default: `false`)                          |
+| `--telegram`  | boolean | Enable Telegram notifications (default: `false`)                   |
+| `--verbose`   | boolean | Log each candle fetch (default: `false`)                           |
+| `--symbol`    | string  | Trading pair (default: `"BTCUSDT"`)                                |
+| `--strategy`  | string  | Strategy name (default: first registered)                          |
+| `--exchange`  | string  | Exchange name (default: first registered)                          |
+| `--frame`     | string  | Backtest frame name (default: first registered)                    |
+| `--cache`     | string  | Intervals to pre-cache before backtest (default: `"1m, 15m, 30m, 4h"`) |
 
 **Positional argument (required):** path to your strategy entry point file (set once in `package.json` scripts).
 
