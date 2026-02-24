@@ -1,6 +1,6 @@
 import * as functools_kit from 'functools-kit';
+import { CandleInterval, TrailingTakeCommit, TrailingStopCommit, BreakevenCommit, PartialProfitCommit, PartialLossCommit, IStrategyTickResultScheduled, IStrategyTickResultCancelled, IStrategyTickResultOpened, IStrategyTickResultClosed, RiskContract } from 'backtest-kit';
 import { Input } from 'telegraf';
-import { TrailingTakeCommit, TrailingStopCommit, BreakevenCommit, PartialProfitCommit, PartialLossCommit, IStrategyTickResultScheduled, IStrategyTickResultCancelled, IStrategyTickResultOpened, IStrategyTickResultClosed, RiskContract } from 'backtest-kit';
 
 interface ILogger {
     log(topic: string, ...args: any[]): void;
@@ -20,41 +20,68 @@ declare class LoggerService implements ILogger {
 
 declare class PaperMainService {
     private loggerService;
-    private exchangeSchemaService;
     private resolveService;
+    private exchangeSchemaService;
+    private symbolSchemaService;
     private frontendProviderService;
     private telegramProviderService;
+    run: ((payload: {
+        entryPoint: string;
+        symbol: string;
+        strategy: string;
+        exchange: string;
+        verbose: boolean;
+    }) => Promise<void>) & functools_kit.ISingleshotClearable;
     protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
 }
 
 declare class LiveMainService {
     private loggerService;
-    private exchangeSchemaService;
     private resolveService;
+    private exchangeSchemaService;
+    private symbolSchemaService;
     private frontendProviderService;
     private telegramProviderService;
+    private liveProviderService;
+    run: ((payload: {
+        entryPoint: string;
+        symbol: string;
+        strategy: string;
+        exchange: string;
+        verbose: boolean;
+    }) => Promise<void>) & functools_kit.ISingleshotClearable;
     protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
 }
 
 declare class BacktestMainService {
     private loggerService;
+    private resolveService;
     private exchangeSchemaService;
     private frameSchemaService;
+    private symbolSchemaService;
     private cacheLogicService;
-    private resolveService;
     private frontendProviderService;
     private telegramProviderService;
+    run: ((payload: {
+        entryPoint: string;
+        symbol: string;
+        strategy: string;
+        exchange: string;
+        frame: string;
+        cacheList: string[];
+        verbose: boolean;
+    }) => Promise<void>) & functools_kit.ISingleshotClearable;
     protected init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
 }
 
 declare class ExchangeSchemaService {
     readonly loggerService: LoggerService;
-    init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+    addSchema: (() => Promise<void>) & functools_kit.ISingleshotClearable;
 }
 
 declare class FrameSchemaService {
     readonly loggerService: LoggerService;
-    init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+    addSchema: (() => Promise<void>) & functools_kit.ISingleshotClearable;
 }
 
 declare class ResolveService {
@@ -73,14 +100,14 @@ declare class ErrorService {
 
 declare class SymbolSchemaService {
     readonly loggerService: LoggerService;
-    init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+    addSchema: (() => Promise<void>) & functools_kit.ISingleshotClearable;
 }
 
 declare class FrontendProviderService {
     private readonly loggerService;
     enable: (() => () => void) & functools_kit.ISingleshotClearable;
     disable: () => void;
-    init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+    connect: (() => Promise<() => void>) & functools_kit.ISingleshotClearable;
 }
 
 declare class TelegramProviderService {
@@ -88,12 +115,12 @@ declare class TelegramProviderService {
     private readonly telegramLogicService;
     enable: (() => () => void) & functools_kit.ISingleshotClearable;
     disable: () => void;
-    init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+    connect: (() => Promise<() => void>) & functools_kit.ISingleshotClearable;
 }
 
 declare class CacheLogicService {
     private readonly loggerService;
-    execute: (dto: {
+    execute: (intervalList: CandleInterval[], dto: {
         symbol: string;
         frameName: string;
         exchangeName: string;
@@ -190,7 +217,7 @@ declare class LiveProviderService {
     private handleRisk;
     enable: (() => (...args: any[]) => any) & functools_kit.ISingleshotClearable;
     disable: () => void;
-    init: (() => Promise<void>) & functools_kit.ISingleshotClearable;
+    connect: (() => Promise<() => void>) & functools_kit.ISingleshotClearable;
 }
 
 declare const cli: {

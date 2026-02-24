@@ -8,22 +8,6 @@ import {
   CandleInterval,
 } from "backtest-kit";
 import { getErrorMessage, retry } from "functools-kit";
-import { getArgs } from "../../../helpers/getArgs";
-
-const DEFAULT_TIMEFRAME_LIST: CandleInterval[] = ["1m", "15m", "30m", "1h", "4h"];
-
-const GET_TIMEFRAME_LIST_FN = async () => {
-  const { values } = getArgs();
-  if (!values.cache) {
-    console.warn(
-      `Warning: No cache timeframes provided. Using default timeframes: ${DEFAULT_TIMEFRAME_LIST.join(", ")}`,
-    );
-    return DEFAULT_TIMEFRAME_LIST;
-  }
-  return String(values.cache)
-    .split(",")
-    .map((timeframe) => timeframe.trim());
-};
 
 const GET_TIMEFRAME_RANGE_FN = async (frameName: string) => {
   const frameList = await listFrameSchema();
@@ -78,16 +62,18 @@ const CACHE_CANDLES_FN = retry(
 export class CacheLogicService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
-  public execute = async (dto: {
-    symbol: string;
-    frameName: string;
-    exchangeName: string;
-  }) => {
+  public execute = async (
+    intervalList: CandleInterval[],
+    dto: {
+      symbol: string;
+      frameName: string;
+      exchangeName: string;
+    },
+  ) => {
     this.loggerService.log("cacheLogicService execute", {
       dto,
     });
     const { startDate, endDate } = await GET_TIMEFRAME_RANGE_FN(dto.frameName);
-    const intervalList = await GET_TIMEFRAME_LIST_FN();
     try {
       for (const interval of intervalList) {
         await CACHE_CANDLES_FN(interval, {

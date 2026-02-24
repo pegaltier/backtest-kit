@@ -1,4 +1,9 @@
-import { listExchangeSchema, listStrategySchema, Live, overrideExchangeSchema } from "backtest-kit";
+import {
+  listExchangeSchema,
+  listStrategySchema,
+  Live,
+  overrideExchangeSchema,
+} from "backtest-kit";
 import { singleshot } from "functools-kit";
 import { getArgs } from "../../../helpers/getArgs";
 import { inject } from "../../../lib/core/di";
@@ -13,66 +18,68 @@ import SymbolSchemaService from "../schema/SymbolSchemaService";
 import LiveProviderService from "../provider/LiveProviderService";
 
 export class LiveMainService {
-
   private loggerService = inject<LoggerService>(TYPES.loggerService);
-
-  private exchangeSchemaService = inject<ExchangeSchemaService>(TYPES.exchangeSchemaService);
-  private symbolSchemaService = inject<SymbolSchemaService>(TYPES.symbolSchemaService);
-
   private resolveService = inject<ResolveService>(TYPES.resolveService);
 
-  private frontendProviderService = inject<FrontendProviderService>(TYPES.frontendProviderService);
-  private telegramProviderService = inject<TelegramProviderService>(TYPES.telegramProviderService);
-  private liveProviderService = inject<LiveProviderService>(TYPES.liveProviderService);
+  private exchangeSchemaService = inject<ExchangeSchemaService>(
+    TYPES.exchangeSchemaService,
+  );
+  private symbolSchemaService = inject<SymbolSchemaService>(
+    TYPES.symbolSchemaService,
+  );
 
-  protected init = singleshot(async () => {
-    this.loggerService.log("liveMainService init");
+  private frontendProviderService = inject<FrontendProviderService>(
+    TYPES.frontendProviderService,
+  );
+  private telegramProviderService = inject<TelegramProviderService>(
+    TYPES.telegramProviderService,
+  );
+  private liveProviderService = inject<LiveProviderService>(
+    TYPES.liveProviderService,
+  );
+
+  public run = singleshot(async (payload: {
+    entryPoint: string;
+    symbol: string;
+    strategy: string;
+    exchange: string;
+    verbose: boolean;
+  }) => {
+    this.loggerService.log("liveMainService run", {
+      payload,
+    });
 
     {
-        this.frontendProviderService.connect();
-        this.telegramProviderService.connect();
-        this.liveProviderService.connect();
+      this.frontendProviderService.connect();
+      this.telegramProviderService.connect();
+      this.liveProviderService.connect();
     }
 
-    const { values, positionals } = getArgs();
-
-    if (!values.live) {
-      return;
-    }
-
-    const [entryPoint = null] = positionals;
-
-    if (!entryPoint) {
-      throw new Error("Entry point is required");
-    }
-
-    await this.resolveService.attachEntryPoint(entryPoint);
+    await this.resolveService.attachEntryPoint(payload.entryPoint);
 
     {
-        this.exchangeSchemaService.addSchema();
-        this.symbolSchemaService.addSchema();
+      this.exchangeSchemaService.addSchema();
+      this.symbolSchemaService.addSchema();
     }
 
-    const symbol = <string>values.symbol || "BTCUSDT";
+    const symbol = payload.symbol || "BTCUSDT";
 
     const [defaultStrategyName = null] = await listStrategySchema();
     const [defaultExchangeName = null] = await listExchangeSchema();
 
-    const strategyName =
-      <string>values.strategy || defaultStrategyName?.strategyName;
+    const strategyName = payload.strategy || defaultStrategyName?.strategyName;
 
     if (!strategyName) {
       throw new Error("Strategy name is required");
     }
 
-    const exchangeName =
-      <string>values.exchange || defaultExchangeName?.exchangeName;
+    const exchangeName = payload.exchange || defaultExchangeName?.exchangeName;
 
     if (!exchangeName) {
       throw new Error("Exchange name is required");
     }
 
-    if (values.verbose) {
+    if (payload.verbose) {
       overrideExchangeSchema({
         exchangeName,
         callbacks: {
@@ -89,8 +96,32 @@ export class LiveMainService {
       strategyName,
       exchangeName,
     });
-        
+
     notifyFinish();
+  });
+
+  protected init = singleshot(async () => {
+    this.loggerService.log("liveMainService init");
+
+    const { values, positionals } = getArgs();
+
+    if (!values.live) {
+      return;
+    }
+
+    const [entryPoint = null] = positionals;
+
+    if (!entryPoint) {
+      throw new Error("Entry point is required");
+    }
+
+    return await this.run({
+      entryPoint,
+      exchange: <string>values.exchange,
+      strategy: <string>values.strategy,
+      symbol: <string>values.symbol,
+      verbose: <boolean>values.verbose,
+    })
   });
 }
 
