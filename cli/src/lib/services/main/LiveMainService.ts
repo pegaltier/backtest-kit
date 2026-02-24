@@ -10,6 +10,7 @@ import FrontendProviderService from "../provider/FrontendProviderService";
 import TelegramProviderService from "../provider/TelegramProviderService";
 import notifyFinish from "../../../utils/notifyFinish";
 import SymbolSchemaService from "../schema/SymbolSchemaService";
+import LiveProviderService from "../provider/LiveProviderService";
 
 export class LiveMainService {
 
@@ -19,15 +20,18 @@ export class LiveMainService {
   private symbolSchemaService = inject<SymbolSchemaService>(TYPES.symbolSchemaService);
 
   private resolveService = inject<ResolveService>(TYPES.resolveService);
+
   private frontendProviderService = inject<FrontendProviderService>(TYPES.frontendProviderService);
   private telegramProviderService = inject<TelegramProviderService>(TYPES.telegramProviderService);
+  private liveProviderService = inject<LiveProviderService>(TYPES.liveProviderService);
 
   protected init = singleshot(async () => {
     this.loggerService.log("liveMainService init");
 
     {
-        this.frontendProviderService.init();
-        this.telegramProviderService.init();
+        this.frontendProviderService.connect();
+        this.telegramProviderService.connect();
+        this.liveProviderService.connect();
     }
 
     const { values, positionals } = getArgs();

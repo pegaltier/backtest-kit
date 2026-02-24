@@ -26,8 +26,8 @@ export class PaperMainService {
     this.loggerService.log("paperMainService init");
 
     {
-        this.frontendProviderService.init();
-        this.telegramProviderService.init();
+        this.frontendProviderService.connect();
+        this.telegramProviderService.connect();
     }
 
     const { values, positionals } = getArgs();

@@ -28,12 +28,12 @@ export class FrontendProviderService {
     }
   };
 
-  public init = singleshot(async () => {
-    this.loggerService.log("frontendProviderService init");
+  public connect = singleshot(async () => {
+    this.loggerService.log("frontendProviderService connect");
     if (!getArgs().values.ui) {
       return;
     }
-    entrySubject.subscribe(this.enable);
+    return entrySubject.subscribe(this.enable);
   });
 }
 

@@ -42,8 +42,8 @@ export class BacktestMainService {
     this.loggerService.log("backtestMainService init");
 
     {
-        this.frontendProviderService.init();
-        this.telegramProviderService.init();
+        this.frontendProviderService.connect();
+        this.telegramProviderService.connect();
     }
 
     const { values, positionals } = getArgs();

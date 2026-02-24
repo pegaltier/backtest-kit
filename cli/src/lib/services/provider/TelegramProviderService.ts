@@ -40,12 +40,12 @@ export class TelegramProviderService {
     }
   };
 
-  public init = singleshot(async () => {
-    this.loggerService.log("telegramProviderService init");
+  public connect = singleshot(async () => {
+    this.loggerService.log("telegramProviderService connect");
     if (!getArgs().values.telegram) {
       return;
     }
-    entrySubject.subscribe(this.enable);
+    return entrySubject.subscribe(this.enable);
   });
 }
 

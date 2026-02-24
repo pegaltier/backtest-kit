@@ -221,12 +221,12 @@ export class LiveProviderService {
     }
   };
 
-  public init = singleshot(async () => {
-    this.loggerService.log("liveProviderService init");
+  public connect = singleshot(async () => {
+    this.loggerService.log("liveProviderService connect");
     if (!getArgs().values.live) {
       return;
     }
-    entrySubject.subscribe(this.enable);
+    return entrySubject.subscribe(this.enable);
   });
 }
 
