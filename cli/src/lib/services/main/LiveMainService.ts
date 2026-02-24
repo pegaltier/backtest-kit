@@ -9,12 +9,14 @@ import ResolveService from "../base/ResolveService";
 import FrontendProviderService from "../provider/FrontendProviderService";
 import TelegramProviderService from "../provider/TelegramProviderService";
 import notifyFinish from "../../../utils/notifyFinish";
+import SymbolSchemaService from "../schema/SymbolSchemaService";
 
 export class LiveMainService {
 
   private loggerService = inject<LoggerService>(TYPES.loggerService);
 
   private exchangeSchemaService = inject<ExchangeSchemaService>(TYPES.exchangeSchemaService);
+  private symbolSchemaService = inject<SymbolSchemaService>(TYPES.symbolSchemaService);
 
   private resolveService = inject<ResolveService>(TYPES.resolveService);
   private frontendProviderService = inject<FrontendProviderService>(TYPES.frontendProviderService);
@@ -43,7 +45,8 @@ export class LiveMainService {
     await this.resolveService.attachEntryPoint(entryPoint);
 
     {
-        this.exchangeSchemaService.init();
+        this.exchangeSchemaService.addSchema();
+        this.symbolSchemaService.addSchema();
     }
 
     const symbol = <string>values.symbol || "BTCUSDT";

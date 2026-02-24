@@ -77,8 +77,8 @@ const ADD_EXCHANGE_FN = (self: ExchangeSchemaService) => {
 export class ExchangeSchemaService {
   public readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
-  public init = singleshot(async () => {
-    this.loggerService.log("exchangeSchemaService init");
+  public addSchema = singleshot(async () => {
+    this.loggerService.log("exchangeSchemaService addSchema");
     const { length } = await listExchangeSchema();
     !length && ADD_EXCHANGE_FN(this);
   });

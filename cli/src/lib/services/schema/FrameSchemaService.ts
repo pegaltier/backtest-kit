@@ -20,8 +20,8 @@ const ADD_FRAME_FN = (self: FrameSchemaService) => {
 export class FrameSchemaService {
   public readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
-  public init = singleshot(async () => {
-    this.loggerService.log("frameSchemaService init");
+  public addSchema = singleshot(async () => {
+    this.loggerService.log("frameSchemaService addSchema");
     if (!getArgs().values.backtest) {
       return;
     }

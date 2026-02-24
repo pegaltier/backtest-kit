@@ -17,6 +17,7 @@ import FrontendProviderService from "../provider/FrontendProviderService";
 import TelegramProviderService from "../provider/TelegramProviderService";
 import CacheLogicService from "../logic/CacheLogicService";
 import notifyFinish from "../../../utils/notifyFinish";
+import SymbolSchemaService from "../schema/SymbolSchemaService";
 
 export class BacktestMainService {
   private loggerService = inject<LoggerService>(TYPES.loggerService);
@@ -27,6 +28,8 @@ export class BacktestMainService {
   private frameSchemaService = inject<FrameSchemaService>(
     TYPES.frameSchemaService,
   );
+  private symbolSchemaService = inject<SymbolSchemaService>(TYPES.symbolSchemaService);
+
   private cacheLogicService = inject<CacheLogicService>(
     TYPES.cacheLogicService,
   )
@@ -58,8 +61,9 @@ export class BacktestMainService {
     await this.resolveService.attachEntryPoint(entryPoint);
 
     {
-      this.exchangeSchemaService.init();
-      this.frameSchemaService.init();
+      this.exchangeSchemaService.addSchema();
+      this.symbolSchemaService.addSchema();
+      this.frameSchemaService.addSchema();
     }
 
     const symbol = <string>values.symbol || "BTCUSDT";
