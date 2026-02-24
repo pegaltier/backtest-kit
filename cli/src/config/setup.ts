@@ -25,6 +25,6 @@ import {
 }
 
 {
-  NotificationLive.useDummy();
-  NotificationBacktest.useDummy();
+  NotificationLive.usePersist();
+  NotificationBacktest.useMemory();
 }
