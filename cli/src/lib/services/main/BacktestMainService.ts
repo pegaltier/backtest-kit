@@ -161,7 +161,7 @@ export class BacktestMainService {
       return;
     }
 
-    const [entryPoint = null] = positionals;
+    const [entryPoint = null] = positionals.slice(-1);
 
     if (!entryPoint) {
       throw new Error("Entry point is required");

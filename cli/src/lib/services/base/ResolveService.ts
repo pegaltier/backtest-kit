@@ -32,8 +32,8 @@ export class ResolveService {
         {
             const cwd = process.cwd();
             process.chdir(moduleRoot);
-            dotenv.config({ path: path.join(cwd, '.env') });
-            dotenv.config({ path: path.join(moduleRoot, '.env'), override: true });
+            dotenv.config({ path: path.join(cwd, '.env'), override: true, quiet: true });
+            dotenv.config({ path: path.join(moduleRoot, '.env'), override: true, quiet: true });
             await import(pathToFileURL(absolutePath).href);
             await entrySubject.next(absolutePath);
         }

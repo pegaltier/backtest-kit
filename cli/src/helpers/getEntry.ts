@@ -1,5 +1,9 @@
-export const getEntry = (metaUrl: string): boolean => {
-  return process.argv[1] === new URL(metaUrl).pathname
-}
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+export const getEntry = (metaUrl) => {
+    const metaPath = fileURLToPath(metaUrl);
+    return path.resolve(process.argv[1]) === path.resolve(metaPath);
+};
 
 export default getEntry;

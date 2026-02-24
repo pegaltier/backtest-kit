@@ -21,7 +21,7 @@ import {
 
 {
   StorageLive.usePersist();
-  StorageBacktest.useDummy();
+  StorageBacktest.useMemory();
 }
 
 {
