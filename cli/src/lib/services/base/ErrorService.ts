@@ -1,6 +1,7 @@
 import {
   errorData,
   getErrorMessage,
+  singleshot,
   str,
 } from "functools-kit";
 import fs from "fs";
@@ -55,14 +56,14 @@ export class ErrorService {
     });
   };
 
-  protected init = () => {
+  protected init = singleshot(() => {
     const global = <any>globalThis;
     if (global[ERROR_HANDLER_INSTALLED]) {
       return;
     }
     this._listenForError();
     global[ERROR_HANDLER_INSTALLED] = 1;
-  };
+  });
 }
 
 export default ErrorService;
