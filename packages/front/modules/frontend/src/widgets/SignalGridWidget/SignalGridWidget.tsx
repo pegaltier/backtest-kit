@@ -225,62 +225,14 @@ const signal_fields: TypedField[] = [
     sx: {
       mt: 2,
     },
-    element: ({ status, payload }) => (
+    element: ({ payload }) => (
       <Button
-        variant="contained"
-        disabled={status !== "pending"}
-        sx={{
-          background: "#f44336",
-          "&:hover": { background: darken("#f44336", 0.2) },
-          color: "white",
-        }}
-        onClick={payload.handleCloseSignal}
+        variant="outlined"
+        onClick={payload.handleClose}
       >
-        Продать актив
+        Назад
       </Button>
     ),
-  },
-];
-
-const cancel_fields: TypedField[] = [
-  {
-    type: FieldType.Text,
-    validation: {
-      required: true,
-    },
-    name: "password",
-    inputType: "password",
-    title: "Пароль администратора",
-  },
-  {
-    type: FieldType.Text,
-    validation: {
-      required: true,
-    },
-    inputRows: 5,
-    name: "comment",
-    title: "Причина закрытия",
-  },
-];
-
-const remove_fields: TypedField[] = [
-  {
-    type: FieldType.Text,
-    validation: {
-      required: true,
-    },
-    name: "password",
-    inputType: "password",
-    title: "Пароль администратора",
-  },
-  {
-    type: FieldType.Text,
-    validation: {
-      required: true,
-    },
-    inputRows: 5,
-    name: "comment",
-    title: "Причина удаления",
   },
 ];
 
@@ -303,123 +255,18 @@ export const SignalGridWidget = ({
     null
   );
 
-  const pickAlert = useAlert({
-    title: "Статус",
-    large: true,
-  });
-
-  const pickCloseOne = useOne({
-    title: "Закрытие сигнала",
-    fields: cancel_fields,
-    slots: defaultSlots,
-  });
-
-  const pickRemoveOne = useOne({
-    title: "Удаление сигнала",
-    fields: remove_fields,
-    slots: defaultSlots,
-  });
-
-  const { execute: closeSignal } = useAsyncAction(
-    async (dto: { signalId: string; comment: string }) => {
-      try {
-        await commitCloseSignal(dto.signalId, dto.comment);
-        await sleep(1_000);
-        pickAlert({
-          description: "Сигнал закрыт успешно!",
-        }).then(onUpdate);
-      } catch (error) {
-        pickAlert({
-          description: getErrorMessage(error) || "Произошла ошибка",
-        });
-      }
-    },
-    {
-      onLoadStart: () => ioc.layoutService.setAppbarLoader(true),
-      onLoadEnd: () => ioc.layoutService.setAppbarLoader(false),
-    }
-  );
-
-  const { execute: removeSignal } = useAsyncAction(
-    async (dto: { signalId: string; comment: string }) => {
-      try {
-        await commitRemoveSignal(dto.signalId, dto.comment);
-        await sleep(1_000);
-        pickAlert({
-          description: "Сигнал удален успешно!",
-        }).then(onUpdate);
-      } catch (error) {
-        pickAlert({
-          description: getErrorMessage(error) || "Произошла ошибка",
-        });
-      }
-    },
-    {
-      onLoadStart: () => ioc.layoutService.setAppbarLoader(true),
-      onLoadEnd: () => ioc.layoutService.setAppbarLoader(false),
-    }
-  );
-
-  const handleCloseSignal = async () => {
-    const { id: signalId } = selectedRow$.current;
-    const data = await pickCloseOne().toPromise();
-    if (!data) {
-      return;
-    }
-    if (data.password !== ADMIN_PASS) {
-      await sleep(1_000);
-      pickAlert({
-        description: "Неверный пароль",
-      });
-      return;
-    }
-    await closeSignal({
-      comment: data.comment,
-      signalId,
-    });
-  };
-
-  const handleRemoveSignal = async () => {
-    const { id: signalId } = selectedRow$.current;
-    const data = await pickRemoveOne().toPromise();
-    if (!data) {
-      return;
-    }
-    if (data.password !== ADMIN_PASS) {
-      await sleep(1_000);
-      pickAlert({
-        description: "Неверный пароль",
-      });
-      return;
-    }
-    await removeSignal({
-      comment: data.comment,
-      signalId,
-    });
-  };
-
   const { pickData, setOpen, render } = useActionModal({
     title: "Информация",
     AfterTitle: ({ onClose }) => (
       <Stack direction="row" gap={2}>
-        <IconButton
-          size="small"
-          onClick={() => {
-            onClose();
-            handleRemoveSignal();
-          }}
-        >
-          <Delete />
-        </IconButton>
         <IconButton size="small" onClick={onClose}>
           <Close />
         </IconButton>
       </Stack>
     ),
     payload: () => ({
-      handleCloseSignal() {
+      handleClose() {
         setOpen(false);
-        handleCloseSignal();
       },
     }),
     fields: signal_fields,
