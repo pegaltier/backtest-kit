@@ -10,6 +10,7 @@ import { provide } from "./di";
 import { TYPES } from "./types";
 import SymbolConnectionService from "../services/connection/SymbolConnectionService";
 import SymbolMetaService from "../services/meta/SymbolMetaService";
+import PriceConnectionService from "../services/connection/PriceConnectionService";
 
 {
   provide(TYPES.loggerService, () => new LoggerService());
@@ -18,6 +19,7 @@ import SymbolMetaService from "../services/meta/SymbolMetaService";
 
 {
   provide(TYPES.symbolConnectionService, () => new SymbolConnectionService());
+  provide(TYPES.priceConnectionService, () => new PriceConnectionService());
 }
 
 {
