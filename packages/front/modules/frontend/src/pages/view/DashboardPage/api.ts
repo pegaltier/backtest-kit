@@ -43,12 +43,6 @@ const getClosedBySymbol = async (symbol: string, mode: Mode): Promise<ClosedSign
   );
 };
 
-const startOfTodayUTC = (): number => {
-  const d = new Date();
-  d.setUTCHours(0, 0, 0, 0);
-  return d.getTime();
-};
-
 // ── Метрики ──────────────────────────────────────────────────────────────────
 
 export const fetchTradePerfomanceMeasure = async (
@@ -130,7 +124,14 @@ export const fetchRevenueCountMeasure = async (
 ): Promise<IRevenueCount> => {
   const closed = await getClosedBySymbol(symbol, mode);
 
-  const todayStart = startOfTodayUTC();
+  // Точка отсчёта «сегодня» — начало дня самого последнего сигнала.
+  // Для бектеста это позволяет корректно считать окна (сегодня/вчера/7д/31д)
+  // относительно конца прогона, а не текущей реальной даты.
+  const latestUpdatedAt = closed.length
+    ? Math.max(...closed.map((s) => s.updatedAt))
+    : Date.now();
+
+  const todayStart = dayjs(latestUpdatedAt).startOf("day").valueOf();
   const yesterdayStart = todayStart - 86400000;
   const sevenDaysStart = todayStart - 7 * 86400000;
   const thirtyOneDaysStart = todayStart - 31 * 86400000;
