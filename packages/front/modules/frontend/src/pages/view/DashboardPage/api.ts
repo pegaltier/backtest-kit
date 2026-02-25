@@ -130,8 +130,8 @@ export const fetchRevenueCountMeasure = async (
     // "Today" anchor — start of the day of the most recent signal.
     // For backtests this ensures windows (today/yesterday/7d/31d) are computed
     // relative to the end of the run, not the current wall-clock date.
-    const latestUpdatedAt = closed.length
-        ? Math.max(...closed.map((s) => s.updatedAt))
+    const latestUpdatedAt = mode === "backtest"
+        ? closed.length ? closed.reduce((acm, cur) => Math.max(acm, cur.updatedAt), 0) : Date.now()
         : Date.now();
 
     const todayStart = dayjs(latestUpdatedAt).startOf("day").valueOf();
