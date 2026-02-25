@@ -94,6 +94,9 @@ export const toProfitLossDto = (
     // Calculate PNL for remaining position (if any)
     // Compute totalClosed from _partial array
     const totalClosed = signal._partial.reduce((sum, p) => sum + p.percent, 0);
+    if (totalClosed > 100) {
+      throw new Error(`Partial closes exceed 100%: ${totalClosed}% (signal id: ${signal.id})`);
+    }
     const remainingPercent = 100 - totalClosed;
     if (remainingPercent > 0) {
       const priceCloseWithSlippage =
