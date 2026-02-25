@@ -99,7 +99,13 @@ const options: IBreadcrumbs2Option[] = [
 
 const reloadSubject = new Subject<void>();
 
-export const DashboardPage = () => {
+interface IDashboardPageProps {
+  mode: "live" | "backtest";
+}
+
+export const DashboardPage = ({
+  mode,
+}: IDashboardPageProps) => {
   const [data, { loading, execute }] = useAsyncValue(
     async () => {
       const symbolList = await fetchSymbolList();
@@ -131,10 +137,10 @@ export const DashboardPage = () => {
             tradePerfomanceLocal,
             revenueCountLocal,
           ] = await Promise.all([
-            fetchDailyTradesMeasure(symbol),
-            fetchSuccessRateMeasure(symbol),
-            fetchTradePerfomanceMeasure(symbol),
-            fetchRevenueCountMeasure(symbol),
+            fetchDailyTradesMeasure(symbol, mode),
+            fetchSuccessRateMeasure(symbol, mode),
+            fetchTradePerfomanceMeasure(symbol, mode),
+            fetchRevenueCountMeasure(symbol, mode),
           ]);
 
           for (const trade of dailyTradesLocal) {
@@ -200,6 +206,7 @@ export const DashboardPage = () => {
     {
       onLoadStart: () => ioc.layoutService.setAppbarLoader(true),
       onLoadEnd: () => ioc.layoutService.setAppbarLoader(false),
+      deps: [mode],
     }
   );
 
