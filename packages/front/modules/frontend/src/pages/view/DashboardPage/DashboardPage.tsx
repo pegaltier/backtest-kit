@@ -5,6 +5,7 @@ import {
   IBreadcrumbs2Option,
   One,
   Subject,
+  useAsyncAction,
   useAsyncValue,
   useOnce,
 } from "react-declarative";
@@ -16,10 +17,11 @@ import {
   fetchSymbolList,
   fetchSymbolMap,
   clearSignalCache,
+  fetchSignals,
 } from "./api";
 import ITradePerfomance from "../../../model/TradePerfomance.model";
 import IconWrapper from "../../../components/common/IconWrapper";
-import { KeyboardArrowLeft, Refresh } from "@mui/icons-material";
+import { Download, HourglassTop, KeyboardArrowLeft, LiveTv, Refresh } from "@mui/icons-material";
 import { Container } from "@mui/material";
 import { ISuccessRateWithSymbol } from "../../../model/Measure.model";
 import IRevenueCount from "../../../model/RevenueCount.model";
@@ -33,6 +35,29 @@ const INITIAL_TRADE_PERFOMANCE: ITradePerfomance = {
 };
 
 const actions: IBreadcrumbs2Action[] = [
+  {
+    action: "download-action",
+    label: "Download",
+    icon: () => <IconWrapper icon={Download} color="#4caf50" />
+  },
+  {
+    divider: true,
+  },
+  {
+    action: "live-action",
+    label: "Switch to LIVE",
+    isVisible: (payload) => payload === "backtest",
+    icon: () => <IconWrapper icon={LiveTv} color="#4caf50" />
+  },
+  {
+    action: "backtest-action",
+    label: "Switch to BACKTEST",
+    isVisible: (payload) => payload === "live",
+    icon: () => <IconWrapper icon={HourglassTop} color="#4caf50" />
+  },
+  {
+    divider: true,
+  },
   {
     action: "update-now",
     label: "Refresh manually",
@@ -171,12 +196,31 @@ export const DashboardPage = ({
     }
   );
 
+  const { execute: handleDownload } = useAsyncAction(async () => {
+    const signals = await fetchSignals(mode);
+    const blob = new Blob([JSON.stringify(signals, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    ioc.layoutService.downloadFile(url, `signals_${mode}_${Date.now()}.json`);
+  }, {
+    onLoadStart: () => ioc.layoutService.setAppbarLoader(true),
+    onLoadEnd: () => ioc.layoutService.setAppbarLoader(false),
+  });
+
   useOnce(() => reloadSubject.subscribe(execute));
 
   const handleAction = async (action: string) => {
+    if (action === "download-action") {
+      await handleDownload();
+    }
     if (action === "update-now") {
       clearSignalCache();
       await reloadSubject.next();
+    }
+    if (action === "live-action") {
+      ioc.routerService.push("/dashboard/live");
+    }
+    if (action === "backtest-action") {
+      ioc.routerService.push("/dashboard/backtest");
     }
     if (action === "back-action") {
       ioc.routerService.push("/");

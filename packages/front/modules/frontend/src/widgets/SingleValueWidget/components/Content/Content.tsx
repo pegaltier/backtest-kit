@@ -95,7 +95,7 @@ export const Content = ({
         [classes.unsetBackground]: backgroundMode === BackgroundMode.Unset,
         [classes.semiBackground]: backgroundMode === BackgroundMode.Semi,
       })}>
-        <Typography>{formatAmount(roundNumber(value, roundDigits))}</Typography>
+        <Typography fontWeight="bold">{formatAmount(roundNumber(value, roundDigits))}</Typography>
         <Typography>{valueUnit}</Typography>
       </div>
       {!!caption && (

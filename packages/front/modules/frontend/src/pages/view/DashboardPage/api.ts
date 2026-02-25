@@ -11,7 +11,7 @@ type ClosedSignal = Extract<IStorageSignalRow, { status: "closed" }>;
 
 const CACHE_TTL = 45_000;
 
-const fetchSignals = ttl(
+export const fetchSignals = ttl(
     async (mode: Mode): Promise<IStorageSignalRow[]> => {
         return mode === "live"
             ? await ioc.storageViewService.listSignalLive()
