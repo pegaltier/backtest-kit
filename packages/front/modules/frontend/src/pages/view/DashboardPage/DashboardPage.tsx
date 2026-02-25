@@ -1,24 +1,21 @@
 import {
   Breadcrumbs2,
   Breadcrumbs2Type,
-  fetchApi,
-  FieldType,
   IBreadcrumbs2Action,
   IBreadcrumbs2Option,
   One,
-  randomString,
-  singleshot,
   Subject,
-  TypedField,
   useAsyncValue,
   useOnce,
-  openBlank,
 } from "react-declarative";
 import {
   fetchDailyTradesMeasure,
   fetchSuccessRateMeasure,
   fetchTradePerfomanceMeasure,
   fetchRevenueCountMeasure,
+  fetchSymbolList,
+  fetchSymbolMap,
+  clearSignalCache,
 } from "./api";
 import ITradePerfomance from "../../../model/TradePerfomance.model";
 import IconWrapper from "../../../components/common/IconWrapper";
@@ -28,42 +25,6 @@ import { ISuccessRateWithSymbol } from "../../../model/Measure.model";
 import IRevenueCount from "../../../model/RevenueCount.model";
 import ioc from "../../../lib";
 import dashboard_fields from "../../../assets/dashboard_fields";
-
-const fetchSymbolList = singleshot(async (): Promise<string[]> => {
-  const { error, data } = await fetchApi("/dict/symbol/list", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("tradegpt-token")}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      requestId: randomString(),
-      serviceName: "kpi-app",
-    }),
-  });
-  if (error) {
-    throw new Error(error);
-  }
-  return data;
-});
-
-const fetchSymbolMap = singleshot(async (): Promise<Record<string, any>> => {
-  const { error, data } = await fetchApi("/dict/symbol/map", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("tradegpt-token")}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      requestId: randomString(),
-      serviceName: "kpi-app",
-    }),
-  });
-  if (error) {
-    throw new Error(error);
-  }
-  return data;
-});
 
 const INITIAL_TRADE_PERFOMANCE: ITradePerfomance = {
   rejectedCount: 0,
@@ -214,6 +175,7 @@ export const DashboardPage = ({
 
   const handleAction = async (action: string) => {
     if (action === "update-now") {
+      clearSignalCache();
       await reloadSubject.next();
     }
     if (action === "back-action") {
@@ -235,6 +197,7 @@ export const DashboardPage = ({
           handleUpdate() {
             reloadSubject.next();
           },
+          mode,
         })}
         fields={dashboard_fields}
       />

@@ -39,27 +39,10 @@ import ioc from "../../lib";
 
 const ADMIN_PASS = "88888888";
 
-const fetchSymbolMap = singleshot(async (): Promise<Record<string, any>> => {
-  const { error, data } = await fetchApi("/dict/symbol/map", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("tradegpt-token")}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      requestId: randomString(),
-      serviceName: "kpi-app",
-    }),
-  });
-  if (error) {
-    throw new Error(error);
-  }
-  return data;
-});
-
 interface ISignalGridWidgetProps {
   onUpdate: () => void;
   sx: SxProps;
+  mode: "live" | "backtest";
 }
 
 interface GridItem extends ISignal {
@@ -77,7 +60,7 @@ const columns: IGridColumn<GridItem>[] = [
       <Async>
         {async () => {
           try {
-            const symbolMap = await fetchSymbolMap();
+            const symbolMap = await ioc.symbolGlobalService.getSymbolMap();
             return (
               <Circle
                 sx={{
@@ -379,8 +362,9 @@ const row_actions: IGridAction[] = [
 export const SignalGridWidget = ({
   sx,
   onUpdate,
+  mode,
 }: ISignalGridWidgetProps) => {
-  const paginator = useSignalOffsetPaginator();
+  const paginator = useSignalOffsetPaginator(mode);
 
   const [selectedRow$, setSelectedRow] = useActualRef<ISignal | null>(
     null

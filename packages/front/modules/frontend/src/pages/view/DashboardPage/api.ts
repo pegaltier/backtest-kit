@@ -1,193 +1,163 @@
-import { fetchApi, randomString, singleshot } from "react-declarative";
+import { IStorageSignalRow } from "backtest-kit";
 import ITradePerfomance from "../../../model/TradePerfomance.model";
 import ISuccessRate from "../../../model/SuccessRate.model";
 import IDailyTrades from "../../../model/DailyTrades.model";
 import IRevenueCount from "../../../model/RevenueCount.model";
+import ioc from "../../../lib";
+import { dayjs, getMomentStamp } from "react-declarative";
 
-export const fetchSymbolMap = singleshot(async (): Promise<Record<string, any>> => {
-  const { error, data } = await fetchApi("/dict/symbol/map", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("tradegpt-token")}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      requestId: randomString(),
-      serviceName: "kpi-app",
-    }),
-  });
-  if (error) {
-    throw new Error(error);
-  }
-  return data;
-});
+type Mode = "live" | "backtest";
+type ClosedSignal = Extract<IStorageSignalRow, { status: "closed" }>;
 
-export const fetchSymbolList = singleshot(async (): Promise<string[]> => {
-  const { error, data } = await fetchApi("/dict/symbol/list", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("tradegpt-token")}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      requestId: randomString(),
-      serviceName: "kpi-app",
-    }),
-  });
-  if (error) {
-    throw new Error(error);
-  }
-  return data;
-});
+// Кэш промисов — общая загрузка на один цикл execute
+const _signalCache = new Map<Mode, Promise<IStorageSignalRow[]>>();
 
-export const fetchTradePerfomanceMeasure = async (symbol: string): Promise<ITradePerfomance> => {
-  const { error, data } = await fetchApi(`/report/trade_perfomance/${symbol}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      requestId: randomString(),
-      serviceName: "kpi-app",
-      symbol: String(symbol).toUpperCase(),
-    }),
-  });
-  if (error) {
-    throw new Error(error);
+const getSignals = (mode: Mode): Promise<IStorageSignalRow[]> => {
+  if (!_signalCache.has(mode)) {
+    const promise =
+      mode === "live"
+        ? ioc.storageViewService.listSignalLive()
+        : ioc.storageViewService.listSignalBacktest();
+    _signalCache.set(mode, promise);
   }
-  return data;
+  return _signalCache.get(mode)!;
 };
 
-export const fetchSuccessRateMeasure = async (symbol: string): Promise<ISuccessRate> => {
-  const { error, data } = await fetchApi(`/report/success_rate/${symbol}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      requestId: randomString(),
-      serviceName: "kpi-app",
-      symbol: String(symbol).toUpperCase(),
-    }),
-  });
-  if (error) {
-    throw new Error(error);
-  }
-  return data;
+/** Сбросить кэш перед принудительным обновлением */
+export const clearSignalCache = () => _signalCache.clear();
+
+// ── Символы ──────────────────────────────────────────────────────────────────
+
+export const fetchSymbolList = (): Promise<string[]> =>
+  ioc.symbolGlobalService.getSymbolList();
+
+export const fetchSymbolMap = (): Promise<Record<string, any>> =>
+  ioc.symbolGlobalService.getSymbolMap();
+
+// ── Вспомогательные ──────────────────────────────────────────────────────────
+
+const getClosedBySymbol = async (symbol: string, mode: Mode): Promise<ClosedSignal[]> => {
+  const all = await getSignals(mode);
+  return all.filter(
+    (s): s is ClosedSignal => s.status === "closed" && s.symbol === symbol
+  );
 };
 
-export const fetchDailyTradesMeasure = async (symbol: string): Promise<IDailyTrades[]> => {
-  const { error, data } = await fetchApi(`/report/daily_trades/${symbol}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      requestId: randomString(),
-      serviceName: "kpi-app",
-      symbol: String(symbol).toUpperCase(),
-    }),
-  });
-  if (error) {
-    throw new Error(error);
-  }
-  return data;
+const startOfTodayUTC = (): number => {
+  const d = new Date();
+  d.setUTCHours(0, 0, 0, 0);
+  return d.getTime();
 };
 
-export const fetchRevenueCountMeasure = async (symbol: string): Promise<IRevenueCount> => {
-  const { error, data } = await fetchApi(`/report/revenue_count/${symbol}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      requestId: randomString(),
-      serviceName: "kpi-app",
-      symbol: String(symbol).toUpperCase(),
-    }),
-  });
-  if (error) {
-    throw new Error(error);
-  }
-  return data;
+// ── Метрики ──────────────────────────────────────────────────────────────────
+
+export const fetchTradePerfomanceMeasure = async (
+  symbol: string,
+  mode: Mode
+): Promise<ITradePerfomance> => {
+  const closed = await getClosedBySymbol(symbol, mode);
+  return {
+    total: closed.length,
+    resolvedCount: closed.filter((s) => s.pnl.pnlPercentage > 0).length,
+    rejectedCount: closed.filter((s) => s.pnl.pnlPercentage <= 0).length,
+  };
 };
 
-/**
- * Fetch dump logs for execution ID
- */
-export const fetchDump = async (executionId: string): Promise<string | null> => {
-  const { error, data } = await fetchApi(`/dump/${executionId}`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("tradegpt-token")}`,
-    },
-  });
-  if (error) {
-    throw new Error(error);
-  }
-  return data;
+export const fetchSuccessRateMeasure = async (
+  symbol: string,
+  mode: Mode
+): Promise<ISuccessRate> => {
+  const closed = await getClosedBySymbol(symbol, mode);
+
+  // Допуск 0.5% на slippage и комиссии при сравнении с TP/SL
+  const TOLERANCE = 0.005;
+
+  const isAtTP = (s: ClosedSignal): boolean =>
+    Math.abs(s.pnl.priceClose - s.originalPriceTakeProfit) /
+      s.originalPriceTakeProfit <
+    TOLERANCE;
+
+  const isAtSL = (s: ClosedSignal): boolean =>
+    Math.abs(s.pnl.priceClose - s.originalPriceStopLoss) /
+      s.originalPriceStopLoss <
+    TOLERANCE;
+
+  return {
+    resolvedTakeProfitCount: closed.filter(
+      (s) => s.pnl.pnlPercentage > 0 && isAtTP(s)
+    ).length,
+    rejectedStopLossCount: closed.filter(
+      (s) => s.pnl.pnlPercentage <= 0 && isAtSL(s)
+    ).length,
+    resolvedCloseCount: closed.filter(
+      (s) => s.pnl.pnlPercentage > 0 && !isAtTP(s)
+    ).length,
+    rejectedCloseCount: closed.filter(
+      (s) => s.pnl.pnlPercentage <= 0 && !isAtSL(s)
+    ).length,
+  };
 };
 
-/**
- * Fetch candle data by signal ID
- */
-export const fetchAllCandleBySignal = async (signalId: string): Promise<any> => {
-  const { error, data } = await fetchApi(`/candle/by_signal/${signalId}`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("tradegpt-token")}`,
-    },
-  });
-  if (error) {
-    throw new Error(error);
+export const fetchDailyTradesMeasure = async (
+  symbol: string,
+  mode: Mode
+): Promise<IDailyTrades[]> => {
+  const closed = await getClosedBySymbol(symbol, mode);
+
+  const map = new Map<number, { resolved: number; rejected: number }>();
+
+  for (const s of closed) {
+    const stamp = getMomentStamp(dayjs(s.updatedAt));
+    const current = map.get(stamp) ?? { resolved: 0, rejected: 0 };
+    if (s.pnl.pnlPercentage > 0) {
+      map.set(stamp, { ...current, resolved: current.resolved + 1 });
+    } else {
+      map.set(stamp, { ...current, rejected: current.rejected + 1 });
+    }
   }
-  return data;
+
+  return Array.from(map.entries()).map(([stamp, { resolved, rejected }]) => ({
+    stamp,
+    count: resolved + rejected,
+    resolved,
+    rejected,
+  }));
 };
 
-/**
- * Fetch close decisions by signal ID
- */
-export const fetchAllCloseBySignal = async (signalId: string): Promise<any[]> => {
-  const { error, data } = await fetchApi(`/close/by_signal/${signalId}`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("tradegpt-token")}`,
-    },
-  });
-  if (error) {
-    throw new Error(error);
-  }
-  return data;
-};
+export const fetchRevenueCountMeasure = async (
+  symbol: string,
+  mode: Mode
+): Promise<IRevenueCount> => {
+  const closed = await getClosedBySymbol(symbol, mode);
 
-/**
- * Fetch confirm history by signal ID
- */
-export const fetchAllConfirmBySignal = async (signalId: string): Promise<any[]> => {
-  const { error, data } = await fetchApi(`/confirm/by_signal/${signalId}`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("tradegpt-token")}`,
-    },
-  });
-  if (error) {
-    throw new Error(error);
-  }
-  return data;
-};
+  const todayStart = startOfTodayUTC();
+  const yesterdayStart = todayStart - 86400000;
+  const sevenDaysStart = todayStart - 7 * 86400000;
+  const thirtyOneDaysStart = todayStart - 31 * 86400000;
 
-/**
- * Fetch risk assessments by signal ID
- */
-export const fetchAllRiskBySignal = async (signalId: string): Promise<any[]> => {
-  const { error, data } = await fetchApi(`/risk/by_signal/${signalId}`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("tradegpt-token")}`,
-    },
-  });
-  if (error) {
-    throw new Error(error);
-  }
-  return data;
+  const isToday = (s: ClosedSignal) => s.updatedAt >= todayStart;
+  const isYesterday = (s: ClosedSignal) =>
+    s.updatedAt >= yesterdayStart && s.updatedAt < todayStart;
+  const isSevenDays = (s: ClosedSignal) => s.updatedAt >= sevenDaysStart;
+  const isThirtyOneDays = (s: ClosedSignal) => s.updatedAt >= thirtyOneDaysStart;
+
+  const sumPnl = (arr: ClosedSignal[]) =>
+    arr.reduce((acc, s) => acc + s.pnl.pnlPercentage, 0);
+
+  const todaySignals = closed.filter(isToday);
+  const yesterdaySignals = closed.filter(isYesterday);
+  const sevenDaysSignals = closed.filter(isSevenDays);
+  const thirtyOneDaysSignals = closed.filter(isThirtyOneDays);
+
+  return {
+    symbol,
+    todayRevenue: sumPnl(todaySignals),
+    yesterdayRevenue: sumPnl(yesterdaySignals),
+    sevenDaysRevenue: sumPnl(sevenDaysSignals),
+    thirtyOneDaysRevenue: sumPnl(thirtyOneDaysSignals),
+    todayCount: todaySignals.length,
+    yesterdayCount: yesterdaySignals.length,
+    sevenDaysCount: sevenDaysSignals.length,
+    thirtyOneDaysCount: thirtyOneDaysSignals.length,
+  };
 };

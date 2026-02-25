@@ -266,6 +266,7 @@ const dashboard_fields: TypedField<IMeasure>[] = [
         <SignalGridWidget
           sx={{ height: "max(calc((100dvh - 100px) / 2), 450px)" }}
           onUpdate={payload.handleUpdate}
+          mode={payload.mode}
         />
       );
     },

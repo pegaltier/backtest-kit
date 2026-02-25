@@ -118,14 +118,21 @@ const Chart = ({
         const crosshairMoveHandler = ({
             time,
         }: MouseEventParams) => {
-
-            const { day, month, year } = time as BusinessDay;
-            const item = items.find(({ time }) => time.day === day && time.month === month && time.year === year);
-
-            if (item) {
-                const count = Math.round(Math.round(item.value * 100) / 100);
-                tooltipElement.innerHTML = `Всего: ${count}, Выполнено: ${item.resolved}, Отклонено: ${item.rejected}`;
-            } else {
+            if (!time) {
+                tooltipElement.innerHTML = '';
+                return;
+            }
+            try {
+                const { day, month, year } = time as BusinessDay;
+                const item = items.find(({ time }) => time.day === day && time.month === month && time.year === year);
+                if (item) {
+                    const count = Math.round(Math.round(item.value * 100) / 100);
+                    tooltipElement.innerHTML = `Всего: ${count}, Выполнено: ${item.resolved}, Отклонено: ${item.rejected}`;
+                } else {
+                    tooltipElement.innerHTML = '';
+                }
+            } catch (error) {
+                console.log(error);
                 tooltipElement.innerHTML = '';
             }
         };
