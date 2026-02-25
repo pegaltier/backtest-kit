@@ -95,6 +95,9 @@ export const ListView = ({
                 const url = URL.createObjectURL(blob);
                 ioc.layoutService.downloadFile(url, `signals_${type$.current}_${Date.now()}.json`);
             }
+            if (action === "dashboard-action") {
+                ioc.routerService.push(`/dashboard/${type$.current}`);
+            }
         }),
     );
 

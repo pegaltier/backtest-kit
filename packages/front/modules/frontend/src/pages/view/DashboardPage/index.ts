@@ -1,2 +1,2 @@
-export * from "./MainView";
-export { default } from "./MainView";
+export * from "./DashboardPage";
+export { default } from "./DashboardPage";
