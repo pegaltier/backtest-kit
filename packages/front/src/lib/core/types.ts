@@ -5,6 +5,7 @@ const baseServices = {
 
 const connectionServices = {
     symbolConnectionService: Symbol("symbolConnectionService"),
+    priceConnectionService: Symbol("priceConnectionService"),
 }
 
 const metaServices = {

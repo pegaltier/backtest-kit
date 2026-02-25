@@ -12,6 +12,7 @@ import StorageViewService from "./services/view/StorageViewService";
 import ExchangeViewService from "./services/view/ExchangeViewService";
 import SymbolConnectionService from "./services/connection/SymbolConnectionService";
 import SymbolMetaService from "./services/meta/SymbolMetaService";
+import PriceConnectionService from "./services/connection/PriceConnectionService";
 
 const baseServices = {
   loggerService: inject<LoggerService>(TYPES.loggerService),
@@ -20,6 +21,7 @@ const baseServices = {
 
 const connectionServices = {
   symbolConnectionService: inject<SymbolConnectionService>(TYPES.symbolConnectionService),
+  priceConnectionService: inject<PriceConnectionService>(TYPES.priceConnectionService),
 }
 
 const metaServices = {

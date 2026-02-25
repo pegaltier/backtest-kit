@@ -22,6 +22,10 @@ const dashboardRoutes: IRouteItem[] = [
         path: "/main",
         element: heavy(() => import("../pages/view/MainPage")),
     },
+    {
+        path: "/dashboard/:mode",
+        element: heavy(() => import("../pages/view/DashboardPage")),
+    },
 ];
 
 export const routes: IRouteItem[] = [

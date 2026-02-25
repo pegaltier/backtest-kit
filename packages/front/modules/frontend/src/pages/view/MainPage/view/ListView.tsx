@@ -95,6 +95,9 @@ export const ListView = ({
                 const url = URL.createObjectURL(blob);
                 ioc.layoutService.downloadFile(url, `signals_${type$.current}_${Date.now()}.json`);
             }
+            if (action === "dashboard-action") {
+                ioc.routerService.push(`/dashboard/${type$.current}`);
+            }
         }),
     );
 
@@ -124,8 +127,8 @@ export const ListView = ({
                                 maxWidth: "435px",
                             },
                         }}
-                        primary="Нет сигналов"
-                        secondary="Сигналы будут отображены здесь после появления"
+                        primary="No signals"
+                        secondary="Signals will be displayed here after they appear"
                     />
                 </ListItem>
             );
