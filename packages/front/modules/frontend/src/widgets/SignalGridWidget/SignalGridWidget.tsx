@@ -27,11 +27,7 @@ import {
   AutoFixHigh,
   Circle,
   Close,
-  Delete,
-  Info,
 } from "@mui/icons-material";
-import { defaultSlots } from "../../components/OneSlotFactory";
-import { commitCloseSignal, commitRemoveSignal } from "./api";
 import useSignalOffsetPaginator from "../../api/useSignalOffsetPaginator";
 import IconWrapper from "../../components/common/IconWrapper";
 import { ISignal } from "../../api/useSignalOffsetPaginator/model/Signal.model";
