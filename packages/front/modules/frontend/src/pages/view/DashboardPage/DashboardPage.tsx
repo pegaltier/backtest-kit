@@ -165,8 +165,8 @@ export const DashboardPage = ({
       };
     },
     {
-      onLoadStart: () => ioc.layoutService.setAppbarLoader(true),
-      onLoadEnd: () => ioc.layoutService.setAppbarLoader(false),
+      onLoadStart: () => ioc.layoutService.setModalLoader(true),
+      onLoadEnd: () => ioc.layoutService.setModalLoader(false),
       deps: [mode],
     }
   );

@@ -215,10 +215,34 @@ const signal_fields: TypedField[] = [
     tabletColumns: "12",
     phoneColumns: "12",
     name: "buyPrice",
-    title: "Цена покупки",
+    title: "Entry",
     readonly: true,
     compute: (obj) =>
       obj.buyPrice ? `${formatAmount(obj.buyPrice)}$` : "Не указана",
+  },
+  {
+    type: FieldType.Text,
+    outlined: false,
+    desktopColumns: "12",
+    tabletColumns: "12",
+    phoneColumns: "12",
+    name: "takeProfitPrice",
+    title: "Take Profit",
+    readonly: true,
+    compute: (obj) =>
+      obj.takeProfitPrice ? `${formatAmount(obj.takeProfitPrice)}$` : "Не указана",
+  },
+  {
+    type: FieldType.Text,
+    outlined: false,
+    desktopColumns: "12",
+    tabletColumns: "12",
+    phoneColumns: "12",
+    name: "stopLossPrice",
+    title: "Stop Loss",
+    readonly: true,
+    compute: (obj) =>
+      obj.stopLossPrice ? `${formatAmount(obj.stopLossPrice)}$` : "Не указана",
   },
   {
     type: FieldType.Component,

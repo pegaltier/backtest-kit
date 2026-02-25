@@ -2,8 +2,11 @@ export interface ISignal {
     id: string;
     symbol: string;
     position: string;
-    profitLoss: number;
     profitLossPercentage: number;
+    takeProfitPrice: number;
+    originalTakeProfitPrice: number;
+    stopLossPrice: number;
+    originalStopLossPrice: number;
     buyPrice: number;
     quantity: number;
     date: string;
