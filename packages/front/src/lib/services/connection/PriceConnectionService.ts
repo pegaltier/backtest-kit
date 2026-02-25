@@ -5,9 +5,9 @@ import {
   singleshot,
   waitForNext,
 } from "functools-kit";
-import { inject } from "src/lib/core/di";
+import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
-import { TYPES } from "src/lib/core/types";
+import { TYPES } from "../../../lib/core/types";
 
 type ExchangeName = string;
 type StrategyName = string;
