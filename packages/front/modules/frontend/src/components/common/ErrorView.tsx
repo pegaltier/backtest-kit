@@ -34,9 +34,8 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
-const ERROR_LABEL =
-  "Данные устарели. Обновите страницу";
-const OFFLINE_LABEL = "Отключен от сервера";
+const ERROR_LABEL = "Data is outdated. Please refresh the page";
+const OFFLINE_LABEL = "Disconnected from server";
 
 interface IErrorViewProps {
   onLine?: boolean;
@@ -53,7 +52,7 @@ export const ErrorView = ({ onLine = navigator.onLine }: IErrorViewProps) => {
             <Stack direction="column" gap="15px">
               <span>{onLine ? ERROR_LABEL : OFFLINE_LABEL}</span>
               <Button variant="contained" onClick={() => window.location.reload()}>
-                {onLine ? "Перезагрузить страницу" : "Переподключиться"}
+                {onLine ? "Reload page" : "Reconnect"}
               </Button>
             </Stack>
           </Paper>

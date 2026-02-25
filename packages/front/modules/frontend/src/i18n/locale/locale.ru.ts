@@ -79,4 +79,9 @@ export const LOCALE: Record<string, string> = {
   "Document preview": "Предпросмотр",
   Download: "Скачать",
   "Show details": "Показать / Скрыть",
+  // ErrorView
+  "Data is outdated. Please refresh the page": "Данные устарели. Обновите страницу",
+  "Disconnected from server": "Отключен от сервера",
+  "Reload page": "Перезагрузить страницу",
+  "Reconnect": "Переподключиться",
 };

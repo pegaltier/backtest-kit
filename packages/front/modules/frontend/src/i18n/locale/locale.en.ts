@@ -79,4 +79,9 @@ export const LOCALE: Record<string, string> = {
   "Document preview": "Document preview",
   Download: "Download",
   "Show details": "Show details",
+  // ErrorView
+  "Data is outdated. Please refresh the page": "Data is outdated. Please refresh the page",
+  "Disconnected from server": "Disconnected from server",
+  "Reload page": "Reload page",
+  "Reconnect": "Reconnect",
 };
