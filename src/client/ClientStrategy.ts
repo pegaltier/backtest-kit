@@ -260,7 +260,7 @@ const PROCESS_COMMIT_QUEUE_FN = async (
         totalEntries: publicSignal.totalEntries,
         signalId: publicSignal.id,
         position: publicSignal.position,
-        priceOpen: publicSignal.originalPriceOpen,
+        priceOpen: publicSignal.priceOpen,
         priceTakeProfit: publicSignal.priceTakeProfit,
         priceStopLoss: publicSignal.priceStopLoss,
         originalPriceTakeProfit: publicSignal.originalPriceTakeProfit,
