@@ -263,6 +263,7 @@ export {
   TrailingTakeCommit,
   BreakevenCommit,
   ActivateScheduledCommit,
+  AverageBuyCommit,
 } from "./contract/StrategyCommit.contract";
 
 export { ExecutionContextService } from "./lib/services/context/ExecutionContextService";
