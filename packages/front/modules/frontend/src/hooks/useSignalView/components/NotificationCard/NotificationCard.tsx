@@ -338,7 +338,17 @@ const hasEffectivePriceOpen = (
 const hasTotalEntries = (
   item: NotificationModel
 ): item is NotificationModel & { totalEntries: number } => {
-  return "totalEntries" in item;
+  return "totalEntries" in item && (item as any).totalEntries > 1;
+};
+
+const hasOriginalPriceOpen = (
+  item: NotificationModel
+): item is NotificationModel & { originalPriceOpen: number; priceOpen: number } => {
+  return (
+    "originalPriceOpen" in item &&
+    "priceOpen" in item &&
+    (item as any).originalPriceOpen !== (item as any).priceOpen
+  );
 };
 
 export const NotificationCard = forwardRef(
@@ -470,6 +480,13 @@ export const NotificationCard = forwardRef(
                       label={`${t("Avg entry")}: ${item.effectivePriceOpen}`}
                       variant="outlined"
                       color="warning"
+                    />
+                  )}
+                  {hasOriginalPriceOpen(item) && (
+                    <Chip
+                      size="small"
+                      label={`${t("Orig entry")}: ${item.originalPriceOpen}`}
+                      variant="outlined"
                     />
                   )}
                 </Stack>
