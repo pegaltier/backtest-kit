@@ -49,9 +49,9 @@ npm install @backtest-kit/cli
 ```json
 {
   "scripts": {
-    "backtest": "@backtest-kit/cli --backtest ./src/index.mjs",
-    "paper":    "@backtest-kit/cli --paper    ./src/index.mjs",
-    "start":    "@backtest-kit/cli --live     ./src/index.mjs"
+    "backtest": "npx @backtest-kit/cli --backtest ./src/index.mjs",
+    "paper":    "npx @backtest-kit/cli --paper    ./src/index.mjs",
+    "start":    "npx @backtest-kit/cli --live     ./src/index.mjs"
   },
   "dependencies": {
     "@backtest-kit/cli": "latest",
@@ -149,7 +149,7 @@ npm start -- --symbol BTCUSDT --ui
 ```json
 {
   "scripts": {
-    "backtest": "@backtest-kit/cli --backtest ./src/index.mjs"
+    "backtest": "npx @backtest-kit/cli --backtest ./src/index.mjs"
   }
 }
 ```
@@ -163,7 +163,7 @@ Runs the strategy against historical candle data using a registered `FrameSchema
 ```json
 {
   "scripts": {
-    "backtest": "@backtest-kit/cli --backtest --symbol ETHUSDT --strategy my-strategy --exchange binance --frame feb-2024 --cacheInterval \"1m, 15m, 1h, 4h\" ./src/index.mjs"
+    "backtest": "npx @backtest-kit/cli --backtest --symbol ETHUSDT --strategy my-strategy --exchange binance --frame feb-2024 --cacheInterval \"1m, 15m, 1h, 4h\" ./src/index.mjs"
   }
 }
 ```
@@ -181,7 +181,7 @@ Connects to the live exchange but does not place real orders. Identical code pat
 ```json
 {
   "scripts": {
-    "paper": "@backtest-kit/cli --paper --symbol BTCUSDT ./src/index.mjs"
+    "paper": "npx @backtest-kit/cli --paper --symbol BTCUSDT ./src/index.mjs"
   }
 }
 ```
@@ -197,7 +197,7 @@ Deploys a real trading bot. Requires exchange API keys configured in your `.env`
 ```json
 {
   "scripts": {
-    "start": "@backtest-kit/cli --live --ui --telegram --symbol BTCUSDT ./src/index.mjs"
+    "start": "npx @backtest-kit/cli --live --ui --telegram --symbol BTCUSDT ./src/index.mjs"
   }
 }
 ```
@@ -246,8 +246,8 @@ monorepo/
 ```json
 {
   "scripts": {
-    "backtest:oct": "@backtest-kit/cli --backtest ./strategies/oct_2025/index.mjs",
-    "backtest:dec": "@backtest-kit/cli --backtest ./strategies/dec_2025/index.mjs"
+    "backtest:oct": "npx @backtest-kit/cli --backtest ./strategies/oct_2025/index.mjs",
+    "backtest:dec": "npx @backtest-kit/cli --backtest ./strategies/dec_2025/index.mjs"
   },
   "dependencies": {
     "@backtest-kit/cli": "latest",
@@ -506,7 +506,7 @@ Markdown.disable();
 **✅ With @backtest-kit/cli (one script)**
 
 ```json
-{ "scripts": { "backtest": "@backtest-kit/cli --backtest --ui --telegram ./src/index.mjs" } }
+{ "scripts": { "backtest": "npx @backtest-kit/cli --backtest --ui --telegram ./src/index.mjs" } }
 ```
 
 ```bash
