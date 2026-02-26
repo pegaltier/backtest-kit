@@ -10,6 +10,7 @@ import { StrategyName } from "../../../interfaces/Strategy.interface";
 import { strategyCommitSubject } from "../../../config/emitters";
 import {
   ActivateScheduledCommit,
+  AverageBuyCommit,
   BreakevenCommit,
   CancelScheduledCommit,
   ClosePendingCommit,
@@ -696,6 +697,99 @@ export class StrategyReportService {
   };
 
   /**
+   * Logs an average-buy (DCA) event when a new averaging entry is added to an open position.
+   *
+   * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+   * @param currentPrice - Price at which the new averaging entry was executed
+   * @param effectivePriceOpen - Averaged entry price after this addition
+   * @param totalEntries - Total number of DCA entries after this addition
+   * @param isBacktest - Whether this is a backtest or live trading event
+   * @param context - Strategy context with strategyName, exchangeName, frameName
+   * @param timestamp - Timestamp from StrategyCommitContract (execution context time)
+   * @param position - Trade direction: "long" or "short"
+   * @param priceOpen - Original entry price (unchanged by averaging)
+   * @param priceTakeProfit - Effective take profit price
+   * @param priceStopLoss - Effective stop loss price
+   * @param originalPriceTakeProfit - Original take profit before trailing
+   * @param originalPriceStopLoss - Original stop loss before trailing
+   * @param scheduledAt - Signal creation timestamp in milliseconds
+   * @param pendingAt - Pending timestamp in milliseconds
+   */
+  public averageBuy = async (
+    symbol: string,
+    currentPrice: number,
+    effectivePriceOpen: number,
+    totalEntries: number,
+    isBacktest: boolean,
+    context: {
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
+    },
+    timestamp: number,
+    position: "long" | "short",
+    priceOpen: number,
+    priceTakeProfit: number,
+    priceStopLoss: number,
+    originalPriceTakeProfit: number,
+    originalPriceStopLoss: number,
+    scheduledAt: number,
+    pendingAt: number,
+  ) => {
+    this.loggerService.log("strategyReportService averageBuy", {
+      symbol,
+      currentPrice,
+      effectivePriceOpen,
+      totalEntries,
+      isBacktest,
+    });
+    if (!this.subscribe.hasValue()) {
+      return;
+    }
+    const pendingRow = await this.strategyCoreService.getPendingSignal(
+      isBacktest,
+      symbol,
+      {
+        exchangeName: context.exchangeName,
+        strategyName: context.strategyName,
+        frameName: context.frameName,
+      },
+    );
+    if (!pendingRow) {
+      return;
+    }
+    const createdAt = new Date(timestamp).toISOString();
+    await Report.writeData(
+      "strategy",
+      {
+        action: "average-buy",
+        currentPrice,
+        effectivePriceOpen,
+        totalEntries,
+        symbol,
+        timestamp,
+        createdAt,
+        position,
+        priceOpen,
+        priceTakeProfit,
+        priceStopLoss,
+        originalPriceTakeProfit,
+        originalPriceStopLoss,
+        scheduledAt,
+        pendingAt,
+      },
+      {
+        signalId: pendingRow.id,
+        exchangeName: context.exchangeName,
+        frameName: context.frameName,
+        strategyName: context.strategyName,
+        symbol,
+        walkerName: "",
+      },
+    );
+  };
+
+  /**
    * Initializes the service for event logging.
    *
    * Must be called before any events can be logged. Uses singleshot pattern
@@ -887,6 +981,32 @@ export class StrategyReportService {
         )
       );
 
+    const unAverageBuy = strategyCommitSubject
+      .filter(({ action }) => action === "average-buy")
+      .connect(async (event: AverageBuyCommit) =>
+        await this.averageBuy(
+          event.symbol,
+          event.currentPrice,
+          event.effectivePriceOpen,
+          event.totalEntries,
+          event.backtest,
+          {
+            exchangeName: event.exchangeName,
+            frameName: event.frameName,
+            strategyName: event.strategyName,
+          },
+          event.timestamp,
+          event.position,
+          event.priceOpen,
+          event.priceTakeProfit,
+          event.priceStopLoss,
+          event.originalPriceTakeProfit,
+          event.originalPriceStopLoss,
+          event.scheduledAt,
+          event.pendingAt,
+        )
+      );
+
     const disposeFn = compose(
       () => unCancelSchedule(),
       () => unClosePending(),
@@ -896,6 +1016,7 @@ export class StrategyReportService {
       () => unTrailingTake(),
       () => unBreakeven(),
       () => unActivateScheduled(),
+      () => unAverageBuy(),
     );
 
     return () => {

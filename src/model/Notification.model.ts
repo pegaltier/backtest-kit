@@ -363,6 +363,53 @@ export interface BreakevenCommitNotification {
 }
 
 /**
+ * Average-buy (DCA) commit notification.
+ * Emitted when a new averaging entry is added to an open position.
+ */
+export interface AverageBuyCommitNotification {
+  /** Discriminator for type-safe union */
+  type: "average_buy.commit";
+  /** Unique notification identifier */
+  id: string;
+  /** Unix timestamp in milliseconds when the averaging entry was executed */
+  timestamp: number;
+  /** Whether this notification is from backtest mode (true) or live mode (false) */
+  backtest: boolean;
+  /** Trading pair symbol (e.g., "BTCUSDT") */
+  symbol: string;
+  /** Strategy name that generated this signal */
+  strategyName: StrategyName;
+  /** Exchange name where signal was executed */
+  exchangeName: ExchangeName;
+  /** Unique signal identifier (UUID v4) */
+  signalId: string;
+  /** Price at which the new averaging entry was executed */
+  currentPrice: number;
+  /** Averaged (effective) entry price after this addition */
+  effectivePriceOpen: number;
+  /** Total number of DCA entries after this addition */
+  totalEntries: number;
+  /** Trade direction: "long" (buy) or "short" (sell) */
+  position: "long" | "short";
+  /** Original entry price (unchanged by averaging) */
+  priceOpen: number;
+  /** Effective take profit price (with trailing if set) */
+  priceTakeProfit: number;
+  /** Effective stop loss price (with trailing if set) */
+  priceStopLoss: number;
+  /** Original take profit price before any trailing adjustments */
+  originalPriceTakeProfit: number;
+  /** Original stop loss price before any trailing adjustments */
+  originalPriceStopLoss: number;
+  /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
+  scheduledAt: number;
+  /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
+  pendingAt: number;
+  /** Unix timestamp in milliseconds when the notification was created */
+  createdAt: number;
+}
+
+/**
  * Activate scheduled commit notification.
  * Emitted when a scheduled signal is activated by user (without waiting for priceOpen).
  */
@@ -716,6 +763,7 @@ export type NotificationModel =
   | PartialProfitCommitNotification
   | PartialLossCommitNotification
   | BreakevenCommitNotification
+  | AverageBuyCommitNotification
   | ActivateScheduledCommitNotification
   | TrailingStopCommitNotification
   | TrailingTakeCommitNotification

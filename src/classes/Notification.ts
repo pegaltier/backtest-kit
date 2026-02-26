@@ -362,6 +362,30 @@ const CREATE_STRATEGY_COMMIT_NOTIFICATION_FN = (data: StrategyCommitContract): N
       createdAt: data.timestamp,
     };
   }
+  if (data.action === "average-buy") {
+    return {
+      type: "average_buy.commit",
+      id: CREATE_KEY_FN(),
+      timestamp: data.timestamp,
+      backtest: data.backtest,
+      symbol: data.symbol,
+      strategyName: data.strategyName,
+      exchangeName: data.exchangeName,
+      signalId: data.signalId,
+      currentPrice: data.currentPrice,
+      effectivePriceOpen: data.effectivePriceOpen,
+      totalEntries: data.totalEntries,
+      position: data.position,
+      priceOpen: data.priceOpen,
+      priceTakeProfit: data.priceTakeProfit,
+      priceStopLoss: data.priceStopLoss,
+      originalPriceTakeProfit: data.originalPriceTakeProfit,
+      originalPriceStopLoss: data.originalPriceStopLoss,
+      scheduledAt: data.scheduledAt,
+      pendingAt: data.pendingAt,
+      createdAt: data.timestamp,
+    };
+  }
   return null;
 };
 

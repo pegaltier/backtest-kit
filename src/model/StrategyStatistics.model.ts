@@ -14,7 +14,8 @@ export type StrategyActionType =
   | "trailing-stop"
   | "trailing-take"
   | "breakeven"
-  | "activate-scheduled";
+  | "activate-scheduled"
+  | "average-buy";
 
 /**
  * Unified strategy event data for markdown report generation.
@@ -67,6 +68,10 @@ export interface StrategyEvent {
   scheduledAt?: number;
   /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
   pendingAt?: number;
+  /** Averaged entry price after DCA addition (average-buy action only) */
+  effectivePriceOpen?: number;
+  /** Total number of DCA entries after this addition (average-buy action only) */
+  totalEntries?: number;
 }
 
 /**
@@ -112,4 +117,7 @@ export interface StrategyStatisticsModel {
 
   /** Count of activate-scheduled events */
   activateScheduledCount: number;
+
+  /** Count of average-buy (DCA) events */
+  averageBuyCount: number;
 }
