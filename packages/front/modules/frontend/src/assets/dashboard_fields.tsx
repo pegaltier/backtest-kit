@@ -29,7 +29,7 @@ const dashboard_fields: TypedField<IMeasure>[] = [
             : BackgroundColor.Orange;
       return (
         <SingleValueWidget
-          style={{ height: "max(calc((100dvh - 100px) / 3), 125px)" }}
+          style={{ height: "max(calc((100dvh - 100px) / 3), 275px)" }}
           value={value}
           backgroundColor={backgroundColor}
           backgroundMode={BackgroundMode.Semi}
@@ -62,7 +62,7 @@ const dashboard_fields: TypedField<IMeasure>[] = [
             : BackgroundColor.Orange;
       return (
         <SingleValueWidget
-          style={{ height: "max(calc((100dvh - 100px) / 3), 125px)" }}
+          style={{ height: "max(calc((100dvh - 100px) / 3), 275px)" }}
           value={value}
           backgroundColor={backgroundColor}
           backgroundMode={BackgroundMode.Semi}
@@ -95,7 +95,7 @@ const dashboard_fields: TypedField<IMeasure>[] = [
             : BackgroundColor.Orange;
       return (
         <SingleValueWidget
-          style={{ height: "max(calc((100dvh - 100px) / 3), 125px)" }}
+          style={{ height: "max(calc((100dvh - 100px) / 3), 275px)" }}
           value={value}
           backgroundColor={backgroundColor}
           backgroundMode={BackgroundMode.Semi}
@@ -128,7 +128,7 @@ const dashboard_fields: TypedField<IMeasure>[] = [
             : BackgroundColor.Orange;
       return (
         <SingleValueWidget
-          style={{ height: "max(calc((100dvh - 100px) / 3), 125px)" }}
+          style={{ height: "max(calc((100dvh - 100px) / 3), 275px)" }}
           value={value}
           backgroundColor={backgroundColor}
           backgroundMode={BackgroundMode.Semi}
