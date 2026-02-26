@@ -140,6 +140,7 @@ const PROCESS_COMMIT_QUEUE_FN = async (
         priceStopLoss: publicSignal.priceStopLoss,
         originalPriceTakeProfit: publicSignal.originalPriceTakeProfit,
         originalPriceStopLoss: publicSignal.originalPriceStopLoss,
+        originalPriceOpen: publicSignal.originalPriceOpen,
         scheduledAt: publicSignal.scheduledAt,
         pendingAt: publicSignal.pendingAt,
       });
@@ -164,6 +165,7 @@ const PROCESS_COMMIT_QUEUE_FN = async (
         priceStopLoss: publicSignal.priceStopLoss,
         originalPriceTakeProfit: publicSignal.originalPriceTakeProfit,
         originalPriceStopLoss: publicSignal.originalPriceStopLoss,
+        originalPriceOpen: publicSignal.originalPriceOpen,
         scheduledAt: publicSignal.scheduledAt,
         pendingAt: publicSignal.pendingAt,
       });
@@ -187,6 +189,7 @@ const PROCESS_COMMIT_QUEUE_FN = async (
         priceStopLoss: publicSignal.priceStopLoss,
         originalPriceTakeProfit: publicSignal.originalPriceTakeProfit,
         originalPriceStopLoss: publicSignal.originalPriceStopLoss,
+        originalPriceOpen: publicSignal.originalPriceOpen,
         scheduledAt: publicSignal.scheduledAt,
         pendingAt: publicSignal.pendingAt,
       });
@@ -211,6 +214,7 @@ const PROCESS_COMMIT_QUEUE_FN = async (
         priceStopLoss: publicSignal.priceStopLoss,
         originalPriceTakeProfit: publicSignal.originalPriceTakeProfit,
         originalPriceStopLoss: publicSignal.originalPriceStopLoss,
+        originalPriceOpen: publicSignal.originalPriceOpen,
         scheduledAt: publicSignal.scheduledAt,
         pendingAt: publicSignal.pendingAt,
       });
@@ -235,6 +239,7 @@ const PROCESS_COMMIT_QUEUE_FN = async (
         priceStopLoss: publicSignal.priceStopLoss,
         originalPriceTakeProfit: publicSignal.originalPriceTakeProfit,
         originalPriceStopLoss: publicSignal.originalPriceStopLoss,
+        originalPriceOpen: publicSignal.originalPriceOpen,
         scheduledAt: publicSignal.scheduledAt,
         pendingAt: publicSignal.pendingAt,
       });
@@ -260,6 +265,7 @@ const PROCESS_COMMIT_QUEUE_FN = async (
         priceStopLoss: publicSignal.priceStopLoss,
         originalPriceTakeProfit: publicSignal.originalPriceTakeProfit,
         originalPriceStopLoss: publicSignal.originalPriceStopLoss,
+        originalPriceOpen: publicSignal.originalPriceOpen,
         scheduledAt: publicSignal.scheduledAt,
         pendingAt: publicSignal.pendingAt,
       });
@@ -3383,6 +3389,7 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
         priceStopLoss: publicSignalForCommit.priceStopLoss,
         originalPriceTakeProfit: publicSignalForCommit.originalPriceTakeProfit,
         originalPriceStopLoss: publicSignalForCommit.originalPriceStopLoss,
+        originalPriceOpen: publicSignalForCommit.originalPriceOpen,
         scheduledAt: publicSignalForCommit.scheduledAt,
         pendingAt: publicSignalForCommit.pendingAt,
         totalEntries: publicSignalForCommit.totalEntries,
@@ -4066,6 +4073,7 @@ export class ClientStrategy implements IStrategy {
         cancelId: cancelledSignal.cancelId,
         timestamp: currentTime,
         totalEntries: cancelledSignal._entry?.length ?? 1,
+        originalPriceOpen: cancelledSignal.priceOpen,
       });
 
       // Call onCancel callback
@@ -4130,6 +4138,7 @@ export class ClientStrategy implements IStrategy {
         closeId: closedSignal.closeId,
         timestamp: currentTime,
         totalEntries: closedSignal._entry?.length ?? 1,
+        originalPriceOpen: closedSignal.priceOpen,
       });
 
       // Call onClose callback
@@ -4278,6 +4287,7 @@ export class ClientStrategy implements IStrategy {
         priceStopLoss: publicSignalForCommit.priceStopLoss,
         originalPriceTakeProfit: publicSignalForCommit.originalPriceTakeProfit,
         originalPriceStopLoss: publicSignalForCommit.originalPriceStopLoss,
+        originalPriceOpen: publicSignalForCommit.originalPriceOpen,
         scheduledAt: publicSignalForCommit.scheduledAt,
         pendingAt: publicSignalForCommit.pendingAt,
         totalEntries: publicSignalForCommit.totalEntries,
@@ -4491,6 +4501,7 @@ export class ClientStrategy implements IStrategy {
         cancelId: cancelledSignal.cancelId,
         timestamp: closeTimestamp,
         totalEntries: cancelledSignal._entry?.length ?? 1,
+        originalPriceOpen: cancelledSignal.priceOpen,
       });
 
       await CALL_CANCEL_CALLBACKS_FN(
@@ -4551,6 +4562,7 @@ export class ClientStrategy implements IStrategy {
         closeId: closedSignal.closeId,
         timestamp: closeTimestamp,
         totalEntries: closedSignal._entry?.length ?? 1,
+        originalPriceOpen: closedSignal.priceOpen,
       });
 
       await CALL_CLOSE_CALLBACKS_FN(

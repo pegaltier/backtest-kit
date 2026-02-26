@@ -474,6 +474,8 @@ export class StrategyMarkdownService {
     originalPriceStopLoss: number,
     scheduledAt: number,
     pendingAt: number,
+    totalEntries: number,
+    originalPriceOpen: number,
   ) => {
     this.loggerService.log("strategyMarkdownService partialProfit", {
       symbol,
@@ -516,6 +518,8 @@ export class StrategyMarkdownService {
       priceStopLoss,
       originalPriceTakeProfit,
       originalPriceStopLoss,
+      originalPriceOpen,
+      totalEntries,
       scheduledAt,
       pendingAt,
     });
@@ -554,6 +558,8 @@ export class StrategyMarkdownService {
     originalPriceStopLoss: number,
     scheduledAt: number,
     pendingAt: number,
+    totalEntries: number,
+    originalPriceOpen: number,
   ) => {
     this.loggerService.log("strategyMarkdownService partialLoss", {
       symbol,
@@ -596,6 +602,8 @@ export class StrategyMarkdownService {
       priceStopLoss,
       originalPriceTakeProfit,
       originalPriceStopLoss,
+      originalPriceOpen,
+      totalEntries,
       scheduledAt,
       pendingAt,
     });
@@ -634,6 +642,8 @@ export class StrategyMarkdownService {
     originalPriceStopLoss: number,
     scheduledAt: number,
     pendingAt: number,
+    totalEntries: number,
+    originalPriceOpen: number,
   ) => {
     this.loggerService.log("strategyMarkdownService trailingStop", {
       symbol,
@@ -676,6 +686,8 @@ export class StrategyMarkdownService {
       priceStopLoss,
       originalPriceTakeProfit,
       originalPriceStopLoss,
+      originalPriceOpen,
+      totalEntries,
       scheduledAt,
       pendingAt,
     });
@@ -714,6 +726,8 @@ export class StrategyMarkdownService {
     originalPriceStopLoss: number,
     scheduledAt: number,
     pendingAt: number,
+    totalEntries: number,
+    originalPriceOpen: number,
   ) => {
     this.loggerService.log("strategyMarkdownService trailingTake", {
       symbol,
@@ -756,6 +770,8 @@ export class StrategyMarkdownService {
       priceStopLoss,
       originalPriceTakeProfit,
       originalPriceStopLoss,
+      originalPriceOpen,
+      totalEntries,
       scheduledAt,
       pendingAt,
     });
@@ -792,6 +808,8 @@ export class StrategyMarkdownService {
     originalPriceStopLoss: number,
     scheduledAt: number,
     pendingAt: number,
+    totalEntries: number,
+    originalPriceOpen: number,
   ) => {
     this.loggerService.log("strategyMarkdownService breakeven", {
       symbol,
@@ -832,6 +850,8 @@ export class StrategyMarkdownService {
       priceStopLoss,
       originalPriceTakeProfit,
       originalPriceStopLoss,
+      originalPriceOpen,
+      totalEntries,
       scheduledAt,
       pendingAt,
     });
@@ -869,6 +889,8 @@ export class StrategyMarkdownService {
     originalPriceStopLoss: number,
     scheduledAt: number,
     pendingAt: number,
+    totalEntries: number,
+    originalPriceOpen: number,
     activateId?: string,
   ) => {
     this.loggerService.log("strategyMarkdownService activateScheduled", {
@@ -912,6 +934,8 @@ export class StrategyMarkdownService {
       priceStopLoss,
       originalPriceTakeProfit,
       originalPriceStopLoss,
+      originalPriceOpen,
+      totalEntries,
       scheduledAt,
       pendingAt,
     });
@@ -952,6 +976,7 @@ export class StrategyMarkdownService {
     originalPriceStopLoss: number,
     scheduledAt: number,
     pendingAt: number,
+    originalPriceOpen: number,
   ) => {
     this.loggerService.log("strategyMarkdownService averageBuy", {
       symbol,
@@ -996,6 +1021,7 @@ export class StrategyMarkdownService {
       priceStopLoss,
       originalPriceTakeProfit,
       originalPriceStopLoss,
+      originalPriceOpen,
       scheduledAt,
       pendingAt,
     });
@@ -1210,6 +1236,8 @@ export class StrategyMarkdownService {
           event.originalPriceStopLoss,
           event.scheduledAt,
           event.pendingAt,
+          event.totalEntries,
+          event.originalPriceOpen,
         )
       );
 
@@ -1235,6 +1263,8 @@ export class StrategyMarkdownService {
           event.originalPriceStopLoss,
           event.scheduledAt,
           event.pendingAt,
+          event.totalEntries,
+          event.originalPriceOpen,
         )
       );
 
@@ -1260,6 +1290,8 @@ export class StrategyMarkdownService {
           event.originalPriceStopLoss,
           event.scheduledAt,
           event.pendingAt,
+          event.totalEntries,
+          event.originalPriceOpen,
         )
       );
 
@@ -1285,6 +1317,8 @@ export class StrategyMarkdownService {
           event.originalPriceStopLoss,
           event.scheduledAt,
           event.pendingAt,
+          event.totalEntries,
+          event.originalPriceOpen,
         )
       );
 
@@ -1309,6 +1343,8 @@ export class StrategyMarkdownService {
           event.originalPriceStopLoss,
           event.scheduledAt,
           event.pendingAt,
+          event.totalEntries,
+          event.originalPriceOpen,
         )
       );
 
@@ -1333,6 +1369,8 @@ export class StrategyMarkdownService {
           event.originalPriceStopLoss,
           event.scheduledAt,
           event.pendingAt,
+          event.totalEntries,
+          event.originalPriceOpen,
           event.activateId,
         )
       );
@@ -1360,6 +1398,7 @@ export class StrategyMarkdownService {
           event.originalPriceStopLoss,
           event.scheduledAt,
           event.pendingAt,
+          event.originalPriceOpen,
         )
       );
 

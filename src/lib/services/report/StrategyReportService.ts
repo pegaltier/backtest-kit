@@ -203,6 +203,8 @@ export class StrategyReportService {
     originalPriceStopLoss: number,
     scheduledAt: number,
     pendingAt: number,
+    totalEntries: number,
+    originalPriceOpen: number,
   ) => {
     this.loggerService.log("strategyReportService partialProfit", {
       symbol,
@@ -241,6 +243,8 @@ export class StrategyReportService {
         priceStopLoss,
         originalPriceTakeProfit,
         originalPriceStopLoss,
+        originalPriceOpen,
+        totalEntries,
         scheduledAt,
         pendingAt,
       },
@@ -292,6 +296,8 @@ export class StrategyReportService {
     originalPriceStopLoss: number,
     scheduledAt: number,
     pendingAt: number,
+    totalEntries: number,
+    originalPriceOpen: number,
   ) => {
     this.loggerService.log("strategyReportService partialLoss", {
       symbol,
@@ -330,6 +336,8 @@ export class StrategyReportService {
         priceStopLoss,
         originalPriceTakeProfit,
         originalPriceStopLoss,
+        originalPriceOpen,
+        totalEntries,
         scheduledAt,
         pendingAt,
       },
@@ -381,6 +389,8 @@ export class StrategyReportService {
     originalPriceStopLoss: number,
     scheduledAt: number,
     pendingAt: number,
+    totalEntries: number,
+    originalPriceOpen: number,
   ) => {
     this.loggerService.log("strategyReportService trailingStop", {
       symbol,
@@ -419,6 +429,8 @@ export class StrategyReportService {
         priceStopLoss,
         originalPriceTakeProfit,
         originalPriceStopLoss,
+        originalPriceOpen,
+        totalEntries,
         scheduledAt,
         pendingAt,
       },
@@ -470,6 +482,8 @@ export class StrategyReportService {
     originalPriceStopLoss: number,
     scheduledAt: number,
     pendingAt: number,
+    totalEntries: number,
+    originalPriceOpen: number,
   ) => {
     this.loggerService.log("strategyReportService trailingTake", {
       symbol,
@@ -508,6 +522,8 @@ export class StrategyReportService {
         priceStopLoss,
         originalPriceTakeProfit,
         originalPriceStopLoss,
+        originalPriceOpen,
+        totalEntries,
         scheduledAt,
         pendingAt,
       },
@@ -557,6 +573,8 @@ export class StrategyReportService {
     originalPriceStopLoss: number,
     scheduledAt: number,
     pendingAt: number,
+    totalEntries: number,
+    originalPriceOpen: number,
   ) => {
     this.loggerService.log("strategyReportService breakeven", {
       symbol,
@@ -593,6 +611,8 @@ export class StrategyReportService {
         priceStopLoss,
         originalPriceTakeProfit,
         originalPriceStopLoss,
+        originalPriceOpen,
+        totalEntries,
         scheduledAt,
         pendingAt,
       },
@@ -643,6 +663,8 @@ export class StrategyReportService {
     originalPriceStopLoss: number,
     scheduledAt: number,
     pendingAt: number,
+    totalEntries: number,
+    originalPriceOpen: number,
     activateId?: string,
   ) => {
     this.loggerService.log("strategyReportService activateScheduled", {
@@ -682,6 +704,8 @@ export class StrategyReportService {
         priceStopLoss,
         originalPriceTakeProfit,
         originalPriceStopLoss,
+        originalPriceOpen,
+        totalEntries,
         scheduledAt,
         pendingAt,
       },
@@ -735,6 +759,7 @@ export class StrategyReportService {
     originalPriceStopLoss: number,
     scheduledAt: number,
     pendingAt: number,
+    originalPriceOpen: number,
   ) => {
     this.loggerService.log("strategyReportService averageBuy", {
       symbol,
@@ -775,6 +800,7 @@ export class StrategyReportService {
         priceStopLoss,
         originalPriceTakeProfit,
         originalPriceStopLoss,
+        originalPriceOpen,
         scheduledAt,
         pendingAt,
       },
@@ -854,6 +880,8 @@ export class StrategyReportService {
           event.originalPriceStopLoss,
           event.scheduledAt,
           event.pendingAt,
+          event.totalEntries,
+          event.originalPriceOpen,
         )
       );
 
@@ -879,6 +907,8 @@ export class StrategyReportService {
           event.originalPriceStopLoss,
           event.scheduledAt,
           event.pendingAt,
+          event.totalEntries,
+          event.originalPriceOpen,
         )
       );
 
@@ -904,6 +934,8 @@ export class StrategyReportService {
           event.originalPriceStopLoss,
           event.scheduledAt,
           event.pendingAt,
+          event.totalEntries,
+          event.originalPriceOpen,
         )
       );
 
@@ -929,6 +961,8 @@ export class StrategyReportService {
           event.originalPriceStopLoss,
           event.scheduledAt,
           event.pendingAt,
+          event.totalEntries,
+          event.originalPriceOpen,
         )
       );
 
@@ -953,6 +987,8 @@ export class StrategyReportService {
           event.originalPriceStopLoss,
           event.scheduledAt,
           event.pendingAt,
+          event.totalEntries,
+          event.originalPriceOpen,
         )
       );
 
@@ -977,6 +1013,8 @@ export class StrategyReportService {
           event.originalPriceStopLoss,
           event.scheduledAt,
           event.pendingAt,
+          event.totalEntries,
+          event.originalPriceOpen,
           event.activateId,
         )
       );
@@ -1004,6 +1042,7 @@ export class StrategyReportService {
           event.originalPriceStopLoss,
           event.scheduledAt,
           event.pendingAt,
+          event.originalPriceOpen,
         )
       );
 

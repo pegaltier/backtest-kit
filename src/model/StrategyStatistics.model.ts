@@ -64,6 +64,8 @@ export interface StrategyEvent {
   originalPriceTakeProfit?: number;
   /** Original stop loss price before any trailing adjustments */
   originalPriceStopLoss?: number;
+  /** Original entry price at signal creation (unchanged by DCA averaging) */
+  originalPriceOpen?: number;
   /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
   scheduledAt?: number;
   /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */

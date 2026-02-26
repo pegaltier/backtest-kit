@@ -25,6 +25,8 @@ interface SignalCommitBase {
    * 1 = no averaging done (only initial entry). 2+ = averaged positions.
    */
   totalEntries: number;
+  /** Original entry price at signal creation (unchanged by DCA averaging). */
+  originalPriceOpen: number;
 }
 
 /**
