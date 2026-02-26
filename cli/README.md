@@ -340,6 +340,10 @@ export default class {
   onBreakeven(event) {
     console.log('Breakeven triggered', event.symbol);
   }
+
+  onAverageBuy(event) {
+    console.log('Cost averaging (DCA)', event.symbol);
+  }
 }
 ```
 
