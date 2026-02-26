@@ -199,6 +199,17 @@ Activates a scheduled signal early without waiting for price to reach priceOpen.
 Sets the activation flag on the scheduled signal. The actual activation
 happens on the next tick() when strategy detects the flag.
 
+### commitAverageBuy
+
+```ts
+commitAverageBuy: (symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+```
+
+Adds a new DCA entry to the active pending signal.
+
+Adds a new averaging entry at currentPrice to the position's entry history.
+Updates effectivePriceOpen (mean of all entries) and emits average-buy commit event.
+
 ### getData
 
 ```ts

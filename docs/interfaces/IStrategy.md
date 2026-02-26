@@ -284,6 +284,26 @@ Validations:
 
 Use case: User-controlled breakeven protection triggered from onPartialProfit callback.
 
+### averageBuy
+
+```ts
+averageBuy: (symbol: string, currentPrice: number, backtest: boolean) => Promise<boolean>
+```
+
+Adds a new averaging entry to an open position (DCA — Dollar Cost Averaging).
+
+Appends currentPrice to the _entry array. The effective entry price used in all
+distance and PNL calculations becomes the simple arithmetic mean of all _entry prices.
+Original priceOpen is preserved unchanged for identity/audit purposes.
+
+Rejection rules (returns false without throwing):
+- LONG: currentPrice &gt;= last entry price (must average down, not up or equal)
+- SHORT: currentPrice &lt;= last entry price (must average down, not up or equal)
+
+Validations (throws):
+- No pending signal exists
+- currentPrice is not a positive finite number
+
 ### dispose
 
 ```ts

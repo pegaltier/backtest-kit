@@ -64,3 +64,20 @@ timestamp: number
 ```
 
 Timestamp from execution context (tick's when or backtest candle timestamp)
+
+### totalEntries
+
+```ts
+totalEntries: number
+```
+
+Total number of DCA entries at the time of this event (_entry.length).
+1 = no averaging done (only initial entry). 2+ = averaged positions.
+
+### originalPriceOpen
+
+```ts
+originalPriceOpen: number
+```
+
+Original entry price at signal creation (unchanged by DCA averaging).

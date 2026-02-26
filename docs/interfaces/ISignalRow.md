@@ -110,6 +110,18 @@ Updated by trailing() method based on position type and percentage distance.
 When _trailingPriceStopLoss is set, it replaces priceStopLoss for TP/SL checks.
 Original priceStopLoss is preserved in persistence but ignored during execution.
 
+### _entry
+
+```ts
+_entry: { price: number; }[]
+```
+
+DCA (Dollar Cost Averaging) entry history.
+First element is always the original priceOpen at signal creation.
+Each subsequent element is a new averaging entry added by averageBuy().
+Effective entry price = simple arithmetic mean of all price values.
+Original priceOpen is preserved unchanged for identity/audit purposes.
+
 ### _trailingPriceTakeProfit
 
 ```ts

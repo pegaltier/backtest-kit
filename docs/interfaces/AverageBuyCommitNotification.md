@@ -1,19 +1,19 @@
 ---
-title: docs/interface/SignalOpenedNotification
+title: docs/interface/AverageBuyCommitNotification
 group: docs
 ---
 
-# SignalOpenedNotification
+# AverageBuyCommitNotification
 
-Signal opened notification.
-Emitted when a new trading position is opened.
+Average-buy (DCA) commit notification.
+Emitted when a new averaging entry is added to an open position.
 
 ## Properties
 
 ### type
 
 ```ts
-type: "signal.opened"
+type: "average_buy.commit"
 ```
 
 Discriminator for type-safe union
@@ -32,7 +32,7 @@ Unique notification identifier
 timestamp: number
 ```
 
-Unix timestamp in milliseconds when signal was opened (pendingAt)
+Unix timestamp in milliseconds when the averaging entry was executed
 
 ### backtest
 
@@ -74,6 +74,30 @@ signalId: string
 
 Unique signal identifier (UUID v4)
 
+### currentPrice
+
+```ts
+currentPrice: number
+```
+
+Price at which the new averaging entry was executed
+
+### effectivePriceOpen
+
+```ts
+effectivePriceOpen: number
+```
+
+Averaged (effective) entry price after this addition
+
+### totalEntries
+
+```ts
+totalEntries: number
+```
+
+Total number of DCA entries after this addition
+
 ### position
 
 ```ts
@@ -88,7 +112,7 @@ Trade direction: "long" (buy) or "short" (sell)
 priceOpen: number
 ```
 
-Entry price for the position
+Original entry price (unchanged by averaging)
 
 ### priceTakeProfit
 
@@ -96,7 +120,7 @@ Entry price for the position
 priceTakeProfit: number
 ```
 
-Take profit target price
+Effective take profit price (with trailing if set)
 
 ### priceStopLoss
 
@@ -104,7 +128,7 @@ Take profit target price
 priceStopLoss: number
 ```
 
-Stop loss exit price
+Effective stop loss price (with trailing if set)
 
 ### originalPriceTakeProfit
 
@@ -130,22 +154,6 @@ originalPriceOpen: number
 
 Original entry price at signal creation (unchanged by DCA averaging)
 
-### totalEntries
-
-```ts
-totalEntries: number
-```
-
-Total number of DCA entries (_entry.length). 1 = no averaging.
-
-### note
-
-```ts
-note: string
-```
-
-Optional human-readable description of signal reason
-
 ### scheduledAt
 
 ```ts
@@ -168,4 +176,4 @@ Pending timestamp in milliseconds (when position became pending/active at priceO
 createdAt: number
 ```
 
-Unix timestamp in milliseconds when the tick result was created (from candle timestamp in backtest or execution context when in live)
+Unix timestamp in milliseconds when the notification was created

@@ -103,6 +103,14 @@ activateScheduled: (symbol: string, currentPrice: number, isBacktest: boolean, c
 
 Logs an activate-scheduled event when a scheduled signal is activated early.
 
+### averageBuy
+
+```ts
+averageBuy: (symbol: string, currentPrice: number, effectivePriceOpen: number, totalEntries: number, isBacktest: boolean, context: { strategyName: string; exchangeName: string; frameName: string; }, timestamp: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTak...
+```
+
+Logs an average-buy (DCA) event when a new averaging entry is added to an open position.
+
 ### subscribe
 
 ```ts

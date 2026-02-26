@@ -269,3 +269,14 @@ Activates a scheduled signal early without waiting for price to reach priceOpen.
 
 Validates strategy existence and delegates to connection service
 to set the activation flag. The actual activation happens on next tick().
+
+### averageBuy
+
+```ts
+averageBuy: (backtest: boolean, symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+```
+
+Adds a new DCA entry to the active pending signal.
+
+Validates strategy existence and delegates to connection service
+to add a new averaging entry to the position.

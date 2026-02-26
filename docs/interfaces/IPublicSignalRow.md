@@ -45,3 +45,21 @@ Total executed percentage from partial closes.
 Sum of all percent values from _partial array (both profit and loss types).
 Represents the total portion of the position that has been closed through partial executions.
 Range: 0-100. Value of 0 means no partial closes, 100 means position fully closed through partials.
+
+### totalEntries
+
+```ts
+totalEntries: number
+```
+
+Total number of entries in the DCA _entry history (_entry.length).
+1 = no averaging done (only initial entry). 2+ = averaged positions.
+
+### originalPriceOpen
+
+```ts
+originalPriceOpen: number
+```
+
+Original entry price set at signal creation (unchanged by averaging).
+Mirrors signal.priceOpen which is preserved for identity/audit purposes.

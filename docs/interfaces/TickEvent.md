@@ -106,6 +106,22 @@ originalPriceStopLoss: number
 
 Original stop loss price before modifications (only for scheduled/waiting/opened/active/closed/cancelled)
 
+### originalPriceOpen
+
+```ts
+originalPriceOpen: number
+```
+
+Original entry price at signal creation (unchanged by DCA averaging)
+
+### totalEntries
+
+```ts
+totalEntries: number
+```
+
+Total number of DCA entries (_entry.length). 1 = no averaging.
+
 ### partialExecuted
 
 ```ts

@@ -106,6 +106,22 @@ originalPriceStopLoss: number
 
 Original stop loss price before modifications
 
+### totalEntries
+
+```ts
+totalEntries: number
+```
+
+Total number of DCA entries (present when averageBuy was applied)
+
+### originalPriceOpen
+
+```ts
+originalPriceOpen: number
+```
+
+Original entry price before DCA averaging (present when averageBuy was applied)
+
 ### partialExecuted
 
 ```ts

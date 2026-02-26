@@ -90,3 +90,11 @@ activateScheduledCount: number
 ```
 
 Count of activate-scheduled events
+
+### averageBuyCount
+
+```ts
+averageBuyCount: number
+```
+
+Count of average-buy (DCA) events

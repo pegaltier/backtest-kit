@@ -289,3 +289,13 @@ Activates a scheduled signal early without waiting for price to reach priceOpen.
 
 Delegates to ClientStrategy.activateScheduled() which sets _activatedSignal flag.
 The actual activation happens on next tick() when strategy detects the flag.
+
+### averageBuy
+
+```ts
+averageBuy: (backtest: boolean, symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+```
+
+Adds a new DCA entry to the active pending signal.
+
+Delegates to ClientStrategy.averageBuy() with current execution context.

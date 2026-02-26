@@ -122,6 +122,22 @@ originalPriceStopLoss: number
 
 Original stop loss price before any trailing adjustments
 
+### originalPriceOpen
+
+```ts
+originalPriceOpen: number
+```
+
+Original entry price at signal creation (unchanged by DCA averaging)
+
+### totalEntries
+
+```ts
+totalEntries: number
+```
+
+Total number of DCA entries (_entry.length). 1 = no averaging.
+
 ### scheduledAt
 
 ```ts

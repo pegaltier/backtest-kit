@@ -178,6 +178,14 @@ originalPriceStopLoss: number
 
 Original stop loss price before any trailing adjustments
 
+### originalPriceOpen
+
+```ts
+originalPriceOpen: number
+```
+
+Original entry price at signal creation (unchanged by DCA averaging)
+
 ### scheduledAt
 
 ```ts
@@ -193,3 +201,19 @@ pendingAt: number
 ```
 
 Pending timestamp in milliseconds (when position became pending/active at priceOpen)
+
+### effectivePriceOpen
+
+```ts
+effectivePriceOpen: number
+```
+
+Averaged entry price after DCA addition (average-buy action only)
+
+### totalEntries
+
+```ts
+totalEntries: number
+```
+
+Total number of DCA entries after this addition (average-buy action only)
