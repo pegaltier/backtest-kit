@@ -71,9 +71,11 @@ export const ListView = ({
     const [signals, { loading, execute }] = useAsyncValue(
         async () => {
             if (type === "live") {
-                return await ioc.storageViewService.listSignalLive();
+                const signalList = await ioc.storageViewService.listSignalLive();
+                return signalList.filter((s) => s.status === "closed")
             }
-            return await ioc.storageViewService.listSignalBacktest();
+            const signalList =  await ioc.storageViewService.listSignalBacktest();
+            return signalList.filter((s) => s.status === "closed")
         },
         {
             onLoadStart: () => setLoading(true),
