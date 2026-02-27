@@ -58,7 +58,7 @@
     "default": "./build/index.cjs"
   },
   "devDependencies": {
-    "@babel/plugin-transform-modules-commonjs": "7.28.6",
+    "@babel/plugin-transform-modules-umd": "7.27.1",
     "@babel/standalone": "7.29.1",
     "@backtest-kit/ui": "3.3.2",
     "@rollup/plugin-typescript": "11.1.6",
@@ -80,7 +80,7 @@
     "worker-testbed": "1.0.12"
   },
   "peerDependencies": {
-    "@babel/plugin-transform-modules-commonjs": "^7.28.6",
+    "@babel/plugin-transform-modules-umd": "^7.27.1",
     "@babel/standalone": "^7.29.1",
     "@backtest-kit/ui": "^3.3.2",
     "backtest-kit": "^3.3.2",

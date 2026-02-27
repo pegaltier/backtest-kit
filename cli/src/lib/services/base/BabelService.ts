@@ -1,5 +1,5 @@
 import { transform, registerPlugin } from "@babel/standalone";
-import pluginCommonjs from "@babel/plugin-transform-modules-commonjs";
+import pluginUMD from "@babel/plugin-transform-modules-umd";
 import LoggerService from "../base/LoggerService";
 import * as BacktestKit from "backtest-kit";
 import { inject } from "../../../lib/core/di";
@@ -8,11 +8,17 @@ import { createRequire } from "module";
 import { fileURLToPath } from "url";
 import path from "path";
 
-registerPlugin("plugin-transform-modules-commonjs", pluginCommonjs);
+registerPlugin("plugin-transform-modules-umd", pluginUMD);
 
 const require = createRequire(import.meta.url);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+declare global {
+  interface Window {
+    BacktestKit: typeof BacktestKit;
+  }
+}
 
 export class BabelService {
   readonly loggerService = inject<LoggerService>(TYPES.loggerService);
@@ -22,7 +28,17 @@ export class BabelService {
     const result = transform(code, {
       filename: "index.ts",
       presets: ["env", "typescript"],
-      plugins: ["plugin-transform-modules-commonjs"],
+      plugins: [
+        [
+          "plugin-transform-modules-umd",
+          {
+            globals: {
+              "backtest-kit": "BacktestKit",
+            },
+            moduleId: "Executor",
+          },
+        ],
+      ],
       parserOpts: { strictMode: false },
     });
     if (!result.code) {

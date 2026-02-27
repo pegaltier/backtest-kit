@@ -20,6 +20,7 @@ import TelegramLogicService from "./services/logic/TelegramLogicService";
 import TelegramTemplateService from "./services/template/TelegramTemplateService";
 import ModuleConnectionService from "./services/connection/ModuleConnectionService";
 import LiveProviderService from "./services/provider/LiveProviderService";
+import BabelService from "./services/base/BabelService";
 
 const apiServices = {
   telegramApiService: inject<TelegramApiService>(TYPES.telegramApiService),
@@ -30,6 +31,7 @@ const baseServices = {
   errorService: inject<ErrorService>(TYPES.errorService),
   loggerService: inject<LoggerService>(TYPES.loggerService),
   resolveService: inject<ResolveService>(TYPES.resolveService),
+  babelService: inject<BabelService>(TYPES.babelService),
 };
 
 const connectionServices = {
