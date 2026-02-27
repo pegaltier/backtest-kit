@@ -11,12 +11,17 @@ import { entrySubject } from '../../../config/emitters';
 import BabelService from './BabelService';
 import fs from "fs/promises";
 
+declare const __IS_ESM__: boolean;
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const require = createRequire(import.meta.url);
 
 const REQUIRE_ENTRY_FACTORY = (filePath: string): boolean => {
+    if (__IS_ESM__) {
+        return false;
+    }
     try {
         require(filePath);
         return true;
@@ -26,6 +31,9 @@ const REQUIRE_ENTRY_FACTORY = (filePath: string): boolean => {
 };
 
 const IMPORT_ENTRY_FACTORY = async (filePath: string): Promise<boolean> => {
+    if (!__IS_ESM__) {
+        return false;
+    }
     try {
         await import(pathToFileURL(filePath).href);
         return true;

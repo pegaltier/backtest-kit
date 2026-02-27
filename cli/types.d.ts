@@ -1,4 +1,5 @@
 import * as functools_kit from 'functools-kit';
+import * as BacktestKit from 'backtest-kit';
 import { CandleInterval, TrailingTakeCommit, TrailingStopCommit, BreakevenCommit, PartialProfitCommit, PartialLossCommit, IStrategyTickResultScheduled, IStrategyTickResultCancelled, IStrategyTickResultOpened, IStrategyTickResultClosed, RiskContract, AverageBuyCommit } from 'backtest-kit';
 import { Input } from 'telegraf';
 
@@ -85,8 +86,22 @@ declare class FrameSchemaService {
     addSchema: (() => Promise<void>) & functools_kit.ISingleshotClearable;
 }
 
+declare const BacktestKitCli: {};
+declare global {
+    interface Window {
+        BacktestKit: typeof BacktestKit;
+        BacktestKitCli: typeof BacktestKitCli;
+    }
+}
+declare class BabelService {
+    readonly loggerService: LoggerService;
+    transpile: (code: string) => any;
+    transpileAndRun: (code: string) => Record<string, unknown>;
+}
+
 declare class ResolveService {
-    private readonly loggerService;
+    readonly loggerService: LoggerService;
+    readonly babelService: BabelService;
     readonly DEFAULT_TEMPLATE_DIR: string;
     readonly OVERRIDE_TEMPLATE_DIR: string;
     readonly OVERRIDE_MODULES_DIR: string;
@@ -243,6 +258,7 @@ declare const cli: {
     errorService: ErrorService;
     loggerService: LoggerService;
     resolveService: ResolveService;
+    babelService: BabelService;
     telegramApiService: TelegramApiService;
     quickchartApiService: QuickchartApiService;
 };
