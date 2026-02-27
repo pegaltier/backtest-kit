@@ -14,9 +14,17 @@ const require = createRequire(import.meta.url);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const BacktestKitCli = new Proxy({}, {
+  get(_target, prop) {
+    throw new Error(`@backtest-kit/cli is not available in this context (accessed: ${String(prop)})`);
+  },
+});
+
+
 declare global {
   interface Window {
     BacktestKit: typeof BacktestKit;
+    BacktestKitCli: typeof BacktestKitCli
   }
 }
 
@@ -34,6 +42,7 @@ export class BabelService {
           {
             globals: {
               "backtest-kit": "BacktestKit",
+              "@backtest-kit/cli": "BacktestKitCli",
             },
             moduleId: "Executor",
           },
@@ -63,5 +72,6 @@ export class BabelService {
 }
 
 globalThis.BacktestKit = BacktestKit;
+globalThis.BacktestKitCli = BacktestKitCli;
 
 export default BabelService;
