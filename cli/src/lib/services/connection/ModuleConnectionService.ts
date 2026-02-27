@@ -21,7 +21,14 @@ const require = createRequire(import.meta.url);
 const getExtVariants = (fileName: string): string[] => {
   const ext = path.extname(fileName);
   const base = ext ? fileName.slice(0, -ext.length) : fileName;
-  return [fileName, `${base}.cjs`, `${base}.mjs`];
+  return [
+    fileName,
+    `${base}.cjs`,
+    `${base}.mjs`,
+    `${base}.ts`,
+    `${base}.tsx`,
+    `${base}.js`,
+  ];
 };
 
 const REQUIRE_MODULE_FACTORY = (
@@ -64,7 +71,10 @@ const BABEL_MODULE_FACTORY = async (
     try {
       const code = await fs.readFile(variant, "utf-8");
       const { exports } = self.babelService.transpileAndRun(code);
-      return (exports as Record<string, unknown>).default as TBaseModuleCtor | BaseModule ?? exports as unknown as TBaseModuleCtor | BaseModule;
+      if (exports.default) {
+        return <TBaseModuleCtor | BaseModule>exports.default;
+      }
+      return <TBaseModuleCtor | BaseModule>exports;
     } catch (error) {
       console.log(getErrorMessage(error));
       continue;
