@@ -1,7 +1,8 @@
 import { ExecutionContextService, MethodContextService, lib } from "backtest-kit";
 
 import NodeType from '../enum/NodeType';
-import { TypedNode, InferNodeValue } from '../interfaces/TypedNode.interface';
+import { TypedNode, SourceNode, OutputNode } from '../interfaces/TypedNode.interface';
+import { Value } from '../interfaces/Node.interface';
 
 /**
  * Рекурсивно вычисляет значение узла графа.
@@ -9,7 +10,9 @@ import { TypedNode, InferNodeValue } from '../interfaces/TypedNode.interface';
  * Для OutputNode сначала резолвит все дочерние nodes параллельно,
  * затем передаёт их типизированные значения в compute().
  */
-export const resolve = async <T extends TypedNode>(node: T): Promise<InferNodeValue<T>> => {
+export async function resolve<V extends Value>(node: SourceNode<V>): Promise<V>;
+export async function resolve<TNodes extends TypedNode[], V extends Value>(node: OutputNode<TNodes, V>): Promise<V>;
+export async function resolve(node: TypedNode): Promise<Value> {
 
     if (!ExecutionContextService.hasContext()) {
         throw new Error("Execution context is required to resolve graph nodes. Please ensure that resolve() is called within a valid execution context.");
@@ -22,10 +25,10 @@ export const resolve = async <T extends TypedNode>(node: T): Promise<InferNodeVa
     if (node.type === NodeType.SourceNode) {
         const { symbol, when } = lib.executionContextService.context;
         const { exchangeName } = lib.methodContextService.context;
-        return node.fetch(symbol, when, exchangeName) as Promise<InferNodeValue<T>>;
+        return node.fetch(symbol, when, exchangeName);
     }
     const values = await Promise.all(node.nodes.map(resolve));
-    return node.compute(values as any) as Promise<InferNodeValue<T>>;
+    return node.compute(values as any);
 };
 
 export default resolve;

@@ -95,7 +95,8 @@ declare const deepFlat: (arr?: INode[]) => INode[];
  * Для OutputNode сначала резолвит все дочерние nodes параллельно,
  * затем передаёт их типизированные значения в compute().
  */
-declare const resolve: <T extends TypedNode>(node: T) => Promise<InferNodeValue<T>>;
+declare function resolve<V extends Value>(node: SourceNode<V>): Promise<V>;
+declare function resolve<TNodes extends TypedNode[], V extends Value>(node: OutputNode<TNodes, V>): Promise<V>;
 
 /**
  * Сериализованная (плоская) форма узла графа для хранения в БД.
