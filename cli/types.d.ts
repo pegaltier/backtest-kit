@@ -218,6 +218,7 @@ type TBaseModuleCtor = new () => BaseModule;
 declare class ModuleConnectionService {
     readonly loggerService: LoggerService;
     readonly resolveService: ResolveService;
+    readonly babelService: BabelService;
     getInstance: ((fileName: string) => Promise<BaseModule>) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, Promise<Partial<ILiveModule>>>;
 }
 

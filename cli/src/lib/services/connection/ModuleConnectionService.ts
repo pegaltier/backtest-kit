@@ -1,9 +1,11 @@
 import { memoize } from "functools-kit";
 import { createRequire } from "module";
+import { pathToFileURL } from "url";
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import ResolveService from "../base/ResolveService";
+import BabelService from "../base/BabelService";
 import fs from "fs/promises";
 import { constants } from "fs";
 import path from "path";
@@ -11,6 +13,8 @@ import {
   BaseModule,
   TBaseModuleCtor,
 } from "../../../interfaces/Module.interface";
+
+declare const __IS_ESM__: boolean;
 
 const require = createRequire(import.meta.url);
 
@@ -23,6 +27,9 @@ const getExtVariants = (fileName: string): string[] => {
 const REQUIRE_MODULE_FACTORY = (
   fileName: string,
 ): TBaseModuleCtor | BaseModule | null => {
+  if (__IS_ESM__) {
+    return null;
+  }
   for (const variant of getExtVariants(fileName)) {
     try {
       return require(variant);
@@ -36,9 +43,28 @@ const REQUIRE_MODULE_FACTORY = (
 const IMPORT_MODULE_FACTORY = async (
   fileName: string,
 ): Promise<TBaseModuleCtor | BaseModule | null> => {
+  if (!__IS_ESM__) {
+    return null;
+  }
   for (const variant of getExtVariants(fileName)) {
     try {
-      return await import(variant);
+      return await import(pathToFileURL(variant).href);
+    } catch {
+      continue;
+    }
+  }
+  return null;
+};
+
+const BABEL_MODULE_FACTORY = async (
+  fileName: string,
+  self: ModuleConnectionService,
+): Promise<TBaseModuleCtor | BaseModule | null> => {
+  for (const variant of getExtVariants(fileName)) {
+    try {
+      const code = await fs.readFile(variant, "utf-8");
+      const exports = self.babelService.transpileAndRun(code);
+      return (exports as Record<string, unknown>).default as TBaseModuleCtor | BaseModule ?? exports as unknown as TBaseModuleCtor | BaseModule;
     } catch {
       continue;
     }
@@ -67,12 +93,16 @@ const LOAD_MODULE_MODULE_FN = async (
   if ((Ctor = await IMPORT_MODULE_FACTORY(resolvedFile))) {
     return typeof Ctor === "function" ? new Ctor() : Ctor;
   }
+  if ((Ctor = await BABEL_MODULE_FACTORY(resolvedFile, self))) {
+    return typeof Ctor === "function" ? new Ctor() : Ctor;
+  }
   throw new Error(`Module module import failed for file: ${resolvedFile}`);
 };
 
 export class ModuleConnectionService {
   readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   readonly resolveService = inject<ResolveService>(TYPES.resolveService);
+  readonly babelService = inject<BabelService>(TYPES.babelService);
 
   public getInstance = memoize(
     ([fileName]) => `${fileName}`,
