@@ -65,6 +65,10 @@ interface ILogEntry {
     id: string;
     /** Log level */
     type: "log" | "debug" | "info" | "warn";
+    /** Unix timestamp in milliseconds when the entry was created */
+    timestamp: number;
+    /** Date taken from backtest context to improve user experience */
+    createdAt: string;
     /** Log topic / method name */
     topic: string;
     /** Additional arguments passed to the log call */
@@ -9825,31 +9829,93 @@ declare class MarkdownAdapter extends MarkdownUtils {
  */
 declare const Markdown: MarkdownAdapter;
 
+/**
+ * Extended logger interface with log history access.
+ */
 interface ILog extends ILogger {
+    /**
+     * Returns all stored log entries.
+     * @returns Array of all log entries
+     */
     getList(): Promise<ILogEntry[]>;
 }
+/**
+ * Constructor type for log adapters.
+ * Used for custom log implementations.
+ */
 type TLogCtor = new () => Partial<ILog>;
 /**
  * Log adapter with pluggable storage backend.
  *
  * Features:
  * - Adapter pattern for swappable log implementations
- * - Default adapter: LogPersistUtils (persistent storage)
- * - Alternative adapters: LogMemoryUtils, LogDummyUtils
+ * - Default adapter: LogMemoryUtils (in-memory storage)
+ * - Alternative adapters: LogPersistUtils, LogDummyUtils
  * - Convenience methods: usePersist(), useMemory(), useDummy()
  */
 declare class LogAdapter implements ILog {
+    /** Internal log utils instance */
     private _log;
+    /**
+     * Lists all stored log entries.
+     * Proxies call to the underlying log adapter.
+     * @returns Array of all log entries
+     */
     getList: () => Promise<ILogEntry[]>;
+    /**
+     * Logs a general-purpose message.
+     * Proxies call to the underlying log adapter.
+     * @param topic - The log topic / method name
+     * @param args - Additional arguments
+     */
     log: (topic: string, ...args: any[]) => void;
+    /**
+     * Logs a debug-level message.
+     * Proxies call to the underlying log adapter.
+     * @param topic - The log topic / method name
+     * @param args - Additional arguments
+     */
     debug: (topic: string, ...args: any[]) => void;
+    /**
+     * Logs an info-level message.
+     * Proxies call to the underlying log adapter.
+     * @param topic - The log topic / method name
+     * @param args - Additional arguments
+     */
     info: (topic: string, ...args: any[]) => void;
+    /**
+     * Logs a warning-level message.
+     * Proxies call to the underlying log adapter.
+     * @param topic - The log topic / method name
+     * @param args - Additional arguments
+     */
     warn: (topic: string, ...args: any[]) => void;
+    /**
+     * Sets the log adapter constructor.
+     * All future log operations will use this adapter.
+     * @param Ctor - Constructor for log adapter
+     */
     useLogger: (Ctor: TLogCtor) => void;
+    /**
+     * Switches to persistent log adapter.
+     * Log entries will be persisted to disk.
+     */
     usePersist: () => void;
+    /**
+     * Switches to in-memory log adapter (default).
+     * Log entries will be stored in memory only.
+     */
     useMemory: () => void;
+    /**
+     * Switches to dummy log adapter.
+     * All future log writes will be no-ops.
+     */
     useDummy: () => void;
 }
+/**
+ * Global singleton instance of LogAdapter.
+ * Provides unified log management with pluggable backends.
+ */
 declare const Log: LogAdapter;
 
 /**
