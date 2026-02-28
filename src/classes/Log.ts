@@ -1,8 +1,12 @@
-import { randomString, singleshot } from "functools-kit";
+import * as fs from "fs/promises";
+import { createWriteStream, WriteStream } from "fs";
+import { join } from "path";
+import { randomString, singleshot, timeout, TIMEOUT_SYMBOL, getErrorMessage } from "functools-kit";
 import { ILogEntry, ILogger } from "../interfaces/Logger.interface";
 import { PersistLogAdapter } from "./Persist";
 import backtest, { ExecutionContextService } from "../lib";
 import { GLOBAL_CONFIG } from "../config/params";
+import { exitEmitter } from "../config/emitters";
 
 const LOG_PERSIST_METHOD_NAME_WAIT_FOR_INIT = "LogPersistUtils.waitForInit";
 const LOG_PERSIST_METHOD_NAME_LOG = "LogPersistUtils.log";
@@ -21,6 +25,16 @@ const LOG_ADAPTER_METHOD_NAME_USE_LOGGER = "LogAdapter.useLogger";
 const LOG_ADAPTER_METHOD_NAME_USE_PERSIST = "LogAdapter.usePersist";
 const LOG_ADAPTER_METHOD_NAME_USE_MEMORY = "LogAdapter.useMemory";
 const LOG_ADAPTER_METHOD_NAME_USE_DUMMY = "LogAdapter.useDummy";
+const LOG_ADAPTER_METHOD_NAME_USE_JSONL = "LogAdapter.useJsonl";
+
+const LOG_JSONL_METHOD_NAME_LOG = "LogJsonlUtils.log";
+const LOG_JSONL_METHOD_NAME_DEBUG = "LogJsonlUtils.debug";
+const LOG_JSONL_METHOD_NAME_INFO = "LogJsonlUtils.info";
+const LOG_JSONL_METHOD_NAME_WARN = "LogJsonlUtils.warn";
+const LOG_JSONL_METHOD_NAME_GET_LIST = "LogJsonlUtils.getList";
+
+const WAIT_FOR_INIT_SYMBOL = Symbol("wait-for-init");
+const WRITE_SAFE_SYMBOL = Symbol("write-safe");
 
 /**
  * Backtest execution time retrieval function.
@@ -306,6 +320,173 @@ export class LogMemoryUtils implements ILog {
 }
 
 /**
+ * JSONL-based log adapter with append-only writes and file-based reads.
+ *
+ * Features:
+ * - Writes log entries as JSONL lines via WriteStream (append-only)
+ * - Stream-based writes with backpressure handling
+ * - 15-second timeout protection for write operations
+ * - Automatic directory creation on first write
+ * - Error handling via exitEmitter
+ * - getList reads and parses all lines from the JSONL file
+ *
+ * File format: {dirName}/{fileName}.jsonl
+ * Each line contains a full ILogEntry object.
+ */
+export class LogJsonlUtils implements ILog {
+  /** Absolute path to the JSONL file */
+  private _filePath: string;
+
+  /** WriteStream instance for append-only writes, null until initialized */
+  private _stream: WriteStream | null = null;
+
+  /**
+   * Creates a new JSONL log adapter instance.
+   *
+   * @param fileName - Base file name (without extension)
+   * @param dirName - Directory path for the JSONL file
+   */
+  constructor(
+    readonly fileName: string,
+    readonly dirName: string,
+  ) {
+    this._filePath = join(this.dirName, this.fileName);
+  }
+
+  /**
+   * Singleshot initialization: creates directory and opens append stream.
+   * Sets up error handler that emits to exitEmitter.
+   */
+  [WAIT_FOR_INIT_SYMBOL] = singleshot(async (): Promise<void> => {
+    await fs.mkdir(this.dirName, { recursive: true });
+    this._stream = createWriteStream(this._filePath, { flags: "a" });
+    this._stream.on("error", (err) => {
+      exitEmitter.next(
+        new Error(
+          `LogJsonlUtils stream error for file=${this._filePath} message=${getErrorMessage(err)}`
+        )
+      );
+    });
+  });
+
+  /**
+   * Timeout-protected write with backpressure handling.
+   * Waits for drain event if write buffer is full.
+   * Times out after 15 seconds and returns TIMEOUT_SYMBOL.
+   */
+  [WRITE_SAFE_SYMBOL] = timeout(async (line: string) => {
+    if (!this._stream!.write(line)) {
+      await new Promise<void>((resolve) => {
+        this._stream!.once("drain", resolve);
+      });
+    }
+  }, 15_000);
+
+  /**
+   * Appends a log entry as a JSONL line.
+   */
+  private _append = async (entry: ILogEntry): Promise<void> => {
+    await this[WAIT_FOR_INIT_SYMBOL]();
+    const line = JSON.stringify(entry) + "\n";
+    const status = await this[WRITE_SAFE_SYMBOL](line);
+    if (status === TIMEOUT_SYMBOL) {
+      throw new Error(`LogJsonlUtils timeout writing to file=${this._filePath}`);
+    }
+  };
+
+  /**
+   * Logs a general-purpose message.
+   * @param topic - The log topic / method name
+   * @param args - Additional arguments
+   */
+  public log = async (topic: string, ...args: any[]): Promise<void> => {
+    backtest.loggerService.info(LOG_JSONL_METHOD_NAME_LOG, { topic });
+    const date = await GET_DATE_FN();
+    await this._append({
+      id: randomString(),
+      type: "log",
+      timestamp: Date.now(),
+      createdAt: date.toISOString(),
+      topic,
+      args,
+    });
+  };
+
+  /**
+   * Logs a debug-level message.
+   * @param topic - The log topic / method name
+   * @param args - Additional arguments
+   */
+  public debug = async (topic: string, ...args: any[]): Promise<void> => {
+    backtest.loggerService.info(LOG_JSONL_METHOD_NAME_DEBUG, { topic });
+    const date = await GET_DATE_FN();
+    await this._append({
+      id: randomString(),
+      type: "debug",
+      timestamp: Date.now(),
+      createdAt: date.toISOString(),
+      topic,
+      args,
+    });
+  };
+
+  /**
+   * Logs an info-level message.
+   * @param topic - The log topic / method name
+   * @param args - Additional arguments
+   */
+  public info = async (topic: string, ...args: any[]): Promise<void> => {
+    backtest.loggerService.info(LOG_JSONL_METHOD_NAME_INFO, { topic });
+    const date = await GET_DATE_FN();
+    await this._append({
+      id: randomString(),
+      type: "info",
+      timestamp: Date.now(),
+      createdAt: date.toISOString(),
+      topic,
+      args,
+    });
+  };
+
+  /**
+   * Logs a warning-level message.
+   * @param topic - The log topic / method name
+   * @param args - Additional arguments
+   */
+  public warn = async (topic: string, ...args: any[]): Promise<void> => {
+    backtest.loggerService.info(LOG_JSONL_METHOD_NAME_WARN, { topic });
+    const date = await GET_DATE_FN();
+    await this._append({
+      id: randomString(),
+      type: "warn",
+      timestamp: Date.now(),
+      createdAt: date.toISOString(),
+      topic,
+      args,
+    });
+  };
+
+  /**
+   * Reads all log entries from the JSONL file.
+   * Returns empty array if file does not exist.
+   * @returns Array of all log entries
+   */
+  public getList = async (): Promise<ILogEntry[]> => {
+    backtest.loggerService.info(LOG_JSONL_METHOD_NAME_GET_LIST);
+    let raw: string;
+    try {
+      raw = await fs.readFile(this._filePath, "utf-8");
+    } catch {
+      return [];
+    }
+    return raw
+      .split("\n")
+      .filter((line) => line.trim().length > 0)
+      .map((line) => JSON.parse(line) as ILogEntry);
+  };
+}
+
+/**
  * Dummy log adapter that discards all writes.
  *
  * Features:
@@ -460,6 +641,22 @@ export class LogAdapter implements ILog {
   public useDummy = () => {
     backtest.loggerService.info(LOG_ADAPTER_METHOD_NAME_USE_DUMMY);
     this._log = new LogDummyUtils();
+  };
+
+  /**
+   * Switches to JSONL file log adapter.
+   * Log entries will be appended to {dirName}/{fileName}.jsonl.
+   * Reads are performed by parsing all lines from the file.
+   *
+   * @param fileName - Base file name without extension (default: "log")
+   * @param dirName - Directory for the JSONL file (default: ./dump/log)
+   */
+  public useJsonl = (
+    fileName = "log.jsonl",
+    dirName = join(process.cwd(), "./dump/log"),
+  ) => {
+    backtest.loggerService.info(LOG_ADAPTER_METHOD_NAME_USE_JSONL);
+    this._log = new LogJsonlUtils(fileName, dirName);
   };
 }
 
