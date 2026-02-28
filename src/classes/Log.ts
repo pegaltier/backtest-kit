@@ -6,7 +6,7 @@ import { ILogEntry, ILogger } from "../interfaces/Logger.interface";
 import { PersistLogAdapter } from "./Persist";
 import backtest, { ExecutionContextService, MethodContextService } from "../lib";
 import { GLOBAL_CONFIG } from "../config/params";
-import { exitEmitter } from "../config/emitters";
+import { exitEmitter, shutdownEmitter } from "../config/emitters";
 
 const LOG_PERSIST_METHOD_NAME_WAIT_FOR_INIT = "LogPersistUtils.waitForInit";
 const LOG_PERSIST_METHOD_NAME_LOG = "LogPersistUtils.log";
@@ -421,6 +421,10 @@ export class LogJsonlUtils implements ILog {
           `LogJsonlUtils stream error for file=${this._filePath} message=${getErrorMessage(err)}`
         )
       );
+    });
+    shutdownEmitter.subscribe(() => {
+      this._stream?.end();
+      this._stream = null;
     });
   });
 

@@ -47,6 +47,12 @@ export const errorEmitter = new Subject<Error>();
 export const exitEmitter = new Subject<Error>();
 
 /**
+ * Shutdown emitter for graceful shutdown events.
+ * Emits when a shutdown signal is received (e.g., SIGINT) to allow components to perform cleanup before process exit.
+ */
+export const shutdownEmitter = new Subject<void>();
+
+/**
  * Done emitter for live background execution completion.
  * Emits when live background tasks complete (Live.background).
  */

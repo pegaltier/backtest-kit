@@ -11,7 +11,7 @@ import {
   timeout,
   TIMEOUT_SYMBOL,
 } from "functools-kit";
-import { exitEmitter } from "../config/emitters";
+import { exitEmitter, shutdownEmitter } from "../config/emitters";
 
 const REPORT_BASE_METHOD_NAME_CTOR = "ReportBase.CTOR";
 const REPORT_BASE_METHOD_NAME_WAIT_FOR_INIT = "ReportBase.waitForInit";
@@ -170,6 +170,10 @@ class ReportBase implements TReportBase {
           } message=${getErrorMessage(err)}`
         )
       );
+    });
+    shutdownEmitter.subscribe(() => {
+      this._stream?.end();
+      this._stream = null;
     });
   });
 

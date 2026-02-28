@@ -1,4 +1,4 @@
-import { listenDoneBacktest, listenDoneLive } from "backtest-kit";
+import { listenDoneBacktest, listenDoneLive, shutdown } from "backtest-kit";
 import { compose, singleshot } from "functools-kit";
 
 export const notifyFinish = singleshot(() => {
@@ -15,6 +15,7 @@ export const notifyFinish = singleshot(() => {
         () => unLive(),
         () => unBacktest(),
     );
+    shutdown();
 })
 
 export default notifyFinish;
