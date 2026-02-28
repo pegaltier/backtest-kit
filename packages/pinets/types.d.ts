@@ -29,7 +29,7 @@ type PlotRecord = {
     plots: PlotModel;
 };
 
-type TIndicatorCtor = (source: string, inputs?: Record<string, any>) => IIndicator;
+type TIndicatorCtor = new (source: string, inputs?: Record<string, any>) => IIndicator;
 interface IIndicator {
     source: string;
     inputs: Record<string, any>;
@@ -40,7 +40,7 @@ interface IProvider {
     getSymbolInfo(tickerId: string): Promise<any>;
 }
 
-type TPineCtor = (source: IProvider, tickerId: string, timeframe: string, limit: number) => IPine;
+type TPineCtor = new (source: IProvider, tickerId: string, timeframe: string, limit: number) => IPine;
 interface IPine {
     ready(): Promise<void>;
     run(code: string | IIndicator): Promise<PlotRecord>;
@@ -171,7 +171,7 @@ declare class CandleProviderService implements IProvider {
 declare class PineConnectionService {
     private readonly loggerService;
     private PineFactory;
-    getInstance: (...args: Parameters<TPineCtor>) => Promise<IPine>;
+    getInstance: (...args: ConstructorParameters<TPineCtor>) => Promise<IPine>;
     usePine: (ctor: TPineCtor) => void;
     clear: () => void;
 }
@@ -179,7 +179,7 @@ declare class PineConnectionService {
 declare class IndicatorConnectionService {
     private readonly loggerService;
     private IndicatorFactory;
-    getInstance: (...args: Parameters<TIndicatorCtor>) => Promise<IIndicator>;
+    getInstance: (...args: ConstructorParameters<TIndicatorCtor>) => Promise<IIndicator>;
     useIndicator: (ctor: TIndicatorCtor) => void;
     clear: () => void;
 }
@@ -226,4 +226,4 @@ declare const pine: {
     };
 };
 
-export { AXIS_SYMBOL, type CandleModel, Code, File, type ILogger, type IPine, type IProvider, type PlotExtractConfig, type PlotMapping, type PlotModel, type PlotRecord, type SymbolInfoModel, type TPineCtor, dumpPlotData, extract, getSignal, pine as lib, markdown, run, setLogger, toMarkdown, toSignalDto, useIndicator, usePine };
+export { AXIS_SYMBOL, type CandleModel, Code, File, type IIndicator, type ILogger, type IPine, type IProvider, type PlotExtractConfig, type PlotMapping, type PlotModel, type PlotRecord, type SymbolInfoModel, type TIndicatorCtor, type TPineCtor, dumpPlotData, extract, getSignal, pine as lib, markdown, run, setLogger, toMarkdown, toSignalDto, useIndicator, usePine };

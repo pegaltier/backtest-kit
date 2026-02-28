@@ -37,7 +37,7 @@ const LOAD_INDICATOR_FACTORY_FN = singleshot(async () => {
     if (ctor = await IMPORT_INDICATOR_FACTORY()) {
         return ctor;
     }
-    throw new Error("PineTS import failed. Call usePine to provide a PineTS class to @backtest-kit/pinets.");
+    throw new Error("PineTS import failed (useIndicator). Call usePine to provide a PineTS class to @backtest-kit/pinets.");
 })
 
 export class IndicatorConnectionService {
@@ -45,7 +45,7 @@ export class IndicatorConnectionService {
 
     private IndicatorFactory: TIndicatorCtor;
 
-    public getInstance = async (...args: Parameters<TIndicatorCtor>): Promise<IIndicator> => {
+    public getInstance = async (...args: ConstructorParameters<TIndicatorCtor>): Promise<IIndicator> => {
         this.loggerService.log("indicatorConnectionService getInstance", {
             args,
         });

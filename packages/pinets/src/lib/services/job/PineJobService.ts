@@ -11,7 +11,6 @@ import PineConnectionService from "../connection/PineConnectionService";
 import { CandleInterval } from "backtest-kit";
 import { Code } from "../../../classes/Code";
 import { PlotModel, PlotRecord } from "../../../model/Plot.model";
-import { PineTS } from "pinets";
 import IndicatorConnectionService from "../connection/IndicatorConnectionService";
 
 const CREATE_PROVIDER_FN = singleshot(

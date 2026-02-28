@@ -45,7 +45,7 @@ export class PineConnectionService {
 
     private PineFactory: TPineCtor;
 
-    public getInstance = async (...args: Parameters<TPineCtor>): Promise<IPine> => {
+    public getInstance = async (...args: ConstructorParameters<TPineCtor>): Promise<IPine> => {
         this.loggerService.log("pineConnectionService getInstance", {
             args,
         });
@@ -53,7 +53,7 @@ export class PineConnectionService {
             this.PineFactory = await LOAD_PINE_FACTORY_FN();
         }
         if (!this.PineFactory) {
-            throw new Error("PineTS import failed. Call usePine to provide a PineTS class to @backtest-kit/pinets.");   
+            throw new Error("PineTS import failed (usePine). Call usePine to provide a PineTS class to @backtest-kit/pinets.");   
         }
         return Reflect.construct(this.PineFactory, args);
     }
