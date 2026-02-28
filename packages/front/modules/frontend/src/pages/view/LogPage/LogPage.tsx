@@ -115,6 +115,7 @@ export const LogPage = () => {
       handleDownload();
     }
     if (action === "update-now") {
+      setFilterData("");
       await reloadSubject.next();
     }
     if (action === "search-action") {
