@@ -1,3 +1,140 @@
+# Aggregated Trades, Log Adapter & Indicator Inputs (v3.5, 28/02/2026)
+
+> Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/3.5)
+
+## Log Adapter
+
+<img width="1920" height="948" alt="image" src="https://github.com/user-attachments/assets/4a54685f-e5c8-4d84-9c2d-cf9ba815e312" />
+
+New `Log` singleton with pluggable storage backends for recording backtest/live execution events. Timestamps are taken from the backtest execution context so log entries align with strategy time rather than wall-clock time.
+
+### `Log` — new global singleton
+
+```typescript
+import { Log } from "backtest-kit";
+
+// Write log entries
+await Log.log("myStrategy.tick", { price: 42000 });
+await Log.debug("myStrategy.debug", someData);
+await Log.info("myStrategy.info", someData);
+await Log.warn("myStrategy.warn", someData);
+
+// Retrieve stored entries
+const entries = await Log.getList();
+// [{ id, type, timestamp, createdAt, topic, args }, ...]
+```
+
+**Switching backends:**
+
+```typescript
+Log.usePersist();   // persist to ./dump/data/log/ (survives restarts)
+Log.useMemory();    // in-memory only (default)
+Log.useDummy();     // discard all writes
+
+// Custom adapter
+Log.useLogger(MyLogClass);
+```
+
+
+## Aggregated Trades API
+
+New `getAggregatedTrades` function added to the public exchange API. Fetches tick-level trade data backwards from the current execution context time with built-in look-ahead bias prevention.
+
+### `getAggregatedTrades` — new public function
+
+```typescript
+import { getAggregatedTrades } from "backtest-kit";
+
+// Fetch last hour of trades (one CC_AGGREGATED_TRADES_MAX_MINUTES window)
+const trades = await getAggregatedTrades("BTCUSDT");
+
+// Fetch last 500 trades with automatic backwards pagination
+const lastTrades = await getAggregatedTrades("BTCUSDT", 500);
+// [{ id, price, qty, timestamp, isBuyerMaker }, ...]
+```
+
+**Algorithm:**
+- Aligns `to` down to the nearest minute boundary to prevent look-ahead bias
+- Without `limit`: returns one `CC_AGGREGATED_TRADES_MAX_MINUTES`-wide window (default 60 min)
+- With `limit`: paginates backwards in windows until enough trades are collected, then slices to exact count
+
+**New config parameters:**
+
+| Parameter | Default | Description |
+|---|---|---|
+| `CC_AGGREGATED_TRADES_MAX_MINUTES` | `60` | Window size for each fetch chunk |
+
+**New types exported:**
+
+```typescript
+interface IAggregatedTradeData {
+  id: string;
+  price: number;
+  qty: number;
+  timestamp: number;
+  isBuyerMaker: boolean;
+}
+```
+
+**Schema integration** — add `getAggregatedTrades` to your exchange schema:
+
+```typescript
+addExchangeSchema({
+  exchangeName: "binance",
+  getAggregatedTrades: async (symbol, from, to, backtest) => {
+    if (backtest) {
+      return await db.getAggTrades(symbol, from, to);
+    }
+    return await binance.fetchAggTrades(symbol);
+  },
+});
+```
+
+
+## PineTS Indicator Inputs
+
+`@backtest-kit/pinets` functions now accept an optional `inputs` parameter, allowing Pine Script indicator parameters to be passed directly from TypeScript without modifying the script source.
+
+### `inputs` parameter in `run`, `getSignal`, `markdown`
+
+```typescript
+import { run, getSignal, markdown } from "@backtest-kit/pinets";
+
+// Pass indicator inputs (e.g. RSI length override)
+const result = await run(source, {
+  symbol: "BTCUSDT",
+  timeframe: "1h",
+  limit: 200,
+  inputs: { length: 14, source: "close" },
+});
+
+const signal = await getSignal(source, {
+  symbol: "BTCUSDT",
+  timeframe: "1h",
+  limit: 200,
+  inputs: { length: 14 },
+});
+```
+
+When `inputs` is non-empty, the script is run through the new `IndicatorConnectionService` which wraps the Pine source in an `Indicator` class instance; otherwise execution falls through to the plain string code path unchanged.
+
+### `useIndicator` — new function
+
+```typescript
+import { useIndicator } from "@backtest-kit/pinets";
+import { Indicator } from "pinets";
+
+// Override auto-detected Indicator class
+useIndicator(Indicator);
+```
+
+**`IndicatorConnectionService`** auto-discovers the `Indicator` class from the `pinets` package via `require` then `import` fallback. Call `useIndicator` to bypass auto-discovery or when using a custom class.
+
+**`TPineCtor`** updated from a plain function type to a constructor (`new (...) => IPine`) and `IPine.run` now accepts `string | IIndicator`.
+
+
+
+
 # TypeScript Support for CLI (v3.4.0, 27/02/2026)
 
 > Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/3.4.0)
