@@ -380,6 +380,21 @@ export class LogJsonlUtils implements ILog {
   /** WriteStream instance for append-only writes, null until initialized */
   private _stream: WriteStream | null = null;
 
+  /** In-memory ring buffer of recent log entries */
+  private _entries: ILogEntry[] = [];
+
+  /**
+   * Removes oldest entries if limit is exceeded.
+   */
+  private _enforceLimit(): void {
+    if (this._entries.length > GLOBAL_CONFIG.CC_MAX_LOG_LINES) {
+      this._entries.splice(
+        0,
+        this._entries.length - GLOBAL_CONFIG.CC_MAX_LOG_LINES,
+      );
+    }
+  }
+
   /**
    * Creates a new JSONL log adapter instance.
    *
@@ -426,6 +441,8 @@ export class LogJsonlUtils implements ILog {
    * Appends a log entry as a JSONL line.
    */
   private _append = async (entry: ILogEntry): Promise<void> => {
+    this._entries.push(entry);
+    this._enforceLimit();
     await this[WAIT_FOR_INIT_SYMBOL]();
     const line = JSON.stringify(entry) + "\n";
     const status = await this[WRITE_SAFE_SYMBOL](line);
@@ -521,16 +538,7 @@ export class LogJsonlUtils implements ILog {
    */
   public getList = async (): Promise<ILogEntry[]> => {
     backtest.loggerService.info(LOG_JSONL_METHOD_NAME_GET_LIST);
-    let raw: string;
-    try {
-      raw = await fs.readFile(this._filePath, "utf-8");
-    } catch {
-      return [];
-    }
-    return raw
-      .split("\n")
-      .filter((line) => line.trim().length > 0)
-      .map((line) => JSON.parse(line) as ILogEntry);
+    return [...this._entries];
   };
 }
 
