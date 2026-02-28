@@ -3,6 +3,7 @@ import {
   Breadcrumbs2Type,
   IBreadcrumbs2Action,
   IBreadcrumbs2Option,
+  OneButton,
   pickDocuments,
   Subject,
   useActualState,
@@ -12,7 +13,7 @@ import {
   VirtualView,
 } from "react-declarative";
 import IconWrapper from "../../../components/common/IconWrapper";
-import { Download, KeyboardArrowLeft, Refresh } from "@mui/icons-material";
+import { Download, KeyboardArrowLeft, Refresh, Search } from "@mui/icons-material";
 import { Container } from "@mui/material";
 import ioc from "../../../lib";
 import { ILogEntry } from "backtest-kit";
@@ -51,6 +52,12 @@ const options: IBreadcrumbs2Option[] = [
     action: "back-action",
     label: "Logs",
   },
+  {
+    type: Breadcrumbs2Type.Button,
+    icon: Search,
+    action: "search-action",
+    label: "Search",
+  }
 ];
 
 const reloadSubject = new Subject<void>();
@@ -89,12 +96,26 @@ export const LogPage = () => {
     onLoadEnd: () => ioc.layoutService.setAppbarLoader(false),
   });
 
+  const handleSearch = async () => {
+    const prompt = await ioc.layoutService.prompt("Search keyword");
+    if (prompt) {
+      setFilterData(prompt);
+      reloadSubject.next();
+      return;
+    }
+    setFilterData("");
+    reloadSubject.next();
+  }
+
   const handleAction = async (action: string) => {
     if (action === "download-action") {
       handleDownload();
     }
     if (action === "update-now") {
       await reloadSubject.next();
+    }
+    if (action === "search-action") {
+      handleSearch();
     }
   }
 
