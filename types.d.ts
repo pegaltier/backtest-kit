@@ -14635,6 +14635,25 @@ type Function = (...args: any[]) => any;
  */
 type CacheFileFunction = (symbol: string, ...args: any[]) => Promise<any>;
 /**
+ * Utility type to drop the first argument from a function type.
+ * For example, for a function type `(symbol: string, arg1: number, arg2: string) => Promise<void>`,
+ * this type will infer the rest of the arguments as `[arg1: number, arg2: string]`.
+ */
+type DropFirst<T extends (...args: any) => any> = T extends (first: any, ...rest: infer R) => any ? R : never;
+/**
+ * Extracts the `key` generator argument tuple from a `CacheFileFunction`.
+ * The first two arguments are always `symbol: string` and `alignMs: number` (aligned timestamp),
+ * followed by the rest of the original function's arguments.
+ *
+ * For example, for a function type `(symbol: string, arg1: number, arg2: string) => Promise<void>`,
+ * this type will produce the tuple `[symbol: string, alignMs: number, arg1: number, arg2: string]`.
+ */
+type CacheFileKeyArgs<T extends CacheFileFunction> = [
+    symbol: string,
+    alignMs: number,
+    ...rest: DropFirst<T>
+];
+/**
  * Utility class for function caching with timeframe-based invalidation.
  *
  * Provides simplified API for wrapping functions with automatic caching.
@@ -14654,7 +14673,7 @@ declare class CacheUtils {
      * Memoized function to get or create CacheInstance for a function.
      * Each function gets its own isolated cache instance.
      */
-    private _getInstance;
+    private _getFnInstance;
     /**
      * Memoized function to get or create CacheFileInstance for an async function.
      * Each function gets its own isolated file-cache instance.
@@ -14701,15 +14720,20 @@ declare class CacheUtils {
      * Wrap an async function with persistent file-based caching.
      *
      * Returns a wrapped version of the function that reads from disk on cache hit
-     * and writes the result to disk on cache miss. Cache is keyed by the aligned
-     * candle timestamp + symbol from execution context + dynamic key from args.
+     * and writes the result to disk on cache miss. Files are stored under
+     * `./dump/data/measure/{name}_{interval}_{index}/`.
+     *
+     * The `run` function reference is used as the memoization key for the underlying
+     * `CacheFileInstance`, so each unique function reference gets its own isolated instance.
+     * Pass the same function reference each time to reuse the same cache.
      *
      * @template T - Async function type to cache
-     * @template K - Dynamic key type
      * @param run - Async function to wrap with file caching
      * @param context.interval - Candle interval for cache invalidation
-     * @param context.key - Optional key generator; receives all args, first arg is symbol.
-     *                      Default: `([symbol]) => symbol`
+     * @param context.name - Human-readable bucket name; becomes the directory prefix
+     * @param context.key - Optional entity key generator. Receives `[symbol, alignMs, ...rest]`
+     *                      where `alignMs` is the timestamp aligned to `interval`.
+     *                      Default: `([symbol, alignMs]) => \`${symbol}_${alignMs}\``
      * @returns Wrapped async function with automatic persistent caching
      *
      * @example
@@ -14718,20 +14742,22 @@ declare class CacheUtils {
      *   return await externalApi.fetch(symbol, period);
      * };
      *
-     * // Default key — cache per symbol
-     * const cachedFetch = Cache.file(fetchData, { interval: "1h" });
+     * // Default key — one cache file per symbol per aligned candle
+     * const cachedFetch = Cache.file(fetchData, { interval: "1h", name: "fetchData" });
      *
-     * // Custom key — cache per symbol + period
+     * // Custom key — one cache file per symbol + period combination
      * const cachedFetch = Cache.file(fetchData, {
      *   interval: "1h",
-     *   key: ([symbol, period]) => `${symbol}_${period}`,
+     *   name: "fetchData",
+     *   key: ([symbol, alignMs, period]) => `${symbol}_${alignMs}_${period}`,
      * });
      * const result = await cachedFetch("BTCUSDT", 14);
      * ```
      */
-    file: <T extends CacheFileFunction, K = string>(run: T, context: {
+    file: <T extends CacheFileFunction>(run: T, context: {
         interval: CandleInterval;
-        key?: (args: Parameters<T>) => K;
+        name: string;
+        key?: (args: CacheFileKeyArgs<T>) => string;
     }) => T;
     /**
      * Flush (remove) cached CacheInstance for a specific function or all functions.
