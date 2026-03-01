@@ -42,13 +42,7 @@ const tabs: ITabsStep[] = [
     },
 ];
 
-interface IMainPageProps {
-    symbol: string
-}
-
-export const MainPage = ({
-    symbol,
-}: IMainPageProps) => {
+export const OverviewPage = () => {
 
     useOnce(() => history.replace("/backtest"));
 
@@ -82,9 +76,6 @@ export const MainPage = ({
                         type: "live"
                     },
                 })}
-                payload={() => ({
-                    symbol,
-                })}
                 onTabChange={handleTabChange}
             />
             <Background />
@@ -92,4 +83,4 @@ export const MainPage = ({
     );
 };
 
-export default MainPage;
+export default OverviewPage;

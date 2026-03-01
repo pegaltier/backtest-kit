@@ -5,10 +5,15 @@ import {
     IBreadcrumbs2Action,
 } from "react-declarative";
 import actionSubject from "../config/actionSubject";
-import { Dashboard, Download, EditNote, Refresh } from "@mui/icons-material";
+import { Dashboard, Download, EditNote, KeyboardArrowLeft, Refresh } from "@mui/icons-material";
 import IconWrapper from "../../../../components/common/IconWrapper";
 
 const options: IBreadcrumbs2Option[] = [
+    {
+        type: Breadcrumbs2Type.Link,
+        action: "back-action",
+        label: <KeyboardArrowLeft sx={{ display: "block" }} />,
+    },
     {
         type: Breadcrumbs2Type.Link,
         action: "back-action",
@@ -17,7 +22,7 @@ const options: IBreadcrumbs2Option[] = [
     {
         type: Breadcrumbs2Type.Link,
         action: "back-action",
-        label: "Dashboard",
+        label: "Overview",
     },
 ];
 

@@ -103,6 +103,9 @@ export const ListView = ({
             if (action === "logs-action") {
                 ioc.routerService.push(`/logs`);
             }
+            if (action === "back-action") {
+                ioc.routerService.push(`/main`);
+            }
         }),
     );
 
