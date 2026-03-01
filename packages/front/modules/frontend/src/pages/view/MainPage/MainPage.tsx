@@ -1,8 +1,11 @@
 import {
     Box,
+    Button,
     ButtonBase,
     Chip,
     Container,
+    darken,
+    getContrastRatio,
     lighten,
     Paper,
     Stack,
@@ -20,13 +23,20 @@ import {
     typo,
 } from "react-declarative";
 import { makeStyles } from "../../../styles";
-import { KeyboardArrowLeft, Quickreply, Refresh } from "@mui/icons-material";
+import {
+    Dashboard,
+    KeyboardArrowLeft,
+    Quickreply,
+    Refresh,
+} from "@mui/icons-material";
 import { useMemo } from "react";
 import ioc from "../../../lib";
 import IconWrapper from "../../../components/common/IconWrapper";
 
 const GROUP_HEADER = "trade-gpt__groupHeader";
 const GROUP_ROOT = "trade-gpt__groupRoot";
+
+const ICON_ROOT = "trade-gpt__symbolImage";
 
 const useStyles = makeStyles()({
     root: {
@@ -39,6 +49,16 @@ const useStyles = makeStyles()({
 interface IRoute {
     label: string;
     to: string;
+    color: string;
+}
+
+function isLightColor(hex: string) {
+    // Compare contrast with black (#000000) and white (#FFFFFF)
+    const contrastWithBlack = getContrastRatio(hex, "#000000");
+    const contrastWithWhite = getContrastRatio(hex, "#FFFFFF");
+
+    // If contrast with black is higher, the color is likely light
+    return contrastWithBlack > contrastWithWhite;
 }
 
 const options: IBreadcrumbs2Option[] = [
@@ -62,7 +82,11 @@ const actions: IBreadcrumbs2Action[] = [
     },
 ];
 
-const createButton = (to: string, label: React.ReactNode): TypedField => ({
+const createButton = (
+    to: string,
+    label: React.ReactNode,
+    color: string,
+): TypedField => ({
     type: FieldType.Component,
     desktopColumns: "6",
     tabletColumns: "12",
@@ -70,13 +94,14 @@ const createButton = (to: string, label: React.ReactNode): TypedField => ({
     fieldRightMargin: "1",
     fieldBottomMargin: "1",
     element: () => (
-        <Paper
+        <Button
             component={ButtonBase}
             onClick={() => {
                 ioc.routerService.push(to);
             }}
             sx={{
                 width: "100%",
+                background: color,
                 color: "white",
                 fontWeight: "bold",
                 fontSize: "18px",
@@ -84,16 +109,27 @@ const createButton = (to: string, label: React.ReactNode): TypedField => ({
                 minHeight: "125px",
                 textWrap: "wrap",
                 padding: "16px",
-                "&:hover": {
-                    background: (theme) =>
-                        lighten(theme.palette.primary.main, 0.23),
+                [`& .${ICON_ROOT}`]: {
+                    transition: "filter 500ms",
                 },
-                background: (theme) => theme.palette.primary.main,
+                "&:hover": {
+                    background: () =>
+                        isLightColor(color)
+                            ? darken(color, 0.33)
+                            : lighten(color, 0.33),
+                    [`& .${ICON_ROOT}`]: {
+                        transition: "filter 500ms",
+                        filter: isLightColor(color)
+                            ? "brightness(0.7) contrast(1.2)"
+                            : "brightness(1.3) contrast(0.5)",
+                    },
+                },
                 transition: "background 500ms",
             }}
+            startIcon={<Dashboard className={ICON_ROOT} />}
         >
             {label}
-        </Paper>
+        </Button>
     ),
 });
 
@@ -135,40 +171,37 @@ const createGroup = (label: string, routes: IRoute[]): TypedField => ({
         },
         {
             type: FieldType.Group,
-            fields: routes.map(({ label, to }) => createButton(to, label)),
+            fields: routes.map(({ label, to, color }) =>
+                createButton(to, label, color),
+            ),
         },
     ],
 });
 
-interface IMainPage {
-    symbol: string;
-}
+const application_routes: IRoute[] = [
+    {
+        label: "Свечи 1 минута",
+        to: `/coin/1m`,
+        color: "#0033AD",
+    },
+    {
+        label: "Свечи 15 минут",
+        to: `/coin/15m`,
+        color: "#E6007A",
+    },
+    {
+        label: "Свечи 1 час",
+        to: `/coin/1h`,
+        color: "#58BF00",
+    },
+];
 
-export const MainPage = ({ symbol }: IMainPage) => {
+const fields: TypedField[] = [
+    createGroup("Application", application_routes)
+];
+
+export const MainPage = () => {
     const { classes } = useStyles();
-
-    const candle_routes = useMemo(
-        (): IRoute[] => [
-            {
-                label: "Свечи 1 минута",
-                to: `/coin/${symbol}/1m`,
-            },
-            {
-                label: "Свечи 15 минут",
-                to: `/coin/${symbol}/15m`,
-            },
-            {
-                label: "Свечи 1 час",
-                to: `/coin/${symbol}/1h`,
-            },
-        ],
-        [symbol],
-    );
-
-    const fields = useMemo(
-        (): TypedField[] => [createGroup("График", candle_routes)],
-        [candle_routes],
-    );
 
     const handleAction = async (action: string) => {};
 
@@ -177,7 +210,6 @@ export const MainPage = ({ symbol }: IMainPage) => {
             <Breadcrumbs2
                 items={options}
                 actions={actions}
-                payload={symbol}
                 onAction={handleAction}
             />
             <One
