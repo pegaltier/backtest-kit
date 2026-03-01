@@ -307,6 +307,30 @@ export class CacheInstance<T extends Function = Function, K = string> {
 type CacheFileFunction = (symbol: string, ...args: any[]) => Promise<any>;
 
 /**
+ * Utility type to drop the first argument from a function type.
+ * For example, for a function type `(symbol: string, arg1: number, arg2: string) => Promise<void>`,
+ * this type will infer the rest of the arguments as `[arg1: number, arg2: string]`.
+ */
+type DropFirst<T extends (...args: any) => any> =
+  T extends (first: any, ...rest: infer R) => any
+    ? R
+    : never;
+
+/**
+ * Extracts the `key` generator argument tuple from a `CacheFileFunction`.
+ * The first two arguments are always `symbol: string` and `alignMs: number` (aligned timestamp),
+ * followed by the rest of the original function's arguments.
+ *
+ * For example, for a function type `(symbol: string, arg1: number, arg2: string) => Promise<void>`,
+ * this type will produce the tuple `[symbol: string, alignMs: number, arg1: number, arg2: string]`.
+ */
+type CacheFileKeyArgs<T extends CacheFileFunction> = [
+  symbol: string,
+  alignMs: number,
+  ...rest: DropFirst<T>
+];
+
+/**
  * Instance class for caching async function results in persistent file storage.
  *
  * Provides automatic cache invalidation based on candle intervals.
@@ -322,20 +346,36 @@ type CacheFileFunction = (symbol: string, ...args: any[]) => Promise<any>;
  * const result = await instance.run("BTCUSDT", extraArg);
  * ```
  */
-export class CacheFileInstance<T extends CacheFileFunction = CacheFileFunction, K = string> {
+export class CacheFileInstance<T extends CacheFileFunction = CacheFileFunction> {
+  /** Global counter — incremented once per CacheFileInstance construction */
+  private static _indexCounter = 0;
+
+  /**
+   * Allocates a new unique index. Called once in the constructor to give each
+   * CacheFileInstance its own namespace in the persistent key space.
+   */
+  private static createIndex(): number {
+    return CacheFileInstance._indexCounter++;
+  }
+
+  /** Unique index for this instance, used as a prefix in the persistent dynamicKey */
+  readonly index: number;
+
   /**
    * Creates a new CacheFileInstance.
    *
    * @param fn - Async function to cache
    * @param interval - Candle interval for cache invalidation
    * @param key - Dynamic key generator; receives all args, must return a string.
-   *              Default: `([symbol]) => symbol`
+   *              Default: `([symbol, interval]) => \`${symbol}_${interval}\``
    */
   constructor(
     readonly fn: T,
     readonly interval: CandleInterval,
-    readonly key: (args: Parameters<T>) => K = ([symbol]) => symbol as K
-  ) {}
+    readonly key: (args: CacheFileKeyArgs<T>) => string = ([symbol, alignMs]) => `${symbol}_${alignMs}`
+  ) {
+    this.index = CacheFileInstance.createIndex();
+  }
 
   /**
    * Execute async function with persistent file caching.
@@ -371,18 +411,21 @@ export class CacheFileInstance<T extends CacheFileFunction = CacheFileFunction, 
       }
     }
 
-    const { symbol, when } = backtest.executionContextService.context;
-    const alignedTs = align(when.getTime(), this.interval);
-    const bucket = `${alignedTs}_${symbol}`;
-    const dynamicKey = String(this.key(args));
+    const [symbol, ...rest] = args;
 
-    const cached = await PersistMeasureAdapter.readMeasureData(bucket, dynamicKey);
+    const { when } = backtest.executionContextService.context;
+    const alignedTs = align(when.getTime(), this.interval);
+    const bucket = `${symbol}_${this.interval}_${this.index}`;
+
+    const entityKey = this.key([symbol, alignedTs, ...rest as DropFirst<T>]);
+
+    const cached = await PersistMeasureAdapter.readMeasureData(bucket, entityKey);
     if (cached !== null) {
       return cached as Awaited<ReturnType<T>>;
     }
 
     const result = await this.fn.call(null, ...args);
-    await PersistMeasureAdapter.writeMeasureData(result, bucket, dynamicKey);
+    await PersistMeasureAdapter.writeMeasureData(result, bucket, entityKey);
     return result;
   };
 }
@@ -407,7 +450,7 @@ export class CacheUtils {
    * Memoized function to get or create CacheInstance for a function.
    * Each function gets its own isolated cache instance.
    */
-  private _getInstance = memoize(
+  private _getFnInstance = memoize(
     ([run]) => run,
     <T extends Function, K>(
       run: T,
@@ -422,10 +465,10 @@ export class CacheUtils {
    */
   private _getFileInstance = memoize(
     ([run]) => run,
-    <T extends CacheFileFunction, K>(
+    <T extends CacheFileFunction>(
       run: T,
       interval: CandleInterval,
-      key?: (args: Parameters<T>) => K
+      key?: (args: CacheFileKeyArgs<T>) => string
     ) => new CacheFileInstance(run, interval, key)
   );
 
@@ -474,7 +517,7 @@ export class CacheUtils {
     });
 
     const wrappedFn = (...args: Parameters<T>): ReturnType<T> => {
-      const instance = this._getInstance(run, context.interval, context.key);
+      const instance = this._getFnInstance(run, context.interval, context.key);
       return instance.run(...args).value;
     };
 
@@ -508,16 +551,16 @@ export class CacheUtils {
    * // Custom key — cache per symbol + period
    * const cachedFetch = Cache.file(fetchData, {
    *   interval: "1h",
-   *   key: ([symbol, period]) => `${symbol}_${period}`,
+   *   key: ([symbol, interval, period]) => `${symbol}_${period}`,
    * });
    * const result = await cachedFetch("BTCUSDT", 14);
    * ```
    */
-  public file = <T extends CacheFileFunction, K = string>(
+  public file = <T extends CacheFileFunction>(
     run: T,
     context: {
       interval: CandleInterval;
-      key?: (args: Parameters<T>) => K;
+      key?: (args:  CacheFileKeyArgs<T>) => string;
     }
   ): T => {
     backtest.loggerService.info(CACHE_METHOD_NAME_FILE, { context });
@@ -563,7 +606,7 @@ export class CacheUtils {
     backtest.loggerService.info(CACHE_METHOD_NAME_FLUSH, {
       run,
     });
-    this._getInstance.clear(run);
+    this._getFnInstance.clear(run);
   };
 
   /**
@@ -607,7 +650,7 @@ export class CacheUtils {
       console.warn(`${CACHE_METHOD_NAME_CLEAR} called without execution context, skipping clear`);
       return;
     }
-    this._getInstance.get(run).clear();
+    this._getFnInstance.get(run).clear();
   };
 
   /**
@@ -640,7 +683,7 @@ export class CacheUtils {
       console.warn(`${CACHE_METHOD_NAME_GC} called without execution context, skipping garbage collection`);
       return;
     }
-    return this._getInstance.get(run).gc();
+    return this._getFnInstance.get(run).gc();
   };
 }
 
