@@ -14,6 +14,7 @@ import { COLUMN_CONFIG } from "../../../config/columns";
 import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
 import { Markdown } from "../../../classes/Markdown";
+import { getContextTimestamp } from "../../../helpers/getContextTimestamp";
 
 /**
  * Type alias for column configuration used in backtest markdown reports.

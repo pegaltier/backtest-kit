@@ -7,6 +7,7 @@ import { PersistLogAdapter } from "./Persist";
 import backtest, { ExecutionContextService, MethodContextService } from "../lib";
 import { GLOBAL_CONFIG } from "../config/params";
 import { exitEmitter, shutdownEmitter } from "../config/emitters";
+import { getContextTimestamp } from "../helpers/getContextTimestamp";
 
 const LOG_PERSIST_METHOD_NAME_WAIT_FOR_INIT = "LogPersistUtils.waitForInit";
 const LOG_PERSIST_METHOD_NAME_LOG = "LogPersistUtils.log";
@@ -140,7 +141,8 @@ export class LogPersistUtils implements ILog {
     this._entries.push({
       id: randomString(),
       type: "log",
-      priority: Date.now(),
+        priority: Date.now(),
+        timestamp: getContextTimestamp(),
       createdAt: date.toISOString(),
       methodContext: GET_METHOD_CONTEXT_FN(),
       executionContext: GET_EXECUTION_CONTEXT_FN(),
@@ -165,6 +167,7 @@ export class LogPersistUtils implements ILog {
       id: randomString(),
       type: "debug",
       priority: Date.now(),
+      timestamp: getContextTimestamp(),
       createdAt: date.toISOString(),
       methodContext: GET_METHOD_CONTEXT_FN(),
       executionContext: GET_EXECUTION_CONTEXT_FN(),
@@ -189,6 +192,7 @@ export class LogPersistUtils implements ILog {
       id: randomString(),
       type: "info",
       priority: Date.now(),
+      timestamp: getContextTimestamp(),
       createdAt: date.toISOString(),
       methodContext: GET_METHOD_CONTEXT_FN(),
       executionContext: GET_EXECUTION_CONTEXT_FN(),
@@ -213,6 +217,7 @@ export class LogPersistUtils implements ILog {
       id: randomString(),
       type: "warn",
       priority: Date.now(),
+      timestamp: getContextTimestamp(),
       createdAt: date.toISOString(),
       methodContext: GET_METHOD_CONTEXT_FN(),
       executionContext: GET_EXECUTION_CONTEXT_FN(),
@@ -274,6 +279,7 @@ export class LogMemoryUtils implements ILog {
       id: randomString(),
       type: "log",
       priority: Date.now(),
+      timestamp: getContextTimestamp(),
       createdAt: date.toISOString(),
       methodContext: GET_METHOD_CONTEXT_FN(),
       executionContext: GET_EXECUTION_CONTEXT_FN(),
@@ -296,6 +302,7 @@ export class LogMemoryUtils implements ILog {
       id: randomString(),
       type: "debug",
       priority: Date.now(),
+      timestamp: getContextTimestamp(),
       createdAt: date.toISOString(),
       methodContext: GET_METHOD_CONTEXT_FN(),
       executionContext: GET_EXECUTION_CONTEXT_FN(),
@@ -318,6 +325,7 @@ export class LogMemoryUtils implements ILog {
       id: randomString(),
       type: "info",
       priority: Date.now(),
+      timestamp: getContextTimestamp(),
       createdAt: date.toISOString(),
       methodContext: GET_METHOD_CONTEXT_FN(),
       executionContext: GET_EXECUTION_CONTEXT_FN(),
@@ -340,6 +348,7 @@ export class LogMemoryUtils implements ILog {
       id: randomString(),
       type: "warn",
       priority: Date.now(),
+      timestamp: getContextTimestamp(),
       createdAt: date.toISOString(),
       methodContext: GET_METHOD_CONTEXT_FN(),
       executionContext: GET_EXECUTION_CONTEXT_FN(),
@@ -467,6 +476,7 @@ export class LogJsonlUtils implements ILog {
       id: randomString(),
       type: "log",
       priority: Date.now(),
+      timestamp: getContextTimestamp(),
       createdAt: date.toISOString(),
       methodContext: GET_METHOD_CONTEXT_FN(),
       executionContext: GET_EXECUTION_CONTEXT_FN(),
@@ -487,6 +497,7 @@ export class LogJsonlUtils implements ILog {
       id: randomString(),
       type: "debug",
       priority: Date.now(),
+      timestamp: getContextTimestamp(),
       createdAt: date.toISOString(),
       methodContext: GET_METHOD_CONTEXT_FN(),
       executionContext: GET_EXECUTION_CONTEXT_FN(),
@@ -507,6 +518,7 @@ export class LogJsonlUtils implements ILog {
       id: randomString(),
       type: "info",
       priority: Date.now(),
+      timestamp: getContextTimestamp(),
       createdAt: date.toISOString(),
       methodContext: GET_METHOD_CONTEXT_FN(),
       executionContext: GET_EXECUTION_CONTEXT_FN(),
@@ -527,6 +539,7 @@ export class LogJsonlUtils implements ILog {
       id: randomString(),
       type: "warn",
       priority: Date.now(),
+      timestamp: getContextTimestamp(),
       createdAt: date.toISOString(),
       methodContext: GET_METHOD_CONTEXT_FN(),
       executionContext: GET_EXECUTION_CONTEXT_FN(),

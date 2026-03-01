@@ -2989,10 +2989,12 @@ interface ILogEntry {
     id: string;
     /** Log level */
     type: "log" | "debug" | "info" | "warn";
-    /** Unix timestamp in milliseconds when the entry was created */
+    /** Current Unix timestamp in milliseconds for storage rotate */
     priority: number;
     /** Date taken from backtest context to improve user experience */
     createdAt: string;
+    /** Unix timestamp in milliseconds taken from backtest context to improve user experience */
+    timestamp: number;
     /** Optional method context associated with the log entry, providing additional details about the execution environment or state when the log was recorded */
     methodContext: IMethodContext | null;
     /** Optional execution context associated with the log entry, providing additional details about the execution environment or state when the log was recorded */
@@ -4738,7 +4740,6 @@ declare function getDefaultColumns(): Readonly<{
  *     priceTakeProfit: 51000,
  *     priceStopLoss: 49000,
  *     minuteEstimatedTime: 60,
- *     timestamp: Date.now(),
  *   }),
  *   callbacks: {
  *     onOpen: (symbol, signal, currentPrice, backtest) => console.log("Signal opened"),
@@ -16596,7 +16597,7 @@ declare class ActionBase implements IPublicAction {
      * @example
      * ```typescript
      * pingScheduled(event: SchedulePingContract) {
-     *   const waitTime = Date.now() - event.data.timestampScheduled;
+     *   const waitTime = getTimestamp() - event.data.timestampScheduled;
      *   const waitMinutes = Math.floor(waitTime / 60000);
      *   console.log(`Scheduled signal waiting ${waitMinutes} minutes`);
      * }
@@ -16620,7 +16621,7 @@ declare class ActionBase implements IPublicAction {
      * @example
      * ```typescript
      * pingActive(event: ActivePingContract) {
-     *   const holdTime = Date.now() - event.data.pendingAt;
+     *   const holdTime = getTimestamp() - event.data.pendingAt;
      *   const holdMinutes = Math.floor(holdTime / 60000);
      *   console.log(`Active signal holding ${holdMinutes} minutes`);
      * }

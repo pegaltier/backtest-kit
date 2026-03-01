@@ -9,10 +9,12 @@ export interface ILogEntry {
   id: string;
   /** Log level */
   type: "log" | "debug" | "info" | "warn";
-  /** Unix timestamp in milliseconds when the entry was created */
+  /** Current Unix timestamp in milliseconds for storage rotate */
   priority: number;
   /** Date taken from backtest context to improve user experience */
   createdAt: string;
+  /** Unix timestamp in milliseconds taken from backtest context to improve user experience */
+  timestamp: number;
   /** Optional method context associated with the log entry, providing additional details about the execution environment or state when the log was recorded */
   methodContext: IMethodContext | null;
   /** Optional execution context associated with the log entry, providing additional details about the execution environment or state when the log was recorded */
