@@ -1,3 +1,24 @@
+# Navigation Hub (v3.5.1, 01/03/2026)
+
+> Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/3.5.1)
+
+## ✨ Portfolio Overview, PNL Performance, System Logs
+
+<img width="3008" height="1972" alt="image" src="https://github.com/user-attachments/assets/e8022824-4cf1-4531-8e45-52f71b28464f" />
+
+`MainPage` has been redesigned from a tabbed view into a tile-based navigation hub. Each tile is a large colored button that routes to a dedicated section of the application.
+
+Available routes:
+
+- **Portfolio Overview** (`/overview`) — tabbed view with Backtest / Live signal lists
+- **PNL Performance** (`/dashboard`) — equity and drawdown dashboard
+- **System Logs** (`/logs`) — execution log viewer
+
+The logo and app title in the header now navigate back to `/main` instead of opening the GitHub repository.
+
+
+
+
 # Aggregated Trades, Log Adapter & Indicator Inputs (v3.5, 28/02/2026)
 
 > Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/3.5)
