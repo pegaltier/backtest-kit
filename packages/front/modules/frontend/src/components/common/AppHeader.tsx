@@ -137,9 +137,7 @@ export const AppHeader = ({ loading }: IAppHeaderProps) => {
             <Box className={classes.container}>
                 <Center
                     onClick={() =>
-                        openBlank(
-                            "https://github.com/tripolskypetr/backtest-kit",
-                        )
+                        ioc.routerService.push("/main")
                     }
                     className={cx(classes.logo, LOGO_CLASS)}
                 >
@@ -151,9 +149,7 @@ export const AppHeader = ({ loading }: IAppHeaderProps) => {
                 <Typography
                     variant="h4"
                     onClick={() =>
-                        openBlank(
-                            "https://github.com/tripolskypetr/backtest-kit",
-                        )
+                        ioc.routerService.push("/main")
                     }
                     className={cx(classes.title, LOGO_CLASS)}
                     sx={{ display: { xs: "none", sm: "flex" } }}
