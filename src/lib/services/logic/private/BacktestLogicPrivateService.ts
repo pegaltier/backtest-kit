@@ -18,7 +18,6 @@ import {
 import { GLOBAL_CONFIG } from "../../../../config/params";
 import { and, errorData, getErrorMessage } from "functools-kit";
 import ActionCoreService from "../../core/ActionCoreService";
-import { getContextTimestamp } from "../../../../helpers/getContextTimestamp";
 
 const ACTIVE_CANDLE_INCLUDED = 1;
 const SCHEDULE_ACTIVATION_CANDLE_SKIP = 1;
@@ -318,7 +317,7 @@ export class BacktestLogicPrivateService {
 
         // Track signal processing duration
         const signalEndTime = performance.now();
-        const currentTimestamp = getContextTimestamp();
+        const currentTimestamp = Date.now();
         await performanceEmitter.next({
           timestamp: currentTimestamp,
           previousTimestamp: previousEventTimestamp,
@@ -465,7 +464,7 @@ export class BacktestLogicPrivateService {
 
         // Track signal processing duration
         const signalEndTime = performance.now();
-        const currentTimestamp = getContextTimestamp();
+        const currentTimestamp = Date.now();
         await performanceEmitter.next({
           timestamp: currentTimestamp,
           previousTimestamp: previousEventTimestamp,
@@ -516,7 +515,7 @@ export class BacktestLogicPrivateService {
 
       // Track timeframe processing duration
       const timeframeEndTime = performance.now();
-      const currentTimestamp = getContextTimestamp();
+      const currentTimestamp = Date.now();
       await performanceEmitter.next({
         timestamp: currentTimestamp,
         previousTimestamp: previousEventTimestamp,
@@ -547,7 +546,7 @@ export class BacktestLogicPrivateService {
 
     // Track total backtest duration
     const backtestEndTime = performance.now();
-    const currentTimestamp = getContextTimestamp();
+    const currentTimestamp = Date.now();
     await performanceEmitter.next({
       timestamp: currentTimestamp,
       previousTimestamp: previousEventTimestamp,

@@ -12,8 +12,6 @@ import {
   IStrategyTickResultOpened,
   IStrategyTickResultCancelled,
 } from "../../../../interfaces/Strategy.interface";
-import { getContextTimestamp } from "../../../../helpers/getContextTimestamp";
-
 
 /**
  * Private service for live trading orchestration using async generators.
@@ -107,7 +105,7 @@ export class LiveLogicPrivateService {
 
       // Track tick duration
       const tickEndTime = performance.now();
-      const currentTimestamp = getContextTimestamp();
+      const currentTimestamp = Date.now();
       await performanceEmitter.next({
         timestamp: currentTimestamp,
         previousTimestamp: previousEventTimestamp,
