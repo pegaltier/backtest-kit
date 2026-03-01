@@ -95,7 +95,7 @@ interface IDashboardPageProps {
 }
 
 export const DashboardPage = ({
-  mode,
+  mode = "backtest",
 }: IDashboardPageProps) => {
   const [data, { loading, execute }] = useAsyncValue(
     async () => {

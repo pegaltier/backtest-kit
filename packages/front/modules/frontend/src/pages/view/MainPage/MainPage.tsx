@@ -24,10 +24,13 @@ import {
 } from "react-declarative";
 import { makeStyles } from "../../../styles";
 import {
+    AccountBalanceWalletTwoTone,
     Dashboard,
+    InsertChartTwoTone,
     KeyboardArrowLeft,
     Quickreply,
     Refresh,
+    TerminalTwoTone,
 } from "@mui/icons-material";
 import { useMemo } from "react";
 import ioc from "../../../lib";
@@ -50,6 +53,7 @@ interface IRoute {
     label: string;
     to: string;
     color: string;
+    icon: React.ComponentType<any>;
 }
 
 function isLightColor(hex: string) {
@@ -86,6 +90,7 @@ const createButton = (
     to: string,
     label: React.ReactNode,
     color: string,
+    Icon: React.ComponentType<any>,
 ): TypedField => ({
     type: FieldType.Component,
     desktopColumns: "6",
@@ -126,7 +131,7 @@ const createButton = (
                 },
                 transition: "background 500ms",
             }}
-            startIcon={<Dashboard className={ICON_ROOT} />}
+            startIcon={<Icon className={ICON_ROOT} />}
         >
             {label}
         </Button>
@@ -171,8 +176,8 @@ const createGroup = (label: string, routes: IRoute[]): TypedField => ({
         },
         {
             type: FieldType.Group,
-            fields: routes.map(({ label, to, color }) =>
-                createButton(to, label, color),
+            fields: routes.map(({ label, to, color, icon }) =>
+                createButton(to, label, color, icon),
             ),
         },
     ],
@@ -180,19 +185,22 @@ const createGroup = (label: string, routes: IRoute[]): TypedField => ({
 
 const application_routes: IRoute[] = [
     {
-        label: "Свечи 1 минута",
-        to: `/coin/1m`,
+        label: "Portfolio Overview",
+        to: `/overview`,
         color: "#0033AD",
+        icon: AccountBalanceWalletTwoTone,
     },
     {
-        label: "Свечи 15 минут",
-        to: `/coin/15m`,
+        label: "PNL Performance",
+        to: `/dashboard`,
         color: "#E6007A",
+        icon: InsertChartTwoTone,
     },
     {
-        label: "Свечи 1 час",
-        to: `/coin/1h`,
+        label: "System Logs",
+        to: `/logs`,
         color: "#58BF00",
+        icon: TerminalTwoTone,
     },
 ];
 
