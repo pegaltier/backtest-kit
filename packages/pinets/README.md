@@ -4,7 +4,7 @@
 
 > Run TradingView Pine Script strategies in Node.js self hosted enviroment. Execute your existing Pine Script indicators and generate trading signals - pure technical analysis with 1:1 syntax compatibility.
 
-![screenshot](https://raw.githubusercontent.com/tripolskypetr/backtest-kit/HEAD/assets/screenshots/screenshot8.png)
+![screenshot](https://raw.githubusercontent.com/tripolskypetr/backtest-kit/HEAD/assets/screenshots/screenshot16.png)
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/tripolskypetr/backtest-kit)
 [![npm](https://img.shields.io/npm/v/@backtest-kit/pinets.svg?style=flat-square)](https://npmjs.org/package/@backtest-kit/pinets)

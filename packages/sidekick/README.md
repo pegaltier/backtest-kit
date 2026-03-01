@@ -2,7 +2,7 @@
 
 > The easiest way to create a new Backtest Kit trading bot project. Scaffolds a multi-timeframe crypto trading strategy with Pine Script indicators via [PineTS](https://github.com/QuantForgeOrg/PineTS) runtime, 4H trend filter + 15m signal generator, partial profit taking, breakeven trailing stops, and risk validation.
 
-![screenshot](https://raw.githubusercontent.com/tripolskypetr/backtest-kit/HEAD/assets/screenshots/screenshot8.png)
+![screenshot](https://raw.githubusercontent.com/tripolskypetr/backtest-kit/HEAD/assets/screenshots/screenshot16.png)
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/tripolskypetr/backtest-kit)
 [![npm](https://img.shields.io/npm/v/@backtest-kit/sidekick.svg?style=flat-square)](https://npmjs.org/package/@backtest-kit/sidekick)
