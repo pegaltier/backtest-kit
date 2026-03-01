@@ -1,3 +1,77 @@
+# File Cache & Synchronized Timestamps (v3.7, 02/03/2026)
+
+> Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/3.7)
+
+## `Cache.file` — persistent file-based caching for external API calls
+
+New `Cache.file` method wraps any async function with disk-backed caching. On cache hit the result is read from disk; on miss the function is called and the result is written. Cache entries are automatically invalidated when the aligned candle timestamp changes, so each candle interval gets its own isolated bucket.
+
+### Usage
+
+```typescript
+import { Cache } from "backtest-kit";
+
+const fetchIndicator = async (symbol: string, period: number) => {
+  return await externalApi.fetch(symbol, period);
+};
+
+// Default key — one cache entry per symbol
+const cachedFetch = Cache.file(fetchIndicator, { interval: "1h", name: "fetchIndicator" });
+
+// Custom key — one cache entry per symbol + period combination
+const cachedFetch = Cache.file(fetchIndicator, {
+  interval: "1h",
+  name: "fetchFearGreedIndex",
+  key: ([symbol, alignMs, period]) => `${symbol}_${alignMs}_${period}`,
+});
+
+const result = await cachedFetch("BTCUSDT", 14);
+```
+
+### Cache key structure
+
+| Part | Value |
+|---|---|
+| Bucket (directory) | `{name}_{interval}_{index}` — static per instance, no timestamp to avoid directory spam |
+| Dynamic key (file) | Result of the `key` function; defaults to `{symbol}_{alignedTimestamp}` |
+
+Cache files are stored under `./dump/data/measure/`.
+
+```
+dump/data/measure/
+├── fetchIndicator_1h_0/          ← bucket: {name}_{interval}_{index}
+│   ├── BTCUSDT_1743465600000.json     ← entityKey: {symbol}_{alignMs}
+│   ├── BTCUSDT_1743469200000.json
+│   └── ETHUSDT_1743465600000.json
+└── fetchFearGreedIndex_1h_1/
+    ├── BTCUSDT_1743465600000.json
+    └── BTCUSDT_1743469200000.json
+```
+
+### `PersistMeasureAdapter` — pluggable storage backend
+
+The underlying persistence layer is exposed as a global singleton. You can swap it out with a custom adapter or disable it entirely:
+
+```typescript
+import { PersistMeasureAdapter } from "backtest-kit";
+
+PersistMeasureAdapter.useDummy();                        // discard all writes (useful in tests)
+PersistMeasureAdapter.useJson();                         // restore default JSON adapter
+PersistMeasureAdapter.usePersistMeasureAdapter(MyCtor);  // custom adapter
+```
+
+---
+
+## Synchronized timestamps in logs and reports
+
+All timestamp usages across `Markdown`, `Report`, `*ReportService`, and `*MarkdownService` now go through `getContextTimestamp()` instead of `Date.now()`:
+
+- **During backtest** — returns the simulated candle time from `ExecutionContextService.context.when`, so log and report entries are aligned with strategy time rather than wall-clock time.
+- **During live** — falls back to `Date.now()`, behaviour unchanged.
+
+
+
+
 # Navigation Hub (v3.5.1, 01/03/2026)
 
 > Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/3.5.1)
