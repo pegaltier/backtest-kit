@@ -383,11 +383,15 @@ export class CacheFileInstance<T extends CacheFileFunction = CacheFileFunction> 
    * Execute async function with persistent file caching.
    *
    * Algorithm:
-   * 1. Build bucket = `${alignedTimestamp}_${symbol}` using execution context
-   * 2. Build dynamic key from the key generator
-   * 3. Try to read from PersistMeasureAdapter
-   * 4. On hit — return cached value
-   * 5. On miss — call fn, write result to disk, return result
+   * 1. Build bucket = `${name}_${interval}_${index}` — fixed per instance, used as directory name
+   * 2. Align execution context `when` to interval boundary → `alignedTs`
+   * 3. Build entity key from the key generator (receives `[symbol, alignedTs, ...rest]`)
+   * 4. Try to read from PersistMeasureAdapter using (bucket, entityKey)
+   * 5. On hit — return cached value
+   * 6. On miss — call fn, write result to disk, return result
+   *
+   * Cache invalidation happens through the entity key: the default key embeds `alignedTs`,
+   * so each new candle interval produces a new file name while the bucket directory stays the same.
    *
    * Requires active execution context (symbol, when) and method context.
    *
@@ -531,15 +535,20 @@ export class CacheUtils {
    * Wrap an async function with persistent file-based caching.
    *
    * Returns a wrapped version of the function that reads from disk on cache hit
-   * and writes the result to disk on cache miss. Cache is keyed by the aligned
-   * candle timestamp + symbol from execution context + dynamic key from args.
+   * and writes the result to disk on cache miss. Files are stored under
+   * `./dump/data/measure/{name}_{interval}_{index}/`.
+   *
+   * The `run` function reference is used as the memoization key for the underlying
+   * `CacheFileInstance`, so each unique function reference gets its own isolated instance.
+   * Pass the same function reference each time to reuse the same cache.
    *
    * @template T - Async function type to cache
-   * @template K - Dynamic key type
    * @param run - Async function to wrap with file caching
    * @param context.interval - Candle interval for cache invalidation
-   * @param context.key - Optional key generator; receives all args, first arg is symbol.
-   *                      Default: `([symbol]) => symbol`
+   * @param context.name - Human-readable bucket name; becomes the directory prefix
+   * @param context.key - Optional entity key generator. Receives `[symbol, alignMs, ...rest]`
+   *                      where `alignMs` is the timestamp aligned to `interval`.
+   *                      Default: `([symbol, alignMs]) => \`${symbol}_${alignMs}\``
    * @returns Wrapped async function with automatic persistent caching
    *
    * @example
@@ -548,13 +557,14 @@ export class CacheUtils {
    *   return await externalApi.fetch(symbol, period);
    * };
    *
-   * // Default key — cache per symbol
-   * const cachedFetch = Cache.file(fetchData, { interval: "1h" });
+   * // Default key — one cache file per symbol per aligned candle
+   * const cachedFetch = Cache.file(fetchData, { interval: "1h", name: "fetchData" });
    *
-   * // Custom key — cache per symbol + period
+   * // Custom key — one cache file per symbol + period combination
    * const cachedFetch = Cache.file(fetchData, {
    *   interval: "1h",
-   *   key: ([symbol, interval, period]) => `${symbol}_${period}`,
+   *   name: "fetchData",
+   *   key: ([symbol, alignMs, period]) => `${symbol}_${alignMs}_${period}`,
    * });
    * const result = await cachedFetch("BTCUSDT", 14);
    * ```
