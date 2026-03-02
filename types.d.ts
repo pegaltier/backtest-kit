@@ -4385,6 +4385,66 @@ declare function getPositionAveragePrice(symbol: string): Promise<number | null>
 declare function getPositionInvestedCount(symbol: string): Promise<number | null>;
 declare function getPositionInvestedCost(symbol: string): Promise<number | null>;
 declare function getPositionPnlPercent(symbol: string): Promise<number | null>;
+/**
+ * Executes partial close at profit level by absolute dollar amount (moving toward TP).
+ *
+ * Convenience wrapper around commitPartialProfit that converts a dollar amount
+ * to a percentage of the invested position cost automatically.
+ * Price must be moving toward take profit (in profit direction).
+ *
+ * Automatically detects backtest/live mode from execution context.
+ * Automatically fetches current price via getAveragePrice.
+ *
+ * @param symbol - Trading pair symbol
+ * @param dollarAmount - Dollar value of position to close (e.g. 150 closes $150 worth)
+ * @returns Promise<boolean> - true if partial close executed, false if skipped or no position
+ *
+ * @throws Error if currentPrice is not in profit direction:
+ *   - LONG: currentPrice must be > priceOpen
+ *   - SHORT: currentPrice must be < priceOpen
+ *
+ * @example
+ * ```typescript
+ * import { commitPartialProfitCost } from "backtest-kit";
+ *
+ * // Close $150 of a $300 position (50%) at profit
+ * const success = await commitPartialProfitCost("BTCUSDT", 150);
+ * if (success) {
+ *   console.log('Partial profit executed');
+ * }
+ * ```
+ */
+declare function commitPartialProfitCost(symbol: string, dollarAmount: number): Promise<boolean>;
+/**
+ * Executes partial close at loss level by absolute dollar amount (moving toward SL).
+ *
+ * Convenience wrapper around commitPartialLoss that converts a dollar amount
+ * to a percentage of the invested position cost automatically.
+ * Price must be moving toward stop loss (in loss direction).
+ *
+ * Automatically detects backtest/live mode from execution context.
+ * Automatically fetches current price via getAveragePrice.
+ *
+ * @param symbol - Trading pair symbol
+ * @param dollarAmount - Dollar value of position to close (e.g. 100 closes $100 worth)
+ * @returns Promise<boolean> - true if partial close executed, false if skipped or no position
+ *
+ * @throws Error if currentPrice is not in loss direction:
+ *   - LONG: currentPrice must be < priceOpen
+ *   - SHORT: currentPrice must be > priceOpen
+ *
+ * @example
+ * ```typescript
+ * import { commitPartialLossCost } from "backtest-kit";
+ *
+ * // Close $100 of a $300 position (~33%) at loss
+ * const success = await commitPartialLossCost("BTCUSDT", 100);
+ * if (success) {
+ *   console.log('Partial loss executed');
+ * }
+ * ```
+ */
+declare function commitPartialLossCost(symbol: string, dollarAmount: number): Promise<boolean>;
 declare function getPositionPnlCost(symbol: string): Promise<number | null>;
 
 /**
@@ -10833,6 +10893,76 @@ declare class BacktestUtils {
         frameName: FrameName;
     }) => Promise<boolean>;
     /**
+     * Executes partial close at profit level by absolute dollar amount (moving toward TP).
+     *
+     * Convenience wrapper around commitPartialProfit that converts a dollar amount
+     * to a percentage of the invested position cost automatically.
+     * Price must be moving toward take profit (in profit direction).
+     *
+     * @param symbol - Trading pair symbol
+     * @param dollarAmount - Dollar value of position to close (e.g. 150 closes $150 worth)
+     * @param currentPrice - Current market price for this partial close
+     * @param context - Execution context with strategyName, exchangeName, and frameName
+     * @returns Promise<boolean> - true if partial close executed, false if skipped or no position
+     *
+     * @throws Error if currentPrice is not in profit direction:
+     *   - LONG: currentPrice must be > priceOpen
+     *   - SHORT: currentPrice must be < priceOpen
+     *
+     * @example
+     * ```typescript
+     * // Close $150 of a $300 position (50%) at profit
+     * const success = await Backtest.commitPartialProfitCost("BTCUSDT", 150, 45000, {
+     *   exchangeName: "binance",
+     *   frameName: "frame1",
+     *   strategyName: "my-strategy"
+     * });
+     * if (success) {
+     *   console.log('Partial profit executed');
+     * }
+     * ```
+     */
+    commitPartialProfitCost: (symbol: string, dollarAmount: number, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<boolean>;
+    /**
+     * Executes partial close at loss level by absolute dollar amount (moving toward SL).
+     *
+     * Convenience wrapper around commitPartialLoss that converts a dollar amount
+     * to a percentage of the invested position cost automatically.
+     * Price must be moving toward stop loss (in loss direction).
+     *
+     * @param symbol - Trading pair symbol
+     * @param dollarAmount - Dollar value of position to close (e.g. 100 closes $100 worth)
+     * @param currentPrice - Current market price for this partial close
+     * @param context - Execution context with strategyName, exchangeName, and frameName
+     * @returns Promise<boolean> - true if partial close executed, false if skipped or no position
+     *
+     * @throws Error if currentPrice is not in loss direction:
+     *   - LONG: currentPrice must be < priceOpen
+     *   - SHORT: currentPrice must be > priceOpen
+     *
+     * @example
+     * ```typescript
+     * // Close $100 of a $300 position (~33%) at loss
+     * const success = await Backtest.commitPartialLossCost("BTCUSDT", 100, 38000, {
+     *   exchangeName: "binance",
+     *   frameName: "frame1",
+     *   strategyName: "my-strategy"
+     * });
+     * if (success) {
+     *   console.log('Partial loss executed');
+     * }
+     * ```
+     */
+    commitPartialLossCost: (symbol: string, dollarAmount: number, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<boolean>;
+    /**
      * Adjusts the trailing stop-loss distance for an active pending signal.
      *
      * CRITICAL: Always calculates from ORIGINAL SL, not from current trailing SL.
@@ -11674,6 +11804,72 @@ declare class LiveUtils {
      * ```
      */
     commitPartialLoss: (symbol: string, percentToClose: number, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+    }) => Promise<boolean>;
+    /**
+     * Executes partial close at profit level by absolute dollar amount (moving toward TP).
+     *
+     * Convenience wrapper around commitPartialProfit that converts a dollar amount
+     * to a percentage of the invested position cost automatically.
+     * Price must be moving toward take profit (in profit direction).
+     *
+     * @param symbol - Trading pair symbol
+     * @param dollarAmount - Dollar value of position to close (e.g. 150 closes $150 worth)
+     * @param currentPrice - Current market price for this partial close
+     * @param context - Execution context with strategyName and exchangeName
+     * @returns Promise<boolean> - true if partial close executed, false if skipped or no position
+     *
+     * @throws Error if currentPrice is not in profit direction:
+     *   - LONG: currentPrice must be > priceOpen
+     *   - SHORT: currentPrice must be < priceOpen
+     *
+     * @example
+     * ```typescript
+     * // Close $150 of a $300 position (50%) at profit
+     * const success = await Live.commitPartialProfitCost("BTCUSDT", 150, 45000, {
+     *   exchangeName: "binance",
+     *   strategyName: "my-strategy"
+     * });
+     * if (success) {
+     *   console.log('Partial profit executed');
+     * }
+     * ```
+     */
+    commitPartialProfitCost: (symbol: string, dollarAmount: number, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+    }) => Promise<boolean>;
+    /**
+     * Executes partial close at loss level by absolute dollar amount (moving toward SL).
+     *
+     * Convenience wrapper around commitPartialLoss that converts a dollar amount
+     * to a percentage of the invested position cost automatically.
+     * Price must be moving toward stop loss (in loss direction).
+     *
+     * @param symbol - Trading pair symbol
+     * @param dollarAmount - Dollar value of position to close (e.g. 100 closes $100 worth)
+     * @param currentPrice - Current market price for this partial close
+     * @param context - Execution context with strategyName and exchangeName
+     * @returns Promise<boolean> - true if partial close executed, false if skipped or no position
+     *
+     * @throws Error if currentPrice is not in loss direction:
+     *   - LONG: currentPrice must be < priceOpen
+     *   - SHORT: currentPrice must be > priceOpen
+     *
+     * @example
+     * ```typescript
+     * // Close $100 of a $300 position (~33%) at loss
+     * const success = await Live.commitPartialLossCost("BTCUSDT", 100, 38000, {
+     *   exchangeName: "binance",
+     *   strategyName: "my-strategy"
+     * });
+     * if (success) {
+     *   console.log('Partial loss executed');
+     * }
+     * ```
+     */
+    commitPartialLossCost: (symbol: string, dollarAmount: number, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
     }) => Promise<boolean>;
@@ -17510,6 +17706,20 @@ declare const percentDiff: (a?: number, b?: number) => number;
 declare const percentValue: (yesterdayValue: number, todayValue: number) => number;
 
 /**
+ * Convert an absolute dollar amount to a percentage of the invested position cost.
+ * Use the result as the `percent` argument to `commitPartialProfit` / `commitPartialLoss`.
+ *
+ * @param dollarAmount - Dollar value to close (e.g. 150)
+ * @param investedCost - Total invested cost from `getPositionInvestedCost` (e.g. 300)
+ * @returns Percentage of the position to close (0–100)
+ *
+ * @example
+ * const percent = investedCostToPercent(150, 300); // 50
+ * await commitPartialProfit("BTCUSDT", percent);
+ */
+declare const investedCostToPercent: (dollarAmount: number, investedCost: number) => number;
+
+/**
  * Client implementation for exchange data access.
  *
  * Features:
@@ -22256,4 +22466,4 @@ declare const getTotalClosed: (signal: ISignalRow) => {
     remainingCostBasis: number;
 };
 
-export { ActionBase, type ActivateScheduledCommit, type ActivateScheduledCommitNotification, type ActivePingContract, type AverageBuyCommit, Backtest, type BacktestStatisticsModel, Breakeven, type BreakevenAvailableNotification, type BreakevenCommit, type BreakevenCommitNotification, type BreakevenContract, type BreakevenData, Cache, type CancelScheduledCommit, type CandleData, type CandleInterval, type ClosePendingCommit, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IActionSchema, type IActivateScheduledCommitRow, type IAggregatedTradeData, type IBidData, type IBreakevenCommitRow, type ICandleData, type ICommitRow, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type ILog, type ILogEntry, type ILogger, type IMarkdownDumpOptions, type INotificationUtils, type IOrderBookData, type IPartialLossCommitRow, type IPartialProfitCommitRow, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicAction, type IPublicCandleData, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskSignalRow, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingParams, type ISizingParamsATR, type ISizingParamsFixedPercentage, type ISizingParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStorageSignalRow, type IStorageUtils, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IStrategyTickResultWaiting, type ITrailingStopCommitRow, type ITrailingTakeCommitRow, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveStatisticsModel, Log, type LogData, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MeasureData, MethodContextService, type MetricStats, Notification, NotificationBacktest, type NotificationData, NotificationLive, type NotificationModel, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossAvailableNotification, type PartialLossCommit, type PartialLossCommitNotification, type PartialLossContract, type PartialProfitAvailableNotification, type PartialProfitCommit, type PartialProfitCommitNotification, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistLogAdapter, PersistMeasureAdapter, PersistNotificationAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PersistStorageAdapter, PositionSize, type ProgressBacktestContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, Storage, StorageBacktest, type StorageData, StorageLive, Strategy, type StrategyActionType, type StrategyCancelReason, type StrategyCloseReason, type StrategyCommitContract, type StrategyEvent, type StrategyStatisticsModel, type TLogCtor, type TMarkdownBase, type TNotificationUtilsCtor, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TStorageUtilsCtor, type TickEvent, type TrailingStopCommit, type TrailingStopCommitNotification, type TrailingTakeCommit, type TrailingTakeCommitNotification, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, alignToInterval, checkCandles, commitActivateScheduled, commitAverageBuy, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialProfit, commitTrailingStop, commitTrailingTake, dumpMessages, emitters, formatPrice, formatQuantity, get, getActionSchema, getAggregatedTrades, getAveragePrice, getBacktestTimeframe, getBreakeven, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getEffectivePriceOpen, getExchangeSchema, getFrameSchema, getMode, getNextCandles, getOrderBook, getPendingSignal, getPositionAveragePrice, getPositionInvestedCost, getPositionInvestedCount, getPositionPnlCost, getPositionPnlPercent, getRawCandles, getRiskSchema, getScheduledSignal, getSizingSchema, getStrategySchema, getSymbol, getTimestamp, getTotalClosed, getTotalCostClosed, getTotalPercentClosed, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenStrategyCommit, listenStrategyCommitOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, percentDiff, percentValue, roundTicks, set, setColumns, setConfig, setLogger, shutdown, stopStrategy, toProfitLossDto, validate, waitForCandle, warmCandles };
+export { ActionBase, type ActivateScheduledCommit, type ActivateScheduledCommitNotification, type ActivePingContract, type AverageBuyCommit, Backtest, type BacktestStatisticsModel, Breakeven, type BreakevenAvailableNotification, type BreakevenCommit, type BreakevenCommitNotification, type BreakevenContract, type BreakevenData, Cache, type CancelScheduledCommit, type CandleData, type CandleInterval, type ClosePendingCommit, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IActionSchema, type IActivateScheduledCommitRow, type IAggregatedTradeData, type IBidData, type IBreakevenCommitRow, type ICandleData, type ICommitRow, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type ILog, type ILogEntry, type ILogger, type IMarkdownDumpOptions, type INotificationUtils, type IOrderBookData, type IPartialLossCommitRow, type IPartialProfitCommitRow, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicAction, type IPublicCandleData, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskSignalRow, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingParams, type ISizingParamsATR, type ISizingParamsFixedPercentage, type ISizingParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStorageSignalRow, type IStorageUtils, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IStrategyTickResultWaiting, type ITrailingStopCommitRow, type ITrailingTakeCommitRow, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveStatisticsModel, Log, type LogData, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MeasureData, MethodContextService, type MetricStats, Notification, NotificationBacktest, type NotificationData, NotificationLive, type NotificationModel, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossAvailableNotification, type PartialLossCommit, type PartialLossCommitNotification, type PartialLossContract, type PartialProfitAvailableNotification, type PartialProfitCommit, type PartialProfitCommitNotification, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistLogAdapter, PersistMeasureAdapter, PersistNotificationAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PersistStorageAdapter, PositionSize, type ProgressBacktestContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, Storage, StorageBacktest, type StorageData, StorageLive, Strategy, type StrategyActionType, type StrategyCancelReason, type StrategyCloseReason, type StrategyCommitContract, type StrategyEvent, type StrategyStatisticsModel, type TLogCtor, type TMarkdownBase, type TNotificationUtilsCtor, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TStorageUtilsCtor, type TickEvent, type TrailingStopCommit, type TrailingStopCommitNotification, type TrailingTakeCommit, type TrailingTakeCommitNotification, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, alignToInterval, checkCandles, commitActivateScheduled, commitAverageBuy, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialLossCost, commitPartialProfit, commitPartialProfitCost, commitTrailingStop, commitTrailingTake, dumpMessages, emitters, formatPrice, formatQuantity, get, getActionSchema, getAggregatedTrades, getAveragePrice, getBacktestTimeframe, getBreakeven, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getEffectivePriceOpen, getExchangeSchema, getFrameSchema, getMode, getNextCandles, getOrderBook, getPendingSignal, getPositionAveragePrice, getPositionInvestedCost, getPositionInvestedCount, getPositionPnlCost, getPositionPnlPercent, getRawCandles, getRiskSchema, getScheduledSignal, getSizingSchema, getStrategySchema, getSymbol, getTimestamp, getTotalClosed, getTotalCostClosed, getTotalPercentClosed, getWalkerSchema, hasTradeContext, investedCostToPercent, backtest as lib, listExchangeSchema, listFrameSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenStrategyCommit, listenStrategyCommitOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, percentDiff, percentValue, roundTicks, set, setColumns, setConfig, setLogger, shutdown, stopStrategy, toProfitLossDto, validate, waitForCandle, warmCandles };

@@ -328,8 +328,8 @@ const PROCESS_COMMIT_QUEUE_FN = async (
 const TO_PUBLIC_SIGNAL = <T extends ISignalDto | ISignalRow | IScheduledSignalRow>(signal: T): IPublicSignalRow => {
   const hasTrailingSL = "_trailingPriceStopLoss" in signal && signal._trailingPriceStopLoss !== undefined;
   const hasTrailingTP = "_trailingPriceTakeProfit" in signal && signal._trailingPriceTakeProfit !== undefined;
-  const partialExecuted = ("_partial" in signal && Array.isArray(signal._partial))
-    ? signal._partial.reduce((sum, partial) => sum + partial.percent, 0)
+  const partialExecuted = "_partial" in signal
+    ? getTotalClosed(signal).totalClosedPercent
     : 0;
   const totalEntries = ("_entry" in signal && Array.isArray(signal._entry))
     ? signal._entry.length
