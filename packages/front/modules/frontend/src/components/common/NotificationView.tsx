@@ -188,7 +188,7 @@ const getNotificationTitle = (item: NotificationModel): string => {
     case "activate_scheduled.commit":
       return `${t("Activated")} ${item.position.toUpperCase()} ${item.symbol}`;
     case "average_buy.commit":
-      return `${t("Average buy")} ${item.symbol} (${item.totalEntries} ${t("entries")})`;
+      return `${t("Average Buy")} ${item.symbol}`;
     case "trailing_stop.commit":
       return `${t("Trailing stop")} ${item.symbol}`;
     case "trailing_take.commit":
