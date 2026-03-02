@@ -206,57 +206,120 @@ Backtest Kit is **not a data-processing library** - it is a **time execution eng
 
 ### 💰 How PNL Works
 
-`commitAverageBuy` for a LONG position is **only accepted when the current price is below the effective entry price** (a new low). If the price is at or above `effectivePriceOpen`, the call is silently rejected. This prevents averaging up.
+These three functions work together to manage a position dynamically. To reduce position linearity, the framework treats every DCA entry as a fixed **$100 unit** regardless of price — this flattens the effective entry curve and makes PNL weighting independent of position size.
 
-**`effectivePriceOpen`** is the harmonic mean of all accepted DCA entries. After each partial close, the remaining cost basis is carried forward into the harmonic mean calculation for subsequent entries.
+- **`commitAverageBuy`** — adds a new DCA entry. For LONG, **only accepted when current price is below `effectivePriceOpen`** (a new low). Silently rejected otherwise. This prevents averaging up.
+- **`commitPartialProfit`** — closes X% of the position at a profit. Locks in gains while keeping exposure.
+- **`commitPartialLoss`** — closes X% of the position at a loss. Cuts exposure before the stop-loss is hit.
+
+**`priceOpen`** is the harmonic mean of all accepted DCA entries. After each partial close (`commitPartialProfit` or `commitPartialLoss`), the remaining cost basis is carried forward into the harmonic mean calculation for subsequent entries — so `priceOpen` shifts after every partial, which in turn changes whether the next `commitAverageBuy` call will be accepted.
 
 <details>
   <summary>
     The Math
   </summary>
 
-  **Scenario:** LONG entry @ 1000, 4 extra DCA attempts, 3 partials, closed at TP.
+  **Scenario:** LONG entry @ 1000, 4 DCA attempts (1 rejected), 3 partials, closed at TP.
+  `totalInvested = $500` (5 × $100, including the rejected attempt).
+
+  **Entries**
 
   ```
-  Entry:             $1000  (1 entry, totalInvested starts at $100)
-  PP(30%) @ 1150     cnt=1  → snap1 = hm([1000]) = 1000
-  DCA attempt @ 950         → 950 < snap1=1000 ✓ accepted  (totalInvested=$200)
-  DCA attempt @ 880         → 880 < snap1=1000 ✓ accepted  (totalInvested=$300)
-  PL(20%) @ 860      cnt=3  → snap2 = (70+200) / (70/1000 + 100/950 + 100/880)
-                                     = 270 / 0.28898...
-                                     ≈ 934.58
-  DCA attempt @ 920         → 920 < snap2=934.58 ✓ accepted  (totalInvested=$400)
-  PP(40%) @ 1050     cnt=4  → snap3 = (216 + 100) / (216/934.58 + 100/920)
-                                     ≈ 929.92
-  DCA attempt @ 980         → 980 > snap3=929.92 ✗ REJECTED
-  Close (TP) @ 1200
+  entry#1 @ 1000  → 0.10000 coins
+    commitPartialProfit(30%) @ 1150          ← cnt=1
+  entry#2 @ 950   → 0.10526 coins
+  entry#3 @ 880   → 0.11364 coins
+    commitPartialLoss(20%)   @ 860           ← cnt=3
+  entry#4 @ 920   → 0.10870 coins
+    commitPartialProfit(40%) @ 1050          ← cnt=4
+  entry#5 @ 980   → 0.10204 coins  ✗ REJECTED (980 > effectivePriceOpen≈946.95)
+  totalInvested = $500
   ```
 
-  **Weight calculation (cost-basis replay):**
+  **Partial#1 — commitPartialProfit @ 1150, 30%, cnt=1**
 
   ```
-  costBasis = 0
-  p1 (cnt=1, 30%): newEntries=1,  costBasis=100,  dollarValue=30,    weight=30/400=0.075
-                   after: costBasis=70
-  p2 (cnt=3, 20%): newEntries=2,  costBasis=270,  dollarValue=54,    weight=54/400=0.135
-                   after: costBasis=216
-  p3 (cnt=4, 40%): newEntries=1,  costBasis=316,  dollarValue=126.4, weight=126.4/400=0.316
-                   after: costBasis=189.6
-  remWeight = (400 - 30 - 54 - 126.4) / 400 = 189.6 / 400 = 0.474
+  effectivePrice = hm(1000) = 1000
+  costBasis = $100
+  partialDollarValue = 30% × 100 = $30  → weight = 30/500 = 0.060
+  pnl = (1150−1000)/1000 × 100 = +15.00%
+  costBasis → $70
+  coins sold: 0.03000 × 1150 = $34.50
+  remaining:  0.07000
   ```
 
-  **PNL per component:**
+  **DCA after Partial#1**
 
   ```
-  p1: (1150 - snap1) / snap1 × weight = (1150-1000)/1000 × 0.075 = +1.125%
-  p2: (860  - snap2) / snap2 × weight = (860-934.58)/934.58 × 0.135 ≈ −1.077%
-  p3: (1050 - snap3) / snap3 × weight = (1050-929.92)/929.92 × 0.316 ≈ +4.079%
-  rem:(1200 - snap3) / snap3 × remWeight = (1200-929.92)/929.92 × 0.474 ≈ +13.77%
-  Total pnlPercentage ≈ +17.90%  (before fees)
+  entry#2 @ 950  (950 < ep1=1000 ✓ accepted)
+  entry#3 @ 880  (880 < ep1=1000 ✓ accepted)
+  coins: 0.07000 + 0.10526 + 0.11364 = 0.28890
   ```
 
-  **Key insight:** Only 4 entries accepted (entry + DCA@950 + DCA@880 + DCA@920).
-  The DCA@980 attempt is rejected because 980 > effectivePriceOpen≈929.92 at that moment.
+  **Partial#2 — commitPartialLoss @ 860, 20%, cnt=3**
+
+  ```
+  costBasis = 70 + 100 + 100 = $270
+  ep2 = 270 / 0.28890 ≈ 934.93
+  partialDollarValue = 20% × 270 = $54  → weight = 54/500 = 0.108
+  pnl = (860−934.93)/934.93 × 100 ≈ −8.01%
+  costBasis → $216
+  coins sold: 0.05778 × 860 = $49.69
+  remaining:  0.23112
+  ```
+
+  **DCA after Partial#2**
+
+  ```
+  entry#4 @ 920  (920 < ep2=934.93 ✓ accepted)
+  coins: 0.23112 + 0.10870 = 0.33982
+  ```
+
+  **Partial#3 — commitPartialProfit @ 1050, 40%, cnt=4**
+
+  ```
+  costBasis = 216 + 100 = $316
+  ep3 = 316 / 0.33982 ≈ 929.90
+  partialDollarValue = 40% × 316 = $126.4  → weight = 126.4/500 = 0.2528
+  pnl = (1050−929.90)/929.90 × 100 ≈ +12.92%
+  costBasis → $189.6
+  coins sold: 0.13593 × 1050 = $142.72
+  remaining:  0.20389
+  ```
+
+  **DCA after Partial#3 — rejected**
+
+  ```
+  entry#5 @ 980  (980 > ep_final≈946.95 ✗ REJECTED)
+  ```
+
+  **Close at TP @ 1200**
+
+  ```
+  oldCoins = 189.6 / 929.90 = 0.20389
+  newCoins = 100 / 980      = 0.10204   (rejected — ep_final is computed without entry#5)
+  ep_final = 289.6 / 0.30593 ≈ 946.95
+
+  remainingDollarValue = 500 − 30 − 54 − 126.4 = $289.6
+  weight = 289.6/500 = 0.5792
+  pnl = (1200−946.95)/946.95 × 100 ≈ +26.72%
+  coins sold: 0.30593 × 1200 = $367.12
+  ```
+
+  **Result (toProfitLossDto)**
+
+  ```
+  0.060  × (+15.00) = +0.900
+  0.108  × (−8.01)  = −0.865
+  0.2528 × (+12.92) = +3.267
+  0.5792 × (+26.72) = +15.477
+  ─────────────────────────────
+                    ≈ +18.78%
+
+  Cross-check (coins):
+  34.50 + 49.69 + 142.72 + 367.12 = $594.03
+  (594.03 − 500) / 500 × 100      = +18.81%  ✓
+  ```
 </details>
 
 ### 🔍 How getCandles Works
