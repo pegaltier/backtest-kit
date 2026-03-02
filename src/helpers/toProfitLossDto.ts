@@ -6,17 +6,21 @@ import { getEffectivePriceOpen } from "./getEffectivePriceOpen";
  * Calculates profit/loss for a closed signal with slippage and fees.
  *
  * For signals with partial closes:
- * - Weights are calculated by ACTUAL DOLLAR VALUE of each partial relative to total invested,
- *   not by raw percent. This correctly handles DCA entries that occur after partial closes.
+ * - Weights are calculated by ACTUAL DOLLAR VALUE of each partial relative to total invested.
+ *   This correctly handles DCA entries that occur after partial closes.
  *
- * Weight formula:
- *   partialDollarValue = (partial.percent / 100) * (partial.entryCountAtClose * $100)
+ * Weight formula per partial:
+ *   partialDollarValue = (partial.percent / 100) × partial.positionCostBasisAtClose
  *   weight = partialDollarValue / totalInvested
- *   totalInvested = _entry.length * $100
+ *   totalInvested = _entry.length × $100
+ *
+ * Remaining weight:
+ *   closedDollarValue = Σ partialDollarValue_i
+ *   remainingWeight = (totalInvested - closedDollarValue) / totalInvested
  *
  * Fee structure:
- *   - Open fee: CC_PERCENT_FEE (charged once)
- *   - Close fee per partial: CC_PERCENT_FEE × weight × (closeWithSlip / openWithSlip)
+ *   - Open fee:  CC_PERCENT_FEE (charged once)
+ *   - Close fee: CC_PERCENT_FEE × weight × (closeWithSlip / openWithSlip) per partial/remaining
  *
  * @param signal - Closed signal with position details and optional partial history
  * @param priceClose - Actual close price at final exit
@@ -38,13 +42,21 @@ export const toProfitLossDto = (
     // Total invested capital = number of DCA entries × $100 per entry
     const totalInvested = signal._entry ? signal._entry.length * 100 : 100;
 
+    let closedDollarValue = 0;
+
     // Calculate PNL for each partial close
     for (const partial of signal._partial) {
-      // Real dollar value of this partial at the moment it was closed
-      const partialDollarValue = (partial.percent / 100) * (partial.entryCountAtClose * 100);
+      // Real dollar value sold in this partial
+      // positionCostBasisAtClose = cost basis of position BEFORE this partial
+      const positionCostBasisAtClose = partial.entryCountAtClose * 100;
+      
+      const partialDollarValue =
+        (partial.percent / 100) * positionCostBasisAtClose;
 
-      // Weight relative to total invested capital (handles DCA after partial)
+      // Weight relative to total invested capital
       const weight = partialDollarValue / totalInvested;
+
+      closedDollarValue += partialDollarValue;
 
       // Use the effective entry price snapshot captured at the time of this partial close
       const priceOpenWithSlippage =
@@ -71,23 +83,18 @@ export const toProfitLossDto = (
         (priceCloseWithSlippage / priceOpenWithSlippage);
     }
 
-    // Calculate dollar value already closed across all partials
-    const closedDollarValue = signal._partial.reduce(
-      (sum, p) => sum + (p.percent / 100) * (p.entryCountAtClose * 100),
-      0
-    );
-
     if (closedDollarValue > totalInvested + 0.001) {
       throw new Error(
-        `Partial closes dollar value (${closedDollarValue}) exceeds total invested (${totalInvested}) — signal id: ${signal.id}`
+        `Partial closes dollar value (${closedDollarValue.toFixed(4)}) exceeds total invested (${totalInvested}) — signal id: ${signal.id}`
       );
     }
 
+    // Remaining position
     const remainingDollarValue = totalInvested - closedDollarValue;
     const remainingWeight = remainingDollarValue / totalInvested;
 
     if (remainingWeight > 0) {
-      // For remaining position use current effective price (reflects all DCA including post-partial)
+      // Use current effective price — reflects all DCA including post-partial entries
       const remainingOpenWithSlippage =
         signal.position === "long"
           ? priceOpen * (1 + GLOBAL_CONFIG.CC_PERCENT_SLIPPAGE / 100)
