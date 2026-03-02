@@ -2588,6 +2588,30 @@ interface IStrategy {
      */
     getStopped: (symbol: string) => Promise<boolean>;
     /**
+     * Returns how much of the position is still held, as a percentage of totalInvested.
+     *
+     * Uses dollar-basis cost-basis replay (DCA-aware).
+     * 100% means nothing was closed yet. Decreases with each partial close.
+     *
+     * Returns 100 if no pending signal or no partial closes.
+     *
+     * @param symbol - Trading pair symbol
+     * @returns Promise resolving to held percentage (0–100)
+     */
+    getTotalPercentClosed: (symbol: string) => Promise<number | null>;
+    /**
+     * Returns how many dollars of cost basis are still held (not yet closed by partials).
+     *
+     * Full position open: equals totalInvested (entries × $100).
+     * Decreases with each partial close, increases with each averageBuy().
+     *
+     * Returns totalInvested if no pending signal or no partial closes.
+     *
+     * @param symbol - Trading pair symbol
+     * @returns Promise resolving to held cost basis in dollars
+     */
+    getTotalCostClosed: (symbol: string) => Promise<number | null>;
+    /**
      * Fast backtest using historical candles.
      * Iterates through candles, calculates VWAP, checks TP/SL on each candle.
      *
@@ -4229,6 +4253,107 @@ declare function commitActivateScheduled(symbol: string, activateId?: string): P
  * ```
  */
 declare function commitAverageBuy(symbol: string): Promise<boolean>;
+/**
+ * Returns the percentage of the position currently held (not closed).
+ * 100 = nothing has been closed (full position), 0 = fully closed.
+ * Correctly accounts for DCA entries between partial closes.
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise<number> - held percentage (0–100)
+ *
+ * @example
+ * ```typescript
+ * import { getTotalPercentClosed } from "backtest-kit";
+ *
+ * const heldPct = await getTotalPercentClosed("BTCUSDT");
+ * console.log(`Holding ${heldPct}% of position`);
+ * ```
+ */
+declare function getTotalPercentClosed(symbol: string): Promise<number>;
+/**
+ * Returns the cost basis in dollars of the position currently held (not closed).
+ * Correctly accounts for DCA entries between partial closes.
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise<number> - held cost basis in dollars
+ *
+ * @example
+ * ```typescript
+ * import { getTotalCostClosed } from "backtest-kit";
+ *
+ * const heldCost = await getTotalCostClosed("BTCUSDT");
+ * console.log(`Holding $${heldCost} of position`);
+ * ```
+ */
+declare function getTotalCostClosed(symbol: string): Promise<number>;
+/**
+ * Returns the currently active pending signal for the strategy.
+ * If no active signal exists, returns null.
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise resolving to pending signal or null
+ *
+ * @example
+ * ```typescript
+ * import { getPendingSignal } from "backtest-kit";
+ *
+ * const pending = await getPendingSignal("BTCUSDT");
+ * if (pending) {
+ *   console.log("Active signal:", pending.id);
+ * }
+ * ```
+ */
+declare function getPendingSignal(symbol: string): Promise<ISignalRow>;
+/**
+ * Returns the currently active scheduled signal for the strategy.
+ * If no scheduled signal exists, returns null.
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise resolving to scheduled signal or null
+ *
+ * @example
+ * ```typescript
+ * import { getScheduledSignal } from "backtest-kit";
+ *
+ * const scheduled = await getScheduledSignal("BTCUSDT");
+ * if (scheduled) {
+ *   console.log("Scheduled signal:", scheduled.id);
+ * }
+ * ```
+ */
+declare function getScheduledSignal(symbol: string): Promise<IScheduledSignalRow>;
+/**
+ * Checks if breakeven threshold has been reached for the current pending signal.
+ *
+ * Returns true if price has moved far enough in profit direction to cover
+ * transaction costs. Threshold is calculated as: (CC_PERCENT_SLIPPAGE + CC_PERCENT_FEE) * 2
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @param currentPrice - Current market price to check against threshold
+ * @returns Promise<boolean> - true if breakeven threshold reached, false otherwise
+ *
+ * @example
+ * ```typescript
+ * import { getBreakeven, getAveragePrice } from "backtest-kit";
+ *
+ * const price = await getAveragePrice("BTCUSDT");
+ * const canBreakeven = await getBreakeven("BTCUSDT", price);
+ * if (canBreakeven) {
+ *   console.log("Breakeven available");
+ * }
+ * ```
+ */
+declare function getBreakeven(symbol: string, currentPrice: number): Promise<boolean>;
 
 /**
  * Stops the strategy from generating new signals.
@@ -10412,6 +10537,45 @@ declare class BacktestUtils {
         frameName: FrameName;
     }) => Promise<ISignalRow>;
     /**
+     * Returns the percentage of the position currently held (not closed).
+     * 100 = nothing has been closed (full position), 0 = fully closed.
+     * Correctly accounts for DCA entries between partial closes.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Context with strategyName, exchangeName, frameName
+     * @returns Promise<number> - held percentage (0–100)
+     *
+     * @example
+     * ```typescript
+     * const heldPct = await Backtest.getTotalPercentClosed("BTCUSDT", { strategyName, exchangeName, frameName });
+     * console.log(`Holding ${heldPct}% of position`);
+     * ```
+     */
+    getTotalPercentClosed: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<number>;
+    /**
+     * Returns the cost basis in dollars of the position currently held (not closed).
+     * Correctly accounts for DCA entries between partial closes.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Context with strategyName, exchangeName, frameName
+     * @returns Promise<number> - held cost basis in dollars
+     *
+     * @example
+     * ```typescript
+     * const heldCost = await Backtest.getTotalCostClosed("BTCUSDT", { strategyName, exchangeName, frameName });
+     * console.log(`Holding $${heldCost} of position`);
+     * ```
+     */
+    getTotalCostClosed: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<number>;
+    /**
      * Retrieves the currently active scheduled signal for the strategy.
      * If no scheduled signal exists, returns null.
      *
@@ -11215,6 +11379,43 @@ declare class LiveUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
     }) => Promise<ISignalRow>;
+    /**
+     * Returns the percentage of the position currently held (not closed).
+     * 100 = nothing has been closed (full position), 0 = fully closed.
+     * Correctly accounts for DCA entries between partial closes.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Context with strategyName and exchangeName
+     * @returns Promise<number> - held percentage (0–100)
+     *
+     * @example
+     * ```typescript
+     * const heldPct = await Live.getTotalPercentClosed("BTCUSDT", { strategyName, exchangeName });
+     * console.log(`Holding ${heldPct}% of position`);
+     * ```
+     */
+    getTotalPercentClosed: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+    }) => Promise<number>;
+    /**
+     * Returns the cost basis in dollars of the position currently held (not closed).
+     * Correctly accounts for DCA entries between partial closes.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Context with strategyName and exchangeName
+     * @returns Promise<number> - held cost basis in dollars
+     *
+     * @example
+     * ```typescript
+     * const heldCost = await Live.getTotalCostClosed("BTCUSDT", { strategyName, exchangeName });
+     * console.log(`Holding $${heldCost} of position`);
+     * ```
+     */
+    getTotalCostClosed: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+    }) => Promise<number>;
     /**
      * Retrieves the currently active scheduled signal for the strategy.
      * If no scheduled signal exists, returns null.
@@ -15347,6 +15548,35 @@ declare class StrategyCoreService implements TStrategy$1 {
         frameName: FrameName;
     }) => Promise<ISignalRow | null>;
     /**
+     * Returns the percentage of the position currently held (not closed).
+     * 100 = nothing has been closed (full position), 0 = fully closed.
+     * Correctly accounts for DCA entries between partial closes.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise<number> - held percentage (0–100)
+     */
+    getTotalPercentClosed: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<number | null>;
+    /**
+     * Returns the cost basis in dollars of the position currently held (not closed).
+     * Correctly accounts for DCA entries between partial closes.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise<number> - held cost basis in dollars
+     */
+    getTotalCostClosed: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<number | null>;
+    /**
      * Retrieves the currently active scheduled signal for the symbol.
      * If no scheduled signal exists, returns null.
      * Used internally for monitoring scheduled signal activation.
@@ -18199,6 +18429,35 @@ declare class StrategyConnectionService implements TStrategy {
         exchangeName: ExchangeName;
         frameName: FrameName;
     }) => Promise<ISignalRow | null>;
+    /**
+     * Returns the percentage of the position currently held (not closed).
+     * 100 = nothing has been closed (full position), 0 = fully closed.
+     * Correctly accounts for DCA entries between partial closes.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise<number> - held percentage (0–100)
+     */
+    getTotalPercentClosed: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<number | null>;
+    /**
+     * Returns the cost basis in dollars of the position currently held (not closed).
+     * Correctly accounts for DCA entries between partial closes.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise<number> - held cost basis in dollars
+     */
+    getTotalCostClosed: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<number | null>;
     /**
      * Retrieves the currently active scheduled signal for the strategy.
      * If no scheduled signal exists, returns null.
@@ -21854,4 +22113,4 @@ declare const getTotalClosed: (signal: ISignalRow) => {
     remainingCostBasis: number;
 };
 
-export { ActionBase, type ActivateScheduledCommit, type ActivateScheduledCommitNotification, type ActivePingContract, type AverageBuyCommit, Backtest, type BacktestStatisticsModel, Breakeven, type BreakevenAvailableNotification, type BreakevenCommit, type BreakevenCommitNotification, type BreakevenContract, type BreakevenData, Cache, type CancelScheduledCommit, type CandleData, type CandleInterval, type ClosePendingCommit, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IActionSchema, type IActivateScheduledCommitRow, type IAggregatedTradeData, type IBidData, type IBreakevenCommitRow, type ICandleData, type ICommitRow, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type ILog, type ILogEntry, type ILogger, type IMarkdownDumpOptions, type INotificationUtils, type IOrderBookData, type IPartialLossCommitRow, type IPartialProfitCommitRow, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicAction, type IPublicCandleData, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskSignalRow, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingParams, type ISizingParamsATR, type ISizingParamsFixedPercentage, type ISizingParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStorageSignalRow, type IStorageUtils, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IStrategyTickResultWaiting, type ITrailingStopCommitRow, type ITrailingTakeCommitRow, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveStatisticsModel, Log, type LogData, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MeasureData, MethodContextService, type MetricStats, Notification, NotificationBacktest, type NotificationData, NotificationLive, type NotificationModel, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossAvailableNotification, type PartialLossCommit, type PartialLossCommitNotification, type PartialLossContract, type PartialProfitAvailableNotification, type PartialProfitCommit, type PartialProfitCommitNotification, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistLogAdapter, PersistMeasureAdapter, PersistNotificationAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PersistStorageAdapter, PositionSize, type ProgressBacktestContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, Storage, StorageBacktest, type StorageData, StorageLive, Strategy, type StrategyActionType, type StrategyCancelReason, type StrategyCloseReason, type StrategyCommitContract, type StrategyEvent, type StrategyStatisticsModel, type TLogCtor, type TMarkdownBase, type TNotificationUtilsCtor, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TStorageUtilsCtor, type TickEvent, type TrailingStopCommit, type TrailingStopCommitNotification, type TrailingTakeCommit, type TrailingTakeCommitNotification, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, alignToInterval, checkCandles, commitActivateScheduled, commitAverageBuy, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialProfit, commitTrailingStop, commitTrailingTake, dumpMessages, emitters, formatPrice, formatQuantity, get, getActionSchema, getAggregatedTrades, getAveragePrice, getBacktestTimeframe, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getEffectivePriceOpen, getExchangeSchema, getFrameSchema, getMode, getNextCandles, getOrderBook, getRawCandles, getRiskSchema, getSizingSchema, getStrategySchema, getSymbol, getTimestamp, getTotalClosed, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenStrategyCommit, listenStrategyCommitOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, roundTicks, set, setColumns, setConfig, setLogger, shutdown, stopStrategy, toProfitLossDto, validate, waitForCandle, warmCandles };
+export { ActionBase, type ActivateScheduledCommit, type ActivateScheduledCommitNotification, type ActivePingContract, type AverageBuyCommit, Backtest, type BacktestStatisticsModel, Breakeven, type BreakevenAvailableNotification, type BreakevenCommit, type BreakevenCommitNotification, type BreakevenContract, type BreakevenData, Cache, type CancelScheduledCommit, type CandleData, type CandleInterval, type ClosePendingCommit, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IActionSchema, type IActivateScheduledCommitRow, type IAggregatedTradeData, type IBidData, type IBreakevenCommitRow, type ICandleData, type ICommitRow, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type ILog, type ILogEntry, type ILogger, type IMarkdownDumpOptions, type INotificationUtils, type IOrderBookData, type IPartialLossCommitRow, type IPartialProfitCommitRow, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicAction, type IPublicCandleData, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskSignalRow, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingParams, type ISizingParamsATR, type ISizingParamsFixedPercentage, type ISizingParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStorageSignalRow, type IStorageUtils, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IStrategyTickResultWaiting, type ITrailingStopCommitRow, type ITrailingTakeCommitRow, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveStatisticsModel, Log, type LogData, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MeasureData, MethodContextService, type MetricStats, Notification, NotificationBacktest, type NotificationData, NotificationLive, type NotificationModel, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossAvailableNotification, type PartialLossCommit, type PartialLossCommitNotification, type PartialLossContract, type PartialProfitAvailableNotification, type PartialProfitCommit, type PartialProfitCommitNotification, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistLogAdapter, PersistMeasureAdapter, PersistNotificationAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PersistStorageAdapter, PositionSize, type ProgressBacktestContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenedNotification, type SignalScheduledNotification, Storage, StorageBacktest, type StorageData, StorageLive, Strategy, type StrategyActionType, type StrategyCancelReason, type StrategyCloseReason, type StrategyCommitContract, type StrategyEvent, type StrategyStatisticsModel, type TLogCtor, type TMarkdownBase, type TNotificationUtilsCtor, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TStorageUtilsCtor, type TickEvent, type TrailingStopCommit, type TrailingStopCommitNotification, type TrailingTakeCommit, type TrailingTakeCommitNotification, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, alignToInterval, checkCandles, commitActivateScheduled, commitAverageBuy, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialProfit, commitTrailingStop, commitTrailingTake, dumpMessages, emitters, formatPrice, formatQuantity, get, getActionSchema, getAggregatedTrades, getAveragePrice, getBacktestTimeframe, getBreakeven, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getEffectivePriceOpen, getExchangeSchema, getFrameSchema, getMode, getNextCandles, getOrderBook, getPendingSignal, getRawCandles, getRiskSchema, getScheduledSignal, getSizingSchema, getStrategySchema, getSymbol, getTimestamp, getTotalClosed, getTotalCostClosed, getTotalPercentClosed, getWalkerSchema, hasTradeContext, backtest as lib, listExchangeSchema, listFrameSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenStrategyCommit, listenStrategyCommitOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, roundTicks, set, setColumns, setConfig, setLogger, shutdown, stopStrategy, toProfitLossDto, validate, waitForCandle, warmCandles };

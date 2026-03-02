@@ -13,6 +13,11 @@ const TRAILING_PROFIT_METHOD_NAME = "strategy.commitTrailingTake";
 const BREAKEVEN_METHOD_NAME = "strategy.commitBreakeven";
 const ACTIVATE_SCHEDULED_METHOD_NAME = "strategy.commitActivateScheduled";
 const AVERAGE_BUY_METHOD_NAME = "strategy.commitAverageBuy";
+const GET_TOTAL_PERCENT_CLOSED_METHOD_NAME = "strategy.getTotalPercentClosed";
+const GET_TOTAL_COST_CLOSED_METHOD_NAME = "strategy.getTotalCostClosed";
+const GET_PENDING_SIGNAL_METHOD_NAME = "strategy.getPendingSignal";
+const GET_SCHEDULED_SIGNAL_METHOD_NAME = "strategy.getScheduledSignal";
+const GET_BREAKEVEN_METHOD_NAME = "strategy.getBreakeven";
 
 /**
  * Cancels the scheduled signal without stopping the strategy.
@@ -479,6 +484,204 @@ export async function commitAverageBuy(symbol: string): Promise<boolean> {
   const { exchangeName, frameName, strategyName } =
     backtest.methodContextService.context;
   return await backtest.strategyCoreService.averageBuy(
+    isBacktest,
+    symbol,
+    currentPrice,
+    { exchangeName, frameName, strategyName }
+  );
+}
+
+/**
+ * Returns the percentage of the position currently held (not closed).
+ * 100 = nothing has been closed (full position), 0 = fully closed.
+ * Correctly accounts for DCA entries between partial closes.
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise<number> - held percentage (0–100)
+ *
+ * @example
+ * ```typescript
+ * import { getTotalPercentClosed } from "backtest-kit";
+ *
+ * const heldPct = await getTotalPercentClosed("BTCUSDT");
+ * console.log(`Holding ${heldPct}% of position`);
+ * ```
+ */
+export async function getTotalPercentClosed(symbol: string): Promise<number> {
+  backtest.loggerService.info(GET_TOTAL_PERCENT_CLOSED_METHOD_NAME, {
+    symbol,
+  });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("getTotalPercentClosed requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("getTotalPercentClosed requires a method context");
+  }
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } =
+    backtest.methodContextService.context;
+  return await backtest.strategyCoreService.getTotalPercentClosed(
+    isBacktest,
+    symbol,
+    { exchangeName, frameName, strategyName }
+  );
+}
+
+/**
+ * Returns the cost basis in dollars of the position currently held (not closed).
+ * Correctly accounts for DCA entries between partial closes.
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise<number> - held cost basis in dollars
+ *
+ * @example
+ * ```typescript
+ * import { getTotalCostClosed } from "backtest-kit";
+ *
+ * const heldCost = await getTotalCostClosed("BTCUSDT");
+ * console.log(`Holding $${heldCost} of position`);
+ * ```
+ */
+export async function getTotalCostClosed(symbol: string): Promise<number> {
+  backtest.loggerService.info(GET_TOTAL_COST_CLOSED_METHOD_NAME, {
+    symbol,
+  });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("getTotalCostClosed requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("getTotalCostClosed requires a method context");
+  }
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } =
+    backtest.methodContextService.context;
+  return await backtest.strategyCoreService.getTotalCostClosed(
+    isBacktest,
+    symbol,
+    { exchangeName, frameName, strategyName }
+  );
+}
+
+/**
+ * Returns the currently active pending signal for the strategy.
+ * If no active signal exists, returns null.
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise resolving to pending signal or null
+ *
+ * @example
+ * ```typescript
+ * import { getPendingSignal } from "backtest-kit";
+ *
+ * const pending = await getPendingSignal("BTCUSDT");
+ * if (pending) {
+ *   console.log("Active signal:", pending.id);
+ * }
+ * ```
+ */
+export async function getPendingSignal(symbol: string) {
+  backtest.loggerService.info(GET_PENDING_SIGNAL_METHOD_NAME, {
+    symbol,
+  });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("getPendingSignal requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("getPendingSignal requires a method context");
+  }
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } =
+    backtest.methodContextService.context;
+  return await backtest.strategyCoreService.getPendingSignal(
+    isBacktest,
+    symbol,
+    { exchangeName, frameName, strategyName }
+  );
+}
+
+/**
+ * Returns the currently active scheduled signal for the strategy.
+ * If no scheduled signal exists, returns null.
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise resolving to scheduled signal or null
+ *
+ * @example
+ * ```typescript
+ * import { getScheduledSignal } from "backtest-kit";
+ *
+ * const scheduled = await getScheduledSignal("BTCUSDT");
+ * if (scheduled) {
+ *   console.log("Scheduled signal:", scheduled.id);
+ * }
+ * ```
+ */
+export async function getScheduledSignal(symbol: string) {
+  backtest.loggerService.info(GET_SCHEDULED_SIGNAL_METHOD_NAME, {
+    symbol,
+  });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("getScheduledSignal requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("getScheduledSignal requires a method context");
+  }
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } =
+    backtest.methodContextService.context;
+  return await backtest.strategyCoreService.getScheduledSignal(
+    isBacktest,
+    symbol,
+    { exchangeName, frameName, strategyName }
+  );
+}
+
+/**
+ * Checks if breakeven threshold has been reached for the current pending signal.
+ *
+ * Returns true if price has moved far enough in profit direction to cover
+ * transaction costs. Threshold is calculated as: (CC_PERCENT_SLIPPAGE + CC_PERCENT_FEE) * 2
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @param currentPrice - Current market price to check against threshold
+ * @returns Promise<boolean> - true if breakeven threshold reached, false otherwise
+ *
+ * @example
+ * ```typescript
+ * import { getBreakeven, getAveragePrice } from "backtest-kit";
+ *
+ * const price = await getAveragePrice("BTCUSDT");
+ * const canBreakeven = await getBreakeven("BTCUSDT", price);
+ * if (canBreakeven) {
+ *   console.log("Breakeven available");
+ * }
+ * ```
+ */
+export async function getBreakeven(symbol: string, currentPrice: number): Promise<boolean> {
+  backtest.loggerService.info(GET_BREAKEVEN_METHOD_NAME, {
+    symbol,
+    currentPrice,
+  });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("getBreakeven requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("getBreakeven requires a method context");
+  }
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } =
+    backtest.methodContextService.context;
+  return await backtest.strategyCoreService.getBreakeven(
     isBacktest,
     symbol,
     currentPrice,

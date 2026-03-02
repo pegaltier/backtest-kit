@@ -20,6 +20,11 @@ export {
   commitBreakeven,
   commitActivateScheduled,
   commitAverageBuy,
+  getPendingSignal,
+  getScheduledSignal,
+  getBreakeven,
+  getTotalPercentClosed,
+  getTotalCostClosed,
 } from "./function/strategy";
 export { stopStrategy } from "./function/control";
 export { shutdown } from "./function/shutdown.function";
