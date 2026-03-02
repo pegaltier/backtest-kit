@@ -21773,66 +21773,33 @@ declare const backtest: {
  * Calculates profit/loss for a closed signal with slippage and fees.
  *
  * For signals with partial closes:
- * - Calculates weighted PNL: Σ(percent_i × pnl_i) for each partial + (remaining% × final_pnl)
- * - Each partial close has its own slippage
- * - Open fee is charged once; close fees are proportional to each partial's size
- * - Total fees = CC_PERCENT_FEE (open) + Σ CC_PERCENT_FEE × (partial% / 100) × (closeWithSlip / openWithSlip)
+ * - Weights are calculated by ACTUAL DOLLAR VALUE of each partial relative to total invested,
+ *   not by raw percent. This correctly handles DCA entries that occur after partial closes.
  *
- * Formula breakdown:
- * 1. Apply slippage to open/close prices (worse execution)
- *    - LONG: buy higher (+slippage), sell lower (-slippage)
- *    - SHORT: sell lower (-slippage), buy higher (+slippage)
- * 2. Calculate raw PNL percentage
- *    - LONG: ((closePrice - openPrice) / openPrice) * 100
- *    - SHORT: ((openPrice - closePrice) / openPrice) * 100
- * 3. Subtract total fees: open fee + close fee adjusted for slippage-affected execution price
+ * Weight formula:
+ *   partialDollarValue = (partial.percent / 100) * (partial.entryCountAtClose * $100)
+ *   weight = partialDollarValue / totalInvested
+ *   totalInvested = _entry.length * $100
+ *
+ * Fee structure:
+ *   - Open fee: CC_PERCENT_FEE (charged once)
+ *   - Close fee per partial: CC_PERCENT_FEE × weight × (closeWithSlip / openWithSlip)
  *
  * @param signal - Closed signal with position details and optional partial history
  * @param priceClose - Actual close price at final exit
  * @returns PNL data with percentage and prices
- *
- * @example
- * ```typescript
- * // Signal without partial closes
- * const pnl = toProfitLossDto(
- *   {
- *     position: "long",
- *     priceOpen: 100,
- *   },
- *   110 // close at +10%
- * );
- * console.log(pnl.pnlPercentage); // ~9.6% (after slippage and fees)
- *
- * // Signal with partial closes
- * const pnlPartial = toProfitLossDto(
- *   {
- *     position: "long",
- *     priceOpen: 100,
- *     _partial: [
- *       { type: "profit", percent: 30, price: 120 }, // +20% on 30%
- *       { type: "profit", percent: 40, price: 115 }, // +15% on 40%
- *     ],
- *   },
- *   105 // final close at +5% for remaining 30%
- * );
- * // Weighted PNL = 30% × 20% + 40% × 15% + 30% × 5% = 6% + 6% + 1.5% = 13.5% (before fees)
- * ```
  */
 declare const toProfitLossDto: (signal: ISignalRow, priceClose: number) => IStrategyPnL;
 
 /**
  * Returns the effective entry price for price calculations.
  *
- * When the _entry array exists and has at least one element, returns
- * the simple arithmetic mean of all entry prices (DCA average).
- * Otherwise returns the original signal.priceOpen.
+ * Uses harmonic mean (correct for fixed-dollar DCA: $100 per entry).
+ * When partial closes exist, uses the last partial's effectivePrice snapshot
+ * + any new DCA entries added after that partial, weighted by actual coin quantities.
  *
- * This mirrors the _trailingPriceStopLoss pattern: original price is preserved
- * in signal.priceOpen (for identity/tracking), while calculations use the
- * effective averaged price returned by this function.
- *
- * @param signal - Signal row (ISignalRow or IScheduledSignalRow)
- * @returns Effective entry price for distance and PNL calculations
+ * @param signal - Signal row
+ * @returns Effective entry price for PNL calculations
  */
 declare const getEffectivePriceOpen: (signal: ISignalRow) => number;
 

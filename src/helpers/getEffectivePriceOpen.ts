@@ -3,16 +3,12 @@ import { ISignalRow } from "../interfaces/Strategy.interface";
 /**
  * Returns the effective entry price for price calculations.
  *
- * When the _entry array exists and has at least one element, returns
- * the simple arithmetic mean of all entry prices (DCA average).
- * Otherwise returns the original signal.priceOpen.
+ * Uses harmonic mean (correct for fixed-dollar DCA: $100 per entry).
+ * When partial closes exist, uses the last partial's effectivePrice snapshot
+ * + any new DCA entries added after that partial, weighted by actual coin quantities.
  *
- * This mirrors the _trailingPriceStopLoss pattern: original price is preserved
- * in signal.priceOpen (for identity/tracking), while calculations use the
- * effective averaged price returned by this function.
- *
- * @param signal - Signal row (ISignalRow or IScheduledSignalRow)
- * @returns Effective entry price for distance and PNL calculations
+ * @param signal - Signal row
+ * @returns Effective entry price for PNL calculations
  */
 export const getEffectivePriceOpen = (signal: ISignalRow): number => {
   if (!signal._entry || signal._entry.length === 0) return signal.priceOpen;
@@ -20,33 +16,36 @@ export const getEffectivePriceOpen = (signal: ISignalRow): number => {
   const entries = signal._entry;
   const partials = signal._partial ?? [];
 
-  // Базовый случай: нет partial exits — чистое гармоническое среднее
+  // No partial exits — pure harmonic mean of all entries
   if (partials.length === 0) {
-    return harmonicMean(entries.map(e => e.price));
+    return harmonicMean(entries.map((e) => e.price));
   }
 
-  // Берём последний partial — он содержит актуальный effectivePrice и entryCount
+  // Use the last partial snapshot:
+  // - effectivePrice = harmonic average of position at that moment
+  // - entryCountAtClose = how many _entry records existed at that moment
   const lastPartial = partials[partials.length - 1];
   const totalClosedPercent = partials.reduce((sum, p) => sum + p.percent, 0);
-  const remainingPercent = (100 - totalClosedPercent) / 100; // доля [0..1]
+  const remainingPercent = (100 - totalClosedPercent) / 100; // fraction [0..1]
 
-  // Новые DCA-входы после последнего partial
+  // New DCA entries added AFTER the last partial close
   const newEntries = entries.slice(lastPartial.entryCountAtClose);
 
-  // Количество монет, оставшихся от "старой" позиции:
-  // totalCoinsAtLastPartial = entryCountAtClose * 100 / effectivePrice
-  // remainingOldCoins = remainingPercent * totalCoinsAtLastPartial
+  // Coins remaining from "old" position:
+  // totalCoins at last partial = entryCountAtClose * $100 / effectivePrice
+  // remainingOldCoins = remainingPercent * totalCoins
   const oldCoins =
-    remainingPercent * (lastPartial.entryCountAtClose * 100) / lastPartial.effectivePrice;
+    (remainingPercent * lastPartial.entryCountAtClose * 100) /
+    lastPartial.effectivePrice;
 
-  // Монеты от новых DCA
+  // Coins from new DCA entries (each costs $100)
   const newCoins = newEntries.reduce((sum, e) => sum + 100 / e.price, 0);
 
   const totalCoins = oldCoins + newCoins;
   if (totalCoins === 0) return lastPartial.effectivePrice;
 
-  // Стоимость: старая часть + новые $100 × N входов
-  const totalCost = oldCoins * lastPartial.effectivePrice + newEntries.length * 100;
+  const totalCost =
+    oldCoins * lastPartial.effectivePrice + newEntries.length * 100;
 
   return totalCost / totalCoins;
 };

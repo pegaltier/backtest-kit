@@ -6,50 +6,21 @@ import { getEffectivePriceOpen } from "./getEffectivePriceOpen";
  * Calculates profit/loss for a closed signal with slippage and fees.
  *
  * For signals with partial closes:
- * - Calculates weighted PNL: Σ(percent_i × pnl_i) for each partial + (remaining% × final_pnl)
- * - Each partial close has its own slippage
- * - Open fee is charged once; close fees are proportional to each partial's size
- * - Total fees = CC_PERCENT_FEE (open) + Σ CC_PERCENT_FEE × (partial% / 100) × (closeWithSlip / openWithSlip)
+ * - Weights are calculated by ACTUAL DOLLAR VALUE of each partial relative to total invested,
+ *   not by raw percent. This correctly handles DCA entries that occur after partial closes.
  *
- * Formula breakdown:
- * 1. Apply slippage to open/close prices (worse execution)
- *    - LONG: buy higher (+slippage), sell lower (-slippage)
- *    - SHORT: sell lower (-slippage), buy higher (+slippage)
- * 2. Calculate raw PNL percentage
- *    - LONG: ((closePrice - openPrice) / openPrice) * 100
- *    - SHORT: ((openPrice - closePrice) / openPrice) * 100
- * 3. Subtract total fees: open fee + close fee adjusted for slippage-affected execution price
+ * Weight formula:
+ *   partialDollarValue = (partial.percent / 100) * (partial.entryCountAtClose * $100)
+ *   weight = partialDollarValue / totalInvested
+ *   totalInvested = _entry.length * $100
+ *
+ * Fee structure:
+ *   - Open fee: CC_PERCENT_FEE (charged once)
+ *   - Close fee per partial: CC_PERCENT_FEE × weight × (closeWithSlip / openWithSlip)
  *
  * @param signal - Closed signal with position details and optional partial history
  * @param priceClose - Actual close price at final exit
  * @returns PNL data with percentage and prices
- *
- * @example
- * ```typescript
- * // Signal without partial closes
- * const pnl = toProfitLossDto(
- *   {
- *     position: "long",
- *     priceOpen: 100,
- *   },
- *   110 // close at +10%
- * );
- * console.log(pnl.pnlPercentage); // ~9.6% (after slippage and fees)
- *
- * // Signal with partial closes
- * const pnlPartial = toProfitLossDto(
- *   {
- *     position: "long",
- *     priceOpen: 100,
- *     _partial: [
- *       { type: "profit", percent: 30, price: 120 }, // +20% on 30%
- *       { type: "profit", percent: 40, price: 115 }, // +15% on 40%
- *     ],
- *   },
- *   105 // final close at +5% for remaining 30%
- * );
- * // Weighted PNL = 30% × 20% + 40% × 15% + 30% × 5% = 6% + 6% + 1.5% = 13.5% (before fees)
- * ```
  */
 export const toProfitLossDto = (
   signal: ISignalRow,
@@ -64,13 +35,18 @@ export const toProfitLossDto = (
     // Open fee is paid once for the whole position
     let totalFees = GLOBAL_CONFIG.CC_PERCENT_FEE;
 
+    // Total invested capital = number of DCA entries × $100 per entry
+    const totalInvested = signal._entry ? signal._entry.length * 100 : 100;
+
     // Calculate PNL for each partial close
     for (const partial of signal._partial) {
-      const partialPercent = partial.percent;
+      // Real dollar value of this partial at the moment it was closed
+      const partialDollarValue = (partial.percent / 100) * (partial.entryCountAtClose * 100);
 
-      // Use the effective entry price snapshot captured at the time of this partial close.
-      // This correctly handles DCA averaging that occurred before this partial exit,
-      // even if more averaging happened after.
+      // Weight relative to total invested capital (handles DCA after partial)
+      const weight = partialDollarValue / totalInvested;
+
+      // Use the effective entry price snapshot captured at the time of this partial close
       const priceOpenWithSlippage =
         signal.position === "long"
           ? partial.effectivePrice * (1 + GLOBAL_CONFIG.CC_PERCENT_SLIPPAGE / 100)
@@ -81,29 +57,37 @@ export const toProfitLossDto = (
           ? partial.price * (1 - GLOBAL_CONFIG.CC_PERCENT_SLIPPAGE / 100)
           : partial.price * (1 + GLOBAL_CONFIG.CC_PERCENT_SLIPPAGE / 100);
 
-      // Calculate PNL for this partial
       const partialPnl =
         signal.position === "long"
           ? ((priceCloseWithSlippage - priceOpenWithSlippage) / priceOpenWithSlippage) * 100
           : ((priceOpenWithSlippage - priceCloseWithSlippage) / priceOpenWithSlippage) * 100;
 
-      // Weight by percentage of position closed
-      totalWeightedPnl += (partialPercent / 100) * partialPnl;
+      totalWeightedPnl += weight * partialPnl;
 
-      // Close fee is proportional to the size of this partial and adjusted for slippage
-      totalFees += GLOBAL_CONFIG.CC_PERCENT_FEE * (partialPercent / 100) * (priceCloseWithSlippage / priceOpenWithSlippage);
+      // Close fee proportional to real dollar weight
+      totalFees +=
+        GLOBAL_CONFIG.CC_PERCENT_FEE *
+        weight *
+        (priceCloseWithSlippage / priceOpenWithSlippage);
     }
 
-    // Calculate PNL for remaining position (if any)
-    // Compute totalClosed from _partial array
-    const totalClosed = signal._partial.reduce((sum, p) => sum + p.percent, 0);
-    if (totalClosed > 100) {
-      throw new Error(`Partial closes exceed 100%: ${totalClosed}% (signal id: ${signal.id})`);
+    // Calculate dollar value already closed across all partials
+    const closedDollarValue = signal._partial.reduce(
+      (sum, p) => sum + (p.percent / 100) * (p.entryCountAtClose * 100),
+      0
+    );
+
+    if (closedDollarValue > totalInvested + 0.001) {
+      throw new Error(
+        `Partial closes dollar value (${closedDollarValue}) exceeds total invested (${totalInvested}) — signal id: ${signal.id}`
+      );
     }
-    const remainingPercent = 100 - totalClosed;
-    if (remainingPercent > 0) {
-      // For the remaining position use the current effective price — this reflects all DCA
-      // entries including any that were added after the last partial close.
+
+    const remainingDollarValue = totalInvested - closedDollarValue;
+    const remainingWeight = remainingDollarValue / totalInvested;
+
+    if (remainingWeight > 0) {
+      // For remaining position use current effective price (reflects all DCA including post-partial)
       const remainingOpenWithSlippage =
         signal.position === "long"
           ? priceOpen * (1 + GLOBAL_CONFIG.CC_PERCENT_SLIPPAGE / 100)
@@ -114,21 +98,19 @@ export const toProfitLossDto = (
           ? priceClose * (1 - GLOBAL_CONFIG.CC_PERCENT_SLIPPAGE / 100)
           : priceClose * (1 + GLOBAL_CONFIG.CC_PERCENT_SLIPPAGE / 100);
 
-      // Calculate PNL for remaining
       const remainingPnl =
         signal.position === "long"
           ? ((priceCloseWithSlippage - remainingOpenWithSlippage) / remainingOpenWithSlippage) * 100
           : ((remainingOpenWithSlippage - priceCloseWithSlippage) / remainingOpenWithSlippage) * 100;
 
-      // Weight by remaining percentage
-      totalWeightedPnl += (remainingPercent / 100) * remainingPnl;
+      totalWeightedPnl += remainingWeight * remainingPnl;
 
-      // Close fee is proportional to the remaining size and adjusted for slippage
-      totalFees += GLOBAL_CONFIG.CC_PERCENT_FEE * (remainingPercent / 100) * (priceCloseWithSlippage / remainingOpenWithSlippage);
+      totalFees +=
+        GLOBAL_CONFIG.CC_PERCENT_FEE *
+        remainingWeight *
+        (priceCloseWithSlippage / remainingOpenWithSlippage);
     }
 
-    // Subtract total fees from weighted PNL
-    // totalFees = CC_PERCENT_FEE (open) + Σ CC_PERCENT_FEE × (partialPercent/100) × (closeWithSlip/openWithSlip)
     const pnlPercentage = totalWeightedPnl - totalFees;
 
     return {
@@ -143,35 +125,27 @@ export const toProfitLossDto = (
   let priceCloseWithSlippage: number;
 
   if (signal.position === "long") {
-    // LONG: покупаем дороже, продаем дешевле
     priceOpenWithSlippage = priceOpen * (1 + GLOBAL_CONFIG.CC_PERCENT_SLIPPAGE / 100);
     priceCloseWithSlippage = priceClose * (1 - GLOBAL_CONFIG.CC_PERCENT_SLIPPAGE / 100);
   } else {
-    // SHORT: продаем дешевле, покупаем дороже
     priceOpenWithSlippage = priceOpen * (1 - GLOBAL_CONFIG.CC_PERCENT_SLIPPAGE / 100);
     priceCloseWithSlippage = priceClose * (1 + GLOBAL_CONFIG.CC_PERCENT_SLIPPAGE / 100);
   }
 
-  // Открытие: комиссия от цены входа; закрытие: комиссия от фактической цены выхода (с учётом slippage)
-  const totalFee = GLOBAL_CONFIG.CC_PERCENT_FEE * (1 + priceCloseWithSlippage / priceOpenWithSlippage);
+  const totalFee =
+    GLOBAL_CONFIG.CC_PERCENT_FEE *
+    (1 + priceCloseWithSlippage / priceOpenWithSlippage);
 
   let pnlPercentage: number;
 
   if (signal.position === "long") {
-    // LONG: прибыль при росте цены
     pnlPercentage =
-      ((priceCloseWithSlippage - priceOpenWithSlippage) /
-        priceOpenWithSlippage) *
-      100;
+      ((priceCloseWithSlippage - priceOpenWithSlippage) / priceOpenWithSlippage) * 100;
   } else {
-    // SHORT: прибыль при падении цены
     pnlPercentage =
-      ((priceOpenWithSlippage - priceCloseWithSlippage) /
-        priceOpenWithSlippage) *
-      100;
+      ((priceOpenWithSlippage - priceCloseWithSlippage) / priceOpenWithSlippage) * 100;
   }
 
-  // Вычитаем комиссии
   pnlPercentage -= totalFee;
 
   return {
