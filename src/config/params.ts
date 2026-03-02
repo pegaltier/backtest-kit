@@ -185,6 +185,15 @@ export const GLOBAL_CONFIG = {
    * Default: true (mutex locking enabled for candle fetching)
    */
   CC_ENABLE_CANDLE_FETCH_MUTEX: true,
+
+  /**
+   * Enables DCA (Dollar-Cost Averaging) logic even if antirecord is not broken.
+   * Allows to commitAverageBuy if currentPrice is not the lowest price since entry, but still lower than priceOpen.
+   * This can help improve average entry price in cases where price has rebounded after entry but is still below priceOpen, without waiting for a new lower price.
+   *
+   * Default: true (DCA logic enabled everywhere, not just when antirecord is broken)
+   */
+  CC_ENABLE_DCA_EVERYWHERE: false,
 };
 
 export const DEFAULT_CONFIG = Object.freeze({...GLOBAL_CONFIG});

@@ -1529,7 +1529,7 @@ const AVERAGE_BUY_FN = (
 
   if (signal.position === "long") {
     // LONG: averaging down = currentPrice must be strictly lower than last entry
-    if (currentPrice >= lastEntry.price) {
+    if (!GLOBAL_CONFIG.CC_ENABLE_DCA_EVERYWHERE && currentPrice >= lastEntry.price) {
       self.params.logger.debug("AVERAGE_BUY_FN: rejected — currentPrice >= last entry (LONG)", {
         signalId: signal.id,
         position: signal.position,
@@ -1541,7 +1541,7 @@ const AVERAGE_BUY_FN = (
     }
   } else {
     // SHORT: averaging down = currentPrice must be strictly higher than last entry
-    if (currentPrice <= lastEntry.price) {
+    if (!GLOBAL_CONFIG.CC_ENABLE_DCA_EVERYWHERE && currentPrice <= lastEntry.price) {
       self.params.logger.debug("AVERAGE_BUY_FN: rejected — currentPrice <= last entry (SHORT)", {
         signalId: signal.id,
         position: signal.position,
