@@ -1,3 +1,109 @@
+# DCA-Aware Position Inspection (v3.8, 03/03/2026)
+
+> Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/3.8)
+
+
+## New position inspection API
+
+Nine new functions are now available both as standalone imports and as methods on `Backtest` / `Live`:
+
+| Function | Description |
+|---|---|
+| `getTotalPercentClosed(symbol)` | % of position still held (100 = nothing closed) |
+| `getTotalCostClosed(symbol)` | Dollar cost-basis still held after partials |
+| `getPositionAveragePrice(symbol)` | Harmonic-mean DCA entry price |
+| `getPositionInvestedCount(symbol)` | Number of DCA entries made |
+| `getPositionInvestedCost(symbol)` | Total invested dollars (entries × $100) |
+| `getPositionPnlPercent(symbol, currentPrice)` | Unrealized PNL % at current price |
+| `getPositionPnlCost(symbol, currentPrice)` | Unrealized PNL in dollars at current price |
+| `getPositionLevels(symbol)` | Array of all DCA entry prices (`[priceOpen, ...averageBuy prices]`) |
+| `getPositionPartials(symbol)` | Array of all partial close records for the current position |
+
+All functions return `null` when no pending signal exists. `getPositionLevels` returns a single-element array `[priceOpen]` when no DCA entries have been made. `getPositionPartials` returns an empty array `[]` when no partial closes have been executed yet.
+
+```typescript
+import { getPositionLevels, getPositionPartials } from "backtest-kit";
+
+// Inspect DCA ladder
+const levels = await getPositionLevels("BTCUSDT");
+// No DCA:   [43000]
+// One DCA:  [43000, 42000]
+// Two DCA:  [43000, 42000, 41500]
+
+// Inspect partial close history
+const partials = await getPositionPartials("BTCUSDT");
+// [{ type: "profit", percent: 30, price: 44000, effectivePrice: 43000, entryCountAtClose: 1 }, ...]
+```
+
+## New dollar-amount partial-close API
+
+`commitPartialProfitCost` and `commitPartialLossCost` accept a dollar amount instead of a percentage, removing the need to manually compute the equivalent percent. The library converts the dollar amount using `getPositionInvestedCost` internally.
+
+```typescript
+import { commitPartialProfitCost, commitPartialLossCost } from "backtest-kit";
+
+// Close $150 worth of position at profit
+await commitPartialProfitCost("BTCUSDT", 150);
+
+// Cut $100 of position at loss
+await commitPartialLossCost("BTCUSDT", 100);
+```
+
+## New utility exports
+
+| Export | Description |
+|---|---|
+| `investedCostToPercent(dollarAmount, investedCost)` | Convert a dollar amount to a close percentage |
+| `percentDiff(a, b)` | Percentage difference between two numbers |
+| `percentValue(yesterday, today)` | Percentage change from one value to another |
+
+Helper internals are now also publicly exported for advanced use: `toProfitLossDto`, `getEffectivePriceOpen`, `getTotalClosed`.
+
+## Reworked cost-basis & PNL algorithm
+
+### `getEffectivePriceOpen` — harmonic mean + partial replay
+
+The effective entry price now uses the **harmonic mean** of all DCA entry prices (correct for fixed-dollar DCA). When partial closes are present the function replays the cost-basis sequence to compute the remaining position's effective price after each close, so DCA entries added *after* a partial are treated correctly.
+
+### `toProfitLossDto` — dollar-weight PNL
+
+PNL weighting is now based on the **actual dollar value** of each partial relative to `totalInvested`. Previously weights were the raw close percentage, which gave wrong results when `commitAverageBuy` was called between partial closes.
+
+Cost-basis replay per partial:
+```
+costBasis = 0
+for each partial[i]:
+  costBasis += (entryCountAtClose[i] - entryCountAtClose[i-1]) × $100
+  partialDollarValue[i] = (percent[i] / 100) × costBasis
+  weight[i]             = partialDollarValue[i] / totalInvested
+  costBasis            *= (1 - percent[i] / 100)
+```
+
+Each partial's PNL is now computed against the **effective entry price snapshot** (`effectivePrice`) captured at the moment `commitPartialProfit/Loss` was called.
+
+## Data model changes
+
+`_partial` entries now carry two additional fields:
+
+| Field | Type | Purpose |
+|---|---|---|
+| `entryCountAtClose` | `number` | Number of `_entry` items at the time of this partial — enables cost-basis replay |
+| `effectivePrice` | `number` | DCA-averaged entry price at the time of this partial — used for PNL calculation |
+| `debugTimestamp` | `number?` | Execution-context timestamp for debugging |
+
+`_entry` items now carry an optional `debugTimestamp` field.
+
+## New config flag: `CC_ENABLE_DCA_EVERYWHERE`
+
+`setConfig({ CC_ENABLE_DCA_EVERYWHERE: true })` removes the strict "must be a new low/high" requirement for `commitAverageBuy`. When enabled the engine accepts any `commitAverageBuy` call regardless of whether the current price breaks the previous entry record. Defaults to `false` (original strict behavior preserved).
+
+## Frontend: AverageBuyCommitView
+
+New `useAverageBuyCommitView` hook and accompanying views (`Candle1mView`, `Candle15mView`, `Candle1hView`) display a live DCA commit form with multi-timeframe candle charts. The hook integrates with `LayoutService` and the notification system to show the current DCA state during live trading.
+
+
+
+
 # Measure Cache & Synchronized Timestamps (v3.7, 02/03/2026)
 
 > Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/3.7)
