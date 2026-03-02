@@ -1703,3 +1703,250 @@ test("DCA BACKTEST: partialProfit × 3 consecutive → TP no DCA (LONG)", async 
 
   pass(`DCA-9: pp1=${pp1Executed}, pp2=${pp2Executed}, pp3=${pp3Executed}, totalEntries=${ce.totalEntries}, effectivePriceOpen=${ce.priceOpen?.toFixed(2)}`);
 });
+
+
+/**
+ * DCA ТЕСТ #10: SD scenario — profit→DCA→DCA→loss→DCA→profit→DCA→TP (LONG)
+ *
+ * Соответствует unit-тесту SD (spec/dca.test.mjs):
+ *   entry#1@1000, PP(30%,cnt=1)@1150, DCA@950, DCA@880,
+ *   PL(20%,cnt=3)@860, DCA@920, PP(40%,cnt=4)@1050, DCA@980, TP@1200
+ *
+ * Фазы свечей:
+ *   i=0..4:   выше 1000 — ждём (scheduled не активируется)
+ *   i=5..9:   активация: low<=1000
+ *   i=10..14: рост до 1150 → PP(30%)
+ *   i=15..19: падение до 950 → DCA#2
+ *   i=20..24: падение до 880 → DCA#3
+ *   i=25..29: падение до 860 → PL(20%)   (860 < effectivePriceOpen ~934)
+ *   i=30..34: рост до 920 → DCA#4
+ *   i=35..39: рост до 1050 → PP(40%)     (1050 > effectivePriceOpen ~929)
+ *   i=40..44: падение до 980 → DCA#5
+ *   i=45..59: TP = 1200
+ *
+ * Проверяем:
+ *   - все 5 операций выполнены в правильном порядке
+ *   - totalEntries=5 при закрытии
+ *   - effectivePriceOpen < originalPriceOpen (DCA вниз снизил среднюю)
+ *   - closeReason=take_profit
+ */
+test("DCA BACKTEST: PP→DCA→DCA→PL→DCA→PP→DCA→TP (SD scenario, LONG)", async ({ pass, fail }) => {
+  const closeEvents = [];
+
+  const startTime = new Date("2024-01-01T00:00:00Z").getTime();
+  const intervalMs = 60000;
+  const basePrice = 1000;
+  const bufferMinutes = 5;
+  const bufferStartTime = startTime - bufferMinutes * intervalMs;
+
+  let allCandles = [];
+  let signalGenerated = false;
+  let pp1Executed = false;
+  let dca1Executed = false;
+  let dca2Executed = false;
+  let plExecuted = false;
+  let dca3Executed = false;
+  let pp2Executed = false;
+  let dca4Executed = false;
+
+  // Буферные свечи выше priceOpen
+  for (let i = 0; i < bufferMinutes; i++) {
+    allCandles.push({
+      timestamp: bufferStartTime + i * intervalMs,
+      open: basePrice + 100,
+      high: basePrice + 200,
+      low: basePrice + 50,
+      close: basePrice + 100,
+      volume: 100,
+    });
+  }
+
+  addExchangeSchema({
+    exchangeName: "binance-dca-10",
+    getCandles: async (_symbol, _interval, since, limit) => {
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const existing = allCandles.find((c) => c.timestamp === timestamp);
+        if (existing) {
+          result.push(existing);
+        } else {
+          result.push({
+            timestamp,
+            open: basePrice + 100,
+            high: basePrice + 200,
+            low: basePrice + 50,
+            close: basePrice + 100,
+            volume: 100,
+          });
+        }
+      }
+      return result;
+    },
+    formatPrice: async (_symbol, p) => p.toFixed(8),
+    formatQuantity: async (_symbol, qty) => qty.toFixed(8),
+  });
+
+  addStrategySchema({
+    strategyName: "test-dca-10",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+
+      // 10 свечей на фазу — VWAP успевает стабилизироваться (5-свечное окно)
+      // Итого: 5(wait) + 10(act) + 10(1150) + 10(950) + 10(880) + 10(860) + 10(920) + 10(1050) + 10(980) + 10(TP) = 95 свечей
+      for (let i = 0; i < 95; i++) {
+        const timestamp = startTime + i * intervalMs;
+        if (i < 5) {
+          // Выше priceOpen — ждём активации
+          allCandles.push({ timestamp, open: basePrice + 100, high: basePrice + 200, low: basePrice + 50, close: basePrice + 100, volume: 100 });
+        } else if (i < 15) {
+          // Активация: low <= priceOpen
+          allCandles.push({ timestamp, open: basePrice, high: basePrice + 100, low: basePrice - 50, close: basePrice, volume: 100 });
+        } else if (i < 25) {
+          // Рост до 1150 → PP(30%)
+          const price = 1150;
+          allCandles.push({ timestamp, open: price, high: price + 30, low: price - 30, close: price, volume: 100 });
+        } else if (i < 35) {
+          // Падение до 950 → DCA#2
+          const price = 950;
+          allCandles.push({ timestamp, open: price, high: price + 30, low: price - 30, close: price, volume: 100 });
+        } else if (i < 45) {
+          // Падение до 880 → DCA#3
+          const price = 880;
+          allCandles.push({ timestamp, open: price, high: price + 30, low: price - 30, close: price, volume: 100 });
+        } else if (i < 55) {
+          // Падение до 860 → PL(20%)  (860 < effectivePriceOpen ~934)
+          const price = 860;
+          allCandles.push({ timestamp, open: price, high: price + 30, low: price - 30, close: price, volume: 100 });
+        } else if (i < 65) {
+          // Рост до 920 → DCA#4
+          const price = 920;
+          allCandles.push({ timestamp, open: price, high: price + 30, low: price - 30, close: price, volume: 100 });
+        } else if (i < 75) {
+          // Рост до 1050 → PP(40%)  (1050 > effectivePriceOpen ~929)
+          const price = 1050;
+          allCandles.push({ timestamp, open: price, high: price + 30, low: price - 30, close: price, volume: 100 });
+        } else if (i < 85) {
+          // Падение до 980 → DCA#5
+          const price = 980;
+          allCandles.push({ timestamp, open: price, high: price + 30, low: price - 30, close: price, volume: 100 });
+        } else {
+          // TP = 1200
+          const price = 1200;
+          allCandles.push({ timestamp, open: price, high: price + 50, low: price - 50, close: price, volume: 100 });
+        }
+      }
+
+      return {
+        position: "long",
+        priceOpen: basePrice,              // 1000
+        priceTakeProfit: basePrice + 200,  // 1200 (+20%)
+        priceStopLoss: basePrice - 200,    // 800 (-20%)
+        minuteEstimatedTime: 120,
+      };
+    },
+    callbacks: {
+      onActivePing: async (symbol, _data, _when, _backtest) => {
+        const currentPrice = await getAveragePrice(symbol);
+
+        // Шаг 1: PP(30%) при росте до ~1150
+        if (!pp1Executed && currentPrice >= 1130) {
+          pp1Executed = true;
+          await commitPartialProfit(symbol, 30);
+        }
+
+        // Шаг 2: DCA#2 при падении до ~950
+        if (pp1Executed && !dca1Executed && currentPrice <= 960) {
+          dca1Executed = true;
+          await commitAverageBuy(symbol);
+        }
+
+        // Шаг 3: DCA#3 при падении до ~880
+        if (dca1Executed && !dca2Executed && currentPrice <= 890) {
+          dca2Executed = true;
+          await commitAverageBuy(symbol);
+        }
+
+        // Шаг 4: PL(20%) при падении до ~860  (860 < effectivePriceOpen ~934)
+        if (dca2Executed && !plExecuted && currentPrice <= 870) {
+          plExecuted = true;
+          await commitPartialLoss(symbol, 20);
+        }
+
+        // Шаг 5: DCA#4 при росте до ~920
+        if (plExecuted && !dca3Executed && currentPrice >= 910) {
+          dca3Executed = true;
+          await commitAverageBuy(symbol);
+        }
+
+        // Шаг 6: PP(40%) при росте до ~1050  (1050 > effectivePriceOpen ~929)
+        if (dca3Executed && !pp2Executed && currentPrice >= 1030) {
+          pp2Executed = true;
+          await commitPartialProfit(symbol, 40);
+        }
+
+        // Шаг 7: DCA#5 при падении до ~980
+        if (pp2Executed && !dca4Executed && currentPrice <= 990) {
+          dca4Executed = true;
+          await commitAverageBuy(symbol);
+        }
+      },
+      onClose: (_symbol, data, _currentPrice) => {
+        closeEvents.push({
+          priceOpen: data.priceOpen,
+          originalPriceOpen: data.originalPriceOpen,
+          totalEntries: data.totalEntries,
+          closeReason: data.closeReason,
+        });
+      },
+      onCancel: (symbol, _data, currentPrice) => {
+        console.log("[DCA-10 onCancel]", { symbol, currentPrice });
+      },
+    },
+  });
+
+  addFrameSchema({
+    frameName: "60m-dca-10",
+    interval: "1m",
+    startDate: new Date("2024-01-01T00:00:00Z"),
+    endDate: new Date("2024-01-01T01:35:00Z"),  // 95 candles
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+  let errorCaught = null;
+  const unsubscribeError = listenError((error) => { errorCaught = error; awaitSubject.next(); });
+
+  Backtest.background("BTCUSDT", { strategyName: "test-dca-10", exchangeName: "binance-dca-10", frameName: "60m-dca-10" });
+
+  await awaitSubject.toPromise();
+  unsubscribeError();
+
+  if (errorCaught) { fail(`Error: ${errorCaught.message || errorCaught}`); return; }
+  if (!pp1Executed)  { fail("commitPartialProfit #1 never executed"); return; }
+  if (!dca1Executed) { fail("commitAverageBuy #1 (950) never executed"); return; }
+  if (!dca2Executed) { fail("commitAverageBuy #2 (880) never executed"); return; }
+  if (!plExecuted)   { fail("commitPartialLoss never executed"); return; }
+  if (!pp2Executed)  { fail("commitPartialProfit #2 never executed"); return; }
+  if (closeEvents.length === 0) { fail("Position never closed"); return; }
+
+  const ce = closeEvents[0];
+
+  // DCA#4@920 и DCA#5@980 отклоняются: после PL@860 effectivePriceOpen ~929,
+  // 920 и 980 выше неё → commitAverageBuy отклоняется (нет нового low).
+  // Итого 3 входа: entry#1@1000, DCA@950, DCA@880.
+  if (ce.totalEntries !== 3) {
+    fail(`Expected totalEntries=3 (DCA@920,@980 rejected above effectivePriceOpen), got ${ce.totalEntries}`);
+    return;
+  }
+
+  if (ce.priceOpen >= ce.originalPriceOpen) {
+    fail(`Expected effectivePriceOpen (${ce.priceOpen?.toFixed(2)}) < originalPriceOpen (${ce.originalPriceOpen}) after DCA down`);
+    return;
+  }
+
+  pass(`DCA-10 SD: pp1=${pp1Executed}, dca@950=${dca1Executed}, dca@880=${dca2Executed}, pl=${plExecuted}, dca@920(rejected)=${dca3Executed}, pp2=${pp2Executed}, dca@980(rejected)=${dca4Executed}, totalEntries=${ce.totalEntries}, effectivePriceOpen=${ce.priceOpen?.toFixed(2)}`);
+});
