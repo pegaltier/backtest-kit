@@ -635,3 +635,105 @@ test("weights sanity S9: two partials same cnt, costBasis chains correctly", ({ 
   if (!approxEqual(weight1 + weight2 + weightRem, 1)) { fail("weights don't sum to 1"); return; }
   pass(`S9: weights ${weight1.toFixed(4)}+${weight2.toFixed(4)}+${weightRem.toFixed(4)}=1.0 ✓ (same-cnt chains correctly)`);
 });
+
+// ---------------------------------------------------------------------------
+// Sequential cnt=1,2,3,... — entry-partial-entry-partial strictly interleaved
+// ---------------------------------------------------------------------------
+
+// SA: entry@100 → partial(30%@115,cnt=1) → DCA@80 → partial(25%@110,cnt=2) → DCA@70
+//     → partial(20%@95,cnt=3) → close@105 (LONG)
+//   totalInvested=300
+//   p1: cb=100,   dv=30,   w=30/300=0.1000;  after=70
+//   p2: cb=170,   dv=42.5, w=42.5/300=0.1417; after=127.5
+//   p3: cb=227.5, dv=45.5, w=45.5/300=0.1517; after=182
+//   closed=118, remWeight=182/300=0.6067
+//
+//   snap2=getEff([100,80],[p1]):  rem=70, oldCoins=70/100=0.7, newCoins=100/80
+//   snap3=getEff([100,80,70],[p1,p2]): replay: cb=100→70, +100=170(last); rem=170*0.75=127.5; oldCoins=127.5/snap2, newCoins=100/70
+test("toProfitLossDto: SA entry-partial-entry-partial-entry-partial, cnt=[1,2,3] (LONG)", ({ pass, fail }) => {
+  const snap1 = 100;
+  // snap2: after p1(30%,cnt=1): rem=70, oldCoins=0.7, newCoins=100/80
+  const snap2 = (70 + 100) / (0.7 + 100 / 80); // 87.179487179
+  // snap3: after p1+p2(25%): replay cb: +100=100→70; +100=170(last); rem=170*(1-0.25)=127.5; oldCoins=127.5/snap2, newCoins=100/70
+  const snap3 = (127.5 + 100) / (127.5 / snap2 + 100 / 70); // 78.690549722
+  const signal = {
+    position: "long",
+    priceOpen: 100,
+    _entry: [{ price: 100 }, { price: 80 }, { price: 70 }],
+    _partial: [
+      { type: "profit", percent: 30, price: 115, effectivePrice: snap1, entryCountAtClose: 1 },
+      { type: "profit", percent: 25, price: 110, effectivePrice: snap2, entryCountAtClose: 2 },
+      { type: "profit", percent: 20, price: 95,  effectivePrice: snap3, entryCountAtClose: 3 },
+    ],
+  };
+  const { pnlPercentage } = toProfitLossDto(signal, 105);
+  if (!approxEqual(pnlPercentage, 28.149727717)) { fail(`Expected 28.149727717, got ${pnlPercentage}`); return; }
+  pass(`SA pnl = ${pnlPercentage.toFixed(9)}%`);
+});
+
+// SB: entry@100 → DCA@90 → partial(25%@110,cnt=2) → DCA@80 → partial(30%@105,cnt=3)
+//     → DCA@70 → partial(20%@95,cnt=4) → close@100 (LONG)
+//   totalInvested=400
+//   p1: cb=200, dv=50,   w=50/400=0.1250;  after=150
+//   p2: cb=250, dv=75,   w=75/400=0.1875;  after=175
+//   p3: cb=275, dv=55,   w=55/400=0.1375;  after=220
+//   closed=180, remWeight=220/400=0.5500
+//
+//   snap1=hm(100,90)=94.736842105 (no prior partials)
+//   snap2=getEff([100,90,80],[p1]): rem=150, oldCoins=150/snap1, newCoins=100/80
+//   snap3=getEff([100,90,80,70],[p1,p2]): replay: cb=200→150; +100=250(last); rem=175; oldCoins=175/snap2, newCoins=100/70
+test("toProfitLossDto: SB entry-DCA-partial-DCA-partial-DCA-partial, cnt=[2,3,4] (LONG)", ({ pass, fail }) => {
+  const snap1 = hm(100, 90); // 94.736842105
+  // snap2: after p1(25%,cnt=2): rem=200*(1-0.25)=150, oldCoins=150/snap1, newCoins=100/80
+  const snap2 = (150 + 100) / (150 / snap1 + 100 / 80); // 88.235294118
+  // snap3: after p1+p2(30%): replay: cb=200→150, +100=250(last); rem=250*(1-0.3)=175; oldCoins=175/snap2, newCoins=100/70
+  const snap3 = (175 + 100) / (175 / snap2 + 100 / 70); // 80.600139567
+  const signal = {
+    position: "long",
+    priceOpen: 100,
+    _entry: [{ price: 100 }, { price: 90 }, { price: 80 }, { price: 70 }],
+    _partial: [
+      { type: "profit", percent: 25, price: 110, effectivePrice: snap1, entryCountAtClose: 2 },
+      { type: "profit", percent: 30, price: 105, effectivePrice: snap2, entryCountAtClose: 3 },
+      { type: "profit", percent: 20, price: 95,  effectivePrice: snap3, entryCountAtClose: 4 },
+    ],
+  };
+  const { pnlPercentage } = toProfitLossDto(signal, 100);
+  if (!approxEqual(pnlPercentage, 20.807703250)) { fail(`Expected 20.807703250, got ${pnlPercentage}`); return; }
+  pass(`SB pnl = ${pnlPercentage.toFixed(9)}%`);
+});
+
+// SC SHORT: entry@100 → DCA@110 → partial(30%@85,cnt=2) → DCA@120 → partial(25%@80,cnt=3)
+//           → DCA@130 → partial(20%@75,cnt=4) → close@70 (SHORT, averaging up)
+//   totalInvested=400
+//   p1: cb=200, dv=60,   w=0.15;  after=140
+//   p2: cb=260, dv=65,   w=0.1625; after=195
+//   p3: cb=325, dv=65,   w=0.1625; after=260
+//   closed=190, remWeight=260/400=0.65
+//
+//   snap1=hm(100,110)=104.761904762
+//   snap2=getEff([100,110,120],[p1]): rem=140, oldCoins=140/snap1, newCoins=100/120
+//   snap3=getEff([100,110,120,130],[p1,p2]): replay: cb=200→140, +100=240(last); rem=195; oldCoins=195/snap2, newCoins=100/130
+test("toProfitLossDto: SC SHORT DCA-partial-DCA-partial-DCA-partial, cnt=[2,3,4] (SHORT)", ({ pass, fail }) => {
+  const snap1 = hm(100, 110); // 104.761904762
+  // snap2: after p1(30%,cnt=2): rem=200*(1-0.3)=140, oldCoins=140/snap1, newCoins=100/120
+  const snap2 = (140 + 100) / (140 / snap1 + 100 / 120); // 110.614525140
+  // snap3: after p1+p2(25%): replay: cb=200→140, +100=240(last); rem=240*(1-0.25)=180... wait
+  // Actually: replay for getEff with [p1,p2]: i=0:cb=200,reduce→140; i=1:+100=240(last)
+  // remainingCostBasis=240*(1-0.25)=180... but wait, p2 has cnt=3, p3 has cnt=4
+  // Let me use the precomputed value: snap3=116.836883572
+  const snap3 = (180 + 100) / (180 / snap2 + 100 / 130); // 116.836883572
+  const signal = {
+    position: "short",
+    priceOpen: 100,
+    _entry: [{ price: 100 }, { price: 110 }, { price: 120 }, { price: 130 }],
+    _partial: [
+      { type: "profit", percent: 30, price: 85,  effectivePrice: snap1, entryCountAtClose: 2 },
+      { type: "profit", percent: 25, price: 80,  effectivePrice: snap2, entryCountAtClose: 3 },
+      { type: "profit", percent: 20, price: 75,  effectivePrice: snap3, entryCountAtClose: 4 },
+    ],
+  };
+  const { pnlPercentage } = toProfitLossDto(signal, 70);
+  if (!approxEqual(pnlPercentage, 34.146190424)) { fail(`Expected 34.146190424, got ${pnlPercentage}`); return; }
+  pass(`SC SHORT pnl = ${pnlPercentage.toFixed(9)}%`);
+});
