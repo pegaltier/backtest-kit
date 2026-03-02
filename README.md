@@ -204,6 +204,61 @@ Customize via `setConfig()`:
 
 Backtest Kit is **not a data-processing library** - it is a **time execution engine**. Think of the engine as an **async stream of time**, where your strategy is evaluated step by step.
 
+### 💰 How PNL Works
+
+`commitAverageBuy` for a LONG position is **only accepted when the current price is below the effective entry price** (a new low). If the price is at or above `effectivePriceOpen`, the call is silently rejected. This prevents averaging up.
+
+**`effectivePriceOpen`** is the harmonic mean of all accepted DCA entries. After each partial close, the remaining cost basis is carried forward into the harmonic mean calculation for subsequent entries.
+
+<details>
+  <summary>
+    The Math
+  </summary>
+
+  **Scenario:** LONG entry @ 1000, 4 extra DCA attempts, 3 partials, closed at TP.
+
+  ```
+  Entry:             $1000  (1 entry, totalInvested starts at $100)
+  PP(30%) @ 1150     cnt=1  → snap1 = hm([1000]) = 1000
+  DCA attempt @ 950         → 950 < snap1=1000 ✓ accepted  (totalInvested=$200)
+  DCA attempt @ 880         → 880 < snap1=1000 ✓ accepted  (totalInvested=$300)
+  PL(20%) @ 860      cnt=3  → snap2 = (70+200) / (70/1000 + 100/950 + 100/880)
+                                     = 270 / 0.28898...
+                                     ≈ 934.58
+  DCA attempt @ 920         → 920 < snap2=934.58 ✓ accepted  (totalInvested=$400)
+  PP(40%) @ 1050     cnt=4  → snap3 = (216 + 100) / (216/934.58 + 100/920)
+                                     ≈ 929.92
+  DCA attempt @ 980         → 980 > snap3=929.92 ✗ REJECTED
+  Close (TP) @ 1200
+  ```
+
+  **Weight calculation (cost-basis replay):**
+
+  ```
+  costBasis = 0
+  p1 (cnt=1, 30%): newEntries=1,  costBasis=100,  dollarValue=30,    weight=30/400=0.075
+                   after: costBasis=70
+  p2 (cnt=3, 20%): newEntries=2,  costBasis=270,  dollarValue=54,    weight=54/400=0.135
+                   after: costBasis=216
+  p3 (cnt=4, 40%): newEntries=1,  costBasis=316,  dollarValue=126.4, weight=126.4/400=0.316
+                   after: costBasis=189.6
+  remWeight = (400 - 30 - 54 - 126.4) / 400 = 189.6 / 400 = 0.474
+  ```
+
+  **PNL per component:**
+
+  ```
+  p1: (1150 - snap1) / snap1 × weight = (1150-1000)/1000 × 0.075 = +1.125%
+  p2: (860  - snap2) / snap2 × weight = (860-934.58)/934.58 × 0.135 ≈ −1.077%
+  p3: (1050 - snap3) / snap3 × weight = (1050-929.92)/929.92 × 0.316 ≈ +4.079%
+  rem:(1200 - snap3) / snap3 × remWeight = (1200-929.92)/929.92 × 0.474 ≈ +13.77%
+  Total pnlPercentage ≈ +17.90%  (before fees)
+  ```
+
+  **Key insight:** Only 4 entries accepted (entry + DCA@950 + DCA@880 + DCA@920).
+  The DCA@980 attempt is rejected because 980 > effectivePriceOpen≈929.92 at that moment.
+</details>
+
 ### 🔍 How getCandles Works
 
 backtest-kit uses Node.js `AsyncLocalStorage` to automatically provide
