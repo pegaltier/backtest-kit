@@ -170,6 +170,75 @@ export class StrategyCoreService implements TStrategy {
     return await this.strategyConnectionService.getTotalCostClosed(backtest, symbol, context);
   };
 
+  public getPositionAveragePrice = async (
+    backtest: boolean,
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<number | null> => {
+    this.loggerService.log("strategyCoreService getPositionAveragePrice", {
+      symbol,
+      context,
+    });
+    await this.validate(context);
+    return await this.strategyConnectionService.getPositionAveragePrice(backtest, symbol, context);
+  };
+
+  public getPositionInvestedCount = async (
+    backtest: boolean,
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<number | null> => {
+    this.loggerService.log("strategyCoreService getPositionInvestedCount", {
+      symbol,
+      context,
+    });
+    await this.validate(context);
+    return await this.strategyConnectionService.getPositionInvestedCount(backtest, symbol, context);
+  };
+
+  public getPositionInvestedCost = async (
+    backtest: boolean,
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<number | null> => {
+    this.loggerService.log("strategyCoreService getPositionInvestedCost", {
+      symbol,
+      context,
+    });
+    await this.validate(context);
+    return await this.strategyConnectionService.getPositionInvestedCost(backtest, symbol, context);
+  };
+
+  public getPositionPnlPercent = async (
+    backtest: boolean,
+    symbol: string,
+    currentPrice: number,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<number | null> => {
+    this.loggerService.log("strategyCoreService getPositionPnlPercent", {
+      symbol,
+      currentPrice,
+      context,
+    });
+    await this.validate(context);
+    return await this.strategyConnectionService.getPositionPnlPercent(backtest, symbol, currentPrice, context);
+  };
+
+  public getPositionPnlCost = async (
+    backtest: boolean,
+    symbol: string,
+    currentPrice: number,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<number | null> => {
+    this.loggerService.log("strategyCoreService getPositionPnlCost", {
+      symbol,
+      currentPrice,
+      context,
+    });
+    await this.validate(context);
+    return await this.strategyConnectionService.getPositionPnlCost(backtest, symbol, currentPrice, context);
+  };
+
   /**
    * Retrieves the currently active scheduled signal for the symbol.
    * If no scheduled signal exists, returns null.

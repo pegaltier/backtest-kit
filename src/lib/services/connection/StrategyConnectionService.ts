@@ -546,6 +546,80 @@ export class StrategyConnectionService implements TStrategy {
     return await strategy.getTotalCostClosed(symbol);
   };
 
+  public getPositionAveragePrice = async (
+    backtest: boolean,
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<number | null> => {
+    this.loggerService.log("strategyConnectionService getPositionAveragePrice", {
+      symbol,
+      context,
+      backtest,
+    });
+    const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
+    return await strategy.getPositionAveragePrice(symbol);
+  };
+
+  public getPositionInvestedCount = async (
+    backtest: boolean,
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<number | null> => {
+    this.loggerService.log("strategyConnectionService getPositionInvestedCount", {
+      symbol,
+      context,
+      backtest,
+    });
+    const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
+    return await strategy.getPositionInvestedCount(symbol);
+  };
+
+  public getPositionInvestedCost = async (
+    backtest: boolean,
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<number | null> => {
+    this.loggerService.log("strategyConnectionService getPositionInvestedCost", {
+      symbol,
+      context,
+      backtest,
+    });
+    const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
+    return await strategy.getPositionInvestedCost(symbol);
+  };
+
+  public getPositionPnlPercent = async (
+    backtest: boolean,
+    symbol: string,
+    currentPrice: number,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<number | null> => {
+    this.loggerService.log("strategyConnectionService getPositionPnlPercent", {
+      symbol,
+      currentPrice,
+      context,
+      backtest,
+    });
+    const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
+    return await strategy.getPositionPnlPercent(symbol, currentPrice);
+  };
+
+  public getPositionPnlCost = async (
+    backtest: boolean,
+    symbol: string,
+    currentPrice: number,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<number | null> => {
+    this.loggerService.log("strategyConnectionService getPositionPnlCost", {
+      symbol,
+      currentPrice,
+      context,
+      backtest,
+    });
+    const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
+    return await strategy.getPositionPnlCost(symbol, currentPrice);
+  };
+
   /**
    * Retrieves the currently active scheduled signal for the strategy.
    * If no scheduled signal exists, returns null.

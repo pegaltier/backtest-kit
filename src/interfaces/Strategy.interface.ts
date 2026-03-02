@@ -856,6 +856,38 @@ export interface IStrategy {
   getTotalCostClosed: (symbol: string) => Promise<number | null>;
 
   /**
+   * Returns the effective (DCA-averaged) entry price for the current pending signal.
+   * Returns null if no pending signal exists.
+   */
+  getPositionAveragePrice: (symbol: string) => Promise<number | null>;
+
+  /**
+   * Returns the number of DCA entries for the current pending signal.
+   * 1 = original entry only. Returns null if no pending signal exists.
+   */
+  getPositionInvestedCount: (symbol: string) => Promise<number | null>;
+
+  /**
+   * Returns the total invested cost basis in dollars (entryCount × $100).
+   * Returns null if no pending signal exists.
+   */
+  getPositionInvestedCost: (symbol: string) => Promise<number | null>;
+
+  /**
+   * Returns the unrealized PNL percentage at currentPrice.
+   * Accounts for partial closes, DCA entries, slippage and fees.
+   * Returns null if no pending signal exists.
+   */
+  getPositionPnlPercent: (symbol: string, currentPrice: number) => Promise<number | null>;
+
+  /**
+   * Returns the unrealized PNL in dollars at currentPrice.
+   * Calculated as: pnlPercentage / 100 × totalInvestedCost.
+   * Returns null if no pending signal exists.
+   */
+  getPositionPnlCost: (symbol: string, currentPrice: number) => Promise<number | null>;
+
+  /**
    * Fast backtest using historical candles.
    * Iterates through candles, calculates VWAP, checks TP/SL on each candle.
    *

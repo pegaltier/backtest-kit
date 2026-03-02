@@ -27,6 +27,16 @@ const BACKTEST_METHOD_NAME_GET_TOTAL_COST_CLOSED =
 const BACKTEST_METHOD_NAME_GET_SCHEDULED_SIGNAL =
   "BacktestUtils.getScheduledSignal";
 const BACKTEST_METHOD_NAME_GET_BREAKEVEN = "BacktestUtils.getBreakeven";
+const BACKTEST_METHOD_NAME_GET_POSITION_AVERAGE_PRICE =
+  "BacktestUtils.getPositionAveragePrice";
+const BACKTEST_METHOD_NAME_GET_POSITION_INVESTED_COUNT =
+  "BacktestUtils.getPositionInvestedCount";
+const BACKTEST_METHOD_NAME_GET_POSITION_INVESTED_COST =
+  "BacktestUtils.getPositionInvestedCost";
+const BACKTEST_METHOD_NAME_GET_POSITION_PNL_PERCENT =
+  "BacktestUtils.getPositionPnlPercent";
+const BACKTEST_METHOD_NAME_GET_POSITION_PNL_COST =
+  "BacktestUtils.getPositionPnlCost";
 const BACKTEST_METHOD_NAME_BREAKEVEN = "Backtest.commitBreakeven";
 const BACKTEST_METHOD_NAME_CANCEL_SCHEDULED = "Backtest.commitCancelScheduled";
 const BACKTEST_METHOD_NAME_CLOSE_PENDING = "Backtest.commitClosePending";
@@ -878,6 +888,272 @@ export class BacktestUtils {
     }
 
     return await backtest.strategyCoreService.getBreakeven(
+      true,
+      symbol,
+      currentPrice,
+      context
+    );
+  };
+
+  public getPositionAveragePrice = async (
+    symbol: string,
+    context: {
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
+    }
+  ): Promise<number | null> => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_GET_POSITION_AVERAGE_PRICE, {
+      symbol,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      BACKTEST_METHOD_NAME_GET_POSITION_AVERAGE_PRICE
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      BACKTEST_METHOD_NAME_GET_POSITION_AVERAGE_PRICE
+    );
+
+    {
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          BACKTEST_METHOD_NAME_GET_POSITION_AVERAGE_PRICE
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            BACKTEST_METHOD_NAME_GET_POSITION_AVERAGE_PRICE
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            BACKTEST_METHOD_NAME_GET_POSITION_AVERAGE_PRICE
+          )
+        );
+    }
+
+    return await backtest.strategyCoreService.getPositionAveragePrice(
+      true,
+      symbol,
+      context
+    );
+  };
+
+  public getPositionInvestedCount = async (
+    symbol: string,
+    context: {
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
+    }
+  ): Promise<number | null> => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_GET_POSITION_INVESTED_COUNT, {
+      symbol,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      BACKTEST_METHOD_NAME_GET_POSITION_INVESTED_COUNT
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      BACKTEST_METHOD_NAME_GET_POSITION_INVESTED_COUNT
+    );
+
+    {
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          BACKTEST_METHOD_NAME_GET_POSITION_INVESTED_COUNT
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            BACKTEST_METHOD_NAME_GET_POSITION_INVESTED_COUNT
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            BACKTEST_METHOD_NAME_GET_POSITION_INVESTED_COUNT
+          )
+        );
+    }
+
+    return await backtest.strategyCoreService.getPositionInvestedCount(
+      true,
+      symbol,
+      context
+    );
+  };
+
+  public getPositionInvestedCost = async (
+    symbol: string,
+    context: {
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
+    }
+  ): Promise<number | null> => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_GET_POSITION_INVESTED_COST, {
+      symbol,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      BACKTEST_METHOD_NAME_GET_POSITION_INVESTED_COST
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      BACKTEST_METHOD_NAME_GET_POSITION_INVESTED_COST
+    );
+
+    {
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          BACKTEST_METHOD_NAME_GET_POSITION_INVESTED_COST
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            BACKTEST_METHOD_NAME_GET_POSITION_INVESTED_COST
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            BACKTEST_METHOD_NAME_GET_POSITION_INVESTED_COST
+          )
+        );
+    }
+
+    return await backtest.strategyCoreService.getPositionInvestedCost(
+      true,
+      symbol,
+      context
+    );
+  };
+
+  public getPositionPnlPercent = async (
+    symbol: string,
+    currentPrice: number,
+    context: {
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
+    }
+  ): Promise<number | null> => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_GET_POSITION_PNL_PERCENT, {
+      symbol,
+      currentPrice,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      BACKTEST_METHOD_NAME_GET_POSITION_PNL_PERCENT
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      BACKTEST_METHOD_NAME_GET_POSITION_PNL_PERCENT
+    );
+
+    {
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          BACKTEST_METHOD_NAME_GET_POSITION_PNL_PERCENT
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            BACKTEST_METHOD_NAME_GET_POSITION_PNL_PERCENT
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            BACKTEST_METHOD_NAME_GET_POSITION_PNL_PERCENT
+          )
+        );
+    }
+
+    return await backtest.strategyCoreService.getPositionPnlPercent(
+      true,
+      symbol,
+      currentPrice,
+      context
+    );
+  };
+
+  public getPositionPnlCost = async (
+    symbol: string,
+    currentPrice: number,
+    context: {
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
+    }
+  ): Promise<number | null> => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_GET_POSITION_PNL_COST, {
+      symbol,
+      currentPrice,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      BACKTEST_METHOD_NAME_GET_POSITION_PNL_COST
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      BACKTEST_METHOD_NAME_GET_POSITION_PNL_COST
+    );
+
+    {
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          BACKTEST_METHOD_NAME_GET_POSITION_PNL_COST
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            BACKTEST_METHOD_NAME_GET_POSITION_PNL_COST
+          )
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            BACKTEST_METHOD_NAME_GET_POSITION_PNL_COST
+          )
+        );
+    }
+
+    return await backtest.strategyCoreService.getPositionPnlCost(
       true,
       symbol,
       currentPrice,

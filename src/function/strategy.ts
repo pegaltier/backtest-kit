@@ -18,6 +18,11 @@ const GET_TOTAL_COST_CLOSED_METHOD_NAME = "strategy.getTotalCostClosed";
 const GET_PENDING_SIGNAL_METHOD_NAME = "strategy.getPendingSignal";
 const GET_SCHEDULED_SIGNAL_METHOD_NAME = "strategy.getScheduledSignal";
 const GET_BREAKEVEN_METHOD_NAME = "strategy.getBreakeven";
+const GET_POSITION_AVERAGE_PRICE_METHOD_NAME = "strategy.getPositionAveragePrice";
+const GET_POSITION_INVESTED_COUNT_METHOD_NAME = "strategy.getPositionInvestedCount";
+const GET_POSITION_INVESTED_COST_METHOD_NAME = "strategy.getPositionInvestedCost";
+const GET_POSITION_PNL_PERCENT_METHOD_NAME = "strategy.getPositionPnlPercent";
+const GET_POSITION_PNL_COST_METHOD_NAME = "strategy.getPositionPnlCost";
 
 /**
  * Cancels the scheduled signal without stopping the strategy.
@@ -682,6 +687,95 @@ export async function getBreakeven(symbol: string, currentPrice: number): Promis
   const { exchangeName, frameName, strategyName } =
     backtest.methodContextService.context;
   return await backtest.strategyCoreService.getBreakeven(
+    isBacktest,
+    symbol,
+    currentPrice,
+    { exchangeName, frameName, strategyName }
+  );
+}
+
+export async function getPositionAveragePrice(symbol: string): Promise<number | null> {
+  backtest.loggerService.info(GET_POSITION_AVERAGE_PRICE_METHOD_NAME, { symbol });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("getPositionAveragePrice requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("getPositionAveragePrice requires a method context");
+  }
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } = backtest.methodContextService.context;
+  return await backtest.strategyCoreService.getPositionAveragePrice(
+    isBacktest,
+    symbol,
+    { exchangeName, frameName, strategyName }
+  );
+}
+
+export async function getPositionInvestedCount(symbol: string): Promise<number | null> {
+  backtest.loggerService.info(GET_POSITION_INVESTED_COUNT_METHOD_NAME, { symbol });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("getPositionInvestedCount requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("getPositionInvestedCount requires a method context");
+  }
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } = backtest.methodContextService.context;
+  return await backtest.strategyCoreService.getPositionInvestedCount(
+    isBacktest,
+    symbol,
+    { exchangeName, frameName, strategyName }
+  );
+}
+
+export async function getPositionInvestedCost(symbol: string): Promise<number | null> {
+  backtest.loggerService.info(GET_POSITION_INVESTED_COST_METHOD_NAME, { symbol });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("getPositionInvestedCost requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("getPositionInvestedCost requires a method context");
+  }
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } = backtest.methodContextService.context;
+  return await backtest.strategyCoreService.getPositionInvestedCost(
+    isBacktest,
+    symbol,
+    { exchangeName, frameName, strategyName }
+  );
+}
+
+export async function getPositionPnlPercent(symbol: string): Promise<number | null> {
+  backtest.loggerService.info(GET_POSITION_PNL_PERCENT_METHOD_NAME, { symbol });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("getPositionPnlPercent requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("getPositionPnlPercent requires a method context");
+  }
+  const currentPrice = await getAveragePrice(symbol);
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } = backtest.methodContextService.context;
+  return await backtest.strategyCoreService.getPositionPnlPercent(
+    isBacktest,
+    symbol,
+    currentPrice,
+    { exchangeName, frameName, strategyName }
+  );
+}
+
+export async function getPositionPnlCost(symbol: string): Promise<number | null> {
+  backtest.loggerService.info(GET_POSITION_PNL_COST_METHOD_NAME, { symbol });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("getPositionPnlCost requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("getPositionPnlCost requires a method context");
+  }
+  const currentPrice = await getAveragePrice(symbol);
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } = backtest.methodContextService.context;
+  return await backtest.strategyCoreService.getPositionPnlCost(
     isBacktest,
     symbol,
     currentPrice,

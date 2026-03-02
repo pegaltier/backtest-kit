@@ -4063,6 +4063,107 @@ export class ClientStrategy implements IStrategy {
   }
 
   /**
+   * Returns the effective (DCA-averaged) entry price for the current pending signal.
+   *
+   * This is the harmonic mean of all _entry prices, which is the correct
+   * cost-basis price used in all PNL calculations.
+   * With no DCA entries, equals the original priceOpen.
+   *
+   * Returns null if no pending signal exists.
+   *
+   * @param symbol - Trading pair symbol
+   * @returns Promise resolving to effective entry price or null
+   */
+  public async getPositionAveragePrice(symbol: string): Promise<number | null> {
+    this.params.logger.debug("ClientStrategy getPositionAveragePrice", { symbol });
+    if (!this._pendingSignal) {
+      return null;
+    }
+    return GET_EFFECTIVE_PRICE_OPEN(this._pendingSignal);
+  }
+
+  /**
+   * Returns the number of DCA entries made for the current pending signal.
+   *
+   * 1 = original entry only (no DCA).
+   * Increases by 1 with each successful commitAverageBuy().
+   *
+   * Returns null if no pending signal exists.
+   *
+   * @param symbol - Trading pair symbol
+   * @returns Promise resolving to entry count or null
+   */
+  public async getPositionInvestedCount(symbol: string): Promise<number | null> {
+    this.params.logger.debug("ClientStrategy getPositionInvestedCount", { symbol });
+    if (!this._pendingSignal) {
+      return null;
+    }
+    return this._pendingSignal._entry?.length ?? 1;
+  }
+
+  /**
+   * Returns the total invested cost basis in dollars for the current pending signal.
+   *
+   * Equal to entryCount × $100 (COST_BASIS_PER_ENTRY).
+   * 1 entry = $100, 2 entries = $200, etc.
+   *
+   * Returns null if no pending signal exists.
+   *
+   * @param symbol - Trading pair symbol
+   * @returns Promise resolving to total invested cost in dollars or null
+   */
+  public async getPositionInvestedCost(symbol: string): Promise<number | null> {
+    this.params.logger.debug("ClientStrategy getPositionInvestedCost", { symbol });
+    if (!this._pendingSignal) {
+      return null;
+    }
+    return (this._pendingSignal._entry?.length ?? 1) * COST_BASIS_PER_ENTRY;
+  }
+
+  /**
+   * Returns the unrealized PNL percentage for the current pending signal at currentPrice.
+   *
+   * Accounts for partial closes, DCA entries, slippage and fees
+   * (delegates to toProfitLossDto).
+   *
+   * Returns null if no pending signal exists.
+   *
+   * @param symbol - Trading pair symbol
+   * @param currentPrice - Current market price
+   * @returns Promise resolving to pnlPercentage or null
+   */
+  public async getPositionPnlPercent(symbol: string, currentPrice: number): Promise<number | null> {
+    this.params.logger.debug("ClientStrategy getPositionPnlPercent", { symbol, currentPrice });
+    if (!this._pendingSignal) {
+      return null;
+    }
+    const pnl = toProfitLossDto(this._pendingSignal, currentPrice);
+    return pnl.pnlPercentage;
+  }
+
+  /**
+   * Returns the unrealized PNL in dollars for the current pending signal at currentPrice.
+   *
+   * Calculated as: pnlPercentage / 100 × totalInvestedCost
+   * Accounts for partial closes, DCA entries, slippage and fees.
+   *
+   * Returns null if no pending signal exists.
+   *
+   * @param symbol - Trading pair symbol
+   * @param currentPrice - Current market price
+   * @returns Promise resolving to pnl in dollars or null
+   */
+  public async getPositionPnlCost(symbol: string, currentPrice: number): Promise<number | null> {
+    this.params.logger.debug("ClientStrategy getPositionPnlCost", { symbol, currentPrice });
+    if (!this._pendingSignal) {
+      return null;
+    }
+    const totalInvested = (this._pendingSignal._entry?.length ?? 1) * COST_BASIS_PER_ENTRY;
+    const pnl = toProfitLossDto(this._pendingSignal, currentPrice);
+    return (pnl.pnlPercentage / 100) * totalInvested;
+  }
+
+  /**
    * Performs a single tick of strategy execution.
    *
    * Flow (LIVE mode):
