@@ -4192,6 +4192,14 @@ export class ClientStrategy implements IStrategy {
     return entries.map((e) => e.price);
   }
 
+  public async getPositionPartials(symbol: string): Promise<Array<{ type: "profit" | "loss"; percent: number; price: number; effectivePrice: number; entryCountAtClose: number; debugTimestamp?: number; }> | null> {
+    this.params.logger.debug("ClientStrategy getPositionPartials", { symbol });
+    if (!this._pendingSignal) {
+      return null;
+    }
+    return this._pendingSignal._partial ?? [];
+  }
+
   /**
    * Performs a single tick of strategy execution.
    *

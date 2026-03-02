@@ -634,6 +634,20 @@ export class StrategyConnectionService implements TStrategy {
     return await strategy.getPositionLevels(symbol);
   };
 
+  public getPositionPartials = async (
+    backtest: boolean,
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ) => {
+    this.loggerService.log("strategyConnectionService getPositionPartials", {
+      symbol,
+      context,
+      backtest,
+    });
+    const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
+    return await strategy.getPositionPartials(symbol);
+  };
+
   /**
    * Retrieves the currently active scheduled signal for the strategy.
    * If no scheduled signal exists, returns null.

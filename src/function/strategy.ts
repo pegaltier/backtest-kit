@@ -27,6 +27,7 @@ const GET_POSITION_INVESTED_COST_METHOD_NAME = "strategy.getPositionInvestedCost
 const GET_POSITION_PNL_PERCENT_METHOD_NAME = "strategy.getPositionPnlPercent";
 const GET_POSITION_PNL_COST_METHOD_NAME = "strategy.getPositionPnlCost";
 const GET_POSITION_LEVELS_METHOD_NAME = "strategy.getPositionLevels";
+const GET_POSITION_PARTIALS_METHOD_NAME = "strategy.getPositionPartials";
 
 /**
  * Cancels the scheduled signal without stopping the strategy.
@@ -931,6 +932,23 @@ export async function getPositionLevels(symbol: string): Promise<number[] | null
   const { backtest: isBacktest } = backtest.executionContextService.context;
   const { exchangeName, frameName, strategyName } = backtest.methodContextService.context;
   return await backtest.strategyCoreService.getPositionLevels(
+    isBacktest,
+    symbol,
+    { exchangeName, frameName, strategyName }
+  );
+}
+
+export async function getPositionPartials(symbol: string) {
+  backtest.loggerService.info(GET_POSITION_PARTIALS_METHOD_NAME, { symbol });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("getPositionPartials requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("getPositionPartials requires a method context");
+  }
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } = backtest.methodContextService.context;
+  return await backtest.strategyCoreService.getPositionPartials(
     isBacktest,
     symbol,
     { exchangeName, frameName, strategyName }
