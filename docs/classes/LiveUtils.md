@@ -64,6 +64,25 @@ getPendingSignal: (symbol: string, context: { strategyName: string; exchangeName
 Retrieves the currently active pending signal for the strategy.
 If no active signal exists, returns null.
 
+### getTotalPercentClosed
+
+```ts
+getTotalPercentClosed: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number>
+```
+
+Returns the percentage of the position currently held (not closed).
+100 = nothing has been closed (full position), 0 = fully closed.
+Correctly accounts for DCA entries between partial closes.
+
+### getTotalCostClosed
+
+```ts
+getTotalCostClosed: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number>
+```
+
+Returns the cost basis in dollars of the position currently held (not closed).
+Correctly accounts for DCA entries between partial closes.
+
 ### getScheduledSignal
 
 ```ts
@@ -83,6 +102,48 @@ Checks if breakeven threshold has been reached for the current pending signal.
 
 Uses the same formula as BREAKEVEN_FN to determine if price has moved far enough
 to cover transaction costs (slippage + fees) and allow breakeven to be set.
+
+### getPositionAveragePrice
+
+```ts
+getPositionAveragePrice: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number>
+```
+
+### getPositionInvestedCount
+
+```ts
+getPositionInvestedCount: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number>
+```
+
+### getPositionInvestedCost
+
+```ts
+getPositionInvestedCost: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number>
+```
+
+### getPositionPnlPercent
+
+```ts
+getPositionPnlPercent: (symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; }) => Promise<number>
+```
+
+### getPositionPnlCost
+
+```ts
+getPositionPnlCost: (symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; }) => Promise<number>
+```
+
+### getPositionLevels
+
+```ts
+getPositionLevels: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number[]>
+```
+
+### getPositionPartials
+
+```ts
+getPositionPartials: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<{ type: "profit" | "loss"; percent: number; currentPrice: number; effectivePrice: number; entryCountAtClose: number; debugTimestamp?: number; }[]>
+```
 
 ### stop
 
@@ -140,6 +201,30 @@ commitPartialLoss: (symbol: string, percentToClose: number, currentPrice: number
 Executes partial close at loss level (moving toward SL).
 
 Closes a percentage of the active pending position at loss.
+Price must be moving toward stop loss (in loss direction).
+
+### commitPartialProfitCost
+
+```ts
+commitPartialProfitCost: (symbol: string, dollarAmount: number, currentPrice: number, context: { strategyName: string; exchangeName: string; }) => Promise<boolean>
+```
+
+Executes partial close at profit level by absolute dollar amount (moving toward TP).
+
+Convenience wrapper around commitPartialProfit that converts a dollar amount
+to a percentage of the invested position cost automatically.
+Price must be moving toward take profit (in profit direction).
+
+### commitPartialLossCost
+
+```ts
+commitPartialLossCost: (symbol: string, dollarAmount: number, currentPrice: number, context: { strategyName: string; exchangeName: string; }) => Promise<boolean>
+```
+
+Executes partial close at loss level by absolute dollar amount (moving toward SL).
+
+Convenience wrapper around commitPartialLoss that converts a dollar amount
+to a percentage of the invested position cost automatically.
 Price must be moving toward stop loss (in loss direction).
 
 ### commitTrailingStop

@@ -75,6 +75,79 @@ Checks if the strategy has been stopped.
 Returns the stopped state indicating whether the strategy should
 cease processing new ticks or signals.
 
+### getTotalPercentClosed
+
+```ts
+getTotalPercentClosed: (symbol: string) => Promise<number>
+```
+
+Returns how much of the position is still held, as a percentage of totalInvested.
+
+Uses dollar-basis cost-basis replay (DCA-aware).
+100% means nothing was closed yet. Decreases with each partial close.
+
+Returns 100 if no pending signal or no partial closes.
+
+### getTotalCostClosed
+
+```ts
+getTotalCostClosed: (symbol: string) => Promise<number>
+```
+
+Returns how many dollars of cost basis are still held (not yet closed by partials).
+
+Full position open: equals totalInvested (entries × $100).
+Decreases with each partial close, increases with each averageBuy().
+
+Returns totalInvested if no pending signal or no partial closes.
+
+### getPositionAveragePrice
+
+```ts
+getPositionAveragePrice: (symbol: string) => Promise<number>
+```
+
+Returns the effective (DCA-averaged) entry price for the current pending signal.
+Returns null if no pending signal exists.
+
+### getPositionInvestedCount
+
+```ts
+getPositionInvestedCount: (symbol: string) => Promise<number>
+```
+
+Returns the number of DCA entries for the current pending signal.
+1 = original entry only. Returns null if no pending signal exists.
+
+### getPositionInvestedCost
+
+```ts
+getPositionInvestedCost: (symbol: string) => Promise<number>
+```
+
+Returns the total invested cost basis in dollars (entryCount × $100).
+Returns null if no pending signal exists.
+
+### getPositionPnlPercent
+
+```ts
+getPositionPnlPercent: (symbol: string, currentPrice: number) => Promise<number>
+```
+
+Returns the unrealized PNL percentage at currentPrice.
+Accounts for partial closes, DCA entries, slippage and fees.
+Returns null if no pending signal exists.
+
+### getPositionPnlCost
+
+```ts
+getPositionPnlCost: (symbol: string, currentPrice: number) => Promise<number>
+```
+
+Returns the unrealized PNL in dollars at currentPrice.
+Calculated as: pnlPercentage / 100 × totalInvestedCost.
+Returns null if no pending signal exists.
+
 ### backtest
 
 ```ts

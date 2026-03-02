@@ -58,3 +58,11 @@ getOrderBook: (symbol: string, depth: number, from: Date, to: Date, backtest: bo
 ```
 
 Fetch order book for a trading pair (required, defaults applied)
+
+### getAggregatedTrades
+
+```ts
+getAggregatedTrades: (symbol: string, from: Date, to: Date, backtest: boolean) => Promise<IAggregatedTradeData[]>
+```
+
+Fetch aggregated trades for a trading pair (required, defaults applied)

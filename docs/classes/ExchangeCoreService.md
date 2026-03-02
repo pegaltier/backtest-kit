@@ -108,6 +108,14 @@ Sets up execution context with the provided when/backtest parameters.
 The exchange implementation will receive time range parameters but may
 choose to use them (backtest) or ignore them (live).
 
+### getAggregatedTrades
+
+```ts
+getAggregatedTrades: (symbol: string, when: Date, backtest: boolean, limit?: number) => Promise<IAggregatedTradeData[]>
+```
+
+Fetches aggregated trades with execution context.
+
 ### getRawCandles
 
 ```ts

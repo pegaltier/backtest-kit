@@ -29,7 +29,7 @@ Optional developer note for documentation
 ### getCandles
 
 ```ts
-getCandles: (symbol: string, interval: CandleInterval, since: Date, limit: number, backtest: boolean) => Promise<ICandleData[]>
+getCandles: (symbol: string, interval: CandleInterval, since: Date, limit: number, backtest: boolean) => Promise<IPublicCandleData[]>
 ```
 
 Fetch candles from data source (API or database).
@@ -62,6 +62,15 @@ getOrderBook: (symbol: string, depth: number, from: Date, to: Date, backtest: bo
 
 Fetch order book for a trading pair.
 
+Optional. If not provided, throws an error when called.
+
+### getAggregatedTrades
+
+```ts
+getAggregatedTrades: (symbol: string, from: Date, to: Date, backtest: boolean) => Promise<IAggregatedTradeData[]>
+```
+
+Fetch aggregated trades for a trading pair.
 Optional. If not provided, throws an error when called.
 
 ### callbacks

@@ -85,7 +85,7 @@ Internal runtime marker for scheduled signals
 ### _partial
 
 ```ts
-_partial: { type: "profit" | "loss"; percent: number; price: number; }[]
+_partial: { type: "profit" | "loss"; percent: number; currentPrice: number; debugTimestamp?: number; effectivePrice: number; entryCountAtClose: number; }[]
 ```
 
 History of partial closes for PNL calculation.
@@ -113,7 +113,7 @@ Original priceStopLoss is preserved in persistence but ignored during execution.
 ### _entry
 
 ```ts
-_entry: { price: number; }[]
+_entry: { price: number; debugTimestamp?: number; }[]
 ```
 
 DCA (Dollar Cost Averaging) entry history.

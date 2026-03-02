@@ -61,6 +61,14 @@ getOrderBook: (symbol: string, depth?: number) => Promise<IOrderBookData>
 
 Fetch order book for a trading pair.
 
+### getAggregatedTrades
+
+```ts
+getAggregatedTrades: (symbol: string, limit?: number) => Promise<IAggregatedTradeData[]>
+```
+
+Fetch aggregated trades for a trading pair.
+
 ### getRawCandles
 
 ```ts

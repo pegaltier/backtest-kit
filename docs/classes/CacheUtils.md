@@ -18,14 +18,23 @@ constructor();
 
 ## Properties
 
-### _getInstance
+### _getFnInstance
 
 ```ts
-_getInstance: any
+_getFnInstance: any
 ```
 
 Memoized function to get or create CacheInstance for a function.
 Each function gets its own isolated cache instance.
+
+### _getFileInstance
+
+```ts
+_getFileInstance: any
+```
+
+Memoized function to get or create CacheFileInstance for an async function.
+Each function gets its own isolated file-cache instance.
 
 ### fn
 
@@ -37,6 +46,22 @@ Wrap a function with caching based on timeframe intervals.
 
 Returns a wrapped version of the function that automatically caches results
 and invalidates based on the specified candle interval.
+
+### file
+
+```ts
+file: <T extends CacheFileFunction>(run: T, context: { interval: CandleInterval; name: string; key?: (args: [symbol: string, alignMs: number, ...rest: DropFirst<T>]) => string; }) => T
+```
+
+Wrap an async function with persistent file-based caching.
+
+Returns a wrapped version of the function that reads from disk on cache hit
+and writes the result to disk on cache miss. Files are stored under
+`./dump/data/measure/{name}_{interval}_{index}/`.
+
+The `run` function reference is used as the memoization key for the underlying
+`CacheFileInstance`, so each unique function reference gets its own isolated instance.
+Pass the same function reference each time to reuse the same cache.
 
 ### flush
 

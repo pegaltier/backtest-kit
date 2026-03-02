@@ -102,6 +102,84 @@ Retrieves the currently active pending signal for the strategy.
 If no active signal exists, returns null.
 Used internally for monitoring TP/SL and time expiration.
 
+### getTotalPercentClosed
+
+```ts
+getTotalPercentClosed: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the percentage of the position currently held (not closed).
+100 = nothing has been closed (full position), 0 = fully closed.
+Correctly accounts for DCA entries between partial closes.
+
+### getTotalCostClosed
+
+```ts
+getTotalCostClosed: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the cost basis in dollars of the position currently held (not closed).
+Correctly accounts for DCA entries between partial closes.
+
+### getPositionAveragePrice
+
+```ts
+getPositionAveragePrice: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the effective (DCA-averaged) entry price for the current pending signal.
+Returns null if no pending signal exists.
+
+### getPositionInvestedCount
+
+```ts
+getPositionInvestedCount: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the number of DCA entries for the current pending signal.
+1 = original entry only. Returns null if no pending signal exists.
+
+### getPositionInvestedCost
+
+```ts
+getPositionInvestedCost: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the total invested cost basis in dollars (entryCount × $100).
+Returns null if no pending signal exists.
+
+### getPositionPnlPercent
+
+```ts
+getPositionPnlPercent: (backtest: boolean, symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the unrealized PNL percentage at currentPrice.
+Accounts for partial closes, DCA entries, slippage and fees.
+Returns null if no pending signal exists.
+
+### getPositionPnlCost
+
+```ts
+getPositionPnlCost: (backtest: boolean, symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the unrealized PNL in dollars at currentPrice.
+Calculated as: pnlPercentage / 100 × totalInvestedCost.
+Returns null if no pending signal exists.
+
+### getPositionLevels
+
+```ts
+getPositionLevels: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number[]>
+```
+
+### getPositionPartials
+
+```ts
+getPositionPartials: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<{ type: "profit" | "loss"; percent: number; currentPrice: number; effectivePrice: number; entryCountAtClose: number; debugTimestamp?: number; }[]>
+```
+
 ### getScheduledSignal
 
 ```ts

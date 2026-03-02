@@ -25,9 +25,12 @@ declare function getConfig(): {
     CC_BREAKEVEN_THRESHOLD: number;
     CC_ORDER_BOOK_TIME_OFFSET_MINUTES: number;
     CC_ORDER_BOOK_MAX_DEPTH_LEVELS: number;
+    CC_AGGREGATED_TRADES_MAX_MINUTES: number;
     CC_MAX_NOTIFICATIONS: number;
     CC_MAX_SIGNALS: number;
+    CC_MAX_LOG_LINES: number;
     CC_ENABLE_CANDLE_FETCH_MUTEX: boolean;
+    CC_ENABLE_DCA_EVERYWHERE: boolean;
 };
 ```
 

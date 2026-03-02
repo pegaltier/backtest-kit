@@ -74,6 +74,14 @@ Delegates to ExchangeInstance which calculates time range and passes it
 to the exchange schema implementation. The from/to parameters may be used
 (backtest) or ignored (live) depending on the implementation.
 
+### getAggregatedTrades
+
+```ts
+getAggregatedTrades: (symbol: string, context: { exchangeName: string; }, limit?: number) => Promise<IAggregatedTradeData[]>
+```
+
+Fetch aggregated trades for a trading pair.
+
 ### getRawCandles
 
 ```ts

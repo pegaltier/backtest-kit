@@ -136,3 +136,21 @@ Fetches order book for a trading pair.
 Calculates time range based on execution context time (when) and
 CC_ORDER_BOOK_TIME_OFFSET_MINUTES, then delegates to the exchange
 schema implementation which may use or ignore the time range.
+
+### getAggregatedTrades
+
+```ts
+getAggregatedTrades(symbol: string, limit?: number): Promise<IAggregatedTradeData[]>;
+```
+
+Fetches aggregated trades backwards from execution context time.
+
+Algorithm:
+1. Align when down to the nearest minute boundary (1-minute granularity)
+2. If limit is not specified: fetch one window of CC_AGGREGATED_TRADES_MAX_MINUTES
+3. If limit is specified: paginate backwards in CC_AGGREGATED_TRADES_MAX_MINUTES
+   chunks until at least limit trades are collected, then slice to limit
+
+Look-ahead bias prevention:
+- `to` is always aligned down to the minute (never exceeds current when)
+- Each pagination window goes strictly backwards from alignedWhen
