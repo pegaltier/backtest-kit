@@ -382,6 +382,9 @@ export { parseArgs } from "./utils/parseArgs";
 export { get } from "./utils/get";
 export { set } from "./utils/set";
 
+export { percentDiff } from "./utils/percentDiff";
+export { percentValue } from "./utils/percentValue";
+
 export { type GlobalConfig } from "./config/params";
 export { type ColumnConfig } from "./config/columns";
 
