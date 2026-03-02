@@ -41,6 +41,7 @@ import { GLOBAL_CONFIG } from "../config/params";
 import toPlainString from "../helpers/toPlainString";
 import beginTime from "../utils/beginTime";
 import { StrategyCommitContract } from "../contract/StrategyCommit.contract";
+import { getDebugTimestamp } from "../helpers/getDebugTimestamp";
 
 const INTERVAL_MINUTES: Record<SignalInterval, number> = {
   "1m": 1,
@@ -797,7 +798,7 @@ const GET_SIGNAL_FN = trycatch(
           scheduledAt: currentTime,
           pendingAt: currentTime, // Для immediate signal оба времени одинаковые
           _isScheduled: false,
-          _entry: [{ price: signal.priceOpen }],
+          _entry: [{ price: signal.priceOpen, debugTimestamp: currentTime }],
         };
 
         // Валидируем сигнал перед возвратом
@@ -822,7 +823,7 @@ const GET_SIGNAL_FN = trycatch(
         scheduledAt: currentTime,
         pendingAt: SCHEDULED_SIGNAL_PENDING_MOCK, // Временно, обновится при активации
         _isScheduled: true,
-        _entry: [{ price: signal.priceOpen }],
+        _entry: [{ price: signal.priceOpen, debugTimestamp: currentTime }],
       };
 
       // Валидируем сигнал перед возвратом
@@ -843,7 +844,7 @@ const GET_SIGNAL_FN = trycatch(
       scheduledAt: currentTime,
       pendingAt: currentTime, // Для immediate signal оба времени одинаковые
       _isScheduled: false,
-      _entry: [{ price: currentPrice }],
+      _entry: [{ price: currentPrice, debugTimestamp: currentTime }],
     };
 
     // Валидируем сигнал перед возвратом
@@ -1009,6 +1010,7 @@ const PARTIAL_PROFIT_FN = (
     percent: percentToClose,
     entryCountAtClose,
     price: currentPrice,
+    debugTimestamp: getDebugTimestamp(),
     effectivePrice,
   });
 
@@ -1067,6 +1069,7 @@ const PARTIAL_LOSS_FN = (
     price: currentPrice,
     entryCountAtClose,
     effectivePrice,
+    debugTimestamp: getDebugTimestamp(),
   });
 
   self.params.logger.warn("PARTIAL_LOSS_FN executed", {
@@ -1519,7 +1522,7 @@ const AVERAGE_BUY_FN = (
 ): boolean => {
   // Ensure _entry is initialized (handles signals loaded from disk without _entry)
   if (!signal._entry || signal._entry.length === 0) {
-    signal._entry = [{ price: signal.priceOpen }];
+    signal._entry = [{ price: signal.priceOpen, debugTimestamp: getDebugTimestamp() }];
   }
 
   const lastEntry = signal._entry[signal._entry.length - 1];
@@ -1550,7 +1553,7 @@ const AVERAGE_BUY_FN = (
     }
   }
 
-  signal._entry.push({ price: currentPrice });
+  signal._entry.push({ price: currentPrice, debugTimestamp: getDebugTimestamp() });
 
   self.params.logger.info("AVERAGE_BUY_FN executed", {
     signalId: signal.id,

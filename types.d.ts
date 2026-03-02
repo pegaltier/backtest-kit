@@ -1959,6 +1959,8 @@ interface ISignalRow extends ISignalDto {
         percent: number;
         /** Price at which this partial was executed */
         price: number;
+        /** Debug only timestamp in milliseconds */
+        debugTimestamp?: number;
         /**
          * Effective entry price (DCA average) at the moment this partial close was executed.
          * Captured from GET_EFFECTIVE_PRICE_OPEN at partial close time.
@@ -1994,6 +1996,8 @@ interface ISignalRow extends ISignalDto {
     _entry?: Array<{
         /** Price at which this entry was executed */
         price: number;
+        /** Debug only timestamp in milliseconds */
+        debugTimestamp?: number;
     }>;
     /**
      * Trailing take-profit price that overrides priceTakeProfit when set.
