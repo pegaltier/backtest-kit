@@ -2835,6 +2835,22 @@ const OPEN_NEW_PENDING_SIGNAL_FN = async (
     return null;
   }
 
+  // Sync open: if external system rejects — skip open, retry on next tick
+  const syncOpenAllowed = await CALL_SIGNAL_SYNC_OPEN_FN(
+    currentTime,
+    signal.priceOpen,
+    signal,
+    self
+  );
+
+  if (!syncOpenAllowed) {
+    self.params.logger.info("ClientStrategy OPEN_NEW_PENDING_SIGNAL_FN rejected by sync", {
+      symbol: self.params.execution.context.symbol,
+      signalId: signal.id,
+    });
+    return null;
+  }
+
   await CALL_RISK_ADD_SIGNAL_FN(
     self,
     self.params.execution.context.symbol,
@@ -4591,7 +4607,26 @@ export class ClientStrategy implements IStrategy {
     // Check if pending signal was closed - emit closed event once
     if (this._closedSignal) {
       const closedSignal = this._closedSignal;
-      this._closedSignal = null; // Clear after emitting
+
+      // Sync close: if external system rejects — keep _closedSignal, retry on next tick
+      const syncCloseAllowed = await CALL_SIGNAL_SYNC_CLOSE_FN(
+        currentTime,
+        currentPrice,
+        "closed",
+        closedSignal,
+        this
+      );
+
+      if (!syncCloseAllowed) {
+        this.params.logger.info("ClientStrategy tick: user-closed signal rejected by sync, will retry", {
+          symbol: this.params.execution.context.symbol,
+          signalId: closedSignal.id,
+        });
+        // Do NOT clear _closedSignal — retry on next tick
+        return await RETURN_IDLE_FN(this, currentPrice);
+      }
+
+      this._closedSignal = null; // Clear only after sync confirmed
 
       this.params.logger.info("ClientStrategy tick: pending signal was closed", {
         symbol: this.params.execution.context.symbol,
@@ -5048,9 +5083,33 @@ export class ClientStrategy implements IStrategy {
       const currentPrice = await this.params.exchange.getAveragePrice(symbol);
 
       const closedSignal = this._closedSignal;
-      this._closedSignal = null; // Clear after using
 
       const closeTimestamp = this.params.execution.context.when.getTime();
+
+      // Sync close: if external system rejects — restore _pendingSignal, retry on next backtest() call
+      const syncCloseAllowed = await CALL_SIGNAL_SYNC_CLOSE_FN(
+        closeTimestamp,
+        currentPrice,
+        "closed",
+        closedSignal,
+        this
+      );
+
+      if (!syncCloseAllowed) {
+        this.params.logger.info("ClientStrategy backtest: user-closed signal rejected by sync, will retry", {
+          symbol: this.params.execution.context.symbol,
+          signalId: closedSignal.id,
+        });
+        // Restore _pendingSignal so next backtest() call can process it normally
+        this._closedSignal = null;
+        this._pendingSignal = closedSignal;
+        throw new Error(
+          `ClientStrategy backtest: signal close rejected by sync (signalId=${closedSignal.id}). ` +
+          `Retry backtest() with new candle data.`
+        );
+      }
+
+      this._closedSignal = null; // Clear only after sync confirmed
 
       // Emit commit with correct timestamp from backtest context
       await CALL_COMMIT_FN(this, {
