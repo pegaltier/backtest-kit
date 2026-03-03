@@ -54,6 +54,8 @@ interface IReportTarget {
   live: boolean;
   /** Enable backtest closed signal event logging */
   backtest: boolean;
+  /** Enable signal synchronization event logging (signal-open, signal-close) */
+  sync: boolean;
 }
 
 /**
@@ -309,6 +311,7 @@ const WILDCARD_TARGET: IReportTarget = {
   risk: true,
   schedule: true,
   walker: true,
+  sync: true,
 };
 
 /**
@@ -357,6 +360,7 @@ export class ReportUtils {
     schedule = false,
     walker = false,
     strategy = false,
+    sync = false,
   }: Partial<IReportTarget> = WILDCARD_TARGET) => {
     lib.loggerService.debug(REPORT_UTILS_METHOD_NAME_ENABLE, {
       backtest: bt,
@@ -369,6 +373,7 @@ export class ReportUtils {
       schedule,
       walker,
       strategy,
+      sync,
     });
     const unList: Function[] = [];
     if (bt) {
@@ -399,7 +404,10 @@ export class ReportUtils {
       unList.push(lib.walkerReportService.subscribe());
     }
     if (strategy) {
-      unList.push(lib.scheduleReportService.subscribe());
+      unList.push(lib.strategyReportService.subscribe());
+    }
+    if (sync) {
+      unList.push(lib.syncReportService.subscribe());
     }
     return compose(...unList.map((un) => () => void un()));
   };
@@ -451,6 +459,7 @@ export class ReportUtils {
     schedule = false,
     walker = false,
     strategy = false,
+    sync = false,
   }: Partial<IReportTarget> = WILDCARD_TARGET) => {
     lib.loggerService.debug(REPORT_UTILS_METHOD_NAME_DISABLE, {
       backtest: bt,
@@ -463,6 +472,7 @@ export class ReportUtils {
       schedule,
       walker,
       strategy,
+      sync,
     });
     if (bt) {
       lib.backtestReportService.unsubscribe();
@@ -493,6 +503,9 @@ export class ReportUtils {
     }
     if (strategy) {
       lib.strategyReportService.unsubscribe();
+    }
+    if (sync) {
+      lib.syncReportService.unsubscribe();
     }
   };
 }

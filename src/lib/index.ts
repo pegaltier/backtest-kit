@@ -68,6 +68,7 @@ import PartialReportService from "./services/report/PartialReportService";
 import BreakevenReportService from "./services/report/BreakevenReportService";
 import RiskReportService from "./services/report/RiskReportService";
 import StrategyReportService from "./services/report/StrategyReportService";
+import SyncReportService from "./services/report/SyncReportService";
 import StrategyMarkdownService from "./services/markdown/StrategyMarkdownService";
 
 const baseServices = {
@@ -224,6 +225,7 @@ const reportServices = {
   ),
   riskReportService: inject<RiskReportService>(TYPES.riskReportService),
   strategyReportService: inject<StrategyReportService>(TYPES.strategyReportService),
+  syncReportService: inject<SyncReportService>(TYPES.syncReportService),
 };
 
 const validationServices = {

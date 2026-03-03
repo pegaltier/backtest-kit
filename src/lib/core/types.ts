@@ -85,6 +85,7 @@ const reportServices = {
     breakevenReportService: Symbol('breakevenReportService'),
     riskReportService: Symbol('riskReportService'),
     strategyReportService: Symbol('strategyReportService'),
+    syncReportService: Symbol('syncReportService'),
 }
 
 const validationServices = {

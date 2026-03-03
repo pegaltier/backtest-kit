@@ -63,6 +63,7 @@ import PartialReportService from "../services/report/PartialReportService";
 import BreakevenReportService from "../services/report/BreakevenReportService";
 import RiskReportService from "../services/report/RiskReportService";
 import StrategyReportService from "../services/report/StrategyReportService";
+import SyncReportService from "../services/report/SyncReportService";
 import StrategyMarkdownService from "../services/markdown/StrategyMarkdownService";
 
 {
@@ -151,6 +152,7 @@ import StrategyMarkdownService from "../services/markdown/StrategyMarkdownServic
     provide(TYPES.breakevenReportService, () => new BreakevenReportService());
     provide(TYPES.riskReportService, () => new RiskReportService());
     provide(TYPES.strategyReportService, () => new StrategyReportService());
+    provide(TYPES.syncReportService, () => new SyncReportService());
 }
 
 {
