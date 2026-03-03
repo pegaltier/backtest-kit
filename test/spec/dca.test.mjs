@@ -24,20 +24,20 @@ test("getEffectivePriceOpen: empty _entry → returns priceOpen", ({ pass, fail 
 });
 
 test("getEffectivePriceOpen: single entry → returns that price", ({ pass, fail }) => {
-  const result = getEffectivePriceOpen({ priceOpen: 100, _entry: [{ price: 100 }] });
+  const result = getEffectivePriceOpen({ priceOpen: 100, _entry: [{ price: 100, cost: 100 }] });
   if (!approxEqual(result, 100)) { fail(`Expected 100, got ${result}`); return; }
   pass("ok");
 });
 
 test("getEffectivePriceOpen: two entries → harmonic mean", ({ pass, fail }) => {
   // $100@100 + $100@80 = 2.25 BTC for $200 → avg = 200/2.25 = 88.888...
-  const result = getEffectivePriceOpen({ priceOpen: 100, _entry: [{ price: 100 }, { price: 80 }] });
+  const result = getEffectivePriceOpen({ priceOpen: 100, _entry: [{ price: 100, cost: 100 }, { price: 80, cost: 100 }] });
   if (!approxEqual(result, hm(100, 80))) { fail(`Expected ${hm(100,80).toFixed(9)}, got ${result}`); return; }
   pass(`hm([100,80]) = ${result.toFixed(9)}`);
 });
 
 test("getEffectivePriceOpen: three entries → harmonic mean", ({ pass, fail }) => {
-  const result = getEffectivePriceOpen({ priceOpen: 100, _entry: [{ price: 100 }, { price: 80 }, { price: 70 }] });
+  const result = getEffectivePriceOpen({ priceOpen: 100, _entry: [{ price: 100, cost: 100 }, { price: 80, cost: 100 }, { price: 70, cost: 100 }] });
   if (!approxEqual(result, hm(100, 80, 70))) { fail(`Expected ${hm(100,80,70).toFixed(9)}, got ${result}`); return; }
   pass(`hm([100,80,70]) = ${result.toFixed(9)}`);
 });
@@ -58,8 +58,8 @@ test("getEffectivePriceOpen: partial exit then DCA — correct weighted price", 
   // result = 170 / 1.95 = 87.179487179
   const signal = {
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 80 }],
-    _partial: [{ type: "profit", percent: 30, currentPrice: 120, effectivePrice: 100, entryCountAtClose: 1 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 80, cost: 100 }],
+    _partial: [{ type: "profit", percent: 30, currentPrice: 120, costBasisAtClose: 100, entryCountAtClose: 1 }],
   };
   const result = getEffectivePriceOpen(signal);
   if (!approxEqual(result, 87.179487179)) { fail(`Expected 87.179487179, got ${result}`); return; }
@@ -73,8 +73,8 @@ test("getEffectivePriceOpen: no new DCA after partial → effective price unchan
   const snap = hm(100, 80);
   const signal = {
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 80 }],
-    _partial: [{ type: "profit", percent: 50, currentPrice: 110, effectivePrice: snap, entryCountAtClose: 2 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 80, cost: 100 }],
+    _partial: [{ type: "profit", percent: 50, currentPrice: 110, costBasisAtClose: 200, entryCountAtClose: 2 }],
   };
   const result = getEffectivePriceOpen(signal);
   if (!approxEqual(result, snap)) { fail(`Expected ${snap.toFixed(9)}, got ${result}`); return; }
@@ -85,8 +85,8 @@ test("getEffectivePriceOpen: 100% closed single partial → returns lastPartial.
   // totalCoins = 0 → returns effectivePrice from last partial
   const signal = {
     priceOpen: 100,
-    _entry: [{ price: 100 }],
-    _partial: [{ type: "profit", percent: 100, currentPrice: 120, effectivePrice: 100, entryCountAtClose: 1 }],
+    _entry: [{ price: 100, cost: 100 }],
+    _partial: [{ type: "profit", percent: 100, currentPrice: 120, costBasisAtClose: 100, entryCountAtClose: 1 }],
   };
   const result = getEffectivePriceOpen(signal);
   if (!approxEqual(result, 100)) { fail(`Expected 100, got ${result}`); return; }
@@ -101,10 +101,10 @@ test("getEffectivePriceOpen: two partials with same entryCountAtClose — cost b
   // totalCost = 35, result = 35/0.5 = 70
   const signal = {
     priceOpen: 100,
-    _entry: [{ price: 100 }],
+    _entry: [{ price: 100, cost: 100 }],
     _partial: [
-      { type: "profit", percent: 30, currentPrice: 110, effectivePrice: 100, entryCountAtClose: 1 },
-      { type: "profit", percent: 50, currentPrice: 120, effectivePrice: 70,  entryCountAtClose: 1 },
+      { type: "profit", percent: 30, currentPrice: 110, costBasisAtClose: 100, entryCountAtClose: 1 },
+      { type: "profit", percent: 50, currentPrice: 120, costBasisAtClose: 70,  entryCountAtClose: 1 },
     ],
   };
   const result = getEffectivePriceOpen(signal);
@@ -131,7 +131,7 @@ test("toProfitLossDto: SHORT no partials, close@90", ({ pass, fail }) => {
 
 test("toProfitLossDto: LONG with DCA[100,80], no partials, close@100", ({ pass, fail }) => {
   // eff = hm([100,80]) = 88.888...
-  const signal = { position: "long", priceOpen: 100, _entry: [{ price: 100 }, { price: 80 }] };
+  const signal = { position: "long", priceOpen: 100, _entry: [{ price: 100, cost: 100 }, { price: 80, cost: 100 }] };
   const { pnlPercentage } = toProfitLossDto(signal, 100);
   if (!approxEqual(pnlPercentage, 12.062949550)) { fail(`Expected 12.062949550, got ${pnlPercentage}`); return; }
   pass(`pnl = ${pnlPercentage.toFixed(9)}% (eff=hm[100,80]=${hm(100,80).toFixed(3)})`);
@@ -159,8 +159,8 @@ test("toProfitLossDto: S3-key weight=0.25/0.75 after partialExit→DCA (LONG)", 
   const signal = {
     position: "long",
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 80 }],
-    _partial: [{ type: "profit", percent: 50, currentPrice: 120, effectivePrice: 100, entryCountAtClose: 1 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 80, cost: 100 }],
+    _partial: [{ type: "profit", percent: 50, currentPrice: 120, costBasisAtClose: 100, entryCountAtClose: 1 }],
   };
   const { pnlPercentage } = toProfitLossDto(signal, 90);
   if (!approxEqual(pnlPercentage, 8.324184565)) { fail(`Expected 8.324184565, got ${pnlPercentage}`); return; }
@@ -174,12 +174,11 @@ test("toProfitLossDto: S3-key weight=0.25/0.75 after partialExit→DCA (LONG)", 
 // ---------------------------------------------------------------------------
 
 test("toProfitLossDto: S1 averageBuy→partialProfit (LONG)", ({ pass, fail }) => {
-  const snap = hm(100, 80);
   const signal = {
     position: "long",
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 80 }],
-    _partial: [{ type: "profit", percent: 50, currentPrice: 110, effectivePrice: snap, entryCountAtClose: 2 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 80, cost: 100 }],
+    _partial: [{ type: "profit", percent: 50, currentPrice: 110, costBasisAtClose: 200, entryCountAtClose: 2 }],
   };
   const { pnlPercentage } = toProfitLossDto(signal, 120);
   if (!approxEqual(pnlPercentage, 28.887391983)) { fail(`Expected 28.887391983, got ${pnlPercentage}`); return; }
@@ -193,12 +192,11 @@ test("toProfitLossDto: S1 averageBuy→partialProfit (LONG)", ({ pass, fail }) =
 // ---------------------------------------------------------------------------
 
 test("toProfitLossDto: S2 averageBuy→partialLoss (LONG)", ({ pass, fail }) => {
-  const snap = hm(100, 80);
   const signal = {
     position: "long",
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 80 }],
-    _partial: [{ type: "loss", percent: 30, currentPrice: 75, effectivePrice: snap, entryCountAtClose: 2 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 80, cost: 100 }],
+    _partial: [{ type: "loss", percent: 30, currentPrice: 75, costBasisAtClose: 200, entryCountAtClose: 2 }],
   };
   const { pnlPercentage } = toProfitLossDto(signal, 100);
   if (!approxEqual(pnlPercentage, 3.650728334)) { fail(`Expected 3.650728334, got ${pnlPercentage}`); return; }
@@ -215,8 +213,8 @@ test("toProfitLossDto: S3 partialProfit→averageBuy (LONG)", ({ pass, fail }) =
   const signal = {
     position: "long",
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 80 }],
-    _partial: [{ type: "profit", percent: 30, currentPrice: 120, effectivePrice: 100, entryCountAtClose: 1 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 80, cost: 100 }],
+    _partial: [{ type: "profit", percent: 30, currentPrice: 120, costBasisAtClose: 100, entryCountAtClose: 1 }],
   };
   const { pnlPercentage } = toProfitLossDto(signal, 105);
   if (!approxEqual(pnlPercentage, 19.914356019)) { fail(`Expected 19.914356019, got ${pnlPercentage}`); return; }
@@ -233,8 +231,8 @@ test("toProfitLossDto: S4 partialLoss→averageBuy (LONG)", ({ pass, fail }) => 
   const signal = {
     position: "long",
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 60 }],
-    _partial: [{ type: "loss", percent: 30, currentPrice: 80, effectivePrice: 100, entryCountAtClose: 1 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 60, cost: 100 }],
+    _partial: [{ type: "loss", percent: 30, currentPrice: 80, costBasisAtClose: 100, entryCountAtClose: 1 }],
   };
   const { pnlPercentage } = toProfitLossDto(signal, 90);
   if (!approxEqual(pnlPercentage, 18.044973526)) { fail(`Expected 18.044973526, got ${pnlPercentage}`); return; }
@@ -256,17 +254,13 @@ test("toProfitLossDto: S4 partialLoss→averageBuy (LONG)", ({ pass, fail }) => 
 //   snap2 = getEff([100,80],[p1]): remainingCostBasis=75, oldCoins=75/100=0.75, newCoins=100/80
 //         = 175/(0.75+100/80) = 87.500000000  (NOT hm(100,80)=88.89 — ignores p1's sell)
 test("toProfitLossDto: S5 partial→DCA→partial→DCA→close (LONG)", ({ pass, fail }) => {
-  const snap1 = 100;
-  // snap2 = effective price after p1 sold 25% and DCA@80 added:
-  // remainingCostBasis=100*(1-0.25)=75, oldCoins=75/100=0.75, newCoins=100/80
-  const snap2 = (75 + 100) / (0.75 + 100 / 80); // 87.500000000
   const signal = {
     position: "long",
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 80 }, { price: 70 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 80, cost: 100 }, { price: 70, cost: 100 }],
     _partial: [
-      { type: "profit", percent: 25, currentPrice: 115, effectivePrice: snap1, entryCountAtClose: 1 },
-      { type: "profit", percent: 25, currentPrice: 112, effectivePrice: snap2, entryCountAtClose: 2 },
+      { type: "profit", percent: 25, currentPrice: 115, costBasisAtClose: 100, entryCountAtClose: 1 },
+      { type: "profit", percent: 25, currentPrice: 112, costBasisAtClose: 175, entryCountAtClose: 2 },
     ],
   };
   const { pnlPercentage } = toProfitLossDto(signal, 105);
@@ -284,17 +278,13 @@ test("toProfitLossDto: S5 partial→DCA→partial→DCA→close (LONG)", ({ pass
 //   snap2 = getEff([100,85,75],[p1]): remainingCostBasis=140, oldCoins=140/snap1, newCoins=100/75
 //         = 240/(140/snap1+100/75) = 84.008236102  (NOT hm(100,85,75)=81.55 — that ignores p1's sell)
 test("toProfitLossDto: S6 DCA→partial→DCA→partial→close (LONG)", ({ pass, fail }) => {
-  const snap1 = hm(100, 85);
-  // snap2 = effective price of position just before second partial (after p1 sold 30% and DCA@75 added)
-  // remainingCostBasis after p1 = 200*(1-0.3)=140, oldCoins=140/snap1, newCoins=100/75
-  const snap2 = (140 + 100) / (140 / snap1 + 100 / 75); // 84.008236102
   const signal = {
     position: "long",
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 85 }, { price: 75 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 85, cost: 100 }, { price: 75, cost: 100 }],
     _partial: [
-      { type: "profit", percent: 30, currentPrice: 110, effectivePrice: snap1, entryCountAtClose: 2 },
-      { type: "loss",   percent: 20, currentPrice: 88,  effectivePrice: snap2, entryCountAtClose: 3 },
+      { type: "profit", percent: 30, currentPrice: 110, costBasisAtClose: 200, entryCountAtClose: 2 },
+      { type: "loss",   percent: 20, currentPrice: 88,  costBasisAtClose: 240, entryCountAtClose: 3 },
     ],
   };
   const { pnlPercentage } = toProfitLossDto(signal, 95);
@@ -312,16 +302,13 @@ test("toProfitLossDto: S6 DCA→partial→DCA→partial→close (LONG)", ({ pass
 //   snap2 = getEff([100,70,60],[p1]): remainingCostBasis=80, oldCoins=80/100=0.8, newCoins=100/70+100/60
 //         = 280/(0.8+100/70+100/60) = 71.882640587  (NOT hm(100,70,60)=73.26 — that ignores p1's sell)
 test("toProfitLossDto: S7 partial→DCA→DCA→partial→close (LONG)", ({ pass, fail }) => {
-  // snap2 = effective price of position just before second partial (after p1 sold 20% and DCAs@70,@60 added)
-  // remainingCostBasis after p1 = 100*(1-0.2)=80, oldCoins=80/100=0.8, newCoins=100/70+100/60
-  const snap2 = (80 + 100 + 100) / (0.8 + 100 / 70 + 100 / 60); // 71.882640587
   const signal = {
     position: "long",
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 70 }, { price: 60 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 70, cost: 100 }, { price: 60, cost: 100 }],
     _partial: [
-      { type: "loss",   percent: 20, currentPrice: 85, effectivePrice: 100,   entryCountAtClose: 1 },
-      { type: "profit", percent: 30, currentPrice: 95, effectivePrice: snap2, entryCountAtClose: 3 },
+      { type: "loss",   percent: 20, currentPrice: 85, costBasisAtClose: 100, entryCountAtClose: 1 },
+      { type: "profit", percent: 30, currentPrice: 95, costBasisAtClose: 280, entryCountAtClose: 3 },
     ],
   };
   const { pnlPercentage } = toProfitLossDto(signal, 80);
@@ -340,17 +327,13 @@ test("toProfitLossDto: S7 partial→DCA→DCA→partial→close (LONG)", ({ pass
 //     remainingCostBasis = 200*(1-0.4)=120, oldCoins=120/snap1, newCoins=100/70
 //     result = 220/(120/snap1 + 100/70)  [= 79.177377892]
 test("toProfitLossDto: S8 DCA→partial→DCA→partial→close each snap distinct (LONG)", ({ pass, fail }) => {
-  const snap1 = hm(100, 80);
-  // snap2 = getEffectivePriceOpen of position just before second partial
-  // remainingCostBasis after p1 = 200*(1-0.4)=120, oldCoins=120/snap1, newCoins=100/70
-  const snap2 = (120 + 100) / (120 / snap1 + 100 / 70); // 79.177377892
   const signal = {
     position: "long",
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 80 }, { price: 70 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 80, cost: 100 }, { price: 70, cost: 100 }],
     _partial: [
-      { type: "profit", percent: 40, currentPrice: 100, effectivePrice: snap1, entryCountAtClose: 2 },
-      { type: "profit", percent: 30, currentPrice: 110, effectivePrice: snap2, entryCountAtClose: 3 },
+      { type: "profit", percent: 40, currentPrice: 100, costBasisAtClose: 200, entryCountAtClose: 2 },
+      { type: "profit", percent: 30, currentPrice: 110, costBasisAtClose: 220, entryCountAtClose: 3 },
     ],
   };
   const { pnlPercentage } = toProfitLossDto(signal, 95);
@@ -372,17 +355,13 @@ test("toProfitLossDto: S8 DCA→partial→DCA→partial→close each snap distin
 //     i=0: cb=100, reduce→80; i=1: newE=0, cb=80 (last)
 //     remainingCostBasis=80*(1-0.2)=64, oldCoins=64/snap2, newCoins=100/70
 test("toProfitLossDto: S9 partial→partial→DCA→close (LONG)", ({ pass, fail }) => {
-  const snap1 = 100;
-  // snap2 = effective price of position at time of p2 (after p1 fired, DCA@70 not yet added)
-  // replay: p1 sold 20%, so remainingCostBasis=80, oldCoins=80/100=0.8, newCoins=100/70
-  const snap2 = (80 + 100) / (0.8 + 100 / 70); // 80.769230769
   const signal = {
     position: "long",
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 70 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 70, cost: 100 }],
     _partial: [
-      { type: "profit", percent: 20, currentPrice: 120, effectivePrice: snap1, entryCountAtClose: 1 },
-      { type: "loss",   percent: 20, currentPrice: 90,  effectivePrice: snap2, entryCountAtClose: 1 },
+      { type: "profit", percent: 20, currentPrice: 120, costBasisAtClose: 100, entryCountAtClose: 1 },
+      { type: "loss",   percent: 20, currentPrice: 90,  costBasisAtClose: 80,  entryCountAtClose: 1 },
     ],
   };
   const { pnlPercentage } = toProfitLossDto(signal, 95);
@@ -405,15 +384,13 @@ test("toProfitLossDto: S9 partial→partial→DCA→close (LONG)", ({ pass, fail
 //     remainingCostBasis=200*(1-0.3)=140, oldCoins=140/snap1, newCoins=100/120
 //     snap2 = (140+100)/(140/snap1+100/120)  [= 110.614525140]
 test("toProfitLossDto: S10 SHORT DCA→partial→DCA→partial→close", ({ pass, fail }) => {
-  const snap1 = hm(100, 110);
-  const snap2 = (140 + 100) / (140 / snap1 + 100 / 120); // 110.614525140
   const signal = {
     position: "short",
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 110 }, { price: 120 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 110, cost: 100 }, { price: 120, cost: 100 }],
     _partial: [
-      { type: "profit", percent: 30, currentPrice: 90, effectivePrice: snap1, entryCountAtClose: 2 },
-      { type: "profit", percent: 30, currentPrice: 85, effectivePrice: snap2, entryCountAtClose: 3 },
+      { type: "profit", percent: 30, currentPrice: 90, costBasisAtClose: 200, entryCountAtClose: 2 },
+      { type: "profit", percent: 30, currentPrice: 85, costBasisAtClose: 240, entryCountAtClose: 3 },
     ],
   };
   const { pnlPercentage } = toProfitLossDto(signal, 88);
@@ -432,14 +409,13 @@ test("toProfitLossDto: S10 SHORT DCA→partial→DCA→partial→close", ({ pass
 //     remainingCostBasis=100*(1-0.25)=75, oldCoins=75/100=0.75, newCoins=100/115
 //     snap2 = (75+100)/(0.75+100/115)  [= 108.053691275]
 test("toProfitLossDto: S11 SHORT partial(loss)→DCA→partial(profit)→close", ({ pass, fail }) => {
-  const snap2 = (75 + 100) / (0.75 + 100 / 115); // 108.053691275
   const signal = {
     position: "short",
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 115 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 115, cost: 100 }],
     _partial: [
-      { type: "loss",   percent: 25, currentPrice: 105, effectivePrice: 100,   entryCountAtClose: 1 },
-      { type: "profit", percent: 25, currentPrice: 88,  effectivePrice: snap2, entryCountAtClose: 2 },
+      { type: "loss",   percent: 25, currentPrice: 105, costBasisAtClose: 100, entryCountAtClose: 1 },
+      { type: "profit", percent: 25, currentPrice: 88,  costBasisAtClose: 175, entryCountAtClose: 2 },
     ],
   };
   const { pnlPercentage } = toProfitLossDto(signal, 92);
@@ -453,8 +429,8 @@ test("toProfitLossDto: SHORT S3 partialProfit→averageBuy (SHORT)", ({ pass, fa
   const signal = {
     position: "short",
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 120 }],
-    _partial: [{ type: "profit", percent: 30, currentPrice: 80, effectivePrice: 100, entryCountAtClose: 1 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 120, cost: 100 }],
+    _partial: [{ type: "profit", percent: 30, currentPrice: 80, costBasisAtClose: 100, entryCountAtClose: 1 }],
   };
   const { pnlPercentage } = toProfitLossDto(signal, 85);
   if (!approxEqual(pnlPercentage, 22.501524358)) { fail(`Expected 22.501524358, got ${pnlPercentage}`); return; }
@@ -479,22 +455,15 @@ test("toProfitLossDto: SHORT S3 partialProfit→averageBuy (SHORT)", ({ pass, fa
 //     replay: i=0:cb=100,red→80; i=1:cb=180,red→144; i=2:newE=1,cb=244 (last)
 //     remainingCostBasis=244*(1-0.2)=195.2, oldCoins=195.2/snap3, newCoins=100/65
 test("toProfitLossDto: S13 four partials three DCA rounds (LONG)", ({ pass, fail }) => {
-  const snap1 = 100;
-  // snap2 = getEff after p1 sold 20% then DCA@80: remainingCostBasis=80, oldCoins=80/100, newCoins=100/80
-  const snap2 = (80 + 100) / (80 / 100 + 100 / 80); // 87.804878049
-  // snap3: replay cb: 100→80 (p1 reduce), +100=180 (p2, last); rem=180*0.8=144; oldCoins=144/snap2, newCoins=100/72
-  const snap3 = (144 + 100) / (144 / snap2 + 100 / 72); // 80.557593544
-  // snap4: replay: 100→80, +100=180→144 (p2 reduce), +100=244 (p3, last); rem=244*0.8=195.2; oldCoins=195.2/snap3, newCoins=100/65
-  const snap4 = (195.2 + 100) / (195.2 / snap3 + 100 / 65); // 74.515861783
   const signal = {
     position: "long",
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 80 }, { price: 72 }, { price: 65 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 80, cost: 100 }, { price: 72, cost: 100 }, { price: 65, cost: 100 }],
     _partial: [
-      { type: "profit", percent: 20, currentPrice: 115, effectivePrice: snap1, entryCountAtClose: 1 },
-      { type: "profit", percent: 20, currentPrice: 108, effectivePrice: snap2, entryCountAtClose: 2 },
-      { type: "loss",   percent: 20, currentPrice: 83,  effectivePrice: snap3, entryCountAtClose: 3 },
-      { type: "profit", percent: 20, currentPrice: 100, effectivePrice: snap4, entryCountAtClose: 4 },
+      { type: "profit", percent: 20, currentPrice: 115, costBasisAtClose: 100,   entryCountAtClose: 1 },
+      { type: "profit", percent: 20, currentPrice: 108, costBasisAtClose: 180,   entryCountAtClose: 2 },
+      { type: "loss",   percent: 20, currentPrice: 83,  costBasisAtClose: 244,   entryCountAtClose: 3 },
+      { type: "profit", percent: 20, currentPrice: 100, costBasisAtClose: 295.2, entryCountAtClose: 4 },
     ],
   };
   const { pnlPercentage } = toProfitLossDto(signal, 100);
@@ -513,10 +482,10 @@ test("toProfitLossDto: 100% closed via two chained partials (no remaining)", ({ 
   const signal = {
     position: "long",
     priceOpen: 100,
-    _entry: [{ price: 100 }],
+    _entry: [{ price: 100, cost: 100 }],
     _partial: [
-      { type: "profit", percent: 60,  currentPrice: 110, effectivePrice: 100, entryCountAtClose: 1 },
-      { type: "profit", percent: 100, currentPrice: 115, effectivePrice: 100, entryCountAtClose: 1 },
+      { type: "profit", percent: 60,  currentPrice: 110, costBasisAtClose: 100, entryCountAtClose: 1 },
+      { type: "profit", percent: 100, currentPrice: 115, costBasisAtClose: 40,  entryCountAtClose: 1 },
     ],
   };
   const { pnlPercentage } = toProfitLossDto(signal, 999);
@@ -533,10 +502,10 @@ test("toProfitLossDto: throws when partial dollar value exceeds totalInvested", 
     id: "test",
     position: "long",
     priceOpen: 100,
-    _entry: [{ price: 100 }],
+    _entry: [{ price: 100, cost: 100 }],
     _partial: [
-      { type: "profit", percent: 80, currentPrice: 110, effectivePrice: 100, entryCountAtClose: 1 },
-      { type: "profit", percent: 60, currentPrice: 115, effectivePrice: 100, entryCountAtClose: 2 },
+      { type: "profit", percent: 80, currentPrice: 110, costBasisAtClose: 100, entryCountAtClose: 1 },
+      { type: "profit", percent: 60, currentPrice: 115, costBasisAtClose: 120, entryCountAtClose: 2 },
     ],
   };
   try {
@@ -549,15 +518,15 @@ test("toProfitLossDto: throws when partial dollar value exceeds totalInvested", 
 
 test("toProfitLossDto: effectivePrice per-partial independent of current _entry", ({ pass, fail }) => {
   // entry[100,40] → getEff without partials would give hm(100,40)~57
-  // partial 50%@120 (eff=100, cnt=1) correctly uses eff=100 for that partial's PNL
+  // partial 50%@120 (costBasisAtClose=100, cnt=1) correctly uses eff=100 for that partial's PNL
   // remEff = (remainingCostBasis=50, oldCoins=50/100=0.5, newCoins=100/40=2.5)
   //        = (50+100)/(0.5+2.5) = 150/3 = 50
   // pnl = 64.405659341
   const signal = {
     position: "long",
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 40 }],
-    _partial: [{ type: "profit", percent: 50, currentPrice: 120, effectivePrice: 100, entryCountAtClose: 1 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 40, cost: 100 }],
+    _partial: [{ type: "profit", percent: 50, currentPrice: 120, costBasisAtClose: 100, entryCountAtClose: 1 }],
   };
   const { pnlPercentage } = toProfitLossDto(signal, 90);
   if (!approxEqual(pnlPercentage, 64.405659341)) { fail(`Expected 64.405659341, got ${pnlPercentage}`); return; }
@@ -651,19 +620,14 @@ test("weights sanity S9: two partials same cnt, costBasis chains correctly", ({ 
 //   snap2=getEff([100,80],[p1]):  rem=70, oldCoins=70/100=0.7, newCoins=100/80
 //   snap3=getEff([100,80,70],[p1,p2]): replay: cb=100→70, +100=170(last); rem=170*0.75=127.5; oldCoins=127.5/snap2, newCoins=100/70
 test("toProfitLossDto: SA entry-partial-entry-partial-entry-partial, cnt=[1,2,3] (LONG)", ({ pass, fail }) => {
-  const snap1 = 100;
-  // snap2: after p1(30%,cnt=1): rem=70, oldCoins=0.7, newCoins=100/80
-  const snap2 = (70 + 100) / (0.7 + 100 / 80); // 87.179487179
-  // snap3: after p1+p2(25%): replay cb: +100=100→70; +100=170(last); rem=170*(1-0.25)=127.5; oldCoins=127.5/snap2, newCoins=100/70
-  const snap3 = (127.5 + 100) / (127.5 / snap2 + 100 / 70); // 78.690549722
   const signal = {
     position: "long",
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 80 }, { price: 70 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 80, cost: 100 }, { price: 70, cost: 100 }],
     _partial: [
-      { type: "profit", percent: 30, currentPrice: 115, effectivePrice: snap1, entryCountAtClose: 1 },
-      { type: "profit", percent: 25, currentPrice: 110, effectivePrice: snap2, entryCountAtClose: 2 },
-      { type: "profit", percent: 20, currentPrice: 95,  effectivePrice: snap3, entryCountAtClose: 3 },
+      { type: "profit", percent: 30, currentPrice: 115, costBasisAtClose: 100,   entryCountAtClose: 1 },
+      { type: "profit", percent: 25, currentPrice: 110, costBasisAtClose: 170,   entryCountAtClose: 2 },
+      { type: "profit", percent: 20, currentPrice: 95,  costBasisAtClose: 227.5, entryCountAtClose: 3 },
     ],
   };
   const { pnlPercentage } = toProfitLossDto(signal, 105);
@@ -683,19 +647,14 @@ test("toProfitLossDto: SA entry-partial-entry-partial-entry-partial, cnt=[1,2,3]
 //   snap2=getEff([100,90,80],[p1]): rem=150, oldCoins=150/snap1, newCoins=100/80
 //   snap3=getEff([100,90,80,70],[p1,p2]): replay: cb=200→150; +100=250(last); rem=175; oldCoins=175/snap2, newCoins=100/70
 test("toProfitLossDto: SB entry-DCA-partial-DCA-partial-DCA-partial, cnt=[2,3,4] (LONG)", ({ pass, fail }) => {
-  const snap1 = hm(100, 90); // 94.736842105
-  // snap2: after p1(25%,cnt=2): rem=200*(1-0.25)=150, oldCoins=150/snap1, newCoins=100/80
-  const snap2 = (150 + 100) / (150 / snap1 + 100 / 80); // 88.235294118
-  // snap3: after p1+p2(30%): replay: cb=200→150, +100=250(last); rem=250*(1-0.3)=175; oldCoins=175/snap2, newCoins=100/70
-  const snap3 = (175 + 100) / (175 / snap2 + 100 / 70); // 80.600139567
   const signal = {
     position: "long",
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 90 }, { price: 80 }, { price: 70 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 90, cost: 100 }, { price: 80, cost: 100 }, { price: 70, cost: 100 }],
     _partial: [
-      { type: "profit", percent: 25, currentPrice: 110, effectivePrice: snap1, entryCountAtClose: 2 },
-      { type: "profit", percent: 30, currentPrice: 105, effectivePrice: snap2, entryCountAtClose: 3 },
-      { type: "profit", percent: 20, currentPrice: 95,  effectivePrice: snap3, entryCountAtClose: 4 },
+      { type: "profit", percent: 25, currentPrice: 110, costBasisAtClose: 200, entryCountAtClose: 2 },
+      { type: "profit", percent: 30, currentPrice: 105, costBasisAtClose: 250, entryCountAtClose: 3 },
+      { type: "profit", percent: 20, currentPrice: 95,  costBasisAtClose: 275, entryCountAtClose: 4 },
     ],
   };
   const { pnlPercentage } = toProfitLossDto(signal, 100);
@@ -717,21 +676,14 @@ test("toProfitLossDto: SB entry-DCA-partial-DCA-partial-DCA-partial, cnt=[2,3,4]
 //         rem=216; oldCoins=216/snap2; newCoins=100/920
 //         = 316/(216/snap2+100/920) = 929.917012143
 test("toProfitLossDto: SD profit→DCA→DCA→loss→DCA→profit→DCA→close, cnt=[1,3,4] (LONG)", ({ pass, fail }) => {
-  const snap1 = 1000;
-  // snap2: p1 sold 30% of cb=100 → rem=70; then DCAs@950,@880 added
-  // oldCoins=70/1000=0.07, newCoins=100/950+100/880
-  const snap2 = (70 + 200) / (0.07 + 100 / 950 + 100 / 880); // 934.580987082
-  // snap3: replay p1+p2: i=0:cb=100→70; i=1:+200=270(last); rem=270*0.8=216
-  // oldCoins=216/snap2, newCoins=100/920
-  const snap3 = (216 + 100) / (216 / snap2 + 100 / 920); // 929.917012143
   const signal = {
     position: "long",
     priceOpen: 1000,
-    _entry: [{ price: 1000 }, { price: 950 }, { price: 880 }, { price: 920 }, { price: 980 }],
+    _entry: [{ price: 1000, cost: 100 }, { price: 950, cost: 100 }, { price: 880, cost: 100 }, { price: 920, cost: 100 }, { price: 980, cost: 100 }],
     _partial: [
-      { type: "profit", percent: 30, currentPrice: 1150, effectivePrice: snap1, entryCountAtClose: 1 },
-      { type: "loss",   percent: 20, currentPrice: 860,  effectivePrice: snap2, entryCountAtClose: 3 },
-      { type: "profit", percent: 40, currentPrice: 1050, effectivePrice: snap3, entryCountAtClose: 4 },
+      { type: "profit", percent: 30, currentPrice: 1150, costBasisAtClose: 100, entryCountAtClose: 1 },
+      { type: "loss",   percent: 20, currentPrice: 860,  costBasisAtClose: 270, entryCountAtClose: 3 },
+      { type: "profit", percent: 40, currentPrice: 1050, costBasisAtClose: 316, entryCountAtClose: 4 },
     ],
   };
   const { pnlPercentage } = toProfitLossDto(signal, 1200);
@@ -763,7 +715,7 @@ test("getTotalClosed: no partials, 3 entries → 0% closed, remainingCostBasis=3
   // totalInvested = 3 * 100 = 300
   const { totalClosedPercent, remainingCostBasis } = getTotalClosed({
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 80 }, { price: 70 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 80, cost: 100 }, { price: 70, cost: 100 }],
   });
   if (totalClosedPercent !== 0) { fail(`totalClosedPercent expected 0, got ${totalClosedPercent}`); return; }
   if (remainingCostBasis !== 300) { fail(`remainingCostBasis expected 300, got ${remainingCostBasis}`); return; }
@@ -775,8 +727,8 @@ test("getTotalClosed: single partial 30% of cnt=1 → 30% closed, remainingCostB
   // totalInvested=100, totalClosedPercent=30%, remainingCostBasis=70
   const { totalClosedPercent, remainingCostBasis } = getTotalClosed({
     priceOpen: 100,
-    _entry: [{ price: 100 }],
-    _partial: [{ type: "profit", percent: 30, currentPrice: 120, effectivePrice: 100, entryCountAtClose: 1 }],
+    _entry: [{ price: 100, cost: 100 }],
+    _partial: [{ type: "profit", percent: 30, currentPrice: 120, costBasisAtClose: 100, entryCountAtClose: 1 }],
   });
   if (!approxEqual(totalClosedPercent, 30)) { fail(`totalClosedPercent expected 30, got ${totalClosedPercent}`); return; }
   if (!approxEqual(remainingCostBasis, 70)) { fail(`remainingCostBasis expected 70, got ${remainingCostBasis}`); return; }
@@ -788,8 +740,8 @@ test("getTotalClosed: single partial 40% of cnt=2 (both entries in position) →
   // totalInvested=200, totalClosedPercent=40%, remainingCostBasis=120
   const { totalClosedPercent, remainingCostBasis } = getTotalClosed({
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 80 }],
-    _partial: [{ type: "profit", percent: 40, currentPrice: 110, effectivePrice: 90, entryCountAtClose: 2 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 80, cost: 100 }],
+    _partial: [{ type: "profit", percent: 40, currentPrice: 110, costBasisAtClose: 200, entryCountAtClose: 2 }],
   });
   if (!approxEqual(totalClosedPercent, 40)) { fail(`totalClosedPercent expected 40, got ${totalClosedPercent}`); return; }
   if (!approxEqual(remainingCostBasis, 120)) { fail(`remainingCostBasis expected 120, got ${remainingCostBasis}`); return; }
@@ -804,10 +756,10 @@ test("getTotalClosed: two partials same cnt=1 (sequential closes, no DCA between
   // totalInvested=200, closedDollar=36, totalClosedPercent=18%
   const { totalClosedPercent, remainingCostBasis } = getTotalClosed({
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 70 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 70, cost: 100 }],
     _partial: [
-      { type: "profit", percent: 20, currentPrice: 120, effectivePrice: 100, entryCountAtClose: 1 },
-      { type: "profit", percent: 20, currentPrice: 115, effectivePrice: 100, entryCountAtClose: 1 },
+      { type: "profit", percent: 20, currentPrice: 120, costBasisAtClose: 100, entryCountAtClose: 1 },
+      { type: "profit", percent: 20, currentPrice: 115, costBasisAtClose: 80,  entryCountAtClose: 1 },
     ],
   });
   if (!approxEqual(totalClosedPercent, 18)) { fail(`totalClosedPercent expected 18, got ${totalClosedPercent}`); return; }
@@ -822,10 +774,10 @@ test("getTotalClosed: two partials different cnt (DCA between) → 34.666% close
   // totalInvested=300, closedDollar=104, totalClosedPercent=104/300*100=34.666...%
   const { totalClosedPercent, remainingCostBasis } = getTotalClosed({
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 70 }, { price: 60 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 70, cost: 100 }, { price: 60, cost: 100 }],
     _partial: [
-      { type: "loss",   percent: 20, currentPrice: 85, effectivePrice: 100, entryCountAtClose: 1 },
-      { type: "profit", percent: 30, currentPrice: 95, effectivePrice: 100, entryCountAtClose: 3 },
+      { type: "loss",   percent: 20, currentPrice: 85, costBasisAtClose: 100, entryCountAtClose: 1 },
+      { type: "profit", percent: 30, currentPrice: 95, costBasisAtClose: 280, entryCountAtClose: 3 },
     ],
   });
   const expectedPct = 104 / 300 * 100; // 34.666...
@@ -841,9 +793,9 @@ test("getTotalClosed: post-partial DCA entries added after last partial → 15% 
   // totalInvested=400, closedDollar=60, totalClosedPercent=15%
   const { totalClosedPercent, remainingCostBasis } = getTotalClosed({
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 80 }, { price: 70 }, { price: 60 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 80, cost: 100 }, { price: 70, cost: 100 }, { price: 60, cost: 100 }],
     _partial: [
-      { type: "profit", percent: 30, currentPrice: 120, effectivePrice: 90, entryCountAtClose: 2 },
+      { type: "profit", percent: 30, currentPrice: 120, costBasisAtClose: 200, entryCountAtClose: 2 },
     ],
   });
   if (!approxEqual(totalClosedPercent, 15)) { fail(`totalClosedPercent expected 15, got ${totalClosedPercent}`); return; }
@@ -857,10 +809,10 @@ test("getTotalClosed: 100% closed via chained partials (60% then 100% of remaind
   // totalInvested=100, closedDollar=100, totalClosedPercent=100%, remainingCostBasis=0
   const { totalClosedPercent, remainingCostBasis } = getTotalClosed({
     priceOpen: 100,
-    _entry: [{ price: 100 }],
+    _entry: [{ price: 100, cost: 100 }],
     _partial: [
-      { type: "profit", percent: 60,  currentPrice: 110, effectivePrice: 100, entryCountAtClose: 1 },
-      { type: "profit", percent: 100, currentPrice: 115, effectivePrice: 100, entryCountAtClose: 1 },
+      { type: "profit", percent: 60,  currentPrice: 110, costBasisAtClose: 100, entryCountAtClose: 1 },
+      { type: "profit", percent: 100, currentPrice: 115, costBasisAtClose: 40,  entryCountAtClose: 1 },
     ],
   });
   if (!approxEqual(totalClosedPercent, 100)) { fail(`totalClosedPercent expected 100, got ${totalClosedPercent}`); return; }
@@ -877,12 +829,12 @@ test("getTotalClosed: S13 four partials three DCA rounds → 40.96% closed, rema
   // closedDollar=163.84, totalClosedPercent=40.96%, remainingCostBasis=236.16
   const { totalClosedPercent, remainingCostBasis } = getTotalClosed({
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 80 }, { price: 72 }, { price: 65 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 80, cost: 100 }, { price: 72, cost: 100 }, { price: 65, cost: 100 }],
     _partial: [
-      { type: "profit", percent: 20, currentPrice: 115, effectivePrice: 100, entryCountAtClose: 1 },
-      { type: "profit", percent: 20, currentPrice: 108, effectivePrice: 100, entryCountAtClose: 2 },
-      { type: "loss",   percent: 20, currentPrice: 83,  effectivePrice: 100, entryCountAtClose: 3 },
-      { type: "profit", percent: 20, currentPrice: 100, effectivePrice: 100, entryCountAtClose: 4 },
+      { type: "profit", percent: 20, currentPrice: 115, costBasisAtClose: 100,   entryCountAtClose: 1 },
+      { type: "profit", percent: 20, currentPrice: 108, costBasisAtClose: 180,   entryCountAtClose: 2 },
+      { type: "loss",   percent: 20, currentPrice: 83,  costBasisAtClose: 244,   entryCountAtClose: 3 },
+      { type: "profit", percent: 20, currentPrice: 100, costBasisAtClose: 295.2, entryCountAtClose: 4 },
     ],
   });
   if (!approxEqual(totalClosedPercent, 40.96)) { fail(`totalClosedPercent expected 40.96, got ${totalClosedPercent}`); return; }
@@ -902,22 +854,14 @@ test("getTotalClosed: S13 four partials three DCA rounds → 40.96% closed, rema
 //   snap2=getEff([100,110,120],[p1]): rem=140, oldCoins=140/snap1, newCoins=100/120
 //   snap3=getEff([100,110,120,130],[p1,p2]): replay: cb=200→140, +100=240(last); rem=195; oldCoins=195/snap2, newCoins=100/130
 test("toProfitLossDto: SC SHORT DCA-partial-DCA-partial-DCA-partial, cnt=[2,3,4] (SHORT)", ({ pass, fail }) => {
-  const snap1 = hm(100, 110); // 104.761904762
-  // snap2: after p1(30%,cnt=2): rem=200*(1-0.3)=140, oldCoins=140/snap1, newCoins=100/120
-  const snap2 = (140 + 100) / (140 / snap1 + 100 / 120); // 110.614525140
-  // snap3: after p1+p2(25%): replay: cb=200→140, +100=240(last); rem=240*(1-0.25)=180... wait
-  // Actually: replay for getEff with [p1,p2]: i=0:cb=200,reduce→140; i=1:+100=240(last)
-  // remainingCostBasis=240*(1-0.25)=180... but wait, p2 has cnt=3, p3 has cnt=4
-  // Let me use the precomputed value: snap3=116.836883572
-  const snap3 = (180 + 100) / (180 / snap2 + 100 / 130); // 116.836883572
   const signal = {
     position: "short",
     priceOpen: 100,
-    _entry: [{ price: 100 }, { price: 110 }, { price: 120 }, { price: 130 }],
+    _entry: [{ price: 100, cost: 100 }, { price: 110, cost: 100 }, { price: 120, cost: 100 }, { price: 130, cost: 100 }],
     _partial: [
-      { type: "profit", percent: 30, currentPrice: 85,  effectivePrice: snap1, entryCountAtClose: 2 },
-      { type: "profit", percent: 25, currentPrice: 80,  effectivePrice: snap2, entryCountAtClose: 3 },
-      { type: "profit", percent: 20, currentPrice: 75,  effectivePrice: snap3, entryCountAtClose: 4 },
+      { type: "profit", percent: 30, currentPrice: 85, costBasisAtClose: 200, entryCountAtClose: 2 },
+      { type: "profit", percent: 25, currentPrice: 80, costBasisAtClose: 240, entryCountAtClose: 3 },
+      { type: "profit", percent: 20, currentPrice: 75, costBasisAtClose: 280, entryCountAtClose: 4 },
     ],
   };
   const { pnlPercentage } = toProfitLossDto(signal, 70);
