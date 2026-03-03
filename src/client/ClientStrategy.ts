@@ -1533,29 +1533,29 @@ const AVERAGE_BUY_FN = (
     signal._entry = [{ price: signal.priceOpen, cost: GLOBAL_CONFIG.CC_POSITION_ENTRY_COST, debugTimestamp: getDebugTimestamp() }];
   }
 
-  const lastEntry = signal._entry[signal._entry.length - 1];
-
   if (signal.position === "long") {
-    // LONG: averaging down = currentPrice must be strictly lower than last entry
-    if (!GLOBAL_CONFIG.CC_ENABLE_DCA_EVERYWHERE && currentPrice >= lastEntry.price) {
-      self.params.logger.debug("AVERAGE_BUY_FN: rejected — currentPrice >= last entry (LONG)", {
+    // LONG: new entry must beat the all-time low — strictly below every prior entry price
+    const minEntryPrice = Math.min(...signal._entry.map((e) => e.price));
+    if (!GLOBAL_CONFIG.CC_ENABLE_DCA_EVERYWHERE && currentPrice >= minEntryPrice) {
+      self.params.logger.debug("AVERAGE_BUY_FN: rejected — currentPrice >= min entry price (LONG)", {
         signalId: signal.id,
         position: signal.position,
         currentPrice,
-        lastEntryPrice: lastEntry.price,
-        reason: "must average down for LONG",
+        minEntryPrice,
+        reason: "must beat all-time low for LONG",
       });
       return false;
     }
   } else {
-    // SHORT: averaging down = currentPrice must be strictly higher than last entry
-    if (!GLOBAL_CONFIG.CC_ENABLE_DCA_EVERYWHERE && currentPrice <= lastEntry.price) {
-      self.params.logger.debug("AVERAGE_BUY_FN: rejected — currentPrice <= last entry (SHORT)", {
+    // SHORT: new entry must beat the all-time high — strictly above every prior entry price
+    const maxEntryPrice = Math.max(...signal._entry.map((e) => e.price));
+    if (!GLOBAL_CONFIG.CC_ENABLE_DCA_EVERYWHERE && currentPrice <= maxEntryPrice) {
+      self.params.logger.debug("AVERAGE_BUY_FN: rejected — currentPrice <= max entry price (SHORT)", {
         signalId: signal.id,
         position: signal.position,
         currentPrice,
-        lastEntryPrice: lastEntry.price,
-        reason: "must average down for SHORT",
+        maxEntryPrice,
+        reason: "must beat all-time high for SHORT",
       });
       return false;
     }
