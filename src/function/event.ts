@@ -1,5 +1,5 @@
 import backtest from "../lib";
-import { signalEmitter, signalLiveEmitter, signalBacktestEmitter, errorEmitter, exitEmitter, doneLiveSubject, doneBacktestSubject, doneWalkerSubject, progressBacktestEmitter, progressWalkerEmitter, performanceEmitter, walkerEmitter, walkerCompleteSubject, validationSubject, partialProfitSubject, partialLossSubject, breakevenSubject, riskSubject, schedulePingSubject, activePingSubject, strategyCommitSubject } from "../config/emitters";
+import { signalEmitter, signalLiveEmitter, signalBacktestEmitter, errorEmitter, exitEmitter, doneLiveSubject, doneBacktestSubject, doneWalkerSubject, progressBacktestEmitter, progressWalkerEmitter, performanceEmitter, walkerEmitter, walkerCompleteSubject, validationSubject, partialProfitSubject, partialLossSubject, breakevenSubject, riskSubject, schedulePingSubject, activePingSubject, strategyCommitSubject, syncSubject } from "../config/emitters";
 import { IStrategyTickResult } from "../interfaces/Strategy.interface";
 import { DoneContract } from "../contract/Done.contract";
 import { ProgressBacktestContract } from "../contract/ProgressBacktest.contract";
@@ -15,6 +15,7 @@ import { SchedulePingContract } from "../contract/SchedulePing.contract";
 import { ActivePingContract } from "../contract/ActivePing.contract";
 import { StrategyCommitContract } from "../contract/StrategyCommit.contract";
 import { queued } from "functools-kit";
+import SignalSyncContract from "src/contract/SignalSync.contract";
 
 const LISTEN_SIGNAL_METHOD_NAME = "event.listenSignal";
 const LISTEN_SIGNAL_ONCE_METHOD_NAME = "event.listenSignalOnce";
@@ -51,6 +52,8 @@ const LISTEN_ACTIVE_PING_METHOD_NAME = "event.listenActivePing";
 const LISTEN_ACTIVE_PING_ONCE_METHOD_NAME = "event.listenActivePingOnce";
 const LISTEN_STRATEGY_COMMIT_METHOD_NAME = "event.listenStrategyCommit";
 const LISTEN_STRATEGY_COMMIT_ONCE_METHOD_NAME = "event.listenStrategyCommitOnce";
+const LISTEN_SYNC_METHOD_NAME = "event.listenSync";
+const LISTEN_SYNC_ONCE_METHOD_NAME = "event.listenSyncOnce";
 
 /**
  * Subscribes to all signal events with queued async processing.
@@ -1228,4 +1231,34 @@ export function listenStrategyCommitOnce(
 ) {
   backtest.loggerService.log(LISTEN_STRATEGY_COMMIT_ONCE_METHOD_NAME);
   return strategyCommitSubject.filter(filterFn).once(fn);
+}
+
+/**
+ * Subscribes to signal synchronization events with queued async processing.
+ * If throws position is not being opened/closed until the async function completes. Useful for synchronizing with external systems.
+ *
+ * Emits when signals are being synchronized (e.g. pending signal being opened/closed).
+ * 
+ * @param fn - Callback function to handle sync events. If the function returns a promise, signal processing will wait until it resolves.
+ * @returns Unsubscribe function to stop listening
+ */
+export function listenSync(fn: (event: SignalSyncContract) => void) {
+  backtest.loggerService.log(LISTEN_SYNC_METHOD_NAME);
+  return syncSubject.subscribe(queued(async (event) => fn(event)));
+}
+
+/**
+ * Subscribes to filtered signal synchronization events with one-time execution.
+ * If throws position is not being opened/closed until the async function completes. Useful for synchronizing with external systems.
+ * 
+ * @param filterFn - Predicate to filter which events trigger the callback
+ * @param fn - Callback function to handle the filtered event (called only once). If the function returns a promise, signal processing will wait until it resolves.
+ * @returns Unsubscribe function to cancel the listener before it fires
+ */
+export function listenSyncOnce(
+  filterFn: (event: SignalSyncContract) => boolean,
+  fn: (event: SignalSyncContract) => void
+) {
+  backtest.loggerService.log(LISTEN_SYNC_ONCE_METHOD_NAME);
+  return syncSubject.filter(filterFn).once(fn);
 }

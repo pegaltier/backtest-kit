@@ -75,6 +75,103 @@ const SCHEDULED_SIGNAL_PENDING_MOCK = 0;
 const TIMEOUT_SYMBOL = Symbol('timeout');
 
 /**
+ * Calls onSignalSync callback for signal-open event.
+ *
+ * Invoked BEFORE setPendingSignal to give the external system a chance to confirm
+ * that the limit order was filled on the exchange. If the callback returns false
+ * (or throws), the position open is skipped and the strategy state is NOT mutated.
+ * The framework will retry on the next tick.
+ */
+const CALL_SIGNAL_SYNC_OPEN_FN = trycatch(
+  async (
+    timestamp: number,
+    currentPrice: number,
+    pendingSignal: ISignalRow,
+    self: ClientStrategy
+  ): Promise<boolean> => {
+    const publicSignal = TO_PUBLIC_SIGNAL(pendingSignal, currentPrice);
+    const pnl = toProfitLossDto(pendingSignal, currentPrice);
+    return await self.params.onSignalSync({
+      action: "signal-open",
+      symbol: self.params.execution.context.symbol,
+      strategyName: self.params.strategyName,
+      exchangeName: self.params.exchangeName,
+      frameName: self.params.frameName,
+      backtest: self.params.execution.context.backtest,
+      signalId: pendingSignal.id,
+      timestamp,
+      signal: publicSignal,
+      cost: pendingSignal.cost,
+      currentPrice,
+      position: publicSignal.position,
+      pnl,
+      priceOpen: publicSignal.priceOpen,
+      priceTakeProfit: publicSignal.priceTakeProfit,
+      priceStopLoss: publicSignal.priceStopLoss,
+      originalPriceTakeProfit: publicSignal.originalPriceTakeProfit,
+      originalPriceStopLoss: publicSignal.originalPriceStopLoss,
+      originalPriceOpen: publicSignal.originalPriceOpen,
+      scheduledAt: publicSignal.scheduledAt,
+      pendingAt: publicSignal.pendingAt,
+      totalEntries: publicSignal.totalEntries,
+      totalPartials: publicSignal.totalPartials,
+    });
+  },
+  {
+    defaultValue: false,
+  }
+);
+
+/**
+ * Calls onSignalSync callback for signal-close event.
+ *
+ * Invoked BEFORE setPendingSignal(null) to give the external system a chance to confirm
+ * that the position was closed on the exchange (e.g. market order filled, OCO cancelled).
+ * If the callback returns false (or throws), the position close is skipped and the
+ * strategy state is NOT mutated. The framework will retry on the next tick.
+ */
+const CALL_SIGNAL_SYNC_CLOSE_FN = trycatch(
+  async (
+    timestamp: number,
+    currentPrice: number,
+    closeReason: "time_expired" | "take_profit" | "stop_loss" | "closed",
+    signal: ISignalRow,
+    self: ClientStrategy
+  ): Promise<boolean> => {
+    const publicSignal = TO_PUBLIC_SIGNAL(signal, currentPrice);
+    const pnl = toProfitLossDto(signal, currentPrice);
+    return await self.params.onSignalSync({
+      action: "signal-close",
+      symbol: self.params.execution.context.symbol,
+      strategyName: self.params.strategyName,
+      exchangeName: self.params.exchangeName,
+      frameName: self.params.frameName,
+      backtest: self.params.execution.context.backtest,
+      signalId: signal.id,
+      timestamp,
+      signal: publicSignal,
+      currentPrice,
+      pnl,
+      position: publicSignal.position,
+      priceOpen: publicSignal.priceOpen,
+      priceTakeProfit: publicSignal.priceTakeProfit,
+      priceStopLoss: publicSignal.priceStopLoss,
+      originalPriceTakeProfit: publicSignal.originalPriceTakeProfit,
+      originalPriceStopLoss: publicSignal.originalPriceStopLoss,
+      originalPriceOpen: publicSignal.originalPriceOpen,
+      scheduledAt: publicSignal.scheduledAt,
+      pendingAt: publicSignal.pendingAt,
+      closeReason,
+      totalEntries: publicSignal.totalEntries,
+      totalPartials: publicSignal.totalPartials,
+    });
+  },
+  {
+    defaultValue: false,
+  }
+);
+
+/**
  * Calls onCommit callback with strategy commit event.
  *
  * Wraps the callback in trycatch to prevent errors from breaking the flow.
@@ -1793,14 +1890,45 @@ const ACTIVATE_SCHEDULED_SIGNAL_FN = async (
     return null;
   }
 
-  await self.setScheduledSignal(null);
-
   // КРИТИЧЕСКИ ВАЖНО: обновляем pendingAt при активации
   const activatedSignal: ISignalRow = {
     ...scheduled,
     pendingAt: activationTime,
     _isScheduled: false,
   };
+
+  // Sync open: if external system rejects — cancel scheduled signal instead of opening
+  const syncOpenAllowed = await CALL_SIGNAL_SYNC_OPEN_FN(
+    activationTime,
+    activatedSignal.priceOpen,
+    activatedSignal,
+    self
+  );
+
+  if (!syncOpenAllowed) {
+    self.params.logger.info("ClientStrategy scheduled signal activation rejected by sync", {
+      symbol: self.params.execution.context.symbol,
+      signalId: scheduled.id,
+    });
+    await self.setScheduledSignal(null);
+    await CALL_COMMIT_FN(self, {
+      action: "cancel-scheduled",
+      symbol: self.params.execution.context.symbol,
+      strategyName: self.params.strategyName,
+      exchangeName: self.params.exchangeName,
+      frameName: self.params.frameName,
+      signalId: scheduled.id,
+      backtest: self.params.execution.context.backtest,
+      timestamp: activationTime,
+      totalEntries: scheduled._entry?.length ?? 1,
+      totalPartials: scheduled._partial?.length ?? 0,
+      originalPriceOpen: scheduled.priceOpen,
+      pnl: toProfitLossDto(scheduled, scheduled.priceOpen),
+    });
+    return null;
+  }
+
+  await self.setScheduledSignal(null);
 
   await self.setPendingSignal(activatedSignal);
 
@@ -2817,10 +2945,28 @@ const CLOSE_PENDING_SIGNAL_FN = async (
   signal: ISignalRow,
   currentPrice: number,
   closeReason: "time_expired" | "take_profit" | "stop_loss"
-): Promise<IStrategyTickResultClosed> => {
-  const pnl = toProfitLossDto(signal, currentPrice);
-
+): Promise<IStrategyTickResultClosed | null> => {
   const currentTime = self.params.execution.context.when.getTime();
+
+  // Sync close: if external system rejects — skip close, retry on next tick
+  const syncCloseAllowed = await CALL_SIGNAL_SYNC_CLOSE_FN(
+    currentTime,
+    currentPrice,
+    closeReason,
+    signal,
+    self
+  );
+
+  if (!syncCloseAllowed) {
+    self.params.logger.info(`ClientStrategy signal ${closeReason} rejected by sync`, {
+      symbol: self.params.execution.context.symbol,
+      signalId: signal.id,
+      closeReason,
+    });
+    return null;
+  }
+
+  const pnl = toProfitLossDto(signal, currentPrice);
 
   self.params.logger.info(`ClientStrategy signal ${closeReason}`, {
     symbol: self.params.execution.context.symbol,
@@ -3187,14 +3333,45 @@ const ACTIVATE_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
     return false;
   }
 
-  await self.setScheduledSignal(null);
-
   // КРИТИЧЕСКИ ВАЖНО: обновляем pendingAt при активации в backtest
   const activatedSignal: ISignalRow = {
     ...scheduled,
     pendingAt: activationTime,
     _isScheduled: false,
   };
+
+  // Sync open: if external system rejects — cancel scheduled signal instead of opening
+  const syncOpenAllowed = await CALL_SIGNAL_SYNC_OPEN_FN(
+    activationTime,
+    activatedSignal.priceOpen,
+    activatedSignal,
+    self
+  );
+
+  if (!syncOpenAllowed) {
+    self.params.logger.info("ClientStrategy backtest scheduled signal activation rejected by sync", {
+      symbol: self.params.execution.context.symbol,
+      signalId: scheduled.id,
+    });
+    await self.setScheduledSignal(null);
+    await CALL_COMMIT_FN(self, {
+      action: "cancel-scheduled",
+      symbol: self.params.execution.context.symbol,
+      strategyName: self.params.strategyName,
+      exchangeName: self.params.exchangeName,
+      frameName: self.params.frameName,
+      signalId: scheduled.id,
+      backtest: self.params.execution.context.backtest,
+      timestamp: activationTime,
+      totalEntries: scheduled._entry?.length ?? 1,
+      totalPartials: scheduled._partial?.length ?? 0,
+      originalPriceOpen: scheduled.priceOpen,
+      pnl: toProfitLossDto(scheduled, scheduled.priceOpen),
+    });
+    return false;
+  }
+
+  await self.setScheduledSignal(null);
 
   await self.setPendingSignal(activatedSignal);
 
@@ -3232,7 +3409,25 @@ const CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN = async (
   averagePrice: number,
   closeReason: "time_expired" | "take_profit" | "stop_loss",
   closeTimestamp: number
-): Promise<IStrategyTickResultClosed> => {
+): Promise<IStrategyTickResultClosed | null> => {
+  // Sync close: if external system rejects — skip close, retry on next candle
+  const syncCloseAllowed = await CALL_SIGNAL_SYNC_CLOSE_FN(
+    closeTimestamp,
+    averagePrice,
+    closeReason,
+    signal,
+    self
+  );
+
+  if (!syncCloseAllowed) {
+    self.params.logger.info(`ClientStrategy backtest ${closeReason} rejected by sync`, {
+      symbol: self.params.execution.context.symbol,
+      signalId: signal.id,
+      closeReason,
+    });
+    return null;
+  }
+
   const pnl = toProfitLossDto(signal, averagePrice);
 
   self.params.logger.debug(`ClientStrategy backtest ${closeReason}`, {
@@ -3400,13 +3595,44 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
         return { activated: false, cancelled: false, activationIndex: i, result: null };
       }
 
-      await self.setScheduledSignal(null);
-
       const pendingSignal: ISignalRow = {
         ...activatedSignal,
         pendingAt: candle.timestamp,
         _isScheduled: false,
       };
+
+      // Sync open: if external system rejects — cancel scheduled signal instead of opening
+      const syncOpenAllowed = await CALL_SIGNAL_SYNC_OPEN_FN(
+        candle.timestamp,
+        pendingSignal.priceOpen,
+        pendingSignal,
+        self
+      );
+
+      if (!syncOpenAllowed) {
+        self.params.logger.info("ClientStrategy backtest user-activated signal rejected by sync", {
+          symbol: self.params.execution.context.symbol,
+          signalId: activatedSignal.id,
+        });
+        await self.setScheduledSignal(null);
+        await CALL_COMMIT_FN(self, {
+          action: "cancel-scheduled",
+          symbol: self.params.execution.context.symbol,
+          strategyName: self.params.strategyName,
+          exchangeName: self.params.exchangeName,
+          frameName: self.params.frameName,
+          signalId: activatedSignal.id,
+          backtest: self.params.execution.context.backtest,
+          timestamp: candle.timestamp,
+          totalEntries: activatedSignal._entry?.length ?? 1,
+          totalPartials: activatedSignal._partial?.length ?? 0,
+          originalPriceOpen: activatedSignal.priceOpen,
+          pnl: toProfitLossDto(activatedSignal, averagePrice),
+        });
+        return { activated: false, cancelled: true, activationIndex: i, result: null };
+      }
+
+      await self.setScheduledSignal(null);
 
       await self.setPendingSignal(pendingSignal);
 
@@ -4505,6 +4731,30 @@ export class ClientStrategy implements IStrategy {
         pendingAt: currentTime,
         _isScheduled: false,
       };
+
+      const syncOpenAllowed = await CALL_SIGNAL_SYNC_OPEN_FN(currentTime, currentPrice, pendingSignal, this);
+      if (!syncOpenAllowed) {
+        this.params.logger.info("ClientStrategy tick: user-activated signal rejected by sync", {
+          symbol: this.params.execution.context.symbol,
+          signalId: activatedSignal.id,
+        });
+        await this.setScheduledSignal(null);
+        await CALL_COMMIT_FN(this, {
+          action: "cancel-scheduled",
+          symbol: this.params.execution.context.symbol,
+          strategyName: this.params.strategyName,
+          exchangeName: this.params.exchangeName,
+          frameName: this.params.frameName,
+          signalId: activatedSignal.id,
+          backtest: this.params.execution.context.backtest,
+          timestamp: currentTime,
+          totalEntries: activatedSignal._entry?.length ?? 1,
+          totalPartials: activatedSignal._partial?.length ?? 0,
+          originalPriceOpen: activatedSignal.priceOpen,
+          pnl: toProfitLossDto(activatedSignal, currentPrice),
+        });
+        return await RETURN_IDLE_FN(this, currentPrice);
+      }
 
       await this.setPendingSignal(pendingSignal);
 

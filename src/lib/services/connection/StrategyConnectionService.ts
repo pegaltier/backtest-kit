@@ -25,6 +25,7 @@ import {
   activePingSubject,
   errorEmitter,
   strategyCommitSubject,
+  syncSubject,
 } from "../../../config/emitters";
 import { StrategyCommitContract } from "../../../contract/StrategyCommit.contract";
 import { IRisk, RiskName } from "../../../interfaces/Risk.interface";
@@ -37,6 +38,20 @@ import { FrameName } from "../../../interfaces/Frame.interface";
 import ActionCoreService from "../core/ActionCoreService";
 import backtest from "../../../lib";
 import beginTime from "../../../utils/beginTime";
+import SignalSyncContract from "src/contract/SignalSync.contract";
+
+/**
+ * If syncSubject listener throws, it means the signal was not properly synchronized to the exchange (e.g. limit order failed to fill).
+ * ClientStrategy will skip position open/close and will try again on the next tick until successful synchronization.
+ */
+const CREATE_SYNC_FN = () => trycatch(
+  async (event: SignalSyncContract) => {
+    await syncSubject.next(event);
+    return true;
+  }, {
+    defaultValue: false,
+  }
+);
 
 /**
  * Emits signal tick results with correct execution context timestamp.
@@ -470,6 +485,7 @@ export class StrategyConnectionService implements TStrategy {
         onActivePing: CREATE_COMMIT_ACTIVE_PING_FN(this),
         onDispose: CREATE_COMMIT_DISPOSE_FN(this),
         onCommit: CREATE_COMMIT_FN(this),
+        onSignalSync: CREATE_SYNC_FN(),
       });
     }
   );

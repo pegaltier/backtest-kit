@@ -8,6 +8,7 @@ import { IBreakeven } from "./Breakeven.interface";
 import { FrameName } from "./Frame.interface";
 import { ActionName } from "./Action.interface";
 import { StrategyCommitContract } from "../contract/StrategyCommit.contract";
+import { SignalSyncContract } from "../contract/SignalSync.contract";
 
 /**
  * Signal generation interval for throttling.
@@ -457,6 +458,8 @@ export interface IStrategyParams extends IStrategySchema {
   onDispose: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<void>;
   /** System callback for commit events (emits to strategyCommitSubject) */
   onCommit: (event: StrategyCommitContract) => Promise<void>;
+  /** System callback for signal synchronization events (emits to syncSubject) */
+  onSignalSync: (event: SignalSyncContract) => Promise<boolean> | boolean;
 }
 
 /**

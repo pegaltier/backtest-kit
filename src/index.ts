@@ -108,6 +108,8 @@ export {
   listenActivePingOnce,
   listenStrategyCommit,
   listenStrategyCommitOnce,
+  listenSync,
+  listenSyncOnce,
 } from "./function/event";
 export {
   getCandles,
