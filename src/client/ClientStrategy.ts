@@ -5237,13 +5237,22 @@ export class ClientStrategy implements IStrategy {
           const lastPrice = GET_AVG_PRICE_FN(recentCandles);
           const closeTimestamp = candles[activationIndex].timestamp;
 
-          return await CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN(
+          const noRemainingResult = await CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN(
             this,
             scheduled,
             lastPrice,
             "time_expired",
             closeTimestamp
           );
+
+          if (!noRemainingResult) {
+            throw new Error(
+              `ClientStrategy backtest: time_expired close rejected by sync (signalId=${scheduled.id}). ` +
+              `Retry backtest() with new candle data.`
+            );
+          }
+
+          return noRemainingResult;
         }
 
         candles = remainingCandles;
@@ -5362,13 +5371,23 @@ export class ClientStrategy implements IStrategy {
     }
 
     // Time actually expired - close with time_expired
-    return await CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN(
+    const timeExpiredResult = await CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN(
       this,
       signal,
       lastPrice,
       "time_expired",
       closeTimestamp
     );
+
+    if (!timeExpiredResult) {
+      // Sync rejected the close — signal remains in _pendingSignal, caller must retry
+      throw new Error(
+        `ClientStrategy backtest: time_expired close rejected by sync (signalId=${signal.id}). ` +
+        `Retry backtest() with new candle data.`
+      );
+    }
+
+    return timeExpiredResult;
   }
 
   /**
