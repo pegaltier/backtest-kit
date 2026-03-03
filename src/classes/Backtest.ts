@@ -353,7 +353,7 @@ export class BacktestInstance {
         frameName: context.frameName,
       });
       backtest.strategyCoreService
-        .getPendingSignal(true, symbol, {
+        .hasPendingSignal(true, symbol, {
           strategyName: context.strategyName,
           exchangeName: context.exchangeName,
           frameName: context.frameName,
@@ -572,6 +572,7 @@ export class BacktestUtils {
    */
   public getPendingSignal = async (
     symbol: string,
+    currentPrice: number,
     context: {
       strategyName: StrategyName;
       exchangeName: ExchangeName;
@@ -618,6 +619,7 @@ export class BacktestUtils {
     return await backtest.strategyCoreService.getPendingSignal(
       true,
       symbol,
+      currentPrice,
       context
     );
   };
@@ -773,6 +775,7 @@ export class BacktestUtils {
    */
   public getScheduledSignal = async (
     symbol: string,
+    currentPrice: number,
     context: {
       strategyName: StrategyName;
       exchangeName: ExchangeName;
@@ -819,6 +822,7 @@ export class BacktestUtils {
     return await backtest.strategyCoreService.getScheduledSignal(
       true,
       symbol,
+      currentPrice,
       context
     );
   };

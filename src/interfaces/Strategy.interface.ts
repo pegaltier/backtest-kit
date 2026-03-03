@@ -190,6 +190,12 @@ export interface IPublicSignalRow extends ISignalRow {
    * Mirrors signal.priceOpen which is preserved for identity/audit purposes.
    */
   originalPriceOpen: number;
+  /**
+   * Unrealized PNL at the time this public signal was created.
+   * Calculated using toProfitLossDto with the currentPrice at the moment of emission.
+   * null when currentPrice is not available (e.g. scheduled signal before price check).
+   */
+  pnl: IStrategyPnL | null;
 }
 
 /**
@@ -469,7 +475,7 @@ export interface IStrategyCallbacks {
   /** Called when scheduled signal is cancelled without opening position */
   onCancel: (symbol: string, data: IPublicSignalRow, currentPrice: number, backtest: boolean) => void | Promise<void>;
   /** Called when signal is written to persist storage (for testing) */
-  onWrite: (symbol: string, data: IPublicSignalRow | null, backtest: boolean) => void;
+  onWrite: (symbol: string, data: ISignalRow | null, backtest: boolean) => void;
   /** Called when signal is in partial profit state (price moved favorably but not reached TP yet) */
   onPartialProfit: (symbol: string, data: IPublicSignalRow, currentPrice: number, revenuePercent: number, backtest: boolean) => void | Promise<void>;
   /** Called when signal is in partial loss state (price moved against position but not hit SL yet) */
@@ -780,7 +786,7 @@ export interface IStrategy {
    * @param symbol - Trading pair symbol
    * @returns Promise resolving to pending signal or null
    */
-  getPendingSignal: (symbol: string) => Promise<IPublicSignalRow | null>;
+  getPendingSignal: (symbol: string, currentPrice: number) => Promise<IPublicSignalRow | null>;
 
   /**
    * Retrieves the currently active scheduled signal for the symbol.
@@ -790,7 +796,7 @@ export interface IStrategy {
    * @param symbol - Trading pair symbol
    * @returns Promise resolving to scheduled signal or null
    */
-  getScheduledSignal: (symbol: string) => Promise<IPublicSignalRow | null>;
+  getScheduledSignal: (symbol: string, currentPrice: number) => Promise<IPublicSignalRow | null>;
 
   /**
    * Checks if breakeven threshold has been reached for the current pending signal.
@@ -1264,6 +1270,16 @@ export interface IStrategy {
    * @returns Promise<boolean> - true if entry added, false if rejected by direction check
    */
   averageBuy: (symbol: string, currentPrice: number, backtest: boolean) => Promise<boolean>;
+
+  /**
+   * Checks if there is an active pending signal for the symbol.
+   *
+   * Used internally to determine if TP/SL monitoring should occur on tick.
+   *
+   * @param symbol - Trading pair symbol
+   * @returns Promise resolving to true if pending signal exists, false otherwise
+   */
+  hasPendingSignal: (symbol: string) => Promise<boolean>;
 
   /**
    * Disposes the strategy instance and cleans up resources.

@@ -290,7 +290,7 @@ export class LiveInstance {
         frameName: ""
       });
       backtest.strategyCoreService
-        .getPendingSignal(false, symbol, {
+        .hasPendingSignal(false, symbol, {
           strategyName: context.strategyName,
           exchangeName: context.exchangeName,
           frameName: "",
@@ -448,7 +448,7 @@ export class LiveUtils {
    * }
    * ```
    */
-  public getPendingSignal = async (symbol: string, context: { strategyName: StrategyName; exchangeName: ExchangeName; }) => {
+  public getPendingSignal = async (symbol: string, currentPrice: number, context: { strategyName: StrategyName; exchangeName: ExchangeName; }) => {
     backtest.loggerService.info(LIVE_METHOD_NAME_GET_PENDING_SIGNAL, {
       symbol,
       context,
@@ -463,7 +463,7 @@ export class LiveUtils {
       actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_GET_PENDING_SIGNAL));
     }
 
-    return await backtest.strategyCoreService.getPendingSignal(false, symbol, {
+    return await backtest.strategyCoreService.getPendingSignal(false, symbol, currentPrice, {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
       frameName: "",
@@ -559,7 +559,7 @@ export class LiveUtils {
    * }
    * ```
    */
-  public getScheduledSignal = async (symbol: string, context: { strategyName: StrategyName; exchangeName: ExchangeName; }) => {
+  public getScheduledSignal = async (symbol: string, currentPrice: number, context: { strategyName: StrategyName; exchangeName: ExchangeName; }) => {
     backtest.loggerService.info(LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL, {
       symbol,
       context,
@@ -574,7 +574,7 @@ export class LiveUtils {
       actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL));
     }
 
-    return await backtest.strategyCoreService.getScheduledSignal(false, symbol, {
+    return await backtest.strategyCoreService.getScheduledSignal(false, symbol, currentPrice, {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
       frameName: "",

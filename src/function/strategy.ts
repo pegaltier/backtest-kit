@@ -610,9 +610,11 @@ export async function getPendingSignal(symbol: string) {
   const { backtest: isBacktest } = backtest.executionContextService.context;
   const { exchangeName, frameName, strategyName } =
     backtest.methodContextService.context;
+  const currentPrice = await backtest.exchangeConnectionService.getAveragePrice(symbol);
   return await backtest.strategyCoreService.getPendingSignal(
     isBacktest,
     symbol,
+    currentPrice,
     { exchangeName, frameName, strategyName }
   );
 }
@@ -646,12 +648,14 @@ export async function getScheduledSignal(symbol: string) {
   if (!MethodContextService.hasContext()) {
     throw new Error("getScheduledSignal requires a method context");
   }
+  const currentPrice = await backtest.exchangeConnectionService.getAveragePrice(symbol);
   const { backtest: isBacktest } = backtest.executionContextService.context;
   const { exchangeName, frameName, strategyName } =
     backtest.methodContextService.context;
   return await backtest.strategyCoreService.getScheduledSignal(
     isBacktest,
     symbol,
+    currentPrice,
     { exchangeName, frameName, strategyName }
   );
 }

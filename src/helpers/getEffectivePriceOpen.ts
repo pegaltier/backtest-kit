@@ -1,4 +1,10 @@
-import { ISignalRow } from "../interfaces/Strategy.interface";
+import { ISignalDto, ISignalRow } from "../interfaces/Strategy.interface";
+
+interface Signal extends ISignalDto {
+  priceOpen: number;
+  _entry?: ISignalRow['_entry'];
+  _partial?: ISignalRow['_partial'];
+}
 
 /**
  * Returns the effective (DCA-weighted) entry price for a signal.
@@ -18,7 +24,7 @@ import { ISignalRow } from "../interfaces/Strategy.interface";
  * @param signal - Signal row with _entry and optional _partial
  * @returns Effective entry price for PNL calculations
  */
-export const getEffectivePriceOpen = (signal: ISignalRow): number => {
+export const getEffectivePriceOpen = (signal: Signal): number => {
   const entries = signal._entry;
   if (!entries || entries.length === 0) return signal.priceOpen;
 

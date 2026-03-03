@@ -1,4 +1,4 @@
-import { StrategyName } from "../interfaces/Strategy.interface";
+import { StrategyName, IStrategyPnL } from "../interfaces/Strategy.interface";
 import { ExchangeName } from "../interfaces/Exchange.interface";
 import { FrameName } from "../interfaces/Frame.interface";
 
@@ -37,6 +37,8 @@ export interface CancelScheduledCommit extends SignalCommitBase {
   action: "cancel-scheduled";
   /** Optional identifier for the cancellation reason (user-provided) */
   cancelId?: string;
+  /** Unrealized PNL at the moment of cancellation */
+  pnl: IStrategyPnL;
 }
 
 /**
@@ -47,6 +49,8 @@ export interface ClosePendingCommit extends SignalCommitBase {
   action: "close-pending";
   /** Optional identifier for the close reason (user-provided) */
   closeId?: string;
+  /** PNL at the moment of close */
+  pnl: IStrategyPnL;
 }
 
 /**
@@ -59,6 +63,8 @@ export interface PartialProfitCommit extends SignalCommitBase {
   percentToClose: number;
   /** Current market price at time of action */
   currentPrice: number;
+  /** Unrealized PNL at the moment of partial profit */
+  pnl: IStrategyPnL;
   /** Trade direction: "long" (buy) or "short" (sell) */
   position: "long" | "short";
   /** Entry price for the position */
@@ -87,6 +93,8 @@ export interface PartialLossCommit extends SignalCommitBase {
   percentToClose: number;
   /** Current market price at time of action */
   currentPrice: number;
+  /** Unrealized PNL at the moment of partial loss */
+  pnl: IStrategyPnL;
   /** Trade direction: "long" (buy) or "short" (sell) */
   position: "long" | "short";
   /** Entry price for the position */
@@ -115,6 +123,8 @@ export interface TrailingStopCommit extends SignalCommitBase {
   percentShift: number;
   /** Current market price at time of trailing adjustment */
   currentPrice: number;
+  /** Unrealized PNL at the moment of trailing stop adjustment */
+  pnl: IStrategyPnL;
   /** Trade direction: "long" (buy) or "short" (sell) */
   position: "long" | "short";
   /** Entry price for the position */
@@ -143,6 +153,8 @@ export interface TrailingTakeCommit extends SignalCommitBase {
   percentShift: number;
   /** Current market price at time of trailing adjustment */
   currentPrice: number;
+  /** Unrealized PNL at the moment of trailing take adjustment */
+  pnl: IStrategyPnL;
   /** Trade direction: "long" (buy) or "short" (sell) */
   position: "long" | "short";
   /** Entry price for the position */
@@ -169,6 +181,8 @@ export interface BreakevenCommit extends SignalCommitBase {
   action: "breakeven";
   /** Current market price at time of breakeven adjustment */
   currentPrice: number;
+  /** Unrealized PNL at the moment of breakeven adjustment */
+  pnl: IStrategyPnL;
   /** Trade direction: "long" (buy) or "short" (sell) */
   position: "long" | "short";
   /** Entry price for the position */
@@ -200,6 +214,8 @@ export interface AverageBuyCommit extends SignalCommitBase {
   cost: number;
   /** Effective (averaged) entry price after this addition */
   effectivePriceOpen: number;
+  /** Unrealized PNL at the moment of average-buy (calculated after new entry added) */
+  pnl: IStrategyPnL;
   /** Trade direction: "long" (buy) or "short" (sell) */
   position: "long" | "short";
   /** Original entry price (signal.priceOpen, unchanged by averaging) */
@@ -228,6 +244,8 @@ export interface ActivateScheduledCommit extends SignalCommitBase {
   activateId?: string;
   /** Current market price at time of activation */
   currentPrice: number;
+  /** PNL at the moment of activation (calculated at priceOpen) */
+  pnl: IStrategyPnL;
   /** Trade direction: "long" (buy) or "short" (sell) */
   position: "long" | "short";
   /** Entry price for the position */

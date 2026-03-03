@@ -488,6 +488,7 @@ export class StrategyConnectionService implements TStrategy {
   public getPendingSignal = async (
     backtest: boolean,
     symbol: string,
+    currentPrice: number,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<ISignalRow | null> => {
     this.loggerService.log("strategyConnectionService getPendingSignal", {
@@ -496,7 +497,7 @@ export class StrategyConnectionService implements TStrategy {
       backtest,
     });
     const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
-    return await strategy.getPendingSignal(symbol);
+    return await strategy.getPendingSignal(symbol, currentPrice);
   };
 
   /**
@@ -662,6 +663,7 @@ export class StrategyConnectionService implements TStrategy {
   public getScheduledSignal = async (
     backtest: boolean,
     symbol: string,
+    currentPrice: number,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<IScheduledSignalRow | null> => {
     this.loggerService.log("strategyConnectionService getScheduledSignal", {
@@ -670,7 +672,7 @@ export class StrategyConnectionService implements TStrategy {
       backtest,
     });
     const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
-    return await strategy.getScheduledSignal(symbol);
+    return await strategy.getScheduledSignal(symbol, currentPrice);
   };
 
   /**
@@ -828,6 +830,28 @@ export class StrategyConnectionService implements TStrategy {
     const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
     await strategy.stopStrategy(symbol, backtest);
   };
+
+  /**
+   * Checks if there is an active pending signal for the strategy.
+   * Delegates to ClientStrategy.hasPendingSignal() which checks if there is an active position
+   * that has not been fully closed.
+   * @param backtest - Whether running in backtest mode
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName, exchangeName, frameName
+   * @returns Promise resolving to true if there is an active pending signal, false otherwise
+   */
+  public hasPendingSignal = async (
+    backtest: boolean,
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
+  ): Promise<boolean> => {
+    this.loggerService.log("strategyConnectionService hasPendingSignal", {
+      symbol,
+      context,
+    });
+    const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
+    return await strategy.hasPendingSignal(symbol);
+  }
 
   /**
    * Disposes the ClientStrategy instance for the given context.

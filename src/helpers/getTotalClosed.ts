@@ -1,5 +1,12 @@
-import { ISignalRow } from "../interfaces/Strategy.interface";
+import { ISignalDto, ISignalRow } from "../interfaces/Strategy.interface";
 import { GLOBAL_CONFIG } from "../config/params";
+
+interface Signal extends ISignalDto {
+  priceOpen: number;
+  _entry?: ISignalRow['_entry'];
+  _partial?: ISignalRow['_partial'];
+}
+
 
 /**
  * Returns the total closed state of a position using costBasisAtClose snapshots.
@@ -18,7 +25,7 @@ import { GLOBAL_CONFIG } from "../config/params";
  * @returns Object with totalClosedPercent (0–100) and remainingCostBasis (USD still open)
  */
 export const getTotalClosed = (
-  signal: ISignalRow
+  signal: Signal
 ): { totalClosedPercent: number; remainingCostBasis: number } => {
   const entries = signal._entry ?? [];
   const partials = signal._partial ?? [];
