@@ -1,4 +1,4 @@
-import { StrategyName } from "../interfaces/Strategy.interface";
+import { IStrategyPnL, StrategyName } from "../interfaces/Strategy.interface";
 import { ExchangeName } from "../interfaces/Exchange.interface";
 import { FrameName } from "../interfaces/Frame.interface";
 
@@ -74,6 +74,12 @@ export interface StrategyEvent {
   effectivePriceOpen?: number;
   /** Total number of DCA entries after this addition (average-buy action only) */
   totalEntries?: number;
+  /** Total number of partial closes executed (_partial.length) */
+  totalPartials?: number;
+  /** PNL at the moment of this action */
+  pnl?: IStrategyPnL;
+  /** Cost of this entry in USD (average-buy action only) */
+  cost?: number;
 }
 
 /**

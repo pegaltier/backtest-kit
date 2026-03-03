@@ -99,6 +99,27 @@ export const strategy_columns: ColumnModel<StrategyEvent>[] = [
     isVisible: () => true,
   },
   {
+    key: "totalPartials",
+    label: "Partial Closes",
+    format: (data) => (data.totalPartials !== undefined ? String(data.totalPartials) : "N/A"),
+    isVisible: () => true,
+  },
+  {
+    key: "pnlPercentage",
+    label: "PNL (net)",
+    format: (data) =>
+      data.pnl !== undefined
+        ? `${data.pnl.pnlPercentage > 0 ? "+" : ""}${data.pnl.pnlPercentage.toFixed(2)}%`
+        : "N/A",
+    isVisible: () => true,
+  },
+  {
+    key: "cost",
+    label: "Cost (USD)",
+    format: (data) => (data.cost !== undefined ? `${data.cost.toFixed(2)} USD` : "N/A"),
+    isVisible: () => true,
+  },
+  {
     key: "timestamp",
     label: "Timestamp",
     format: (data) => new Date(data.timestamp).toISOString(),

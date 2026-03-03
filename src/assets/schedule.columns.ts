@@ -141,6 +141,22 @@ export const schedule_columns: ColumnModel<ScheduledEvent>[] = [
     isVisible: () => true,
   },
   {
+    key: "totalPartials",
+    label: "Partial Closes",
+    format: (data) =>
+      data.totalPartials !== undefined ? String(data.totalPartials) : "N/A",
+    isVisible: () => true,
+  },
+  {
+    key: "pnlPercentage",
+    label: "PNL (net)",
+    format: (data) =>
+      data.pnl !== undefined
+        ? `${data.pnl.pnlPercentage > 0 ? "+" : ""}${data.pnl.pnlPercentage.toFixed(2)}%`
+        : "N/A",
+    isVisible: () => true,
+  },
+  {
     key: "partialExecuted",
     label: "Partial Executed %",
     format: (data) =>

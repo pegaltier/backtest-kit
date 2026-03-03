@@ -1,4 +1,4 @@
-import { StrategyName } from "../interfaces/Strategy.interface";
+import { IStrategyPnL, StrategyName } from "../interfaces/Strategy.interface";
 import { PartialLevel } from "../interfaces/Partial.interface";
 
 /**
@@ -34,10 +34,14 @@ export interface PartialEvent {
   originalPriceStopLoss?: number;
   /** Total number of DCA entries (present when averageBuy was applied) */
   totalEntries?: number;
+  /** Total number of partial closes executed (_partial.length) */
+  totalPartials?: number;
   /** Original entry price before DCA averaging (present when averageBuy was applied) */
   originalPriceOpen?: number;
   /** Total executed percentage from partial closes */
   partialExecuted?: number;
+  /** Unrealized PNL at the moment this level was reached */
+  pnl?: IStrategyPnL;
   /** Human-readable description of signal reason */
   note?: string;
   /** Timestamp when position became active (ms) */

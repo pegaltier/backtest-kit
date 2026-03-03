@@ -192,6 +192,7 @@ class ReportStorage {
       originalPriceTakeProfit: data.signal.originalPriceTakeProfit,
       originalPriceStopLoss: data.signal.originalPriceStopLoss,
       partialExecuted: data.signal.partialExecuted,
+      totalPartials: data.signal.totalPartials,
       pendingAt: data.signal.pendingAt,
       scheduledAt: data.signal.scheduledAt,
     });
@@ -223,9 +224,12 @@ class ReportStorage {
       originalPriceTakeProfit: data.signal.originalPriceTakeProfit,
       originalPriceStopLoss: data.signal.originalPriceStopLoss,
       partialExecuted: data.signal.partialExecuted,
+      totalPartials: data.signal.totalPartials,
       percentTp: data.percentTp,
       percentSl: data.percentSl,
       pnl: data.pnl.pnlPercentage,
+      pnlCost: data.pnl.pnlCost,
+      pnlEntries: data.pnl.pnlEntries,
       pendingAt: data.signal.pendingAt,
       scheduledAt: data.signal.scheduledAt,
     };
@@ -273,7 +277,10 @@ class ReportStorage {
       originalPriceTakeProfit: data.signal.originalPriceTakeProfit,
       originalPriceStopLoss: data.signal.originalPriceStopLoss,
       partialExecuted: data.signal.partialExecuted,
+      totalPartials: data.signal.totalPartials,
       pnl: data.pnl.pnlPercentage,
+      pnlCost: data.pnl.pnlCost,
+      pnlEntries: data.pnl.pnlEntries,
       closeReason: data.closeReason,
       duration: durationMin,
       pendingAt: data.signal.pendingAt,
@@ -308,6 +315,7 @@ class ReportStorage {
       originalPriceTakeProfit: data.signal.originalPriceTakeProfit,
       originalPriceStopLoss: data.signal.originalPriceStopLoss,
       partialExecuted: data.signal.partialExecuted,
+      totalPartials: data.signal.totalPartials,
       scheduledAt: data.signal.scheduledAt,
     });
 
@@ -338,9 +346,12 @@ class ReportStorage {
       originalPriceTakeProfit: data.signal.originalPriceTakeProfit,
       originalPriceStopLoss: data.signal.originalPriceStopLoss,
       partialExecuted: data.signal.partialExecuted,
+      totalPartials: data.signal.totalPartials,
       percentTp: data.percentTp,
       percentSl: data.percentSl,
       pnl: data.pnl.pnlPercentage,
+      pnlCost: data.pnl.pnlCost,
+      pnlEntries: data.pnl.pnlEntries,
       scheduledAt: data.signal.scheduledAt,
     };
 
@@ -384,6 +395,7 @@ class ReportStorage {
       originalPriceTakeProfit: data.signal.originalPriceTakeProfit,
       originalPriceStopLoss: data.signal.originalPriceStopLoss,
       partialExecuted: data.signal.partialExecuted,
+      totalPartials: data.signal.totalPartials,
       cancelReason: data.reason,
       scheduledAt: data.signal.scheduledAt,
     });

@@ -140,6 +140,13 @@ export const live_columns: ColumnModel<TickEvent>[] = [
     isVisible: () => true,
   },
   {
+    key: "totalPartials",
+    label: "Partial Closes",
+    format: (data) =>
+      data.totalPartials !== undefined ? String(data.totalPartials) : "N/A",
+    isVisible: () => true,
+  },
+  {
     key: "partialExecuted",
     label: "Partial Executed %",
     format: (data) =>
@@ -167,6 +174,15 @@ export const live_columns: ColumnModel<TickEvent>[] = [
       if (data.pnl === undefined) return "N/A";
       return `${data.pnl > 0 ? "+" : ""}${data.pnl.toFixed(2)}%`;
     },
+    isVisible: () => true,
+  },
+  {
+    key: "pnlCost",
+    label: "PNL (USD)",
+    format: (data) =>
+      data.pnlCost !== undefined
+        ? `${data.pnlCost > 0 ? "+" : ""}${data.pnlCost.toFixed(2)} USD`
+        : "N/A",
     isVisible: () => true,
   },
   {
