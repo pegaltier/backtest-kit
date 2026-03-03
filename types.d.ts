@@ -2010,6 +2010,8 @@ interface ISignalRow extends ISignalDto {
      * Original priceTakeProfit is preserved in persistence but ignored during execution.
      */
     _trailingPriceTakeProfit?: number;
+    /** Unix timestamp in milliseconds when this signal was created/scheduled in backtest context or when getSignal was called in live context (before validation) */
+    timestamp: number;
 }
 /**
  * Scheduled signal row for delayed entry at specific price.

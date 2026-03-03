@@ -813,6 +813,7 @@ const GET_SIGNAL_FN = trycatch(
           frameName: self.params.method.context.frameName,
           scheduledAt: currentTime,
           pendingAt: currentTime, // Для immediate signal оба времени одинаковые
+          timestamp: currentTime,
           _isScheduled: false,
           _entry: [{ price: signal.priceOpen, debugTimestamp: currentTime }],
         };
@@ -838,6 +839,7 @@ const GET_SIGNAL_FN = trycatch(
         frameName: self.params.method.context.frameName,
         scheduledAt: currentTime,
         pendingAt: SCHEDULED_SIGNAL_PENDING_MOCK, // Временно, обновится при активации
+        timestamp: currentTime,
         _isScheduled: true,
         _entry: [{ price: signal.priceOpen, debugTimestamp: currentTime }],
       };
@@ -859,6 +861,7 @@ const GET_SIGNAL_FN = trycatch(
       frameName: self.params.method.context.frameName,
       scheduledAt: currentTime,
       pendingAt: currentTime, // Для immediate signal оба времени одинаковые
+      timestamp: currentTime,
       _isScheduled: false,
       _entry: [{ price: currentPrice, debugTimestamp: currentTime }],
     };
