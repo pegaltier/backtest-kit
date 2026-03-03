@@ -193,9 +193,8 @@ export interface IPublicSignalRow extends ISignalRow {
   /**
    * Unrealized PNL at the time this public signal was created.
    * Calculated using toProfitLossDto with the currentPrice at the moment of emission.
-   * null when currentPrice is not available (e.g. scheduled signal before price check).
    */
-  pnl: IStrategyPnL | null;
+  pnl: IStrategyPnL;
 }
 
 /**
