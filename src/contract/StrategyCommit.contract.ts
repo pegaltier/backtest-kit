@@ -196,6 +196,8 @@ export interface AverageBuyCommit extends SignalCommitBase {
   action: "average-buy";
   /** Price at which the new averaging entry was executed */
   currentPrice: number;
+  /** Cost of this averaging entry in USD */
+  cost: number;
   /** Effective (averaged) entry price after this addition */
   effectivePriceOpen: number;
   /** Trade direction: "long" (buy) or "short" (sell) */

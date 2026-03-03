@@ -1232,6 +1232,7 @@ export class StrategyConnectionService implements TStrategy {
     symbol: string,
     currentPrice: number,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
+    cost: number,
   ): Promise<boolean> => {
     this.loggerService.log("strategyConnectionService averageBuy", {
       symbol,
@@ -1240,7 +1241,7 @@ export class StrategyConnectionService implements TStrategy {
       backtest,
     });
     const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
-    return await strategy.averageBuy(symbol, currentPrice, backtest);
+    return await strategy.averageBuy(symbol, currentPrice, backtest, cost);
   };
 }
 

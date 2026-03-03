@@ -194,6 +194,13 @@ export const GLOBAL_CONFIG = {
    * Default: true (DCA logic enabled everywhere, not just when antirecord is broken)
    */
   CC_ENABLE_DCA_EVERYWHERE: false,
+
+  /**
+   * Cost of entering a position (in USD).
+   * This is used as a default value for calculating position size and risk management when cost data is not provided by the strategy
+   * Default: $100 per position
+   */
+  CC_POSITION_ENTRY_COST: 100,
 };
 
 export const DEFAULT_CONFIG = Object.freeze({...GLOBAL_CONFIG});

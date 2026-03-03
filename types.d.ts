@@ -1833,6 +1833,8 @@ interface AverageBuyCommit extends SignalCommitBase {
     action: "average-buy";
     /** Price at which the new averaging entry was executed */
     currentPrice: number;
+    /** Cost of this averaging entry in USD */
+    cost: number;
     /** Effective (averaged) entry price after this addition */
     effectivePriceOpen: number;
     /** Trade direction: "long" (buy) or "short" (sell) */
@@ -1918,6 +1920,8 @@ interface ISignalDto {
     priceStopLoss: number;
     /** Expected duration in minutes before time_expired */
     minuteEstimatedTime: number;
+    /** Cost of this entry in USD. Default: GLOBAL_CONFIG.CC_POSITION_ENTRY_COST */
+    cost?: number;
 }
 /**
  * Complete signal with auto-generated id.
@@ -1959,23 +1963,20 @@ interface ISignalRow extends ISignalDto {
         percent: number;
         /** Price at which this partial was executed */
         currentPrice: number;
-        /** Debug only timestamp in milliseconds */
-        debugTimestamp?: number;
         /**
-         * Effective entry price (DCA average) at the moment this partial close was executed.
-         * Captured from GET_EFFECTIVE_PRICE_OPEN at partial close time.
-         * Used in PNL calculation when averageBuy() is called after partial closes,
-         * so each partial's profit is calculated against the correct entry price at that moment.
+         * Running cost basis (sum of entry costs) at the moment this partial was executed,
+         * BEFORE applying the percent reduction.
+         * Stored as a snapshot so helpers don't need to replay the full entry history.
+         * Effective entry price at this partial = costBasisAtClose / Σ(entry.cost/entry.price for entries[0..entryCountAtClose])
          */
-        effectivePrice: number;
+        costBasisAtClose: number;
         /**
-         * Entry count (number of entries in _entry history) at the moment this partial close was executed.
-         * Used to determine which entries are included in the effective price calculation for this partial close.
-         * When averageBuy() is called after partial closes, new entries are added to _entry, but they should not affect the effective price used for already executed partial closes.
-         * By capturing entryCountAtClose, we can slice the _entry array to include only the entries that were part of the position at the time of this partial close when calculating the effective price for PNL.
-         * This ensures that each partial close's PNL is calculated against the correct average entry price, even if more averaging happens after the partial close.
+         * Number of _entry elements at the moment this partial close was executed.
+         * Used to slice _entry to only entries that existed at this partial.
          */
         entryCountAtClose: number;
+        /** Debug only timestamp in milliseconds */
+        debugTimestamp?: number;
     }>;
     /**
      * Trailing stop-loss price that overrides priceStopLoss when set.
@@ -1996,6 +1997,8 @@ interface ISignalRow extends ISignalDto {
     _entry?: Array<{
         /** Price at which this entry was executed */
         price: number;
+        /** Cost of this entry in USD (e.g. 100 for $100 position) */
+        cost: number;
         /** Debug only timestamp in milliseconds */
         debugTimestamp?: number;
     }>;
@@ -2187,6 +2190,8 @@ interface IAverageBuyCommitRow extends ICommitRowBase {
     action: "average-buy";
     /** Price at which the new averaging entry was executed */
     currentPrice: number;
+    /** Cost of this averaging entry in USD */
+    cost: number;
     /** Total number of entries in _entry after this addition */
     totalEntries: number;
 }
@@ -2307,6 +2312,10 @@ interface IStrategyPnL {
     priceOpen: number;
     /** Exit price adjusted with slippage and fees */
     priceClose: number;
+    /** Absolute profit/loss in USD: pnlPercentage / 100 * pnlEntries */
+    pnlCost: number;
+    /** Total invested capital in USD: sum of all entry costs */
+    pnlEntries: number;
 }
 /**
  * Tick result: no active signal, idle state.
@@ -4281,7 +4290,7 @@ declare function commitActivateScheduled(symbol: string, activateId?: string): P
  * }
  * ```
  */
-declare function commitAverageBuy(symbol: string): Promise<boolean>;
+declare function commitAverageBuy(symbol: string, cost?: number): Promise<boolean>;
 /**
  * Returns the percentage of the position currently held (not closed).
  * 100 = nothing has been closed (full position), 0 = fully closed.
@@ -4474,7 +4483,7 @@ declare function getPositionPartials(symbol: string): Promise<{
     type: "profit" | "loss";
     percent: number;
     currentPrice: number;
-    effectivePrice: number;
+    costBasisAtClose: number;
     entryCountAtClose: number;
     debugTimestamp?: number;
 }[]>;
@@ -4759,6 +4768,12 @@ declare const GLOBAL_CONFIG: {
      * Default: true (DCA logic enabled everywhere, not just when antirecord is broken)
      */
     CC_ENABLE_DCA_EVERYWHERE: boolean;
+    /**
+     * Cost of entering a position (in USD).
+     * This is used as a default value for calculating position size and risk management when cost data is not provided by the strategy
+     * Default: $100 per position
+     */
+    CC_POSITION_ENTRY_COST: number;
 };
 /**
  * Type for global configuration object.
@@ -4871,6 +4886,7 @@ declare function getConfig(): {
     CC_MAX_LOG_LINES: number;
     CC_ENABLE_CANDLE_FETCH_MUTEX: boolean;
     CC_ENABLE_DCA_EVERYWHERE: boolean;
+    CC_POSITION_ENTRY_COST: number;
 };
 /**
  * Retrieves the default configuration object for the framework.
@@ -4911,6 +4927,7 @@ declare function getDefaultConfig(): Readonly<{
     CC_MAX_LOG_LINES: number;
     CC_ENABLE_CANDLE_FETCH_MUTEX: boolean;
     CC_ENABLE_DCA_EVERYWHERE: boolean;
+    CC_POSITION_ENTRY_COST: number;
 }>;
 /**
  * Sets custom column configurations for markdown report generation.
@@ -10787,7 +10804,7 @@ declare class BacktestUtils {
         type: "profit" | "loss";
         percent: number;
         currentPrice: number;
-        effectivePrice: number;
+        costBasisAtClose: number;
         entryCountAtClose: number;
         debugTimestamp?: number;
     }[]>;
@@ -11189,7 +11206,7 @@ declare class BacktestUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => Promise<boolean>;
+    }, cost?: number) => Promise<boolean>;
     /**
      * Gets statistical data from all closed signals for a symbol-strategy pair.
      *
@@ -11730,7 +11747,7 @@ declare class LiveUtils {
         type: "profit" | "loss";
         percent: number;
         currentPrice: number;
-        effectivePrice: number;
+        costBasisAtClose: number;
         entryCountAtClose: number;
         debugTimestamp?: number;
     }[]>;
@@ -12106,7 +12123,7 @@ declare class LiveUtils {
     commitAverageBuy: (symbol: string, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-    }) => Promise<boolean>;
+    }, cost?: number) => Promise<boolean>;
     /**
      * Gets statistical data from all live trading events for a symbol-strategy pair.
      *
@@ -15951,7 +15968,7 @@ declare class StrategyCoreService implements TStrategy$1 {
         type: "profit" | "loss";
         percent: number;
         currentPrice: number;
-        effectivePrice: number;
+        costBasisAtClose: number;
         entryCountAtClose: number;
         debugTimestamp?: number;
     }[]>;
@@ -16343,7 +16360,7 @@ declare class StrategyCoreService implements TStrategy$1 {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => Promise<boolean>;
+    }, cost: number) => Promise<boolean>;
 }
 
 /**
@@ -18905,7 +18922,7 @@ declare class StrategyConnectionService implements TStrategy {
         type: "profit" | "loss";
         percent: number;
         currentPrice: number;
-        effectivePrice: number;
+        costBasisAtClose: number;
         entryCountAtClose: number;
         debugTimestamp?: number;
     }[]>;
@@ -19299,7 +19316,7 @@ declare class StrategyConnectionService implements TStrategy {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => Promise<boolean>;
+    }, cost: number) => Promise<boolean>;
 }
 
 /**
@@ -22500,13 +22517,8 @@ declare const backtest: {
  * - Weights are calculated by ACTUAL DOLLAR VALUE of each partial relative to total invested.
  *   This correctly handles DCA entries that occur before or after partial closes.
  *
- * Cost basis is reconstructed by replaying the partial sequence via entryCountAtClose + percent:
- *   costBasis = 0
- *   for each partial[i]:
- *     costBasis += (entryCountAtClose[i] - entryCountAtClose[i-1]) × $100
- *     partialDollarValue[i] = (percent[i] / 100) × costBasis
- *     weight[i]             = partialDollarValue[i] / totalInvested
- *     costBasis            *= (1 - percent[i] / 100)
+ * Partial effective price is computed from costBasisAtClose snapshot:
+ *   effectivePrice = costBasisAtClose / Σ(entry.cost/entry.price for entries[0..entryCountAtClose])
  *
  * Fee structure:
  *   - Open fee:  CC_PERCENT_FEE (charged once)
@@ -22514,50 +22526,45 @@ declare const backtest: {
  *
  * @param signal - Closed signal with position details and optional partial history
  * @param priceClose - Actual close price at final exit
- * @returns PNL data with percentage and prices
+ * @returns PNL data with percentage, prices, and USD amounts
  */
 declare const toProfitLossDto: (signal: ISignalRow, priceClose: number) => IStrategyPnL;
 
 /**
- * Returns the effective entry price for price calculations.
+ * Returns the effective (DCA-weighted) entry price for a signal.
  *
- * Uses harmonic mean (correct for fixed-dollar DCA: $100 per entry).
+ * Uses cost-weighted harmonic mean: effectivePrice = Σcost / Σ(cost/price)
+ * This is the correct formula for fixed-dollar DCA positions where each entry
+ * has its own cost (e.g. $100, $200, etc.).
  *
- * When partial closes exist, replays the partial sequence to reconstruct
- * the running cost basis at each partial — no extra stored fields needed.
+ * When partial closes exist, uses the costBasisAtClose snapshot from the last partial
+ * to avoid replaying the full entry history:
+ *   1. Compute effectivePrice AT last partial = costBasisAtClose / Σ(cost/price for entries[0..entryCountAtClose])
+ *   2. remainingCostBasis = costBasisAtClose * (1 - lastPartial.percent / 100)
+ *   3. oldCoins = remainingCostBasis / effectivePriceAtPartial
+ *   4. newCoins = Σ(cost/price) for entries added AFTER last partial
+ *   5. effectivePrice = (remainingCostBasis + newCost) / (oldCoins + newCoins)
  *
- * Cost basis replay:
- *   costBasis starts at 0
- *   for each partial[i]:
- *     newEntries = entryCountAtClose[i] - entryCountAtClose[i-1]  (or entryCountAtClose[0] for i=0)
- *     costBasis += newEntries × $100          ← add DCA entries up to this partial
- *     positionCostBasisAtClose[i] = costBasis ← snapshot BEFORE close
- *     costBasis × = (1 - percent[i] / 100)    ← reduce after close
- *
- * @param signal - Signal row
+ * @param signal - Signal row with _entry and optional _partial
  * @returns Effective entry price for PNL calculations
  */
 declare const getEffectivePriceOpen: (signal: ISignalRow) => number;
 
 /**
- * Returns the total closed state of a position using cost-basis replay.
+ * Returns the total closed state of a position using costBasisAtClose snapshots.
  *
- * Correctly accounts for DCA entries added between partial closes via averageBuy().
- * Simple percent summation (sum of _partial[i].percent) is INCORRECT when averageBuy()
- * is called between partials — this function uses the same cost-basis replay as
- * toProfitLossDto to compute the true dollar-weighted closed fraction.
+ * Each partial in _partial stores costBasisAtClose — the running cost basis BEFORE
+ * that partial was applied. This avoids replaying the full entry history on every call.
  *
- * Cost-basis replay:
- *   costBasis = 0
+ * Cost-basis replay (simplified):
  *   for each partial[i]:
- *     costBasis += (entryCountAtClose[i] - entryCountAtClose[i-1]) × $100
- *     closedDollar += (percent[i] / 100) × costBasis
- *     costBasis ×= (1 - percent[i] / 100)
- *   // then add entries added AFTER the last partial
- *   costBasis += (currentEntryCount - lastPartialEntryCount) × $100
+ *     closedDollar += (percent[i] / 100) × costBasisAtClose[i]
+ *     remainingCostBasis = costBasisAtClose[i] × (1 - percent[i] / 100)
+ *   // entries added AFTER last partial add directly to remainingCostBasis
+ *   remainingCostBasis += Σ entry.cost for entries[lastEntryCount..]
  *
  * @param signal - Signal row with _partial and _entry arrays
- * @returns Object with totalClosedPercent (0–100+) and remainingCostBasis (dollar value still open)
+ * @returns Object with totalClosedPercent (0–100) and remainingCostBasis (USD still open)
  */
 declare const getTotalClosed: (signal: ISignalRow) => {
     totalClosedPercent: number;

@@ -5,6 +5,7 @@ import {
 } from "../interfaces/Strategy.interface";
 import backtest from "../lib";
 import { exitEmitter, doneLiveSubject } from "../config/emitters";
+import { GLOBAL_CONFIG } from "../config/params";
 import { getErrorMessage, memoize, randomString, singlerun } from "functools-kit";
 import { Columns } from "../lib/services/markdown/LiveMarkdownService";
 import { ExchangeName } from "../interfaces/Exchange.interface";
@@ -1455,7 +1456,8 @@ export class LiveUtils {
     context: {
       strategyName: StrategyName;
       exchangeName: ExchangeName;
-    }
+    },
+    cost: number = GLOBAL_CONFIG.CC_POSITION_ENTRY_COST
   ): Promise<boolean> => {
     backtest.loggerService.info(LIVE_METHOD_NAME_AVERAGE_BUY, {
       symbol,
@@ -1476,7 +1478,7 @@ export class LiveUtils {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
       frameName: "",
-    });
+    }, cost);
   };
 
   /**

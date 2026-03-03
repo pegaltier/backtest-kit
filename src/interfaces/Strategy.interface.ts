@@ -40,6 +40,8 @@ export interface ISignalDto {
   priceStopLoss: number;
   /** Expected duration in minutes before time_expired */
   minuteEstimatedTime: number;
+  /** Cost of this entry in USD. Default: GLOBAL_CONFIG.CC_POSITION_ENTRY_COST */
+  cost?: number;
 }
 
 /**
@@ -82,23 +84,20 @@ export interface ISignalRow extends ISignalDto {
     percent: number;
     /** Price at which this partial was executed */
     currentPrice: number;
-    /** Debug only timestamp in milliseconds */
-    debugTimestamp?: number;
     /**
-     * Effective entry price (DCA average) at the moment this partial close was executed.
-     * Captured from GET_EFFECTIVE_PRICE_OPEN at partial close time.
-     * Used in PNL calculation when averageBuy() is called after partial closes,
-     * so each partial's profit is calculated against the correct entry price at that moment.
+     * Running cost basis (sum of entry costs) at the moment this partial was executed,
+     * BEFORE applying the percent reduction.
+     * Stored as a snapshot so helpers don't need to replay the full entry history.
+     * Effective entry price at this partial = costBasisAtClose / Σ(entry.cost/entry.price for entries[0..entryCountAtClose])
      */
-    effectivePrice: number;
+    costBasisAtClose: number;
     /**
-     * Entry count (number of entries in _entry history) at the moment this partial close was executed.
-     * Used to determine which entries are included in the effective price calculation for this partial close.
-     * When averageBuy() is called after partial closes, new entries are added to _entry, but they should not affect the effective price used for already executed partial closes.
-     * By capturing entryCountAtClose, we can slice the _entry array to include only the entries that were part of the position at the time of this partial close when calculating the effective price for PNL.
-     * This ensures that each partial close's PNL is calculated against the correct average entry price, even if more averaging happens after the partial close.
+     * Number of _entry elements at the moment this partial close was executed.
+     * Used to slice _entry to only entries that existed at this partial.
      */
     entryCountAtClose: number;
+    /** Debug only timestamp in milliseconds */
+    debugTimestamp?: number;
   }>;
   /**
    * Trailing stop-loss price that overrides priceStopLoss when set.
@@ -119,6 +118,8 @@ export interface ISignalRow extends ISignalDto {
   _entry?: Array<{
     /** Price at which this entry was executed */
     price: number;
+    /** Cost of this entry in USD (e.g. 100 for $100 position) */
+    cost: number;
     /** Debug only timestamp in milliseconds */
     debugTimestamp?: number;
   }>;
@@ -347,6 +348,8 @@ export interface IAverageBuyCommitRow extends ICommitRowBase {
   action: "average-buy";
   /** Price at which the new averaging entry was executed */
   currentPrice: number;
+  /** Cost of this averaging entry in USD */
+  cost: number;
   /** Total number of entries in _entry after this addition */
   totalEntries: number;
 }
@@ -527,6 +530,10 @@ export interface IStrategyPnL {
   priceOpen: number;
   /** Exit price adjusted with slippage and fees */
   priceClose: number;
+  /** Absolute profit/loss in USD: pnlPercentage / 100 * pnlEntries */
+  pnlCost: number;
+  /** Total invested capital in USD: sum of all entry costs */
+  pnlEntries: number;
 }
 
 /**

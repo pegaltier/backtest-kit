@@ -830,7 +830,8 @@ export class StrategyCoreService implements TStrategy {
     backtest: boolean,
     symbol: string,
     currentPrice: number,
-    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
+    cost: number,
   ): Promise<boolean> => {
     this.loggerService.log("strategyCoreService averageBuy", {
       symbol,
@@ -839,7 +840,7 @@ export class StrategyCoreService implements TStrategy {
       backtest,
     });
     await this.validate(context);
-    return await this.strategyConnectionService.averageBuy(backtest, symbol, currentPrice, context);
+    return await this.strategyConnectionService.averageBuy(backtest, symbol, currentPrice, context, cost);
   };
 }
 

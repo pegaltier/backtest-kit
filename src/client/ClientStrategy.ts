@@ -53,19 +53,17 @@ const INTERVAL_MINUTES: Record<SignalInterval, number> = {
   "1h": 60,
 };
 
-const COST_BASIS_PER_ENTRY = 100;
-
 /**
  * Type for partial profit/loss events queued in ClientStrategy._commitQueue.
  * These events are emitted to onCommit callback with proper execution context timestamp.
  */
 type Partials = Array<{ 
-  type: "profit" | "loss"; 
-  percent: number; 
-  currentPrice: number; 
-  effectivePrice: number; 
-  entryCountAtClose: number; 
-  debugTimestamp?: number; 
+  type: "profit" | "loss";
+  percent: number;
+  currentPrice: number;
+  costBasisAtClose: number;
+  entryCountAtClose: number;
+  debugTimestamp?: number;
 }>;
 
 /**
@@ -272,6 +270,7 @@ const PROCESS_COMMIT_QUEUE_FN = async (
         frameName: self.params.frameName,
         backtest: commit.backtest,
         currentPrice: commit.currentPrice,
+        cost: commit.cost,
         effectivePriceOpen,
         timestamp,
         totalEntries: publicSignal.totalEntries,
@@ -815,7 +814,7 @@ const GET_SIGNAL_FN = trycatch(
           pendingAt: currentTime, // Для immediate signal оба времени одинаковые
           timestamp: currentTime,
           _isScheduled: false,
-          _entry: [{ price: signal.priceOpen, debugTimestamp: currentTime }],
+          _entry: [{ price: signal.priceOpen, cost: signal.cost ?? GLOBAL_CONFIG.CC_POSITION_ENTRY_COST, debugTimestamp: currentTime }],
         };
 
         // Валидируем сигнал перед возвратом
@@ -841,7 +840,7 @@ const GET_SIGNAL_FN = trycatch(
         pendingAt: SCHEDULED_SIGNAL_PENDING_MOCK, // Временно, обновится при активации
         timestamp: currentTime,
         _isScheduled: true,
-        _entry: [{ price: signal.priceOpen, debugTimestamp: currentTime }],
+        _entry: [{ price: signal.priceOpen, cost: signal.cost ?? GLOBAL_CONFIG.CC_POSITION_ENTRY_COST, debugTimestamp: currentTime }],
       };
 
       // Валидируем сигнал перед возвратом
@@ -863,7 +862,7 @@ const GET_SIGNAL_FN = trycatch(
       pendingAt: currentTime, // Для immediate signal оба времени одинаковые
       timestamp: currentTime,
       _isScheduled: false,
-      _entry: [{ price: currentPrice, debugTimestamp: currentTime }],
+      _entry: [{ price: currentPrice, cost: signal.cost ?? GLOBAL_CONFIG.CC_POSITION_ENTRY_COST, debugTimestamp: currentTime }],
     };
 
     // Валидируем сигнал перед возвратом
@@ -997,7 +996,7 @@ const PARTIAL_PROFIT_FN = (
 
   // Check if would exceed 100% total closed (dollar-basis, DCA-aware)
   const { totalClosedPercent, remainingCostBasis } = getTotalClosed(signal);
-  const totalInvested = (signal._entry?.length ?? 1) * COST_BASIS_PER_ENTRY;
+  const totalInvested = (signal._entry ?? []).reduce((s, e) => s + e.cost, 0) || GLOBAL_CONFIG.CC_POSITION_ENTRY_COST;
   const newPartialDollar = (percentToClose / 100) * remainingCostBasis;
   const newTotalClosedDollar = (totalClosedPercent / 100) * totalInvested + newPartialDollar;
 
@@ -1017,7 +1016,6 @@ const PARTIAL_PROFIT_FN = (
   }
 
   // Capture effective entry price at the moment of partial close (for DCA-aware PNL)
-  const effectivePrice = GET_EFFECTIVE_PRICE_OPEN(signal);
   const entryCountAtClose = signal._entry ? signal._entry.length : 1;
 
   // Add new partial close entry
@@ -1026,8 +1024,8 @@ const PARTIAL_PROFIT_FN = (
     percent: percentToClose,
     entryCountAtClose,
     currentPrice,
+    costBasisAtClose: remainingCostBasis,
     debugTimestamp: getDebugTimestamp(),
-    effectivePrice,
   });
 
   self.params.logger.info("PARTIAL_PROFIT_FN executed", {
@@ -1051,7 +1049,7 @@ const PARTIAL_LOSS_FN = (
 
   // Check if would exceed 100% total closed (dollar-basis, DCA-aware)
   const { totalClosedPercent, remainingCostBasis } = getTotalClosed(signal);
-  const totalInvested = (signal._entry?.length ?? 1) * COST_BASIS_PER_ENTRY;
+  const totalInvested = (signal._entry ?? []).reduce((s, e) => s + e.cost, 0) || GLOBAL_CONFIG.CC_POSITION_ENTRY_COST;
   const newPartialDollar = (percentToClose / 100) * remainingCostBasis;
   const newTotalClosedDollar = (totalClosedPercent / 100) * totalInvested + newPartialDollar;
 
@@ -1070,8 +1068,6 @@ const PARTIAL_LOSS_FN = (
     return false;
   }
 
-  // Capture effective entry price at the moment of partial close (for DCA-aware PNL)
-  const effectivePrice = GET_EFFECTIVE_PRICE_OPEN(signal);
   const entryCountAtClose = signal._entry ? signal._entry.length : 1;
 
   // Add new partial close entry
@@ -1080,7 +1076,7 @@ const PARTIAL_LOSS_FN = (
     percent: percentToClose,
     currentPrice,
     entryCountAtClose,
-    effectivePrice,
+    costBasisAtClose: remainingCostBasis,
     debugTimestamp: getDebugTimestamp(),
   });
 
@@ -1529,11 +1525,12 @@ const BREAKEVEN_FN = (
 const AVERAGE_BUY_FN = (
   self: ClientStrategy,
   signal: ISignalRow,
-  currentPrice: number
+  currentPrice: number,
+  cost: number = GLOBAL_CONFIG.CC_POSITION_ENTRY_COST
 ): boolean => {
   // Ensure _entry is initialized (handles signals loaded from disk without _entry)
   if (!signal._entry || signal._entry.length === 0) {
-    signal._entry = [{ price: signal.priceOpen, debugTimestamp: getDebugTimestamp() }];
+    signal._entry = [{ price: signal.priceOpen, cost: GLOBAL_CONFIG.CC_POSITION_ENTRY_COST, debugTimestamp: getDebugTimestamp() }];
   }
 
   const lastEntry = signal._entry[signal._entry.length - 1];
@@ -1564,7 +1561,7 @@ const AVERAGE_BUY_FN = (
     }
   }
 
-  signal._entry.push({ price: currentPrice, debugTimestamp: getDebugTimestamp() });
+  signal._entry.push({ price: currentPrice, cost, debugTimestamp: getDebugTimestamp() });
 
   self.params.logger.info("AVERAGE_BUY_FN executed", {
     signalId: signal.id,
@@ -4133,7 +4130,7 @@ export class ClientStrategy implements IStrategy {
     if (!this._pendingSignal) {
       return null;
     }
-    return (this._pendingSignal._entry?.length ?? 1) * COST_BASIS_PER_ENTRY;
+    return (this._pendingSignal._entry ?? []).reduce((s, e) => s + e.cost, 0) || GLOBAL_CONFIG.CC_POSITION_ENTRY_COST;
   }
 
   /**
@@ -4174,9 +4171,8 @@ export class ClientStrategy implements IStrategy {
     if (!this._pendingSignal) {
       return null;
     }
-    const totalInvested = (this._pendingSignal._entry?.length ?? 1) * COST_BASIS_PER_ENTRY;
     const pnl = toProfitLossDto(this._pendingSignal, currentPrice);
-    return (pnl.pnlPercentage / 100) * totalInvested;
+    return pnl.pnlCost;
   }
 
   /**
@@ -6221,7 +6217,8 @@ export class ClientStrategy implements IStrategy {
   public async averageBuy(
     symbol: string,
     currentPrice: number,
-    backtest: boolean
+    backtest: boolean,
+    cost: number = GLOBAL_CONFIG.CC_POSITION_ENTRY_COST
   ): Promise<boolean> {
     this.params.logger.debug("ClientStrategy averageBuy", {
       symbol,
@@ -6244,7 +6241,7 @@ export class ClientStrategy implements IStrategy {
     }
 
     // Execute averaging logic
-    const result = AVERAGE_BUY_FN(this, this._pendingSignal, currentPrice);
+    const result = AVERAGE_BUY_FN(this, this._pendingSignal, currentPrice, cost);
 
     if (!result) {
       return false;
@@ -6279,6 +6276,7 @@ export class ClientStrategy implements IStrategy {
       symbol,
       backtest,
       currentPrice,
+      cost,
       totalEntries: this._pendingSignal._entry?.length ?? 1,
     });
 

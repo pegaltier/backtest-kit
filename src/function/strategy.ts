@@ -4,6 +4,7 @@ import backtest, {
 } from "../lib";
 import { getAveragePrice } from "./exchange";
 import { investedCostToPercent } from "../utils/investedCostToPercent";
+import { GLOBAL_CONFIG } from "../config/params";
 
 const CANCEL_SCHEDULED_METHOD_NAME = "strategy.commitCancelScheduled";
 const CLOSE_PENDING_METHOD_NAME = "strategy.commitClosePending";
@@ -479,7 +480,7 @@ export async function commitActivateScheduled(symbol: string, activateId?: strin
  * }
  * ```
  */
-export async function commitAverageBuy(symbol: string): Promise<boolean> {
+export async function commitAverageBuy(symbol: string, cost: number = GLOBAL_CONFIG.CC_POSITION_ENTRY_COST): Promise<boolean> {
   backtest.loggerService.info(AVERAGE_BUY_METHOD_NAME, {
     symbol,
   });
@@ -497,7 +498,8 @@ export async function commitAverageBuy(symbol: string): Promise<boolean> {
     isBacktest,
     symbol,
     currentPrice,
-    { exchangeName, frameName, strategyName }
+    { exchangeName, frameName, strategyName },
+    cost
   );
 }
 
