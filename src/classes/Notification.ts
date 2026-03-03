@@ -54,6 +54,7 @@ const CREATE_SIGNAL_NOTIFICATION_FN = (data: IStrategyTickResult): NotificationM
       originalPriceOpen: data.signal.originalPriceOpen,
       totalEntries: data.signal.totalEntries,
       cost: data.signal.cost,
+      pnl: data.signal.pnl,
       note: data.signal.note,
       scheduledAt: data.signal.scheduledAt,
       pendingAt: data.signal.pendingAt,
@@ -83,6 +84,7 @@ const CREATE_SIGNAL_NOTIFICATION_FN = (data: IStrategyTickResult): NotificationM
       originalPriceOpen: data.signal.originalPriceOpen,
       totalEntries: data.signal.totalEntries,
       pnlPercentage: data.pnl.pnlPercentage,
+      pnl: data.pnl,
       closeReason: data.closeReason,
       duration: durationMin,
       note: data.signal.note,
@@ -110,6 +112,7 @@ const CREATE_SIGNAL_NOTIFICATION_FN = (data: IStrategyTickResult): NotificationM
       originalPriceOpen: data.signal.originalPriceOpen,
       totalEntries: data.signal.totalEntries,
       cost: data.signal.cost,
+      pnl: data.signal.pnl,
       scheduledAt: data.signal.scheduledAt,
       currentPrice: data.currentPrice,
       createdAt: data.createdAt,
@@ -261,11 +264,12 @@ const CREATE_STRATEGY_COMMIT_NOTIFICATION_FN = (data: StrategyCommitContract): N
       originalPriceStopLoss: data.originalPriceStopLoss,
       originalPriceOpen: data.originalPriceOpen,
       totalEntries: data.totalEntries,
+      pnl: data.pnl,
       scheduledAt: data.scheduledAt,
       pendingAt: data.pendingAt,
       createdAt: data.timestamp,
     };
-  } 
+  }
   if (data.action === "partial-loss") {
     return {
       type: "partial_loss.commit",
@@ -286,11 +290,12 @@ const CREATE_STRATEGY_COMMIT_NOTIFICATION_FN = (data: StrategyCommitContract): N
       originalPriceStopLoss: data.originalPriceStopLoss,
       originalPriceOpen: data.originalPriceOpen,
       totalEntries: data.totalEntries,
+      pnl: data.pnl,
       scheduledAt: data.scheduledAt,
       pendingAt: data.pendingAt,
       createdAt: data.timestamp,
     };
-  } 
+  }
   if (data.action === "breakeven") {
     return {
       type: "breakeven.commit",
@@ -310,11 +315,12 @@ const CREATE_STRATEGY_COMMIT_NOTIFICATION_FN = (data: StrategyCommitContract): N
       originalPriceStopLoss: data.originalPriceStopLoss,
       originalPriceOpen: data.originalPriceOpen,
       totalEntries: data.totalEntries,
+      pnl: data.pnl,
       scheduledAt: data.scheduledAt,
       pendingAt: data.pendingAt,
       createdAt: data.timestamp,
     };
-  } 
+  }
   if (data.action === "trailing-stop") {
     return {
       type: "trailing_stop.commit",
@@ -335,11 +341,12 @@ const CREATE_STRATEGY_COMMIT_NOTIFICATION_FN = (data: StrategyCommitContract): N
       originalPriceStopLoss: data.originalPriceStopLoss,
       originalPriceOpen: data.originalPriceOpen,
       totalEntries: data.totalEntries,
+      pnl: data.pnl,
       scheduledAt: data.scheduledAt,
       pendingAt: data.pendingAt,
       createdAt: data.timestamp,
     };
-  } 
+  }
   if (data.action === "trailing-take") {
     return {
       type: "trailing_take.commit",
@@ -360,11 +367,12 @@ const CREATE_STRATEGY_COMMIT_NOTIFICATION_FN = (data: StrategyCommitContract): N
       originalPriceStopLoss: data.originalPriceStopLoss,
       originalPriceOpen: data.originalPriceOpen,
       totalEntries: data.totalEntries,
+      pnl: data.pnl,
       scheduledAt: data.scheduledAt,
       pendingAt: data.pendingAt,
       createdAt: data.timestamp,
     };
-  } 
+  }
   if (data.action === "activate-scheduled") {
     return {
       type: "activate_scheduled.commit",
@@ -385,6 +393,7 @@ const CREATE_STRATEGY_COMMIT_NOTIFICATION_FN = (data: StrategyCommitContract): N
       originalPriceStopLoss: data.originalPriceStopLoss,
       originalPriceOpen: data.originalPriceOpen,
       totalEntries: data.totalEntries,
+      pnl: data.pnl,
       scheduledAt: data.scheduledAt,
       pendingAt: data.pendingAt,
       createdAt: data.timestamp,
@@ -411,6 +420,7 @@ const CREATE_STRATEGY_COMMIT_NOTIFICATION_FN = (data: StrategyCommitContract): N
       originalPriceTakeProfit: data.originalPriceTakeProfit,
       originalPriceStopLoss: data.originalPriceStopLoss,
       originalPriceOpen: data.originalPriceOpen,
+      pnl: data.pnl,
       scheduledAt: data.scheduledAt,
       pendingAt: data.pendingAt,
       createdAt: data.timestamp,

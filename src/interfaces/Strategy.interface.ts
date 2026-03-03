@@ -162,6 +162,11 @@ export interface IScheduledSignalRow extends ISignalRow {
  */
 export interface IPublicSignalRow extends ISignalRow {
   /**
+   * Cost of the initial position entry in USD (first entry, not DCA).
+   * Inherited from ISignalRow. Explicitly surfaced here for consumer visibility.
+   */
+  cost: number;
+  /**
    * Original stop-loss price set at signal creation.
    * Remains unchanged even if trailing stop-loss modifies effective SL.
    * Used for user visibility of initial SL parameters.
