@@ -41,13 +41,20 @@ import beginTime from "../../../utils/beginTime";
 import SignalSyncContract from "src/contract/SignalSync.contract";
 
 /**
- * If syncSubject listener throws, it means the signal was not properly synchronized to the exchange (e.g. limit order failed to fill).
+ * If syncSubject listener or any registered action throws, it means the signal was not properly synchronized
+ * to the exchange (e.g. limit order failed to fill).
  * ClientStrategy will skip position open/close and will try again on the next tick until successful synchronization.
  */
-const CREATE_SYNC_FN = () => trycatch(
+const CREATE_SYNC_FN = (
+  self: StrategyConnectionService,
+  strategyName: StrategyName,
+  exchangeName: ExchangeName,
+  frameName: FrameName,
+  backtest: boolean
+) => trycatch(
   async (event: SignalSyncContract) => {
     await syncSubject.next(event);
-    return true;
+    return await self.actionCoreService.signalSync(backtest, event, { strategyName, exchangeName, frameName });
   }, {
     defaultValue: false,
   }
@@ -485,7 +492,7 @@ export class StrategyConnectionService implements TStrategy {
         onActivePing: CREATE_COMMIT_ACTIVE_PING_FN(this),
         onDispose: CREATE_COMMIT_DISPOSE_FN(this),
         onCommit: CREATE_COMMIT_FN(this),
-        onSignalSync: CREATE_SYNC_FN(),
+        onSignalSync: CREATE_SYNC_FN(this, strategyName, exchangeName, frameName, backtest),
       });
     }
   );

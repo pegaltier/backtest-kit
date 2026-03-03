@@ -8,6 +8,7 @@ import { RiskContract } from "../contract/Risk.contract";
 import { FrameName } from "./Frame.interface";
 import { ILogger } from "./Logger.interface";
 import { ExchangeName } from "./Exchange.interface";
+import { SignalSyncContract } from "../contract/SignalSync.contract";
 
 /**
  * Constructor type for action handlers with strategy context.
@@ -263,6 +264,21 @@ export interface IActionCallbacks {
    * @param backtest - True for backtest mode, false for live trading
    */
   onRiskRejection(event: RiskContract, actionName: ActionName, strategyName: StrategyName, frameName: FrameName, backtest: boolean): void | Promise<void>;
+
+  /**
+   * Called when framework attempts to open or close a position via limit order.
+   * Return false (or throw) to reject the operation — framework will retry on next tick.
+   *
+   * NOTE: Unlike other callbacks, exceptions from this method are NOT swallowed.
+   * They propagate up to CREATE_SYNC_FN which catches them and returns false.
+   *
+   * @param event - Sync event with action "signal-open" or "signal-close"
+   * @param actionName - Action identifier
+   * @param strategyName - Strategy identifier
+   * @param frameName - Timeframe identifier
+   * @param backtest - True for backtest mode, false for live trading
+   */
+  onSignalSync(event: SignalSyncContract, actionName: ActionName, strategyName: StrategyName, frameName: FrameName, backtest: boolean): boolean | Promise<boolean>;
 }
 
 /**
@@ -522,6 +538,16 @@ export interface IAction {
    * @param event - Risk rejection data with reason and context
    */
   riskRejection(event: RiskContract): void | Promise<void>;
+
+  /**
+   * Called when framework attempts to open or close a position via limit order.
+   * Return false (or throw) to reject — framework will retry on next tick.
+   *
+   * NOTE: Exceptions are NOT swallowed here — they propagate to CREATE_SYNC_FN.
+   *
+   * @param event - Sync event with action "signal-open" or "signal-close"
+   */
+  signalSync(event: SignalSyncContract): boolean | Promise<boolean>;
 
   /**
    * Cleans up resources and subscriptions when action handler is no longer needed.

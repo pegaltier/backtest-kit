@@ -16,6 +16,7 @@ import { PartialLossContract } from "../contract/PartialLoss.contract";
 import { SchedulePingContract } from "../contract/SchedulePing.contract";
 import { ActivePingContract } from "../contract/ActivePing.contract";
 import { RiskContract } from "../contract/Risk.contract";
+import { SignalSyncContract } from "../contract/SignalSync.contract";
 import backtest from "../lib";
 import { errorEmitter } from "../config/emitters";
 import { FrameName } from "../interfaces/Frame.interface";
@@ -263,6 +264,23 @@ const CALL_RISK_REJECTION_CALLBACK_FN = trycatch(
     },
   }
 );
+
+/**
+ * Calls onSignalSync callback WITHOUT trycatch — exceptions must propagate
+ * up to CREATE_SYNC_FN in StrategyConnectionService (which returns false on error).
+ */
+const CALL_SIGNAL_SYNC_CALLBACK_FN = async (
+  self: ClientAction,
+  event: SignalSyncContract,
+  strategyName: StrategyName,
+  frameName: FrameName,
+  isBacktest: boolean
+): Promise<boolean> => {
+  if (self.params.callbacks?.onSignalSync) {
+    return await self.params.callbacks.onSignalSync(event, self.params.actionName, strategyName, frameName, isBacktest);
+  }
+  return true;
+};
 
 /** Wrapper to call onInit callback with error handling */
 const CALL_INIT_CALLBACK_FN = trycatch(
@@ -710,6 +728,39 @@ export class ClientAction implements IAction {
 
     // Call callback if defined
     await CALL_RISK_REJECTION_CALLBACK_FN(
+      this,
+      event,
+      this.params.strategyName,
+      this.params.frameName,
+      event.backtest
+    );
+  };
+
+  /**
+   * Gate for position open/close via limit order.
+   * NOT wrapped in trycatch — exceptions propagate to CREATE_SYNC_FN.
+   */
+  public async signalSync(event: SignalSyncContract): Promise<boolean> {
+    this.params.logger.debug("ClientAction signalSync", {
+      actionName: this.params.actionName,
+      strategyName: this.params.strategyName,
+      frameName: this.params.frameName,
+    });
+
+    if (!this._handlerInstance) {
+      await this.waitForInit();
+    }
+
+    // Call handler method if defined — exceptions propagate
+    if (this._handlerInstance?.signalSync) {
+      const handlerResult = await this._handlerInstance.signalSync(event);
+      if (!handlerResult) {
+        return false;
+      }
+    }
+
+    // Call callback if defined — exceptions propagate
+    return await CALL_SIGNAL_SYNC_CALLBACK_FN(
       this,
       event,
       this.params.strategyName,

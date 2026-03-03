@@ -4,6 +4,7 @@ import PartialProfitContract from "../contract/PartialProfit.contract";
 import SchedulePingContract from "../contract/SchedulePing.contract";
 import ActivePingContract from "../contract/ActivePing.contract";
 import RiskContract from "../contract/Risk.contract";
+import { SignalSyncContract } from "../contract/SignalSync.contract";
 import {
   IStrategyTickResult,
   StrategyName,
@@ -28,6 +29,7 @@ const METHOD_NAME_PARTIAL_LOSS_AVAILABLE = "ActionBase.partialLossAvailable";
 const METHOD_NAME_PING_SCHEDULED = "ActionBase.pingScheduled";
 const METHOD_NAME_PING_ACTIVE = "ActionBase.pingActive";
 const METHOD_NAME_RISK_REJECTION = "ActionBase.riskRejection";
+const METHOD_NAME_SIGNAL_SYNC = "ActionBase.signalSync";
 const METHOD_NAME_DISPOSE = "ActionBase.dispose";
 
 const DEFAULT_SOURCE = "default";
@@ -484,6 +486,20 @@ class ActionProxy implements IPublicAction {
    */
   public async riskRejection(event: RiskContract) {
     return await CALL_RISK_REJECTION_FN(event, this);
+  }
+
+  /**
+   * Gate for position open/close via limit order.
+   * NOT wrapped in trycatch — exceptions propagate to CREATE_SYNC_FN.
+   *
+   * @param event - Sync event with action "signal-open" or "signal-close"
+   * @returns true to allow, false to reject (retry next tick)
+   */
+  public async signalSync(event: SignalSyncContract): Promise<boolean> {
+    if (this._target.signalSync) {
+      return await this._target.signalSync(event);
+    }
+    return true;
   }
 
   /**
@@ -982,6 +998,24 @@ class ActionBase implements IPublicAction {
       event,
       source,
     });
+  }
+
+  /**
+   * Gate for position open/close via limit order. Default allows all.
+   * Override and return false (or throw) to reject — framework retries next tick.
+   *
+   * NOTE: Exceptions are NOT swallowed — they propagate to CREATE_SYNC_FN.
+   *
+   * @param event - Sync event with action "signal-open" or "signal-close"
+   */
+  public signalSync(
+    _event: SignalSyncContract,
+    source = DEFAULT_SOURCE,
+  ): boolean | Promise<boolean> {
+    backtest.loggerService.info(METHOD_NAME_SIGNAL_SYNC, {
+      source,
+    });
+    return true;
   }
 
   /**
