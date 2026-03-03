@@ -25,6 +25,11 @@ interface SignalCommitBase {
    * 1 = no averaging done (only initial entry). 2+ = averaged positions.
    */
   totalEntries: number;
+  /**
+   * Total number of partial closes executed at the time of this event (_partial.length).
+   * 0 = no partial closes done. 1+ = partial closes executed.
+   */
+  totalPartials: number;
   /** Original entry price at signal creation (unchanged by DCA averaging). */
   originalPriceOpen: number;
 }

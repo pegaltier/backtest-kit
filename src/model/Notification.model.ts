@@ -39,10 +39,22 @@ export interface SignalOpenedNotification {
   originalPriceOpen: number;
   /** Total number of DCA entries (_entry.length). 1 = no averaging. */
   totalEntries: number;
+  /** Total number of partial closes executed (_partial.length). 0 = no partial closes done. */
+  totalPartials: number;
   /** Cost of the initial position entry in USD (from signal.cost) */
   cost: number;
   /** Unrealized PNL at the moment of signal open (from signal.pnl) */
   pnl: IStrategyPnL;
+  /** Profit/loss as percentage (e.g., 1.5 for +1.5%, -2.3 for -2.3%) */
+  pnlPercentage: number;
+  /** Entry price from PNL calculation (effective price adjusted with slippage and fees) */
+  pnlPriceOpen: number;
+  /** Exit price from PNL calculation (adjusted with slippage and fees) */
+  pnlPriceClose: number;
+  /** Absolute profit/loss in USD */
+  pnlCost: number;
+  /** Total invested capital in USD */
+  pnlEntries: number;
   /** Optional human-readable description of signal reason */
   note?: string;
   /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
@@ -92,10 +104,20 @@ export interface SignalClosedNotification {
   originalPriceOpen: number;
   /** Total number of DCA entries (_entry.length). 1 = no averaging. */
   totalEntries: number;
+  /** Total number of partial closes executed (_partial.length). 0 = no partial closes done. */
+  totalPartials: number;
   /** Profit/loss as percentage (e.g., 1.5 for +1.5%, -2.3 for -2.3%) */
   pnlPercentage: number;
   /** Final PNL at signal close (from data.pnl) */
   pnl: IStrategyPnL;
+  /** Entry price from PNL calculation (effective price adjusted with slippage and fees) */
+  pnlPriceOpen: number;
+  /** Exit price from PNL calculation (adjusted with slippage and fees) */
+  pnlPriceClose: number;
+  /** Absolute profit/loss in USD */
+  pnlCost: number;
+  /** Total invested capital in USD */
+  pnlEntries: number;
   /** Why signal closed (time_expired | take_profit | stop_loss | closed) */
   closeReason: string;
   /** Duration of position in minutes (from pendingAt to closeTimestamp) */
@@ -151,6 +173,20 @@ export interface PartialProfitAvailableNotification {
   originalPriceOpen: number;
   /** Total number of DCA entries (_entry.length). 1 = no averaging. */
   totalEntries: number;
+  /** Total number of partial closes executed (_partial.length). 0 = no partial closes done. */
+  totalPartials: number;
+  /** Unrealized PNL at the moment this level was reached (from data.pnl) */
+  pnl: IStrategyPnL;
+  /** Profit/loss as percentage (e.g., 1.5 for +1.5%, -2.3 for -2.3%) */
+  pnlPercentage: number;
+  /** Entry price from PNL calculation (effective price adjusted with slippage and fees) */
+  pnlPriceOpen: number;
+  /** Exit price from PNL calculation (adjusted with slippage and fees) */
+  pnlPriceClose: number;
+  /** Absolute profit/loss in USD */
+  pnlCost: number;
+  /** Total invested capital in USD */
+  pnlEntries: number;
   /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
   scheduledAt: number;
   /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
@@ -200,6 +236,20 @@ export interface PartialLossAvailableNotification {
   originalPriceOpen: number;
   /** Total number of DCA entries (_entry.length). 1 = no averaging. */
   totalEntries: number;
+  /** Total number of partial closes executed (_partial.length). 0 = no partial closes done. */
+  totalPartials: number;
+  /** Unrealized PNL at the moment this level was reached (from data.pnl) */
+  pnl: IStrategyPnL;
+  /** Profit/loss as percentage (e.g., 1.5 for +1.5%, -2.3 for -2.3%) */
+  pnlPercentage: number;
+  /** Entry price from PNL calculation (effective price adjusted with slippage and fees) */
+  pnlPriceOpen: number;
+  /** Exit price from PNL calculation (adjusted with slippage and fees) */
+  pnlPriceClose: number;
+  /** Absolute profit/loss in USD */
+  pnlCost: number;
+  /** Total invested capital in USD */
+  pnlEntries: number;
   /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
   scheduledAt: number;
   /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
@@ -247,6 +297,20 @@ export interface BreakevenAvailableNotification {
   originalPriceOpen: number;
   /** Total number of DCA entries (_entry.length). 1 = no averaging. */
   totalEntries: number;
+  /** Total number of partial closes executed (_partial.length). 0 = no partial closes done. */
+  totalPartials: number;
+  /** Unrealized PNL at the moment breakeven became available (from data.pnl) */
+  pnl: IStrategyPnL;
+  /** Profit/loss as percentage (e.g., 1.5 for +1.5%, -2.3 for -2.3%) */
+  pnlPercentage: number;
+  /** Entry price from PNL calculation (effective price adjusted with slippage and fees) */
+  pnlPriceOpen: number;
+  /** Exit price from PNL calculation (adjusted with slippage and fees) */
+  pnlPriceClose: number;
+  /** Absolute profit/loss in USD */
+  pnlCost: number;
+  /** Total invested capital in USD */
+  pnlEntries: number;
   /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
   scheduledAt: number;
   /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
@@ -296,8 +360,20 @@ export interface PartialProfitCommitNotification {
   originalPriceOpen: number;
   /** Total number of DCA entries (_entry.length). 1 = no averaging. */
   totalEntries: number;
+  /** Total number of partial closes executed (_partial.length). 0 = no partial closes done. */
+  totalPartials: number;
   /** PNL at the moment of partial profit commit (from data.pnl) */
   pnl: IStrategyPnL;
+  /** Profit/loss as percentage (e.g., 1.5 for +1.5%, -2.3 for -2.3%) */
+  pnlPercentage: number;
+  /** Entry price from PNL calculation (effective price adjusted with slippage and fees) */
+  pnlPriceOpen: number;
+  /** Exit price from PNL calculation (adjusted with slippage and fees) */
+  pnlPriceClose: number;
+  /** Absolute profit/loss in USD */
+  pnlCost: number;
+  /** Total invested capital in USD */
+  pnlEntries: number;
   /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
   scheduledAt: number;
   /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
@@ -347,8 +423,20 @@ export interface PartialLossCommitNotification {
   originalPriceOpen: number;
   /** Total number of DCA entries (_entry.length). 1 = no averaging. */
   totalEntries: number;
+  /** Total number of partial closes executed (_partial.length). 0 = no partial closes done. */
+  totalPartials: number;
   /** PNL at the moment of partial loss commit (from data.pnl) */
   pnl: IStrategyPnL;
+  /** Profit/loss as percentage (e.g., 1.5 for +1.5%, -2.3 for -2.3%) */
+  pnlPercentage: number;
+  /** Entry price from PNL calculation (effective price adjusted with slippage and fees) */
+  pnlPriceOpen: number;
+  /** Exit price from PNL calculation (adjusted with slippage and fees) */
+  pnlPriceClose: number;
+  /** Absolute profit/loss in USD */
+  pnlCost: number;
+  /** Total invested capital in USD */
+  pnlEntries: number;
   /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
   scheduledAt: number;
   /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
@@ -396,8 +484,20 @@ export interface BreakevenCommitNotification {
   originalPriceOpen: number;
   /** Total number of DCA entries (_entry.length). 1 = no averaging. */
   totalEntries: number;
+  /** Total number of partial closes executed (_partial.length). 0 = no partial closes done. */
+  totalPartials: number;
   /** PNL at the moment of breakeven commit (from data.pnl) */
   pnl: IStrategyPnL;
+  /** Profit/loss as percentage (e.g., 1.5 for +1.5%, -2.3 for -2.3%) */
+  pnlPercentage: number;
+  /** Entry price from PNL calculation (effective price adjusted with slippage and fees) */
+  pnlPriceOpen: number;
+  /** Exit price from PNL calculation (adjusted with slippage and fees) */
+  pnlPriceClose: number;
+  /** Absolute profit/loss in USD */
+  pnlCost: number;
+  /** Total invested capital in USD */
+  pnlEntries: number;
   /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
   scheduledAt: number;
   /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
@@ -435,6 +535,8 @@ export interface AverageBuyCommitNotification {
   effectivePriceOpen: number;
   /** Total number of DCA entries after this addition */
   totalEntries: number;
+  /** Total number of partial closes executed (_partial.length). 0 = no partial closes done. */
+  totalPartials: number;
   /** Trade direction: "long" (buy) or "short" (sell) */
   position: "long" | "short";
   /** Original entry price (unchanged by averaging) */
@@ -451,6 +553,16 @@ export interface AverageBuyCommitNotification {
   originalPriceOpen: number;
   /** PNL at the moment of average-buy commit (from data.pnl) */
   pnl: IStrategyPnL;
+  /** Profit/loss as percentage (e.g., 1.5 for +1.5%, -2.3 for -2.3%) */
+  pnlPercentage: number;
+  /** Entry price from PNL calculation (effective price adjusted with slippage and fees) */
+  pnlPriceOpen: number;
+  /** Exit price from PNL calculation (adjusted with slippage and fees) */
+  pnlPriceClose: number;
+  /** Absolute profit/loss in USD */
+  pnlCost: number;
+  /** Total invested capital in USD */
+  pnlEntries: number;
   /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
   scheduledAt: number;
   /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
@@ -498,8 +610,20 @@ export interface ActivateScheduledCommitNotification {
   originalPriceOpen: number;
   /** Total number of DCA entries (_entry.length). 1 = no averaging. */
   totalEntries: number;
+  /** Total number of partial closes executed (_partial.length). 0 = no partial closes done. */
+  totalPartials: number;
   /** PNL at the moment of activate-scheduled commit (from data.pnl) */
   pnl: IStrategyPnL;
+  /** Profit/loss as percentage (e.g., 1.5 for +1.5%, -2.3 for -2.3%) */
+  pnlPercentage: number;
+  /** Entry price from PNL calculation (effective price adjusted with slippage and fees) */
+  pnlPriceOpen: number;
+  /** Exit price from PNL calculation (adjusted with slippage and fees) */
+  pnlPriceClose: number;
+  /** Absolute profit/loss in USD */
+  pnlCost: number;
+  /** Total invested capital in USD */
+  pnlEntries: number;
   /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
   scheduledAt: number;
   /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
@@ -551,8 +675,20 @@ export interface TrailingStopCommitNotification {
   originalPriceOpen: number;
   /** Total number of DCA entries (_entry.length). 1 = no averaging. */
   totalEntries: number;
+  /** Total number of partial closes executed (_partial.length). 0 = no partial closes done. */
+  totalPartials: number;
   /** PNL at the moment of trailing-stop commit (from data.pnl) */
   pnl: IStrategyPnL;
+  /** Profit/loss as percentage (e.g., 1.5 for +1.5%, -2.3 for -2.3%) */
+  pnlPercentage: number;
+  /** Entry price from PNL calculation (effective price adjusted with slippage and fees) */
+  pnlPriceOpen: number;
+  /** Exit price from PNL calculation (adjusted with slippage and fees) */
+  pnlPriceClose: number;
+  /** Absolute profit/loss in USD */
+  pnlCost: number;
+  /** Total invested capital in USD */
+  pnlEntries: number;
   /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
   scheduledAt: number;
   /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
@@ -602,8 +738,20 @@ export interface TrailingTakeCommitNotification {
   originalPriceOpen: number;
   /** Total number of DCA entries (_entry.length). 1 = no averaging. */
   totalEntries: number;
+  /** Total number of partial closes executed (_partial.length). 0 = no partial closes done. */
+  totalPartials: number;
   /** PNL at the moment of trailing-take commit (from data.pnl) */
   pnl: IStrategyPnL;
+  /** Profit/loss as percentage (e.g., 1.5 for +1.5%, -2.3 for -2.3%) */
+  pnlPercentage: number;
+  /** Entry price from PNL calculation (effective price adjusted with slippage and fees) */
+  pnlPriceOpen: number;
+  /** Exit price from PNL calculation (adjusted with slippage and fees) */
+  pnlPriceClose: number;
+  /** Absolute profit/loss in USD */
+  pnlCost: number;
+  /** Total invested capital in USD */
+  pnlEntries: number;
   /** Signal creation timestamp in milliseconds (when signal was first created/scheduled) */
   scheduledAt: number;
   /** Pending timestamp in milliseconds (when position became pending/active at priceOpen) */
@@ -694,10 +842,22 @@ export interface SignalScheduledNotification {
   originalPriceOpen: number;
   /** Total number of DCA entries (_entry.length). 1 = no averaging. */
   totalEntries: number;
+  /** Total number of partial closes executed (_partial.length). 0 = no partial closes done. */
+  totalPartials: number;
   /** Cost of the initial position entry in USD (from signal.cost) */
   cost: number;
   /** Unrealized PNL at the moment of signal scheduled (from signal.pnl) */
   pnl: IStrategyPnL;
+  /** Profit/loss as percentage (e.g., 1.5 for +1.5%, -2.3 for -2.3%) */
+  pnlPercentage: number;
+  /** Entry price from PNL calculation (effective price adjusted with slippage and fees) */
+  pnlPriceOpen: number;
+  /** Exit price from PNL calculation (adjusted with slippage and fees) */
+  pnlPriceClose: number;
+  /** Absolute profit/loss in USD */
+  pnlCost: number;
+  /** Total invested capital in USD */
+  pnlEntries: number;
   /** Unix timestamp in milliseconds when signal was scheduled */
   scheduledAt: number;
   /** Current market price when signal was scheduled */
@@ -743,6 +903,8 @@ export interface SignalCancelledNotification {
   originalPriceOpen: number;
   /** Total number of DCA entries (_entry.length). 1 = no averaging. */
   totalEntries: number;
+  /** Total number of partial closes executed (_partial.length). 0 = no partial closes done. */
+  totalPartials: number;
   /** Why signal was cancelled (timeout | price_reject | user) */
   cancelReason: string;
   /** Optional cancellation identifier (provided when user calls cancel()) */

@@ -191,6 +191,11 @@ export interface IPublicSignalRow extends ISignalRow {
    */
   totalEntries: number;
   /**
+   * Total number of partial closes executed (_partial.length).
+   * 0 = no partial closes done. 1+ = partial closes executed.
+   */
+  totalPartials: number;
+  /**
    * Original entry price set at signal creation (unchanged by averaging).
    * Mirrors signal.priceOpen which is preserved for identity/audit purposes.
    */

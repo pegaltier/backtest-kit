@@ -150,6 +150,7 @@ const PROCESS_COMMIT_QUEUE_FN = async (
         pnl: toProfitLossDto(self._pendingSignal, commit.currentPrice),
         timestamp,
         totalEntries: publicSignal.totalEntries,
+        totalPartials: publicSignal.totalPartials,
         position: publicSignal.position,
         priceOpen: publicSignal.priceOpen,
         signalId: publicSignal.id,
@@ -176,6 +177,7 @@ const PROCESS_COMMIT_QUEUE_FN = async (
         pnl: toProfitLossDto(self._pendingSignal, commit.currentPrice),
         timestamp,
         totalEntries: publicSignal.totalEntries,
+        totalPartials: publicSignal.totalPartials,
         position: publicSignal.position,
         priceOpen: publicSignal.priceOpen,
         signalId: publicSignal.id,
@@ -201,6 +203,7 @@ const PROCESS_COMMIT_QUEUE_FN = async (
         pnl: toProfitLossDto(self._pendingSignal, commit.currentPrice),
         timestamp,
         totalEntries: publicSignal.totalEntries,
+        totalPartials: publicSignal.totalPartials,
         signalId: publicSignal.id,
         position: publicSignal.position,
         priceOpen: publicSignal.priceOpen,
@@ -227,6 +230,7 @@ const PROCESS_COMMIT_QUEUE_FN = async (
         pnl: toProfitLossDto(self._pendingSignal, commit.currentPrice),
         timestamp,
         totalEntries: publicSignal.totalEntries,
+        totalPartials: publicSignal.totalPartials,
         signalId: publicSignal.id,
         position: publicSignal.position,
         priceOpen: publicSignal.priceOpen,
@@ -253,6 +257,7 @@ const PROCESS_COMMIT_QUEUE_FN = async (
         pnl: toProfitLossDto(self._pendingSignal, commit.currentPrice),
         timestamp,
         totalEntries: publicSignal.totalEntries,
+        totalPartials: publicSignal.totalPartials,
         signalId: publicSignal.id,
         position: publicSignal.position,
         priceOpen: publicSignal.priceOpen,
@@ -281,6 +286,7 @@ const PROCESS_COMMIT_QUEUE_FN = async (
         pnl: toProfitLossDto(self._pendingSignal, commit.currentPrice),
         timestamp,
         totalEntries: publicSignal.totalEntries,
+        totalPartials: publicSignal.totalPartials,
         signalId: publicSignal.id,
         position: publicSignal.position,
         priceOpen: publicSignal.priceOpen,
@@ -353,6 +359,9 @@ const TO_PUBLIC_SIGNAL = <T extends ISignalDto | ISignalRow | IScheduledSignalRo
   const totalEntries = ("_entry" in signal && Array.isArray(signal._entry))
     ? signal._entry.length
     : 1;
+  const totalPartials = ("_partial" in signal && Array.isArray(signal._partial))
+    ? signal._partial.length
+    : 0;
   const effectivePriceOpen = "_entry" in signal ? GET_EFFECTIVE_PRICE_OPEN(signal): signal.priceOpen;
   return {
     ...structuredClone(signal) as ISignalRow | IScheduledSignalRow,
@@ -364,6 +373,7 @@ const TO_PUBLIC_SIGNAL = <T extends ISignalDto | ISignalRow | IScheduledSignalRo
     originalPriceTakeProfit: signal.priceTakeProfit,
     partialExecuted,
     totalEntries,
+    totalPartials,
     pnl: toProfitLossDto(signal as ISignalRow, currentPrice),
   };
 };
@@ -3432,6 +3442,7 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
         scheduledAt: publicSignalForCommit.scheduledAt,
         pendingAt: publicSignalForCommit.pendingAt,
         totalEntries: publicSignalForCommit.totalEntries,
+        totalPartials: publicSignalForCommit.totalPartials,
       });
 
       await CALL_OPEN_CALLBACKS_FN(
@@ -4310,6 +4321,7 @@ export class ClientStrategy implements IStrategy {
         cancelId: cancelledSignal.cancelId,
         timestamp: currentTime,
         totalEntries: cancelledSignal._entry?.length ?? 1,
+        totalPartials: cancelledSignal._partial?.length ?? 0,
         originalPriceOpen: cancelledSignal.priceOpen,
         pnl: toProfitLossDto(cancelledSignal, currentPrice),
       });
@@ -4372,6 +4384,7 @@ export class ClientStrategy implements IStrategy {
         closeId: closedSignal.closeId,
         timestamp: currentTime,
         totalEntries: closedSignal._entry?.length ?? 1,
+        totalPartials: closedSignal._partial?.length ?? 0,
         originalPriceOpen: closedSignal.priceOpen,
         pnl: toProfitLossDto(closedSignal, currentPrice),
       });
@@ -4527,6 +4540,7 @@ export class ClientStrategy implements IStrategy {
         scheduledAt: publicSignalForCommit.scheduledAt,
         pendingAt: publicSignalForCommit.pendingAt,
         totalEntries: publicSignalForCommit.totalEntries,
+        totalPartials: publicSignalForCommit.totalPartials,
       });
 
       // Call onOpen callback
@@ -4737,6 +4751,7 @@ export class ClientStrategy implements IStrategy {
         cancelId: cancelledSignal.cancelId,
         timestamp: closeTimestamp,
         totalEntries: cancelledSignal._entry?.length ?? 1,
+        totalPartials: cancelledSignal._partial?.length ?? 0,
         originalPriceOpen: cancelledSignal.priceOpen,
         pnl: toProfitLossDto(cancelledSignal, currentPrice),
       });
@@ -4799,6 +4814,7 @@ export class ClientStrategy implements IStrategy {
         closeId: closedSignal.closeId,
         timestamp: closeTimestamp,
         totalEntries: closedSignal._entry?.length ?? 1,
+        totalPartials: closedSignal._partial?.length ?? 0,
         originalPriceOpen: closedSignal.priceOpen,
         pnl: toProfitLossDto(closedSignal, currentPrice),
       });

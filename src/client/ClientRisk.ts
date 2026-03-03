@@ -80,6 +80,7 @@ const TO_RISK_SIGNAL = <T extends ISignalRow>(signal: T, currentPrice: number): 
     cost: signal.cost || GLOBAL_CONFIG.CC_POSITION_ENTRY_COST,
     timestamp: signal.timestamp || getContextTimestamp(),
     totalEntries: 1,
+    totalPartials: 0,
     priceOpen: signal.priceOpen ?? currentPrice,
     priceStopLoss: hasTrailingSL ? signal._trailingPriceStopLoss : signal.priceStopLoss,
     priceTakeProfit: hasTrailingTP ? signal._trailingPriceTakeProfit : signal.priceTakeProfit,
