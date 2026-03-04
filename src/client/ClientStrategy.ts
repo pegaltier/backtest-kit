@@ -6101,7 +6101,7 @@ export class ClientStrategy implements IStrategy {
       const trailingStopLoss = signal._trailingPriceStopLoss;
       if (signal.position === "long") {
         const isPositiveTrailing = trailingStopLoss > effectivePriceOpen;
-        if (isPositiveTrailing) return false; // already protecting profit, state won't change
+        if (isPositiveTrailing) return true; // already protecting profit
         const thresholdPrice = effectivePriceOpen * (1 + breakevenThresholdPercent / 100);
         const isThresholdReached = currentPrice >= thresholdPrice;
         if (!isThresholdReached || breakevenPrice <= trailingStopLoss) return false;
@@ -6109,7 +6109,7 @@ export class ClientStrategy implements IStrategy {
         return true;
       } else {
         const isPositiveTrailing = trailingStopLoss < effectivePriceOpen;
-        if (isPositiveTrailing) return false; // already protecting profit, state won't change
+        if (isPositiveTrailing) return true; // already protecting profit
         const thresholdPrice = effectivePriceOpen * (1 - breakevenThresholdPercent / 100);
         const isThresholdReached = currentPrice <= thresholdPrice;
         if (!isThresholdReached || breakevenPrice >= trailingStopLoss) return false;
