@@ -204,6 +204,19 @@ export const ListView = ({
                                             Entry:
                                         </Box>
                                         {formatAmount(item.priceOpen)}$
+                                        {item.originalPriceOpen !== item.priceOpen && (
+                                            <Box
+                                                component="span"
+                                                sx={{
+                                                    color: "text.disabled",
+                                                    ml: 0.5,
+                                                    fontSize: "0.75em",
+                                                    textDecoration: "line-through",
+                                                }}
+                                            >
+                                                {formatAmount(item.originalPriceOpen)}$
+                                            </Box>
+                                        )}
                                     </Typography>
                                     <Typography
                                         variant="body2"
@@ -223,6 +236,19 @@ export const ListView = ({
                                             TP:
                                         </Box>
                                         {formatAmount(item.priceTakeProfit)}$
+                                        {item.originalPriceTakeProfit !== item.priceTakeProfit && (
+                                            <Box
+                                                component="span"
+                                                sx={{
+                                                    color: "text.disabled",
+                                                    ml: 0.5,
+                                                    fontSize: "0.75em",
+                                                    textDecoration: "line-through",
+                                                }}
+                                            >
+                                                {formatAmount(item.originalPriceTakeProfit)}$
+                                            </Box>
+                                        )}
                                     </Typography>
                                     <Typography
                                         variant="body2"
@@ -242,7 +268,38 @@ export const ListView = ({
                                             SL:
                                         </Box>
                                         {formatAmount(item.priceStopLoss)}$
+                                        {item.originalPriceStopLoss !== item.priceStopLoss && (
+                                            <Box
+                                                component="span"
+                                                sx={{
+                                                    color: "text.disabled",
+                                                    ml: 0.5,
+                                                    fontSize: "0.75em",
+                                                    textDecoration: "line-through",
+                                                }}
+                                            >
+                                                {formatAmount(item.originalPriceStopLoss)}$
+                                            </Box>
+                                        )}
                                     </Typography>
+                                    {"pnl" in item && (
+                                        <Typography
+                                            variant="body2"
+                                            component="span"
+                                            sx={{ fontWeight: "medium" }}
+                                        >
+                                            <Box
+                                                component="span"
+                                                sx={{
+                                                    color: "text.secondary",
+                                                    mr: 0.5,
+                                                }}
+                                            >
+                                                Invested:
+                                            </Box>
+                                            {formatAmount(item.pnl.pnlEntries)}$
+                                        </Typography>
+                                    )}
                                     {"pnl" in item && (
                                         <Typography
                                             variant="body2"
@@ -264,6 +321,39 @@ export const ListView = ({
                                         >
                                             PNL: {item.pnl.pnlPercentage >= 0 ? "+" : ""}
                                             {item.pnl.pnlPercentage.toFixed(2)}%
+                                            {" / "}
+                                            {item.pnl.pnlCost >= 0 ? "+" : ""}
+                                            {formatAmount(item.pnl.pnlCost)}$
+                                        </Typography>
+                                    )}
+                                    {item.totalEntries > 1 && (
+                                        <Typography
+                                            variant="caption"
+                                            component="span"
+                                            sx={{
+                                                px: 1,
+                                                py: 0.25,
+                                                borderRadius: 0.5,
+                                                background: alpha("#2196f3", 0.15),
+                                                color: "#1565c0",
+                                            }}
+                                        >
+                                            DCA×{item.totalEntries}
+                                        </Typography>
+                                    )}
+                                    {item.totalPartials > 0 && (
+                                        <Typography
+                                            variant="caption"
+                                            component="span"
+                                            sx={{
+                                                px: 1,
+                                                py: 0.25,
+                                                borderRadius: 0.5,
+                                                background: alpha("#9c27b0", 0.15),
+                                                color: "#6a1b9a",
+                                            }}
+                                        >
+                                            Partial×{item.totalPartials}
                                         </Typography>
                                     )}
                                     <Typography
@@ -303,9 +393,7 @@ export const ListView = ({
                                     variant="subtitle2"
                                     sx={{ opacity: 0.5 }}
                                 >
-                                    {formatTimeElapsed(
-                                        item.createdAt || item.pendingAt,
-                                    )}
+                                    {formatTimeElapsed(item.createdAt)}
                                 </Typography>
                             }
                         />

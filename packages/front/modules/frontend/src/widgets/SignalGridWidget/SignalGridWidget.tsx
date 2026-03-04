@@ -79,7 +79,7 @@ const columns: IGridColumn<GridItem>[] = [
     label: "Symbol",
     minWidth: 115,
     width: (fullWidth) =>
-      Math.max(fullWidth - 100 - 100 - 100 - 80 - 45 - 100 - 90, 45),
+      Math.max(fullWidth - 45 - 90 - 145 - 80 - 90 - 80, 45),
     format: ({ symbol }) => symbol,
   },
   {
@@ -106,28 +106,44 @@ const columns: IGridColumn<GridItem>[] = [
   },
   {
     field: "buyPrice",
-    label: "Buy price",
+    label: "Entry",
     minWidth: 145,
     width: () => 145,
     format: ({ buyPrice }) => `${formatAmount(buyPrice)}$`,
   },
   {
-    field: "totalEntries",
-    label: "DCA",
+    field: "pnlEntries",
+    label: "Invested",
     minWidth: 80,
     width: () => 80,
+    format: ({ pnlEntries }) => `${formatAmount(pnlEntries)}$`,
   },
   {
     field: "profitLossPercentage",
-    label: "%",
-    minWidth: 80,
-    width: () => 80,
+    label: "PNL %",
+    minWidth: 90,
+    width: () => 90,
     format: ({ profitLossPercentage }) => {
       const isProfit = profitLossPercentage >= 0;
       return (
         <span style={{ color: isProfit ? "green" : "red" }}>
           {isProfit ? "+" : ""}
           {profitLossPercentage.toFixed(2)}%
+        </span>
+      );
+    },
+  },
+  {
+    field: "pnlCost",
+    label: "PNL $",
+    minWidth: 80,
+    width: () => 80,
+    format: ({ pnlCost }) => {
+      const isProfit = pnlCost >= 0;
+      return (
+        <span style={{ color: isProfit ? "green" : "red" }}>
+          {isProfit ? "+" : ""}
+          {formatAmount(pnlCost)}$
         </span>
       );
     },
@@ -178,70 +194,11 @@ const signal_fields: TypedField[] = [
     desktopColumns: "12",
     tabletColumns: "12",
     phoneColumns: "12",
-    name: "profitLossPercentage",
-    title: "Profit/Loss",
-    readonly: true,
-    trailingIcon: ({ data }) => {
-      if (data.profitLossPercentage < 0) {
-        return (
-          <ArrowCircleDown
-            sx={{
-              color: "red",
-            }}
-          />
-        );
-      }
-      return (
-        <ArrowCircleUp
-          sx={{
-            color: "green",
-          }}
-        />
-      );
-    },
-    compute: (obj) => {
-      if (obj.profitLossPercentage !== undefined) {
-        const isProfit = obj.profitLossPercentage >= 0;
-        return `${isProfit ? "+" : ""}${obj.profitLossPercentage.toFixed(2)}%`;
-      }
-      return "N/A";
-    },
-  },
-  {
-    type: FieldType.Text,
-    outlined: false,
-    desktopColumns: "12",
-    tabletColumns: "12",
-    phoneColumns: "12",
     name: "buyPrice",
     title: "Entry",
     readonly: true,
     compute: (obj) =>
       obj.buyPrice ? `${formatAmount(obj.buyPrice)}$` : "N/A",
-  },
-  {
-    type: FieldType.Text,
-    outlined: false,
-    desktopColumns: "12",
-    tabletColumns: "12",
-    phoneColumns: "12",
-    name: "takeProfitPrice",
-    title: "Take Profit",
-    readonly: true,
-    compute: (obj) =>
-      obj.takeProfitPrice ? `${formatAmount(obj.takeProfitPrice)}$` : "N/A",
-  },
-  {
-    type: FieldType.Text,
-    outlined: false,
-    desktopColumns: "12",
-    tabletColumns: "12",
-    phoneColumns: "12",
-    name: "stopLossPrice",
-    title: "Stop Loss",
-    readonly: true,
-    compute: (obj) =>
-      obj.stopLossPrice ? `${formatAmount(obj.stopLossPrice)}$` : "N/A",
   },
   {
     type: FieldType.Text,
@@ -262,12 +219,130 @@ const signal_fields: TypedField[] = [
     desktopColumns: "12",
     tabletColumns: "12",
     phoneColumns: "12",
+    name: "takeProfitPrice",
+    title: "Take Profit",
+    readonly: true,
+    compute: (obj) =>
+      obj.takeProfitPrice ? `${formatAmount(obj.takeProfitPrice)}$` : "N/A",
+  },
+  {
+    type: FieldType.Text,
+    outlined: false,
+    desktopColumns: "12",
+    tabletColumns: "12",
+    phoneColumns: "12",
+    name: "originalTakeProfitPrice",
+    title: "Original Take Profit",
+    readonly: true,
+    isVisible: (obj) => obj.originalTakeProfitPrice != null && obj.originalTakeProfitPrice !== obj.takeProfitPrice,
+    compute: (obj) =>
+      obj.originalTakeProfitPrice ? `${formatAmount(obj.originalTakeProfitPrice)}$` : "N/A",
+  },
+  {
+    type: FieldType.Text,
+    outlined: false,
+    desktopColumns: "12",
+    tabletColumns: "12",
+    phoneColumns: "12",
+    name: "stopLossPrice",
+    title: "Stop Loss",
+    readonly: true,
+    compute: (obj) =>
+      obj.stopLossPrice ? `${formatAmount(obj.stopLossPrice)}$` : "N/A",
+  },
+  {
+    type: FieldType.Text,
+    outlined: false,
+    desktopColumns: "12",
+    tabletColumns: "12",
+    phoneColumns: "12",
+    name: "originalStopLossPrice",
+    title: "Original Stop Loss",
+    readonly: true,
+    isVisible: (obj) => obj.originalStopLossPrice != null && obj.originalStopLossPrice !== obj.stopLossPrice,
+    compute: (obj) =>
+      obj.originalStopLossPrice ? `${formatAmount(obj.originalStopLossPrice)}$` : "N/A",
+  },
+  {
+    type: FieldType.Text,
+    outlined: false,
+    desktopColumns: "12",
+    tabletColumns: "12",
+    phoneColumns: "12",
+    name: "pnlEntries",
+    title: "Invested",
+    readonly: true,
+    compute: (obj) => `${formatAmount(obj.pnlEntries)}$`,
+  },
+  {
+    type: FieldType.Text,
+    outlined: false,
+    desktopColumns: "12",
+    tabletColumns: "12",
+    phoneColumns: "12",
+    name: "profitLossPercentage",
+    title: "PNL %",
+    readonly: true,
+    trailingIcon: ({ data }) => {
+      if (data.profitLossPercentage < 0) {
+        return (
+          <ArrowCircleDown
+            sx={{
+              color: "red",
+            }}
+          />
+        );
+      }
+      return (
+        <ArrowCircleUp
+          sx={{
+            color: "green",
+          }}
+        />
+      );
+    },
+    compute: (obj) => {
+      const isProfit = obj.profitLossPercentage >= 0;
+      return `${isProfit ? "+" : ""}${obj.profitLossPercentage.toFixed(2)}%`;
+    },
+  },
+  {
+    type: FieldType.Text,
+    outlined: false,
+    desktopColumns: "12",
+    tabletColumns: "12",
+    phoneColumns: "12",
+    name: "pnlCost",
+    title: "PNL $",
+    readonly: true,
+    compute: (obj) => {
+      const isProfit = obj.pnlCost >= 0;
+      return `${isProfit ? "+" : ""}${formatAmount(obj.pnlCost)}$`;
+    },
+  },
+  {
+    type: FieldType.Text,
+    outlined: false,
+    desktopColumns: "12",
+    tabletColumns: "12",
+    phoneColumns: "12",
     name: "totalEntries",
     title: "DCA Entries",
     readonly: true,
     isVisible: (obj) => obj.totalEntries != null && obj.totalEntries > 1,
-    compute: (obj) =>
-      obj.totalEntries != null ? String(obj.totalEntries) : "N/A",
+    compute: (obj) => String(obj.totalEntries),
+  },
+  {
+    type: FieldType.Text,
+    outlined: false,
+    desktopColumns: "12",
+    tabletColumns: "12",
+    phoneColumns: "12",
+    name: "totalPartials",
+    title: "Partial Closes",
+    readonly: true,
+    isVisible: (obj) => obj.totalPartials != null && obj.totalPartials > 0,
+    compute: (obj) => String(obj.totalPartials),
   },
   {
     type: FieldType.Component,
