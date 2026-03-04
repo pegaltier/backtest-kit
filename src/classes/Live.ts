@@ -3063,6 +3063,8 @@ export class LiveUtils {
       currentPrice,
       cost,
       position: signalForAvgBuy.position,
+      priceTakeProfit: signalForAvgBuy.priceTakeProfit,
+      priceStopLoss: signalForAvgBuy.priceStopLoss,
       context: {
         strategyName: context.strategyName,
         exchangeName: context.exchangeName,

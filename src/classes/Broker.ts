@@ -359,6 +359,10 @@ export type BrokerAverageBuyPayload = {
   cost: number;
   /** Position direction */
   position: "long" | "short";
+  /** Active take profit price at the time of the DCA entry */
+  priceTakeProfit: number;
+  /** Active stop loss price at the time of the DCA entry */
+  priceStopLoss: number;
   /** Strategy/exchange/frame routing context */
   context: {
     strategyName: StrategyName;

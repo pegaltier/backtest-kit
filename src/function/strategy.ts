@@ -929,6 +929,8 @@ export async function commitAverageBuy(
     currentPrice,
     cost,
     position: signalForAvgBuy.position,
+    priceTakeProfit: signalForAvgBuy.priceTakeProfit,
+    priceStopLoss: signalForAvgBuy.priceStopLoss,
     context: { exchangeName, frameName, strategyName },
     backtest: isBacktest,
   });

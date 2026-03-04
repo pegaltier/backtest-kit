@@ -2937,6 +2937,8 @@ export class BacktestUtils {
       currentPrice,
       cost,
       position: signalForAvgBuy.position,
+      priceTakeProfit: signalForAvgBuy.priceTakeProfit,
+      priceStopLoss: signalForAvgBuy.priceStopLoss,
       context,
       backtest: true,
     });
