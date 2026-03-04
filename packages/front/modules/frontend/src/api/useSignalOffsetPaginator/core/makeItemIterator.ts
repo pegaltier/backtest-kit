@@ -27,7 +27,7 @@ const makeItemIterator = (mode: "live" | "backtest") =>
                     profitLossPercentage: s.pnl.pnlPercentage,
                     pnlCost: s.pnl.pnlCost,
                     pnlEntries: s.pnl.pnlEntries,
-                    buyPrice: s.pnl.priceOpen,
+                    buyPrice: s.priceOpen,
                     originalBuyPrice: s.originalPriceOpen,
                     cost: s.cost,
                     totalEntries: s.totalEntries,
