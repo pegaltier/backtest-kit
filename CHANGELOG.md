@@ -1,3 +1,65 @@
+# Broker Adapter & Order Integrity (v4.0, 04/03/2026)
+
+> Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/4.0)
+
+## Broker Adapter API
+
+A pluggable broker integration layer that intercepts every trade-mutating operation **before** the internal state is modified. If the broker adapter throws, the DI-core mutation is never reached and position state remains unchanged — providing transaction-like guarantees over exchange order placement.
+
+### How it works
+
+Every `commit*` call in `Live.ts`, `Backtest.ts`, and `strategy.ts` now follows a strict three-phase sequence:
+
+```
+1. validate*()    — pure pre-flight checks (returns false, never throws)
+2. Broker.commit*() — forward to exchange adapter (throws → abort, state unchanged)
+3. coreService.*()  — mutate internal position state
+```
+
+In backtest mode (`payload.backtest === true`) all broker calls are silently skipped so existing test suites require no changes.
+
+### New exports
+
+| Export | Kind | Description |
+|---|---|---|
+| `Broker` | singleton | Global `BrokerAdapter` instance — entry point for all broker operations |
+| `IBroker` | interface | Adapter contract — implement to connect a real exchange |
+| `TBrokerCtor` | type | Constructor overload accepted by `Broker.useBrokerAdapter` |
+| `BrokerSignalOpenPayload` | type | Payload for `onSignalOpenCommit` — position activation |
+| `BrokerSignalClosePayload` | type | Payload for `onSignalCloseCommit` — position close (SL/TP/manual) |
+| `BrokerPartialProfitPayload` | type | Payload for `onPartialProfitCommit` — partial close at profit |
+| `BrokerPartialLossPayload` | type | Payload for `onPartialLossCommit` — partial close at loss |
+| `BrokerTrailingStopPayload` | type | Payload for `onTrailingStopCommit` — SL adjustment with `newStopLossPrice` |
+| `BrokerTrailingTakePayload` | type | Payload for `onTrailingTakeCommit` — TP adjustment with `newTakeProfitPrice` |
+| `BrokerBreakevenPayload` | type | Payload for `onBreakevenCommit` — SL moved to entry, TP unchanged |
+| `BrokerAverageBuyPayload` | type | Payload for `onAverageBuyCommit` — DCA entry with `cost` and `currentPrice` |
+
+### `Broker.useBrokerAdapter`
+
+Registers the adapter. Accepts either a class constructor or an already-instantiated object implementing `Partial<IBroker>` (all methods are optional — unimplemented ones are silently skipped via `BrokerProxy`).
+
+```typescript
+import { Broker, IBroker, BrokerPartialProfitPayload } from "backtest-kit";
+
+class MyBroker implements Partial<IBroker> {
+  async onPartialProfitCommit(payload: BrokerPartialProfitPayload) {
+    await exchange.createOrder({
+      symbol: payload.symbol,
+      side: "sell",
+      quantity: payload.cost / payload.currentPrice,
+    });
+  }
+}
+
+// Register via constructor (called with `new` internally)
+Broker.useBrokerAdapter(MyBroker);
+
+// Or via instance
+Broker.useBrokerAdapter(new MyBroker());
+```
+
+
+
 # Signal Sync & Custom Entry Cost (v3.9, 04/03/2026)
 
 > Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/3.9)
