@@ -329,7 +329,7 @@ These three functions work together to dynamically manage the position. To reduc
 
 **Spot**
 
-```tsx
+```typescript
 import ccxt from "ccxt";
 import { singleshot, sleep } from "functools-kit";
 import {
@@ -455,7 +455,7 @@ Broker.useBrokerAdapter(
     }
 
     async onPartialProfitCommit(payload: BrokerPartialProfitPayload): Promise<void> {
-      const { symbol, cost, currentPrice } = payload;
+      const { symbol, percentToClose, currentPrice } = payload;
       const exchange = await getSpotExchange();
 
       // Cancel all resting orders before partial close — throws on exchange error, backtest-kit retries
@@ -464,7 +464,11 @@ Broker.useBrokerAdapter(
         await exchange.cancelOrder(order.id, symbol);
       }
 
-      const qty        = parseFloat(exchange.amountToPrecision(symbol, cost / currentPrice));
+      // Derive qty from real exchange balance using percentToClose to avoid precision mismatch
+      const balance    = await exchange.fetchBalance();
+      const base       = symbol.replace(/USDT|BUSD|BTC|ETH$/, "");
+      const totalQty   = parseFloat(String(balance?.free?.[base] ?? 0));
+      const qty        = parseFloat(exchange.amountToPrecision(symbol, totalQty * (percentToClose / 100)));
       const closePrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
 
       // Partial close: limit sell, waits for fill — partial fill rolled back on timeout, backtest-kit retries
@@ -472,7 +476,7 @@ Broker.useBrokerAdapter(
     }
 
     async onPartialLossCommit(payload: BrokerPartialLossPayload): Promise<void> {
-      const { symbol, cost, currentPrice } = payload;
+      const { symbol, percentToClose, currentPrice } = payload;
       const exchange = await getSpotExchange();
 
       // Cancel all resting orders before partial close — throws on exchange error, backtest-kit retries
@@ -481,7 +485,11 @@ Broker.useBrokerAdapter(
         await exchange.cancelOrder(order.id, symbol);
       }
 
-      const qty        = parseFloat(exchange.amountToPrecision(symbol, cost / currentPrice));
+      // Derive qty from real exchange balance using percentToClose to avoid precision mismatch
+      const balance    = await exchange.fetchBalance();
+      const base       = symbol.replace(/USDT|BUSD|BTC|ETH$/, "");
+      const totalQty   = parseFloat(String(balance?.free?.[base] ?? 0));
+      const qty        = parseFloat(exchange.amountToPrecision(symbol, totalQty * (percentToClose / 100)));
       const closePrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
 
       // Partial close: limit sell, waits for fill — partial fill rolled back on timeout, backtest-kit retries
@@ -566,7 +574,7 @@ Broker.enable();
 
 **Futures**
 
-```tsx
+```typescript
 import ccxt from "ccxt";
 import { singleshot, sleep } from "functools-kit";
 import {
@@ -602,7 +610,7 @@ const getFuturesExchange = singleshot(async () => {
 
 /**
  * Place a limit order and poll until filled (status === "closed").
- * On timeout: cancel the order, sell any partial fill via market to rollback cleanly,
+ * On timeout: cancel the order, close any partial fill via market to rollback cleanly,
  * then throw — backtest-kit will retry the commit against a clean exchange state.
  */
 async function createLimitOrderAndWait(
@@ -690,7 +698,7 @@ Broker.useBrokerAdapter(
     }
 
     async onPartialProfitCommit(payload: BrokerPartialProfitPayload): Promise<void> {
-      const { symbol, cost, currentPrice, position } = payload;
+      const { symbol, percentToClose, currentPrice, position } = payload;
       const exchange = await getFuturesExchange();
 
       // Cancel all resting orders before partial close — throws on exchange error, backtest-kit retries
@@ -699,7 +707,11 @@ Broker.useBrokerAdapter(
         await exchange.cancelOrder(order.id, symbol);
       }
 
-      const qty        = parseFloat(exchange.amountToPrecision(symbol, cost / currentPrice));
+      // Derive qty from real exchange position using percentToClose to avoid precision mismatch
+      const positions  = await exchange.fetchPositions([symbol]);
+      const pos        = positions.find((p) => p.symbol === symbol);
+      const totalQty   = Math.abs(parseFloat(String(pos?.contracts ?? 0)));
+      const qty        = parseFloat(exchange.amountToPrecision(symbol, totalQty * (percentToClose / 100)));
       const closePrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
       const exitSide   = position === "long" ? "sell" : "buy";
 
@@ -708,7 +720,7 @@ Broker.useBrokerAdapter(
     }
 
     async onPartialLossCommit(payload: BrokerPartialLossPayload): Promise<void> {
-      const { symbol, cost, currentPrice, position } = payload;
+      const { symbol, percentToClose, currentPrice, position } = payload;
       const exchange = await getFuturesExchange();
 
       // Cancel all resting orders before partial close — throws on exchange error, backtest-kit retries
@@ -717,7 +729,11 @@ Broker.useBrokerAdapter(
         await exchange.cancelOrder(order.id, symbol);
       }
 
-      const qty        = parseFloat(exchange.amountToPrecision(symbol, cost / currentPrice));
+      // Derive qty from real exchange position using percentToClose to avoid precision mismatch
+      const positions  = await exchange.fetchPositions([symbol]);
+      const pos        = positions.find((p) => p.symbol === symbol);
+      const totalQty   = Math.abs(parseFloat(String(pos?.contracts ?? 0)));
+      const qty        = parseFloat(exchange.amountToPrecision(symbol, totalQty * (percentToClose / 100)));
       const closePrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
       const exitSide   = position === "long" ? "sell" : "buy";
 
