@@ -6089,10 +6089,6 @@ export class ClientStrategy implements IStrategy {
 
     const signal = this._pendingSignal;
     const effectivePriceOpen = GET_EFFECTIVE_PRICE_OPEN(signal);
-    const effectiveTakeProfit = signal._trailingPriceTakeProfit ?? signal.priceTakeProfit;
-
-    if (signal.position === "long" && effectivePriceOpen >= effectiveTakeProfit) return false;
-    if (signal.position === "short" && effectivePriceOpen <= effectiveTakeProfit) return false;
 
     const breakevenThresholdPercent = (GLOBAL_CONFIG.CC_PERCENT_SLIPPAGE + GLOBAL_CONFIG.CC_PERCENT_FEE) * 2;
     const breakevenPrice = effectivePriceOpen;
@@ -6330,14 +6326,15 @@ export class ClientStrategy implements IStrategy {
       newStopLoss = effectivePriceOpen * (1 + newSlDistancePercent / 100);
     }
 
-    if (signal.position === "long" && currentPrice < newStopLoss) return false;
-    if (signal.position === "short" && currentPrice > newStopLoss) return false;
-
     const effectiveTakeProfit = signal._trailingPriceTakeProfit ?? signal.priceTakeProfit;
     if (signal.position === "long" && newStopLoss >= effectiveTakeProfit) return false;
     if (signal.position === "short" && newStopLoss <= effectiveTakeProfit) return false;
 
-    // Absorption check
+    // Intrusion check (mirrors trailingStop method: applied before TRAILING_STOP_LOSS_FN, for all calls)
+    if (signal.position === "long" && currentPrice < newStopLoss) return false;
+    if (signal.position === "short" && currentPrice > newStopLoss) return false;
+
+    // Absorption check (mirrors TRAILING_STOP_LOSS_FN: first call is unconditional)
     const currentTrailingSL = signal._trailingPriceStopLoss;
     if (currentTrailingSL !== undefined) {
       if (signal.position === "long" && newStopLoss <= currentTrailingSL) return false;
@@ -6618,14 +6615,15 @@ export class ClientStrategy implements IStrategy {
       newTakeProfit = effectivePriceOpen * (1 - newTpDistancePercent / 100);
     }
 
-    if (signal.position === "long" && currentPrice > newTakeProfit) return false;
-    if (signal.position === "short" && currentPrice < newTakeProfit) return false;
-
     const effectiveStopLoss = signal._trailingPriceStopLoss ?? signal.priceStopLoss;
     if (signal.position === "long" && newTakeProfit <= effectiveStopLoss) return false;
     if (signal.position === "short" && newTakeProfit >= effectiveStopLoss) return false;
 
-    // Absorption check
+    // Intrusion check (mirrors trailingTake method: applied before TRAILING_TAKE_PROFIT_FN, for all calls)
+    if (signal.position === "long" && currentPrice > newTakeProfit) return false;
+    if (signal.position === "short" && currentPrice < newTakeProfit) return false;
+
+    // Absorption check (mirrors TRAILING_TAKE_PROFIT_FN: first call is unconditional)
     const currentTrailingTP = signal._trailingPriceTakeProfit;
     if (currentTrailingTP !== undefined) {
       if (signal.position === "long" && newTakeProfit >= currentTrailingTP) return false;
