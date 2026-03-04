@@ -24,3 +24,11 @@ cancelId: string
 ```
 
 Optional identifier for the cancellation reason (user-provided)
+
+### pnl
+
+```ts
+pnl: IStrategyPnL
+```
+
+Unrealized PNL at the moment of cancellation

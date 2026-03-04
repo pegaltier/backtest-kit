@@ -138,6 +138,14 @@ totalEntries: number
 
 Total number of DCA entries (_entry.length). 1 = no averaging.
 
+### totalPartials
+
+```ts
+totalPartials: number
+```
+
+Total number of partial closes executed (_partial.length). 0 = no partial closes done.
+
 ### cancelReason
 
 ```ts

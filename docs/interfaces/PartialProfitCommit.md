@@ -33,6 +33,14 @@ currentPrice: number
 
 Current market price at time of action
 
+### pnl
+
+```ts
+pnl: IStrategyPnL
+```
+
+Unrealized PNL at the moment of partial profit
+
 ### position
 
 ```ts

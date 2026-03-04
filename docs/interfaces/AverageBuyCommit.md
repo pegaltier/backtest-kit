@@ -26,6 +26,14 @@ currentPrice: number
 
 Price at which the new averaging entry was executed
 
+### cost
+
+```ts
+cost: number
+```
+
+Cost of this averaging entry in USD
+
 ### effectivePriceOpen
 
 ```ts
@@ -33,6 +41,14 @@ effectivePriceOpen: number
 ```
 
 Effective (averaged) entry price after this addition
+
+### pnl
+
+```ts
+pnl: IStrategyPnL
+```
+
+Unrealized PNL at the moment of average-buy (calculated after new entry added)
 
 ### position
 

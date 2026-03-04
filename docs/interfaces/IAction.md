@@ -126,6 +126,17 @@ Emitted by: RiskConnectionService via riskSubject
 Source: COMMIT_REJECTION_FN callback in RiskConnectionService
 Frequency: Only when signal is rejected (not emitted for allowed signals)
 
+### signalSync
+
+```ts
+signalSync: (event: SignalSyncContract) => void | Promise<void>
+```
+
+Called when framework attempts to open or close a position via limit order.
+Throw to reject — framework will retry on next tick.
+
+NOTE: Exceptions are NOT swallowed here — they propagate to CREATE_SYNC_FN.
+
 ### dispose
 
 ```ts

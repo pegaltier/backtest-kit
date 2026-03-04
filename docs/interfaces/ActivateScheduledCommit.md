@@ -33,6 +33,14 @@ currentPrice: number
 
 Current market price at time of activation
 
+### pnl
+
+```ts
+pnl: IStrategyPnL
+```
+
+PNL at the moment of activation (calculated at priceOpen)
+
 ### position
 
 ```ts

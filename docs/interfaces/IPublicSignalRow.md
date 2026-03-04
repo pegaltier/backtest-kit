@@ -15,6 +15,15 @@ Note: originalPriceStopLoss/originalPriceTakeProfit are identical to priceStopLo
 
 ## Properties
 
+### cost
+
+```ts
+cost: number
+```
+
+Cost of the initial position entry in USD (first entry, not DCA).
+Inherited from ISignalRow. Explicitly surfaced here for consumer visibility.
+
 ### originalPriceStopLoss
 
 ```ts
@@ -55,6 +64,15 @@ totalEntries: number
 Total number of entries in the DCA _entry history (_entry.length).
 1 = no averaging done (only initial entry). 2+ = averaged positions.
 
+### totalPartials
+
+```ts
+totalPartials: number
+```
+
+Total number of partial closes executed (_partial.length).
+0 = no partial closes done. 1+ = partial closes executed.
+
 ### originalPriceOpen
 
 ```ts
@@ -63,3 +81,12 @@ originalPriceOpen: number
 
 Original entry price set at signal creation (unchanged by averaging).
 Mirrors signal.priceOpen which is preserved for identity/audit purposes.
+
+### pnl
+
+```ts
+pnl: IStrategyPnL
+```
+
+Unrealized PNL at the time this public signal was created.
+Calculated using toProfitLossDto with the currentPrice at the moment of emission.

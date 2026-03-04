@@ -114,6 +114,14 @@ totalEntries: number
 
 Total number of DCA entries (present when averageBuy was applied)
 
+### totalPartials
+
+```ts
+totalPartials: number
+```
+
+Total number of partial closes executed (_partial.length)
+
 ### originalPriceOpen
 
 ```ts
@@ -129,6 +137,14 @@ partialExecuted: number
 ```
 
 Total executed percentage from partial closes
+
+### pnl
+
+```ts
+pnl: IStrategyPnL
+```
+
+Unrealized PNL at the moment of this event
 
 ### closeTimestamp
 

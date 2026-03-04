@@ -65,3 +65,11 @@ minuteEstimatedTime: number
 ```
 
 Expected duration in minutes before time_expired
+
+### cost
+
+```ts
+cost: number
+```
+
+Cost of this entry in USD. Default: GLOBAL_CONFIG.CC_POSITION_ENTRY_COST

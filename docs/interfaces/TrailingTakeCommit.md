@@ -33,6 +33,14 @@ currentPrice: number
 
 Current market price at time of trailing adjustment
 
+### pnl
+
+```ts
+pnl: IStrategyPnL
+```
+
+Unrealized PNL at the moment of trailing take adjustment
+
 ### position
 
 ```ts

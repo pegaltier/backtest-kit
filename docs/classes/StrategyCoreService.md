@@ -5,7 +5,7 @@ group: docs
 
 # StrategyCoreService
 
-Implements `TStrategy$1`
+Implements `TStrategy`
 
 Global service for strategy operations with execution context injection.
 
@@ -78,7 +78,7 @@ Logs validation activity.
 ### getPendingSignal
 
 ```ts
-getPendingSignal: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<ISignalRow>
+getPendingSignal: (backtest: boolean, symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<ISignalRow>
 ```
 
 Retrieves the currently active pending signal for the symbol.
@@ -160,13 +160,13 @@ getPositionLevels: (backtest: boolean, symbol: string, context: { strategyName: 
 ### getPositionPartials
 
 ```ts
-getPositionPartials: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<{ type: "profit" | "loss"; percent: number; currentPrice: number; effectivePrice: number; entryCountAtClose: number; debugTimestamp?: number; }[]>
+getPositionPartials: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<{ type: "profit" | "loss"; percent: number; currentPrice: number; costBasisAtClose: number; entryCountAtClose: number; debugTimestamp?: number; }[]>
 ```
 
 ### getScheduledSignal
 
 ```ts
-getScheduledSignal: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<IScheduledSignalRow>
+getScheduledSignal: (backtest: boolean, symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<IScheduledSignalRow>
 ```
 
 Retrieves the currently active scheduled signal for the symbol.
@@ -280,6 +280,15 @@ Clears the memoized ClientStrategy instance from cache.
 Delegates to StrategyConnectionService.dispose() if payload provided,
 otherwise clears all strategy instances.
 
+### validatePartialProfit
+
+```ts
+validatePartialProfit: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+```
+
+Checks whether `partialProfit` would succeed without executing it.
+Validates context, then delegates to StrategyConnectionService.validatePartialProfit().
+
 ### partialProfit
 
 ```ts
@@ -292,6 +301,15 @@ Validates strategy existence and delegates to connection service
 to close a percentage of the pending position at profit.
 
 Does not require execution context as this is a direct state mutation.
+
+### validatePartialLoss
+
+```ts
+validatePartialLoss: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+```
+
+Checks whether `partialLoss` would succeed without executing it.
+Validates context, then delegates to StrategyConnectionService.validatePartialLoss().
 
 ### partialLoss
 
@@ -306,10 +324,10 @@ to close a percentage of the pending position at loss.
 
 Does not require execution context as this is a direct state mutation.
 
-### trailingStop
+### validateTrailingStop
 
 ```ts
-trailingStop: (backtest: boolean, symbol: string, percentShift: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+validateTrailingStop: (backtest: boolean, symbol: string, percentShift: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
 ```
 
 Adjusts the trailing stop-loss distance for an active pending signal.
@@ -319,13 +337,40 @@ to update the stop-loss distance by a percentage adjustment.
 
 Does not require execution context as this is a direct state mutation.
 
+### trailingStop
+
+```ts
+trailingStop: (backtest: boolean, symbol: string, percentShift: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+```
+
+Checks whether `trailingStop` would succeed without executing it.
+Validates context, then delegates to StrategyConnectionService.validateTrailingStop().
+
+### validateTrailingTake
+
+```ts
+validateTrailingTake: (backtest: boolean, symbol: string, percentShift: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+```
+
+Adjusts the trailing take-profit distance for an active pending signal.
+Validates context and delegates to StrategyConnectionService.
+
 ### trailingTake
 
 ```ts
 trailingTake: (backtest: boolean, symbol: string, percentShift: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
 ```
 
-Adjusts the trailing take-profit distance for an active pending signal.
+Checks whether `trailingTake` would succeed without executing it.
+Validates context, then delegates to StrategyConnectionService.validateTrailingTake().
+
+### validateBreakeven
+
+```ts
+validateBreakeven: (backtest: boolean, symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+```
+
+Moves stop-loss to breakeven when price reaches threshold.
 Validates context and delegates to StrategyConnectionService.
 
 ### breakeven
@@ -334,8 +379,8 @@ Validates context and delegates to StrategyConnectionService.
 breakeven: (backtest: boolean, symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
 ```
 
-Moves stop-loss to breakeven when price reaches threshold.
-Validates context and delegates to StrategyConnectionService.
+Checks whether `breakeven` would succeed without executing it.
+Validates context, then delegates to StrategyConnectionService.validateBreakeven().
 
 ### activateScheduled
 
@@ -348,13 +393,33 @@ Activates a scheduled signal early without waiting for price to reach priceOpen.
 Validates strategy existence and delegates to connection service
 to set the activation flag. The actual activation happens on next tick().
 
-### averageBuy
+### validateAverageBuy
 
 ```ts
-averageBuy: (backtest: boolean, symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+validateAverageBuy: (backtest: boolean, symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
 ```
 
 Adds a new DCA entry to the active pending signal.
 
 Validates strategy existence and delegates to connection service
 to add a new averaging entry to the position.
+
+### averageBuy
+
+```ts
+averageBuy: (backtest: boolean, symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }, cost: number) => Promise<boolean>
+```
+
+Checks whether `averageBuy` would succeed without executing it.
+Validates context, then delegates to StrategyConnectionService.validateAverageBuy().
+
+### hasPendingSignal
+
+```ts
+hasPendingSignal: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+```
+
+Checks if there is an active pending signal for the symbol.
+Validates strategy existence and delegates to connection service
+to check if a pending signal exists for the symbol.
+Does not require execution context as this is a state query operation.

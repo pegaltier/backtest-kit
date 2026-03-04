@@ -10,14 +10,29 @@ declare function getPositionPartials(symbol: string): Promise<{
     type: "profit" | "loss";
     percent: number;
     currentPrice: number;
-    effectivePrice: number;
+    costBasisAtClose: number;
     entryCountAtClose: number;
     debugTimestamp?: number;
 }[]>;
 ```
 
+Returns the list of partial close events for the current pending signal.
+
+Each element represents a partial profit or loss close executed via
+commitPartialProfit / commitPartialLoss (or their Cost variants).
+
+Returns null if no pending signal exists.
+Returns an empty array if no partials were executed yet.
+
+Each entry contains:
+- `type` — "profit" or "loss"
+- `percent` — percentage of position closed at this partial
+- `currentPrice` — execution price of the partial close
+- `costBasisAtClose` — accounting cost basis at the moment of this partial
+- `entryCountAtClose` — number of DCA entries accumulated at this partial
+
 ## Parameters
 
 | Parameter | Description |
 |-----------|-------------|
-| `symbol` | |
+| `symbol` | Trading pair symbol |

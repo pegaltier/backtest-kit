@@ -89,3 +89,11 @@ backtest: boolean
 ```
 
 Enable backtest markdown reports (main strategy results with full trade history)
+
+### sync
+
+```ts
+sync: boolean
+```
+
+Enable signal sync lifecycle reports (signal-open and signal-close events)

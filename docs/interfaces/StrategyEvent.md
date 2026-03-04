@@ -217,3 +217,27 @@ totalEntries: number
 ```
 
 Total number of DCA entries after this addition (average-buy action only)
+
+### totalPartials
+
+```ts
+totalPartials: number
+```
+
+Total number of partial closes executed (_partial.length)
+
+### pnl
+
+```ts
+pnl: IStrategyPnL
+```
+
+PNL at the moment of this action
+
+### cost
+
+```ts
+cost: number
+```
+
+Cost of this entry in USD (average-buy action only)

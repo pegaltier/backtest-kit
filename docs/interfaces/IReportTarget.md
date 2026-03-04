@@ -89,3 +89,11 @@ backtest: boolean
 ```
 
 Enable backtest closed signal event logging
+
+### sync
+
+```ts
+sync: boolean
+```
+
+Enable signal synchronization event logging (signal-open, signal-close)

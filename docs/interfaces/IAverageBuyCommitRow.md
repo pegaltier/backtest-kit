@@ -25,6 +25,14 @@ currentPrice: number
 
 Price at which the new averaging entry was executed
 
+### cost
+
+```ts
+cost: number
+```
+
+Cost of this averaging entry in USD
+
 ### totalEntries
 
 ```ts

@@ -82,6 +82,14 @@ currentPrice: number
 
 Price at which the new averaging entry was executed
 
+### cost
+
+```ts
+cost: number
+```
+
+Cost of this averaging entry in USD
+
 ### effectivePriceOpen
 
 ```ts
@@ -97,6 +105,14 @@ totalEntries: number
 ```
 
 Total number of DCA entries after this addition
+
+### totalPartials
+
+```ts
+totalPartials: number
+```
+
+Total number of partial closes executed (_partial.length). 0 = no partial closes done.
 
 ### position
 
@@ -153,6 +169,54 @@ originalPriceOpen: number
 ```
 
 Original entry price at signal creation (unchanged by DCA averaging)
+
+### pnl
+
+```ts
+pnl: IStrategyPnL
+```
+
+PNL at the moment of average-buy commit (from data.pnl)
+
+### pnlPercentage
+
+```ts
+pnlPercentage: number
+```
+
+Profit/loss as percentage (e.g., 1.5 for +1.5%, -2.3 for -2.3%)
+
+### pnlPriceOpen
+
+```ts
+pnlPriceOpen: number
+```
+
+Entry price from PNL calculation (effective price adjusted with slippage and fees)
+
+### pnlPriceClose
+
+```ts
+pnlPriceClose: number
+```
+
+Exit price from PNL calculation (adjusted with slippage and fees)
+
+### pnlCost
+
+```ts
+pnlCost: number
+```
+
+Absolute profit/loss in USD
+
+### pnlEntries
+
+```ts
+pnlEntries: number
+```
+
+Total invested capital in USD
 
 ### scheduledAt
 

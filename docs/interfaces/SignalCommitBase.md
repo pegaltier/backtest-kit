@@ -74,6 +74,15 @@ totalEntries: number
 Total number of DCA entries at the time of this event (_entry.length).
 1 = no averaging done (only initial entry). 2+ = averaged positions.
 
+### totalPartials
+
+```ts
+totalPartials: number
+```
+
+Total number of partial closes executed at the time of this event (_partial.length).
+0 = no partial closes done. 1+ = partial closes executed.
+
 ### originalPriceOpen
 
 ```ts

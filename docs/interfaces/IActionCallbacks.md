@@ -144,3 +144,16 @@ Called when signal is rejected by risk management.
 
 Triggered by: RiskConnectionService via riskSubject
 Frequency: Only when signal fails risk validation (not emitted for allowed signals)
+
+### onSignalSync
+
+```ts
+onSignalSync: (event: SignalSyncContract, actionName: string, strategyName: string, frameName: string, backtest: boolean) => void | Promise<void>
+```
+
+Called when framework attempts to open or close a position via limit order.
+Return false (or throw) to reject the operation — framework will retry on next tick.
+
+NOTE: Unlike other callbacks, exceptions from this method are NOT swallowed.
+They propagate up to CREATE_SYNC_FN which catches them and returns false.
+Throw to reject the operation — framework will retry on next tick.

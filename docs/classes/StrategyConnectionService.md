@@ -5,7 +5,7 @@ group: docs
 
 # StrategyConnectionService
 
-Implements `TStrategy`
+Implements `TStrategy$1`
 
 Connection service routing strategy operations to correct ClientStrategy instance.
 
@@ -95,7 +95,7 @@ Cache key includes exchangeName and frameName for proper isolation.
 ### getPendingSignal
 
 ```ts
-getPendingSignal: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<ISignalRow>
+getPendingSignal: (backtest: boolean, symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<ISignalRow>
 ```
 
 Retrieves the currently active pending signal for the strategy.
@@ -177,13 +177,13 @@ getPositionLevels: (backtest: boolean, symbol: string, context: { strategyName: 
 ### getPositionPartials
 
 ```ts
-getPositionPartials: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<{ type: "profit" | "loss"; percent: number; currentPrice: number; effectivePrice: number; entryCountAtClose: number; debugTimestamp?: number; }[]>
+getPositionPartials: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<{ type: "profit" | "loss"; percent: number; currentPrice: number; costBasisAtClose: number; entryCountAtClose: number; debugTimestamp?: number; }[]>
 ```
 
 ### getScheduledSignal
 
 ```ts
-getScheduledSignal: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<IScheduledSignalRow>
+getScheduledSignal: (backtest: boolean, symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<IScheduledSignalRow>
 ```
 
 Retrieves the currently active scheduled signal for the strategy.
@@ -247,6 +247,16 @@ Stops the specified strategy from generating new signals.
 Delegates to ClientStrategy.stopStrategy() which sets internal flag to prevent
 getSignal from being called on subsequent ticks.
 
+### hasPendingSignal
+
+```ts
+hasPendingSignal: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+```
+
+Checks if there is an active pending signal for the strategy.
+Delegates to ClientStrategy.hasPendingSignal() which checks if there is an active position
+that has not been fully closed.
+
 ### dispose
 
 ```ts
@@ -297,6 +307,15 @@ Does NOT set stop flag - strategy can continue generating new signals.
 Note: Closed event will be emitted on next tick() call when strategy
 detects the pending signal was closed.
 
+### validatePartialProfit
+
+```ts
+validatePartialProfit: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+```
+
+Checks whether `partialProfit` would succeed without executing it.
+Delegates to `ClientStrategy.validatePartialProfit()` — no throws, pure boolean result.
+
 ### partialProfit
 
 ```ts
@@ -309,6 +328,15 @@ Closes a percentage of the pending position at the current price, recording it a
 The partial close is tracked in `_partial` array for weighted PNL calculation when position fully closes.
 
 Delegates to ClientStrategy.partialProfit() with current execution context.
+
+### validatePartialLoss
+
+```ts
+validatePartialLoss: (backtest: boolean, symbol: string, percentToClose: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+```
+
+Checks whether `partialLoss` would succeed without executing it.
+Delegates to `ClientStrategy.validatePartialLoss()` — no throws, pure boolean result.
 
 ### partialLoss
 
@@ -323,6 +351,15 @@ The partial close is tracked in `_partial` array for weighted PNL calculation wh
 
 Delegates to ClientStrategy.partialLoss() with current execution context.
 
+### validateTrailingStop
+
+```ts
+validateTrailingStop: (backtest: boolean, symbol: string, percentShift: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+```
+
+Checks whether `trailingStop` would succeed without executing it.
+Delegates to `ClientStrategy.validateTrailingStop()` — no throws, pure boolean result.
+
 ### trailingStop
 
 ```ts
@@ -336,6 +373,15 @@ Positive percentShift tightens the SL (reduces distance), negative percentShift 
 
 Delegates to ClientStrategy.trailingStop() with current execution context.
 
+### validateTrailingTake
+
+```ts
+validateTrailingTake: (backtest: boolean, symbol: string, percentShift: number, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+```
+
+Checks whether `trailingTake` would succeed without executing it.
+Delegates to `ClientStrategy.validateTrailingTake()` — no throws, pure boolean result.
+
 ### trailingTake
 
 ```ts
@@ -348,6 +394,15 @@ Updates the take-profit distance by a percentage adjustment relative to the orig
 Negative percentShift brings TP closer to entry, positive percentShift moves it further.
 
 Delegates to ClientStrategy.trailingTake() with current execution context.
+
+### validateBreakeven
+
+```ts
+validateBreakeven: (backtest: boolean, symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+```
+
+Checks whether `breakeven` would succeed without executing it.
+Delegates to `ClientStrategy.validateBreakeven()` — no throws, pure boolean result.
 
 ### breakeven
 
@@ -368,10 +423,19 @@ Activates a scheduled signal early without waiting for price to reach priceOpen.
 Delegates to ClientStrategy.activateScheduled() which sets _activatedSignal flag.
 The actual activation happens on next tick() when strategy detects the flag.
 
+### validateAverageBuy
+
+```ts
+validateAverageBuy: (backtest: boolean, symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+```
+
+Checks whether `averageBuy` would succeed without executing it.
+Delegates to `ClientStrategy.validateAverageBuy()` — no throws, pure boolean result.
+
 ### averageBuy
 
 ```ts
-averageBuy: (backtest: boolean, symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+averageBuy: (backtest: boolean, symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }, cost: number) => Promise<boolean>
 ```
 
 Adds a new DCA entry to the active pending signal.

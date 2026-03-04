@@ -6,10 +6,10 @@ group: docs
 # Columns$4
 
 ```ts
-type Columns$4 = ColumnModel<IHeatmapRow>;
+type Columns$4 = ColumnModel<PartialEvent>;
 ```
 
-Type alias for column configuration used in heatmap markdown reports.
+Type alias for column configuration used in partial profit/loss markdown reports.
 
 Represents a column model specifically designed to format and display
-per-symbol portfolio statistics in markdown tables.
+partial position exit events in markdown tables.

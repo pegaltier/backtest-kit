@@ -206,6 +206,16 @@ Retrieves action list from strategy schema (IStrategySchema.actions)
 and invokes the riskRejection handler on each ClientAction instance sequentially.
 Called only when a signal fails risk validation.
 
+### signalSync
+
+```ts
+signalSync: (backtest: boolean, event: SignalSyncContract, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<void>
+```
+
+Gates position open/close across all registered actions.
+NOT wrapped in trycatch — exceptions propagate to CREATE_SYNC_FN.
+Returns true only if ALL actions return true.
+
 ### dispose
 
 ```ts

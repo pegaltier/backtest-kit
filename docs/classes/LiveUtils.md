@@ -58,7 +58,7 @@ Useful for running live trading for side effects only (callbacks, persistence).
 ### getPendingSignal
 
 ```ts
-getPendingSignal: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<ISignalRow>
+getPendingSignal: (symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; }) => Promise<ISignalRow>
 ```
 
 Retrieves the currently active pending signal for the strategy.
@@ -86,7 +86,7 @@ Correctly accounts for DCA entries between partial closes.
 ### getScheduledSignal
 
 ```ts
-getScheduledSignal: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<IScheduledSignalRow>
+getScheduledSignal: (symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; }) => Promise<IScheduledSignalRow>
 ```
 
 Retrieves the currently active scheduled signal for the strategy.
@@ -109,11 +109,20 @@ to cover transaction costs (slippage + fees) and allow breakeven to be set.
 getPositionAveragePrice: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number>
 ```
 
+Returns the effective (weighted average) entry price for the current pending signal.
+
+Accounts for all DCA entries via commitAverageBuy.
+Returns null if no pending signal exists.
+
 ### getPositionInvestedCount
 
 ```ts
 getPositionInvestedCount: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number>
 ```
+
+Returns the total number of base-asset units currently held in the position.
+
+Includes units from all DCA entries. Returns null if no pending signal exists.
 
 ### getPositionInvestedCost
 
@@ -121,11 +130,20 @@ getPositionInvestedCount: (symbol: string, context: { strategyName: string; exch
 getPositionInvestedCost: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number>
 ```
 
+Returns the total dollar cost invested in the current position.
+
+Sum of all entry costs across DCA entries. Returns null if no pending signal exists.
+
 ### getPositionPnlPercent
 
 ```ts
 getPositionPnlPercent: (symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; }) => Promise<number>
 ```
+
+Returns the current unrealized PnL as a percentage of the invested cost.
+
+Calculated relative to the effective (weighted average) entry price.
+Positive for profit, negative for loss. Returns null if no pending signal exists.
 
 ### getPositionPnlCost
 
@@ -133,17 +151,43 @@ getPositionPnlPercent: (symbol: string, currentPrice: number, context: { strateg
 getPositionPnlCost: (symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; }) => Promise<number>
 ```
 
+Returns the current unrealized PnL in quote currency (dollar amount).
+
+Calculated as (currentPrice - effectiveEntry) * units for LONG,
+reversed for SHORT. Returns null if no pending signal exists.
+
 ### getPositionLevels
 
 ```ts
 getPositionLevels: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number[]>
 ```
 
+Returns the list of DCA entry prices for the current pending signal.
+
+The first element is always the original priceOpen (initial entry).
+Each subsequent element is a price added by commitAverageBuy().
+Returns null if no pending signal exists.
+Returns a single-element array [priceOpen] if no DCA entries were made.
+
 ### getPositionPartials
 
 ```ts
-getPositionPartials: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<{ type: "profit" | "loss"; percent: number; currentPrice: number; effectivePrice: number; entryCountAtClose: number; debugTimestamp?: number; }[]>
+getPositionPartials: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<{ type: "profit" | "loss"; percent: number; currentPrice: number; costBasisAtClose: number; entryCountAtClose: number; debugTimestamp?: number; }[]>
 ```
+
+Returns the list of partial close events for the current pending signal.
+
+Each element represents a partial profit or loss close executed via
+commitPartialProfit / commitPartialLoss (or their Cost variants).
+Returns null if no pending signal exists.
+Returns an empty array if no partials were executed yet.
+
+Each entry contains:
+- `type` — "profit" or "loss"
+- `percent` — percentage of position closed at this partial
+- `currentPrice` — execution price of the partial close
+- `costBasisAtClose` — accounting cost basis at the moment of this partial
+- `entryCountAtClose` — number of DCA entries accumulated at this partial
 
 ### stop
 
@@ -271,6 +315,28 @@ Absorption behavior:
 - For LONG: only accepts LOWER TP (never moves up, closer to entry wins)
 - For SHORT: only accepts HIGHER TP (never moves down, closer to entry wins)
 
+### commitTrailingStopCost
+
+```ts
+commitTrailingStopCost: (symbol: string, newStopLossPrice: number, currentPrice: number, context: { strategyName: string; exchangeName: string; }) => Promise<boolean>
+```
+
+Adjusts the trailing stop-loss to an absolute price level.
+
+Convenience wrapper around commitTrailingStop that converts an absolute
+stop-loss price to a percentShift relative to the ORIGINAL SL distance.
+
+### commitTrailingTakeCost
+
+```ts
+commitTrailingTakeCost: (symbol: string, newTakeProfitPrice: number, currentPrice: number, context: { strategyName: string; exchangeName: string; }) => Promise<boolean>
+```
+
+Adjusts the trailing take-profit to an absolute price level.
+
+Convenience wrapper around commitTrailingTake that converts an absolute
+take-profit price to a percentShift relative to the ORIGINAL TP distance.
+
 ### commitBreakeven
 
 ```ts
@@ -296,7 +362,7 @@ happens on the next tick() when strategy detects the flag.
 ### commitAverageBuy
 
 ```ts
-commitAverageBuy: (symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; }) => Promise<boolean>
+commitAverageBuy: (symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; }, cost?: number) => Promise<boolean>
 ```
 
 Adds a new DCA entry to the active pending signal.
@@ -315,7 +381,7 @@ Gets statistical data from all live trading events for a symbol-strategy pair.
 ### getReport
 
 ```ts
-getReport: (symbol: string, context: { strategyName: string; exchangeName: string; }, columns?: Columns$7[]) => Promise<string>
+getReport: (symbol: string, context: { strategyName: string; exchangeName: string; }, columns?: Columns$8[]) => Promise<string>
 ```
 
 Generates markdown report with all events for a symbol-strategy pair.
@@ -323,7 +389,7 @@ Generates markdown report with all events for a symbol-strategy pair.
 ### dump
 
 ```ts
-dump: (symbol: string, context: { strategyName: string; exchangeName: string; }, path?: string, columns?: Columns$7[]) => Promise<void>
+dump: (symbol: string, context: { strategyName: string; exchangeName: string; }, path?: string, columns?: Columns$8[]) => Promise<void>
 ```
 
 Saves strategy report to disk.

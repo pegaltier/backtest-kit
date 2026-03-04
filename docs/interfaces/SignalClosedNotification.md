@@ -146,6 +146,14 @@ totalEntries: number
 
 Total number of DCA entries (_entry.length). 1 = no averaging.
 
+### totalPartials
+
+```ts
+totalPartials: number
+```
+
+Total number of partial closes executed (_partial.length). 0 = no partial closes done.
+
 ### pnlPercentage
 
 ```ts
@@ -153,6 +161,46 @@ pnlPercentage: number
 ```
 
 Profit/loss as percentage (e.g., 1.5 for +1.5%, -2.3 for -2.3%)
+
+### pnl
+
+```ts
+pnl: IStrategyPnL
+```
+
+Final PNL at signal close (from data.pnl)
+
+### pnlPriceOpen
+
+```ts
+pnlPriceOpen: number
+```
+
+Entry price from PNL calculation (effective price adjusted with slippage and fees)
+
+### pnlPriceClose
+
+```ts
+pnlPriceClose: number
+```
+
+Exit price from PNL calculation (adjusted with slippage and fees)
+
+### pnlCost
+
+```ts
+pnlCost: number
+```
+
+Absolute profit/loss in USD
+
+### pnlEntries
+
+```ts
+pnlEntries: number
+```
+
+Total invested capital in USD
 
 ### closeReason
 

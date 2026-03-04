@@ -25,6 +25,14 @@ currentPrice: number
 
 Current market price at time of breakeven adjustment
 
+### pnl
+
+```ts
+pnl: IStrategyPnL
+```
+
+Unrealized PNL at the moment of breakeven adjustment
+
 ### position
 
 ```ts

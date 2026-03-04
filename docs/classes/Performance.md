@@ -45,7 +45,7 @@ static getReport(symbol: string, context: {
     strategyName: StrategyName;
     exchangeName: ExchangeName;
     frameName: FrameName;
-}, backtest?: boolean, columns?: Columns$5[]): Promise<string>;
+}, backtest?: boolean, columns?: Columns$6[]): Promise<string>;
 ```
 
 Generates markdown report with performance analysis.
@@ -62,7 +62,7 @@ static dump(symbol: string, context: {
     strategyName: StrategyName;
     exchangeName: ExchangeName;
     frameName: FrameName;
-}, backtest?: boolean, path?: string, columns?: Columns$5[]): Promise<void>;
+}, backtest?: boolean, path?: string, columns?: Columns$6[]): Promise<void>;
 ```
 
 Saves performance report to disk.

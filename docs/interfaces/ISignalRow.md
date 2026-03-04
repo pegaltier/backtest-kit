@@ -18,6 +18,14 @@ id: string
 
 Unique signal identifier (UUID v4 auto-generated)
 
+### cost
+
+```ts
+cost: number
+```
+
+Cost of this entry in USD (e.g. 100 for $100 position)
+
 ### priceOpen
 
 ```ts
@@ -85,7 +93,7 @@ Internal runtime marker for scheduled signals
 ### _partial
 
 ```ts
-_partial: { type: "profit" | "loss"; percent: number; currentPrice: number; debugTimestamp?: number; effectivePrice: number; entryCountAtClose: number; }[]
+_partial: { type: "profit" | "loss"; percent: number; currentPrice: number; costBasisAtClose: number; entryCountAtClose: number; debugTimestamp?: number; }[]
 ```
 
 History of partial closes for PNL calculation.
@@ -113,7 +121,7 @@ Original priceStopLoss is preserved in persistence but ignored during execution.
 ### _entry
 
 ```ts
-_entry: { price: number; debugTimestamp?: number; }[]
+_entry: { price: number; cost: number; debugTimestamp?: number; }[]
 ```
 
 DCA (Dollar Cost Averaging) entry history.
@@ -136,3 +144,11 @@ Updated by trailingTake() method based on position type and percentage distance.
 - For SHORT: can move downward (further) or upward (closer) from entry
 When _trailingPriceTakeProfit is set, it replaces priceTakeProfit for TP/SL checks.
 Original priceTakeProfit is preserved in persistence but ignored during execution.
+
+### timestamp
+
+```ts
+timestamp: number
+```
+
+Unix timestamp in milliseconds when this signal was created/scheduled in backtest context or when getSignal was called in live context (before validation)

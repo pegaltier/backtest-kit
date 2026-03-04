@@ -33,3 +33,19 @@ priceClose: number
 ```
 
 Exit price adjusted with slippage and fees
+
+### pnlCost
+
+```ts
+pnlCost: number
+```
+
+Absolute profit/loss in USD: pnlPercentage / 100 * pnlEntries
+
+### pnlEntries
+
+```ts
+pnlEntries: number
+```
+
+Total invested capital in USD: sum of all entry costs

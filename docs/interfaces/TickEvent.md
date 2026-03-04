@@ -21,7 +21,7 @@ Event timestamp in milliseconds (scheduledAt for scheduled events, pendingAt for
 ### action
 
 ```ts
-action: "opened" | "scheduled" | "closed" | "cancelled" | "idle" | "waiting" | "active"
+action: "closed" | "opened" | "scheduled" | "cancelled" | "idle" | "waiting" | "active"
 ```
 
 Event action type
@@ -122,6 +122,14 @@ totalEntries: number
 
 Total number of DCA entries (_entry.length). 1 = no averaging.
 
+### totalPartials
+
+```ts
+totalPartials: number
+```
+
+Total number of partial closes executed (_partial.length)
+
 ### partialExecuted
 
 ```ts
@@ -129,6 +137,22 @@ partialExecuted: number
 ```
 
 Total executed percentage from partial closes (only for scheduled/waiting/opened/active/closed/cancelled)
+
+### pnlCost
+
+```ts
+pnlCost: number
+```
+
+Absolute profit/loss in USD (for active/waiting: unrealized, for closed: realized)
+
+### pnlEntries
+
+```ts
+pnlEntries: number
+```
+
+Total invested capital in USD
 
 ### percentTp
 

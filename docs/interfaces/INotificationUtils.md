@@ -50,6 +50,14 @@ handleStrategyCommit: (data: StrategyCommitContract) => Promise<void>
 
 Handles strategy commit events (partial-profit, breakeven, trailing, etc.).
 
+### handleSync
+
+```ts
+handleSync: (data: SignalSyncContract) => Promise<void>
+```
+
+Handles signal sync event (signal-open, signal-close).
+
 ### handleRisk
 
 ```ts

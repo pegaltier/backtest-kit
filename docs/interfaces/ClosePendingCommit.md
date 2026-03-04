@@ -24,3 +24,11 @@ closeId: string
 ```
 
 Optional identifier for the close reason (user-provided)
+
+### pnl
+
+```ts
+pnl: IStrategyPnL
+```
+
+PNL at the moment of close

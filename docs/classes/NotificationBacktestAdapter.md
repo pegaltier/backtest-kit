@@ -76,6 +76,15 @@ handleStrategyCommit: (data: StrategyCommitContract) => Promise<void>
 Handles strategy commit events.
 Proxies call to the underlying notification adapter.
 
+### handleSync
+
+```ts
+handleSync: (data: SignalSyncContract) => Promise<void>
+```
+
+Handles signal sync events (signal-open, signal-close).
+Proxies call to the underlying notification adapter.
+
 ### handleRisk
 
 ```ts

@@ -136,3 +136,12 @@ riskRejection(event: RiskContract): Promise<void>;
 ```
 
 Handles risk rejection events when signals fail risk validation.
+
+### signalSync
+
+```ts
+signalSync(event: SignalSyncContract): Promise<void>;
+```
+
+Gate for position open/close via limit order.
+NOT wrapped in trycatch — exceptions propagate to CREATE_SYNC_FN.
