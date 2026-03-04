@@ -465,9 +465,15 @@ Broker.useBrokerAdapter(
       }
 
       // Derive qty from real exchange balance using percentToClose to avoid precision mismatch
-      const balance    = await exchange.fetchBalance();
-      const base       = symbol.replace(/USDT|BUSD|BTC|ETH$/, "");
-      const totalQty   = parseFloat(String(balance?.free?.[base] ?? 0));
+      const balance  = await exchange.fetchBalance();
+      const base     = symbol.replace(/USDT|BUSD|BTC|ETH$/, "");
+      const totalQty = parseFloat(String(balance?.free?.[base] ?? 0));
+
+      // Position may have already been closed by SL/TP on exchange — skip gracefully
+      if (totalQty === 0) {
+        throw new Error(`PartialProfit skipped: no open position for ${symbol} on exchange — SL/TP may have already been filled`);
+      }
+
       const qty        = parseFloat(exchange.amountToPrecision(symbol, totalQty * (percentToClose / 100)));
       const closePrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
 
@@ -486,9 +492,15 @@ Broker.useBrokerAdapter(
       }
 
       // Derive qty from real exchange balance using percentToClose to avoid precision mismatch
-      const balance    = await exchange.fetchBalance();
-      const base       = symbol.replace(/USDT|BUSD|BTC|ETH$/, "");
-      const totalQty   = parseFloat(String(balance?.free?.[base] ?? 0));
+      const balance  = await exchange.fetchBalance();
+      const base     = symbol.replace(/USDT|BUSD|BTC|ETH$/, "");
+      const totalQty = parseFloat(String(balance?.free?.[base] ?? 0));
+
+      // Position may have already been closed by SL/TP on exchange — skip gracefully
+      if (totalQty === 0) {
+        throw new Error(`PartialLoss skipped: no open position for ${symbol} on exchange — SL/TP may have already been filled`);
+      }
+
       const qty        = parseFloat(exchange.amountToPrecision(symbol, totalQty * (percentToClose / 100)));
       const closePrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
 
@@ -507,9 +519,15 @@ Broker.useBrokerAdapter(
         await exchange.cancelOrder(slOrder.id, symbol);
       }
 
-      const balance = await exchange.fetchBalance();
-      const base    = symbol.replace(/USDT|BUSD|BTC|ETH$/, "");
-      const qty     = parseFloat(String(balance?.free?.[base] ?? 0));
+      const balance  = await exchange.fetchBalance();
+      const base     = symbol.replace(/USDT|BUSD|BTC|ETH$/, "");
+      const qty      = parseFloat(String(balance?.free?.[base] ?? 0));
+
+      // Position may have already been closed by SL/TP on exchange — skip gracefully
+      if (qty === 0) {
+        throw new Error(`TrailingStop skipped: no open position for ${symbol} on exchange — SL/TP may have already been filled`);
+      }
+
       const slPrice = parseFloat(exchange.priceToPrecision(symbol, newStopLossPrice));
 
       // Updated SL: resting stop-limit sell, accepted synchronously by Binance REST
@@ -527,9 +545,15 @@ Broker.useBrokerAdapter(
         await exchange.cancelOrder(tpOrder.id, symbol);
       }
 
-      const balance = await exchange.fetchBalance();
-      const base    = symbol.replace(/USDT|BUSD|BTC|ETH$/, "");
-      const qty     = parseFloat(String(balance?.free?.[base] ?? 0));
+      const balance  = await exchange.fetchBalance();
+      const base     = symbol.replace(/USDT|BUSD|BTC|ETH$/, "");
+      const qty      = parseFloat(String(balance?.free?.[base] ?? 0));
+
+      // Position may have already been closed by SL/TP on exchange — skip gracefully
+      if (qty === 0) {
+        throw new Error(`TrailingTake skipped: no open position for ${symbol} on exchange — SL/TP may have already been filled`);
+      }
+
       const tpPrice = parseFloat(exchange.priceToPrecision(symbol, newTakeProfitPrice));
 
       // Updated TP: resting limit sell, accepted synchronously by Binance REST
@@ -547,9 +571,15 @@ Broker.useBrokerAdapter(
         await exchange.cancelOrder(slOrder.id, symbol);
       }
 
-      const balance = await exchange.fetchBalance();
-      const base    = symbol.replace(/USDT|BUSD|BTC|ETH$/, "");
-      const qty     = parseFloat(String(balance?.free?.[base] ?? 0));
+      const balance  = await exchange.fetchBalance();
+      const base     = symbol.replace(/USDT|BUSD|BTC|ETH$/, "");
+      const qty      = parseFloat(String(balance?.free?.[base] ?? 0));
+
+      // Position may have already been closed by SL/TP on exchange — skip gracefully
+      if (qty === 0) {
+        throw new Error(`Breakeven skipped: no open position for ${symbol} on exchange — SL/TP may have already been filled`);
+      }
+
       const slPrice = parseFloat(exchange.priceToPrecision(symbol, newStopLossPrice));
 
       // Breakeven SL: resting stop-limit sell at entry price, accepted synchronously by Binance REST
@@ -708,9 +738,15 @@ Broker.useBrokerAdapter(
       }
 
       // Derive qty from real exchange position using percentToClose to avoid precision mismatch
-      const positions  = await exchange.fetchPositions([symbol]);
-      const pos        = positions.find((p) => p.symbol === symbol);
-      const totalQty   = Math.abs(parseFloat(String(pos?.contracts ?? 0)));
+      const positions = await exchange.fetchPositions([symbol]);
+      const pos       = positions.find((p) => p.symbol === symbol);
+      const totalQty  = Math.abs(parseFloat(String(pos?.contracts ?? 0)));
+
+      // Position may have already been closed by SL/TP on exchange — skip gracefully
+      if (totalQty === 0) {
+        throw new Error(`PartialProfit skipped: no open position for ${symbol} on exchange — SL/TP may have already been filled`);
+      }
+
       const qty        = parseFloat(exchange.amountToPrecision(symbol, totalQty * (percentToClose / 100)));
       const closePrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
       const exitSide   = position === "long" ? "sell" : "buy";
@@ -730,9 +766,15 @@ Broker.useBrokerAdapter(
       }
 
       // Derive qty from real exchange position using percentToClose to avoid precision mismatch
-      const positions  = await exchange.fetchPositions([symbol]);
-      const pos        = positions.find((p) => p.symbol === symbol);
-      const totalQty   = Math.abs(parseFloat(String(pos?.contracts ?? 0)));
+      const positions = await exchange.fetchPositions([symbol]);
+      const pos       = positions.find((p) => p.symbol === symbol);
+      const totalQty  = Math.abs(parseFloat(String(pos?.contracts ?? 0)));
+
+      // Position may have already been closed by SL/TP on exchange — skip gracefully
+      if (totalQty === 0) {
+        throw new Error(`PartialLoss skipped: no open position for ${symbol} on exchange — SL/TP may have already been filled`);
+      }
+
       const qty        = parseFloat(exchange.amountToPrecision(symbol, totalQty * (percentToClose / 100)));
       const closePrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
       const exitSide   = position === "long" ? "sell" : "buy";
@@ -755,8 +797,14 @@ Broker.useBrokerAdapter(
       const positions = await exchange.fetchPositions([symbol]);
       const pos       = positions.find((p) => p.symbol === symbol);
       const qty       = Math.abs(parseFloat(String(pos?.contracts ?? 0)));
-      const slPrice   = parseFloat(exchange.priceToPrecision(symbol, newStopLossPrice));
-      const exitSide  = position === "long" ? "sell" : "buy";
+
+      // Position may have already been closed by SL/TP on exchange — skip gracefully
+      if (qty === 0) {
+        throw new Error(`TrailingStop skipped: no open position for ${symbol} on exchange — SL/TP may have already been filled`);
+      }
+
+      const slPrice  = parseFloat(exchange.priceToPrecision(symbol, newStopLossPrice));
+      const exitSide = position === "long" ? "sell" : "buy";
 
       // Updated SL: resting stop-market on exit side, accepted synchronously by Binance REST
       await exchange.createOrder(symbol, "stop_market", exitSide, qty, undefined, { stopPrice: slPrice, reduceOnly: true });
@@ -776,8 +824,14 @@ Broker.useBrokerAdapter(
       const positions = await exchange.fetchPositions([symbol]);
       const pos       = positions.find((p) => p.symbol === symbol);
       const qty       = Math.abs(parseFloat(String(pos?.contracts ?? 0)));
-      const tpPrice   = parseFloat(exchange.priceToPrecision(symbol, newTakeProfitPrice));
-      const exitSide  = position === "long" ? "sell" : "buy";
+
+      // Position may have already been closed by SL/TP on exchange — skip gracefully
+      if (qty === 0) {
+        throw new Error(`TrailingTake skipped: no open position for ${symbol} on exchange — SL/TP may have already been filled`);
+      }
+
+      const tpPrice  = parseFloat(exchange.priceToPrecision(symbol, newTakeProfitPrice));
+      const exitSide = position === "long" ? "sell" : "buy";
 
       // Updated TP: resting limit on exit side, accepted synchronously by Binance REST
       await exchange.createOrder(symbol, "limit", exitSide, qty, tpPrice, { reduceOnly: true });
@@ -797,8 +851,14 @@ Broker.useBrokerAdapter(
       const positions = await exchange.fetchPositions([symbol]);
       const pos       = positions.find((p) => p.symbol === symbol);
       const qty       = Math.abs(parseFloat(String(pos?.contracts ?? 0)));
-      const slPrice   = parseFloat(exchange.priceToPrecision(symbol, newStopLossPrice));
-      const exitSide  = position === "long" ? "sell" : "buy";
+
+      // Position may have already been closed by SL/TP on exchange — skip gracefully
+      if (qty === 0) {
+        throw new Error(`Breakeven skipped: no open position for ${symbol} on exchange — SL/TP may have already been filled`);
+      }
+
+      const slPrice  = parseFloat(exchange.priceToPrecision(symbol, newStopLossPrice));
+      const exitSide = position === "long" ? "sell" : "buy";
 
       // Breakeven SL: resting stop-market at entry price on exit side, accepted synchronously by Binance REST
       await exchange.createOrder(symbol, "stop_market", exitSide, qty, undefined, { stopPrice: slPrice, reduceOnly: true });
