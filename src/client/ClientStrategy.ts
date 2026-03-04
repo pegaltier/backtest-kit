@@ -6090,6 +6090,10 @@ export class ClientStrategy implements IStrategy {
     const signal = this._pendingSignal;
     const effectivePriceOpen = GET_EFFECTIVE_PRICE_OPEN(signal);
 
+    const effectiveTakeProfit = signal._trailingPriceTakeProfit ?? signal.priceTakeProfit;
+    if (signal.position === "long" && effectivePriceOpen >= effectiveTakeProfit) return false;
+    if (signal.position === "short" && effectivePriceOpen <= effectiveTakeProfit) return false;
+
     const breakevenThresholdPercent = (GLOBAL_CONFIG.CC_PERCENT_SLIPPAGE + GLOBAL_CONFIG.CC_PERCENT_FEE) * 2;
     const breakevenPrice = effectivePriceOpen;
 
