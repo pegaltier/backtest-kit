@@ -6,7 +6,13 @@ import {
 import backtest from "../lib";
 import { exitEmitter, doneLiveSubject } from "../config/emitters";
 import { GLOBAL_CONFIG } from "../config/params";
-import { getErrorMessage, memoize, not, randomString, singlerun } from "functools-kit";
+import {
+  getErrorMessage,
+  memoize,
+  not,
+  randomString,
+  singlerun,
+} from "functools-kit";
 import { Columns } from "../lib/services/markdown/LiveMarkdownService";
 import { ExchangeName } from "../interfaces/Exchange.interface";
 import { slPriceToPercentShift } from "../math/slPriceToPercentShift";
@@ -25,14 +31,19 @@ const LIVE_METHOD_NAME_DUMP = "LiveUtils.dump";
 const LIVE_METHOD_NAME_TASK = "LiveUtils.task";
 const LIVE_METHOD_NAME_GET_STATUS = "LiveUtils.getStatus";
 const LIVE_METHOD_NAME_GET_PENDING_SIGNAL = "LiveUtils.getPendingSignal";
-const LIVE_METHOD_NAME_GET_TOTAL_PERCENT_CLOSED = "LiveUtils.getTotalPercentClosed";
+const LIVE_METHOD_NAME_GET_TOTAL_PERCENT_CLOSED =
+  "LiveUtils.getTotalPercentClosed";
 const LIVE_METHOD_NAME_GET_TOTAL_COST_CLOSED = "LiveUtils.getTotalCostClosed";
 const LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL = "LiveUtils.getScheduledSignal";
 const LIVE_METHOD_NAME_GET_BREAKEVEN = "LiveUtils.getBreakeven";
-const LIVE_METHOD_NAME_GET_POSITION_AVERAGE_PRICE = "LiveUtils.getPositionAveragePrice";
-const LIVE_METHOD_NAME_GET_POSITION_INVESTED_COUNT = "LiveUtils.getPositionInvestedCount";
-const LIVE_METHOD_NAME_GET_POSITION_INVESTED_COST = "LiveUtils.getPositionInvestedCost";
-const LIVE_METHOD_NAME_GET_POSITION_PNL_PERCENT = "LiveUtils.getPositionPnlPercent";
+const LIVE_METHOD_NAME_GET_POSITION_AVERAGE_PRICE =
+  "LiveUtils.getPositionAveragePrice";
+const LIVE_METHOD_NAME_GET_POSITION_INVESTED_COUNT =
+  "LiveUtils.getPositionInvestedCount";
+const LIVE_METHOD_NAME_GET_POSITION_INVESTED_COST =
+  "LiveUtils.getPositionInvestedCost";
+const LIVE_METHOD_NAME_GET_POSITION_PNL_PERCENT =
+  "LiveUtils.getPositionPnlPercent";
 const LIVE_METHOD_NAME_GET_POSITION_PNL_COST = "LiveUtils.getPositionPnlCost";
 const LIVE_METHOD_NAME_GET_POSITION_LEVELS = "LiveUtils.getPositionLevels";
 const LIVE_METHOD_NAME_GET_POSITION_PARTIALS = "LiveUtils.getPositionPartials";
@@ -41,12 +52,14 @@ const LIVE_METHOD_NAME_CANCEL_SCHEDULED = "Live.cancelScheduled";
 const LIVE_METHOD_NAME_CLOSE_PENDING = "Live.closePending";
 const LIVE_METHOD_NAME_PARTIAL_PROFIT = "LiveUtils.commitPartialProfit";
 const LIVE_METHOD_NAME_PARTIAL_LOSS = "LiveUtils.commitPartialLoss";
-const LIVE_METHOD_NAME_PARTIAL_PROFIT_COST = "LiveUtils.commitPartialProfitCost";
+const LIVE_METHOD_NAME_PARTIAL_PROFIT_COST =
+  "LiveUtils.commitPartialProfitCost";
 const LIVE_METHOD_NAME_PARTIAL_LOSS_COST = "LiveUtils.commitPartialLossCost";
 const LIVE_METHOD_NAME_TRAILING_STOP = "LiveUtils.commitTrailingStop";
 const LIVE_METHOD_NAME_TRAILING_PROFIT = "LiveUtils.commitTrailingTake";
 const LIVE_METHOD_NAME_TRAILING_STOP_COST = "LiveUtils.commitTrailingStopCost";
-const LIVE_METHOD_NAME_TRAILING_PROFIT_COST = "LiveUtils.commitTrailingTakeCost";
+const LIVE_METHOD_NAME_TRAILING_PROFIT_COST =
+  "LiveUtils.commitTrailingTakeCost";
 const LIVE_METHOD_NAME_ACTIVATE_SCHEDULED = "Live.commitActivateScheduled";
 const LIVE_METHOD_NAME_AVERAGE_BUY = "Live.commitAverageBuy";
 
@@ -88,7 +101,7 @@ const INSTANCE_TASK_FN = async (
     });
   }
   self._isDone = true;
-}
+};
 
 /**
  * Instance class for live trading operations on a specific symbol-strategy pair.
@@ -111,7 +124,7 @@ const INSTANCE_TASK_FN = async (
  * ```
  */
 export class LiveInstance {
-  /** A randomly generated string. */  
+  /** A randomly generated string. */
   readonly id = randomString();
 
   /** Internal flag indicating if live trading was stopped manually */
@@ -129,7 +142,7 @@ export class LiveInstance {
   constructor(
     readonly symbol: string,
     readonly strategyName: StrategyName,
-    readonly exchangeName: ExchangeName
+    readonly exchangeName: ExchangeName,
   ) {}
 
   /**
@@ -142,19 +155,21 @@ export class LiveInstance {
    *
    * @internal
    */
-  private task = singlerun(async (
-    symbol: string,
-    context: {
-      strategyName: StrategyName;
-      exchangeName: ExchangeName;
-    }
-  ) => {
-    backtest.loggerService.info(LIVE_METHOD_NAME_TASK, {
-      symbol,
-      context,
-    });
-    return await INSTANCE_TASK_FN(symbol, context, this);
-  })
+  private task = singlerun(
+    async (
+      symbol: string,
+      context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+      },
+    ) => {
+      backtest.loggerService.info(LIVE_METHOD_NAME_TASK, {
+        symbol,
+        context,
+      });
+      return await INSTANCE_TASK_FN(symbol, context, this);
+    },
+  );
 
   /**
    * Gets the current status of this live trading instance.
@@ -194,7 +209,7 @@ export class LiveInstance {
     context: {
       strategyName: StrategyName;
       exchangeName: ExchangeName;
-    }
+    },
   ) => {
     backtest.loggerService.info(LIVE_METHOD_NAME_RUN, {
       symbol,
@@ -202,12 +217,48 @@ export class LiveInstance {
     });
 
     {
-      backtest.backtestMarkdownService.clear({ symbol, strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "", backtest: false });
-      backtest.liveMarkdownService.clear({ symbol, strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "", backtest: false });
-      backtest.scheduleMarkdownService.clear({ symbol, strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "", backtest: false });
-      backtest.performanceMarkdownService.clear({ symbol, strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "", backtest: false });
-      backtest.partialMarkdownService.clear({ symbol, strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "", backtest: false });
-      backtest.riskMarkdownService.clear({ symbol, strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "", backtest: false });
+      backtest.backtestMarkdownService.clear({
+        symbol,
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+        backtest: false,
+      });
+      backtest.liveMarkdownService.clear({
+        symbol,
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+        backtest: false,
+      });
+      backtest.scheduleMarkdownService.clear({
+        symbol,
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+        backtest: false,
+      });
+      backtest.performanceMarkdownService.clear({
+        symbol,
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+        backtest: false,
+      });
+      backtest.partialMarkdownService.clear({
+        symbol,
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+        backtest: false,
+      });
+      backtest.riskMarkdownService.clear({
+        symbol,
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+        backtest: false,
+      });
     }
 
     {
@@ -221,28 +272,34 @@ export class LiveInstance {
     }
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(
-        context.strategyName
-      );
-      riskName && backtest.riskGlobalService.clear({
-        riskName,
-        exchangeName: context.exchangeName,
-        frameName: "",
-        backtest: false
-      });
-      riskList && riskList.forEach((riskName) => backtest.riskGlobalService.clear({
-        riskName,
-        exchangeName: context.exchangeName,
-        frameName: "",
-        backtest: false
-      }));
-      actions && actions.forEach((actionName) => backtest.actionCoreService.clear({
-        actionName,
-        strategyName: context.strategyName,
-        exchangeName: context.exchangeName,
-        frameName: "",
-        backtest: false
-      }));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskGlobalService.clear({
+          riskName,
+          exchangeName: context.exchangeName,
+          frameName: "",
+          backtest: false,
+        });
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskGlobalService.clear({
+            riskName,
+            exchangeName: context.exchangeName,
+            frameName: "",
+            backtest: false,
+          }),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionCoreService.clear({
+            actionName,
+            strategyName: context.strategyName,
+            exchangeName: context.exchangeName,
+            frameName: "",
+            backtest: false,
+          }),
+        );
     }
 
     return backtest.liveCommandService.run(symbol, context);
@@ -273,7 +330,7 @@ export class LiveInstance {
     context: {
       strategyName: StrategyName;
       exchangeName: ExchangeName;
-    }
+    },
   ) => {
     backtest.loggerService.info(LIVE_METHOD_NAME_BACKGROUND, {
       symbol,
@@ -282,20 +339,24 @@ export class LiveInstance {
     const currentStatus = this.task.getStatus();
     {
       if (currentStatus === "pending") {
-        throw new Error(`Live.background is already running for symbol=${symbol} strategyName=${context.strategyName} exchangeName=${context.exchangeName}`);
+        throw new Error(
+          `Live.background is already running for symbol=${symbol} strategyName=${context.strategyName} exchangeName=${context.exchangeName}`,
+        );
       }
       if (currentStatus === "rejected") {
-        throw new Error(`Live.background has failed for symbol=${symbol} strategyName=${context.strategyName} exchangeName=${context.exchangeName}`);
+        throw new Error(
+          `Live.background has failed for symbol=${symbol} strategyName=${context.strategyName} exchangeName=${context.exchangeName}`,
+        );
       }
     }
     this.task(symbol, context).catch((error) =>
-      exitEmitter.next(new Error(getErrorMessage(error)))
+      exitEmitter.next(new Error(getErrorMessage(error))),
     );
     return () => {
       backtest.strategyCoreService.stopStrategy(false, symbol, {
         strategyName: context.strategyName,
         exchangeName: context.exchangeName,
-        frameName: ""
+        frameName: "",
       });
       backtest.strategyCoreService
         .hasPendingSignal(false, symbol, {
@@ -321,7 +382,6 @@ export class LiveInstance {
       this._isStopped = true;
     };
   };
-
 }
 
 /**
@@ -362,7 +422,7 @@ export class LiveUtils {
     ([symbol, strategyName, exchangeName]) =>
       `${symbol}:${strategyName}:${exchangeName}`,
     (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName) =>
-      new LiveInstance(symbol, strategyName, exchangeName)
+      new LiveInstance(symbol, strategyName, exchangeName),
   );
 
   /**
@@ -380,21 +440,45 @@ export class LiveUtils {
     context: {
       strategyName: StrategyName;
       exchangeName: ExchangeName;
-    }
+    },
   ) => {
     {
-      backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_RUN);
-      backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_RUN);
+      backtest.strategyValidationService.validate(
+        context.strategyName,
+        LIVE_METHOD_NAME_RUN,
+      );
+      backtest.exchangeValidationService.validate(
+        context.exchangeName,
+        LIVE_METHOD_NAME_RUN,
+      );
     }
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_RUN);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_RUN));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_RUN));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_RUN);
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_RUN,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_RUN,
+          ),
+        );
     }
 
-    const instance = this._getInstance(symbol, context.strategyName, context.exchangeName);
+    const instance = this._getInstance(
+      symbol,
+      context.strategyName,
+      context.exchangeName,
+    );
     return instance.run(symbol, context);
   };
 
@@ -424,19 +508,46 @@ export class LiveUtils {
     context: {
       strategyName: StrategyName;
       exchangeName: ExchangeName;
-    }
+    },
   ) => {
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_BACKGROUND);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_BACKGROUND);
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_BACKGROUND,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_BACKGROUND,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_BACKGROUND);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_BACKGROUND));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_BACKGROUND));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_BACKGROUND,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_BACKGROUND,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_BACKGROUND,
+          ),
+        );
     }
 
-    const instance = this._getInstance(symbol, context.strategyName, context.exchangeName);
+    const instance = this._getInstance(
+      symbol,
+      context.strategyName,
+      context.exchangeName,
+    );
     return instance.background(symbol, context);
   };
 
@@ -456,26 +567,58 @@ export class LiveUtils {
    * }
    * ```
    */
-  public getPendingSignal = async (symbol: string, currentPrice: number, context: { strategyName: StrategyName; exchangeName: ExchangeName; }) => {
+  public getPendingSignal = async (
+    symbol: string,
+    currentPrice: number,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName },
+  ) => {
     backtest.loggerService.info(LIVE_METHOD_NAME_GET_PENDING_SIGNAL, {
       symbol,
       context,
     });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_PENDING_SIGNAL);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_GET_PENDING_SIGNAL);
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_GET_PENDING_SIGNAL,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_GET_PENDING_SIGNAL,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_PENDING_SIGNAL);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_PENDING_SIGNAL));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_GET_PENDING_SIGNAL));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_GET_PENDING_SIGNAL,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_GET_PENDING_SIGNAL,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_GET_PENDING_SIGNAL,
+          ),
+        );
     }
 
-    return await backtest.strategyCoreService.getPendingSignal(false, symbol, currentPrice, {
-      strategyName: context.strategyName,
-      exchangeName: context.exchangeName,
-      frameName: "",
-    });
+    return await backtest.strategyCoreService.getPendingSignal(
+      false,
+      symbol,
+      currentPrice,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
   };
 
   /**
@@ -493,26 +636,56 @@ export class LiveUtils {
    * console.log(`Holding ${heldPct}% of position`);
    * ```
    */
-  public getTotalPercentClosed = async (symbol: string, context: { strategyName: StrategyName; exchangeName: ExchangeName; }) => {
+  public getTotalPercentClosed = async (
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName },
+  ) => {
     backtest.loggerService.info(LIVE_METHOD_NAME_GET_TOTAL_PERCENT_CLOSED, {
       symbol,
       context,
     });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_TOTAL_PERCENT_CLOSED);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_GET_TOTAL_PERCENT_CLOSED);
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_GET_TOTAL_PERCENT_CLOSED,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_GET_TOTAL_PERCENT_CLOSED,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_TOTAL_PERCENT_CLOSED);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_TOTAL_PERCENT_CLOSED));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_GET_TOTAL_PERCENT_CLOSED));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_GET_TOTAL_PERCENT_CLOSED,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_GET_TOTAL_PERCENT_CLOSED,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_GET_TOTAL_PERCENT_CLOSED,
+          ),
+        );
     }
 
-    return await backtest.strategyCoreService.getTotalPercentClosed(false, symbol, {
-      strategyName: context.strategyName,
-      exchangeName: context.exchangeName,
-      frameName: "",
-    });
+    return await backtest.strategyCoreService.getTotalPercentClosed(
+      false,
+      symbol,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
   };
 
   /**
@@ -529,26 +702,56 @@ export class LiveUtils {
    * console.log(`Holding $${heldCost} of position`);
    * ```
    */
-  public getTotalCostClosed = async (symbol: string, context: { strategyName: StrategyName; exchangeName: ExchangeName; }) => {
+  public getTotalCostClosed = async (
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName },
+  ) => {
     backtest.loggerService.info(LIVE_METHOD_NAME_GET_TOTAL_COST_CLOSED, {
       symbol,
       context,
     });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_TOTAL_COST_CLOSED);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_GET_TOTAL_COST_CLOSED);
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_GET_TOTAL_COST_CLOSED,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_GET_TOTAL_COST_CLOSED,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_TOTAL_COST_CLOSED);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_TOTAL_COST_CLOSED));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_GET_TOTAL_COST_CLOSED));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_GET_TOTAL_COST_CLOSED,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_GET_TOTAL_COST_CLOSED,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_GET_TOTAL_COST_CLOSED,
+          ),
+        );
     }
 
-    return await backtest.strategyCoreService.getTotalCostClosed(false, symbol, {
-      strategyName: context.strategyName,
-      exchangeName: context.exchangeName,
-      frameName: "",
-    });
+    return await backtest.strategyCoreService.getTotalCostClosed(
+      false,
+      symbol,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
   };
 
   /**
@@ -567,26 +770,58 @@ export class LiveUtils {
    * }
    * ```
    */
-  public getScheduledSignal = async (symbol: string, currentPrice: number, context: { strategyName: StrategyName; exchangeName: ExchangeName; }) => {
+  public getScheduledSignal = async (
+    symbol: string,
+    currentPrice: number,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName },
+  ) => {
     backtest.loggerService.info(LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL, {
       symbol,
       context,
     });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL);
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL,
+          ),
+        );
     }
 
-    return await backtest.strategyCoreService.getScheduledSignal(false, symbol, currentPrice, {
-      strategyName: context.strategyName,
-      exchangeName: context.exchangeName,
-      frameName: "",
-    });
+    return await backtest.strategyCoreService.getScheduledSignal(
+      false,
+      symbol,
+      currentPrice,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
   };
 
   /**
@@ -615,28 +850,56 @@ export class LiveUtils {
   public getBreakeven = async (
     symbol: string,
     currentPrice: number,
-    context: { strategyName: StrategyName; exchangeName: ExchangeName; }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName },
   ): Promise<boolean> => {
     backtest.loggerService.info(LIVE_METHOD_NAME_GET_BREAKEVEN, {
       symbol,
       currentPrice,
       context,
     });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_BREAKEVEN);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_GET_BREAKEVEN);
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_GET_BREAKEVEN,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_GET_BREAKEVEN,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_BREAKEVEN);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_BREAKEVEN));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_GET_BREAKEVEN));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_GET_BREAKEVEN,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_GET_BREAKEVEN,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_GET_BREAKEVEN,
+          ),
+        );
     }
 
-    return await backtest.strategyCoreService.getBreakeven(false, symbol, currentPrice, {
-      strategyName: context.strategyName,
-      exchangeName: context.exchangeName,
-      frameName: "",
-    });
+    return await backtest.strategyCoreService.getBreakeven(
+      false,
+      symbol,
+      currentPrice,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
   };
 
   /**
@@ -651,24 +914,54 @@ export class LiveUtils {
    */
   public getPositionAveragePrice = async (
     symbol: string,
-    context: { strategyName: StrategyName; exchangeName: ExchangeName; }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName },
   ): Promise<number | null> => {
-    backtest.loggerService.info(LIVE_METHOD_NAME_GET_POSITION_AVERAGE_PRICE, { symbol, context });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_POSITION_AVERAGE_PRICE);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_GET_POSITION_AVERAGE_PRICE);
+    backtest.loggerService.info(LIVE_METHOD_NAME_GET_POSITION_AVERAGE_PRICE, {
+      symbol,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_GET_POSITION_AVERAGE_PRICE,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_GET_POSITION_AVERAGE_PRICE,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_POSITION_AVERAGE_PRICE);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_POSITION_AVERAGE_PRICE));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_GET_POSITION_AVERAGE_PRICE));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_GET_POSITION_AVERAGE_PRICE,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_GET_POSITION_AVERAGE_PRICE,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_GET_POSITION_AVERAGE_PRICE,
+          ),
+        );
     }
 
-    return await backtest.strategyCoreService.getPositionAveragePrice(false, symbol, {
-      strategyName: context.strategyName,
-      exchangeName: context.exchangeName,
-      frameName: "",
-    });
+    return await backtest.strategyCoreService.getPositionAveragePrice(
+      false,
+      symbol,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
   };
 
   /**
@@ -682,24 +975,54 @@ export class LiveUtils {
    */
   public getPositionInvestedCount = async (
     symbol: string,
-    context: { strategyName: StrategyName; exchangeName: ExchangeName; }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName },
   ): Promise<number | null> => {
-    backtest.loggerService.info(LIVE_METHOD_NAME_GET_POSITION_INVESTED_COUNT, { symbol, context });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_POSITION_INVESTED_COUNT);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_GET_POSITION_INVESTED_COUNT);
+    backtest.loggerService.info(LIVE_METHOD_NAME_GET_POSITION_INVESTED_COUNT, {
+      symbol,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_GET_POSITION_INVESTED_COUNT,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_GET_POSITION_INVESTED_COUNT,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_POSITION_INVESTED_COUNT);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_POSITION_INVESTED_COUNT));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_GET_POSITION_INVESTED_COUNT));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_GET_POSITION_INVESTED_COUNT,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_GET_POSITION_INVESTED_COUNT,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_GET_POSITION_INVESTED_COUNT,
+          ),
+        );
     }
 
-    return await backtest.strategyCoreService.getPositionInvestedCount(false, symbol, {
-      strategyName: context.strategyName,
-      exchangeName: context.exchangeName,
-      frameName: "",
-    });
+    return await backtest.strategyCoreService.getPositionInvestedCount(
+      false,
+      symbol,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
   };
 
   /**
@@ -713,24 +1036,54 @@ export class LiveUtils {
    */
   public getPositionInvestedCost = async (
     symbol: string,
-    context: { strategyName: StrategyName; exchangeName: ExchangeName; }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName },
   ): Promise<number | null> => {
-    backtest.loggerService.info(LIVE_METHOD_NAME_GET_POSITION_INVESTED_COST, { symbol, context });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_POSITION_INVESTED_COST);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_GET_POSITION_INVESTED_COST);
+    backtest.loggerService.info(LIVE_METHOD_NAME_GET_POSITION_INVESTED_COST, {
+      symbol,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_GET_POSITION_INVESTED_COST,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_GET_POSITION_INVESTED_COST,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_POSITION_INVESTED_COST);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_POSITION_INVESTED_COST));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_GET_POSITION_INVESTED_COST));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_GET_POSITION_INVESTED_COST,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_GET_POSITION_INVESTED_COST,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_GET_POSITION_INVESTED_COST,
+          ),
+        );
     }
 
-    return await backtest.strategyCoreService.getPositionInvestedCost(false, symbol, {
-      strategyName: context.strategyName,
-      exchangeName: context.exchangeName,
-      frameName: "",
-    });
+    return await backtest.strategyCoreService.getPositionInvestedCost(
+      false,
+      symbol,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
   };
 
   /**
@@ -747,24 +1100,56 @@ export class LiveUtils {
   public getPositionPnlPercent = async (
     symbol: string,
     currentPrice: number,
-    context: { strategyName: StrategyName; exchangeName: ExchangeName; }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName },
   ): Promise<number | null> => {
-    backtest.loggerService.info(LIVE_METHOD_NAME_GET_POSITION_PNL_PERCENT, { symbol, currentPrice, context });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_POSITION_PNL_PERCENT);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_GET_POSITION_PNL_PERCENT);
+    backtest.loggerService.info(LIVE_METHOD_NAME_GET_POSITION_PNL_PERCENT, {
+      symbol,
+      currentPrice,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_GET_POSITION_PNL_PERCENT,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_GET_POSITION_PNL_PERCENT,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_POSITION_PNL_PERCENT);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_POSITION_PNL_PERCENT));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_GET_POSITION_PNL_PERCENT));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_GET_POSITION_PNL_PERCENT,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_GET_POSITION_PNL_PERCENT,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_GET_POSITION_PNL_PERCENT,
+          ),
+        );
     }
 
-    return await backtest.strategyCoreService.getPositionPnlPercent(false, symbol, currentPrice, {
-      strategyName: context.strategyName,
-      exchangeName: context.exchangeName,
-      frameName: "",
-    });
+    return await backtest.strategyCoreService.getPositionPnlPercent(
+      false,
+      symbol,
+      currentPrice,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
   };
 
   /**
@@ -781,24 +1166,56 @@ export class LiveUtils {
   public getPositionPnlCost = async (
     symbol: string,
     currentPrice: number,
-    context: { strategyName: StrategyName; exchangeName: ExchangeName; }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName },
   ): Promise<number | null> => {
-    backtest.loggerService.info(LIVE_METHOD_NAME_GET_POSITION_PNL_COST, { symbol, currentPrice, context });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_POSITION_PNL_COST);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_GET_POSITION_PNL_COST);
+    backtest.loggerService.info(LIVE_METHOD_NAME_GET_POSITION_PNL_COST, {
+      symbol,
+      currentPrice,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_GET_POSITION_PNL_COST,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_GET_POSITION_PNL_COST,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_POSITION_PNL_COST);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_POSITION_PNL_COST));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_GET_POSITION_PNL_COST));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_GET_POSITION_PNL_COST,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_GET_POSITION_PNL_COST,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_GET_POSITION_PNL_COST,
+          ),
+        );
     }
 
-    return await backtest.strategyCoreService.getPositionPnlCost(false, symbol, currentPrice, {
-      strategyName: context.strategyName,
-      exchangeName: context.exchangeName,
-      frameName: "",
-    });
+    return await backtest.strategyCoreService.getPositionPnlCost(
+      false,
+      symbol,
+      currentPrice,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
   };
 
   /**
@@ -815,17 +1232,43 @@ export class LiveUtils {
    */
   public getPositionLevels = async (
     symbol: string,
-    context: { strategyName: StrategyName; exchangeName: ExchangeName; }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName },
   ): Promise<number[] | null> => {
-    backtest.loggerService.info(LIVE_METHOD_NAME_GET_POSITION_LEVELS, { symbol, context });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_POSITION_LEVELS);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_GET_POSITION_LEVELS);
+    backtest.loggerService.info(LIVE_METHOD_NAME_GET_POSITION_LEVELS, {
+      symbol,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_GET_POSITION_LEVELS,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_GET_POSITION_LEVELS,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_POSITION_LEVELS);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_POSITION_LEVELS));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_GET_POSITION_LEVELS));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_GET_POSITION_LEVELS,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_GET_POSITION_LEVELS,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_GET_POSITION_LEVELS,
+          ),
+        );
     }
 
     return await backtest.strategyCoreService.getPositionLevels(false, symbol, {
@@ -856,24 +1299,54 @@ export class LiveUtils {
    */
   public getPositionPartials = async (
     symbol: string,
-    context: { strategyName: StrategyName; exchangeName: ExchangeName; }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName },
   ) => {
-    backtest.loggerService.info(LIVE_METHOD_NAME_GET_POSITION_PARTIALS, { symbol, context });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_POSITION_PARTIALS);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_GET_POSITION_PARTIALS);
+    backtest.loggerService.info(LIVE_METHOD_NAME_GET_POSITION_PARTIALS, {
+      symbol,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_GET_POSITION_PARTIALS,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_GET_POSITION_PARTIALS,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_POSITION_PARTIALS);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_POSITION_PARTIALS));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_GET_POSITION_PARTIALS));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_GET_POSITION_PARTIALS,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_GET_POSITION_PARTIALS,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_GET_POSITION_PARTIALS,
+          ),
+        );
     }
 
-    return await backtest.strategyCoreService.getPositionPartials(false, symbol, {
-      strategyName: context.strategyName,
-      exchangeName: context.exchangeName,
-      frameName: "",
-    });
+    return await backtest.strategyCoreService.getPositionPartials(
+      false,
+      symbol,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
   };
 
   /**
@@ -898,20 +1371,43 @@ export class LiveUtils {
     context: {
       strategyName: StrategyName;
       exchangeName: ExchangeName;
-    }
+    },
   ): Promise<void> => {
     backtest.loggerService.info(LIVE_METHOD_NAME_STOP, {
       symbol,
       context,
     });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_STOP);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_STOP);
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_STOP,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_STOP,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_STOP);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_STOP));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_STOP));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_STOP,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_STOP,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_STOP,
+          ),
+        );
     }
 
     await backtest.strategyCoreService.stopStrategy(false, symbol, {
@@ -950,28 +1446,56 @@ export class LiveUtils {
       strategyName: StrategyName;
       exchangeName: ExchangeName;
     },
-    cancelId?: string
+    cancelId?: string,
   ): Promise<void> => {
     backtest.loggerService.info(LIVE_METHOD_NAME_CANCEL_SCHEDULED, {
       symbol,
       context,
       cancelId,
     });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_CANCEL_SCHEDULED);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_CANCEL_SCHEDULED);
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_CANCEL_SCHEDULED,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_CANCEL_SCHEDULED,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_CANCEL_SCHEDULED);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_CANCEL_SCHEDULED));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_CANCEL_SCHEDULED));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_CANCEL_SCHEDULED,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_CANCEL_SCHEDULED,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_CANCEL_SCHEDULED,
+          ),
+        );
     }
 
-    await backtest.strategyCoreService.cancelScheduled(false, symbol, {
-      strategyName: context.strategyName,
-      exchangeName: context.exchangeName,
-      frameName: "",
-    }, cancelId);
+    await backtest.strategyCoreService.cancelScheduled(
+      false,
+      symbol,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+      cancelId,
+    );
   };
 
   /**
@@ -1001,28 +1525,56 @@ export class LiveUtils {
       strategyName: StrategyName;
       exchangeName: ExchangeName;
     },
-    closeId?: string
+    closeId?: string,
   ): Promise<void> => {
     backtest.loggerService.info(LIVE_METHOD_NAME_CLOSE_PENDING, {
       symbol,
       context,
       closeId,
     });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_CLOSE_PENDING);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_CLOSE_PENDING);
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_CLOSE_PENDING,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_CLOSE_PENDING,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_CLOSE_PENDING);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_CLOSE_PENDING));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_CLOSE_PENDING));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_CLOSE_PENDING,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_CLOSE_PENDING,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_CLOSE_PENDING,
+          ),
+        );
     }
 
-    await backtest.strategyCoreService.closePending(false, symbol, {
-      strategyName: context.strategyName,
-      exchangeName: context.exchangeName,
-      frameName: "",
-    }, closeId);
+    await backtest.strategyCoreService.closePending(
+      false,
+      symbol,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+      closeId,
+    );
   };
 
   /**
@@ -1060,7 +1612,7 @@ export class LiveUtils {
     context: {
       strategyName: StrategyName;
       exchangeName: ExchangeName;
-    }
+    },
   ): Promise<boolean> => {
     backtest.loggerService.info(LIVE_METHOD_NAME_PARTIAL_PROFIT, {
       symbol,
@@ -1068,25 +1620,92 @@ export class LiveUtils {
       currentPrice,
       context,
     });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_PARTIAL_PROFIT);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_PARTIAL_PROFIT);
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_PARTIAL_PROFIT,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_PARTIAL_PROFIT,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_PARTIAL_PROFIT);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_PARTIAL_PROFIT));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_PARTIAL_PROFIT));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_PARTIAL_PROFIT,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_PARTIAL_PROFIT,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_PARTIAL_PROFIT,
+          ),
+        );
     }
 
-    const investedCost = await backtest.strategyCoreService.getPositionInvestedCost(false, symbol, { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" });
+    const investedCost =
+      await backtest.strategyCoreService.getPositionInvestedCost(
+        false,
+        symbol,
+        {
+          strategyName: context.strategyName,
+          exchangeName: context.exchangeName,
+          frameName: "",
+        },
+      );
     if (investedCost === null) {
       return false;
     }
-    if (await not(backtest.strategyCoreService.validatePartialProfit(false, symbol, percentToClose, currentPrice, { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" }))) {
+    if (
+      await not(
+        backtest.strategyCoreService.validatePartialProfit(
+          false,
+          symbol,
+          percentToClose,
+          currentPrice,
+          {
+            strategyName: context.strategyName,
+            exchangeName: context.exchangeName,
+            frameName: "",
+          },
+        ),
+      )
+    ) {
       return false;
     }
-    await Broker.commitPartialProfit({ symbol, percentToClose, cost: percentToCloseCost(percentToClose, investedCost), currentPrice, context: { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" } });
-    return await backtest.strategyCoreService.partialProfit(false, symbol, percentToClose, currentPrice, { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" });
+    await Broker.commitPartialProfit({
+      symbol,
+      percentToClose,
+      cost: percentToCloseCost(percentToClose, investedCost),
+      currentPrice,
+      context: {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+      backtest: false,
+    });
+    return await backtest.strategyCoreService.partialProfit(
+      false,
+      symbol,
+      percentToClose,
+      currentPrice,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
   };
 
   /**
@@ -1124,7 +1743,7 @@ export class LiveUtils {
     context: {
       strategyName: StrategyName;
       exchangeName: ExchangeName;
-    }
+    },
   ): Promise<boolean> => {
     backtest.loggerService.info(LIVE_METHOD_NAME_PARTIAL_LOSS, {
       symbol,
@@ -1132,25 +1751,92 @@ export class LiveUtils {
       currentPrice,
       context,
     });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_PARTIAL_LOSS);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_PARTIAL_LOSS);
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_PARTIAL_LOSS,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_PARTIAL_LOSS,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_PARTIAL_LOSS);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_PARTIAL_LOSS));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_PARTIAL_LOSS));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_PARTIAL_LOSS,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_PARTIAL_LOSS,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_PARTIAL_LOSS,
+          ),
+        );
     }
 
-    const investedCost = await backtest.strategyCoreService.getPositionInvestedCost(false, symbol, { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" });
+    const investedCost =
+      await backtest.strategyCoreService.getPositionInvestedCost(
+        false,
+        symbol,
+        {
+          strategyName: context.strategyName,
+          exchangeName: context.exchangeName,
+          frameName: "",
+        },
+      );
     if (investedCost === null) {
       return false;
     }
-    if (await not(backtest.strategyCoreService.validatePartialLoss(false, symbol, percentToClose, currentPrice, { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" }))) {
+    if (
+      await not(
+        backtest.strategyCoreService.validatePartialLoss(
+          false,
+          symbol,
+          percentToClose,
+          currentPrice,
+          {
+            strategyName: context.strategyName,
+            exchangeName: context.exchangeName,
+            frameName: "",
+          },
+        ),
+      )
+    ) {
       return false;
     }
-    await Broker.commitPartialLoss({ symbol, percentToClose, cost: percentToCloseCost(percentToClose, investedCost), currentPrice, context: { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" } });
-    return await backtest.strategyCoreService.partialLoss(false, symbol, percentToClose, currentPrice, { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" });
+    await Broker.commitPartialLoss({
+      symbol,
+      percentToClose,
+      cost: percentToCloseCost(percentToClose, investedCost),
+      currentPrice,
+      context: {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+      backtest: false,
+    });
+    return await backtest.strategyCoreService.partialLoss(
+      false,
+      symbol,
+      percentToClose,
+      currentPrice,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
   };
 
   /**
@@ -1186,33 +1872,101 @@ export class LiveUtils {
     symbol: string,
     dollarAmount: number,
     currentPrice: number,
-    context: { strategyName: StrategyName; exchangeName: ExchangeName; }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName },
   ): Promise<boolean> => {
-    backtest.loggerService.info(LIVE_METHOD_NAME_PARTIAL_PROFIT_COST, { symbol, dollarAmount, currentPrice, context });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_PARTIAL_PROFIT_COST);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_PARTIAL_PROFIT_COST);
+    backtest.loggerService.info(LIVE_METHOD_NAME_PARTIAL_PROFIT_COST, {
+      symbol,
+      dollarAmount,
+      currentPrice,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_PARTIAL_PROFIT_COST,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_PARTIAL_PROFIT_COST,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_PARTIAL_PROFIT_COST);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_PARTIAL_PROFIT_COST));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_PARTIAL_PROFIT_COST));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_PARTIAL_PROFIT_COST,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_PARTIAL_PROFIT_COST,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_PARTIAL_PROFIT_COST,
+          ),
+        );
     }
 
-    const investedCost = await backtest.strategyCoreService.getPositionInvestedCost(false, symbol, {
-      strategyName: context.strategyName,
-      exchangeName: context.exchangeName,
-      frameName: "",
-    });
+    const investedCost =
+      await backtest.strategyCoreService.getPositionInvestedCost(
+        false,
+        symbol,
+        {
+          strategyName: context.strategyName,
+          exchangeName: context.exchangeName,
+          frameName: "",
+        },
+      );
     if (investedCost === null) {
       return false;
     }
     const percentToClose = (dollarAmount / investedCost) * 100;
-    if (await not(backtest.strategyCoreService.validatePartialProfit(false, symbol, percentToClose, currentPrice, { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" }))) {
+    if (
+      await not(
+        backtest.strategyCoreService.validatePartialProfit(
+          false,
+          symbol,
+          percentToClose,
+          currentPrice,
+          {
+            strategyName: context.strategyName,
+            exchangeName: context.exchangeName,
+            frameName: "",
+          },
+        ),
+      )
+    ) {
       return false;
     }
-    await Broker.commitPartialProfit({ symbol, percentToClose, cost: dollarAmount, currentPrice, context: { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" } });
-    return await backtest.strategyCoreService.partialProfit(false, symbol, percentToClose, currentPrice, { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" });
+    await Broker.commitPartialProfit({
+      symbol,
+      percentToClose,
+      cost: dollarAmount,
+      currentPrice,
+      context: {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+      backtest: false,
+    });
+    return await backtest.strategyCoreService.partialProfit(
+      false,
+      symbol,
+      percentToClose,
+      currentPrice,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
   };
 
   /**
@@ -1248,33 +2002,101 @@ export class LiveUtils {
     symbol: string,
     dollarAmount: number,
     currentPrice: number,
-    context: { strategyName: StrategyName; exchangeName: ExchangeName; }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName },
   ): Promise<boolean> => {
-    backtest.loggerService.info(LIVE_METHOD_NAME_PARTIAL_LOSS_COST, { symbol, dollarAmount, currentPrice, context });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_PARTIAL_LOSS_COST);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_PARTIAL_LOSS_COST);
+    backtest.loggerService.info(LIVE_METHOD_NAME_PARTIAL_LOSS_COST, {
+      symbol,
+      dollarAmount,
+      currentPrice,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_PARTIAL_LOSS_COST,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_PARTIAL_LOSS_COST,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_PARTIAL_LOSS_COST);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_PARTIAL_LOSS_COST));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_PARTIAL_LOSS_COST));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_PARTIAL_LOSS_COST,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_PARTIAL_LOSS_COST,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_PARTIAL_LOSS_COST,
+          ),
+        );
     }
 
-    const investedCost = await backtest.strategyCoreService.getPositionInvestedCost(false, symbol, {
-      strategyName: context.strategyName,
-      exchangeName: context.exchangeName,
-      frameName: "",
-    });
+    const investedCost =
+      await backtest.strategyCoreService.getPositionInvestedCost(
+        false,
+        symbol,
+        {
+          strategyName: context.strategyName,
+          exchangeName: context.exchangeName,
+          frameName: "",
+        },
+      );
     if (investedCost === null) {
       return false;
     }
     const percentToClose = (dollarAmount / investedCost) * 100;
-    if (await not(backtest.strategyCoreService.validatePartialLoss(false, symbol, percentToClose, currentPrice, { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" }))) {
+    if (
+      await not(
+        backtest.strategyCoreService.validatePartialLoss(
+          false,
+          symbol,
+          percentToClose,
+          currentPrice,
+          {
+            strategyName: context.strategyName,
+            exchangeName: context.exchangeName,
+            frameName: "",
+          },
+        ),
+      )
+    ) {
       return false;
     }
-    await Broker.commitPartialLoss({ symbol, percentToClose, cost: dollarAmount, currentPrice, context: { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" } });
-    return await backtest.strategyCoreService.partialLoss(false, symbol, percentToClose, currentPrice, { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" });
+    await Broker.commitPartialLoss({
+      symbol,
+      percentToClose,
+      cost: dollarAmount,
+      currentPrice,
+      context: {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+      backtest: false,
+    });
+    return await backtest.strategyCoreService.partialLoss(
+      false,
+      symbol,
+      percentToClose,
+      currentPrice,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
   };
 
   /**
@@ -1327,7 +2149,7 @@ export class LiveUtils {
     context: {
       strategyName: StrategyName;
       exchangeName: ExchangeName;
-    }
+    },
   ): Promise<boolean> => {
     backtest.loggerService.info(LIVE_METHOD_NAME_TRAILING_STOP, {
       symbol,
@@ -1335,29 +2157,106 @@ export class LiveUtils {
       currentPrice,
       context,
     });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_TRAILING_STOP);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_TRAILING_STOP);
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_TRAILING_STOP,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_TRAILING_STOP,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_TRAILING_STOP);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_TRAILING_STOP));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_TRAILING_STOP));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_TRAILING_STOP,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_TRAILING_STOP,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_TRAILING_STOP,
+          ),
+        );
     }
 
-    const signal = await backtest.strategyCoreService.getPendingSignal(false, symbol, currentPrice, { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" });
+    const signal = await backtest.strategyCoreService.getPendingSignal(
+      false,
+      symbol,
+      currentPrice,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
     if (!signal) {
       return false;
     }
-    const effectivePriceOpen = await backtest.strategyCoreService.getPositionAveragePrice(false, symbol, { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" });
+    const effectivePriceOpen =
+      await backtest.strategyCoreService.getPositionAveragePrice(
+        false,
+        symbol,
+        {
+          strategyName: context.strategyName,
+          exchangeName: context.exchangeName,
+          frameName: "",
+        },
+      );
     if (effectivePriceOpen === null) {
       return false;
     }
-    if (await not(backtest.strategyCoreService.validateTrailingStop(false, symbol, percentShift, currentPrice, { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" }))) {
+    if (
+      await not(
+        backtest.strategyCoreService.validateTrailingStop(
+          false,
+          symbol,
+          percentShift,
+          currentPrice,
+          {
+            strategyName: context.strategyName,
+            exchangeName: context.exchangeName,
+            frameName: "",
+          },
+        ),
+      )
+    ) {
       return false;
     }
-    await Broker.commitTrailingStop({ symbol, percentShift, currentPrice, newStopLossPrice: slPercentShiftToPrice(percentShift, signal.priceStopLoss, effectivePriceOpen, signal.position), context });
-    return await backtest.strategyCoreService.trailingStop(false, symbol, percentShift, currentPrice, { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" });
+    await Broker.commitTrailingStop({
+      symbol,
+      percentShift,
+      currentPrice,
+      newStopLossPrice: slPercentShiftToPrice(
+        percentShift,
+        signal.priceStopLoss,
+        effectivePriceOpen,
+        signal.position,
+      ),
+      context,
+      backtest: false,
+    });
+    return await backtest.strategyCoreService.trailingStop(
+      false,
+      symbol,
+      percentShift,
+      currentPrice,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
   };
 
   /**
@@ -1410,7 +2309,7 @@ export class LiveUtils {
     context: {
       strategyName: StrategyName;
       exchangeName: ExchangeName;
-    }
+    },
   ): Promise<boolean> => {
     backtest.loggerService.info(LIVE_METHOD_NAME_TRAILING_PROFIT, {
       symbol,
@@ -1418,29 +2317,106 @@ export class LiveUtils {
       currentPrice,
       context,
     });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_TRAILING_PROFIT);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_TRAILING_PROFIT);
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_TRAILING_PROFIT,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_TRAILING_PROFIT,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_TRAILING_PROFIT);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_TRAILING_PROFIT));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_TRAILING_PROFIT));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_TRAILING_PROFIT,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_TRAILING_PROFIT,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_TRAILING_PROFIT,
+          ),
+        );
     }
 
-    const signal = await backtest.strategyCoreService.getPendingSignal(false, symbol, currentPrice, { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" });
+    const signal = await backtest.strategyCoreService.getPendingSignal(
+      false,
+      symbol,
+      currentPrice,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
     if (!signal) {
       return false;
     }
-    const effectivePriceOpen = await backtest.strategyCoreService.getPositionAveragePrice(false, symbol, { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" });
+    const effectivePriceOpen =
+      await backtest.strategyCoreService.getPositionAveragePrice(
+        false,
+        symbol,
+        {
+          strategyName: context.strategyName,
+          exchangeName: context.exchangeName,
+          frameName: "",
+        },
+      );
     if (effectivePriceOpen === null) {
       return false;
     }
-    if (await not(backtest.strategyCoreService.validateTrailingTake(false, symbol, percentShift, currentPrice, { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" }))) {
+    if (
+      await not(
+        backtest.strategyCoreService.validateTrailingTake(
+          false,
+          symbol,
+          percentShift,
+          currentPrice,
+          {
+            strategyName: context.strategyName,
+            exchangeName: context.exchangeName,
+            frameName: "",
+          },
+        ),
+      )
+    ) {
       return false;
     }
-    await Broker.commitTrailingTake({ symbol, percentShift, currentPrice, newTakeProfitPrice: tpPercentShiftToPrice(percentShift, signal.priceTakeProfit, effectivePriceOpen, signal.position), context });
-    return await backtest.strategyCoreService.trailingTake(false, symbol, percentShift, currentPrice, { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" });
+    await Broker.commitTrailingTake({
+      symbol,
+      percentShift,
+      currentPrice,
+      newTakeProfitPrice: tpPercentShiftToPrice(
+        percentShift,
+        signal.priceTakeProfit,
+        effectivePriceOpen,
+        signal.position,
+      ),
+      context,
+      backtest: false,
+    });
+    return await backtest.strategyCoreService.trailingTake(
+      false,
+      symbol,
+      percentShift,
+      currentPrice,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
   };
 
   /**
@@ -1462,7 +2438,7 @@ export class LiveUtils {
     context: {
       strategyName: StrategyName;
       exchangeName: ExchangeName;
-    }
+    },
   ): Promise<boolean> => {
     backtest.loggerService.info(LIVE_METHOD_NAME_TRAILING_STOP_COST, {
       symbol,
@@ -1470,38 +2446,106 @@ export class LiveUtils {
       currentPrice,
       context,
     });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_TRAILING_STOP_COST);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_TRAILING_STOP_COST);
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_TRAILING_STOP_COST,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_TRAILING_STOP_COST,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_TRAILING_STOP_COST);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_TRAILING_STOP_COST));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_TRAILING_STOP_COST));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_TRAILING_STOP_COST,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_TRAILING_STOP_COST,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_TRAILING_STOP_COST,
+          ),
+        );
     }
 
-    const signal = await backtest.strategyCoreService.getPendingSignal(false, symbol, currentPrice, {
-      strategyName: context.strategyName,
-      exchangeName: context.exchangeName,
-      frameName: "",
-    });
+    const signal = await backtest.strategyCoreService.getPendingSignal(
+      false,
+      symbol,
+      currentPrice,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
     if (!signal) {
       return false;
     }
-    const effectivePriceOpen = await backtest.strategyCoreService.getPositionAveragePrice(false, symbol, {
-      strategyName: context.strategyName,
-      exchangeName: context.exchangeName,
-      frameName: "",
-    });
+    const effectivePriceOpen =
+      await backtest.strategyCoreService.getPositionAveragePrice(
+        false,
+        symbol,
+        {
+          strategyName: context.strategyName,
+          exchangeName: context.exchangeName,
+          frameName: "",
+        },
+      );
     if (effectivePriceOpen === null) {
       return false;
     }
-    const percentShift = slPriceToPercentShift(newStopLossPrice, signal.priceStopLoss, effectivePriceOpen);
-    if (await not(backtest.strategyCoreService.validateTrailingStop(false, symbol, percentShift, currentPrice, { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" }))) {
+    const percentShift = slPriceToPercentShift(
+      newStopLossPrice,
+      signal.priceStopLoss,
+      effectivePriceOpen,
+    );
+    if (
+      await not(
+        backtest.strategyCoreService.validateTrailingStop(
+          false,
+          symbol,
+          percentShift,
+          currentPrice,
+          {
+            strategyName: context.strategyName,
+            exchangeName: context.exchangeName,
+            frameName: "",
+          },
+        ),
+      )
+    ) {
       return false;
     }
-    await Broker.commitTrailingStop({ symbol, percentShift, currentPrice, newStopLossPrice, context });
-    return await backtest.strategyCoreService.trailingStop(false, symbol, percentShift, currentPrice, { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" });
+    await Broker.commitTrailingStop({
+      symbol,
+      percentShift,
+      currentPrice,
+      newStopLossPrice,
+      context,
+      backtest: false,
+    });
+    return await backtest.strategyCoreService.trailingStop(
+      false,
+      symbol,
+      percentShift,
+      currentPrice,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
   };
 
   /**
@@ -1523,7 +2567,7 @@ export class LiveUtils {
     context: {
       strategyName: StrategyName;
       exchangeName: ExchangeName;
-    }
+    },
   ): Promise<boolean> => {
     backtest.loggerService.info(LIVE_METHOD_NAME_TRAILING_PROFIT_COST, {
       symbol,
@@ -1531,38 +2575,106 @@ export class LiveUtils {
       currentPrice,
       context,
     });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_TRAILING_PROFIT_COST);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_TRAILING_PROFIT_COST);
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_TRAILING_PROFIT_COST,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_TRAILING_PROFIT_COST,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_TRAILING_PROFIT_COST);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_TRAILING_PROFIT_COST));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_TRAILING_PROFIT_COST));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_TRAILING_PROFIT_COST,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_TRAILING_PROFIT_COST,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_TRAILING_PROFIT_COST,
+          ),
+        );
     }
 
-    const signal = await backtest.strategyCoreService.getPendingSignal(false, symbol, currentPrice, {
-      strategyName: context.strategyName,
-      exchangeName: context.exchangeName,
-      frameName: "",
-    });
+    const signal = await backtest.strategyCoreService.getPendingSignal(
+      false,
+      symbol,
+      currentPrice,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
     if (!signal) {
       return false;
     }
-    const effectivePriceOpen = await backtest.strategyCoreService.getPositionAveragePrice(false, symbol, {
-      strategyName: context.strategyName,
-      exchangeName: context.exchangeName,
-      frameName: "",
-    });
+    const effectivePriceOpen =
+      await backtest.strategyCoreService.getPositionAveragePrice(
+        false,
+        symbol,
+        {
+          strategyName: context.strategyName,
+          exchangeName: context.exchangeName,
+          frameName: "",
+        },
+      );
     if (effectivePriceOpen === null) {
       return false;
     }
-    const percentShift = tpPriceToPercentShift(newTakeProfitPrice, signal.priceTakeProfit, effectivePriceOpen);
-    if (await not(backtest.strategyCoreService.validateTrailingTake(false, symbol, percentShift, currentPrice, { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" }))) {
+    const percentShift = tpPriceToPercentShift(
+      newTakeProfitPrice,
+      signal.priceTakeProfit,
+      effectivePriceOpen,
+    );
+    if (
+      await not(
+        backtest.strategyCoreService.validateTrailingTake(
+          false,
+          symbol,
+          percentShift,
+          currentPrice,
+          {
+            strategyName: context.strategyName,
+            exchangeName: context.exchangeName,
+            frameName: "",
+          },
+        ),
+      )
+    ) {
       return false;
     }
-    await Broker.commitTrailingTake({ symbol, percentShift, currentPrice, newTakeProfitPrice, context });
-    return await backtest.strategyCoreService.trailingTake(false, symbol, percentShift, currentPrice, { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" });
+    await Broker.commitTrailingTake({
+      symbol,
+      percentShift,
+      currentPrice,
+      newTakeProfitPrice,
+      context,
+      backtest: false,
+    });
+    return await backtest.strategyCoreService.trailingTake(
+      false,
+      symbol,
+      percentShift,
+      currentPrice,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
   };
 
   /**
@@ -1592,32 +2704,82 @@ export class LiveUtils {
     context: {
       strategyName: StrategyName;
       exchangeName: ExchangeName;
-    }
+    },
   ): Promise<boolean> => {
     backtest.loggerService.info(LIVE_METHOD_NAME_BREAKEVEN, {
       symbol,
       currentPrice,
       context,
     });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_BREAKEVEN);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_BREAKEVEN);
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_BREAKEVEN,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_BREAKEVEN,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_BREAKEVEN);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_BREAKEVEN));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_BREAKEVEN));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_BREAKEVEN,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_BREAKEVEN,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_BREAKEVEN,
+          ),
+        );
     }
 
-    if (await not(backtest.strategyCoreService.validateBreakeven(false, symbol, currentPrice, { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" }))) {
+    if (
+      await not(
+        backtest.strategyCoreService.validateBreakeven(
+          false,
+          symbol,
+          currentPrice,
+          {
+            strategyName: context.strategyName,
+            exchangeName: context.exchangeName,
+            frameName: "",
+          },
+        ),
+      )
+    ) {
       return false;
     }
-    await Broker.commitBreakeven({ symbol, currentPrice, context: { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" } });
-    return await backtest.strategyCoreService.breakeven(false, symbol, currentPrice, {
-      strategyName: context.strategyName,
-      exchangeName: context.exchangeName,
-      frameName: "",
+    await Broker.commitBreakeven({
+      symbol,
+      currentPrice,
+      context: {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+      backtest: false,
     });
+    return await backtest.strategyCoreService.breakeven(
+      false,
+      symbol,
+      currentPrice,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
   };
 
   /**
@@ -1646,28 +2808,56 @@ export class LiveUtils {
       strategyName: StrategyName;
       exchangeName: ExchangeName;
     },
-    activateId?: string
+    activateId?: string,
   ): Promise<void> => {
     backtest.loggerService.info(LIVE_METHOD_NAME_ACTIVATE_SCHEDULED, {
       symbol,
       context,
       activateId,
     });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_ACTIVATE_SCHEDULED);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_ACTIVATE_SCHEDULED);
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_ACTIVATE_SCHEDULED,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_ACTIVATE_SCHEDULED,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_ACTIVATE_SCHEDULED);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_ACTIVATE_SCHEDULED));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_ACTIVATE_SCHEDULED));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_ACTIVATE_SCHEDULED,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_ACTIVATE_SCHEDULED,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_ACTIVATE_SCHEDULED,
+          ),
+        );
     }
 
-    await backtest.strategyCoreService.activateScheduled(false, symbol, {
-      strategyName: context.strategyName,
-      exchangeName: context.exchangeName,
-      frameName: "",
-    }, activateId);
+    await backtest.strategyCoreService.activateScheduled(
+      false,
+      symbol,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+      activateId,
+    );
   };
 
   /**
@@ -1700,32 +2890,84 @@ export class LiveUtils {
       strategyName: StrategyName;
       exchangeName: ExchangeName;
     },
-    cost: number = GLOBAL_CONFIG.CC_POSITION_ENTRY_COST
+    cost: number = GLOBAL_CONFIG.CC_POSITION_ENTRY_COST,
   ): Promise<boolean> => {
     backtest.loggerService.info(LIVE_METHOD_NAME_AVERAGE_BUY, {
       symbol,
       currentPrice,
       context,
     });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_AVERAGE_BUY);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_AVERAGE_BUY);
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_AVERAGE_BUY,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_AVERAGE_BUY,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_AVERAGE_BUY);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_AVERAGE_BUY));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_AVERAGE_BUY));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_AVERAGE_BUY,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_AVERAGE_BUY,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_AVERAGE_BUY,
+          ),
+        );
     }
 
-    if (await not(backtest.strategyCoreService.validateAverageBuy(false, symbol, currentPrice, { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" }))) {
+    if (
+      await not(
+        backtest.strategyCoreService.validateAverageBuy(
+          false,
+          symbol,
+          currentPrice,
+          {
+            strategyName: context.strategyName,
+            exchangeName: context.exchangeName,
+            frameName: "",
+          },
+        ),
+      )
+    ) {
       return false;
     }
-    await Broker.commitAverageBuy({ symbol, currentPrice, cost, context: { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" } });
-    return await backtest.strategyCoreService.averageBuy(false, symbol, currentPrice, {
-      strategyName: context.strategyName,
-      exchangeName: context.exchangeName,
-      frameName: "",
-    }, cost);
+    await Broker.commitAverageBuy({
+      symbol,
+      currentPrice,
+      cost,
+      context: {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+      backtest: false,
+    });
+    return await backtest.strategyCoreService.averageBuy(
+      false,
+      symbol,
+      currentPrice,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+      cost,
+    );
   };
 
   /**
@@ -1751,23 +2993,52 @@ export class LiveUtils {
     context: {
       strategyName: StrategyName;
       exchangeName: ExchangeName;
-    }
+    },
   ) => {
     backtest.loggerService.info(LIVE_METHOD_NAME_GET_DATA, {
       symbol,
       context,
     });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_DATA);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_GET_DATA);
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_GET_DATA,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_GET_DATA,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_DATA);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_DATA));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_GET_DATA));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_GET_DATA,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_GET_DATA,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_GET_DATA,
+          ),
+        );
     }
 
-    return await backtest.liveMarkdownService.getData(symbol, context.strategyName, context.exchangeName, "", false);
+    return await backtest.liveMarkdownService.getData(
+      symbol,
+      context.strategyName,
+      context.exchangeName,
+      "",
+      false,
+    );
   };
 
   /**
@@ -1795,23 +3066,53 @@ export class LiveUtils {
       strategyName: StrategyName;
       exchangeName: ExchangeName;
     },
-    columns?: Columns[]
+    columns?: Columns[],
   ): Promise<string> => {
     backtest.loggerService.info(LIVE_METHOD_NAME_GET_REPORT, {
       symbol,
       context,
     });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_GET_REPORT);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_GET_REPORT);
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_GET_REPORT,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_GET_REPORT,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_REPORT);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_GET_REPORT));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_GET_REPORT));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_GET_REPORT,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_GET_REPORT,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_GET_REPORT,
+          ),
+        );
     }
 
-    return await backtest.liveMarkdownService.getReport(symbol, context.strategyName, context.exchangeName, "", false, columns);
+    return await backtest.liveMarkdownService.getReport(
+      symbol,
+      context.strategyName,
+      context.exchangeName,
+      "",
+      false,
+      columns,
+    );
   };
 
   /**
@@ -1847,24 +3148,55 @@ export class LiveUtils {
       exchangeName: ExchangeName;
     },
     path?: string,
-    columns?: Columns[]
+    columns?: Columns[],
   ): Promise<void> => {
     backtest.loggerService.info(LIVE_METHOD_NAME_DUMP, {
       symbol,
       context,
       path,
     });
-    backtest.strategyValidationService.validate(context.strategyName, LIVE_METHOD_NAME_DUMP);
-    backtest.exchangeValidationService.validate(context.exchangeName, LIVE_METHOD_NAME_DUMP);
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_DUMP,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_DUMP,
+    );
 
     {
-      const { riskName, riskList, actions } = backtest.strategySchemaService.get(context.strategyName);
-      riskName && backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_DUMP);
-      riskList && riskList.forEach((riskName) => backtest.riskValidationService.validate(riskName, LIVE_METHOD_NAME_DUMP));
-      actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_DUMP));
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_DUMP,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_DUMP,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_DUMP,
+          ),
+        );
     }
 
-    await backtest.liveMarkdownService.dump(symbol, context.strategyName, context.exchangeName, "", false, path, columns);
+    await backtest.liveMarkdownService.dump(
+      symbol,
+      context.strategyName,
+      context.exchangeName,
+      "",
+      false,
+      path,
+      columns,
+    );
   };
 
   /**
@@ -1882,8 +3214,10 @@ export class LiveUtils {
    */
   public list = async () => {
     const instanceList = this._getInstance.values();
-    return await Promise.all(instanceList.map((instance) => instance.getStatus()));
-  }
+    return await Promise.all(
+      instanceList.map((instance) => instance.getStatus()),
+    );
+  };
 }
 
 /**

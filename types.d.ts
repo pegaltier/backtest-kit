@@ -18221,6 +18221,7 @@ type BrokerPartialProfitPayload = {
         exchangeName: ExchangeName;
         frameName?: FrameName;
     };
+    backtest: boolean;
 };
 type BrokerPartialLossPayload = {
     symbol: string;
@@ -18232,6 +18233,7 @@ type BrokerPartialLossPayload = {
         exchangeName: ExchangeName;
         frameName?: FrameName;
     };
+    backtest: boolean;
 };
 type BrokerTrailingStopPayload = {
     symbol: string;
@@ -18243,6 +18245,7 @@ type BrokerTrailingStopPayload = {
         exchangeName: ExchangeName;
         frameName?: FrameName;
     };
+    backtest: boolean;
 };
 type BrokerTrailingTakePayload = {
     symbol: string;
@@ -18254,6 +18257,7 @@ type BrokerTrailingTakePayload = {
         exchangeName: ExchangeName;
         frameName?: FrameName;
     };
+    backtest: boolean;
 };
 type BrokerBreakevenPayload = {
     symbol: string;
@@ -18263,6 +18267,7 @@ type BrokerBreakevenPayload = {
         exchangeName: ExchangeName;
         frameName?: FrameName;
     };
+    backtest: boolean;
 };
 type BrokerAverageBuyPayload = {
     symbol: string;
@@ -18273,6 +18278,7 @@ type BrokerAverageBuyPayload = {
         exchangeName: ExchangeName;
         frameName?: FrameName;
     };
+    backtest: boolean;
 };
 declare class BrokerAdapter {
     commitPartialProfit: (payload: BrokerPartialProfitPayload) => Promise<void>;

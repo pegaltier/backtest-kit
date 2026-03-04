@@ -18,6 +18,7 @@ export type BrokerPartialProfitPayload = {
     exchangeName: ExchangeName;
     frameName?: FrameName;
   };
+  backtest: boolean;
 };
 
 export type BrokerPartialLossPayload = {
@@ -30,6 +31,7 @@ export type BrokerPartialLossPayload = {
     exchangeName: ExchangeName;
     frameName?: FrameName;
   };
+  backtest: boolean;
 };
 
 export type BrokerTrailingStopPayload = {
@@ -42,6 +44,7 @@ export type BrokerTrailingStopPayload = {
     exchangeName: ExchangeName;
     frameName?: FrameName;
   };
+  backtest: boolean;
 };
 
 export type BrokerTrailingTakePayload = {
@@ -54,6 +57,7 @@ export type BrokerTrailingTakePayload = {
     exchangeName: ExchangeName;
     frameName?: FrameName;
   };
+  backtest: boolean;
 };
 
 export type BrokerBreakevenPayload = {
@@ -64,6 +68,7 @@ export type BrokerBreakevenPayload = {
     exchangeName: ExchangeName;
     frameName?: FrameName;
   };
+  backtest: boolean;
 };
 
 export type BrokerAverageBuyPayload = {
@@ -75,20 +80,45 @@ export type BrokerAverageBuyPayload = {
     exchangeName: ExchangeName;
     frameName?: FrameName;
   };
+  backtest: boolean;
 };
 
 export class BrokerAdapter {
-  public commitPartialProfit = async (payload: BrokerPartialProfitPayload) => {};
+  public commitPartialProfit = async (payload: BrokerPartialProfitPayload) => {
+    if (payload.backtest) {
+      return;
+    }
+  };
 
-  public commitPartialLoss = async (payload: BrokerPartialLossPayload) => {};
+  public commitPartialLoss = async (payload: BrokerPartialLossPayload) => {
+    if (payload.backtest) {
+      return;
+    }
+  };
 
-  public commitTrailingStop = async (payload: BrokerTrailingStopPayload) => {};
+  public commitTrailingStop = async (payload: BrokerTrailingStopPayload) => {
+    if (payload.backtest) {
+      return;
+    }
+  };
 
-  public commitTrailingTake = async (payload: BrokerTrailingTakePayload) => {};
+  public commitTrailingTake = async (payload: BrokerTrailingTakePayload) => {
+    if (payload.backtest) {
+      return;
+    }
+  };
 
-  public commitBreakeven = async (_payload: BrokerBreakevenPayload) => {};
+  public commitBreakeven = async (payload: BrokerBreakevenPayload) => {
+    if (payload.backtest) {
+      return;
+    }
+  };
 
-  public commitAverageBuy = async (_payload: BrokerAverageBuyPayload) => {};
+  public commitAverageBuy = async (payload: BrokerAverageBuyPayload) => {
+    if (payload.backtest) {
+      return;
+    }
+  };
 }
 
 export const Broker = new BrokerAdapter();
