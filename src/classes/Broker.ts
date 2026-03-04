@@ -149,6 +149,8 @@ export type BrokerPartialProfitPayload = {
   cost: number;
   /** Current market price at which the partial close executes */
   currentPrice: number;
+  /** Position direction */
+  position: "long" | "short";
   /** Strategy/exchange/frame routing context */
   context: {
     strategyName: StrategyName;
@@ -186,6 +188,8 @@ export type BrokerPartialLossPayload = {
   cost: number;
   /** Current market price at which the partial close executes */
   currentPrice: number;
+  /** Position direction */
+  position: "long" | "short";
   /** Strategy/exchange/frame routing context */
   context: {
     strategyName: StrategyName;
@@ -225,6 +229,8 @@ export type BrokerTrailingStopPayload = {
   currentPrice: number;
   /** Absolute stop-loss price after applying percentShift */
   newStopLossPrice: number;
+  /** Position direction */
+  position: "long" | "short";
   /** Strategy/exchange/frame routing context */
   context: {
     strategyName: StrategyName;
@@ -264,6 +270,8 @@ export type BrokerTrailingTakePayload = {
   currentPrice: number;
   /** Absolute take-profit price after applying percentShift */
   newTakeProfitPrice: number;
+  /** Position direction */
+  position: "long" | "short";
   /** Strategy/exchange/frame routing context */
   context: {
     strategyName: StrategyName;
@@ -304,6 +312,8 @@ export type BrokerBreakevenPayload = {
   newStopLossPrice: number;
   /** Effective take-profit price = _trailingPriceTakeProfit ?? priceTakeProfit (unchanged by breakeven) */
   newTakeProfitPrice: number;
+  /** Position direction */
+  position: "long" | "short";
   /** Strategy/exchange/frame routing context */
   context: {
     strategyName: StrategyName;
@@ -339,6 +349,8 @@ export type BrokerAverageBuyPayload = {
   currentPrice: number;
   /** Dollar amount of the new DCA entry (default: CC_POSITION_ENTRY_COST) */
   cost: number;
+  /** Position direction */
+  position: "long" | "short";
   /** Strategy/exchange/frame routing context */
   context: {
     strategyName: StrategyName;

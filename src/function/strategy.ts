@@ -192,6 +192,15 @@ export async function commitPartialProfit(
   if (investedCostForProfit === null) {
     return false;
   }
+  const signalForProfit = await backtest.strategyCoreService.getPendingSignal(
+    isBacktest,
+    symbol,
+    currentPrice,
+    { exchangeName, frameName, strategyName },
+  );
+  if (!signalForProfit) {
+    return false;
+  }
   if (
     await not(
       backtest.strategyCoreService.validatePartialProfit(
@@ -210,6 +219,7 @@ export async function commitPartialProfit(
     percentToClose,
     cost: percentToCloseCost(percentToClose, investedCostForProfit),
     currentPrice,
+    position: signalForProfit.position,
     context: { exchangeName, frameName, strategyName },
     backtest: isBacktest,
   });
@@ -276,6 +286,15 @@ export async function commitPartialLoss(
   if (investedCostForLoss === null) {
     return false;
   }
+  const signalForLoss = await backtest.strategyCoreService.getPendingSignal(
+    isBacktest,
+    symbol,
+    currentPrice,
+    { exchangeName, frameName, strategyName },
+  );
+  if (!signalForLoss) {
+    return false;
+  }
   if (
     await not(
       backtest.strategyCoreService.validatePartialLoss(
@@ -294,6 +313,7 @@ export async function commitPartialLoss(
     percentToClose,
     cost: percentToCloseCost(percentToClose, investedCostForLoss),
     currentPrice,
+    position: signalForLoss.position,
     context: { exchangeName, frameName, strategyName },
     backtest: isBacktest,
   });
@@ -409,6 +429,7 @@ export async function commitTrailingStop(
       effectivePriceOpen,
       signal.position,
     ),
+    position: signal.position,
     context: { exchangeName, frameName, strategyName },
     backtest: isBacktest,
   });
@@ -524,6 +545,7 @@ export async function commitTrailingTake(
       effectivePriceOpen,
       signal.position,
     ),
+    position: signal.position,
     context: { exchangeName, frameName, strategyName },
     backtest: isBacktest,
   });
@@ -608,6 +630,7 @@ export async function commitTrailingStopCost(
     percentShift,
     currentPrice,
     newStopLossPrice,
+    position: signal.position,
     context: { exchangeName, frameName, strategyName },
     backtest: isBacktest,
   });
@@ -692,6 +715,7 @@ export async function commitTrailingTakeCost(
     percentShift,
     currentPrice,
     newTakeProfitPrice,
+    position: signal.position,
     context: { exchangeName, frameName, strategyName },
     backtest: isBacktest,
   });
@@ -777,6 +801,7 @@ export async function commitBreakeven(symbol: string): Promise<boolean> {
     currentPrice,
     newStopLossPrice: breakevenNewStopLossPrice(effectivePriceOpen),
     newTakeProfitPrice: breakevenNewTakeProfitPrice(signal.priceTakeProfit, signal._trailingPriceTakeProfit),
+    position: signal.position,
     context: { exchangeName, frameName, strategyName },
     backtest: isBacktest,
   });
@@ -886,10 +911,20 @@ export async function commitAverageBuy(
   ) {
     return false;
   }
+  const signalForAvgBuy = await backtest.strategyCoreService.getPendingSignal(
+    isBacktest,
+    symbol,
+    currentPrice,
+    { exchangeName, frameName, strategyName },
+  );
+  if (!signalForAvgBuy) {
+    return false;
+  }
   await Broker.commitAverageBuy({
     symbol,
     currentPrice,
     cost,
+    position: signalForAvgBuy.position,
     context: { exchangeName, frameName, strategyName },
     backtest: isBacktest,
   });
@@ -1253,6 +1288,15 @@ export async function commitPartialProfitCost(
   if (investedCost === null) {
     return false;
   }
+  const signalForProfitCost = await backtest.strategyCoreService.getPendingSignal(
+    isBacktest,
+    symbol,
+    currentPrice,
+    { exchangeName, frameName, strategyName },
+  );
+  if (!signalForProfitCost) {
+    return false;
+  }
   const percentToClose = investedCostToPercent(dollarAmount, investedCost);
   if (
     await not(
@@ -1272,6 +1316,7 @@ export async function commitPartialProfitCost(
     percentToClose,
     cost: dollarAmount,
     currentPrice,
+    position: signalForProfitCost.position,
     context: { exchangeName, frameName, strategyName },
     backtest: isBacktest,
   });
@@ -1340,6 +1385,15 @@ export async function commitPartialLossCost(
   if (investedCost === null) {
     return false;
   }
+  const signalForLossCost = await backtest.strategyCoreService.getPendingSignal(
+    isBacktest,
+    symbol,
+    currentPrice,
+    { exchangeName, frameName, strategyName },
+  );
+  if (!signalForLossCost) {
+    return false;
+  }
   const percentToClose = investedCostToPercent(dollarAmount, investedCost);
   if (
     await not(
@@ -1359,6 +1413,7 @@ export async function commitPartialLossCost(
     percentToClose,
     cost: dollarAmount,
     currentPrice,
+    position: signalForLossCost.position,
     context: { exchangeName, frameName, strategyName },
     backtest: isBacktest,
   });

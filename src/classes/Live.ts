@@ -1668,6 +1668,19 @@ export class LiveUtils {
     if (investedCost === null) {
       return false;
     }
+    const signalForProfit = await backtest.strategyCoreService.getPendingSignal(
+      false,
+      symbol,
+      currentPrice,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
+    if (!signalForProfit) {
+      return false;
+    }
     if (
       await not(
         backtest.strategyCoreService.validatePartialProfit(
@@ -1690,6 +1703,7 @@ export class LiveUtils {
       percentToClose,
       cost: percentToCloseCost(percentToClose, investedCost),
       currentPrice,
+      position: signalForProfit.position,
       context: {
         strategyName: context.strategyName,
         exchangeName: context.exchangeName,
@@ -1799,6 +1813,19 @@ export class LiveUtils {
     if (investedCost === null) {
       return false;
     }
+    const signalForLoss = await backtest.strategyCoreService.getPendingSignal(
+      false,
+      symbol,
+      currentPrice,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
+    if (!signalForLoss) {
+      return false;
+    }
     if (
       await not(
         backtest.strategyCoreService.validatePartialLoss(
@@ -1821,6 +1848,7 @@ export class LiveUtils {
       percentToClose,
       cost: percentToCloseCost(percentToClose, investedCost),
       currentPrice,
+      position: signalForLoss.position,
       context: {
         strategyName: context.strategyName,
         exchangeName: context.exchangeName,
@@ -1928,6 +1956,19 @@ export class LiveUtils {
     if (investedCost === null) {
       return false;
     }
+    const signalForProfitCost = await backtest.strategyCoreService.getPendingSignal(
+      false,
+      symbol,
+      currentPrice,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
+    if (!signalForProfitCost) {
+      return false;
+    }
     const percentToClose = (dollarAmount / investedCost) * 100;
     if (
       await not(
@@ -1951,6 +1992,7 @@ export class LiveUtils {
       percentToClose,
       cost: dollarAmount,
       currentPrice,
+      position: signalForProfitCost.position,
       context: {
         strategyName: context.strategyName,
         exchangeName: context.exchangeName,
@@ -2058,6 +2100,19 @@ export class LiveUtils {
     if (investedCost === null) {
       return false;
     }
+    const signalForLossCost = await backtest.strategyCoreService.getPendingSignal(
+      false,
+      symbol,
+      currentPrice,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
+    if (!signalForLossCost) {
+      return false;
+    }
     const percentToClose = (dollarAmount / investedCost) * 100;
     if (
       await not(
@@ -2081,6 +2136,7 @@ export class LiveUtils {
       percentToClose,
       cost: dollarAmount,
       currentPrice,
+      position: signalForLossCost.position,
       context: {
         strategyName: context.strategyName,
         exchangeName: context.exchangeName,
@@ -2245,6 +2301,7 @@ export class LiveUtils {
         effectivePriceOpen,
         signal.position,
       ),
+      position: signal.position,
       context,
       backtest: false,
     });
@@ -2405,6 +2462,7 @@ export class LiveUtils {
         effectivePriceOpen,
         signal.position,
       ),
+      position: signal.position,
       context,
       backtest: false,
     });
@@ -2534,6 +2592,7 @@ export class LiveUtils {
       percentShift,
       currentPrice,
       newStopLossPrice,
+      position: signal.position,
       context,
       backtest: false,
     });
@@ -2663,6 +2722,7 @@ export class LiveUtils {
       percentShift,
       currentPrice,
       newTakeProfitPrice,
+      position: signal.position,
       context,
       backtest: false,
     });
@@ -2793,6 +2853,7 @@ export class LiveUtils {
       currentPrice,
       newStopLossPrice: breakevenNewStopLossPrice(effectivePriceOpen),
       newTakeProfitPrice: breakevenNewTakeProfitPrice(signal.priceTakeProfit, signal._trailingPriceTakeProfit),
+      position: signal.position,
       context: {
         strategyName: context.strategyName,
         exchangeName: context.exchangeName,
@@ -2976,10 +3037,24 @@ export class LiveUtils {
     ) {
       return false;
     }
+    const signalForAvgBuy = await backtest.strategyCoreService.getPendingSignal(
+      false,
+      symbol,
+      currentPrice,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
+    if (!signalForAvgBuy) {
+      return false;
+    }
     await Broker.commitAverageBuy({
       symbol,
       currentPrice,
       cost,
+      position: signalForAvgBuy.position,
       context: {
         strategyName: context.strategyName,
         exchangeName: context.exchangeName,

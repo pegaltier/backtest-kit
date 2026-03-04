@@ -1691,6 +1691,15 @@ export class BacktestUtils {
     if (investedCostForProfit === null) {
       return false;
     }
+    const signalForProfit = await backtest.strategyCoreService.getPendingSignal(
+      true,
+      symbol,
+      currentPrice,
+      context,
+    );
+    if (!signalForProfit) {
+      return false;
+    }
     if (
       await not(
         backtest.strategyCoreService.validatePartialProfit(
@@ -1709,6 +1718,7 @@ export class BacktestUtils {
       percentToClose,
       cost: percentToCloseCost(percentToClose, investedCostForProfit),
       currentPrice,
+      position: signalForProfit.position,
       context,
       backtest: true,
     });
@@ -1808,6 +1818,15 @@ export class BacktestUtils {
     if (investedCostForLoss === null) {
       return false;
     }
+    const signalForLoss = await backtest.strategyCoreService.getPendingSignal(
+      true,
+      symbol,
+      currentPrice,
+      context,
+    );
+    if (!signalForLoss) {
+      return false;
+    }
     if (
       await not(
         backtest.strategyCoreService.validatePartialLoss(
@@ -1826,6 +1845,7 @@ export class BacktestUtils {
       percentToClose,
       cost: percentToCloseCost(percentToClose, investedCostForLoss),
       currentPrice,
+      position: signalForLoss.position,
       context,
       backtest: true,
     });
@@ -1926,6 +1946,15 @@ export class BacktestUtils {
     if (investedCost === null) {
       return false;
     }
+    const signalForProfitCost = await backtest.strategyCoreService.getPendingSignal(
+      true,
+      symbol,
+      currentPrice,
+      context,
+    );
+    if (!signalForProfitCost) {
+      return false;
+    }
     const percentToClose = (dollarAmount / investedCost) * 100;
     if (
       await not(
@@ -1945,6 +1974,7 @@ export class BacktestUtils {
       percentToClose,
       cost: dollarAmount,
       currentPrice,
+      position: signalForProfitCost.position,
       context,
       backtest: true,
     });
@@ -2045,6 +2075,15 @@ export class BacktestUtils {
     if (investedCost === null) {
       return false;
     }
+    const signalForLossCost = await backtest.strategyCoreService.getPendingSignal(
+      true,
+      symbol,
+      currentPrice,
+      context,
+    );
+    if (!signalForLossCost) {
+      return false;
+    }
     const percentToClose = (dollarAmount / investedCost) * 100;
     if (
       await not(
@@ -2064,6 +2103,7 @@ export class BacktestUtils {
       percentToClose,
       cost: dollarAmount,
       currentPrice,
+      position: signalForLossCost.position,
       context,
       backtest: true,
     });
@@ -2210,6 +2250,7 @@ export class BacktestUtils {
         effectivePriceOpen,
         signal.position,
       ),
+      position: signal.position,
       context,
       backtest: true,
     });
@@ -2356,6 +2397,7 @@ export class BacktestUtils {
         effectivePriceOpen,
         signal.position,
       ),
+      position: signal.position,
       context,
       backtest: true,
     });
@@ -2470,6 +2512,7 @@ export class BacktestUtils {
       percentShift,
       currentPrice,
       newStopLossPrice,
+      position: signal.position,
       context,
       backtest: true,
     });
@@ -2584,6 +2627,7 @@ export class BacktestUtils {
       percentShift,
       currentPrice,
       newTakeProfitPrice,
+      position: signal.position,
       context,
       backtest: true,
     });
@@ -2699,6 +2743,7 @@ export class BacktestUtils {
       currentPrice,
       newStopLossPrice: breakevenNewStopLossPrice(effectivePriceOpen),
       newTakeProfitPrice: breakevenNewTakeProfitPrice(signal.priceTakeProfit, signal._trailingPriceTakeProfit),
+      position: signal.position,
       context,
       backtest: true,
     });
@@ -2870,10 +2915,20 @@ export class BacktestUtils {
     ) {
       return false;
     }
+    const signalForAvgBuy = await backtest.strategyCoreService.getPendingSignal(
+      true,
+      symbol,
+      currentPrice,
+      context,
+    );
+    if (!signalForAvgBuy) {
+      return false;
+    }
     await Broker.commitAverageBuy({
       symbol,
       currentPrice,
       cost,
+      position: signalForAvgBuy.position,
       context,
       backtest: true,
     });
