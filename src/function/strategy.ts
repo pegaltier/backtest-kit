@@ -6,6 +6,7 @@ import { getAveragePrice } from "./exchange";
 import { investedCostToPercent } from "../utils/investedCostToPercent";
 import { slPriceToPercentShift } from "../utils/slPriceToPercentShift";
 import { tpPriceToPercentShift } from "../utils/tpPriceToPercentShift";
+import { Broker } from "../classes/Broker";
 import { GLOBAL_CONFIG } from "../config/params";
 
 const CANCEL_SCHEDULED_METHOD_NAME = "strategy.commitCancelScheduled";
@@ -70,6 +71,7 @@ export async function commitCancelScheduled(symbol: string, cancelId?: string): 
   const { backtest: isBacktest } = backtest.executionContextService.context;
   const { exchangeName, frameName, strategyName } =
     backtest.methodContextService.context;
+  await Broker.commitCancelScheduled({ symbol, cancelId, context: { exchangeName, frameName, strategyName } });
   await backtest.strategyCoreService.cancelScheduled(
     isBacktest,
     symbol,
@@ -113,6 +115,7 @@ export async function commitClosePending(symbol: string, closeId?: string): Prom
   const { backtest: isBacktest } = backtest.executionContextService.context;
   const { exchangeName, frameName, strategyName } =
     backtest.methodContextService.context;
+  await Broker.commitClosePending({ symbol, closeId, context: { exchangeName, frameName, strategyName } });
   await backtest.strategyCoreService.closePending(
     isBacktest,
     symbol,
@@ -166,6 +169,7 @@ export async function commitPartialProfit(
   const { backtest: isBacktest } = backtest.executionContextService.context;
   const { exchangeName, frameName, strategyName } =
     backtest.methodContextService.context;
+  await Broker.commitPartialProfit({ symbol, percentToClose, currentPrice, context: { exchangeName, frameName, strategyName } });
   return await backtest.strategyCoreService.partialProfit(
     isBacktest,
     symbol,
@@ -220,6 +224,7 @@ export async function commitPartialLoss(
   const { backtest: isBacktest } = backtest.executionContextService.context;
   const { exchangeName, frameName, strategyName } =
     backtest.methodContextService.context;
+  await Broker.commitPartialLoss({ symbol, percentToClose, currentPrice, context: { exchangeName, frameName, strategyName } });
   return await backtest.strategyCoreService.partialLoss(
     isBacktest,
     symbol,
@@ -291,6 +296,7 @@ export async function commitTrailingStop(
   const { backtest: isBacktest } = backtest.executionContextService.context;
   const { exchangeName, frameName, strategyName } =
     backtest.methodContextService.context;
+  await Broker.commitTrailingStop({ symbol, percentShift, currentPrice, context: { exchangeName, frameName, strategyName } });
   return await backtest.strategyCoreService.trailingStop(
     isBacktest,
     symbol,
@@ -362,6 +368,7 @@ export async function commitTrailingTake(
   const { backtest: isBacktest } = backtest.executionContextService.context;
   const { exchangeName, frameName, strategyName } =
     backtest.methodContextService.context;
+  await Broker.commitTrailingTake({ symbol, percentShift, currentPrice, context: { exchangeName, frameName, strategyName } });
   return await backtest.strategyCoreService.trailingTake(
     isBacktest,
     symbol,
@@ -406,6 +413,7 @@ export async function commitTrailingStopCost(
   const effectivePriceOpen = await backtest.strategyCoreService.getPositionAveragePrice(isBacktest, symbol, { exchangeName, frameName, strategyName });
   if (effectivePriceOpen === null) return false;
   const percentShift = slPriceToPercentShift(newStopLossPrice, signal.priceStopLoss, effectivePriceOpen);
+  await Broker.commitTrailingStopCost({ symbol, newStopLossPrice, currentPrice, context: { exchangeName, frameName, strategyName } });
   return await backtest.strategyCoreService.trailingStop(isBacktest, symbol, percentShift, currentPrice, { exchangeName, frameName, strategyName });
 }
 
@@ -444,6 +452,7 @@ export async function commitTrailingTakeCost(
   const effectivePriceOpen = await backtest.strategyCoreService.getPositionAveragePrice(isBacktest, symbol, { exchangeName, frameName, strategyName });
   if (effectivePriceOpen === null) return false;
   const percentShift = tpPriceToPercentShift(newTakeProfitPrice, signal.priceTakeProfit, effectivePriceOpen);
+  await Broker.commitTrailingTakeCost({ symbol, newTakeProfitPrice, currentPrice, context: { exchangeName, frameName, strategyName } });
   return await backtest.strategyCoreService.trailingTake(isBacktest, symbol, percentShift, currentPrice, { exchangeName, frameName, strategyName });
 }
 
@@ -486,6 +495,7 @@ export async function commitBreakeven(symbol: string): Promise<boolean> {
   const { backtest: isBacktest } = backtest.executionContextService.context;
   const { exchangeName, frameName, strategyName } =
     backtest.methodContextService.context;
+  await Broker.commitBreakeven({ symbol, currentPrice, context: { exchangeName, frameName, strategyName } });
   return await backtest.strategyCoreService.breakeven(
     isBacktest,
     symbol,
@@ -528,6 +538,7 @@ export async function commitActivateScheduled(symbol: string, activateId?: strin
   const { backtest: isBacktest } = backtest.executionContextService.context;
   const { exchangeName, frameName, strategyName } =
     backtest.methodContextService.context;
+  await Broker.commitActivateScheduled({ symbol, activateId, context: { exchangeName, frameName, strategyName } });
   await backtest.strategyCoreService.activateScheduled(
     isBacktest,
     symbol,
@@ -574,6 +585,7 @@ export async function commitAverageBuy(symbol: string, cost: number = GLOBAL_CON
   const { backtest: isBacktest } = backtest.executionContextService.context;
   const { exchangeName, frameName, strategyName } =
     backtest.methodContextService.context;
+  await Broker.commitAverageBuy({ symbol, currentPrice, cost, context: { exchangeName, frameName, strategyName } });
   return await backtest.strategyCoreService.averageBuy(
     isBacktest,
     symbol,
@@ -902,6 +914,7 @@ export async function commitPartialProfitCost(symbol: string, dollarAmount: numb
   );
   if (investedCost === null) return false;
   const percentToClose = investedCostToPercent(dollarAmount, investedCost);
+  await Broker.commitPartialProfitCost({ symbol, dollarAmount, currentPrice, context: { exchangeName, frameName, strategyName } });
   return await backtest.strategyCoreService.partialProfit(
     isBacktest,
     symbol,
@@ -958,6 +971,7 @@ export async function commitPartialLossCost(symbol: string, dollarAmount: number
   );
   if (investedCost === null) return false;
   const percentToClose = investedCostToPercent(dollarAmount, investedCost);
+  await Broker.commitPartialLossCost({ symbol, dollarAmount, currentPrice, context: { exchangeName, frameName, strategyName } });
   return await backtest.strategyCoreService.partialLoss(
     isBacktest,
     symbol,

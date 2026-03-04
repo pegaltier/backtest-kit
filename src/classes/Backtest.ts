@@ -13,6 +13,7 @@ import { ExchangeName } from "../interfaces/Exchange.interface";
 import { FrameName } from "../interfaces/Frame.interface";
 import { slPriceToPercentShift } from "../utils/slPriceToPercentShift";
 import { tpPriceToPercentShift } from "../utils/tpPriceToPercentShift";
+import { Broker } from "./Broker";
 
 const BACKTEST_METHOD_NAME_RUN = "BacktestUtils.run";
 const BACKTEST_METHOD_NAME_BACKGROUND = "BacktestUtils.background";
@@ -1501,6 +1502,7 @@ export class BacktestUtils {
         );
     }
 
+    await Broker.commitCancelScheduled({ symbol, cancelId, context });
     await backtest.strategyCoreService.cancelScheduled(
       true,
       symbol,
@@ -1578,6 +1580,7 @@ export class BacktestUtils {
         );
     }
 
+    await Broker.commitClosePending({ symbol, closeId, context });
     await backtest.strategyCoreService.closePending(
       true,
       symbol,
@@ -1664,6 +1667,7 @@ export class BacktestUtils {
         );
     }
 
+    await Broker.commitPartialProfit({ symbol, percentToClose, currentPrice, context });
     return await backtest.strategyCoreService.partialProfit(
       true,
       symbol,
@@ -1751,6 +1755,7 @@ export class BacktestUtils {
         );
     }
 
+    await Broker.commitPartialLoss({ symbol, percentToClose, currentPrice, context });
     return await backtest.strategyCoreService.partialLoss(
       true,
       symbol,
@@ -1837,6 +1842,7 @@ export class BacktestUtils {
     );
     if (investedCost === null) return false;
     const percentToClose = (dollarAmount / investedCost) * 100;
+    await Broker.commitPartialProfitCost({ symbol, dollarAmount, currentPrice, context });
     return await backtest.strategyCoreService.partialProfit(
       true,
       symbol,
@@ -1923,6 +1929,7 @@ export class BacktestUtils {
     );
     if (investedCost === null) return false;
     const percentToClose = (dollarAmount / investedCost) * 100;
+    await Broker.commitPartialLossCost({ symbol, dollarAmount, currentPrice, context });
     return await backtest.strategyCoreService.partialLoss(
       true,
       symbol,
@@ -2025,6 +2032,7 @@ export class BacktestUtils {
         );
     }
 
+    await Broker.commitTrailingStop({ symbol, percentShift, currentPrice, context });
     return await backtest.strategyCoreService.trailingStop(
       true,
       symbol,
@@ -2127,6 +2135,7 @@ export class BacktestUtils {
         );
     }
 
+    await Broker.commitTrailingTake({ symbol, percentShift, currentPrice, context });
     return await backtest.strategyCoreService.trailingTake(
       true,
       symbol,
@@ -2193,6 +2202,7 @@ export class BacktestUtils {
     const effectivePriceOpen = await backtest.strategyCoreService.getPositionAveragePrice(true, symbol, context);
     if (effectivePriceOpen === null) return false;
     const percentShift = slPriceToPercentShift(newStopLossPrice, signal.priceStopLoss, effectivePriceOpen);
+    await Broker.commitTrailingStopCost({ symbol, newStopLossPrice, currentPrice, context });
     return await backtest.strategyCoreService.trailingStop(true, symbol, percentShift, currentPrice, context);
   };
 
@@ -2253,6 +2263,7 @@ export class BacktestUtils {
     const effectivePriceOpen = await backtest.strategyCoreService.getPositionAveragePrice(true, symbol, context);
     if (effectivePriceOpen === null) return false;
     const percentShift = tpPriceToPercentShift(newTakeProfitPrice, signal.priceTakeProfit, effectivePriceOpen);
+    await Broker.commitTrailingTakeCost({ symbol, newTakeProfitPrice, currentPrice, context });
     return await backtest.strategyCoreService.trailingTake(true, symbol, percentShift, currentPrice, context);
   };
 
@@ -2324,6 +2335,7 @@ export class BacktestUtils {
         );
     }
 
+    await Broker.commitBreakeven({ symbol, currentPrice, context });
     return await backtest.strategyCoreService.breakeven(
       true,
       symbol,
@@ -2400,6 +2412,7 @@ export class BacktestUtils {
         );
     }
 
+    await Broker.commitActivateScheduled({ symbol, activateId, context });
     await backtest.strategyCoreService.activateScheduled(
       true,
       symbol,
@@ -2480,6 +2493,7 @@ export class BacktestUtils {
         );
     }
 
+    await Broker.commitAverageBuy({ symbol, currentPrice, cost, context });
     return await backtest.strategyCoreService.averageBuy(
       true,
       symbol,

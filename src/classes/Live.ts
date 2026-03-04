@@ -11,6 +11,7 @@ import { Columns } from "../lib/services/markdown/LiveMarkdownService";
 import { ExchangeName } from "../interfaces/Exchange.interface";
 import { slPriceToPercentShift } from "../utils/slPriceToPercentShift";
 import { tpPriceToPercentShift } from "../utils/tpPriceToPercentShift";
+import { Broker } from "./Broker";
 
 const LIVE_METHOD_NAME_RUN = "LiveUtils.run";
 const LIVE_METHOD_NAME_BACKGROUND = "LiveUtils.background";
@@ -963,6 +964,7 @@ export class LiveUtils {
       actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_CANCEL_SCHEDULED));
     }
 
+    await Broker.commitCancelScheduled({ symbol, cancelId, context: { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" } });
     await backtest.strategyCoreService.cancelScheduled(false, symbol, {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
@@ -1014,6 +1016,7 @@ export class LiveUtils {
       actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_CLOSE_PENDING));
     }
 
+    await Broker.commitClosePending({ symbol, closeId, context: { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" } });
     await backtest.strategyCoreService.closePending(false, symbol, {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
@@ -1074,6 +1077,7 @@ export class LiveUtils {
       actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_PARTIAL_PROFIT));
     }
 
+    await Broker.commitPartialProfit({ symbol, percentToClose, currentPrice, context: { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" } });
     return await backtest.strategyCoreService.partialProfit(false, symbol, percentToClose, currentPrice, {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
@@ -1134,6 +1138,7 @@ export class LiveUtils {
       actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_PARTIAL_LOSS));
     }
 
+    await Broker.commitPartialLoss({ symbol, percentToClose, currentPrice, context: { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" } });
     return await backtest.strategyCoreService.partialLoss(false, symbol, percentToClose, currentPrice, {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
@@ -1194,6 +1199,7 @@ export class LiveUtils {
     });
     if (investedCost === null) return false;
     const percentToClose = (dollarAmount / investedCost) * 100;
+    await Broker.commitPartialProfitCost({ symbol, dollarAmount, currentPrice, context: { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" } });
     return await backtest.strategyCoreService.partialProfit(false, symbol, percentToClose, currentPrice, {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
@@ -1254,6 +1260,7 @@ export class LiveUtils {
     });
     if (investedCost === null) return false;
     const percentToClose = (dollarAmount / investedCost) * 100;
+    await Broker.commitPartialLossCost({ symbol, dollarAmount, currentPrice, context: { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" } });
     return await backtest.strategyCoreService.partialLoss(false, symbol, percentToClose, currentPrice, {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
@@ -1329,6 +1336,7 @@ export class LiveUtils {
       actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_TRAILING_STOP));
     }
 
+    await Broker.commitTrailingStop({ symbol, percentShift, currentPrice, context: { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" } });
     return await backtest.strategyCoreService.trailingStop(false, symbol, percentShift, currentPrice, {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
@@ -1404,6 +1412,7 @@ export class LiveUtils {
       actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_TRAILING_PROFIT));
     }
 
+    await Broker.commitTrailingTake({ symbol, percentShift, currentPrice, context: { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" } });
     return await backtest.strategyCoreService.trailingTake(false, symbol, percentShift, currentPrice, {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
@@ -1461,6 +1470,7 @@ export class LiveUtils {
     });
     if (effectivePriceOpen === null) return false;
     const percentShift = slPriceToPercentShift(newStopLossPrice, signal.priceStopLoss, effectivePriceOpen);
+    await Broker.commitTrailingStopCost({ symbol, newStopLossPrice, currentPrice, context: { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" } });
     return await backtest.strategyCoreService.trailingStop(false, symbol, percentShift, currentPrice, {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
@@ -1518,6 +1528,7 @@ export class LiveUtils {
     });
     if (effectivePriceOpen === null) return false;
     const percentShift = tpPriceToPercentShift(newTakeProfitPrice, signal.priceTakeProfit, effectivePriceOpen);
+    await Broker.commitTrailingTakeCost({ symbol, newTakeProfitPrice, currentPrice, context: { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" } });
     return await backtest.strategyCoreService.trailingTake(false, symbol, percentShift, currentPrice, {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
@@ -1569,6 +1580,7 @@ export class LiveUtils {
       actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_BREAKEVEN));
     }
 
+    await Broker.commitBreakeven({ symbol, currentPrice, context: { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" } });
     return await backtest.strategyCoreService.breakeven(false, symbol, currentPrice, {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
@@ -1619,6 +1631,7 @@ export class LiveUtils {
       actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_ACTIVATE_SCHEDULED));
     }
 
+    await Broker.commitActivateScheduled({ symbol, activateId, context: { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" } });
     await backtest.strategyCoreService.activateScheduled(false, symbol, {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
@@ -1673,6 +1686,7 @@ export class LiveUtils {
       actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_AVERAGE_BUY));
     }
 
+    await Broker.commitAverageBuy({ symbol, currentPrice, cost, context: { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" } });
     return await backtest.strategyCoreService.averageBuy(false, symbol, currentPrice, {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
