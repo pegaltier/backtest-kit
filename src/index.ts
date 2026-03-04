@@ -416,14 +416,14 @@ export { parseArgs } from "./utils/parseArgs";
 export { get } from "./utils/get";
 export { set } from "./utils/set";
 
-export { percentDiff } from "./utils/percentDiff";
-export { percentValue } from "./utils/percentValue";
-export { investedCostToPercent } from "./utils/investedCostToPercent";
-export { slPriceToPercentShift } from "./utils/slPriceToPercentShift";
-export { tpPriceToPercentShift } from "./utils/tpPriceToPercentShift";
-export { slPercentShiftToPrice } from "./utils/slPercentShiftToPrice";
-export { tpPercentShiftToPrice } from "./utils/tpPercentShiftToPrice"
-export { percentToCloseCost } from "./utils/percentToCloseCost";
+export { percentDiff } from "./math/percentDiff";
+export { percentValue } from "./math/percentValue";
+export { investedCostToPercent } from "./math/investedCostToPercent";
+export { slPriceToPercentShift } from "./math/slPriceToPercentShift";
+export { tpPriceToPercentShift } from "./math/tpPriceToPercentShift";
+export { slPercentShiftToPrice } from "./math/slPercentShiftToPrice";
+export { tpPercentShiftToPrice } from "./math/tpPercentShiftToPrice"
+export { percentToCloseCost } from "./math/percentToCloseCost";
 
 export { type GlobalConfig } from "./config/params";
 export { type ColumnConfig } from "./config/columns";

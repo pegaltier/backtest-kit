@@ -3,12 +3,12 @@ import backtest, {
   MethodContextService,
 } from "../lib";
 import { getAveragePrice } from "./exchange";
-import { investedCostToPercent } from "../utils/investedCostToPercent";
-import { slPriceToPercentShift } from "../utils/slPriceToPercentShift";
-import { tpPriceToPercentShift } from "../utils/tpPriceToPercentShift";
-import { slPercentShiftToPrice } from "../utils/slPercentShiftToPrice";
-import { tpPercentShiftToPrice } from "../utils/tpPercentShiftToPrice";
-import { percentToCloseCost } from "../utils/percentToCloseCost";
+import { investedCostToPercent } from "../math/investedCostToPercent";
+import { slPriceToPercentShift } from "../math/slPriceToPercentShift";
+import { tpPriceToPercentShift } from "../math/tpPriceToPercentShift";
+import { slPercentShiftToPrice } from "../math/slPercentShiftToPrice";
+import { tpPercentShiftToPrice } from "../math/tpPercentShiftToPrice";
+import { percentToCloseCost } from "../math/percentToCloseCost";
 import { Broker } from "../classes/Broker";
 import { GLOBAL_CONFIG } from "../config/params";
 

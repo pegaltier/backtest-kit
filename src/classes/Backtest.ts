@@ -11,11 +11,11 @@ import {
 import { Columns } from "../lib/services/markdown/BacktestMarkdownService";
 import { ExchangeName } from "../interfaces/Exchange.interface";
 import { FrameName } from "../interfaces/Frame.interface";
-import { slPriceToPercentShift } from "../utils/slPriceToPercentShift";
-import { tpPriceToPercentShift } from "../utils/tpPriceToPercentShift";
-import { slPercentShiftToPrice } from "../utils/slPercentShiftToPrice";
-import { tpPercentShiftToPrice } from "../utils/tpPercentShiftToPrice";
-import { percentToCloseCost } from "../utils/percentToCloseCost";
+import { slPriceToPercentShift } from "../math/slPriceToPercentShift";
+import { tpPriceToPercentShift } from "../math/tpPriceToPercentShift";
+import { slPercentShiftToPrice } from "../math/slPercentShiftToPrice";
+import { tpPercentShiftToPrice } from "../math/tpPercentShiftToPrice";
+import { percentToCloseCost } from "../math/percentToCloseCost";
 import { Broker } from "./Broker";
 
 const BACKTEST_METHOD_NAME_RUN = "BacktestUtils.run";

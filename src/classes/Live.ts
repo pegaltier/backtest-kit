@@ -9,11 +9,11 @@ import { GLOBAL_CONFIG } from "../config/params";
 import { getErrorMessage, memoize, randomString, singlerun } from "functools-kit";
 import { Columns } from "../lib/services/markdown/LiveMarkdownService";
 import { ExchangeName } from "../interfaces/Exchange.interface";
-import { slPriceToPercentShift } from "../utils/slPriceToPercentShift";
-import { tpPriceToPercentShift } from "../utils/tpPriceToPercentShift";
-import { slPercentShiftToPrice } from "../utils/slPercentShiftToPrice";
-import { tpPercentShiftToPrice } from "../utils/tpPercentShiftToPrice";
-import { percentToCloseCost } from "../utils/percentToCloseCost";
+import { slPriceToPercentShift } from "../math/slPriceToPercentShift";
+import { tpPriceToPercentShift } from "../math/tpPriceToPercentShift";
+import { slPercentShiftToPrice } from "../math/slPercentShiftToPrice";
+import { tpPercentShiftToPrice } from "../math/tpPercentShiftToPrice";
+import { percentToCloseCost } from "../math/percentToCloseCost";
 import { Broker } from "./Broker";
 
 const LIVE_METHOD_NAME_RUN = "LiveUtils.run";
