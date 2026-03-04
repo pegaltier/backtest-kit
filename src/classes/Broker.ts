@@ -225,10 +225,7 @@ export class BrokerAdapter {
     if (payload.backtest) {
       return;
     }
-    if (!this._brokerInstance) {
-      return;
-    }
-    await this._brokerInstance.onSignalCloseCommit(payload);
+    await this._brokerInstance?.onSignalCloseCommit(payload);
   };
 
   public commitPartialProfit = async (payload: BrokerPartialProfitPayload) => {
@@ -238,10 +235,7 @@ export class BrokerAdapter {
     if (payload.backtest) {
       return;
     }
-    if (!this._brokerInstance) {
-      return;
-    }
-    await this._brokerInstance.onPartialProfitCommit(payload);
+    await this._brokerInstance?.onPartialProfitCommit(payload);
   };
 
   public commitPartialLoss = async (payload: BrokerPartialLossPayload) => {
@@ -251,10 +245,7 @@ export class BrokerAdapter {
     if (payload.backtest) {
       return;
     }
-    if (!this._brokerInstance) {
-      return;
-    }
-    await this._brokerInstance.onPartialLossCommit(payload);
+    await this._brokerInstance?.onPartialLossCommit(payload);
   };
 
   public commitTrailingStop = async (payload: BrokerTrailingStopPayload) => {
@@ -264,10 +255,7 @@ export class BrokerAdapter {
     if (payload.backtest) {
       return;
     }
-    if (!this._brokerInstance) {
-      return;
-    }
-    await this._brokerInstance.onTrailingStopCommit(payload);
+    await this._brokerInstance?.onTrailingStopCommit(payload);
   };
 
   public commitTrailingTake = async (payload: BrokerTrailingTakePayload) => {
@@ -277,10 +265,7 @@ export class BrokerAdapter {
     if (payload.backtest) {
       return;
     }
-    if (!this._brokerInstance) {
-      return;
-    }
-    await this._brokerInstance.onTrailingTakeCommit(payload);
+    await this._brokerInstance?.onTrailingTakeCommit(payload);
   };
 
   public commitBreakeven = async (payload: BrokerBreakevenPayload) => {
@@ -290,10 +275,7 @@ export class BrokerAdapter {
     if (payload.backtest) {
       return;
     }
-    if (!this._brokerInstance) {
-      return;
-    }
-    await this._brokerInstance.onBreakevenCommit(payload);
+    await this._brokerInstance?.onBreakevenCommit(payload);
   };
 
   public commitAverageBuy = async (payload: BrokerAverageBuyPayload) => {
@@ -303,10 +285,7 @@ export class BrokerAdapter {
     if (payload.backtest) {
       return;
     }
-    if (!this._brokerInstance) {
-      return;
-    }
-    await this._brokerInstance.onAverageBuyCommit(payload);
+    await this._brokerInstance?.onAverageBuyCommit(payload);
   };
 
   public useBrokerAdapter = (broker: TBrokerCtor | Partial<IBroker>) => {
@@ -321,7 +300,7 @@ export class BrokerAdapter {
   public enable = singleshot(() => {
     if (!this._brokerInstance) {
       this.enable.clear();
-      throw new Error("No broker instance provided");
+      throw new Error("No broker instance provided. Call Broker.useBrokerAdapter first.");
     }
 
     const unSignalOpen = syncSubject.subscribe(async (event) => {
