@@ -348,6 +348,12 @@ import {
 const FILL_POLL_INTERVAL_MS = 10_000;
 const FILL_POLL_ATTEMPTS = 10;
 
+/**
+ * Sleep between cancelOrder and fetchOrder to allow Binance to process the
+ * cancellation — fetchOrder immediately after cancel may return stale filled qty.
+ */
+const CANCEL_SETTLE_MS = 2_000;
+
 const getSpotExchange = singleshot(async () => {
   const exchange = new ccxt.binance({
     apiKey: process.env.BINANCE_API_KEY,
@@ -379,12 +385,18 @@ function truncateQty(exchange: ccxt.binance, symbol: string, qty: number): numbe
 }
 
 /**
+ * Fetch current free balance for base currency of symbol.
+ */
+async function fetchFreeQty(exchange: ccxt.binance, symbol: string): Promise<number> {
+  const balance = await exchange.fetchBalance();
+  const base    = getBase(exchange, symbol);
+  return parseFloat(String(balance?.free?.[base] ?? 0));
+}
+
+/**
  * Place a limit order and poll until filled (status === "closed").
- * On timeout: cancel the order, sell any partial fill via market to rollback cleanly,
- * then throw — backtest-kit will retry the commit against a clean exchange state.
- * 
- * If SL/TP prices are provided they are restored on the remaining qty after rollback
- * so the position is never left unprotected while backtest-kit retries.
+ * On timeout: cancel the order, settle, check partial fill and sell it via market,
+ * restore SL/TP on remaining position so it is never left unprotected, then throw.
  */
 async function createLimitOrderAndWait(
   exchange: ccxt.binance,
@@ -406,6 +418,9 @@ async function createLimitOrderAndWait(
 
   await exchange.cancelOrder(order.id, symbol);
 
+  // Wait for Binance to settle the cancellation before reading filled qty
+  await sleep(CANCEL_SETTLE_MS);
+
   const final     = await exchange.fetchOrder(order.id, symbol);
   const filledQty = final.filled ?? 0;
 
@@ -417,9 +432,7 @@ async function createLimitOrderAndWait(
 
   // Restore SL/TP on remaining position so it is not left unprotected during retry
   if (restore) {
-    const balance      = await exchange.fetchBalance();
-    const base         = getBase(exchange, symbol);
-    const remainingQty = truncateQty(exchange, symbol, parseFloat(String(balance?.free?.[base] ?? 0)));
+    const remainingQty = truncateQty(exchange, symbol, await fetchFreeQty(exchange, symbol));
     if (remainingQty > 0) {
       await exchange.createOrder(symbol, "limit", "sell", remainingQty, restore.tpPrice);
       await exchange.createOrder(symbol, "stop_loss_limit", "sell", remainingQty, restore.slPrice, { stopPrice: restore.slPrice });
@@ -451,15 +464,17 @@ Broker.useBrokerAdapter(
       const tpPrice   = parseFloat(exchange.priceToPrecision(symbol, priceTakeProfit));
       const slPrice   = parseFloat(exchange.priceToPrecision(symbol, priceStopLoss));
 
-      // Entry: limit buy, waits for fill — partial fill rolled back on timeout, backtest-kit retries
-      // No restore needed — if entry fails the position does not exist yet
+      // Entry: no restore needed — position does not exist yet if entry times out
       await createLimitOrderAndWait(exchange, symbol, "buy", qty, openPrice);
 
-      // Take-profit: resting limit sell, accepted synchronously by Binance REST
-      await exchange.createOrder(symbol, "limit", "sell", qty, tpPrice);
-
-      // Stop-loss: resting stop-limit sell, accepted synchronously by Binance REST
-      await exchange.createOrder(symbol, "stop_loss_limit", "sell", qty, slPrice, { stopPrice: slPrice });
+      // Post-fill: if TP/SL placement fails, position is open and unprotected — close via market
+      try {
+        await exchange.createOrder(symbol, "limit", "sell", qty, tpPrice);
+        await exchange.createOrder(symbol, "stop_loss_limit", "sell", qty, slPrice, { stopPrice: slPrice });
+      } catch (err) {
+        await exchange.createOrder(symbol, "market", "sell", qty);
+        throw err;
+      }
     }
 
     async onSignalCloseCommit(payload: BrokerSignalClosePayload): Promise<void> {
@@ -472,17 +487,19 @@ Broker.useBrokerAdapter(
         await exchange.cancelOrder(order.id, symbol);
       }
 
-      const balance  = await exchange.fetchBalance();
-      const base     = getBase(exchange, symbol);
-      const qty      = truncateQty(exchange, symbol, parseFloat(String(balance?.free?.[base] ?? 0)));
+      const qty = truncateQty(exchange, symbol, await fetchFreeQty(exchange, symbol));
 
-      if (qty > 0) {
-        const closePrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
-        const tpPrice    = parseFloat(exchange.priceToPrecision(symbol, priceTakeProfit));
-        const slPrice    = parseFloat(exchange.priceToPrecision(symbol, priceStopLoss));
-        // Restore SL/TP if close times out so position is not left unprotected during retry
-        await createLimitOrderAndWait(exchange, symbol, "sell", qty, closePrice, { tpPrice, slPrice });
+      // Position already closed by SL/TP on exchange — nothing to do, commit succeeds
+      if (qty === 0) {
+        return;
       }
+
+      const closePrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
+      const tpPrice    = parseFloat(exchange.priceToPrecision(symbol, priceTakeProfit));
+      const slPrice    = parseFloat(exchange.priceToPrecision(symbol, priceStopLoss));
+
+      // Restore SL/TP if close times out so position is not left unprotected during retry
+      await createLimitOrderAndWait(exchange, symbol, "sell", qty, closePrice, { tpPrice, slPrice });
     }
 
     async onPartialProfitCommit(payload: BrokerPartialProfitPayload): Promise<void> {
@@ -495,9 +512,7 @@ Broker.useBrokerAdapter(
         await exchange.cancelOrder(order.id, symbol);
       }
 
-      const balance  = await exchange.fetchBalance();
-      const base     = getBase(exchange, symbol);
-      const totalQty = parseFloat(String(balance?.free?.[base] ?? 0));
+      const totalQty = await fetchFreeQty(exchange, symbol);
 
       // Position may have already been closed by SL/TP on exchange — skip gracefully
       if (totalQty === 0) {
@@ -515,8 +530,14 @@ Broker.useBrokerAdapter(
 
       // Restore SL/TP on remaining qty after successful partial close
       if (remainingQty > 0) {
-        await exchange.createOrder(symbol, "limit", "sell", remainingQty, tpPrice);
-        await exchange.createOrder(symbol, "stop_loss_limit", "sell", remainingQty, slPrice, { stopPrice: slPrice });
+        try {
+          await exchange.createOrder(symbol, "limit", "sell", remainingQty, tpPrice);
+          await exchange.createOrder(symbol, "stop_loss_limit", "sell", remainingQty, slPrice, { stopPrice: slPrice });
+        } catch (err) {
+          // Remaining position is unprotected — close via market
+          await exchange.createOrder(symbol, "market", "sell", remainingQty);
+          throw err;
+        }
       }
     }
 
@@ -530,9 +551,7 @@ Broker.useBrokerAdapter(
         await exchange.cancelOrder(order.id, symbol);
       }
 
-      const balance  = await exchange.fetchBalance();
-      const base     = getBase(exchange, symbol);
-      const totalQty = parseFloat(String(balance?.free?.[base] ?? 0));
+      const totalQty = await fetchFreeQty(exchange, symbol);
 
       // Position may have already been closed by SL/TP on exchange — skip gracefully
       if (totalQty === 0) {
@@ -550,8 +569,14 @@ Broker.useBrokerAdapter(
 
       // Restore SL/TP on remaining qty after successful partial close
       if (remainingQty > 0) {
-        await exchange.createOrder(symbol, "limit", "sell", remainingQty, tpPrice);
-        await exchange.createOrder(symbol, "stop_loss_limit", "sell", remainingQty, slPrice, { stopPrice: slPrice });
+        try {
+          await exchange.createOrder(symbol, "limit", "sell", remainingQty, tpPrice);
+          await exchange.createOrder(symbol, "stop_loss_limit", "sell", remainingQty, slPrice, { stopPrice: slPrice });
+        } catch (err) {
+          // Remaining position is unprotected — close via market
+          await exchange.createOrder(symbol, "market", "sell", remainingQty);
+          throw err;
+        }
       }
     }
 
@@ -559,16 +584,17 @@ Broker.useBrokerAdapter(
       const { symbol, newStopLossPrice } = payload;
       const exchange = await getSpotExchange();
 
-      // Cancel existing SL order only — TP stays untouched
+      // Cancel existing SL order only — Spot has no reduceOnly, filter by side + type
       const orders  = await exchange.fetchOpenOrders(symbol);
-      const slOrder = orders.find((o) => ["stop_loss_limit", "stop", "STOP_LOSS_LIMIT"].includes(o.type ?? "")) ?? null;
+      const slOrder = orders.find((o) =>
+        o.side === "sell" &&
+        ["stop_loss_limit", "stop", "STOP_LOSS_LIMIT"].includes(o.type ?? "")
+      ) ?? null;
       if (slOrder) {
         await exchange.cancelOrder(slOrder.id, symbol);
       }
 
-      const balance  = await exchange.fetchBalance();
-      const base     = getBase(exchange, symbol);
-      const qty      = truncateQty(exchange, symbol, parseFloat(String(balance?.free?.[base] ?? 0)));
+      const qty = truncateQty(exchange, symbol, await fetchFreeQty(exchange, symbol));
 
       // Position may have already been closed by SL/TP on exchange — skip gracefully
       if (qty === 0) {
@@ -577,7 +603,6 @@ Broker.useBrokerAdapter(
 
       const slPrice = parseFloat(exchange.priceToPrecision(symbol, newStopLossPrice));
 
-      // Updated SL: resting stop-limit sell, accepted synchronously by Binance REST
       await exchange.createOrder(symbol, "stop_loss_limit", "sell", qty, slPrice, { stopPrice: slPrice });
     }
 
@@ -585,16 +610,17 @@ Broker.useBrokerAdapter(
       const { symbol, newTakeProfitPrice } = payload;
       const exchange = await getSpotExchange();
 
-      // Cancel existing TP order only — SL stays untouched
+      // Cancel existing TP order only — Spot has no reduceOnly, filter by side + type
       const orders  = await exchange.fetchOpenOrders(symbol);
-      const tpOrder = orders.find((o) => ["limit", "LIMIT"].includes(o.type ?? "")) ?? null;
+      const tpOrder = orders.find((o) =>
+        o.side === "sell" &&
+        ["limit", "LIMIT"].includes(o.type ?? "")
+      ) ?? null;
       if (tpOrder) {
         await exchange.cancelOrder(tpOrder.id, symbol);
       }
 
-      const balance  = await exchange.fetchBalance();
-      const base     = getBase(exchange, symbol);
-      const qty      = truncateQty(exchange, symbol, parseFloat(String(balance?.free?.[base] ?? 0)));
+      const qty = truncateQty(exchange, symbol, await fetchFreeQty(exchange, symbol));
 
       // Position may have already been closed by SL/TP on exchange — skip gracefully
       if (qty === 0) {
@@ -603,7 +629,6 @@ Broker.useBrokerAdapter(
 
       const tpPrice = parseFloat(exchange.priceToPrecision(symbol, newTakeProfitPrice));
 
-      // Updated TP: resting limit sell, accepted synchronously by Binance REST
       await exchange.createOrder(symbol, "limit", "sell", qty, tpPrice);
     }
 
@@ -611,16 +636,17 @@ Broker.useBrokerAdapter(
       const { symbol, newStopLossPrice } = payload;
       const exchange = await getSpotExchange();
 
-      // Cancel existing SL order only — TP stays untouched
+      // Cancel existing SL order only — Spot has no reduceOnly, filter by side + type
       const orders  = await exchange.fetchOpenOrders(symbol);
-      const slOrder = orders.find((o) => ["stop_loss_limit", "stop", "STOP_LOSS_LIMIT"].includes(o.type ?? "")) ?? null;
+      const slOrder = orders.find((o) =>
+        o.side === "sell" &&
+        ["stop_loss_limit", "stop", "STOP_LOSS_LIMIT"].includes(o.type ?? "")
+      ) ?? null;
       if (slOrder) {
         await exchange.cancelOrder(slOrder.id, symbol);
       }
 
-      const balance  = await exchange.fetchBalance();
-      const base     = getBase(exchange, symbol);
-      const qty      = truncateQty(exchange, symbol, parseFloat(String(balance?.free?.[base] ?? 0)));
+      const qty = truncateQty(exchange, symbol, await fetchFreeQty(exchange, symbol));
 
       // Position may have already been closed by SL/TP on exchange — skip gracefully
       if (qty === 0) {
@@ -629,7 +655,6 @@ Broker.useBrokerAdapter(
 
       const slPrice = parseFloat(exchange.priceToPrecision(symbol, newStopLossPrice));
 
-      // Breakeven SL: resting stop-limit sell at entry price, accepted synchronously by Binance REST
       await exchange.createOrder(symbol, "stop_loss_limit", "sell", qty, slPrice, { stopPrice: slPrice });
     }
 
@@ -638,9 +663,7 @@ Broker.useBrokerAdapter(
       const exchange = await getSpotExchange();
 
       // Guard against DCA into a ghost position — SL/TP may have already closed it on exchange
-      const balance  = await exchange.fetchBalance();
-      const base     = getBase(exchange, symbol);
-      const existing = parseFloat(String(balance?.free?.[base] ?? 0));
+      const existing = await fetchFreeQty(exchange, symbol);
 
       if (existing === 0) {
         throw new Error(`AverageBuy skipped: no open position for ${symbol} on exchange — SL/TP may have already been filled`);
@@ -657,13 +680,21 @@ Broker.useBrokerAdapter(
       const tpPrice    = parseFloat(exchange.priceToPrecision(symbol, priceTakeProfit));
       const slPrice    = parseFloat(exchange.priceToPrecision(symbol, priceStopLoss));
 
-      // DCA entry: limit buy, waits for fill — restore SL/TP on existing qty if times out
+      // DCA entry: restore SL/TP on existing qty if times out so position is not left unprotected
       await createLimitOrderAndWait(exchange, symbol, "buy", qty, entryPrice, { tpPrice, slPrice });
 
-      // Recreate SL/TP on total qty (existing + new DCA entry) after successful fill
-      const totalQty = truncateQty(exchange, symbol, existing + qty);
-      await exchange.createOrder(symbol, "limit", "sell", totalQty, tpPrice);
-      await exchange.createOrder(symbol, "stop_loss_limit", "sell", totalQty, slPrice, { stopPrice: slPrice });
+      // Refetch balance after fill — existing snapshot is stale after cancel + fill
+      const totalQty = truncateQty(exchange, symbol, await fetchFreeQty(exchange, symbol));
+
+      // Recreate SL/TP on fresh total qty after successful fill
+      try {
+        await exchange.createOrder(symbol, "limit", "sell", totalQty, tpPrice);
+        await exchange.createOrder(symbol, "stop_loss_limit", "sell", totalQty, slPrice, { stopPrice: slPrice });
+      } catch (err) {
+        // Total position is unprotected — close via market
+        await exchange.createOrder(symbol, "market", "sell", totalQty);
+        throw err;
+      }
     }
   }
 );
@@ -691,6 +722,12 @@ import {
 
 const FILL_POLL_INTERVAL_MS = 10_000;
 const FILL_POLL_ATTEMPTS = 10;
+
+/**
+ * Sleep between cancelOrder and fetchOrder to allow Binance to process the
+ * cancellation — fetchOrder immediately after cancel may return stale filled qty.
+ */
+const CANCEL_SETTLE_MS = 2_000;
 
 /**
  * 3x leverage — conservative choice for $1000 total fiat.
@@ -736,12 +773,25 @@ function findPosition(positions: ccxt.Position[], symbol: string, side: "long" |
 }
 
 /**
+ * Fetch current contracts qty for symbol/side.
+ */
+async function fetchContractsQty(
+  exchange: ccxt.binance,
+  symbol: string,
+  side: "long" | "short"
+): Promise<number> {
+  const positions = await exchange.fetchPositions([symbol]);
+  const pos       = findPosition(positions, symbol, side);
+  return Math.abs(parseFloat(String(pos?.contracts ?? 0)));
+}
+
+/**
  * Place a limit order and poll until filled (status === "closed").
- * On timeout: cancel the order, close any partial fill via market to rollback cleanly,
- * then throw — backtest-kit will retry the commit against a clean exchange state.
+ * On timeout: cancel the order, settle, check partial fill and close it via market,
+ * restore SL/TP on remaining position so it is never left unprotected, then throw.
  *
- * If restore is provided, SL/TP are recreated on the remaining position before throwing
- * so the position is never left unprotected while backtest-kit retries.
+ * Pass params.reduceOnly = true for closing orders — prevents accidental reversal
+ * if qty has floating point drift vs real position size on exchange.
  */
 async function createLimitOrderAndWait(
   exchange: ccxt.binance,
@@ -750,7 +800,7 @@ async function createLimitOrderAndWait(
   qty: number,
   price: number,
   params: Record<string, unknown> = {},
-  restore?: { exitSide: "buy" | "sell"; tpPrice: number; slPrice: number }
+  restore?: { exitSide: "buy" | "sell"; tpPrice: number; slPrice: number; positionSide: "long" | "short" }
 ): Promise<void> {
   const order = await exchange.createOrder(symbol, "limit", side, qty, price, params);
 
@@ -764,6 +814,9 @@ async function createLimitOrderAndWait(
 
   await exchange.cancelOrder(order.id, symbol);
 
+  // Wait for Binance to settle the cancellation before reading filled qty
+  await sleep(CANCEL_SETTLE_MS);
+
   const final     = await exchange.fetchOrder(order.id, symbol);
   const filledQty = final.filled ?? 0;
 
@@ -775,9 +828,7 @@ async function createLimitOrderAndWait(
 
   // Restore SL/TP on remaining position so it is not left unprotected during retry
   if (restore) {
-    const positions    = await exchange.fetchPositions([symbol]);
-    const pos          = positions.find((p) => p.symbol === symbol) ?? null;
-    const remainingQty = truncateQty(exchange, symbol, Math.abs(parseFloat(String(pos?.contracts ?? 0))));
+    const remainingQty = truncateQty(exchange, symbol, await fetchContractsQty(exchange, symbol, restore.positionSide));
     if (remainingQty > 0) {
       await exchange.createOrder(symbol, "limit", restore.exitSide, remainingQty, restore.tpPrice, { reduceOnly: true });
       await exchange.createOrder(symbol, "stop_market", restore.exitSide, remainingQty, undefined, { stopPrice: restore.slPrice, reduceOnly: true });
@@ -809,14 +860,17 @@ Broker.useBrokerAdapter(
       const entrySide = position === "long" ? "buy"  : "sell";
       const exitSide  = position === "long" ? "sell" : "buy";
 
-      // Entry: no reduceOnly — opening order. No restore needed — position does not exist yet on timeout.
+      // Entry: no restore needed — position does not exist yet if entry times out
       await createLimitOrderAndWait(exchange, symbol, entrySide, qty, openPrice);
 
-      // Take-profit: resting limit on exit side, accepted synchronously by Binance REST
-      await exchange.createOrder(symbol, "limit", exitSide, qty, tpPrice, { reduceOnly: true });
-
-      // Stop-loss: resting stop-market on exit side, accepted synchronously by Binance REST
-      await exchange.createOrder(symbol, "stop_market", exitSide, qty, undefined, { stopPrice: slPrice, reduceOnly: true });
+      // Post-fill: if TP/SL placement fails, position is open and unprotected — close via market
+      try {
+        await exchange.createOrder(symbol, "limit", exitSide, qty, tpPrice, { reduceOnly: true });
+        await exchange.createOrder(symbol, "stop_market", exitSide, qty, undefined, { stopPrice: slPrice, reduceOnly: true });
+      } catch (err) {
+        await exchange.createOrder(symbol, "market", exitSide, qty, undefined, { reduceOnly: true });
+        throw err;
+      }
     }
 
     async onSignalCloseCommit(payload: BrokerSignalClosePayload): Promise<void> {
@@ -829,19 +883,25 @@ Broker.useBrokerAdapter(
         await exchange.cancelOrder(order.id, symbol);
       }
 
-      const positions = await exchange.fetchPositions([symbol]);
-      const pos       = findPosition(positions, symbol, position);
-      const qty       = truncateQty(exchange, symbol, Math.abs(parseFloat(String(pos?.contracts ?? 0))));
-      const exitSide  = position === "long" ? "sell" : "buy";
+      const qty      = truncateQty(exchange, symbol, await fetchContractsQty(exchange, symbol, position));
+      const exitSide = position === "long" ? "sell" : "buy";
 
-      if (qty > 0) {
-        const closePrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
-        const tpPrice    = parseFloat(exchange.priceToPrecision(symbol, priceTakeProfit));
-        const slPrice    = parseFloat(exchange.priceToPrecision(symbol, priceStopLoss));
-        // reduceOnly: prevents accidental reversal if qty has drift vs real position
-        // Restore SL/TP if close times out so position is not left unprotected during retry
-        await createLimitOrderAndWait(exchange, symbol, exitSide, qty, closePrice, { reduceOnly: true }, { exitSide, tpPrice, slPrice });
+      // Position already closed by SL/TP on exchange — nothing to do, commit succeeds
+      if (qty === 0) {
+        return;
       }
+
+      const closePrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
+      const tpPrice    = parseFloat(exchange.priceToPrecision(symbol, priceTakeProfit));
+      const slPrice    = parseFloat(exchange.priceToPrecision(symbol, priceStopLoss));
+
+      // reduceOnly: prevents accidental reversal if qty has drift vs real position
+      // Restore SL/TP if close times out so position is not left unprotected during retry
+      await createLimitOrderAndWait(
+        exchange, symbol, exitSide, qty, closePrice,
+        { reduceOnly: true },
+        { exitSide, tpPrice, slPrice, positionSide: position }
+      );
     }
 
     async onPartialProfitCommit(payload: BrokerPartialProfitPayload): Promise<void> {
@@ -854,9 +914,7 @@ Broker.useBrokerAdapter(
         await exchange.cancelOrder(order.id, symbol);
       }
 
-      const positions = await exchange.fetchPositions([symbol]);
-      const pos       = findPosition(positions, symbol, position);
-      const totalQty  = Math.abs(parseFloat(String(pos?.contracts ?? 0)));
+      const totalQty = await fetchContractsQty(exchange, symbol, position);
 
       // Position may have already been closed by SL/TP on exchange — skip gracefully
       if (totalQty === 0) {
@@ -872,12 +930,22 @@ Broker.useBrokerAdapter(
 
       // reduceOnly: prevents accidental reversal if qty has drift vs real position
       // Restore SL/TP on remaining qty if partial close times out so position is not left unprotected
-      await createLimitOrderAndWait(exchange, symbol, exitSide, qty, closePrice, { reduceOnly: true }, { exitSide, tpPrice, slPrice });
+      await createLimitOrderAndWait(
+        exchange, symbol, exitSide, qty, closePrice,
+        { reduceOnly: true },
+        { exitSide, tpPrice, slPrice, positionSide: position }
+      );
 
       // Restore SL/TP on remaining qty after successful partial close
       if (remainingQty > 0) {
-        await exchange.createOrder(symbol, "limit", exitSide, remainingQty, tpPrice, { reduceOnly: true });
-        await exchange.createOrder(symbol, "stop_market", exitSide, remainingQty, undefined, { stopPrice: slPrice, reduceOnly: true });
+        try {
+          await exchange.createOrder(symbol, "limit", exitSide, remainingQty, tpPrice, { reduceOnly: true });
+          await exchange.createOrder(symbol, "stop_market", exitSide, remainingQty, undefined, { stopPrice: slPrice, reduceOnly: true });
+        } catch (err) {
+          // Remaining position is unprotected — close via market
+          await exchange.createOrder(symbol, "market", exitSide, remainingQty, undefined, { reduceOnly: true });
+          throw err;
+        }
       }
     }
 
@@ -891,9 +959,7 @@ Broker.useBrokerAdapter(
         await exchange.cancelOrder(order.id, symbol);
       }
 
-      const positions = await exchange.fetchPositions([symbol]);
-      const pos       = findPosition(positions, symbol, position);
-      const totalQty  = Math.abs(parseFloat(String(pos?.contracts ?? 0)));
+      const totalQty = await fetchContractsQty(exchange, symbol, position);
 
       // Position may have already been closed by SL/TP on exchange — skip gracefully
       if (totalQty === 0) {
@@ -909,12 +975,22 @@ Broker.useBrokerAdapter(
 
       // reduceOnly: prevents accidental reversal if qty has drift vs real position
       // Restore SL/TP on remaining qty if partial close times out so position is not left unprotected
-      await createLimitOrderAndWait(exchange, symbol, exitSide, qty, closePrice, { reduceOnly: true }, { exitSide, tpPrice, slPrice });
+      await createLimitOrderAndWait(
+        exchange, symbol, exitSide, qty, closePrice,
+        { reduceOnly: true },
+        { exitSide, tpPrice, slPrice, positionSide: position }
+      );
 
       // Restore SL/TP on remaining qty after successful partial close
       if (remainingQty > 0) {
-        await exchange.createOrder(symbol, "limit", exitSide, remainingQty, tpPrice, { reduceOnly: true });
-        await exchange.createOrder(symbol, "stop_market", exitSide, remainingQty, undefined, { stopPrice: slPrice, reduceOnly: true });
+        try {
+          await exchange.createOrder(symbol, "limit", exitSide, remainingQty, tpPrice, { reduceOnly: true });
+          await exchange.createOrder(symbol, "stop_market", exitSide, remainingQty, undefined, { stopPrice: slPrice, reduceOnly: true });
+        } catch (err) {
+          // Remaining position is unprotected — close via market
+          await exchange.createOrder(symbol, "market", exitSide, remainingQty, undefined, { reduceOnly: true });
+          throw err;
+        }
       }
     }
 
@@ -922,26 +998,26 @@ Broker.useBrokerAdapter(
       const { symbol, newStopLossPrice, position } = payload;
       const exchange = await getFuturesExchange();
 
-      // Cancel existing SL order only — TP stays untouched
+      // Cancel existing SL order only — filter by reduceOnly to avoid cancelling unrelated orders
       const orders  = await exchange.fetchOpenOrders(symbol);
-      const slOrder = orders.find((o) => ["stop_market", "stop", "STOP_MARKET"].includes(o.type ?? "")) ?? null;
+      const slOrder = orders.find((o) =>
+        !!o.reduceOnly &&
+        ["stop_market", "stop", "STOP_MARKET"].includes(o.type ?? "")
+      ) ?? null;
       if (slOrder) {
         await exchange.cancelOrder(slOrder.id, symbol);
       }
 
-      const positions = await exchange.fetchPositions([symbol]);
-      const pos       = findPosition(positions, symbol, position);
-      const qty       = truncateQty(exchange, symbol, Math.abs(parseFloat(String(pos?.contracts ?? 0))));
+      const qty      = truncateQty(exchange, symbol, await fetchContractsQty(exchange, symbol, position));
+      const exitSide = position === "long" ? "sell" : "buy";
 
       // Position may have already been closed by SL/TP on exchange — skip gracefully
       if (qty === 0) {
         throw new Error(`TrailingStop skipped: no open position for ${symbol} on exchange — SL/TP may have already been filled`);
       }
 
-      const slPrice  = parseFloat(exchange.priceToPrecision(symbol, newStopLossPrice));
-      const exitSide = position === "long" ? "sell" : "buy";
+      const slPrice = parseFloat(exchange.priceToPrecision(symbol, newStopLossPrice));
 
-      // Updated SL: resting stop-market on exit side, accepted synchronously by Binance REST
       await exchange.createOrder(symbol, "stop_market", exitSide, qty, undefined, { stopPrice: slPrice, reduceOnly: true });
     }
 
@@ -949,26 +1025,26 @@ Broker.useBrokerAdapter(
       const { symbol, newTakeProfitPrice, position } = payload;
       const exchange = await getFuturesExchange();
 
-      // Cancel existing TP order only — SL stays untouched
+      // Cancel existing TP order only — filter by reduceOnly to avoid cancelling unrelated orders
       const orders  = await exchange.fetchOpenOrders(symbol);
-      const tpOrder = orders.find((o) => ["limit", "LIMIT"].includes(o.type ?? "")) ?? null;
+      const tpOrder = orders.find((o) =>
+        !!o.reduceOnly &&
+        ["limit", "LIMIT"].includes(o.type ?? "")
+      ) ?? null;
       if (tpOrder) {
         await exchange.cancelOrder(tpOrder.id, symbol);
       }
 
-      const positions = await exchange.fetchPositions([symbol]);
-      const pos       = findPosition(positions, symbol, position);
-      const qty       = truncateQty(exchange, symbol, Math.abs(parseFloat(String(pos?.contracts ?? 0))));
+      const qty      = truncateQty(exchange, symbol, await fetchContractsQty(exchange, symbol, position));
+      const exitSide = position === "long" ? "sell" : "buy";
 
       // Position may have already been closed by SL/TP on exchange — skip gracefully
       if (qty === 0) {
         throw new Error(`TrailingTake skipped: no open position for ${symbol} on exchange — SL/TP may have already been filled`);
       }
 
-      const tpPrice  = parseFloat(exchange.priceToPrecision(symbol, newTakeProfitPrice));
-      const exitSide = position === "long" ? "sell" : "buy";
+      const tpPrice = parseFloat(exchange.priceToPrecision(symbol, newTakeProfitPrice));
 
-      // Updated TP: resting limit on exit side, accepted synchronously by Binance REST
       await exchange.createOrder(symbol, "limit", exitSide, qty, tpPrice, { reduceOnly: true });
     }
 
@@ -976,26 +1052,26 @@ Broker.useBrokerAdapter(
       const { symbol, newStopLossPrice, position } = payload;
       const exchange = await getFuturesExchange();
 
-      // Cancel existing SL order only — TP stays untouched
+      // Cancel existing SL order only — filter by reduceOnly to avoid cancelling unrelated orders
       const orders  = await exchange.fetchOpenOrders(symbol);
-      const slOrder = orders.find((o) => ["stop_market", "stop", "STOP_MARKET"].includes(o.type ?? "")) ?? null;
+      const slOrder = orders.find((o) =>
+        !!o.reduceOnly &&
+        ["stop_market", "stop", "STOP_MARKET"].includes(o.type ?? "")
+      ) ?? null;
       if (slOrder) {
         await exchange.cancelOrder(slOrder.id, symbol);
       }
 
-      const positions = await exchange.fetchPositions([symbol]);
-      const pos       = findPosition(positions, symbol, position);
-      const qty       = truncateQty(exchange, symbol, Math.abs(parseFloat(String(pos?.contracts ?? 0))));
+      const qty      = truncateQty(exchange, symbol, await fetchContractsQty(exchange, symbol, position));
+      const exitSide = position === "long" ? "sell" : "buy";
 
       // Position may have already been closed by SL/TP on exchange — skip gracefully
       if (qty === 0) {
         throw new Error(`Breakeven skipped: no open position for ${symbol} on exchange — SL/TP may have already been filled`);
       }
 
-      const slPrice  = parseFloat(exchange.priceToPrecision(symbol, newStopLossPrice));
-      const exitSide = position === "long" ? "sell" : "buy";
+      const slPrice = parseFloat(exchange.priceToPrecision(symbol, newStopLossPrice));
 
-      // Breakeven SL: resting stop-market at entry price on exit side, accepted synchronously by Binance REST
       await exchange.createOrder(symbol, "stop_market", exitSide, qty, undefined, { stopPrice: slPrice, reduceOnly: true });
     }
 
@@ -1004,9 +1080,7 @@ Broker.useBrokerAdapter(
       const exchange = await getFuturesExchange();
 
       // Guard against DCA into a ghost position — SL/TP may have already closed it on exchange
-      const positions = await exchange.fetchPositions([symbol]);
-      const pos       = findPosition(positions, symbol, position);
-      const existing  = Math.abs(parseFloat(String(pos?.contracts ?? 0)));
+      const existing = await fetchContractsQty(exchange, symbol, position);
 
       if (existing === 0) {
         throw new Error(`AverageBuy skipped: no open position for ${symbol} on exchange — SL/TP may have already been filled`);
@@ -1022,17 +1096,30 @@ Broker.useBrokerAdapter(
       const entryPrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
       const tpPrice    = parseFloat(exchange.priceToPrecision(symbol, priceTakeProfit));
       const slPrice    = parseFloat(exchange.priceToPrecision(symbol, priceStopLoss));
-      const entrySide  = position === "long" ? "buy" : "sell";
+      // onAverageBuyCommit is called for both long (buy) and short (sell) DCA entries.
+      // For short positions entrySide is "sell" — this correctly adds to the short position.
+      const entrySide  = position === "long" ? "buy"  : "sell";
       const exitSide   = position === "long" ? "sell" : "buy";
 
-      // DCA entry: limit order, waits for fill
-      // Restore SL/TP on existing qty if times out so position is not left unprotected during retry
-      await createLimitOrderAndWait(exchange, symbol, entrySide, qty, entryPrice, {}, { exitSide, tpPrice, slPrice });
+      // DCA entry: restore SL/TP on existing qty if times out so position is not left unprotected
+      await createLimitOrderAndWait(
+        exchange, symbol, entrySide, qty, entryPrice,
+        {},
+        { exitSide, tpPrice, slPrice, positionSide: position }
+      );
 
-      // Recreate SL/TP on total qty (existing + new DCA entry) after successful fill
-      const totalQty = truncateQty(exchange, symbol, existing + qty);
-      await exchange.createOrder(symbol, "limit", exitSide, totalQty, tpPrice, { reduceOnly: true });
-      await exchange.createOrder(symbol, "stop_market", exitSide, totalQty, undefined, { stopPrice: slPrice, reduceOnly: true });
+      // Refetch contracts after fill — existing snapshot is stale after cancel + fill
+      const totalQty = truncateQty(exchange, symbol, await fetchContractsQty(exchange, symbol, position));
+
+      // Recreate SL/TP on fresh total qty after successful fill
+      try {
+        await exchange.createOrder(symbol, "limit", exitSide, totalQty, tpPrice, { reduceOnly: true });
+        await exchange.createOrder(symbol, "stop_market", exitSide, totalQty, undefined, { stopPrice: slPrice, reduceOnly: true });
+      } catch (err) {
+        // Total position is unprotected — close via market
+        await exchange.createOrder(symbol, "market", exitSide, totalQty, undefined, { reduceOnly: true });
+        throw err;
+      }
     }
   }
 );
